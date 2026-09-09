@@ -17,7 +17,13 @@ import { render } from '@testing-library/react'
 import { describe, expect, test } from 'bun:test'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { VX } from '../../tokens'
-import { ChartFrame, legendEntryCap, resolveLegend, resolvePlotRect } from './ChartFrame'
+import {
+  ChartFrame,
+  legendEntryCap,
+  resolveLegend,
+  resolveLegendRollup,
+  resolvePlotRect,
+} from './ChartFrame'
 import { resolveFrameHeight, resolveLegendMaxRows } from './chart-frame-layout'
 import type { ResponsiveChartHeight } from './chart-frame-layout'
 import type { LegendEntry } from './ChartLegend'
@@ -27,6 +33,9 @@ import type { SeriesStyle } from '../series'
 const series: SeriesStyle[] = [{ key: 'a', label: 'Series A', color: '#000', mark: 'line' }]
 
 const CHART_BODY_MARKER = 'CHART_BODY_MARKER'
+
+/** One legend entry, shared by every cap/rollup case below. */
+const entry = (key: string, label: string): LegendEntry => ({ key, label, color: '#000' })
 
 function renderFrame(isPending: boolean): string {
   return renderToStaticMarkup(
@@ -226,7 +235,6 @@ describe('resolvePlotRect — the plot never collapses under its own legend', ()
 })
 
 describe('legendEntryCap — only a fill frame rolls its legend up, and only when it must', () => {
-  const entry = (key: string, label: string): LegendEntry => ({ key, label, color: '#000' })
   const five = ['a', 'b', 'c', 'd', 'e'].map((k) => entry(k, k.toUpperCase()))
   const many = Array.from({ length: 24 }, (_, i) => entry(`s${i}`, `Series number ${i}`))
 
@@ -243,19 +251,100 @@ describe('legendEntryCap — only a fill frame rolls its legend up, and only whe
     expect(cap).toBeGreaterThanOrEqual(1)
   })
 
-  test('an explicit caller maxRows stays the upper bound', () => {
+  test('the tier DEFAULT stays the upper bound — two defaults, the smaller wins', () => {
     const cap = legendEntryCap({
       items: many,
       containerW: 390,
       available: 240 - VX.minPlotHeight,
-      callerMaxRows: 2,
+      defaultMaxRows: 2,
     })
     expect(cap).toBeLessThanOrEqual(2)
   })
 
-  test('an unmeasured width falls back to the caller cap rather than guessing', () => {
+  test('an unmeasured width falls back to the default rather than guessing', () => {
     expect(legendEntryCap({ items: many, containerW: 0, available: 120 })).toBe(undefined)
-    expect(legendEntryCap({ items: many, containerW: 0, available: 120, callerMaxRows: 3 })).toBe(3)
+    expect(legendEntryCap({ items: many, containerW: 0, available: 120, defaultMaxRows: 3 })).toBe(
+      3,
+    )
+  })
+})
+
+/**
+ * The consumer report this fixes (meteo, 1.30.0): a 7-entry meteogram legend in a 92–150px docked
+ * `fill` row rendered 2 entries at `maxRows` 3, 6 AND 99 — five series drawn in colours nothing
+ * named, behind a rollup the box had no room to expand into. 1.30.0's own halves were both right;
+ * `ChartFrame` ran the measured fit over the honoured cap, so this covers the COMPOSITION, which
+ * is the part no pure-function test could see.
+ */
+describe('resolveLegendRollup — a stated maxRows outranks the tier AND the measured fit', () => {
+  const seven = ['a', 'b', 'c', 'd', 'e', 'f', 'g'].map((k) => entry(k, `Series ${k}`))
+  /** meteo's row: 150px tall, `VX.minPlotHeight` 120, so the legend's share is 30px. */
+  const meteo = { items: seven, containerW: 380, available: 150 - VX.minPlotHeight } as const
+
+  test('the measured fit is what pinned it — the state before the fix', () => {
+    expect(legendEntryCap({ ...meteo, defaultMaxRows: 99 })).toBeLessThan(seven.length)
+  })
+
+  test('every stated number now survives the same box, and the plot pays', () => {
+    for (const statedMaxRows of [3, 6, 99]) {
+      expect(
+        resolveLegendRollup({ ...meteo, statedMaxRows, tier: 'phone', fillBand: true }),
+      ).toEqual({ maxRows: statedMaxRows, legendWins: true })
+    }
+  })
+
+  test('stating nothing still gets the measured fit, bounded by the tier default', () => {
+    const rollup = resolveLegendRollup({ ...meteo, tier: 'phone', fillBand: true })
+    expect(rollup.legendWins).toBe(false)
+    expect(rollup.maxRows).toBeLessThanOrEqual(2)
+  })
+
+  test('off a fill band nothing is measured — the frame grows instead', () => {
+    expect(resolveLegendRollup({ ...meteo, tier: 'phone', fillBand: false })).toEqual({
+      maxRows: 2,
+      legendWins: false,
+    })
+    expect(resolveLegendRollup({ ...meteo, tier: 'desktop', fillBand: false })).toEqual({
+      maxRows: undefined,
+      legendWins: false,
+    })
+  })
+
+  test('a stated cap off a fill band is honoured too, and costs the plot nothing', () => {
+    expect(
+      resolveLegendRollup({ ...meteo, statedMaxRows: 6, tier: 'phone', fillBand: false }),
+    ).toEqual({ maxRows: 6, legendWins: false })
+  })
+})
+
+describe('resolvePlotRect — legendWins moves the cost onto the plot, never past the cell', () => {
+  const box = { containerW: 380, resolvedHeight: 150, minWidth: 200, sideLegendWidth: 0 }
+
+  test('without it the plot holds its floor and the frame overflows its own fill cell', () => {
+    const plot = resolvePlotRect({ ...box, topBottomLegendHeight: 94 })
+    expect(plot.height).toBe(VX.minPlotHeight)
+    expect(plot.height + 94).toBeGreaterThan(box.resolvedHeight)
+  })
+
+  test('with it the plot takes the remainder — 150 in, 150 out', () => {
+    const plot = resolvePlotRect({ ...box, topBottomLegendHeight: 94, legendWins: true })
+    expect(plot.height).toBe(150 - 94)
+  })
+
+  test('a legend that fits is unaffected — this only ever bites past the floor', () => {
+    const fits = { ...box, resolvedHeight: 240, topBottomLegendHeight: 30 }
+    expect(resolvePlotRect(fits).height).toBe(resolvePlotRect({ ...fits, legendWins: true }).height)
+  })
+
+  test('spend the whole box and the plot is 0 — the callers own arithmetic, not a silent rollup', () => {
+    expect(resolvePlotRect({ ...box, topBottomLegendHeight: 200, legendWins: true }).height).toBe(0)
+  })
+
+  test('an unmeasured fill frame still renders nothing, legendWins or not', () => {
+    expect(
+      resolvePlotRect({ ...box, resolvedHeight: 0, topBottomLegendHeight: 0, legendWins: true })
+        .height,
+    ).toBe(0)
   })
 })
 

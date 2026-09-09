@@ -7,6 +7,7 @@ import { VX } from '../../tokens'
 import type { ChartMargin } from '../../tokens'
 import { CartesianChart } from '../primitives/CartesianChart'
 import type { AxisConfig, CartesianTooltipConfig, PlotContext } from '../primitives/CartesianChart'
+import type { ResponsiveChartHeight } from '../primitives/ChartFrame'
 import type { ZoneSpec } from '../primitives/ZoneRects'
 import type { ChartState } from '../primitives/ChartPending'
 import { curveFor, LINE_OVERLAY_STROKE_WIDTH } from '../series'
@@ -65,8 +66,9 @@ export type BarsRefLine = {
 
 export type BarsProps<T> = BasaltProps & {
   data: T[]
-  /** Fixed height in pixels, forwarded to `CartesianChart`. Default 240. */
-  height?: number
+  /** Height in px, or one per size step (`{ base, sm?, md?, lg? }`). Default 240. Forwarded
+   * unchanged; `ChartFrameProps.height` owns the law — steps resolve off the MEASURED width. */
+  height?: number | ResponsiveChartHeight
   chartId: string
   getX: (d: T) => string
   /** Generic value accessor — given a data point and a bar/line key, returns the value or null. */

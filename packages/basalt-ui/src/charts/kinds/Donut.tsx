@@ -6,6 +6,7 @@ import { assertRequiredProps } from '../../common/validate'
 import type { BasaltProps } from '../../common/props'
 import { ChartTooltipFloat, TooltipBody, TooltipRow } from '../primitives/ChartTooltip'
 import { ChartFrame } from '../primitives/ChartFrame'
+import type { ResponsiveChartHeight } from '../primitives/ChartFrame'
 import type { ChartState } from '../primitives/ChartPending'
 import { VX } from '../../tokens'
 import type { SeriesStyle } from '../series'
@@ -20,8 +21,9 @@ export type DonutDatum<K extends string = SeriesKey> = { key: K; value: number }
 
 export type DonutProps<K extends string = SeriesKey> = BasaltProps & {
   data: DonutDatum<K>[]
-  /** Fixed height in pixels, forwarded to the internal `ChartFrame`. Default 240. */
-  height?: number
+  /** Height in px, or one per size step (`{ base, sm?, md?, lg? }`). Default 240. Forwarded
+   * unchanged; `ChartFrameProps.height` owns the law — steps resolve off the MEASURED width. */
+  height?: number | ResponsiveChartHeight
   colorForKey: (key: K) => string
   formatValue: (v: number) => string
   seriesLabel?: (key: string) => string

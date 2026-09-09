@@ -10,6 +10,7 @@ import {
   TooltipRow,
 } from '../primitives/ChartTooltip'
 import { ChartFrame } from '../primitives/ChartFrame'
+import type { ResponsiveChartHeight } from '../primitives/ChartFrame'
 import { useChartTierMetrics } from '../primitives/chart-tier'
 import type { ChartState } from '../primitives/ChartPending'
 import { maxTextWidth } from '../utils/measure-text'
@@ -24,8 +25,10 @@ type HeatmapTip = HeatmapCell & { anchor: { x: number; y: number } }
 
 export type HeatmapProps<T> = BasaltProps & {
   data: T[]
-  /** Fixed height in pixels. Used when neither `aspectRatio` nor `fill` is set. Default 240. */
-  height?: number
+  /** Height in px, or one per size step (`{ base, sm?, md?, lg? }`). Used when neither
+   * `aspectRatio` nor `fill` is set. Default 240. `ChartFrameProps.height` owns the law —
+   * steps resolve off the MEASURED width. */
+  height?: number | ResponsiveChartHeight
   /** height = Math.round(containerWidth / aspectRatio). Ignored when `fill` is set. */
   aspectRatio?: number
   /** Fill the parent flex/grid cell's measured height instead of a fixed/derived one. */

@@ -6,10 +6,9 @@ import { useChartSize } from '../hooks/useChartSize'
 import { deriveLegend } from '../series'
 import type { ChartLegendConfig, LegendPlacement, SeriesStyle } from '../series'
 import {
-  legendEntryCap,
   resolveChartTier,
   resolveFrameHeight,
-  resolveLegendMaxRows,
+  resolveLegendRollup,
   resolvePlotRect,
 } from './chart-frame-layout'
 import type { ResponsiveChartHeight } from './chart-frame-layout'
@@ -20,7 +19,12 @@ import type { ChartState } from './ChartPending'
 
 /** Re-exported for `ChartFrame.test.tsx` and any other consumer that previously reached these
  * through `ChartFrame` — the layout math itself lives in `./chart-frame-layout` (pure, DOM-free). */
-export { legendEntryCap, resolvePlotRect, resolveChartTier } from './chart-frame-layout'
+export {
+  legendEntryCap,
+  resolveLegendRollup,
+  resolvePlotRect,
+  resolveChartTier,
+} from './chart-frame-layout'
 export type { ResponsiveChartHeight } from './chart-frame-layout'
 
 const DEFAULT_HEIGHT = 240
@@ -34,13 +38,14 @@ export type ChartFrameLegend = {
   /**
    * Wrap cap → "+N more" rollup at high cardinality.
    *
-   * An explicit value WINS OUTRIGHT — including over the phone tier's own two-row default
-   * (`chartTierMetrics`). It used to be `Math.min`'d against the tier, which made the documented
-   * per-chart opt-out ("opt back out with an explicit `legend.maxRows`") false in the one direction
-   * anybody needs it: a consumer's 380px inspector panel is "a phone" on a 1440px desktop, and a
-   * six-series legend rolled up to `+4 more` with no way to say no. Under `fill` the measured
-   * entry cap can still roll up FURTHER — that is a floor on the plot, not a tier default
-   * ({@link legendEntryCap}).
+   * An explicit value WINS OUTRIGHT — over the phone tier's two-row default (`chartTierMetrics`)
+   * AND over a `fill` frame's measured fit (`legendEntryCap`). 1.30.0 fixed only the first half:
+   * the fit still ran `Math.min(fitted, caller)` on top, so meteo's 7-entry meteogram legend in a
+   * 150px docked row rendered 2 entries at `maxRows` 3, 6 AND 99 — five series drawn in colours
+   * nothing named. Both losers are DEFAULTS (the tier's, and `VX.minPlotHeight`); this is the one
+   * number a caller stated, so under `fill` the PLOT yields the height instead
+   * ({@link resolvePlotRect}'s `legendWins`). State a number too large for the box and the plot
+   * gets what is left — visible, and yours.
    */
   maxRows?: number
   /** Visually separate role: series | overlay | reference. */
@@ -232,37 +237,31 @@ export function ChartFrame({
   const sideLegendWidth = legendVisible && vertical ? legendW : 0
   const topBottomLegendHeight = legendVisible && !vertical ? legendH : 0
 
+  const legendItems = legend === false ? [] : deriveLegend(series)
+  const togglable = legend !== false && (legend.toggle ?? legendItems.length > 1)
+
+  // The cap, and who pays for it — one pure decision ({@link resolveLegendRollup} states the three
+  // cases and why the composition, not either half, is what shipped broken). A fixed-height frame
+  // grows around its legend; a `fill` one cannot, so its legend rolls up to the measured fit
+  // instead of eating the plot — unless the caller stated a number, which nothing trims and the
+  // plot pays for. Top/bottom only: a side legend costs width, not height.
+  const { maxRows, legendWins } = resolveLegendRollup({
+    ...(legend !== false && legend.maxRows !== undefined && { statedMaxRows: legend.maxRows }),
+    tier,
+    fillBand: legendVisible && fill && !vertical,
+    items: legendItems,
+    containerW,
+    available: resolvedHeight - VX.minPlotHeight,
+  })
+
   const plot = resolvePlotRect({
     containerW,
     resolvedHeight,
     minWidth,
     sideLegendWidth,
     topBottomLegendHeight,
+    ...(legendWins && { legendWins }),
   })
-
-  const legendItems = legend === false ? [] : deriveLegend(series)
-  const togglable = legend !== false && (legend.toggle ?? legendItems.length > 1)
-
-  // A fixed-height frame grows around its legend; a `fill` one cannot, so its legend rolls up
-  // instead of eating the plot (see `legendEntryCap`). Top/bottom only — a side legend costs
-  // width, not height.
-  // The resolved cap — the caller's if they named one, else the tier's DEFAULT, never both
-  // `Math.min`'d (`resolveLegendMaxRows` owns that law and says why) — enters the fill measurement
-  // as the upper bound, so a phone-width `fill` frame can only ever roll up further, never less.
-  const callerMaxRows =
-    legend === false ? undefined : resolveLegendMaxRows({ callerMaxRows: legend.maxRows, tier })
-
-  const maxRows =
-    legend === false
-      ? undefined
-      : fill && !vertical
-        ? legendEntryCap({
-            items: legendItems,
-            containerW,
-            available: resolvedHeight - VX.minPlotHeight,
-            ...(callerMaxRows !== undefined && { callerMaxRows }),
-          })
-        : callerMaxRows
 
   const legendNode =
     legend === false || resolvedState !== null ? null : (

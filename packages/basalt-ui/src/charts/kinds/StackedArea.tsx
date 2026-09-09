@@ -5,6 +5,7 @@ import type { BasaltProps } from '../../common/props'
 import type { CursorResolution } from '../cursor/resolve'
 import { CartesianChart } from '../primitives/CartesianChart'
 import type { AxisConfig, PlotContext } from '../primitives/CartesianChart'
+import type { ResponsiveChartHeight } from '../primitives/ChartFrame'
 import type { ChartState } from '../primitives/ChartPending'
 import { curveFor } from '../series'
 import type { ChartLegendConfig, ChartSeries } from '../series'
@@ -12,8 +13,9 @@ import { isDev } from '../../common/is-dev'
 
 export type StackedAreaProps<T> = BasaltProps & {
   data: T[]
-  /** Fixed height in pixels, forwarded to `CartesianChart`. Default 240. */
-  height?: number
+  /** Height in px, or one per size step (`{ base, sm?, md?, lg? }`). Default 240. Forwarded
+   * unchanged; `ChartFrameProps.height` owns the law — steps resolve off the MEASURED width. */
+  height?: number | ResponsiveChartHeight
   chartId: string
   getX: (d: T) => string
   /** The stacked bands, bottom to top — the single source of truth for color, legend, and tooltip

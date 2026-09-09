@@ -15,12 +15,22 @@ the types, not this table, if the two disagree.
 
 **The newest section is headed `## Unreleased`, and the RELEASE renames it to its own number.**
 This file is written before `semantic-release` picks the number, so a number written here is a guess
-— and it was wrong three rounds running. The rename is therefore a release-time step, not an
+— and it was wrong four rounds running. The rename is therefore a release-time step, not an
 authoring-time one: the section is authored as `## Unreleased — <title>`, and the release swaps the
 word `Unreleased` for the computed version, leaving the title alone; a fresh `## Unreleased` opens
-above it. Doing it by hand is what failed three times running — `.releaserc.json`'s `prepareCmd`
-already rewrites `package.json` and regenerates `llms.txt` at exactly that moment, so that is where
-the swap belongs.
+above it, with a fresh column in the index below.
+
+**Since 1.30.1 a script does it, and that is the fix the previous revision only claimed.** This
+paragraph used to end "so that is where the swap belongs" — a statement of intent that read as a
+statement of fact. `prepareCmd` was never given the step and MIGRATING.md was never added to
+`@semantic-release/git`'s assets, so even a correct local edit could not have reached the tarball,
+and 1.30.0 duly shipped `## Unreleased — the chrome wave` to npm; three separate consumer agents
+found it there. `packages/basalt-ui/scripts/release-migrating.ts` now performs the rename in
+`prepareCmd` beside `gen-llms.ts` and commits through the same assets list, `--check` runs it in
+`scripts/release.sh`'s preflight (a dry run SKIPS `prepare`, so nothing else in the pipeline can
+catch a shape it cannot rewrite), and it FAILS rather than doing nothing when the shape surprises
+it. If you are reading a heading that still says `Unreleased` in an installed tarball, that is a
+bug, not an authoring slip.
 
 **Skipping that step is what this file's worst defect was.** 1.27.0, 1.28.0 and 1.29.0 all shipped
 under one `## Unreleased` heading — ~1000 lines, two of its subsections still titled "targeting
@@ -48,22 +58,87 @@ all 2294 lines of the previous revision to learn that four minors moved two thin
 layer; this index is that answer in one line. It is a POINTER, not a second copy: every cell names
 the section that carries the detail, and a surface with no row in a minor had no delta in it. The
 `Unreleased` column takes the version number at the same moment the section below it does, and a new
-column is added at the same time — one edit, in the release commit.
+column opens at the same time — both performed by `scripts/release-migrating.ts` in the release
+commit, so the column head and the section it points at can never disagree.
 
-| Surface                     | 1.27.0                                      | 1.28.0                                                                                 | 1.29.0                                                                     | Unreleased                          |
-| --------------------------- | ------------------------------------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- | ----------------------------------- |
-| **tokens** (`./tokens`)     | —                                           | `--vx-divider` → `rgba()` on both schemes (§ Shell)                                    | `--vx-space-touch-target` added (§ Additions)                              | eight spacing numbers (§ Chrome)    |
-| **charts** (`./charts`)     | —                                           | phone tier, `curve`, formatters, `state`, log axis (§ preamble)                        | `ChartState.empty: string`, `AxisBottomNumeric` (§ Additions)              | —                                   |
-| **shell** (`.`)             | —                                           | scrollport, region seams, **the brand left the sidebar** (§§ scrollport, brand, Shell) | `PageTitle`, `BasaltDevDock`, `useBreakpoint` (§ Additions)                | More popover, aside pill (§ Chrome) |
-| **controls** (`./controls`) | `NumberFilter`, `field.number` (§ Controls) | sheet renders panel rows; `PanelRow`, `SliderControl` (§ `basalt-ui/controls`)         | —                                                                          | —                                   |
-| **forms** (`./forms`)       | —                                           | `field` → `inputProps`, **`inputProps` drops `key`**, the layout tier (§ `inputProps`) | `field` DELETED — and the `--fix` recipe no longer works (§ Consolidation) | —                                   |
-| **data** (`./data/table`)   | —                                           | root is a `<div>`, row selection, `getItemKey` required (§ `basalt-ui/data`)           | `./data` + `./query` + `./connectivity` dropped (§ Consolidation)          | —                                   |
-| **CLI** (`basalt-ui`)       | —                                           | —                                                                                      | **resolver stops relocating; `doctor` loses 6 of 10 checks** (§ CLI)       | —                                   |
-| **guards**                  | five rules → `error` (§ Guards)             | six new ids at `warn` (§ preamble)                                                     | `query-dual-import` retired in 1.29.1 (§ Guards)                           | four rules → `error` (§ Guards)     |
+There is one row per SURFACE, not per export, and a surface earns a row once anything in it moves:
+**dashboard** and **toolchain** were added at 1.30.1 because `StatGroup`/`WidgetGrid` and the
+shipped lefthook preset both changed in 1.30.0 with no row that owned them — which is how a
+consumer read this index, found nothing, and diffed a KPI row that had silently gone 4-up → 2-up.
+
+| Surface                       | 1.27.0                                                       | 1.28.0                                                                                 | 1.29.0                                                                                         | 1.30.0                                                                             | Unreleased                                                            |
+| ----------------------------- | ------------------------------------------------------------ | -------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| **tokens** (`./tokens`)       | —                                                            | `--vx-divider` → `rgba()` on both schemes (§ Shell)                                    | `--vx-space-touch-target` added (§ Additions)                                                  | eight spacing numbers (§ Chrome)                                                   | —                                                                     |
+| **charts** (`./charts`)       | —                                                            | phone tier, `curve`, formatters, `state`, log axis (§ preamble)                        | `ChartState.empty: string`, `AxisBottomNumeric` (§ Additions)                                  | responsive `height`, `legend.maxRows` (§ Charts)                                   | `height` reaches the kinds; `maxRows` beats the `fill` fit (§ Charts) |
+| **shell** (`.`)               | —                                                            | scrollport, region seams, **the brand left the sidebar** (§§ scrollport, brand, Shell) | `PageTitle`, `BasaltDevDock`, `useBreakpoint` (§ Additions)                                    | More popover, aside pill, the responsive gutter, `useBasaltSpacing` (§ Chrome)     | —                                                                     |
+| **controls** (`./controls`)   | `NumberFilter`, `field.number` (§ Controls)                  | sheet renders panel rows; `PanelRow`, `SliderControl` (§ `basalt-ui/controls`)         | —                                                                                              | —                                                                                  | —                                                                     |
+| **forms** (`./forms`)         | —                                                            | `field` → `inputProps`, **`inputProps` drops `key`**, the layout tier (§ `inputProps`) | `field` DELETED — and the `--fix` recipe no longer works (§ Consolidation)                     | —                                                                                  | —                                                                     |
+| **data** (`./data/table`)     | —                                                            | root is a `<div>`, row selection, `getItemKey` required (§ `basalt-ui/data`)           | `./data` + `./query` + `./connectivity` dropped (§ Consolidation)                              | —                                                                                  | —                                                                     |
+| **dashboard** (`.`)           | `StatCard`: `unit`, `breakdown`, delta format (§ `StatCard`) | `StatGroup`, `WidgetGrid`, query-aware `StatCard` — additive                           | —                                                                                              | **the column law keys on the CONTAINER; `cols={4}` is 2-up at `sm`** (§ Dashboard) | —                                                                     |
+| **toolchain** (`./configs/*`) | —                                                            | —                                                                                      | the shipped lefthook preset's `check-theme` BROKE — the CLI resolver stopped ascending (§ CLI) | the preset's default bin, and the `root:` recipe (§ Toolchain)                     | —                                                                     |
+| **CLI** (`basalt-ui`)         | —                                                            | —                                                                                      | **resolver stops relocating; `doctor` loses 6 of 10 checks** (§ CLI)                           | —                                                                                  | —                                                                     |
+| **guards**                    | five rules → `error` (§ Guards)                              | six new ids at `warn` (§ preamble)                                                     | `query-dual-import` retired in 1.29.1 (§ Guards)                                               | four rules → `error` (§ Guards)                                                    | —                                                                     |
 
 ---
 
-## Unreleased — the chrome wave
+## Unreleased — finishing 1.30.0
+
+**A patch. Nothing is added, renamed or removed — three things 1.30.0 shipped are made to work, and
+one number it published is corrected.** If you are on 1.29.x, read § 1.30.0 first and this second;
+if you are already on 1.30.0, this section is the whole delta.
+
+### Charts — the responsive `height` reaches the kinds it was written for
+
+`ResponsiveChartHeight` (`{ base, sm?, md?, lg? }`) landed at 1.30.0 on `ChartFrame.height` alone.
+`CartesianChart` and all nine kinds still declared `height?: number` and merely spread the value
+through — and `basalt/hand-rolled-plot` forbids composing `ChartFrame` directly for a single-plot
+cartesian chart, so the feature could not be reached from any compliant call site.
+`MultiLine height={{ base: 200, sm: 260 }}` was a `tsc` error over a value that would have resolved
+correctly at runtime.
+
+Ten declarations are widened to `number | ResponsiveChartHeight` — `CartesianChart`, `MultiLine`,
+`Bars`, `StackedArea`, `ZonedLine`, `BandStrip`, `MirroredBars`, `Heatmap`, `DualPanel`, `Donut` —
+and `ResponsiveChartHeight` is exported from `./charts` so a consumer can name the type.
+**Type-only, additive, no rendering moves**: a plain `number` behaves exactly as before, and the steps resolve
+against the MEASURED container width (the same width the chart tier reads), never the viewport.
+
+### Charts — `legend.maxRows` wins under `fill` too, and the plot yields
+
+**This one MOVES RENDERING for a chart that already sets `legend.maxRows` inside a `fill` frame.**
+1.30.0 promised an explicit `maxRows` "WINS OUTRIGHT" and delivered half of it: the tier default
+stopped trimming the number, but `legendEntryCap`'s measured fit then ran `Math.min(fitted, caller)`
+on top. In a docked panel — where `fill` is the norm and the row height sits near
+`VX.minPlotHeight` — the fit is the binding constraint, so the documented escape was inert in
+exactly the case it was restored for. Measured: a 7-entry legend in a 92–150px row rendered 2
+entries at `maxRows` 3, 6 **and** 99, with five series drawn in colours nothing named.
+
+The fit now resolves an ABSENT cap only. When a caller states a number on a `fill` band, the legend
+takes the rows it asked for and **`VX.minPlotHeight` stops being a floor** — the plot yields the
+height instead. Both things that used to trim the number are framework DEFAULTS (the tier's cap,
+and a floor about the plot); the stated number is the only intent in the room.
+
+- **Expect a taller legend and a shorter plot** anywhere you set `maxRows` on a docked/`fill` chart.
+  A number too large for the box now costs the plot visibly, in the frame you sized, rather than
+  being silently rolled back up.
+- **Opt-out: drop `maxRows`.** With nothing stated the measured fit applies exactly as it did at
+  1.30.0, bounded by the tier's default. That is the same setting as before this change.
+- **Fixed-height frames are unaffected** — they grow around their legend and never entered the fit.
+
+### This file — the release-time rename is a script now
+
+The `## Unreleased` → `## <version>` swap and its index column are performed by
+`packages/basalt-ui/scripts/release-migrating.ts` in `prepareCmd`, committed through the same
+`@semantic-release/git` assets list that keeps `llms.txt` current, gated by `--check` in the release
+wrapper's preflight, and covered by tests. See this file's preamble for why the previous revision's
+claim to have already done this was false. **Consumer-visible consequence:** the newest section in
+an installed tarball carries its own version number. If it says `Unreleased`, file it.
+
+**§ 1.30.0 § Guards carries a corrected number**, restated here because a published measurement
+moved: meteo is 5 `control-outside-home` incumbents, not 0, and the fleet total is 34, not 29 — the
+zero was a failed `npx --no-install oxlint` invocation read as "no findings". The four promotions to
+`error` are unaffected and stand as shipped; only the extended C1 pair's count changed.
+
+## 1.30.0 — the chrome wave
 
 **Mostly CHROME, which removes and renames nothing: eight spacing numbers move, the mobile More
 surface becomes a compact popover instead of a bottom sheet, and the aside's phone pill takes the
@@ -116,6 +191,22 @@ through `useBasaltSpacing()`, deliberately — a Mantine spacing KEY would resol
   those numbers, for a consumer computing geometry that has to track `density` rather than pinning a
   literal. Additive; it was already the shell's own reader.
 
+**READING the gutter is the other direction, and it is a different variable.** The paragraph above
+states the WRITE consequence; the read one caught a consumer. `--vx-space-app-shell-inset` is a
+single value (20) with no phone twin in the same var, while the shell's real gutter reaches Mantine
+as the JS pair and lands in **`--app-shell-padding`**, which Mantine emits per breakpoint. So
+full-bleed math (`margin-inline: calc(var(--…) * -1)`, a height budget subtracting the page inset)
+must read `--app-shell-padding` — grepping for the basalt-prefixed token gets a number that is
+correct by coincidence from `sm` up and wrong on a phone (20 against the real 8). Inside a
+`BasaltShell`, read Mantine's var.
+
+**Shell-less, the two `--vx-*` gutter vars ARE your lever**, and that is the case they were emitted
+for — nothing else in the framework reads them, which is why they are the exception among the
+JS-only `appShell*` entries. A provider-only app that had a hand-maintained `Container px` pair and a
+matching negative-margin `.bleed` pair, restating the same two numbers in two files behind two media
+queries, deletes both and reads `--vx-space-app-shell-inset{,-mobile}` instead. Only `BasaltShell`'s
+own gutter is unreachable that way.
+
 **The mobile More surface is a compact POPOVER, not a bottom sheet**, and `MOBILE_MENU_MAX_DEFAULT`
 rises 6 → 12. `projectMobileNav` is unchanged in shape — the surface is still INFERRED from row
 count (0 drops the slot, 1 is a plain link, ≤ `menuMax` is a `menu`, past it a `sheet`) — but a
@@ -154,12 +245,90 @@ are not a `FilterSet`, so unlike `Filters (n)` there is no census to derive one 
   bottom of the page — deliberate, pinned by tests, and invisible on the desktop it was authored
   on, so `PageAside` now says it once in dev. The remedy is to give that bar a row 2.
 
+### Dashboard — `StatGroup` and `WidgetGrid` key on the CONTAINER, and `cols={4}` goes 2-up at `sm`
+
+**This is the item in 1.30.0 that can silently change a production layout, and the previous revision
+of this section did not mention it at all.** Neither export changed shape; both changed where their
+column law reads its width from.
+
+- **The law now keys on the CONTAINER, not the viewport.** Each primitive renders its own
+  `container-type: inline-size` box around the grid, so the counts follow the width the row
+  ACTUALLY has. The shell moves that width with the viewport held still — a `PageAside` claiming its
+  300px, the sidebar collapsing 256px → its 48px rail, your own split pane — and `@media` sees none
+  of it. Measured: a `PageAside` on a 1512px desktop left a KPI row ~956px wide, `@media` still
+  resolved `lg`, and four cells of 239px truncated their own values mid-word. **If you mount either
+  primitive inside an aside, a split pane or beside a collapsible sidebar, expect a column count to
+  drop where it used to overflow.** The old viewport law survives verbatim under
+  `@supports not (container-type: inline-size)` for pre-2023 browsers, so there are two laws in the
+  file and exactly one is ever live.
+- **`StatGroup cols={4}` now takes TWO columns at `sm`, not three.** The general rule is still
+  `min(cols, 3)`; `4` is the exception, because three columns leave a four-KPI row as 3 + 1 — one
+  orphan cell against two thirds of empty track. `2`, `3` and `5` are unchanged. The full law is
+  `base 2 → sm min(cols, 3), except 4 → 2 → lg cols`.
+- **No opt-out, and none is offered**: `cols` is the DESKTOP count and a responsive object is
+  deliberately not forwarded (that seam is what let five call sites in one app disagree). If you
+  need a different law, you are outside these primitives.
+
+Worth checking while you are here: `WidgetGrid` and `StatGroup` exist to own exactly the
+`SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }}` a dashboard hand-writes per page, and the container
+fix only reaches the rows that adopted them. In the reference consumer, five KPI rows still
+hand-roll the law over raw Mantine `Card` and no guard names it — a `SimpleGrid` of card-shaped
+children is invisible to every rule. Grep for `SimpleGrid` before concluding the wave reached you.
+
+### Charts — a responsive `height`, and the legend escape 1.30.0 promised
+
+Both of these landed in 1.30.0 with no row here, and both were only partly reachable. **Read this
+section against 1.30.1, not 1.30.0** — the § Unreleased entries above are what makes them usable.
+
+- **`height` accepts `{ base, sm?, md?, lg? }`** as well as a plain number, resolved against the
+  chart's MEASURED container width (the same width the tier reads), not the viewport. In 1.30.0 the
+  widened type reached `ChartFrame` alone, while `CartesianChart` and all nine kinds still declared
+  `height?: number` and merely spread it through — and `basalt/hand-rolled-plot` forbids composing
+  `ChartFrame` directly for a single-plot cartesian chart, so the feature was unreachable from any
+  compliant call site. It was type-only: the object always resolved correctly at runtime.
+- **An explicit `legend={{ maxRows: n }}` beats the phone tier's default cap.** The tier keys on the
+  measured box, so a 380px inspector panel on a 1440px desktop IS "a phone" and its two-row default
+  rolled a six-series legend up to `+4 more` with no way to say no. `margin` and `xLabelRotate`
+  always had that escape; the legend did not. Under `fill` a measured cap still applies on top — see
+  § Unreleased for what that actually costs, because "can still roll up FURTHER" understated it.
+
+### Toolchain — the shipped lefthook preset's `check-theme`, and what it does NOT fix
+
+**The one item in this release with a known-broken incumbent state, and it had no row at all.** The
+preset is `extends:`-ed, which means it auto-updates unread — so if you hand-patched around the
+1.29.0 breakage, nothing else will tell you to re-examine that patch.
+
+**What broke in 1.29.0** (two things, in one release): the CLI resolver stopped ascending to a
+config-carrying ancestor — since then it is `BASALT_CWD`, else the invocation cwd, and it infers
+nothing — while the preset's default bin was `bunx --no-install basalt-ui`, which resolves to
+nothing at a repo root under bun's isolated linker. Lefthook runs commands at the REPO ROOT, so for
+every consumer whose `basalt` config is not at the repo root the hook was a hard `0 files scanned`
+failure. (It keys on where the **config** lives, not where the app lives: an app at `apps/web` with
+its `basalt` block, manifest and `lefthook.yml` at the root was never affected.)
+
+**What 1.30.0 fixes is ONE of the two.** The default bin is now
+`${BASALT_BIN:-${BASALT_CWD:+$BASALT_CWD/}node_modules/.bin/basalt-ui}` — the local bin of the
+package the guard runs FOR, failing with the path it looked for instead of a resolver error — and
+the preset gained `root:` in its list of merging seams plus a monorepo recipe at the bottom of the
+file. **The resolver is untouched.** So:
+
+- **If you set `BASALT_CWD`, keep it.** Deleting the `env:` block is the natural reading of "the
+  preset's `check-theme` was fixed" and it silently un-gates the hook again: with no `BASALT_CWD`
+  the guard is back to scanning a config-less root. Only the `BASALT_BIN` half may now be redundant.
+- **If you set `BASALT_BIN` alone**, it still wins outright and nothing changes.
+- **If you spell the commands out with `root: '<pkg>/'`** rather than extending the preset — the
+  sanctioned monorepo recipe — the new default never runs and this is a no-op for you.
+- **`basalt-ui doctor` reads the MERGED config** (`lefthook dump`), so it is what tells you whether
+  the result actually gates. The file's own comments are accurate; check against them, not against
+  a summary.
+
 ### Guards — four rules promote to `error`, and the C1 pair does not
 
 Every one of these six entries said in its own `why` that this release "is when the incumbent count
 across argo, linewatch, image-share, rb, image-gen and the playground is re-measured" (law C16).
 That measurement was taken 2026-09-09, with all seven consumers freshly migrated to 1.29.2 and
-basalt built from `master`, by running `npx oxlint .` in each repo and counting by rule id:
+basalt built from `master`, by running `npx oxlint .` in each repo and counting by rule id — a
+method that failed open in one of them, see the correction under the table:
 
 | Rule                                                              | argo | image-gen | image-share | rb  | linewatch | meteo | obsidian | playground | Verdict      |
 | ----------------------------------------------------------------- | ---- | --------- | ----------- | --- | --------- | ----- | -------- | ---------- | ------------ |
@@ -167,24 +336,60 @@ basalt built from `master`, by running `npx oxlint .` in each repo and counting 
 | `basalt/forms-field-key`                                          | 0    | 0         | 0           | 0   | 0         | 0     | 0        | 0          | → `error`    |
 | `basalt/query-fn-unwrap`                                          | 0    | 0         | 0           | 0   | 0         | 0     | 0        | 0          | → `error`    |
 | `basalt/bound-control-outside-home`                               | 0    | 0         | 0           | 0   | 0         | 0     | 0        | 0          | → `error`    |
-| `basalt/control-outside-home` + `raw-selection-control` (one law) | 2    | 10        | 6           | 8   | 0         | 0     | 0        | 3          | stays `warn` |
+| `basalt/control-outside-home` + `raw-selection-control` (one law) | 2    | 10        | 6           | 8   | 0         | 5     | 0        | 3          | stays `warn` |
+
+**Corrected at 1.30.1: meteo is 5, not 0 — the fleet total is 34, not 29.** The zero published at
+1.30.0 was an artifact: meteo has no local oxlint binary, so `npx --no-install oxlint` failed there
+with a package error and the counting pipeline read that failure as "no findings" — the same
+silent-zero shape this file already warns about for `check-theme`'s fabricated roots, arrived at from the other side. The
+five are real (`display-controls.tsx:258`, `stack-editor.tsx:301/323/337`, `forecast-tab.tsx:151`),
+and re-measuring with a guaranteed-present binary is what found them. **The DECISION is unchanged**:
+all four promoted rules re-measured at zero in every repo including meteo, so those four promotions
+stand exactly as shipped — only the extended pair's count moved. A count taken through a repo's own
+`lint` script rather than a bare oxlint invocation is not a measurement; meteo's `lint` is
+`basalt-ui check-theme` alone and never runs oxlint at all.
 
 **The four promotions cost nothing to take.** They were measured at zero, in every consumer, before
 being flipped — which is the entire point of a grace window: it is a period in which the count is
 allowed to fall to zero on its own, not a timer that fires regardless. If one of them fires in your
 app, it is finding something none of the fleet had, and the message names the remedy.
 
-**The C1 pair is extended to 1.31.0, and the reason is not the count.** 29 incumbents is a large
-number, but the argument is that **this release is the first in which either lane names a home those
-29 can reach.** Every home both messages listed was a shell slot — `PageBar` / `Section` /
-`WidgetHeader` — so a consumer mounting `BasaltProvider` and no `BasaltShell` had no reachable home
-at all: image-gen is a Tauri window with a hand-rolled header and carries 10 of the 29 by itself,
-and `basalt/bound-control-outside-home` closed the `ViewTabs` escape it would otherwise have taken.
-This release adds the missing sentence to both messages — a `PageBar` outside a shell renders in
-flow, sticky, with its own `title`, which is what `PageBar` has always actually done — so the
-remedy exists from now, not before. Promoting a rule to `error` in the same minor that first makes
-it satisfiable hands you zero minors to act on the answer. **1.31.0 is when those 29 are measured
-against this number.**
+**The C1 pair is extended to 1.31.0, and the reason is not the count.** The argument is that
+**until this release, one class of consumer had no reachable home at all.** Every home both messages
+listed was a shell slot — `PageBar` / `Section` / `WidgetHeader` — so an app mounting
+`BasaltProvider` and no `BasaltShell` was being told to move a control somewhere it could not
+render one. This release adds the missing sentence to both messages: a `PageBar` outside a shell
+renders in flow, sticky, with its own `title`, which is what `PageBar` has always actually done.
+Promoting a rule to `error` in the same minor that first makes it satisfiable hands you zero minors
+to act on the answer.
+
+**What that sentence does and does not buy, measured rather than assumed** — the 1.30.0 revision of
+this paragraph rested the extension on "image-gen is a Tauri window with a hand-rolled header and
+carries 10 of the 29 by itself" (the count as
+published), implying a shell-less `PageBar` addresses those 10. It addresses
+**zero** of them. image-gen's header `SegmentedControl` was already waived and is not in the count;
+the real 10 are labelled `Select`/`SegmentedControl` form fields, a `Chip.Group` role tagger and a
+canvas preview-mode switch. The remedy that moves that number is **`basalt-ui/forms`** — `FormRow`
+and `FormGroup` both silence the rule, verified against a bare labelled `Select` — and adopting it
+is a nine-site change that moves each label off the input onto the row. The extension still stands;
+the reason is this:
+
+- **A shell-less SINGLE-page app is closed by `PageBar`** — one page, so every control is a page
+  control and row 2 is the honest home. That is the whole of linewatch.
+- **A shell-less app whose switcher is primary NAVIGATION is not.** `PageBar`'s `tabs` models a
+  page's sub-views; basalt models top-level nav only through `BasaltShell`, and `BasaltShell` is
+  all-or-nothing — sidebar plus header plus scrollport — which a 100vh Tauri window with per-view
+  keep-alive scrollports cannot take. The missing primitive there is a shell-less top-level nav,
+  not a page bar.
+- **A shell-FUL app was never blocked on reachability at all**, and 14 of the 34 are in one (rb and
+  image-share both mount `BasaltShell`). Their blocker is law C1's other half: `PageBar.filters`
+  accepts `FilterSet` descendants only, so the honest fix is porting hand-rolled `value`/`onChange`
+  clusters onto bound `FieldHandle`s plus a `createSearchStore` — a page-shape change per page, and
+  the 1.30.0 sentence made it no cheaper.
+
+**1.31.0 is when the 34 are re-measured — with a bare oxlint invocation in every repo, and split by
+whether the app mounts a shell.** The raw count is the wrong number to promote on; "how many are in
+an app that already had a home" is the one that says what an `error` would cost.
 
 Riding along, and the reason a single waiver now works: `control-outside-home` (the AST lane) and
 `raw-selection-control` (the text lane) are one law with two rule ids, and until now

@@ -1,7 +1,8 @@
 /**
  * Doc-drift meta-tests, merged into one file (C2 consolidation) — each `describe` below is a
  * former standalone test file (`agents-sync`, `llms-sync`, `gen-llms-check`, `jsdoc-specifiers`,
- * `lefthook-preset`), moved here verbatim with its own assertions unchanged. One place for "does
+ * `lefthook-preset`), moved here verbatim with its own assertions unchanged, plus
+ * `release-migrating` which was written into it. One place for "does
  * a committed doc/config still match its generator or its SSOT", rather than five.
  *
  * Run: bun test packages/basalt-ui/tests/drift.test.ts
@@ -12,6 +13,7 @@ import { join, resolve } from 'node:path'
 import { afterAll, describe, expect, it } from 'bun:test'
 
 import { generateLlmsTxt, outPath } from '../scripts/gen-llms'
+import { migratingPath, renameUnreleased } from '../scripts/release-migrating'
 import { SURFACES } from '../src/surfaces'
 import type { SurfaceSpec } from '../src/surfaces'
 
@@ -360,5 +362,143 @@ describe('sync-self', () => {
     for (const dir of installed) {
       expect([dir.name, existsSync(join(SKILLS_SRC, dir.name))]).toEqual([dir.name, true])
     }
+  })
+})
+
+// ── release-migrating — the release-time `## Unreleased` → `## <version>` rename ──────────────────
+
+/**
+ * Same law as `llms-sync` above, one file over: a doc the RELEASE rewrites has to be provably
+ * rewritable before the release runs. This one is here because the rename failed FOUR releases
+ * running with nothing to catch it — `prepareCmd` never had the step the file's preamble claimed,
+ * and 1.30.0 shipped `## Unreleased — the chrome wave` to npm. The `--check` pair at the bottom is
+ * what would have caught round 4.
+ */
+
+const MIGRATING_SCRIPT = join(PKG_ROOT, 'scripts/release-migrating.ts')
+
+/** The shape MIGRATING is authored in, reduced to the two things the script rewrites. */
+const FIXTURE = [
+  '# Migrating basalt-ui',
+  '',
+  '## What changed, by surface',
+  '',
+  '| Surface | 1.29.0 | Unreleased |',
+  '| --- | --- | --- |',
+  '| **tokens** (`./tokens`) | a token moved | eight spacing numbers (§ Chrome) |',
+  '| **charts** (`./charts`) | — | — |',
+  '',
+  '---',
+  '',
+  '## Unreleased — the chrome wave',
+  '',
+  'Body prose.',
+  '',
+  '## 1.29.2 — a patch',
+  '',
+  'Older body.',
+  '',
+].join('\n')
+
+describe('renameUnreleased', () => {
+  const out = renameUnreleased(FIXTURE, '1.30.0')
+  const lines = out.split('\n')
+
+  it('renames the section heading and keeps its title verbatim', () => {
+    expect(out).toContain('## 1.30.0 — the chrome wave')
+    expect(out).not.toContain('## Unreleased — the chrome wave')
+  })
+
+  it('opens a fresh `## Unreleased` ABOVE the section it just named', () => {
+    const fresh = lines.indexOf('## Unreleased')
+    const named = lines.indexOf('## 1.30.0 — the chrome wave')
+    expect(fresh).toBeGreaterThan(-1)
+    expect(fresh).toBeLessThan(named)
+  })
+
+  it('renames the index column head and appends a fresh empty one', () => {
+    const header = lines.find((l) => l.startsWith('| Surface')) as string
+    expect(header).toBe('| Surface | 1.29.0 | 1.30.0 | Unreleased |')
+    expect(lines[lines.indexOf(header) + 1]).toBe('| --- | --- | --- | --- |')
+  })
+
+  it('gives every surface row an empty cell in the new column', () => {
+    expect(out).toContain(
+      '| **tokens** (`./tokens`) | a token moved | eight spacing numbers (§ Chrome) | — |',
+    )
+    expect(out).toContain('| **charts** (`./charts`) | — | — | — |')
+  })
+
+  it('leaves the older sections and their prose alone', () => {
+    expect(out).toContain('## 1.29.2 — a patch')
+    expect(out).toContain('Older body.')
+  })
+
+  it('is repeatable — the fresh heading is what the NEXT release renames', () => {
+    const second = renameUnreleased(out, '1.30.1')
+    expect(second).toContain('## 1.30.1')
+    expect(second).toContain('## Unreleased')
+    expect(second.split('\n').find((l) => l.startsWith('| Surface'))).toBe(
+      '| Surface | 1.29.0 | 1.30.0 | 1.30.1 | Unreleased |',
+    )
+  })
+})
+
+// ── Failing closed — every one of these used to be "silently changed nothing" ─────────────────────
+
+describe('renameUnreleased refuses a shape it does not recognise', () => {
+  it('throws when the `## Unreleased` heading is already gone', () => {
+    expect(() =>
+      renameUnreleased(FIXTURE.replace('## Unreleased —', '## 1.30.0 —'), '1.30.0'),
+    ).toThrow(/expected exactly one/)
+  })
+
+  it('throws when the index column head was renamed without the section', () => {
+    expect(() =>
+      renameUnreleased(FIXTURE.replace('| Unreleased |', '| 1.30.0 |'), '1.30.0'),
+    ).toThrow(/last column is headed/)
+  })
+
+  it('throws when the surface index is missing', () => {
+    expect(() =>
+      renameUnreleased(
+        FIXTURE.replace('## What changed, by surface', '## Something else'),
+        '1.30.0',
+      ),
+    ).toThrow(/section not found/)
+  })
+
+  it('refuses a version that is not one — a stray flag must not become a heading', () => {
+    expect(() => renameUnreleased(FIXTURE, '--dry-run')).toThrow(/is not a version/)
+  })
+})
+
+// ── The gate itself, against the real file the release rewrites ──────────────────────────────────
+
+describe('--check against the committed MIGRATING.md', () => {
+  it('exits 0 — the release-time rename will find what it expects', () => {
+    const result = Bun.spawnSync(['bun', MIGRATING_SCRIPT, '--check'])
+    expect(result.exitCode).toBe(0)
+  })
+
+  it('exits non-zero once the heading is stale, then restores byte-exact', () => {
+    const original = readFileSync(migratingPath, 'utf8')
+    try {
+      // Exactly what 1.30.0 shipped: the section already named, so nothing is left to rename.
+      // Matches whether or not the section carries a title, so filling one in cannot quietly turn
+      // this into a no-op that asserts nothing.
+      const stale = original.replace(/^## Unreleased\b.*$/m, '## 9.9.9')
+      expect(stale).not.toBe(original)
+      writeFileSync(migratingPath, stale, 'utf8')
+
+      const result = Bun.spawnSync(['bun', MIGRATING_SCRIPT, '--check'])
+      expect(result.exitCode).not.toBe(0)
+      expect(result.stderr.toString()).toContain('expected exactly one')
+    } finally {
+      writeFileSync(migratingPath, original, 'utf8')
+    }
+
+    expect(readFileSync(migratingPath, 'utf8')).toBe(original)
+    expect(Bun.spawnSync(['bun', MIGRATING_SCRIPT, '--check']).exitCode).toBe(0)
   })
 })
