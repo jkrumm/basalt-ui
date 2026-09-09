@@ -1,3 +1,12 @@
+# [1.30.0](https://github.com/jkrumm/basalt-ui/compare/v1.29.2...v1.30.0) (2026-09-09)
+
+
+### Features
+
+* mount the aside on the dashboard and make the playground phone-honest ([d72914b](https://github.com/jkrumm/basalt-ui/commit/d72914b41ee4cd1f98ea51af15666e5c0f764ec9))
+* promote four guard rules to error, extend the C1 pair to 1.31.0 ([121f8d2](https://github.com/jkrumm/basalt-ui/commit/121f8d29859cfbe89a8413ee9e8e1ae1c81443a9))
+* rebuild the shell chrome for phones, gutters and container columns ([0f63581](https://github.com/jkrumm/basalt-ui/commit/0f63581ef9d86a3ff3c69c7bed7c4d456156c8b5))
+
 ## [1.29.2](https://github.com/jkrumm/basalt-ui/compare/v1.29.1...v1.29.2) (2026-09-03)
 
 
