@@ -12,6 +12,7 @@ import type { BandFold, BandTooltipConfig } from '../hooks/useBandPlot'
 import { probeAxisLabels } from '../layout/auto-margin'
 import { AxisBottomDate, AxisLeftNumeric } from '../primitives/Axes'
 import { ChartFrame, resolveLegend } from '../primitives/ChartFrame'
+import type { ResponsiveChartHeight } from '../primitives/ChartFrame'
 import {
   ChartTooltipFloat,
   TooltipBody,
@@ -79,8 +80,9 @@ export type MirroredBarsProps<T> = BasaltProps & {
   /** Per-datum bar opacity — a real but qualified measurement (a short bucket, a partial interval)
    * drawn dimmer. Default 1. */
   getBarOpacity?: (d: T) => number
-  /** Fixed height in px, forwarded to `ChartFrame`. Default 240. */
-  height?: number
+  /** Height in px, or one per size step (`{ base, sm?, md?, lg? }`). Default 240. Forwarded
+   * unchanged; `ChartFrameProps.height` owns the law — steps resolve off the MEASURED width. */
+  height?: number | ResponsiveChartHeight
   fill?: boolean
   formatX?: (key: string) => string
   xTickValues?: (keys: readonly string[], plotWidth: number) => readonly string[]

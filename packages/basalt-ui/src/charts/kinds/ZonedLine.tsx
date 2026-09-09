@@ -7,6 +7,7 @@ import type { CursorResolution } from '../cursor/resolve'
 import { AreaGradient, areaFillUrl } from '../primitives/AreaGradient'
 import type { CartesianTooltipConfig, AxisConfig, PlotContext } from '../primitives/CartesianChart'
 import { CartesianChart } from '../primitives/CartesianChart'
+import type { ResponsiveChartHeight } from '../primitives/ChartFrame'
 import type { XZoneSpec } from '../primitives/XZoneRects'
 import type { ZoneSpec } from '../primitives/ZoneRects'
 import type { ChartState } from '../primitives/ChartPending'
@@ -31,8 +32,9 @@ export type ZonedLineRefLine = {
 
 export type ZonedLineProps<T> = BasaltProps & {
   data: T[]
-  /** Fixed height in pixels, forwarded to `CartesianChart`. Default 240. */
-  height?: number
+  /** Height in px, or one per size step (`{ base, sm?, md?, lg? }`). Default 240. Forwarded
+   * unchanged; `ChartFrameProps.height` owns the law — steps resolve off the MEASURED width. */
+  height?: number | ResponsiveChartHeight
   chartId: string
   /** Extracts the x-axis category (date string) from a data point. */
   getX: (d: T) => string

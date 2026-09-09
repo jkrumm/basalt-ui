@@ -17,6 +17,7 @@ import { fmtAxisDate } from '../utils/format'
 import { autoXLabelRotate, smartTicks, smartTicksEvery, xLabelPxFor } from '../utils/ticks'
 import { AxisBottomDate, AxisLeftNumeric, AxisRightNumeric } from './Axes'
 import { ChartFrame, resolveLegend } from './ChartFrame'
+import type { ResponsiveChartHeight } from './ChartFrame'
 import { useChartTierMetrics } from './chart-tier'
 import type { ChartState } from './ChartPending'
 import { ChartTooltipFloat, TooltipBody, TooltipHeader, TooltipRow } from './ChartTooltip'
@@ -209,7 +210,9 @@ export type CartesianChartProps<T> = BasaltProps & {
   /** X-range bands (time windows), drawn behind the marks. */
   xZones?: XZoneSpec[]
   refLines?: { value: number; color: string; dashed?: boolean; axis?: 'left' | 'right' }[]
-  height?: number
+  /** Height in px, or one per size step (`{ base, sm?, md?, lg? }`). Default 240. Forwarded
+   * unchanged; `ChartFrameProps.height` owns the law — steps resolve off the MEASURED width. */
+  height?: number | ResponsiveChartHeight
   aspectRatio?: number
   fill?: boolean
   legend?: ChartLegendConfig | false

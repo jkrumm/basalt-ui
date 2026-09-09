@@ -15,6 +15,7 @@ import {
   TooltipRow,
 } from '../primitives/ChartTooltip'
 import { ChartFrame, resolveLegend } from '../primitives/ChartFrame'
+import type { ResponsiveChartHeight } from '../primitives/ChartFrame'
 import { Crosshair, SeriesDot } from '../primitives/Crosshair'
 import { HoverOverlay } from '../primitives/HoverOverlay'
 import { ZoneRects } from '../primitives/ZoneRects'
@@ -31,8 +32,9 @@ import { smartTicks, xLabelPxFor } from '../utils/ticks'
 
 export type DualPanelProps<T> = BasaltProps & {
   data: T[]
-  /** Fixed height in pixels, forwarded to the internal `ChartFrame`. Default 240. */
-  height?: number
+  /** Height in px, or one per size step (`{ base, sm?, md?, lg? }`). Default 240. Forwarded
+   * unchanged; `ChartFrameProps.height` owns the law — steps resolve off the MEASURED width. */
+  height?: number | ResponsiveChartHeight
   chartId: string
   getX: (d: T) => string
   /** X tick label formatter. Default `fmtAxisDate` (DD.MM) — same default `CartesianChart` uses,

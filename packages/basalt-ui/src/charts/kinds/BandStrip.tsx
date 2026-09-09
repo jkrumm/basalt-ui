@@ -10,6 +10,7 @@ import { useBandPlot } from '../hooks/useBandPlot'
 import type { BandFold, BandTooltipConfig } from '../hooks/useBandPlot'
 import { AxisBottomDate } from '../primitives/Axes'
 import { ChartFrame, resolveLegend } from '../primitives/ChartFrame'
+import type { ResponsiveChartHeight } from '../primitives/ChartFrame'
 import {
   ChartTooltipFloat,
   TooltipBody,
@@ -94,9 +95,10 @@ export type BandStripProps<T> = BasaltProps & {
   series: readonly BandStripSeries<T>[]
   /** Which state each datum is in. */
   getBand: (d: T) => BandSpan
-  /** Fixed height in px, forwarded to `ChartFrame`. The band row gets whatever the measured
-   * margins and the measured legend band leave. Default 240. */
-  height?: number
+  /** Height in px, or one per size step (`{ base, sm?, md?, lg? }`), forwarded to `ChartFrame`.
+   * The band row gets whatever the measured margins and legend band leave. Default 240.
+   * `ChartFrameProps.height` owns the law — steps resolve off the MEASURED width. */
+  height?: number | ResponsiveChartHeight
   /** Fill the parent flex/grid cell's measured height instead of a fixed one. */
   fill?: boolean
   /** X tick label formatter. Default `fmtAxisDate` (DD.MM). */

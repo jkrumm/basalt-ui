@@ -67,6 +67,7 @@ export {
   ChartFrame,
   type ChartFrameProps,
   type ChartFrameLegend,
+  type ResponsiveChartHeight,
   type PlotRect,
   resolveLegend,
 } from './primitives/ChartFrame'
