@@ -325,9 +325,12 @@ describe('PageAside — the panel surface and the mobile projection', () => {
     // No panel node anywhere — neither the portalled form nor the in-flow one (C9: ONE node).
     expect(document.querySelectorAll('[data-basalt-page-aside]')).toHaveLength(0)
     expect(screen.queryByTestId('aside-child')).toBeNull()
-    // …and the trigger is in row 2, named by the aside's title.
+    // …and the trigger is in row 2, named by the aside's title — VISIBLY, not just to a screen
+    // reader through an `ariaLabel`. The title names the CONTENT, never the region
+    // (`docs/ASIDE-SPEC.md` §0), so the pill reads "Weights" and never the word "Panel".
     const trigger = screen.getByRole('button', { name: 'Weights' })
-    expect(trigger.textContent).toContain('Panel')
+    expect(trigger.textContent).toContain('Weights')
+    expect(trigger.textContent).not.toContain('Panel')
 
     fireEvent.click(trigger)
 
@@ -336,7 +339,10 @@ describe('PageAside — the panel surface and the mobile projection', () => {
     await waitFor(() => {
       expect(screen.getByTestId('aside-child')).toBeDefined()
     })
-    expect(screen.getByText('Weights')).toBeDefined()
+    // The sheet's own heading, queried through the Drawer's title slot rather than by text: the
+    // PILL now carries the same word (it is labelled by the title, not by "Panel"), so a bare
+    // `getByText('Weights')` matches both nodes.
+    expect(document.querySelector('.mantine-Drawer-title')?.textContent).toContain('Weights')
   })
 
   test('a Section child also resolves the group tier inside the mobile sheet projection', async () => {

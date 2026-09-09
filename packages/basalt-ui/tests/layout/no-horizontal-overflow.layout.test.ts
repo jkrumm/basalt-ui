@@ -25,8 +25,11 @@ import type { FixtureSpec } from './fixture/spec'
 import type { Viewport } from './harness'
 import {
   CLOSE_BUDGET_MS,
+  LAPTOP_900,
+  LAPTOP_1024,
   PHONE,
   PHONE_SMALL,
+  TABLET_768,
   closeLayoutSuite,
   expectNoHorizontalOverflow,
   initLayoutSuite,
@@ -85,6 +88,21 @@ const DATA: FixtureSpec = {
   table: { rows: 12, columns: 6, stickyHeader: false, search: true, facets: 2 },
 }
 
+/**
+ * The same crowded page with the two things a desktop shell adds and a phone never sees: a NAVBAR
+ * eating 256px of every row, and the shell's own `globalActions` cluster. `actionIcons` gives row 1
+ * production-length labels and the icon `BarEntry`'s `md` fold needs to fall back to.
+ *
+ * It is a separate spec rather than a widened `CROWDED` on purpose: `CROWDED` is what every phone
+ * assertion above was measured against, and a fixture that grows under them turns a real regression
+ * and a fixture edit into the same failure.
+ */
+const DESKTOP_CROWDED: FixtureSpec = {
+  ...CROWDED,
+  bar: { pills: 4, actions: 4, actionIcons: true },
+  globals: 3,
+}
+
 layout('no horizontal overflow on a phone', () => {
   afterAll(closeLayoutSuite, CLOSE_BUDGET_MS)
 
@@ -96,6 +114,34 @@ layout('no horizontal overflow on a phone', () => {
         await p.horizontalOverflow(),
         'a phone page must never scroll sideways — a box that outgrows its column drags the whole ' +
           'app with it, and every sticky and fixed element on the page detaches from the content',
+        viewport,
+      )
+    })
+  }
+
+  /**
+   * THE 768–1100 GAP — the widths this guard skipped entirely, and the ones the current chrome round
+   * is riskiest at.
+   *
+   * The sweep above samples 390/360/320 and then nothing until a desktop nobody was measuring, so
+   * every width where the NAVBAR is charged to the row but the row has not folded for it was
+   * unguarded. That is not a hypothetical band: at exactly 768 the navbar appears and takes 256px in
+   * one step, leaving 512px of header for a `/dashboard` row 1 measured at ~554px plus ~102px of
+   * globals plus ~48px of gaps — ~192px over, absorbed by a breadcrumb that shrank to nothing.
+   *
+   * `.lead`'s 96px floor and `BarEntry`'s `md` icon-only tier are the interim answer to that
+   * (`shell/app-header.module.css` states the arithmetic for both), and the header row's own fit is
+   * asserted where it belongs — `shell-chrome.layout.test.ts`. What this file owns is the property
+   * it has always owned: whatever the fold does or fails to do, the PAGE must not scroll sideways.
+   */
+  for (const viewport of [TABLET_768, LAPTOP_900, LAPTOP_1024]) {
+    test(`a crowded desktop page fits its width (${viewport.width}px, ${viewport.name})`, async () => {
+      const p = await openFixture(DESKTOP_CROWDED, viewport)
+      await p.settle()
+      expectNoHorizontalOverflow(
+        await p.horizontalOverflow(),
+        'a header row that outgrows the width the navbar leaves it must FOLD, never widen the ' +
+          'page — every fixed and sticky element on it detaches from the content when it does',
         viewport,
       )
     })
@@ -127,6 +173,38 @@ layout('no horizontal overflow on a phone', () => {
         viewport,
       )
     })
+  }
+
+  /**
+   * ROW 2 CARRYING BOTH LINES — a `ViewTabs` strip beside the pills, which is what round 2 made the
+   * ordinary shape: nearly every playground route now hands `PageBar.tabs` a `ViewTabs`.
+   *
+   * It is the only row-2 slot with a width law of its own. `ViewTabs` renders a real segmented
+   * strip up to three options and collapses to a `Select` past that, in CSS — so `tabs: 4` and
+   * `tabs: 3` are two different components in the same box, and both are swept. Below `sm` row 2 is
+   * a COLUMN of two declared lines (`page-bar.module.css`'s own docblock), so the strip gets the
+   * full width rather than sharing it with the pills; that is a line count decided by what is
+   * mounted, never by width (law C14), and it is exactly the arrangement that has to hold at 320.
+   *
+   * THE THREE SHAPES THIS FILE STILL CANNOT REACH, and it is a fixture limit rather than a choice:
+   * a 2-col `WidgetGrid` at base, a stacked chart COLUMN (`ChartsSpec` mounts exactly one kind),
+   * and a `Section`-actions switch row (`FixtureSpec` mounts no `Section` at all). Each needs its
+   * own `FixtureSpec` field plus a `fixtures.tsx` branch. The guard also still walks only synthetic
+   * pages and never opens a real playground route — the known limitation this file has always had.
+   */
+  for (const viewport of [PHONE, PHONE_SMALL]) {
+    for (const tabs of [3, 4]) {
+      test(`row 2's ${tabs}-option tabs strip fits beside the pills (${viewport.name})`, async () => {
+        const p = await openFixture({ ...CROWDED, bar: { pills: 2, tabs } }, viewport)
+        await p.settle()
+        expectNoHorizontalOverflow(
+          await p.horizontalOverflow(),
+          'row 2 is `flex-wrap: nowrap` with no `overflow-x` by law C7, so a tabs strip that ' +
+            'states a width the phone cannot pay widens the page instead of collapsing',
+          viewport,
+        )
+      })
+    }
   }
 
   /**

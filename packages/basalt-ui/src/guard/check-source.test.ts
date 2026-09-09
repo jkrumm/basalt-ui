@@ -2134,6 +2134,27 @@ ${HEX}`,
     expect(kinds(f)).not.toContain('raw-hex')
   })
 
+  /**
+   * The JSX shape a consumer actually writes for a control-home waiver, on BOTH lanes: a
+   * `{/* theme-allow … *\/}` whose reason wraps over several lines. The oxlint plugin reads the
+   * comment NODE (length is free); this lane walks forward from the token through
+   * `commentBlockEnd`, and before that walk a `*\/}` on its own line absorbed the waiver — it
+   * looked applied and was not, which is the worst outcome a waiver can have. Pinned per token
+   * placement, because a consumer writes both.
+   */
+  it.each([
+    [
+      'token on the opening line',
+      `    {/* theme-allow raw-hex — a long reason that\n        wraps over lines\n     */}`,
+    ],
+    [
+      'token on its own line inside the block',
+      `    {/*\n      theme-allow raw-hex — a long reason\n    */}`,
+    ],
+  ])('a multi-line JSX comment waives the code under it (%s)', (_name, comment) => {
+    expect(kinds(find(`${comment}\n    ${HEX}`))).not.toContain('raw-hex')
+  })
+
   it('a blank line ends the block — the waiver does not jump it', () => {
     expect(
       kinds(
@@ -2426,6 +2447,31 @@ describe('in-body-page-title', () => {
     const f = find(`<Title order={1}>Analytics</Title>`)
     expect(f.find((x) => x.kind === 'in-body-page-title')?.severity).toBe('error')
   })
+
+  // The law is "one NAME per page", and a name is written in WORDS. Kept in step with the plugin's
+  // `hasStaticTitleText` — same id, so the two lanes must not disagree about what they cover.
+  it('does NOT flag a Title rendering a value — a nav-less detail route', () => {
+    expect(kinds(find(`<Title order={1}>{knot.title}</Title>`))).not.toContain('in-body-page-title')
+  })
+
+  it("does NOT flag a card's hero value", () => {
+    expect(kinds(find(`<Title order={2}>{RANK[g.rank]}</Title>`))).not.toContain(
+      'in-body-page-title',
+    )
+  })
+
+  it.each([`{'Users'}`, '{`Users`}'])('still flags a laundered literal %s', (child) => {
+    expect(kinds(find(`<Title order={1}>${child}</Title>`))).toContain('in-body-page-title')
+  })
+
+  it('still flags a name with a value interpolated into it', () => {
+    expect(kinds(find(`<Title order={1}>Users {n}</Title>`))).toContain('in-body-page-title')
+  })
+
+  it('still flags a formatted-across-lines Title whose body is a name', () => {
+    const f = find(`<Title\n  order={1}\n>\n  Analytics\n</Title>`)
+    expect(kinds(f)).toContain('in-body-page-title')
+  })
 })
 
 // ── 27. raw-selection-control (the text lane of law C1) ──────────────────────
@@ -2460,6 +2506,39 @@ describe('raw-selection-control', () => {
   it('does NOT flag anything in a file importing @mantine/form', () => {
     const f = find(`import { useForm } from '@mantine/form'\n<Select data={[]} />`)
     expect(kinds(f)).not.toContain('raw-selection-control')
+  })
+
+  /**
+   * ONE LAW, TWO IDS. This kind and `basalt/control-outside-home` are the same law read by two
+   * engines, and this kind's own message says so — but a `theme-allow control-outside-home` used
+   * to parse here (every plugin id is known) and then cover NOTHING, so the only working
+   * annotation was `theme-allow raw-selection-control control-outside-home`. See
+   * {@link WAIVER_ID_ALIASES}: an alias only ever widens, so neither spelling is stricter.
+   */
+  it('is waived by a theme-allow naming the PLUGIN’s id', () => {
+    const f = find(
+      `// theme-allow control-outside-home — the Tauri header has no shell\n<Select data={[]} />`,
+    )
+    expect(kinds(f)).not.toContain('raw-selection-control')
+  })
+
+  it('is waived by a theme-allow-file naming the plugin’s id', () => {
+    const f = find(
+      `// theme-allow-file control-outside-home — every filter here is a waiver\n<Select data={[]} />`,
+    )
+    expect(kinds(f)).not.toContain('raw-selection-control')
+  })
+
+  // The alias widens the two spellings of ONE law; it must not reach a different kind.
+  it('does not let that waiver leak onto another kind', () => {
+    const f = find(`// theme-allow control-outside-home — one law\nconst c = '#ff0000'`)
+    expect(kinds(f)).toContain('raw-hex')
+  })
+
+  it('names PageBar as the reachable home for a shell-less app', () => {
+    const f = find(`<Select data={[]} />`)
+    expect(guardKindRemedy('raw-selection-control')).toContain('PageBar needs no BasaltShell')
+    expect(kinds(f)).toContain('raw-selection-control')
   })
 
   it('does NOT flag the file that DEFINES a basalt control', () => {
@@ -3356,5 +3435,15 @@ describe('neutralizeAllowAnnotation', () => {
 describe('PLUGIN_RULE_IDS', () => {
   it('names no guard kind — the two registries are disjoint by construction', () => {
     for (const id of PLUGIN_RULE_IDS) expect(Object.hasOwn(GUARD_RULES, id)).toBe(false)
+  })
+})
+
+// A self-closing `<Title order={1} />` renders no name, so neither lane reports it — and the text
+// lane needs that as an explicit test, or its body scan runs to the NEXT `</Title>` in the file and
+// grades unrelated code. One id, two lanes, one verdict.
+describe('in-body-page-title — a self-closing Title', () => {
+  it('does not report, even with a later Title in the same file', () => {
+    const f = find(`<Title order={1} />\n<Card />\n<Title order={3}>Section</Title>`)
+    expect(kinds(f)).not.toContain('in-body-page-title')
   })
 })

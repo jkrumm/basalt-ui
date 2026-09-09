@@ -39,14 +39,34 @@ const ROW_2 = '[data-basalt-page-bar="shell"]'
 /** The aside's own node, in either of the two forms it paints. */
 const PANEL = '[data-basalt-page-aside]'
 const PROBE = '[data-testid="aside-probe"]'
-/** `FilterPill` names itself with the aside's `title` (`page-bar.tsx`'s `ariaLabel`). */
-const PANEL_PILL = `button[aria-label="${'Composition'}"]`
+/**
+ * The aside's phone trigger, matched STRUCTURALLY: the pills line's only direct-child `button`.
+ *
+ * It used to be `button[aria-label="Composition"]`, and that selector is gone for a good reason
+ * rather than a convenient one. The pill now renders as `<FilterPill label={panel.title}>` — it
+ * NAMES ITS CONTENT instead of the region, which is `docs/ASIDE-SPEC.md` §0's own rule and the
+ * point of the change. `FilterPill` only writes the `aria-label` ATTRIBUTE when an `ariaLabel` prop
+ * is passed, so the accessible name is now computed from the button's text: correct for a screen
+ * reader, and invisible to an attribute selector.
+ *
+ * Matching it by text is not available here: `LayoutPage.count`/`.box` run
+ * `document.querySelector` inside the page (see `harness.ts`), so the selector must be real CSS and
+ * CSS cannot read text. Playwright's `:has-text()` engine would only work in `tap`/`waitFor`, and a
+ * constant that means two different things in two methods is worse than either. The structure is
+ * exact instead: `page-bar.tsx` puts filters in `.filters`, the trailing actions in `.filtersEnd`
+ * and this pill bare — so `> button` is the panel pill and nothing else. The TEXT is asserted
+ * separately, in INVARIANT 2, which is where it belongs.
+ */
+const PANEL_PILL = '[data-basalt-page-bar-line="pills"] > button'
+
+/** The aside's title, and therefore the phone pill's visible label — asserted in INVARIANT 2. */
+const ASIDE_TITLE = 'Composition'
 
 const ASIDE_SPEC: FixtureSpec = {
   sections: [
     { label: 'Main', items: [{ key: 'home', label: 'Home', mobile: 'tab', active: true }] },
   ],
-  aside: { title: 'Composition' },
+  aside: { title: ASIDE_TITLE },
 }
 
 layout('PageAside projections — real layout', () => {
@@ -97,7 +117,14 @@ layout('PageAside projections — real layout', () => {
 
     expect(await p.count(`${ROW_2} ${PANEL_PILL}`)).toBe(1)
     const pill = await p.box('Panel pill', `${ROW_2} ${PANEL_PILL}`)
-    expect(await p.raw.textContent(`${ROW_2} ${PANEL_PILL}`)).toContain('Panel')
+    // The pill carries the ASIDE'S TITLE, and specifically not the word "Panel" — both halves are
+    // the assertion. `docs/ASIDE-SPEC.md` §0: a label names the CONTENT, never the region. A phone
+    // user reading "Panel" for an aside called "Composition" is being told which BOX it is, which
+    // they can see, instead of what is in it, which they cannot. The negative is pinned because
+    // that is the regression with a name: the pill shipped as `label="Panel"` for a whole wave.
+    const pillText = await p.raw.textContent(`${ROW_2} ${PANEL_PILL}`)
+    expect(pillText).toContain(ASIDE_TITLE)
+    expect(pillText).not.toContain('Panel')
     expectFullyInside(
       pill,
       p.bounds(),
@@ -150,18 +177,58 @@ layout('PageAside projections — real layout', () => {
    * wrapper draws the band's `border-bottom` OUTSIDE an otherwise unconstrained `height: auto` box.
    * There is no stable selector for it (a plain CSS-module class with no `data-*` hook), so it is
    * read as `ROW_2`'s parent, the same escape hatch `LayoutPage.raw` documents itself for.
+   *
+   * IT WENT RED AT 0.75px, AND IT WAS NOT ROUNDING. Every number below is a MEASURED read at
+   * 1440x900, and they close exactly — 0.75 is arithmetic, not a sub-pixel residue, and it does not
+   * move with `devicePixelRatio` (2 on this machine):
+   *
+   *   `--basalt-page-bar-h`  31.25px  ← row 2's CONTENT box, what the ResizeObserver publishes
+   *   band painted bottom    y76.25   ← 31.25 + its own 1px `border-bottom`, drawn outside the box
+   *   header `min-height`    32.25px  ← `calc(31.25px + 1px)`, the CSS's documented compensation
+   *   header PAINTED height  33px     ← 32px of content + 1px border, so the min-height lost
+   *   header painted bottom  y77      ← 0.75 past the band. Exactly 32 − 31.25.
+   *
+   * The 32 is `.fold`, sized `calc(var(--vx-space-control-height-ctl) * var(--mantine-scale))`, and
+   * `controlHeightCtl` grew 30 → 32 in the desktop-shell pass. Under `box-sizing: border-box` a
+   * 32.25px `min-height` leaves a 31.25px content box, the 32px toggle does not fit, and content
+   * beats `min-height`. At 30 it fit, and the seam met BY COINCIDENCE.
+   *
+   * The band was the wrong number, not the header. Row 2 has no `min-height`
+   * (`page-bar.module.css` `.row2` is `padding-block: --vx-space-stack-xs` around its content), and
+   * the fixture used to hand it a bare `<span>Filters</span>` — 23.25px, where every real row-2
+   * slot goes through `CtlSlot` and holds a 32px control, for a 40 → 41px band. `AsideBar` now
+   * carries a real `ctl` control (see its docblock) and the two seams meet with the header's own
+   * toggle fitting inside the band, which is the `/cbbi` shape this invariant was measured against
+   * in the first place. The tolerance is UNCHANGED at 0.5px.
+   *
+   * The latent CSS fragility is real but is NOT what this test measures: a consumer who puts plain
+   * text in `PageBar.filters` gets a band shorter than the aside header's own toggle, and no
+   * `page-aside.module.css` `min-height` can make the seams meet then — a header cannot be shorter
+   * than the control it contains. The second assertion below pins that floor explicitly so the
+   * coincidence cannot silently return.
    */
   test('the aside header seam meets the page-bar band seam, not 9px above it', async () => {
     const p = await openFixture(ASIDE_SPEC, DESKTOP)
     const header = await p.box('aside header', `${ASIDE} [data-basalt-page-aside-header]`)
-    const bandBottom = await p.raw.evaluate((sel) => {
+    const band = await p.raw.evaluate((sel) => {
       const row2 = document.querySelector(sel)
       const outlet = row2?.parentElement
       if (outlet === null || outlet === undefined) return null
-      return outlet.getBoundingClientRect().bottom
+      const rect = outlet.getBoundingClientRect()
+      return { top: rect.top, bottom: rect.bottom }
     }, ROW_2)
-    expect(bandBottom).not.toBeNull()
-    expect(Math.abs(header.box.bottom - (bandBottom as number))).toBeLessThanOrEqual(0.5)
+    expect(band).not.toBeNull()
+    const { top: bandTop, bottom: bandBottom } = band as { top: number; bottom: number }
+    expect(Math.abs(header.box.bottom - bandBottom)).toBeLessThanOrEqual(0.5)
+
+    // THE PRECONDITION, asserted rather than assumed — see the docblock. The header's `min-height`
+    // is `calc(--basalt-page-bar-h + 1px)` under `box-sizing: border-box`, so the band's PAINTED
+    // height also has to cover the header's own tallest child (the `.fold` toggle at
+    // `--vx-space-control-height-ctl`) plus its 1px `border-bottom`. Below that floor the content
+    // wins, the header grows past the band, and the seam misses by however much it overflowed.
+    // Failing HERE says which of the two numbers moved; failing only above says 0.75 and nothing.
+    const fold = await p.box('aside fold toggle', `${ASIDE} [data-basalt-page-aside-header] button`)
+    expect(bandBottom - bandTop).toBeGreaterThanOrEqual(fold.box.height + 1)
   })
 
   /**
@@ -170,13 +237,85 @@ layout('PageAside projections — real layout', () => {
    * instead of collapsing to the band's absent height. `noBar` drops the fixture's `AsideBar` so
    * `--basalt-page-bar-h` is never published — the CSS fallback chain is what this pins.
    */
-  test('with no PageBar, the aside header stays the ordinary 48px band', async () => {
+  test('with no PageBar, the aside header stays the ordinary 44px band', async () => {
     const p = await openFixture(
-      { ...ASIDE_SPEC, aside: { title: 'Composition', noBar: true } },
+      { ...ASIDE_SPEC, aside: { title: ASIDE_TITLE, noBar: true } },
       DESKTOP,
     )
     const header = await p.box('aside header', `${ASIDE} [data-basalt-page-aside-header]`)
-    expect(header.box.height).toBeGreaterThanOrEqual(47.5)
-    expect(header.box.height).toBeLessThanOrEqual(48.5)
+    // 44, not the 48 this asserted before the desktop-shell spacing pass — the band IS
+    // `appShellHeaderHeight` (see its entry in `tokens/palette.ts`), so this bound moves with it.
+    expect(header.box.height).toBeGreaterThanOrEqual(43.5)
+    expect(header.box.height).toBeLessThanOrEqual(44.5)
+  })
+
+  /**
+   * INVARIANT 6 — a CLAIMED aside narrows the content column, and the KPI row has to answer to that
+   * width rather than to the viewport's.
+   *
+   * This is the failure mode no viewport sweep can see, and it is why `StatGroup`/`WidgetGrid` moved
+   * onto `@container` (`dashboard/stat-group.module.css`'s docblock states the measured defect: a
+   * `PageAside` on a 1512px desktop left the row ~956px wide, `@media` still resolved `lg`, and four
+   * cells of 239px truncated their own values mid-word). Every existing sweep in this suite holds
+   * the viewport still and moves nothing else, so all of them would have stayed green through it.
+   *
+   * MEASURED here at 1440x900 with the aside claimed: viewport 1440 (≥ the 1200px `lg` boundary, so
+   * the viewport law says FOUR), sidebar 256 + aside 300 + the shell's own insets leave the group
+   * 844px — squarely the `sm` tier, so the container law says TWO for `cols={4}` (the deliberate
+   * exception to `min(cols, 3)`: three columns would leave a four-KPI row as 3 + 1, one orphan
+   * against two thirds of empty track — `dashboard/stat-group.tsx` states the reasoning), at ~415px
+   * a cell. Both halves are asserted because they fail differently: the track count is the law, and
+   * the clamp is what a reader would actually see. `statsWide` is the precondition for the second
+   * one — `.value` ellipsizes (`dashboard/widget-header.module.css`), so a column one tier too
+   * narrow is invisible against the four-digit stand-in and only shows against a number a real
+   * dashboard would print (~195px, which fits 415 and does not fit the ~174 the base tier gives).
+   *
+   * THE HARNESS HAD TO LEARN TO SEE THIS FIRST. `Bun.build` scopes a CSS-modules container name in
+   * the `@container` prelude and not in the declaration, so every one of these queries was dead in
+   * the fixture and the group silently rendered its BASE two columns — a wrong number that looks
+   * like a plausible one. `harness.ts`'s `unscopeContainerNames` states the evidence and the fix.
+   */
+  test('desktop 1440 with the aside claimed: the KPI row follows its CONTAINER, not the viewport', async () => {
+    const p = await openFixture({ ...ASIDE_SPEC, stats: 4, statsWide: true }, DESKTOP)
+
+    const group = await p.raw.evaluate(() => {
+      // `[data-sm-cols]` is what tells a `StatGroup` from a `WidgetGrid` — both write `data-cols`,
+      // and only `StatGroup` writes the `sm` half (`dashboard/stat-group.tsx`).
+      const root = document.querySelector('[data-cols][data-sm-cols]')
+      if (root === null) return null
+      // The RESOLVED tracks, not the declaration — `repeat(var(--…), …)` computes to a used-value
+      // list, so counting entries is the only way to read which tier actually won.
+      const tracks = getComputedStyle(root).gridTemplateColumns.split(/\s+/).filter(Boolean).length
+      // Only the nodes that DECLARE they clamp — `ellipsis` + `nowrap` is what `.value` and
+      // `.titleText` carry (`dashboard/widget-header.module.css`), and it is the whole population
+      // whose overflow is user-visible as truncated TEXT. A bare `scrollWidth > clientWidth` sweep
+      // over every descendant is not the same question and answers it wrongly: it reports the card's
+      // own body, whose 13px overhang is the sparkline's deliberate `.sparklineBleed` negative
+      // margin (MEASURED 260 > 247), i.e. a design feature indicted as a defect.
+      const clamped = [...root.querySelectorAll('*')]
+        .filter((node) => {
+          const style = getComputedStyle(node)
+          if (style.textOverflow !== 'ellipsis' || style.whiteSpace !== 'nowrap') return false
+          return node.scrollWidth > node.clientWidth + 0.5
+        })
+        .map(
+          (node) =>
+            `${node.tagName.toLowerCase()} "${node.textContent ?? ''}" ` +
+            `${node.scrollWidth}>${node.clientWidth}`,
+        )
+      return { width: root.getBoundingClientRect().width, tracks, clamped }
+    })
+    expect(group).not.toBeNull()
+    const { width, tracks, clamped } = group as {
+      width: number
+      tracks: number
+      clamped: string[]
+    }
+
+    // The aside really is claimed and really did cost the column its width — without this the two
+    // assertions below could both pass on a page where no aside ever mounted.
+    expect(width).toBeLessThan(DESKTOP.width - 300)
+    expect(tracks).toBe(2)
+    expect(clamped, `clamped KPI text in a ${width}px row: ${clamped.join(' | ')}`).toEqual([])
   })
 })

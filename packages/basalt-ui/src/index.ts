@@ -37,6 +37,15 @@ export { createBasaltTheme, baseTheme, cssVariablesResolver } from './theme'
 export type { BasaltFontsConfig, CreateBasaltThemeOptions } from './theme'
 export { CTL_THEME, CtlSlot } from './theme'
 export type { CtlSlotProps } from './theme'
+/**
+ * The ACTIVE resolved spacing off the running theme, not the frozen level-0 `SPACE`/`SPACE_STEP`
+ * snapshot on `basalt-ui/tokens`. Public because a consumer laying out ITS OWN chrome beside the
+ * shell's (a sticky sub-header under the app header, a fixed rail beside the navbar) has to hit the
+ * same rhythm the shell resolved, and every one of those numbers is JS-consumed — an AppShell
+ * dimension or a `<Menu width={…}>` — so there is no `--vx-*` var to read it from instead. See
+ * `theme/use-basalt-spacing.ts` for the level-0 fallback contract.
+ */
+export { useBasaltSpacing } from './theme'
 export { ThemeToggle, type ThemeToggleProps } from './theme/theme-toggle'
 /**
  * The action vocabulary every home's `actions` slot takes (`docs/CONTROLS-SPEC.md` §2.1). The

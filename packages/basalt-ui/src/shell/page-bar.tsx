@@ -41,6 +41,9 @@ import asideClasses from './page-aside.module.css'
 /** The custom property row 2's measured height is published on. */
 export const PAGE_BAR_HEIGHT_VAR = '--basalt-page-bar-h'
 
+/** Dev-only diagnostics, constant-folded out of a production bundle — see {@link useAsidePanelSlot}. */
+const DEV = process.env['NODE_ENV'] !== 'production'
+
 /**
  * What a `PageAside` publishes when it projects itself into row 2 below `sm`
  * (`docs/ASIDE-SPEC.md` §0 "Desktop and mobile are one declaration"). Metadata only — the aside's
@@ -203,13 +206,36 @@ export function usePageKebabClaimed(): boolean {
  * Internal — the seam `PageAside` projects itself through below `sm` (`docs/ASIDE-SPEC.md` §0).
  * `host` says whether there is a row 2 to hang the pill off at all; `claim` publishes the aside's
  * title and glyph; `target` is the node inside the opened sheet its children portal into.
+ *
+ * It also carries THE ONE BRANCH NOBODY PREDICTS, as a dev-only warning. `PageBar` only claims the
+ * panel host when it renders a row 2 (`tabs`, `filters` or a non-empty `filtersEnd`), so a page
+ * whose bar has actions ALONE gets `host: false` — and below `sm` that aside silently stops being
+ * reachable: no pill, no sheet, just the in-flow form at the bottom of a scrolled page. The
+ * behaviour is deliberate (there is genuinely nowhere to hang a trigger) and pinned by
+ * `page-aside.test.tsx`, so this warns rather than changes it. Nothing about the page LOOKS wrong
+ * on the desktop the author is building on, which is exactly why it needs saying out loud.
+ *
+ * `settled` is why the warning is not a one-shot mount effect: `panelHost` is published by a LAYOUT
+ * effect inside `PageBar`, so on the first pass it is false on every page, including the ones that
+ * do host. Deferring by one commit — the same deferral `PageAside` runs for the same reason — is
+ * what keeps this from firing on every aside in the library.
  */
 export function useAsidePanelSlot(): {
   host: boolean
   claim: (panel: AsidePanelClaim) => () => void
   target: HTMLElement | null
 } {
-  const { panelHost, claimPanel, panelTarget } = useContext(PageBarContext)
+  const { panelHost, claimPanel, panelTarget, inShell } = useContext(PageBarContext)
+  const [settled, setSettled] = useState(false)
+  useIsomorphicLayoutEffect(() => {
+    setSettled(true)
+  }, [])
+  useEffect(() => {
+    if (!DEV || !settled || !inShell || panelHost) return
+    console.warn(
+      "[basalt] PageAside: this page's PageBar renders no row 2 (no `tabs`, no `filters`, no `filtersEnd`), so below `sm` there is no pill to open the aside — it renders in flow at the bottom of the page instead. Give the bar a row 2, or expect the in-flow form on a phone.",
+    )
+  }, [settled, inShell, panelHost])
   return { host: panelHost, claim: claimPanel, target: panelTarget }
 }
 
@@ -419,10 +445,18 @@ export function PageBar({
           )}
           {panel !== null && (
             <FilterPill
-              // One word, no count: unlike `Filters (n)` an aside has no census to count (its
-              // children are not a `FilterSet`), and a number nobody can derive is worse than none.
-              label="Panel"
-              ariaLabel={panel.title}
+              // THE ASIDE'S OWN TITLE, not the word "Panel" — the title names the CONTENT, never
+              // the region (`docs/ASIDE-SPEC.md` §0), which is the rule the desktop header already
+              // obeys by painting `panel.title` at the top of the region. A phone user reading
+              // "Panel" for an aside called "Inspector" or "Session detail" is being told which
+              // BOX it is, which they can see, instead of what is in it, which they cannot. The
+              // separate `ariaLabel` went with it: it existed only to put the real title back for a
+              // screen reader, so once the visible label IS the title the two would say the same
+              // thing twice.
+              //
+              // Still no count: unlike `Filters (n)` an aside has no census to count (its children
+              // are not a `FilterSet`), and a number nobody can derive is worse than none.
+              label={panel.title}
               icon={panel.icon}
               className={classes.panelPill}
               hideGlyph

@@ -18,6 +18,8 @@ import { describe, expect, test } from 'bun:test'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { VX } from '../../tokens'
 import { ChartFrame, legendEntryCap, resolveLegend, resolvePlotRect } from './ChartFrame'
+import { resolveFrameHeight, resolveLegendMaxRows } from './chart-frame-layout'
+import type { ResponsiveChartHeight } from './chart-frame-layout'
 import type { LegendEntry } from './ChartLegend'
 import { HoverOverlay } from './HoverOverlay'
 import type { SeriesStyle } from '../series'
@@ -254,5 +256,66 @@ describe('legendEntryCap — only a fill frame rolls its legend up, and only whe
   test('an unmeasured width falls back to the caller cap rather than guessing', () => {
     expect(legendEntryCap({ items: many, containerW: 0, available: 120 })).toBe(undefined)
     expect(legendEntryCap({ items: many, containerW: 0, available: 120, callerMaxRows: 3 })).toBe(3)
+  })
+})
+
+/**
+ * The consumer report this fixes (meteo, 1.29.2): "the phone chart tier has an opt-out for margin
+ * and xLabelRotate but NOT for the legend, and it moves rendering on the desktop." The tier keys on
+ * the MEASURED box — correctly; that is not the bug — so a 380px inspector panel on a 1440px
+ * desktop resolves to `phone`, and `Math.min(legend.maxRows, tierMaxRows)` meant a six-series
+ * legend rolled up to two rows with no way to say no, while MIGRATING promised the opposite.
+ */
+describe('resolveLegendMaxRows — the tier cap is a DEFAULT, not a ceiling', () => {
+  test('an explicit caller cap beats the phone tier outright, in BOTH directions', () => {
+    expect(resolveLegendMaxRows({ callerMaxRows: 3, tier: 'phone' })).toBe(3)
+    expect(resolveLegendMaxRows({ callerMaxRows: 1, tier: 'phone' })).toBe(1)
+  })
+
+  test('saying nothing still gets the tier default', () => {
+    expect(resolveLegendMaxRows({ callerMaxRows: undefined, tier: 'phone' })).toBe(2)
+    expect(resolveLegendMaxRows({ callerMaxRows: undefined, tier: 'desktop' })).toBe(undefined)
+  })
+
+  test('the desktop tier never invents a cap over an explicit one', () => {
+    expect(resolveLegendMaxRows({ callerMaxRows: 5, tier: 'desktop' })).toBe(5)
+  })
+})
+
+/**
+ * `height` was a bare `number` on every shipped kind, so the only way to make a chart shorter on a
+ * phone was a JS breakpoint — which `basalt/responsive-twin` forbids. The steps are compared
+ * against the frame's own MEASURED width for the same reason the tier is: a chart squeezed to
+ * 380px by a `PageAside` on a 1440px desktop is as narrow as one on a phone.
+ */
+describe('resolveFrameHeight — a height per size step, resolved off the measured box', () => {
+  const responsive: ResponsiveChartHeight = { base: 180, md: 260 }
+
+  test('a plain number passes through untouched — this is a widening, not a rename', () => {
+    expect(resolveFrameHeight(240, 900)).toBe(240)
+    expect(resolveFrameHeight(240, 0)).toBe(240)
+  })
+
+  test('a step applies from its own width up', () => {
+    expect(resolveFrameHeight(responsive, 992)).toBe(260)
+    expect(resolveFrameHeight(responsive, 1400)).toBe(260)
+  })
+
+  test('below every named step it is `base` — including at a desktop VIEWPORT', () => {
+    // The whole point: 380px is the measured width of a `PageAside` panel, not of a phone.
+    expect(resolveFrameHeight(responsive, 380)).toBe(180)
+    expect(resolveFrameHeight(responsive, 991)).toBe(180)
+  })
+
+  test('the widest STATED step wins, not the widest possible one', () => {
+    expect(resolveFrameHeight({ base: 180, sm: 220, lg: 300 }, 1000)).toBe(220)
+    expect(resolveFrameHeight({ base: 180, sm: 220, lg: 300 }, 1200)).toBe(300)
+  })
+
+  test('an unmeasured box takes the LARGEST stated step, never `base`', () => {
+    // `resolveChartTier`'s first-frame rule, applied to height: a chart that painted short and then
+    // grew one frame later is the jump this avoids. SSR and the pre-observer frame both land here.
+    expect(resolveFrameHeight(responsive, 0)).toBe(260)
+    expect(resolveFrameHeight({ base: 180 }, 0)).toBe(180)
   })
 })

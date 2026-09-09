@@ -142,12 +142,50 @@
 
 /* Re-apply the bled inset INSIDE the viewport, so rows keep their exact 10px/10px column while the
  * bar floats clear of them in the gutter. Static padding, not Mantine's `offsetScrollbars`: the
- * latter pads only while overflowing, which reflows the rows the moment a section expands. */
+ * latter pads only while overflowing, which reflows the rows the moment a section expands.
+ *
+ * `padding-block-end` is the scroll END-STOP: with only the inline inset, an overflowing column
+ * cut its last row flush against the viewport edge, which reads as a label whose list is CLIPPED
+ * rather than as something that scrolls. One `region-gap` of air below the last row is the same
+ * number the search slot opens at the column's other end.
+ *
+ * The end-stop is necessary and NOT sufficient, and the mask below is the other half. MEASURED at
+ * 1512x945 with the playground's nav: `.navScroll` is `flex: 1; min-height: 0` between the search
+ * slot and a `flex-shrink: 0` footer, so any nav taller than the leftover column overflows — and
+ * the end-stop only pads the BOTTOM OF THE CONTENT, which the reader sees exactly once, at the
+ * scroll end. Everywhere else the viewport's own edge cuts whatever row happens to cross it, and
+ * `.footer`'s progress block starts one `region-gap` under that cut. Two hard edges 12px apart:
+ * the column reads BROKEN rather than scrolled. Nothing else says otherwise, because the
+ * ScrollArea is `type="hover"` — at rest there is no bar at all.
+ *
+ * So: a scroll fade on the viewport's bottom edge, and deliberately NOT the other candidate, a
+ * `--vx-divider` seam on `.footer`. A rule there would answer a question nobody asked — the footer
+ * boundary is already carried by its own `padding-top` and the account row's inset (see `.footer`
+ * below) — and it would answer the real one WRONG: a hairline drawn across a row that is severed
+ * mid-glyph makes the severing crisper, not legible. A fade is the only one of the two that says
+ * "there is more, and it moves". It also keeps this module out of `theme/divider-law.test.ts`'s
+ * inventory, which is the correct outcome and not a dodge: that ledger exists so every hairline is
+ * a line someone chose, and this one would have been chosen to stand in for a scrollbar.
+ *
+ * The ramp is one `region-gap` tall, which is what pairs it with the end-stop instead of fighting
+ * it: at the scroll END those 12px hold the end-stop's padding — empty — so the last row lands
+ * fully opaque, and a column that does not overflow fades nothing but its own trailing air. Only
+ * mid-scroll, where a real row crosses the edge, does the fade have anything to dim.
+ *
+ * `black`/`transparent` here are alpha, not color: a mask reads only the alpha channel, so these
+ * carry no design meaning and deliberately are NOT `--vx-*` tokens. Do not route them through the
+ * palette in a token sweep. */
 .navViewport {
   padding-inline-end: var(--vx-space-row-inset-x);
+  padding-block-end: var(--vx-space-sidebar-region-gap);
+  mask-image: linear-gradient(
+    to bottom,
+    black calc(100% - var(--vx-space-sidebar-region-gap)),
+    transparent
+  );
 }
 
-/* Sections separate by SPACING only — 15px between sections, nothing above the first (the brand
+/* Sections separate by SPACING only — 16px between sections, nothing above the first (the brand
  * band's centred `min-height` already opens the region's air, and the optional search slot's own
  * `padding-block` opens more when it renders). */
 .nav > div + div {
@@ -156,9 +194,24 @@
 
 /*
  * Footer region — no border; the account row's own top padding supplies the separation.
+ *
+ * The region owns its own air on both axes, because the `Stack` wrapping it is `gap={0}`
+ * (`app-sidebar.tsx`) — the footer's rhythm is single-sourced HERE, so the whole answer is
+ * readable in one place rather than split between a prop and a stylesheet. Without it a
+ * bottom-placed block (a `kind: 'progress'` block defaults to `'bottom'`) stacked FLUSH on the
+ * settings and account rows and on the scroll region above, which is the "cramped" footer.
+ *
+ * `region-gap` (12) above the cluster, `stack-sm` (8) between its parts — deliberately tighter
+ * than the nav's `section-gap` (16): the footer is ONE pinned cluster whose rows belong together,
+ * not a list of peer sections.
  */
 .footer {
   flex-shrink: 0;
+  padding-top: var(--vx-space-sidebar-region-gap);
+}
+
+.footer > * + * {
+  margin-top: var(--vx-space-stack-sm);
 }
 
 /*

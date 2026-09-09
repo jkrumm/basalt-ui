@@ -13,6 +13,7 @@
  * media query, so there is no first-paint flash and no hook that re-renders on resize.
  */
 import { ActionIcon, Button, Group, Menu } from '@mantine/core'
+import type { MantineBreakpoint } from '@mantine/core'
 import { createContext, isValidElement, useContext, useEffect } from 'react'
 import type { ReactNode } from 'react'
 import type { BasaltProps } from '../common/props'
@@ -188,6 +189,19 @@ const MOBILE_PRIMARY_PADDING_X = 10
 const BAR_GAP = 6
 
 /**
+ * A declared WIDTH TIER for one rendered form of an action — Mantine's own `visibleFrom`/`hiddenFrom`
+ * style props, forwarded verbatim, which is the same CSS-only mechanism this file's `sm` swap uses
+ * (see the module header). Never a JS media query: no first-paint flash, no resize re-render.
+ *
+ * It exists because `sm` is not the only width at which this row runs out of room — see
+ * {@link BarEntry}'s `md` label fold for the arithmetic.
+ */
+type TierVisibility = {
+  visibleFrom?: MantineBreakpoint
+  hiddenFrom?: MantineBreakpoint
+}
+
+/**
  * One action as a button. No `size` prop anywhere: the enclosing `CtlSlot` (mounted by the home,
  * never by the action) resolves the `ctl` tier — law C5.
  */
@@ -195,15 +209,19 @@ function BarButton({
   action,
   variant,
   px,
+  tier,
 }: {
   action: BarActionItem
   variant: 'filled' | 'default'
   /** Overrides the tier's horizontal inset — only the compact mobile primary passes it. */
   px?: number
+  /** The declared width tier this form paints at — see {@link TierVisibility}. */
+  tier?: TierVisibility
 }): ReactNode {
   const shared = {
     variant,
     ...(px !== undefined && { px }),
+    ...tier,
     disabled: action.disabled === true,
     loading: action.loading === true,
     // EVERY icon in this file goes through `IconSlot` — the box is the framework's, never the
@@ -234,13 +252,17 @@ function BarButton({
 function BarIconButton({
   action,
   variant,
+  tier,
 }: {
   action: BarActionItem
   /** `default` is the bordered desktop form — a joined `ControlGroup` member (see {@link BarEntry}). */
   variant: 'filled' | 'subtle' | 'default'
+  /** The declared width tier this form paints at — see {@link TierVisibility}. */
+  tier?: TierVisibility
 }): ReactNode {
   const shared = {
     variant,
+    ...tier,
     'aria-label': action.label,
     disabled: action.disabled === true,
     loading: action.loading === true,
@@ -697,6 +719,35 @@ function BarEntry({
   if (emphasis === 'mobile-secondary') return <MobileBarEntry action={action} variant="subtle" />
   if (iconOnly === true && action.icon !== undefined) {
     return <BarIconButton action={action} variant="default" />
+  }
+  // THE `md` LABEL FOLD — the second declared tier, and the only fold this row had between `sm`
+  // (48em, where the whole mobile swap happens) and the width at which a desktop header is
+  // genuinely wide. Above `sm` the only fold was `DESKTOP_SECONDARY_MAX`, which is a COUNT and
+  // never a width: three labelled secondaries are three labelled secondaries at 768px and at
+  // 2560px.
+  //
+  // The arithmetic, on /dashboard at exactly 768px — the width where the navbar appears and takes
+  // 256px: 512px of header left, against ~554px of row 1 + ~102px of globals + ~48px of gaps ≈
+  // 704px. ~192px over, and nothing above `sm` folded — the breadcrumb absorbed it by shrinking to
+  // zero (`shell/app-header.module.css`'s `.lead`, now floored at 96px, which this tier pays for).
+  // Dropping up to `DESKTOP_SECONDARY_MAX` labelled secondaries to their 30px icon form returns
+  // roughly 180-240px on that row: a labelled `ctl` button is its icon slot + label + insets
+  // (~90-110px depending on the word), an icon-only one is the tier's 30px square.
+  //
+  // The PRIMARY keeps its label at every width — it is the one action a reader must be able to
+  // name without hovering (law C6: exactly one per home), so `emphasis === 'primary'` never enters
+  // this branch. An icon-LESS secondary keeps its label too: there is nothing to fall back to, the
+  // same reason `MobileBarEntry` renders a compact labelled button below `sm`.
+  //
+  // Both forms are rendered and CSS picks one, the mechanism the `sm` swap already uses — that is
+  // law C9 being HONOURED, not breached: the swap belongs to the control, and this is the control.
+  if (emphasis === 'secondary' && action.icon !== undefined) {
+    return (
+      <>
+        <BarIconButton action={action} variant="default" tier={{ hiddenFrom: 'md' }} />
+        <BarButton action={action} variant="default" tier={{ visibleFrom: 'md' }} />
+      </>
+    )
   }
   return <BarButton action={action} variant={emphasis === 'primary' ? 'filled' : 'default'} />
 }

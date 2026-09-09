@@ -76,8 +76,46 @@ export type BarSpec = {
   title?: string
   /** How many filter pills ride row 2. */
   pills?: number
+  /**
+   * How many options ride row 2's `ViewTabs` strip (`PageBar.tabs`), 0 ⇒ no strip at all.
+   *
+   * Exists because round 2 put a `ViewTabs` in `tabs` on nearly every playground route, and the
+   * strip has a WIDTH LAW no other row-2 slot has: `ViewTabs` renders a real segmented strip up to
+   * three options and collapses to a `Select` past it, in CSS. Three and four are therefore two
+   * different components in the same slot, and only the four-up case exercises the collapse — so
+   * the count is the knob, not a boolean. The labels are `BAR_LABELS`' production-length ones
+   * (`Organic search`, …), because a strip of `Tab 1`s fits at a width no real strip fits at.
+   */
+  tabs?: number
   /** How many row-1 actions ride the header portal. */
   actions?: number
+  /**
+   * Gives every action an `icon`. OPT-IN rather than the default, because it moves geometry in two
+   * places at once and only one of them is wanted: it is the precondition for `BarEntry`'s `md`
+   * label fold (a secondary with no icon has nothing to fall back to and keeps its label at every
+   * width), and it also widens the compact mobile primary that the phone-overflow tests measure.
+   * A desktop test opts in; the phone sweeps keep the shape they were written against.
+   */
+  actionIcons?: true
+}
+
+/**
+ * The sidebar's pinned FOOTER region — the block below the nav scroll area holding the settings
+ * rows and the account row (`app-sidebar.tsx`).
+ *
+ * It renders ONLY when the consumer supplies at least one of these props, which is why the footer's
+ * rhythm — the gap that separates it from the scroll region, and the gap between its own rows —
+ * had no fixture to be measured in until this field existed.
+ */
+export type SidebarSpec = {
+  /** Mounts the account row (`status: 'authenticated'`) — the footer's bottom-most child. */
+  account?: true
+  /**
+   * How many `settingsMenuItems` ride the footer. Three or fewer render as FLAT rows, four or more
+   * collapse into the single gear menu (`AppSidebarProps.settingsMenuItems` documents the
+   * threshold) — the flat form is the one with a rhythm to measure.
+   */
+  settings?: number
 }
 
 /**
@@ -175,12 +213,30 @@ export type FixtureSpec = {
   bar?: BarSpec
   /** Renders a `StatGroup` of this many `StatCard`s, each with a bled `BarSparkline`. */
   stats?: number
+  /**
+   * Gives every KPI a PRODUCTION-LENGTH value (`$12,847,301.55`) instead of the four-digit
+   * stand-in. Opt-in for the same reason `BarSpec.actionIcons` is: the phone sweeps were measured
+   * against the short values. It is the precondition for observing a clamp at all — `.value`
+   * ellipsizes, so a column one tier too narrow is invisible until the number is long enough to
+   * reach the edge (`fixtures.tsx`'s `WIDE_STAT_VALUES` states the measured widths).
+   */
+  statsWide?: true
   /** Renders a `PageAside` (and, by default, the `PageBar` row 2 it projects into below `sm`). */
   aside?: AsideSpec
   /** Renders one `basalt-ui/charts` kind above the filler. Omitted ⇒ no chart in the tree. */
   charts?: ChartsSpec
   /** Renders a `basalt-ui/agent-chat` transcript above the filler. Omitted ⇒ no transcript. */
   agent?: AgentSpec
+  /** Fills the sidebar's pinned FOOTER region, which otherwise does not render at all. */
+  sidebar?: SidebarSpec
+  /**
+   * How many `globalActions` ride the header's trailing cluster.
+   *
+   * Omitting it renders NO `.global` node at all (`HeaderGlobalActions` returns `null` on an empty
+   * list), which is exactly the shape that made the desktop header row look roomier here than on
+   * any real page: production spends ~100px there before the page's own actions get a pixel.
+   */
+  globals?: number
 }
 
 declare global {

@@ -556,8 +556,9 @@ function spaceDecls(space: SpaceValues): string[] {
     decl('space-stack-xl', `${space.anchors.stackXl}px`),
     // The CSS-module spacing sweep's one-offs (docs/STATUS.md) — same single-source reasoning,
     // grouped to match `SPACE_STEP_BASE`'s own grouping in tokens/palette.ts.
-    // ONE value at every viewport since 1.26.0 — the AppShell header is a single 48px row (law
-    // C14), so the `-mobile` override of the old Decision-3 responsive pair is gone.
+    // ONE value at every viewport since 1.26.0 — the AppShell header is a single
+    // `appShellHeaderHeight` row (law C14), so the `-mobile` override of the old Decision-3
+    // responsive pair is gone.
     decl('space-sticky-header-clearance', `${space.step.stickyHeaderClearance}px`),
     decl('space-nav-icon-gap', `${space.step.navIconGap}px`),
     decl('space-sidebar-region-gap', `${space.step.sidebarRegionGap}px`),
@@ -634,6 +635,24 @@ function spaceDecls(space: SpaceValues): string[] {
     decl('space-sidebar-child-list-indent', `${space.step.sidebarChildListIndent}px`),
     decl('space-sidebar-child-row-inset-y', `${space.step.sidebarChildRowInsetY}px`),
     decl('space-sidebar-child-row-indent', `${space.step.sidebarChildRowIndent}px`),
+    // The page gutter — the ONE `appShell*` dimension that IS emitted, against the JS-number-only
+    // rule its five neighbours follow (see the note at the bottom of this list). It earns the
+    // exception because it is the most visible spacing number the framework ships — every page's
+    // left edge — and it was, until now, the one number the `--vx-*` layer did not expose at all, so
+    // a consumer retuning its identity through `createBasaltTheme` could not reach it and had to
+    // reach past the token layer into `AppShell.Main`'s own styles. Emitted in PLAIN PX, like every
+    // other inset/gap in this list and unlike the `pxRem` heights above it: the rem-plus-
+    // `var(--mantine-scale)` reconstruction exists so a CONTROL's box tracks the root font size and
+    // Mantine's global scale knob; a page gutter is a layout margin against a viewport, not a box
+    // sized to text, so scaling it with the font would make a large-type user's content column
+    // narrower rather than more legible.
+    decl('space-app-shell-inset', `${space.step.appShellInset}px`),
+    decl('space-app-shell-inset-mobile', `${space.step.appShellInsetMobile}px`),
+    // The header's breadcrumb floor — emitted for the same reason as the gutter pair above it and
+    // not for the JS-number reason its `appShell*` neighbours below are withheld for: this one has
+    // a real CSS consumer (`shell/app-header.module.css`'s `.lead`), which is the whole test this
+    // list applies. Plain px, like every other layout dimension here.
+    decl('space-app-shell-header-lead-min', `${space.step.appShellHeaderLeadMin}px`),
     decl('space-mobile-nav-tab-gap', `${space.step.mobileNavTabGap}px`),
     decl('space-mobile-nav-icon-size', `${space.step.mobileNavIconSize}px`),
     decl('space-mobile-nav-tab-inset-y', `${space.step.mobileNavTabInsetY}px`),
@@ -651,6 +670,11 @@ function spaceDecls(space: SpaceValues): string[] {
     decl('space-badge-inset-y', `${space.step.badgeInsetY}px`),
     decl('space-badge-inset-x', `${space.step.badgeInsetX}px`),
     decl('space-stat-card-gap', `${space.step.statCardGap}px`),
+    // The card/section inset ladder — the three values `spaceMobileDecls` below re-points at `< sm`
+    // (see its doc for where the law lives and why it lives there).
+    decl('space-card-inset-y', `${space.step.cardInsetY}px`),
+    decl('space-card-inset-x', `${space.step.cardInsetX}px`),
+    decl('space-section-gap', `${space.step.sectionGap}px`),
     decl('space-virtual-row-inset-y', `${space.step.virtualRowInsetY}px`),
     decl('space-virtual-row-inset-x', `${space.step.virtualRowInsetX}px`),
     // Controls tier row/gap heights (`docs/CONTROLS-SPEC.md` §5) — the current commit's consumers
@@ -666,7 +690,8 @@ function spaceDecls(space: SpaceValues): string[] {
     // `chartDotR`/`progressBarSize`/`timelineBullet` are DELIBERATELY absent — see this function's
     // doc for why (JS-number-only consumers, zero `var()` reads). `appShellHeaderHeight`/
     // `appShellNavbarWidth`/`appShellNavbarRailWidth`/`appShellAsideWidth`/`appShellAsideRailWidth`
-    // join that list —
+    // join that list — but NOT `appShellInset`/`appShellInsetMobile`/`appShellHeaderLeadMin`, which
+    // are emitted above and carry their own reason for the exception —
     // `shell/index.tsx` reads all five as JS numbers via `useBasaltSpacing()` (Mantine's `AppShell`
     // `header`/`navbar`/`aside` props take numbers, not `var()` strings), so a `--vx-space-app-shell-*`
     // decl here would have had zero consumers, framework-wide, the same dead-weight shape this function's
@@ -913,6 +938,54 @@ const indent = (block: string): string =>
     .join('\n')
 
 /**
+ * The `< sm` breakpoint, written the way a stylesheet has to write it — the SAME literal every
+ * basalt CSS module spells (`shell/app-header.module.css`, `dashboard/section.module.css`, …), and
+ * for the same reason `BREAKPOINTS` above exists: a `@media` condition is resolved before custom
+ * properties exist, so the number cannot be a `var()`. Held here as a constant rather than inlined
+ * so the emitter and the modules can be grepped as one set.
+ */
+const MOBILE_MEDIA = '@media (max-width: 47.99375em)'
+
+/**
+ * The MOBILE INSET LADDER, and this function is its ONE home — framework-wide, not per module.
+ *
+ * The problem it answers: the desktop-shell pass took the page gutter from 20 to 8 below `sm`
+ * (`appShellInsetMobile`), and the card ladder INSIDE that gutter never moved — card insets stayed
+ * `xs`/`sm` and a `Section`'s gaps stayed `stackMd` at every width — so a 390px phone still read
+ * "content spacing too big" after the gutter fix. Two rungs close it: the card's horizontal inset
+ * steps `sm` -> `xs`, and the Section's gap steps `stackMd` -> `stackSm`.
+ *
+ * Why it lives HERE and not in the three CSS files that consume it: two of those three sites are
+ * INLINE styles in TSX (`dashboard/stat-card.tsx`, `charts/primitives/ChartCard.tsx`), and an
+ * inline style cannot carry a media query at all. The only surface that reaches all three is a
+ * custom property whose VALUE moves at the breakpoint, and the only stylesheet guaranteed present
+ * wherever those components render is this one — `BasaltProvider` injects `buildPaletteCss()`, and
+ * a component's own CSS module is loaded only if a bundler kept that module. So the law is one
+ * `@media` block emitted beside the base declarations it overrides, and every consuming site is a
+ * plain `var()` read with no breakpoint knowledge. A media query copied into three files (or into
+ * one component stylesheet reaching for `:global(:root)`) was the alternative, and it fails the
+ * same way twice: three copies drift, and one copy in a tree-shakeable module is a law that
+ * sometimes does not ship.
+ *
+ * This does NOT make the token layer responsive in general. It stays what `BREAKPOINTS`'s doc says
+ * it is — the layer that owns the NUMBER a media query has to write — and this is the one law whose
+ * consuming sites cannot write that query themselves. A dimension whose consumer is a CSS module
+ * keeps making the choice in that module (`appShellInset`/`appShellInsetMobile` still do).
+ */
+function spaceMobileDecls(space: SpaceValues): string[] {
+  return [
+    decl('space-card-inset-x', `${space.scale.xs}px`),
+    decl('space-section-gap', `${space.anchors.stackSm}px`),
+  ]
+}
+
+/** {@link spaceMobileDecls} as the `@media` block that overrides the base `:root` declarations —
+ *  same specificity, later in source order, so it wins below `sm` and nowhere else. */
+function mobileLadderBlock(space: SpaceValues): string {
+  return `${MOBILE_MEDIA} {\n  :root {\n${indent(spaceMobileDecls(space).join('\n'))}\n  }\n}`
+}
+
+/**
  * Emit the `--vx-*` stylesheet: a `:root` block of theme-independent scalars, then the
  * dark (default) and light primitive blocks under `html[data-mantine-color-scheme='…']`.
  *
@@ -942,8 +1015,9 @@ export function buildPaletteCss(
 ): string {
   const groups = opts.groups ?? {}
   const legacyAliases = opts.legacyAliases ?? true
+  const only = opts.only ?? 'all'
   const extraDerived = (opts.derived ?? []).map((d) => `  ${d}`).join('\n')
-  const derivedBlock = frameworkDerived(data, opts.only ?? 'all', legacyAliases)
+  const derivedBlock = frameworkDerived(data, only, legacyAliases)
   const derived = extraDerived ? `${derivedBlock}\n${extraDerived}` : derivedBlock
   const side = (s: Side): string => {
     const extra = Object.entries(groups)
@@ -952,7 +1026,14 @@ export function buildPaletteCss(
     const framework = frameworkPrimitives(s, data, legacyAliases)
     return extra ? `${framework}\n${extra}` : framework
   }
-  const rootBlock = `:root {\n${derived}\n}`
+  // The scalars, then the ONE `@media` block that re-points two of them below `sm` (see
+  // `spaceMobileDecls`). Dropped under `only: 'core'` for the same reason the declarations it
+  // overrides are: both vars are component-named one-offs, not `SPACE` anchors, so a core-only
+  // consumer never receives the base pair the block exists to override.
+  const rootBlock =
+    only === 'core'
+      ? `:root {\n${derived}\n}`
+      : `:root {\n${derived}\n}\n${mobileLadderBlock(DEFAULT_SPACE_VALUES)}`
 
   // The legacy shape — kept verbatim, and only reachable when the caller asked for nothing.
   if (opts.scheme === undefined && opts.defaultScheme === undefined && !opts.mediaFallback) {
@@ -1073,5 +1154,8 @@ export function buildRadiusCss(radius: RadiusValues | undefined): string {
  */
 export function buildDensityCss(space: SpaceValues | undefined): string {
   if (!space) return ''
-  return `:root {\n${spaceDecls(space).join('\n')}\n}`
+  // The `< sm` ladder rides along, at the retuned level — without it a phone at `density: 2` would
+  // take the level-0 mobile inset from the static stylesheet and the level-2 base from this one,
+  // which is the only way the two rungs of one ladder could ever come from different levels.
+  return `:root {\n${spaceDecls(space).join('\n')}\n}\n${mobileLadderBlock(space)}`
 }

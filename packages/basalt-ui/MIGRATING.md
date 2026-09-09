@@ -13,9 +13,22 @@ on was written against source, not against its commit messages — which is not 
 1.23.0 commit message describes a change it did not make (see `1.23.1` § Corrections). Check
 the types, not this table, if the two disagree.
 
-**The newest section is headed `## Unreleased`, and stays that way until npm serves it.** This file
-is written before `semantic-release` picks the number, so a number written here is a guess — and it
-was wrong three rounds running.
+**The newest section is headed `## Unreleased`, and the RELEASE renames it to its own number.**
+This file is written before `semantic-release` picks the number, so a number written here is a guess
+— and it was wrong three rounds running. The rename is therefore a release-time step, not an
+authoring-time one: the section is authored as `## Unreleased — <title>`, and the release swaps the
+word `Unreleased` for the computed version, leaving the title alone; a fresh `## Unreleased` opens
+above it. Doing it by hand is what failed three times running — `.releaserc.json`'s `prepareCmd`
+already rewrites `package.json` and regenerates `llms.txt` at exactly that moment, so that is where
+the swap belongs.
+
+**Skipping that step is what this file's worst defect was.** 1.27.0, 1.28.0 and 1.29.0 all shipped
+under one `## Unreleased` heading — ~1000 lines, two of its subsections still titled "targeting
+1.29.0" weeks after 1.29.0 was on npm. Four of five consumer migrations off 1.25.0/1.27.0 named it
+their top finding independently: a reader cannot tell which minor introduced which change, and
+"read every section between your version and the target" is unusable when the last three sections
+claim not to be between them. One of them shipped a real defect through the gap. Restored to
+per-minor sections below; keep it that way.
 
 **No majors, by policy.** A rename or a removal ships as a plain `feat:` on the 1.x line, so a minor
 bump can require code changes. Skipping several at once is the expensive case — read every section
@@ -28,18 +41,411 @@ between your version and the target.
 1.10.0, 1.13.0, 1.14.0, 1.16.0, 1.18.0 — and every patch. Additive-only subpaths: `./tokens.css`
 at 1.3.0, `./agent-chat` at 1.10.0.
 
+## What changed, by surface
+
+**Read your row, then the sections it names — not the whole file.** A `tokens-only` consumer read
+all 2294 lines of the previous revision to learn that four minors moved two things in the token
+layer; this index is that answer in one line. It is a POINTER, not a second copy: every cell names
+the section that carries the detail, and a surface with no row in a minor had no delta in it. The
+`Unreleased` column takes the version number at the same moment the section below it does, and a new
+column is added at the same time — one edit, in the release commit.
+
+| Surface                     | 1.27.0                                      | 1.28.0                                                                                 | 1.29.0                                                                     | Unreleased                          |
+| --------------------------- | ------------------------------------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- | ----------------------------------- |
+| **tokens** (`./tokens`)     | —                                           | `--vx-divider` → `rgba()` on both schemes (§ Shell)                                    | `--vx-space-touch-target` added (§ Additions)                              | eight spacing numbers (§ Chrome)    |
+| **charts** (`./charts`)     | —                                           | phone tier, `curve`, formatters, `state`, log axis (§ preamble)                        | `ChartState.empty: string`, `AxisBottomNumeric` (§ Additions)              | —                                   |
+| **shell** (`.`)             | —                                           | scrollport, region seams, **the brand left the sidebar** (§§ scrollport, brand, Shell) | `PageTitle`, `BasaltDevDock`, `useBreakpoint` (§ Additions)                | More popover, aside pill (§ Chrome) |
+| **controls** (`./controls`) | `NumberFilter`, `field.number` (§ Controls) | sheet renders panel rows; `PanelRow`, `SliderControl` (§ `basalt-ui/controls`)         | —                                                                          | —                                   |
+| **forms** (`./forms`)       | —                                           | `field` → `inputProps`, **`inputProps` drops `key`**, the layout tier (§ `inputProps`) | `field` DELETED — and the `--fix` recipe no longer works (§ Consolidation) | —                                   |
+| **data** (`./data/table`)   | —                                           | root is a `<div>`, row selection, `getItemKey` required (§ `basalt-ui/data`)           | `./data` + `./query` + `./connectivity` dropped (§ Consolidation)          | —                                   |
+| **CLI** (`basalt-ui`)       | —                                           | —                                                                                      | **resolver stops relocating; `doctor` loses 6 of 10 checks** (§ CLI)       | —                                   |
+| **guards**                  | five rules → `error` (§ Guards)             | six new ids at `warn` (§ preamble)                                                     | `query-dual-import` retired in 1.29.1 (§ Guards)                           | —                                   |
+
 ---
 
-## Unreleased
+## Unreleased — the chrome wave
+
+**One wave of pure CHROME, which removes and renames nothing: eight spacing numbers move, the
+mobile More surface becomes a compact popover instead of a bottom sheet, and the aside's phone pill
+takes the aside's own title.** Nothing to fix — but the app looks different, so read § Chrome below
+for the table and the opt-outs before you diff a screenshot.
+
+### Chrome — the spacing pass, the More popover, and the aside's pill
+
+**A VISUAL change, shipping as a plain `feat:` on the 1.x line.** Nothing is removed, nothing is
+renamed and no call site has to change — but eight spacing numbers, the mobile More surface and one
+pill label all move, so an app pinned to a screenshot will see a diff. Majors are banned here
+(`feat!:` and `BREAKING CHANGE:` footers are forbidden), so the version number cannot carry that
+warning and this section is it. Each behaviour change below names its opt-out.
+
+**Eight spacing numbers** — six moved, two new, all level-0 values and all density-tracked
+(`tokens/palette.ts`; every entry carries its own reasoning, and `theme/spacing.test.ts`'s file
+header carries the wave's). One report drove all eight: the sidebar and header band read as small
+controls floating in dead air while the page content sat too close to the seam.
+
+| Token                    | Was     | Now | What it sizes                                                                                                      |
+| ------------------------ | ------- | --- | ------------------------------------------------------------------------------------------------------------------ |
+| `controlHeightCtl`       | 30      | 32  | the `ctl` tier — the whole chrome tier lands on ONE number now                                                     |
+| `appShellHeaderHeight`   | 48      | 44  | the app-header band, one token tall at every viewport                                                              |
+| `pageBarRowHeight`       | 40      | 36  | `PageBar` row 2's band — the secondary band stays a clear step under the primary                                   |
+| `sidebarSectionGap`      | 12      | 16  | between nav sections                                                                                               |
+| `sidebarSectionLabelGap` | 2       | 6   | a section label to its own list. The proximity pair was INVERTED, so every label read as heading the list ABOVE it |
+| `sidebarRegionGap`       | 10      | 12  | between the sidebar's regions — now visibly bigger than the gaps inside one                                        |
+| `appShellInset`          | _(new)_ | 20  | the page gutter from `sm` up, replacing the `SPACE_SCALE.sm` (13) the main column used to borrow                   |
+| `appShellInsetMobile`    | _(new)_ | 8   | the page gutter below `sm` — at 13 a phone spent 6.7% of a 390px viewport on margin before a card was drawn        |
+
+Both new entries ARE emitted as CSS variables — `--vx-space-app-shell-inset` /
+`--vx-space-app-shell-inset-mobile`, unlike their JS-only `appShell*` neighbours. **The page gutter
+is now RESPONSIVE**: `BasaltShell` hands Mantine `padding={{ base: 8, sm: 20 }}` and gives
+`AppShell.Header` the same pair, both stepping at `theme.breakpoints.sm`, so the breadcrumb's left
+edge, the global actions' right edge and the page's first column share one gutter at every width —
+and above `sm` they land on the vertical line the sidebar's nav icons already sat on.
+
+**The opt-out, and its one sharp edge.** These are structural theme tokens, so the lever is
+`createBasaltTheme(overrides, { density })` — an integer level that moves the whole scale by the
+law — never a per-token override. Re-declaring `--vx-space-app-shell-inset` in your own CSS restyles
+whatever READS that var, but NOT the shell's own gutter: that value reaches Mantine as a JS number
+through `useBasaltSpacing()`, deliberately — a Mantine spacing KEY would resolve back to
+`var(--mantine-spacing-sm)` and hand the gutter straight back to the 13 this replaces.
+
+- **`useBasaltSpacing` is on the root barrel** (`basalt-ui`) — the derived spacing objects behind
+  those numbers, for a consumer computing geometry that has to track `density` rather than pinning a
+  literal. Additive; it was already the shell's own reader.
+
+**The mobile More surface is a compact POPOVER, not a bottom sheet**, and `MOBILE_MENU_MAX_DEFAULT`
+rises 6 → 12. `projectMobileNav` is unchanged in shape — the surface is still INFERRED from row
+count (0 drops the slot, 1 is a plain link, ≤ `menuMax` is a `menu`, past it a `sheet`) — but a
+7-to-12-row slot now lands on `menu` where it used to raise a full-width Drawer. **The
+never-below-the-fold guarantee moved off the constant and onto CSS**: the dropdown declares
+`max-height: min(72dvh, 560px)` with `overflow-y: auto`, which binds at ANY row count, so the
+constant is a taste bound on how tall one popover may get rather than the arithmetic it claimed to
+be (that arithmetic — "6 × 44px against 415px of headroom" — was stale in nearly every term; the
+rows are 40px). `menuMax` survives for the nav that has genuinely outgrown a popover. **Opt-out:
+`mobileNav.menuMax`**, the unchanged prop — set it to `6` to restore the old cut-off, and it still
+moves the line in both directions.
+
+Riding along on the bar, all visible with no code change:
+
+- **The bar paints `--vx-surface-panel`.** It used to resolve to `--vx-surface-bg` — the exact fill
+  the scrollport above it paints — so the only thing separating the bar from the page was the region
+  seam's 9%-alpha hairline, which is invisible on a phone. No new token, no shadow, no `withBorder`.
+- **The dead taps.** Re-tapping the active tab scrolls to top and now REPORTS whether anything
+  actually scrolled, so an already-at-top retap navigates instead of doing nothing; `menuRow` and
+  `sheetRow` adopt the link row's activation rule (`aria-current`, the disabled guard) instead of
+  each answering it differently; a disabled row no longer sets `pointer-events: none`, which
+  swallowed the tap with no press state; the More tab is a real toggle, so a second tap closes it;
+  and a sheet's overlay stops being hit-testable over the other tabs after `onClose`.
+
+**`PageBar`'s phone aside pill carries the aside's own `title`**, not the literal word `Panel`
+(`docs/ASIDE-SPEC.md` §0 — the title names the CONTENT, never the region, which is the rule the
+desktop header already obeyed). The separate `ariaLabel` went with it: it existed only to put the
+real title back for a screen reader, and once the visible label IS the title the two said the same
+thing twice. No opt-out and none is needed — the pill takes no label prop — but a test asserting the
+string `Panel` now reads whatever your `PageAside` names itself. Still no count: an aside's children
+are not a `FilterSet`, so unlike `Filters (n)` there is no census to derive one from.
+
+- **One new dev warning, no behaviour change.** Below `sm` a `PageAside` can only project into
+  `PageBar` row 2, and that row exists ONLY when the bar has `tabs`, `filters` or a non-empty
+  `filtersEnd`. A page whose bar carries `actions` alone therefore renders the aside in flow at the
+  bottom of the page — deliberate, pinned by tests, and invisible on the desktop it was authored
+  on, so `PageAside` now says it once in dev. The remedy is to give that bar a row 2.
+
+## 1.29.2 — `unwrap` over a union-typed Eden response
+
+A patch, one export's TYPE only. Nothing renamed, nothing removed.
+
+- **`unwrap` strips `null`/`undefined` from a union-typed Eden response again** — the single
+  conditional signature 1.29.1 landed still inferred `TData` off `Envelope<infer TData>`, and an Eden
+  Treaty response is a UNION of envelopes (`{ data: T; error: null } | { data: null; error:
+EdenFetchError }`), not one envelope with a nullable `data`; inferring through the wrapper type
+  read `T | null` at every Eden call site. `UnwrapResult` now infers the raw `data` field and wraps
+  it in `NonNullable`, which distributes over a union `R` — `unwrap(await api.x.get())` resolves to
+  `T` again, with no `| null`. Runtime unchanged.
+
+## 1.29.1 — the DevDock router prop, `unwrap` as a callback, one retired guard
+
+A patch. Two type corrections to exports 1.29.0 introduced, and one lint rule retired
+because 1.29.0 made its premise unreachable — see § Guards below.
+
+- **`BasaltDevDock`'s `router` prop now accepts a real TanStack `Router` instance with no cast** —
+  the prior structural stand-in rejected a class instance under TS weak-type detection (no property
+  overlap, no index signature), forcing `router={router as never}`. It is now `router?: object`:
+  any non-null object is assignable, and the devtools panel remains the only reader.
+- **`unwrap` collapses to ONE generic signature with a conditional return**, replacing the two
+  overloads 1.29.0 introduced. The overload pair resolved `unwrap` to `unknown` whenever it
+  was passed as a bare callback (`api.threads.get().then(unwrap)`) — `.then()` reads the declared
+  type of the reference rather than applying an overload, and TS cannot propagate generic inference
+  across an overload set the way it can for a single signature. `.then(unwrap)` now infers `TData`
+  again, alongside `unwrap(await p)` and `unwrap(p)` — nothing about the runtime behaviour changed.
+
+### Guards — `basalt/query-dual-import` removed
+
+**Retired, not merely relaxed** — its `RETIRED_RULE_IDS` entry (kept recognized, so an existing
+`theme-allow query-dual-import` still reads as a dead waiver rather than a typo) and its
+`PLUGIN_RULE_GRACE` ledger row are both deleted. Its whole premise — a raw `@tanstack/react-query`
+import beside `basalt-ui/query` — went unreachable the moment `./query` dropped (see § Consolidation
+in 1.29.0 below): a consumer now MUST import `@tanstack/react-query` directly, and the rule warned on every
+one of those imports instead of the drift it was written to catch (90+ false positives on a single
+consumer). `query-fn-unwrap` is unaffected — it is a different rule, still `warn` (grace → 1.30.0).
+
+## 1.29.0 — the consolidation: three subpaths dropped, every shim deleted, the CLI narrowed
+
+**The removal minor.** Three published subpaths dropped, every `@deprecated` shim in the package
+deleted at once, and the CLI narrowed to what a consumer actually runs — plus one additive wave (C5)
+whose whole point is code you get to delete. Two of the three most expensive findings in the 1.25.0
+→ 1.29.2 fleet migration came out of this minor and neither had a row of its own: the CLI resolver
+change (§ CLI below) and the `field` deletion breaking this file's own `--fix` recipe
+(§ Consolidation below). Both have one now.
+
+### Consolidation — three subpaths dropped, every `@deprecated` shim deleted
+
+**Dropped subpaths — three, all folded into `.`/`./provider`, none deleted outright.**
+
+<!-- C1 symbol list -->
+
+- `./query` — dropped. `createBasaltQueryClient`, `unwrap`, `BasaltQueryDevtools`,
+  `toErrorMessage`, `errorStatus` now on `.` (root barrel) — import from `basalt-ui` instead of
+  `basalt-ui/query`. The nine raw TanStack re-exports it carried (`QueryClientProvider`,
+  `QueryErrorResetBoundary`, `useQueryErrorResetBoundary`, `useQuery`, `useSuspenseQuery`,
+  `useMutation`, `useQueryClient`, `useInfiniteQuery`, `queryOptions`) are gone from basalt entirely —
+  import them from `@tanstack/react-query`, which the root entry already requires.
+- `./data/table` — **narrowed, not dropped**: `BasaltDataTable`, its types and `createColumnHelper`
+  stay; the TanStack pass-throughs (`useReactTable`, `flexRender`, `getCoreRowModel`,
+  `getSortedRowModel`, `getFilteredRowModel`, `getPaginationRowModel`, `ColumnDef`, `SortingState`,
+  `ColumnHelper`, `PaginationState`, `ColumnPinningState`, `RowSelectionState`, `ColumnFiltersState`)
+  are imported from `@tanstack/react-table` directly.
+- `./connectivity` — dropped. `ConnectivityProvider` (auto-mounted by `BasaltProvider`, no
+  consumer-side import needed), `useConnectivity`, `ConnectivityIndicator` now on `.`.
+- `./data` (bare) — dropped. It never carried its own exports beyond re-exporting `./data/table`
+  and `./data/virtual` — import the narrow subpath you need directly; nothing renamed.
+- `./controls-dates` — **unaffected**, stays a separate subpath (inlining it into `./controls`
+  would pull `@mantine/dates` into a subpath that must resolve without it).
+
+**Deleted `@deprecated` shims** (every one slated for 1.29.0 removal in an earlier minor's
+deprecation row — see that minor's own `MIGRATING.md` section for the original `@deprecated`
+annotation and rationale):
+
+- `state.ts`'s legacy connectivity export — use `./provider`'s `useConnectivity` instead.
+- `BasaltProvider`'s flat `sseUrl` / `healthUrl` / `healthIntervalMs` props — use
+  `connectivity={{ sseUrl, healthUrl, healthIntervalMs }}`.
+- `QueryStateVariant` and the `variant` prop on `QueryState`/`LoadingState`/`ErrorState`/`EmptyState`
+  — use `QueryStateTier` and `tier`. **Identical values, identical branch behaviour**, verified by
+  diffing `src/dashboard/query-state.tsx` at `v1.25.0` against 1.29.2: the union is `'page' |
+'section'` in both, and `'section'` takes the same bare/compact branch in both. A pure rename, so a
+  `variant="section"` becomes `tier="section"` with nothing to eyeball afterwards.
+  `QueryStateTier`'s own JSDoc says "`'section'` meant two different things across the two
+  spellings" — that is the NAMING rationale for picking `tier` (audit B #19), not a behaviour
+  warning, and it has been read as one twice: once by a fleet audit that told consumers to "eyeball
+  the rendered tier once after the change", once by a migration agent that stopped to diff the
+  sources. It does not describe a value-semantics change.
+- `createSearchParamStore` / `createMultiSearchParamStore` (`basalt-ui/router-tanstack`) and the
+  legacy branches they kept alive in the field vocabulary — use `createSearchStore` with
+  `field.enum` / `field.multi`.
+- `field` on `basalt-ui/forms` — use `inputProps(form, path)` + `fieldKey(form, path)`.
+  **The two-pass `oxlint --fix` recipe in 1.28.0's § `inputProps` DOES NOT WORK if you land here.**
+  Pass 1 (`basalt/deprecated-export` autofixing `field` → `inputProps as field`) never fires: the
+  row leaves `DEPRECATED_EXPORTS` in the same minor the export does, so at 1.29.x there is nothing
+  deprecated to nudge. Pass 2 (`basalt/forms-field-key`) reports the `field(` spread but does not
+  autofix it — its fixer only handles an `inputProps(` spread missing a `key`. So: **coming from
+  1.28.x the recipe holds; coming from 1.27.x or earlier, every call site is a hand edit.** It is
+  two edits per field, and `field` at least fails to compile, unlike the `key` half:
+
+  ```tsx
+  /* 1.27 */ <TextInput {...field(form, 'email')} />
+  /* 1.29 */ <TextInput key={fieldKey(form, 'email')} {...inputProps(form, 'email')} />
+  ```
+
+  Find them all: `rg -n '\bfield\(\s*\w*[Ff]orm\b' --type ts` (`--type ts` covers `.tsx`).
+
+- `BasaltNotifications` / `BasaltNotificationsProps` (`basalt-ui/notifications`) — mount
+  `<BasaltOverlays notifications />` from `basalt-ui/commands` instead. **Doctrine exception,
+  recorded**: this one never carried a `deprecated-export` row; it was superseded in 1.2x and its own
+  JSDoc warned against mounting it next to `BasaltOverlays`, so it leaves in the same minor as the
+  other shims. The `duplicate-notifications-mount` lint rule that only existed to catch the
+  double-mount is retired with it.
+- `ConnectivityIndicatorProps` stays on the root barrel (it is `BasaltProps`).
+
+- `ZonedLine`/`Bars`' `ZoneSpec` aliases — use the canonical `AxisConfig`-scoped zone type each
+  kind now exports directly.
+- `inputProps`'s `key` return field (already shape-changed in 1.28.0 — see § `inputProps` no longer
+  returns `key` there) — fully removed this minor; use `fieldKey(form, name)` alongside
+  `inputProps(form, name)`.
+
+**On notice for 1.30.0** — a public export with exactly one consumer (the playground) as of this
+audit. Adopt-or-delete: gains a real consumer by 1.30.0 or is removed. Not a promise either way;
+record your adoption in `docs/ARGO-MIGRATION-LEARNINGS.md` if you pick one up.
+
+- **Threads/agent-chat composite tier**: `ThreadWorkspace`, `ThreadFeed`, `ThreadFeedRow`,
+  `ThreadDetailPanel`, `ThreadOutcomeCard`, `ThreadsStoreAdapter`, `createThreadsStore`,
+  `createAdapterThreadsStore`, `threadsStoreAdapterContract`, `threadPartRenderers`,
+  `definePartRenderers`.
+- **Chart kind**: `Heatmap` only — `DualPanel` has an argo consumer and `MirroredBars`/`BandStrip`
+  are consumed by linewatch, so those three are NOT on notice.
+- **Nav/shell**: `PageAside`, `PanelRow`, `SettingsRow` (playground-only as of this audit).
+- **Controls**: `SliderControl`, `SearchFilter`, `ToggleFilter`, `CompareFilter`, `OverflowMenu`,
+  `ControlGroup`.
+
+**The common primitives, as a unit.** `src/common` (shipped from the maturation round) is now the
+one place the base prop / error / ref vocabulary lives: `BasaltProps`, `SlotStylesProps`, `cx`,
+`mergeRefs`/`assignRef`, the prefixed `errors.ts` table (`toErrorMessage`/`errorStatus`),
+`useValidateProps`, `assertRequiredProps`. Every basalt component extends `BasaltProps` for its own
+prop type rather than redeclaring `className`/`style`; a consumer composing over a basalt component
+should do the same.
+
+### Additions — what C5 lets a consumer delete
+
+C5 consolidation — every item below names the argo lines it lets a consumer delete
+(`.claude/maturation/consolidation-plan.md` §C5, `audit-f-argo-consumer.md`). All additive; nothing
+in this block removes or renames an existing export. **Additive is not the same as ignorable**: two
+of these REPLACE code a consumer is already hand-rolling — see § `basalt-ui/format` below, and
+`PageTitle`, which is the answer to the `in-body-page-title` waiver a shell-less page needed.
+
+- **`basalt-ui/format`** — new subpath, Mantine-free and React-free: `money`, `percent`, `integer`,
+  `compact`, `deltaPct`, `duration` (seconds → `"1h 02m"`; `{ unit: 'minutes' }` for a
+  minutes-based input), `durationClock` (`"1:02:03"`), `clock`, `relativeTime`, `weekday`, `km`,
+  `kcal` — plus the original chart-formatter names (`fmtCompact`/`fmtPercent`/`fmtCurrency`/
+  `fmtInt`/`fmtAxisDate`/`fmtTooltipDate`/`NON_FINITE`/`formatters`), now re-exported from here;
+  `./charts`' `utils/format.ts` is an internal re-export shim, not a second implementation.
+- **`ChartState.empty`** widens to `boolean | string` — a string is both truthy and the label
+  `ChartEmpty` paints. `ChartCard` gains `state?: ChartState`, `placeholderHeight?: number`
+  (default 240) and `stateAction?: ReactNode`, and `children` is now optional so a title-less
+  pending card can be a route's own `<Suspense fallback>`. Resolution order is the same
+  `resolveChartState` precedence every kind already has — pending → error → empty — and
+  `state={{}}`/omitting `state` renders `children` unchanged. `ChartCenter`'s `width` widens to
+  `number | string` (`'100%'` for a non-measured block body).
+- **`DualPanel`'s `fillBetween` gains `aboveFill?: string`** — the above-side fill color; omitted,
+  both sides keep sharing `fill` (unchanged behaviour). **`AxisBottomNumeric`** exported from
+  `./charts` — the numeric twin of `AxisLeftNumeric`, for a bespoke continuous-x plot.
+- **`useBreakpoint(name, edge?, options?)`** on the root barrel — SSR/hydration-safe media query
+  over `theme.breakpoints`, built on `useSyncExternalStore` (not `@mantine/hooks`' `useMediaQuery`,
+  which mismatches during hydration). `edge` is `'min'` (default, "at least this wide") or `'max'`.
+  `page-aside.tsx` now composes this hook's own internals instead of a private duplicate.
+- **`--vx-space-touch-target` / `VX.spaceTouchTarget`** — the WCAG touch-target floor (44px),
+  density-exempt. The one `SPACE_FIXED` member that IS emitted as a CSS var (every other one stays
+  JS-only) — a consumer's own `@media (pointer: coarse)` CSS-module rule reads it directly.
+- **`SettingsMenuItem.active?: boolean`** — renders a trailing check glyph and `aria-current` in
+  every projection (the sidebar's flat rows and gear menu, the mobile More sheet).
+- **`basalt-ui/commands` gains imperative shell handles**: `setColorScheme(scheme)` and
+  `toggleSidebar()`, wired automatically — `BasaltProvider` registers the Mantine color-scheme
+  setter, `BasaltShell` registers the collapse toggle, so a command's `run` calls either with zero
+  `__root.tsx` bridge wiring (unlike the hand-rolled `color-scheme-bridge.ts`/`sidebar-bridge.ts`
+  shape this seeds from). `Slot<K, Constraint>` (`register.ts`) changed its internal resolution
+  from a whole-interface mapped-type match to an indexed-access form — same public behaviour,
+  fixes the commands↔overlays same-file type cycle a command calling `overlays.open(...)` used to
+  hit while `defineCommands`'s own type was still being inferred.
+- **`BasaltDevDock`** on the root barrel — a fixed, dev-only bottom drawer hosting TanStack Router
+  devtools, TanStack Query devtools and the theme lab, each peer lazy-loaded. New optional peer:
+  `@tanstack/react-router-devtools`.
+- **`BasaltErrorBoundaryProps`** is now exported; `onError` is optional (defaults to the same
+  console-warn-in-dev fallback `BasaltProvider`'s own top-level `onError` uses); an omitted
+  `fallback` now renders a minimal built-in default (a `PageTitle` + reload button) instead of
+  `null` — pass `fallback={null}` explicitly for the old swallow-it behaviour. **`PageTitle`** is a
+  new shell-less page-title primitive on the root barrel (a plain `<h1>`, not Mantine's `<Title>`,
+  so it needs no `in-body-page-title` waiver) — the remedy for the `in-body-page-title` waiver a
+  shell-less error/auth page used to need.
+- **`unwrap` gains a second overload** — the original took only a `Promise` of the `{ data, error }`
+  envelope; it now also accepts the ALREADY-RESOLVED envelope directly (`unwrap(await api.x.get())`,
+  or as a bare `.then(unwrap)` callback), inferring which overload from whether the argument IS a
+  `Promise`. The absence guard also now throws on `undefined` data, not just `null`.
+
+### CLI — one resolver, and six checks `doctor` stopped running
+
+**Read this one if your app is not at the repo root.** A consumer migration reported it costing
+more debugging than any of the five export removals in this minor, and until now it was one clause
+inside a bullet.
+
+**The resolver stopped relocating.** Every project-scoped command (`check-theme`, `doctor`, `sync`)
+used to descend two levels and ascend to the nearest ancestor looking for a `basalt` config. It now
+resolves ONE way — `BASALT_CWD` when set, else the invocation cwd — plus a declared `basalt.roots`,
+and infers nothing from siblings or parents (`resolveProjectDir`, `src/cli/index.ts`). That is the
+right call (the ascend existed to paper over `check-theme` FABRICATING `roots: ["src"]`), and it is
+a silent break for every workspace consumer:
+
+| Where you run it                 | Before 1.29.0                       | 1.29.0+                                                          |
+| -------------------------------- | ----------------------------------- | ---------------------------------------------------------------- |
+| repo root, config in `apps/web`  | relocated to `apps/web` and said so | reads the root, finds no config, **`✖ 0 files scanned`, exit 1** |
+| `apps/web`                       | unchanged                           | unchanged                                                        |
+| repo root, `BASALT_CWD=apps/web` | unchanged                           | unchanged — this is now the only way                             |
+
+**The consequence nobody wrote down: the SHIPPED lefthook preset broke itself.** Lefthook runs every
+command at the repo root, so a monorepo consumer who did nothing but bump the version got a
+pre-commit hook that scanned zero files and failed — from a preset they cannot override the `run:`
+of. Its default `BASALT_BIN` fallback (`bunx --no-install basalt-ui`) also resolves to nothing at
+the root under bun's isolated linker, which puts basalt beside the package that depends on it.
+Two fixes, either one enough:
+
+```yaml
+# <repo>/lefthook.yml — the one line that fixes the guard
+pre-commit:
+  commands:
+    check-theme:
+      env: { BASALT_CWD: apps/web }
+```
+
+or run the whole hook inside the package (`root: 'apps/web/'` per command — it merges, the preset
+does not define it). `configs/lefthook.yml` now carries both as a MONOREPO RECIPE block and derives
+its default bin from `BASALT_CWD`; a consumer on 1.29.x writes the `env:` block by hand.
+
+**`doctor` lost six of its ten checks.** At 1.25.0 it printed ten lines; it prints four. Verified
+against the shipped `dist/cli/doctor.js` — the code is deleted, not skipped, so nothing reports a
+skip either:
+
+| Check                                                        | 1.25.0         | 1.29.x            | What you lose                                                                    |
+| ------------------------------------------------------------ | -------------- | ----------------- | -------------------------------------------------------------------------------- |
+| `.basalt/manifest.json` exists                               | ✓              | ✓                 | —                                                                                |
+| `basalt-ui` resolves from here, and at which version         | ✓              | **gone**          | the "you are silently running a `bunx`-downloaded copy" answer                   |
+| installed `basalt-ui` matches the manifest's `basaltVersion` | ✓              | **gone**          | the install/manifest skew a CI `doctor` step existed to catch — now a no-op      |
+| spacing scale matches the last `sync`                        | ✓              | **gone**          | the token layer moving under a consumer between minors                           |
+| running CLI version matches the installed package            | ✓              | **gone**          | the 1.20.0-cache-against-a-1.22.0-pin failure `basaltBinCommand` was written for |
+| `guard-scan`: `basalt.roots` resolves to > 0 files           | ✓              | **gone**          | **the check that made a silently-scanning-nothing `check-theme` impossible**     |
+| `basaltAppPlugin({ icons })` files exist                     | ✓              | **gone**          | a manifest referencing icons that were never added                               |
+| oxlint preset extended                                       | ✓              | ✓                 | —                                                                                |
+| lefthook preset wired                                        | ✓              | ✓                 | —                                                                                |
+| `ai` major parity                                            | workspace-wide | this package only | skew between two workspace packages                                              |
+
+The `guard-scan` row and the resolver change are the same failure from two directions: 1.29.0
+deleted the ascend that used to find your config AND the check that would have told you it hadn't.
+**If your CI runs `basalt-ui doctor` as a version-skew gate, that step no longer gates** — assert
+the version yourself, or keep `check-theme` (which still fails loudly on zero roots) as the gate.
+
+**Two commands are gone**: `info` (it graded a consumer's `vite.config.ts` by parsing it and nobody
+read the output — no replacement) and `check-coverage` (repo-internal, now
+`bun scripts/check-coverage.ts` inside this repo; it never had a consumer meaning). A consumer's own
+docs or CI naming either will fail on an unknown command, which the CLI reports by name.
+
+### `basalt-ui/format` — the subpath that deletes your hand-rolled formatters
+
+**An addition, but a MIGRATION**, and the reason it gets a row: it does not add a capability, it
+replaces one every consumer already hand-rolled. Nobody greps a migration file for a thing that was
+not taken away, so it is written down here as well as in § Additions.
+
+```tsx
+/* before */ <Text>${(cents / 100).toFixed(2)}</Text>
+/* after  */ <Text>{money(cents / 100)}</Text>          // import { money } from 'basalt-ui/format'
+```
+
+`money`, `percent`, `integer`, `compact`, `deltaPct`, `duration`, `durationClock`, `clock`,
+`relativeTime`, `weekday`, `km`, `kcal` — all `Intl`-backed with an explicit `locale` defaulting to
+the runtime's, all returning an em dash for non-finite input instead of `NaN`/`∞`. Mantine-free and
+React-free, so a chart axis, a table cell and a server-rendered string share one implementation. The
+chart formatters (`fmtCompact`/`fmtPercent`/`fmtCurrency`/`fmtInt`/`fmtAxisDate`/`fmtTooltipDate`)
+are re-exported from here and `./charts`' `utils/format.ts` is a shim over them, not a second copy —
+so there is no "which one do I import" question to get wrong.
+
+Find your call sites: `rg -n 'toFixed\(|toLocaleString\(|Intl\.NumberFormat' --type ts`
+
+## 1.28.0 — the aside, the shell scrollport, the form layer, and `inputProps` without `key`
 
 **Nothing removed, and ONE thing changed shape: `inputProps` no longer returns `key`** — a silent
 behaviour change at every field call site, caught by the new `basalt/forms-field-key` and described
-in its own § below. Read that one before upgrading; the rest of the minor is additive, with
-enforcement tightened: five oxlint rules plus one guard
-kind became `error`, and new rule ids shipped at `warn`. The store half of this minor also
-fixed four inference and notification defects consumers hit while porting, plus two ways a fallback
-got pinned into localStorage — see § Stores below. Every level change honours the `theme-allow`
-grammar unchanged; only the severity of an unwaived finding moves.
+in its own § below. Read that one before upgrading; the rest of the export delta is additive. Six
+new oxlint rule ids ship at `warn`; **nothing is promoted to `error` in this minor** — the five
+oxlint rules and one guard kind that went `error` were 1.27.0's, see § Guards there. Every level
+honours the `theme-allow` grammar unchanged.
+
+**And one silent DELETION that no compiler, linter or test reports: the brand left the sidebar.**
+If your app suppresses the header region, it also lost its brand and its sidebar collapse toggle the
+moment it bumped — see § Shell — the brand moved into the header (below).
 
 **One behaviour change with a blast radius past this package: `AppShell.Main` is now the
 scrollport, and the WINDOW no longer scrolls inside a `BasaltShell`.** Nothing was removed or
@@ -48,23 +454,6 @@ see § The shell scrollport below.
 
 What is new, one line each — nothing here renames or removes anything:
 
-- **`BasaltDevDock`'s `router` prop now accepts a real TanStack `Router` instance with no cast** —
-  the prior structural stand-in rejected a class instance under TS weak-type detection (no property
-  overlap, no index signature), forcing `router={router as never}`. It is now `router?: object`:
-  any non-null object is assignable, and the devtools panel remains the only reader.
-- **`unwrap` collapses to ONE generic signature with a conditional return**, replacing the two
-  overloads this same minor introduced. The overload pair resolved `unwrap` to `unknown` whenever it
-  was passed as a bare callback (`api.threads.get().then(unwrap)`) — `.then()` reads the declared
-  type of the reference rather than applying an overload, and TS cannot propagate generic inference
-  across an overload set the way it can for a single signature. `.then(unwrap)` now infers `TData`
-  again, alongside `unwrap(await p)` and `unwrap(p)` — nothing about the runtime behaviour changed.
-- **`unwrap` strips `null`/`undefined` from a union-typed Eden response again** — the single
-  conditional signature above still inferred `TData` off `Envelope<infer TData>`, and an Eden
-  Treaty response is a UNION of envelopes (`{ data: T; error: null } | { data: null; error:
-EdenFetchError }`), not one envelope with a nullable `data`; inferring through the wrapper type
-  read `T | null` at every Eden call site. `UnwrapResult` now infers the raw `data` field and wraps
-  it in `NonNullable`, which distributes over a union `R` — `unwrap(await api.x.get())` resolves to
-  `T` again, with no `| null`. Runtime unchanged.
 - **`scrollParentOf` / `SCROLLPORT_ATTRIBUTE`** (`basalt-ui`) — resolve which box actually scrolls an
   element (`null` = the document). The seam behind the shell scrollport change below.
 - **`PageAside`** (`basalt-ui`) — the right-hand aside REGION a route claims, with the panel filter
@@ -169,7 +558,9 @@ EdenFetchError }`), not one envelope with a nullable `data`; inferring through t
   flattened `BasaltProvider` connectivity props. Permanently `warn` — a deprecation is a schedule,
   not a defect. **On the `field` row, take the two fixes in order**: that rename lands the new
   `inputProps` shape, which has no `key`, and `basalt/forms-field-key` then reports the same line
-  and inserts the `key`. Two `--fix` passes, or one manual edit writing both.
+  and inserts the `key`. Two `--fix` passes, or one manual edit writing both. **This works only
+  while `field` is still deprecated-but-shipped, i.e. on 1.28.x** — 1.29.0 deletes both the export
+  and its ledger row, and with them pass 1.
 - **Dev-only duplicate-mount warnings** — `BasaltProvider` now warns when a second instance mounts
   while the first is still mounted; `<BasaltOverlays notifications />` and `<BasaltNotifications />`
   now warn when BOTH are mounted at once (previously prose-only in both cases). Both are
@@ -371,7 +762,14 @@ mode: a form that stops resetting, with no signal anywhere.
 reports every `{...inputProps(…)}` spread whose element carries no sibling `key`, and it
 **autofixes** — inserting `key={fieldKey(<same args>)}` and adding `fieldKey` to the existing
 `basalt-ui/forms` import. Run `oxlint --fix` over the app and read the diff; the escape hatch for an
-element genuinely remounted by its parent is `theme-allow forms-field-key — <why>`.
+element genuinely remounted by its parent is `theme-allow forms-field-key — <why>`. **Scope the
+`--fix` to the paths you are migrating** (`oxlint --fix src/features/settings`): the shipped preset
+enables autofixable stylistic rules, so a bare `oxlint --fix .` rewrites untouched files in the same
+commit.
+
+> **If you are landing on 1.29.x, not 1.28.x, the two-pass recipe below does not apply** — `field`
+> is deleted there, so pass 1 has nothing to fix and the edit is manual. See 1.29.0 § Consolidation,
+> the `field` row.
 
 **The deprecated `field` alias did NOT follow `inputProps` here.** It is no longer
 `export const field = inputProps`: it keeps the 1.27 return shape, `key` included, so
@@ -452,9 +850,9 @@ Two unrelated exports shared the name `field`: the forms adapter's `getInputProp
 the `field.enum/multi/range/number/boolean/string` store-field builder in `basalt-ui/state` and
 `basalt-ui/router-tanstack`. A page combining a form and a filter store had to alias one on import.
 
-| Removed / renamed           | Replacement  | Note                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| --------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `field` (`basalt-ui/forms`) | `inputProps` | Same signature — `inputProps(form, path)`. `field` still resolves from `basalt-ui/forms` as a `@deprecated` alias, so nothing breaks; the alias goes away the next time the forms surface changes, and that removal ships as a plain `feat:`, never a major. **Since the Unreleased minor the two are no longer the same function**: `inputProps` dropped `key` from its return and `field` did not — see § `inputProps` no longer returns `key`. |
+| Removed / renamed           | Replacement  | Note                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| --------------------------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `field` (`basalt-ui/forms`) | `inputProps` | Same signature — `inputProps(form, path)`. `field` still resolves from `basalt-ui/forms` as a `@deprecated` alias in 1.28.x, so nothing breaks here; **it is deleted in 1.29.0** (see that minor's § Consolidation, which also explains why the `--fix` recipe stops working there). **In 1.28.0 the two are no longer the same function**: `inputProps` dropped `key` from its return and `field` did not — see § `inputProps` no longer returns `key`. |
 
 The `field.*` store builder (`basalt-ui/state`, `basalt-ui/router-tanstack`) is untouched.
 
@@ -499,6 +897,183 @@ redundant (Mantine's own default).
   `ZonedLine`, un-stacked `Bars`); `StackedArea` and stacked `Bars` install a domain function with a
   hard `0` floor and their marks anchor at the baseline, so a log scale on either yields `NaN`
   geometry — don't opt in there. Additive; omitted stays linear.
+
+### `basalt-ui/data` — a typed facet id, and a required `getItemKey`
+
+**`BasaltDataTable`: a mistyped `facets[].columnId` used to render no pill, silently — `if
+(!column) return null`.** It now throws in dev, naming the id and every known column id
+(`facet columnId "…" matches no column`); production still degrades to no pill for that one facet.
+`DataTableFacet` also gained a type parameter — `DataTableFacet<T = unknown>` — so `columnId` is
+typed off the row shape wherever TanStack's `accessor`/manual `id` inference allows it
+(`Extract<keyof T, string> | (string & {})`); the default keeps a bare `DataTableFacet[]`
+compiling unchanged. `BasaltDataTableProps.facets` is now `DataTableFacet<T>[]`, and
+`initialColumnPinning` moved from TanStack's own `ColumnPinningState` to a new, `T`-derived
+`DataTableColumnPinning<T>` (structurally assignable to `ColumnPinningState`, so no cast is
+needed at either end). Both are additive for existing call sites — an id that was already a real
+column keeps compiling and rendering exactly as before.
+
+**`BasaltVirtualList.getItemKey` is now required.** The index fallback hid stale rows across a
+mutation: an insert/delete shifts every index below it, so the OLD item kept rendering at each
+shifted index until an unrelated re-render happened to catch it up — in the one component whose
+job is a long mutable list. Pass a real per-item key (`(item) => item.id`); there is no
+replacement for the index fallback.
+
+**`BasaltVirtualList` gained a ref.** `ref?: Ref<BasaltVirtualListHandle>` exposes
+`scrollToIndex`/`scrollToOffset`/`scrollToEnd` (delegating to the internal
+`@tanstack/react-virtual` instance) plus `getVirtualizer()` as the full escape hatch — mirrors
+`./data/table`'s `useReactTable` re-export as the table's own. Additive; omitting `ref` changes
+nothing.
+
+### `basalt-ui/commands` — `BasaltOverlays` no longer WRAPS your app in `ModalsProvider`
+
+**Same props, same imperative API, one structural change: every layer — `ModalsProvider`
+included — now renders as a SIBLING of `children` instead of an ancestor.** The old shape put the
+whole app under a `React.lazy` Suspense boundary (`<Suspense fallback={<>{app}</>}>
+<LazyModalsProvider>{app}</LazyModalsProvider></Suspense>`), and `React.lazy` suspends on its first
+render even when the module is already warm. Two consequences, both real: the app's FIRST COMMIT was
+deferred past a microtask — long enough for TanStack Router's async `loadMatches` to `setState` onto
+a not-yet-mounted fiber ("Can't perform a React state update on a component that hasn't mounted
+yet", once per full page load) — and the app tree mounted TWICE, once inside the fallback and once
+resolved, so every effect in the app ran twice on boot.
+
+Nothing to change for the overlay APIs. `modals.open` / `modals.openConfirmModal` (and so basalt's
+own `overlays.open` / `overlays.close`) go through `@mantine/modals`' window CustomEvent bus, which
+`ModalsProvider` subscribes to — being inside it was never a requirement, and the provider renders
+its own managed `Modal` regardless of where it sits.
+
+**The one thing a sibling cannot serve is React CONTEXT**: `useModals()` from `@mantine/modals`
+called inside your app now throws its "was called outside of context" error. If you use it (or
+`openContextModal`, which needs the provider's `modals` map that `BasaltOverlays` never passed
+anyway), mount your own provider and turn basalt's off — two providers would both answer the event
+bus and open every modal twice:
+
+```tsx
+<BasaltOverlays modals={false}>
+  <ModalsProvider modals={CONTEXT_MODALS}>
+    <App />
+  </ModalsProvider>
+</BasaltOverlays>
+```
+
+### `basalt-ui/controls` — the mobile `Filters (n)` sheet renders panel rows, not its own list
+
+**The sheet's `SheetOptionList` (44px rows, a hairline between them, one per option) is gone.**
+`useFilterSurface() === 'sheet'` now resolves to the SAME `PanelRow`/`PanelChoice`/facet-list body
+`'panel'` already renders (`docs/CONTROLS-SPEC.md` §3: "sheet = panel rows inside a Drawer") — label
+above, full-width control below, folding past `PANEL_TRACK_MAX` (3, a `Select`) or `max` (a
+`MultiSelectFilter`'s `Show N more`) the same way the aside already did. A set with many options no
+longer grows the sheet to a full column of option rows. `RangeFilter`'s sheet form is the panel's one
+`Select` (presets plus a `Custom range…` row revealing the injected picker) instead of a
+`SheetOptionList` with the picker behind a separate disclosure row.
+
+Also fixed in the same pass: a `fullWidth` `SegmentedControl` (`PanelChoice`'s ≤3-option form, and
+`ViewTabs`) now splits its options EVENLY — Mantine's own `.control` carries no `min-width`
+override, so the initial `auto` floored each option at its content width and a `fullWidth` track
+split unevenly; a long label now ellipsizes inside its equal share instead of forcing the column
+wide. The active segment's fill is a second ink-mix step
+(`color-mix(in srgb, var(--vx-ink) 12%, var(--vx-surface-panel))`), not a flat `--vx-surface-panel`,
+so it stays visible against its own track when the whole control sits on a panel-coloured surface (a
+`PanelRow`), where a flat panel fill read as barely-there next to the 6%-tinted track around it.
+
+| Removed                                                                                                                      | Replacement                                                 | Note                                                                                                                                                                                                                                                                                                                                           |
+| ---------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SheetOptionList`, `SheetField`, `SheetDisclosure` (`basalt-ui/controls`)                                                    | `PanelRow` / `PanelChoice` (already exported)               | Were never part of the public `./controls` barrel — internal to `filter-sheet.tsx` — so this only breaks a consumer test that imported them directly out of `basalt-ui/controls/filter-sheet` or hooked a `role="radio"` `<fieldset>` DOM shape inside the sheet (now a `PanelChoice` `SegmentedControl`, `role="radiogroup"`, or a `Select`). |
+| `SheetRow`, `sheetRowClassNames` (`basalt-ui/controls`)                                                                      | none                                                        | Also internal-only. `ToggleFilter`'s sheet form is now a `PanelRow` whose `Switch` rides the label line, the same shape the panel surface always used.                                                                                                                                                                                         |
+| `.sheetOption` / `.sheetList` / `.sheetField` / `.sheetRow` / `.sheetDisclosureBody` / `.sheetLabel` (`controls.module.css`) | `panel-row.module.css`'s `.row`/`.head`/`.control`/`.label` | CSS-module classes were never a public contract; named for a consumer that vendored a copy of the sheet's old CSS.                                                                                                                                                                                                                             |
+
+### The shell scrollport — Main scrolls, not the window
+
+`BasaltShell` dropped Mantine's `layout="alt"` (the header now spans the full viewport width, above
+the sidebar and the aside, instead of being inset beside the sidebar) and gave `AppShell.Main` a
+bounded height with `overflow: auto`. Main is therefore THE scrolling element: the document's
+`scrollHeight` equals the viewport height, the browser scrollbar sits on Main's own right edge
+(inside the aside, where the content is) instead of at the far edge of the window, and
+`window.scrollY` is pinned at 0.
+
+Main carries two handles: `data-basalt-scrollport` (basalt's own, and what `scrollParentOf` looks
+for) and `data-scroll-restoration-id="basalt-main"` (the attribute `@tanstack/router-core`'s scroll
+restoration reads, so a router-driven app restores this element rather than the window).
+
+What to change in a consumer:
+
+| If your app…                                                        | Do this                                                                                                                                                                                                     |
+| ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| reads `window.scrollY` / listens for `scroll` on `window`           | `const port = scrollParentOf(el)` and read `port.scrollTop` / listen on `port` — `null` still means the window, so shell-less code is unchanged                                                             |
+| scrolls with `window.scrollTo` / `document.scrollingElement`        | target `document.querySelector('[data-basalt-scrollport]')` first, with the document as the fallback                                                                                                        |
+| uses window-based scroll restoration                                | point it at `[data-scroll-restoration-id="basalt-main"]`; TanStack Router picks it up with no config                                                                                                        |
+| overrides `--vx-space-sticky-header-clearance`                      | the token NO LONGER includes the app-shell header height — it is `anchors.stackMd` (12px at level 0), pure breathing room, because BOTH the header and the page-bar band are regions outside the scrollport |
+| passes `BasaltDataTable stickyHeaderOffset` inside a shell          | drop it entirely. Nothing overhangs the scrollport any more, so a sticky table head wants `top: 0`, which is the default                                                                                    |
+| computes a viewport-filling body from `--basalt-page-bar-h`         | inside a shell that is just `100%` now — the band is outside Main rather than scrolling with it. The var is still published                                                                                 |
+| passes `mobileNav.getScrollElement` only to reach the page scroller | you can drop it — the default resolves the scrollport now                                                                                                                                                   |
+
+Two more rendering changes ride along, both visible without any code change (the third,
+the brand relocation, is NOT always visible — it has its own § below):
+
+- **`PageBar` row 2 is a shell-owned BAND**, not a row in the page: it portals into an outlet
+  `BasaltShell` renders between the header and the scrollport, exactly as row 1 portals into the
+  header. It spans Main's width, carries `--vx-surface-bg` and one `--vx-divider` hairline, and is a
+  zero-height, seam-less box on a route with no `PageBar`. It is no longer sticky and no longer
+  depends on where you wrote `<PageBar>` — nested in a `Stack` or written as Main's direct child now
+  produce identical geometry. Its padding-block tightened from `--vx-space-stack-sm` to
+  `--vx-space-stack-xs`, so the bar is 8px shorter.
+- **`BasaltDataTable` contains itself horizontally by default.** A table with neither `maxHeight`
+  nor `minWidth` used to render a bare `<table>`, which sizes to its own min-content — a five-column
+  table measured 448px inside a 390px viewport and dragged the whole page sideways. Every table now
+  renders inside `Table.ScrollContainer type="native"` (`minWidth: 0` when you set none), so a wide
+  table scrolls inside its own card. `stickyHeader` with neither prop cannot take that container —
+  an `overflow-x` box computes `overflow-y` to `auto` and becomes the header's scrollport, and with
+  no height cap it has no scroll range, so the header would go inert — so it takes a wrapper whose
+  overflow is **measured** instead: while the table fits its container the wrapper declares no
+  overflow at all and the page-sticky header sticks exactly as before; once the table is wider the
+  wrapper flips to `overflow-x: auto`, the columns stay reachable, and the header is inert at that
+  width. The flip is a live `ResizeObserver` reading in both directions, so the wrapper goes back to
+  bare when the space returns (the window widened, the sidebar collapsed, the aside closed), and it
+  publishes `data-contained="true|false"`. The dev warning on that shape now states the trade rather
+  than a defect and points at `maxHeight` for a table that must both scroll and stick. Pinning takes
+  the same wrapper: the `overflow-x: auto` `Box` a pinned, uncapped, sticky table used to get is
+  gone, because it was the inert-header shape it was meant to avoid. **The TOOLBAR was the other
+  half of the same defect and is fixed with it**: the toolbar `Group` is the header row's flex item
+  (`CtlSlot` between them is `display: contents`) and carried `flex: 0 0 auto`, so a 220px search
+  beside a 230px facet pill row was an unshrinkable 461px box in a 302px column — `AppShell.Main`
+  measured `scrollWidth` 505 against `clientWidth` 390 at 390x844. It is now `flex: 0 1 auto` with
+  `min-width: 0`, and the search's `w={220}` became a flex BASIS (`flex: 0 1 220px`, floored at
+  `12ch`, capped at `100%`). The field still resolves to 220px wherever 220 fits and still never
+  grows with the table; below that the search and the pills wrap onto their own lines.
+
+### Shell — the brand moved into the header, and that can DELETE it
+
+**This one is filed separately because "visible without any code change" is exactly what it is
+not.** The header now spans the full viewport width, so the sidebar's `appShellHeaderHeight` brand
+row was painting a SECOND band under the header seam. The brand is the header's leading zone
+instead — `--app-shell-navbar-offset` wide, so it still tracks the rail collapse and still ends on
+the sidebar\|main seam — and the sidebar column starts at `SidebarSearch`. `brand`, `brand.menu` and
+the collapse toggle are unchanged; only the markup's home moved.
+
+**If your app suppresses the header, the brand and the sidebar collapse toggle are now GONE.**
+Nothing type-checks differently, nothing lints, no test fails: the app simply boots without them.
+A phone-first consumer that zeroes the header (`--app-shell-header-height: 0`,
+`--app-shell-header-offset: 0`, or `display: none` on the region) hit exactly this, and found it by
+looking at the app. There is currently no supported way to suppress a shell region and no signal
+when a region's contents move underneath you — **so if you have ever styled a `mantine-AppShell-*`
+region away, re-check it against every minor that touches the shell.** The remedy is to stop
+suppressing the header (it is one token tall) or to render your own brand where the header used to
+be.
+
+**Two more consequences, for a consumer mounting `AppSidebar` DIRECTLY** rather than through
+`BasaltShell` (which is the supported path): it no longer paints a brand row, and its
+`onToggleCollapse` prop is no longer read there — `BasaltShell` feeds it to the header instead. Both
+are silent in the same way.
+
+Find out whether this reaches you: `rg -n "app-shell-(header|navbar)-(height|offset)|AppShell-header"`
+
+## 1.27.0 — the number lane, `StatCard`'s breakdown, and five promotions
+
+**Nothing removed. Two exports added (`NumberFilter`, and three members on the number handle),
+one member added to every `FieldHandle` (`clear()`), four `StatCard` props added, and enforcement
+tightened: five oxlint rules plus one guard kind became `error`.** The store half of this minor also
+fixed four inference and notification defects consumers hit while porting, plus two ways a fallback
+got pinned into localStorage — see § Stores below. Every level change honours the `theme-allow`
+grammar unchanged; only the severity of an unwaived finding moves.
 
 ### Stores — the `custom` flag, patched writes, lazy fallbacks, derived windows
 
@@ -747,297 +1322,6 @@ half is deliberately NOT exempted the same way — a local `StatCard` beside an
 `import { StatCard as Base }` kept the name AND a piece of the original, which is the fork shape this
 rule most wants to see.
 
-### Guards — `basalt/query-dual-import` removed
-
-**Retired, not merely relaxed** — its `RETIRED_RULE_IDS` entry (kept recognized, so an existing
-`theme-allow query-dual-import` still reads as a dead waiver rather than a typo) and its
-`PLUGIN_RULE_GRACE` ledger row are both deleted. Its whole premise — a raw `@tanstack/react-query`
-import beside `basalt-ui/query` — went unreachable the moment `./query` dropped (see § Consolidation
-above): a consumer now MUST import `@tanstack/react-query` directly, and the rule warned on every
-one of those imports instead of the drift it was written to catch (90+ false positives on a single
-consumer). `query-fn-unwrap` is unaffected — it is a different rule, still `warn` (grace → 1.30.0).
-
-### `basalt-ui/data` — a typed facet id, and a required `getItemKey`
-
-**`BasaltDataTable`: a mistyped `facets[].columnId` used to render no pill, silently — `if
-(!column) return null`.** It now throws in dev, naming the id and every known column id
-(`facet columnId "…" matches no column`); production still degrades to no pill for that one facet.
-`DataTableFacet` also gained a type parameter — `DataTableFacet<T = unknown>` — so `columnId` is
-typed off the row shape wherever TanStack's `accessor`/manual `id` inference allows it
-(`Extract<keyof T, string> | (string & {})`); the default keeps a bare `DataTableFacet[]`
-compiling unchanged. `BasaltDataTableProps.facets` is now `DataTableFacet<T>[]`, and
-`initialColumnPinning` moved from TanStack's own `ColumnPinningState` to a new, `T`-derived
-`DataTableColumnPinning<T>` (structurally assignable to `ColumnPinningState`, so no cast is
-needed at either end). Both are additive for existing call sites — an id that was already a real
-column keeps compiling and rendering exactly as before.
-
-**`BasaltVirtualList.getItemKey` is now required.** The index fallback hid stale rows across a
-mutation: an insert/delete shifts every index below it, so the OLD item kept rendering at each
-shifted index until an unrelated re-render happened to catch it up — in the one component whose
-job is a long mutable list. Pass a real per-item key (`(item) => item.id`); there is no
-replacement for the index fallback.
-
-**`BasaltVirtualList` gained a ref.** `ref?: Ref<BasaltVirtualListHandle>` exposes
-`scrollToIndex`/`scrollToOffset`/`scrollToEnd` (delegating to the internal
-`@tanstack/react-virtual` instance) plus `getVirtualizer()` as the full escape hatch — mirrors
-`./data/table`'s `useReactTable` re-export as the table's own. Additive; omitting `ref` changes
-nothing.
-
-### `basalt-ui/commands` — `BasaltOverlays` no longer WRAPS your app in `ModalsProvider`
-
-**Same props, same imperative API, one structural change: every layer — `ModalsProvider`
-included — now renders as a SIBLING of `children` instead of an ancestor.** The old shape put the
-whole app under a `React.lazy` Suspense boundary (`<Suspense fallback={<>{app}</>}>
-<LazyModalsProvider>{app}</LazyModalsProvider></Suspense>`), and `React.lazy` suspends on its first
-render even when the module is already warm. Two consequences, both real: the app's FIRST COMMIT was
-deferred past a microtask — long enough for TanStack Router's async `loadMatches` to `setState` onto
-a not-yet-mounted fiber ("Can't perform a React state update on a component that hasn't mounted
-yet", once per full page load) — and the app tree mounted TWICE, once inside the fallback and once
-resolved, so every effect in the app ran twice on boot.
-
-Nothing to change for the overlay APIs. `modals.open` / `modals.openConfirmModal` (and so basalt's
-own `overlays.open` / `overlays.close`) go through `@mantine/modals`' window CustomEvent bus, which
-`ModalsProvider` subscribes to — being inside it was never a requirement, and the provider renders
-its own managed `Modal` regardless of where it sits.
-
-**The one thing a sibling cannot serve is React CONTEXT**: `useModals()` from `@mantine/modals`
-called inside your app now throws its "was called outside of context" error. If you use it (or
-`openContextModal`, which needs the provider's `modals` map that `BasaltOverlays` never passed
-anyway), mount your own provider and turn basalt's off — two providers would both answer the event
-bus and open every modal twice:
-
-```tsx
-<BasaltOverlays modals={false}>
-  <ModalsProvider modals={CONTEXT_MODALS}>
-    <App />
-  </ModalsProvider>
-</BasaltOverlays>
-```
-
-### `basalt-ui/controls` — the mobile `Filters (n)` sheet renders panel rows, not its own list
-
-**The sheet's `SheetOptionList` (44px rows, a hairline between them, one per option) is gone.**
-`useFilterSurface() === 'sheet'` now resolves to the SAME `PanelRow`/`PanelChoice`/facet-list body
-`'panel'` already renders (`docs/CONTROLS-SPEC.md` §3: "sheet = panel rows inside a Drawer") — label
-above, full-width control below, folding past `PANEL_TRACK_MAX` (3, a `Select`) or `max` (a
-`MultiSelectFilter`'s `Show N more`) the same way the aside already did. A set with many options no
-longer grows the sheet to a full column of option rows. `RangeFilter`'s sheet form is the panel's one
-`Select` (presets plus a `Custom range…` row revealing the injected picker) instead of a
-`SheetOptionList` with the picker behind a separate disclosure row.
-
-Also fixed in the same pass: a `fullWidth` `SegmentedControl` (`PanelChoice`'s ≤3-option form, and
-`ViewTabs`) now splits its options EVENLY — Mantine's own `.control` carries no `min-width`
-override, so the initial `auto` floored each option at its content width and a `fullWidth` track
-split unevenly; a long label now ellipsizes inside its equal share instead of forcing the column
-wide. The active segment's fill is a second ink-mix step
-(`color-mix(in srgb, var(--vx-ink) 12%, var(--vx-surface-panel))`), not a flat `--vx-surface-panel`,
-so it stays visible against its own track when the whole control sits on a panel-coloured surface (a
-`PanelRow`), where a flat panel fill read as barely-there next to the 6%-tinted track around it.
-
-| Removed                                                                                                                      | Replacement                                                 | Note                                                                                                                                                                                                                                                                                                                                           |
-| ---------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `SheetOptionList`, `SheetField`, `SheetDisclosure` (`basalt-ui/controls`)                                                    | `PanelRow` / `PanelChoice` (already exported)               | Were never part of the public `./controls` barrel — internal to `filter-sheet.tsx` — so this only breaks a consumer test that imported them directly out of `basalt-ui/controls/filter-sheet` or hooked a `role="radio"` `<fieldset>` DOM shape inside the sheet (now a `PanelChoice` `SegmentedControl`, `role="radiogroup"`, or a `Select`). |
-| `SheetRow`, `sheetRowClassNames` (`basalt-ui/controls`)                                                                      | none                                                        | Also internal-only. `ToggleFilter`'s sheet form is now a `PanelRow` whose `Switch` rides the label line, the same shape the panel surface always used.                                                                                                                                                                                         |
-| `.sheetOption` / `.sheetList` / `.sheetField` / `.sheetRow` / `.sheetDisclosureBody` / `.sheetLabel` (`controls.module.css`) | `panel-row.module.css`'s `.row`/`.head`/`.control`/`.label` | CSS-module classes were never a public contract; named for a consumer that vendored a copy of the sheet's old CSS.                                                                                                                                                                                                                             |
-
-### The shell scrollport — Main scrolls, not the window
-
-`BasaltShell` dropped Mantine's `layout="alt"` (the header now spans the full viewport width, above
-the sidebar and the aside, instead of being inset beside the sidebar) and gave `AppShell.Main` a
-bounded height with `overflow: auto`. Main is therefore THE scrolling element: the document's
-`scrollHeight` equals the viewport height, the browser scrollbar sits on Main's own right edge
-(inside the aside, where the content is) instead of at the far edge of the window, and
-`window.scrollY` is pinned at 0.
-
-Main carries two handles: `data-basalt-scrollport` (basalt's own, and what `scrollParentOf` looks
-for) and `data-scroll-restoration-id="basalt-main"` (the attribute `@tanstack/router-core`'s scroll
-restoration reads, so a router-driven app restores this element rather than the window).
-
-What to change in a consumer:
-
-| If your app…                                                        | Do this                                                                                                                                                                                                     |
-| ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| reads `window.scrollY` / listens for `scroll` on `window`           | `const port = scrollParentOf(el)` and read `port.scrollTop` / listen on `port` — `null` still means the window, so shell-less code is unchanged                                                             |
-| scrolls with `window.scrollTo` / `document.scrollingElement`        | target `document.querySelector('[data-basalt-scrollport]')` first, with the document as the fallback                                                                                                        |
-| uses window-based scroll restoration                                | point it at `[data-scroll-restoration-id="basalt-main"]`; TanStack Router picks it up with no config                                                                                                        |
-| overrides `--vx-space-sticky-header-clearance`                      | the token NO LONGER includes the app-shell header height — it is `anchors.stackMd` (12px at level 0), pure breathing room, because BOTH the header and the page-bar band are regions outside the scrollport |
-| passes `BasaltDataTable stickyHeaderOffset` inside a shell          | drop it entirely. Nothing overhangs the scrollport any more, so a sticky table head wants `top: 0`, which is the default                                                                                    |
-| computes a viewport-filling body from `--basalt-page-bar-h`         | inside a shell that is just `100%` now — the band is outside Main rather than scrolling with it. The var is still published                                                                                 |
-| passes `mobileNav.getScrollElement` only to reach the page scroller | you can drop it — the default resolves the scrollport now                                                                                                                                                   |
-
-Three rendering changes ride along, all visible without any code change:
-
-- **The brand moved out of the sidebar and into the header.** The header spans the full viewport
-  width now, so the sidebar's `appShellHeaderHeight` brand row painted as a SECOND 48px band under
-  the header seam. It is the header's leading zone instead — `--app-shell-navbar-offset` wide, so it
-  still tracks the rail collapse and still ends on the sidebar\|main seam — and the sidebar column
-  starts at `SidebarSearch`. `brand`, `brand.menu` and the collapse toggle are unchanged; only the
-  markup's home moved. Two consequences for a consumer mounting `AppSidebar` DIRECTLY (rather than
-  through `BasaltShell`, which is the supported path): it no longer paints a brand row, and its
-  `onToggleCollapse` prop is no longer read there — `BasaltShell` feeds it to the header instead.
-- **`PageBar` row 2 is a shell-owned BAND**, not a row in the page: it portals into an outlet
-  `BasaltShell` renders between the header and the scrollport, exactly as row 1 portals into the
-  header. It spans Main's width, carries `--vx-surface-bg` and one `--vx-divider` hairline, and is a
-  zero-height, seam-less box on a route with no `PageBar`. It is no longer sticky and no longer
-  depends on where you wrote `<PageBar>` — nested in a `Stack` or written as Main's direct child now
-  produce identical geometry. Its padding-block tightened from `--vx-space-stack-sm` to
-  `--vx-space-stack-xs`, so the bar is 8px shorter.
-- **`BasaltDataTable` contains itself horizontally by default.** A table with neither `maxHeight`
-  nor `minWidth` used to render a bare `<table>`, which sizes to its own min-content — a five-column
-  table measured 448px inside a 390px viewport and dragged the whole page sideways. Every table now
-  renders inside `Table.ScrollContainer type="native"` (`minWidth: 0` when you set none), so a wide
-  table scrolls inside its own card. `stickyHeader` with neither prop cannot take that container —
-  an `overflow-x` box computes `overflow-y` to `auto` and becomes the header's scrollport, and with
-  no height cap it has no scroll range, so the header would go inert — so it takes a wrapper whose
-  overflow is **measured** instead: while the table fits its container the wrapper declares no
-  overflow at all and the page-sticky header sticks exactly as before; once the table is wider the
-  wrapper flips to `overflow-x: auto`, the columns stay reachable, and the header is inert at that
-  width. The flip is a live `ResizeObserver` reading in both directions, so the wrapper goes back to
-  bare when the space returns (the window widened, the sidebar collapsed, the aside closed), and it
-  publishes `data-contained="true|false"`. The dev warning on that shape now states the trade rather
-  than a defect and points at `maxHeight` for a table that must both scroll and stick. Pinning takes
-  the same wrapper: the `overflow-x: auto` `Box` a pinned, uncapped, sticky table used to get is
-  gone, because it was the inert-header shape it was meant to avoid. **The TOOLBAR was the other
-  half of the same defect and is fixed with it**: the toolbar `Group` is the header row's flex item
-  (`CtlSlot` between them is `display: contents`) and carried `flex: 0 0 auto`, so a 220px search
-  beside a 230px facet pill row was an unshrinkable 461px box in a 302px column — `AppShell.Main`
-  measured `scrollWidth` 505 against `clientWidth` 390 at 390x844. It is now `flex: 0 1 auto` with
-  `min-width: 0`, and the search's `w={220}` became a flex BASIS (`flex: 0 1 220px`, floored at
-  `12ch`, capped at `100%`). The field still resolves to 220px wherever 220 fits and still never
-  grows with the table; below that the search and the pills wrap onto their own lines.
-
-### Consolidation (targeting 1.29.0)
-
-**Dropped subpaths — three, all folded into `.`/`./provider`, none deleted outright.**
-
-<!-- C1 symbol list -->
-
-- `./query` — dropped. `createBasaltQueryClient`, `unwrap`, `BasaltQueryDevtools`,
-  `toErrorMessage`, `errorStatus` now on `.` (root barrel) — import from `basalt-ui` instead of
-  `basalt-ui/query`. The nine raw TanStack re-exports it carried (`QueryClientProvider`,
-  `QueryErrorResetBoundary`, `useQueryErrorResetBoundary`, `useQuery`, `useSuspenseQuery`,
-  `useMutation`, `useQueryClient`, `useInfiniteQuery`, `queryOptions`) are gone from basalt entirely —
-  import them from `@tanstack/react-query`, which the root entry already requires.
-- `./data/table` — **narrowed, not dropped**: `BasaltDataTable`, its types and `createColumnHelper`
-  stay; the TanStack pass-throughs (`useReactTable`, `flexRender`, `getCoreRowModel`,
-  `getSortedRowModel`, `getFilteredRowModel`, `getPaginationRowModel`, `ColumnDef`, `SortingState`,
-  `ColumnHelper`, `PaginationState`, `ColumnPinningState`, `RowSelectionState`, `ColumnFiltersState`)
-  are imported from `@tanstack/react-table` directly.
-- `./connectivity` — dropped. `ConnectivityProvider` (auto-mounted by `BasaltProvider`, no
-  consumer-side import needed), `useConnectivity`, `ConnectivityIndicator` now on `.`.
-- `./data` (bare) — dropped. It never carried its own exports beyond re-exporting `./data/table`
-  and `./data/virtual` — import the narrow subpath you need directly; nothing renamed.
-- `./controls-dates` — **unaffected**, stays a separate subpath (inlining it into `./controls`
-  would pull `@mantine/dates` into a subpath that must resolve without it).
-
-**Deleted `@deprecated` shims** (every one slated for 1.29.0 removal in an earlier minor's
-deprecation row — see that minor's own `MIGRATING.md` section for the original `@deprecated`
-annotation and rationale):
-
-- `state.ts`'s legacy connectivity export — use `./provider`'s `useConnectivity` instead.
-- `BasaltProvider`'s flat `sseUrl` / `healthUrl` / `healthIntervalMs` props — use
-  `connectivity={{ sseUrl, healthUrl, healthIntervalMs }}`.
-- `QueryStateVariant` and the `variant` prop on `QueryState`/`LoadingState`/`ErrorState`/`EmptyState`
-  — use `QueryStateTier` and `tier` (identical values).
-- `createSearchParamStore` / `createMultiSearchParamStore` (`basalt-ui/router-tanstack`) and the
-  legacy branches they kept alive in the field vocabulary — use `createSearchStore` with
-  `field.enum` / `field.multi`.
-- `field` on `basalt-ui/forms` — use `inputProps(form, path)` + `fieldKey(form, path)`.
-- `BasaltNotifications` / `BasaltNotificationsProps` (`basalt-ui/notifications`) — mount
-  `<BasaltOverlays notifications />` from `basalt-ui/commands` instead. **Doctrine exception,
-  recorded**: this one never carried a `deprecated-export` row; it was superseded in 1.2x and its own
-  JSDoc warned against mounting it next to `BasaltOverlays`, so it leaves in the same minor as the
-  other shims. The `duplicate-notifications-mount` lint rule that only existed to catch the
-  double-mount is retired with it.
-- `ConnectivityIndicatorProps` stays on the root barrel (it is `BasaltProps`).
-
-**CLI** (`basalt-ui`): `info` and `check-coverage` are gone — `check-coverage` is a repo-internal
-script (`bun scripts/check-coverage.ts`), not a consumer command; `info` graded a consumer's
-`vite.config.ts` by parsing it and nobody read the output. `doctor` checks THIS package only: the
-workspace-wide `ai` major-parity walk (with `!`-exclusions and `aiMajorSkewReason`) and the
-`basaltAppPlugin({ icons })` file check are dropped. One resolver remains for every command —
-`BASALT_CWD`, then cwd, plus a declared `basalt.roots`; nothing is inferred from siblings or parents.
-
-- `ZonedLine`/`Bars`' `ZoneSpec` aliases — use the canonical `AxisConfig`-scoped zone type each
-  kind now exports directly.
-- `inputProps`'s `key` return field (already shape-changed in an earlier Unreleased entry above) —
-  fully removed this minor; use `fieldKey(form, name)` alongside `inputProps(form, name)`.
-
-**On notice for 1.30.0** — a public export with exactly one consumer (the playground) as of this
-audit. Adopt-or-delete: gains a real consumer by 1.30.0 or is removed. Not a promise either way;
-record your adoption in `docs/ARGO-MIGRATION-LEARNINGS.md` if you pick one up.
-
-- **Threads/agent-chat composite tier**: `ThreadWorkspace`, `ThreadFeed`, `ThreadFeedRow`,
-  `ThreadDetailPanel`, `ThreadOutcomeCard`, `ThreadsStoreAdapter`, `createThreadsStore`,
-  `createAdapterThreadsStore`, `threadsStoreAdapterContract`, `threadPartRenderers`,
-  `definePartRenderers`.
-- **Chart kind**: `Heatmap` only — `DualPanel` has an argo consumer and `MirroredBars`/`BandStrip`
-  are consumed by linewatch, so those three are NOT on notice.
-- **Nav/shell**: `PageAside`, `PanelRow`, `SettingsRow` (playground-only as of this audit).
-- **Controls**: `SliderControl`, `SearchFilter`, `ToggleFilter`, `CompareFilter`, `OverflowMenu`,
-  `ControlGroup`.
-
-**`common/**`— the public common primitives, as a unit.**`src/common/\*\*`(shipped from the
-maturation round) is now the one place base prop/error/ref vocabulary lives:`BasaltProps`,
-`SlotStylesProps`, `cx`, `mergeRefs`/`assignRef`, the prefixed `errors.ts` table
-(`toErrorMessage`/`errorStatus`), `useValidateProps`, `assertRequiredProps`. Every basalt component
-extends `BasaltProps`for its own prop type rather than redeclaring`className`/`style`; a consumer
-composing over a basalt component should do the same.
-
-### Additions (targeting 1.29.0)
-
-C5 consolidation — every item below names the argo lines it lets a consumer delete
-(`.claude/maturation/consolidation-plan.md` §C5, `audit-f-argo-consumer.md`). All additive; nothing
-in this block removes or renames an existing export.
-
-- **`basalt-ui/format`** — new subpath, Mantine-free and React-free: `money`, `percent`, `integer`,
-  `compact`, `deltaPct`, `duration` (seconds → `"1h 02m"`; `{ unit: 'minutes' }` for a
-  minutes-based input), `durationClock` (`"1:02:03"`), `clock`, `relativeTime`, `weekday`, `km`,
-  `kcal` — plus the original chart-formatter names (`fmtCompact`/`fmtPercent`/`fmtCurrency`/
-  `fmtInt`/`fmtAxisDate`/`fmtTooltipDate`/`NON_FINITE`/`formatters`), now re-exported from here;
-  `./charts`' `utils/format.ts` is an internal re-export shim, not a second implementation.
-- **`ChartState.empty`** widens to `boolean | string` — a string is both truthy and the label
-  `ChartEmpty` paints. `ChartCard` gains `state?: ChartState`, `placeholderHeight?: number`
-  (default 240) and `stateAction?: ReactNode`, and `children` is now optional so a title-less
-  pending card can be a route's own `<Suspense fallback>`. Resolution order is the same
-  `resolveChartState` precedence every kind already has — pending → error → empty — and
-  `state={{}}`/omitting `state` renders `children` unchanged. `ChartCenter`'s `width` widens to
-  `number | string` (`'100%'` for a non-measured block body).
-- **`DualPanel`'s `fillBetween` gains `aboveFill?: string`** — the above-side fill color; omitted,
-  both sides keep sharing `fill` (unchanged behaviour). **`AxisBottomNumeric`** exported from
-  `./charts` — the numeric twin of `AxisLeftNumeric`, for a bespoke continuous-x plot.
-- **`useBreakpoint(name, edge?, options?)`** on the root barrel — SSR/hydration-safe media query
-  over `theme.breakpoints`, built on `useSyncExternalStore` (not `@mantine/hooks`' `useMediaQuery`,
-  which mismatches during hydration). `edge` is `'min'` (default, "at least this wide") or `'max'`.
-  `page-aside.tsx` now composes this hook's own internals instead of a private duplicate.
-- **`--vx-space-touch-target` / `VX.spaceTouchTarget`** — the WCAG touch-target floor (44px),
-  density-exempt. The one `SPACE_FIXED` member that IS emitted as a CSS var (every other one stays
-  JS-only) — a consumer's own `@media (pointer: coarse)` CSS-module rule reads it directly.
-- **`SettingsMenuItem.active?: boolean`** — renders a trailing check glyph and `aria-current` in
-  every projection (the sidebar's flat rows and gear menu, the mobile More sheet).
-- **`basalt-ui/commands` gains imperative shell handles**: `setColorScheme(scheme)` and
-  `toggleSidebar()`, wired automatically — `BasaltProvider` registers the Mantine color-scheme
-  setter, `BasaltShell` registers the collapse toggle, so a command's `run` calls either with zero
-  `__root.tsx` bridge wiring (unlike the hand-rolled `color-scheme-bridge.ts`/`sidebar-bridge.ts`
-  shape this seeds from). `Slot<K, Constraint>` (`register.ts`) changed its internal resolution
-  from a whole-interface mapped-type match to an indexed-access form — same public behaviour,
-  fixes the commands↔overlays same-file type cycle a command calling `overlays.open(...)` used to
-  hit while `defineCommands`'s own type was still being inferred.
-- **`BasaltDevDock`** on the root barrel — a fixed, dev-only bottom drawer hosting TanStack Router
-  devtools, TanStack Query devtools and the theme lab, each peer lazy-loaded. New optional peer:
-  `@tanstack/react-router-devtools`.
-- **`BasaltErrorBoundaryProps`** is now exported; `onError` is optional (defaults to the same
-  console-warn-in-dev fallback `BasaltProvider`'s own top-level `onError` uses); an omitted
-  `fallback` now renders a minimal built-in default (a `PageTitle` + reload button) instead of
-  `null` — pass `fallback={null}` explicitly for the old swallow-it behaviour. **`PageTitle`** is a
-  new shell-less page-title primitive on the root barrel (a plain `<h1>`, not Mantine's `<Title>`,
-  so it needs no `in-body-page-title` waiver) — the remedy for the `in-body-page-title` waiver a
-  shell-less error/auth page used to need.
-- **`unwrap` gains a second overload** — the original took only a `Promise` of the `{ data, error }`
-  envelope; it now also accepts the ALREADY-RESOLVED envelope directly (`unwrap(await api.x.get())`,
-  or as a bare `.then(unwrap)` callback), inferring which overload from whether the argument IS a
-  `Promise`. The absence guard also now throws on `undefined` data, not just `null`.
-
 ## 1.26.0 — the control tier, the page bar and the store
 
 **One export removed and two deprecated — see § Stores below; two shell PROPS removed — see
@@ -1057,7 +1341,7 @@ happened to the nine rows below.
 (`shadow-basalt-export`). Both ledgers now hold only the wave-6 control guards listed under
 § Guards — six plugin rules and two guard kinds, each `{ since: '1.26.0', promote: '1.27.0' }` —
 which the C16 gate forced to promote or be deleted at 1.27.0. Five rules and one kind promoted there;
-the C1 pair was re-dated to 1.30.0 against a measurement (see `## Unreleased` above). A theme-allow escape written against
+the C1 pair was re-dated to 1.30.0 against a measurement (see 1.27.0 § Guards above). A theme-allow escape written against
 any of these still works unchanged; only the SEVERITY of an unwaived finding moves from `warn` to
 `error`.
 

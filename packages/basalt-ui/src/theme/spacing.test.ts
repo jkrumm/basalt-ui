@@ -29,6 +29,27 @@
  * counting it pushed every consumer a full header down inside the content. The chrome that IS inside
  * the scrollport — `PageBar` row 2 — is added in CSS as `var(--basalt-page-bar-h, 0px)` by the two
  * consumers that face it. See `deriveSpacing`'s doc in `tokens/palette.ts` for the full rationale.
+ * - The desktop-shell spacing pass moved six numbers and added two, all against one complaint — the
+ *   sidebar/header band read as small controls floating in dead air while the page content sat too
+ *   close to the seam. `controlHeightCtl` 30 -> 32 (the whole chrome tier now lands on ONE number),
+ *   `appShellHeaderHeight` 48 -> 44 and `pageBarRowHeight` 40 -> 36 (the two bands shrink to the
+ *   tier they hold, and the secondary band stays a clear step under the primary),
+ *   `sidebarSectionGap` 12 -> 16 with `sidebarSectionLabelGap` 2 -> 6 (the section label's proximity
+ *   pair was INVERTED — more space below the label than above it — so every label read as belonging
+ *   to the list above rather than the one it heads), and `sidebarRegionGap` 10 -> 12 (the column's
+ *   three region seams now separate visibly from the gaps inside a region). The two additions,
+ *   `appShellInset` 20 / `appShellInsetMobile` 8, replace the `SPACE_SCALE.sm` the main column used
+ *   to borrow for its page gutter: 20 puts the page's first column on the same vertical line as the
+ *   sidebar's nav icons, 8 stops a phone spending 6.7% of a 390px viewport on margin. Each number's
+ *   own reasoning is on its entry in `tokens/palette.ts`.
+ * - Round 2 of the same pass added four more entries and moved NO existing number. Three of them —
+ *   `cardInsetY` 11 / `cardInsetX` 13 / `sectionGap` 12 — only NAME values the cards and `Section`
+ *   already rendered (`SPACE_SCALE.xs`/`.sm` and `SPACE.stackMd`, previously spelled at the call
+ *   site as `--mantine-spacing-*`/`--vx-space-stack-md`), so level 0 is byte-identical; the point of
+ *   naming them is that the mobile ladder can then step two of them a rung down below `sm` without
+ *   touching the scales every other consumer reads. The fourth, `appShellHeaderLeadMin` 96, replaces
+ *   the raw `96px` the header's breadcrumb floor shipped as in round 1 — same number, now tracking
+ *   density like every other dimension of that row.
  * Every value NOT named above is still byte-identical to the pre-tokenization number it replaced.
  */
 import { DEFAULT_THEME, mergeMantineTheme } from '@mantine/core'
@@ -59,10 +80,13 @@ describe('SPACE anchors match the shipped identity', () => {
     expect(SPACE.controlHeight).toBe(42)
   })
 
-  test('the controls tier anchors are 20/24/30/36 (docs/CONTROLS-SPEC.md §5)', () => {
+  test('the controls tier anchors are 20/24/32/36 (docs/CONTROLS-SPEC.md §5)', () => {
     expect(SPACE.controlHeightTag).toBe(20)
     expect(SPACE.controlHeightWidget).toBe(24)
-    expect(SPACE.controlHeightCtl).toBe(30)
+    // 32, not the original 30 — the desktop-shell spacing pass landed the whole chrome tier on ONE
+    // number (search trigger, sidebar block row and a resolved NavLink row are all 32 too). See
+    // `controlHeightCtl`'s own doc in `tokens/palette.ts`.
+    expect(SPACE.controlHeightCtl).toBe(32)
     expect(SPACE.touchControlHeight).toBe(36)
   })
 })
@@ -261,9 +285,9 @@ describe('--vx-space-* is emitted from the SAME constants', () => {
   test('emits the controls-tier heights in REM, and the control gap in px (docs/CONTROLS-SPEC.md §5)', () => {
     expect(css).toContain('--vx-space-control-height-tag: 1.25rem;')
     expect(css).toContain('--vx-space-control-height-widget: 1.5rem;')
-    expect(css).toContain('--vx-space-control-height-ctl: 1.875rem;')
+    expect(css).toContain('--vx-space-control-height-ctl: 2rem;')
     expect(css).toContain('--vx-space-touch-control-height: 2.25rem;')
-    expect(css).toContain('--vx-space-page-bar-row-height: 2.5rem;')
+    expect(css).toContain('--vx-space-page-bar-row-height: 2.25rem;')
     expect(css).toContain('--vx-space-section-header-height: 2.25rem;')
     expect(css).toContain('--vx-space-widget-header-height: 1.75rem;')
     expect(css).toContain('--vx-space-sidebar-block-row-height: 2rem;')
@@ -300,7 +324,7 @@ const SPACE_STEP_SWEEP: ReadonlyArray<
   // the header-inclusive 60 — shows up as a failing assertion rather than a silent revert).
   ['stickyHeaderClearance', 12, 'space-sticky-header-clearance'],
   ['navIconGap', 10, 'space-nav-icon-gap'],
-  ['sidebarRegionGap', 10, 'space-sidebar-region-gap'],
+  ['sidebarRegionGap', 12, 'space-sidebar-region-gap'],
   ['proseQuoteInsetY', 2, 'space-prose-quote-inset-y'],
   ['proseQuoteIndent', 12, 'space-prose-quote-indent'],
   ['proseInlineCodeInsetY', 1.5, 'space-prose-inline-code-inset-y'],
@@ -363,12 +387,12 @@ const SPACE_STEP_SWEEP: ReadonlyArray<
   ['settingsRowGap', 16, 'space-settings-row-gap'],
   ['mermaidContainerInset', 16, 'space-mermaid-container-inset'],
   ['sidebarBrandInsetX', 7, 'space-sidebar-brand-inset-x'],
-  ['sidebarSectionGap', 12, 'space-sidebar-section-gap'],
+  ['sidebarSectionGap', 16, 'space-sidebar-section-gap'],
   ['sidebarAccountInsetTop', 9, 'space-sidebar-account-inset-top'],
   ['sidebarAccountInsetX', 7, 'space-sidebar-account-inset-x'],
   ['sidebarAccountInsetBottom', 2, 'space-sidebar-account-inset-bottom'],
   ['sidebarAvatarSize', 28, 'space-sidebar-avatar-size'],
-  ['sidebarSectionLabelGap', 2, 'space-sidebar-section-label-gap'],
+  ['sidebarSectionLabelGap', 6, 'space-sidebar-section-label-gap'],
   ['sidebarChildListGapTop', 2, 'space-sidebar-child-list-gap-top'],
   ['sidebarChildListGapBottom', 3, 'space-sidebar-child-list-gap-bottom'],
   ['sidebarChildListIndent', 15, 'space-sidebar-child-list-indent'],
@@ -381,13 +405,21 @@ const SPACE_STEP_SWEEP: ReadonlyArray<
   // JS-number-only (`shell/index.tsx` reads all three via `useBasaltSpacing()` — Mantine's AppShell
   // `header`/`navbar` props take numbers, not `var()` strings) — see `spaceDecls`'s doc in
   // `tokens/index.ts` for why a `--vx-space-app-shell-*` declaration would have zero consumers.
-  ['appShellHeaderHeight', 48, null],
+  ['appShellHeaderHeight', 44, null],
   ['appShellNavbarWidth', 256, null],
   ['appShellNavbarRailWidth', 48, null],
   // Same JS-number-only shape, one region over: `shell/index.tsx` hands both to AppShell's `aside`
   // config (`docs/ASIDE-SPEC.md` §0).
   ['appShellAsideWidth', 300, null],
   ['appShellAsideRailWidth', 36, null],
+  // The page gutter — the ONE `appShell*` dimension with a `--vx-*` var, and in PX, not the `rem`
+  // its controls-tier neighbours use: it is a layout margin against a viewport, not a box sized to
+  // text. Both halves of the reason are in `spaceDecls`'s own comment (`tokens/index.ts`).
+  ['appShellInset', 20, 'space-app-shell-inset'],
+  ['appShellInsetMobile', 8, 'space-app-shell-inset-mobile'],
+  // The header's breadcrumb floor — the third `appShell*` dimension with a `--vx-*` var, for the
+  // ordinary reason (a CSS module reads it), not for the gutter's special one.
+  ['appShellHeaderLeadMin', 96, 'space-app-shell-header-lead-min'],
   ['mobileNavTabGap', 3, 'space-mobile-nav-tab-gap'],
   // JS-number-only, and for the same two reasons the six above are: `shell/index.tsx` hands
   // `mobileNavBarHeight` to AppShell's `footer.height` (a number, not a `var()` string), and
@@ -412,6 +444,14 @@ const SPACE_STEP_SWEEP: ReadonlyArray<
   ['statCardGap', 8, 'space-stat-card-gap'],
   ['virtualRowInsetY', 8, 'space-virtual-row-inset-y'],
   ['virtualRowInsetX', 12, 'space-virtual-row-inset-x'],
+  // The card/section inset ladder. Each locks the DESKTOP rung; the `< sm` rung is not a constant
+  // of its own by design (it is the neighbouring `SPACE_SCALE.xs` / `SPACE.stackSm`, re-pointed by
+  // `spaceMobileDecls` in `tokens/index.ts`), so there is nothing here to lock for it — the
+  // `buildPaletteCss` assertion below still sees these three declarations at their base values,
+  // because a `@media` block never changes what the `:root` block declares.
+  ['cardInsetY', 11, 'space-card-inset-y'],
+  ['cardInsetX', 13, 'space-card-inset-x'],
+  ['sectionGap', 12, 'space-section-gap'],
   ['chartLegendGap', 22, null],
   ['chartMarginTop', 12, null],
   ['chartMarginRight', 16, null],
@@ -424,7 +464,7 @@ const SPACE_STEP_SWEEP: ReadonlyArray<
   // Controls tier row/gap heights (`docs/CONTROLS-SPEC.md` §5) — emitted in REM for the heights
   // (`pageBarRowHeight`/`sectionHeaderHeight`/`widgetHeaderHeight`/`sidebarBlockRowHeight`/
   // `sheetRowHeight`, same `pxRem` reconstruction as `space-input-height`), px for the gap.
-  ['pageBarRowHeight', 40, 'space-page-bar-row-height', 'rem'],
+  ['pageBarRowHeight', 36, 'space-page-bar-row-height', 'rem'],
   ['sectionHeaderHeight', 36, 'space-section-header-height', 'rem'],
   ['widgetHeaderHeight', 28, 'space-widget-header-height', 'rem'],
   ['sidebarBlockRowHeight', 32, 'space-sidebar-block-row-height', 'rem'],

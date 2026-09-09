@@ -13,6 +13,7 @@ declare const classes: {
   readonly menuItem: string
   readonly menuItemNested: string
   readonly menuLabel: string
+  readonly menuSectionStart: string
   readonly sheet: string
   readonly sheetTitle: string
   readonly sheetHeader: string

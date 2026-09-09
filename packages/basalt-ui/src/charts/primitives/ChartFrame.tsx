@@ -6,11 +6,13 @@ import { useChartSize } from '../hooks/useChartSize'
 import { deriveLegend } from '../series'
 import type { ChartLegendConfig, LegendPlacement, SeriesStyle } from '../series'
 import {
-  chartTierMetrics,
   legendEntryCap,
   resolveChartTier,
+  resolveFrameHeight,
+  resolveLegendMaxRows,
   resolvePlotRect,
 } from './chart-frame-layout'
+import type { ResponsiveChartHeight } from './chart-frame-layout'
 import { ChartTierProvider } from './chart-tier'
 import { ChartLegend } from './ChartLegend'
 import { ChartEmpty, ChartError, ChartPending, resolveChartState } from './ChartPending'
@@ -19,6 +21,7 @@ import type { ChartState } from './ChartPending'
 /** Re-exported for `ChartFrame.test.tsx` and any other consumer that previously reached these
  * through `ChartFrame` — the layout math itself lives in `./chart-frame-layout` (pure, DOM-free). */
 export { legendEntryCap, resolvePlotRect, resolveChartTier } from './chart-frame-layout'
+export type { ResponsiveChartHeight } from './chart-frame-layout'
 
 const DEFAULT_HEIGHT = 240
 const DEFAULT_MIN_WIDTH = 200
@@ -28,7 +31,17 @@ const DEFAULT_MIN_WIDTH = 200
 export type ChartFrameLegend = {
   /** Default 'bottom'. */
   placement?: LegendPlacement
-  /** Wrap cap → "+N more" rollup at high cardinality. */
+  /**
+   * Wrap cap → "+N more" rollup at high cardinality.
+   *
+   * An explicit value WINS OUTRIGHT — including over the phone tier's own two-row default
+   * (`chartTierMetrics`). It used to be `Math.min`'d against the tier, which made the documented
+   * per-chart opt-out ("opt back out with an explicit `legend.maxRows`") false in the one direction
+   * anybody needs it: a consumer's 380px inspector panel is "a phone" on a 1440px desktop, and a
+   * six-series legend rolled up to `+4 more` with no way to say no. Under `fill` the measured
+   * entry cap can still roll up FURTHER — that is a floor on the plot, not a tier default
+   * ({@link legendEntryCap}).
+   */
   maxRows?: number
   /** Visually separate role: series | overlay | reference. */
   groups?: boolean
@@ -47,8 +60,16 @@ export type ChartFrameLegend = {
 export type ChartFrameProps = BasaltProps & {
   /** Series identity — drives the derived legend. Pass the SAME array the kind draws + tooltips from. */
   series: readonly SeriesStyle[]
-  /** Fixed height in pixels. Used when neither `aspectRatio` nor `fill` is set. Default 240. */
-  height?: number
+  /**
+   * Height in pixels, or one per size step. Used when neither `aspectRatio` nor `fill` is set.
+   * Default 240.
+   *
+   * `{ base: 180, md: 260 }` is the declarative escape from a page of fixed-height charts: the
+   * steps are compared against the frame's own MEASURED width, not the viewport, so a chart squeezed
+   * by a `PageAside` gets the short height on a desktop too. A plain number is unchanged and stays
+   * supported ({@link resolveFrameHeight}).
+   */
+  height?: number | ResponsiveChartHeight
   /** height = Math.round(containerWidth / aspectRatio). Ignored when `fill` is set. */
   aspectRatio?: number
   /** Fill the parent flex/grid cell's measured height instead of a fixed/derived one. */
@@ -206,7 +227,7 @@ export function ChartFrame({
     ? containerH
     : aspectRatio !== undefined
       ? Math.round(containerW / aspectRatio)
-      : (height ?? DEFAULT_HEIGHT)
+      : resolveFrameHeight(height ?? DEFAULT_HEIGHT, containerW)
 
   const sideLegendWidth = legendVisible && vertical ? legendW : 0
   const topBottomLegendHeight = legendVisible && !vertical ? legendH : 0
@@ -225,17 +246,11 @@ export function ChartFrame({
   // A fixed-height frame grows around its legend; a `fill` one cannot, so its legend rolls up
   // instead of eating the plot (see `legendEntryCap`). Top/bottom only — a side legend costs
   // width, not height.
-  // The tier's own cap folds in as an upper bound BEFORE the fill measurement, so a phone-width
-  // `fill` frame can only ever roll up further, never less (`chartTierMetrics`).
-  const tierMaxRows = chartTierMetrics(tier).legendMaxRows
+  // The resolved cap — the caller's if they named one, else the tier's DEFAULT, never both
+  // `Math.min`'d (`resolveLegendMaxRows` owns that law and says why) — enters the fill measurement
+  // as the upper bound, so a phone-width `fill` frame can only ever roll up further, never less.
   const callerMaxRows =
-    legend === false
-      ? undefined
-      : legend.maxRows === undefined
-        ? tierMaxRows
-        : tierMaxRows === undefined
-          ? legend.maxRows
-          : Math.min(legend.maxRows, tierMaxRows)
+    legend === false ? undefined : resolveLegendMaxRows({ callerMaxRows: legend.maxRows, tier })
 
   const maxRows =
     legend === false

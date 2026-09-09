@@ -10,7 +10,11 @@
  * state and lands its trailing edge exactly on the sidebar|main seam. The negative
  * `margin-inline-start` cancels `AppShell.Header`'s own `px` inset so the zone starts at the
  * viewport edge and re-applies that inset as padding — which is what puts the brand lead on the
- * same x as the sidebar rows below it.
+ * same x as the sidebar's nav ICON column below it. The arithmetic, now that the page gutter is
+ * `SPACE.appShellInset`: the zone re-applies `--app-shell-padding` = 20, and a nav icon sits at
+ * 10px of `.root` frame inset plus 10px of NavLink inset (`rowInsetX`) = 20. One vertical line
+ * across the seam — a claim this comment used to make while the gutter was 13, and that the
+ * 13 -> 20 move made true.
  */
 .zone {
   flex: 0 0 var(--app-shell-navbar-offset, 0rem);
@@ -58,11 +62,16 @@
 }
 
 /* Workspace switcher (`brand.menu`) — the brand name plus a chevron, as a row-shaped trigger. The
- * chevron is faint until hover so the brand still reads as the brand, not as a control. */
+ * chevron is faint until hover so the brand still reads as the brand, not as a control.
+ *
+ * `control-gap`, not the `sidebar-section-label-gap` this used to borrow: it is a HORIZONTAL
+ * name-to-glyph gap inside one control, and it has nothing to do with a sidebar label's vertical
+ * proximity pair — which is exactly why it moved when that token was retuned for an unrelated
+ * reason. Same 6px, correct by meaning. */
 .brandButton {
   display: flex;
   align-items: center;
-  gap: var(--vx-space-sidebar-section-label-gap);
+  gap: var(--vx-space-control-gap);
   min-width: 0;
   padding: 0;
   color: var(--vx-faint);

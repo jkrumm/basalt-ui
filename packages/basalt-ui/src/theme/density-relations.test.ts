@@ -431,15 +431,17 @@ describe('Fix 6 — BasaltShell AppShell dimensions track density', () => {
     }
   })
 
-  // The "header/rail 48-coincidence at level 0" check that used to live here is deleted, not
-  // rewritten: it asserted `appShellHeaderHeight === appShellNavbarRailWidth` at level 0, which is
-  // true BY CONSTRUCTION (both `SPACE_STEP_BASE` entries hold the literal same base, 48, and are
-  // mapped through the same deterministic `scaleSpace` call) and stays true at every OTHER level for
-  // the identical reason — no value-based assertion can distinguish "these two happen to share a
-  // base" (a coincidence) from "one is derived from the other" (a law) without mutating the source,
-  // which is out of scope for a value-level test. The actual claim (they are two INDEPENDENT
-  // `SPACE_STEP_BASE` entries, not one derived from the other) is already documented at the source —
-  // see `appShellHeaderHeight`'s own JSDoc in `tokens/palette.ts`.
+  // The "header/rail 48-coincidence at level 0" check that used to live here is deleted, and stays
+  // deleted now that the coincidence itself is gone (`appShellHeaderHeight` 44, `appShell
+  // NavbarRailWidth` 48). It asserted `appShellHeaderHeight === appShellNavbarRailWidth` at level 0,
+  // which was true BY CONSTRUCTION while both `SPACE_STEP_BASE` entries held the same base and were
+  // mapped through the same deterministic `scaleSpace` call — no value-based assertion can
+  // distinguish "these two happen to share a base" (a coincidence) from "one is derived from the
+  // other" (a law) without mutating the source, which is out of scope for a value-level test. That
+  // the two have since moved apart with nothing breaking is the coincidence's own obituary. The
+  // actual claim (they are two INDEPENDENT `SPACE_STEP_BASE` entries, not one derived from the
+  // other) is documented at the source — see `appShellHeaderHeight`'s own JSDoc in
+  // `tokens/palette.ts`.
 
   test('the footer stays a structural literal — no density-tracking entry for it, and the sm:0 landmine stays fenced', () => {
     for (const level of ALL_LEVELS) {
@@ -468,7 +470,7 @@ describe('Fix 9 — the Mantine spacing scale keeps its strict xs < sm < md < lg
   })
 })
 
-describe('Fix 10 — ctl SegmentedControl matches the ctl Button/Input box at every level, not a fixed 30px', () => {
+describe('Fix 10 — ctl SegmentedControl matches the ctl Button/Input box at every level, not a fixed 32px', () => {
   // `SegmentedControl.extend`'s function-form `styles` only sets a label `minHeight` when
   // `props.size === 'ctl'` — everything else (`sm`/`md` in a form) must fall through untouched.
   const stylesFn = baseTheme.components?.['SegmentedControl']?.styles as

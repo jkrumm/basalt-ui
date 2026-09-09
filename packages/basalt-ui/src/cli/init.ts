@@ -4,7 +4,7 @@
  * oxlint-preset plugin reader from `./sync` (also called there).
  */
 import { existsSync } from 'node:fs'
-import { relative, resolve } from 'node:path'
+import { resolve } from 'node:path'
 
 import { deriveSpacing } from '../tokens'
 import type { MergeLintResult, ScaffoldFlags } from './index'
@@ -15,17 +15,16 @@ import {
   mergeOxlintExtends,
   normalizeForLedger,
   patchPackageJson,
+  placementNotices,
   pruneRetiredManagedFiles,
   readManifest,
   reconcileRoots,
-  relativePosix,
   renderContext,
   reportPrune,
   resolvePeerFlags,
   resolvePlacement,
   rootsNotices,
   sha256,
-  shippedAssetPath,
   unitState,
   writeFileEnsuringDir,
   writeUnit,
@@ -166,30 +165,10 @@ export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags =
   if (seededLintScript) {
     console.log(`basalt-ui init: added the "lint:basalt" script (${lintScript}) to package.json.`)
   }
-  // lefthook.yml / .github/workflows/check.yml are repo-root-shaped — neither lefthook nor GitHub
-  // Actions reads config from anywhere but the repo root, so a package living in a subdirectory
-  // skips both rather than relocating them into a spot nothing reads.
-  if (!placement.isPackageRepoRoot) {
-    console.log(
-      `basalt-ui init: skipped lefthook.yml (this package is not the repo root — repo root ` +
-        `detected at ${placement.repoRoot}) — lefthook only reads config at the repo root; extend ` +
-        `${ctx.vars.LEFTHOOK_PRESET_PATH} from your root lefthook.yml instead, and give its ` +
-        `check-theme command \`env: { BASALT_CWD: ${relativePosix(placement.repoRoot, cwd)} }\` ` +
-        'so the guard runs where your basalt config actually lives.',
-    )
-    console.log(
-      `basalt-ui init: skipped .github/workflows/check.yml (this package is not the repo root — ` +
-        `repo root detected at ${placement.repoRoot}) — GitHub Actions only reads .github/ at the ` +
-        `repo root; copy the steps from ${shippedAssetPath(install, placement.repoRoot, 'configs/check.yml')} ` +
-        'into your root CI workflow instead.',
-    )
-  }
-  if (placement.relocatedQueryClient !== null) {
-    console.log(
-      `basalt-ui init: skipped src/query-client.ts (found an existing query client at ` +
-        `${relative(cwd, placement.relocatedQueryClient)}) — import it from there instead of ` +
-        're-seeding at the original path.',
-    )
+  // The permanent placement skips (repo-root-shaped tooling, a relocated scaffold) — one text,
+  // shared with `sync`. See {@link placementNotices}.
+  for (const line of placementNotices(cwd, placement)) {
+    console.log(`basalt-ui init: ${line}`)
   }
   // query-client.ts / __root.tsx reference the optional TanStack peers directly — seeding them
   // without the peer installed would ship an unresolved import. Hint how to opt in instead.

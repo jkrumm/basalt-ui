@@ -45,15 +45,20 @@ const bodyClipStyle: CSSProperties = {
   borderBottomLeftRadius: VX.radiusCard,
   borderBottomRightRadius: VX.radiusCard,
   overflow: 'hidden',
-  padding: '2px var(--mantine-spacing-sm, 0.8125rem) var(--mantine-spacing-xs, 0.6875rem)',
+  padding: '2px var(--vx-space-card-inset-x, 0.8125rem) var(--vx-space-card-inset-y, 0.6875rem)',
 }
-// Card inset = spacing xs (vertical) / sm (horizontal). The `--mantine-spacing-*` vars carry
-// basalt's OWNED scale (theme.spacing.xs 0.6875rem / sm 0.8125rem); the rem fallbacks keep a
-// Mantine-free `./charts`-only consumer (no MantineProvider vars) padded identically. No
-// header/body divider — the title block and the plot read as one continuous surface; a rule here
-// only doubled the card's shadow-embedded ring and made the header feel heavier.
+// Card inset = the `cardInsetY`/`cardInsetX` role tokens (vertical / horizontal), the SAME two
+// vars `StatCard` reads — a ChartCard and a StatCard in one grid row must not disagree about their
+// inset, which is why the pair is one named role rather than two files each spelling `xs`/`sm`.
+// They used to read `--mantine-spacing-xs`/`-sm`; the `--vx-*` pair carries the same numbers off
+// the same owned scale, is emitted by the same stylesheet at a retuned density, and — unlike the
+// Mantine vars — steps a rung down below `sm` (the mobile inset ladder, `spaceMobileDecls` in
+// `tokens/index.ts`). The rem fallbacks are unchanged and keep a `./charts`-only consumer with
+// neither MantineProvider nor BasaltProvider padded identically. No header/body divider — the
+// title block and the plot read as one continuous surface; a rule here only doubled the card's
+// shadow-embedded ring and made the header feel heavier.
 const headerWrapStyle: CSSProperties = {
-  padding: 'var(--mantine-spacing-xs, 0.6875rem) var(--mantine-spacing-sm, 0.8125rem) 4px',
+  padding: 'var(--vx-space-card-inset-y, 0.6875rem) var(--vx-space-card-inset-x, 0.8125rem) 4px',
 }
 
 /**

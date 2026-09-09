@@ -180,6 +180,27 @@ export const KNOWN_RULE_IDS = new Set([
   ...RETIRED_RULE_IDS,
 ])
 
+/**
+ * ONE LAW, TWO RULE IDS — the ids that waive each other, in BOTH directions.
+ *
+ * `basalt/control-outside-home` (this plugin, AST) and `raw-selection-control` (`src/guard`'s text
+ * lane) are the same law read by two engines, and the guard's own message says so. They could not
+ * share one id the way `in-body-page-title` does, because the two lanes disagree often enough that
+ * a consumer needs to be able to name which one they are waiving — but a consumer waiving the law
+ * should not have to know that, and before this map they did: `theme-allow control-outside-home`
+ * silenced oxlint and left check-theme reporting, so the only working annotation was
+ * `theme-allow raw-selection-control control-outside-home` — two ids, undocumented, discovered one
+ * debug cycle per consumer.
+ *
+ * Mirrored VERBATIM by `src/guard`'s copy (this file must not import from the package — see the
+ * header); `check-source.test.ts` asserts the two agree. An alias only ever WIDENS what an
+ * annotation covers, so a waiver can never become stricter by being spelled the other way.
+ */
+export const WAIVER_ID_ALIASES = {
+  'control-outside-home': ['raw-selection-control'],
+  'raw-selection-control': ['control-outside-home'],
+}
+
 const ALLOW_RULE_TOKEN = /^(?:basalt\/)?([a-z][a-z0-9-]*)(?=$|[\s,:—–])/
 const ALLOW_REASON_SEPARATOR = /^(?:—|–|-{1,2}|:)\s*/
 /** Shortest string accepted as a written reason — enough to exclude a stray separator. */
@@ -277,6 +298,7 @@ function parseThemeAllows(commentValue) {
  */
 function allowCovers(allow, ruleId) {
   if (allow.rules.includes(ruleId)) return true
+  if ((WAIVER_ID_ALIASES[ruleId] ?? []).some((alias) => allow.rules.includes(alias))) return true
   if (allow.scope === 'file') return false
   return allow.rules.length === 0 && allow.unknownRules.length === 0
 }
@@ -2233,10 +2255,63 @@ function collectBasaltImportMap(node, into, ownTree) {
  * caller resolves it against {@link collectBasaltImports}'s set afterwards.
  */
 function slotOwnerBinding(attr) {
-  if (attr === null || attr === undefined || attr.type !== 'JSXAttribute') return undefined
+  if (attr === null || attr === undefined) return undefined
+  if (attr.type === 'Property') return spreadSlotOwnerBinding(attr)
+  if (attr.type !== 'JSXAttribute') return undefined
   const name = attr.name?.name
   if (typeof name !== 'string' || !SLOT_ATTRS.has(name)) return undefined
   const owner = attr.parent
+  if (owner === null || owner === undefined || owner.type !== 'JSXOpeningElement') return undefined
+  if (!SLOT_OWNER_TAGS.has(jsxTagName(owner.name) ?? '')) return undefined
+  return jsxRootName(owner.name)
+}
+
+/**
+ * Everything that may sit between a slot Property and the `{...}` spreading it. A conditional slot
+ * is written as one of `{...obj}`, `{...(cond && { tabs })}` or `{...(cond ? { tabs } : {})}`, and
+ * nothing else reaches a spread without changing what the property MEANS.
+ */
+const SPREAD_WRAPPER_TYPES = new Set([
+  'ObjectExpression',
+  'LogicalExpression',
+  'ConditionalExpression',
+])
+
+/**
+ * {@link slotOwnerBinding} for a slot written as an OBJECT SPREAD — `<Section {...(cond && { tabs:
+ * <ViewTabs/> })}>` is the same home as `<Section tabs={<ViewTabs/>}>` and used to be invisible,
+ * because every control rule resolved homes off JSXAttribute nodes alone.
+ *
+ * That is not an exotic shape: under `exactOptionalPropertyTypes` a consumer CANNOT write
+ * `tabs={cond ? <X/> : undefined}` at all — `undefined` is not assignable to an optional prop — so
+ * the spread IS the idiom, and linewatch (a strict house-style repo) writes it three times in one
+ * element. `bound-control-outside-home` therefore reported a false positive on every strict
+ * consumer's conditional slot, waivable only by comment, on a rule scheduled to go `error`.
+ *
+ * The walk out is deliberately narrow ({@link SPREAD_WRAPPER_TYPES}): the property has to reach a
+ * `JSXSpreadAttribute` through object/`&&`/`?:` nodes only. A property inside a `.map()`, a call
+ * argument or a hoisted `const` is NOT claimed — that value is not written into this element, and
+ * treating it as a home would exempt controls that really have none.
+ *
+ * A computed key (`{ [k]: <ViewTabs/> }`) is not a slot: the name is not knowable statically, and
+ * guessing one direction or the other is exactly the "looks correct and is not" class the control
+ * rules exist to remove.
+ */
+function spreadSlotOwnerBinding(property) {
+  if (property.computed === true) return undefined
+  const name = property.key?.name ?? property.key?.value
+  if (typeof name !== 'string' || !SLOT_ATTRS.has(name)) return undefined
+  let current = property.parent
+  for (let depth = 0; current !== null && current !== undefined; depth++) {
+    if (depth > ANCESTRY_MAX_DEPTH) return undefined
+    if (current.type === 'JSXSpreadAttribute') break
+    if (!SPREAD_WRAPPER_TYPES.has(current.type)) return undefined
+    current = current.parent
+  }
+  if (current === null || current === undefined || current.type !== 'JSXSpreadAttribute') {
+    return undefined
+  }
+  const owner = current.parent
   if (owner === null || owner === undefined || owner.type !== 'JSXOpeningElement') return undefined
   if (!SLOT_OWNER_TAGS.has(jsxTagName(owner.name) ?? '')) return undefined
   return jsxRootName(owner.name)
@@ -2277,6 +2352,8 @@ function hostedInsideSlot(node) {
       return true
     }
     if (current.type === 'JSXAttribute' && SLOT_ATTRS.has(current.name?.name ?? '')) return false
+    // The object-spread spelling of the same boundary — see {@link spreadSlotOwnerBinding}.
+    if (slotOwnerBinding(current) !== undefined) return false
     current = current.parent
   }
   return false
@@ -2398,7 +2475,11 @@ function createSlotContext(context) {
     noteImport(node) {
       collectBasaltImportMap(node, homes, ownTree)
     },
-    /** Feed every JSXAttribute here — a slot attribute contributes its value's identifiers. */
+    /**
+     * Feed every JSXAttribute AND every ObjectExpression Property here — a slot attribute, in
+     * either spelling, contributes its value's identifiers. A Property's `value` is the expression
+     * directly (no JSX container to unwrap), which `unwrapExpressionContainer` passes through.
+     */
     note(attr) {
       const owner = slotOwnerBinding(attr)
       if (owner === undefined) return
@@ -2560,6 +2641,11 @@ const handRolledFilter = {
         collectMantineImports(node, mantineImports)
         slots.noteImport(node)
       },
+      // The object-spread spelling of a slot — see {@link spreadSlotOwnerBinding}. `slots.note`
+      // accepts either node shape; feeding both is what keeps ONE home model across the lanes.
+      Property(node) {
+        slots.note(node)
+      },
       JSXAttribute(node) {
         slots.note(node)
       },
@@ -2589,12 +2675,24 @@ const handRolledFilter = {
 
 // ── Rule 17 — control-outside-home ──────────────────────────────────────────────────────────────
 
+/**
+ * The one fact that decides a SHELL-LESS app, and the one neither control-home message used to
+ * state. `PageBar` does not require `BasaltShell`: without a shell it renders both rows in flow,
+ * sticky at the top of the document, with `title` + `icon` leading row 1 (see
+ * `src/shell/page-bar.tsx`'s own header). So a provider-only consumer — image-gen mounts
+ * `BasaltProvider` and a hand-rolled Tauri window header, no shell — has a reachable home, and the
+ * rule is satisfiable there. Both messages read the same sentence so the two lanes cannot drift.
+ */
+const SHELL_LESS_HOME_HINT =
+  'No shell? `PageBar` needs no `BasaltShell`: outside one it renders in flow, sticky, with its ' +
+  'own `title` — so its slots are a reachable home for a provider-only app.'
+
 const CONTROL_OUTSIDE_HOME_MESSAGE =
   'Raw Mantine selection control with no home — a filter, tab or action belongs in exactly one of ' +
   'the three homes (a PageBar / Section / WidgetHeader slot, or a form row), and a home is entered ' +
   'through a slot prop (law C1). A settings row, a form row (FormRow/FormGroup), an overlay ' +
   '(Modal/Drawer/Popover/Menu) and a form (@mantine/form) are the declared non-homes and never ' +
-  'report. (basalt/control-outside-home)'
+  `report. ${SHELL_LESS_HOME_HINT} (basalt/control-outside-home)`
 
 /**
  * The cross-file half of C1, and the one rule here that is openly a HEURISTIC: "this control has
@@ -2631,6 +2729,11 @@ const controlOutsideHome = {
         slots.noteImport(node)
         owner.noteImport(node)
         if ((node.source?.value ?? '') === '@mantine/form') importsMantineForm = true
+      },
+      // The object-spread spelling of a slot — see {@link spreadSlotOwnerBinding}. `slots.note`
+      // accepts either node shape; feeding both is what keeps ONE home model across the lanes.
+      Property(node) {
+        slots.note(node)
       },
       JSXAttribute(node) {
         slots.note(node)
@@ -2759,6 +2862,11 @@ const controlSizeLiteral = {
       ImportDeclaration(node) {
         collectMantineImports(node, mantineImports)
         slots.noteImport(node)
+      },
+      // The object-spread spelling of a slot — see {@link spreadSlotOwnerBinding}. `slots.note`
+      // accepts either node shape; feeding both is what keeps ONE home model across the lanes.
+      Property(node) {
+        slots.note(node)
       },
       JSXAttribute(node) {
         slots.note(node)
@@ -2905,6 +3013,11 @@ const pageBarBudget = {
         if (actions.value.elements.length <= SECTION_ACTION_BUDGET) return
         findings.push({ node: actions.attr, owner, message: PAGE_BAR_BUDGET_MESSAGES.section })
       },
+      // The object-spread spelling of a slot — see {@link spreadSlotOwnerBinding}. `slots.note`
+      // accepts either node shape; feeding both is what keeps ONE home model across the lanes.
+      Property(node) {
+        slots.note(node)
+      },
       JSXAttribute(node) {
         slots.note(node)
         if (node.name?.name !== 'variant') return
@@ -2957,11 +3070,55 @@ const pageBarBudget = {
 const PAGE_TITLE_HOST_TAGS = new Set(['Prose', 'ArticleLayout', 'Modal', 'Drawer'])
 
 const IN_BODY_PAGE_TITLE_MESSAGE =
-  'In-body page title — the page is named ONCE, by the breadcrumb (`staticData.title`) or by ' +
-  '`PageBar.title` in a shell-less app, and every section/card/table title is a `WidgetHeader` ' +
-  '(law C8). An `<Title order={1|2}>` in the body is a second, drifting name for the same page. ' +
-  'Prose / ArticleLayout / an overlay and anything under a `content/` path are document headings ' +
-  'and never report. (basalt/in-body-page-title)'
+  'In-body page title — the page is named ONCE: by the breadcrumb (`staticData.title`), by ' +
+  '`PageBar.title`, or by `<PageTitle>` on a shell-less surface (a route error, an auth gate, a ' +
+  'standalone screen — it renders the page name at the right step with no shell above it). Every ' +
+  'section/card/table title is a `WidgetHeader` (law C8). An `<Title order={1|2}>` spelling a name ' +
+  'out in the body is a second, drifting name for the same page. A Title rendering a VALUE — ' +
+  '`{doc.title}`, `{RANK_LABEL[rank]}` — never reports: that is data, not a name. Prose / ' +
+  'ArticleLayout / an overlay and anything under a `content/` path never report either. ' +
+  '(basalt/in-body-page-title)'
+
+/**
+ * Does this `<Title>` spell a name out, or render a value?
+ *
+ * The narrowing that made C8 satisfiable. The law is "one NAME per page", and a name is written in
+ * words — so the rule now needs static text before it reports. Two shapes were unanswerable without
+ * this, and between them they were 24 of rb's 27 lint errors across 12 files:
+ *
+ * 1. **A nav-less DETAIL route.** On `/knots/$slug` the breadcrumb names the PARENT list ("Learn /
+ *    Courses") and the document's own title has to live in the body. `PageTitle` does not help (it
+ *    is the shell-less surface primitive) and `PageBar.title` is a `string`. The law was
+ *    unsatisfiable and every consumer was going to paper it with the same waiver — which is the
+ *    rule losing, not the consumer.
+ * 2. **A card's hero VALUE.** `<Title order={2}>{RANK_LABEL[game.rank]}</Title>` is a number at the
+ *    display type step. There is no non-restyling fix: `order={3}` is a different step, `Text`
+ *    drops the type scale, and `component="p"` does not help because the rule keys on the tag name
+ *    and the `order` prop.
+ *
+ * Both are `{expression}` children, and by construction an expression is not a static page name.
+ * The false negative this accepts is narrow and named: `<Title order={1}>{t('page.users')}</Title>`
+ * is a page name and no longer reports. A LAUNDERED literal still does — `{'Users'}` and a
+ * substitution-free template are read as the text they are, so the escape is the expression, not
+ * the braces.
+ */
+function hasStaticTitleText(node, depth = 0) {
+  if (node === null || node === undefined || depth > 4) return false
+  for (const child of node.children ?? []) {
+    if (child.type === 'JSXText' && child.value.trim() !== '') return true
+    if (child.type === 'JSXElement' || child.type === 'JSXFragment') {
+      if (hasStaticTitleText(child, depth + 1)) return true
+      continue
+    }
+    if (child.type !== 'JSXExpressionContainer') continue
+    const expr = child.expression
+    if (typeof expr?.value === 'string' && expr.value.trim() !== '') return true
+    if (expr?.type === 'TemplateLiteral' && (expr.expressions?.length ?? 0) === 0) {
+      if ((expr.quasis ?? []).some((q) => (q.value?.cooked ?? '').trim() !== '')) return true
+    }
+  }
+  return false
+}
 
 /** The `order` prop as a number literal, or undefined. */
 function titleOrderOf(node) {
@@ -2994,6 +3151,8 @@ const inBodyPageTitle = {
         const order = titleOrderOf(node)
         if (order !== 1 && order !== 2) return
         if (hasAncestorTag(node, PAGE_TITLE_HOST_TAGS)) return
+        // A Title with no static text renders a value, not a name — see hasStaticTitleText.
+        if (!hasStaticTitleText(node.parent)) return
         if (hasThemeAllow(context, node, 'in-body-page-title')) return
         context.report({ node, message: IN_BODY_PAGE_TITLE_MESSAGE })
       },
@@ -3212,7 +3371,8 @@ const BOUND_CONTROL_OUTSIDE_HOME_MESSAGE =
   '— where the panel surface renders it as a row instead (law C1, docs/ASIDE-SPEC.md §3). ' +
   'SliderControl is not policed: it renders its own PanelRow and has no pill form. An overlay ' +
   '(Modal/Drawer/Popover/Menu), a settings row and a form row (FormRow/FormGroup) are the ' +
-  'declared non-homes and never report. (basalt/bound-control-outside-home)'
+  `declared non-homes and never report. ${SHELL_LESS_HOME_HINT} ` +
+  '(basalt/bound-control-outside-home)'
 
 /**
  * A BOUND basalt control that is in no home at all — ledger G5 (`docs/ASIDE-SPEC.md` §2), the half
@@ -3257,6 +3417,11 @@ const boundControlOutsideHome = {
         collectBasaltImportMap(node, controls, ownTree)
         slots.noteImport(node)
         owner.noteImport(node)
+      },
+      // The object-spread spelling of a slot — see {@link spreadSlotOwnerBinding}. `slots.note`
+      // accepts either node shape; feeding both is what keeps ONE home model across the lanes.
+      Property(node) {
+        slots.note(node)
       },
       JSXAttribute(node) {
         slots.note(node)
@@ -3588,12 +3753,11 @@ const FORMS_FIELD_KEY_MESSAGES = {
     'spread compiles unchanged and silently stops resetting. ' +
     '(basalt/forms-field-key)',
   deprecatedAlias:
-    'A spread `field(…)`. That is the @deprecated 1.27 alias and it still bundles `key` INTO the ' +
-    'returned object, so it still logs React 19\'s `A props object containing a "key" prop is ' +
-    'being spread into JSX` on every render — kept byte-identical on purpose, because a ' +
-    'deprecation is a schedule and not a silent behaviour change. Migrate to ' +
-    '`key={fieldKey(form, path)} {...inputProps(form, path)}` (packages/basalt-ui/MIGRATING.md ' +
-    'carries the row); the alias itself is removed in 1.29.0. ' +
+    'A spread `field(…)`. `field` NO LONGER EXISTS — it was the @deprecated 1.27 alias and 1.29.0 ' +
+    'removed it, so this import does not resolve and this file does not compile. Rewrite it as ' +
+    '`key={fieldKey(form, path)} {...inputProps(form, path)}` (two calls, never one object: a ' +
+    'spread `key` is a React 19 warning). Not autofixed: the honest edit rewrites the import as ' +
+    'well as the call site. packages/basalt-ui/MIGRATING.md carries the row. ' +
     '(basalt/forms-field-key)',
 }
 
@@ -3622,9 +3786,12 @@ function hasKeyAttribute(opening) {
  *   `basalt-ui/forms` import when it is not already there, so `--fix` produces working code rather
  *   than an unresolved identifier.
  * - `{...field(…)}` — the pre-migration call site. Reported ALWAYS, key or no key, and deliberately
- *   NOT autofixed: `field` still returns the bundle, so inserting a second `key` would be wrong,
- *   and the honest remedy is the rename `basalt/deprecated-export` already nudges. This arm is a
- *   pointer at the migration, one lane over from that rule's import-level nudge.
+ *   NOT autofixed: the honest edit rewrites the IMPORT as well as the call site, and a fixer that
+ *   only touched the spread would leave an unresolved `field` behind. This arm is the whole reason
+ *   the rule still knows the name — 1.29.0 deleted `field`, and `basalt/deprecated-export`'s table
+ *   went empty with it, so a consumer skipping 1.28.x reaches 1.29.x with a hard compile error and
+ *   nothing but tsc to explain it. The message says that in so many words; it used to describe the
+ *   alias as still shipping and still bundling `key`, which read as "nothing is broken yet".
  *
  * Provenance is the `basalt-ui/forms` specifier (plus a relative import inside basalt's own `src/`,
  * or the dogfood surface goes silent — the same gate `collectBasaltImports` uses), read through the

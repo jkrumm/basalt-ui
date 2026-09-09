@@ -378,7 +378,12 @@ export function StatCard({
     <Card
       className={cx(classNames?.root, className)}
       style={{
-        // Card inset = spacing xs / sm, matching every other basalt card. `overflow: hidden` clips
+        // Card inset = the `cardInsetY`/`cardInsetX` role tokens (11/13 at level 0 — the same
+        // `xs`/`sm` rungs this used to spell as `--mantine-spacing-*`), matching every other basalt
+        // card because `ChartCard` reads the SAME two vars. Below `sm` the horizontal one steps a
+        // rung down on its own: the responsive half of the ladder lives in `spaceMobileDecls`
+        // (`tokens/index.ts`), which is the only home that can reach an inline style like this one.
+        // `overflow: hidden` clips
         // the full-bleed sparkline to the card's rounded corners; an element's own `box-shadow`
         // renders outside its border box and is NOT clipped by its own `overflow`, so the
         // shadow-card ring is unaffected (verified — only an ANCESTOR's overflow clips a
@@ -390,7 +395,7 @@ export function StatCard({
         // body is `height: 100%` and the sparkline is `margin-top: auto`. The content is what states
         // the height now (~88-96px), and four cards in a `SimpleGrid` still match because a grid row
         // stretches its items.
-        padding: 'var(--mantine-spacing-xs) var(--mantine-spacing-sm)',
+        padding: 'var(--vx-space-card-inset-y, 0.6875rem) var(--vx-space-card-inset-x, 0.8125rem)',
         overflow: 'hidden',
         // Anchors the tone rail. Set unconditionally so a card's stacking context does not change
         // depending on whether it happens to have crossed a threshold this render.

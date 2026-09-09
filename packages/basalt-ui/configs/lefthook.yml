@@ -10,10 +10,16 @@
 # `lefthook dump`: declare `pre-commit.commands.oxfmt.run` (or `glob:`) in your file and the
 # preset's value is what runs — yours is discarded silently, with no warning. Only keys this preset
 # does NOT define merge in from yours. So:
-#   • `env:`, `exclude:`, `skip:` and any command name not used here — yours, they merge.
+#   • `env:`, `root:`, `exclude:`, `skip:` and any command name not used here — yours, they merge.
 #   • `run:` and `glob:` on a command below — NOT overridable. Do not try.
 # The sanctioned seams are therefore:
-#   • `BASALT_BIN` (below) — set it via `env:` to point the guard at a specific CLI.
+#   • `root:` — the ONE seam that fixes a monorepo, and the one nobody guesses. Lefthook runs every
+#     command at the REPO ROOT; `root:` moves one command into your package and rewrites
+#     `{staged_files}` relative to it. Every command below needs it when the app is not the repo
+#     root — otherwise `oxlint`/`oxfmt` run where there is no config and `check-theme` scans
+#     nothing. See the recipe at the bottom of this file.
+#   • `BASALT_CWD` / `BASALT_BIN` (below) — set them via `env:` to point the guard at a package and
+#     at a specific CLI. An alternative to `root:` for `check-theme` only.
 #   • `exclude:` — carve files out of a glob you cannot narrow.
 #   • a differently-named command of your own, plus `skip: true` on the one here you are replacing.
 #
@@ -62,23 +68,49 @@ pre-commit:
     # Without this, a consumer accumulates violations indefinitely while `check-theme` is never
     # invoked, and the kinds it never ran are indistinguishable from the kinds that found nothing.
     #
-    # `$BASALT_BIN` is the one sanctioned override seam here, because `run:` itself is not
-    # overridable (see the note at the top). It defaults to `bunx --no-install basalt-ui`:
-    #   • `--no-install` because a plain `bunx basalt-ui` in a repo where basalt is not resolvable
-    #     from the ROOT (bun's isolated linker puts it beside the package that depends on it)
-    #     silently downloads a DIFFERENT copy from npm and gates the commit with a version nobody
-    #     pinned. With the flag it fails loudly instead, which is the answer you can act on.
-    #   • point it at the local bin to fix that, exactly as the seeded check.yml does:
-    #       pre-commit:
-    #         commands:
-    #           check-theme:
-    #             env: { BASALT_BIN: ./packages/web/node_modules/.bin/basalt-ui }
+    # `$BASALT_CWD` and `$BASALT_BIN` are the sanctioned override seams here, because `run:` itself
+    # is not overridable (see the note at the top).
     #
     # Lefthook runs commands at the REPO ROOT, while in a monorepo the `basalt` config and the
-    # manifest live in a package below it — verified to produce `0 files scanned`, i.e. following
-    # this preset installed a gate that never gated. `check-theme` now relocates to the single
-    # workspace package carrying a basalt config and says so; with more than one, set BASALT_CWD
-    # in the same `env:` block to name the package:
-    #   env: { BASALT_CWD: apps/web }
+    # manifest live in a package below it. Since 1.29.0 the CLI resolves ONE way — `BASALT_CWD`,
+    # else the invocation cwd — and infers nothing from siblings or parents, so at the root it
+    # reads a directory with no basalt config and scans nothing. That used to be an unexplained
+    # `0 files scanned`; it now names this preset and the two fixes. `BASALT_CWD` is the fix that
+    # needs no other change, and this `run:` derives the bin from it so one setting covers both:
+    #   pre-commit:
+    #     commands:
+    #       check-theme:
+    #         env: { BASALT_CWD: apps/web }
+    #
+    # The default bin is `<BASALT_CWD>/node_modules/.bin/basalt-ui`, i.e. the local bin of the
+    # package the guard is being run FOR, and plain `node_modules/.bin/basalt-ui` when BASALT_CWD
+    # is unset. That replaces a `bunx --no-install basalt-ui` default which resolved to nothing at
+    # the root under bun's isolated linker — the linker puts basalt beside the package that depends
+    # on it, never at the root, so the default was broken in exactly the layout BASALT_CWD exists
+    # for. A missing bin now fails with the path it looked for instead of `bunx`'s resolver error.
+    # Override it (a hoisted install, a pinned copy) with `env: { BASALT_BIN: … }` in the same
+    # block; it wins outright.
     check-theme:
-      run: ${BASALT_BIN:-bunx --no-install basalt-ui} check-theme
+      run: ${BASALT_BIN:-${BASALT_CWD:+$BASALT_CWD/}node_modules/.bin/basalt-ui} check-theme
+
+# ── MONOREPO RECIPE (the app is NOT at the repo root) ────────────────────────────────────────────
+# `extends` merges the commands above, but NOT a working directory — so at the repo root `oxlint`
+# and `oxfmt` run where your `.oxlintrc.json` and your binaries are not, and `check-theme` scans a
+# directory with no basalt config. Add `root:` per command in YOUR root lefthook.yml — it merges,
+# because the preset deliberately does not define it:
+#
+#   # <repo>/lefthook.yml
+#   extends:
+#     - apps/web/node_modules/basalt-ui/configs/lefthook.yml
+#   pre-commit:
+#     commands:
+#       oxlint: { root: 'apps/web/' }
+#       oxfmt: { root: 'apps/web/' }
+#       check-theme: { root: 'apps/web/' }
+#
+# One mechanism for all three, and `check-theme` needs nothing else: `root:` moves the invocation
+# cwd, which is the only thing the CLI resolves from. `env: { BASALT_CWD: apps/web }` is the
+# equivalent for the guard alone — reach for it when the command has to keep running at the root.
+#
+# `basalt-ui doctor` reads the MERGED config (`lefthook dump`) rather than this file, so it is what
+# tells you whether the result actually gates.

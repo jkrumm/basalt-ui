@@ -9,7 +9,14 @@
   align-items: stretch;
   width: 100%;
   height: 100%;
-  background: var(--mantine-color-body);
+  /* NOT `--mantine-color-body`: that is the EXACT fill the scrollport above paints (both resolve
+   * to `--vx-surface-bg`), so the only thing separating the bar from the page was the region
+   * seam's 9%-alpha hairline — invisible on a phone, which is the "it could also have a border"
+   * report. `--vx-surface-panel` is a derived step above bg on both schemes and is the same
+   * relation `.sheet` already uses, so the edge is a real tonal one with no new token, no drop
+   * shadow (DESIGN-CORE pins depth to three tokens, none of them an upward-cast footer shadow)
+   * and no `withBorder` on the shell region (basalt-mantine.md forbids drawing that ourselves). */
+  background-color: var(--vx-surface-panel);
   -webkit-tap-highlight-color: transparent;
   /* NO padding-bottom / env() here: Mantine's own AppShell `.footer` rule already does
    * `height: calc(var(--app-shell-footer-height) + env(safe-area-inset-bottom))` +
@@ -90,7 +97,8 @@
   height: 8px;
   border-radius: 999px;
   background-color: var(--vx-accent);
-  box-shadow: 0 0 0 2px var(--mantine-color-body);
+  /* The halo punches the dot out of whatever the BAR paints, so it tracks `.bar`'s fill. */
+  box-shadow: 0 0 0 2px var(--vx-surface-panel);
 }
 
 /* `text-overflow: clip`, never an ellipsis — a truncated word with a "…" in a 72px tab reads as
@@ -106,10 +114,25 @@
 }
 
 /* The menu pops UP out of its tab and is configured `flip: false` — flipping a bottom-anchored
- * menu would put it under the footer. `menuMax` is what guarantees it fits (§2.2). */
+ * menu would put it under the footer, so something has to guarantee it fits. That something is the
+ * `max-height` below, not `menuMax` (§2.2 as it used to be written). */
 .menuDropdown {
-  padding: 4px;
-  max-height: min(60dvh, 360px);
+  padding: var(--vx-space-stack-xs);
+  /* THIS is what guarantees the menu never renders below the fold — not `menuMax`, which is only
+   * the menu-vs-sheet taste threshold (`mobile-nav-model.ts`'s module doc has the accounting).
+   *
+   * `min(62dvh, 440px)`, down from `min(72dvh, 560px)`. The old pair fit — but fitting was never
+   * the whole ask: MEASURED in headless Chrome at 390x844 the dropdown rendered 300x560 at
+   * y=221..781, i.e. 66% of the screen, which reads as a panel rather than as the "subtle, small
+   * menu" the More surface is supposed to be. At 440 the same phone gets 52%.
+   *
+   * The accounting, at both ends of the supported range. 390x844: headroom above the bar is 772px,
+   * 62dvh resolves to 523px, so the 440px term binds — 57% of the headroom. 320x568: headroom is
+   * ~496px, 62dvh resolves to 352px, so THAT term binds — 71% of the headroom. Either way the
+   * binding term is one of the two written here and it lands under the headroom, which is the
+   * property that matters: the cap, not `menuMax`, is the guarantee. Past it the dropdown scrolls
+   * inside itself instead of growing, so a long More list costs scroll, never fold. */
+  max-height: min(62dvh, 440px);
   overflow-y: auto;
   overscroll-behavior: contain;
 }
@@ -135,13 +158,16 @@
 /*
  * A disabled destination still RENDERS in the menu (§2.3 rule 11) — it just must not be reachable.
  * Mantine's `Menu.css` styles `[data-disabled]` with a dimmed color and nothing else, and the row
- * is polymorphic (`component="a"`), so the native `disabled` attribute does not apply either: with
- * no rule here the row stays fully clickable. `pointer-events: none` is the real guard; `menuRow`
- * carries a matching handler guard for the paths pointers do not cover (keyboard, synthetic
- * clicks, a consumer stylesheet that resets this).
+ * is polymorphic (`component="a"`), so the native `disabled` attribute does not apply either.
+ *
+ * `pointer-events: none` USED to be the guard here and is deliberately gone. It made the row
+ * swallow a tap with zero feedback — no `:active`, no press state, nothing — which on a phone is
+ * indistinguishable from a button that is simply broken, and "I tap and nothing happens" is
+ * literally the report this change answers. The guard is now entirely in the handlers (`menuRow`,
+ * `sheetRow`), which cover the pointer path and every path a pointer never takes; the row still
+ * depresses under a finger and still goes nowhere, which is the honest version of dead.
  */
 .menuItem[data-disabled] {
-  pointer-events: none;
   cursor: not-allowed;
 }
 
@@ -151,7 +177,10 @@
   padding-inline-start: calc(var(--mantine-spacing-md) + 12px) !important;
 }
 
-/* Overflow section heading inside the menu — inherits the theme's mono micro-label. */
+/* Overflow section heading, in the menu AND in the sheet — inherits the theme's mono micro-label.
+ * The inset matches the rows' own (`--vx-space-row-inset-x`) so the heading and the labels under
+ * it share one left edge; the vertical padding is asymmetric on purpose — a heading belongs to
+ * what follows it, so it sits closer to its own rows than to the section above. */
 .menuLabel {
   font-family: var(--basalt-font-mono);
   font-size: var(--vx-text-micro);
@@ -159,6 +188,65 @@
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--vx-faint);
+  padding: 6px var(--vx-space-row-inset-x) 2px;
+}
+
+/*
+ * The popover's SECTION RHYTHM — what replaced the single `Menu.Divider`, and it is SPACE, not a
+ * line.
+ *
+ * The Drawer's bulk was never its row height (40px is a WCAG 2.5.5 floor pinned by
+ * `theme/density-relations.test.ts`); it was the stack rhythm around the rows — a 12px section
+ * gap, 18px of Drawer padding and a header row. A popover with one hairline through the middle and
+ * no rhythm at all is the other extreme, so each group opens its own band instead.
+ *
+ * A `border-top: 1px solid var(--vx-divider)` here was the obvious move and is deliberately NOT
+ * what shipped: `theme/divider-law.test.ts` inventories every horizontal hairline in the package
+ * and classifies it as `between-rows`, `region-boundary` or (inside `content/**` only)
+ * `prose-typography` — and it says in as many words that a rule under a HEADING in the chrome lane
+ * is none of the three, and that the fix is to delete it and let the type scale and the space do
+ * the work. A mono uppercase micro-label at `--vx-faint` over its own band of air is already a
+ * section boundary; a line under it would be the second one.
+ *
+ * `:not(:first-child)` keeps the first group flush with the dropdown's own padding instead of
+ * opening a band under the top edge with nothing above it — the same "a separator separates"
+ * property the guarded `Menu.Divider` used to carry in JSX. Scoped to `.menuDropdown` because
+ * `.menuLabel` is also the SHEET's group heading (`sheetGroupLabel`), where each label is its
+ * group Stack's first child and the rhythm is the Drawer's own to draw.
+ *
+ * The band is 6/4, down from 8/8 — the second half of the same "still too big" verdict the
+ * `max-height` above answers, and the cheaper half. MEASURED per heading at 8/8: 8px margin + 8px
+ * padding-top + 2px padding-bottom + a 17px line = a 35px box, and there are FIVE of them in the
+ * shipped More surface — 175px, 28% of the whole dropdown spent on five words. 6/4 takes each
+ * banded heading to 29px and hands 24px back to the rows. It does NOT touch the row height (40px
+ * is the WCAG 2.5.5 floor named at the top of this comment) and it does not add the line the
+ * paragraph above rules out: this is the same space that argument asked to carry the boundary,
+ * spent tighter.
+ */
+.menuDropdown .menuLabel:not(:first-child) {
+  margin-top: 6px;
+  padding-top: 4px;
+}
+
+/* The same band, on the first row of the UNLABELLED tail (blocks + account + settings) — the one
+ * boundary in the More surface with no heading to open it. Margin rather than padding: a row is a
+ * touch target with a `min-height` floor and symmetric inset, so growing one side of it would make
+ * that row read as a different size from its siblings. */
+.menuDropdown .menuSectionStart {
+  margin-top: 8px;
+}
+
+/*
+ * A sticky heading over a scrolling dropdown must be OPAQUE. `theme/index.ts` documents the same
+ * fix for the Drawer's header: basalt dropped that background to `transparent`, which reads fine
+ * until rows actually scroll under it and then shows every one of them straight through the title.
+ * `--vx-surface-overlay` is the dropdown's own fill, so the heading matches the box it sits in.
+ */
+.menuDropdown .menuLabel {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background-color: var(--vx-surface-overlay);
 }
 
 /*

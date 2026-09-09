@@ -121,10 +121,13 @@ describe('MobileNav', () => {
   })
 
   /** §2.5 — re-tapping the slot you are already on is a scroll-to-top, not a redundant history
-   *  entry. `preventDefault` is what suppresses the router's own click handler. */
+   *  entry. `preventDefault` is what suppresses the router's own click handler — and it is now
+   *  conditional on the scroll having somewhere to go (test 16), so the target is scrolled down
+   *  before the tap. */
   test('2. re-tapping the ACTIVE slot scrolls the configured element and suppresses navigation', () => {
     const scrolled: ScrollToOptions[] = []
     const target = document.createElement('div')
+    target.scrollTop = 400
     target.scrollTo = ((options: ScrollToOptions) => {
       scrolled.push(options)
     }) as typeof target.scrollTo
@@ -182,14 +185,15 @@ describe('MobileNav', () => {
     expect(drawer()).toBeNull()
   })
 
-  /** Past `menuMax` the surface flips — the sheet is not deleted, it is confined to the case a
-   *  content-sized menu genuinely cannot hold. */
-  test('4. a 9-destination group slot opens the bottom sheet', async () => {
+  /** Past `menuMax` (12) the surface flips — the sheet is not deleted, it is confined to the case
+   *  a content-sized menu genuinely cannot hold. Nine rows used to land here and no longer does;
+   *  test 16b pins that half. */
+  test('4. a 13-destination group slot opens the bottom sheet', async () => {
     renderBar([
       {
         label: 'Reports',
         mobile: { tab: true },
-        items: Array.from({ length: 9 }, (_, i) => item(`row${i + 1}`)),
+        items: Array.from({ length: 13 }, (_, i) => item(`row${i + 1}`)),
       },
       { label: 'Main', items: [item('home')] },
     ])
@@ -381,7 +385,7 @@ describe('MobileNav', () => {
       {
         label: 'Reports',
         mobile: { tab: true },
-        items: Array.from({ length: 9 }, (_, i) => item(`row${i + 1}`)),
+        items: Array.from({ length: 13 }, (_, i) => item(`row${i + 1}`)),
       },
       { label: 'Main', items: [item('home')] },
     ])
@@ -415,7 +419,7 @@ describe('MobileNav', () => {
       {
         label: 'Reports',
         mobile: { tab: true },
-        items: Array.from({ length: 9 }, (_, i) => item(`row${i + 1}`)),
+        items: Array.from({ length: 13 }, (_, i) => item(`row${i + 1}`)),
       },
       { label: 'Main', items: [item('home')] },
     ])
@@ -439,6 +443,7 @@ describe('MobileNav', () => {
     const scrolled: ScrollToOptions[] = []
     const port = document.createElement('div')
     port.setAttribute(SCROLLPORT_ATTRIBUTE, '')
+    port.scrollTop = 400
     port.scrollTo = ((options: ScrollToOptions) => {
       scrolled.push(options)
     }) as typeof port.scrollTo
@@ -466,12 +471,14 @@ describe('MobileNav', () => {
     const scrolledConfigured: ScrollToOptions[] = []
     const scrolledPort: ScrollToOptions[] = []
     const configured = document.createElement('div')
+    configured.scrollTop = 400
     configured.scrollTo = ((options: ScrollToOptions) => {
       scrolledConfigured.push(options)
     }) as typeof configured.scrollTo
 
     const port = document.createElement('div')
     port.setAttribute(SCROLLPORT_ATTRIBUTE, '')
+    port.scrollTop = 400
     port.scrollTo = ((options: ScrollToOptions) => {
       scrolledPort.push(options)
     }) as typeof port.scrollTo
@@ -503,6 +510,8 @@ describe('MobileNav', () => {
   test('15. with neither getScrollElement nor a declared scrollport, falls back to document.scrollingElement', () => {
     const scrolled: ScrollToOptions[] = []
     const original = document.documentElement.scrollTo
+    const originalTop = document.documentElement.scrollTop
+    document.documentElement.scrollTop = 400
     document.documentElement.scrollTo = ((options: ScrollToOptions) => {
       scrolled.push(options)
     }) as typeof document.documentElement.scrollTo
@@ -521,7 +530,241 @@ describe('MobileNav', () => {
       expect(scrolled[0]?.top).toBe(0)
     } finally {
       document.documentElement.scrollTo = original
+      document.documentElement.scrollTop = originalTop
     }
+  })
+
+  /**
+   * THE DEAD TAP, ENCODED. `scrollToTop` used to scroll the declared scrollport unconditionally
+   * while the caller had already called `preventDefault` — so on every page whose real scroller is
+   * an INNER element (a thread pane, a `Table.ScrollContainer`, an article body) `AppShell.Main`'s
+   * own `scrollTop` was 0, the scroll moved nothing, and the navigation was gone too. Nothing at
+   * all happened, on exactly the pages with the most to scroll.
+   *
+   * The law now: attempt the scroll FIRST, suppress the navigation only if something moved. With
+   * every scroller at rest the tap falls through to the router — a redundant same-route navigation
+   * is strictly better than silence.
+   */
+  test('16. an active retap with nothing scrolled lets the navigation through', () => {
+    const port = document.createElement('div')
+    port.setAttribute(SCROLLPORT_ATTRIBUTE, '')
+    let portScrolls = 0
+    port.scrollTo = (() => {
+      portScrolls += 1
+    }) as typeof port.scrollTo
+    document.body.appendChild(port)
+
+    try {
+      renderBar([
+        {
+          label: 'Main',
+          items: [item('home', { mobile: 'tab', active: true, Anchor: testAnchor('anchor-home') })],
+        },
+      ])
+
+      const event = clickCancelable(screen.getByTestId('anchor-home'))
+      expect(event.defaultPrevented).toBe(false)
+      expect(portScrolls).toBe(0)
+    } finally {
+      port.remove()
+    }
+  })
+
+  /** The other half: the declared scrollport is at rest, but an inner element inside it is not —
+   *  that inner one is the surface the user is looking at, so it is what scrolls, and the
+   *  navigation IS suppressed because something really moved. */
+  test('16a. an active retap finds the inner scroller when the scrollport itself is at rest', () => {
+    const port = document.createElement('div')
+    port.setAttribute(SCROLLPORT_ATTRIBUTE, '')
+    let portScrolls = 0
+    port.scrollTo = (() => {
+      portScrolls += 1
+    }) as typeof port.scrollTo
+
+    const outer = document.createElement('div')
+    const inner = document.createElement('div')
+    outer.appendChild(inner)
+    port.appendChild(outer)
+    document.body.appendChild(port)
+    // Both are scrolled; the DEEPER one wins (a page scroller holding a thread pane means the pane
+    // is what the user is reading).
+    outer.scrollTop = 200
+    inner.scrollTop = 300
+    const scrolled: string[] = []
+    outer.scrollTo = (() => scrolled.push('outer')) as typeof outer.scrollTo
+    inner.scrollTo = (() => scrolled.push('inner')) as typeof inner.scrollTo
+
+    try {
+      renderBar([
+        {
+          label: 'Main',
+          items: [item('home', { mobile: 'tab', active: true, Anchor: testAnchor('anchor-home') })],
+        },
+      ])
+
+      const event = clickCancelable(screen.getByTestId('anchor-home'))
+      expect(event.defaultPrevented).toBe(true)
+      expect(scrolled).toEqual(['inner'])
+      expect(portScrolls).toBe(0)
+    } finally {
+      port.remove()
+    }
+  })
+
+  /**
+   * COMPLAINT 2, ENCODED: a nine-row More surface is a POPOVER. At `menuMax` 6 this raised a full
+   * bottom Drawer — "a big door on mobile" — for a row count a content-sized menu holds with room
+   * to spare. What keeps the menu above the fold is its own `max-height`, at any row count
+   * (`app-mobile-nav.module.css`), so the constant was free to move.
+   */
+  test('16b. a 9-destination group slot opens a MENU, not the big door', async () => {
+    renderBar([
+      {
+        label: 'Reports',
+        mobile: { tab: true },
+        items: Array.from({ length: 9 }, (_, i) => item(`row${i + 1}`)),
+      },
+      { label: 'Main', items: [item('home')] },
+    ])
+
+    fireEvent.click(screen.getByLabelText('Reports'))
+    await waitFor(() => expect(menu()).not.toBeNull())
+    expect(drawer()).toBeNull()
+    expect(document.querySelectorAll('.mantine-Menu-item')).toHaveLength(9)
+  })
+
+  /**
+   * §2.9 — the sheet's half of the disabled guard, which it did not have. `menuRow` guarded its
+   * handler and `sheetRow` did not, so a disabled destination in a SHEET fired the consumer's
+   * navigation handler and dismissed the sheet on top of it. Both now go through one `onActivate`.
+   * The second assertion is the one that makes it a guard rather than a no-op: the enabled sibling
+   * still fires and still closes.
+   */
+  test('17. a disabled sheet row fires nothing and does not dismiss the sheet', async () => {
+    let disabledFired = 0
+    let enabledFired = 0
+    renderBar([
+      {
+        label: 'Reports',
+        mobile: { tab: true },
+        items: [
+          ...Array.from({ length: 11 }, (_, i) => item(`row${i + 1}`)),
+          item('weekly', {
+            disabled: true,
+            onClick: () => {
+              disabledFired += 1
+            },
+          }),
+          item('daily', {
+            onClick: () => {
+              enabledFired += 1
+            },
+          }),
+        ],
+      },
+      { label: 'Main', items: [item('home')] },
+    ])
+
+    fireEvent.click(screen.getByLabelText('Reports'))
+    await waitFor(() => expect(drawer()).not.toBeNull())
+
+    const sheetRows = Array.from(
+      document.querySelectorAll('.mantine-Drawer-content .mantine-NavLink-root'),
+    )
+    const disabled = sheetRows.find((row) => row.textContent?.includes('Weekly'))
+    const enabled = sheetRows.find((row) => row.textContent?.includes('Daily'))
+    if (!disabled || !enabled) throw new Error('both rows must render — rule 11 keeps them both')
+
+    fireEvent.click(disabled)
+    expect(disabledFired).toBe(0)
+    // Still open: a dead row must not read as "it did something".
+    expect(drawer()).not.toBeNull()
+
+    fireEvent.click(enabled)
+    expect(enabledFired).toBe(1)
+    await waitForGone('drawer')
+  })
+
+  /**
+   * The sheet trigger is a DISCLOSURE, like the menu one. It used to be `setOpenKey(slot.key)` — a
+   * setter, not a toggle — so re-tapping an open sheet's own tab did nothing at all, while the menu
+   * path got Mantine's toggle for free. And with no `Menu.Target` there is no `withRoles` clone, so
+   * the trigger announced nothing either: `aria-haspopup`/`aria-expanded` are set by hand on
+   * exactly this path (§2.9).
+   */
+  test('18. the sheet tab toggles and carries its own dialog ARIA', async () => {
+    renderBar([
+      {
+        label: 'Reports',
+        mobile: { tab: true },
+        items: Array.from({ length: 13 }, (_, i) => item(`row${i + 1}`)),
+      },
+      { label: 'Main', items: [item('home')] },
+    ])
+
+    const trigger = screen.getByLabelText('Reports')
+    expect(trigger.getAttribute('aria-haspopup')).toBe('dialog')
+    expect(trigger.getAttribute('aria-expanded')).toBe('false')
+
+    fireEvent.click(trigger)
+    await waitFor(() => expect(drawer()).not.toBeNull())
+    expect(trigger.getAttribute('aria-expanded')).toBe('true')
+
+    fireEvent.click(trigger)
+    await waitForGone('drawer')
+  })
+
+  /** The MENU trigger keeps Mantine's clone and must not be doubled up by the hand-set pair —
+   *  `aria-haspopup` reads `menu` there, never `dialog`. */
+  test('18a. the menu tab keeps the withRoles clone Mantine puts on a Menu.Target', async () => {
+    renderBar([
+      { label: 'Reports', mobile: { tab: true }, items: [item('daily'), item('weekly')] },
+      { label: 'Main', items: [item('home')] },
+    ])
+
+    const trigger = screen.getByLabelText('Reports')
+    expect(trigger.getAttribute('aria-haspopup')).toBe('menu')
+    fireEvent.click(trigger)
+    await waitFor(() => expect(menu()).not.toBeNull())
+    expect(trigger.getAttribute('aria-expanded')).toBe('true')
+  })
+
+  /**
+   * COMPLAINT 2's other half — the popover got the Drawer's section RHYTHM without its bulk. The
+   * `Menu.Divider` node is gone: each group's heading draws its own top rule in CSS, and the
+   * unlabelled tail's first row carries `.menuSectionStart`. Class hashes are unavailable under
+   * `bun test` (file header), so what is assertable here is the DOM shape — no divider node, and a
+   * heading per group — not the pixels, which are the layout suite's job.
+   */
+  test('19. the More popover uses per-group headings instead of a Menu.Divider node', async () => {
+    const model = projectMobileNav(
+      [
+        {
+          label: 'Main',
+          items: [item('home', { mobile: 'tab' }), item('activity', { mobile: 'tab' })],
+        },
+        { label: 'Admin', items: [item('settings'), item('billing')] },
+      ],
+      { extraMoreRows: 1 },
+    )
+    render(
+      <MantineProvider>
+        <MobileNav
+          model={model}
+          settingsMenuItems={[{ key: 'theme', label: 'Theme', onClick: () => {} }]}
+        />
+      </MantineProvider>,
+    )
+
+    fireEvent.click(screen.getByLabelText('More'))
+    await waitFor(() => expect(menu()).not.toBeNull())
+
+    const dropdown = menu()
+    if (!dropdown) throw new Error('unreachable')
+    expect(dropdown.querySelectorAll('.mantine-Menu-divider')).toHaveLength(0)
+    expect(dropdown.querySelectorAll('.mantine-Menu-label')).toHaveLength(1)
+    // The tail still renders — losing the divider must not lose the rows it used to sit above.
+    expect(dropdown.textContent).toContain('Theme')
   })
 })
 

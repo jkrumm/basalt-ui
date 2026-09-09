@@ -291,10 +291,6 @@ function collapseStore(key: string): () => readonly [boolean, (next: boolean) =>
   return store
 }
 
-// The shared inset for the shell padding and the header's inline padding, so the breadcrumb's
-// left edge and the global actions' right edge land on the card column's edges.
-const SHELL_INSET = 'sm' as const
-
 /**
  * The shell's two page-level regions are providers, and both wrap the frame rather than living
  * inside it: `PageBarProvider` owns the header portal and the single-kebab claim, `AsideProvider`
@@ -334,6 +330,30 @@ function ShellFrame({
   // (controls, the search trigger/avatar, nav labels) already track density, so a fixed literal
   // container squeezes progressively worse as density rises.
   const { step } = useBasaltSpacing()
+  // THE PAGE GUTTER, responsive — the shared inset for `AppShell`'s own padding and the header's
+  // inline padding, so the breadcrumb's left edge and the global actions' right edge land on the
+  // card column's edges. It used to be the literal `'sm'` spacing key, which is 13px at EVERY
+  // width: 13 on a 360px phone and 13 on a 2560px monitor, with no token behind it. Now it is the
+  // `appShellInset` / `appShellInsetMobile` pair (see their entries in `tokens/palette.ts`).
+  //
+  // On a 390px phone that is 8 a side instead of 13 — 10px more line width, and 10px less vertical
+  // chrome, since `padding` is Main's vertical inset too. From `sm` up it is 20, which is the x the
+  // sidebar's nav icon column already sits at, so the brand mark, the nav icons and the page's
+  // first column all start on one vertical line.
+  //
+  // VERIFIED against the installed Mantine 9.3 source, because both props take the object by a
+  // DIFFERENT road and both had to be checked:
+  //   - `AppShell padding`: `AppShellMediaStyles/assign-padding-variables.mjs` puts `base` in the
+  //     `:root` rule and every other key in `get-variables.mjs`'s MIN-width block
+  //     (`(min-width: <breakpoint>)`), so the pair is mobile-first and needs no max-width twin.
+  //   - `AppShell.Header px`: a Box style prop, `Box/style-props/parse-style-props.mjs` — same
+  //     `{ base, … }` shape, same `(min-width: theme.breakpoints.sm)` query, emitted on a generated
+  //     class. Both resolve `sm` from `theme.breakpoints`, so the two gutters step at one width.
+  // A NUMBER on either road is CONVERTED by Mantine's `rem()` — 8 becomes
+  // `calc(0.5rem * var(--mantine-scale))` — rather than looked up, which is exactly why these are
+  // numbers: a spacing KEY resolves to `var(--mantine-spacing-sm)` and hands the gutter back to
+  // Mantine's own scale, which is where the 13px came from.
+  const inset = { base: step.appShellInsetMobile, sm: step.appShellInset }
   const aside = useAsideRegion()
   const [storedCollapsed, setStoredCollapsed] = collapseStore(storageKey)()
   // Controlled/uncontrolled seam (item 19): an explicit `collapsed` prop overrides the internal
@@ -410,7 +430,7 @@ function ShellFrame({
       // A plain number, NOT a `calc(... + env(safe-area-inset-bottom))` string: Mantine's own
       // `.footer` rule already adds the inset to both the height and the padding (§2.7).
       footer={{ height: { base: step.mobileNavBarHeight, sm: 0 } }}
-      padding={SHELL_INSET}
+      padding={inset}
       // `mainClasses.shell` is not decoration — see its rule for why the root has to establish a
       // block formatting context now that Main is offset with margins.
       className={cx(mainClasses.shell, className)}
@@ -419,7 +439,7 @@ function ShellFrame({
       {/* Region seams (docs/DESIGN-SPEC.md §5, §8 #12): Mantine's `[data-with-border]` painted in
        * `--vx-divider` by the theme's `AppShell.extend({ vars })`. No shell module draws a region
        * edge; never opt a section back out of its border here. */}
-      <AppShell.Header px={SHELL_INSET}>
+      <AppShell.Header px={inset}>
         <div className={headerClasses.bar}>
           {/* The header's LEADING ZONE — exactly `--app-shell-navbar-offset` wide, so its trailing
            * edge lands on the sidebar|main seam and the breadcrumb after it starts on Main's own

@@ -1,14 +1,33 @@
 /*
  * WidgetGrid's column law, in CSS (law C9 — a responsive swap belongs to the control, never to a JS
- * media query). The two literals below are Mantine's own `--mantine-breakpoint-sm` (48em) and
- * `--mantine-breakpoint-lg` (75em); a `@media` condition is resolved before custom properties
- * exist, so the number has to be written — same standing constraint `content/article-layout.
- * module.css` documents.
+ * media query).
  *
- * The COUNTS are custom properties instead, set once per instance by the component: three
- * hand-written `repeat()` blocks would have to enumerate every `cols` value, and the whole point of
- * this primitive is that a consumer states one desktop number and basalt owns the rest.
+ * **The law keys on the CONTAINER, not the viewport**, for the reason `stat-group.module.css`'s
+ * header states in full: the shell moves the available width without moving the viewport (a
+ * `PageAside` claiming 300px, the sidebar collapsing to its 48px rail, a consumer's split layout),
+ * and `@media` is blind to all of it. `.container` — rendered by `WidgetGrid` around the grid —
+ * is what makes the queries answerable and is always the box the grid actually fills; a query with
+ * no container resolves to false, so leaning on the shell to establish one would have pinned every
+ * non-shell consumer to a single column.
+ *
+ * `.item`'s span law is in the same blocks for the same reason: `grid-column: span <n>` must be
+ * clamped against the count the ROOT is actually rendering, and the root's count now follows the
+ * container. A span resolved against the viewport while the tracks follow the container is exactly
+ * the phantom-track defect `WidgetGrid.Item`'s context clamp exists to prevent.
+ *
+ * The literals: px in `@container`, Mantine's own `em` in the `@supports not` fallback — same
+ * boundary (768px / 1200px at the 16px initial font size), but `em` inside a `@container`
+ * condition resolves against the CONTAINER's font-size, so px is the only spelling that cannot
+ * drift. A condition cannot read a custom property either way, so the numbers are written; the
+ * COUNTS are custom properties, set once per instance by the component — three hand-written
+ * `repeat()` blocks would have to enumerate every `cols` value, and the whole point of this
+ * primitive is that a consumer states one desktop number and basalt owns the rest.
  */
+
+.container {
+  container-type: inline-size;
+  container-name: basalt-widget-grid;
+}
 
 .root {
   display: grid;
@@ -16,18 +35,6 @@
      phone is two unreadable charts. */
   grid-template-columns: repeat(1, minmax(0, 1fr));
   gap: var(--vx-space-stack-md);
-}
-
-@media (min-width: 48em) {
-  .root {
-    grid-template-columns: repeat(var(--basalt-widget-grid-cols-sm), minmax(0, 1fr));
-  }
-}
-
-@media (min-width: 75em) {
-  .root {
-    grid-template-columns: repeat(var(--basalt-widget-grid-cols-lg), minmax(0, 1fr));
-  }
 }
 
 /*
@@ -40,14 +47,50 @@
   min-width: 0;
 }
 
-@media (min-width: 48em) {
+@container basalt-widget-grid (min-width: 768px) {
+  .root {
+    grid-template-columns: repeat(var(--basalt-widget-grid-cols-sm), minmax(0, 1fr));
+  }
+
   .item {
     grid-column: span var(--basalt-widget-grid-span-sm);
   }
 }
 
-@media (min-width: 75em) {
+@container basalt-widget-grid (min-width: 1200px) {
+  .root {
+    grid-template-columns: repeat(var(--basalt-widget-grid-cols-lg), minmax(0, 1fr));
+  }
+
   .item {
     grid-column: span var(--basalt-widget-grid-span-lg);
+  }
+}
+
+/*
+ * The pre-container-query fallback — Safari < 16, Chrome < 106, Firefox < 110. Verbatim the law
+ * this file shipped before, keyed on the viewport, and reachable ONLY where `@container` is not: a
+ * browser that cannot parse `container-type` cannot parse the blocks above either, so the two sets
+ * are never live at once.
+ */
+@supports not (container-type: inline-size) {
+  @media (min-width: 48em) {
+    .root {
+      grid-template-columns: repeat(var(--basalt-widget-grid-cols-sm), minmax(0, 1fr));
+    }
+
+    .item {
+      grid-column: span var(--basalt-widget-grid-span-sm);
+    }
+  }
+
+  @media (min-width: 75em) {
+    .root {
+      grid-template-columns: repeat(var(--basalt-widget-grid-cols-lg), minmax(0, 1fr));
+    }
+
+    .item {
+      grid-column: span var(--basalt-widget-grid-span-lg);
+    }
   }
 }

@@ -178,32 +178,49 @@ describe('projectMobileNav', () => {
     expect(slot.item.key).toBe('settings')
   })
 
-  /** §2.2 — the same section, twice, differing only in how many rows it holds. */
-  test('6. a group slot of 4 destinations is a menu; of 9 it is a sheet', () => {
+  /**
+   * §2.2 — the same section, three times, differing only in how many rows it holds.
+   *
+   * NINE ROWS IS THE ONE THAT MOVED. It was a sheet under `menuMax` 6, which is the "big door on
+   * mobile" report: a realistic nav raised a full Drawer for a list a popover holds comfortably.
+   * The popover's own `max-height` is what keeps it above the fold at any count
+   * (`app-mobile-nav.module.css`), so the constant is free to sit where taste puts it.
+   */
+  test('6. group slots of 4 and 9 destinations are menus; 13 is a sheet', () => {
     const small = projectMobileNav([{ label: 'Reports', mobile: { tab: true }, items: items(4) }])
-    const large = projectMobileNav([{ label: 'Reports', mobile: { tab: true }, items: items(9) }])
+    const mid = projectMobileNav([{ label: 'Reports', mobile: { tab: true }, items: items(9) }])
+    const large = projectMobileNav([{ label: 'Reports', mobile: { tab: true }, items: items(13) }])
 
     expect(slotAt(small, 0).kind).toBe('menu')
+    expect(slotAt(mid, 0).kind).toBe('menu')
     expect(slotAt(large, 0).kind).toBe('sheet')
   })
 
-  /** The threshold is arithmetic (6 rows x 44px + 8px fits above a 56px bar on a 568px viewport),
-   *  so the boundary itself is worth pinning — off-by-one here renders a menu below the fold. */
-  test('7. menuMax is inclusive: exactly menuMax rows is a menu, one more is a sheet', () => {
-    const atLimit = projectMobileNav([{ label: 'Reports', mobile: { tab: true }, items: items(6) }])
+  /** The boundary itself, at the 12 the default now sits on — an off-by-one here is a surface a
+   *  consumer never asked for, in either direction. */
+  test('7. menuMax is inclusive: exactly menuMax (12) rows is a menu, one more is a sheet', () => {
+    const atLimit = projectMobileNav([
+      { label: 'Reports', mobile: { tab: true }, items: items(12) },
+    ])
     const overLimit = projectMobileNav([
-      { label: 'Reports', mobile: { tab: true }, items: items(7) },
+      { label: 'Reports', mobile: { tab: true }, items: items(13) },
     ])
 
     expect(slotAt(atLimit, 0).kind).toBe('menu')
     expect(slotAt(overLimit, 0).kind).toBe('sheet')
 
-    // And the threshold is a knob, not a constant: lowering it moves the same six rows to a sheet.
+    // And the threshold is a knob, not a constant, in BOTH directions: an app that wants the sheet
+    // back at six rows says so, and one that never wants a sheet raises it past its own row count.
     const tightened = projectMobileNav(
       [{ label: 'Reports', mobile: { tab: true }, items: items(6) }],
       { config: { menuMax: 5 } },
     )
     expect(slotAt(tightened, 0).kind).toBe('sheet')
+    const loosened = projectMobileNav(
+      [{ label: 'Reports', mobile: { tab: true }, items: items(13) }],
+      { config: { menuMax: 30 } },
+    )
+    expect(slotAt(loosened, 0).kind).toBe('menu')
   })
 
   /**
@@ -211,8 +228,8 @@ describe('projectMobileNav', () => {
    * full-height sidebar drawer is gone, so they must count toward the menu-vs-sheet threshold.
    * The model cannot see them (they are Mantine chrome, not `SidebarItem`s); the shell counts.
    */
-  test('8. extraMoreRows push a six-destination More over the threshold into a sheet', () => {
-    const sections = [{ label: 'Main', items: [item('a', { mobile: 'tab' }), ...items(6)] }]
+  test('8. extraMoreRows push a twelve-destination More over the threshold into a sheet', () => {
+    const sections = [{ label: 'Main', items: [item('a', { mobile: 'tab' }), ...items(12)] }]
 
     expect(slotAt(projectMobileNav(sections), 1).kind).toBe('menu')
     expect(slotAt(projectMobileNav(sections, { extraMoreRows: 1 }), 1).kind).toBe('sheet')
@@ -384,6 +401,58 @@ describe('projectMobileNav', () => {
   })
 
   /**
+   * The two CARDINALITY-COLLAPSE paths (§2.2: a surface holding one destination IS that
+   * destination) read the same activeness predicate a `link` slot anywhere else does —
+   * `isActiveDestination`, the destination's OWN key, never the `hasActiveDestination` rollup over
+   * children the tap cannot reach. Both used the rollup; both now state the law locally.
+   *
+   * The two predicates coincide TODAY, and that is worth writing down rather than dressing this up
+   * as a bug fix: both collapses require `countRows === 1`, and `countRows` counts descendants, so
+   * `only` is childless whenever either branch is taken (a section whose one destination has a
+   * nested child projects a two-row MENU, asserted below). What changed is that each slot's
+   * activeness is now derived from the same set its `covered` is — the property rule 12 rests on —
+   * instead of from a non-local invariant about what `rows === 1` implies. Widen the collapse and
+   * the rollup would have lit a tab whose tap goes somewhere else, silently.
+   */
+  test('12d. both cardinality collapses read the destination itself, not the rollup', () => {
+    const section = (active: boolean) => [
+      { label: 'Main', items: [item('a', { mobile: 'tab' as const })] },
+      { label: 'Admin', mobile: { tab: true as const }, items: [item('settings', { active })] },
+    ]
+    expect(slotAt(projectMobileNav(section(true)), 1).active).toBe(true)
+    expect(slotAt(projectMobileNav(section(false)), 1).active).toBe(false)
+
+    // The More collapse (rule 10): one leftover destination is a link slot, not a More surface.
+    const more = (active: boolean) => [
+      {
+        label: 'Main',
+        items: [
+          item('a', { mobile: 'tab' as const }),
+          item('b', { mobile: 'tab' as const }),
+          item('leftover', { active }),
+        ],
+      },
+    ]
+    const collapsed = slotAt(projectMobileNav(more(true)), 2)
+    expect(collapsed.kind).toBe('link')
+    expect(collapsed.key).toBe('leftover')
+    expect(collapsed.active).toBe(true)
+    expect(slotAt(projectMobileNav(more(false)), 2).active).toBe(false)
+
+    // The precondition the equivalence rests on: a nested child makes it two rows, so the collapse
+    // never fires on a destination whose subtree the rollup could disagree about.
+    const nested = projectMobileNav([
+      { label: 'Main', items: [item('a', { mobile: 'tab' })] },
+      {
+        label: 'Admin',
+        mobile: { tab: true },
+        items: [item('settings', { children: [item('billing', { active: true })] })],
+      },
+    ])
+    expect(slotAt(nested, 1).kind).toBe('menu')
+  })
+
+  /**
    * The invariant, stated once over every shape this model produces: AT MOST ONE slot is active.
    * `useNav` already guarantees exactly one active DESTINATION (`use-nav.test.tsx`); this is the
    * projection's half of the same law, and it is what a rendered bar actually shows.
@@ -513,8 +582,8 @@ describe('blockRowCount', () => {
   })
 
   /** The threshold this number exists to move, asserted end to end against the projection. */
-  test('block rows push a six-destination More over the threshold into a sheet', () => {
-    const sections = [{ label: 'Main', items: [item('a', { mobile: 'tab' }), ...items(6)] }]
+  test('block rows push a twelve-destination More over the threshold into a sheet', () => {
+    const sections = [{ label: 'Main', items: [item('a', { mobile: 'tab' }), ...items(12)] }]
     expect(slotAt(projectMobileNav(sections), 1).kind).toBe('menu')
     expect(
       slotAt(projectMobileNav(sections, { extraMoreRows: blockRowCount([list()]) }), 1).kind,

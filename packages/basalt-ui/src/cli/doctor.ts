@@ -4,7 +4,7 @@
  * managed-file manifest path) back from `./index`, this package's shared CLI helpers.
  */
 import { existsSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { relative, resolve } from 'node:path'
 
 import type { BasaltConfig } from './index'
 import {
@@ -19,7 +19,10 @@ import {
   parseJsonc,
   readBasaltConfig,
   readIfExists,
+  readManifest,
   resolveProjectDir,
+  resolveRoots,
+  scannableFiles,
   shippedAssetPath,
 } from './index'
 import { findManifestAbove, parentInstallAdvice } from './sync'
@@ -102,16 +105,22 @@ function resolveAiMajorSkewReason(cfg: BasaltConfig): {
  * Check a consumer repo's basalt integration and print a pass/warn report.
  *
  * Narrowed to what a single-directory-scoped run can actually verify — no workspace-glob walking,
- * no ascend/descend project discovery (see {@link resolveProjectDir}). Four checks, numbered in
+ * no ascend/descend project discovery (see {@link resolveProjectDir}). Six checks, numbered in
  * the order they run and print:
  *
  * Hard failures (exit non-zero):
  *   1. `.basalt/manifest.json` exists (`basalt-ui init` was run).
- *   2. `oxlint-preset` ("rules in sync"): the consumer's `.oxlintrc.json` extends the shipped
+ *   2. `install-parity`: basalt-ui resolves, doctor prints WHERE and at what version, and that
+ *      version agrees with the manifest's `basaltVersion`.
+ *   3. `guard-scan`: `check-theme` would scan more than zero files, sharing `scannableFiles` so the
+ *      two cannot disagree. Both RESTORED in 1.30.0 after four minors gone with no MIGRATING row —
+ *      README § `doctor` carries what their absence cost (a no-op CI gate, a green guard scanning
+ *      nothing, and two basalt-WRITTEN docs describing output the CLI no longer produced).
+ *   4. `oxlint-preset` ("rules in sync"): the consumer's `.oxlintrc.json` extends the shipped
  *      preset AND that path resolves. `init` keeps an existing config, so the framework's whole
  *      lint half can be silently off — one repo carried six real violations invisibly across five
  *      minors this way.
- *   4. `ai-major-parity`: within THIS package.json, `dependencies`/`devDependencies`/
+ *   6. `ai-major-parity`: within THIS package.json, `dependencies`/`devDependencies`/
  *      `peerDependencies` agree on the `ai` package's major. `basalt/ai-sdk-major` (the oxlint
  *      plugin rule) already catches this per linted FILE against its nearest package.json; this
  *      check exists for the shape a lint run cannot see — a package whose own manifest asks its
@@ -121,7 +130,7 @@ function resolveAiMajorSkewReason(cfg: BasaltConfig): {
  *      already agree warns that the exemption is stale.
  *
  * Warning (non-fatal):
- *   3. `lefthook-preset` ("lefthook wired"): a pre-commit command runs `check-theme`, read from
+ *   5. `lefthook-preset` ("lefthook wired"): a pre-commit command runs `check-theme`, read from
  *      `lefthook dump --format json` (resolves `extends`/`include`/`root:` the way lefthook itself
  *      does — see {@link inspectLefthookGate}). No lefthook config at all is a pass (a consumer may
  *      gate elsewhere); a config that resolves but wires no guard command warns; a config lefthook
@@ -189,7 +198,39 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
 
   const install = findBasaltInstall(cwd)
 
-  // ── Hard check 2: the consumer's oxlint config extends the shipped preset ──
+  // ── Hard check 2: install matches the manifest, and doctor says WHERE (the CLAUDE-block's claim)
+  const manifestVersion = profile === 'tokens-only' ? undefined : readManifest(cwd).basaltVersion
+  const at = install.dir === null ? '' : `${relative(cwd, install.dir)} (${install.version})`
+  if (install.dir === null) {
+    fail(
+      'install-parity: basalt-ui does not resolve here, above, or in a sibling workspace package.',
+    )
+  } else if (manifestVersion === undefined || install.version === manifestVersion) {
+    const matches = manifestVersion === undefined ? '' : " and matches the manifest's basaltVersion"
+    pass(`basalt-ui resolves at ${at}${matches}`)
+  } else {
+    fail(
+      `install-parity: basalt-ui resolves at ${at}, but ${MANIFEST_PATH} was last written by ` +
+        `${manifestVersion} — the managed layer is from a different release than the code. Run ` +
+        '`basalt-ui sync` (or `bun install`, if the lockfile is what is stale).',
+    )
+  }
+
+  // ── Hard check 3: the guard sees files — zero-file roots are a green guard enforcing nothing ──
+  const scanned = profile === 'tokens-only' ? null : scannableFiles(cwd, cfg).length
+  if (scanned === null) {
+    pass('guard-scan: n/a — a tokens-only consumer runs the token lane, not the file walk')
+  } else if (scanned === 0) {
+    fail(
+      'guard-scan: `check-theme` would scan ZERO files here — either `basalt.roots` points at ' +
+        'paths that do not exist, or this is not the package the config lives in (BASALT_CWD, ' +
+        'else the cwd; nothing is inferred).',
+    )
+  } else {
+    pass(`guard-scan: check-theme covers ${scanned} file(s) under ${resolveRoots(cfg).join(', ')}`)
+  }
+
+  // ── Hard check 4: the consumer's oxlint config extends the shipped preset ──
   // `init` KEEPS an existing `.oxlintrc.json`, so a repo can carry the whole scaffold with the
   // framework's lint half switched off and nothing anywhere saying so. One repo ran five minors
   // that way and surfaced six real `basalt/no-raw-font-size` errors the moment it was wired.
@@ -235,7 +276,7 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
     }
   }
 
-  // ── Warn check 3: the pre-commit hook actually runs the guard ──────────────
+  // ── Warn check 5: the pre-commit hook actually runs the guard ──────────────
   // Read via `lefthook dump --format json`, which resolves `extends`/`include`/remote configs/
   // `root:` the way lefthook itself does — see {@link inspectLefthookGate}.
   const repoRoot = findRepoRoot(cwd)
@@ -262,7 +303,7 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
     )
   }
 
-  // ── Hard check 4: ai package major version parity within THIS package.json ─
+  // ── Hard check 6: ai package major version parity within THIS package.json ─
   // basalt/ai-sdk-major (the lint rule) is per-file against the NEAREST package.json, so a lint
   // run scoped to one workspace package only ever sees that package's own `ai` major and is
   // perfectly happy. This check reads the SAME package.json across its dependencies/

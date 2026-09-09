@@ -52,6 +52,51 @@ export const CONTENT_END = '[data-testid="content-end"]'
  * rather than by a Mantine class, because that attribute is the thing consumers are promised. */
 export const MAIN = '[data-basalt-scrollport]'
 
+/**
+ * A CSS-MODULE class, by the local name it is authored under.
+ *
+ * `Bun.build` compiles `*.module.css` to `<local>_<per-file hash>` (VERIFIED in the fixture's own
+ * bundle: `.bar_Gdyk4Q`, `.menuDropdown_7QmWJg`), and the hash tracks the file's CONTENTS — it moves
+ * every time the module is edited, so it can never be written down here.
+ *
+ * The match is ANCHORED (`^` for a sole class, `" "` for one in a list) rather than a bare
+ * `[class*="bar_"]`, which also matches a `.sidebar_…` or a `.toolbar_…` that does not exist today
+ * and would be found by the wrong test on the day it does.
+ *
+ * ALWAYS SCOPE IT to a Mantine static class or a `data-basalt-*` handle. Local names repeat across
+ * modules by design: `.lead` is declared by BOTH `shell/app-header.module.css` (the breadcrumb side
+ * of the header row, floored at `min-width: 96px`) and `shell/page-bar.module.css` (row 1's own
+ * lead, `min-width: 0`), and `.bar` by three modules. An unscoped match resolves to whichever
+ * happens to come first in document order, which is how a geometry assertion goes quietly vacuous.
+ */
+export function moduleClass(local: string): string {
+  return `:is([class^="${local}_"],[class*=" ${local}_"])`
+}
+
+/**
+ * `AppShell.Header` — the header BAND, one `appShellHeaderHeight` row at every viewport (law C14).
+ * Its own inline padding is the responsive page gutter, the same pair `AppShell` gets.
+ */
+export const HEADER = '.mantine-AppShell-header'
+/** The header's single row: `[brand zone] [breadcrumb] ···· [page bar row 1] | [globals]`. */
+export const HEADER_ROW = `${HEADER} > ${moduleClass('bar')}`
+/** The ELASTIC side of that row — the breadcrumb wrapper, and the only side that may ellipsize. */
+export const HEADER_LEAD = `${HEADER_ROW} > ${moduleClass('lead')}`
+/** `PageBar` row 1's portal target — the RIGID side. Descendant, not child: it is a child today. */
+export const HEADER_PAGE_BAR = `${HEADER_ROW} ${moduleClass('pageBar')}`
+/** The shell's own trailing action cluster. A DESCENDANT — `CtlSlot` sits between it and the row
+ * as a `display: contents` Box, so it is a grandchild in the DOM and a flex item in layout. */
+export const HEADER_GLOBAL = `${HEADER_ROW} ${moduleClass('global')}`
+
+/** `AppShell.Navbar` — the desktop sidebar's region. Mounted (merely hidden) below `sm`. */
+export const NAVBAR = '.mantine-AppShell-navbar'
+/** The sidebar's nav SCROLLPORT — a Mantine `ScrollArea` viewport, not the navbar itself. */
+export const NAV_VIEWPORT = `${NAVBAR} .mantine-ScrollArea-viewport`
+/** Nav rows, SCOPED to that viewport so the footer's own rows never count as nav rows. */
+export const NAV_ROWS = `${NAV_VIEWPORT} .mantine-NavLink-root`
+/** The sidebar's pinned footer region — settings rows plus the account row. */
+export const SIDEBAR_FOOTER = `${NAVBAR} ${moduleClass('footer')}`
+
 /** A bar slot by accessible name — `aria-label={slot.label}` on both link and surface tabs. */
 export function tab(label: string): string {
   return `${BAR} [aria-label="${label}"]`
@@ -71,6 +116,23 @@ export type Viewport = { readonly name: string; readonly width: number; readonly
 
 export const PHONE: Viewport = { name: 'iPhone 14', width: 390, height: 844 }
 export const PHONE_SMALL: Viewport = { name: 'iPhone SE', width: 320, height: 568 }
+
+/**
+ * THE GAP BETWEEN A PHONE AND A DESKTOP, which every viewport list in this suite used to skip.
+ *
+ * 768 is `sm` exactly — the width at which the navbar appears and takes 256px out of the header in
+ * one step, so it is the WORST case for the header row and not merely a sample of it. 900 is the
+ * middle of the `sm`→`md` band, where the navbar is already paid for and `BarEntry`'s `md` label
+ * fold has not fired yet. 1024 is just past `md` (62em = 992px), where the labels come back — the
+ * first width at which the row carries its full desktop content.
+ *
+ * The heights are short on purpose (720/700/640, all under a real laptop's): the sidebar's own
+ * scroll region and the popover caps only bind when the column is shorter than its content, and a
+ * 1200px-tall fixture would prove neither.
+ */
+export const TABLET_768: Viewport = { name: 'sm exactly', width: 768, height: 720 }
+export const LAPTOP_900: Viewport = { name: 'sm→md mid', width: 900, height: 700 }
+export const LAPTOP_1024: Viewport = { name: 'past md', width: 1024, height: 640 }
 
 export type Box = {
   readonly x: number
@@ -223,6 +285,45 @@ async function buildFixture(dir: string): Promise<void> {
     }
     throw new Error('FAILED: the layout fixture did not build — bundler logs above.')
   }
+  await unscopeContainerNames(dir)
+}
+
+/**
+ * Undo `Bun.build`'s ASYMMETRIC CSS-modules scoping of container names — without this the suite is
+ * BLIND to every `@container` rule the package ships, and blind SILENTLY: the query simply never
+ * matches and the element keeps its base-tier layout, which reads as a plausible measurement.
+ *
+ * MEASURED, on a two-rule module (`.container { container-name: basalt-x }` +
+ * `@container basalt-x (min-width: 768px)`):
+ *
+ *   Bun.build  →  `container-name: basalt-x`        `@container basalt-x_BLNoTg (width >= 768px)`
+ *   vite build →  `container: basalt-x/inline-size` `@container basalt-x (width >= 768px)`
+ *
+ * Bun hashes the name in the AT-RULE prelude and not in the declaration, so the two halves can
+ * never meet. Vite (postcss-modules, which is what `basaltViteConfig` and therefore every consumer
+ * runs) does not scope container names at all, in either half — so UNSCOPING is not a workaround
+ * that makes a test pass, it is the only rewrite that makes this harness render what a consumer
+ * renders. That is the same standard the rest of this file holds itself to: the fixture is
+ * `BasaltShell` unmodified, and the bundler must not be a behaviour the tests are written against.
+ *
+ * Scoped to names the bundle actually DECLARES, so the rewrite can only ever touch a container the
+ * package named itself — a stray `_`-suffixed identifier elsewhere in the CSS is out of reach.
+ */
+async function unscopeContainerNames(dir: string): Promise<void> {
+  const file = Bun.file(join(dir, 'main.css'))
+  if (!(await file.exists())) return
+  const css = await file.text()
+  const declared = new Set(
+    [...css.matchAll(/container(?:-name)?\s*:\s*([A-Za-z_][\w-]*)/g)].map((m) => m[1] as string),
+  )
+  if (declared.size === 0) return
+  let next = css
+  for (const name of declared) {
+    // `@container <name>_<hash>` → `@container <name>`. The hash is Bun's per-file CSS-modules
+    // suffix, the same one `MAIN`'s docblock above names for class selectors.
+    next = next.replace(new RegExp(`(@container\\s+)${name}_[A-Za-z0-9_$-]+\\b`, 'g'), `$1${name}`)
+  }
+  if (next !== css) await Bun.write(join(dir, 'main.css'), next)
 }
 
 /**
@@ -687,6 +788,58 @@ export function expectGapAtMost(
     `${outer.name}.${edge} − ${inner.name}.${edge} <= ${px(max)}`,
     `gap = ${px(gap)} (+${px(gap - max)} of dead space)`,
     [outer, inner],
+    viewport,
+  )
+}
+
+/**
+ * The mirror of {@link expectGapAtMost}: a gap that must be OPEN.
+ *
+ * Both inequalities are real invariants and they are not the same one reversed for convenience.
+ * "Hugs its content" is a MAXIMUM (a sheet that grew past its rows), and a region that must read as
+ * separate from the one above it is a MINIMUM (a footer whose rows stacked flush on the scroll
+ * region — the "cramped" defect). A rhythm regression is a gap that CLOSED, and nothing in this
+ * harness could observe one before this existed.
+ */
+export function expectGapAtLeast(
+  outer: Named,
+  inner: Named,
+  edge: 'top' | 'bottom',
+  min: number,
+  why: string,
+  viewport?: Viewport,
+): void {
+  const gap =
+    edge === 'bottom' ? outer.box.bottom - inner.box.bottom : inner.box.top - outer.box.top
+  if (gap >= min) return
+  fail(
+    why,
+    `${outer.name}.${edge} − ${inner.name}.${edge} >= ${px(min)}`,
+    `gap = ${px(gap)} (−${px(min - gap)} of the air this region is supposed to own)`,
+    [outer, inner],
+    viewport,
+  )
+}
+
+/**
+ * Two SIBLING boxes stacked vertically keep at least `min` of air between them. `expectGapAtLeast`
+ * measures a container against something inside it; this measures one row against the next, which
+ * is what a stack rhythm actually is.
+ */
+export function expectSeparatedBy(
+  upper: Named,
+  lower: Named,
+  min: number,
+  why: string,
+  viewport?: Viewport,
+): void {
+  const gap = lower.box.top - upper.box.bottom
+  if (gap >= min) return
+  fail(
+    why,
+    `${lower.name}.top − ${upper.name}.bottom >= ${px(min)}`,
+    `gap = ${px(gap)} (−${px(min - gap)}) — the two rows read as one block`,
+    [upper, lower],
     viewport,
   )
 }

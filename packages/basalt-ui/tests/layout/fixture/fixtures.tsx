@@ -4,11 +4,14 @@ import { ThreadFeedRow, ThreadTranscript } from '../../../src/agent-chat'
 import type { AgentThread, ChatMessage, StreamStatus, TranscriptPart } from '../../../src/agent'
 import { Bars, BarSparkline, Donut, Heatmap, MultiLine, fmtAxisDate } from '../../../src/charts'
 import type { BarsBar, ChartSeries, DonutDatum } from '../../../src/charts'
-import { FilterSet, SelectFilter } from '../../../src/controls'
+import { FilterSet, SelectFilter, ViewTabs } from '../../../src/controls'
 import { BasaltDataTable } from '../../../src/data/table'
 import type { DataTableFacet } from '../../../src/data/table'
 import type { ColumnDef } from '@tanstack/react-table'
+import { ActionIcon, Button } from '@mantine/core'
 import { BasaltShell, PageAside, PageBar, StatCard, StatGroup } from '../../../src/index'
+import type { BasaltAccountProps, SettingsMenuItem } from '../../../src/index'
+import type { GlobalAction } from '../../../src/controls'
 import type { NavAnchor, SidebarItem, SidebarSection } from '../../../src/shell/nav-types'
 import { createLocalStore, field } from '../../../src/state'
 import type {
@@ -196,16 +199,43 @@ const barStore = createLocalStore({
 
 const BAR_FIELD_KEYS = ['f0', 'f1', 'f2', 'f3'] as const
 
+/** Production-length row-1 action labels — see `BarFixture` for why they ride `actionIcons`. */
+const BAR_ACTION_LABELS = ['New report', 'Export CSV', 'Schedule', 'Share'] as const
+
 function BarFixture({ spec }: { spec: BarSpec }): ReactElement {
   const pills = BAR_FIELD_KEYS.slice(0, Math.min(spec.pills ?? 0, BAR_FIELD_KEYS.length))
+  const tabCount = Math.min(spec.tabs ?? 0, BAR_VALUES.length)
   const actions = Array.from({ length: spec.actions ?? 0 }, (_, i) => ({
     key: `a${i}`,
-    label: `Action ${i + 1}`,
+    // The production LABEL rides with the icon, and deliberately not on its own: a labelled `ctl`
+    // button is its icon slot + label + insets, so the label's own advance is most of the width the
+    // `md` fold gives back, and a desktop row of `Action 1`s would fit at a width no real row fits
+    // at. Keeping both behind the one flag also leaves every phone sweep written before this
+    // measuring the exact box it was written against.
+    label:
+      spec.actionIcons === true ? (BAR_ACTION_LABELS[i] ?? `Action ${i + 1}`) : `Action ${i + 1}`,
+    ...(spec.actionIcons === true && { icon: <Glyph /> }),
     onClick: () => {},
   }))
   return (
     <PageBar
       {...(spec.title !== undefined && { title: spec.title })}
+      {...(tabCount > 0 && {
+        // Bound to the SAME store the pills use — `ViewTabs` needs a `FieldHandle` and this fixture
+        // already owns one whose options carry production-length labels. `options` is passed
+        // explicitly rather than defaulted, because the count is what the strip-vs-`Select`
+        // collapse keys on and `field.options` is fixed at four.
+        tabs: (
+          <ViewTabs
+            field={barStore.field.f0}
+            label="View"
+            options={BAR_VALUES.slice(0, tabCount).map((value) => ({
+              value,
+              label: BAR_LABELS[value] as string,
+            }))}
+          />
+        ),
+      })}
       {...(pills.length > 0 && {
         filters: (
           <FilterSet>
@@ -229,17 +259,33 @@ function BarFixture({ spec }: { spec: BarSpec }): ReactElement {
 
 const SPARK_DATA = Array.from({ length: 24 }, (_, i) => 10 + ((i * 7) % 19))
 
+/**
+ * Production-length KPI values (`wide`). `--vx-text-kpi` mono at ~195px each, MEASURED at 1440x900
+ * — wider than a 4-up cell in a shell that also carries an aside (~200px, ~174px inside the card's
+ * inset) and comfortably inside a 3-up one (~273px). That gap is the whole point: `.value` clamps
+ * with `overflow: hidden` + `text-overflow: ellipsis` (`dashboard/widget-header.module.css`), so a
+ * column count one tier too generous shows up as `scrollWidth > clientWidth` and nothing else —
+ * silently, and only against a value a real dashboard would print.
+ *
+ * OPT-IN rather than the default, for the reason `BarSpec.actionIcons` states: every phone sweep in
+ * `no-horizontal-overflow.layout.test.ts` was measured against the short values, and a fixture that
+ * grows under an existing assertion turns a fixture edit and a real regression into one failure.
+ */
+const WIDE_STAT_VALUES = ['$12,847,301.55', '$8,204,663.10', '$1,975,428.06', '$640,119.42']
+
 /** `StatGroup` + `StatCard` with a BLED sparkline — the render-prop form, so the mark sizes itself
  * to the card's measured inner width rather than to a hardcoded one. That measurement is exactly
  * what can overshoot a 320px page if a card's own box does not stay inside its column. */
-function StatsFixture({ count }: { count: number }): ReactElement {
+function StatsFixture({ count, wide }: { count: number; wide: boolean }): ReactElement {
   return (
     <StatGroup cols={4}>
       {Array.from({ length: count }, (_, i) => (
         <StatCard
           key={i}
           title={`Metric ${i + 1}`}
-          value={`${(i + 1) * 1234}`}
+          value={
+            wide ? (WIDE_STAT_VALUES[i % WIDE_STAT_VALUES.length] as string) : `${(i + 1) * 1234}`
+          }
           sparkline={({ width, height }) => (
             <BarSparkline data={SPARK_DATA} width={width} height={height} />
           )}
@@ -247,6 +293,46 @@ function StatsFixture({ count }: { count: number }): ReactElement {
       ))}
     </StatGroup>
   )
+}
+
+// ── The shell's own chrome: header globals, sidebar footer ────────────────────────────────────
+
+/**
+ * `globalActions` — bare `ActionIcon`s, which is the shape `app-header.module.css`'s `.global` rule
+ * exists for: the consumer passes a NODE, so basalt cannot hand it a size and the enclosing
+ * `CtlSlot` supplies the `ctl` tier instead (law C5). Passing an already-sized control would grade a
+ * shape the framework does not have to defend.
+ */
+function globalActionsFor(count: number): GlobalAction[] {
+  return Array.from({ length: count }, (_, i) => ({
+    key: `g${i}`,
+    node: (
+      <ActionIcon variant="subtle" aria-label={`Global ${i + 1}`}>
+        <Glyph />
+      </ActionIcon>
+    ),
+  }))
+}
+
+/**
+ * A settled, signed-in account row. `authenticated` rather than `loading` on purpose: the loading
+ * form is a skeleton with its own height, and the footer rhythm this fixture exists to measure is
+ * the one a reader actually sees.
+ */
+const FIXTURE_ACCOUNT: BasaltAccountProps = {
+  state: {
+    status: 'authenticated',
+    identity: { id: 'u1', name: 'Fixture User', email: 'fixture@example.com' },
+  },
+}
+
+/** Flat settings rows — the form with a rhythm; four or more collapse into one gear row instead. */
+function settingsItemsFor(count: number): SettingsMenuItem[] {
+  return Array.from({ length: count }, (_, i) => ({
+    key: `s${i}`,
+    label: `Setting ${i + 1}`,
+    onClick: () => {},
+  }))
 }
 
 // ── The aside ─────────────────────────────────────────────────────────────────────────────────
@@ -292,12 +378,33 @@ function AsideProbe(): ReactElement {
 
 /**
  * A row-2 payload, so `PageBar` publishes the `panelHost` claim the phone projection hangs its
- * `Panel` pill off. Deliberately NOT a bound control: this fixture measures where the aside goes,
+ * `Panel` pill off. Deliberately NOT a BOUND control: this fixture measures where the aside goes,
  * and a store would put a second stateful thing in the tree that the mount count would then have
- * to account for.
+ * to account for. A plain `ctl`-tier `Button` is bound to nothing and is exactly the box a real
+ * filter pill occupies, so it buys the height without the state.
+ *
+ * THE HEIGHT IS THE POINT, and it used to be a bare `<span>Filters</span>`. Row 2 has no
+ * `min-height` of its own (`shell/page-bar.module.css` `.row2` is `padding-block:
+ * --vx-space-stack-xs` around whatever it holds), so a text stand-in made the band 8.75px SHORTER
+ * than any real bar's: MEASURED at 1440x900, content 23.25px → band 31.25px → painted 32.25px,
+ * against a real control's 32 → 40 → 41. `PageAside`'s shell header sizes itself to that published
+ * band (`--basalt-page-bar-h`) and carries its own 32px fold toggle, so the too-short band put the
+ * header 0.75px past the seam it exists to meet — a fixture artifact wearing a layout defect's
+ * clothes. It only surfaced when `controlHeightCtl` grew 30 → 32; below that the fold happened to
+ * fit inside the stand-in's band and the seam met by coincidence, which is the worst way for an
+ * invariant to be true. See `page-aside.layout.test.ts` INVARIANT 4, which asserts the precondition
+ * outright so the coincidence cannot come back.
  */
 function AsideBar(): ReactElement {
-  return <PageBar filters={<span data-testid="bar-filters">Filters</span>} />
+  return (
+    <PageBar
+      filters={
+        <Button variant="default" size="ctl" data-testid="bar-filters">
+          Filters
+        </Button>
+      }
+    />
+  )
 }
 
 function AsideFixture({ spec }: { spec: AsideSpec }): ReactElement {
@@ -610,10 +717,17 @@ export function ShellFixture({ spec }: { spec: FixtureSpec }): ReactElement {
       brand={{ name: 'Fixture' }}
       sections={sections}
       {...(spec.nav && { mobileNav: spec.nav })}
+      {...(spec.globals !== undefined && { globalActions: globalActionsFor(spec.globals) })}
+      {...(spec.sidebar?.account === true && { account: FIXTURE_ACCOUNT })}
+      {...(spec.sidebar?.settings !== undefined && {
+        settingsMenuItems: settingsItemsFor(spec.sidebar.settings),
+      })}
     >
       {spec.aside && !spec.aside.noBar && <AsideBar />}
       {spec.bar && <BarFixture spec={spec.bar} />}
-      {spec.stats !== undefined && <StatsFixture count={spec.stats} />}
+      {spec.stats !== undefined && (
+        <StatsFixture count={spec.stats} wide={spec.statsWide === true} />
+      )}
       {spec.table && <TableFixture spec={spec.table} />}
       {spec.charts && <ChartsFixture spec={spec.charts} />}
       {spec.agent && <AgentFixture spec={spec.agent} />}

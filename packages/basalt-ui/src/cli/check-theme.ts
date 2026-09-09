@@ -19,6 +19,7 @@ import {
   conflictingProfileFlags,
   declaredProfile,
   DEFAULT_ROOTS,
+  hasBasaltKey,
   readBasaltConfig,
   resolveExemptRules,
   resolveProjectDir,
@@ -96,6 +97,18 @@ export function checkTheme(
     // A configured-but-wrong root is never intentional, and silently scanning 0 files under the
     // built-in defaults (argo's pre-migration layout) is the same failure mode for every other
     // consumer — both cases fail loud instead of warn-plus-green.
+    // The WRONG-DIRECTORY case leads, and since 1.29.0's single resolver it is the common one:
+    // lefthook and GitHub Actions both run at the REPO ROOT while the config lives in a package
+    // below it. Only the roots messages used to print, sending a consumer to edit `basalt.roots` in
+    // a package.json that has no `basalt` block at all.
+    if (!hasBasaltKey(cwd)) {
+      console.error(
+        `✖ basalt-ui check-theme: ${cwd}/package.json has no "basalt" key — very likely not the ` +
+          'package you meant to scan (BASALT_CWD, else the invocation cwd; nothing is inferred). ' +
+          'At a repo root? Give the command `root: <pkg>/` (lefthook) or `working-directory: ' +
+          '<pkg>` (Actions), or set BASALT_CWD=<pkg>. If this directory IS it, run `basalt-ui init`.',
+      )
+    }
     if (cfg.roots === undefined) {
       console.error(
         `✖ basalt-ui check-theme: 0 files scanned — no "basalt.roots" configured in package.json, and ` +
