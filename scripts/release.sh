@@ -8,7 +8,9 @@
 # the OIDC identity that pushes to the registry with provenance. This script is a local FRONT DOOR
 # to that pair, not a third path. What it adds:
 #
-#   • a preflight (right branch, clean tree, in sync) before anything is dispatched;
+#   • a preflight (right branch, clean tree, in sync) before anything is dispatched — including
+#     `release-migrating.ts --check`, because `prepareCmd`'s MIGRATING rename runs in the `prepare`
+#     step, which a dry run SKIPS, so nothing else in the pipeline can catch a shape it can't fix;
 #   • a dry run first, ALWAYS, with the computed version read back before the real one is offered;
 #   • a hard refusal on a major — majors are banned here by design (see CLAUDE.md), and the one
 #     way to get one by accident is a stray `feat!:`/`BREAKING CHANGE:` reaching master. Nothing
@@ -63,6 +65,14 @@ current=$(git rev-parse --abbrev-ref HEAD)
 git fetch origin --quiet
 [ "$(git rev-parse HEAD)" = "$(git rev-parse "origin/$BRANCH")" ] ||
   die "local $BRANCH differs from origin/$BRANCH — push or pull first"
+
+# MIGRATING's release-time `## Unreleased` → `## <version>` rename runs in `prepareCmd`, and
+# semantic-release SKIPS `prepare` in a dry run — so the dry run below cannot exercise it and a
+# broken shape would only surface in the published tarball. That is exactly how four releases
+# shipped a stale heading. `--check` runs the same transform here, against the same file, before
+# anything is dispatched.
+bun "$PACKAGE_PATH/scripts/release-migrating.ts" --check ||
+  die "MIGRATING.md is not in a shape the release-time rename can rewrite — fix it, then release."
 
 # ── Run helpers ──────────────────────────────────────────────────────────────
 latest_run() {

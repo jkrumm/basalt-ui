@@ -7,7 +7,7 @@
     [
       "@semantic-release/exec",
       {
-        "prepareCmd": "node -e \"const fs=require('fs');const p=JSON.parse(fs.readFileSync('packages/basalt-ui/package.json','utf8'));p.version='${nextRelease.version}';fs.writeFileSync('packages/basalt-ui/package.json',JSON.stringify(p,null,2)+'\\n');\" && bun packages/basalt-ui/scripts/gen-llms.ts"
+        "prepareCmd": "node -e \"const fs=require('fs');const p=JSON.parse(fs.readFileSync('packages/basalt-ui/package.json','utf8'));p.version='${nextRelease.version}';fs.writeFileSync('packages/basalt-ui/package.json',JSON.stringify(p,null,2)+'\\n');\" && bun packages/basalt-ui/scripts/gen-llms.ts && bun packages/basalt-ui/scripts/release-migrating.ts ${nextRelease.version}"
       }
     ],
     [
@@ -16,7 +16,8 @@
         "assets": [
           "packages/basalt-ui/CHANGELOG.md",
           "packages/basalt-ui/package.json",
-          "packages/basalt-ui/llms.txt"
+          "packages/basalt-ui/llms.txt",
+          "packages/basalt-ui/MIGRATING.md"
         ],
         "message": "chore: release ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
       }
