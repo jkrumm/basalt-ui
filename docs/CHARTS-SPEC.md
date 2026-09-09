@@ -418,8 +418,10 @@ below, and the frame's own box absorbs the difference. A `fill` frame is pinned 
 cannot grow, so instead its legend rolls up: `legendEntryCap` measures how many entries actually
 fit in the rows left over once `VX.minPlotHeight` is reserved (a real greedy-wrap measurement
 against the legend's own labels, not an assumed one-entry-per-row count) and feeds that as
-`ChartLegend`'s `maxRows` cap, unless the caller already passed an explicit `legend.maxRows` — an
-explicit cap always wins as the upper bound.
+`ChartLegend`'s `maxRows` cap. An explicit `legend.maxRows` REPLACES that measurement rather
+than bounding it (1.30.1): the fit derives from `VX.minPlotHeight`, a framework default about
+the plot, and a default does not outvote the one number a caller stated. The plot yields the
+height instead — see §8.
 
 ## 7. Band plots — `BandStrip` and `MirroredBars`
 
@@ -514,8 +516,12 @@ Two consequences worth stating, because both are places the tier could otherwise
   plotted colours unnamed behind a `<span>`, which is a categorical encoding the chart draws and
   then refuses to decode — on the one viewport where there is no hover to fall back on. The chip is
   a `<button aria-expanded>`; expanded, every entry renders, the legend band grows, and
-  `ChartFrame`'s observer re-flows the frame around it. The plot keeps `VX.minPlotHeight` either
-  way — under `fill`, where the box cannot grow, that is what `legendEntryCap` is for.
+  `ChartFrame`'s observer re-flows the frame around it. The plot keeps `VX.minPlotHeight` while
+  the caller states nothing — under `fill`, where the box cannot grow, that is what
+  `legendEntryCap` is for. A caller who DOES state `legend.maxRows` overrides both the tier and
+  the fit, and the plot floor yields to it, down to zero if that is what the number costs: the
+  arithmetic is then the caller's and it is visible, rather than a silent rollup that leaves
+  plotted colours unnamed.
 
 ## 9. Number formats, and the three "nothing to draw" states
 

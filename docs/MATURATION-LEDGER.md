@@ -187,5 +187,41 @@ now sweeps 768/900/1024, a band it had no coverage in at all.
 | W4   | Every responsive primitive keyed on the VIEWPORT while shell regions move the CONTENT width — mounting an aside truncated the KPI row mid-word                                                                                      | shipped (container queries; viewport law kept under `@supports not`)       |
 | W5   | The aside was the least discoverable shipped surface: only on `/cbbi` and a non-default tab of `/data`, and an unclaimed region paints nothing                                                                                      | shipped (mounted on the landing dashboard; prop table in the shipped rule) |
 | W6   | Fed back from the fleet migration: the shipped lefthook preset had been broken for every non-root consumer since 1.29.0; `in-body-page-title` reported 24× in one repo with no escape; `## Unreleased` covered three SHIPPED minors | shipped                                                                    |
-| W7   | C16 came due for six grace entries. Measured fleet-wide: four at zero → promoted; the C1 pair at 29 → extended to 1.31.0, because 1.30.0 is the first release naming a home they can reach                                          | shipped — `MIGRATING.md` § Guards                                          |
+| W7   | C16 came due for six grace entries. Measured fleet-wide: four at zero → promoted; the C1 pair at **34** (published as 29 — see R3) → extended to 1.31.0, because 1.30.0 is the first release naming a home they can reach           | shipped — `MIGRATING.md` § Guards                                          |
 | W8   | `PageTitle` has a real consumer outside the playground (image-share, 3 sites) — the evidence its 1.30.0 adopt-or-delete verdict was waiting on                                                                                      | adopt                                                                      |
+
+## 1.30.1 repairs (2026-09-09)
+
+1.30.0 published, all seven consumer repos took it within the hour, and their reports found real
+defects IN that release. This wave repairs them as a patch — every item completes something 1.30.0
+promised and did not deliver. Consumer reports: `.claude/uxwave/roll-1300-feedback.md`.
+
+| Item | Finding                                                                                                                                                                                                                                                                                                                                                                             | Status                                                                                 |
+| ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| R1   | **The MIGRATING `## Unreleased` → `## <version>` rename failed a FOURTH time, in the published tarball**, and three consumer agents found it independently. Root cause verified: `prepareCmd` never had the step the file's own preamble claimed it had, and `MIGRATING.md` was not in `@semantic-release/git`'s assets — so a correct local edit could not have reached npm either | fixed — `scripts/release-migrating.ts` + `--check` in the release preflight + 12 tests |
+| R2   | § 1.30.0 covered § Chrome and § Guards and nothing else. Missing: the container column law (which silently flipped a KPI row 4-up → 2-up in the reference consumer), the chart `height`/`legend.maxRows` pair, the lefthook preset, and the gutter's READ direction                                                                                                                 | fixed — §§ Dashboard, Charts, Toolchain + two new index rows                           |
+| R3   | The published guard table recorded meteo at 0 `control-outside-home`; it has 5. `npx --no-install oxlint` failed there with a package error and the pipeline read the failure as "no findings" — the same silent-zero shape the CLI's docs call out for fabricated roots. Fleet total 34, not 29                                                                                    | corrected in place; **the four promotions are unaffected and stand as shipped**        |
+| R4   | § Guards rested the C1 extension on "image-gen carries 10 of the 29 and a shell-less `PageBar` reaches them". image-gen reports it reaches ZERO — its 10 are form fields, whose remedy is `basalt-ui/forms`. The real verdict: `PageBar` closes a shell-less SINGLE-page app, not one whose switcher is top-level NAV                                                               | rewritten; extension stands, the reason is now the true one                            |
+
+**The lesson R1 and R3 share, and the reason both are written down rather than just fixed:** a step
+that fails open is indistinguishable from a step that passed. The rename did nothing and reported
+nothing four times; the oxlint invocation errored and was counted as a zero. Both are now closed the
+same way — the mechanism runs in the release and FAILS when it cannot do its job (`--check` in
+`scripts/release.sh`'s preflight, because semantic-release skips `prepare` in a dry run and nothing
+else in the pipeline can catch it).
+
+**Open, not fixed here** (each named by a consumer, none a 1.30.1 repair):
+
+- No guard names a hand-rolled `SimpleGrid` of card-shaped KPIs, so the container fix reaches 2 of 7
+  KPI rows in the reference consumer. A text-lane check would give C-doctrine's adopt-or-delete a
+  measurable "named consumer".
+- `basalt-ui doctor` verifies that `.oxlintrc.json` extends the preset but not that any script ever
+  RUNS oxlint — which is what let meteo's zero look real. A "a script actually invokes oxlint" check
+  closes R3's cause rather than its symptom.
+- A `basalt-ui tokens:diff <from> [<to>]` printing the anchors that moved between two versions.
+  Nothing in the toolchain can see a consumer literal that mirrors a moved anchor, and this release
+  was eight moved anchors.
+- The promoted-rule oxlint message prints its full ~90-word law per finding — 8 identical paragraphs
+  in one run. `check-theme` already prints its `Fix:` prose once at the end.
+- `basalt-ui sync` reprints both permanent placement-skip essays on every run, though `sync --check`
+  already knows to collapse them to one line.
