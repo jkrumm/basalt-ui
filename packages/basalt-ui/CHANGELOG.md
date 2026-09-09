@@ -1,3 +1,10 @@
+## [1.30.2](https://github.com/jkrumm/basalt-ui/compare/v1.30.1...v1.30.2) (2026-09-09)
+
+
+### Bug Fixes
+
+* stop legendWins collapsing a self-measured fill frame to no plot ([07f0fcd](https://github.com/jkrumm/basalt-ui/commit/07f0fcd65df5047caec1ce09aaaf7f05958e58ad))
+
 ## [1.30.1](https://github.com/jkrumm/basalt-ui/compare/v1.30.0...v1.30.1) (2026-09-09)
 
 
