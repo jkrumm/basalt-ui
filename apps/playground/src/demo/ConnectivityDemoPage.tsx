@@ -38,23 +38,39 @@ function ConnectivityPreview() {
   )
 }
 
-function SignalControl({
+/**
+ * One signal's override, as a settings ROW rather than a bare control.
+ *
+ * The `SegmentedControl` is declared inside the `SettingsRow` it belongs to, not in a helper handed
+ * to a `control=` prop further down: a form row is law C1's third home, and
+ * `basalt/control-outside-home` (warn today, error at 1.30.0) reads the control's OWN ancestry — a
+ * helper component is a different subtree, so the home was invisible from where the control is
+ * written. Folding the label in makes the home literal and shortens every call site.
+ */
+function SignalRow({
+  label,
   value,
   onChange,
 }: {
+  label: string
   value: SignalState
   onChange: (value: SignalState) => void
 }) {
   return (
-    <SegmentedControl
-      size="xs"
-      data={[
-        { label: 'Live', value: 'live' },
-        { label: 'Online', value: 'online' },
-        { label: 'Offline', value: 'offline' },
-      ]}
-      value={value}
-      onChange={(v) => onChange(v as SignalState)}
+    <SettingsRow
+      label={label}
+      control={
+        <SegmentedControl
+          size="xs"
+          data={[
+            { label: 'Live', value: 'live' },
+            { label: 'Online', value: 'online' },
+            { label: 'Offline', value: 'offline' },
+          ]}
+          value={value}
+          onChange={(v) => onChange(v as SignalState)}
+        />
+      }
     />
   )
 }
@@ -87,7 +103,7 @@ export function ConnectivityDemoPage() {
   const hasOverrides = Object.keys(override).length > 0
 
   return (
-    <Stack gap="lg" p="md" maw={600}>
+    <Stack gap="lg" maw={600}>
       <Text size="sm" c="dimmed">
         Toggle individual signals to see how the connectivity indicator responds. The inner{' '}
         <Code>ConnectivityProvider</Code> shadows the shell&apos;s auto-mounted one.
@@ -100,22 +116,10 @@ export function ConnectivityDemoPage() {
           '(force connected), or "Offline" (force disconnected).'
         }
       >
-        <SettingsRow
-          label="Browser Online"
-          control={<SignalControl value={browserState} onChange={setBrowserState} />}
-        />
-        <SettingsRow
-          label="React Query Online"
-          control={<SignalControl value={queryState} onChange={setQueryState} />}
-        />
-        <SettingsRow
-          label="SSE Open"
-          control={<SignalControl value={sseState} onChange={setSseState} />}
-        />
-        <SettingsRow
-          label="Health Passing"
-          control={<SignalControl value={healthState} onChange={setHealthState} />}
-        />
+        <SignalRow label="Browser Online" value={browserState} onChange={setBrowserState} />
+        <SignalRow label="React Query Online" value={queryState} onChange={setQueryState} />
+        <SignalRow label="SSE Open" value={sseState} onChange={setSseState} />
+        <SignalRow label="Health Passing" value={healthState} onChange={setHealthState} />
       </SettingsSection>
 
       <Divider />

@@ -32,11 +32,10 @@ import {
   Stack,
   Text,
   Textarea,
-  Title,
   Tooltip,
 } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
-import { EmptyState } from 'basalt-ui'
+import { EmptyState, SettingsRow } from 'basalt-ui'
 import { VX } from 'basalt-ui/tokens'
 import {
   BasaltStickToBottom,
@@ -189,6 +188,15 @@ function ChatEmptyState({ onPick }: { onPick: (text: string) => void }) {
   )
 }
 
+/**
+ * The chat surface's height. Viewport-relative, not a flat 560: on an iPhone SE (568 tall) the
+ * scrollport is 568 − 48 header − 56 mobile bar ≈ 464px, so a rigid 560 put the composer — the one
+ * interactive element on the page — permanently below the fold. `dvh` resolves correctly here
+ * because the scrollport is a real element (`data-basalt-scrollport`), and the 360px floor keeps
+ * the transcript readable on the shortest phone rather than collapsing with the viewport.
+ */
+const CHAT_HEIGHT = 'clamp(360px, 60dvh, 560px)'
+
 // ── Page-scoped styles ──────────────────────────────────────────────────────────
 // Typing-indicator keyframes only. The streamed assistant markdown is styled by basalt-ui/content's
 // Prose (density="chat"), so this page owns no markdown CSS.
@@ -279,22 +287,23 @@ export function AgentDemoPage() {
 
   const isEmpty = messages.length === 0 && !showLive
 
+  // No `p="md"`: `AppShell.Main` already pads (8px below `sm`, 20px above) and a second gutter here
+  // cost a 390px phone ~32px a side — enough to make two routes of the same app measure
+  // differently. No in-body `<Title>` either; see ComponentsPage's module doc for the page-chrome
+  // rule this wave applied.
   return (
-    <Stack gap="md" p="md">
+    <Stack gap="md">
       {/* Typing-indicator keyframes. Markdown typography comes from content's Prose, not from here. */}
       <style>{TYPING_STYLES}</style>
 
-      <div>
-        <Title order={3}>Agent chat</Title>
-        <Text size="sm" c="dimmed" mt={4}>
-          A streaming chat on basalt-ui/agent — persisted multi-turn thread, coalesced markdown,
-          inline reasoning / tool calls / sources, and a mid-stream error path. The thread survives
-          navigate-away and reload.
-        </Text>
-      </div>
+      <Text size="sm" c="dimmed">
+        A streaming chat on basalt-ui/agent — persisted multi-turn thread, coalesced markdown,
+        inline reasoning / tool calls / sources, and a mid-stream error path. The thread survives
+        navigate-away and reload.
+      </Text>
 
       {/* ── Chat surface ──────────────────────────────────────────────────────── */}
-      <Paper style={{ display: 'flex', flexDirection: 'column', height: 560 }}>
+      <Paper style={{ display: 'flex', flexDirection: 'column', height: CHAT_HEIGHT }}>
         <Box style={{ flex: 1, minHeight: 0, position: 'relative' }}>
           {isEmpty ? (
             <ChatEmptyState onPick={sendText} />
@@ -382,52 +391,65 @@ export function AgentDemoPage() {
 
         <Collapse expanded={devOpen}>
           <Stack gap="sm" mt="sm">
-            <Group gap="md" align="flex-end" wrap="wrap">
-              <Select
+            {/* The two simulation inputs are `SettingsRow`s, not a bare `Group` of controls. This
+                panel is a settings block, not a filter bar, and a form row is law C1's third home —
+                which is what `basalt/control-outside-home` (warn today, error at 1.30.0) reported
+                on both. The rows also stop the pair from wrapping into a ragged two-line strip at
+                390px, where `align="flex-end"` left the segmented control hanging off the select.
+                The visible label moves to the row, so each control states its own accessible name. */}
+            <Stack gap={0}>
+              <SettingsRow
                 label="Scenario"
-                size="xs"
-                w={220}
-                data={AGENT_SCENARIOS.map((s) => ({ value: s.value, label: s.label }))}
-                value={scenarioValue}
-                onChange={(v) => v && setScenarioValue(v)}
-                allowDeselect={false}
-                disabled={streaming}
+                control={
+                  <Select
+                    aria-label="Scenario"
+                    size="xs"
+                    w={220}
+                    data={AGENT_SCENARIOS.map((s) => ({ value: s.value, label: s.label }))}
+                    value={scenarioValue}
+                    onChange={(v) => v && setScenarioValue(v)}
+                    allowDeselect={false}
+                    disabled={streaming}
+                  />
+                }
               />
-              <Box>
-                <Text size="xs" fw={500} mb={4}>
-                  Stream speed
-                </Text>
-                <SegmentedControl
-                  size="xs"
-                  value={speed}
-                  onChange={(v) => setSpeed(v as StreamSpeed)}
-                  data={[
-                    { value: 'normal', label: 'Normal' },
-                    { value: 'instant', label: 'Instant' },
-                  ]}
-                  disabled={streaming}
-                />
-              </Box>
-              <Group gap="xs">
-                <Button
-                  size="compact-sm"
-                  variant="default"
-                  onClick={handleRegenerate}
-                  disabled={streaming || messages.length === 0}
-                >
-                  Regenerate
-                </Button>
-                <Button
-                  size="compact-sm"
-                  variant="subtle"
-                  color="red"
-                  leftSection={<IconTrash />}
-                  onClick={clear}
-                  disabled={streaming || messages.length === 0}
-                >
-                  Clear conversation
-                </Button>
-              </Group>
+              <SettingsRow
+                label="Stream speed"
+                control={
+                  <SegmentedControl
+                    aria-label="Stream speed"
+                    size="xs"
+                    value={speed}
+                    onChange={(v) => setSpeed(v as StreamSpeed)}
+                    data={[
+                      { value: 'normal', label: 'Normal' },
+                      { value: 'instant', label: 'Instant' },
+                    ]}
+                    disabled={streaming}
+                  />
+                }
+              />
+            </Stack>
+
+            <Group gap="xs">
+              <Button
+                size="compact-sm"
+                variant="default"
+                onClick={handleRegenerate}
+                disabled={streaming || messages.length === 0}
+              >
+                Regenerate
+              </Button>
+              <Button
+                size="compact-sm"
+                variant="subtle"
+                color="red"
+                leftSection={<IconTrash />}
+                onClick={clear}
+                disabled={streaming || messages.length === 0}
+              >
+                Clear conversation
+              </Button>
             </Group>
 
             <Text size="xs" c="dimmed">

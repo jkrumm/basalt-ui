@@ -13,22 +13,13 @@
  * The table uses a small typed dataset with ColumnDef<T>[] columns (createColumnHelper).
  * The virtual list renders 1 000 items in a fixed-height 300px box to prove windowing.
  */
-import {
-  Badge,
-  Box,
-  Button,
-  Divider,
-  Group,
-  Paper,
-  Stack,
-  Switch,
-  Tabs,
-  Text,
-  Title,
-} from '@mantine/core'
-import { EmptyState } from 'basalt-ui'
+import { Badge, Box, Button, Divider, Group, Paper, Stack, Switch, Tabs, Text } from '@mantine/core'
+import { EmptyState, PageBar } from 'basalt-ui'
+import { FilterSet, RangeFilter, SearchFilter, ViewTabs } from 'basalt-ui/controls'
+import { createLocalStore, field } from 'basalt-ui/state'
 import { BasaltDataTable, createColumnHelper } from 'basalt-ui/data/table'
 import type { DataTableFacet } from 'basalt-ui/data/table'
+import { dataStressFilters } from './data-stress-store'
 import { DataStressPage } from './DataStressPage'
 import { DataTableChromeDemoPage } from './DataTableChromeDemoPage'
 import { QueryDemoPage } from './QueryDemoPage'
@@ -37,6 +28,14 @@ import { VX } from 'basalt-ui/tokens'
 import type { SortingState } from '@tanstack/react-table'
 import { useMemo, useState } from 'react'
 import { IconSearch } from './icons'
+
+// The route's view switch, store-bound (law C3) so a back navigation lands on the tab left behind.
+const dataViews = createLocalStore({
+  key: 'data-view',
+  fields: { tab: field.enum(['overview', 'chrome', 'stress', 'query'], 'overview') },
+}).labels({
+  tab: { overview: 'Overview', chrome: 'Table chrome', stress: 'Stress', query: 'Query' },
+})
 
 // ── Table demo ────────────────────────────────────────────────────────────────
 
@@ -342,15 +341,32 @@ function VirtualListSection() {
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export function DataDemoPage() {
+  const [tab] = dataViews.field.tab.use()
+  // No `p="md"` and no in-body `<Title>` — the shell pads Main and the breadcrumb names the page
+  // (ComponentsPage's module doc states the wave's page-chrome rule).
   return (
-    <Stack gap="md" p="md">
-      <div>
-        <Title order={3}>./data adapter</Title>
-        <Text size="sm" c="dimmed" mt={4}>
-          BasaltDataTable (TanStack Table + Mantine) + BasaltVirtualList (TanStack Virtual +
-          Mantine)
-        </Text>
-      </div>
+    <Stack gap="md">
+      {/* The route's ONE PageBar (law C6). It carries the tab set in row 2 — a raw four-item
+          `Tabs.List` wraps to a two-line strip at 390px, `ViewTabs` collapses past three options to
+          a phone `Select` in CSS (law C9) — and, while the Stress tab is showing, that tab's own
+          store-bound toolbar. Those filters used to live in `DataStressPage`, but Mantine keeps an
+          inactive `Tabs.Panel` mounted, so a bar declared down there was the route's bar on every
+          tab and left no home for the tabs themselves. */}
+      <PageBar
+        tabs={<ViewTabs field={dataViews.field.tab} label="Demo" />}
+        {...(tab === 'stress' && {
+          filters: (
+            <FilterSet>
+              <RangeFilter field={dataStressFilters.field.range} />
+              <SearchFilter field={dataStressFilters.field.query} placeholder="Find a session" />
+            </FilterSet>
+          ),
+        })}
+      />
+
+      <Text size="sm" c="dimmed">
+        BasaltDataTable (TanStack Table + Mantine) + BasaltVirtualList (TanStack Virtual + Mantine)
+      </Text>
 
       <Paper p="sm">
         <Stack gap="xs">
@@ -369,17 +385,11 @@ export function DataDemoPage() {
         </Stack>
       </Paper>
 
-      {/* `/data-table-chrome`, `/data-stress`, and `/query` absorbed here (audit E §7). Only
-          `DataStressPage` carries its own `PageBar`, and only while its tab is active, so the
-          route still carries exactly one at a time (law C6). */}
-      <Tabs defaultValue="overview">
-        <Tabs.List>
-          <Tabs.Tab value="overview">Overview</Tabs.Tab>
-          <Tabs.Tab value="chrome">Table chrome</Tabs.Tab>
-          <Tabs.Tab value="stress">Stress</Tabs.Tab>
-          <Tabs.Tab value="query">Query</Tabs.Tab>
-        </Tabs.List>
-        <Tabs.Panel value="overview" pt="md">
+      {/* `/data-table-chrome`, `/data-stress`, and `/query` absorbed here (audit E §7). Controlled
+          off `dataViews` and rendering no `Tabs.List` of its own — the switch is the `ViewTabs` in
+          the bar above. The panels stay Mantine's, so `keepMounted` behaviour is unchanged. */}
+      <Tabs value={tab}>
+        <Tabs.Panel value="overview">
           <Paper p="sm">
             <Stack gap="md">
               <TableSection />
@@ -390,13 +400,13 @@ export function DataDemoPage() {
             </Stack>
           </Paper>
         </Tabs.Panel>
-        <Tabs.Panel value="chrome" pt="md">
+        <Tabs.Panel value="chrome">
           <DataTableChromeDemoPage />
         </Tabs.Panel>
-        <Tabs.Panel value="stress" pt="md">
+        <Tabs.Panel value="stress">
           <DataStressPage />
         </Tabs.Panel>
-        <Tabs.Panel value="query" pt="md">
+        <Tabs.Panel value="query">
           <QueryDemoPage />
         </Tabs.Panel>
       </Tabs>

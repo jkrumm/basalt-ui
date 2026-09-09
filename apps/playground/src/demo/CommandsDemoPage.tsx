@@ -14,7 +14,7 @@
  * while this page is rendered.
  */
 import { useEffect, useState } from 'react'
-import { Alert, Badge, Button, Divider, Group, Paper, Stack, Text, Title } from '@mantine/core'
+import { Alert, Badge, Button, Divider, Group, Paper, Stack, Text } from '@mantine/core'
 import {
   defineOverlays,
   openSpotlight,
@@ -252,14 +252,13 @@ export function CommandsDemoPage() {
   useCommandHotkeys()
 
   return (
-    <Stack gap="md" p="md">
-      <div>
-        <Title order={3}>./commands adapter</Title>
-        <Text size="sm" c="dimmed" mt={4}>
-          defineCommands + runCommand + defineOverlays + overlays.open + Spotlight + ShortcutsHelp +
-          BasaltOverlays mount + useCommandHotkeys (live keybindings)
-        </Text>
-      </div>
+    <Stack gap="md">
+      {/* No in-body `<Title>` — the breadcrumb names the page; the subpath the page demos is
+          stated in the lead instead (ComponentsPage's module doc has the wave's rule). */}
+      <Text size="sm" c="dimmed">
+        <code>./commands</code>: defineCommands + runCommand + defineOverlays + overlays.open +
+        Spotlight + ShortcutsHelp + BasaltOverlays mount + useCommandHotkeys (live keybindings)
+      </Text>
 
       <Paper p="sm">
         <Stack gap="xs">

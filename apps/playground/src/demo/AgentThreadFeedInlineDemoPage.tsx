@@ -55,7 +55,7 @@
  *     composer sends a message — that call happens from a click, long after both StrictMode mount
  *     passes have settled, so it never meets the race above.
  */
-import { Badge, Box, Button, Group, Paper, SimpleGrid, Stack, Text, Title } from '@mantine/core'
+import { Badge, Box, Button, Group, Paper, SimpleGrid, Stack, Text } from '@mantine/core'
 import { createThreadsStore, heuristicOutcome, useAgentThreadRuns } from 'basalt-ui/agent'
 import type {
   AgentPart,
@@ -188,7 +188,12 @@ function makeReasoningProbe(
 
 const useThreads = createThreadsStore({ key: 'playground-thread-feed-inline', version: 2 })
 
-const PANEL_HEIGHT = 520
+/**
+ * Viewport-relative, not a flat 520 — same law as `AgentDemoPage`'s `CHAT_HEIGHT`: a rigid pane
+ * taller than the phone scrollport (≈464px on an iPhone SE) pushes each panel's composer below the
+ * fold. `dvh` resolves against the real scrollport element (`data-basalt-scrollport`).
+ */
+const PANEL_HEIGHT = 'clamp(340px, 55dvh, 520px)'
 
 export function AgentThreadFeedInlineDemoPage() {
   const store = useThreads()
@@ -304,21 +309,24 @@ export function AgentThreadFeedInlineDemoPage() {
     [expandedId, runs, mountCounts, streamCounts, bumpMount, handleSend, stop],
   )
 
+  // No `p="md"`: this block renders inside `ThreadsPage`, which is itself inside `AppShell.Main` —
+  // three nested gutters left each panel below ~150px of content at 390px. No in-body `<Title>`
+  // either; see ComponentsPage's module doc for the wave's page-chrome rule.
   return (
-    <Stack gap="md" p="md">
-      <div>
-        <Title order={3}>Thread feed — inline row vs outcome row</Title>
-        <Text size="sm" c="dimmed" mt={4}>
-          The same three threads, rendered two ways: the Slack-shaped inline row on the left (expand
-          in place, transcript + composer), the unchanged inbox row on the right. Both load already
-          settled — expand a row on the left, watch its two counters, then collapse and re-expand it
-          a few times — both must stay flat. Sending a new message (the composer at the bottom of an
-          expanded row) is the only thing allowed to move either counter, and now shows a Stop
-          button while it streams.
-        </Text>
-      </div>
+    <Stack gap="md">
+      <Text size="sm" c="dimmed">
+        The same three threads, rendered two ways: the Slack-shaped inline row on the left (expand
+        in place, transcript + composer), the unchanged inbox row on the right. Both load already
+        settled — expand a row on the left, watch its two counters, then collapse and re-expand it a
+        few times — both must stay flat. Sending a new message (the composer at the bottom of an
+        expanded row) is the only thing allowed to move either counter, and now shows a Stop button
+        while it streams.
+      </Text>
 
-      <SimpleGrid cols={2} spacing="md">
+      {/* `{ base: 1, md: 2 }`, not a bare `cols={2}`: a bare number stays two columns at every
+          width, which at 390px left each ThreadFeed a ~150px column to render a chat transcript
+          in. Every other grid in the playground already declares a base count. */}
+      <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
         <Paper p="sm">
           <Text size="xs" tt="uppercase" fw={600} c="dimmed" mb={6}>
             variant=&quot;inline&quot; (renderRow → ThreadFeedRow)

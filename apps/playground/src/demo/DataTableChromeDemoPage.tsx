@@ -84,15 +84,19 @@ export function DataTableChromeDemoPage() {
     <Stack gap="lg">
       {/* The flags are the section's `actions` slot, not an ephemeral row in the body (law C1), and
           none of them carries a `size` because the home sets the tier (law C5).
-          THREE of them, not four: a `Section` holds ≤3 actions (law C6), and four labelled switches
-          in a `wrap: nowrap` row measure past a 375px viewport — which law C7 forbids a home from
-          scrolling or wrapping out of. The fourth, rarest one folds into a kebab, which is exactly
-          the fold basalt would compute for a typed `BarAction[]`. */}
+          THREE of them, not four: a `Section` holds ≤3 actions (law C6). The fourth, rarest one
+          folds into a kebab, which is exactly the fold basalt would compute for a typed
+          `BarAction[]`.
+          The row WRAPS. The earlier `wrap="nowrap"` was written on the theory that only a fourth
+          switch would break 375px, and the measurement was wrong: three labelled Mantine switches
+          are ~110px each, so with two `lg` gaps and the kebab the row's min-content floor is
+          ~410px — past a 390px viewport on its own. `WidgetHeader`'s mobile rule already drops
+          `.actions` onto its own line with `max-width: 100%`, and only the `nowrap` defeated it. */}
       <Section
         title="Data table — capped body, sticky header, column alignment"
         subtitle="40 rows in a card that must not grow past 320px."
         actions={
-          <Group gap="lg" wrap="nowrap">
+          <Group gap="sm" wrap="wrap">
             <Switch
               label="maxHeight 320"
               checked={capped}

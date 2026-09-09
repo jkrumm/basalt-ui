@@ -26,7 +26,7 @@
  *   (c) reloading the actual browser tab resumes the SAME thread via useAgentThreadRuns' mount-time
  *       reconciliation, replays the full turn, and completes — without resending the question.
  */
-import { Alert, Button, Code, Group, Paper, Stack, Text, Textarea, Title } from '@mantine/core'
+import { Alert, Button, Code, Group, Paper, Stack, Text, Textarea } from '@mantine/core'
 import { EmptyState } from 'basalt-ui'
 import {
   aiSdkTransport,
@@ -99,15 +99,15 @@ export function AgentAiSdkDemoPage() {
   const stalled = streaming && bufferSnapshot !== undefined && bufferSnapshot.chunkCount > 0
 
   return (
-    <Stack gap="md" p="md">
-      <div>
-        <Title order={3}>Agent chat — AI SDK resumption</Title>
-        <Text size="sm" c="dimmed" mt={4}>
-          A single-turn demo over <code>aiSdkTransport</code> against a mock, resumable backend —
-          built to prove that reloading the tab mid-stream recovers the answer, without resending
-          the question.
-        </Text>
-      </div>
+    <Stack gap="md">
+      {/* No in-body `<Title>`: the breadcrumb names the route and the bar's "AI SDK transport" tab
+          names this view — a third heading here was the third name for the same thing. See
+          ComponentsPage's module doc for the wave's page-chrome rule. */}
+      <Text size="sm" c="dimmed">
+        A single-turn demo over <code>aiSdkTransport</code> against a mock, resumable backend —
+        built to prove that reloading the tab mid-stream recovers the answer, without resending the
+        question.
+      </Text>
 
       <Paper py="xs" px="sm" style={{ minHeight: 220 }}>
         {thread === undefined ? (

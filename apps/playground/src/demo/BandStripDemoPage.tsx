@@ -18,8 +18,11 @@
  * Both strips share a cursor with each other and with every other chart on the page — no provider,
  * `cursorResolution` defaults to `'leading'` because a band IS a span keyed by its leading edge.
  */
-import { useMemo, useState } from 'react'
-import { SegmentedControl, Stack, Text } from '@mantine/core'
+import { useMemo } from 'react'
+import { Stack } from '@mantine/core'
+import { Section } from 'basalt-ui'
+import { ViewTabs } from 'basalt-ui/controls'
+import { createLocalStore, field } from 'basalt-ui/state'
 import { alpha, BandStrip, ChartCard, VX } from 'basalt-ui/charts'
 import type { BandSpan, BandStripSeries } from 'basalt-ui/charts'
 
@@ -172,77 +175,86 @@ function linkBand(d: LinkSlot): BandSpan {
   return { state: 'speed', fill: alpha(VX.line, 0.25 + 0.65 * (d.mbit / 1000)) }
 }
 
+/**
+ * The window size, store-bound (law C3) so a reload lands on the width that was being looked at.
+ *
+ * It drives BOTH strips, which is what decides its home: a `ChartCard`'s `actions` slot would put a
+ * control that reprojects two charts inside one of them. A `Section` wraps the pair and its `tabs`
+ * slot is the switch's home — a real home rather than the floating `SegmentedControl` that sat
+ * above the block and reported `basalt/control-outside-home` (error at 1.30.0).
+ */
+const bandStripViews = createLocalStore({
+  key: 'bandstrip-window',
+  fields: { buckets: field.enum(['48', '144', '288'], '288') },
+}).labels({
+  buckets: {
+    '48': '48 buckets (unfolded)',
+    '144': '144 buckets',
+    '288': '288 buckets (folds)',
+  },
+})
+
 export function BandStripDemoPage() {
-  const [size, setSize] = useState('288')
+  const [size] = bandStripViews.field.buckets.use()
   const count = Number(size)
   const slots = useMemo(() => buildSlots(count), [count])
   const link = useMemo(() => buildLink(count), [count])
 
   return (
-    <Stack gap="lg">
-      <Stack gap="xs">
-        <Text size="sm" c="dimmed">
-          One rect per slot, no y axis at all. Scrub with the pointer or tab in and use ←/→ — both
-          strips and every other chart on the page share one cursor with no provider.
-        </Text>
-        <SegmentedControl
-          value={size}
-          onChange={setSize}
-          data={[
-            { value: '48', label: '48 buckets (unfolded)' },
-            { value: '144', label: '144 buckets' },
-            { value: '288', label: '288 buckets (folds)' },
-          ]}
-        />
+    <Section
+      title="Band strips"
+      subtitle="One rect per slot, no y axis at all. Scrub with the pointer or tab in and use ←/→ — both strips and every other chart on the page share one cursor with no provider."
+      tabs={<ViewTabs field={bandStripViews.field.buckets} label="Window" />}
+    >
+      <Stack gap="sm">
+        <ChartCard
+          title="Availability"
+          subtitle="Loss per 5-minute bucket, with unmeasured buckets hatched"
+          info="A clean bucket is neutral ink, loss is a ramp inside one state, and a bucket nothing measured is hatched — three facts colour alone could not keep apart."
+        >
+          <BandStrip<Slot>
+            data={slots}
+            chartId="pg-availability-strip"
+            getX={(d) => d.key}
+            series={AVAILABILITY_SERIES}
+            getBand={availabilityBand}
+            formatX={fmtClock}
+            fold={{ merge: mergeSlots }}
+            absentState="absent"
+            height={110}
+            ariaLabel="Availability in 5-minute buckets, with unmeasured buckets marked"
+            legend={{ toggle: false }}
+            tooltip={{
+              onFollow: true,
+              formatHeader: (key) => new Date(key).toLocaleString(),
+              label: (d) => ({
+                text: d.foldedFrom > 1 ? `${d.foldedFrom} buckets` : '1 bucket',
+                color: VX.legendText,
+              }),
+            }}
+          />
+        </ChartCard>
+
+        <ChartCard
+          title="Negotiated link speed"
+          subtitle="A renegotiation is MARKED, never averaged into a rate the NIC never ran at"
+          info="Speed intensity is relative to the fastest rate the window saw. A bucket holding two speeds gets an inset marker instead of their mean."
+        >
+          <BandStrip<LinkSlot>
+            data={link}
+            chartId="pg-link-strip"
+            getX={(d) => d.key}
+            series={LINK_SERIES}
+            getBand={linkBand}
+            formatX={fmtClock}
+            absentState="absent"
+            height={110}
+            ariaLabel="Negotiated link speed per bucket"
+            legend={{ toggle: false }}
+            tooltip={{ onFollow: true, formatHeader: (key) => new Date(key).toLocaleString() }}
+          />
+        </ChartCard>
       </Stack>
-
-      <ChartCard
-        title="Availability"
-        subtitle="Loss per 5-minute bucket, with unmeasured buckets hatched"
-        info="A clean bucket is neutral ink, loss is a ramp inside one state, and a bucket nothing measured is hatched — three facts colour alone could not keep apart."
-      >
-        <BandStrip<Slot>
-          data={slots}
-          chartId="pg-availability-strip"
-          getX={(d) => d.key}
-          series={AVAILABILITY_SERIES}
-          getBand={availabilityBand}
-          formatX={fmtClock}
-          fold={{ merge: mergeSlots }}
-          absentState="absent"
-          height={110}
-          ariaLabel="Availability in 5-minute buckets, with unmeasured buckets marked"
-          legend={{ toggle: false }}
-          tooltip={{
-            onFollow: true,
-            formatHeader: (key) => new Date(key).toLocaleString(),
-            label: (d) => ({
-              text: d.foldedFrom > 1 ? `${d.foldedFrom} buckets` : '1 bucket',
-              color: VX.legendText,
-            }),
-          }}
-        />
-      </ChartCard>
-
-      <ChartCard
-        title="Negotiated link speed"
-        subtitle="A renegotiation is MARKED, never averaged into a rate the NIC never ran at"
-        info="Speed intensity is relative to the fastest rate the window saw. A bucket holding two speeds gets an inset marker instead of their mean."
-      >
-        <BandStrip<LinkSlot>
-          data={link}
-          chartId="pg-link-strip"
-          getX={(d) => d.key}
-          series={LINK_SERIES}
-          getBand={linkBand}
-          formatX={fmtClock}
-          absentState="absent"
-          height={110}
-          ariaLabel="Negotiated link speed per bucket"
-          legend={{ toggle: false }}
-          tooltip={{ onFollow: true, formatHeader: (key) => new Date(key).toLocaleString() }}
-        />
-      </ChartCard>
-    </Stack>
+    </Section>
   )
 }

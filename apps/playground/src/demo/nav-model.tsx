@@ -84,6 +84,20 @@ export const NAV = defineNav({
         {
           id: 'components',
           label: 'Components',
+          // The FOURTH and last `mobile: 'tab'`, which fills the bar: `MOBILE_MAX_TABS_DEFAULT` is
+          // 5 INCLUDING the More slot, and the shell always needs More here (the account row and
+          // the sidebar blocks feed `extraMoreRows`), so four is the ceiling — a fifth would be
+          // dropped back into More with a dev warning naming it.
+          //
+          // Components rather than `cbbi`, `agent` or `settings`, on reach: it is the catalogue
+          // someone judging a component framework opens repeatedly, while `/cbbi` and `/agent` are
+          // each read once and `/settings` is already reachable from the account menu. It also
+          // pairs with `/charts` — the two members of this group are then the two tabs, so the
+          // phone bar mirrors a sidebar group instead of scattering it.
+          mobile: 'tab',
+          // A 72px slot: "Components" would ellipsize, and the short label is the only thing the
+          // bar prints under the icon.
+          short: 'UI',
           icon: <IconComponents />,
           link: linkOptions({ to: '/components' }),
         },

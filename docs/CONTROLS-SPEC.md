@@ -19,7 +19,7 @@ it — `advisory` means the generated coverage header lists it under `not guarde
 | C2  | A basalt filter or tab has no `value`/`onChange`; it takes `field` (a `FieldHandle`) and owns both the URL write and the localStorage mirror.                                                                                                                                                                                                                                                   | TypeScript — the props do not exist                                                                                                                                           |
 | C3  | Tab and filter state never lives in `useState`; it derives from a store field on the URL lane or the local lane.                                                                                                                                                                                                                                                                                | C2 + `basalt/hand-rolled-filter`                                                                                                                                              |
 | C4  | Every field declares its lanes once at definition — `{ url, persist }` — and resolves URL ⊳ localStorage ⊳ fallback, uniformly for every field kind.                                                                                                                                                                                                                                            | `createSearchStore` types + `search-store.test.ts`                                                                                                                            |
-| C5  | A home sets the size tier (`ctl` = 30px); an element inside a home slot carries no `size`, `w`, `fullWidth`, `visibleFrom` or `hiddenFrom`.                                                                                                                                                                                                                                                     | `basalt/control-size-literal`                                                                                                                                                 |
+| C5  | A home sets the size tier (`ctl` = 32px); an element inside a home slot carries no `size`, `w`, `fullWidth`, `visibleFrom` or `hiddenFrom`.                                                                                                                                                                                                                                                     | `basalt/control-size-literal`                                                                                                                                                 |
 | C6  | A page has one `PageBar`; its `actions` hold ≤5 entries and exactly one `primary`; a `Section` holds ≤3 actions.                                                                                                                                                                                                                                                                                | `basalt/page-bar-budget` + `ActionGroupProps.primary` singular                                                                                                                |
 | C7  | A home never scrolls horizontally and never wraps; overflow folds into a `More` menu (actions) or a `Filters (n)` sheet (filters), computed by basalt from typed data (a declared second LINE below `sm` is a control's phone form — C9 — not a wrap; row 2 of `PageBar` is the one home that has one).                                                                                         | `raw-scroll-container` (widened) + typed `BarAction[]`                                                                                                                        |
 | C8  | Every section, card or table title is a `WidgetHeader`; the page title is the breadcrumb (`staticData.title`) or `PageBar.title` in shell-less apps; an in-body `<Title order={1\|2}>` is an error.                                                                                                                                                                                             | `basalt/in-body-page-title` (order-1/2 branch); hand-rolled section headings are `advisory` + `shadow-basalt-export` on the name `Section`                                    |
@@ -40,7 +40,7 @@ three doubled controls; C16 resolves D4.
 `sm` stays the only breakpoint a CONSUMER writes. Mobile below means `< sm`; there is no
 `pointer: coarse` axis. The two dashboard grid primitives are the sanctioned exception and the only
 place `lg` (75em) exists in the package: `WidgetGrid` and `StatGroup` own the multi-breakpoint
-column law INTERNALLY — `base 1 → sm min(cols,2) → lg cols` and `base 2 → sm min(cols,3) → lg cols`
+column law INTERNALLY — `base 1 → sm min(cols,2) → lg cols` and `base 2 → sm min(cols,3), 4→2 → lg cols`
 respectively — so a page states one desktop count and never a responsive object. That is the point:
 five playground call sites reached for `md`/`lg` with three different breakpoint sets because no
 primitive owned the law (audit B #6/#7).
@@ -81,7 +81,7 @@ export function PageBar(props: PageBarProps): ReactNode
 ```
 
 Rendering is decided by context, not by prop. **Inside `BasaltShell`** row 1 (`actions`, `sync`)
-portals into the existing 48px header through the mechanism `PageActions` uses today
+portals into the existing 44px header through the mechanism `PageActions` uses today
 (`shell/page-header.tsx`), replacing it; the breadcrumb stays the lead. Row 2 (`tabs`, `filters`,
 `filtersEnd`) **portals into a second shell-owned outlet**, the BAND between the header and the
 scrollport — the same mechanism as row 1, one region down. It is not in the page flow and not
@@ -102,7 +102,7 @@ a sticky table head, `ArticleLayout`'s `.tocRail` and a `Section` `#anchor` all 
 Main's own top edge, with no `--basalt-page-bar-h` term. It still publishes its measured height as
 `--basalt-page-bar-h` on `documentElement` (ResizeObserver,
 `height > 0` guard — linewatch's `page-header.tsx:73-111` becomes framework behaviour). The AppShell
-header therefore stays a token, 48px on every viewport: `appShellHeaderMobileHeight` (97, B12) and
+header therefore stays a token, 44px on every viewport: `appShellHeaderMobileHeight` (97, B12) and
 the always-reserved 52px row (`palette.ts:586`, gap #5) are deleted, and no header height is React
 state. **Without a shell** the bar renders both rows in-flow, sticky at `top: 0`, with `title` +
 `icon` leading row 1. The height lands in the LAYOUT phase (`useLayoutEffect`, plain ref), so a cold
@@ -112,7 +112,7 @@ through the class, not through a global attribute selector — a seam under the 
 consumer's to draw (see `docs/MANTINE-THEMING.md` § Chrome integration for the region-seam wiring).
 
 Desktop: row 1 = lead · custom chips · ≤3 secondaries as `default` buttons + `More` · `sync` ·
-`primary` filled, RIGHTMOST · then `globalActions` after a gap, all `ctl` (30px). Row 2 = `tabs` ·
+`primary` filled, RIGHTMOST · then `globalActions` after a gap, all `ctl` (32px). Row 2 = `tabs` ·
 filter pills · `filtersEnd` right-aligned, `wrap: nowrap`, overflow folds into `+N`.
 
 Mobile: row 1 = breadcrumb · `primary` as an icon · kebab `Menu` holding every `mobile: 'more'`
@@ -127,7 +127,7 @@ pill when claimed. `n` = `store.useActiveCount()`; a line exists only when its c
 
 ```ts
 export type WidgetHeaderProps = {
-  tier: 'section' | 'widget' | 'group' // section: 30px ctl, h2 · widget: 24px icon tier, h3, display-only · group: aside/inspector label, h3, mono micro uppercase faint, quietest rank
+  tier: 'section' | 'widget' | 'group' // section: 32px ctl, h2 · widget: 24px icon tier, h3, display-only · group: aside/inspector label, h3, mono micro uppercase faint, quietest rank
   title: string
   icon?: ReactNode
   subtitle?: string
@@ -165,7 +165,7 @@ page, the card is `ChartCard`/`StatCard`.
 
 Mobile: `tier: 'section'` keeps title · count · one inline action, the rest in a kebab; `tabs`
 past 3 options become a `Select`. `tier: 'widget'` keeps value + delta wrapping under the title,
-sparkline `right` drops to `bleed`, one `⋯` at 30px with a 36px hit area.
+sparkline `right` drops to `bleed`, one `⋯` at 32px with a 36px hit area.
 
 | Tier      | Component                     | Heading | Style                                                      | Row height            | Icon |
 | --------- | ----------------------------- | ------- | ---------------------------------------------------------- | --------------------- | ---- |
@@ -239,9 +239,9 @@ actions is `ActionGroup`, and joining it would claim a relationship that is not 
 | `SearchFilter`      | `{ field: FieldHandle<StringField>; placeholder?: string }`                                                                                                                               | `field.string` (`history: 'replace'`)                                                                                                                                                                                                                                                                                                                                                                                                                                        | sheet = panel: the input as a `PanelRow`                                                                                                                                                                                                                    |
 | `ToggleFilter`      | `{ field: FieldHandle<BooleanField>; label: string }`                                                                                                                                     | `field.boolean`                                                                                                                                                                                                                                                                                                                                                                                                                                                              | sheet = panel: a `PanelRow` whose `Switch` rides the label line                                                                                                                                                                                             |
 | `ViewTabs`          | `{ field: FieldHandle<EnumField<T>>; options?: readonly { value: T; label: string; only?: 'sm-up' \| 'sm-down' }[] }`                                                                     | `field.enum`                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | ≤3 options AND fit-checked: `SegmentedControl fullWidth`; more (or a fit failure) → `Select`; `only: 'sm-down'` absorbs argo's Train tab                                                                                                                    |
-| `SyncButton`        | `{ syncing: boolean; lastCompletedAt?: number \| Date \| null; onSync: () => void; scope: 'page' \| 'global'; label?: string; error?: string }`                                           | —                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | `scope: 'page'` is labelled with the age inline above `sm` and icon-only below it; `scope: 'global'` is icon-only at EVERY width (the shell header shares 48px with the breadcrumb and row 1), age and error in the tooltip, `label` as the accessible name |
+| `SyncButton`        | `{ syncing: boolean; lastCompletedAt?: number \| Date \| null; onSync: () => void; scope: 'page' \| 'global'; label?: string; error?: string }`                                           | —                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | `scope: 'page'` is labelled with the age inline above `sm` and icon-only below it; `scope: 'global'` is icon-only at EVERY width (the shell header shares 44px with the breadcrumb and row 1), age and error in the tooltip, `label` as the accessible name |
 | `ActionGroup`       | `ActionGroupProps`                                                                                                                                                                        | —                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | primary icon + kebab                                                                                                                                                                                                                                        |
-| `ControlGroup`      | `{ children: ReactNode; gap?: 'none' \| 'tight' /* default 'none' */ }`                                                                                                                   | — (presentational; no `role`, no label — each child keeps its own accessible name)                                                                                                                                                                                                                                                                                                                                                                                           | unchanged — a joined set is one unit at every width; `ActionGroup` additionally joins ADJACENT icon-only entries on the mobile bar, where two 30px squares with a gap cost three boxes' worth of border                                                     |
+| `ControlGroup`      | `{ children: ReactNode; gap?: 'none' \| 'tight' /* default 'none' */ }`                                                                                                                   | — (presentational; no `role`, no label — each child keeps its own accessible name)                                                                                                                                                                                                                                                                                                                                                                                           | unchanged — a joined set is one unit at every width; `ActionGroup` additionally joins ADJACENT icon-only entries on the mobile bar, where two 32px squares with a gap cost three boxes' worth of border                                                     |
 | `OverflowMenu`      | `{ actions: readonly BarAction[] }`                                                                                                                                                       | —                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | 44px rows                                                                                                                                                                                                                                                   |
 
 **Surfaces.** A control has ONE form per mount and it is picked by the HOME, never by a prop or a
@@ -466,18 +466,18 @@ A 4px ladder with four rungs, density-tracked through `deriveSpacing`'s multipli
 | ----------------------------- | ------- | ----- | -------------------------------- | --------------------------------------------------- |
 | `controlHeightTag` _(new)_    | 20      | 18    | `Badge` count tag                | inline chip, table cell                             |
 | `controlHeightWidget` _(new)_ | 24      | 22    | `size="icon"` ActionIcon         | `WidgetHeader tier="widget"` actions                |
-| `controlHeightCtl` _(new)_    | 30      | 28    | `size="ctl"`                     | `PageBar`, `Section`, table toolbar, sidebar blocks |
+| `controlHeightCtl` _(new)_    | 32      | 28    | `size="ctl"`                     | `PageBar`, `Section`, table toolbar, sidebar blocks |
 | `touchControlHeight` _(new)_  | 36      | 30    | hit area (`::before`) below `sm` | every home                                          |
 | `controlHeight` (exists)      | 42      | —     | `size="md"`                      | forms — unchanged                                   |
 
-Steps: `pageBarRowHeight 40`, `sectionHeaderHeight 36`, `widgetHeaderHeight 28`,
+Steps: `pageBarRowHeight 36`, `sectionHeaderHeight 36`, `widgetHeaderHeight 28`,
 `sidebarBlockRowHeight 32`, `controlGap 6`, `sheetRowHeight 44`. Deleted:
 `appHeaderMobileActionsHeight`, `appShellHeaderMobileHeight`, `stickyHeaderClearanceMobile`,
 `--vx-space-app-header-mobile-actions-height`. `stickyHeaderClearance` = `anchors.stackMd` on every
 viewport — breathing room and nothing else: since `AppShell.Main` became the scrollport, BOTH the
 app header and `PageBar` row 2's band are regions rendered outside it, so folding either in would
-push every consumer that far down inside the content. Palantir's 20/24/30/40 lands as 20/24/30/42 because 42 is Mantine's
-own `md` and the existing anchor.
+push every consumer that far down inside the content. Palantir's 20/24/30/40 lands as 20/24/32/42 because 42 is Mantine's
+own `md` and the existing anchor, and `ctl` took the extra 2px in the 2026-09-09 chrome round.
 
 Mechanism — the tier reaches Mantine through its own size system, verified in 9.3.0
 (`getSize('ctl', 'button-height')` → `var(--button-height-ctl)`, `core/utils/get-size`).
@@ -492,12 +492,13 @@ omitted) fails the build. Each home wraps its **slot** — never its body — in
 `<MantineThemeProvider inherit theme={CTL_THEME}>` whose `components` set
 `defaultProps: { size: 'ctl' }` for Button/ActionIcon/Input/TextInput/Select/MultiSelect/
 SegmentedControl/NativeSelect (Menu has no `size` prop), and a `data-basalt-tier` attribute; `mergeMantineTheme` deep-merges, so the
-base `Button.extend` vars survive. A raw `Button` dropped into `PageBar.actions` is 30px with no
+base `Button.extend` vars survive. A raw `Button` dropped into `PageBar.actions` is 32px with no
 prop; a `size="xs"` typed there is C5. **`CtlSlot` takes `tier?: 'ctl' | 'widget'`** (default `'ctl'`): a
-`WidgetHeader tier="widget"` header row is 28px and cannot hold a 30px control, so its `actions` slot
+`WidgetHeader tier="widget"` header row is 28px and cannot hold a 32px control, so its `actions` slot
 mounts at `'widget'` — ActionIcon-only, `size="icon"` (24px, `--vx-space-control-height-widget`, which
 is what that anchor has always named). `StatCard` used the default and a card with a kebab measured a
-30px title row against 28 beside it, so two KPI cards in one grid row sat 2px out of line.
+30px title row (the `ctl` tier at the time) against 28 beside it, so two KPI cards in one grid row
+sat 2px out of line.
 `ChartCard` lives inside the Mantine-free `charts/` boundary and therefore cannot mount `CtlSlot` at all: its `actions` slot carries the same `data-basalt-tier="widget"` marker written by hand, and the basalt controls placed there size themselves (`size="ctl"` internally) — a raw Mantine element in that one slot is not auto-tiered, which `control-size-literal` and `hand-rolled-filter` are what catch. Mantine's own `sm`/`xs` sizes are **not** re-pointed —
 every `size="sm"` in a modal or form keeps Mantine's 36px. `SegmentedControl` gets `size: 'ctl'`
 vars and the mono numeric-label rule in its module CSS. Inputs keep the 16px iOS floor

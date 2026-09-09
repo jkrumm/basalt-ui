@@ -3,26 +3,39 @@ import { SettingsRow, SettingsSection } from 'basalt-ui'
 import { scenarioToAccountState, useUserScenario } from './user-scenario-store'
 import type { UserScenario } from './user-scenario-store'
 
-/** A `SegmentedControl` bound directly to one scenario field — no local state, the store is the
- * single source of truth so the sidebar footer re-renders live on every change. Rendered as a
- * `SettingsRow` control by the call sites below. */
-function ScenarioToggle<K extends keyof UserScenario>({
+/**
+ * One scenario field, as a settings ROW: a `SegmentedControl` bound directly to the store — no
+ * local state, so the sidebar footer re-renders live on every change.
+ *
+ * The row is IN the helper rather than at the four call sites, because the control's home has to be
+ * visible from the control's own site: `basalt/control-outside-home` (warn today, error at 1.30.0)
+ * walks this subtree, and a bare `<SegmentedControl>` handed to a `control=` prop in another
+ * component reads as homeless however many `SettingsRow`s wrap it downstream.
+ */
+function ScenarioRow<K extends keyof UserScenario>({
+  label,
   field,
   data,
   scenario,
   setScenario,
 }: {
+  label: string
   field: K
   data: Array<{ label: string; value: UserScenario[K] & string }>
   scenario: UserScenario
   setScenario: (next: UserScenario) => void
 }) {
   return (
-    <SegmentedControl
-      size="xs"
-      data={data}
-      value={scenario[field] as string}
-      onChange={(value) => setScenario({ ...scenario, [field]: value })}
+    <SettingsRow
+      label={label}
+      control={
+        <SegmentedControl
+          size="xs"
+          data={data}
+          value={scenario[field] as string}
+          onChange={(value) => setScenario({ ...scenario, [field]: value })}
+        />
+      }
     />
   )
 }
@@ -32,76 +45,60 @@ export function UserStatePage() {
   const accountState = scenarioToAccountState(scenario)
 
   return (
-    <Stack gap="lg" p="md" maw={600}>
+    <Stack gap="lg" maw={600}>
       <Text size="sm" c="dimmed">
         Toggle auth/plan/role state to see the sidebar footer&apos;s <Code>SidebarAccount</Code>{' '}
         react live — including the Account/Billing drawers behind its menu.
       </Text>
 
       <SettingsSection title="Session">
-        <SettingsRow
+        <ScenarioRow
           label="Auth"
-          control={
-            <ScenarioToggle
-              field="auth"
-              scenario={scenario}
-              setScenario={setScenario}
-              data={[
-                { label: 'Loading', value: 'loading' },
-                { label: 'Signed out', value: 'signed-out' },
-                { label: 'Signed in', value: 'signed-in' },
-              ]}
-            />
-          }
+          field="auth"
+          scenario={scenario}
+          setScenario={setScenario}
+          data={[
+            { label: 'Loading', value: 'loading' },
+            { label: 'Signed out', value: 'signed-out' },
+            { label: 'Signed in', value: 'signed-in' },
+          ]}
         />
-        <SettingsRow
+        <ScenarioRow
           label="Role"
-          control={
-            <ScenarioToggle
-              field="role"
-              scenario={scenario}
-              setScenario={setScenario}
-              data={[
-                { label: 'User', value: 'user' },
-                { label: 'Admin', value: 'admin' },
-                { label: 'Owner', value: 'owner' },
-              ]}
-            />
-          }
+          field="role"
+          scenario={scenario}
+          setScenario={setScenario}
+          data={[
+            { label: 'User', value: 'user' },
+            { label: 'Admin', value: 'admin' },
+            { label: 'Owner', value: 'owner' },
+          ]}
         />
       </SettingsSection>
 
       <SettingsSection title="Plan">
-        <SettingsRow
+        <ScenarioRow
           label="Plan"
-          control={
-            <ScenarioToggle
-              field="plan"
-              scenario={scenario}
-              setScenario={setScenario}
-              data={[
-                { label: 'Free', value: 'free' },
-                { label: 'Pro', value: 'pro' },
-                { label: 'Team', value: 'team' },
-              ]}
-            />
-          }
+          field="plan"
+          scenario={scenario}
+          setScenario={setScenario}
+          data={[
+            { label: 'Free', value: 'free' },
+            { label: 'Pro', value: 'pro' },
+            { label: 'Team', value: 'team' },
+          ]}
         />
-        <SettingsRow
+        <ScenarioRow
           label="Plan status"
-          control={
-            <ScenarioToggle
-              field="planStatus"
-              scenario={scenario}
-              setScenario={setScenario}
-              data={[
-                { label: 'Active', value: 'active' },
-                { label: 'Trialing', value: 'trialing' },
-                { label: 'Past due', value: 'past_due' },
-                { label: 'Canceled', value: 'canceled' },
-              ]}
-            />
-          }
+          field="planStatus"
+          scenario={scenario}
+          setScenario={setScenario}
+          data={[
+            { label: 'Active', value: 'active' },
+            { label: 'Trialing', value: 'trialing' },
+            { label: 'Past due', value: 'past_due' },
+            { label: 'Canceled', value: 'canceled' },
+          ]}
         />
       </SettingsSection>
 

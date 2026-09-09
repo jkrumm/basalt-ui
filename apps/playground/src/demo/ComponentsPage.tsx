@@ -8,6 +8,16 @@
  *
  * Pure Mantine: only components and layout primitives (Stack / Group / SimpleGrid / Box) — no raw
  * <div>, no inline-styled layout.
+ *
+ * PAGE-CHROME RULE for this wave, applied to every demo page in the phone-readiness pass and
+ * stated once here because this is the first page it touched: **the breadcrumb is the page's one
+ * name.** A page body never prints its own `<Title>` — law C8 already reserves the name for the
+ * breadcrumb (or `PageBar.title` in a shell-less app), `PageTitle` is the shipped primitive for
+ * the shell-less case, and `basalt/in-body-page-title` is the guard that says so. The framing
+ * sentence each page carried under that heading is kept, demoted to a lead `<Text size="sm"
+ * c="dimmed">` (or a `Section` subtitle where a section already owns the block) — which is what
+ * this page and `/dashboard`, `/cbbi`, `/charts` already did. Two chromes competing for ~90px
+ * above the first real content is the thing being removed, not the prose.
  */
 import {
   Accordion,
@@ -33,6 +43,8 @@ import {
   TextInput,
 } from '@mantine/core'
 import { EmptyState, PageBar, SettingsSection } from 'basalt-ui'
+import { ViewTabs } from 'basalt-ui/controls'
+import { createLocalStore, field } from 'basalt-ui/state'
 import type { ReactNode } from 'react'
 import { ActivityPage } from './ActivityPage'
 import { IconSearch } from './icons'
@@ -45,6 +57,16 @@ function ComponentGroup({ title, children }: { title: string; children: ReactNod
   return <SettingsSection title={title}>{children}</SettingsSection>
 }
 
+// The route's view switch, store-bound so a deep link and a back navigation land on the tab the
+// user left (law C3). `createLocalStore`, not `createSearchStore`: which showcase tab is open is
+// not worth a URL param, and the local store mirrors it to localStorage all the same.
+const componentViews = createLocalStore({
+  key: 'components-view',
+  fields: { tab: field.enum(['surfaces', 'primitives', 'activity'], 'surfaces') },
+}).labels({
+  tab: { surfaces: 'Surfaces', primitives: 'Primitives', activity: 'Activity' },
+})
+
 const TABLE_ROWS = [
   { name: 'Sessions', value: '12,480', delta: '12.4%' },
   { name: 'Signups', value: '3,210', delta: '8.1%' },
@@ -53,27 +75,34 @@ const TABLE_ROWS = [
 ]
 
 export function ComponentsPage() {
+  const [tab] = componentViews.field.tab.use()
   return (
     <Stack gap="md">
       {/* `PageBar` row 1 portals into the app-shell header; the action is typed DATA, so basalt
-          owns its size, its overflow fold and its mobile projection (laws C5/C7). */}
-      <PageBar actions={{ secondary: [{ key: 'export', label: 'Export', onClick: () => {} }] }} />
+          owns its size, its overflow fold and its mobile projection (laws C5/C7). The route's tab
+          set is row 2's `tabs` slot, which is the only home a bound control may enter (law C1). */}
+      <PageBar
+        tabs={<ViewTabs field={componentViews.field.tab} label="Section" />}
+        actions={{ secondary: [{ key: 'export', label: 'Export', onClick: () => {} }] }}
+      />
 
       {/* `/primitives` and `/activity` absorbed here (audit E §7) — one PageBar for the whole
-          route (law C6), each former page's body unchanged as a panel. */}
-      <Tabs defaultValue="surfaces">
-        <Tabs.List>
-          <Tabs.Tab value="surfaces">Surfaces</Tabs.Tab>
-          <Tabs.Tab value="primitives">Primitives</Tabs.Tab>
-          <Tabs.Tab value="activity">Activity</Tabs.Tab>
-        </Tabs.List>
-        <Tabs.Panel value="surfaces" pt="md">
+          route (law C6), each former page's body unchanged as a panel.
+
+          `Tabs` is CONTROLLED off the store and renders no `Tabs.List` of its own: a raw list is
+          `display: flex; flex-wrap: wrap`, so a labelled tab strip breaks onto two lines at 390px
+          with the active underline split across rows. `ViewTabs` owns that swap in CSS instead
+          (law C9) — a full-width `SegmentedControl` on a phone while the labels fit, a `Select`
+          past three options or past the width. The panels stay Mantine's, so `keepMounted`
+          behaviour is unchanged. */}
+      <Tabs value={tab}>
+        <Tabs.Panel value="surfaces">
           <ComponentsSurfaces />
         </Tabs.Panel>
-        <Tabs.Panel value="primitives" pt="md">
+        <Tabs.Panel value="primitives">
           <PrimitivesPage />
         </Tabs.Panel>
-        <Tabs.Panel value="activity" pt="md">
+        <Tabs.Panel value="activity">
           <ActivityPage />
         </Tabs.Panel>
       </Tabs>
@@ -98,6 +127,12 @@ function ComponentsSurfaces() {
         <ComponentGroup title="Inputs">
           <Stack gap="sm">
             <TextInput label="Name" placeholder="Jane Doe" />
+            {/* theme-allow control-outside-home — this Select IS the specimen: the group's subject
+                is how a raw, themed Mantine input renders on a panel surface, beside a TextInput
+                and a Textarea, and it carries no state anything else reads. A bound
+                `SelectFilter` here would show basalt's control instead of the Mantine one the
+                screenshot is for. One of the page's two deliberate waivers; the other is the
+                "Segmented control" group below. */}
             <Select
               label="Channel"
               placeholder="Pick one"
@@ -137,6 +172,9 @@ function ComponentsSurfaces() {
         </ComponentGroup>
 
         <ComponentGroup title="Segmented control">
+          {/* theme-allow control-outside-home — the group's title is the rule's own answer to why:
+              the raw control is the specimen. It is uncontrolled and reads nothing, so there is no
+              filter here to give a home to. */}
           <SegmentedControl
             data={[
               { label: 'Day', value: 'day' },

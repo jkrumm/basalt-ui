@@ -5,7 +5,7 @@
  * title (13px/600 ink) are all themed for free. The only call-site style override is the mono
  * micro-timestamp — docs/DESIGN-SPEC.md §3's micro-label idiom, condensed for a feed row.
  */
-import { Paper, Stack, Text, Timeline, Title } from '@mantine/core'
+import { Paper, Stack, Text, Timeline } from '@mantine/core'
 import type { CSSProperties } from 'react'
 import { VX } from 'basalt-ui/tokens'
 
@@ -59,14 +59,13 @@ const ACTIVITY_EVENTS: ActivityEvent[] = [
 
 export function ActivityPage() {
   return (
-    <Stack gap="md" p="md">
-      <div>
-        <Title order={3}>Activity</Title>
-        <Text size="sm" c="dimmed" mt={4}>
-          A recent-events feed built on Mantine's Timeline — themed centrally (bullet, line, and
-          title); only the timestamp is a call-site style override.
-        </Text>
-      </div>
+    <Stack gap="md">
+      {/* No in-body `<Title>` — the /components bar's "Activity" tab names this view (see
+          ComponentsPage's module doc, which states the wave's page-chrome rule). */}
+      <Text size="sm" c="dimmed">
+        A recent-events feed built on Mantine's Timeline — themed centrally (bullet, line, and
+        title); only the timestamp is a call-site style override.
+      </Text>
 
       <Paper py="xs" px="sm">
         <Timeline active={0}>

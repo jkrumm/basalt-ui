@@ -5,13 +5,20 @@
  * scroll at phone width — plus `BasaltVirtualList` (imported from the narrow `basalt-ui/data/virtual`
  * subpath, audit-b-components.md #17) with a `LineSparkline` per row and the ref handle
  * (`scrollToIndex`/`scrollToEnd`).
+ *
+ * The toolbar this page demonstrates is REAL but no longer mounted here: `/data` folds this page
+ * in as a tab, and Mantine keeps an inactive `Tabs.Panel` mounted, so a `PageBar` in this file was
+ * the route's one bar on all four tabs (law C6) and blocked the route from putting its own tab set
+ * in row 2. `DataDemoPage` now owns the single mount and renders THESE filters into it while this
+ * tab is active — same store (`dataStressFilters`), same band, same published
+ * `--basalt-page-bar-h` the table below clears.
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Button, Group, Stack, Text } from '@mantine/core'
-import { PageAside, PageBar, Section } from 'basalt-ui'
+import { PageAside, Section } from 'basalt-ui'
 import type { QueryStateLike } from 'basalt-ui'
 import { overlays } from 'basalt-ui/commands'
-import { FilterSet, RangeFilter, SearchFilter, ViewTabs } from 'basalt-ui/controls'
+import { ViewTabs } from 'basalt-ui/controls'
 import { BasaltDataTable, createColumnHelper } from 'basalt-ui/data/table'
 import { BasaltVirtualList } from 'basalt-ui/data/virtual'
 import type { BasaltVirtualListHandle } from 'basalt-ui/data/virtual'
@@ -314,14 +321,6 @@ export function DataStressPage() {
 
   return (
     <Stack gap="sm">
-      <PageBar
-        filters={
-          <FilterSet>
-            <RangeFilter field={dataStressFilters.field.range} />
-            <SearchFilter field={dataStressFilters.field.query} placeholder="Find a session" />
-          </FilterSet>
-        }
-      />
       <Text size="sm" c="dimmed">
         The sticky row-2 toolbar above, a `manualPagination` table clearing it via
         `--basalt-page-bar-h`, and a horizontal scroll forced by `minWidth` at phone width — none of
