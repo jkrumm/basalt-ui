@@ -183,7 +183,7 @@ claim to have already done this was false. **Consumer-visible consequence:** the
 an installed tarball carries its own version number. If it says `Unreleased`, file it.
 
 **§ 1.30.0 § Guards carries a corrected number**, restated here because a published measurement
-moved: meteo is 5 `control-outside-home` incumbents, not 0, and the fleet total is 34, not 29 — the
+moved: weatherorb is 5 `control-outside-home` incumbents, not 0, and the fleet total is 34, not 29 — the
 zero was a failed `npx --no-install oxlint` invocation read as "no findings". The four promotions to
 `error` are unaffected and stand as shipped; only the extended C1 pair's count changed.
 
@@ -379,23 +379,23 @@ That measurement was taken 2026-09-09, with all seven consumers freshly migrated
 basalt built from `master`, by running `npx oxlint .` in each repo and counting by rule id — a
 method that failed open in one of them, see the correction under the table:
 
-| Rule                                                              | argo | image-gen | image-share | rb  | linewatch | meteo | obsidian | playground | Verdict      |
-| ----------------------------------------------------------------- | ---- | --------- | ----------- | --- | --------- | ----- | -------- | ---------- | ------------ |
-| `basalt/provider-above-router`                                    | 0    | 0         | 0           | 0   | 0         | 0     | 0        | 0          | → `error`    |
-| `basalt/forms-field-key`                                          | 0    | 0         | 0           | 0   | 0         | 0     | 0        | 0          | → `error`    |
-| `basalt/query-fn-unwrap`                                          | 0    | 0         | 0           | 0   | 0         | 0     | 0        | 0          | → `error`    |
-| `basalt/bound-control-outside-home`                               | 0    | 0         | 0           | 0   | 0         | 0     | 0        | 0          | → `error`    |
-| `basalt/control-outside-home` + `raw-selection-control` (one law) | 2    | 10        | 6           | 8   | 0         | 5     | 0        | 3          | stays `warn` |
+| Rule                                                              | argo | image-gen | image-share | rb  | linewatch | weatherorb | obsidian | playground | Verdict      |
+| ----------------------------------------------------------------- | ---- | --------- | ----------- | --- | --------- | ---------- | -------- | ---------- | ------------ |
+| `basalt/provider-above-router`                                    | 0    | 0         | 0           | 0   | 0         | 0          | 0        | 0          | → `error`    |
+| `basalt/forms-field-key`                                          | 0    | 0         | 0           | 0   | 0         | 0          | 0        | 0          | → `error`    |
+| `basalt/query-fn-unwrap`                                          | 0    | 0         | 0           | 0   | 0         | 0          | 0        | 0          | → `error`    |
+| `basalt/bound-control-outside-home`                               | 0    | 0         | 0           | 0   | 0         | 0          | 0        | 0          | → `error`    |
+| `basalt/control-outside-home` + `raw-selection-control` (one law) | 2    | 10        | 6           | 8   | 0         | 5          | 0        | 3          | stays `warn` |
 
-**Corrected at 1.30.1: meteo is 5, not 0 — the fleet total is 34, not 29.** The zero published at
-1.30.0 was an artifact: meteo has no local oxlint binary, so `npx --no-install oxlint` failed there
+**Corrected at 1.30.1: weatherorb is 5, not 0 — the fleet total is 34, not 29.** The zero published at
+1.30.0 was an artifact: weatherorb has no local oxlint binary, so `npx --no-install oxlint` failed there
 with a package error and the counting pipeline read that failure as "no findings" — the same
 silent-zero shape this file already warns about for `check-theme`'s fabricated roots, arrived at from the other side. The
 five are real (`display-controls.tsx:258`, `stack-editor.tsx:301/323/337`, `forecast-tab.tsx:151`),
 and re-measuring with a guaranteed-present binary is what found them. **The DECISION is unchanged**:
-all four promoted rules re-measured at zero in every repo including meteo, so those four promotions
+all four promoted rules re-measured at zero in every repo including weatherorb, so those four promotions
 stand exactly as shipped — only the extended pair's count moved. A count taken through a repo's own
-`lint` script rather than a bare oxlint invocation is not a measurement; meteo's `lint` is
+`lint` script rather than a bare oxlint invocation is not a measurement; weatherorb's `lint` is
 `basalt-ui check-theme` alone and never runs oxlint at all.
 
 **The four promotions cost nothing to take.** They were measured at zero, in every consumer, before

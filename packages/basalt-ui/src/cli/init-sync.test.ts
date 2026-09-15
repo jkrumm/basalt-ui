@@ -287,7 +287,7 @@ describe('sync --check — a permanent skip is not drift', () => {
 
 /**
  * The seeded query client is a FACTORY, not a module-level singleton. `export const queryClient =
- * createBasaltQueryClient()` is created once per PROCESS, so an SSR consumer (meteo is a TanStack
+ * createBasaltQueryClient()` is created once per PROCESS, so an SSR consumer (weatherorb is a TanStack
  * Start app that prerenders routes) serves every request from one shared cache.
  */
 describe('the seeded query client is SSR-safe', () => {

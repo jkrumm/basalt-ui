@@ -62,7 +62,7 @@ export function deprecatedProp(
  * Distinct from {@link deprecatedProp} (still read, going away) and {@link oneOf} (read, and the
  * value is out of range): this one renders something the caller did not ask for and nothing in the
  * type system, the linter or the console says so. `ChartFrame`'s `height` under `fill` is the
- * reference case — meteo passed both for the life of the file and never learnt that eight height
+ * reference case — weatherorb passed both for the life of the file and never learnt that eight height
  * constants and a whole `compact` branch changed no pixel.
  */
 export function ignoredProp(component: string, prop: string, because: string): string {

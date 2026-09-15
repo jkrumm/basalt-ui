@@ -270,7 +270,7 @@ describe('legendEntryCap — only a fill frame rolls its legend up, and only whe
 })
 
 /**
- * The consumer report this fixes (meteo, 1.30.0): a 7-entry meteogram legend in a 92–150px docked
+ * The consumer report this fixes (weatherorb, 1.30.0): a 7-entry meteogram legend in a 92–150px docked
  * `fill` row rendered 2 entries at `maxRows` 3, 6 AND 99 — five series drawn in colours nothing
  * named, behind a rollup the box had no room to expand into. 1.30.0's own halves were both right;
  * `ChartFrame` ran the measured fit over the honoured cap, so this covers the COMPOSITION, which
@@ -278,33 +278,33 @@ describe('legendEntryCap — only a fill frame rolls its legend up, and only whe
  */
 describe('resolveLegendRollup — a stated maxRows outranks the tier AND the measured fit', () => {
   const seven = ['a', 'b', 'c', 'd', 'e', 'f', 'g'].map((k) => entry(k, `Series ${k}`))
-  /** meteo's row: 150px tall, `VX.minPlotHeight` 120, so the legend's share is 30px. */
-  const meteo = { items: seven, containerW: 380, available: 150 - VX.minPlotHeight } as const
+  /** weatherorb's row: 150px tall, `VX.minPlotHeight` 120, so the legend's share is 30px. */
+  const weatherorb = { items: seven, containerW: 380, available: 150 - VX.minPlotHeight } as const
 
   test('the measured fit is what pinned it — the state before the fix', () => {
-    expect(legendEntryCap({ ...meteo, defaultMaxRows: 99 })).toBeLessThan(seven.length)
+    expect(legendEntryCap({ ...weatherorb, defaultMaxRows: 99 })).toBeLessThan(seven.length)
   })
 
   test('every stated number now survives the same box, and the plot pays', () => {
     for (const statedMaxRows of [3, 6, 99]) {
       expect(
-        resolveLegendRollup({ ...meteo, statedMaxRows, tier: 'phone', fillBand: true }),
+        resolveLegendRollup({ ...weatherorb, statedMaxRows, tier: 'phone', fillBand: true }),
       ).toEqual({ maxRows: statedMaxRows, legendWins: true })
     }
   })
 
   test('stating nothing still gets the measured fit, bounded by the tier default', () => {
-    const rollup = resolveLegendRollup({ ...meteo, tier: 'phone', fillBand: true })
+    const rollup = resolveLegendRollup({ ...weatherorb, tier: 'phone', fillBand: true })
     expect(rollup.legendWins).toBe(false)
     expect(rollup.maxRows).toBeLessThanOrEqual(2)
   })
 
   test('off a fill band nothing is measured — the frame grows instead', () => {
-    expect(resolveLegendRollup({ ...meteo, tier: 'phone', fillBand: false })).toEqual({
+    expect(resolveLegendRollup({ ...weatherorb, tier: 'phone', fillBand: false })).toEqual({
       maxRows: 2,
       legendWins: false,
     })
-    expect(resolveLegendRollup({ ...meteo, tier: 'desktop', fillBand: false })).toEqual({
+    expect(resolveLegendRollup({ ...weatherorb, tier: 'desktop', fillBand: false })).toEqual({
       maxRows: undefined,
       legendWins: false,
     })
@@ -312,7 +312,7 @@ describe('resolveLegendRollup — a stated maxRows outranks the tier AND the mea
 
   test('a stated cap off a fill band is honoured too, and costs the plot nothing', () => {
     expect(
-      resolveLegendRollup({ ...meteo, statedMaxRows: 6, tier: 'phone', fillBand: false }),
+      resolveLegendRollup({ ...weatherorb, statedMaxRows: 6, tier: 'phone', fillBand: false }),
     ).toEqual({ maxRows: 6, legendWins: false })
   })
 })
@@ -371,7 +371,7 @@ describe('resolvePlotRect — legendWins moves the cost onto the plot, never pas
 })
 
 /**
- * The consumer report this fixes (meteo, 1.29.2): "the phone chart tier has an opt-out for margin
+ * The consumer report this fixes (weatherorb, 1.29.2): "the phone chart tier has an opt-out for margin
  * and xLabelRotate but NOT for the legend, and it moves rendering on the desktop." The tier keys on
  * the MEASURED box — correctly; that is not the bug — so a 380px inspector panel on a 1440px
  * desktop resolves to `phone`, and `Math.min(legend.maxRows, tierMaxRows)` meant a six-series
