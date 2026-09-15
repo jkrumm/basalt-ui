@@ -48,7 +48,7 @@ export type ChartFrameLegend = {
    *
    * An explicit value WINS OUTRIGHT — over the phone tier's two-row default (`chartTierMetrics`)
    * AND over a `fill` frame's measured fit (`legendEntryCap`). 1.30.0 fixed only the first half:
-   * the fit still ran `Math.min(fitted, caller)` on top, so meteo's 7-entry meteogram legend in a
+   * the fit still ran `Math.min(fitted, caller)` on top, so weatherorb's 7-entry meteogram legend in a
    * 150px docked row rendered 2 entries at `maxRows` 3, 6 AND 99 — five series drawn in colours
    * nothing named. Both losers are DEFAULTS (the tier's, and `VX.minPlotHeight`); this is the one
    * number a caller stated, so under `fill` the PLOT yields the height instead

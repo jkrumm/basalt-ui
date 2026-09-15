@@ -3977,7 +3977,7 @@ export const PLUGIN_RULE_GRACE = {
       'wave-6 rules promoted at 1.27.0; this one has not, across three re-datings. ' +
       'RE-MEASURED 2026-09-09, every consumer freshly migrated to 1.29.2 and basalt built from ' +
       'master: 29 incumbents across five repos — image-gen 10, rb 8, image-share 6, the playground ' +
-      '3, argo 2 — and zero in linewatch, meteo and obsidian. The 1.28.0 prediction held: ' +
+      '3, argo 2 — and zero in linewatch, weatherorb and obsidian. The 1.28.0 prediction held: ' +
       "{@link isOverlayConventionFile} took argo's 9 cross-file overlay warns down to 2, which is " +
       'the part of the remainder that was ever going to fall to an exemption. ' +
       'Extended to 1.31.0, and the argument is NOT the count — it is that 1.30.0 is the first ' +

@@ -189,7 +189,7 @@ export function chartTierMetrics(tier: ChartTier): ChartTierMetrics {
  * The measured {@link legendEntryCap} a `fill` frame applies is NOT a second ceiling on top of
  * this: it resolves an ABSENT cap only. 1.30.0 ran it over the caller's number as well
  * (`Math.min(fitted, caller)`), which made "wins outright" false again in the one place it was
- * needed — meteo measured a 7-entry legend pinned to 2 entries at `maxRows` 3, 6 AND 99, with 5
+ * needed — weatherorb measured a 7-entry legend pinned to 2 entries at `maxRows` 3, 6 AND 99, with 5
  * series drawn in colours the legend refused to name. The fit is not physics either: it derives
  * from `VX.minPlotHeight`, which is a framework DEFAULT about the plot. Two defaults do not
  * outvote the one number a caller stated, so the PLOT yields the height instead
