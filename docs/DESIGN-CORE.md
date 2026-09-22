@@ -14,7 +14,7 @@ flow, how depth is built, what every chart composes — not the concrete hues. A
 `DESIGN.md` instantiates the palette (the brand voltage, the per-series data dictionary) on top of
 the shipped rules.
 
-**Precedence** (for this repo and for a consumer repo alike): see root `CLAUDE.md` §
+**Precedence** (for this repo and for a consumer repo alike): see root `AGENTS.md` §
 Consolidation doctrine / precedence chain. When this file and a shipped rule disagree, fix the rule
 to match (or update both deliberately) — this file is the source those rules are distilled from.
 
