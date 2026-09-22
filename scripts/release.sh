@@ -12,7 +12,7 @@
 #     `release-migrating.ts --check`, because `prepareCmd`'s MIGRATING rename runs in the `prepare`
 #     step, which a dry run SKIPS, so nothing else in the pipeline can catch a shape it can't fix;
 #   • a dry run first, ALWAYS, with the computed version read back before the real one is offered;
-#   • a hard refusal on a major — majors are banned here by design (see CLAUDE.md), and the one
+#   • a hard refusal on a major — majors are banned here by design (see AGENTS.md), and the one
 #     way to get one by accident is a stray `feat!:`/`BREAKING CHANGE:` reaching master. Nothing
 #     else in the pipeline checks;
 #   • the C16 grace gate against the COMPUTED version (`packages/basalt-ui/scripts/check-grace.ts`),
@@ -122,7 +122,7 @@ await_completion() {
 # This exists because the line it replaces was a single unretried `npm view` interpolated into the
 # success message — so the script could, and did, print `✔ basalt-ui v1.30.1 published — registry
 # reports 1.30.0` and exit 0. The whole reason this wrapper exists rather than a bare
-# `gh workflow run` is that a green exit means "on npm" (see CLAUDE.md § Release Process); a claim
+# `gh workflow run` is that a green exit means "on npm" (see AGENTS.md § Release Process); a claim
 # printed beside evidence contradicting it is worse than no claim, because it is the line a reader
 # trusts instead of checking.
 #
@@ -177,7 +177,7 @@ echo
 echo "  ${last_tag:-none} → v$version  (${bump:-unknown})"
 
 if [ "$bump" = "major" ]; then
-  die "a MAJOR is banned in this repo (CLAUDE.md: no majors, 1.x absorbs breaks).
+  die "a MAJOR is banned in this repo (AGENTS.md: no majors, 1.x absorbs breaks).
    Something on $BRANCH carries \`feat!:\` or a BREAKING CHANGE footer. Rewrite it as a plain
    \`feat:\` documenting the change in the body, then release again."
 fi
