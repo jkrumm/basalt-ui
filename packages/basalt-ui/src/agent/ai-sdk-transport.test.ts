@@ -330,15 +330,18 @@ describe('aiSdkTransport — snapshot→delta diffing', () => {
     expect(requested?.approval).toEqual({ id: 'appr-1', isAutomatic: true, signature: 'sig-xyz' })
 
     const responded = toolParts.find((p) => p.state === 'approval-responded')
-    // AI SDK's OWN runtime carries `isAutomatic` forward into approval-responded but drops
-    // `signature` there (verified against dist/index.js) — this is the SDK's behavior, not a bug
-    // in this diffing layer; what this pins is that basalt passes whatever the SDK gives it
-    // through unflattened, not that basalt itself re-adds a dropped field.
+    // AI SDK's OWN runtime carries both `isAutomatic` and `signature` forward into
+    // approval-responded (verified against dist/index.js; `ai` changelog ee55a07 "Preserve tool
+    // approval signatures when approvals transition to responded" — pre-7.0.17 it dropped
+    // `signature` here) — this is the SDK's behavior, not this diffing layer; what this pins is
+    // that basalt passes whatever the SDK gives it through unflattened, not that basalt itself
+    // adds or drops a field.
     expect(responded?.approval).toEqual({
       id: 'appr-1',
       approved: true,
       reason: 'looks safe',
       isAutomatic: true,
+      signature: 'sig-xyz',
     })
   })
 
