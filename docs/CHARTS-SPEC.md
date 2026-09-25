@@ -464,26 +464,19 @@ proves nothing.
   counts itself.
 - **`BandStrip` derives exactly one tooltip row** — more stays hand-authored in `tooltip.extraRows`.
 
-## 8. The phone tier — measured, never a media query
+## 8. The container class — measured, never a media query
 
-`src/charts/**` had no breakpoint literal anywhere in it: legend font, tick font, `VX.margin`,
-`dotR` and the tooltip's `minWidth: 140` were identical at 1920px and at 320px (audit-c #12). It now
-resolves **two tiers**, and it resolves them from the width `ChartFrame` already MEASURES.
+Chart chrome keys on the frame's MEASURED width, never a viewport `@media`: a chart in a two-column
+cell on a 1440px desktop is as narrow as one filling a phone, and only the `ResizeObserver` sees
+that. The class is `CONTAINER_CLASSES` (micro < 240 < compact < 480 < regular < 800 < wide);
+`resolveChartLayout` (`primitives/chart-layout.ts`, RESPONSIVE-SPEC §4) resolves it plus height and
+legend fit. Unmeasured (SSR, first paint) it follows the viewport size class (a compact viewport is
+a `compact` container).
 
-A viewport breakpoint would answer the wrong question. A chart in a two-column grid cell on a 1440px
-desktop is exactly as narrow as one filling a phone, and `@media` cannot see that; the
-`ResizeObserver` can. It also keeps the layer Mantine-free — `theme.breakpoints` is on the coupled
-side of the boundary.
-
-- **`resolveChartTier(containerW)`** (`primitives/chart-frame-layout.ts`) returns `'phone'` below
-  `VX.phoneChartWidth` (480) and `'desktop'` otherwise. An UNMEASURED box (`containerW <= 0` — SSR,
-  or before the observer's first callback) is `'desktop'`: the first frame must not paint phone
-  chrome it then undoes one frame later.
-- **`ChartFrame` publishes it once**, through `ChartTierProvider`; the axes, the legend, the
-  crosshair dots and the tooltip read it back with `useChartTierMetrics()`. Outside a `ChartFrame`
-  the default is `'desktop'`, so a hand-composed plot keeps today's sizes.
-- **`chartTierMetrics(tier)`** is the whole size set, in one frozen object per tier, so a new
-  tier-sensitive size is added in one place and read by name rather than branched on at each site.
+- **`ChartFrame` publishes the class once**; the axes, legend, crosshair dots and tooltip read their
+  metrics with `useChartTierMetrics()`. Outside a frame the default is `regular` (desktop sizes).
+- **`micro`/`compact` take the phone metrics, `regular`/`wide` the desktop ones** (one frozen object
+  each, `chartTierMetrics`; `resolveChartTier` and friends are deprecated forwards):
 
 | Metric             | desktop                         | phone              |
 | ------------------ | ------------------------------- | ------------------ |
@@ -494,34 +487,19 @@ side of the boundary.
 | legend entry cap   | none                            | 2, then `+N more`  |
 | margin FLOORS      | `VX.margin`                     | `VX.margin × 0.75` |
 
-Two consequences worth stating, because both are places the tier could otherwise lie:
-
-- **The tick font is threaded into the MEASUREMENT, not just the paint.** `autoMargin` takes the
-  tier's `fontPx` and its tightened `floor`, and `xLabelPxFor` measures at the same size — §1's
-  measured-equals-painted law holds per tier or it holds nowhere. The margin floors only ever
-  tighten; the measured law above them is untouched. That includes `useBandPlot`, which measures the
-  gutters for `BandStrip` and `MirroredBars`: those kinds paint through the same `AxisBottomDate`,
-  so a hook that measured at the desktop font while the axis painted the phone one would break the
-  law in the one place no `CartesianChart` call site could catch it. `Heatmap` reads the tier for
-  its own row/column labels and gradient endpoints for the same reason, though it measures nothing.
-- **`xLabelRotate` left unset auto-rotates to 45 at the phone tier** when the measured labels cannot
-  fit three ticks side by side (`autoXLabelRotate`). Two ticks is a labelled left edge, a labelled
-  right edge and nothing to read between them. Desktop never auto-rotates: rotating spends
-  bottom-gutter depth, which is the cheap axis on a phone and the expensive one on a screen that had
-  horizontal room all along. **`xLabelRotate: 0` is the opt-out.** And wanting to rotate is not the
-  same as rotating fitting: the rotated margin is resolved too, and the rotation is refused unless
-  it paints more labels than the flat axis would (§1 — block (f1) at 320 auto-rotated itself into a
-  clip it did not have at 390).
-- **The phone legend's `+N more` is a DISCLOSURE, not a caption.** A cap of two left six of eight
-  plotted colours unnamed behind a `<span>`, which is a categorical encoding the chart draws and
-  then refuses to decode — on the one viewport where there is no hover to fall back on. The chip is
-  a `<button aria-expanded>`; expanded, every entry renders, the legend band grows, and
-  `ChartFrame`'s observer re-flows the frame around it. The plot keeps `VX.minPlotHeight` while
-  the caller states nothing — under `fill`, where the box cannot grow, that is what
-  `legendEntryCap` is for. A caller who DOES state `legend.maxRows` overrides both the tier and
-  the fit, and the plot floor yields to it, down to zero if that is what the number costs: the
-  arithmetic is then the caller's and it is visible, rather than a silent rollup that leaves
-  plotted colours unnamed.
+- **The tick font is threaded into the MEASUREMENT, not just the paint** (`autoMargin`'s `fontPx`
+  and tightened `floor`, `xLabelPxFor`, `useBandPlot`, `Heatmap`): §1's measured-equals-painted law
+  holds per class or nowhere.
+- **`xLabelRotate` unset auto-rotates to 45 at the phone metrics** when the measured labels cannot
+  fit three ticks side by side (`autoXLabelRotate`); desktop never auto-rotates. `0` is the
+  opt-out, and the rotation is refused unless it paints more labels than the flat axis.
+- **The phone legend's `+N more` is a `<button aria-expanded>` disclosure**: expanded, every entry
+  renders and the frame re-flows. The plot keeps `VX.minPlotHeight`; under `fill` that is what
+  `legendEntryCap` is for. A stated `legend.maxRows` overrides the tier and the fit, and the floor
+  yields to it.
+- **`height`** is derived from measured width × class when unstated, and is a MINIMUM inside a
+  `ChartCard`. `{ base, regular, wide }` steps key on the class; a numeric literal is an override and
+  warns once in dev when it leaves the plot under the floor.
 
 ## 9. Number formats, and the three "nothing to draw" states
 
