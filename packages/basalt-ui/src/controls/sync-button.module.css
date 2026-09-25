@@ -45,7 +45,7 @@
  * width itself, pinned to the `ctl` height so the box is square. This module is unlayered, so it
  * outranks `@layer mantine` regardless of specificity.
  */
-@media (max-width: 47.99375em) {
+@media (max-width: 52.49375em) {
   .label,
   .age {
     display: none;

@@ -19,9 +19,13 @@ import type { MantineTheme } from '@mantine/core'
 import * as MantineCore from '@mantine/core'
 
 import { CTL_THEME, baseTheme, cssVariablesResolver } from '../src/theme/index'
+import { SIZE_CLASSES, sizeClassMaxEm, toEm } from '../src/tokens/size-classes'
 
 const PKG_ROOT = join(import.meta.dir, '..')
 const SRC_DIR = join(PKG_ROOT, 'src')
+/** The `medium` size-class boundary as the literals the CSS modules carry (52.5em / 52.49375em). */
+const SMALL_MIN_EM = toEm(SIZE_CLASSES.medium)
+const SMALL_MAX_EM = sizeClassMaxEm(SIZE_CLASSES.medium)
 
 // ════════════════════════════════════════════════════════════════════════════════════════════════
 // 1. Shadow-surface coverage — every `--vx-shadow-card`/`-ctrl`/`-raised` application site must be
@@ -732,9 +736,11 @@ function checkLayoutRhythmCss(): string[] {
   const appSidebarCss = readFileSync(join(SRC_DIR, 'shell/app-sidebar.module.css'), 'utf8')
   const pageBarCss = readFileSync(join(SRC_DIR, 'shell/page-bar.module.css'), 'utf8')
 
-  const railStart = appSidebarCss.indexOf('@media (min-width: 48em)')
+  const railStart = appSidebarCss.indexOf(`@media (min-width: ${SMALL_MIN_EM})`)
   if (railStart < 0) {
-    failures.push('layout-rhythm-css: app-sidebar.module.css has no @media (min-width: 48em) block')
+    failures.push(
+      `layout-rhythm-css: app-sidebar.module.css has no @media (min-width: ${SMALL_MIN_EM}) block`,
+    )
   } else {
     const rail = appSidebarCss.slice(railStart)
     if (!rail.includes('.root[data-collapsed] .footerVersion {\n    display: none;\n  }')) {
@@ -795,10 +801,10 @@ function checkLayoutRhythmCss(): string[] {
   }
 
   const decls = pageBarCss.replace(/\/\*[\s\S]*?\*\//g, '')
-  const mediaStart = decls.indexOf('@media (max-width: 47.99375em)')
+  const mediaStart = decls.indexOf(`@media (max-width: ${SMALL_MAX_EM})`)
   if (mediaStart < 0) {
     failures.push(
-      'layout-rhythm-css: page-bar.module.css has no @media (max-width: 47.99375em) block',
+      `layout-rhythm-css: page-bar.module.css has no @media (max-width: ${SMALL_MAX_EM}) block`,
     )
   } else {
     const { body: mobileBlock, end: mediaEnd } = extractMediaBlock(decls, mediaStart)

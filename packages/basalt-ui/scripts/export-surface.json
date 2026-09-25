@@ -70,7 +70,8 @@
     "useAgentThreadRuns",
     "useBasaltSpacing",
     "useBreakpoint",
-    "useConnectivity"
+    "useConnectivity",
+    "useSizeClass"
   ],
   "./charts": [
     "AreaClosed",

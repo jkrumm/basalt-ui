@@ -36,7 +36,7 @@
 
 /* Below `sm` there is no navbar at all (the bottom bar is the whole nav), so the zone would be a
  * zero-width box holding a hidden toggle. The breadcrumb owns the phone header's lead. */
-@media (max-width: 47.99375em) {
+@media (max-width: 52.49375em) {
   .zone {
     display: none;
   }
@@ -103,7 +103,7 @@
  * (logo + name) hides and the toggle centres. The zone drops its inset so the toggle's centre lands
  * on the rail's icon column rather than 13px right of it.
  */
-@media (min-width: 48em) {
+@media (min-width: 52.5em) {
   .zone[data-collapsed] {
     padding-inline: 0;
   }

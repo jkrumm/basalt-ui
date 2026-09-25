@@ -195,7 +195,7 @@
  * The popover's SECTION RHYTHM — what replaced the single `Menu.Divider`, and it is SPACE, not a
  * line.
  *
- * The Drawer's bulk was never its row height (40px is a WCAG 2.5.5 floor pinned by
+ * The Drawer's bulk was never its row height (44px is the WCAG 2.5.5 AAA-enhanced floor pinned by
  * `theme/density-relations.test.ts`); it was the stack rhythm around the rows — a 12px section
  * gap, 18px of Drawer padding and a header row. A popover with one hairline through the middle and
  * no rhythm at all is the other extreme, so each group opens its own band instead.
@@ -218,8 +218,8 @@
  * `max-height` above answers, and the cheaper half. MEASURED per heading at 8/8: 8px margin + 8px
  * padding-top + 2px padding-bottom + a 17px line = a 35px box, and there are FIVE of them in the
  * shipped More surface — 175px, 28% of the whole dropdown spent on five words. 6/4 takes each
- * banded heading to 29px and hands 24px back to the rows. It does NOT touch the row height (40px
- * is the WCAG 2.5.5 floor named at the top of this comment) and it does not add the line the
+ * banded heading to 29px and hands 24px back to the rows. It does NOT touch the row height (44px
+ * is the WCAG 2.5.5 AAA-enhanced floor named at the top of this comment) and it does not add the line the
  * paragraph above rules out: this is the same space that argument asked to carry the boundary,
  * spent tighter.
  */
@@ -331,7 +331,7 @@
  * longer fights that — it used to force the dense desktop row's padding back OPEN with
  * `!important`, which is exactly how a "44px touch row" and a "29px sidebar row" ended up as two
  * unrelated geometries for the same list. What is left here is only what the theme does not supply:
- * the touch-target `min-height` floor (`--vx-space-mobile-nav-row-height`, 40px — WCAG 2.5.5 AA).
+ * the touch-target `min-height` floor (`--vx-space-mobile-nav-row-height`, 44px — WCAG 2.5.5 AAA-enhanced).
  */
 .row {
   display: flex;

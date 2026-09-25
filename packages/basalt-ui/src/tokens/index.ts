@@ -16,11 +16,11 @@ import {
   ROW_LINE_HEIGHT,
   SHADOW,
   SPACE,
-  SPACE_FIXED,
   SPACE_SCALE,
   SPACE_STEP,
 } from './palette'
 import type { PaletteData, RadiusValues, SpaceValues } from './palette'
+import { SIZE_CLASSES, sizeClassMaxEm } from './size-classes'
 
 // The raw hue families + pair-picker — the building blocks a consumer's series module composes
 // (`hrv: p(BP.blue)`). The doctrine sends every consumer here, so they are public surface, not
@@ -159,11 +159,9 @@ export const VX = {
   // Fully-rounded pill affordance (scroll-to-bottom button, chips) — fixed, does not track the
   // radius knob (see `RADIUS_STEP.pill`'s doc in `tokens/palette.ts`).
   radiusPill: 'var(--vx-radius-pill)',
-  // The WCAG 2.5.5/2.5.8 touch-target floor (44px), fixed — does not track the density knob (see
-  // `SPACE_FIXED.spaceTouchTarget`'s doc in `tokens/palette.ts`). For a hit area with no `ctl`-tier
-  // home to size it — a consumer's own `@media (pointer: coarse)` CSS-module rule reads the same
-  // `--vx-space-touch-target` var this resolves to.
-  spaceTouchTarget: 'var(--vx-space-touch-target)',
+  // The pointer-tier hit floor: 44px under `(pointer: coarse)` (WCAG 2.5.5), 24px otherwise
+  // (2.5.8). Density-exempt; `[data-basalt-hit]::after` in `styles.css` reads it.
+  hit: 'var(--vx-hit)',
 
   // Controls tier sizing (`docs/CONTROLS-SPEC.md` §5) — `var()` refs onto the density-tracking
   // `--vx-space-*` declarations `spaceDecls` emits above (same ref pattern as `radiusCard`/
@@ -173,7 +171,6 @@ export const VX = {
     controlHeightTag: 'var(--vx-space-control-height-tag)',
     controlHeightWidget: 'var(--vx-space-control-height-widget)',
     controlHeightCtl: 'var(--vx-space-control-height-ctl)',
-    touchControlHeight: 'var(--vx-space-touch-control-height)',
     pageBarRowHeight: 'var(--vx-space-page-bar-row-height)',
     sectionHeaderHeight: 'var(--vx-space-section-header-height)',
     widgetHeaderHeight: 'var(--vx-space-widget-header-height)',
@@ -323,7 +320,7 @@ export const VX = {
 export const BREAKPOINTS = {
   /**
    * `content/article-layout.module.css` — below this the TOC rail is dropped and the article
-   * collapses to a single centred column. Well above the `sm` (48em/768px) shell breakpoint on
+   * collapses to a single centred column. Well above the `sm` (52.5em/840px) shell breakpoint on
    * purpose: the rail needs the prose measure PLUS its own width plus the column gap, which runs
    * out long before the shell goes mobile.
    */
@@ -484,7 +481,7 @@ function frameworkPrimitives(side: Side, data: PaletteData, legacyAliases: boole
  * the two lists can never drift apart — mirrors `frameworkDerived`'s own single-source reasoning for
  * the radii.
  *
- * The ten controls-tier anchors/one-offs (`controlHeightTag`/`Widget`/`Ctl`, `touchControlHeight`,
+ * The nine controls-tier anchors/one-offs (`controlHeightTag`/`Widget`/`Ctl`,
  * `pageBarRowHeight`, `sectionHeaderHeight`, `widgetHeaderHeight`, `sidebarBlockRowHeight`,
  * `controlGap`, `sheetRowHeight` — `docs/CONTROLS-SPEC.md` §5) are a DELIBERATE exception to the
  * "has at least one real consumer today" rule below: `theme/ctl-theme.tsx`'s `CTL_THEME` and the
@@ -548,7 +545,6 @@ function spaceDecls(space: SpaceValues): string[] {
     decl('space-control-height-tag', pxRem(space.anchors.controlHeightTag)),
     decl('space-control-height-widget', pxRem(space.anchors.controlHeightWidget)),
     decl('space-control-height-ctl', pxRem(space.anchors.controlHeightCtl)),
-    decl('space-touch-control-height', pxRem(space.anchors.touchControlHeight)),
     decl('space-stack-xs', `${space.anchors.stackXs}px`),
     decl('space-stack-sm', `${space.anchors.stackSm}px`),
     decl('space-stack-md', `${space.anchors.stackMd}px`),
@@ -774,10 +770,9 @@ function frameworkDerived(data: PaletteData, only: 'core' | 'all', legacyAliases
     // only in this static block, never in `buildRadiusCss`'s dynamic override (see
     // `RADIUS_STEP.pill`'s doc).
     decl('radius-pill', `${RADIUS_STEP.pill}px`),
-    // The WCAG touch-target floor — fixed, density-EXEMPT, so it lives only in this static block,
-    // never in `buildDensityCss`'s dynamic override (same law as `radius-pill` above; see
-    // `SPACE_FIXED.spaceTouchTarget`'s doc).
-    decl('space-touch-target', `${SPACE_FIXED.spaceTouchTarget}px`),
+    // The pointer tier's fine default — density-EXEMPT, so it lives only in this static block
+    // (same law as `radius-pill` above). `coarseHitBlock` re-points it to 44px.
+    decl('hit', `${HIT_FINE}px`),
     ...(only === 'core' ? space.filter(isCoreSpaceDecl) : space),
     // Article-density Prose measure (docs/CONTENT-SPEC.md §5) — theme-independent, like the radii.
     decl('prose-measure', '72ch'),
@@ -944,7 +939,13 @@ const indent = (block: string): string =>
  * properties exist, so the number cannot be a `var()`. Held here as a constant rather than inlined
  * so the emitter and the modules can be grepped as one set.
  */
-const MOBILE_MEDIA = '@media (max-width: 47.99375em)'
+const MOBILE_MEDIA = `@media (max-width: ${sizeClassMaxEm(SIZE_CLASSES.medium)})`
+
+/** `--vx-hit` per pointer tier — WCAG 2.5.8 (24) and 2.5.5 (44). */
+const HIT_FINE = 24
+const HIT_COARSE = 44
+
+const coarseHitBlock = `@media (pointer: coarse) {\n  :root {\n    --vx-hit: ${HIT_COARSE}px;\n  }\n}`
 
 /**
  * The MOBILE INSET LADDER, and this function is its ONE home — framework-wide, not per module.
@@ -1032,8 +1033,8 @@ export function buildPaletteCss(
   // consumer never receives the base pair the block exists to override.
   const rootBlock =
     only === 'core'
-      ? `:root {\n${derived}\n}`
-      : `:root {\n${derived}\n}\n${mobileLadderBlock(DEFAULT_SPACE_VALUES)}`
+      ? `:root {\n${derived}\n}\n${coarseHitBlock}`
+      : `:root {\n${derived}\n}\n${mobileLadderBlock(DEFAULT_SPACE_VALUES)}\n${coarseHitBlock}`
 
   // The legacy shape — kept verbatim, and only reachable when the caller asked for nothing.
   if (opts.scheme === undefined && opts.defaultScheme === undefined && !opts.mediaFallback) {

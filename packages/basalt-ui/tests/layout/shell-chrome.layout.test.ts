@@ -25,6 +25,7 @@
  */
 import { afterAll, describe, test } from 'bun:test'
 import { SPACE, SPACE_STEP } from '../../src/tokens/palette'
+import { SIZE_CLASSES } from '../../src/tokens/size-classes'
 import type { FixtureSpec } from './fixture/spec'
 import type { LayoutPage, Named, Viewport } from './harness'
 import {
@@ -101,11 +102,11 @@ const HEADER_PAGE: FixtureSpec = {
 const SWEEP = [PHONE_SMALL, PHONE, TABLET_768, LAPTOP_900, LAPTOP_1024] as const
 
 /**
- * `theme.breakpoints.sm` in pixels. It is 48em, and every basalt CSS module writes its max-width
- * twin as the literal `47.99375em` because a media query cannot resolve a custom property — so the
- * two sides of the step are 767 and 768 at the default 16px root.
+ * `theme.breakpoints.sm` in pixels — the medium size class's floor (`SIZE_CLASSES`). Every CSS module
+ * writes its max-width twin as a literal (`breakpoint-literals.test.ts` pins them), so the two sides
+ * of the step are one px apart.
  */
-const SM_PX = 768
+const SM_PX = SIZE_CLASSES.medium
 
 /** A resolved computed length, in px. Throws rather than returning `NaN` on a value that is not one. */
 async function computedPx(p: LayoutPage, selector: string, property: string): Promise<number> {

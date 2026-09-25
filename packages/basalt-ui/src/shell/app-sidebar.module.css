@@ -30,10 +30,8 @@
  * notch on the side the sidebar touches. `max()` is a FLOOR — the inset only grows the padding
  * past its normal value, never shrinks it. Right inset is `app-main.module.css`'s to draw; the
  * PWA's top inset needs no rule here (the status bar uses the opaque `default` style). */
-@media (display-mode: standalone) {
-  .root {
-    padding-left: max(var(--vx-space-row-inset-x), env(safe-area-inset-left));
-  }
+:global(:root[data-basalt-host]:not([data-basalt-host='web'])) .root {
+  padding-left: max(var(--vx-space-row-inset-x), env(safe-area-inset-left));
 }
 
 .link {
@@ -634,12 +632,12 @@
 }
 
 /*
- * Icon-rail (collapsed) — desktop only. Gated behind min-width: sm (48em) so the sidebar doesn't
+ * Icon-rail (collapsed) — desktop only. Gated behind min-width: sm (52.5em) so the sidebar doesn't
  * exist at all below that breakpoint (see `MobileNav`) regardless of the persisted collapse flag.
  * Hide the section labels and nav labels; center the remaining icons. The brand's own rail form
  * lives in `app-brand.module.css` now, keyed off the same `data-collapsed` attribute.
  */
-@media (min-width: 48em) {
+@media (min-width: 52.5em) {
   .root[data-collapsed] .searchSlot {
     padding-block: var(--vx-space-sidebar-region-gap);
     display: flex;

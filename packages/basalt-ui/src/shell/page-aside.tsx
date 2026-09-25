@@ -46,7 +46,6 @@
 import { createContext, useCallback, useContext, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import { useMantineTheme } from '@mantine/core'
 import { cx } from '../common/props'
 import type { BasaltProps, SlotStylesProps } from '../common/props'
 import { assertRequiredProps } from '../common/validate'
@@ -54,7 +53,7 @@ import { usePersistedOrLocal } from '../state/persisted-or-local'
 import { FilterSetScope } from '../controls/filter-context'
 import { useAsidePanelSlot } from './page-bar'
 import { useIsomorphicLayoutEffect } from './isomorphic-layout-effect'
-import { useMediaQueryMatches } from './use-breakpoint'
+import { useSizeClass } from './use-size-class'
 import classes from './page-aside.module.css'
 
 type AsideRegion = {
@@ -220,20 +219,18 @@ export function PageAside(props: PageAsideProps): ReactNode {
   // claim effect below would then re-run (claim → release → claim) forever. `claimPanel` is a
   // `useCallback` on the provider, so it is the stable half.
   const { host: panelHost, claim: claimPanel, target: panelTarget } = useAsidePanelSlot()
-  const theme = useMantineTheme()
-  // `sm` is the only breakpoint (`docs/CONTROLS-SPEC.md` §2), read off the theme so a consumer that
-  // retunes it moves the aside with it. THE declared C9 exception (see this file's header): the
-  // read is JS because the two projections are two portal targets under two filter surfaces, and a
-  // CSS twin would double-mount stateful children. `useSyncExternalStore` is what keeps SSR, the
-  // hydration pass and the first client paint agreeing on which single node exists.
-  const desktop = useMediaQueryMatches(`(min-width: ${theme.breakpoints.sm})`, true)
+  // THE declared C9 exception (see this file's header): the read is JS because the two projections
+  // are two portal targets under two filter surfaces, and a CSS twin would double-mount stateful
+  // children. `useSizeClass` (`useSyncExternalStore`) keeps SSR, the hydration pass and the first
+  // client paint agreeing on which single node exists. Wave 3 redesigns docking.
+  const isCompact = useSizeClass() === 'compact'
   const [folded, setFolded] = usePersistedOrLocal({
     scope: 'aside',
     persistKey,
     initial: defaultFolded,
   })
 
-  const portalled = inShell && desktop
+  const portalled = inShell && !isCompact
   // Below `sm` the panel goes into the page bar's row 2 IF there is one. Without a row 2 there is
   // nowhere to put a trigger, so the honest in-flow form (wave 1) stays.
   const projected = !portalled && panelHost

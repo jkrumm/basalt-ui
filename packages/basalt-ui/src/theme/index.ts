@@ -81,6 +81,7 @@ import type { PaletteData, RadiusValues, SpaceValues } from '../tokens/palette'
 import { DEFAULT_DERIVE_CONFIG, isDefaultDeriveConfig, resolveDeriveConfig } from '../tokens/derive'
 import type { DeriveConfig } from '../tokens/derive'
 import { pxRem, VX } from '../tokens'
+import { SIZE_CLASS_BREAKPOINTS } from '../tokens/size-classes'
 import type { BasaltFontsConfig } from '../tokens'
 import controlsClasses from './controls.module.css'
 import floatingClasses from './floating.module.css'
@@ -422,6 +423,7 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
   const { radius = DEFAULT_RADIUS_VALUES, spacing = DEFAULT_SPACE_VALUES } = options
   const { ACCENT, FILL } = data
   return createTheme({
+    breakpoints: SIZE_CLASS_BREAKPOINTS,
     primaryColor: 'blue',
     // ONE shade in both schemes — a filled control is a SURFACE, and the accent surface is the same
     // hex either way (see `ACCENT.accentFill`). The scheme-inverting half of the accent lives in
@@ -1556,7 +1558,7 @@ function hasFontsConfig(fonts: BasaltFontsConfig | undefined): fonts is BasaltFo
 /**
  * Build the Basalt theme, optionally merged with consumer overrides. Overrides win on conflict
  * (Mantine `mergeThemeOverrides` is last-wins), so a consumer can retune any field without
- * forking the base.
+ * forking the base — except `breakpoints`, which is always derived from `SIZE_CLASSES`.
  *
  * Pass `{ derive }` to retune the palette identity instead of the shipped default, `{ fonts }` to
  * retune the three-font system, `{ radius }` to retune the two radius anchors, and/or `{ density }`
@@ -1578,7 +1580,7 @@ function hasFontsConfig(fonts: BasaltFontsConfig | undefined): fonts is BasaltFo
  * — it is only lost if a consumer's own `overrides.other` explicitly sets that same key.
  */
 export function createBasaltTheme(
-  overrides?: MantineThemeOverride,
+  overrides?: Omit<MantineThemeOverride, 'breakpoints'>,
   options?: CreateBasaltThemeOptions,
 ): MantineThemeOverride {
   const resolvedConfig = resolveDeriveConfig(options?.derive)
@@ -1610,5 +1612,7 @@ export function createBasaltTheme(
   if (hasFontsConfig(fontsConfig)) {
     theme = mergeThemeOverrides(theme, { other: { basaltFonts: fontsConfig } })
   }
-  return overrides ? mergeThemeOverrides(theme, overrides) : theme
+  if (!overrides) return theme
+  // `theme.breakpoints` is derived from `SIZE_CLASSES` — a JS caller's override is dropped.
+  return { ...mergeThemeOverrides(theme, overrides), breakpoints: SIZE_CLASS_BREAKPOINTS }
 }

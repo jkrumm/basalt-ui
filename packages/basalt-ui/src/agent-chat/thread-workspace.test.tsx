@@ -12,7 +12,8 @@
  * `createAdapterThreadsStore` instance) so each case can assert one exact `{ hydrated, threads }`
  * combination without racing a real async adapter.
  */
-import { DEFAULT_THEME, MantineProvider } from '@mantine/core'
+import { MantineProvider } from '@mantine/core'
+import { SIZE_CLASSES } from '../tokens/size-classes'
 import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, test } from 'bun:test'
 import type { ReactElement } from 'react'
@@ -24,14 +25,14 @@ import type { ThreadWorkspaceProps } from './thread-workspace'
 
 afterEach(cleanup)
 
-// `useMediaQuery` reads `window.matchMedia` inside a mount effect RTL flushes synchronously —
-// force the wide-viewport branch so every case renders the feed pane (same idiom as
+// `useSizeClass` reads `window.matchMedia` — every `(min-width)` query matching is the expanded
+// class; force the wide-viewport branch so every case renders the feed pane (same idiom as
 // thread-feed.test.tsx's `withReducedMotion`).
 function withWideViewport<T>(fn: () => T): T {
   const original = window.matchMedia
   window.matchMedia = (query: string): MediaQueryList =>
     ({
-      matches: false,
+      matches: true,
       media: query,
       onchange: null,
       addListener: () => {},
@@ -222,8 +223,8 @@ describe('assertRequiredProps (F-ERR-1)', () => {
   })
 })
 
-describe('the narrow breakpoint (shell/page-aside.tsx parity)', () => {
-  test('is derived from theme.breakpoints.sm, not a hardcoded pixel value', () => {
+describe('the narrow breakpoint', () => {
+  test('is the compact size class — it reads the medium boundary, not a hardcoded pixel value', () => {
     const recordedQueries: string[] = []
     const original = window.matchMedia
     window.matchMedia = (query: string): MediaQueryList => {
@@ -252,8 +253,6 @@ describe('the narrow breakpoint (shell/page-aside.tsx parity)', () => {
     } finally {
       window.matchMedia = original
     }
-    expect(recordedQueries).toContain(
-      `(max-width: calc(${DEFAULT_THEME.breakpoints.sm} - 0.00625em))`,
-    )
+    expect(recordedQueries).toContain(`(min-width: ${SIZE_CLASSES.medium / 16}em)`)
   })
 })

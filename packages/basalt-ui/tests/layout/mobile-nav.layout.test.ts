@@ -342,10 +342,9 @@ layout('mobile nav — real layout', () => {
 
   /**
    * INVARIANT 6 — touch targets hold their floors at every density level. `deriveSpacing` clamps
-   * `mobileNavBarHeight` with `Math.max(49, …)` and `mobileNavRowHeight` with `Math.max(40, …)`
-   * (tokens/palette.ts — the row floor moved from 44 to 40, the WCAG 2.5.5 AA figure, once the
-   * sheet's rows switched to the sidebar's own row-inset vocabulary; the AAA-figure floor stays on
-   * `mobileNavBarHeight`, unchanged). This is the end-to-end proof that the floor survives
+   * `mobileNavBarHeight` with `Math.max(49, …)` and `mobileNavRowHeight` with `Math.max(44, …)`
+   * (tokens/palette.ts — the WCAG 2.5.5 Target Size (Enhanced, AAA) figure; a 40px interlude was
+   * the wrong citation and is reverted). This is the end-to-end proof that the floor survives
    * derive → CSS var → Mantine inline styles → cascade — the row now clears it purely via
    * `min-height`, since the sidebar's own padding + line-height no longer produce a taller row on
    * their own the way the old bespoke touch padding did.
@@ -357,15 +356,14 @@ layout('mobile nav — real layout', () => {
    * `Math.max(49, …)` buys the pixel the seam claims back; a slot no longer loses a further pixel
    * of its own, since the border moved off `.bar`.
    *
-   * Measured (bar / min slot / min sheet row), re-measured after the M4 row-height change: d=−3 →
-   * 48 / 48 / 40; d=0 → 55 / 55 / 40; d=+3 → 72 / 72 / 52. The row is floor-bound (exactly 40) at
-   * d=−3 and d=0 — the sidebar's own row-inset padding no longer produces a taller row on its own —
+   * Measured (bar / min slot / min sheet row), pre-44 figures: d=−3 → 48 / 48 / 40; d=0 → 55 / 55 /
+   * 40; d=+3 → 72 / 72 / 52. The row is now floor-bound (exactly 44) at d=−3 and d=0 — the sidebar's own row-inset padding no longer produces a taller row on its own —
    * and content-bound (52, past the floor) at d=+3, where the density-scaled padding + line-height
    * exceed it. Bar and slot are unchanged from before this minor.
    *
    * One page, three remounts: remounting is ~5x cheaper than a new browser context.
    */
-  test('touch targets hold the 40/44/48px floors at density −3, 0 and +3', async () => {
+  test('touch targets hold the 44/44/48px floors at density −3, 0 and +3', async () => {
     const p = await openFixture(sheetSpec(7))
     for (const density of [-3, 0, 3]) {
       await p.remount(sheetSpec(7, { density }))
@@ -409,8 +407,8 @@ layout('mobile nav — real layout', () => {
       for (const [i, box] of rows.entries()) {
         expectHeightAtLeast(
           { name: `row ${i} @density ${density}`, box },
-          40,
-          'every sheet row keeps the 40px touch-target floor at every density level',
+          44,
+          'every sheet row keeps the 44px touch-target floor at every density level',
         )
       }
       await p.dismiss()

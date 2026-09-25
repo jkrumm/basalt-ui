@@ -19,7 +19,7 @@
  * padding), so the 560px cap uses 73% of it; on the smallest supported viewport (320x568) the
  * headroom is ~496px and 72dvh is 409px — the cap is binding on every supported phone, and the row
  * count never is. The old arithmetic here ("6 x 44px + 8px padding against 415px of headroom") was
- * stale in almost every number: rows are 40px (`--vx-space-mobile-nav-row-height`), the dropdown's
+ * stale in almost every number: rows are 44px (`--vx-space-mobile-nav-row-height`), the dropdown's
  * own padding is `2 * --vx-space-stack-xs` = 8px, and the headroom figures above are the measured
  * ones.
  *

@@ -80,14 +80,13 @@ describe('SPACE anchors match the shipped identity', () => {
     expect(SPACE.controlHeight).toBe(42)
   })
 
-  test('the controls tier anchors are 20/24/32/36 (docs/CONTROLS-SPEC.md §5)', () => {
+  test('the controls tier anchors are 20/24/32 (docs/CONTROLS-SPEC.md §5)', () => {
     expect(SPACE.controlHeightTag).toBe(20)
     expect(SPACE.controlHeightWidget).toBe(24)
     // 32, not the original 30 — the desktop-shell spacing pass landed the whole chrome tier on ONE
     // number (search trigger, sidebar block row and a resolved NavLink row are all 32 too). See
     // `controlHeightCtl`'s own doc in `tokens/palette.ts`.
     expect(SPACE.controlHeightCtl).toBe(32)
-    expect(SPACE.touchControlHeight).toBe(36)
   })
 })
 
@@ -286,7 +285,6 @@ describe('--vx-space-* is emitted from the SAME constants', () => {
     expect(css).toContain('--vx-space-control-height-tag: 1.25rem;')
     expect(css).toContain('--vx-space-control-height-widget: 1.5rem;')
     expect(css).toContain('--vx-space-control-height-ctl: 2rem;')
-    expect(css).toContain('--vx-space-touch-control-height: 2.25rem;')
     expect(css).toContain('--vx-space-page-bar-row-height: 2.25rem;')
     expect(css).toContain('--vx-space-section-header-height: 2.25rem;')
     expect(css).toContain('--vx-space-widget-header-height: 1.75rem;')
@@ -428,7 +426,7 @@ const SPACE_STEP_SWEEP: ReadonlyArray<
   ['mobileNavIconSize', 24, 'space-mobile-nav-icon-size'],
   ['mobileNavTabInsetY', 2, 'space-mobile-nav-tab-inset-y'],
   ['mobileNavTabInsetX', 12, 'space-mobile-nav-tab-inset-x'],
-  ['mobileNavRowHeight', 40, 'space-mobile-nav-row-height'],
+  ['mobileNavRowHeight', 44, 'space-mobile-nav-row-height'],
   ['mobileNavMenuWidth', 232, null],
   ['agentRailInsetX', 10, 'space-agent-rail-inset-x'],
   ['agentPartGapTop', 6, 'space-agent-part-gap-top'],

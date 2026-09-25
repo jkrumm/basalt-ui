@@ -80,6 +80,7 @@ export { AppBreadcrumbs, type AppBreadcrumbsProps } from './app-breadcrumbs'
 export { PageBar, type PageBarProps, type PageBarSlot } from './page-bar'
 export { PageAside, type PageAsideProps, type PageAsideSlot } from './page-aside'
 export { useBreakpoint, type BreakpointName } from './use-breakpoint'
+export { useSizeClass, type SizeClass } from './use-size-class'
 export { PageTitle, type PageTitleProps, type PageTitleSlot } from './page-title'
 
 /**

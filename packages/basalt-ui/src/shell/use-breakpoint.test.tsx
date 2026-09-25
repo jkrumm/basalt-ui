@@ -6,7 +6,7 @@
 import { MantineProvider } from '@mantine/core'
 import { render, screen } from '@testing-library/react'
 import { describe, expect, test } from 'bun:test'
-import { useBreakpoint, useMediaQueryMatches } from './use-breakpoint'
+import { useBreakpoint } from './use-breakpoint'
 
 function Probe({ name, edge }: { name: 'xs' | 'sm' | 'md' | 'lg' | 'xl'; edge?: 'min' | 'max' }) {
   const matches = useBreakpoint(name, edge)
@@ -39,20 +39,5 @@ describe('useBreakpoint — max edge', () => {
 
   test('max xl is true at 1024px — the viewport IS narrower than xl (88em)', () => {
     expect(renderProbe('xl', 'max')).toBe('true')
-  })
-})
-
-describe('useBreakpoint — an explicit fallback override wins over the edge default', () => {
-  test('page-aside.tsx-style: min edge, fallback true', () => {
-    function DesktopFirst() {
-      const desktop = useMediaQueryMatches('(min-width: 48em)', true)
-      return <span data-testid="result">{String(desktop)}</span>
-    }
-    render(<DesktopFirst />)
-    // The real matchMedia resolves this query at the 1024px default viewport regardless of the
-    // fallback — the fallback only matters with no matchMedia at all, which `mediaQueryList`
-    // guards internally (`typeof window.matchMedia !== 'function'`); asserting the plumbing here
-    // is what `useMediaQueryMatches` is exported (not `default`) for.
-    expect(screen.getByTestId('result').textContent).toBe('true')
   })
 })
