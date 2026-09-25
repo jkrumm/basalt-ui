@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, test } from 'bun:test'
 import { renderToStaticMarkup } from 'react-dom/server'
+import { SizeClassHintContext } from '../../shell/use-size-class'
 import { ChartCursorScope } from '../cursor/scope'
 import { probeAxisLabels } from '../layout/auto-margin'
 import type { ChartSeries } from '../series'
@@ -850,17 +851,21 @@ describe('CartesianChart — x tick spacing measures the label it paints', () =>
   // makes two different label widths resolve to two different tick counts here.
   const renderWith = (props: Partial<Parameters<typeof CartesianChart<Row>>[0]>): string =>
     renderToStaticMarkup(
-      <CartesianChart<Row>
-        data={many}
-        chartId="xspace"
-        getX={(d) => d.date}
-        series={[seriesFor('a')]}
-        legend={false}
-        margin={{ left: 0, right: 0 }}
-        {...props}
-      >
-        {() => null}
-      </CartesianChart>,
+      // Unmeasured, the container class follows the viewport hint; `expanded` keeps these on the
+      // desktop tick font they were written against.
+      <SizeClassHintContext.Provider value="expanded">
+        <CartesianChart<Row>
+          data={many}
+          chartId="xspace"
+          getX={(d) => d.date}
+          series={[seriesFor('a')]}
+          legend={false}
+          margin={{ left: 0, right: 0 }}
+          {...props}
+        >
+          {() => null}
+        </CartesianChart>
+      </SizeClassHintContext.Provider>,
     )
 
   test('a wide formatX thins the axis; the narrow default does not', () => {

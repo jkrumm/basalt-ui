@@ -1,20 +1,24 @@
 import type { CSSProperties, ReactNode } from 'react'
-import { useCallback, useState } from 'react'
+import { useCallback, useContext, useState } from 'react'
 import type { BasaltProps } from '../../common/props'
-import { ignoredProp } from '../../common/errors'
+import { deprecatedProp, ignoredProp, plotBelowFloor } from '../../common/errors'
 import { useValidateProps } from '../../common/validate'
+import { useSizeClass } from '../../shell/use-size-class'
 import { VX } from '../../tokens'
 import { useChartSize } from '../hooks/useChartSize'
 import { deriveLegend } from '../series'
 import type { ChartLegendConfig, LegendPlacement, SeriesStyle } from '../series'
+import { ChartCardContext } from './chart-card-context'
+import { resolveChartLayout, resolveFrameClass } from './chart-layout'
 import {
-  resolveChartTier,
+  deprecatedHeightKeys,
   resolveFrameHeight,
+  tierOfContainerClass,
   resolveLegendRollup,
   resolvePlotRect,
 } from './chart-frame-layout'
 import type { ResponsiveChartHeight } from './chart-frame-layout'
-import { ChartTierProvider } from './chart-tier'
+import { ChartTierProvider, useCoarsePointer, useViewportHeight } from './chart-tier'
 import { ChartLegend } from './ChartLegend'
 import { ChartEmpty, ChartError, ChartPending, resolveChartState } from './ChartPending'
 import type { ChartState } from './ChartPending'
@@ -29,7 +33,6 @@ export {
 } from './chart-frame-layout'
 export type { ResponsiveChartHeight } from './chart-frame-layout'
 
-const DEFAULT_HEIGHT = 240
 const DEFAULT_MIN_WIDTH = 200
 
 /** Legend configuration for {@link ChartFrame}. Omit entirely (or pass `{}`) for the default
@@ -74,14 +77,16 @@ export type ChartFrameProps = BasaltProps & {
   /** Series identity — drives the derived legend. Pass the SAME array the kind draws + tooltips from. */
   series: readonly SeriesStyle[]
   /**
-   * Height in pixels, or one per size step. Used when neither `aspectRatio` nor `fill` is set.
-   * Default 240. Passing it WITH `fill` is a wiring mistake, not a fallback — `fill` wins and
+   * Height in pixels, or one per container step. Used when neither `aspectRatio` nor `fill` is set.
+   * Default: derived from the measured width and container class (`resolveChartLayout`). Inside a
+   * `ChartCard` the resulting height is a MINIMUM — the frame grows into a taller card body. Passing it WITH `fill` is a wiring mistake, not a fallback — `fill` wins and
    * this is never read, which now warns once in dev (`common/errors.ts`' `ignoredProp`).
    *
-   * `{ base: 180, md: 260 }` is the declarative escape from a page of fixed-height charts: the
-   * steps are compared against the frame's own MEASURED width, not the viewport, so a chart squeezed
-   * by a `PageAside` gets the short height on a desktop too. A plain number is unchanged and stays
-   * supported ({@link resolveFrameHeight}).
+   * `{ base: 180, wide: 260 }` is the declarative escape from a page of fixed-height charts: the
+   * `regular`/`wide` steps are compared against the frame's own MEASURED width, not the viewport,
+   * so a chart squeezed by a `PageAside` gets the short height on a desktop too. A plain number is
+   * an override and stays supported ({@link resolveFrameHeight}); one that leaves the plot under
+   * `VX.minPlotHeight` warns once in dev.
    */
   height?: number | ResponsiveChartHeight
   /** height = Math.round(containerWidth / aspectRatio). Ignored when `fill` is set — which warns
@@ -137,6 +142,13 @@ export type PlotRect = {
   height: number
   hidden: ReadonlySet<string>
 }
+
+/** `ResponsiveChartHeight`'s deprecated keys and what replaces each. */
+const DEPRECATED_HEIGHT_KEYS = {
+  sm: 'height.regular',
+  md: 'height.wide',
+  lg: 'height.wide',
+} as const
 
 const outerStyle = (fill: boolean, vertical: boolean): CSSProperties => ({
   width: '100%',
@@ -219,6 +231,10 @@ export function ChartFrame({
 }: ChartFrameProps): ReactNode {
   const { ref: containerRef, width: containerW, height: containerH } = useChartSize()
   const { ref: legendRef, width: legendW, height: legendH } = useChartSize()
+  const { inCard } = useContext(ChartCardContext)
+  const sizeClass = useSizeClass()
+  const coarse = useCoarsePointer()
+  const viewportH = useViewportHeight()
   const [hidden, setHidden] = useState<ReadonlySet<string>>(() => new Set())
 
   const toggleKey = useCallback((key: string) => {
@@ -255,6 +271,16 @@ export function ChartFrame({
     ],
     [fill, height, aspectRatio],
   )
+  useValidateProps(
+    'ChartFrame',
+    () =>
+      height === undefined
+        ? null
+        : deprecatedHeightKeys(height).map((key) =>
+            deprecatedProp('ChartFrame', `height.${key}`, DEPRECATED_HEIGHT_KEYS[key], '1.31.0'),
+          ),
+    [height],
+  )
 
   const placement = legend === false ? 'bottom' : (legend.placement ?? 'bottom')
   const vertical = placement === 'left' || placement === 'right'
@@ -262,18 +288,51 @@ export function ChartFrame({
   // legend naming a series with nothing to point at is its own small lie.
   const resolvedState = resolveChartState({ ...(state !== undefined && { state }), isPending })
   const legendVisible = legend !== false && resolvedState === null
-  const tier = resolveChartTier(containerW)
-
-  const resolvedHeight = fill
-    ? containerH
-    : aspectRatio !== undefined
-      ? Math.round(containerW / aspectRatio)
-      : resolveFrameHeight(height ?? DEFAULT_HEIGHT, containerW)
+  const legendItems = legend === false ? [] : deriveLegend(series)
+  const statedHeight =
+    height === undefined
+      ? undefined
+      : resolveFrameHeight(height, resolveFrameClass({ frameW: containerW, sizeClass }))
+  const layout = resolveChartLayout({
+    frameW: containerW,
+    slotW: 0,
+    viewportH,
+    legendItems,
+    yLabels: [],
+    xLabels: [],
+    categorical: false,
+    sizeClass,
+    coarse,
+    ...(statedHeight !== undefined && { override: { height: statedHeight } }),
+  })
+  const tier = tierOfContainerClass(layout.containerClass)
 
   const sideLegendWidth = legendVisible && vertical ? legendW : 0
   const topBottomLegendHeight = legendVisible && !vertical ? legendH : 0
 
-  const legendItems = legend === false ? [] : deriveLegend(series)
+  const computedHeight =
+    aspectRatio !== undefined ? Math.round(containerW / aspectRatio) : layout.height
+  // In a card the computed height is a floor: a stretched grid row hands the body more, and the
+  // frame (flex 1 in the body) takes it. Never below what the legend band plus the plot floor need.
+  const grows = inCard && !fill
+  const resolvedHeight = fill
+    ? containerH
+    : grows
+      ? Math.max(computedHeight, containerH)
+      : computedHeight
+  const cardMinHeight = Math.max(computedHeight, VX.minPlotHeight + topBottomLegendHeight)
+
+  useValidateProps(
+    'ChartFrame',
+    () =>
+      typeof height === 'number' &&
+      !fill &&
+      aspectRatio === undefined &&
+      height - topBottomLegendHeight < VX.minPlotHeight
+        ? plotBelowFloor('ChartFrame', height, VX.minPlotHeight)
+        : null,
+    [height, fill, aspectRatio, topBottomLegendHeight],
+  )
   const togglable = legend !== false && (legend.toggle ?? legendItems.length > 1)
 
   // The cap, and who pays for it — one pure decision ({@link resolveLegendRollup} states the three
@@ -317,11 +376,15 @@ export function ChartFrame({
     )
 
   return (
-    <ChartTierProvider tier={tier}>
+    <ChartTierProvider containerClass={layout.containerClass}>
       <div
         ref={containerRef}
         {...(className !== undefined && { className })}
-        style={{ ...outerStyle(fill, vertical), ...style }}
+        style={{
+          ...outerStyle(fill, vertical),
+          ...(grows && { flex: '1 1 0', minHeight: cardMinHeight }),
+          ...style,
+        }}
         {...(ariaLabel !== undefined && { role: 'group', 'aria-label': ariaLabel })}
         {...(resolvedState === 'pending' && { 'aria-busy': 'true' })}
       >

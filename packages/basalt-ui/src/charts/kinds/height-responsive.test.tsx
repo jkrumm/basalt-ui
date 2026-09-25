@@ -9,8 +9,8 @@
  * the declarations were narrow, which is why "it compiles" proved nothing and this file renders.
  *
  * Every case renders UNMEASURED (`renderToStaticMarkup`, no `ResizeObserver`), where
- * `resolveFrameHeight` takes the LARGEST stated step — so `{ base: 180, md: 260 }` must paint the
- * same 260 a bare `height={260}` does, and `{ base: 180 }` must paint 180. The second case is what
+ * the container class comes from the viewport hint (`SizeClassHintContext`, mounted `expanded` here →
+ * `wide`) — so `{ base: 180, wide: 260 }` must paint the same 260 a bare `height={260}` does, and `{ base: 180 }` must paint 180. The second case is what
  * separates "the object reached `ChartFrame`" from "the object was dropped and the 240 default
  * happens not to collide".
  *
@@ -22,6 +22,7 @@
 import { describe, expect, test } from 'bun:test'
 import { renderToStaticMarkup } from 'react-dom/server'
 import type { ReactElement } from 'react'
+import { SizeClassHintContext } from '../../shell/use-size-class'
 import { CartesianChart } from '../primitives/CartesianChart'
 import type { ResponsiveChartHeight } from '../primitives/ChartFrame'
 import { Bars } from './Bars'
@@ -135,17 +136,27 @@ const MOUNTS: Record<string, Mount> = {
   ),
 }
 
+/** Unmeasured, an `expanded` viewport implies the `wide` container class. */
+const renderWide = (element: ReactElement): string =>
+  renderToStaticMarkup(
+    <SizeClassHintContext.Provider value="expanded">{element}</SizeClassHintContext.Provider>,
+  )
+
 describe('height accepts a number AND a ResponsiveChartHeight on every shipped surface', () => {
   for (const [name, mount] of Object.entries(MOUNTS)) {
     test(`${name}: a plain number is byte-identical to the responsive object resolving to it`, () => {
-      const plain = renderToStaticMarkup(mount(260))
-      const stepped = renderToStaticMarkup(mount({ base: 180, md: 260 }))
+      const plain = renderWide(mount(260))
+      const stepped = renderWide(mount({ base: 180, wide: 260 }))
       expect(plain).toContain('height="260"')
       expect(stepped).toBe(plain)
     })
 
+    test(`${name}: the deprecated md alias resolves like wide`, () => {
+      expect(renderWide(mount({ base: 180, md: 260 }))).toBe(renderWide(mount(260)))
+    })
+
     test(`${name}: a different resolved step paints a different box — the object is READ`, () => {
-      const short = renderToStaticMarkup(mount({ base: 180 }))
+      const short = renderWide(mount({ base: 180 }))
       expect(short).toContain('height="180"')
       expect(short).not.toContain('height="260"')
     })
