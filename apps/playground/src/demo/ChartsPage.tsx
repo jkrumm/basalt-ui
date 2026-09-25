@@ -154,14 +154,14 @@ const LIFTS = [
 const SESSIONS_REVENUE_SERIES: ChartSeries<DayPoint>[] = [
   {
     key: 'sessions',
-    label: 'Sessions (left axis)',
+    label: 'Sessions',
     color: demoColors.sessions,
     mark: 'line',
     getValue: (d) => d.sessions,
   },
   {
     key: 'revenue',
-    label: 'Revenue ×1k (right axis)',
+    label: 'Revenue ×1k',
     color: demoColors.revenue,
     mark: 'line',
     dash: 'dashed',
