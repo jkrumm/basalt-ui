@@ -163,11 +163,13 @@ compact 240–479, regular 480–799, wide ≥ 800):
   `useChartTier`, `useChartTierMetrics` and `ChartTierMetrics` are `@deprecated`, still forward,
   and go in 1.31.0 (no replacement export; `basalt/deprecated-export` warns, no autofix). **Before
   the first measurement the class follows the viewport** (`<BasaltProvider sizeClassHint>`, default
-  `compact`), so an unmeasured first frame is phone-shaped unless a hint says otherwise.
+  `compact`), so an unmeasured first frame is phone-shaped unless a hint says otherwise. With no
+  `BasaltProvider` at all (a charts-only consumer) it is `regular`, never phone chrome.
 - **`ResponsiveChartHeight` keys are `base` / `regular` / `wide`** (from 480 / 800px of the frame's
   measured width). `sm` → `regular`; `md` and `lg` → `wide` (`lg` beats `md`; a new key beats its
-  alias). The old keys warn once in dev and are removed in 1.31.0; their thresholds moved
-  (768/992/1200 → 480/800), so re-check any object that relied on the old widths.
+  alias). The old keys warn once in dev and are removed in 1.31.0. **Thresholds moved, not just
+  names:** `sm` 768 → 480px; `md` (992) and `lg` (1200) collapse into the one `wide` step at 800px —
+  re-check any object that relied on the old widths.
 - **`ChartFrame` with no `height` derives one** from its measured width (≈0.62 / 0.5 / 0.4 × width by
   class, clamped 160–420, and to 0.45 × viewport height on a coarse pointer) instead of 240. A
   numeric `height` is an override and warns once in dev when it leaves the plot under

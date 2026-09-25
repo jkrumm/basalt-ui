@@ -6,8 +6,8 @@
  * Under this DOM harness there is no ResizeObserver, so `ChartFrame` falls back to its `minWidth`
  * floor — `plot.width` is a fixed 200.
  */
-import { fireEvent, render, screen } from '@testing-library/react'
-import { describe, expect, test } from 'bun:test'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { afterEach, describe, expect, test } from 'bun:test'
 import { ChartCursorScope } from '../cursor/scope'
 import type { ChartSeries } from '../series'
 import { MirroredBars } from './MirroredBars'
@@ -242,5 +242,41 @@ describe('MirroredBars — BasaltProps', () => {
     const root = container.querySelector('.my-chart')
     expect(root).not.toBeNull()
     expect((root as HTMLElement).style.opacity).toBe('0.5')
+  })
+})
+
+describe('MirroredBars — the left axis follows the container class', () => {
+  const realObserver = window.ResizeObserver
+  afterEach(() => {
+    window.ResizeObserver = realObserver
+  })
+
+  /** A `ResizeObserver` that reports one fixed inline size the moment it observes. */
+  function measureAs(width: number): void {
+    window.ResizeObserver = class {
+      constructor(private readonly cb: ResizeObserverCallback) {}
+      observe(target: Element): void {
+        this.cb(
+          [{ target, contentRect: { width, height: 200, top: 0, left: 0 } } as ResizeObserverEntry],
+          this as unknown as ResizeObserver,
+        )
+      }
+      unobserve(): void {}
+      disconnect(): void {}
+    }
+  }
+
+  test('micro (< 240px) paints no y axis at all — not an outside one either', async () => {
+    measureAs(200)
+    const { container } = renderChart()
+    await waitFor(() => expect(container.querySelector('.visx-axis-bottom')).not.toBeNull())
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    expect(container.querySelectorAll('.visx-axis-left')).toHaveLength(0)
+  })
+
+  test('compact (240-479px) keeps both pane axes, drawn inside the plot', async () => {
+    measureAs(300)
+    const { container } = renderChart()
+    await waitFor(() => expect(container.querySelectorAll('.visx-axis-left')).toHaveLength(2))
   })
 })

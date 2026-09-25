@@ -1,9 +1,9 @@
 import type { CSSProperties, ReactNode } from 'react'
-import { useCallback, useContext, useState } from 'react'
+import { useCallback, useContext, useMemo, useState } from 'react'
 import type { BasaltProps } from '../../common/props'
 import { deprecatedProp, ignoredProp, plotBelowFloor } from '../../common/errors'
 import { useValidateProps } from '../../common/validate'
-import { useSizeClass } from '../../shell/use-size-class'
+import { SizeClassHintContext, useSizeClass } from '../../shell/use-size-class'
 import { VX } from '../../tokens'
 import { useChartSize } from '../hooks/useChartSize'
 import { deriveLegend } from '../series'
@@ -150,6 +150,13 @@ const DEPRECATED_HEIGHT_KEYS = {
   lg: 'height.wide',
 } as const
 
+/** The thresholds moved with the keys — a straight rename would silently shift the breakpoints. */
+const DEPRECATED_HEIGHT_NOTES = {
+  sm: 'It applied from 768px; `regular` applies from 480px of the frame width.',
+  md: 'It applied from 992px; `wide` is one step, from 800px of the frame width.',
+  lg: 'It applied from 1200px; `wide` is one step, from 800px of the frame width.',
+} as const
+
 const outerStyle = (fill: boolean, vertical: boolean): CSSProperties => ({
   width: '100%',
   height: fill ? '100%' : undefined,
@@ -232,7 +239,10 @@ export function ChartFrame({
   const { ref: containerRef, width: containerW, height: containerH } = useChartSize()
   const { ref: legendRef, width: legendW, height: legendH } = useChartSize()
   const { inCard } = useContext(ChartCardContext)
-  const sizeClass = useSizeClass()
+  const viewportClass = useSizeClass()
+  // No `BasaltProvider` (a charts-only consumer) means no viewport hint: the unmeasured first frame
+  // resolves to the regular (desktop) class, not phone chrome.
+  const sizeClass = useContext(SizeClassHintContext) === undefined ? 'medium' : viewportClass
   const coarse = useCoarsePointer()
   const viewportH = useViewportHeight()
   const [hidden, setHidden] = useState<ReadonlySet<string>>(() => new Set())
@@ -277,7 +287,13 @@ export function ChartFrame({
       height === undefined
         ? null
         : deprecatedHeightKeys(height).map((key) =>
-            deprecatedProp('ChartFrame', `height.${key}`, DEPRECATED_HEIGHT_KEYS[key], '1.31.0'),
+            deprecatedProp(
+              'ChartFrame',
+              `height.${key}`,
+              DEPRECATED_HEIGHT_KEYS[key],
+              '1.31.0',
+              DEPRECATED_HEIGHT_NOTES[key],
+            ),
           ),
     [height],
   )
@@ -293,18 +309,27 @@ export function ChartFrame({
     height === undefined
       ? undefined
       : resolveFrameHeight(height, resolveFrameClass({ frameW: containerW, sizeClass }))
-  const layout = resolveChartLayout({
-    frameW: containerW,
-    slotW: 0,
-    viewportH,
-    legendItems,
-    yLabels: [],
-    xLabels: [],
-    categorical: false,
-    sizeClass,
-    coarse,
-    ...(statedHeight !== undefined && { override: { height: statedHeight } }),
-  })
+  // Memoized on scalars (the legend by its keys+labels) so `ChartTierProvider`'s value is stable
+  // across renders that change nothing. The legend half of this layout is consumed in wave 7.
+  const legendKey = legendItems.map((item) => `${item.key}\u0000${item.label}`).join('\u0001')
+  const layout = useMemo(
+    () =>
+      resolveChartLayout({
+        frameW: containerW,
+        slotW: 0,
+        viewportH,
+        legendItems,
+        yLabels: [],
+        xLabels: [],
+        categorical: false,
+        sizeClass,
+        coarse,
+        ...(statedHeight !== undefined && { override: { height: statedHeight } }),
+      }),
+    // `legendItems` is a fresh array per render; `legendKey` is its identity.
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
+    [containerW, viewportH, legendKey, sizeClass, coarse, statedHeight],
+  )
   const tier = tierOfContainerClass(layout.containerClass)
 
   const sideLegendWidth = legendVisible && vertical ? legendW : 0

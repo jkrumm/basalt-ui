@@ -11,7 +11,7 @@ import {
 } from '../primitives/ChartTooltip'
 import { ChartFrame } from '../primitives/ChartFrame'
 import type { ResponsiveChartHeight } from '../primitives/ChartFrame'
-import { useChartTierMetrics } from '../primitives/chart-tier'
+import { useChartMetrics } from '../primitives/chart-tier'
 import type { ChartState } from '../primitives/ChartPending'
 import { maxTextWidth } from '../utils/measure-text'
 import { thinLabels, xLabelPxFor } from '../utils/ticks'
@@ -177,7 +177,7 @@ function HeatmapPlot<T>(props: HeatmapPlotProps<T>) {
   // The row/column labels and the gradient legend's endpoints read like axis ticks, so they take
   // the tier's tick font for the same reason `Axes.tsx` does — a 360px heatmap that painted its
   // categories at the desktop size would be the one chart still ignoring §8.
-  const { axisFont } = useChartTierMetrics()
+  const { axisFont } = useChartMetrics()
 
   const [tip, setTip] = useState<HeatmapTip | null>(null)
 

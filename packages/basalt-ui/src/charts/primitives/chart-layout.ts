@@ -69,9 +69,14 @@ const X_LABEL_GAP = 8
 const LEGEND_ROWS = { header: 1, band: 2 } as const
 
 /** Before the first measurement a compact viewport implies a compact container. */
+const CONTAINER_CLASS_OF_SIZE_CLASS = {
+  compact: 'compact',
+  medium: 'regular',
+  expanded: 'wide',
+} as const satisfies Record<keyof typeof SIZE_CLASSES, ContainerClass>
+
 function containerClassFromSizeClass(sizeClass: keyof typeof SIZE_CLASSES): ContainerClass {
-  if (sizeClass === 'compact') return 'compact'
-  return sizeClass === 'medium' ? 'regular' : 'wide'
+  return CONTAINER_CLASS_OF_SIZE_CLASS[sizeClass]
 }
 
 const clamp = (value: number, min: number, max: number): number =>
@@ -111,19 +116,29 @@ export function isTightClass(containerClass: ContainerClass): boolean {
   return containerClass === 'compact' || containerClass === 'micro'
 }
 
-/** Ladder step 1: `12500` -> `12.5k`, `1_200_000` -> `1.2M`; `null` below 1000 (nothing to compact). */
+const COMPACT_UNITS = [
+  [1e12, 'T'],
+  [1e9, 'B'],
+  [1e6, 'M'],
+  [1e3, 'k'],
+] as const
+
+const roundTenth = (value: number): number => Math.round(value * 10) / 10
+
+/**
+ * Ladder step 1: `12500` -> `12.5k`, `1_200_000` -> `1.2M`; `null` below 1000 or non-finite. Rounds
+ * BEFORE choosing the unit's suffix, so `999_950` reads `1M`, never `1000k`; the largest unit caps.
+ */
 export function compactNumber(value: number): string | null {
   const abs = Math.abs(value)
   if (!Number.isFinite(value) || abs < 1000) return null
-  const units = [
-    [1e12, 'T'],
-    [1e9, 'B'],
-    [1e6, 'M'],
-    [1e3, 'k'],
-  ] as const
-  const [size, suffix] = units.find(([unit]) => abs >= unit) ?? units[units.length - 1]!
-  const scaled = Math.round((value / size) * 10) / 10
-  return `${scaled}${suffix}`
+  let index = COMPACT_UNITS.findIndex(([unit]) => abs >= unit)
+  let scaled = roundTenth(abs / COMPACT_UNITS[index]![0])
+  if (scaled >= 1000 && index > 0) {
+    index -= 1
+    scaled = roundTenth(abs / COMPACT_UNITS[index]![0])
+  }
+  return `${value < 0 ? '-' : ''}${scaled}${COMPACT_UNITS[index]![1]}`
 }
 
 /** Ladder step 1's rule: compact only when the longest y label is over 4 chars. */

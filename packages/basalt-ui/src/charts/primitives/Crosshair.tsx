@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { VX } from '../../tokens'
-import { useChartTierMetrics } from './chart-tier'
+import { useChartMetrics } from './chart-tier'
 
 /**
  * The shared vertical hover crosshair — one implementation for what used to be five hand-rolled
@@ -38,6 +38,6 @@ export function SeriesDot({
   color: string
   r?: number
 }): ReactNode {
-  const { dotR } = useChartTierMetrics()
+  const { dotR } = useChartMetrics()
   return <circle cx={cx} cy={cy} r={r ?? dotR} fill={color} stroke={VX.dotStroke} strokeWidth={2} />
 }

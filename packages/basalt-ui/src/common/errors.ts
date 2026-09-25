@@ -48,10 +48,11 @@ export function deprecatedProp(
   oldProp: string,
   newProp: string,
   removeIn: string,
+  note?: string,
 ): string {
   return message(
     component,
-    `prop "${oldProp}" is deprecated — use "${newProp}" instead. "${oldProp}" is removed in ${removeIn}.`,
+    `prop "${oldProp}" is deprecated — use "${newProp}" instead. "${oldProp}" is removed in ${removeIn}.${note === undefined ? '' : ` ${note}`}`,
   )
 }
 

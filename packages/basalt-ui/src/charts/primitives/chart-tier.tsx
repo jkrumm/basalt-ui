@@ -55,14 +55,19 @@ export function useChartLayout(): ChartLayout | null {
   return useContext(ChartContainerClassContext).layout
 }
 
+/** The resolved sizes for the ambient container class — what every internal primitive wants. */
+export function useChartMetrics(): ChartTierMetrics {
+  return chartTierMetrics(tierOfContainerClass(useChartContainerClass()))
+}
+
 /** @deprecated Removed in 1.31.0 — the container class replaces the tier (`'phone'` = `micro`/`compact`). */
 export function useChartTier(): ChartTier {
   return tierOfContainerClass(useChartContainerClass())
 }
 
-/** The resolved sizes for the ambient container class — what every primitive actually wants. */
+/** @deprecated Removed in 1.31.0 — read the container class (`useChartContainerClass`) instead of the tier. */
 export function useChartTierMetrics(): ChartTierMetrics {
-  return chartTierMetrics(useChartTier())
+  return useChartMetrics()
 }
 
 const subscribeNothing = (): (() => void) => () => {}

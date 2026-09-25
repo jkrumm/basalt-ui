@@ -883,10 +883,10 @@ describe('CartesianChart — x tick spacing measures the label it paints', () =>
   })
 
   test('rotating the labels frees the spacing again — they stack diagonally, not side by side', () => {
-    const flat = tickCount(renderWith({ formatX: (key) => `${key} 14:00 CEST` }))
-    const rotated = tickCount(
-      renderWith({ formatX: (key) => `${key} 14:00 CEST`, xLabelRotate: 45 }),
-    )
+    // A 45° label still projects `cos 45°` of its width onto the axis, so this only frees room
+    // for labels that fit the 200px plot at all once tilted — the full stamp does not.
+    const flat = tickCount(renderWith({ formatX: (key) => `${key} 14` }))
+    const rotated = tickCount(renderWith({ formatX: (key) => `${key} 14`, xLabelRotate: 45 }))
     expect(rotated).toBeGreaterThan(flat)
   })
 

@@ -21,7 +21,7 @@ import type { ChartMargin } from '../../tokens'
 import type { CursorResolution } from '../cursor/resolve'
 import { autoMargin } from '../layout/auto-margin'
 import { isTightClass, planXLabels } from '../primitives/chart-layout'
-import { useChartContainerClass, useChartTierMetrics } from '../primitives/chart-tier'
+import { useChartContainerClass, useChartMetrics } from '../primitives/chart-tier'
 import { maxTextWidth } from '../utils/measure-text'
 import { smartTicks, xLabelPxFor } from '../utils/ticks'
 import { useChartCursor } from './useChartCursor'
@@ -151,8 +151,9 @@ export type BandPlot<T> = {
   /** Drawn width of one band — the pitch minus a 1px separator, floored at 1. */
   bandWidth: number
   tickValues: string[]
-  /** Left-axis labels draw inside the plot (compact/micro, no `margin.left` override). */
-  yInside: boolean
+  /** Where the left axis paints: inside the plot (compact), not at all (micro), else outside. An
+   * explicit `margin.left` keeps it outside. Same law as `CartesianChart`. */
+  yPlacement: 'outside' | 'inside' | 'none'
   /** Terminal x labels anchor inward (compact/micro). */
   xAnchorTerminals: boolean
   /** Width to wrap x labels to; undefined when they do not wrap. */
@@ -188,13 +189,18 @@ export function useBandPlot<T>(input: UseBandPlotInput<T>): BandPlot<T> {
   // two things `CartesianChart` reads off it: the tick font its gutters are MEASURED at (the same
   // one `AxisBottomDate` paints — measured labels must be the painted labels, §1) and the tightened
   // margin FLOORS (`docs/CHARTS-SPEC.md` §8).
-  const tier = useChartTierMetrics()
+  const tier = useChartMetrics()
   const containerClass = useChartContainerClass()
   const tight = isTightClass(containerClass)
 
   const hasLeftAxis = leftLabels !== undefined && leftLabels.length > 0
   // Ladder step 5: inside labels reserve no gutter. An explicit `margin.left` keeps them outside.
-  const yInside = tight && hasLeftAxis && marginOverride?.left === undefined
+  const yPlacement: 'outside' | 'inside' | 'none' =
+    !tight || !hasLeftAxis || marginOverride?.left !== undefined
+      ? 'outside'
+      : containerClass === 'micro'
+        ? 'none'
+        : 'inside'
   const xLabelsAll = useMemo(() => data.map((d) => formatX(getX(d))), [data, getX, formatX])
 
   // Ladder step 4 (wrap; a band axis cannot rotate, so it thins instead). Sized from the token
@@ -214,7 +220,7 @@ export function useBandPlot<T>(input: UseBandPlotInput<T>): BandPlot<T> {
   // ── Pass 1: gutters, from the labels that will actually be painted ──────────────────────────
   const margin = useMemo<ChartMargin>(() => {
     const measured = autoMargin({
-      ...(leftLabels !== undefined && { left: yInside ? [] : leftLabels }),
+      ...(leftLabels !== undefined && { left: yPlacement === 'outside' ? leftLabels : [] }),
       bottom: xLabelsAll,
       fontPx: tier.axisFont,
       floor: tier.margin,
@@ -257,7 +263,7 @@ export function useBandPlot<T>(input: UseBandPlotInput<T>): BandPlot<T> {
     tier.axisFont,
     tier.margin,
     tight,
-    yInside,
+    yPlacement,
     xPlan.lines,
   ])
 
@@ -348,7 +354,7 @@ export function useBandPlot<T>(input: UseBandPlotInput<T>): BandPlot<T> {
     step,
     bandWidth,
     tickValues,
-    yInside,
+    yPlacement,
     xAnchorTerminals: tight,
     xWrapWidth,
     svgRef,

@@ -16,6 +16,7 @@
 import { render } from '@testing-library/react'
 import { describe, expect, test } from 'bun:test'
 import { renderToStaticMarkup } from 'react-dom/server'
+import { SizeClassHintContext } from '../../shell/use-size-class'
 import { VX } from '../../tokens'
 import {
   ChartFrame,
@@ -27,6 +28,7 @@ import {
 import { resolveFrameHeight, resolveLegendMaxRows } from './chart-frame-layout'
 import type { ResponsiveChartHeight } from './chart-frame-layout'
 import type { LegendEntry } from './ChartLegend'
+import { useChartLayout } from './chart-tier'
 import { HoverOverlay } from './HoverOverlay'
 import type { SeriesStyle } from '../series'
 
@@ -476,5 +478,32 @@ describe('ChartFrame height warnings (dev, once)', () => {
 
   test('a numeric height above the floor is silent', () => {
     expect(mount(VX.minPlotHeight + 50).filter((m) => m.includes('plot floor'))).toEqual([])
+  })
+})
+
+describe('an unmeasured ChartFrame without a BasaltProvider is not phone chrome', () => {
+  function Probe() {
+    const layout = useChartLayout()
+    return <text>{`${layout?.containerClass}|${layout?.height}`}</text>
+  }
+  const frame = (): ReturnType<typeof ChartFrame> => (
+    <ChartFrame series={series} legend={false}>
+      {() => (
+        <svg>
+          <Probe />
+        </svg>
+      )}
+    </ChartFrame>
+  )
+
+  test('no provider: regular class, height from the regular ratio (640 x 0.5)', () => {
+    expect(renderToStaticMarkup(frame())).toContain('regular|320')
+  })
+
+  test('a provider hint still decides the unmeasured class', () => {
+    const markup = renderToStaticMarkup(
+      <SizeClassHintContext.Provider value="compact">{frame()}</SizeClassHintContext.Provider>,
+    )
+    expect(markup).toContain('compact|223')
   })
 })

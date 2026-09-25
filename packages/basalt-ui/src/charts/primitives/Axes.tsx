@@ -3,7 +3,7 @@ import type { AxisScale, TickFormatter } from '@visx/axis'
 import { VX } from '../../tokens'
 import { ROTATED_LABEL_OFFSET } from '../layout/auto-margin'
 import { fmtAxisDate } from '../utils/format'
-import { useChartTierMetrics } from './chart-tier'
+import { useChartMetrics } from './chart-tier'
 
 /**
  * Tick label font — mono, per `docs/DESIGN-SPEC.md` §5 ("ticks mono 10.5px faint"). Not a `VX.*`
@@ -35,7 +35,7 @@ export function AxisLeftNumeric({
    * caller reserves no gutter for them (`docs/waves/RESPONSIVE-SPEC.md` §4 step 5). */
   inside?: boolean
 }) {
-  const { axisFont } = useChartTierMetrics()
+  const { axisFont } = useChartMetrics()
   return (
     <AxisLeft
       scale={scale}
@@ -86,7 +86,7 @@ export function AxisRightNumeric({
   /** Exact tick positions (e.g. a compass axis at 0/90/180/270). Overrides `numTicks`. */
   tickValues?: readonly number[]
 }) {
-  const { axisFont } = useChartTierMetrics()
+  const { axisFont } = useChartMetrics()
   return (
     <AxisRight
       left={left}
@@ -127,7 +127,7 @@ export function AxisBottomNumeric({
   /** Exact tick positions (e.g. a compass axis at 0/90/180/270). Overrides `numTicks`. */
   tickValues?: readonly number[]
 }) {
-  const { axisFont } = useChartTierMetrics()
+  const { axisFont } = useChartMetrics()
   return (
     <AxisBottom
       top={top}
@@ -199,7 +199,7 @@ export function AxisBottomDate({
    */
   rotate?: 45 | 90
 }) {
-  const { axisFont } = useChartTierMetrics()
+  const { axisFont } = useChartMetrics()
   const rotated = rotate === undefined ? undefined : ROTATED_OFFSET[rotate]
   return (
     <AxisBottom

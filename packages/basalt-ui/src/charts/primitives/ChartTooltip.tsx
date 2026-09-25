@@ -3,7 +3,7 @@ import { useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { createPortal } from 'react-dom'
 import { VX } from '../../tokens'
 import { fmtTooltipDate } from '../utils/format'
-import { useChartTierMetrics } from './chart-tier'
+import { useChartMetrics } from './chart-tier'
 
 // Panel bg + shadow-card, radius 8 (docs/DESIGN-SPEC.md §5's "Tooltip/popover/menu" idiom) — the
 // same depth-via-shadow treatment as ChartCard, never a `border` property. Surfaces resolve per
@@ -191,7 +191,7 @@ export function ChartTooltipFloat({
   const ref = useRef<HTMLDivElement>(null)
   const [box, setBox] = useState<{ width: number; height: number } | null>(null)
   const isClient = useIsClient()
-  const { tooltipMinWidth } = useChartTierMetrics()
+  const { tooltipMinWidth } = useChartMetrics()
 
   useLayoutEffect(() => {
     const el = ref.current
