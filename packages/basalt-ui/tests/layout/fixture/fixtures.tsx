@@ -12,6 +12,7 @@ import {
   fmtAxisDate,
 } from '../../../src/charts'
 import type { BandStripSeries, BarsBar, ChartSeries, DonutDatum } from '../../../src/charts'
+import { BasaltOverlays, overlays } from '../../../src/commands'
 import { FilterSet, SelectFilter, ViewTabs } from '../../../src/controls'
 import { BasaltDataTable } from '../../../src/data/table'
 import type { DataTableFacet } from '../../../src/data/table'
@@ -740,6 +741,35 @@ function AgentFixture({ spec }: { spec: AgentSpec }): ReactElement {
   return <VirtualizedTranscriptFixture spec={spec} />
 }
 
+/** `overlays.confirm` (danger) behind a button — the modal-as-sheet invariant's only trigger. */
+function ConfirmFixture(): ReactElement {
+  return (
+    <>
+      <BasaltOverlays spotlight={false} notifications={false} hotkeys={false}>
+        {null}
+      </BasaltOverlays>
+      <button
+        type="button"
+        data-testid="open-confirm"
+        onClick={
+          () =>
+            overlays
+              .confirm({
+                title: 'Revoke access?',
+                body: 'The key stops working immediately.',
+                confirmLabel: 'Revoke',
+                danger: true,
+                onConfirm: () => {},
+              })
+              .catch(() => {}) // the modals layer is lazy: a too-early tap rejects, the test retries
+        }
+      >
+        Open confirm
+      </button>
+    </>
+  )
+}
+
 export function ShellFixture({ spec }: { spec: FixtureSpec }): ReactElement {
   const icons = spec.icons ?? true
   const sections: SidebarSection[] = spec.sections.map((section) => ({
@@ -766,6 +796,7 @@ export function ShellFixture({ spec }: { spec: FixtureSpec }): ReactElement {
       {spec.table && <TableFixture spec={spec.table} />}
       {spec.charts && <ChartsFixture spec={spec.charts} />}
       {spec.agent && <AgentFixture spec={spec.agent} />}
+      {spec.confirm && <ConfirmFixture />}
       {/* theme-allow -- a measured filler height IS the fixture's payload, not a themed size */}
       <div style={{ height: spec.bodyHeight ?? 0 }} />
       <div data-testid="content-end">end of content</div>

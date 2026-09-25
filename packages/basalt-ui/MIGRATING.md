@@ -96,6 +96,10 @@ on those keys: `xs` no longer differs from `sm`, and `md`/`lg`/`xl` now switch a
 | `VX.space.touchControlHeight`, `--vx-space-touch-control-height` | `VX.hit`; density-exempt, so it no longer tracks the knob                                                                                                                        |
 | `DESKTOP_SECONDARY_MAX` (`./controls`)                           | none — `PageBar` row 1 folds secondary actions by its measured width (icon-only, then into `More`); removed with no grace window because nothing but the row's own count read it |
 
+| Changed                                                                                                                   | Notes                                                                                                                                                                                                                                                   |
+| ------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Themed `Modal` is a bottom sheet below the `medium` size class; `./content` hover-reveal affordances are visible on touch | Opt out of the sheet by overriding `classNames.inner`/`content`/`body`. A consumer `attributes` (Switch/Checkbox/Radio) or `closeButtonProps` (Modal) replaces the shipped `data-basalt-hit` shallowly — re-add `'data-basalt-hit': true` where needed. |
+
 `--vx-space-mobile-nav-row-height` is 44px (was 40). A hit overlay is `[data-basalt-hit]` in
 `styles.css`; the home controls' overlays now key on `(pointer: coarse)` instead of width.
 

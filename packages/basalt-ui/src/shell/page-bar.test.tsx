@@ -258,16 +258,22 @@ describe('page-bar.module.css', () => {
     expect(decls.match(/flex-wrap: nowrap/g)?.length).toBeGreaterThanOrEqual(5)
   })
 
-  test('the mobile hit area rides ::after — Mantine owns Button::before for its loading overlay', () => {
-    expect(decls).toContain('::after')
+  test('the hit area is the shared [data-basalt-hit] overlay, capped at the control gap', () => {
+    expect(decls).not.toContain('::after')
     expect(decls).not.toContain('::before')
-    expect(decls).toContain('min-height: var(--vx-hit)')
+    expect(decls).toContain('--vx-hit-gap: var(--vx-space-control-gap)')
   })
 
-  test('the hit area un-clips its own host — Mantine roots are overflow: hidden', () => {
-    // Without this the overlay is clipped back to the 30px box and law C15's 36px target does not
+  test('the shared overlay rides ::after and un-clips its host — Mantine roots are overflow: hidden', () => {
+    // Without this the overlay is clipped back to the 30px box and law C15's target does not
     // exist at all, which no token assertion can catch.
-    expect(decls).toMatch(/:not\(\[data-loading\]\)[\s\S]{0,80}overflow: visible/)
+    const shared = readFileSync(
+      resolve(dirname(fileURLToPath(import.meta.url)), '..', 'styles.css'),
+      'utf8',
+    ).replace(/\/\*[\s\S]*?\*\//g, '')
+    expect(shared).toContain('::after')
+    expect(shared).not.toContain('::before')
+    expect(shared).toMatch(/:not\(\[data-loading\]\)[\s\S]{0,80}overflow: visible/)
   })
 })
 

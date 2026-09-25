@@ -221,25 +221,34 @@
   /* Pointer tier: an invisible hit-area expansion to at least `--vx-hit` (44px coarse, 24px fine),
      no layout change. `::after`, not `::before` — Mantine's Button owns `::before` for its loading
      overlay. `overflow: visible` is load-bearing: Button/ActionIcon roots clip to their box, which
-     would clip the overlay; the clip only serves their `[data-loading]` overlay, so it stays then. */
-  [data-basalt-hit] {
+     would clip the overlay; the clip only serves their `[data-loading]` overlay, so it stays then.
+     Adopters: `data-basalt-hit` on the control, or `data-basalt-hit-scope` on a home whose
+     `button`/`a` descendants (consumer-supplied) adopt it.
+     DECISION: the axis is `pointer: coarse` (the PRIMARY input, via `--vx-hit`), never
+     `any-pointer` — a touch laptop's mouse-first session must not inflate every hit area.
+     OVERLAP CAP: a host with neighbours sets `--vx-hit-gap` (its real gap between controls); the
+     expansion is then limited to that gap in total (half per side), so adjacent hit boxes never
+     overlap and a later sibling never steals a tap. Unset = uncapped (an isolated control). The
+     `+ 2px` is the control's own 1px border (Mantine buttons carry one, transparent or not): `100%`
+     is the PADDING box, the gap is measured between border boxes.
+     `position: relative` is the ::after's containing block; an adopter that must be
+     absolute/sticky sets its own `position` in an unlayered rule, which outranks this layer. */
+  :is([data-basalt-hit], [data-basalt-hit-scope] :is(button, a)) {
     position: relative;
   }
 
-  [data-basalt-hit]:not([data-loading]) {
+  :is([data-basalt-hit], [data-basalt-hit-scope] :is(button, a)):not([data-loading]) {
     overflow: visible;
   }
 
-  [data-basalt-hit]::after {
+  :is([data-basalt-hit], [data-basalt-hit-scope] :is(button, a))::after {
     content: '';
     position: absolute;
     top: 50%;
     left: 50%;
     translate: -50% -50%;
-    width: 100%;
-    height: 100%;
-    min-width: var(--vx-hit);
-    min-height: var(--vx-hit);
+    width: min(max(100%, var(--vx-hit)), calc(100% + 2px + var(--vx-hit-gap, 100vmax)));
+    height: min(max(100%, var(--vx-hit)), calc(100% + 2px + var(--vx-hit-gap, 100vmax)));
   }
 
   /* Print: hide the BasaltShell chrome so only page content prints.

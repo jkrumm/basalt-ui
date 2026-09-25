@@ -87,6 +87,8 @@ function wrapperStyle(placement: LegendPlacement, fontSize: number): CSSProperti
     justifyContent: vertical ? 'flex-start' : 'center',
     columnGap: VX.legendGap,
     rowGap: VX.legendGap,
+    // Caps each entry's `[data-basalt-hit]` overlay at the real inter-entry gap (styles.css).
+    ...({ '--vx-hit-gap': `${VX.legendGap}px` } as CSSProperties),
     padding: '8px 0 2px',
     fontSize,
     color: VX.muted,
@@ -325,6 +327,7 @@ export function ChartLegend({
       <button
         key={item.key}
         type="button"
+        data-basalt-hit
         data-legend-key={item.key}
         // The note is the whole point for a series that is invisible in the plot, so it has to
         // reach a screen reader too — an explicit aria-label would otherwise replace it.
@@ -364,6 +367,7 @@ export function ChartLegend({
       <button
         key="legend-more"
         type="button"
+        data-basalt-hit
         aria-expanded={expanded}
         onClick={() => setExpanded((prev) => !prev)}
         style={{ ...LEGEND_ITEM_BUTTON, cursor: 'pointer', textDecoration: 'underline' }}

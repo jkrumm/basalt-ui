@@ -143,7 +143,7 @@ export function MultiSelectFilter<T extends string>(props: MultiSelectFilterProp
         setValue(next as readonly T[])
       }}
     >
-      <Stack gap={2}>
+      <Stack gap={2} style={{ '--vx-hit-gap': 'var(--stack-gap)' }}>
         {options.map((option) => (
           <Checkbox
             key={option.value}

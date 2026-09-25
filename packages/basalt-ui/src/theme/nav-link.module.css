@@ -21,6 +21,13 @@
   font-weight: 600;
 }
 
+/* Touch floor: rows are adjacent (1px gap), so an overlay would overlap — the row itself is 44. */
+@media (pointer: coarse) {
+  .root {
+    min-height: var(--vx-hit);
+  }
+}
+
 /* Active + hover — one step stronger than the resting active fill, so a pointer over the active row
  * still reads as feedback rather than as a flat, unresponsive selection. */
 @media (hover: hover) {

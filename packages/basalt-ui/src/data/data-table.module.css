@@ -62,3 +62,26 @@
 .containment[data-contained='true'] {
   overflow-x: auto;
 }
+
+/*
+ * The selection column's hit area is the WHOLE cell (`docs/waves/RESPONSIVE-SPEC.md` §6): the
+ * cell is the positioning box and the wrapping <label>'s ::after stretches over it, so a tap
+ * anywhere in the cell toggles the checkbox. Not `data-basalt-hit` — that primitive centres a
+ * `--vx-hit` square on its element; this one must fill a cell of any width.
+ */
+.selectCell {
+  position: relative;
+}
+
+.selectHit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.selectHit::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}

@@ -147,7 +147,7 @@ export function EnumFilter<T extends string>({
         setValue(next as T)
       }}
     >
-      <Stack gap={2}>
+      <Stack gap={2} style={{ '--vx-hit-gap': 'var(--stack-gap)' }}>
         {options.map((option) => (
           <Radio
             key={option.value}

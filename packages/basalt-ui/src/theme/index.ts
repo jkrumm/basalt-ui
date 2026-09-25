@@ -183,6 +183,9 @@ function pinShades(
   return out as unknown as MantineColorsTuple
 }
 
+// Mantine's typed prop bags reject `data-*` literals; a spread carries the hit-area attribute in.
+const HIT_ATTR: Record<string, true> = { 'data-basalt-hit': true }
+
 /** The shipped, config-independent palette data — `baseTheme` / `cssVariablesResolver` below are
  * built from this once, at module load. */
 const DEFAULT_PALETTE_DATA = buildPaletteData(DEFAULT_DERIVE_CONFIG)
@@ -672,6 +675,8 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
         classNames: { wrapper: controlsClasses.inputWrapper, input: controlsClasses.input },
       }),
       TextInput: TextInput.extend({ defaultProps: { size: 'md' } }),
+      // The stepper chevrons sit ~15px apart, so neither can own a 44px overlay; the coarse
+      // `.input` min-height floor (theme/controls.module.css) is the touch floor.
       NumberInput: NumberInput.extend({ defaultProps: { size: 'md' } }),
       PasswordInput: PasswordInput.extend({ defaultProps: { size: 'md' } }),
       Select: Select.extend({ defaultProps: { size: 'md' } }),
@@ -988,10 +993,16 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
       // under it but shows every scrolled row straight through the title once one does (the mobile
       // filter sheet, the shell's "More" nav sheet). The header stays sticky; only its own
       // background moves back to opaque, matching the content box it sits above rather than the page
-      // behind it. Title = head font; close button = the ghost idiom (floating.module.css).
+      // behind it. Title = head font; close button = the ghost idiom (floating.module.css). Below the
+      // `medium` size class the Modal is a bottom sheet (floating.module.css `sheet*`).
       Modal: Modal.extend({
-        defaultProps: { radius: radius.floating },
-        classNames: { close: floatingClasses.closeButton },
+        defaultProps: { radius: radius.floating, closeButtonProps: { ...HIT_ATTR } },
+        classNames: {
+          close: floatingClasses.closeButton,
+          inner: floatingClasses.sheetInner,
+          content: floatingClasses.sheetContent,
+          body: floatingClasses.sheetBody,
+        },
         styles: {
           content: {
             backgroundColor: 'var(--vx-surface-overlay)',
@@ -1069,7 +1080,15 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
       // The v9 thumb indicator is a center dot painted in the TRACK color — over the remapped
       // neutral track it read as an artifact, so it's disabled: clean track, plain thumb, accent
       // fill when checked (`--switch-color` defaults to the primary filled shade = the accent).
-      Switch: Switch.extend({ defaultProps: { withThumbIndicator: false } }),
+      // `track` is the Switch's <label>, so the invisible `--vx-hit` overlay (`data-basalt-hit`)
+      // still toggles it. Checkbox/Radio boxes are bare <input>s under a plain <div> — an overlay
+      // there would swallow clicks, so only their `label` (a real <label>) carries it.
+      Switch: Switch.extend({
+        defaultProps: {
+          withThumbIndicator: false,
+          attributes: { track: { 'data-basalt-hit': true } },
+        },
+      }),
       // The tab-list bottom rule (and the inactive-tab hover underline) is a layout separator, not
       // control chrome — it reads the divider token instead of the heavy gray-3/dark-4 line
       // (controls.module.css; custom properties are stripped from `styles` objects). The active tab
@@ -1093,6 +1112,7 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
       // `useStyles`), so re-pointing that var here wins on every render path. Without this, a dark-mode
       // Checkbox/Radio paints a white checkmark on the light accent fill — invisible.
       Checkbox: Checkbox.extend({
+        defaultProps: { attributes: { label: { 'data-basalt-hit': true } } },
         vars: (theme, props) => ({
           root: {
             // `iconColor` is an explicit call-site override, and `outline` paints the mark in the
@@ -1103,6 +1123,7 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
         }),
       }),
       Radio: Radio.extend({
+        defaultProps: { attributes: { label: { 'data-basalt-hit': true } } },
         vars: (theme, props) => ({
           root: {
             '--radio-icon-color':

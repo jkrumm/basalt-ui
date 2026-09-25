@@ -71,6 +71,7 @@ export function FilterPill({
       variant="default"
       size="ctl"
       className={cx(classes.pill, className)}
+      data-basalt-hit
       classNames={{ label: classes.pillLabel }}
       {...(style !== undefined && { style })}
       {...(active === true && { 'data-active': true })}

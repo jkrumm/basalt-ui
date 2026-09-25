@@ -232,6 +232,8 @@ export type FixtureSpec = {
   charts?: ChartsSpec
   /** Renders a `basalt-ui/agent-chat` transcript above the filler. Omitted ⇒ no transcript. */
   agent?: AgentSpec
+  /** Mounts `BasaltOverlays` and a button (`data-testid="open-confirm"`) opening `overlays.confirm`. */
+  confirm?: true
   /** Fills the sidebar's pinned FOOTER region, which otherwise does not render at all. */
   sidebar?: SidebarSpec
   /**

@@ -63,7 +63,9 @@ export const CTL_THEME: MantineThemeOverride = {
     NativeSelect: NativeSelect.extend({ defaultProps: { size: 'ctl' } }),
     // The theme keys are the component names Mantine's own `useProps` looks up — `RadioGroup`, not
     // `Radio.Group` (`RadioGroup.mjs`: `useProps("RadioGroup", …)`).
-    Radio: Radio.extend({ defaultProps: { size: 'ctl' } }),
+    Radio: Radio.extend({
+      defaultProps: { size: 'ctl', attributes: { label: { 'data-basalt-hit': true } } },
+    }),
     // Mantine types `RadioGroup.size` as a CLOSED `MantineSize`, while `Radio`, `Checkbox`,
     // `Checkbox.Group`, `Switch` and `Switch.Group` all type theirs OPEN
     // (`MantineSize | (string & {})`) — verified in the installed 9.3.0 `.d.ts` files, so this is an
@@ -71,9 +73,13 @@ export const CTL_THEME: MantineThemeOverride = {
     // runtime `getSize` interpolates the string identically for all six. The cast restores what
     // every sibling type already allows; it widens nothing.
     RadioGroup: Radio.Group.extend({ defaultProps: { size: 'ctl' as MantineSize } }),
-    Checkbox: Checkbox.extend({ defaultProps: { size: 'ctl' } }),
+    Checkbox: Checkbox.extend({
+      defaultProps: { size: 'ctl', attributes: { label: { 'data-basalt-hit': true } } },
+    }),
     CheckboxGroup: Checkbox.Group.extend({ defaultProps: { size: 'ctl' } }),
-    Switch: Switch.extend({ defaultProps: { size: 'ctl' } }),
+    Switch: Switch.extend({
+      defaultProps: { size: 'ctl', attributes: { track: { 'data-basalt-hit': true } } },
+    }),
     SwitchGroup: Switch.Group.extend({ defaultProps: { size: 'ctl' } }),
   },
 }
