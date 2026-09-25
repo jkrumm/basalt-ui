@@ -93,17 +93,35 @@ then `/review` findings resolved.
       consolidation were deferred. Gate: `bun run pre` red only on `ai-sdk-transport.test.ts:339`, layout
       92/92, budgets 396/400 · 750/750 · 2479/2480.
 
-## Wave 4 — Touch tier <!-- status: active -->
+## Wave 4 — Touch tier <!-- status: done -->
 
-- [ ] Adopt `[data-basalt-hit]` in every interactive primitive: the C1 homes, SettingsRow/FormRow
+- [x] Adopt `[data-basalt-hit]` in every interactive primitive: the C1 homes, SettingsRow/FormRow
       control slot, InfoGlyph, DataTable pagination (into CtlSlot) + selection cell, legend toggles,
       mobile nav; migrate width-keyed touch `@media` rules to the pointer axis
-- [ ] Hover-reveal gates in `./content` (copy button, permalinks) and any row actions
-- [ ] Modal / `overlays.confirm` as a bottom sheet at compact with full-width `--vx-hit` actions
-- [ ] `hit-floor.layout.test.ts` (≥ 44×44 under hasTouch on every playground route)
-      **Left behind:**
+- [x] Hover-reveal gates in `./content` (copy button, permalinks) and any row actions
+- [x] Modal / `overlays.confirm` as a bottom sheet at compact with full-width `--vx-hit` actions
+- [x] `hit-floor.layout.test.ts` (≥ 44×44 under hasTouch on every playground route)
+      **Left behind:** One primitive: `[data-basalt-hit]` (element) or `[data-basalt-hit-scope]` (a home whose
+      `button`/`a` descendants adopt it) in `styles.css`; the axis is `pointer: coarse` (not any-pointer). A host sets
+      `--vx-hit-gap` (its real control gap) and the overlay is capped to that gap so adjacent boxes never overlap
+      (`hit-overlap.layout.test.ts`); unset = uncapped, so any NEW adopter next to a sibling MUST set the gap.
+      Inside a gap host the floor is `min(44, size + gap)` (WCAG 2.5.8 spacing route), not 44 — a 24px icon in a 6px
+      gap gets a 30px box. NumberInput steppers do NOT adopt (two siblings too close): the coarse `.input` min-height
+      floor covers them. Nav rows and inputs get `min-height: var(--vx-hit)` under coarse instead of an overlay.
+      Modal is a CSS-only bottom sheet below the medium size class (`floating.module.css` `sheet*`, reaches the confirm
+      button row via `.sheetBody > Group:last-child`); MIGRATING has the row. Hover reveals in `./content` gated on
+      `(hover: hover) and (pointer: fine)`. **Known gaps:** collapsed icon rail rows are 27px wide (24px floor, hit-floor
+      test exempts `.mantine-AppShell-navbar` narrower than 44) — widening the rail is a shell design call; bare
+      Checkbox/Radio boxes (no label) get no overlay (need a `<label>` wrapper); `hit-floor` and `hit-overlap` run on the
+      fixture app (harness has no playground routes), not every playground route, and take no before/after shots;
+      pills' block axis is capped to 38px by the shared gap rule; app-brand toggle's overlay is clipped by `.zone`
+      `overflow: hidden` at negative density; select-cell height (40px) is under 44. Review improvements deferred:
+      dedupe hit `attributes` in `theme/index.ts` vs `ctl-theme.tsx`, extract a `SelectionCheckbox` in data-table,
+      scope the sheet's Group rule to the confirm row, default `--vx-hit-gap` on `[data-basalt-hit-scope]`.
+      Gate: `bun run pre` red only on `ai-sdk-transport.test.ts:339` (plus a load-flaky 5s timeout in
+      `actions.test.tsx`, green alone), layout 98/98, pack-test passed, budgets unchanged.
 
-## Wave 5 — Card chrome by container <!-- status: pending -->
+## Wave 5 — Card chrome by container <!-- status: active -->
 
 - [ ] `container: basalt-card` on ChartCard/StatCard/Section/WidgetHeader; header rules → `@container`
       per the container-class table; subtitle → info glyph at compact; wide puts value on the title row
