@@ -18,10 +18,8 @@ the shipped rules.
 Consolidation doctrine / precedence chain. When this file and a shipped rule disagree, fix the rule
 to match (or update both deliberately) — this file is the source those rules are distilled from.
 
-> **This file governs the system, not the data.** It declares the rules, the tiers, and the
-> contract. The **per-metric colour assignments** — which series gets which hue — are a data
-> dictionary that lives only in the consumer's palette source (the executable `{light,dark}` source
-> of truth), never here.
+> **This file governs the system, not the data.** Per-metric colour assignments live only in the
+> consumer's palette source (the executable `{light,dark}` source of truth), never here.
 
 ## Identity
 
@@ -67,14 +65,9 @@ These are settled doctrine, drawn from studied systems and stated to be promotab
 
 ### Influences
 
-The system is a combination of three studied design systems — the best of each:
-
-- **IBM Carbon** → _discipline_: one scarce accent, a defined spacing/type scale, hairline-not-shadow
-  elevation, "every colour has a reason." The restraint backbone.
-- **Linear** → _dark-first craft_: a deep surface ramp (`canvas → surface-1/2` + layered hairlines)
-  with light as the flip, and tight radii that read precise/technical.
-- **Coinbase** → _signal-only colour_: up/down deltas as text colour (never a fill) and numbers in
-  mono — "ink earns its colour" applied to a finance dashboard.
+Three studied systems, the best of each: **IBM Carbon** for discipline (one scarce accent, "every
+colour has a reason"), **Linear** for dark-first craft (a deep surface ramp, tight precise radii),
+**Coinbase** for signal-only colour (up/down as text colour, numbers in mono).
 
 ## Token architecture (three tiers)
 
@@ -116,8 +109,7 @@ Spend a colour only for one of these. Otherwise the mark is neutral (`VX.line`).
 | **Categorical separation** | Stages, intensity ramp, multi-toggle (2+ series)   | per-series accent (from the consumer's series map)     |
 | _none of the above_        | Single sparkline, one stat tile, single-metric bar | **neutral** `VX.line`                                  |
 
-Worked rule: a multi-toggle bar chart colours bars `isMulti ? series.x : VX.line` — neutral when one
-metric is selected, distinct colours only when 2+ are compared. Copy it.
+Worked rule: a multi-toggle bar chart colours bars `isMulti ? series.x : VX.line`.
 
 ## Light / dark, opacity, and reactivity
 
@@ -157,6 +149,14 @@ metric is selected, distinct colours only when 2+ are compared. Copy it.
   `font-stretch: 88%`), and mono (`'JetBrains Mono Variable'`) for numbers — a tabular stack that
   keeps metric columns aligned (a Coinbase pattern). The type ladder itself is defined once in
   `src/tokens/index.ts` (`VX.text.*` / `--vx-text-*`) — no font-size literals at call sites.
+- **Responsive is three independent axes, not one breakpoint.** (1) **Size class** — the viewport,
+  `compact` < 840 / `medium` < 1200 / `expanded`, from `SIZE_CLASSES`; **shell chrome only** (bottom
+  bar, rail, sidebar, aside docking); `theme.breakpoints` is derived from it. (2) **Container
+  class** — a component's own inline size (`CONTAINER_CLASSES`: micro/compact/regular/wide) via
+  `@container`; card chrome and chart tiers never read the viewport. (3) **Pointer tier** — input
+  modality, not width: `--vx-hit` is 24px (WCAG 2.5.8 Target Size Minimum) and 44px under
+  `(pointer: coarse)` (WCAG 2.5.5 Target Size Enhanced), `hover` behaviour gates on
+  `(hover: hover)`. A narrow desktop window is not a phone; a tablet is not a wide phone.
 
 ## Data visualization — the visx primitives contract
 
