@@ -49,7 +49,6 @@ describe('chartTierMetrics', () => {
     expect(desktop.legendFontSize).toBe(VX.legendFontSize)
     expect(desktop.dotR).toBe(VX.dotR)
     expect(desktop.margin).toEqual(VX.margin)
-    expect(desktop.legendMaxRows).toBeUndefined()
   })
 
   test('the phone fonts are one step DOWN the shared ladder, not arbitrary pixels', () => {
@@ -66,10 +65,9 @@ describe('chartTierMetrics', () => {
     }
   })
 
-  test('the dot shrinks, the tooltip narrows, the legend gains a two-entry cap', () => {
+  test('the dot shrinks and the tooltip narrows', () => {
     expect(phone.dotR).toBeLessThan(desktop.dotR)
     expect(phone.tooltipMinWidth).toBeLessThan(desktop.tooltipMinWidth)
-    expect(phone.legendMaxRows).toBe(2)
   })
 
   test('it returns the SAME frozen object per tier — never a fresh one per render', () => {

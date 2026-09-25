@@ -13,8 +13,8 @@
  * to the DOM harness would only be worth it if a future assertion here needed a real measured size
  * (a live `ResizeObserver` reading) rather than this SSR fallback rect.
  */
-import { render } from '@testing-library/react'
-import { describe, expect, test } from 'bun:test'
+import { render, waitFor } from '@testing-library/react'
+import { afterEach, describe, expect, test } from 'bun:test'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { SizeClassHintContext } from '../../shell/use-size-class'
 import { VX } from '../../tokens'
@@ -25,7 +25,7 @@ import {
   resolveLegendRollup,
   resolvePlotRect,
 } from './ChartFrame'
-import { resolveFrameHeight, resolveLegendMaxRows } from './chart-frame-layout'
+import { resolveFrameHeight } from './chart-frame-layout'
 import type { ResponsiveChartHeight } from './chart-frame-layout'
 import type { LegendEntry } from './ChartLegend'
 import { useChartLayout } from './chart-tier'
@@ -253,7 +253,7 @@ describe('legendEntryCap — only a fill frame rolls its legend up, and only whe
     expect(cap).toBeGreaterThanOrEqual(1)
   })
 
-  test('the tier DEFAULT stays the upper bound — two defaults, the smaller wins', () => {
+  test('the width fit stays the upper bound — two defaults, the smaller wins', () => {
     const cap = legendEntryCap({
       items: many,
       containerW: 390,
@@ -278,7 +278,7 @@ describe('legendEntryCap — only a fill frame rolls its legend up, and only whe
  * `ChartFrame` ran the measured fit over the honoured cap, so this covers the COMPOSITION, which
  * is the part no pure-function test could see.
  */
-describe('resolveLegendRollup — a stated maxRows outranks the tier AND the measured fit', () => {
+describe('resolveLegendRollup — a stated maxRows outranks the width fit AND the height fit', () => {
   const seven = ['a', 'b', 'c', 'd', 'e', 'f', 'g'].map((k) => entry(k, `Series ${k}`))
   /** meteo's row: 150px tall, `VX.minPlotHeight` 120, so the legend's share is 30px. */
   const meteo = { items: seven, containerW: 380, available: 150 - VX.minPlotHeight } as const
@@ -290,23 +290,23 @@ describe('resolveLegendRollup — a stated maxRows outranks the tier AND the mea
   test('every stated number now survives the same box, and the plot pays', () => {
     for (const statedMaxRows of [3, 6, 99]) {
       expect(
-        resolveLegendRollup({ ...meteo, statedMaxRows, tier: 'phone', fillBand: true }),
+        resolveLegendRollup({ ...meteo, statedMaxRows, fittedMaxRows: 2, fillBand: true }),
       ).toEqual({ maxRows: statedMaxRows, legendWins: true })
     }
   })
 
-  test('stating nothing still gets the measured fit, bounded by the tier default', () => {
-    const rollup = resolveLegendRollup({ ...meteo, tier: 'phone', fillBand: true })
+  test('stating nothing still gets the height fit, bounded by the width fit', () => {
+    const rollup = resolveLegendRollup({ ...meteo, fittedMaxRows: 2, fillBand: true })
     expect(rollup.legendWins).toBe(false)
     expect(rollup.maxRows).toBeLessThanOrEqual(2)
   })
 
   test('off a fill band nothing is measured — the frame grows instead', () => {
-    expect(resolveLegendRollup({ ...meteo, tier: 'phone', fillBand: false })).toEqual({
+    expect(resolveLegendRollup({ ...meteo, fittedMaxRows: 2, fillBand: false })).toEqual({
       maxRows: 2,
       legendWins: false,
     })
-    expect(resolveLegendRollup({ ...meteo, tier: 'desktop', fillBand: false })).toEqual({
+    expect(resolveLegendRollup({ ...meteo, fittedMaxRows: undefined, fillBand: false })).toEqual({
       maxRows: undefined,
       legendWins: false,
     })
@@ -314,7 +314,7 @@ describe('resolveLegendRollup — a stated maxRows outranks the tier AND the mea
 
   test('a stated cap off a fill band is honoured too, and costs the plot nothing', () => {
     expect(
-      resolveLegendRollup({ ...meteo, statedMaxRows: 6, tier: 'phone', fillBand: false }),
+      resolveLegendRollup({ ...meteo, statedMaxRows: 6, fittedMaxRows: 2, fillBand: false }),
     ).toEqual({ maxRows: 6, legendWins: false })
   })
 })
@@ -369,29 +369,6 @@ describe('resolvePlotRect — legendWins moves the cost onto the plot, never pas
       legendWins: true,
     }
     expect(resolvePlotRect(grown).height).toBe(VX.minPlotHeight)
-  })
-})
-
-/**
- * The consumer report this fixes (meteo, 1.29.2): "the phone chart tier has an opt-out for margin
- * and xLabelRotate but NOT for the legend, and it moves rendering on the desktop." The tier keys on
- * the MEASURED box — correctly; that is not the bug — so a 380px inspector panel on a 1440px
- * desktop resolves to `phone`, and `Math.min(legend.maxRows, tierMaxRows)` meant a six-series
- * legend rolled up to two rows with no way to say no, while MIGRATING promised the opposite.
- */
-describe('resolveLegendMaxRows — the tier cap is a DEFAULT, not a ceiling', () => {
-  test('an explicit caller cap beats the phone tier outright, in BOTH directions', () => {
-    expect(resolveLegendMaxRows({ callerMaxRows: 3, tier: 'phone' })).toBe(3)
-    expect(resolveLegendMaxRows({ callerMaxRows: 1, tier: 'phone' })).toBe(1)
-  })
-
-  test('saying nothing still gets the tier default', () => {
-    expect(resolveLegendMaxRows({ callerMaxRows: undefined, tier: 'phone' })).toBe(2)
-    expect(resolveLegendMaxRows({ callerMaxRows: undefined, tier: 'desktop' })).toBe(undefined)
-  })
-
-  test('the desktop tier never invents a cap over an explicit one', () => {
-    expect(resolveLegendMaxRows({ callerMaxRows: 5, tier: 'desktop' })).toBe(5)
   })
 })
 
@@ -505,5 +482,56 @@ describe('an unmeasured ChartFrame without a BasaltProvider is not phone chrome'
       <SizeClassHintContext.Provider value="compact">{frame()}</SizeClassHintContext.Provider>,
     )
     expect(markup).toContain('compact|223')
+  })
+})
+
+describe('a micro frame draws no legend, whatever the placement', () => {
+  const original = window.ResizeObserver
+  const two: SeriesStyle[] = [
+    { key: 'a', label: 'Series A', color: '#000', mark: 'line' },
+    { key: 'b', label: 'Series B', color: '#000', mark: 'line' },
+  ]
+
+  function installObserver(width: number): void {
+    class FixedBoxResizeObserver {
+      constructor(private readonly callback: ResizeObserverCallback) {}
+      observe(): void {
+        this.callback(
+          [{ contentRect: { width, height: 240, top: 0, left: 0 } }] as never,
+          this as never,
+        )
+      }
+      unobserve(): void {}
+      disconnect(): void {}
+    }
+    window.ResizeObserver = FixedBoxResizeObserver as unknown as typeof ResizeObserver
+  }
+
+  afterEach(() => {
+    window.ResizeObserver = original
+  })
+
+  const mount = (width: number, placement: 'right' | 'bottom'): HTMLElement => {
+    installObserver(width)
+    return render(
+      <ChartFrame series={two} legend={{ placement }}>
+        {() => <svg />}
+      </ChartFrame>,
+    ).container
+  }
+  const legendCount = (container: HTMLElement): number =>
+    container.querySelectorAll('[data-legend-key]').length
+
+  test('sanity: a wide frame keeps the side legend', async () => {
+    const container = mount(480, 'right')
+    await new Promise((resolve) => setTimeout(resolve, 20))
+    expect(legendCount(container)).toBe(2)
+  })
+
+  test('a 200px frame draws none — side placement included', async () => {
+    const side = mount(200, 'right')
+    const bottom = mount(200, 'bottom')
+    await waitFor(() => expect(legendCount(side)).toBe(0))
+    await waitFor(() => expect(legendCount(bottom)).toBe(0))
   })
 })

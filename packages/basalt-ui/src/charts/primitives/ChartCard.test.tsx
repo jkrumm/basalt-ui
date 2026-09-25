@@ -4,9 +4,11 @@
  * Mantine-free (`src/charts/**`), so no `MantineProvider` wrapper is needed — mirrors
  * `ChartFrame.test.tsx`'s rationale.
  */
-import { render, screen } from '@testing-library/react'
-import { describe, expect, test } from 'bun:test'
+import { render, screen, waitFor, within } from '@testing-library/react'
+import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
+import type { SeriesStyle } from '../series'
 import { ChartCard } from './ChartCard'
+import { ChartFrame } from './ChartFrame'
 
 describe('the header renders only when it has something to show', () => {
   test('nothing set — no heading at all', () => {
@@ -156,5 +158,71 @@ describe('state replaces the body with a placeholder, header stays put', () => {
       </ChartCard>,
     )
     expect(screen.getByRole('button', { name: 'Clear filters' })).toBeDefined()
+  })
+})
+
+/**
+ * The wave-5 legend slot now has its consumer: a frame inside a headed card portals its legend into
+ * `[data-basalt-legend-slot]` once the slot is measured. Needs a shim that reports a box on
+ * `observe()` (the shared preload's observer is inert) — restored afterwards.
+ */
+describe('the legend portals into the header slot', () => {
+  const originalResizeObserver = window.ResizeObserver
+  const many: SeriesStyle[] = Array.from({ length: 8 }, (_, i) => ({
+    key: `s${i}`,
+    label: `Series number ${i}`,
+    color: '#000',
+    mark: 'line',
+  }))
+
+  function installObserver(width: number): void {
+    class FixedBoxResizeObserver {
+      constructor(private readonly callback: ResizeObserverCallback) {}
+      observe(): void {
+        this.callback(
+          [{ contentRect: { width, height: 240, top: 0, left: 0 } }] as never,
+          this as never,
+        )
+      }
+      unobserve(): void {}
+      disconnect(): void {}
+    }
+    window.ResizeObserver = FixedBoxResizeObserver as unknown as typeof ResizeObserver
+  }
+
+  beforeAll(() => installObserver(600))
+  afterAll(() => {
+    window.ResizeObserver = originalResizeObserver
+  })
+
+  test('a headed card hosts the legend in its slot, and overflow folds into All N', async () => {
+    const { container } = render(
+      <ChartCard title="Revenue">
+        <ChartFrame series={many} height={240}>
+          {() => <svg />}
+        </ChartFrame>
+      </ChartCard>,
+    )
+    const slot = container.querySelector('[data-basalt-legend-slot]') as HTMLElement
+    await waitFor(() => expect(slot.querySelector('[data-legend-key]')).not.toBeNull())
+    // One header row at 600px: some entries visible, the rest behind the chip that counts them all.
+    expect(within(slot).getByRole('button', { name: 'All 8' })).not.toBeNull()
+    expect(slot.querySelectorAll('[data-legend-key]').length).toBeLessThan(8)
+    // The band under the plot is gone — the legend exists once.
+    expect(container.querySelectorAll('[data-legend-key]').length).toBe(
+      slot.querySelectorAll('[data-legend-key]').length,
+    )
+  })
+
+  test('a headless card has no slot, so the legend keeps its band under the plot', async () => {
+    const { container } = render(
+      <ChartCard>
+        <ChartFrame series={many} height={240}>
+          {() => <svg />}
+        </ChartFrame>
+      </ChartCard>,
+    )
+    await waitFor(() => expect(container.querySelector('[data-legend-key]')).not.toBeNull())
+    expect(container.querySelector('[data-basalt-legend-slot]')).toBeNull()
   })
 })

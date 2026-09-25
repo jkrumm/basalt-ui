@@ -85,7 +85,10 @@ export type ChartLegendConfig = {
   placement?: LegendPlacement
   /** Visually separate role: series | overlay | reference. */
   groups?: boolean
-  /** Wrap cap → "+N more" rollup at high cardinality. */
+  /**
+   * @deprecated Removed in 1.31.0 — the legend fits by measured width and folds overflow into an
+   * `All N` disclosure on its own. An explicit value still wins this release (entry count).
+   */
   maxRows?: number
   /** Clicking an entry hides that series. Default: on whenever there is more than one entry. */
   toggle?: boolean

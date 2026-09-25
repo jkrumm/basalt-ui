@@ -134,6 +134,16 @@ describe('legend', () => {
     expect(l.overflow).toBeGreaterThanOrEqual(2)
   })
 
+  test('a header row holds one line, a band two — the same legend overflows more in the header', () => {
+    const items = entries(6, 'Series label')
+    const band = layout({ frameW: 500, legendItems: items }).legend
+    const header = layout({ frameW: 500, slotW: 500, legendItems: items }).legend
+    if (band.mode === 'none' || band.mode === 'side') throw new Error('expected a legend')
+    if (header.mode === 'none' || header.mode === 'side') throw new Error('expected a legend')
+    expect(header.where).toBe('header')
+    expect(header.visible).toBeLessThan(band.visible)
+  })
+
   test('a legend never rolls up fewer than 2 entries', () => {
     // Find a width where exactly one entry would overflow, then assert it is not rolled up.
     for (let w = 240; w < 800; w += 4) {

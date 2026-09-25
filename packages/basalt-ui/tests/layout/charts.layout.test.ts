@@ -214,12 +214,12 @@ layout('Charts — real layout', () => {
   })
 
   /**
-   * INVARIANT 6 — the phone legend's "+N more" is a disclosure, not a caption
-   * (`docs/CHARTS-SPEC.md` §8). A cap of two (`PHONE_LEGEND_MAX_ROWS`) leaves six of eight plotted
-   * colours unnamed; the chip must be a REAL `aria-expanded` toggle, and expanding it must not cost
-   * the plot its floor.
+   * INVARIANT 6 — the legend's "All N" is a disclosure, not a caption (`docs/CHARTS-SPEC.md` §8).
+   * The band shows what fits its measured width (never rolling up fewer than 2); the chip is a REAL
+   * `aria-expanded` toggle opening every entry in a sheet (coarse pointer), and opening it must
+   * not cost the plot its floor or grow the band.
    */
-  test('the phone legend rollup discloses every entry on tap and the plot keeps its floor', async () => {
+  test('the phone legend overflow discloses every entry on tap and the plot keeps its floor', async () => {
     const p = await openFixture(
       chartFixture({ kind: 'multiLine', legendEntries: 8, height: 240 }),
       PHONE,
@@ -227,19 +227,23 @@ layout('Charts — real layout', () => {
 
     expect(await p.count(LEGEND_MORE)).toBe(1)
     expect(await p.count(`${LEGEND_MORE}[aria-expanded="false"]`)).toBe(1)
-    expect(await p.count(LEGEND_ENTRY)).toBe(2)
+    const banded = await p.count(LEGEND_ENTRY)
+    expect(banded).toBeGreaterThanOrEqual(2)
+    expect(banded).toBeLessThan(8)
+    const before = await p.box('svg', SVG)
 
     await p.tap(LEGEND_MORE)
 
     expect(await p.count(`${LEGEND_MORE}[aria-expanded="true"]`)).toBe(1)
-    expect(await p.count(LEGEND_ENTRY)).toBe(8)
+    expect(await p.count('dialog[open] button[aria-pressed]')).toBe(8)
 
     const svg = await p.box('svg', SVG)
     expectHeightAtLeast(
       svg,
       VX.minPlotHeight,
-      'expanding the phone legend rollup must not shrink the plot below its floor',
+      'opening the legend disclosure must not shrink the plot below its floor',
     )
+    expect(svg.box.height).toBe(before.box.height)
   })
 
   /**

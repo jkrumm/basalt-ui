@@ -1,5 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react'
-import { useCallback, useContext, useMemo, useState } from 'react'
+import { useCallback, useContext, useLayoutEffect, useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
 import type { BasaltProps } from '../../common/props'
 import { deprecatedProp, ignoredProp, plotBelowFloor } from '../../common/errors'
 import { useValidateProps } from '../../common/validate'
@@ -13,7 +14,6 @@ import { resolveChartLayout, resolveFrameClass } from './chart-layout'
 import {
   deprecatedHeightKeys,
   resolveFrameHeight,
-  tierOfContainerClass,
   resolveLegendRollup,
   resolvePlotRect,
 } from './chart-frame-layout'
@@ -41,22 +41,12 @@ export type ChartFrameLegend = {
   /** Default 'bottom'. */
   placement?: LegendPlacement
   /**
-   * Rollup cap at high cardinality: the legend renders this many ENTRIES and folds the remainder
-   * into a `+N more` disclosure chip.
+   * @deprecated Removed in 1.31.0 — the legend now fits by measured width every time and folds
+   * overflow into an `All N` disclosure (`docs/waves/RESPONSIVE-SPEC.md` §4); drop the prop.
    *
-   * **It counts entries, not rows** — the name is inherited and now load-bearing across
-   * `ChartTierMetrics.legendMaxRows`, so it is not renamed in a patch. `maxRows: 3` on a 7-entry
-   * legend renders three entries, which is ONE row at any width they fit on. `ChartLegend` slices
-   * (`entries.slice(0, cap)`); nothing here measures rows.
-   *
-   * An explicit value WINS OUTRIGHT — over the phone tier's two-row default (`chartTierMetrics`)
-   * AND over a `fill` frame's measured fit (`legendEntryCap`). 1.30.0 fixed only the first half:
-   * the fit still ran `Math.min(fitted, caller)` on top, so meteo's 7-entry meteogram legend in a
-   * 150px docked row rendered 2 entries at `maxRows` 3, 6 AND 99 — five series drawn in colours
-   * nothing named. Both losers are DEFAULTS (the tier's, and `VX.minPlotHeight`); this is the one
-   * number a caller stated, so under `fill` the PLOT yields the height instead
-   * ({@link resolvePlotRect}'s `legendWins`). State a number too large for the box and the plot
-   * gets what is left — visible, and yours.
+   * Until then an explicit value still WINS OUTRIGHT over the measured fit, and it counts ENTRIES,
+   * not rows: `maxRows: 3` on a 7-entry legend renders three entries. Under `fill` the PLOT yields
+   * the height ({@link resolvePlotRect}'s `legendWins`).
    */
   maxRows?: number
   /** Visually separate role: series | overlay | reference. */
@@ -238,7 +228,13 @@ export function ChartFrame({
 }: ChartFrameProps): ReactNode {
   const { ref: containerRef, width: containerW, height: containerH } = useChartSize()
   const { ref: legendRef, width: legendW, height: legendH } = useChartSize()
-  const { inCard } = useContext(ChartCardContext)
+  const { ref: slotRef, width: slotMeasuredW } = useChartSize()
+  const { inCard, legendSlot } = useContext(ChartCardContext)
+  // The card's header slot is observed like the frame is: its width is what a header legend fits.
+  useLayoutEffect(() => {
+    slotRef(legendSlot)
+    return () => slotRef(null)
+  }, [legendSlot, slotRef])
   const viewportClass = useSizeClass()
   // No `BasaltProvider` (a charts-only consumer) means no viewport hint: the unmeasured first frame
   // resolves to the regular (desktop) class, not phone chrome.
@@ -305,18 +301,34 @@ export function ChartFrame({
   const resolvedState = resolveChartState({ ...(state !== undefined && { state }), isPending })
   const legendVisible = legend !== false && resolvedState === null
   const legendItems = legend === false ? [] : deriveLegend(series)
+  useValidateProps(
+    'ChartFrame',
+    () =>
+      // A cap covering every entry rolls nothing up — it is how `Donut` states "never roll up".
+      legend !== false && legend.maxRows !== undefined && legend.maxRows < legendItems.length
+        ? deprecatedProp(
+            'ChartFrame',
+            'legend.maxRows',
+            'nothing (the legend fits by measured width)',
+            '1.31.0',
+            'Overflow folds into an `All N` disclosure; an explicit value still wins this release.',
+          )
+        : null,
+    [legend, legendItems.length],
+  )
   const statedHeight =
     height === undefined
       ? undefined
       : resolveFrameHeight(height, resolveFrameClass({ frameW: containerW, sizeClass }))
   // Memoized on scalars (the legend by its keys+labels) so `ChartTierProvider`'s value is stable
-  // across renders that change nothing. The legend half of this layout is consumed in wave 7.
+  // across renders that change nothing. No slot (or not measured yet) → `slotW` 0 → a band.
+  const slotW = legendSlot === null ? 0 : slotMeasuredW
   const legendKey = legendItems.map((item) => `${item.key}\u0000${item.label}`).join('\u0001')
   const layout = useMemo(
     () =>
       resolveChartLayout({
         frameW: containerW,
-        slotW: 0,
+        slotW,
         viewportH,
         legendItems,
         yLabels: [],
@@ -328,12 +340,16 @@ export function ChartFrame({
       }),
     // `legendItems` is a fresh array per render; `legendKey` is its identity.
     // oxlint-disable-next-line react-hooks/exhaustive-deps
-    [containerW, viewportH, legendKey, sizeClass, coarse, statedHeight],
+    [containerW, slotW, viewportH, legendKey, sizeClass, coarse, statedHeight],
   )
-  const tier = tierOfContainerClass(layout.containerClass)
 
-  const sideLegendWidth = legendVisible && vertical ? legendW : 0
-  const topBottomLegendHeight = legendVisible && !vertical ? legendH : 0
+  // The resolver gates every placement: none at micro (a side legend included), else the card's
+  // header slot when there is one, or a band. A side legend keeps its own column for the rest.
+  const fit = layout.legend.mode === 'dots' || layout.legend.mode === 'chips' ? layout.legend : null
+  const showLegend = legendVisible && fit !== null
+  const inHeader = showLegend && !vertical && legendSlot !== null && fit?.where === 'header'
+  const sideLegendWidth = showLegend && vertical ? legendW : 0
+  const topBottomLegendHeight = showLegend && !vertical && !inHeader ? legendH : 0
 
   const computedHeight =
     aspectRatio !== undefined ? Math.round(containerW / aspectRatio) : layout.height
@@ -367,8 +383,8 @@ export function ChartFrame({
   // plot pays for. Top/bottom only: a side legend costs width, not height.
   const { maxRows, legendWins } = resolveLegendRollup({
     ...(legend !== false && legend.maxRows !== undefined && { statedMaxRows: legend.maxRows }),
-    tier,
-    fillBand: legendVisible && fill && !vertical,
+    ...(!vertical && fit !== null && fit.overflow > 0 && { fittedMaxRows: fit.visible }),
+    fillBand: showLegend && fill && !inHeader && !vertical,
     items: legendItems,
     containerW,
     available: resolvedHeight - VX.minPlotHeight,
@@ -384,7 +400,7 @@ export function ChartFrame({
   })
 
   const legendNode =
-    legend === false || resolvedState !== null ? null : (
+    legend === false || resolvedState !== null || !showLegend ? null : (
       <div ref={legendRef} style={legendWrapperStyle(vertical)}>
         <ChartLegend
           items={legendItems}
@@ -413,7 +429,14 @@ export function ChartFrame({
         {...(ariaLabel !== undefined && { role: 'group', 'aria-label': ariaLabel })}
         {...(resolvedState === 'pending' && { 'aria-busy': 'true' })}
       >
-        {legendNode !== null && (placement === 'top' || placement === 'left') && legendNode}
+        {inHeader &&
+          legendNode !== null &&
+          legendSlot !== null &&
+          createPortal(legendNode, legendSlot)}
+        {!inHeader &&
+          legendNode !== null &&
+          (placement === 'top' || placement === 'left') &&
+          legendNode}
         {plot.width > 0 &&
           plot.height > 0 &&
           (resolvedState === 'pending' ? (
@@ -429,7 +452,10 @@ export function ChartFrame({
           ) : (
             children({ ...plot, hidden })
           ))}
-        {legendNode !== null && (placement === 'bottom' || placement === 'right') && legendNode}
+        {!inHeader &&
+          legendNode !== null &&
+          (placement === 'bottom' || placement === 'right') &&
+          legendNode}
       </div>
     </ChartTierProvider>
   )

@@ -988,3 +988,103 @@ describe('CartesianChart — a rotated x axis widens the LEFT margin', () => {
     expect(leftOf(renderPlain({ xLabelRotate: 45, margin: { left: 4 } }))).toBe(4)
   })
 })
+
+describe('CartesianChart — dual-axis tick tint', () => {
+  const dual = (series: ChartSeries<Row>[]) =>
+    renderToStaticMarkup(
+      <SizeClassHintContext.Provider value="expanded">
+        <CartesianChart<Row>
+          data={rows}
+          chartId="dual-tint"
+          getX={(d) => d.date}
+          series={series}
+          y2={{}}
+          legend={false}
+        >
+          {() => null}
+        </CartesianChart>
+      </SizeClassHintContext.Provider>,
+    )
+  const tinted = (markup: string) => (markup.match(/fill="color-mix[^"]*"/g) ?? []).length
+
+  test('one series per axis tints both axes with the series colour', () => {
+    const markup = dual([
+      { ...seriesFor('a'), color: 'var(--vx-accent)' },
+      { ...seriesFor('b'), color: 'var(--vx-neutral)', axis: 'right' },
+    ])
+    expect(markup).toContain('color-mix(in srgb, var(--vx-accent) 80%, transparent)')
+    expect(markup).toContain('color-mix(in srgb, var(--vx-neutral) 80%, transparent)')
+  })
+
+  test('two series on one axis leaves both axes neutral', () => {
+    expect(
+      tinted(
+        dual([seriesFor('a'), seriesFor('b'), { ...seriesFor('b'), key: 'c', axis: 'right' }]),
+      ),
+    ).toBe(0)
+  })
+})
+
+describe('CartesianChart — end-of-line labels', () => {
+  // Unmeasured, the plot is ~200px wide, so labels stay one glyph to fit the quarter-width gutter cap.
+  const labelled = (key: 'a' | 'b'): ChartSeries<Row> => ({
+    ...seriesFor(key),
+    label: key.toUpperCase(),
+    color: `var(--vx-series-${key})`,
+  })
+  const three: ChartSeries<Row>[] = [
+    labelled('a'),
+    labelled('b'),
+    { ...labelled('a'), key: 'c', label: 'C', getValue: (d) => d.a * 0.5 },
+  ]
+
+  const renderAt = (
+    hint: 'compact' | 'expanded',
+    series: ChartSeries<Row>[],
+    props: { margin?: { right: number } } = {},
+  ) =>
+    renderToStaticMarkup(
+      <SizeClassHintContext.Provider value={hint}>
+        <CartesianChart<Row>
+          data={rows}
+          chartId={`end-${hint}`}
+          getX={(d) => d.date}
+          series={series}
+          {...props}
+        >
+          {() => null}
+        </CartesianChart>
+      </SizeClassHintContext.Provider>,
+    )
+  const endTexts = (markup: string) => markup.match(/<text[^>]*pointer-events="none"[^>]*>/g) ?? []
+
+  test('wide, 2 and 3 line series: one label per line, in the series colour', () => {
+    expect(endTexts(renderAt('expanded', [labelled('a'), labelled('b')]))).toHaveLength(2)
+    const markup = renderAt('expanded', three)
+    expect(endTexts(markup)).toHaveLength(3)
+    expect(markup).toContain('>B</text>')
+    expect(markup).toContain('fill="var(--vx-series-b)"')
+  })
+
+  test('compact draws none', () => {
+    expect(endTexts(renderAt('compact', [labelled('a'), labelled('b')]))).toHaveLength(0)
+  })
+
+  test('4+ series draw none', () => {
+    const four = [...three, { ...labelled('b'), key: 'd', label: 'D' }]
+    expect(endTexts(renderAt('expanded', four))).toHaveLength(0)
+  })
+
+  test('bar and area marks draw none', () => {
+    for (const mark of ['bar', 'area'] as const) {
+      const series = [labelled('a'), { ...labelled('b'), mark }]
+      expect(endTexts(renderAt('expanded', series))).toHaveLength(0)
+    }
+  })
+
+  test('an explicit margin.right wins — no end labels', () => {
+    expect(
+      endTexts(renderAt('expanded', [labelled('a'), labelled('b')], { margin: { right: 8 } })),
+    ).toHaveLength(0)
+  })
+})
