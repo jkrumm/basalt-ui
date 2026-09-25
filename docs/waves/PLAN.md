@@ -40,21 +40,35 @@ then `/review` findings resolved.
       pointer; DataTable has no phone behaviour; the chart legend rollup ignores width; axis gutters and
       height literals starve the plot.
 
-## Wave 2 — Foundations: the three-axis law <!-- status: active -->
+## Wave 2 — Foundations: the three-axis law <!-- status: done -->
 
-- [ ] Tokens: `SIZE_CLASSES` + `CONTAINER_CLASSES` tables; derive `theme.breakpoints` from them (not
+- [x] Tokens: `SIZE_CLASSES` + `CONTAINER_CLASSES` tables; derive `theme.breakpoints` from them (not
       overridable); `breakpoint-literals.test.ts` pins every CSS literal (spec §1)
-- [ ] `useSizeClass()` (useSyncExternalStore) + `BasaltProvider sizeClassHint`; migrate the three
+- [x] `useSizeClass()` (useSyncExternalStore) + `BasaltProvider sizeClassHint`; migrate the three
       JS viewport reads (incl. ThreadWorkspace first-frame flash); put `useBreakpoint` on notice in
       MIGRATING.md
-- [ ] `--vx-hit` + the `[data-basalt-hit]::after` primitive; collapse
+- [x] `--vx-hit` + the `[data-basalt-hit]::after` primitive; collapse
       `spaceTouchTarget`/`touchControlHeight`/width-keyed floors into it; `mobileNavRowHeight` 44;
       update density tests
-- [ ] `data-basalt-host` on `<html>` from BasaltProvider; move `display-mode` CSS onto it
-- [ ] Rewrite `DESIGN-CORE.md` §2 ¶1 as the three-axis law (fix the WCAG citations), offset by cuts
-      **Left behind:**
+- [x] `data-basalt-host` on `<html>` from BasaltProvider; move `display-mode` CSS onto it
+- [x] Rewrite `DESIGN-CORE.md` §2 ¶1 as the three-axis law (fix the WCAG citations), offset by cuts
+      **Left behind:** `tokens/size-classes.ts` (SIZE_CLASSES, CONTAINER_CLASSES — no consumer yet, wave 5/6),
+      `--vx-hit` + `[data-basalt-hit]::after` in styles.css (nothing adopts the attribute yet: wave 4),
+      `useSizeClass()` + `BasaltProvider sizeClassHint`/`host`, `data-basalt-host`. Mantine keys collapse:
+      xs=sm=52.5em (medium), md=lg=xl=75em (expanded) — wave 3 reads `sm` as rail-and-up, `lg` as full sidebar.
+      `PageAside`/`ThreadWorkspace` treat "desktop" as `size class !== compact` until wave 3 redesigns docking.
+      `breakpoint-literals.test.ts` has a `COMPONENT_SHAPE_LEGACY` allowlist (form-layout, stat-card,
+      widget-header x2, stat-group, widget-grid 48em, article-layout 1200px) — waves 3/5 delete entries.
+      **Open review blocker for wave 4:** adjacent 24px controls each get a 44px overflow-visible `::after`; boxes
+      overlap and the later sibling wins taps (widget-header actions, page-bar row 1, 6px control gaps) — cap the
+      expansion to half the gap and add a no-overlap layout assertion. Also decide `pointer: coarse` vs
+      `any-pointer: coarse` (hybrid laptops). `[data-basalt-hit]` sets `position: relative` — watch absolutely
+      positioned adopters. Stale wording: `dashboard/widget-grid.tsx:25` ("`sm` is still the only breakpoint").
+      `useBreakpoint` is `@deprecated` (removal next minor). Known unrelated failure on HEAD:
+      `agent/ai-sdk-transport.test.ts:339` (approval-responded missing `signature`).
+      Gate: `make verify` = pre red only on that test; layout 83/83; pack-test passed.
 
-## Wave 3 — Shell: compact / medium / expanded <!-- status: pending -->
+## Wave 3 — Shell: compact / medium / expanded <!-- status: active -->
 
 - [ ] Shell size classes: bottom bar < 840, rail + overlay aside 840–1199, full sidebar ≥ 1200 with
       the aside docked only while main ≥ 720; persisted state distinguishes unset from explicitly false
