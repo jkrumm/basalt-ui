@@ -105,9 +105,8 @@ this, tick spacing came from `VX.minPxPerTick` alone regardless of what `formatX
 formatter returning `Mar 08 14:00` overlapped at every width. `CartesianChart` measures this itself
 (`xLabelPx`, from the same `xLabels` it already builds for the bottom margin); `useBandPlot` and
 `DualPanel` compute the equivalent from their own formatted label set and thread it into their own
-`smartTicks` call the same way. Omitting `labelPx` (or passing `undefined`) falls back to the old
-constant-only behavior — this is what `xLabelRotate` does, since a rotated label no longer competes
-for HORIZONTAL room with its neighbour.
+`smartTicks` call the same way. Omitting `labelPx` falls back to the constant floor, which is all a
+90° label needs; a 45° one competes for its projected box (`rotatedXLabelPx`), not its full width.
 
 **`xLabelRotate?: 0 | 45 | 90`** tilts the x tick labels counter-clockwise, anchored at their right
 edge, and deepens the bottom gutter by the rotated label's projected height instead of its width
