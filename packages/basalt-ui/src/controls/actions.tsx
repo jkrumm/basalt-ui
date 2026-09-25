@@ -13,10 +13,10 @@
  * media query, so there is no first-paint flash and no hook that re-renders on resize.
  */
 import { ActionIcon, Button, Group, Menu } from '@mantine/core'
-import type { MantineBreakpoint } from '@mantine/core'
-import { createContext, isValidElement, useContext, useEffect } from 'react'
-import type { ReactNode } from 'react'
+import { createContext, isValidElement, useContext, useEffect, useRef, useState } from 'react'
+import type { ReactNode, RefObject } from 'react'
 import type { BasaltProps } from '../common/props'
+import { useIsomorphicLayoutEffect } from '../shell/isomorphic-layout-effect'
 import type { NavAnchor } from '../shell/nav-types'
 import type { AnyNavLink } from '../router-tanstack/nav'
 import { IconSlot } from '../theme/icon-slot'
@@ -97,9 +97,6 @@ export type GlobalAction = {
   /** @default 'bar' for the first two, `'more'` for the rest */
   mobile?: 'bar' | 'more' | 'hidden'
 }
-
-/** Secondaries rendered inline on desktop; the rest fold into `More` (`docs/CONTROLS-SPEC.md` §2.1). */
-export const DESKTOP_SECONDARY_MAX = 3
 
 /** `GlobalAction`s without an explicit `mobile` that still land on the mobile bar. */
 export const MOBILE_GLOBAL_BAR_MAX = 2
@@ -189,17 +186,12 @@ const MOBILE_PRIMARY_PADDING_X = 10
 const BAR_GAP = 6
 
 /**
- * A declared WIDTH TIER for one rendered form of an action — Mantine's own `visibleFrom`/`hiddenFrom`
- * style props, forwarded verbatim, which is the same CSS-only mechanism this file's `sm` swap uses
- * (see the module header). Never a JS media query: no first-paint flash, no resize re-render.
- *
- * It exists because `sm` is not the only width at which this row runs out of room — see
- * {@link BarEntry}'s `md` label fold for the arithmetic.
+ * The DOM contract between `PageBar` row 1 and {@link useMeasuredFold} — module-internal, not part
+ * of any barrel. `PAGE_BAR_END_ATTR` marks the elastic row the fold measures; `BAR_KEY_ATTR` tags
+ * each rendered action with its `key` so a measured box maps back to its action.
  */
-type TierVisibility = {
-  visibleFrom?: MantineBreakpoint
-  hiddenFrom?: MantineBreakpoint
-}
+export const PAGE_BAR_END_ATTR = 'data-basalt-page-bar-end'
+export const BAR_KEY_ATTR = 'data-bar-key'
 
 /**
  * One action as a button. No `size` prop anywhere: the enclosing `CtlSlot` (mounted by the home,
@@ -209,19 +201,16 @@ function BarButton({
   action,
   variant,
   px,
-  tier,
 }: {
   action: BarActionItem
   variant: 'filled' | 'default'
   /** Overrides the tier's horizontal inset — only the compact mobile primary passes it. */
   px?: number
-  /** The declared width tier this form paints at — see {@link TierVisibility}. */
-  tier?: TierVisibility
 }): ReactNode {
   const shared = {
     variant,
     ...(px !== undefined && { px }),
-    ...tier,
+    [BAR_KEY_ATTR]: action.key,
     disabled: action.disabled === true,
     loading: action.loading === true,
     // EVERY icon in this file goes through `IconSlot` — the box is the framework's, never the
@@ -252,17 +241,14 @@ function BarButton({
 function BarIconButton({
   action,
   variant,
-  tier,
 }: {
   action: BarActionItem
   /** `default` is the bordered desktop form — a joined `ControlGroup` member (see {@link BarEntry}). */
   variant: 'filled' | 'subtle' | 'default'
-  /** The declared width tier this form paints at — see {@link TierVisibility}. */
-  tier?: TierVisibility
 }): ReactNode {
   const shared = {
     variant,
-    ...tier,
+    [BAR_KEY_ATTR]: action.key,
     'aria-label': action.label,
     disabled: action.disabled === true,
     loading: action.loading === true,
@@ -488,6 +474,149 @@ function joinRuns(
   return runs
 }
 
+type FoldStep = 'icon' | 'overflow'
+
+/** The `More` trigger's estimated width — reserved only once something has folded (cf. `FOLD_PILL_WIDTH`). */
+const MORE_WIDTH = 80
+
+/**
+ * The measured fold as a pure decision. `room` is the row's available width, `fixed` everything in it
+ * that never folds (primary, sync, joined runs, custom nodes), each foldable `item` its labelled and
+ * icon-only width (`icon` absent when it ships no icon). Folds from the LAST item back: first to
+ * icon-only where an icon exists, then into `More`. Items that stay whole are absent from the result.
+ */
+export function planBarFold(input: {
+  room: number
+  fixed: number
+  gap: number
+  hasMenus: boolean
+  items: readonly { key: string; full: number; icon: number | undefined }[]
+}): Record<string, FoldStep> {
+  const { room, fixed, gap, hasMenus, items } = input
+  const steps: (FoldStep | undefined)[] = items.map(() => undefined)
+  const used = (): number =>
+    items.reduce(
+      (sum, item, i) => {
+        const step = steps[i]
+        if (step === 'overflow') return sum
+        return sum + gap + (step === 'icon' ? (item.icon ?? item.full) : item.full)
+      },
+      fixed + (hasMenus || steps.includes('overflow') ? MORE_WIDTH + gap : 0),
+    )
+
+  for (let i = items.length - 1; i >= 0 && used() > room; i -= 1) {
+    if (items[i]!.icon !== undefined) steps[i] = 'icon'
+  }
+  for (let i = items.length - 1; i >= 0 && used() > room; i -= 1) steps[i] = 'overflow'
+  return Object.fromEntries(items.flatMap((item, i) => (steps[i] ? [[item.key, steps[i]]] : [])))
+}
+
+/** The row's flex items, looking through `display: contents` wrappers (`CtlSlot`). */
+function flowItems(el: Element): Element[] {
+  return Array.from(el.children).flatMap((child) =>
+    getComputedStyle(child).display === 'contents' ? flowItems(child) : [child],
+  )
+}
+
+/**
+ * Row 1's fold state. Measures the desktop group's row (`PAGE_BAR_END_ATTR`, an elastic box) and
+ * re-plans on every resize and once web fonts settle. A zero reading (hidden below `sm`, not yet
+ * laid out) or a missing `ResizeObserver` is not evidence of overflow, so the row then stays whole.
+ * A changed action set or label drops every remembered width and re-measures from the whole row,
+ * because a folded action cannot report the width its new label would take.
+ */
+function useMeasuredFold(input: {
+  host: 'page' | 'slot'
+  flat: readonly (BarActionItem | BarActionCustom)[]
+  hasMenus: boolean
+}): { folds: Record<string, FoldStep>; groupRef: RefObject<HTMLDivElement | null> } {
+  const { host, flat, hasMenus } = input
+  const groupRef = useRef<HTMLDivElement>(null)
+  const [folds, setFolds] = useState<Record<string, FoldStep>>({})
+  const [epoch, setEpoch] = useState(0)
+  const foldsRef = useRef(folds)
+  const flatRef = useRef(flat)
+  const widths = useRef(new Map<string, { full: number; icon: number }>())
+  const signature = flat.map((a) => `${a.key}:${a.kind === undefined ? a.label : ''}`).join('|')
+  const measuredSignature = useRef(signature)
+
+  // Declared before the measuring effect so it runs first on every commit.
+  useIsomorphicLayoutEffect(() => {
+    foldsRef.current = folds
+    flatRef.current = flat
+  })
+
+  useIsomorphicLayoutEffect(() => {
+    const group = groupRef.current
+    const row = group?.closest(`[${PAGE_BAR_END_ATTR}]`) ?? null
+    if (
+      host !== 'page' ||
+      group === null ||
+      row === null ||
+      typeof ResizeObserver === 'undefined'
+    ) {
+      return
+    }
+    if (measuredSignature.current !== signature) {
+      measuredSignature.current = signature
+      widths.current.clear()
+      if (Object.keys(foldsRef.current).length > 0) {
+        // Render the row whole, then measure it: `epoch` re-runs this effect after that commit.
+        foldsRef.current = {}
+        setFolds({})
+        setEpoch((n) => n + 1)
+        return
+      }
+    }
+    const measure = (): void => {
+      const flat = flatRef.current
+      const foldable = new Set(flat.filter((a) => a.kind === undefined).map((a) => a.key))
+      const buttons = Array.from(group.children).filter(
+        (el): el is HTMLElement =>
+          el instanceof HTMLElement && foldable.has(el.getAttribute(BAR_KEY_ATTR) ?? ''),
+      )
+      for (const el of buttons) {
+        const key = el.getAttribute(BAR_KEY_ATTR)!
+        if (foldsRef.current[key] === undefined && el.offsetWidth > 0) {
+          widths.current.set(key, { full: el.offsetWidth, icon: el.offsetHeight })
+        }
+      }
+      const items = flat.flatMap((a) => {
+        const seen = widths.current.get(a.key)
+        if (a.kind !== undefined || seen === undefined) return []
+        return [{ key: a.key, full: seen.full, icon: a.icon === undefined ? undefined : seen.icon }]
+      })
+      const rects = flowItems(row)
+        .map((el) => el.getBoundingClientRect())
+        .filter((r) => r.width > 0)
+      if (row.clientWidth <= 0 || rects.length === 0 || items.length === 0) return
+
+      const used = Math.max(...rects.map((r) => r.right)) - Math.min(...rects.map((r) => r.left))
+      const rendered = buttons.reduce((sum, el) => sum + el.offsetWidth + BAR_GAP, 0)
+      const moreNow = hasMenus || Object.values(foldsRef.current).includes('overflow')
+      const fixed = used - rendered - (moreNow ? MORE_WIDTH + BAR_GAP : 0)
+      const next = planBarFold({ room: row.clientWidth, fixed, gap: BAR_GAP, hasMenus, items })
+      const prev = foldsRef.current
+      const same =
+        Object.keys(next).length === Object.keys(prev).length &&
+        Object.entries(next).every(([key, step]) => prev[key] === step)
+      if (!same) setFolds(next)
+    }
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(row)
+    // The first measure can precede the web font, whose swap-in changes every label's width.
+    let disposed = false
+    void document.fonts?.ready?.then(() => (disposed ? undefined : measure()))
+    return () => {
+      disposed = true
+      observer.disconnect()
+    }
+  }, [host, hasMenus, signature, epoch])
+
+  return { folds, groupRef }
+}
+
 export function BarActionRow({
   primary,
   secondary,
@@ -505,8 +634,11 @@ export function BarActionRow({
 
   const flat = list.filter((a): a is BarActionItem | BarActionCustom => a.kind !== 'menu')
   const menus = list.filter((a): a is BarActionMenu => a.kind === 'menu')
-  const inline = flat.slice(0, DESKTOP_SECONDARY_MAX)
-  const desktopOverflow = [...flat.slice(DESKTOP_SECONDARY_MAX), ...menus]
+  const { folds, groupRef } = useMeasuredFold({ host, flat, hasMenus: menus.length > 0 })
+  const runs = joinRuns(flat, { viewport: 'desktop' }).filter(
+    (run) => run.length > 1 || folds[run[0]!.key] !== 'overflow',
+  )
+  const desktopOverflow = [...flat.filter((a) => folds[a.key] === 'overflow'), ...menus]
 
   const wantsMobile = viewport === 'both'
   const mobileList = [...list, ...mobileOnly]
@@ -551,7 +683,7 @@ export function BarActionRow({
   const hasMobile = mobileBar.length > 0 || claimsKebab
   if (!hasDesktop && !hasMobile && syncNode === undefined) return null
 
-  const desktopLead = inline.length > 0 || desktopOverflow.length > 0 || syncNode === undefined
+  const desktopLead = flat.length > 0 || menus.length > 0 || syncNode === undefined
 
   // The caller's `className`/`style` land on the ONE desktop group and the ONE mobile group. A
   // `syncNode` splits the desktop row in two, and with nothing to lead with (no inline actions, no
@@ -566,10 +698,15 @@ export function BarActionRow({
   return (
     <>
       {hasDesktop && desktopLead && (
-        <Group gap={BAR_GAP} wrap="nowrap" visibleFrom="sm" {...rootProps}>
-          {joinRuns(inline, { viewport: 'desktop' }).map((run) =>
+        <Group ref={groupRef} gap={BAR_GAP} wrap="nowrap" visibleFrom="sm" {...rootProps}>
+          {runs.map((run) =>
             run.length === 1 ? (
-              <BarEntry key={run[0]!.key} action={run[0]!} emphasis="secondary" />
+              <BarEntry
+                key={run[0]!.key}
+                action={run[0]!}
+                emphasis="secondary"
+                iconOnly={folds[run[0]!.key] === 'icon'}
+              />
             ) : (
               <ControlGroup key={`join-${run[0]!.key}`}>
                 {run.map((action) => (
@@ -621,8 +758,8 @@ export function BarActionRow({
 /**
  * A home's `actions` slot, projected for both viewports.
  *
- * Desktop: `primary` as a `filled` button · up to `DESKTOP_SECONDARY_MAX` secondaries as `default`
- * buttons · everything past that, plus every `kind: 'menu'`, in one `More` menu.
+ * Desktop: `primary` as a `filled` button · secondaries as `default` buttons, folded by the row's
+ * measured width (icon-only, then into `More`) · every `kind: 'menu'` in that same `More` menu.
  * Mobile: `primary` as an icon button when it ships an icon and a compact labelled button when it
  * does not · one kebab holding every `mobile: 'more'` action · `mobile: 'hidden'` drops the action
  * entirely.
@@ -676,8 +813,8 @@ export function isBarActionList(actions: SlotActions): actions is BarAction[] {
 
 /**
  * Renders a {@link SlotActions} slot: the typed form goes through the SAME projection `PageBar` and
- * `ActionGroup` use — inline up to {@link DESKTOP_SECONDARY_MAX}, the rest folded into `More`, and a
- * mobile kebab below `sm` — and the node form is returned untouched.
+ * `ActionGroup` use — inline, `kind: 'menu'` folded into `More`, and a mobile kebab below `sm` — and
+ * the node form is returned untouched.
  *
  * Every entry lands in `secondary`: a `BarAction[]` carries no primary marker, and law C6's "exactly
  * one primary" is the page bar's rule, enforced by `ActionGroupProps.primary` being singular. A home
@@ -710,7 +847,7 @@ function BarEntry({
 }: {
   action: BarAction
   emphasis: 'primary' | 'secondary' | 'mobile-primary' | 'mobile-secondary'
-  /** Set by a JOINED run — see {@link joinRuns}. The label survives as the accessible name. */
+  /** Set by a JOINED run (see {@link joinRuns}) or a measured fold. The label survives as the accessible name. */
   iconOnly?: boolean
 }): ReactNode {
   if (action.kind === 'custom') return <span className={classes.customSlot}>{action.node}</span>
@@ -719,35 +856,6 @@ function BarEntry({
   if (emphasis === 'mobile-secondary') return <MobileBarEntry action={action} variant="subtle" />
   if (iconOnly === true && action.icon !== undefined) {
     return <BarIconButton action={action} variant="default" />
-  }
-  // THE `md` LABEL FOLD — the second declared tier, and the only fold this row had between `sm`
-  // (48em, where the whole mobile swap happens) and the width at which a desktop header is
-  // genuinely wide. Above `sm` the only fold was `DESKTOP_SECONDARY_MAX`, which is a COUNT and
-  // never a width: three labelled secondaries are three labelled secondaries at 768px and at
-  // 2560px.
-  //
-  // The arithmetic, on /dashboard at exactly 768px — the width where the navbar appears and takes
-  // 256px: 512px of header left, against ~554px of row 1 + ~102px of globals + ~48px of gaps ≈
-  // 704px. ~192px over, and nothing above `sm` folded — the breadcrumb absorbed it by shrinking to
-  // zero (`shell/app-header.module.css`'s `.lead`, now floored at 96px, which this tier pays for).
-  // Dropping up to `DESKTOP_SECONDARY_MAX` labelled secondaries to their 30px icon form returns
-  // roughly 180-240px on that row: a labelled `ctl` button is its icon slot + label + insets
-  // (~90-110px depending on the word), an icon-only one is the tier's 30px square.
-  //
-  // The PRIMARY keeps its label at every width — it is the one action a reader must be able to
-  // name without hovering (law C6: exactly one per home), so `emphasis === 'primary'` never enters
-  // this branch. An icon-LESS secondary keeps its label too: there is nothing to fall back to, the
-  // same reason `MobileBarEntry` renders a compact labelled button below `sm`.
-  //
-  // Both forms are rendered and CSS picks one, the mechanism the `sm` swap already uses — that is
-  // law C9 being HONOURED, not breached: the swap belongs to the control, and this is the control.
-  if (emphasis === 'secondary' && action.icon !== undefined) {
-    return (
-      <>
-        <BarIconButton action={action} variant="default" tier={{ hiddenFrom: 'md' }} />
-        <BarButton action={action} variant="default" tier={{ visibleFrom: 'md' }} />
-      </>
-    )
   }
   return <BarButton action={action} variant={emphasis === 'primary' ? 'filled' : 'default'} />
 }

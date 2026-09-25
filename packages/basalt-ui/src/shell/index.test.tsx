@@ -6,7 +6,7 @@
  */
 import { MantineProvider } from '@mantine/core'
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { describe, expect, test } from 'bun:test'
+import { afterEach, describe, expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { ActionGroup } from '../controls/actions'
@@ -19,6 +19,7 @@ import { toggleSidebar } from '../commands/shell-bridge'
 import type { BasaltAccountProps, SidebarBlock, SidebarSection } from './index'
 
 const BRAND = { name: 'Argo' }
+let restoreMatchMedia: (() => void) | null = null
 const ONE_SECTION: SidebarSection[] = [
   { label: 'Main', items: [{ key: 'home', label: 'Home', icon: null }] },
 ]
@@ -219,7 +220,34 @@ describe('BasaltShell extraMoreRows', () => {
  * consumer drift; round 5 corrected it — the shell itself used `useLocalStorage`, so the raw read
  * was the only way to mirror what the shell wrote. These tests pin the shape a consumer now reads.
  */
+
+/** A viewport of `width` px: a `(min-width: <n>em)` query matches when `n * 16 <= width`. */
+function installViewport(width: number): void {
+  const original = window.matchMedia
+  window.matchMedia = (query: string): MediaQueryList => {
+    const em = /\(min-width:\s*([\d.]+)em\)/.exec(query)?.[1]
+    return {
+      matches: em !== undefined && Number(em) * 16 <= width,
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    } as MediaQueryList
+  }
+  restoreMatchMedia = () => {
+    window.matchMedia = original
+  }
+}
+
 describe('BasaltShell collapse persistence', () => {
+  afterEach(() => {
+    restoreMatchMedia?.()
+    restoreMatchMedia = null
+  })
+
   const COLLAPSE_TOGGLE =
     'button[aria-label="Collapse sidebar"], button[aria-label="Expand sidebar"]'
 
@@ -233,6 +261,7 @@ describe('BasaltShell collapse persistence', () => {
   test('writes the namespaced, versioned envelope — not a bare boolean at a bare key', () => {
     const key = 'collapse-envelope'
     localStorage.clear()
+    installViewport(1400)
     const { container } = renderShell(key)
 
     fireEvent.click(container.querySelector(COLLAPSE_TOGGLE) as HTMLElement)
@@ -244,11 +273,54 @@ describe('BasaltShell collapse persistence', () => {
   test("commands/shell-bridge.ts's toggleSidebar flips the SAME persisted state the button does (C5)", () => {
     const key = 'collapse-envelope-bridge'
     localStorage.clear()
+    installViewport(1400)
     renderShell(key)
 
     act(() => toggleSidebar())
 
     expect(localStorage.getItem(`basalt:${key}`)).toBe(JSON.stringify({ v: 1, value: true }))
+  })
+
+  test('medium defaults to the rail while nothing is stored, and the toggle then writes `false`', () => {
+    const key = 'collapse-medium-unset'
+    localStorage.clear()
+    installViewport(1024)
+    const { container } = renderShell(key)
+
+    expect(container.querySelector('button[aria-label="Expand sidebar"]')).not.toBeNull()
+    fireEvent.click(container.querySelector(COLLAPSE_TOGGLE) as HTMLElement)
+
+    expect(localStorage.getItem(`basalt:${key}`)).toBe(JSON.stringify({ v: 1, value: false }))
+    expect(container.querySelector('button[aria-label="Collapse sidebar"]')).not.toBeNull()
+  })
+
+  test('an explicit `false` beats the medium default — unset and written-false are different', () => {
+    const key = 'collapse-medium-false'
+    localStorage.clear()
+    localStorage.setItem(`basalt:${key}`, JSON.stringify({ v: 1, value: false }))
+    installViewport(1024)
+    const { container } = renderShell(key)
+
+    expect(container.querySelector('button[aria-label="Collapse sidebar"]')).not.toBeNull()
+  })
+
+  test('expanded stays full while nothing is stored, and a controlled `collapsed` keeps its meaning', () => {
+    installViewport(1400)
+    localStorage.clear()
+    const { container, unmount } = renderShell('collapse-expanded-unset')
+    expect(container.querySelector('button[aria-label="Collapse sidebar"]')).not.toBeNull()
+    unmount()
+    restoreMatchMedia?.()
+
+    installViewport(1024)
+    const controlled = render(
+      <MantineProvider>
+        <BasaltShell brand={BRAND} sections={ONE_SECTION} collapsed={false} />
+      </MantineProvider>,
+    )
+    expect(
+      controlled.container.querySelector('button[aria-label="Collapse sidebar"]'),
+    ).not.toBeNull()
   })
 })
 

@@ -90,10 +90,11 @@ keys collapse. So `xs` moves 36em → 52.5em, `sm` 48em → 52.5em (an iPad port
 62em → 75em, `lg` stays 75em and `xl` 88em → 75em. Check every `visibleFrom`/`hiddenFrom`/`useBreakpoint`
 on those keys: `xs` no longer differs from `sm`, and `md`/`lg`/`xl` now switch at the same width.
 
-| Removed                                                          | Replacement                                                                  |
-| ---------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| `VX.spaceTouchTarget`, `--vx-space-touch-target`                 | `VX.hit`, `--vx-hit` (24px on fine pointers, 44px under `(pointer: coarse)`) |
-| `VX.space.touchControlHeight`, `--vx-space-touch-control-height` | `VX.hit`; density-exempt, so it no longer tracks the knob                    |
+| Removed                                                          | Replacement                                                                                                                                                                      |
+| ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `VX.spaceTouchTarget`, `--vx-space-touch-target`                 | `VX.hit`, `--vx-hit` (24px on fine pointers, 44px under `(pointer: coarse)`)                                                                                                     |
+| `VX.space.touchControlHeight`, `--vx-space-touch-control-height` | `VX.hit`; density-exempt, so it no longer tracks the knob                                                                                                                        |
+| `DESKTOP_SECONDARY_MAX` (`./controls`)                           | none — `PageBar` row 1 folds secondary actions by its measured width (icon-only, then into `More`); removed with no grace window because nothing but the row's own count read it |
 
 `--vx-space-mobile-nav-row-height` is 44px (was 40). A hit overlay is `[data-basalt-hit]` in
 `styles.css`; the home controls' overlays now key on `(pointer: coarse)` instead of width.
@@ -109,6 +110,16 @@ follows the compact class (< 840px, was < `sm` 48em).
 `(display-mode: standalone)` matches; `<BasaltProvider host="native">` forces `native` for a
 webview shell). The shell's safe-area padding keys on any non-`web` host (`pwa`, `native`) instead of a raw
 `display-mode` query.
+
+**`PageAside`'s `defaultFolded` default now depends on whether the aside can dock.** Where an open
+aside would push main (`expanded`, main keeps its floor width) it starts open; everywhere else it
+would overlay main, so it starts folded on the rail. An explicit choice — a persisted or toggled fold —
+always wins. Opt out with `defaultFolded={false}` (open everywhere) or `defaultFolded` (folded
+everywhere).
+
+**The navbar defaults to the rail in the `medium` class** while nothing is persisted under
+`storageKey`. Opt out with a controlled `collapsed` prop; a persisted `false` (the user opened it
+once) pins it open.
 
 **On notice — `useBreakpoint` (removed next minor).** `@deprecated`, still works. Replace
 `useBreakpoint('sm')` with `useSizeClass() !== 'compact'`, and `useBreakpoint('lg')` with

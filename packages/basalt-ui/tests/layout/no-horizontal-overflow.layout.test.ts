@@ -24,10 +24,15 @@ import { afterAll, describe, test } from 'bun:test'
 import type { FixtureSpec } from './fixture/spec'
 import type { Viewport } from './harness'
 import {
+  BAR,
   CLOSE_BUDGET_MS,
+  DESKTOP_1440,
+  HEADER,
   LAPTOP_900,
   LAPTOP_1024,
   PHONE,
+  PHONE_375,
+  PHONE_LANDSCAPE,
   PHONE_SMALL,
   TABLET_768,
   closeLayoutSuite,
@@ -103,6 +108,9 @@ const DESKTOP_CROWDED: FixtureSpec = {
   globals: 3,
 }
 
+/** The crowded page plus a claimed aside — the shape where the aside's docking decision can widen main. */
+const ASIDE_CROWDED: FixtureSpec = { ...DESKTOP_CROWDED, aside: { title: 'Filters' } }
+
 layout('no horizontal overflow on a phone', () => {
   afterAll(closeLayoutSuite, CLOSE_BUDGET_MS)
 
@@ -146,6 +154,53 @@ layout('no horizontal overflow on a phone', () => {
       )
     })
   }
+
+  /**
+   * THE SIZE-CLASS SWEEP — 375 / 768 / 1024 / 1440, each class's docking (bottom bar, rail sidebar +
+   * overlay aside, full sidebar + docked aside) on the crowded page, with and without a claimed
+   * aside. Both readings (document AND main) come from `expectNoHorizontalOverflow`.
+   */
+  for (const viewport of [PHONE_375, TABLET_768, LAPTOP_1024, DESKTOP_1440]) {
+    for (const [label, spec] of [
+      ['crowded', DESKTOP_CROWDED],
+      ['crowded + aside', ASIDE_CROWDED],
+    ] as const) {
+      test(`the ${label} shell fits its width (${viewport.width}px, ${viewport.name})`, async () => {
+        const p = await openFixture(spec, viewport)
+        await p.settle()
+        expectNoHorizontalOverflow(
+          await p.horizontalOverflow(),
+          'whichever way the shell docks its sidebar and aside at this size class, the page must ' +
+            'not scroll sideways',
+          viewport,
+        )
+      })
+    }
+  }
+
+  /**
+   * LANDSCAPE PHONE (812x375): the header and the bottom bar take their compact row, so together
+   * they leave the content most of a 375px-tall screen. The 812 width sits in the medium class, so
+   * a bar may not exist at all — only the boxes that render are summed.
+   */
+  test('a landscape phone keeps its chrome compact and does not overflow', async () => {
+    const p = await openFixture(ASIDE_CROWDED, PHONE_LANDSCAPE)
+    await p.settle()
+    const header = await p.box('header', HEADER)
+    const bars = await p.boxes(BAR)
+    const chrome = header.box.height + (bars[0]?.height ?? 0)
+    if (chrome > 90) {
+      throw new Error(
+        `LAYOUT: landscape chrome is ${chrome.toFixed(1)}px (header ${header.box.height.toFixed(1)} ` +
+          `+ bottom bar ${(bars[0]?.height ?? 0).toFixed(1)}) — expected <= 90px combined`,
+      )
+    }
+    expectNoHorizontalOverflow(
+      await p.horizontalOverflow(),
+      'a landscape phone must not scroll sideways',
+      PHONE_LANDSCAPE,
+    )
+  })
 
   /**
    * THE TABLE TOOLBAR — the second offender this file caught, and it was never the `<table>`.

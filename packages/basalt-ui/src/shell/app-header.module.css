@@ -65,12 +65,10 @@
  * plus ~66px of mobile bar, ~66px of globals and ~26px of gaps inside a 374px content box, so the
  * floor is never the binding constraint there.
  *
- * The floor is NOT free above `sm`: on its own it adds its own 96px to that ~192px overflow. The
- * `md` label fold in `controls/actions.tsx` (`BarEntry`, same 62em tier) is what pays for it —
- * dropping up to `DESKTOP_SECONDARY_MAX` (3) labelled secondaries to `ctl`-tier icon buttons returns
- * roughly 180-240px on that same row. The two are one change; neither is correct alone, and
- * NEITHER is the real answer, which is measuring the row (a ResizeObserver fold) rather than
- * declaring breakpoints for it. This pair is the cheap, declared interim until that exists.
+ * Above `sm` the row is measured, not declared: `.lead` stops growing and `.pageBar` takes every
+ * remaining pixel (`flex: 1 1 0`), so its width IS the room `PageBar` row 1 folds its secondary
+ * actions against (`controls/actions.tsx`, `planBarFold`). `max-width` keeps a long breadcrumb from
+ * starving it.
  */
 .lead {
   display: flex;
@@ -109,6 +107,18 @@
   align-items: center;
   justify-content: flex-end;
   gap: var(--vx-space-control-gap);
+}
+
+@media (min-width: 52.5em) {
+  .lead {
+    flex: 0 1 auto;
+    max-width: 40%;
+  }
+
+  .pageBar {
+    flex: 1 1 0;
+    min-width: 0;
+  }
 }
 
 /*

@@ -6,10 +6,9 @@
  * ONE property ("the page does not scroll sideways") and owns it well; what it cannot say is WHERE
  * the width went. Three of the current chrome round's changes are exactly that kind of claim:
  *
- *  - the header row has no width-driven fold between `sm` (768) and `md` (992), so the whole band
- *    was carried by `.lead`'s new 96px floor and `BarEntry`'s new `md` icon-only tier — a pair that
- *    is only correct TOGETHER (`shell/app-header.module.css` states the arithmetic for both), and
- *    was measured on a real page but never pinned;
+ *  - the header row folds by MEASURED width (`planBarFold`: icon-only, then into `More`) against
+ *    `.lead`'s 96px floor — a pair that is only correct TOGETHER (`shell/app-header.module.css`
+ *    states the arithmetic), and was measured on a real page but never pinned;
  *  - the page gutter became RESPONSIVE (`{ base: appShellInsetMobile, sm: appShellInset }` on both
  *    `AppShell` and `AppShell.Header`), so the header, the band and Main now all have to land on
  *    ONE number and step at ONE width;
@@ -61,15 +60,14 @@ const layout = ready ? describe : describe.skip
  * than a formality), `PageBar` row 1 with a primary plus two labelled secondaries, and the shell's
  * own three-icon `globalActions` cluster.
  *
- * `actionIcons` is what makes the secondaries eligible for `BarEntry`'s `md` label fold at all — an
- * icon-less secondary keeps its label at every width because there is nothing to fall back to — and
- * it swaps in production-length labels with it (see `BarFixture`). Without both, the row measured
+ * `actionIcons` gives the secondaries an icon to fold down to, and swaps in production-length
+ * labels with it (see `BarFixture`). Without both, the row measured
  * here is narrower than any row the fold was designed for and the test would pass on a page that
  * does not exist.
  *
- * FOUR actions, which is `DESKTOP_SECONDARY_MAX` + the primary — the heaviest row 1 that still
- * renders entirely inline, so the row is as loaded as the shipped fold ever lets it get. That
- * choice is what gives these assertions their bite; MEASURED, with the fold live:
+ * FOUR actions — a loaded row 1 that the measured fold (`planBarFold`) has to shrink to the width
+ * the row is given. That choice is what gives these assertions their bite; MEASURED at the time
+ * of the earlier count-based fold (the numbers below are historical, the assertions are not):
  *
  *   width   crumb side   row 1    globals
  *     320       138.0      70.0      70.0
@@ -78,10 +76,9 @@ const layout = ready ? describe : describe.skip
  *     900       252.6     224.4     108.0
  *    1024       188.3     412.7     108.0   ← labels back, row 1 grows 188.3px
  *
- * 768 is the case that matters, and it is not close to vacuous: drop the `md` fold and row 1 there
- * becomes ~368px, which needs the crumb at −23px. The crumb stops at 96, the row overflows by ~48,
- * and BOTH the fit test and the floor test below go red — which is exactly the pair that is only
- * correct together.
+ * 768 is the case that matters: drop the fold and row 1 there needs more than the crumb can give,
+ * the crumb stops at its 96px floor and the row overflows — BOTH the fit test and the floor test
+ * below go red, which is exactly the pair that is only correct together.
  */
 const HEADER_PAGE: FixtureSpec = {
   sections: [
@@ -254,7 +251,7 @@ layout('shell chrome — the header row, the gutter, the sidebar footer', () => 
           `  page actions w=${pageBar.box.width.toFixed(1)}\n` +
           `  header row   w=${row.box.width.toFixed(1)}\n` +
           `  viewport ${viewport.width}x${viewport.height} (${viewport.name})\n\n` +
-          '  expected: the row folds (BarEntry drops labelled secondaries to icons above `sm`) ' +
+          '  expected: the row folds (`planBarFold`: icons, then More)' +
           'BEFORE `.lead` goes under its own `min-width`\n',
       )
     })

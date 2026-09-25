@@ -8,7 +8,6 @@
 export {
   ActionGroup,
   OverflowMenu,
-  DESKTOP_SECONDARY_MAX,
   MOBILE_GLOBAL_BAR_MAX,
   barActionMobile,
   globalActionMobile,

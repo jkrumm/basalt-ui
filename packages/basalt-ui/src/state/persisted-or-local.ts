@@ -13,7 +13,7 @@
  *
  * Not exported from `../state` — this is an internal hook, not part of the `./state` surface.
  */
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { createPersistedState } from './persisted'
 
 /** The key an unpersisted caller parks on — never read, because that branch returns local state. */
@@ -28,10 +28,14 @@ export function usePersistedOrLocal<T>({
   scope: string
   /** Persist under `basalt:<scope>:<persistKey>`. Omitted → local state, nothing written. */
   persistKey: string | undefined
-  /** First-render value, respected only while nothing is persisted. */
+  /**
+   * The value while the user has not chosen one — unset, NOT "written as this". It may change
+   * between renders (a size-class default) and the flag follows until a set call pins it.
+   */
   initial: T
 }): readonly [T, (next: T) => void] {
-  const [local, setLocal] = useState(initial)
+  // Boxed so "never set" (`null`) stays distinct from a set value of any `T`, falsy ones included.
+  const [local, setLocal] = useState<{ value: T } | null>(null)
   // `createPersistedState` is a per-key module FACTORY, so it is memoized rather than called during
   // render — the same reason `shell/index.tsx` memoizes its collapse store.
   const usePersisted = useMemo(
@@ -44,7 +48,9 @@ export function usePersistedOrLocal<T>({
     [scope, persistKey, initial],
   )
   const [persisted, setPersisted] = usePersisted()
+  // Stable across renders like the persisted setter — a value-only setter, so no updater form.
+  const setLocalValue = useCallback((next: T) => setLocal({ value: next }), [])
 
   if (persistKey !== undefined) return [persisted, setPersisted] as const
-  return [local, setLocal] as const
+  return [local === null ? initial : local.value, setLocalValue] as const
 }

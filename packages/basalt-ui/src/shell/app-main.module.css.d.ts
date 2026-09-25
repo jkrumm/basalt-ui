@@ -7,5 +7,6 @@ declare const classes: {
   readonly shell: string
   readonly band: string
   readonly main: string
+  readonly asideOverlay: string
 }
 export default classes

@@ -16,6 +16,9 @@ const noopSubscribe =
   (_cb: () => void): (() => void) =>
   () => {}
 
+// Nothing has been written as far as the server can tell.
+const serverIsSet = (): boolean => false
+
 export type PersistedStateOptions<T> = {
   /** localStorage key (will be namespaced as `basalt:<key>`). */
   readonly key: string
@@ -81,40 +84,59 @@ function isEnvelope(raw: unknown): raw is Envelope {
   )
 }
 
-/** Parse a raw localStorage string (or null) into a value, falling back to `initial` on any miss. */
-function parseStorage<T>(raw: string | null, opts: PersistedStateOptions<T>): T {
-  if (raw === null) return opts.initial
+/**
+ * One parse pass over a raw localStorage string: the value AND whether the store ACCEPTED what it
+ * found. `accepted` is false for a miss, garbage, a wrong version with no `migrate`, or a value the
+ * schema rejects — every case that falls back to `initial`, so `isSet` never claims a choice that
+ * was not honoured.
+ */
+function parseStorage<T>(
+  raw: string | null,
+  opts: PersistedStateOptions<T>,
+): { value: T; accepted: boolean } {
+  const miss = { value: opts.initial, accepted: false }
+  if (raw === null) return miss
   try {
     const parsed: unknown = JSON.parse(raw)
-    if (!isEnvelope(parsed)) return opts.initial
+    if (!isEnvelope(parsed)) return miss
 
     let value: unknown = parsed.value
 
     if (parsed.v !== opts.version) {
-      value = opts.migrate ? opts.migrate(parsed.value, parsed.v) : opts.initial
+      if (!opts.migrate) return miss
+      value = opts.migrate(parsed.value, parsed.v)
     }
 
     if (opts.schema) {
       const result = opts.schema['~standard'].validate(value)
       // Async schema — can't await in sync storage path; fall back to initial
-      if (result instanceof Promise) return opts.initial
-      if (result.issues !== undefined) return opts.initial
+      if (result instanceof Promise) return miss
+      if (result.issues !== undefined) return miss
       // Narrowed to SuccessResult<T> — value is T
-      return result.value
+      return { value: result.value, accepted: true }
     }
 
-    return value as T
+    return { value: value as T, accepted: true }
   } catch {
-    return opts.initial
+    return miss
   }
 }
+
+/**
+ * Values a write could not persist (storage blocked, full, private mode), by namespaced key. An
+ * explicit user choice then still wins for the rest of the session instead of snapping back to the
+ * default; a successful write or a `storage` event for the key drops the entry.
+ */
+const unpersisted = new Map<string, { value: unknown }>()
 
 function writeEnvelope(storageKey: string, version: number, value: unknown): void {
   try {
     const envelope: Envelope = { v: version, value }
     window.localStorage.setItem(storageKey, JSON.stringify(envelope))
+    unpersisted.delete(storageKey)
   } catch {
-    // Silently fail (storage full, private browsing, etc.)
+    // Storage full or blocked: keep the value in memory rather than lose the choice.
+    unpersisted.set(storageKey, { value })
   }
 }
 
@@ -137,6 +159,25 @@ function writeStorage<T>(opts: PersistedStateOptions<T>, next: T): void {
 export function createPersistedState<T>(
   opts: PersistedStateOptions<T>,
 ): () => readonly [T, (next: T) => void] {
+  const useStore = createPersistedStore(opts)
+  return function usePersistedState() {
+    const [value, setValue] = useStore()
+    return [value, setValue] as const
+  }
+}
+
+/**
+ * `createPersistedState` plus a third tuple element: `isSet`, false until a value is written or a
+ * stored one is accepted (a stale-version or schema-invalid envelope is NOT set).
+ * `value` alone cannot say — an unset key and an explicit write of `initial` both read as `initial`,
+ * and a default that depends on context (the shell's size-class collapse default) may apply to the
+ * first only.
+ *
+ * @internal Not exported from the `basalt-ui/state` barrel.
+ */
+export function createPersistedStore<T>(
+  opts: PersistedStateOptions<T>,
+): () => readonly [T, (next: T) => void, boolean] {
   const storageKey = `basalt:${opts.key}`
 
   const subscribe = (cb: () => void): (() => void) => {
@@ -148,7 +189,10 @@ export function createPersistedState<T>(
     // when the last one leaves (cleanup semantics preserved).
     if (channel.handler === null) {
       channel.handler = (e: StorageEvent): void => {
-        if (e.key === storageKey) notify(storageKey)
+        if (e.key !== storageKey) return
+        // Another tab's write (or removal) is newer than anything this tab failed to persist.
+        unpersisted.delete(storageKey)
+        notify(storageKey)
       }
       window.addEventListener('storage', channel.handler)
     }
@@ -171,9 +215,12 @@ export function createPersistedState<T>(
   // the object/array case (chat history, form drafts).
   let cachedRaw: string | null = null
   let cachedValue: T = opts.initial
+  let cachedIsSet = false
   let primed = false
 
   const getSnapshot = (): T => {
+    const override = unpersisted.get(storageKey)
+    if (override !== undefined) return override.value as T
     let raw: string | null
     try {
       raw = window.localStorage.getItem(storageKey)
@@ -181,10 +228,16 @@ export function createPersistedState<T>(
       raw = null
     }
     if (primed && raw === cachedRaw) return cachedValue
+    const parsed = parseStorage(raw, opts)
     cachedRaw = raw
-    cachedValue = parseStorage(raw, opts)
+    cachedValue = parsed.value
+    cachedIsSet = parsed.accepted
     primed = true
     return cachedValue
+  }
+  const getIsSet = (): boolean => {
+    getSnapshot()
+    return unpersisted.has(storageKey) || cachedIsSet
   }
   const getServerSnapshot = (): T => opts.initial
 
@@ -198,15 +251,21 @@ export function createPersistedState<T>(
   // Detect SSR once at creation time — the environment doesn't change between renders.
   const isServer = typeof window === 'undefined'
 
-  return function usePersistedState(): readonly [T, (next: T) => void] {
+  return function usePersistedStore(): readonly [T, (next: T) => void, boolean] {
+    // SSR guard — subscribe must not reference `window` on the server.
+    const listen = isServer ? noopSubscribe : subscribe
     const value = useSyncExternalStore<T>(
-      // SSR guard — subscribe must not reference `window` on the server.
-      isServer ? noopSubscribe : subscribe,
+      listen,
       isServer ? getServerSnapshot : getSnapshot,
       getServerSnapshot,
     )
+    const isSet = useSyncExternalStore<boolean>(
+      listen,
+      isServer ? serverIsSet : getIsSet,
+      serverIsSet,
+    )
 
-    return [value, setState] as const
+    return [value, setState, isSet] as const
   }
 }
 

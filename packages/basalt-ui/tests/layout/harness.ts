@@ -134,6 +134,11 @@ export const TABLET_768: Viewport = { name: 'sm exactly', width: 768, height: 72
 export const LAPTOP_900: Viewport = { name: 'sm→md mid', width: 900, height: 700 }
 export const LAPTOP_1024: Viewport = { name: 'past md', width: 1024, height: 640 }
 
+/** The size-class sweep's remaining anchors: a 375 phone, a 1440 desktop, and a landscape phone. */
+export const PHONE_375: Viewport = { name: 'iPhone 375', width: 375, height: 812 }
+export const DESKTOP_1440: Viewport = { name: 'expanded', width: 1440, height: 900 }
+export const PHONE_LANDSCAPE: Viewport = { name: 'landscape phone', width: 812, height: 375 }
+
 export type Box = {
   readonly x: number
   readonly y: number

@@ -13,7 +13,10 @@
  * WHERE it renders is decided by context and viewport, never by a prop:
  *
  * - **Inside `BasaltShell`, from `sm` up** the panel portals into `AppShell.Aside`, folding to a
- *   `appShellAsideRailWidth` rail with one expand button.
+ *   `appShellAsideRailWidth` rail with one expand button. It DOCKS (pushes main) only while main
+ *   keeps its floor width; otherwise it opens as an overlay over main and starts folded. The overlay
+ *   is a persistent panel closed by its own fold button — not a transient, click-away or Escape
+ *   dismissable one.
  * - **Below `sm`, with a `PageBar` that renders a row 2**, the panel PROJECTS into that row: it
  *   registers its title and glyph with the page-bar slot, renders no node of its own, and row 2
  *   draws one `Panel` pill opening a `FilterSheet` its children portal into. One node at a time —
@@ -120,6 +123,14 @@ export function useAsideRegion(): Pick<AsideRegion, 'claimed' | 'folded'> {
   return { claimed, folded }
 }
 
+/**
+ * Internal — whether an OPEN aside would push the main column (expanded, main keeps its floor)
+ * rather than overlay it. Provided by `ShellFrame`, which alone knows the navbar width, from the
+ * same render that computes it: a state published after mount would make the first pass read
+ * "cannot dock" and fold a default-open aside for one commit.
+ */
+export const AsideDocksContext = createContext(false)
+
 /** Internal — the node inside `AppShell.Aside` the active page's panel portals into. */
 export function AsideOutlet({ className }: { className?: string }) {
   const { setTarget } = useContext(AsideContext)
@@ -135,7 +146,10 @@ export type PageAsideProps = BasaltProps &
     title: string
     /** Persists the fold at `basalt:aside:<persistKey>`. Omit for an unpersisted fold. */
     persistKey?: string
-    /** Fold state on first render, respected only while nothing is persisted. @default false */
+    /**
+     * The fold while the user has not chosen one — an explicit (persisted or toggled) choice always
+     * wins. @default open where the aside docks beside main, folded where it would overlay it
+     */
     defaultFolded?: boolean
     children: ReactNode
   }
@@ -213,8 +227,9 @@ export function PageAside(props: PageAsideProps): ReactNode {
   assertRequiredProps('PageAside', props, ['title'], {
     title: 'it names the region — it is the header text AND the `aria-label` on the landmark.',
   })
-  const { title, persistKey, defaultFolded = false, children, className, style, classNames } = props
+  const { title, persistKey, defaultFolded, children, className, style, classNames } = props
   const { target, inShell, claim, publishFolded } = useContext(AsideContext)
+  const docks = useContext(AsideDocksContext)
   // Destructured, not held as one object: the hook returns a fresh literal every render, and the
   // claim effect below would then re-run (claim → release → claim) forever. `claimPanel` is a
   // `useCallback` on the provider, so it is the stable half.
@@ -222,12 +237,12 @@ export function PageAside(props: PageAsideProps): ReactNode {
   // THE declared C9 exception (see this file's header): the read is JS because the two projections
   // are two portal targets under two filter surfaces, and a CSS twin would double-mount stateful
   // children. `useSizeClass` (`useSyncExternalStore`) keeps SSR, the hydration pass and the first
-  // client paint agreeing on which single node exists. Wave 3 redesigns docking.
+  // client paint agreeing on which single node exists.
   const isCompact = useSizeClass() === 'compact'
   const [folded, setFolded] = usePersistedOrLocal({
     scope: 'aside',
     persistKey,
-    initial: defaultFolded,
+    initial: defaultFolded ?? !docks,
   })
 
   const portalled = inShell && !isCompact
