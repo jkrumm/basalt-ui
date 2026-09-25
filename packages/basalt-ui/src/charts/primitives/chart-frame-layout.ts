@@ -14,6 +14,8 @@ import { measureText } from '../utils/measure-text'
 const LEGEND_LINE_H = Math.ceil(VX.legendFontSize * 1.35)
 /** `ChartLegend`'s own vertical wrapper padding (`8px 0 2px`). */
 const LEGEND_PAD_Y = 10
+/** Gap between two wrapped legend rows — tight (4-6px); the wider `VX.legendGap` separates entries. */
+export const LEGEND_ROW_GAP = 6
 /** Swatch plus the gap to its label — the fixed part of a legend entry's width. */
 const LEGEND_SWATCH_W = 24
 
@@ -101,11 +103,6 @@ const PHONE_MARGIN_SCALE = 0.75
  * the smaller stroke widths a narrow chart draws. */
 const PHONE_DOT_R = Math.max(VX.dotR - 1, 2)
 
-/** Legend entries a phone-tier legend renders before rolling the rest into `+N more`. Two is the
- * cap because a third entry wraps at every realistic phone width, and a wrapped legend is what
- * eats the plot (`legendEntryCap`). */
-const PHONE_LEGEND_MAX_ROWS = 2
-
 /** Tooltip `minWidth`, per tier — 140px is 39% of a 360px screen. */
 const TOOLTIP_MIN_WIDTH = { desktop: 140, phone: 110 } as const
 
@@ -127,9 +124,6 @@ export type ChartTierMetrics = {
   dotR: number
   /** Floating tooltip `minWidth`, px. */
   tooltipMinWidth: number
-  /** Default entry cap on the legend, or `undefined` for no default cap. An explicit
-   * `legend.maxRows` replaces it outright ({@link resolveLegendMaxRows}). */
-  legendMaxRows: number | undefined
   /** Per-side margin FLOORS (`VX.margin` is a floor, never a ceiling — §1). */
   margin: ChartMargin
 }
@@ -140,7 +134,6 @@ const DESKTOP_METRICS: ChartTierMetrics = {
   legendFontSize: VX.legendFontSize,
   dotR: VX.dotR,
   tooltipMinWidth: TOOLTIP_MIN_WIDTH.desktop,
-  legendMaxRows: undefined,
   margin: VX.margin,
 }
 
@@ -152,7 +145,6 @@ const PHONE_METRICS: ChartTierMetrics = {
   legendFontSize: VX.text.xs,
   dotR: PHONE_DOT_R,
   tooltipMinWidth: TOOLTIP_MIN_WIDTH.phone,
-  legendMaxRows: PHONE_LEGEND_MAX_ROWS,
   margin: {
     top: Math.round(VX.margin.top * PHONE_MARGIN_SCALE),
     right: Math.round(VX.margin.right * PHONE_MARGIN_SCALE),
@@ -170,52 +162,22 @@ export function chartTierMetrics(tier: ChartTier): ChartTierMetrics {
 }
 
 /**
- * Which legend cap applies: the caller's, or the tier's own default.
- *
- * **An explicit `callerMaxRows` wins OUTRIGHT.** This used to be `Math.min(caller, tier)`, which
- * made the documented per-chart opt-out ("opt back out with an explicit `legend.maxRows`") false in
- * the one direction anybody needs it. The tier's `PHONE_LEGEND_MAX_ROWS` is a DEFAULT for charts
- * that said nothing — a chart that names a number has already answered the question the default
- * exists to answer, and it matters because the tier keys on the measured box: a 380px inspector
- * panel on a 1440px desktop is "a phone", so a six-series legend rolled up to two rows + `+4 more`
- * with no way to say no. `margin` and `xLabelRotate` always had that escape; the legend did not.
- *
- * The measured {@link legendEntryCap} a `fill` frame applies is NOT a second ceiling on top of
- * this: it resolves an ABSENT cap only. 1.30.0 ran it over the caller's number as well
- * (`Math.min(fitted, caller)`), which made "wins outright" false again in the one place it was
- * needed — meteo measured a 7-entry legend pinned to 2 entries at `maxRows` 3, 6 AND 99, with 5
- * series drawn in colours the legend refused to name. The fit is not physics either: it derives
- * from `VX.minPlotHeight`, which is a framework DEFAULT about the plot. Two defaults do not
- * outvote the one number a caller stated, so the PLOT yields the height instead
- * ({@link resolvePlotRect}'s `legendWins`) — visibly, in the frame the caller sized.
- */
-export function resolveLegendMaxRows(input: {
-  callerMaxRows?: number | undefined
-  tier: ChartTier
-}): number | undefined {
-  return input.callerMaxRows ?? chartTierMetrics(input.tier).legendMaxRows
-}
-
-/**
  * The whole legend-cap decision in one place: which cap `ChartLegend` gets, and whether the plot
- * pays for it.
- *
- * It lives here rather than inline in `ChartFrame` because the COMPOSITION is what broke. 1.30.0
- * had both halves right on their own — {@link resolveLegendMaxRows} honoured a stated cap,
- * {@link legendEntryCap} measured a fit — and then ran the second over the first, which no test
- * could see because neither pure function was wrong and the frame that combined them needs a
- * `ResizeObserver` to test. Now the combination is a pure function too.
+ * pays for it. Pure, because the COMPOSITION is what once broke (1.30.0 ran a measured fit over a
+ * caller's stated number) and the frame that combines them needs a `ResizeObserver` to test.
  *
  * Three cases, in order:
- * 1. The caller STATED a number → it is the cap, and on a `fill` band the plot yields
- *    (`legendWins`). Nothing measured or defaulted trims it.
- * 2. No `fill` band → the tier's default (or none), because the frame simply grows.
- * 3. A `fill` band with nothing stated → the measured fit, bounded by the tier's default.
+ * 1. The caller STATED `legend.maxRows` (deprecated, still honoured) → it is the cap, and on a
+ *    `fill` band the plot yields (`legendWins`). Nothing measured trims it.
+ * 2. No `fill` band → the resolver's width-measured fit (`fittedMaxRows`), because the frame grows.
+ * 3. A `fill` band with nothing stated → the tighter of that fit and the height-measured
+ *    {@link legendEntryCap}, because a `fill` box cannot grow.
  */
 export function resolveLegendRollup(input: {
   /** The caller's own `legend.maxRows`. */
   statedMaxRows?: number | undefined
-  tier: ChartTier
+  /** `resolveChartLayout().legend.visible` when it overflows, else `undefined`. */
+  fittedMaxRows?: number | undefined
   /** A visible top/bottom legend on a `fill` frame — the one shape whose box cannot grow. */
   fillBand: boolean
   items: readonly LegendEntry[]
@@ -223,16 +185,15 @@ export function resolveLegendRollup(input: {
   /** Frame height the legend may consume — `resolvedHeight - VX.minPlotHeight`. */
   available: number
 }): { maxRows: number | undefined; legendWins: boolean } {
-  const { statedMaxRows, tier, fillBand, items, containerW, available } = input
+  const { statedMaxRows, fittedMaxRows, fillBand, items, containerW, available } = input
   if (statedMaxRows !== undefined) return { maxRows: statedMaxRows, legendWins: fillBand }
-  const tierMaxRows = resolveLegendMaxRows({ callerMaxRows: undefined, tier })
-  if (!fillBand) return { maxRows: tierMaxRows, legendWins: false }
+  if (!fillBand) return { maxRows: fittedMaxRows, legendWins: false }
   return {
     maxRows: legendEntryCap({
       items,
       containerW,
       available,
-      ...(tierMaxRows !== undefined && { defaultMaxRows: tierMaxRows }),
+      ...(fittedMaxRows !== undefined && { defaultMaxRows: fittedMaxRows }),
     }),
     legendWins: false,
   }
@@ -325,7 +286,7 @@ function isSelfMeasured(room: number): boolean {
 
 /** Height of a legend band `rows` rows tall, wrapper padding included. */
 const legendBandHeight = (rows: number): number =>
-  LEGEND_PAD_Y + rows * LEGEND_LINE_H + Math.max(rows - 1, 0) * VX.legendGap
+  LEGEND_PAD_Y + rows * LEGEND_LINE_H + Math.max(rows - 1, 0) * LEGEND_ROW_GAP
 
 /** Width one legend entry occupies — swatch, gap, label, and the note that rides after it. */
 const legendEntryWidth = (item: LegendEntry): number =>
@@ -373,7 +334,7 @@ export function entriesWithinRows(
  * This resolves an ABSENT cap. A caller who stated `legend.maxRows` never reaches here at all —
  * `ChartFrame` routes around it — because `Math.min`-ing a stated number against this one made the
  * documented escape inert in exactly the narrow `fill` panel it exists for
- * ({@link resolveLegendMaxRows}).
+ * ({@link resolveLegendRollup}).
  */
 export function legendEntryCap(input: {
   items: readonly LegendEntry[]
@@ -381,8 +342,8 @@ export function legendEntryCap(input: {
   /** Frame height the legend may consume — `resolvedHeight - VX.minPlotHeight`. */
   available: number
   /**
-   * The cap that applies when nothing explicit was stated — today only the tier's own default
-   * ({@link chartTierMetrics}). Two defaults contending: the smaller wins.
+   * The cap that applies when nothing explicit was stated — the resolver's width fit. Two
+   * defaults contending: the smaller wins.
    */
   defaultMaxRows?: number
 }): number | undefined {
@@ -390,7 +351,7 @@ export function legendEntryCap(input: {
   if (containerW <= 0 || items.length === 0) return defaultMaxRows
   const rows = Math.max(
     1,
-    Math.floor((available - LEGEND_PAD_Y + VX.legendGap) / (LEGEND_LINE_H + VX.legendGap)),
+    Math.floor((available - LEGEND_PAD_Y + LEGEND_ROW_GAP) / (LEGEND_LINE_H + LEGEND_ROW_GAP)),
   )
   if (
     legendBandHeight(rows) <= available &&

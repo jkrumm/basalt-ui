@@ -4,11 +4,12 @@ import { scaleLinear, scaleLog, scalePoint } from '@visx/scale'
 import { useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { BasaltProps } from '../../common/props'
-import { VX } from '../../tokens'
+import { VX, alpha } from '../../tokens'
 import type { ChartMargin } from '../../tokens'
 import type { CursorResolution } from '../cursor/resolve'
 import { useChartCursor } from '../hooks/useChartCursor'
 import { autoMargin, probeAxisLabels } from '../layout/auto-margin'
+import { END_LABEL_GAP, planEndLabels } from '../layout/end-labels'
 import { logTickValues, niceLogDomain } from '../layout/log-ticks'
 import { deriveLegend, deriveTooltipRows } from '../series'
 import type { ChartLegendConfig, ChartSeries } from '../series'
@@ -49,6 +50,9 @@ type ContinuousScale = ReturnType<typeof scaleLinear<number>> | ReturnType<typeo
 type PointScale = ReturnType<typeof scalePoint<string>>
 
 const DEFAULT_AUTO_PAD = 1.1
+
+/** Faint tint a dual-axis chart lays over its tick labels: the series colour, kept quiet. */
+const AXIS_TINT_ALPHA = 0.8
 
 /** One y-axis, fully described. Collapses the removed `yDomain` / `yAutoMaxFloor` / `yAutoMinCeil` /
  * `yAutoPad` / `numTicksY` / `formatYTick` prop soup into a single object per axis. */
@@ -691,7 +695,7 @@ function CartesianPlot<T>({
         ? xLabelPx
         : xPlan.labelPx
 
-  const margin = useMemo(
+  const baseMargin = useMemo(
     () =>
       rotate === 0
         ? wrapWidth === undefined
@@ -703,17 +707,54 @@ function CartesianPlot<T>({
     [flatMargin, rotated45Margin, marginInput, rotate, wrapWidth, xPlan.lines],
   )
 
+  // End-of-line labels are planned FIRST, against the base margin: the right gutter is reserved
+  // only when the labels will actually draw. `yScale` depends on the plot height alone, so it is
+  // safe to build before the right margin is settled.
+  const yMax = Math.max(plot.height - baseMargin.top - baseMargin.bottom, 0)
+  const yScale = useMemo(
+    () => buildYScale(y, leftDomain, yMax, leftTicks),
+    [y, leftDomain, yMax, leftTicks],
+  )
+  const endPlan = useMemo(
+    () =>
+      planEndLabels({
+        containerClass,
+        hasY2: y2 !== undefined,
+        hasMarginRight: marginOverride?.right !== undefined,
+        visible,
+        data,
+        yScale,
+        yMax,
+        fontPx: tier.axisFont,
+        plotWidth: plot.width - baseMargin.left - baseMargin.right,
+      }),
+    [
+      containerClass,
+      y2,
+      marginOverride?.right,
+      visible,
+      data,
+      yScale,
+      yMax,
+      tier.axisFont,
+      plot.width,
+      baseMargin.left,
+      baseMargin.right,
+    ],
+  )
+  const endLabels = endPlan?.labels ?? []
+  const margin = useMemo(
+    () =>
+      endPlan === null ? baseMargin : { ...baseMargin, right: baseMargin.right + endPlan.gutter },
+    [baseMargin, endPlan],
+  )
+
   // ── Pass 2: the real scales, now that the plot rect is known ────────────────────────────────
   const xMax = Math.max(plot.width - margin.left - margin.right, 0)
-  const yMax = Math.max(plot.height - margin.top - margin.bottom, 0)
 
   const xScale = useMemo(
     () => scalePoint<string>({ domain: keys, range: [0, xMax], padding: 0.5 }),
     [keys, xMax],
-  )
-  const yScale = useMemo(
-    () => buildYScale(y, leftDomain, yMax, leftTicks),
-    [y, leftDomain, yMax, leftTicks],
   )
   const y2Scale = useMemo(
     () => (rightDomain === null ? null : buildYScale(y2, rightDomain, yMax, rightTicks)),
@@ -758,6 +799,12 @@ function CartesianPlot<T>({
       ),
     [visible, leftFormat, rightFormat],
   )
+
+  // Dual axis with exactly one visible series per side: the tick labels carry that series' colour,
+  // so the axis says which line it reads. Any other split leaves both axes neutral.
+  const tintAxes = y2 !== undefined && leftSeries.length === 1 && rightSeries.length === 1
+  const leftTint = tintAxes ? alpha(leftSeries[0]!.color, AXIS_TINT_ALPHA) : undefined
+  const rightTint = tintAxes ? alpha(rightSeries[0]!.color, AXIS_TINT_ALPHA) : undefined
 
   const rows =
     tooltipEnabled && point !== null ? deriveTooltipRows(tooltipSeries, point, leftFormat) : []
@@ -859,6 +906,7 @@ function CartesianPlot<T>({
               numTicks={leftTicks}
               tickFormat={(v) => leftFormat(Number(v))}
               inside={yPlacement === 'inside'}
+              {...(leftTint !== undefined && { tickColor: leftTint })}
             />
           )}
           {y2Scale !== null && (
@@ -867,6 +915,7 @@ function CartesianPlot<T>({
               left={xMax}
               numTicks={rightTicks}
               tickFormat={(v) => rightFormat(Number(v))}
+              {...(rightTint !== undefined && { tickColor: rightTint })}
             />
           )}
           <AxisBottomDate
@@ -878,6 +927,24 @@ function CartesianPlot<T>({
             anchorTerminals={tight && rotate === 0}
             {...(wrapWidth !== undefined && { wrapWidth })}
           />
+
+          {endLabels.map(({ series: s, y: labelY }) => (
+            <text
+              key={`end-${s.key}`}
+              x={xMax + END_LABEL_GAP}
+              y={labelY}
+              dy="0.35em"
+              fill={s.color}
+              fontFamily="var(--basalt-font-mono)"
+              fontSize={tier.axisFont}
+              opacity={
+                highlighted === null || s.key === highlighted || s.parent === highlighted ? 1 : 0.25
+              }
+              pointerEvents="none"
+            >
+              {s.label}
+            </text>
+          ))}
 
           <HoverOverlay
             width={xMax}

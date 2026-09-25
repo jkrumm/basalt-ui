@@ -1,7 +1,8 @@
 import { Group } from '@visx/group'
 import { Pie } from '@visx/shape'
-import { memo, useMemo, useState } from 'react'
+import { memo, useMemo, useRef, useState } from 'react'
 import type { PointerEvent, ReactNode } from 'react'
+import { useChartSize } from '../hooks/useChartSize'
 import { assertRequiredProps } from '../../common/validate'
 import type { BasaltProps } from '../../common/props'
 import { ChartTooltipFloat, TooltipBody, TooltipRow } from '../primitives/ChartTooltip'
@@ -9,6 +10,15 @@ import { ChartFrame } from '../primitives/ChartFrame'
 import type { ResponsiveChartHeight } from '../primitives/ChartFrame'
 import type { ChartState } from '../primitives/ChartPending'
 import { VX } from '../../tokens'
+import { resolveContainerClass } from '../../tokens/size-classes'
+import { resolveFrameHeight } from '../primitives/chart-frame-layout'
+import {
+  foldOther,
+  resolveDonutLayout,
+  resolveDonutRadius,
+  resolveOtherKey,
+  sharePercent,
+} from './donut-layout'
 import type { SeriesStyle } from '../series'
 import type { SeriesKey } from '../../register'
 
@@ -64,14 +74,20 @@ export type DonutProps<K extends string = SeriesKey> = BasaltProps & {
   state?: ChartState
 }
 
+const identityLabel = (key: string): string => key
+
 /**
  * Radial slice-share chart with a punched-out center label. Composes `ChartFrame` for a
  * categorical legend derived from the slices (one `SeriesStyle` per slice, `mark: 'bar'`) so the
- * legend can never drift from what's plotted — legend-hidden slices drop out of the ring, the
- * center total, and the tooltip's "Share" row together (`docs/CHARTS-SPEC.md` §5). No crosshair —
- * meaningless for a radial layout. Hover stays local to the pie (dimming siblings on hover) rather
+ * legend can never drift from what's plotted — legend-hidden slices drop out of the ring and the
+ * tooltip together, while every share is taken of ALL slices so the legend and the tooltip never
+ * disagree (`docs/CHARTS-SPEC.md` §5). No crosshair — meaningless for a radial layout. Hover stays local to the pie (dimming siblings on hover) rather
  * than joining the shared cursor: a date-keyed cursor has no counterpart on a donut, and cross-kind
  * category sync (donut ↔ bar, via a generalized key) is a distinct, deliberately deferred feature.
+ *
+ * Layout law (`docs/waves/RESPONSIVE-SPEC.md` §4): frame W/H > 1.5 puts the legend beside the ring
+ * with value and %, the ring capped at `min(h, 0.55w)`; `micro`/`compact` stack the full legend
+ * under the ring, never rolled up. 7 or more slices fold the smallest into a neutral "Other".
  */
 function DonutInner<K extends string = SeriesKey>(props: DonutProps<K>) {
   // F-ERR-1: name the component and the prop. Without this a missing accessor surfaces
@@ -82,7 +98,8 @@ function DonutInner<K extends string = SeriesKey>(props: DonutProps<K>) {
     data,
     height,
     colorForKey,
-    seriesLabel = (k) => k,
+    formatValue,
+    seriesLabel = identityLabel,
     ariaLabel,
     isPending,
     state,
@@ -90,44 +107,116 @@ function DonutInner<K extends string = SeriesKey>(props: DonutProps<K>) {
     style,
   } = props
 
-  const series: SeriesStyle[] = data.map((d) => ({
-    key: d.key,
-    label: seriesLabel(d.key),
-    color: colorForKey(d.key),
-    mark: 'bar',
-  }))
+  // The legend side depends on the frame's own measured box, which only exists inside
+  // `ChartFrame` — so measure the wrapper (same width) one level up. A stated height is used as
+  // is; the measured one moves with the legend's placement, so an unstated height gets hysteresis.
+  const { ref, width: frameW, height: measuredH } = useChartSize()
+  const containerClass = resolveContainerClass(frameW)
+  const frameH = height === undefined ? measuredH : resolveFrameHeight(height, containerClass)
+  const wasSide = useRef(false)
+  const { side } = resolveDonutLayout({
+    frameW,
+    frameH,
+    containerClass,
+    wasSide: height === undefined && wasSide.current,
+  })
+  wasSide.current = side
+
+  const slices = useMemo(() => {
+    const { kept, other } = foldOther(data)
+    const out: Slice[] = kept.map((d) => ({
+      key: d.key,
+      label: seriesLabel(d.key),
+      color: colorForKey(d.key),
+      value: d.value,
+    }))
+    if (other !== null)
+      out.push({
+        key: resolveOtherKey(kept.map((d) => d.key)),
+        label: 'Other',
+        color: VX.neutral,
+        value: other,
+      })
+    return out
+  }, [data, seriesLabel, colorForKey])
+
+  // One denominator for the side legend and the tooltip: every slice, hidden or not.
+  const total = useMemo(() => slices.reduce((sum, d) => sum + d.value, 0), [slices])
+  const series = useMemo<SeriesStyle[]>(
+    () =>
+      slices.map((d) => ({
+        key: d.key,
+        label: side
+          ? `${d.label} · ${formatValue(d.value)} · ${sharePercent(d.value, total)}%`
+          : d.label,
+        color: d.color,
+        mark: 'bar',
+      })),
+    [slices, side, formatValue, total],
+  )
 
   return (
-    <ChartFrame
-      series={series}
-      {...(height !== undefined && { height })}
-      {...(ariaLabel !== undefined && { ariaLabel })}
-      {...(isPending !== undefined && { isPending })}
-      {...(state !== undefined && { state })}
+    <div
+      ref={ref}
       {...(className !== undefined && { className })}
-      {...(style !== undefined && { style })}
+      style={{ display: 'flex', flexDirection: 'column', flex: '1 1 auto', minHeight: 0, ...style }}
     >
-      {(plot) => <DonutPlot {...props} plot={plot} />}
-    </ChartFrame>
+      <ChartFrame
+        series={series}
+        // Never roll the legend up: the full list is the donut's only key. Side legends read as a column.
+        legend={{ placement: side ? 'right' : 'bottom', maxRows: series.length }}
+        {...(height !== undefined && { height })}
+        {...(ariaLabel !== undefined && { ariaLabel })}
+        {...(isPending !== undefined && { isPending })}
+        {...(state !== undefined && { state })}
+      >
+        {(plot) => (
+          <DonutPlot
+            slices={slices}
+            total={total}
+            side={side}
+            frameW={frameW}
+            plot={plot}
+            formatValue={formatValue}
+            {...(props.centerLabel !== undefined && { centerLabel: props.centerLabel })}
+            {...(props.centerSubLabel !== undefined && { centerSubLabel: props.centerSubLabel })}
+            {...(props.centerContent !== undefined && { centerContent: props.centerContent })}
+            {...(props.innerRatio !== undefined && { innerRatio: props.innerRatio })}
+            {...(props.padAngle !== undefined && { padAngle: props.padAngle })}
+          />
+        )}
+      </ChartFrame>
+    </div>
   )
 }
 
-type DonutPlotProps<K extends string = SeriesKey> = DonutProps<K> & {
+type Slice = { key: string; label: string; color: string; value: number }
+
+type DonutPlotProps = Pick<
+  DonutProps,
+  'formatValue' | 'centerLabel' | 'centerSubLabel' | 'centerContent' | 'innerRatio' | 'padAngle'
+> & {
   plot: { width: number; height: number; hidden: ReadonlySet<string> }
+  slices: Slice[]
+  /** Sum of ALL slices (hidden included) — the one denominator for every share. */
+  total: number
+  side: boolean
+  frameW: number
 }
 
 /** A hovered slice plus the viewport anchor `ChartTooltipFloat` positions against. */
-type DonutTip<K extends string> = { key: K; value: number; anchor: { x: number; y: number } }
+type DonutTip = { slice: Slice; anchor: { x: number; y: number } }
 
 /** The measured plot — split from {@link DonutInner} so it only draws once `ChartFrame` has
  * resolved a non-empty plot rect (radius/center depend on the measured size). */
-function DonutPlot<K extends string = SeriesKey>(props: DonutPlotProps<K>) {
+function DonutPlot(props: DonutPlotProps) {
   const {
-    data,
+    slices,
+    total,
     plot,
-    colorForKey,
+    side,
+    frameW,
     formatValue,
-    seriesLabel = (k) => k,
     centerLabel,
     centerSubLabel,
     centerContent,
@@ -136,20 +225,18 @@ function DonutPlot<K extends string = SeriesKey>(props: DonutPlotProps<K>) {
   } = props
   const { width, height, hidden } = plot
 
-  const [tip, setTip] = useState<DonutTip<K> | null>(null)
-  const hoveredKey = tip?.key ?? null
+  const [tip, setTip] = useState<DonutTip | null>(null)
+  const hoveredKey = tip?.slice.key ?? null
 
-  const visibleData = useMemo(() => data.filter((d) => !hidden.has(d.key)), [data, hidden])
+  const visibleData = useMemo(() => slices.filter((d) => !hidden.has(d.key)), [slices, hidden])
 
-  const radius = Math.min(width, height) / 2 - 4
+  const radius = resolveDonutRadius({ plotW: width, plotH: height, frameW, side })
   const innerRadius = radius * innerRatio
   const centerX = width / 2
   const centerY = height / 2
 
-  const total = useMemo(() => visibleData.reduce((sum, d) => sum + d.value, 0), [visibleData])
-
-  const show = (d: DonutDatum<K>, event: PointerEvent<SVGGElement>) => {
-    setTip({ key: d.key, value: d.value, anchor: { x: event.clientX, y: event.clientY } })
+  const show = (d: Slice, event: PointerEvent<SVGGElement>) => {
+    setTip({ slice: d, anchor: { x: event.clientX, y: event.clientY } })
   }
   const hide = () => setTip(null)
 
@@ -157,7 +244,7 @@ function DonutPlot<K extends string = SeriesKey>(props: DonutPlotProps<K>) {
     <div style={{ position: 'relative' }}>
       <svg width={width} height={height}>
         <Group left={centerX} top={centerY}>
-          <Pie<DonutDatum<K>>
+          <Pie<Slice>
             data={visibleData}
             pieValue={(d) => d.value}
             pieSortValues={() => 0}
@@ -188,7 +275,7 @@ function DonutPlot<K extends string = SeriesKey>(props: DonutPlotProps<K>) {
                   >
                     <path
                       d={pie.path(arc) || ''}
-                      fill={colorForKey(key)}
+                      fill={arc.data.color}
                       stroke={VX.surface.panel}
                       strokeWidth={1.5}
                       opacity={hoveredKey === null || hoveredKey === key ? 1 : 0.4}
@@ -248,15 +335,15 @@ function DonutPlot<K extends string = SeriesKey>(props: DonutPlotProps<K>) {
         <ChartTooltipFloat anchor={tip.anchor}>
           <TooltipBody>
             <TooltipRow
-              color={colorForKey(tip.key)}
-              label={seriesLabel(tip.key)}
-              value={formatValue(tip.value)}
+              color={tip.slice.color}
+              label={tip.slice.label}
+              value={formatValue(tip.slice.value)}
               shape="bar"
             />
             <TooltipRow
               color={VX.grid}
               label="Share"
-              value={`${total > 0 ? Math.round((tip.value / total) * 100) : 0}%`}
+              value={`${sharePercent(tip.slice.value, total)}%`}
               shape="bar"
             />
           </TooltipBody>

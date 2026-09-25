@@ -175,6 +175,25 @@ compact 240–479, regular 480–799, wide ≥ 800):
   numeric `height` is an override and warns once in dev when it leaves the plot under
   `VX.minPlotHeight`. Inside a `ChartCard` the height is a minimum: the frame grows into a taller
   card body.
+- **The legend fits by measured width, and `legend.maxRows` is `@deprecated`** (dev-warns once,
+  removed in 1.31.0; an explicit value still wins this release, as an entry count). Overflow folds
+  into an **`All N`** chip (was `+N more` / `Show less`) that opens every entry, toggles included, in
+  a popover on a fine pointer and a bottom sheet on a coarse one — it never grows the band. A legend
+  never rolls up fewer than 2 entries and left-aligns (was centred) with a 6px row gap. Inside a
+  `ChartCard` with a header the legend now renders in the header slot instead of under the plot; a
+  frame under 240px (micro) draws no legend. The phone tier no longer caps a legend at two entries
+  by default.
+- **Hard removal, no grace window: `ChartTierMetrics.legendMaxRows`.** It was a public field of the
+  already-`@deprecated` `ChartTierMetrics` (a forwarder onto the container class), and it is deleted
+  outright in this release rather than kept for one more minor — nothing inside basalt reads it, and
+  the tier no longer caps a legend, so a stated value could only ever have been ignored. A consumer
+  reading `useChartTierMetrics().legendMaxRows` gets a `tsc` error; state a cap with
+  `legend.maxRows` where one is wanted.
+- **Selectors and text matching the old rollup move.** Anything matching `+N more` / `Show less`
+  (tests, e2e selectors, screenshots' text) now matches the `All N` chip and the disclosure it opens
+  (`role="dialog"`, name `Legend`, `data-basalt-legend-disclosure`); there is no in-place expand.
+- **Standalone `ChartLegend` no longer applies a tier entry cap.** It renders every entry unless
+  `maxRows` is passed; only `ChartFrame` derives a cap (from the measured fit).
 
 ## 1.30.2 — the `legendWins` collapse, and two things `ChartFrame` never said out loud
 

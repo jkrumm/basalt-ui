@@ -159,7 +159,7 @@ export function ChartCard({
   style,
   children,
 }: ChartCardProps) {
-  const [legendSlot, setLegendSlot] = useState<HTMLElement | null>(null)
+  const [legendSlot, setLegendSlot] = useState<HTMLDivElement | null>(null)
   const context = useMemo(() => ({ legendSlot, inCard: true }), [legendSlot])
   const resolvedState = resolveChartState({ ...(state !== undefined && { state }) })
   const hasHeader =

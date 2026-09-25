@@ -15,6 +15,10 @@ const TICK_FONT_FAMILY = 'var(--basalt-font-mono)'
 /** Halo stroke behind an inside y label, so it stays legible over the grid and marks. */
 const INSIDE_HALO_WIDTH = 3
 
+/** Tick label colour. Default `VX.faint`; a dual-axis chart tints it with its series' colour. */
+type TickColor = { tickColor?: string }
+const DEFAULT_TICK_COLOR = VX.faint
+
 /** Themed left numeric axis — baked-in theme colors + font size. The tick font tracks the ambient
  * chart tier (`docs/CHARTS-SPEC.md` §8); a caller measuring its own gutter must measure at the
  * SAME size (`chartTierMetrics().axisFont` into `autoMargin`'s `fontPx`), or the measured label
@@ -25,7 +29,8 @@ export function AxisLeftNumeric({
   tickFormat,
   tickValues,
   inside = false,
-}: {
+  tickColor = DEFAULT_TICK_COLOR,
+}: TickColor & {
   scale: AxisScale
   numTicks?: number
   tickFormat?: TickFormatter<number>
@@ -46,7 +51,7 @@ export function AxisLeftNumeric({
       tickLabelProps={
         inside
           ? {
-              fill: VX.faint,
+              fill: tickColor,
               fontFamily: TICK_FONT_FAMILY,
               fontSize: axisFont,
               textAnchor: 'start',
@@ -58,7 +63,7 @@ export function AxisLeftNumeric({
               paintOrder: 'stroke',
             }
           : {
-              fill: VX.faint,
+              fill: tickColor,
               fontFamily: TICK_FONT_FAMILY,
               fontSize: axisFont,
               dx: -4,
@@ -77,7 +82,8 @@ export function AxisRightNumeric({
   numTicks = 5,
   tickFormat,
   tickValues,
-}: {
+  tickColor = DEFAULT_TICK_COLOR,
+}: TickColor & {
   scale: AxisScale
   /** Left offset inside the Group (typically xMax). Required since AxisRight needs positioning. */
   left: number
@@ -95,7 +101,7 @@ export function AxisRightNumeric({
       {...(tickFormat !== undefined && { tickFormat })}
       {...(tickValues !== undefined && { tickValues: [...tickValues] })}
       tickLabelProps={{
-        fill: VX.faint,
+        fill: tickColor,
         fontFamily: TICK_FONT_FAMILY,
         fontSize: axisFont,
         dx: 4,

@@ -6,7 +6,10 @@ import { createContext } from 'react'
  * (RESPONSIVE-SPEC §3), so a card has one chrome band, not two. `null` until the slot mounts, and
  * outside any card. Deliberately not exported from any barrel.
  */
-export const ChartCardContext = createContext<{ legendSlot: HTMLElement | null; inCard: boolean }>({
+export const ChartCardContext = createContext<{
+  legendSlot: HTMLDivElement | null
+  inCard: boolean
+}>({
   legendSlot: null,
   inCard: false,
 })
