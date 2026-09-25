@@ -483,7 +483,7 @@ a `compact` container).
 | legend font        | `VX.legendFontSize` (`TEXT.sm`) | `TEXT.xs`          |
 | crosshair `dotR`   | `VX.dotR`                       | one step in        |
 | tooltip `minWidth` | 140                             | 110                |
-| legend entry cap   | none                            | 2, then `+N more`  |
+| legend entry cap   | measured fit                    | measured fit       |
 | margin FLOORS      | `VX.margin`                     | `VX.margin × 0.75` |
 
 - **The tick font is threaded into the MEASUREMENT, not just the paint** (`autoMargin`'s `fontPx`
@@ -492,10 +492,10 @@ a `compact` container).
 - **`xLabelRotate` unset auto-rotates to 45 at the phone metrics** when the measured labels cannot
   fit three ticks side by side (`autoXLabelRotate`); desktop never auto-rotates. `0` is the
   opt-out, and the rotation is refused unless it paints more labels than the flat axis.
-- **The phone legend's `+N more` is a `<button aria-expanded>` disclosure**: expanded, every entry
-  renders and the frame re-flows. The plot keeps `VX.minPlotHeight`; under `fill` that is what
-  `legendEntryCap` is for. A stated `legend.maxRows` overrides the tier and the fit, and the floor
-  yields to it.
+- **The legend fits its measured width** (never rolling up fewer than 2); overflow is an `All N`
+  `<button aria-expanded>` disclosure: a popover on a fine pointer, a bottom sheet on a coarse one,
+  so the band never grows. In a `ChartCard` the legend portals into the header slot. A stated
+  `legend.maxRows` (deprecated, 1.31.0) still overrides the fit.
 - **`height`** is derived from measured width × class when unstated, and is a MINIMUM inside a
   `ChartCard`. `{ base, regular, wide }` steps key on the class; a numeric literal is an override and
   warns once in dev when it leaves the plot under the floor.

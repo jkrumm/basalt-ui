@@ -198,14 +198,38 @@ then `/review` findings resolved.
 
 ## Wave 7 — Chart legend, donut, dual axis <!-- status: active -->
 
-- [ ] Legend: width-measured fit always, never roll up < 2, row gap 4–6 left-aligned, portal into the
+- [x] Legend: width-measured fit always, never roll up < 2, row gap 4–6 left-aligned, portal into the
       ChartCard header slot, "All N" disclosure (popover fine / sheet coarse); deprecate `legend.maxRows`
-- [ ] Donut aspect law (side legend W/H > 1.5, compact full list, 7+ → Other)
-- [ ] Dual-axis tick tint; delete "(left axis)" legend prose
-- [ ] End-of-line labels at wide (≤ 3 lines, collision fallback to chips)
+- [x] Donut aspect law (side legend W/H > 1.5, compact full list, 7+ → Other)
+- [x] Dual-axis tick tint; delete "(left axis)" legend prose
+- [x] End-of-line labels at wide (≤ 3 lines, collision fallback to chips)
 - [ ] Success metric: median data rect ≥ 0.55 at every viewport, none < 0.40. If it misses, write the
       gap into Left behind and do not tick this step
-      **Left behind:**
+      **Left behind:** MISSED, step 5 stays open, so the chain stops here. Medians (`.claude/mobile/w7/`,
+      `measure.mjs`): phone 0.480 (w6 0.454) · tablet 0.512 (0.485) · desktop 0.512 (0.504); target 0.55.
+      Two charts stay < 0.40 on every viewport, both `/charts` Primitives (Availability 0.30-0.34,
+      Negotiated link speed 0.30-0.31): short 206-232px cards whose 72-99px HEADER is ~43% of the card
+      (no legend band, gutters fine). Next lowest: Checkout funnel 0.42-0.46 (216px card, wrapped x
+      labels 40px), Sessions vs revenue 0.45-0.47 (right gutter for y2). The remaining lever is header
+      height / card min-height (chrome, not axes or legend): decide whether a header-height law
+      (title+subtitle+controls on one row at wide/regular) belongs in wave 7b, or lower the target.
+      Shipped (commits bd203a8, b5eb85b): `ChartFrame` renders from `resolveChartLayout().legend`;
+      `slotW` measured from the ChartCard header slot and the legend portals into it (slot now has a
+      consumer); `All N` disclosure = fixed-position `<dialog open>` portalled to body (popover fine /
+      sheet coarse, focus + Escape + aria-controls); `legend.maxRows` dev-warned (removeIn 1.31.0),
+      `ChartTierMetrics.legendMaxRows` HARD-removed (MIGRATING); standalone `ChartLegend` applies no tier
+      cap. Donut: `kinds/donut-layout.ts` (side legend past W/H 1.5 with hysteresis to 1.35, ring
+      `min(plotW, plotH, 0.55w)`, 7+ slices fold to Other, one `sharePercent` denominator). Dual axis:
+      `tickColor` on `AxisLeft/RightNumeric` (new optional prop). End labels: `layout/end-labels.ts`
+      `planEndLabels` (wide, no y2, <= 3 line series, no `margin.right`; none drawn if they cannot
+      separate: the legend stays, there is no chip fallback). **Deferred:** rolled entries are not ranked
+      by visual weight (series order); `legend.mode` `dots` vs `chips` does not change rendering; the
+      first `useLayoutEffect` slot bridge could become a `ChartCard`-owned measured slot in context;
+      `CartesianPlot` is fallow-CRITICAL (planEndLabels extraction helped, more to do); `Donut` accepts
+      no `legend.placement`/`maxRows` (it owns both); no `/dashboard/revenue` in the measure harness
+      (its 375 view shows only two KPI cards, unverified); end labels have no real-width test (SSR
+      width). Gate: `bun run pre` red only on `ai-sdk-transport.test.ts:339`; layout 107/107;
+      pack-test passed; budgets within ceiling; `/review` 6 blockers fixed, improvements 1-6 applied.
 
 ## Wave 8 — Chart touch model <!-- status: pending -->
 
