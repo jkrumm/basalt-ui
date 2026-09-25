@@ -87,6 +87,8 @@ export {
   type PageAsideSlot,
   useBreakpoint,
   type BreakpointName,
+  useSizeClass,
+  type SizeClass,
   PageTitle,
   type PageTitleProps,
   type PageTitleSlot,

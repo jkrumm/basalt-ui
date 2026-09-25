@@ -36,7 +36,10 @@ import { isDefaultDeriveConfig } from '../tokens/derive'
 import { buildPaletteData } from '../tokens/palette'
 import { isDev } from '../common/is-dev'
 import { registerColorSchemeSetter } from '../commands/shell-bridge'
+import { useIsomorphicLayoutEffect } from '../shell/isomorphic-layout-effect'
 import { PageTitle } from '../shell/page-title'
+import { SizeClassHintContext } from '../shell/use-size-class'
+import type { SizeClass } from '../shell/use-size-class'
 
 /**
  * Where an error surfaced — drives consumer routing (a render error vs a global rejection differ).
@@ -108,6 +111,20 @@ export type BasaltProviderProps = {
    * `ConnectivityProvider`).
    */
   connectivity?: Omit<ConnectivityProviderProps, 'children'>
+  /**
+   * The size class `useSizeClass()` reports on the server and during hydration, before `matchMedia`
+   * can answer. Default `'compact'` (mobile-first). An SSR app that knows the device class (UA
+   * hint, cookie) passes it so the first frame already matches. An SSR desktop app SHOULD pass it:
+   * without it the first paint is `'compact'`, and `PageAside`/`ThreadWorkspace` remount after
+   * hydration when the real class lands.
+   */
+  sizeClassHint?: SizeClass
+  /**
+   * Force `<html data-basalt-host>`. Unset → `'pwa'` when `(display-mode: standalone)` matches,
+   * else `'web'`. Pass `'native'` from a webview shell (Capacitor, Tauri) — no display-mode query
+   * can detect one.
+   */
+  host?: 'native'
 } & Omit<MantineProviderProps, 'children' | 'theme' | 'defaultColorScheme' | 'cssVariablesResolver'>
 
 // ── Default error handler ─────────────────────────────────────────────────────────────────────────
@@ -226,6 +243,28 @@ export function composeInjectedCss(
   densityCss: string,
 ): string {
   return [base, fontsCss, radiusCss, densityCss].filter(Boolean).join('\n')
+}
+
+// ── Host attribute ────────────────────────────────────────────────────────────────────────────────
+
+/** `data-basalt-host` on `<html>` — the one place a `display-mode` query is read; CSS keys off it. */
+export function useHostAttribute(forced: 'native' | undefined): void {
+  // Layout effect: the attribute must land before first paint, or a PWA flashes web chrome.
+  useIsomorphicLayoutEffect(() => {
+    const root = document.documentElement
+    const list =
+      forced === undefined && typeof window.matchMedia === 'function'
+        ? window.matchMedia('(display-mode: standalone)')
+        : null
+    const apply = (): void =>
+      root.setAttribute('data-basalt-host', forced ?? (list?.matches ? 'pwa' : 'web'))
+    apply()
+    list?.addEventListener('change', apply)
+    return () => {
+      list?.removeEventListener('change', apply)
+      root.removeAttribute('data-basalt-host')
+    }
+  }, [forced])
 }
 
 // ── Inner bridge ──────────────────────────────────────────────────────────────────────────────────
@@ -355,9 +394,12 @@ export function BasaltProvider({
   onError,
   nonce,
   connectivity,
+  sizeClassHint = 'compact',
+  host,
   ...rest
 }: BasaltProviderProps) {
   useDuplicateProviderGuard()
+  useHostAttribute(host)
   const errorHandler = onError ?? defaultOnError
 
   // `createBasaltTheme(theme)` — plus, when the theme lab's "Apply" switch is on, the delta of its
@@ -386,7 +428,9 @@ export function BasaltProvider({
           nonce={nonce}
           onError={errorHandler}
         >
-          <ConnectivityProvider {...resolvedConnectivity}>{children}</ConnectivityProvider>
+          <SizeClassHintContext.Provider value={sizeClassHint}>
+            <ConnectivityProvider {...resolvedConnectivity}>{children}</ConnectivityProvider>
+          </SizeClassHintContext.Provider>
         </BasaltBridge>
       </BasaltErrorBoundary>
     </MantineProvider>

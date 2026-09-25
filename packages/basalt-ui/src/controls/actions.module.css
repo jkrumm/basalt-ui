@@ -24,7 +24,7 @@
   padding: 0 var(--vx-space-row-inset-x);
 }
 
-@media (max-width: 47.99375em) {
+@media (pointer: coarse) {
   .menuItem,
   .customRow {
     min-height: var(--vx-space-sheet-row-height);

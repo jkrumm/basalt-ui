@@ -167,7 +167,7 @@ describe('buildPaletteCss core-only spacing', () => {
     expect(buildPaletteCss({ only: 'all' })).toBe(buildPaletteCss())
   })
 
-  it('drops 108 of the 122 spacing variables, taking the set from 250 to 142', () => {
+  it('drops 108 of the 120 spacing variables, taking the set from 249 to 141', () => {
     // 211 canonical (all kebab-case, since the 1.4.0 rename) + 32 legacy camelCase aliases
     // (default `legacyAliases: true`) = 243; the alias set is spacing-free, so it rides along
     // unchanged in both `all` and `core`. 211 = 202 at 1.20.0 plus the `nano`/`display` type rungs plus the ten control-tier
@@ -187,16 +187,17 @@ describe('buildPaletteCss core-only spacing', () => {
     // `--vx-space-section-gap`, which NAME values the cards and `Section` already rendered so that
     // the `< sm` override has a role token to re-point) = 250. That override is a `@media` block,
     // not a fifth and sixth name — `varNames` is a SET, so re-declaring a var at a breakpoint moves
-    // none of these counts.
-    expect(all.size).toBe(250)
-    expect(core.size).toBe(142)
-    expect([...all].filter((n) => n.startsWith('space-'))).toHaveLength(122)
-    expect([...core].filter((n) => n.startsWith('space-'))).toHaveLength(14)
+    // none of these counts. The pointer-tier collapse then swaps `--vx-space-touch-target` and
+    // `--vx-space-touch-control-height` for the one non-space `--vx-hit` = 249.
+    expect(all.size).toBe(249)
+    expect(core.size).toBe(141)
+    expect([...all].filter((n) => n.startsWith('space-'))).toHaveLength(120)
+    expect([...core].filter((n) => n.startsWith('space-'))).toHaveLength(12)
   })
 
-  it('keeps exactly the SPACE anchors plus the touch-target floor — the partition tracks the constants, not a list', () => {
+  it('keeps exactly the SPACE anchors — the partition tracks the constants, not a list', () => {
     const kept = [...core].filter((n) => n.startsWith('space-')).toSorted()
-    const expected = [...Object.keys(SPACE).map(spaceVar), 'space-touch-target'].toSorted()
+    const expected = Object.keys(SPACE).map(spaceVar).toSorted()
     expect(kept).toEqual(expected)
   })
 
@@ -288,8 +289,9 @@ describe('legacy camelCase aliases (1.4.0 kebab-case rename)', () => {
     const withoutAliases = varNames(buildPaletteCss({ legacyAliases: false }))
     // 211 + the 1.29.0 `--vx-space-touch-target` addition (C5 consolidation) = 212, + the two
     // 2026-09 app-shell-inset vars = 214, + the four of that round's second chrome pass (the header
-    // lead floor and the three-var card/section inset ladder) = 218.
-    expect(withoutAliases.size).toBe(218)
+    // lead floor and the three-var card/section inset ladder) = 218, then -1 for the pointer-tier
+    // collapse (two touch vars out, `--vx-hit` in) = 217.
+    expect(withoutAliases.size).toBe(217)
     expect(withAliases.size).toBe(withoutAliases.size + 32)
     for (const name of withoutAliases) expect(withAliases.has(name)).toBe(true)
   })

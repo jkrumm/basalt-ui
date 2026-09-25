@@ -4,7 +4,7 @@
  * Composes `ThreadFeed` + a new-thread `Composer` (left/main pane) with `ThreadDetailPanel`
  * (right pane) over `useAgentThreadRuns`, so a consumer wires one component instead of hand-
  * assembling the pieces. Responsive: wide viewports show both panes side by side; narrow
- * viewports (`<= 768px`) show exactly one — the feed when no thread is open, a full-screen
+ * viewports (the `compact` size class, < 840px) show exactly one — the feed when no thread is open, a full-screen
  * detail panel once one is.
  *
  * `useThreads` is a prop, not called internally, because `createThreadsStore` must be invoked
@@ -32,14 +32,14 @@
  *   )
  * }
  */
-import { Box, Divider, Flex, Skeleton, Stack, Text, useMantineTheme } from '@mantine/core'
-import { useMediaQuery } from '@mantine/hooks'
+import { Box, Divider, Flex, Skeleton, Stack, Text } from '@mantine/core'
 import type { JSX, ReactNode } from 'react'
 import type { AgentPart, AgentTransport, OutcomeResolver, ThreadsStore } from '../agent'
 import { useAgentThreadRuns } from '../agent'
 import { cx } from '../common/props'
 import type { BasaltProps, SlotStylesProps } from '../common/props'
 import { assertRequiredProps } from '../common/validate'
+import { useSizeClass } from '../shell/use-size-class'
 import { VX } from '../tokens'
 import { Composer } from './composer'
 import { ThreadDetailPanel } from './thread-detail-panel'
@@ -53,7 +53,7 @@ const FULL_HEIGHT_STYLE = { height: '100%' } as const
 
 /** The four boxes `ThreadWorkspace` paints: `root` is the outermost pane split, `feed` is the
  * thread-list pane, `composer` is the new-thread composer pinned under the feed, `detail` is the
- * right-hand (or, below 768px, full-screen) open-thread pane. */
+ * right-hand (or, in the `compact` size class, full-screen) open-thread pane. */
 export type ThreadWorkspaceSlot = 'root' | 'feed' | 'composer' | 'detail'
 
 export type ThreadWorkspaceProps = BasaltProps &
@@ -146,7 +146,7 @@ function FeedErrorState(): JSX.Element {
 /**
  * A two-pane master-detail thread workspace: a scrollable feed of threads with an anchored
  * new-thread composer, and a detail panel for the open thread's live transcript. Collapses to a
- * single pane below 768px.
+ * single pane in the `compact` size class (< 840px).
  *
  * @example
  * <ThreadWorkspace useThreads={useThreads} transport={transport} resolveOutcome={heuristicOutcome} />
@@ -165,12 +165,9 @@ export function ThreadWorkspace({
   assertRequiredProps('ThreadWorkspace', { useThreads }, ['useThreads'])
   const store = useThreads()
   const runs = useAgentThreadRuns({ transport, store, resolveOutcome })
-  // Matches `shell/page-aside.tsx`'s own `theme.breakpoints.sm` desktop check — read off the theme,
-  // not hardcoded, so a consumer that retunes `breakpoints.sm` moves the aside and this workspace
-  // together. `max-width` is the min-width complement: `sm − 0.00625em` (the same 0.1px offset
-  // Mantine's own CSS breakpoints use), so the two checks never straddle the same pixel.
-  const theme = useMantineTheme()
-  const narrow = useMediaQuery(`(max-width: calc(${theme.breakpoints.sm} - 0.00625em))`)
+  // Narrow = the compact size class — the same viewport axis as the shell, and SSR/first-frame
+  // correct (the provider's `sizeClassHint` is the server snapshot, no post-mount flip).
+  const narrow = useSizeClass() === 'compact'
 
   const threads = store.threads
   const activeThread = threads.find((thread) => thread.id === store.activeId) ?? null

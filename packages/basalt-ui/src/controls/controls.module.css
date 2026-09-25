@@ -4,7 +4,7 @@
  * Two form factors per control, ONE mount each, switched by CSS only (C9): the `pill` surface
  * (bordered 30px chip + popover) and the `sheet` surface (`PanelRow` label-above-control rows
  * inside the mobile `Filters (n)` Drawer — the same rows the aside's `panel` surface renders;
- * `panel-row.module.css` owns their geometry). `48em` / `47.99375em` are the `sm` breakpoint in the
+ * `panel-row.module.css` owns their geometry). `52.5em` / `52.49375em` are the `sm` size-class boundary in the
  * exact literal form every other basalt CSS module uses — a media query cannot resolve a custom
  * property, so the breakpoint cannot be a token (see `content/prose.module.css`'s note).
  */
@@ -50,7 +50,7 @@
 }
 
 /* Below `sm` only the first `inline` slots are pills; the rest live in the sheet. */
-@media (max-width: 47.99375em) {
+@media (max-width: 52.49375em) {
   .pillSlot:not([data-inline]) {
     display: none;
   }
@@ -60,7 +60,7 @@
  * Folding is a DESKTOP concern only — scoped to `min-width` so a width measured on a wide viewport
  * can never hide a slot the mobile `inline` budget is supposed to keep.
  */
-@media (min-width: 48em) {
+@media (min-width: 52.5em) {
   .pillSlot[data-folded] {
     display: none;
   }
@@ -71,7 +71,7 @@
   display: none;
 }
 
-@media (min-width: 48em) {
+@media (min-width: 52.5em) {
   .foldPill[data-shown] {
     display: inline-flex;
   }
@@ -81,7 +81,7 @@
   display: none;
 }
 
-@media (max-width: 47.99375em) {
+@media (max-width: 52.49375em) {
   .sheetPill {
     display: inline-flex;
   }
@@ -157,7 +157,7 @@
   color: var(--vx-ink);
 }
 
-@media (max-width: 47.99375em) {
+@media (pointer: coarse) {
   /* Mantine's Button root clips to its box; the overlay must escape it to be hit-testable. Loading
    * buttons keep the clip their overlay depends on (same pairing as page-bar.module.css). */
   .pill:not([data-loading]) {
@@ -167,13 +167,13 @@
   .pill::before {
     content: '';
     position: absolute;
-    /* Both operands scale with `--mantine-scale` (same reconstruction the theme uses for every
-     * other ctl-tier box, `theme/index.ts`'s `ctlSizeVars`) so the overlay stays centred on — and
-     * sized off — the ACTUAL scaled pill box, not its unscaled rem value. */
+    /* The pill height scales with `--mantine-scale` (same reconstruction the theme uses for every
+     * other ctl-tier box, `theme/index.ts`'s `ctlSizeVars`) so the overlay stays centred on the
+     * ACTUAL scaled pill box; `--vx-hit` is a fixed px target and does not scale. */
     inset-block: calc(
       (
           calc(var(--vx-space-control-height-ctl, 1.875rem) * var(--mantine-scale, 1)) -
-            calc(var(--vx-space-touch-control-height, 2.25rem) * var(--mantine-scale, 1))
+            var(--vx-hit, 44px)
         ) /
         2
     );

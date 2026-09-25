@@ -188,8 +188,8 @@
 }
 
 /*
- * Law C15 — every touch target inside a home is at least `touchControlHeight` (36px at level 0)
- * below `sm`, while the VISIBLE box stays the 30px `ctl` tier. `::after` and not `::before`:
+ * Law C15 — every touch target inside a home is at least `--vx-hit` (44px under
+ * `(pointer: coarse)`), while the VISIBLE box stays the 30px `ctl` tier. `::after` and not `::before`:
  * Mantine's Button owns `::before` for its loading overlay (`@mantine/core/styles/Button.css`),
  * so a hit area drawn there would fight it. `pointer-events` stays default so the overlay is the
  * one receiving the tap.
@@ -200,7 +200,7 @@
  * above the control misses. What `overflow: hidden` buys those roots is clipping the loading
  * overlay's blur, and that overlay is only painted under `[data-loading]`, which is excluded below.
  */
-@media (max-width: 47.99375em) {
+@media (pointer: coarse) {
   .row1 :is(button, a),
   .row2 :is(button, a) {
     position: relative;
@@ -220,10 +220,12 @@
     translate: -50% -50%;
     width: 100%;
     height: 100%;
-    min-width: var(--vx-space-touch-control-height);
-    min-height: var(--vx-space-touch-control-height);
+    min-width: var(--vx-hit);
+    min-height: var(--vx-hit);
   }
+}
 
+@media (max-width: 52.49375em) {
   /*
    * Row 2's phone form: two declared lines, tabs then pills — not a wrap (law C7). `.pills` folds
    * every overflow into `Filters (n)` at any width, EXCEPT when it holds nothing visible: below `sm`

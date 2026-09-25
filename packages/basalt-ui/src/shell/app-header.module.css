@@ -148,10 +148,10 @@
  * the row's elastic side truncated `Overview / Dashboard` to `O… / D…`, which is two ellipses and a
  * separator in place of the one word that says where the reader is.
  *
- * `47.99375em` is the `sm` breakpoint in the exact literal form every other basalt CSS module uses —
+ * `52.49375em` is the `sm` breakpoint in the exact literal form every other basalt CSS module uses —
  * a media query cannot resolve a custom property.
  */
-@media (max-width: 47.99375em) {
+@media (max-width: 52.49375em) {
   .crumbAncestors {
     display: none;
   }

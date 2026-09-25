@@ -261,7 +261,7 @@ describe('page-bar.module.css', () => {
   test('the mobile hit area rides ::after — Mantine owns Button::before for its loading overlay', () => {
     expect(decls).toContain('::after')
     expect(decls).not.toContain('::before')
-    expect(decls).toContain('min-height: var(--vx-space-touch-control-height)')
+    expect(decls).toContain('min-height: var(--vx-hit)')
   })
 
   test('the hit area un-clips its own host — Mantine roots are overflow: hidden', () => {

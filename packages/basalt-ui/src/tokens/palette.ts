@@ -321,11 +321,6 @@ const SPACE_ANCHORS_BASE = {
    * and the whole band looked unresolved. 32 lands the entire chrome tier on ONE number, which is
    * also the smallest square that still holds a 16px icon with a 8px surround. */
   controlHeightCtl: 32,
-  /** The touch hit-area size (`::before`) every home control expands to below `sm` (C15,
-   * `docs/CONTROLS-SPEC.md` §5) — independent of the visible `controlHeightCtl` box, same shape as
-   * `mobileNavBarHeight`/`mobileNavRowHeight`'s Apple HIG 44pt / WCAG 2.5.5 floors elsewhere in this
-   * table. Floored at 30px in {@link deriveSpacing} (C15's "floor 30 at density −3"). */
-  touchControlHeight: 36,
 } as const
 
 /**
@@ -618,9 +613,8 @@ const SPACE_STEP_BASE = {
    *
    *  44, down from 48. The band holds ONE `ctl`-tier row (32 since this pass), so 48 left 8px of
    *  dead air above and below it — the "too much spacing at the top bar" the header reads as. 44
-   *  keeps 6px of breathing room a side, still clears `touchControlHeight` (36) below `sm` and
-   *  `controlHeight` (42) for a `size="md"` control, and is the Apple HIG 44pt figure the rest of
-   *  this table already floors its touch targets at. */
+   *  keeps 6px of breathing room a side, still clears `controlHeight` (42) for a `size="md"`
+   *  control, and is the 44px touch floor (WCAG 2.5.5). */
   appShellHeaderHeight: 44,
   /** AppShell navbar width, expanded — ONE entry for both the `base` (mobile, where the navbar is
    *  permanently collapsed and unused — see `MobileNav`) and the expanded `sm` value: the same
@@ -696,12 +690,9 @@ const SPACE_STEP_BASE = {
   mobileNavTabInsetY: 2,
   /** Active-pill inset around the slot icon, horizontal. */
   mobileNavTabInsetX: 12,
-  /** Menu/sheet row height. Floored at 40px in `deriveSpacing` — a deliberate design choice, not
-   *  a WCAG floor: it's the row height shared with the desktop sidebar rows, above the WCAG 2.5.8
-   *  AA minimum (24px) and below the 2.5.5 AAA figure (44px, the size `mobileNavBarHeight`/
-   *  `sheetRowHeight` still hold to) — the shortest box that still reads as ONE row vocabulary with
-   *  the sidebar instead of a bespoke touch size. */
-  mobileNavRowHeight: 40,
+  /** Menu/sheet row height — the WCAG 2.5.5 44px target, floored at 44 in `deriveSpacing` (the
+   *  pointer tier's `--vx-hit` is the same number under `(pointer: coarse)`). */
+  mobileNavRowHeight: 44,
   /** More/group `<Menu width={…}>`. JS-consumed, no var — same rationale as
    *  `sidebarSettingsMenuWidth` directly above. */
   mobileNavMenuWidth: 232,
@@ -853,18 +844,6 @@ export const SPACE_FIXED = {
    * `[-3, 3]` range can produce) for no compensating benefit, since the two radii it sits between
    * never move independently of each other. */
   segmentedTrackInset: 2,
-  /**
-   * The WCAG 2.5.5/2.5.8 touch-target floor (44px) for a hit area that has no `ctl`-tier home to
-   * size it — a raw CSS-module rule bumping a control's hit area under `@media (pointer: coarse)`
-   * (C5 consolidation: argo carried three such rules with a hand-picked 44/46px literal apiece).
-   * Density-exempt for the same reason `touchControlHeight`'s FLOOR is: a target this small must
-   * never shrink further, whatever the density knob says elsewhere. Unlike the rest of this
-   * object, this ONE key IS emitted as a `--vx-*` var (`tokens/index.ts`'s `space-touch-target`) —
-   * the others stay JS-only because nothing outside the framework's own components reads them, but
-   * this floor's whole purpose is being read by a CONSUMER's own `.module.css`, which cannot
-   * import a JS ref at all.
-   */
-  spaceTouchTarget: 44,
 } as const
 
 /**
@@ -1095,7 +1074,6 @@ export function deriveSpacing(level: number): SpaceValues {
   anchors.controlHeightTag = Math.max(18, anchors.controlHeightTag)
   anchors.controlHeightWidget = Math.max(22, anchors.controlHeightWidget)
   anchors.controlHeightCtl = Math.max(28, anchors.controlHeightCtl)
-  anchors.touchControlHeight = Math.max(30, anchors.touchControlHeight)
 
   const mappedStep = mapSpaceGroup(SPACE_STEP_BASE, level, multiplier)
   // WCAG 2.5.8 minimum interactive-target size — see this function's doc for why the trigger's
@@ -1112,7 +1090,7 @@ export function deriveSpacing(level: number): SpaceValues {
   // box) would render at 47px if the floor stopped at 48. +1 buys back exactly the pixel the seam
   // claims, so the tappable bar itself still measures >= 48.
   mappedStep.mobileNavBarHeight = Math.max(49, mappedStep.mobileNavBarHeight)
-  mappedStep.mobileNavRowHeight = Math.max(40, mappedStep.mobileNavRowHeight)
+  mappedStep.mobileNavRowHeight = Math.max(44, mappedStep.mobileNavRowHeight)
   // Same floor family, same reason — `sheetRowHeight`'s own doc names it "same floor family as
   // `mobileNavRowHeight`", but nothing enforced that below level 0 until now.
   mappedStep.sheetRowHeight = Math.max(44, mappedStep.sheetRowHeight)

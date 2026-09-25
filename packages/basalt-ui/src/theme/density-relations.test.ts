@@ -186,9 +186,9 @@ describe('Fix 4 — every interactive target clears the WCAG 2.5.8 24px floor at
     expect(deriveSpacing(-3).step.mobileNavBarHeight).toBe(49)
   })
 
-  test('a mobile nav menu/sheet row never drops below its own 40px floor', () => {
+  test('a mobile nav menu/sheet row never drops below its own 44px floor', () => {
     for (const level of ALL_LEVELS) {
-      expect(deriveSpacing(level).step.mobileNavRowHeight).toBeGreaterThanOrEqual(40)
+      expect(deriveSpacing(level).step.mobileNavRowHeight).toBeGreaterThanOrEqual(44)
     }
   })
 
@@ -207,16 +207,6 @@ describe('Fix 4 — every interactive target clears the WCAG 2.5.8 24px floor at
       expect(anchors.controlHeight).toBeGreaterThanOrEqual(24)
       expect(anchors.inputHeight).toBeGreaterThanOrEqual(24)
     }
-  })
-
-  // C15 (`docs/CONTROLS-SPEC.md` §5): "every touch target inside a home is ≥36px below `sm` (floor
-  // 30 at density −3)". Without the floor the 1 + 0.1*level multiplier takes 36 -> 25 at level -3,
-  // well under even the 24px WCAG floor above.
-  test('touchControlHeight never drops below its own 30px floor (C15)', () => {
-    for (const level of ALL_LEVELS) {
-      expect(deriveSpacing(level).anchors.touchControlHeight).toBeGreaterThanOrEqual(30)
-    }
-    expect(deriveSpacing(-3).anchors.touchControlHeight).toBe(30)
   })
 
   test('the remaining controls-tier anchors clear their own floors at every level', () => {
@@ -385,7 +375,7 @@ describe('Fix 6 — BasaltShell AppShell dimensions track density', () => {
     }
   })
 
-  test('the header is ONE row at every viewport, and it holds a touch target below sm', () => {
+  test('the header is ONE row at every viewport, and it holds a ctl row', () => {
     // The invariant this replaced was a BUDGET: `appShellHeaderMobileHeight` was a documented SUM
     // (row 1 + `SPACE_SCALE.sm` + `appHeaderMobileActionsHeight`), so row 1 was whatever the total
     // left over, and raising an addend without raising the total silently ate the target-size margin
@@ -395,12 +385,11 @@ describe('Fix 6 — BasaltShell AppShell dimensions track density', () => {
     // 1.26.0 deletes the sum instead of re-tuning it: `PageBar` folds the page's overflow into a
     // kebab and moves filters/tabs into the page flow, so there is no second mobile row to reserve
     // (law C14) and the header is `appShellHeaderHeight` at EVERY width. Row 1's budget is therefore
-    // the whole header, and the thing worth asserting is what law C15 actually promises — that a
-    // `touchControlHeight` target fits inside it below `sm`.
+    // the whole header, and the thing worth asserting is that one `ctl`-tier row fits inside it (the
+    // touch floor is the density-exempt `--vx-hit`, not a density anchor).
     for (const level of ALL_LEVELS) {
       const { step, anchors } = deriveSpacing(level)
-      expect(step.appShellHeaderHeight).toBeGreaterThanOrEqual(anchors.touchControlHeight)
-      expect(anchors.touchControlHeight).toBeGreaterThanOrEqual(anchors.controlHeightCtl)
+      expect(step.appShellHeaderHeight).toBeGreaterThanOrEqual(anchors.controlHeightCtl)
     }
   })
 
