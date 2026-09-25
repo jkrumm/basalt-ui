@@ -68,17 +68,32 @@ then `/review` findings resolved.
       `agent/ai-sdk-transport.test.ts:339` (approval-responded missing `signature`).
       Gate: `make verify` = pre red only on that test; layout 83/83; pack-test passed.
 
-## Wave 3 — Shell: compact / medium / expanded <!-- status: active -->
+## Wave 3 — Shell: compact / medium / expanded <!-- status: done -->
 
-- [ ] Shell size classes: bottom bar < 840, rail + overlay aside 840–1199, full sidebar ≥ 1200 with
+- [x] Shell size classes: bottom bar < 840, rail + overlay aside 840–1199, full sidebar ≥ 1200 with
       the aside docked only while main ≥ 720; persisted state distinguishes unset from explicitly false
-- [ ] PageBar row-1 fold by measured width (reuse useTrackFits); icon-less secondaries fold
-- [ ] Public shell bottom inset (`--app-shell-footer-offset`); toasts above the tab bar + safe area
-- [ ] Landscape-phone compact header/bottom bar
-- [ ] `no-horizontal-overflow.layout.test.ts` at 375/768/1024/1440; shots before/after
-      **Left behind:**
+- [x] PageBar row-1 fold by measured width (reuse useTrackFits); icon-less secondaries fold
+- [x] Public shell bottom inset (`--app-shell-footer-offset`); toasts above the tab bar + safe area
+- [x] Landscape-phone compact header/bottom bar
+- [x] `no-horizontal-overflow.layout.test.ts` at 375/768/1024/1440; shots before/after
+      **Left behind:** Docking: compact <840 bottom bar; medium = rail sidebar by default (only while the
+      collapse store is UNSET — `createPersistedStore` in `state/persisted.ts` is `@internal`, returns
+      `[value, set, isSet]`) + aside as a 36px rail whose open panel overlays main (persistent, closed by its
+      fold button — no scrim/Escape/outside-click); expanded docks the aside only while main keeps >=720
+      (`MAIN_MIN_WIDTH`, `AsideDocksContext` seeded synchronously by ShellFrame). `PageAside defaultFolded`
+      now defaults to `!docks`. `--app-shell-footer-offset` is Mantine-emitted on `:root` (documented in
+      `app-main.module.css`); toasts consume it via a rule in `styles.css`. Landscape phone: header 40 / bar
+      45, labels visually hidden (CSS literals in `app-main.module.css`, not tokens). PageBar row 1 folds by
+      measured width (`planBarFold`/`useMeasuredFold` in `controls/actions.tsx`); `DESKTOP_SECONDARY_MAX` and
+      the md label fold removed (MIGRATING). **Known gaps:** slot-host actions (Section, DataTable header)
+      no longer fold at all — only `host: 'page'` measures (C6 caps them at 3/5); `MORE_WIDTH = 80` is an
+      estimate; the medium sidebar expand toggle still pushes main rather than overlaying; no before/after
+      shots were taken (layout suite asserts geometry instead); `actions.tsx` is now large (split into
+      `bar-fold.ts` if it grows); review's `useShellDocking` hook restructuring and CSS duplicate-block
+      consolidation were deferred. Gate: `bun run pre` red only on `ai-sdk-transport.test.ts:339`, layout
+      92/92, budgets 396/400 · 750/750 · 2479/2480.
 
-## Wave 4 — Touch tier <!-- status: pending -->
+## Wave 4 — Touch tier <!-- status: active -->
 
 - [ ] Adopt `[data-basalt-hit]` in every interactive primitive: the C1 homes, SettingsRow/FormRow
       control slot, InfoGlyph, DataTable pagination (into CtlSlot) + selection cell, legend toggles,
