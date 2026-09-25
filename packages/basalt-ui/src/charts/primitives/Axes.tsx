@@ -12,6 +12,9 @@ import { useChartTierMetrics } from './chart-tier'
  */
 const TICK_FONT_FAMILY = 'var(--basalt-font-mono)'
 
+/** Halo stroke behind an inside y label, so it stays legible over the grid and marks. */
+const INSIDE_HALO_WIDTH = 3
+
 /** Themed left numeric axis — baked-in theme colors + font size. The tick font tracks the ambient
  * chart tier (`docs/CHARTS-SPEC.md` §8); a caller measuring its own gutter must measure at the
  * SAME size (`chartTierMetrics().axisFont` into `autoMargin`'s `fontPx`), or the measured label
@@ -21,12 +24,16 @@ export function AxisLeftNumeric({
   numTicks = 5,
   tickFormat,
   tickValues,
+  inside = false,
 }: {
   scale: AxisScale
   numTicks?: number
   tickFormat?: TickFormatter<number>
   /** Exact tick positions (e.g. a compass axis at 0/90/180/270). Overrides `numTicks`. */
   tickValues?: readonly number[]
+  /** Labels drawn over the grid, left-aligned above their line, on a surface-coloured halo — the
+   * caller reserves no gutter for them (`docs/waves/RESPONSIVE-SPEC.md` §4 step 5). */
+  inside?: boolean
 }) {
   const { axisFont } = useChartTierMetrics()
   return (
@@ -35,12 +42,28 @@ export function AxisLeftNumeric({
       numTicks={numTicks}
       {...(tickFormat !== undefined && { tickFormat })}
       {...(tickValues !== undefined && { tickValues: [...tickValues] })}
-      tickLabelProps={{
-        fill: VX.faint,
-        fontFamily: TICK_FONT_FAMILY,
-        fontSize: axisFont,
-        dx: -4,
-      }}
+      {...(inside && { tickLength: 0, hideTicks: true })}
+      tickLabelProps={
+        inside
+          ? {
+              fill: VX.faint,
+              fontFamily: TICK_FONT_FAMILY,
+              fontSize: axisFont,
+              textAnchor: 'start',
+              dx: 4,
+              dy: '-0.35em',
+              stroke: VX.surface.panel,
+              strokeWidth: INSIDE_HALO_WIDTH,
+              strokeLinejoin: 'round',
+              paintOrder: 'stroke',
+            }
+          : {
+              fill: VX.faint,
+              fontFamily: TICK_FONT_FAMILY,
+              fontSize: axisFont,
+              dx: -4,
+            }
+      }
       stroke={VX.surface.border}
       tickStroke={VX.surface.border}
     />
@@ -134,6 +157,18 @@ export function AxisBottomNumeric({
  */
 const ROTATED_OFFSET = ROTATED_LABEL_OFFSET
 
+/** `textAnchor` of one x label: inward at the two terminals when asked, centred otherwise. */
+export function terminalAnchor(input: {
+  anchorTerminals: boolean
+  index: number
+  count: number
+}): 'start' | 'middle' | 'end' {
+  const { anchorTerminals, index, count } = input
+  if (!anchorTerminals || count < 2) return 'middle'
+  if (index === 0) return 'start'
+  return index === count - 1 ? 'end' : 'middle'
+}
+
 /** Themed bottom date axis — baked-in smartTicks + DD.MM formatting. */
 export function AxisBottomDate({
   scale,
@@ -141,10 +176,17 @@ export function AxisBottomDate({
   tickValues,
   tickFormat = fmtAxisDate,
   rotate,
+  anchorTerminals = false,
+  wrapWidth,
 }: {
   scale: AxisScale
   top: number
   tickValues: string[]
+  /** First label anchored `start`, last `end`, so the terminals stay inside the plot instead of
+   * overflowing it. Ignored when rotated. */
+  anchorTerminals?: boolean
+  /** Wrap each label to this many px (SVG tspans) instead of thinning or rotating it. */
+  wrapWidth?: number
   /**
    * Defaults to `fmtAxisDate` (DD.MM). Override for a sub-day window, where DD.MM collapses every
    * tick to the same label.
@@ -165,14 +207,18 @@ export function AxisBottomDate({
       scale={scale}
       tickValues={tickValues}
       tickFormat={tickFormat}
-      tickLabelProps={{
+      tickLabelProps={(_value, index, values) => ({
         fill: VX.faint,
         fontFamily: TICK_FONT_FAMILY,
         fontSize: axisFont,
-        textAnchor: rotated === undefined ? 'middle' : 'end',
+        textAnchor:
+          rotated !== undefined
+            ? 'end'
+            : terminalAnchor({ anchorTerminals, index, count: values.length }),
         ...(rotate !== undefined && { angle: -rotate }),
         ...(rotated !== undefined && { dx: rotated.dx, dy: rotated.dy }),
-      }}
+        ...(wrapWidth !== undefined && rotated === undefined && { width: wrapWidth }),
+      })}
       stroke={VX.surface.border}
       tickStroke={VX.surface.border}
     />

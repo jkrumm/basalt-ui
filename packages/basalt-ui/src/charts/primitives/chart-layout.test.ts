@@ -5,7 +5,15 @@
 import { describe, expect, test } from 'bun:test'
 import { CONTAINER_CLASSES } from '../../tokens/size-classes'
 import type { ContainerClass } from '../../tokens/size-classes'
-import { resolveChartLayout } from './chart-layout'
+import {
+  compactNumber,
+  planXLabels,
+  resolveAxisEconomy,
+  resolveChartLayout,
+  shouldCompactYLabels,
+  wrapLabel,
+  yTickCount,
+} from './chart-layout'
 import type { ChartLayoutInput } from './chart-layout'
 import type { LegendEntry } from './ChartLegend'
 
@@ -155,8 +163,103 @@ describe('axes stay populated for the next step', () => {
     const many = Array.from({ length: 40 }, (_, i) => `Category ${i}`)
     expect(
       layout({ frameW: 900, categorical: true, xLabels: many.slice(0, 3) }).xAxis,
-    ).toMatchObject({ wrap: true, rotate: 0 })
+    ).toMatchObject({ wrap: false, rotate: 0 })
     expect(layout({ frameW: 400, categorical: true, xLabels: many }).xAxis.rotate).toBe(45)
     expect(layout({ frameW: 200, xLabels: many }).xAxis.thinTo).toBe(2)
+  })
+})
+
+describe('ladder step 1: compact y number format', () => {
+  const table: [number, string | null][] = [
+    [999, null],
+    [1000, '1k'],
+    [12500, '12.5k'],
+    [-12500, '-12.5k'],
+    [1_200_000, '1.2M'],
+    [3_000_000_000, '3B'],
+    [2_500_000_000_000, '2.5T'],
+    [0.5, null],
+  ]
+  test.each(table)('compactNumber(%p) = %p', (value, expected) => {
+    expect(compactNumber(value)).toBe(expected)
+  })
+
+  test('only labels longer than 4 chars ask for it', () => {
+    expect(shouldCompactYLabels(['0', '5,000'])).toBe(true)
+    expect(shouldCompactYLabels(['0', '500', '1000'])).toBe(false)
+  })
+})
+
+describe('ladder step 2: y tick count', () => {
+  const table: [number, number][] = [
+    [90, 2], // under VX.minPlotHeight: thin to 2
+    [119, 2],
+    [120, 3],
+    [176, 4],
+    [220, 5],
+    [1000, 6],
+  ]
+  test.each(table)('plot height %p -> %p ticks', (height, ticks) => {
+    expect(yTickCount(height)).toBe(ticks)
+  })
+})
+
+describe('ladder step 3-4: wrap, rotate and terminals', () => {
+  test('wrapLabel breaks on words by measured width and keeps an over-wide word whole', () => {
+    expect(wrapLabel('Mar 08 14:00', 1000, 10)).toEqual(['Mar 08 14:00'])
+    const parts = wrapLabel('Mar 08 14:00', 30, 10)
+    expect(parts.length).toBeGreaterThan(1)
+    expect(parts.join(' ')).toBe('Mar 08 14:00')
+    expect(wrapLabel('Supercalifragilistic', 5, 10)).toEqual(['Supercalifragilistic'])
+  })
+
+  const labels = Array.from({ length: 6 }, (_, i) => `Category ${i}`)
+  test('labels that fit flat neither wrap nor rotate', () => {
+    expect(planXLabels({ labels, plotWidth: 2000, fontPx: 10, categorical: true })).toMatchObject({
+      wrap: false,
+      rotate: 0,
+      lines: 1,
+    })
+  })
+
+  test('multi-word labels that do not fit wrap before they rotate', () => {
+    const plan = planXLabels({ labels, plotWidth: 300, fontPx: 10, categorical: true })
+    expect(plan).toMatchObject({ wrap: true, rotate: 0 })
+    expect(plan.lines).toBeGreaterThan(1)
+    expect(plan.wrapPx).toBeGreaterThan(0)
+  })
+
+  test('rotate only when keys exceed twice what fits, even wrapped', () => {
+    const many = Array.from({ length: 60 }, (_, i) => `Category ${i}`)
+    expect(
+      planXLabels({ labels: many, plotWidth: 300, fontPx: 10, categorical: true }).rotate,
+    ).toBe(45)
+  })
+
+  test('a non-categorical axis never wraps', () => {
+    expect(planXLabels({ labels, plotWidth: 300, fontPx: 10, categorical: false }).wrap).toBe(false)
+  })
+
+  test('inward terminals only where the plot is tight; micro keeps 2 ticks and no y axis', () => {
+    const at = (containerClass: ContainerClass) =>
+      resolveAxisEconomy({
+        containerClass,
+        plotHeight: 200,
+        plotWidth: 300,
+        yLabels: ['0', '10'],
+        xLabels: labels,
+        categorical: false,
+      })
+    expect(at('micro').xAxis).toMatchObject({ anchorTerminals: true, thinTo: 2 })
+    expect(at('micro').yAxis.mode).toBe('none')
+    expect(at('compact')).toMatchObject({
+      xAxis: { anchorTerminals: true },
+      yAxis: { mode: 'inside' },
+    })
+    expect(at('regular')).toMatchObject({
+      xAxis: { anchorTerminals: false },
+      yAxis: { mode: 'outside' },
+    })
+    expect(at('wide').xAxis.anchorTerminals).toBe(false)
   })
 })

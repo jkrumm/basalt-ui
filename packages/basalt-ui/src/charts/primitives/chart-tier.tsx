@@ -1,6 +1,7 @@
-import { createContext, useContext, useSyncExternalStore } from 'react'
+import { createContext, useContext, useMemo, useSyncExternalStore } from 'react'
 import type { ReactNode } from 'react'
 import type { ContainerClass } from '../../tokens/size-classes'
+import type { ChartLayout } from './chart-layout'
 import { chartTierMetrics, resolveChartTier, tierOfContainerClass } from './chart-frame-layout'
 import type { ChartTier, ChartTierMetrics } from './chart-frame-layout'
 
@@ -13,25 +14,50 @@ import type { ChartTier, ChartTierMetrics } from './chart-frame-layout'
  * Default `'regular'` (desktop metrics), so a primitive rendered outside a `ChartFrame` (a
  * hand-composed plot, a `TooltipRow` in a consumer's own tooltip) keeps today's sizes.
  */
-const ChartContainerClassContext = createContext<ContainerClass>('regular')
+type ChartLayoutContextValue = { containerClass: ContainerClass; layout: ChartLayout | null }
+
+const ChartContainerClassContext = createContext<ChartLayoutContextValue>({
+  containerClass: 'regular',
+  layout: null,
+})
 
 export type ChartTierProviderProps = {
   containerClass: ContainerClass
+  /** The full resolved layout; omitted by a caller that only knows the class. */
+  layout?: ChartLayout
   children: ReactNode
 }
 
-/** Publishes a resolved container class to the subtree. Mounted once, by `ChartFrame`. */
-export function ChartTierProvider({ containerClass, children }: ChartTierProviderProps): ReactNode {
+/** Publishes a resolved container class (and layout) to the subtree. Mounted once, by `ChartFrame`. */
+export function ChartTierProvider({
+  containerClass,
+  layout,
+  children,
+}: ChartTierProviderProps): ReactNode {
+  const value = useMemo(
+    () => ({ containerClass, layout: layout ?? null }),
+    [containerClass, layout],
+  )
   return (
-    <ChartContainerClassContext.Provider value={containerClass}>
+    <ChartContainerClassContext.Provider value={value}>
       {children}
     </ChartContainerClassContext.Provider>
   )
 }
 
+/** The ambient container class (`'regular'` outside a `ChartFrame`). Internal. */
+export function useChartContainerClass(): ContainerClass {
+  return useContext(ChartContainerClassContext).containerClass
+}
+
+/** The full layout `ChartFrame` resolved, or `null` outside one. Internal, not on any barrel. */
+export function useChartLayout(): ChartLayout | null {
+  return useContext(ChartContainerClassContext).layout
+}
+
 /** @deprecated Removed in 1.31.0 — the container class replaces the tier (`'phone'` = `micro`/`compact`). */
 export function useChartTier(): ChartTier {
-  return tierOfContainerClass(useContext(ChartContainerClassContext))
+  return tierOfContainerClass(useChartContainerClass())
 }
 
 /** The resolved sizes for the ambient container class — what every primitive actually wants. */

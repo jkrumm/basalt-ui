@@ -18,7 +18,14 @@ import { autoXLabelRotate, smartTicks, smartTicksEvery, xLabelPxFor } from '../u
 import { AxisBottomDate, AxisLeftNumeric, AxisRightNumeric } from './Axes'
 import { ChartFrame, resolveLegend } from './ChartFrame'
 import type { ResponsiveChartHeight } from './ChartFrame'
-import { useChartTierMetrics } from './chart-tier'
+import {
+  compactNumber,
+  isTightClass,
+  planXLabels,
+  shouldCompactYLabels,
+  yTickCount,
+} from './chart-layout'
+import { useChartContainerClass, useChartTierMetrics } from './chart-tier'
 import type { ChartState } from './ChartPending'
 import { ChartTooltipFloat, TooltipBody, TooltipHeader, TooltipRow } from './ChartTooltip'
 import { Crosshair, SeriesDot } from './Crosshair'
@@ -35,7 +42,6 @@ import type { ZoneSpec } from './ZoneRects'
 type ContinuousScale = ReturnType<typeof scaleLinear<number>> | ReturnType<typeof scaleLog<number>>
 type PointScale = ReturnType<typeof scalePoint<string>>
 
-const DEFAULT_TICKS = 5
 const DEFAULT_AUTO_PAD = 1.1
 
 /** One y-axis, fully described. Collapses the removed `yDomain` / `yAutoMaxFloor` / `yAutoMinCeil` /
@@ -322,6 +328,41 @@ export function resolveAxisDomain<T>(
 }
 
 /**
+ * Probe one y axis' labels. With no consumer `format`, labels over 4 chars switch to the compact
+ * number format (`12500` -> `12.5k`, ladder step 1); an explicit `format` is never touched.
+ */
+function probeYAxis(opts: {
+  domain: [number, number]
+  ticks: number
+  nice: boolean
+  scale: 'linear' | 'log' | undefined
+  format: ((v: number) => string) | undefined
+}): { labels: string[]; format: (v: number) => string } {
+  const { domain, ticks, nice, scale, format } = opts
+  const base = probeAxisLabels({
+    domain,
+    ticks,
+    nice,
+    ...(scale !== undefined && { scale }),
+    ...(format !== undefined && { format }),
+  })
+  if (format !== undefined || !shouldCompactYLabels(base.labels)) {
+    return base
+  }
+  const compact = (v: number): string => compactNumber(v) ?? base.format(v)
+  return {
+    labels: probeAxisLabels({
+      domain,
+      ticks,
+      nice,
+      format: compact,
+      ...(scale !== undefined && { scale }),
+    }).labels,
+    format: compact,
+  }
+}
+
+/**
  * One y-axis' real scale, built from its resolved domain — shared by the left and right axis so
  * the log branch (`scaleLog` + `nice` + the 1-2-5 tick override) is written and commented exactly
  * once instead of as two independently-maintained twins.
@@ -493,6 +534,8 @@ function CartesianPlot<T>({
   // the half a hook cannot reach: the tick font the margins are MEASURED at, and the margin
   // floors themselves (`docs/CHARTS-SPEC.md` §8).
   const tier = useChartTierMetrics()
+  const containerClass = useChartContainerClass()
+  const tight = isTightClass(containerClass)
 
   const visible = useMemo(() => series.filter((s) => !hidden.has(s.key)), [series, hidden])
   const leftSeries = useMemo(() => visible.filter((s) => s.axis !== 'right'), [visible])
@@ -526,17 +569,21 @@ function CartesianPlot<T>({
     [y2, data, rightSeries, rightBounds],
   )
 
-  const leftTicks = y?.ticks ?? DEFAULT_TICKS
-  const rightTicks = y2?.ticks ?? DEFAULT_TICKS
+  // Tick count is a law of the plot height (one per ~44px, 2 under `VX.minPlotHeight`), estimated
+  // from the token floors because the real margins depend on the labels these ticks produce. A
+  // consumer's `ticks` always wins.
+  const estimatedPlotHeight = plot.height - tier.margin.top - tier.margin.bottom
+  const leftTicks = y?.ticks ?? yTickCount(estimatedPlotHeight)
+  const rightTicks = y2?.ticks ?? yTickCount(estimatedPlotHeight)
 
   const { labels: leftLabels, format: leftFormat } = useMemo(
     () =>
-      probeAxisLabels({
+      probeYAxis({
         domain: leftDomain,
         ticks: leftTicks,
         nice: y?.nice ?? false,
-        ...(y?.scale !== undefined && { scale: y.scale }),
-        ...(y?.format !== undefined && { format: y.format }),
+        scale: y?.scale,
+        format: y?.format,
       }),
     [leftDomain, leftTicks, y?.format, y?.nice, y?.scale],
   )
@@ -545,17 +592,28 @@ function CartesianPlot<T>({
     () =>
       rightDomain === null
         ? { labels: [], format: (v: number) => String(v) }
-        : probeAxisLabels({
+        : probeYAxis({
             domain: rightDomain,
             ticks: rightTicks,
             nice: y2?.nice ?? false,
-            ...(y2?.scale !== undefined && { scale: y2.scale }),
-            ...(y2?.format !== undefined && { format: y2.format }),
+            scale: y2?.scale,
+            format: y2?.format,
           }),
     [rightDomain, rightTicks, y2?.format, y2?.nice, y2?.scale],
   )
 
   const xLabels = useMemo(() => keys.map(formatX), [keys, formatX])
+
+  // Ladder step 5: at compact/micro the y labels sit inside the plot (micro: no y axis), so the
+  // left gutter drops to its floor. An explicit `margin.left` means the consumer laid out an
+  // outside gutter — it keeps the outside axis.
+  const yPlacement =
+    !tight || marginOverride?.left !== undefined
+      ? 'outside'
+      : containerClass === 'micro'
+        ? 'none'
+        : 'inside'
+  const categorical = tight && xLabels.some((label) => /\s/.test(label))
 
   /** The horizontal room one x tick label needs: the widest string that could be painted, plus
    * breathing space to its neighbour. Feeds `smartTicks`, which otherwise thinned the axis by a
@@ -567,14 +625,24 @@ function CartesianPlot<T>({
    * measured label can never differ between the one that DECIDES and the one that PAINTS. */
   const marginInput = useMemo(
     () => ({
-      left: leftLabels,
+      left: yPlacement === 'outside' ? leftLabels : [],
       right: rightLabels,
       bottom: xLabels,
       fontPx: tier.axisFont,
       floor: tier.margin,
+      anchorTerminals: tight,
       ...(marginOverride !== undefined && { override: marginOverride }),
     }),
-    [leftLabels, rightLabels, xLabels, tier.axisFont, tier.margin, marginOverride],
+    [
+      leftLabels,
+      rightLabels,
+      xLabels,
+      tier.axisFont,
+      tier.margin,
+      marginOverride,
+      tight,
+      yPlacement,
+    ],
   )
 
   /** The margin an UNROTATED axis resolves to. It is the final margin in every case except an
@@ -590,23 +658,37 @@ function CartesianPlot<T>({
 
   // An explicit `xLabelRotate` always wins — including `0`, which is the documented "never rotate"
   // opt-out. Only an unset one falls through to the phone tier's own default.
+  // Ladder step 4: categorical (multi-word) labels at compact/micro wrap before they rotate, and
+  // rotate only when there are more than twice as many keys as fit. Everything else keeps the
+  // phone tier's `autoXLabelRotate`.
+  const flatXMax = Math.max(plot.width - flatMargin.left - flatMargin.right, 0)
+  const xPlan = useMemo(
+    () => planXLabels({ labels: xLabels, plotWidth: flatXMax, fontPx: tier.axisFont, categorical }),
+    [xLabels, flatXMax, tier.axisFont, categorical],
+  )
   const rotate =
     xLabelRotate ??
-    autoXLabelRotate({
-      tier: tier.tier,
-      xMax: Math.max(plot.width - flatMargin.left - flatMargin.right, 0),
-      labelPx: xLabelPx,
-      rotatedXMax: Math.max(plot.width - rotated45Margin.left - rotated45Margin.right, 0),
-    })
+    (categorical
+      ? xPlan.rotate
+      : autoXLabelRotate({
+          tier: tier.tier,
+          xMax: flatXMax,
+          labelPx: xLabelPx,
+          rotatedXMax: Math.max(plot.width - rotated45Margin.left - rotated45Margin.right, 0),
+        }))
+  const wrapWidth = rotate === 0 && xPlan.wrap ? xPlan.wrapPx : undefined
+  const tickLabelPx = wrapWidth === undefined ? xLabelPx : xPlan.labelPx
 
   const margin = useMemo(
     () =>
       rotate === 0
-        ? flatMargin
+        ? wrapWidth === undefined
+          ? flatMargin
+          : autoMargin({ ...marginInput, bottomLines: xPlan.lines })
         : rotate === 45
           ? rotated45Margin
           : autoMargin({ ...marginInput, rotate }),
-    [flatMargin, rotated45Margin, marginInput, rotate],
+    [flatMargin, rotated45Margin, marginInput, rotate, wrapWidth, xPlan.lines],
   )
 
   // ── Pass 2: the real scales, now that the plot rect is known ────────────────────────────────
@@ -627,17 +709,16 @@ function CartesianPlot<T>({
   )
 
   // Resolution order: explicit VALUES win, then an explicit COUNT, then as many as fit.
-  const tickValues = useMemo(
-    () =>
-      xTickValues !== undefined
-        ? [...xTickValues(keys, xMax)]
-        : xTicks === undefined
-          ? // A rotated label stacks diagonally instead of beside its neighbour, so its WIDTH no
-            // longer governs tick spacing — the constant floor takes over, exactly as before.
-            smartTicks(keys, xMax, rotate === 0 ? xLabelPx : undefined)
-          : smartTicksEvery(keys, xTicks),
-    [keys, xMax, xTicks, xTickValues, xLabelPx, rotate],
-  )
+  const tickValues = useMemo(() => {
+    if (xTickValues !== undefined) return [...xTickValues(keys, xMax)]
+    if (xTicks !== undefined) return smartTicksEvery(keys, xTicks)
+    // Micro: the two terminals only.
+    if (containerClass === 'micro')
+      return keys.length > 1 ? [keys[0]!, keys[keys.length - 1]!] : keys
+    // A rotated label stacks diagonally instead of beside its neighbour, so its WIDTH no
+    // longer governs tick spacing — the constant floor takes over, exactly as before.
+    return smartTicks(keys, xMax, rotate === 0 ? tickLabelPx : undefined)
+  }, [keys, xMax, xTicks, xTickValues, tickLabelPx, rotate, containerClass])
 
   const cursor = useChartCursor<T>({
     data,
@@ -762,11 +843,14 @@ function CartesianPlot<T>({
             </>
           )}
 
-          <AxisLeftNumeric
-            scale={yScale}
-            numTicks={leftTicks}
-            tickFormat={(v) => leftFormat(Number(v))}
-          />
+          {yPlacement !== 'none' && (
+            <AxisLeftNumeric
+              scale={yScale}
+              numTicks={leftTicks}
+              tickFormat={(v) => leftFormat(Number(v))}
+              inside={yPlacement === 'inside'}
+            />
+          )}
           {y2Scale !== null && (
             <AxisRightNumeric
               scale={y2Scale}
@@ -781,6 +865,8 @@ function CartesianPlot<T>({
             tickValues={tickValues}
             tickFormat={(v) => formatX(String(v))}
             {...(rotate !== 0 && { rotate })}
+            anchorTerminals={tight && rotate === 0}
+            {...(wrapWidth !== undefined && { wrapWidth })}
           />
 
           <HoverOverlay
