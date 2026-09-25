@@ -157,19 +157,46 @@ then `/review` findings resolved.
       `ai-sdk-transport.test.ts:339`; layout 107/107; `/review` blockers (wide order, <260 rail cascade)
       fixed, improvements 3/4/5 applied.
 
-## Wave 6 — Chart layout law: resolver, axes, height <!-- status: active -->
+## Wave 6 — Chart layout law: resolver, axes, height <!-- status: done -->
 
-- [ ] `resolveChartLayout` (spec §4) replaces `resolveChartTier`/`ChartTierMetrics`; container
+- [x] `resolveChartLayout` (spec §4) replaces `resolveChartTier`/`ChartTierMetrics`; container
       classes from the shared table; unmeasured default from the size class; unit tests pin the
       decision table
-- [ ] Axis economy: compact y format, tick count from yMax, inward terminals, wrap-before-rotate,
+- [x] Axis economy: compact y format, tick count from yMax, inward terminals, wrap-before-rotate,
       band per-tick = label px, y labels inside at compact/micro, `VX.minPlotHeight` guard on yMax
-- [ ] Height from width × class (0.45 dvh clamp on coarse), treated as min-height inside a card; height
+- [x] Height from width × class (0.45 dvh clamp on coarse), treated as min-height inside a card; height
       literal warns under floor; `ResponsiveChartHeight` keys base/regular/wide (+ aliases, MIGRATING)
-- [ ] Re-measure with `.claude/mobile/capture.mjs`: record data-rect medians per viewport
-      **Left behind:**
+- [x] Re-measure with `.claude/mobile/capture.mjs`: record data-rect medians per viewport
+      **Left behind:** `charts/primitives/chart-layout.ts` = `resolveChartLayout` + `resolveAxisEconomy` (+ helpers
+      `compactNumber`, `yTickCount`, `planXLabels`), internal only (no barrel). `ChartFrame` publishes the full
+      layout via the chart-tier context (`useChartMetrics` internal; `useChartTier`/`useChartTierMetrics`/
+      `resolveChartTier`/`chartTierMetrics`/`ChartTierMetrics` are `@deprecated` forwarders, removeIn 1.31.0, ledger
+      rows + MIGRATING). Container class from `CONTAINER_CLASSES`; unmeasured → the viewport size class, but a
+      provider-less frame resolves `regular`. `ResponsiveChartHeight` = `base/regular/wide`, `sm/md/lg` dev-warned
+      aliases (sm→regular 480, md/lg→wide 800 — thresholds SHIFT, stated in MIGRATING). A `ChartFrame` with no `height`
+      now derives one (0.62/0.5/0.4 × width, 160–420, coarse ≤ 0.45 dvh quantised to 50px) instead of 240; in a
+      `ChartCard` it is a min-height and the frame grows into the flex body. Axes: compact y format past 4 chars and
+      tick count from plot height apply at EVERY width; inside y labels, wrap-before-rotate, anchored terminals apply
+      at compact/micro; explicit `margin`/`format`/`ticks`/`xLabelRotate` win. Rotated x labels now thin by projected
+      45° width (fixed a 0.6px overlap the layout suite caught). Budgets unchanged (396/400). Gate: `bun run pre` red
+      only on `ai-sdk-transport.test.ts:339`; layout 107/107; pack-test passed; `/review` blockers fixed.
+      **Re-measure** (`.claude/mobile/w6/`, `measure.mjs` = data-rect harness; `capture.mjs` only measures svg/card):
+      median data rect phone 0.454 (base 0.443) · tablet 0.485 (0.415 like-for-like; spec's 0.33 doesn't reproduce) ·
+      desktop 0.504 (0.485); charts < 0.40: 2 per viewport (both on `/charts` primitives tab: Availability,
+      Negotiated link speed ~0.30–0.34). Measured BEFORE the review fixes. **Known gaps for wave 7/10:** the
+      resolver's `legend` half is computed but NOT rendered from (ChartFrame still uses the tier rollup, `slotW` = 0) —
+      wave 7 wires it; `useChartLayout` has no consumer beyond that; `categorical` in CartesianChart/useBandPlot is a
+      whitespace heuristic at compact, not derived from the scale kind; axis-economy ladder is duplicated in
+      CartesianChart/useBandPlot vs `resolveAxisEconomy` (extract `resolveYPlacement`); cbbi at 375: inside "100%" label
+      half-clipped at plot top, Distribution's inside y labels overprint first bars; `/dashboard/revenue` at 375 shows
+      no charts (identical in w5 "after" — investigate); `useBreakpoint` has no `deprecated-export` ledger row;
+      no auto-height-card ratchet layout test (`resolvedHeight = max(computed, containerH)`); coarse/viewport hooks
+      register a listener per frame (shared store, low priority); inside-y halo uses `VX.surface.panel` (may box on
+      raised surfaces); `VX.phoneChartWidth` (480) now duplicates `CONTAINER_CLASSES.regular`. The no-`height`
+      derived default is a silent change for every existing chart (MIGRATING carries it) — revisit if a consumer
+      objects.
 
-## Wave 7 — Chart legend, donut, dual axis <!-- status: pending -->
+## Wave 7 — Chart legend, donut, dual axis <!-- status: active -->
 
 - [ ] Legend: width-measured fit always, never roll up < 2, row gap 4–6 left-aligned, portal into the
       ChartCard header slot, "All N" disclosure (popover fine / sheet coarse); deprecate `legend.maxRows`
