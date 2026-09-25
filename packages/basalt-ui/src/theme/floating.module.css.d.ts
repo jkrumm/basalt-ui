@@ -5,5 +5,8 @@
 declare const classes: {
   readonly closeButton: string
   readonly menuItem: string
+  readonly sheetBody: string
+  readonly sheetContent: string
+  readonly sheetInner: string
 }
 export default classes

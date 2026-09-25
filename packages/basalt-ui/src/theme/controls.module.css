@@ -61,6 +61,13 @@ html[data-mantine-color-scheme] .inputWrapper[data-variant='default']:not([data-
   box-shadow: var(--field-depth);
 }
 
+/* An input cannot host the `[data-basalt-hit]` ::after overlay, so its touch floor is real height. */
+@media (pointer: coarse) {
+  .input {
+    min-height: var(--vx-hit);
+  }
+}
+
 .input[data-variant='default'] {
   --field-depth: var(--vx-shadow-raised);
 }

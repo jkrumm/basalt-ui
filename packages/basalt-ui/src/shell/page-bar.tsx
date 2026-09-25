@@ -393,7 +393,7 @@ export function PageBar({
   }, [inShell, hasRow2, claimPanelHost])
 
   const row1 = hasRow1 ? (
-    <div className={cx(classes.row1, classNames?.row1)}>
+    <div className={cx(classes.row1, classNames?.row1)} data-basalt-hit-scope>
       {hasLead && (
         <div className={classes.lead}>
           {icon !== undefined && (
@@ -435,7 +435,7 @@ export function PageBar({
   const hasPills = filters !== undefined || panel !== null || filtersEndActions.length > 0
 
   const row2 = hasRow2 ? (
-    <div className={cx(classes.row2, classNames?.row2)}>
+    <div className={cx(classes.row2, classNames?.row2)} data-basalt-hit-scope>
       {tabs !== undefined && (
         <div className={classes.tabs} data-basalt-page-bar-line="tabs">
           <CtlSlot>{tabs}</CtlSlot>

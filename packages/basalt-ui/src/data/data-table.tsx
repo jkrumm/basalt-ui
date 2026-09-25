@@ -68,6 +68,7 @@ import {
 import type {
   CSSProperties,
   KeyboardEvent as ReactKeyboardEvent,
+  MouseEvent as ReactMouseEvent,
   ReactNode,
   RefObject,
 } from 'react'
@@ -315,32 +316,37 @@ const SELECT_COLUMN_ID = '__basalt_select__'
  * Built per render inside a `useMemo`, not hoisted as a constant: `ColumnDef` is generic in `T`, and
  * a single shared instance would have to be cast at every call site.
  *
- * `onClick`'s `stopPropagation` is the load-bearing line. The checkbox lives inside the row, and a
- * row carrying `onRowActivate` opens a detail from a click — so without it, ticking the box also
- * navigated away from the table the tick was meant to act on.
+ * The select cell's `stopPropagation` (see the `<Table.Td>`) is the load-bearing line. The checkbox
+ * lives inside the row, and a row carrying `onRowActivate` opens a detail from a click — so without
+ * it, ticking the box also navigated away from the table the tick was meant to act on.
  */
 function selectionColumn<T>(): ColumnDef<T, unknown> {
   return {
     id: SELECT_COLUMN_ID,
     enableSorting: false,
     header: ({ table }) => (
-      <Checkbox
-        size="xs"
-        aria-label="Select all rows"
-        checked={table.getIsAllPageRowsSelected()}
-        indeterminate={table.getIsSomePageRowsSelected() && !table.getIsAllPageRowsSelected()}
-        onChange={table.getToggleAllPageRowsSelectedHandler()}
-      />
+      // oxlint-disable-next-line jsx-a11y/label-has-associated-control -- wraps <Checkbox>, which oxlint cannot see is an input
+      <label className={classes.selectHit}>
+        <Checkbox
+          size="xs"
+          aria-label="Select all rows"
+          checked={table.getIsAllPageRowsSelected()}
+          indeterminate={table.getIsSomePageRowsSelected() && !table.getIsAllPageRowsSelected()}
+          onChange={table.getToggleAllPageRowsSelectedHandler()}
+        />
+      </label>
     ),
     cell: ({ row }) => (
-      <Checkbox
-        size="xs"
-        aria-label={`Select row ${row.index + 1}`}
-        checked={row.getIsSelected()}
-        disabled={!row.getCanSelect()}
-        onChange={row.getToggleSelectedHandler()}
-        onClick={(event) => event.stopPropagation()}
-      />
+      // oxlint-disable-next-line jsx-a11y/label-has-associated-control -- wraps <Checkbox>, which oxlint cannot see is an input
+      <label className={classes.selectHit}>
+        <Checkbox
+          size="xs"
+          aria-label={`Select row ${row.index + 1}`}
+          checked={row.getIsSelected()}
+          disabled={!row.getCanSelect()}
+          onChange={row.getToggleSelectedHandler()}
+        />
+      </label>
     ),
   }
 }
@@ -1451,6 +1457,7 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
               return (
                 <Table.Th
                   key={header.id}
+                  {...(header.column.id === SELECT_COLUMN_ID && { className: classes.selectCell })}
                   onClick={canSort ? toggleSorting : undefined}
                   onKeyDown={
                     canSort
@@ -1563,6 +1570,14 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
                   return (
                     <Table.Td
                       key={cell.id}
+                      {...(cell.column.id === SELECT_COLUMN_ID && {
+                        className: classes.selectCell,
+                        // The label's ::after fills the cell, so a tap on it bubbles to the row —
+                        // stop it only where a tick is possible; a disabled row's tap is a row tap.
+                        ...(cell.row.getCanSelect() && {
+                          onClick: (event: ReactMouseEvent) => event.stopPropagation(),
+                        }),
+                      })}
                       style={{
                         ...(typeof cell.getValue() === 'number' &&
                         cell.column.columnDef.meta?.numeral !== false
@@ -1714,13 +1729,15 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
               onChange={(value) => value && table.setPageSize(Number(value))}
               allowDeselect={false}
             />
-            <Pagination
-              size="sm"
-              radius="md"
-              total={Math.max(table.getPageCount(), 1)}
-              value={paginationState.pageIndex + 1}
-              onChange={(page) => table.setPageIndex(page - 1)}
-            />
+            <CtlSlot>
+              <Pagination
+                size="sm"
+                radius="md"
+                total={Math.max(table.getPageCount(), 1)}
+                value={paginationState.pageIndex + 1}
+                onChange={(page) => table.setPageIndex(page - 1)}
+              />
+            </CtlSlot>
           </Group>
         </Group>
       )}

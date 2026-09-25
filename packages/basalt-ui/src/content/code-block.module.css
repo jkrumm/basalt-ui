@@ -77,11 +77,20 @@ html[data-mantine-color-scheme='light'] .body :global(.shiki span) {
   position: absolute;
   top: var(--vx-space-code-block-floating-copy-offset);
   right: var(--vx-space-code-block-floating-copy-offset);
-  opacity: 0;
   transition: opacity 120ms ease;
 }
 
-.container:hover .floatingCopy,
+/* Hidden-until-hover only where hover exists (RESPONSIVE-SPEC §1 pointer tier); touch shows it. */
+@media (hover: hover) and (pointer: fine) {
+  .floatingCopy {
+    opacity: 0;
+  }
+
+  .container:hover .floatingCopy {
+    opacity: 1;
+  }
+}
+
 .container:focus-within .floatingCopy {
   opacity: 1;
 }

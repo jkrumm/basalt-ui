@@ -156,6 +156,7 @@ function ChevronToggle({
     <button
       type="button"
       className={classes.chevron}
+      data-basalt-hit
       data-open={open}
       aria-expanded={open}
       aria-controls={controls}

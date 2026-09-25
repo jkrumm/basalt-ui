@@ -101,10 +101,11 @@
  * outline the row reads as loose text. Declared here rather than by relaxing the resolver, which
  * would put a hairline back on every default button in the app.
  *
- * The ≥36px touch target below `sm` (C15) is drawn as a `::before` overlay so the visible box stays
- * 30px.
+ * The touch target (C15) is the shared `[data-basalt-hit]` overlay (`styles.css`), capped at the
+ * chip-row gap so neighbouring pills never overlap; the visible box stays 30px.
  */
 .pill {
+  --vx-hit-gap: var(--vx-space-control-gap);
   position: relative;
   max-width: 15rem;
   border-color: color-mix(in srgb, var(--vx-ink) 12%, transparent);
@@ -155,30 +156,6 @@
 
 .pill[data-active] .pillIcon {
   color: var(--vx-ink);
-}
-
-@media (pointer: coarse) {
-  /* Mantine's Button root clips to its box; the overlay must escape it to be hit-testable. Loading
-   * buttons keep the clip their overlay depends on (same pairing as page-bar.module.css). */
-  .pill:not([data-loading]) {
-    overflow: visible;
-  }
-
-  .pill::before {
-    content: '';
-    position: absolute;
-    /* The pill height scales with `--mantine-scale` (same reconstruction the theme uses for every
-     * other ctl-tier box, `theme/index.ts`'s `ctlSizeVars`) so the overlay stays centred on the
-     * ACTUAL scaled pill box; `--vx-hit` is a fixed px target and does not scale. */
-    inset-block: calc(
-      (
-          calc(var(--vx-space-control-height-ctl, 1.875rem) * var(--mantine-scale, 1)) -
-            var(--vx-hit, 44px)
-        ) /
-        2
-    );
-    inset-inline: 0;
-  }
 }
 
 /* Label at the tier's own step and weight (`docs/CONTROLS-SPEC.md` §3) — Mantine's Button label

@@ -190,41 +190,13 @@
 }
 
 /*
- * Law C15 — every touch target inside a home is at least `--vx-hit` (44px under
- * `(pointer: coarse)`), while the VISIBLE box stays the 30px `ctl` tier. `::after` and not `::before`:
- * Mantine's Button owns `::before` for its loading overlay (`@mantine/core/styles/Button.css`),
- * so a hit area drawn there would fight it. `pointer-events` stays default so the overlay is the
- * one receiving the tap.
- *
- * `overflow: visible` is LOAD-BEARING, not tidying. Mantine's Button and ActionIcon roots both set
- * `overflow: hidden` (`Button.css`, `ActionIcon.css`), which clips an overlay that by definition
- * extends past the 30px box — so without this the 36px target simply does not exist and a tap 3px
- * above the control misses. What `overflow: hidden` buys those roots is clipping the loading
- * overlay's blur, and that overlay is only painted under `[data-loading]`, which is excluded below.
+ * Law C15 — controls in a home adopt the shared `[data-basalt-hit]` overlay (`styles.css`) through
+ * `data-basalt-hit-scope` on `.row1`/`.row2`; `--vx-hit-gap` caps the expansion at the real gap so
+ * neighbours' hit boxes never overlap. The VISIBLE box stays the 30px `ctl` tier.
  */
-@media (pointer: coarse) {
-  .row1 :is(button, a),
-  .row2 :is(button, a) {
-    position: relative;
-  }
-
-  .row1 :is(button, a):not([data-loading]),
-  .row2 :is(button, a):not([data-loading]) {
-    overflow: visible;
-  }
-
-  .row1 :is(button, a)::after,
-  .row2 :is(button, a)::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    translate: -50% -50%;
-    width: 100%;
-    height: 100%;
-    min-width: var(--vx-hit);
-    min-height: var(--vx-hit);
-  }
+.row1,
+.row2 {
+  --vx-hit-gap: var(--vx-space-control-gap);
 }
 
 @media (max-width: 52.49375em) {

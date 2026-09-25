@@ -7,5 +7,7 @@ declare const classes: {
   readonly bulkBar: string
   readonly bulkCount: string
   readonly containment: string
+  readonly selectCell: string
+  readonly selectHit: string
 }
 export default classes

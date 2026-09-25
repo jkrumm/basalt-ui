@@ -33,3 +33,38 @@
 .menuItem[data-menu-active]:not(:disabled):not([data-disabled]) {
   background-color: color-mix(in srgb, var(--vx-ink) 6%, transparent);
 }
+
+/*
+ * Modal as a bottom sheet at the `compact` size class (docs/waves/RESPONSIVE-SPEC.md §6): anchored
+ * to the bottom edge, full width, radius on the top corners only, safe-area bottom padding. The
+ * literal is `sizeClassMaxEm(SIZE_CLASSES.medium)`, pinned by `breakpoint-literals.test.ts`.
+ * `.sheetBody` is the Modal body; it reaches the trailing button row `overlays.confirm`
+ * renders (Mantine `Group`), stretching the buttons to full width at the `--vx-hit` floor.
+ */
+@media (max-width: 52.49375em) {
+  .sheetInner {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .sheetContent {
+    flex: 0 0 100%;
+    max-width: 100%;
+    /* theme-allow css-raw-surface — top corners only, the shape of a sheet. `!important`: the
+       Modal content is a Paper whose theme `styles.root` writes `border-radius` inline. */
+    border-radius: var(--vx-radius-card) var(--vx-radius-card) 0 0 !important;
+  }
+
+  .sheetBody {
+    padding-bottom: calc(var(--mantine-spacing-md) + env(safe-area-inset-bottom, 0px));
+  }
+
+  .sheetBody > :global(.mantine-Group-root):last-child {
+    flex-wrap: nowrap;
+  }
+
+  .sheetBody > :global(.mantine-Group-root):last-child > button {
+    flex: 1;
+    min-height: var(--vx-hit);
+  }
+}

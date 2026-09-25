@@ -130,6 +130,7 @@ export function AppBrand({ brand, collapsed, onToggleCollapse, className, style 
         size={28}
         visibleFrom="sm"
         className={classes.ghostIcon}
+        data-basalt-hit
         onClick={onToggleCollapse}
         aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
       >
