@@ -51,6 +51,27 @@ function installMobileMatchMedia(): void {
   }
 }
 
+/** A viewport of `width` px: a `(min-width: <n>em)` query matches when `n * 16 <= width`. */
+function installViewport(width: number): void {
+  const original = window.matchMedia
+  window.matchMedia = (query: string): MediaQueryList => {
+    const em = /\(min-width:\s*([\d.]+)em\)/.exec(query)?.[1]
+    return {
+      matches: em !== undefined && Number(em) * 16 <= width,
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    } as MediaQueryList
+  }
+  restoreMatchMedia = () => {
+    window.matchMedia = original
+  }
+}
+
 /**
  * A viewport that can MOVE: every `(min-width: …)` query answers `desktop` and every listener the
  * component registered is notified when that flips.
@@ -103,8 +124,16 @@ function asideCss(): string {
 }
 
 describe('PageAside inside a BasaltShell', () => {
+  // `expanded` with room to dock (1400 >= 256 navbar + 300 aside + 720 main) — the desktop the
+  // region tests below describe. The harness's own 1024px is `medium`, covered at the end.
   beforeEach(() => {
     localStorage.clear()
+    installViewport(1400)
+  })
+
+  afterEach(() => {
+    restoreMatchMedia?.()
+    restoreMatchMedia = null
   })
 
   const renderInShell = (aside: ReactNode) =>
@@ -207,6 +236,139 @@ describe('PageAside inside a BasaltShell', () => {
 })
 
 /**
+ * Docking by size class (`docs/waves/RESPONSIVE-SPEC.md` §1): only `expanded` with room lets an open
+ * aside push main. Everywhere else the region reserves the rail and an open panel overlays main;
+ * the fold defaults to closed there, and an explicit choice always wins.
+ */
+describe('PageAside docking', () => {
+  beforeEach(() => {
+    localStorage.clear()
+  })
+
+  afterEach(() => {
+    restoreMatchMedia?.()
+    restoreMatchMedia = null
+  })
+
+  const renderPage = (aside: ReactNode) => {
+    render(
+      <MantineProvider>
+        <BasaltShell brand={BRAND} sections={ONE_SECTION}>
+          {aside}
+        </BasaltShell>
+      </MantineProvider>,
+    )
+  }
+  const OVERLAY = 'aside.mantine-AppShell-aside[style*="--app-shell-aside-width"]'
+
+  test('medium: starts folded on the rail and opens as an overlay, reserving no more width', () => {
+    installViewport(1024)
+    renderPage(
+      <PageAside title="Panel">
+        <div data-testid="aside-child" />
+      </PageAside>,
+    )
+
+    expect(screen.getByLabelText('Expand panel')).toBeDefined()
+    expect(asideCss()).toContain('--app-shell-aside-width:calc(2.25rem * var(--mantine-scale))')
+    expect(document.querySelector(OVERLAY)).toBeNull()
+
+    fireEvent.click(screen.getByLabelText('Expand panel'))
+
+    expect(screen.getByTestId('aside-child')).toBeDefined()
+    // The region still reserves the rail; the element itself widens over main.
+    expect(asideCss()).toContain('--app-shell-aside-width:calc(2.25rem * var(--mantine-scale))')
+    expect(document.querySelector(OVERLAY)?.getAttribute('style')).toContain('18.75rem')
+  })
+
+  test('expanded without room for a 720px main: folded and overlay, like medium', () => {
+    installViewport(1200)
+    renderPage(
+      <PageAside title="Panel">
+        <div />
+      </PageAside>,
+    )
+
+    expect(screen.getByLabelText('Expand panel')).toBeDefined()
+    expect(asideCss()).toContain('--app-shell-aside-width:calc(2.25rem * var(--mantine-scale))')
+  })
+
+  test('expanded with room: open and docked — the region reserves its full width', () => {
+    installViewport(1300)
+    renderPage(
+      <PageAside title="Panel">
+        <div />
+      </PageAside>,
+    )
+
+    expect(screen.getByLabelText('Collapse panel')).toBeDefined()
+    expect(asideCss()).toContain('--app-shell-aside-width:calc(18.75rem * var(--mantine-scale))')
+    expect(document.querySelector(OVERLAY)).toBeNull()
+  })
+
+  test('a persistKey aside with nothing stored opens on a dockable desktop and writes nothing', () => {
+    installViewport(1500)
+    renderPage(
+      <PageAside title="Panel" persistKey="dock">
+        <div data-testid="aside-child" />
+      </PageAside>,
+    )
+
+    expect(screen.getByTestId('aside-child')).toBeDefined()
+    expect(screen.queryByLabelText('Expand panel')).toBeNull()
+    // The default is applied while UNSET — never written as if the user had chosen it.
+    expect(localStorage.getItem('basalt:aside:dock')).toBeNull()
+    expect(asideCss()).toContain('--app-shell-aside-width:calc(18.75rem * var(--mantine-scale))')
+  })
+
+  test('a persistKey aside on a dockable desktop is never rendered folded on the way to open', () => {
+    installViewport(1500)
+    const observer = new MutationObserver(() => {})
+    observer.observe(document.body, { childList: true, subtree: true })
+    renderPage(
+      <PageAside title="Panel" persistKey="dock">
+        <div />
+      </PageAside>,
+    )
+    const records = observer.takeRecords()
+    observer.disconnect()
+    const railInserted = records.some((record) =>
+      [...record.addedNodes].some(
+        (node) =>
+          node instanceof Element &&
+          (node.matches('[aria-label="Expand panel"]') ||
+            node.querySelector('[aria-label="Expand panel"]') !== null),
+      ),
+    )
+
+    expect(railInserted).toBe(false)
+  })
+
+  test('an explicit defaultFolded={false} opens the aside even where it overlays', () => {
+    installViewport(1024)
+    renderPage(
+      <PageAside title="Panel" defaultFolded={false}>
+        <div data-testid="aside-child" />
+      </PageAside>,
+    )
+
+    expect(screen.getByTestId('aside-child')).toBeDefined()
+  })
+
+  test('a persisted open fold wins over the size-class default', () => {
+    localStorage.setItem('basalt:aside:dock', JSON.stringify({ v: 1, value: false }))
+    installViewport(1024)
+    renderPage(
+      <PageAside title="Panel" persistKey="dock">
+        <div data-testid="aside-child" />
+      </PageAside>,
+    )
+
+    expect(screen.getByTestId('aside-child')).toBeDefined()
+  })
+})
+
+/**
  * Below `sm` and in a shell-less app the panel is ONE node in the page flow, where the page wrote
  * it — never a second mount under a `visibleFrom` twin (law C9), and never a fold control for a
  * region that does not exist.
@@ -289,6 +451,7 @@ describe('PageAside — the panel surface and the mobile projection', () => {
   })
 
   test('a child of the aside body sees the `panel` surface, not `pill`', () => {
+    installViewport(1400)
     render(
       <MantineProvider>
         <BasaltShell brand={BRAND} sections={ONE_SECTION}>

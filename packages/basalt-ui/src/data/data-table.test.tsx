@@ -927,7 +927,7 @@ describe('enableRowSelection + bulkActions', () => {
 // ── actions: BarAction[] | ReactNode (law C15) ────────────────────────────────
 
 describe('actions — the widened toolbar slot', () => {
-  test('a BarAction[] gets the C7 fold instead of a clipped row', () => {
+  test('a BarAction[] renders whole when nothing is measured', () => {
     renderTable({
       actions: [
         { key: 'a', label: 'Alpha' },
@@ -938,9 +938,11 @@ describe('actions — the widened toolbar slot', () => {
     })
     const desktop = document.querySelector('.mantine-visible-from-sm')
     if (!desktop) throw new Error('expected the desktop action group')
+    // A slot host (and any host without layout) has no measured fold: the row stays whole. The fold
+    // itself is `planBarFold`'s, pinned in controls/actions.test.tsx.
     expect(desktop.textContent).toContain('Alpha')
-    expect(desktop.textContent).not.toContain('Delta')
-    expect(desktop.textContent).toContain('More')
+    expect(desktop.textContent).toContain('Delta')
+    expect(desktop.textContent).not.toContain('More')
   })
 
   test('a ReactNode slot is unchanged', () => {

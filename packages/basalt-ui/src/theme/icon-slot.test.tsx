@@ -150,10 +150,12 @@ describe('every home named by the spec routes `icon` through the slot', () => {
       <MantineProvider>
         <ActionGroup
           secondary={[
-            { key: 'a', label: 'A' },
-            { key: 'b', label: 'B' },
-            { key: 'c', label: 'C' },
-            { key: 'd', label: 'D', icon: <OversizedGlyph /> },
+            {
+              key: 'm',
+              kind: 'menu',
+              label: 'M',
+              items: [{ key: 'd', label: 'D', icon: <OversizedGlyph /> }],
+            },
           ]}
         />
       </MantineProvider>,

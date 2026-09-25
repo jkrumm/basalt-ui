@@ -524,7 +524,7 @@ describe('query — the four container states', () => {
  * data instead of nodes.
  */
 describe('actions — the BarAction[] | ReactNode union', () => {
-  test('a BarAction[] folds past 3 into More, inside the header', () => {
+  test('a BarAction[] renders whole inside the header when nothing is measured', () => {
     renderWith(
       <Section
         title="Runs"
@@ -540,9 +540,11 @@ describe('actions — the BarAction[] | ReactNode union', () => {
     )
     const desktop = document.querySelector('.mantine-visible-from-sm')
     if (!desktop) throw new Error('expected the desktop action group')
+    // A slot host (and any host without layout) has no measured fold: the row stays whole. The fold
+    // itself is `planBarFold`'s, pinned in controls/actions.test.tsx.
     expect(desktop.textContent).toContain('Alpha')
-    expect(desktop.textContent).not.toContain('Delta')
-    expect(desktop.textContent).toContain('More')
+    expect(desktop.textContent).toContain('Delta')
+    expect(desktop.textContent).not.toContain('More')
   })
 
   test('a BarAction runs its onClick', () => {

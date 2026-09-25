@@ -134,3 +134,43 @@
 :global(:root[data-basalt-host]:not([data-basalt-host='web'])) .main {
   padding-right: max(var(--app-shell-padding), env(safe-area-inset-right));
 }
+
+/*
+ * PUBLIC SHELL BOTTOM INSET — `--app-shell-footer-offset` (stable name, do not rename): the visible
+ * bottom-bar height WITHOUT the safe-area inset, and 0 wherever there is no bar (from `sm` up).
+ * Anything bottom-anchored (toasts, a chat composer) sits at
+ * `calc(var(--app-shell-footer-offset, 0px) + env(safe-area-inset-bottom, 0px))`.
+ *
+ * Mantine emits it on `:root` for a fixed-mode AppShell (its `cssVariablesSelector`), so a
+ * body-level portal reads it; the landscape override below is on `:root` for the same reason.
+ */
+
+/*
+ * An OPEN aside that does not dock: the region reserved only its rail, so it widens itself over
+ * main (`--app-shell-aside-width` is set on this element by `shell/index.tsx`) instead of shrinking
+ * it, lifted on the card depth token.
+ */
+.asideOverlay {
+  box-shadow: var(--vx-shadow-card);
+}
+
+/*
+ * Landscape phone: the header and the bottom bar take their compact row. The heights are JS numbers
+ * in `AppShell` props, so the override is on `:root` where Mantine writes them; `:root:root` outranks
+ * its later-rendered `<style>` at equal source order. The bar exists only below `sm`, so its rule is
+ * gated to that width — a wide landscape phone has no bar and keeps `--app-shell-footer-offset` 0.
+ * Compact numbers: header 40, bar 45 (44 tappable under its 1px seam), labels hidden.
+ */
+@media (max-height: 480px) and (orientation: landscape) {
+  :global(:root:root) {
+    --app-shell-header-height: 40px;
+    --app-shell-header-offset: 40px;
+  }
+}
+
+@media (max-height: 480px) and (orientation: landscape) and (max-width: 52.49375em) {
+  :global(:root:root) {
+    --app-shell-footer-height: 45px;
+    --app-shell-footer-offset: 45px;
+  }
+}

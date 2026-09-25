@@ -9,7 +9,7 @@
  */
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { describe, expect, test } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import type { ReactNode } from 'react'
 import {
   ActionGroup,
@@ -20,6 +20,9 @@ import {
   barActionMobile,
   globalActionMobile,
   isBarActionList,
+  BAR_KEY_ATTR,
+  PAGE_BAR_END_ATTR,
+  planBarFold,
 } from './actions'
 import type { BarAction, BarExtras } from './actions'
 
@@ -54,13 +57,10 @@ describe('ActionGroup — desktop', () => {
     expect(row?.textContent).not.toContain('More')
   })
 
-  test('a fourth secondary folds into ONE More menu instead of widening the row (law C7)', () => {
+  test('without a measurable row nothing folds — a zero reading is not overflow', () => {
     renderGroup({ secondary: secondary(5) })
-    const row = desktop()
-    // Three inline + the `More` trigger, which is itself a `default` button.
-    expect(row?.querySelectorAll('[data-variant="default"]').length).toBe(4)
-    expect(row?.textContent).toContain('More')
-    expect(screen.getAllByRole('button', { name: 'More' }).length).toBe(1)
+    expect(desktop()?.querySelectorAll('[data-variant="default"]').length).toBe(5)
+    expect(desktop()?.textContent).not.toContain('More')
   })
 
   test("a kind: 'menu' action never takes bar width — it folds even as the only secondary", () => {
@@ -343,18 +343,16 @@ describe('BarActionSlot — the SlotActions union', () => {
     expect(document.querySelector('.mantine-visible-from-sm')).toBeNull()
   })
 
-  test('the data arm gets the C7 fold: 3 inline, the rest behind More', () => {
+  test('the data arm renders its actions on the desktop group', () => {
     render(
       <MantineProvider>
-        <BarActionSlot actions={secondary(5)} />
+        <BarActionSlot actions={secondary(2)} />
       </MantineProvider>,
     )
     const desktop = document.querySelector('.mantine-visible-from-sm')
     if (!desktop) throw new Error('expected the desktop group')
     expect(desktop.textContent).toContain('Second 0')
-    expect(desktop.textContent).toContain('Second 2')
-    expect(desktop.textContent).not.toContain('Second 3')
-    expect(desktop.textContent).toContain('More')
+    expect(desktop.textContent).toContain('Second 1')
   })
 
   test('the data arm mounts the mobile kebab — the projection a ReactNode row never got', () => {
@@ -366,5 +364,215 @@ describe('BarActionSlot — the SlotActions union', () => {
     const mobile = document.querySelector('.mantine-hidden-from-sm')
     if (!mobile) throw new Error('expected the mobile group')
     expect(mobile.querySelector('[aria-label="More actions"]')).not.toBeNull()
+  })
+})
+
+const item = (key: string, full: number, icon?: number) => ({ key, full, icon })
+
+describe('planBarFold', () => {
+  const base = { gap: 6, hasMenus: false }
+
+  test('a row that fits folds nothing', () => {
+    const items = [item('a', 90, 32), item('b', 90, 32)]
+    expect(planBarFold({ ...base, room: 400, fixed: 100, items })).toEqual({})
+  })
+
+  test('folds from the last item back, icon-only first', () => {
+    const items = [item('a', 90, 32), item('b', 90, 32), item('c', 90, 32)]
+    // 100 + 3 x 96 = 388 overflows both rooms; c at icon width leaves 330, b and c leave 272.
+    expect(planBarFold({ ...base, room: 350, fixed: 100, items })).toEqual({ c: 'icon' })
+    expect(planBarFold({ ...base, room: 300, fixed: 100, items })).toEqual({ b: 'icon', c: 'icon' })
+  })
+
+  test('an icon-less item skips the icon step and goes straight to More', () => {
+    const items = [item('a', 90, 32), item('b', 90)]
+    expect(planBarFold({ ...base, room: 230, fixed: 100, items })).toEqual({
+      a: 'icon',
+      b: 'overflow',
+    })
+  })
+
+  test('More reserves its own width once anything overflows', () => {
+    const items = [item('a', 90), item('b', 90)]
+    // fixed 100 + a 96 = 196 fits 200, but with More (86) it is 282 -> a overflows too.
+    expect(planBarFold({ ...base, room: 200, fixed: 100, items })).toEqual({
+      a: 'overflow',
+      b: 'overflow',
+    })
+  })
+
+  test('a menu action reserves More from the start', () => {
+    const items = [item('a', 90, 32)]
+    expect(planBarFold({ ...base, hasMenus: true, room: 250, fixed: 100, items })).toEqual({
+      a: 'icon',
+    })
+  })
+})
+
+describe('planBarFold — edges', () => {
+  const base = { gap: 6, hasMenus: false }
+
+  test('no room at all pushes everything into More, icons first tried and abandoned', () => {
+    const items = [item('a', 90, 32), item('b', 90)]
+    expect(planBarFold({ ...base, room: 0, fixed: 0, items })).toEqual({
+      a: 'overflow',
+      b: 'overflow',
+    })
+    expect(planBarFold({ ...base, room: -40, fixed: 0, items })).toEqual({
+      a: 'overflow',
+      b: 'overflow',
+    })
+  })
+
+  test('no items and no menus is nothing to fold, whatever the room', () => {
+    expect(planBarFold({ ...base, room: 0, fixed: 500, items: [] })).toEqual({})
+  })
+
+  test('only menus: nothing to fold even when More alone overflows the room', () => {
+    expect(planBarFold({ ...base, hasMenus: true, room: 10, fixed: 0, items: [] })).toEqual({})
+  })
+
+  test('every item icon-less goes straight to More, last first', () => {
+    const items = [item('a', 90), item('b', 90), item('c', 90)]
+    // 3 x 96 = 288 overflows 250; c out leaves 192 + More 86 = 278, still over; b out leaves 96 + 86.
+    expect(planBarFold({ ...base, room: 250, fixed: 0, items })).toEqual({
+      c: 'overflow',
+      b: 'overflow',
+    })
+  })
+
+  test('a single item steps whole, then icon-only, then More as the room shrinks', () => {
+    const items = [item('a', 90, 32)]
+    expect(planBarFold({ ...base, room: 100, fixed: 0, items })).toEqual({})
+    expect(planBarFold({ ...base, room: 60, fixed: 0, items })).toEqual({ a: 'icon' })
+    expect(planBarFold({ ...base, room: 20, fixed: 0, items })).toEqual({ a: 'overflow' })
+  })
+})
+
+/**
+ * `useMeasuredFold` reaching the DOM. happy-dom does no layout, so the boxes are stubbed: a
+ * labelled button is 10px per label character, an icon-only one (it carries an `aria-label`) 32px,
+ * the row's own width is `ROW_ROOM`, and the row's one flow child spans every rendered action.
+ */
+describe('BarActionRow — the measured fold reaching the DOM', () => {
+  const GAP = 6
+  let room = 0
+  const saved: [object, string, PropertyDescriptor | undefined][] = []
+  const original = globalThis.ResizeObserver
+
+  const stub = (target: object, key: string, descriptor: PropertyDescriptor): void => {
+    saved.push([target, key, Object.getOwnPropertyDescriptor(target, key)])
+    Object.defineProperty(target, key, { configurable: true, ...descriptor })
+  }
+  const widthOf = (el: Element): number =>
+    el.hasAttribute('aria-label') ? 32 : (el.textContent?.length ?? 0) * 10
+
+  beforeEach(() => {
+    globalThis.ResizeObserver = class {
+      observe(): void {}
+      unobserve(): void {}
+      disconnect(): void {}
+    } as unknown as typeof ResizeObserver
+    stub(HTMLElement.prototype, 'offsetWidth', {
+      get(this: HTMLElement) {
+        return this.hasAttribute(BAR_KEY_ATTR) ? widthOf(this) : 0
+      },
+    })
+    stub(HTMLElement.prototype, 'offsetHeight', {
+      get(this: HTMLElement) {
+        return this.hasAttribute(BAR_KEY_ATTR) ? 32 : 0
+      },
+    })
+    stub(HTMLElement.prototype, 'clientWidth', {
+      get(this: HTMLElement) {
+        return this.hasAttribute(PAGE_BAR_END_ATTR) ? room : 0
+      },
+    })
+    stub(Element.prototype, 'getBoundingClientRect', {
+      value(this: Element) {
+        const inRow = this.parentElement?.hasAttribute(PAGE_BAR_END_ATTR) === true
+        const right = inRow
+          ? Array.from(this.querySelectorAll(`[${BAR_KEY_ATTR}]`)).reduce(
+              (sum, el) => sum + widthOf(el) + GAP,
+              0,
+            )
+          : 0
+        return { left: 0, right, width: right, top: 0, bottom: 0, height: 0, x: 0, y: 0 }
+      },
+    })
+  })
+
+  afterEach(() => {
+    globalThis.ResizeObserver = original
+    for (const [target, key, descriptor] of saved.reverse()) {
+      if (descriptor) Object.defineProperty(target, key, descriptor)
+      else Reflect.deleteProperty(target, key)
+    }
+    saved.length = 0
+  })
+
+  const glyph = <svg data-testid="glyph" />
+  const actions = (labels: string[], icons: boolean): BarAction[] =>
+    labels.map((label, i) => ({
+      key: `k${i}`,
+      label,
+      ...(icons && { icon: glyph }),
+      onClick: () => {},
+    }))
+  const ui = (secondary: BarAction[]): ReactNode => (
+    <MantineProvider>
+      <div {...{ [PAGE_BAR_END_ATTR]: '' }}>
+        <BarActionRow host="page" secondary={secondary} />
+      </div>
+    </MantineProvider>
+  )
+  const barKeys = (): (string | null)[] =>
+    Array.from(document.querySelectorAll(`[${BAR_KEY_ATTR}][class*="Group"], [${BAR_KEY_ATTR}]`))
+      .filter((el) => el.closest('.mantine-visible-from-sm') !== null)
+      .map((el) => el.getAttribute(BAR_KEY_ATTR))
+
+  test('a row that overflows renders the tail icon-only, its label kept as the accessible name', () => {
+    room = 250
+    render(ui(actions(['AAAAAAAAAA', 'BBBBBBBBBB', 'CCCCCCCCCC'], true)))
+
+    const c = document.querySelector(`[${BAR_KEY_ATTR}="k2"]`)
+    expect(c?.getAttribute('aria-label')).toBe('CCCCCCCCCC')
+    expect(document.querySelector(`[${BAR_KEY_ATTR}="k0"]`)?.hasAttribute('aria-label')).toBe(false)
+    expect(document.querySelector(`[${BAR_KEY_ATTR}="k1"]`)?.hasAttribute('aria-label')).toBe(false)
+  })
+
+  test('icon-less items that overflow leave the row and land in More', async () => {
+    room = 300
+    render(ui(actions(['AAAAAAAAAA', 'BBBBBBBBBB', 'CCCCCCCCCC'], false)))
+
+    expect(barKeys()).toEqual(['k0', 'k1'])
+    fireEvent.click(screen.getByRole('button', { name: 'More' }))
+    await waitFor(() => expect(screen.getByText('CCCCCCCCCC')).toBeDefined())
+  })
+
+  test('a row that fits renders whole with no More', () => {
+    room = 400
+    render(ui(actions(['AAAAAAAAAA', 'BBBBBBBBBB', 'CCCCCCCCCC'], false)))
+
+    expect(barKeys()).toEqual(['k0', 'k1', 'k2'])
+    expect(screen.queryByRole('button', { name: 'More' })).toBeNull()
+  })
+
+  test('a shorter label on a folded action re-measures instead of trusting the stale width', () => {
+    room = 250
+    const { rerender } = render(ui(actions(['AAAAAAAAAA', 'BBBBBBBBBB', 'CCCCCCCCCC'], true)))
+    expect(document.querySelector(`[${BAR_KEY_ATTR}="k2"]`)?.hasAttribute('aria-label')).toBe(true)
+
+    rerender(ui(actions(['A', 'B', 'C'], true)))
+
+    expect(document.querySelector(`[${BAR_KEY_ATTR}="k2"]`)?.hasAttribute('aria-label')).toBe(false)
+  })
+
+  test('an unmeasurable row (zero width) never folds', () => {
+    room = 0
+    render(ui(actions(['AAAAAAAAAA', 'BBBBBBBBBB', 'CCCCCCCCCC'], true)))
+
+    expect(barKeys()).toEqual(['k0', 'k1', 'k2'])
+    expect(document.querySelector('[aria-label="CCCCCCCCCC"]')).toBeNull()
   })
 })

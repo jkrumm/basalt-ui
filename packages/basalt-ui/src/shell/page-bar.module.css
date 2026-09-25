@@ -46,6 +46,8 @@
 }
 
 .row1 {
+  /* Fills the header's elastic outlet, so `.row1End` below is the ROOM the action fold measures. */
+  width: 100%;
   display: flex;
   flex-wrap: nowrap;
   align-items: center;

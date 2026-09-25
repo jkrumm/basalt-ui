@@ -28,7 +28,12 @@ import { createPortal } from 'react-dom'
 import { cx } from '../common/props'
 import type { BasaltProps, SlotStylesProps } from '../common/props'
 import { CtlSlot } from '../theme'
-import { BarActionRow, BarExtrasProvider, globalActionAsBarAction } from '../controls/actions'
+import {
+  BarActionRow,
+  BarExtrasProvider,
+  PAGE_BAR_END_ATTR,
+  globalActionAsBarAction,
+} from '../controls/actions'
 import { FilterPill } from '../controls/filter-pill'
 import { FilterSheet } from '../controls/filter-sheet'
 import { SyncButton } from '../controls/sync-button'
@@ -399,7 +404,7 @@ export function PageBar({
           {title !== undefined && <h1 className={classes.title}>{title}</h1>}
         </div>
       )}
-      <div className={classes.row1End}>
+      <div className={classes.row1End} {...{ [PAGE_BAR_END_ATTR]: '' }}>
         {(actions !== undefined || filtersEndActions.length > 0 || sync !== undefined) && (
           <CtlSlot>
             {/* THE row-1 group: the only `host: 'page'` instance, so the shell's `mobile: 'more'`

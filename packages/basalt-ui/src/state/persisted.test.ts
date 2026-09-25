@@ -9,7 +9,7 @@
  */
 import { beforeEach, describe, expect, test } from 'bun:test'
 import { act, renderHook } from '@testing-library/react'
-import { createPersistedState, readPersistedValue } from './persisted'
+import { createPersistedState, createPersistedStore, readPersistedValue } from './persisted'
 
 beforeEach(() => {
   localStorage.clear()
@@ -87,5 +87,130 @@ describe('createPersistedState — one key, two instances', () => {
     expect(written).toEqual({ title: 'one' })
     // Same raw string → same parsed reference, which is what keeps useSyncExternalStore quiet.
     expect(renderHook(() => useDraft()).result.current[0]).toBe(written)
+  })
+})
+
+describe('createPersistedStore — unset is not written-false', () => {
+  test('isSet is false until a write, then true even when the value equals `initial`', () => {
+    const useStore = createPersistedStore({ key: 'unset-flag', version: 1, initial: false })
+    const { result } = renderHook(() => useStore())
+    expect(result.current[0]).toBe(false)
+    expect(result.current[2]).toBe(false)
+
+    act(() => {
+      result.current[1](false)
+    })
+
+    expect(result.current[0]).toBe(false)
+    expect(result.current[2]).toBe(true)
+  })
+
+  test('a value already in storage reads as set; a corrupt one does not', () => {
+    const useStore = createPersistedStore({ key: 'unset-flag-2', version: 1, initial: true })
+    localStorage.setItem('basalt:unset-flag-2', JSON.stringify({ v: 1, value: false }))
+    const stored = renderHook(() => useStore())
+    expect(stored.result.current[0]).toBe(false)
+    expect(stored.result.current[2]).toBe(true)
+    stored.unmount()
+
+    localStorage.setItem('basalt:unset-flag-2', 'not json')
+    const corrupt = renderHook(() => useStore())
+    expect(corrupt.result.current[0]).toBe(true)
+    expect(corrupt.result.current[2]).toBe(false)
+  })
+
+  test('a stale-version envelope is not set, and the value stays `initial`', () => {
+    const useStore = createPersistedStore({ key: 'stale-flag', version: 2, initial: 'dflt' })
+    localStorage.setItem('basalt:stale-flag', JSON.stringify({ v: 1, value: 'old' }))
+    const { result } = renderHook(() => useStore())
+    expect(result.current[0]).toBe('dflt')
+    expect(result.current[2]).toBe(false)
+  })
+
+  test('a schema-invalid envelope is not set', () => {
+    const schema = {
+      '~standard': {
+        version: 1 as const,
+        vendor: 'test',
+        validate: (value: unknown) =>
+          typeof value === 'string' ? { value } : { issues: [{ message: 'not a string' }] },
+      },
+    }
+    const useStore = createPersistedStore({
+      key: 'schema-flag',
+      version: 1,
+      initial: 'dflt',
+      schema,
+    })
+    localStorage.setItem('basalt:schema-flag', JSON.stringify({ v: 1, value: 42 }))
+    const { result } = renderHook(() => useStore())
+    expect(result.current[0]).toBe('dflt')
+    expect(result.current[2]).toBe(false)
+  })
+
+  test('a migrated stale envelope counts as set', () => {
+    const useStore = createPersistedStore({
+      key: 'migrated-flag',
+      version: 2,
+      initial: 0,
+      migrate: (old) => Number(old) * 10,
+    })
+    localStorage.setItem('basalt:migrated-flag', JSON.stringify({ v: 1, value: 4 }))
+    const { result } = renderHook(() => useStore())
+    expect(result.current[0]).toBe(40)
+    expect(result.current[2]).toBe(true)
+  })
+
+  test('when the write throws, the explicit choice still wins for the session', () => {
+    const useStore = createPersistedStore({ key: 'blocked-flag', version: 1, initial: false })
+    const { result } = renderHook(() => useStore())
+    const real = window.localStorage
+    Object.defineProperty(window, 'localStorage', {
+      configurable: true,
+      value: {
+        getItem: (key: string) => real.getItem(key),
+        setItem: () => {
+          throw new Error('QuotaExceededError')
+        },
+      },
+    })
+    try {
+      act(() => {
+        result.current[1](true)
+      })
+      expect(result.current[0]).toBe(true)
+      expect(result.current[2]).toBe(true)
+      expect(localStorage.getItem('basalt:blocked-flag')).toBeNull()
+    } finally {
+      Object.defineProperty(window, 'localStorage', { configurable: true, value: real })
+    }
+
+    // Storage works again: the next write persists and the override is gone.
+    act(() => {
+      result.current[1](false)
+    })
+    expect(localStorage.getItem('basalt:blocked-flag')).toBe(JSON.stringify({ v: 1, value: false }))
+    expect(result.current[0]).toBe(false)
+  })
+
+  test('removeItem plus a storage event returns the store to unset', () => {
+    const useStore = createPersistedStore({ key: 'removed-flag', version: 1, initial: 'dflt' })
+    localStorage.setItem('basalt:removed-flag', JSON.stringify({ v: 1, value: 'chosen' }))
+    const { result } = renderHook(() => useStore())
+    expect(result.current[0]).toBe('chosen')
+    expect(result.current[2]).toBe(true)
+
+    act(() => {
+      localStorage.removeItem('basalt:removed-flag')
+      window.dispatchEvent(new StorageEvent('storage', { key: 'basalt:removed-flag' }))
+    })
+
+    expect(result.current[0]).toBe('dflt')
+    expect(result.current[2]).toBe(false)
+  })
+
+  test('createPersistedState keeps its two-element contract', () => {
+    const useState2 = createPersistedState({ key: 'two-tuple', version: 1, initial: 0 })
+    expect(renderHook(() => useState2()).result.current).toHaveLength(2)
   })
 })

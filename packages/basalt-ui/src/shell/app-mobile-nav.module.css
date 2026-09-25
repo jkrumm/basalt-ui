@@ -403,3 +403,15 @@
     transition: none;
   }
 }
+
+/* Landscape phone: the bar's compact row (`app-main.module.css` sets its height) is icons only —
+ * the label is visually hidden, not removed, so each tab keeps its accessible name. */
+@media (max-height: 480px) and (orientation: landscape) {
+  .label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+}

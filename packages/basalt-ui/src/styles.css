@@ -210,6 +210,14 @@
     background-color: var(--basalt-scrollbar-thumb-hover);
   }
 
+  /* Bottom-anchored toasts clear the shell's bottom bar + safe area (RESPONSIVE-SPEC §2). */
+  .mantine-Notifications-root[data-position^='bottom'] {
+    bottom: calc(
+      var(--app-shell-footer-offset, 0px) + env(safe-area-inset-bottom, 0px) +
+        var(--mantine-spacing-md)
+    );
+  }
+
   /* Pointer tier: an invisible hit-area expansion to at least `--vx-hit` (44px coarse, 24px fine),
      no layout change. `::after`, not `::before` — Mantine's Button owns `::before` for its loading
      overlay. `overflow: visible` is load-bearing: Button/ActionIcon roots clip to their box, which

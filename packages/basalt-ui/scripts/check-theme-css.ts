@@ -220,6 +220,14 @@ const SHADOW_SURFACES: readonly ShadowSurfaceEntry[] = [
       'the same rule).',
   },
   {
+    file: 'shell/app-main.module.css',
+    site: '.asideOverlay',
+    roundedBy:
+      "none by design — `.asideOverlay` lands on Mantine's AppShell.Aside root, a full-height " +
+      'panel flush to the viewport edge whose aside rule in AppShell.css (@mantine/core/styles) ' +
+      'declares no border-radius, so the shadow follows a square box and there is no corner shape to mismatch.',
+  },
+  {
     file: 'shell/sidebar-search.module.css',
     site: '.trigger',
     roundedBy:
