@@ -121,17 +121,43 @@ then `/review` findings resolved.
       Gate: `bun run pre` red only on `ai-sdk-transport.test.ts:339` (plus a load-flaky 5s timeout in
       `actions.test.tsx`, green alone), layout 98/98, pack-test passed, budgets unchanged.
 
-## Wave 5 — Card chrome by container <!-- status: active -->
+## Wave 5 — Card chrome by container <!-- status: done -->
 
-- [ ] `container: basalt-card` on ChartCard/StatCard/Section/WidgetHeader; header rules → `@container`
+- [x] `container: basalt-card` on ChartCard/StatCard/Section/WidgetHeader; header rules → `@container`
       per the container-class table; subtitle → info glyph at compact; wide puts value on the title row
-- [ ] KPI value never ellipsizes (cqi clamp, delta wraps first); StatGroup 1 col < 260px
-- [ ] ChartCard flex column + body flex:1 (charts grow into stretched rows); internal legend slot via
+- [x] KPI value never ellipsizes (cqi clamp, delta wraps first); StatGroup 1 col < 260px
+- [x] ChartCard flex column + body flex:1 (charts grow into stretched rows); internal legend slot via
       context (no new export)
-- [ ] Before/after shots of /dashboard, /dashboard/revenue, /cbbi at all three viewports
-      **Left behind:**
+- [x] Before/after shots of /dashboard, /dashboard/revenue, /cbbi at all three viewports
+      **Left behind:** `container: basalt-card / inline-size` is declared on the ChartCard root (inline
+      style), StatCard root (inline style) and Section root (CSS module) — NOT on WidgetHeader, so
+      SettingsSection/DangerZone/BasaltDataTable compose it with no card container and get the unconditional
+      base rules (wrap, shrinkable actions, plain `--vx-text-kpi`); the `cqi` clamp lives in
+      `@container basalt-card (width >= 0px)`. Container classes: micro+compact are NOT split (one
+      `max-width: 479.9px` block: subtitle folds into the info glyph, title row wraps, StatCard sparkline
+      column); wide (>=800px) puts value/delta on the title row via `.titleRow{display:contents}` + `order`
+      (metrics 1, actions 2). Subtitle fold = a second InfoGlyph (`foldGlyph`) when `info` is unset, else the
+      bubble carries `note` (`foldNote`). StatGroup: 1 col < 260px (`259.9px`, StatGroup-specific literal,
+      allowlisted per container in `breakpoint-literals.test.ts`). ChartCard: flex column, body
+      `flex: 1 1 auto` (block, not flex — charts still use explicit heights, wave 6 owns height-as-min-height);
+      internal legend slot = `charts/primitives/chart-card-context.ts` + an empty
+      `<div data-basalt-legend-slot>` in the header band (only when `hasHeader`), NO consumer yet — wave 7
+      portals into it or it is deleted (adopt-or-delete; review flagged it as dead plumbing).
+      MIGRATING.md has the behaviour-change entry. Layout suite: `card-chrome.layout.test.ts` (105 -> 107).
+      Shots: `.claude/mobile/w5/{before,after}/` via `node .claude/mobile/w5/shoot.mjs before|after`
+      (before/dashboard-phone is a tiled artifact of `isMobile:true`; the script now uses `isMobile:false`).
+      **Known gaps:** a StatCard stretched by a grid row leaves a ~55px dead band under its sparkline strip
+      (pre-existing, spec only stretches ChartCard); SettingsSection/BasaltDataTable don't declare a card
+      container so they never fold the subtitle or move metrics to the title row; review deferred:
+      duplicate rail-suppression blocks in `stat-group.module.css`, source-text CSS tests
+      (`stat-group.test.ts`) should become layout probes, container declaration duplicated across two TSX
+      files + one CSS module, no layout probes at exactly 479/480/799/800 or for auto-width flex/grid parents
+      (inline-size containment collapses shrink-to-fit cards — documented in MIGRATING). Net diff +468/−227
+      (tests + fold logic); budgets unchanged 396/400 · 750/750 · 2479/2480. Gate: `bun run pre` red only on
+      `ai-sdk-transport.test.ts:339`; layout 107/107; `/review` blockers (wide order, <260 rail cascade)
+      fixed, improvements 3/4/5 applied.
 
-## Wave 6 — Chart layout law: resolver, axes, height <!-- status: pending -->
+## Wave 6 — Chart layout law: resolver, axes, height <!-- status: active -->
 
 - [ ] `resolveChartLayout` (spec §4) replaces `resolveChartTier`/`ChartTierMetrics`; container
       classes from the shared table; unmeasured default from the size class; unit tests pin the
