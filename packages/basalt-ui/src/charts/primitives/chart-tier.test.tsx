@@ -199,6 +199,9 @@ function bottomMarginOf(container: HTMLElement): number {
 }
 
 const WIDE_X = (key: string): string => `${key} 14:00 CEST`
+/** Same width, no whitespace: cannot wrap, so the gutter/rotation laws under test are isolated
+ * from the compact-width wrap-first law (`resolveAxisEconomy`). */
+const SOLID_X = (key: string): string => `${key}/14:00:00/CEST`
 
 /**
  * §8's "the tick font is threaded into the MEASUREMENT, not just the paint". `useBandPlot` owns the
@@ -215,7 +218,7 @@ describe(`useBandPlot measures at the tier it paints (${PHONE_WIDTH}px)`, () => 
     { key: '2026-08-02', up: 20, down: 400 },
     { key: '2026-08-03', up: 10, down: 200 },
   ]
-  const xLabels = bandRows.map((d) => WIDE_X(d.key))
+  const xLabels = bandRows.map((d) => SOLID_X(d.key))
 
   /** What the bottom gutter must be if it was measured at the font the axis paints. */
   const expectedBottom = autoMargin({
@@ -236,7 +239,7 @@ describe(`useBandPlot measures at the tier it paints (${PHONE_WIDTH}px)`, () => 
         data={bandRows}
         chartId="band-tier"
         getX={(d) => d.key}
-        formatX={WIDE_X}
+        formatX={SOLID_X}
         series={[{ key: 'ok', label: 'Up', color: '#0a0', mark: 'bar' }]}
         getBand={() => ({ state: 'ok' })}
         height={CHART_HEIGHT}
@@ -255,7 +258,7 @@ describe(`useBandPlot measures at the tier it paints (${PHONE_WIDTH}px)`, () => 
         data={bandRows}
         chartId="mirror-tier"
         getX={(d) => d.key}
-        formatX={WIDE_X}
+        formatX={SOLID_X}
         series={[
           { key: 'up', label: 'Up', color: '#0a0', mark: 'bar', getValue: (d) => d.up },
           { key: 'down', label: 'Down', color: '#00a', mark: 'bar', getValue: (d) => d.down },
@@ -336,7 +339,7 @@ describe(`Heatmap reads the tier for its category labels (${PHONE_WIDTH}px)`, ()
  * the measured labels cannot fit three ticks side by side, and the rotated first label's leftward
  * projection widens the left gutter that used to clip it.
  */
-describe(`wide labels auto-rotate at ${PHONE_WIDTH}px, and xLabelRotate: 0 opts out`, () => {
+describe(`wide labels at ${PHONE_WIDTH}px: terminals anchor inward, xLabelRotate is explicit`, () => {
   measuredAt(PHONE_WIDTH)
 
   const renderRotating = async (props: Record<string, unknown> = {}): Promise<HTMLElement> => {
@@ -346,7 +349,7 @@ describe(`wide labels auto-rotate at ${PHONE_WIDTH}px, and xLabelRotate: 0 opts 
         chartId={`rot-${JSON.stringify(props)}`}
         getX={(d: Row) => d.date}
         series={series}
-        formatX={WIDE_X}
+        formatX={SOLID_X}
         legend={false}
         height={CHART_HEIGHT}
         {...props}
@@ -360,13 +363,17 @@ describe(`wide labels auto-rotate at ${PHONE_WIDTH}px, and xLabelRotate: 0 opts 
     return container
   }
 
-  test('unset auto-rotates to 45 and widens the left margin over the opted-out chart', async () => {
+  test('unset anchors the two terminals inward instead of rotating; an explicit 45 still rotates and widens the left margin', async () => {
     const auto = await renderRotating()
-    const optedOut = await renderRotating({ xLabelRotate: 0 })
+    const explicit = await renderRotating({ xLabelRotate: 45 })
 
-    expect(auto.innerHTML).toContain('transform="rotate(-45')
-    expect(optedOut.innerHTML).not.toContain('transform="rotate(')
-    expect(plotOrigin(auto.innerHTML).left).toBeGreaterThan(plotOrigin(optedOut.innerHTML).left)
+    // Anchored terminals fit two flat labels in the room the old half-label reservation took, so
+    // the phone default no longer rotates here — it only rotates when rotating buys more labels.
+    expect(auto.innerHTML).not.toContain('transform="rotate(')
+    expect(auto.innerHTML).toContain('text-anchor="start"')
+    expect(auto.innerHTML).toContain('text-anchor="end"')
+    expect(explicit.innerHTML).toContain('transform="rotate(-45')
+    expect(plotOrigin(explicit.innerHTML).left).toBeGreaterThan(plotOrigin(auto.innerHTML).left)
   })
 
   test('an explicit 90 is painted as given — the caller always wins over the default', async () => {
@@ -397,5 +404,81 @@ describe('the same wide labels at desktop width never auto-rotate', () => {
       expect(container.querySelector('.visx-axis-bottom')).not.toBeNull()
     })
     expect(container.innerHTML).not.toContain('transform="rotate(')
+  })
+})
+
+/**
+ * Ladder steps 1, 2 and 5 end to end (`docs/waves/RESPONSIVE-SPEC.md` §4): at compact width the y
+ * labels sit INSIDE the plot and the left gutter drops to its floor; at regular width they stay
+ * outside and the gutter is measured as before.
+ */
+describe.each([
+  { width: PHONE_WIDTH, inside: true },
+  { width: 900, inside: false },
+])('y axis placement at $width px', ({ width, inside }) => {
+  measuredAt(width)
+
+  const bigRows = rows.map((row) => ({ ...row, v: row.v * 1000 }))
+
+  test(
+    inside ? 'labels inside, left margin == floor' : 'labels outside, gutter measured',
+    async () => {
+      const { container } = render(
+        <CartesianChart
+          data={bigRows}
+          chartId={`y-place-${width}`}
+          getX={(d: Row) => d.date}
+          series={series}
+          legend={false}
+          height={CHART_HEIGHT}
+        >
+          {() => null}
+        </CartesianChart>,
+      )
+      const wanted = inside ? 'paint-order="stroke"' : 'visx-axis-left'
+      await waitFor(() => {
+        expect(container.innerHTML).toContain(wanted)
+        expect(container.querySelector('.visx-axis-bottom')).not.toBeNull()
+      })
+      const markup = container.innerHTML
+      const left = plotOrigin(markup).left
+      if (inside) {
+        expect(left).toBe(chartTierMetrics('phone').margin.left)
+        expect(markup).toContain('stroke="var(--vx-surface-panel)"')
+        return
+      }
+      expect(markup).not.toContain('paint-order="stroke"')
+      expect(left).toBeGreaterThanOrEqual(chartTierMetrics('desktop').margin.left)
+      // Compact y format: 40000 paints as 40k, never 40,000.
+      expect(markup).toContain('>40k<')
+      expect(markup).not.toContain('40,000')
+    },
+  )
+})
+
+describe('an explicit margin.left keeps the y axis outside at compact width', () => {
+  measuredAt(PHONE_WIDTH)
+
+  test('and an explicit y.format is never compacted', async () => {
+    const { container } = render(
+      <CartesianChart
+        data={rows.map((row) => ({ ...row, v: row.v * 1000 }))}
+        chartId="y-margin-wins"
+        getX={(d: Row) => d.date}
+        series={series}
+        legend={false}
+        height={CHART_HEIGHT}
+        margin={{ left: 60 }}
+        y={{ format: (v) => `${v} units` }}
+      >
+        {() => null}
+      </CartesianChart>,
+    )
+    await waitFor(() => {
+      expect(container.querySelector('.visx-axis-bottom')).not.toBeNull()
+      expect(plotOrigin(container.innerHTML).left).toBe(60)
+    })
+    expect(container.innerHTML).not.toContain('paint-order="stroke"')
+    expect(container.innerHTML).toContain('units')
   })
 })

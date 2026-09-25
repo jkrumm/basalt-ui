@@ -376,7 +376,7 @@ export function ChartFrame({
     )
 
   return (
-    <ChartTierProvider containerClass={layout.containerClass}>
+    <ChartTierProvider containerClass={layout.containerClass} layout={layout}>
       <div
         ref={containerRef}
         {...(className !== undefined && { className })}

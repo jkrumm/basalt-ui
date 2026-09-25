@@ -20,7 +20,8 @@ import type { ReactNode, RefObject } from 'react'
 import type { ChartMargin } from '../../tokens'
 import type { CursorResolution } from '../cursor/resolve'
 import { autoMargin } from '../layout/auto-margin'
-import { useChartTierMetrics } from '../primitives/chart-tier'
+import { isTightClass, planXLabels } from '../primitives/chart-layout'
+import { useChartContainerClass, useChartTierMetrics } from '../primitives/chart-tier'
 import { maxTextWidth } from '../utils/measure-text'
 import { smartTicks, xLabelPxFor } from '../utils/ticks'
 import { useChartCursor } from './useChartCursor'
@@ -150,6 +151,12 @@ export type BandPlot<T> = {
   /** Drawn width of one band — the pitch minus a 1px separator, floored at 1. */
   bandWidth: number
   tickValues: string[]
+  /** Left-axis labels draw inside the plot (compact/micro, no `margin.left` override). */
+  yInside: boolean
+  /** Terminal x labels anchor inward (compact/micro). */
+  xAnchorTerminals: boolean
+  /** Width to wrap x labels to; undefined when they do not wrap. */
+  xWrapWidth: number | undefined
   svgRef: RefObject<SVGSVGElement | null>
   tooltipAnchor: CursorAnchor | null
   showTooltip: boolean
@@ -182,17 +189,37 @@ export function useBandPlot<T>(input: UseBandPlotInput<T>): BandPlot<T> {
   // one `AxisBottomDate` paints — measured labels must be the painted labels, §1) and the tightened
   // margin FLOORS (`docs/CHARTS-SPEC.md` §8).
   const tier = useChartTierMetrics()
+  const containerClass = useChartContainerClass()
+  const tight = isTightClass(containerClass)
 
   const hasLeftAxis = leftLabels !== undefined && leftLabels.length > 0
+  // Ladder step 5: inside labels reserve no gutter. An explicit `margin.left` keeps them outside.
+  const yInside = tight && hasLeftAxis && marginOverride?.left === undefined
   const xLabelsAll = useMemo(() => data.map((d) => formatX(getX(d))), [data, getX, formatX])
+
+  // Ladder step 4 (wrap; a band axis cannot rotate, so it thins instead). Sized from the token
+  // floors because the real gutters depend on the wrapped line count.
+  const xPlan = useMemo(
+    () =>
+      planXLabels({
+        labels: xLabelsAll,
+        plotWidth: width - tier.margin.left - tier.margin.right,
+        fontPx: tier.axisFont,
+        categorical: tight && xLabelsAll.some((label) => /\s/.test(label)),
+      }),
+    [xLabelsAll, width, tier.margin, tier.axisFont, tight],
+  )
+  const xWrapWidth = xPlan.wrap ? xPlan.wrapPx : undefined
 
   // ── Pass 1: gutters, from the labels that will actually be painted ──────────────────────────
   const margin = useMemo<ChartMargin>(() => {
     const measured = autoMargin({
-      ...(leftLabels !== undefined && { left: leftLabels }),
+      ...(leftLabels !== undefined && { left: yInside ? [] : leftLabels }),
       bottom: xLabelsAll,
       fontPx: tier.axisFont,
       floor: tier.margin,
+      anchorTerminals: tight,
+      bottomLines: xPlan.lines,
       ...(marginOverride !== undefined && { override: marginOverride }),
     })
     if (marginOverride?.left !== undefined && marginOverride.right !== undefined) return measured
@@ -201,24 +228,38 @@ export function useBandPlot<T>(input: UseBandPlotInput<T>): BandPlot<T> {
     // A band axis puts its FIRST tick on the plot's left edge, so the left gutter needs the same
     // half-label law `autoMargin` already applies on the right. `autoMargin` cannot know that —
     // its left law measures a left AXIS, which a band plot may not have.
-    const left = hasLeftAxis ? measured.left : Math.max(measured.left, halfXLabel)
+    const left = hasLeftAxis || tight ? measured.left : Math.max(measured.left, halfXLabel)
     return {
       ...measured,
       ...(marginOverride?.left === undefined && {
-        left: hasLeftAxis
-          ? left
-          : capTerminalGutter(left, width, TERMINAL_GUTTER_MAX_FRACTION.left, tier.margin.left),
+        left:
+          hasLeftAxis || tight
+            ? left
+            : capTerminalGutter(left, width, TERMINAL_GUTTER_MAX_FRACTION.left, tier.margin.left),
       }),
       ...(marginOverride?.right === undefined && {
-        right: capTerminalGutter(
-          measured.right,
-          width,
-          TERMINAL_GUTTER_MAX_FRACTION.right,
-          tier.margin.right,
-        ),
+        right: tight
+          ? measured.right
+          : capTerminalGutter(
+              measured.right,
+              width,
+              TERMINAL_GUTTER_MAX_FRACTION.right,
+              tier.margin.right,
+            ),
       }),
     }
-  }, [leftLabels, xLabelsAll, marginOverride, hasLeftAxis, width, tier.axisFont, tier.margin])
+  }, [
+    leftLabels,
+    xLabelsAll,
+    marginOverride,
+    hasLeftAxis,
+    width,
+    tier.axisFont,
+    tier.margin,
+    tight,
+    yInside,
+    xPlan.lines,
+  ])
 
   const plotWidth = Math.max(width - margin.left - margin.right, 0)
 
@@ -262,18 +303,18 @@ export function useBandPlot<T>(input: UseBandPlotInput<T>): BandPlot<T> {
   // same measured-spacing law `CartesianChart` applies (`docs/CHARTS-SPEC.md` §1). `keys` (not
   // `xLabelsAll`) because ticks are chosen from the post-fold key list.
   const xLabelPx = useMemo(
-    () => xLabelPxFor(keys.map(formatX), tier.axisFont),
-    [keys, formatX, tier.axisFont],
+    () =>
+      xWrapWidth === undefined ? xLabelPxFor(keys.map(formatX), tier.axisFont) : xPlan.labelPx,
+    [keys, formatX, tier.axisFont, xWrapWidth, xPlan.labelPx],
   )
 
-  const tickValues = useMemo(
-    () => [
-      ...(xTickValues === undefined
-        ? smartTicks(keys, plotWidth, xLabelPx)
-        : xTickValues(keys, plotWidth)),
-    ],
-    [keys, plotWidth, xTickValues, xLabelPx],
-  )
+  const tickValues = useMemo(() => {
+    if (xTickValues !== undefined) return [...xTickValues(keys, plotWidth)]
+    // Micro: the two terminals only.
+    if (containerClass === 'micro')
+      return keys.length > 1 ? [keys[0]!, keys[keys.length - 1]!] : [...keys]
+    return [...smartTicks(keys, plotWidth, xLabelPx)]
+  }, [keys, plotWidth, xTickValues, xLabelPx, containerClass])
 
   const svgRef = useRef<SVGSVGElement>(null)
   const point = cursor.point
@@ -307,6 +348,9 @@ export function useBandPlot<T>(input: UseBandPlotInput<T>): BandPlot<T> {
     step,
     bandWidth,
     tickValues,
+    yInside,
+    xAnchorTerminals: tight,
+    xWrapWidth,
     svgRef,
     tooltipAnchor,
     showTooltip,

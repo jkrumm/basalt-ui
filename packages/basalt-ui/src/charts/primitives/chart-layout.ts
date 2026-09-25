@@ -19,7 +19,19 @@ export type ChartLayout = {
     | { mode: 'dots' | 'chips'; where: 'header' | 'band'; visible: number; overflow: number }
     | { mode: 'side'; width: number }
   yAxis: { mode: 'outside' | 'inside' | 'none'; ticks: number; compact: boolean }
-  xAxis: { anchorTerminals: true; wrap: boolean; rotate: 0 | 45; thinTo: number }
+  xAxis: {
+    /** First label anchored `start`, last `end` — only where the plot is tight (micro/compact). */
+    anchorTerminals: boolean
+    wrap: boolean
+    rotate: 0 | 45
+    thinTo: number
+    /** Lines the tallest label takes once wrapped (1 when it does not). */
+    lines: number
+    /** Px one tick label needs: measured width (wrapped width when wrapping) plus the gap. */
+    labelPx: number
+    /** Width labels wrap to; `0` when they do not wrap. */
+    wrapPx: number
+  }
 }
 
 export type ChartLayoutInput = {
@@ -94,36 +106,146 @@ function resolveLegend(
   }
 }
 
-function resolveYAxis(
-  input: ChartLayoutInput,
-  containerClass: ContainerClass,
-  height: number,
-): ChartLayout['yAxis'] {
-  const longest = input.yLabels.reduce((max, label) => Math.max(max, label.length), 0)
+/** Compact and micro plots are tight: y labels move inside and terminal x labels anchor inward. */
+export function isTightClass(containerClass: ContainerClass): boolean {
+  return containerClass === 'compact' || containerClass === 'micro'
+}
+
+/** Ladder step 1: `12500` -> `12.5k`, `1_200_000` -> `1.2M`; `null` below 1000 (nothing to compact). */
+export function compactNumber(value: number): string | null {
+  const abs = Math.abs(value)
+  if (!Number.isFinite(value) || abs < 1000) return null
+  const units = [
+    [1e12, 'T'],
+    [1e9, 'B'],
+    [1e6, 'M'],
+    [1e3, 'k'],
+  ] as const
+  const [size, suffix] = units.find(([unit]) => abs >= unit) ?? units[units.length - 1]!
+  const scaled = Math.round((value / size) * 10) / 10
+  return `${scaled}${suffix}`
+}
+
+/** Ladder step 1's rule: compact only when the longest y label is over 4 chars. */
+export function shouldCompactYLabels(labels: readonly string[]): boolean {
+  return labels.some((label) => label.length > COMPACT_LABEL_CHARS)
+}
+
+/** Ladder step 2 + the `VX.minPlotHeight` guard: one tick per ~44px, 2 when the plot is under the floor. */
+export function yTickCount(plotHeight: number): number {
+  if (plotHeight < VX.minPlotHeight) return 2
+  return clamp(Math.round(plotHeight / TICK_SPACING), 2, 6)
+}
+
+/** Greedy word wrap by measured px; a single word wider than `maxPx` keeps its own line. */
+export function wrapLabel(label: string, maxPx: number, fontPx: number): string[] {
+  const words = label.split(/\s+/).filter((word) => word !== '')
+  const lines: string[] = []
+  let current = ''
+  for (const word of words) {
+    const candidate = current === '' ? word : `${current} ${word}`
+    if (current !== '' && measureText(candidate, fontPx) > maxPx) {
+      lines.push(current)
+      current = word
+      continue
+    }
+    current = candidate
+  }
+  if (current !== '') lines.push(current)
+  return lines.length > 0 ? lines : [label]
+}
+
+export type XLabelPlan = Pick<
+  ChartLayout['xAxis'],
+  'wrap' | 'rotate' | 'thinTo' | 'lines' | 'labelPx' | 'wrapPx'
+>
+
+/**
+ * Ladder step 4: x labels that do not all fit side by side wrap (categorical only) before they
+ * rotate; they rotate only when there are more than twice as many keys as fit even wrapped.
+ */
+export function planXLabels(input: {
+  labels: readonly string[]
+  plotWidth: number
+  fontPx: number
+  categorical: boolean
+}): XLabelPlan {
+  const { labels, plotWidth, fontPx, categorical } = input
+  const count = labels.length
+  const widest = labels.reduce((max, label) => Math.max(max, measureText(label, fontPx)), 0)
+  const flatPx = widest + X_LABEL_GAP
+  const fit = plotWidth > 0 && widest > 0 ? Math.floor(plotWidth / flatPx) : count
+  const flat = {
+    wrap: false,
+    rotate: 0,
+    thinTo: clamp(fit, 2, Math.max(count, 2)),
+    lines: 1,
+    labelPx: flatPx,
+    wrapPx: 0,
+  } as const satisfies XLabelPlan
+  if (!categorical || count <= fit || plotWidth <= 0) return flat
+
+  const widestWord = labels.reduce(
+    (max, label) => Math.max(max, ...label.split(/\s+/).map((word) => measureText(word, fontPx))),
+    0,
+  )
+  const wrapPx = Math.min(widest, Math.max(widestWord, Math.floor(plotWidth / count) - X_LABEL_GAP))
+  const wrapped = labels.map((label) => wrapLabel(label, wrapPx, fontPx))
+  const lines = wrapped.reduce((max, parts) => Math.max(max, parts.length), 1)
+  if (lines === 1) {
+    // Nothing to wrap (single words): rotating is the only remaining answer.
+    return count > 2 * Math.max(fit, 1) ? { ...flat, rotate: 45 } : flat
+  }
+  const wrappedWidest = wrapped.reduce(
+    (max, parts) => Math.max(max, ...parts.map((part) => measureText(part, fontPx))),
+    0,
+  )
+  const wrappedFit = Math.max(Math.floor(plotWidth / (wrappedWidest + X_LABEL_GAP)), 1)
+  if (count > 2 * wrappedFit) return { ...flat, rotate: 45 }
   return {
-    mode: containerClass === 'micro' ? 'none' : containerClass === 'compact' ? 'inside' : 'outside',
-    ticks: clamp(Math.round(height / TICK_SPACING), 2, 6),
-    compact: containerClass !== 'wide' || longest > COMPACT_LABEL_CHARS,
+    wrap: true,
+    rotate: 0,
+    thinTo: clamp(wrappedFit, 2, Math.max(count, 2)),
+    lines,
+    labelPx: wrappedWidest + X_LABEL_GAP,
+    wrapPx,
   }
 }
 
-function resolveXAxis(
-  input: ChartLayoutInput,
-  containerClass: ContainerClass,
-): ChartLayout['xAxis'] {
-  const count = input.xLabels.length
-  const widest = input.xLabels.reduce(
-    (max, label) => Math.max(max, measureText(label, VX.axisFont)),
-    0,
-  )
-  const fit =
-    input.frameW > 0 && widest > 0 ? Math.floor(input.frameW / (widest + X_LABEL_GAP)) : count
+export type AxisEconomyInput = {
+  containerClass: ContainerClass
+  /** Plot height in px (an estimate is fine before margins are known). */
+  plotHeight: number
+  /** Plot width in px; `0` unknown. */
+  plotWidth: number
+  yLabels: readonly string[]
+  xLabels: readonly string[]
+  categorical: boolean
+  /** Tick font the labels are measured at. */
+  fontPx?: number
+}
+
+/** The axis half of the layout, from the labels that will actually be painted. */
+export function resolveAxisEconomy(input: AxisEconomyInput): Pick<ChartLayout, 'yAxis' | 'xAxis'> {
+  const { containerClass } = input
+  const plan = planXLabels({
+    labels: input.xLabels,
+    plotWidth: input.plotWidth,
+    fontPx: input.fontPx ?? VX.axisFont,
+    categorical: input.categorical,
+  })
   return {
-    anchorTerminals: true,
-    wrap: input.categorical,
-    // Categorical labels wrap first; they rotate only when there are over twice as many as fit.
-    rotate: input.categorical && count > 2 * Math.max(fit, 1) ? 45 : 0,
-    thinTo: containerClass === 'micro' ? 2 : clamp(fit, 2, Math.max(count, 2)),
+    yAxis: {
+      mode:
+        containerClass === 'micro' ? 'none' : containerClass === 'compact' ? 'inside' : 'outside',
+      ticks: yTickCount(input.plotHeight),
+      compact: shouldCompactYLabels(input.yLabels),
+    },
+    xAxis: {
+      anchorTerminals: isTightClass(containerClass),
+      ...plan,
+      thinTo: containerClass === 'micro' ? 2 : plan.thinTo,
+    },
   }
 }
 
@@ -144,7 +266,13 @@ export function resolveChartLayout(input: ChartLayoutInput): ChartLayout {
     containerClass,
     height,
     legend: resolveLegend(input, containerClass),
-    yAxis: resolveYAxis(input, containerClass, height),
-    xAxis: resolveXAxis(input, containerClass),
+    ...resolveAxisEconomy({
+      containerClass,
+      plotHeight: height - VX.margin.top - VX.margin.bottom,
+      plotWidth: input.frameW - VX.margin.left - VX.margin.right,
+      yLabels: input.yLabels,
+      xLabels: input.xLabels,
+      categorical: input.categorical,
+    }),
   }
 }

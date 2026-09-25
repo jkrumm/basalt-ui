@@ -133,6 +133,11 @@ export type AutoMarginInput = {
    * grow past its floor.
    */
   floor?: ChartMargin
+  /** X labels anchored inward at the terminals (`AxisBottomDate anchorTerminals`): the last label
+   * no longer centres on the right edge, so the half-label right reservation is dropped. */
+  anchorTerminals?: boolean
+  /** Lines the tallest (wrapped) x label takes. Default 1. */
+  bottomLines?: number
   /** Explicit per-side overrides — applied LAST, so an escape hatch always wins. */
   override?: Partial<ChartMargin>
 }
@@ -157,7 +162,16 @@ export type AutoMarginInput = {
  */
 export function autoMargin(input: AutoMarginInput = {}): ChartMargin {
   const fontPx = input.fontPx ?? VX.axisFont
-  const { left = [], right = [], bottom = [], rotate = 0, floor = VX.margin, override } = input
+  const {
+    left = [],
+    right = [],
+    bottom = [],
+    rotate = 0,
+    floor = VX.margin,
+    anchorTerminals = false,
+    bottomLines = 1,
+    override,
+  } = input
 
   const leftWidth = maxTextWidth(left, fontPx)
   const rightWidth = maxTextWidth(right, fontPx)
@@ -166,7 +180,8 @@ export function autoMargin(input: AutoMarginInput = {}): ChartMargin {
   // Measured EXACTLY as painted: through the same `dx`/`dy` `primitives/Axes.tsx` nudges a rotated
   // label by, and from the baseline the axis anchors it at.
   const rotated = rotatedLabelExtents({ labelWidth: bottomWidth, fontPx, rotate })
-  const bottomExtent = rotate === 0 ? lineHeight(fontPx) + AXIS_TICK_GAP : rotated.below
+  const bottomExtent =
+    rotate === 0 ? lineHeight(fontPx) * Math.max(bottomLines, 1) + AXIS_TICK_GAP : rotated.below
 
   return {
     top: override?.top ?? floor.top,
@@ -175,7 +190,11 @@ export function autoMargin(input: AutoMarginInput = {}): ChartMargin {
       Math.ceil(
         Math.max(
           floor.right,
-          right.length > 0 ? rightWidth + AXIS_TICK_GAP : rotate === 0 ? bottomWidth / 2 : 0,
+          right.length > 0
+            ? rightWidth + AXIS_TICK_GAP
+            : rotate === 0 && !anchorTerminals
+              ? bottomWidth / 2
+              : 0,
         ),
       ),
     bottom: override?.bottom ?? Math.ceil(Math.max(floor.bottom, bottomExtent)),

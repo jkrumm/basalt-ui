@@ -382,6 +382,8 @@ function BandStripPlot<T>(props: BandStripPlotProps<T>) {
             scale={scale}
             tickValues={band.tickValues}
             tickFormat={(v) => formatX(String(v))}
+            anchorTerminals={band.xAnchorTerminals}
+            {...(band.xWrapWidth !== undefined && { wrapWidth: band.xWrapWidth })}
           />
 
           <HoverOverlay

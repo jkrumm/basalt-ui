@@ -388,6 +388,7 @@ function MirroredBarsPlot<T>(props: MirroredBarsPlotProps<T>) {
               scale={upAxisScale}
               numTicks={upTicks}
               tickFormat={(v) => up.format(Number(v))}
+              inside={band.yInside}
             />
           )}
           {downVisible && (
@@ -396,6 +397,7 @@ function MirroredBarsPlot<T>(props: MirroredBarsPlotProps<T>) {
                 scale={downScale}
                 numTicks={downTicks}
                 tickFormat={(v) => down.format(Number(v))}
+                inside={band.yInside}
               />
             </Group>
           )}
@@ -416,6 +418,8 @@ function MirroredBarsPlot<T>(props: MirroredBarsPlotProps<T>) {
             scale={scale}
             tickValues={band.tickValues}
             tickFormat={(v) => formatX(String(v))}
+            anchorTerminals={band.xAnchorTerminals}
+            {...(band.xWrapWidth !== undefined && { wrapWidth: band.xWrapWidth })}
           />
 
           <HoverOverlay
