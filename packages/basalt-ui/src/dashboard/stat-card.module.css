@@ -1,11 +1,8 @@
 /*
- * StatCard's sparkline placement (docs/CONTROLS-SPEC.md §2.2). `bleed` (default) keeps the historic
- * full-width row beneath the hero value, bled past the card's own inset padding — same negative
- * margins the pre-WidgetHeader version drew inline. `right` sits the sparkline beside the
- * BREAKDOWN row instead, the reference-design look, and collapses back to `bleed`'s stacked layout
- * below `sm` — CSS only for the sparkline's own box, `.metricsRow` below for the row it sits in
- * (`47.99375em` is Mantine's own complement of `min-width: 48em`, same value
- * `content/prose.module.css` derives it from).
+ * StatCard's sparkline placement (docs/CONTROLS-SPEC.md §2.2). `bleed` (default) keeps the full-width
+ * row beneath the hero value, bled past the card's inset padding. `right` sits the sparkline beside
+ * the BREAKDOWN row and collapses back to `bleed`'s stacked layout when the card itself is narrower
+ * than 480px (`container: basalt-card`, set on the Card root in `stat-card.tsx`).
  */
 
 .body {
@@ -131,7 +128,7 @@
 }
 
 /* Asks for `StatCard`'s `SPARKLINE_RIGHT_WIDTH`/`_HEIGHT` (handed down as custom properties, so this
- * rule and the `< sm` reset below can both reach them). `align-self: flex-end` is the one alignment
+ * rule and the narrow-card reset below can both reach them). `align-self: flex-end` is the one alignment
  * this restructure keeps at the SPARKLINE's own level rather than the row's: `.metricsRow` does not
  * set `align-items: flex-end` itself, because a card with no breakdown would then need nothing to
  * anchor against — only the sparkline opts into sitting at the row's bottom edge, which matters once
@@ -146,7 +143,7 @@
   overflow: hidden;
 }
 
-@media (max-width: 47.99375em) {
+@container basalt-card (max-width: 479.9px) {
   .metricsRow {
     flex-direction: column;
     align-items: stretch;

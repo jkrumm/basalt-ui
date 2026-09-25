@@ -9,9 +9,9 @@
  * 88%/550 title treatment. `tier: 'group'` also renders an `<h3>`, but at the quietest rank on the
  * page: a mono, uppercase, faint micro-label — an inspector/aside group heading, one step below a
  * `widget` tier and resolved automatically by `Section` when it renders on the `PageAside` panel
- * surface (never a call-site prop). The title row holds title/icon/info/count/actions only; `value`
- * + `delta` render on their own hero-metric row directly beneath it, for every tier — never inline
- * with the title. `StatCard`, `ChartCard`, `Section`, `SettingsSection`/`DangerZone` and
+ * surface (never a call-site prop). The title row holds title/icon/info/count/actions; `value` +
+ * `delta` render on their own hero-metric row beneath it, and move onto the title row when the
+ * enclosing card (`container: basalt-card`) is 800px or wider — CSS only. `StatCard`, `ChartCard`, `Section`, `SettingsSection`/`DangerZone` and
  * `BasaltDataTable` each compose this and render nothing else above their body (wave 3,
  * docs/CONTROLS-SPEC.md §2.2's composer table).
  *
@@ -62,7 +62,8 @@ export type WidgetHeaderProps = BasaltProps &
     title: string
     /** Optional leading icon, rendered before the title. Decorative — hidden from assistive tech. */
     icon?: ReactNode
-    /** Optional muted line rendered below the title row. */
+    /** Optional muted line rendered below the title row. In a card narrower than 480px it folds into
+     * the info glyph's bubble instead (CSS only — exactly one of the two shows). */
     subtitle?: string
     /**
      * Renders an info glyph BESIDE the heading (never inside it — this text would otherwise become
@@ -72,8 +73,8 @@ export type WidgetHeaderProps = BasaltProps &
      * click — so a keyboard user gets it too. Mantine-free: a plain state bubble, not a Tooltip.
      */
     info?: string
-    /** Pre-formatted metric value (mono, hero size). Renders on its own row with `delta`, directly
-     * under the title row — never inline with the title. */
+    /** Pre-formatted metric value (mono, hero size, never truncated). Renders on its own row with
+     * `delta` under the title row, or on the title row in a card 800px or wider. */
     value?: string
     /**
      * The value's unit, rendered immediately after it on the hero row: muted, mono, `--vx-text-sm`.
@@ -170,7 +171,16 @@ export type WidgetHeaderDeltaProps = Pick<
  * composes it so an inspector row's `hint` is the same glyph, bubble and keyboard behaviour a
  * `WidgetHeader`'s `info` is — not a second one that drifts.
  */
-export function InfoGlyph({ text }: { text: string }) {
+export function InfoGlyph({
+  text,
+  note,
+  className,
+}: {
+  text: string
+  /** A second paragraph in the bubble, shown only where `.foldNote` is (the folded subtitle). */
+  note?: string
+  className?: string
+}) {
   const [open, setOpen] = useState(false)
   const tipId = useId()
   const triggerRef = useRef<HTMLButtonElement>(null)
@@ -186,7 +196,7 @@ export function InfoGlyph({ text }: { text: string }) {
   }, [open])
 
   return (
-    <span className={classes.info}>
+    <span className={cx(classes.info, className)}>
       <button
         ref={triggerRef}
         type="button"
@@ -213,6 +223,7 @@ export function InfoGlyph({ text }: { text: string }) {
       {open && (
         <span id={tipId} role="tooltip" className={classes.infoBubble}>
           {text}
+          {note !== undefined && <span className={classes.foldNote}>{note}</span>}
         </span>
       )}
     </span>
@@ -259,7 +270,12 @@ export function WidgetHeader({
           <span className={classes.titleText}>{title}</span>
         </Heading>
         {/* OUTSIDE the heading on purpose — see `info`'s own doc. */}
-        {info !== undefined && <InfoGlyph text={info} />}
+        {info !== undefined && (
+          <InfoGlyph text={info} {...(subtitle !== undefined && { note: subtitle })} />
+        )}
+        {info === undefined && subtitle !== undefined && (
+          <InfoGlyph text={subtitle} className={classes.foldGlyph} />
+        )}
         {count !== undefined && <span className={classes.count}>{count}</span>}
         {actions !== undefined && (
           <span className={classes.actions} data-basalt-hit-scope>

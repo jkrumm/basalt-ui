@@ -12,12 +12,14 @@
  * The header renders only when at least one of title/info/value/actions/icon/count is set — ending
  * the `''`-as-hidden-header sentinel a consumer used to reach for otherwise.
  */
+import { useMemo, useState } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
 import { cx } from '../../common/props'
 import type { BasaltProps, SlotStylesProps } from '../../common/props'
 import { VX } from '../../tokens'
 import { WidgetHeader } from '../../dashboard/widget-header'
 import type { DeltaPolarity } from '../../dashboard/delta-badge'
+import { ChartCardContext } from './chart-card-context'
 import { ChartEmpty, ChartError, ChartPending, resolveChartState } from './ChartPending'
 import type { ChartState } from './ChartPending'
 
@@ -31,7 +33,16 @@ import type { ChartState } from './ChartPending'
 // `WidgetHeader`'s info bubble (`widget-header.module.css`'s `.infoBubble`, which is where the
 // tooltip this file used to own now lives) opens downward past the header's own box, and must be
 // able to overhang the card edge without being invisibly cut off.
+//
+// The root is a flex column and a `basalt-card` inline-size container (the card's own width drives
+// its header chrome, RESPONSIVE-SPEC §3): the body takes the row's spare height when a grid stretches
+// the card.
 const cardStyle: CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  minHeight: 0,
+  containerType: 'inline-size',
+  containerName: 'basalt-card',
   borderRadius: VX.radiusCard,
   boxShadow: VX.shadowCard,
   backgroundColor: VX.surface.panel,
@@ -45,6 +56,8 @@ const bodyClipStyle: CSSProperties = {
   borderBottomLeftRadius: VX.radiusCard,
   borderBottomRightRadius: VX.radiusCard,
   overflow: 'hidden',
+  flex: '1 1 auto',
+  minHeight: 0,
   padding: '2px var(--vx-space-card-inset-x, 0.8125rem) var(--vx-space-card-inset-y, 0.6875rem)',
 }
 // Card inset = the `cardInsetY`/`cardInsetX` role tokens (vertical / horizontal), the SAME two
@@ -143,6 +156,8 @@ export function ChartCard({
   style,
   children,
 }: ChartCardProps) {
+  const [legendSlot, setLegendSlot] = useState<HTMLElement | null>(null)
+  const context = useMemo(() => ({ legendSlot }), [legendSlot])
   const resolvedState = resolveChartState({ ...(state !== undefined && { state }) })
   const hasHeader =
     title !== undefined ||
@@ -153,57 +168,60 @@ export function ChartCard({
     count !== undefined
 
   return (
-    <div
-      className={cx(classNames?.root, className)}
-      style={{ ...cardStyle, ...style }}
-      {...(resolvedState === 'pending' && { 'aria-busy': 'true' })}
-    >
-      {hasHeader && (
-        <div
-          {...(classNames?.header !== undefined && { className: classNames.header })}
-          style={headerWrapStyle}
-        >
-          <WidgetHeader
-            tier="widget"
-            title={title ?? ''}
-            {...(icon !== undefined && { icon })}
-            {...(subtitle !== undefined && { subtitle })}
-            {...(info !== undefined && { info })}
-            {...(value !== undefined && { value })}
-            {...(delta !== undefined && { delta })}
-            {...(deltaPeriod !== undefined && { deltaPeriod })}
-            {...(deltaPolarity !== undefined && { deltaPolarity })}
-            {...(count !== undefined && { count })}
-            {...(actions !== undefined && {
-              actions: <span data-basalt-tier="widget">{actions}</span>,
-            })}
-          />
-        </div>
-      )}
+    <ChartCardContext.Provider value={context}>
       <div
-        {...(classNames?.body !== undefined && { className: classNames.body })}
-        style={bodyClipStyle}
+        className={cx(classNames?.root, className)}
+        style={{ ...cardStyle, ...style }}
+        {...(resolvedState === 'pending' && { 'aria-busy': 'true' })}
       >
-        {resolvedState === 'pending' ? (
-          <ChartPending width="100%" height={placeholderHeight} />
-        ) : resolvedState === 'error' ? (
-          <ChartError
-            width="100%"
-            height={placeholderHeight}
-            error={state?.error}
-            action={stateAction}
-          />
-        ) : resolvedState === 'empty' ? (
-          <ChartEmpty
-            width="100%"
-            height={placeholderHeight}
-            {...(typeof state?.empty === 'string' && { label: state.empty })}
-            action={stateAction}
-          />
-        ) : (
-          children
+        {hasHeader && (
+          <div
+            {...(classNames?.header !== undefined && { className: classNames.header })}
+            style={headerWrapStyle}
+          >
+            <WidgetHeader
+              tier="widget"
+              title={title ?? ''}
+              {...(icon !== undefined && { icon })}
+              {...(subtitle !== undefined && { subtitle })}
+              {...(info !== undefined && { info })}
+              {...(value !== undefined && { value })}
+              {...(delta !== undefined && { delta })}
+              {...(deltaPeriod !== undefined && { deltaPeriod })}
+              {...(deltaPolarity !== undefined && { deltaPolarity })}
+              {...(count !== undefined && { count })}
+              {...(actions !== undefined && {
+                actions: <span data-basalt-tier="widget">{actions}</span>,
+              })}
+            />
+            <div ref={setLegendSlot} data-basalt-legend-slot="" />
+          </div>
         )}
+        <div
+          {...(classNames?.body !== undefined && { className: classNames.body })}
+          style={bodyClipStyle}
+        >
+          {resolvedState === 'pending' ? (
+            <ChartPending width="100%" height={placeholderHeight} />
+          ) : resolvedState === 'error' ? (
+            <ChartError
+              width="100%"
+              height={placeholderHeight}
+              error={state?.error}
+              action={stateAction}
+            />
+          ) : resolvedState === 'empty' ? (
+            <ChartEmpty
+              width="100%"
+              height={placeholderHeight}
+              {...(typeof state?.empty === 'string' && { label: state.empty })}
+              action={stateAction}
+            />
+          ) : (
+            children
+          )}
+        </div>
       </div>
-    </div>
+    </ChartCardContext.Provider>
   )
 }

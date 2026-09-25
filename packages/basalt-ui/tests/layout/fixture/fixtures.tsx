@@ -4,6 +4,7 @@ import { ThreadFeedRow, ThreadTranscript } from '../../../src/agent-chat'
 import type { AgentThread, ChatMessage, StreamStatus, TranscriptPart } from '../../../src/agent'
 import {
   BandStrip,
+  ChartCard,
   Bars,
   BarSparkline,
   Donut,
@@ -27,6 +28,7 @@ import type {
   AgentSpec,
   AsideSpec,
   BarSpec,
+  CardsSpec,
   ChartsSpec,
   FixtureSpec,
   ItemSpec,
@@ -271,10 +273,9 @@ const SPARK_DATA = Array.from({ length: 24 }, (_, i) => 10 + ((i * 7) % 19))
 /**
  * Production-length KPI values (`wide`). `--vx-text-kpi` mono at ~195px each, MEASURED at 1440x900
  * — wider than a 4-up cell in a shell that also carries an aside (~200px, ~174px inside the card's
- * inset) and comfortably inside a 3-up one (~273px). That gap is the whole point: `.value` clamps
- * with `overflow: hidden` + `text-overflow: ellipsis` (`dashboard/widget-header.module.css`), so a
- * column count one tier too generous shows up as `scrollWidth > clientWidth` and nothing else —
- * silently, and only against a value a real dashboard would print.
+ * inset) and comfortably inside a 3-up one (~273px). The value no longer ellipsizes (it shrinks with
+ * its card, `dashboard/widget-header.module.css`), so a column count one tier too generous is now
+ * a card-chrome question, not a clip — but only a value a real dashboard would print shows it.
  *
  * OPT-IN rather than the default, for the reason `BarSpec.actionIcons` states: every phone sweep in
  * `no-horizontal-overflow.layout.test.ts` was measured against the short values, and a fixture that
@@ -301,6 +302,52 @@ function StatsFixture({ count, wide }: { count: number; wide: boolean }): ReactE
         />
       ))}
     </StatGroup>
+  )
+}
+
+/** StatCards at exact container widths + a ChartCard stretched by a fixed-height grid row. */
+function CardsFixture({ spec }: { spec: CardsSpec }): ReactElement {
+  return (
+    <>
+      {spec.widths.map((w) => (
+        // theme-allow -- the wrapper width IS the fixture's payload (a container-class probe)
+        <div key={w} data-testid={`card-${w}`} style={{ width: w }}>
+          <StatCard
+            title="Revenue"
+            subtitle="Trailing 30 days"
+            value="$12,847,301.55"
+            delta={4.2}
+            actions={
+              <ActionIcon variant="subtle" aria-label="Menu">
+                ⋯
+              </ActionIcon>
+            }
+          />
+        </div>
+      ))}
+      {spec.groupWidth !== undefined && (
+        // theme-allow -- the wrapper width IS the fixture's payload (a container-class probe)
+        <div data-testid="group" style={{ width: spec.groupWidth }}>
+          <StatGroup cols={4} divided>
+            {[1, 2, 3, 4].map((n) => (
+              <div key={n}>{`Metric ${n}`}</div>
+            ))}
+          </StatGroup>
+        </div>
+      )}
+      {spec.stretchedRow !== undefined && (
+        // theme-allow -- the row height IS the fixture's payload (a stretch probe)
+        <div
+          data-testid="stretch-row"
+          style={{ display: 'grid', gridTemplateRows: `${spec.stretchedRow}px` }}
+        >
+          <ChartCard title="Stretched">
+            {/* theme-allow -- a short fixed body: the spare row height must reach the body wrapper */}
+            <div style={{ height: 60 }} />
+          </ChartCard>
+        </div>
+      )}
+    </>
   )
 }
 
@@ -793,6 +840,7 @@ export function ShellFixture({ spec }: { spec: FixtureSpec }): ReactElement {
       {spec.stats !== undefined && (
         <StatsFixture count={spec.stats} wide={spec.statsWide === true} />
       )}
+      {spec.cards && <CardsFixture spec={spec.cards} />}
       {spec.table && <TableFixture spec={spec.table} />}
       {spec.charts && <ChartsFixture spec={spec.charts} />}
       {spec.agent && <AgentFixture spec={spec.agent} />}

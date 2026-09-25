@@ -17,6 +17,8 @@ declare const classes: {
   readonly sparkline: string
   readonly info: string
   readonly infoTrigger: string
+  readonly foldGlyph: string
+  readonly foldNote: string
   readonly infoBubble: string
   readonly deltaBadge: string
   readonly deltaGlyph: string

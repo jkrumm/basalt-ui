@@ -196,6 +196,20 @@ export type AgentSpec = {
   mode?: 'virtualized' | 'inlineRow' | 'anchorToEnd'
 }
 
+/**
+ * Card chrome by container width (RESPONSIVE-SPEC §3). One `StatCard` (production-length value,
+ * subtitle) per width, each in a wrapper of exactly that many px, plus a `ChartCard` in a
+ * 400px-tall grid row. Exists because `@container` outcomes are a layout fact happy-dom cannot see.
+ */
+export type CardsSpec = {
+  /** One StatCard per entry, in a wrapper this many px wide (`data-testid="card-<w>"`). */
+  widths: number[]
+  /** Adds a ChartCard inside `data-testid="stretch-row"` with a short body, in a grid row this many px tall. */
+  stretchedRow?: number
+  /** A `divided` `StatGroup` of four cards in a wrapper this many px wide (`data-testid="group"`). */
+  groupWidth?: number
+}
+
 export type FixtureSpec = {
   sections: SectionSpec[]
   nav?: { maxTabs?: number; menuMax?: number; moreLabel?: string }
@@ -226,6 +240,8 @@ export type FixtureSpec = {
    * reach the edge (`fixtures.tsx`'s `WIDE_STAT_VALUES` states the measured widths).
    */
   statsWide?: true
+  /** Renders card-chrome probes: StatCards at fixed container widths, a stretched ChartCard. */
+  cards?: CardsSpec
   /** Renders a `PageAside` (and, by default, the `PageBar` row 2 it projects into below `sm`). */
   aside?: AsideSpec
   /** Renders one `basalt-ui/charts` kind above the filler. Omitted ⇒ no chart in the tree. */

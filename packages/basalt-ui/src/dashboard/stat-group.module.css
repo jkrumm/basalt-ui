@@ -26,8 +26,7 @@
  * boundary at the 16px initial font size — 768px and 1200px — but `em` inside a `@container`
  * condition resolves against the CONTAINER's font-size rather than the root's, so a consumer panel
  * with smaller text would silently move the breakpoint. px is the only spelling that cannot drift.
- * (`47.99375em` → `767.9px`, `74.99375em` → `1199.9px`; the same complements `stat-card.module.css`
- * uses.) A condition still cannot read a custom property either way, so the numbers are written;
+ * (`47.99375em` → `767.9px`, `74.99375em` → `1199.9px`.) A condition still cannot read a custom property either way, so the numbers are written;
  * the COUNTS are custom properties the component sets per instance.
  */
 
@@ -42,6 +41,19 @@
      column turns a four-metric row into four screens of scrolling. */
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--vx-space-stack-md);
+}
+
+/* 260px is StatGroup's own literal (RESPONSIVE-SPEC §3), not a container class: one column below it,
+ * so every cell leads a row and the rail draws no leading hairline at all. */
+@container basalt-stat-group (max-width: 259.9px) {
+  .root {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .root[data-divided] > *:nth-child(n) {
+    border-inline-start: 0;
+    padding-inline-start: 0;
+  }
 }
 
 @container basalt-stat-group (min-width: 768px) {

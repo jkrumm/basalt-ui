@@ -9,8 +9,11 @@
  * by name with rem fallbacks at their level-0 px value (36/28/6), same idiom as ChartCard's
  * `--mantine-spacing-*` fallbacks.
  *
- * Layout: the title row holds title/icon/info/count/actions only. `value` + `delta` render on
- * their own hero-metric row directly beneath it — for every tier, never inline with the title.
+ * Layout keys on the enclosing card's OWN width (`container: basalt-card`, declared by ChartCard /
+ * StatCard / Section — RESPONSIVE-SPEC §1/§3), never the viewport: below 480px the subtitle folds
+ * into the info glyph; 480–799 is standard, `value` + `delta` on their own row under the title; from
+ * 800 they move onto the title row. Wrapping and shrinking are unconditional. No enclosing card, no
+ * container: the standard layout. Container conditions are px literals of CONTAINER_CLASSES.
  */
 
 .root {
@@ -18,73 +21,15 @@
   flex-direction: column;
 }
 
+/* The row WRAPS only when it does not fit (a lone kebab stays beside the title; a wide `actions` slot
+ * takes its own right-aligned line instead of squeezing the heading) — unconditional, so composers
+ * with no `basalt-card` container (`SettingsSection`, `BasaltDataTable`) keep the safety net. */
 .titleRow {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--vx-space-control-gap, 0.375rem);
-}
-
-/*
- * Below `sm` the title row WRAPS, which is the safety net for an `actions` slot too wide to sit
- * beside the title. `flex-wrap` is the right tool precisely because it is conditional: a 30px kebab
- * fits and stays on the row, while a control whose hypothetical size does not fit takes its own line
- * instead of squeezing the heading to an ellipsis. No breakpoint arithmetic, no max-width fraction,
- * and no prop — the row measures the actual content.
- *
- * `row-gap` is the 8px rhythm step, so a wrapped slot reads as the line under the title rather than
- * as a second header. `.actions` keeps its `margin-inline-start: auto`, which on a wrapped line makes
- * it right-aligned — the same edge it holds when it is on the row.
- */
-@media (max-width: 47.99375em) {
-  .titleRow {
-    flex-wrap: wrap;
-    row-gap: var(--vx-space-stack-sm);
-  }
-
-  /*
-   * WRAP ONLY WHEN IT DOES NOT FIT (M4 follow-up) — `flex: 1 1 100%` forced EVERY actions slot onto
-   * its own row, even a single 24px icon that fit beside the title fine (a KPI card's lone `···`
-   * menu dropped under the title and pushed the value down with it). `flex: 0 1 auto` restores
-   * ordinary flex sizing: no grow, so a short slot stays put beside the title on the shared row;
-   * `min-width: 0` plus `flex-shrink: 1` (part of the same shorthand, overriding the base rule's
-   * `flex-shrink: 0`) let it shrink and, once `.titleRow`'s own `flex-wrap: wrap` decides it truly
-   * does not fit, drop to its own line. `max-width: 100%` is the cap once it IS alone on that line —
-   * without it a `.actions` still carrying unshrinkable content (the `visibleFrom="sm"` control plus
-   * a nowrap switch `Group`, see below) can overflow the card rather than shrink into it. The base
-   * rule's `margin-inline-start: auto` still applies in both states — right-aligned beside the title
-   * when it fits, right-aligned as the lone item on its own wrapped line when it does not.
-   *
-   * `.actions` keeps its OWN `flex-wrap: wrap` from the prior fix: `Section` can hand it a `tabs`
-   * control (`CtlSlot`-wrapped) AND an `actions` control (another `CtlSlot`) in the same slot, and
-   * without this a nowrap `Group` of switches beside a view-switch control gets squeezed into one
-   * shared line and overflows below its own min-content width — the exact regression this rule
-   * once fixed. It is orthogonal to the row-level "wrap only when it does not fit" law above: with
-   * one child, wrapping has nothing to do, so a lone `···` menu still stays on the title line.
-   *
-   * The real flex items get `flex: 1 1 auto; min-width: 0` so they can shrink or (via the `> * > *`
-   * twin) stack within whatever width `.actions` itself resolves to — a full-width phone `Select`
-   * still reads as its own full-width line because the CONTROL sets that itself (`ViewTabs`'
-   * `fullWidth`/`.phoneSelect`), not because `.actions` forces it.
-   *
-   * The `> * > *` twin exists because `CtlSlot` (`theme/ctl-theme.tsx`) wraps a home's actions in a
-   * `display: contents` box — invisible to the flex box tree, so its OWN children (not it) are the
-   * real flex items. `display: contents` elements still match `.actions > *` by DOM structure but
-   * carry no box to apply `flex`/`min-width` to, hence styling one level deeper as well; a call site
-   * that skips `CtlSlot` and hands `actions` a real element directly gets the same rule from the
-   * first selector.
-   */
-  .actions {
-    flex: 0 1 auto;
-    flex-wrap: wrap;
-    min-width: 0;
-    max-width: 100%;
-  }
-
-  .actions > *,
-  .actions > * > * {
-    flex: 1 1 auto;
-    min-width: 0;
-  }
+  row-gap: var(--vx-space-stack-sm);
 }
 
 .root[data-tier='section'] .titleRow {
@@ -203,59 +148,31 @@
 }
 
 /*
- * The hero-metric row — value + delta, directly under the title row, for every tier. The delta rides
- * 4px off the value, not 8: it is a suffix ON the number (`$168,920 +47%`), and at 8px it read as a
- * second, unrelated chip in the row. `baseline` alignment is what keeps the mono numeral and the
- * badge's own smaller mono text sitting on one line.
- */
-/*
- * The hero-metric row: the value, then its `DeltaBadge`.
- *
- * The gap is the 8px vertical-rhythm step (`--vx-space-stack-sm`), not the 4px it shipped as. 4px is
- * the rhythm's SMALLEST step — the distance between a label and the thing it labels — and at that
- * distance the badge read as a superscript hanging off the numeral rather than as a second fact
- * beside it. It is a token and not a literal so it tracks the density knob with every other spacing
- * in the header (`deriveSpacing`, `tokens/palette.ts`); `theme/layout-rhythm-css.test.ts`'s sibling
- * assertion in `widget-header.test.tsx` pins it against exactly the literal it used to be.
- *
- * `align-items: center`, not `baseline`. The badge is a BOX with its own padding and a mono 11.5px
- * label, so aligning its text baseline to a 24px KPI numeral's baseline put the box itself low —
- * its top edge sat below the numeral's x-height and its bottom edge hung under the numeral's
- * baseline. A chip beside a numeral is centred on the numeral, the same law the `count` tag in the
- * title row above already follows.
+ * The hero-metric row: the value, then its `DeltaBadge`, 8px apart (`--vx-space-stack-sm`, tracks
+ * density). It always WRAPS — the badge drops under the value when they do not fit, the value never
+ * ellipsizes. `center`, not `baseline`: the badge is a padded box, so a chip beside a numeral is
+ * centred on it (same law as the `count` tag above).
  */
 .metrics {
   display: flex;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--vx-space-stack-sm);
   margin-top: 2px;
   min-width: 0;
 }
 
-/*
- * Below `sm` the metric row WRAPS, so the badge drops under the value instead of ellipsizing it.
- * `nowrap` plus the `.value` clamp below is right on desktop — a `+18.9%` cannot ellipsize and read,
- * a numeral can — but a KPI's numeral IS the content, and in a 2-up card grid at 390px
- * `$1294.9k ▲18.9%` rendered as `$129… ▲18.9%`. Truncating the number to protect the delta about the
- * number is the wrong way round. Conditional like the title row above it: a short value keeps the
- * badge beside it, and only a value that would otherwise clip gives up the line.
- */
-@media (max-width: 47.99375em) {
-  .metrics {
-    flex-wrap: wrap;
-    row-gap: 2px;
-  }
+/* Tight when the badge wraps under the value. */
+.metrics {
+  row-gap: 2px;
 }
 
-/* The value is the row's shrinkable half and the delta badge is not: a pre-formatted numeral can
- * ellipsize and still read, a `+18.9%` cannot. Without the clamp the badge grew past the header box
- * and painted over `StatCard`'s 72px sparkline slot beside it. */
+/* NEVER truncated: the numeral IS the content. It shrinks with the card's own width instead —
+ * `cqi` against `basalt-card` (the clamp, at the end of this file), from the `kpi` step down to the
+ * `lg` step (16px), and `overflow-wrap` breaks a pathological string rather than clipping it. */
 .value {
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
   font-family: var(--basalt-font-mono);
   font-size: var(--vx-text-kpi);
   font-weight: 600;
@@ -266,8 +183,8 @@
 /*
  * The unit beside the hero value. Mono like the number it qualifies (so `412 TSS` sits on one
  * baseline grid), `--vx-text-sm` and `--vx-muted` so it never competes with the numeral — the whole
- * point is that a unit is the SMALL half of the pair. `flex-shrink: 0`: the value is the row's
- * shrinkable half (see `.value`), and a unit that ellipsized to `TS…` would state nothing.
+ * point is that a unit is the SMALL half of the pair. `flex-shrink: 0`: a unit clipped to `TS…`
+ * would state nothing.
  */
 .unit {
   flex-shrink: 0;
@@ -284,10 +201,21 @@
 .actions {
   --vx-hit-gap: var(--vx-space-control-gap);
   display: inline-flex;
-  flex-shrink: 0;
+  /* No grow, but it may shrink and wrap once `.titleRow` decides it does not fit, capped at 100% once
+   * alone on its line. Its flex items shrink too; the `> * > *` twin reaches through `CtlSlot`'s
+   * `display: contents` wrapper, whose own children are the real items. */
+  flex: 0 1 auto;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--vx-space-control-gap, 0.375rem);
   margin-inline-start: auto;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.actions > *,
+.actions > * > * {
+  flex: 1 1 auto;
   min-width: 0;
 }
 
@@ -332,6 +260,12 @@
 .infoTrigger:focus-visible,
 .infoTrigger[data-open='true'] {
   color: var(--vx-muted);
+}
+
+/* Folded-subtitle pieces: hidden until a `basalt-card` narrower than 480px shows them (below). */
+.foldGlyph,
+.foldNote {
+  display: none;
 }
 
 /*
@@ -385,4 +319,80 @@
   margin-inline-start: 4px;
   font-weight: 500;
   opacity: 0.6;
+}
+
+/* Card narrower than 480px: the subtitle folds into the info glyph (`InfoGlyph`'s `note`, or
+ * `.foldGlyph` when there is no `info`) — exactly one of the two shows. */
+@container basalt-card (max-width: 479.9px) {
+  .subtitle {
+    display: none;
+  }
+
+  .foldGlyph {
+    display: inline-flex;
+  }
+
+  .foldNote {
+    display: block;
+  }
+}
+
+/* The KPI numeral shrinks with its card. `(width >= 0px)` is always true but only inside a
+ * `basalt-card` container, so `cqi` never resolves against an unrelated one (or the viewport) —
+ * with no card the numeral stays at the plain `kpi` step above. 8cqi reaches the 24px `kpi` step at
+ * a 300px card. */
+@container basalt-card (width >= 0px) {
+  .value {
+    font-size: clamp(var(--vx-text-lg), 8cqi, var(--vx-text-kpi));
+  }
+}
+
+/*
+ * From 800px `value` + `delta` ride the title row: the title row dissolves (`display: contents`)
+ * so heading, info, count, metrics and actions share the root's one flex line, and `order` puts
+ * the metrics before the actions. The metrics take the free space (`margin-inline-start: auto`),
+ * which pushes metrics AND actions right; with no metrics, `.actions` keeps its own auto margin.
+ * The heading keeps the tier's row height (`min-height` was on `.titleRow`), so a title-less header
+ * does not collapse.
+ */
+@container basalt-card (min-width: 800px) {
+  .root {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    column-gap: var(--vx-space-control-gap, 0.375rem);
+  }
+
+  .titleRow {
+    display: contents;
+  }
+
+  .root[data-tier='section'] .heading {
+    min-height: var(--vx-space-section-header-height, 2.25rem);
+  }
+
+  .root[data-tier='widget'] .heading,
+  .root[data-tier='group'] .heading {
+    min-height: var(--vx-space-widget-header-height, 1.75rem);
+  }
+
+  .metrics {
+    order: 1;
+    margin-block: 0;
+    margin-inline-start: auto;
+  }
+
+  .actions {
+    order: 2;
+  }
+
+  .root:has(.metrics) .actions {
+    margin-inline-start: 0;
+  }
+
+  .subtitle,
+  .sparkline {
+    order: 3;
+    flex: 0 0 100%;
+  }
 }
