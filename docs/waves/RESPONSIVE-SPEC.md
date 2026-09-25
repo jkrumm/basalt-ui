@@ -85,7 +85,7 @@ padding, overscroll, pull-to-refresh suppression) keys on the attribute, not on 
 - The three size classes above. Today the 768–991px band opens the 256px sidebar and the 300px aside
   together, which leaves a 172px main column and 163px of document overflow (measured). That's a P0.
 - PageBar row 1 folds by **measured width** (reuse the `useTrackFits` / FilterSet observer), not by
-  `DESKTOP_SECONDARY_MAX=3`. Icon-less secondary actions fold too (first-grapheme fallback).
+  a fixed action count. Icon-less secondary actions fold too (first-grapheme fallback).
 - `--app-shell-footer-offset` becomes a documented, stable CSS var ("shell bottom inset"). Toasts,
   the chat composer and any bottom-anchored overlay sit above it and above
   `env(safe-area-inset-bottom)`. Toasts overlap the mobile tab bar today (P0).
