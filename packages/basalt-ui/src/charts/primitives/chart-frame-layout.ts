@@ -4,6 +4,8 @@
  */
 
 import { VX } from '../../tokens'
+import { resolveContainerClass } from '../../tokens/size-classes'
+import type { ContainerClass } from '../../tokens/size-classes'
 import type { ChartMargin } from '../../tokens'
 import type { LegendEntry } from './ChartLegend'
 import { measureText } from '../utils/measure-text'
@@ -16,91 +18,76 @@ const LEGEND_PAD_Y = 10
 const LEGEND_SWATCH_W = 24
 
 /**
- * The two size tiers a chart resolves to. There are exactly two, and there is no `tablet`: the
- * tier exists to answer "is there room for full-size chrome around the plot", which is a yes/no
- * question, and a third rung would need a third calibrated metric set nothing has asked for.
+ * The two metric sets a chart's chrome resolves to. Internally the container class
+ * (`micro`/`compact` → `'phone'`, `regular`/`wide` → `'desktop'`) picks one; there is no `tablet`.
  */
 export type ChartTier = 'phone' | 'desktop'
 
-/**
- * The tier a chart's chrome resolves to, from the width of the box it was MEASURED in — never
- * from a media query.
- *
- * A viewport breakpoint answers the wrong question. A chart in a 2-column grid cell on a 1440px
- * desktop is exactly as narrow as one filling a phone, and `@media` cannot see that; the
- * `ResizeObserver` `ChartFrame` already runs can. It also keeps this file (and the whole chart
- * layer) Mantine-free — `theme.breakpoints` is on the coupled side of the boundary.
- *
- * An UNMEASURED box (`containerW <= 0` — SSR, or before the observer's first callback) resolves
- * to `'desktop'`: the first frame must not paint phone chrome that then re-lays-out one frame
- * later, and `resolvePlotRect` already treats an unmeasured width as the first-frame case.
- */
-export function resolveChartTier(containerW: number): ChartTier {
-  return containerW > 0 && containerW < VX.phoneChartWidth ? 'phone' : 'desktop'
+/** The metric set a container class resolves to. */
+export function tierOfContainerClass(containerClass: ContainerClass): ChartTier {
+  return containerClass === 'micro' || containerClass === 'compact' ? 'phone' : 'desktop'
 }
 
 /**
- * A chart height stated per size step instead of as one number — the declarative escape from "every
- * chart on this page is 260px tall on a 375px phone too".
+ * @deprecated Removed in 1.31.0. The chart tier is now the MEASURED container class
+ * (`CONTAINER_CLASSES`, `docs/waves/RESPONSIVE-SPEC.md` §1); `'phone'` = `micro`/`compact`.
+ * Forwards to it. An unmeasured box (`containerW <= 0`) still answers `'desktop'`.
+ */
+export function resolveChartTier(containerW: number): ChartTier {
+  return containerW > 0 ? tierOfContainerClass(resolveContainerClass(containerW)) : 'desktop'
+}
+
+/**
+ * A chart height stated per container step instead of as one number — the declarative escape from
+ * "every chart on this page is 260px tall on a 375px phone too".
  *
- * `base` is required and is the height a box narrower than every named step gets; each further key
- * is the height from that step UP. Keys are Mantine's breakpoint names so a consumer writes the
- * vocabulary they already write, and nothing more than `sm`/`md`/`lg` is offered: `xs`/`xl` would
- * be two more rungs nobody has asked a chart to have.
+ * `base` is the height below the `regular` class; `regular` and `wide` take effect from
+ * `CONTAINER_CLASSES.regular` / `.wide` of the frame's MEASURED width (never the viewport).
  *
  * ```tsx
- * <ChartFrame series={series} height={{ base: 180, md: 260 }}>{…}</ChartFrame>
+ * <ChartFrame series={series} height={{ base: 180, wide: 260 }}>{…}</ChartFrame>
  * ```
  */
 export type ResponsiveChartHeight = {
-  /** Below the narrowest STATED step — and NOT the first-frame value; see {@link resolveFrameHeight}. */
   base: number
-  /** From 768px of MEASURED container width up. */
+  /** From the `regular` container class (480px) up. */
+  regular?: number
+  /** From the `wide` container class (800px) up. */
+  wide?: number
+  /** @deprecated Removed in 1.31.0 — use `regular`. */
   sm?: number
-  /** From 992px up. */
+  /** @deprecated Removed in 1.31.0 — use `wide`. */
   md?: number
-  /** From 1200px up. */
+  /** @deprecated Removed in 1.31.0 — use `wide`. */
   lg?: number
 }
 
-/**
- * The measured CONTAINER width, in px, each {@link ResponsiveChartHeight} key takes effect at.
- *
- * The numbers are what Mantine's `sm`/`md`/`lg` breakpoints resolve to at the 16px initial font
- * size, so a consumer's mental model transfers — but they are compared against the element's own
- * MEASURED box, never the viewport, for the reason {@link resolveChartTier} states: a chart in a
- * `PageAside`-squeezed grid cell on a 1440px desktop is as narrow as one on a phone, and the
- * viewport agrees with neither. Keeping them as plain numbers here is also what keeps this file
- * Mantine-free — `theme.breakpoints` is on the coupled side of the boundary.
- */
-const HEIGHT_STEP_WIDTH = { sm: 768, md: 992, lg: 1200 } as const
-
-/** Widest-first, so the first step that fits is the answer. */
-const HEIGHT_STEPS = ['lg', 'md', 'sm'] as const
+/** The old `sm`/`md`/`lg` keys a height object still carries, for the dev warning. */
+export function deprecatedHeightKeys(
+  height: number | ResponsiveChartHeight,
+): Array<'sm' | 'md' | 'lg'> {
+  if (typeof height === 'number') return []
+  return (['sm', 'md', 'lg'] as const).filter((key) => height[key] !== undefined)
+}
 
 /**
- * Resolve a `height` prop — a plain number, or a {@link ResponsiveChartHeight} — against the
- * measured container width.
+ * Resolve a `height` prop — a plain number, or a {@link ResponsiveChartHeight} — for a container
+ * class. A plain number passes through untouched. The class is the measured one, or, before the
+ * first measurement, the one implied by the viewport ({@link resolveChartLayout}), so the first
+ * frame is not a different height from the second.
  *
- * A plain number passes through untouched: this is a WIDENING of the prop, not a replacement, and
- * every existing `height={240}` must keep meaning exactly 240.
- *
- * An UNMEASURED box (`containerW <= 0` — SSR, or before the `ResizeObserver`'s first callback)
- * resolves to the LARGEST stated step, matching {@link resolveChartTier}'s first-frame rule: the
- * first paint must not be phone-shaped chrome that grows one frame later. Falling to `base` there
- * would make every SSR'd chart short and then jump.
+ * Aliases: `sm` → `regular`, `md`/`lg` → `wide` (`lg` beating `md`); a new key beats its alias.
  */
 export function resolveFrameHeight(
   height: number | ResponsiveChartHeight,
-  containerW: number,
+  containerClass: ContainerClass,
 ): number {
   if (typeof height === 'number') return height
-  const widest = HEIGHT_STEPS.find((step) => height[step] !== undefined)
-  if (containerW <= 0) return widest === undefined ? height.base : (height[widest] ?? height.base)
-  const step = HEIGHT_STEPS.find(
-    (name) => containerW >= HEIGHT_STEP_WIDTH[name] && height[name] !== undefined,
-  )
-  return step === undefined ? height.base : (height[step] ?? height.base)
+  const regular = height.regular ?? height.sm
+  const wide = height.wide ?? height.lg ?? height.md
+  if (containerClass === 'wide') return wide ?? regular ?? height.base
+  if (containerClass === 'regular') return regular ?? height.base
+  return height.base
 }
 
 /**
@@ -122,8 +109,12 @@ const PHONE_LEGEND_MAX_ROWS = 2
 /** Tooltip `minWidth`, per tier — 140px is 39% of a 360px screen. */
 const TOOLTIP_MIN_WIDTH = { desktop: 140, phone: 110 } as const
 
-/** Every size a chart's chrome resolves per tier. One object so a new tier-sensitive size is added
- * in one place and read by name, rather than each primitive branching on the tier itself. */
+/**
+ * @deprecated Removed in 1.31.0 — see {@link chartTierMetrics}.
+ *
+ * Every size a chart's chrome resolves per tier. One object so a new tier-sensitive size is added
+ * in one place and read by name, rather than each primitive branching on the tier itself.
+ */
 export type ChartTierMetrics = {
   /** Which tier these are, so a consumer of the metrics never needs both values threaded. */
   tier: ChartTier
@@ -170,7 +161,10 @@ const PHONE_METRICS: ChartTierMetrics = {
   },
 }
 
-/** The resolved sizes for one tier. Frozen module constants — never a new object per render. */
+/**
+ * @deprecated Removed in 1.31.0. Chart chrome sizes now follow the measured container class
+ * (`CONTAINER_CLASSES`); `'phone'` metrics apply to `micro`/`compact`. Forwards unchanged.
+ */
 export function chartTierMetrics(tier: ChartTier): ChartTierMetrics {
   return tier === 'phone' ? PHONE_METRICS : DESKTOP_METRICS
 }
@@ -343,7 +337,11 @@ const legendEntryWidth = (item: LegendEntry): number =>
 
 /** How many of `items` fit in `rows` wrapped rows of `width` — the same greedy wrap the flex
  * container performs, measured rather than assumed (`docs/CHARTS-SPEC.md` §1). */
-function entriesWithinRows(items: readonly LegendEntry[], width: number, rows: number): number {
+export function entriesWithinRows(
+  items: readonly LegendEntry[],
+  width: number,
+  rows: number,
+): number {
   let row = 1
   let x = 0
   let fitted = 0

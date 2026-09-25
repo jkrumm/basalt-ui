@@ -58,6 +58,9 @@ const bodyClipStyle: CSSProperties = {
   overflow: 'hidden',
   flex: '1 1 auto',
   minHeight: 0,
+  // A column, so a `ChartFrame` inside can grow into the body a stretched grid row hands the card.
+  display: 'flex',
+  flexDirection: 'column',
   padding: '2px var(--vx-space-card-inset-x, 0.8125rem) var(--vx-space-card-inset-y, 0.6875rem)',
 }
 // Card inset = the `cardInsetY`/`cardInsetX` role tokens (vertical / horizontal), the SAME two
@@ -157,7 +160,7 @@ export function ChartCard({
   children,
 }: ChartCardProps) {
   const [legendSlot, setLegendSlot] = useState<HTMLElement | null>(null)
-  const context = useMemo(() => ({ legendSlot }), [legendSlot])
+  const context = useMemo(() => ({ legendSlot, inCard: true }), [legendSlot])
   const resolvedState = resolveChartState({ ...(state !== undefined && { state }) })
   const hasHeader =
     title !== undefined ||

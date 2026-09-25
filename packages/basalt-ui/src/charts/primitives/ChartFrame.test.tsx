@@ -395,38 +395,86 @@ describe('resolveLegendMaxRows — the tier cap is a DEFAULT, not a ceiling', ()
 
 /**
  * `height` was a bare `number` on every shipped kind, so the only way to make a chart shorter on a
- * phone was a JS breakpoint — which `basalt/responsive-twin` forbids. The steps are compared
- * against the frame's own MEASURED width for the same reason the tier is: a chart squeezed to
- * 380px by a `PageAside` on a 1440px desktop is as narrow as one on a phone.
+ * phone was a JS breakpoint — which `basalt/responsive-twin` forbids. The steps key on the frame's
+ * own container class (`CONTAINER_CLASSES`, MEASURED width) for the same reason the tier does: a
+ * chart squeezed to 380px by a `PageAside` on a 1440px desktop is as narrow as one on a phone.
  */
-describe('resolveFrameHeight — a height per size step, resolved off the measured box', () => {
-  const responsive: ResponsiveChartHeight = { base: 180, md: 260 }
+describe('resolveFrameHeight — a height per container step', () => {
+  const responsive: ResponsiveChartHeight = { base: 180, wide: 260 }
 
   test('a plain number passes through untouched — this is a widening, not a rename', () => {
-    expect(resolveFrameHeight(240, 900)).toBe(240)
-    expect(resolveFrameHeight(240, 0)).toBe(240)
+    expect(resolveFrameHeight(240, 'wide')).toBe(240)
+    expect(resolveFrameHeight(240, 'micro')).toBe(240)
   })
 
-  test('a step applies from its own width up', () => {
-    expect(resolveFrameHeight(responsive, 992)).toBe(260)
-    expect(resolveFrameHeight(responsive, 1400)).toBe(260)
+  test('a step applies from its own class up', () => {
+    expect(resolveFrameHeight(responsive, 'wide')).toBe(260)
+    expect(resolveFrameHeight({ base: 180, regular: 220 }, 'wide')).toBe(220)
+    expect(resolveFrameHeight({ base: 180, regular: 220 }, 'regular')).toBe(220)
   })
 
-  test('below every named step it is `base` — including at a desktop VIEWPORT', () => {
-    // The whole point: 380px is the measured width of a `PageAside` panel, not of a phone.
-    expect(resolveFrameHeight(responsive, 380)).toBe(180)
-    expect(resolveFrameHeight(responsive, 991)).toBe(180)
+  test('below every named step it is `base` — micro, compact, and a narrow desktop cell', () => {
+    expect(resolveFrameHeight(responsive, 'micro')).toBe(180)
+    expect(resolveFrameHeight(responsive, 'compact')).toBe(180)
+    expect(resolveFrameHeight(responsive, 'regular')).toBe(180)
   })
 
   test('the widest STATED step wins, not the widest possible one', () => {
-    expect(resolveFrameHeight({ base: 180, sm: 220, lg: 300 }, 1000)).toBe(220)
-    expect(resolveFrameHeight({ base: 180, sm: 220, lg: 300 }, 1200)).toBe(300)
+    expect(resolveFrameHeight({ base: 180, regular: 220, wide: 300 }, 'regular')).toBe(220)
+    expect(resolveFrameHeight({ base: 180, regular: 220, wide: 300 }, 'wide')).toBe(300)
   })
 
-  test('an unmeasured box takes the LARGEST stated step, never `base`', () => {
-    // `resolveChartTier`'s first-frame rule, applied to height: a chart that painted short and then
-    // grew one frame later is the jump this avoids. SSR and the pre-observer frame both land here.
-    expect(resolveFrameHeight(responsive, 0)).toBe(260)
-    expect(resolveFrameHeight({ base: 180 }, 0)).toBe(180)
+  test('deprecated aliases: sm → regular, md/lg → wide, lg beats md, new keys beat aliases', () => {
+    expect(resolveFrameHeight({ base: 180, sm: 220 }, 'regular')).toBe(220)
+    expect(resolveFrameHeight({ base: 180, md: 260 }, 'wide')).toBe(260)
+    expect(resolveFrameHeight({ base: 180, md: 260, lg: 300 }, 'wide')).toBe(300)
+    expect(resolveFrameHeight({ base: 180, wide: 280, lg: 300 }, 'wide')).toBe(280)
+    expect(resolveFrameHeight({ base: 180, md: 260 }, 'regular')).toBe(180)
+  })
+})
+
+describe('ChartFrame height warnings (dev, once)', () => {
+  function captureErrors(run: () => void): string[] {
+    const original = console.error
+    const messages: string[] = []
+    console.error = (...args: unknown[]) => {
+      messages.push(args.map(String).join(' '))
+    }
+    try {
+      run()
+    } finally {
+      console.error = original
+    }
+    return messages
+  }
+
+  const mount = (height: number | ResponsiveChartHeight): string[] =>
+    captureErrors(() => {
+      render(
+        <ChartFrame series={series} legend={false} height={height}>
+          {() => null}
+        </ChartFrame>,
+      )
+    })
+
+  test('an old sm/md/lg key warns with its replacement', () => {
+    expect(
+      mount({ base: 180, md: 260 }).some((m) =>
+        m.includes('"height.md" is deprecated — use "height.wide"'),
+      ),
+    ).toBe(true)
+  })
+
+  test('the new keys do not warn', () => {
+    expect(mount({ base: 181, wide: 261 }).filter((m) => m.includes('deprecated'))).toEqual([])
+  })
+
+  test('a numeric height under the plot floor warns', () => {
+    const under = VX.minPlotHeight - 10
+    expect(mount(under).some((m) => m.includes(`prop "height" (${under})`))).toBe(true)
+  })
+
+  test('a numeric height above the floor is silent', () => {
+    expect(mount(VX.minPlotHeight + 50).filter((m) => m.includes('plot floor'))).toEqual([])
   })
 })

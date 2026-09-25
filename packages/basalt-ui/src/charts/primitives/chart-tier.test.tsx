@@ -130,8 +130,8 @@ describe(`a chart measured at ${PHONE_WIDTH}px paints the phone tier`, () => {
       </CartesianChart>,
     )
 
-    // The unmeasured first frame paints the desktop tier by design (see resolveChartTier(0));
-    // the phone frame follows once the box is measured. Wait for THAT paint, not for the first
+    // The unmeasured first frame follows the viewport hint (compact by default, RESPONSIVE-SPEC §1);
+    // the measured frame follows once the box is measured. Wait for THAT paint, not for the first
     // `<text>` — on a slow runner the first paint is the desktop one and the assertion must not
     // race it.
     const fontSizes = () =>

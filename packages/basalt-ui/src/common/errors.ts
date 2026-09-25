@@ -70,6 +70,19 @@ export function ignoredProp(component: string, prop: string, because: string): s
 }
 
 /**
+ * A numeric `height` the caller stated that, once the legend band is taken out, leaves the plot
+ * under the floor. The frame keeps the plot at the floor and grows past the number, so the chart
+ * is taller than the caller asked for and nothing else says why.
+ */
+export function plotBelowFloor(component: string, height: number, floor: number): string {
+  return message(
+    component,
+    `prop "height" (${height}) leaves less than the ${floor}px plot floor once the legend band is ` +
+      'subtracted, so the frame grows past it. Raise the height or drop the legend.',
+  )
+}
+
+/**
  * An imperative call needs a layer that is not there — the optional peer is not installed, or the
  * mount that subscribes to its event bus is disabled. Both halves are named because the remedy
  * differs: install it, or stop turning it off.

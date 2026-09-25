@@ -3645,8 +3645,41 @@ const queryFnUnwrap = {
  * @type {readonly DeprecatedExport[]}
  */
 export const DEPRECATED_EXPORTS = [
-  // Empty since 1.29.0: every 1.28.x deprecation was removed on schedule. The next
-  // deprecation adds a row here in the same commit as its @deprecated JSDoc and MIGRATING entry.
+  {
+    subpath: 'basalt-ui/charts',
+    name: 'resolveChartTier',
+    replacement: 'the measured container class (CONTAINER_CLASSES)',
+    removeIn: '1.31.0',
+    fix: false,
+  },
+  {
+    subpath: 'basalt-ui/charts',
+    name: 'chartTierMetrics',
+    replacement: 'the measured container class (CONTAINER_CLASSES)',
+    removeIn: '1.31.0',
+    fix: false,
+  },
+  {
+    subpath: 'basalt-ui/charts',
+    name: 'useChartTier',
+    replacement: 'the measured container class (CONTAINER_CLASSES)',
+    removeIn: '1.31.0',
+    fix: false,
+  },
+  {
+    subpath: 'basalt-ui/charts',
+    name: 'useChartTierMetrics',
+    replacement: 'the measured container class (CONTAINER_CLASSES)',
+    removeIn: '1.31.0',
+    fix: false,
+  },
+  {
+    subpath: 'basalt-ui/charts',
+    name: 'ChartTierMetrics',
+    replacement: 'the measured container class (CONTAINER_CLASSES)',
+    removeIn: '1.31.0',
+    fix: false,
+  },
 ]
 
 function deprecatedExportMessage(row) {

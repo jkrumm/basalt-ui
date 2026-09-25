@@ -12,6 +12,16 @@ export const SIZE_CLASSES = { compact: 0, medium: 840, expanded: 1200 } as const
 /** A component's own inline size — card chrome, chart tier, forms. No CSS reads it yet. */
 export const CONTAINER_CLASSES = { micro: 0, compact: 240, regular: 480, wide: 800 } as const
 
+export type ContainerClass = keyof typeof CONTAINER_CLASSES
+
+/** The class a MEASURED inline size falls in (`px` is a min-width boundary, so 240 is `compact`). */
+export function resolveContainerClass(px: number): ContainerClass {
+  if (px >= CONTAINER_CLASSES.wide) return 'wide'
+  if (px >= CONTAINER_CLASSES.regular) return 'regular'
+  if (px >= CONTAINER_CLASSES.compact) return 'compact'
+  return 'micro'
+}
+
 /**
  * `theme.breakpoints`, derived — a consumer cannot retune it. Mantine needs all five keys:
  * `base` (no key) is compact, `xs`/`sm` open the medium class, `md`/`lg`/`xl` the expanded one, so
