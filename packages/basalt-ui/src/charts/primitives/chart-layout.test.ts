@@ -179,6 +179,15 @@ describe('ladder step 1: compact y number format', () => {
     [3_000_000_000, '3B'],
     [2_500_000_000_000, '2.5T'],
     [0.5, null],
+    [999_949, '999.9k'],
+    [999_950, '1M'],
+    [999_999, '1M'],
+    [1_000_000, '1M'],
+    [-999_999, '-1M'],
+    [999_950_000, '1B'],
+    [999_950_000_000_000, '1000T'],
+    [Number.NaN, null],
+    [Number.POSITIVE_INFINITY, null],
   ]
   test.each(table)('compactNumber(%p) = %p', (value, expected) => {
     expect(compactNumber(value)).toBe(expected)

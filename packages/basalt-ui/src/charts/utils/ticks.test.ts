@@ -1,7 +1,14 @@
 import { describe, expect, test } from 'bun:test'
 import { VX } from '../../tokens'
 import { maxTextWidth } from './measure-text'
-import { autoXLabelRotate, smartTicks, smartTicksEvery, thinLabels, xLabelPxFor } from './ticks'
+import {
+  autoXLabelRotate,
+  rotatedXLabelPx,
+  smartTicks,
+  smartTicksEvery,
+  thinLabels,
+  xLabelPxFor,
+} from './ticks'
 
 const keys = (n: number): string[] => Array.from({ length: n }, (_, i) => `k${i}`)
 
@@ -37,6 +44,25 @@ describe('smartTicks', () => {
 describe('smartTicksEvery', () => {
   test('targets an exact count and still appends the last key', () => {
     expect(smartTicksEvery(keys(8), 3)).toEqual(['k0', 'k3', 'k6', 'k7'])
+  })
+})
+
+describe('rotatedXLabelPx', () => {
+  const wide = ['Mar 08 14:00']
+
+  test('a 45° label needs its projected box plus the gap, never less than the flat floor implies', () => {
+    const width = maxTextWidth(wide, VX.axisFont)
+    const projected = Math.SQRT1_2 * (width + Math.ceil(VX.axisFont * 1.35))
+    expect(rotatedXLabelPx(wide)).toBeGreaterThanOrEqual(projected + 8)
+    expect(rotatedXLabelPx(wide)).toBeGreaterThan(xLabelPxFor(wide) * Math.SQRT1_2)
+  })
+
+  test('thinning by it keeps adjacent projected boxes apart where the 55px floor let them touch', () => {
+    const px = rotatedXLabelPx(wide, 10)
+    const ticks = smartTicks(keys(30), 354, px)
+    const pitch = (354 / 30) * Math.ceil(30 / Math.max(2, Math.floor(354 / px)))
+    expect(ticks.length).toBeGreaterThan(1)
+    expect(pitch).toBeGreaterThanOrEqual(px - 8)
   })
 })
 

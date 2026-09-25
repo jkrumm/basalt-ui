@@ -383,21 +383,21 @@ function MirroredBarsPlot<T>(props: MirroredBarsPlotProps<T>) {
 
           {/* One axis per pane, each in its own scale's units — a single shared axis would be
               wrong for at least one of them whenever the two domains differ, which is always. */}
-          {upVisible && (
+          {upVisible && band.yPlacement !== 'none' && (
             <AxisLeftNumeric
               scale={upAxisScale}
               numTicks={upTicks}
               tickFormat={(v) => up.format(Number(v))}
-              inside={band.yInside}
+              inside={band.yPlacement === 'inside'}
             />
           )}
-          {downVisible && (
+          {downVisible && band.yPlacement !== 'none' && (
             <Group top={baseline}>
               <AxisLeftNumeric
                 scale={downScale}
                 numTicks={downTicks}
                 tickFormat={(v) => down.format(Number(v))}
-                inside={band.yInside}
+                inside={band.yPlacement === 'inside'}
               />
             </Group>
           )}

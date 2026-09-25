@@ -19,6 +19,17 @@ export function xLabelPxFor(labels: string[], fontPx: number = VX.axisFont): num
 }
 
 /**
+ * The horizontal room one 45°-rotated x label takes: its projected box (`cos 45°` of the width plus
+ * one line box) plus the gap. A tilted label still competes with its neighbour for this much, so
+ * thinning by the bare `VX.minPxPerTick` floor let two of them touch as soon as the plot widened.
+ */
+export function rotatedXLabelPx(labels: string[], fontPx: number = VX.axisFont): number {
+  return (
+    Math.ceil(COS_45 * (maxTextWidth(labels, fontPx) + Math.ceil(fontPx * 1.35))) + X_TICK_LABEL_GAP
+  )
+}
+
+/**
  * Pick evenly-spaced tick values that fit the available width.
  *
  * `labelPx` is the width one formatted label actually needs (measured, plus the gap it wants from

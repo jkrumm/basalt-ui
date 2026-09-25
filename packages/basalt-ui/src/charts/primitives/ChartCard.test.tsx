@@ -80,6 +80,8 @@ describe('the card chrome', () => {
     const body = root.lastElementChild as HTMLElement
     expect(body.style.flex).toBe('1 1 auto')
     expect(body.style.minHeight).toBe('0')
+    expect(body.style.display).toBe('flex')
+    expect(body.style.flexDirection).toBe('column')
   })
 
   test('an empty legend slot sits in the header band only when there is a header', () => {

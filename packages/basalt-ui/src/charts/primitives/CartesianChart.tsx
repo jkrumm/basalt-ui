@@ -14,7 +14,13 @@ import { deriveLegend, deriveTooltipRows } from '../series'
 import type { ChartLegendConfig, ChartSeries } from '../series'
 import { padAutoLower, padAutoUpper } from '../utils/domain'
 import { fmtAxisDate } from '../utils/format'
-import { autoXLabelRotate, smartTicks, smartTicksEvery, xLabelPxFor } from '../utils/ticks'
+import {
+  autoXLabelRotate,
+  rotatedXLabelPx,
+  smartTicks,
+  smartTicksEvery,
+  xLabelPxFor,
+} from '../utils/ticks'
 import { AxisBottomDate, AxisLeftNumeric, AxisRightNumeric } from './Axes'
 import { ChartFrame, resolveLegend } from './ChartFrame'
 import type { ResponsiveChartHeight } from './ChartFrame'
@@ -25,7 +31,7 @@ import {
   shouldCompactYLabels,
   yTickCount,
 } from './chart-layout'
-import { useChartContainerClass, useChartTierMetrics } from './chart-tier'
+import { useChartContainerClass, useChartMetrics } from './chart-tier'
 import type { ChartState } from './ChartPending'
 import { ChartTooltipFloat, TooltipBody, TooltipHeader, TooltipRow } from './ChartTooltip'
 import { Crosshair, SeriesDot } from './Crosshair'
@@ -533,7 +539,7 @@ function CartesianPlot<T>({
   // The tier `ChartFrame` resolved from its own MEASURED width. Everything sized by it here is
   // the half a hook cannot reach: the tick font the margins are MEASURED at, and the margin
   // floors themselves (`docs/CHARTS-SPEC.md` §8).
-  const tier = useChartTierMetrics()
+  const tier = useChartMetrics()
   const containerClass = useChartContainerClass()
   const tight = isTightClass(containerClass)
 
@@ -677,7 +683,13 @@ function CartesianPlot<T>({
           rotatedXMax: Math.max(plot.width - rotated45Margin.left - rotated45Margin.right, 0),
         }))
   const wrapWidth = rotate === 0 && xPlan.wrap ? xPlan.wrapPx : undefined
-  const tickLabelPx = wrapWidth === undefined ? xLabelPx : xPlan.labelPx
+  // A 90° label is one line box wide, so the constant floor governs it; a 45° one projects wider.
+  const tickLabelPx =
+    rotate === 45
+      ? rotatedXLabelPx(xLabels, tier.axisFont)
+      : wrapWidth === undefined
+        ? xLabelPx
+        : xPlan.labelPx
 
   const margin = useMemo(
     () =>
@@ -715,9 +727,7 @@ function CartesianPlot<T>({
     // Micro: the two terminals only.
     if (containerClass === 'micro')
       return keys.length > 1 ? [keys[0]!, keys[keys.length - 1]!] : keys
-    // A rotated label stacks diagonally instead of beside its neighbour, so its WIDTH no
-    // longer governs tick spacing — the constant floor takes over, exactly as before.
-    return smartTicks(keys, xMax, rotate === 0 ? tickLabelPx : undefined)
+    return smartTicks(keys, xMax, rotate === 0 || rotate === 45 ? tickLabelPx : undefined)
   }, [keys, xMax, xTicks, xTickValues, tickLabelPx, rotate, containerClass])
 
   const cursor = useChartCursor<T>({

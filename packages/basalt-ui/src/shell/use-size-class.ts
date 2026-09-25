@@ -23,8 +23,8 @@ const BOUNDARIES: readonly (readonly [SizeClass, number])[] = (
   .slice()
   .reverse()
 
-/** Provided by `BasaltProvider`'s `sizeClassHint`; the server snapshot. */
-export const SizeClassHintContext = createContext<SizeClass>('compact')
+/** Provided by `BasaltProvider`'s `sizeClassHint`; the server snapshot. `undefined` = no provider. */
+export const SizeClassHintContext = createContext<SizeClass | undefined>(undefined)
 
 type BoundaryLists = readonly (readonly [SizeClass, MediaQueryList])[]
 
@@ -41,7 +41,7 @@ function readSizeClass(lists: BoundaryLists, hint: SizeClass): SizeClass {
 }
 
 export function useSizeClass(): SizeClass {
-  const hint = useContext(SizeClassHintContext)
+  const hint = useContext(SizeClassHintContext) ?? 'compact'
   // Created once per mount: `matchMedia()` allocates a live object per call, and `subscribe` must
   // listen on the very lists `getSnapshot` reads.
   const [lists] = useState(boundaryLists)

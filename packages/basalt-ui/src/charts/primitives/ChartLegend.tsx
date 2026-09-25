@@ -3,7 +3,7 @@ import { useState } from 'react'
 import type { BasaltProps } from '../../common/props'
 import { alpha, VX } from '../../tokens'
 import type { SeriesRole, LegendPlacement } from '../series'
-import { useChartTierMetrics } from './chart-tier'
+import { useChartMetrics } from './chart-tier'
 
 export type LegendEntry = {
   key: string
@@ -302,7 +302,7 @@ export function ChartLegend({
   groups?: boolean
   maxRows?: number
 }) {
-  const tier = useChartTierMetrics()
+  const tier = useChartMetrics()
   const [expanded, setExpanded] = useState(false)
   const handleEnter = (e: MouseEvent<HTMLButtonElement> | FocusEvent<HTMLButtonElement>) => {
     const key = e.currentTarget.dataset['legendKey']
