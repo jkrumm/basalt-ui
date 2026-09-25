@@ -130,6 +130,28 @@ once) pins it open.
 `useSizeClass() === 'expanded'`. A `max`-edge or non-shell width read is a container concern: use
 `@container` in CSS.
 
+**Card chrome keys on the card's own width, not the viewport.** `ChartCard`, `StatCard` and `Section`
+are now `container: basalt-card / inline-size` (`container-type: inline-size` — layout and inline-size
+containment). That has two consequences: a card needs a **definite inline size** (a block child, a
+grid `1fr` track or an explicit width — it can no longer shrink-to-fit inside a flex row or an `auto`
+grid track, where it would collapse to 0), and it becomes the containing block for `position: fixed`
+and absolute descendants. What moved onto the card's width (`CONTAINER_CLASSES`: micro < 240,
+compact 240–479, regular 480–799, wide ≥ 800):
+
+- **Under 480px, `subtitle` folds into the info glyph** and the visible line is hidden. A card with a
+  `subtitle` and no `info` now renders a `More information` button (hidden from 480px up); with both,
+  the one glyph's bubble reads `info`, then `subtitle`. A test asserting the subtitle is visible in a
+  narrow card, or that no `More information` button exists without `info`, needs updating.
+- **From 800px, `value` + `delta` sit on the title row**, before `actions`, instead of on their own
+  row. The KPI value never ellipsizes any more: it shrinks with the card (`cqi`, `kpi` → 16px) and
+  breaks a pathological string rather than clipping it.
+- **`StatCard` `sparklinePlacement="right"` collapses to the stacked layout** when the card is under
+  480px wide (it keyed to the viewport's `sm` before). Two-up cards on a
+  desktop that kept the sparkline beside the value now stack when the card itself is narrow.
+- **`StatGroup` is one column under 260px** of its own width, with no leading rail hairline.
+- `ChartCard` is a flex column (`display: flex`, body `flex: 1 1 auto`): in a stretched grid row the
+  spare height goes to the body.
+
 ## 1.30.2 — the `legendWins` collapse, and two things `ChartFrame` never said out loud
 
 **A patch. Nothing is added, renamed or removed.** One rendering regression 1.30.1 shipped is

@@ -11,7 +11,7 @@
  *
  * `sparklinePlacement` decides where the trend visual sits: `'bleed'` (default) keeps the historic
  * full-width row beneath the hero value, bled past the card's own inset padding; `'right'` sits it
- * beside the hero row, the reference-design look. Below `sm`, `'right'` collapses back to the
+ * beside the hero row, the reference-design look. In a card narrower than 480px, `'right'` collapses back to the
  * `'bleed'` layout — CSS only, no JS branch (`stat-card.module.css`).
  *
  * `info` and `subtitle` are forwarded to that same `WidgetHeader`, and a hero KPI usually wants
@@ -277,7 +277,7 @@ export type StatCardProps = BasaltProps &
      */
     sparkline?: ReactNode | ((size: StatCardSparklineSize) => ReactNode)
     /** Where `sparkline` sits. `'bleed'` (default) is today's full-width row bled to the card edges;
-     * `'right'` sits it beside the hero value row. Collapses to `'bleed'` below `sm`. */
+     * `'right'` sits it beside the hero value row. Collapses to `'bleed'` in a card narrower than 480px. */
     sparklinePlacement?: 'bleed' | 'right'
     /** Header-right slot (e.g. a ghost "..." menu trigger) — wrapped in `CtlSlot tier="widget"`, so a
      * raw `ActionIcon` with no `size` lands on the 24px step the 28px header row holds (C1/C5). */
@@ -357,7 +357,7 @@ export function StatCard({
         )}
         {...(!bleeds && {
           // CUSTOM PROPERTIES, not `flexBasis`/`height` directly. A React inline style beats every
-          // stylesheet rule, so an inline `flexBasis: 72` also applied below `sm` — where `'right'`
+          // stylesheet rule, so an inline `flexBasis: 72` also applied in a narrow card — where `'right'`
           // collapses `.metricsRow` to a COLUMN and flex-basis is therefore the main-axis HEIGHT.
           // The mobile sparkline rendered in a 72px-tall box holding 26px of bars, which is the dead
           // band under every KPI value on a phone. Handed to CSS as values instead, the media query
@@ -400,6 +400,9 @@ export function StatCard({
         // Anchors the tone rail. Set unconditionally so a card's stacking context does not change
         // depending on whether it happens to have crossed a threshold this render.
         position: 'relative',
+        // The card's own width drives its chrome (`widget-header.module.css`, `.metricsRow`).
+        containerType: 'inline-size',
+        containerName: 'basalt-card',
         ...style,
       }}
       data-tone={tone}

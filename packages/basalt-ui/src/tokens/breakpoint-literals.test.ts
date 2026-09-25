@@ -1,6 +1,6 @@
 /**
  * Pins every width `@media` literal — in `src/**\/*.css` and in the emitted token CSS — to
- * `SIZE_CLASSES`. A media condition cannot read a custom property, so the number is written in
+ * `SIZE_CLASSES`, and every `@container basalt-card` literal to `CONTAINER_CLASSES`. A media condition cannot read a custom property, so the number is written in
  * CSS and this test is the only tie back to the table.
  */
 import { describe, expect, test } from 'bun:test'
@@ -24,15 +24,35 @@ const sizeLiterals = new Set(
 
 /**
  * Component-shape rules still on a viewport `@media` (a container question — later waves move them
- * onto `@container` and delete their entry here). Keyed by file relative to `src/`.
+ * onto `@container` and delete their entry here). StatGroup's is its `@supports not` fallback. Keyed by file relative to `src/`.
  */
 const COMPONENT_SHAPE_LEGACY: Record<string, readonly string[]> = {
   'forms/form-layout.module.css': ['47.99375em'],
-  'dashboard/stat-card.module.css': ['47.99375em'],
-  'dashboard/widget-header.module.css': ['47.99375em'],
   'dashboard/widget-grid.module.css': ['48em'],
   'dashboard/stat-group.module.css': ['48em', '47.99375em'],
   'content/article-layout.module.css': ['1200px'],
+}
+
+/** `@container basalt-card` is the card-chrome axis: its literals are CONTAINER_CLASSES boundaries. */
+const containerLiterals = new Set(
+  Object.values(CONTAINER_CLASSES)
+    .filter((px) => px > 0)
+    .flatMap((px) => [`${px}px`, `${Number((px - 0.1).toFixed(1))}px`]),
+)
+
+/** The other named containers' pre-existing literals (`stat-group`/`widget-grid` 768/1200, plus
+ * StatGroup's own 260 one-column rule) — not card chrome, so not pinned to the class table. */
+const LEGACY_CONTAINER_LITERALS = new Set(['259.9px', '767.9px', '768px', '1199.9px', '1200px'])
+
+function containerConditions(css: string): { name: string; literals: string[] }[] {
+  const out: { name: string; literals: string[] }[] = []
+  for (const line of css.replace(/\/\*[\s\S]*?\*\//g, '').split('\n')) {
+    const m = line.match(/@container\s+([\w-]+)/)
+    if (!m) continue
+    const literals = [...line.matchAll(/\((?:min|max)-width:\s*([\d.]+px)\)/g)].map((l) => l[1]!)
+    out.push({ name: m[1]!, literals })
+  }
+  return out
 }
 
 function widthLiterals(css: string): string[] {
@@ -55,6 +75,17 @@ describe('breakpoint literals', () => {
     const allowed = COMPONENT_SHAPE_LEGACY[file] ?? []
     const stray = widthLiterals(readFileSync(join(SRC, file), 'utf8')).filter(
       (lit) => !sizeLiterals.has(lit) && !allowed.includes(lit),
+    )
+    expect(stray).toEqual([])
+  })
+
+  test.each(files)('%s writes only class-table @container literals', (file) => {
+    const stray = containerConditions(readFileSync(join(SRC, file), 'utf8')).flatMap(
+      ({ name, literals }) =>
+        literals.filter(
+          (lit) =>
+            !(name === 'basalt-card' ? containerLiterals : LEGACY_CONTAINER_LITERALS).has(lit),
+        ),
     )
     expect(stray).toEqual([])
   })

@@ -65,6 +65,40 @@ describe('the header renders only when it has something to show', () => {
   })
 })
 
+describe('the card chrome', () => {
+  test('root is a `basalt-card` inline-size container and a flex column; the body takes spare height', () => {
+    const { container } = render(
+      <ChartCard title="Revenue">
+        <svg />
+      </ChartCard>,
+    )
+    const root = container.firstElementChild as HTMLElement
+    expect(root.style.containerType).toBe('inline-size')
+    expect(root.style.containerName).toBe('basalt-card')
+    expect(root.style.display).toBe('flex')
+    expect(root.style.flexDirection).toBe('column')
+    const body = root.lastElementChild as HTMLElement
+    expect(body.style.flex).toBe('1 1 auto')
+    expect(body.style.minHeight).toBe('0')
+  })
+
+  test('an empty legend slot sits in the header band only when there is a header', () => {
+    const withHeader = render(
+      <ChartCard title="Revenue">
+        <svg />
+      </ChartCard>,
+    )
+    expect(withHeader.container.querySelectorAll('[data-basalt-legend-slot]')).toHaveLength(1)
+    withHeader.unmount()
+    const bare = render(
+      <ChartCard>
+        <svg />
+      </ChartCard>,
+    )
+    expect(bare.container.querySelector('[data-basalt-legend-slot]')).toBeNull()
+  })
+})
+
 describe('state replaces the body with a placeholder, header stays put', () => {
   const BODY = 'CHART_BODY_MARKER'
 

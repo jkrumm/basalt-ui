@@ -18,6 +18,7 @@
  * query at all).
  */
 .root {
+  container: basalt-card / inline-size;
   display: flex;
   flex-direction: column;
   gap: var(--vx-space-section-gap, 0.75rem);

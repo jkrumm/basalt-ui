@@ -48,6 +48,12 @@ const TONES: { tone: StatCardTone; token: string; verdict: string }[] = [
   { tone: 'bad', token: 'var(--vx-status-bad)', verdict: 'Past the severe threshold' },
 ]
 
+test('the card root is the `basalt-card` inline-size container its header chrome keys on', () => {
+  const markup = render()
+  expect(markup).toContain('container-type:inline-size')
+  expect(markup).toContain('container-name:basalt-card')
+})
+
 describe('every tone draws its rail from the per-scheme status token', () => {
   for (const { tone, token } of TONES) {
     test(tone, () => {
@@ -499,8 +505,8 @@ describe("stat-card.module.css — .metricsRow (right placement's breakdown + sp
     expect(rule('.sparklineRight')).toContain('align-self: flex-end')
   })
 
-  test('below sm, the row becomes a column and the sparkline resets to stretch — full width, not flush end', () => {
-    const start = decls.indexOf('@media (max-width: 47.99375em) {')
+  test('in a card under 480px, the row becomes a column and the sparkline resets to stretch — full width, not flush end', () => {
+    const start = decls.indexOf('@container basalt-card (max-width: 479.9px) {')
     expect(start).toBeGreaterThan(-1)
     const mobileBlock = decls.slice(start)
     expect(mobileBlock).toContain('.metricsRow {')
