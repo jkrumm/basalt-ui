@@ -13,6 +13,11 @@ name: Deploy
 # Every master push, not just apps/marketing/** — the image also bakes root
 # package.json, bun.lock and tsconfig.json, so a dependency change alters the
 # built site with no marketing diff. Release commits carry [skip ci].
+#
+# Every deploy also purges basalt-ui.com at Cloudflare's edge, so the year-long
+# edge cache (apps/marketing/nginx.conf) is never stale after a release. The
+# purge token is Zone:Read + Cache Purge only — see the VPS repo's
+# docs/edge-cache.md for the shared pattern and token scope.
 
 on:
   push:
@@ -33,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - uses: jkrumm/rollhook-action@v1
@@ -42,3 +47,5 @@ jobs:
           image_name: basalt-ui-marketing
           dockerfile: apps/marketing/Dockerfile
           context: .
+          cloudflare_purge_hosts: basalt-ui.com
+          cloudflare_api_token: ${{ secrets.CLOUDFLARE_PURGE_TOKEN }}
