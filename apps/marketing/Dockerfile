@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM oven/bun:1.3.9-slim AS builder
+FROM oven/bun:1.4.1-slim AS builder
 WORKDIR /app
 
 # Every workspace member (packages/*, apps/*) must be present or bun re-resolves
