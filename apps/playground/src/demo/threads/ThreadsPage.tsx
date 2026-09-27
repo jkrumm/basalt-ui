@@ -22,11 +22,11 @@ const useThreads = createThreadsStore({ key: 'playground-threads', version: 1 })
 
 /**
  * Viewport-relative, not a flat 560 — same reason as `AgentDemoPage`'s `CHAT_HEIGHT`: an iPhone
- * SE's scrollport is ≈464px, so a rigid 560 pushed the workspace's composer below the fold. `dvh`
- * resolves against the real scrollport element (`data-basalt-scrollport`); the floor keeps the
- * two-pane split usable rather than letting it collapse with the viewport.
+ * SE's scrollport is ≈464px, so a rigid 560 pushed the workspace's composer below the fold. No
+ * 360px floor any more: `ThreadWorkspace`'s composer (`Composer`, internally) now pins itself
+ * above the keyboard inset (`--vx-keyboard-inset`), which was the only reason the floor existed.
  */
-const WORKSPACE_HEIGHT = 'clamp(360px, 60dvh, 560px)'
+const WORKSPACE_HEIGHT = 'min(60dvh, 560px)'
 
 /** The /threads tab: a bounded-height ThreadWorkspace so feed/panel scroll. No in-body heading and
  * no `p="md"` — the shell's breadcrumb names the page and `AppShell.Main` owns the gutter (see

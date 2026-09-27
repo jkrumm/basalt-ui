@@ -189,11 +189,15 @@ function ChatEmptyState({ onPick }: { onPick: (text: string) => void }) {
 }
 
 /**
- * The chat surface's height. Viewport-relative, not a flat 560: on an iPhone SE (568 tall) the
- * scrollport is 568 − 48 header − 56 mobile bar ≈ 464px, so a rigid 560 put the composer — the one
- * interactive element on the page — permanently below the fold. `dvh` resolves correctly here
- * because the scrollport is a real element (`data-basalt-scrollport`), and the 360px floor keeps
- * the transcript readable on the shortest phone rather than collapsing with the viewport.
+ * The chat surface's height. Viewport-relative rather than a flat 560 (a rigid pixel height on an
+ * iPhone SE's 464px scrollport would put the composer permanently below the fold), and STILL
+ * clamped to a 360px floor: `Composer` now pins itself above the keyboard inset internally
+ * (`--vx-keyboard-inset`, see `packages/basalt-ui/src/agent-chat/use-keyboard-inset.ts`), but this
+ * page's own composer is hand-rolled below (`Textarea`/`Group`, not `Composer`) and so does NOT
+ * inherit that fix — the floor stays here to survive a keyboard-shrunk viewport the way it always
+ * did. `ThreadsPage`'s `WORKSPACE_HEIGHT` dropped its floor because its composer really is
+ * `Composer` (via `ThreadWorkspace`); this page would need to wire the same internal hook itself
+ * to safely drop it too.
  */
 const CHAT_HEIGHT = 'clamp(360px, 60dvh, 560px)'
 

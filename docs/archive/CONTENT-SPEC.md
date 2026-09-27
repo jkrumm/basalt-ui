@@ -186,7 +186,8 @@ raw stream text
 
 - **TOC**: right rail, sticky, h2/h3, IntersectionObserver active state, auto-collapse to a
   popover under the content-width breakpoint (Fumadocs tableOfContentPopover pattern). Mono
-  micro-label header ("ON THIS PAGE") per the DESIGN-SPEC micro-label idiom.
+  micro-label header ("ON THIS PAGE") per the DESIGN-SPEC micro-label idiom. Shipped — Wave 10
+  (`ArticleLayout`'s `Popover` trigger below 1200px).
 - **Reading progress**: opt-in thin bar, top of the content column, `aria-hidden`.
 - **Anchor links**: heading hover reveals `#` link; click copies URL (Starlight pattern).
 - **Prev/Next**: footer pagination cells with directional arrows, title + optional section.
