@@ -23,7 +23,12 @@ const SPEC: FixtureSpec = {
   sections: [
     { label: 'Main', items: [{ key: 'a', label: 'Overview', mobile: 'tab', active: true }] },
   ],
-  cards: { widths: [200, 320, 900], stretchedRow: 400, groupWidth: 240 },
+  cards: {
+    widths: [200, 320, 900],
+    stretchedRow: 400,
+    groupWidth: 240,
+    shortHeader: { width: 600, bodyHeight: 140 },
+  },
 }
 
 layout('card chrome by container', () => {
@@ -91,6 +96,16 @@ layout('card chrome by container', () => {
     const narrowValue = await p.box('nv', `[data-testid="card-320"] ${moduleClass('value')}`)
     const narrowHeading = await p.box('nh', `[data-testid="card-320"] ${moduleClass('titleRow')}`)
     expect(narrowValue.box.top).toBeGreaterThanOrEqual(narrowHeading.box.bottom)
+  })
+
+  // Wave 8's header-economy law: a short-but-wide ChartCard (the `/charts` Primitives
+  // "Availability"/"Negotiated link speed" shape) folds its subtitle by height, not width, and its
+  // merged title row keeps the header to a fifth of the card. Measured before wave 8: 0.335 at this
+  // fixture's width/body (subtitle visible, full-size KPI numeral, full header inset).
+  test('a short ChartCard header stays at or under 20% of the card height (wave 8)', async () => {
+    const card = await p.box('card', '[data-testid="card-short"] > div')
+    const header = await p.box('header', '[data-testid="card-short"] > div > div:first-child')
+    expect(header.box.height / card.box.height).toBeLessThanOrEqual(0.2)
   })
 
   test('a divided StatGroup at 240px is one column with no rail border or indent on any cell', async () => {

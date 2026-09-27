@@ -11,7 +11,9 @@
  * `widget` tier and resolved automatically by `Section` when it renders on the `PageAside` panel
  * surface (never a call-site prop). The title row holds title/icon/info/count/actions; `value` +
  * `delta` render on their own hero-metric row beneath it, and move onto the title row when the
- * enclosing card (`container: basalt-card`) is 800px or wider — CSS only. `StatCard`, `ChartCard`, `Section`, `SettingsSection`/`DangerZone` and
+ * enclosing card (`container: basalt-card`) is 480px or wider — CSS only (wave 8: was 800px). The
+ * subtitle also folds into the info glyph whenever the card's own height is under 280px, regardless
+ * of width. `StatCard`, `ChartCard`, `Section`, `SettingsSection`/`DangerZone` and
  * `BasaltDataTable` each compose this and render nothing else above their body (wave 3,
  * docs/CONTROLS-SPEC.md §2.2's composer table).
  *
@@ -62,8 +64,9 @@ export type WidgetHeaderProps = BasaltProps &
     title: string
     /** Optional leading icon, rendered before the title. Decorative — hidden from assistive tech. */
     icon?: ReactNode
-    /** Optional muted line rendered below the title row. In a card narrower than 480px it folds into
-     * the info glyph's bubble instead (CSS only — exactly one of the two shows). */
+    /** Optional muted line rendered below the title row. In a card narrower than 480px, or shorter
+     * than 280px regardless of width, it folds into the info glyph's bubble instead (CSS only —
+     * exactly one of the two shows). */
     subtitle?: string
     /**
      * Renders an info glyph BESIDE the heading (never inside it — this text would otherwise become
@@ -74,7 +77,7 @@ export type WidgetHeaderProps = BasaltProps &
      */
     info?: string
     /** Pre-formatted metric value (mono, hero size, never truncated). Renders on its own row with
-     * `delta` under the title row, or on the title row in a card 800px or wider. */
+     * `delta` under the title row, or on the title row in a card 480px or wider. */
     value?: string
     /**
      * The value's unit, rendered immediately after it on the hero row: muted, mono, `--vx-text-sm`.

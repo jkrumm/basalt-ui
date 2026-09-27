@@ -19,9 +19,24 @@ import type { BasaltProps, SlotStylesProps } from '../../common/props'
 import { VX } from '../../tokens'
 import { WidgetHeader } from '../../dashboard/widget-header'
 import type { DeltaPolarity } from '../../dashboard/delta-badge'
+import { useChartSize } from '../hooks/useChartSize'
 import { ChartCardContext } from './chart-card-context'
 import { ChartEmpty, ChartError, ChartPending, resolveChartState } from './ChartPending'
 import type { ChartState } from './ChartPending'
+
+/**
+ * Below this rendered height the header folds its subtitle regardless of width (wave 8's
+ * header-economy law, `docs/waves/RESPONSIVE-SPEC.md` §3) — a short-but-wide card (a KPI-style
+ * chart card) still needs the vertical space back. A `@container basalt-card` SIZE query would be
+ * the natural expression, but `container-type: size` on a box with no explicit height (the common,
+ * non-grid-stretched case) collapses it to 0 — CSS containment requires a definite size in the
+ * contained axis, and a ChartCard's height is ordinarily derived from its content (VERIFIED: making
+ * the root a size container drops `card-chrome.layout.test.ts`'s unstretched short-card fixture to
+ * a 0px box). `useChartSize` (the same measuring primitive `ChartFrame` uses) reads the rendered
+ * height instead, and `data-basalt-card-short` is the CSS hook `widget-header.module.css` reacts to
+ * with the same subtitle-fold declarations as the width query.
+ */
+const CARD_SHORT_HEIGHT = 280
 
 // Surfaces resolve per theme via CSS vars, so the styles are static (no useMemo/isDark).
 // Depth = `shadow-card` (a whisper shadow + a 1px ring baked into the same value), never a
@@ -75,6 +90,13 @@ const bodyClipStyle: CSSProperties = {
 // shadow-embedded ring and made the header feel heavier.
 const headerWrapStyle: CSSProperties = {
   padding: 'var(--vx-space-card-inset-y, 0.6875rem) var(--vx-space-card-inset-x, 0.8125rem) 4px',
+}
+// A short card (wave 8) trims the header's own top inset — the subtitle line and the wide-tier
+// value/delta row are both already gone by the time `short` is true, so the full card inset reads
+// as dead air rather than rhythm. Bottom stays 4px (unchanged) so the header-to-body seam matches
+// every other ChartCard.
+const headerWrapShortStyle: CSSProperties = {
+  padding: '4px var(--vx-space-card-inset-x, 0.8125rem) 4px',
 }
 
 /**
@@ -160,6 +182,7 @@ export function ChartCard({
   children,
 }: ChartCardProps) {
   const [legendSlot, setLegendSlot] = useState<HTMLDivElement | null>(null)
+  const { ref: sizeRef, height: measuredHeight } = useChartSize()
   const context = useMemo(() => ({ legendSlot, inCard: true }), [legendSlot])
   const resolvedState = resolveChartState({ ...(state !== undefined && { state }) })
   const hasHeader =
@@ -169,18 +192,21 @@ export function ChartCard({
     actions !== undefined ||
     icon !== undefined ||
     count !== undefined
+  const short = measuredHeight > 0 && measuredHeight < CARD_SHORT_HEIGHT
 
   return (
     <ChartCardContext.Provider value={context}>
       <div
+        ref={sizeRef}
         className={cx(classNames?.root, className)}
         style={{ ...cardStyle, ...style }}
         {...(resolvedState === 'pending' && { 'aria-busy': 'true' })}
+        {...(short && { 'data-basalt-card-short': '' })}
       >
         {hasHeader && (
           <div
             {...(classNames?.header !== undefined && { className: classNames.header })}
-            style={headerWrapStyle}
+            style={short ? headerWrapShortStyle : headerWrapStyle}
           >
             <WidgetHeader
               tier="widget"

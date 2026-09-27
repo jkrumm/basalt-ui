@@ -208,6 +208,13 @@ export type CardsSpec = {
   stretchedRow?: number
   /** A `divided` `StatGroup` of four cards in a wrapper this many px wide (`data-testid="group"`). */
   groupWidth?: number
+  /**
+   * A SHORT, auto-height `ChartCard` with a full title+subtitle+value+delta+actions header — the
+   * `/charts` Primitives "Availability"/"Negotiated link speed" shape (wave 8's header-economy law,
+   * `docs/waves/PLAN.md`). Rendered at `data-testid="card-short"`, NOT stretched by a grid row, so
+   * the card's own height is whatever the header + `bodyHeight` naturally sum to.
+   */
+  shortHeader?: { width: number; bodyHeight: number }
 }
 
 export type FixtureSpec = {

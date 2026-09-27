@@ -260,8 +260,8 @@ describe('the container laws', () => {
     expect(CSS).not.toContain('@media')
   })
 
-  test('from 800px value + delta move onto the title row (the title row dissolves)', () => {
-    const wide = CSS.slice(CSS.indexOf('@container basalt-card (min-width: 800px)'))
+  test('from 480px value + delta move onto the title row (the title row dissolves)', () => {
+    const wide = CSS.slice(CSS.indexOf('@container basalt-card (min-width: 480px)'))
     expect(wide).toContain('display: contents')
     expect(wide).toContain('margin-inline-start: auto')
     // metrics BEFORE actions, both after the heading, so actions stay the rightmost item
