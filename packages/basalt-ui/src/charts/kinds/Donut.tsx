@@ -1,8 +1,9 @@
 import { Group } from '@visx/group'
 import { Pie } from '@visx/shape'
-import { memo, useMemo, useRef, useState } from 'react'
-import type { PointerEvent, ReactNode } from 'react'
+import { memo, useMemo, useRef } from 'react'
+import type { ReactNode } from 'react'
 import { useChartSize } from '../hooks/useChartSize'
+import { useDiscreteCursor } from '../hooks/useDiscreteCursor'
 import { assertRequiredProps } from '../../common/validate'
 import type { BasaltProps } from '../../common/props'
 import { ChartTooltipFloat, TooltipBody, TooltipRow } from '../primitives/ChartTooltip'
@@ -84,6 +85,8 @@ const identityLabel = (key: string): string => key
  * disagree (`docs/CHARTS-SPEC.md` §5). No crosshair — meaningless for a radial layout. Hover stays local to the pie (dimming siblings on hover) rather
  * than joining the shared cursor: a date-keyed cursor has no counterpart on a donut, and cross-kind
  * category sync (donut ↔ bar, via a generalized key) is a distinct, deliberately deferred feature.
+ * Tap-to-pin, keyboard stepping and focus over the slice ring come from `useDiscreteCursor`
+ * (`docs/waves/RESPONSIVE-SPEC.md` §5), the discrete counterpart of `HoverOverlay`.
  *
  * Layout law (`docs/waves/RESPONSIVE-SPEC.md` §4): frame W/H > 1.5 puts the legend beside the ring
  * with value and %, the ring capped at `min(h, 0.55w)`; `micro`/`compact` stack the full legend
@@ -204,9 +207,6 @@ type DonutPlotProps = Pick<
   frameW: number
 }
 
-/** A hovered slice plus the viewport anchor `ChartTooltipFloat` positions against. */
-type DonutTip = { slice: Slice; anchor: { x: number; y: number } }
-
 /** The measured plot — split from {@link DonutInner} so it only draws once `ChartFrame` has
  * resolved a non-empty plot rect (radius/center depend on the measured size). */
 function DonutPlot(props: DonutPlotProps) {
@@ -225,24 +225,26 @@ function DonutPlot(props: DonutPlotProps) {
   } = props
   const { width, height, hidden } = plot
 
-  const [tip, setTip] = useState<DonutTip | null>(null)
-  const hoveredKey = tip?.slice.key ?? null
-
   const visibleData = useMemo(() => slices.filter((d) => !hidden.has(d.key)), [slices, hidden])
+
+  // One ring, one shared keyboard host: `useDiscreteCursor` gives arrow-key stepping through the
+  // VISIBLE slices (a hidden legend entry is not a reachable target either), plus tap-to-pin on
+  // touch. Left/Right and Up/Down are equivalent (no `columns` — a ring has no 2D shape).
+  const cursor = useDiscreteCursor<Slice>({
+    targets: visibleData,
+    getKey: (d) => d.key,
+    ariaLabel: 'Donut slices — use arrow keys to select, Escape to dismiss',
+  })
+  const activeKey = cursor.tip?.target.key ?? null
 
   const radius = resolveDonutRadius({ plotW: width, plotH: height, frameW, side })
   const innerRadius = radius * innerRatio
   const centerX = width / 2
   const centerY = height / 2
 
-  const show = (d: Slice, event: PointerEvent<SVGGElement>) => {
-    setTip({ slice: d, anchor: { x: event.clientX, y: event.clientY } })
-  }
-  const hide = () => setTip(null)
-
   return (
     <div style={{ position: 'relative' }}>
-      <svg width={width} height={height}>
+      <svg width={width} height={height} {...cursor.hostProps}>
         <Group left={centerX} top={centerY}>
           <Pie<Slice>
             data={visibleData}
@@ -259,18 +261,13 @@ function DonutPlot(props: DonutPlotProps) {
                 return (
                   <g
                     key={key}
-                    onPointerEnter={(event) => {
-                      show(arc.data, event)
-                    }}
-                    onPointerMove={(event) => {
-                      show(arc.data, event)
-                    }}
-                    onPointerLeave={() => {
-                      hide()
-                    }}
-                    onPointerCancel={() => {
-                      hide()
-                    }}
+                    id={cursor.optionId(arc.data)}
+                    // An SVG `<g>` has no `<option>` counterpart — `useDiscreteCursor`'s
+                    // listbox/option pair (see its JSDoc) is a role over an arbitrary shape.
+                    // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role
+                    role="option"
+                    aria-selected={activeKey === key}
+                    {...cursor.pointerProps(arc.data)}
                     style={{ cursor: 'pointer' }}
                   >
                     <path
@@ -278,7 +275,7 @@ function DonutPlot(props: DonutPlotProps) {
                       fill={arc.data.color}
                       stroke={VX.surface.panel}
                       strokeWidth={1.5}
-                      opacity={hoveredKey === null || hoveredKey === key ? 1 : 0.4}
+                      opacity={activeKey === null || activeKey === key ? 1 : 0.4}
                     />
                   </g>
                 )
@@ -331,19 +328,19 @@ function DonutPlot(props: DonutPlotProps) {
         </div>
       )}
 
-      {tip !== null && (
-        <ChartTooltipFloat anchor={tip.anchor}>
+      {cursor.tip !== null && (
+        <ChartTooltipFloat anchor={cursor.tip.anchor}>
           <TooltipBody>
             <TooltipRow
-              color={tip.slice.color}
-              label={tip.slice.label}
-              value={formatValue(tip.slice.value)}
+              color={cursor.tip.target.color}
+              label={cursor.tip.target.label}
+              value={formatValue(cursor.tip.target.value)}
               shape="bar"
             />
             <TooltipRow
               color={VX.grid}
               label="Share"
-              value={`${sharePercent(tip.slice.value, total)}%`}
+              value={`${sharePercent(cursor.tip.target.value, total)}%`}
               shape="bar"
             />
           </TooltipBody>

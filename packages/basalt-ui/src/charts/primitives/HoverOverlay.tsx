@@ -11,6 +11,7 @@ export function HoverOverlay({
   width,
   height,
   onMove,
+  onDown,
   onLeave,
   onKeyDown,
   onBlur,
@@ -22,6 +23,9 @@ export function HoverOverlay({
   width: number
   height: number
   onMove: PointerEventHandler<SVGRectElement>
+  /** Coarse-pointer tap: resolves + shows the tooltip immediately, with no preceding `pointermove`
+   * (`docs/waves/RESPONSIVE-SPEC.md` §5). Optional so a caller with no touch story yet can omit it. */
+  onDown?: PointerEventHandler<SVGRectElement>
   onLeave: PointerEventHandler<SVGRectElement>
   /** Present = the overlay is focusable and scrubs on ←/→. */
   onKeyDown?: KeyboardEventHandler<SVGRectElement>
@@ -59,6 +63,7 @@ export function HoverOverlay({
       // reaches this overlay to scrub the chart.
       style={{ touchAction: 'pan-y' }}
       onPointerMove={onMove}
+      {...(onDown !== undefined && { onPointerDown: onDown })}
       onPointerLeave={onLeave}
       onPointerCancel={onLeave}
     />

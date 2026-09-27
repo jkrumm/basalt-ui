@@ -336,12 +336,16 @@ function DualPanelPlot<T>(props: DualPanelPlotProps<T>) {
     [bottomDomain, bottomH, useNiceBottom],
   )
 
+  // ONE `<svg>` wraps both panes below, so it doubles as the tap-outside boundary
+  // (`docs/waves/RESPONSIVE-SPEC.md` §5) for the single cursor they share.
+  const svgRef = useRef<SVGSVGElement>(null)
   const cursor = useChartCursor<T>({
     data,
     chartId,
     getKey: getX,
     xScale,
     marginLeft: margin.left,
+    boundaryRef: svgRef,
     ...(cursorResolution !== undefined && { resolution: cursorResolution }),
   })
 
@@ -477,7 +481,6 @@ function DualPanelPlot<T>(props: DualPanelPlotProps<T>) {
     [visibleSeries, lineValid, xScale, topYScale, getX],
   )
 
-  const svgRef = useRef<SVGSVGElement>(null)
   const point = cursor.point
   const sx = point !== null ? (xScale(getX(point)) ?? 0) : 0
   const syncedBar = point !== null ? getBar(point) : null
@@ -485,10 +488,12 @@ function DualPanelPlot<T>(props: DualPanelPlotProps<T>) {
   // Same seam as `CartesianChart`: this chart renders its tooltip as the cursor SOURCE (always) or,
   // opted in via `onFollow`, as a FOLLOWER. A follower has no pointer under it, so it is always
   // positioned via the anchored (crosshair) path — `cursor.anchor` stays null on a chart nobody is
-  // hovering, so following it here would render nothing.
+  // hovering, so following it here would render nothing. `DualPanel` has no `follow` prop to
+  // override the default, so touch (spec §5) anchors unconditionally, same as an unset `follow`
+  // elsewhere.
   const isFollowerRender = !cursor.isSource && onFollow === true
   const showTooltip = point !== null && (cursor.isSource || isFollowerRender)
-  const anchorX = isFollowerRender && point !== null ? sx : null
+  const anchorX = (isFollowerRender || cursor.isTouch) && point !== null ? sx : null
   const svgRect = anchorX === null ? undefined : svgRef.current?.getBoundingClientRect()
   const tooltipAnchor =
     svgRect === undefined || anchorX === null
@@ -585,6 +590,7 @@ function DualPanelPlot<T>(props: DualPanelPlotProps<T>) {
             width={xMax}
             height={topH + PANE_GAP}
             onMove={cursor.onPointerMove}
+            onDown={cursor.onPointerDown}
             onLeave={cursor.onPointerLeave}
             onKeyDown={cursor.onKeyDown}
             onBlur={cursor.onBlur}
@@ -648,6 +654,7 @@ function DualPanelPlot<T>(props: DualPanelPlotProps<T>) {
             width={xMax}
             height={bottomH + margin.bottom}
             onMove={cursor.onPointerMove}
+            onDown={cursor.onPointerDown}
             onLeave={cursor.onPointerLeave}
           />
         </Group>
