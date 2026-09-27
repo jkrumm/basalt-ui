@@ -150,13 +150,21 @@ grid track, where it would collapse to 0), and it becomes the containing block f
 and absolute descendants. What moved onto the card's width (`CONTAINER_CLASSES`: micro < 240,
 compact 240–479, regular 480–799, wide ≥ 800):
 
-- **Under 480px, `subtitle` folds into the info glyph** and the visible line is hidden. A card with a
-  `subtitle` and no `info` now renders a `More information` button (hidden from 480px up); with both,
-  the one glyph's bubble reads `info`, then `subtitle`. A test asserting the subtitle is visible in a
-  narrow card, or that no `More information` button exists without `info`, needs updating.
-- **From 800px, `value` + `delta` sit on the title row**, before `actions`, instead of on their own
-  row. The KPI value never ellipsizes any more: it shrinks with the card (`cqi`, `kpi` → 16px) and
-  breaks a pathological string rather than clipping it.
+- **Under 480px, or under 280px of the card's own HEIGHT regardless of width (wave 8), `subtitle`
+  folds into the info glyph** and the visible line is hidden. A card with a `subtitle` and no `info`
+  now renders a `More information` button (hidden past both floors); with both, the one glyph's
+  bubble reads `info`, then `subtitle`. A test asserting the subtitle is visible in a narrow OR short
+  card, or that no `More information` button exists without `info`, needs updating. The height half
+  is JS-measured (`ChartCard` only, via a `data-basalt-card-short` attribute it sets from its own
+  rendered height) rather than a `@container` size query — `container-type: size` collapses an
+  auto-height card to 0, so there is no CSS-only way to query a card's own height without an
+  explicit size. `StatCard`/`Section` do not (yet) set the attribute, so only `ChartCard` folds by
+  height today.
+- **From 480px (was 800px in 1.30.x — wave 8), `value` + `delta` sit on the title row**, before
+  `actions`, instead of on their own row. The KPI value never ellipsizes any more: it shrinks with
+  the card (`cqi`, `kpi` → 16px) and breaks a pathological string rather than clipping it. A short
+  `ChartCard` (see above) also shrinks the value to the `lg` step and trims the header's own top
+  inset, so a short-but-wide chart card's header stays at or under a fifth of the card's height.
 - **`StatCard` `sparklinePlacement="right"` collapses to the stacked layout** when the card is under
   480px wide (it keyed to the viewport's `sm` before). Two-up cards on a
   desktop that kept the sparkline beside the value now stack when the card itself is narrow.

@@ -347,6 +347,25 @@ function CardsFixture({ spec }: { spec: CardsSpec }): ReactElement {
           </ChartCard>
         </div>
       )}
+      {spec.shortHeader !== undefined && (
+        // theme-allow -- the wrapper width IS the fixture's payload (a container-class probe)
+        <div data-testid="card-short" style={{ width: spec.shortHeader.width }}>
+          <ChartCard
+            title="Availability"
+            subtitle="Last 24 hours"
+            value="99.982%"
+            delta={0.4}
+            actions={
+              <ActionIcon variant="subtle" aria-label="Menu">
+                ⋯
+              </ActionIcon>
+            }
+          >
+            {/* theme-allow -- a short fixed body: the header/card ratio probe's own payload */}
+            <div style={{ height: spec.shortHeader.bodyHeight }} />
+          </ChartCard>
+        </div>
+      )}
     </>
   )
 }
