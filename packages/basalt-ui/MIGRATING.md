@@ -173,8 +173,9 @@ compact 240–479, regular 480–799, wide ≥ 800):
   spare height goes to the body.
 - **The chart tier is the measured container class** (`micro`/`compact` < 480px keep the old phone
   metrics; `regular`/`wide` the desktop ones). `resolveChartTier`, `chartTierMetrics`,
-  `useChartTier`, `useChartTierMetrics` and `ChartTierMetrics` are `@deprecated`, still forward,
-  and go in 1.31.0 (no replacement export; `basalt/deprecated-export` warns, no autofix). **Before
+  `useChartTier`, `useChartTierMetrics`, `ChartTierMetrics` and `VX.phoneChartWidth` are
+  `@deprecated`, still forward (`phoneChartWidth` now reads `CONTAINER_CLASSES.regular`, same
+  value), and go in 1.31.0 (no replacement export; `basalt/deprecated-export` warns, no autofix). **Before
   the first measurement the class follows the viewport** (`<BasaltProvider sizeClassHint>`, default
   `compact`), so an unmeasured first frame is phone-shaped unless a hint says otherwise. With no
   `BasaltProvider` at all (a charts-only consumer) it is `regular`, never phone chrome.
