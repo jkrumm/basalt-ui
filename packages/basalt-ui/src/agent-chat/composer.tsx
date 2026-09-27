@@ -43,6 +43,7 @@ import { cx } from '../common/props'
 import type { BasaltProps, SlotStylesProps } from '../common/props'
 import { readPersistedValue } from '../state'
 import { VX } from '../tokens'
+import { useKeyboardInsetRef } from './use-keyboard-inset'
 
 /** A minimal, dependency-free send-arrow glyph (icons are passed in as ReactNode elsewhere; this
  * one is inline since Composer has no icon prop in its contract). */
@@ -471,6 +472,11 @@ export function Composer({
 
   useImperativeHandle(ref, () => ({ insertText, setValue, focus: focusTextarea }))
 
+  // Pins the composer above a coarse-pointer on-screen keyboard — see use-keyboard-inset.ts. The
+  // published custom property defaults to 0px via CSS, so a Composer with no `visualViewport`
+  // support (SSR, an unsupporting engine) pays for exactly one no-op custom property.
+  const keyboardInsetRef = useKeyboardInsetRef()
+
   const submit = (): void => {
     if (inputDisabled || !hasPayload) return
     const submittedText = trimmed
@@ -574,8 +580,20 @@ export function Composer({
   return (
     <Stack
       gap={6}
+      ref={keyboardInsetRef}
       className={cx(classNames?.root, className)}
-      {...(style !== undefined && { style })}
+      // Composed, not overwritten: spreading `style` AFTER a flat `paddingBottom` let a consumer's
+      // own `style.paddingBottom` (or `padding` shorthand) silently disable keyboard-inset pinning,
+      // with the `0px` fallback masking the failure. `calc()` keeps both — the consumer's own
+      // bottom padding, plus however much keyboard is currently covering it.
+      style={{
+        ...style,
+        paddingBottom: `calc(var(--vx-keyboard-inset, 0px) + ${
+          typeof style?.paddingBottom === 'number'
+            ? `${style.paddingBottom}px`
+            : (style?.paddingBottom ?? '0px')
+        })`,
+      }}
     >
       <Group gap="xs" align="flex-end" wrap="nowrap">
         {leftSection}

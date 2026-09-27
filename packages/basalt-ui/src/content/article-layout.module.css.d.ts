@@ -11,6 +11,9 @@ declare const classes: {
   readonly metaRow: string
   readonly content: string
   readonly tocRail: string
+  readonly tocTrigger: string
+  readonly tocTriggerLabel: string
+  readonly tocDropdown: string
   readonly footer: string
   readonly navCell: string
   readonly navCellNext: string

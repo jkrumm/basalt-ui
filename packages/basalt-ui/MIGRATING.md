@@ -209,6 +209,18 @@ compact 240–479, regular 480–799, wide ≥ 800):
 - **Standalone `ChartLegend` no longer applies a tier entry cap.** It renders every entry unless
   `maxRows` is passed; only `ChartFrame` derives a cap (from the measured fit).
 
+**`BasaltDataTable` folds low-priority columns instead of only scrolling, once the table no
+longer fits its wrapper (behaviour change, no API change beyond the new `meta.priority`).** The
+same measured fit `stickyHeader` already used (`useMeasuredContainment`) now also drives an
+analytic fold: the lowest-priority data columns move into a per-row disclosure (a chevron toggle
+in a new leading cell, revealing the folded columns as label/value pairs directly under the row)
+until the rest fit, rather than forcing `Table.ScrollContainer` into horizontal scroll. **With no
+`meta.priority` set anywhere — every existing `<BasaltDataTable data columns />` — the LAST
+declared column folds first**, so a table that already fit its container renders exactly as
+before; only a table that would otherwise have scrolled changes. Order it explicitly via
+`meta.priority` on a column (a higher number folds before a lower one). Never engages beside an
+explicit `maxHeight`/`minWidth` (a declared scroll box), and never folds the selection column.
+
 ## 1.30.2 — the `legendWins` collapse, and two things `ChartFrame` never said out loud
 
 **A patch. Nothing is added, renamed or removed.** One rendering regression 1.30.1 shipped is

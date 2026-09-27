@@ -576,7 +576,11 @@ describe('className and classNames (common/props.ts)', () => {
     const { container } = renderTable({
       className: 'my-table',
       classNames: { root: 'slot-root', footer: 'slot-footer' },
+      // `minWidth`, not just `maxHeight`: a declared horizontal floor is what keeps this table on
+      // the flat, un-wrapped ScrollContainer shape this test asserts (`data-table.tsx`'s
+      // `foldEligible`) — `maxHeight` alone now also gets the column fold's own measuring wrapper.
       maxHeight: 480,
+      minWidth: 720,
       enablePagination: true,
     })
     const root = container.querySelector('.slot-root')
