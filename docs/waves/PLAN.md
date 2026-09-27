@@ -78,25 +78,84 @@ resolved.
       off-screen guard checks only `anchor.y`, not `anchor.x`; `touch-action: pan-y` + its rationale
       comment is copy-pasted onto four plot `<svg>`s rather than one shared constant.
 
-## Wave 2 — Slim-down before the chart fixes <!-- status: active -->
+## Wave 2 — Slim-down before the chart fixes <!-- status: done -->
 
-- [ ] Delete the dead axis half of the resolver: `ChartLayout.yAxis/xAxis`, `resolveAxisEconomy`,
+- [x] Delete the dead axis half of the resolver: `ChartLayout.yAxis/xAxis`, `resolveAxisEconomy`,
       `AxisEconomyInput`, `thinTo`, the side variant, `useChartLayout` and the layout context field, plus
       their dead tests (B4)
-- [ ] One Mantine-free `useMediaQuery(query, serverFallback)` in `common/` with a shared per-query
+- [x] One Mantine-free `useMediaQuery(query, serverFallback)` in `common/` with a shared per-query
       MediaQueryList cache becomes the single exempt file. `useSizeClass` is built on it; `useMinWidth` is
       deleted; `useCoarsePointer`/`readCoarse` reuse it (B5, P2-12). This also clears basalt's own 14
       `raw-breakpoint` self-fires (B3)
-- [ ] Remove the public `legend.mode` override (the resolver decides; B7) and the `BasaltProvider host`
+- [x] Remove the public `legend.mode` override (the resolver decides; B7) and the `BasaltProvider host`
       prop (keep the automatic `data-basalt-host`; B12). Hard-delete the zero-consumer deprecated chart
       tier forwarders with MIGRATING rows (B9; grep argo and weatherorb first, and keep `useBreakpoint`
       and `legend.maxRows` on notice)
-- [ ] Every "removed in 1.31.0" / promote-1.31.0 note becomes **1.32.0**, because this branch ships as
+- [x] Every "removed in 1.31.0" / promote-1.31.0 note becomes **1.32.0**, because this branch ships as
       1.31.0 (B1)
-- [ ] Record the src line delta for this wave in Left behind. It must be negative
-      **Left behind:**
+- [x] Record the src line delta for this wave in Left behind. It must be negative
+      **Left behind:** `packages/basalt-ui/src` net **-388 lines** (142 insertions, 530 deletions,
+      `git diff --stat` vs the wave-1 close-out commit). One commit, `refactor: slim down the dead
+  axis resolver, media-query stores and speculative chart escape hatches`.
 
-## Wave 3 — Card and legend correctness <!-- status: pending -->
+      **B4** — `resolveAxisEconomy`/`AxisEconomyInput`/`useChartLayout`/the `side` legend variant/
+      `thinTo`'s micro override are gone from `chart-layout.ts`/`chart-tier.tsx`; `XLabelPlan` is now
+      its own type instead of `Pick<ChartLayout['xAxis'], …>`. `ChartFrame`'s `resolveChartLayout`
+      call drops the always-`[]`/`false` `yLabels`/`xLabels`/`categorical` args (dead — the real axis
+      ladder runs off `isTightClass`/`planXLabels`/`yTickCount` directly in `CartesianChart`/
+      `useBandPlot`, untouched). `ChartFrame.test.tsx`'s `useChartLayout`-based probe now reads
+      `useChartContainerClass()` instead (height assertions dropped — already covered directly in
+      `chart-layout.test.ts`).
+
+      **B5/B3** — new `common/use-media-query.ts` (`useMediaQuery` + a non-reactive `readMediaQuery`
+      for a dev-only one-off check), keyed by a `WeakMap<typeof window.matchMedia, Map<query,
+      MediaQueryList>>` rather than a bare `Map<query, …>` — a bare map would have served a STALE
+      `MediaQueryList` to any test that swaps in its own `window.matchMedia` stub per test (a real
+      pattern here: `provider/host.test.tsx`, `use-size-class.test.tsx`, `virtual-list.test.tsx`),
+      since the cache would outlive the stub. `useSizeClass` is now two `useMediaQuery` calls (dropped
+      its own `useState(boundaryLists)`); `shell/index.tsx`'s `useMinWidth` is gone (inlined);
+      `useCoarsePointer` and `useBreakpoint` are one-line forwarders; `virtual-list.tsx`'s and
+      `provider/index.tsx`'s raw `window.matchMedia` reads route through the shared module. Verified:
+      `raw-breakpoint` self-fires in `packages/basalt-ui/src` went from 11 (already down from the
+      review's 14 after wave 1) to 2 — `ChartLegend.tsx`'s `window.innerHeight`/`innerWidth`
+      popover-positioning read and `content/article-card.tsx`'s pre-existing incumbent, neither named
+      in P1-5's fix list, both left alone.
+
+      **B7/B12/B9** — `legend.mode` deleted from `ChartLegendConfig`/`ChartFrameLegend` (grep of
+      argo/weatherorb/the playground: zero consumers); `ChartLegend`'s own internal `mode` prop
+      (resolver-driven) is untouched. `BasaltProvider`'s `host` prop is gone; `useHostAttribute` takes
+      no argument and always auto-detects (`<html data-basalt-host="web|pwa">`, `native` removed with
+      zero consumers). Hard-deleted with no grace window (zero consumers, confirmed by grep):
+      `resolveChartTier`, `chartTierMetrics`, `useChartTier`, `useChartTierMetrics` (all from the
+      `./charts` barrel), `VX.phoneChartWidth`, `ResponsiveChartHeight.sm/md/lg`. **`ChartTier`/
+      `ChartTierMetrics` themselves stay as internal (unexported) types** in `chart-frame-layout.ts` —
+      `ticks.ts`'s `autoXLabelRotate`, `Axes.tsx` and `auto-margin.ts` still read the tier concept
+      internally; only the PUBLIC surface (the barrel re-export, six symbol names) is gone, matching
+      the review's own "-6 public symbols" accounting. `tierOfContainerClass` + `chartTierMetrics`
+      collapsed into one `chartMetrics(containerClass)`. Added a NEW "on notice (adopt-or-delete)"
+      MIGRATING row for the whole `ResponsiveChartHeight` object form (not just its old keys) — zero
+      consumers under `~/SourceRoot` use `{ base, regular, wide }` over a plain number, and the
+      derived-height law already covers the common case; a future minor may drop it for a plain
+      number + explicit override unless a consumer names a need. `export-surface.json` regenerated
+      (`--update`) to match.
+      **B1** — the two grace entries genuinely new to this branch (`raw-breakpoint` in
+      `oxlint-plugin.js`, `raw-media-query` in `guard/index.ts`) moved `since: 1.30.2 → 1.31.0`,
+      `promote: 1.31.0 → 1.32.0`; the `legend.maxRows` deprecation notices (JSDoc ×2 +
+      `deprecatedProp` call) moved `1.31.0 → 1.32.0`. **Deliberately left alone**: the PRE-EXISTING
+      `control-outside-home`/`raw-selection-control` (C1) pair, still genuinely scheduled to promote
+      AT 1.31.0 (decided when 1.31.0 was already the next real version, unrelated to this branch's
+      off-by-one) — `bun packages/basalt-ui/scripts/check-grace.ts 1.31.0` now fails on ONLY those
+      two, verified. **This is a real release blocker for whoever cuts 1.31.0**: either promote the
+      C1 pair to `error` (re-measure the fleet per its own grace-entry `why`) or extend `promote` with
+      a reason, before `make release` will get past its preflight. Orchestrator's call, per this
+      file's header.
+
+      Gate run: `bun run build` → `bun run pre` (fmt/lint/typecheck/check-theme/check-budgets/tests,
+      4774 pass) → `bun run test:layout` (125 pass) → `packages/basalt-ui` `bun run pack-test`
+      (PASSED) — all green, in pieces rather than `make verify` (another Chrome was running; wave 1's
+      warning), but every step it would have chained ran and passed.
+
+## Wave 3 — Card and legend correctness <!-- status: active -->
 
 - [ ] ChartCard's short-card flag gets hysteresis: it enters below 280 and leaves at ≥ 280 plus the
       largest fold delta. Add a layout test that the flag holds still for 2s on `/dashboard` "Sales by
