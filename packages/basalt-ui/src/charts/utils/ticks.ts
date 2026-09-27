@@ -12,7 +12,7 @@ const X_TICK_LABEL_GAP = 8
  * `useBandPlot` and `DualPanel` — the three call sites that used to reimplement this formula.
  *
  * `fontPx` defaults to `VX.axisFont`; a phone-tier chart passes its own smaller tick font
- * (`chartTierMetrics().axisFont`) so the spacing is derived from the size actually painted.
+ * (`chartMetrics().axisFont`) so the spacing is derived from the size actually painted.
  */
 export function xLabelPxFor(labels: string[], fontPx: number = VX.axisFont): number {
   return maxTextWidth(labels, fontPx) + X_TICK_LABEL_GAP

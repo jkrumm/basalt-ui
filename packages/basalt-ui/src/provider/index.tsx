@@ -35,6 +35,7 @@ import type { BuildPaletteOpts } from '../tokens'
 import { isDefaultDeriveConfig } from '../tokens/derive'
 import { buildPaletteData } from '../tokens/palette'
 import { isDev } from '../common/is-dev'
+import { useMediaQuery } from '../common/use-media-query'
 import { registerColorSchemeSetter } from '../commands/shell-bridge'
 import { useIsomorphicLayoutEffect } from '../shell/isomorphic-layout-effect'
 import { PageTitle } from '../shell/page-title'
@@ -119,12 +120,6 @@ export type BasaltProviderProps = {
    * hydration when the real class lands.
    */
   sizeClassHint?: SizeClass
-  /**
-   * Force `<html data-basalt-host>`. Unset → `'pwa'` when `(display-mode: standalone)` matches,
-   * else `'web'`. Pass `'native'` from a webview shell (Capacitor, Tauri) — no display-mode query
-   * can detect one.
-   */
-  host?: 'native'
 } & Omit<MantineProviderProps, 'children' | 'theme' | 'defaultColorScheme' | 'cssVariablesResolver'>
 
 // ── Default error handler ─────────────────────────────────────────────────────────────────────────
@@ -248,23 +243,14 @@ export function composeInjectedCss(
 // ── Host attribute ────────────────────────────────────────────────────────────────────────────────
 
 /** `data-basalt-host` on `<html>` — the one place a `display-mode` query is read; CSS keys off it. */
-export function useHostAttribute(forced: 'native' | undefined): void {
+export function useHostAttribute(): void {
+  const isPwa = useMediaQuery('(display-mode: standalone)', false)
   // Layout effect: the attribute must land before first paint, or a PWA flashes web chrome.
   useIsomorphicLayoutEffect(() => {
     const root = document.documentElement
-    const list =
-      forced === undefined && typeof window.matchMedia === 'function'
-        ? window.matchMedia('(display-mode: standalone)')
-        : null
-    const apply = (): void =>
-      root.setAttribute('data-basalt-host', forced ?? (list?.matches ? 'pwa' : 'web'))
-    apply()
-    list?.addEventListener('change', apply)
-    return () => {
-      list?.removeEventListener('change', apply)
-      root.removeAttribute('data-basalt-host')
-    }
-  }, [forced])
+    root.setAttribute('data-basalt-host', isPwa ? 'pwa' : 'web')
+    return () => root.removeAttribute('data-basalt-host')
+  }, [isPwa])
 }
 
 // ── Inner bridge ──────────────────────────────────────────────────────────────────────────────────
@@ -395,11 +381,10 @@ export function BasaltProvider({
   nonce,
   connectivity,
   sizeClassHint = 'compact',
-  host,
   ...rest
 }: BasaltProviderProps) {
   useDuplicateProviderGuard()
-  useHostAttribute(host)
+  useHostAttribute()
   const errorHandler = onError ?? defaultOnError
 
   // `createBasaltTheme(theme)` — plus, when the theme lab's "Apply" switch is on, the delta of its

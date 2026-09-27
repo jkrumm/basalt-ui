@@ -1,9 +1,9 @@
-import { createContext, useContext, useMemo, useSyncExternalStore } from 'react'
+import { createContext, useContext, useSyncExternalStore } from 'react'
 import type { ReactNode } from 'react'
+import { useMediaQuery } from '../../common/use-media-query'
 import type { ContainerClass } from '../../tokens/size-classes'
-import type { ChartLayout } from './chart-layout'
-import { chartTierMetrics, resolveChartTier, tierOfContainerClass } from './chart-frame-layout'
-import type { ChartTier, ChartTierMetrics } from './chart-frame-layout'
+import { chartMetrics } from './chart-frame-layout'
+import type { ChartTierMetrics } from './chart-frame-layout'
 
 /**
  * Ambient container class. `ChartFrame` publishes the class it resolved (`resolveChartLayout`:
@@ -14,32 +14,17 @@ import type { ChartTier, ChartTierMetrics } from './chart-frame-layout'
  * Default `'regular'` (desktop metrics), so a primitive rendered outside a `ChartFrame` (a
  * hand-composed plot, a `TooltipRow` in a consumer's own tooltip) keeps today's sizes.
  */
-type ChartLayoutContextValue = { containerClass: ContainerClass; layout: ChartLayout | null }
-
-const ChartContainerClassContext = createContext<ChartLayoutContextValue>({
-  containerClass: 'regular',
-  layout: null,
-})
+const ChartContainerClassContext = createContext<ContainerClass>('regular')
 
 export type ChartTierProviderProps = {
   containerClass: ContainerClass
-  /** The full resolved layout; omitted by a caller that only knows the class. */
-  layout?: ChartLayout
   children: ReactNode
 }
 
-/** Publishes a resolved container class (and layout) to the subtree. Mounted once, by `ChartFrame`. */
-export function ChartTierProvider({
-  containerClass,
-  layout,
-  children,
-}: ChartTierProviderProps): ReactNode {
-  const value = useMemo(
-    () => ({ containerClass, layout: layout ?? null }),
-    [containerClass, layout],
-  )
+/** Publishes a resolved container class to the subtree. Mounted once, by `ChartFrame`. */
+export function ChartTierProvider({ containerClass, children }: ChartTierProviderProps): ReactNode {
   return (
-    <ChartContainerClassContext.Provider value={value}>
+    <ChartContainerClassContext.Provider value={containerClass}>
       {children}
     </ChartContainerClassContext.Provider>
   )
@@ -47,46 +32,19 @@ export function ChartTierProvider({
 
 /** The ambient container class (`'regular'` outside a `ChartFrame`). Internal. */
 export function useChartContainerClass(): ContainerClass {
-  return useContext(ChartContainerClassContext).containerClass
-}
-
-/** The full layout `ChartFrame` resolved, or `null` outside one. Internal, not on any barrel. */
-export function useChartLayout(): ChartLayout | null {
-  return useContext(ChartContainerClassContext).layout
+  return useContext(ChartContainerClassContext)
 }
 
 /** The resolved sizes for the ambient container class — what every internal primitive wants. */
 export function useChartMetrics(): ChartTierMetrics {
-  return chartTierMetrics(tierOfContainerClass(useChartContainerClass()))
-}
-
-/** @deprecated Removed in 1.31.0 — the container class replaces the tier (`'phone'` = `micro`/`compact`). */
-export function useChartTier(): ChartTier {
-  return tierOfContainerClass(useChartContainerClass())
-}
-
-/** @deprecated Removed in 1.31.0 — read the container class (`useChartContainerClass`) instead of the tier. */
-export function useChartTierMetrics(): ChartTierMetrics {
-  return useChartMetrics()
+  return chartMetrics(useChartContainerClass())
 }
 
 const subscribeNothing = (): (() => void) => () => {}
 
-function subscribeCoarse(onChange: () => void): () => void {
-  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return () => {}
-  const list = window.matchMedia('(pointer: coarse)')
-  list.addEventListener('change', onChange)
-  return () => list.removeEventListener('change', onChange)
-}
-
-function readCoarse(): boolean {
-  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false
-  return window.matchMedia('(pointer: coarse)').matches
-}
-
 /** Whether the primary pointer is coarse. Server snapshot `false`: hydration agrees, then updates. */
 export function useCoarsePointer(): boolean {
-  return useSyncExternalStore(subscribeCoarse, readCoarse, () => false)
+  return useMediaQuery('(pointer: coarse)', false)
 }
 
 /** Viewport height is quantized so a mobile URL bar collapsing does not re-lay-out every chart. */
@@ -107,6 +65,3 @@ function readViewportH(): number {
 export function useViewportHeight(): number {
   return useSyncExternalStore(subscribeViewportH, readViewportH, () => 0)
 }
-
-export { chartTierMetrics, resolveChartTier }
-export type { ChartTier, ChartTierMetrics }

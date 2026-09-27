@@ -84,14 +84,6 @@ export {
   type ResolvedChartState,
   resolveChartState,
 } from './primitives/ChartPending'
-export {
-  useChartTier,
-  useChartTierMetrics,
-  chartTierMetrics,
-  resolveChartTier,
-  type ChartTier,
-  type ChartTierMetrics,
-} from './primitives/chart-tier'
 export { Crosshair, SeriesDot } from './primitives/Crosshair'
 export { HatchPattern, hatchFill, hatchSizeFor } from './primitives/HatchPattern'
 export { ChartCard, type ChartCardProps, type ChartCardSlot } from './primitives/ChartCard'

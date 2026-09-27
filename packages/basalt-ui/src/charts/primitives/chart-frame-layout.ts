@@ -4,7 +4,6 @@
  */
 
 import { VX } from '../../tokens'
-import { resolveContainerClass } from '../../tokens/size-classes'
 import type { ContainerClass } from '../../tokens/size-classes'
 import type { ChartMargin } from '../../tokens'
 import type { LegendEntry } from './ChartLegend'
@@ -22,22 +21,9 @@ const LEGEND_SWATCH_W = 24
 /**
  * The two metric sets a chart's chrome resolves to. Internally the container class
  * (`micro`/`compact` → `'phone'`, `regular`/`wide` → `'desktop'`) picks one; there is no `tablet`.
+ * Internal only — not on any public barrel.
  */
 export type ChartTier = 'phone' | 'desktop'
-
-/** The metric set a container class resolves to. */
-export function tierOfContainerClass(containerClass: ContainerClass): ChartTier {
-  return containerClass === 'micro' || containerClass === 'compact' ? 'phone' : 'desktop'
-}
-
-/**
- * @deprecated Removed in 1.31.0. The chart tier is now the MEASURED container class
- * (`CONTAINER_CLASSES`, `docs/waves/RESPONSIVE-SPEC.md` §1); `'phone'` = `micro`/`compact`.
- * Forwards to it. An unmeasured box (`containerW <= 0`) still answers `'desktop'`.
- */
-export function resolveChartTier(containerW: number): ChartTier {
-  return containerW > 0 ? tierOfContainerClass(resolveContainerClass(containerW)) : 'desktop'
-}
 
 /**
  * A chart height stated per container step instead of as one number — the declarative escape from
@@ -56,20 +42,6 @@ export type ResponsiveChartHeight = {
   regular?: number
   /** From the `wide` container class (800px) up. */
   wide?: number
-  /** @deprecated Removed in 1.31.0 — use `regular`. */
-  sm?: number
-  /** @deprecated Removed in 1.31.0 — use `wide`. */
-  md?: number
-  /** @deprecated Removed in 1.31.0 — use `wide`. */
-  lg?: number
-}
-
-/** The old `sm`/`md`/`lg` keys a height object still carries, for the dev warning. */
-export function deprecatedHeightKeys(
-  height: number | ResponsiveChartHeight,
-): Array<'sm' | 'md' | 'lg'> {
-  if (typeof height === 'number') return []
-  return (['sm', 'md', 'lg'] as const).filter((key) => height[key] !== undefined)
 }
 
 /**
@@ -77,18 +49,14 @@ export function deprecatedHeightKeys(
  * class. A plain number passes through untouched. The class is the measured one, or, before the
  * first measurement, the one implied by the viewport ({@link resolveChartLayout}), so the first
  * frame is not a different height from the second.
- *
- * Aliases: `sm` → `regular`, `md`/`lg` → `wide` (`lg` beating `md`); a new key beats its alias.
  */
 export function resolveFrameHeight(
   height: number | ResponsiveChartHeight,
   containerClass: ContainerClass,
 ): number {
   if (typeof height === 'number') return height
-  const regular = height.regular ?? height.sm
-  const wide = height.wide ?? height.lg ?? height.md
-  if (containerClass === 'wide') return wide ?? regular ?? height.base
-  if (containerClass === 'regular') return regular ?? height.base
+  if (containerClass === 'wide') return height.wide ?? height.regular ?? height.base
+  if (containerClass === 'regular') return height.regular ?? height.base
   return height.base
 }
 
@@ -107,10 +75,9 @@ const PHONE_DOT_R = Math.max(VX.dotR - 1, 2)
 const TOOLTIP_MIN_WIDTH = { desktop: 140, phone: 110 } as const
 
 /**
- * @deprecated Removed in 1.31.0 — see {@link chartTierMetrics}.
- *
  * Every size a chart's chrome resolves per tier. One object so a new tier-sensitive size is added
- * in one place and read by name, rather than each primitive branching on the tier itself.
+ * in one place and read by name, rather than each primitive branching on the tier itself. Internal
+ * only — not on any public barrel.
  */
 export type ChartTierMetrics = {
   /** Which tier these are, so a consumer of the metrics never needs both values threaded. */
@@ -153,12 +120,11 @@ const PHONE_METRICS: ChartTierMetrics = {
   },
 }
 
-/**
- * @deprecated Removed in 1.31.0. Chart chrome sizes now follow the measured container class
- * (`CONTAINER_CLASSES`); `'phone'` metrics apply to `micro`/`compact`. Forwards unchanged.
- */
-export function chartTierMetrics(tier: ChartTier): ChartTierMetrics {
-  return tier === 'phone' ? PHONE_METRICS : DESKTOP_METRICS
+/** The metric set a container class resolves to (`micro`/`compact` → phone, else desktop). */
+export function chartMetrics(containerClass: ContainerClass): ChartTierMetrics {
+  return containerClass === 'micro' || containerClass === 'compact'
+    ? PHONE_METRICS
+    : DESKTOP_METRICS
 }
 
 /**

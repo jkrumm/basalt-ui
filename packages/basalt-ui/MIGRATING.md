@@ -90,11 +90,16 @@ keys collapse. So `xs` moves 36em → 52.5em, `sm` 48em → 52.5em (an iPad port
 62em → 75em, `lg` stays 75em and `xl` 88em → 75em. Check every `visibleFrom`/`hiddenFrom`/`useBreakpoint`
 on those keys: `xs` no longer differs from `sm`, and `md`/`lg`/`xl` now switch at the same width.
 
-| Removed                                                          | Replacement                                                                                                                                                                      |
-| ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `VX.spaceTouchTarget`, `--vx-space-touch-target`                 | `VX.hit`, `--vx-hit` (24px on fine pointers, 44px under `(pointer: coarse)`)                                                                                                     |
-| `VX.space.touchControlHeight`, `--vx-space-touch-control-height` | `VX.hit`; density-exempt, so it no longer tracks the knob                                                                                                                        |
-| `DESKTOP_SECONDARY_MAX` (`./controls`)                           | none — `PageBar` row 1 folds secondary actions by its measured width (icon-only, then into `More`); removed with no grace window because nothing but the row's own count read it |
+| Removed                                                                                                                     | Replacement                                                                                                                                                                           |
+| --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `VX.spaceTouchTarget`, `--vx-space-touch-target`                                                                            | `VX.hit`, `--vx-hit` (24px on fine pointers, 44px under `(pointer: coarse)`)                                                                                                          |
+| `VX.space.touchControlHeight`, `--vx-space-touch-control-height`                                                            | `VX.hit`; density-exempt, so it no longer tracks the knob                                                                                                                             |
+| `DESKTOP_SECONDARY_MAX` (`./controls`)                                                                                      | none — `PageBar` row 1 folds secondary actions by its measured width (icon-only, then into `More`); removed with no grace window because nothing but the row's own count read it      |
+| `resolveChartTier`, `chartTierMetrics`, `useChartTier`, `useChartTierMetrics`, `ChartTier`, `ChartTierMetrics` (`./charts`) | none — removed, no grace: zero consumers. Chart chrome sizes follow the measured container class internally; there is no public tier API to read it from                              |
+| `VX.phoneChartWidth`                                                                                                        | `CONTAINER_CLASSES.regular` (`basalt-ui/tokens`) — removed, no grace: zero consumers, and the constant no longer drove any resolution                                                 |
+| `ResponsiveChartHeight.sm/md/lg`                                                                                            | `regular` / `wide` — removed, no grace: zero consumers                                                                                                                                |
+| `legend.mode` (every kind's `ChartLegendConfig`, `ChartFrameLegend`)                                                        | none — the resolver's own 'dots'/'chips' pick is the law; a speculative escape hatch with zero consumers that could silently re-open the plot-eating legend the wave-11 chain removed |
+| `BasaltProvider host`                                                                                                       | none — `<html data-basalt-host>` is now always auto-detected (`pwa`/`web`); re-add when a Capacitor/Tauri consumer is named                                                           |
 
 | Changed                                                                                                                   | Notes                                                                                                                                                                                                                                                   |
 | ------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -124,10 +129,10 @@ server/hydration frame is `compact` unless a hint says otherwise, so an SSR app 
 desktop `PageAside` projection first should pass `sizeClassHint`. `ThreadWorkspace`'s narrow layout
 follows the compact class (< 840px, was < `sm` 48em).
 
-**`<html data-basalt-host="web|pwa|native">`** is set by `BasaltProvider` (`pwa` when
-`(display-mode: standalone)` matches; `<BasaltProvider host="native">` forces `native` for a
-webview shell). The shell's safe-area padding keys on any non-`web` host (`pwa`, `native`) instead of a raw
-`display-mode` query.
+**`<html data-basalt-host="web|pwa">`** is set by `BasaltProvider` (`pwa` when
+`(display-mode: standalone)` matches, else `web` — always auto-detected; the `host="native"` force
+had zero consumers and is removed). The shell's safe-area padding keys on a non-`web` host instead
+of a raw `display-mode` query.
 
 **`PageAside`'s `defaultFolded` default now depends on whether the aside can dock.** Where an open
 aside would push main (`expanded`, main keeps its floor width) it starts open; everywhere else it
@@ -174,37 +179,43 @@ compact 240–479, regular 480–799, wide ≥ 800):
 - `ChartCard` is a flex column (`display: flex`, body `flex: 1 1 auto`): in a stretched grid row the
   spare height goes to the body.
 - **The chart tier is the measured container class** (`micro`/`compact` < 480px keep the old phone
-  metrics; `regular`/`wide` the desktop ones). `resolveChartTier`, `chartTierMetrics`,
-  `useChartTier`, `useChartTierMetrics`, `ChartTierMetrics` and `VX.phoneChartWidth` are
-  `@deprecated`, still forward (`phoneChartWidth` now reads `CONTAINER_CLASSES.regular`, same
-  value), and go in 1.31.0 (no replacement export; `basalt/deprecated-export` warns, no autofix). **Before
-  the first measurement the class follows the viewport** (`<BasaltProvider sizeClassHint>`, default
-  `compact`), so an unmeasured first frame is phone-shaped unless a hint says otherwise. With no
-  `BasaltProvider` at all (a charts-only consumer) it is `regular`, never phone chrome.
+  metrics; `regular`/`wide` the desktop ones). **Hard removal, no grace window: `resolveChartTier`,
+  `chartTierMetrics`, `useChartTier`, `useChartTierMetrics`, `ChartTier`, `ChartTierMetrics` and
+  `VX.phoneChartWidth`.** Zero consumers, so these ship straight to removed rather than carrying a
+  deprecated forwarder for one more minor — there is no replacement export; chart chrome sizes
+  follow the measured container class internally, with no public tier API to read it from.
+  `ChartTierMetrics.legendMaxRows` (the field a stated `legend.maxRows` could never actually reach,
+  since the tier no longer caps a legend) goes with the type; state a cap with `legend.maxRows`
+  directly where one is wanted. **Before the first measurement the class follows the viewport**
+  (`<BasaltProvider sizeClassHint>`, default `compact`), so an unmeasured first frame is
+  phone-shaped unless a hint says otherwise. With no `BasaltProvider` at all (a charts-only
+  consumer) it is `regular`, never phone chrome.
 - **`ResponsiveChartHeight` keys are `base` / `regular` / `wide`** (from 480 / 800px of the frame's
-  measured width). `sm` → `regular`; `md` and `lg` → `wide` (`lg` beats `md`; a new key beats its
-  alias). The old keys warn once in dev and are removed in 1.31.0. **Thresholds moved, not just
-  names:** `sm` 768 → 480px; `md` (992) and `lg` (1200) collapse into the one `wide` step at 800px —
-  re-check any object that relied on the old widths.
+  measured width). **Hard removal, no grace window: the `sm`/`md`/`lg` aliases.** Zero consumers, so
+  the old keys are gone outright rather than warning for a minor first — `sm` was `regular` (768 →
+  480px), `md`/`lg` were `wide` (992/1200 → 800px, one step). A `height={{ sm: … }}` object now
+  fails `tsc` on the unknown key; rename to `regular`/`wide` and re-check any object that relied on
+  the old widths. **On notice (adopt-or-delete): the whole object form.** Nothing under
+  `~/SourceRoot` uses `{ base, regular, wide }` over a plain number — the derived height law
+  (`ChartFrame` with no `height`, next bullet) already covers the common case a per-step height
+  existed for. A future minor may drop it for a plain number plus an explicit override, unless a
+  consumer names a need for it first.
 - **`ChartFrame` with no `height` derives one** from its measured width (≈0.62 / 0.5 / 0.4 × width by
   class, clamped 160–420, and to 0.45 × viewport height on a coarse pointer) instead of 240. A
   numeric `height` is an override and warns once in dev when it leaves the plot under
   `VX.minPlotHeight`. Inside a `ChartCard` the height is a minimum: the frame grows into a taller
   card body.
 - **The legend fits by measured width, and `legend.maxRows` is `@deprecated`** (dev-warns once,
-  removed in 1.31.0; an explicit value still wins this release, as an entry count). Overflow folds
+  removed in 1.32.0; an explicit value still wins this release, as an entry count). Overflow folds
   into an **`All N`** chip (was `+N more` / `Show less`) that opens every entry, toggles included, in
   a popover on a fine pointer and a bottom sheet on a coarse one — it never grows the band. A legend
   never rolls up fewer than 2 entries and left-aligns (was centred) with a 6px row gap. Inside a
   `ChartCard` with a header the legend now renders in the header slot instead of under the plot; a
   frame under 240px (micro) draws no legend. The phone tier no longer caps a legend at two entries
   by default.
-- **Hard removal, no grace window: `ChartTierMetrics.legendMaxRows`.** It was a public field of the
-  already-`@deprecated` `ChartTierMetrics` (a forwarder onto the container class), and it is deleted
-  outright in this release rather than kept for one more minor — nothing inside basalt reads it, and
-  the tier no longer caps a legend, so a stated value could only ever have been ignored. A consumer
-  reading `useChartTierMetrics().legendMaxRows` gets a `tsc` error; state a cap with
-  `legend.maxRows` where one is wanted.
+- **Hard removal, no grace window: `legend.mode`.** A speculative escape hatch back to labels for a
+  chart in a short card, added with zero consumers — the resolver's own `'dots'`/`'chips'` pick is
+  now the only law, with no override.
 - **Selectors and text matching the old rollup move.** Anything matching `+N more` / `Show less`
   (tests, e2e selectors, screenshots' text) now matches the `All N` chip and the disclosure it opens
   (`role="dialog"`, name `Legend`, `data-basalt-legend-disclosure`); there is no in-place expand.

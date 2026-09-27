@@ -214,9 +214,9 @@ export type CartesianChartProps<T> = BasaltProps & {
    *
    * This is the phone answer to a label too wide to repeat horizontally: rotating keeps every tick
    * the axis would otherwise have to thin away — which is why, LEFT UNSET, it is now the phone
-   * tier's DEFAULT: below `VX.phoneChartWidth`, labels too wide to fit three ticks side by side
-   * auto-rotate to 45 (`autoXLabelRotate`). Nothing changes at desktop width, and nothing changes
-   * for a chart that already passes a value.
+   * tier's DEFAULT: below `CONTAINER_CLASSES.regular`, labels too wide to fit three ticks side by
+   * side auto-rotate to 45 (`autoXLabelRotate`). Nothing changes at desktop width, and nothing
+   * changes for a chart that already passes a value.
    *
    * **`0` is the opt-out** — "never rotate, thin the axis instead" — and is the only way to get
    * the pre-tier behaviour back on a phone-width chart with very wide labels.

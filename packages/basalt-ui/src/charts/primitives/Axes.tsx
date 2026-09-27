@@ -69,7 +69,7 @@ function InsideTickLabel({ x, y, formattedValue, fontSize, fill }: TickRendererP
 
 /** Themed left numeric axis — baked-in theme colors + font size. The tick font tracks the ambient
  * chart tier (`docs/CHARTS-SPEC.md` §8); a caller measuring its own gutter must measure at the
- * SAME size (`chartTierMetrics().axisFont` into `autoMargin`'s `fontPx`), or the measured label
+ * SAME size (`chartMetrics().axisFont` into `autoMargin`'s `fontPx`), or the measured label
  * and the painted one stop being the same string's width. */
 export function AxisLeftNumeric({
   scale,

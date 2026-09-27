@@ -1,7 +1,9 @@
 /**
  * `resolveChartLayout` — the single, pure decision point for a chart's space (`docs/waves/
- * RESPONSIVE-SPEC.md` §4): container class, height and legend fit, plus the axis economy the next
- * step consumes. DOM-free and Mantine-free; deliberately not on any public barrel.
+ * RESPONSIVE-SPEC.md` §4): container class, height and legend fit. Also hosts the axis-economy
+ * ladder (`resolveYPlacement`, `planXLabels`, `yTickCount`, `compactNumber`, …) that
+ * `CartesianChart`/`useBandPlot` call directly. DOM-free and Mantine-free; deliberately not on any
+ * public barrel.
  */
 
 import { resolveContainerClass } from '../../tokens/size-classes'
@@ -17,21 +19,6 @@ export type ChartLayout = {
   legend:
     | { mode: 'none' }
     | { mode: 'dots' | 'chips'; where: 'header' | 'band'; visible: number; overflow: number }
-    | { mode: 'side'; width: number }
-  yAxis: { mode: 'outside' | 'inside' | 'none'; ticks: number; compact: boolean }
-  xAxis: {
-    /** First label anchored `start`, last `end` — only where the plot is tight (micro/compact). */
-    anchorTerminals: boolean
-    wrap: boolean
-    rotate: 0 | 45
-    thinTo: number
-    /** Lines the tallest label takes once wrapped (1 when it does not). */
-    lines: number
-    /** Px one tick label needs: measured width (wrapped width when wrapping) plus the gap. */
-    labelPx: number
-    /** Width labels wrap to; `0` when they do not wrap. */
-    wrapPx: number
-  }
 }
 
 export type ChartLayoutInput = {
@@ -42,9 +29,6 @@ export type ChartLayoutInput = {
   /** Viewport height in px (`0` unknown). Only read on a coarse pointer. */
   viewportH: number
   legendItems: readonly LegendEntry[]
-  yLabels: readonly string[]
-  xLabels: readonly string[]
-  categorical: boolean
   /** Viewport class — decides the container class until the frame is measured. */
   sizeClass: keyof typeof SIZE_CLASSES
   coarse: boolean
@@ -138,8 +122,8 @@ export function isTightClass(containerClass: ContainerClass): boolean {
  * Ladder step 5: at a tight container class the y labels move inside the plot (micro: no y axis
  * at all), so the left gutter drops to its floor. Not-tight, no left axis to place, or an explicit
  * `margin.left` (the consumer laid out an outside gutter themselves) all keep the axis outside —
- * the single implementation `CartesianChart`/`useBandPlot`/`resolveAxisEconomy` all call, replacing
- * three independent copies of the same ladder (`docs/waves/PLAN.md` wave 8).
+ * the single implementation `CartesianChart`/`useBandPlot` both call, replacing three independent
+ * copies of the same ladder (`docs/waves/PLAN.md` wave 8).
  */
 export function resolveYPlacement(
   containerClass: ContainerClass,
@@ -205,10 +189,17 @@ export function wrapLabel(label: string, maxPx: number, fontPx: number): string[
   return lines.length > 0 ? lines : [label]
 }
 
-export type XLabelPlan = Pick<
-  ChartLayout['xAxis'],
-  'wrap' | 'rotate' | 'thinTo' | 'lines' | 'labelPx' | 'wrapPx'
->
+export type XLabelPlan = {
+  wrap: boolean
+  rotate: 0 | 45
+  thinTo: number
+  /** Lines the tallest label takes once wrapped (1 when it does not). */
+  lines: number
+  /** Px one tick label needs: measured width (wrapped width when wrapping) plus the gap. */
+  labelPx: number
+  /** Width labels wrap to; `0` when they do not wrap. */
+  wrapPx: number
+}
 
 /**
  * Ladder step 4: x labels that do not all fit side by side wrap (categorical only) before they
@@ -262,42 +253,6 @@ export function planXLabels(input: {
   }
 }
 
-export type AxisEconomyInput = {
-  containerClass: ContainerClass
-  /** Plot height in px (an estimate is fine before margins are known). */
-  plotHeight: number
-  /** Plot width in px; `0` unknown. */
-  plotWidth: number
-  yLabels: readonly string[]
-  xLabels: readonly string[]
-  categorical: boolean
-  /** Tick font the labels are measured at. */
-  fontPx?: number
-}
-
-/** The axis half of the layout, from the labels that will actually be painted. */
-export function resolveAxisEconomy(input: AxisEconomyInput): Pick<ChartLayout, 'yAxis' | 'xAxis'> {
-  const { containerClass } = input
-  const plan = planXLabels({
-    labels: input.xLabels,
-    plotWidth: input.plotWidth,
-    fontPx: input.fontPx ?? VX.axisFont,
-    categorical: input.categorical,
-  })
-  return {
-    yAxis: {
-      mode: resolveYPlacement(containerClass),
-      ticks: yTickCount(input.plotHeight),
-      compact: shouldCompactYLabels(input.yLabels),
-    },
-    xAxis: {
-      anchorTerminals: isTightClass(containerClass),
-      ...plan,
-      thinTo: containerClass === 'micro' ? 2 : plan.thinTo,
-    },
-  }
-}
-
 /** The container class: the measured width's, or the viewport-implied one while unmeasured. */
 export function resolveFrameClass(input: {
   frameW: number
@@ -310,18 +265,9 @@ export function resolveFrameClass(input: {
 
 export function resolveChartLayout(input: ChartLayoutInput): ChartLayout {
   const containerClass = resolveFrameClass(input)
-  const height = resolveHeight(input, containerClass)
   return {
     containerClass,
-    height,
+    height: resolveHeight(input, containerClass),
     legend: resolveLegend(input, containerClass),
-    ...resolveAxisEconomy({
-      containerClass,
-      plotHeight: height - VX.margin.top - VX.margin.bottom,
-      plotWidth: input.frameW - VX.margin.left - VX.margin.right,
-      yLabels: input.yLabels,
-      xLabels: input.xLabels,
-      categorical: input.categorical,
-    }),
   }
 }

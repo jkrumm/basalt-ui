@@ -151,10 +151,6 @@ describe('height accepts a number AND a ResponsiveChartHeight on every shipped s
       expect(stepped).toBe(plain)
     })
 
-    test(`${name}: the deprecated md alias resolves like wide`, () => {
-      expect(renderWide(mount({ base: 180, md: 260 }))).toBe(renderWide(mount(260)))
-    })
-
     test(`${name}: a different resolved step paints a different box — the object is READ`, () => {
       const short = renderWide(mount({ base: 180 }))
       expect(short).toContain('height="180"')
