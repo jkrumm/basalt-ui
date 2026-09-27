@@ -1,8 +1,9 @@
 import type { CSSProperties, MouseEvent, ReactNode } from 'react'
-import { useEffect, useId, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { BasaltProps } from '../../common/props'
 import { alpha, VX } from '../../tokens'
+import { useDismissOnOutside } from '../cursor/touch-pin'
 import type { SeriesRole, LegendPlacement } from '../series'
 import { DOTS_HIT_GAP, LEGEND_DOT_SIZE, LEGEND_ROW_GAP, orderEntries } from './chart-frame-layout'
 import { useChartMetrics, useCoarsePointer } from './chart-tier'
@@ -386,39 +387,21 @@ export function ChartLegend({
     wasOpen.current = open
   }, [open])
 
-  useEffect(() => {
-    if (!open) return
-    const close = () => setDisclosure(null)
-    const inside = (target: EventTarget | null): boolean =>
-      target instanceof Node &&
-      (panelRef.current?.contains(target) === true || triggerRef.current?.contains(target) === true)
-    const onPointerDown = (e: PointerEvent) => {
-      if (inside(e.target)) return
-      close()
-    }
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') close()
-    }
-    // The panel is fixed to where the trigger WAS — a scroll (any scroller, hence capture) or a
-    // resize leaves it hanging off nothing. The panel's own scroll is not one.
-    const onScroll = (e: Event) => {
-      if (e.target instanceof Node && panelRef.current?.contains(e.target)) return
-      close()
-    }
-    // Capture phase, like the chart cursors' own outside-dismiss listeners (`useChartCursor.ts`,
-    // `useDiscreteCursor.ts`) — a bubble-phase listener never sees a pointerdown a descendant widget
-    // stopped from propagating, which would leave the disclosure stuck open under it.
-    document.addEventListener('pointerdown', onPointerDown, true)
-    document.addEventListener('keydown', onKeyDown)
-    window.addEventListener('scroll', onScroll, true)
-    window.addEventListener('resize', close)
-    return () => {
-      document.removeEventListener('pointerdown', onPointerDown, true)
-      document.removeEventListener('keydown', onKeyDown)
-      window.removeEventListener('scroll', onScroll, true)
-      window.removeEventListener('resize', close)
-    }
-  }, [open])
+  // The panel is fixed to where the trigger WAS — a scroll outside it (any scroller, hence capture)
+  // or a resize leaves it hanging off nothing; the panel's own scroll is not one. Shared with the
+  // chart cursors' own outside-dismiss (`useChartCursor`/`useDiscreteCursor`, see `touch-pin.ts`).
+  const isInsidePanel = useCallback(
+    (target: Node): boolean =>
+      panelRef.current?.contains(target) === true || triggerRef.current?.contains(target) === true,
+    [],
+  )
+  useDismissOnOutside({
+    enabled: open,
+    isInside: isInsidePanel,
+    onDismiss: () => setDisclosure(null),
+    dismissOnResize: true,
+    scrollExemptInside: true,
+  })
 
   // The coarse sheet claims `aria-modal` (below), which is a claim that Tab cannot leave it — a
   // native `<dialog open>` (no `showModal()`) does not enforce that on its own (B14). Wrap Tab at

@@ -50,10 +50,25 @@ export function useCoarsePointer(): boolean {
 /** Viewport height is quantized so a mobile URL bar collapsing does not re-lay-out every chart. */
 const VIEWPORT_H_STEP = 50
 
+// One shared `resize` listener for the whole page (like `common/use-media-query.ts`'s one
+// `MediaQueryList` per query) rather than every mounted `ChartFrame` installing its own — a
+// dashboard with a dozen charts used to mean a dozen native listeners for the same value.
+const viewportHListeners = new Set<() => void>()
+let viewportHListenerAttached = false
+
+function ensureViewportHListener(): void {
+  if (viewportHListenerAttached || typeof window === 'undefined') return
+  viewportHListenerAttached = true
+  window.addEventListener('resize', () => {
+    for (const listener of viewportHListeners) listener()
+  })
+}
+
 function subscribeViewportH(onChange: () => void): () => void {
   if (typeof window === 'undefined') return subscribeNothing()
-  window.addEventListener('resize', onChange)
-  return () => window.removeEventListener('resize', onChange)
+  ensureViewportHListener()
+  viewportHListeners.add(onChange)
+  return () => viewportHListeners.delete(onChange)
 }
 
 function readViewportH(): number {

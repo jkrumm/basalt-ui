@@ -21,7 +21,7 @@
  * stubs `event.clientX` reaches `useChartCursor` as the plot-local x untouched, which is what lets
  * `clientX` alone select a different point below.
  */
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import { useRef } from 'react'
 import type { RefObject } from 'react'
@@ -155,6 +155,22 @@ describe('useChartCursor — coarse pointer (touch)', () => {
     expect(screen.getByTestId('point-touch-move-pin').textContent).toBe('2026-08-03')
   })
 
+  test('a cancelled SECOND press restores the previously committed pin instead of dropping it', () => {
+    const overlay = renderChart('touch-cancel-restore')
+    fireEvent.pointerDown(overlay, { pointerType: 'touch', pointerId: 1, clientX: 0, clientY: 0 })
+    fireEvent.pointerUp(overlay, { pointerType: 'touch', pointerId: 1 })
+    expect(screen.getByTestId('point-touch-cancel-restore').textContent).toBe('2026-08-01')
+
+    // A second tap elsewhere is provisional — it moves the pin's DISPLAY immediately…
+    fireEvent.pointerDown(overlay, { pointerType: 'touch', pointerId: 2, clientX: 200, clientY: 0 })
+    expect(screen.getByTestId('point-touch-cancel-restore').textContent).toBe('2026-08-03')
+
+    // …but the browser taking THIS press as a scroll must restore the FIRST point's committed pin,
+    // not drop it — the R2C-1/P0-2 regression this test pins.
+    fireEvent.pointerCancel(overlay, { pointerType: 'touch', pointerId: 2 })
+    expect(screen.getByTestId('point-touch-cancel-restore').textContent).toBe('2026-08-01')
+  })
+
   test('a document pointerdown outside boundaryRef clears the pin', () => {
     const overlay = renderChart('touch-outside', true)
     fireEvent.pointerDown(overlay, { pointerType: 'touch', pointerId: 1, clientX: 0, clientY: 0 })
@@ -211,23 +227,33 @@ describe('useChartCursor — coarse pointer (touch)', () => {
 })
 
 describe('useChartCursor — fine pointer (mouse), regression', () => {
-  test('hover shows and moves the tooltip; leave clears it', () => {
+  test('hover shows and moves the tooltip; leave clears it', async () => {
     const overlay = renderChart('mouse-hover')
+    // `onPointerMove`'s nearest-point search is coalesced to one per animation frame (the O(n)
+    // resolve, not just the anchor `scheduleAnchor` already batched) — `waitFor` rather than a
+    // synchronous assertion, matching every other `requestAnimationFrame`-coalesced read in this
+    // file's siblings (`Bars.test.tsx`).
     fireEvent.pointerMove(overlay, { pointerType: 'mouse', clientX: 0, clientY: 0 })
-    expect(screen.getByTestId('point-mouse-hover').textContent).toBe('2026-08-01')
+    await waitFor(() =>
+      expect(screen.getByTestId('point-mouse-hover').textContent).toBe('2026-08-01'),
+    )
     expect(screen.getByTestId('touch-mouse-hover').textContent).toBe('false')
 
     fireEvent.pointerMove(overlay, { pointerType: 'mouse', clientX: 200, clientY: 0 })
-    expect(screen.getByTestId('point-mouse-hover').textContent).toBe('2026-08-03')
+    await waitFor(() =>
+      expect(screen.getByTestId('point-mouse-hover').textContent).toBe('2026-08-03'),
+    )
 
     fireEvent.pointerLeave(overlay)
     expect(screen.getByTestId('point-mouse-hover').textContent).toBe('none')
   })
 
-  test('pointercancel clears a mouse-hovered cursor (no pin to protect)', () => {
+  test('pointercancel clears a mouse-hovered cursor (no pin to protect)', async () => {
     const overlay = renderChart('mouse-cancel')
     fireEvent.pointerMove(overlay, { pointerType: 'mouse', clientX: 0, clientY: 0 })
-    expect(screen.getByTestId('point-mouse-cancel').textContent).toBe('2026-08-01')
+    await waitFor(() =>
+      expect(screen.getByTestId('point-mouse-cancel').textContent).toBe('2026-08-01'),
+    )
 
     fireEvent.pointerCancel(overlay)
     expect(screen.getByTestId('point-mouse-cancel').textContent).toBe('none')

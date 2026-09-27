@@ -4,6 +4,8 @@ import type { KeyboardEvent, PointerEvent, RefObject } from 'react'
 import type { CursorResolution } from '../cursor/resolve'
 import { buildDomainIndex, classifyDomain, resolveCursorPoint } from '../cursor/resolve'
 import { useCursorState, useCursorStore } from '../cursor/scope'
+import type { CursorState } from '../cursor/store'
+import { useDismissOnOutside, useTouchPin } from '../cursor/touch-pin'
 
 /** Viewport-space pointer anchor the tooltip positions against. */
 export type CursorAnchor = { x: number; y: number }
@@ -110,13 +112,18 @@ export function useChartCursor<T>({
 
   const frameRef = useRef<number | null>(null)
   const pendingRef = useRef<CursorAnchor | null>(null)
-  // The `pointerId` of a coarse press that has shown the tooltip but not yet committed the pin
-  // (`pointerup`). A `pointercancel`/`pointerleave` naming this pointer before it commits is the
-  // browser taking the gesture — a scroll — and must clear rather than commit.
-  const pressRef = useRef<number | null>(null)
+  // `pointermove` floods far faster than one nearest-point search is worth — an untethered scrub
+  // can fire dozens of native events between paints. `moveFrameRef`/`pendingMoveRef` coalesce the
+  // O(n) search itself (not just the anchor, which `frameRef`/`pendingRef` already batch) to one
+  // per animation frame — see `onPointerMove` below.
+  const moveFrameRef = useRef<number | null>(null)
+  const pendingMoveRef = useRef<{ px: number; anchor: CursorAnchor; pointerType: string } | null>(
+    null,
+  )
   useEffect(
     () => () => {
       if (frameRef.current !== null) cancelAnimationFrame(frameRef.current)
+      if (moveFrameRef.current !== null) cancelAnimationFrame(moveFrameRef.current)
       // Release the shared cursor if this chart still owns it. Unmounting while hovered (a filter
       // drops the chart, a tab switches) fires no leave/blur, so the store would keep pointing at
       // a dead chartId — and any sibling whose domain resolves that stale key would paint a ghost
@@ -135,20 +142,22 @@ export function useChartCursor<T>({
     })
   }, [])
 
-  // Shared by `onPointerMove` (fine-pointer hover) AND `onPointerDown` (the coarse-pointer tap that
-  // has to resolve immediately, with no preceding move) — the nearest-point search plus the
-  // broadcast, so the two paths cannot drift apart.
-  const resolveToNearest = useCallback(
-    (event: PointerEvent<SVGRectElement>) => {
-      if (data.length === 0) return
-      // Explicit reference node: `localPoint(event)` resolves it from `event.target`, which is the
-      // overlay rect only while the overlay is genuinely the topmost hit element. Passing
-      // `currentTarget` pins the coordinate space to the overlay regardless of what a kind draws
-      // above it.
-      const local = localPoint(event.currentTarget, event.nativeEvent)
-      if (local === null) return
-      const px = local.x - marginLeft
+  // The provisional-press commit/revert machine (`docs/CHARTS-SPEC.md` §4) — shared with
+  // `useDiscreteCursor`. `getCommitted` snapshots the STORE's current value (not this chart's own
+  // `point`), because the shared cursor is page-wide: a committed pin can belong to a different
+  // chart than the one now taking a second, cancelled press.
+  const touchPin = useTouchPin<CursorState>({
+    getCommitted: () => store.get(),
+    setCommitted: (v) => store.set(v.key, v.source, v.kind),
+  })
 
+  // The nearest-point search plus the broadcast — shared by the immediate (tap) and throttled
+  // (move) resolve paths below, so they cannot drift apart. `px` is the plot-local x, already run
+  // through `localPoint` by the caller: a `requestAnimationFrame` boundary has no business holding
+  // a live `PointerEvent`, only the plain numbers it already read out of one.
+  const resolveNearestAt = useCallback(
+    (px: number, anchor: CursorAnchor, pointerType: string) => {
+      if (data.length === 0) return
       let closest = data[0] as T
       let minDist = Infinity
       for (const d of data) {
@@ -159,63 +168,109 @@ export function useChartCursor<T>({
           closest = d
         }
       }
-
-      setIsTouch(event.pointerType !== 'mouse')
-      scheduleAnchor({ x: event.clientX, y: event.clientY })
+      setIsTouch(pointerType !== 'mouse')
+      scheduleAnchor(anchor)
       store.set(getKeyRef.current(closest), chartId, kind)
     },
-    [data, marginLeft, chartId, store, scheduleAnchor, kind],
+    [data, chartId, store, scheduleAnchor, kind],
   )
 
-  const onPointerMove = resolveToNearest
+  // Explicit reference node: `localPoint(event)` resolves it from `event.target`, which is the
+  // overlay rect only while the overlay is genuinely the topmost hit element. Passing
+  // `currentTarget` pins the coordinate space to the overlay regardless of what a kind draws above it.
+  const localX = useCallback(
+    (event: PointerEvent<SVGRectElement>): number | null => {
+      const local = localPoint(event.currentTarget, event.nativeEvent)
+      return local === null ? null : local.x - marginLeft
+    },
+    [marginLeft],
+  )
+
+  // A tap resolves immediately — one discrete event, not a flood, so it needs no throttle.
+  const resolveImmediate = useCallback(
+    (event: PointerEvent<SVGRectElement>) => {
+      const px = localX(event)
+      if (px === null) return
+      resolveNearestAt(px, { x: event.clientX, y: event.clientY }, event.pointerType)
+    },
+    [localX, resolveNearestAt],
+  )
+
+  const onPointerMove = useCallback(
+    (event: PointerEvent<SVGRectElement>) => {
+      const px = localX(event)
+      if (px === null) return
+      pendingMoveRef.current = {
+        px,
+        anchor: { x: event.clientX, y: event.clientY },
+        pointerType: event.pointerType,
+      }
+      if (moveFrameRef.current !== null) return
+      moveFrameRef.current = requestAnimationFrame(() => {
+        moveFrameRef.current = null
+        const pending = pendingMoveRef.current
+        pendingMoveRef.current = null
+        if (pending !== null) resolveNearestAt(pending.px, pending.anchor, pending.pointerType)
+      })
+    },
+    [localX, resolveNearestAt],
+  )
+
   // A tap fires `pointerdown` + `pointerup` with no `pointermove` in between, so hover's resolve
   // path never runs for it — this is what makes a tap show anything at all. It also MOVES an
   // existing touch pin: a fresh `pointerdown` elsewhere in the chart re-resolves and re-broadcasts
   // exactly like the first one, with nothing extra to wire.
   const onPointerDown = useCallback(
     (event: PointerEvent<SVGRectElement>) => {
-      resolveToNearest(event)
-      // A coarse press is PROVISIONAL: record the pointer so `onPointerUp` can commit the pin and a
-      // `pointercancel`/`pointerleave` for the SAME still-uncommitted pointer can undo it. A fine
-      // pointer never sets a press — its hover path has no pin to protect.
-      if (event.pointerType !== 'mouse') pressRef.current = event.pointerId
+      // A coarse press is PROVISIONAL: snapshot whatever is committed now (so a cancel can restore
+      // it) BEFORE the resolve below overwrites the store. A fine pointer never begins a press —
+      // its hover path has no pin to protect.
+      if (event.pointerType !== 'mouse') touchPin.begin(event.pointerId)
+      resolveImmediate(event)
     },
-    [resolveToNearest],
+    [resolveImmediate, touchPin],
   )
   // A completed tap: the pin is now committed, so `onPointerLeave`'s touch no-op keeps it past the
   // lift. Only the tracked pointer commits — a stray `pointerup` is ignored.
-  const onPointerUp = useCallback((event: PointerEvent<SVGRectElement>) => {
-    if (pressRef.current === event.pointerId) pressRef.current = null
-  }, [])
+  const onPointerUp = useCallback(
+    (event: PointerEvent<SVGRectElement>) => {
+      touchPin.commit(event.pointerId)
+    },
+    [touchPin],
+  )
 
   const clear = useCallback(() => {
     if (frameRef.current !== null) {
       cancelAnimationFrame(frameRef.current)
       frameRef.current = null
     }
+    if (moveFrameRef.current !== null) {
+      cancelAnimationFrame(moveFrameRef.current)
+      moveFrameRef.current = null
+    }
     pendingRef.current = null
-    pressRef.current = null
+    pendingMoveRef.current = null
+    touchPin.reset()
     setAnchor(null)
     // Only clear the SHARED cursor if this chart still owns it: moving fast from chart A to B lets
     // A's leave fire after B's move, and an unconditional clear would wipe B's cursor.
     if (store.get().source === chartId) store.set(null, null, null)
-  }, [store, chartId])
+  }, [store, chartId, touchPin])
 
   // `pointerleave`/`pointercancel` share this one handler (`HoverOverlay` wires both to `onLeave`).
-  // A still-uncommitted touch press cancelled here is the browser taking the gesture (a scroll) and
-  // clears. Once COMMITTED by touch it is a no-op — otherwise a stray `pointercancel` would undo the
-  // pin the tap was meant to set. Escape's `clear()` in `onKeyDown` bypasses this guard entirely, by
-  // design: it is the one dismissal that must work regardless of pointer type.
+  // A still-uncommitted touch press cancelled here is the browser taking the gesture (a scroll):
+  // `touchPin.cancel` restores whatever pin was committed before this press started (or leaves it
+  // clear when nothing was), rather than dropping a pin this press never owned. Once COMMITTED by
+  // touch it is a no-op — a stray `pointercancel` must not undo the pin the tap was meant to set.
+  // Escape's `clear()` in `onKeyDown` bypasses this guard entirely, by design: it is the one
+  // dismissal that must work regardless of pointer type.
   const onPointerLeave = useCallback(
     (event: PointerEvent<SVGRectElement>) => {
-      if (pressRef.current === event.pointerId) {
-        clear()
-        return
-      }
+      if (touchPin.cancel(event.pointerId)) return
       if (isTouch) return
       clear()
     },
-    [isTouch, clear],
+    [isTouch, clear, touchPin],
   )
 
   const onKeyDown = useCallback(
@@ -253,34 +308,20 @@ export function useChartCursor<T>({
   const isSource = cursor.source === chartId
 
   // Tap-outside dismissal (spec §5): while THIS chart is both pinned by touch and still the cursor's
-  // source, one capture-phase `document` `pointerdown` listener clears it the moment the event
-  // target falls outside `boundaryRef`. Gating on `isSource` (not `isTouch` alone) means the
-  // listener follows the pin — a sibling chart stealing the source on its own touch tap detaches
-  // this one instead of leaving a second stale listener alive. The same effect carries the two
-  // other "the pin no longer points at anything" dismissals: a capture-phase `scroll` (a fixed
-  // tooltip detaches from its chart) and a document-level `Escape`.
-  useEffect(() => {
-    if (!isTouch || !isSource || boundaryRef === undefined) return
-    const onDocumentPointerDown = (event: globalThis.PointerEvent) => {
-      const boundary = boundaryRef.current
-      if (boundary !== null && event.target instanceof Node && boundary.contains(event.target)) {
-        return
-      }
-      clear()
-    }
-    const onScroll = () => clear()
-    const onDocumentKeyDown = (event: globalThis.KeyboardEvent) => {
-      if (event.key === 'Escape') clear()
-    }
-    document.addEventListener('pointerdown', onDocumentPointerDown, true)
-    document.addEventListener('scroll', onScroll, true)
-    document.addEventListener('keydown', onDocumentKeyDown)
-    return () => {
-      document.removeEventListener('pointerdown', onDocumentPointerDown, true)
-      document.removeEventListener('scroll', onScroll, true)
-      document.removeEventListener('keydown', onDocumentKeyDown)
-    }
-  }, [isTouch, isSource, boundaryRef, clear])
+  // source, a capture-phase `document` `pointerdown`/`scroll`/`keydown` (shared with
+  // `useDiscreteCursor`, see `touch-pin.ts`) clears it the moment the event target falls outside
+  // `boundaryRef`. Gating on `isSource` (not `isTouch` alone) means the listener follows the pin —
+  // a sibling chart stealing the source on its own touch tap detaches this one instead of leaving a
+  // second stale listener alive.
+  const isInsideBoundary = useCallback(
+    (target: Node): boolean => boundaryRef?.current?.contains(target) === true,
+    [boundaryRef],
+  )
+  useDismissOnOutside({
+    enabled: isTouch && isSource && boundaryRef !== undefined,
+    isInside: isInsideBoundary,
+    onDismiss: clear,
+  })
 
   return {
     point,

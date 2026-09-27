@@ -7,7 +7,7 @@
  */
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, test } from 'bun:test'
-import { useDiscreteCursor } from './useDiscreteCursor'
+import { useDiscreteCursor } from './use-discrete-cursor'
 
 type Item = { id: string }
 
@@ -141,6 +141,24 @@ describe('useDiscreteCursor — coarse pointer (touch)', () => {
     fireEvent.pointerDown(screen.getByTestId('target-b'), { pointerType: 'touch', pointerId: 1 })
     fireEvent.pointerUp(screen.getByTestId('target-b'), { pointerType: 'touch', pointerId: 1 })
     expect(tipKey()).toBe('b')
+    expect(pinned()).toBe('true')
+  })
+
+  test('a cancelled SECOND press restores the previously committed pin instead of dropping it', () => {
+    render(<Harness />)
+    fireEvent.pointerDown(screen.getByTestId('target-a'), { pointerType: 'touch', pointerId: 1 })
+    fireEvent.pointerUp(screen.getByTestId('target-a'), { pointerType: 'touch', pointerId: 1 })
+    expect(tipKey()).toBe('a')
+    expect(pinned()).toBe('true')
+
+    // A tap on a different target is provisional — it moves the readout immediately…
+    fireEvent.pointerDown(screen.getByTestId('target-b'), { pointerType: 'touch', pointerId: 2 })
+    expect(tipKey()).toBe('b')
+
+    // …but the browser taking THIS press as a scroll must restore the FIRST target's committed
+    // pin, not drop it — the R2C-1/P0-2 regression this test pins.
+    fireEvent.pointerCancel(screen.getByTestId('target-b'), { pointerType: 'touch', pointerId: 2 })
+    expect(tipKey()).toBe('a')
     expect(pinned()).toBe('true')
   })
 

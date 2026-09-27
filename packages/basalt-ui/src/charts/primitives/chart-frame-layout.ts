@@ -323,7 +323,10 @@ function fitDotRows(
   let x = 0
   let fitted = 0
   for (let i = 0; i < items.length; i += 1) {
-    const next = x === 0 ? LEGEND_DOT_SIZE : x + DOT_PITCH + LEGEND_DOT_SIZE
+    // `DOT_PITCH` already IS one dot's full footprint (its own size plus the gap to a neighbour,
+    // `LEGEND_DOT_SIZE + DOTS_HIT_GAP`) — adding `LEGEND_DOT_SIZE` again here double-counted every
+    // dot after the row's first, wrapping a legend to `All N` well before it actually overflowed.
+    const next = x === 0 ? LEGEND_DOT_SIZE : x + DOT_PITCH
     if (next > width && x > 0) {
       row += 1
       if (row > rows) return fitted

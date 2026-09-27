@@ -25,7 +25,13 @@ import {
   resolveLegendRollup,
   resolvePlotRect,
 } from './ChartFrame'
-import { entriesWithinDotRows, orderEntries, resolveFrameHeight } from './chart-frame-layout'
+import {
+  DOTS_HIT_GAP,
+  LEGEND_DOT_SIZE,
+  entriesWithinDotRows,
+  orderEntries,
+  resolveFrameHeight,
+} from './chart-frame-layout'
 import type { ResponsiveChartHeight } from './chart-frame-layout'
 import type { LegendEntry } from './ChartLegend'
 import { useChartContainerClass } from './chart-tier'
@@ -444,6 +450,16 @@ describe('entriesWithinDotRows — R2C-9: dots fit by pitch, not chip width', ()
     expect(entriesWithinDotRows(entries(4), 274, 1)).toBe(4)
   })
 
+  test('a row sized to EXACTLY N dots fits all N — the double-counted-width regression', () => {
+    // `DOT_PITCH` (internal) is already one dot's full footprint (its own size plus the gap to a
+    // neighbour); a row of N dots needs one dot plus (N-1) pitches. Adding `LEGEND_DOT_SIZE` a
+    // second time per dot (the bug) overstated every dot after the first, wrapping a row one dot
+    // early — 3 dots fit here only once the double-count is gone.
+    const dotPitch = LEGEND_DOT_SIZE + DOTS_HIT_GAP
+    const exactWidthForThree = LEGEND_DOT_SIZE + dotPitch * 2
+    expect(entriesWithinDotRows(entries(3), exactWidthForThree, 1)).toBe(3)
+  })
+
   test('8 grouped entries at 337px: a group divider costs its own gap, so fewer fit than ungrouped', () => {
     const items = entries(8)
     const { dividerAfter } = orderEntries(items, false)
@@ -455,7 +471,10 @@ describe('entriesWithinDotRows — R2C-9: dots fit by pitch, not chip width', ()
 
   test('once the overflow chip is needed, its width is reserved so it never wraps to its own row', () => {
     const items = entries(8)
-    const fit = entriesWithinDotRows(items, 337, 1)
+    // 320px fits 7 of 8 dots by pitch alone (330px exactly fits all 8, post-fix) — tight enough to
+    // still need the `All 8` chip's reserved width, which the pre-fix double-count made true at
+    // any width up to and including 337.
+    const fit = entriesWithinDotRows(items, 320, 1)
     expect(fit).toBeGreaterThan(0)
     expect(fit).toBeLessThan(items.length)
   })

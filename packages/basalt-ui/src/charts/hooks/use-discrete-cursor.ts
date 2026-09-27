@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
+import { useCallback, useId, useMemo, useRef, useState } from 'react'
 import type {
   KeyboardEventHandler,
   PointerEvent as ReactPointerEvent,
   PointerEventHandler,
 } from 'react'
+import { useDismissOnOutside, useTouchPin } from '../cursor/touch-pin'
 
 /** A discrete target plus the viewport-space point its tooltip anchors to. */
 export type DiscreteCursorTip<T> = { target: T; anchor: { x: number; y: number } }
@@ -75,11 +76,14 @@ export function useDiscreteCursor<T>({
   const [active, setActive] = useState<ActiveState | null>(null)
   const [pinned, setPinned] = useState(false)
   const hostElRef = useRef<Element | null>(null)
-  // The `pointerId` of a coarse press that has shown a readout but not yet committed the pin
-  // (`pointerup`). A `pointercancel` naming this pointer before it commits is the browser taking
-  // the gesture — a scroll — and clears instead.
-  const pressRef = useRef<number | null>(null)
   const idPrefix = useId()
+
+  // Mirrors `active`/`pinned` so the provisional-press machine below can read the CURRENT committed
+  // value synchronously from an event handler, without either living in a ref of its own.
+  const activeRef = useRef(active)
+  activeRef.current = active
+  const pinnedRef = useRef(pinned)
+  pinnedRef.current = pinned
 
   // Read through refs so a keypress or an outside tap arriving between renders (the two
   // `document`-level listeners below) always sees the LATEST list/accessor, not the ones closed
@@ -92,44 +96,33 @@ export function useDiscreteCursor<T>({
   const columnsRef = useRef(columns)
   columnsRef.current = columns
 
+  // The provisional-press commit/revert machine (`docs/CHARTS-SPEC.md` §4) — shared with
+  // `useChartCursor`. The committed value IS `active` whenever `pinned` is true — there is no
+  // separate ref to keep in sync, `pinnedRef`/`activeRef` above already mirror both.
+  const touchPin = useTouchPin<ActiveState | null>({
+    getCommitted: () => (pinnedRef.current ? activeRef.current : null),
+    setCommitted: (value) => {
+      setActive(value)
+      setPinned(value !== null)
+    },
+  })
+
   const clear = useCallback(() => {
-    pressRef.current = null
+    touchPin.reset()
     setActive(null)
     setPinned(false)
-  }, [])
+  }, [touchPin])
 
   // Coarse-pointer pin dismissal that can't be expressed as a per-target handler: a tap OUTSIDE
   // the host, or Escape, from anywhere on the page. A tap landing back INSIDE the host is handled
   // by the per-target `onPointerDown` in `pointerProps` instead (it MOVES the pin), so this
   // listener only ever fires for the "elsewhere" case — same shape as `ChartLegend`'s disclosure
-  // dismissal.
-  useEffect(() => {
-    if (!pinned) return
-    const onDocPointerDown = (event: PointerEvent): void => {
-      const host = hostElRef.current
-      if (host !== null && event.target instanceof Node && host.contains(event.target)) return
-      clear()
-    }
-    const onDocKeyDown = (event: KeyboardEvent): void => {
-      if (event.key === 'Escape') clear()
-    }
-    // A pinned tooltip's `anchor` is a viewport coordinate captured at tap time — a page scroll
-    // moves the chart out from under it, so this needs the same capture-phase `scroll` → `clear()`
-    // dismissal `useChartCursor`'s cartesian pin uses.
-    const onScroll = (): void => clear()
-    // Capture phase, matching `useChartCursor`'s equivalent listener: a bubble-phase listener
-    // would never fire if some ancestor between the tapped element and `document` calls
-    // `stopPropagation()` on its own `pointerdown` handler (e.g. a Mantine overlay elsewhere on
-    // the page), leaving the pin stuck with no way to dismiss it via an outside tap.
-    document.addEventListener('pointerdown', onDocPointerDown, true)
-    document.addEventListener('keydown', onDocKeyDown)
-    document.addEventListener('scroll', onScroll, true)
-    return () => {
-      document.removeEventListener('pointerdown', onDocPointerDown, true)
-      document.removeEventListener('keydown', onDocKeyDown)
-      document.removeEventListener('scroll', onScroll, true)
-    }
-  }, [pinned, clear])
+  // dismissal. Shared with `useChartCursor` (`touch-pin.ts`).
+  const isInsideHost = useCallback(
+    (target: Node): boolean => hostElRef.current?.contains(target) === true,
+    [],
+  )
+  useDismissOnOutside({ enabled: pinned, isInside: isInsideHost, onDismiss: clear })
 
   // Index in `targetsRef`, NOT the key: Heatmap's `cellKey` joins cells with `\u0000`, which would
   // leak a NUL into a DOM id, and an id has to be a valid DOM token. Resolved by KEY, not reference:
@@ -146,8 +139,11 @@ export function useDiscreteCursor<T>({
     [idPrefix, indexByKey],
   )
 
-  const findTarget = (key: string): T | undefined =>
-    targetsRef.current.find((t) => getKeyRef.current(t) === key)
+  // O(1) via `indexByKey` rather than a fresh scan — the same Map `optionId` already builds.
+  const findTarget = (key: string): T | undefined => {
+    const index = indexByKey.get(key)
+    return index === undefined ? undefined : targetsRef.current[index]
+  }
 
   const pointerProps = (t: T): ReturnType<UseDiscreteCursorResult<T>['pointerProps']> => {
     const key = getKeyRef.current(t)
@@ -155,15 +151,13 @@ export function useDiscreteCursor<T>({
       setActive({ key, anchor: { x: event.clientX, y: event.clientY } })
     }
     // Shared by `onPointerLeave` and `onPointerCancel`: a still-UNCOMMITTED press ending here is the
-    // browser taking the gesture (a scroll) and must clear regardless of `pinned` — the two used to
-    // diverge (`onPointerCancel` checked this, `onPointerLeave` didn't), which left a stale `pressRef`
-    // and a stuck readout on the leave-before-cancel ordering a scroll off a small hit target
-    // commonly produces.
-    const clearIfUncommitted = (event: ReactPointerEvent<Element>): boolean => {
-      if (pressRef.current !== event.pointerId) return false
-      clear()
-      return true
-    }
+    // browser taking the gesture (a scroll) — `touchPin.cancel` restores whatever was COMMITTED
+    // before this press started (or leaves it clear when nothing was), regardless of `pinned`. The
+    // two used to diverge (`onPointerCancel` checked this, `onPointerLeave` didn't), which left a
+    // stale press and a stuck readout on the leave-before-cancel ordering a scroll off a small hit
+    // target commonly produces.
+    const cancelIfUncommitted = (event: ReactPointerEvent<Element>): boolean =>
+      touchPin.cancel(event.pointerId)
     // `pointerType !== 'mouse'` throughout (never `=== 'touch'`), matching `useChartCursor` —
     // pen counts as coarse too, so a stylus tap gets the same pin-until-dismiss contract a finger
     // does, not the fine-pointer hover path.
@@ -181,12 +175,13 @@ export function useDiscreteCursor<T>({
         showAt(event)
       },
       // Only a coarse pointer presses — a fine pointer's `down` is a no-op, it already shows via
-      // enter/move above. The press is PROVISIONAL: it shows the readout but does not commit the
-      // pin, which only `onPointerUp` does. On touch the readout anchors to the HOST's top edge
-      // rather than the finger, which would cover it; a missing host falls back to the pointer.
+      // enter/move above. The press is PROVISIONAL: it snapshots whatever is committed now (so a
+      // cancel can restore it) BEFORE showing the readout, which only `onPointerUp` commits. On
+      // touch the readout anchors to the HOST's top edge rather than the finger, which would cover
+      // it; a missing host falls back to the pointer.
       onPointerDown: (event) => {
         if (event.pointerType === 'mouse') return
-        pressRef.current = event.pointerId
+        touchPin.begin(event.pointerId)
         const rect = hostElRef.current?.getBoundingClientRect()
         setActive({
           key,
@@ -201,19 +196,19 @@ export function useDiscreteCursor<T>({
       // `pointerType` check keeps an unrelated mouse `pointerup` reusing that id from committing an
       // abandoned touch press.
       onPointerUp: (event) => {
-        if (event.pointerType === 'mouse' || pressRef.current !== event.pointerId) return
-        pressRef.current = null
+        if (event.pointerType === 'mouse') return
+        if (!touchPin.commit(event.pointerId)) return
         setPinned(true)
       },
       // A still-uncommitted press ending here is the browser taking the gesture (a scroll); clear it
       // regardless of `pinned`. Otherwise keep the fine-pointer/pinned guard.
       onPointerLeave: (event) => {
-        if (clearIfUncommitted(event)) return
+        if (cancelIfUncommitted(event)) return
         if (event.pointerType !== 'mouse' || pinned) return
         setActive(null)
       },
       onPointerCancel: (event) => {
-        if (clearIfUncommitted(event)) return
+        if (cancelIfUncommitted(event)) return
         if (event.pointerType !== 'mouse' || pinned) return
         setActive(null)
       },
