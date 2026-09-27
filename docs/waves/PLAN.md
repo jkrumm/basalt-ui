@@ -341,19 +341,64 @@ cards), so this wave adds a header-height law. It reads `.claude/mobile/w7/` and
       `PointerEvent` dispatch — `page.touchscreen.tap()` can't express a scrub and coordinate-based
       dispatch can miss Donut's annular arcs) covers `multiLine`/`donut`/`heatmap` only, not every
       cartesian kind (they share `HoverOverlay`/`useChartCursor`, judged sufficient). Gate: `make
-    verify` green (build, `bun run pre`, layout suite 120/120 incl. the new file, pack-test);
+  verify` green (build, `bun run pre`, layout suite 120/120 incl. the new file, pack-test);
       budgets unchanged (396/400 public symbols — no new export). No MIGRATING.md entry (no export
       removed or renamed; `ChartCursor<T>` widened, not narrowed).
 
-## Wave 10 — Data, content, chat <!-- status: active -->
+## Wave 10 — Data, content, chat <!-- status: done -->
 
-- [ ] DataTable `meta.priority` → per-row disclosure below measured fit (declared order by default)
-- [ ] VirtualList coarse-pointer row-height dev warning
-- [ ] Article TOC sheet/popover trigger below 1200; code block overflow fade
-- [ ] Agent-chat `visualViewport` keyboard inset (`--vx-keyboard-inset`); drop the playground dvh clamps
-      **Left behind:**
+- [x] DataTable `meta.priority` → per-row disclosure below measured fit (declared order by default)
+- [x] VirtualList coarse-pointer row-height dev warning
+- [x] Article TOC sheet/popover trigger below 1200; code block overflow fade
+- [x] Agent-chat `visualViewport` keyboard inset (`--vx-keyboard-inset`); drop the playground dvh clamps
+      **Left behind:** Three parallel `@implementer` workers on disjoint file groups (`data/**`,
+      `content/**`, `agent-chat/**` + playground demo pages), then `/review` (sideclaw, high-signal —
+      4 blocking, 15 improvements, 2 discussions). All 4 blocking fixed by the orchestrator directly:
+      (1) the fold-disclosure toggle's click bubbled into `onRowActivate` — `stopPropagation` added;
+      (2) column fold was gated on `maxHeight || minWidth` (`scrolls`) when only `minWidth` is a
+      genuinely declared horizontal floor — `maxHeight`-only tables (the sticky-header pairing this
+      package's own docs recommend) were silently exempt from folding and still scrolled; regated on
+      `foldEligible = minWidth === undefined`, with a new DOM sub-branch so a `maxHeight`-only table
+      still gets its own `ScrollArea` scrollport (vertical) INSIDE the fold's measuring wrapper
+      (horizontal) — required rewriting two now-stale tests (`data-table-containment.test.tsx`,
+      `data-table.test.tsx`) that asserted the old never-folds/flat-DOM shape for that combo;
+      (3) `expandedFoldRows` keyed on the TanStack default row id (index in `data`) leaked across the
+      table's lifetime and could pre-expand a different record after a manual-pagination page turn —
+      reset on `data` reference change; (4) `AgentDemoPage`'s dropped 360px keyboard floor assumed its
+      hand-rolled composer inherits the new `useKeyboardInsetRef` fix — it doesn't (no `Composer`
+      import) — floor restored there specifically, `ThreadsPage` (real `Composer` via
+      `ThreadWorkspace`) correctly keeps it dropped. 5 of 15 improvements also fixed same-session:
+      the TOC Popover trigger was DOM-ordered before `.content` so CSS Grid's auto-placement cursor
+      seated it in its own (short, non-sticky) row instead of sharing `.content`'s tall one — moved
+      after, mirroring `.tocRail`'s position; `tocOpen` wasn't reset when `showTocRail` flips, so
+      resizing back below 1200px could remount the Popover already open — reset via the
+      adjust-during-render pattern (a ref comparison, not an effect); `Composer`'s
+      `paddingBottom: 'var(--vx-keyboard-inset)', ...style` let a consumer's own `style.paddingBottom`
+      silently disable keyboard pinning — composed via `calc()` instead; the overflow-fade measurement
+      in `CodeBlock` used `useEffect` (one-frame flash of an unmasked too-wide block) while the
+      sibling `useColumnFold` uses `useLayoutEffect` — aligned. **Deferred, not fixed:** the remaining
+      10 improvements (a `useColumnFold`/`useMeasuredContainment` `ResizeObserver`-bootstrap dedup;
+      whether column-fold being default-on with no `columnFold={false}` opt-out is acceptable for
+      1.x — human call; `columnLabel` falling back to the raw column id for non-string headers vs the
+      docs' "label/value pairs" claim; a genuine but narrow edge case where the CSS
+      `@media (max-width: 1200px)` and the JS `useSizeClass() === 'expanded'` both evaluate true at
+      EXACTLY 1200px, so neither the rail nor the trigger is reachable at that one pixel width — fixing
+      it needs either a shared epsilon-adjusted breakpoint or a JS read of the exact same query CSS
+      uses, deferred as a 1px-wide edge case; a controlled `columnVisibility` with no
+      `onColumnVisibilityChange`; `--vx-keyboard-inset` duplicated as a string literal in two files;
+      a hardcoded `2.75rem` fold-toggle cell width duplicating the `FOLD_TOGGLE_WIDTH = 44` JS
+      constant; a redundant `setBodyRef` wrapper; a `columnDefId` type assertion vs a type guard) —
+      and 2 discussions (`data-table.tsx` at 2016 lines, past the point a `data-table-fold.ts`
+      extraction would pay for itself; the same column-fold-default-on question from a different
+      angle). `fallow` also flagged an unlisted `@testing-library/react` dependency in
+      `apps/playground/package.json` — verified false positive: it's root-hoisted in this Bun
+      workspace and 98 existing files already import it the same way, pre-dating this wave. Gate:
+      `make verify` green (build, `bun run pre` 4742/4742 pass + 1 pre-existing skip
+      (`ai-sdk-transport.test.ts:339`), layout 120/120, pack-test passed, budgets 396/400 · 750/750 ·
+      2464/2480 — all unchanged from wave 9 except spec prose). Two commits (basalt-ui package
+      separate per convention): `ad08847` (package), `4355ef6` (playground + docs).
 
-## Wave 11 — Guards, distill, final critic <!-- status: pending -->
+## Wave 11 — Guards, distill, final critic <!-- status: active -->
 
 - [ ] Legend density in short cards (wave 8 finding): in a card < 240px tall the legend gets at most one
       row and folds to dots / the `All N` chip before it takes plot height; fixes `/charts` Primitives
