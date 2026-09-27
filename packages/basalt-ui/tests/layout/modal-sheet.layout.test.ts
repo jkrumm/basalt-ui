@@ -1,6 +1,6 @@
 /**
  * Layout invariants for `overlays.confirm` as a bottom sheet at the `compact` size class
- * (`docs/waves/RESPONSIVE-SPEC.md` §6). A real browser, because the sheet is a cascade outcome
+ * (`docs/DESIGN-CORE.md` § Layout, elevation, shapes). A real browser, because the sheet is a cascade outcome
  * (a `@media` rule over Mantine's own inner/content geometry) that happy-dom cannot resolve.
  */
 import { afterAll, describe, expect, test } from 'bun:test'

@@ -210,7 +210,7 @@
     background-color: var(--basalt-scrollbar-thumb-hover);
   }
 
-  /* Bottom-anchored toasts clear the shell's bottom bar + safe area (RESPONSIVE-SPEC §2). */
+  /* Bottom-anchored toasts clear the shell's bottom bar + safe area (docs/CONTROLS-SPEC.md §2). */
   .mantine-Notifications-root[data-position^='bottom'] {
     bottom: calc(
       var(--app-shell-footer-offset, 0px) + env(safe-area-inset-bottom, 0px) +

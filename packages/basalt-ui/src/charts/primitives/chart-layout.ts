@@ -1,6 +1,6 @@
 /**
- * `resolveChartLayout` — the single, pure decision point for a chart's space (`docs/waves/
- * RESPONSIVE-SPEC.md` §4): container class, height and legend fit. Also hosts the axis-economy
+ * `resolveChartLayout` — the single, pure decision point for a chart's space
+ * (`docs/CHARTS-SPEC.md` §8): container class, height and legend fit. Also hosts the axis-economy
  * ladder (`resolveYPlacement`, `planXLabels`, `yTickCount`, `compactNumber`, …) that
  * `CartesianChart`/`useBandPlot` call directly. DOM-free and Mantine-free; deliberately not on any
  * public barrel.
@@ -33,14 +33,13 @@ export type ChartLayoutInput = {
   sizeClass: keyof typeof SIZE_CLASSES
   coarse: boolean
   /**
-   * The card's own `short` flag (`ChartCard`'s `measuredHeight < CARD_SHORT_HEIGHT`, wave 8's
-   * header-fold law) — reused as the ONE source of truth for "this legend gets at most one row"
-   * (wave 11, `docs/waves/PLAN.md`), rather than a second, narrower threshold. Default `false`
-   * (no card, or an unmeasured/tall one).
+   * The card's own `short` flag (`ChartCard`'s `measuredHeight < CARD_SHORT_HEIGHT`) — the ONE
+   * source of truth for "this legend gets at most one row", not a second narrower threshold.
+   * Default `false` (no card, or an unmeasured/tall one).
    */
   cardShort?: boolean
   /** The legend's own `groups` config — whether role dividers render (and so count toward the
-   * dots-mode fit, R2C-9). Default `false`. */
+   * dots-mode fit). Default `false`. */
   groups?: boolean
   /** Consumer-stated values; each wins over the derived one. */
   override?: { height?: number }
@@ -82,8 +81,8 @@ function resolveHeight(input: ChartLayoutInput, containerClass: ContainerClass):
   const derived =
     override ?? clamp(Math.round(width * HEIGHT_RATIO[containerClass]), HEIGHT_MIN, HEIGHT_MAX)
   if (!input.coarse || input.viewportH <= 0) return derived
-  // A viewport safety cap, not a design choice — a literal `height` used to skip it entirely, so a
-  // consumer's fixed-height chart could still overflow a short landscape-phone viewport (R2C-12).
+  // A viewport safety cap: it applies to a consumer's literal `height` too, so a fixed-height chart
+  // cannot overflow a short landscape-phone viewport.
   return Math.min(derived, Math.round(input.viewportH * COARSE_VIEWPORT_SHARE))
 }
 
@@ -109,11 +108,9 @@ function resolveLegend(
   const chipFit = entriesWithinRows(ordered, width, LEGEND_ROWS[where])
   const allChipsFit = chipFit >= total
 
-  // The law (R2C-8, `docs/waves/PLAN.md` wave 3): chips whenever every entry fits one header row —
-  // a compact/short header with ROOM stays labelled. Dots is a header-only FALLBACK for when chips
+  // Chips whenever every entry fits one header row; dots is a header-only FALLBACK for when chips
   // do not fit, and only while the card is short or the container itself is compact
-  // (RESPONSIVE-SPEC.md §1/§4). A band legend (no header slot) always stays 'chips': a compact-width
-  // chart with nowhere to portal its legend never had a designed dots form.
+  // (`docs/CHARTS-SPEC.md` §5, Legend). A band legend always stays 'chips'.
   const wantsDots =
     where === 'header' && !allChipsFit && (input.cardShort === true || containerClass === 'compact')
 
@@ -132,11 +129,9 @@ export function isTightClass(containerClass: ContainerClass): boolean {
 }
 
 /**
- * Ladder step 5: at a tight container class the y labels move inside the plot (micro: no y axis
- * at all), so the left gutter drops to its floor. Not-tight, no left axis to place, or an explicit
- * `margin.left` (the consumer laid out an outside gutter themselves) all keep the axis outside —
- * the single implementation `CartesianChart`/`useBandPlot` both call, replacing three independent
- * copies of the same ladder (`docs/waves/PLAN.md` wave 8).
+ * At a tight container class the y labels move inside the plot (micro: no y axis at all), so the
+ * left gutter drops to its floor. Not-tight, no left axis, or an explicit `margin.left` all keep
+ * the axis outside — the single implementation `CartesianChart`/`useBandPlot` both call.
  */
 export function resolveYPlacement(
   containerClass: ContainerClass,
@@ -151,8 +146,7 @@ export function resolveYPlacement(
 /**
  * Left-margin floor once `resolveYPlacement` moves the labels INSIDE the plot: just enough for the
  * axis line and a hair of breathing room, not the outside axis's full label-width floor. Passing
- * the tier's own `margin.left` as the floor here (the pre-wave-4 bug) reserved a gutter for a label
- * that no longer paints there.
+ * the tier's own `margin.left` here reserves a gutter for a label that no longer paints.
  */
 export const INSIDE_Y_FLOOR = 4
 

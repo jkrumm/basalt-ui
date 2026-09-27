@@ -21,6 +21,7 @@ import {
 } from './palette'
 import type { PaletteData, RadiusValues, SpaceValues } from './palette'
 import { SIZE_CLASSES, sizeClassMaxEm } from './size-classes'
+import { HIT_COARSE, HIT_FINE } from '../common/hit-floor'
 
 // The raw hue families + pair-picker — the building blocks a consumer's series module composes
 // (`hrv: p(BP.blue)`). The doctrine sends every consumer here, so they are public surface, not
@@ -932,10 +933,6 @@ const indent = (block: string): string =>
  * so the emitter and the modules can be grepped as one set.
  */
 const MOBILE_MEDIA = `@media (max-width: ${sizeClassMaxEm(SIZE_CLASSES.medium)})`
-
-/** `--vx-hit` per pointer tier — WCAG 2.5.8 (24) and 2.5.5 (44). */
-const HIT_FINE = 24
-const HIT_COARSE = 44
 
 const coarseHitBlock = `@media (pointer: coarse) {\n  :root {\n    --vx-hit: ${HIT_COARSE}px;\n  }\n}`
 

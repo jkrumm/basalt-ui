@@ -37,7 +37,7 @@ export type ChartFrameLegend = {
   placement?: LegendPlacement
   /**
    * @deprecated Removed in 1.32.0 — the legend now fits by measured width every time and folds
-   * overflow into an `All N` disclosure (`docs/waves/RESPONSIVE-SPEC.md` §4); drop the prop.
+   * overflow into an `All N` disclosure (`docs/CHARTS-SPEC.md` §8); drop the prop.
    *
    * Until then an explicit value still WINS OUTRIGHT over the measured fit, and it counts ENTRIES,
    * not rows: `maxRows: 3` on a 7-entry legend renders three entries. Under `fill` the PLOT yields

@@ -152,8 +152,8 @@
   transition: opacity 120ms ease;
 }
 
-/* Hidden-until-hover only where hover exists (RESPONSIVE-SPEC §1 pointer tier); touch shows it.
-   Focus always reveals (the rule below outranks the hidden one). */
+/* Hidden-until-hover only where hover exists (pointer tier, docs/DESIGN-CORE.md § Layout,
+   elevation, shapes); touch shows it. Focus always reveals (the rule below outranks the hidden one). */
 @media (hover: hover) and (pointer: fine) {
   .root :is(h1, h2, h3, h4, h5, h6) .headingAnchor {
     opacity: 0;

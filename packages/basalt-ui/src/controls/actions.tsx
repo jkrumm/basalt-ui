@@ -16,7 +16,8 @@ import { ActionIcon, Button, Group, Menu } from '@mantine/core'
 import { createContext, isValidElement, useContext, useEffect, useRef, useState } from 'react'
 import type { ReactNode, RefObject } from 'react'
 import type { BasaltProps } from '../common/props'
-import { useIsomorphicLayoutEffect } from '../shell/isomorphic-layout-effect'
+import { useMeasuredWidths } from '../common/use-measured-widths'
+import { useIsomorphicLayoutEffect } from '../common/isomorphic-layout-effect'
 import type { NavAnchor } from '../shell/nav-types'
 import type { AnyNavLink } from '../router-tanstack/nav'
 import { IconSlot } from '../theme/icon-slot'
@@ -519,11 +520,11 @@ function flowItems(el: Element): Element[] {
 }
 
 /**
- * Row 1's fold state. Measures the desktop group's row (`PAGE_BAR_END_ATTR`, an elastic box) and
- * re-plans on every resize and once web fonts settle. A zero reading (hidden below `sm`, not yet
- * laid out) or a missing `ResizeObserver` is not evidence of overflow, so the row then stays whole.
- * A changed action set or label drops every remembered width and re-measures from the whole row,
- * because a folded action cannot report the width its new label would take.
+ * Row 1's fold state. Measures the desktop group's row (`PAGE_BAR_END_ATTR`) and re-plans on every
+ * resize and once web fonts settle; a zero reading (hidden below `sm`, not yet laid out) is not
+ * overflow, so the row then stays whole. A changed action set or label drops every remembered
+ * width and re-measures from the whole row, because a folded action cannot report the width its
+ * new label would take.
  */
 function useMeasuredFold(input: {
   host: 'page' | 'slot'
@@ -536,41 +537,39 @@ function useMeasuredFold(input: {
   const [epoch, setEpoch] = useState(0)
   const foldsRef = useRef(folds)
   const flatRef = useRef(flat)
-  const widths = useRef(new Map<string, { full: number; icon: number }>())
-  const signature = flat.map((a) => `${a.key}:${a.kind === undefined ? a.label : ''}`).join('|')
+  // Menus are filtered out of `flat`, so `hasMenus` — which reserves `MORE_WIDTH` in `planBarFold`
+  // — rides the signature: a menu appearing or leaving is a re-measure trigger, not an invisible one.
+  const signature = `${hasMenus ? 'menus' : 'nomenus'}|${flat
+    .map((a) => `${a.key}:${a.kind === undefined ? a.label : ''}`)
+    .join('|')}`
   const measuredSignature = useRef(signature)
 
-  // Declared before the measuring effect so it runs first on every commit.
+  // Declared before the measuring hook so it runs first on every commit.
   useIsomorphicLayoutEffect(() => {
     foldsRef.current = folds
     flatRef.current = flat
   })
 
-  useIsomorphicLayoutEffect(() => {
-    const group = groupRef.current
-    const row = group?.closest(`[${PAGE_BAR_END_ATTR}]`) ?? null
-    if (
-      host !== 'page' ||
-      group === null ||
-      row === null ||
-      typeof ResizeObserver === 'undefined'
-    ) {
-      return
-    }
-    if (measuredSignature.current !== signature) {
-      measuredSignature.current = signature
-      widths.current.clear()
-      if (Object.keys(foldsRef.current).length > 0) {
-        // Render the row whole, then measure it: `epoch` re-runs this effect after that commit.
-        foldsRef.current = {}
-        setFolds({})
-        setEpoch((n) => n + 1)
-        return
+  const measured = useMeasuredWidths({
+    resolveRoot: () => groupRef.current?.closest(`[${PAGE_BAR_END_ATTR}]`) ?? null,
+    signature,
+    enabled: host === 'page',
+    nonce: epoch,
+    onMeasure: (row, boxes) => {
+      if (measuredSignature.current !== signature) {
+        measuredSignature.current = signature
+        if (Object.keys(foldsRef.current).length > 0) {
+          // Render the row whole, then measure it: `epoch` re-runs this hook after that commit.
+          foldsRef.current = {}
+          setFolds({})
+          setEpoch((n) => n + 1)
+          return
+        }
       }
-    }
-    const measure = (): void => {
-      const flat = flatRef.current
-      const foldable = new Set(flat.filter((a) => a.kind === undefined).map((a) => a.key))
+      const group = groupRef.current
+      if (group === null) return
+      const current = flatRef.current
+      const foldable = new Set(current.filter((a) => a.kind === undefined).map((a) => a.key))
       const buttons = Array.from(group.children).filter(
         (el): el is HTMLElement =>
           el instanceof HTMLElement && foldable.has(el.getAttribute(BAR_KEY_ATTR) ?? ''),
@@ -578,13 +577,15 @@ function useMeasuredFold(input: {
       for (const el of buttons) {
         const key = el.getAttribute(BAR_KEY_ATTR)!
         if (foldsRef.current[key] === undefined && el.offsetWidth > 0) {
-          widths.current.set(key, { full: el.offsetWidth, icon: el.offsetHeight })
+          boxes.current.set(key, { width: el.offsetWidth, height: el.offsetHeight })
         }
       }
-      const items = flat.flatMap((a) => {
-        const seen = widths.current.get(a.key)
+      const items = current.flatMap((a) => {
+        const seen = boxes.current.get(a.key)
         if (a.kind !== undefined || seen === undefined) return []
-        return [{ key: a.key, full: seen.full, icon: a.icon === undefined ? undefined : seen.icon }]
+        return [
+          { key: a.key, full: seen.width, icon: a.icon === undefined ? undefined : seen.height },
+        ]
       })
       const rects = flowItems(row)
         .map((el) => el.getBoundingClientRect())
@@ -601,18 +602,17 @@ function useMeasuredFold(input: {
         Object.keys(next).length === Object.keys(prev).length &&
         Object.entries(next).every(([key, step]) => prev[key] === step)
       if (!same) setFolds(next)
-    }
-    measure()
-    const observer = new ResizeObserver(measure)
-    observer.observe(row)
-    // The first measure can precede the web font, whose swap-in changes every label's width.
+    },
+  })
+
+  // The first measure can precede the web font, whose swap-in changes every label's width.
+  useIsomorphicLayoutEffect(() => {
     let disposed = false
-    void document.fonts?.ready?.then(() => (disposed ? undefined : measure()))
+    void document.fonts?.ready?.then(() => (disposed ? undefined : measured.remeasure()))
     return () => {
       disposed = true
-      observer.disconnect()
     }
-  }, [host, hasMenus, signature, epoch])
+  }, [host, signature])
 
   return { folds, groupRef }
 }

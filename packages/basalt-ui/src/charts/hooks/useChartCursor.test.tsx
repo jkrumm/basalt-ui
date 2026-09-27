@@ -1,5 +1,5 @@
 /**
- * `useChartCursor`'s touch model (`docs/waves/RESPONSIVE-SPEC.md` §5): a coarse-pointer
+ * `useChartCursor`'s touch model (`docs/CHARTS-SPEC.md` §4, Tooltip): a coarse-pointer
  * `pointerdown` resolves + shows the readout immediately (no preceding `pointermove`) but is
  * PROVISIONAL — `pointerup` for the same pointer commits the pin, a `pointercancel` before commit
  * (a scroll winning the gesture) clears it, and a fresh tap elsewhere moves the pin. A committed

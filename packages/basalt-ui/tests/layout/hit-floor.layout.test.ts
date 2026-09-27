@@ -1,7 +1,7 @@
 /**
  * Layout invariant for the pointer tier: under `hasTouch` (`(pointer: coarse)`) every interactive
  * element's EFFECTIVE hit box — its own rect unioned with its `[data-basalt-hit]::after` — is at
- * least `--vx-hit` (44px) on both axes (`docs/waves/RESPONSIVE-SPEC.md` §1, WCAG 2.5.5).
+ * least `--vx-hit` (44px) on both axes (`docs/DESIGN-CORE.md` § Layout, elevation, shapes, WCAG 2.5.5).
  *
  * One honest exception: inside a `--vx-hit-gap` host (the C1 homes) the overlay is capped so it can
  * never overlap a neighbour (`hit-overlap.layout.test.ts`), so the floor there is

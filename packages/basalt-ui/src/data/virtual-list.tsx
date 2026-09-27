@@ -23,6 +23,7 @@ import type { ReactNode, Ref } from 'react'
 import { cx } from '../common/props'
 import type { BasaltProps, SlotStylesProps } from '../common/props'
 import { BASALT_PREFIX } from '../common/errors'
+import { HIT_COARSE } from '../common/hit-floor'
 import { assertRequiredProps, useValidateProps } from '../common/validate'
 import { readMediaQuery } from '../common/use-media-query'
 import { ErrorState } from '../dashboard/query-state'
@@ -125,13 +126,6 @@ export type BasaltVirtualListProps<T> = BasaltProps &
  * <BasaltVirtualList ref={listRef} items={items} height={400} renderItem={renderRow} getItemKey={(i) => i.id} />
  * listRef.current?.scrollToIndex(42, { align: 'center' })
  */
-/**
- * The coarse-pointer touch floor `--vx-hit` resolves to (`tokens/index.ts`'s `HIT_COARSE`),
- * duplicated as a plain number: this dev check compares it against a measured px height, and
- * `VX.hit` is a CSS var string with no numeric read.
- */
-const COARSE_TOUCH_FLOOR = 44
-
 /** `estimateSize` sets every row's rendered height — there is no per-row measurement in this
  * component — so a value under the coarse floor understates the touch target for every row. */
 function shortRowHeightMessage(estimateSize: number): string {
@@ -222,7 +216,7 @@ export function BasaltVirtualList<T>(props: BasaltVirtualListProps<T>) {
   useValidateProps(
     'BasaltVirtualList',
     () =>
-      readMediaQuery('(pointer: coarse)', false) && estimateSize < COARSE_TOUCH_FLOOR
+      readMediaQuery('(pointer: coarse)', false) && estimateSize < HIT_COARSE
         ? shortRowHeightMessage(estimateSize)
         : null,
     [estimateSize],

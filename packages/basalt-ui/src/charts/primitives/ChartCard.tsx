@@ -27,7 +27,7 @@ import type { ChartState } from './ChartPending'
 
 /**
  * Below this rendered height the header folds its subtitle regardless of width (wave 8's
- * header-economy law, `docs/waves/RESPONSIVE-SPEC.md` §3) — a short-but-wide card (a KPI-style
+ * header-economy law, `docs/CHARTS-SPEC.md` §5) — a short-but-wide card (a KPI-style
  * chart card) still needs the vertical space back. A `@container basalt-card` SIZE query would be
  * the natural expression, but `container-type: size` on a box with no explicit height (the common,
  * non-grid-stretched case) collapses it to 0 — CSS containment requires a definite size in the
@@ -61,7 +61,7 @@ const SHORT_EXIT_SLACK = 24
 // able to overhang the card edge without being invisibly cut off.
 //
 // The root is a flex column and a `basalt-card` inline-size container (the card's own width drives
-// its header chrome, RESPONSIVE-SPEC §3): the body takes the row's spare height when a grid stretches
+// its header chrome, `docs/CHARTS-SPEC.md` §8): the body takes the row's spare height when a grid stretches
 // the card.
 const cardStyle: CSSProperties = {
   display: 'flex',

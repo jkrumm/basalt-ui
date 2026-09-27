@@ -55,7 +55,7 @@ import { assertRequiredProps } from '../common/validate'
 import { usePersistedOrLocal } from '../state/persisted-or-local'
 import { FilterSetScope } from '../controls/filter-context'
 import { useAsidePanelSlot } from './page-bar'
-import { useIsomorphicLayoutEffect } from './isomorphic-layout-effect'
+import { useIsomorphicLayoutEffect } from '../common/isomorphic-layout-effect'
 import { useSizeClass } from './use-size-class'
 import classes from './page-aside.module.css'
 

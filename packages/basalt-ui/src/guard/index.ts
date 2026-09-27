@@ -114,16 +114,17 @@ const CSS_SURFACE_RADIUS = /(?<![\w-])border-radius\s*:\s*([^;}]+)/g
 const CSS_SURFACE_SHADOW = /(?<![\w-])box-shadow\s*:\s*([^;}]+)/g
 
 /**
- * A width `@media` condition — `(min-width: 52.5em)` / `(max-width: 767.9px)`. RESPONSIVE-SPEC.md
- * §1's size-class axis names its own home (`shell/**`, `@media` against `SIZE_CLASSES` literals);
- * anywhere else a hard-coded viewport breakpoint has skipped the framework's one seam for it
- * (`useSizeClass()`, or the derived `theme.breakpoints`). See `raw-breakpoint`, the oxlint plugin's
+ * A width `@media` condition — `(min-width: 52.5em)` / `(max-width: 767.9px)`. The size-class axis
+ * (`docs/DESIGN-CORE.md` § Layout, elevation, shapes) names its own home (`shell/**`, `@media`
+ * against `SIZE_CLASSES` literals); anywhere else a hard-coded viewport breakpoint has skipped the
+ * framework's one seam for it (`useSizeClass()`, or the derived `theme.breakpoints`). See
+ * `raw-breakpoint`, the oxlint plugin's
  * AST-side twin for the same law over JSX (`configs/oxlint-plugin.js`) — this is the CSS-text half,
  * the shape the plugin cannot see. New file type for this check (CSS, same reasoning as
  * `css-raw-surface`), so it lands under its own kind at `warn` for one minor rather than widening an
  * existing one.
  */
-const CSS_WIDTH_MEDIA_QUERY = /@media[^{]*\(\s*(?:min|max)-width\s*:\s*[\d.]+(?:px|em)\s*\)/g
+const CSS_WIDTH_MEDIA_QUERY = /@media[^{]*\(\s*(?:min|max)-width\s*:\s*[\d.]+(?:px|em|rem|vw)\s*\)/g
 
 /** An `@container` condition — the declared NAME plus every raw boundary inside its parens. */
 const CSS_CONTAINER_QUERY = /@container\s+([\w-]+)\s*\(([^)]*)\)/g
@@ -134,19 +135,24 @@ const CSS_CONTAINER_QUERY = /@container\s+([\w-]+)\s*\(([^)]*)\)/g
  */
 const CSS_CONTAINER_LITERAL = /(?:min-width|max-width|width)\s*(?:[<>]=?|:)\s*([\d.]+)(px|em)?/g
 
-/** A `(pointer: …)` / `(any-pointer: …)` media condition whose value is not the coarse tier. */
-const CSS_NON_COARSE_POINTER_QUERY = /\(\s*(?:any-)?pointer\s*:\s*(?!coarse\b)[a-z-]+\s*\)/g
+/**
+ * A `(pointer: …)` / `(any-pointer: …)` media condition whose value is neither sanctioned tier.
+ * `coarse` is the touch tier (`--vx-hit` 44px); `fine` is its standard companion for a hover-only
+ * affordance (`(hover: hover) and (pointer: fine)`), so both are legal — anything else is not.
+ */
+const CSS_NON_COARSE_POINTER_QUERY =
+  /\(\s*(?:any-)?pointer\s*:\s*(?!(?:coarse|fine)\b)[a-z-]+\s*\)/g
 
 /**
- * The `@container` names RESPONSIVE-SPEC.md §1's axis table declares — a consumer container
- * carrying any other name has invented its own container-query breakpoint instead of using the
- * framework's. `basalt-card` is the one shipped today (`src/dashboard/section.module.css`);
- * `basalt-form`/`basalt-main`/`basalt-grid` are the table's remaining three, reserved here so a
+ * The `@container` names the container-class axis declares — a consumer container carrying any
+ * other name has invented its own container-query breakpoint instead of using the framework's.
+ * `basalt-card` is the one shipped today (`src/dashboard/section.module.css`);
+ * `basalt-form`/`basalt-main`/`basalt-grid` are the declared remaining three, reserved here so a
  * consumer adopting one ahead of the framework does not immediately trip this guard.
  *
  * Two container names already shipped ahead of this table — `basalt-stat-group` and
  * `basalt-widget-grid` (`src/tokens/breakpoint-literals.test.ts`'s own `LEGACY_CONTAINER_LITERALS`
- * names them) — predate RESPONSIVE-SPEC.md §1 and are deliberately NOT in this set: they surface as
+ * names them) — predate the declared table and are deliberately NOT in this set: they surface as
  * `warn` findings against basalt's own source the same way any other kind's incumbent violations do
  * at grace time, rather than being silently grandfathered into a shipped rule's allowlist.
  */
@@ -172,22 +178,22 @@ const CONTAINER_CLASS_LITERALS_PX = new Set([0, 240, 239.9, 480, 479.9, 800, 799
  * `SIZE_CLASSES`' two boundaries (840/1200px) as the em literals `theme.breakpoints`/`shell/**`
  * actually write (`size-classes.ts`'s `toEm`/`sizeClassMaxEm`, 16px root): `52.5em`/`75em` (the
  * `min-width` boundaries) and their `max-width` companions one hundredth of a px short,
- * `52.49375em`/`74.99375em`. RESPONSIVE-SPEC.md §1 names `shell/**` the size-class axis's one CSS
- * home — a width `@media` there against one of these four is the framework's own sanctioned
- * implementation of the axis, not a raw breakpoint a consumer invented.
+ * `52.49375em`/`74.99375em`. The size-class axis names `shell/**` its one CSS home — a width
+ * `@media` there against one of these four is the framework's own sanctioned implementation of the
+ * axis, not a raw breakpoint a consumer invented.
  */
 const SIZE_CLASS_LITERALS = new Set(['52.5em', '75em', '52.49375em', '74.99375em'])
 
-/** RESPONSIVE-SPEC.md §1: "Who may use it: shell/**". Any `shell/`-pathed CSS, basalt's own or a
+/** The size-class axis's one CSS home is `shell/**`. Any `shell/`-pathed CSS, basalt's own or a
  * consumer's own shell chrome alike — not a name list, because a consumer's shell directory is
  * never one of `SHELL_HOME_NAMES`' three (or four) declared components. */
 const SHELL_CSS_PATH = /(?:^|\/)shell\//
 
 function isSanctionedShellMediaQuery(relPath: string, query: string): boolean {
   if (!SHELL_CSS_PATH.test(relPath)) return false
-  // Both units captured (not `em` only) so a `px` width — never a `SIZE_CLASS_LITERALS` member —
-  // correctly fails the check below, rather than `.every()` vacuously passing on an empty match.
-  const widths = [...query.matchAll(/(?:min|max)-width:\s*([\d.]+(?:em|px))/g)]
+  // All four units captured (not `em` only) so a `px` width — never a `SIZE_CLASS_LITERALS` member
+  // — correctly fails the check below, rather than `.every()` vacuously passing on an empty match.
+  const widths = [...query.matchAll(/(?:min|max)-width:\s*([\d.]+(?:em|px|rem|vw))/g)]
   return widths.length > 0 && widths.every((m) => SIZE_CLASS_LITERALS.has(m[1]!))
 }
 
@@ -839,11 +845,11 @@ export const GRACE_PERIOD_KINDS: Partial<Record<GuardKind, GraceEntry>> = {
     since: '1.31.0',
     promote: '1.32.0',
     why:
-      'new in the wave-11 responsive/touch guards (docs/waves/RESPONSIVE-SPEC.md §7) — the CSS-text ' +
+      'new in the wave-11 responsive/touch guards — the CSS-text ' +
       "twin of the oxlint plugin's `basalt/raw-breakpoint`. Reaching CSS is a NEW file type for this " +
       "check, same reasoning as `css-raw-surface`, and basalt's own `src/dashboard/stat-group.module" +
       '.css` / `widget-grid.module.css` already declare `@container` names (`basalt-stat-group`, ' +
-      "`basalt-widget-grid`) outside RESPONSIVE-SPEC.md §1's four-name table, plus `shell/**`'s own " +
+      "`basalt-widget-grid`) outside the declared four-name table, plus `shell/**`'s own " +
       "legitimate width `@media` rules — real incumbents in basalt's own tree at ship time, so this " +
       'ships warn rather than error from the start. Promotes with its AST twin at 1.32.0.',
   },
@@ -2166,8 +2172,7 @@ export const GUARD_RULES = {
     // CSS-only: a width @media, an @container name/literal or a non-coarse pointer query has no JSX
     // spelling — the AST-side twin of this law is the oxlint plugin's basalt/raw-breakpoint.
     appliesTo: (relPath) => relPath.endsWith('.css'),
-    message:
-      "Raw viewport/container breakpoint in CSS — a width @media belongs to shell/** against SIZE_CLASSES (useSizeClass() is the JS seam), an @container name/literal must be one of RESPONSIVE-SPEC.md §1's declared containers at a CONTAINER_CLASSES boundary, and a pointer query other than (pointer: coarse) has no framework meaning. Same law the oxlint plugin enforces as basalt/raw-breakpoint over JSX; this is the CSS half.",
+    message: `Raw viewport/container breakpoint in CSS — a width @media belongs to shell/** against SIZE_CLASSES (useSizeClass() is the JS seam); an @container name must be one of ${[...DECLARED_CONTAINER_NAMES].join(' / ')} at a boundary in ${[...CONTAINER_CLASS_LITERALS_PX].map((px) => `${px}px`).join(' / ')}; and a pointer query other than (pointer: coarse) or (pointer: fine) has no framework meaning. Same law the oxlint plugin enforces as basalt/raw-breakpoint over JSX; this is the CSS half.`,
   },
 } as const satisfies Record<GuardKind, GuardRule>
 
@@ -2415,8 +2420,8 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
       }
     }
 
-    // raw-media-query: three independent CSS-only shapes (RESPONSIVE-SPEC.md §7) — a width @media,
-    // an @container name/literal outside the declared table, and a non-coarse pointer query.
+    // raw-media-query: three independent CSS-only shapes — a width @media, an @container
+    // name/literal outside the declared table, and a pointer query that is neither coarse nor fine.
     if (ruleApplies('raw-media-query', relPath)) {
       for (const m of line.matchAll(CSS_WIDTH_MEDIA_QUERY)) {
         if (isSanctionedShellMediaQuery(relPath, m[0])) continue

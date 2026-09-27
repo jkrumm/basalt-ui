@@ -1,5 +1,5 @@
 /**
- * The decision table of `resolveChartLayout` (`docs/waves/RESPONSIVE-SPEC.md` §1, §4): container
+ * The decision table of `resolveChartLayout` (`docs/CHARTS-SPEC.md` §8): container
  * class boundaries, the unmeasured default, the legend fit and its 2-entry rule, the height law.
  */
 import { describe, expect, test } from 'bun:test'

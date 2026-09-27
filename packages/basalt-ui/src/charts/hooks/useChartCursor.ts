@@ -18,7 +18,7 @@ export type ChartCursor<T> = {
   /**
    * True when the interaction that most recently placed THIS chart's cursor had
    * `event.pointerType !== 'mouse'` (touch or pen). Callers fold it into the anchored-tooltip
-   * condition (`tooltip.follow` defaulting to `false` on touch, spec §5) — a follower's own
+   * condition (`tooltip.follow` defaulting to `false` on touch, docs/CHARTS-SPEC.md §4) — a follower's own
    * anchoring is unaffected, since a follower is never the one whose pointer set this flag.
    */
   isTouch: boolean
@@ -42,21 +42,17 @@ export type ChartCursor<T> = {
 
 /**
  * Wires a chart into the ambient cursor store: snaps the pointer to the nearest own point,
- * broadcasts it, and reads back a sibling's broadcast through domain-aware resolution. Replaces
- * the removed `useHoverSync` + `useChartTooltip` pair, including their `resolveKey` escape hatch —
- * resolution is now automatic.
+ * broadcasts it, and reads back a sibling's broadcast through domain-aware resolution — automatic,
+ * no `resolveKey` escape hatch.
  *
- * The tooltip anchor is coalesced through `requestAnimationFrame`, so a fast scrub costs one local
- * state write per frame instead of one per event. The BROADCAST is not rAF-gated — it is deduped
- * instead (the store ignores a set that doesn't change the value), so a scrub within one x-bucket
- * costs nothing while a real bucket change reaches siblings on the same tick rather than a frame
- * late.
+ * The tooltip anchor is coalesced through `requestAnimationFrame` (one local write per frame on a
+ * fast scrub); the BROADCAST is deduped instead, so a within-bucket scrub costs nothing and a real
+ * bucket change reaches siblings on the same tick.
  *
- * Touch model (`docs/waves/RESPONSIVE-SPEC.md` §5): a fine pointer keeps hovering as above. A
- * coarse pointer (`onPointerDown`) resolves and shows the tooltip immediately, drag-scrubs via the
- * same `onPointerMove`, and COMMITS a pin on `onPointerUp` — `onPointerLeave` (also wired to
- * `pointercancel`) no-ops once committed. A press the browser turns into a scroll is cancelled
- * before it commits and clears instead (`R2C-1`/`P0-2`). The pin moves on a fresh tap elsewhere,
+ * Touch model (`docs/CHARTS-SPEC.md` §4): a fine pointer keeps hovering. A coarse pointer
+ * (`onPointerDown`) resolves and shows the tooltip immediately, drag-scrubs via `onPointerMove`,
+ * and COMMITS a pin on `onPointerUp` — `onPointerLeave` (also wired to `pointercancel`) no-ops once
+ * committed. A press the browser turns into a scroll clears instead. The pin moves on a fresh tap,
  * clears on a `document` tap outside `boundaryRef`, on any scroll, or on Escape.
  */
 export function useChartCursor<T>({
@@ -81,11 +77,10 @@ export function useChartCursor<T>({
    */
   resolution?: CursorResolution
   /**
-   * Element a touch tap OUTSIDE dismisses the pin against (spec §5). While this chart's cursor is
-   * pinned by touch, one `document` `pointerdown` listener (capture phase) clears it the moment the
-   * event target falls outside this ref — added on pinning, removed on unpin/unmount. Omit it to
-   * skip outside-dismiss for this call site (a tap elsewhere in the chart and Escape still work);
-   * never throws for a missing ref.
+   * Element a touch tap OUTSIDE dismisses the pin against (`docs/CHARTS-SPEC.md` §4). One
+   * capture-phase `document` `pointerdown` listener clears the pin when the target falls outside
+   * this ref — added on pinning, removed on unpin/unmount. Omit to skip outside-dismiss (a tap
+   * elsewhere in the chart and Escape still work); never throws for a missing ref.
    */
   boundaryRef?: RefObject<Element | null>
 }): ChartCursor<T> {
@@ -117,8 +112,7 @@ export function useChartCursor<T>({
   const pendingRef = useRef<CursorAnchor | null>(null)
   // The `pointerId` of a coarse press that has shown the tooltip but not yet committed the pin
   // (`pointerup`). A `pointercancel`/`pointerleave` naming this pointer before it commits is the
-  // browser taking the gesture — a scroll — and must clear (`R2C-1`/`P0-2`); resolving on
-  // `pointerdown` alone used to commit the pin on first contact, leaving it stuck.
+  // browser taking the gesture — a scroll — and must clear rather than commit.
   const pressRef = useRef<number | null>(null)
   useEffect(
     () => () => {
@@ -264,8 +258,7 @@ export function useChartCursor<T>({
   // listener follows the pin — a sibling chart stealing the source on its own touch tap detaches
   // this one instead of leaving a second stale listener alive. The same effect carries the two
   // other "the pin no longer points at anything" dismissals: a capture-phase `scroll` (a fixed
-  // tooltip detaches from its chart — `R2C-4`) and a document-level `Escape` (the overlay need not
-  // hold focus — `R2C-14`).
+  // tooltip detaches from its chart) and a document-level `Escape`.
   useEffect(() => {
     if (!isTouch || !isSource || boundaryRef === undefined) return
     const onDocumentPointerDown = (event: globalThis.PointerEvent) => {

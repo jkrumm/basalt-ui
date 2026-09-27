@@ -39,7 +39,7 @@ import { FilterSheet } from '../controls/filter-sheet'
 import { SyncButton } from '../controls/sync-button'
 import type { ActionGroupProps, BarAction, GlobalAction } from '../controls/actions'
 import type { SyncButtonProps } from '../controls/sync-button'
-import { useIsomorphicLayoutEffect } from './isomorphic-layout-effect'
+import { useIsomorphicLayoutEffect } from '../common/isomorphic-layout-effect'
 import classes from './page-bar.module.css'
 import asideClasses from './page-aside.module.css'
 

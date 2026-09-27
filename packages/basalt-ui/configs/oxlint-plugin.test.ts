@@ -3402,7 +3402,7 @@ describe('basalt/forms-field-key', () => {
   })
 })
 
-// ── raw-breakpoint (RESPONSIVE-SPEC.md §7) ───────────────────────────────────
+// ── raw-breakpoint ────────────────────────────────────────────────────────────
 
 describe('basalt/raw-breakpoint', () => {
   it('flags a responsive-object prop on an imported Mantine component', () => {
@@ -3411,6 +3411,47 @@ describe('basalt/raw-breakpoint', () => {
         `export const C = () => <SimpleGrid cols={{ base: 1, sm: 2 }} />\n`,
     )
     expect(rules).toContain('raw-breakpoint')
+  })
+
+  it('flags a responsive object nested one level down (Mantine AppShell idiom)', () => {
+    const { rules } = run(
+      `import { AppShell } from '@mantine/core'\n` +
+        `export const C = () => <AppShell footer={{ height: { base: 60, sm: 0 } }}>hi</AppShell>\n`,
+    )
+    expect(rules).toContain('raw-breakpoint')
+  })
+
+  it('flags a responsive object behind a same-file const binding', () => {
+    const { rules } = run(
+      `import { SimpleGrid } from '@mantine/core'\n` +
+        `const responsiveCols = { base: 1, sm: 2 }\n` +
+        `export const C = () => <SimpleGrid cols={responsiveCols} />\n`,
+    )
+    expect(rules).toContain('raw-breakpoint')
+  })
+
+  // The nested-property half: a property VALUE that is itself an Identifier must resolve through
+  // the same-file const map, exactly as the attribute's own top-level value already does.
+  it('flags a responsive object behind a const used as a nested property value', () => {
+    const { rules } = run(
+      `import { AppShell } from '@mantine/core'\n` +
+        `const h = { base: 60, sm: 0 }\n` +
+        `export const C = () => <AppShell footer={{ height: h }}>hi</AppShell>\n`,
+    )
+    expect(rules).toContain('raw-breakpoint')
+  })
+
+  // A name declared twice in the file has no single binding without a scope manager, so it is
+  // dropped rather than resolved last-declaration-wins — the outer (non-responsive) `cols` the JSX
+  // actually references must not be flagged via the inner function's responsive one.
+  it('does NOT flag a name redeclared in the file — an ambiguous binding is skipped, not guessed', () => {
+    const { rules } = run(
+      `import { SimpleGrid } from '@mantine/core'\n` +
+        `const cols = { fixed: 2 }\n` +
+        `function Other() {\n  const cols = { base: 1, sm: 2 }\n  return null\n}\n` +
+        `export const C = () => <SimpleGrid cols={cols} />\n`,
+    )
+    expect(rules).not.toContain('raw-breakpoint')
   })
 
   it('does NOT flag a fixed cols on the same component', () => {
@@ -3438,6 +3479,17 @@ describe('basalt/raw-breakpoint', () => {
     const { rules } = run(
       `import { Box } from '@mantine/core'\n` +
         `export function BasaltShell() {\n  return <Box visibleFrom="sm">desktop only</Box>\n}\n`,
+    )
+    expect(rules).not.toContain('raw-breakpoint')
+  })
+
+  // The exemption is uniform across all four shapes: a file that IS the shell may also carry a
+  // responsive-object prop, not only visibleFrom/hiddenFrom.
+  it('does NOT flag a responsive-object prop inside a file that DEFINES BasaltShell', () => {
+    const { rules } = run(
+      `import { SimpleGrid } from '@mantine/core'\n` +
+        `export function BasaltShell() {\n  return null\n}\n` +
+        `export const C = () => <SimpleGrid cols={{ base: 1, sm: 2 }} />\n`,
     )
     expect(rules).not.toContain('raw-breakpoint')
   })

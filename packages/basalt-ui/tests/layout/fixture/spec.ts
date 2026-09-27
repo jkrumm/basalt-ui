@@ -201,7 +201,7 @@ export type AgentSpec = {
 }
 
 /**
- * Card chrome by container width (RESPONSIVE-SPEC §3). One `StatCard` (production-length value,
+ * Card chrome by container width (docs/DESIGN-CORE.md § Layout, elevation, shapes). One `StatCard` (production-length value,
  * subtitle) per width, each in a wrapper of exactly that many px, plus a `ChartCard` in a
  * 400px-tall grid row. Exists because `@container` outcomes are a layout fact happy-dom cannot see.
  */

@@ -1,5 +1,5 @@
 /**
- * Layout invariants for card chrome by CONTAINER width (`docs/waves/RESPONSIVE-SPEC.md` §1/§3): the
+ * Layout invariants for card chrome by CONTAINER width (`docs/DESIGN-CORE.md` § Layout, elevation, shapes): the
  * KPI value never truncates at any card width, the subtitle is visible only from 480px (below it,
  * it folds into the info glyph — exactly one shows), and a `ChartCard` stretched by a grid row hands
  * the spare height to its body. `@container` outcomes are a layout fact happy-dom cannot see.

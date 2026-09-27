@@ -310,7 +310,7 @@ export function useBandPlot<T>(input: UseBandPlotInput<T>): BandPlot<T> {
     xScale: bandCenter,
     marginLeft: margin.left,
     // Both callers (`BandStrip`, `MirroredBars`) mount exactly one `<svg ref={band.svgRef}>`, so
-    // it doubles as the tap-outside boundary (`docs/waves/RESPONSIVE-SPEC.md` §5) with no separate
+    // it doubles as the tap-outside boundary (`docs/CHARTS-SPEC.md` §4, Tooltip) with no separate
     // passthrough option — reusing the ref this hook already returns, not a new one.
     boundaryRef: svgRef,
     ...(cursorResolution !== undefined && { resolution: cursorResolution }),

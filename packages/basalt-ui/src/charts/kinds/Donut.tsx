@@ -87,9 +87,9 @@ const identityLabel = (key: string): string => key
  * than joining the shared cursor: a date-keyed cursor has no counterpart on a donut, and cross-kind
  * category sync (donut ↔ bar, via a generalized key) is a distinct, deliberately deferred feature.
  * Tap-to-pin, keyboard stepping and focus over the slice ring come from `useDiscreteCursor`
- * (`docs/waves/RESPONSIVE-SPEC.md` §5), the discrete counterpart of `HoverOverlay`.
+ * (`docs/CHARTS-SPEC.md` §4, Tooltip), the discrete counterpart of `HoverOverlay`.
  *
- * Layout law (`docs/waves/RESPONSIVE-SPEC.md` §4): frame W/H > 1.5 puts the legend beside the ring
+ * Layout law (`docs/CHARTS-SPEC.md` §5, Legend): frame W/H > 1.5 puts the legend beside the ring
  * with value and %, the ring capped at `min(h, 0.55w)`; `micro`/`compact` stack the full legend
  * under the ring, never rolled up. 7 or more slices fold the smallest into a neutral "Other".
  */

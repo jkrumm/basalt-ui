@@ -4006,9 +4006,30 @@ function isResponsiveObjectValue(node) {
 }
 
 /**
- * The shell components RESPONSIVE-SPEC.md §7 names as `visibleFrom`/`hiddenFrom`'s legitimate home
- * — the size-class axis's one JSX escape hatch (§1: "Who may use it: shell/**, overlays"). Matched
- * by DECLARATION name, the same owner-by-declaration test `hand-rolled-shell`'s
+ * Does this prop value CONTAIN a responsive object — itself, nested one level down in a property
+ * (`footer={{ height: { base: 60, sm: 0 } }}`, Mantine's own AppShell idiom), or behind a same-file
+ * `const` binding at either place (`const h = { base: 60, sm: 0 }`, then `footer={{ height: h }}`)?
+ * `consts` is the same-file name→object map, so an Identifier resolves identically wherever it
+ * appears — the top-level attribute value and a nested property value alike. Matching only a nested
+ * `ObjectExpression` left the Identifier-in-a-property shape trivially bypassable.
+ */
+function containsResponsiveObjectValue(node, consts, seen = new Set()) {
+  const resolved =
+    node !== null && node !== undefined && node.type === 'Identifier' ? consts.get(node.name) : node
+  if (resolved === null || resolved === undefined || resolved.type !== 'ObjectExpression')
+    return false
+  if (seen.has(resolved)) return false
+  seen.add(resolved)
+  if (isResponsiveObjectValue(resolved)) return true
+  return resolved.properties.some(
+    (prop) => prop.type === 'Property' && containsResponsiveObjectValue(prop.value, consts, seen),
+  )
+}
+
+/**
+ * The shell components that are `visibleFrom`/`hiddenFrom`'s legitimate home — the size-class
+ * axis's one JSX escape hatch, alongside overlays. Matched by DECLARATION name, the same
+ * owner-by-declaration test `hand-rolled-shell`'s
  * `notesOwnerDefinition` already uses for "this file IS the framework piece, not a consumer of it"
  * — a file defining one of these is exempt for the whole file, because deciding which JSX line
  * inside a shell's own render tree is "the shell deciding its own chrome" vs. "a stray breakpoint"
@@ -4019,18 +4040,18 @@ function isResponsiveObjectValue(node) {
 const SHELL_HOME_NAMES = new Set(['BasaltShell', 'AppSidebar', 'MobileNav', 'AppBrand'])
 
 /**
- * The two files RESPONSIVE-SPEC.md §7 exempts by NAME rather than by declaration:
- * `useMediaQuery`'s own implementation (`common/use-media-query.ts` — the one sanctioned
- * `window.matchMedia` read every other file, including `useSizeClass`, now funnels through) and
- * `ChartTooltip` (the Mantine-free chart layer's own pointer-tier read).
+ * The two files exempted by NAME rather than by declaration: `useMediaQuery`'s own implementation
+ * (`common/use-media-query.ts` — the one sanctioned `window.matchMedia` read every other file,
+ * including `useSizeClass`, now funnels through) and `ChartTooltip` (the Mantine-free chart layer's
+ * own pointer-tier read).
  */
 const RAW_BREAKPOINT_EXEMPT_FILE = /(?:^|[\\/])(?:use-media-query\.ts|ChartTooltip\.tsx)$/
 
 const RAW_BREAKPOINT_RESPONSIVE_PROP_MESSAGE =
-  'Responsive-object style prop on a Mantine component — a consumer cannot hand-roll a breakpoint ' +
-  '(RESPONSIVE-SPEC.md §1: the framework owns size class, container class and pointer tier, never a ' +
-  "per-component `{ base, sm, … }`). Reach for a container query for this component's own width, or " +
-  'useSizeClass() for shell-only chrome. (basalt/raw-breakpoint)'
+  'Responsive-object style prop on a Mantine component — the framework owns the three responsive ' +
+  'axes (size class for shell chrome, container class for a component’s own width, pointer tier), ' +
+  'never a per-component `{ base, sm, … }`. Reach for a container query for this component’s own ' +
+  'width, or useSizeClass() for shell-only chrome. (basalt/raw-breakpoint)'
 
 const RAW_BREAKPOINT_VISIBLE_HIDDEN_MESSAGE =
   "visibleFrom/hiddenFrom outside a shell home or a control's own C9 swap — this pair is the " +
@@ -4048,17 +4069,19 @@ const RAW_BREAKPOINT_GLOBAL_MESSAGE =
   "owns, shell-only. Route a component's own layout decision through a container query instead. " +
   '(basalt/raw-breakpoint)'
 
-/** The three hooks RESPONSIVE-SPEC.md §7 names, whatever module they are imported from. */
+/** The three viewport hooks the law names, whatever module they are imported from. */
 const RAW_BREAKPOINT_HOOK_NAMES = new Set(['useMediaQuery', 'useMatches', 'useViewportSize'])
 
 /**
- * Four independent shapes, one law (RESPONSIVE-SPEC.md §7): a consumer (or basalt itself, outside
- * the three shell homes) reaching past the framework's two sanctioned seams — `useSizeClass()` for
- * shell-only viewport chrome, a container query for everything else — to read or react to a raw
+ * Four independent shapes, one law: a consumer (or basalt itself, outside the shell homes)
+ * reaching past the framework's two sanctioned seams — `useSizeClass()` for shell-only viewport
+ * chrome, a container query for everything else — to read or react to a raw
  * viewport breakpoint. `visibleFrom`/`hiddenFrom` and the responsive-object shape are reported once
  * the whole file has been walked ({@link SHELL_HOME_NAMES} may be declared after its first JSX use,
  * the same ordering hazard `hand-rolled-shell` defers a `Program:exit` report to avoid); the import
- * and the two global reads carry no such ordering hazard and report immediately.
+ * and the two global reads carry no such ordering hazard and report immediately. A file that
+ * declares a shell home (or a control's own C9 swap) is exempt for all four shapes uniformly — the
+ * shell's own responsive chrome is the sanctioned use, whatever shape it takes.
  */
 // Ships: warn (grace → 1.32.0)
 const rawBreakpoint = {
@@ -4068,7 +4091,8 @@ const rawBreakpoint = {
       description:
         'Disallow a hand-rolled viewport breakpoint — a responsive-object Mantine prop, ' +
         'visibleFrom/hiddenFrom outside a shell home, useMediaQuery/useMatches/useViewportSize, or ' +
-        'a raw window.matchMedia/innerWidth read.',
+        'a raw window.matchMedia/innerWidth read. All four shapes are exempt inside a file that ' +
+        'declares a shell-home component (or a control implementing its own C9 swap).',
     },
     schema: [],
   },
@@ -4085,6 +4109,12 @@ const rawBreakpoint = {
     let definesShellHome = false
     const visibleHiddenCandidates = []
     const responsiveObjectCandidates = []
+    // Same-file `const NAME = { base, sm }` bindings, resolved when a JSX attribute or a nested
+    // property passes the Identifier — no scope manager here, so this is a flat name→object map.
+    // A name declared more than once in the file is ambiguous (its two bindings cannot be told
+    // apart), so it is dropped from the map entirely rather than guessed at last-wins.
+    const responsiveObjectConsts = new Map()
+    const seenDeclaratorNames = new Set()
 
     const noteShellHomeOwner = (name) => {
       if (typeof name === 'string' && SHELL_HOME_NAMES.has(name)) definesShellHome = true
@@ -4119,6 +4149,16 @@ const rawBreakpoint = {
       VariableDeclarator(node) {
         noteShellHomeOwner(node.id?.name)
         controlOwner.visitors.VariableDeclarator(node)
+        if (node.id?.type !== 'Identifier') return
+        const name = node.id.name
+        if (seenDeclaratorNames.has(name)) {
+          // A redeclared name — drop whatever the first declaration put here, so the ambiguous
+          // binding is never used to flag (or clear) a JSX value it may not even be.
+          responsiveObjectConsts.delete(name)
+          return
+        }
+        seenDeclaratorNames.add(name)
+        if (node.init?.type === 'ObjectExpression') responsiveObjectConsts.set(name, node.init)
       },
       JSXAttribute(node) {
         const name = node.name?.name
@@ -4127,11 +4167,7 @@ const rawBreakpoint = {
           visibleHiddenCandidates.push(node)
           return
         }
-        const value = unwrapExpressionContainer(node.value)
-        if (!isResponsiveObjectValue(value)) return
-        const owner = node.parent
-        if (owner === null || owner === undefined || owner.type !== 'JSXOpeningElement') return
-        if (resolveMantineTag(owner.name, mantineImports) === undefined) return
+        // Resolved at `Program:exit` so a `const` declared after its first JSX use still resolves.
         responsiveObjectCandidates.push(node)
       },
       CallExpression(node) {
@@ -4148,11 +4184,18 @@ const rawBreakpoint = {
         context.report({ node, message: RAW_BREAKPOINT_GLOBAL_MESSAGE })
       },
       'Program:exit'() {
+        // A shell home (or a control implementing its own C9 swap) IS the framework piece — the
+        // shell's own responsive chrome is the sanctioned use, so nothing here reports there.
+        if (definesShellHome || controlOwner.isOwner()) return
         for (const node of responsiveObjectCandidates) {
+          const value = unwrapExpressionContainer(node.value)
+          if (!containsResponsiveObjectValue(value, responsiveObjectConsts)) continue
+          const owner = node.parent
+          if (owner === null || owner === undefined || owner.type !== 'JSXOpeningElement') continue
+          if (resolveMantineTag(owner.name, mantineImports) === undefined) continue
           if (hasThemeAllow(context, node, 'raw-breakpoint')) continue
           context.report({ node, message: RAW_BREAKPOINT_RESPONSIVE_PROP_MESSAGE })
         }
-        if (definesShellHome || controlOwner.isOwner()) return
         for (const node of visibleHiddenCandidates) {
           if (hasThemeAllow(context, node, 'raw-breakpoint')) continue
           context.report({ node, message: RAW_BREAKPOINT_VISIBLE_HIDDEN_MESSAGE })
@@ -4226,7 +4269,7 @@ export const PLUGIN_RULE_GRACE = {
     since: '1.31.0',
     promote: '1.32.0',
     why:
-      'new in the wave-11 responsive/touch guards (docs/waves/RESPONSIVE-SPEC.md §7). Catches four ' +
+      'new in the wave-11 responsive/touch guards. Catches four ' +
       'independent shapes at once — a responsive-object Mantine prop, visibleFrom/hiddenFrom outside ' +
       'the three shell homes, the three raw viewport hooks, and window.matchMedia/innerWidth — none ' +
       'of which basalt policed before this wave, so every consumer on an earlier minor has a green ' +

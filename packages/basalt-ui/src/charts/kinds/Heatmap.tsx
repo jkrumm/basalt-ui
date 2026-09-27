@@ -118,7 +118,7 @@ const LEGEND_LABEL_H = 16
  * last one cannot clip.
  *
  * Tap-to-pin, keyboard stepping and focus over the grid come from `useDiscreteCursor`
- * (`docs/waves/RESPONSIVE-SPEC.md` §5), the discrete counterpart of `HoverOverlay`. Its targets are
+ * (`docs/CHARTS-SPEC.md` §4, Tooltip), the discrete counterpart of `HoverOverlay`. Its targets are
  * the FULL row-major grid (data cells and empty ones alike) so Up/Down can jump one row via a fixed
  * `columns` stride; only a cell WITH data renders a tooltip or takes pointer input, matching today's
  * hover behavior — an empty cell is still a keyboard stop (so the grid reads as one rectangle), it

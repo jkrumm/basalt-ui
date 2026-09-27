@@ -1,4 +1,4 @@
-/** Pins the bottom-anchored toast inset in styles.css (RESPONSIVE-SPEC §2). */
+/** Pins the bottom-anchored toast inset in styles.css (docs/CONTROLS-SPEC.md §2). */
 import { readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'

@@ -381,7 +381,7 @@ function ShellFrame({
   const isCollapseControlled = collapsedProp !== undefined
   const uncontrolledCollapsed = collapseIsSet ? storedCollapsed : sizeClass === 'medium'
   const collapsed = isCollapseControlled ? collapsedProp : uncontrolledCollapsed
-  // Aside docking (`docs/waves/RESPONSIVE-SPEC.md` §1): an open aside pushes main only in
+  // Aside docking (`docs/DESIGN-CORE.md` § Layout, elevation, shapes): an open aside pushes main only in
   // `expanded` while main keeps `MAIN_MIN_WIDTH` beside this navbar; otherwise the region reserves
   // just its rail and an open panel overlays main. Provided through `AsideDocksContext` in the SAME
   // render, so `PageAside` defaults its fold from the right value on its first pass.

@@ -1,5 +1,5 @@
 /**
- * Touch interaction model across chart kinds (`docs/waves/RESPONSIVE-SPEC.md` §5, wave 9 step 3;
+ * Touch interaction model across chart kinds (`docs/CHARTS-SPEC.md` §4, Tooltip, wave 9 step 3;
  * the provisional-press contract is `R2C-1`/`P0-2`): a touch press is PROVISIONAL — `pointerdown`
  * shows the readout, `pointerup` for the same pointer commits the pin, and a `pointercancel`
  * before commit (a scroll winning the gesture) clears it. Once committed, the pin survives lift and
@@ -182,7 +182,7 @@ layout('Chart touch model', () => {
   afterAll(closeLayoutSuite, CLOSE_BUDGET_MS)
 
   /**
-   * The cartesian contract (`CartesianChart`/`useChartCursor`, `docs/waves/RESPONSIVE-SPEC.md` §5):
+   * The cartesian contract (`CartesianChart`/`useChartCursor`, `docs/CHARTS-SPEC.md` §4, Tooltip):
    * a tap with no preceding `pointermove` resolves and shows the tooltip immediately, a scrub keeps
    * resolving through the SAME `onPointerMove` path a fine pointer's hover uses, `pointerup` commits
    * the pin, a `pointercancel` before commit clears it (the scroll case), the pin survives lift and

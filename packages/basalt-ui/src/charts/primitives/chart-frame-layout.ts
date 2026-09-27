@@ -3,6 +3,7 @@
  * is testable without a `ResizeObserver` and `ChartFrame.tsx` stays the measuring/rendering shell.
  */
 
+import { HIT_COARSE } from '../../common/hit-floor'
 import { VX } from '../../tokens'
 import type { ContainerClass } from '../../tokens/size-classes'
 import type { ChartMargin } from '../../tokens'
@@ -30,10 +31,10 @@ const LEGEND_SWATCH_W = 24
  * `LEGEND_DOT_SIZE` is 8px, so the floor is 44 − 8 − 2 = 34; a few px of headroom against rounding.
  */
 export const LEGEND_DOT_SIZE = 8
-export const DOTS_HIT_GAP = 44 - LEGEND_DOT_SIZE - 2 + 4
-/** One dot's full visual footprint in a wrapped row — the fit basis for dots mode (R2C-9): a chip's
- * swatch+label width badly overstates what a dot actually costs, which is how a 4-entry legend that
- * fits easily as dots got measured as if it were 4 chips and wrapped `All N` to its own row. */
+export const DOTS_HIT_GAP = HIT_COARSE - LEGEND_DOT_SIZE - 2 + 4
+/** One dot's full visual footprint in a wrapped row — the fit basis for dots mode. A chip's
+ * swatch+label width badly overstates what a dot costs, so measuring dots as chips wrapped a
+ * 4-entry legend to its own `All N` row. */
 const DOT_PITCH = LEGEND_DOT_SIZE + DOTS_HIT_GAP
 
 const GROUP_ORDER: SeriesRole[] = ['series', 'overlay', 'reference']
@@ -42,8 +43,7 @@ const roleOf = (item: LegendEntry): SeriesRole => item.role ?? 'series'
 /**
  * Order entries series → overlay → reference and record where a divider belongs — the ONE ordering
  * both `ChartLegend`'s render and the resolver's fit math (`chart-layout.ts`) use, so a dots-mode
- * fit never disagrees with what actually wraps (R2C-9: an unordered fit undercounted the group
- * dividers a grouped legend renders as their own flex items).
+ * fit never disagrees with what actually wraps (a grouped legend renders dividers as flex items).
  */
 export function orderEntries(
   items: readonly LegendEntry[],
@@ -214,22 +214,13 @@ export function resolveLegendRollup(input: {
  * Resolve the plot rect from the measured box and the measured legend band. Pure and exported so
  * the two floors below are testable without a `ResizeObserver`.
  *
- * Two floors, and each is only a floor while it is honest:
- * - **width** — `minWidth` is a FIRST-FRAME guard, applied only while `containerW` is still 0
- *   (unmeasured, or SSR, where the observer never fires). Once measured the plot tracks the box
- *   exactly, floored at 1 so no scale divides by zero: applying a 200px floor forever drew an SVG
- *   wider than its own container inside any narrower grid cell.
- * - **height** — the legend band is subtracted first (it always was), but the remainder can no
- *   longer collapse: eight entries wrapping to five rows at phone width ate a fixed
- *   `height={240}` toward zero and the body stopped rendering entirely. The plot stops at
- *   `VX.minPlotHeight` and the frame's own box grows by the difference instead — it is a flex
- *   column with `height: auto`, so that growth is automatic. Under `fill` the box CANNOT grow, so
- *   the legend is capped instead ({@link legendEntryCap}) — UNLESS the caller stated
- *   `legend.maxRows`, which is `legendWins`: there the floor itself yields, because a floor is a
- *   default and the caller's number is not, but only as far as the box HAS room
- *   ({@link SELF_MEASURED_SLACK}). An unmeasured box (`resolvedHeight <= 0`, i.e. a `fill` frame
- *   before its first measurement) stays at 0 and renders nothing, exactly as before — the floor
- *   must never invent a height for a box nobody has measured.
+ * `minWidth` is a FIRST-FRAME guard, applied only while `containerW` is still 0 (unmeasured, or
+ * SSR); once measured the plot tracks the box exactly, floored at 1 so no scale divides by zero.
+ * The legend band is subtracted first, and the remainder stops at `VX.minPlotHeight` — the frame's
+ * flex box grows by the difference under a fixed height, and under `fill` (which cannot grow) the
+ * legend is capped instead ({@link legendEntryCap}). A caller-stated `legend.maxRows` yields the
+ * floor itself (`legendWins`) as far as the box has room ({@link SELF_MEASURED_SLACK}); an
+ * unmeasured box (`resolvedHeight <= 0`) stays 0 and renders nothing.
  */
 export function resolvePlotRect(input: {
   containerW: number
@@ -263,33 +254,20 @@ export function resolvePlotRect(input: {
   }
 }
 
-/**
- * Sub-pixel slack on "the frame measures its own legend band and nothing else".
- *
- * MEASURED exact in the collapse this guards (both `ResizeObserver` contentRects read 29.375 in
- * headless Chrome, `tests/layout/charts.layout.test.ts` INVARIANT 7) — the slack exists only so a
- * future rounding or border difference between the two observers cannot re-open a fixpoint that
- * has no other way out. A plot this thin has nothing to draw either way.
- */
+/** Sub-pixel slack on "the frame measures its own legend band and nothing else" — absorbs a
+ * future rounding or border difference between the two observers without re-opening the zero
+ * fixpoint below. */
 const SELF_MEASURED_SLACK = 0.5
 
 /**
  * Is the frame's height its OWN content rather than a box something else stated?
  *
- * `ChartFrame` measures its own node (`useChartSize` → visx `useParentSize` observes the element
- * the ref is attached to, its name notwithstanding), and under `fill` its `height: 100%` resolves
- * to `auto` in any parent that states no height. Its only children are the plot and the legend, so
- * `room === 0` means the box IS the legend band — which happens exactly when no plot was drawn.
- *
- * That is why `legendWins` cannot yield the floor there: with the floor gone the sequence has a
- * FIXPOINT AT ZERO — plot 0 → content is the legend → box = band → room 0 → plot 0, forever, and
- * the chart never appears. Keeping the floor while `room` is 0 converges on the same box a `fill`
- * frame in an unsized parent has always had (plot `VX.minPlotHeight`, box = plot + band), from
- * which `room` is positive and `legendWins` applies normally.
- *
- * A NEGATIVE `room` is not this case and must keep yielding: a self-measured box can never be
- * shorter than its own content, so a band taller than the box means the box was stated by
- * something else, and spending all of it on legend rows is the caller's own arithmetic.
+ * Under `fill` a frame in an unsized parent resolves its height to `auto`; its only children are
+ * the plot and the legend, so `room === 0` means the box IS the legend band. There `legendWins`
+ * must NOT yield the floor — with the floor gone the sequence has a fixpoint at zero (plot 0 →
+ * content is the legend → box = band → room 0 → plot 0 forever). A NEGATIVE `room` is not this
+ * case: a self-measured box can never be shorter than its own content, so the box was stated by
+ * something else, and spending all of it on legend rows is the caller's arithmetic.
  */
 function isSelfMeasured(room: number): boolean {
   return room >= 0 && room < SELF_MEASURED_SLACK
@@ -333,8 +311,8 @@ export function entriesWithinRows(
 }
 
 /** The greedy dot-pitch wrap `entriesWithinDotRows` runs twice — once optimistically, once against
- * a width that already gave up the `All N` chip's room. A group divider is its own flex item in the
- * rendered row, so it costs one more pitch of gap before the next dot (R2C-9). */
+ * a width that already gave up the `All N` chip's room. A group divider is its own flex item, so it
+ * costs one more pitch before the next dot. */
 function fitDotRows(
   items: readonly LegendEntry[],
   width: number,
@@ -360,16 +338,12 @@ function fitDotRows(
 }
 
 /**
- * How many of `items` fit as DOTS in `rows` wrapped rows of `width` (R2C-9) — the dots-mode
- * counterpart of {@link entriesWithinRows}, measured at the dot's own pitch rather than a chip's
- * swatch+label width, which is what let a legend that fits easily as dots get measured as if it
- * were rendering chips and wrap its overflow chip to a second row 50+px below the first.
- * `dividerAfter` (from {@link orderEntries}) counts a rendered group divider's own gap into the fit.
+ * How many of `items` fit as DOTS in `rows` wrapped rows of `width` — the dots-mode counterpart of
+ * {@link entriesWithinRows}, measured at the dot's own pitch rather than a chip's width.
+ * `dividerAfter` (from {@link orderEntries}) counts a rendered group divider's own gap.
  *
- * Two passes: the first assumes every entry is visible and needs no `All N` chip; if that already
- * fits, it IS the answer (no chip is drawn). Otherwise the second pass reserves the chip's measured
- * width (plus one pitch of gap) up front, so the chip can never wrap to a row of its own — the
- * failure this function exists to prevent.
+ * Two passes: every entry visible with no `All N` chip (if that fits, no chip is drawn); otherwise
+ * reserve the chip's measured width up front so it can never wrap to a row of its own.
  */
 export function entriesWithinDotRows(
   items: readonly LegendEntry[],
@@ -385,19 +359,13 @@ export function entriesWithinDotRows(
 }
 
 /**
- * The entry cap a `fill` frame's legend must respect so the plot keeps `VX.minPlotHeight`.
+ * The entry cap a `fill` frame's legend must respect so the plot keeps `VX.minPlotHeight`. A
+ * `fill` frame is pinned to its cell, so the only lever is `ChartLegend`'s `maxRows` rollup; how
+ * many entries fit follows from MEASURING the labels, not assuming one per row. Returns
+ * `undefined` when the whole legend already fits.
  *
- * A fixed-height frame grows to fit its legend; a `fill` frame is pinned to its cell, so the only
- * remaining lever is `ChartLegend`'s `maxRows` rollup (an ENTRY cap — see its JSDoc). The rows the
- * legend may take follow from the height left over; how many entries that is follows from
- * MEASURING the labels, not from assuming one entry per row — otherwise a five-entry legend that
- * fits on one line would roll up to `+2 more` in every 240px cell, moving rendering for charts
- * that never had the bug. Returns `undefined` when the whole legend already fits.
- *
- * This resolves an ABSENT cap. A caller who stated `legend.maxRows` never reaches here at all —
- * `ChartFrame` routes around it — because `Math.min`-ing a stated number against this one made the
- * documented escape inert in exactly the narrow `fill` panel it exists for
- * ({@link resolveLegendRollup}).
+ * Resolves an ABSENT cap only: a caller who stated `legend.maxRows` never reaches here
+ * ({@link resolveLegendRollup} routes around it), so the documented escape is never made inert.
  */
 export function legendEntryCap(input: {
   items: readonly LegendEntry[]

@@ -35,7 +35,8 @@
 }
 
 /*
- * Modal as a bottom sheet at the `compact` size class (docs/waves/RESPONSIVE-SPEC.md §6): anchored
+ * Modal as a bottom sheet at the `compact` size class (docs/DESIGN-CORE.md § Layout, elevation,
+ * shapes): anchored
  * to the bottom edge, full width, radius on the top corners only, safe-area bottom padding. The
  * literal is `sizeClassMaxEm(SIZE_CLASSES.medium)`, pinned by `breakpoint-literals.test.ts`.
  * `.sheetBody` is the Modal body; it reaches the trailing button row `overlays.confirm`

@@ -1,5 +1,5 @@
 /**
- * StatGroup's one-column law (RESPONSIVE-SPEC §3): a stat-group container under 260px stacks one
+ * StatGroup's one-column law (`docs/DESIGN-CORE.md` § Layout, elevation, shapes): a container under 260px stacks one
  * column and the divider rail draws no leading hairline on any cell. CSS-module hashes are
  * unavailable under `bun test`, so the rule is read from the file.
  */
