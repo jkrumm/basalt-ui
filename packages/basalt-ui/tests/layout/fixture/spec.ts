@@ -172,6 +172,10 @@ export type ChartsSpec = {
   /** `legend.maxRows` stated by the CALLER — the number nothing (tier default, measured fit) may
    * trim, and the one that hands the legend the height under `fill` (`legendWins`). */
   legendMaxRows?: number
+  /** Number of x-axis keys. Default 30. `bandStrip` is the one categorical-by-construction kind
+   * here, so a small count is how a `formatX: 'wide'` label is made to actually WRAP (fit every
+   * key) rather than thin flat — the 30-key default is too dense to ever wrap at phone width. */
+  days?: number
 }
 
 /**

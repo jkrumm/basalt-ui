@@ -78,10 +78,12 @@ const clamp = (value: number, min: number, max: number): number =>
 
 function resolveHeight(input: ChartLayoutInput, containerClass: ContainerClass): number {
   const override = input.override?.height
-  if (override !== undefined) return override
   const width = input.frameW > 0 ? input.frameW : UNMEASURED_WIDTH[containerClass]
-  const derived = clamp(Math.round(width * HEIGHT_RATIO[containerClass]), HEIGHT_MIN, HEIGHT_MAX)
+  const derived =
+    override ?? clamp(Math.round(width * HEIGHT_RATIO[containerClass]), HEIGHT_MIN, HEIGHT_MAX)
   if (!input.coarse || input.viewportH <= 0) return derived
+  // A viewport safety cap, not a design choice — a literal `height` used to skip it entirely, so a
+  // consumer's fixed-height chart could still overflow a short landscape-phone viewport (R2C-12).
   return Math.min(derived, Math.round(input.viewportH * COARSE_VIEWPORT_SHARE))
 }
 
@@ -145,6 +147,14 @@ export function resolveYPlacement(
     return 'outside'
   return containerClass === 'micro' ? 'none' : 'inside'
 }
+
+/**
+ * Left-margin floor once `resolveYPlacement` moves the labels INSIDE the plot: just enough for the
+ * axis line and a hair of breathing room, not the outside axis's full label-width floor. Passing
+ * the tier's own `margin.left` as the floor here (the pre-wave-4 bug) reserved a gutter for a label
+ * that no longer paints there.
+ */
+export const INSIDE_Y_FLOOR = 4
 
 const COMPACT_UNITS = [
   [1e12, 'T'],
@@ -213,8 +223,10 @@ export type XLabelPlan = {
 }
 
 /**
- * Ladder step 4: x labels that do not all fit side by side wrap (categorical only) before they
- * rotate; they rotate only when there are more than twice as many keys as fit even wrapped.
+ * Ladder step 4: x labels that do not all fit side by side wrap — categorical (band) domains
+ * only, and only when wrapping shows EVERY key. A wrap that would still drop keys buys nothing
+ * (it costs a line of bottom gutter to thin the same way flat already would), so it falls back to
+ * flat/thinned instead. Rotating is the last resort, reached only once even a full wrap can't fit.
  */
 export function planXLabels(input: {
   labels: readonly string[]
@@ -253,15 +265,17 @@ export function planXLabels(input: {
     0,
   )
   const wrappedFit = Math.max(Math.floor(plotWidth / (wrappedWidest + X_LABEL_GAP)), 1)
-  if (count > 2 * wrappedFit) return { ...flat, rotate: 45 }
-  return {
-    wrap: true,
-    rotate: 0,
-    thinTo: clamp(wrappedFit, 2, Math.max(count, 2)),
-    lines,
-    labelPx: wrappedWidest + X_LABEL_GAP,
-    wrapPx,
+  if (wrappedFit >= count) {
+    return {
+      wrap: true,
+      rotate: 0,
+      thinTo: count,
+      lines,
+      labelPx: wrappedWidest + X_LABEL_GAP,
+      wrapPx,
+    }
   }
+  return count > 2 * wrappedFit ? { ...flat, rotate: 45 } : flat
 }
 
 /** The container class: the measured width's, or the viewport-implied one while unmeasured. */

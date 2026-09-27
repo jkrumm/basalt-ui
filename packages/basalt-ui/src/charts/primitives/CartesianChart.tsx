@@ -6,6 +6,7 @@ import type { ReactNode } from 'react'
 import type { BasaltProps } from '../../common/props'
 import { VX, alpha } from '../../tokens'
 import type { ChartMargin } from '../../tokens'
+import { classifyDomain } from '../cursor/resolve'
 import type { CursorResolution } from '../cursor/resolve'
 import { useChartCursor } from '../hooks/useChartCursor'
 import { autoMargin, probeAxisLabels } from '../layout/auto-margin'
@@ -15,18 +16,13 @@ import { deriveLegend, deriveTooltipRows } from '../series'
 import type { ChartLegendConfig, ChartSeries } from '../series'
 import { padAutoLower, padAutoUpper } from '../utils/domain'
 import { fmtAxisDate } from '../utils/format'
-import {
-  autoXLabelRotate,
-  rotatedXLabelPx,
-  smartTicks,
-  smartTicksEvery,
-  xLabelPxFor,
-} from '../utils/ticks'
+import { rotatedXLabelPx, smartTicks, smartTicksEvery, xLabelPxFor } from '../utils/ticks'
 import { AxisBottomDate, AxisLeftNumeric, AxisRightNumeric } from './Axes'
 import { ChartFrame, resolveLegend } from './ChartFrame'
 import type { ResponsiveChartHeight } from './ChartFrame'
 import {
   compactNumber,
+  INSIDE_Y_FLOOR,
   isTightClass,
   planXLabels,
   resolveYPlacement,
@@ -212,14 +208,15 @@ export type CartesianChartProps<T> = BasaltProps & {
    * bottom gutter deepens by the rotated label's projected height, measured like every other side
    * (`docs/CHARTS-SPEC.md` §1), so nothing clips.
    *
-   * This is the phone answer to a label too wide to repeat horizontally: rotating keeps every tick
-   * the axis would otherwise have to thin away — which is why, LEFT UNSET, it is now the phone
-   * tier's DEFAULT: below `CONTAINER_CLASSES.regular`, labels too wide to fit three ticks side by
-   * side auto-rotate to 45 (`autoXLabelRotate`). Nothing changes at desktop width, and nothing
-   * changes for a chart that already passes a value.
+   * This is the phone answer to a **categorical** axis whose labels are too wide to repeat
+   * horizontally: rotating keeps every tick the axis would otherwise have to thin away — which is
+   * why, LEFT UNSET, it is now the phone tier's DEFAULT for a band domain, below
+   * `CONTAINER_CLASSES.regular` (`planXLabels`). A time or number domain never auto-rotates (or
+   * wraps) — it thins instead, however narrow the plot. Nothing changes at desktop width, and
+   * nothing changes for a chart that already passes a value.
    *
    * **`0` is the opt-out** — "never rotate, thin the axis instead" — and is the only way to get
-   * the pre-tier behaviour back on a phone-width chart with very wide labels.
+   * the pre-tier behaviour back on a phone-width categorical chart with very wide labels.
    */
   xLabelRotate?: 0 | 45 | 90
   /** Value-range bands on the left scale, drawn behind the marks. */
@@ -619,7 +616,10 @@ function CartesianPlot<T>({
   // left gutter drops to its floor. An explicit `margin.left` means the consumer laid out an
   // outside gutter — it keeps the outside axis. `CartesianChart` always has a left axis.
   const yPlacement = resolveYPlacement(containerClass, { marginOverrideLeft: marginOverride?.left })
-  const categorical = tight && xLabels.some((label) => /\s/.test(label))
+  // A whitespace test misclassified any spaced date format ("Mar 01") as categorical, which then
+  // wrapped or rotated a time axis that should only ever thin (§ ladder step 4). Domain kind is
+  // the actual law: only a band (category) domain wraps or rotates; time and number domains thin.
+  const categorical = tight && classifyDomain(keys) === 'band'
 
   /** The horizontal room one x tick label needs: the widest string that could be painted, plus
    * breathing space to its neighbour. Feeds `smartTicks`, which otherwise thinned the axis by a
@@ -635,7 +635,9 @@ function CartesianPlot<T>({
       right: rightLabels,
       bottom: xLabels,
       fontPx: tier.axisFont,
-      floor: tier.margin,
+      // An inside-placed y label paints IN the plot, so the left gutter it used to reserve
+      // (the phone tier's own margin floor) is dead space — only the inside-label floor applies.
+      floor: yPlacement === 'outside' ? tier.margin : { ...tier.margin, left: INSIDE_Y_FLOOR },
       anchorTerminals: tight,
       ...(marginOverride !== undefined && { override: marginOverride }),
     }),
@@ -656,32 +658,21 @@ function CartesianPlot<T>({
    * deciding needs an `xMax`, and `xMax` needs a margin, so the unrotated pass breaks the loop. */
   const flatMargin = useMemo(() => autoMargin(marginInput), [marginInput])
 
-  /** And the margin a 45° axis would resolve to — the OTHER half of the decision. A rotated label
-   * reaches into the left gutter, so rotating spends plot width; `autoXLabelRotate` refuses the
-   * trade when what is left cannot hold three labels at their projected pitch, which is how block
-   * (f1) at 320 used to rotate itself into a clipped axis (§8). */
+  /** And the margin a 45° axis would resolve to — the OTHER half of the decision, needed only for
+   * a categorical (band) domain that still overflows once wrapped (`planXLabels`'s own rotate
+   * case). A rotated label reaches into the left gutter, so rotating spends plot width. */
   const rotated45Margin = useMemo(() => autoMargin({ ...marginInput, rotate: 45 }), [marginInput])
 
   // An explicit `xLabelRotate` always wins — including `0`, which is the documented "never rotate"
-  // opt-out. Only an unset one falls through to the phone tier's own default.
-  // Ladder step 4: categorical (multi-word) labels at compact/micro wrap before they rotate, and
-  // rotate only when there are more than twice as many keys as fit. Everything else keeps the
-  // phone tier's `autoXLabelRotate`.
+  // opt-out. Only an unset one falls through to the domain-driven default: a categorical (band)
+  // axis wraps before it rotates, and rotates only when even wrapped it doesn't fit
+  // (`planXLabels`). A time or number domain never wraps or rotates — it only thins.
   const flatXMax = Math.max(plot.width - flatMargin.left - flatMargin.right, 0)
   const xPlan = useMemo(
     () => planXLabels({ labels: xLabels, plotWidth: flatXMax, fontPx: tier.axisFont, categorical }),
     [xLabels, flatXMax, tier.axisFont, categorical],
   )
-  const rotate =
-    xLabelRotate ??
-    (categorical
-      ? xPlan.rotate
-      : autoXLabelRotate({
-          tier: tier.tier,
-          xMax: flatXMax,
-          labelPx: xLabelPx,
-          rotatedXMax: Math.max(plot.width - rotated45Margin.left - rotated45Margin.right, 0),
-        }))
+  const rotate = xLabelRotate ?? (categorical ? xPlan.rotate : 0)
   const wrapWidth = rotate === 0 && xPlan.wrap ? xPlan.wrapPx : undefined
   // A 90° label is one line box wide, so the constant floor governs it; a 45° one projects wider.
   const tickLabelPx =
@@ -766,8 +757,8 @@ function CartesianPlot<T>({
     // Micro: the two terminals only.
     if (containerClass === 'micro')
       return keys.length > 1 ? [keys[0]!, keys[keys.length - 1]!] : keys
-    return smartTicks(keys, xMax, rotate === 0 || rotate === 45 ? tickLabelPx : undefined)
-  }, [keys, xMax, xTicks, xTickValues, tickLabelPx, rotate, containerClass])
+    return smartTicks(keys, xMax, rotate === 0 || rotate === 45 ? tickLabelPx : undefined, tight)
+  }, [keys, xMax, xTicks, xTickValues, tickLabelPx, rotate, containerClass, tight])
 
   const svgRef = useRef<SVGSVGElement>(null)
   const cursor = useChartCursor<T>({

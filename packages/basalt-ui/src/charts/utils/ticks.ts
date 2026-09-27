@@ -33,36 +33,66 @@ export function rotatedXLabelPx(labels: string[], fontPx: number = VX.axisFont):
  * Pick evenly-spaced tick values that fit the available width.
  *
  * `labelPx` is the width one formatted label actually needs (measured, plus the gap it wants from
- * its neighbour) and overrides the `VX.minPxPerTick` floor whenever it is wider. Without it the
- * spacing came from that constant alone regardless of what was painted, so a `formatX` returning
- * `Mar 08 14:00` overlapped at every width — the one side of the chart that did not follow §1's
- * "measure what you paint" law. Omit it and nothing moves.
+ * its neighbour) and REPLACES the `VX.minPxPerTick` constant whenever it is supplied, in either
+ * direction — a wide label needs more room than the constant assumed (a `formatX` returning
+ * `Mar 08 14:00` used to overlap at every width, the one side of the chart that did not follow
+ * §1's "measure what you paint" law), and a narrow one (single-digit band labels) can pack in
+ * MORE ticks than the constant would allow, which the floor used to suppress (R2C-11). Omit it and
+ * the constant is what governs, same as before.
  *
  * The final key is still appended when the step misses the last index — a thinned axis would
  * otherwise paint no label at the right edge at all — but it no longer prints ON TOP of its
  * neighbour. An appended tick lands a PARTIAL step from the last one on the grid, so at any tick
  * count wide enough labels overlap there; measured at `/charts-stress` block (f1), `Mar 13 14:00`
  * and `Mar 14 14:00` printed over each other at 1440px. When that gap is narrower than one label,
- * the grid tick before it is dropped instead. Index 0 is never dropped: the left edge is the one
- * label a reader orients from.
+ * the grid tick before it is dropped instead.
+ *
+ * `anchorTerminals` (default false) mirrors the SAME flag `autoMargin`/`Axes.tsx` take: when the
+ * axis anchors index 0 and the last index at their TEXT edge rather than their centre
+ * (`terminalAnchor`), each reaches a FULL label's width toward its neighbour instead of half, so
+ * the plain per-tick pitch above (sized for two centred labels) isn't enough at either boundary —
+ * `Bars` with 30 daily "Jan DD HH:MM" keys overlapped there at phone width even though the interior
+ * pitch was fine (R2C-6). The SAME rule then applies, symmetrically, to the tick right after
+ * index 0. 1.5× is a deliberately generous (cheap, simple) stand-in for "one label plus half a
+ * label" rather than measuring the split precisely; it's skipped when `labelPx` is only the bare
+ * `VX.minPxPerTick` floor, which has no relationship to how wide a label actually is. Index 0
+ * always survives (never the one dropped here) and `last` is always (re-)added below, so dropping
+ * any OTHER index never breaks the "at least 2 ticks" floor.
  */
-export function smartTicks(dates: string[], xMax: number, labelPx?: number): string[] {
+export function smartTicks(
+  dates: string[],
+  xMax: number,
+  labelPx?: number,
+  anchorTerminals = false,
+): string[] {
   if (dates.length === 0) return []
-  const perTick = Math.max(VX.minPxPerTick, labelPx ?? 0)
+  const perTick = labelPx ?? VX.minPxPerTick
   const maxTicks = Math.max(2, Math.floor(xMax / perTick))
   if (dates.length <= maxTicks) return dates
   const step = Math.ceil(dates.length / maxTicks)
   const last = dates.length - 1
+  // `scalePoint({ padding: 0.5 })` spreads N points over `xMax`, so one index is `xMax / N` wide.
+  const pxPerIndex = dates.length > 0 ? xMax / dates.length : 0
 
   const keep = new Set<number>()
   for (let i = 0; i <= last; i += step) keep.add(i)
 
+  const BOUNDARY_FACTOR = 1.5
+  const boundaryPx = anchorTerminals && labelPx !== undefined ? perTick * BOUNDARY_FACTOR : perTick
+
+  if (anchorTerminals && labelPx !== undefined) {
+    const second = [...keep].sort((a, b) => a - b)[1]
+    if (second !== undefined && second !== last && second * pxPerIndex < boundaryPx) {
+      keep.delete(second)
+    }
+  }
+
   const lastOnGrid = Math.floor(last / step) * step
   if (lastOnGrid !== last) {
-    // `scalePoint({ padding: 0.5 })` spreads N points over `xMax`, so one index is `xMax / N` wide.
-    const pxPerIndex = dates.length > 0 ? xMax / dates.length : 0
     const gapPx = (last - lastOnGrid) * pxPerIndex
-    if (lastOnGrid > 0 && gapPx > 0 && gapPx < perTick) keep.delete(lastOnGrid)
+    if (lastOnGrid > 0 && gapPx > 0 && gapPx < boundaryPx) {
+      keep.delete(lastOnGrid)
+    }
     keep.add(last)
   }
 

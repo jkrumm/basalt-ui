@@ -19,6 +19,7 @@ import { MirroredBars } from '../kinds/MirroredBars'
 import { autoMargin } from '../layout/auto-margin'
 import { CartesianChart } from './CartesianChart'
 import { chartMetrics } from './chart-frame-layout'
+import { INSIDE_Y_FLOOR } from './chart-layout'
 
 describe('chartMetrics', () => {
   const desktop = chartMetrics('regular')
@@ -423,7 +424,7 @@ describe.each([
           {() => null}
         </CartesianChart>,
       )
-      const wanted = inside ? 'fill="var(--vx-surface-panel)"' : 'visx-axis-left'
+      const wanted = inside ? 'paint-order="stroke"' : 'visx-axis-left'
       await waitFor(() => {
         expect(container.innerHTML).toContain(wanted)
         expect(container.querySelector('.visx-axis-bottom')).not.toBeNull()
@@ -431,11 +432,13 @@ describe.each([
       const markup = container.innerHTML
       const left = plotOrigin(markup).left
       if (inside) {
-        expect(left).toBe(chartMetrics('compact').margin.left)
-        expect(markup).toContain('fill="var(--vx-surface-panel)"')
+        // Inside placement floors the left gutter at INSIDE_Y_FLOOR, not the tier's full
+        // outside-axis margin — the label paints inside the plot, so no gutter is reserved for it.
+        expect(left).toBe(INSIDE_Y_FLOOR)
+        expect(markup).toContain('paint-order="stroke"')
         return
       }
-      expect(markup).not.toContain('fill="var(--vx-surface-panel)"')
+      expect(markup).not.toContain('paint-order="stroke"')
       expect(left).toBeGreaterThanOrEqual(chartMetrics('regular').margin.left)
       // Compact y format: 40000 paints as 40k, never 40,000.
       expect(markup).toContain('>40k<')
