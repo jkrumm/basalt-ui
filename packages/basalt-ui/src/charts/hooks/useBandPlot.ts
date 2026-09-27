@@ -20,7 +20,7 @@ import type { ReactNode, RefObject } from 'react'
 import type { ChartMargin } from '../../tokens'
 import type { CursorResolution } from '../cursor/resolve'
 import { autoMargin } from '../layout/auto-margin'
-import { isTightClass, planXLabels } from '../primitives/chart-layout'
+import { isTightClass, planXLabels, resolveYPlacement } from '../primitives/chart-layout'
 import { useChartContainerClass, useChartMetrics } from '../primitives/chart-tier'
 import { maxTextWidth } from '../utils/measure-text'
 import { smartTicks, xLabelPxFor } from '../utils/ticks'
@@ -195,23 +195,22 @@ export function useBandPlot<T>(input: UseBandPlotInput<T>): BandPlot<T> {
 
   const hasLeftAxis = leftLabels !== undefined && leftLabels.length > 0
   // Ladder step 5: inside labels reserve no gutter. An explicit `margin.left` keeps them outside.
-  const yPlacement: 'outside' | 'inside' | 'none' =
-    !tight || !hasLeftAxis || marginOverride?.left !== undefined
-      ? 'outside'
-      : containerClass === 'micro'
-        ? 'none'
-        : 'inside'
+  const yPlacement = resolveYPlacement(containerClass, {
+    hasLeftAxis,
+    marginOverrideLeft: marginOverride?.left,
+  })
   const xLabelsAll = useMemo(() => data.map((d) => formatX(getX(d))), [data, getX, formatX])
 
   // Ladder step 4 (wrap; a band axis cannot rotate, so it thins instead). Sized from the token
-  // floors because the real gutters depend on the wrapped line count.
+  // floors because the real gutters depend on the wrapped line count. A band chart's x labels are
+  // always categorical by construction (one slot per datum) — no whitespace heuristic needed.
   const xPlan = useMemo(
     () =>
       planXLabels({
         labels: xLabelsAll,
         plotWidth: width - tier.margin.left - tier.margin.right,
         fontPx: tier.axisFont,
-        categorical: tight && xLabelsAll.some((label) => /\s/.test(label)),
+        categorical: tight,
       }),
     [xLabelsAll, width, tier.margin, tier.axisFont, tight],
   )

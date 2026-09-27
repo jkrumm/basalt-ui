@@ -1,8 +1,9 @@
 import { AxisBottom, AxisLeft, AxisRight } from '@visx/axis'
-import type { AxisScale, TickFormatter } from '@visx/axis'
+import type { AxisScale, TickFormatter, TickRendererProps } from '@visx/axis'
 import { VX } from '../../tokens'
 import { ROTATED_LABEL_OFFSET } from '../layout/auto-margin'
 import { fmtAxisDate } from '../utils/format'
+import { measureText } from '../utils/measure-text'
 import { useChartMetrics } from './chart-tier'
 
 /**
@@ -12,12 +13,59 @@ import { useChartMetrics } from './chart-tier'
  */
 const TICK_FONT_FAMILY = 'var(--basalt-font-mono)'
 
-/** Halo stroke behind an inside y label, so it stays legible over the grid and marks. */
-const INSIDE_HALO_WIDTH = 3
+/** Horizontal padding either side of an inside label's background chip. */
+const INSIDE_CHIP_PAD_X = 4
+/** Gap kept between the tick's gridline and the near edge of its label's chip. */
+const INSIDE_LABEL_GAP = 3
+/**
+ * A tick within this many line-heights of the plot's top edge (y=0) flips its label BELOW the
+ * tick line instead of above it — the SVG viewBox is sized exactly to the plot height, so an
+ * "above" label at the very top tick would otherwise clip against it.
+ */
+const TOP_CLEARANCE_LINES = 1
 
 /** Tick label colour. Default `VX.faint`; a dual-axis chart tints it with its series' colour. */
 type TickColor = { tickColor?: string }
 const DEFAULT_TICK_COLOR = VX.faint
+
+/**
+ * Custom tick renderer for an inside-placed y label: a solid background chip (so the digits never
+ * overprint the grid/marks the way a thin halo stroke still let them) that flips to sit BELOW its
+ * tick line near the plot's top edge instead of clipping against the SVG's own viewBox.
+ */
+function InsideTickLabel({ x, y, formattedValue, fontSize, fill }: TickRendererProps) {
+  if (formattedValue === undefined) return null
+  const size = typeof fontSize === 'number' ? fontSize : VX.axisFont
+  const lineHeight = Math.round(size * 1.3)
+  const nearTop = y <= lineHeight * TOP_CLEARANCE_LINES
+  const centerY = nearTop
+    ? y + INSIDE_LABEL_GAP + lineHeight / 2
+    : y - INSIDE_LABEL_GAP - lineHeight / 2
+  const width = measureText(formattedValue, size) + INSIDE_CHIP_PAD_X * 2
+  return (
+    <g>
+      <rect
+        x={x}
+        y={centerY - lineHeight / 2}
+        width={width}
+        height={lineHeight}
+        rx={2}
+        fill={VX.surface.panel}
+      />
+      <text
+        x={x + INSIDE_CHIP_PAD_X}
+        y={centerY}
+        dominantBaseline="middle"
+        textAnchor="start"
+        fill={fill}
+        fontFamily={TICK_FONT_FAMILY}
+        fontSize={size}
+      >
+        {formattedValue}
+      </text>
+    </g>
+  )
+}
 
 /** Themed left numeric axis — baked-in theme colors + font size. The tick font tracks the ambient
  * chart tier (`docs/CHARTS-SPEC.md` §8); a caller measuring its own gutter must measure at the
@@ -36,8 +84,9 @@ export function AxisLeftNumeric({
   tickFormat?: TickFormatter<number>
   /** Exact tick positions (e.g. a compass axis at 0/90/180/270). Overrides `numTicks`. */
   tickValues?: readonly number[]
-  /** Labels drawn over the grid, left-aligned above their line, on a surface-coloured halo — the
-   * caller reserves no gutter for them (`docs/waves/RESPONSIVE-SPEC.md` §4 step 5). */
+  /** Labels drawn over the grid, left-aligned on a surface-coloured background chip (above their
+   * line, or below it for a tick within one line-height of the plot's top edge) — the caller
+   * reserves no gutter for them (`docs/waves/RESPONSIVE-SPEC.md` §4 step 5). */
   inside?: boolean
 }) {
   const { axisFont } = useChartMetrics()
@@ -47,21 +96,10 @@ export function AxisLeftNumeric({
       numTicks={numTicks}
       {...(tickFormat !== undefined && { tickFormat })}
       {...(tickValues !== undefined && { tickValues: [...tickValues] })}
-      {...(inside && { tickLength: 0, hideTicks: true })}
+      {...(inside && { tickLength: 0, hideTicks: true, tickComponent: InsideTickLabel })}
       tickLabelProps={
         inside
-          ? {
-              fill: tickColor,
-              fontFamily: TICK_FONT_FAMILY,
-              fontSize: axisFont,
-              textAnchor: 'start',
-              dx: 4,
-              dy: '-0.35em',
-              stroke: VX.surface.panel,
-              strokeWidth: INSIDE_HALO_WIDTH,
-              strokeLinejoin: 'round',
-              paintOrder: 'stroke',
-            }
+          ? { fill: tickColor, fontSize: axisFont }
           : {
               fill: tickColor,
               fontFamily: TICK_FONT_FAMILY,

@@ -104,11 +104,16 @@ on those keys: `xs` no longer differs from `sm`, and `md`/`lg`/`xl` now switch a
 `styles.css`; the home controls' overlays now key on `(pointer: coarse)` instead of width.
 
 **Chart axes economise space at `compact`/`micro` container width** (behaviour change, no API change).
-Y labels draw inside the plot over the grid (surface halo) and the left gutter drops to its floor;
-`micro` drops the y axis and keeps two x terminals; terminal x labels anchor inward; multi-word x
-labels wrap before they rotate (rotate only past 2x what fits). At every width y labels over 4 chars
-compact (`12.5k`, `1.2M`) and the y tick count is one per ~44px of plot height (min 2). Opt out with
-explicit props: `margin.left` (keeps y labels outside), `y.format`, `y.ticks`, `xLabelRotate`.
+Y labels draw inside the plot over the grid, on a solid background chip (wave 8: was a thin surface
+halo stroke, which still let the digits visually blend into a bar's fill — a bar/band chart's first
+and last ticks sit directly over drawn ink with no clear region the way a line/area chart's do) and
+the left gutter drops to its floor; `micro` drops the y axis and keeps two x terminals; terminal x
+labels anchor inward; multi-word x labels wrap before they rotate (rotate only past 2x what fits). A
+tick within one line-height of the plot's top edge flips its label below the tick line instead of
+above it, so it no longer clips against the chart's own SVG viewBox (wave 8). At every width y labels
+over 4 chars compact (`12.5k`, `1.2M`) and the y tick count is one per ~44px of plot height (min 2).
+Opt out with explicit props: `margin.left` (keeps y labels outside), `y.format`, `y.ticks`,
+`xLabelRotate`.
 
 **`useSizeClass()` (`.`) is added** — `'compact' | 'medium' | 'expanded'`, `useSyncExternalStore`
 over one `MediaQueryList` per boundary. Its server snapshot is the new `<BasaltProvider
