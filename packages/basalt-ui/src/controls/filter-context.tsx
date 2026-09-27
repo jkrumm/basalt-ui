@@ -33,6 +33,17 @@ import {
 import type { ReactNode } from 'react'
 
 /**
+ * The real gap a popover row (`EnumFilter`'s `Radio.Group`, `MultiSelectFilter`'s `Checkbox.Group`)
+ * needs so its `[data-basalt-hit]::after` overlay can reach the full 44px coarse floor with no
+ * overlap into the next row — same derivation as the chart legend's dots mode (`DOTS_HIT_GAP`):
+ * `hit - rowHeight - 2 + 4` headroom, rowHeight being Mantine's default `Radio`/`Checkbox` label row
+ * (~21px). A bare `gap={2}` left the `--vx-hit-gap` cap able to buy only ~4px of the 44
+ * (code-foundations F1). Shared rather than duplicated per file: both popover rows share the exact
+ * same row height and floor, so one drift point beats two hand-kept copies.
+ */
+export const POPOVER_ROW_HIT_GAP = 25
+
+/**
  * Which form a control renders. Provided by `FilterSet` (`'pill'` / `'sheet'`) and by `PageAside`
  * (`'panel'`); `'pill'` when there is neither.
  */

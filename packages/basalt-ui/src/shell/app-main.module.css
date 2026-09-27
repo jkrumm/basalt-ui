@@ -155,22 +155,30 @@
 }
 
 /*
- * Landscape phone: the header and the bottom bar take their compact row. The heights are JS numbers
- * in `AppShell` props, so the override is on `:root` where Mantine writes them; `:root:root` outranks
- * its later-rendered `<style>` at equal source order. The bar exists only below `sm`, so its rule is
- * gated to that width — a wide landscape phone has no bar and keeps `--app-shell-footer-offset` 0.
- * Compact numbers: header 40, bar 45 (44 tappable under its 1px seam), labels hidden.
+ * Landscape phone: the header and the bottom bar take their compact row, SCALED to the viewport's
+ * own height budget rather than a flat step — a flat 40/45 barely shrinks (44→40, 56→45, ≈9-20%)
+ * against the height itself halving (812→375), so the chrome's SHARE of the screen nearly doubles
+ * (r2 N1: 16.7% portrait → 32.3% landscape even with the flat numbers). `clamp(floor, Ndvh,
+ * ceiling)` keeps continuity at the 480px breakpoint edge (Ndvh ≈ ceiling there) and keeps
+ * shrinking below it, down to a floor: 36px for the header (room for the brand/burger row), 45px
+ * for the bar (`--vx-hit`'s 44px coarse floor + its 1px seam — the bar's floor is a law, not a
+ * choice, so its clamp is pinned there through the whole practical landscape-phone range and only
+ * matters if that floor itself ever moves). The heights are JS numbers in `AppShell` props, so the
+ * override is on `:root` where Mantine writes them; `:root:root` outranks its later-rendered
+ * `<style>` at equal source order. The bar exists only below `sm`, so its rule is gated to that
+ * width — a wide landscape phone has no bar and keeps `--app-shell-footer-offset` 0. Labels hidden:
+ * `app-mobile-nav.module.css`.
  */
 @media (max-height: 480px) and (orientation: landscape) {
   :global(:root:root) {
-    --app-shell-header-height: 40px;
-    --app-shell-header-offset: 40px;
+    --app-shell-header-height: clamp(36px, 9dvh, 40px);
+    --app-shell-header-offset: clamp(36px, 9dvh, 40px);
   }
 }
 
 @media (max-height: 480px) and (orientation: landscape) and (max-width: 52.49375em) {
   :global(:root:root) {
-    --app-shell-footer-height: 45px;
-    --app-shell-footer-offset: 45px;
+    --app-shell-footer-height: clamp(45px, 9.4dvh, 56px);
+    --app-shell-footer-offset: clamp(45px, 9.4dvh, 56px);
   }
 }

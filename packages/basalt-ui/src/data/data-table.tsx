@@ -1079,9 +1079,11 @@ function RowDisclosure<T>({
  * basalt ships no icon set (`docs/waves/RESPONSIVE-SPEC.md` §6, mirrors `SortIndicator` above). */
 function FoldToggle({
   expanded,
+  controlsId,
   onToggle,
 }: {
   expanded: boolean
+  controlsId: string
   onToggle: () => void
 }): ReactNode {
   return (
@@ -1090,6 +1092,7 @@ function FoldToggle({
       className={classes.foldToggle}
       data-basalt-hit
       aria-expanded={expanded}
+      aria-controls={controlsId}
       aria-label={expanded ? 'Hide row details' : 'Show row details'}
       // A row carrying `onRowActivate` reads a bubbled click as "activate the row" — the toggle
       // would open/close its disclosure AND fire the row's own action underneath it.
@@ -1832,7 +1835,11 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
                 >
                   {hasFolded && (
                     <Table.Td className={classes.foldToggleCell}>
-                      <FoldToggle expanded={rowExpanded} onToggle={() => toggleFoldRow(row.id)} />
+                      <FoldToggle
+                        expanded={rowExpanded}
+                        controlsId={`${row.id}-fold`}
+                        onToggle={() => toggleFoldRow(row.id)}
+                      />
                     </Table.Td>
                   )}
                   {cells.map((cell) => {
@@ -1866,7 +1873,7 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
                   })}
                 </Table.Tr>
                 {rowExpanded && (
-                  <Table.Tr className={classes.foldDisclosureRowTr}>
+                  <Table.Tr id={`${row.id}-fold`} className={classes.foldDisclosureRowTr}>
                     <Table.Td colSpan={columnCount} className={classes.foldDisclosureCell}>
                       <RowDisclosure row={row} folded={columnFold.folded} />
                     </Table.Td>
@@ -2031,7 +2038,6 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
             />
             <CtlSlot>
               <Pagination
-                size="sm"
                 radius="md"
                 total={Math.max(table.getPageCount(), 1)}
                 value={paginationState.pageIndex + 1}

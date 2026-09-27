@@ -30,23 +30,32 @@ function render(tree: ReactNode): string {
 
 // ── the phone CSS twin ────────────────────────────────────────────────────────
 
-describe('the label-above swap is CSS at the `sm` breakpoint, never a JS media query', () => {
+describe('the label-above swap is CSS at the row’s own ~600px width, never a JS media query', () => {
   const css = readFileSync(resolve(import.meta.dirname, 'form-layout.module.css'), 'utf8')
   /** Declarations only — the comments above them name the breakpoint and the columns in prose. */
   const decls = css.replace(/\/\*[\s\S]*?\*\//g, '')
 
-  test('the desktop row is two columns', () => {
-    const start = decls.indexOf('.row {')
+  test('the desktop grid is two columns', () => {
+    const start = decls.indexOf('.grid {')
     expect(start).toBeGreaterThan(-1)
     expect(decls.slice(start, decls.indexOf('}', start))).toContain(
       'grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr)',
     )
   })
 
-  test('below `sm` the same .row collapses to one column', () => {
-    const media = decls.indexOf('@media (max-width: 47.99375em)')
+  test('below 600px of its OWN width, the same .grid collapses to one column (@container)', () => {
+    const query = decls.indexOf('@container basalt-form-row (max-width: 599.9px)')
+    expect(query).toBeGreaterThan(-1)
+    const block = decls.slice(query, decls.indexOf('\n}', decls.indexOf('.grid {', query)))
+    expect(block).toContain('grid-template-columns: minmax(0, 1fr)')
+  })
+
+  test('the pre-container-query fallback collapses the same .grid below the old viewport `sm`', () => {
+    const supports = decls.indexOf('@supports not (container-type: inline-size)')
+    expect(supports).toBeGreaterThan(-1)
+    const media = decls.indexOf('@media (max-width: 47.99375em)', supports)
     expect(media).toBeGreaterThan(-1)
-    const block = decls.slice(media, decls.indexOf('\n}', decls.indexOf('.row {', media)))
+    const block = decls.slice(media, decls.indexOf('\n}', decls.indexOf('.grid {', media)))
     expect(block).toContain('grid-template-columns: minmax(0, 1fr)')
   })
 

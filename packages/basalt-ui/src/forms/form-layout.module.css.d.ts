@@ -6,6 +6,7 @@ declare const classes: {
   readonly section: string
   readonly sectionBody: string
   readonly row: string
+  readonly grid: string
   readonly rowLabel: string
   readonly label: string
   readonly hint: string

@@ -41,8 +41,16 @@ const containerLiterals = new Set(
 )
 
 /** The other named containers' pre-existing literals (`stat-group`/`widget-grid` 768/1200, plus
- * StatGroup's own 260 one-column rule) — not card chrome, so not pinned to the class table. */
-const LEGACY_CONTAINER_LITERALS = new Set(['259.9px', '767.9px', '768px', '1199.9px', '1200px'])
+ * StatGroup's own 260 one-column rule and FormRow's own 600 label-beside-input rule) — not card
+ * chrome, so not pinned to the class table. */
+const LEGACY_CONTAINER_LITERALS = new Set([
+  '259.9px',
+  '599.9px',
+  '767.9px',
+  '768px',
+  '1199.9px',
+  '1200px',
+])
 
 function containerConditions(css: string): { name: string; literals: string[] }[] {
   const out: { name: string; literals: string[] }[] = []

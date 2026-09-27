@@ -43,6 +43,7 @@ import {
   Notification,
   NumberInput,
   Pagination,
+  PaginationControl,
   Paper,
   PasswordInput,
   PillsInput,
@@ -1135,6 +1136,12 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
         vars: (theme, props) => ({
           root: { '--pagination-active-color': onColorFor(theme, props) },
         }),
+      }),
+      // `Pagination`'s own controls (prev/next/page buttons) resolve `PaginationControl`'s
+      // defaultProps independently of the parent — `data-basalt-hit` here is what closes the
+      // gap Switch/Checkbox/Radio already close at their own theme entries.
+      PaginationControl: PaginationControl.extend({
+        defaultProps: { ...HIT_ATTR },
       }),
       Stepper: Stepper.extend({
         vars: (theme, props) => ({ root: { '--stepper-icon-color': onColorFor(theme, props) } }),

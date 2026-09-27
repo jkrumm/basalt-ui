@@ -17,6 +17,7 @@ import { BasaltOverlays, overlays } from '../../../src/commands'
 import { FilterSet, SelectFilter, ViewTabs } from '../../../src/controls'
 import { BasaltDataTable } from '../../../src/data/table'
 import type { DataTableFacet } from '../../../src/data/table'
+import { FormRow } from '../../../src/forms'
 import type { ColumnDef } from '@tanstack/react-table'
 import { ActionIcon, Button } from '@mantine/core'
 import { BasaltShell, PageAside, PageBar, StatCard, StatGroup } from '../../../src/index'
@@ -31,6 +32,7 @@ import type {
   CardsSpec,
   ChartsSpec,
   FixtureSpec,
+  FormsSpec,
   ItemSpec,
   TableSpec,
 } from './spec'
@@ -387,6 +389,22 @@ function CardsFixture({ spec }: { spec: CardsSpec }): ReactElement {
             {/* theme-allow -- a fixed body: the oscillation-scan probe's own payload */}
             <div style={{ height: bodyHeight }} />
           </ChartCard>
+        </div>
+      ))}
+    </>
+  )
+}
+
+/** `FormRow` at exact container widths — the `@container basalt-form-row` probe (n2). */
+function FormsFixture({ spec }: { spec: FormsSpec }): ReactElement {
+  return (
+    <>
+      {spec.widths.map((w) => (
+        // theme-allow -- the wrapper width IS the fixture's payload (a container-class probe)
+        <div key={w} data-testid={`form-row-${w}`} style={{ width: w }}>
+          <FormRow label="Project name">
+            <input aria-label="Project name" defaultValue="My project" />
+          </FormRow>
         </div>
       ))}
     </>
@@ -883,6 +901,7 @@ export function ShellFixture({ spec }: { spec: FixtureSpec }): ReactElement {
         <StatsFixture count={spec.stats} wide={spec.statsWide === true} />
       )}
       {spec.cards && <CardsFixture spec={spec.cards} />}
+      {spec.forms && <FormsFixture spec={spec.forms} />}
       {spec.table && <TableFixture spec={spec.table} />}
       {spec.charts && <ChartsFixture spec={spec.charts} />}
       {spec.agent && <AgentFixture spec={spec.agent} />}

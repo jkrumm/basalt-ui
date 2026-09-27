@@ -4,7 +4,15 @@
  * NumberInput steppers are NOT adopters (two siblings ~15px apart cannot each own a 44px overlay;
  * the coarse `.input` min-height is the floor).
  */
-import { Checkbox, MantineProvider, Modal, NumberInput, Radio, Switch } from '@mantine/core'
+import {
+  Checkbox,
+  MantineProvider,
+  Modal,
+  NumberInput,
+  Pagination,
+  Radio,
+  Switch,
+} from '@mantine/core'
 import { render } from '@testing-library/react'
 import { describe, expect, test } from 'bun:test'
 import { createBasaltTheme } from './index'
@@ -39,6 +47,18 @@ describe('theme hit adopters', () => {
     const hit = container.querySelector(HIT)
     expect(hit?.tagName.toLowerCase()).toBe('label')
     expect(hit?.querySelector('input')).toBeNull()
+  })
+
+  test('Pagination: every page/prev/next control carries the hit attribute (data-1)', () => {
+    const { container } = render(
+      <MantineProvider theme={theme}>
+        <Pagination total={5} value={1} onChange={() => {}} />
+      </MantineProvider>,
+    )
+    const hits = container.querySelectorAll(HIT)
+    // withControls (prev/next) + 5 page buttons = 7 — no `size="sm"` reaching the theme override.
+    expect(hits.length).toBe(7)
+    for (const hit of hits) expect(hit.tagName.toLowerCase()).toBe('button')
   })
 
   test('Modal: the close button carries the hit attribute', () => {

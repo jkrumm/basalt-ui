@@ -30,7 +30,7 @@ import { assertRequiredProps } from '../common/validate'
 import type { FieldHandle, MultiField } from '../state'
 import type { FilterOption } from './select-filter'
 import classes from './controls.module.css'
-import { useFilterRegistration, useFilterSurface } from './filter-context'
+import { POPOVER_ROW_HIT_GAP, useFilterRegistration, useFilterSurface } from './filter-context'
 import { FilterPill } from './filter-pill'
 import { CheckGlyph, useControlName } from './filter-sheet'
 import { PanelRow } from './panel-row'
@@ -143,7 +143,7 @@ export function MultiSelectFilter<T extends string>(props: MultiSelectFilterProp
         setValue(next as readonly T[])
       }}
     >
-      <Stack gap={2} style={{ '--vx-hit-gap': 'var(--stack-gap)' }}>
+      <Stack gap={POPOVER_ROW_HIT_GAP} style={{ '--vx-hit-gap': 'var(--stack-gap)' }}>
         {options.map((option) => (
           <Checkbox
             key={option.value}

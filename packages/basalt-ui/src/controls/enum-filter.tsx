@@ -31,7 +31,7 @@ import type { ReactNode } from 'react'
 import type { BasaltProps } from '../common/props'
 import type { FieldOption } from '../state'
 import classes from './controls.module.css'
-import { useFilterRegistration, useFilterSurface } from './filter-context'
+import { POPOVER_ROW_HIT_GAP, useFilterRegistration, useFilterSurface } from './filter-context'
 import { FilterPill } from './filter-pill'
 import { useControlName } from './filter-sheet'
 import { PanelChoice, PanelRow } from './panel-row'
@@ -147,7 +147,7 @@ export function EnumFilter<T extends string>({
         setValue(next as T)
       }}
     >
-      <Stack gap={2} style={{ '--vx-hit-gap': 'var(--stack-gap)' }}>
+      <Stack gap={POPOVER_ROW_HIT_GAP} style={{ '--vx-hit-gap': 'var(--stack-gap)' }}>
         {options.map((option) => (
           <Radio
             key={option.value}
