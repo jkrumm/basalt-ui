@@ -1,0 +1,136 @@
+# basalt-ui — mobile/touch round 2: review fixes and slim-down
+
+**Goal:** every confirmed finding from the second review cycle is fixed, the branch is smaller, and the
+chain hands back a branch that is green and ready to release.
+**Evidence (read first, every wave):** `.claude/mobile/r2/review-<key>.md` (keys: `visual-shell-dash`,
+`visual-charts`, `code-charts`, `code-foundations`, `code-data-content-guards`, `bloat`, `consumers`),
+`r2/capture-summary.md`, `r2/data-rect.json`, and the harnesses `r2/capture.mjs` and `r2/measure.mjs`.
+Every finding ID below (R2C-n, P0-n, B-n, …) is defined in one of those reports, with root cause and
+file:line. Each P0/P1 was confirmed by an adversarial verifier. Law homes: `docs/DESIGN-CORE.md`,
+`docs/CHARTS-SPEC.md`, `docs/CONTROLS-SPEC.md`; history is in `docs/MATURATION-LEDGER.md`.
+**Branch:** `feat/mobile-touch`. Merge and release belong to the orchestrator, not to a wave.
+**Gate:** `make verify` green (build + `bun run pre` + layout suite + pack-test), then `/review` findings
+resolved.
+
+**Every wave:**
+
+- `packages/basalt-ui/**` commits stay separate from everything else. Use conventional commits with
+  an empty scope, never `feat!:`. A removal needs a `MIGRATING.md` row in the same commit.
+- Budgets are at their ceilings. Round 2 must end **net-negative in src lines**.
+- **Run `make verify` only while no other Chrome is running.** Never `pkill` Chrome while a layout
+  suite runs: round 1's final verify died with "Browser closed" because of that.
+- A red test is never "unrelated" until it has been reproduced on `origin/master` after
+  `bun install --frozen-lockfile`.
+- Workers get disjoint file groups. Never `git stash/checkout/reset`. Format only the files you
+  touched. Run unit tests from the repo root.
+- Close-out is not optional. `/review` runs every wave, and a green wave always spawns its successor
+  with `rd wave basalt-ui '…'` (`rd wave` excludes your own pane).
+- Playground: `http://localhost:7710`. If it is down, start it with
+  `nohup bun run dev:playground >/tmp/basalt-playground.log 2>&1 &`. Shots go under `.claude/mobile/r2/w<n>/`.
+- Every behaviour fix gets a test that would have caught it: a layout-suite test with CDP touch
+  events for touch behaviour, a pure unit test for decisions.
+
+## Wave 1 — Chart touch correctness <!-- status: active -->
+
+- [ ] A touch press is **provisional**: pointerdown shows the readout, pointercancel for the same
+      pointerId clears it, and only pointerup commits the pin. Apply this in `useChartCursor`/
+      `HoverOverlay` and `useDiscreteCursor` (R2C-1, P0-2)
+- [ ] `touch-action: pan-y` moves to the plot `<svg>` (or ChartFrame's plot box) in CartesianChart,
+      useBandPlot and DualPanel, and comes off the `<rect>` (R2C-2)
+- [ ] While a pin is held, a capture-phase scroll listener clears it (R2C-4), and a document-level
+      Escape clears cartesian pins (R2C-14). ChartTooltipFloat hides followers whose anchor is
+      off-screen instead of clamping them over the bottom nav (R2C-3). Discrete-kind touch readouts
+      anchor to the host top, not under the finger (P2-11)
+- [ ] A tap draws no UA focus ring; `:focus-visible` gets a VX accent inset (R2C-15). Every
+      Donut/Heatmap listbox option gets an accessible name, and ids are built from the index with no
+      NUL (P1-6)
+- [ ] Layout tests via CDP touch: vertical scroll starting on a chart → no pin; horizontal drag → no
+      pointercancel, the readout scrubs; tap → pin; tap outside, scroll or Escape → dismissed; linked
+      charts → no off-screen followers
+      **Left behind:**
+
+## Wave 2 — Slim-down before the chart fixes <!-- status: pending -->
+
+- [ ] Delete the dead axis half of the resolver: `ChartLayout.yAxis/xAxis`, `resolveAxisEconomy`,
+      `AxisEconomyInput`, `thinTo`, the side variant, `useChartLayout` and the layout context field, plus
+      their dead tests (B4)
+- [ ] One Mantine-free `useMediaQuery(query, serverFallback)` in `common/` with a shared per-query
+      MediaQueryList cache becomes the single exempt file. `useSizeClass` is built on it; `useMinWidth` is
+      deleted; `useCoarsePointer`/`readCoarse` reuse it (B5, P2-12). This also clears basalt's own 14
+      `raw-breakpoint` self-fires (B3)
+- [ ] Remove the public `legend.mode` override (the resolver decides; B7) and the `BasaltProvider host`
+      prop (keep the automatic `data-basalt-host`; B12). Hard-delete the zero-consumer deprecated chart
+      tier forwarders with MIGRATING rows (B9; grep argo and weatherorb first, and keep `useBreakpoint`
+      and `legend.maxRows` on notice)
+- [ ] Every "removed in 1.31.0" / promote-1.31.0 note becomes **1.32.0**, because this branch ships as
+      1.31.0 (B1)
+- [ ] Record the src line delta for this wave in Left behind. It must be negative
+      **Left behind:**
+
+## Wave 3 — Card and legend correctness <!-- status: pending -->
+
+- [ ] ChartCard's short-card flag gets hysteresis: it enters below 280 and leaves at ≥ 280 plus the
+      largest fold delta. Add a layout test that the flag holds still for 2s on `/dashboard` "Sales by
+      channel" at every viewport (P0-1)
+- [ ] Legend mode law: **chips whenever all entries fit one header row**. Dots only when chips don't
+      fit and the card is short or compact. The Donut never uses dots; it keeps its list under or
+      beside the ring. In dots mode a tap opens the All-N sheet instead of toggling, and dots get a
+      title (R2C-8, P1-4)
+- [ ] Dots are fitted by pitch (dot + `DOTS_HIT_GAP`); group dividers count in the fit; the All-N chip
+      width is reserved in the same row; dots use `LEGEND_ROW_GAP`. Pure unit cases: 4 entries at 274px
+      and 8 grouped entries at 337px (R2C-9, P1-3)
+- [ ] End labels only when ≥ 2 series are visible **and** no header legend slot exists (R2C-10). The
+      slot's width is seeded synchronously, so there is no band-then-header paint (P2-8). The first frame
+      claims the slot and later ones fall back to the band with a dev warning (P2-9). Donut writes its
+      hysteresis ref in a layout effect, not during render (P2-10)
+- [ ] The legend sheet gets a real focus trap (or drops `aria-modal`) and takes its z-index from a
+      token (B14)
+      **Left behind:**
+
+## Wave 4 — Axes and height: give the plot its space <!-- status: pending -->
+
+- [ ] Inside-y placement uses a left floor of about 4px in CartesianChart and useBandPlot (R2C-5,
+      P1-5). Inside labels get a text halo (paint-order stroke) instead of the opaque chip that covers
+      the data
+- [ ] `categorical` derives from the domain kind (`classifyDomain`). Time and number domains thin
+      and never wrap or rotate; wrap only when every wrapped key fits (R2C-6, P1-7). Wrapped labels
+      anchor at the top below the tick, with a layout test (R2C-7)
+- [ ] Band per-tick width: `labelPx ?? VX.minPxPerTick`, so the measured width wins (R2C-11)
+- [ ] On a coarse pointer, the 0.45 × viewport-height clamp also applies to a literal `height`
+      (R2C-12). Delete the literal heights, the digit-grouping-only `format`s and `legend.maxRows` from
+      the playground chart pages (R2C-12, R2C-13, R2C-16; net-negative)
+- [ ] Re-measure with `r2/measure.mjs` into `r2/w4/`. Target: median data rect ≥ 0.55 at each
+      viewport and none < 0.40. Tick this step either way and record the numbers
+      **Left behind:**
+
+## Wave 5 — Touch floors, forms, landscape <!-- status: pending -->
+
+- [ ] DataTable pagination: drop `size="sm"`, and `Pagination.extend` gets the hit attribute like
+      Switch/Checkbox/Radio (data-1, P0). The fold toggle gets `aria-controls` (fold-toggle-missing-aria-controls)
+- [ ] SelectFilter, CompareFilter and MultiSelectFilter popover rows reach a 44px coarse hit area,
+      with the gap derived like `DOTS_HIT_GAP` (code-foundations F1)
+- [ ] FormRow puts the label beside the input when its container is ≥ ~600px (n2). Landscape-phone
+      header and footer use a height-scaled compact row, with tab labels dropped under the icons (n1)
+- [ ] The Composer keyboard inset honours a `style.padding` shorthand (composer-padding-shorthand-dropped)
+- [ ] A minimal row-selection specimen goes back into an existing playground route, not a new route
+      file (data-3)
+      **Left behind:**
+
+## Wave 6 — Guards, docs, comment diet, final critic <!-- status: pending -->
+
+- [ ] `basalt/raw-breakpoint` recurses into nested objects and variable indirection (or narrows its
+      documented claim). `raw-media-query` matches any width unit (rem, vw). The three self-violations
+      are annotated or fixed, and `(pointer: fine)` is sanctioned next to `coarse`
+      (code-data-content-guards)
+- [ ] Repoint every `docs/waves/RESPONSIVE-SPEC.md` citation (43+ files, guard messages, deprecation
+      notes) to DESIGN-CORE / CHARTS-SPEC / CONTROLS-SPEC. Guard messages inline the allowed
+      `@container` names and boundaries. Extend `check-agent-doc-drift` to `src/**` and `configs/**` so
+      this can't recur (B2, responsive-spec-dangling-references)
+- [ ] Comment diet: one "why" sentence per block, and wave narrative out of shipped src into the
+      ledger (B11, ~-250 lines). Extract one internal `useMeasuredWidths` for the PageBar and DataTable
+      fold engines (B10). Keep one internal 44px hit constant (B15)
+- [ ] Full recapture (`r2/capture.mjs` + `r2/measure.mjs`) at the 5 viewports, then a critic pass
+      over the shots. Fix any regression. Update the ledger with the round-2 outcome and the
+      line-delta totals
+- [ ] Delete `docs/waves/`, then stop and hand back to the orchestrator. No merge, no release
+      **Left behind:**
