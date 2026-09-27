@@ -6,7 +6,7 @@
  * to `--vx-surface-bg`. `--vx-surface-border`/`line` is reserved for layout dividers, not the
  * card/panel edge.
  *
- * Pure Mantine: only components and layout primitives (Stack / Group / SimpleGrid / Box) — no raw
+ * Pure Mantine: only components and layout primitives (Stack / Group / WidgetGrid / Box) — no raw
  * <div>, no inline-styled layout.
  *
  * PAGE-CHROME RULE for this wave, applied to every demo page in the phone-readiness pass and
@@ -33,7 +33,6 @@ import {
   Radio,
   SegmentedControl,
   Select,
-  SimpleGrid,
   Stack,
   Switch,
   Table,
@@ -42,7 +41,7 @@ import {
   Textarea,
   TextInput,
 } from '@mantine/core'
-import { EmptyState, PageBar, SettingsSection } from 'basalt-ui'
+import { EmptyState, PageBar, SettingsSection, WidgetGrid } from 'basalt-ui'
 import { ViewTabs } from 'basalt-ui/controls'
 import { createLocalStore, field } from 'basalt-ui/state'
 import type { ReactNode } from 'react'
@@ -113,7 +112,7 @@ export function ComponentsPage() {
 function ComponentsSurfaces() {
   return (
     <Stack gap="md">
-      <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
+      <WidgetGrid cols={2}>
         <ComponentGroup title="Buttons">
           <Group gap="sm">
             <Button variant="filled">Filled</Button>
@@ -183,7 +182,7 @@ function ComponentsSurfaces() {
             ]}
           />
         </ComponentGroup>
-      </SimpleGrid>
+      </WidgetGrid>
 
       <ComponentGroup title="Table">
         <Table withTableBorder striped highlightOnHover>
@@ -206,7 +205,7 @@ function ComponentsSurfaces() {
         </Table>
       </ComponentGroup>
 
-      <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
+      <WidgetGrid cols={2}>
         <ComponentGroup title="Accordion">
           <Accordion variant="contained" defaultValue="acquisition">
             <Accordion.Item value="acquisition">
@@ -263,9 +262,9 @@ function ComponentsSurfaces() {
             </Popover>
           </Group>
         </ComponentGroup>
-      </SimpleGrid>
+      </WidgetGrid>
 
-      <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
+      <WidgetGrid cols={2}>
         <ComponentGroup title="Badges & code">
           <Stack gap="sm">
             <Group gap="sm">
@@ -294,7 +293,7 @@ function ComponentsSurfaces() {
             </Radio.Group>
           </Stack>
         </ComponentGroup>
-      </SimpleGrid>
+      </WidgetGrid>
 
       <ComponentGroup title="Empty state">
         <EmptyState

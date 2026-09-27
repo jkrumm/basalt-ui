@@ -357,11 +357,18 @@ CONTAINS the key, so answering at all would be a crosshair on a bucket that prov
   / `BarsLine.tooltip: false`, the same escape `SeriesStyle.tooltip` gives every other kind.
 - **rAF-coalesced position.** Pointer moves write through a frame scheduler instead of a
   `setState` per event.
-- **Anchorable.** `tooltip.follow` defaults to true (the tooltip tracks the pointer, as before).
-  `follow: false` anchors it to the crosshair at the plot's top edge instead, so a column of charts
-  sharing one cursor lines every tooltip up on the same x. Following is the default because
-  anchoring costs a `getBoundingClientRect` per hovered frame. Viewport collision handling (flip +
-  clamp, measure-before-show) is handled once in `ChartTooltipFloat` for both modes.
+- **Anchorable.** `tooltip.follow` defaults to true on a fine pointer (the tooltip tracks the
+  pointer, as before) but an UNSET `follow` anchors on a coarse one — a finger would otherwise sit
+  on top of its own readout. `follow: false`/`true` stated explicitly always wins on either pointer
+  tier. Anchored mode pins the tooltip to the crosshair at the plot's top edge, so a column of
+  charts sharing one cursor lines every tooltip up on the same x. Viewport collision handling (flip
+  - clamp, measure-before-show) is handled once in `ChartTooltipFloat` for both modes.
+- **Coarse pointer**: `pointerdown` resolves and shows immediately (a tap fires no `pointermove`);
+  a drag scrubs with `touch-action: pan-y` so vertical page scroll keeps working; on lift the
+  readout stays PINNED until a tap elsewhere in the chart (moves it), a tap outside (dismisses,
+  capture-phase listener), or Escape. `useChartCursor` carries this for every cartesian kind and
+  `DualPanel`; `useDiscreteCursor` gives `Donut`/`Heatmap` the same tap/keyboard/focus parity over a
+  discrete target list. A shared-cursor pin/dismiss (§3) propagates to every linked chart.
 - **Keyboard.** The hover overlay is focusable; ←/→ scrub the cursor, Escape clears it. The tooltip
   is `aria-live="polite"`.
 - **It renders nothing on the server.** `ChartTooltipFloat` was the ONE `renderToString` casualty in
@@ -395,6 +402,14 @@ CONTAINS the key, so answering at all would be a crosshair on a bucket that prov
   legend only restates the chart's own title and costs a row for a toggle that can blank the whole
   plot. A kind wired through `CartesianChart` gets this for free; one composing `ChartFrame`
   directly without threading `seriesCount` (`DualPanel`) keeps its prior always-shown behaviour.
+- **A short `ChartCard` (measured < 280px) or a `compact` container folds the header legend to
+  plain colour dots, no label** — the name still reaches assistive tech via the entry's own
+  `aria-label`. The `All N` disclosure panel is unaffected: it always shows the full swatch + label.
+- **`Donut`**: past a side legend's own W/H > 1.5 it moves beside the ring (value + %), full list
+  below at compact (never rolled up), 7+ slices fold to `Other`. Dual axis (`y2`, one series each)
+  tints that axis's ticks with the series colour instead of an "(left axis)" suffix. End labels
+  (`wide`, ≤ 3 line series, no `y2`) replace the legend with right-gutter text when they can
+  separate.
 
 ## 6. One responsive path
 

@@ -14,17 +14,18 @@ beyond it is `git log $(git describe --tags --abbrev=0)..HEAD`.
 Everything below this line is built. Nothing in this document is a plan — but the last rows may not
 be released yet; the version column says when a capability landed, not what npm serves.
 
-| Capability                                                                                                                                                                                                                    | Shipped                                                                       |
-| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| 1.0 Mantine pivot, 1.x line live                                                                                                                                                                                              | 1.0.0                                                                         |
-| Theme config closed — all four `createBasaltTheme` dimensions (`derive`, `fonts`, `radius`, `density`)                                                                                                                        | 1.2.0                                                                         |
-| Framework-free tokens — `basalt-ui tokens:css`, `basalt-ui/tokens.css`, `only: 'core'`                                                                                                                                        | 1.3.0 (kebab-case 1.5.0)                                                      |
-| Chart-layer rebuild — `CartesianChart` as the one mandatory primitive                                                                                                                                                         | 1.15.0                                                                        |
-| Native mobile nav + `defineNav`                                                                                                                                                                                               | 1.19.0                                                                        |
-| Controls concept — the three homes, the `ctl` tier, typed stores, sidebar blocks, 13→6 rules                                                                                                                                  | 1.26.0                                                                        |
-| Region seams + the `/cbbi` chrome round — divider seams, phone row 2, `AxisConfig.scale: 'log'`                                                                                                                               | 1.27.0                                                                        |
-| Maturation round — `common/**` (`BasaltProps`, `useValidateProps`, `errors.ts`), deprecation lifecycle (`deprecated-export`), phone chart tier, query-aware containers, `PageAside` shell region, `docs/MATURATION-LEDGER.md` | Unreleased (1.28.0)                                                           |
-| Consolidation — one lint engine, adopt-or-delete, one doc home per doctrine, budgets gate                                                                                                                                     | In progress (targets 1.29.0), see `docs/MATURATION-LEDGER.md` § Consolidation |
+| Capability                                                                                                                                                                                                                    | Shipped                                                          |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| 1.0 Mantine pivot, 1.x line live                                                                                                                                                                                              | 1.0.0                                                            |
+| Theme config closed — all four `createBasaltTheme` dimensions (`derive`, `fonts`, `radius`, `density`)                                                                                                                        | 1.2.0                                                            |
+| Framework-free tokens — `basalt-ui tokens:css`, `basalt-ui/tokens.css`, `only: 'core'`                                                                                                                                        | 1.3.0 (kebab-case 1.5.0)                                         |
+| Chart-layer rebuild — `CartesianChart` as the one mandatory primitive                                                                                                                                                         | 1.15.0                                                           |
+| Native mobile nav + `defineNav`                                                                                                                                                                                               | 1.19.0                                                           |
+| Controls concept — the three homes, the `ctl` tier, typed stores, sidebar blocks, 13→6 rules                                                                                                                                  | 1.26.0                                                           |
+| Region seams + the `/cbbi` chrome round — divider seams, phone row 2, `AxisConfig.scale: 'log'`                                                                                                                               | 1.27.0                                                           |
+| Maturation round — `common/**` (`BasaltProps`, `useValidateProps`, `errors.ts`), deprecation lifecycle (`deprecated-export`), phone chart tier, query-aware containers, `PageAside` shell region, `docs/MATURATION-LEDGER.md` | 1.28.0                                                           |
+| Consolidation — one lint engine, adopt-or-delete, one doc home per doctrine, budgets gate                                                                                                                                     | 1.29.0–1.30.2, see `docs/MATURATION-LEDGER.md`                   |
+| Responsive/touch maturation — three-axis law, `resolveChartLayout`, coarse-pointer chart touch model, `basalt/raw-breakpoint` + `raw-media-query` guards                                                                      | Unreleased, `feat/mobile-touch`, see `docs/MATURATION-LEDGER.md` |
 
 Adopted downstream: seven consumer repos as of the round-9 sweep. `rollhook` runs the
 framework-free route with no Mantine and no React (`docs/FRAMEWORK-FREE.md`); `basalt-ui-obsidian`
@@ -51,9 +52,8 @@ Intentional cut-line calls, not gaps:
 - **tsdown migration** — NO-GO for 1.0 (swapping the tsc declaration emitter on a type-spine
   package; owner may override).
 - **Phase-5 kill-list** — bottom-sheet, runtime hooks, canvas-line-kind, `create-basalt-app`,
-  dtcg-interchange, `@mantine/dropzone`, full `<Chat>`/voice. Advisory-only. (The PWA vite helper
-  shipped as `basaltAppPlugin`; `appshell-aside-slot` shipped as `PageAside` — see
-  `docs/ASIDE-SPEC.md`.)
+  dtcg-interchange, `@mantine/dropzone`, full `<Chat>`/voice. Advisory-only (the PWA helper and the
+  aside shipped as `basaltAppPlugin`/`PageAside` — `docs/ASIDE-SPEC.md`).
 - **`no-explicit-any` → error escalation**, **`./state` static-lint globs** (would over-reach into
   consumer state files), **controlled `DataTable` sorting** prop.
 - **`@example` JSDoc markdown-compile harness** (the playground demos already are canonical

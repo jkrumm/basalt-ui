@@ -225,3 +225,72 @@ else in the pipeline can catch it).
   in one run. `check-theme` already prints its `Fix:` prose once at the end.
 - `basalt-ui sync` reprints both permanent placement-skip essays on every run, though `sync --check`
   already knows to collapse them to one line.
+
+## Responsive, touch and plot-first maturation — waves 1–11 (2026-09-27)
+
+The `feat/mobile-touch` chain (`docs/waves/PLAN.md`, `docs/waves/RESPONSIVE-SPEC.md` — both deleted
+by wave 11, distilled into `DESIGN-CORE.md` §Layout, `CHARTS-SPEC.md` §§3–8, `CONTROLS-SPEC.md` §2).
+Unreleased on top of 1.30.2 as of this entry; the human decides the version and cuts the release.
+
+**Shipped, wave by wave:** W1 audit + spec; W2 the three-axis law (`SIZE_CLASSES`/`CONTAINER_CLASSES`,
+`useSizeClass()`, `--vx-hit`); W3 shell docking (compact bottom bar <840 / medium rail 840–1199 /
+expanded sidebar ≥1200, `PageBar` row-1 measured fold); W4 the touch tier (`[data-basalt-hit]`
+everywhere, the bottom-sheet Modal); W5 card chrome by container (`@container basalt-card`, the KPI
+`cqi` clamp); W6 the chart layout law (`resolveChartLayout`, axis economy); W7 legend fit + donut +
+dual-axis + end labels; W8 header economy (short-card subtitle/value fold); W9 the chart touch model
+(`useChartCursor`/`useDiscreteCursor`, pointerdown-pin-dismiss); W10 DataTable priority-fold,
+VirtualList row-height warning, the content TOC sheet, agent-chat keyboard inset; W11 (this entry).
+
+**Wave 11 — guards, distill, final critic:**
+
+| Item | Finding                                                                                                                                                                                                                                                                                                                                                                  | Status                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| G1   | The two persistent sub-0.40 charts (`/charts` Primitives — Availability, Negotiated link speed) had a header legend that never actually folded: `chart-layout.ts`'s `mode: 'dots'` had existed since wave 6/7 but nothing in `ChartLegend.tsx` ever rendered a dots form — every card, at every wave, rendered full chip legends regardless of what the resolver decided | fixed — `ChartLegend` gained a real `mode='dots'` render (colour-only swatch, name in `aria-label`), wired through `ChartFrame`; a short `ChartCard` (measured < 280px) or a `compact` container now forces it, HEADER-ONLY (a `/review` blocking finding: the first cut leaked dots into band-placed legends at `compact` width, contradicting the container-class table)                                                                                                                                                                                      |
+| G2   | No opt-out existed for a consumer whose chart lands in a short card but wants labels anyway                                                                                                                                                                                                                                                                              | fixed — `legend.mode` on every kind's `ChartLegendConfig`/`ChartFrameLegend`, an explicit value always wins over the resolver                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| G3   | `basalt/raw-breakpoint` (oxlint, warn → 1.31.0) + `raw-media-query` (CSS guard kind, warn → 1.31.0) — the two guards RESPONSIVE-SPEC.md §7 specified                                                                                                                                                                                                                     | shipped; `/review` (OCR angle) found and fixed 4 false positives before landing: `useMatches` collided with `@tanstack/react-router`'s own hook (scoped to `@mantine/*` sources), `visibleFrom`/`hiddenFrom`'s exemption missed `AppBrand`/`ViewTabs`/`ActionGroup` (now reuses the shared `createControlOwnerProbe` + `AppBrand` added by name), `@container basalt-card (width >= 0px)` (a real idiom, `widget-header.module.css`) was flagged as an off-table literal, and `shell/**`'s own sanctioned `SIZE_CLASSES` `@media` rules had no exemption at all |
+| G4   | 10 playground `SimpleGrid {base:1, md:2}` grids migrated to `WidgetGrid`                                                                                                                                                                                                                                                                                                 | shipped                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| G5   | Full recapture (`capture.mjs` extended with `tabletLg` 1024×768 and `landscapePhone` 812×375) + a screenshot critic pass — confirmed no regression in the new viewport conditions or the wave-3 landscape shell chrome; found G1 (above) as the one real defect                                                                                                          | shipped                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+
+**Re-measured** (`.claude/mobile/w11/measure.mjs`, same harness as w6–w8): phone median 0.501 (w8:
+0.486) · tablet 0.520 (w8: 0.520) · desktop 0.512 (w8: 0.512, unchanged — the two fixed charts are
+phone/tablet-primarily narrow). The two persistent offenders: phone 0.356/0.378 (w8: 0.31–0.36),
+tablet 0.379/0.379, desktop 0.394/0.394 (w8: 0.36) — real, measured, roughly halves the gap to the
+0.40 floor and the 0.55 target, but does not fully clear either. Orchestrator ruling: same as waves
+7/8 (both explicitly missed 0.55 and shipped anyway) — the remaining gap is axis-gutter and
+band-row-height tax on a ~200px-tall card, a different lever than legend density, out of this wave's
+charter. Not chasing further this chain.
+
+**Known gaps, not fixed this wave** (found by two `/review` passes — sideclaw multi-angle + native
+`code-review` — verified real, judged out of wave 11's charter):
+
+- `resolveLegend`'s fit/overflow count (`entriesWithinRows`, `chart-layout.ts`) always measures
+  chip-width (swatch + label), even when the resolved `mode` will be `'dots'` — a short card with
+  MORE entries than this wave's two test cases could show a premature "All N" disclosure a
+  dots-width fit would have avoided. Untested; the two charts this wave targets have too few entries
+  to trigger it.
+- `ChartLegend`'s **chips**-mode `--vx-hit-gap` (`VX.legendGap`, 22px) is fed to the CSS cap for
+  BOTH axes, but the real vertical row gap on a wrap is `LEGEND_ROW_GAP` (6px) — pre-existing since
+  wave 4, not introduced here. A legend wrapping to 2+ rows under a coarse pointer could see a small
+  cross-row hit-overlay overlap; `hit-overlap.layout.test.ts` only covers same-row neighbours.
+- Several pre-existing, unrelated-to-this-wave findings from the broader `code-review` pass (not
+  touched, no regression from this wave): `PageBarProvider`/`AsideProvider` build a fresh context
+  value every render with no `useMemo`; `shell/index.tsx`'s `useMinWidth` is a third near-duplicate
+  hand-rolled `matchMedia`/`useSyncExternalStore` hook alongside `use-breakpoint.ts` and
+  `use-size-class.ts`; `useSizeClass()` allocates its own `MediaQueryList` pair per call site instead
+  of one shared subscription; `state/persisted.ts`'s new `isSet` read doubles `localStorage.getItem`
+  calls per render; `44`/`24`/`2` (hit-floor, overlay inset) are hardcoded independently in 4+ places
+  with nothing tying them to one source.
+
+**Doc distillation**: `RESPONSIVE-SPEC.md` and `PLAN.md` deleted (their job was done); the three-axis
+law was already in `DESIGN-CORE.md` §Layout (wave 2); `CHARTS-SPEC.md` gained the coarse-pointer
+touch model (§4, corrected a stale claim that `tooltip.follow` always defaults `true`) and the
+donut/dual-axis/end-labels/legend-dots laws (§5); `CONTROLS-SPEC.md` §2's shell axis description was
+stale (still named the old binary `sm` breakpoint) and is now the real three-tier table. Landed
+inside the exact `docs/*.md` prose ceiling (2480/2480) and the shipped-rule-line ceiling (750/750,
+unchanged — no rule file touched, only the generated `<!-- basalt:coverage -->` blocks for the two
+new guards).
+
+Gate: `make verify` green (build, `bun run pre` 4781/4781 pass, layout suite 120/120, pack-test);
+`bun packages/basalt-ui/scripts/check-budgets.ts --report` all 6 within ceiling; two `/review` passes
+(sideclaw multi-angle high + native `code-review` high) — sideclaw's 6 blocking findings and the
+native pass's in-scope findings all fixed; out-of-scope/pre-existing findings recorded above.
