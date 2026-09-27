@@ -18,31 +18,21 @@ import { Heatmap } from '../kinds/Heatmap'
 import { MirroredBars } from '../kinds/MirroredBars'
 import { autoMargin } from '../layout/auto-margin'
 import { CartesianChart } from './CartesianChart'
-import { chartTierMetrics, resolveChartTier } from './chart-frame-layout'
+import { chartMetrics } from './chart-frame-layout'
 
-describe('resolveChartTier — the MEASURED box, never a media query', () => {
-  test('a phone-width box resolves to the phone tier', () => {
-    expect(resolveChartTier(360)).toBe('phone')
+describe('chartMetrics', () => {
+  const desktop = chartMetrics('regular')
+  const phone = chartMetrics('compact')
+
+  test('micro and compact both resolve to the phone metric set', () => {
+    expect(chartMetrics('micro')).toBe(phone)
+    expect(chartMetrics('compact')).toBe(phone)
   })
 
-  test('a narrow grid cell on a wide screen resolves to phone too — that is the point', () => {
-    expect(resolveChartTier(320)).toBe('phone')
+  test('regular and wide both resolve to the desktop metric set', () => {
+    expect(chartMetrics('regular')).toBe(desktop)
+    expect(chartMetrics('wide')).toBe(desktop)
   })
-
-  test('the threshold itself is desktop — the tier is `< phoneChartWidth`', () => {
-    expect(resolveChartTier(VX.phoneChartWidth)).toBe('desktop')
-    expect(resolveChartTier(VX.phoneChartWidth - 1)).toBe('phone')
-  })
-
-  test('an UNMEASURED box is desktop — the first frame must not paint phone chrome it then undoes', () => {
-    expect(resolveChartTier(0)).toBe('desktop')
-    expect(resolveChartTier(-1)).toBe('desktop')
-  })
-})
-
-describe('chartTierMetrics', () => {
-  const desktop = chartTierMetrics('desktop')
-  const phone = chartTierMetrics('phone')
 
   test('desktop is exactly today’s tokens — the tier moves nothing on a wide chart', () => {
     expect(desktop.axisFont).toBe(VX.axisFont)
@@ -70,9 +60,9 @@ describe('chartTierMetrics', () => {
     expect(phone.tooltipMinWidth).toBeLessThan(desktop.tooltipMinWidth)
   })
 
-  test('it returns the SAME frozen object per tier — never a fresh one per render', () => {
-    expect(chartTierMetrics('phone')).toBe(phone)
-    expect(chartTierMetrics('desktop')).toBe(desktop)
+  test('it returns the SAME frozen object per class — never a fresh one per render', () => {
+    expect(chartMetrics('compact')).toBe(phone)
+    expect(chartMetrics('regular')).toBe(desktop)
   })
 })
 
@@ -135,7 +125,7 @@ describe(`a chart measured at ${PHONE_WIDTH}px paints the phone tier`, () => {
     const fontSizes = () =>
       new Set([...container.querySelectorAll('text')].map((node) => node.getAttribute('font-size')))
     await waitFor(() => {
-      expect(fontSizes()).toEqual(new Set([String(chartTierMetrics('phone').axisFont)]))
+      expect(fontSizes()).toEqual(new Set([String(chartMetrics('compact').axisFont)]))
     })
     expect(fontSizes().has(String(VX.axisFont))).toBe(false)
   })
@@ -161,7 +151,7 @@ describe(`a chart measured at ${PHONE_WIDTH}px paints the phone tier`, () => {
     // for the first entry (same race as the tick-font test above under full-suite load).
     await waitFor(() => {
       const legend = screen.getByRole('button', { name: 'v' }).parentElement
-      expect(legend?.style.fontSize).toBe(`${chartTierMetrics('phone').legendFontSize}px`)
+      expect(legend?.style.fontSize).toBe(`${chartMetrics('compact').legendFontSize}px`)
     })
   })
 })
@@ -198,7 +188,7 @@ function bottomMarginOf(container: HTMLElement): number {
 
 const WIDE_X = (key: string): string => `${key} 14:00 CEST`
 /** Same width, no whitespace: cannot wrap, so the gutter/rotation laws under test are isolated
- * from the compact-width wrap-first law (`resolveAxisEconomy`). */
+ * from the compact-width wrap-first law (`planXLabels`). */
 const SOLID_X = (key: string): string => `${key}/14:00:00/CEST`
 
 /**
@@ -210,7 +200,7 @@ const SOLID_X = (key: string): string => `${key}/14:00:00/CEST`
 describe(`useBandPlot measures at the tier it paints (${PHONE_WIDTH}px)`, () => {
   measuredAt(PHONE_WIDTH)
 
-  const phone = chartTierMetrics('phone')
+  const phone = chartMetrics('compact')
   const bandRows = [
     { key: '2026-08-01', up: 40, down: 800 },
     { key: '2026-08-02', up: 20, down: 400 },
@@ -327,7 +317,7 @@ describe(`Heatmap reads the tier for its category labels (${PHONE_WIDTH}px)`, ()
     const fonts = new Set(
       [...container.querySelectorAll('text')].map((n) => n.getAttribute('font-size')),
     )
-    expect(fonts).toEqual(new Set([String(chartTierMetrics('phone').axisFont)]))
+    expect(fonts).toEqual(new Set([String(chartMetrics('compact').axisFont)]))
     expect(fonts.has(String(VX.axisFont))).toBe(false)
   })
 })
@@ -441,12 +431,12 @@ describe.each([
       const markup = container.innerHTML
       const left = plotOrigin(markup).left
       if (inside) {
-        expect(left).toBe(chartTierMetrics('phone').margin.left)
+        expect(left).toBe(chartMetrics('compact').margin.left)
         expect(markup).toContain('fill="var(--vx-surface-panel)"')
         return
       }
       expect(markup).not.toContain('fill="var(--vx-surface-panel)"')
-      expect(left).toBeGreaterThanOrEqual(chartTierMetrics('desktop').margin.left)
+      expect(left).toBeGreaterThanOrEqual(chartMetrics('regular').margin.left)
       // Compact y format: 40000 paints as 40k, never 40,000.
       expect(markup).toContain('>40k<')
       expect(markup).not.toContain('40,000')

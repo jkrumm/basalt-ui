@@ -28,7 +28,7 @@ import {
 import { resolveFrameHeight } from './chart-frame-layout'
 import type { ResponsiveChartHeight } from './chart-frame-layout'
 import type { LegendEntry } from './ChartLegend'
-import { useChartLayout } from './chart-tier'
+import { useChartContainerClass } from './chart-tier'
 import { HoverOverlay } from './HoverOverlay'
 import type { SeriesStyle } from '../series'
 
@@ -402,14 +402,6 @@ describe('resolveFrameHeight — a height per container step', () => {
     expect(resolveFrameHeight({ base: 180, regular: 220, wide: 300 }, 'regular')).toBe(220)
     expect(resolveFrameHeight({ base: 180, regular: 220, wide: 300 }, 'wide')).toBe(300)
   })
-
-  test('deprecated aliases: sm → regular, md/lg → wide, lg beats md, new keys beat aliases', () => {
-    expect(resolveFrameHeight({ base: 180, sm: 220 }, 'regular')).toBe(220)
-    expect(resolveFrameHeight({ base: 180, md: 260 }, 'wide')).toBe(260)
-    expect(resolveFrameHeight({ base: 180, md: 260, lg: 300 }, 'wide')).toBe(300)
-    expect(resolveFrameHeight({ base: 180, wide: 280, lg: 300 }, 'wide')).toBe(280)
-    expect(resolveFrameHeight({ base: 180, md: 260 }, 'regular')).toBe(180)
-  })
 })
 
 describe('ChartFrame height warnings (dev, once)', () => {
@@ -436,18 +428,6 @@ describe('ChartFrame height warnings (dev, once)', () => {
       )
     })
 
-  test('an old sm/md/lg key warns with its replacement', () => {
-    expect(
-      mount({ base: 180, md: 260 }).some((m) =>
-        m.includes('"height.md" is deprecated — use "height.wide"'),
-      ),
-    ).toBe(true)
-  })
-
-  test('the new keys do not warn', () => {
-    expect(mount({ base: 181, wide: 261 }).filter((m) => m.includes('deprecated'))).toEqual([])
-  })
-
   test('a numeric height under the plot floor warns', () => {
     const under = VX.minPlotHeight - 10
     expect(mount(under).some((m) => m.includes(`prop "height" (${under})`))).toBe(true)
@@ -460,8 +440,7 @@ describe('ChartFrame height warnings (dev, once)', () => {
 
 describe('an unmeasured ChartFrame without a BasaltProvider is not phone chrome', () => {
   function Probe() {
-    const layout = useChartLayout()
-    return <text>{`${layout?.containerClass}|${layout?.height}`}</text>
+    return <text>{useChartContainerClass()}</text>
   }
   const frame = (): ReturnType<typeof ChartFrame> => (
     <ChartFrame series={series} legend={false}>
@@ -473,15 +452,15 @@ describe('an unmeasured ChartFrame without a BasaltProvider is not phone chrome'
     </ChartFrame>
   )
 
-  test('no provider: regular class, height from the regular ratio (640 x 0.5)', () => {
-    expect(renderToStaticMarkup(frame())).toContain('regular|320')
+  test('no provider: regular class (the desktop default)', () => {
+    expect(renderToStaticMarkup(frame())).toContain('regular')
   })
 
   test('a provider hint still decides the unmeasured class', () => {
     const markup = renderToStaticMarkup(
       <SizeClassHintContext.Provider value="compact">{frame()}</SizeClassHintContext.Provider>,
     )
-    expect(markup).toContain('compact|223')
+    expect(markup).toContain('compact')
   })
 })
 

@@ -836,8 +836,8 @@ export const GRACE_PERIOD_KINDS: Partial<Record<GuardKind, GraceEntry>> = {
       're-measured against that number.',
   },
   'raw-media-query': {
-    since: '1.30.2',
-    promote: '1.31.0',
+    since: '1.31.0',
+    promote: '1.32.0',
     why:
       'new in the wave-11 responsive/touch guards (docs/waves/RESPONSIVE-SPEC.md §7) — the CSS-text ' +
       "twin of the oxlint plugin's `basalt/raw-breakpoint`. Reaching CSS is a NEW file type for this " +
@@ -845,7 +845,7 @@ export const GRACE_PERIOD_KINDS: Partial<Record<GuardKind, GraceEntry>> = {
       '.css` / `widget-grid.module.css` already declare `@container` names (`basalt-stat-group`, ' +
       "`basalt-widget-grid`) outside RESPONSIVE-SPEC.md §1's four-name table, plus `shell/**`'s own " +
       "legitimate width `@media` rules — real incumbents in basalt's own tree at ship time, so this " +
-      'ships warn rather than error from the start. Promotes with its AST twin at 1.31.0.',
+      'ships warn rather than error from the start. Promotes with its AST twin at 1.32.0.',
   },
 }
 

@@ -24,6 +24,7 @@ import { cx } from '../common/props'
 import type { BasaltProps, SlotStylesProps } from '../common/props'
 import { BASALT_PREFIX } from '../common/errors'
 import { assertRequiredProps, useValidateProps } from '../common/validate'
+import { readMediaQuery } from '../common/use-media-query'
 import { ErrorState } from '../dashboard/query-state'
 import type { QueryStateLike } from '../dashboard/query-state'
 import { dataQueryBranch } from './query-branch'
@@ -221,10 +222,7 @@ export function BasaltVirtualList<T>(props: BasaltVirtualListProps<T>) {
   useValidateProps(
     'BasaltVirtualList',
     () =>
-      typeof window !== 'undefined' &&
-      typeof window.matchMedia === 'function' &&
-      window.matchMedia('(pointer: coarse)').matches &&
-      estimateSize < COARSE_TOUCH_FLOOR
+      readMediaQuery('(pointer: coarse)', false) && estimateSize < COARSE_TOUCH_FLOOR
         ? shortRowHeightMessage(estimateSize)
         : null,
     [estimateSize],

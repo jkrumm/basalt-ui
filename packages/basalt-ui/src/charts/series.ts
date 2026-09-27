@@ -86,19 +86,12 @@ export type ChartLegendConfig = {
   /** Visually separate role: series | overlay | reference. */
   groups?: boolean
   /**
-   * @deprecated Removed in 1.31.0 — the legend fits by measured width and folds overflow into an
+   * @deprecated Removed in 1.32.0 — the legend fits by measured width and folds overflow into an
    * `All N` disclosure on its own. An explicit value still wins this release (entry count).
    */
   maxRows?: number
   /** Clicking an entry hides that series. Default: on whenever there is more than one entry. */
   toggle?: boolean
-  /**
-   * Forces the header-slot legend's render — `'dots'` (colour only, no label) or `'chips'` (swatch
-   * + label). Omit to let `resolveChartLayout` decide (a short `ChartCard` or a `compact` container
-   * folds to dots on its own, `docs/CHARTS-SPEC.md` §5) — an explicit value always wins over that,
-   * the escape hatch back to labels for a consumer who wants them even in a short card.
-   */
-  mode?: 'dots' | 'chips'
 }
 
 /** Visual identity of a series — everything the legend + tooltip swatch need. No accessors, no `T`. */

@@ -18,7 +18,7 @@
 import { render, waitFor } from '@testing-library/react'
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import { CartesianChart } from '../primitives/CartesianChart'
-import { chartTierMetrics } from '../primitives/chart-frame-layout'
+import { chartMetrics } from '../primitives/chart-frame-layout'
 import { Heatmap } from '../kinds/Heatmap'
 import { measureText } from '../utils/measure-text'
 
@@ -124,7 +124,7 @@ function assertRotatedLabelsInside(container: HTMLElement): void {
   const svgHeight = Number(svg.getAttribute('height'))
   const plot = translateOf(container.querySelector('.visx-group'))
   const axis = translateOf(container.querySelector('.visx-axis-bottom'))
-  const fontPx = chartTierMetrics('phone').axisFont
+  const fontPx = chartMetrics('compact').axisFont
   const labels = [...container.querySelectorAll('.visx-axis-bottom text')]
 
   expect(labels.length).toBeGreaterThan(0)
@@ -178,7 +178,7 @@ describe('Heatmap column labels thin like an axis at 390', () => {
 
   /** Painted x range of a centred category label, in the root SVG's coordinates. */
   const columnBoxes = (container: HTMLElement): { left: number; right: number }[] => {
-    const fontPx = chartTierMetrics('phone').axisFont
+    const fontPx = chartMetrics('compact').axisFont
     return [...container.querySelectorAll('text[text-anchor="middle"]')].map((node) => {
       const group = translateOf(node.parentElement)
       const half = measureText(node.textContent ?? '', fontPx) / 2

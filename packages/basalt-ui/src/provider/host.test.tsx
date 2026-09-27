@@ -49,7 +49,7 @@ function stubChangeableDisplayMode(): { flip: (standalone: boolean) => void; res
 }
 
 function HostProbe(): null {
-  useHostAttribute(undefined)
+  useHostAttribute()
   return null
 }
 
@@ -69,16 +69,6 @@ describe('BasaltProvider data-basalt-host', () => {
     try {
       render(<BasaltProvider>x</BasaltProvider>)
       expect(document.documentElement.getAttribute('data-basalt-host')).toBe('pwa')
-    } finally {
-      restore()
-    }
-  })
-
-  test('host="native" wins over display-mode', () => {
-    const restore = stubDisplayMode(true)
-    try {
-      render(<BasaltProvider host="native">x</BasaltProvider>)
-      expect(document.documentElement.getAttribute('data-basalt-host')).toBe('native')
     } finally {
       restore()
     }

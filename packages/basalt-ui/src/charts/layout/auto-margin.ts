@@ -124,11 +124,11 @@ export type AutoMarginInput = {
   /** Degrees of counter-clockwise rotation applied to the x tick labels. Default 0. */
   rotate?: number
   /** Tick-label font size. Default `VX.axisFont`. A phone-tier chart passes its own smaller size
-   * (`chartTierMetrics().axisFont`) — the measured label must be the painted label. */
+   * (`chartMetrics().axisFont`) — the measured label must be the painted label. */
   fontPx?: number
   /**
    * Per-side FLOORS. Default `VX.margin`. The phone tier passes its tightened set
-   * (`chartTierMetrics().margin`) so a static 44px left gutter does not spend an eighth of a 360px
+   * (`chartMetrics().margin`) so a static 44px left gutter does not spend an eighth of a 360px
    * chart on a three-character label. The law itself does not move: a side may still only ever
    * grow past its floor.
    */

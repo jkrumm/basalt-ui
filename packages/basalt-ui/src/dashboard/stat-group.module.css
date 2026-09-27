@@ -2,8 +2,8 @@
  * StatGroup's column law and its optional rail, in CSS (law C9).
  *
  * **The law keys on the CONTAINER, not the viewport.** A viewport breakpoint answers the wrong
- * question — the same one `resolveChartTier` refuses to ask (`charts/primitives/chart-frame-layout.
- * ts`): the shell has regions that change the AVAILABLE width with the viewport held still (a
+ * question — the same one `resolveContainerClass` refuses to ask (`tokens/size-classes.ts`): the
+ * shell has regions that change the AVAILABLE width with the viewport held still (a
  * `PageAside` claiming its 300px, the sidebar collapsing 256px → its 48px rail, a consumer's own
  * split layout), and `@media` cannot see any of them. Measured defect: a `PageAside` mounted on a
  * 1512px desktop left the KPI row ~956px wide, `@media` still resolved `lg`, and four cells of

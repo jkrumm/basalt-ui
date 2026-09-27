@@ -7,9 +7,10 @@ import { CONTAINER_CLASSES } from '../../tokens/size-classes'
 import type { ContainerClass } from '../../tokens/size-classes'
 import {
   compactNumber,
+  isTightClass,
   planXLabels,
-  resolveAxisEconomy,
   resolveChartLayout,
+  resolveYPlacement,
   shouldCompactYLabels,
   wrapLabel,
   yTickCount,
@@ -26,9 +27,6 @@ const base: ChartLayoutInput = {
   slotW: 0,
   viewportH: 800,
   legendItems: [],
-  yLabels: [],
-  xLabels: [],
-  categorical: false,
   sizeClass: 'expanded',
   coarse: false,
 }
@@ -171,7 +169,7 @@ describe('legend', () => {
 
   test('visible + overflow always equals the entry count', () => {
     const l = layout({ frameW: 260, legendItems: entries(9, 'A longer label') }).legend
-    if (l.mode === 'none' || l.mode === 'side') throw new Error('expected a rolled legend')
+    if (l.mode === 'none') throw new Error('expected a rolled legend')
     expect(l.visible + l.overflow).toBe(9)
     expect(l.overflow).toBeGreaterThanOrEqual(2)
   })
@@ -180,8 +178,8 @@ describe('legend', () => {
     const items = entries(6, 'Series label')
     const band = layout({ frameW: 500, legendItems: items }).legend
     const header = layout({ frameW: 500, slotW: 500, legendItems: items }).legend
-    if (band.mode === 'none' || band.mode === 'side') throw new Error('expected a legend')
-    if (header.mode === 'none' || header.mode === 'side') throw new Error('expected a legend')
+    if (band.mode === 'none') throw new Error('expected a legend')
+    if (header.mode === 'none') throw new Error('expected a legend')
     expect(header.where).toBe('header')
     expect(header.visible).toBeLessThan(band.visible)
   })
@@ -190,34 +188,9 @@ describe('legend', () => {
     // Find a width where exactly one entry would overflow, then assert it is not rolled up.
     for (let w = 240; w < 800; w += 4) {
       const l = layout({ frameW: w, legendItems: entries(5, 'Label') }).legend
-      if (l.mode === 'none' || l.mode === 'side') continue
+      if (l.mode === 'none') continue
       expect(l.overflow).not.toBe(1)
     }
-  })
-})
-
-describe('axes stay populated for the next step', () => {
-  test('y mode follows the class; ticks scale with height within [2, 6]', () => {
-    expect(layout({ frameW: 200 }).yAxis.mode).toBe('none')
-    expect(layout({ frameW: 360 }).yAxis.mode).toBe('inside')
-    expect(layout({ frameW: 600 }).yAxis.mode).toBe('outside')
-    const ticks = layout({ frameW: 900 }).yAxis.ticks
-    expect(ticks).toBeGreaterThanOrEqual(2)
-    expect(ticks).toBeLessThanOrEqual(6)
-  })
-
-  test('long y labels ask for the compact number format', () => {
-    expect(layout({ frameW: 900, yLabels: ['1,000,000'] }).yAxis.compact).toBe(true)
-    expect(layout({ frameW: 900, yLabels: ['10'] }).yAxis.compact).toBe(false)
-  })
-
-  test('categorical x labels wrap before they rotate; micro keeps 2 terminals', () => {
-    const many = Array.from({ length: 40 }, (_, i) => `Category ${i}`)
-    expect(
-      layout({ frameW: 900, categorical: true, xLabels: many.slice(0, 3) }).xAxis,
-    ).toMatchObject({ wrap: false, rotate: 0 })
-    expect(layout({ frameW: 400, categorical: true, xLabels: many }).xAxis.rotate).toBe(45)
-    expect(layout({ frameW: 200, xLabels: many }).xAxis.thinTo).toBe(2)
   })
 })
 
@@ -301,26 +274,15 @@ describe('ladder step 3-4: wrap, rotate and terminals', () => {
     expect(planXLabels({ labels, plotWidth: 300, fontPx: 10, categorical: false }).wrap).toBe(false)
   })
 
-  test('inward terminals only where the plot is tight; micro keeps 2 ticks and no y axis', () => {
-    const at = (containerClass: ContainerClass) =>
-      resolveAxisEconomy({
-        containerClass,
-        plotHeight: 200,
-        plotWidth: 300,
-        yLabels: ['0', '10'],
-        xLabels: labels,
-        categorical: false,
-      })
-    expect(at('micro').xAxis).toMatchObject({ anchorTerminals: true, thinTo: 2 })
-    expect(at('micro').yAxis.mode).toBe('none')
-    expect(at('compact')).toMatchObject({
-      xAxis: { anchorTerminals: true },
-      yAxis: { mode: 'inside' },
-    })
-    expect(at('regular')).toMatchObject({
-      xAxis: { anchorTerminals: false },
-      yAxis: { mode: 'outside' },
-    })
-    expect(at('wide').xAxis.anchorTerminals).toBe(false)
+  test('isTightClass and the y placement it drives: micro drops the axis, compact moves it inside', () => {
+    expect(isTightClass('micro')).toBe(true)
+    expect(isTightClass('compact')).toBe(true)
+    expect(isTightClass('regular')).toBe(false)
+    expect(isTightClass('wide')).toBe(false)
+
+    expect(resolveYPlacement('micro')).toBe('none')
+    expect(resolveYPlacement('compact')).toBe('inside')
+    expect(resolveYPlacement('regular')).toBe('outside')
+    expect(resolveYPlacement('wide')).toBe('outside')
   })
 })

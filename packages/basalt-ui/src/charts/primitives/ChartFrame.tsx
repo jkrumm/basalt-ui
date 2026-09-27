@@ -11,12 +11,7 @@ import { deriveLegend } from '../series'
 import type { ChartLegendConfig, LegendPlacement, SeriesStyle } from '../series'
 import { ChartCardContext } from './chart-card-context'
 import { resolveChartLayout, resolveFrameClass } from './chart-layout'
-import {
-  deprecatedHeightKeys,
-  resolveFrameHeight,
-  resolveLegendRollup,
-  resolvePlotRect,
-} from './chart-frame-layout'
+import { resolveFrameHeight, resolveLegendRollup, resolvePlotRect } from './chart-frame-layout'
 import type { ResponsiveChartHeight } from './chart-frame-layout'
 import { ChartTierProvider, useCoarsePointer, useViewportHeight } from './chart-tier'
 import { ChartLegend } from './ChartLegend'
@@ -25,12 +20,7 @@ import type { ChartState } from './ChartPending'
 
 /** Re-exported for `ChartFrame.test.tsx` and any other consumer that previously reached these
  * through `ChartFrame` — the layout math itself lives in `./chart-frame-layout` (pure, DOM-free). */
-export {
-  legendEntryCap,
-  resolveLegendRollup,
-  resolvePlotRect,
-  resolveChartTier,
-} from './chart-frame-layout'
+export { legendEntryCap, resolveLegendRollup, resolvePlotRect } from './chart-frame-layout'
 export type { ResponsiveChartHeight } from './chart-frame-layout'
 
 const DEFAULT_MIN_WIDTH = 200
@@ -41,7 +31,7 @@ export type ChartFrameLegend = {
   /** Default 'bottom'. */
   placement?: LegendPlacement
   /**
-   * @deprecated Removed in 1.31.0 — the legend now fits by measured width every time and folds
+   * @deprecated Removed in 1.32.0 — the legend now fits by measured width every time and folds
    * overflow into an `All N` disclosure (`docs/waves/RESPONSIVE-SPEC.md` §4); drop the prop.
    *
    * Until then an explicit value still WINS OUTRIGHT over the measured fit, and it counts ENTRIES,
@@ -61,8 +51,6 @@ export type ChartFrameLegend = {
    * plot, the tooltip, and the auto domain together (`docs/CHARTS-SPEC.md` §5).
    */
   toggle?: boolean
-  /** Forces the header legend's render, overriding the resolver's own 'dots'/'chips' pick. */
-  mode?: 'dots' | 'chips'
 }
 
 export type ChartFrameProps = BasaltProps & {
@@ -135,20 +123,6 @@ export type PlotRect = {
   hidden: ReadonlySet<string>
 }
 
-/** `ResponsiveChartHeight`'s deprecated keys and what replaces each. */
-const DEPRECATED_HEIGHT_KEYS = {
-  sm: 'height.regular',
-  md: 'height.wide',
-  lg: 'height.wide',
-} as const
-
-/** The thresholds moved with the keys — a straight rename would silently shift the breakpoints. */
-const DEPRECATED_HEIGHT_NOTES = {
-  sm: 'It applied from 768px; `regular` applies from 480px of the frame width.',
-  md: 'It applied from 992px; `wide` is one step, from 800px of the frame width.',
-  lg: 'It applied from 1200px; `wide` is one step, from 800px of the frame width.',
-} as const
-
 const outerStyle = (fill: boolean, vertical: boolean): CSSProperties => ({
   width: '100%',
   height: fill ? '100%' : undefined,
@@ -195,7 +169,6 @@ export function resolveLegend(
     ...(config?.groups !== undefined && { groups: config.groups }),
     ...(config?.maxRows !== undefined && { maxRows: config.maxRows }),
     ...(config?.toggle !== undefined && { toggle: config.toggle }),
-    ...(config?.mode !== undefined && { mode: config.mode }),
     ...(hover !== undefined && { highlighted: hover.highlighted, onHighlight: hover.onHighlight }),
   }
 }
@@ -280,23 +253,6 @@ export function ChartFrame({
     ],
     [fill, height, aspectRatio],
   )
-  useValidateProps(
-    'ChartFrame',
-    () =>
-      height === undefined
-        ? null
-        : deprecatedHeightKeys(height).map((key) =>
-            deprecatedProp(
-              'ChartFrame',
-              `height.${key}`,
-              DEPRECATED_HEIGHT_KEYS[key],
-              '1.31.0',
-              DEPRECATED_HEIGHT_NOTES[key],
-            ),
-          ),
-    [height],
-  )
-
   const placement = legend === false ? 'bottom' : (legend.placement ?? 'bottom')
   const vertical = placement === 'left' || placement === 'right'
   // Every non-null state replaces the plot, and all three suppress the legend for one reason: a
@@ -313,7 +269,7 @@ export function ChartFrame({
             'ChartFrame',
             'legend.maxRows',
             'nothing (the legend fits by measured width)',
-            '1.31.0',
+            '1.32.0',
             'Overflow folds into an `All N` disclosure; an explicit value still wins this release.',
           )
         : null,
@@ -334,9 +290,6 @@ export function ChartFrame({
         slotW,
         viewportH,
         legendItems,
-        yLabels: [],
-        xLabels: [],
-        categorical: false,
         sizeClass,
         coarse,
         cardShort,
@@ -347,12 +300,10 @@ export function ChartFrame({
     [containerW, slotW, viewportH, legendKey, sizeClass, coarse, cardShort, statedHeight],
   )
 
-  // The resolver gates every placement: none at micro (a side legend included), else the card's
-  // header slot when there is one, or a band. A side legend keeps its own column for the rest.
+  // The resolver gates every placement: none at micro, else the card's header slot when there is
+  // one, or a band.
   const fit = layout.legend.mode === 'dots' || layout.legend.mode === 'chips' ? layout.legend : null
-  // An explicit `legend.mode` (the escape hatch back to labels for a consumer whose chart lands in
-  // a short card but still wants them) always wins over the resolver's own 'dots'/'chips' pick.
-  const legendMode = legend !== false ? (legend.mode ?? fit?.mode) : fit?.mode
+  const legendMode = fit?.mode
   const showLegend = legendVisible && fit !== null
   const inHeader = showLegend && !vertical && legendSlot !== null && fit?.where === 'header'
   const sideLegendWidth = showLegend && vertical ? legendW : 0
@@ -425,7 +376,7 @@ export function ChartFrame({
     )
 
   return (
-    <ChartTierProvider containerClass={layout.containerClass} layout={layout}>
+    <ChartTierProvider containerClass={layout.containerClass}>
       <div
         ref={containerRef}
         {...(className !== undefined && { className })}

@@ -10,7 +10,7 @@
  * **`cols` is the DESKTOP count, and it is the only number a consumer states.** The law is
  * `base 1 → sm min(cols, 2) → lg cols`: a phone gets one column because a dashboard card holds a
  * chart; a tablet gets at most two because a third makes every chart narrower than
- * `VX.phoneChartWidth`; the full count lands at `lg`. Mantine's `cols={{ … }}` object is
+ * `CONTAINER_CLASSES.regular`; the full count lands at `lg`. Mantine's `cols={{ … }}` object is
  * deliberately NOT forwarded — a responsive object on the public prop is exactly the seam that let
  * five call sites disagree.
  *
@@ -19,8 +19,8 @@
  * ACTUALLY has. The shell moves that width without moving the viewport — a `PageAside` claiming its
  * 300px, the sidebar collapsing 256px → its 48px rail, a consumer's split pane — and a `@media`
  * query sees none of it: it kept three chart columns in a 956px content box and every chart in the
- * row went narrower than `VX.phoneChartWidth`, which is the exact condition the `lg` rung exists to
- * avoid. See `widget-grid.module.css`'s header for the fallback.
+ * row went narrower than `CONTAINER_CLASSES.regular`, which is the exact condition the `lg` rung
+ * exists to avoid. See `widget-grid.module.css`'s header for the fallback.
  *
  * **This is the sanctioned place `lg` enters the package.** A consumer never writes a
  * breakpoint — component layout keys on the container's own width (`docs/waves/RESPONSIVE-SPEC.md`

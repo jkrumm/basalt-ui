@@ -4020,11 +4020,11 @@ const SHELL_HOME_NAMES = new Set(['BasaltShell', 'AppSidebar', 'MobileNav', 'App
 
 /**
  * The two files RESPONSIVE-SPEC.md §7 exempts by NAME rather than by declaration:
- * `useSizeClass()`'s own implementation (the one sanctioned `window.matchMedia` read the whole rule
- * exists to funnel every other file toward) and `ChartTooltip` (the Mantine-free chart layer's own
- * pointer-tier read, which cannot go through `useSizeClass` — chart files ban `@mantine/*`).
+ * `useMediaQuery`'s own implementation (`common/use-media-query.ts` — the one sanctioned
+ * `window.matchMedia` read every other file, including `useSizeClass`, now funnels through) and
+ * `ChartTooltip` (the Mantine-free chart layer's own pointer-tier read).
  */
-const RAW_BREAKPOINT_EXEMPT_FILE = /(?:^|[\\/])(?:use-size-class\.ts|ChartTooltip\.tsx)$/
+const RAW_BREAKPOINT_EXEMPT_FILE = /(?:^|[\\/])(?:use-media-query\.ts|ChartTooltip\.tsx)$/
 
 const RAW_BREAKPOINT_RESPONSIVE_PROP_MESSAGE =
   'Responsive-object style prop on a Mantine component — a consumer cannot hand-roll a breakpoint ' +
@@ -4060,7 +4060,7 @@ const RAW_BREAKPOINT_HOOK_NAMES = new Set(['useMediaQuery', 'useMatches', 'useVi
  * the same ordering hazard `hand-rolled-shell` defers a `Program:exit` report to avoid); the import
  * and the two global reads carry no such ordering hazard and report immediately.
  */
-// Ships: warn (grace → 1.31.0)
+// Ships: warn (grace → 1.32.0)
 const rawBreakpoint = {
   meta: {
     type: 'suggestion',
@@ -4223,8 +4223,8 @@ export const PLUGIN_RULE_GRACE = {
       '`theme-allow-file control-outside-home — overlay`.',
   },
   'raw-breakpoint': {
-    since: '1.30.2',
-    promote: '1.31.0',
+    since: '1.31.0',
+    promote: '1.32.0',
     why:
       'new in the wave-11 responsive/touch guards (docs/waves/RESPONSIVE-SPEC.md §7). Catches four ' +
       'independent shapes at once — a responsive-object Mantine prop, visibleFrom/hiddenFrom outside ' +
@@ -4233,7 +4233,7 @@ export const PLUGIN_RULE_GRACE = {
       "build with all four shapes already in it. basalt-ui/content's own article-card.tsx (a " +
       "`SimpleGrid cols={{ base: 1, sm: 2, lg }}`) is one incumbent measured in basalt's own tree at " +
       'ship time — a real number, not zero, so this ships warn rather than error from the start. ' +
-      '1.31.0 is when that incumbent and any consumer-side ones are expected to have moved to a ' +
+      '1.32.0 is when that incumbent and any consumer-side ones are expected to have moved to a ' +
       'container query or a theme-allow with a stated reason.',
   },
 }

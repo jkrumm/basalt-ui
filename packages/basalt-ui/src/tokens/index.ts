@@ -20,7 +20,7 @@ import {
   SPACE_STEP,
 } from './palette'
 import type { PaletteData, RadiusValues, SpaceValues } from './palette'
-import { CONTAINER_CLASSES, SIZE_CLASSES, sizeClassMaxEm } from './size-classes'
+import { SIZE_CLASSES, sizeClassMaxEm } from './size-classes'
 
 // The raw hue families + pair-picker — the building blocks a consumer's series module composes
 // (`hrv: p(BP.blue)`). The doctrine sends every consumer here, so they are public surface, not
@@ -289,13 +289,6 @@ export const VX = {
    * legend rolls up).
    */
   minPlotHeight: 120,
-  /**
-   * @deprecated Duplicates `CONTAINER_CLASSES.regular` (`basalt-ui/tokens`) — removed in 1.31.0.
-   * Read from `CONTAINER_CLASSES.regular` directly; `resolveChartTier`/`chartTierMetrics` already
-   * do (chart-frame-layout.ts), so this constant no longer drives any resolution, only docs and its
-   * own test.
-   */
-  phoneChartWidth: CONTAINER_CLASSES.regular,
 } as const
 
 /**
@@ -309,7 +302,7 @@ export const VX = {
  * `styles.floor.test.ts`).
  *
  * Only breakpoints that are genuinely a CSS-authored `@media` belong here. A component that can
- * measure its own box uses the measurement instead (`VX.phoneChartWidth`), and Mantine chrome uses
+ * measure its own box uses the measurement instead (`CONTAINER_CLASSES`), and Mantine chrome uses
  * `theme.breakpoints`.
  */
 export const BREAKPOINTS = {

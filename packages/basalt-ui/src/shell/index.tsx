@@ -20,11 +20,12 @@
  * default (rail in `medium`); any stored value, `false` included, wins.
  */
 import { AppShell, Box, rem } from '@mantine/core'
-import { Fragment, useCallback, useEffect, useMemo, useSyncExternalStore } from 'react'
+import { Fragment, useCallback, useEffect, useMemo } from 'react'
 import type { CSSProperties, MouseEvent, ReactNode } from 'react'
 import { registerSidebarToggle } from '../commands/shell-bridge'
 import { cx } from '../common/props'
 import type { BasaltProps } from '../common/props'
+import { useMediaQuery } from '../common/use-media-query'
 import { assertRequiredProps } from '../common/validate'
 import { AppSidebar } from './app-sidebar'
 import { AppBrand } from './app-brand'
@@ -307,29 +308,6 @@ function collapseStore(key: string): CollapseStore {
  */
 const MAIN_MIN_WIDTH = 720
 
-/** `(min-width: <px>)`, through `useSyncExternalStore` so SSR and hydration read `false`. */
-function useMinWidth(px: number): boolean {
-  const list = useMemo(
-    () =>
-      typeof window === 'undefined' || typeof window.matchMedia !== 'function'
-        ? null
-        : window.matchMedia(`(min-width: ${toEm(px)})`),
-    [px],
-  )
-  const subscribe = useCallback(
-    (onChange: () => void) => {
-      list?.addEventListener('change', onChange)
-      return () => list?.removeEventListener('change', onChange)
-    },
-    [list],
-  )
-  return useSyncExternalStore(
-    subscribe,
-    () => list?.matches ?? false,
-    () => false,
-  )
-}
-
 /**
  * The shell's two page-level regions are providers, and both wrap the frame rather than living
  * inside it: `PageBarProvider` owns the header portal and the single-kebab claim, `AsideProvider`
@@ -408,7 +386,10 @@ function ShellFrame({
   // just its rail and an open panel overlays main. Provided through `AsideDocksContext` in the SAME
   // render, so `PageAside` defaults its fold from the right value on its first pass.
   const navbarWidth = collapsed ? step.appShellNavbarRailWidth : step.appShellNavbarWidth
-  const roomToDock = useMinWidth(navbarWidth + step.appShellAsideWidth + MAIN_MIN_WIDTH)
+  const roomToDock = useMediaQuery(
+    `(min-width: ${toEm(navbarWidth + step.appShellAsideWidth + MAIN_MIN_WIDTH)})`,
+    false,
+  )
   const docks = sizeClass === 'expanded' && roomToDock
   const asideOpen = aside.claimed && !aside.folded
   const asideOverlay = asideOpen && !docks
