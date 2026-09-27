@@ -12,7 +12,7 @@ import {
 import { ChartFrame } from '../primitives/ChartFrame'
 import type { ResponsiveChartHeight } from '../primitives/ChartFrame'
 import { useChartMetrics } from '../primitives/chart-tier'
-import { useDiscreteCursor } from '../hooks/useDiscreteCursor'
+import { useDiscreteCursor } from '../hooks/use-discrete-cursor'
 import type { ChartState } from '../primitives/ChartPending'
 import { maxTextWidth } from '../utils/measure-text'
 import { thinLabels, xLabelPxFor } from '../utils/ticks'

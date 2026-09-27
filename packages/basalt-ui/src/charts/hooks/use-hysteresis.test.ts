@@ -6,7 +6,7 @@
  */
 import { renderHook } from '@testing-library/react'
 import { describe, expect, test } from 'bun:test'
-import { useHysteresis } from './useHysteresis'
+import { useHysteresis } from './use-hysteresis'
 
 describe('useHysteresis', () => {
   test('the first render computes from the initial value', () => {

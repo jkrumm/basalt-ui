@@ -276,6 +276,37 @@ layout('Chart touch model', () => {
       expect(await p.count(TOOLTIP)).toBe(1)
     })
 
+    test('a cancelled SECOND press restores the previously committed pin instead of dropping it', async () => {
+      // R2C-1/P0-2, round 2's carried-forward gap: tap A pins it; a second press at B is only
+      // PROVISIONAL, and the browser taking THAT press as a scroll must restore A's committed pin,
+      // not drop it.
+      const p = await openFixture(chartFixture({ kind: 'multiLine' }), DESKTOP_1440)
+      const overlay = await p.box('overlay', OVERLAY)
+      const pointA = {
+        x: overlay.box.left + overlay.box.width * 0.2,
+        y: overlay.box.top + overlay.box.height / 2,
+      }
+      const pointB = {
+        x: overlay.box.left + overlay.box.width * 0.8,
+        y: overlay.box.top + overlay.box.height / 2,
+      }
+
+      await touch(p, OVERLAY, 0, 'pointerdown', pointA)
+      await touch(p, OVERLAY, 0, 'pointerup', pointA)
+      const pinnedA = await tooltipText(p)
+
+      // Press B — provisional, moves the readout…
+      await touch(p, OVERLAY, 0, 'pointerdown', pointB)
+      const provisionalB = await tooltipText(p)
+      expect(provisionalB).not.toBe(pinnedA)
+
+      // …then a vertical scroll cancels it: A's pin must still be showing.
+      await touch(p, OVERLAY, 0, 'pointercancel', pointB)
+      await p.quiesce()
+      expect(await p.count(TOOLTIP)).toBe(1)
+      expect(await tooltipText(p)).toBe(pinnedA)
+    })
+
     test('a tap outside the chart dismisses the pinned tooltip', async () => {
       const p = await openFixture(chartFixture({ kind: 'multiLine' }), DESKTOP_1440)
       const overlay = await p.box('overlay', OVERLAY)
@@ -361,6 +392,28 @@ layout('Chart touch model', () => {
 
       expect(after).not.toBe(before)
       expect(await p.count(TOOLTIP)).toBe(1)
+    })
+
+    test('a cancelled SECOND press restores the previously committed pin instead of dropping it', async () => {
+      // Same R2C-1/P0-2 regression as the cartesian case above, over `useDiscreteCursor`'s own
+      // press/commit/cancel machine: tap slice A pins it; a second press on slice B is only
+      // PROVISIONAL, and a scroll cancelling THAT press must restore A's pin, not drop it.
+      const p = await openFixture(chartFixture({ kind: 'donut' }), DESKTOP_1440)
+      const sliceA = await nthBox(p, OPTION, 0)
+      const sliceB = await nthBox(p, OPTION, 1)
+
+      await touch(p, OPTION, 0, 'pointerdown', center(sliceA))
+      await touch(p, OPTION, 0, 'pointerup', center(sliceA))
+      const pinnedA = await tooltipText(p)
+
+      await touch(p, OPTION, 1, 'pointerdown', center(sliceB))
+      const provisionalB = await tooltipText(p)
+      expect(provisionalB).not.toBe(pinnedA)
+
+      await touch(p, OPTION, 1, 'pointercancel', center(sliceB))
+      await p.quiesce()
+      expect(await p.count(TOOLTIP)).toBe(1)
+      expect(await tooltipText(p)).toBe(pinnedA)
     })
 
     test('a tap outside the ring dismisses the pin', async () => {

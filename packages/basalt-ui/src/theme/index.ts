@@ -1087,7 +1087,7 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
       Switch: Switch.extend({
         defaultProps: {
           withThumbIndicator: false,
-          attributes: { track: { 'data-basalt-hit': true } },
+          attributes: { track: HIT_ATTR },
         },
       }),
       // The tab-list bottom rule (and the inactive-tab hover underline) is a layout separator, not
@@ -1113,7 +1113,7 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
       // `useStyles`), so re-pointing that var here wins on every render path. Without this, a dark-mode
       // Checkbox/Radio paints a white checkmark on the light accent fill — invisible.
       Checkbox: Checkbox.extend({
-        defaultProps: { attributes: { label: { 'data-basalt-hit': true } } },
+        defaultProps: { attributes: { label: HIT_ATTR } },
         vars: (theme, props) => ({
           root: {
             // `iconColor` is an explicit call-site override, and `outline` paints the mark in the
@@ -1124,7 +1124,7 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
         }),
       }),
       Radio: Radio.extend({
-        defaultProps: { attributes: { label: { 'data-basalt-hit': true } } },
+        defaultProps: { attributes: { label: HIT_ATTR } },
         vars: (theme, props) => ({
           root: {
             '--radio-icon-color':
