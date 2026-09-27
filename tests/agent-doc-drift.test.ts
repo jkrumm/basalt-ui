@@ -127,7 +127,8 @@ describe('agent-doc-drift guard', () => {
     expect(findConfigsJsFiles().length).toBeGreaterThan(0)
     expect(findRepoMdFiles().length).toBeGreaterThan(findAgentMdFiles().length)
     expect(checkD([...findRepoMdFiles(), ...findConfigsJsFiles()], findSrcTsFiles())).toEqual([])
-  })
+    // Scans every repo doc + src file: ~5s under full-suite load, past bun's 5s default.
+  }, 20_000)
 
   it('DELETED_DOCS still names a replacement for every entry', () => {
     for (const [doc, replacement] of Object.entries(DELETED_DOCS)) {
