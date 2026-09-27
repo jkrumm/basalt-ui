@@ -100,6 +100,16 @@ export function duplicateMount(component: string): string {
   )
 }
 
+/** Two frames inside one `ChartCard` both want the header legend slot (`docs/waves/PLAN.md` wave
+ * 3, P2-9) — only the first to mount keeps it, every later one falls back to its own band legend
+ * rather than silently overwriting the portal. */
+export function legendSlotContention(component: string): string {
+  return message(
+    component,
+    'more than one chart in this ChartCard wants the header legend slot — only the first keeps it, the rest fall back to their own band legend.',
+  )
+}
+
 // ── Transport-agnostic error decoding ────────────────────────────────────────────────────────────
 //
 // Deliberately in this module, with NO `@tanstack/react-query` import — `dashboard/query-state.tsx`

@@ -19,6 +19,11 @@ import {
 const ready = await initLayoutSuite()
 const layout = ready ? describe : describe.skip
 
+// A wide scan around `CARD_SHORT_HEIGHT` (280px) — the exact bistable band depends on the header's
+// own folded/unfolded height (not reproduced here), so the scan spans a generous range around it
+// rather than one guessed value.
+const OSCILLATION_SCAN_HEIGHTS = Array.from({ length: 21 }, (_, i) => 150 + i * 10)
+
 const SPEC: FixtureSpec = {
   sections: [
     { label: 'Main', items: [{ key: 'a', label: 'Overview', mobile: 'tab', active: true }] },
@@ -28,6 +33,7 @@ const SPEC: FixtureSpec = {
     stretchedRow: 400,
     groupWidth: 240,
     shortHeader: { width: 600, bodyHeight: 140 },
+    oscillationScan: { width: 600, bodyHeights: OSCILLATION_SCAN_HEIGHTS },
   },
 }
 
@@ -106,6 +112,31 @@ layout('card chrome by container', () => {
     const card = await p.box('card', '[data-testid="card-short"] > div')
     const header = await p.box('header', '[data-testid="card-short"] > div > div:first-child')
     expect(header.box.height / card.box.height).toBeLessThanOrEqual(0.2)
+  })
+
+  // P0-1: `data-basalt-card-short` used to oscillate forever on any card whose unfolded height fell
+  // in a narrow band around 280px — the flag folds the header, which changes the card's OWN
+  // measured height, which could flip the flag back on the next ResizeObserver reading. Hysteresis
+  // (enter below 280, leave only at/above 280 + the exit slack) should make it hold still.
+  test('data-basalt-card-short holds still over time at every scanned body height', async () => {
+    const testids = OSCILLATION_SCAN_HEIGHTS.map((h) => `card-osc-${h}`)
+    const readFlags = () =>
+      p.raw.evaluate(
+        (ids) =>
+          ids.map((id) =>
+            document
+              .querySelector(`[data-testid="${id}"] > div`)
+              ?.hasAttribute('data-basalt-card-short'),
+          ),
+        testids,
+      )
+    await p.settle()
+    const first = await readFlags()
+    for (let i = 0; i < 4; i += 1) {
+      await p.raw.waitForTimeout(120)
+      const next = await readFlags()
+      expect(next).toEqual(first)
+    }
   })
 
   test('a divided StatGroup at 240px is one column with no rail border or indent on any cell', async () => {

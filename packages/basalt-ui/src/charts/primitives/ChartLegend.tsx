@@ -1,10 +1,10 @@
-import type { CSSProperties, ReactNode } from 'react'
+import type { CSSProperties, MouseEvent, ReactNode } from 'react'
 import { useEffect, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { BasaltProps } from '../../common/props'
 import { alpha, VX } from '../../tokens'
 import type { SeriesRole, LegendPlacement } from '../series'
-import { LEGEND_ROW_GAP } from './chart-frame-layout'
+import { DOTS_HIT_GAP, LEGEND_DOT_SIZE, LEGEND_ROW_GAP, orderEntries } from './chart-frame-layout'
 import { useChartMetrics, useCoarsePointer } from './chart-tier'
 
 export type LegendEntry = {
@@ -53,35 +53,12 @@ const LEGEND_ITEM_BUTTON: CSSProperties = {
   textAlign: 'inherit',
 }
 
-const GROUP_ORDER: SeriesRole[] = ['series', 'overlay', 'reference']
-
 /** Stable empty set — a fresh `new Set()` default would be a new identity on every render. */
 const NO_HIDDEN: ReadonlySet<string> = new Set()
 
-const roleOf = (item: LegendEntry): SeriesRole => item.role ?? 'series'
-
-/** Order entries series → overlay → reference and record where a divider belongs. */
-function orderEntries(
-  items: LegendEntry[],
-  groups: boolean,
-): { entries: LegendEntry[]; dividerAfter: Set<number> } {
-  if (!groups) return { entries: items, dividerAfter: new Set() }
-
-  const dividerAfter = new Set<number>()
-  const entries: LegendEntry[] = []
-  const nonEmptyGroups = GROUP_ORDER.map((role) =>
-    items.filter((item) => roleOf(item) === role),
-  ).filter((group) => group.length > 0)
-  nonEmptyGroups.forEach((group, i) => {
-    entries.push(...group)
-    if (i < nonEmptyGroups.length - 1) dividerAfter.add(entries.length - 1)
-  })
-  return { entries, dividerAfter }
-}
-
 const DISCLOSURE_PANEL: CSSProperties = {
   position: 'fixed',
-  zIndex: 9999,
+  zIndex: VX.zIndexFloating,
   display: 'flex',
   flexDirection: 'column',
   gap: LEGEND_ROW_GAP,
@@ -128,19 +105,6 @@ function disclosurePlacement(chip: DOMRect, coarse: boolean): CSSProperties {
       }
 }
 
-/**
- * The real gap a dots-mode entry needs so its `[data-basalt-hit]::after` overlay can reach the
- * full 44px coarse floor with NO overlap into its neighbour's overlay (`hit-floor.layout.test.ts` +
- * `hit-overlap.layout.test.ts`, wave 4's cap: `styles.css`'s `::after` grows to
- * `min(max(size,44), size + 2 + gap)`). Two 44px-wide overlays centred on same-size hosts touch
- * with zero overlap only once their PITCH (real gap + host size) is itself >= 44 — below that, the
- * cap can only shrink the overlay below 44 (honouring WCAG 2.5.8's spacing route) or let it overlap;
- * there is no gap value that lets it hit 44 exactly while staying flush against a same-size sibling.
- * `LEGEND_DOT_SIZE` is 8px, so the floor is 44 − 8 − 2 = 34; a few px of headroom against rounding.
- */
-const LEGEND_DOT_SIZE = 8
-const DOTS_HIT_GAP = 44 - LEGEND_DOT_SIZE - 2 + 4
-
 function wrapperStyle(placement: LegendPlacement, fontSize: number, dots: boolean): CSSProperties {
   const vertical = placement === 'left' || placement === 'right'
   const gap = dots ? DOTS_HIT_GAP : VX.legendGap
@@ -151,7 +115,10 @@ function wrapperStyle(placement: LegendPlacement, fontSize: number, dots: boolea
     alignItems: vertical ? 'flex-start' : 'center',
     justifyContent: 'flex-start',
     columnGap: gap,
-    rowGap: dots ? gap : LEGEND_ROW_GAP,
+    // Always the tight row gap (R2C-9): the wider dots COLUMN gap is a hit-overlap cap, not
+    // breathing room between wrapped rows — a dots-mode header legend is 1 row by law
+    // (`LEGEND_ROWS.header` in `chart-layout.ts`) anyway, so this only ever shows in the band.
+    rowGap: LEGEND_ROW_GAP,
     // Caps each entry's `[data-basalt-hit]` overlay at the real inter-entry gap (styles.css).
     ...({ '--vx-hit-gap': `${gap}px` } as CSSProperties),
     // A dots-mode row has no text baseline to breathe around — the header-fold law (wave 8) is
@@ -398,17 +365,24 @@ export function ChartLegend({
   const tier = useChartMetrics()
   const coarse = useCoarsePointer()
   const [disclosure, setDisclosure] = useState<CSSProperties | null>(null)
-  const chipRef = useRef<HTMLButtonElement>(null)
+  // Whichever button opened the panel — the `All N` chip, or (dots mode) any entry — so focus
+  // returns to where the user actually tapped, not to a fixed chip that might not exist.
+  const triggerRef = useRef<HTMLButtonElement | null>(null)
   const panelRef = useRef<HTMLDialogElement>(null)
   const open = disclosure !== null
 
   const panelId = useId()
   const wasOpen = useRef(false)
 
-  // Focus moves into the panel on open and back to the chip on EVERY close path.
+  const openDisclosure = (trigger: HTMLButtonElement) => {
+    triggerRef.current = trigger
+    setDisclosure(disclosurePlacement(trigger.getBoundingClientRect(), coarse))
+  }
+
+  // Focus moves into the panel on open and back to the trigger on EVERY close path.
   useEffect(() => {
     if (open) panelRef.current?.focus()
-    else if (wasOpen.current) chipRef.current?.focus()
+    else if (wasOpen.current) triggerRef.current?.focus()
     wasOpen.current = open
   }, [open])
 
@@ -417,7 +391,7 @@ export function ChartLegend({
     const close = () => setDisclosure(null)
     const inside = (target: EventTarget | null): boolean =>
       target instanceof Node &&
-      (panelRef.current?.contains(target) === true || chipRef.current?.contains(target) === true)
+      (panelRef.current?.contains(target) === true || triggerRef.current?.contains(target) === true)
     const onPointerDown = (e: PointerEvent) => {
       if (inside(e.target)) return
       close()
@@ -425,23 +399,54 @@ export function ChartLegend({
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') close()
     }
-    // The panel is fixed to where the chip WAS — a scroll (any scroller, hence capture) or a
+    // The panel is fixed to where the trigger WAS — a scroll (any scroller, hence capture) or a
     // resize leaves it hanging off nothing. The panel's own scroll is not one.
     const onScroll = (e: Event) => {
       if (e.target instanceof Node && panelRef.current?.contains(e.target)) return
       close()
     }
-    document.addEventListener('pointerdown', onPointerDown)
+    // Capture phase, like the chart cursors' own outside-dismiss listeners (`useChartCursor.ts`,
+    // `useDiscreteCursor.ts`) — a bubble-phase listener never sees a pointerdown a descendant widget
+    // stopped from propagating, which would leave the disclosure stuck open under it.
+    document.addEventListener('pointerdown', onPointerDown, true)
     document.addEventListener('keydown', onKeyDown)
     window.addEventListener('scroll', onScroll, true)
     window.addEventListener('resize', close)
     return () => {
-      document.removeEventListener('pointerdown', onPointerDown)
+      document.removeEventListener('pointerdown', onPointerDown, true)
       document.removeEventListener('keydown', onKeyDown)
       window.removeEventListener('scroll', onScroll, true)
       window.removeEventListener('resize', close)
     }
   }, [open])
+
+  // The coarse sheet claims `aria-modal` (below), which is a claim that Tab cannot leave it — a
+  // native `<dialog open>` (no `showModal()`) does not enforce that on its own (B14). Wrap Tab at
+  // the panel's own first/last focusable rather than the fine popover, which is dismissed by an
+  // outside click/Escape just as easily and never claimed to be modal in the first place.
+  useEffect(() => {
+    if (!open || !coarse) return
+    const panel = panelRef.current
+    if (panel === null) return
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return
+      const focusable = panel.querySelectorAll<HTMLElement>(
+        'button, [tabindex]:not([tabindex="-1"])',
+      )
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+      if (first === undefined || last === undefined) return
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault()
+        last.focus()
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault()
+        first.focus()
+      }
+    }
+    panel.addEventListener('keydown', onKeyDown)
+    return () => panel.removeEventListener('keydown', onKeyDown)
+  }, [open, coarse])
 
   const handleEnter = (key: string) => onHighlight?.(key)
   const handleLeave = () => onHighlight?.(null)
@@ -454,48 +459,59 @@ export function ChartLegend({
 
   // The disclosure panel is a second copy of the same entries: it gets its own id namespace and
   // no `data-legend-key`, so a page query for the band's entries never finds the panel's twins.
-  const entryButton = (item: LegendEntry, inPanel = false): ReactNode => (
-    <button
-      key={item.key}
-      type="button"
-      data-basalt-hit
-      {...(!inPanel && { 'data-legend-key': item.key })}
-      // The note is the whole point for a series that is invisible in the plot, so it has to
-      // reach a screen reader too — an explicit aria-label would otherwise replace it.
-      aria-label={item.note ? `${item.label} — ${item.note}` : item.label}
-      {...(onToggle !== undefined && { 'aria-pressed': !hidden.has(item.key) })}
-      style={{
-        ...LEGEND_ITEM_BUTTON,
-        cursor: onToggle === undefined ? 'default' : 'pointer',
-        // Toggled-off wins over hover-dimming: a hidden series must read as hidden even while
-        // it is the one being hovered.
-        opacity: hidden.has(item.key)
-          ? 0.35
-          : highlighted === null || highlighted === item.key
-            ? 1
-            : 0.3,
-        textDecoration: hidden.has(item.key) ? 'line-through' : 'none',
-      }}
-      {...(onToggle !== undefined && { onClick: () => onToggle(item.key) })}
-      onMouseEnter={() => handleEnter(item.key)}
-      onMouseLeave={handleLeave}
-      onFocus={() => handleEnter(item.key)}
-      onBlur={handleLeave}
-    >
-      {!inPanel && mode === 'dots' ? (
-        <LegendDot item={item} />
-      ) : (
-        <>
-          <LegendSwatch item={item} idPrefix={inPanel ? `${idPrefix}disclosure-` : idPrefix} />
-          <span>{item.label}</span>
-          {item.note ? <span style={LEGEND_NOTE_STYLE}>{item.note}</span> : null}
-          {item.children?.map((child) => (
-            <LegendChild key={child.key} item={child} />
-          ))}
-        </>
-      )}
-    </button>
-  )
+  const entryButton = (item: LegendEntry, inPanel = false): ReactNode => {
+    // A dots-mode entry names nothing on its own face — its whole point is the color — so a tap
+    // opens the same All-N sheet the overflow chip does, rather than silently hiding a series the
+    // reader was trying to identify (R2C-8: "what is this?" used to toggle it off instead).
+    const isDotTrigger = !inPanel && mode === 'dots' && onToggle !== undefined
+    return (
+      <button
+        key={item.key}
+        type="button"
+        data-basalt-hit
+        {...(!inPanel && { 'data-legend-key': item.key })}
+        // The note is the whole point for a series that is invisible in the plot, so it has to
+        // reach a screen reader too — an explicit aria-label would otherwise replace it.
+        aria-label={item.note ? `${item.label} — ${item.note}` : item.label}
+        {...(isDotTrigger && { title: item.label, 'aria-haspopup': 'dialog' as const })}
+        {...(isDotTrigger
+          ? { 'aria-expanded': open, 'aria-controls': panelId }
+          : onToggle !== undefined && { 'aria-pressed': !hidden.has(item.key) })}
+        style={{
+          ...LEGEND_ITEM_BUTTON,
+          cursor: onToggle === undefined ? 'default' : 'pointer',
+          // Toggled-off wins over hover-dimming: a hidden series must read as hidden even while
+          // it is the one being hovered.
+          opacity: hidden.has(item.key)
+            ? 0.35
+            : highlighted === null || highlighted === item.key
+              ? 1
+              : 0.3,
+          textDecoration: hidden.has(item.key) ? 'line-through' : 'none',
+        }}
+        {...(isDotTrigger
+          ? { onClick: (e: MouseEvent<HTMLButtonElement>) => openDisclosure(e.currentTarget) }
+          : onToggle !== undefined && { onClick: () => onToggle(item.key) })}
+        onMouseEnter={() => handleEnter(item.key)}
+        onMouseLeave={handleLeave}
+        onFocus={() => handleEnter(item.key)}
+        onBlur={handleLeave}
+      >
+        {!inPanel && mode === 'dots' ? (
+          <LegendDot item={item} />
+        ) : (
+          <>
+            <LegendSwatch item={item} idPrefix={inPanel ? `${idPrefix}disclosure-` : idPrefix} />
+            <span>{item.label}</span>
+            {item.note ? <span style={LEGEND_NOTE_STYLE}>{item.note}</span> : null}
+            {item.children?.map((child) => (
+              <LegendChild key={child.key} item={child} />
+            ))}
+          </>
+        )}
+      </button>
+    )
+  }
 
   const nodes: ReactNode[] = []
   visible.forEach((item, i) => {
@@ -507,17 +523,12 @@ export function ChartLegend({
     nodes.push(
       <button
         key="legend-more"
-        ref={chipRef}
         type="button"
         data-basalt-hit
         aria-expanded={open}
         aria-haspopup="dialog"
         aria-controls={panelId}
-        onClick={(e) =>
-          setDisclosure(
-            open ? null : disclosurePlacement(e.currentTarget.getBoundingClientRect(), coarse),
-          )
-        }
+        onClick={(e) => (open ? setDisclosure(null) : openDisclosure(e.currentTarget))}
         style={{ ...LEGEND_ITEM_BUTTON, cursor: 'pointer', textDecoration: 'underline' }}
       >
         {`All ${entries.length}`}
@@ -544,7 +555,9 @@ export function ChartLegend({
                 style={{
                   position: 'fixed',
                   inset: 0,
-                  zIndex: 9998,
+                  // One below the panel it sits behind — still `VX.zIndexFloating`-derived, never a
+                  // second unrelated literal (B14).
+                  zIndex: VX.zIndexFloating - 1,
                   backgroundColor: alpha(VX.neutral, 0.35),
                 }}
               />

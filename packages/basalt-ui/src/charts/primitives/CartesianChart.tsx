@@ -510,7 +510,7 @@ type CartesianPlotProps<T> = Omit<
   | 'className'
   | 'style'
 > & {
-  plot: { width: number; height: number; hidden: ReadonlySet<string> }
+  plot: { width: number; height: number; hidden: ReadonlySet<string>; legendInHeader: boolean }
   highlighted: string | null
   marginOverride?: Partial<ChartMargin>
 }
@@ -717,6 +717,7 @@ function CartesianPlot<T>({
         containerClass,
         hasY2: y2 !== undefined,
         hasMarginRight: marginOverride?.right !== undefined,
+        hasHeaderLegend: plot.legendInHeader,
         visible,
         data,
         yScale,
@@ -728,6 +729,7 @@ function CartesianPlot<T>({
       containerClass,
       y2,
       marginOverride?.right,
+      plot.legendInHeader,
       visible,
       data,
       yScale,

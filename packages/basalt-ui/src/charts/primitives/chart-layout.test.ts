@@ -192,6 +192,31 @@ describe('legend', () => {
       expect(l.overflow).not.toBe(1)
     }
   })
+
+  test('R2C-8: chips win over dots whenever every entry fits one header row, even compact/short', () => {
+    // A generous header slot: a handful of short entries fit as CHIPS in one row even at compact
+    // width and inside a short card — dots is a fallback for when chips do NOT fit, not a blanket
+    // compact/short rule (the pre-fix bug: a Donut with 4 short entries got unlabelled dots anyway).
+    const compact = layout({ frameW: 300, slotW: 400, legendItems: entries(4, 'A') }).legend
+    expect(compact).toMatchObject({ mode: 'chips', where: 'header' })
+
+    const short = layout({
+      frameW: 600,
+      slotW: 400,
+      legendItems: entries(3, 'A'),
+      cardShort: true,
+    }).legend
+    expect(short).toMatchObject({ mode: 'chips', where: 'header' })
+  })
+
+  test('R2C-8: dots is still the fallback once chips genuinely do not fit', () => {
+    const narrow = layout({
+      frameW: 300,
+      slotW: 90,
+      legendItems: entries(4, 'A somewhat longer label'),
+    }).legend
+    expect(narrow).toMatchObject({ mode: 'dots', where: 'header' })
+  })
 })
 
 describe('ladder step 1: compact y number format', () => {

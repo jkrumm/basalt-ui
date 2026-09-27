@@ -51,14 +51,27 @@ export function useValidateProps(
     const messages = Array.isArray(result) ? result : [result]
     for (const raw of messages) {
       if (raw === null || raw === undefined) continue
-      const key = `${component} ${raw}`
-      if (reported.has(key)) continue
-      reported.add(key)
-      console.error(raw)
+      reportOnce(component, raw)
     }
     // The deps ARE the caller's contract: this hook cannot know what `check` closes over.
     // oxlint-disable-next-line react-hooks/exhaustive-deps -- the caller owns the dep list
   }, deps)
+}
+
+/**
+ * The same once-per-`(component, message)` dev diagnostic {@link useValidateProps} logs, for a
+ * caller that already owns the effect a check would otherwise race — a decision made synchronously
+ * inside a `useLayoutEffect` (e.g. `ChartFrame`'s header-slot claim, P2-9) has no business waiting a
+ * further render for a REACTIVE check on state that effect itself just set: that state update lags
+ * one commit behind the decision, and a passive-effect check racing it warns about instances that
+ * are about to win in the very next render.
+ */
+export function reportOnce(component: string, message: string): void {
+  if (!isDev()) return
+  const key = `${component} ${message}`
+  if (reported.has(key)) return
+  reported.add(key)
+  console.error(message)
 }
 
 /** Test seam. The once-per-message Set is module state, so a suite has to be able to clear it. */

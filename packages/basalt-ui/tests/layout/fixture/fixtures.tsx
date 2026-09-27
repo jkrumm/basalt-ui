@@ -366,6 +366,29 @@ function CardsFixture({ spec }: { spec: CardsSpec }): ReactElement {
           </ChartCard>
         </div>
       )}
+      {spec.oscillationScan?.bodyHeights.map((bodyHeight) => (
+        // theme-allow -- the wrapper width IS the fixture's payload (a container-class probe)
+        <div
+          key={bodyHeight}
+          data-testid={`card-osc-${bodyHeight}`}
+          style={{ width: spec.oscillationScan!.width }}
+        >
+          <ChartCard
+            title="Availability"
+            subtitle="Last 24 hours"
+            value="99.982%"
+            delta={0.4}
+            actions={
+              <ActionIcon variant="subtle" aria-label="Menu">
+                ⋯
+              </ActionIcon>
+            }
+          >
+            {/* theme-allow -- a fixed body: the oscillation-scan probe's own payload */}
+            <div style={{ height: bodyHeight }} />
+          </ChartCard>
+        </div>
+      ))}
     </>
   )
 }
