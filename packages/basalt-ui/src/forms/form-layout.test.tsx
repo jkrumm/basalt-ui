@@ -44,7 +44,7 @@ describe('the label-above swap is CSS at the row’s own ~600px width, never a J
   })
 
   test('below 600px of its OWN width, the same .grid collapses to one column (@container)', () => {
-    const query = decls.indexOf('@container basalt-form-row (max-width: 599.9px)')
+    const query = decls.indexOf('@container basalt-form (max-width: 599.9px)')
     expect(query).toBeGreaterThan(-1)
     const block = decls.slice(query, decls.indexOf('\n}', decls.indexOf('.grid {', query)))
     expect(block).toContain('grid-template-columns: minmax(0, 1fr)')

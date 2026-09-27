@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react'
-import { useCallback, useContext, useId, useLayoutEffect, useMemo, useState } from 'react'
+import { useCallback, useContext, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { BasaltProps } from '../../common/props'
 import {
@@ -230,10 +230,14 @@ export function ChartFrame({
     short: cardShort,
     claimLegendSlot,
     releaseLegendSlot,
+    legendSlotVersion,
   } = useContext(ChartCardContext)
   const frameId = useId()
   const [ownsSlot, setOwnsSlot] = useState(false)
   const [slotSeedW, setSlotSeedW] = useState(0)
+  // Mirrors `ownsSlot` synchronously so the retry effect below can read "do I currently own the
+  // slot" without waiting a render for the state to catch up — see the two effects' own doc.
+  const ownsSlotRef = useRef(false)
   const placement = legend === false ? 'bottom' : (legend.placement ?? 'bottom')
   const vertical = placement === 'left' || placement === 'right'
   // `Donut` sets `headerSlot: false` (P1-4) — it never wants the slot, so it must never CLAIM it
@@ -253,37 +257,64 @@ export function ChartFrame({
   // as a separate reactive check on `ownsSlot` state — that state takes one extra render to catch up
   // with the claim, and a passive effect reacting to the interim (stale) value warned about frames
   // that went on to win the claim one render later.
-  useLayoutEffect(() => {
-    if (legendSlot === null || !wantsHeaderSlot) {
-      setOwnsSlot(false)
-      setSlotSeedW(0)
-      return undefined
-    }
+  // One claim attempt, shared by the owner effect below (real identity changes) and the
+  // denied-frame retry effect further down (a sibling's release). Reads `legendVisible` at CALL
+  // time through the closure, not through a dependency array of its own effect, so the two callers
+  // stay free to key on whatever triggers each of them.
+  const tryClaim = useCallback((): boolean => {
+    if (legendSlot === null || !wantsHeaderSlot) return false
     const owns = claimLegendSlot(frameId)
+    ownsSlotRef.current = owns
     setOwnsSlot(owns)
     if (!owns) {
       setSlotSeedW(0)
       if (legendVisible) reportOnce('ChartFrame', legendSlotContention('ChartFrame'))
-      return undefined
+      return false
     }
     // Seeded synchronously (P2-8) so the very first commit already knows the slot's real width,
     // instead of assuming 0 until the ResizeObserver's first (asynchronous) callback — which is
     // what let a header legend paint once in the band before jumping to the header on every mount.
     setSlotSeedW(legendSlot.getBoundingClientRect().width)
     slotRef(legendSlot)
-    return () => {
-      releaseLegendSlot(frameId)
-      slotRef(null)
+    return true
+  }, [legendSlot, wantsHeaderSlot, legendVisible, frameId, claimLegendSlot, slotRef])
+
+  // Releases the slot only if THIS frame currently owns it, read live off `ownsSlotRef` at
+  // cleanup time rather than a snapshot closed over when the effect ran — so it correctly releases
+  // whichever effect (this one's own claim, or the retry effect's) most recently won it.
+  const releaseIfOwned = useCallback(() => {
+    if (!ownsSlotRef.current) return
+    ownsSlotRef.current = false
+    releaseLegendSlot(frameId)
+    slotRef(null)
+  }, [releaseLegendSlot, frameId, slotRef])
+
+  // The OWNER effect: claims/releases only on a real identity change (the slot itself, whether this
+  // frame even wants one, or a remount) — never on `legendSlotVersion`. A prior version keyed this
+  // effect on `legendSlotVersion` too, so the owner's own cleanup (which unconditionally released)
+  // bumped the version, which re-ran this very effect, which released again — an infinite
+  // release → bump → re-run loop that surfaced as "Maximum update depth exceeded" under StrictMode
+  // replay or a `legendVisible` flip. Only a DENIED frame reacts to the version now (below).
+  useLayoutEffect(() => {
+    if (legendSlot === null || !wantsHeaderSlot) {
+      setOwnsSlot(false)
+      setSlotSeedW(0)
+      return undefined
     }
-  }, [
-    legendSlot,
-    wantsHeaderSlot,
-    legendVisible,
-    frameId,
-    claimLegendSlot,
-    releaseLegendSlot,
-    slotRef,
-  ])
+    tryClaim()
+    return releaseIfOwned
+  }, [legendSlot, wantsHeaderSlot, tryClaim, releaseIfOwned])
+
+  // The DENIED-frame retry: fires only when the slot's ownership changes elsewhere
+  // (`legendSlotVersion` bumps on a release). A frame that already owns the slot short-circuits via
+  // `ownsSlotRef` — this effect never releases what it claims; the owner effect's `releaseIfOwned`
+  // cleanup (keyed on stable identity, not on this version) is the one place release happens, for
+  // whichever frame currently holds the slot.
+  useLayoutEffect(() => {
+    if (ownsSlotRef.current) return
+    tryClaim()
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
+  }, [legendSlotVersion])
   const viewportClass = useSizeClass()
   // No `BasaltProvider` (a charts-only consumer) means no viewport hint: the unmeasured first frame
   // resolves to the regular (desktop) class, not phone chrome.
@@ -351,7 +382,13 @@ export function ChartFrame({
   // a band. `slotSeedW` (P2-8) covers the gap before the ResizeObserver's own first callback.
   const slotW = legendSlot === null || !ownsSlot ? 0 : Math.max(slotMeasuredW, slotSeedW)
   const groups = legend !== false && legend.groups === true
-  const legendKey = legendItems.map((item) => `${item.key}\u0000${item.label}`).join('\u0001')
+  // Role and note both feed the resolver (`orderEntries`'s grouping, `legendEntryWidth`'s measured
+  // fit), so a change to either — a series moving `role`, a note appearing/disappearing — has to
+  // invalidate this memo exactly like a key or label change does; keying on key+label alone missed
+  // both and served a stale layout until something else happened to change first.
+  const legendKey = legendItems
+    .map((item) => `${item.key}\u0000${item.label}\u0000${item.role ?? ''}\u0000${item.note ?? ''}`)
+    .join('\u0001')
   const layout = useMemo(
     () =>
       resolveChartLayout({

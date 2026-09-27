@@ -14,7 +14,7 @@ import { baseTheme } from '../theme'
 import { pxRem } from '../tokens'
 import { SPACE_STEP } from '../tokens/palette'
 import { PageAside } from './page-aside'
-import { BasaltShell, PageBar } from './index'
+import { BasaltShell, PageBar, roomToDockServerFallback } from './index'
 import { toggleSidebar } from '../commands/shell-bridge'
 import type { BasaltAccountProps, SidebarBlock, SidebarSection } from './index'
 
@@ -239,6 +239,57 @@ function installViewport(width: number): void {
   }
   restoreMatchMedia = () => {
     window.matchMedia = original
+  }
+}
+
+/**
+ * A viewport that can MOVE, per-query — unlike `installMovableMatchMedia` in `page-aside.test.tsx`
+ * (which answers every `(min-width: …)` query identically), this resolves each query against a
+ * live width, so `useSizeClass`'s two DIFFERENT boundaries (medium/expanded) and the shell's own
+ * room-to-dock query can disagree — the medium-but-not-docked state the Escape hatch needs is
+ * exactly that disagreement (`sizeClass === 'medium'`, `docks` false because `docks` requires
+ * `'expanded'`). Fires a real `change` event per query on `setWidth`, so a live `useSyncExternalStore`
+ * subscription re-renders with no remount — the same idiom `installMovableMatchMedia` uses.
+ */
+function installMovableViewport(initialWidth: number): (width: number) => void {
+  const original = window.matchMedia
+  let width = initialWidth
+  const listeners = new Map<string, Set<(event: MediaQueryListEvent) => void>>()
+  const matchesFor = (query: string): boolean => {
+    const em = /\(min-width:\s*([\d.]+)em\)/.exec(query)?.[1]
+    return em !== undefined && Number(em) * 16 <= width
+  }
+  window.matchMedia = (query: string): MediaQueryList =>
+    ({
+      get matches() {
+        return matchesFor(query)
+      },
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: (_: string, listener: (event: MediaQueryListEvent) => void) => {
+        let set = listeners.get(query)
+        if (set === undefined) {
+          set = new Set()
+          listeners.set(query, set)
+        }
+        set.add(listener)
+      },
+      removeEventListener: (_: string, listener: (event: MediaQueryListEvent) => void) => {
+        listeners.get(query)?.delete(listener)
+      },
+      dispatchEvent: () => false,
+    }) as unknown as MediaQueryList
+  restoreMatchMedia = () => {
+    window.matchMedia = original
+  }
+  return (next: number) => {
+    width = next
+    for (const [query, set] of listeners) {
+      const event = { matches: matchesFor(query) } as MediaQueryListEvent
+      for (const listener of set) listener(event)
+    }
   }
 }
 
@@ -644,6 +695,188 @@ describe('BasaltShell region seams', () => {
     const source = readFileSync(join(import.meta.dir, 'index.tsx'), 'utf8')
     expect(source.match(/withBorder/g)).toHaveLength(1)
     expect(source).toContain('withBorder={aside.claimed}')
+  })
+})
+
+/**
+ * The aside overlay carries an `--app-shell-aside-width` inline var only while it renders as an
+ * OVERLAY (`asideOverlay`, `shell/index.tsx`) — docking sizes the region through the normal `width`
+ * prop instead. Used below as the DOM-observable proxy for "docks vs overlays", since the CSS
+ * module class name basalt applies alongside it is not stable in this test environment.
+ */
+function asideOverlayVar(container: HTMLElement): string | null {
+  const style = container.querySelector('.mantine-AppShell-aside')?.getAttribute('style') ?? ''
+  return style.includes('--app-shell-aside-width') ? 'overlay' : null
+}
+
+/**
+ * `roomToDockServerFallback` — the room-to-dock `min-width` query's SSR/no-`matchMedia` fallback
+ * (regression: used to be hardcoded `false`, so a `sizeClassHint="expanded"` route rendered a
+ * default-open aside "cannot dock" for one commit even on a desktop the server already knew was
+ * wide). Pinned as a direct unit test rather than through a rendered `BasaltShell`: deleting
+ * `window.matchMedia` to force the fallback path also breaks `MantineProvider` itself (it reads
+ * `matchMedia` in its own color-scheme effect), and the aside's actual claim/fold/portal machinery
+ * is entirely effect- and ref-driven, so neither a client render nor a `renderToString` pass can
+ * observe this one boolean through rendered markup — see the function's own doc for why it was
+ * extracted.
+ */
+describe('roomToDockServerFallback', () => {
+  test('an expanded hint means the server already believes there is room to dock', () => {
+    expect(roomToDockServerFallback('expanded')).toBe(true)
+  })
+
+  test('a compact or medium hint never assumes room to dock', () => {
+    expect(roomToDockServerFallback('compact')).toBe(false)
+    expect(roomToDockServerFallback('medium')).toBe(false)
+  })
+
+  test('no hint at all (undefined) never assumes room to dock', () => {
+    expect(roomToDockServerFallback(undefined)).toBe(false)
+  })
+})
+
+describe('BasaltShell aside overlay — Escape hatch', () => {
+  test('Escape folds an open overlay aside', () => {
+    installViewport(900) // medium size class: never docks, so an open aside always overlays
+    try {
+      render(
+        <MantineProvider>
+          <BasaltShell brand={BRAND} sections={ONE_SECTION}>
+            <PageAside title="Panel" defaultFolded={false}>
+              <div />
+            </PageAside>
+          </BasaltShell>
+        </MantineProvider>,
+      )
+      expect(screen.getByLabelText('Collapse panel')).not.toBeNull()
+
+      fireEvent.keyDown(window, { key: 'Escape' })
+
+      expect(screen.getByLabelText('Expand panel')).not.toBeNull()
+    } finally {
+      restoreMatchMedia?.()
+      restoreMatchMedia = null
+    }
+  })
+
+  /**
+   * Regression: `closeSignal` is monotonic SHARED state on `AsideProvider`, bumped once per Escape
+   * for the lifetime of the whole shell — never reset back to 0. A `PageAside` used to fold
+   * whenever `closeSignal !== 0`, so once ANY Escape had ever fired, every LATER-mounted
+   * `PageAside` (a route navigation swapping which one is claimed) read the stale already-bumped
+   * signal as "a close was just requested" and folded on its very first commit — even with
+   * `defaultFolded={false}` and nothing persisted. Baselining the signal at mount fixes it: only a
+   * change AFTER a given instance's own mount folds it.
+   */
+  test('Escape from a previous PageAside does not fold a later-mounted one on mount', () => {
+    installViewport(900) // medium size class: never docks, so an open aside always overlays
+    try {
+      const { rerender } = render(
+        <MantineProvider>
+          <BasaltShell brand={BRAND} sections={ONE_SECTION}>
+            <PageAside key="first" title="Panel" defaultFolded={false}>
+              <div />
+            </PageAside>
+          </BasaltShell>
+        </MantineProvider>,
+      )
+      expect(screen.getByLabelText('Collapse panel')).not.toBeNull()
+
+      fireEvent.keyDown(window, { key: 'Escape' })
+      expect(screen.getByLabelText('Expand panel')).not.toBeNull()
+
+      // A route change: the first aside unmounts (a different `key`, forcing a real remount, not
+      // a props update of the same instance) and a second one claims the region instead. The
+      // shell's `closeSignal` stays bumped from the Escape above.
+      rerender(
+        <MantineProvider>
+          <BasaltShell brand={BRAND} sections={ONE_SECTION}>
+            <PageAside key="second" title="Other panel" defaultFolded={false}>
+              <div />
+            </PageAside>
+          </BasaltShell>
+        </MantineProvider>,
+      )
+
+      // Respects its OWN defaultFolded={false} rather than folding because of the earlier Escape.
+      expect(screen.getByLabelText('Collapse panel')).not.toBeNull()
+    } finally {
+      restoreMatchMedia?.()
+      restoreMatchMedia = null
+    }
+  })
+
+  test('Escape is a no-op while the aside is docked', () => {
+    installViewport(1600) // expanded, well past the docking floor
+    try {
+      const { container } = render(
+        <MantineProvider>
+          <BasaltShell brand={BRAND} sections={ONE_SECTION}>
+            <PageAside title="Panel" defaultFolded={false}>
+              <div />
+            </PageAside>
+          </BasaltShell>
+        </MantineProvider>,
+      )
+      expect(asideOverlayVar(container)).toBeNull()
+      expect(screen.getByLabelText('Collapse panel')).not.toBeNull()
+
+      fireEvent.keyDown(window, { key: 'Escape' })
+
+      // Still docked, still open — Escape only wires up while `asideOverlay` is true.
+      expect(screen.getByLabelText('Collapse panel')).not.toBeNull()
+    } finally {
+      restoreMatchMedia?.()
+      restoreMatchMedia = null
+    }
+  })
+
+  /**
+   * Regression: `closeSignalBaseline` captured the `closeSignal` this `PageAside` instance MOUNTED
+   * with, once, and never advanced — so once one Escape had folded it, the baseline stayed pinned
+   * at the pre-Escape value forever. A `portalled` false→true transition (the aside leaving the
+   * shell below `sm` and rejoining above it — same instance, no remount) re-runs the effect with
+   * `closeSignal` still sitting on that same already-handled value, which the frozen baseline read
+   * as "a NEW close was just requested" and folded a panel the user had since reopened.
+   */
+  test('Escape → expand → a portalled false→true transition does not re-fold on the stale signal', () => {
+    const setWidth = installMovableViewport(900) // medium: portalled, and never docks
+    try {
+      render(
+        <MantineProvider>
+          <BasaltShell brand={BRAND} sections={ONE_SECTION}>
+            <PageAside title="Panel" defaultFolded={false}>
+              <div />
+            </PageAside>
+          </BasaltShell>
+        </MantineProvider>,
+      )
+      expect(screen.getByLabelText('Collapse panel')).not.toBeNull()
+
+      fireEvent.keyDown(window, { key: 'Escape' })
+      expect(screen.getByLabelText('Expand panel')).not.toBeNull()
+
+      fireEvent.click(screen.getByLabelText('Expand panel'))
+      expect(screen.getByLabelText('Collapse panel')).not.toBeNull()
+
+      // Below `sm`: the aside leaves the shell (`portalled` → false) — the FoldButton renders only
+      // while portalled, so it disappears entirely; nothing here folds it.
+      act(() => {
+        setWidth(600)
+      })
+      expect(screen.queryByLabelText('Collapse panel')).toBeNull()
+      expect(screen.queryByLabelText('Expand panel')).toBeNull()
+
+      // Back above `sm`: the aside rejoins the shell (`portalled` → true again) — `closeSignal`
+      // never changed across this whole round trip, so nothing here should read it as a new close.
+      act(() => {
+        setWidth(900)
+      })
+      expect(screen.getByLabelText('Collapse panel')).not.toBeNull()
+    } finally {
+      restoreMatchMedia?.()
+      restoreMatchMedia = null
+    }
   })
 })
 

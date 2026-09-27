@@ -114,6 +114,16 @@ export type BasaltVirtualListProps<T> = BasaltProps &
     ref?: Ref<BasaltVirtualListHandle>
   }
 
+/** `estimateSize` sets every row's rendered height — there is no per-row measurement in this
+ * component — so a value under the coarse floor understates the touch target for every row. */
+function shortRowHeightMessage(estimateSize: number): string {
+  return (
+    `${BASALT_PREFIX} BasaltVirtualList: "estimateSize" is ${estimateSize}px under a coarse ` +
+    '(touch) pointer — every row renders at this height, below the `--vx-hit` floor (44px, WCAG ' +
+    '2.5.5). Raise "estimateSize" to at least 44, or pad the row content so it clears the floor.'
+  )
+}
+
 /**
  * Imperative escape hatch for {@link BasaltVirtualList} — the virtualizer's own `scrollToIndex` /
  * `scrollToOffset` / `scrollToEnd` were otherwise unreachable, since the component owns the
@@ -126,16 +136,6 @@ export type BasaltVirtualListProps<T> = BasaltProps &
  * <BasaltVirtualList ref={listRef} items={items} height={400} renderItem={renderRow} getItemKey={(i) => i.id} />
  * listRef.current?.scrollToIndex(42, { align: 'center' })
  */
-/** `estimateSize` sets every row's rendered height — there is no per-row measurement in this
- * component — so a value under the coarse floor understates the touch target for every row. */
-function shortRowHeightMessage(estimateSize: number): string {
-  return (
-    `${BASALT_PREFIX} BasaltVirtualList: "estimateSize" is ${estimateSize}px under a coarse ` +
-    '(touch) pointer — every row renders at this height, below the `--vx-hit` floor (44px, WCAG ' +
-    '2.5.5). Raise "estimateSize" to at least 44, or pad the row content so it clears the floor.'
-  )
-}
-
 export type BasaltVirtualListHandle = {
   /** Scrolls so the item at `index` is in view. */
   scrollToIndex: (index: number, opts?: ScrollToOptions) => void
@@ -213,13 +213,20 @@ export function BasaltVirtualList<T>(props: BasaltVirtualListProps<T>) {
   // A coarse pointer only — a mouse user's row height is a layout choice, not an accessibility
   // floor. `estimateSize` sets every row's actual rendered height (this component never measures
   // one), so a value under the floor is not a false positive to catch later.
+  //
+  // Reads `props.estimateSize`, not the destructured `estimateSize` above: the shipped DEFAULT
+  // (40) is itself under `HIT_COARSE` (44), so warning off the destructured value fired on every
+  // coarse-pointer mount that never named `estimateSize` at all. Only a caller's OWN too-short
+  // value is a defect to report.
   useValidateProps(
     'BasaltVirtualList',
     () =>
-      readMediaQuery('(pointer: coarse)', false) && estimateSize < HIT_COARSE
-        ? shortRowHeightMessage(estimateSize)
+      props.estimateSize !== undefined &&
+      props.estimateSize < HIT_COARSE &&
+      readMediaQuery('(pointer: coarse)', false)
+        ? shortRowHeightMessage(props.estimateSize)
         : null,
-    [estimateSize],
+    [props.estimateSize],
   )
 
   const parentRef = useRef<HTMLDivElement>(null)

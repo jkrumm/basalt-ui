@@ -10,6 +10,7 @@ import { classifyDomain } from '../cursor/resolve'
 import type { CursorResolution } from '../cursor/resolve'
 import { useChartCursor } from '../hooks/useChartCursor'
 import { autoMargin, probeAxisLabels } from '../layout/auto-margin'
+import type { AutoMarginInput } from '../layout/auto-margin'
 import { END_LABEL_GAP, planEndLabels } from '../layout/end-labels'
 import { logTickValues, niceLogDomain } from '../layout/log-ticks'
 import { deriveLegend, deriveTooltipRows } from '../series'
@@ -17,14 +18,14 @@ import type { ChartLegendConfig, ChartSeries } from '../series'
 import { padAutoLower, padAutoUpper } from '../utils/domain'
 import { fmtAxisDate } from '../utils/format'
 import { rotatedXLabelPx, smartTicks, smartTicksEvery, xLabelPxFor } from '../utils/ticks'
-import { AxisBottomDate, AxisLeftNumeric, AxisRightNumeric } from './Axes'
+import { AxisBottomDate, AxisLeftNumeric, AxisRightNumeric, TICK_FONT_FAMILY } from './Axes'
 import { ChartFrame, resolveLegend } from './ChartFrame'
 import type { ResponsiveChartHeight } from './ChartFrame'
 import {
   compactNumber,
-  INSIDE_Y_FLOOR,
   isTightClass,
   planXLabels,
+  resolveMarginFloor,
   resolveYPlacement,
   shouldCompactYLabels,
   yTickCount,
@@ -404,6 +405,49 @@ function buildYScale<T>(
 }
 
 /**
+ * `tickLabelPx`'s resolver, split out of a two-deep ternary: a 45° label projects wider than its
+ * flat glyph box, so it measures through {@link rotatedXLabelPx} instead of the flat/wrapped
+ * numbers every other rotation uses; a wrapped flat label (`wrapWidth` set) uses ITS width, an
+ * unwrapped one the plain flat width. `rotate === 90` falls through to the flat/wrapped branch
+ * unchanged — `wrapWidth` is only ever set for `rotate === 0` (see its own definition), so a 90°
+ * axis always resolves to `flatLabelPx` here, matching the pre-split behaviour exactly.
+ */
+function resolveTickLabelPx(input: {
+  rotate: 0 | 45 | 90
+  wrapWidth: number | undefined
+  xLabels: string[]
+  axisFont: number
+  flatLabelPx: number
+  wrappedLabelPx: number
+}): number {
+  const { rotate, wrapWidth, xLabels, axisFont, flatLabelPx, wrappedLabelPx } = input
+  if (rotate === 45) return rotatedXLabelPx(xLabels, axisFont)
+  return wrapWidth === undefined ? flatLabelPx : wrappedLabelPx
+}
+
+/**
+ * `baseMargin`'s resolver, split out of the same two-deep ternary: an unrotated, unwrapped axis
+ * keeps the already-measured flat margin; wrapping re-measures for the extra line(s)
+ * (`bottomLines`); a 45° rotation reuses its own pre-measured margin ({@link rotated45Margin}); a
+ * 90° one measures fresh (no pre-measured twin exists for it, unlike 45°).
+ */
+function resolveBaseMargin(input: {
+  rotate: 0 | 45 | 90
+  wrapWidth: number | undefined
+  flatMargin: ChartMargin
+  rotated45Margin: ChartMargin
+  marginInput: AutoMarginInput
+  xPlanLines: number
+}): ChartMargin {
+  const { rotate, wrapWidth, flatMargin, rotated45Margin, marginInput, xPlanLines } = input
+  if (rotate === 45) return rotated45Margin
+  if (rotate === 90) return autoMargin({ ...marginInput, rotate })
+  return wrapWidth === undefined
+    ? flatMargin
+    : autoMargin({ ...marginInput, bottomLines: xPlanLines })
+}
+
+/**
  * The cartesian chart primitive — the rung that was missing between `ChartFrame` and raw visx
  * (`docs/CHARTS-SPEC.md` §2).
  *
@@ -637,7 +681,7 @@ function CartesianPlot<T>({
       fontPx: tier.axisFont,
       // An inside-placed y label paints IN the plot, so the left gutter it used to reserve
       // (the phone tier's own margin floor) is dead space — only the inside-label floor applies.
-      floor: yPlacement === 'outside' ? tier.margin : { ...tier.margin, left: INSIDE_Y_FLOOR },
+      floor: resolveMarginFloor(yPlacement, tier.margin),
       anchorTerminals: tight,
       ...(marginOverride !== undefined && { override: marginOverride }),
     }),
@@ -675,22 +719,25 @@ function CartesianPlot<T>({
   const rotate = xLabelRotate ?? (categorical ? xPlan.rotate : 0)
   const wrapWidth = rotate === 0 && xPlan.wrap ? xPlan.wrapPx : undefined
   // A 90° label is one line box wide, so the constant floor governs it; a 45° one projects wider.
-  const tickLabelPx =
-    rotate === 45
-      ? rotatedXLabelPx(xLabels, tier.axisFont)
-      : wrapWidth === undefined
-        ? xLabelPx
-        : xPlan.labelPx
+  const tickLabelPx = resolveTickLabelPx({
+    rotate,
+    wrapWidth,
+    xLabels,
+    axisFont: tier.axisFont,
+    flatLabelPx: xLabelPx,
+    wrappedLabelPx: xPlan.labelPx,
+  })
 
   const baseMargin = useMemo(
     () =>
-      rotate === 0
-        ? wrapWidth === undefined
-          ? flatMargin
-          : autoMargin({ ...marginInput, bottomLines: xPlan.lines })
-        : rotate === 45
-          ? rotated45Margin
-          : autoMargin({ ...marginInput, rotate }),
+      resolveBaseMargin({
+        rotate,
+        wrapWidth,
+        flatMargin,
+        rotated45Margin,
+        marginInput,
+        xPlanLines: xPlan.lines,
+      }),
     [flatMargin, rotated45Margin, marginInput, rotate, wrapWidth, xPlan.lines],
   )
 
@@ -937,7 +984,7 @@ function CartesianPlot<T>({
               y={labelY}
               dy="0.35em"
               fill={s.color}
-              fontFamily="var(--basalt-font-mono)"
+              fontFamily={TICK_FONT_FAMILY}
               fontSize={tier.axisFont}
               opacity={
                 highlighted === null || s.key === highlighted || s.parent === highlighted ? 1 : 0.25

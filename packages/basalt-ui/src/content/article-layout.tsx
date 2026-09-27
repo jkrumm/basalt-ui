@@ -169,11 +169,10 @@ export function ArticleLayout({
 
       {toc &&
         !showTocRail && (
-          // Positioned in DOM AFTER `.content`, mirroring `.tocRail` above: CSS Grid's auto-placement
-          // cursor (both are `grid-column: 1`, no explicit row) seats this in the SAME row as
-          // `.content` only if it follows it in source order — placed BEFORE `.content` it lands in
-          // its own short row instead, and `position: sticky` has no room to travel in a row exactly
-          // as tall as the trigger button itself.
+          // `.tocTrigger`'s `grid-row: 2` (article-layout.module.css) is EXPLICIT, matching
+          // `.content`'s own row — not left to CSS Grid's auto-placement, which used to land this
+          // in its own row below the content instead of at its top (both are `grid-column: 1`, and
+          // the auto-placement cursor moves past row 2 once `.content` claims it).
           <Popover
             opened={tocOpen}
             onChange={setTocOpen}

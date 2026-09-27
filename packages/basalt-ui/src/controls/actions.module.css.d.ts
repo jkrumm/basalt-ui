@@ -9,5 +9,6 @@ declare const classes: {
   readonly customSlot: string
   readonly kebabIcon: string
   readonly chevronIcon: string
+  readonly joinBox: string
 }
 export default classes

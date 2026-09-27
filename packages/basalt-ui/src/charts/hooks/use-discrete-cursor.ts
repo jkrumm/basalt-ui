@@ -1,4 +1,4 @@
-import { useCallback, useId, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import type {
   KeyboardEventHandler,
   PointerEvent as ReactPointerEvent,
@@ -96,6 +96,42 @@ export function useDiscreteCursor<T>({
   const columnsRef = useRef(columns)
   columnsRef.current = columns
 
+  // `pointermove`/`pointerenter` flood far faster than one `setActive` is worth on a fast scrub
+  // across many targets — coalesced to one commit per animation frame, the same treatment
+  // `useChartCursor`'s own hover path gives its (costlier) nearest-point search. Cancelled on
+  // unmount and in `clear()` — which `onPointerLeave`/`onPointerCancel` below also route through —
+  // so a frame already in flight cannot resurrect a hover the clear just dismissed.
+  const moveFrameRef = useRef<number | null>(null)
+  const pendingActiveRef = useRef<ActiveState | null>(null)
+  useEffect(
+    () => () => {
+      if (moveFrameRef.current !== null) cancelAnimationFrame(moveFrameRef.current)
+    },
+    [],
+  )
+  const scheduleActive = useCallback((next: ActiveState) => {
+    pendingActiveRef.current = next
+    if (moveFrameRef.current !== null) return
+    moveFrameRef.current = requestAnimationFrame(() => {
+      moveFrameRef.current = null
+      setActive(pendingActiveRef.current)
+    })
+  }, [])
+
+  // Cancels a hover frame already in flight and clears what it was about to commit — called by
+  // every SYNCHRONOUS writer of `active` (a touch press, a keyboard step, `clear()` itself) before
+  // it writes. Without this, a `pointermove` scheduled a tick earlier (coalesced onto
+  // `moveFrameRef`/`pendingActiveRef`, per `scheduleActive` above) is still in flight when one of
+  // those writes lands, and the frame fires a moment later and overwrites it right back with the
+  // stale hover target — the keyboard/touch target "reverts" to whatever was last hovered.
+  const cancelPendingFrame = useCallback(() => {
+    if (moveFrameRef.current !== null) {
+      cancelAnimationFrame(moveFrameRef.current)
+      moveFrameRef.current = null
+    }
+    pendingActiveRef.current = null
+  }, [])
+
   // The provisional-press commit/revert machine (`docs/CHARTS-SPEC.md` §4) — shared with
   // `useChartCursor`. The committed value IS `active` whenever `pinned` is true — there is no
   // separate ref to keep in sync, `pinnedRef`/`activeRef` above already mirror both.
@@ -108,10 +144,11 @@ export function useDiscreteCursor<T>({
   })
 
   const clear = useCallback(() => {
+    cancelPendingFrame()
     touchPin.reset()
     setActive(null)
     setPinned(false)
-  }, [touchPin])
+  }, [touchPin, cancelPendingFrame])
 
   // Coarse-pointer pin dismissal that can't be expressed as a per-target handler: a tap OUTSIDE
   // the host, or Escape, from anywhere on the page. A tap landing back INSIDE the host is handled
@@ -148,7 +185,7 @@ export function useDiscreteCursor<T>({
   const pointerProps = (t: T): ReturnType<UseDiscreteCursorResult<T>['pointerProps']> => {
     const key = getKeyRef.current(t)
     const showAt = (event: ReactPointerEvent<Element>): void => {
-      setActive({ key, anchor: { x: event.clientX, y: event.clientY } })
+      scheduleActive({ key, anchor: { x: event.clientX, y: event.clientY } })
     }
     // Shared by `onPointerLeave` and `onPointerCancel`: a still-UNCOMMITTED press ending here is the
     // browser taking the gesture (a scroll) — `touchPin.cancel` restores whatever was COMMITTED
@@ -182,6 +219,9 @@ export function useDiscreteCursor<T>({
       onPointerDown: (event) => {
         if (event.pointerType === 'mouse') return
         touchPin.begin(event.pointerId)
+        // A hover frame scheduled just before this press (e.g. a hybrid touch+mouse device) must
+        // not be allowed to land after this — see `cancelPendingFrame`'s own doc.
+        cancelPendingFrame()
         const rect = hostElRef.current?.getBoundingClientRect()
         setActive({
           key,
@@ -201,16 +241,21 @@ export function useDiscreteCursor<T>({
         setPinned(true)
       },
       // A still-uncommitted press ending here is the browser taking the gesture (a scroll); clear it
-      // regardless of `pinned`. Otherwise keep the fine-pointer/pinned guard.
+      // regardless of `pinned`. Otherwise keep the fine-pointer/pinned guard. Routes through the
+      // same `clear()` the outside-tap/Escape dismissal uses (mirrors `useChartCursor`'s own
+      // `onPointerLeave`) rather than a bare `setActive(null)` — a `pointermove` scheduled just
+      // before this event fires is still in flight (coalesced onto `moveFrameRef`/
+      // `pendingActiveRef`), and only `clear()` cancels it. A bare `setActive(null)` left that frame
+      // free to land a tick later and resurrect the tooltip this leave/cancel was meant to dismiss.
       onPointerLeave: (event) => {
         if (cancelIfUncommitted(event)) return
         if (event.pointerType !== 'mouse' || pinned) return
-        setActive(null)
+        clear()
       },
       onPointerCancel: (event) => {
         if (cancelIfUncommitted(event)) return
         if (event.pointerType !== 'mouse' || pinned) return
-        setActive(null)
+        clear()
       },
     }
   }
@@ -255,6 +300,9 @@ export function useDiscreteCursor<T>({
       rect === undefined
         ? { x: 0, y: 0 }
         : { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }
+    // A hover frame scheduled just before this keypress must not be allowed to land after this —
+    // see `cancelPendingFrame`'s own doc.
+    cancelPendingFrame()
     setActive({ key: getKeyRef.current(next), anchor })
   }
 

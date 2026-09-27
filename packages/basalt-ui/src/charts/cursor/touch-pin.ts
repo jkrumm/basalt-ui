@@ -3,7 +3,7 @@
  * `useChartCursor`/`useDiscreteCursor`/`ChartLegend`'s disclosure cannot drift apart on the same
  * contract (round 2's carried-forward gap: each had its own hand-rolled copy).
  */
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 
 /**
  * Outside-tap / Escape / scroll (optionally resize) dismissal for a pinned/open floating element.
@@ -89,6 +89,10 @@ export function useTouchPin<V>({
 }): TouchPin {
   const pressRef = useRef<number | null>(null)
   const backupRef = useRef<V | undefined>(undefined)
+  // Whether `backupRef` holds a real snapshot — `backupRef.current !== undefined` used to stand in
+  // for this, which silently dropped a genuinely committed `undefined` (a caller's `V` can legally
+  // include it): `cancel` would restore nothing at all instead of restoring "nothing was pinned".
+  const hasBackupRef = useRef(false)
   const getCommittedRef = useRef(getCommitted)
   getCommittedRef.current = getCommitted
   const setCommittedRef = useRef(setCommitted)
@@ -96,6 +100,7 @@ export function useTouchPin<V>({
 
   const begin = useCallback((pointerId: number) => {
     backupRef.current = getCommittedRef.current()
+    hasBackupRef.current = true
     pressRef.current = pointerId
   }, [])
 
@@ -103,6 +108,7 @@ export function useTouchPin<V>({
     if (pressRef.current !== pointerId) return false
     pressRef.current = null
     backupRef.current = undefined
+    hasBackupRef.current = false
     return true
   }, [])
 
@@ -110,15 +116,23 @@ export function useTouchPin<V>({
     if (pressRef.current !== pointerId) return false
     pressRef.current = null
     const backup = backupRef.current
+    const hasBackup = hasBackupRef.current
     backupRef.current = undefined
-    if (backup !== undefined) setCommittedRef.current(backup)
+    hasBackupRef.current = false
+    if (hasBackup) setCommittedRef.current(backup as V)
     return true
   }, [])
 
   const reset = useCallback(() => {
     pressRef.current = null
     backupRef.current = undefined
+    hasBackupRef.current = false
   }, [])
 
-  return { begin, commit, cancel, reset }
+  // Stable identity: `begin`/`commit`/`cancel`/`reset` are themselves already stable (empty-dep
+  // `useCallback`s), but the returned OBJECT wrapping them was a fresh literal every render — a
+  // consumer's own effect depending on the whole `TouchPin` (or a `useDismissOnOutside` closing
+  // over one of these) would re-subscribe on every render for no reason. Memoizing on the four
+  // (stable) functions costs nothing and makes the wrapper's identity match theirs.
+  return useMemo(() => ({ begin, commit, cancel, reset }), [begin, commit, cancel, reset])
 }

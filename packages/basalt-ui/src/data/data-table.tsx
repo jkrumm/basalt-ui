@@ -907,7 +907,10 @@ function getPinnedCellStyle<T>(
 /** The column id TanStack will resolve internally for this raw def — explicit `id`, else the
  * accessor key string. Mirrors the resolution `facetColumns` already relies on above. */
 function columnDefId<T>(column: ColumnDef<T, unknown>): string | undefined {
-  return column.id ?? (column as { accessorKey?: string }).accessorKey
+  if (column.id !== undefined) return column.id
+  return 'accessorKey' in column && typeof column.accessorKey === 'string'
+    ? column.accessorKey
+    : undefined
 }
 
 /**
@@ -941,21 +944,29 @@ const EMPTY_FOLD_SET: ReadonlySet<string> = new Set()
 
 /**
  * Pure decision: fold columns off the FRONT of `order` (already fold-first sorted) until the
- * still-unfolded ones — plus the disclosure toggle's own width, once anything is folded — fit
- * `room`. A candidate with no measured width yet (never rendered) is skipped rather than folded
- * blind, since folding it would remove the one place its width could ever be read from.
+ * still-unfolded ones — plus `overhead` (the columns excluded from candidacy altogether — pinned,
+ * or `enableHiding: false` — which occupy room but can never fold) and the disclosure toggle's own
+ * width, once anything is folded — fit `room`. A candidate with no measured width yet (never
+ * rendered) is skipped rather than folded blind, since folding it would remove the one place its
+ * width could ever be read from.
  */
-function planColumnFold(input: {
+export function planColumnFold(input: {
   room: number
   toggleWidth: number
+  overhead: number
   order: readonly string[]
   widths: ReadonlyMap<string, number>
 }): ReadonlySet<string> {
-  const { room, toggleWidth, order, widths } = input
+  const { room, toggleWidth, overhead, order, widths } = input
   const known = order.filter((id) => widths.has(id))
-  let unfolded = known.reduce((sum, id) => sum + (widths.get(id) ?? 0), 0)
+  let unfolded = overhead + known.reduce((sum, id) => sum + (widths.get(id) ?? 0), 0)
   const folded = new Set<string>()
   for (const id of known) {
+    // Never fold the last remaining data column — a table with every column folded has no row
+    // identifier left to read at all, which is worse than the horizontal scroll this exists to
+    // avoid. With no explicit `meta.priority` this is `order`'s LAST id, which `foldOrder`'s own
+    // doc pins as the FIRST declared column (the last-declared one folds first).
+    if (folded.size >= known.length - 1) break
     const withToggle = unfolded + (folded.size > 0 ? toggleWidth : 0)
     if (withToggle <= room) break
     folded.add(id)
@@ -971,15 +982,27 @@ function planColumnFold(input: {
  * visible, caches it, and decides analytically (`planColumnFold`). `useMeasuredWidths` owns the
  * cache and the wrapper-vs-table observer that `controls/actions.tsx`'s fold shares.
  */
-function useColumnFold(input: { active: boolean; order: readonly string[] }): {
+function useColumnFold(input: {
+  active: boolean
+  order: readonly string[]
+  /**
+   * Columns excluded from fold candidacy altogether (pinned, or `enableHiding: false`) — they are
+   * never in `order`, but they still occupy room, and their measured widths (carried in the same
+   * `[data-basalt-fold-id]` sweep as every eligible column's) become fixed overhead against the
+   * fold baseline. See `planColumnFold`'s `overhead` param.
+   */
+  fixedIds: readonly string[]
+}): {
   wrapperRef: RefObject<HTMLDivElement | null>
   folded: ReadonlySet<string>
 } {
-  const { active, order } = input
+  const { active, order, fixedIds } = input
   const wrapperRef = useRef<HTMLDivElement>(null)
   const [folded, setFolded] = useState<ReadonlySet<string>>(EMPTY_FOLD_SET)
   const orderRef = useRef(order)
   orderRef.current = order
+  const fixedIdsRef = useRef(fixedIds)
+  fixedIdsRef.current = fixedIds
   useLayoutEffect(() => {
     if (!active || order.length === 0) {
       setFolded((current) => (current.size === 0 ? current : EMPTY_FOLD_SET))
@@ -988,7 +1011,7 @@ function useColumnFold(input: { active: boolean; order: readonly string[] }): {
 
   useMeasuredWidths({
     resolveRoot: () => wrapperRef.current,
-    signature: order.join('|'),
+    signature: `${order.join('|')}::${fixedIds.join('|')}`,
     enabled: active && order.length > 0,
     // The table too, not only the wrapper: a re-measured column set moves its min-content width
     // while the wrapper's own box never changes.
@@ -1005,11 +1028,13 @@ function useColumnFold(input: { active: boolean; order: readonly string[] }): {
       // `useMeasuredContainment` above runs against the aside animating in from 0.
       if (room === 0) return
       const widths = new Map([...boxes.current].map(([id, box]) => [id, box.width]))
+      const overhead = fixedIdsRef.current.reduce((sum, id) => sum + (widths.get(id) ?? 0), 0)
       const next = planColumnFold({
         room,
         // The disclosure toggle is a fixed icon-button cell matched to the coarse hit floor, so it
         // reads as one more `--vx-hit` control rather than a narrower afterthought.
         toggleWidth: HIT_COARSE,
+        overhead,
         order: orderRef.current,
         widths,
       })
@@ -1430,7 +1455,7 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
     if (!facets || facets.length === 0) return columns
     const facetById = new Map(facets.map((facet) => [facet.columnId, facet]))
     return columns.map((column) => {
-      const id = column.id ?? (column as { accessorKey?: string }).accessorKey
+      const id = columnDefId(column)
       const facet = id === undefined ? undefined : facetById.get(id)
       if (!facet) return column
       const filterFn: FilterFn<T> = facet.multiple
@@ -1496,9 +1521,28 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
 
   // The fold order is computed off the caller's OWN `columns` — never `tableColumns` — so the
   // selection checkbox (prepended below) is never a fold candidate; see `foldOrder`'s docblock for
-  // the declared-order default and the explicit-priority rule.
-  const columnFoldOrder = useMemo(() => foldOrder(columns), [columns])
-  const columnFold = useColumnFold({ active: foldEligible, order: columnFoldOrder })
+  // the declared-order default and the explicit-priority rule. `enableHiding: false` and a PINNED
+  // column are excluded outright, not merely de-prioritized — both are the caller stating this
+  // column must stay visible, the same declaration a fold candidate has no way to override.
+  const { columnFoldOrder, columnFoldFixedIds } = useMemo(() => {
+    const pinnedIds = new Set([...(columnPinning.left ?? []), ...(columnPinning.right ?? [])])
+    const excluded = new Set(
+      columns.flatMap((column) => {
+        const id = columnDefId(column)
+        if (id === undefined) return []
+        return column.enableHiding === false || pinnedIds.has(id) ? [id] : []
+      }),
+    )
+    return {
+      columnFoldOrder: foldOrder(columns).filter((id) => !excluded.has(id)),
+      columnFoldFixedIds: [...excluded],
+    }
+  }, [columns, columnPinning])
+  const columnFold = useColumnFold({
+    active: foldEligible,
+    order: columnFoldOrder,
+    fixedIds: columnFoldFixedIds,
+  })
   const columnVisibility: VisibilityState = useMemo(
     () => Object.fromEntries([...columnFold.folded].map((id) => [id, false])),
     [columnFold.folded],
@@ -1514,14 +1558,43 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
     })
   }, [])
   // `row.id` defaults to the row's index in `data` (no `getRowId` passed) — stable across a
-  // client-side sort/filter/pagination (they reorder or subset the SAME core rows), but a NEW
-  // `data` reference (a manual-pagination page turn, a server refetch) can seat an entirely
-  // different record at an id this set already holds, silently pre-expanding it. Clearing on
-  // every `data` change is conservative rather than trying to tell "same records reordered" apart
-  // from "different records at the same ids".
+  // client-side sort/filter/pagination (they reorder or subset the SAME core rows). PRUNED rather
+  // than cleared on every `data` change: a non-memoized `data` prop (an inline `.map()`, an
+  // unstable query result) hands a brand-new array of the SAME rows on every parent re-render, and
+  // clearing on that reference alone collapsed every open disclosure the instant anything upstream
+  // re-rendered.
+  //
+  // Pruning by ID ALONE is only safe with `getRowId` — a caller-declared identity that genuinely
+  // survives a page turn or a refetch, so an id no longer present (a manual-pagination page turn, a
+  // delete) still has to go, or a differently-shaped record seated at a reused id would silently
+  // read as pre-expanded. Without `getRowId` the id IS the array index, and an index survives a
+  // refetch trivially — it is still "0", "1", … even when every object behind it is now a
+  // completely different record. Keeping an expanded index across THAT would silently attach the
+  // old disclosure to a stranger's row. So the index-id lane instead keeps a `prevData` snapshot and
+  // asks the narrower, correct question: is the object AT this index still the same reference as
+  // last time? A non-memoized array of the SAME rows answers yes at every index (the case above);
+  // a page turn or a refetch answers no.
+  const prevDataRef = useRef(data)
   useEffect(() => {
-    setExpandedFoldRows((current) => (current.size === 0 ? current : EMPTY_FOLD_SET))
-  }, [data])
+    const prevData = prevDataRef.current
+    prevDataRef.current = data
+    setExpandedFoldRows((current) => {
+      if (current.size === 0) return current
+      let next: ReadonlySet<string>
+      if (getRowId === undefined) {
+        next = new Set(
+          [...current].filter((id) => {
+            const index = Number(id)
+            return data[index] !== undefined && data[index] === prevData[index]
+          }),
+        )
+      } else {
+        const liveIds = new Set(data.map((row, index) => getRowId(row, index)))
+        next = new Set([...current].filter((id) => liveIds.has(id)))
+      }
+      return next.size === current.size ? current : next
+    })
+  }, [data, getRowId])
 
   const table = useReactTable<T>({
     data,
@@ -1975,7 +2048,12 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
               allowDeselect={false}
             />
             <CtlSlot>
+              {/* `Pagination` carries no `ctl`-tier entry in `CTL_THEME` (its own controls resolve
+                  the 44px coarse hit floor through `PaginationControl`'s theme-level
+                  `data-basalt-hit`, not through the `ctl` size), so `CtlSlot` cannot restore this
+                  size on its own — an explicit `size="sm"` is the visual this footer always had. */}
               <Pagination
+                size="sm"
                 radius="md"
                 total={Math.max(table.getPageCount(), 1)}
                 value={paginationState.pageIndex + 1}

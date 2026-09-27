@@ -31,7 +31,9 @@ describe('the hero-metric row — value → delta spacing and alignment', () => 
     const metrics = block('.metrics')
     expect(metrics).toContain('gap: var(--vx-space-stack-sm)')
     expect(metrics).not.toContain('gap: 4px')
-    expect(metrics).not.toMatch(/gap:\s*\d/)
+    // Bare `gap:`, not `row-gap:` — the block's own `row-gap: 2px` is legitimate sub-scale
+    // micro-spacing (basalt-tokens.md), a different property from the one this test pins.
+    expect(metrics).not.toMatch(/(?<![-\w])gap:\s*\d/)
   })
 
   test('the badge is CENTRED on the value, not baseline-aligned to it', () => {
@@ -220,7 +222,11 @@ test('subtitle renders below the title row', () => {
 describe('the subtitle folds into the info glyph in a card under 480px (CSS-only, one shows)', () => {
   test('subtitle with no info renders a fold glyph whose bubble is the subtitle', () => {
     render(<WidgetHeader tier="widget" title="Uptime" subtitle="Trailing 30 days." />)
-    fireEvent.focus(screen.getByRole('button', { name: 'More information' }))
+    // The fold glyph's aria-label carries the subtitle text — it is otherwise the ONLY accessible
+    // surface a folded (narrow/short) card leaves for it (regression: used to be a bare
+    // 'More information', indistinguishable from every other card's glyph).
+    const trigger = screen.getByRole('button', { name: 'More information: Trailing 30 days.' })
+    fireEvent.focus(trigger)
     expect(screen.getByRole('tooltip').textContent).toBe('Trailing 30 days.')
     expect(screen.getByRole('heading', { level: 3, name: 'Uptime' })).toBeDefined()
   })

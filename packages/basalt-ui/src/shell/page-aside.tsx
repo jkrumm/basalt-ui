@@ -15,8 +15,8 @@
  * - **Inside `BasaltShell`, from `sm` up** the panel portals into `AppShell.Aside`, folding to a
  *   `appShellAsideRailWidth` rail with one expand button. It DOCKS (pushes main) only while main
  *   keeps its floor width; otherwise it opens as an overlay over main and starts folded. The overlay
- *   is a persistent panel closed by its own fold button — not a transient, click-away or Escape
- *   dismissable one.
+ *   is a persistent panel closed by its own fold button, or by Escape (the shell's keyboard escape
+ *   hatch — `shell/index.tsx`'s `asideOverlay` effect) — it is not click-away dismissable.
  * - **Below `sm`, with a `PageBar` that renders a row 2**, the panel PROJECTS into that row: it
  *   registers its title and glyph with the page-bar slot, renders no node of its own, and row 2
  *   draws one `Panel` pill opening a `FilterSheet` its children portal into. One node at a time —
@@ -46,7 +46,7 @@
  * read stays in JS — through `useSyncExternalStore`, so SSR, hydration and the first paint agree.
  * Recorded in `docs/CONTROLS-SPEC.md` §1 (C9) and `docs/ASIDE-SPEC.md` §0.
  */
-import { createContext, useCallback, useContext, useMemo, useState } from 'react'
+import { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { cx } from '../common/props'
@@ -72,6 +72,14 @@ type AsideRegion = {
   folded: boolean
   claim: () => () => void
   publishFolded: (folded: boolean) => void
+  /**
+   * Bumped by `requestClose` — never 0 again once a close has been requested, so `PageAside` can
+   * treat "changed since mount" as "fold now" without a ref of its own. `ShellFrame` is the one
+   * caller, on Escape while the aside renders as an overlay.
+   */
+  closeSignal: number
+  /** Asks the claiming `PageAside` to fold — the keyboard escape hatch for the overlay form. */
+  requestClose: () => void
 }
 
 const NO_REGION: AsideRegion = {
@@ -82,6 +90,8 @@ const NO_REGION: AsideRegion = {
   folded: false,
   claim: () => () => {},
   publishFolded: () => {},
+  closeSignal: 0,
+  requestClose: () => {},
 }
 
 const AsideContext = createContext<AsideRegion>(NO_REGION)
@@ -94,6 +104,7 @@ export function AsideProvider({ children }: { children: ReactNode }): ReactNode 
   const [target, setTarget] = useState<HTMLElement | null>(null)
   const [claims, setClaims] = useState(0)
   const [folded, setFolded] = useState(false)
+  const [closeSignal, setCloseSignal] = useState(0)
 
   const claim = useCallback(() => {
     setClaims((n) => n + 1)
@@ -104,6 +115,8 @@ export function AsideProvider({ children }: { children: ReactNode }): ReactNode 
     }
   }, [])
 
+  const requestClose = useCallback(() => setCloseSignal((n) => n + 1), [])
+
   const value: AsideRegion = {
     target,
     setTarget,
@@ -112,15 +125,18 @@ export function AsideProvider({ children }: { children: ReactNode }): ReactNode 
     folded,
     claim,
     publishFolded: setFolded,
+    closeSignal,
+    requestClose,
   }
 
   return <AsideContext.Provider value={value}>{children}</AsideContext.Provider>
 }
 
-/** Internal — the region's state, read by `BasaltShell` to size `AppShell.Aside`. */
-export function useAsideRegion(): Pick<AsideRegion, 'claimed' | 'folded'> {
-  const { claimed, folded } = useContext(AsideContext)
-  return { claimed, folded }
+/** Internal — the region's state, read by `BasaltShell` to size `AppShell.Aside` and to request a
+ * close (the Escape hatch on the overlay form). */
+export function useAsideRegion(): Pick<AsideRegion, 'claimed' | 'folded' | 'requestClose'> {
+  const { claimed, folded, requestClose } = useContext(AsideContext)
+  return { claimed, folded, requestClose }
 }
 
 /**
@@ -228,7 +244,7 @@ export function PageAside(props: PageAsideProps): ReactNode {
     title: 'it names the region — it is the header text AND the `aria-label` on the landmark.',
   })
   const { title, persistKey, defaultFolded, children, className, style, classNames } = props
-  const { target, inShell, claim, publishFolded } = useContext(AsideContext)
+  const { target, inShell, claim, publishFolded, closeSignal } = useContext(AsideContext)
   const docks = useContext(AsideDocksContext)
   // Destructured, not held as one object: the hook returns a fresh literal every render, and the
   // claim effect below would then re-run (claim → release → claim) forever. `claimPanel` is a
@@ -279,6 +295,27 @@ export function PageAside(props: PageAsideProps): ReactNode {
     if (!portalled) return
     publishFolded(folded)
   }, [portalled, folded, publishFolded])
+
+  // The Escape hatch (`shell/index.tsx`'s `asideOverlay` effect): `closeSignal` is monotonic and
+  // shared across every `PageAside` the shell ever mounts, so "past the initial 0" is the wrong
+  // question for any instance mounted AFTER the first Escape elsewhere in the app's lifetime — it
+  // would read the ALREADY-bumped signal as "a close was requested" on its very first commit and
+  // fold before the user ever asked. `closeSignalBaseline` captures the value THIS instance mounted
+  // with, so only a change AFTER that point — a close requested while this instance is live — folds
+  // it; a later-mounted instance still respects its own `defaultFolded`/persisted state. Guarded on
+  // `portalled`, matching where `ShellFrame` can even observe an overlay to escape out of.
+  //
+  // The baseline ADVANCES to every `closeSignal` it acts on — not just at mount. Without that, a
+  // portalled false→true transition (the aside leaving and rejoining the shell, e.g. a viewport
+  // resize crossing `sm`) re-runs this effect with `closeSignal` still sitting on the value the
+  // FIRST Escape already bumped it to, which the baseline — frozen at its pre-Escape value — reads
+  // as "a close was just requested" all over again and folds an aside the user had since reopened.
+  const closeSignalBaseline = useRef(closeSignal)
+  useIsomorphicLayoutEffect(() => {
+    if (!portalled || closeSignal === closeSignalBaseline.current) return
+    closeSignalBaseline.current = closeSignal
+    setFolded(true)
+  }, [portalled, closeSignal])
 
   useIsomorphicLayoutEffect(() => {
     if (!projected) return

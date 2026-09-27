@@ -2498,6 +2498,46 @@ describe('raw-media-query', () => {
     expect(kinds(f)).toContain('raw-media-query')
   })
 
+  /**
+   * Regression: `isSanctionedShellMediaQuery` extracted widths with a keyword-only
+   * `(?:min|max)-width:` scan, so a SIZE_CLASSES boundary spelled as a range comparison
+   * (`width >= 52.5em`, value-first, or chained — the same shapes `CSS_WIDTH_MEDIA_QUERY` above
+   * already matches) read as an EMPTY width list inside a shell/ path and fell through to being
+   * flagged as an off-table breakpoint, even though it names one of the framework's own two
+   * sanctioned boundaries.
+   */
+  it('does NOT flag a SIZE_CLASSES width @media inside a shell/ path, spelled as a range comparison', () => {
+    const f = find(
+      '@media (width >= 52.5em) {\n  .a { display: flex; }\n}\n',
+      'src/shell/app-header.module.css',
+    )
+    expect(kinds(f).filter((k) => k === 'raw-media-query')).toEqual([])
+  })
+
+  it('does NOT flag a SIZE_CLASSES width @media inside a shell/ path, spelled value-first', () => {
+    const f = find(
+      '@media (52.5em <= width) {\n  .a { display: flex; }\n}\n',
+      'src/shell/app-header.module.css',
+    )
+    expect(kinds(f).filter((k) => k === 'raw-media-query')).toEqual([])
+  })
+
+  it('does NOT flag a SIZE_CLASSES width @media inside a shell/ path, chained both boundaries', () => {
+    const f = find(
+      '@media (52.5em <= width <= 75em) {\n  .a { display: flex; }\n}\n',
+      'src/shell/app-header.module.css',
+    )
+    expect(kinds(f).filter((k) => k === 'raw-media-query')).toEqual([])
+  })
+
+  it('still flags an off-table width @media inside a shell/ path, spelled as a range comparison', () => {
+    const f = find(
+      '@media (width >= 600px) {\n  .a { display: flex; }\n}\n',
+      'src/shell/app-header.module.css',
+    )
+    expect(kinds(f)).toContain('raw-media-query')
+  })
+
   // Drift guard: every REAL `CONTAINER_CLASSES` boundary must pass; a literal one below it must
   // not (`CONTAINER_CLASS_LITERALS_PX` hand-duplicates the table — the missing-`0` false positive
   // fixed alongside this test is a live instance of exactly the drift this pins against).
@@ -2508,6 +2548,64 @@ describe('raw-media-query', () => {
       expect(kinds(f)).not.toContain('raw-media-query')
     },
   )
+
+  it('flags a range-comparison width @media — "(width >= …)", not just "min/max-width:"', () => {
+    const f = find('@media (width >= 600px) {\n  .a { display: flex; }\n}\n', 'src/a.css')
+    expect(kinds(f)).toContain('raw-media-query')
+  })
+
+  /**
+   * Regression: `CSS_WIDTH_MEDIA_QUERY` only matched the keyword-first comparison shape
+   * (`width >= 600px`) — the exact same boundary spelled VALUE-first (`600px <= width`, legal CSS
+   * range syntax) slipped past unflagged.
+   */
+  it('flags a value-first range-comparison width @media — "(600px <= width)"', () => {
+    const f = find('@media (600px <= width) {\n  .a { display: flex; }\n}\n', 'src/a.css')
+    expect(kinds(f)).toContain('raw-media-query')
+  })
+
+  /** Same regression, the CHAINED shape — both boundaries in one condition. */
+  it('flags a chained range-comparison width @media — "(400px <= width <= 700px)"', () => {
+    const f = find('@media (400px <= width <= 700px) {\n  .a { display: flex; }\n}\n', 'src/a.css')
+    expect(kinds(f)).toContain('raw-media-query')
+  })
+
+  it('flags a chained range-comparison in the reverse direction — "(700px >= width >= 400px)"', () => {
+    const f = find('@media (700px >= width >= 400px) {\n  .a { display: flex; }\n}\n', 'src/a.css')
+    expect(kinds(f)).toContain('raw-media-query')
+  })
+
+  it('does NOT flag an unnamed @container at a CONTAINER_CLASSES boundary — omitting the name is legal CSS', () => {
+    const f = find('@container (min-width: 480px) {\n  .a { display: flex; }\n}\n', 'src/a.css')
+    expect(kinds(f)).not.toContain('raw-media-query')
+  })
+
+  it('flags an unnamed @container off a CONTAINER_CLASSES boundary — still judged, just not on the name', () => {
+    const f = find('@container (min-width: 500px) {\n  .a { display: flex; }\n}\n', 'src/a.css')
+    expect(kinds(f)).toContain('raw-media-query')
+  })
+
+  /**
+   * Regression: `CSS_CONTAINER_QUERY` used to capture only the FIRST parenthesized clause, so a
+   * chained `and (...)` — `stat-group.module.css` ships exactly this shape — left every boundary
+   * after the first entirely unjudged. A declared name (`basalt-card`) with a valid first clause
+   * and an OFF-TABLE second clause is the case that only a full-at-rule capture can catch.
+   */
+  it('validates every chained `and (...)` clause, not just the first', () => {
+    const f = find(
+      '@container basalt-card (min-width: 480px) and (max-width: 999px) {\n  .a {}\n}\n',
+      'src/a.css',
+    )
+    expect(kinds(f)).toContain('raw-media-query')
+  })
+
+  it('does NOT flag a chained @container where every clause lands on a real boundary', () => {
+    const f = find(
+      '@container basalt-card (min-width: 480px) and (max-width: 799.9px) {\n  .a {}\n}\n',
+      'src/a.css',
+    )
+    expect(kinds(f)).not.toContain('raw-media-query')
+  })
 })
 
 // ── 25. inline-font-size ─────────────────────────────────────────────────────

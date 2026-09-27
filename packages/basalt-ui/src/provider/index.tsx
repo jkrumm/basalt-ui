@@ -242,15 +242,38 @@ export function composeInjectedCss(
 
 // ── Host attribute ────────────────────────────────────────────────────────────────────────────────
 
-/** `data-basalt-host` on `<html>` — the one place a `display-mode` query is read; CSS keys off it. */
+/** Mount count backing `useHostAttribute`'s ref-counted removal — see that function's doc. */
+let hostAttributeCount = 0
+
+/**
+ * `data-basalt-host` on `<html>` — the one place a `display-mode` query is read; CSS keys off it.
+ *
+ * The layout effect below lands the attribute before the browser paints the CLIENT render — true
+ * only for a client-rendered app. An SSR'd document paints its server HTML (with no
+ * `data-basalt-host` yet, since `display-mode` is a client-only read) before hydration ever reaches
+ * this effect, so a PWA can still flash web chrome across that server-to-hydration gap; this only
+ * closes the gap between hydration and the next client paint.
+ */
 export function useHostAttribute(): void {
   const isPwa = useMediaQuery('(display-mode: standalone)', false)
-  // Layout effect: the attribute must land before first paint, or a PWA flashes web chrome.
+
   useIsomorphicLayoutEffect(() => {
-    const root = document.documentElement
-    root.setAttribute('data-basalt-host', isPwa ? 'pwa' : 'web')
-    return () => root.removeAttribute('data-basalt-host')
+    document.documentElement.setAttribute('data-basalt-host', isPwa ? 'pwa' : 'web')
   }, [isPwa])
+
+  // Ref-counted across every mounted `BasaltProvider` — mirrors `useDuplicateProviderGuard`'s own
+  // module-level counter just below. A second provider (a nested route wrapping its own, two trees
+  // on one page) unmounting must not rip the attribute out from under a first one still mounted;
+  // only the LAST unmount removes it. Deliberately a SEPARATE effect from the one above: sharing one
+  // effect keyed on `[isPwa]` would decrement (and possibly zero out) this counter on every
+  // `isPwa` change, not only on a genuine unmount.
+  useIsomorphicLayoutEffect(() => {
+    hostAttributeCount++
+    return () => {
+      hostAttributeCount--
+      if (hostAttributeCount === 0) document.documentElement.removeAttribute('data-basalt-host')
+    }
+  }, [])
 }
 
 // ── Inner bridge ──────────────────────────────────────────────────────────────────────────────────

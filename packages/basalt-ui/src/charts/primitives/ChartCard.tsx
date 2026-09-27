@@ -213,16 +213,31 @@ export function ChartCard({
   )
 
   const legendOwnerRef = useRef<string | null>(null)
+  // Bumped on every release so a previously-denied sibling's claim effect (keyed on the context
+  // value it reads, see `chart-card-context.ts`) re-runs and gets a chance to re-claim the slot the
+  // owner just gave up — without it a frame told "no" once stayed denied even after the owner
+  // unmounted.
+  const [legendSlotVersion, setLegendSlotVersion] = useState(0)
   const claimLegendSlot = useCallback((id: string) => {
     if (legendOwnerRef.current === null) legendOwnerRef.current = id
     return legendOwnerRef.current === id
   }, [])
   const releaseLegendSlot = useCallback((id: string) => {
-    if (legendOwnerRef.current === id) legendOwnerRef.current = null
+    if (legendOwnerRef.current === id) {
+      legendOwnerRef.current = null
+      setLegendSlotVersion((v) => v + 1)
+    }
   }, [])
   const context = useMemo(
-    () => ({ legendSlot, inCard: true, short, claimLegendSlot, releaseLegendSlot }),
-    [legendSlot, short, claimLegendSlot, releaseLegendSlot],
+    () => ({
+      legendSlot,
+      inCard: true,
+      short,
+      claimLegendSlot,
+      releaseLegendSlot,
+      legendSlotVersion,
+    }),
+    [legendSlot, short, claimLegendSlot, releaseLegendSlot, legendSlotVersion],
   )
 
   return (

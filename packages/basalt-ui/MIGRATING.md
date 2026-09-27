@@ -234,6 +234,13 @@ before; only a table that would otherwise have scrolled changes. Order it explic
 `meta.priority` on a column (a higher number folds before a lower one). Never engages beside an
 explicit `maxHeight`/`minWidth` (a declared scroll box), and never folds the selection column.
 
+**`Composer` pins itself above the on-screen keyboard, and its root is now a wrapper (behaviour
+change, no API change).** `className`, `style` and `classNames.root` land on an outer wrapper that
+also holds a keyboard-inset spacer (`--vx-keyboard-inset`, 0px when no keyboard is open), and the
+input row plus actions sit in an inner stack. Padding, margin, border and background on the root
+behave as before; a flex/`gap` override on the root no longer reaches the input row. Style the row
+through `classNames.actions` or wrap the Composer instead.
+
 ## 1.30.2 — the `legendWins` collapse, and two things `ChartFrame` never said out loud
 
 **A patch. Nothing is added, renamed or removed.** One rendering regression 1.30.1 shipped is

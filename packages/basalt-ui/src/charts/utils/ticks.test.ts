@@ -41,6 +41,13 @@ describe('smartTicks', () => {
   test('an empty domain stays empty', () => {
     expect(smartTicks([], 250, 80)).toEqual([])
   })
+
+  test('round 3: a non-positive labelPx falls back to VX.minPxPerTick instead of dividing by it', () => {
+    // Pre-fix, `labelPx ?? VX.minPxPerTick` let a `0` (or negative) straight through — `xMax / 0`
+    // floors `maxTicks` to `Infinity`, which made every date "fit" and skipped thinning entirely.
+    expect(smartTicks(keys(7), 250, 0)).toEqual(smartTicks(keys(7), 250))
+    expect(smartTicks(keys(7), 250, -10)).toEqual(smartTicks(keys(7), 250))
+  })
 })
 
 describe('smartTicksEvery', () => {
@@ -246,8 +253,22 @@ describe('smartTicks — the appended final tick no longer prints on its neighbo
   test('with `anchorTerminals`, the head is protected the same way the appended tail is', () => {
     const nine = Array.from({ length: 9 }, (_, i) => `k${i}`)
     // Same layout, but index 0 is now START-anchored: 2's centre (62px away) is inside the 82.5px
-    // (1.5×55) that full-width reach needs, so 2 goes even though the tail never appends anything.
-    expect(smartTicks(nine, 280, 55, true)).toEqual(['k0', 'k4', 'k6', 'k8'])
+    // (1.5×55) that full-width reach needs, so 2 goes. index 8 (`last`) is already ON the grid here
+    // — nothing is appended — but round 3 closed exactly that gap: the END check now runs
+    // regardless, and 6's centre (also 62px from 8) is just as inside the 82.5px boundary, so it
+    // goes too, leaving only the two terminals and the one tick comfortably between them.
+    expect(smartTicks(nine, 280, 55, true)).toEqual(['k0', 'k4', 'k8'])
+  })
+
+  test('round 3: the END check now also fires when the grid already lands on `last` — the 13-date counter-example', () => {
+    // 13 daily keys, 60px labels, 260px width: step 4 keeps {0, 4, 8, 12} with `last` (12) already
+    // ON the grid, so nothing is appended — the bug this closes is that the pre-fix code only ever
+    // checked END clearance inside the "something was appended" branch, so 8 sat 80px (4 × 20px/idx)
+    // from the END-anchored 12 with no check at all, under the 90px (1.5×60) a full-width terminal
+    // label needs. The head suffers the identical 80px gap against index 0 and is dropped the same
+    // way, leaving only the two terminals.
+    const thirteen = Array.from({ length: 13 }, (_, i) => `k${i}`)
+    expect(smartTicks(thirteen, 260, 60, true)).toEqual(['k0', 'k12'])
   })
 
   test('neither boundary pair ever sits closer than 1.5 label widths, across a spread of widths', () => {

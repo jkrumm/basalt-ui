@@ -72,10 +72,12 @@ describe('ChartLegend dots mode opens the All-N sheet instead of toggling (R2C-8
     expect(markup).toContain('title="Low cloud"')
   })
 
-  test('without onToggle a dot is inert — no title, no disclosure trigger', () => {
+  test('with legend.toggle:false (no onToggle) a dot still carries a title and opens the disclosure — a dot names nothing on its own face regardless of whether toggling is on', () => {
+    const markup = renderToStaticMarkup(<ChartLegend items={items} mode="dots" />)
+    expect(markup).toContain('title="Low cloud"')
     renderDom(<ChartLegend items={items} mode="dots" />)
     fireEvent.click(screen.getByRole('button', { name: 'Low cloud' }))
-    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(screen.getByRole('dialog')).not.toBeNull()
   })
 })
 

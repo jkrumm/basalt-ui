@@ -60,3 +60,16 @@
 
   color: var(--vx-faint);
 }
+
+/*
+ * The `Box` wrapping a joined `ControlGroup` run (`BAR_KEY_ATTR`, one level up from the group
+ * itself) so `useMeasuredFold` can measure the whole run as a single box. Without `flex: none` this
+ * wrapper is an ORDINARY flex item of the desktop row (`flex: 0 1 auto`, Mantine `Box`'s default) —
+ * exactly the shrink target the row's own fold arithmetic squeezes first, so its `offsetWidth` read
+ * back a compressed width instead of the run's real max-content width. `ControlGroup` itself
+ * already carries this on its own root (`.group`, `controls.module.css`) — this wrapper needs the
+ * same property one box further out.
+ */
+.joinBox {
+  flex: none;
+}

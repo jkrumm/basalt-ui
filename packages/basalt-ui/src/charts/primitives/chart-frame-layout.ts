@@ -285,12 +285,19 @@ const legendEntryWidth = (item: LegendEntry): number =>
     VX.legendFontSize,
   )
 
-/** How many of `items` fit in `rows` wrapped rows of `width` — the same greedy wrap the flex
- * container performs, measured rather than assumed (`docs/CHARTS-SPEC.md` §1). */
-export function entriesWithinRows(
+/**
+ * The greedy chip-width wrap {@link entriesWithinRows} runs — split out so
+ * {@link entriesWithinChipRows} can run it a second time against a narrower, reserve-adjusted
+ * width without duplicating the wrap arithmetic. `allowZero` (default false) drops the "the first
+ * entry always fits" guarantee a bare row-fit needs (a raw width-vs-0 check is meaningless
+ * otherwise): without it, the SAME entry the caller is about to also draw an `All N` chip beside
+ * would always be counted as fitting even when the two together provably don't.
+ */
+function fitChipRows(
   items: readonly LegendEntry[],
   width: number,
   rows: number,
+  allowZero = false,
 ): number {
   let row = 1
   let x = 0
@@ -298,6 +305,7 @@ export function entriesWithinRows(
   for (const item of items) {
     const w = legendEntryWidth(item)
     const next = x === 0 ? w : x + VX.legendGap + w
+    if (x === 0 && allowZero && next > width) return 0
     if (next > width && x > 0) {
       row += 1
       if (row > rows) return fitted
@@ -310,14 +318,47 @@ export function entriesWithinRows(
   return fitted
 }
 
+/** How many of `items` fit in `rows` wrapped rows of `width` — the same greedy wrap the flex
+ * container performs, measured rather than assumed (`docs/CHARTS-SPEC.md` §1). */
+export function entriesWithinRows(
+  items: readonly LegendEntry[],
+  width: number,
+  rows: number,
+): number {
+  return fitChipRows(items, width, rows)
+}
+
+/**
+ * Chips-mode counterpart of {@link entriesWithinDotRows}: once the un-reserved fit overflows, a
+ * second pass measures against the width LESS the `All N` chip's own footprint, so the count this
+ * returns still leaves the chip room to sit beside it in the same row — same reserve law the dots
+ * fit already applied, now applied to chip width instead of a dot's pitch. Returns 0 when not even
+ * the first chip fits once the chip's width is reserved, so the row renders the disclosure alone
+ * rather than one crowded chip plus a chip that doesn't actually fit next to it.
+ */
+export function entriesWithinChipRows(
+  items: readonly LegendEntry[],
+  width: number,
+  rows: number,
+): number {
+  const total = items.length
+  const fittedNoReserve = fitChipRows(items, width, rows)
+  if (fittedNoReserve >= total) return fittedNoReserve
+  const reserve = measureText(`All ${total}`, VX.legendFontSize) + VX.legendGap
+  return fitChipRows(items, Math.max(width - reserve, 0), rows, true)
+}
+
 /** The greedy dot-pitch wrap `entriesWithinDotRows` runs twice — once optimistically, once against
  * a width that already gave up the `All N` chip's room. A group divider is its own flex item, so it
- * costs one more pitch before the next dot. */
+ * costs one more pitch before the next dot. `allowZero` (default false) mirrors {@link fitChipRows}'s
+ * own flag: without it the first dot always counts as fitted regardless of `width`, which is wrong
+ * for the reserved pass once reserving has left no usable room at all. */
 function fitDotRows(
   items: readonly LegendEntry[],
   width: number,
   rows: number,
   dividerAfter: ReadonlySet<number>,
+  allowZero = false,
 ): number {
   let row = 1
   let x = 0
@@ -327,6 +368,7 @@ function fitDotRows(
     // `LEGEND_DOT_SIZE + DOTS_HIT_GAP`) — adding `LEGEND_DOT_SIZE` again here double-counted every
     // dot after the row's first, wrapping a legend to `All N` well before it actually overflowed.
     const next = x === 0 ? LEGEND_DOT_SIZE : x + DOT_PITCH
+    if (x === 0 && allowZero && next > width) return 0
     if (next > width && x > 0) {
       row += 1
       if (row > rows) return fitted
@@ -346,7 +388,9 @@ function fitDotRows(
  * `dividerAfter` (from {@link orderEntries}) counts a rendered group divider's own gap.
  *
  * Two passes: every entry visible with no `All N` chip (if that fits, no chip is drawn); otherwise
- * reserve the chip's measured width up front so it can never wrap to a row of its own.
+ * reserve the chip's measured width up front so it can never wrap to a row of its own — and, once
+ * reserved, allow the answer to be 0: a chip wide enough to leave no room for even the first dot
+ * means the row draws the disclosure alone, not one dot crowding a chip that no longer fits beside it.
  */
 export function entriesWithinDotRows(
   items: readonly LegendEntry[],
@@ -358,7 +402,7 @@ export function entriesWithinDotRows(
   const fittedNoReserve = fitDotRows(items, width, rows, dividerAfter)
   if (fittedNoReserve >= total) return fittedNoReserve
   const reserve = measureText(`All ${total}`, VX.legendFontSize) + DOT_PITCH
-  return fitDotRows(items, Math.max(width - reserve, 0), rows, dividerAfter)
+  return fitDotRows(items, Math.max(width - reserve, 0), rows, dividerAfter, true)
 }
 
 /**

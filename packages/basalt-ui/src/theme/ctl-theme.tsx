@@ -48,6 +48,12 @@ import {
 import type { MantineSize, MantineThemeOverride } from '@mantine/core'
 import type { ReactNode } from 'react'
 
+// Mantine's typed prop bags reject `data-*` literals; a spread carries the hit-area attribute in.
+// Lives here (not `./index`, which imports THIS module) rather than the reverse, so `./index`'s own
+// USE of it (alongside `CTL_THEME`/`CtlSlot`) closes no new import cycle. `./index` does not
+// re-export it — it stays internal, reachable only through that import (see `./index`'s own doc).
+export const HIT_ATTR: Record<string, true> = { 'data-basalt-hit': true }
+
 /** The `MantineThemeOverride` a `<CtlSlot>` provides — see this module's doc for the merge/
  * precedence contract. Exported so a consumer composing its own slot (a bespoke home not covered
  * by `PageBar`/`Section`/the sidebar blocks) can reach the SAME tier without re-declaring it. */
@@ -64,7 +70,7 @@ export const CTL_THEME: MantineThemeOverride = {
     // The theme keys are the component names Mantine's own `useProps` looks up — `RadioGroup`, not
     // `Radio.Group` (`RadioGroup.mjs`: `useProps("RadioGroup", …)`).
     Radio: Radio.extend({
-      defaultProps: { size: 'ctl', attributes: { label: { 'data-basalt-hit': true } } },
+      defaultProps: { size: 'ctl', attributes: { label: HIT_ATTR } },
     }),
     // Mantine types `RadioGroup.size` as a CLOSED `MantineSize`, while `Radio`, `Checkbox`,
     // `Checkbox.Group`, `Switch` and `Switch.Group` all type theirs OPEN
@@ -74,11 +80,11 @@ export const CTL_THEME: MantineThemeOverride = {
     // every sibling type already allows; it widens nothing.
     RadioGroup: Radio.Group.extend({ defaultProps: { size: 'ctl' as MantineSize } }),
     Checkbox: Checkbox.extend({
-      defaultProps: { size: 'ctl', attributes: { label: { 'data-basalt-hit': true } } },
+      defaultProps: { size: 'ctl', attributes: { label: HIT_ATTR } },
     }),
     CheckboxGroup: Checkbox.Group.extend({ defaultProps: { size: 'ctl' } }),
     Switch: Switch.extend({
-      defaultProps: { size: 'ctl', attributes: { track: { 'data-basalt-hit': true } } },
+      defaultProps: { size: 'ctl', attributes: { track: HIT_ATTR } },
     }),
     SwitchGroup: Switch.Group.extend({ defaultProps: { size: 'ctl' } }),
   },

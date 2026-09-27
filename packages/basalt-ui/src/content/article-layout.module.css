@@ -17,13 +17,19 @@
   grid-template-columns: minmax(0, var(--vx-prose-measure));
 }
 
-/* The literal below MUST equal `BREAKPOINTS.article` (src/tokens/index.ts) — a `@media`
+/* The literal below MUST equal `BREAKPOINTS.article - 0.1` (src/tokens/index.ts) — a `@media`
  * condition is resolved before custom properties exist, so `max-width: var(--x)` is invalid CSS
- * and a stylesheet with a responsive rule has no choice but to write the number. The token is the
- * readable half; `article-layout.breakpoint.test.ts` asserts the two agree, the same
+ * and a stylesheet with a responsive rule has no choice but to write the number. The 0.1px offset
+ * is `tokens/size-classes.ts`' own `sizeClassMaxEm` convention (Mantine's own): the JS side
+ * (`article-layout.tsx`'s `useSizeClass() === 'expanded'`) reads a plain `min-width: 1200px`,
+ * inclusive AT 1200 — writing this query as a bare `max-width: 1200px` would ALSO be inclusive at
+ * exactly 1200px, so at that one width both conditions would fire at once: JS renders the rail,
+ * and this rule then hides it with `display: none`, leaving neither the rail nor the trigger
+ * visible. `1199.9px` makes the two conditions strict complements with no such gap. The token is
+ * the readable half; `article-layout.breakpoint.test.ts` asserts the two agree, the same
  * "literal must match the token" idiom as `styles.floor.test.ts`. Change both or neither. */
 /* theme-allow raw-media-query — deliberate literal pinned to BREAKPOINTS.article, outside shell/** */
-@media (max-width: 1200px) {
+@media (max-width: 1199.9px) {
   .root {
     grid-template-columns: minmax(0, var(--vx-prose-measure));
   }
@@ -35,6 +41,7 @@
 
 .header {
   grid-column: 1;
+  grid-row: 1;
   display: flex;
   flex-direction: column;
   gap: var(--vx-space-article-header-gap);
@@ -72,11 +79,13 @@
 
 .content {
   grid-column: 1;
+  grid-row: 2;
   min-width: 0;
 }
 
 .tocRail {
   grid-column: 2;
+  grid-row: 2;
   position: sticky;
   /* The rail sticks inside whatever scrolls it — `AppShell.Main` in a shell, the document without
    * one — and NOTHING overhangs that box: the app header and `PageBar` row 2's band are both shell
@@ -91,9 +100,13 @@
 /* The rail's below-breakpoint replacement (docs/CONTENT-SPEC.md §7): a small sticky trigger that
  * opens the SAME `TableOfContents` in a `Popover` instead of the rail vanishing. Rendered by JS
  * (`useSizeClass() !== 'expanded'`), never both at once with `.tocRail` — no media query needed
- * here, only the sticky/alignment behaviour for whenever it IS mounted. */
+ * here, only the sticky/alignment behaviour for whenever it IS mounted. `grid-row: 2` is EXPLICIT,
+ * not left to auto-placement: `.content` also being `grid-column: 1` moves the auto-placement
+ * cursor's row on past row 2 by the time this item (also column 1) is placed, landing it in its
+ * own row BELOW the content instead of at its top — the whole point of this trigger. */
 .tocTrigger {
   grid-column: 1;
+  grid-row: 2;
   justify-self: end;
   align-self: start;
   position: sticky;
@@ -116,6 +129,7 @@
 
 .footer {
   grid-column: 1;
+  grid-row: 3;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: var(--vx-space-article-footer-gap);

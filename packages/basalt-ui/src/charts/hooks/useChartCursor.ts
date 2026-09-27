@@ -93,6 +93,23 @@ export function useChartCursor<T>({
   // Branched per EVENT (`event.pointerType`), never a static media query — a hybrid device can
   // carry both inputs, and a media query can't tell which one just fired.
   const [isTouch, setIsTouch] = useState(false)
+  // Whether THIS chart currently holds a COMMITTED touch/pen pin — deliberately separate from
+  // `isTouch` above, which a subsequent fine-pointer move resets to `false` (that IS the bug this
+  // guards against) and which `clear()` never touches. Set on a successful `onPointerUp` commit,
+  // cleared by `clear()` OR by losing source ownership — mirrors `useDiscreteCursor`'s `pinned`
+  // state, kept as a ref here since nothing needs to re-render off it directly.
+  const pinnedRef = useRef(false)
+  // A SIBLING chart stealing the shared cursor source (its own touch tap) never calls THIS chart's
+  // `clear()` — nothing here observes that tap directly. Left unguarded, `pinnedRef` stayed `true`
+  // forever once set, so a later mouse hover on this chart — after it legitimately re-claims
+  // `source` — read a stale pin and froze the crosshair (`resolveNearestAt`'s
+  // `pointerType === 'mouse' && pinnedRef.current && store.get().source === chartId` guard blocking
+  // a hover that was never actually still pinned). Reset the moment this chart is no longer the
+  // cursor's source — the one signal that unambiguously means whatever touch pin this chart held
+  // is gone, stolen or not.
+  useEffect(() => {
+    if (cursor.source !== chartId) pinnedRef.current = false
+  }, [cursor.source, chartId])
 
   // Accessors read through refs so the pointer callbacks stay referentially stable: the natural
   // call style is an inline arrow, fresh every render, and re-creating these would re-bind the
@@ -158,6 +175,13 @@ export function useChartCursor<T>({
   const resolveNearestAt = useCallback(
     (px: number, anchor: CursorAnchor, pointerType: string) => {
       if (data.length === 0) return
+      // A committed touch/pen pin must not be silently overridden by a fine-pointer hover on a
+      // hybrid device (a touchscreen laptop with a mouse/trackpad) — mirrors `useDiscreteCursor`'s
+      // `pinned` guard on its own hover path. Gated on `store.get().source` (not the reactive
+      // `isSource` derived later in this hook) so a pin a SIBLING chart has since stolen no longer
+      // blocks this chart's own mouse hover just because this chart's stale `pinnedRef` is still
+      // true.
+      if (pointerType === 'mouse' && pinnedRef.current && store.get().source === chartId) return
       let closest = data[0] as T
       let minDist = Infinity
       for (const d of data) {
@@ -231,10 +255,14 @@ export function useChartCursor<T>({
     [resolveImmediate, touchPin],
   )
   // A completed tap: the pin is now committed, so `onPointerLeave`'s touch no-op keeps it past the
-  // lift. Only the tracked pointer commits — a stray `pointerup` is ignored.
+  // lift. Only the tracked pointer commits — a stray `pointerup` is ignored. `pointerType ===
+  // 'mouse'` is checked FIRST and unconditionally: some browsers alias a touch's `pointerId` to the
+  // same value (1) a mouse pointer uses, so without this an unrelated mouse `pointerup` could commit
+  // an abandoned touch press it never tracked (mirrors `useDiscreteCursor`'s identical guard).
   const onPointerUp = useCallback(
     (event: PointerEvent<SVGRectElement>) => {
-      touchPin.commit(event.pointerId)
+      if (event.pointerType === 'mouse') return
+      if (touchPin.commit(event.pointerId)) pinnedRef.current = true
     },
     [touchPin],
   )
@@ -251,6 +279,7 @@ export function useChartCursor<T>({
     pendingRef.current = null
     pendingMoveRef.current = null
     touchPin.reset()
+    pinnedRef.current = false
     setAnchor(null)
     // Only clear the SHARED cursor if this chart still owns it: moving fast from chart A to B lets
     // A's leave fire after B's move, and an unconditional clear would wipe B's cursor.

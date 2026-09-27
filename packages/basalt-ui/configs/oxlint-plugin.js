@@ -3647,48 +3647,12 @@ const queryFnUnwrap = {
  * @type {readonly DeprecatedExport[]}
  */
 export const DEPRECATED_EXPORTS = [
-  {
-    subpath: 'basalt-ui/charts',
-    name: 'resolveChartTier',
-    replacement: 'the measured container class (CONTAINER_CLASSES)',
-    removeIn: '1.31.0',
-    fix: false,
-  },
-  {
-    subpath: 'basalt-ui/charts',
-    name: 'chartTierMetrics',
-    replacement: 'the measured container class (CONTAINER_CLASSES)',
-    removeIn: '1.31.0',
-    fix: false,
-  },
-  {
-    subpath: 'basalt-ui/charts',
-    name: 'useChartTier',
-    replacement: 'the measured container class (CONTAINER_CLASSES)',
-    removeIn: '1.31.0',
-    fix: false,
-  },
-  {
-    subpath: 'basalt-ui/charts',
-    name: 'useChartTierMetrics',
-    replacement: 'the measured container class (CONTAINER_CLASSES)',
-    removeIn: '1.31.0',
-    fix: false,
-  },
-  {
-    subpath: 'basalt-ui/charts',
-    name: 'ChartTierMetrics',
-    replacement: 'the measured container class (CONTAINER_CLASSES)',
-    removeIn: '1.31.0',
-    fix: false,
-  },
-  {
-    subpath: 'basalt-ui/charts',
-    name: 'phoneChartWidth',
-    replacement: 'CONTAINER_CLASSES.regular (basalt-ui/tokens)',
-    removeIn: '1.31.0',
-    fix: false,
-  },
+  // The chart phone-tier API (`resolveChartTier`/`chartTierMetrics`/`useChartTier`/
+  // `useChartTierMetrics`/`ChartTierMetrics`/`phoneChartWidth`) is NOT here: MIGRATING.md's own
+  // Unreleased section states it a hard removal with no grace window (zero consumers), and these
+  // exports are no longer reachable from any public barrel in `src/charts`/`src/tokens` — a row
+  // here would nudge a rewrite to an import that no longer resolves, i.e. "it still resolves today"
+  // would be false.
   {
     subpath: 'basalt-ui',
     name: 'useBreakpoint',

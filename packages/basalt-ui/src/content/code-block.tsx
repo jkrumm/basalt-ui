@@ -13,7 +13,8 @@
  * <CodeBlock language="bash" code="bun add basalt-ui" showCopy />
  */
 import type { CSSProperties } from 'react'
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { useIsomorphicLayoutEffect } from '../common/isomorphic-layout-effect'
 import classes from './code-block.module.css'
 import { CopyAction } from './copy-action'
 import { highlightCode } from './highlighter'
@@ -65,8 +66,9 @@ export function CodeBlock({
   const [showOverflowFade, setShowOverflowFade] = useState(false)
 
   // Layout effect, not a plain effect: measuring after paint would let a code block that's
-  // already too wide on mount flash one frame with no fade before this fires.
-  useLayoutEffect(() => {
+  // already too wide on mount flash one frame with no fade before this fires. Isomorphic so an SSR
+  // render never trips React's "useLayoutEffect does nothing on the server" warning.
+  useIsomorphicLayoutEffect(() => {
     const body = bodyRef.current
     if (!body) return
 

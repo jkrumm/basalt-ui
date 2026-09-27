@@ -20,7 +20,7 @@
  * default (rail in `medium`); any stored value, `false` included, wins.
  */
 import { AppShell, Box, rem } from '@mantine/core'
-import { Fragment, useCallback, useEffect, useMemo } from 'react'
+import { Fragment, useCallback, useContext, useEffect, useMemo } from 'react'
 import type { CSSProperties, MouseEvent, ReactNode } from 'react'
 import { registerSidebarToggle } from '../commands/shell-bridge'
 import { cx } from '../common/props'
@@ -48,7 +48,8 @@ import type {
 import { CtlSlot, useBasaltSpacing } from '../theme'
 import { createPersistedStore } from '../state/persisted'
 import { toEm } from '../tokens/size-classes'
-import { useSizeClass } from './use-size-class'
+import { SizeClassHintContext, useSizeClass } from './use-size-class'
+import type { SizeClass } from './use-size-class'
 import brandClasses from './app-brand.module.css'
 import headerClasses from './app-header.module.css'
 import mainClasses from './app-main.module.css'
@@ -309,6 +310,19 @@ function collapseStore(key: string): CollapseStore {
 const MAIN_MIN_WIDTH = 720
 
 /**
+ * The room-to-dock `min-width` query's SSR/no-`matchMedia` fallback — an `'expanded'`
+ * `sizeClassHint` means the server already believes there is room, matching `useSizeClass`'s own
+ * hint-seeded guard one level up (`use-size-class.ts`). Extracted as its own pure function (rather
+ * than the inline `sizeClassHint === 'expanded'` it replaces) purely so `index.test.tsx` can pin it
+ * without needing to render `BasaltShell` through a real SSR pass — `AppShell`'s + `PageAside`'s own
+ * effects/refs/portals make that path unobservable through rendered markup, and the previous
+ * hardcoded `false` fallback here shipped with no test at all for exactly that reason.
+ */
+export function roomToDockServerFallback(sizeClassHint: SizeClass | undefined): boolean {
+  return sizeClassHint === 'expanded'
+}
+
+/**
  * The shell's two page-level regions are providers, and both wrap the frame rather than living
  * inside it: `PageBarProvider` owns the header portal and the single-kebab claim, `AsideProvider`
  * owns the aside portal, the region CLAIM and the claiming page's fold state — which `ShellFrame`
@@ -386,15 +400,34 @@ function ShellFrame({
   // just its rail and an open panel overlays main. Provided through `AsideDocksContext` in the SAME
   // render, so `PageAside` defaults its fold from the right value on its first pass.
   const navbarWidth = collapsed ? step.appShellNavbarRailWidth : step.appShellNavbarWidth
+  // The SSR/first-paint fallback mirrors `useSizeClass`'s own hint-seeded guard: an `expanded` hint
+  // from `<BasaltProvider sizeClassHint>` means the server already believes there is room to dock, so
+  // the first client paint agrees instead of defaulting to "cannot dock" and folding a default-open
+  // aside for one commit.
+  const sizeClassHint = useContext(SizeClassHintContext)
   const roomToDock = useMediaQuery(
     `(min-width: ${toEm(navbarWidth + step.appShellAsideWidth + MAIN_MIN_WIDTH)})`,
-    false,
+    roomToDockServerFallback(sizeClassHint),
   )
   const docks = sizeClass === 'expanded' && roomToDock
   const asideOpen = aside.claimed && !aside.folded
   const asideOverlay = asideOpen && !docks
   const asideReserved = asideOpen && docks ? step.appShellAsideWidth : step.appShellAsideRailWidth
   const asideWidth = aside.claimed ? asideReserved : 0
+  // Keyboard escape hatch for the overlay form only — the docked form never blocks content, so
+  // there is nothing to escape out of. `requestClose` is a stable callback from `AsideProvider`
+  // (destructured, not read as `aside.requestClose`, so the effect deps name it directly rather
+  // than the whole `aside` object — a fresh literal every render); `PageAside` folds itself in
+  // response (see its own `closeSignal` effect).
+  const { requestClose } = aside
+  useEffect(() => {
+    if (!asideOverlay) return
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.key === 'Escape') requestClose()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [asideOverlay, requestClose])
   const toggleCollapse = useCallback(() => {
     const next = !collapsed
     if (!isCollapseControlled) setStoredCollapsed(next)
