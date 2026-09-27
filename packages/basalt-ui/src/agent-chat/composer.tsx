@@ -338,6 +338,20 @@ export type ComposerProps = BasaltProps &
     readonly hint?: ReactNode
   }
 
+/**
+ * The bottom component of a CSS `padding` shorthand (1-4 space-separated values, or React's own
+ * bare-number-means-px convention) — so a consumer's `style={{ padding: '20px' }}` (or `padding:
+ * 20`) still composes into the keyboard-inset calc below instead of being silently discarded by the
+ * `paddingBottom` longhand that follows it. Naive on plain lengths; not a general CSS parser, since
+ * this only ever reads a consumer's own inline `style` prop.
+ */
+function paddingBottomOf(padding: string | number): string {
+  if (typeof padding === 'number') return `${padding}px`
+  const parts = padding.trim().split(/\s+/)
+  const bottom = parts.length >= 3 ? parts[2] : parts[0]
+  return bottom ?? '0px'
+}
+
 /** The default footer: the Enter / Shift+Enter keyboard contract, in the mono micro-label voice. */
 function DefaultHint(): JSX.Element {
   return (
@@ -585,13 +599,15 @@ export function Composer({
       // Composed, not overwritten: spreading `style` AFTER a flat `paddingBottom` let a consumer's
       // own `style.paddingBottom` (or `padding` shorthand) silently disable keyboard-inset pinning,
       // with the `0px` fallback masking the failure. `calc()` keeps both — the consumer's own
-      // bottom padding, plus however much keyboard is currently covering it.
+      // bottom padding, plus however much keyboard is currently covering it. `paddingBottom` wins
+      // over the shorthand's own bottom component when both are set, matching the CSS cascade.
       style={{
         ...style,
         paddingBottom: `calc(var(--vx-keyboard-inset, 0px) + ${
           typeof style?.paddingBottom === 'number'
             ? `${style.paddingBottom}px`
-            : (style?.paddingBottom ?? '0px')
+            : (style?.paddingBottom ??
+              (style?.padding !== undefined ? paddingBottomOf(style.padding) : '0px'))
         })`,
       }}
     >

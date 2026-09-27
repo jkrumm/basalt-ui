@@ -935,3 +935,36 @@ describe('common props (`common/props.ts`)', () => {
     expect(container.querySelector('.my-actions')).not.toBeNull()
   })
 })
+
+describe('the keyboard-inset calc composes a consumer `style.padding` shorthand too', () => {
+  function rootPaddingBottom(className: string, style: ComposerProps['style']): string | undefined {
+    const { container } = renderComposer({ onSubmit: noop, className, style })
+    const root = container.querySelector(`.${className}`) as HTMLElement | null
+    return root?.style.paddingBottom
+  }
+
+  test('a bare `paddingBottom` still composes (regression guard)', () => {
+    const pb = rootPaddingBottom('probe-pb', { paddingBottom: 20 })
+    expect(pb).toBe('calc(var(--vx-keyboard-inset, 0px) + 20px)')
+  })
+
+  test('a `padding` shorthand composes its bottom component, not just the keyboard inset', () => {
+    const pb = rootPaddingBottom('probe-shorthand', { padding: '20px' })
+    expect(pb).toBe('calc(var(--vx-keyboard-inset, 0px) + 20px)')
+  })
+
+  test('a multi-value `padding` shorthand reads its bottom component', () => {
+    const pb = rootPaddingBottom('probe-shorthand-4', { padding: '10px 20px 30px 20px' })
+    expect(pb).toBe('calc(var(--vx-keyboard-inset, 0px) + 30px)')
+  })
+
+  test('a bare-number `padding` shorthand (React’s px convention) still gets a unit', () => {
+    const pb = rootPaddingBottom('probe-shorthand-number', { padding: 20 })
+    expect(pb).toBe('calc(var(--vx-keyboard-inset, 0px) + 20px)')
+  })
+
+  test('`paddingBottom` wins over the shorthand when both are set', () => {
+    const pb = rootPaddingBottom('probe-both', { padding: '20px', paddingBottom: 8 })
+    expect(pb).toBe('calc(var(--vx-keyboard-inset, 0px) + 8px)')
+  })
+})

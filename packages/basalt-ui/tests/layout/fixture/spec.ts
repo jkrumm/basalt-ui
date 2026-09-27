@@ -229,6 +229,15 @@ export type CardsSpec = {
   oscillationScan?: { width: number; bodyHeights: number[] }
 }
 
+/**
+ * `FormRow` at fixed container widths (`docs/waves/PLAN.md` wave 5, n2) — one `data-testid="form-
+ * row-<w>"` wrapper per width, since the label/control swap keys on the row's OWN measured width
+ * via `@container`, a layout fact happy-dom cannot see.
+ */
+export type FormsSpec = {
+  widths: number[]
+}
+
 export type FixtureSpec = {
   sections: SectionSpec[]
   nav?: { maxTabs?: number; menuMax?: number; moreLabel?: string }
@@ -261,6 +270,8 @@ export type FixtureSpec = {
   statsWide?: true
   /** Renders card-chrome probes: StatCards at fixed container widths, a stretched ChartCard. */
   cards?: CardsSpec
+  /** Renders `FormRow` container-width probes (n2). */
+  forms?: FormsSpec
   /** Renders a `PageAside` (and, by default, the `PageBar` row 2 it projects into below `sm`). */
   aside?: AsideSpec
   /** Renders one `basalt-ui/charts` kind above the filler. Omitted ⇒ no chart in the tree. */

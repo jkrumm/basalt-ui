@@ -6,8 +6,17 @@
  * deliberately rather than forked: a form row and a `SettingsRow` are the same shape at the same
  * rhythm, and a second pair of numbers is how the two drift apart.
  *
- * The `47.99375em` literal is the `sm` breakpoint (law C9 — the responsive swap is CSS, never a JS
- * media query). A `@media` condition cannot read a custom property, so the number is written.
+ * The label/control swap keys on the row's OWN measured width via `@container`, not the viewport
+ * (law C9 — the responsive swap is CSS, never a JS media query, but a viewport `@media` answers the
+ * wrong question here the same way `StatGroup`'s used to: a narrow column can leave a row too
+ * tight for two 250px+ cells well before the viewport itself crosses `sm`, and a wide one — a
+ * landscape phone, a split pane — can afford two columns well under it). `.row` establishes the
+ * containment and `.grid` is the queried child, the same split `StatGroup`'s `.container`/`.root`
+ * uses — a container cannot reliably query ITSELF for a layout-affecting property (measured here:
+ * Chrome silently keeps the un-queried value even once the container's own width crosses the
+ * condition), only a descendant. The `599.9px`/`47.99375em` literals: 600px is roughly the point
+ * two ~250px+ cells stop feeling cramped; `@container`/`@media` conditions cannot read a custom
+ * property, so both are written numbers, not `--vx-*` refs.
  */
 
 /* ── FormSection ─────────────────────────────────────────────────────────────────────────────── */
@@ -32,6 +41,11 @@
  * itself against a one-line input.
  */
 .row {
+  container-type: inline-size;
+  container-name: basalt-form-row;
+}
+
+.grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
   align-items: start;
@@ -80,11 +94,22 @@
   color: var(--vx-status-bad);
 }
 
-/* The phone twin: the control needs the full width, so the label goes above it. */
-@media (max-width: 47.99375em) {
-  .row {
+/* The narrow twin: the control needs the full width, so the label goes above it. */
+@container basalt-form-row (max-width: 599.9px) {
+  .grid {
     grid-template-columns: minmax(0, 1fr);
     gap: var(--vx-space-stack-xs);
+  }
+}
+
+/* Pre-container-query fallback (Safari < 16, Chrome < 106, Firefox < 110) — the old viewport law,
+ * reachable only where `@container` itself cannot parse (same reasoning as `stat-group.module.css`). */
+@supports not (container-type: inline-size) {
+  @media (max-width: 47.99375em) {
+    .grid {
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--vx-space-stack-xs);
+    }
   }
 }
 

@@ -337,6 +337,34 @@ layout('BasaltDataTable sticky header — real layout', () => {
           'recover them.',
       )
     }
+
+    // `aria-controls` links the trigger to the disclosure row it opens (fold-toggle-missing-aria-
+    // controls): click the first toggle and confirm the id it names is the row that actually appears.
+    const linked = await p.raw.evaluate((sel) => {
+      const toggle = document.querySelector<HTMLButtonElement>(
+        `${sel} button[aria-label="Show row details"]`,
+      )
+      const controlsId = toggle?.getAttribute('aria-controls')
+      toggle?.click()
+      return { controlsId }
+    }, WRAPPER)
+    if (!linked.controlsId) {
+      throw new Error(
+        'LAYOUT INVARIANT VIOLATED — the fold toggle has no `aria-controls`, so assistive tech ' +
+          'cannot navigate from the trigger to the disclosure it opens.',
+      )
+    }
+    await p.settle()
+    const disclosureId = await p.raw.evaluate(
+      (id) => document.getElementById(id)?.tagName.toLowerCase() ?? null,
+      linked.controlsId,
+    )
+    if (disclosureId !== 'tr') {
+      throw new Error(
+        `LAYOUT INVARIANT VIOLATED — aria-controls="${linked.controlsId}" names no expanded ` +
+          `disclosure row.\n  actual: ${String(disclosureId)}`,
+      )
+    }
   })
   /**
    * INVARIANT 6 — the toolbar SHRINKS, and shrinking did not cost the search its stated width.

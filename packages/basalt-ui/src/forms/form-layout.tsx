@@ -185,17 +185,19 @@ export function FormRow(props: FormRowProps) {
       className={cx(classes.row, classNames?.root, className)}
       {...(style !== undefined && { style })}
     >
-      <div className={cx(classes.rowLabel, classNames?.label)}>
-        <label className={classes.label} {...(htmlFor !== undefined && { htmlFor })}>
-          {label}
-          <RequiredMark required={required} />
-        </label>
-        {hint !== undefined && <span className={classes.hint}>{hint}</span>}
+      <div className={classes.grid}>
+        <div className={cx(classes.rowLabel, classNames?.label)}>
+          <label className={classes.label} {...(htmlFor !== undefined && { htmlFor })}>
+            {label}
+            <RequiredMark required={required} />
+          </label>
+          {hint !== undefined && <span className={classes.hint}>{hint}</span>}
+        </div>
+        <fieldset className={cx(classes.control, classNames?.control)} disabled={disabled}>
+          {children}
+          <FieldError error={error} />
+        </fieldset>
       </div>
-      <fieldset className={cx(classes.control, classNames?.control)} disabled={disabled}>
-        {children}
-        <FieldError error={error} />
-      </fieldset>
     </div>
   )
 }
