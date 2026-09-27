@@ -26,6 +26,8 @@ then `/review` findings resolved.
   you touched, report out-of-scope tsc errors verbatim instead of fixing them. Run unit tests from
   the repo root.
 - Prove visual changes with before/after shots under `.claude/mobile/w<n>/`.
+- A red test is never "unrelated" until it's been reproduced on `origin/master`. First run
+  `bun install --frozen-lockfile` (wave 6/7's `ai-sdk-transport.test.ts:339` failure was a stale `node_modules`).
 
 ## Wave 1 — Audit and spec <!-- status: done -->
 
@@ -196,15 +198,15 @@ then `/review` findings resolved.
       derived default is a silent change for every existing chart (MIGRATING carries it) — revisit if a consumer
       objects.
 
-## Wave 7 — Chart legend, donut, dual axis <!-- status: active -->
+## Wave 7 — Chart legend, donut, dual axis <!-- status: done -->
 
 - [x] Legend: width-measured fit always, never roll up < 2, row gap 4–6 left-aligned, portal into the
       ChartCard header slot, "All N" disclosure (popover fine / sheet coarse); deprecate `legend.maxRows`
 - [x] Donut aspect law (side legend W/H > 1.5, compact full list, 7+ → Other)
 - [x] Dual-axis tick tint; delete "(left axis)" legend prose
 - [x] End-of-line labels at wide (≤ 3 lines, collision fallback to chips)
-- [ ] Success metric: median data rect ≥ 0.55 at every viewport, none < 0.40. If it misses, write the
-      gap into Left behind and do not tick this step
+- [x] Success metric measured: MISSED (0.480 / 0.512 / 0.512, two charts < 0.40). Orchestrator ruling
+      2026-09-27: the lever left is card header height, not axes or legend, so it goes to Wave 7b with the target unchanged
       **Left behind:** MISSED, step 5 stays open, so the chain stops here. Medians (`.claude/mobile/w7/`,
       `measure.mjs`): phone 0.480 (w6 0.454) · tablet 0.512 (0.485) · desktop 0.512 (0.504); target 0.55.
       Two charts stay < 0.40 on every viewport, both `/charts` Primitives (Availability 0.30-0.34,
@@ -230,6 +232,27 @@ then `/review` findings resolved.
       (its 375 view shows only two KPI cards, unverified); end labels have no real-width test (SSR
       width). Gate: `bun run pre` red only on `ai-sdk-transport.test.ts:339`; layout 107/107;
       pack-test passed; budgets within ceiling; `/review` 6 blockers fixed, improvements 1-6 applied.
+
+## Wave 7b — Header economy and wave 6/7 leftovers <!-- status: active -->
+
+Orchestrator ruling: keep the 0.55 target. The measured culprit is the card HEADER (72–99px, ~43% of short
+cards), so this wave adds a header-height law. It reads `.claude/mobile/w7/` and Wave 6/7 **Left behind** first.
+
+- [ ] Header-height law in ChartCard/WidgetHeader: at `regular`/`wide`, title · value · delta · actions share
+      ONE row; the subtitle folds into the info glyph whenever the card's own height is < 280px (measure the
+      card, not the viewport); header ≤ 20% of card height on every playground chart. No new prop
+- [ ] Visual defects from w6/w7 shots: /cbbi 375 inside "100%" y label clipped at the plot top; Distribution's
+      inside y labels overprint the first bars (band/bar kinds keep y labels outside or pad the first band);
+      `/dashboard/revenue` at 375 renders no charts, root-cause it (a real bug until proven otherwise) and add
+      it to `measure.mjs`
+- [ ] Dedupe: extract `resolveYPlacement` so CartesianChart/useBandPlot read `resolveAxisEconomy` instead of
+      re-implementing the ladder; `categorical` from the scale kind, not a whitespace heuristic
+- [ ] Hygiene: `useBreakpoint` deprecated-export ledger row; `VX.phoneChartWidth` → reads
+      `CONTAINER_CLASSES.regular` (deprecate the duplicate); a layout test for the auto-height card ratchet
+- [ ] Re-measure with `.claude/mobile/w6/measure.mjs` → `.claude/mobile/w7b/`. Target: median data rect ≥ 0.55
+      per viewport, none < 0.40. **Tick this step either way**, writing the numbers into Left behind (the
+      orchestrator judges a miss at the end; the chain must not stall on it again)
+      **Left behind:**
 
 ## Wave 8 — Chart touch model <!-- status: pending -->
 
