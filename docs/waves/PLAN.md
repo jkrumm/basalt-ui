@@ -26,6 +26,9 @@ then `/review` findings resolved.
   you touched, report out-of-scope tsc errors verbatim instead of fixing them. Run unit tests from
   the repo root.
 - Prove visual changes with before/after shots under `.claude/mobile/w<n>/`.
+- Close-out is NOT optional: `/review` runs every wave (a worker's self-check doesn't replace it), and a green wave
+  ALWAYS spawns its successor with `rd wave basalt-ui '…'`. `rd wave` excludes your own pane, so a live session
+  in the checkout is no reason to stop.
 - A red test is never "unrelated" until it's been reproduced on `origin/master`. First run
   `bun install --frozen-lockfile` (wave 6/7's `ai-sdk-transport.test.ts:339` failure was a stale `node_modules`).
 
@@ -310,6 +313,9 @@ cards), so this wave adds a header-height law. It reads `.claude/mobile/w7/` and
 
 ## Wave 11 — Guards, distill, final critic <!-- status: pending -->
 
+- [ ] Legend density in short cards (wave 8 finding): in a card < 240px tall the legend gets at most one
+      row and folds to dots / the `All N` chip before it takes plot height; fixes `/charts` Primitives
+      Availability + Negotiated link speed (< 0.40). Re-measure: record medians vs the 0.55 target
 - [ ] `basalt/raw-breakpoint` oxlint rule + `raw-media-query` CSS guard kind; migrate playground
       SimpleGrids to WidgetGrid; `.oxlintrc.json` levels match `configs/oxlint.json`
 - [ ] Full recapture (`capture.mjs`) + a screenshot critic pass at 375/768/1024/1440, landscape 812×375;
