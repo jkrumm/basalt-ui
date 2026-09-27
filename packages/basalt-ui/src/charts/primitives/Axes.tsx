@@ -3,7 +3,6 @@ import type { AxisScale, TickFormatter, TickRendererProps } from '@visx/axis'
 import { VX } from '../../tokens'
 import { ROTATED_LABEL_OFFSET } from '../layout/auto-margin'
 import { fmtAxisDate } from '../utils/format'
-import { measureText } from '../utils/measure-text'
 import { useChartMetrics } from './chart-tier'
 
 /**
@@ -13,10 +12,12 @@ import { useChartMetrics } from './chart-tier'
  */
 const TICK_FONT_FAMILY = 'var(--basalt-font-mono)'
 
-/** Horizontal padding either side of an inside label's background chip. */
-const INSIDE_CHIP_PAD_X = 4
-/** Gap kept between the tick's gridline and the near edge of its label's chip. */
+/** Horizontal padding between the tick's gridline and the near edge of its label's halo. */
+const INSIDE_LABEL_PAD_X = 4
+/** Gap kept between the tick's gridline and the near edge of an inside label. */
 const INSIDE_LABEL_GAP = 3
+/** Halo stroke width, px — wide enough to clear a mark drawn directly under the digits. */
+const INSIDE_LABEL_HALO_WIDTH = 3
 /**
  * A tick within this many line-heights of the plot's top edge (y=0) flips its label BELOW the
  * tick line instead of above it — the SVG viewBox is sized exactly to the plot height, so an
@@ -29,9 +30,11 @@ type TickColor = { tickColor?: string }
 const DEFAULT_TICK_COLOR = VX.faint
 
 /**
- * Custom tick renderer for an inside-placed y label: a solid background chip (so the digits never
- * overprint the grid/marks the way a thin halo stroke still let them) that flips to sit BELOW its
- * tick line near the plot's top edge instead of clipping against the SVG's own viewBox.
+ * Custom tick renderer for an inside-placed y label: a `paint-order: stroke` halo (the surface
+ * colour stroked wide, under the fill) instead of an opaque background chip — the chip covered
+ * whatever mark sat under it (P1-5), a halo only pushes the mark's edge outward one stroke-width.
+ * Flips to sit BELOW its tick line near the plot's top edge instead of clipping against the SVG's
+ * own viewBox.
  */
 function InsideTickLabel({ x, y, formattedValue, fontSize, fill }: TickRendererProps) {
   if (formattedValue === undefined) return null
@@ -41,29 +44,21 @@ function InsideTickLabel({ x, y, formattedValue, fontSize, fill }: TickRendererP
   const centerY = nearTop
     ? y + INSIDE_LABEL_GAP + lineHeight / 2
     : y - INSIDE_LABEL_GAP - lineHeight / 2
-  const width = measureText(formattedValue, size) + INSIDE_CHIP_PAD_X * 2
   return (
-    <g>
-      <rect
-        x={x}
-        y={centerY - lineHeight / 2}
-        width={width}
-        height={lineHeight}
-        rx={2}
-        fill={VX.surface.panel}
-      />
-      <text
-        x={x + INSIDE_CHIP_PAD_X}
-        y={centerY}
-        dominantBaseline="middle"
-        textAnchor="start"
-        fill={fill}
-        fontFamily={TICK_FONT_FAMILY}
-        fontSize={size}
-      >
-        {formattedValue}
-      </text>
-    </g>
+    <text
+      x={x + INSIDE_LABEL_PAD_X}
+      y={centerY}
+      dominantBaseline="middle"
+      textAnchor="start"
+      fill={fill}
+      stroke={VX.surface.panel}
+      strokeWidth={INSIDE_LABEL_HALO_WIDTH}
+      paintOrder="stroke"
+      fontFamily={TICK_FONT_FAMILY}
+      fontSize={size}
+    >
+      {formattedValue}
+    </text>
   )
 }
 
@@ -261,7 +256,11 @@ export function AxisBottomDate({
             : terminalAnchor({ anchorTerminals, index, count: values.length }),
         ...(rotate !== undefined && { angle: -rotate }),
         ...(rotated !== undefined && { dx: rotated.dx, dy: rotated.dy }),
-        ...(wrapWidth !== undefined && rotated === undefined && { width: wrapWidth }),
+        // A wrapped label's default baseline anchors its LAST line, which stacks the earlier ones
+        // UPWARD into the axis line and ticks (R2C-7) — `autoMargin`'s `bottomLines` reserves room
+        // BELOW the axis, so the reservation and the paint have to agree on which line anchors.
+        ...(wrapWidth !== undefined &&
+          rotated === undefined && { width: wrapWidth, verticalAnchor: 'start', dy: '-0.35em' }),
       })}
       stroke={VX.surface.border}
       tickStroke={VX.surface.border}

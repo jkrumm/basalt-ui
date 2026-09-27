@@ -545,8 +545,8 @@ function fmtWide(key: string): string {
 
 const CHART_DAYS = 30
 
-function buildChartData(seriesCount: number): ChartPoint[] {
-  return Array.from({ length: CHART_DAYS }, (_, i) => ({
+function buildChartData(seriesCount: number, days: number = CHART_DAYS): ChartPoint[] {
+  return Array.from({ length: days }, (_, i) => ({
     date: isoDate(i),
     values: Array.from(
       { length: seriesCount },
@@ -633,7 +633,7 @@ function ChartsFixture({ spec }: { spec: ChartsSpec }): ReactElement {
       case 'bandStrip':
         return (
           <BandStrip
-            data={buildChartData(seriesCount)}
+            data={buildChartData(seriesCount, spec.days)}
             chartId="fixture-chart"
             getX={(d) => d.date}
             series={buildBandSeries(seriesCount)}

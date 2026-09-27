@@ -20,7 +20,12 @@ import type { ReactNode, RefObject } from 'react'
 import type { ChartMargin } from '../../tokens'
 import type { CursorResolution } from '../cursor/resolve'
 import { autoMargin } from '../layout/auto-margin'
-import { isTightClass, planXLabels, resolveYPlacement } from '../primitives/chart-layout'
+import {
+  INSIDE_Y_FLOOR,
+  isTightClass,
+  planXLabels,
+  resolveYPlacement,
+} from '../primitives/chart-layout'
 import { useChartContainerClass, useChartMetrics } from '../primitives/chart-tier'
 import { maxTextWidth } from '../utils/measure-text'
 import { smartTicks, xLabelPxFor } from '../utils/ticks'
@@ -222,7 +227,9 @@ export function useBandPlot<T>(input: UseBandPlotInput<T>): BandPlot<T> {
       ...(leftLabels !== undefined && { left: yPlacement === 'outside' ? leftLabels : [] }),
       bottom: xLabelsAll,
       fontPx: tier.axisFont,
-      floor: tier.margin,
+      // An inside-placed left axis paints IN the plot, so the outside label-width floor is dead
+      // space there — same law as `CartesianChart`'s `marginInput.floor`.
+      floor: yPlacement === 'outside' ? tier.margin : { ...tier.margin, left: INSIDE_Y_FLOOR },
       anchorTerminals: tight,
       bottomLines: xPlan.lines,
       ...(marginOverride !== undefined && { override: marginOverride }),
@@ -323,8 +330,8 @@ export function useBandPlot<T>(input: UseBandPlotInput<T>): BandPlot<T> {
     // Micro: the two terminals only.
     if (containerClass === 'micro')
       return keys.length > 1 ? [keys[0]!, keys[keys.length - 1]!] : [...keys]
-    return [...smartTicks(keys, plotWidth, xLabelPx)]
-  }, [keys, plotWidth, xTickValues, xLabelPx, containerClass])
+    return [...smartTicks(keys, plotWidth, xLabelPx, tight)]
+  }, [keys, plotWidth, xTickValues, xLabelPx, containerClass, tight])
 
   const point = cursor.point
   const crosshairX = point === null ? null : (bandCenter(getX(point)) ?? null)

@@ -313,4 +313,20 @@ layout('Charts — real layout', () => {
         'given',
     )
   })
+
+  test('a wrapped label anchors below the tick, never growing up into the axis line (R2C-7)', async () => {
+    // A `bandStrip` (categorical by construction) with only 6 wide "Jan DD HH:MM" keys: narrow
+    // enough that every key wraps and fits (R2C-6's law), so this actually exercises the wrap path
+    // — the 30-key default is too dense to ever wrap at phone width, it only thins.
+    const p = await openFixture(
+      chartFixture({ kind: 'bandStrip', formatX: 'wide', days: 6 }),
+      PHONE,
+    )
+    const axisLine = await p.box('axis line', `${FRAME} .visx-axis-bottom .visx-axis-line`)
+    const labels = await p.boxes(TICK_TEXT)
+    expect(labels.length).toBeGreaterThan(0)
+    for (const label of labels) {
+      expect(label.top).toBeGreaterThanOrEqual(axisLine.box.bottom - 0.5)
+    }
+  })
 })

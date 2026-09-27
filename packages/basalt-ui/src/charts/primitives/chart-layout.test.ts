@@ -88,10 +88,13 @@ describe('height', () => {
     expect(layout({ frameW: 900, coarse: true, viewportH: 0 }).height).toBe(360)
   })
 
-  test('the consumer override wins over everything', () => {
+  test('the consumer override wins over the derived height, but not the coarse viewport clamp', () => {
+    expect(layout({ frameW: 900, coarse: false, override: { height: 500 } }).height).toBe(500)
+    // 600 * 0.45 = 270, less than the override — the clamp is a safety cap, not a design choice
+    // an override can opt out of (R2C-12).
     expect(
       layout({ frameW: 900, coarse: true, viewportH: 600, override: { height: 500 } }).height,
-    ).toBe(500)
+    ).toBe(270)
   })
 })
 
@@ -281,11 +284,19 @@ describe('ladder step 3-4: wrap, rotate and terminals', () => {
     })
   })
 
-  test('multi-word labels that do not fit wrap before they rotate', () => {
-    const plan = planXLabels({ labels, plotWidth: 300, fontPx: 10, categorical: true })
-    expect(plan).toMatchObject({ wrap: true, rotate: 0 })
+  test('multi-word labels wrap only when wrapping shows every key', () => {
+    const plan = planXLabels({ labels, plotWidth: 400, fontPx: 10, categorical: true })
+    expect(plan).toMatchObject({ wrap: true, rotate: 0, thinTo: labels.length })
     expect(plan.lines).toBeGreaterThan(1)
     expect(plan.wrapPx).toBeGreaterThan(0)
+  })
+
+  test('a wrap that would still drop keys falls back to flat/thinned instead', () => {
+    // Same labels, a plot too narrow for all 6 wrapped: R2C-6's fix is that this NEVER wraps and
+    // thins anyway (dropping keys for a two-line axis that bought nothing) — it just thins flat.
+    const plan = planXLabels({ labels, plotWidth: 300, fontPx: 10, categorical: true })
+    expect(plan).toMatchObject({ wrap: false, rotate: 0, lines: 1 })
+    expect(plan.thinTo).toBeLessThan(labels.length)
   })
 
   test('rotate only when keys exceed twice what fits, even wrapped', () => {

@@ -22,8 +22,10 @@ describe('smartTicks', () => {
     expect(smartTicks(keys(7), 250, 80)).toEqual(['k0', 'k3', 'k6'])
   })
 
-  test('a label narrower than the floor changes nothing', () => {
-    expect(smartTicks(keys(7), 250, 20)).toEqual(smartTicks(keys(7), 250))
+  test('a measured label narrower than the constant still wins — more ticks, not fewer', () => {
+    // 250px / 20px allows all 7; the bare constant would have thinned to 4 (see the default-spacing
+    // case above). The measured width is what was actually painted, so it governs either direction.
+    expect(smartTicks(keys(7), 250, 20)).toEqual(keys(7))
     expect(VX.minPxPerTick).toBeGreaterThan(20)
   })
 
@@ -207,6 +209,14 @@ describe('smartTicks — the appended final tick no longer prints on its neighbo
     expect(ticks).toEqual(['k0', 'k3', 'k6', 'k8'])
   })
 
+  test('with `anchorTerminals`, a tick too close to the appended END terminal is dropped too', () => {
+    const wide = Array.from({ length: 9 }, (_, i) => `k${i}`)
+    // Same layout as above, but the last (appended) tick is now END-anchored: its full-width reach
+    // needs 90px (1.5×60) from its neighbour, not the plain 60px, so k6 goes.
+    const ticks = smartTicks(wide, 280, 60, true)
+    expect(ticks).toEqual(['k0', 'k3', 'k8'])
+  })
+
   test('the LEFT-edge label is never the one dropped', () => {
     // 4 keys, a 200px label at 100px: maxTicks floors to 2, step 2 -> {0, 2}, index 3 appended
     // 25px later, so the crowded grid tick (index 2) IS dropped — and index 0 survives it.
@@ -227,9 +237,35 @@ describe('smartTicks — the appended final tick no longer prints on its neighbo
     }
   })
 
-  test('a grid that already lands on the last index is untouched', () => {
+  test('a grid that already lands on the last index is untouched without `anchorTerminals`', () => {
     const nine = Array.from({ length: 9 }, (_, i) => `k${i}`)
     // step 2 -> 0,2,4,6,8: the last index IS on the grid, so nothing is appended or dropped.
     expect(smartTicks(nine, 280, 55)).toEqual(['k0', 'k2', 'k4', 'k6', 'k8'])
+  })
+
+  test('with `anchorTerminals`, the head is protected the same way the appended tail is', () => {
+    const nine = Array.from({ length: 9 }, (_, i) => `k${i}`)
+    // Same layout, but index 0 is now START-anchored: 2's centre (62px away) is inside the 82.5px
+    // (1.5×55) that full-width reach needs, so 2 goes even though the tail never appends anything.
+    expect(smartTicks(nine, 280, 55, true)).toEqual(['k0', 'k4', 'k6', 'k8'])
+  })
+
+  test('neither boundary pair ever sits closer than 1.5 label widths, across a spread of widths', () => {
+    // Regression case (a 30-day `Bars` fixture, R2C-6): a plain per-tick gap left the START-anchored
+    // first tick's own footprint overlapping the next centred one (`layout/charts.layout.test.ts`
+    // "wide x labels never overlap"). This checks the same invariant generically, not just at the
+    // one width the fixture happened to render at.
+    const dates = Array.from({ length: 30 }, (_, i) => `k${i}`)
+    const labelPx = 80
+    for (const xMax of [150, 280, 320, 390, 500, 900]) {
+      const ticks = smartTicks(dates, xMax, labelPx, true)
+      const idx = ticks.map((d) => dates.indexOf(d))
+      if (idx.length < 2) continue
+      const pxPerIndex = xMax / dates.length
+      const first = idx[1]! * pxPerIndex
+      const lastGap = (idx.at(-1)! - idx.at(-2)!) * pxPerIndex
+      expect(first).toBeGreaterThanOrEqual(labelPx * 1.5 - 0.01)
+      expect(lastGap).toBeGreaterThanOrEqual(labelPx * 1.5 - 0.01)
+    }
   })
 })
