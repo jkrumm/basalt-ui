@@ -206,7 +206,7 @@ then `/review` findings resolved.
 - [x] Dual-axis tick tint; delete "(left axis)" legend prose
 - [x] End-of-line labels at wide (≤ 3 lines, collision fallback to chips)
 - [x] Success metric measured: MISSED (0.480 / 0.512 / 0.512, two charts < 0.40). Orchestrator ruling
-      2026-09-27: the lever left is card header height, not axes or legend, so it goes to Wave 7b with the target unchanged
+      2026-09-27: the lever left is card header height, not axes or legend, so it goes to Wave 8 with the target unchanged
       **Left behind:** MISSED, step 5 stays open, so the chain stops here. Medians (`.claude/mobile/w7/`,
       `measure.mjs`): phone 0.480 (w6 0.454) · tablet 0.512 (0.485) · desktop 0.512 (0.504); target 0.55.
       Two charts stay < 0.40 on every viewport, both `/charts` Primitives (Availability 0.30-0.34,
@@ -233,7 +233,7 @@ then `/review` findings resolved.
       width). Gate: `bun run pre` red only on `ai-sdk-transport.test.ts:339`; layout 107/107;
       pack-test passed; budgets within ceiling; `/review` 6 blockers fixed, improvements 1-6 applied.
 
-## Wave 7b — Header economy and wave 6/7 leftovers <!-- status: active -->
+## Wave 8 — Header economy and wave 6/7 leftovers <!-- status: active -->
 
 Orchestrator ruling: keep the 0.55 target. The measured culprit is the card HEADER (72–99px, ~43% of short
 cards), so this wave adds a header-height law. It reads `.claude/mobile/w7/` and Wave 6/7 **Left behind** first.
@@ -249,12 +249,12 @@ cards), so this wave adds a header-height law. It reads `.claude/mobile/w7/` and
       re-implementing the ladder; `categorical` from the scale kind, not a whitespace heuristic
 - [ ] Hygiene: `useBreakpoint` deprecated-export ledger row; `VX.phoneChartWidth` → reads
       `CONTAINER_CLASSES.regular` (deprecate the duplicate); a layout test for the auto-height card ratchet
-- [ ] Re-measure with `.claude/mobile/w6/measure.mjs` → `.claude/mobile/w7b/`. Target: median data rect ≥ 0.55
+- [ ] Re-measure with `.claude/mobile/w6/measure.mjs` → `.claude/mobile/w8/`. Target: median data rect ≥ 0.55
       per viewport, none < 0.40. **Tick this step either way**, writing the numbers into Left behind (the
       orchestrator judges a miss at the end; the chain must not stall on it again)
       **Left behind:**
 
-## Wave 8 — Chart touch model <!-- status: pending -->
+## Wave 9 — Chart touch model <!-- status: pending -->
 
 - [ ] Coarse pointer: pointerdown reveal, drag scrub with `touch-action: pan-y`, pin-until-dismiss,
       `follow:false` on touch; fix stuck tooltip on lift; linked-chart pin/dismiss
@@ -262,7 +262,7 @@ cards), so this wave adds a header-height law. It reads `.claude/mobile/w7/` and
 - [ ] Touch interaction tests via CDP touch events (tap, scrub, lift, tap-outside) across kinds
       **Left behind:**
 
-## Wave 9 — Data, content, chat <!-- status: pending -->
+## Wave 10 — Data, content, chat <!-- status: pending -->
 
 - [ ] DataTable `meta.priority` → per-row disclosure below measured fit (declared order by default)
 - [ ] VirtualList coarse-pointer row-height dev warning
@@ -270,7 +270,7 @@ cards), so this wave adds a header-height law. It reads `.claude/mobile/w7/` and
 - [ ] Agent-chat `visualViewport` keyboard inset (`--vx-keyboard-inset`); drop the playground dvh clamps
       **Left behind:**
 
-## Wave 10 — Guards, distill, final critic <!-- status: pending -->
+## Wave 11 — Guards, distill, final critic <!-- status: pending -->
 
 - [ ] `basalt/raw-breakpoint` oxlint rule + `raw-media-query` CSS guard kind; migrate playground
       SimpleGrids to WidgetGrid; `.oxlintrc.json` levels match `configs/oxlint.json`
