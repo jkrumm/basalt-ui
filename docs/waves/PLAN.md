@@ -98,62 +98,62 @@ resolved.
       `git diff --stat` vs the wave-1 close-out commit). One commit, `refactor: slim down the dead
 axis resolver, media-query stores and speculative chart escape hatches`.
 
-          **B4** — `resolveAxisEconomy`/`AxisEconomyInput`/`useChartLayout`/the `side` legend variant/
-          `thinTo`'s micro override are gone from `chart-layout.ts`/`chart-tier.tsx`; `XLabelPlan` is now
-          its own type instead of `Pick<ChartLayout['xAxis'], …>`. `ChartFrame`'s `resolveChartLayout`
-          call drops the always-`[]`/`false` `yLabels`/`xLabels`/`categorical` args (dead — the real axis
-          ladder runs off `isTightClass`/`planXLabels`/`yTickCount` directly in `CartesianChart`/
-          `useBandPlot`, untouched). `ChartFrame.test.tsx`'s `useChartLayout`-based probe now reads
-          `useChartContainerClass()` instead (height assertions dropped — already covered directly in
-          `chart-layout.test.ts`).
+            **B4** — `resolveAxisEconomy`/`AxisEconomyInput`/`useChartLayout`/the `side` legend variant/
+            `thinTo`'s micro override are gone from `chart-layout.ts`/`chart-tier.tsx`; `XLabelPlan` is now
+            its own type instead of `Pick<ChartLayout['xAxis'], …>`. `ChartFrame`'s `resolveChartLayout`
+            call drops the always-`[]`/`false` `yLabels`/`xLabels`/`categorical` args (dead — the real axis
+            ladder runs off `isTightClass`/`planXLabels`/`yTickCount` directly in `CartesianChart`/
+            `useBandPlot`, untouched). `ChartFrame.test.tsx`'s `useChartLayout`-based probe now reads
+            `useChartContainerClass()` instead (height assertions dropped — already covered directly in
+            `chart-layout.test.ts`).
 
-          **B5/B3** — new `common/use-media-query.ts` (`useMediaQuery` + a non-reactive `readMediaQuery`
-          for a dev-only one-off check), keyed by a `WeakMap<typeof window.matchMedia, Map<query,
-          MediaQueryList>>` rather than a bare `Map<query, …>` — a bare map would have served a STALE
-          `MediaQueryList` to any test that swaps in its own `window.matchMedia` stub per test (a real
-          pattern here: `provider/host.test.tsx`, `use-size-class.test.tsx`, `virtual-list.test.tsx`),
-          since the cache would outlive the stub. `useSizeClass` is now two `useMediaQuery` calls (dropped
-          its own `useState(boundaryLists)`); `shell/index.tsx`'s `useMinWidth` is gone (inlined);
-          `useCoarsePointer` and `useBreakpoint` are one-line forwarders; `virtual-list.tsx`'s and
-          `provider/index.tsx`'s raw `window.matchMedia` reads route through the shared module. Verified:
-          `raw-breakpoint` self-fires in `packages/basalt-ui/src` went from 11 (already down from the
-          review's 14 after wave 1) to 2 — `ChartLegend.tsx`'s `window.innerHeight`/`innerWidth`
-          popover-positioning read and `content/article-card.tsx`'s pre-existing incumbent, neither named
-          in P1-5's fix list, both left alone.
+            **B5/B3** — new `common/use-media-query.ts` (`useMediaQuery` + a non-reactive `readMediaQuery`
+            for a dev-only one-off check), keyed by a `WeakMap<typeof window.matchMedia, Map<query,
+            MediaQueryList>>` rather than a bare `Map<query, …>` — a bare map would have served a STALE
+            `MediaQueryList` to any test that swaps in its own `window.matchMedia` stub per test (a real
+            pattern here: `provider/host.test.tsx`, `use-size-class.test.tsx`, `virtual-list.test.tsx`),
+            since the cache would outlive the stub. `useSizeClass` is now two `useMediaQuery` calls (dropped
+            its own `useState(boundaryLists)`); `shell/index.tsx`'s `useMinWidth` is gone (inlined);
+            `useCoarsePointer` and `useBreakpoint` are one-line forwarders; `virtual-list.tsx`'s and
+            `provider/index.tsx`'s raw `window.matchMedia` reads route through the shared module. Verified:
+            `raw-breakpoint` self-fires in `packages/basalt-ui/src` went from 11 (already down from the
+            review's 14 after wave 1) to 2 — `ChartLegend.tsx`'s `window.innerHeight`/`innerWidth`
+            popover-positioning read and `content/article-card.tsx`'s pre-existing incumbent, neither named
+            in P1-5's fix list, both left alone.
 
-          **B7/B12/B9** — `legend.mode` deleted from `ChartLegendConfig`/`ChartFrameLegend` (grep of
-          argo/weatherorb/the playground: zero consumers); `ChartLegend`'s own internal `mode` prop
-          (resolver-driven) is untouched. `BasaltProvider`'s `host` prop is gone; `useHostAttribute` takes
-          no argument and always auto-detects (`<html data-basalt-host="web|pwa">`, `native` removed with
-          zero consumers). Hard-deleted with no grace window (zero consumers, confirmed by grep):
-          `resolveChartTier`, `chartTierMetrics`, `useChartTier`, `useChartTierMetrics` (all from the
-          `./charts` barrel), `VX.phoneChartWidth`, `ResponsiveChartHeight.sm/md/lg`. **`ChartTier`/
-          `ChartTierMetrics` themselves stay as internal (unexported) types** in `chart-frame-layout.ts` —
-          `ticks.ts`'s `autoXLabelRotate`, `Axes.tsx` and `auto-margin.ts` still read the tier concept
-          internally; only the PUBLIC surface (the barrel re-export, six symbol names) is gone, matching
-          the review's own "-6 public symbols" accounting. `tierOfContainerClass` + `chartTierMetrics`
-          collapsed into one `chartMetrics(containerClass)`. Added a NEW "on notice (adopt-or-delete)"
-          MIGRATING row for the whole `ResponsiveChartHeight` object form (not just its old keys) — zero
-          consumers under `~/SourceRoot` use `{ base, regular, wide }` over a plain number, and the
-          derived-height law already covers the common case; a future minor may drop it for a plain
-          number + explicit override unless a consumer names a need. `export-surface.json` regenerated
-          (`--update`) to match.
-          **B1** — the two grace entries genuinely new to this branch (`raw-breakpoint` in
-          `oxlint-plugin.js`, `raw-media-query` in `guard/index.ts`) moved `since: 1.30.2 → 1.31.0`,
-          `promote: 1.31.0 → 1.32.0`; the `legend.maxRows` deprecation notices (JSDoc ×2 +
-          `deprecatedProp` call) moved `1.31.0 → 1.32.0`. **Deliberately left alone**: the PRE-EXISTING
-          `control-outside-home`/`raw-selection-control` (C1) pair, still genuinely scheduled to promote
-          AT 1.31.0 (decided when 1.31.0 was already the next real version, unrelated to this branch's
-          off-by-one) — `bun packages/basalt-ui/scripts/check-grace.ts 1.31.0` now fails on ONLY those
-          two, verified. **This is a real release blocker for whoever cuts 1.31.0**: either promote the
-          C1 pair to `error` (re-measure the fleet per its own grace-entry `why`) or extend `promote` with
-          a reason, before `make release` will get past its preflight. Orchestrator's call, per this
-          file's header.
+            **B7/B12/B9** — `legend.mode` deleted from `ChartLegendConfig`/`ChartFrameLegend` (grep of
+            argo/weatherorb/the playground: zero consumers); `ChartLegend`'s own internal `mode` prop
+            (resolver-driven) is untouched. `BasaltProvider`'s `host` prop is gone; `useHostAttribute` takes
+            no argument and always auto-detects (`<html data-basalt-host="web|pwa">`, `native` removed with
+            zero consumers). Hard-deleted with no grace window (zero consumers, confirmed by grep):
+            `resolveChartTier`, `chartTierMetrics`, `useChartTier`, `useChartTierMetrics` (all from the
+            `./charts` barrel), `VX.phoneChartWidth`, `ResponsiveChartHeight.sm/md/lg`. **`ChartTier`/
+            `ChartTierMetrics` themselves stay as internal (unexported) types** in `chart-frame-layout.ts` —
+            `ticks.ts`'s `autoXLabelRotate`, `Axes.tsx` and `auto-margin.ts` still read the tier concept
+            internally; only the PUBLIC surface (the barrel re-export, six symbol names) is gone, matching
+            the review's own "-6 public symbols" accounting. `tierOfContainerClass` + `chartTierMetrics`
+            collapsed into one `chartMetrics(containerClass)`. Added a NEW "on notice (adopt-or-delete)"
+            MIGRATING row for the whole `ResponsiveChartHeight` object form (not just its old keys) — zero
+            consumers under `~/SourceRoot` use `{ base, regular, wide }` over a plain number, and the
+            derived-height law already covers the common case; a future minor may drop it for a plain
+            number + explicit override unless a consumer names a need. `export-surface.json` regenerated
+            (`--update`) to match.
+            **B1** — the two grace entries genuinely new to this branch (`raw-breakpoint` in
+            `oxlint-plugin.js`, `raw-media-query` in `guard/index.ts`) moved `since: 1.30.2 → 1.31.0`,
+            `promote: 1.31.0 → 1.32.0`; the `legend.maxRows` deprecation notices (JSDoc ×2 +
+            `deprecatedProp` call) moved `1.31.0 → 1.32.0`. **Deliberately left alone**: the PRE-EXISTING
+            `control-outside-home`/`raw-selection-control` (C1) pair, still genuinely scheduled to promote
+            AT 1.31.0 (decided when 1.31.0 was already the next real version, unrelated to this branch's
+            off-by-one) — `bun packages/basalt-ui/scripts/check-grace.ts 1.31.0` now fails on ONLY those
+            two, verified. **This is a real release blocker for whoever cuts 1.31.0**: either promote the
+            C1 pair to `error` (re-measure the fleet per its own grace-entry `why`) or extend `promote` with
+            a reason, before `make release` will get past its preflight. Orchestrator's call, per this
+            file's header.
 
-          Gate run: `bun run build` → `bun run pre` (fmt/lint/typecheck/check-theme/check-budgets/tests,
-          4774 pass) → `bun run test:layout` (125 pass) → `packages/basalt-ui` `bun run pack-test`
-          (PASSED) — all green, in pieces rather than `make verify` (another Chrome was running; wave 1's
-          warning), but every step it would have chained ran and passed.
+            Gate run: `bun run build` → `bun run pre` (fmt/lint/typecheck/check-theme/check-budgets/tests,
+            4774 pass) → `bun run test:layout` (125 pass) → `packages/basalt-ui` `bun run pack-test`
+            (PASSED) — all green, in pieces rather than `make verify` (another Chrome was running; wave 1's
+            warning), but every step it would have chained ran and passed.
 
 ## Wave 3 — Card and legend correctness <!-- status: done -->
 
@@ -230,8 +230,8 @@ touchAction: 'pan-y' }}` is a literal repeated across four plot `<svg>`s with no
 - [x] Re-measure with `r2/measure.mjs` into `r2/w4/`. Target: median data rect ≥ 0.55 at each
       viewport and none < 0.40. Tick this step either way and record the numbers
       **Left behind:** Two commits, `fix: give the plot its space — inside-y floor, wrap law,
-  height clamp` (packages/basalt-ui, `71a855b`) and `refactor: drop literal chart heights and
-  digit-grouping-only y formats` (root, `e940d52`) — split because a mixed staging set trips
+height clamp` (packages/basalt-ui, `71a855b`) and `refactor: drop literal chart heights and
+digit-grouping-only y formats` (root, `e940d52`) — split because a mixed staging set trips
       the repo's own `isolated-basalt-ui` pre-commit guard. Gate run in full: `bun run build` →
       `bun run pre` (4801 pass) → `bun run test:layout` (127 pass, one new case) →
       `packages/basalt-ui` `bun run pack-test` (PASSED).
@@ -352,7 +352,7 @@ touchAction: 'pan-y' }}` is a literal repeated across four plot `<svg>`s with no
 - [x] A minimal row-selection specimen goes back into an existing playground route, not a new route
       file (data-3)
       **Left behind:** One commit, `fix: touch floors, filter hit gap, form-row container width,
-    composer padding` (packages/basalt-ui, `f6329ef`). Gate run in full: `bun run build` →
+  composer padding` (packages/basalt-ui, `f6329ef`). Gate run in full: `bun run build` →
       `bun run pre` (4810 pass) → `bun run test:layout` (132 pass, 5 new) →
       `packages/basalt-ui` `bun run pack-test` (PASSED).
 
@@ -444,7 +444,7 @@ touchAction: 'pan-y' }}` is a literal repeated across four plot `<svg>`s with no
       documented claim). `raw-media-query` matches any width unit (rem, vw). The three self-violations
       are annotated or fixed, and `(pointer: fine)` is sanctioned next to `coarse`
       (code-data-content-guards)
-- [ ] Repoint every `docs/waves/RESPONSIVE-SPEC.md` citation (43+ files, guard messages, deprecation
+- [ ] Repoint every citation of the deleted wave spec (43+ files, guard messages, deprecation
       notes) to DESIGN-CORE / CHARTS-SPEC / CONTROLS-SPEC. Guard messages inline the allowed
       `@container` names and boundaries. Extend `check-agent-doc-drift` to `src/**` and `configs/**` so
       this can't recur (B2, responsive-spec-dangling-references)
