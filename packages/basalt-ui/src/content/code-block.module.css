@@ -56,7 +56,7 @@
   overflow-x: auto;
 }
 
-/* Trailing-edge overflow fade (docs/waves/RESPONSIVE-SPEC.md §6) — `code-block.tsx` toggles this
+/* Trailing-edge overflow fade (docs/MATURATION-LEDGER.md) — `code-block.tsx` toggles this
  * attribute from a scroll/resize measurement (`scrollWidth > clientWidth`, not yet at the end), so
  * it never decorates a block that already fits and never lingers once scrolled to the end. The mask
  * fades to TRANSPARENT, not to a solid color — what shows through is `.container`'s own translucent
@@ -101,7 +101,7 @@ html[data-mantine-color-scheme='light'] .body :global(.shiki span) {
   transition: opacity 120ms ease;
 }
 
-/* Hidden-until-hover only where hover exists (RESPONSIVE-SPEC §1 pointer tier); touch shows it. */
+/* Hidden-until-hover only where hover exists (pointer tier, docs/DESIGN-CORE.md § Layout). */
 @media (hover: hover) and (pointer: fine) {
   .floatingCopy {
     opacity: 0;

@@ -47,33 +47,17 @@ export type UseDiscreteCursorResult<T> = {
 
 /**
  * Keyboard + focus + tap parity for a DISCRETE set of targets (donut slices, heatmap cells) — the
- * counterpart `HoverOverlay` gives a continuous cartesian domain
- * (`docs/waves/RESPONSIVE-SPEC.md` §5).
+ * counterpart `HoverOverlay` gives a continuous cartesian domain (`docs/CHARTS-SPEC.md` §4).
  *
- * **Role choice**: `listbox`/`option` (WAI-ARIA APG "Listbox"), not `slider`. `HoverOverlay` uses
- * `role="slider"` because a cartesian domain IS one continuous value with a min/max; a donut slice
- * or a heatmap cell is a NAMED choice among many discrete siblings, which is exactly what a listbox
- * models. `aria-activedescendant` announces the focused option's id while DOM focus stays on the
- * one host — no per-shape `tabIndex`, matching `HoverOverlay`'s one-focusable-node shape.
+ * **Role choice**: `listbox`/`option` (WAI-ARIA APG "Listbox"), not `slider`. A cartesian domain is
+ * one continuous value; a donut slice or heatmap cell is a named choice among discrete siblings.
+ * `aria-activedescendant` announces the focused option's id while DOM focus stays on the one host.
  *
- * Three input modes converge on one `tip`:
- * - **Fine pointer** (mouse/pen): hover shows the tooltip, ephemeral — clears on pointer leave,
- *   unchanged from today's per-arc/per-cell handlers.
- * - **Coarse pointer** (touch): `pointerdown` shows it PROVISIONALLY, and `pointerup` COMMITS the
- *   pin; a `pointercancel` before commit (the browser taking the gesture as a scroll) clears it
- *   instead (`R2C-1`/`P0-2`). A committed pin survives lift, a tap on a different target moves it,
- *   and it's dismissed by a tap outside the host or Escape — the same pin-until-dismiss contract
- *   the cartesian kinds use for a scrub.
- * - **Keyboard**: the host is the one focusable node; arrow keys step `targets` by index and
- *   Escape clears (same key `HoverOverlay` uses). `columns`, when given, maps Up/Down to a
- *   full-row jump (`±columns`) so a 2D grid (Heatmap, row-major `targets`) gets real row/column
- *   movement over one flat list; Left/Right always step by one. Omitted (Donut's single ring),
- *   every arrow steps by one — Up/Down and Left/Right are equivalent.
- *
- * Keyboard focus has no pointer coordinate to anchor a tooltip at, so it anchors to the HOST's own
- * bounding-box center — an accepted simplification (exact per-arc/per-cell geometry would need
- * each kind to hand this hook a screen-space centroid resolver for one extra pixel of polish); the
- * value itself still reaches a screen reader via the option's accessible text.
+ * Three input modes converge on one `tip`: hover (fine pointer, ephemeral), a provisional tap that
+ * `pointerup` commits into a pin (a `pointercancel` first — a scroll — clears it), and keyboard
+ * stepping on the one focusable host (`columns` maps Up/Down to a full-row jump for a 2D grid;
+ * Left/Right always step by one). Keyboard focus anchors the tooltip to the host's center — an
+ * accepted simplification; the value still reaches a screen reader via the option's text.
  */
 export function useDiscreteCursor<T>({
   targets,
@@ -93,7 +77,7 @@ export function useDiscreteCursor<T>({
   const hostElRef = useRef<Element | null>(null)
   // The `pointerId` of a coarse press that has shown a readout but not yet committed the pin
   // (`pointerup`). A `pointercancel` naming this pointer before it commits is the browser taking
-  // the gesture — a scroll — and clears instead (`R2C-1`/`P0-2`).
+  // the gesture — a scroll — and clears instead.
   const pressRef = useRef<number | null>(null)
   const idPrefix = useId()
 
@@ -130,8 +114,8 @@ export function useDiscreteCursor<T>({
       if (event.key === 'Escape') clear()
     }
     // A pinned tooltip's `anchor` is a viewport coordinate captured at tap time — a page scroll
-    // moves the chart out from under it exactly as it does for `useChartCursor`'s cartesian pin
-    // (`R2C-4`), so this needs the same capture-phase `scroll` → `clear()` dismissal.
+    // moves the chart out from under it, so this needs the same capture-phase `scroll` → `clear()`
+    // dismissal `useChartCursor`'s cartesian pin uses.
     const onScroll = (): void => clear()
     // Capture phase, matching `useChartCursor`'s equivalent listener: a bubble-phase listener
     // would never fire if some ancestor between the tapped element and `document` calls
@@ -147,13 +131,11 @@ export function useDiscreteCursor<T>({
     }
   }, [pinned, clear])
 
-  // Index in `targetsRef`, NOT the key: Heatmap's `cellKey` joins cells with `\u0000`, which leaked
-  // a NUL into a DOM id (`_r_93_-Mon\u00008:00`) and an id has to be a valid DOM token (`P1-6`).
-  // Resolved by KEY, not reference: Heatmap builds a fresh `{ row, col, value }` object per cell
-  // render, never the same reference as the memoized `targets` array, so a reference lookup always
-  // missed and rendered every option's id as index `-1`. A `Map` built once per `targets` change,
-  // not a `findIndex` per call, keeps this O(1) — `optionId` runs once per rendered target plus once
-  // for `aria-activedescendant`, on the same render loop the touch-scrub path re-runs every frame.
+  // Index in `targetsRef`, NOT the key: Heatmap's `cellKey` joins cells with `\u0000`, which would
+  // leak a NUL into a DOM id, and an id has to be a valid DOM token. Resolved by KEY, not reference:
+  // Heatmap builds a fresh `{ row, col, value }` object per cell render, so a reference lookup always
+  // misses. A `Map` built once per `targets` change keeps `optionId` O(1) on the render loop the
+  // touch-scrub path re-runs every frame.
   const indexByKey = useMemo(() => {
     const map = new Map<string, number>()
     targets.forEach((t, i) => map.set(getKeyRef.current(t), i))
@@ -201,8 +183,7 @@ export function useDiscreteCursor<T>({
       // Only a coarse pointer presses — a fine pointer's `down` is a no-op, it already shows via
       // enter/move above. The press is PROVISIONAL: it shows the readout but does not commit the
       // pin, which only `onPointerUp` does. On touch the readout anchors to the HOST's top edge
-      // rather than the finger, which would cover it (`P2-11`); a missing host falls back to the
-      // pointer position.
+      // rather than the finger, which would cover it; a missing host falls back to the pointer.
       onPointerDown: (event) => {
         if (event.pointerType === 'mouse') return
         pressRef.current = event.pointerId

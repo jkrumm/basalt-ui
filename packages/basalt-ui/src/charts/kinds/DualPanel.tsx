@@ -337,7 +337,7 @@ function DualPanelPlot<T>(props: DualPanelPlotProps<T>) {
   )
 
   // ONE `<svg>` wraps both panes below, so it doubles as the tap-outside boundary
-  // (`docs/waves/RESPONSIVE-SPEC.md` §5) for the single cursor they share.
+  // (`docs/CHARTS-SPEC.md` §4, Tooltip) for the single cursor they share.
   const svgRef = useRef<SVGSVGElement>(null)
   const cursor = useChartCursor<T>({
     data,

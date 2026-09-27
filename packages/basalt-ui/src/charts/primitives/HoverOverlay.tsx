@@ -26,7 +26,7 @@ export function HoverOverlay({
   height: number
   onMove: PointerEventHandler<SVGRectElement>
   /** Coarse-pointer tap: resolves + shows the tooltip immediately, with no preceding `pointermove`
-   * (`docs/waves/RESPONSIVE-SPEC.md` §5). The press is provisional; `onUp` commits it. */
+   * (`docs/CHARTS-SPEC.md` §4, Tooltip). The press is provisional; `onUp` commits it. */
   onDown?: PointerEventHandler<SVGRectElement>
   /** Commits the provisional touch press so the pin survives the lift. */
   onUp?: PointerEventHandler<SVGRectElement>

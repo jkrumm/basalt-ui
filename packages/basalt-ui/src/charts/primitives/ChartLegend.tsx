@@ -242,7 +242,7 @@ const LEGEND_CHILD_STYLE: CSSProperties = {
 }
 
 /**
- * The whole entry collapses to its color, in 'dots' mode (RESPONSIVE-SPEC.md §1/§4: a short or
+ * The whole entry collapses to its color, in 'dots' mode (`docs/CHARTS-SPEC.md` §5: a short or
  * `compact`-container header has no room for a text label per entry) — a plain 8px circle
  * regardless of the series' own shape, since a two-tone `split`/`splitLine` swatch cannot express
  * two colors in one dot. The name survives via the button's own `aria-label`; sighted users get
@@ -355,7 +355,7 @@ export function ChartLegend({
   /**
    * `'dots'` collapses every VISIBLE entry to a plain color dot with no label (the name still
    * reaches assistive tech via `aria-label`) — `resolveChartLayout`'s header-slot legend forces
-   * this for a short `ChartCard` (wave 11, RESPONSIVE-SPEC.md §4) so the legend band's height and
+   * this for a short `ChartCard` (wave 11, `docs/CHARTS-SPEC.md` §5) so the legend band's height and
    * width both shrink before it eats plot space. The `All N` disclosure panel is unaffected: it
    * always shows the full swatch + label, `mode` only governs the inline row. Default `'chips'`
    * (today's swatch + label rendering) for every other caller.

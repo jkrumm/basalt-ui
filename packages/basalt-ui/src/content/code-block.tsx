@@ -56,7 +56,7 @@ export function CodeBlock({
     }
   }, [code, language])
 
-  // Trailing-edge overflow fade (docs/waves/RESPONSIVE-SPEC.md §6): visible only while `.body` is
+  // Trailing-edge overflow fade (docs/MATURATION-LEDGER.md): visible only while `.body` is
   // actually wider than its box AND not yet scrolled to the end — never a permanent decoration on a
   // block that already fits, never a fade implying more content once the reader reaches it. LTR
   // only (no `dir` handling exists anywhere else in this file); a future RTL pass would fade the

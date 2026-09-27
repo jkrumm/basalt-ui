@@ -294,7 +294,7 @@ layout('BasaltDataTable sticky header — real layout', () => {
    *
    * Before the column fold, an eight-column sticky table at 390px flipped its wrapper to
    * `overflow-x: auto` and left the extra columns reachable only by horizontal scroll. The fold
-   * (`docs/waves/RESPONSIVE-SPEC.md` §6, `useColumnFold`/`planColumnFold` in `data/data-table.tsx`)
+   * (`docs/CONTROLS-SPEC.md` §2, `useColumnFold`/`planColumnFold` in `data/data-table.tsx`)
    * now measures the same wrapper first and hides the lowest-priority columns — declared order,
    * last column first, since this fixture sets no `meta.priority` — into a per-row disclosure
    * until the rest fit, so the wrapper stays BARE and the sticky header stays live at this width.

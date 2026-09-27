@@ -192,7 +192,7 @@ describe('the dev warning names the trade, not a defect', () => {
 
 /**
  * COLUMN FOLD — `meta.priority` (`useColumnFold`/`planColumnFold` in `data-table.tsx`,
- * `docs/waves/RESPONSIVE-SPEC.md` §6). Same stubbed-layout idiom as the suite above: widths come
+ * `docs/CONTROLS-SPEC.md` §2). Same stubbed-layout idiom as the suite above: widths come
  * from `data-test-width`, fired by hand through the stub `ResizeObserver`. Column header cells
  * carry `data-basalt-fold-id`, read once while visible and cached, so re-measuring a table that
  * has already folded a column never needs it back on screen.
@@ -253,7 +253,7 @@ function headerIds(container: HTMLElement): string[] {
   )
 }
 
-describe('column fold — meta.priority (docs/waves/RESPONSIVE-SPEC.md §6)', () => {
+describe('column fold — meta.priority (docs/CONTROLS-SPEC.md §2)', () => {
   test('no priority anywhere: declared order folds LAST column first', async () => {
     stubLayout()
     const { container } = mountFold()

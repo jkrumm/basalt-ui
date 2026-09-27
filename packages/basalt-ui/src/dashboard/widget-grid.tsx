@@ -23,8 +23,9 @@
  * exists to avoid. See `widget-grid.module.css`'s header for the fallback.
  *
  * **This is the sanctioned place `lg` enters the package.** A consumer never writes a
- * breakpoint — component layout keys on the container's own width (`docs/waves/RESPONSIVE-SPEC.md`
- * §1); `WidgetGrid` and `StatGroup` own their `lg` container rung internally so nobody else has to.
+ * breakpoint — component layout keys on the container's own width
+ * (`docs/DESIGN-CORE.md` § Layout, elevation, shapes); `WidgetGrid` and `StatGroup` own their `lg`
+ * container rung internally so nobody else has to.
  *
  * `WidgetGrid.Item` is for the one card that is wider than the rest — a hero chart beside two
  * stacked panels. `span` is likewise the DESKTOP span and is CLAMPED to the live column count at

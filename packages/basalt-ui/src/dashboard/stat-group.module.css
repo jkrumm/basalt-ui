@@ -43,7 +43,7 @@
   gap: var(--vx-space-stack-md);
 }
 
-/* 260px is StatGroup's own literal (RESPONSIVE-SPEC §3), not a container class: one column below it,
+/* 260px is StatGroup's own literal (docs/DESIGN-CORE.md § Layout, elevation, shapes), not a container class: one column below it,
  * so every cell leads a row and the rail draws no leading hairline at all. */
 @container basalt-stat-group (max-width: 259.9px) {
   .root {

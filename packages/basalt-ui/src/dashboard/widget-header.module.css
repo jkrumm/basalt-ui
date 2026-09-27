@@ -10,7 +10,7 @@
  * `--mantine-spacing-*` fallbacks.
  *
  * Layout keys on the enclosing card's OWN width (`container: basalt-card`, declared by ChartCard /
- * StatCard / Section — RESPONSIVE-SPEC §1/§3), never the viewport: below 480px the subtitle folds
+ * StatCard / Section — docs/DESIGN-CORE.md § Layout, elevation, shapes), never the viewport: below 480px the subtitle folds
  * into the info glyph; from 480px (wave 8) `value` + `delta` move onto the title row. Wrapping and
  * shrinking are unconditional. The subtitle ALSO folds (regardless of width) whenever the card's own
  * height is under 280px — see the `basalt-card-h` block below (wave 8's header-economy law). No

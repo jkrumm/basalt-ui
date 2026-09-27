@@ -81,7 +81,7 @@ export function AxisLeftNumeric({
   tickValues?: readonly number[]
   /** Labels drawn over the grid, left-aligned on a surface-coloured background chip (above their
    * line, or below it for a tick within one line-height of the plot's top edge) — the caller
-   * reserves no gutter for them (`docs/waves/RESPONSIVE-SPEC.md` §4 step 5). */
+   * reserves no gutter for them (`docs/CHARTS-SPEC.md` §8). */
   inside?: boolean
 }) {
   const { axisFont } = useChartMetrics()

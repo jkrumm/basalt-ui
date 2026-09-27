@@ -119,7 +119,7 @@ describe(`a chart measured at ${PHONE_WIDTH}px paints the phone tier`, () => {
       </CartesianChart>,
     )
 
-    // The unmeasured first frame follows the viewport hint (compact by default, RESPONSIVE-SPEC §1);
+    // The unmeasured first frame follows the viewport hint (compact by default, docs/CHARTS-SPEC.md §8);
     // the measured frame follows once the box is measured. Wait for THAT paint, not for the first
     // `<text>` — on a slow runner the first paint is the desktop one and the assertion must not
     // race it.
@@ -397,7 +397,7 @@ describe('the same wide labels at desktop width never auto-rotate', () => {
 })
 
 /**
- * Ladder steps 1, 2 and 5 end to end (`docs/waves/RESPONSIVE-SPEC.md` §4): at compact width the y
+ * Ladder steps 1, 2 and 5 end to end (`docs/CHARTS-SPEC.md` §8): at compact width the y
  * labels sit INSIDE the plot and the left gutter drops to its floor; at regular width they stay
  * outside and the gutter is measured as before.
  */

@@ -25,6 +25,10 @@
  * denylist name is also asserted ABSENT from the real export surface, so an entry that gets
  * re-introduced as a live export fails loudly instead of silently banning something real.
  *
+ * Check D — a deleted-doc denylist. A comment citing a doc path that no longer exists is neither a
+ * stale export nor a removed API, so A/B/C all miss it; the path is hand-listed with its new home
+ * and scanned across `agent/**`, `src/**` comments and the shipped `configs/**` plugin.
+ *
  * Repo-local only: `scripts/` is absent from package.json's `files`, so this reads
  * non-shipped state (`scripts/export-surface.json`) and must not be reachable from a consumer's
  * `node_modules/basalt-ui` — unlike `check-coverage`, it does not belong behind the shipped CLI.
@@ -340,18 +344,77 @@ export function checkDenylistIsGenuinelyRemoved(validNames: ReadonlySet<string>)
   return failures
 }
 
+// ── Check D: a citation of a doc file that no longer exists ───────────────────
+//
+// A comment or doc that cites `docs/waves/RESPONSIVE-SPEC.md` reads as authoritative and leads a
+// reader to a path that isn't there — the drift `Check A`/`Check B` cannot see, because it names
+// neither an export nor a removed API. Every deleted doc is hand-listed with its current home(s);
+// the scan covers every markdown file in the repo (agent docs, `docs/**`, both CLAUDE.mds) and the
+// shipped oxlint plugin's own message strings (`configs/**/*.js`, where the `raw-breakpoint` rule's
+// messages live — a rule message is as consumer-visible as prose), both scanned RAW; `src/**` JSDoc
+// is the one masked half, so a string literal that merely happens to contain a dead path is not a
+// citation.
+
+/** Deleted bare filename → the doc path(s) its citations should now point at. */
+export const DELETED_DOCS: Readonly<Record<string, string>> = {
+  'RESPONSIVE-SPEC.md':
+    'docs/DESIGN-CORE.md § Layout, elevation, shapes / docs/CHARTS-SPEC.md / docs/CONTROLS-SPEC.md §2, §6',
+}
+
+/** Every `.js` file under `configs/**` — the shipped oxlint plugin carries citations in messages. */
+export function findConfigsJsFiles(): string[] {
+  const configsRoot = join(pkgRoot, 'configs')
+  const entries = readdirSync(configsRoot, { recursive: true }) as string[]
+  return entries.filter((rel) => rel.endsWith('.js')).map((rel) => join(configsRoot, rel))
+}
+
+export type CheckDFailure = { file: string; line: number; doc: string; replacement: string }
+
+/**
+ * `rawFiles` (markdown, and the shipped oxlint plugin's `.js` message strings) are scanned raw — a
+ * `.md` file IS prose and a rule message IS consumer-visible text, so there is no comment to mask
+ * to. `commentFiles` (`src/**` `.ts`) are scanned through {@link maskToComments} so only a
+ * JSDoc/line comment naming the dead path fails — a string literal that merely happens to contain
+ * it does not.
+ */
+export function checkD(
+  rawFiles: readonly string[],
+  commentFiles: readonly string[],
+): CheckDFailure[] {
+  const failures: CheckDFailure[] = []
+  const entries = Object.entries(DELETED_DOCS)
+  const scan = (file: string, lines: string[]): void => {
+    lines.forEach((lineText, idx) => {
+      for (const [doc, replacement] of entries) {
+        if (lineText.includes(doc)) {
+          failures.push({ file: relative(pkgRoot, file), line: idx + 1, doc, replacement })
+        }
+      }
+    })
+  }
+  for (const file of rawFiles) scan(file, readFileSync(file, 'utf8').split('\n'))
+  for (const file of commentFiles) {
+    scan(file, maskToComments(readFileSync(file, 'utf8')).split('\n'))
+  }
+  return failures
+}
+
 // ── Check C: the tokens-only kind count, restated by hand in eight docs ───────
 
 /**
  * Every markdown file in the repo, minus the directories nothing here owns. Wider than Check A/B's
- * `agent/**` on purpose — the count below is stated in the package README, both CLAUDE.mds,
- * MIGRATING, two `agent/` docs and two root `docs/` pages.
+ * `agent/**` on purpose — the count below is stated in the package README, both
+ * CLAUDE.mds, MIGRATING, two `agent/` docs and two root `docs/` pages. `.claude/` is excluded: its
+ * only markdown is gitignored agent scratch (review dumps, wave notes) that a CI checkout never
+ * has, so scanning it would make the check depend on the working tree it happens to sit in.
  */
 export function findRepoMdFiles(): string[] {
   const repoRoot = join(pkgRoot, '..', '..')
   const entries = readdirSync(repoRoot, { recursive: true }) as string[]
   return entries
-    .filter((rel) => rel.endsWith('.md') && !/(^|[\\/])(node_modules|dist|\.git)[\\/]/.test(rel))
+    .filter(
+      (rel) => rel.endsWith('.md') && !/(^|[\\/])(node_modules|dist|\.git|\.claude)[\\/]/.test(rel),
+    )
     .map((rel) => join(repoRoot, rel))
 }
 
@@ -390,10 +453,15 @@ function main(): void {
   const validNames = collectValidNames()
   const mdFiles = findAgentMdFiles()
   const srcTsFiles = findSrcTsFiles()
+  const configsJsFiles = findConfigsJsFiles()
+  const repoMdFiles = findRepoMdFiles()
 
   const aFailures = checkA(mdFiles, validNames)
   const bFailures = [...checkB(mdFiles), ...checkBSrc(srcTsFiles)]
-  const cFailures = checkC(findRepoMdFiles(), TOKENS_ONLY_DISABLED_KINDS.size)
+  const cFailures = checkC(repoMdFiles, TOKENS_ONLY_DISABLED_KINDS.size)
+  // `repoMdFiles` already contains `mdFiles`; configs `.js` are raw (their message strings are
+  // consumer-visible), only `src/**` goes through the comment mask.
+  const dFailures = checkD([...repoMdFiles, ...configsJsFiles], srcTsFiles)
   const selfFailures = [
     ...checkDenylistIsGenuinelyRemoved(validNames),
     ...checkMasksUrlSlashesCorrectly(),
@@ -414,6 +482,9 @@ function main(): void {
         `${f.file}:${f.line}: says tokens-only disables ${f.claimed} kinds, but ` +
         `TOKENS_ONLY_DISABLED_KINDS has ${TOKENS_ONLY_DISABLED_KINDS.size}`,
     ),
+    ...dFailures.map(
+      (f) => `${f.file}:${f.line}: cites deleted doc '${f.doc}' — use ${f.replacement} instead`,
+    ),
     ...selfFailures,
   ]
 
@@ -424,8 +495,9 @@ function main(): void {
   }
 
   console.log(
-    `✓ agent-doc-drift: 0 failures (${mdFiles.length} docs + ${srcTsFiles.length} src files ` +
-      `scanned, ${validNames.size} valid names, ${Object.keys(REMOVED_APIS).length} denylisted)`,
+    `✓ agent-doc-drift: 0 failures (${repoMdFiles.length} docs + ${srcTsFiles.length} src files + ` +
+      `${configsJsFiles.length} configs files scanned, ${validNames.size} valid names, ` +
+      `${Object.keys(REMOVED_APIS).length} denylisted, ${Object.keys(DELETED_DOCS).length} deleted docs)`,
   )
 }
 

@@ -1,7 +1,7 @@
 /**
  * `useKeyboardInsetRef` — publishes the live on-screen-keyboard inset as `--vx-keyboard-inset` on
  * a ref'd root element, so `Composer` can stay pinned above a coarse-pointer on-screen keyboard
- * without the consumer hand-rolling a `dvh` clamp (`docs/waves/RESPONSIVE-SPEC.md` §6, the wave 10
+ * without the consumer hand-rolling a `dvh` clamp (`docs/MATURATION-LEDGER.md`, the wave 10
  * agent-chat finding). Internal — not exported from the package.
  *
  * Reads `window.visualViewport`, guarded exactly like `useSizeClass`'s `matchMedia` guard
@@ -23,7 +23,7 @@
  * plain `RefObject` (which is not itself a dependency).
  */
 import { useCallback, useState } from 'react'
-import { useIsomorphicLayoutEffect } from '../shell/isomorphic-layout-effect'
+import { useIsomorphicLayoutEffect } from '../common/isomorphic-layout-effect'
 
 const KEYBOARD_INSET_VAR = '--vx-keyboard-inset'
 

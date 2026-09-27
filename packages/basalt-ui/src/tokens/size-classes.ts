@@ -1,5 +1,5 @@
 /**
- * The two responsive tables (`docs/waves/RESPONSIVE-SPEC.md` §1) — pure data, Mantine-free. Each
+ * The two responsive tables (`docs/DESIGN-CORE.md` § Layout, elevation, shapes) — pure data, Mantine-free. Each
  * value is the class's minimum width in px.
  *
  * A `@media`/`@container` condition cannot read a custom property, so CSS writes the literal and

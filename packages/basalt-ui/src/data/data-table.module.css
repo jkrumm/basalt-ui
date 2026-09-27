@@ -64,7 +64,7 @@
 }
 
 /*
- * The selection column's hit area is the WHOLE cell (`docs/waves/RESPONSIVE-SPEC.md` §6): the
+ * The selection column's hit area is the WHOLE cell (`docs/CONTROLS-SPEC.md` §2): the
  * cell is the positioning box and the wrapping <label>'s ::after stretches over it, so a tap
  * anywhere in the cell toggles the checkbox. Not `data-basalt-hit` — that primitive centres a
  * `--vx-hit` square on its element; this one must fill a cell of any width.
@@ -97,8 +97,8 @@
 }
 
 /*
- * The fold-disclosure toggle column (`docs/waves/RESPONSIVE-SPEC.md` §6) — a narrow, centred cell
- * matching `FOLD_TOGGLE_WIDTH` in `data-table.tsx`, so the header's empty cell and every row's
+ * The fold-disclosure toggle column (`docs/CONTROLS-SPEC.md` §2) — a narrow, centred cell
+ * matching `HIT_COARSE` in `common/hit-floor.ts`, so the header's empty cell and every row's
  * button cell line up under one another regardless of how many columns folded.
  */
 .foldToggleCell {

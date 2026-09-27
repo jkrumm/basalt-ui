@@ -1,5 +1,5 @@
 /**
- * `ArticleLayout` — the TOC rail's below-breakpoint replacement (docs/waves/RESPONSIVE-SPEC.md §6;
+ * `ArticleLayout` — the TOC rail's below-breakpoint replacement (docs/MATURATION-LEDGER.md;
  * docs/archive/CONTENT-SPEC.md §7): a sticky "On this page" trigger opens the SAME
  * `TableOfContents` in a `Popover` instead of the rail vanishing.
  * `article-layout.breakpoint.test.ts` pins the CSS literal (`@media (max-width: 1200px)` ==

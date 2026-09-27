@@ -236,7 +236,7 @@ describe('PageAside inside a BasaltShell', () => {
 })
 
 /**
- * Docking by size class (`docs/waves/RESPONSIVE-SPEC.md` §1): only `expanded` with room lets an open
+ * Docking by size class (`docs/DESIGN-CORE.md` § Layout, elevation, shapes): only `expanded` with room lets an open
  * aside push main. Everywhere else the region reserves the rail and an open panel overlays main;
  * the fold defaults to closed there, and an explicit choice always wins.
  */

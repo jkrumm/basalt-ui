@@ -2374,7 +2374,7 @@ describe('css-raw-surface', () => {
   })
 })
 
-// ── 27. raw-media-query (RESPONSIVE-SPEC.md §7 — the CSS-text half) ──────────
+// ── 27. raw-media-query (the CSS-text half) ─────────────────────────────────
 
 describe('raw-media-query', () => {
   it('flags a width @media in a CSS module', () => {
@@ -2390,6 +2390,16 @@ describe('raw-media-query', () => {
       '@media (max-width: 767.9px) {\n  .a { display: block; }\n}\n',
       'src/a.module.css',
     )
+    expect(kinds(f)).toContain('raw-media-query')
+  })
+
+  it('flags a rem width @media — the more idiomatic spelling of the same breakpoint', () => {
+    const f = find('@media (min-width: 60rem) {\n  .a { display: block; }\n}\n', 'src/a.module.css')
+    expect(kinds(f)).toContain('raw-media-query')
+  })
+
+  it('flags a vw width @media', () => {
+    const f = find('@media (max-width: 100vw) {\n  .a { display: block; }\n}\n', 'src/a.module.css')
     expect(kinds(f)).toContain('raw-media-query')
   })
 
@@ -2427,8 +2437,16 @@ describe('raw-media-query', () => {
     expect(kinds(f)).toContain('raw-media-query')
   })
 
-  it('flags a (pointer: fine) condition', () => {
-    const f = find('@media (pointer: fine) {\n  .a { cursor: pointer; }\n}\n', 'src/a.css')
+  it('does NOT flag a (pointer: fine) condition — the companion to coarse, not an arbitrary tier', () => {
+    const f = find(
+      '@media (hover: hover) and (pointer: fine) {\n  .a { cursor: pointer; }\n}\n',
+      'src/a.css',
+    )
+    expect(kinds(f).filter((k) => k === 'raw-media-query')).toEqual([])
+  })
+
+  it('flags a pointer tier that is neither coarse nor fine', () => {
+    const f = find('@media (pointer: none) {\n  .a { cursor: pointer; }\n}\n', 'src/a.css')
     expect(kinds(f)).toContain('raw-media-query')
   })
 

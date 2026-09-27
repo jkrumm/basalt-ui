@@ -78,6 +78,8 @@ import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, use
 import { cx } from '../common/props'
 import type { BasaltProps, SlotStylesProps } from '../common/props'
 import { BASALT_PREFIX } from '../common/errors'
+import { HIT_COARSE } from '../common/hit-floor'
+import { useMeasuredWidths } from '../common/use-measured-widths'
 import { assertRequiredProps, useValidateProps } from '../common/validate'
 import { FilterSet } from '../controls'
 import { ActionGroup, BarActionSlot } from '../controls/actions'
@@ -125,7 +127,7 @@ declare module '@tanstack/react-table' {
      */
     numeral?: boolean
     /**
-     * Fold priority for the measured column fold (`docs/waves/RESPONSIVE-SPEC.md` §6): once the
+     * Fold priority for the measured column fold (`docs/CONTROLS-SPEC.md` §2): once the
      * table no longer fits its wrapper, the HIGHEST-numbered priority column folds first, moving
      * into a per-row disclosure instead of forcing the table into horizontal scroll. Unset columns
      * fall back to their declared position, so a bare `<BasaltDataTable data columns />` folds its
@@ -900,7 +902,7 @@ function getPinnedCellStyle<T>(
   }
 }
 
-// ── Column fold (`meta.priority`, docs/waves/RESPONSIVE-SPEC.md §6) ───────────
+// ── Column fold (`meta.priority`, docs/CONTROLS-SPEC.md §2) ──────────────────
 
 /** The column id TanStack will resolve internally for this raw def — explicit `id`, else the
  * accessor key string. Mirrors the resolution `facetColumns` already relies on above. */
@@ -930,11 +932,6 @@ function foldOrder<T>(columns: readonly ColumnDef<T, unknown>[]): string[] {
     .toSorted((a, b) => b.priority - a.priority || b.index - a.index)
     .map((candidate) => candidate.id)
 }
-
-/** The disclosure toggle column's own width — a fixed icon-button cell, matched to the
- * coarse-pointer hit floor (`tokens/index.ts`'s `HIT_COARSE`) so it reads as one more `--vx-hit`
- * control rather than a narrower afterthought. */
-const FOLD_TOGGLE_WIDTH = 44
 
 /** Marks a rendered data column header for `useColumnFold`'s width measurement — never read past
  * that hook, so it carries no styling and needs no CSS-module counterpart. */
@@ -968,14 +965,11 @@ function planColumnFold(input: {
 }
 
 /**
- * The general-case measured fold: while the sticky-header-only `useMeasuredContainment` above
- * answers a boolean fit/contained, folding columns changes the very box being measured — reacting
- * to that boolean directly (fold one, remeasure, maybe unfold) would oscillate. So this hook
- * reuses the same wrapper-vs-table `ResizeObserver` idiom but reads each candidate `<th
- * data-basalt-fold-id>`'s width ONCE, while it is still visible, caches it, and makes the fold
- * decision analytically (`planColumnFold`) — the same shape `controls/actions.tsx`'s
- * `useMeasuredFold`/`planBarFold` use for the page bar's own fold. A folded column's cached width
- * survives being hidden, so re-measuring on a resize never needs it back on screen.
+ * The general-case measured fold. Reacting to `useMeasuredContainment`'s boolean fit directly
+ * (fold one, remeasure, maybe unfold) would oscillate, because folding changes the very box being
+ * measured. Instead this reads each candidate `<th data-basalt-fold-id>`'s width once, while it is
+ * visible, caches it, and decides analytically (`planColumnFold`). `useMeasuredWidths` owns the
+ * cache and the wrapper-vs-table observer that `controls/actions.tsx`'s fold shares.
  */
 function useColumnFold(input: { active: boolean; order: readonly string[] }): {
   wrapperRef: RefObject<HTMLDivElement | null>
@@ -984,60 +978,46 @@ function useColumnFold(input: { active: boolean; order: readonly string[] }): {
   const { active, order } = input
   const wrapperRef = useRef<HTMLDivElement>(null)
   const [folded, setFolded] = useState<ReadonlySet<string>>(EMPTY_FOLD_SET)
-  const widths = useRef(new Map<string, number>())
   const orderRef = useRef(order)
   orderRef.current = order
-  const signature = order.join('|')
-  const measuredSignature = useRef(signature)
-
   useLayoutEffect(() => {
     if (!active || order.length === 0) {
       setFolded((current) => (current.size === 0 ? current : EMPTY_FOLD_SET))
-      return
     }
-    const wrapper = wrapperRef.current
-    if (wrapper === null) return
+  }, [active, order.length])
 
-    // A changed column set drops every remembered width — a folded column cannot report the
-    // width its new content would take, so the whole cache has to be rebuilt from what is visible.
-    if (measuredSignature.current !== signature) {
-      measuredSignature.current = signature
-      widths.current.clear()
-    }
-
-    const measure = (): void => {
-      for (const cell of wrapper.querySelectorAll<HTMLElement>(`[${FOLD_ID_ATTR}]`)) {
+  useMeasuredWidths({
+    resolveRoot: () => wrapperRef.current,
+    signature: order.join('|'),
+    enabled: active && order.length > 0,
+    // The table too, not only the wrapper: a re-measured column set moves its min-content width
+    // while the wrapper's own box never changes.
+    extra: (root) => [root.querySelector('table')],
+    onMeasure: (root, boxes) => {
+      for (const cell of root.querySelectorAll<HTMLElement>(`[${FOLD_ID_ATTR}]`)) {
         const id = cell.getAttribute(FOLD_ID_ATTR)
-        if (id !== null && cell.offsetWidth > 0) widths.current.set(id, cell.offsetWidth)
+        if (id !== null && cell.offsetWidth > 0) {
+          boxes.current.set(id, { width: cell.offsetWidth, height: cell.offsetHeight })
+        }
       }
-      const room = wrapper.clientWidth
-      // A zero reading is an un-laid-out ancestor, not a table with no room — see
-      // `useMeasuredContainment` above for the same guard against the aside animating in from 0.
+      const room = root.clientWidth
+      // A zero reading is an un-laid-out ancestor, not a table with no room — the same guard
+      // `useMeasuredContainment` above runs against the aside animating in from 0.
       if (room === 0) return
+      const widths = new Map([...boxes.current].map(([id, box]) => [id, box.width]))
       const next = planColumnFold({
         room,
-        toggleWidth: FOLD_TOGGLE_WIDTH,
+        // The disclosure toggle is a fixed icon-button cell matched to the coarse hit floor, so it
+        // reads as one more `--vx-hit` control rather than a narrower afterthought.
+        toggleWidth: HIT_COARSE,
         order: orderRef.current,
-        widths: widths.current,
+        widths,
       })
       setFolded((current) =>
         current.size === next.size && [...current].every((id) => next.has(id)) ? current : next,
       )
-    }
-
-    if (typeof ResizeObserver === 'undefined') {
-      measure()
-      return
-    }
-    const observer = new ResizeObserver(measure)
-    observer.observe(wrapper)
-    const table = wrapper.querySelector('table')
-    if (table !== null) observer.observe(table)
-    measure()
-    return () => {
-      observer.disconnect()
-    }
-  }, [active, order.length, signature])
+    },
+  })
 
   return { wrapperRef, folded: active ? folded : EMPTY_FOLD_SET }
 }
@@ -1076,7 +1056,7 @@ function RowDisclosure<T>({
 }
 
 /** The per-row expand/collapse control the fold-disclosure column renders — a text glyph, since
- * basalt ships no icon set (`docs/waves/RESPONSIVE-SPEC.md` §6, mirrors `SortIndicator` above). */
+ * basalt ships no icon set (`docs/CONTROLS-SPEC.md` §2, mirrors `SortIndicator` above). */
 function FoldToggle({
   expanded,
   controlsId,
@@ -1197,38 +1177,20 @@ function enforceManualPaginationContract(breaches: ManualPaginationBreach[]): vo
  * statically: `stickyHeader` with neither `maxHeight` nor `minWidth`.
  *
  * Every other table renders inside `Table.ScrollContainer type="native"`, because a bare `<table>`
- * sizes to its own min-content and a five-column one measured 448px inside a 390px viewport,
- * dragging the whole page sideways (`tests/layout/no-horizontal-overflow.layout.test.ts`). This
- * shape cannot take that container unconditionally: an `overflow-x: auto` box computes `overflow-y`
- * to `auto` as well, which makes it the sticky header's own scrollport — and with no height cap
- * that box has no scroll range at all, so the `<thead>` scrolls clean away (MEASURED in Chrome:
- * top 10.5 → −389.5 across a 400px scroll). Containing it unconditionally deletes the feature;
- * leaving it bare unconditionally widens the page.
+ * sizes to its own min-content and would drag the page sideways. This shape cannot take that
+ * container unconditionally: an `overflow-x: auto` box also computes `overflow-y`, making it the
+ * sticky header's own scrollport with no scroll range, so the `<thead>` scrolls clean away.
  *
- * So the wrapper's overflow is decided by MEASUREMENT, the same fit-check `useTrackFits`
- * (`controls/panel-row.tsx`) runs for a segmented track. While the table FITS its wrapper the
- * wrapper is `overflow: visible` — bare, and the page-sticky header sticks against `AppShell.Main`
- * exactly as it did before. Once the table is WIDER the wrapper flips to `overflow-x: auto`, the
- * columns stay reachable by horizontal scroll, and the header is necessarily inert at that width.
- * That is the honest trade: a header that stops sticking is recoverable, a page that scrolls
- * sideways takes every fixed and sticky element on it with it.
+ * So the wrapper's overflow is MEASURED. While the table FITS, the wrapper is bare and the sticky
+ * header sticks; once it is WIDER, the wrapper flips to `overflow-x: auto` and the header is inert.
+ * The trade is deliberate: a header that stops sticking is recoverable, a page that scrolls
+ * sideways is not.
  *
- * Three properties that are easy to lose:
- *
- * - **The observer stays alive in BOTH states** — no one-way latch, unlike `useTrackFits`. The
- *   wrapper must revert to bare when the space comes back (the window widened, the sidebar
- *   collapsed, the aside closed), and a contained table's `offsetWidth` is still its min-content
- *   width, so the same comparison keeps answering correctly from inside the contained state.
- * - **Equality counts as FITS**, which is what stops the two states oscillating: a contained
- *   wrapper that grows past the table reads `offsetWidth === clientWidth` (the `width: 100%` table
- *   resolves against the container) and flips back exactly once.
- * - **A zero `clientWidth` is `unknown`, not overflow** — the ancestor chain has not been laid out
- *   yet (the aside animates its width in from 0, `docs/ASIDE-SPEC.md` §0). Committing to contained
- *   on that reading would wrap a table that was never too wide.
- *
- * `useLayoutEffect` runs before paint, so a table that is already measurable resolves without a
- * flash of the wrong mode. SSR reaches neither the effect nor a `window`, and the default state is
- * bare — the same node the server and the first client paint both render.
+ * Three invariants: the observer stays alive in BOTH states (no one-way latch, so the wrapper
+ * reverts when the space returns); equality counts as FITS (a `width: 100%` table reads
+ * `offsetWidth === clientWidth`, which stops oscillation); and a zero `clientWidth` is `unknown`,
+ * not overflow (the aside animates its width in from 0). `useLayoutEffect` runs before paint, so an
+ * already-measurable table resolves without a flash; the default is bare for SSR and first paint.
  */
 function useMeasuredContainment(active: boolean): {
   wrapperRef: RefObject<HTMLDivElement | null>
@@ -1237,50 +1199,26 @@ function useMeasuredContainment(active: boolean): {
   const wrapperRef = useRef<HTMLDivElement>(null)
   const [contained, setContained] = useState(false)
 
-  useLayoutEffect(() => {
-    if (!active) return
-    const wrapper = wrapperRef.current
-    if (wrapper === null) return
-
-    // Three answers, not two — see the docblock. `unknown` moves neither the state nor the
-    // observer; it is simply not an answer yet.
-    const checkFit = (): 'fits' | 'contained' | 'unknown' => {
-      const table = wrapper.querySelector('table')
-      if (table === null) return 'unknown'
-      if (wrapper.clientWidth === 0 || table.offsetWidth === 0) return 'unknown'
-      return table.offsetWidth <= wrapper.clientWidth ? 'fits' : 'contained'
-    }
-
-    const apply = (): void => {
-      const result = checkFit()
-      if (result === 'unknown') return
-      const next = result === 'contained'
-      setContained((current) => (current === next ? current : next))
-    }
-
-    if (typeof ResizeObserver === 'undefined') {
-      // No recovery path without an observer, so the one same-tick read is this environment's
-      // only chance. `unknown` stays bare, which is the pre-measurement default anyway.
-      apply()
-      return
-    }
-
-    const observer = new ResizeObserver(apply)
-    observer.observe(wrapper)
-    const table = wrapper.querySelector('table')
+  // The same measured-fold core `useColumnFold` uses, so this shape no longer mounts a second
+  // bespoke `ResizeObserver` on the wrapper + table.
+  useMeasuredWidths({
+    resolveRoot: () => wrapperRef.current,
+    signature: String(active),
+    enabled: active,
     // The TABLE too, not only the wrapper: a column set that re-measures (a facet filter changing
     // the widest cell, a font settling) moves the table's min-content width while the wrapper's
     // box never changes at all.
-    if (table !== null) observer.observe(table)
-
-    // Same check once, synchronously, so an already-settled table resolves before paint rather
-    // than waiting for the observer's first async tick.
-    apply()
-
-    return () => {
-      observer.disconnect()
-    }
-  }, [active])
+    extra: (root) => [root.querySelector('table')],
+    onMeasure: (root) => {
+      const table = root.querySelector('table')
+      // Three answers, not two — see the docblock. A zero reading is an un-laid-out ancestor
+      // (the aside animating in from 0), not overflow, so it moves neither the state nor the
+      // observer; equality counts as FITS and stops the fit/contained oscillation.
+      if (table === null || root.clientWidth === 0 || table.offsetWidth === 0) return
+      const next = table.offsetWidth > root.clientWidth
+      setContained((current) => (current === next ? current : next))
+    },
+  })
 
   return { wrapperRef, contained: active && contained }
 }

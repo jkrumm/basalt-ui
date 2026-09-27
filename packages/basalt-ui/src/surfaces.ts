@@ -272,7 +272,7 @@ export const SURFACES = {
     // `BasaltShell` IS the root barrel's promise (docs/CONTROLS-SPEC.md §6 wave 6).
     pluginRules: [
       'hand-rolled-shell',
-      // The size-class axis's one JSX escape hatch (docs/waves/RESPONSIVE-SPEC.md §1/§7) is reserved
+      // The size-class axis's one JSX escape hatch (docs/CONTROLS-SPEC.md §6) is reserved
       // for BasaltShell/AppSidebar/MobileNav — the same shell promise `hand-rolled-shell` polices,
       // one axis over.
       'raw-breakpoint',

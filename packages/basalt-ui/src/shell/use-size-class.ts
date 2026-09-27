@@ -1,5 +1,6 @@
 /**
- * `useSizeClass` — the viewport axis of the responsive law (`docs/waves/RESPONSIVE-SPEC.md` §1):
+ * `useSizeClass` — the viewport axis of the responsive law (`docs/DESIGN-CORE.md` § Layout,
+ * elevation, shapes):
  * `'compact' | 'medium' | 'expanded'`, for the JS reads CSS cannot express (portal targets,
  * mount-one-of-two branches). Shell-only — components size by container, not by this.
  *

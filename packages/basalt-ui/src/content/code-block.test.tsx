@@ -1,5 +1,5 @@
 /**
- * `CodeBlock` — the trailing-edge overflow fade (docs/waves/RESPONSIVE-SPEC.md §6): `[data-code-
+ * `CodeBlock` — the trailing-edge overflow fade (docs/MATURATION-LEDGER.md): `[data-code-
  * overflow]` is the one DOM-observable hook the CSS module's `mask-image` reads, toggled from a
  * `scrollWidth > clientWidth` + `scrollLeft` measurement rather than React state driving the mask
  * itself. happy-dom computes no real layout (both read `0` by default, which trivially satisfies
