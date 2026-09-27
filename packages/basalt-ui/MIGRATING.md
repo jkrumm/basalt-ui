@@ -103,6 +103,8 @@ on those keys: `xs` no longer differs from `sm`, and `md`/`lg`/`xl` now switch a
 `--vx-space-mobile-nav-row-height` is 44px (was 40). A hit overlay is `[data-basalt-hit]` in
 `styles.css`; the home controls' overlays now key on `(pointer: coarse)` instead of width.
 
+**A touch press on a chart is now PROVISIONAL, not pinned on contact** (behaviour change; `useChartCursor`'s exported `ChartCursor<T>` type gains a required `onPointerUp` field and widens `onPointerLeave` to take the pointer event — source-compatible for the normal `{...cursor}`/JSX-prop usage every shipped kind and consumer chart uses, but a manual `cursor.onPointerLeave()` call with no argument now throws). `pointerdown` still resolves and shows immediately; `pointerup` for that pointer commits the pin; a `pointercancel`/`pointerleave` before commit (the browser taking the gesture as a scroll) clears the readout instead of leaving it pinned. A pinned tooltip is now also dismissed by a `document` scroll and by Escape from anywhere in the document, not just an overlay that holds focus. A bespoke chart wired directly to `HoverOverlay` (the five declared non-`CartesianChart` shapes, or a consumer's own) needs to pass through the hook's new `onPointerUp`/`onUp` the same way it already passes `onDown`/`onMove`.
+
 **Chart axes economise space at `compact`/`micro` container width** (behaviour change, no API change).
 Y labels draw inside the plot over the grid, on a solid background chip (wave 8: was a thin surface
 halo stroke, which still let the digits visually blend into a bar's fill — a bar/band chart's first

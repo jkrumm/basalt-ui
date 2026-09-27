@@ -502,7 +502,13 @@ function DualPanelPlot<T>(props: DualPanelPlotProps<T>) {
 
   return (
     <>
-      <svg ref={svgRef} width={plot.width} height={plot.height}>
+      <svg
+        ref={svgRef}
+        width={plot.width}
+        height={plot.height}
+        // `touch-action` on the plot `<svg>`: Chrome ignores it on the overlay `<rect>` (`R2C-2`).
+        style={{ touchAction: 'pan-y' }}
+      >
         {/* Top pane: line series + fill-between + zones + ref lines. */}
         <Group left={margin.left} top={margin.top}>
           <GridRows scale={topYScale} width={xMax} stroke={VX.grid} numTicks={4} />
@@ -591,6 +597,7 @@ function DualPanelPlot<T>(props: DualPanelPlotProps<T>) {
             height={topH + PANE_GAP}
             onMove={cursor.onPointerMove}
             onDown={cursor.onPointerDown}
+            onUp={cursor.onPointerUp}
             onLeave={cursor.onPointerLeave}
             onKeyDown={cursor.onKeyDown}
             onBlur={cursor.onBlur}
@@ -655,6 +662,7 @@ function DualPanelPlot<T>(props: DualPanelPlotProps<T>) {
             height={bottomH + margin.bottom}
             onMove={cursor.onPointerMove}
             onDown={cursor.onPointerDown}
+            onUp={cursor.onPointerUp}
             onLeave={cursor.onPointerLeave}
           />
         </Group>

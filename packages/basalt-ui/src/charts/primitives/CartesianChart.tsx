@@ -844,7 +844,14 @@ function CartesianPlot<T>({
 
   return (
     <>
-      <svg ref={svgRef} width={plot.width} height={plot.height}>
+      <svg
+        ref={svgRef}
+        width={plot.width}
+        height={plot.height}
+        // `touch-action` on the plot `<svg>`, not the overlay `<rect>`: Chrome ignores it on an SVG
+        // child, so a horizontal scrub was claimed as a pan and cancelled (`R2C-2`).
+        style={{ touchAction: 'pan-y' }}
+      >
         <Group left={margin.left} top={margin.top}>
           {(y?.grid ?? true) && (
             <GridRows scale={yScale} width={xMax} stroke={VX.grid} numTicks={leftTicks} />
@@ -953,6 +960,7 @@ function CartesianPlot<T>({
             height={yMax}
             onMove={cursor.onPointerMove}
             onDown={cursor.onPointerDown}
+            onUp={cursor.onPointerUp}
             onLeave={cursor.onPointerLeave}
             onKeyDown={cursor.onKeyDown}
             onBlur={cursor.onBlur}

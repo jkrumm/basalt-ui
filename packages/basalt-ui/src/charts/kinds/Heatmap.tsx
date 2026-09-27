@@ -280,6 +280,7 @@ function HeatmapPlot<T>(props: HeatmapPlotProps<T>) {
                   // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role
                   role="option"
                   aria-selected={isActive}
+                  aria-label={`${rowLabels[ri]}: ${colLabels[ci]}: ${value !== undefined ? formatValue(value) : 'no data'}`}
                   x={ci * cellW + cellGap / 2}
                   y={ri * cellH + cellGap / 2}
                   width={Math.max(0, cellW - cellGap)}

@@ -1,12 +1,14 @@
 /**
- * Touch interaction model across chart kinds (`docs/waves/RESPONSIVE-SPEC.md` §5, wave 9 step 3):
- * tap-to-pin, scrub, lift, tap-elsewhere/tap-outside dismissal, and (for the two discrete kinds)
- * keyboard parity. `useChartCursor`/`useDiscreteCursor` are the code under test — see their own
- * JSDoc for the contract this suite pins. `Donut.test.tsx`/`Heatmap.test.tsx` already pin the same
- * contract's LOGIC on jsdom; what only a real browser can prove is that the interaction still reaches
- * a REALLY portaled, REALLY measured `ChartTooltipFloat` (jsdom's `useLayoutEffect` never observes a
- * real `offsetWidth`/`offsetHeight`) and that a tap outside crosses a REAL document boundary rather
- * than a synthetic one.
+ * Touch interaction model across chart kinds (`docs/waves/RESPONSIVE-SPEC.md` §5, wave 9 step 3;
+ * the provisional-press contract is `R2C-1`/`P0-2`): a touch press is PROVISIONAL — `pointerdown`
+ * shows the readout, `pointerup` for the same pointer commits the pin, and a `pointercancel`
+ * before commit (a scroll winning the gesture) clears it. Once committed, the pin survives lift and
+ * is dismissed by a tap outside, a `document` scroll, or Escape. `useChartCursor`/`useDiscreteCursor`
+ * are the code under test — see their own JSDoc for the contract this suite pins.
+ * `Donut.test.tsx`/`Heatmap.test.tsx` already pin the same contract's LOGIC on jsdom; what only a
+ * real browser can prove is that the interaction still reaches a REALLY portaled, REALLY measured
+ * `ChartTooltipFloat` (jsdom's `useLayoutEffect` never observes a real `offsetWidth`/`offsetHeight`)
+ * and that a tap outside crosses a REAL document boundary rather than a synthetic one.
  *
  * DISPATCH METHOD, chosen empirically rather than assumed: a real `PointerEvent` dispatched
  * DIRECTLY on the target element (`element.dispatchEvent(...)`, `pointerType: 'touch'`), not
@@ -59,11 +61,13 @@ function chartFixture(charts: ChartsSpec): FixtureSpec {
   }
 }
 
-type TouchType = 'pointerdown' | 'pointermove' | 'pointercancel'
+type TouchType = 'pointerdown' | 'pointermove' | 'pointerup' | 'pointercancel'
 
 /**
  * Dispatches a real touch `PointerEvent` directly on the `index`-th element matching `selector` —
- * see the file header for why direct-element dispatch beats a coordinate-based one here.
+ * see the file header for why direct-element dispatch beats a coordinate-based one here. Every
+ * event carries the same `pointerId` (7) so a `pointerup`/`pointercancel` names the press its
+ * `pointerdown` opened, which is exactly the id matching the provisional-press contract keys on.
  */
 async function touch(
   p: LayoutPage,
@@ -109,6 +113,23 @@ async function tapOutside(p: LayoutPage): Promise<void> {
         isPrimary: true,
       }),
     )
+  })
+  await p.settle()
+}
+
+/** A scroll anywhere in the document — the dismissal `useChartCursor` installs while pinned. */
+async function scrollDocument(p: LayoutPage): Promise<void> {
+  await p.raw.evaluate(() => {
+    document.dispatchEvent(new Event('scroll', { bubbles: true }))
+  })
+  await p.settle()
+}
+
+/** Escape from an UNFOCUSED overlay (dispatched on `document.body`), the case the overlay's own
+ * `onKeyDown` cannot cover — `R2C-14`. */
+async function escapeFromBody(p: LayoutPage): Promise<void> {
+  await p.raw.evaluate(() => {
+    document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
   })
   await p.settle()
 }
@@ -163,13 +184,14 @@ layout('Chart touch model', () => {
   /**
    * The cartesian contract (`CartesianChart`/`useChartCursor`, `docs/waves/RESPONSIVE-SPEC.md` §5):
    * a tap with no preceding `pointermove` resolves and shows the tooltip immediately, a scrub keeps
-   * resolving through the SAME `onPointerMove` path a fine pointer's hover uses, the pin survives
-   * lift (`pointerleave`/`pointercancel` no-op while `isTouch`), a fresh tap elsewhere in the chart
-   * moves the pin, and a tap outside the chart's own `<svg>` dismisses it. `multiLine` stands in for
-   * every cartesian kind — they all route through the same `HoverOverlay`/`useChartCursor` pair.
+   * resolving through the SAME `onPointerMove` path a fine pointer's hover uses, `pointerup` commits
+   * the pin, a `pointercancel` before commit clears it (the scroll case), the pin survives lift and
+   * moves on a fresh tap elsewhere, and it is dismissed by a tap outside or on scroll/Escape.
+   * `multiLine` stands in for every cartesian kind — they all route through the same
+   * `HoverOverlay`/`useChartCursor` pair.
    */
   describe('multiLine (cartesian)', () => {
-    test('a tap with no prior pointermove shows the tooltip immediately, and it stays pinned past lift', async () => {
+    test('a completed tap shows the tooltip immediately and it stays pinned past lift', async () => {
       const p = await openFixture(chartFixture({ kind: 'multiLine' }), DESKTOP_1440)
       const overlay = await p.box('overlay', OVERLAY)
       const point = {
@@ -177,19 +199,36 @@ layout('Chart touch model', () => {
         y: overlay.box.top + overlay.box.height / 2,
       }
 
+      // `pointerdown` alone is PROVISIONAL and already shows the readout.
       await touch(p, OVERLAY, 0, 'pointerdown', point)
       const shown = await tooltipText(p)
       expect(shown.length).toBeGreaterThan(0)
 
-      // `HoverOverlay` wires no `onPointerUp` at all — lift is a genuine no-op. `pointercancel` IS
-      // wired (to the same `onLeave` as `pointerleave`) and is the one this pins against: it no-ops
-      // while `isTouch`, which is exactly what keeps a stray scroll-gesture cancel from clearing it.
+      // `pointerup` for the same pointer commits the pin; a later `pointercancel` is then the
+      // committed-touch no-op, not a dismissal.
+      await touch(p, OVERLAY, 0, 'pointerup', point)
       await touch(p, OVERLAY, 0, 'pointercancel', point)
       expect(await p.count(TOOLTIP)).toBe(1)
       expect(await tooltipText(p)).toBe(shown)
     })
 
-    test('a scrub after the tap moves the tooltip content, and it stays pinned after the lift', async () => {
+    test('a scroll gesture that starts on the chart (pointerdown then pointercancel) leaves no pin', async () => {
+      const p = await openFixture(chartFixture({ kind: 'multiLine' }), DESKTOP_1440)
+      const overlay = await p.box('overlay', OVERLAY)
+      const point = center(overlay.box)
+
+      // The readout appears on contact…
+      await touch(p, OVERLAY, 0, 'pointerdown', point)
+      expect(await p.count(TOOLTIP)).toBe(1)
+
+      // …and the browser taking the gesture (a vertical pan cancels the pointer) must clear it,
+      // because the press never completed with a `pointerup`.
+      await touch(p, OVERLAY, 0, 'pointercancel', point)
+      await p.quiesce()
+      expect(await p.count(TOOLTIP)).toBe(0)
+    })
+
+    test('a scrub after the tap moves the tooltip, and pointerup commits it with no cancel', async () => {
       const p = await openFixture(chartFixture({ kind: 'multiLine' }), DESKTOP_1440)
       const overlay = await p.box('overlay', OVERLAY)
       const start = {
@@ -208,7 +247,8 @@ layout('Chart touch model', () => {
       const after = await tooltipText(p)
       expect(after).not.toBe(before)
 
-      await touch(p, OVERLAY, 0, 'pointercancel', end)
+      // The completed drag commits as scrub-then-pin; nothing cancels it.
+      await touch(p, OVERLAY, 0, 'pointerup', end)
       expect(await p.count(TOOLTIP)).toBe(1)
       expect(await tooltipText(p)).toBe(after)
     })
@@ -226,8 +266,10 @@ layout('Chart touch model', () => {
       }
 
       await touch(p, OVERLAY, 0, 'pointerdown', first)
+      await touch(p, OVERLAY, 0, 'pointerup', first)
       const before = await tooltipText(p)
       await touch(p, OVERLAY, 0, 'pointerdown', second)
+      await touch(p, OVERLAY, 0, 'pointerup', second)
       const after = await tooltipText(p)
 
       expect(after).not.toBe(before)
@@ -239,9 +281,36 @@ layout('Chart touch model', () => {
       const overlay = await p.box('overlay', OVERLAY)
 
       await touch(p, OVERLAY, 0, 'pointerdown', center(overlay.box))
+      await touch(p, OVERLAY, 0, 'pointerup', center(overlay.box))
       await tooltipText(p)
 
       await tapOutside(p)
+      await p.quiesce()
+      expect(await p.count(TOOLTIP)).toBe(0)
+    })
+
+    test('a document scroll clears a pinned tooltip', async () => {
+      const p = await openFixture(chartFixture({ kind: 'multiLine' }), DESKTOP_1440)
+      const overlay = await p.box('overlay', OVERLAY)
+
+      await touch(p, OVERLAY, 0, 'pointerdown', center(overlay.box))
+      await touch(p, OVERLAY, 0, 'pointerup', center(overlay.box))
+      await tooltipText(p)
+
+      await scrollDocument(p)
+      await p.quiesce()
+      expect(await p.count(TOOLTIP)).toBe(0)
+    })
+
+    test('Escape clears a pinned tooltip even with the overlay unfocused', async () => {
+      const p = await openFixture(chartFixture({ kind: 'multiLine' }), DESKTOP_1440)
+      const overlay = await p.box('overlay', OVERLAY)
+
+      await touch(p, OVERLAY, 0, 'pointerdown', center(overlay.box))
+      await touch(p, OVERLAY, 0, 'pointerup', center(overlay.box))
+      await tooltipText(p)
+
+      await escapeFromBody(p)
       await p.quiesce()
       expect(await p.count(TOOLTIP)).toBe(0)
     })
@@ -249,11 +318,12 @@ layout('Chart touch model', () => {
 
   /**
    * Donut's ring (`useDiscreteCursor`, no `columns` — a ring has no 2D shape, every arrow steps by
-   * one). Same pin/move/dismiss contract as the cartesian kinds, over discrete slice targets instead
-   * of a continuous domain, plus arrow-key stepping through `aria-activedescendant`.
+   * one). Same provisional-press/pin/move/dismiss contract as the cartesian kinds, over discrete
+   * slice targets instead of a continuous domain, plus arrow-key stepping through
+   * `aria-activedescendant`.
    */
   describe('donut (discrete)', () => {
-    test('a tap on a slice pins the tooltip past lift', async () => {
+    test('a completed tap on a slice pins the tooltip past lift', async () => {
       const p = await openFixture(chartFixture({ kind: 'donut' }), DESKTOP_1440)
       const slice = await nthBox(p, OPTION, 0)
 
@@ -261,10 +331,20 @@ layout('Chart touch model', () => {
       const shown = await tooltipText(p)
       expect(shown.length).toBeGreaterThan(0)
 
-      // Per-target `onPointerCancel` no-ops once `pinned`, regardless of pointer type.
+      await touch(p, OPTION, 0, 'pointerup', center(slice))
       await touch(p, OPTION, 0, 'pointercancel', center(slice))
       expect(await p.count(TOOLTIP)).toBe(1)
       expect(await tooltipText(p)).toBe(shown)
+    })
+
+    test('a cancelled press on a slice leaves no tooltip', async () => {
+      const p = await openFixture(chartFixture({ kind: 'donut' }), DESKTOP_1440)
+      const slice = await nthBox(p, OPTION, 0)
+
+      await touch(p, OPTION, 0, 'pointerdown', center(slice))
+      await touch(p, OPTION, 0, 'pointercancel', center(slice))
+      await p.quiesce()
+      expect(await p.count(TOOLTIP)).toBe(0)
     })
 
     test('a tap on a different slice moves the pin', async () => {
@@ -273,8 +353,10 @@ layout('Chart touch model', () => {
       const second = await nthBox(p, OPTION, 1)
 
       await touch(p, OPTION, 0, 'pointerdown', center(first))
+      await touch(p, OPTION, 0, 'pointerup', center(first))
       const before = await tooltipText(p)
       await touch(p, OPTION, 1, 'pointerdown', center(second))
+      await touch(p, OPTION, 1, 'pointerup', center(second))
       const after = await tooltipText(p)
 
       expect(after).not.toBe(before)
@@ -286,6 +368,7 @@ layout('Chart touch model', () => {
       const slice = await nthBox(p, OPTION, 0)
 
       await touch(p, OPTION, 0, 'pointerdown', center(slice))
+      await touch(p, OPTION, 0, 'pointerup', center(slice))
       await tooltipText(p)
 
       await tapOutside(p)
@@ -319,7 +402,7 @@ layout('Chart touch model', () => {
    * produce, and exactly the defect a `columns` mis-wire would look like.
    */
   describe('heatmap (discrete, 2D grid)', () => {
-    test('a tap on a cell pins the tooltip past lift', async () => {
+    test('a completed tap on a cell pins the tooltip past lift', async () => {
       const p = await openFixture(chartFixture({ kind: 'heatmap' }), DESKTOP_1440)
       const cell = await nthBox(p, OPTION, 0)
 
@@ -327,9 +410,20 @@ layout('Chart touch model', () => {
       const shown = await tooltipText(p)
       expect(shown.length).toBeGreaterThan(0)
 
+      await touch(p, OPTION, 0, 'pointerup', center(cell))
       await touch(p, OPTION, 0, 'pointercancel', center(cell))
       expect(await p.count(TOOLTIP)).toBe(1)
       expect(await tooltipText(p)).toBe(shown)
+    })
+
+    test('a cancelled press on a cell leaves no tooltip', async () => {
+      const p = await openFixture(chartFixture({ kind: 'heatmap' }), DESKTOP_1440)
+      const cell = await nthBox(p, OPTION, 0)
+
+      await touch(p, OPTION, 0, 'pointerdown', center(cell))
+      await touch(p, OPTION, 0, 'pointercancel', center(cell))
+      await p.quiesce()
+      expect(await p.count(TOOLTIP)).toBe(0)
     })
 
     test('a tap elsewhere in the grid moves the pin', async () => {
@@ -338,8 +432,10 @@ layout('Chart touch model', () => {
       const second = await nthBox(p, OPTION, 5)
 
       await touch(p, OPTION, 0, 'pointerdown', center(first))
+      await touch(p, OPTION, 0, 'pointerup', center(first))
       const before = await tooltipText(p)
       await touch(p, OPTION, 5, 'pointerdown', center(second))
+      await touch(p, OPTION, 5, 'pointerup', center(second))
       const after = await tooltipText(p)
 
       expect(after).not.toBe(before)
@@ -351,6 +447,7 @@ layout('Chart touch model', () => {
       const cell = await nthBox(p, OPTION, 0)
 
       await touch(p, OPTION, 0, 'pointerdown', center(cell))
+      await touch(p, OPTION, 0, 'pointerup', center(cell))
       await tooltipText(p)
 
       await tapOutside(p)

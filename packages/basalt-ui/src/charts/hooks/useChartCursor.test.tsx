@@ -1,10 +1,11 @@
 /**
  * `useChartCursor`'s touch model (`docs/waves/RESPONSIVE-SPEC.md` §5): a coarse-pointer
- * `pointerdown` resolves + pins immediately (no preceding `pointermove`), lift leaves it pinned,
- * a stray `pointerleave`/`pointercancel` while pinned is a no-op, a fresh tap elsewhere moves the
- * pin, and it clears only via a `document` tap outside `boundaryRef` or Escape. Fine-pointer hover
- * (mouse) stays byte-identical to the pre-existing behavior — the last case here is the regression
- * guard for that.
+ * `pointerdown` resolves + shows the readout immediately (no preceding `pointermove`) but is
+ * PROVISIONAL — `pointerup` for the same pointer commits the pin, a `pointercancel` before commit
+ * (a scroll winning the gesture) clears it, and a fresh tap elsewhere moves the pin. A committed
+ * pin clears only via a `document` tap outside `boundaryRef`, a `document` scroll, or Escape.
+ * Fine-pointer hover (mouse) stays byte-identical to the pre-existing behavior — the last case here
+ * is the regression guard for that.
  *
  * A real DOM harness is required (not SSR): pointer events need a mounted element to dispatch on.
  * `HoverOverlay`'s transparent `<rect role="slider">` is reused verbatim as the wiring surface
@@ -80,6 +81,7 @@ function TestChart({
           height={100}
           onMove={cursor.onPointerMove}
           onDown={cursor.onPointerDown}
+          onUp={cursor.onPointerUp}
           onLeave={cursor.onPointerLeave}
           onKeyDown={cursor.onKeyDown}
           onBlur={cursor.onBlur}
@@ -104,51 +106,88 @@ function renderChart(chartId: string, boundary?: boolean) {
 describe('useChartCursor — coarse pointer (touch)', () => {
   test('pointerdown resolves + shows the tooltip immediately, with no prior pointermove', () => {
     const overlay = renderChart('touch-down')
-    fireEvent.pointerDown(overlay, { pointerType: 'touch', clientX: 0, clientY: 0 })
+    fireEvent.pointerDown(overlay, { pointerType: 'touch', pointerId: 1, clientX: 0, clientY: 0 })
     expect(screen.getByTestId('point-touch-down').textContent).toBe('2026-08-01')
   })
 
-  test('pointerup leaves the cursor PINNED rather than clearing it', () => {
+  test('a completed tap (pointerdown + pointerup) leaves the cursor PINNED', () => {
     const overlay = renderChart('touch-lift')
-    fireEvent.pointerDown(overlay, { pointerType: 'touch', clientX: 0, clientY: 0 })
-    fireEvent.pointerUp(overlay, { pointerType: 'touch' })
+    fireEvent.pointerDown(overlay, { pointerType: 'touch', pointerId: 1, clientX: 0, clientY: 0 })
+    fireEvent.pointerUp(overlay, { pointerType: 'touch', pointerId: 1 })
     expect(screen.getByTestId('point-touch-lift').textContent).toBe('2026-08-01')
   })
 
-  test('pointercancel while pinned by touch is a no-op', () => {
+  test('pointercancel for the SAME uncommitted pointer (a scroll) clears the readout', () => {
     const overlay = renderChart('touch-cancel')
-    fireEvent.pointerDown(overlay, { pointerType: 'touch', clientX: 0, clientY: 0 })
-    fireEvent.pointerCancel(overlay)
+    fireEvent.pointerDown(overlay, { pointerType: 'touch', pointerId: 1, clientX: 0, clientY: 0 })
     expect(screen.getByTestId('point-touch-cancel').textContent).toBe('2026-08-01')
+    fireEvent.pointerCancel(overlay, { pointerType: 'touch', pointerId: 1 })
+    expect(screen.getByTestId('point-touch-cancel').textContent).toBe('none')
   })
 
-  test('pointerleave while pinned by touch is a no-op', () => {
+  test('pointercancel AFTER commit is a no-op', () => {
+    const overlay = renderChart('touch-cancel-after')
+    fireEvent.pointerDown(overlay, { pointerType: 'touch', pointerId: 1, clientX: 0, clientY: 0 })
+    fireEvent.pointerUp(overlay, { pointerType: 'touch', pointerId: 1 })
+    fireEvent.pointerCancel(overlay, { pointerType: 'touch', pointerId: 1 })
+    expect(screen.getByTestId('point-touch-cancel-after').textContent).toBe('2026-08-01')
+  })
+
+  test('pointerleave while pinned by touch is a no-op, but clears an uncommitted press', () => {
     const overlay = renderChart('touch-leave')
-    fireEvent.pointerDown(overlay, { pointerType: 'touch', clientX: 0, clientY: 0 })
-    fireEvent.pointerLeave(overlay)
+    fireEvent.pointerDown(overlay, { pointerType: 'touch', pointerId: 1, clientX: 0, clientY: 0 })
+    fireEvent.pointerUp(overlay, { pointerType: 'touch', pointerId: 1 })
+    fireEvent.pointerLeave(overlay, { pointerType: 'touch', pointerId: 1 })
     expect(screen.getByTestId('point-touch-leave').textContent).toBe('2026-08-01')
+
+    const fresh = renderChart('touch-leave-uncommitted')
+    fireEvent.pointerDown(fresh, { pointerType: 'touch', pointerId: 1, clientX: 0, clientY: 0 })
+    fireEvent.pointerLeave(fresh, { pointerType: 'touch', pointerId: 1 })
+    expect(screen.getByTestId('point-touch-leave-uncommitted').textContent).toBe('none')
   })
 
   test('a second pointerdown elsewhere in the chart moves the pin', () => {
     const overlay = renderChart('touch-move-pin')
-    fireEvent.pointerDown(overlay, { pointerType: 'touch', clientX: 0, clientY: 0 })
+    fireEvent.pointerDown(overlay, { pointerType: 'touch', pointerId: 1, clientX: 0, clientY: 0 })
+    fireEvent.pointerUp(overlay, { pointerType: 'touch', pointerId: 1 })
     expect(screen.getByTestId('point-touch-move-pin').textContent).toBe('2026-08-01')
-    fireEvent.pointerDown(overlay, { pointerType: 'touch', clientX: 200, clientY: 0 })
+    fireEvent.pointerDown(overlay, { pointerType: 'touch', pointerId: 1, clientX: 200, clientY: 0 })
     expect(screen.getByTestId('point-touch-move-pin').textContent).toBe('2026-08-03')
   })
 
   test('a document pointerdown outside boundaryRef clears the pin', () => {
     const overlay = renderChart('touch-outside', true)
-    fireEvent.pointerDown(overlay, { pointerType: 'touch', clientX: 0, clientY: 0 })
+    fireEvent.pointerDown(overlay, { pointerType: 'touch', pointerId: 1, clientX: 0, clientY: 0 })
+    fireEvent.pointerUp(overlay, { pointerType: 'touch', pointerId: 1 })
     expect(screen.getByTestId('point-touch-outside').textContent).toBe('2026-08-01')
 
     fireEvent.pointerDown(document.body)
     expect(screen.getByTestId('point-touch-outside').textContent).toBe('none')
   })
 
+  test('a document scroll clears a committed pin', () => {
+    const overlay = renderChart('touch-scroll', true)
+    fireEvent.pointerDown(overlay, { pointerType: 'touch', pointerId: 1, clientX: 0, clientY: 0 })
+    fireEvent.pointerUp(overlay, { pointerType: 'touch', pointerId: 1 })
+    expect(screen.getByTestId('point-touch-scroll').textContent).toBe('2026-08-01')
+
+    fireEvent.scroll(document)
+    expect(screen.getByTestId('point-touch-scroll').textContent).toBe('none')
+  })
+
+  test('a document Escape keydown clears a committed pin without overlay focus', () => {
+    const overlay = renderChart('touch-doc-escape', true)
+    fireEvent.pointerDown(overlay, { pointerType: 'touch', pointerId: 1, clientX: 0, clientY: 0 })
+    fireEvent.pointerUp(overlay, { pointerType: 'touch', pointerId: 1 })
+    expect(screen.getByTestId('point-touch-doc-escape').textContent).toBe('2026-08-01')
+
+    fireEvent.keyDown(document.body, { key: 'Escape' })
+    expect(screen.getByTestId('point-touch-doc-escape').textContent).toBe('none')
+  })
+
   test('with no boundaryRef, outside-dismiss is skipped rather than throwing', () => {
     const overlay = renderChart('touch-no-boundary', false)
-    fireEvent.pointerDown(overlay, { pointerType: 'touch', clientX: 0, clientY: 0 })
+    fireEvent.pointerDown(overlay, { pointerType: 'touch', pointerId: 1, clientX: 0, clientY: 0 })
     expect(screen.getByTestId('point-touch-no-boundary').textContent).toBe('2026-08-01')
 
     fireEvent.pointerDown(document.body)
@@ -157,7 +196,7 @@ describe('useChartCursor — coarse pointer (touch)', () => {
 
   test('Escape clears the pin regardless of pointer type', () => {
     const overlay = renderChart('touch-escape')
-    fireEvent.pointerDown(overlay, { pointerType: 'touch', clientX: 0, clientY: 0 })
+    fireEvent.pointerDown(overlay, { pointerType: 'touch', pointerId: 1, clientX: 0, clientY: 0 })
     expect(screen.getByTestId('point-touch-escape').textContent).toBe('2026-08-01')
 
     fireEvent.keyDown(overlay, { key: 'Escape' })
@@ -166,7 +205,7 @@ describe('useChartCursor — coarse pointer (touch)', () => {
 
   test('exposes isTouch true after a touch interaction', () => {
     const overlay = renderChart('touch-flag')
-    fireEvent.pointerDown(overlay, { pointerType: 'touch', clientX: 0, clientY: 0 })
+    fireEvent.pointerDown(overlay, { pointerType: 'touch', pointerId: 1, clientX: 0, clientY: 0 })
     expect(screen.getByTestId('touch-touch-flag').textContent).toBe('true')
   })
 })

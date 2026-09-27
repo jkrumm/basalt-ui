@@ -215,6 +215,11 @@ export function ChartTooltipFloat({
   const vw = window.innerWidth
   const vh = window.innerHeight
 
+  // An anchor outside the viewport means the chart that owns it has scrolled off-screen. Clamping
+  // would paint a follower's box over unrelated chrome (the bottom nav — `R2C-3`); render nothing
+  // instead.
+  if (anchor.y < 0 || anchor.y > vh) return null
+
   const flipsLeft = anchor.x + TOOLTIP_GAP + width + VIEWPORT_MARGIN > vw
   const left = flipsLeft
     ? Math.max(VIEWPORT_MARGIN, anchor.x - TOOLTIP_GAP - width)

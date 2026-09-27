@@ -1,0 +1,13 @@
+/*
+ * `HoverOverlay` — the transparent plot rect every cartesian kind scrubs through. A tap focuses it
+ * on pointerdown, so the UA's own outline would ring the whole plot on every phone tap (`R2C-15`);
+ * keyboard focus keeps a VX accent inset instead.
+ */
+.overlay {
+  outline: none;
+}
+
+.overlay:focus-visible {
+  outline: 1px solid var(--vx-accent);
+  outline-offset: -1px;
+}

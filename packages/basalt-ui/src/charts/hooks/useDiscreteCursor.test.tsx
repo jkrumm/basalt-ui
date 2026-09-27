@@ -72,9 +72,14 @@ describe('useDiscreteCursor — fine pointer (hover)', () => {
 })
 
 describe('useDiscreteCursor — coarse pointer (touch)', () => {
-  test('a tap shows AND pins the tooltip; lift (leave) does not dismiss it', () => {
+  test('a completed tap (pointerdown + pointerup) pins the tooltip and lift (leave) does not dismiss it', () => {
     render(<Harness />)
-    fireEvent.pointerDown(screen.getByTestId('target-c'), { pointerType: 'touch' })
+    fireEvent.pointerDown(screen.getByTestId('target-c'), {
+      pointerType: 'touch',
+      pointerId: 1,
+    })
+    expect(tipKey()).toBe('c')
+    fireEvent.pointerUp(screen.getByTestId('target-c'), { pointerType: 'touch', pointerId: 1 })
     expect(tipKey()).toBe('c')
     expect(pinned()).toBe('true')
 
@@ -83,18 +88,66 @@ describe('useDiscreteCursor — coarse pointer (touch)', () => {
     expect(pinned()).toBe('true')
   })
 
+  test('pointerdown alone shows the readout but does not pin; a cancel for the same pointer clears it', () => {
+    render(<Harness />)
+    fireEvent.pointerDown(screen.getByTestId('target-a'), {
+      pointerType: 'touch',
+      pointerId: 1,
+    })
+    expect(tipKey()).toBe('a')
+    expect(pinned()).toBe('false')
+
+    fireEvent.pointerCancel(screen.getByTestId('target-a'), { pointerType: 'touch', pointerId: 1 })
+    expect(tipKey()).toBe('none')
+    expect(pinned()).toBe('false')
+  })
+
+  test('pointerdown alone shows the readout but does not pin; a LEAVE for the same pointer clears it too', () => {
+    // Regression: a finger dragging off a small hit target during a scroll commonly fires
+    // `pointerleave` before `pointercancel` — `onPointerLeave` used to skip the uncommitted-press
+    // guard `onPointerCancel` already had, leaving `pressRef` stale and the readout stuck visible.
+    render(<Harness />)
+    fireEvent.pointerDown(screen.getByTestId('target-a'), {
+      pointerType: 'touch',
+      pointerId: 1,
+    })
+    expect(tipKey()).toBe('a')
+    expect(pinned()).toBe('false')
+
+    fireEvent.pointerLeave(screen.getByTestId('target-a'), { pointerType: 'touch', pointerId: 1 })
+    expect(tipKey()).toBe('none')
+    expect(pinned()).toBe('false')
+  })
+
+  test('a document scroll clears a pinned tooltip', () => {
+    // Regression: the pinned-dismissal effect wired outside-tap + Escape but no `scroll` listener,
+    // so a pinned Donut/Heatmap tooltip stayed anchored to a viewport point after the chart scrolled
+    // away underneath it — the same bug `useChartCursor`'s cartesian pin was fixed for.
+    render(<Harness />)
+    fireEvent.pointerDown(screen.getByTestId('target-a'), { pointerType: 'touch', pointerId: 1 })
+    fireEvent.pointerUp(screen.getByTestId('target-a'), { pointerType: 'touch', pointerId: 1 })
+    expect(pinned()).toBe('true')
+
+    fireEvent.scroll(document)
+    expect(tipKey()).toBe('none')
+    expect(pinned()).toBe('false')
+  })
+
   test('tapping a different target MOVES the pin', () => {
     render(<Harness />)
-    fireEvent.pointerDown(screen.getByTestId('target-a'), { pointerType: 'touch' })
+    fireEvent.pointerDown(screen.getByTestId('target-a'), { pointerType: 'touch', pointerId: 1 })
+    fireEvent.pointerUp(screen.getByTestId('target-a'), { pointerType: 'touch', pointerId: 1 })
     expect(tipKey()).toBe('a')
-    fireEvent.pointerDown(screen.getByTestId('target-b'), { pointerType: 'touch' })
+    fireEvent.pointerDown(screen.getByTestId('target-b'), { pointerType: 'touch', pointerId: 1 })
+    fireEvent.pointerUp(screen.getByTestId('target-b'), { pointerType: 'touch', pointerId: 1 })
     expect(tipKey()).toBe('b')
     expect(pinned()).toBe('true')
   })
 
   test('a tap outside the host dismisses the pin', () => {
     render(<Harness />)
-    fireEvent.pointerDown(screen.getByTestId('target-a'), { pointerType: 'touch' })
+    fireEvent.pointerDown(screen.getByTestId('target-a'), { pointerType: 'touch', pointerId: 1 })
+    fireEvent.pointerUp(screen.getByTestId('target-a'), { pointerType: 'touch', pointerId: 1 })
     expect(pinned()).toBe('true')
 
     fireEvent.pointerDown(screen.getByTestId('outside'))
@@ -104,7 +157,8 @@ describe('useDiscreteCursor — coarse pointer (touch)', () => {
 
   test('Escape dismisses the pin from anywhere in the document', () => {
     render(<Harness />)
-    fireEvent.pointerDown(screen.getByTestId('target-a'), { pointerType: 'touch' })
+    fireEvent.pointerDown(screen.getByTestId('target-a'), { pointerType: 'touch', pointerId: 1 })
+    fireEvent.pointerUp(screen.getByTestId('target-a'), { pointerType: 'touch', pointerId: 1 })
     expect(pinned()).toBe('true')
 
     fireEvent.keyDown(document, { key: 'Escape' })

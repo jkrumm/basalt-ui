@@ -267,6 +267,7 @@ function DonutPlot(props: DonutPlotProps) {
                     // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role
                     role="option"
                     aria-selected={activeKey === key}
+                    aria-label={`${arc.data.label}: ${formatValue(arc.data.value)}, ${sharePercent(arc.data.value, total)}%`}
                     {...cursor.pointerProps(arc.data)}
                     style={{ cursor: 'pointer' }}
                   >

@@ -1,4 +1,5 @@
 import type { FocusEventHandler, KeyboardEventHandler, PointerEventHandler } from 'react'
+import styles from './HoverOverlay.module.css'
 
 /**
  * Transparent <rect> that captures pointer events (mouse + touch + pen) for tooltip + crosshair
@@ -12,6 +13,7 @@ export function HoverOverlay({
   height,
   onMove,
   onDown,
+  onUp,
   onLeave,
   onKeyDown,
   onBlur,
@@ -24,8 +26,10 @@ export function HoverOverlay({
   height: number
   onMove: PointerEventHandler<SVGRectElement>
   /** Coarse-pointer tap: resolves + shows the tooltip immediately, with no preceding `pointermove`
-   * (`docs/waves/RESPONSIVE-SPEC.md` §5). Optional so a caller with no touch story yet can omit it. */
+   * (`docs/waves/RESPONSIVE-SPEC.md` §5). The press is provisional; `onUp` commits it. */
   onDown?: PointerEventHandler<SVGRectElement>
+  /** Commits the provisional touch press so the pin survives the lift. */
+  onUp?: PointerEventHandler<SVGRectElement>
   onLeave: PointerEventHandler<SVGRectElement>
   /** Present = the overlay is focusable and scrubs on ←/→. */
   onKeyDown?: KeyboardEventHandler<SVGRectElement>
@@ -39,7 +43,12 @@ export function HoverOverlay({
   valueText?: string
 }) {
   return (
+    // `touch-action: pan-y` lives on the plot's `<svg>` (each kind's own), NOT here: Chrome ignores
+    // `touch-action` on an SVG child `<rect>`, so the browser claims a horizontal pan and cancels
+    // the pointer (`R2C-2`). The `overlay` class owns the focus ring: no UA outline on tap, a VX
+    // accent inset under `:focus-visible` (`R2C-15`).
     <rect
+      className={styles.overlay}
       width={width}
       height={height}
       fill="transparent"
@@ -58,12 +67,9 @@ export function HoverOverlay({
         onKeyDown,
         ...(onBlur !== undefined && { onBlur }),
       })}
-      // `pan-y`, not `none`: `none` would turn a full-width chart into a scroll dead zone on a
-      // phone. `pan-y` lets vertical page scroll pass through while a horizontal drag still
-      // reaches this overlay to scrub the chart.
-      style={{ touchAction: 'pan-y' }}
       onPointerMove={onMove}
       {...(onDown !== undefined && { onPointerDown: onDown })}
+      {...(onUp !== undefined && { onPointerUp: onUp })}
       onPointerLeave={onLeave}
       onPointerCancel={onLeave}
     />
