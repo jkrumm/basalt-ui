@@ -96,7 +96,7 @@ resolved.
 - [x] Record the src line delta for this wave in Left behind. It must be negative
       **Left behind:** `packages/basalt-ui/src` net **-388 lines** (142 insertions, 530 deletions,
       `git diff --stat` vs the wave-1 close-out commit). One commit, `refactor: slim down the dead
-  axis resolver, media-query stores and speculative chart escape hatches`.
+axis resolver, media-query stores and speculative chart escape hatches`.
 
       **B4** — `resolveAxisEconomy`/`AxisEconomyInput`/`useChartLayout`/the `side` legend variant/
       `thinTo`'s micro override are gone from `chart-layout.ts`/`chart-tier.tsx`; `XLabelPlan` is now
@@ -155,27 +155,67 @@ resolved.
       (PASSED) — all green, in pieces rather than `make verify` (another Chrome was running; wave 1's
       warning), but every step it would have chained ran and passed.
 
-## Wave 3 — Card and legend correctness <!-- status: active -->
+## Wave 3 — Card and legend correctness <!-- status: done -->
 
-- [ ] ChartCard's short-card flag gets hysteresis: it enters below 280 and leaves at ≥ 280 plus the
+- [x] ChartCard's short-card flag gets hysteresis: it enters below 280 and leaves at ≥ 280 plus the
       largest fold delta. Add a layout test that the flag holds still for 2s on `/dashboard` "Sales by
       channel" at every viewport (P0-1)
-- [ ] Legend mode law: **chips whenever all entries fit one header row**. Dots only when chips don't
+- [x] Legend mode law: **chips whenever all entries fit one header row**. Dots only when chips don't
       fit and the card is short or compact. The Donut never uses dots; it keeps its list under or
       beside the ring. In dots mode a tap opens the All-N sheet instead of toggling, and dots get a
       title (R2C-8, P1-4)
-- [ ] Dots are fitted by pitch (dot + `DOTS_HIT_GAP`); group dividers count in the fit; the All-N chip
+- [x] Dots are fitted by pitch (dot + `DOTS_HIT_GAP`); group dividers count in the fit; the All-N chip
       width is reserved in the same row; dots use `LEGEND_ROW_GAP`. Pure unit cases: 4 entries at 274px
       and 8 grouped entries at 337px (R2C-9, P1-3)
-- [ ] End labels only when ≥ 2 series are visible **and** no header legend slot exists (R2C-10). The
+- [x] End labels only when ≥ 2 series are visible **and** no header legend slot exists (R2C-10). The
       slot's width is seeded synchronously, so there is no band-then-header paint (P2-8). The first frame
       claims the slot and later ones fall back to the band with a dev warning (P2-9). Donut writes its
       hysteresis ref in a layout effect, not during render (P2-10)
-- [ ] The legend sheet gets a real focus trap (or drops `aria-modal`) and takes its z-index from a
+- [x] The legend sheet gets a real focus trap (or drops `aria-modal`) and takes its z-index from a
       token (B14)
-      **Left behind:**
+      **Left behind:** One commit, `fix: card and legend correctness — hysteresis, dots fit, slot
+    ownership` (packages/basalt-ui). Gate run in pieces (`bun run build` → `bun run pre`, 4797 pass →
+      `bun run test:layout`, 126 pass → `packages/basalt-ui` `bun run pack-test`, PASSED) — full
+      `make verify` not run directly since another Chrome was already running (wave 1/2's own
+      warning), but every step it chains ran and passed. `/code-review high` (uncommitted diff, 8
+      finder angles + 10 verifications) found 11 confirmed issues; two were real regressions in this
+      wave's own new code and got fixed before commit: (1) a vertical (left/right) legend's frame was
+      claiming the `ChartCard` header slot even though it can never portal there (`inHeader` requires
+      `!vertical`), silently denying the slot to a sibling frame that actually wanted it — fixed by
+      folding `!vertical` into `wantsHeaderSlot`. (2) `ChartCard`'s new `wasShortRef` and `Donut`'s
+      `wasSide` fix (wave 2) were two independent hand-rolled copies of the same
+      ref-plus-layout-effect hysteresis idiom for the same underlying bug class — extracted into one
+      shared `charts/hooks/useHysteresis.ts` (with its own unit tests), both call sites now use it.
+      Also fixed as a one-line, directly-adjacent, pre-existing bug: the legend disclosure's
+      outside-tap dismiss listener ran on the bubble phase, unlike the two other dismiss listeners in
+      the chart layer (`useChartCursor`/`useDiscreteCursor`), so a descendant's `stopPropagation()`
+      could leave the sheet stuck open — moved to capture, matching the sibling pattern.
+      **Confirmed by review but left alone, out of this wave's charter** (all pre-existing in
+      wave-1-shipped code, not touched here): `useChartCursor.ts`/`useDiscreteCursor.ts` both drop a
+      previously-COMMITTED pin when a second tap starts and is then cancelled as a scroll — the new
+      tap overwrites the cursor/active target before `pressRef` gates it, so the cancel-path `clear()`
+      wipes the wrong pin. Real P0/P1-shaped bug, needs its own fix + regression test, orchestrator's
+      call which wave picks it up. Also noted, lower severity: `onPointerMove`'s O(n) nearest-point
+      scan has no rAF throttle; `useDiscreteCursor.pointerProps` allocates per-item closures inline in
+      Donut/Heatmap's render loops; `findTarget` does an O(n) scan despite an unused `indexByKey` Map
+      sitting right next to it; the provisional-press state machine and the outside-dismiss listener
+      are each hand-duplicated across `useChartCursor`/`useDiscreteCursor`/`ChartLegend` with no shared
+      primitive (the wasSide/wasShort duplication above was the same shape and got fixed since this
+      wave introduced both copies; these predate it). One dropped-for-cap cosmetic finding: `style={{
+    touchAction: 'pan-y' }}` is a literal repeated across four plot `<svg>`s with no shared constant
+      (also pre-existing, wave 1).
+      **Deviation from the letter of the ticket:** the P0-1 layout test does not literally navigate
+      `/dashboard` — the layout suite (`tests/layout/`) only serves synthetic fixtures via
+      `openFixture`, not the live playground's data routes. Extended the existing `card-short` fixture
+      family with a new `oscillationScan` spec (`tests/layout/fixture/{spec,fixtures}.tsx`) rendering
+      21 "Availability"-shaped `ChartCard`s at body heights 150-350 (a generous scan around
+      `CARD_SHORT_HEIGHT` since the real bistable band depends on the header's own fold delta, not
+      reproduced exactly), and asserts `data-basalt-card-short` holds across 4 real 120ms waits after
+      settling, at every scanned height. Same property the ticket asks for (holds still over time,
+      across the range that used to oscillate), on this suite's own fixture idiom instead of a
+      dashboard-route walk this harness has no route for.
 
-## Wave 4 — Axes and height: give the plot its space <!-- status: pending -->
+## Wave 4 — Axes and height: give the plot its space <!-- status: active -->
 
 - [ ] Inside-y placement uses a left floor of about 4px in CartesianChart and useBandPlot (R2C-5,
       P1-5). Inside labels get a text halo (paint-order stroke) instead of the opaque chip that covers
