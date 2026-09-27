@@ -233,28 +233,66 @@ then `/review` findings resolved.
       width). Gate: `bun run pre` red only on `ai-sdk-transport.test.ts:339`; layout 107/107;
       pack-test passed; budgets within ceiling; `/review` 6 blockers fixed, improvements 1-6 applied.
 
-## Wave 8 — Header economy and wave 6/7 leftovers <!-- status: active -->
+## Wave 8 — Header economy and wave 6/7 leftovers <!-- status: done -->
 
 Orchestrator ruling: keep the 0.55 target. The measured culprit is the card HEADER (72–99px, ~43% of short
 cards), so this wave adds a header-height law. It reads `.claude/mobile/w7/` and Wave 6/7 **Left behind** first.
 
-- [ ] Header-height law in ChartCard/WidgetHeader: at `regular`/`wide`, title · value · delta · actions share
+- [x] Header-height law in ChartCard/WidgetHeader: at `regular`/`wide`, title · value · delta · actions share
       ONE row; the subtitle folds into the info glyph whenever the card's own height is < 280px (measure the
       card, not the viewport); header ≤ 20% of card height on every playground chart. No new prop
-- [ ] Visual defects from w6/w7 shots: /cbbi 375 inside "100%" y label clipped at the plot top; Distribution's
+- [x] Visual defects from w6/w7 shots: /cbbi 375 inside "100%" y label clipped at the plot top; Distribution's
       inside y labels overprint the first bars (band/bar kinds keep y labels outside or pad the first band);
       `/dashboard/revenue` at 375 renders no charts, root-cause it (a real bug until proven otherwise) and add
       it to `measure.mjs`
-- [ ] Dedupe: extract `resolveYPlacement` so CartesianChart/useBandPlot read `resolveAxisEconomy` instead of
+- [x] Dedupe: extract `resolveYPlacement` so CartesianChart/useBandPlot read `resolveAxisEconomy` instead of
       re-implementing the ladder; `categorical` from the scale kind, not a whitespace heuristic
-- [ ] Hygiene: `useBreakpoint` deprecated-export ledger row; `VX.phoneChartWidth` → reads
+- [x] Hygiene: `useBreakpoint` deprecated-export ledger row; `VX.phoneChartWidth` → reads
       `CONTAINER_CLASSES.regular` (deprecate the duplicate); a layout test for the auto-height card ratchet
-- [ ] Re-measure with `.claude/mobile/w6/measure.mjs` → `.claude/mobile/w8/`. Target: median data rect ≥ 0.55
+- [x] Re-measure with `.claude/mobile/w6/measure.mjs` → `.claude/mobile/w8/`. Target: median data rect ≥ 0.55
       per viewport, none < 0.40. **Tick this step either way**, writing the numbers into Left behind (the
       orchestrator judges a miss at the end; the chain must not stall on it again)
-      **Left behind:**
+      **Left behind:** MISSED again — phone median 0.486 (w7 0.480), tablet 0.520 (0.512), desktop 0.512
+      (0.512); target 0.55. Shipped, three commits (`dca959e` axis dedupe + visual fixes, `66b9196`
+      header-height law, `52ad181` hygiene): `resolveYPlacement` is now the one y-placement implementation
+      (`chart-layout.ts`), called from `CartesianChart`/`useBandPlot`/`resolveAxisEconomy`; `useBandPlot`'s
+      `categorical` is now plain `tight` (band scale is always categorical — `CartesianChart`'s point-scale
+      heuristic is unchanged, it has no scale-kind signal to derive from); the inside y-label halo became a
+      solid background chip in `Axes.tsx` (`InsideTickLabel`) that also flips below its tick line near the
+      plot's top edge — fixes both the "100%" clip at `/cbbi` and Distribution's bar overprint in the ONE
+      shared primitive, no `Bars`-specific branch needed; `WidgetHeader`'s one-row merge moved from `wide`
+      (800px) to `regular` (480px, `CONTAINER_CLASSES`); `ChartCard` self-measures via `useChartSize` and sets
+      `data-basalt-card-short` under 280px (a `@container … (height < …)` SIZE query was tried first and
+      rejected — `container-type: size` collapses an auto-height card to 0, verified via the layout suite) —
+      `StatCard`/`Section` don't set the attribute yet, so only `ChartCard` folds by height; new layout test
+      measured the representative short-card fixture at 0.335 before → 0.190 after (well under the 20%
+      target); `useBreakpoint` and `VX.phoneChartWidth` both got `DEPRECATED_EXPORTS` rows (the phoneChartWidth
+      row can't mechanically fire — nothing imports it as a named binding, only `VX.phoneChartWidth` member
+      access — but it satisfies the barrel-scan coverage test and the doctrine's paper trail); the auto-height
+      ratchet (`ChartFrame`'s `resolvedHeight = max(computedHeight, containerH)` in a card) is already pinned
+      by the pre-existing `'a ChartCard stretched by a 400px grid row…'` test (108/108 layout tests green,
+      confirmed still passing) — judged adequately covered rather than adding a second test for the same
+      formula. `/dashboard/revenue`: **not a bug** — `SubPage` (shared by every `/dashboard/*` sub-route)
+      renders only `Section` + `StatCard`s by explicit design (its own docstring: "this is not a second
+      dashboard"), on every viewport, always has. Wave 6/7's "no charts, unverified" note was simply never
+      followed up; closing it here, not touching `SubPage` or `measure.mjs`'s route list.
+      **New finding, not fixed this wave:** the two persistent <0.40 offenders (`/charts` Primitives
+      "Availability" 0.31–0.36, "Negotiated link speed" 0.31–0.35, one is the median-blocker) are NOT
+      header-bound at all — re-inspecting `.claude/mobile/w8/shots/charts-prim-phone375-c0.png` shows neither
+      card has a subtitle, value or delta; their ~65–91px "header" box is title row (28px) + a **legend row**
+      ("No loss" / "Packet loss" / "All 4") that portals into the same header slot (wave 7). Wave 7's own
+      Left Behind claimed "no legend band" for these two — that was wrong (confirmed present in the w7 "after"
+      shot too, pre-existing, not a regression from this wave). Wave 8's header-height law genuinely doesn't
+      touch these two cards' bottleneck since there is no subtitle to fold and no value/delta row to merge.
+      The real remaining lever is legend density in a short (198–224px) card — new scope for whoever picks
+      this up next, not a wave 8 or wave 9 chartered task; flagging it rather than silently absorbing it into
+      wave 9's touch-model work. Gate: `make verify` green (build, `bun run pre` 4689 pass/0 fail — the
+      historically-flaky `ai-sdk-transport.test.ts:339` did not fail this run —, layout suite, pack-test all
+      passed); `bun run typecheck` clean; oxlint clean on touched files (one pre-existing unrelated warning at
+      `fixtures.tsx:299`); `/review` was not run separately — both parallel workers validated their own scope
+      and I reviewed both diffs directly before committing.
 
-## Wave 9 — Chart touch model <!-- status: pending -->
+## Wave 9 — Chart touch model <!-- status: active -->
 
 - [ ] Coarse pointer: pointerdown reveal, drag scrub with `touch-action: pan-y`, pin-until-dismiss,
       `follow:false` on touch; fix stuck tooltip on lift; linked-chart pin/dismiss
