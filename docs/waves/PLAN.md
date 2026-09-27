@@ -295,15 +295,57 @@ cards), so this wave adds a header-height law. It reads `.claude/mobile/w7/` and
       `fixtures.tsx:299`); `/review` was not run separately — both parallel workers validated their own scope
       and I reviewed both diffs directly before committing.
 
-## Wave 9 — Chart touch model <!-- status: active -->
+## Wave 9 — Chart touch model <!-- status: done -->
 
-- [ ] Coarse pointer: pointerdown reveal, drag scrub with `touch-action: pan-y`, pin-until-dismiss,
+- [x] Coarse pointer: pointerdown reveal, drag scrub with `touch-action: pan-y`, pin-until-dismiss,
       `follow:false` on touch; fix stuck tooltip on lift; linked-chart pin/dismiss
-- [ ] `useDiscreteCursor` for Donut and Heatmap (tap + keyboard + focus parity)
-- [ ] Touch interaction tests via CDP touch events (tap, scrub, lift, tap-outside) across kinds
-      **Left behind:**
+- [x] `useDiscreteCursor` for Donut and Heatmap (tap + keyboard + focus parity)
+- [x] Touch interaction tests via CDP touch events (tap, scrub, lift, tap-outside) across kinds
+      **Left behind:** One commit (`addf238`). Centralized in `useChartCursor` (shared by
+      `CartesianChart`, `DualPanel`, and `useBandPlot` — so `MirroredBars`/`BandStrip` inherit it for
+      free): a coarse pointer (`event.pointerType !== 'mouse'`, branched per-event, never a static
+      media query) resolves+shows on `pointerdown` (a tap fires no `pointermove`), stays PINNED past
+      lift (`pointerleave`/`pointercancel` no-op while pinned), moves on a fresh tap elsewhere, and
+      dismisses via a tap outside an optional `boundaryRef` (capture-phase `document` listener, gated
+      on `isTouch && isSource` so a sibling stealing the source detaches it) or Escape (pointer-type
+      agnostic, unchanged). `boundaryRef` wired from each kind's own `<svg>` (`CartesianChart`,
+      `useBandPlot` reusing its existing ref for both `MirroredBars`/`BandStrip`, `DualPanel`'s one
+      `<svg>` wrapping both panes). `tooltip.follow` unset now anchors on touch too (`cursor.isTouch`
+      folded into `useAnchoredPosition`/`useAnchored`/`DualPanel`'s anchor condition); an explicit
+      `follow` (true or false) still wins. New internal `useDiscreteCursor` hook (NOT exported —
+      budget stayed 396/400) gives Donut/Heatmap the same tap-pin/dismiss contract over a discrete
+      target list, plus `role="listbox"`/`role="option"` + `aria-activedescendant` keyboard stepping
+      (Left/Right ±1 always; Heatmap passes `columns: cols.length` so Up/Down jump a full grid row,
+      Donut has no 2D shape so every arrow is equivalent). Heatmap's targets are the FULL row-major
+      grid including gaps, so the `columns` stride never shifts — a gap cell is a keyboard stop with
+      no tooltip. `/review` (high) found 4 issues in `useDiscreteCursor`, 3 fixed same-commit: (1) a
+      fine-pointer hover on a hybrid device could silently steal `active` out from under a touch pin
+      because `onPointerEnter`/`onPointerMove` didn't check `pinned` — now guarded; (2) `onPointerDown`
+      only pinned for literal `'touch'`, excluding pen, inconsistent with `useChartCursor`'s
+      `!== 'mouse'` — aligned; (3) the outside-tap listener was bubble-phase, unlike
+      `useChartCursor`'s capture-phase one (vulnerable to an ancestor's `stopPropagation`) — now
+      capture-phase too. Fixing (2) flipped a jsdom default (`pointerType: ''` synthetic events no
+      longer pass `!== 'mouse'`) and broke one pre-existing Donut test relying on the omission —
+      fixed by making that test's `pointerType: 'mouse'` explicit, matching every other test in this
+      family. **Skipped by design:** finding 4 (`useDiscreteCursor.pointerProps` allocates 5 closures
+      per target per render, unlike `useChartCursor`'s ref-stabilized handlers) — donut slices and
+      heatmap cells are small bounded sets, not a hot virtualized path; ref-stabilizing per
+      `useChartCursor`'s pattern needs a per-key closure cache for real benefit, real complexity for
+      no measured cost here. Revisit if a heatmap grows large enough to matter.
+      **Known gaps:** keyboard focus has no pointer coordinate, so `useDiscreteCursor` anchors a
+      keyboard-driven tooltip to the shared host's own bounding-box center rather than the focused
+      arc/cell's centroid (documented in the hook's JSDoc; exact per-shape geometry would need each
+      kind to hand it a centroid resolver). `DualPanel` has no `follow` prop at all, so touch always
+      anchors there (no explicit-`follow` escape hatch, unlike every other kind). New
+      `chart-touch.layout.test.ts` (12 tests, real Chromium via CDP-adjacent direct-element
+      `PointerEvent` dispatch — `page.touchscreen.tap()` can't express a scrub and coordinate-based
+      dispatch can miss Donut's annular arcs) covers `multiLine`/`donut`/`heatmap` only, not every
+      cartesian kind (they share `HoverOverlay`/`useChartCursor`, judged sufficient). Gate: `make
+    verify` green (build, `bun run pre`, layout suite 120/120 incl. the new file, pack-test);
+      budgets unchanged (396/400 public symbols — no new export). No MIGRATING.md entry (no export
+      removed or renamed; `ChartCursor<T>` widened, not narrowed).
 
-## Wave 10 — Data, content, chat <!-- status: pending -->
+## Wave 10 — Data, content, chat <!-- status: active -->
 
 - [ ] DataTable `meta.priority` → per-row disclosure below measured fit (declared order by default)
 - [ ] VirtualList coarse-pointer row-height dev warning
