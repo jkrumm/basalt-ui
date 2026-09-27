@@ -47,7 +47,8 @@
     "basalt/token-layer-boundary": "error",
     "basalt/agent-resume-guard": "error",
     "basalt/agent-no-raw-usechat": "error",
-    "basalt/ai-sdk-major": "error"
+    "basalt/ai-sdk-major": "error",
+    "basalt/raw-breakpoint": "warn"
   },
   "ignorePatterns": [
     ".claude/**",

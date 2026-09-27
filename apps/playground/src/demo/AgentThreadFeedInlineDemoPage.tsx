@@ -55,7 +55,8 @@
  *     composer sends a message — that call happens from a click, long after both StrictMode mount
  *     passes have settled, so it never meets the race above.
  */
-import { Badge, Box, Button, Group, Paper, SimpleGrid, Stack, Text } from '@mantine/core'
+import { Badge, Box, Button, Group, Paper, Stack, Text } from '@mantine/core'
+import { WidgetGrid } from 'basalt-ui'
 import { createThreadsStore, heuristicOutcome, useAgentThreadRuns } from 'basalt-ui/agent'
 import type {
   AgentPart,
@@ -323,10 +324,7 @@ export function AgentThreadFeedInlineDemoPage() {
         while it streams.
       </Text>
 
-      {/* `{ base: 1, md: 2 }`, not a bare `cols={2}`: a bare number stays two columns at every
-          width, which at 390px left each ThreadFeed a ~150px column to render a chat transcript
-          in. Every other grid in the playground already declares a base count. */}
-      <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
+      <WidgetGrid cols={2}>
         <Paper p="sm">
           <Text size="xs" tt="uppercase" fw={600} c="dimmed" mb={6}>
             variant=&quot;inline&quot; (renderRow → ThreadFeedRow)
@@ -353,7 +351,7 @@ export function AgentThreadFeedInlineDemoPage() {
             />
           </Box>
         </Paper>
-      </SimpleGrid>
+      </WidgetGrid>
 
       <Group gap="xs">
         <Button radius="md" variant="default" leftSection={<IconReset />} onClick={handleReset}>

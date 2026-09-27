@@ -37,7 +37,8 @@ three doubled controls; C16 resolves D4.
 
 ## 2. Homes
 
-A CONSUMER writes no breakpoint; the shell's size class (`compact` below `sm`, 52.5em) is the only
+A CONSUMER writes no breakpoint; the shell's size class (`compact` < 840 bottom bar, `medium`
+840–1199 rail sidebar, `expanded` ≥ 1200 full sidebar — `SIZE_CLASSES`/`useSizeClass()`) is the only
 viewport axis, and touch is the pointer tier (`--vx-hit`, `(pointer: coarse)`), not a width. The two
 dashboard grid primitives are the sanctioned exception and the only place `lg` (75em) exists: `WidgetGrid` and `StatGroup` own the multi-breakpoint
 column law INTERNALLY — `base 1 → sm min(cols,2) → lg cols` and `base 2 → sm min(cols,3), 4→2 → lg cols`

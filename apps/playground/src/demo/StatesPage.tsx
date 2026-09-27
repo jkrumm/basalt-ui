@@ -6,8 +6,8 @@
  * `page` and `section` variants.
  */
 import { useState } from 'react'
-import { Group, Paper, SimpleGrid, Stack, Text } from '@mantine/core'
-import { EmptyState, ErrorState, LoadingState, QueryState, Section } from 'basalt-ui'
+import { Group, Paper, Stack, Text } from '@mantine/core'
+import { EmptyState, ErrorState, LoadingState, QueryState, Section, WidgetGrid } from 'basalt-ui'
 import type { QueryStateLike } from 'basalt-ui'
 import { ChartCard, MultiLine } from 'basalt-ui/charts'
 import { RangeFilter, ViewTabs } from 'basalt-ui/controls'
@@ -195,7 +195,7 @@ function BuildingBlocksBlock() {
         the theme-lab's Density control on <code>/settings</code>, not a second provider mounted
         here.
       </Text>
-      <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">
+      <WidgetGrid cols={2}>
         <Paper p="sm" withBorder>
           <Text size="xs" tt="uppercase" fw={600} c="dimmed" mb="xs">
             LoadingState — section
@@ -250,7 +250,7 @@ function BuildingBlocksBlock() {
             description="Once data arrives, it renders here."
           />
         </Paper>
-      </SimpleGrid>
+      </WidgetGrid>
     </Stack>
   )
 }
