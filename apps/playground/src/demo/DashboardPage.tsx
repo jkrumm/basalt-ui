@@ -45,7 +45,6 @@ import {
   CHANNEL_LABEL,
   deltaPeriodLabel,
   downsample,
-  integer,
   sparklineBars,
   topPageColumns,
 } from './analytics-data'
@@ -172,7 +171,8 @@ const SMALL_CHARTS: readonly {
   title: string
   info: string
   color: string
-  format: (v: number) => string
+  /** Omitted where the value is a plain count — the default compact y format is exercised instead. */
+  format?: (v: number) => string
   /** The y format under the enclosing Section's `rate` view. */
   rateFormat: (v: number) => string
   /** Each series' value re-expressed as a share of its own first point. */
@@ -184,7 +184,6 @@ const SMALL_CHARTS: readonly {
     title: 'Checkout funnel',
     info: 'Visitors surviving each step of the funnel.',
     color: VX.accent,
-    format: (v) => integer(v),
     rateFormat: (v) => `${Math.round(v)}%`,
     toRate: (value, data) => (value / (data.funnel[0]?.visitors ?? 1)) * 100,
     points: (data) => data.funnel.map((p) => ({ x: p.step, value: p.visitors })),
@@ -490,11 +489,10 @@ export function DashboardPage() {
               // own header stay the CARD's (law C1's third home) — the aside would be the wrong
               // reach for a control that formats exactly one widget.
               data={plotPoints}
-              height={280}
               chartId="analytics-sales"
               ariaLabel="Total sales over time"
               getX={(d) => d.date}
-              y={{ domain: 'auto', format: (v) => integer(v), scale: filters.scale }}
+              y={{ domain: 'auto', scale: filters.scale }}
               {...(bands !== undefined && { zones: bands })}
               series={[
                 {
@@ -563,31 +561,36 @@ export function DashboardPage() {
         }
       >
         <WidgetGrid cols={3}>
-          {SMALL_CHARTS.map((chart) => (
-            <ChartCard key={chart.key} title={chart.title} info={chart.info}>
-              <MultiLine
-                data={chart.points(data)}
-                height={160}
-                chartId={`analytics-${chart.key}`}
-                ariaLabel={chart.title}
-                getX={(d) => d.x}
-                y={{
-                  domain: 'auto',
-                  format: funnelView === 'rate' ? chart.rateFormat : chart.format,
-                }}
-                series={[
-                  {
-                    key: 'value',
-                    label: chart.title,
-                    color: chart.color,
-                    mark: 'line',
-                    getValue: (d) =>
-                      funnelView === 'rate' ? chart.toRate(d.value, data) : d.value,
-                  },
-                ]}
-              />
-            </ChartCard>
-          ))}
+          {SMALL_CHARTS.map((chart) => {
+            const format = funnelView === 'rate' ? chart.rateFormat : chart.format
+            return (
+              <ChartCard key={chart.key} title={chart.title} info={chart.info}>
+                <MultiLine
+                  data={chart.points(data)}
+                  chartId={`analytics-${chart.key}`}
+                  ariaLabel={chart.title}
+                  getX={(d) => d.x}
+                  y={{
+                    domain: 'auto',
+                    // `chart.format` is omitted for a plain count (funnel), which exercises the
+                    // default compact y format — `exactOptionalPropertyTypes` requires the key
+                    // itself to be dropped rather than assigned an explicit `undefined`.
+                    ...(format !== undefined && { format }),
+                  }}
+                  series={[
+                    {
+                      key: 'value',
+                      label: chart.title,
+                      color: chart.color,
+                      mark: 'line',
+                      getValue: (d) =>
+                        funnelView === 'rate' ? chart.toRate(d.value, data) : d.value,
+                    },
+                  ]}
+                />
+              </ChartCard>
+            )
+          })}
         </WidgetGrid>
       </Section>
 

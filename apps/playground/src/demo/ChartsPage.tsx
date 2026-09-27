@@ -177,9 +177,7 @@ function SessionsRevenueChart({ data, chartId }: { data: DayPoint[]; chartId: st
       chartId={chartId}
       getX={(d) => d.date}
       series={SESSIONS_REVENUE_SERIES}
-      y={{ format: fmtInt }}
       y2={{ format: (v) => `$${v.toFixed(1)}k` }}
-      height={260}
       legend={{ placement: 'bottom' }}
       // onFollow: this chart also renders its tooltip as a cursor FOLLOWER — hover "Health score" or
       // "Training load" below and this one reads along, anchored to the shared crosshair.
@@ -270,7 +268,6 @@ function ChannelVolumeChart({ data, chartId }: { data: ChannelVolumePoint[]; cha
       series={VOLUME_SERIES}
       tooltip={{ formatHeader: (key) => `Week ${key.slice(1)}` }}
       y={{
-        format: fmtInt,
         domain: (rows, visible) => {
           const shown = new Set(visible.map((s) => s.key))
           let maxSum = 0
@@ -281,8 +278,7 @@ function ChannelVolumeChart({ data, chartId }: { data: ChannelVolumePoint[]; cha
           return [0, Math.max(maxSum, shown.has('stretch') ? 900 : 0) * 1.1]
         },
       }}
-      height={300}
-      legend={{ placement: 'bottom', groups: true, maxRows: 6 }}
+      legend={{ groups: true }}
     >
       {({ data: rows, hidden, xScale, yScale, xMax }) => {
         const barWidth = Math.max((xMax / Math.max(rows.length, 1)) * 0.6, 2)
@@ -358,7 +354,6 @@ function WeeklyDigestChart({ chartId }: { chartId: string }) {
   return (
     <Bars
       data={WEEKLY_DIGEST}
-      height={260}
       chartId={chartId}
       getX={(d) => d.date}
       cursorResolution="leading"
@@ -409,7 +404,6 @@ function ChannelMixCard() {
     >
       <Donut
         data={CHANNEL_MIX as DonutDatum[]}
-        height={260}
         colorForKey={demoColor}
         seriesLabel={(k) => CHANNEL_MIX.find((c) => c.key === k)?.label ?? k}
         formatValue={(v) => fmtInt(v)}
@@ -456,7 +450,6 @@ function CursorScopeBlock() {
         <ChartCard title="Unscoped — Revenue" subtitle="Shares the page cursor">
           <ZonedLine<DayPoint>
             data={SERIES_DATA}
-            height={200}
             chartId="charts-unscoped-a"
             getX={(d) => d.date}
             series={SCOPE_A_SERIES}
@@ -465,7 +458,6 @@ function CursorScopeBlock() {
         <ChartCard title="Unscoped — Churn" subtitle="Shares the page cursor">
           <ZonedLine<DayPoint>
             data={SERIES_DATA}
-            height={200}
             chartId="charts-unscoped-b"
             getX={(d) => d.date}
             series={SCOPE_B_SERIES}
@@ -477,7 +469,6 @@ function CursorScopeBlock() {
           <ChartCard title="Scoped — Tenant 1" subtitle="Isolated pair, via ChartCursorScope">
             <ZonedLine<DayPoint>
               data={SERIES_DATA}
-              height={200}
               chartId="charts-scoped-a"
               getX={(d) => d.date}
               series={SCOPE_A_SERIES}
@@ -486,7 +477,6 @@ function CursorScopeBlock() {
           <ChartCard title="Scoped — Tenant 2" subtitle="Isolated pair, via ChartCursorScope">
             <ZonedLine<DayPoint>
               data={SERIES_DATA}
-              height={200}
               chartId="charts-scoped-b"
               getX={(d) => d.date}
               series={SCOPE_B_SERIES}
@@ -539,7 +529,6 @@ export function ChartsPage() {
           >
             <ZonedLine<DayPoint>
               data={SERIES_DATA}
-              height={300}
               chartId="charts-health"
               getX={(d) => d.date}
               series={[
@@ -577,7 +566,6 @@ export function ChartsPage() {
             >
               <StackedArea<DayPoint>
                 data={SERIES_DATA}
-                height={260}
                 chartId="charts-volume"
                 getX={(d) => d.date}
                 series={STACK_GROUPS.map((g) => ({
@@ -598,7 +586,6 @@ export function ChartsPage() {
             >
               <DualPanel<LoadPoint>
                 data={LOAD_TREND}
-                height={300}
                 chartId="charts-load"
                 getX={(d) => d.date}
                 series={[
@@ -675,7 +662,6 @@ export function ChartsPage() {
           >
             <MultiLine<LiftPoint>
               data={LIFT_TREND}
-              height={300}
               chartId="charts-1rm"
               getX={(d) => d.session}
               formatX={(key) => `#${key.slice(1)}`}
@@ -713,7 +699,6 @@ export function ChartsPage() {
             >
               <Heatmap<HeatCell>
                 data={ACTIVITY_HEATMAP}
-                height={300}
                 chartId="charts-heat"
                 getRow={(d) => d.day}
                 getCol={(d) => d.hour}
