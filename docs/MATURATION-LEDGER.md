@@ -354,20 +354,9 @@ each still landed net-negative in the areas they specifically targeted (dead cod
 review-*.md` reports and the six waves' own `/review` passes, judged out of charter or too
 speculative to chase without a named consumer):
 
-- `useChartCursor`/`useDiscreteCursor` drop a previously-COMMITTED pin when a second tap starts and
-  is then cancelled as a scroll (wave 3, real P0/P1-shaped, needs its own fix + regression test).
-- The provisional-press state machine and the outside-dismiss listener are each hand-duplicated
-  across `useChartCursor`/`useDiscreteCursor`/`ChartLegend` with no shared primitive (waves 1/3/4).
-- `onPointerMove`'s O(n) nearest-point scan has no rAF throttle in either cursor hook; `findTarget`
-  does an O(n) scan past an unused `indexByKey` Map; `useDiscreteCursor.pointerProps` allocates
-  per-item closures inline in Donut/Heatmap's render loops (waves 3/4).
-- `fitDotRows` double-counts a dot's width in the wrap-simulation (legend fit, waves 2/3).
-- `chart-tier.tsx`'s `useViewportHeight` installs one raw resize listener per `ChartFrame` instead of
-  sharing one the way `common/use-media-query.ts` already does (wave 2/4).
-- `theme/index.ts`'s Switch/Checkbox/Radio still hand-type `{ 'data-basalt-hit': true }` instead of
-  the `HIT_ATTR` constant `PaginationControl` uses (wave 1/5); `useDiscreteCursor.ts`/
-  `useHysteresis.ts` are camelCase, not kebab-case per this repo's own naming rule (wave 1/3);
-  `ChartLegend`'s `orderEntries` call is unmemoized on a hover-driven render path (wave 1).
+- `useDiscreteCursor.pointerProps` allocates per-item closures inline in Donut/Heatmap's render
+  loops (waves 3/4).
+- `ChartLegend`'s `orderEntries` call is unmemoized on a hover-driven render path (wave 1).
 - Three layout-suite files (`chart-touch.layout.test.ts`'s per-kind touch-pin blocks,
   `hit-floor.layout.test.ts`/`hit-overlap.layout.test.ts`'s effective-hit-box math) duplicate the
   same inline computation with no shared test helper (wave 1/4/5).
