@@ -98,62 +98,62 @@ resolved.
       `git diff --stat` vs the wave-1 close-out commit). One commit, `refactor: slim down the dead
 axis resolver, media-query stores and speculative chart escape hatches`.
 
-        **B4** — `resolveAxisEconomy`/`AxisEconomyInput`/`useChartLayout`/the `side` legend variant/
-        `thinTo`'s micro override are gone from `chart-layout.ts`/`chart-tier.tsx`; `XLabelPlan` is now
-        its own type instead of `Pick<ChartLayout['xAxis'], …>`. `ChartFrame`'s `resolveChartLayout`
-        call drops the always-`[]`/`false` `yLabels`/`xLabels`/`categorical` args (dead — the real axis
-        ladder runs off `isTightClass`/`planXLabels`/`yTickCount` directly in `CartesianChart`/
-        `useBandPlot`, untouched). `ChartFrame.test.tsx`'s `useChartLayout`-based probe now reads
-        `useChartContainerClass()` instead (height assertions dropped — already covered directly in
-        `chart-layout.test.ts`).
+          **B4** — `resolveAxisEconomy`/`AxisEconomyInput`/`useChartLayout`/the `side` legend variant/
+          `thinTo`'s micro override are gone from `chart-layout.ts`/`chart-tier.tsx`; `XLabelPlan` is now
+          its own type instead of `Pick<ChartLayout['xAxis'], …>`. `ChartFrame`'s `resolveChartLayout`
+          call drops the always-`[]`/`false` `yLabels`/`xLabels`/`categorical` args (dead — the real axis
+          ladder runs off `isTightClass`/`planXLabels`/`yTickCount` directly in `CartesianChart`/
+          `useBandPlot`, untouched). `ChartFrame.test.tsx`'s `useChartLayout`-based probe now reads
+          `useChartContainerClass()` instead (height assertions dropped — already covered directly in
+          `chart-layout.test.ts`).
 
-        **B5/B3** — new `common/use-media-query.ts` (`useMediaQuery` + a non-reactive `readMediaQuery`
-        for a dev-only one-off check), keyed by a `WeakMap<typeof window.matchMedia, Map<query,
-        MediaQueryList>>` rather than a bare `Map<query, …>` — a bare map would have served a STALE
-        `MediaQueryList` to any test that swaps in its own `window.matchMedia` stub per test (a real
-        pattern here: `provider/host.test.tsx`, `use-size-class.test.tsx`, `virtual-list.test.tsx`),
-        since the cache would outlive the stub. `useSizeClass` is now two `useMediaQuery` calls (dropped
-        its own `useState(boundaryLists)`); `shell/index.tsx`'s `useMinWidth` is gone (inlined);
-        `useCoarsePointer` and `useBreakpoint` are one-line forwarders; `virtual-list.tsx`'s and
-        `provider/index.tsx`'s raw `window.matchMedia` reads route through the shared module. Verified:
-        `raw-breakpoint` self-fires in `packages/basalt-ui/src` went from 11 (already down from the
-        review's 14 after wave 1) to 2 — `ChartLegend.tsx`'s `window.innerHeight`/`innerWidth`
-        popover-positioning read and `content/article-card.tsx`'s pre-existing incumbent, neither named
-        in P1-5's fix list, both left alone.
+          **B5/B3** — new `common/use-media-query.ts` (`useMediaQuery` + a non-reactive `readMediaQuery`
+          for a dev-only one-off check), keyed by a `WeakMap<typeof window.matchMedia, Map<query,
+          MediaQueryList>>` rather than a bare `Map<query, …>` — a bare map would have served a STALE
+          `MediaQueryList` to any test that swaps in its own `window.matchMedia` stub per test (a real
+          pattern here: `provider/host.test.tsx`, `use-size-class.test.tsx`, `virtual-list.test.tsx`),
+          since the cache would outlive the stub. `useSizeClass` is now two `useMediaQuery` calls (dropped
+          its own `useState(boundaryLists)`); `shell/index.tsx`'s `useMinWidth` is gone (inlined);
+          `useCoarsePointer` and `useBreakpoint` are one-line forwarders; `virtual-list.tsx`'s and
+          `provider/index.tsx`'s raw `window.matchMedia` reads route through the shared module. Verified:
+          `raw-breakpoint` self-fires in `packages/basalt-ui/src` went from 11 (already down from the
+          review's 14 after wave 1) to 2 — `ChartLegend.tsx`'s `window.innerHeight`/`innerWidth`
+          popover-positioning read and `content/article-card.tsx`'s pre-existing incumbent, neither named
+          in P1-5's fix list, both left alone.
 
-        **B7/B12/B9** — `legend.mode` deleted from `ChartLegendConfig`/`ChartFrameLegend` (grep of
-        argo/weatherorb/the playground: zero consumers); `ChartLegend`'s own internal `mode` prop
-        (resolver-driven) is untouched. `BasaltProvider`'s `host` prop is gone; `useHostAttribute` takes
-        no argument and always auto-detects (`<html data-basalt-host="web|pwa">`, `native` removed with
-        zero consumers). Hard-deleted with no grace window (zero consumers, confirmed by grep):
-        `resolveChartTier`, `chartTierMetrics`, `useChartTier`, `useChartTierMetrics` (all from the
-        `./charts` barrel), `VX.phoneChartWidth`, `ResponsiveChartHeight.sm/md/lg`. **`ChartTier`/
-        `ChartTierMetrics` themselves stay as internal (unexported) types** in `chart-frame-layout.ts` —
-        `ticks.ts`'s `autoXLabelRotate`, `Axes.tsx` and `auto-margin.ts` still read the tier concept
-        internally; only the PUBLIC surface (the barrel re-export, six symbol names) is gone, matching
-        the review's own "-6 public symbols" accounting. `tierOfContainerClass` + `chartTierMetrics`
-        collapsed into one `chartMetrics(containerClass)`. Added a NEW "on notice (adopt-or-delete)"
-        MIGRATING row for the whole `ResponsiveChartHeight` object form (not just its old keys) — zero
-        consumers under `~/SourceRoot` use `{ base, regular, wide }` over a plain number, and the
-        derived-height law already covers the common case; a future minor may drop it for a plain
-        number + explicit override unless a consumer names a need. `export-surface.json` regenerated
-        (`--update`) to match.
-        **B1** — the two grace entries genuinely new to this branch (`raw-breakpoint` in
-        `oxlint-plugin.js`, `raw-media-query` in `guard/index.ts`) moved `since: 1.30.2 → 1.31.0`,
-        `promote: 1.31.0 → 1.32.0`; the `legend.maxRows` deprecation notices (JSDoc ×2 +
-        `deprecatedProp` call) moved `1.31.0 → 1.32.0`. **Deliberately left alone**: the PRE-EXISTING
-        `control-outside-home`/`raw-selection-control` (C1) pair, still genuinely scheduled to promote
-        AT 1.31.0 (decided when 1.31.0 was already the next real version, unrelated to this branch's
-        off-by-one) — `bun packages/basalt-ui/scripts/check-grace.ts 1.31.0` now fails on ONLY those
-        two, verified. **This is a real release blocker for whoever cuts 1.31.0**: either promote the
-        C1 pair to `error` (re-measure the fleet per its own grace-entry `why`) or extend `promote` with
-        a reason, before `make release` will get past its preflight. Orchestrator's call, per this
-        file's header.
+          **B7/B12/B9** — `legend.mode` deleted from `ChartLegendConfig`/`ChartFrameLegend` (grep of
+          argo/weatherorb/the playground: zero consumers); `ChartLegend`'s own internal `mode` prop
+          (resolver-driven) is untouched. `BasaltProvider`'s `host` prop is gone; `useHostAttribute` takes
+          no argument and always auto-detects (`<html data-basalt-host="web|pwa">`, `native` removed with
+          zero consumers). Hard-deleted with no grace window (zero consumers, confirmed by grep):
+          `resolveChartTier`, `chartTierMetrics`, `useChartTier`, `useChartTierMetrics` (all from the
+          `./charts` barrel), `VX.phoneChartWidth`, `ResponsiveChartHeight.sm/md/lg`. **`ChartTier`/
+          `ChartTierMetrics` themselves stay as internal (unexported) types** in `chart-frame-layout.ts` —
+          `ticks.ts`'s `autoXLabelRotate`, `Axes.tsx` and `auto-margin.ts` still read the tier concept
+          internally; only the PUBLIC surface (the barrel re-export, six symbol names) is gone, matching
+          the review's own "-6 public symbols" accounting. `tierOfContainerClass` + `chartTierMetrics`
+          collapsed into one `chartMetrics(containerClass)`. Added a NEW "on notice (adopt-or-delete)"
+          MIGRATING row for the whole `ResponsiveChartHeight` object form (not just its old keys) — zero
+          consumers under `~/SourceRoot` use `{ base, regular, wide }` over a plain number, and the
+          derived-height law already covers the common case; a future minor may drop it for a plain
+          number + explicit override unless a consumer names a need. `export-surface.json` regenerated
+          (`--update`) to match.
+          **B1** — the two grace entries genuinely new to this branch (`raw-breakpoint` in
+          `oxlint-plugin.js`, `raw-media-query` in `guard/index.ts`) moved `since: 1.30.2 → 1.31.0`,
+          `promote: 1.31.0 → 1.32.0`; the `legend.maxRows` deprecation notices (JSDoc ×2 +
+          `deprecatedProp` call) moved `1.31.0 → 1.32.0`. **Deliberately left alone**: the PRE-EXISTING
+          `control-outside-home`/`raw-selection-control` (C1) pair, still genuinely scheduled to promote
+          AT 1.31.0 (decided when 1.31.0 was already the next real version, unrelated to this branch's
+          off-by-one) — `bun packages/basalt-ui/scripts/check-grace.ts 1.31.0` now fails on ONLY those
+          two, verified. **This is a real release blocker for whoever cuts 1.31.0**: either promote the
+          C1 pair to `error` (re-measure the fleet per its own grace-entry `why`) or extend `promote` with
+          a reason, before `make release` will get past its preflight. Orchestrator's call, per this
+          file's header.
 
-        Gate run: `bun run build` → `bun run pre` (fmt/lint/typecheck/check-theme/check-budgets/tests,
-        4774 pass) → `bun run test:layout` (125 pass) → `packages/basalt-ui` `bun run pack-test`
-        (PASSED) — all green, in pieces rather than `make verify` (another Chrome was running; wave 1's
-        warning), but every step it would have chained ran and passed.
+          Gate run: `bun run build` → `bun run pre` (fmt/lint/typecheck/check-theme/check-budgets/tests,
+          4774 pass) → `bun run test:layout` (125 pass) → `packages/basalt-ui` `bun run pack-test`
+          (PASSED) — all green, in pieces rather than `make verify` (another Chrome was running; wave 1's
+          warning), but every step it would have chained ran and passed.
 
 ## Wave 3 — Card and legend correctness <!-- status: done -->
 
@@ -174,7 +174,7 @@ axis resolver, media-query stores and speculative chart escape hatches`.
 - [x] The legend sheet gets a real focus trap (or drops `aria-modal`) and takes its z-index from a
       token (B14)
       **Left behind:** One commit, `fix: card and legend correctness — hysteresis, dots fit, slot
-  ownership` (packages/basalt-ui). Gate run in pieces (`bun run build` → `bun run pre`, 4797 pass →
+ownership` (packages/basalt-ui). Gate run in pieces (`bun run build` → `bun run pre`, 4797 pass →
       `bun run test:layout`, 126 pass → `packages/basalt-ui` `bun run pack-test`, PASSED) — full
       `make verify` not run directly since another Chrome was already running (wave 1/2's own
       warning), but every step it chains ran and passed. `/code-review high` (uncommitted diff, 8
@@ -202,7 +202,7 @@ axis resolver, media-query stores and speculative chart escape hatches`.
       are each hand-duplicated across `useChartCursor`/`useDiscreteCursor`/`ChartLegend` with no shared
       primitive (the wasSide/wasShort duplication above was the same shape and got fixed since this
       wave introduced both copies; these predate it). One dropped-for-cap cosmetic finding: `style={{
-  touchAction: 'pan-y' }}` is a literal repeated across four plot `<svg>`s with no shared constant
+touchAction: 'pan-y' }}` is a literal repeated across four plot `<svg>`s with no shared constant
       (also pre-existing, wave 1).
       **Deviation from the letter of the ticket:** the P0-1 layout test does not literally navigate
       `/dashboard` — the layout suite (`tests/layout/`) only serves synthetic fixtures via
@@ -230,8 +230,8 @@ axis resolver, media-query stores and speculative chart escape hatches`.
 - [x] Re-measure with `r2/measure.mjs` into `r2/w4/`. Target: median data rect ≥ 0.55 at each
       viewport and none < 0.40. Tick this step either way and record the numbers
       **Left behind:** Two commits, `fix: give the plot its space — inside-y floor, wrap law,
-    height clamp` (packages/basalt-ui, `71a855b`) and `refactor: drop literal chart heights and
-    digit-grouping-only y formats` (root, `e940d52`) — split because a mixed staging set trips
+  height clamp` (packages/basalt-ui, `71a855b`) and `refactor: drop literal chart heights and
+  digit-grouping-only y formats` (root, `e940d52`) — split because a mixed staging set trips
       the repo's own `isolated-basalt-ui` pre-commit guard. Gate run in full: `bun run build` →
       `bun run pre` (4801 pass) → `bun run test:layout` (127 pass, one new case) →
       `packages/basalt-ui` `bun run pack-test` (PASSED).
@@ -340,20 +340,105 @@ axis resolver, media-query stores and speculative chart escape hatches`.
       wave picks up cross-cutting cleanup.
       **Left behind:**
 
-## Wave 5 — Touch floors, forms, landscape <!-- status: active -->
+## Wave 5 — Touch floors, forms, landscape <!-- status: done -->
 
-- [ ] DataTable pagination: drop `size="sm"`, and `Pagination.extend` gets the hit attribute like
+- [x] DataTable pagination: drop `size="sm"`, and `Pagination.extend` gets the hit attribute like
       Switch/Checkbox/Radio (data-1, P0). The fold toggle gets `aria-controls` (fold-toggle-missing-aria-controls)
-- [ ] SelectFilter, CompareFilter and MultiSelectFilter popover rows reach a 44px coarse hit area,
+- [x] SelectFilter, CompareFilter and MultiSelectFilter popover rows reach a 44px coarse hit area,
       with the gap derived like `DOTS_HIT_GAP` (code-foundations F1)
-- [ ] FormRow puts the label beside the input when its container is ≥ ~600px (n2). Landscape-phone
+- [x] FormRow puts the label beside the input when its container is ≥ ~600px (n2). Landscape-phone
       header and footer use a height-scaled compact row, with tab labels dropped under the icons (n1)
-- [ ] The Composer keyboard inset honours a `style.padding` shorthand (composer-padding-shorthand-dropped)
-- [ ] A minimal row-selection specimen goes back into an existing playground route, not a new route
+- [x] The Composer keyboard inset honours a `style.padding` shorthand (composer-padding-shorthand-dropped)
+- [x] A minimal row-selection specimen goes back into an existing playground route, not a new route
       file (data-3)
-      **Left behind:**
+      **Left behind:** One commit, `fix: touch floors, filter hit gap, form-row container width,
+    composer padding` (packages/basalt-ui, `f6329ef`). Gate run in full: `bun run build` →
+      `bun run pre` (4810 pass) → `bun run test:layout` (132 pass, 5 new) →
+      `packages/basalt-ui` `bun run pack-test` (PASSED).
 
-## Wave 6 — Guards, docs, comment diet, final critic <!-- status: pending -->
+      **data-1** — `data-table.tsx`'s `<Pagination>` drops its `size="sm"` literal; `theme/index.ts`
+      gains `PaginationControl: PaginationControl.extend({ defaultProps: { ...HIT_ATTR } })`
+      (`PaginationControl` is its own themed component — Mantine resolves its `defaultProps` by
+      displayName independent of how `<Pagination>` renders it, so this reaches every prev/next/page
+      button). `FoldToggle` takes a new `controlsId` prop; the disclosure `<Table.Tr>` gets a
+      matching `id={`${row.id}-fold`}`. New: a `hit-adopters.test.tsx` case (7 buttons on a 5-page
+      `Pagination` all carry the hit attribute) and a `data-table.layout.test.ts` addition (click a
+      fold toggle, assert `aria-controls` names the row that actually expands).
+
+      **code-foundations F1** — `enum-filter.tsx`/`multi-select-filter.tsx`'s `Stack gap={2}` (→
+      `--stack-gap: 0.125rem`, capping the coarse overlay at ~4px) is now `POPOVER_ROW_HIT_GAP = 25`
+      (`44 - 21 - 2 + 4`, the same derivation as chart legend's `DOTS_HIT_GAP`), extracted to
+      `filter-context.tsx` as a shared export rather than duplicated per file (a `/code-review high`
+      finding, independently surfaced by three finder angles) — both files already import from
+      there. New tests in `select-filter.test.tsx` and a new `multi-select-filter.test.tsx` open the
+      popover and assert `--stack-gap` off the old 2px literal.
+
+      **n2** — `FormRow`'s label/control swap moved from a viewport `@media (max-width: 47.99375em)`
+      to `@container basalt-form-row (max-width: 599.9px)`, at a new ~600px threshold. **Real
+      pitfall hit and fixed**: the first attempt put `container-type`/`container-name` AND
+      `grid-template-columns` on the SAME element (`.row`) — Chrome silently never applies the
+      queried value once an element tries to requery its own established container for a
+      layout-affecting property (confirmed with an isolated minimal repro outside the app, not just
+      in-component). Fixed the same way `StatGroup` already does it: `.row` establishes containment,
+      a new child `.grid` (one extra wrapping div in `FormRow`'s render) is the queried box. The
+      `.d.ts` CSS-module type shim and `form-layout.test.tsx`'s CSS-text assertions were updated to
+      match. `@supports not (container-type: inline-size)` keeps the old viewport rule as the
+      pre-container-query fallback. New: `tests/layout/fixture/{spec,fixtures}.tsx` gained a
+      `forms?: FormsSpec` fixture (`FormRow` at fixed container widths, mirroring `CardsSpec`'s
+      pattern) and a new `form-row.layout.test.ts` (4 widths × column count, plus a label-position
+      geometry check) — this is the test that would have caught the self-query bug; it failed
+      against the first (broken) version and passes against the shipped one.
+
+      **n1** — tab labels were ALREADY hidden under the icons in landscape
+      (`app-mobile-nav.module.css:409`, pre-existing) — only the "height-scaled compact row" half was
+      open. `app-main.module.css`'s flat `40px`/`45px` landscape header/footer heights are now
+      `clamp(36px, 9dvh, 40px)` / `clamp(45px, 9.4dvh, 56px)`: continuity at the 480px breakpoint
+      edge (the `dvh` term resolves near the old flat value there) and real shrinkage below it. The
+      footer's clamp is floor-pinned at 45px (`--vx-hit`'s 44px coarse floor + 1px seam) through the
+      whole practical landscape-phone range by design — a hard law, not a tuning miss — so it reads
+      as a no-op today and only matters if that floor itself ever moves.
+
+      **composer-padding-shorthand-dropped** — `composer.tsx`'s new `paddingBottomOf()` reads a
+      `padding` shorthand's bottom component (1-4 space-separated values) as the calc's base when
+      `paddingBottom` itself is unset. **Review-caught regression, fixed before this was clean**: the
+      first version did `String(style.padding)`, which drops the unit entirely when a consumer passes
+      a bare number (`{ padding: 20 }`, React's own px convention) — `paddingBottomOf` now takes
+      `string | number` directly and appends `px` itself. Five new `composer.test.tsx` cases (bare
+      `paddingBottom`, string shorthand, 4-value shorthand, numeric shorthand, `paddingBottom` winning
+      over the shorthand).
+
+      **data-3** — live-verified, no code change needed: the review's "no route exercises
+      `enableRowSelection`" claim was stale — `DataStressPage` (which has real row-selection +
+      `bulkActions`) is mounted inside `DataDemoPage`'s "Stress" tab, and `DataDemoPage` IS `/data`'s
+      route component (`routes/data.tsx`). Confirmed live via the running playground: the Stress
+      tab's row-selection checkboxes render, each wrapped in a `.selectHit` label with `inset: 0`,
+      exactly the fix shape the review itself described. The tab selection is a local (non-URL) store
+      field, which is likely why a script probing `/data` directly without switching tabs found
+      nothing.
+
+      **`/code-review high`** (uncommitted diff, 8 finder angles) found 9 issues; two were real bugs
+      in this wave's own new code and fixed before commit (the composer numeric-padding regression
+      above, and the `form-layout.module.css.d.ts` hand-maintained type shim missing the new `grid`
+      key — a real `tsc` break, caught mid-review since the fork raced my own self-query fix). The
+      `POPOVER_ROW_HIT_GAP` duplication was fixed (see above). One more of my own new code fixed on
+      sight during gate-running (not by the review): a `jsx-a11y(control-has-associated-label)` error
+      on the new `FormsFixture`'s bare `<input>` — added `aria-label="Project name"`.
+      **Confirmed by review but left alone, pre-existing and out of this wave's charter**: `theme
+      /index.ts`'s Switch/Checkbox/Radio still hand-type `{ 'data-basalt-hit': true }` instead of the
+      `HIT_ATTR` constant my own new `PaginationControl` entry now uses (wave 1); two hook files under
+      `charts/hooks/**` (`useDiscreteCursor.ts`, `useHysteresis.ts`) are camelCase, not kebab-case
+      per this file's own naming rule (wave 1/3); `ChartLegend`'s `orderEntries` call is unmemoized on
+      a hover-driven render path (wave 1); `chart-touch.layout.test.ts`'s three per-kind touch-pin
+      test blocks and `hit-floor.layout.test.ts`/`hit-overlap.layout.test.ts`'s inline effective-hit-
+      box computation are each duplicated with no shared helper (wave 1/4). None blocking, all named
+      here for whichever wave picks up cross-cutting cleanup (wave 6's own charter names some of this
+      already). Also noted, not a defect: `oxlint`'s default exit code is 1 on ANY diagnostic
+      including warnings ONLY when at least one is error-severity — a full-repo `bun run lint`
+      failure mid-wave turned out to be the `FormsFixture` a11y error above, not the ~40 pre-existing
+      `no-console`/`consistent-function-scoping` warnings scattered across untouched test files (those
+      alone exit 0); worth remembering before assuming a red `lint` is unrelated pre-existing debt.
+
+## Wave 6 — Guards, docs, comment diet, final critic <!-- status: active -->
 
 - [ ] `basalt/raw-breakpoint` recurses into nested objects and variable indirection (or narrows its
       documented claim). `raw-media-query` matches any width unit (rem, vw). The three self-violations
