@@ -74,7 +74,7 @@ layout('card chrome by container', () => {
     const subtitle = (await p.boxes(`${root} ${moduleClass('subtitle')}`))[0]
     expect(subtitle !== undefined && subtitle.height > 0).toBe(shown)
     // Below 480px the folded glyph carries the subtitle instead; from 480px it is not rendered.
-    const glyphs = await p.boxes(`${root} button[aria-label="More information"]`)
+    const glyphs = await p.boxes(`${root} button[aria-label^="More information"]`)
     expect(glyphs.some((g) => g.height > 0)).toBe(!shown)
   })
 
