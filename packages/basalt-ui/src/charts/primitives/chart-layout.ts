@@ -11,7 +11,7 @@ import type { ContainerClass, SIZE_CLASSES } from '../../tokens/size-classes'
 import { VX } from '../../tokens'
 import { measureText } from '../utils/measure-text'
 import type { LegendEntry } from './ChartLegend'
-import { entriesWithinRows } from './chart-frame-layout'
+import { entriesWithinDotRows, entriesWithinRows, orderEntries } from './chart-frame-layout'
 
 export type ChartLayout = {
   containerClass: ContainerClass
@@ -39,6 +39,9 @@ export type ChartLayoutInput = {
    * (no card, or an unmeasured/tall one).
    */
   cardShort?: boolean
+  /** The legend's own `groups` config — whether role dividers render (and so count toward the
+   * dots-mode fit, R2C-9). Default `false`. */
+  groups?: boolean
   /** Consumer-stated values; each wins over the derived one. */
   override?: { height?: number }
 }
@@ -82,6 +85,12 @@ function resolveHeight(input: ChartLayoutInput, containerClass: ContainerClass):
   return Math.min(derived, Math.round(input.viewportH * COARSE_VIEWPORT_SHARE))
 }
 
+/** A legend never rolls up fewer than 2 entries: "+1 more" hides nothing a chip would not show. */
+function rollUp(total: number, fitted: number): { visible: number; overflow: number } {
+  const visible = total - fitted < 2 ? total : fitted
+  return { visible, overflow: total - visible }
+}
+
 function resolveLegend(
   input: ChartLayoutInput,
   containerClass: ContainerClass,
@@ -90,27 +99,29 @@ function resolveLegend(
   if (containerClass === 'micro' || total === 0) return { mode: 'none' }
   const where = input.slotW > 0 ? 'header' : 'band'
   const width = where === 'header' ? input.slotW : input.frameW
-  const fitted =
-    width > 0 ? Math.max(1, entriesWithinRows(input.legendItems, width, LEGEND_ROWS[where])) : total
-  // A legend never rolls up fewer than 2 entries: "+1 more" hides nothing a chip would not show.
-  const visible = total - fitted < 2 ? total : fitted
-  // Dots is a HEADER-ONLY fold (RESPONSIVE-SPEC.md §1's container table: "compact: … legend in
-  // header (dots)" — every row names the header, never the band). A short card (wave 11, PLAN.md
-  // "the legend gets at most one row and folds to dots… before it takes plot height") forces the
-  // same fold regardless of container class, on the same header-only condition — only the RENDER
-  // MODE changes, not `LEGEND_ROWS.header` or the fit/overflow math above. A band legend (no
-  // header slot) always stays 'chips': a compact-width chart with nowhere to portal its legend
-  // never had a designed dots form, before or after wave 11.
-  const mode =
-    where === 'header' && (input.cardShort === true || containerClass === 'compact')
-      ? 'dots'
-      : 'chips'
-  return {
-    mode,
-    where,
-    visible,
-    overflow: total - visible,
+  // Unmeasured (first paint, before P2-8's synchronous slot seed lands): assume everything fits
+  // rather than guessing a fold nothing has measured yet.
+  if (width <= 0) return { mode: 'chips', where, visible: total, overflow: 0 }
+
+  const { entries: ordered, dividerAfter } = orderEntries(input.legendItems, input.groups === true)
+  const chipFit = entriesWithinRows(ordered, width, LEGEND_ROWS[where])
+  const allChipsFit = chipFit >= total
+
+  // The law (R2C-8, `docs/waves/PLAN.md` wave 3): chips whenever every entry fits one header row —
+  // a compact/short header with ROOM stays labelled. Dots is a header-only FALLBACK for when chips
+  // do not fit, and only while the card is short or the container itself is compact
+  // (RESPONSIVE-SPEC.md §1/§4). A band legend (no header slot) always stays 'chips': a compact-width
+  // chart with nowhere to portal its legend never had a designed dots form.
+  const wantsDots =
+    where === 'header' && !allChipsFit && (input.cardShort === true || containerClass === 'compact')
+
+  if (!wantsDots) {
+    const { visible, overflow } = rollUp(total, Math.max(1, chipFit))
+    return { mode: 'chips', where, visible, overflow }
   }
+  const dotFit = entriesWithinDotRows(ordered, width, LEGEND_ROWS[where], dividerAfter)
+  const { visible, overflow } = rollUp(total, Math.max(1, dotFit))
+  return { mode: 'dots', where, visible, overflow }
 }
 
 /** Compact and micro plots are tight: y labels move inside and terminal x labels anchor inward. */

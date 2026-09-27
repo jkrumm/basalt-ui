@@ -11,7 +11,7 @@ import { useChartMetrics } from './chart-tier'
 const TOOLTIP_STYLES: CSSProperties = {
   position: 'fixed',
   pointerEvents: 'none',
-  zIndex: 9999,
+  zIndex: VX.zIndexFloating,
   backgroundColor: VX.surface.panel,
   borderRadius: 'var(--vx-radius-floating)',
   padding: '0',

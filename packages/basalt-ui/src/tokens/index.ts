@@ -289,6 +289,10 @@ export const VX = {
    * legend rolls up).
    */
   minPlotHeight: 120,
+  /** Every floating chart overlay portalled to `document.body` — a pinned tooltip, the legend's
+   * `All N` disclosure and its backdrop — shares one stacking value, so they always stack the same
+   * way relative to page chrome and to each other. */
+  zIndexFloating: 9999,
 } as const
 
 /**

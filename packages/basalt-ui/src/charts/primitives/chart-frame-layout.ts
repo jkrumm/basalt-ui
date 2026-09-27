@@ -7,6 +7,7 @@ import { VX } from '../../tokens'
 import type { ContainerClass } from '../../tokens/size-classes'
 import type { ChartMargin } from '../../tokens'
 import type { LegendEntry } from './ChartLegend'
+import type { SeriesRole } from '../series'
 import { measureText } from '../utils/measure-text'
 
 /** Line box of one legend row at `VX.legendFontSize`. */
@@ -17,6 +18,50 @@ const LEGEND_PAD_Y = 10
 export const LEGEND_ROW_GAP = 6
 /** Swatch plus the gap to its label — the fixed part of a legend entry's width. */
 const LEGEND_SWATCH_W = 24
+
+/**
+ * The real gap a dots-mode entry needs so its `[data-basalt-hit]::after` overlay can reach the
+ * full 44px coarse floor with NO overlap into its neighbour's overlay (`hit-floor.layout.test.ts` +
+ * `hit-overlap.layout.test.ts`, wave 4's cap: `styles.css`'s `::after` grows to
+ * `min(max(size,44), size + 2 + gap)`). Two 44px-wide overlays centred on same-size hosts touch
+ * with zero overlap only once their PITCH (real gap + host size) is itself >= 44 — below that, the
+ * cap can only shrink the overlay below 44 (honouring WCAG 2.5.8's spacing route) or let it overlap;
+ * there is no gap value that lets it hit 44 exactly while staying flush against a same-size sibling.
+ * `LEGEND_DOT_SIZE` is 8px, so the floor is 44 − 8 − 2 = 34; a few px of headroom against rounding.
+ */
+export const LEGEND_DOT_SIZE = 8
+export const DOTS_HIT_GAP = 44 - LEGEND_DOT_SIZE - 2 + 4
+/** One dot's full visual footprint in a wrapped row — the fit basis for dots mode (R2C-9): a chip's
+ * swatch+label width badly overstates what a dot actually costs, which is how a 4-entry legend that
+ * fits easily as dots got measured as if it were 4 chips and wrapped `All N` to its own row. */
+const DOT_PITCH = LEGEND_DOT_SIZE + DOTS_HIT_GAP
+
+const GROUP_ORDER: SeriesRole[] = ['series', 'overlay', 'reference']
+const roleOf = (item: LegendEntry): SeriesRole => item.role ?? 'series'
+
+/**
+ * Order entries series → overlay → reference and record where a divider belongs — the ONE ordering
+ * both `ChartLegend`'s render and the resolver's fit math (`chart-layout.ts`) use, so a dots-mode
+ * fit never disagrees with what actually wraps (R2C-9: an unordered fit undercounted the group
+ * dividers a grouped legend renders as their own flex items).
+ */
+export function orderEntries(
+  items: readonly LegendEntry[],
+  groups: boolean,
+): { entries: LegendEntry[]; dividerAfter: ReadonlySet<number> } {
+  if (!groups) return { entries: [...items], dividerAfter: new Set() }
+
+  const dividerAfter = new Set<number>()
+  const entries: LegendEntry[] = []
+  const nonEmptyGroups = GROUP_ORDER.map((role) =>
+    items.filter((item) => roleOf(item) === role),
+  ).filter((group) => group.length > 0)
+  nonEmptyGroups.forEach((group, i) => {
+    entries.push(...group)
+    if (i < nonEmptyGroups.length - 1) dividerAfter.add(entries.length - 1)
+  })
+  return { entries, dividerAfter }
+}
 
 /**
  * The two metric sets a chart's chrome resolves to. Internally the container class
@@ -285,6 +330,58 @@ export function entriesWithinRows(
     fitted += 1
   }
   return fitted
+}
+
+/** The greedy dot-pitch wrap `entriesWithinDotRows` runs twice — once optimistically, once against
+ * a width that already gave up the `All N` chip's room. A group divider is its own flex item in the
+ * rendered row, so it costs one more pitch of gap before the next dot (R2C-9). */
+function fitDotRows(
+  items: readonly LegendEntry[],
+  width: number,
+  rows: number,
+  dividerAfter: ReadonlySet<number>,
+): number {
+  let row = 1
+  let x = 0
+  let fitted = 0
+  for (let i = 0; i < items.length; i += 1) {
+    const next = x === 0 ? LEGEND_DOT_SIZE : x + DOT_PITCH + LEGEND_DOT_SIZE
+    if (next > width && x > 0) {
+      row += 1
+      if (row > rows) return fitted
+      x = LEGEND_DOT_SIZE
+    } else {
+      x = next
+    }
+    fitted += 1
+    if (dividerAfter.has(i)) x += DOT_PITCH
+  }
+  return fitted
+}
+
+/**
+ * How many of `items` fit as DOTS in `rows` wrapped rows of `width` (R2C-9) — the dots-mode
+ * counterpart of {@link entriesWithinRows}, measured at the dot's own pitch rather than a chip's
+ * swatch+label width, which is what let a legend that fits easily as dots get measured as if it
+ * were rendering chips and wrap its overflow chip to a second row 50+px below the first.
+ * `dividerAfter` (from {@link orderEntries}) counts a rendered group divider's own gap into the fit.
+ *
+ * Two passes: the first assumes every entry is visible and needs no `All N` chip; if that already
+ * fits, it IS the answer (no chip is drawn). Otherwise the second pass reserves the chip's measured
+ * width (plus one pitch of gap) up front, so the chip can never wrap to a row of its own — the
+ * failure this function exists to prevent.
+ */
+export function entriesWithinDotRows(
+  items: readonly LegendEntry[],
+  width: number,
+  rows: number,
+  dividerAfter: ReadonlySet<number> = new Set(),
+): number {
+  const total = items.length
+  const fittedNoReserve = fitDotRows(items, width, rows, dividerAfter)
+  if (fittedNoReserve >= total) return fittedNoReserve
+  const reserve = measureText(`All ${total}`, VX.legendFontSize) + DOT_PITCH
+  return fitDotRows(items, Math.max(width - reserve, 0), rows, dividerAfter)
 }
 
 /**

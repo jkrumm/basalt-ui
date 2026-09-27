@@ -47,6 +47,94 @@ describe("ChartLegend mode='dots' (wave 11)", () => {
   })
 })
 
+describe('ChartLegend dots mode opens the All-N sheet instead of toggling (R2C-8)', () => {
+  const items: LegendEntry[] = [BASE, { ...BASE, key: 'cloud-mid', label: 'Mid cloud' }]
+
+  test('a tap on a dot opens the disclosure and does not toggle the series', () => {
+    const toggled: string[] = []
+    renderDom(<ChartLegend items={items} mode="dots" onToggle={(key) => toggled.push(key)} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Low cloud' }))
+    expect(screen.getByRole('dialog')).not.toBeNull()
+    expect(toggled).toEqual([])
+  })
+
+  test('the disclosure it opens names every entry, even with no overflow chip', () => {
+    renderDom(<ChartLegend items={items} mode="dots" onToggle={() => {}} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Low cloud' }))
+    const panel = screen.getByRole('dialog')
+    expect(within(panel).getByText('Mid cloud')).toBeTruthy()
+  })
+
+  test('a dot carries a title for a hovering pointer', () => {
+    const markup = renderToStaticMarkup(
+      <ChartLegend items={items} mode="dots" onToggle={() => {}} />,
+    )
+    expect(markup).toContain('title="Low cloud"')
+  })
+
+  test('without onToggle a dot is inert — no title, no disclosure trigger', () => {
+    renderDom(<ChartLegend items={items} mode="dots" />)
+    fireEvent.click(screen.getByRole('button', { name: 'Low cloud' }))
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
+})
+
+describe('ChartLegend disclosure focus trap on the coarse sheet (B14)', () => {
+  function withCoarsePointer<T>(run: () => T): T {
+    const original = window.matchMedia
+    window.matchMedia = ((query: string) => ({
+      matches: query === '(pointer: coarse)',
+      media: query,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    })) as unknown as typeof window.matchMedia
+    try {
+      return run()
+    } finally {
+      window.matchMedia = original
+    }
+  }
+
+  const items: LegendEntry[] = ['a', 'b', 'c'].map((key) => ({
+    key,
+    label: `Series ${key}`,
+    color: 'var(--vx-fill-1)',
+  }))
+
+  test('Tab from the last entry wraps to the first; Shift+Tab from the first wraps to the last', () => {
+    withCoarsePointer(() => {
+      renderDom(<ChartLegend items={items} maxRows={1} />)
+      fireEvent.click(screen.getByRole('button', { name: 'All 3' }))
+      const panel = screen.getByRole('dialog')
+      const buttons = within(panel).getAllByRole('button')
+      const first = buttons[0]!
+      const last = buttons[buttons.length - 1]!
+
+      last.focus()
+      fireEvent.keyDown(panel, { key: 'Tab' })
+      expect(document.activeElement).toBe(first)
+
+      first.focus()
+      fireEvent.keyDown(panel, { key: 'Tab', shiftKey: true })
+      expect(document.activeElement).toBe(last)
+    })
+  })
+
+  test('Tab forward from anywhere but the last entry is left alone (no wrap, no preventDefault)', () => {
+    withCoarsePointer(() => {
+      renderDom(<ChartLegend items={items} maxRows={1} />)
+      fireEvent.click(screen.getByRole('button', { name: 'All 3' }))
+      const panel = screen.getByRole('dialog')
+      const buttons = within(panel).getAllByRole('button')
+      buttons[0]!.focus()
+      const event = fireEvent.keyDown(panel, { key: 'Tab' })
+      // Not trapped from a non-edge position — the handler leaves the browser's own default intact
+      // (`fireEvent` returns `false` only when a listener called `preventDefault`).
+      expect(event).toBe(true)
+    })
+  })
+})
+
 describe('ChartLegend note', () => {
   test('renders after the label when set', () => {
     const markup = render([{ ...BASE, note: '0% all night' }])

@@ -12,7 +12,7 @@
  * The header renders only when at least one of title/info/value/actions/icon/count is set — ending
  * the `''`-as-hidden-header sentinel a consumer used to reach for otherwise.
  */
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
 import { cx } from '../../common/props'
 import type { BasaltProps, SlotStylesProps } from '../../common/props'
@@ -20,6 +20,7 @@ import { VX } from '../../tokens'
 import { WidgetHeader } from '../../dashboard/widget-header'
 import type { DeltaPolarity } from '../../dashboard/delta-badge'
 import { useChartSize } from '../hooks/useChartSize'
+import { useHysteresis } from '../hooks/useHysteresis'
 import { ChartCardContext } from './chart-card-context'
 import { ChartEmpty, ChartError, ChartPending, resolveChartState } from './ChartPending'
 import type { ChartState } from './ChartPending'
@@ -37,6 +38,16 @@ import type { ChartState } from './ChartPending'
  * with the same subtitle-fold declarations as the width query.
  */
 const CARD_SHORT_HEIGHT = 280
+/**
+ * Hysteresis band on the flag above (`docs/waves/PLAN.md` wave 3, P0-1). `short` folds the header,
+ * which changes the card's OWN measured height by the fold delta — a card whose unfolded height
+ * lands in `[280, 280 + Δ)` is bistable, and the async RO → rAF → debounce → setState → commit path
+ * can sit one reading behind, which turned the bistability into a perpetual flip-flop on the
+ * "Sales by channel" dashboard card (27-52 times per 2s, every viewport). Entering short still
+ * happens below `CARD_SHORT_HEIGHT`; LEAVING it needs `CARD_SHORT_HEIGHT + SHORT_EXIT_SLACK`, sized
+ * to clear the largest fold delta (subtitle line + inset + value row) with headroom.
+ */
+const SHORT_EXIT_SLACK = 24
 
 // Surfaces resolve per theme via CSS vars, so the styles are static (no useMemo/isDark).
 // Depth = `shadow-card` (a whisper shadow + a 1px ring baked into the same value), never a
@@ -191,8 +202,28 @@ export function ChartCard({
     actions !== undefined ||
     icon !== undefined ||
     count !== undefined
-  const short = measuredHeight > 0 && measuredHeight < CARD_SHORT_HEIGHT
-  const context = useMemo(() => ({ legendSlot, inCard: true, short }), [legendSlot, short])
+  // Hysteresis (P0-1, `SHORT_EXIT_SLACK`'s own doc): which threshold applies depends on the
+  // PREVIOUS committed flag, so a card whose unfolded height sits in the bistable band settles
+  // instead of flip-flopping forever.
+  const short = useHysteresis(
+    (wasShort) =>
+      measuredHeight > 0 &&
+      measuredHeight < (wasShort ? CARD_SHORT_HEIGHT + SHORT_EXIT_SLACK : CARD_SHORT_HEIGHT),
+    false,
+  )
+
+  const legendOwnerRef = useRef<string | null>(null)
+  const claimLegendSlot = useCallback((id: string) => {
+    if (legendOwnerRef.current === null) legendOwnerRef.current = id
+    return legendOwnerRef.current === id
+  }, [])
+  const releaseLegendSlot = useCallback((id: string) => {
+    if (legendOwnerRef.current === id) legendOwnerRef.current = null
+  }, [])
+  const context = useMemo(
+    () => ({ legendSlot, inCard: true, short, claimLegendSlot, releaseLegendSlot }),
+    [legendSlot, short, claimLegendSlot, releaseLegendSlot],
+  )
 
   return (
     <ChartCardContext.Provider value={context}>

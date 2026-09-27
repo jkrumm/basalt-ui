@@ -25,7 +25,7 @@ import {
   resolveLegendRollup,
   resolvePlotRect,
 } from './ChartFrame'
-import { resolveFrameHeight } from './chart-frame-layout'
+import { entriesWithinDotRows, orderEntries, resolveFrameHeight } from './chart-frame-layout'
 import type { ResponsiveChartHeight } from './chart-frame-layout'
 import type { LegendEntry } from './ChartLegend'
 import { useChartContainerClass } from './chart-tier'
@@ -401,6 +401,71 @@ describe('resolveFrameHeight — a height per container step', () => {
   test('the widest STATED step wins, not the widest possible one', () => {
     expect(resolveFrameHeight({ base: 180, regular: 220, wide: 300 }, 'regular')).toBe(220)
     expect(resolveFrameHeight({ base: 180, regular: 220, wide: 300 }, 'wide')).toBe(300)
+  })
+})
+
+describe('orderEntries — series → overlay → reference, dividers at the group boundaries', () => {
+  const entry = (key: string, role?: LegendEntry['role']): LegendEntry => ({
+    key,
+    label: key,
+    color: '#000',
+    ...(role !== undefined && { role }),
+  })
+
+  test('groups=false is a no-op: input order, no dividers', () => {
+    const items = [entry('a', 'reference'), entry('b'), entry('c', 'overlay')]
+    expect(orderEntries(items, false)).toEqual({ entries: items, dividerAfter: new Set() })
+  })
+
+  test('groups=true sorts series → overlay → reference and marks each boundary', () => {
+    const a = entry('a', 'reference')
+    const b = entry('b')
+    const c = entry('c', 'overlay')
+    const { entries, dividerAfter } = orderEntries([a, b, c], true)
+    expect(entries.map((e) => e.key)).toEqual(['b', 'c', 'a'])
+    // A divider after 'b' (series → overlay) and after 'c' (overlay → reference), never after the
+    // last group.
+    expect(dividerAfter).toEqual(new Set([0, 1]))
+  })
+
+  test('an absent group contributes no divider', () => {
+    const items = [entry('a'), entry('b', 'reference')]
+    const { dividerAfter } = orderEntries(items, true)
+    expect(dividerAfter).toEqual(new Set([0]))
+  })
+})
+
+describe('entriesWithinDotRows — R2C-9: dots fit by pitch, not chip width', () => {
+  const entry = (key: string): LegendEntry => ({ key, label: `Series ${key}`, color: '#000' })
+  const entries = (n: number): LegendEntry[] =>
+    Array.from({ length: n }, (_, i) => entry(String(i)))
+
+  test('4 short entries at 274px fit in one row (the pre-fix bug: chip-width fit wrapped `All 4`)', () => {
+    expect(entriesWithinDotRows(entries(4), 274, 1)).toBe(4)
+  })
+
+  test('8 grouped entries at 337px: a group divider costs its own gap, so fewer fit than ungrouped', () => {
+    const items = entries(8)
+    const { dividerAfter } = orderEntries(items, false)
+    const grouped = new Set([2, 5])
+    const ungroupedFit = entriesWithinDotRows(items, 337, 1, dividerAfter)
+    const groupedFit = entriesWithinDotRows(items, 337, 1, grouped)
+    expect(groupedFit).toBeLessThanOrEqual(ungroupedFit)
+  })
+
+  test('once the overflow chip is needed, its width is reserved so it never wraps to its own row', () => {
+    const items = entries(8)
+    const fit = entriesWithinDotRows(items, 337, 1)
+    expect(fit).toBeGreaterThan(0)
+    expect(fit).toBeLessThan(items.length)
+  })
+
+  test('an empty item list fits nothing (nothing to wrap)', () => {
+    expect(entriesWithinDotRows([], 200, 1)).toBe(0)
+  })
+
+  test('zero width fits only the first dot — the same "always place the first item" rule entriesWithinRows uses', () => {
+    expect(entriesWithinDotRows(entries(3), 0, 1)).toBe(1)
   })
 })
 

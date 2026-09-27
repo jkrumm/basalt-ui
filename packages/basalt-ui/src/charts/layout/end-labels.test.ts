@@ -92,6 +92,7 @@ describe('planEndLabels', () => {
     containerClass: 'wide' as const,
     hasY2: false,
     hasMarginRight: false,
+    hasHeaderLegend: false,
     data: [{ a: 1, b: 5 }] as Row[],
     yScale: (v: number) => 100 - v * 10,
     yMax: 100,
@@ -130,23 +131,33 @@ describe('planEndLabels', () => {
         { a: 1, b: 5 },
         { a: null, b: null },
       ],
-      visible: [line('a')],
+      visible: [line('a'), line('b')],
     })!
     expect(plan.labels[0]!.y).toBe(90)
   })
 
-  test('a hidden series shrinks the plan to the visible ones', () => {
-    const plan = planEndLabels({ ...base, visible: [line('b')] })!
-    expect(plan.labels.map((l) => l.series.key)).toEqual(['b'])
+  test('a single visible series is legend-suppressed, not end-labelled (R2C-10)', () => {
+    // Shrinking from 2 visible to 1 (a hidden series) used to still draw one end label — the same
+    // "single series is its own legend" law that already suppresses a single-entry legend.
+    expect(planEndLabels({ ...base, visible: [line('a')] })).toBeNull()
+    expect(planEndLabels({ ...base, visible: [line('b')] })).toBeNull()
+  })
+
+  test('a header legend already names every series, so end labels would only repeat it (R2C-10)', () => {
+    expect(
+      planEndLabels({ ...base, visible: [line('a'), line('b')], hasHeaderLegend: true }),
+    ).toBeNull()
   })
 
   test('is off outside the eligibility rules', () => {
-    const visible = [line('a')]
+    const visible = [line('a'), line('b')]
     expect(planEndLabels({ ...base, visible, containerClass: 'regular' })).toBeNull()
     expect(planEndLabels({ ...base, visible, hasY2: true })).toBeNull()
     expect(planEndLabels({ ...base, visible, hasMarginRight: true })).toBeNull()
     expect(planEndLabels({ ...base, visible: [] })).toBeNull()
-    expect(planEndLabels({ ...base, visible: [{ ...line('a'), mark: 'bar' }] })).toBeNull()
+    expect(
+      planEndLabels({ ...base, visible: [line('a'), { ...line('b'), mark: 'bar' }] }),
+    ).toBeNull()
     expect(
       planEndLabels({ ...base, visible: [line('a'), line('b'), line('a'), line('b')] }),
     ).toBeNull()

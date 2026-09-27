@@ -215,6 +215,14 @@ export type CardsSpec = {
    * the card's own height is whatever the header + `bodyHeight` naturally sum to.
    */
   shortHeader?: { width: number; bodyHeight: number }
+  /**
+   * The same "Availability" header shape as {@link shortHeader}, once per `bodyHeights` entry, each
+   * in its own `data-testid="card-osc-<bodyHeight>"` wrapper — a scan across the band where the
+   * card's own measured height straddles `CARD_SHORT_HEIGHT` (280px), where the short flag used to
+   * self-referentially oscillate forever (`docs/waves/PLAN.md` wave 3, P0-1: the flag folds the
+   * header, which changes the card's own measured height, which can flip the flag back).
+   */
+  oscillationScan?: { width: number; bodyHeights: number[] }
 }
 
 export type FixtureSpec = {

@@ -71,15 +71,21 @@ export type EndLabel<T> = { series: ChartSeries<T>; y: number }
 
 /**
  * Whether and how a chart draws end-of-line labels. Eligible only on a wide container with one y
- * axis, no consumer `margin.right`, and 1..{@link MAX_END_LABELS} visible series that are all lines.
- * Each label sits at its line's last non-null value, nudged apart; the plan is `null` — no gutter
- * reserved, nothing drawn — when any rule fails, a series has no plottable value, the stack cannot
- * fit, or the gutter would be too wide. The gutter is measured from the label text.
+ * axis, no consumer `margin.right`, no header legend already naming every series for free (R2C-10:
+ * end labels REPLACE the legend, they never duplicate it), and 2..{@link MAX_END_LABELS} visible
+ * series that are all lines — a single line has its own title doing that job already (the same law
+ * that already suppresses a single-entry legend, `ChartFrame.resolveLegend`'s JSDoc). Each label
+ * sits at its line's last non-null value, nudged apart; the plan is `null` — no gutter reserved,
+ * nothing drawn — when any rule fails, a series has no plottable value, the stack cannot fit, or
+ * the gutter would be too wide. The gutter is measured from the label text.
  */
 export function planEndLabels<T>(input: {
   containerClass: ContainerClass
   hasY2: boolean
   hasMarginRight: boolean
+  /** A `ChartCard` header slot already named every visible series — end labels would only repeat
+   * it, at the cost of a right-hand gutter the header slot cost nothing (R2C-10). */
+  hasHeaderLegend: boolean
   visible: readonly ChartSeries<T>[]
   data: readonly T[]
   yScale: (value: number) => number
@@ -88,10 +94,20 @@ export function planEndLabels<T>(input: {
   /** Plot width before any gutter is taken. */
   plotWidth: number
 }): { gutter: number; labels: EndLabel<T>[] } | null {
-  const { containerClass, hasY2, hasMarginRight, visible, data, yScale, yMax, fontPx, plotWidth } =
-    input
-  if (containerClass !== 'wide' || hasY2 || hasMarginRight) return null
-  if (visible.length < 1 || visible.length > MAX_END_LABELS) return null
+  const {
+    containerClass,
+    hasY2,
+    hasMarginRight,
+    hasHeaderLegend,
+    visible,
+    data,
+    yScale,
+    yMax,
+    fontPx,
+    plotWidth,
+  } = input
+  if (containerClass !== 'wide' || hasY2 || hasMarginRight || hasHeaderLegend) return null
+  if (visible.length < 2 || visible.length > MAX_END_LABELS) return null
   if (!visible.every((s) => s.mark === 'line')) return null
 
   const gutter = endLabelGutter({ labels: visible.map((s) => s.label), fontPx, plotWidth })

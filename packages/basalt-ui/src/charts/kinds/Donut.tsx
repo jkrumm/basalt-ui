@@ -1,9 +1,10 @@
 import { Group } from '@visx/group'
 import { Pie } from '@visx/shape'
-import { memo, useMemo, useRef } from 'react'
+import { memo, useMemo } from 'react'
 import type { ReactNode } from 'react'
 import { useChartSize } from '../hooks/useChartSize'
 import { useDiscreteCursor } from '../hooks/useDiscreteCursor'
+import { useHysteresis } from '../hooks/useHysteresis'
 import { assertRequiredProps } from '../../common/validate'
 import type { BasaltProps } from '../../common/props'
 import { ChartTooltipFloat, TooltipBody, TooltipRow } from '../primitives/ChartTooltip'
@@ -116,14 +117,16 @@ function DonutInner<K extends string = SeriesKey>(props: DonutProps<K>) {
   const { ref, width: frameW, height: measuredH } = useChartSize()
   const containerClass = resolveContainerClass(frameW)
   const frameH = height === undefined ? measuredH : resolveFrameHeight(height, containerClass)
-  const wasSide = useRef(false)
-  const { side } = resolveDonutLayout({
-    frameW,
-    frameH,
-    containerClass,
-    wasSide: height === undefined && wasSide.current,
-  })
-  wasSide.current = side
+  const side = useHysteresis(
+    (wasSide) =>
+      resolveDonutLayout({
+        frameW,
+        frameH,
+        containerClass,
+        wasSide: height === undefined && wasSide,
+      }).side,
+    false,
+  )
 
   const slices = useMemo(() => {
     const { kept, other } = foldOther(data)
@@ -166,8 +169,11 @@ function DonutInner<K extends string = SeriesKey>(props: DonutProps<K>) {
     >
       <ChartFrame
         series={series}
-        // Never roll the legend up: the full list is the donut's only key. Side legends read as a column.
-        legend={{ placement: side ? 'right' : 'bottom', maxRows: series.length }}
+        // Never roll the legend up: the full list is the donut's only key. Side legends read as a
+        // column. `headerSlot: false` (P1-4) keeps it under/beside the ring even inside a
+        // `ChartCard` with a header slot free — a Donut's legend IS its key, so it must never
+        // shrink to unlabelled header dots.
+        legend={{ placement: side ? 'right' : 'bottom', maxRows: series.length, headerSlot: false }}
         {...(height !== undefined && { height })}
         {...(ariaLabel !== undefined && { ariaLabel })}
         {...(isPending !== undefined && { isPending })}

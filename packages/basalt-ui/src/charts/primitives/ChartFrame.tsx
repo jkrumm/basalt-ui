@@ -1,9 +1,14 @@
 import type { CSSProperties, ReactNode } from 'react'
-import { useCallback, useContext, useLayoutEffect, useMemo, useState } from 'react'
+import { useCallback, useContext, useId, useLayoutEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { BasaltProps } from '../../common/props'
-import { deprecatedProp, ignoredProp, plotBelowFloor } from '../../common/errors'
-import { useValidateProps } from '../../common/validate'
+import {
+  deprecatedProp,
+  ignoredProp,
+  legendSlotContention,
+  plotBelowFloor,
+} from '../../common/errors'
+import { reportOnce, useValidateProps } from '../../common/validate'
 import { SizeClassHintContext, useSizeClass } from '../../shell/use-size-class'
 import { VX } from '../../tokens'
 import { useChartSize } from '../hooks/useChartSize'
@@ -51,6 +56,16 @@ export type ChartFrameLegend = {
    * plot, the tooltip, and the auto domain together (`docs/CHARTS-SPEC.md` §5).
    */
   toggle?: boolean
+  /**
+   * Internal escape hatch for a kind that never wants its legend portalled into a `ChartCard`
+   * header, whatever the placement — `Donut` sets this (`docs/waves/PLAN.md` wave 3, P1-4): its
+   * side/bottom legend is the ring's only key, so it must stay under or beside the ring rather than
+   * follow every other frame's default of claiming an available header slot. `false` keeps the
+   * legend in its own band regardless of `placement`; omitted (default) behaves as today. Not
+   * something a consumer composing a kind's own `legend` prop can reach — kinds compose `ChartFrame`
+   * directly to set it.
+   */
+  headerSlot?: boolean
 }
 
 export type ChartFrameProps = BasaltProps & {
@@ -121,6 +136,10 @@ export type PlotRect = {
   width: number
   height: number
   hidden: ReadonlySet<string>
+  /** Whether THIS frame's legend is currently portalled into a `ChartCard` header slot — a chart
+   * composing `ChartFrame` (e.g. `CartesianChart`'s end labels, R2C-10) reads this to skip a
+   * band-legend-only affordance once the header already names every series for free. */
+  legendInHeader: boolean
 }
 
 const outerStyle = (fill: boolean, vertical: boolean): CSSProperties => ({
@@ -205,12 +224,66 @@ export function ChartFrame({
   const { ref: containerRef, width: containerW, height: containerH } = useChartSize()
   const { ref: legendRef, width: legendW, height: legendH } = useChartSize()
   const { ref: slotRef, width: slotMeasuredW } = useChartSize()
-  const { inCard, legendSlot, short: cardShort } = useContext(ChartCardContext)
+  const {
+    inCard,
+    legendSlot,
+    short: cardShort,
+    claimLegendSlot,
+    releaseLegendSlot,
+  } = useContext(ChartCardContext)
+  const frameId = useId()
+  const [ownsSlot, setOwnsSlot] = useState(false)
+  const [slotSeedW, setSlotSeedW] = useState(0)
+  const placement = legend === false ? 'bottom' : (legend.placement ?? 'bottom')
+  const vertical = placement === 'left' || placement === 'right'
+  // `Donut` sets `headerSlot: false` (P1-4) — it never wants the slot, so it must never CLAIM it
+  // either, or it would silently deny a sibling frame in the same card that does want it. A
+  // vertical (left/right) legend never portals into the header either (`inHeader` below requires
+  // `!vertical`), so it must not claim the slot from a sibling that could actually use it.
+  const wantsHeaderSlot = legend !== false && legend.headerSlot !== false && !vertical
+  // Every non-null state replaces the plot, and all three suppress the legend for one reason: a
+  // legend naming a series with nothing to point at is its own small lie. Computed here (ahead of
+  // the claim effect below) only because that effect's own dev warning needs it.
+  const resolvedState = resolveChartState({ ...(state !== undefined && { state }), isPending })
+  const legendVisible = legend !== false && resolvedState === null
   // The card's header slot is observed like the frame is: its width is what a header legend fits.
+  // Only the frame that CLAIMS the slot (first to mount, P2-9) observes it or seeds its width — a
+  // second frame in the same card never measures a slot it will not portal into. The contention
+  // warning is reported HERE, from the deterministic `owns` this effect just computed, rather than
+  // as a separate reactive check on `ownsSlot` state — that state takes one extra render to catch up
+  // with the claim, and a passive effect reacting to the interim (stale) value warned about frames
+  // that went on to win the claim one render later.
   useLayoutEffect(() => {
+    if (legendSlot === null || !wantsHeaderSlot) {
+      setOwnsSlot(false)
+      setSlotSeedW(0)
+      return undefined
+    }
+    const owns = claimLegendSlot(frameId)
+    setOwnsSlot(owns)
+    if (!owns) {
+      setSlotSeedW(0)
+      if (legendVisible) reportOnce('ChartFrame', legendSlotContention('ChartFrame'))
+      return undefined
+    }
+    // Seeded synchronously (P2-8) so the very first commit already knows the slot's real width,
+    // instead of assuming 0 until the ResizeObserver's first (asynchronous) callback — which is
+    // what let a header legend paint once in the band before jumping to the header on every mount.
+    setSlotSeedW(legendSlot.getBoundingClientRect().width)
     slotRef(legendSlot)
-    return () => slotRef(null)
-  }, [legendSlot, slotRef])
+    return () => {
+      releaseLegendSlot(frameId)
+      slotRef(null)
+    }
+  }, [
+    legendSlot,
+    wantsHeaderSlot,
+    legendVisible,
+    frameId,
+    claimLegendSlot,
+    releaseLegendSlot,
+    slotRef,
+  ])
   const viewportClass = useSizeClass()
   // No `BasaltProvider` (a charts-only consumer) means no viewport hint: the unmeasured first frame
   // resolves to the regular (desktop) class, not phone chrome.
@@ -253,12 +326,6 @@ export function ChartFrame({
     ],
     [fill, height, aspectRatio],
   )
-  const placement = legend === false ? 'bottom' : (legend.placement ?? 'bottom')
-  const vertical = placement === 'left' || placement === 'right'
-  // Every non-null state replaces the plot, and all three suppress the legend for one reason: a
-  // legend naming a series with nothing to point at is its own small lie.
-  const resolvedState = resolveChartState({ ...(state !== undefined && { state }), isPending })
-  const legendVisible = legend !== false && resolvedState === null
   const legendItems = legend === false ? [] : deriveLegend(series)
   useValidateProps(
     'ChartFrame',
@@ -280,8 +347,10 @@ export function ChartFrame({
       ? undefined
       : resolveFrameHeight(height, resolveFrameClass({ frameW: containerW, sizeClass }))
   // Memoized on scalars (the legend by its keys+labels) so `ChartTierProvider`'s value is stable
-  // across renders that change nothing. No slot (or not measured yet) → `slotW` 0 → a band.
-  const slotW = legendSlot === null ? 0 : slotMeasuredW
+  // across renders that change nothing. No slot, not the owner, or not measured yet → `slotW` 0 →
+  // a band. `slotSeedW` (P2-8) covers the gap before the ResizeObserver's own first callback.
+  const slotW = legendSlot === null || !ownsSlot ? 0 : Math.max(slotMeasuredW, slotSeedW)
+  const groups = legend !== false && legend.groups === true
   const legendKey = legendItems.map((item) => `${item.key}\u0000${item.label}`).join('\u0001')
   const layout = useMemo(
     () =>
@@ -293,19 +362,23 @@ export function ChartFrame({
         sizeClass,
         coarse,
         cardShort,
+        groups,
         ...(statedHeight !== undefined && { override: { height: statedHeight } }),
       }),
     // `legendItems` is a fresh array per render; `legendKey` is its identity.
     // oxlint-disable-next-line react-hooks/exhaustive-deps
-    [containerW, slotW, viewportH, legendKey, sizeClass, coarse, cardShort, statedHeight],
+    [containerW, slotW, viewportH, legendKey, sizeClass, coarse, cardShort, groups, statedHeight],
   )
 
   // The resolver gates every placement: none at micro, else the card's header slot when there is
-  // one, or a band.
+  // one AND this frame owns it (P2-9) — `slotW` is already 0 for a non-owner or a `headerSlot:
+  // false` kind (P1-4), so `fit.where` already reads 'band' for both; `ownsSlot` here is only the
+  // (harmless) belt to that suspenders.
   const fit = layout.legend.mode === 'dots' || layout.legend.mode === 'chips' ? layout.legend : null
   const legendMode = fit?.mode
   const showLegend = legendVisible && fit !== null
-  const inHeader = showLegend && !vertical && legendSlot !== null && fit?.where === 'header'
+  const inHeader =
+    showLegend && !vertical && legendSlot !== null && ownsSlot && fit?.where === 'header'
   const sideLegendWidth = showLegend && vertical ? legendW : 0
   const topBottomLegendHeight = showLegend && !vertical && !inHeader ? legendH : 0
 
@@ -409,7 +482,7 @@ export function ChartFrame({
               {...(typeof state?.empty === 'string' && { label: state.empty })}
             />
           ) : (
-            children({ ...plot, hidden })
+            children({ ...plot, hidden, legendInHeader: inHeader })
           ))}
         {!inHeader &&
           legendNode !== null &&

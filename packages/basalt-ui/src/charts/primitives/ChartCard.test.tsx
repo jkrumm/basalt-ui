@@ -195,7 +195,7 @@ describe('the legend portals into the header slot', () => {
     window.ResizeObserver = originalResizeObserver
   })
 
-  test('a headed card hosts the legend in its slot, and overflow folds into All N', async () => {
+  test('a headed card hosts the legend in its slot; dots mode fits by pitch, so all 8 fit with no All N chip (R2C-9)', async () => {
     const { container } = render(
       <ChartCard title="Revenue">
         <ChartFrame series={many} height={240}>
@@ -205,13 +205,35 @@ describe('the legend portals into the header slot', () => {
     )
     const slot = container.querySelector('[data-basalt-legend-slot]') as HTMLElement
     await waitFor(() => expect(slot.querySelector('[data-legend-key]')).not.toBeNull())
-    // One header row at 600px: some entries visible, the rest behind the chip that counts them all.
-    expect(within(slot).getByRole('button', { name: 'All 8' })).not.toBeNull()
-    expect(slot.querySelectorAll('[data-legend-key]').length).toBeLessThan(8)
+    // The card is short (the ResizeObserver shim reports 240px < 280), so the header legend folds to
+    // dots — measured at the dot's own pitch (R2C-9), not a chip's swatch+label width, which is
+    // narrow enough that all 8 series fit in one 600px row with nothing left to roll up.
+    expect(screen.queryByRole('button', { name: 'All 8' })).toBeNull()
+    expect(slot.querySelectorAll('[data-legend-key]').length).toBe(8)
     // The band under the plot is gone — the legend exists once.
     expect(container.querySelectorAll('[data-legend-key]').length).toBe(
       slot.querySelectorAll('[data-legend-key]').length,
     )
+  })
+
+  test('once a header slot genuinely cannot fit every dot, the overflow folds into All N', async () => {
+    const twenty: SeriesStyle[] = Array.from({ length: 20 }, (_, i) => ({
+      key: `s${i}`,
+      label: `Series number ${i}`,
+      color: '#000',
+      mark: 'line',
+    }))
+    const { container } = render(
+      <ChartCard title="Revenue">
+        <ChartFrame series={twenty} height={240}>
+          {() => <svg />}
+        </ChartFrame>
+      </ChartCard>,
+    )
+    const slot = container.querySelector('[data-basalt-legend-slot]') as HTMLElement
+    await waitFor(() => expect(slot.querySelector('[data-legend-key]')).not.toBeNull())
+    expect(within(slot).getByRole('button', { name: 'All 20' })).not.toBeNull()
+    expect(slot.querySelectorAll('[data-legend-key]').length).toBeLessThan(20)
   })
 
   test('a headless card has no slot, so the legend keeps its band under the plot', async () => {
@@ -224,5 +246,43 @@ describe('the legend portals into the header slot', () => {
     )
     await waitFor(() => expect(container.querySelector('[data-legend-key]')).not.toBeNull())
     expect(container.querySelector('[data-basalt-legend-slot]')).toBeNull()
+  })
+
+  test('two frames in one card: only the first claims the slot, the second falls back to its own band (P2-9)', async () => {
+    const seriesA: SeriesStyle[] = [
+      { key: 's1', label: 'First chart', color: '#000', mark: 'line' },
+    ]
+    const seriesB: SeriesStyle[] = [
+      { key: 's2', label: 'Second chart', color: '#000', mark: 'line' },
+    ]
+    const originalError = console.error
+    const messages: string[] = []
+    console.error = (...args: unknown[]) => messages.push(args.map(String).join(' '))
+    try {
+      const { container } = render(
+        <ChartCard title="Two charts">
+          <ChartFrame series={seriesA} height={120}>
+            {() => <svg />}
+          </ChartFrame>
+          <ChartFrame series={seriesB} height={120}>
+            {() => <svg />}
+          </ChartFrame>
+        </ChartCard>,
+      )
+      const slot = container.querySelector('[data-basalt-legend-slot]') as HTMLElement
+      await waitFor(() => expect(slot.querySelector('[data-legend-key]')).not.toBeNull())
+      // Only the FIRST frame's legend lives in the shared slot...
+      expect([...slot.querySelectorAll('[data-legend-key]')].map((e) => e.textContent)).toEqual([
+        'First chart',
+      ])
+      // ...the second frame's legend still rendered, just in its own band outside the slot.
+      const allLabels = [...container.querySelectorAll('[data-legend-key]')].map(
+        (e) => e.textContent,
+      )
+      expect(allLabels).toEqual(['First chart', 'Second chart'])
+      expect(messages.some((m) => m.includes('header legend slot'))).toBe(true)
+    } finally {
+      console.error = originalError
+    }
   })
 })
