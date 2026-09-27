@@ -20,7 +20,7 @@ import {
   SPACE_STEP,
 } from './palette'
 import type { PaletteData, RadiusValues, SpaceValues } from './palette'
-import { SIZE_CLASSES, sizeClassMaxEm } from './size-classes'
+import { CONTAINER_CLASSES, SIZE_CLASSES, sizeClassMaxEm } from './size-classes'
 
 // The raw hue families + pair-picker — the building blocks a consumer's series module composes
 // (`hrv: p(BP.blue)`). The doctrine sends every consumer here, so they are public surface, not
@@ -290,17 +290,12 @@ export const VX = {
    */
   minPlotHeight: 120,
   /**
-   * The measured CONTAINER width, in px, below which a chart resolves to its phone tier
-   * (`resolveChartTier`, `docs/CHARTS-SPEC.md` §8): one step smaller legend and tick fonts,
-   * tightened margin floors, a smaller crosshair dot, a narrower tooltip, and a two-entry legend
-   * rollup.
-   *
-   * Deliberately NOT a media query and NOT a `theme.breakpoints` value. A chart in a two-column
-   * grid cell on a 1440px desktop is as narrow as one on a phone, and only the element's own
-   * measured box knows that — the viewport does not. It also keeps the chart layer Mantine-free:
-   * `theme.breakpoints` lives on the coupled side of the boundary.
+   * @deprecated Duplicates `CONTAINER_CLASSES.regular` (`basalt-ui/tokens`) — removed in 1.31.0.
+   * Read from `CONTAINER_CLASSES.regular` directly; `resolveChartTier`/`chartTierMetrics` already
+   * do (chart-frame-layout.ts), so this constant no longer drives any resolution, only docs and its
+   * own test.
    */
-  phoneChartWidth: 480,
+  phoneChartWidth: CONTAINER_CLASSES.regular,
 } as const
 
 /**

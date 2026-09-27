@@ -3680,6 +3680,20 @@ export const DEPRECATED_EXPORTS = [
     removeIn: '1.31.0',
     fix: false,
   },
+  {
+    subpath: 'basalt-ui/charts',
+    name: 'phoneChartWidth',
+    replacement: 'CONTAINER_CLASSES.regular (basalt-ui/tokens)',
+    removeIn: '1.31.0',
+    fix: false,
+  },
+  {
+    subpath: 'basalt-ui',
+    name: 'useBreakpoint',
+    replacement: 'useSizeClass (compact/medium/expanded) or @container for a container concern',
+    removeIn: '1.31.0',
+    fix: false,
+  },
 ]
 
 function deprecatedExportMessage(row) {
