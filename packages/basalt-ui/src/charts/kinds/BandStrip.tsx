@@ -390,6 +390,7 @@ function BandStripPlot<T>(props: BandStripPlotProps<T>) {
             width={plotWidth}
             height={stripHeight}
             onMove={cursor.onPointerMove}
+            onDown={cursor.onPointerDown}
             onLeave={cursor.onPointerLeave}
             onKeyDown={cursor.onKeyDown}
             onBlur={cursor.onBlur}

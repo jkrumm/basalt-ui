@@ -1,6 +1,6 @@
 import { Group } from '@visx/group'
-import type { PointerEvent, ReactNode } from 'react'
-import { memo, useMemo, useState } from 'react'
+import type { ReactNode } from 'react'
+import { memo, useMemo } from 'react'
 import { assertRequiredProps } from '../../common/validate'
 import type { BasaltProps } from '../../common/props'
 import {
@@ -12,6 +12,7 @@ import {
 import { ChartFrame } from '../primitives/ChartFrame'
 import type { ResponsiveChartHeight } from '../primitives/ChartFrame'
 import { useChartMetrics } from '../primitives/chart-tier'
+import { useDiscreteCursor } from '../hooks/useDiscreteCursor'
 import type { ChartState } from '../primitives/ChartPending'
 import { maxTextWidth } from '../utils/measure-text'
 import { thinLabels, xLabelPxFor } from '../utils/ticks'
@@ -20,8 +21,9 @@ import { VX, alpha } from '../../tokens'
 /** A single resolved heatmap cell — the unit the tooltip and hover operate on. */
 type HeatmapCell = { row: string; col: string; value: number }
 
-/** A hovered cell plus the viewport anchor `ChartTooltipFloat` positions against. */
-type HeatmapTip = HeatmapCell & { anchor: { x: number; y: number } }
+/** One grid position, data or not — `useDiscreteCursor`'s target unit. `value` is `undefined` for
+ * an (row, col) pair with no data, which stays a keyboard stop but never shows a tooltip. */
+type CellTarget = { row: string; col: string; value: number | undefined }
 
 export type HeatmapProps<T> = BasaltProps & {
   data: T[]
@@ -115,6 +117,13 @@ const LEGEND_LABEL_H = 16
  * right gutter reserves half the widest column label, so no two painted labels overlap and the
  * last one cannot clip.
  *
+ * Tap-to-pin, keyboard stepping and focus over the grid come from `useDiscreteCursor`
+ * (`docs/waves/RESPONSIVE-SPEC.md` §5), the discrete counterpart of `HoverOverlay`. Its targets are
+ * the FULL row-major grid (data cells and empty ones alike) so Up/Down can jump one row via a fixed
+ * `columns` stride; only a cell WITH data renders a tooltip or takes pointer input, matching today's
+ * hover behavior — an empty cell is still a keyboard stop (so the grid reads as one rectangle), it
+ * just carries no readout.
+ *
  * Composes `ChartFrame` purely for measuring (`height`/`aspectRatio`/`fill`, the same three
  * sizing modes every other kind exposes) — `legend={false}` and an empty `series` opt out of
  * `ChartFrame`'s own derived legend, since Heatmap already ships its own gradient strip.
@@ -179,8 +188,6 @@ function HeatmapPlot<T>(props: HeatmapPlotProps<T>) {
   // categories at the desktop size would be the one chart still ignoring §8.
   const { axisFont } = useChartMetrics()
 
-  const [tip, setTip] = useState<HeatmapTip | null>(null)
-
   const rows = useMemo(() => rowsProp ?? firstSeen(data, getRow), [rowsProp, data, getRow])
   const cols = useMemo(() => colsProp ?? firstSeen(data, getCol), [colsProp, data, getCol])
 
@@ -195,6 +202,36 @@ function HeatmapPlot<T>(props: HeatmapPlotProps<T>) {
     }
     return { lookup: map, max: m }
   }, [data, getRow, getCol, getValue])
+
+  // The FULL row-major grid (gaps included) so `columns: cols.length` gives `useDiscreteCursor` a
+  // real row stride for Up/Down — a targets list built only from cells WITH data would shift that
+  // stride the moment a row has a gap.
+  const cellTargets = useMemo<CellTarget[]>(() => {
+    const out: CellTarget[] = []
+    for (const row of rows) {
+      for (const col of cols) out.push({ row, col, value: lookup.get(cellKey(row, col)) })
+    }
+    return out
+  }, [rows, cols, lookup])
+  const cursor = useDiscreteCursor<CellTarget>({
+    targets: cellTargets,
+    getKey: (c) => cellKey(c.row, c.col),
+    columns: cols.length,
+    ariaLabel: 'Heatmap cells — use arrow keys to navigate, Escape to dismiss',
+  })
+  // Resolved once here (not inline in the JSX below) so `value` narrows to `number` — a keyboard
+  // stop on an empty cell has a `tip` but no readout to show.
+  const activeTip =
+    cursor.tip !== null && cursor.tip.target.value !== undefined
+      ? {
+          anchor: cursor.tip.anchor,
+          cell: {
+            row: cursor.tip.target.row,
+            col: cursor.tip.target.col,
+            value: cursor.tip.target.value,
+          },
+        }
+      : null
 
   const rowLabels = useMemo(() => rows.map(rowLabel), [rows, rowLabel])
   const colLabels = useMemo(() => cols.map(colLabel), [cols, colLabel])
@@ -223,23 +260,26 @@ function HeatmapPlot<T>(props: HeatmapPlotProps<T>) {
     [rowLabels, cellH, axisFont],
   )
 
-  const show = (row: string, col: string, value: number, event: PointerEvent<SVGRectElement>) => {
-    setTip({ row, col, value, anchor: { x: event.clientX, y: event.clientY } })
-  }
-  const hide = () => setTip(null)
-
   return (
     <div style={{ position: 'relative' }}>
-      <svg width={width} height={height}>
+      <svg width={width} height={height} {...cursor.hostProps}>
         <Group left={PAD_LEFT} top={PAD_TOP}>
           {rows.flatMap((row, ri) =>
             cols.map((col, ci) => {
               const value = lookup.get(cellKey(row, col))
               const has = value !== undefined
               const cellFill = has ? alpha(color, intensity(value, max)) : alpha(VX.neutral, 0.04)
+              const target: CellTarget = { row, col, value }
+              const isActive = cursor.tip?.target.row === row && cursor.tip?.target.col === col
               return (
                 <rect
                   key={cellKey(row, col)}
+                  id={cursor.optionId(target)}
+                  // An SVG `<rect>` has no `<option>` counterpart — `useDiscreteCursor`'s
+                  // listbox/option pair (see its JSDoc) is a role over an arbitrary shape.
+                  // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role
+                  role="option"
+                  aria-selected={isActive}
                   x={ci * cellW + cellGap / 2}
                   y={ri * cellH + cellGap / 2}
                   width={Math.max(0, cellW - cellGap)}
@@ -247,9 +287,7 @@ function HeatmapPlot<T>(props: HeatmapPlotProps<T>) {
                   rx={cellRadius}
                   fill={cellFill}
                   style={{ cursor: has ? 'pointer' : 'default' }}
-                  onPointerMove={(e) => has && show(row, col, value, e)}
-                  onPointerLeave={hide}
-                  onPointerCancel={hide}
+                  {...(has ? cursor.pointerProps(target) : {})}
                 />
               )
             }),
@@ -328,17 +366,17 @@ function HeatmapPlot<T>(props: HeatmapPlotProps<T>) {
         )}
       </svg>
 
-      {tip !== null && (
-        <ChartTooltipFloat anchor={tip.anchor}>
-          <TooltipHeader date={rowLabel(tip.row)} label={colLabel(tip.col)} />
+      {activeTip !== null && (
+        <ChartTooltipFloat anchor={activeTip.anchor}>
+          <TooltipHeader date={rowLabel(activeTip.cell.row)} label={colLabel(activeTip.cell.col)} />
           <TooltipBody>
             <TooltipRow
               color={alpha(color, 0.9)}
               shape="bar"
               label="Value"
-              value={formatValue(tip.value)}
+              value={formatValue(activeTip.cell.value)}
             />
-            {renderTooltip?.(tip)}
+            {renderTooltip?.(activeTip.cell)}
           </TooltipBody>
         </ChartTooltipFloat>
       )}

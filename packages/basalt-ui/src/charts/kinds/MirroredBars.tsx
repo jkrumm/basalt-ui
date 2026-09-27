@@ -426,6 +426,7 @@ function MirroredBarsPlot<T>(props: MirroredBarsPlotProps<T>) {
             width={plotWidth}
             height={barBand}
             onMove={cursor.onPointerMove}
+            onDown={cursor.onPointerDown}
             onLeave={cursor.onPointerLeave}
             onKeyDown={cursor.onKeyDown}
             onBlur={cursor.onBlur}

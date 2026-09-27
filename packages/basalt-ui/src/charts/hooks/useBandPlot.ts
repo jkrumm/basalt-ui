@@ -295,12 +295,17 @@ export function useBandPlot<T>(input: UseBandPlotInput<T>): BandPlot<T> {
     [scale],
   )
 
+  const svgRef = useRef<SVGSVGElement>(null)
   const cursor = useChartCursor<T>({
     data: bands,
     chartId,
     getKey: getX,
     xScale: bandCenter,
     marginLeft: margin.left,
+    // Both callers (`BandStrip`, `MirroredBars`) mount exactly one `<svg ref={band.svgRef}>`, so
+    // it doubles as the tap-outside boundary (`docs/waves/RESPONSIVE-SPEC.md` §5) with no separate
+    // passthrough option — reusing the ref this hook already returns, not a new one.
+    boundaryRef: svgRef,
     ...(cursorResolution !== undefined && { resolution: cursorResolution }),
   })
 
@@ -321,7 +326,6 @@ export function useBandPlot<T>(input: UseBandPlotInput<T>): BandPlot<T> {
     return [...smartTicks(keys, plotWidth, xLabelPx)]
   }, [keys, plotWidth, xTickValues, xLabelPx, containerClass])
 
-  const svgRef = useRef<SVGSVGElement>(null)
   const point = cursor.point
   const crosshairX = point === null ? null : (bandCenter(getX(point)) ?? null)
 
@@ -330,7 +334,10 @@ export function useBandPlot<T>(input: UseBandPlotInput<T>): BandPlot<T> {
   // no pointer under it, so it is always positioned via the anchored (crosshair) path.
   const isFollowerRender = !cursor.isSource && cfg?.onFollow === true
   const showTooltip = tooltip !== false && point !== null && (cursor.isSource || isFollowerRender)
-  const useAnchored = cfg?.follow === false || isFollowerRender
+  // An unset `follow` also anchors on touch (spec §5) — same law as `CartesianChart`'s
+  // `useAnchoredPosition`; an EXPLICIT `follow` always wins over that default.
+  const useAnchored =
+    cfg?.follow === false || (cfg?.follow === undefined && cursor.isTouch) || isFollowerRender
   const anchorX = useAnchored ? crosshairX : null
   const svgRect = anchorX === null ? undefined : svgRef.current?.getBoundingClientRect()
   const tooltipAnchor =

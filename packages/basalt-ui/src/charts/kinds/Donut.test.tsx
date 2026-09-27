@@ -93,9 +93,67 @@ describe('Donut — shares', () => {
     )
     const arcs = container.querySelectorAll('svg g[style*="cursor"]')
     expect(arcs.length).toBe(2)
-    fireEvent.pointerEnter(arcs[0]!, { clientX: 10, clientY: 10 })
+    // `useDiscreteCursor` branches on `pointerType !== 'mouse'` (pen counts as coarse too) — jsdom's
+    // synthetic default is `''`, not `'mouse'`, so this must be explicit or the hover path no-ops.
+    fireEvent.pointerEnter(arcs[0]!, { pointerType: 'mouse', clientX: 10, clientY: 10 })
     const share = screen.getByText('Share').parentElement
     expect(share?.textContent).toContain('25%')
     expect(container.textContent).toContain('a · v1 · 25%')
+  })
+})
+
+const shareText = (): string | null | undefined =>
+  screen.queryByText('Share')?.parentElement?.textContent
+
+describe('Donut — touch and keyboard parity (useDiscreteCursor)', () => {
+  function renderTwo() {
+    fakeSize = { width: 900, height: 240 }
+    return render(
+      <Donut<Key>
+        data={[datum('a', 1), datum('b', 3)]}
+        colorForKey={colorForKey}
+        formatValue={formatValue}
+        height={240}
+      />,
+    )
+  }
+
+  test('a tap pins the tooltip; lift does not dismiss it, a tap outside does', () => {
+    const { container } = renderTwo()
+    const arcs = container.querySelectorAll('svg g[role="option"]')
+    expect(arcs.length).toBe(2)
+
+    fireEvent.pointerDown(arcs[0]!, { pointerType: 'touch' })
+    expect(shareText()).toContain('25%')
+
+    fireEvent.pointerLeave(arcs[0]!, { pointerType: 'touch' })
+    expect(shareText()).toContain('25%')
+
+    fireEvent.pointerDown(document.body, { pointerType: 'touch' })
+    expect(screen.queryByText('Share')).toBeNull()
+  })
+
+  test('a tap on the other slice moves the pin', () => {
+    const { container } = renderTwo()
+    const arcs = container.querySelectorAll('svg g[role="option"]')
+    fireEvent.pointerDown(arcs[0]!, { pointerType: 'touch' })
+    expect(shareText()).toContain('25%')
+    fireEvent.pointerDown(arcs[1]!, { pointerType: 'touch' })
+    expect(shareText()).toContain('75%')
+  })
+
+  test('the ring is one focusable listbox; arrow keys step between slices, Escape dismisses', () => {
+    const { container } = renderTwo()
+    const host = screen.getByRole('listbox')
+    expect(host.tagName).toBe('svg')
+    expect(container.querySelectorAll('g[role="option"]')).toHaveLength(2)
+
+    fireEvent.keyDown(host, { key: 'ArrowRight' })
+    expect(shareText()).toContain('25%')
+    fireEvent.keyDown(host, { key: 'ArrowRight' })
+    expect(shareText()).toContain('75%')
+
+    fireEvent.keyDown(host, { key: 'Escape' })
+    expect(screen.queryByText('Share')).toBeNull()
   })
 })

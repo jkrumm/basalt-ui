@@ -767,16 +767,17 @@ function CartesianPlot<T>({
     return smartTicks(keys, xMax, rotate === 0 || rotate === 45 ? tickLabelPx : undefined)
   }, [keys, xMax, xTicks, xTickValues, tickLabelPx, rotate, containerClass])
 
+  const svgRef = useRef<SVGSVGElement>(null)
   const cursor = useChartCursor<T>({
     data,
     chartId,
     getKey: getX,
     xScale,
     marginLeft: margin.left,
+    boundaryRef: svgRef,
     ...(cursorResolution !== undefined && { resolution: cursorResolution }),
   })
 
-  const svgRef = useRef<SVGSVGElement>(null)
   const tooltipEnabled = tooltip !== false
   const tooltipCfg = tooltip === false ? undefined : tooltip
   const point = cursor.point
@@ -813,8 +814,13 @@ function CartesianPlot<T>({
 
   // Anchored mode resolves the crosshair's plot-local x into viewport space; following mode uses
   // the pointer position `useChartCursor` already recorded. A follower render always anchors, since
-  // `follow`'s pointer-tracking path has no pointer to read on this chart.
-  const useAnchoredPosition = tooltipCfg?.follow === false || isFollowerRender
+  // `follow`'s pointer-tracking path has no pointer to read on this chart. An unset `follow` also
+  // anchors on touch (spec §5) — the readout would otherwise sit under the finger; an EXPLICIT
+  // `follow` (true or false) always wins over that default.
+  const useAnchoredPosition =
+    tooltipCfg?.follow === false ||
+    (tooltipCfg?.follow === undefined && cursor.isTouch) ||
+    isFollowerRender
   const anchorX = useAnchoredPosition && point !== null && cursorX !== null ? cursorX : null
   const svgRect = anchorX === null ? undefined : svgRef.current?.getBoundingClientRect()
   const tooltipAnchor =
@@ -946,6 +952,7 @@ function CartesianPlot<T>({
             width={xMax}
             height={yMax}
             onMove={cursor.onPointerMove}
+            onDown={cursor.onPointerDown}
             onLeave={cursor.onPointerLeave}
             onKeyDown={cursor.onKeyDown}
             onBlur={cursor.onBlur}
