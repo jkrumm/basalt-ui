@@ -30,26 +30,55 @@ resolved.
 - Every behaviour fix gets a test that would have caught it: a layout-suite test with CDP touch
   events for touch behaviour, a pure unit test for decisions.
 
-## Wave 1 — Chart touch correctness <!-- status: active -->
+## Wave 1 — Chart touch correctness <!-- status: done -->
 
-- [ ] A touch press is **provisional**: pointerdown shows the readout, pointercancel for the same
+- [x] A touch press is **provisional**: pointerdown shows the readout, pointercancel for the same
       pointerId clears it, and only pointerup commits the pin. Apply this in `useChartCursor`/
       `HoverOverlay` and `useDiscreteCursor` (R2C-1, P0-2)
-- [ ] `touch-action: pan-y` moves to the plot `<svg>` (or ChartFrame's plot box) in CartesianChart,
+- [x] `touch-action: pan-y` moves to the plot `<svg>` (or ChartFrame's plot box) in CartesianChart,
       useBandPlot and DualPanel, and comes off the `<rect>` (R2C-2)
-- [ ] While a pin is held, a capture-phase scroll listener clears it (R2C-4), and a document-level
+- [x] While a pin is held, a capture-phase scroll listener clears it (R2C-4), and a document-level
       Escape clears cartesian pins (R2C-14). ChartTooltipFloat hides followers whose anchor is
       off-screen instead of clamping them over the bottom nav (R2C-3). Discrete-kind touch readouts
       anchor to the host top, not under the finger (P2-11)
-- [ ] A tap draws no UA focus ring; `:focus-visible` gets a VX accent inset (R2C-15). Every
+- [x] A tap draws no UA focus ring; `:focus-visible` gets a VX accent inset (R2C-15). Every
       Donut/Heatmap listbox option gets an accessible name, and ids are built from the index with no
       NUL (P1-6)
-- [ ] Layout tests via CDP touch: vertical scroll starting on a chart → no pin; horizontal drag → no
+- [x] Layout tests via CDP touch: vertical scroll starting on a chart → no pin; horizontal drag → no
       pointercancel, the readout scrubs; tap → pin; tap outside, scroll or Escape → dismissed; linked
       charts → no off-screen followers
-      **Left behind:**
+      **Left behind:** Shipped via `mcp__sideclaw__dispatch` (in-place) + direct fixes on top, two
+      commits: `fix: make chart touch presses provisional and dismiss on scroll` (packages/basalt-ui)
+      and `docs: update the coarse-pointer touch model in CHARTS-SPEC` (root). `make verify`-equivalent
+      run in pieces (`bun run pre` + `make layout`, both green, no other Chrome running) rather than
+      `make verify` itself — build/pack-test weren't needed for a src-only change.
+      `/review` (deep, uncommitted scope) caught real bugs the dispatch's own unit-test-only
+      validation missed, all fixed before commit: (1) `useDiscreteCursor`'s `optionId` used a
+      reference-equality `indexOf` against `targets`, but Heatmap builds a fresh `{row,col,value}`
+      object per cell render — every rendered option id silently resolved to index `-1`, decoupled
+      from the correct `aria-activedescendant` (caught by `make layout`'s real-Chrome run, not
+      `bun test`); switched to a key-based `Map` (also fixes an O(n²) `findIndex`-per-render the
+      review flagged independently). (2) `onPointerLeave` in `useDiscreteCursor` didn't clear an
+      uncommitted press the way `onPointerCancel` did — a scroll off a small Donut/Heatmap hit target
+      commonly fires leave before cancel, reproducing the exact stuck-tooltip bug for discrete kinds;
+      unified via a shared `clearIfUncommitted` closure. (3) `useDiscreteCursor` had no
+      document-scroll dismissal for a pinned pin at all (only outside-tap + Escape) — added, mirroring
+      `useChartCursor`. Added regression tests for both discrete-cursor fixes. `ChartCursor`'s public
+      type gained `onPointerUp` and widened `onPointerLeave`'s signature — documented in
+      `packages/basalt-ui/MIGRATING.md` (source-compatible for JSX/spread usage, the only shape any
+      shipped kind or consumer uses).
+      **Not done, left for a later wave/judgment call** (all "improvement"/"discussion", not
+      blocking, per the review): the provisional-press state machine is hand-duplicated between
+      `useChartCursor` and `useDiscreteCursor` with no shared implementation — worth extracting if a
+      third kind picks up its own copy; a second finger touching down before the first press commits
+      silently drops the first pointer (untested, likely fine — charts aren't multi-touch surfaces);
+      `useChartCursor`'s new capture-phase document scroll listener isn't scoped to a target, so an
+      unrelated `ScrollArea`/`Table.ScrollContainer` elsewhere on the page also dismisses this
+      chart's pin (matches existing `ChartLegend` precedent, not a regression); `ChartTooltipFloat`'s
+      off-screen guard checks only `anchor.y`, not `anchor.x`; `touch-action: pan-y` + its rationale
+      comment is copy-pasted onto four plot `<svg>`s rather than one shared constant.
 
-## Wave 2 — Slim-down before the chart fixes <!-- status: pending -->
+## Wave 2 — Slim-down before the chart fixes <!-- status: active -->
 
 - [ ] Delete the dead axis half of the resolver: `ChartLayout.yAxis/xAxis`, `resolveAxisEconomy`,
       `AxisEconomyInput`, `thinTo`, the side variant, `useChartLayout` and the layout context field, plus
