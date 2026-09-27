@@ -66,6 +66,7 @@ export const PLUGIN_RULE_ID_LIST = [
   'agent-no-raw-usechat',
   'ai-sdk-major',
   'no-import-meta-env',
+  'raw-breakpoint',
 ] as const
 
 /** One registered oxlint plugin rule id — the literal union of {@link PLUGIN_RULE_ID_LIST}. */
@@ -262,12 +263,19 @@ export const SURFACES = {
       'inline-display',
       'raw-html-layout',
       'hidden-inline-style',
+      // The CSS-text twin of `raw-breakpoint` (below) — a width @media, an undeclared @container
+      // name/literal, or a non-coarse pointer query, the shape a JSX-only AST rule cannot see.
+      'raw-media-query',
     ],
     // The chrome half of the plugin: the shell, the card idiom, the page title and the scroll
     // doctrine. `hand-rolled-shell` sits here rather than on a shell-shaped surface because
     // `BasaltShell` IS the root barrel's promise (docs/CONTROLS-SPEC.md §6 wave 6).
     pluginRules: [
       'hand-rolled-shell',
+      // The size-class axis's one JSX escape hatch (docs/waves/RESPONSIVE-SPEC.md §1/§7) is reserved
+      // for BasaltShell/AppSidebar/MobileNav — the same shell promise `hand-rolled-shell` polices,
+      // one axis over.
+      'raw-breakpoint',
       'card-inset',
       'in-body-page-title',
       'raw-scroll-container',

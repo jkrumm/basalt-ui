@@ -92,6 +92,13 @@ export type ChartLegendConfig = {
   maxRows?: number
   /** Clicking an entry hides that series. Default: on whenever there is more than one entry. */
   toggle?: boolean
+  /**
+   * Forces the header-slot legend's render — `'dots'` (colour only, no label) or `'chips'` (swatch
+   * + label). Omit to let `resolveChartLayout` decide (a short `ChartCard` or a `compact` container
+   * folds to dots on its own, `docs/CHARTS-SPEC.md` §5) — an explicit value always wins over that,
+   * the escape hatch back to labels for a consumer who wants them even in a short card.
+   */
+  mode?: 'dots' | 'chips'
 }
 
 /** Visual identity of a series — everything the legend + tooltip swatch need. No accessors, no `T`. */

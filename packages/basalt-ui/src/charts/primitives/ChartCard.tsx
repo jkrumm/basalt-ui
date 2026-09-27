@@ -183,7 +183,6 @@ export function ChartCard({
 }: ChartCardProps) {
   const [legendSlot, setLegendSlot] = useState<HTMLDivElement | null>(null)
   const { ref: sizeRef, height: measuredHeight } = useChartSize()
-  const context = useMemo(() => ({ legendSlot, inCard: true }), [legendSlot])
   const resolvedState = resolveChartState({ ...(state !== undefined && { state }) })
   const hasHeader =
     title !== undefined ||
@@ -193,6 +192,7 @@ export function ChartCard({
     icon !== undefined ||
     count !== undefined
   const short = measuredHeight > 0 && measuredHeight < CARD_SHORT_HEIGHT
+  const context = useMemo(() => ({ legendSlot, inCard: true, short }), [legendSlot, short])
 
   return (
     <ChartCardContext.Provider value={context}>

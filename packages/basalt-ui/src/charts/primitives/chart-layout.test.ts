@@ -103,19 +103,61 @@ describe('legend', () => {
     expect(layout({ legendItems: [] }).legend).toEqual({ mode: 'none' })
   })
 
-  test('compact → dots, regular/wide → chips; a band without a header slot', () => {
+  test('dots is header-only — a band legend (no header slot) always stays chips, any container class', () => {
     expect(layout({ frameW: 360, legendItems: entries(2) }).legend).toMatchObject({
-      mode: 'dots',
+      mode: 'chips',
       where: 'band',
     })
     expect(layout({ frameW: 600, legendItems: entries(2) }).legend).toMatchObject({ mode: 'chips' })
     expect(layout({ frameW: 900, legendItems: entries(2) }).legend).toMatchObject({ mode: 'chips' })
   })
 
+  test('a compact container DOES fold to dots once it has a header slot', () => {
+    expect(layout({ frameW: 360, slotW: 100, legendItems: entries(2) }).legend).toMatchObject({
+      mode: 'dots',
+      where: 'header',
+    })
+  })
+
   test('a header slot moves the legend there and measures the slot, not the frame', () => {
     const l = layout({ frameW: 900, slotW: 120, legendItems: entries(6) })
     expect(l.legend).toMatchObject({ where: 'header' })
     expect(l.legend.mode === 'chips' && l.legend.overflow).toBeGreaterThan(0)
+  })
+
+  test('a short card forces the header legend to dots regardless of container class (wave 11)', () => {
+    const regular = layout({
+      frameW: 600,
+      slotW: 120,
+      legendItems: entries(2),
+      cardShort: true,
+    }).legend
+    expect(regular).toMatchObject({ mode: 'dots', where: 'header' })
+
+    const wide = layout({
+      frameW: 900,
+      slotW: 120,
+      legendItems: entries(2),
+      cardShort: true,
+    }).legend
+    expect(wide).toMatchObject({ mode: 'dots', where: 'header' })
+  })
+
+  test('a non-short card of the same container class is unchanged (still chips)', () => {
+    expect(
+      layout({ frameW: 600, slotW: 120, legendItems: entries(2), cardShort: false }).legend,
+    ).toMatchObject({ mode: 'chips', where: 'header' })
+    expect(layout({ frameW: 900, slotW: 120, legendItems: entries(2) }).legend).toMatchObject({
+      mode: 'chips',
+      where: 'header',
+    })
+  })
+
+  test('cardShort does not affect a band legend (no header slot)', () => {
+    expect(layout({ frameW: 600, legendItems: entries(2), cardShort: true }).legend).toMatchObject({
+      mode: 'chips',
+      where: 'band',
+    })
   })
 
   test('everything that fits is visible with no overflow', () => {

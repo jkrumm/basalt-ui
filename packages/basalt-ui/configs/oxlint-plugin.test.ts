@@ -70,6 +70,7 @@ beforeEach(() => {
         'basalt/agent-resume-guard': 'error',
         'basalt/agent-no-raw-usechat': 'error',
         'basalt/ai-sdk-major': 'error',
+        'basalt/raw-breakpoint': 'error',
       },
     }),
   )
@@ -2735,10 +2736,11 @@ describe('basalt/responsive-twin', () => {
   })
 
   it('does NOT flag two halves on DIFFERENT breakpoints', () => {
-    const { code, rules } = run(
+    // `code` is not asserted here: raw visibleFrom/hiddenFrom outside a shell home is its own,
+    // unrelated finding (basalt/raw-breakpoint) — this test is only about responsive-twin's silence.
+    const { rules } = run(
       `export const C = () => (\n  <div>\n    <SegmentedControl visibleFrom="sm" data={[]} />\n    <SegmentedControl hiddenFrom="md" data={[]} />\n  </div>\n)\n`,
     )
-    expect(code).toBe(0)
     expect(rules).not.toContain('responsive-twin')
   })
 
@@ -3397,6 +3399,95 @@ describe('basalt/forms-field-key', () => {
     const fixed = readFileSync(resolve(dir, 'fixture.tsx'), 'utf8')
     expect(fixed).toContain(`import { fieldKey, inputProps } from 'basalt-ui/forms'`)
     expect(fixed).toContain(`key={fieldKey(form, 'email')}`)
+  })
+})
+
+// ── raw-breakpoint (RESPONSIVE-SPEC.md §7) ───────────────────────────────────
+
+describe('basalt/raw-breakpoint', () => {
+  it('flags a responsive-object prop on an imported Mantine component', () => {
+    const { rules } = run(
+      `import { SimpleGrid } from '@mantine/core'\n` +
+        `export const C = () => <SimpleGrid cols={{ base: 1, sm: 2 }} />\n`,
+    )
+    expect(rules).toContain('raw-breakpoint')
+  })
+
+  it('does NOT flag a fixed cols on the same component', () => {
+    const { rules } = run(
+      `import { SimpleGrid } from '@mantine/core'\n` +
+        `export const C = () => <SimpleGrid cols={2} />\n`,
+    )
+    expect(rules).not.toContain('raw-breakpoint')
+  })
+
+  it('does NOT flag an object prop on a component never imported from @mantine/*', () => {
+    const { rules } = run(`export const C = () => <WidgetGrid cols={{ base: 1, sm: 2 }} />\n`)
+    expect(rules).not.toContain('raw-breakpoint')
+  })
+
+  it('flags visibleFrom/hiddenFrom outside a shell home', () => {
+    const { rules } = run(
+      `import { Box } from '@mantine/core'\n` +
+        `export const C = () => <Box visibleFrom="sm">desktop only</Box>\n`,
+    )
+    expect(rules).toContain('raw-breakpoint')
+  })
+
+  it('does NOT flag visibleFrom/hiddenFrom inside a file that DEFINES BasaltShell', () => {
+    const { rules } = run(
+      `import { Box } from '@mantine/core'\n` +
+        `export function BasaltShell() {\n  return <Box visibleFrom="sm">desktop only</Box>\n}\n`,
+    )
+    expect(rules).not.toContain('raw-breakpoint')
+  })
+
+  it('does NOT flag visibleFrom/hiddenFrom inside a file that DEFINES a C9 control (ViewTabs) and imports no basalt-ui', () => {
+    const { rules } = run(
+      `import { Box } from '@mantine/core'\n` +
+        `export function ViewTabs() {\n  return <Box visibleFrom="sm">desktop only</Box>\n}\n`,
+    )
+    expect(rules).not.toContain('raw-breakpoint')
+  })
+
+  it('flags an import of useMediaQuery/useMatches/useViewportSize from @mantine/*', () => {
+    expect(run(`import { useMediaQuery } from '@mantine/hooks'\n`).rules).toContain(
+      'raw-breakpoint',
+    )
+    expect(run(`import { useMatches } from '@mantine/core'\n`).rules).toContain('raw-breakpoint')
+    expect(run(`import { useViewportSize } from '@mantine/hooks'\n`).rules).toContain(
+      'raw-breakpoint',
+    )
+  })
+
+  it('does NOT flag useMatches imported from a non-Mantine router (name collision)', () => {
+    // @tanstack/react-router (and react-router) export their own unrelated `useMatches` —
+    // basalt's own `src/router-tanstack/index.ts` imports it; scoped to `@mantine/*` sources only.
+    expect(run(`import { useMatches } from '@tanstack/react-router'\n`).rules).not.toContain(
+      'raw-breakpoint',
+    )
+    expect(run(`import { useViewportSize } from 'some-lib'\n`).rules).not.toContain(
+      'raw-breakpoint',
+    )
+  })
+
+  it('flags window.matchMedia and window.innerWidth', () => {
+    expect(run(`const mq = window.matchMedia('(max-width: 600px)')\n`).rules).toContain(
+      'raw-breakpoint',
+    )
+    expect(run(`const w = window.innerWidth\n`).rules).toContain('raw-breakpoint')
+  })
+
+  it('flags a bare matchMedia() call', () => {
+    expect(run(`const mq = matchMedia('(max-width: 600px)')\n`).rules).toContain('raw-breakpoint')
+  })
+
+  it('honors a scoped theme-allow on the responsive-object prop', () => {
+    const { rules } = run(
+      `import { SimpleGrid } from '@mantine/core'\n` +
+        `export const C = () => (\n  // theme-allow raw-breakpoint — migrating in a follow-up\n  <SimpleGrid cols={{ base: 1, sm: 2 }} />\n)\n`,
+    )
+    expect(rules).not.toContain('raw-breakpoint')
   })
 })
 

@@ -128,19 +128,35 @@ function disclosurePlacement(chip: DOMRect, coarse: boolean): CSSProperties {
       }
 }
 
-function wrapperStyle(placement: LegendPlacement, fontSize: number): CSSProperties {
+/**
+ * The real gap a dots-mode entry needs so its `[data-basalt-hit]::after` overlay can reach the
+ * full 44px coarse floor with NO overlap into its neighbour's overlay (`hit-floor.layout.test.ts` +
+ * `hit-overlap.layout.test.ts`, wave 4's cap: `styles.css`'s `::after` grows to
+ * `min(max(size,44), size + 2 + gap)`). Two 44px-wide overlays centred on same-size hosts touch
+ * with zero overlap only once their PITCH (real gap + host size) is itself >= 44 — below that, the
+ * cap can only shrink the overlay below 44 (honouring WCAG 2.5.8's spacing route) or let it overlap;
+ * there is no gap value that lets it hit 44 exactly while staying flush against a same-size sibling.
+ * `LEGEND_DOT_SIZE` is 8px, so the floor is 44 − 8 − 2 = 34; a few px of headroom against rounding.
+ */
+const LEGEND_DOT_SIZE = 8
+const DOTS_HIT_GAP = 44 - LEGEND_DOT_SIZE - 2 + 4
+
+function wrapperStyle(placement: LegendPlacement, fontSize: number, dots: boolean): CSSProperties {
   const vertical = placement === 'left' || placement === 'right'
+  const gap = dots ? DOTS_HIT_GAP : VX.legendGap
   return {
     display: 'flex',
     flexDirection: vertical ? 'column' : 'row',
     flexWrap: vertical ? 'nowrap' : 'wrap',
     alignItems: vertical ? 'flex-start' : 'center',
     justifyContent: 'flex-start',
-    columnGap: VX.legendGap,
-    rowGap: LEGEND_ROW_GAP,
+    columnGap: gap,
+    rowGap: dots ? gap : LEGEND_ROW_GAP,
     // Caps each entry's `[data-basalt-hit]` overlay at the real inter-entry gap (styles.css).
-    ...({ '--vx-hit-gap': `${VX.legendGap}px` } as CSSProperties),
-    padding: '8px 0 2px',
+    ...({ '--vx-hit-gap': `${gap}px` } as CSSProperties),
+    // A dots-mode row has no text baseline to breathe around — the header-fold law (wave 8) is
+    // the reason this row exists at all, so it gets the same tight treatment.
+    padding: dots ? '4px 0 2px' : '8px 0 2px',
     fontSize,
     color: VX.muted,
   }
@@ -258,6 +274,27 @@ const LEGEND_CHILD_STYLE: CSSProperties = {
   opacity: 0.75,
 }
 
+/**
+ * The whole entry collapses to its color, in 'dots' mode (RESPONSIVE-SPEC.md §1/§4: a short or
+ * `compact`-container header has no room for a text label per entry) — a plain 8px circle
+ * regardless of the series' own shape, since a two-tone `split`/`splitLine` swatch cannot express
+ * two colors in one dot. The name survives via the button's own `aria-label`; sighted users get
+ * color-coded identity only, same trade the `compact` container class already made for the y axis.
+ */
+function LegendDot({ item }: { item: LegendEntry }) {
+  return (
+    <span
+      style={{
+        width: LEGEND_DOT_SIZE,
+        height: LEGEND_DOT_SIZE,
+        borderRadius: '50%', // theme-allow raw-surface — a circle shape, not a surface corner
+        backgroundColor: item.color,
+        flexShrink: 0,
+      }}
+    />
+  )
+}
+
 /** Compact swatch for a folded child entry — smaller than {@link LegendSwatch}, line/bar only
  * (folded companions are simple line or bar series; `split`/`splitLine` never fold). */
 function LegendChildSwatch({ item }: { item: LegendEntry }) {
@@ -333,6 +370,7 @@ export function ChartLegend({
   placement = 'bottom',
   groups = false,
   maxRows,
+  mode = 'chips',
   className,
   style,
 }: BasaltProps & {
@@ -347,6 +385,15 @@ export function ChartLegend({
   placement?: LegendPlacement
   groups?: boolean
   maxRows?: number
+  /**
+   * `'dots'` collapses every VISIBLE entry to a plain color dot with no label (the name still
+   * reaches assistive tech via `aria-label`) — `resolveChartLayout`'s header-slot legend forces
+   * this for a short `ChartCard` (wave 11, RESPONSIVE-SPEC.md §4) so the legend band's height and
+   * width both shrink before it eats plot space. The `All N` disclosure panel is unaffected: it
+   * always shows the full swatch + label, `mode` only governs the inline row. Default `'chips'`
+   * (today's swatch + label rendering) for every other caller.
+   */
+  mode?: 'dots' | 'chips'
 }) {
   const tier = useChartMetrics()
   const coarse = useCoarsePointer()
@@ -435,12 +482,18 @@ export function ChartLegend({
       onFocus={() => handleEnter(item.key)}
       onBlur={handleLeave}
     >
-      <LegendSwatch item={item} idPrefix={inPanel ? `${idPrefix}disclosure-` : idPrefix} />
-      <span>{item.label}</span>
-      {item.note ? <span style={LEGEND_NOTE_STYLE}>{item.note}</span> : null}
-      {item.children?.map((child) => (
-        <LegendChild key={child.key} item={child} />
-      ))}
+      {!inPanel && mode === 'dots' ? (
+        <LegendDot item={item} />
+      ) : (
+        <>
+          <LegendSwatch item={item} idPrefix={inPanel ? `${idPrefix}disclosure-` : idPrefix} />
+          <span>{item.label}</span>
+          {item.note ? <span style={LEGEND_NOTE_STYLE}>{item.note}</span> : null}
+          {item.children?.map((child) => (
+            <LegendChild key={child.key} item={child} />
+          ))}
+        </>
+      )}
     </button>
   )
 
@@ -475,7 +528,7 @@ export function ChartLegend({
   return (
     <div
       {...(className !== undefined && { className })}
-      style={{ ...wrapperStyle(placement, tier.legendFontSize), ...style }}
+      style={{ ...wrapperStyle(placement, tier.legendFontSize, mode === 'dots'), ...style }}
     >
       {nodes}
       {open &&

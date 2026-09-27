@@ -48,6 +48,13 @@ export type ChartLayoutInput = {
   /** Viewport class — decides the container class until the frame is measured. */
   sizeClass: keyof typeof SIZE_CLASSES
   coarse: boolean
+  /**
+   * The card's own `short` flag (`ChartCard`'s `measuredHeight < CARD_SHORT_HEIGHT`, wave 8's
+   * header-fold law) — reused as the ONE source of truth for "this legend gets at most one row"
+   * (wave 11, `docs/waves/PLAN.md`), rather than a second, narrower threshold. Default `false`
+   * (no card, or an unmeasured/tall one).
+   */
+  cardShort?: boolean
   /** Consumer-stated values; each wins over the derived one. */
   override?: { height?: number }
 }
@@ -103,8 +110,19 @@ function resolveLegend(
     width > 0 ? Math.max(1, entriesWithinRows(input.legendItems, width, LEGEND_ROWS[where])) : total
   // A legend never rolls up fewer than 2 entries: "+1 more" hides nothing a chip would not show.
   const visible = total - fitted < 2 ? total : fitted
+  // Dots is a HEADER-ONLY fold (RESPONSIVE-SPEC.md §1's container table: "compact: … legend in
+  // header (dots)" — every row names the header, never the band). A short card (wave 11, PLAN.md
+  // "the legend gets at most one row and folds to dots… before it takes plot height") forces the
+  // same fold regardless of container class, on the same header-only condition — only the RENDER
+  // MODE changes, not `LEGEND_ROWS.header` or the fit/overflow math above. A band legend (no
+  // header slot) always stays 'chips': a compact-width chart with nowhere to portal its legend
+  // never had a designed dots form, before or after wave 11.
+  const mode =
+    where === 'header' && (input.cardShort === true || containerClass === 'compact')
+      ? 'dots'
+      : 'chips'
   return {
-    mode: containerClass === 'compact' ? 'dots' : 'chips',
+    mode,
     where,
     visible,
     overflow: total - visible,
