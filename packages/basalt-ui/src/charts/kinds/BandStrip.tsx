@@ -357,7 +357,13 @@ function BandStripPlot<T>(props: BandStripPlotProps<T>) {
 
   return (
     <>
-      <svg ref={band.svgRef} width={plot.width} height={plot.height}>
+      <svg
+        ref={band.svgRef}
+        width={plot.width}
+        height={plot.height}
+        // `touch-action` on the plot `<svg>`: Chrome ignores it on the overlay `<rect>` (`R2C-2`).
+        style={{ touchAction: 'pan-y' }}
+      >
         <defs>
           <HatchPattern
             id={hatchId}
@@ -391,6 +397,7 @@ function BandStripPlot<T>(props: BandStripPlotProps<T>) {
             height={stripHeight}
             onMove={cursor.onPointerMove}
             onDown={cursor.onPointerDown}
+            onUp={cursor.onPointerUp}
             onLeave={cursor.onPointerLeave}
             onKeyDown={cursor.onKeyDown}
             onBlur={cursor.onBlur}

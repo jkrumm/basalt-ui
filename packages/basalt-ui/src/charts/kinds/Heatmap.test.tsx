@@ -68,7 +68,8 @@ describe('Heatmap — touch (coarse pointer pin)', () => {
     const { container } = renderGrid()
     const cellEls = container.querySelectorAll('svg rect[role="option"]')
 
-    fireEvent.pointerDown(cellEls[0]!, { pointerType: 'touch' })
+    fireEvent.pointerDown(cellEls[0]!, { pointerType: 'touch', pointerId: 1 })
+    fireEvent.pointerUp(cellEls[0]!, { pointerType: 'touch', pointerId: 1 })
     expect(screen.getByText('Value').parentElement?.textContent).toContain('1')
 
     fireEvent.pointerLeave(cellEls[0]!, { pointerType: 'touch' })
@@ -78,12 +79,24 @@ describe('Heatmap — touch (coarse pointer pin)', () => {
     expect(screen.queryByText('Value')).toBeNull()
   })
 
+  test('a cancelled press (a scroll) clears the provisional readout', () => {
+    const { container } = renderGrid()
+    const cellEls = container.querySelectorAll('svg rect[role="option"]')
+    fireEvent.pointerDown(cellEls[0]!, { pointerType: 'touch', pointerId: 1 })
+    expect(screen.getByText('Value').parentElement?.textContent).toContain('1')
+
+    fireEvent.pointerCancel(cellEls[0]!, { pointerType: 'touch', pointerId: 1 })
+    expect(screen.queryByText('Value')).toBeNull()
+  })
+
   test('a tap on a different cell moves the pin', () => {
     const { container } = renderGrid()
     const cellEls = container.querySelectorAll('svg rect[role="option"]')
-    fireEvent.pointerDown(cellEls[0]!, { pointerType: 'touch' })
+    fireEvent.pointerDown(cellEls[0]!, { pointerType: 'touch', pointerId: 1 })
+    fireEvent.pointerUp(cellEls[0]!, { pointerType: 'touch', pointerId: 1 })
     expect(screen.getByText('Value').parentElement?.textContent).toContain('1')
-    fireEvent.pointerDown(cellEls[3]!, { pointerType: 'touch' })
+    fireEvent.pointerDown(cellEls[3]!, { pointerType: 'touch', pointerId: 1 })
+    fireEvent.pointerUp(cellEls[3]!, { pointerType: 'touch', pointerId: 1 })
     expect(screen.getByText('Value').parentElement?.textContent).toContain('4')
   })
 })

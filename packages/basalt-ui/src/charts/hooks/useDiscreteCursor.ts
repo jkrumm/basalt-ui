@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import type {
   KeyboardEventHandler,
   PointerEvent as ReactPointerEvent,
@@ -22,6 +22,7 @@ export type UseDiscreteCursorResult<T> = {
     onPointerEnter: PointerEventHandler<Element>
     onPointerMove: PointerEventHandler<Element>
     onPointerDown: PointerEventHandler<Element>
+    onPointerUp: PointerEventHandler<Element>
     onPointerLeave: PointerEventHandler<Element>
     onPointerCancel: PointerEventHandler<Element>
   }
@@ -58,9 +59,11 @@ export type UseDiscreteCursorResult<T> = {
  * Three input modes converge on one `tip`:
  * - **Fine pointer** (mouse/pen): hover shows the tooltip, ephemeral — clears on pointer leave,
  *   unchanged from today's per-arc/per-cell handlers.
- * - **Coarse pointer** (touch): `pointerdown` shows AND PINS it. A pin survives lift, a tap on a
- *   different target moves it, and it's dismissed by a tap outside the host or Escape — the same
- *   pin-until-dismiss contract the cartesian kinds use for a scrub.
+ * - **Coarse pointer** (touch): `pointerdown` shows it PROVISIONALLY, and `pointerup` COMMITS the
+ *   pin; a `pointercancel` before commit (the browser taking the gesture as a scroll) clears it
+ *   instead (`R2C-1`/`P0-2`). A committed pin survives lift, a tap on a different target moves it,
+ *   and it's dismissed by a tap outside the host or Escape — the same pin-until-dismiss contract
+ *   the cartesian kinds use for a scrub.
  * - **Keyboard**: the host is the one focusable node; arrow keys step `targets` by index and
  *   Escape clears (same key `HoverOverlay` uses). `columns`, when given, maps Up/Down to a
  *   full-row jump (`±columns`) so a 2D grid (Heatmap, row-major `targets`) gets real row/column
@@ -88,6 +91,10 @@ export function useDiscreteCursor<T>({
   const [active, setActive] = useState<ActiveState | null>(null)
   const [pinned, setPinned] = useState(false)
   const hostElRef = useRef<Element | null>(null)
+  // The `pointerId` of a coarse press that has shown a readout but not yet committed the pin
+  // (`pointerup`). A `pointercancel` naming this pointer before it commits is the browser taking
+  // the gesture — a scroll — and clears instead (`R2C-1`/`P0-2`).
+  const pressRef = useRef<number | null>(null)
   const idPrefix = useId()
 
   // Read through refs so a keypress or an outside tap arriving between renders (the two
@@ -102,6 +109,7 @@ export function useDiscreteCursor<T>({
   columnsRef.current = columns
 
   const clear = useCallback(() => {
+    pressRef.current = null
     setActive(null)
     setPinned(false)
   }, [])
@@ -121,21 +129,39 @@ export function useDiscreteCursor<T>({
     const onDocKeyDown = (event: KeyboardEvent): void => {
       if (event.key === 'Escape') clear()
     }
+    // A pinned tooltip's `anchor` is a viewport coordinate captured at tap time — a page scroll
+    // moves the chart out from under it exactly as it does for `useChartCursor`'s cartesian pin
+    // (`R2C-4`), so this needs the same capture-phase `scroll` → `clear()` dismissal.
+    const onScroll = (): void => clear()
     // Capture phase, matching `useChartCursor`'s equivalent listener: a bubble-phase listener
     // would never fire if some ancestor between the tapped element and `document` calls
     // `stopPropagation()` on its own `pointerdown` handler (e.g. a Mantine overlay elsewhere on
     // the page), leaving the pin stuck with no way to dismiss it via an outside tap.
     document.addEventListener('pointerdown', onDocPointerDown, true)
     document.addEventListener('keydown', onDocKeyDown)
+    document.addEventListener('scroll', onScroll, true)
     return () => {
       document.removeEventListener('pointerdown', onDocPointerDown, true)
       document.removeEventListener('keydown', onDocKeyDown)
+      document.removeEventListener('scroll', onScroll, true)
     }
   }, [pinned, clear])
 
+  // Index in `targetsRef`, NOT the key: Heatmap's `cellKey` joins cells with `\u0000`, which leaked
+  // a NUL into a DOM id (`_r_93_-Mon\u00008:00`) and an id has to be a valid DOM token (`P1-6`).
+  // Resolved by KEY, not reference: Heatmap builds a fresh `{ row, col, value }` object per cell
+  // render, never the same reference as the memoized `targets` array, so a reference lookup always
+  // missed and rendered every option's id as index `-1`. A `Map` built once per `targets` change,
+  // not a `findIndex` per call, keeps this O(1) — `optionId` runs once per rendered target plus once
+  // for `aria-activedescendant`, on the same render loop the touch-scrub path re-runs every frame.
+  const indexByKey = useMemo(() => {
+    const map = new Map<string, number>()
+    targets.forEach((t, i) => map.set(getKeyRef.current(t), i))
+    return map
+  }, [targets])
   const optionId = useCallback(
-    (t: T): string => `${idPrefix}-${getKeyRef.current(t).replace(/\s+/g, '_')}`,
-    [idPrefix],
+    (t: T): string => `${idPrefix}-${indexByKey.get(getKeyRef.current(t)) ?? -1}`,
+    [idPrefix, indexByKey],
   )
 
   const findTarget = (key: string): T | undefined =>
@@ -145,6 +171,16 @@ export function useDiscreteCursor<T>({
     const key = getKeyRef.current(t)
     const showAt = (event: ReactPointerEvent<Element>): void => {
       setActive({ key, anchor: { x: event.clientX, y: event.clientY } })
+    }
+    // Shared by `onPointerLeave` and `onPointerCancel`: a still-UNCOMMITTED press ending here is the
+    // browser taking the gesture (a scroll) and must clear regardless of `pinned` — the two used to
+    // diverge (`onPointerCancel` checked this, `onPointerLeave` didn't), which left a stale `pressRef`
+    // and a stuck readout on the leave-before-cancel ordering a scroll off a small hit target
+    // commonly produces.
+    const clearIfUncommitted = (event: ReactPointerEvent<Element>): boolean => {
+      if (pressRef.current !== event.pointerId) return false
+      clear()
+      return true
     }
     // `pointerType !== 'mouse'` throughout (never `=== 'touch'`), matching `useChartCursor` —
     // pen counts as coarse too, so a stylus tap gets the same pin-until-dismiss contract a finger
@@ -162,18 +198,41 @@ export function useDiscreteCursor<T>({
         if (event.pointerType !== 'mouse' || pinned) return
         showAt(event)
       },
-      // Only a coarse pointer pins — a fine pointer's `down` is a no-op, it already shows via
-      // enter/move above.
+      // Only a coarse pointer presses — a fine pointer's `down` is a no-op, it already shows via
+      // enter/move above. The press is PROVISIONAL: it shows the readout but does not commit the
+      // pin, which only `onPointerUp` does. On touch the readout anchors to the HOST's top edge
+      // rather than the finger, which would cover it (`P2-11`); a missing host falls back to the
+      // pointer position.
       onPointerDown: (event) => {
         if (event.pointerType === 'mouse') return
-        setPinned(true)
-        showAt(event)
+        pressRef.current = event.pointerId
+        const rect = hostElRef.current?.getBoundingClientRect()
+        setActive({
+          key,
+          anchor:
+            rect === undefined
+              ? { x: event.clientX, y: event.clientY }
+              : { x: rect.left + rect.width / 2, y: rect.top },
+        })
       },
+      // A completed tap commits the pin. Only the tracked pointer commits — and only a coarse one:
+      // some browsers assign a touch's `pointerId` the same value (1) mouse pointers use, so a
+      // `pointerType` check keeps an unrelated mouse `pointerup` reusing that id from committing an
+      // abandoned touch press.
+      onPointerUp: (event) => {
+        if (event.pointerType === 'mouse' || pressRef.current !== event.pointerId) return
+        pressRef.current = null
+        setPinned(true)
+      },
+      // A still-uncommitted press ending here is the browser taking the gesture (a scroll); clear it
+      // regardless of `pinned`. Otherwise keep the fine-pointer/pinned guard.
       onPointerLeave: (event) => {
+        if (clearIfUncommitted(event)) return
         if (event.pointerType !== 'mouse' || pinned) return
         setActive(null)
       },
       onPointerCancel: (event) => {
+        if (clearIfUncommitted(event)) return
         if (event.pointerType !== 'mouse' || pinned) return
         setActive(null)
       },

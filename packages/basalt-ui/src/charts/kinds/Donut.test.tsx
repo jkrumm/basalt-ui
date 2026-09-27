@@ -123,7 +123,8 @@ describe('Donut — touch and keyboard parity (useDiscreteCursor)', () => {
     const arcs = container.querySelectorAll('svg g[role="option"]')
     expect(arcs.length).toBe(2)
 
-    fireEvent.pointerDown(arcs[0]!, { pointerType: 'touch' })
+    fireEvent.pointerDown(arcs[0]!, { pointerType: 'touch', pointerId: 1 })
+    fireEvent.pointerUp(arcs[0]!, { pointerType: 'touch', pointerId: 1 })
     expect(shareText()).toContain('25%')
 
     fireEvent.pointerLeave(arcs[0]!, { pointerType: 'touch' })
@@ -133,12 +134,24 @@ describe('Donut — touch and keyboard parity (useDiscreteCursor)', () => {
     expect(screen.queryByText('Share')).toBeNull()
   })
 
+  test('a cancelled press (a scroll) clears the provisional readout', () => {
+    const { container } = renderTwo()
+    const arcs = container.querySelectorAll('svg g[role="option"]')
+    fireEvent.pointerDown(arcs[0]!, { pointerType: 'touch', pointerId: 1 })
+    expect(shareText()).toContain('25%')
+
+    fireEvent.pointerCancel(arcs[0]!, { pointerType: 'touch', pointerId: 1 })
+    expect(screen.queryByText('Share')).toBeNull()
+  })
+
   test('a tap on the other slice moves the pin', () => {
     const { container } = renderTwo()
     const arcs = container.querySelectorAll('svg g[role="option"]')
-    fireEvent.pointerDown(arcs[0]!, { pointerType: 'touch' })
+    fireEvent.pointerDown(arcs[0]!, { pointerType: 'touch', pointerId: 1 })
+    fireEvent.pointerUp(arcs[0]!, { pointerType: 'touch', pointerId: 1 })
     expect(shareText()).toContain('25%')
-    fireEvent.pointerDown(arcs[1]!, { pointerType: 'touch' })
+    fireEvent.pointerDown(arcs[1]!, { pointerType: 'touch', pointerId: 1 })
+    fireEvent.pointerUp(arcs[1]!, { pointerType: 'touch', pointerId: 1 })
     expect(shareText()).toContain('75%')
   })
 

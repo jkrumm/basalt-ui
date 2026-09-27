@@ -25,12 +25,17 @@ export type ChartCursor<T> = {
   onPointerMove: (event: PointerEvent<SVGRectElement>) => void
   /** Coarse-pointer equivalent of hover: resolves the nearest point and shows the tooltip
    * immediately, with no preceding `pointermove` — a plain tap otherwise fires only
-   * `pointerdown`/`pointerup`. Also what MOVES an existing touch pin to a new tap elsewhere in the
-   * same chart (fine pointers ignore it; `onPointerMove` already covers hover for them). */
+   * `pointerdown`/`pointerup`. The press is PROVISIONAL: it shows the tooltip but does not commit a
+   * pin, which only `onPointerUp` does. Also what MOVES an existing touch pin to a new tap elsewhere
+   * in the same chart (fine pointers ignore it; `onPointerMove` already covers hover for them). */
   onPointerDown: (event: PointerEvent<SVGRectElement>) => void
-  /** No-op while this chart's cursor is PINNED by a touch interaction (§5) — otherwise a stray
-   * `pointercancel` (a scroll gesture starting) would undo the pin the same drag was meant to set. */
-  onPointerLeave: () => void
+  /** Commits the provisional touch press — the same `pointerId` as the matching `onPointerDown` —
+   * so the pin survives the lift. A `pointerup` for any other pointer is ignored. */
+  onPointerUp: (event: PointerEvent<SVGRectElement>) => void
+  /** `pointerleave`/`pointercancel`, sharing one handler. A still-UNCOMMITTED touch press cancelled
+   * here is the browser taking the gesture (a scroll) and clears; once committed, touch no-ops so a
+   * stray `pointercancel` cannot undo the pin. A fine pointer always clears. */
+  onPointerLeave: (event: PointerEvent<SVGRectElement>) => void
   onKeyDown: (event: KeyboardEvent<SVGRectElement>) => void
   onBlur: () => void
 }
@@ -49,9 +54,10 @@ export type ChartCursor<T> = {
  *
  * Touch model (`docs/waves/RESPONSIVE-SPEC.md` §5): a fine pointer keeps hovering as above. A
  * coarse pointer (`onPointerDown`) resolves and shows the tooltip immediately, drag-scrubs via the
- * same `onPointerMove`, and stays PINNED past lift — `onPointerLeave` (also wired to
- * `pointercancel`) no-ops while pinned. The pin moves on a fresh tap elsewhere in the chart, clears
- * on a `document` tap outside `boundaryRef`, or on Escape.
+ * same `onPointerMove`, and COMMITS a pin on `onPointerUp` — `onPointerLeave` (also wired to
+ * `pointercancel`) no-ops once committed. A press the browser turns into a scroll is cancelled
+ * before it commits and clears instead (`R2C-1`/`P0-2`). The pin moves on a fresh tap elsewhere,
+ * clears on a `document` tap outside `boundaryRef`, on any scroll, or on Escape.
  */
 export function useChartCursor<T>({
   data,
@@ -109,6 +115,11 @@ export function useChartCursor<T>({
 
   const frameRef = useRef<number | null>(null)
   const pendingRef = useRef<CursorAnchor | null>(null)
+  // The `pointerId` of a coarse press that has shown the tooltip but not yet committed the pin
+  // (`pointerup`). A `pointercancel`/`pointerleave` naming this pointer before it commits is the
+  // browser taking the gesture — a scroll — and must clear (`R2C-1`/`P0-2`); resolving on
+  // `pointerdown` alone used to commit the pin on first contact, leaving it stuck.
+  const pressRef = useRef<number | null>(null)
   useEffect(
     () => () => {
       if (frameRef.current !== null) cancelAnimationFrame(frameRef.current)
@@ -167,7 +178,21 @@ export function useChartCursor<T>({
   // path never runs for it — this is what makes a tap show anything at all. It also MOVES an
   // existing touch pin: a fresh `pointerdown` elsewhere in the chart re-resolves and re-broadcasts
   // exactly like the first one, with nothing extra to wire.
-  const onPointerDown = resolveToNearest
+  const onPointerDown = useCallback(
+    (event: PointerEvent<SVGRectElement>) => {
+      resolveToNearest(event)
+      // A coarse press is PROVISIONAL: record the pointer so `onPointerUp` can commit the pin and a
+      // `pointercancel`/`pointerleave` for the SAME still-uncommitted pointer can undo it. A fine
+      // pointer never sets a press — its hover path has no pin to protect.
+      if (event.pointerType !== 'mouse') pressRef.current = event.pointerId
+    },
+    [resolveToNearest],
+  )
+  // A completed tap: the pin is now committed, so `onPointerLeave`'s touch no-op keeps it past the
+  // lift. Only the tracked pointer commits — a stray `pointerup` is ignored.
+  const onPointerUp = useCallback((event: PointerEvent<SVGRectElement>) => {
+    if (pressRef.current === event.pointerId) pressRef.current = null
+  }, [])
 
   const clear = useCallback(() => {
     if (frameRef.current !== null) {
@@ -175,6 +200,7 @@ export function useChartCursor<T>({
       frameRef.current = null
     }
     pendingRef.current = null
+    pressRef.current = null
     setAnchor(null)
     // Only clear the SHARED cursor if this chart still owns it: moving fast from chart A to B lets
     // A's leave fire after B's move, and an unconditional clear would wipe B's cursor.
@@ -182,14 +208,21 @@ export function useChartCursor<T>({
   }, [store, chartId])
 
   // `pointerleave`/`pointercancel` share this one handler (`HoverOverlay` wires both to `onLeave`).
-  // While PINNED by touch it is a no-op — otherwise a stray `pointercancel` (a scroll gesture
-  // starting under the finger) would undo the pin the same drag was meant to set. Escape's `clear()`
-  // in `onKeyDown` bypasses this guard entirely, by design: it is the one dismissal that must work
-  // regardless of pointer type.
-  const onPointerLeave = useCallback(() => {
-    if (isTouch) return
-    clear()
-  }, [isTouch, clear])
+  // A still-uncommitted touch press cancelled here is the browser taking the gesture (a scroll) and
+  // clears. Once COMMITTED by touch it is a no-op — otherwise a stray `pointercancel` would undo the
+  // pin the tap was meant to set. Escape's `clear()` in `onKeyDown` bypasses this guard entirely, by
+  // design: it is the one dismissal that must work regardless of pointer type.
+  const onPointerLeave = useCallback(
+    (event: PointerEvent<SVGRectElement>) => {
+      if (pressRef.current === event.pointerId) {
+        clear()
+        return
+      }
+      if (isTouch) return
+      clear()
+    },
+    [isTouch, clear],
+  )
 
   const onKeyDown = useCallback(
     (event: KeyboardEvent<SVGRectElement>) => {
@@ -229,7 +262,10 @@ export function useChartCursor<T>({
   // source, one capture-phase `document` `pointerdown` listener clears it the moment the event
   // target falls outside `boundaryRef`. Gating on `isSource` (not `isTouch` alone) means the
   // listener follows the pin — a sibling chart stealing the source on its own touch tap detaches
-  // this one instead of leaving a second stale listener alive.
+  // this one instead of leaving a second stale listener alive. The same effect carries the two
+  // other "the pin no longer points at anything" dismissals: a capture-phase `scroll` (a fixed
+  // tooltip detaches from its chart — `R2C-4`) and a document-level `Escape` (the overlay need not
+  // hold focus — `R2C-14`).
   useEffect(() => {
     if (!isTouch || !isSource || boundaryRef === undefined) return
     const onDocumentPointerDown = (event: globalThis.PointerEvent) => {
@@ -239,8 +275,18 @@ export function useChartCursor<T>({
       }
       clear()
     }
+    const onScroll = () => clear()
+    const onDocumentKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (event.key === 'Escape') clear()
+    }
     document.addEventListener('pointerdown', onDocumentPointerDown, true)
-    return () => document.removeEventListener('pointerdown', onDocumentPointerDown, true)
+    document.addEventListener('scroll', onScroll, true)
+    document.addEventListener('keydown', onDocumentKeyDown)
+    return () => {
+      document.removeEventListener('pointerdown', onDocumentPointerDown, true)
+      document.removeEventListener('scroll', onScroll, true)
+      document.removeEventListener('keydown', onDocumentKeyDown)
+    }
   }, [isTouch, isSource, boundaryRef, clear])
 
   return {
@@ -250,6 +296,7 @@ export function useChartCursor<T>({
     isTouch,
     onPointerMove,
     onPointerDown,
+    onPointerUp,
     onPointerLeave,
     onKeyDown,
     onBlur: clear,
