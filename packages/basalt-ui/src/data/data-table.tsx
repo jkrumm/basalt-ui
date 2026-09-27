@@ -51,11 +51,13 @@ import type {
   ColumnPinningState,
   FilterFn,
   PaginationState,
+  Row,
   RowData,
   RowSelectionState,
   SortingState,
   Table as TanstackTable,
   Updater,
+  VisibilityState,
 } from '@tanstack/react-table'
 import {
   flexRender,
@@ -72,7 +74,7 @@ import type {
   ReactNode,
   RefObject,
 } from 'react'
-import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { cx } from '../common/props'
 import type { BasaltProps, SlotStylesProps } from '../common/props'
 import { BASALT_PREFIX } from '../common/errors'
@@ -122,6 +124,14 @@ declare module '@tanstack/react-table' {
      * `<td>`'s mono font then overrides what the cell asked for.
      */
     numeral?: boolean
+    /**
+     * Fold priority for the measured column fold (`docs/waves/RESPONSIVE-SPEC.md` §6): once the
+     * table no longer fits its wrapper, the HIGHEST-numbered priority column folds first, moving
+     * into a per-row disclosure instead of forcing the table into horizontal scroll. Unset columns
+     * fall back to their declared position, so a bare `<BasaltDataTable data columns />` folds its
+     * LAST column first — nothing regresses with no `meta.priority` set anywhere. See `foldOrder`.
+     */
+    priority?: number
   }
 }
 
@@ -890,6 +900,211 @@ function getPinnedCellStyle<T>(
   }
 }
 
+// ── Column fold (`meta.priority`, docs/waves/RESPONSIVE-SPEC.md §6) ───────────
+
+/** The column id TanStack will resolve internally for this raw def — explicit `id`, else the
+ * accessor key string. Mirrors the resolution `facetColumns` already relies on above. */
+function columnDefId<T>(column: ColumnDef<T, unknown>): string | undefined {
+  return column.id ?? (column as { accessorKey?: string }).accessorKey
+}
+
+/**
+ * Fold order for `meta.priority` — the FIRST id in the returned list folds first. Effective
+ * priority is `meta.priority ?? declaredIndex`, so with no `meta.priority` set anywhere it is just
+ * the column's position: the LAST declared column folds first, the zero-config default a bare
+ * `<BasaltDataTable data columns />` needs. An explicit priority folds a HIGHER number before a
+ * lower one; a tie folds in reverse declared order. A column with no resolvable id (an
+ * `accessorFn` with no explicit `id`) is never a fold candidate — nothing downstream could
+ * reliably re-identify it once hidden.
+ */
+function foldOrder<T>(columns: readonly ColumnDef<T, unknown>[]): string[] {
+  return columns
+    .map((column, index) => ({
+      id: columnDefId(column),
+      priority: column.meta?.priority ?? index,
+      index,
+    }))
+    .filter((candidate): candidate is { id: string; priority: number; index: number } =>
+      Boolean(candidate.id),
+    )
+    .toSorted((a, b) => b.priority - a.priority || b.index - a.index)
+    .map((candidate) => candidate.id)
+}
+
+/** The disclosure toggle column's own width — a fixed icon-button cell, matched to the
+ * coarse-pointer hit floor (`tokens/index.ts`'s `HIT_COARSE`) so it reads as one more `--vx-hit`
+ * control rather than a narrower afterthought. */
+const FOLD_TOGGLE_WIDTH = 44
+
+/** Marks a rendered data column header for `useColumnFold`'s width measurement — never read past
+ * that hook, so it carries no styling and needs no CSS-module counterpart. */
+const FOLD_ID_ATTR = 'data-basalt-fold-id'
+
+const EMPTY_FOLD_SET: ReadonlySet<string> = new Set()
+
+/**
+ * Pure decision: fold columns off the FRONT of `order` (already fold-first sorted) until the
+ * still-unfolded ones — plus the disclosure toggle's own width, once anything is folded — fit
+ * `room`. A candidate with no measured width yet (never rendered) is skipped rather than folded
+ * blind, since folding it would remove the one place its width could ever be read from.
+ */
+function planColumnFold(input: {
+  room: number
+  toggleWidth: number
+  order: readonly string[]
+  widths: ReadonlyMap<string, number>
+}): ReadonlySet<string> {
+  const { room, toggleWidth, order, widths } = input
+  const known = order.filter((id) => widths.has(id))
+  let unfolded = known.reduce((sum, id) => sum + (widths.get(id) ?? 0), 0)
+  const folded = new Set<string>()
+  for (const id of known) {
+    const withToggle = unfolded + (folded.size > 0 ? toggleWidth : 0)
+    if (withToggle <= room) break
+    folded.add(id)
+    unfolded -= widths.get(id) ?? 0
+  }
+  return folded
+}
+
+/**
+ * The general-case measured fold: while the sticky-header-only `useMeasuredContainment` above
+ * answers a boolean fit/contained, folding columns changes the very box being measured — reacting
+ * to that boolean directly (fold one, remeasure, maybe unfold) would oscillate. So this hook
+ * reuses the same wrapper-vs-table `ResizeObserver` idiom but reads each candidate `<th
+ * data-basalt-fold-id>`'s width ONCE, while it is still visible, caches it, and makes the fold
+ * decision analytically (`planColumnFold`) — the same shape `controls/actions.tsx`'s
+ * `useMeasuredFold`/`planBarFold` use for the page bar's own fold. A folded column's cached width
+ * survives being hidden, so re-measuring on a resize never needs it back on screen.
+ */
+function useColumnFold(input: { active: boolean; order: readonly string[] }): {
+  wrapperRef: RefObject<HTMLDivElement | null>
+  folded: ReadonlySet<string>
+} {
+  const { active, order } = input
+  const wrapperRef = useRef<HTMLDivElement>(null)
+  const [folded, setFolded] = useState<ReadonlySet<string>>(EMPTY_FOLD_SET)
+  const widths = useRef(new Map<string, number>())
+  const orderRef = useRef(order)
+  orderRef.current = order
+  const signature = order.join('|')
+  const measuredSignature = useRef(signature)
+
+  useLayoutEffect(() => {
+    if (!active || order.length === 0) {
+      setFolded((current) => (current.size === 0 ? current : EMPTY_FOLD_SET))
+      return
+    }
+    const wrapper = wrapperRef.current
+    if (wrapper === null) return
+
+    // A changed column set drops every remembered width — a folded column cannot report the
+    // width its new content would take, so the whole cache has to be rebuilt from what is visible.
+    if (measuredSignature.current !== signature) {
+      measuredSignature.current = signature
+      widths.current.clear()
+    }
+
+    const measure = (): void => {
+      for (const cell of wrapper.querySelectorAll<HTMLElement>(`[${FOLD_ID_ATTR}]`)) {
+        const id = cell.getAttribute(FOLD_ID_ATTR)
+        if (id !== null && cell.offsetWidth > 0) widths.current.set(id, cell.offsetWidth)
+      }
+      const room = wrapper.clientWidth
+      // A zero reading is an un-laid-out ancestor, not a table with no room — see
+      // `useMeasuredContainment` above for the same guard against the aside animating in from 0.
+      if (room === 0) return
+      const next = planColumnFold({
+        room,
+        toggleWidth: FOLD_TOGGLE_WIDTH,
+        order: orderRef.current,
+        widths: widths.current,
+      })
+      setFolded((current) =>
+        current.size === next.size && [...current].every((id) => next.has(id)) ? current : next,
+      )
+    }
+
+    if (typeof ResizeObserver === 'undefined') {
+      measure()
+      return
+    }
+    const observer = new ResizeObserver(measure)
+    observer.observe(wrapper)
+    const table = wrapper.querySelector('table')
+    if (table !== null) observer.observe(table)
+    measure()
+    return () => {
+      observer.disconnect()
+    }
+  }, [active, order.length, signature])
+
+  return { wrapperRef, folded: active ? folded : EMPTY_FOLD_SET }
+}
+
+/** The label half of a folded column's disclosure row — its own header when it is a plain string
+ * (the common case), else the column id, since a function/`ReactNode` header has no header
+ * CONTEXT to render with here (this is a body row, not the `<thead>`). */
+function columnLabel<T>(column: Column<T, unknown>): string {
+  const header = column.columnDef.header
+  return typeof header === 'string' ? header : column.id
+}
+
+/** One row's folded columns as label/value pairs, directly under it. `row.getAllCells()` returns
+ * every leaf cell regardless of visibility (unlike `getVisibleCells()`), so a folded column's own
+ * `cell` renderer still draws here exactly as it would in the `<td>` it no longer occupies. */
+function RowDisclosure<T>({
+  row,
+  folded,
+}: {
+  row: Row<T>
+  folded: ReadonlySet<string>
+}): ReactNode {
+  const cells = row.getAllCells().filter((cell) => folded.has(cell.column.id))
+  return (
+    <div className={classes.foldDisclosure}>
+      {cells.map((cell) => (
+        <div key={cell.id} className={classes.foldDisclosureRow}>
+          <Text className={classes.foldDisclosureLabel}>{columnLabel(cell.column)}</Text>
+          <div className={classes.foldDisclosureValue}>
+            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/** The per-row expand/collapse control the fold-disclosure column renders — a text glyph, since
+ * basalt ships no icon set (`docs/waves/RESPONSIVE-SPEC.md` §6, mirrors `SortIndicator` above). */
+function FoldToggle({
+  expanded,
+  onToggle,
+}: {
+  expanded: boolean
+  onToggle: () => void
+}): ReactNode {
+  return (
+    <button
+      type="button"
+      className={classes.foldToggle}
+      data-basalt-hit
+      aria-expanded={expanded}
+      aria-label={expanded ? 'Hide row details' : 'Show row details'}
+      // A row carrying `onRowActivate` reads a bubbled click as "activate the row" — the toggle
+      // would open/close its disclosure AND fire the row's own action underneath it.
+      onClick={(event) => {
+        event.stopPropagation()
+        onToggle()
+      }}
+    >
+      <Box component="span" aria-hidden>
+        {expanded ? '▾' : '▸'}
+      </Box>
+    </button>
+  )
+}
+
 // ── The manual-pagination contract ────────────────────────────────────────────
 
 /** One client-side control that `manualPagination` turns into a claim the table cannot support. */
@@ -1324,6 +1539,49 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
   const filteringEnabled = !breaches.includes('filtering')
   const totalIsAuthoritative = !breaches.includes('total')
 
+  // A capped body or a horizontal floor both need the same native scroll node — computed here,
+  // ahead of the table, because `pageStickyHeader` (further down) needs it: `maxHeight` alone still
+  // wants its own `ScrollArea` scrollport (a sticky `<thead>` resolves against it, not the measured
+  // containment div, which offers no vertical scroll box at all), so EITHER prop rules out the
+  // measured-containment shape.
+  const scrolls = maxHeight !== undefined || minWidth !== undefined
+
+  // Fold eligibility is narrower than `scrolls`: only `minWidth` is a genuinely DECLARED horizontal
+  // floor — the caller is stating "this table is at least this wide," which folding columns out of
+  // would contradict. `maxHeight` alone is a purely VERTICAL cap and orthogonal to column width, so
+  // a `stickyHeader` + `maxHeight` table (the pairing this package's own docs recommend for a
+  // capped, sticky-header body) still folds instead of silently regressing to horizontal scroll.
+  const foldEligible = minWidth === undefined
+
+  // The fold order is computed off the caller's OWN `columns` — never `tableColumns` — so the
+  // selection checkbox (prepended below) is never a fold candidate; see `foldOrder`'s docblock for
+  // the declared-order default and the explicit-priority rule.
+  const columnFoldOrder = useMemo(() => foldOrder(columns), [columns])
+  const columnFold = useColumnFold({ active: foldEligible, order: columnFoldOrder })
+  const columnVisibility: VisibilityState = useMemo(
+    () => Object.fromEntries([...columnFold.folded].map((id) => [id, false])),
+    [columnFold.folded],
+  )
+  const hasFolded = columnFold.folded.size > 0
+  const [expandedFoldRows, setExpandedFoldRows] = useState<ReadonlySet<string>>(EMPTY_FOLD_SET)
+  const toggleFoldRow = useCallback((rowId: string) => {
+    setExpandedFoldRows((current) => {
+      const next = new Set(current)
+      if (next.has(rowId)) next.delete(rowId)
+      else next.add(rowId)
+      return next
+    })
+  }, [])
+  // `row.id` defaults to the row's index in `data` (no `getRowId` passed) — stable across a
+  // client-side sort/filter/pagination (they reorder or subset the SAME core rows), but a NEW
+  // `data` reference (a manual-pagination page turn, a server refetch) can seat an entirely
+  // different record at an id this set already holds, silently pre-expanding it. Clearing on
+  // every `data` change is conservative rather than trying to tell "same records reordered" apart
+  // from "different records at the same ids".
+  useEffect(() => {
+    setExpandedFoldRows((current) => (current.size === 0 ? current : EMPTY_FOLD_SET))
+  }, [data])
+
   const table = useReactTable<T>({
     data,
     columns: tableColumns,
@@ -1332,6 +1590,7 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
       globalFilter,
       columnFilters,
       columnPinning,
+      columnVisibility,
       ...(enablePagination && { pagination }),
       ...(enableRowSelection && { rowSelection: rowSelectionState }),
     },
@@ -1377,10 +1636,11 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
   const showSkeleton = branch === undefined ? isLoading : branch === 'pending'
   const queryError = branch === 'error' && query !== undefined ? query : undefined
 
-  // Every colSpan and every skeleton row counts the RENDERED columns, which is one more than
-  // `columns` once the checkbox column is prepended — a stale count left the empty state and the
-  // error row one cell short of the header.
-  const columnCount = columns.length + (enableRowSelection ? 1 : 0)
+  // Every colSpan and every skeleton row counts the RENDERED columns: one more than `columns` for
+  // the prepended checkbox column, one more again for the fold-disclosure toggle once anything has
+  // folded — a stale count left the empty state and the error row short of the header.
+  const columnCount =
+    columns.length + (enableRowSelection ? 1 : 0) + (hasFolded ? 1 : 0) - columnFold.folded.size
 
   // `getSelectedRowModel()` is TanStack's own memo, so its `rows` array keeps its identity until
   // the selection or the row model actually moves — which is what makes both memos below hold.
@@ -1406,8 +1666,8 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
 
   // A capped body or a horizontal floor both need the same native scroll node. Everything else —
   // pinning included — either takes that same container (the uncapped, non-sticky default) or the
-  // measured wrapper below; there is no third overflow box.
-  const scrolls = maxHeight !== undefined || minWidth !== undefined
+  // measured wrapper below; there is no third overflow box. (`scrolls` itself is computed earlier,
+  // ahead of the table, because the column fold above needs it too.)
   // `stickyHeaderOffset` is a WINDOW-scroll concept — the height of whatever fixed chrome the page
   // scrolls under (the AppShell header plus `PageBar` row 2). Inside the scroll container it is
   // always wrong: that box is the sticky header's own scrollport, so the offset parks the `<thead>`
@@ -1446,6 +1706,9 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
       <Table.Thead>
         {headerGroups.map((headerGroup) => (
           <Table.Tr key={headerGroup.id}>
+            {/* The disclosure toggle column has no header of its own — nothing is "sorted" or
+                "selected all" across it, only revealed per row. */}
+            {hasFolded && <Table.Th className={classes.foldToggleCell} aria-hidden />}
             {headerGroup.headers.map((header) => {
               const canSort = sortingEnabled && header.column.getCanSort()
               const sorted = header.column.getIsSorted()
@@ -1454,10 +1717,14 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
                 ? getPinnedCellStyle(table, header.column)
                 : undefined
               const align = resolveAlign(header.column)
+              const isSelectColumn = header.column.id === SELECT_COLUMN_ID
               return (
                 <Table.Th
                   key={header.id}
-                  {...(header.column.id === SELECT_COLUMN_ID && { className: classes.selectCell })}
+                  {...(isSelectColumn && { className: classes.selectCell })}
+                  // The measured fold's own read (`useColumnFold`) — never present on the
+                  // selection column, which is never a fold candidate.
+                  {...(!isSelectColumn && { [FOLD_ID_ATTR]: header.column.id })}
                   onClick={canSort ? toggleSorting : undefined}
                   onKeyDown={
                     canSort
@@ -1539,59 +1806,73 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
                   ...row.getRightVisibleCells(),
                 ]
               : row.getVisibleCells()
+            const rowExpanded = hasFolded && expandedFoldRows.has(row.id)
             return (
-              <Table.Tr
-                key={row.id}
-                {...(enableRowSelection && row.getIsSelected() && { 'data-selected': true })}
-                {...(onRowActivate !== undefined && {
-                  className: classes.activatable,
-                  'data-activatable': true,
-                  tabIndex: 0,
-                  onClick: () => onRowActivate(row.original),
-                  // Enter only. Space is the browser's own page-scroll on a focused non-button, and
-                  // stealing it from a keyboard reader moving down a long table costs more than the
-                  // second activation key buys.
-                  onKeyDown: (event: ReactKeyboardEvent<HTMLTableRowElement>) => {
-                    if (event.key !== 'Enter') return
-                    // Only the ROW's own Enter. A cell may hold a button, a link or the selection
-                    // checkbox, and keydown bubbles — so without this an Enter on a nested control
-                    // fired that control AND opened the row's detail behind it.
-                    if (event.target !== event.currentTarget) return
-                    event.preventDefault()
-                    onRowActivate(row.original)
-                  },
-                })}
-              >
-                {cells.map((cell) => {
-                  const pinnedStyle = enablePinning
-                    ? getPinnedCellStyle(table, cell.column)
-                    : undefined
-                  const align = resolveAlign(cell.column)
-                  return (
-                    <Table.Td
-                      key={cell.id}
-                      {...(cell.column.id === SELECT_COLUMN_ID && {
-                        className: classes.selectCell,
-                        // The label's ::after fills the cell, so a tap on it bubbles to the row —
-                        // stop it only where a tick is possible; a disabled row's tap is a row tap.
-                        ...(cell.row.getCanSelect() && {
-                          onClick: (event: ReactMouseEvent) => event.stopPropagation(),
-                        }),
-                      })}
-                      style={{
-                        ...(typeof cell.getValue() === 'number' &&
-                        cell.column.columnDef.meta?.numeral !== false
-                          ? NUMERIC_CELL_STYLE
-                          : undefined),
-                        ...(align !== undefined && { textAlign: align }),
-                        ...pinnedStyle,
-                      }}
-                    >
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+              <Fragment key={row.id}>
+                <Table.Tr
+                  {...(enableRowSelection && row.getIsSelected() && { 'data-selected': true })}
+                  {...(onRowActivate !== undefined && {
+                    className: classes.activatable,
+                    'data-activatable': true,
+                    tabIndex: 0,
+                    onClick: () => onRowActivate(row.original),
+                    // Enter only. Space is the browser's own page-scroll on a focused non-button, and
+                    // stealing it from a keyboard reader moving down a long table costs more than the
+                    // second activation key buys.
+                    onKeyDown: (event: ReactKeyboardEvent<HTMLTableRowElement>) => {
+                      if (event.key !== 'Enter') return
+                      // Only the ROW's own Enter. A cell may hold a button, a link or the selection
+                      // checkbox, and keydown bubbles — so without this an Enter on a nested control
+                      // fired that control AND opened the row's detail behind it.
+                      if (event.target !== event.currentTarget) return
+                      event.preventDefault()
+                      onRowActivate(row.original)
+                    },
+                  })}
+                >
+                  {hasFolded && (
+                    <Table.Td className={classes.foldToggleCell}>
+                      <FoldToggle expanded={rowExpanded} onToggle={() => toggleFoldRow(row.id)} />
                     </Table.Td>
-                  )
-                })}
-              </Table.Tr>
+                  )}
+                  {cells.map((cell) => {
+                    const pinnedStyle = enablePinning
+                      ? getPinnedCellStyle(table, cell.column)
+                      : undefined
+                    const align = resolveAlign(cell.column)
+                    return (
+                      <Table.Td
+                        key={cell.id}
+                        {...(cell.column.id === SELECT_COLUMN_ID && {
+                          className: classes.selectCell,
+                          // The label's ::after fills the cell, so a tap on it bubbles to the row —
+                          // stop it only where a tick is possible; a disabled row's tap is a row tap.
+                          ...(cell.row.getCanSelect() && {
+                            onClick: (event: ReactMouseEvent) => event.stopPropagation(),
+                          }),
+                        })}
+                        style={{
+                          ...(typeof cell.getValue() === 'number' &&
+                          cell.column.columnDef.meta?.numeral !== false
+                            ? NUMERIC_CELL_STYLE
+                            : undefined),
+                          ...(align !== undefined && { textAlign: align }),
+                          ...pinnedStyle,
+                        }}
+                      >
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </Table.Td>
+                    )
+                  })}
+                </Table.Tr>
+                {rowExpanded && (
+                  <Table.Tr className={classes.foldDisclosureRowTr}>
+                    <Table.Td colSpan={columnCount} className={classes.foldDisclosureCell}>
+                      <RowDisclosure row={row} folded={columnFold.folded} />
+                    </Table.Td>
+                  </Table.Tr>
+                )}
+              </Fragment>
             )
           })
         )}
@@ -1686,25 +1967,44 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
       {bulkBarActions !== undefined && (
         <BulkActionBar count={selectedRows.length} actions={bulkBarActions} />
       )}
-      {pageStickyHeader ? (
-        // Pinning takes this wrapper too — a pinned column's offsets are `position: sticky` on the
-        // cells and need no overflow box of their own, so the `overflow-x: auto` Box that used to
-        // sit here was the exact inert-sticky defect this shape exists to avoid.
-        <div
-          ref={containment.wrapperRef}
-          className={classes.containment}
-          data-contained={containment.contained ? 'true' : 'false'}
-        >
-          {tableNode}
-        </div>
-      ) : (
-        <Table.ScrollContainer
-          type="native"
-          minWidth={minWidth ?? 0}
-          {...(maxHeight !== undefined && { maxHeight })}
-        >
+      {!foldEligible ? (
+        // An explicit `minWidth` is the one genuinely DECLARED horizontal floor — the column fold
+        // never engages here (see `foldEligible`, above), so this shape keeps its exact
+        // pre-existing DOM: no extra measuring wrapper for a table nothing folds.
+        <Table.ScrollContainer type="native" minWidth={minWidth ?? 0} maxHeight={maxHeight}>
           {tableNode}
         </Table.ScrollContainer>
+      ) : (
+        // The column fold's own measuring box (`useColumnFold`) — wraps every remaining shape,
+        // `maxHeight`-only included: a vertical cap is orthogonal to column width, so a
+        // `stickyHeader` + `maxHeight` table (the pairing this package's own docs recommend) still
+        // folds instead of silently regressing to horizontal scroll. A plain block box, so it
+        // constrains nothing on its own; `columnFold.wrapperRef` only reads it.
+        <div ref={columnFold.wrapperRef} className={classes.foldWrapper}>
+          {pageStickyHeader ? (
+            // Pinning takes this wrapper too — a pinned column's offsets are `position: sticky` on
+            // the cells and need no overflow box of their own, so the `overflow-x: auto` Box that
+            // used to sit here was the exact inert-sticky defect this shape exists to avoid.
+            <div
+              ref={containment.wrapperRef}
+              className={classes.containment}
+              data-contained={containment.contained ? 'true' : 'false'}
+            >
+              {tableNode}
+            </div>
+          ) : maxHeight !== undefined ? (
+            // `pageStickyHeader` is already false whenever `maxHeight` is set (`scrolls` above), so
+            // this is the ONE remaining case: a vertical cap with no sticky header to measure —
+            // still wants its own `ScrollArea` scrollport, just with no `minWidth` floor.
+            <Table.ScrollContainer type="native" minWidth={0} maxHeight={maxHeight}>
+              {tableNode}
+            </Table.ScrollContainer>
+          ) : (
+            <Table.ScrollContainer type="native" minWidth={0}>
+              {tableNode}
+            </Table.ScrollContainer>
+          )}
+        </div>
       )}
       {enablePagination && (
         <Group

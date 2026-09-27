@@ -85,3 +85,74 @@
   position: absolute;
   inset: 0;
 }
+
+/*
+ * The column-fold measuring box (`useColumnFold` in `data-table.tsx`) — a plain block wrapper
+ * around whichever overflow shape the table already picks (the measured containment div, or
+ * `Table.ScrollContainer`). `min-width: 0` is the same flex/grid floor `.containment` needs: a
+ * wrapper sized by its own min-content would never read a shrunken `clientWidth` back.
+ */
+.foldWrapper {
+  min-width: 0;
+}
+
+/*
+ * The fold-disclosure toggle column (`docs/waves/RESPONSIVE-SPEC.md` §6) — a narrow, centred cell
+ * matching `FOLD_TOGGLE_WIDTH` in `data-table.tsx`, so the header's empty cell and every row's
+ * button cell line up under one another regardless of how many columns folded.
+ */
+.foldToggleCell {
+  width: 2.75rem;
+  text-align: center;
+}
+
+.foldToggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--vx-muted);
+  cursor: pointer;
+}
+
+.foldToggle:hover {
+  color: var(--vx-ink);
+}
+
+/* The disclosure row itself carries no border of its own — it reads as part of the row above it,
+   not a new one. */
+.foldDisclosureRowTr {
+  border-top: none;
+}
+
+.foldDisclosureCell {
+  padding-top: 0;
+  background: var(--vx-surface-subtle);
+}
+
+.foldDisclosure {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vx-space-row-inset-y, 0.375rem);
+  padding: var(--vx-space-row-inset-y, 0.375rem) 0;
+}
+
+.foldDisclosureRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--vx-space-row-inset-x, 0.5rem);
+}
+
+.foldDisclosureLabel {
+  font-size: var(--vx-text-xs);
+  color: var(--vx-muted);
+}
+
+.foldDisclosureValue {
+  font-size: var(--vx-text-sm);
+  color: var(--vx-ink);
+  text-align: right;
+}

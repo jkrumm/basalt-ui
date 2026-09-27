@@ -290,37 +290,51 @@ layout('BasaltDataTable sticky header — real layout', () => {
   })
 
   /**
-   * INVARIANT 5 — the same shape, too wide, contains ITSELF rather than the page.
+   * INVARIANT 5 — the same shape, too wide, FOLDS columns rather than scrolling the page (wave 10).
    *
-   * This is the half the old exemption did not have. An eight-column sticky table at 390px is wider
-   * than Main; measured, its wrapper flips to `overflow-x: auto`, so the columns stay reachable by
-   * horizontal scroll inside the card while the document and Main both stay honest. The sticky
-   * header is inert at this width by construction — that is the trade, and it is why the flip is
-   * measured rather than declared.
+   * Before the column fold, an eight-column sticky table at 390px flipped its wrapper to
+   * `overflow-x: auto` and left the extra columns reachable only by horizontal scroll. The fold
+   * (`docs/waves/RESPONSIVE-SPEC.md` §6, `useColumnFold`/`planColumnFold` in `data/data-table.tsx`)
+   * now measures the same wrapper first and hides the lowest-priority columns — declared order,
+   * last column first, since this fixture sets no `meta.priority` — into a per-row disclosure
+   * until the rest fit, so the wrapper stays BARE and the sticky header stays live at this width.
+   * Horizontal scroll is still the fallback once folding runs out of columns to hide (an
+   * unbreakably wide SINGLE column, not exercised here); `no-horizontal-overflow.layout.test.ts`
+   * covers that floor.
    */
-  test('the same shape, too wide for a phone, contains itself instead of the page', async () => {
-    // EIGHT columns, not the six the overflow guard's crowded page uses: six measured 372 against
-    // a 364px wrapper, and an 8px margin is one font-metric change away from flipping the very
-    // state this test names. The shape is identical; the reading is decisive.
+  test('the same shape, too wide for a phone, folds columns instead of scrolling', async () => {
+    // EIGHT columns, not the six the overflow guard's crowded page uses — the shape is identical to
+    // the pre-fold invariant this replaces, so the fold's effect (not a different fixture) is what
+    // flips the reading.
     const p = await openFixture({ ...tableSpec(), table: { rows: 20, columns: 8 } }, PHONE)
-    await expectContained(p, true, 'eight unbreakable columns cannot fit a 390px phone')
+    await expectContained(
+      p,
+      false,
+      'the fold hides low-priority columns until the rest fit — no scroll container is needed',
+    )
     expectNoHorizontalOverflow(
       await p.horizontalOverflow(),
-      'a sticky, uncapped table must contain itself once it outgrows its column — the page may ' +
-        'never be draggable sideways, whatever the header does',
+      'a folded table must never leave the page (or itself) draggable sideways either',
       PHONE,
     )
 
-    const scroll = await p.raw.evaluate((sel) => {
-      const element = document.querySelector(sel)
-      if (!element) throw new Error(`LAYOUT: no element matched \`${sel}\``)
-      return { scrollWidth: element.scrollWidth, clientWidth: element.clientWidth }
-    }, WRAPPER)
-    if (!(scroll.scrollWidth > scroll.clientWidth)) {
+    const headerCells = await p.raw.evaluate(
+      (sel) => document.querySelectorAll(`${sel} thead th`).length,
+      WRAPPER,
+    )
+    if (headerCells >= 9) {
       throw new Error(
-        'LAYOUT INVARIANT VIOLATED — a contained wrapper must actually scroll horizontally, or ' +
-          'the columns past its right edge are unreachable rather than merely off-screen.\n' +
-          `  wrapper scrollWidth = ${scroll.scrollWidth}, clientWidth = ${scroll.clientWidth}`,
+        'LAYOUT INVARIANT VIOLATED — nothing folded: 8 declared columns plus the disclosure ' +
+          `toggle should render fewer than 9 header cells once any column hides.\n  actual: ` +
+          `${headerCells} header cells`,
+      )
+    }
+
+    const toggles = await p.count('button[aria-label="Show row details"]')
+    if (toggles === 0) {
+      throw new Error(
+        'LAYOUT INVARIANT VIOLATED — columns folded but no per-row disclosure toggle rendered to ' +
+          'recover them.',
       )
     }
   })

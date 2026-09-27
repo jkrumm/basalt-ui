@@ -7,6 +7,15 @@ declare const classes: {
   readonly bulkBar: string
   readonly bulkCount: string
   readonly containment: string
+  readonly foldDisclosure: string
+  readonly foldDisclosureCell: string
+  readonly foldDisclosureLabel: string
+  readonly foldDisclosureRow: string
+  readonly foldDisclosureRowTr: string
+  readonly foldDisclosureValue: string
+  readonly foldToggle: string
+  readonly foldToggleCell: string
+  readonly foldWrapper: string
   readonly selectCell: string
   readonly selectHit: string
 }

@@ -5,8 +5,10 @@
  * `ReadingProgress`) — it does not reimplement them.
  *
  * The header/content/footer all align to the SAME grid column, so the article body reads as one
- * consistent width whether or not the TOC rail is visible (hidden below the 1200px breakpoint,
- * where the content column takes the full centered width instead).
+ * consistent width whether or not the TOC rail is visible. Below the 1200px breakpoint the rail
+ * is replaced, not dropped: a sticky "On this page" trigger opens the same `TableOfContents` in a
+ * `Popover` (docs/CONTENT-SPEC.md §7's originally-documented behavior, `useSizeClass() !==
+ * 'expanded'` — the same numeric threshold, resolved in JS instead of `@media`).
  *
  * @example
  * import { ArticleLayout } from 'basalt-ui/content'
@@ -23,8 +25,9 @@
  * </ArticleLayout>
  */
 import type { CSSProperties, ReactNode } from 'react'
-import { useRef } from 'react'
-import { ScrollArea } from '@mantine/core'
+import { useRef, useState } from 'react'
+import { Button, Popover, ScrollArea } from '@mantine/core'
+import { useSizeClass } from '../shell/use-size-class'
 import classes from './article-layout.module.css'
 import { formatArticleDate } from './article-model'
 import type { ProseDensity } from './prose'
@@ -115,6 +118,22 @@ export function ArticleLayout({
   const articleRef = useRef<HTMLDivElement>(null)
   const rootClass = [classes.root, !toc && classes.noToc, className].filter(Boolean).join(' ')
   const hasMetaRow = meta?.date !== undefined || meta?.readingTime !== undefined
+  // `useSizeClass()` is the JS-side twin of the `@media (max-width: 1200px)` rule below — both read
+  // `BREAKPOINTS.article`/`SIZE_CLASSES.expanded`, the same 1200 number (`article-layout.module.css`'s
+  // own comment). Below it the rail is replaced by a trigger, never both at once — a CSS-only swap
+  // has no hook to open a `Popover` from, so this is one of the JS reads that breakpoint doctrine
+  // reserves `useSizeClass()` for, not a second raw media query.
+  const showTocRail = useSizeClass() === 'expanded'
+  const [tocOpen, setTocOpen] = useState(false)
+  // Resizing across the breakpoint unmounts the `Popover` without closing it — `tocOpen` lives on
+  // THIS component, not the Popover, so crossing back below the breakpoint would otherwise remount
+  // it already open with no user action. Adjusted during render (React's own pattern for resetting
+  // state when a derived value changes), not an effect, so there is no open-then-close flash.
+  const prevShowTocRailRef = useRef(showTocRail)
+  if (prevShowTocRailRef.current !== showTocRail) {
+    prevShowTocRailRef.current = showTocRail
+    if (tocOpen) setTocOpen(false)
+  }
 
   return (
     <div className={rootClass} {...(style !== undefined && { style })}>
@@ -140,13 +159,50 @@ export function ArticleLayout({
         <Prose density={density}>{children}</Prose>
       </div>
 
-      {toc && (
+      {toc && showTocRail && (
         <div className={classes.tocRail}>
           <ScrollArea.Autosize mah="calc(100vh - 108px)" type="hover">
             <TableOfContents containerRef={articleRef} />
           </ScrollArea.Autosize>
         </div>
       )}
+
+      {toc &&
+        !showTocRail && (
+          // Positioned in DOM AFTER `.content`, mirroring `.tocRail` above: CSS Grid's auto-placement
+          // cursor (both are `grid-column: 1`, no explicit row) seats this in the SAME row as
+          // `.content` only if it follows it in source order — placed BEFORE `.content` it lands in
+          // its own short row instead, and `position: sticky` has no room to travel in a row exactly
+          // as tall as the trigger button itself.
+          <Popover
+            opened={tocOpen}
+            onChange={setTocOpen}
+            onDismiss={() => setTocOpen(false)}
+            position="bottom-end"
+            withinPortal
+            shadow="md"
+            radius="sm"
+            trapFocus
+          >
+            <Popover.Target>
+              <Button
+                variant="subtle"
+                color="gray"
+                size="compact-xs"
+                className={classes.tocTrigger}
+                classNames={{ label: classes.tocTriggerLabel }}
+                onClick={() => setTocOpen((current) => !current)}
+              >
+                On this page
+              </Button>
+            </Popover.Target>
+            <Popover.Dropdown className={classes.tocDropdown}>
+              <ScrollArea.Autosize mah="calc(100vh - 108px)" type="hover">
+                <TableOfContents containerRef={articleRef} onNavigate={() => setTocOpen(false)} />
+              </ScrollArea.Autosize>
+            </Popover.Dropdown>
+          </Popover>
+        )}
 
       {(prev !== undefined || next !== undefined) && (
         <footer className={classes.footer}>

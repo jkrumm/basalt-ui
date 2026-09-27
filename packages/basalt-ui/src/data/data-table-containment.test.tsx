@@ -14,7 +14,7 @@
  * the window widened, the sidebar collapsed, the aside closed.
  */
 import { MantineProvider } from '@mantine/core'
-import { act, render } from '@testing-library/react'
+import { act, fireEvent, render } from '@testing-library/react'
 import { afterEach, describe, expect, spyOn, test } from 'bun:test'
 import { resetValidatedProps } from '../common/validate'
 import { BasaltDataTable } from './data-table'
@@ -187,5 +187,146 @@ describe('the dev warning names the trade, not a defect', () => {
     // It no longer claims the shape widens the page — measurement is what stops that.
     expect(message).not.toContain('widens the whole page')
     error.mockRestore()
+  })
+})
+
+/**
+ * COLUMN FOLD — `meta.priority` (`useColumnFold`/`planColumnFold` in `data-table.tsx`,
+ * `docs/waves/RESPONSIVE-SPEC.md` §6). Same stubbed-layout idiom as the suite above: widths come
+ * from `data-test-width`, fired by hand through the stub `ResizeObserver`. Column header cells
+ * carry `data-basalt-fold-id`, read once while visible and cached, so re-measuring a table that
+ * has already folded a column never needs it back on screen.
+ */
+type FoldRow = { a: string; b: string; c: string }
+const foldCol = createColumnHelper<FoldRow>()
+const FOLD_ROWS: FoldRow[] = [{ a: 'A1', b: 'B1', c: 'C1' }]
+
+const FOLD_COLUMNS_DEFAULT = [
+  foldCol.accessor('a', { header: 'A' }),
+  foldCol.accessor('b', { header: 'B' }),
+  foldCol.accessor('c', { header: 'C' }),
+]
+
+const FOLD_COLUMNS_PRIORITY = [
+  foldCol.accessor('a', { header: 'A', meta: { priority: 5 } }),
+  foldCol.accessor('b', { header: 'B', meta: { priority: 1 } }),
+  foldCol.accessor('c', { header: 'C', meta: { priority: 3 } }),
+]
+
+function mountFold(props: Record<string, unknown> = {}, columns = FOLD_COLUMNS_DEFAULT) {
+  return render(
+    <MantineProvider>
+      <BasaltDataTable data={FOLD_ROWS} columns={columns} {...props} />
+    </MantineProvider>,
+  )
+}
+
+function foldWrapperOf(container: HTMLElement): HTMLElement {
+  const scroller = container.querySelector('.mantine-TableScrollContainer-scrollContainer')
+  const wrapper = scroller?.parentElement
+  if (!(wrapper instanceof HTMLElement)) throw new Error('expected the fold measuring wrapper')
+  return wrapper
+}
+
+/** Writes the wrapper's room and every named column's header width, then fires every stub
+ * observer — a column already folded (removed from the DOM) is simply not found, and keeps
+ * whatever width was cached from the last time it was visible. */
+async function resizeFold(
+  container: HTMLElement,
+  wrapperWidth: number,
+  columnWidths: Record<string, number>,
+) {
+  const wrapper = foldWrapperOf(container)
+  wrapper.dataset['testWidth'] = String(wrapperWidth)
+  for (const [id, width] of Object.entries(columnWidths)) {
+    const cell = wrapper.querySelector(`[data-basalt-fold-id="${id}"]`)
+    if (cell instanceof HTMLElement) cell.dataset['testWidth'] = String(width)
+  }
+  await act(async () => {
+    for (const notify of observers) notify()
+  })
+}
+
+function headerIds(container: HTMLElement): string[] {
+  return [...container.querySelectorAll('[data-basalt-fold-id]')].map(
+    (th) => th.getAttribute('data-basalt-fold-id') ?? '',
+  )
+}
+
+describe('column fold — meta.priority (docs/waves/RESPONSIVE-SPEC.md §6)', () => {
+  test('no priority anywhere: declared order folds LAST column first', async () => {
+    stubLayout()
+    const { container } = mountFold()
+    // Nothing measured yet — every column stays, the zero-config default.
+    expect(headerIds(container)).toEqual(['a', 'b', 'c'])
+
+    await resizeFold(container, 100, { a: 50, b: 50, c: 50 })
+    // 150 total over a 100 room: 'c' (last declared) folds first, then 'b' — 'a' plus the 44px
+    // toggle column (50 + 44 = 94) fits, so it stays a real column.
+    expect(headerIds(container)).toEqual(['a'])
+    expect(container.querySelector('[data-basalt-fold-id="b"]')).toBeNull()
+    expect(container.querySelector('[data-basalt-fold-id="c"]')).toBeNull()
+  })
+
+  test('reverts when the space returns — the cache survives the columns being hidden', async () => {
+    stubLayout()
+    const { container } = mountFold()
+    await resizeFold(container, 100, { a: 50, b: 50, c: 50 })
+    expect(headerIds(container)).toEqual(['a'])
+
+    await resizeFold(container, 1000, {})
+    expect(headerIds(container)).toEqual(['a', 'b', 'c'])
+  })
+
+  test('explicit meta.priority overrides the declared order', async () => {
+    stubLayout()
+    const { container } = mountFold({}, FOLD_COLUMNS_PRIORITY)
+    // priority a=5, c=3, b=1 — 'a' (declared FIRST) folds before 'b' (declared LAST) because its
+    // priority number is higher.
+    await resizeFold(container, 100, { a: 50, b: 50, c: 50 })
+    expect(headerIds(container)).toEqual(['b'])
+    expect(container.querySelector('[data-basalt-fold-id="a"]')).toBeNull()
+    expect(container.querySelector('[data-basalt-fold-id="c"]')).toBeNull()
+  })
+
+  test('the disclosure toggle reveals exactly the folded columns, as label/value pairs', async () => {
+    stubLayout()
+    const { container } = mountFold()
+    await resizeFold(container, 100, { a: 50, b: 50, c: 50 })
+    expect(headerIds(container)).toEqual(['a'])
+
+    // Folded, so absent from the row's own cells…
+    expect(container.querySelector('tbody tr')?.textContent).not.toContain('B1')
+    expect(container.querySelector('tbody tr')?.textContent).not.toContain('C1')
+
+    const toggle = container.querySelector('tbody button[aria-label="Show row details"]')
+    if (!(toggle instanceof HTMLElement)) throw new Error('expected the fold toggle button')
+    fireEvent.click(toggle)
+
+    // …and present, labelled, once the row is expanded.
+    const rows = container.querySelectorAll('tbody tr')
+    const disclosure = rows[1]
+    expect(disclosure?.textContent).toContain('B')
+    expect(disclosure?.textContent).toContain('B1')
+    expect(disclosure?.textContent).toContain('C')
+    expect(disclosure?.textContent).toContain('C1')
+    expect(disclosure?.textContent).not.toContain('A1')
+
+    fireEvent.click(toggle)
+    expect(container.querySelectorAll('tbody tr')).toHaveLength(1)
+  })
+
+  test('a table with `minWidth` never folds — the declared horizontal floor wins', async () => {
+    stubLayout()
+    const { container } = mountFold({ minWidth: 720 })
+    await resizeFold(container, 100, { a: 50, b: 50, c: 50 })
+    expect(headerIds(container)).toEqual(['a', 'b', 'c'])
+  })
+
+  test('a table with only `maxHeight` (no `minWidth`) still folds — the cap is purely vertical', async () => {
+    stubLayout()
+    const { container } = mountFold({ maxHeight: 480 })
+    await resizeFold(container, 100, { a: 50, b: 50, c: 50 })
+    expect(headerIds(container)).toEqual(['a'])
   })
 })

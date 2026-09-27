@@ -265,3 +265,66 @@ describe('query — the four container states', () => {
     spy.mockRestore()
   })
 })
+
+// ── Coarse-pointer row-height floor (wave 10) ──────────────────────────────────
+
+/** Stubs `window.matchMedia` to answer `(pointer: coarse)`, mirroring `ChartLegend.test.tsx`'s idiom. */
+function stubPointer(coarse: boolean): () => void {
+  const original = window.matchMedia
+  window.matchMedia = ((query: string) => ({
+    matches: coarse && query === '(pointer: coarse)',
+    media: query,
+    addEventListener: () => {},
+    removeEventListener: () => {},
+  })) as unknown as typeof window.matchMedia
+  return () => {
+    window.matchMedia = original
+  }
+}
+
+function renderEstimate(estimateSize: number) {
+  return render(
+    <MantineProvider>
+      <BasaltVirtualList
+        items={ITEMS}
+        height={300}
+        estimateSize={estimateSize}
+        renderItem={(item) => <div>{item.label}</div>}
+        getItemKey={(item) => item.id}
+      />
+    </MantineProvider>,
+  )
+}
+
+describe('coarse-pointer row-height dev warning', () => {
+  test('a short row under a coarse pointer warns, naming --vx-hit', () => {
+    resetValidatedProps()
+    const restore = stubPointer(true)
+    const spy = spyOn(console, 'error').mockImplementation(() => {})
+    renderEstimate(28)
+    expect(spy.mock.calls.flat().join(' ')).toContain('"estimateSize" is 28px')
+    expect(spy.mock.calls.flat().join(' ')).toContain('--vx-hit')
+    spy.mockRestore()
+    restore()
+  })
+
+  test('a fine pointer with the same short row stays silent', () => {
+    resetValidatedProps()
+    const restore = stubPointer(false)
+    const spy = spyOn(console, 'error').mockImplementation(() => {})
+    renderEstimate(28)
+    expect(spy).not.toHaveBeenCalled()
+    spy.mockRestore()
+    restore()
+  })
+
+  test('a coarse pointer at or above the floor stays silent', () => {
+    resetValidatedProps()
+    const restore = stubPointer(true)
+    const spy = spyOn(console, 'error').mockImplementation(() => {})
+    renderEstimate(44)
+    expect(spy).not.toHaveBeenCalled()
+    spy.mockRestore()
+    restore()
+  })
+})

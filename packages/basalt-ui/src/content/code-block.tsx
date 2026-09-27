@@ -13,7 +13,7 @@
  * <CodeBlock language="bash" code="bun add basalt-ui" showCopy />
  */
 import type { CSSProperties } from 'react'
-import { useEffect, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import classes from './code-block.module.css'
 import { CopyAction } from './copy-action'
 import { highlightCode } from './highlighter'
@@ -39,6 +39,10 @@ export function CodeBlock({
   // Intentionally NOT reset on every code/language change — keeping the last-good html while a
   // re-highlight is in flight avoids a flash back to plain mono on every keystroke of streamed code.
   const [html, setHtml] = useState<string | null>(null)
+  const bodyRef = useRef<HTMLElement | null>(null)
+  const setBodyRef = (node: HTMLElement | null): void => {
+    bodyRef.current = node
+  }
 
   useEffect(() => {
     if (language === undefined) return
@@ -51,6 +55,35 @@ export function CodeBlock({
       cancelled = true
     }
   }, [code, language])
+
+  // Trailing-edge overflow fade (docs/waves/RESPONSIVE-SPEC.md §6): visible only while `.body` is
+  // actually wider than its box AND not yet scrolled to the end — never a permanent decoration on a
+  // block that already fits, never a fade implying more content once the reader reaches it. LTR
+  // only (no `dir` handling exists anywhere else in this file); a future RTL pass would fade the
+  // LEADING edge instead. `[data-code-overflow]` (not React state driving the mask itself) is the
+  // toggle the CSS module reads, so the fade never re-renders the block — only this one attribute.
+  const [showOverflowFade, setShowOverflowFade] = useState(false)
+
+  // Layout effect, not a plain effect: measuring after paint would let a code block that's
+  // already too wide on mount flash one frame with no fade before this fires.
+  useLayoutEffect(() => {
+    const body = bodyRef.current
+    if (!body) return
+
+    const update = (): void => {
+      const atEnd = body.scrollLeft + body.clientWidth >= body.scrollWidth - 1
+      setShowOverflowFade(body.scrollWidth > body.clientWidth && !atEnd)
+    }
+    update()
+
+    body.addEventListener('scroll', update, { passive: true })
+    const observer = new ResizeObserver(update)
+    observer.observe(body)
+    return () => {
+      body.removeEventListener('scroll', update)
+      observer.disconnect()
+    }
+  }, [html, code])
 
   const containerClass = [classes.container, className].filter(Boolean).join(' ')
 
@@ -66,9 +99,18 @@ export function CodeBlock({
         </div>
       )}
       {html !== null ? (
-        <div className={classes.body} dangerouslySetInnerHTML={{ __html: html }} />
+        <div
+          ref={setBodyRef}
+          className={classes.body}
+          {...(showOverflowFade && { 'data-code-overflow': true })}
+          dangerouslySetInnerHTML={{ __html: html }}
+        />
       ) : (
-        <pre className={classes.body}>
+        <pre
+          ref={setBodyRef}
+          className={classes.body}
+          {...(showOverflowFade && { 'data-code-overflow': true })}
+        >
           <code>{code}</code>
         </pre>
       )}

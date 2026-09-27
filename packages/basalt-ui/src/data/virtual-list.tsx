@@ -124,6 +124,23 @@ export type BasaltVirtualListProps<T> = BasaltProps &
  * <BasaltVirtualList ref={listRef} items={items} height={400} renderItem={renderRow} getItemKey={(i) => i.id} />
  * listRef.current?.scrollToIndex(42, { align: 'center' })
  */
+/**
+ * The coarse-pointer touch floor `--vx-hit` resolves to (`tokens/index.ts`'s `HIT_COARSE`),
+ * duplicated as a plain number: this dev check compares it against a measured px height, and
+ * `VX.hit` is a CSS var string with no numeric read.
+ */
+const COARSE_TOUCH_FLOOR = 44
+
+/** `estimateSize` sets every row's rendered height — there is no per-row measurement in this
+ * component — so a value under the coarse floor understates the touch target for every row. */
+function shortRowHeightMessage(estimateSize: number): string {
+  return (
+    `${BASALT_PREFIX} BasaltVirtualList: "estimateSize" is ${estimateSize}px under a coarse ` +
+    '(touch) pointer — every row renders at this height, below the `--vx-hit` floor (44px, WCAG ' +
+    '2.5.5). Raise "estimateSize" to at least 44, or pad the row content so it clears the floor.'
+  )
+}
+
 export type BasaltVirtualListHandle = {
   /** Scrolls so the item at `index` is in view. */
   scrollToIndex: (index: number, opts?: ScrollToOptions) => void
@@ -196,6 +213,21 @@ export function BasaltVirtualList<T>(props: BasaltVirtualListProps<T>) {
         : `${BASALT_PREFIX} BasaltVirtualList: props "query" and "isLoading" are both set — ` +
           '"query" wins and "isLoading" is ignored. Drop "isLoading".',
     [query === undefined, props.isLoading === undefined],
+  )
+
+  // A coarse pointer only — a mouse user's row height is a layout choice, not an accessibility
+  // floor. `estimateSize` sets every row's actual rendered height (this component never measures
+  // one), so a value under the floor is not a false positive to catch later.
+  useValidateProps(
+    'BasaltVirtualList',
+    () =>
+      typeof window !== 'undefined' &&
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(pointer: coarse)').matches &&
+      estimateSize < COARSE_TOUCH_FLOOR
+        ? shortRowHeightMessage(estimateSize)
+        : null,
+    [estimateSize],
   )
 
   const parentRef = useRef<HTMLDivElement>(null)

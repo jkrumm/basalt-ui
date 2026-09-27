@@ -87,6 +87,32 @@
   align-self: start;
 }
 
+/* The rail's below-breakpoint replacement (docs/CONTENT-SPEC.md §7): a small sticky trigger that
+ * opens the SAME `TableOfContents` in a `Popover` instead of the rail vanishing. Rendered by JS
+ * (`useSizeClass() !== 'expanded'`), never both at once with `.tocRail` — no media query needed
+ * here, only the sticky/alignment behaviour for whenever it IS mounted. */
+.tocTrigger {
+  grid-column: 1;
+  justify-self: end;
+  align-self: start;
+  position: sticky;
+  top: var(--vx-space-sticky-header-clearance);
+  z-index: 1;
+}
+
+.tocTriggerLabel {
+  font-family: var(--basalt-font-mono);
+  font-size: var(--vx-text-micro);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--vx-faint);
+}
+
+.tocDropdown {
+  min-width: 220px;
+  max-width: min(320px, calc(100vw - 32px));
+}
+
 .footer {
   grid-column: 1;
   display: grid;
