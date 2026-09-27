@@ -179,7 +179,7 @@ sparkline `right` drops to `bleed`, one `⋯` at 32px with a 36px hit area.
 everywhere else, no call-site prop. An aside never hosts a `section`-tier heading; a group-tier body
 has zero gap because its `PanelRow`s own their own inset and hairline.
 
-**`BasaltDataTable` column fold (wave 10, `docs/waves/RESPONSIVE-SPEC.md` §6).** Once a table no
+**`BasaltDataTable` column fold (wave 10).** Once a table no
 longer fits its measured wrapper — the same fit `stickyHeader` already reads
 (`useMeasuredContainment`) — the lowest-priority data columns fold into a per-row disclosure
 instead of handing `Table.ScrollContainer` a silent horizontal scrollbar. `meta.priority` orders

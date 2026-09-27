@@ -15,9 +15,14 @@ import { join } from 'node:path'
 import {
   checkA,
   checkB,
+  checkD,
   checkDenylistIsGenuinelyRemoved,
   collectValidNames,
+  DELETED_DOCS,
   findAgentMdFiles,
+  findConfigsJsFiles,
+  findRepoMdFiles,
+  findSrcTsFiles,
   REMOVED_APIS,
 } from '../packages/basalt-ui/scripts/check-agent-doc-drift'
 
@@ -99,6 +104,35 @@ describe('agent-doc-drift guard', () => {
     withFixture('See ChartTool<span></span>tip for details.\n', (file) => {
       expect(checkB([file])[0]?.name).toBe('ChartTooltip')
     })
+  })
+
+  // ── Check D: deleted-doc citations ──────────────────────────────────────────
+
+  it('Check D fails a fixture doc citing a deleted doc path', () => {
+    withFixture('The law is in docs/waves/RESPONSIVE-SPEC.md §4.\n', (file) => {
+      const failures = checkD([file], [])
+      expect(failures).toHaveLength(1)
+      expect(failures[0]?.line).toBe(1)
+      expect(failures[0]?.doc).toBe('RESPONSIVE-SPEC.md')
+    })
+  })
+
+  it('Check D passes a fixture naming the current home instead', () => {
+    withFixture('The law is in docs/CHARTS-SPEC.md §8.\n', (file) => {
+      expect(checkD([file], [])).toEqual([])
+    })
+  })
+
+  it('the real tree cites no deleted doc from any repo doc, src/** or configs/**', () => {
+    expect(findConfigsJsFiles().length).toBeGreaterThan(0)
+    expect(findRepoMdFiles().length).toBeGreaterThan(findAgentMdFiles().length)
+    expect(checkD([...findRepoMdFiles(), ...findConfigsJsFiles()], findSrcTsFiles())).toEqual([])
+  })
+
+  it('DELETED_DOCS still names a replacement for every entry', () => {
+    for (const [doc, replacement] of Object.entries(DELETED_DOCS)) {
+      expect([doc, replacement.length > 0]).toEqual([doc, true])
+    }
   })
 
   // ── denylist self-consistency ────────────────────────────────────────────────

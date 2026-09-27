@@ -483,7 +483,7 @@ proves nothing.
 Chart chrome keys on the frame's MEASURED width, never a viewport `@media`: a chart in a two-column
 cell on a 1440px desktop is as narrow as one filling a phone, and only the `ResizeObserver` sees
 that. The class is `CONTAINER_CLASSES` (micro < 240 < compact < 480 < regular < 800 < wide);
-`resolveChartLayout` (`primitives/chart-layout.ts`, RESPONSIVE-SPEC §4) resolves it plus height and
+`resolveChartLayout` (`primitives/chart-layout.ts`, §8) resolves it plus height and
 legend fit. Unmeasured (SSR, first paint) it follows the viewport size class (a compact viewport is
 a `compact` container).
 
