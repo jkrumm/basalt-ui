@@ -363,12 +363,12 @@ CONTAINS the key, so answering at all would be a crosshair on a bucket that prov
   tier. Anchored mode pins the tooltip to the crosshair at the plot's top edge, so a column of
   charts sharing one cursor lines every tooltip up on the same x. Viewport collision handling (flip
   - clamp, measure-before-show) is handled once in `ChartTooltipFloat` for both modes.
-- **Coarse pointer**: `pointerdown` resolves and shows immediately (a tap fires no `pointermove`);
-  a drag scrubs with `touch-action: pan-y` so vertical page scroll keeps working; on lift the
-  readout stays PINNED until a tap elsewhere in the chart (moves it), a tap outside (dismisses,
-  capture-phase listener), or Escape. `useChartCursor` carries this for every cartesian kind and
-  `DualPanel`; `useDiscreteCursor` gives `Donut`/`Heatmap` the same tap/keyboard/focus parity over a
-  discrete target list. A shared-cursor pin/dismiss (§3) propagates to every linked chart.
+- **Coarse pointer**: `pointerdown` resolves and shows but is PROVISIONAL; `pointerup` COMMITS the
+  pin, a `pointercancel`/`pointerleave` naming that pointer first (a scroll winning) clears it
+  instead. `touch-action: pan-y` sits on the plot `<svg>`, not the overlay `<rect>` (Chrome ignores
+  it there). Once committed the pin survives lift, dismissed document-wide by a tap elsewhere,
+  outside, a scroll, or Escape. `useChartCursor`/`useDiscreteCursor` both carry this and propagate
+  it (§3) to every linked chart; an off-screen follower now renders nothing instead of clamping.
 - **Keyboard.** The hover overlay is focusable; ←/→ scrub the cursor, Escape clears it. The tooltip
   is `aria-live="polite"`.
 - **It renders nothing on the server.** `ChartTooltipFloat` was the ONE `renderToString` casualty in
