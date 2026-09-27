@@ -294,3 +294,97 @@ Gate: `make verify` green (build, `bun run pre` 4781/4781 pass, layout suite 120
 `bun packages/basalt-ui/scripts/check-budgets.ts --report` all 6 within ceiling; two `/review` passes
 (sideclaw multi-angle high + native `code-review` high) — sideclaw's 6 blocking findings and the
 native pass's in-scope findings all fixed; out-of-scope/pre-existing findings recorded above.
+
+## Round 2 — second review cycle (`feat/mobile-touch`, waves 1–6, 2026-09-25 → 2026-09-27)
+
+A fresh review pass (`.claude/mobile/r2/review-*.md`, seven angles) on the branch this ledger's own
+wave-11 entry closed found real bugs in that closed work — a stuck-tooltip regression, an axis
+economy nothing read, four hand-rolled media-query stores, a bypassable `raw-breakpoint` guard, and
+78 citations of a spec file the SAME branch had just deleted. `docs/waves/PLAN.md` planned six waves
+to fix them; all six shipped and the plan is deleted with this entry (its job is done, same as that
+other transient spec file before it).
+
+| Wave | Scope                                     | Outcome                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| ---- | ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | Chart touch correctness                   | Provisional press (pointerdown shows, pointercancel clears, pointerup commits) for both cursor kinds; `touch-action: pan-y` moved to the plot `<svg>`; scroll/Escape dismiss a held pin; focus ring only on real keyboard focus. `/review` caught two real regressions in the dispatch's own fix (a reference-equality `optionId` giving every Heatmap cell index `-1`; `onPointerLeave` not clearing an uncommitted press) — both fixed before commit.                                                                                                                                                                                                                                                                                                                                                                                              |
+| 2    | Slim-down before the chart fixes          | Deleted the dead axis-economy resolver nothing read (`resolveAxisEconomy`/`useChartLayout`/`side` legend/`thinTo`); one `useMediaQuery` replaced four hand-rolled stores; `legend.mode` and `BasaltProvider.host` (zero consumers) removed; grace entries re-dated `1.31.0 → 1.32.0` since this branch ships as 1.31.0, not 1.30.2. **-388 src lines.**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| 3    | Card and legend correctness               | `ChartCard`'s short-card flag gained hysteresis (enter <280, leave ≥280 + fold delta); legend law fixed to "chips whenever they fit one row, dots only when they don't and the card is short/compact"; dots fitted by pitch with group dividers counted; end labels only with ≥2 series and no header slot. `/code-review high` found 11 issues, 2 real regressions in this wave's own code fixed before commit (a vertical legend claiming a header slot it can never portal to; two independently hand-rolled hysteresis copies unified into one `useHysteresis`). Left open: a committed pin surviving a second tap-then-cancel race in both cursor hooks (real P0/P1-shaped, not touched — orchestrator's call which wave).                                                                                                                      |
+| 4    | Axes and height — give the plot its space | Inside-y labels get a 4px floor + text halo instead of an opaque chip; `categorical` now derives from the domain kind so time/number axes never rotate; wrap only fires when every wrapped label fits; band tick pitch takes the measured width in either direction (surfaced a real anchor-terminal overlap, fixed with a boundary reserve); the coarse-pointer height clamp now applies to a literal `height` too, and 13 literal chart heights + digit-grouping-only formats + `legend.maxRows` came out of the playground. Re-measured data-rect: phone/tablet/desktop medians 0.53/0.59/0.56 (target 0.55) — two persistent sub-0.40 outliers (`DualPanel`'s "Training load", small-card "Availability"/"Negotiated link speed") read as chart-shape-specific, not this wave's laws; not chased further, same ruling waves 7/8 made in round 1. |
+| 5    | Touch floors, forms, landscape            | `Pagination`/fold-toggle reach the 44px hit floor with `aria-controls`; filter popover rows get a derived hit gap (`POPOVER_ROW_HIT_GAP`, extracted to one shared export after `/code-review` caught the duplication); `FormRow`'s label/control swap moved from a viewport media query to a `@container` (a real Chrome footgun hit and fixed: container-type and the queried grid-template-columns can't sit on the same element); landscape-phone header/footer height-scale via `clamp()`. Two real regressions in this wave's own new code fixed before commit (a numeric `padding` shorthand silently dropped by `Composer`'s keyboard-inset calc; a CSS-module `.d.ts` type shim missing a new key).                                                                                                                                          |
+| 6    | Guards, docs, comment diet, final critic  | See below.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+
+**Wave 6 — closed 2026-09-27.** `basalt/raw-breakpoint` now recurses into a nested responsive object
+(Mantine's own `AppShell footer={{ height: { base, sm } }}` idiom) and resolves a same-file
+`const NAME = {...}` an Identifier prop value points at, at ANY nesting depth — an adversarial
+`/review` pass proved the first cut of the const resolution was itself bypassable (a nested
+Identifier never resolved) and could mask a real violation under a redeclared name; both closed
+(delete-on-redeclare rather than last-wins). `raw-media-query`'s width regex now accepts `rem`/`vw`,
+not just `px`/`em`, and its pointer-tier check sanctions `(pointer: fine)` alongside `(pointer:
+coarse)` — the standard accessible companion query, already used unannotated in this branch's own
+`content/*.module.css`. Every guard/plugin message that used to just cite the now-deleted spec file
+is self-contained now (the allowed container names and px boundaries are
+inlined). The ~48 stale citations of that deleted doc (across `src/`, `configs/`, and this branch's
+own `docs/*.md`) are repointed to wherever that law actually lives, and
+`check-agent-doc-drift.ts` gained a fourth check: a hand-maintained deleted-doc denylist scanned raw
+(not comment-masked — a guard rule's own message text is a string literal, not a comment) across
+`configs/**/*.js` and every repo-wide doc, so this exact class of drift fails the build automatically
+from here on. Comment diet trimmed wave-narrative and restated-code comments from the worst
+comment-to-code-ratio files (`data-table.tsx`, `useDiscreteCursor.ts`, `guard/index.ts`,
+`chart-layout.ts`, `useChartCursor.ts`, `chart-frame-layout.ts`); `controls/actions.tsx` and
+`data/data-table.tsx` each hand-rolled their own measured-width cache + `ResizeObserver` for fold
+planning — both (plus `data-table`'s separate `useMeasuredContainment`) now share one internal
+`common/use-measured-widths.ts`; the `44`px hit floor, independently restated in three files, has one
+internal home (`common/hit-floor.ts`). A `/review` pass on the result found two real bugs in this
+wave's own new abstractions before commit: the `useMeasuredWidths` extraction silently dropped
+`hasMenus` from `useMeasuredFold`'s re-measure trigger (folded into `signature`, its own
+invalidation key); the flat const-resolution map above. Six smaller findings fixed alongside (dead
+`room`/`version` state re-rendering on every observer tick; a raw `useLayoutEffect` where the hook
+already branches for a server path — swapped for the shared `useIsomorphicLayoutEffect`, relocated
+`shell/` → `common/` since `common/` may not import outward; two stale comments; a `px`-per-value
+message fix; the shell-home exemption now documented as uniform across all four `raw-breakpoint`
+shapes, with a test).
+
+**Round-2 line-delta totals** (`packages/basalt-ui/src`, round-1 close `3ba3cb4` → round-2 close,
+`git diff --numstat`): non-test src **+313** (1372 insertions, 1059 deletions, 66 files), test files
+**+540** (740 insertions, 200 deletions, 28 files) — net **+853**. Round 2 is a correctness- and
+law-completion round on top of round 1's own slim-down, not a second slimming pass; waves 2 and 6
+each still landed net-negative in the areas they specifically targeted (dead code, comment bloat).
+
+**Known gaps carried forward, not fixed this round** (found across the seven `.claude/mobile/r2/
+review-*.md` reports and the six waves' own `/review` passes, judged out of charter or too
+speculative to chase without a named consumer):
+
+- `useChartCursor`/`useDiscreteCursor` drop a previously-COMMITTED pin when a second tap starts and
+  is then cancelled as a scroll (wave 3, real P0/P1-shaped, needs its own fix + regression test).
+- The provisional-press state machine and the outside-dismiss listener are each hand-duplicated
+  across `useChartCursor`/`useDiscreteCursor`/`ChartLegend` with no shared primitive (waves 1/3/4).
+- `onPointerMove`'s O(n) nearest-point scan has no rAF throttle in either cursor hook; `findTarget`
+  does an O(n) scan past an unused `indexByKey` Map; `useDiscreteCursor.pointerProps` allocates
+  per-item closures inline in Donut/Heatmap's render loops (waves 3/4).
+- `fitDotRows` double-counts a dot's width in the wrap-simulation (legend fit, waves 2/3).
+- `chart-tier.tsx`'s `useViewportHeight` installs one raw resize listener per `ChartFrame` instead of
+  sharing one the way `common/use-media-query.ts` already does (wave 2/4).
+- `theme/index.ts`'s Switch/Checkbox/Radio still hand-type `{ 'data-basalt-hit': true }` instead of
+  the `HIT_ATTR` constant `PaginationControl` uses (wave 1/5); `useDiscreteCursor.ts`/
+  `useHysteresis.ts` are camelCase, not kebab-case per this repo's own naming rule (wave 1/3);
+  `ChartLegend`'s `orderEntries` call is unmemoized on a hover-driven render path (wave 1).
+- Three layout-suite files (`chart-touch.layout.test.ts`'s per-kind touch-pin blocks,
+  `hit-floor.layout.test.ts`/`hit-overlap.layout.test.ts`'s effective-hit-box math) duplicate the
+  same inline computation with no shared test helper (wave 1/4/5).
+- The two persistent sub-0.40 data-rect charts (`DualPanel` "Training load", small-card
+  "Availability"/"Negotiated link speed") — same ruling as round 1's waves 7/8 and this round's
+  wave 4: a different lever (axis-gutter/band-row-height tax on a ~200px card) than anything this
+  round's laws touch, not chased further.
+
+**Re-measured at close** (`r2/measure.mjs`, phone375/tablet768/desktop1440, wave 4's own methodology):
+median / min data-rect share phone **0.536 / 0.302**, tablet **0.594 / 0.347**, desktop **0.582 /
+0.322** — unchanged from wave 4's numbers within measurement noise, confirming wave 6 introduced no
+chart-layout regression. Full recapture (`r2/capture.mjs`, all 5 viewports × dark/light) shows zero
+horizontal overflow anywhere; a critic pass over the dashboard/data/charts/landscape shots found no
+visual regression.
+
+Gate: `make verify` green (build, `bun run pre` 4828/4828 pass, layout suite, pack-test);
+`bun packages/basalt-ui/scripts/check-budgets.ts --report` all 6 within ceiling; two `/review` passes
+(sideclaw multi-angle high, twice — once on the wave's own diff, once on the fix-up) — every blocking
+finding fixed before commit, in-scope non-blocking findings fixed alongside, out-of-scope/pre-existing
+findings recorded above. Merge and release are the orchestrator's call, not a wave's — not done here.
