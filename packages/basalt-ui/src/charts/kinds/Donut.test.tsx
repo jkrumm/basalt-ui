@@ -3,7 +3,7 @@
  * width is faked through `useChartSize` (delegating to the real hook when no size is set) because
  * the DOM harness has no layout, and the side legend only exists on a measured, wide frame.
  */
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, mock, test } from 'bun:test'
 import { renderToStaticMarkup } from 'react-dom/server'
 import * as realChartSize from '../hooks/useChartSize'
@@ -81,7 +81,7 @@ describe('Donut — shares', () => {
     expect(markup).not.toContain('NaN')
   })
 
-  test('the tooltip share equals the legend share', () => {
+  test('the tooltip share equals the legend share', async () => {
     fakeSize = { width: 900, height: 240 }
     const { container } = render(
       <Donut<Key>
@@ -95,7 +95,9 @@ describe('Donut — shares', () => {
     expect(arcs.length).toBe(2)
     // `useDiscreteCursor` branches on `pointerType !== 'mouse'` (pen counts as coarse too) — jsdom's
     // synthetic default is `''`, not `'mouse'`, so this must be explicit or the hover path no-ops.
+    // Round 3: the hover path is also rAF-coalesced now, so the readout lands a frame later.
     fireEvent.pointerEnter(arcs[0]!, { pointerType: 'mouse', clientX: 10, clientY: 10 })
+    await waitFor(() => expect(screen.getByText('Share')).not.toBeNull())
     const share = screen.getByText('Share').parentElement
     expect(share?.textContent).toContain('25%')
     expect(container.textContent).toContain('a · v1 · 25%')

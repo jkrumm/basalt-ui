@@ -17,10 +17,11 @@
  */
 import { MantineProvider, Text } from '@mantine/core'
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { describe, expect, mock, spyOn, test } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, mock, spyOn, test } from 'bun:test'
 import type { ColumnFiltersState } from '@tanstack/react-table'
 import { resetValidatedProps } from '../common/validate'
-import { BasaltDataTable } from './data-table'
+import { BAR_KEY_ATTR, PAGE_BAR_END_ATTR } from '../controls/actions'
+import { BasaltDataTable, planColumnFold } from './data-table'
 import { createColumnHelper } from './table'
 import type { BasaltDataTableProps } from './data-table'
 
@@ -50,6 +51,32 @@ function renderTable(props: Partial<BasaltDataTableProps<Row>> = {}) {
     </MantineProvider>,
   )
 }
+
+/**
+ * Regression: a pinned column (or `enableHiding: false`) is excluded from fold CANDIDACY, but it
+ * still occupies real width — `useColumnFold` used to compute the fold baseline from only the
+ * eligible columns' own widths, so a pinned column's width was invisible to the fit check even
+ * though it is rendered and counts against `room` exactly like every other column.
+ */
+describe('planColumnFold', () => {
+  test('a pinned column A=100 + eligible B=100, C=100 in 250px room folds one eligible column', () => {
+    const widths = new Map([
+      ['a', 100],
+      ['b', 100],
+      ['c', 100],
+    ])
+    const folded = planColumnFold({
+      room: 250,
+      toggleWidth: 0,
+      // A is pinned — never in `order` — but its measured width is fixed overhead against the
+      // baseline, exactly as `useColumnFold` computes it from the excluded ids.
+      overhead: 100,
+      order: ['c', 'b'],
+      widths,
+    })
+    expect(folded.size).toBe(1)
+  })
+})
 
 describe('maxHeight — the capped body', () => {
   test('no maxHeight still renders a scroll container — uncapped, with a zero floor', () => {
@@ -268,6 +295,24 @@ describe('the toolbar has no fixed-width literals and resolves controls to the c
     const slot = container.querySelector('[data-basalt-tier="ctl"]')
     expect(slot).not.toBeNull()
     expect(slot?.querySelector('button')?.textContent).toBe('Export')
+  })
+})
+
+/**
+ * Regression: the pagination footer's `Pagination` used to lose its explicit `size="sm"` to
+ * `CtlSlot`'s `ctl` tier — `Pagination` has no `ctl`-tier entry in `CTL_THEME` (its own controls
+ * resolve the 44px coarse hit floor through `PaginationControl`'s theme-level `data-basalt-hit`,
+ * not through the `ctl` size), so a `CtlSlot` alone cannot restore this size, and the explicit
+ * `size="sm"` is what keeps the footer's visual size unchanged.
+ */
+describe('the pagination footer keeps its explicit size="sm"', () => {
+  test('Pagination renders at size sm, not the ctl tier its CtlSlot wrapper would otherwise resolve', () => {
+    const { container } = renderTable({
+      enablePagination: true,
+      initialPagination: { pageIndex: 0, pageSize: 1 },
+    })
+    const root = container.querySelector('.mantine-Pagination-root')
+    expect(root?.getAttribute('data-size')).toBe('sm')
   })
 })
 
@@ -942,8 +987,10 @@ describe('actions — the widened toolbar slot', () => {
     })
     const desktop = document.querySelector('.mantine-visible-from-sm')
     if (!desktop) throw new Error('expected the desktop action group')
-    // A slot host (and any host without layout) has no measured fold: the row stays whole. The fold
-    // itself is `planBarFold`'s, pinned in controls/actions.test.tsx.
+    // happy-dom evaluates no layout, so every measured width reads 0 and nothing folds — the row
+    // stays whole. A slot host DOES fold once it has real widths to measure (see the stubbed-layout
+    // describe block below); the fold decision itself is `planBarFold`'s, pinned in
+    // controls/actions.test.tsx.
     expect(desktop.textContent).toContain('Alpha')
     expect(desktop.textContent).toContain('Delta')
     expect(desktop.textContent).not.toContain('More')
@@ -953,5 +1000,93 @@ describe('actions — the widened toolbar slot', () => {
     renderTable({ actions: <Text>Export</Text> })
     expect(screen.getByText('Export')).toBeDefined()
     expect(document.querySelector('.mantine-visible-from-sm')).toBeNull()
+  })
+})
+
+/**
+ * The toolbar's `BarAction[]` actually folding — the regression `enabled: host === 'page'` left in
+ * `controls/actions.tsx`: the table's toolbar is a `host: 'slot'` mount (`BarActionSlot`), and that
+ * gate meant it could never fold no matter how narrow the toolbar got. Same stubbed-DOM idiom as
+ * `controls/actions.test.tsx`'s own "measured fold reaching the DOM" suite.
+ */
+describe('actions — the toolbar slot folds under measurement', () => {
+  const GAP = 6
+  let room = 0
+  const saved: [object, string, PropertyDescriptor | undefined][] = []
+  const original = globalThis.ResizeObserver
+
+  const stub = (target: object, key: string, descriptor: PropertyDescriptor): void => {
+    saved.push([target, key, Object.getOwnPropertyDescriptor(target, key)])
+    Object.defineProperty(target, key, { configurable: true, ...descriptor })
+  }
+  const widthOf = (el: Element): number =>
+    el.hasAttribute('aria-label') ? 32 : (el.textContent?.length ?? 0) * 10
+
+  beforeEach(() => {
+    globalThis.ResizeObserver = class {
+      observe(): void {}
+      unobserve(): void {}
+      disconnect(): void {}
+    } as unknown as typeof ResizeObserver
+    stub(HTMLElement.prototype, 'offsetWidth', {
+      get(this: HTMLElement) {
+        return this.hasAttribute(BAR_KEY_ATTR) ? widthOf(this) : 0
+      },
+    })
+    stub(HTMLElement.prototype, 'offsetHeight', {
+      get(this: HTMLElement) {
+        return this.hasAttribute(BAR_KEY_ATTR) ? 32 : 0
+      },
+    })
+    stub(HTMLElement.prototype, 'clientWidth', {
+      get(this: HTMLElement) {
+        return this.hasAttribute(PAGE_BAR_END_ATTR) ? room : 0
+      },
+    })
+    stub(Element.prototype, 'getBoundingClientRect', {
+      value(this: Element) {
+        const inRow = this.parentElement?.hasAttribute(PAGE_BAR_END_ATTR) === true
+        if (!inRow) return { left: 0, right: 0, width: 0, top: 0, bottom: 0, height: 0, x: 0, y: 0 }
+        const descendants = Array.from(this.querySelectorAll(`[${BAR_KEY_ATTR}]`))
+        if (descendants.length > 0) {
+          const right = descendants.reduce((sum, el) => sum + widthOf(el) + GAP, 0)
+          return { left: 0, right, width: right, top: 0, bottom: 0, height: 0, x: 0, y: 0 }
+        }
+        // The toolbar is a `slot` host — it tags the `Group` itself, so `flowItems` yields its
+        // buttons directly: each leaf's box is positioned after its own preceding siblings, the way
+        // a real flex row lays out.
+        const siblings = this.parentElement ? Array.from(this.parentElement.children) : []
+        const index = siblings.indexOf(this)
+        const left = siblings.slice(0, index).reduce((sum, el) => sum + widthOf(el) + GAP, 0)
+        const width = widthOf(this)
+        return { left, right: left + width, width, top: 0, bottom: 0, height: 0, x: 0, y: 0 }
+      },
+    })
+  })
+
+  afterEach(() => {
+    globalThis.ResizeObserver = original
+    for (const [target, key, descriptor] of saved.reverse()) {
+      if (descriptor) Object.defineProperty(target, key, descriptor)
+      else Reflect.deleteProperty(target, key)
+    }
+    saved.length = 0
+  })
+
+  test('the toolbar action row folds into More once its actions overflow the measured width', async () => {
+    room = 200
+    renderTable({
+      actions: [
+        { key: 'a', label: 'AAAAAAAAAA' },
+        { key: 'b', label: 'BBBBBBBBBB' },
+        { key: 'c', label: 'CCCCCCCCCC' },
+        { key: 'd', label: 'DDDDDDDDDD' },
+      ],
+    })
+    const desktop = document.querySelector('.mantine-visible-from-sm')
+    if (!desktop) throw new Error('expected the desktop action group')
+    expect(desktop.textContent).toContain('More')
+    fireEvent.click(screen.getByRole('button', { name: 'More' }))
+    await waitFor(() => expect(screen.getByText('DDDDDDDDDD')).toBeDefined())
   })
 })

@@ -55,9 +55,18 @@ export function useMeasuredWidths(options: UseMeasuredWidthsOptions): UseMeasure
       signatureRef.current = signature
       boxes.current.clear()
     }
-    if (!enabled) return
+    if (!enabled) {
+      // A disabled/detached root leaves no `measure` to re-run — without this a stale closure over
+      // the PREVIOUS root's `onMeasure` survives on `remeasureRef` and a later `remeasure()` call
+      // (the web-font effect in `controls/actions.tsx`) would measure a root that is no longer live.
+      remeasureRef.current = () => {}
+      return
+    }
     const root = resolveRef.current()
-    if (root === null) return
+    if (root === null) {
+      remeasureRef.current = () => {}
+      return
+    }
     const measure = (): void => {
       onMeasureRef.current(root, boxes)
     }

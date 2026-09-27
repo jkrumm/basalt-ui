@@ -177,11 +177,17 @@ export type WidgetHeaderDeltaProps = Pick<
 export function InfoGlyph({
   text,
   note,
+  ariaLabel = 'More information',
   className,
 }: {
   text: string
   /** A second paragraph in the bubble, shown only where `.foldNote` is (the folded subtitle). */
   note?: string
+  /** The GLYPH's own accessible name. Default `'More information'`; `WidgetHeader` overrides it to
+   * include the subtitle text for its fold-glyph mount (`info === undefined`), where this trigger
+   * IS the subtitle's only accessible surface — the bubble it opens is otherwise unreachable
+   * without first knowing there is something to open. */
+  ariaLabel?: string
   className?: string
 }) {
   const [open, setOpen] = useState(false)
@@ -207,7 +213,7 @@ export function InfoGlyph({
         className={classes.infoTrigger}
         // The GLYPH is named, not the text — `text` reaches AT through `aria-describedby` below, so
         // it never lands in the heading's or the button's accessible name.
-        aria-label="More information"
+        aria-label={ariaLabel}
         aria-describedby={open ? tipId : undefined}
         data-open={open}
         onMouseEnter={() => setOpen(true)}
@@ -277,7 +283,11 @@ export function WidgetHeader({
           <InfoGlyph text={info} {...(subtitle !== undefined && { note: subtitle })} />
         )}
         {info === undefined && subtitle !== undefined && (
-          <InfoGlyph text={subtitle} className={classes.foldGlyph} />
+          <InfoGlyph
+            text={subtitle}
+            className={classes.foldGlyph}
+            ariaLabel={`More information: ${subtitle}`}
+          />
         )}
         {count !== undefined && <span className={classes.count}>{count}</span>}
         {actions !== undefined && (

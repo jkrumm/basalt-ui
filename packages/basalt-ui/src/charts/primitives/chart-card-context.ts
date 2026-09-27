@@ -14,6 +14,11 @@ import { createContext } from 'react'
  * long as it holds it, every later claimant is told no and falls back to its own band legend
  * instead of a second frame silently portalling into the same node. Outside any card there is no
  * slot to contend for, so the default always grants the claim.
+ *
+ * `legendSlotVersion` bumps every time the owner releases the slot (round 3's carried gap): a
+ * denied frame's claim attempt runs once, in its own mount effect, so with no signal that the slot
+ * freed up it would sit denied forever even after the owning frame unmounts. Frames read it only to
+ * put it in a dependency array — the effect re-running is the entire point, not the number itself.
  */
 export const ChartCardContext = createContext<{
   legendSlot: HTMLDivElement | null
@@ -21,10 +26,12 @@ export const ChartCardContext = createContext<{
   short: boolean
   claimLegendSlot: (id: string) => boolean
   releaseLegendSlot: (id: string) => void
+  legendSlotVersion: number
 }>({
   legendSlot: null,
   inCard: false,
   short: false,
   claimLegendSlot: () => true,
   releaseLegendSlot: () => {},
+  legendSlotVersion: 0,
 })

@@ -4,7 +4,7 @@
  * `ResizeObserver` shim never fires, so `ChartFrame`'s plot rect would otherwise stay at its SSR
  * fallback size and every cell would collapse to a zero-area rect.
  */
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, mock, test } from 'bun:test'
 import * as realChartSize from '../hooks/useChartSize'
 import { Heatmap } from './Heatmap'
@@ -52,12 +52,14 @@ function renderGrid() {
 }
 
 describe('Heatmap — hover (fine pointer, unchanged)', () => {
-  test('hovering a cell shows its value', () => {
+  test('hovering a cell shows its value', async () => {
     const { container } = renderGrid()
     const cellEls = container.querySelectorAll('svg rect[role="option"]')
     expect(cellEls.length).toBe(6)
     fireEvent.pointerMove(cellEls[0]!, { pointerType: 'mouse', clientX: 5, clientY: 5 })
-    expect(screen.getByText('Value').parentElement?.textContent).toContain('1')
+    // Round 3: `useDiscreteCursor`'s hover path is now rAF-coalesced (mirrors `useChartCursor`'s),
+    // so the readout lands one animation frame after the event, not synchronously.
+    await waitFor(() => expect(screen.getByText('Value').parentElement?.textContent).toContain('1'))
     fireEvent.pointerLeave(cellEls[0]!, { pointerType: 'mouse' })
     expect(screen.queryByText('Value')).toBeNull()
   })

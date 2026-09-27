@@ -8,9 +8,11 @@ import { useChartMetrics } from './chart-tier'
 /**
  * Tick label font — mono, per `docs/DESIGN-SPEC.md` §5 ("ticks mono 10.5px faint"). Not a `VX.*`
  * ref (the token layer is off-limits to font-family additions here) — a plain reference to the
- * `--basalt-font-mono` var that `styles.css` already defines.
+ * `--basalt-font-mono` var that `styles.css` already defines. Exported so `CartesianChart`'s own
+ * end-of-line labels (the same mono tick font, painted outside any `Axis*` primitive here) read it
+ * rather than keeping a second, driftable copy of the literal.
  */
-const TICK_FONT_FAMILY = 'var(--basalt-font-mono)'
+export const TICK_FONT_FAMILY = 'var(--basalt-font-mono)'
 
 /** Horizontal padding between the tick's gridline and the near edge of its label's halo. */
 const INSIDE_LABEL_PAD_X = 4

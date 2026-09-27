@@ -5,7 +5,7 @@
  * same style `ChartLegend.test.tsx` uses for its disclosure panel's Escape/outside-tap pair.
  * `.tsx`, not the `.ts` a spec draft may have named it: the harness renders JSX.
  */
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, test } from 'bun:test'
 import { useDiscreteCursor } from './use-discrete-cursor'
 
@@ -49,17 +49,42 @@ const pinned = (): string => screen.getByTestId('pinned').textContent ?? ''
 afterEach(cleanup)
 
 describe('useDiscreteCursor — fine pointer (hover)', () => {
-  test('hover shows the tooltip and leave clears it, unpinned', () => {
+  test('hover shows the tooltip and leave clears it, unpinned', async () => {
     render(<Harness />)
     fireEvent.pointerEnter(screen.getByTestId('target-b'), {
       pointerType: 'mouse',
       clientX: 1,
       clientY: 2,
     })
-    expect(tipKey()).toBe('b')
+    // Round 3: `onPointerEnter`/`onPointerMove` are now rAF-coalesced (mirrors `useChartCursor`'s
+    // own hover path), so the readout lands one animation frame after the event, not synchronously.
+    await waitFor(() => expect(tipKey()).toBe('b'))
     expect(pinned()).toBe('false')
 
     fireEvent.pointerLeave(screen.getByTestId('target-b'), { pointerType: 'mouse' })
+    expect(tipKey()).toBe('none')
+  })
+
+  /**
+   * Regression: `onPointerEnter`'s readout is rAF-coalesced (`scheduleActive`) — a leave arriving
+   * before that frame flushes used to clear via a bare `setActive(null)`, which neither cancelled
+   * the pending frame nor cleared `pendingActiveRef`. The frame then fired AFTER the leave and
+   * resurrected the tooltip a tick later. Routing the leave through `clear()` (which cancels the
+   * frame and drops the pending value) means the frame never fires at all.
+   */
+  test('a leave arriving before the enter frame flushes leaves the tooltip unrendered — it never resurrects', async () => {
+    render(<Harness />)
+    fireEvent.pointerEnter(screen.getByTestId('target-b'), {
+      pointerType: 'mouse',
+      clientX: 1,
+      clientY: 2,
+    })
+    // Immediately — before the enter's own animation frame has had a chance to flush.
+    fireEvent.pointerLeave(screen.getByTestId('target-b'), { pointerType: 'mouse' })
+    expect(tipKey()).toBe('none')
+
+    // Give the (would-be) enter frame every chance to fire.
+    await new Promise((resolve) => setTimeout(resolve, 50))
     expect(tipKey()).toBe('none')
   })
 
@@ -245,5 +270,29 @@ describe('useDiscreteCursor — keyboard', () => {
     expect(tipKey()).toBe('e')
     fireEvent.keyDown(host, { key: 'ArrowUp' })
     expect(tipKey()).toBe('b')
+  })
+
+  /**
+   * Regression: a hover's readout is rAF-coalesced (`scheduleActive`) — a keyboard step arriving
+   * while that frame is still in flight used to write `active` synchronously and then get
+   * overwritten a tick later when the stale hover frame finally fired, reverting the keyboard
+   * target back to whatever was last hovered. `onKeyDown` now cancels the pending frame before its
+   * own synchronous write, the same guard `onPointerDown` and `clear()` already carry.
+   */
+  test('a pointermove scheduled just before a keyboard step does not revert it once the frame flushes', async () => {
+    render(<Harness />)
+    fireEvent.pointerEnter(screen.getByTestId('target-c'), {
+      pointerType: 'mouse',
+      clientX: 1,
+      clientY: 2,
+    })
+    // Immediately — before the hover's own animation frame has had a chance to flush.
+    const host = screen.getByRole('listbox')
+    fireEvent.keyDown(host, { key: 'ArrowRight' })
+    expect(tipKey()).toBe('a')
+
+    // Give the (would-be) hover frame every chance to fire.
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    expect(tipKey()).toBe('a')
   })
 })

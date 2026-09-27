@@ -13,9 +13,9 @@
  * StatCard / Section — docs/DESIGN-CORE.md § Layout, elevation, shapes), never the viewport: below 480px the subtitle folds
  * into the info glyph; from 480px (wave 8) `value` + `delta` move onto the title row. Wrapping and
  * shrinking are unconditional. The subtitle ALSO folds (regardless of width) whenever the card's own
- * height is under 280px — see the `basalt-card-h` block below (wave 8's header-economy law). No
- * enclosing card, no container: the standard layout. Container conditions are px literals of
- * CONTAINER_CLASSES.
+ * height is under 280px — see the `[data-basalt-card-short]` block below (wave 8's header-economy
+ * law). No enclosing card, no container: the standard layout. Container conditions are px literals
+ * of CONTAINER_CLASSES.
  */
 
 .root {
@@ -160,13 +160,10 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--vx-space-stack-sm);
+  /* Tight when the badge wraps under the value. */
+  row-gap: 2px;
   margin-top: 2px;
   min-width: 0;
-}
-
-/* Tight when the badge wraps under the value. */
-.metrics {
-  row-gap: 2px;
 }
 
 /* NEVER truncated: the numeral IS the content. It shrinks with the card's own width instead —

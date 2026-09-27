@@ -327,4 +327,23 @@ describe('coarse-pointer row-height dev warning', () => {
     spy.mockRestore()
     restore()
   })
+
+  test('the shipped default (40, itself under the floor) never warns when the caller never named estimateSize', () => {
+    resetValidatedProps()
+    const restore = stubPointer(true)
+    const spy = spyOn(console, 'error').mockImplementation(() => {})
+    render(
+      <MantineProvider>
+        <BasaltVirtualList
+          items={ITEMS}
+          height={300}
+          renderItem={(item) => <div>{item.label}</div>}
+          getItemKey={(item) => item.id}
+        />
+      </MantineProvider>,
+    )
+    expect(spy).not.toHaveBeenCalled()
+    spy.mockRestore()
+    restore()
+  })
 })

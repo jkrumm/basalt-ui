@@ -30,7 +30,7 @@ const COMPONENT_SHAPE_LEGACY: Record<string, readonly string[]> = {
   'forms/form-layout.module.css': ['47.99375em'],
   'dashboard/widget-grid.module.css': ['48em'],
   'dashboard/stat-group.module.css': ['48em', '47.99375em'],
-  'content/article-layout.module.css': ['1200px'],
+  'content/article-layout.module.css': ['1199.9px'],
 }
 
 /** `@container basalt-card` is the card-chrome axis: its literals are CONTAINER_CLASSES boundaries. */

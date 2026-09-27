@@ -6,6 +6,7 @@
  */
 import { render, screen, waitFor, within } from '@testing-library/react'
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
+import { StrictMode } from 'react'
 import type { SeriesStyle } from '../series'
 import { ChartCard } from './ChartCard'
 import { ChartFrame } from './ChartFrame'
@@ -281,6 +282,185 @@ describe('the legend portals into the header slot', () => {
       )
       expect(allLabels).toEqual(['First chart', 'Second chart'])
       expect(messages.some((m) => m.includes('header legend slot'))).toBe(true)
+    } finally {
+      console.error = originalError
+    }
+  })
+
+  test('once the owner releases the slot, the previously-denied sibling frame re-claims it', async () => {
+    const seriesA: SeriesStyle[] = [
+      { key: 's1', label: 'First chart', color: '#000', mark: 'line' },
+    ]
+    const seriesB: SeriesStyle[] = [
+      { key: 's2', label: 'Second chart', color: '#000', mark: 'line' },
+    ]
+    const originalError = console.error
+    console.error = () => {}
+    try {
+      function Frames({ showFirst }: { showFirst: boolean }) {
+        return (
+          <ChartCard title="Two charts">
+            {showFirst && (
+              <ChartFrame series={seriesA} height={120}>
+                {() => <svg />}
+              </ChartFrame>
+            )}
+            <ChartFrame series={seriesB} height={120}>
+              {() => <svg />}
+            </ChartFrame>
+          </ChartCard>
+        )
+      }
+      const { container, rerender } = render(<Frames showFirst />)
+      const slot = container.querySelector('[data-basalt-legend-slot]') as HTMLElement
+      await waitFor(() => expect(slot.querySelector('[data-legend-key]')).not.toBeNull())
+      // The first frame owns the slot, exactly like the two-mounted-at-once case above...
+      expect([...slot.querySelectorAll('[data-legend-key]')].map((e) => e.textContent)).toEqual([
+        'First chart',
+      ])
+
+      // ...unmounting it releases the claim, and the second frame — told "no" on its own first
+      // mount — gets a chance to re-claim the now-empty slot instead of staying denied forever.
+      rerender(<Frames showFirst={false} />)
+      await waitFor(() =>
+        expect([...slot.querySelectorAll('[data-legend-key]')].map((e) => e.textContent)).toEqual([
+          'Second chart',
+        ]),
+      )
+    } finally {
+      console.error = originalError
+    }
+  })
+})
+
+/**
+ * Regression: adding `legendSlotVersion` to the slot-ownership effect's OWN dependency array made
+ * the OWNER'S cleanup (which unconditionally released the slot on every re-run, expecting to
+ * reclaim it right after) bump the version, which — because the owner's effect was itself keyed on
+ * that same version — re-ran the effect, released again, bumped again: an infinite
+ * release → bump → re-run loop that threw "Maximum update depth exceeded". It surfaced two ways:
+ * StrictMode's deliberate mount → cleanup → mount replay, and any ordinary prop change that flips
+ * `legendVisible` (an `isPending` toggle), both of which re-run the OWNER's effect for a reason
+ * that has nothing to do with the slot itself. Only a DENIED frame reacts to the version now — see
+ * `ChartFrame.tsx`'s two-effect split.
+ */
+describe('legend-slot ownership effect does not loop (round 2 regression)', () => {
+  // Same stub as "the legend portals into the header slot" above — a real width is what makes the
+  // legend resolve into the header slot at all, which the last test here needs in order to observe
+  // the handoff.
+  const originalResizeObserver = window.ResizeObserver
+
+  function installObserver(width: number): void {
+    class FixedBoxResizeObserver {
+      constructor(private readonly callback: ResizeObserverCallback) {}
+      observe(): void {
+        this.callback(
+          [{ contentRect: { width, height: 240, top: 0, left: 0 } }] as never,
+          this as never,
+        )
+      }
+      unobserve(): void {}
+      disconnect(): void {}
+    }
+    window.ResizeObserver = FixedBoxResizeObserver as unknown as typeof ResizeObserver
+  }
+
+  beforeAll(() => installObserver(600))
+  afterAll(() => {
+    window.ResizeObserver = originalResizeObserver
+  })
+
+  test('StrictMode replay of two frames sharing one card never throws "Maximum update depth exceeded"', () => {
+    const seriesA: SeriesStyle[] = [
+      { key: 's1', label: 'First chart', color: '#000', mark: 'line' },
+    ]
+    const seriesB: SeriesStyle[] = [
+      { key: 's2', label: 'Second chart', color: '#000', mark: 'line' },
+    ]
+    const originalError = console.error
+    const messages: string[] = []
+    console.error = (...args: unknown[]) => messages.push(args.map(String).join(' '))
+    try {
+      render(
+        <StrictMode>
+          <ChartCard title="Two charts">
+            <ChartFrame series={seriesA} height={120}>
+              {() => <svg />}
+            </ChartFrame>
+            <ChartFrame series={seriesB} height={120}>
+              {() => <svg />}
+            </ChartFrame>
+          </ChartCard>
+        </StrictMode>,
+      )
+    } finally {
+      console.error = originalError
+    }
+    expect(messages.some((m) => m.includes('Maximum update depth exceeded'))).toBe(false)
+  })
+
+  test("toggling the owner's isPending (a legendVisible flip) repeatedly never loops", () => {
+    const series: SeriesStyle[] = [{ key: 's1', label: 'Only chart', color: '#000', mark: 'line' }]
+    const originalError = console.error
+    const messages: string[] = []
+    console.error = (...args: unknown[]) => messages.push(args.map(String).join(' '))
+    try {
+      function Owner({ pending }: { pending: boolean }) {
+        return (
+          <ChartCard title="One chart">
+            <ChartFrame series={series} height={120} isPending={pending}>
+              {() => <svg />}
+            </ChartFrame>
+          </ChartCard>
+        )
+      }
+      const { rerender } = render(<Owner pending={false} />)
+      rerender(<Owner pending />)
+      rerender(<Owner pending={false} />)
+      rerender(<Owner pending />)
+      rerender(<Owner pending={false} />)
+    } finally {
+      console.error = originalError
+    }
+    expect(messages.some((m) => m.includes('Maximum update depth exceeded'))).toBe(false)
+  })
+
+  test('owner unmount still hands the slot to the denied sibling (no regression from the split)', async () => {
+    const seriesA: SeriesStyle[] = [
+      { key: 's1', label: 'First chart', color: '#000', mark: 'line' },
+    ]
+    const seriesB: SeriesStyle[] = [
+      { key: 's2', label: 'Second chart', color: '#000', mark: 'line' },
+    ]
+    const originalError = console.error
+    console.error = () => {}
+    try {
+      function Frames({ showFirst }: { showFirst: boolean }) {
+        return (
+          <ChartCard title="Two charts">
+            {showFirst && (
+              <ChartFrame series={seriesA} height={120}>
+                {() => <svg />}
+              </ChartFrame>
+            )}
+            <ChartFrame series={seriesB} height={120}>
+              {() => <svg />}
+            </ChartFrame>
+          </ChartCard>
+        )
+      }
+      const { container, rerender } = render(<Frames showFirst />)
+      const slot = container.querySelector('[data-basalt-legend-slot]') as HTMLElement
+      await waitFor(() => expect(slot.querySelector('[data-legend-key]')).not.toBeNull())
+      expect([...slot.querySelectorAll('[data-legend-key]')].map((e) => e.textContent)).toEqual([
+        'First chart',
+      ])
+      rerender(<Frames showFirst={false} />)
+      await waitFor(() =>
+        expect([...slot.querySelectorAll('[data-legend-key]')].map((e) => e.textContent)).toEqual([
+          'Second chart',
+        ]),
+      )
     } finally {
       console.error = originalError
     }

@@ -113,8 +113,17 @@ const SHADOW_IS_COMPOSED = /var\(|\$\{/
 const CSS_SURFACE_RADIUS = /(?<![\w-])border-radius\s*:\s*([^;}]+)/g
 const CSS_SURFACE_SHADOW = /(?<![\w-])box-shadow\s*:\s*([^;}]+)/g
 
+/** One numeric width literal — the value half of every shape `CSS_WIDTH_MEDIA_QUERY` matches. */
+const CSS_WIDTH_NUM = '[\\d.]+(?:px|em|rem|vw)'
+
 /**
- * A width `@media` condition — `(min-width: 52.5em)` / `(max-width: 767.9px)`. The size-class axis
+ * A width `@media` condition — `(min-width: 52.5em)` / `(max-width: 767.9px)`, plus every range-
+ * comparison spelling CSS lets an author use instead (the SAME condition, just spelled
+ * differently): keyword-first (`width >= 600px`), value-first (`600px <= width`), and CHAINED, both
+ * sides at once (`400px <= width <= 700px`, `700px >= width >= 400px`). A regex that only covered
+ * the keyword-first comparison form let every value-first or chained range slip past unflagged —
+ * the exact shape `width >= 600px` catches that `600px <= width` (the same boundary, spelled the
+ * other way round) does not. The size-class axis
  * (`docs/DESIGN-CORE.md` § Layout, elevation, shapes) names its own home (`shell/**`, `@media`
  * against `SIZE_CLASSES` literals); anywhere else a hard-coded viewport breakpoint has skipped the
  * framework's one seam for it (`useSizeClass()`, or the derived `theme.breakpoints`). See
@@ -124,10 +133,31 @@ const CSS_SURFACE_SHADOW = /(?<![\w-])box-shadow\s*:\s*([^;}]+)/g
  * `css-raw-surface`), so it lands under its own kind at `warn` for one minor rather than widening an
  * existing one.
  */
-const CSS_WIDTH_MEDIA_QUERY = /@media[^{]*\(\s*(?:min|max)-width\s*:\s*[\d.]+(?:px|em|rem|vw)\s*\)/g
+const CSS_WIDTH_MEDIA_QUERY = new RegExp(
+  '@media[^{]*\\(\\s*(?:' +
+    // keyword form: min-width: N / max-width: N
+    `(?:min|max)-width\\s*:\\s*${CSS_WIDTH_NUM}` +
+    // width-first comparison, with an optional CHAINED second boundary on the other side:
+    // width OP N, or N OP width OP N
+    `|(?:${CSS_WIDTH_NUM}\\s*[<>]=?\\s*)?width\\s*[<>]=?\\s*${CSS_WIDTH_NUM}` +
+    // value-first comparison with NO trailing boundary: N OP width. The lookahead excludes the
+    // chained shape (already matched whole by the alternative above) so this only fires for the
+    // plain value-first form.
+    `|${CSS_WIDTH_NUM}\\s*[<>]=?\\s*width(?!\\s*[<>]=?\\s*${CSS_WIDTH_NUM})` +
+    ')\\s*\\)',
+  'g',
+)
 
-/** An `@container` condition — the declared NAME plus every raw boundary inside its parens. */
-const CSS_CONTAINER_QUERY = /@container\s+([\w-]+)\s*\(([^)]*)\)/g
+/**
+ * An `@container` condition — the declared NAME (optional: `@container (min-width: …)` with no
+ * name is legal CSS, scoping to the nearest ancestor container regardless of its name) plus every
+ * raw boundary across the WHOLE at-rule, chained `and (...)` clauses included
+ * (`@container basalt-stat-group (min-width: 768px) and (max-width: 1199.9px)` —
+ * `stat-group.module.css` ships exactly this shape). Capturing only the first parenthesized clause
+ * would silently skip every boundary after the first `and`; group 2 here is the full run of
+ * `(...)`/`and` text so `CSS_CONTAINER_LITERAL`'s own `matchAll` below finds all of them.
+ */
+const CSS_CONTAINER_QUERY = /@container(?:\s+([\w-]+))?\s*((?:\([^)]*\)\s*(?:and\s*)?)+)/g
 
 /**
  * One numeric boundary inside an `@container` condition's parens, in either syntax CSS allows: the
@@ -191,10 +221,16 @@ const SHELL_CSS_PATH = /(?:^|\/)shell\//
 
 function isSanctionedShellMediaQuery(relPath: string, query: string): boolean {
   if (!SHELL_CSS_PATH.test(relPath)) return false
-  // All four units captured (not `em` only) so a `px` width — never a `SIZE_CLASS_LITERALS` member
-  // — correctly fails the check below, rather than `.every()` vacuously passing on an empty match.
-  const widths = [...query.matchAll(/(?:min|max)-width:\s*([\d.]+(?:em|px|rem|vw))/g)]
-  return widths.length > 0 && widths.every((m) => SIZE_CLASS_LITERALS.has(m[1]!))
+  // `query` is always one whole match of `CSS_WIDTH_MEDIA_QUERY`, which only ever matches a WIDTH
+  // condition — keyword (`min-width:`/`max-width:`), comparison (`width >= N` / `N <= width`), or
+  // chained (`N <= width <= N`) — so every `px`/`em`/`rem`/`vw`-suffixed literal anywhere in it IS a
+  // width boundary, regardless of which of those spellings produced it. Extracting every literal
+  // this way (rather than a keyword-only `(?:min|max)-width:` scan) is what lets this understand
+  // the comparison/chained spellings too, with no shape-specific regex of its own. All four units
+  // are captured (not `em` only) so a `px` width — never a `SIZE_CLASS_LITERALS` member — correctly
+  // fails the check below, rather than `.every()` vacuously passing on an empty match.
+  const widths = query.match(new RegExp(CSS_WIDTH_NUM, 'g')) ?? []
+  return widths.length > 0 && widths.every((w) => SIZE_CLASS_LITERALS.has(w))
 }
 
 /** The largest CSS radius literal treated as a sub-scale micro-corner, in px — below the 4px floor. */
@@ -2430,11 +2466,18 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
       for (const m of line.matchAll(CSS_CONTAINER_QUERY)) {
         const name = m[1] ?? ''
         const body = m[2] ?? ''
-        if (!DECLARED_CONTAINER_NAMES.has(name)) {
+        // An UNNAMED `@container (...)` is legal CSS (scopes to the nearest ancestor container
+        // regardless of its name) — only a name that IS present and NOT in the declared table is a
+        // violation; the empty name itself never is.
+        if (name !== '' && !DECLARED_CONTAINER_NAMES.has(name)) {
           push('raw-media-query', i + 1, m[0].trim())
           continue
         }
-        if (name !== 'basalt-card') continue
+        // Literal boundaries are judged against `basalt-card`'s own table (see
+        // `CONTAINER_CLASS_LITERALS_PX`'s doc) — an unnamed query has no OTHER table to judge
+        // against, so it is judged against this one too; the other three declared names stay
+        // unjudged until they ship their own.
+        if (name !== '' && name !== 'basalt-card') continue
         for (const lit of body.matchAll(CSS_CONTAINER_LITERAL)) {
           const px = lit[2] === 'em' ? Number(lit[1]) * ROOT_FONT_SIZE_PX : Number(lit[1])
           if (!CONTAINER_CLASS_LITERALS_PX.has(px)) {

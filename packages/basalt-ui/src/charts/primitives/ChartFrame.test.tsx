@@ -28,7 +28,9 @@ import {
 import {
   DOTS_HIT_GAP,
   LEGEND_DOT_SIZE,
+  entriesWithinChipRows,
   entriesWithinDotRows,
+  entriesWithinRows,
   orderEntries,
   resolveFrameHeight,
 } from './chart-frame-layout'
@@ -483,8 +485,35 @@ describe('entriesWithinDotRows — R2C-9: dots fit by pitch, not chip width', ()
     expect(entriesWithinDotRows([], 200, 1)).toBe(0)
   })
 
-  test('zero width fits only the first dot — the same "always place the first item" rule entriesWithinRows uses', () => {
-    expect(entriesWithinDotRows(entries(3), 0, 1)).toBe(1)
+  test('zero width fits nothing once the reserved (overflow) pass runs — round 3: the "always place the first item" rule no longer survives a reserve that leaves no room at all', () => {
+    expect(entriesWithinDotRows(entries(3), 0, 1)).toBe(0)
+  })
+})
+
+describe('entriesWithinChipRows — round 3: chips reserve the All-N chip width, like dots', () => {
+  const entry = (key: string, label = key): LegendEntry => ({ key, label, color: '#000' })
+  const entries = (n: number, label = 'A longish series label'): LegendEntry[] =>
+    Array.from({ length: n }, (_, i) => entry(`k${i}`, `${label} ${i}`))
+
+  test('when everything fits with no chip needed, the reserve pass never runs', () => {
+    const items = entries(3)
+    expect(entriesWithinChipRows(items, 2000, 1)).toBe(entriesWithinRows(items, 2000, 1))
+  })
+
+  test('once overflow is real, the count leaves room for the All-N chip beside it', () => {
+    const items = entries(6)
+    const unreserved = entriesWithinRows(items, 260, 1)
+    const reserved = entriesWithinChipRows(items, 260, 1)
+    expect(unreserved).toBeGreaterThan(0)
+    expect(reserved).toBeLessThanOrEqual(unreserved)
+  })
+
+  test('a width too narrow for even the first chip once the All-N chip is reserved returns 0 — the row draws the disclosure alone', () => {
+    expect(entriesWithinChipRows(entries(3), 0, 1)).toBe(0)
+  })
+
+  test('an empty item list fits nothing', () => {
+    expect(entriesWithinChipRows([], 200, 1)).toBe(0)
   })
 })
 
@@ -596,5 +625,99 @@ describe('a micro frame draws no legend, whatever the placement', () => {
     const bottom = mount(200, 'bottom')
     await waitFor(() => expect(legendCount(side)).toBe(0))
     await waitFor(() => expect(legendCount(bottom)).toBe(0))
+  })
+})
+
+/**
+ * Regression (test gap): `legendKey` — the `useMemo` dependency behind `layout`, and so behind the
+ * legend's own measured fit — used to be built from each entry's `key`+`label` alone. A `role` or
+ * `note` appearing on an entry with the SAME key+label changed nothing that memo watched, so
+ * `ChartFrame` kept serving the layout computed BEFORE that entry changed, until something else
+ * (a resize, a series added/removed) invalidated it first. `legendKey` now folds in `role`/`note`
+ * too (see its own comment in `ChartFrame.tsx`) — this pins that the RENDERED legend actually
+ * reacts, not just that the string changed.
+ *
+ * A `note` is used here (rather than `role`) because it is the more DIRECTLY measurable lever:
+ * `legendEntryWidth` folds a note straight into the text it measures, so a note appearing widens
+ * an entry enough to push a legend that fit whole into an `All N` rollup — an outcome asserted
+ * against the SAME pure resolver (`orderEntries` + `entriesWithinChipRows`) `ChartFrame` calls
+ * internally, rather than a hand-calibrated pixel count.
+ */
+describe('the legend layout memo recomputes on a role/note change, same key+label', () => {
+  const original = window.ResizeObserver
+  function installObserver(width: number): void {
+    class FixedBoxResizeObserver {
+      constructor(private readonly callback: ResizeObserverCallback) {}
+      observe(): void {
+        this.callback(
+          [{ contentRect: { width, height: 240, top: 0, left: 0 } }] as never,
+          this as never,
+        )
+      }
+      unobserve(): void {}
+      disconnect(): void {}
+    }
+    window.ResizeObserver = FixedBoxResizeObserver as unknown as typeof ResizeObserver
+  }
+  afterEach(() => {
+    window.ResizeObserver = original
+  })
+
+  // >= `CONTAINER_CLASSES.compact` (240px) — below it `resolveLegend` short-circuits the whole
+  // legend to `mode: 'none'` at the `micro` container class, before any entry width is even read.
+  const FRAME_W = 300
+  const NOTE = 'x'.repeat(15)
+  const shortSeries = (key: string): SeriesStyle => ({
+    key,
+    label: key.toUpperCase(),
+    color: '#000',
+    mark: 'line',
+  })
+  const base: SeriesStyle[] = ['a', 'b', 'c', 'd', 'e', 'f'].map(shortSeries)
+  // Same key+label as `base` throughout — the only difference is a `note` on the last four.
+  const withNotes: SeriesStyle[] = base.map((s, i) => (i >= 2 ? { ...s, note: NOTE } : s))
+
+  const legendItemsOf = (list: SeriesStyle[]): LegendEntry[] =>
+    list.map((s) => ({
+      key: s.key,
+      label: s.label,
+      color: s.color,
+      ...(s.note !== undefined && { note: s.note }),
+    }))
+
+  /** The expected visible-entry count, derived from the SAME pure resolver `ChartFrame` calls
+   * internally (`chart-layout.ts`'s `resolveLegend`, un-exported — mirrored here over the two
+   * pieces that ARE exported) — not a hand-calibrated pixel count. */
+  function expectedVisible(list: SeriesStyle[]): number {
+    const items = legendItemsOf(list)
+    const { entries } = orderEntries(items, false)
+    const fitted = entriesWithinChipRows(entries, FRAME_W, 2)
+    return items.length - fitted < 2 ? items.length : fitted
+  }
+
+  test('sanity: the notes alone push the resolver into an overflow it did not have before', () => {
+    expect(expectedVisible(base)).toBe(6)
+    expect(expectedVisible(withNotes)).toBeLessThan(6)
+  })
+
+  test('adding notes to entries (same key+label) recomputes the rendered legend fit', async () => {
+    installObserver(FRAME_W)
+    const { container, rerender } = render(
+      <ChartFrame series={base} legend={{}}>
+        {() => <svg />}
+      </ChartFrame>,
+    )
+    await new Promise((resolve) => setTimeout(resolve, 20))
+    expect(container.querySelectorAll('[data-legend-key]').length).toBe(expectedVisible(base))
+    expect(container.textContent).not.toContain('All 6')
+
+    rerender(
+      <ChartFrame series={withNotes} legend={{}}>
+        {() => <svg />}
+      </ChartFrame>,
+    )
+    await new Promise((resolve) => setTimeout(resolve, 20))
+    expect(container.querySelectorAll('[data-legend-key]').length).toBe(expectedVisible(withNotes))
+    expect(container.textContent).toContain('All 6')
   })
 })

@@ -445,8 +445,11 @@ export function ChartLegend({
   const entryButton = (item: LegendEntry, inPanel = false): ReactNode => {
     // A dots-mode entry names nothing on its own face — its whole point is the color — so a tap
     // opens the same All-N sheet the overflow chip does, rather than silently hiding a series the
-    // reader was trying to identify (R2C-8: "what is this?" used to toggle it off instead).
-    const isDotTrigger = !inPanel && mode === 'dots' && onToggle !== undefined
+    // reader was trying to identify (R2C-8: "what is this?" used to toggle it off instead). Gated
+    // on `mode` alone: with `legend.toggle: false` (no `onToggle`) a dots entry still has no OTHER
+    // way to name itself, so it still needs the title + disclosure — `onToggle !== undefined` used
+    // to suppress both just because toggling happened to be off.
+    const isDotTrigger = !inPanel && mode === 'dots'
     return (
       <button
         key={item.key}
@@ -462,7 +465,7 @@ export function ChartLegend({
           : onToggle !== undefined && { 'aria-pressed': !hidden.has(item.key) })}
         style={{
           ...LEGEND_ITEM_BUTTON,
-          cursor: onToggle === undefined ? 'default' : 'pointer',
+          cursor: onToggle === undefined && !isDotTrigger ? 'default' : 'pointer',
           // Toggled-off wins over hover-dimming: a hidden series must read as hidden even while
           // it is the one being hovered.
           opacity: hidden.has(item.key)

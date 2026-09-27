@@ -160,25 +160,30 @@
  * against the height itself halving (812→375), so the chrome's SHARE of the screen nearly doubles
  * (r2 N1: 16.7% portrait → 32.3% landscape even with the flat numbers). `clamp(floor, Ndvh,
  * ceiling)` keeps continuity at the 480px breakpoint edge (Ndvh ≈ ceiling there) and keeps
- * shrinking below it, down to a floor: 36px for the header (room for the brand/burger row), 45px
- * for the bar (`--vx-hit`'s 44px coarse floor + its 1px seam — the bar's floor is a law, not a
- * choice, so its clamp is pinned there through the whole practical landscape-phone range and only
- * matters if that floor itself ever moves). The heights are JS numbers in `AppShell` props, so the
- * override is on `:root` where Mantine writes them; `:root:root` outranks its later-rendered
- * `<style>` at equal source order. The bar exists only below `sm`, so its rule is gated to that
- * width — a wide landscape phone has no bar and keeps `--app-shell-footer-offset` 0. Labels hidden:
- * `app-mobile-nav.module.css`.
+ * shrinking below it, down to a floor: 36px for the header (room for the brand/burger row), and
+ * `--vx-space-mobile-nav-row-height + 1px` (its own seam) for the bar — the row token, not a flat
+ * 45px, because `deriveSpacing`'s density knob only FLOORS that token at 44 and is free to scale it
+ * taller at density > 0; a hardcoded 45px floor would then clamp the footer BELOW its own row's
+ * real height at any positive density, clipping it. The heights are JS numbers in `AppShell` props,
+ * so the override is on `:root` where Mantine writes them; `:root:root` outranks its later-rendered
+ * `<style>` at equal source order. Both rules are gated to the same width — the header and the bar
+ * both exist ONLY below `sm` in this landscape-compact form; a wide landscape phone/tablet has no
+ * bar (and keeps `--app-shell-footer-offset` 0) and reads its header at the ordinary, un-clamped
+ * height, not this mobile row. Labels hidden: `app-mobile-nav.module.css`.
  */
-@media (max-height: 480px) and (orientation: landscape) {
+@media (max-height: 480px) and (orientation: landscape) and (max-width: 52.49375em) {
   :global(:root:root) {
     --app-shell-header-height: clamp(36px, 9dvh, 40px);
     --app-shell-header-offset: clamp(36px, 9dvh, 40px);
-  }
-}
-
-@media (max-height: 480px) and (orientation: landscape) and (max-width: 52.49375em) {
-  :global(:root:root) {
-    --app-shell-footer-height: clamp(45px, 9.4dvh, 56px);
-    --app-shell-footer-offset: clamp(45px, 9.4dvh, 56px);
+    --app-shell-footer-height: clamp(
+      calc(var(--vx-space-mobile-nav-row-height) + 1px),
+      9.4dvh,
+      56px
+    );
+    --app-shell-footer-offset: clamp(
+      calc(var(--vx-space-mobile-nav-row-height) + 1px),
+      9.4dvh,
+      56px
+    );
   }
 }

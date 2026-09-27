@@ -2,9 +2,10 @@
  * `ArticleLayout` — the TOC rail's below-breakpoint replacement (docs/MATURATION-LEDGER.md;
  * docs/archive/CONTENT-SPEC.md §7): a sticky "On this page" trigger opens the SAME
  * `TableOfContents` in a `Popover` instead of the rail vanishing.
- * `article-layout.breakpoint.test.ts` pins the CSS literal (`@media (max-width: 1200px)` ==
- * `BREAKPOINTS.article`); this file pins the JS-side twin (`useSizeClass() !== 'expanded'`) and the
- * overlay's open/close/navigate behaviour, which the CSS-only rail never needed.
+ * `article-layout.breakpoint.test.ts` pins the CSS literal (`@media (max-width: 1199.9px)`, a
+ * strict complement of `BREAKPOINTS.article`'s inclusive JS `min-width` read — see that file's own
+ * doc); this file pins the JS-side twin (`useSizeClass() !== 'expanded'`) and the overlay's
+ * open/close/navigate behaviour, which the CSS-only rail never needed.
  *
  * Every query into the open dropdown passes `{ hidden: true }` — same idiom as
  * `controls/filter-set.test.tsx`'s own popover queries. Under happy-dom every element measures

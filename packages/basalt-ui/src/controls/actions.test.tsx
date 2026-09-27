@@ -10,6 +10,8 @@
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import type { ReactNode } from 'react'
 import {
   ActionGroup,
@@ -36,6 +38,28 @@ function renderGroup(props: Parameters<typeof ActionGroup>[0]) {
 
 const desktop = () => document.querySelector('.mantine-visible-from-sm')
 const mobile = () => document.querySelector('.mantine-hidden-from-sm')
+
+const ACTIONS_CSS = readFileSync(join(import.meta.dir, 'actions.module.css'), 'utf8')
+
+/**
+ * Regression: the `Box` wrapping a joined `ControlGroup` run (`useMeasuredFold`'s `BAR_KEY_ATTR`,
+ * one level up from the group itself) used to carry no `flex` declaration at all — an ordinary
+ * flex item of the desktop row (`flex: 0 1 auto`), which the row's own fold arithmetic can shrink
+ * below the run's max-content width, corrupting the very `offsetWidth` reading the fold decision is
+ * based on. `ControlGroup`'s own root already pins `flex: none` on itself (`.group`,
+ * `controls.module.css`); the wrapper one box out needs the same property. A CSS module resolves to
+ * `{}` under `bun test` (see the file's own doc), so the geometry is asserted from the module text —
+ * the idiom `control-group.test.tsx` uses for the same reason.
+ */
+describe('the joined-run wrapping Box does not shrink like an ordinary flex item', () => {
+  test('.joinBox carries flex: none', () => {
+    const rule = ACTIONS_CSS.slice(
+      ACTIONS_CSS.indexOf('.joinBox {'),
+      ACTIONS_CSS.indexOf('}', ACTIONS_CSS.indexOf('.joinBox {')),
+    )
+    expect(rule).toContain('flex: none')
+  })
+})
 
 const secondary = (n: number): BarAction[] =>
   Array.from({ length: n }, (_, i) => ({ key: `s${i}`, label: `Second ${i}` }))
@@ -491,13 +515,22 @@ describe('BarActionRow — the measured fold reaching the DOM', () => {
     stub(Element.prototype, 'getBoundingClientRect', {
       value(this: Element) {
         const inRow = this.parentElement?.hasAttribute(PAGE_BAR_END_ATTR) === true
-        const right = inRow
-          ? Array.from(this.querySelectorAll(`[${BAR_KEY_ATTR}]`)).reduce(
-              (sum, el) => sum + widthOf(el) + GAP,
-              0,
-            )
-          : 0
-        return { left: 0, right, width: right, top: 0, bottom: 0, height: 0, x: 0, y: 0 }
+        if (!inRow) return { left: 0, right: 0, width: 0, top: 0, bottom: 0, height: 0, x: 0, y: 0 }
+        const descendants = Array.from(this.querySelectorAll(`[${BAR_KEY_ATTR}]`))
+        if (descendants.length > 0) {
+          // A `page` host's one flow child is the whole `Group` — its box spans every tagged
+          // descendant.
+          const right = descendants.reduce((sum, el) => sum + widthOf(el) + GAP, 0)
+          return { left: 0, right, width: right, top: 0, bottom: 0, height: 0, x: 0, y: 0 }
+        }
+        // A `slot` host tags the `Group` itself, so `flowItems` yields its buttons directly — each
+        // leaf's box is positioned after its own preceding siblings, the way a real flex row lays
+        // out (so `used` still spans the whole row instead of collapsing to one item's width).
+        const siblings = this.parentElement ? Array.from(this.parentElement.children) : []
+        const index = siblings.indexOf(this)
+        const left = siblings.slice(0, index).reduce((sum, el) => sum + widthOf(el) + GAP, 0)
+        const width = widthOf(this)
+        return { left, right: left + width, width, top: 0, bottom: 0, height: 0, x: 0, y: 0 }
       },
     })
   })
@@ -519,13 +552,20 @@ describe('BarActionRow — the measured fold reaching the DOM', () => {
       ...(icons && { icon: glyph }),
       onClick: () => {},
     }))
-  const ui = (secondary: BarAction[]): ReactNode => (
-    <MantineProvider>
-      <div {...{ [PAGE_BAR_END_ATTR]: '' }}>
-        <BarActionRow host="page" secondary={secondary} />
-      </div>
-    </MantineProvider>
-  )
+  const ui = (secondary: BarAction[], host: 'page' | 'slot' = 'page'): ReactNode =>
+    host === 'page' ? (
+      <MantineProvider>
+        <div {...{ [PAGE_BAR_END_ATTR]: '' }}>
+          <BarActionRow host="page" secondary={secondary} />
+        </div>
+      </MantineProvider>
+    ) : (
+      // A `slot` host has no wider ancestor to measure — it tags its OWN row with
+      // `PAGE_BAR_END_ATTR` instead (`Element.closest` matches self first), so no wrapper div here.
+      <MantineProvider>
+        <BarActionRow host="slot" secondary={secondary} />
+      </MantineProvider>
+    )
   const barKeys = (): (string | null)[] =>
     Array.from(document.querySelectorAll(`[${BAR_KEY_ATTR}][class*="Group"], [${BAR_KEY_ATTR}]`))
       .filter((el) => el.closest('.mantine-visible-from-sm') !== null)
@@ -574,5 +614,42 @@ describe('BarActionRow — the measured fold reaching the DOM', () => {
 
     expect(barKeys()).toEqual(['k0', 'k1', 'k2'])
     expect(document.querySelector('[aria-label="CCCCCCCCCC"]')).toBeNull()
+  })
+
+  test('a slot host (ActionGroup/BarActionSlot) folds too — it measures its OWN row, not only PageBar row 1', async () => {
+    room = 300
+    render(
+      ui(
+        actions(['AAAAAAAAAA', 'BBBBBBBBBB', 'CCCCCCCCCC', 'DDDDDDDDDD', 'EEEEEEEEEE'], false),
+        'slot',
+      ),
+    )
+
+    // Same arithmetic as the page-host "icon-less items overflow" case above: k0/k1 fit, the rest
+    // fold into `More`. The regression this pins is `enabled: host === 'page'`, which left every
+    // slot host (`Section`, `StatCard`, `ChartCard`, the table toolbar) permanently unfoldable.
+    expect(barKeys()).toEqual(['k0', 'k1'])
+    fireEvent.click(screen.getByRole('button', { name: 'More' }))
+    await waitFor(() => expect(screen.getByText('EEEEEEEEEE')).toBeDefined())
+  })
+
+  test('a `group: true` run is tagged as ONE measurable unit, not left to its ungrouped members', () => {
+    room = 2000
+    const joined: BarAction[] = [
+      { key: 'prev', label: 'Previous period', group: true, onClick: () => {} },
+      { key: 'today', label: 'Today', group: true, onClick: () => {} },
+      { key: 'next', label: 'Next period', group: true, onClick: () => {} },
+    ]
+    render(ui(joined))
+
+    // The run's own members are GRANDCHILDREN of the measured row (nested inside `ControlGroup`),
+    // invisible to the direct-children scan `useMeasuredFold` runs — before this, no DIRECT child
+    // of the row carried the run's key at all, so a joined run could never be measured or folded.
+    // The wrapper one level up now carries it (its first member's key), as one box.
+    const group = document.querySelector('.mantine-visible-from-sm')
+    const directTags = group
+      ? Array.from(group.children).map((el) => el.getAttribute(BAR_KEY_ATTR))
+      : []
+    expect(directTags).toContain('prev')
   })
 })

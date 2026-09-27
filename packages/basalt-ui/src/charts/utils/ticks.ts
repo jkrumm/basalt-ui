@@ -66,34 +66,69 @@ export function smartTicks(
   anchorTerminals = false,
 ): string[] {
   if (dates.length === 0) return []
-  const perTick = labelPx ?? VX.minPxPerTick
+  // A non-positive `labelPx` (a caller's own arithmetic gone wrong, or an explicit 0) is not "no
+  // measurement" — `labelPx ?? VX.minPxPerTick` let it through as-is, and `xMax / 0` then floors
+  // `maxTicks` to `Infinity`, which used to make EVERY tick "fit" and skip thinning entirely.
+  const perTick = labelPx !== undefined && labelPx > 0 ? labelPx : VX.minPxPerTick
   const maxTicks = Math.max(2, Math.floor(xMax / perTick))
-  if (dates.length <= maxTicks) return dates
-  const step = Math.ceil(dates.length / maxTicks)
   const last = dates.length - 1
   // `scalePoint({ padding: 0.5 })` spreads N points over `xMax`, so one index is `xMax / N` wide.
   const pxPerIndex = dates.length > 0 ? xMax / dates.length : 0
+  // Only a REAL measured label (not the bare `VX.minPxPerTick` floor, which knows nothing about how
+  // wide a label actually is) earns the wider terminal clearance below.
+  const anchored = anchorTerminals && labelPx !== undefined && labelPx > 0
 
   const keep = new Set<number>()
-  for (let i = 0; i <= last; i += step) keep.add(i)
+  if (dates.length <= maxTicks) {
+    // Every date already fits with no thinning — round 3: this used to `return dates` here,
+    // skipping the terminal-clearance pass below entirely. A terminal-anchored label still reaches
+    // a FULL label's width toward its neighbour (not half, like a centred one), which the plain
+    // per-tick spacing above does not itself guarantee, so the same pass has to run here too.
+    for (let i = 0; i <= last; i += 1) keep.add(i)
+  } else {
+    const step = Math.ceil(dates.length / maxTicks)
+    for (let i = 0; i <= last; i += step) keep.add(i)
 
-  const BOUNDARY_FACTOR = 1.5
-  const boundaryPx = anchorTerminals && labelPx !== undefined ? perTick * BOUNDARY_FACTOR : perTick
-
-  if (anchorTerminals && labelPx !== undefined) {
-    const second = [...keep].sort((a, b) => a - b)[1]
-    if (second !== undefined && second !== last && second * pxPerIndex < boundaryPx) {
-      keep.delete(second)
+    const BOUNDARY_FACTOR = 1.5
+    const boundaryPx = anchored ? perTick * BOUNDARY_FACTOR : perTick
+    // The final key is appended unconditionally, even when the step misses it — but only dropping
+    // the grid tick right before it when the two would otherwise sit closer than one tick's width.
+    // This is the "would an APPEND overlap" concern; it does nothing when the step already lands on
+    // `last` (nothing is being appended), which is the gap the anchored pass below closes.
+    const lastOnGrid = Math.floor(last / step) * step
+    if (lastOnGrid !== last) {
+      const gapPx = (last - lastOnGrid) * pxPerIndex
+      if (lastOnGrid > 0 && gapPx > 0 && gapPx < boundaryPx) keep.delete(lastOnGrid)
+      keep.add(last)
     }
   }
 
-  const lastOnGrid = Math.floor(last / step) * step
-  if (lastOnGrid !== last) {
-    const gapPx = (last - lastOnGrid) * pxPerIndex
-    if (lastOnGrid > 0 && gapPx > 0 && gapPx < boundaryPx) {
-      keep.delete(lastOnGrid)
+  if (anchored && keep.size > 1) {
+    const BOUNDARY_FACTOR = 1.5
+    const boundaryPx = perTick * BOUNDARY_FACTOR
+    // START: the kept index right after 0 needs a FULL label's clearance from it, not the plain
+    // per-tick pitch a centred label would settle for.
+    const sorted = [...keep].toSorted((a, b) => a - b)
+    const second = sorted[1]
+    if (second !== undefined && second !== last && second * pxPerIndex < boundaryPx) {
+      keep.delete(second)
     }
-    keep.add(last)
+    // END: the same check, mirrored, against whatever is now the second-to-last kept index —
+    // computed AFTER the START drop above (not from the original grid), and unconditional of
+    // whether `last` was naturally on the grid or had to be appended (round 3's fix: previously this
+    // only ran inside the `lastOnGrid !== last` branch above, so a grid that already landed on
+    // `last` skipped it — the 13-dates/60px-label/260px-width counter-example this closes: step 4
+    // lands on index 12, leaving its neighbour at index 8 only 80px away, under the 90px a
+    // full-width terminal label needs).
+    const afterHead = [...keep].toSorted((a, b) => a - b)
+    const secondLast = afterHead[afterHead.length - 2]
+    if (
+      secondLast !== undefined &&
+      secondLast !== 0 &&
+      (last - secondLast) * pxPerIndex < boundaryPx
+    ) {
+      keep.delete(secondLast)
+    }
   }
 
   return dates.filter((_, i) => keep.has(i))

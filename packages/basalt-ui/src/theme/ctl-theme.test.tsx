@@ -273,3 +273,22 @@ describe('StatCard mounts its actions slot at the widget tier', () => {
     expect(container.querySelector('button')?.getAttribute('data-size')).toBe('icon')
   })
 })
+
+/**
+ * `HIT_ATTR` has no consumer of its own (consolidation doctrine: adopt or delete) — it stays
+ * module-internal to `./ctl-theme`, read by `theme/index.ts` for its OWN use, never re-exported
+ * from that barrel. A prior round re-exported it alongside `CTL_THEME`/`CtlSlot`, which — had
+ * `theme/index.ts` ever become a published subpath — would have grown the public surface with no
+ * named consumer, exactly what `scripts/check-budgets.ts`'s public-symbol ceiling exists to catch.
+ */
+describe('HIT_ATTR stays module-internal', () => {
+  test('the theme barrel (./index) does not re-export it', async () => {
+    const themeBarrel: Record<string, unknown> = await import('./index')
+    expect('HIT_ATTR' in themeBarrel).toBe(false)
+  })
+
+  test('./ctl-theme, the internal module, still exports it directly', async () => {
+    const ctlTheme: Record<string, unknown> = await import('./ctl-theme')
+    expect('HIT_ATTR' in ctlTheme).toBe(true)
+  })
+})

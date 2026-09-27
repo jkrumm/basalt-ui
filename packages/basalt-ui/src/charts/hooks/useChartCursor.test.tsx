@@ -259,3 +259,89 @@ describe('useChartCursor — fine pointer (mouse), regression', () => {
     expect(screen.getByTestId('point-mouse-cancel').textContent).toBe('none')
   })
 })
+
+/** Two charts sharing ONE cursor store — the handoff scenario `pinnedRef`'s ownership reset guards. */
+function renderTwoCharts(a: string, b: string): { overlayA: HTMLElement; overlayB: HTMLElement } {
+  render(
+    <ChartCursorScope>
+      <TestChart chartId={a} />
+      <TestChart chartId={b} />
+    </ChartCursorScope>,
+  )
+  return {
+    overlayA: screen.getByRole('slider', { name: a }),
+    overlayB: screen.getByRole('slider', { name: b }),
+  }
+}
+
+describe('useChartCursor — pinnedRef stays scoped to actual ownership', () => {
+  test('(a) a touch pin committed on this chart survives a later mouse pointermove on the SAME chart', () => {
+    const overlay = renderChart('pin-survives-hover')
+    fireEvent.pointerDown(overlay, { pointerType: 'touch', pointerId: 1, clientX: 0, clientY: 0 })
+    fireEvent.pointerUp(overlay, { pointerType: 'touch', pointerId: 1 })
+    expect(screen.getByTestId('point-pin-survives-hover').textContent).toBe('2026-08-01')
+
+    // A mouse hover must not override the committed touch pin — this chart still owns the source.
+    fireEvent.pointerMove(overlay, { pointerType: 'mouse', clientX: 200, clientY: 0 })
+    expect(screen.getByTestId('point-pin-survives-hover').textContent).toBe('2026-08-01')
+  })
+
+  test("(b) a mouse pointerup carrying an in-flight touch press's pointerId does not commit it", () => {
+    const overlay = renderChart('alias-pointer-id')
+    fireEvent.pointerDown(overlay, { pointerType: 'touch', pointerId: 1, clientX: 0, clientY: 0 })
+    expect(screen.getByTestId('point-alias-pointer-id').textContent).toBe('2026-08-01')
+
+    // Some browsers alias a touch pointer's id to the same value (1) a mouse pointer uses — an
+    // unrelated mouse pointerup carrying that id must not commit the still-provisional touch press.
+    fireEvent.pointerUp(overlay, { pointerType: 'mouse', pointerId: 1 })
+    // Proof it never committed: the ORIGINAL touch pointer's own cancel still finds a live,
+    // uncommitted press to cancel (restoring/clearing it) — a no-op here would mean the mouse
+    // pointerup had already committed it.
+    fireEvent.pointerCancel(overlay, { pointerType: 'touch', pointerId: 1 })
+    expect(screen.getByTestId('point-alias-pointer-id').textContent).toBe('none')
+  })
+
+  /**
+   * (c) The regression this fix closes. `pinnedRef` used to be cleared only by this chart's own
+   * `clear()`, so a sibling stealing the shared cursor source never reset it. The first mouse hover
+   * on A after the steal still resolves (the guard's OTHER condition, `store.get().source ===
+   * chartId`, is false while B still owns it) and reclaims `source` for A — but with `pinnedRef`
+   * left stale-`true`, that reclaim makes the guard's ownership condition true again, and every
+   * hover AFTER that first one is silently swallowed: the crosshair freezes at wherever that first
+   * reclaim landed.
+   */
+  test('(c) two-chart handoff: A pins by touch, B steals the shared cursor, then mouse hovers on A keep tracking', async () => {
+    const { overlayA, overlayB } = renderTwoCharts('handoff-a', 'handoff-b')
+
+    fireEvent.pointerDown(overlayA, { pointerType: 'touch', pointerId: 1, clientX: 0, clientY: 0 })
+    fireEvent.pointerUp(overlayA, { pointerType: 'touch', pointerId: 1 })
+    expect(screen.getByTestId('point-handoff-a').textContent).toBe('2026-08-01')
+
+    // B steals the shared cursor source with its own touch tap.
+    fireEvent.pointerDown(overlayB, {
+      pointerType: 'touch',
+      pointerId: 2,
+      clientX: 200,
+      clientY: 0,
+    })
+    fireEvent.pointerUp(overlayB, { pointerType: 'touch', pointerId: 2 })
+    await waitFor(() =>
+      expect(screen.getByTestId('point-handoff-b').textContent).toBe('2026-08-03'),
+    )
+
+    // First hover after the steal: resolves and reclaims `source` for A (this much worked even with
+    // the bug, since the guard's ownership half was still false going in).
+    fireEvent.pointerMove(overlayA, { pointerType: 'mouse', clientX: 0, clientY: 0 })
+    await waitFor(() =>
+      expect(screen.getByTestId('point-handoff-a').textContent).toBe('2026-08-01'),
+    )
+
+    // Second hover, a genuinely different position: with the bug this froze at the first reclaim's
+    // point (A now "owns" source again, and the stale `pinnedRef` made the guard block it). Fixed,
+    // it tracks like any ordinary mouse hover.
+    fireEvent.pointerMove(overlayA, { pointerType: 'mouse', clientX: 200, clientY: 0 })
+    await waitFor(() =>
+      expect(screen.getByTestId('point-handoff-a').textContent).toBe('2026-08-03'),
+    )
+  })
+})

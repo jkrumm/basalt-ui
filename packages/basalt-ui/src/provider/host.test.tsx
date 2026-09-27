@@ -111,4 +111,26 @@ describe('BasaltProvider data-basalt-host', () => {
       window.matchMedia = original
     }
   })
+
+  /**
+   * Regression: the attribute used to be removed on EVERY unmount, so a second mounted instance
+   * (a nested route wrapping its own provider, or two independent trees) unmounting first ripped
+   * the attribute out from under one still mounted. It must only go once the LAST instance unmounts.
+   */
+  test('ref-counted across two mounted instances — only the last unmount removes it', () => {
+    const restore = stubDisplayMode(false)
+    try {
+      const first = render(<HostProbe />)
+      const second = render(<HostProbe />)
+      expect(document.documentElement.getAttribute('data-basalt-host')).toBe('web')
+
+      second.unmount()
+      expect(document.documentElement.getAttribute('data-basalt-host')).toBe('web')
+
+      first.unmount()
+      expect(document.documentElement.getAttribute('data-basalt-host')).toBeNull()
+    } finally {
+      restore()
+    }
+  })
 })

@@ -12,7 +12,7 @@
  * rendered, once each, and Mantine's `visibleFrom`/`hiddenFrom` decides which one paints. No JS
  * media query, so there is no first-paint flash and no hook that re-renders on resize.
  */
-import { ActionIcon, Button, Group, Menu } from '@mantine/core'
+import { ActionIcon, Box, Button, Group, Menu } from '@mantine/core'
 import { createContext, isValidElement, useContext, useEffect, useRef, useState } from 'react'
 import type { ReactNode, RefObject } from 'react'
 import type { BasaltProps } from '../common/props'
@@ -457,16 +457,16 @@ type BarActionRowProps = ActionGroupProps & {
  * label, so a labelled joined set is unaffected; the rule reads what the caller actually supplied
  * rather than adding a prop to ask.
  */
-function joinRuns(
-  actions: readonly BarAction[],
+function joinRuns<T extends BarAction>(
+  actions: readonly T[],
   opts: { viewport: 'desktop' | 'mobile'; excludeKey?: string | undefined },
-): BarAction[][] {
-  const joinable = (action: BarAction): boolean =>
+): T[][] {
+  const joinable = (action: T): boolean =>
     action.kind === undefined &&
     action.key !== opts.excludeKey &&
     (action.group === true || (opts.viewport === 'mobile' && action.icon !== undefined))
 
-  const runs: BarAction[][] = []
+  const runs: T[][] = []
   for (const action of actions) {
     const tail = runs.at(-1)
     if (joinable(action) && tail !== undefined && tail.every(joinable)) tail.push(action)
@@ -520,40 +520,51 @@ function flowItems(el: Element): Element[] {
 }
 
 /**
- * Row 1's fold state. Measures the desktop group's row (`PAGE_BAR_END_ATTR`) and re-plans on every
- * resize and once web fonts settle; a zero reading (hidden below `sm`, not yet laid out) is not
- * overflow, so the row then stays whole. A changed action set or label drops every remembered
- * width and re-measures from the whole row, because a folded action cannot report the width its
- * new label would take.
+ * The desktop row's fold state — shared by `PageBar` row 1 (`host: 'page'`, whose ANCESTOR carries
+ * `PAGE_BAR_END_ATTR`, published by `PageBar` itself) and every other home's `ActionGroup` /
+ * `BarActionSlot` (`host: 'slot'`, which has no wider elastic row to measure against and so tags
+ * its OWN `Group` with the same attribute — `Element.closest` matches the element itself first,
+ * so one `resolveRoot` covers both). Measures the row and re-plans on every resize and once web
+ * fonts settle; a zero reading (hidden below `sm`, not yet laid out) is not overflow, so the row
+ * then stays whole. A changed action set or label drops every remembered width and re-measures
+ * from the whole row, because a folded run cannot report the width its new label would take.
+ *
+ * `runs` is `joinRuns`'s own output, not the flat action list: a `group: true` run (rendered as one
+ * `ControlGroup`) is measured and folded AS A UNIT, keyed by its first member — a run of length > 1
+ * has no `icon` step of its own (its members already render icon-only per {@link BarEntry}), so it
+ * can only stay whole or fold straight into `More`.
  */
 function useMeasuredFold(input: {
   host: 'page' | 'slot'
-  flat: readonly (BarActionItem | BarActionCustom)[]
+  runs: readonly (BarActionItem | BarActionCustom)[][]
   hasMenus: boolean
 }): { folds: Record<string, FoldStep>; groupRef: RefObject<HTMLDivElement | null> } {
-  const { host, flat, hasMenus } = input
+  const { host, runs, hasMenus } = input
   const groupRef = useRef<HTMLDivElement>(null)
   const [folds, setFolds] = useState<Record<string, FoldStep>>({})
   const [epoch, setEpoch] = useState(0)
   const foldsRef = useRef(folds)
-  const flatRef = useRef(flat)
-  // Menus are filtered out of `flat`, so `hasMenus` — which reserves `MORE_WIDTH` in `planBarFold`
-  // — rides the signature: a menu appearing or leaving is a re-measure trigger, not an invisible one.
-  const signature = `${hasMenus ? 'menus' : 'nomenus'}|${flat
-    .map((a) => `${a.key}:${a.kind === undefined ? a.label : ''}`)
+  const runsRef = useRef(runs)
+  // Menus are filtered out before `runs` is built, so `hasMenus` — which reserves `MORE_WIDTH` in
+  // `planBarFold` — rides the signature: a menu appearing or leaving is a re-measure trigger, not
+  // an invisible one. A run's signature is its representative key plus every member's label — its
+  // members never fold individually, so only the whole run's label set can move its measured width.
+  const signature = `${hasMenus ? 'menus' : 'nomenus'}|${runs
+    .map(
+      (run) => `${run[0]!.key}:${run.map((a) => (a.kind === undefined ? a.label : '')).join(',')}`,
+    )
     .join('|')}`
   const measuredSignature = useRef(signature)
 
   // Declared before the measuring hook so it runs first on every commit.
   useIsomorphicLayoutEffect(() => {
     foldsRef.current = folds
-    flatRef.current = flat
+    runsRef.current = runs
   })
 
   const measured = useMeasuredWidths({
     resolveRoot: () => groupRef.current?.closest(`[${PAGE_BAR_END_ATTR}]`) ?? null,
     signature,
-    enabled: host === 'page',
     nonce: epoch,
     onMeasure: (row, boxes) => {
       if (measuredSignature.current !== signature) {
@@ -568,24 +579,29 @@ function useMeasuredFold(input: {
       }
       const group = groupRef.current
       if (group === null) return
-      const current = flatRef.current
-      const foldable = new Set(current.filter((a) => a.kind === undefined).map((a) => a.key))
-      const buttons = Array.from(group.children).filter(
+      const currentRuns = runsRef.current
+      // A `kind: 'custom'` entry is never a fold candidate (basalt does not draw it, so it has no
+      // form to fold into) — it is always a length-1 run, since `joinRuns` never joins one.
+      const foldable = new Set(
+        currentRuns.filter((run) => run[0]!.kind === undefined).map((run) => run[0]!.key),
+      )
+      const elements = Array.from(group.children).filter(
         (el): el is HTMLElement =>
           el instanceof HTMLElement && foldable.has(el.getAttribute(BAR_KEY_ATTR) ?? ''),
       )
-      for (const el of buttons) {
+      for (const el of elements) {
         const key = el.getAttribute(BAR_KEY_ATTR)!
         if (foldsRef.current[key] === undefined && el.offsetWidth > 0) {
           boxes.current.set(key, { width: el.offsetWidth, height: el.offsetHeight })
         }
       }
-      const items = current.flatMap((a) => {
-        const seen = boxes.current.get(a.key)
-        if (a.kind !== undefined || seen === undefined) return []
-        return [
-          { key: a.key, full: seen.width, icon: a.icon === undefined ? undefined : seen.height },
-        ]
+      const items = currentRuns.flatMap((run) => {
+        const rep = run[0]!
+        if (rep.kind !== undefined) return []
+        const seen = boxes.current.get(rep.key)
+        if (seen === undefined) return []
+        const icon = run.length === 1 && rep.icon !== undefined ? seen.height : undefined
+        return [{ key: rep.key, full: seen.width, icon }]
       })
       const rects = flowItems(row)
         .map((el) => el.getBoundingClientRect())
@@ -593,7 +609,7 @@ function useMeasuredFold(input: {
       if (row.clientWidth <= 0 || rects.length === 0 || items.length === 0) return
 
       const used = Math.max(...rects.map((r) => r.right)) - Math.min(...rects.map((r) => r.left))
-      const rendered = buttons.reduce((sum, el) => sum + el.offsetWidth + BAR_GAP, 0)
+      const rendered = elements.reduce((sum, el) => sum + el.offsetWidth + BAR_GAP, 0)
       const moreNow = hasMenus || Object.values(foldsRef.current).includes('overflow')
       const fixed = used - rendered - (moreNow ? MORE_WIDTH + BAR_GAP : 0)
       const next = planBarFold({ room: row.clientWidth, fixed, gap: BAR_GAP, hasMenus, items })
@@ -608,7 +624,9 @@ function useMeasuredFold(input: {
   // The first measure can precede the web font, whose swap-in changes every label's width.
   useIsomorphicLayoutEffect(() => {
     let disposed = false
-    void document.fonts?.ready?.then(() => (disposed ? undefined : measured.remeasure()))
+    void document.fonts?.ready
+      ?.then(() => (disposed ? undefined : measured.remeasure()))
+      .catch(() => {})
     return () => {
       disposed = true
     }
@@ -634,11 +652,13 @@ export function BarActionRow({
 
   const flat = list.filter((a): a is BarActionItem | BarActionCustom => a.kind !== 'menu')
   const menus = list.filter((a): a is BarActionMenu => a.kind === 'menu')
-  const { folds, groupRef } = useMeasuredFold({ host, flat, hasMenus: menus.length > 0 })
-  const runs = joinRuns(flat, { viewport: 'desktop' }).filter(
-    (run) => run.length > 1 || folds[run[0]!.key] !== 'overflow',
-  )
-  const desktopOverflow = [...flat.filter((a) => folds[a.key] === 'overflow'), ...menus]
+  const allRuns = joinRuns(flat, { viewport: 'desktop' })
+  const { folds, groupRef } = useMeasuredFold({ host, runs: allRuns, hasMenus: menus.length > 0 })
+  const runs = allRuns.filter((run) => folds[run[0]!.key] !== 'overflow')
+  const desktopOverflow = [
+    ...allRuns.flatMap((run) => (folds[run[0]!.key] === 'overflow' ? run : [])),
+    ...menus,
+  ]
 
   const wantsMobile = viewport === 'both'
   const mobileList = [...list, ...mobileOnly]
@@ -698,7 +718,18 @@ export function BarActionRow({
   return (
     <>
       {hasDesktop && desktopLead && (
-        <Group ref={groupRef} gap={BAR_GAP} wrap="nowrap" visibleFrom="sm" {...rootProps}>
+        <Group
+          ref={groupRef}
+          gap={BAR_GAP}
+          wrap="nowrap"
+          visibleFrom="sm"
+          // A `slot` host has no wider elastic row to measure against (`PageBar` row 1 is the only
+          // one an ancestor tags) — it measures its OWN row instead, and `Element.closest` matches
+          // an element against itself before it walks up, so `useMeasuredFold`'s `resolveRoot` needs
+          // no branch for it.
+          {...(host === 'slot' && { [PAGE_BAR_END_ATTR]: '' })}
+          {...rootProps}
+        >
           {runs.map((run) =>
             run.length === 1 ? (
               <BarEntry
@@ -708,11 +739,20 @@ export function BarActionRow({
                 iconOnly={folds[run[0]!.key] === 'icon'}
               />
             ) : (
-              <ControlGroup key={`join-${run[0]!.key}`}>
-                {run.map((action) => (
-                  <BarEntry key={action.key} action={action} emphasis="secondary" iconOnly />
-                ))}
-              </ControlGroup>
+              // Tagged so the joined set is measured and folded AS ONE BOX — its members are
+              // grandchildren of this `Group`, invisible to the direct-children scan
+              // `useMeasuredFold` runs, so the run needs its own `BAR_KEY_ATTR` one level up.
+              <Box
+                key={`join-${run[0]!.key}`}
+                className={classes.joinBox}
+                {...{ [BAR_KEY_ATTR]: run[0]!.key }}
+              >
+                <ControlGroup>
+                  {run.map((action) => (
+                    <BarEntry key={action.key} action={action} emphasis="secondary" iconOnly />
+                  ))}
+                </ControlGroup>
+              </Box>
             ),
           )}
           <OverflowMenu actions={desktopOverflow} />

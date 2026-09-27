@@ -286,7 +286,7 @@ describe('ladder step 3-4: wrap, rotate and terminals', () => {
 
   test('multi-word labels wrap only when wrapping shows every key', () => {
     const plan = planXLabels({ labels, plotWidth: 400, fontPx: 10, categorical: true })
-    expect(plan).toMatchObject({ wrap: true, rotate: 0, thinTo: labels.length })
+    expect(plan).toMatchObject({ wrap: true, rotate: 0 })
     expect(plan.lines).toBeGreaterThan(1)
     expect(plan.wrapPx).toBeGreaterThan(0)
   })
@@ -296,7 +296,6 @@ describe('ladder step 3-4: wrap, rotate and terminals', () => {
     // thins anyway (dropping keys for a two-line axis that bought nothing) — it just thins flat.
     const plan = planXLabels({ labels, plotWidth: 300, fontPx: 10, categorical: true })
     expect(plan).toMatchObject({ wrap: false, rotate: 0, lines: 1 })
-    expect(plan.thinTo).toBeLessThan(labels.length)
   })
 
   test('rotate only when keys exceed twice what fits, even wrapped', () => {

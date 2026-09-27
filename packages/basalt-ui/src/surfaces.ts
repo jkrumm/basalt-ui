@@ -273,8 +273,8 @@ export const SURFACES = {
     pluginRules: [
       'hand-rolled-shell',
       // The size-class axis's one JSX escape hatch (docs/CONTROLS-SPEC.md §6) is reserved
-      // for BasaltShell/AppSidebar/MobileNav — the same shell promise `hand-rolled-shell` polices,
-      // one axis over.
+      // for BasaltShell/AppSidebar/MobileNav/AppBrand (`SHELL_HOME_NAMES`, configs/oxlint-plugin.js)
+      // — the same shell promise `hand-rolled-shell` polices, one axis over.
       'raw-breakpoint',
       'card-inset',
       'in-body-page-title',

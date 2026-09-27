@@ -936,35 +936,88 @@ describe('common props (`common/props.ts`)', () => {
   })
 })
 
-describe('the keyboard-inset calc composes a consumer `style.padding` shorthand too', () => {
-  function rootPaddingBottom(className: string, style: ComposerProps['style']): string | undefined {
-    const { container } = renderComposer({ onSubmit: noop, className, style })
-    const root = container.querySelector(`.${className}`) as HTMLElement | null
-    return root?.style.paddingBottom
-  }
-
-  test('a bare `paddingBottom` still composes (regression guard)', () => {
-    const pb = rootPaddingBottom('probe-pb', { paddingBottom: 20 })
-    expect(pb).toBe('calc(var(--vx-keyboard-inset, 0px) + 20px)')
+describe('keyboard-inset pinning never touches padding', () => {
+  /**
+   * Regression: the root Stack used to write an inline `paddingBottom` on every render, which
+   * silently beat any `padding-bottom` rule a consumer supplied through `className`/
+   * `classNames.root` — in every environment, not just one with an on-screen keyboard. The inset is
+   * now expressed entirely by a trailing spacer element (below), so the root never carries an
+   * inline `paddingBottom` regardless of what `style` the caller passes.
+   */
+  test('no style prop leaves paddingBottom unset and passes no style at all', () => {
+    const { container } = renderComposer({ onSubmit: noop, className: 'probe-no-style' })
+    const root = container.querySelector('.probe-no-style') as HTMLElement
+    expect(root.style.paddingBottom).toBe('')
   })
 
-  test('a `padding` shorthand composes its bottom component, not just the keyboard inset', () => {
-    const pb = rootPaddingBottom('probe-shorthand', { padding: '20px' })
-    expect(pb).toBe('calc(var(--vx-keyboard-inset, 0px) + 20px)')
+  test('a style prop is passed through to the root verbatim', () => {
+    const { container } = renderComposer({
+      onSubmit: noop,
+      className: 'probe-verbatim-style',
+      style: { color: 'red', marginTop: 4 },
+    })
+    const root = container.querySelector('.probe-verbatim-style') as HTMLElement
+    expect(root.style.color).toBe('red')
+    expect(root.style.marginTop).toBe('4px')
+    expect(root.style.paddingBottom).toBe('')
   })
 
-  test('a multi-value `padding` shorthand reads its bottom component', () => {
-    const pb = rootPaddingBottom('probe-shorthand-4', { padding: '10px 20px 30px 20px' })
-    expect(pb).toBe('calc(var(--vx-keyboard-inset, 0px) + 30px)')
+  test('a `paddingBottom` in style is left exactly as given — not composed into a calc()', () => {
+    const { container } = renderComposer({
+      onSubmit: noop,
+      className: 'probe-padding-bottom',
+      style: { paddingBottom: 20 },
+    })
+    const root = container.querySelector('.probe-padding-bottom') as HTMLElement
+    expect(root.style.paddingBottom).toBe('20px')
   })
 
-  test('a bare-number `padding` shorthand (React’s px convention) still gets a unit', () => {
-    const pb = rootPaddingBottom('probe-shorthand-number', { padding: 20 })
-    expect(pb).toBe('calc(var(--vx-keyboard-inset, 0px) + 20px)')
+  test('a trailing aria-hidden spacer publishes the keyboard-inset var as its height', () => {
+    const { container } = renderComposer({ onSubmit: noop, className: 'probe-spacer' })
+    const root = container.querySelector('.probe-spacer') as HTMLElement
+    const spacer = root.querySelector('div[aria-hidden]') as HTMLElement | null
+    expect(spacer).not.toBeNull()
+    expect(spacer?.style.height).toBe('var(--vx-keyboard-inset, 0px)')
   })
 
-  test('`paddingBottom` wins over the shorthand when both are set', () => {
-    const pb = rootPaddingBottom('probe-both', { padding: '20px', paddingBottom: 8 })
-    expect(pb).toBe('calc(var(--vx-keyboard-inset, 0px) + 8px)')
+  /**
+   * Regression: the spacer used to be the gapped root Stack's own trailing flex child, cancelled
+   * via a negative `margin-top` reading `--stack-gap` back — exact against the Stack's OWN `gap`
+   * prop, but blind to a `gap` a consumer adds on TOP of that through `style`. `style={{ gap: 20 }}`
+   * changes the rendered gap directly (it lands on the same flex box the Stack is) without moving
+   * `--stack-gap` at all, so the cancellation under-cancelled by the difference and a closed
+   * keyboard left phantom space at the bottom. The spacer is now a sibling of the gapped Stack, one
+   * level up on a plain non-flex root — a consumer's `gap` never reaches a box this spacer is
+   * inside, so there is nothing left to cancel.
+   */
+  test('a consumer style={{ gap: 20 }} adds no phantom space under a closed keyboard', () => {
+    const { container } = renderComposer({
+      onSubmit: noop,
+      className: 'probe-consumer-gap',
+      style: { gap: 20 },
+    })
+    const root = container.querySelector('.probe-consumer-gap') as HTMLElement
+    const spacer = root.querySelector('div[aria-hidden]') as HTMLElement | null
+    expect(spacer).not.toBeNull()
+    // The consumer's own gap is passed through verbatim on the root...
+    expect(root.style.gap).toBe('20px')
+    // ...but the spacer sits outside the gapped Stack entirely, so it carries no compensating
+    // margin at all — nothing here can be under- or over-cancelled by any gap the root carries.
+    expect(spacer?.style.marginTop).toBe('')
+    expect(spacer?.style.height).toBe('var(--vx-keyboard-inset, 0px)')
+  })
+
+  test("className's own padding-bottom wins — nothing inline outranks it", () => {
+    const styleEl = document.createElement('style')
+    styleEl.textContent = '.probe-class-padding { padding-bottom: 12px; }'
+    document.head.append(styleEl)
+    try {
+      const { container } = renderComposer({ onSubmit: noop, className: 'probe-class-padding' })
+      const root = container.querySelector('.probe-class-padding') as HTMLElement
+      expect(root.style.paddingBottom).toBe('')
+      expect(getComputedStyle(root).paddingBottom).toBe('12px')
+    } finally {
+      styleEl.remove()
+    }
   })
 })

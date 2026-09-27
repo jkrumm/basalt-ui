@@ -276,15 +276,15 @@ describe(`useBandPlot measures at the tier it paints (${PHONE_WIDTH}px)`, () => 
         height={CHART_HEIGHT}
       />,
     )
+    // Asserted inside waitFor: the first tick paint can land before the tier measurement settles
+    // under full-suite load.
     await waitFor(() => {
-      expect(container.querySelectorAll('.visx-axis-bottom text').length).toBeGreaterThan(0)
+      const ticks = [...container.querySelectorAll('.visx-axis-bottom text')]
+      expect(ticks.length).toBeGreaterThan(0)
+      expect(new Set(ticks.map((n) => n.getAttribute('font-size')))).toEqual(
+        new Set([String(phone.axisFont)]),
+      )
     })
-    const fonts = new Set(
-      [...container.querySelectorAll('.visx-axis-bottom text')].map((n) =>
-        n.getAttribute('font-size'),
-      ),
-    )
-    expect(fonts).toEqual(new Set([String(phone.axisFont)]))
   })
 })
 

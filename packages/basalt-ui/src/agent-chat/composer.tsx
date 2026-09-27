@@ -36,7 +36,7 @@
  *   onSubmit={({ text, attachments }) => send(text, attachments)}
  * />
  */
-import { ActionIcon, Group, Kbd, Stack, Text, Textarea } from '@mantine/core'
+import { ActionIcon, Box, Group, Kbd, Stack, Text, Textarea } from '@mantine/core'
 import type { ClipboardEvent, ComponentProps, JSX, KeyboardEvent, ReactNode, Ref } from 'react'
 import { useImperativeHandle, useLayoutEffect, useRef, useSyncExternalStore } from 'react'
 import { cx } from '../common/props'
@@ -204,6 +204,14 @@ export type ComposerSubmit = {
 const NO_ATTACHMENTS: readonly ComposerAttachment[] = []
 
 /**
+ * The gap between the textarea/actions row and the hint row, inside the inner `Stack` the render
+ * below owns exclusively — the keyboard-inset spacer is deliberately NOT one of that Stack's flex
+ * children (see the render's own comment), so this value never has to be cancelled back out of
+ * anything the spacer contributes.
+ */
+const ROOT_GAP = 6
+
+/**
  * Imperative escape hatch for slot content that must write into the composer from OUTSIDE the
  * render tree — a voice recorder streaming transcript chunks, a suggestion chip inserting at the
  * cursor. Obtained via `ref`. Kept to exactly the three primitives that cover both real use cases
@@ -337,20 +345,6 @@ export type ComposerProps = BasaltProps &
     /** Replaces the whole Enter/Shift+Enter hint row. Pass `null` to drop it entirely. */
     readonly hint?: ReactNode
   }
-
-/**
- * The bottom component of a CSS `padding` shorthand (1-4 space-separated values, or React's own
- * bare-number-means-px convention) — so a consumer's `style={{ padding: '20px' }}` (or `padding:
- * 20`) still composes into the keyboard-inset calc below instead of being silently discarded by the
- * `paddingBottom` longhand that follows it. Naive on plain lengths; not a general CSS parser, since
- * this only ever reads a consumer's own inline `style` prop.
- */
-function paddingBottomOf(padding: string | number): string {
-  if (typeof padding === 'number') return `${padding}px`
-  const parts = padding.trim().split(/\s+/)
-  const bottom = parts.length >= 3 ? parts[2] : parts[0]
-  return bottom ?? '0px'
-}
 
 /** The default footer: the Enter / Shift+Enter keyboard contract, in the mono micro-label voice. */
 function DefaultHint(): JSX.Element {
@@ -488,7 +482,9 @@ export function Composer({
 
   // Pins the composer above a coarse-pointer on-screen keyboard — see use-keyboard-inset.ts. The
   // published custom property defaults to 0px via CSS, so a Composer with no `visualViewport`
-  // support (SSR, an unsupporting engine) pays for exactly one no-op custom property.
+  // support (SSR, an unsupporting engine) pays for exactly one no-op custom property on a trailing
+  // spacer (see the render below) rather than an inline `paddingBottom` that could ever beat a
+  // consumer's own `className`/`classNames.root` padding.
   const keyboardInsetRef = useKeyboardInsetRef()
 
   const submit = (): void => {
@@ -592,65 +588,62 @@ export function Composer({
   const showActions = showStop || showSend
 
   return (
-    <Stack
-      gap={6}
-      ref={keyboardInsetRef}
-      className={cx(classNames?.root, className)}
-      // Composed, not overwritten: spreading `style` AFTER a flat `paddingBottom` let a consumer's
-      // own `style.paddingBottom` (or `padding` shorthand) silently disable keyboard-inset pinning,
-      // with the `0px` fallback masking the failure. `calc()` keeps both — the consumer's own
-      // bottom padding, plus however much keyboard is currently covering it. `paddingBottom` wins
-      // over the shorthand's own bottom component when both are set, matching the CSS cascade.
-      style={{
-        ...style,
-        paddingBottom: `calc(var(--vx-keyboard-inset, 0px) + ${
-          typeof style?.paddingBottom === 'number'
-            ? `${style.paddingBottom}px`
-            : (style?.paddingBottom ??
-              (style?.padding !== undefined ? paddingBottomOf(style.padding) : '0px'))
-        })`,
-      }}
-    >
-      <Group gap="xs" align="flex-end" wrap="nowrap">
-        {leftSection}
-        <Textarea {...textareaProps} ref={textareaRef} />
-        {rightSection}
-        {showActions && (
-          <Group gap="xs" wrap="nowrap" className={cx(classNames?.actions)}>
-            {showStop ? (
-              <ActionIcon
-                size={42}
-                radius="md"
-                variant="filled"
-                color="red"
-                onClick={onStop}
-                aria-label="Stop generating"
-              >
-                <StopGlyph />
-              </ActionIcon>
-            ) : null}
-            {showSend ? (
-              <ActionIcon
-                size={42}
-                radius="md"
-                variant="filled"
-                onClick={submit}
-                disabled={inputDisabled || !hasPayload}
-                aria-label="Send message"
-                // Send action (docs/DESIGN-SPEC.md §5): the one accent-filled control. It needs no
-                // color override — `filled` resolves through the theme to `--vx-accent-fill` /
-                // `--vx-on-accent`. (It used to hand-wire those two vars inline, which is why this
-                // was the ONLY filled control that stayed legible while the rest of the chrome went
-                // through Mantine's scheme-blind autoContrast. The theme owns it now, and hover
-                // works again — an inline style can't express a `:hover` state.)
-              >
-                <SendGlyph />
-              </ActionIcon>
-            ) : null}
-          </Group>
-        )}
-      </Group>
-      {hint === undefined ? <DefaultHint /> : hint}
-    </Stack>
+    <Box ref={keyboardInsetRef} className={cx(classNames?.root, className)} style={style}>
+      <Stack gap={ROOT_GAP}>
+        <Group gap="xs" align="flex-end" wrap="nowrap">
+          {leftSection}
+          <Textarea {...textareaProps} ref={textareaRef} />
+          {rightSection}
+          {showActions && (
+            <Group gap="xs" wrap="nowrap" className={cx(classNames?.actions)}>
+              {showStop ? (
+                <ActionIcon
+                  size={42}
+                  radius="md"
+                  variant="filled"
+                  color="red"
+                  onClick={onStop}
+                  aria-label="Stop generating"
+                >
+                  <StopGlyph />
+                </ActionIcon>
+              ) : null}
+              {showSend ? (
+                <ActionIcon
+                  size={42}
+                  radius="md"
+                  variant="filled"
+                  onClick={submit}
+                  disabled={inputDisabled || !hasPayload}
+                  aria-label="Send message"
+                  // Send action (docs/DESIGN-SPEC.md §5): the one accent-filled control. It needs
+                  // no color override — `filled` resolves through the theme to `--vx-accent-fill`
+                  // / `--vx-on-accent`. (It used to hand-wire those two vars inline, which is why
+                  // this was the ONLY filled control that stayed legible while the rest of the
+                  // chrome went through Mantine's scheme-blind autoContrast. The theme owns it
+                  // now, and hover works again — an inline style can't express a `:hover` state.)
+                >
+                  <SendGlyph />
+                </ActionIcon>
+              ) : null}
+            </Group>
+          )}
+        </Group>
+        {hint === undefined ? <DefaultHint /> : hint}
+      </Stack>
+      {/* Pins the composer above a coarse-pointer on-screen keyboard by growing THIS spacer, not
+          by padding the root — so a consumer's own `className`/`classNames.root` padding-bottom is
+          never overridden (see use-keyboard-inset.ts). It is a SIBLING of the gapped Stack above,
+          not one of its flex children, precisely so it never has to cancel that Stack's `gap`
+          back out: a consumer's own `style` (which lands on this outer, non-flex root, not on the
+          inner Stack) can carry an unrelated `gap` without ever touching what this spacer
+          contributes. A closed keyboard (the var's `0px` fallback) then really is 0 extra height,
+          regardless of anything the caller's `style`/`className` does to the root. (This used to
+          be the Stack's own trailing child, cancelled via a negative `margin-top` reading
+          `--stack-gap` back — exact against Stack's OWN `gap` prop, but blind to a `gap` a
+          consumer added on top through `style`, which changes the rendered gap without moving that
+          var.) */}
+      <Box aria-hidden style={{ height: 'var(--vx-keyboard-inset, 0px)' }} />
+    </Box>
   )
 }

@@ -21,9 +21,9 @@ import type { ChartMargin } from '../../tokens'
 import type { CursorResolution } from '../cursor/resolve'
 import { autoMargin } from '../layout/auto-margin'
 import {
-  INSIDE_Y_FLOOR,
   isTightClass,
   planXLabels,
+  resolveMarginFloor,
   resolveYPlacement,
 } from '../primitives/chart-layout'
 import { useChartContainerClass, useChartMetrics } from '../primitives/chart-tier'
@@ -229,7 +229,7 @@ export function useBandPlot<T>(input: UseBandPlotInput<T>): BandPlot<T> {
       fontPx: tier.axisFont,
       // An inside-placed left axis paints IN the plot, so the outside label-width floor is dead
       // space there — same law as `CartesianChart`'s `marginInput.floor`.
-      floor: yPlacement === 'outside' ? tier.margin : { ...tier.margin, left: INSIDE_Y_FLOOR },
+      floor: resolveMarginFloor(yPlacement, tier.margin),
       anchorTerminals: tight,
       bottomLines: xPlan.lines,
       ...(marginOverride !== undefined && { override: marginOverride }),

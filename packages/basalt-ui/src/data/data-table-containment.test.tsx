@@ -201,6 +201,12 @@ type FoldRow = { a: string; b: string; c: string }
 const foldCol = createColumnHelper<FoldRow>()
 const FOLD_ROWS: FoldRow[] = [{ a: 'A1', b: 'B1', c: 'C1' }]
 
+/** A fourth column so the enableHiding/pinning exclusion test has two ELIGIBLE fold candidates to
+ * work with, rather than the "never fold the last remaining candidate" floor alone deciding it. */
+type ExclusionRow = FoldRow & { d: string }
+const exclusionCol = createColumnHelper<ExclusionRow>()
+const EXCLUSION_ROWS: ExclusionRow[] = [{ a: 'A1', b: 'B1', c: 'C1', d: 'D1' }]
+
 const FOLD_COLUMNS_DEFAULT = [
   foldCol.accessor('a', { header: 'A' }),
   foldCol.accessor('b', { header: 'B' }),
@@ -327,6 +333,203 @@ describe('column fold — meta.priority (docs/CONTROLS-SPEC.md §2)', () => {
     stubLayout()
     const { container } = mountFold({ maxHeight: 480 })
     await resizeFold(container, 100, { a: 50, b: 50, c: 50 })
+    expect(headerIds(container)).toEqual(['a'])
+  })
+
+  test('expanded rows survive a non-memoized `data` array carrying the same rows', async () => {
+    stubLayout()
+    const { container, rerender } = render(
+      <MantineProvider>
+        <BasaltDataTable data={[...FOLD_ROWS]} columns={FOLD_COLUMNS_DEFAULT} />
+      </MantineProvider>,
+    )
+    await resizeFold(container, 100, { a: 50, b: 50, c: 50 })
+    expect(headerIds(container)).toEqual(['a'])
+
+    const toggle = container.querySelector('tbody button[aria-label="Show row details"]')
+    if (!(toggle instanceof HTMLElement)) throw new Error('expected the fold toggle button')
+    fireEvent.click(toggle)
+    expect(container.querySelectorAll('tbody tr')).toHaveLength(2)
+
+    // A BRAND-NEW array holding the SAME row objects at the SAME indices — the shape an inline
+    // `.map()` or an unstable query result hands down on every parent re-render. With no `getRowId`
+    // the expanded id IS the array index, so pruning has to ask a narrower question than "is this
+    // id still present": is the object AT this index still the same reference as before? Here it
+    // is, so the disclosure survives.
+    rerender(
+      <MantineProvider>
+        <BasaltDataTable data={[...FOLD_ROWS]} columns={FOLD_COLUMNS_DEFAULT} />
+      </MantineProvider>,
+    )
+    expect(container.querySelectorAll('tbody tr')).toHaveLength(2)
+  })
+
+  /**
+   * Regression: pruning an index id purely by "is this index still present" (the getRowId-shaped
+   * check) is unsafe once there is no `getRowId` — an index trivially survives a page turn or a
+   * refetch, so the SAME index would silently keep the OLD disclosure attached to a completely
+   * different record now sitting at that position. Only a reference check catches this: a NEW
+   * object at the same index means the row identity actually changed, and the expanded state must
+   * drop with it.
+   */
+  test('expanded rows collapse when a refetch seats a DIFFERENT object at the same index', async () => {
+    stubLayout()
+    const { container, rerender } = render(
+      <MantineProvider>
+        <BasaltDataTable data={FOLD_ROWS} columns={FOLD_COLUMNS_DEFAULT} />
+      </MantineProvider>,
+    )
+    await resizeFold(container, 100, { a: 50, b: 50, c: 50 })
+    expect(headerIds(container)).toEqual(['a'])
+
+    const toggle = container.querySelector('tbody button[aria-label="Show row details"]')
+    if (!(toggle instanceof HTMLElement)) throw new Error('expected the fold toggle button')
+    fireEvent.click(toggle)
+    expect(container.querySelectorAll('tbody tr')).toHaveLength(2)
+
+    // A refetch/page-turn: index 0 is still index 0, but the OBJECT behind it is a different
+    // record now — a brand-new object, not a shallow copy of the same one.
+    rerender(
+      <MantineProvider>
+        <BasaltDataTable data={[{ a: 'A2', b: 'B2', c: 'C2' }]} columns={FOLD_COLUMNS_DEFAULT} />
+      </MantineProvider>,
+    )
+    expect(container.querySelectorAll('tbody tr')).toHaveLength(1)
+  })
+
+  /**
+   * With `getRowId`, pruning STAYS id-based — a caller-declared identity is exactly what the index
+   * lane above has no equivalent of, so a row keeps its expanded disclosure across a re-sort/
+   * refetch as long as the SAME id is still present, whatever object or position it now occupies.
+   */
+  test('with getRowId, expanded rows survive a refetch that reuses the same ids on new objects', async () => {
+    stubLayout()
+    const getRowId = (row: FoldRow) => row.a
+    const { container, rerender } = render(
+      <MantineProvider>
+        <BasaltDataTable data={FOLD_ROWS} columns={FOLD_COLUMNS_DEFAULT} getRowId={getRowId} />
+      </MantineProvider>,
+    )
+    await resizeFold(container, 100, { a: 50, b: 50, c: 50 })
+    expect(headerIds(container)).toEqual(['a'])
+
+    const toggle = container.querySelector('tbody button[aria-label="Show row details"]')
+    if (!(toggle instanceof HTMLElement)) throw new Error('expected the fold toggle button')
+    fireEvent.click(toggle)
+    expect(container.querySelectorAll('tbody tr')).toHaveLength(2)
+
+    // A brand-new object, but the SAME id ("A1") — getRowId says this is still the same row.
+    rerender(
+      <MantineProvider>
+        <BasaltDataTable
+          data={[{ a: 'A1', b: 'B2', c: 'C2' }]}
+          columns={FOLD_COLUMNS_DEFAULT}
+          getRowId={getRowId}
+        />
+      </MantineProvider>,
+    )
+    expect(container.querySelectorAll('tbody tr')).toHaveLength(2)
+
+    // A refetch that drops the id entirely collapses it, same as the index lane's "no longer
+    // present" case.
+    rerender(
+      <MantineProvider>
+        <BasaltDataTable
+          data={[{ a: 'A3', b: 'B3', c: 'C3' }]}
+          columns={FOLD_COLUMNS_DEFAULT}
+          getRowId={getRowId}
+        />
+      </MantineProvider>,
+    )
+    expect(container.querySelectorAll('tbody tr')).toHaveLength(1)
+  })
+
+  /**
+   * `enableHiding: false` and a pinned column are excluded outright from fold candidacy
+   * (`useColumnFold`'s `excluded` set) — a caller stating a column must stay visible has no way to
+   * override that by folding it anyway, however narrow the wrapper measures.
+   */
+  test('enableHiding:false and a pinned column never fold — an ordinary eligible column folds first', async () => {
+    stubLayout()
+    // Four columns so the "never fold the last remaining CANDIDATE" floor (`planColumnFold`) has
+    // two eligible columns to work with ('b' and 'd') rather than one — with only one eligible
+    // column left, that floor alone would keep it visible and the test would pass whether or not
+    // the exclusion itself worked. Here 'd' (declared last among the eligible pair) folds while
+    // 'a' (enableHiding:false) and 'c' (pinned) stay up regardless of how little room is measured.
+    const exclusionColumns = [
+      exclusionCol.accessor('a', { header: 'A', enableHiding: false }),
+      exclusionCol.accessor('b', { header: 'B' }),
+      exclusionCol.accessor('c', { header: 'C' }),
+      exclusionCol.accessor('d', { header: 'D' }),
+    ]
+    const { container } = render(
+      <MantineProvider>
+        <BasaltDataTable
+          data={EXCLUSION_ROWS}
+          columns={exclusionColumns}
+          enablePinning
+          initialColumnPinning={{ left: ['c'] }}
+        />
+      </MantineProvider>,
+    )
+    await resizeFold(container, 1, { a: 50, b: 50, c: 50, d: 50 })
+    // 'c' renders FIRST — pinned-left columns render ahead of the center group
+    // (`getOrderedHeaderGroups`: left → center → right).
+    expect(headerIds(container)).toEqual(['c', 'a', 'b'])
+  })
+
+  test('row selection composes with column folding — selection cell, fold toggle, and colSpan all agree', async () => {
+    stubLayout()
+    const { container } = render(
+      <MantineProvider>
+        <BasaltDataTable data={FOLD_ROWS} columns={FOLD_COLUMNS_DEFAULT} enableRowSelection />
+      </MantineProvider>,
+    )
+    await resizeFold(container, 100, { a: 50, b: 50, c: 50 })
+    expect(headerIds(container)).toEqual(['a'])
+
+    const bodyRow = container.querySelector('tbody tr')
+    if (!bodyRow) throw new Error('expected a body row')
+    // The fold-toggle cell, the selection checkbox cell, and the one column that stayed visible.
+    expect(bodyRow.querySelectorAll('td')).toHaveLength(3)
+    expect(bodyRow.querySelector('input[type="checkbox"]')).not.toBeNull()
+
+    const toggle = bodyRow.querySelector('button[aria-label="Show row details"]')
+    if (!(toggle instanceof HTMLElement)) throw new Error('expected the fold toggle button')
+    fireEvent.click(toggle)
+
+    const disclosure = container.querySelectorAll('tbody tr')[1]
+    // colSpan = columns(3) + selection(1) + fold-toggle(1) - folded(2) = 3, the same width a real
+    // row renders at above — the count the selection column and the fold toggle both feed.
+    expect(disclosure?.querySelector('td')?.getAttribute('colspan')).toBe('3')
+    expect(disclosure?.textContent).toContain('B1')
+    expect(disclosure?.textContent).toContain('C1')
+  })
+})
+
+/**
+ * `planColumnFold`'s own floor — even a wrapper too narrow for a single data column must not fold
+ * every column away: a table with no columns left has no row identifier at all, which is worse
+ * than the horizontal scroll this mechanism exists to avoid.
+ */
+describe('column fold — never folds every data column away', () => {
+  type WideFoldRow = { a: string; b: string; c: string; d: string; e: string; f: string }
+  const wideFoldCol = createColumnHelper<WideFoldRow>()
+  const WIDE_FOLD_ROWS: WideFoldRow[] = [{ a: 'A1', b: 'B1', c: 'C1', d: 'D1', e: 'E1', f: 'F1' }]
+  const WIDE_FOLD_COLUMNS = (['a', 'b', 'c', 'd', 'e', 'f'] as const).map((id) =>
+    wideFoldCol.accessor(id, { header: id.toUpperCase() }),
+  )
+
+  test('6 columns at 120px each in a 100px wrapper still leave the first data column visible', async () => {
+    stubLayout()
+    const { container } = render(
+      <MantineProvider>
+        <BasaltDataTable data={WIDE_FOLD_ROWS} columns={WIDE_FOLD_COLUMNS} />
+      </MantineProvider>,
+    )
+    await resizeFold(container, 100, { a: 120, b: 120, c: 120, d: 120, e: 120, f: 120 })
+    // Every column's own arithmetic says fold everything (6 x 120 vastly overflows 100px even
+    // one at a time) — the guard stops one short, at the declared-first column, 'a'.
     expect(headerIds(container)).toEqual(['a'])
   })
 })

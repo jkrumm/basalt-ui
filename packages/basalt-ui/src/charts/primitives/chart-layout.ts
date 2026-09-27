@@ -9,9 +9,15 @@
 import { resolveContainerClass } from '../../tokens/size-classes'
 import type { ContainerClass, SIZE_CLASSES } from '../../tokens/size-classes'
 import { VX } from '../../tokens'
+import type { ChartMargin } from '../../tokens'
 import { measureText } from '../utils/measure-text'
 import type { LegendEntry } from './ChartLegend'
-import { entriesWithinDotRows, entriesWithinRows, orderEntries } from './chart-frame-layout'
+import {
+  entriesWithinChipRows,
+  entriesWithinDotRows,
+  entriesWithinRows,
+  orderEntries,
+} from './chart-frame-layout'
 
 export type ChartLayout = {
   containerClass: ContainerClass
@@ -86,7 +92,12 @@ function resolveHeight(input: ChartLayoutInput, containerClass: ContainerClass):
   return Math.min(derived, Math.round(input.viewportH * COARSE_VIEWPORT_SHARE))
 }
 
-/** A legend never rolls up fewer than 2 entries: "+1 more" hides nothing a chip would not show. */
+/**
+ * A legend never rolls up fewer than 2 entries: "+1 more" hides nothing a chip would not show.
+ * `fitted` may legitimately be 0 — not even the first chip/dot fits once the `All N` chip's own
+ * width is reserved beside it — in which case the row is the disclosure alone (`visible: 0`),
+ * unless that would roll up the single-entry case the "fewer than 2" rule already protects.
+ */
 function rollUp(total: number, fitted: number): { visible: number; overflow: number } {
   const visible = total - fitted < 2 ? total : fitted
   return { visible, overflow: total - visible }
@@ -115,11 +126,15 @@ function resolveLegend(
     where === 'header' && !allChipsFit && (input.cardShort === true || containerClass === 'compact')
 
   if (!wantsDots) {
-    const { visible, overflow } = rollUp(total, Math.max(1, chipFit))
+    // Re-measured with the `All N` chip's own width reserved whenever there IS overflow — `chipFit`
+    // above is deliberately the un-reserved number (the `allChipsFit` check needs the answer to
+    // "does everything fit with no chip at all"), so it is not reused for the final count here.
+    const fitted = allChipsFit ? chipFit : entriesWithinChipRows(ordered, width, LEGEND_ROWS[where])
+    const { visible, overflow } = rollUp(total, fitted)
     return { mode: 'chips', where, visible, overflow }
   }
   const dotFit = entriesWithinDotRows(ordered, width, LEGEND_ROWS[where], dividerAfter)
-  const { visible, overflow } = rollUp(total, Math.max(1, dotFit))
+  const { visible, overflow } = rollUp(total, dotFit)
   return { mode: 'dots', where, visible, overflow }
 }
 
@@ -149,6 +164,20 @@ export function resolveYPlacement(
  * the tier's own `margin.left` here reserves a gutter for a label that no longer paints.
  */
 export const INSIDE_Y_FLOOR = 4
+
+/**
+ * The `autoMargin` FLOOR to measure against, once `resolveYPlacement` has decided where the left
+ * axis paints — an axis placed `'outside'` keeps the tier's ordinary margin floor; one placed
+ * `'inside'` (or dropped, `'none'`) paints IN the plot, so the outside label-width floor is dead
+ * space on that side and only {@link INSIDE_Y_FLOOR} applies. `CartesianChart` and `useBandPlot`
+ * used to each spell this same ternary out by hand.
+ */
+export function resolveMarginFloor(
+  yPlacement: 'outside' | 'inside' | 'none',
+  tierMargin: ChartMargin,
+): ChartMargin {
+  return yPlacement === 'outside' ? tierMargin : { ...tierMargin, left: INSIDE_Y_FLOOR }
+}
 
 const COMPACT_UNITS = [
   [1e12, 'T'],
@@ -207,7 +236,6 @@ export function wrapLabel(label: string, maxPx: number, fontPx: number): string[
 export type XLabelPlan = {
   wrap: boolean
   rotate: 0 | 45
-  thinTo: number
   /** Lines the tallest label takes once wrapped (1 when it does not). */
   lines: number
   /** Px one tick label needs: measured width (wrapped width when wrapping) plus the gap. */
@@ -236,7 +264,6 @@ export function planXLabels(input: {
   const flat = {
     wrap: false,
     rotate: 0,
-    thinTo: clamp(fit, 2, Math.max(count, 2)),
     lines: 1,
     labelPx: flatPx,
     wrapPx: 0,
@@ -263,7 +290,6 @@ export function planXLabels(input: {
     return {
       wrap: true,
       rotate: 0,
-      thinTo: count,
       lines,
       labelPx: wrappedWidest + X_LABEL_GAP,
       wrapPx,

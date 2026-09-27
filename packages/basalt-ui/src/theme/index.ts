@@ -89,6 +89,7 @@ import floatingClasses from './floating.module.css'
 import navLinkClasses from './nav-link.module.css'
 import segmentedControlClasses from './segmented-control.module.css'
 import timelineClasses from './timeline.module.css'
+import { HIT_ATTR } from './ctl-theme'
 
 /**
  * The `fonts` option's resolved shape — defined in `basalt-ui/tokens` (`BasaltFontsConfig`,
@@ -103,7 +104,9 @@ export type { BasaltFontsConfig } from '../tokens'
 export { useBasaltSpacing } from './use-basalt-spacing'
 
 // The `size="ctl"` slot theme (`docs/CONTROLS-SPEC.md` §5) — see `./ctl-theme`'s own doc for the
-// merge/precedence contract.
+// merge/precedence contract. `HIT_ATTR` is deliberately NOT in this list: it has no consumer of its
+// own (consolidation doctrine — adopt or delete), and stays reachable only through the internal
+// `./ctl-theme` import above, for this file's own use below.
 export { CTL_THEME, CtlSlot, type CtlSlotProps } from './ctl-theme'
 
 // `ThemeToggle` moved into this directory (C1 consolidation, merging the former `theme-toggle/`
@@ -185,7 +188,10 @@ function pinShades(
 }
 
 // Mantine's typed prop bags reject `data-*` literals; a spread carries the hit-area attribute in.
-const HIT_ATTR: Record<string, true> = { 'data-basalt-hit': true }
+// Defined in `./ctl-theme` (imported above) rather than here: `CTL_THEME` there is a top-level
+// `const` built eagerly at module load, so a `HIT_ATTR` defined in THIS file and imported back from
+// `ctl-theme.tsx` would close an import cycle this file's own line 107 doesn't already have — the
+// existing direction (this file depends on `ctl-theme.tsx`, not the reverse) is what keeps it safe.
 
 /** The shipped, config-independent palette data — `baseTheme` / `cssVariablesResolver` below are
  * built from this once, at module load. */

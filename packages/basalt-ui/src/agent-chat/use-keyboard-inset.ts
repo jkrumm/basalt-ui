@@ -21,6 +21,10 @@
  * The state-node + layout-effect shape mirrors `shell/page-bar.tsx`'s `useMeasuredHeightVar`: a
  * callback ref stored in state (so the effect re-runs once the node actually mounts) rather than a
  * plain `RefObject` (which is not itself a dependency).
+ *
+ * Returns the callback ref only. It intentionally does NOT track the live inset (open/closed) —
+ * that stays an imperative, no-re-render style write, which is the entire point of publishing it
+ * outside React state.
  */
 import { useCallback, useState } from 'react'
 import { useIsomorphicLayoutEffect } from '../common/isomorphic-layout-effect'
