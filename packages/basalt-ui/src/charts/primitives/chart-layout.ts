@@ -116,6 +116,23 @@ export function isTightClass(containerClass: ContainerClass): boolean {
   return containerClass === 'compact' || containerClass === 'micro'
 }
 
+/**
+ * Ladder step 5: at a tight container class the y labels move inside the plot (micro: no y axis
+ * at all), so the left gutter drops to its floor. Not-tight, no left axis to place, or an explicit
+ * `margin.left` (the consumer laid out an outside gutter themselves) all keep the axis outside —
+ * the single implementation `CartesianChart`/`useBandPlot`/`resolveAxisEconomy` all call, replacing
+ * three independent copies of the same ladder (`docs/waves/PLAN.md` wave 8).
+ */
+export function resolveYPlacement(
+  containerClass: ContainerClass,
+  opts: { hasLeftAxis?: boolean | undefined; marginOverrideLeft?: number | undefined } = {},
+): 'outside' | 'inside' | 'none' {
+  const { hasLeftAxis = true, marginOverrideLeft } = opts
+  if (!isTightClass(containerClass) || !hasLeftAxis || marginOverrideLeft !== undefined)
+    return 'outside'
+  return containerClass === 'micro' ? 'none' : 'inside'
+}
+
 const COMPACT_UNITS = [
   [1e12, 'T'],
   [1e9, 'B'],
@@ -251,8 +268,7 @@ export function resolveAxisEconomy(input: AxisEconomyInput): Pick<ChartLayout, '
   })
   return {
     yAxis: {
-      mode:
-        containerClass === 'micro' ? 'none' : containerClass === 'compact' ? 'inside' : 'outside',
+      mode: resolveYPlacement(containerClass),
       ticks: yTickCount(input.plotHeight),
       compact: shouldCompactYLabels(input.yLabels),
     },

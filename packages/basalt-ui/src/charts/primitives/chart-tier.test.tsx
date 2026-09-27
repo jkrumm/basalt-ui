@@ -433,7 +433,7 @@ describe.each([
           {() => null}
         </CartesianChart>,
       )
-      const wanted = inside ? 'paint-order="stroke"' : 'visx-axis-left'
+      const wanted = inside ? 'fill="var(--vx-surface-panel)"' : 'visx-axis-left'
       await waitFor(() => {
         expect(container.innerHTML).toContain(wanted)
         expect(container.querySelector('.visx-axis-bottom')).not.toBeNull()
@@ -442,10 +442,10 @@ describe.each([
       const left = plotOrigin(markup).left
       if (inside) {
         expect(left).toBe(chartTierMetrics('phone').margin.left)
-        expect(markup).toContain('stroke="var(--vx-surface-panel)"')
+        expect(markup).toContain('fill="var(--vx-surface-panel)"')
         return
       }
-      expect(markup).not.toContain('paint-order="stroke"')
+      expect(markup).not.toContain('fill="var(--vx-surface-panel)"')
       expect(left).toBeGreaterThanOrEqual(chartTierMetrics('desktop').margin.left)
       // Compact y format: 40000 paints as 40k, never 40,000.
       expect(markup).toContain('>40k<')

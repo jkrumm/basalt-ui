@@ -29,6 +29,7 @@ import {
   compactNumber,
   isTightClass,
   planXLabels,
+  resolveYPlacement,
   shouldCompactYLabels,
   yTickCount,
 } from './chart-layout'
@@ -616,13 +617,8 @@ function CartesianPlot<T>({
 
   // Ladder step 5: at compact/micro the y labels sit inside the plot (micro: no y axis), so the
   // left gutter drops to its floor. An explicit `margin.left` means the consumer laid out an
-  // outside gutter — it keeps the outside axis.
-  const yPlacement =
-    !tight || marginOverride?.left !== undefined
-      ? 'outside'
-      : containerClass === 'micro'
-        ? 'none'
-        : 'inside'
+  // outside gutter — it keeps the outside axis. `CartesianChart` always has a left axis.
+  const yPlacement = resolveYPlacement(containerClass, { marginOverrideLeft: marginOverride?.left })
   const categorical = tight && xLabels.some((label) => /\s/.test(label))
 
   /** The horizontal room one x tick label needs: the widest string that could be painted, plus
