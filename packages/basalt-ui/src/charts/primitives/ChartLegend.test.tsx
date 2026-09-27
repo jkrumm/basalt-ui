@@ -14,6 +14,39 @@ const BASE: LegendEntry = { key: 'cloud-low', label: 'Low cloud', color: 'var(--
 
 const render = (items: LegendEntry[]): string => renderToStaticMarkup(<ChartLegend items={items} />)
 
+describe("ChartLegend mode='dots' (wave 11)", () => {
+  test('drops the visible label, keeps it in aria-label', () => {
+    const markup = renderToStaticMarkup(<ChartLegend items={[BASE]} mode="dots" />)
+    expect(markup).not.toContain('>Low cloud<')
+    expect(markup).toContain('aria-label="Low cloud"')
+  })
+
+  test('a note is not rendered inline either — only in aria-label', () => {
+    const markup = renderToStaticMarkup(
+      <ChartLegend items={[{ ...BASE, note: '0% all night' }]} mode="dots" />,
+    )
+    expect(markup).not.toContain('<span style="opacity:0.75">0% all night</span>')
+    expect(markup).toContain('aria-label="Low cloud — 0% all night"')
+  })
+
+  test('the disclosure panel still shows the full label, even in dots mode', () => {
+    renderDom(
+      <ChartLegend
+        items={[BASE, { key: 'cloud-mid', label: 'Mid cloud', color: 'var(--vx-fill-2)' }]}
+        mode="dots"
+        maxRows={1}
+      />,
+    )
+    fireEvent.click(screen.getByText('All 2'))
+    const panel = screen.getByRole('dialog')
+    expect(within(panel).getByText('Mid cloud')).toBeTruthy()
+  })
+
+  test('default mode is unchanged (chips — label visible)', () => {
+    expect(render([BASE])).toContain('>Low cloud<')
+  })
+})
+
 describe('ChartLegend note', () => {
   test('renders after the label when set', () => {
     const markup = render([{ ...BASE, note: '0% all night' }])

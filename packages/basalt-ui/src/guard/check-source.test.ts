@@ -1,7 +1,7 @@
 /**
  * Unit tests for checkSource — the pure (text, relPath, cfg) → Finding[] core.
  *
- * Covers all 26 guard kinds. Co-located with the guard, excluded from tsc
+ * Covers all 27 guard kinds. Co-located with the guard, excluded from tsc
  * (tsconfig exclude: src/**\/*.test.ts), run via `bun test`.
  *
  * The walker/reporter half is covered by the integration test in
@@ -10,6 +10,7 @@
 import { describe, expect, it } from 'bun:test'
 import { pxRem } from '../tokens'
 import { SPACE_SCALE } from '../tokens/palette'
+import { CONTAINER_CLASSES } from '../tokens/size-classes'
 import {
   checkSource,
   DEFAULT_GUARD_CONFIG,
@@ -2373,6 +2374,124 @@ describe('css-raw-surface', () => {
   })
 })
 
+// ── 27. raw-media-query (RESPONSIVE-SPEC.md §7 — the CSS-text half) ──────────
+
+describe('raw-media-query', () => {
+  it('flags a width @media in a CSS module', () => {
+    const f = find(
+      '@media (min-width: 52.5em) {\n  .a { display: block; }\n}\n',
+      'src/a.module.css',
+    )
+    expect(kinds(f)).toContain('raw-media-query')
+  })
+
+  it('flags a px width @media too', () => {
+    const f = find(
+      '@media (max-width: 767.9px) {\n  .a { display: block; }\n}\n',
+      'src/a.module.css',
+    )
+    expect(kinds(f)).toContain('raw-media-query')
+  })
+
+  it('never fires on a width @media outside CSS (JSX has no @media)', () => {
+    const f = find('@media (min-width: 52.5em) {}', 'src/a.tsx')
+    expect(kinds(f)).not.toContain('raw-media-query')
+  })
+
+  it('does NOT flag an unrelated (non-width) @media', () => {
+    const f = find('@media (prefers-color-scheme: dark) {\n  .a { color: #fff; }\n}\n', 'src/a.css')
+    expect(kinds(f).filter((k) => k === 'raw-media-query')).toEqual([])
+  })
+
+  it('does NOT flag a declared @container name at a CONTAINER_CLASSES boundary', () => {
+    const f = find(
+      '@container basalt-card (min-width: 480px) {\n  .a { display: flex; }\n}\n',
+      'src/a.css',
+    )
+    expect(kinds(f)).not.toContain('raw-media-query')
+  })
+
+  it('flags an undeclared @container name', () => {
+    const f = find(
+      '@container my-widget (min-width: 480px) {\n  .a { display: flex; }\n}\n',
+      'src/a.css',
+    )
+    expect(kinds(f)).toContain('raw-media-query')
+  })
+
+  it('flags a basalt-card literal that is not a CONTAINER_CLASSES boundary', () => {
+    const f = find(
+      '@container basalt-card (min-width: 500px) {\n  .a { display: flex; }\n}\n',
+      'src/a.css',
+    )
+    expect(kinds(f)).toContain('raw-media-query')
+  })
+
+  it('flags a (pointer: fine) condition', () => {
+    const f = find('@media (pointer: fine) {\n  .a { cursor: pointer; }\n}\n', 'src/a.css')
+    expect(kinds(f)).toContain('raw-media-query')
+  })
+
+  it('does NOT flag a (pointer: coarse) condition', () => {
+    const f = find('@media (pointer: coarse) {\n  :root { --vx-hit: 44px; }\n}\n', 'src/a.css')
+    expect(kinds(f).filter((k) => k === 'raw-media-query')).toEqual([])
+  })
+
+  it('does NOT flag an unrelated (hover: hover) condition', () => {
+    const f = find('@media (hover: hover) {\n  .a:hover { opacity: 0.8; }\n}\n', 'src/a.css')
+    expect(kinds(f)).not.toContain('raw-media-query')
+  })
+
+  it('honors a scoped theme-allow', () => {
+    const f = find(
+      '/* theme-allow raw-media-query — legacy shape, migrating in a follow-up */\n' +
+        '@media (min-width: 52.5em) {\n  .a { display: block; }\n}\n',
+      'src/a.module.css',
+    )
+    expect(kinds(f)).not.toContain('raw-media-query')
+  })
+
+  it('does NOT flag a basalt-card literal of 0 — the "(width >= 0px)" scoping idiom', () => {
+    const f = find(
+      '@container basalt-card (width >= 0px) {\n  .a { font-size: 1px; }\n}\n',
+      'src/a.css',
+    )
+    expect(kinds(f)).not.toContain('raw-media-query')
+  })
+
+  it('does NOT flag a SIZE_CLASSES width @media inside a shell/ path', () => {
+    const f = find(
+      '@media (min-width: 52.5em) {\n  .a { display: flex; }\n}\n',
+      'src/shell/app-header.module.css',
+    )
+    expect(kinds(f).filter((k) => k === 'raw-media-query')).toEqual([])
+  })
+
+  it('still flags an off-table width @media inside a shell/ path', () => {
+    const f = find(
+      '@media (min-width: 600px) {\n  .a { display: flex; }\n}\n',
+      'src/shell/app-header.module.css',
+    )
+    expect(kinds(f)).toContain('raw-media-query')
+  })
+
+  it('still flags a SIZE_CLASSES width @media OUTSIDE a shell/ path', () => {
+    const f = find('@media (min-width: 52.5em) {\n  .a { display: flex; }\n}\n', 'src/a.module.css')
+    expect(kinds(f)).toContain('raw-media-query')
+  })
+
+  // Drift guard: every REAL `CONTAINER_CLASSES` boundary must pass; a literal one below it must
+  // not (`CONTAINER_CLASS_LITERALS_PX` hand-duplicates the table — the missing-`0` false positive
+  // fixed alongside this test is a live instance of exactly the drift this pins against).
+  it.each(Object.values(CONTAINER_CLASSES).filter((px) => px > 0))(
+    'a basalt-card literal at the real CONTAINER_CLASSES boundary %dpx is not flagged',
+    (px) => {
+      const f = find(`@container basalt-card (min-width: ${px}px) {\n  .a {}\n}\n`, 'src/a.css')
+      expect(kinds(f)).not.toContain('raw-media-query')
+    },
+  )
+})
+
 // ── 25. inline-font-size ─────────────────────────────────────────────────────
 
 describe('inline-font-size', () => {
@@ -2967,11 +3086,15 @@ describe("profile: 'tokens-only'", () => {
     // a Mantine-rendered home (PageBar / WidgetHeader) or a basalt control over @mantine/core.
     'in-body-page-title': true,
     'raw-selection-control': true,
+    // A raw @media/@container/pointer condition in CSS — the remedy is another CSS literal
+    // (SIZE_CLASSES/CONTAINER_CLASSES/`(pointer: coarse)`), not a Mantine component or prop, so a
+    // tokens-only consumer (no Mantine, still shipping CSS) is exactly who this stays live for.
+    'raw-media-query': false,
   }
 
   it('classifies every kind in the registry — the table is exhaustive', () => {
     expect(Object.keys(MANTINE_COUPLED).toSorted()).toEqual(Object.keys(GUARD_RULES).toSorted())
-    expect(Object.keys(MANTINE_COUPLED)).toHaveLength(26)
+    expect(Object.keys(MANTINE_COUPLED)).toHaveLength(27)
   })
 
   it('the disabled set is exactly the Mantine-coupled half — a complete partition', () => {

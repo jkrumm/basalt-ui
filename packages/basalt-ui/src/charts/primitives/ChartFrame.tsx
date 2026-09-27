@@ -61,6 +61,8 @@ export type ChartFrameLegend = {
    * plot, the tooltip, and the auto domain together (`docs/CHARTS-SPEC.md` §5).
    */
   toggle?: boolean
+  /** Forces the header legend's render, overriding the resolver's own 'dots'/'chips' pick. */
+  mode?: 'dots' | 'chips'
 }
 
 export type ChartFrameProps = BasaltProps & {
@@ -193,6 +195,7 @@ export function resolveLegend(
     ...(config?.groups !== undefined && { groups: config.groups }),
     ...(config?.maxRows !== undefined && { maxRows: config.maxRows }),
     ...(config?.toggle !== undefined && { toggle: config.toggle }),
+    ...(config?.mode !== undefined && { mode: config.mode }),
     ...(hover !== undefined && { highlighted: hover.highlighted, onHighlight: hover.onHighlight }),
   }
 }
@@ -229,7 +232,7 @@ export function ChartFrame({
   const { ref: containerRef, width: containerW, height: containerH } = useChartSize()
   const { ref: legendRef, width: legendW, height: legendH } = useChartSize()
   const { ref: slotRef, width: slotMeasuredW } = useChartSize()
-  const { inCard, legendSlot } = useContext(ChartCardContext)
+  const { inCard, legendSlot, short: cardShort } = useContext(ChartCardContext)
   // The card's header slot is observed like the frame is: its width is what a header legend fits.
   useLayoutEffect(() => {
     slotRef(legendSlot)
@@ -336,16 +339,20 @@ export function ChartFrame({
         categorical: false,
         sizeClass,
         coarse,
+        cardShort,
         ...(statedHeight !== undefined && { override: { height: statedHeight } }),
       }),
     // `legendItems` is a fresh array per render; `legendKey` is its identity.
     // oxlint-disable-next-line react-hooks/exhaustive-deps
-    [containerW, slotW, viewportH, legendKey, sizeClass, coarse, statedHeight],
+    [containerW, slotW, viewportH, legendKey, sizeClass, coarse, cardShort, statedHeight],
   )
 
   // The resolver gates every placement: none at micro (a side legend included), else the card's
   // header slot when there is one, or a band. A side legend keeps its own column for the rest.
   const fit = layout.legend.mode === 'dots' || layout.legend.mode === 'chips' ? layout.legend : null
+  // An explicit `legend.mode` (the escape hatch back to labels for a consumer whose chart lands in
+  // a short card but still wants them) always wins over the resolver's own 'dots'/'chips' pick.
+  const legendMode = legend !== false ? (legend.mode ?? fit?.mode) : fit?.mode
   const showLegend = legendVisible && fit !== null
   const inHeader = showLegend && !vertical && legendSlot !== null && fit?.where === 'header'
   const sideLegendWidth = showLegend && vertical ? legendW : 0
@@ -410,6 +417,7 @@ export function ChartFrame({
           {...(chartId !== undefined && { chartId })}
           {...(legend.groups !== undefined && { groups: legend.groups })}
           {...(maxRows !== undefined && { maxRows })}
+          {...(legendMode !== undefined && { mode: legendMode })}
           {...(legend.highlighted !== undefined && { highlighted: legend.highlighted })}
           {...(legend.onHighlight !== undefined && { onHighlight: legend.onHighlight })}
         />

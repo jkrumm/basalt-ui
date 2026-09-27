@@ -143,6 +143,7 @@ export const KNOWN_RULE_IDS = new Set([
   'visx-tooltip',
   'token-layer-boundary',
   'no-import-meta-env',
+  'raw-breakpoint',
   // These three honour `basalt-agent-allow`, never `theme-allow` — but they are real ids, so an
   // annotation naming one must parse as a (useless) scoped annotation rather than as prose.
   'agent-resume-guard',
@@ -175,6 +176,7 @@ export const KNOWN_RULE_IDS = new Set([
   'hidden-inline-style',
   'in-body-page-title',
   'raw-selection-control',
+  'raw-media-query',
   // Retired guard kinds — no longer in GUARD_RULES, but a `theme-allow` naming one must still
   // parse as a real (dead) waiver rather than an unknown-id typo. See RETIRED_RULE_IDS above.
   ...RETIRED_RULE_IDS,
@@ -3982,6 +3984,184 @@ const noImportMetaEnv = {
   },
 }
 
+// ── Rule 32 — raw-breakpoint ─────────────────────────────────────────────────────────────────────
+
+/** The Mantine responsive-style-prop shorthand keys — `{ base, xs, sm, md, lg, xl }`, never a mix. */
+const RESPONSIVE_OBJECT_KEYS = new Set(['base', 'xs', 'sm', 'md', 'lg', 'xl'])
+
+/**
+ * Is `node` a Mantine responsive-style-prop object literal — `{ base: 1, sm: 2 }`? Every property
+ * key has to be one of {@link RESPONSIVE_OBJECT_KEYS}, and there has to be at least one: a random
+ * object that merely happens to have a `sm` key among other, unrelated ones is not this shape, and
+ * an empty object is not a breakpoint decision at all.
+ */
+function isResponsiveObjectValue(node) {
+  if (node === null || node === undefined || node.type !== 'ObjectExpression') return false
+  if (node.properties.length === 0) return false
+  return node.properties.every((prop) => {
+    if (prop.type !== 'Property') return false
+    const name = propertyKeyName(prop)
+    return typeof name === 'string' && RESPONSIVE_OBJECT_KEYS.has(name)
+  })
+}
+
+/**
+ * The shell components RESPONSIVE-SPEC.md §7 names as `visibleFrom`/`hiddenFrom`'s legitimate home
+ * — the size-class axis's one JSX escape hatch (§1: "Who may use it: shell/**, overlays"). Matched
+ * by DECLARATION name, the same owner-by-declaration test `hand-rolled-shell`'s
+ * `notesOwnerDefinition` already uses for "this file IS the framework piece, not a consumer of it"
+ * — a file defining one of these is exempt for the whole file, because deciding which JSX line
+ * inside a shell's own render tree is "the shell deciding its own chrome" vs. "a stray breakpoint"
+ * is not a distinction the shell's own implementation can make about itself. The OTHER legitimate
+ * home is a control implementing its own C9 swap (`ViewTabs`, `ActionGroup`, …) — that half reuses
+ * {@link createControlOwnerProbe} (`controlOwner` below) rather than a second name list.
+ */
+const SHELL_HOME_NAMES = new Set(['BasaltShell', 'AppSidebar', 'MobileNav', 'AppBrand'])
+
+/**
+ * The two files RESPONSIVE-SPEC.md §7 exempts by NAME rather than by declaration:
+ * `useSizeClass()`'s own implementation (the one sanctioned `window.matchMedia` read the whole rule
+ * exists to funnel every other file toward) and `ChartTooltip` (the Mantine-free chart layer's own
+ * pointer-tier read, which cannot go through `useSizeClass` — chart files ban `@mantine/*`).
+ */
+const RAW_BREAKPOINT_EXEMPT_FILE = /(?:^|[\\/])(?:use-size-class\.ts|ChartTooltip\.tsx)$/
+
+const RAW_BREAKPOINT_RESPONSIVE_PROP_MESSAGE =
+  'Responsive-object style prop on a Mantine component — a consumer cannot hand-roll a breakpoint ' +
+  '(RESPONSIVE-SPEC.md §1: the framework owns size class, container class and pointer tier, never a ' +
+  "per-component `{ base, sm, … }`). Reach for a container query for this component's own width, or " +
+  'useSizeClass() for shell-only chrome. (basalt/raw-breakpoint)'
+
+const RAW_BREAKPOINT_VISIBLE_HIDDEN_MESSAGE =
+  "visibleFrom/hiddenFrom outside a shell home or a control's own C9 swap — this pair is the " +
+  "size-class axis's one JSX escape hatch. Anywhere else it is a hand-rolled viewport breakpoint " +
+  "the framework cannot see or move. Use a container query for a component's own width instead. " +
+  '(basalt/raw-breakpoint)'
+
+const RAW_BREAKPOINT_HOOK_MESSAGE =
+  "useMediaQuery/useMatches/useViewportSize — a raw viewport read outside the framework's one seam " +
+  '(useSizeClass(), shell-only). A component deciding its own layout from a viewport read instead of ' +
+  'a container query is exactly the law this rule exists to catch. (basalt/raw-breakpoint)'
+
+const RAW_BREAKPOINT_GLOBAL_MESSAGE =
+  'window.matchMedia/window.innerWidth read directly — the same viewport read useSizeClass() already ' +
+  "owns, shell-only. Route a component's own layout decision through a container query instead. " +
+  '(basalt/raw-breakpoint)'
+
+/** The three hooks RESPONSIVE-SPEC.md §7 names, whatever module they are imported from. */
+const RAW_BREAKPOINT_HOOK_NAMES = new Set(['useMediaQuery', 'useMatches', 'useViewportSize'])
+
+/**
+ * Four independent shapes, one law (RESPONSIVE-SPEC.md §7): a consumer (or basalt itself, outside
+ * the three shell homes) reaching past the framework's two sanctioned seams — `useSizeClass()` for
+ * shell-only viewport chrome, a container query for everything else — to read or react to a raw
+ * viewport breakpoint. `visibleFrom`/`hiddenFrom` and the responsive-object shape are reported once
+ * the whole file has been walked ({@link SHELL_HOME_NAMES} may be declared after its first JSX use,
+ * the same ordering hazard `hand-rolled-shell` defers a `Program:exit` report to avoid); the import
+ * and the two global reads carry no such ordering hazard and report immediately.
+ */
+// Ships: warn (grace → 1.31.0)
+const rawBreakpoint = {
+  meta: {
+    type: 'suggestion',
+    docs: {
+      description:
+        'Disallow a hand-rolled viewport breakpoint — a responsive-object Mantine prop, ' +
+        'visibleFrom/hiddenFrom outside a shell home, useMediaQuery/useMatches/useViewportSize, or ' +
+        'a raw window.matchMedia/innerWidth read.',
+    },
+    schema: [],
+  },
+  create(context) {
+    if (isTestFile(context)) return {}
+    if (RAW_BREAKPOINT_EXEMPT_FILE.test(getFilename(context))) return {}
+
+    const mantineImports = new Map()
+    // A control implementing its OWN C9 responsive swap (`ViewTabs`, `ActionGroup`'s file, …) is
+    // the other legitimate visibleFrom/hiddenFrom home, alongside the three named shell pieces —
+    // reuse `responsive-twin`'s existing owner probe rather than hand-listing every control file
+    // here too (`view-tabs.tsx`/`actions.tsx` were both false positives before this reuse).
+    const controlOwner = createControlOwnerProbe()
+    let definesShellHome = false
+    const visibleHiddenCandidates = []
+    const responsiveObjectCandidates = []
+
+    const noteShellHomeOwner = (name) => {
+      if (typeof name === 'string' && SHELL_HOME_NAMES.has(name)) definesShellHome = true
+    }
+
+    return {
+      ImportDeclaration(node) {
+        controlOwner.noteImport(node)
+        collectMantineImports(node, mantineImports)
+        if (node.importKind === 'type') return
+        // `useMatches` collides with `@tanstack/react-router`'s own hook of the same name (basalt's
+        // own `src/router-tanstack/index.ts` imports it) — scope the whole set to a `@mantine/*`
+        // source rather than name alone, the same provenance gate every other Mantine-name rule in
+        // this file already uses (`collectMantineImports`).
+        const source = node.source?.value
+        if (typeof source !== 'string' || !source.startsWith('@mantine/')) return
+        for (const specifier of node.specifiers ?? []) {
+          if (specifier.type !== 'ImportSpecifier') continue
+          if (specifier.importKind === 'type') continue
+          const imported = specifier.imported
+          const importedName = imported.type === 'Identifier' ? imported.name : imported.value
+          if (typeof importedName !== 'string' || !RAW_BREAKPOINT_HOOK_NAMES.has(importedName))
+            continue
+          if (hasThemeAllow(context, specifier, 'raw-breakpoint')) continue
+          context.report({ node: specifier, message: RAW_BREAKPOINT_HOOK_MESSAGE })
+        }
+      },
+      FunctionDeclaration(node) {
+        noteShellHomeOwner(node.id?.name)
+        controlOwner.visitors.FunctionDeclaration(node)
+      },
+      VariableDeclarator(node) {
+        noteShellHomeOwner(node.id?.name)
+        controlOwner.visitors.VariableDeclarator(node)
+      },
+      JSXAttribute(node) {
+        const name = node.name?.name
+        if (typeof name !== 'string') return
+        if (name === 'visibleFrom' || name === 'hiddenFrom') {
+          visibleHiddenCandidates.push(node)
+          return
+        }
+        const value = unwrapExpressionContainer(node.value)
+        if (!isResponsiveObjectValue(value)) return
+        const owner = node.parent
+        if (owner === null || owner === undefined || owner.type !== 'JSXOpeningElement') return
+        if (resolveMantineTag(owner.name, mantineImports) === undefined) return
+        responsiveObjectCandidates.push(node)
+      },
+      CallExpression(node) {
+        if (node.callee?.type !== 'Identifier' || node.callee.name !== 'matchMedia') return
+        if (hasThemeAllow(context, node, 'raw-breakpoint')) return
+        context.report({ node, message: RAW_BREAKPOINT_GLOBAL_MESSAGE })
+      },
+      MemberExpression(node) {
+        if (node.object?.type !== 'Identifier' || node.object.name !== 'window') return
+        if (node.computed) return
+        const property = node.property?.name
+        if (property !== 'matchMedia' && property !== 'innerWidth') return
+        if (hasThemeAllow(context, node, 'raw-breakpoint')) return
+        context.report({ node, message: RAW_BREAKPOINT_GLOBAL_MESSAGE })
+      },
+      'Program:exit'() {
+        for (const node of responsiveObjectCandidates) {
+          if (hasThemeAllow(context, node, 'raw-breakpoint')) continue
+          context.report({ node, message: RAW_BREAKPOINT_RESPONSIVE_PROP_MESSAGE })
+        }
+        if (definesShellHome || controlOwner.isOwner()) return
+        for (const node of visibleHiddenCandidates) {
+          if (hasThemeAllow(context, node, 'raw-breakpoint')) continue
+          context.report({ node, message: RAW_BREAKPOINT_VISIBLE_HIDDEN_MESSAGE })
+        }
+      },
+    }
+  },
+}
+
 // ── Grace ledger ────────────────────────────────────────────────────────────────────────────────
 
 /**
@@ -4041,6 +4221,20 @@ export const PLUGIN_RULE_GRACE = {
       'and the remainder is measured against that number. A file outside the convention that is ' +
       "still an overlay's own body declares it with " +
       '`theme-allow-file control-outside-home — overlay`.',
+  },
+  'raw-breakpoint': {
+    since: '1.30.2',
+    promote: '1.31.0',
+    why:
+      'new in the wave-11 responsive/touch guards (docs/waves/RESPONSIVE-SPEC.md §7). Catches four ' +
+      'independent shapes at once — a responsive-object Mantine prop, visibleFrom/hiddenFrom outside ' +
+      'the three shell homes, the three raw viewport hooks, and window.matchMedia/innerWidth — none ' +
+      'of which basalt policed before this wave, so every consumer on an earlier minor has a green ' +
+      "build with all four shapes already in it. basalt-ui/content's own article-card.tsx (a " +
+      "`SimpleGrid cols={{ base: 1, sm: 2, lg }}`) is one incumbent measured in basalt's own tree at " +
+      'ship time — a real number, not zero, so this ships warn rather than error from the start. ' +
+      '1.31.0 is when that incumbent and any consumer-side ones are expected to have moved to a ' +
+      'container query or a theme-allow with a stated reason.',
   },
 }
 
@@ -4111,5 +4305,6 @@ export default {
     'agent-no-raw-usechat': agentNoRawUseChat,
     'ai-sdk-major': aiSdkMajor,
     'no-import-meta-env': noImportMetaEnv,
+    'raw-breakpoint': rawBreakpoint,
   },
 }
