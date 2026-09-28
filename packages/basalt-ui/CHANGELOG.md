@@ -1,3 +1,34 @@
+# [1.31.0](https://github.com/jkrumm/basalt-ui/compare/v1.30.2...v1.31.0) (2026-09-28)
+
+
+### Bug Fixes
+
+* card and legend correctness — hysteresis, dots fit, slot ownership ([890658f](https://github.com/jkrumm/basalt-ui/commit/890658fc6ac5d2ffac1e04b79f6ec8d33f73e583))
+* close responsive-guard gaps and dedupe measured-fold/hit-floor internals ([d37d9c2](https://github.com/jkrumm/basalt-ui/commit/d37d9c29151a65ffc83a9cce9344e602b223bfce))
+* economise chart axis space with a shared y-placement ladder ([05562c7](https://github.com/jkrumm/basalt-ui/commit/05562c748bff5b6f2bf62b020e6d112463e615d1))
+* give the plot its space — inside-y floor, wrap law, height clamp ([16e3e18](https://github.com/jkrumm/basalt-ui/commit/16e3e189c62170151d72014000140726c94a2204))
+* keep a committed chart pin through a cancelled second press ([53e0264](https://github.com/jkrumm/basalt-ui/commit/53e0264343ffd2c06fe666bc916d6159c28ab16d))
+* make chart touch presses provisional and dismiss on scroll ([c0ee0ae](https://github.com/jkrumm/basalt-ui/commit/c0ee0ae17cb6ecaf91183107b26c7f35a026b83f))
+* resolve the pre-release review findings ([a33b6dd](https://github.com/jkrumm/basalt-ui/commit/a33b6ddd58519912698f3dc5b7a6a2c7ff5adf92))
+* thin rotated x labels by projected width, default charts to regular ([105b12d](https://github.com/jkrumm/basalt-ui/commit/105b12d36900846212c7cf91eb6361fe4a554ae5))
+* touch floors, filter hit gap, form-row container width, composer padding ([a12f230](https://github.com/jkrumm/basalt-ui/commit/a12f230963270a8785070b6711768204548fe02d))
+
+
+### Features
+
+* adopt the pointer-tier hit area, gate hover reveals, sheet the modal ([3a63850](https://github.com/jkrumm/basalt-ui/commit/3a63850b489190927d221eaea62d67dd1a8d1f62))
+* drop the dead chart-tier API and consolidate media-query hooks ([b255dcf](https://github.com/jkrumm/basalt-ui/commit/b255dcf5d408b34bec76a4b6a9e5da712e27fa52))
+* fit chart legends by measured width, fold donut and label line ends ([5f0c5bd](https://github.com/jkrumm/basalt-ui/commit/5f0c5bd16cd3abd0b7772da991321ceaff8a1477))
+* fold chart-card headers by height, not width alone ([9d7fc88](https://github.com/jkrumm/basalt-ui/commit/9d7fc889c5981b08db8bd47908a6598c94a55999))
+* fold DataTable columns, warn short rows, sheet the TOC, pin composer keys ([f3bd775](https://github.com/jkrumm/basalt-ui/commit/f3bd775a57411bcb42a0ff49cfc3ae3a80d5a162))
+* fold short-card chart legends to dots, ship the raw-breakpoint guards ([2557d9d](https://github.com/jkrumm/basalt-ui/commit/2557d9dc88438cbb88e0b7a90c572c69dd79c827))
+* key card chrome on the card's own width ([aa407b8](https://github.com/jkrumm/basalt-ui/commit/aa407b866a0d9b343ce5b48f2b3c8f2b60341888))
+* pin chart tooltips on tap, add keyboard parity to donut and heatmap ([a9cc50a](https://github.com/jkrumm/basalt-ui/commit/a9cc50aa6dd0626e3d312eba068cf95bbf50817b))
+* resolve chart layout from the container class, height from width ([ae9632c](https://github.com/jkrumm/basalt-ui/commit/ae9632c010f58c02f49659cec1343bb8c1e23540))
+* size-class shell docking, measured page-bar fold and toast bottom inset ([1fd619d](https://github.com/jkrumm/basalt-ui/commit/1fd619db7f58d81b60b20832b6353968b957c905))
+* spend compact-width axes on the plot, not the gutters ([b0d5b49](https://github.com/jkrumm/basalt-ui/commit/b0d5b49f442a471f1a53b2fb57c90144efb66095))
+* three-axis responsive foundations and --vx-hit ([6609ec1](https://github.com/jkrumm/basalt-ui/commit/6609ec1d62d189184dd512c12334963fb8fe0b84))
+
 ## [1.30.2](https://github.com/jkrumm/basalt-ui/compare/v1.30.1...v1.30.2) (2026-09-09)
 
 
