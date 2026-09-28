@@ -85,15 +85,15 @@ function stubLabelOverflowOnly(): void {
 }
 
 afterEach(() => {
-  if (originalOffsetWidth !== undefined) {
-    Object.defineProperty(HTMLElement.prototype, 'offsetWidth', originalOffsetWidth)
+  // happy-dom defines these on `Element.prototype`, so an `undefined` original means the stub is an
+  // own property of `HTMLElement.prototype` that must be deleted, not left to leak into later files.
+  const restore = (prop: string, original: PropertyDescriptor | undefined): void => {
+    if (original !== undefined) Object.defineProperty(HTMLElement.prototype, prop, original)
+    else Reflect.deleteProperty(HTMLElement.prototype, prop)
   }
-  if (originalClientWidth !== undefined) {
-    Object.defineProperty(HTMLElement.prototype, 'clientWidth', originalClientWidth)
-  }
-  if (originalScrollWidth !== undefined) {
-    Object.defineProperty(HTMLElement.prototype, 'scrollWidth', originalScrollWidth)
-  }
+  restore('offsetWidth', originalOffsetWidth)
+  restore('clientWidth', originalClientWidth)
+  restore('scrollWidth', originalScrollWidth)
 })
 
 describe('PanelChoice — the width gate under PANEL_TRACK_MAX', () => {
