@@ -860,8 +860,9 @@ export type GraceEntry = { since: string; promote: string; why: string }
 export const GRACE_PERIOD_KINDS: Partial<Record<GuardKind, GraceEntry>> = {
   'raw-selection-control': {
     since: '1.26.0',
-    promote: '1.31.0',
+    promote: '1.32.0',
     why:
+      'Extended 1.31.0 -> 1.32.0 at the 1.31.0 release: the basalt tree still carries incumbents (data-table, notifications center, theme-lab) and the argo sweep has not run. ' +
       'new in the wave-6 control guards (docs/CONTROLS-SPEC.md §6, law C1). The text lane cannot ' +
       'see ancestry, so "no home" is approximated by a 12-line host-tag window — the loosest ' +
       'reading in the guard, and the reason this one lands warn rather than error even though its ' +
