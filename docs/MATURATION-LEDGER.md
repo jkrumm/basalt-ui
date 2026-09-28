@@ -377,3 +377,15 @@ Gate: `make verify` green (build, `bun run pre` 4828/4828 pass, layout suite, pa
 (sideclaw multi-angle high, twice — once on the wave's own diff, once on the fix-up) — every blocking
 finding fixed before commit, in-scope non-blocking findings fixed alongside, out-of-scope/pre-existing
 findings recorded above. Merge and release are the orchestrator's call, not a wave's — not done here.
+
+**Pre-release review follow-ups (2026-09-28, deferred on purpose — not release blockers).** Three
+review passes over the full branch fixed every correctness finding (commits `fix: keep a committed
+chart pin…` and `fix: resolve the pre-release review findings`). Left for a consolidation wave:
+`ChartFrame` (fallow CRITICAL; the legend-slot owner/denied protocol spans `ChartCard` +
+`ChartFrame` refs and effects — wants one reducer), `BasaltDataTable`'s ~740-line body (extract a
+`useDataTableState`/row-disclosure hook), `ShellFrame`'s inline aside-docking values (a pure
+`resolveAsideDocking` like `resolveChartLayout`), `CartesianPlot`'s margin ladder, the legend
+disclosure out of `ChartLegend`, the BandStrip/MirroredBars and DualPanel/CartesianChart clone
+groups, `fitChipRows`/`fitDotRows` sharing one greedy-wrap helper, a shared ref-count helper for
+`BasaltProvider`'s two module counters, and `@testing-library/react` resolving only through a hoist
+(no explicit devDependency).
