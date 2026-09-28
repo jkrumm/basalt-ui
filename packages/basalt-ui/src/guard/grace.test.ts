@@ -147,15 +147,15 @@ describe('scripts/check-grace.ts', () => {
   // See either entry's `why` for the 29-incumbent measurement behind that. 1.30.0 must now PASS —
   // that is the release this decision unblocked, and a test still refusing it would refuse it
   // again on the next patch.
-  it.each(['1.27.0', '1.28.0', '1.29.0', '1.30.0', '1.30.9'])(
-    'passes %s — the C1 pair is not due until 1.31.0',
+  it.each(['1.27.0', '1.28.0', '1.29.0', '1.30.0', '1.30.9', '1.31.0', '1.31.9'])(
+    'passes %s — the C1 pair is not due until 1.32.0',
     (v) => {
       expect(runCheckGrace(v).code).toBe(0)
     },
   )
 
-  it('refuses the version the remaining C1 pair is due in (1.31.0)', () => {
-    expect(runCheckGrace('1.31.0').code).toBe(1)
+  it('refuses the version the remaining C1 pair is due in (1.32.0)', () => {
+    expect(runCheckGrace('1.32.0').code).toBe(1)
   })
 
   it('exits 2 on a missing or malformed version rather than passing vacuously', () => {
