@@ -45,6 +45,7 @@
  * width itself, pinned to the `ctl` height so the box is square. This module is unlayered, so it
  * outranks `@layer mantine` regardless of specificity.
  */
+/* theme-allow raw-media-query — the control's own C9 icon-only swap at the compact size class */
 @media (max-width: 52.49375em) {
   .label,
   .age {

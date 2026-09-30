@@ -49,6 +49,11 @@
   flex-shrink: 0;
 }
 
+/* theme-allow-file raw-media-query — the ControlRow's own C9 swap (pills inline, the rest in a
+   sheet) keys on the SIZE CLASS by design: the sheet is compact-class chrome, the same axis the
+   shell's bottom bar reads. Every width query here is `SIZE_CLASSES.medium`, pinned by
+   `breakpoint-literals.test.ts`. */
+
 /* Below `sm` only the first `inline` slots are pills; the rest live in the sheet. */
 @media (max-width: 52.49375em) {
   .pillSlot:not([data-inline]) {

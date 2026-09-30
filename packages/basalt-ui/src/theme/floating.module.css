@@ -42,6 +42,7 @@
  * `.sheetBody` is the Modal body; it reaches the trailing button row `overlays.confirm`
  * renders (Mantine `Group`), stretching the buttons to full width at the `--vx-hit` floor.
  */
+/* theme-allow raw-media-query — the bottom sheet IS the compact size class's overlay form */
 @media (max-width: 52.49375em) {
   .sheetInner {
     align-items: flex-end;
