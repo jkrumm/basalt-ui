@@ -1,3 +1,26 @@
+# [1.32.0](https://github.com/jkrumm/basalt-ui/compare/v1.31.0...v1.32.0) (2026-09-30)
+
+
+### Bug Fixes
+
+* build BasaltDataTable cards only in card mode, guard the routed-prop lookup ([4024e83](https://github.com/jkrumm/basalt-ui/commit/4024e8333c83cb4808507929f47246209e67a00a))
+* exempt a container Grid only when its breakpoints map resolves ([d6d9bda](https://github.com/jkrumm/basalt-ui/commit/d6d9bdaa7eb693a01166d121fdc5bb95002bb09d))
+* honour maxHeight in BasaltDataTable's card projection ([3b59a2f](https://github.com/jkrumm/basalt-ui/commit/3b59a2f5304969e0dcadfa77b1ff375fd0f1d048))
+* key StatGroup and WidgetGrid on the container-class law ([db6e130](https://github.com/jkrumm/basalt-ui/commit/db6e130d050d562926fce63e7f1a5e3d0aeb45f8))
+* move raw-media-query's promotion to 1.33.0 with its AST twin ([ac2641c](https://github.com/jkrumm/basalt-ui/commit/ac2641c4ac1fcb42b2381758ae9a2b20809ce630))
+* move useBreakpoint's removal to 1.33.0 and correct its replacement ([a2c356b](https://github.com/jkrumm/basalt-ui/commit/a2c356bd1979960b8b9fc26eb8341cc84d3e88ee))
+* narrow the container-grid exemption to the props Mantine routes ([d547022](https://github.com/jkrumm/basalt-ui/commit/d5470226008984fba39849062c0ee0abbac178cc))
+* prune ignored dirs during the doc-drift repo walk instead of after it ([a4647dc](https://github.com/jkrumm/basalt-ui/commit/a4647dcd380f74f7ac73989fa6857d2041d16a23))
+* read only width clauses when judging a shell/ media query ([3f14b7f](https://github.com/jkrumm/basalt-ui/commit/3f14b7f342c64c9f2b7b1b04887930f37f695f01))
+* say legend.maxRows changed unit in its deprecation warning ([29ad3a5](https://github.com/jkrumm/basalt-ui/commit/29ad3a5183648a0edc71250b22a996fa818edfb8))
+* stop warning legend-slot contention on a same-commit owner hand-off ([af18cfa](https://github.com/jkrumm/basalt-ui/commit/af18cfad7c3d9747a7cc6c0a117db34bbb8cd531))
+
+
+### Features
+
+* give basalt/raw-breakpoint a reachable container-grid answer ([2bf4a22](https://github.com/jkrumm/basalt-ui/commit/2bf4a2256fff9b08adcd6c3716b92993b4fdb40a))
+* project BasaltDataTable rows as cards on the table's own width ([f201b2a](https://github.com/jkrumm/basalt-ui/commit/f201b2ac81726fc47b2adb5660fd42ce2c881b3e))
+
 # [1.31.0](https://github.com/jkrumm/basalt-ui/compare/v1.30.2...v1.31.0) (2026-09-28)
 
 
