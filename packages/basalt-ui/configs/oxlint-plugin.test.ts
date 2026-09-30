@@ -3685,6 +3685,41 @@ describe('basalt/raw-breakpoint', () => {
       expect(CONTAINER_MESSAGE.test(output)).toBe(true)
     })
 
+    // Trust follows the BINDING, not the name: a shadow of the import is someone else's value.
+    it.each([
+      [
+        'a parameter',
+        `export const C = ({ bp }: { bp: Record<string, string> }) => <Grid type="container" breakpoints={bp}>${SPAN}</Grid>`,
+      ],
+      [
+        'an inner const',
+        `export const C = () => {\n  const bp = pick()\n  return <Grid type="container" breakpoints={bp}>${SPAN}</Grid>\n}`,
+      ],
+      [
+        'an inner const aliasing a parameter',
+        `export function C(props: { m: Record<string, string> }) {\n  const bp = props.m\n  return <Grid type="container" breakpoints={bp}>${SPAN}</Grid>\n}`,
+      ],
+    ])('flags breakpoints={bp} when bp is %s shadowing the aliased import', (_, component) => {
+      const { rules, output } = run(
+        `import { Grid } from '@mantine/core'\n` +
+          `import { CONTAINER_GRID_BREAKPOINTS as bp } from 'basalt-ui/tokens'\n` +
+          `export const Used = () => <Grid type="container" breakpoints={bp}>x</Grid>\n` +
+          `${component}\n`,
+      )
+      expect(rules).toContain('raw-breakpoint')
+      expect(CONTAINER_MESSAGE.test(output)).toBe(true)
+    })
+
+    it('flags a parameter shadowing the unaliased import name', () => {
+      const { rules } = run(
+        `import { Grid } from '@mantine/core'\n` +
+          `import { CONTAINER_GRID_BREAKPOINTS } from 'basalt-ui/tokens'\n` +
+          `export const C = ({ CONTAINER_GRID_BREAKPOINTS }: { CONTAINER_GRID_BREAKPOINTS: Record<string, string> }) =>\n` +
+          `  <Grid type="container" breakpoints={CONTAINER_GRID_BREAKPOINTS}>${SPAN}</Grid>\n`,
+      )
+      expect(rules).toContain('raw-breakpoint')
+    })
+
     // Only the grid-keyed props route through the container queries; Box style props on the same
     // element still compile to viewport @media, so they keep the ordinary viewport message.
     it.each([

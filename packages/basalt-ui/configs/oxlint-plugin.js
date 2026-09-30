@@ -4067,10 +4067,9 @@ const CONTAINER_ROUTED_PROPS = {
  * `type` has to be the string literal `"container"`; a dynamic value is not a decision this rule
  * can read. `Grid.Col` takes its grid's mode by walking to the nearest enclosing `Grid` element.
  * `consts` is the rule's same-file name→object map, so `breakpoints={map}` resolves like any value.
- * `gridMaps` holds the local names bound to basalt's own `CONTAINER_GRID_BREAKPOINTS` (imported
- * from `basalt-ui/tokens`, alias-safe) — the one imported map trusted, because its value is known.
+ * The one IMPORTED map trusted is basalt's own `CONTAINER_GRID_BREAKPOINTS` ({@link isShippedGridMap}).
  */
-function containerGridMode(opening, mantineImports, consts, gridMaps) {
+function containerGridMode(opening, mantineImports, consts, sourceCode) {
   let tag = resolveMantineTag(opening.name, mantineImports)
   let grid = opening
   if (tag === 'Grid.Col') {
@@ -4099,15 +4098,49 @@ function containerGridMode(opening, mantineImports, consts, gridMaps) {
   const breakpoints = attr('breakpoints')
   if (breakpoints === undefined) return 'fallback'
   let map = attrValue(breakpoints)
-  const seen = new Set()
-  while (map?.type === 'Identifier' && !seen.has(map.name)) {
-    if (gridMaps.has(map.name)) return 'container'
-    seen.add(map.name)
-    map = consts.get(map.name)
-  }
+  if (isShippedGridMap(sourceCode, map)) return 'container'
+  if (map?.type === 'Identifier') map = consts.get(map.name)
   const nonEmpty =
     map?.type === 'ObjectExpression' && map.properties.some((prop) => prop.type === 'Property')
   return nonEmpty ? 'container' : 'fallback'
+}
+
+/**
+ * Whether `node` reads basalt's own `CONTAINER_GRID_BREAKPOINTS` — its value is known, so it is
+ * the one imported `breakpoints` map trusted. Resolved through the scope manager to the BINDING the
+ * identifier reads, never by local name: a parameter or inner `const` shadowing the import is not
+ * the import. The binding has to be an `ImportSpecifier` naming it from `basalt-ui/tokens` (any
+ * alias, not type-only), or a `const` whose initializer resolves the same way. Without a scope
+ * manager nothing is trusted — reported, the conservative answer.
+ */
+function isShippedGridMap(sourceCode, node, seen = new Set()) {
+  if (node?.type !== 'Identifier' || seen.has(node)) return false
+  seen.add(node)
+  const def = soleDefinition(sourceCode, node)
+  if (def?.type === 'ImportBinding') {
+    const spec = def.node
+    const decl = def.parent
+    if (decl?.type !== 'ImportDeclaration' || decl.importKind === 'type') return false
+    if (decl.source?.value !== 'basalt-ui/tokens') return false
+    if (spec.type !== 'ImportSpecifier' || spec.importKind === 'type') return false
+    const imported = spec.imported
+    const importedName = imported.type === 'Identifier' ? imported.name : imported.value
+    return importedName === 'CONTAINER_GRID_BREAKPOINTS'
+  }
+  if (def?.type === 'Variable' && def.parent?.kind === 'const')
+    return isShippedGridMap(sourceCode, def.node.init, seen)
+  return false
+}
+
+/** The one definition of the variable `identifier` reads, or `undefined` (unresolved, or more than one). */
+function soleDefinition(sourceCode, identifier) {
+  if (typeof sourceCode?.getScope !== 'function') return undefined
+  for (let scope = sourceCode.getScope(identifier); scope; scope = scope.upper) {
+    const variable = scope.set.get(identifier.name)
+    if (variable === undefined) continue
+    return variable.defs.length === 1 ? variable.defs[0] : undefined
+  }
+  return undefined
 }
 
 /**
@@ -4246,8 +4279,7 @@ const rawBreakpoint = {
     // apart), so it is dropped from the map entirely rather than guessed at last-wins.
     const responsiveObjectConsts = new Map()
     const seenDeclaratorNames = new Set()
-    // Local names bound to `CONTAINER_GRID_BREAKPOINTS` from `basalt-ui/tokens` (see containerGridMode).
-    const containerGridMaps = new Set()
+    const sourceCode = context.sourceCode ?? context.getSourceCode?.()
 
     const noteShellHomeOwner = (name) => {
       if (typeof name === 'string' && SHELL_HOME_NAMES.has(name)) definesShellHome = true
@@ -4258,15 +4290,6 @@ const rawBreakpoint = {
         controlOwner.noteImport(node)
         collectMantineImports(node, mantineImports)
         if (node.importKind === 'type') return
-        if (node.source?.value === 'basalt-ui/tokens') {
-          for (const specifier of node.specifiers ?? []) {
-            if (specifier.type !== 'ImportSpecifier' || specifier.importKind === 'type') continue
-            const imported = specifier.imported
-            const importedName = imported.type === 'Identifier' ? imported.name : imported.value
-            if (importedName === 'CONTAINER_GRID_BREAKPOINTS')
-              containerGridMaps.add(specifier.local.name)
-          }
-        }
         // `useMatches` collides with `@tanstack/react-router`'s own hook of the same name (basalt's
         // own `src/router-tanstack/index.ts` imports it) — scope the whole set to a `@mantine/*`
         // source rather than name alone, the same provenance gate every other Mantine-name rule in
@@ -4341,7 +4364,7 @@ const rawBreakpoint = {
             ? CONTAINER_ROUTED_PROPS[tag]
             : undefined
           const mode = routed?.has(node.name.name)
-            ? containerGridMode(owner, mantineImports, responsiveObjectConsts, containerGridMaps)
+            ? containerGridMode(owner, mantineImports, responsiveObjectConsts, sourceCode)
             : undefined
           if (mode === 'container') continue
           if (!containsResponsiveObjectValue(value, responsiveObjectConsts, mode !== undefined))
