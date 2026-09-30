@@ -939,6 +939,41 @@ describe('NumberFilter — the options form', () => {
     })
     expect(screen.getByRole('button', { name: '1 night' })).toBeDefined()
   })
+
+  /**
+   * rb's shape (F13): "no filter" is the fallback, not an `Any difficulty` row. `clearable` writes
+   * it back, and with no preset matching the fallback the pill reads the filter's name.
+   */
+  test('clearable writes the fallback back, and the unset pill reads the filter name', async () => {
+    const levels = createSearchStore({
+      key: 'c-number-clearable',
+      fields: { difficulty: field.number({ fallback: 0, min: 0, max: 5, int: true }) },
+    })
+    const LEVELS = [1, 2, 3].map((value) => ({ value, label: `Level ${value}` }))
+    const router = await mountPage({
+      validateSearch: levels.validateSearch,
+      entry: '/dashboard?difficulty=2',
+      Page: () => (
+        <NumberFilter
+          field={levels.field.difficulty}
+          label="Difficulty"
+          options={LEVELS}
+          clearable
+        />
+      ),
+    })
+
+    await openPill('Level 2')
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Clear', hidden: true }))
+    })
+    await waitFor(() => {
+      expect(search(router)['difficulty']).toBe(0)
+    })
+    expect(screen.getByRole('button', { name: 'Difficulty' }).hasAttribute('data-active')).toBe(
+      false,
+    )
+  })
 })
 
 describe('NumberFilter — the stepper form', () => {
@@ -1141,6 +1176,34 @@ describe('NumberFilter — the stepper form', () => {
     const pill = screen.getByRole('button', { name: '90' })
     expect(pill.hasAttribute('data-active')).toBe(true)
     expect(pill.hasAttribute('data-numeric')).toBe(true)
+  })
+  test('clearable adds a Clear that writes the fallback and resets the box', async () => {
+    const router = await mountPage({
+      validateSearch: store.validateSearch,
+      entry: '/dashboard?minDuration=90',
+      Page: () => <NumberFilter field={store.field.minDuration} label="Min duration" clearable />,
+    })
+
+    await openPill('90')
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Clear', hidden: true }))
+    })
+    await waitFor(() => {
+      expect(search(router)['minDuration']).toBe(0)
+    })
+    await waitFor(() => {
+      expect(box().value).toBe('0')
+    })
+  })
+
+  test('no Clear without the prop, and none at the fallback', async () => {
+    await mountPage({
+      validateSearch: store.validateSearch,
+      entry: '/dashboard?minDuration=90',
+      Page: () => <NumberFilter field={store.field.minDuration} label="Min duration" />,
+    })
+    await openPill('90')
+    expect(screen.queryByRole('button', { name: 'Clear', hidden: true })).toBeNull()
   })
 })
 
