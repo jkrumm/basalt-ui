@@ -166,6 +166,7 @@ export type ArticleGridProps = {
 
 export function ArticleGrid({ children, cols = 3 }: ArticleGridProps) {
   return (
+    // theme-allow raw-breakpoint — `cols` is documented per viewport `lg`; container keys would re-flow every consumer's grid, so that move ships opt-in
     <SimpleGrid cols={{ base: 1, sm: 2, lg: cols }} spacing="sm">
       {children}
     </SimpleGrid>

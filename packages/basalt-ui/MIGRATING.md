@@ -77,7 +77,7 @@ consumer read this index, found nothing, and diffed a KPI row that had silently 
 | **dashboard** (`.`)           | `StatCard`: `unit`, `breakdown`, delta format (§ `StatCard`) | `StatGroup`, `WidgetGrid`, query-aware `StatCard` — additive                           | —                                                                                              | **the column law keys on the CONTAINER; `cols={4}` is 2-up at `sm`** (§ Dashboard) | —                                                                     | —      | —                                                                                                     | —                                                                         | —                                                                                                               | —                                                                             |
 | **toolchain** (`./configs/*`) | —                                                            | —                                                                                      | the shipped lefthook preset's `check-theme` BROKE — the CLI resolver stopped ascending (§ CLI) | the preset's default bin, and the `root:` recipe (§ Toolchain)                     | —                                                                     | —      | —                                                                                                     | —                                                                         | —                                                                                                               | —                                                                             |
 | **CLI** (`basalt-ui`)         | —                                                            | —                                                                                      | **resolver stops relocating; `doctor` loses 6 of 10 checks** (§ CLI)                           | —                                                                                  | —                                                                     | —      | —                                                                                                     | —                                                                         | —                                                                                                               | —                                                                             |
-| **guards**                    | five rules → `error` (§ Guards)                              | six new ids at `warn` (§ preamble)                                                     | `query-dual-import` retired in 1.29.1 (§ Guards)                                               | four rules → `error` (§ Guards)                                                    | —                                                                     | —      | —                                                                                                     | `raw-breakpoint`: the container-grid answer, `error` at 1.33.0 (§ 1.32.0) | `FormRow`/`FormGroup` homes in both lanes; `basalt-main` dropped (§ Fixes)                                      | —                                                                             |
+| **guards**                    | five rules → `error` (§ Guards)                              | six new ids at `warn` (§ preamble)                                                     | `query-dual-import` retired in 1.29.1 (§ Guards)                                               | four rules → `error` (§ Guards)                                                    | —                                                                     | —      | —                                                                                                     | `raw-breakpoint`: the container-grid answer, `error` at 1.33.0 (§ 1.32.0) | `FormRow`/`FormGroup` homes in both lanes; `basalt-main` dropped (§ Fixes)                                      | C1 + breakpoint pairs → `error`; `unknown-vx-token` `warn` (§ Guards)         |
 
 ---
 
@@ -132,6 +132,27 @@ export const b2Filters = createSearchStore({ key: 'b2-filters', fields: { … },
 writes the fallback back, in both the `options` and the stepper form. "No filter" is the FALLBACK,
 not a row: with `clearable`, drop an `{ value: 0, label: 'Any …' }` option — the pill reads the
 filter's `label` while no preset matches.
+
+### Guards — four ids promote to `error`
+
+The last two twin pairs leave grace together, one law per pair and one promotion for both lanes:
+
+| Law                   | oxlint rule (JSX)             | `check-theme` kind (text/CSS) | In grace since |
+| --------------------- | ----------------------------- | ----------------------------- | -------------- |
+| C1 — a control's home | `basalt/control-outside-home` | `raw-selection-control`       | 1.26.0         |
+| the breakpoint law    | `basalt/raw-breakpoint`       | `raw-media-query`             | 1.31.0         |
+
+Measured before flipping, 2026-10-01: all nine consumers on 1.32.1 — argo, rb, image-gen,
+image-share, email-gateway, linewatch, rollhook, obsidian, weatherorb — at 0 for all four ids.
+basalt's own tree and the playground are at 0 too, after two reasoned waivers in the package
+(`legend-disclosure.tsx` clamps a fixed panel with `window.innerWidth`, a position rather than a
+breakpoint; `ArticleGrid`'s `cols` is documented per viewport `lg`, so moving it to container keys
+would re-flow every consumer's grid and ships opt-in instead).
+
+If one fires after upgrading, it is code written since the measurement: the remedies are unchanged
+(§ 1.31.0 for C1's homes, § 1.32.0 `basalt/raw-breakpoint` for the container recipe), or a
+`theme-allow <id> — <why>`. `basalt.severity` still turns a kind down per repo; the shipped oxlint
+preset's level can be overridden in your own `.oxlintrc.json`.
 
 ### `unknown-vx-token` — a removed or misspelled `--vx-*` name is a finding (`warn`, `error` at 1.34.0)
 

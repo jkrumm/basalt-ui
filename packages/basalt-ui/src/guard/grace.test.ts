@@ -9,10 +9,9 @@
  * `assertGraceLedger` is tested directly against synthetic entries below rather than only through
  * the real ledger: every pre-existing entry promoted or moved to `PLUGIN_RULE_ADVISORY`'s guard-side
  * sibling, and an `it.each` over the empty ledger that left behind ran zero assertions, which proved
- * nothing about the gate actually firing. The ledger carries ONE wave-6 control kind —
- * `raw-selection-control`, re-dated to `promote: '1.30.0'` with its AST twin
- * `basalt/control-outside-home` (`in-body-page-title` promoted on schedule and its entry is gone) —
- * and the real-ledger check below runs against it.
+ * nothing about the gate actually firing. Since 1.33.0 the ledger carries ONE kind,
+ * `unknown-vx-token` (promote 1.34.0) — the C1 pair and `raw-media-query` promoted — and the
+ * real-ledger check below runs against it.
  *
  * This gate measures the version already PUBLISHED, so it can only go red after the release that
  * shipped a due entry. `scripts/check-grace.ts` is the other end — `scripts/release.sh` runs it
@@ -135,34 +134,23 @@ describe('scripts/check-grace.ts', () => {
   it('refuses a version that has reached a promote, naming the entries', () => {
     const { code, stderr } = runCheckGrace('9.9.9')
     expect(code).toBe(1)
-    expect(stderr).toContain('raw-selection-control')
-    expect(stderr).toContain('basalt/control-outside-home')
+    expect(stderr).toContain('unknown-vx-token')
   })
 
   // 1.27.0 promoted five of the six wave-6 plugin rules and one of the two guard kinds; 1.30.0
-  // promoted four more (`bound-control-outside-home`, `provider-above-router`, `forms-field-key`,
-  // `query-fn-unwrap` — all four measured at zero incumbents across the whole consumer fleet). What
-  // is LEFT is the C1 pair (`raw-selection-control` + `basalt/control-outside-home`), extended to
-  // 1.31.0 because 1.30.0 is the first release naming a home a provider-only consumer can reach.
-  // See either entry's `why` for the 29-incumbent measurement behind that. 1.30.0 must now PASS —
-  // that is the release this decision unblocked, and a test still refusing it would refuse it
-  // again on the next patch.
-  it.each([
-    '1.27.0',
-    '1.28.0',
-    '1.29.0',
-    '1.30.0',
-    '1.30.9',
-    '1.31.0',
-    '1.31.9',
-    '1.32.0',
-    '1.32.9',
-  ])('passes %s — the C1 pair is not due until 1.33.0', (v) => {
-    expect(runCheckGrace(v).code).toBe(0)
-  })
+  // promoted four more, all measured at zero incumbents across the fleet. 1.33.0 promoted the last
+  // four — the C1 pair (`raw-selection-control` + `basalt/control-outside-home`) and the breakpoint
+  // pair (`raw-media-query` + `basalt/raw-breakpoint`) — against nine consumers measured at zero on
+  // 1.32.1. What is LEFT is `unknown-vx-token`, new in 1.33.0, so 1.33.x must now PASS.
+  it.each(['1.30.0', '1.31.0', '1.32.0', '1.32.9', '1.33.0', '1.33.9'])(
+    'passes %s — nothing is due until 1.34.0',
+    (v) => {
+      expect(runCheckGrace(v).code).toBe(0)
+    },
+  )
 
-  it('refuses the version the remaining C1 pair is due in (1.33.0)', () => {
-    expect(runCheckGrace('1.33.0').code).toBe(1)
+  it('refuses the version unknown-vx-token is due in (1.34.0)', () => {
+    expect(runCheckGrace('1.34.0').code).toBe(1)
   })
 
   it('exits 2 on a missing or malformed version rather than passing vacuously', () => {

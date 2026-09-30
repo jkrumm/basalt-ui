@@ -33,7 +33,7 @@
     "basalt/hand-rolled-shell": "error",
     "basalt/raw-scroll-container": "error",
     "basalt/hand-rolled-filter": "error",
-    "basalt/control-outside-home": "warn",
+    "basalt/control-outside-home": "error",
     "basalt/bound-control-outside-home": "error",
     "basalt/control-size-literal": "error",
     "basalt/page-bar-budget": "error",
@@ -50,7 +50,7 @@
     "basalt/agent-resume-guard": "error",
     "basalt/agent-no-raw-usechat": "error",
     "basalt/ai-sdk-major": "error",
-    "basalt/raw-breakpoint": "warn"
+    "basalt/raw-breakpoint": "error"
   },
   "overrides": [
     {

@@ -43,6 +43,7 @@ function disclosurePlacement(chip: DOMRect, coarse: boolean): CSSProperties {
     }
   }
   const below = window.innerHeight - chip.bottom
+  // theme-allow raw-breakpoint — clamps a fixed panel inside the viewport; a position, not a breakpoint
   const left = Math.max(8, Math.min(chip.left, window.innerWidth - 248))
   const base = { left, right: 'auto', minWidth: 200, maxWidth: 'calc(100vw - 16px)' }
   return below >= 200 || below >= chip.top
