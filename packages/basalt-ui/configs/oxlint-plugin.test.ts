@@ -3639,6 +3639,52 @@ describe('basalt/raw-breakpoint', () => {
       expect(rules).not.toContain('raw-breakpoint')
     })
 
+    // The shipped map is the one IMPORTED map trusted: its value is known, so five route files no
+    // longer copy the same literal. Provenance-gated on `basalt-ui/tokens`, alias-safe.
+    const SPAN = `<Grid.Col span={{ base: 12, sm: 6 }}>x</Grid.Col>`
+    it.each([
+      [
+        'the named import',
+        `import { CONTAINER_GRID_BREAKPOINTS } from 'basalt-ui/tokens'`,
+        'CONTAINER_GRID_BREAKPOINTS',
+      ],
+      [
+        'an aliased import',
+        `import { CONTAINER_GRID_BREAKPOINTS as bp } from 'basalt-ui/tokens'`,
+        'bp',
+      ],
+      [
+        'a same-file alias of it',
+        `import { CONTAINER_GRID_BREAKPOINTS } from 'basalt-ui/tokens'\nconst bp = CONTAINER_GRID_BREAKPOINTS`,
+        'bp',
+      ],
+    ])(
+      'does NOT flag Grid.Col spans under breakpoints={CONTAINER_GRID_BREAKPOINTS} (%s)',
+      (_, imp, ref) => {
+        const { rules } = run(
+          `import { Grid } from '@mantine/core'\n${imp}\n` +
+            `export const C = () => <Grid type="container" breakpoints={${ref}}>${SPAN}</Grid>\n`,
+        )
+        expect(rules).not.toContain('raw-breakpoint')
+      },
+    )
+
+    it.each([
+      ['another module', `import { CONTAINER_GRID_BREAKPOINTS } from './tokens'`],
+      ['a type-only import', `import type { CONTAINER_GRID_BREAKPOINTS } from 'basalt-ui/tokens'`],
+      [
+        'another basalt-ui/tokens name',
+        `import { CONTAINER_CLASSES as CONTAINER_GRID_BREAKPOINTS } from 'basalt-ui/tokens'`,
+      ],
+    ])('still flags an imported map of the same name from %s', (_, imp) => {
+      const { rules, output } = run(
+        `import { Grid } from '@mantine/core'\n${imp}\n` +
+          `export const C = () => <Grid type="container" breakpoints={CONTAINER_GRID_BREAKPOINTS}>${SPAN}</Grid>\n`,
+      )
+      expect(rules).toContain('raw-breakpoint')
+      expect(CONTAINER_MESSAGE.test(output)).toBe(true)
+    })
+
     // Only the grid-keyed props route through the container queries; Box style props on the same
     // element still compile to viewport @media, so they keep the ordinary viewport message.
     it.each([

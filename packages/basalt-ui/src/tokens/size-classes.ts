@@ -14,6 +14,20 @@ export const CONTAINER_CLASSES = { micro: 0, compact: 240, regular: 480, wide: 8
 
 export type ContainerClass = keyof typeof CONTAINER_CLASSES
 
+/**
+ * `CONTAINER_CLASSES` as the five-key map `<Grid type="container" breakpoints={…}>` takes (Mantine
+ * types it `Record<MantineSize, string>`), so `Grid.Col` keys resolve onto the grid's own width:
+ * `xs` opens compact, `sm` regular, `md`/`lg`/`xl` wide. `basalt/raw-breakpoint` trusts this import
+ * by name (from `basalt-ui/tokens`) — any other imported map is unreadable to it and flagged.
+ */
+export const CONTAINER_GRID_BREAKPOINTS = {
+  xs: `${CONTAINER_CLASSES.compact}px`,
+  sm: `${CONTAINER_CLASSES.regular}px`,
+  md: `${CONTAINER_CLASSES.wide}px`,
+  lg: `${CONTAINER_CLASSES.wide}px`,
+  xl: `${CONTAINER_CLASSES.wide}px`,
+} as const
+
 /** The class a MEASURED inline size falls in (`px` is a min-width boundary, so 240 is `compact`). */
 export function resolveContainerClass(px: number): ContainerClass {
   if (px >= CONTAINER_CLASSES.wide) return 'wide'
