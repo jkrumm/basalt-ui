@@ -8,21 +8,15 @@ import type { ChartMargin } from '../../tokens'
 import type { CursorResolution } from '../cursor/resolve'
 import { useBandPlot } from '../hooks/useBandPlot'
 import type { BandFold, BandTooltipConfig } from '../hooks/useBandPlot'
-import { AxisBottomDate } from '../primitives/Axes'
 import { ChartFrame, resolveLegend } from '../primitives/ChartFrame'
 import type { ResponsiveChartHeight } from '../primitives/ChartFrame'
-import {
-  ChartTooltipFloat,
-  TooltipBody,
-  TooltipHeader,
-  TooltipRow,
-} from '../primitives/ChartTooltip'
+import { TooltipRow } from '../primitives/ChartTooltip'
 import { Crosshair } from '../primitives/Crosshair'
 import { HatchPattern, hatchFill, hatchSizeFor } from '../primitives/HatchPattern'
-import { HoverOverlay } from '../primitives/HoverOverlay'
 import type { ChartState } from '../primitives/ChartPending'
 import type { ChartLegendConfig, SeriesStyle } from '../series'
 import { fmtAxisDate } from '../utils/format'
+import { BandAxisOverlay, BandTooltip, clampFraction } from './band-chrome'
 import { isDev } from '../../common/is-dev'
 
 /**
@@ -256,7 +250,7 @@ function BandStripPlot<T>(props: BandStripPlotProps<T>) {
     ...(tooltip !== undefined && { tooltip }),
   })
 
-  const { bands, margin, plotWidth, scale, cursor, point, crosshairX, step, bandWidth } = band
+  const { bands, margin, plotWidth, point, crosshairX, step, bandWidth } = band
   const stripHeight = Math.max(plot.height - margin.top - margin.bottom, 1)
   const hatchId = `${chartId}-band-absent`
   if (absentState !== undefined && !styleByKey.has(absentState)) {
@@ -351,8 +345,6 @@ function BandStripPlot<T>(props: BandStripPlotProps<T>) {
 
   if (plotWidth <= 0 || bands.length === 0) return null
 
-  const cfg = tooltip === false ? undefined : tooltip
-  const badge = cfg?.label === undefined || point === null ? null : cfg.label(point)
   const row = point === null ? null : deriveBandRow(getBand(point), styleByKey, hidden, point)
 
   return (
@@ -383,67 +375,29 @@ function BandStripPlot<T>(props: BandStripPlotProps<T>) {
 
           {crosshairX !== null && <Crosshair x={crosshairX} top={0} bottom={stripHeight} />}
 
-          <AxisBottomDate
-            top={stripHeight}
-            scale={scale}
-            tickValues={band.tickValues}
-            tickFormat={(v) => formatX(String(v))}
-            anchorTerminals={band.xAnchorTerminals}
-            {...(band.xWrapWidth !== undefined && { wrapWidth: band.xWrapWidth })}
-          />
-
-          <HoverOverlay
-            width={plotWidth}
+          <BandAxisOverlay
+            band={band}
             height={stripHeight}
-            onMove={cursor.onPointerMove}
-            onDown={cursor.onPointerDown}
-            onUp={cursor.onPointerUp}
-            onLeave={cursor.onPointerLeave}
-            onKeyDown={cursor.onKeyDown}
-            onBlur={cursor.onBlur}
-            valueMax={Math.max(bands.length - 1, 0)}
-            {...(point !== null && {
-              valueNow: bands.indexOf(point),
-              valueText: formatX(getX(point)),
-            })}
-            {...(ariaLabel !== undefined && { ariaLabel })}
+            getX={getX}
+            formatX={formatX}
+            ariaLabel={ariaLabel}
           />
         </Group>
       </svg>
 
-      {band.showTooltip && point !== null && (
-        <ChartTooltipFloat anchor={band.tooltipAnchor} ariaLive={band.ariaLive}>
-          <TooltipHeader
-            date={getX(point)}
-            {...(cfg?.formatHeader !== undefined && {
-              format: (key: string) => cfg.formatHeader?.(key, point) ?? key,
-            })}
-            {...(badge !== null && { label: badge.text, labelColor: badge.color })}
+      <BandTooltip band={band} tooltip={tooltip} getX={getX} hidden={hidden}>
+        {row !== null && (
+          <TooltipRow
+            color={row.color}
+            label={row.label}
+            value={row.value}
+            shape={row.shape}
+            dashed={row.dashed}
           />
-          <TooltipBody>
-            {cfg?.prependRows?.(point, { hidden })}
-            {row !== null && (
-              <TooltipRow
-                color={row.color}
-                label={row.label}
-                value={row.value}
-                shape={row.shape}
-                dashed={row.dashed}
-              />
-            )}
-            {cfg?.extraRows?.(point, { hidden })}
-          </TooltipBody>
-        </ChartTooltipFloat>
-      )}
+        )}
+      </BandTooltip>
     </>
   )
-}
-
-/** A 0..1 share. Non-finite (a 0/0 fold count) reads as "nothing is absent" — the conservative
- * end, since the alternative is a band that does not render at all. */
-function clampFraction(value: number | undefined): number {
-  if (value === undefined || !Number.isFinite(value)) return 0
-  return Math.min(Math.max(value, 0), 1)
 }
 
 /**

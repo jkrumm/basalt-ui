@@ -2,6 +2,7 @@ import type { CSSProperties, ReactNode } from 'react'
 import { useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { createPortal } from 'react-dom'
 import { VX } from '../../tokens'
+import type { TooltipRowData } from '../series'
 import { fmtTooltipDate } from '../utils/format'
 import { useChartMetrics } from './chart-tier'
 
@@ -134,6 +135,21 @@ export function TooltipRow({
       </span>
     </div>
   )
+}
+
+/** The derived rows (`deriveTooltipRows`), one {@link TooltipRow} each. */
+export function TooltipRows({ rows }: { rows: readonly TooltipRowData[] }) {
+  return rows.map((row) => (
+    <TooltipRow
+      key={row.key}
+      color={row.color}
+      label={row.label}
+      value={row.value}
+      shape={row.shape}
+      dashed={row.dashed}
+      {...(row.strokeWidth !== undefined && { strokeWidth: row.strokeWidth })}
+    />
+  ))
 }
 
 export function TooltipBody({ children }: { children: ReactNode }) {
