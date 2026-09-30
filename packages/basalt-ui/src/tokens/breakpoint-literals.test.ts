@@ -24,12 +24,9 @@ const sizeLiterals = new Set(
 
 /**
  * Component-shape rules still on a viewport `@media` (a container question — later waves move them
- * onto `@container` and delete their entry here). StatGroup's is its `@supports not` fallback. Keyed by file relative to `src/`.
+ * onto `@container` and delete their entry here). Keyed by file relative to `src/`.
  */
 const COMPONENT_SHAPE_LEGACY: Record<string, readonly string[]> = {
-  'forms/form-layout.module.css': ['47.99375em'],
-  'dashboard/widget-grid.module.css': ['48em'],
-  'dashboard/stat-group.module.css': ['48em', '47.99375em'],
   'content/article-layout.module.css': ['1199.9px'],
 }
 
@@ -40,14 +37,14 @@ const containerLiterals = new Set(
     .flatMap((px) => [`${px}px`, `${Number((px - 0.1).toFixed(1))}px`]),
 )
 
-/** The other named containers' pre-existing literals (`stat-group`/`widget-grid` 768/1200, plus
- * StatGroup's own 260 one-column rule and FormRow's own 600 label-beside-input rule) — not card
- * chrome, so not pinned to the class table. */
-const LEGACY_CONTAINER_LITERALS = new Set([
+/** The other named containers' OWN literals, above or between the class steps: StatGroup's 260
+ * one-column rule, FormRow's 600 label-beside-input rule, and `basalt-grid`'s 1200 full-count
+ * boundary (the class table stops at 800 — `dashboard/stat-group.module.css` states why that is too
+ * early for a full KPI row). Everything else they write must be a class boundary. */
+const OWN_CONTAINER_LITERALS = new Set([
+  ...containerLiterals,
   '259.9px',
   '599.9px',
-  '767.9px',
-  '768px',
   '1199.9px',
   '1200px',
 ])
@@ -91,8 +88,7 @@ describe('breakpoint literals', () => {
     const stray = containerConditions(readFileSync(join(SRC, file), 'utf8')).flatMap(
       ({ name, literals }) =>
         literals.filter(
-          (lit) =>
-            !(name === 'basalt-card' ? containerLiterals : LEGACY_CONTAINER_LITERALS).has(lit),
+          (lit) => !(name === 'basalt-card' ? containerLiterals : OWN_CONTAINER_LITERALS).has(lit),
         ),
     )
     expect(stray).toEqual([])

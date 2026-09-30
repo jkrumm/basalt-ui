@@ -213,6 +213,11 @@ export type CardsSpec = {
   /** A `divided` `StatGroup` of four cards in a wrapper this many px wide (`data-testid="group"`). */
   groupWidth?: number
   /**
+   * A `StatGroup cols={5}` and a `WidgetGrid cols={3}` per width, each in a wrapper of exactly that
+   * many px (`data-testid="grid-probe-<w>"`) — the `basalt-grid` container boundaries, measured.
+   */
+  gridProbes?: number[]
+  /**
    * A SHORT, auto-height `ChartCard` with a full title+subtitle+value+delta+actions header — the
    * `/charts` Primitives "Availability"/"Negotiated link speed" shape (wave 8's header-economy law,
    * `docs/waves/PLAN.md`). Rendered at `data-testid="card-short"`, NOT stretched by a grid row, so

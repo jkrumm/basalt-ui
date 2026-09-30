@@ -10,7 +10,7 @@ import { join } from 'node:path'
 const CSS = readFileSync(join(import.meta.dir, 'stat-group.module.css'), 'utf8')
 
 test('below 260px: one column, and every cell drops the rail hairline', () => {
-  const start = CSS.indexOf('@container basalt-stat-group (max-width: 259.9px)')
+  const start = CSS.indexOf('@container basalt-grid (max-width: 259.9px)')
   expect(start).toBeGreaterThan(-1)
   const rule = CSS.slice(start, CSS.indexOf('\n}\n\n', start))
   expect(rule).toContain('grid-template-columns: minmax(0, 1fr)')

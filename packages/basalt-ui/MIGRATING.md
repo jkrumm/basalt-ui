@@ -131,6 +131,16 @@ const containerBreakpoints = { xs: px(C.compact), sm: px(C.regular), md: px(C.wi
 Pick the container key by the grid's own width, not by the viewport key it replaces: a grid inside a
 page with an aside or a sidebar is narrower than the viewport, which is the point.
 
+### `StatGroup` / `WidgetGrid` — `sm` opens at 800px, container name `basalt-grid`
+
+Both grids now key on the container-class law basalt ships: the `sm` column count opens at the
+`wide` class (**800px** of the grid's own width, was 768); the full `cols` count still opens at
+1200px. A grid 768–799px wide now renders its base count (StatGroup 2, WidgetGrid 1). The
+container they declare is renamed `basalt-stat-group`/`basalt-widget-grid` → **`basalt-grid`** — only
+a consumer rule written against the old names needs editing. The `@supports not (container-type)`
+viewport fallbacks (these two and `FormRow`'s) are gone: every browser that parses basalt's
+`color-mix()` also parses `@container`.
+
 ### `useBreakpoint` — removal moved to 1.33.0, and the 1.31.0 replacement line was half wrong
 
 `useBreakpoint('sm')` → `useSizeClass() !== 'compact'` holds for **shell chrome only**. A page

@@ -50,13 +50,9 @@ describe('the label-above swap is CSS at the row’s own ~600px width, never a J
     expect(block).toContain('grid-template-columns: minmax(0, 1fr)')
   })
 
-  test('the pre-container-query fallback collapses the same .grid below the old viewport `sm`', () => {
-    const supports = decls.indexOf('@supports not (container-type: inline-size)')
-    expect(supports).toBeGreaterThan(-1)
-    const media = decls.indexOf('@media (max-width: 47.99375em)', supports)
-    expect(media).toBeGreaterThan(-1)
-    const block = decls.slice(media, decls.indexOf('\n}', decls.indexOf('.grid {', media)))
-    expect(block).toContain('grid-template-columns: minmax(0, 1fr)')
+  test('no viewport fallback — the @container rule is the only law', () => {
+    expect(decls).not.toContain('@media')
+    expect(decls).not.toContain('@supports')
   })
 
   test('the source carries no media-query hook — the twin cannot be a render branch', () => {
