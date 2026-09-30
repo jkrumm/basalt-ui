@@ -124,20 +124,25 @@ export function applyLabOverride(
 }
 
 /*
- * DEV-build gate (on `useLabTheme` below). `BasaltProvider` is the mandatory `.` entry, so an unconditional subscription to
- * the lab store would make EVERY production app pay a localStorage read + schema validation on first
- * render and keep a `window` 'storage' listener registered for its whole lifetime — to answer a
- * question ("is the dev lab active?") that is always "no" in an app that never mounts
- * `<DeriveControls>`. Resolved ONCE at module scope, so it also lets a bundler drop
- * `useLabThemeDev` (and with it the `theme-lab/derive-state` + `state/persisted` imports) from a
- * production build — but only because the gate is a LITERAL `process.env.NODE_ENV` read inside the
- * ternary itself. Bundlers fold that read; they never inline a cross-module `isDev()` call, and a
- * module-level `const` is not reliably propagated either, so either form kept the whole lab store
- * in every production app's first-paint chunk. `check-budgets.ts`'s provider-only budget pins it.
+ * DEV-build gate (on `useLabTheme` below). `BasaltProvider` is the mandatory `.` entry, so an
+ * unconditional subscription to the lab store would make EVERY production app pay a localStorage
+ * read + schema validation on first render and keep a `window` 'storage' listener registered for
+ * its whole lifetime — to answer a question ("is the dev lab active?") that is always "no" in an
+ * app that never mounts `<DeriveControls>`.
  *
- * The cost: the lab does nothing in a PRODUCTION BUILD of a playground/dev app. It is a dev tool run
- * through a dev server (`bun run dev`), so that is the right side of the trade — but if you ever
- * preview the playground via `vite build && vite preview`, the sliders will be inert there.
+ * Resolved ONCE at module scope, so a bundler can drop `useLabThemeDev` (and with it the
+ * `theme-lab/derive-state` + `state/persisted` imports) from a production build — but only
+ * because the gate is a literal, dotted `process.env.NODE_ENV` read inside the ternary itself.
+ * Measured (minified prod builds, dev branch behind an import): the literal read folds in
+ * Vite/Rolldown, esbuild, Bun and webpack + terser alike, in both the dotted and the bracketed
+ * form; dotted is kept as the form every `define` implementation matches. A cross-module
+ * `isDev()` call and a module-level `const` both LEAK the dev branch in esbuild and Bun (and
+ * `isDev()` in Rolldown too), which is how 1.32.1 shipped the whole lab store in every production
+ * app's first-paint chunk. `check-budgets.ts`'s provider-only budget pins it.
+ *
+ * The cost: the lab does nothing in a PRODUCTION BUILD of a playground/dev app. It is a dev tool
+ * run through a dev server (`bun run dev`), so that is the right side of the trade — but if you
+ * ever preview the playground via `vite build && vite preview`, the sliders will be inert there.
  */
 /**
  * Dev build: subscribed to the lab store.
@@ -165,5 +170,4 @@ function useLabThemeProd(overrides: MantineThemeOverride | undefined): MantineTh
  * the app's lifetime, so the hook order is as stable as a plain function's (a `dev ? use…()`
  * inline in one function body would be a conditional hook call and a `react/rules-of-hooks` error).
  */
-export const useLabTheme =
-  process.env['NODE_ENV'] !== 'production' ? useLabThemeDev : useLabThemeProd
+export const useLabTheme = process.env.NODE_ENV !== 'production' ? useLabThemeDev : useLabThemeProd
