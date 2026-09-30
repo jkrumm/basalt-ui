@@ -34,7 +34,7 @@
  * existing injection emits the matching `--vx-*` CSS off the running theme — one path, both halves.
  *
  * DEV-tool path only, twice over: it is compiled out of a production build entirely (see
- * {@link LAB_ENABLED}), and even in a dev build, with the "Apply" switch off — or in any app that
+ * the DEV-build gate on `useLabTheme`), and even in a dev build, with the "Apply" switch off — or in any app that
  * never mounts the panel, since the persisted key is written by nothing else —
  * {@link applyLabOverride} returns the consumer theme verbatim.
  */
@@ -44,7 +44,6 @@ import { useMemo } from 'react'
 import { useDeriveControlsState, toDeriveOverride } from '../theme-lab/derive-state'
 import type { DeriveOverride } from '../theme-lab/derive-state'
 import { baseTheme, createBasaltTheme } from '../theme'
-import { isDev } from '../common/is-dev'
 
 type Plain = Record<string, unknown>
 
@@ -124,20 +123,22 @@ export function applyLabOverride(
   return mergeThemeOverrides(theme, themeOverrideDelta(baseTheme, labTheme))
 }
 
-/**
- * DEV-build gate. `BasaltProvider` is the mandatory `.` entry, so an unconditional subscription to
+/*
+ * DEV-build gate (on `useLabTheme` below). `BasaltProvider` is the mandatory `.` entry, so an unconditional subscription to
  * the lab store would make EVERY production app pay a localStorage read + schema validation on first
  * render and keep a `window` 'storage' listener registered for its whole lifetime — to answer a
  * question ("is the dev lab active?") that is always "no" in an app that never mounts
  * `<DeriveControls>`. Resolved ONCE at module scope, so it also lets a bundler drop
- * `useLabThemeDev` (and with it the `theme-lab/derive-state` import) from a production build.
+ * `useLabThemeDev` (and with it the `theme-lab/derive-state` + `state/persisted` imports) from a
+ * production build — but only because the gate is a LITERAL `process.env.NODE_ENV` read inside the
+ * ternary itself. Bundlers fold that read; they never inline a cross-module `isDev()` call, and a
+ * module-level `const` is not reliably propagated either, so either form kept the whole lab store
+ * in every production app's first-paint chunk. `check-budgets.ts`'s provider-only budget pins it.
  *
  * The cost: the lab does nothing in a PRODUCTION BUILD of a playground/dev app. It is a dev tool run
  * through a dev server (`bun run dev`), so that is the right side of the trade — but if you ever
  * preview the playground via `vite build && vite preview`, the sliders will be inert there.
  */
-const LAB_ENABLED = isDev()
-
 /**
  * Dev build: subscribed to the lab store.
  *
@@ -161,7 +162,8 @@ function useLabThemeProd(overrides: MantineThemeOverride | undefined): MantineTh
 /**
  * `BasaltProvider`'s theme resolution. Picked at module scope, not per render — both implementations
  * call their hooks unconditionally at their own top level, and which one is bound never changes for
- * the app's lifetime, so the hook order is as stable as a plain function's (a `LAB_ENABLED ? use…()`
+ * the app's lifetime, so the hook order is as stable as a plain function's (a `dev ? use…()`
  * inline in one function body would be a conditional hook call and a `react/rules-of-hooks` error).
  */
-export const useLabTheme = LAB_ENABLED ? useLabThemeDev : useLabThemeProd
+export const useLabTheme =
+  process.env['NODE_ENV'] !== 'production' ? useLabThemeDev : useLabThemeProd
