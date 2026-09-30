@@ -381,9 +381,10 @@ export function buildSearchStore<const S extends Record<string, AnyField>>(
       if (!validated) return
       navigate({
         to: '.',
+        // Gated like the setter: clearing a field already at its fallback keeps the page.
         search: (prev: Record<string, unknown>) => ({
           ...prev,
-          ...resetPatch,
+          ...resetsFor(entry, prev, entry.codec.fallback),
           ...entry.codec.toSearch(entry.codec.fallback),
         }),
         replace: true,

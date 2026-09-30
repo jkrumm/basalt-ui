@@ -884,6 +884,22 @@ describe('resets — a filter write drops a sibling page', () => {
     expect(currentSearch(router)['page']).toBe(1)
   })
 
+  test('clear() on a field already at its fallback keeps the page', async () => {
+    const probe = sink()
+    const router = await mountApp({
+      validateSearch,
+      entry: '/dashboard?prefix=all&page=4',
+      Dashboard: fieldProbe(store.field.prefix, probe),
+    })
+    const navigate = spyOn(router, 'navigate')
+    await act(async () => {
+      store.field.prefix.clear()
+    })
+    expect(navigate).toHaveBeenCalledTimes(1)
+    navigate.mockRestore()
+    expect(currentSearch(router)['page']).toBe(4)
+  })
+
   test('a param the store OWNS is refused at definition', () => {
     expect(() =>
       createSearchStore({
