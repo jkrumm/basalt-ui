@@ -7,7 +7,7 @@
  * enabling every rule this file tests. `run` shells the workspace-root `node_modules/.bin/oxlint`
  * binary and returns the parsed set of `basalt/<rule>` diagnostics it printed.
  */
-import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
+import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'bun:test'
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, resolve } from 'node:path'
@@ -100,11 +100,36 @@ function run(
   writeFileSync(filePath, source)
   const result = Bun.spawnSync([OXLINT_BIN, '-c', '.oxlintrc.json', filename], { cwd: dir })
   const output = `${result.stdout}${result.stderr}`
+  // A plugin that fails to load must fail the run, not read as "no findings" — otherwise every
+  // `not.toContain` below is false-green.
+  if (/Failed to (?:load JS plugin|parse oxlint configuration)/.test(output))
+    throw new Error(`oxlint could not load the basalt plugin:\n${output}`)
   const rules = new Set(
     [...output.matchAll(/\(basalt\/([\w-]+)\)/g)].map((match) => match[1] as string),
   )
   return { code: result.exitCode ?? 0, rules, output }
 }
+
+// The sentinel: one fixture every working plugin reports. If it does not, the plugin is not loaded
+// (or not registered under `basalt/`) and nothing else in this file means anything.
+beforeAll(() => {
+  const sentinelDir = mkdtempSync(resolve(tmpdir(), 'basalt-oxlint-sentinel-'))
+  try {
+    writeFileSync(
+      resolve(sentinelDir, '.oxlintrc.json'),
+      JSON.stringify({ jsPlugins: [PLUGIN_PATH], rules: { 'basalt/no-raw-font-size': 'error' } }),
+    )
+    writeFileSync(resolve(sentinelDir, 'sentinel.tsx'), 'export const C = () => <Text fz={10} />\n')
+    const result = Bun.spawnSync([OXLINT_BIN, '-c', '.oxlintrc.json', 'sentinel.tsx'], {
+      cwd: sentinelDir,
+    })
+    const output = `${result.stdout}${result.stderr}`
+    if (!output.includes('(basalt/no-raw-font-size)'))
+      throw new Error(`basalt oxlint plugin did not load — sentinel rule never fired:\n${output}`)
+  } finally {
+    rmSync(sentinelDir, { recursive: true, force: true })
+  }
+})
 
 // ── no-raw-font-size ─────────────────────────────────────────────────────────
 
@@ -3722,6 +3747,83 @@ describe('basalt/raw-breakpoint', () => {
         `export const C = () => (\n  // theme-allow raw-breakpoint — migrating in a follow-up\n  <SimpleGrid cols={{ base: 1, sm: 2 }} />\n)\n`,
     )
     expect(rules).not.toContain('raw-breakpoint')
+  })
+
+  // rb r2 #11: the object sat inside a conditional, so the rule never saw it.
+  it('flags a responsive object inside a conditional prop value (Grid.Col, no container)', () => {
+    const { rules } = run(
+      `import { Grid } from '@mantine/core'\n` +
+        `export const C = ({ wide }: { wide: boolean }) => (\n` +
+        `  <Grid><Grid.Col span={wide ? { base: 12, md: 4 } : 12}>x</Grid.Col></Grid>\n)\n`,
+    )
+    expect(rules).toContain('raw-breakpoint')
+  })
+
+  it('flags a responsive object on either side of a logical prop value', () => {
+    const { rules } = run(
+      `import { SimpleGrid } from '@mantine/core'\n` +
+        `export const C = ({ c }: { c?: number }) => <SimpleGrid cols={c ?? { base: 1, sm: 2 }} />\n`,
+    )
+    expect(rules).toContain('raw-breakpoint')
+  })
+
+  // rb r2 #13: a base-only object is no breakpoint at all — the message says to write the value.
+  it('tells a base-only responsive object to write the bare value', () => {
+    const { rules, output } = run(
+      `import { SimpleGrid } from '@mantine/core'\n` +
+        `export const C = () => <SimpleGrid cols={{ base: 3 }} />\n`,
+    )
+    expect(rules).toContain('raw-breakpoint')
+    expect(output).toContain('cols={3}')
+    expect(output).not.toContain('keyed on theme breakpoints')
+  })
+
+  // rb r2 #5.
+  it('points a useMediaQuery read at the (pointer: coarse) CSS home', () => {
+    const { output } = run(
+      `import { useMediaQuery } from '@mantine/hooks'\n` +
+        `export const useTouch = () => useMediaQuery('(hover: none)')\n`,
+    )
+    expect(output).toContain('@media (pointer: coarse)')
+  })
+
+  // obsidian r2 #7: a test-setup polyfill lives in `tests/`, not in a `.test` file.
+  it.each(['tests/setup/dom.ts', 'test/setup.ts', 'src/__tests__/setup.ts'])(
+    'does NOT flag a matchMedia stub under %s',
+    (filename) => {
+      const { rules } = run(`window.matchMedia = () => ({ matches: false })\n`, filename)
+      expect(rules).not.toContain('raw-breakpoint')
+    },
+  )
+
+  it('still flags a file whose name merely contains "test" outside a test dir', () => {
+    const { rules } = run(`const mq = window.matchMedia('(max-width: 600px)')\n`, 'src/latest/a.ts')
+    expect(rules).toContain('raw-breakpoint')
+  })
+})
+
+// ── control homes: text lane ≡ plugin ────────────────────────────────────────
+
+// 1.32.1 (B2): the plugin homed FormRow/FormGroup while check-theme's `raw-selection-control` did
+// not, so a correctly migrated form reported in one lane only. Both lists are module-private (the
+// guard is dependency-free, the plugin cannot import TS), so this reads them out of the source.
+describe('control homes — lane parity', () => {
+  const pluginSource = readFileSync(PLUGIN_PATH, 'utf8')
+  const guardSource = readFileSync(resolve(import.meta.dirname, '../src/guard/index.ts'), 'utf8')
+
+  const pluginSet = (name: string): string[] => {
+    const body = pluginSource.match(new RegExp(`const ${name} = new Set\\(\\[([^\\]]*)\\]`))?.[1]
+    if (body === undefined) throw new Error(`${name} not found in oxlint-plugin.js`)
+    return [...body.matchAll(/'([^']+)'/g)].map((m) => m[1] as string)
+  }
+
+  it('check-theme CONTROL_HOST_TAG names exactly CONTROL_HOST_TAGS ∪ BASALT_HOST_TAGS', () => {
+    const alternation = guardSource.match(/const CONTROL_HOST_TAG =\s*\/<\(\?:([^)]*)\)/)?.[1]
+    if (alternation === undefined) throw new Error('CONTROL_HOST_TAG not found in guard/index.ts')
+    const textLane = alternation.split('|').map((tag) => tag.replaceAll('\\.', '.'))
+    const pluginLane = [...pluginSet('CONTROL_HOST_TAGS'), ...pluginSet('BASALT_HOST_TAGS')]
+    expect(pluginLane).toContain('FormRow')
+    expect(textLane.toSorted()).toEqual(pluginLane.toSorted())
   })
 })
 
