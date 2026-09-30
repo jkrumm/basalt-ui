@@ -2429,6 +2429,15 @@ describe('raw-media-query', () => {
     expect(kinds(f)).toContain('raw-media-query')
   })
 
+  // F2(b), 1.32.1: nothing ever declared `basalt-main`, so a query naming it never matched.
+  it('flags @container basalt-main (dropped from the declared names)', () => {
+    const f = find(
+      '@container basalt-main (min-width: 480px) {\n  .a { display: flex; }\n}\n',
+      'src/a.css',
+    )
+    expect(kinds(f)).toContain('raw-media-query')
+  })
+
   it('flags a basalt-card literal that is not a CONTAINER_CLASSES boundary', () => {
     const f = find(
       '@container basalt-card (min-width: 500px) {\n  .a { display: flex; }\n}\n',
@@ -2743,7 +2752,8 @@ describe('raw-selection-control', () => {
     expect(f.find((x) => x.kind === 'raw-selection-control')?.token).toBe('<Select')
   })
 
-  it.each(['SettingsRow', 'Modal', 'Drawer', 'Menu.Dropdown'])(
+  // FormRow/FormGroup: 1.32.1 (B2) — the plugin always homed them; this lane had drifted.
+  it.each(['SettingsRow', 'FormRow', 'FormGroup', 'Modal', 'Drawer', 'Menu.Dropdown'])(
     'does NOT flag one inside a %s window',
     (host) => {
       const f = find(`<${host}>\n  <Select data={[]} />\n</${host}>`)

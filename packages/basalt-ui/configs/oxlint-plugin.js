@@ -390,8 +390,12 @@ function hasFileDeclaration(context, ruleId) {
   )
 }
 
-/** Test/spec files — design guidance does not apply to a fixture. Mirrors `src/cli`'s own SKIP. */
-const TEST_FILE = /\.(?:test|spec)\.[cm]?[jt]sx?$|(?:^|[\\/])__tests__[\\/]/
+/**
+ * Test/spec files — design guidance does not apply to a fixture. Mirrors `src/cli`'s own SKIP, plus
+ * a `test/`/`tests/` directory (1.32.1): a test-setup polyfill (`tests/setup/dom.ts` stubbing
+ * `window.matchMedia`) is neither a `.test` file nor under `__tests__`, and needed a waiver.
+ */
+const TEST_FILE = /\.(?:test|spec)\.[cm]?[jt]sx?$|(?:^|[\\/])(?:__tests__|tests?)[\\/]/
 
 function isTestFile(context) {
   return TEST_FILE.test(getFilename(context))
@@ -3981,6 +3985,16 @@ function isResponsiveObjectValue(node, namedOnly = false) {
  * `ObjectExpression` left the Identifier-in-a-property shape trivially bypassable.
  */
 function containsResponsiveObjectValue(node, consts, namedOnly = false, seen = new Set()) {
+  // `span={wide ? { base: 12, md: 4 } : 12}` — either branch can carry the object (rb's hero Grid
+  // was a false negative until 1.32.1 looked inside the conditional).
+  if (node?.type === 'ConditionalExpression')
+    return [node.consequent, node.alternate].some((branch) =>
+      containsResponsiveObjectValue(branch, consts, namedOnly, seen),
+    )
+  if (node?.type === 'LogicalExpression')
+    return [node.left, node.right].some((side) =>
+      containsResponsiveObjectValue(side, consts, namedOnly, seen),
+    )
   const resolved =
     node !== null && node !== undefined && node.type === 'Identifier' ? consts.get(node.name) : node
   if (resolved === null || resolved === undefined || resolved.type !== 'ObjectExpression')
@@ -4108,6 +4122,26 @@ const RAW_BREAKPOINT_RESPONSIVE_PROP_MESSAGE =
   'Responsive-object prop keyed on theme breakpoints — those are viewport widths. ' +
   `${RAW_BREAKPOINT_RECIPE} (basalt/raw-breakpoint)`
 
+/** rb r2 #5: a `(hover: none)` read was flagged with advice that only covered widths. */
+const RAW_BREAKPOINT_POINTER_HINT =
+  'A hover/pointer capability read belongs in CSS: @media (pointer: coarse) in a module (the ' +
+  'query --vx-hit keys on) — (hover: none) is not a sanctioned query.'
+
+const RAW_BREAKPOINT_BASE_ONLY_MESSAGE =
+  'Responsive-object prop with only a base key — there is no breakpoint in it at all, so drop the ' +
+  'object and write the value: cols={{ base: 3 }} → cols={3}. (basalt/raw-breakpoint)'
+
+/**
+ * Is `node` (or the same-file `const` it names) a responsive object carrying ONLY `base`? That is
+ * no breakpoint decision, and the viewport recipe is the wrong advice for it — the fix is the bare
+ * value. Message-only: the shape still reports, as it always has.
+ */
+function isBaseOnlyResponsiveObject(node, consts) {
+  const resolved = node?.type === 'Identifier' ? consts.get(node.name) : node
+  if (!isResponsiveObjectValue(resolved)) return false
+  return resolved.properties.every((prop) => propertyKeyName(prop) === 'base')
+}
+
 const RAW_BREAKPOINT_CONTAINER_KEY_MESSAGE =
   'Theme breakpoint name under type="container" — Mantine does not resolve it there: ' +
   "SimpleGrid uses each key verbatim as a (min-width: …) length, so 'sm' is a dead query, " +
@@ -4121,11 +4155,12 @@ const RAW_BREAKPOINT_VISIBLE_HIDDEN_MESSAGE =
 const RAW_BREAKPOINT_HOOK_MESSAGE =
   "useMediaQuery/useMatches/useViewportSize — a raw viewport read outside the framework's " +
   'one seam. Shell chrome reads useSizeClass(); a page swapping its own layout (a table for a card ' +
-  `list, a column count) is a container decision. ${RAW_BREAKPOINT_RECIPE} (basalt/raw-breakpoint)`
+  `list, a column count) is a container decision. ${RAW_BREAKPOINT_POINTER_HINT} ` +
+  `${RAW_BREAKPOINT_RECIPE} (basalt/raw-breakpoint)`
 
 const RAW_BREAKPOINT_GLOBAL_MESSAGE =
   'window.matchMedia/window.innerWidth read directly — the viewport read useSizeClass() owns ' +
-  `for shell chrome. ${RAW_BREAKPOINT_RECIPE} (basalt/raw-breakpoint)`
+  `for shell chrome. ${RAW_BREAKPOINT_POINTER_HINT} ${RAW_BREAKPOINT_RECIPE} (basalt/raw-breakpoint)`
 
 /** The three viewport hooks the law names, whatever module they are imported from. */
 const RAW_BREAKPOINT_HOOK_NAMES = new Set(['useMediaQuery', 'useMatches', 'useViewportSize'])
@@ -4265,9 +4300,11 @@ const rawBreakpoint = {
             continue
           if (hasThemeAllow(context, node, 'raw-breakpoint')) continue
           const message =
-            mode === undefined
-              ? RAW_BREAKPOINT_RESPONSIVE_PROP_MESSAGE
-              : RAW_BREAKPOINT_CONTAINER_KEY_MESSAGE
+            mode !== undefined
+              ? RAW_BREAKPOINT_CONTAINER_KEY_MESSAGE
+              : isBaseOnlyResponsiveObject(value, responsiveObjectConsts)
+                ? RAW_BREAKPOINT_BASE_ONLY_MESSAGE
+                : RAW_BREAKPOINT_RESPONSIVE_PROP_MESSAGE
           context.report({ node, message })
         }
         for (const node of visibleHiddenCandidates) {

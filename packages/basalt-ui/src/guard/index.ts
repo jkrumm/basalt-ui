@@ -177,27 +177,23 @@ const CSS_NON_COARSE_POINTER_QUERY =
  * The `@container` names the container-class axis declares — a consumer container carrying any
  * other name has invented its own container-query breakpoint instead of using the framework's.
  * `basalt-card` is the one shipped today (`src/dashboard/section.module.css`);
- * `basalt-form`/`basalt-main`/`basalt-grid` are the declared remaining three, reserved here so a
- * consumer adopting one ahead of the framework does not immediately trip this guard.
+ * `basalt-form`/`basalt-grid` are the declared remaining two, reserved here so a consumer adopting
+ * one ahead of the framework does not immediately trip this guard. `basalt-main` was a third until
+ * 1.32.1 dropped it: nothing ever declared it, so the guard accepted a query that never matched.
  *
  * `basalt-grid` is also what `StatGroup`/`WidgetGrid` declare (`src/dashboard/*.module.css`) —
  * they shipped as `basalt-stat-group`/`basalt-widget-grid` until 1.32.0 moved them onto this table.
  */
-const DECLARED_CONTAINER_NAMES = new Set([
-  'basalt-card',
-  'basalt-form',
-  'basalt-main',
-  'basalt-grid',
-])
+const DECLARED_CONTAINER_NAMES = new Set(['basalt-card', 'basalt-form', 'basalt-grid'])
 
 /**
  * `CONTAINER_CLASSES` (`src/tokens/size-classes.ts`) boundaries, duplicated per the `CTL_THEME_TAGS`
  * convention in the oxlint plugin — this module is dependency-free by contract (file header) and
  * must not import `../tokens`. Pinned against the real table by `check-source.test.ts`. Judged only
- * against `basalt-card`: the other three declared names have no shipped numeric table yet. `0` is
- * the container's own floor, not a class boundary, but `(width >= 0px)` is a legitimate idiom for
- * "scope this rule to the container, whatever its width" (`widget-header.module.css`'s `cqi` clamp)
- * — allowed for that reason, not because it names a real `CONTAINER_CLASSES` step.
+ * against `basalt-card` and unnamed queries: the other declared names have no shipped numeric table
+ * yet. `0` is the container's own floor, not a class boundary, but `(width >= 0px)` is a legitimate
+ * idiom for "scope this rule to the container, whatever its width" (`widget-header.module.css`'s
+ * `cqi` clamp) — allowed for that reason, not because it names a real `CONTAINER_CLASSES` step.
  */
 const CONTAINER_CLASS_LITERALS_PX = new Set([0, 240, 239.9, 480, 479.9, 800, 799.9])
 
@@ -691,9 +687,12 @@ const PROSE_CONTEXT_TAG = /<(?:Prose|ArticleLayout|Modal|Drawer)(?![\w])/
  * read differently in the two lanes. The plugin gates them on the tag's basalt IMPORT; a 12-line
  * regex window has no import graph, so this lane matches by name and accepts the missed warn on a
  * consumer's own `PanelRow` — the same direction every approximation in this scan already leans.
+ *
+ * The name set is the plugin's `CONTROL_HOST_TAGS` ∪ `BASALT_HOST_TAGS`; `oxlint-plugin.test.ts` ›
+ * lane parity asserts the two agree (1.32.1 — `FormRow`/`FormGroup` had drifted out of this lane).
  */
 const CONTROL_HOST_TAG =
-  /<(?:SettingsRow|Modal|Drawer|Popover\.Dropdown|Menu\.Dropdown|Composer|FilterSet|PageAside|PanelRow)(?![\w])/
+  /<(?:SettingsRow|FormRow|FormGroup|Modal|Drawer|Popover\.Dropdown|Menu\.Dropdown|Composer|FilterSet|PageAside|PanelRow)(?![\w])/
 
 /**
  * How far ABOVE a control the host-tag window reaches, in lines.
@@ -2200,7 +2199,7 @@ export const GUARD_RULES = {
     // JSX-tag-shaped (`<Select …>`) — never appears in CSS text.
     appliesTo: (relPath) => !relPath.endsWith('.css'),
     message:
-      'Raw selection control with no home — a filter or tab belongs in a PageBar / Section / WidgetHeader slot and takes a `field` (a FieldHandle), so it owns the URL write and the localStorage mirror instead of carrying value/onChange (docs/CONTROLS-SPEC.md laws C1–C3). Use the bound control from basalt-ui/controls. A settings row, an overlay and an @mantine/form file are the declared non-homes and never report. No shell? PageBar needs no BasaltShell: outside one it renders in flow, sticky, with its own title — so its slots are a reachable home for a provider-only app. This is the TEXT lane of basalt/control-outside-home, which answers the same question against the real AST — where the two disagree, the plugin is right.',
+      'Raw selection control with no home — a filter or tab belongs in a PageBar / Section / WidgetHeader slot and takes a `field` (a FieldHandle), so it owns the URL write and the localStorage mirror instead of carrying value/onChange (docs/CONTROLS-SPEC.md laws C1–C3). Use the bound control from basalt-ui/controls. A settings row, a FormRow / FormGroup, an overlay and an @mantine/form file are the declared non-homes and never report. No shell? PageBar needs no BasaltShell: outside one it renders in flow, sticky, with its own title — so its slots are a reachable home for a provider-only app. This is the TEXT lane of basalt/control-outside-home, which answers the same question against the real AST — where the two disagree, the plugin is right.',
   },
   'inline-font-size': {
     kind: 'inline-font-size',
@@ -2214,7 +2213,7 @@ export const GUARD_RULES = {
     // CSS-only: a width @media, an @container name/literal or a non-coarse pointer query has no JSX
     // spelling — the AST-side twin of this law is the oxlint plugin's basalt/raw-breakpoint.
     appliesTo: (relPath) => relPath.endsWith('.css'),
-    message: `Raw viewport/container breakpoint in CSS — a width @media belongs to shell/** against SIZE_CLASSES (useSizeClass() is the JS seam); an @container name must be one of ${[...DECLARED_CONTAINER_NAMES].join(' / ')} at a boundary in ${[...CONTAINER_CLASS_LITERALS_PX].map((px) => `${px}px`).join(' / ')}; and a pointer query other than (pointer: coarse) or (pointer: fine) has no framework meaning. Same law the oxlint plugin enforces as basalt/raw-breakpoint over JSX; this is the CSS half.`,
+    message: `Raw viewport/container breakpoint in CSS — a width @media belongs to shell/** against SIZE_CLASSES (useSizeClass() is the JS seam); an @container name must be one of ${[...DECLARED_CONTAINER_NAMES].join(' / ')}, and a basalt-card or unnamed @container query must sit at a boundary in ${[...CONTAINER_CLASS_LITERALS_PX].map((px) => `${px}px`).join(' / ')} (the other declared names have no numeric table yet, so their literals are not judged); and a pointer query other than (pointer: coarse) or (pointer: fine) has no framework meaning. Same law the oxlint plugin enforces as basalt/raw-breakpoint over JSX; this is the CSS half.`,
   },
 } as const satisfies Record<GuardKind, GuardRule>
 
@@ -2481,7 +2480,7 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
         }
         // Literal boundaries are judged against `basalt-card`'s own table (see
         // `CONTAINER_CLASS_LITERALS_PX`'s doc) — an unnamed query has no OTHER table to judge
-        // against, so it is judged against this one too; the other three declared names stay
+        // against, so it is judged against this one too; the other declared names stay
         // unjudged until they ship their own.
         if (name !== '' && name !== 'basalt-card') continue
         for (const lit of body.matchAll(CSS_CONTAINER_LITERAL)) {
