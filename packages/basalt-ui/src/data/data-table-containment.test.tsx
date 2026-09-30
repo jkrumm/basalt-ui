@@ -534,21 +534,36 @@ describe('column fold — never folds every data column away', () => {
   })
 })
 
+function cardsBody(container: HTMLElement): HTMLElement {
+  const body = container.querySelector('.cards-body')
+  if (!(body instanceof HTMLElement)) throw new Error('expected the body slot')
+  return body
+}
+
+function cardTexts(container: HTMLElement) {
+  return [...container.querySelectorAll('[data-card]')].map((card) => card.textContent)
+}
+
 describe('renderCard swaps the body on the TABLE’s own container class, not the viewport', () => {
-  function mountCards(props: Record<string, unknown> = {}) {
-    return render(
+  function cardsTree(props: Record<string, unknown> = {}) {
+    return (
       <MantineProvider>
         <BasaltDataTable
           data={ROWS}
           columns={COLUMNS}
           title="Projects"
           className="cards-root"
+          classNames={{ table: 'cards-body' }}
           initialSorting={[{ id: 'cost', desc: false }]}
           renderCard={(row: Row) => <span data-card>{row.project}</span>}
           {...props}
         />
-      </MantineProvider>,
+      </MantineProvider>
     )
+  }
+
+  function mountCards(props: Record<string, unknown> = {}) {
+    return render(cardsTree(props))
   }
 
   async function rootTo(container: HTMLElement, width: number) {
@@ -559,9 +574,6 @@ describe('renderCard swaps the body on the TABLE’s own container class, not th
       for (const notify of observers) notify()
     })
   }
-
-  const cardTexts = (container: HTMLElement) =>
-    [...container.querySelectorAll('[data-card]')].map((card) => card.textContent)
 
   test('unmeasured is the table — the SSR answer and the first paint', () => {
     stubLayout()
@@ -611,5 +623,75 @@ describe('renderCard swaps the body on the TABLE’s own container class, not th
     const { container, getByText } = mountCards({ data: [], emptyState: 'Nothing here' })
     await rootTo(container, 300)
     expect(getByText('Nothing here')).toBeDefined()
+  })
+  test('pending renders skeleton cards inside the card list, not table rows', async () => {
+    stubLayout()
+    const { container } = mountCards({ isLoading: true, skeletonRows: 3 })
+    await rootTo(container, 300)
+    expect(container.querySelector('table')).toBeNull()
+    expect(cardsBody(container).querySelectorAll('.mantine-Skeleton-root')).toHaveLength(3)
+    expect(cardTexts(container)).toEqual([])
+  })
+
+  test('a query error renders the ErrorState in the card list', async () => {
+    stubLayout()
+    const { container, getByText } = mountCards({
+      query: {
+        data: undefined,
+        isError: true,
+        error: new Error('upstream exploded'),
+        fetchStatus: 'idle',
+        refetch: () => undefined,
+      },
+    })
+    await rootTo(container, 300)
+    expect(container.querySelector('table')).toBeNull()
+    expect(cardsBody(container).contains(getByText('upstream exploded'))).toBe(true)
+    expect(cardTexts(container)).toEqual([])
+  })
+
+  test('maxHeight caps the card list in a ScrollArea; without it there is none', async () => {
+    stubLayout()
+    const capped = mountCards({ maxHeight: 200 })
+    await rootTo(capped.container, 300)
+    expect(cardsBody(capped.container).closest('.mantine-ScrollArea-root')).not.toBeNull()
+    capped.unmount()
+
+    const uncapped = mountCards()
+    await rootTo(uncapped.container, 300)
+    expect(cardsBody(uncapped.container).closest('.mantine-ScrollArea-root')).toBeNull()
+  })
+
+  test('selection: no checkbox in cards; the bulk bar keeps a tick made before narrowing', async () => {
+    stubLayout()
+    const { container, getByText } = mountCards({
+      enableRowSelection: true,
+      getRowId: (row: Row) => row.project,
+      bulkActions: (rows: Row[]) => [{ key: 'x', label: `Archive ${rows.length}` }],
+    })
+    const argoBox = [...container.querySelectorAll('tbody tr')]
+      .find((tr) => tr.textContent?.includes('argo'))
+      ?.querySelector('input[type="checkbox"]')
+    if (!argoBox) throw new Error('expected the argo row checkbox')
+    fireEvent.click(argoBox)
+    await rootTo(container, 300)
+    expect(container.querySelectorAll('input[type="checkbox"]')).toHaveLength(0)
+    expect(getByText('1 selected')).toBeDefined()
+  })
+
+  test('selection: a controlled selection changed while narrow drives the bulk bar', async () => {
+    stubLayout()
+    const selectionProps = (rowSelection: Record<string, boolean>) => ({
+      enableRowSelection: true,
+      getRowId: (row: Row) => row.project,
+      rowSelection,
+      bulkActions: (rows: Row[]) => [{ key: 'x', label: `Archive ${rows.length}` }],
+    })
+    const { container, getByText, rerender } = mountCards(selectionProps({ argo: true }))
+    await rootTo(container, 300)
+    expect(getByText('1 selected')).toBeDefined()
+    rerender(cardsTree(selectionProps({ argo: true, linewatch: true })))
+    expect(container.querySelector('table')).toBeNull()
+    expect(getByText('2 selected')).toBeDefined()
   })
 })
