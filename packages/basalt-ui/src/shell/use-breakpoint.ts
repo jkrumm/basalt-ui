@@ -1,5 +1,5 @@
 /**
- * `useBreakpoint` — DEPRECATED (on notice in `MIGRATING.md`, removed next minor): use
+ * `useBreakpoint` — DEPRECATED (on notice in `MIGRATING.md`, removed in 1.33.0): use
  * `useSizeClass` from `./use-size-class`. One media-query hook over the theme's own breakpoints,
  * built on the shared `useMediaQuery` (`common/use-media-query`) — SSR/hydration-safe.
  *
@@ -21,7 +21,7 @@ import { useMediaQuery } from '../common/use-media-query'
 export type BreakpointName = 'xs' | 'sm' | 'md' | 'lg' | 'xl'
 
 /**
- * @deprecated Use `useSizeClass` — removed next minor (see `MIGRATING.md`). `theme.breakpoints` is
+ * @deprecated Use `useSizeClass` — removed in 1.33.0 (see `MIGRATING.md`). `theme.breakpoints` is
  * now derived: `sm` moved 48em → 52.5em and `md`/`lg`/`xl` all sit at 75em (`xs`/`sm` collapse,
  * `md`/`lg`/`xl` collapse).
  */
