@@ -104,9 +104,10 @@ import { CONTAINER_GRID_BREAKPOINTS } from 'basalt-ui/tokens'
 | a shared map you export yourself (flagged when imported)                             | the shipped one, or keep a same-file literal |
 
 The trust is provenance-gated: the import must name `CONTAINER_GRID_BREAKPOINTS` from
-`basalt-ui/tokens` (an alias — `{ CONTAINER_GRID_BREAKPOINTS as bp }` — or a same-file
-`const bp = CONTAINER_GRID_BREAKPOINTS` both count). A map of your own that deviates from it — a
-1200px `xl`, say — stays a same-file literal. `SimpleGrid type="container"` is unchanged: its keys
+`basalt-ui/tokens` (an alias `{ CONTAINER_GRID_BREAKPOINTS as bp }`, a namespace member
+`tokens.CONTAINER_GRID_BREAKPOINTS` on `import * as tokens`, and a same-file `const bp = …` of
+either all count; a parameter or inner `const` that shadows the name does not). A map of your own
+that deviates from it — a 1200px `xl`, say — stays a same-file literal. `SimpleGrid type="container"` is unchanged: its keys
 are CSS lengths, so ``[`${CONTAINER_CLASSES.regular}px`]`` stays the form.
 
 ### State and controls — `resets: ['page']`, `NumberFilter clearable`
