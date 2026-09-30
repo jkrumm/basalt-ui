@@ -796,6 +796,8 @@ function SortIndicator({ direction }: { direction: 'asc' | 'desc' | false }) {
   )
 }
 
+const ARIA_SORT = { asc: 'ascending', desc: 'descending' } as const
+
 // ── Numeral cell idiom (docs/DESIGN-SPEC.md §3: "Stat/table numeral: mono, 12-12.5px, weight
 // 500, ink") — auto-detected from the cell's raw value (no column-level opt-in prop needed) so
 // every numeric column gets tabular, mono figures with zero call-site configuration.
@@ -1688,10 +1690,6 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
   // `data` non-empty while the body has nothing in it, and a blank body reads as a broken table.
   const rows = table.getRowModel().rows
 
-  // A capped body or a horizontal floor both need the same native scroll node. Everything else —
-  // pinning included — either takes that same container (the uncapped, non-sticky default) or the
-  // measured wrapper below; there is no third overflow box. (`scrolls` itself is computed earlier,
-  // ahead of the table, because the column fold above needs it too.)
   // `stickyHeaderOffset` is a WINDOW-scroll concept — the height of whatever fixed chrome the page
   // scrolls under (the AppShell header plus `PageBar` row 2). Inside the scroll container it is
   // always wrong: that box is the sticky header's own scrollport, so the offset parks the `<thead>`
@@ -1760,15 +1758,7 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
                       : undefined
                   }
                   tabIndex={canSort ? 0 : undefined}
-                  aria-sort={
-                    canSort
-                      ? sorted === 'asc'
-                        ? 'ascending'
-                        : sorted === 'desc'
-                          ? 'descending'
-                          : 'none'
-                      : undefined
-                  }
+                  aria-sort={canSort ? (sorted ? ARIA_SORT[sorted] : 'none') : undefined}
                   style={{
                     ...(canSort ? { cursor: 'pointer', userSelect: 'none' } : undefined),
                     ...(align !== undefined && { textAlign: align }),
@@ -2020,15 +2010,10 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
             >
               {tableNode}
             </div>
-          ) : maxHeight !== undefined ? (
-            // `pageStickyHeader` is already false whenever `maxHeight` is set (`scrolls` above), so
-            // this is the ONE remaining case: a vertical cap with no sticky header to measure —
-            // still wants its own `ScrollArea` scrollport, just with no `minWidth` floor.
-            <Table.ScrollContainer type="native" minWidth={0} maxHeight={maxHeight}>
-              {tableNode}
-            </Table.ScrollContainer>
           ) : (
-            <Table.ScrollContainer type="native" minWidth={0}>
+            // `pageStickyHeader` is false whenever `maxHeight` is set (`scrolls` above), so a vertical
+            // cap lands here — its own `ScrollArea` scrollport, just with no `minWidth` floor.
+            <Table.ScrollContainer type="native" minWidth={0} maxHeight={maxHeight}>
               {tableNode}
             </Table.ScrollContainer>
           )}
