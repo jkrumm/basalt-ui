@@ -286,37 +286,45 @@ const legendEntryWidth = (item: LegendEntry): number =>
   )
 
 /**
- * The greedy chip-width wrap {@link entriesWithinRows} runs — split out so
- * {@link entriesWithinChipRows} can run it a second time against a narrower, reserve-adjusted
- * width without duplicating the wrap arithmetic. `allowZero` (default false) drops the "the first
- * entry always fits" guarantee a bare row-fit needs (a raw width-vs-0 check is meaningless
- * otherwise): without it, the SAME entry the caller is about to also draw an `All N` chip beside
- * would always be counted as fitting even when the two together provably don't.
+ * The ONE greedy wrap every legend fit runs — the same wrap the flex container performs, measured
+ * rather than assumed. Each item costs `widthOf(item)` (plus `gap` after the row's first) and
+ * `extraAfter(i)` more once placed (a group divider is its own flex item). `allowZero` (default
+ * false) drops the "the first entry always fits" guarantee a bare row-fit needs: a reserved pass
+ * (the `All N` chip already took its room) must be able to answer 0, or the SAME entry the caller
+ * is about to draw the chip beside would always count as fitting even when the two provably don't.
  */
-function fitChipRows(
-  items: readonly LegendEntry[],
-  width: number,
-  rows: number,
-  allowZero = false,
+function fitGreedyRows<T>(
+  items: readonly T[],
+  fit: {
+    widthOf: (item: T) => number
+    gap: number
+    width: number
+    rows: number
+    allowZero?: boolean
+    extraAfter?: (index: number) => number
+  },
 ): number {
   let row = 1
   let x = 0
   let fitted = 0
-  for (const item of items) {
-    const w = legendEntryWidth(item)
-    const next = x === 0 ? w : x + VX.legendGap + w
-    if (x === 0 && allowZero && next > width) return 0
-    if (next > width && x > 0) {
+  for (const [i, item] of items.entries()) {
+    const w = fit.widthOf(item)
+    const next = x === 0 ? w : x + fit.gap + w
+    if (x === 0 && fit.allowZero === true && next > fit.width) return 0
+    if (next > fit.width && x > 0) {
       row += 1
-      if (row > rows) return fitted
+      if (row > fit.rows) return fitted
       x = w
     } else {
       x = next
     }
     fitted += 1
+    x += fit.extraAfter?.(i) ?? 0
   }
   return fitted
 }
+
+const chipFit = { widthOf: legendEntryWidth, gap: VX.legendGap }
 
 /** How many of `items` fit in `rows` wrapped rows of `width` — the same greedy wrap the flex
  * container performs, measured rather than assumed (`docs/CHARTS-SPEC.md` §1). */
@@ -325,7 +333,7 @@ export function entriesWithinRows(
   width: number,
   rows: number,
 ): number {
-  return fitChipRows(items, width, rows)
+  return fitGreedyRows(items, { ...chipFit, width, rows })
 }
 
 /**
@@ -342,44 +350,15 @@ export function entriesWithinChipRows(
   rows: number,
 ): number {
   const total = items.length
-  const fittedNoReserve = fitChipRows(items, width, rows)
+  const fittedNoReserve = entriesWithinRows(items, width, rows)
   if (fittedNoReserve >= total) return fittedNoReserve
   const reserve = measureText(`All ${total}`, VX.legendFontSize) + VX.legendGap
-  return fitChipRows(items, Math.max(width - reserve, 0), rows, true)
-}
-
-/** The greedy dot-pitch wrap `entriesWithinDotRows` runs twice — once optimistically, once against
- * a width that already gave up the `All N` chip's room. A group divider is its own flex item, so it
- * costs one more pitch before the next dot. `allowZero` (default false) mirrors {@link fitChipRows}'s
- * own flag: without it the first dot always counts as fitted regardless of `width`, which is wrong
- * for the reserved pass once reserving has left no usable room at all. */
-function fitDotRows(
-  items: readonly LegendEntry[],
-  width: number,
-  rows: number,
-  dividerAfter: ReadonlySet<number>,
-  allowZero = false,
-): number {
-  let row = 1
-  let x = 0
-  let fitted = 0
-  for (let i = 0; i < items.length; i += 1) {
-    // `DOT_PITCH` already IS one dot's full footprint (its own size plus the gap to a neighbour,
-    // `LEGEND_DOT_SIZE + DOTS_HIT_GAP`) — adding `LEGEND_DOT_SIZE` again here double-counted every
-    // dot after the row's first, wrapping a legend to `All N` well before it actually overflowed.
-    const next = x === 0 ? LEGEND_DOT_SIZE : x + DOT_PITCH
-    if (x === 0 && allowZero && next > width) return 0
-    if (next > width && x > 0) {
-      row += 1
-      if (row > rows) return fitted
-      x = LEGEND_DOT_SIZE
-    } else {
-      x = next
-    }
-    fitted += 1
-    if (dividerAfter.has(i)) x += DOT_PITCH
-  }
-  return fitted
+  return fitGreedyRows(items, {
+    ...chipFit,
+    width: Math.max(width - reserve, 0),
+    rows,
+    allowZero: true,
+  })
 }
 
 /**
@@ -398,11 +377,20 @@ export function entriesWithinDotRows(
   rows: number,
   dividerAfter: ReadonlySet<number> = new Set(),
 ): number {
+  // A dot is `LEGEND_DOT_SIZE` wide and `DOT_PITCH` already IS its full footprint (size plus the
+  // gap to a neighbour) — so the gap is the pitch LESS the dot; adding the dot again double-counted
+  // every dot after the row's first and wrapped to `All N` well before it overflowed.
+  const dotFit = {
+    widthOf: () => LEGEND_DOT_SIZE,
+    gap: DOT_PITCH - LEGEND_DOT_SIZE,
+    rows,
+    extraAfter: (i: number) => (dividerAfter.has(i) ? DOT_PITCH : 0),
+  }
   const total = items.length
-  const fittedNoReserve = fitDotRows(items, width, rows, dividerAfter)
+  const fittedNoReserve = fitGreedyRows(items, { ...dotFit, width })
   if (fittedNoReserve >= total) return fittedNoReserve
   const reserve = measureText(`All ${total}`, VX.legendFontSize) + DOT_PITCH
-  return fitDotRows(items, Math.max(width - reserve, 0), rows, dividerAfter, true)
+  return fitGreedyRows(items, { ...dotFit, width: Math.max(width - reserve, 0), allowZero: true })
 }
 
 /**
