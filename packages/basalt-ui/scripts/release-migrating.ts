@@ -69,7 +69,14 @@ export function renameUnreleased(markdown: string, version: string): string {
     )
   }
 
-  const lines = markdown.split('\n')
+  // ── Cross-references ─────────────────────────────────────────────────────────
+  // Every `§ Unreleased` that exists at rename time points at the section being renamed — an index
+  // cell or a prose pointer written during the cycle. Rewritten BEFORE the fresh section opens, so
+  // the new cycle starts with none; skipping this is how 1.31.0 and 1.32.0 each shipped index cells
+  // pointing at a section that, once released, no longer carried that name.
+  const lines = markdown
+    .replace(new RegExp(`(§§?\\s+)${UNRELEASED}\\b`, 'g'), `$1${version}`)
+    .split('\n')
 
   // ── The section heading ──────────────────────────────────────────────────────
   const headingIdxs = lines
