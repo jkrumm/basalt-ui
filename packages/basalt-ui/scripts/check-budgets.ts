@@ -19,15 +19,17 @@ import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { gzipSync } from 'node:zlib'
 import { build } from 'vite'
-import type { Rolldown } from 'vite'
 
 const PKG_ROOT = join(import.meta.dir, '..')
 const REPO_ROOT = join(PKG_ROOT, '..', '..')
 
 type Budget = {
   readonly label: string
-  readonly value: number
+  /** `null` = could not be measured here (only ever tolerated under `--report`). */
+  readonly value: number | null
   readonly ceiling: number
+  /** Why `value` is `null`, printed in place of the number. */
+  readonly skipped?: string
 }
 
 /** Every regular file under `dir` whose name matches `pattern`, recursing into subdirectories. */
@@ -130,28 +132,40 @@ function cliNonTestLines(): number {
  * external (not basalt's bytes); CSS is excluded; the count is the entry chunk plus every chunk it
  * statically imports — what loads before first paint, not what loads later.
  */
+const PROVIDER_ONLY_DIST = join(PKG_ROOT, 'dist/index.js')
+
+/**
+ * Whether a module id belongs to basalt's own graph rather than a peer: relative or absolute paths
+ * (POSIX, or a Windows drive letter / UNC path once `\` is normalized to `/`) and Vite's `\u0000`
+ * virtual ids. Everything else is a bare specifier, i.e. a peer, and stays external.
+ */
+function isOwnGraphId(id: string): boolean {
+  const normalized = id.replaceAll('\\', '/')
+  return /^(?:\.{1,2}\/|\/|[A-Za-z]:\/)/.test(normalized) || id.startsWith('\u0000')
+}
+
 async function providerOnlyGzip(): Promise<number> {
-  const distEntry = join(PKG_ROOT, 'dist/index.js')
-  if (!existsSync(distEntry))
-    throw new Error('check-budgets: dist/ missing — run `bun run build` first')
   const result = await build({
     configFile: false,
     logLevel: 'silent',
     root: PKG_ROOT,
     define: { 'process.env.NODE_ENV': '"production"' },
-    resolve: { alias: [{ find: /^basalt-ui$/, replacement: distEntry }] },
+    resolve: { alias: [{ find: /^basalt-ui$/, replacement: PROVIDER_ONLY_DIST }] },
     build: {
       write: false,
       minify: true,
       lib: { entry: join(PKG_ROOT, 'scripts/fixtures/provider-only.ts'), formats: ['es'] },
       rolldownOptions: {
-        // Bare specifiers (peers) are external; relative/absolute paths and Vite's `\u0000`
-        // virtual ids are basalt's own graph.
-        external: (id) => id !== 'basalt-ui' && !/^[./]/.test(id) && !id.startsWith('\u0000'),
+        external: (id) => id !== 'basalt-ui' && !isOwnGraphId(id),
       },
     },
   })
-  const { output } = (Array.isArray(result) ? result[0] : result) as Rolldown.RolldownOutput
+  // `build()` also types a watcher return (`build.watch`), which has no `output`; narrow it away.
+  const bundle = Array.isArray(result) ? result[0] : result
+  if (bundle === undefined || !('output' in bundle)) {
+    throw new Error('check-budgets: provider-only fixture build returned no output')
+  }
+  const { output } = bundle
   const chunks = new Map(
     output.flatMap((o) => (o.type === 'chunk' ? [[o.fileName, o] as const] : [])),
   )
@@ -170,6 +184,8 @@ async function providerOnlyGzip(): Promise<number> {
   return bytes
 }
 
+const PROVIDER_ONLY_LABEL = 'provider-only first paint (gzip B, dist)'
+
 async function budgets(): Promise<Budget[]> {
   return [
     { label: 'public symbols (export-surface.json)', value: publicSymbols(), ceiling: 400 },
@@ -184,21 +200,30 @@ async function budgets(): Promise<Budget[]> {
     { label: 'CLI non-test lines (src/cli/**)', value: cliNonTestLines(), ceiling: 4000 },
     // Landed value (1.33.0, lab store gated out; 1.30.2 measured 19393, 1.32.1 20379). Raise it
     // deliberately, in the commit that spends it, never to make a red gate green.
-    {
-      label: 'provider-only first paint (gzip B, dist)',
-      value: await providerOnlyGzip(),
-      ceiling: 18900,
-    },
+    existsSync(PROVIDER_ONLY_DIST)
+      ? { label: PROVIDER_ONLY_LABEL, value: await providerOnlyGzip(), ceiling: 18900 }
+      : {
+          label: PROVIDER_ONLY_LABEL,
+          value: null,
+          ceiling: 18900,
+          skipped: 'skipped: dist/ missing, run `bun run build`',
+        },
   ]
 }
 
 async function main(): Promise<void> {
   const reportOnly = process.argv.includes('--report')
   const rows = await budgets()
-  const breaches = rows.filter((b) => b.value > b.ceiling)
+  // An unmeasured row is a breach of the gate (it cannot vouch for the number) but not of the
+  // report: `--report` prints it as skipped and still exits 0.
+  const breaches = rows.filter((b) => b.value === null || b.value > b.ceiling)
 
   const width = Math.max(...rows.map((b) => b.label.length))
   for (const b of rows) {
+    if (b.value === null) {
+      console.log(`- ${b.label.padEnd(width)}  ${b.skipped ?? 'skipped'} / ${b.ceiling}`)
+      continue
+    }
     const mark = b.value > b.ceiling ? '✖' : '✓'
     console.log(`${mark} ${b.label.padEnd(width)}  ${b.value} / ${b.ceiling}`)
   }
@@ -211,7 +236,7 @@ async function main(): Promise<void> {
   console.log(
     `\n${reportOnly ? '⚠' : '✖'} check-budgets: ${breaches.length} of ${rows.length} budget${
       rows.length === 1 ? '' : 's'
-    } over ceiling${reportOnly ? ' (--report: not failing the build)' : ''}.`,
+    } over ceiling or unmeasured${reportOnly ? ' (--report: not failing the build)' : ''}.`,
   )
   if (!reportOnly) process.exit(1)
 }
