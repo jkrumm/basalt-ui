@@ -900,6 +900,96 @@ describe('resets — a filter write drops a sibling page', () => {
     expect(currentSearch(router)['page']).toBe(4)
   })
 
+  test('several params drop together — resets: [page, sort]', async () => {
+    const multi = createSearchStore({
+      key: 'r-resets-multi',
+      fields: { prefix: field.enum(['all', 'fuji'], 'all') },
+      resets: ['page', 'sort'],
+    })
+    const probe = sink()
+    const router = await mountApp({
+      validateSearch: (raw) => ({
+        ...multi.validateSearch(raw),
+        page: typeof raw['page'] === 'number' ? raw['page'] : 1,
+        sort: typeof raw['sort'] === 'string' ? raw['sort'] : 'date',
+      }),
+      entry: '/dashboard?prefix=all&page=5&sort=name',
+      Dashboard: fieldProbe(multi.field.prefix, probe),
+    })
+    await act(async () => {
+      probe.current?.set('fuji')
+    })
+    await waitFor(() => {
+      expect(currentSearch(router)['prefix']).toBe('fuji')
+    })
+    expect(currentSearch(router)['page']).toBe(1)
+    expect(currentSearch(router)['sort']).toBe('date')
+  })
+
+  /** `resets` rides a navigate; a field with no URL lane makes none, so the page stays (JSDoc). */
+  test('a mirror-only or memory field write keeps the page — URL-lane writes only', async () => {
+    const offUrl = createSearchStore({
+      key: 'r-resets-off-url',
+      fields: {
+        dense: field.boolean(false, { url: false }),
+        peek: field.boolean(false, { url: false, persist: false }),
+      },
+      resets: ['page'],
+    })
+    const dense = sink()
+    const peek = sink()
+    const router = await mountApp({
+      validateSearch: (raw) => ({ page: typeof raw['page'] === 'number' ? raw['page'] : 1 }),
+      entry: '/dashboard?page=5',
+      Dashboard: () => {
+        fieldProbe(offUrl.field.dense, dense)()
+        fieldProbe(offUrl.field.peek, peek)()
+        return null
+      },
+    })
+    await act(async () => {
+      dense.current?.set(true)
+      peek.current?.set(true)
+    })
+    await waitFor(() => {
+      expect(dense.current?.value).toBe(true)
+    })
+    expect(peek.current?.value).toBe(true)
+    expect(currentSearch(router)['page']).toBe(5)
+  })
+
+  test('useReset on an all-memory store makes no navigate, so the page stays', async () => {
+    const memory = createSearchStore({
+      key: 'r-resets-memory',
+      fields: { peek: field.boolean(false, { url: false, persist: false }) },
+      resets: ['page'],
+    })
+    const probe = sink()
+    let reset: (() => void) | null = null
+    const router = await mountApp({
+      validateSearch: (raw) => ({ page: typeof raw['page'] === 'number' ? raw['page'] : 1 }),
+      entry: '/dashboard?page=5',
+      Dashboard: () => {
+        fieldProbe(memory.field.peek, probe)()
+        reset = memory.useReset()
+        return null
+      },
+    })
+    await act(async () => {
+      probe.current?.set(true)
+    })
+    const navigate = spyOn(router, 'navigate')
+    await act(async () => {
+      reset?.()
+    })
+    expect(navigate).not.toHaveBeenCalled()
+    navigate.mockRestore()
+    await waitFor(() => {
+      expect(probe.current?.value).toBe(false)
+    })
+    expect(currentSearch(router)['page']).toBe(5)
+  })
+
   test('a param the store OWNS is refused at definition', () => {
     expect(() =>
       createSearchStore({
