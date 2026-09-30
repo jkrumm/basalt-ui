@@ -378,9 +378,10 @@ function ShellFrame({
   // Aside docking (`aside-docking.ts`), provided through `AsideDocksContext` in the SAME render so
   // `PageAside` defaults its fold from the right value on its first pass.
   const navbarWidth = collapsed ? step.appShellNavbarRailWidth : step.appShellNavbarWidth
+  const sizeClassHint = useContext(SizeClassHintContext)
   const roomToDock = useMediaQuery(
     asideDockQuery({ navbarWidth, asideWidth: step.appShellAsideWidth }),
-    roomToDockServerFallback(useContext(SizeClassHintContext)),
+    roomToDockServerFallback(sizeClassHint),
   )
   const docking = resolveAsideDocking({
     claimed: aside.claimed,
