@@ -282,6 +282,19 @@ export function buildSearchStore<const S extends Record<string, AnyField>>(
   const resetPatch: Record<string, undefined> = Object.fromEntries(
     resets.map((param) => [param, undefined]),
   )
+  /**
+   * `resetPatch` when `next` moves the field off what the URL holds NOW — read from the navigate's
+   * own `prev`, never the render-captured value, which a second `set()` in the same tick would
+   * misjudge against a value the first one already replaced.
+   */
+  const resetsFor = (
+    entry: StoreEntry,
+    prev: Record<string, unknown>,
+    next: unknown,
+  ): Record<string, undefined> | undefined => {
+    const current = core.resolve(entry, prev, core.readRecord())
+    return entry.codec.equals(next, current) ? undefined : resetPatch
+  }
   const persistedNames = new Set(
     core.entries.filter((entry) => entry.codec.lane.persist).map((entry) => entry.name),
   )
@@ -403,7 +416,7 @@ export function buildSearchStore<const S extends Record<string, AnyField>>(
             // what it held) must not throw the reader off the page they are on.
             search: (prev: Record<string, unknown>) => ({
               ...prev,
-              ...(entry.codec.equals(next, value) ? undefined : resetPatch),
+              ...resetsFor(entry, prev, next),
               ...opts?.patch,
               ...entry.codec.toSearch(next),
             }),
