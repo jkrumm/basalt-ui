@@ -1081,6 +1081,59 @@ function RowDisclosure<T>({
   )
 }
 
+/**
+ * Which rows have their fold disclosure open. `row.id` defaults to the row's index in `data` (no
+ * `getRowId`) — stable across a client-side sort/filter/pagination, which reorder or subset the SAME
+ * core rows. PRUNED rather than cleared on every `data` change: a non-memoized `data` prop (an inline
+ * `.map()`, an unstable query result) hands a brand-new array of the SAME rows on every parent
+ * re-render, and clearing on that reference alone collapsed every open disclosure the instant
+ * anything upstream re-rendered.
+ *
+ * Pruning by ID ALONE is only safe with `getRowId` — a caller-declared identity that genuinely
+ * survives a page turn or a refetch, so an id no longer present (a manual-pagination page turn, a
+ * delete) still has to go, or a differently-shaped record seated at a reused id would silently read
+ * as pre-expanded. Without `getRowId` the id IS the array index, and an index survives a refetch
+ * trivially — it is still "0", "1", … even when every object behind it is a different record.
+ * Keeping an expanded index across THAT would silently attach the old disclosure to a stranger's
+ * row. So the index-id lane keeps a `prevData` snapshot and asks the narrower, correct question: is
+ * the object AT this index still the same reference as last time? A non-memoized array of the SAME
+ * rows answers yes at every index (the case above); a page turn or a refetch answers no.
+ */
+function useRowDisclosure<T>({
+  data,
+  getRowId,
+}: {
+  data: readonly T[]
+  getRowId: ((row: T, index: number) => string) | undefined
+}): { expanded: ReadonlySet<string>; toggle: (rowId: string) => void } {
+  const [expanded, setExpanded] = useState<ReadonlySet<string>>(EMPTY_FOLD_SET)
+  const toggle = useCallback((rowId: string) => {
+    setExpanded((current) => {
+      const next = new Set(current)
+      if (next.has(rowId)) next.delete(rowId)
+      else next.add(rowId)
+      return next
+    })
+  }, [])
+  const prevDataRef = useRef(data)
+  useEffect(() => {
+    const prevData = prevDataRef.current
+    prevDataRef.current = data
+    setExpanded((current) => {
+      if (current.size === 0) return current
+      const liveIds = getRowId && new Set(data.map((row, index) => getRowId(row, index)))
+      const isLive = (id: string) => {
+        if (liveIds) return liveIds.has(id)
+        const index = Number(id)
+        return data[index] !== undefined && data[index] === prevData[index]
+      }
+      const next = new Set([...current].filter(isLive))
+      return next.size === current.size ? current : next
+    })
+  }, [data, getRowId])
+  return { expanded, toggle }
+}
+
 /** The per-row expand/collapse control the fold-disclosure column renders — a text glyph, since
  * basalt ships no icon set (`docs/CONTROLS-SPEC.md` §2, mirrors `SortIndicator` above). */
 function FoldToggle({
@@ -1551,53 +1604,7 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
     [columnFold.folded],
   )
   const hasFolded = columnFold.folded.size > 0
-  const [expandedFoldRows, setExpandedFoldRows] = useState<ReadonlySet<string>>(EMPTY_FOLD_SET)
-  const toggleFoldRow = useCallback((rowId: string) => {
-    setExpandedFoldRows((current) => {
-      const next = new Set(current)
-      if (next.has(rowId)) next.delete(rowId)
-      else next.add(rowId)
-      return next
-    })
-  }, [])
-  // `row.id` defaults to the row's index in `data` (no `getRowId` passed) — stable across a
-  // client-side sort/filter/pagination (they reorder or subset the SAME core rows). PRUNED rather
-  // than cleared on every `data` change: a non-memoized `data` prop (an inline `.map()`, an
-  // unstable query result) hands a brand-new array of the SAME rows on every parent re-render, and
-  // clearing on that reference alone collapsed every open disclosure the instant anything upstream
-  // re-rendered.
-  //
-  // Pruning by ID ALONE is only safe with `getRowId` — a caller-declared identity that genuinely
-  // survives a page turn or a refetch, so an id no longer present (a manual-pagination page turn, a
-  // delete) still has to go, or a differently-shaped record seated at a reused id would silently
-  // read as pre-expanded. Without `getRowId` the id IS the array index, and an index survives a
-  // refetch trivially — it is still "0", "1", … even when every object behind it is now a
-  // completely different record. Keeping an expanded index across THAT would silently attach the
-  // old disclosure to a stranger's row. So the index-id lane instead keeps a `prevData` snapshot and
-  // asks the narrower, correct question: is the object AT this index still the same reference as
-  // last time? A non-memoized array of the SAME rows answers yes at every index (the case above);
-  // a page turn or a refetch answers no.
-  const prevDataRef = useRef(data)
-  useEffect(() => {
-    const prevData = prevDataRef.current
-    prevDataRef.current = data
-    setExpandedFoldRows((current) => {
-      if (current.size === 0) return current
-      let next: ReadonlySet<string>
-      if (getRowId === undefined) {
-        next = new Set(
-          [...current].filter((id) => {
-            const index = Number(id)
-            return data[index] !== undefined && data[index] === prevData[index]
-          }),
-        )
-      } else {
-        const liveIds = new Set(data.map((row, index) => getRowId(row, index)))
-        next = new Set([...current].filter((id) => liveIds.has(id)))
-      }
-      return next.size === current.size ? current : next
-    })
-  }, [data, getRowId])
+  const foldRows = useRowDisclosure({ data, getRowId })
 
   const table = useReactTable<T>({
     data,
@@ -1823,7 +1830,7 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
                   ...row.getRightVisibleCells(),
                 ]
               : row.getVisibleCells()
-            const rowExpanded = hasFolded && expandedFoldRows.has(row.id)
+            const rowExpanded = hasFolded && foldRows.expanded.has(row.id)
             return (
               <Fragment key={row.id}>
                 <Table.Tr
@@ -1852,7 +1859,7 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
                       <FoldToggle
                         expanded={rowExpanded}
                         controlsId={`${row.id}-fold`}
-                        onToggle={() => toggleFoldRow(row.id)}
+                        onToggle={() => foldRows.toggle(row.id)}
                       />
                     </Table.Td>
                   )}
