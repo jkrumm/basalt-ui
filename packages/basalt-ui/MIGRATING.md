@@ -90,6 +90,12 @@ no primitive, and this file never mentioned it. It flags four shapes; each has a
 now. **Severity: `warn`, promotes to `error` at 1.33.0** (moved from 1.32.0 — this is the first
 minor with a documented answer). A `theme-allow raw-breakpoint — <reason>` waives one occurrence.
 
+**Its CSS twin, the `raw-media-query` guard kind** (`basalt-ui check-theme`), enforces the same law
+in `.css`: a width `@media` outside `shell/**`, an `@container` name other than `basalt-card` /
+`basalt-form` / `basalt-main` / `basalt-grid` or at a width off a `CONTAINER_CLASSES` boundary, and
+a pointer query other than `coarse`/`fine`. Same `warn`, and it moved with the rule — **`error` at
+1.33.0** (was 1.32.0). `theme-allow raw-media-query — <reason>` waives one line.
+
 **The law.** `useSizeClass()` is for **shell chrome**. A page swapping its OWN layout — a column
 count, a table for a card list, a row for a stack — is a **container** decision, keyed on
 `CONTAINER_CLASSES` (`basalt-ui/tokens`: compact 240 · regular 480 · wide 800), not the viewport.
