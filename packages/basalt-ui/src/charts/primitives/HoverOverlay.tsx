@@ -2,6 +2,29 @@ import type { FocusEventHandler, KeyboardEventHandler, PointerEventHandler } fro
 import type { ChartCursor } from '../hooks/useChartCursor'
 import styles from './HoverOverlay.module.css'
 
+/** Props of {@link HoverOverlay}. */
+export type HoverOverlayProps = {
+  width: number
+  height: number
+  onMove: PointerEventHandler<SVGRectElement>
+  /** Coarse-pointer tap: resolves + shows the tooltip immediately, with no preceding `pointermove`
+   * (`docs/CHARTS-SPEC.md` §4, Tooltip). The press is provisional; `onUp` commits it. */
+  onDown?: PointerEventHandler<SVGRectElement>
+  /** Commits the provisional touch press so the pin survives the lift. */
+  onUp?: PointerEventHandler<SVGRectElement>
+  onLeave: PointerEventHandler<SVGRectElement>
+  /** Present = the overlay is focusable and scrubs on ←/→. */
+  onKeyDown?: KeyboardEventHandler<SVGRectElement>
+  onBlur?: FocusEventHandler<SVGRectElement>
+  ariaLabel?: string
+  /** Index of the focused point — announced as the slider position. */
+  valueNow?: number
+  /** Last index of the domain. */
+  valueMax?: number
+  /** Human-readable label for the focused point (the formatted x key). */
+  valueText?: string
+}
+
 /**
  * Transparent <rect> that captures pointer events (mouse + touch + pen) for tooltip + crosshair
  * sync.
@@ -22,27 +45,7 @@ export function HoverOverlay({
   valueNow,
   valueMax,
   valueText,
-}: {
-  width: number
-  height: number
-  onMove: PointerEventHandler<SVGRectElement>
-  /** Coarse-pointer tap: resolves + shows the tooltip immediately, with no preceding `pointermove`
-   * (`docs/CHARTS-SPEC.md` §4, Tooltip). The press is provisional; `onUp` commits it. */
-  onDown?: PointerEventHandler<SVGRectElement>
-  /** Commits the provisional touch press so the pin survives the lift. */
-  onUp?: PointerEventHandler<SVGRectElement>
-  onLeave: PointerEventHandler<SVGRectElement>
-  /** Present = the overlay is focusable and scrubs on ←/→. */
-  onKeyDown?: KeyboardEventHandler<SVGRectElement>
-  onBlur?: FocusEventHandler<SVGRectElement>
-  ariaLabel?: string
-  /** Index of the focused point — announced as the slider position. */
-  valueNow?: number
-  /** Last index of the domain. */
-  valueMax?: number
-  /** Human-readable label for the focused point (the formatted x key). */
-  valueText?: string
-}) {
+}: HoverOverlayProps) {
   return (
     // `touch-action: pan-y` lives on the plot's `<svg>` (each kind's own), NOT here: Chrome ignores
     // `touch-action` on an SVG child `<rect>`, so the browser claims a horizontal pan and cancels
@@ -88,7 +91,7 @@ export function cursorSliderProps<T>(input: {
   getX: (d: T) => string
   formatX: (key: string) => string
   ariaLabel: string | undefined
-}) {
+}): Omit<HoverOverlayProps, 'width' | 'height'> {
   const { cursor, data, getX, formatX, ariaLabel } = input
   const { point } = cursor
   return {
