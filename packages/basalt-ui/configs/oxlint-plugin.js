@@ -4110,10 +4110,12 @@ function containerGridMode(opening, mantineImports, consts, sourceCode) {
  * the one imported `breakpoints` map trusted. Resolved through the scope manager to the BINDING the
  * identifier reads, never by local name: a parameter or inner `const` shadowing the import is not
  * the import. The binding has to be an `ImportSpecifier` naming it from `basalt-ui/tokens` (any
- * alias, not type-only), or a `const` whose initializer resolves the same way. Without a scope
- * manager nothing is trusted — reported, the conservative answer.
+ * alias, not type-only), a `.CONTAINER_GRID_BREAKPOINTS` member of that module's namespace import,
+ * or a `const` whose initializer resolves the same way. Without a scope manager nothing is trusted
+ * — reported, the conservative answer.
  */
 function isShippedGridMap(sourceCode, node, seen = new Set()) {
+  if (node?.type === 'MemberExpression') return isShippedGridMapMember(sourceCode, node)
   if (node?.type !== 'Identifier' || seen.has(node)) return false
   seen.add(node)
   const def = soleDefinition(sourceCode, node)
@@ -4130,6 +4132,22 @@ function isShippedGridMap(sourceCode, node, seen = new Set()) {
   if (def?.type === 'Variable' && def.parent?.kind === 'const')
     return isShippedGridMap(sourceCode, def.node.init, seen)
   return false
+}
+
+/** `tokens.CONTAINER_GRID_BREAKPOINTS` (or `tokens['CONTAINER_GRID_BREAKPOINTS']`) on `import * as tokens from 'basalt-ui/tokens'`. */
+function isShippedGridMapMember(sourceCode, node) {
+  const property = node.property
+  const name = node.computed
+    ? isStringLiteral(property) && property.value
+    : property?.type === 'Identifier' && property.name
+  if (name !== 'CONTAINER_GRID_BREAKPOINTS' || node.object?.type !== 'Identifier') return false
+  const def = soleDefinition(sourceCode, node.object)
+  return (
+    def?.type === 'ImportBinding' &&
+    def.node.type === 'ImportNamespaceSpecifier' &&
+    def.parent?.importKind !== 'type' &&
+    def.parent?.source?.value === 'basalt-ui/tokens'
+  )
 }
 
 /** The one definition of the variable `identifier` reads, or `undefined` (unresolved, or more than one). */

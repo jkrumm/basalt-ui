@@ -3685,6 +3685,37 @@ describe('basalt/raw-breakpoint', () => {
       expect(CONTAINER_MESSAGE.test(output)).toBe(true)
     })
 
+    const NS = `import * as tokens from 'basalt-ui/tokens'`
+    it.each([
+      ['a member of the namespace import', NS, 'tokens.CONTAINER_GRID_BREAKPOINTS'],
+      ['a computed member', NS, `tokens['CONTAINER_GRID_BREAKPOINTS']`],
+      ['a const alias of the member', `${NS}\nconst bp = tokens.CONTAINER_GRID_BREAKPOINTS`, 'bp'],
+    ])('does NOT flag Grid.Col spans under %s', (_, imp, ref) => {
+      const { rules } = run(
+        `import { Grid } from '@mantine/core'\n${imp}\n` +
+          `export const C = () => <Grid type="container" breakpoints={${ref}}>${SPAN}</Grid>\n`,
+      )
+      expect(rules).not.toContain('raw-breakpoint')
+    })
+
+    it.each([
+      ['another module', `import * as tokens from './tokens'`, 'tokens.CONTAINER_GRID_BREAKPOINTS'],
+      ['another member', NS, 'tokens.CONTAINER_CLASSES'],
+      [
+        'a parameter shadowing the namespace',
+        `${NS}\nexport const Used = () => tokens.VX`,
+        'tokens.CONTAINER_GRID_BREAKPOINTS',
+        '({ tokens }: { tokens: { CONTAINER_GRID_BREAKPOINTS: Record<string, string> } })',
+      ],
+    ])('still flags a namespace member from %s', (_, imp, ref, params = '()') => {
+      const { rules, output } = run(
+        `import { Grid } from '@mantine/core'\n${imp}\n` +
+          `export const C = ${params} => <Grid type="container" breakpoints={${ref}}>${SPAN}</Grid>\n`,
+      )
+      expect(rules).toContain('raw-breakpoint')
+      expect(CONTAINER_MESSAGE.test(output)).toBe(true)
+    })
+
     // Trust follows the BINDING, not the name: a shadow of the import is someone else's value.
     it.each([
       [
