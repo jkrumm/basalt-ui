@@ -8,6 +8,12 @@
  * therefore runs at `containerW === 0`, i.e. permanently desktop. This file swaps in a shim that
  * reports one fixed box on `observe()`, which is exactly what a real observer does on its first
  * callback, and puts the original back afterwards so no other file inherits it.
+ *
+ * `useParentSize` hands that box on through `requestAnimationFrame`, and until it lands the frame
+ * still paints — at `DEFAULT_MIN_WIDTH` and the VIEWPORT's class, which in happy-dom is desktop. A
+ * real rAF made every assertion here a race against that first paint (under full-suite load the
+ * Heatmap one lost it), so the shim also runs rAF synchronously: the box is delivered inside
+ * `render()`'s own `act`, and `render()` returns the measured paint, never the provisional one.
  */
 import { render, screen, waitFor } from '@testing-library/react'
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
@@ -83,6 +89,8 @@ const series: ChartSeries<Row>[] = [
 ]
 
 const originalResizeObserver = window.ResizeObserver
+const originalRequestAnimationFrame = window.requestAnimationFrame
+const originalCancelAnimationFrame = window.cancelAnimationFrame
 
 function installFixedWidthObserver(width: number): void {
   class FixedBoxResizeObserver {
@@ -97,13 +105,22 @@ function installFixedWidthObserver(width: number): void {
     disconnect(): void {}
   }
   window.ResizeObserver = FixedBoxResizeObserver as unknown as typeof ResizeObserver
+  window.requestAnimationFrame = (callback) => {
+    callback(0)
+    return 0
+  }
+  window.cancelAnimationFrame = () => {}
+}
+
+function restoreObserver(): void {
+  window.ResizeObserver = originalResizeObserver
+  window.requestAnimationFrame = originalRequestAnimationFrame
+  window.cancelAnimationFrame = originalCancelAnimationFrame
 }
 
 describe(`a chart measured at ${PHONE_WIDTH}px paints the phone tier`, () => {
   beforeAll(() => installFixedWidthObserver(PHONE_WIDTH))
-  afterAll(() => {
-    window.ResizeObserver = originalResizeObserver
-  })
+  afterAll(restoreObserver)
 
   test('every axis tick label is painted at the smaller tick font', async () => {
     const { container } = render(
@@ -160,9 +177,7 @@ describe(`a chart measured at ${PHONE_WIDTH}px paints the phone tier`, () => {
 /** Install the fixed-box observer for one `describe`, and put the original back after it. */
 function measuredAt(width: number): void {
   beforeAll(() => installFixedWidthObserver(width))
-  afterAll(() => {
-    window.ResizeObserver = originalResizeObserver
-  })
+  afterAll(restoreObserver)
 }
 
 /** The plot `Group`'s offsets — i.e. the resolved left and top margins. */
@@ -312,9 +327,9 @@ describe(`Heatmap reads the tier for its category labels (${PHONE_WIDTH}px)`, ()
         height={CHART_HEIGHT}
       />,
     )
-    await waitFor(() => {
-      expect(container.querySelectorAll('text').length).toBeGreaterThan(0)
-    })
+    // Synchronous on purpose: the shim delivers the box inside render's act, so the FIRST paint is
+    // already the measured one — the provisional desktop paint at DEFAULT_MIN_WIDTH never shows.
+    expect(container.querySelector('svg')?.getAttribute('width')).toBe(String(PHONE_WIDTH))
     const fonts = new Set(
       [...container.querySelectorAll('text')].map((n) => n.getAttribute('font-size')),
     )
