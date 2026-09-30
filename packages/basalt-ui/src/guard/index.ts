@@ -313,19 +313,21 @@ const REMOVED_VX_NAMES: Readonly<Record<string, string | null>> = {
 const KNOWN_VX_NAMES: ReadonlySet<string> = new Set(BASALT_VX_NAMES)
 
 /**
- * The `--vx-<family>-` prefixes basalt owns, derived from the emitted names (`--vx-space-`,
- * `--vx-surface-`, `--vx-text-`, …). An unknown name is only judged INSIDE one of these: a
- * consumer's `defineSeries`/`groupTokens` series emit `--vx-<key>` / `--vx-<group>-<key>` under any
- * name they choose (argo's `--vx-lp-*`, rb's `--vx-confidence-*`), and a closed allowlist over the
- * whole namespace would flag every one of them.
+ * The bare family roots basalt never emits — `--vx-space`, `--vx-surface`, `--vx-status`, … — derived
+ * from the `--vx-<family>-` prefixes of the emitted names, minus any root that is itself a token
+ * (`--vx-hit`, `--vx-accent`). Nobody emits one: basalt only ever writes `<root>-<key>`, and so does
+ * `groupTokens`. It is the one shape of unknown name basalt can judge WITHOUT seeing the consumer's
+ * palette.
+ *
+ * An unknown name INSIDE a family (`--vx-surface-2`) is deliberately not judged. `groupTokens(name,
+ * map)` takes any `name`, so `--vx-surface-custom` may be a consumer group declared in a file this
+ * scan cannot see, and a per-file guard has no honest way to tell that from a typo.
  */
-const BASALT_VX_FAMILIES: readonly string[] = [
-  ...new Set(
-    BASALT_VX_NAMES.map((n) => /^--vx-[A-Za-z0-9]+-/.exec(n)?.[0]).filter(
-      (p): p is string => p !== undefined,
-    ),
+const BASALT_VX_FAMILY_ROOTS: ReadonlySet<string> = new Set(
+  BASALT_VX_NAMES.map((n) => /^(--vx-[A-Za-z0-9]+)-/.exec(n)?.[1]).filter(
+    (root): root is string => root !== undefined && !KNOWN_VX_NAMES.has(root),
   ),
-]
+)
 
 // Raw Mantine ramp step used for surface color — gray/dark + a step digit.
 const OFF_SYSTEM_SURFACE_VAR = /var\(--mantine-color-(gray|dark)-\d/g
@@ -909,8 +911,7 @@ export const GRACE_PERIOD_KINDS: Partial<Record<GuardKind, GraceEntry>> = {
       'New kind (consumer-loop r2 B3): obsidian lost its 44px touch floor to a removed ' +
       '`var(--vx-space-touch-target)` that nothing reported. A new kind rejects code every previous ' +
       'release accepted, so it lands warn for one minor. Measured at ship time: argo, linewatch, rb, ' +
-      'rollhook, obsidian, weatherorb, image-share, email-gateway 0; image-gen 1 (a real unknown ' +
-      '`--vx-surface-2` hidden behind a `transparent` fallback).',
+      'rollhook, obsidian, weatherorb, image-share, email-gateway, image-gen 0.',
   },
 }
 
@@ -2242,14 +2243,14 @@ export const GUARD_RULES = {
   },
   'unknown-vx-token': {
     kind: 'unknown-vx-token',
-    pattern: VX_VAR_REF, // handled inline (removed map + family gate); entry keeps the registry complete
-    message: `var() names a --vx-* token basalt does not emit, so it resolves to its fallback (or to nothing) with no error anywhere — the name is removed or misspelled. Removed: ${Object.entries(
+    pattern: VX_VAR_REF, // handled inline (removed map + family roots); entry keeps the registry complete
+    message: `var() names a --vx-* token basalt does not emit, so it resolves to its fallback (or to nothing) with no error anywhere. Two shapes are judged, the only two basalt can judge without seeing your palette: a REMOVED name — ${Object.entries(
       REMOVED_VX_NAMES,
     )
       .map(([from, to]) => `${from} → ${to ?? '(deleted, no replacement)'}`)
       .join(
         '; ',
-      )}. Otherwise check the name against basalt-ui/tokens.css. A consumer token inside a basalt family (${BASALT_VX_FAMILIES.map((f) => `${f}*`).join(', ')}) declared in another file needs a theme-allow; series from defineSeries/groupTokens are never judged.`,
+      )} — and a bare family root nothing emits (${[...BASALT_VX_FAMILY_ROOTS].join(', ')}): name the token under it from basalt-ui/tokens.css. Any other unknown name is never judged, because defineSeries/groupTokens may declare it in a file this scan cannot see.`,
   },
 } as const satisfies Record<GuardKind, GuardRule>
 
@@ -2537,14 +2538,11 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
       }
     }
 
-    // unknown-vx-token: a removed name anywhere; an unknown name only inside a basalt family.
+    // unknown-vx-token: a removed name, or a bare family root nothing emits — see the roots' doc.
     for (const m of line.matchAll(VX_VAR_REF)) {
       const name = m[1] ?? ''
-      if (KNOWN_VX_NAMES.has(name) || locallyDeclaredVx.has(name)) continue
-      if (
-        Object.hasOwn(REMOVED_VX_NAMES, name) ||
-        BASALT_VX_FAMILIES.some((family) => name.startsWith(family))
-      )
+      if (locallyDeclaredVx.has(name)) continue
+      if (Object.hasOwn(REMOVED_VX_NAMES, name) || BASALT_VX_FAMILY_ROOTS.has(name))
         push('unknown-vx-token', i + 1, name)
     }
 
