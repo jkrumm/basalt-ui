@@ -51,8 +51,14 @@
  * // An open threshold — a pill holding a stepper, applied on blur or Enter.
  * // minDuration: field.number({ fallback: 0, min: 0, max: 600 })
  * <NumberFilter field={lines.field.minDuration} label="Min duration" step={30} />
+ *
+ * @example
+ * // "No filter" is the fallback, not a row: `clearable` writes it back, and the pill reads the
+ * // filter's name while no preset is picked.
+ * // difficulty: field.number({ fallback: 0, min: 0, max: 5, int: true })
+ * <NumberFilter field={library.field.difficulty} label="Difficulty" options={LEVELS} clearable />
  */
-import { NumberInput } from '@mantine/core'
+import { Button, NumberInput } from '@mantine/core'
 import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { BasaltProps } from '../common/props'
@@ -89,6 +95,9 @@ export type NumberFilterProps = BasaltProps & {
    * declared none. Absent on both, the input keeps Mantine's own default of 1.
    */
   readonly step?: number
+  /** Adds a `Clear` action that clears the field — the same `field.clear()` `Reset all` calls.
+   *  Parity with `SelectFilter`/`EnumFilter`, in both forms. */
+  readonly clearable?: boolean
 }
 
 export function NumberFilter(props: NumberFilterProps): ReactNode {
@@ -97,7 +106,7 @@ export function NumberFilter(props: NumberFilterProps): ReactNode {
   assertRequiredProps('NumberFilter', props, ['field'], {
     field: 'bind it to a store field (`store.field.<name>`), never a value/onChange pair.',
   })
-  const { field, label, icon, options, step, className, style } = props
+  const { field, label, icon, options, step, clearable, className, style } = props
   // Two BRANCHES, two components, and never a conditional hook: the radio form's state lives in
   // `EnumFilter` and the stepper's in `NumberStepper`, so which one mounts is decided once by a prop
   // that does not change across a mount's life.
@@ -107,6 +116,7 @@ export function NumberFilter(props: NumberFilterProps): ReactNode {
         field={field}
         label={label}
         options={options}
+        {...(clearable === true && { clearable: true })}
         {...(icon !== undefined && { icon })}
         {...(className !== undefined && { className })}
         {...(style !== undefined && { style })}
@@ -120,6 +130,7 @@ export function NumberFilter(props: NumberFilterProps): ReactNode {
     <NumberStepper
       field={field}
       label={label}
+      {...(clearable === true && { clearable: true })}
       {...(icon !== undefined && { icon })}
       {...(grain !== undefined && { step: grain })}
       {...(className !== undefined && { className })}
@@ -147,6 +158,7 @@ function NumberChoice({
   label,
   icon,
   options,
+  clearable,
   className,
   style,
 }: BasaltProps & {
@@ -154,6 +166,7 @@ function NumberChoice({
   readonly label: string
   readonly icon?: ReactNode
   readonly options: readonly NumberFilterOption[]
+  readonly clearable?: boolean
 }): ReactNode {
   const [value, setValue] = field.use()
   const rows = options.map((option) => ({ value: String(option.value), label: option.label }))
@@ -182,6 +195,7 @@ function NumberChoice({
       label={label}
       numeric
       options={rows}
+      {...(clearable === true && { clearable: true })}
       {...(icon !== undefined && { icon })}
       {...(className !== undefined && { className })}
       {...(style !== undefined && { style })}
@@ -195,6 +209,7 @@ function NumberStepper({
   label,
   icon,
   step,
+  clearable,
   className,
   style,
 }: BasaltProps & {
@@ -202,6 +217,7 @@ function NumberStepper({
   readonly label: string
   readonly icon?: ReactNode
   readonly step?: number
+  readonly clearable?: boolean
 }): ReactNode {
   const [value, setValue] = field.use()
   const surface = useFilterSurface()
@@ -265,7 +281,22 @@ function NumberStepper({
       {...(className !== undefined && { className })}
       {...(style !== undefined && { style })}
     >
-      <div className={classes.optionList}>{input}</div>
+      <div className={classes.optionList}>
+        {input}
+        {/* Same placement as `EnumFilter`'s: popover only — the sheet and panel rows reset through
+            the `FilterSet` registration above. The draft follows the clear via its effect. */}
+        {clearable === true && !isDefault && (
+          <Button
+            variant="subtle"
+            size="ctl"
+            onClick={() => {
+              field.clear()
+            }}
+          >
+            Clear
+          </Button>
+        )}
+      </div>
     </FilterPill>
   )
 }
