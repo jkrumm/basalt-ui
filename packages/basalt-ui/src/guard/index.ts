@@ -884,15 +884,15 @@ export const GRACE_PERIOD_KINDS: Partial<Record<GuardKind, GraceEntry>> = {
   },
   'raw-media-query': {
     since: '1.31.0',
-    promote: '1.32.0',
+    promote: '1.33.0',
     why:
-      'new in the wave-11 responsive/touch guards — the CSS-text ' +
-      "twin of the oxlint plugin's `basalt/raw-breakpoint`. Reaching CSS is a NEW file type for this " +
-      "check, same reasoning as `css-raw-surface`, and basalt's own `src/dashboard/stat-group.module" +
-      '.css` / `widget-grid.module.css` already declare `@container` names (`basalt-stat-group`, ' +
-      "`basalt-widget-grid`) outside the declared four-name table, plus `shell/**`'s own " +
-      "legitimate width `@media` rules — real incumbents in basalt's own tree at ship time, so this " +
-      'ships warn rather than error from the start. Promotes with its AST twin at 1.32.0.',
+      "The CSS-text twin of the oxlint plugin's `basalt/raw-breakpoint` — ONE LAW, TWO LANES, ONE " +
+      'PROMOTION, so it moves with that rule and never alone (`grace.test.ts` pins the pair). New in ' +
+      'the wave-11 responsive/touch guards; reaching CSS is a NEW file type for this check, same ' +
+      "reasoning as `css-raw-surface`, with incumbents in basalt's own tree at ship time, so it " +
+      'shipped warn. Extended 1.32.0 -> 1.33.0 with its twin: 1.31.0 named ' +
+      'no reachable container primitive, and 1.32.0 is the first minor that documents one ' +
+      '(`CONTAINER_CLASSES` + the declared `@container` names, MIGRATING § `basalt/raw-breakpoint`).',
   },
 }
 

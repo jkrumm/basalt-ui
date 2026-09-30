@@ -24,6 +24,7 @@ import basaltPlugin, {
 } from './oxlint-plugin.js'
 import { CTL_THEME } from '../src/theme/ctl-theme'
 import {
+  GRACE_PERIOD_KINDS,
   GUARD_RULES,
   PLUGIN_RULE_IDS,
   WAIVER_ID_ALIASES as GUARD_WAIVER_ID_ALIASES,
@@ -1331,6 +1332,42 @@ describe('assertGraceLedger', () => {
   it('throws when since does not precede promote', () => {
     const ledger = { 'fake-rule': { since: '1.5.0', promote: '1.5.0', why: 'synthetic' } }
     expect(() => assertGraceLedger(ledger, '1.0.0')).toThrow(/since/)
+  })
+})
+
+// ── twin lanes: one law, two lanes, one promotion ─────────────────────────────
+// A guard kind and a plugin rule that enforce ONE law in two lanes (CSS/text vs. JSX AST) must
+// promote together — a consumer failing one spelling and warned on the other is the confusion the
+// pairing exists to prevent. `raw-media-query` split from `basalt/raw-breakpoint` exactly that way
+// (1.32.0 vs 1.33.0). Twins are DERIVED, not hand-listed, from the two places they are declared: a
+// `WAIVER_ID_ALIASES` pair, and a guard entry whose `why` calls itself the twin of `basalt/<id>`.
+
+const pluginGrace = PLUGIN_RULE_GRACE as Record<string, GraceEntry>
+const guardGrace = GRACE_PERIOD_KINDS as Record<string, GraceEntry>
+
+function twinLanes(): Array<[kind: string, rule: string]> {
+  const pairs = new Map<string, string>()
+  for (const [kind, aliases] of Object.entries(WAIVER_ID_ALIASES)) {
+    for (const rule of aliases) if (kind in guardGrace || rule in pluginGrace) pairs.set(kind, rule)
+  }
+  for (const [kind, entry] of Object.entries(guardGrace)) {
+    const match = /twin of the oxlint plugin's `basalt\/([a-z-]+)`/.exec(entry.why)
+    if (match?.[1] !== undefined) pairs.set(kind, match[1])
+  }
+  return [...pairs].filter(([kind]) => kind in guardGrace)
+}
+
+describe('twin lanes share one promotion', () => {
+  it('derives the raw-media-query ↔ raw-breakpoint pair (the derivation is not silently empty)', () => {
+    expect(twinLanes()).toContainEqual(['raw-media-query', 'raw-breakpoint'])
+  })
+
+  it.each(twinLanes())('%s and basalt/%s are both in grace with the same promote', (kind, rule) => {
+    expect([kind, rule, guardGrace[kind]?.promote]).toEqual([
+      kind,
+      rule,
+      pluginGrace[rule]?.promote,
+    ])
   })
 })
 
