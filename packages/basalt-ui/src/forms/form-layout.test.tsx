@@ -237,6 +237,14 @@ describe('FormGroup', () => {
       ),
     ).toContain('data-direction="row"')
   })
+
+  test('the row direction bottom-aligns, so a trailing button is not stretched to the row height', () => {
+    const css = readFileSync(resolve(import.meta.dirname, 'form-layout.module.css'), 'utf8')
+    const decls = css.replace(/\/\*[\s\S]*?\*\//g, '')
+    const start = decls.indexOf(".groupControls[data-direction='row'] {")
+    expect(start).toBeGreaterThan(-1)
+    expect(decls.slice(start, decls.indexOf('}', start))).toContain('align-items: flex-end')
+  })
 })
 
 describe('FormSection', () => {
