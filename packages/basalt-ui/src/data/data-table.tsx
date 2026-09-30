@@ -61,6 +61,7 @@ import type {
 } from '@tanstack/react-table'
 import {
   flexRender,
+  functionalUpdate,
   getCoreRowModel,
   getFilteredRowModel,
   getPaginationRowModel,
@@ -1248,6 +1249,90 @@ function useMeasuredContainment(active: boolean): {
   return { wrapperRef, contained: active && contained }
 }
 
+/** `useState` whose every write also reports the settled value — the one shape sorting, the global
+ * filter, the column filters and pagination all share. The callback runs inside the updater, so it
+ * sees exactly the value TanStack applied. */
+function useReportedState<S>(
+  initial: S,
+  onChange: ((next: S) => void) | undefined,
+): [S, (updater: Updater<S>) => void] {
+  const [value, setValue] = useState(initial)
+  const update = useCallback(
+    (updater: Updater<S>) => {
+      setValue((prev) => {
+        const next = functionalUpdate(updater, prev)
+        onChange?.(next)
+        return next
+      })
+    },
+    [onChange],
+  )
+  return [value, update]
+}
+
+/** The table's own interactive state and the TanStack `on*Change` handlers that write it — every
+ * piece uncontrolled with an optional change callback, except row selection, which is controlled
+ * whenever `rowSelection` is passed. */
+function useDataTableState<T>(props: BasaltDataTableProps<T>, defaultPageSize: number) {
+  const { rowSelection, onRowSelectionChange } = props
+  const [sorting, onSortingChange] = useReportedState(
+    props.initialSorting ?? [],
+    props.onSortingChange,
+  )
+  const [globalFilter, onGlobalFilterChange] = useReportedState(
+    props.initialGlobalFilter ?? '',
+    props.onGlobalFilterChange,
+  )
+  const [columnFilters, onColumnFiltersChange] = useReportedState<ColumnFiltersState>(
+    [],
+    props.onColumnFiltersChange,
+  )
+  const [pagination, onPaginationChange] = useReportedState(
+    props.initialPagination ?? { pageIndex: 0, pageSize: defaultPageSize },
+    props.onPaginationChange,
+  )
+  const [columnPinning, setColumnPinning] = useState<ColumnPinningState>(
+    props.initialColumnPinning ?? {},
+  )
+  // Uncontrolled by default; `rowSelection`, when passed, is the truth and this only mirrors it so
+  // the updater below has a base to apply against.
+  const [internalRowSelection, setInternalRowSelection] = useState<RowSelectionState>({})
+
+  const handleRowSelectionChange = useCallback(
+    (updater: Updater<RowSelectionState>) => {
+      // CONTROLLED: the caller's map is the base AND the only writer. Mirroring it into state too
+      // would leave a copy that the caller never moves, and that stale copy becomes the selection
+      // the moment `rowSelection` goes back to `undefined` — plus every tick would render twice for
+      // one change. Report the next map and let the caller own it.
+      if (rowSelection !== undefined) {
+        onRowSelectionChange?.(functionalUpdate(updater, rowSelection))
+        return
+      }
+      setInternalRowSelection((prev) => {
+        const next = functionalUpdate(updater, prev)
+        onRowSelectionChange?.(next)
+        return next
+      })
+    },
+    [rowSelection, onRowSelectionChange],
+  )
+
+  return {
+    sorting,
+    onSortingChange,
+    globalFilter,
+    onGlobalFilterChange,
+    columnFilters,
+    onColumnFiltersChange,
+    pagination,
+    onPaginationChange,
+    columnPinning,
+    onColumnPinningChange: setColumnPinning,
+    rowSelection: rowSelection ?? internalRowSelection,
+    onRowSelectionChange: handleRowSelectionChange,
+  }
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 /**
@@ -1294,32 +1379,22 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
     isLoading = false,
     query,
     skeletonRows = 5,
-    initialSorting,
-    onSortingChange,
     enableGlobalFilter = false,
     globalFilterPlaceholder = 'Search…',
     searchIcon,
-    initialGlobalFilter,
-    onGlobalFilterChange,
     facets,
-    onColumnFiltersChange,
     manualFiltering = false,
     actions,
     onRowActivate,
     enableRowSelection = false,
-    rowSelection,
-    onRowSelectionChange,
     getRowId,
     bulkActions,
     enablePagination = false,
     pageSizeOptions = DEFAULT_PAGE_SIZE_OPTIONS,
-    initialPagination,
-    onPaginationChange,
     manualPagination = false,
     rowCount,
     pageCount,
     enablePinning = false,
-    initialColumnPinning,
     maxHeight,
     minWidth,
     stickyHeader,
@@ -1332,17 +1407,8 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
     style,
     classNames,
   } = props
-  const [sorting, setSorting] = useState<SortingState>(initialSorting ?? [])
-  const [globalFilter, setGlobalFilter] = useState(initialGlobalFilter ?? '')
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
-  const [pagination, setPagination] = useState<PaginationState>(
-    initialPagination ?? { pageIndex: 0, pageSize: pageSizeOptions[0] ?? 10 },
-  )
-  const [columnPinning, setColumnPinning] = useState<ColumnPinningState>(initialColumnPinning ?? {})
-  // Uncontrolled by default; `rowSelection`, when passed, is the truth and this only mirrors it so
-  // the updater below has a base to apply against.
-  const [internalRowSelection, setInternalRowSelection] = useState<RowSelectionState>({})
-  const rowSelectionState = rowSelection ?? internalRowSelection
+  const tableState = useDataTableState(props, pageSizeOptions[0] ?? 10)
+  const { globalFilter, columnPinning, onGlobalFilterChange: handleGlobalFilterChange } = tableState
 
   // `stickyHeaderOffset` is DROPPED whenever the table owns a scroll container — see
   // `resolvedStickyHeaderOffset` below for why it is always wrong there. Dropping it silently is
@@ -1383,69 +1449,6 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
       query === undefined,
       props.isLoading === undefined,
     ],
-  )
-
-  const handleSortingChange = useCallback(
-    (updater: Updater<SortingState>) => {
-      setSorting((prev) => {
-        const next = typeof updater === 'function' ? updater(prev) : updater
-        onSortingChange?.(next)
-        return next
-      })
-    },
-    [onSortingChange],
-  )
-
-  const handleGlobalFilterChange = useCallback(
-    (updater: Updater<string>) => {
-      setGlobalFilter((prev) => {
-        const next = typeof updater === 'function' ? updater(prev) : updater
-        onGlobalFilterChange?.(next)
-        return next
-      })
-    },
-    [onGlobalFilterChange],
-  )
-
-  const handleColumnFiltersChange = useCallback(
-    (updater: Updater<ColumnFiltersState>) => {
-      setColumnFilters((prev) => {
-        const next = typeof updater === 'function' ? updater(prev) : updater
-        onColumnFiltersChange?.(next)
-        return next
-      })
-    },
-    [onColumnFiltersChange],
-  )
-
-  const handlePaginationChange = useCallback(
-    (updater: Updater<PaginationState>) => {
-      setPagination((prev) => {
-        const next = typeof updater === 'function' ? updater(prev) : updater
-        onPaginationChange?.(next)
-        return next
-      })
-    },
-    [onPaginationChange],
-  )
-
-  const handleRowSelectionChange = useCallback(
-    (updater: Updater<RowSelectionState>) => {
-      // CONTROLLED: the caller's map is the base AND the only writer. Mirroring it into state too
-      // would leave a copy that the caller never moves, and that stale copy becomes the selection
-      // the moment `rowSelection` goes back to `undefined` — plus every tick would render twice for
-      // one change. Report the next map and let the caller own it.
-      if (rowSelection !== undefined) {
-        onRowSelectionChange?.(typeof updater === 'function' ? updater(rowSelection) : updater)
-        return
-      }
-      setInternalRowSelection((prev) => {
-        const next = typeof updater === 'function' ? updater(prev) : updater
-        onRowSelectionChange?.(next)
-        return next
-      })
-    },
-    [rowSelection, onRowSelectionChange],
   )
 
   // Facets are TanStack `columnFilters` entries under the hood — inject an exact-match (or
@@ -1600,22 +1603,22 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
     data,
     columns: tableColumns,
     state: {
-      sorting,
+      sorting: tableState.sorting,
       globalFilter,
-      columnFilters,
+      columnFilters: tableState.columnFilters,
       columnPinning,
       columnVisibility,
-      ...(enablePagination && { pagination }),
-      ...(enableRowSelection && { rowSelection: rowSelectionState }),
+      ...(enablePagination && { pagination: tableState.pagination }),
+      ...(enableRowSelection && { rowSelection: tableState.rowSelection }),
     },
-    onSortingChange: handleSortingChange,
+    onSortingChange: tableState.onSortingChange,
     onGlobalFilterChange: handleGlobalFilterChange,
-    onColumnFiltersChange: handleColumnFiltersChange,
-    onColumnPinningChange: setColumnPinning,
-    ...(enablePagination && { onPaginationChange: handlePaginationChange }),
+    onColumnFiltersChange: tableState.onColumnFiltersChange,
+    onColumnPinningChange: tableState.onColumnPinningChange,
+    ...(enablePagination && { onPaginationChange: tableState.onPaginationChange }),
     ...(enableRowSelection && {
       enableRowSelection: true,
-      onRowSelectionChange: handleRowSelectionChange,
+      onRowSelectionChange: tableState.onRowSelectionChange,
     }),
     ...(getRowId !== undefined && { getRowId }),
     getCoreRowModel: getCoreRowModel(),
