@@ -231,14 +231,14 @@ export function auditAllows(
         waiverLines.push(`${label} suppresses ${[...new Set(revealed)].join(', ')}${suffix}`)
         continue
       }
-      // Nothing in check-theme's reach moved. If the annotation names a PLUGIN rule, the oxlint
-      // half decides it — a placeholder holds the slot so the report stays in file/line order.
-      if (site.pluginRules.length > 0 && site.guardKinds.length === 0) {
+      // Nothing in check-theme's reach moved. If any id is one oxlint judges (a dual-lane id too),
+      // the oxlint half decides it — a placeholder holds the slot so the report stays in order.
+      if (site.oxlintRules.length > 0) {
         pluginProbes.push({
           slot: waiverLines.length,
           rel,
           line: site.line,
-          ids: site.pluginRules,
+          ids: site.oxlintRules,
           site: label,
           suffix,
         })

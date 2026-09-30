@@ -23,6 +23,7 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { DEFAULT_GUARD_CONFIG, findAllowAnnotations, GUARD_RULES } from '../guard'
 import { checkTheme } from './index.ts'
 
 const PKG_ROOT = fileURLToPath(new URL('../../', import.meta.url))
@@ -211,6 +212,45 @@ describe.skipIf(!existsSync(OXLINT_BIN))('check-theme --audit-allows — oxlint 
     expect(code).toBe(1)
   })
 
+  // rb (consumer loop r3): `in-body-page-title` is one id in BOTH registries. The text lane passed
+  // this `<Title>`, so the audit called the waiver dead without asking oxlint — and deleting it made
+  // oxlint exit 1 on the `error`-level plugin rule. A waiver is live if EITHER lane needs it.
+  it('proves a dual-lane waiver LIVE when only the oxlint lane still needs it', () => {
+    write('package.json', JSON.stringify({ name: 'fixture', basalt: { roots: ['src'] } }))
+    write(
+      'src/features/detail.tsx',
+      "import { Drawer, Stack, Title } from '@mantine/core'\n\n" +
+        'export const Detail = () => (\n' +
+        '  <Stack>\n' +
+        '    {/* theme-allow in-body-page-title — detail route; the breadcrumb names the parent list */}\n' +
+        '    <Title order={2}>Not found</Title>\n' +
+        // An overlay ANYWHERE in the file exempts it from the text lane (it has no ancestry), while
+        // the plugin scopes that exemption to the overlay's own subtree — rb's exact shape.
+        '    <Drawer opened={false} onClose={() => {}} />\n' +
+        '  </Stack>\n' +
+        ')\n',
+    )
+    withOxlint()
+    const { code, log } = audit()
+    expect(log).not.toContain('SUPPRESSES NOTHING')
+    expect(log).toContain('suppresses in-body-page-title@6 (oxlint)')
+    expect(code).toBe(0)
+  })
+
+  it('judges the plugin half of a mixed annotation instead of calling it dead', () => {
+    write('package.json', JSON.stringify({ name: 'fixture', basalt: { roots: ['src'] } }))
+    write(
+      'src/charts/plot.tsx',
+      "import { AxisLeftNumeric } from 'basalt-ui/charts'\n\n" +
+        '// theme-allow raw-hex, hand-rolled-plot — this pane is not a single cartesian plot\n' +
+        'export const Plot = () => <AxisLeftNumeric />\n',
+    )
+    withOxlint()
+    const { code, log } = audit()
+    expect(log).toContain('suppresses hand-rolled-plot@4 (oxlint)')
+    expect(code).toBe(0)
+  })
+
   it('leaves no probe file behind — the neutralized copy is a temp file basalt owns', () => {
     write('package.json', JSON.stringify({ name: 'fixture', basalt: { roots: ['src'] } }))
     write(
@@ -222,5 +262,27 @@ describe.skipIf(!existsSync(OXLINT_BIN))('check-theme --audit-allows — oxlint 
     withOxlint()
     audit()
     expect(readdirSync(join(dir, 'src/charts'))).toEqual(['plot.tsx'])
+  })
+})
+
+/** What one `theme-allow <id>` hands to the oxlint half of the audit. */
+function oxlintJudged(id: string): readonly string[] {
+  return (
+    findAllowAnnotations(`// theme-allow ${id} — why\n`, 'src/a.tsx', DEFAULT_GUARD_CONFIG)[0]
+      ?.oxlintRules ?? []
+  )
+}
+
+describe('AllowAnnotationSite.oxlintRules', () => {
+  it('sends exactly the dual-lane guard kinds (and plugin rules) to oxlint', async () => {
+    // A non-literal specifier: the plugin is a standalone `.js` with no declarations to resolve.
+    const pluginPath: string = '../../configs/oxlint-plugin.js'
+    const plugin = (await import(pluginPath)) as { default: { rules: Record<string, unknown> } }
+    const pluginRules = new Set(Object.keys(plugin.default.rules))
+    for (const kind of Object.keys(GUARD_RULES)) {
+      const expected = pluginRules.has(kind) || kind === 'raw-selection-control'
+      expect([kind, oxlintJudged(kind).length > 0]).toEqual([kind, expected])
+    }
+    expect(oxlintJudged('hand-rolled-plot')).toEqual(['hand-rolled-plot'])
   })
 })

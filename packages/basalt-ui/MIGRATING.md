@@ -183,8 +183,10 @@ const-resolved prop value (`span={wide ? { base: 12, md: 4 } : 12}` used to slip
 warnings.)
 
 **After any guard narrows, audit your waivers:** `basalt-ui check-theme --audit-allows` lists every
-`theme-allow` and whether it still suppresses anything. Dead ones (rb carried five
-`in-body-page-title`, linewatch one `bound-control-outside-home`) go.
+`theme-allow` and whether it still suppresses anything. Dead ones (rb carried three
+`in-body-page-title`, linewatch one `bound-control-outside-home`) go. Before 1.33.0 the audit also
+called an `in-body-page-title` waiver dead when only the oxlint lane still needed it — if deleting
+one makes `oxlint` fail, restore it.
 
 **Scope — the breakpoint law is Mantine/CSS-scoped.** `raw-breakpoint` is an oxlint rule over JSX
 and `raw-media-query` a `check-theme` kind over `.css`. A tokens-only (Tailwind) consumer has only
