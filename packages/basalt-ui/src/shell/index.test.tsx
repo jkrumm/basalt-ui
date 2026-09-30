@@ -14,7 +14,7 @@ import { baseTheme } from '../theme'
 import { pxRem } from '../tokens'
 import { SPACE_STEP } from '../tokens/palette'
 import { PageAside } from './page-aside'
-import { BasaltShell, PageBar, roomToDockServerFallback } from './index'
+import { BasaltShell, PageBar } from './index'
 import { toggleSidebar } from '../commands/shell-bridge'
 import type { BasaltAccountProps, SidebarBlock, SidebarSection } from './index'
 
@@ -708,32 +708,6 @@ function asideOverlayVar(container: HTMLElement): string | null {
   const style = container.querySelector('.mantine-AppShell-aside')?.getAttribute('style') ?? ''
   return style.includes('--app-shell-aside-width') ? 'overlay' : null
 }
-
-/**
- * `roomToDockServerFallback` — the room-to-dock `min-width` query's SSR/no-`matchMedia` fallback
- * (regression: used to be hardcoded `false`, so a `sizeClassHint="expanded"` route rendered a
- * default-open aside "cannot dock" for one commit even on a desktop the server already knew was
- * wide). Pinned as a direct unit test rather than through a rendered `BasaltShell`: deleting
- * `window.matchMedia` to force the fallback path also breaks `MantineProvider` itself (it reads
- * `matchMedia` in its own color-scheme effect), and the aside's actual claim/fold/portal machinery
- * is entirely effect- and ref-driven, so neither a client render nor a `renderToString` pass can
- * observe this one boolean through rendered markup — see the function's own doc for why it was
- * extracted.
- */
-describe('roomToDockServerFallback', () => {
-  test('an expanded hint means the server already believes there is room to dock', () => {
-    expect(roomToDockServerFallback('expanded')).toBe(true)
-  })
-
-  test('a compact or medium hint never assumes room to dock', () => {
-    expect(roomToDockServerFallback('compact')).toBe(false)
-    expect(roomToDockServerFallback('medium')).toBe(false)
-  })
-
-  test('no hint at all (undefined) never assumes room to dock', () => {
-    expect(roomToDockServerFallback(undefined)).toBe(false)
-  })
-})
 
 describe('BasaltShell aside overlay — Escape hatch', () => {
   test('Escape folds an open overlay aside', () => {
