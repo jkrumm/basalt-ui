@@ -34,6 +34,7 @@ import { blockRowCount, projectMobileNav } from './mobile-nav-model'
 import { AppBreadcrumbs } from './app-breadcrumbs'
 import { PageBarBandOutlet, PageBarOutlet, PageBarProvider, usePageKebabClaimed } from './page-bar'
 import { AsideDocksContext, AsideOutlet, AsideProvider, useAsideRegion } from './page-aside'
+import { asideDockQuery, resolveAsideDocking, roomToDockServerFallback } from './aside-docking'
 import { OverflowMenu, globalActionAsBarAction, globalActionMobile } from '../controls/actions'
 import type { GlobalAction } from '../controls/actions'
 import type { AccountMenuItem, BasaltAccountProps } from './account-types'
@@ -47,9 +48,7 @@ import type {
 } from './nav-types'
 import { CtlSlot, useBasaltSpacing } from '../theme'
 import { createPersistedStore } from '../state/persisted'
-import { toEm } from '../tokens/size-classes'
 import { SizeClassHintContext, useSizeClass } from './use-size-class'
-import type { SizeClass } from './use-size-class'
 import brandClasses from './app-brand.module.css'
 import headerClasses from './app-header.module.css'
 import mainClasses from './app-main.module.css'
@@ -304,25 +303,6 @@ function collapseStore(key: string): CollapseStore {
 }
 
 /**
- * Main keeps at least this much width, or an open aside overlays it instead of docking. Not
- * derived from a token: it is the readable floor for a page body, independent of density.
- */
-const MAIN_MIN_WIDTH = 720
-
-/**
- * The room-to-dock `min-width` query's SSR/no-`matchMedia` fallback — an `'expanded'`
- * `sizeClassHint` means the server already believes there is room, matching `useSizeClass`'s own
- * hint-seeded guard one level up (`use-size-class.ts`). Extracted as its own pure function (rather
- * than the inline `sizeClassHint === 'expanded'` it replaces) purely so `index.test.tsx` can pin it
- * without needing to render `BasaltShell` through a real SSR pass — `AppShell`'s + `PageAside`'s own
- * effects/refs/portals make that path unobservable through rendered markup, and the previous
- * hardcoded `false` fallback here shipped with no test at all for exactly that reason.
- */
-export function roomToDockServerFallback(sizeClassHint: SizeClass | undefined): boolean {
-  return sizeClassHint === 'expanded'
-}
-
-/**
  * The shell's two page-level regions are providers, and both wrap the frame rather than living
  * inside it: `PageBarProvider` owns the header portal and the single-kebab claim, `AsideProvider`
  * owns the aside portal, the region CLAIM and the claiming page's fold state — which `ShellFrame`
@@ -395,25 +375,22 @@ function ShellFrame({
   const isCollapseControlled = collapsedProp !== undefined
   const uncontrolledCollapsed = collapseIsSet ? storedCollapsed : sizeClass === 'medium'
   const collapsed = isCollapseControlled ? collapsedProp : uncontrolledCollapsed
-  // Aside docking (`docs/DESIGN-CORE.md` § Layout, elevation, shapes): an open aside pushes main only in
-  // `expanded` while main keeps `MAIN_MIN_WIDTH` beside this navbar; otherwise the region reserves
-  // just its rail and an open panel overlays main. Provided through `AsideDocksContext` in the SAME
-  // render, so `PageAside` defaults its fold from the right value on its first pass.
+  // Aside docking (`aside-docking.ts`), provided through `AsideDocksContext` in the SAME render so
+  // `PageAside` defaults its fold from the right value on its first pass.
   const navbarWidth = collapsed ? step.appShellNavbarRailWidth : step.appShellNavbarWidth
-  // The SSR/first-paint fallback mirrors `useSizeClass`'s own hint-seeded guard: an `expanded` hint
-  // from `<BasaltProvider sizeClassHint>` means the server already believes there is room to dock, so
-  // the first client paint agrees instead of defaulting to "cannot dock" and folding a default-open
-  // aside for one commit.
-  const sizeClassHint = useContext(SizeClassHintContext)
   const roomToDock = useMediaQuery(
-    `(min-width: ${toEm(navbarWidth + step.appShellAsideWidth + MAIN_MIN_WIDTH)})`,
-    roomToDockServerFallback(sizeClassHint),
+    asideDockQuery({ navbarWidth, asideWidth: step.appShellAsideWidth }),
+    roomToDockServerFallback(useContext(SizeClassHintContext)),
   )
-  const docks = sizeClass === 'expanded' && roomToDock
-  const asideOpen = aside.claimed && !aside.folded
-  const asideOverlay = asideOpen && !docks
-  const asideReserved = asideOpen && docks ? step.appShellAsideWidth : step.appShellAsideRailWidth
-  const asideWidth = aside.claimed ? asideReserved : 0
+  const docking = resolveAsideDocking({
+    claimed: aside.claimed,
+    folded: aside.folded,
+    sizeClass,
+    roomToDock,
+    asideWidth: step.appShellAsideWidth,
+    asideRailWidth: step.appShellAsideRailWidth,
+  })
+  const asideOverlay = docking.overlay
   // Keyboard escape hatch for the overlay form only — the docked form never blocks content, so
   // there is nothing to escape out of. `requestClose` is a stable callback from `AsideProvider`
   // (destructured, not read as `aside.requestClose`, so the effect deps name it directly rather
@@ -460,7 +437,7 @@ function ShellFrame({
   )
 
   return (
-    <AsideDocksContext.Provider value={docks}>
+    <AsideDocksContext.Provider value={docking.docks}>
       <AppShell
         h="100dvh"
         // Mantine's DEFAULT layout, not `alt`: the header spans the full viewport width on top and
@@ -484,7 +461,7 @@ function ShellFrame({
         // prop for it on purpose; the ROUTE decides, the same way it decides its page bar.
         aside={{
           // An overlay reserves the rail only — `<AppShell.Aside>` below widens itself over main.
-          width: asideWidth,
+          width: docking.width,
           breakpoint: 'sm',
           // Below `sm` there is no region at all — `PageAside` renders its content in the page
           // flow instead, one node, no responsive twin (law C9).
