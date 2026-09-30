@@ -1,6 +1,12 @@
 /** `sizeClassMaxEm` / `toEm` — the literal forms the CSS modules carry. */
 import { describe, expect, test } from 'bun:test'
-import { SIZE_CLASSES, sizeClassMaxEm, toEm } from './size-classes'
+import {
+  CONTAINER_CLASSES,
+  CONTAINER_GRID_BREAKPOINTS,
+  SIZE_CLASSES,
+  sizeClassMaxEm,
+  toEm,
+} from './size-classes'
 
 describe('size-class em literals', () => {
   test('toEm converts px at a 16px root', () => {
@@ -11,5 +17,18 @@ describe('size-class em literals', () => {
   test('sizeClassMaxEm is 0.1px under the boundary', () => {
     expect(sizeClassMaxEm(SIZE_CLASSES.medium)).toBe('52.49375em')
     expect(sizeClassMaxEm(SIZE_CLASSES.expanded)).toBe('74.99375em')
+  })
+})
+
+describe('CONTAINER_GRID_BREAKPOINTS', () => {
+  test('maps all five Mantine sizes onto a CONTAINER_CLASSES boundary', () => {
+    const { compact, regular, wide } = CONTAINER_CLASSES
+    expect(CONTAINER_GRID_BREAKPOINTS).toEqual({
+      xs: `${compact}px`,
+      sm: `${regular}px`,
+      md: `${wide}px`,
+      lg: `${wide}px`,
+      xl: `${wide}px`,
+    })
   })
 })

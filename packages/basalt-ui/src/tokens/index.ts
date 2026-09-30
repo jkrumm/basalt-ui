@@ -54,7 +54,12 @@ export type { SpaceValues } from './palette'
 
 // The two responsive tables — MIGRATING recipes and the raw-breakpoint guard messages send
 // consumers here for them; `migrating-imports.test.ts` pins that every documented import resolves.
-export { CONTAINER_CLASSES, resolveContainerClass, SIZE_CLASSES } from './size-classes'
+export {
+  CONTAINER_CLASSES,
+  CONTAINER_GRID_BREAKPOINTS,
+  resolveContainerClass,
+  SIZE_CLASSES,
+} from './size-classes'
 export type { ContainerClass } from './size-classes'
 
 /** A per-theme color pair: a hue keeps its identity but shifts shade across schemes. */

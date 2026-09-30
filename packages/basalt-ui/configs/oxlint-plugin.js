@@ -4066,8 +4066,10 @@ const CONTAINER_ROUTED_PROPS = {
  * `type` has to be the string literal `"container"`; a dynamic value is not a decision this rule
  * can read. `Grid.Col` takes its grid's mode by walking to the nearest enclosing `Grid` element.
  * `consts` is the rule's same-file name→object map, so `breakpoints={map}` resolves like any value.
+ * `gridMaps` holds the local names bound to basalt's own `CONTAINER_GRID_BREAKPOINTS` (imported
+ * from `basalt-ui/tokens`, alias-safe) — the one imported map trusted, because its value is known.
  */
-function containerGridMode(opening, mantineImports, consts) {
+function containerGridMode(opening, mantineImports, consts, gridMaps) {
   let tag = resolveMantineTag(opening.name, mantineImports)
   let grid = opening
   if (tag === 'Grid.Col') {
@@ -4096,7 +4098,12 @@ function containerGridMode(opening, mantineImports, consts) {
   const breakpoints = attr('breakpoints')
   if (breakpoints === undefined) return 'fallback'
   let map = attrValue(breakpoints)
-  if (map?.type === 'Identifier') map = consts.get(map.name)
+  const seen = new Set()
+  while (map?.type === 'Identifier' && !seen.has(map.name)) {
+    if (gridMaps.has(map.name)) return 'container'
+    seen.add(map.name)
+    map = consts.get(map.name)
+  }
   const nonEmpty =
     map?.type === 'ObjectExpression' && map.properties.some((prop) => prop.type === 'Property')
   return nonEmpty ? 'container' : 'fallback'
@@ -4134,7 +4141,7 @@ const RAW_BREAKPOINT_EXEMPT_FILE = /(?:^|[\\/])(?:use-media-query\.ts|ChartToolt
 export const RAW_BREAKPOINT_RECIPE =
   'A page’s own layout keys on its container: <SimpleGrid type="container" cols={{ base: 1, ' +
   "'480px': 2, '800px': 3 }}> (px keys = CONTAINER_CLASSES, basalt-ui/tokens), or <Grid " +
-  'type="container" breakpoints={…}> mapping all five xs–xl onto those px widths, with Grid.Col ' +
+  'type="container" breakpoints={CONTAINER_GRID_BREAKPOINTS}> (basalt-ui/tokens), with Grid.Col ' +
   'span={{ base: 12, sm: 6 }} keyed through that map; a Flex direction swap becomes that SimpleGrid (equal ' +
   'columns), a wrapping Group, or a CSS-module @container basalt-grid rule. useSizeClass() is for ' +
   'shell chrome only. Recipes: basalt-ui MIGRATING.md § basalt/raw-breakpoint.'
@@ -4238,6 +4245,8 @@ const rawBreakpoint = {
     // apart), so it is dropped from the map entirely rather than guessed at last-wins.
     const responsiveObjectConsts = new Map()
     const seenDeclaratorNames = new Set()
+    // Local names bound to `CONTAINER_GRID_BREAKPOINTS` from `basalt-ui/tokens` (see containerGridMode).
+    const containerGridMaps = new Set()
 
     const noteShellHomeOwner = (name) => {
       if (typeof name === 'string' && SHELL_HOME_NAMES.has(name)) definesShellHome = true
@@ -4248,6 +4257,15 @@ const rawBreakpoint = {
         controlOwner.noteImport(node)
         collectMantineImports(node, mantineImports)
         if (node.importKind === 'type') return
+        if (node.source?.value === 'basalt-ui/tokens') {
+          for (const specifier of node.specifiers ?? []) {
+            if (specifier.type !== 'ImportSpecifier' || specifier.importKind === 'type') continue
+            const imported = specifier.imported
+            const importedName = imported.type === 'Identifier' ? imported.name : imported.value
+            if (importedName === 'CONTAINER_GRID_BREAKPOINTS')
+              containerGridMaps.add(specifier.local.name)
+          }
+        }
         // `useMatches` collides with `@tanstack/react-router`'s own hook of the same name (basalt's
         // own `src/router-tanstack/index.ts` imports it) — scope the whole set to a `@mantine/*`
         // source rather than name alone, the same provenance gate every other Mantine-name rule in
@@ -4322,7 +4340,7 @@ const rawBreakpoint = {
             ? CONTAINER_ROUTED_PROPS[tag]
             : undefined
           const mode = routed?.has(node.name.name)
-            ? containerGridMode(owner, mantineImports, responsiveObjectConsts)
+            ? containerGridMode(owner, mantineImports, responsiveObjectConsts, containerGridMaps)
             : undefined
           if (mode === 'container') continue
           if (!containsResponsiveObjectValue(value, responsiveObjectConsts, mode !== undefined))
