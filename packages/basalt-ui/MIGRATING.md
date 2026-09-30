@@ -66,25 +66,122 @@ There is one row per SURFACE, not per export, and a surface earns a row once any
 shipped lefthook preset both changed in 1.30.0 with no row that owned them — which is how a
 consumer read this index, found nothing, and diffed a KPI row that had silently gone 4-up → 2-up.
 
-| Surface                       | 1.27.0                                                       | 1.28.0                                                                                 | 1.29.0                                                                                         | 1.30.0                                                                             | 1.30.1                                                                | 1.30.2 | 1.31.0                                                                                                    | 1.32.0                                                                        | Unreleased |
-| ----------------------------- | ------------------------------------------------------------ | -------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | --------------------------------------------------------------------- | ------ | --------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | ---------- |
-| **tokens** (`./tokens`)       | —                                                            | `--vx-divider` → `rgba()` on both schemes (§ Shell)                                    | `--vx-space-touch-target` added (§ Additions)                                                  | eight spacing numbers (§ Chrome)                                                   | —                                                                     | —      | `--vx-hit` replaces the touch vars; `SIZE_CLASSES` (§ Unreleased)                                         | —                                                                             | —          |
-| **charts** (`./charts`)       | —                                                            | phone tier, `curve`, formatters, `state`, log axis (§ preamble)                        | `ChartState.empty: string`, `AxisBottomNumeric` (§ Additions)                                  | responsive `height`, `legend.maxRows` (§ Charts)                                   | `height` reaches the kinds; `maxRows` beats the `fill` fit (§ Charts) | —      | container-class tier + `height` keys (§ Unreleased)                                                       | —                                                                             | —          |
-| **shell** (`.`)               | —                                                            | scrollport, region seams, **the brand left the sidebar** (§§ scrollport, brand, Shell) | `PageTitle`, `BasaltDevDock`, `useBreakpoint` (§ Additions)                                    | More popover, aside pill, the responsive gutter, `useBasaltSpacing` (§ Chrome)     | —                                                                     | —      | `theme.breakpoints` derived, `useSizeClass`, `data-basalt-host`, `useBreakpoint` on notice (§ Unreleased) | `useBreakpoint` removal → 1.33.0; `useSizeClass` is shell-only (§ Unreleased) | —          |
-| **controls** (`./controls`)   | `NumberFilter`, `field.number` (§ Controls)                  | sheet renders panel rows; `PanelRow`, `SliderControl` (§ `basalt-ui/controls`)         | —                                                                                              | —                                                                                  | —                                                                     | —      | —                                                                                                         | —                                                                             | —          |
-| **forms** (`./forms`)         | —                                                            | `field` → `inputProps`, **`inputProps` drops `key`**, the layout tier (§ `inputProps`) | `field` DELETED — and the `--fix` recipe no longer works (§ Consolidation)                     | —                                                                                  | —                                                                     | —      | —                                                                                                         | —                                                                             | —          |
-| **data** (`./data/table`)     | —                                                            | root is a `<div>`, row selection, `getItemKey` required (§ `basalt-ui/data`)           | `./data` + `./query` + `./connectivity` dropped (§ Consolidation)                              | —                                                                                  | —                                                                     | —      | —                                                                                                         | —                                                                             | —          |
-| **dashboard** (`.`)           | `StatCard`: `unit`, `breakdown`, delta format (§ `StatCard`) | `StatGroup`, `WidgetGrid`, query-aware `StatCard` — additive                           | —                                                                                              | **the column law keys on the CONTAINER; `cols={4}` is 2-up at `sm`** (§ Dashboard) | —                                                                     | —      | —                                                                                                         | —                                                                             | —          |
-| **toolchain** (`./configs/*`) | —                                                            | —                                                                                      | the shipped lefthook preset's `check-theme` BROKE — the CLI resolver stopped ascending (§ CLI) | the preset's default bin, and the `root:` recipe (§ Toolchain)                     | —                                                                     | —      | —                                                                                                         | —                                                                             | —          |
-| **CLI** (`basalt-ui`)         | —                                                            | —                                                                                      | **resolver stops relocating; `doctor` loses 6 of 10 checks** (§ CLI)                           | —                                                                                  | —                                                                     | —      | —                                                                                                         | —                                                                             | —          |
-| **guards**                    | five rules → `error` (§ Guards)                              | six new ids at `warn` (§ preamble)                                                     | `query-dual-import` retired in 1.29.1 (§ Guards)                                               | four rules → `error` (§ Guards)                                                    | —                                                                     | —      | —                                                                                                         | `raw-breakpoint`: the container-grid answer, `error` at 1.33.0 (§ Unreleased) | —          |
+| Surface                       | 1.27.0                                                       | 1.28.0                                                                                 | 1.29.0                                                                                         | 1.30.0                                                                             | 1.30.1                                                                | 1.30.2 | 1.31.0                                                                                                    | 1.32.0                                                                        | Unreleased                                                                                                      |
+| ----------------------------- | ------------------------------------------------------------ | -------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | --------------------------------------------------------------------- | ------ | --------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| **tokens** (`./tokens`)       | —                                                            | `--vx-divider` → `rgba()` on both schemes (§ Shell)                                    | `--vx-space-touch-target` added (§ Additions)                                                  | eight spacing numbers (§ Chrome)                                                   | —                                                                     | —      | `--vx-hit` replaces the touch vars; `SIZE_CLASSES` (§ Unreleased)                                         | —                                                                             | `SIZE_CLASSES`/`CONTAINER_CLASSES` actually exported (§ Fixes)                                                  |
+| **charts** (`./charts`)       | —                                                            | phone tier, `curve`, formatters, `state`, log axis (§ preamble)                        | `ChartState.empty: string`, `AxisBottomNumeric` (§ Additions)                                  | responsive `height`, `legend.maxRows` (§ Charts)                                   | `height` reaches the kinds; `maxRows` beats the `fill` fit (§ Charts) | —      | container-class tier + `height` keys (§ Unreleased)                                                       | —                                                                             | `ResponsiveChartHeight` `sm` → key (§ Container recipes)                                                        |
+| **shell** (`.`)               | —                                                            | scrollport, region seams, **the brand left the sidebar** (§§ scrollport, brand, Shell) | `PageTitle`, `BasaltDevDock`, `useBreakpoint` (§ Additions)                                    | More popover, aside pill, the responsive gutter, `useBasaltSpacing` (§ Chrome)     | —                                                                     | —      | `theme.breakpoints` derived, `useSizeClass`, `data-basalt-host`, `useBreakpoint` on notice (§ Unreleased) | `useBreakpoint` removal → 1.33.0; `useSizeClass` is shell-only (§ Unreleased) | shell-less `shell/` gutter, `AppShell` breakpoints, `useSizeClass` for overlays (§§ Shell-less, `useSizeClass`) |
+| **controls** (`./controls`)   | `NumberFilter`, `field.number` (§ Controls)                  | sheet renders panel rows; `PanelRow`, `SliderControl` (§ `basalt-ui/controls`)         | —                                                                                              | —                                                                                  | —                                                                     | —      | —                                                                                                         | —                                                                             | —                                                                                                               |
+| **forms** (`./forms`)         | —                                                            | `field` → `inputProps`, **`inputProps` drops `key`**, the layout tier (§ `inputProps`) | `field` DELETED — and the `--fix` recipe no longer works (§ Consolidation)                     | —                                                                                  | —                                                                     | —      | —                                                                                                         | —                                                                             | `FormGroup` row no longer stretches (§ Fixes)                                                                   |
+| **data** (`./data/table`)     | —                                                            | root is a `<div>`, row selection, `getItemKey` required (§ `basalt-ui/data`)           | `./data` + `./query` + `./connectivity` dropped (§ Consolidation)                              | —                                                                                  | —                                                                     | —      | —                                                                                                         | —                                                                             | `renderCard` documented (§ `renderCard`)                                                                        |
+| **dashboard** (`.`)           | `StatCard`: `unit`, `breakdown`, delta format (§ `StatCard`) | `StatGroup`, `WidgetGrid`, query-aware `StatCard` — additive                           | —                                                                                              | **the column law keys on the CONTAINER; `cols={4}` is 2-up at `sm`** (§ Dashboard) | —                                                                     | —      | —                                                                                                         | —                                                                             | —                                                                                                               |
+| **toolchain** (`./configs/*`) | —                                                            | —                                                                                      | the shipped lefthook preset's `check-theme` BROKE — the CLI resolver stopped ascending (§ CLI) | the preset's default bin, and the `root:` recipe (§ Toolchain)                     | —                                                                     | —      | —                                                                                                         | —                                                                             | —                                                                                                               |
+| **CLI** (`basalt-ui`)         | —                                                            | —                                                                                      | **resolver stops relocating; `doctor` loses 6 of 10 checks** (§ CLI)                           | —                                                                                  | —                                                                     | —      | —                                                                                                         | —                                                                             | —                                                                                                               |
+| **guards**                    | five rules → `error` (§ Guards)                              | six new ids at `warn` (§ preamble)                                                     | `query-dual-import` retired in 1.29.1 (§ Guards)                                               | four rules → `error` (§ Guards)                                                    | —                                                                     | —      | —                                                                                                         | `raw-breakpoint`: the container-grid answer, `error` at 1.33.0 (§ Unreleased) | `FormRow`/`FormGroup` homes in both lanes; `basalt-main` dropped (§ Fixes)                                      |
 
 ---
 
-## Unreleased
+## Unreleased — the 1.32.0 recipe resolves, and the gaps consumers hit upgrading to it
 
-_Nothing yet. Author the next section under this heading as `## Unreleased — <title>`; the
-release renames it and opens a new one here._
+A patch: no new API beyond restoring what 1.31.0/1.32.0 already documented. Eight consumers
+upgraded to 1.32.0; this section is what they had to find out by reading source.
+
+### Fixes you can now delete a workaround for
+
+| What                                                                                                                                                                                                                                                                                                                                                                  | Delete                                                                                                           |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| **`SIZE_CLASSES`, `CONTAINER_CLASSES`, `resolveContainerClass`, `ContainerClass` are exported from `basalt-ui/tokens`.** The 1.31.0/1.32.0 sections, the `raw-breakpoint` message and the `BasaltDataTable` JSDoc all named that import; it did not resolve. A test now fails the build when a fenced import in this file names a symbol its subpath does not export. | the local `container-classes.ts` mirror or the literal `'480px'`/`800` — import them                             |
+| **`FormRow` / `FormGroup` are control homes in `check-theme` too.** The oxlint plugin already treated them as homes; the text lane's `raw-selection-control` did not, so a correctly migrated form row warned (and would have errored at 1.33.0). A parity test now pins both lanes' home lists to one set.                                                           | every `theme-allow raw-selection-control — … FormRow/FormGroup …` waiver (grep `WORKAROUND: homed in a FormRow`) |
+| **`basalt-main` is no longer an accepted `@container` name.** Nothing ever declared it, so a query against it never matched. Declare your own container (`container: <name> / inline-size` on the element) or use `basalt-grid` on the parent.                                                                                                                        | `@container basalt-main …` — rewrite against a container you declare                                             |
+| **The `raw-media-query` message no longer over-claims.** Only `basalt-card` and unnamed `@container` queries are judged against the 0/240/480/800 table; any other declared name is accepted at any width. Same behaviour, honest text.                                                                                                                               | —                                                                                                                |
+| **`raw-breakpoint` exempts a `tests?/` directory** (e.g. a `tests/setup/dom.ts` `matchMedia` polyfill), not only `*.test.*`/`__tests__`. The message now says `cols={{ base: 3 }}` is just `cols={3}`, and a `(hover: none)` read gets a pointer-tier hint.                                                                                                           | the polyfill's `theme-allow raw-breakpoint`                                                                      |
+| **`FormGroup direction="row"` no longer stretches a trailing button** (`align-items: flex-end`).                                                                                                                                                                                                                                                                      | a `style={{ alignSelf: … }}` on the button                                                                       |
+
+**After any guard narrows, audit your waivers:** `basalt-ui check-theme --audit-allows` lists every
+`theme-allow` and whether it still suppresses anything. Dead ones (rb carried five
+`in-body-page-title`, linewatch one `bound-control-outside-home`) go.
+
+**Scope — the breakpoint law is Mantine/CSS-scoped.** `raw-breakpoint` is an oxlint rule over JSX
+and `raw-media-query` a `check-theme` kind over `.css`. A tokens-only (Tailwind) consumer has only
+the `check-theme` lane; nothing here asks it to adopt `type="container"` grids.
+
+### Container recipes 1.32.0 left implicit
+
+**Swap two children at a container width in ONE query** — narrow default, flip both sides inside
+one `min-width` rule. A `max-width: 799.9px` / `min-width: 800px` pair leaves a sub-pixel band where
+both or neither render.
+
+```css
+.root {
+  container: basalt-grid / inline-size;
+}
+.wide {
+  display: none;
+}
+@container basalt-grid (min-width: 800px) {
+  .narrow {
+    display: none;
+  }
+  .wide {
+    display: block;
+  }
+}
+```
+
+**A plain Mantine `Table` (not `BasaltDataTable`)** has no column fold or card projection; the
+sanctioned remedy is the same CSS module — declare the container on the wrapper and hide columns or
+swap to a list inside a `min-width` query. `BasaltDataTable` needs the optional
+`@tanstack/react-table` peer; don't add it only to get the fold.
+
+**Layouts that need a step above `wide` (800px).** There is no fifth class; one ships when two named
+consumers need the same width. Until then, verified against the 1.32.0 plugin:
+
+| Where                                                                    | Off-class width (e.g. `1200px`)                                                                                         |
+| ------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
+| `SimpleGrid type="container"` px key — `cols={{ base: 1, '1200px': 5 }}` | passes: `raw-breakpoint` does not judge px keys, only theme names (`sm`)                                                |
+| `Grid type="container"` `breakpoints` map value — `xl: '1200px'`         | passes: the map's values are not judged                                                                                 |
+| `@container basalt-card` or unnamed, in CSS                              | flagged — `theme-allow raw-media-query — <why this layout needs 1200px>`                                                |
+| `@container <your-own-name>` or `basalt-grid`, in CSS                    | passes today; a later minor may judge `basalt-grid` — prefer a reasoned `theme-allow` over relying on the unjudged name |
+
+Either way, write the reason next to the width: it is the evidence the fifth class is waiting on.
+
+**`ResponsiveChartHeight` `sm` (768px) → which key.** `wide` (800) is 32px later and keeps the old
+step's meaning ("tablet or wider"); `regular` (480) opens 288px earlier. Pick by which side of the old
+width the height was for.
+
+### `BasaltDataTable` `renderCard` (1.32.0, undocumented here until now)
+
+The law lives in the prop's JSDoc (`src/data/data-table.tsx`, shipped in `dist/data/table.d.ts`).
+The points consumers tripped on:
+
+- Swaps at the table's OWN width `< CONTAINER_CLASSES.regular` (480px), not the viewport.
+- Card order is the table's processed order — sort, filter, page. For a domain order, pass
+  `initialSorting` or sort `data`; there is no second sort.
+- `minWidth` disables the COLUMN fold (it declares a horizontal floor) and is ignored by the card
+  list. `stickyHeader` alone keeps the fold; pair it with `maxHeight` to stick at every width.
+- Activation is click or **Enter** — not Space (the browser's page scroll on a focused non-button).
+
+### Shell-less apps and the 1.31.0 breakpoint move
+
+1.31.0 moved `sm` from 48em to **52.5em** (840px). What its checklist missed:
+
+- **Re-key your own literals:** grep `.css` for `47.99375em` / `48em` → `52.49375em` / `52.5em`.
+- **A shell-less app's gutter / sticky-bar CSS belongs under your own `shell/` directory** at
+  52.5em: any `shell/`-pathed CSS may write a width `@media` at a `SIZE_CLASSES` boundary; anywhere
+  else it is `raw-media-query`.
+- **A consumer-owned Mantine `AppShell`** resolves `navbar.breakpoint` / `aside.breakpoint` through
+  `theme.breakpoints`, so `breakpoint: 'sm'` collapses at 840px now, not 768px.
+- **In the `medium` class the sidebar defaults to the rail**, and the rail hides a `kind: 'custom'`
+  block entirely (a list block keeps a dot only with both `icon` and `count`). Anything a
+  `medium`-width user needs must not live only in a custom block.
+- **`PageBar` without a shell:** see the shell-less example in its JSDoc — `title` leads the one
+  sticky bar, and `classNames.root` is where the gutter bleed goes.
+
+### `useSizeClass()` outside the shell — two sanctioned uses
+
+Layout stays a container decision; an overlay's form (`Drawer` side, sheet vs dialog) and content
+paired with a `ViewTabs` option `only: 'sm-down'` may read it. Law and wording:
+`agent/rules/basalt-mantine.md` (a shipped rule, placed by `basalt-ui sync`).
 
 ## 1.32.0 — `basalt/raw-breakpoint` gets its answer
 
