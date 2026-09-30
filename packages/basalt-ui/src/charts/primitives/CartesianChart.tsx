@@ -670,10 +670,14 @@ function CartesianPlot<T>({
   // the actual law: only a band (category) domain wraps or rotates; time and number domains thin.
   const categorical = tight && classifyDomain(keys) === 'band'
 
+  // The room one flat x tick label needs at the tick font the axis will actually paint
+  // (`docs/CHARTS-SPEC.md` §8) — keyed on the labels and font alone, so a y-label or margin change
+  // never re-measures every x label.
+  const flatLabelPx = useMemo(() => xLabelPxFor(xLabels, tier.axisFont), [xLabels, tier.axisFont])
+
   // Everything `autoMargin` measures except the rotation, measured once for every pass so a label
   // can never differ between the one that DECIDES and the one that PAINTS — plus the 45° margin (a
-  // rotated label reaches into the left gutter) and `xLabelPx`, the room one flat x tick label
-  // needs at the tick font the axis will actually paint (`docs/CHARTS-SPEC.md` §8).
+  // rotated label reaches into the left gutter).
   const measured = useMemo(() => {
     const marginInput: AutoMarginInput = {
       left: yPlacement === 'outside' ? leftLabels : [],
@@ -690,7 +694,6 @@ function CartesianPlot<T>({
       marginInput,
       flatMargin: autoMargin(marginInput),
       rotated45Margin: autoMargin({ ...marginInput, rotate: 45 }),
-      flatLabelPx: xLabelPxFor(xLabels, tier.axisFont),
     }
   }, [
     leftLabels,
@@ -706,13 +709,14 @@ function CartesianPlot<T>({
     () =>
       resolveXAxisLayout({
         ...measured,
+        flatLabelPx,
         xLabels,
         fontPx: tier.axisFont,
         plotWidth: plot.width,
         categorical,
         xLabelRotate,
       }),
-    [measured, xLabels, tier.axisFont, plot.width, categorical, xLabelRotate],
+    [measured, flatLabelPx, xLabels, tier.axisFont, plot.width, categorical, xLabelRotate],
   )
 
   // End-of-line labels are planned FIRST, against the base margin: the right gutter is reserved
