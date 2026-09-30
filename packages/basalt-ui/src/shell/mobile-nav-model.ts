@@ -87,8 +87,6 @@ export function blockRowCount(blocks: readonly SidebarBlock[] | undefined): numb
   }).length
 }
 
-const DEV = process.env['NODE_ENV'] !== 'production'
-
 /**
  * §2.3 rule 1. A section's `mobile: false` wins over every item inside it; otherwise the item's own
  * field decides, with the shorthand booleans normalized and `undefined` meaning "reachable, but not
@@ -351,7 +349,7 @@ function buildCandidates(
   /** Rule 11 — `mobile: 'tab'` on a disabled destination is a configuration mistake, not a slot. */
   const tabbable = (item: SidebarItem): boolean => {
     if (!item.disabled) return true
-    if (DEV) {
+    if (process.env.NODE_ENV !== 'production') {
       console.warn(
         `[basalt] MobileNav: "${item.key}" asks for a bar slot but is disabled — a disabled destination never becomes a tab. It still renders, disabled, in the More surface.`,
       )
@@ -373,7 +371,7 @@ function buildCandidates(
         candidates.push(sectionCandidate(section, menuMax))
         continue
       }
-      if (DEV) {
+      if (process.env.NODE_ENV !== 'production') {
         console.warn(
           `[basalt] MobileNav: mobileNav.tabs names "${id}", which is neither a destination key nor a visible section label — ignoring it.`,
         )
@@ -464,7 +462,7 @@ export function projectMobileNav(
   const limit = needsMore ? maxTabs - 1 : maxTabs
   const kept = candidates.slice(0, limit)
   const dropped = candidates.slice(limit)
-  if (DEV && dropped.length > 0) {
+  if (process.env.NODE_ENV !== 'production' && dropped.length > 0) {
     // Rule 13 wants the NAMES, not a tally: "2 candidates dropped" tells a consumer their bar is
     // wrong, while the keys tell them which `mobile: 'tab'` to move or which section to reorder.
     console.warn(

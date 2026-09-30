@@ -29,7 +29,6 @@ import type { ReactNode } from 'react'
 import { useEffect } from 'react'
 import { missingLayer } from '../common/errors'
 import type { Slot } from '../register'
-import { isDev } from '../common/is-dev'
 
 // ── Lazy @mantine/modals resolution ───────────────────────────────────────────
 // @mantine/modals is an OPTIONAL peer — never imported at module evaluation time, so importing
@@ -372,7 +371,7 @@ export const overlays = {
   open<K extends OverlayKey>(key: K, props: OverlayProps<K>): void {
     const spec = activeOverlays[key as string]
     if (spec === undefined) {
-      if (isDev())
+      if (process.env.NODE_ENV !== 'production')
         console.warn(`[basalt] overlays.open: no overlay registered for "${String(key)}"`)
       return
     }

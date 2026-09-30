@@ -24,7 +24,6 @@
  */
 import type { ReactNode } from 'react'
 import type { Slot } from '../register'
-import { isDev } from '../common/is-dev'
 
 // ── Context ───────────────────────────────────────────────────────────────────
 
@@ -172,7 +171,8 @@ export function defineCommand(cmd: Command): Command {
 export function runCommand(id: CommandId, ctx?: CommandRunContext): void | Promise<void> {
   const cmd = activeCommands[id as string]
   if (cmd === undefined) {
-    if (isDev()) console.warn(`[basalt] runCommand: no command registered for "${id}"`)
+    if (process.env.NODE_ENV !== 'production')
+      console.warn(`[basalt] runCommand: no command registered for "${id}"`)
     return
   }
   return cmd.run(ctx)

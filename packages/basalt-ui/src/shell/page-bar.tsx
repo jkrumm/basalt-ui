@@ -46,9 +46,6 @@ import asideClasses from './page-aside.module.css'
 /** The custom property row 2's measured height is published on. */
 export const PAGE_BAR_HEIGHT_VAR = '--basalt-page-bar-h'
 
-/** Dev-only diagnostics, constant-folded out of a production bundle — see {@link useAsidePanelSlot}. */
-const DEV = process.env['NODE_ENV'] !== 'production'
-
 /**
  * What a `PageAside` publishes when it projects itself into row 2 below `sm`
  * (`docs/ASIDE-SPEC.md` §0 "Desktop and mobile are one declaration"). Metadata only — the aside's
@@ -236,7 +233,7 @@ export function useAsidePanelSlot(): {
     setSettled(true)
   }, [])
   useEffect(() => {
-    if (!DEV || !settled || !inShell || panelHost) return
+    if (process.env.NODE_ENV === 'production' || !settled || !inShell || panelHost) return
     console.warn(
       "[basalt] PageAside: this page's PageBar renders no row 2 (no `tabs`, no `filters`, no `filtersEnd`), so below `sm` there is no pill to open the aside — it renders in flow at the bottom of the page instead. Give the bar a row 2, or expect the in-flow form on a phone.",
     )

@@ -38,7 +38,6 @@
  * <PartList parts={coalesceParts(parts)} />
  */
 import type { AgentPart, ReasoningPart, TextPart, ToolCallPart } from './parts'
-import { isDev } from '../common/is-dev'
 
 type TextLike = TextPart | ReasoningPart
 
@@ -170,7 +169,7 @@ function mergeToolPart(existing: ToolCallPart, next: ToolCallPart): ToolCallPart
       // and make every field read below a compile error, so the assertion is what makes the
       // runtime value usable. It asserts nothing tsc has not already proved on the line above.
       const fallback = unhandled as ToolCallPart
-      if (isDev()) {
+      if (process.env.NODE_ENV !== 'production') {
         console.warn(
           `[basalt] coalesceParts: unrecognized tool state ${JSON.stringify(fallback.state)} — kept, merged best-effort`,
         )

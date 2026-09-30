@@ -60,7 +60,6 @@ import { formatRelativeTime } from './relative-time'
 import { ToolChip } from './tool-chip'
 import { resolveVirtualize } from './virtualize'
 import type { VirtualizeOptions, VirtualizeProps } from './virtualize'
-import { isDev } from '../common/is-dev'
 
 /** The mono, uppercase, letter-spaced micro-label idiom (docs/DESIGN-SPEC.md §3) — shared by the
  * transcript's role labels and the reasoning/tool-call headers below. */
@@ -189,11 +188,11 @@ function UnknownPartChip({ part }: { part: ForeignPart }): JSX.Element {
   )
 }
 
-/** Consulted only when `ThreadTranscript` gets no `fallbackRenderer` prop. `isDev()` reads
+/** Consulted only when `ThreadTranscript` gets no `fallbackRenderer` prop. The gate reads
  * `process.env.NODE_ENV` (not `import.meta.env` — basalt-ui bans it) INSIDE the render so tests can
  * flip it. */
 const DEFAULT_FALLBACK_RENDERER: PartRenderer<ForeignPart> = ({ part }) =>
-  isDev() ? <UnknownPartChip part={part} /> : null
+  process.env.NODE_ENV !== 'production' ? <UnknownPartChip part={part} /> : null
 
 // ── Part resolution — the three-step order that is the whole design ───────────
 //

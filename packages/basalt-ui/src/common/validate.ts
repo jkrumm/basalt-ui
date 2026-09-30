@@ -7,7 +7,6 @@
  * mean warns once in dev and renders on (`useValidateProps`).
  */
 import { useEffect } from 'react'
-import { isDev } from './is-dev'
 import { requiredProp } from './errors'
 
 /** A check returns the message(s) it has, or nothing. `null`/`undefined` entries are ignored. */
@@ -23,8 +22,8 @@ const reported = new Set<string>()
 
 /**
  * Dev-only prop validation. `console.error`s each message ONCE per `(component, message)` pair, and
- * is a no-op in production: `isDev()` reads `process.env.NODE_ENV`, which every bundler
- * constant-folds, so the whole body disappears from a production build.
+ * is a no-op in production: the gate is a literal `process.env.NODE_ENV` read, which every bundler
+ * constant-folds, so the whole body disappears from a production build (see `dev-gate.test.ts`).
  *
  * **The dedup key is `${component} ${message}`, and nothing else** — not the instance, not the
  * props. Two instances of one component producing the SAME message say it once between them, which
@@ -46,7 +45,7 @@ export function useValidateProps(
   deps: unknown[],
 ): void {
   useEffect(() => {
-    if (!isDev()) return
+    if (process.env.NODE_ENV === 'production') return
     const result = check()
     const messages = Array.isArray(result) ? result : [result]
     for (const raw of messages) {
@@ -67,7 +66,7 @@ export function useValidateProps(
  * are about to win in the very next render.
  */
 export function reportOnce(component: string, message: string): void {
-  if (!isDev()) return
+  if (process.env.NODE_ENV === 'production') return
   const key = `${component} ${message}`
   if (reported.has(key)) return
   reported.add(key)

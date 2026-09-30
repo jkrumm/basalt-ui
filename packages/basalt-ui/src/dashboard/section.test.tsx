@@ -158,7 +158,7 @@ describe('id — the scroll-anchor contract', () => {
  * that outlives a render, a remount and this file. `resetValidatedProps()` between cases is what
  * keeps each test's expectation about its own render rather than about test order.
  *
- * Relies on the default test-runner NODE_ENV being non-production (`isDev()` true), matching
+ * Relies on the default test-runner NODE_ENV being non-production (dev gates open), matching
  * `data/data-table.test.tsx`'s manualPagination dev-throw tests — no explicit env override needed.
  */
 describe('the dev-only misuse warnings', () => {

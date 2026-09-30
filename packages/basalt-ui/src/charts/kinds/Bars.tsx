@@ -13,7 +13,6 @@ import type { ChartState } from '../primitives/ChartPending'
 import { curveFor, LINE_OVERLAY_STROKE_WIDTH } from '../series'
 import type { ChartLegendConfig, ChartSeries, SeriesCurve } from '../series'
 import { padAutoLower } from '../utils/domain'
-import { isDev } from '../../common/is-dev'
 
 /**
  * `T = unknown` is load-bearing, not a shortcut: it keeps a consumer's existing
@@ -196,7 +195,7 @@ function BarsInner<T>(props: BarsProps<T>) {
   // Stacking sums bar heights via `posOffset`/`negOffset` in yScale units directly — a log axis
   // has no additive zero, so a stacked total is meaningless on it (`docs/CHARTS-SPEC.md`'s null-gap
   // + log contract). `grouped` bars only ever read one bar's own scaled value, so they're unaffected.
-  if (isDev() && barLayout === 'stacked' && y?.scale === 'log') {
+  if (process.env.NODE_ENV !== 'production' && barLayout === 'stacked' && y?.scale === 'log') {
     throw new Error(
       'Bars: stacked bars cannot use a log axis (y.scale: "log") — the stack sums bar heights, ' +
         "and a log axis has no additive zero to sum from. Use barLayout: 'grouped' instead.",

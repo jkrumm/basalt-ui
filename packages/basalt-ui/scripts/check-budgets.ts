@@ -198,14 +198,15 @@ async function budgets(): Promise<Budget[]> {
       ceiling: 15,
     },
     { label: 'CLI non-test lines (src/cli/**)', value: cliNonTestLines(), ceiling: 4000 },
-    // Landed value (1.33.0, lab store gated out; 1.30.2 measured 19393, 1.32.1 20379). Raise it
-    // deliberately, in the commit that spends it, never to make a red gate green.
+    // Landed value (1.33.0: lab store + every isDev()/DEV-const gate folded; 1.30.2 19393,
+    // 1.32.1 20379). Raise it deliberately, in the commit that spends it, never to make a red
+    // gate green.
     existsSync(PROVIDER_ONLY_DIST)
-      ? { label: PROVIDER_ONLY_LABEL, value: await providerOnlyGzip(), ceiling: 18900 }
+      ? { label: PROVIDER_ONLY_LABEL, value: await providerOnlyGzip(), ceiling: 18710 }
       : {
           label: PROVIDER_ONLY_LABEL,
           value: null,
-          ceiling: 18900,
+          ceiling: 18710,
           skipped: 'skipped: dist/ missing, run `bun run build`',
         },
   ]

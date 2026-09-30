@@ -32,7 +32,6 @@ import { useEffect, useRef, useState } from 'react'
 import type { ComponentType, ReactNode } from 'react'
 import type { BasaltProps } from '../common/props'
 import { assertRequiredProps } from '../common/validate'
-import { isDev } from '../common/is-dev'
 import type { FieldHandle, RangeField, RangeValue } from '../state'
 import classes from './controls.module.css'
 import { useFilterRegistration, useFilterSurface } from './filter-context'
@@ -60,7 +59,7 @@ const noPickerWarned = new Set<string>()
  * the type cannot tell "deliberately preset-only" from "forgot the import".
  */
 function warnCustomWithoutPicker(label: string, unreachable: boolean): void {
-  if (!unreachable || !isDev() || noPickerWarned.has(label)) return
+  if (!unreachable || process.env.NODE_ENV === 'production' || noPickerWarned.has(label)) return
   noPickerWarned.add(label)
   // oxlint-disable-next-line no-console -- a dev-time wiring warning has no other channel
   console.warn(
