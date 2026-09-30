@@ -409,13 +409,15 @@ export function checkD(
  * has, so scanning it would make the check depend on the working tree it happens to sit in.
  */
 export function findRepoMdFiles(): string[] {
-  const repoRoot = join(pkgRoot, '..', '..')
-  const entries = readdirSync(repoRoot, { recursive: true }) as string[]
-  return entries
-    .filter(
-      (rel) => rel.endsWith('.md') && !/(^|[\\/])(node_modules|dist|\.git|\.claude)[\\/]/.test(rel),
-    )
-    .map((rel) => join(repoRoot, rel))
+  // Pruned during the walk, not filtered after it: a recursive readdir descends into every
+  // `.claude/worktrees/*/node_modules` first, which took this past 30s on a tree with worktrees.
+  const skip = new Set(['node_modules', 'dist', '.git', '.claude'])
+  const walk = (dir: string): string[] =>
+    readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+      if (entry.isDirectory()) return skip.has(entry.name) ? [] : walk(join(dir, entry.name))
+      return entry.name.endsWith('.md') ? [join(dir, entry.name)] : []
+    })
+  return walk(join(pkgRoot, '..', '..'))
 }
 
 /**
