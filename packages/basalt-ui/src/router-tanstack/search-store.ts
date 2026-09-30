@@ -43,6 +43,20 @@ export type CreateSearchStoreOptions<S extends Record<string, AnyField>> = {
   fields: S
   /** Envelope version — bump when the field set changes to discard stale localStorage. */
   version?: number
+  /**
+   * Search params this store does NOT own that every field write drops from the URL, in the SAME
+   * navigate — `['page']` on a paginated list, so narrowing the set on page 5 lands on page 1 and
+   * Back restores both together. Dropped, not written: the route's own `validateSearch` resolves the
+   * default (`page` → 1), so the store never has to know it. Applies to a field's setter (when the
+   * value changes), its `clear()` and `useReset()`; an explicit `patch` naming the same key wins.
+   *
+   * Store-wide by design: every filter of a list narrows the same list. A param the store owns is
+   * refused at definition — reset a field with `useReset()` or its own `clear()`.
+   *
+   * @example
+   * createSearchStore({ key: 'shares', fields: { q: field.string({}), sort: … }, resets: ['page'] })
+   */
+  resets?: readonly string[]
 }
 
 export type SearchStore<S extends Record<string, AnyField>> = {
@@ -205,6 +219,28 @@ function assertNoLazyUrlFallback(key: string, fields: Record<string, AnyField>):
   }
 }
 
+/**
+ * `resets` exists for keys the store does NOT own; one it owns would be dropped from the URL while
+ * the mirror kept its value — the same URL/mirror split `patch` refuses. Static, so thrown at
+ * definition.
+ */
+function assertResetsNotOwned(input: {
+  key: string
+  resets: readonly string[]
+  paramOwners: ReadonlyMap<string, string>
+}): void {
+  const { key, resets, paramOwners } = input
+  for (const param of resets) {
+    const owner = paramOwners.get(param)
+    if (owner === undefined) continue
+    throw new Error(
+      `basalt-ui: createSearchStore('${key}'): \`resets\` names \`${param}\`, which this store's ` +
+        `field '${owner}' owns. \`resets\` is for sibling params the store does not own (a ` +
+        '`page`); a field of the store is reset through `useReset()` or its own `clear()`.',
+    )
+  }
+}
+
 /** The memory-only lane: neither the URL nor the mirror, so the value lives in the store's own
  * session-scoped external store (`StoreCore.memoryUse`) — the lane `createLocalStore` also uses. */
 function isMemoryLane(entry: StoreEntry): boolean {
@@ -240,6 +276,12 @@ export function buildSearchStore<const S extends Record<string, AnyField>>(
   for (const entry of core.urlEntries) {
     for (const param of entry.codec.params) paramOwners.set(param, entry.name)
   }
+  const resets = o.resets ?? []
+  assertResetsNotOwned({ key: o.key, resets, paramOwners })
+  /** Spread right after `prev` in every store navigate, so a `patch` or the field itself wins. */
+  const resetPatch: Record<string, undefined> = Object.fromEntries(
+    resets.map((param) => [param, undefined]),
+  )
   const persistedNames = new Set(
     core.entries.filter((entry) => entry.codec.lane.persist).map((entry) => entry.name),
   )
@@ -328,6 +370,7 @@ export function buildSearchStore<const S extends Record<string, AnyField>>(
         to: '.',
         search: (prev: Record<string, unknown>) => ({
           ...prev,
+          ...resetPatch,
           ...entry.codec.toSearch(entry.codec.fallback),
         }),
         replace: true,
@@ -356,8 +399,11 @@ export function buildSearchStore<const S extends Record<string, AnyField>>(
             // `patch` FIRST, the field's own params last: a patch is for keys the store does not
             // own (clearing a sibling `detailDate` with `undefined`), so it must never be able to
             // overwrite the value this very call is setting.
+            // `resets` only when the value moves: a no-op write (a debounced box settling back on
+            // what it held) must not throw the reader off the page they are on.
             search: (prev: Record<string, unknown>) => ({
               ...prev,
+              ...(entry.codec.equals(next, value) ? undefined : resetPatch),
               ...opts?.patch,
               ...entry.codec.toSearch(next),
             }),
@@ -464,7 +510,7 @@ export function buildSearchStore<const S extends Record<string, AnyField>>(
         }
         navigate({
           to: '.',
-          search: (prev: Record<string, unknown>) => ({ ...prev, ...patch }),
+          search: (prev: Record<string, unknown>) => ({ ...prev, ...resetPatch, ...patch }),
           replace: true,
           // Same reason as a single field's write above — a `Reset all` pressed from the mobile
           // sheet must not also scroll the page it was pressed on.
