@@ -1,12 +1,10 @@
 import type { CSSProperties, MouseEvent, ReactNode } from 'react'
-import { useCallback, useEffect, useId, useRef, useState } from 'react'
-import { createPortal } from 'react-dom'
 import type { BasaltProps } from '../../common/props'
 import { alpha, VX } from '../../tokens'
-import { useDismissOnOutside } from '../cursor/touch-pin'
 import type { SeriesRole, LegendPlacement } from '../series'
 import { DOTS_HIT_GAP, LEGEND_DOT_SIZE, LEGEND_ROW_GAP, orderEntries } from './chart-frame-layout'
 import { useChartMetrics, useCoarsePointer } from './chart-tier'
+import { LegendDisclosure, useLegendDisclosure } from './legend-disclosure'
 
 export type LegendEntry = {
   key: string
@@ -56,55 +54,6 @@ const LEGEND_ITEM_BUTTON: CSSProperties = {
 
 /** Stable empty set — a fresh `new Set()` default would be a new identity on every render. */
 const NO_HIDDEN: ReadonlySet<string> = new Set()
-
-const DISCLOSURE_PANEL: CSSProperties = {
-  position: 'fixed',
-  zIndex: VX.zIndexFloating,
-  display: 'flex',
-  flexDirection: 'column',
-  gap: LEGEND_ROW_GAP,
-  // theme-allow raw-scroll-container — a fixed floating panel of one legend, not app chrome
-  overflowY: 'auto',
-  // `<dialog open>` brings UA chrome (centring margin, border, fit-content box) this resets.
-  margin: 0,
-  border: 'none',
-  width: 'auto',
-  height: 'auto',
-  padding: 10,
-  boxSizing: 'border-box',
-  backgroundColor: VX.surface.overlay,
-  boxShadow: VX.shadowOverlay,
-  color: VX.muted,
-  borderRadius: VX.radiusCard,
-}
-
-/** A popover never collapses below one usable row, however little room the chip leaves. */
-const DISCLOSURE_MIN_HEIGHT = 96
-
-/** A popover hangs off its chip (flipping above when there is no room below); a sheet is docked. */
-function disclosurePlacement(chip: DOMRect, coarse: boolean): CSSProperties {
-  if (coarse) {
-    return {
-      left: 0,
-      right: 0,
-      bottom: 0,
-      maxHeight: '60dvh',
-      borderBottomLeftRadius: 0,
-      borderBottomRightRadius: 0,
-      padding: '12px 16px calc(12px + env(safe-area-inset-bottom, 0px))',
-    }
-  }
-  const below = window.innerHeight - chip.bottom
-  const left = Math.max(8, Math.min(chip.left, window.innerWidth - 248))
-  const base = { left, right: 'auto', minWidth: 200, maxWidth: 'calc(100vw - 16px)' }
-  return below >= 200 || below >= chip.top
-    ? { ...base, top: chip.bottom + 4, maxHeight: Math.max(below - 12, DISCLOSURE_MIN_HEIGHT) }
-    : {
-        ...base,
-        bottom: window.innerHeight - chip.top + 4,
-        maxHeight: Math.max(chip.top - 12, DISCLOSURE_MIN_HEIGHT),
-      }
-}
 
 function wrapperStyle(placement: LegendPlacement, fontSize: number, dots: boolean): CSSProperties {
   const vertical = placement === 'left' || placement === 'right'
@@ -365,71 +314,7 @@ export function ChartLegend({
 }) {
   const tier = useChartMetrics()
   const coarse = useCoarsePointer()
-  const [disclosure, setDisclosure] = useState<CSSProperties | null>(null)
-  // Whichever button opened the panel — the `All N` chip, or (dots mode) any entry — so focus
-  // returns to where the user actually tapped, not to a fixed chip that might not exist.
-  const triggerRef = useRef<HTMLButtonElement | null>(null)
-  const panelRef = useRef<HTMLDialogElement>(null)
-  const open = disclosure !== null
-
-  const panelId = useId()
-  const wasOpen = useRef(false)
-
-  const openDisclosure = (trigger: HTMLButtonElement) => {
-    triggerRef.current = trigger
-    setDisclosure(disclosurePlacement(trigger.getBoundingClientRect(), coarse))
-  }
-
-  // Focus moves into the panel on open and back to the trigger on EVERY close path.
-  useEffect(() => {
-    if (open) panelRef.current?.focus()
-    else if (wasOpen.current) triggerRef.current?.focus()
-    wasOpen.current = open
-  }, [open])
-
-  // The panel is fixed to where the trigger WAS — a scroll outside it (any scroller, hence capture)
-  // or a resize leaves it hanging off nothing; the panel's own scroll is not one. Shared with the
-  // chart cursors' own outside-dismiss (`useChartCursor`/`useDiscreteCursor`, see `touch-pin.ts`).
-  const isInsidePanel = useCallback(
-    (target: Node): boolean =>
-      panelRef.current?.contains(target) === true || triggerRef.current?.contains(target) === true,
-    [],
-  )
-  useDismissOnOutside({
-    enabled: open,
-    isInside: isInsidePanel,
-    onDismiss: () => setDisclosure(null),
-    dismissOnResize: true,
-    scrollExemptInside: true,
-  })
-
-  // The coarse sheet claims `aria-modal` (below), which is a claim that Tab cannot leave it — a
-  // native `<dialog open>` (no `showModal()`) does not enforce that on its own (B14). Wrap Tab at
-  // the panel's own first/last focusable rather than the fine popover, which is dismissed by an
-  // outside click/Escape just as easily and never claimed to be modal in the first place.
-  useEffect(() => {
-    if (!open || !coarse) return
-    const panel = panelRef.current
-    if (panel === null) return
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key !== 'Tab') return
-      const focusable = panel.querySelectorAll<HTMLElement>(
-        'button, [tabindex]:not([tabindex="-1"])',
-      )
-      const first = focusable[0]
-      const last = focusable[focusable.length - 1]
-      if (first === undefined || last === undefined) return
-      if (e.shiftKey && document.activeElement === first) {
-        e.preventDefault()
-        last.focus()
-      } else if (!e.shiftKey && document.activeElement === last) {
-        e.preventDefault()
-        first.focus()
-      }
-    }
-    panel.addEventListener('keydown', onKeyDown)
-    return () => panel.removeEventListener('keydown', onKeyDown)
-  }, [open, coarse])
+  const { open, panelId, openFrom, close, panel } = useLegendDisclosure(coarse)
 
   const handleEnter = (key: string) => onHighlight?.(key)
   const handleLeave = () => onHighlight?.(null)
@@ -476,7 +361,7 @@ export function ChartLegend({
           textDecoration: hidden.has(item.key) ? 'line-through' : 'none',
         }}
         {...(isDotTrigger
-          ? { onClick: (e: MouseEvent<HTMLButtonElement>) => openDisclosure(e.currentTarget) }
+          ? { onClick: (e: MouseEvent<HTMLButtonElement>) => openFrom(e.currentTarget) }
           : onToggle !== undefined && { onClick: () => onToggle(item.key) })}
         onMouseEnter={() => handleEnter(item.key)}
         onMouseLeave={handleLeave}
@@ -514,7 +399,7 @@ export function ChartLegend({
         aria-expanded={open}
         aria-haspopup="dialog"
         aria-controls={panelId}
-        onClick={(e) => (open ? setDisclosure(null) : openDisclosure(e.currentTarget))}
+        onClick={(e) => (open ? close() : openFrom(e.currentTarget))}
         style={{ ...LEGEND_ITEM_BUTTON, cursor: 'pointer', textDecoration: 'underline' }}
       >
         {`All ${entries.length}`}
@@ -528,41 +413,9 @@ export function ChartLegend({
       style={{ ...wrapperStyle(placement, tier.legendFontSize, mode === 'dots'), ...style }}
     >
       {nodes}
-      {open &&
-        createPortal(
-          <>
-            {coarse && (
-              <div
-                aria-hidden
-                onPointerDown={(e) => {
-                  e.stopPropagation()
-                  setDisclosure(null)
-                }}
-                style={{
-                  position: 'fixed',
-                  inset: 0,
-                  // One below the panel it sits behind — still `VX.zIndexFloating`-derived, never a
-                  // second unrelated literal (B14).
-                  zIndex: VX.zIndexFloating - 1,
-                  backgroundColor: alpha(VX.neutral, 0.35),
-                }}
-              />
-            )}
-            <dialog
-              ref={panelRef}
-              id={panelId}
-              open
-              tabIndex={-1}
-              aria-label="Legend"
-              {...(coarse && { 'aria-modal': true })}
-              data-basalt-legend-disclosure={coarse ? 'sheet' : 'popover'}
-              style={{ ...DISCLOSURE_PANEL, fontSize: tier.legendFontSize, ...disclosure }}
-            >
-              {entries.map((item) => entryButton(item, true))}
-            </dialog>
-          </>,
-          document.body,
-        )}
+      <LegendDisclosure {...panel} fontSize={tier.legendFontSize}>
+        {entries.map((item) => entryButton(item, true))}
+      </LegendDisclosure>
     </div>
   )
 }
