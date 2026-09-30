@@ -408,7 +408,7 @@ export function checkD(
  * only markdown is gitignored agent scratch (review dumps, wave notes) that a CI checkout never
  * has, so scanning it would make the check depend on the working tree it happens to sit in.
  */
-export function findRepoMdFiles(): string[] {
+export function findRepoMdFiles(root: string = join(pkgRoot, '..', '..')): string[] {
   // Pruned during the walk, not filtered after it: a recursive readdir descends into every
   // `.claude/worktrees/*/node_modules` first, which took this past 30s on a tree with worktrees.
   const skip = new Set(['node_modules', 'dist', '.git', '.claude'])
@@ -417,7 +417,7 @@ export function findRepoMdFiles(): string[] {
       if (entry.isDirectory()) return skip.has(entry.name) ? [] : walk(join(dir, entry.name))
       return entry.name.endsWith('.md') ? [join(dir, entry.name)] : []
     })
-  return walk(join(pkgRoot, '..', '..'))
+  return walk(root)
 }
 
 /**
