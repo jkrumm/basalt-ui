@@ -58,7 +58,7 @@
  * // difficulty: field.number({ fallback: 0, min: 0, max: 5, int: true })
  * <NumberFilter field={library.field.difficulty} label="Difficulty" options={LEVELS} clearable />
  */
-import { Button, NumberInput } from '@mantine/core'
+import { NumberInput } from '@mantine/core'
 import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { BasaltProps } from '../common/props'
@@ -68,7 +68,7 @@ import classes from './controls.module.css'
 import { EnumFilter } from './enum-filter'
 import type { ChoiceHandle } from './enum-filter'
 import { useFilterRegistration, useFilterSurface } from './filter-context'
-import { FilterPill } from './filter-pill'
+import { FilterClearButton, FilterPill } from './filter-pill'
 import { useControlName } from './filter-sheet'
 import { PanelRow } from './panel-row'
 
@@ -285,22 +285,7 @@ function NumberStepper({
         {input}
         {/* Same placement as `EnumFilter`'s: popover only — the sheet and panel rows reset through
             the `FilterSet` registration above. The draft follows the clear via its effect. */}
-        {clearable === true && !isDefault && (
-          <Button
-            variant="subtle"
-            size="ctl"
-            // The press would blur the input first, and blur COMMITS the draft — so a typed `300`
-            // would land in the URL a tick before Clear wiped it. Keeping focus skips that write.
-            onMouseDown={(event) => {
-              event.preventDefault()
-            }}
-            onClick={() => {
-              field.clear()
-            }}
-          >
-            Clear
-          </Button>
-        )}
+        {clearable === true && !isDefault && <FilterClearButton onClear={() => field.clear()} />}
       </div>
     </FilterPill>
   )

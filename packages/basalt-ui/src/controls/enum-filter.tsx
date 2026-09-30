@@ -26,13 +26,13 @@
  * its doc). Both public wrappers still type `field` exactly, so a wrong field kind is still a type
  * error at the call site; the widening lives here, where nothing consumer-facing points at it.
  */
-import { Button, Radio, Stack } from '@mantine/core'
+import { Radio, Stack } from '@mantine/core'
 import type { ReactNode } from 'react'
 import type { BasaltProps } from '../common/props'
 import type { FieldOption } from '../state'
 import classes from './controls.module.css'
 import { POPOVER_ROW_HIT_GAP, useFilterRegistration, useFilterSurface } from './filter-context'
-import { FilterPill } from './filter-pill'
+import { FilterClearButton, FilterPill } from './filter-pill'
 import { useControlName } from './filter-sheet'
 import { PanelChoice, PanelRow } from './panel-row'
 import type { FilterOption } from './select-filter'
@@ -157,17 +157,7 @@ export function EnumFilter<T extends string>({
           />
         ))}
       </Stack>
-      {clearable === true && !isDefault && (
-        <Button
-          variant="subtle"
-          size="ctl"
-          onClick={() => {
-            field.clear()
-          }}
-        >
-          Clear
-        </Button>
-      )}
+      {clearable === true && !isDefault && <FilterClearButton onClear={() => field.clear()} />}
     </Radio.Group>
   )
 
