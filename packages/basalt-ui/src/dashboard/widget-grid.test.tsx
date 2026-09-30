@@ -19,6 +19,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import type { ReactNode } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
+import { CONTAINER_CLASSES } from '../tokens/size-classes'
 import { StatGroup } from './stat-group'
 import type { StatGroupCols } from './stat-group'
 import { WidgetGrid } from './widget-grid'
@@ -140,14 +141,11 @@ describe('the responsive half is CSS, never a JS media query (law C9)', () => {
   for (const file of ['widget-grid.module.css', 'stat-group.module.css']) {
     test(`${file} carries the sm and lg blocks`, () => {
       const css = read(file)
-      // px in the container queries, Mantine's own em in the viewport fallback — the same two
-      // boundaries either way. `em` inside a @container condition resolves against the CONTAINER's
-      // font-size rather than the root's, which is why the live law is the px one; see the
-      // module's own header.
-      expect(css).toContain('(min-width: 768px)')
+      // px, never em — `em` inside a @container condition resolves against the CONTAINER's
+      // font-size rather than the root's; see the module's own header. `sm` opens at the `wide`
+      // container class, `lg` at the grid's own 1200.
+      expect(css).toContain(`(min-width: ${CONTAINER_CLASSES.wide}px)`)
       expect(css).toContain('(min-width: 1200px)')
-      expect(css).toContain('min-width: 48em')
-      expect(css).toContain('min-width: 75em')
     })
   }
 
@@ -173,8 +171,8 @@ describe('the responsive half is CSS, never a JS media query (law C9)', () => {
  */
 describe('the law keys on the container, not the viewport', () => {
   const CASES = [
-    { css: 'widget-grid.module.css', name: 'basalt-widget-grid' },
-    { css: 'stat-group.module.css', name: 'basalt-stat-group' },
+    { css: 'widget-grid.module.css', name: 'basalt-grid' },
+    { css: 'stat-group.module.css', name: 'basalt-grid' },
   ]
 
   for (const { css: file, name } of CASES) {
@@ -182,21 +180,19 @@ describe('the law keys on the container, not the viewport', () => {
       const css = read(file)
       expect(css).toContain(`container-name: ${name}`)
       expect(css).toContain('container-type: inline-size')
-      expect(css).toContain(`@container ${name} (min-width: 768px)`)
+      expect(css).toContain(`@container ${name} (min-width: ${CONTAINER_CLASSES.wide}px)`)
       expect(css).toContain(`@container ${name} (min-width: 1200px)`)
     })
 
-    test(`${file} keeps the viewport law only where @container is unsupported`, () => {
-      // Comments stripped first — these files DISCUSS `@media` at length in their headers, and the
-      // assertion is about the rules, not the prose.
+    test(`${file} carries no viewport @media at all`, () => {
+      // Comments stripped first — these files DISCUSS `@media` in their headers, and the assertion
+      // is about the rules, not the prose. The old `@supports not` viewport fallback is gone: it
+      // was unreachable in every browser that parses basalt's `color-mix()`, and two laws live at
+      // once is the one thing these files must never do — the rail's :nth-child suppressors are
+      // more specific than the rule that draws the hairline.
       const css = read(file).replace(/\/\*[\s\S]*?\*\//g, '')
-      // Every @media that survives sits inside the @supports-not block: two laws live at once is
-      // the one thing these files must never do — the rail's :nth-child suppressors are more
-      // specific than the rule that draws the hairline, so an overlapping viewport law would blank
-      // the border on cells in the MIDDLE of a row.
-      const supportsAt = css.indexOf('@supports not (container-type: inline-size)')
-      expect(supportsAt).toBeGreaterThan(-1)
-      expect(css.indexOf('@media')).toBeGreaterThan(supportsAt)
+      expect(css).not.toContain('@media')
+      expect(css).not.toContain('@supports')
     })
   }
 

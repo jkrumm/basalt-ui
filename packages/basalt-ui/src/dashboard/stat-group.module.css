@@ -15,24 +15,24 @@
  * one: a query with no container resolves to false, so a shell-only context would have silently
  * pinned every non-shell consumer to the base count.
  *
- * The `@supports not` block below it is the pre-2023 fallback and the ONLY place the old viewport
- * law survives. It is written as an exclusive alternative rather than as a base the container
- * queries override, because the rail's `:nth-child` suppressors are MORE specific than the rule
- * that draws the border: two overlapping laws would each suppress a different set of leading cells
- * and the rail would lose hairlines in the middle of a row. One law at a time, chosen by support.
+ * The literals are the container-class law (`CONTAINER_CLASSES`, `tokens/size-classes.ts`): the
+ * `sm` count opens at `wide` (800px), not at the viewport-era 768. Two are StatGroup's own and say
+ * so: 260px (one column, below) and 1200px, where the full `cols` count opens. The class table
+ * stops at 800, and 800 is too early for a full KPI row — four cells of ~190px clamp a value a real
+ * dashboard prints (`tests/layout/page-aside.layout.test.ts` measures ~195px against the 844px row
+ * a claimed aside leaves). Conditions are px, never `em`: `em` inside a `@container` condition
+ * resolves against the CONTAINER's font-size, so a consumer panel with smaller text would silently
+ * move the boundary. A condition cannot read a custom property, so the numbers are written; the
+ * COUNTS are custom properties the component sets per instance.
  *
- * The literals: `@container` conditions are stated in px, `@media` ones in Mantine's own `em`
- * (`--mantine-breakpoint-sm` 48em, `--mantine-breakpoint-lg` 75em). Both spellings name the same
- * boundary at the 16px initial font size — 768px and 1200px — but `em` inside a `@container`
- * condition resolves against the CONTAINER's font-size rather than the root's, so a consumer panel
- * with smaller text would silently move the breakpoint. px is the only spelling that cannot drift.
- * (`47.99375em` → `767.9px`, `74.99375em` → `1199.9px`.) A condition still cannot read a custom property either way, so the numbers are written;
- * the COUNTS are custom properties the component sets per instance.
+ * No viewport fallback: basalt's own CSS already requires `color-mix()` (Safari 16.2, Chrome 111,
+ * Firefox 113), and every one of those parses `@container` — a `@supports not (container-type)`
+ * block is unreachable in any browser that renders basalt at all.
  */
 
 .container {
   container-type: inline-size;
-  container-name: basalt-stat-group;
+  container-name: basalt-grid;
 }
 
 .root {
@@ -45,7 +45,7 @@
 
 /* 260px is StatGroup's own literal (docs/DESIGN-CORE.md § Layout, elevation, shapes), not a container class: one column below it,
  * so every cell leads a row and the rail draws no leading hairline at all. */
-@container basalt-stat-group (max-width: 259.9px) {
+@container basalt-grid (max-width: 259.9px) {
   .root {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -56,13 +56,13 @@
   }
 }
 
-@container basalt-stat-group (min-width: 768px) {
+@container basalt-grid (min-width: 800px) {
   .root {
     grid-template-columns: repeat(var(--basalt-stat-group-cols-sm), minmax(0, 1fr));
   }
 }
 
-@container basalt-stat-group (min-width: 1200px) {
+@container basalt-grid (min-width: 1200px) {
   .root {
     grid-template-columns: repeat(var(--basalt-stat-group-cols-lg), minmax(0, 1fr));
   }
@@ -83,14 +83,14 @@
   padding-inline-start: var(--vx-space-stack-md);
 }
 
-@container basalt-stat-group (max-width: 767.9px) {
+@container basalt-grid (max-width: 799.9px) {
   .root[data-divided] > *:nth-child(2n + 1) {
     border-inline-start: 0;
     padding-inline-start: 0;
   }
 }
 
-@container basalt-stat-group (min-width: 768px) and (max-width: 1199.9px) {
+@container basalt-grid (min-width: 800px) and (max-width: 1199.9px) {
   .root[data-divided][data-sm-cols='2'] > *:nth-child(2n + 1),
   .root[data-divided][data-sm-cols='3'] > *:nth-child(3n + 1) {
     border-inline-start: 0;
@@ -98,57 +98,12 @@
   }
 }
 
-@container basalt-stat-group (min-width: 1200px) {
+@container basalt-grid (min-width: 1200px) {
   .root[data-divided][data-cols='2'] > *:nth-child(2n + 1),
   .root[data-divided][data-cols='3'] > *:nth-child(3n + 1),
   .root[data-divided][data-cols='4'] > *:nth-child(4n + 1),
   .root[data-divided][data-cols='5'] > *:nth-child(5n + 1) {
     border-inline-start: 0;
     padding-inline-start: 0;
-  }
-}
-
-/*
- * The pre-container-query fallback — Safari < 16, Chrome < 106, Firefox < 110. Verbatim the law
- * this file shipped before, keyed on the viewport, and reachable ONLY where `@container` is not.
- * A browser that cannot parse `container-type` also cannot parse the `@container` blocks above, so
- * the two sets are never live at once.
- */
-@supports not (container-type: inline-size) {
-  @media (min-width: 48em) {
-    .root {
-      grid-template-columns: repeat(var(--basalt-stat-group-cols-sm), minmax(0, 1fr));
-    }
-  }
-
-  @media (min-width: 75em) {
-    .root {
-      grid-template-columns: repeat(var(--basalt-stat-group-cols-lg), minmax(0, 1fr));
-    }
-  }
-
-  @media (max-width: 47.99375em) {
-    .root[data-divided] > *:nth-child(2n + 1) {
-      border-inline-start: 0;
-      padding-inline-start: 0;
-    }
-  }
-
-  @media (min-width: 48em) and (max-width: 74.99375em) {
-    .root[data-divided][data-sm-cols='2'] > *:nth-child(2n + 1),
-    .root[data-divided][data-sm-cols='3'] > *:nth-child(3n + 1) {
-      border-inline-start: 0;
-      padding-inline-start: 0;
-    }
-  }
-
-  @media (min-width: 75em) {
-    .root[data-divided][data-cols='2'] > *:nth-child(2n + 1),
-    .root[data-divided][data-cols='3'] > *:nth-child(3n + 1),
-    .root[data-divided][data-cols='4'] > *:nth-child(4n + 1),
-    .root[data-divided][data-cols='5'] > *:nth-child(5n + 1) {
-      border-inline-start: 0;
-      padding-inline-start: 0;
-    }
   }
 }

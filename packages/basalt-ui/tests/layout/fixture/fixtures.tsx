@@ -20,7 +20,14 @@ import type { DataTableFacet } from '../../../src/data/table'
 import { FormRow } from '../../../src/forms'
 import type { ColumnDef } from '@tanstack/react-table'
 import { ActionIcon, Button } from '@mantine/core'
-import { BasaltShell, PageAside, PageBar, StatCard, StatGroup } from '../../../src/index'
+import {
+  BasaltShell,
+  PageAside,
+  PageBar,
+  StatCard,
+  StatGroup,
+  WidgetGrid,
+} from '../../../src/index'
 import type { BasaltAccountProps, SettingsMenuItem } from '../../../src/index'
 import type { GlobalAction } from '../../../src/controls'
 import type { NavAnchor, SidebarItem, SidebarSection } from '../../../src/shell/nav-types'
@@ -337,6 +344,21 @@ function CardsFixture({ spec }: { spec: CardsSpec }): ReactElement {
           </StatGroup>
         </div>
       )}
+      {spec.gridProbes?.map((w) => (
+        // theme-allow -- the wrapper width IS the fixture's payload (a container-class probe)
+        <div key={w} data-testid={`grid-probe-${w}`} style={{ width: w }}>
+          <StatGroup cols={5}>
+            {[1, 2, 3, 4, 5].map((n) => (
+              <div key={n}>{`Metric ${n}`}</div>
+            ))}
+          </StatGroup>
+          <WidgetGrid cols={3}>
+            {[1, 2, 3].map((n) => (
+              <div key={n}>{`Widget ${n}`}</div>
+            ))}
+          </WidgetGrid>
+        </div>
+      ))}
       {spec.stretchedRow !== undefined && (
         // theme-allow -- the row height IS the fixture's payload (a stretch probe)
         <div

@@ -14,9 +14,10 @@
  * containment and `.grid` is the queried child, the same split `StatGroup`'s `.container`/`.root`
  * uses — a container cannot reliably query ITSELF for a layout-affecting property (measured here:
  * Chrome silently keeps the un-queried value even once the container's own width crosses the
- * condition), only a descendant. The `599.9px`/`47.99375em` literals: 600px is roughly the point
+ * condition), only a descendant. The `599.9px` literal: 600px is roughly the point
  * two ~250px+ cells stop feeling cramped; `@container`/`@media` conditions cannot read a custom
- * property, so both are written numbers, not `--vx-*` refs.
+ * property, so it is a written number, not a `--vx-*` ref. No viewport fallback — see
+ * `stat-group.module.css`: nothing that renders basalt lacks `@container`.
  */
 
 /* ── FormSection ─────────────────────────────────────────────────────────────────────────────── */
@@ -99,17 +100,6 @@
   .grid {
     grid-template-columns: minmax(0, 1fr);
     gap: var(--vx-space-stack-xs);
-  }
-}
-
-/* Pre-container-query fallback (Safari < 16, Chrome < 106, Firefox < 110) — the old viewport law,
- * reachable only where `@container` itself cannot parse (same reasoning as `stat-group.module.css`). */
-@supports not (container-type: inline-size) {
-  @media (max-width: 47.99375em) {
-    .grid {
-      grid-template-columns: minmax(0, 1fr);
-      gap: var(--vx-space-stack-xs);
-    }
   }
 }
 
