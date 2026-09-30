@@ -6,7 +6,9 @@
 import type {
   ColumnFiltersState,
   ColumnPinningState,
+  PaginationState,
   RowSelectionState,
+  SortingState,
   Updater,
 } from '@tanstack/react-table'
 import { functionalUpdate } from '@tanstack/react-table'
@@ -14,7 +16,6 @@ import type { KeyboardEvent as ReactKeyboardEvent, RefObject } from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useMeasuredWidths } from '../common/use-measured-widths'
 import { CONTAINER_CLASSES } from '../tokens/size-classes'
-import type { BasaltDataTableProps } from './data-table'
 import classes from './data-table.module.css'
 
 export const EMPTY_FOLD_SET: ReadonlySet<string> = new Set()
@@ -96,7 +97,22 @@ function useReportedState<S>(
 /** The table's own interactive state and the TanStack `on*Change` handlers that write it — every
  * piece uncontrolled with an optional change callback, except row selection, which is controlled
  * whenever `rowSelection` is passed. */
-export function useDataTableState<T>(props: BasaltDataTableProps<T>, defaultPageSize: number) {
+/** The `BasaltDataTableProps` fields `useDataTableState` reads — declared here rather than picked
+ * off the props type, so the hook owns its contract and this module never imports the component. */
+export type DataTableStateProps = {
+  initialSorting?: SortingState | undefined
+  onSortingChange?: ((sorting: SortingState) => void) | undefined
+  initialGlobalFilter?: string | undefined
+  onGlobalFilterChange?: ((value: string) => void) | undefined
+  onColumnFiltersChange?: ((filters: ColumnFiltersState) => void) | undefined
+  initialPagination?: PaginationState | undefined
+  onPaginationChange?: ((pagination: PaginationState) => void) | undefined
+  initialColumnPinning?: ColumnPinningState | undefined
+  rowSelection?: RowSelectionState | undefined
+  onRowSelectionChange?: ((selection: RowSelectionState) => void) | undefined
+}
+
+export function useDataTableState(props: DataTableStateProps, defaultPageSize: number) {
   const { rowSelection, onRowSelectionChange } = props
   const [sorting, onSortingChange] = useReportedState(
     props.initialSorting ?? [],
