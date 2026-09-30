@@ -3731,9 +3731,31 @@ describe('unknown-vx-token', () => {
     expect(guardKindRemedy('unknown-vx-token')).toContain('--vx-space-touch-target → --vx-hit')
   })
 
-  it('flags an unknown name inside a basalt family, fallback or not', () => {
-    const f = vx(`<Box style={{ background: 'var(--vx-surface-2, transparent)' }} />`, PATH)
-    expect(f.map((x) => x.token)).toEqual(['--vx-surface-2'])
+  it('flags a bare family root nothing emits, fallback or not', () => {
+    const f = vx(`<Box style={{ background: 'var(--vx-surface, transparent)' }} />`, PATH)
+    expect(f.map((x) => x.token)).toEqual(['--vx-surface'])
+    expect(vx('.a { color: var(--vx-status); gap: var(--vx-space); }').map((x) => x.token)).toEqual(
+      ['--vx-status', '--vx-space'],
+    )
+  })
+
+  // Cross-file, both directions: a per-file scan cannot see the file that declares a consumer
+  // group, so a name under a basalt family prefix is never judged — while a removed name and a bare
+  // root are judged no matter what any other file declares.
+  it('never judges a consumer group under a basalt family prefix declared in another file', () => {
+    const declaring = `export const SURFACE = groupTokens('surface', { custom: p(BP.gray) })\n`
+    expect(vx(declaring, 'src/lib/series.ts')).toEqual([])
+    expect(vx('.a { background: var(--vx-surface-custom); }', 'src/b.module.css')).toEqual([])
+    expect(vx('.a { background: var(--vx-surface-2, transparent); }', 'src/b.module.css')).toEqual(
+      [],
+    )
+  })
+
+  it('judges a removed name and a bare root whatever another file declares', () => {
+    const declaring = ':root { --vx-space-touch-target: 44px; --vx-surface: #000; }\n'
+    expect(vx(declaring, 'src/a.css')).toEqual([])
+    const f = vx('.a { min-height: var(--vx-space-touch-target); background: var(--vx-surface); }')
+    expect(f.map((x) => x.token)).toEqual(['--vx-space-touch-target', '--vx-surface'])
   })
 
   it('passes every live name, and a component-scoped one', () => {
@@ -3754,13 +3776,13 @@ describe('unknown-vx-token', () => {
   })
 
   it('skips a name the file declares itself', () => {
-    expect(vx(':root { --vx-space-rail: 12px; }\n.a { width: var(--vx-space-rail); }')).toEqual([])
+    expect(vx(':root { --vx-space: 12px; }\n.a { width: var(--vx-space); }')).toEqual([])
   })
 
   it('is waivable by id', () => {
     expect(
       vx(
-        '/* theme-allow unknown-vx-token — defined in shell.css */\n.a { width: var(--vx-space-rail); }',
+        '/* theme-allow unknown-vx-token — defined in shell.css */\n.a { width: var(--vx-space-touch-target); }',
       ),
     ).toEqual([])
   })

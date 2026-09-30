@@ -154,14 +154,12 @@ If one fires after upgrading, it is code written since the measurement: the reme
 `theme-allow <id> — <why>`. `basalt.severity` still turns a kind down per repo; the shipped oxlint
 preset's level can be overridden in your own `.oxlintrc.json`.
 
-### `unknown-vx-token` — a removed or misspelled `--vx-*` name is a finding (`warn`, `error` at 1.34.0)
+### `unknown-vx-token` — a removed `--vx-*` name is a finding (`warn`, `error` at 1.34.0)
 
 A `var(--vx-*)` naming a token basalt does not emit resolves to its fallback — or to nothing — with
 no error from tsc, oxlint or the browser. obsidian lost its 44px touch floor that way, to
 `var(--vx-space-touch-target)`. `check-theme` now reports it, in every scanned file type. It ships
-`warn` for this minor and promotes at 1.34.0. Measured at ship time: argo, linewatch, rb, rollhook,
-obsidian, weatherorb, image-share, email-gateway 0; image-gen 1 (`--vx-surface-2` in
-`DerivedSection.tsx`, hidden behind a `transparent` fallback).
+`warn` for this minor and promotes at 1.34.0. Measured at ship time: all nine consumers at 0.
 
 | Removed name                                  | Replacement                                               |
 | --------------------------------------------- | --------------------------------------------------------- |
@@ -171,16 +169,16 @@ obsidian, weatherorb, image-share, email-gateway 0; image-gen 1 (`--vx-surface-2
 | `--vx-space-sticky-header-clearance-mobile`   | `--vx-space-sticky-header-clearance`                      |
 | `--vx-space-sidebar-brand-inset-top`          | none — the brand row is the header band (§ 1.30.0 Chrome) |
 
-- **A name removed or misspelled inside a basalt family** (`--vx-space-*`, `--vx-surface-*`,
-  `--vx-text-*`, `--vx-radius-*`, … — every prefix basalt itself emits) is reported. The live set is
-  exactly `basalt-ui/tokens.css` plus three component-scoped names (`--vx-hit-gap`,
-  `--vx-space-icon-size`, `--vx-keyboard-inset`).
-- **Your `defineSeries`/`groupTokens` series are never judged** — they emit `--vx-<key>` /
-  `--vx-<group>-<key>` under names you choose (argo's `--vx-lp-*`, rb's `--vx-confidence-*`), so a
-  name outside basalt's families is left alone. A computed name (`var(--vx-fill-${hue})`) is
-  skipped, and so is a name the same file declares.
-- **Your own custom property inside a basalt family, declared in another file**, is the one false
-  positive: rename it out of the family, or `theme-allow unknown-vx-token — <where it is declared>`.
+- **Judged: a removed name** (the table) **and a bare family root nothing emits** —
+  `var(--vx-surface)`, `var(--vx-space)`, `var(--vx-status)`: basalt only writes `<root>-<key>`,
+  and so does `groupTokens`. The live set is exactly `basalt-ui/tokens.css` plus three
+  component-scoped names (`--vx-hit-gap`, `--vx-space-icon-size`, `--vx-keyboard-inset`).
+- **Not judged: any other unknown name**, even under a basalt prefix. `groupTokens('surface', …)`
+  emits `--vx-surface-<key>` from a file a per-file scan cannot see, so `--vx-surface-2` could be
+  your group or a typo, and the guard does not guess. Check such a name against
+  `basalt-ui/tokens.css` yourself. Your `defineSeries`/`groupTokens` series (argo's `--vx-lp-*`,
+  rb's `--vx-confidence-*`), a computed name (`var(--vx-fill-${hue})`) and a name the same file
+  declares are never reported.
 
 ## 1.32.1 — the 1.32.0 recipe resolves, and the gaps consumers hit upgrading to it
 
