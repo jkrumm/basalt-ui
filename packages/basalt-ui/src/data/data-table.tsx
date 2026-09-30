@@ -2112,6 +2112,8 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
             {totalIsAuthoritative ? ` of ${total}` : ''}
           </Text>
           <Group gap="xs" align="center">
+            {/* theme-allow control-outside-home — the table's own page-size setting, not a page
+                filter: its state is the table's pagination, owned inside this component. */}
             <Select
               size="ctl"
               radius="md"

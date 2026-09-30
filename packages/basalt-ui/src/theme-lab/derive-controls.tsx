@@ -178,6 +178,8 @@ export function DeriveControls({ resetIcon }: DeriveControlsProps) {
         <Text size="xs" fw={500} mb={4}>
           Neutral family
         </Text>
+        {/* theme-allow control-outside-home — a theme-lab setting (a settings row, a declared
+            non-home), not a page filter: it edits the derive config, never page data. */}
         <SegmentedControl
           size="xs"
           fullWidth

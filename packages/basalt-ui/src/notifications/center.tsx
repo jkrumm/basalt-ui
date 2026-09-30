@@ -205,6 +205,9 @@ export function NotificationCenter({ maxHeight = 320, className, style }: Notifi
       </Group>
 
       {/* View switch */}
+      {/* theme-allow control-outside-home — the center's own inbox/all view, rendered inside
+          `NotificationBell`'s Popover (an overlay, a declared non-home the AST cannot see across
+          the component boundary). */}
       <SegmentedControl
         fullWidth
         size="xs"
