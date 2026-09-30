@@ -19,6 +19,7 @@ import basaltPlugin, {
   KNOWN_RULE_IDS,
   PLUGIN_RULE_ADVISORY,
   PLUGIN_RULE_GRACE,
+  RAW_BREAKPOINT_RECIPE,
   RETIRED_RULE_IDS,
 } from './oxlint-plugin.js'
 import { CTL_THEME } from '../src/theme/ctl-theme'
@@ -28,6 +29,7 @@ import {
   WAIVER_ID_ALIASES as GUARD_WAIVER_ID_ALIASES,
 } from '../src/guard/index.ts'
 import { PLUGIN_RULE_ID_LIST, SURFACES } from '../src/surfaces.ts'
+import { CONTAINER_CLASSES } from '../src/tokens/size-classes.ts'
 
 const PLUGIN_PATH = resolve(import.meta.dirname, 'oxlint-plugin.js')
 const OXLINT_BIN = resolve(import.meta.dirname, '..', '..', '..', 'node_modules', '.bin', 'oxlint')
@@ -3465,6 +3467,30 @@ describe('basalt/raw-breakpoint', () => {
   it('does NOT flag an object prop on a component never imported from @mantine/*', () => {
     const { rules } = run(`export const C = () => <WidgetGrid cols={{ base: 1, sm: 2 }} />\n`)
     expect(rules).not.toContain('raw-breakpoint')
+  })
+
+  // The recipe's px keys are CONTAINER_CLASSES written out by hand in two places — the plugin
+  // (plain JS, cannot import TS source) and MIGRATING's rule entry. Retuning a class must fail here.
+  describe('recipe px literals ↔ CONTAINER_CLASSES', () => {
+    const boundaries = new Set<number>(Object.values(CONTAINER_CLASSES).filter((px) => px > 0))
+    const pxLiterals = (text: string) => [...text.matchAll(/(\d+)px/g)].map((m) => Number(m[1]))
+
+    it('every px key in the rule messages is a CONTAINER_CLASSES boundary', () => {
+      const found = pxLiterals(RAW_BREAKPOINT_RECIPE as string)
+      expect(found.length).toBeGreaterThan(0)
+      for (const px of found) expect([px, boundaries.has(px)]).toEqual([px, true])
+    })
+
+    it("every px value and the class table in MIGRATING's raw-breakpoint entry match", () => {
+      const migrating = readFileSync(resolve(import.meta.dir, '../MIGRATING.md'), 'utf8')
+      const start = migrating.indexOf('### `basalt/raw-breakpoint`')
+      expect(start).toBeGreaterThan(-1)
+      const end = migrating.indexOf('\n### ', start + 1)
+      const section = migrating.slice(start, end === -1 ? undefined : end)
+      for (const px of pxLiterals(section)) expect([px, boundaries.has(px)]).toEqual([px, true])
+      const { compact, regular, wide } = CONTAINER_CLASSES
+      expect(section).toContain(`compact ${compact} · regular ${regular} · wide ${wide}`)
+    })
   })
 
   // The sanctioned answer, read from @mantine/core 9.3 source: SimpleGrid type="container" writes

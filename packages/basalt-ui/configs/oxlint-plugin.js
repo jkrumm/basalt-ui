@@ -4073,8 +4073,10 @@ const RAW_BREAKPOINT_EXEMPT_FILE = /(?:^|[\\/])(?:use-media-query\.ts|ChartToolt
  * (`CONTAINER_CLASSES`, `basalt-ui/tokens`: compact 240 / regular 480 / wide 800), never on the
  * viewport — `useSizeClass()` is the shell's seam, not a page's. Mantine 9's own `type="container"`
  * grids are the primitive: both self-wrap in an `inline-size` container, so they need no ancestor.
+ * The px literals are `CONTAINER_CLASSES` written out (the plugin cannot import TS source);
+ * `oxlint-plugin.test.ts` asserts every one against it, and the MIGRATING recipe too.
  */
-const RAW_BREAKPOINT_RECIPE =
+export const RAW_BREAKPOINT_RECIPE =
   'A page’s own layout keys on its container: <SimpleGrid type="container" cols={{ base: 1, ' +
   "'480px': 2, '800px': 3 }}> (px keys = CONTAINER_CLASSES, basalt-ui/tokens), or <Grid " +
   'type="container" breakpoints={…}> mapping all five xs–xl onto those px widths, with Grid.Col ' +
