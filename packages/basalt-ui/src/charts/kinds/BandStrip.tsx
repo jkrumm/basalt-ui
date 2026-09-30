@@ -17,7 +17,6 @@ import type { ChartState } from '../primitives/ChartPending'
 import type { ChartLegendConfig, SeriesStyle } from '../series'
 import { fmtAxisDate } from '../utils/format'
 import { BandAxisOverlay, BandTooltip, clampFraction } from './band-chrome'
-import { isDev } from '../../common/is-dev'
 
 /**
  * A state a strip can draw. Extends `SeriesStyle` rather than `ChartSeries` because a band has no
@@ -266,7 +265,8 @@ function BandStripPlot<T>(props: BandStripPlotProps<T>) {
       const style = styleByKey.get(span.state)
       const x = i * step
       if (style === undefined) {
-        if (isDev()) throw unknownStateError('BandSpan.state', span.state, styleByKey.keys())
+        if (process.env.NODE_ENV !== 'production')
+          throw unknownStateError('BandSpan.state', span.state, styleByKey.keys())
         out.push(
           <rect
             key={getX(d)}
@@ -298,7 +298,11 @@ function BandStripPlot<T>(props: BandStripPlotProps<T>) {
       const hatchWidth = bandWidth - measuredWidth
       const markerKey = span.marker?.state ?? span.state
       const markerColor = styleByKey.get(markerKey)?.color
-      if (span.marker !== undefined && markerColor === undefined && isDev()) {
+      if (
+        span.marker !== undefined &&
+        markerColor === undefined &&
+        process.env.NODE_ENV !== 'production'
+      ) {
         throw unknownStateError('BandSpan.marker.state', markerKey, styleByKey.keys())
       }
       const inset = span.marker?.inset ?? DEFAULT_MARKER_INSET

@@ -98,7 +98,6 @@ import {
   useRowDisclosure,
 } from './data-table-state'
 import { dataQueryBranch } from './query-branch'
-import { isDev } from '../common/is-dev'
 import classes from './data-table.module.css'
 
 // ── Column alignment ──────────────────────────────────────────────────────────
@@ -303,7 +302,7 @@ function resolveFacetColumn<T>(
 ): Column<T, unknown> | undefined {
   const column = table.getColumn(facet.columnId)
   if (column) return column
-  if (isDev()) {
+  if (process.env.NODE_ENV !== 'production') {
     const knownIds = table
       .getAllColumns()
       .map((known) => known.id)
@@ -1231,7 +1230,7 @@ const reportedBreaches = new Set<string>()
 function enforceManualPaginationContract(breaches: ManualPaginationBreach[]): void {
   if (breaches.length === 0) return
   const message = manualPaginationMessage(breaches)
-  if (isDev()) throw new Error(message)
+  if (process.env.NODE_ENV !== 'production') throw new Error(message)
   if (reportedBreaches.has(message)) return
   reportedBreaches.add(message)
   console.error(message)

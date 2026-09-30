@@ -34,7 +34,6 @@ import { buildDensityCss, buildFontsCss, buildPaletteCss, buildRadiusCss } from 
 import type { BuildPaletteOpts } from '../tokens'
 import { isDefaultDeriveConfig } from '../tokens/derive'
 import { buildPaletteData } from '../tokens/palette'
-import { isDev } from '../common/is-dev'
 import { useMediaQuery } from '../common/use-media-query'
 import { registerColorSchemeSetter } from '../commands/shell-bridge'
 import { useIsomorphicLayoutEffect } from '../common/isomorphic-layout-effect'
@@ -125,7 +124,7 @@ export type BasaltProviderProps = {
 // ── Default error handler ─────────────────────────────────────────────────────────────────────────
 
 function defaultOnError(error: unknown, ctx: BasaltErrorContext): void {
-  if (isDev()) {
+  if (process.env.NODE_ENV !== 'production') {
     // eslint-disable-next-line no-console -- intentional dev-only diagnostic when no onError is supplied
     console.error('[BasaltProvider] unhandled error', ctx.kind, error)
   }
@@ -382,7 +381,7 @@ const providerMounts = createMountCounter()
 
 function useDuplicateProviderGuard(): void {
   useEffect(() => {
-    if (providerMounts.mount() > 1 && isDev()) {
+    if (providerMounts.mount() > 1 && process.env.NODE_ENV !== 'production') {
       console.warn(
         '[basalt] BasaltProvider: more than one instance is mounted at once — nested/duplicate ' +
           'BasaltProviders double-mount MantineProvider, the palette <style> and ' +

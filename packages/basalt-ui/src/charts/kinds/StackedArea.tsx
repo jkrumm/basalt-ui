@@ -9,7 +9,6 @@ import type { ResponsiveChartHeight } from '../primitives/ChartFrame'
 import type { ChartState } from '../primitives/ChartPending'
 import { curveFor } from '../series'
 import type { ChartLegendConfig, ChartSeries } from '../series'
-import { isDev } from '../../common/is-dev'
 
 export type StackedAreaProps<T> = BasaltProps & {
   data: T[]
@@ -113,7 +112,10 @@ function StackedAreaInner<T>(props: StackedAreaProps<T>) {
 
   // The stack sums band heights via `getValue` totals directly — a log axis has no additive zero
   // to sum from (`docs/CHARTS-SPEC.md`'s null-gap + log contract, mirrored from `Bars`' own guard).
-  if (isDev() && (y as { scale?: string } | undefined)?.scale === 'log') {
+  if (
+    process.env.NODE_ENV !== 'production' &&
+    (y as { scale?: string } | undefined)?.scale === 'log'
+  ) {
     throw new Error(
       'StackedArea: cannot use a log axis (y.scale: "log") — the stack sums band heights, ' +
         'and a log axis has no additive zero to sum from.',

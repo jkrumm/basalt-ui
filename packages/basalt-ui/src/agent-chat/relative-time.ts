@@ -7,7 +7,6 @@
  *
  * Internal to `agent-chat/` — not part of the public barrel.
  */
-import { isDev } from '../common/is-dev'
 
 const RELATIVE_TIME_FORMAT = new Intl.RelativeTimeFormat('en', { numeric: 'auto' })
 
@@ -41,7 +40,7 @@ const RELATIVE_TIME_UNITS: readonly {
  */
 export function formatRelativeTime(timestamp: number): string {
   if (!Number.isFinite(timestamp)) {
-    if (isDev()) {
+    if (process.env.NODE_ENV !== 'production') {
       console.warn(
         `[basalt] formatRelativeTime: non-finite timestamp ${String(timestamp)} — rendering empty string`,
       )

@@ -153,7 +153,7 @@ describe('BasaltProvider duplicate-mount guard (F14)', () => {
     warn.mockRestore()
   })
 
-  test('in a production build, mounting a second BasaltProvider does NOT warn — isDev() folds to false', () => {
+  test('in a production build, mounting a second BasaltProvider does NOT warn — the NODE_ENV gate folds to false', () => {
     const originalEnv = process.env['NODE_ENV']
     process.env['NODE_ENV'] = 'production'
     const warn = spyOn(console, 'warn').mockImplementation(() => {})

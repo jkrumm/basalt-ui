@@ -12,7 +12,6 @@
  * as `provider/lab-theme.ts`.
  */
 import { useEffect } from 'react'
-import { isDev } from '../common/is-dev'
 
 let mountedNotificationsCount = 0
 
@@ -25,7 +24,7 @@ let mountedNotificationsCount = 0
 export function useNotificationsMountGuard(): void {
   useEffect(() => {
     mountedNotificationsCount++
-    if (mountedNotificationsCount > 1 && isDev()) {
+    if (mountedNotificationsCount > 1 && process.env.NODE_ENV !== 'production') {
       console.warn(
         '[basalt] more than one Notifications overlay is mounted at once — mount exactly ONE ' +
           "<BasaltOverlays notifications /> (they all render Mantine's <Notifications />, so " +

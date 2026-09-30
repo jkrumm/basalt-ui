@@ -73,7 +73,7 @@ describe('duplicate Notifications-mount guard (F15)', () => {
     warn.mockRestore()
   })
 
-  test('in a production build, mounting TWO at once does NOT warn — isDev() folds to false', async () => {
+  test('in a production build, mounting TWO at once does NOT warn — the NODE_ENV gate folds to false', async () => {
     const originalEnv = process.env['NODE_ENV']
     process.env['NODE_ENV'] = 'production'
     const warn = spyOn(console, 'warn').mockImplementation(() => {})

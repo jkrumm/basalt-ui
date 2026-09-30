@@ -43,7 +43,7 @@ describe('src/common is Mantine-free', () => {
 
     test(`${file} has no VALUE import reaching outside common/`, () => {
       // A type-only re-export is erased by esbuild and carries no runtime edge, so `Tier` may point
-      // at widget-header. A value import may not: `./utils/is-dev` and siblings are the whole
+      // at widget-header. A value import may not: `./errors` and siblings are the whole
       // allowance.
       const valueImports = specifiers(
         source.replaceAll(/^\s*(?:import|export)\s+type\s[\s\S]*?['"][^'"]+['"]/gm, ''),

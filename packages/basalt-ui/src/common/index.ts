@@ -19,5 +19,4 @@ export {
 } from './errors'
 export { useValidateProps, assertRequiredProps, resetValidatedProps } from './validate'
 export { scrollParentOf, SCROLLPORT_ATTRIBUTE } from './scroll-parent'
-export { isDev } from './is-dev'
 export { MOTION_DURATION, MOTION_EASE_STANDARD, MOTION_SPRING } from './motion'
