@@ -305,6 +305,8 @@ prop as a line saving.
 - **Row selection shipped 1.28.0** — TanStack row-selection passthrough, `onRowActivate` and a
   `bulkActions` bar. Known, still not shipped: `emptyState` renders inside a `<td colSpan>` counting
   the raw `columns` prop; no `emptyState="replace"`; no row expansion.
+- **`renderCard`** swaps the body for per-row cards below the TABLE's own `regular` container class,
+  never the viewport — same processed rows, states and activation; the fold is for shedding columns.
 
 ## CLI
 
