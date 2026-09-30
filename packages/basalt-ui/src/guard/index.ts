@@ -152,7 +152,7 @@ const CSS_WIDTH_MEDIA_QUERY = new RegExp(
  * An `@container` condition — the declared NAME (optional: `@container (min-width: …)` with no
  * name is legal CSS, scoping to the nearest ancestor container regardless of its name) plus every
  * raw boundary across the WHOLE at-rule, chained `and (...)` clauses included
- * (`@container basalt-stat-group (min-width: 768px) and (max-width: 1199.9px)` —
+ * (`@container basalt-grid (min-width: 800px) and (max-width: 1199.9px)` —
  * `stat-group.module.css` ships exactly this shape). Capturing only the first parenthesized clause
  * would silently skip every boundary after the first `and`; group 2 here is the full run of
  * `(...)`/`and` text so `CSS_CONTAINER_LITERAL`'s own `matchAll` below finds all of them.
@@ -180,11 +180,8 @@ const CSS_NON_COARSE_POINTER_QUERY =
  * `basalt-form`/`basalt-main`/`basalt-grid` are the declared remaining three, reserved here so a
  * consumer adopting one ahead of the framework does not immediately trip this guard.
  *
- * Two container names already shipped ahead of this table — `basalt-stat-group` and
- * `basalt-widget-grid` (`src/tokens/breakpoint-literals.test.ts`'s own `LEGACY_CONTAINER_LITERALS`
- * names them) — predate the declared table and are deliberately NOT in this set: they surface as
- * `warn` findings against basalt's own source the same way any other kind's incumbent violations do
- * at grace time, rather than being silently grandfathered into a shipped rule's allowlist.
+ * `basalt-grid` is also what `StatGroup`/`WidgetGrid` declare (`src/dashboard/*.module.css`) —
+ * they shipped as `basalt-stat-group`/`basalt-widget-grid` until 1.32.0 moved them onto this table.
  */
 const DECLARED_CONTAINER_NAMES = new Set([
   'basalt-card',
@@ -229,7 +226,14 @@ function isSanctionedShellMediaQuery(relPath: string, query: string): boolean {
   // the comparison/chained spellings too, with no shape-specific regex of its own. All four units
   // are captured (not `em` only) so a `px` width — never a `SIZE_CLASS_LITERALS` member — correctly
   // fails the check below, rather than `.every()` vacuously passing on an empty match.
-  const widths = query.match(new RegExp(CSS_WIDTH_NUM, 'g')) ?? []
+  //
+  // But `query` is the whole at-rule prelude up to the width condition, so it can also carry a
+  // NON-width clause — the shell's own landscape rule is `(max-height: 480px) and (orientation:
+  // landscape) and (max-width: 52.49375em)`, and reading its `480px` height as an off-table width
+  // flagged the framework's own sanctioned implementation. Only the parenthesized clauses that name
+  // `width` are read.
+  const widthClauses = query.match(/\([^()]*\bwidth\b[^()]*\)/g) ?? []
+  const widths = widthClauses.flatMap((c) => c.match(new RegExp(CSS_WIDTH_NUM, 'g')) ?? [])
   return widths.length > 0 && widths.every((w) => SIZE_CLASS_LITERALS.has(w))
 }
 
