@@ -37,6 +37,7 @@ import {
   Checkbox,
   Group,
   Pagination,
+  ScrollArea,
   Select,
   Skeleton,
   Stack,
@@ -388,8 +389,9 @@ function BulkActionBar({ count, actions }: { count: number; actions: BarAction[]
 
 /**
  * The four boxes `BasaltDataTable` paints: `root` is the outer fragment's replacement wrapper,
- * `toolbar` is the search/facets/actions row, `table` is the Mantine `Table` itself, `footer` is
- * the pagination bar.
+ * `toolbar` is the search/facets/actions row, `table` is whichever body renders — the Mantine
+ * `Table`, or the card list's `Stack` while `renderCard` projects — and `footer` is the pagination
+ * bar.
  */
 export type BasaltDataTableSlot = 'root' | 'toolbar' | 'table' | 'footer'
 
@@ -608,6 +610,13 @@ export type BasaltDataTableProps<T> = BasaltProps &
      * the pager, and `query` / `isLoading` / `emptyState`. `onRowActivate` makes each card
      * activatable exactly as it does a row (click, or Enter on the focused card). The selection
      * checkbox is not projected — a card list with a selection keeps its bulk bar but no ticks.
+     *
+     * An activatable card takes `tabIndex=0` + `data-activatable`, never `role="button"`: a card is
+     * where a row's actions and links land (argo's all do), and a `button` role makes every
+     * descendant presentational, so those nested controls would vanish from the accessibility tree.
+     * The affordance is the cursor and the focus ring, as on the row. `maxHeight` caps the card list
+     * in a `ScrollArea`; `minWidth` does not apply — it is a horizontal floor for columns, and a
+     * card list has none.
      *
      * Reach for it when the row carries more than the columns a phone can hold (a status + label +
      * age header, a clamped title, a prose line). A table that only needs to shed a column or two
@@ -1770,6 +1779,25 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
     </Table>
   )
 
+  // The `renderCard` body — the same processed rows, states and activation as the table's.
+  const cardList = (
+    <Stack gap="xs" className={cx(classNames?.table)}>
+      {queryError !== undefined
+        ? errorNode
+        : showSkeleton
+          ? Array.from({ length: skeletonRows }, (_, index) => (
+              <Skeleton key={`skeleton-${index}`} height={48} radius="md" />
+            ))
+          : rows.length === 0
+            ? emptyNode
+            : rows.map((row) => (
+                <Box key={row.id} {...activationProps(onRowActivate, row.original)}>
+                  {renderCard?.(row.original)}
+                </Box>
+              ))}
+    </Stack>
+  )
+
   const paginationState = table.getState().pagination
   // The CURRENT page size is always an option, even when it is not in `pageSizeOptions`. Mantine's
   // Select renders EMPTY when its `value` matches no row, so a table opened at
@@ -1862,21 +1890,13 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
         <BulkActionBar count={selectedRows.length} actions={bulkBarActions} />
       )}
       {projection.cards ? (
-        <Stack gap="xs" className={cx(classNames?.table)}>
-          {queryError !== undefined
-            ? errorNode
-            : showSkeleton
-              ? Array.from({ length: skeletonRows }, (_, index) => (
-                  <Skeleton key={`skeleton-${index}`} height={48} radius="md" />
-                ))
-              : rows.length === 0
-                ? emptyNode
-                : rows.map((row) => (
-                    <Box key={row.id} {...activationProps(onRowActivate, row.original)}>
-                      {renderCard?.(row.original)}
-                    </Box>
-                  ))}
-        </Stack>
+        maxHeight === undefined ? (
+          cardList
+        ) : (
+          <ScrollArea.Autosize mah={maxHeight} type="hover" scrollbars="y">
+            {cardList}
+          </ScrollArea.Autosize>
+        )
       ) : !foldEligible ? (
         // An explicit `minWidth` is the one genuinely DECLARED horizontal floor — the column fold
         // never engages here (see `foldEligible`, above), so this shape keeps its exact
