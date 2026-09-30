@@ -2485,6 +2485,25 @@ describe('raw-media-query', () => {
     expect(kinds(f).filter((k) => k === 'raw-media-query')).toEqual([])
   })
 
+  // Regression: the whole prelude was scanned for literals, so the shell's own landscape rule read
+  // its `max-height: 480px` as an off-table WIDTH and flagged `shell/app-main.module.css`.
+  it('does NOT read a height clause as a width inside a shell/ path', () => {
+    const f = find(
+      '@media (max-height: 480px) and (orientation: landscape) and (max-width: 52.49375em) {\n' +
+        '  .a { display: flex; }\n}\n',
+      'src/shell/app-main.module.css',
+    )
+    expect(kinds(f).filter((k) => k === 'raw-media-query')).toEqual([])
+  })
+
+  it('still flags an off-table width next to a height clause inside a shell/ path', () => {
+    const f = find(
+      '@media (max-height: 480px) and (max-width: 600px) {\n  .a { display: flex; }\n}\n',
+      'src/shell/app-main.module.css',
+    )
+    expect(kinds(f)).toContain('raw-media-query')
+  })
+
   it('still flags an off-table width @media inside a shell/ path', () => {
     const f = find(
       '@media (min-width: 600px) {\n  .a { display: flex; }\n}\n',
