@@ -533,3 +533,83 @@ describe('column fold — never folds every data column away', () => {
     expect(headerIds(container)).toEqual(['a'])
   })
 })
+
+describe('renderCard swaps the body on the TABLE’s own container class, not the viewport', () => {
+  function mountCards(props: Record<string, unknown> = {}) {
+    return render(
+      <MantineProvider>
+        <BasaltDataTable
+          data={ROWS}
+          columns={COLUMNS}
+          title="Projects"
+          className="cards-root"
+          initialSorting={[{ id: 'cost', desc: false }]}
+          renderCard={(row: Row) => <span data-card>{row.project}</span>}
+          {...props}
+        />
+      </MantineProvider>,
+    )
+  }
+
+  async function rootTo(container: HTMLElement, width: number) {
+    const root = container.querySelector('.cards-root')
+    if (!(root instanceof HTMLElement)) throw new Error('expected the table root')
+    root.dataset['testWidth'] = String(width)
+    await act(async () => {
+      for (const notify of observers) notify()
+    })
+  }
+
+  const cardTexts = (container: HTMLElement) =>
+    [...container.querySelectorAll('[data-card]')].map((card) => card.textContent)
+
+  test('unmeasured is the table — the SSR answer and the first paint', () => {
+    stubLayout()
+    const { container } = mountCards()
+    expect(container.querySelector('table')).not.toBeNull()
+    expect(cardTexts(container)).toEqual([])
+  })
+
+  test('below `regular` it renders the processed rows as cards, and reverts when space returns', async () => {
+    stubLayout()
+    const { container, getByText } = mountCards()
+    await rootTo(container, 479)
+    expect(container.querySelector('table')).toBeNull()
+    // The table's own sort, not `data` order — a card list cannot disagree with its table.
+    expect(cardTexts(container)).toEqual(['linewatch', 'argo'])
+    // The header (title · count) stays.
+    expect(getByText('Projects')).toBeDefined()
+
+    await rootTo(container, 480)
+    expect(container.querySelector('table')).not.toBeNull()
+    expect(cardTexts(container)).toEqual([])
+  })
+
+  test('a zero width is unknown and moves nothing', async () => {
+    stubLayout()
+    const { container } = mountCards()
+    await rootTo(container, 300)
+    await rootTo(container, 0)
+    expect(container.querySelector('table')).toBeNull()
+  })
+
+  test('onRowActivate activates a card on click and on its own Enter', async () => {
+    stubLayout()
+    const activated: string[] = []
+    const { container } = mountCards({ onRowActivate: (row: Row) => activated.push(row.project) })
+    await rootTo(container, 300)
+    const cards = [...container.querySelectorAll('[data-activatable]')]
+    expect(cards).toHaveLength(2)
+    fireEvent.click(cards[0] as Element)
+    fireEvent.keyDown(cards[1] as Element, { key: 'Enter' })
+    fireEvent.keyDown(cards[1]?.querySelector('[data-card]') as Element, { key: 'Enter' })
+    expect(activated).toEqual(['linewatch', 'argo'])
+  })
+
+  test('emptyState renders in place of the card list', async () => {
+    stubLayout()
+    const { container, getByText } = mountCards({ data: [], emptyState: 'Nothing here' })
+    await rootTo(container, 300)
+    expect(getByText('Nothing here')).toBeDefined()
+  })
+})
