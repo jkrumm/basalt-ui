@@ -3960,14 +3960,16 @@ const RESPONSIVE_OBJECT_KEYS = new Set(['base', 'xs', 'sm', 'md', 'lg', 'xl'])
  * object that merely happens to have a `sm` key among other, unrelated ones is not this shape, and
  * an empty object is not a breakpoint decision at all.
  */
-function isResponsiveObjectValue(node) {
+function isResponsiveObjectValue(node, namedOnly = false) {
   if (node === null || node === undefined || node.type !== 'ObjectExpression') return false
   if (node.properties.length === 0) return false
-  return node.properties.every((prop) => {
-    if (prop.type !== 'Property') return false
-    const name = propertyKeyName(prop)
-    return typeof name === 'string' && RESPONSIVE_OBJECT_KEYS.has(name)
-  })
+  const names = node.properties.map((prop) =>
+    prop.type === 'Property' ? propertyKeyName(prop) : undefined,
+  )
+  if (!names.every((name) => typeof name === 'string' && RESPONSIVE_OBJECT_KEYS.has(name)))
+    return false
+  // Under `type="container"` a lone `base` is the unconditional value, not a breakpoint decision.
+  return !namedOnly || names.some((name) => name !== 'base')
 }
 
 /**
@@ -3978,17 +3980,71 @@ function isResponsiveObjectValue(node) {
  * appears — the top-level attribute value and a nested property value alike. Matching only a nested
  * `ObjectExpression` left the Identifier-in-a-property shape trivially bypassable.
  */
-function containsResponsiveObjectValue(node, consts, seen = new Set()) {
+function containsResponsiveObjectValue(node, consts, namedOnly = false, seen = new Set()) {
   const resolved =
     node !== null && node !== undefined && node.type === 'Identifier' ? consts.get(node.name) : node
   if (resolved === null || resolved === undefined || resolved.type !== 'ObjectExpression')
     return false
   if (seen.has(resolved)) return false
   seen.add(resolved)
-  if (isResponsiveObjectValue(resolved)) return true
+  if (isResponsiveObjectValue(resolved, namedOnly)) return true
   return resolved.properties.some(
-    (prop) => prop.type === 'Property' && containsResponsiveObjectValue(prop.value, consts, seen),
+    (prop) =>
+      prop.type === 'Property' &&
+      containsResponsiveObjectValue(prop.value, consts, namedOnly, seen),
   )
+}
+
+/**
+ * How Mantine 9 resolves a responsive object on this element's grid, read from `@mantine/core`
+ * 9.3 source — the sanctioned answer to this rule, so it has to be exempt exactly where it works:
+ *
+ * - `'container'` — a `<Grid type="container" breakpoints={…}>` (or a `Grid.Col` inside one). Keys
+ *   resolve through the grid's OWN `breakpoints` map into `@container mantine-grid` queries, so
+ *   an `sm` key is whatever width that map gives it: exempt. Mantine types the map as
+ *   `Record<MantineSize, string>`, so the recipe's keys ARE `xs`–`xl` — exempting by key name
+ *   instead of by owner would flag the sanctioned answer itself.
+ * - `'simple-grid'` — `<SimpleGrid type="container">`. `SimpleGridContainerVariables` writes each
+ *   key VERBATIM as `@container simple-grid (min-width: <key>)` and never consults
+ *   `theme.breakpoints`: a `'480px'` key works (and is not a responsive-object key, so it never
+ *   reaches here), while `sm` emits `(min-width: sm)` — invalid CSS, a dead query. Flagged.
+ * - `'fallback'` — `<Grid type="container">` with NO `breakpoints` (or a `Grid.Col` in one):
+ *   `Grid` only takes its container branch when both are set, so this silently renders viewport
+ *   media queries. Flagged.
+ * - `undefined` — not a container grid; the ordinary viewport law applies.
+ *
+ * `type` has to be the string literal `"container"`; a dynamic value is not a decision this rule
+ * can read. `Grid.Col` takes its grid's mode by walking to the nearest enclosing `Grid` element.
+ */
+function containerGridMode(opening, mantineImports) {
+  let tag = resolveMantineTag(opening.name, mantineImports)
+  let grid = opening
+  if (tag === 'Grid.Col') {
+    grid = undefined
+    for (
+      let node = opening.parent?.parent;
+      node !== null && node !== undefined;
+      node = node.parent
+    ) {
+      if (node.type !== 'JSXElement') continue
+      if (resolveMantineTag(node.openingElement.name, mantineImports) !== 'Grid') continue
+      grid = node.openingElement
+      tag = 'Grid'
+      break
+    }
+  }
+  if (grid === undefined || (tag !== 'Grid' && tag !== 'SimpleGrid')) return undefined
+  const attr = (name) =>
+    grid.attributes.find((a) => a.type === 'JSXAttribute' && a.name?.name === name)
+  const type = attr('type')
+  if (
+    type === undefined ||
+    !isStringLiteral(attrValue(type)) ||
+    attrValue(type).value !== 'container'
+  )
+    return undefined
+  if (tag === 'SimpleGrid') return 'simple-grid'
+  return attr('breakpoints') === undefined ? 'fallback' : 'container'
 }
 
 /**
@@ -4012,27 +4068,42 @@ const SHELL_HOME_NAMES = new Set(['BasaltShell', 'AppSidebar', 'MobileNav', 'App
  */
 const RAW_BREAKPOINT_EXEMPT_FILE = /(?:^|[\\/])(?:use-media-query\.ts|ChartTooltip\.tsx)$/
 
+/**
+ * The one recipe every raw-breakpoint message points at. A page's own layout keys on its CONTAINER
+ * (`CONTAINER_CLASSES`, `basalt-ui/tokens`: compact 240 / regular 480 / wide 800), never on the
+ * viewport — `useSizeClass()` is the shell's seam, not a page's. Mantine 9's own `type="container"`
+ * grids are the primitive: both self-wrap in an `inline-size` container, so they need no ancestor.
+ */
+const RAW_BREAKPOINT_RECIPE =
+  'A page’s own layout keys on its container: <SimpleGrid type="container" cols={{ base: 1, ' +
+  "'480px': 2, '800px': 3 }}> (px keys = CONTAINER_CLASSES, basalt-ui/tokens), or <Grid " +
+  'type="container" breakpoints={…}> mapping all five xs–xl onto those px widths, with Grid.Col ' +
+  'span={{ base: 12, sm: 6 }} keyed through that map; a Flex direction swap becomes that SimpleGrid (equal ' +
+  'columns), a wrapping Group, or a CSS-module @container basalt-grid rule. useSizeClass() is for ' +
+  'shell chrome only. Recipes: basalt-ui MIGRATING.md § basalt/raw-breakpoint.'
+
 const RAW_BREAKPOINT_RESPONSIVE_PROP_MESSAGE =
-  'Responsive-object style prop on a Mantine component — the framework owns the three responsive ' +
-  'axes (size class for shell chrome, container class for a component’s own width, pointer tier), ' +
-  'never a per-component `{ base, sm, … }`. Reach for a container query for this component’s own ' +
-  'width, or useSizeClass() for shell-only chrome. (basalt/raw-breakpoint)'
+  'Responsive-object prop keyed on theme breakpoints — those are viewport widths. ' +
+  `${RAW_BREAKPOINT_RECIPE} (basalt/raw-breakpoint)`
+
+const RAW_BREAKPOINT_CONTAINER_KEY_MESSAGE =
+  'Theme breakpoint name under type="container" — Mantine does not resolve it there: ' +
+  "SimpleGrid uses each key verbatim as a (min-width: …) length, so 'sm' is a dead query, " +
+  'and Grid only goes container with a breakpoints map (without one it silently falls back to ' +
+  `viewport media queries). ${RAW_BREAKPOINT_RECIPE} (basalt/raw-breakpoint)`
 
 const RAW_BREAKPOINT_VISIBLE_HIDDEN_MESSAGE =
-  "visibleFrom/hiddenFrom outside a shell home or a control's own C9 swap — this pair is the " +
-  "size-class axis's one JSX escape hatch. Anywhere else it is a hand-rolled viewport breakpoint " +
-  "the framework cannot see or move. Use a container query for a component's own width instead. " +
-  '(basalt/raw-breakpoint)'
+  "visibleFrom/hiddenFrom outside a shell home or a control's own C9 swap — a viewport " +
+  `breakpoint the framework cannot see or move. ${RAW_BREAKPOINT_RECIPE} (basalt/raw-breakpoint)`
 
 const RAW_BREAKPOINT_HOOK_MESSAGE =
-  "useMediaQuery/useMatches/useViewportSize — a raw viewport read outside the framework's one seam " +
-  '(useSizeClass(), shell-only). A component deciding its own layout from a viewport read instead of ' +
-  'a container query is exactly the law this rule exists to catch. (basalt/raw-breakpoint)'
+  "useMediaQuery/useMatches/useViewportSize — a raw viewport read outside the framework's " +
+  'one seam. Shell chrome reads useSizeClass(); a page swapping its own layout (a table for a card ' +
+  `list, a column count) is a container decision. ${RAW_BREAKPOINT_RECIPE} (basalt/raw-breakpoint)`
 
 const RAW_BREAKPOINT_GLOBAL_MESSAGE =
-  'window.matchMedia/window.innerWidth read directly — the same viewport read useSizeClass() already ' +
-  "owns, shell-only. Route a component's own layout decision through a container query instead. " +
-  '(basalt/raw-breakpoint)'
+  'window.matchMedia/window.innerWidth read directly — the viewport read useSizeClass() owns ' +
+  `for shell chrome. ${RAW_BREAKPOINT_RECIPE} (basalt/raw-breakpoint)`
 
 /** The three viewport hooks the law names, whatever module they are imported from. */
 const RAW_BREAKPOINT_HOOK_NAMES = new Set(['useMediaQuery', 'useMatches', 'useViewportSize'])
@@ -4048,7 +4119,7 @@ const RAW_BREAKPOINT_HOOK_NAMES = new Set(['useMediaQuery', 'useMatches', 'useVi
  * declares a shell home (or a control's own C9 swap) is exempt for all four shapes uniformly — the
  * shell's own responsive chrome is the sanctioned use, whatever shape it takes.
  */
-// Ships: warn (grace → 1.32.0)
+// Ships: warn (grace → 1.33.0)
 const rawBreakpoint = {
   meta: {
     type: 'suggestion',
@@ -4057,7 +4128,8 @@ const rawBreakpoint = {
         'Disallow a hand-rolled viewport breakpoint — a responsive-object Mantine prop, ' +
         'visibleFrom/hiddenFrom outside a shell home, useMediaQuery/useMatches/useViewportSize, or ' +
         'a raw window.matchMedia/innerWidth read. All four shapes are exempt inside a file that ' +
-        'declares a shell-home component (or a control implementing its own C9 swap).',
+        'declares a shell-home component (or a control implementing its own C9 swap); a ' +
+        'responsive object on a Mantine type="container" grid is exempt where Mantine resolves it.',
     },
     schema: [],
   },
@@ -4154,12 +4226,19 @@ const rawBreakpoint = {
         if (definesShellHome || controlOwner.isOwner()) return
         for (const node of responsiveObjectCandidates) {
           const value = unwrapExpressionContainer(node.value)
-          if (!containsResponsiveObjectValue(value, responsiveObjectConsts)) continue
           const owner = node.parent
           if (owner === null || owner === undefined || owner.type !== 'JSXOpeningElement') continue
           if (resolveMantineTag(owner.name, mantineImports) === undefined) continue
+          const mode = containerGridMode(owner, mantineImports)
+          if (mode === 'container') continue
+          if (!containsResponsiveObjectValue(value, responsiveObjectConsts, mode !== undefined))
+            continue
           if (hasThemeAllow(context, node, 'raw-breakpoint')) continue
-          context.report({ node, message: RAW_BREAKPOINT_RESPONSIVE_PROP_MESSAGE })
+          const message =
+            mode === undefined
+              ? RAW_BREAKPOINT_RESPONSIVE_PROP_MESSAGE
+              : RAW_BREAKPOINT_CONTAINER_KEY_MESSAGE
+          context.report({ node, message })
         }
         for (const node of visibleHiddenCandidates) {
           if (hasThemeAllow(context, node, 'raw-breakpoint')) continue
@@ -4233,8 +4312,9 @@ export const PLUGIN_RULE_GRACE = {
   },
   'raw-breakpoint': {
     since: '1.31.0',
-    promote: '1.32.0',
+    promote: '1.33.0',
     why:
+      'Extended 1.32.0 -> 1.33.0: 1.31.0 shipped the rule naming "a container query" but no primitive, and MIGRATING never mentioned it (argo: 42 warns, no documented target). 1.32.0 is the first minor with a reachable, documented answer (Mantine type="container" grids keyed on CONTAINER_CLASSES, exempted here), and promoting in the minor that first makes a rule satisfiable hands a consumer zero minors to act on it — the control-outside-home extension\'s reasoning. ' +
       'new in the wave-11 responsive/touch guards. Catches four ' +
       'independent shapes at once — a responsive-object Mantine prop, visibleFrom/hiddenFrom outside ' +
       'the three shell homes, the three raw viewport hooks, and window.matchMedia/innerWidth — none ' +
@@ -4242,7 +4322,7 @@ export const PLUGIN_RULE_GRACE = {
       "build with all four shapes already in it. basalt-ui/content's own article-card.tsx (a " +
       "`SimpleGrid cols={{ base: 1, sm: 2, lg }}`) is one incumbent measured in basalt's own tree at " +
       'ship time — a real number, not zero, so this ships warn rather than error from the start. ' +
-      '1.32.0 is when that incumbent and any consumer-side ones are expected to have moved to a ' +
+      '1.33.0 is when that incumbent and any consumer-side ones are expected to have moved to a ' +
       'container query or a theme-allow with a stated reason.',
   },
 }

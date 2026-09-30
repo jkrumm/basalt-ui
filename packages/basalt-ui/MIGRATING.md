@@ -66,25 +66,78 @@ There is one row per SURFACE, not per export, and a surface earns a row once any
 shipped lefthook preset both changed in 1.30.0 with no row that owned them — which is how a
 consumer read this index, found nothing, and diffed a KPI row that had silently gone 4-up → 2-up.
 
-| Surface                       | 1.27.0                                                       | 1.28.0                                                                                 | 1.29.0                                                                                         | 1.30.0                                                                             | 1.30.1                                                                | 1.30.2 | 1.31.0                                                                                                    | Unreleased |
-| ----------------------------- | ------------------------------------------------------------ | -------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | --------------------------------------------------------------------- | ------ | --------------------------------------------------------------------------------------------------------- | ---------- |
-| **tokens** (`./tokens`)       | —                                                            | `--vx-divider` → `rgba()` on both schemes (§ Shell)                                    | `--vx-space-touch-target` added (§ Additions)                                                  | eight spacing numbers (§ Chrome)                                                   | —                                                                     | —      | `--vx-hit` replaces the touch vars; `SIZE_CLASSES` (§ Unreleased)                                         | —          |
-| **charts** (`./charts`)       | —                                                            | phone tier, `curve`, formatters, `state`, log axis (§ preamble)                        | `ChartState.empty: string`, `AxisBottomNumeric` (§ Additions)                                  | responsive `height`, `legend.maxRows` (§ Charts)                                   | `height` reaches the kinds; `maxRows` beats the `fill` fit (§ Charts) | —      | container-class tier + `height` keys (§ Unreleased)                                                       | —          |
-| **shell** (`.`)               | —                                                            | scrollport, region seams, **the brand left the sidebar** (§§ scrollport, brand, Shell) | `PageTitle`, `BasaltDevDock`, `useBreakpoint` (§ Additions)                                    | More popover, aside pill, the responsive gutter, `useBasaltSpacing` (§ Chrome)     | —                                                                     | —      | `theme.breakpoints` derived, `useSizeClass`, `data-basalt-host`, `useBreakpoint` on notice (§ Unreleased) | —          |
-| **controls** (`./controls`)   | `NumberFilter`, `field.number` (§ Controls)                  | sheet renders panel rows; `PanelRow`, `SliderControl` (§ `basalt-ui/controls`)         | —                                                                                              | —                                                                                  | —                                                                     | —      | —                                                                                                         | —          |
-| **forms** (`./forms`)         | —                                                            | `field` → `inputProps`, **`inputProps` drops `key`**, the layout tier (§ `inputProps`) | `field` DELETED — and the `--fix` recipe no longer works (§ Consolidation)                     | —                                                                                  | —                                                                     | —      | —                                                                                                         | —          |
-| **data** (`./data/table`)     | —                                                            | root is a `<div>`, row selection, `getItemKey` required (§ `basalt-ui/data`)           | `./data` + `./query` + `./connectivity` dropped (§ Consolidation)                              | —                                                                                  | —                                                                     | —      | —                                                                                                         | —          |
-| **dashboard** (`.`)           | `StatCard`: `unit`, `breakdown`, delta format (§ `StatCard`) | `StatGroup`, `WidgetGrid`, query-aware `StatCard` — additive                           | —                                                                                              | **the column law keys on the CONTAINER; `cols={4}` is 2-up at `sm`** (§ Dashboard) | —                                                                     | —      | —                                                                                                         | —          |
-| **toolchain** (`./configs/*`) | —                                                            | —                                                                                      | the shipped lefthook preset's `check-theme` BROKE — the CLI resolver stopped ascending (§ CLI) | the preset's default bin, and the `root:` recipe (§ Toolchain)                     | —                                                                     | —      | —                                                                                                         | —          |
-| **CLI** (`basalt-ui`)         | —                                                            | —                                                                                      | **resolver stops relocating; `doctor` loses 6 of 10 checks** (§ CLI)                           | —                                                                                  | —                                                                     | —      | —                                                                                                         | —          |
-| **guards**                    | five rules → `error` (§ Guards)                              | six new ids at `warn` (§ preamble)                                                     | `query-dual-import` retired in 1.29.1 (§ Guards)                                               | four rules → `error` (§ Guards)                                                    | —                                                                     | —      | —                                                                                                         | —          |
+| Surface                       | 1.27.0                                                       | 1.28.0                                                                                 | 1.29.0                                                                                         | 1.30.0                                                                             | 1.30.1                                                                | 1.30.2 | 1.31.0                                                                                                    | Unreleased                                                                    |
+| ----------------------------- | ------------------------------------------------------------ | -------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | --------------------------------------------------------------------- | ------ | --------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| **tokens** (`./tokens`)       | —                                                            | `--vx-divider` → `rgba()` on both schemes (§ Shell)                                    | `--vx-space-touch-target` added (§ Additions)                                                  | eight spacing numbers (§ Chrome)                                                   | —                                                                     | —      | `--vx-hit` replaces the touch vars; `SIZE_CLASSES` (§ Unreleased)                                         | —                                                                             |
+| **charts** (`./charts`)       | —                                                            | phone tier, `curve`, formatters, `state`, log axis (§ preamble)                        | `ChartState.empty: string`, `AxisBottomNumeric` (§ Additions)                                  | responsive `height`, `legend.maxRows` (§ Charts)                                   | `height` reaches the kinds; `maxRows` beats the `fill` fit (§ Charts) | —      | container-class tier + `height` keys (§ Unreleased)                                                       | —                                                                             |
+| **shell** (`.`)               | —                                                            | scrollport, region seams, **the brand left the sidebar** (§§ scrollport, brand, Shell) | `PageTitle`, `BasaltDevDock`, `useBreakpoint` (§ Additions)                                    | More popover, aside pill, the responsive gutter, `useBasaltSpacing` (§ Chrome)     | —                                                                     | —      | `theme.breakpoints` derived, `useSizeClass`, `data-basalt-host`, `useBreakpoint` on notice (§ Unreleased) | `useBreakpoint` removal → 1.33.0; `useSizeClass` is shell-only (§ Unreleased) |
+| **controls** (`./controls`)   | `NumberFilter`, `field.number` (§ Controls)                  | sheet renders panel rows; `PanelRow`, `SliderControl` (§ `basalt-ui/controls`)         | —                                                                                              | —                                                                                  | —                                                                     | —      | —                                                                                                         | —                                                                             |
+| **forms** (`./forms`)         | —                                                            | `field` → `inputProps`, **`inputProps` drops `key`**, the layout tier (§ `inputProps`) | `field` DELETED — and the `--fix` recipe no longer works (§ Consolidation)                     | —                                                                                  | —                                                                     | —      | —                                                                                                         | —                                                                             |
+| **data** (`./data/table`)     | —                                                            | root is a `<div>`, row selection, `getItemKey` required (§ `basalt-ui/data`)           | `./data` + `./query` + `./connectivity` dropped (§ Consolidation)                              | —                                                                                  | —                                                                     | —      | —                                                                                                         | —                                                                             |
+| **dashboard** (`.`)           | `StatCard`: `unit`, `breakdown`, delta format (§ `StatCard`) | `StatGroup`, `WidgetGrid`, query-aware `StatCard` — additive                           | —                                                                                              | **the column law keys on the CONTAINER; `cols={4}` is 2-up at `sm`** (§ Dashboard) | —                                                                     | —      | —                                                                                                         | —                                                                             |
+| **toolchain** (`./configs/*`) | —                                                            | —                                                                                      | the shipped lefthook preset's `check-theme` BROKE — the CLI resolver stopped ascending (§ CLI) | the preset's default bin, and the `root:` recipe (§ Toolchain)                     | —                                                                     | —      | —                                                                                                         | —                                                                             |
+| **CLI** (`basalt-ui`)         | —                                                            | —                                                                                      | **resolver stops relocating; `doctor` loses 6 of 10 checks** (§ CLI)                           | —                                                                                  | —                                                                     | —      | —                                                                                                         | —                                                                             |
+| **guards**                    | five rules → `error` (§ Guards)                              | six new ids at `warn` (§ preamble)                                                     | `query-dual-import` retired in 1.29.1 (§ Guards)                                               | four rules → `error` (§ Guards)                                                    | —                                                                     | —      | —                                                                                                         | `raw-breakpoint`: the container-grid answer, `error` at 1.33.0 (§ Unreleased) |
 
 ---
 
-## Unreleased
+## Unreleased — `basalt/raw-breakpoint` gets its answer
 
-_Nothing yet. Author the next section under this heading as `## Unreleased — <title>`; the
-release renames it and opens a new one here._
+### `basalt/raw-breakpoint`
+
+1.31.0 shipped this rule (`warn`) with a message that said "reach for a container query" and named
+no primitive, and this file never mentioned it. It flags four shapes; each has a concrete target
+now. **Severity: `warn`, promotes to `error` at 1.33.0** (moved from 1.32.0 — this is the first
+minor with a documented answer). A `theme-allow raw-breakpoint — <reason>` waives one occurrence.
+
+**The law.** `useSizeClass()` is for **shell chrome**. A page swapping its OWN layout — a column
+count, a table for a card list, a row for a stack — is a **container** decision, keyed on
+`CONTAINER_CLASSES` (`basalt-ui/tokens`: compact 240 · regular 480 · wide 800), not the viewport.
+The primitive is Mantine 9's own `type="container"` grid. Verified against `@mantine/core` 9.3
+source, which is what the rule's exemption is built on:
+
+- `SimpleGrid type="container"` wraps itself in a `container: simple-grid / inline-size` div (no
+  ancestor needed) and writes **each key verbatim** into `@container simple-grid (min-width: <key>)`.
+  Keys are CSS lengths — `'480px'`, not `480` (unitless is invalid) and not `sm` (never resolved
+  through `theme.breakpoints`; emits a dead query). The rule flags `sm`-style keys there.
+- `Grid type="container"` only goes container **when it also gets a `breakpoints` map**; without
+  one it silently renders viewport media queries (flagged). The map is typed
+  `Record<MantineSize, string>` — all five `xs`–`xl`, no custom names — and `Grid.Col` keys resolve
+  through it, so `sm` there means whatever width the map gives it (exempt).
+
+| Shape (what it flags)                                                                           | Replace with                                                                                                                                                                                                                              |
+| ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| responsive object on a Mantine prop — `SimpleGrid cols={{ base, sm }}`                          | `SimpleGrid type="container"` with px keys (below)                                                                                                                                                                                        |
+| `Grid.Col span={{ base, lg }}`                                                                  | `Grid type="container"` + a `breakpoints` map onto container widths; spans keyed through it                                                                                                                                               |
+| `Flex direction={{ base: 'column', sm: 'row' }}`                                                | the container `SimpleGrid` (equal columns); a plain `Group` (wraps by default) for intrinsic-width items; or a CSS module: `container: basalt-grid / inline-size` on the parent, `@container basalt-grid (min-width: 480px)` on the child |
+| `visibleFrom`/`hiddenFrom` outside a shell home or a control's C9 swap                          | the same container rule, `display` toggled in the CSS module — or drop the swap                                                                                                                                                           |
+| `useMediaQuery`/`useMatches`/`useViewportSize` (`@mantine/*`), `window.matchMedia`/`innerWidth` | shell chrome: `useSizeClass()`; a page's layout: one of the above                                                                                                                                                                         |
+
+```tsx
+// before — viewport breakpoints
+<SimpleGrid cols={{ base: 1, sm: 3 }}>…</SimpleGrid>
+<Grid><Grid.Col span={{ base: 12, lg: 4 }}>…</Grid.Col></Grid>
+
+// after — the grid's own width
+import { CONTAINER_CLASSES as C } from 'basalt-ui/tokens'
+<SimpleGrid type="container" cols={{ base: 1, [`${C.regular}px`]: 3 }}>…</SimpleGrid>
+const px = (n: number) => `${n}px`
+const containerBreakpoints = { xs: px(C.compact), sm: px(C.regular), md: px(C.wide), lg: px(C.wide), xl: px(C.wide) }
+<Grid type="container" breakpoints={containerBreakpoints}>
+  <Grid.Col span={{ base: 12, md: 4 }}>…</Grid.Col>
+</Grid>
+```
+
+Pick the container key by the grid's own width, not by the viewport key it replaces: a grid inside a
+page with an aside or a sidebar is narrower than the viewport, which is the point.
+
+### `useBreakpoint` — removal moved to 1.33.0, and the 1.31.0 replacement line was half wrong
+
+`useBreakpoint('sm')` → `useSizeClass() !== 'compact'` holds for **shell chrome only**. A page
+swapping its own layout on it (argo's table ↔ card list) is a container decision — see above. Note
+that `useSizeClass()` answers `'compact'` on the first frame (the server snapshot,
+`<BasaltProvider sizeClassHint>`) where `useBreakpoint` returned `undefined`, so an
+`isLg === true` guard written for that `undefined` can go.
 
 ## 1.31.0 — size classes and the pointer tier
 
@@ -93,7 +146,9 @@ release renames it and opens a new one here._
 it out. Mapping: `xs` = `sm` = 52.5em (medium opens), `md` = `lg` = `xl` = 75em (expanded opens) — the
 keys collapse. So `xs` moves 36em → 52.5em, `sm` 48em → 52.5em (an iPad portrait is now bottom-bar chrome), `md`
 62em → 75em, `lg` stays 75em and `xl` 88em → 75em. Check every `visibleFrom`/`hiddenFrom`/`useBreakpoint`
-on those keys: `xs` no longer differs from `sm`, and `md`/`lg`/`xl` now switch at the same width.
+on those keys: `xs` no longer differs from `sm`, and `md`/`lg`/`xl` now switch at the same width. Outside a
+shell home those props are `basalt/raw-breakpoint` findings — move them to a container grid rather
+than re-keying them (see that section above).
 
 | Removed                                                                                                                     | Replacement                                                                                                                                                                           |
 | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -149,10 +204,10 @@ everywhere).
 `storageKey`. Opt out with a controlled `collapsed` prop; a persisted `false` (the user opened it
 once) pins it open.
 
-**On notice — `useBreakpoint` (removed next minor).** `@deprecated`, still works. Replace
-`useBreakpoint('sm')` with `useSizeClass() !== 'compact'`, and `useBreakpoint('lg')` with
-`useSizeClass() === 'expanded'`. A `max`-edge or non-shell width read is a container concern: use
-`@container` in CSS.
+**On notice — `useBreakpoint` (removal moved to 1.33.0).** `@deprecated`, still works. For shell
+chrome, replace `useBreakpoint('sm')` with `useSizeClass() !== 'compact'` and `useBreakpoint('lg')`
+with `useSizeClass() === 'expanded'`. A page's own layout swap is a container decision, not a
+`useSizeClass()` one — corrected after release; see the `basalt/raw-breakpoint` section above.
 
 **Card chrome keys on the card's own width, not the viewport.** `ChartCard`, `StatCard` and `Section`
 are now `container: basalt-card / inline-size` (`container-type: inline-size` — layout and inline-size

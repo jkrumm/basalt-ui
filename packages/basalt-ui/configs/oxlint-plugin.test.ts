@@ -3467,6 +3467,63 @@ describe('basalt/raw-breakpoint', () => {
     expect(rules).not.toContain('raw-breakpoint')
   })
 
+  // The sanctioned answer, read from @mantine/core 9.3 source: SimpleGrid type="container" writes
+  // each key verbatim as `@container simple-grid (min-width: <key>)`, Grid type="container" only
+  // goes container WITH a `breakpoints` map. Exempt exactly where Mantine resolves the object.
+  describe('Mantine type="container" grids', () => {
+    const grid = (jsx: string) =>
+      run(`import { Grid, SimpleGrid } from '@mantine/core'\nexport const C = () => ${jsx}\n`)
+    const CONTAINER_MESSAGE = /Theme breakpoint name under type="container"/
+
+    it('does NOT flag a px-keyed container SimpleGrid (the recipe)', () => {
+      expect(
+        grid(`<SimpleGrid type="container" cols={{ base: 1, '480px': 2, '800px': 3 }} />`).rules,
+      ).not.toContain('raw-breakpoint')
+    })
+
+    it('does NOT flag a lone `base` under type="container"', () => {
+      expect(grid(`<SimpleGrid type="container" cols={{ base: 2 }} />`).rules).not.toContain(
+        'raw-breakpoint',
+      )
+    })
+
+    it('flags a theme-named key on a container SimpleGrid — Mantine emits a dead (min-width: sm)', () => {
+      const { rules, output } = grid(`<SimpleGrid type="container" cols={{ base: 1, sm: 2 }} />`)
+      expect(rules).toContain('raw-breakpoint')
+      expect(CONTAINER_MESSAGE.test(output)).toBe(true)
+    })
+
+    it('still flags type="media" (and a dynamic type) with the viewport message', () => {
+      for (const type of [`"media"`, `{kind}`]) {
+        const { rules, output } = grid(`<SimpleGrid type=${type} cols={{ base: 1, sm: 2 }} />`)
+        expect(rules).toContain('raw-breakpoint')
+        expect(CONTAINER_MESSAGE.test(output)).toBe(false)
+      }
+    })
+
+    it('does NOT flag Grid.Col spans under a container Grid with a breakpoints map', () => {
+      const src =
+        `<Grid type="container" breakpoints={{ xs: '240px', sm: '480px' }}>\n` +
+        `  {items.map((i) => <Grid.Col key={i} span={{ base: 12, sm: 6 }}>x</Grid.Col>)}\n` +
+        `</Grid>`
+      expect(grid(src).rules).not.toContain('raw-breakpoint')
+    })
+
+    it('flags Grid.Col spans under a container Grid with NO breakpoints — Mantine falls back to media', () => {
+      const { rules, output } = grid(
+        `<Grid type="container"><Grid.Col span={{ base: 12, sm: 6 }}>x</Grid.Col></Grid>`,
+      )
+      expect(rules).toContain('raw-breakpoint')
+      expect(CONTAINER_MESSAGE.test(output)).toBe(true)
+    })
+
+    it('still flags Grid.Col spans under an ordinary Grid', () => {
+      expect(
+        grid(`<Grid><Grid.Col span={{ base: 12, sm: 6 }}>x</Grid.Col></Grid>`).rules,
+      ).toContain('raw-breakpoint')
+    })
+  })
+
   it('flags visibleFrom/hiddenFrom outside a shell home', () => {
     const { rules } = run(
       `import { Box } from '@mantine/core'\n` +
