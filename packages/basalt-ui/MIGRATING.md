@@ -132,6 +132,34 @@ writes the fallback back, in both the `options` and the stepper form. "No filter
 not a row: with `clearable`, drop an `{ value: 0, label: 'Any …' }` option — the pill reads the
 filter's `label` while no preset matches.
 
+### `unknown-vx-token` — a removed or misspelled `--vx-*` name is a finding (`warn`, `error` at 1.34.0)
+
+A `var(--vx-*)` naming a token basalt does not emit resolves to its fallback — or to nothing — with
+no error from tsc, oxlint or the browser. obsidian lost its 44px touch floor that way, to
+`var(--vx-space-touch-target)`. `check-theme` now reports it, in every scanned file type. It ships
+`warn` for this minor and promotes at 1.34.0. Measured at ship time: argo, linewatch, rb, rollhook,
+obsidian, weatherorb, image-share, email-gateway 0; image-gen 1 (`--vx-surface-2` in
+`DerivedSection.tsx`, hidden behind a `transparent` fallback).
+
+| Removed name                                  | Replacement                                               |
+| --------------------------------------------- | --------------------------------------------------------- |
+| `--vx-space-touch-target`                     | `--vx-hit`                                                |
+| `--vx-space-touch-control-height`             | `--vx-hit`                                                |
+| `--vx-space-app-header-mobile-actions-height` | `--vx-space-sticky-header-clearance`                      |
+| `--vx-space-sticky-header-clearance-mobile`   | `--vx-space-sticky-header-clearance`                      |
+| `--vx-space-sidebar-brand-inset-top`          | none — the brand row is the header band (§ 1.30.0 Chrome) |
+
+- **A name removed or misspelled inside a basalt family** (`--vx-space-*`, `--vx-surface-*`,
+  `--vx-text-*`, `--vx-radius-*`, … — every prefix basalt itself emits) is reported. The live set is
+  exactly `basalt-ui/tokens.css` plus three component-scoped names (`--vx-hit-gap`,
+  `--vx-space-icon-size`, `--vx-keyboard-inset`).
+- **Your `defineSeries`/`groupTokens` series are never judged** — they emit `--vx-<key>` /
+  `--vx-<group>-<key>` under names you choose (argo's `--vx-lp-*`, rb's `--vx-confidence-*`), so a
+  name outside basalt's families is left alone. A computed name (`var(--vx-fill-${hue})`) is
+  skipped, and so is a name the same file declares.
+- **Your own custom property inside a basalt family, declared in another file**, is the one false
+  positive: rename it out of the family, or `theme-allow unknown-vx-token — <where it is declared>`.
+
 ## 1.32.1 — the 1.32.0 recipe resolves, and the gaps consumers hit upgrading to it
 
 A patch: no new API beyond restoring what 1.31.0/1.32.0 already documented. Eight consumers
