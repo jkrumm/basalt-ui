@@ -386,13 +386,13 @@ const FIXTURE = [
   '| Surface | 1.29.0 | Unreleased |',
   '| --- | --- | --- |',
   '| **tokens** (`./tokens`) | a token moved | eight spacing numbers (§ Chrome) |',
-  '| **charts** (`./charts`) | — | — |',
+  '| **charts** (`./charts`) | — | the chart tier (§ Unreleased) |',
   '',
   '---',
   '',
   '## Unreleased — the chrome wave',
   '',
-  'Body prose.',
+  'Body prose; see § Unreleased above, and §§ Unreleased, Charts.',
   '',
   '## 1.29.2 — a patch',
   '',
@@ -426,7 +426,12 @@ describe('renameUnreleased', () => {
     expect(out).toContain(
       '| **tokens** (`./tokens`) | a token moved | eight spacing numbers (§ Chrome) | — |',
     )
-    expect(out).toContain('| **charts** (`./charts`) | — | — | — |')
+    expect(out).toContain('| **charts** (`./charts`) | — | the chart tier (§ 1.30.0) | — |')
+  })
+
+  it('points every `§ Unreleased` reference at the section it just named', () => {
+    expect(out).not.toMatch(/§§?\s+Unreleased/)
+    expect(out).toContain('Body prose; see § 1.30.0 above, and §§ 1.30.0, Charts.')
   })
 
   it('leaves the older sections and their prose alone', () => {
