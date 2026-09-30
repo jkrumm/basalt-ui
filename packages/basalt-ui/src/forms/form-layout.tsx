@@ -213,7 +213,12 @@ export type FormGroupProps = BasaltProps & {
   error?: ReactNode
   /** Marks the group required — same two-channel treatment as `FormRow`. */
   required?: boolean
-  /** `column` stacks the options; `row` lays them out inline and wraps. @default 'column' */
+  /**
+   * `column` stacks the options; `row` lays them out inline, wraps, and bottom-aligns them, so a
+   * trailing button sits level with the inputs instead of stretching to the tallest child. Give a
+   * `FormRow` inside a `row` group (or any flex row) a definite width — it is an inline-size
+   * container, so its intrinsic width is zero and it collapses otherwise. @default 'column'
+   */
   direction?: 'row' | 'column'
   /** The cluster — checkboxes, radios, chips. */
   children: ReactNode

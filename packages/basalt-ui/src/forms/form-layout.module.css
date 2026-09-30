@@ -138,9 +138,12 @@
   gap: var(--vx-space-stack-xs);
 }
 
+/* Bottom-aligned, not stretched: a trailing button beside a labelled FormRow keeps its own height
+   and lines up with the input, not with the label above it. */
 .groupControls[data-direction='row'] {
   flex-direction: row;
   flex-wrap: wrap;
+  align-items: flex-end;
   gap: var(--vx-space-control-gap);
 }
 
