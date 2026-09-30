@@ -1196,6 +1196,26 @@ describe('NumberFilter — the stepper form', () => {
     })
   })
 
+  test('pressing Clear keeps focus, so a pending draft never commits on the way', async () => {
+    const router = await mountPage({
+      validateSearch: store.validateSearch,
+      entry: '/dashboard?minDuration=90',
+      Page: () => <NumberFilter field={store.field.minDuration} label="Min duration" clearable />,
+    })
+    await openPill('90')
+    fireEvent.change(box(), { target: { value: '300' } })
+    const clear = screen.getByRole('button', { name: 'Clear', hidden: true })
+    // `false` = the default was prevented: the browser will not move focus off the box, so its
+    // blur-commit never writes `300` ahead of the clear.
+    expect(fireEvent.mouseDown(clear)).toBe(false)
+    await act(async () => {
+      fireEvent.click(clear)
+    })
+    await waitFor(() => {
+      expect(search(router)['minDuration']).toBe(0)
+    })
+  })
+
   test('no Clear without the prop, and none at the fallback', async () => {
     await mountPage({
       validateSearch: store.validateSearch,
