@@ -175,7 +175,9 @@
   "./tokens": [
     "BP",
     "BREAKPOINTS",
+    "CONTAINER_CLASSES",
     "DEFAULT_DERIVE_CONFIG",
+    "SIZE_CLASSES",
     "VX",
     "alpha",
     "buildDensityCss",
@@ -190,6 +192,7 @@
     "groupTokens",
     "p",
     "pxRem",
+    "resolveContainerClass",
     "resolveDeriveConfig",
     "seriesTokens"
   ],
