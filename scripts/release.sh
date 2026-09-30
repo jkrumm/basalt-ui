@@ -43,7 +43,9 @@ PACKAGE_PATH="packages/basalt-ui"
 REPO_URL="https://github.com/jkrumm/basalt-ui"
 RUN_TIMEOUT=1800  # 30m — a release run takes ~1m; this only ever fires on a wedge.
 START_TIMEOUT=180 # 3m for a dispatched/triggered run to appear.
-REGISTRY_TIMEOUT=300 # 5m for the published version to be readable from the registry.
+# 20m for the published version to be readable — a hang guard, not a budget: 1.32.0 took ~7.5m
+# to be served, and the old 5m gave up on a release that had in fact succeeded.
+REGISTRY_TIMEOUT=1200
 
 die() {
   echo "✖ $*" >&2
