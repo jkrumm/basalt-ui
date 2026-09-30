@@ -3543,6 +3543,40 @@ describe('basalt/raw-breakpoint', () => {
       expect(CONTAINER_MESSAGE.test(output)).toBe(true)
     })
 
+    it('reports a const-extracted theme-keyed object on a container SimpleGrid — still a dead query', () => {
+      const { rules, output } = run(
+        `import { SimpleGrid } from '@mantine/core'\n` +
+          `const cols = { base: 1, sm: 2 }\n` +
+          `export const C = () => <SimpleGrid type="container" cols={cols} />\n`,
+      )
+      expect(rules).toContain('raw-breakpoint')
+      expect(CONTAINER_MESSAGE.test(output)).toBe(true)
+    })
+
+    // Grid goes container only on a truthy map, and an empty one emits no query — so the exemption
+    // needs a map that statically resolves to a non-empty object, not the attribute's presence.
+    it.each([
+      ['undefined', `breakpoints={undefined}`, ''],
+      ['an empty object', `breakpoints={{}}`, ''],
+      ['an unresolvable identifier', `breakpoints={imported}`, `import { imported } from './bp'\n`],
+    ])('flags Grid.Col spans under a container Grid whose breakpoints is %s', (_, bp, extra) => {
+      const { rules, output } = run(
+        `import { Grid } from '@mantine/core'\n${extra}` +
+          `export const C = () => <Grid type="container" ${bp}><Grid.Col span={{ base: 12, sm: 6 }}>x</Grid.Col></Grid>\n`,
+      )
+      expect(rules).toContain('raw-breakpoint')
+      expect(CONTAINER_MESSAGE.test(output)).toBe(true)
+    })
+
+    it('does NOT flag Grid.Col spans under a container Grid whose breakpoints is a same-file const', () => {
+      const { rules } = run(
+        `import { Grid } from '@mantine/core'\n` +
+          `const bp = { xs: '240px', sm: '480px', md: '800px', lg: '800px', xl: '800px' }\n` +
+          `export const C = () => <Grid type="container" breakpoints={bp}><Grid.Col span={{ base: 12, sm: 6 }}>x</Grid.Col></Grid>\n`,
+      )
+      expect(rules).not.toContain('raw-breakpoint')
+    })
+
     it('still flags Grid.Col spans under an ordinary Grid', () => {
       expect(
         grid(`<Grid><Grid.Col span={{ base: 12, sm: 6 }}>x</Grid.Col></Grid>`).rules,
