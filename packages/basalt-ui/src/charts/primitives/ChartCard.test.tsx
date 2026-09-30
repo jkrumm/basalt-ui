@@ -7,6 +7,7 @@
 import { render, screen, waitFor, within } from '@testing-library/react'
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import { StrictMode } from 'react'
+import { resetValidatedProps } from '../../common/validate'
 import type { SeriesStyle } from '../series'
 import { ChartCard } from './ChartCard'
 import { ChartFrame } from './ChartFrame'
@@ -460,4 +461,36 @@ describe('legend-slot ownership effect does not loop (round 2 regression)', () =
       console.error = originalError
     }
   })
+})
+
+/**
+ * r1 review regression: the owner unmounting in the SAME commit a new frame mounts (a tab switch —
+ * a different `useId`) is a hand-off, not contention. The new frame's first render still sees the
+ * outgoing owner, so a denial read off that render warned about a frame that goes on to own the
+ * slot. Only a denial of a claim this frame has actually made may warn.
+ */
+test('an owner swapped for a new frame in one commit hands the slot over without a contention warning', async () => {
+  const seriesA: SeriesStyle[] = [{ key: 's1', label: 'Tab A', color: '#000', mark: 'line' }]
+  const seriesB: SeriesStyle[] = [{ key: 's2', label: 'Tab B', color: '#000', mark: 'line' }]
+  resetValidatedProps()
+  const originalError = console.error
+  const messages: string[] = []
+  console.error = (...args: unknown[]) => messages.push(args.map(String).join(' '))
+  try {
+    function Tabs({ tab }: { tab: 'a' | 'b' }) {
+      return (
+        <ChartCard title="Tabbed">
+          <ChartFrame key={tab} series={tab === 'a' ? seriesA : seriesB} height={120}>
+            {() => <svg />}
+          </ChartFrame>
+        </ChartCard>
+      )
+    }
+    const { rerender } = render(<Tabs tab="a" />)
+    rerender(<Tabs tab="b" />)
+    rerender(<Tabs tab="a" />)
+  } finally {
+    console.error = originalError
+  }
+  expect(messages.some((m) => m.includes('header legend slot'))).toBe(false)
 })
