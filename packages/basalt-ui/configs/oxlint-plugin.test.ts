@@ -3577,6 +3577,34 @@ describe('basalt/raw-breakpoint', () => {
       expect(rules).not.toContain('raw-breakpoint')
     })
 
+    // Only the grid-keyed props route through the container queries; Box style props on the same
+    // element still compile to viewport @media, so they keep the ordinary viewport message.
+    it.each([
+      [
+        'SimpleGrid p',
+        `<SimpleGrid type="container" cols={{ base: 1, '480px': 2 }} p={{ base: 'xs', lg: 'md' }} />`,
+      ],
+      [
+        'Grid mt',
+        `<Grid type="container" breakpoints={{ xs: '240px', sm: '480px', md: '800px', lg: '800px', xl: '800px' }} mt={{ base: 0, sm: 'md' }}>x</Grid>`,
+      ],
+      [
+        'Grid.Col mih',
+        `<Grid type="container" breakpoints={{ xs: '240px', sm: '480px', md: '800px', lg: '800px', xl: '800px' }}><Grid.Col span={6} mih={{ base: 80, lg: 120 }}>x</Grid.Col></Grid>`,
+      ],
+    ])('flags a Box style prop on a container grid as viewport (%s)', (_, jsx) => {
+      const { rules, output } = grid(jsx)
+      expect(rules).toContain('raw-breakpoint')
+      expect(CONTAINER_MESSAGE.test(output)).toBe(false)
+    })
+
+    it('does NOT flag container-routed spacing props on a container grid', () => {
+      const src =
+        `<Grid type="container" breakpoints={{ xs: '240px', sm: '480px', md: '800px', lg: '800px', xl: '800px' }} gap={{ base: 'xs', sm: 'md' }}>` +
+        `<Grid.Col span={{ base: 12, sm: 6 }} order={{ base: 2, sm: 1 }}>x</Grid.Col></Grid>`
+      expect(grid(src).rules).not.toContain('raw-breakpoint')
+    })
+
     it('still flags Grid.Col spans under an ordinary Grid', () => {
       expect(
         grid(`<Grid><Grid.Col span={{ base: 12, sm: 6 }}>x</Grid.Col></Grid>`).rules,
