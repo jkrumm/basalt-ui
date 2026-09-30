@@ -3976,36 +3976,57 @@ function isResponsiveObjectValue(node, namedOnly = false) {
   return !namedOnly || names.some((name) => name !== 'base')
 }
 
+/** The `const` initializers {@link reachableObjects} can resolve an Identifier to. */
+const RESOLVABLE_INIT_TYPES = new Set([
+  'ObjectExpression',
+  'ConditionalExpression',
+  'LogicalExpression',
+  'Identifier',
+])
+
 /**
- * Does this prop value CONTAIN a responsive object — itself, nested one level down in a property
- * (`footer={{ height: { base: 60, sm: 0 } }}`, Mantine's own AppShell idiom), or behind a same-file
- * `const` binding at either place (`const h = { base: 60, sm: 0 }`, then `footer={{ height: h }}`)?
- * `consts` is the same-file name→object map, so an Identifier resolves identically wherever it
- * appears — the top-level attribute value and a nested property value alike. Matching only a nested
- * `ObjectExpression` left the Identifier-in-a-property shape trivially bypassable.
+ * Every object literal a value can evaluate to: an Identifier resolves through `consts` (the
+ * same-file name→init map) FIRST, then a conditional contributes both branches and a logical both
+ * sides — in any nesting, so `const span = wide ? { base: 12, md: 4 } : 12` then `span={span}` is
+ * the same shape as writing the conditional inline (rb's hero Grid was a false negative until
+ * 1.32.1). `seen` guards an Identifier cycle (`const a = b`, `const b = a`) and a shared object.
+ */
+function reachableObjects(node, consts, seen = new Set()) {
+  const resolved = node?.type === 'Identifier' ? consts.get(node.name) : node
+  if (resolved === null || resolved === undefined || seen.has(resolved)) return []
+  seen.add(resolved)
+  switch (resolved.type) {
+    case 'ObjectExpression':
+      return [resolved]
+    case 'Identifier':
+      return reachableObjects(resolved, consts, seen)
+    case 'ConditionalExpression':
+      return [resolved.consequent, resolved.alternate].flatMap((branch) =>
+        reachableObjects(branch, consts, seen),
+      )
+    case 'LogicalExpression':
+      return [resolved.left, resolved.right].flatMap((side) => reachableObjects(side, consts, seen))
+    default:
+      return []
+  }
+}
+
+/**
+ * Does this prop value CONTAIN a responsive object — any object it can evaluate to
+ * ({@link reachableObjects}), or one nested one level down in a property of one
+ * (`footer={{ height: { base: 60, sm: 0 } }}`, Mantine's own AppShell idiom), the property value
+ * resolving the same way. Matching only a nested `ObjectExpression` left the Identifier-in-a-
+ * property shape trivially bypassable.
  */
 function containsResponsiveObjectValue(node, consts, namedOnly = false, seen = new Set()) {
-  // `span={wide ? { base: 12, md: 4 } : 12}` — either branch can carry the object (rb's hero Grid
-  // was a false negative until 1.32.1 looked inside the conditional).
-  if (node?.type === 'ConditionalExpression')
-    return [node.consequent, node.alternate].some((branch) =>
-      containsResponsiveObjectValue(branch, consts, namedOnly, seen),
-    )
-  if (node?.type === 'LogicalExpression')
-    return [node.left, node.right].some((side) =>
-      containsResponsiveObjectValue(side, consts, namedOnly, seen),
-    )
-  const resolved =
-    node !== null && node !== undefined && node.type === 'Identifier' ? consts.get(node.name) : node
-  if (resolved === null || resolved === undefined || resolved.type !== 'ObjectExpression')
-    return false
-  if (seen.has(resolved)) return false
-  seen.add(resolved)
-  if (isResponsiveObjectValue(resolved, namedOnly)) return true
-  return resolved.properties.some(
-    (prop) =>
-      prop.type === 'Property' &&
-      containsResponsiveObjectValue(prop.value, consts, namedOnly, seen),
+  return reachableObjects(node, consts, seen).some(
+    (object) =>
+      isResponsiveObjectValue(object, namedOnly) ||
+      object.properties.some(
+        (prop) =>
+          prop.type === 'Property' &&
+          containsResponsiveObjectValue(prop.value, consts, namedOnly, seen),
+      ),
   )
 }
 
@@ -4132,14 +4153,21 @@ const RAW_BREAKPOINT_BASE_ONLY_MESSAGE =
   'object and write the value: cols={{ base: 3 }} → cols={3}. (basalt/raw-breakpoint)'
 
 /**
- * Is `node` (or the same-file `const` it names) a responsive object carrying ONLY `base`? That is
- * no breakpoint decision, and the viewport recipe is the wrong advice for it — the fix is the bare
- * value. Message-only: the shape still reports, as it always has.
+ * Is every responsive object this value can evaluate to ({@link reachableObjects} — the same
+ * unwrap detection uses) one carrying ONLY `base`? That is no breakpoint decision, and the viewport
+ * recipe is the wrong advice for it — the fix is the bare value. Message-only: the shape still
+ * reports, as it always has.
  */
 function isBaseOnlyResponsiveObject(node, consts) {
-  const resolved = node?.type === 'Identifier' ? consts.get(node.name) : node
-  if (!isResponsiveObjectValue(resolved)) return false
-  return resolved.properties.every((prop) => propertyKeyName(prop) === 'base')
+  const responsive = reachableObjects(node, consts).filter((object) =>
+    isResponsiveObjectValue(object),
+  )
+  return (
+    responsive.length > 0 &&
+    responsive.every((object) =>
+      object.properties.every((prop) => propertyKeyName(prop) === 'base'),
+    )
+  )
 }
 
 const RAW_BREAKPOINT_CONTAINER_KEY_MESSAGE =
@@ -4203,8 +4231,9 @@ const rawBreakpoint = {
     let definesShellHome = false
     const visibleHiddenCandidates = []
     const responsiveObjectCandidates = []
-    // Same-file `const NAME = { base, sm }` bindings, resolved when a JSX attribute or a nested
-    // property passes the Identifier — no scope manager here, so this is a flat name→object map.
+    // Same-file `const NAME = { base, sm }` bindings (or a conditional/logical/alias init, see
+    // RESOLVABLE_INIT_TYPES), resolved when a JSX attribute or a nested property passes the
+    // Identifier — no scope manager here, so this is a flat name→init map.
     // A name declared more than once in the file is ambiguous (its two bindings cannot be told
     // apart), so it is dropped from the map entirely rather than guessed at last-wins.
     const responsiveObjectConsts = new Map()
@@ -4252,7 +4281,7 @@ const rawBreakpoint = {
           return
         }
         seenDeclaratorNames.add(name)
-        if (node.init?.type === 'ObjectExpression') responsiveObjectConsts.set(name, node.init)
+        if (RESOLVABLE_INIT_TYPES.has(node.init?.type)) responsiveObjectConsts.set(name, node.init)
       },
       JSXAttribute(node) {
         const name = node.name?.name
@@ -4299,12 +4328,10 @@ const rawBreakpoint = {
           if (!containsResponsiveObjectValue(value, responsiveObjectConsts, mode !== undefined))
             continue
           if (hasThemeAllow(context, node, 'raw-breakpoint')) continue
-          const message =
-            mode !== undefined
-              ? RAW_BREAKPOINT_CONTAINER_KEY_MESSAGE
-              : isBaseOnlyResponsiveObject(value, responsiveObjectConsts)
-                ? RAW_BREAKPOINT_BASE_ONLY_MESSAGE
-                : RAW_BREAKPOINT_RESPONSIVE_PROP_MESSAGE
+          let message = RAW_BREAKPOINT_RESPONSIVE_PROP_MESSAGE
+          if (mode !== undefined) message = RAW_BREAKPOINT_CONTAINER_KEY_MESSAGE
+          else if (isBaseOnlyResponsiveObject(value, responsiveObjectConsts))
+            message = RAW_BREAKPOINT_BASE_ONLY_MESSAGE
           context.report({ node, message })
         }
         for (const node of visibleHiddenCandidates) {

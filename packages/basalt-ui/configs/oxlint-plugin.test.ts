@@ -3759,6 +3759,32 @@ describe('basalt/raw-breakpoint', () => {
     expect(rules).toContain('raw-breakpoint')
   })
 
+  // Review r1: the unwrap ran before const resolution, so hoisting the conditional bypassed it.
+  it('flags a conditional responsive object behind a same-file const', () => {
+    const { rules } = run(
+      `import { Grid } from '@mantine/core'\n` +
+        `export const C = ({ wide }: { wide: boolean }) => {\n` +
+        `  const span = wide ? { base: 12, md: 4 } : 12\n` +
+        `  return <Grid><Grid.Col span={span}>x</Grid.Col></Grid>\n}\n`,
+    )
+    expect(rules).toContain('raw-breakpoint')
+  })
+
+  it('flags through a const alias chain and survives an alias cycle', () => {
+    const chained = run(
+      `import { SimpleGrid } from '@mantine/core'\n` +
+        `const base = { base: 1, sm: 2 }\nconst cols = base\n` +
+        `export const C = () => <SimpleGrid cols={cols} />\n`,
+    )
+    expect(chained.rules).toContain('raw-breakpoint')
+    const cyclic = run(
+      `import { SimpleGrid } from '@mantine/core'\n` +
+        `const a = b\nconst b = a\n` +
+        `export const C = () => <SimpleGrid cols={a} />\n`,
+    )
+    expect(cyclic.rules).not.toContain('raw-breakpoint')
+  })
+
   it('flags a responsive object on either side of a logical prop value', () => {
     const { rules } = run(
       `import { SimpleGrid } from '@mantine/core'\n` +
@@ -3776,6 +3802,24 @@ describe('basalt/raw-breakpoint', () => {
     expect(rules).toContain('raw-breakpoint')
     expect(output).toContain('cols={3}')
     expect(output).not.toContain('keyed on theme breakpoints')
+  })
+
+  it('gives the base-only message through a const-bound conditional too', () => {
+    const { output } = run(
+      `import { SimpleGrid } from '@mantine/core'\n` +
+        `export const C = ({ d }: { d: boolean }) => {\n` +
+        `  const cols = d ? { base: 3 } : 2\n  return <SimpleGrid cols={cols} />\n}\n`,
+    )
+    expect(output).toContain('cols={3}')
+    expect(output).not.toContain('keyed on theme breakpoints')
+  })
+
+  it('keeps the viewport message when any branch carries a real breakpoint', () => {
+    const { output } = run(
+      `import { SimpleGrid } from '@mantine/core'\n` +
+        `export const C = ({ d }: { d: boolean }) => <SimpleGrid cols={d ? { base: 3 } : { base: 1, sm: 2 }} />\n`,
+    )
+    expect(output).toContain('keyed on theme breakpoints')
   })
 
   // rb r2 #5.
