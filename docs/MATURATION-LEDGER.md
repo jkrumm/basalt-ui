@@ -389,3 +389,21 @@ disclosure out of `ChartLegend`, the BandStrip/MirroredBars and DualPanel/Cartes
 groups, `fitChipRows`/`fitDotRows` sharing one greedy-wrap helper, a shared ref-count helper for
 `BasaltProvider`'s two module counters, and `@testing-library/react` resolving only through a hoist
 (no explicit devDependency).
+
+## Consumer loop, round 1 (2026-09-30)
+
+argo took 1.31.0 first and fed back five items; the pre-release follow-ups above ran in parallel
+worktrees. **Closed:** every follow-up item except the ones below: `resolveAsideDocking`, one
+provider mount counter, `useDataTableState`/`useRowDisclosure` in `data-table-state.ts`, the
+legend-slot claimant reducer, one greedy-wrap helper, the margin-ladder resolver, the band-chrome
+dedupe, an explicit `@testing-library/react`. **argo feedback:** F1/F2/F5, where `raw-breakpoint` had
+no reachable answer, now point at Mantine `type="container"` grids, narrowed to the props Mantine
+routes (`raw-breakpoint` + `raw-media-query` promote at 1.33.0); F3 → `BasaltDataTable renderCard`;
+F4 → the `legend.maxRows` warning names its unit change. **Dogfood:** basalt's own `check-theme` 26 → 0
+(StatGroup/WidgetGrid moved onto the container law, 768 → 800).
+
+**Still open:** `ChartFrame` stays fallow-CRITICAL (the protocol is gone; what remains is JSX spread
+branching); `oxlint-plugin.test.ts` can go false-green if the JS plugin fails to load under load (13
+spurious exit-0 failures seen once, not reproducible): a harness assertion that the plugin loaded
+would close it; a shipped `CONTAINER_GRID_BREAKPOINTS` const, if argo's container `Grid`s find the
+five-key map boilerplate painful.
