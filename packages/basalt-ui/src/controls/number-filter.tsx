@@ -289,6 +289,11 @@ function NumberStepper({
           <Button
             variant="subtle"
             size="ctl"
+            // The press would blur the input first, and blur COMMITS the draft — so a typed `300`
+            // would land in the URL a tick before Clear wiped it. Keeping focus skips that write.
+            onMouseDown={(event) => {
+              event.preventDefault()
+            }}
             onClick={() => {
               field.clear()
             }}
