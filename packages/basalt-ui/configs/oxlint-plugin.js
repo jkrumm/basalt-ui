@@ -3999,33 +3999,33 @@ function containsResponsiveObjectValue(node, consts, namedOnly = false, seen = n
  * How Mantine 9 resolves a responsive object on this element's grid, read from `@mantine/core`
  * 9.3 source — the sanctioned answer to this rule, so it has to be exempt exactly where it works:
  *
- * - `'container'` — a `<Grid type="container" breakpoints={…}>` (or a `Grid.Col` inside one). Keys
- *   resolve through the grid's OWN `breakpoints` map into `@container mantine-grid` queries, so
- *   an `sm` key is whatever width that map gives it: exempt. Mantine types the map as
- *   `Record<MantineSize, string>`, so the recipe's keys ARE `xs`–`xl` — exempting by key name
- *   instead of by owner would flag the sanctioned answer itself.
+ * - `'container'` — a `<Grid type="container" breakpoints={…}>` (or a `Grid.Col` inside one) whose
+ *   map statically resolves to a non-empty object. Keys resolve through that map into
+ *   `@container mantine-grid` queries, so an `sm` key is whatever width the map gives it: exempt.
+ *   Mantine types the map as `Record<MantineSize, string>`, so the recipe's keys ARE `xs`–`xl` —
+ *   exempting by key name instead of by owner would flag the sanctioned answer itself.
  * - `'simple-grid'` — `<SimpleGrid type="container">`. `SimpleGridContainerVariables` writes each
  *   key VERBATIM as `@container simple-grid (min-width: <key>)` and never consults
  *   `theme.breakpoints`: a `'480px'` key works (and is not a responsive-object key, so it never
  *   reaches here), while `sm` emits `(min-width: sm)` — invalid CSS, a dead query. Flagged.
- * - `'fallback'` — `<Grid type="container">` with NO `breakpoints` (or a `Grid.Col` in one):
- *   `Grid` only takes its container branch when both are set, so this silently renders viewport
- *   media queries. Flagged.
+ * - `'fallback'` — `<Grid type="container">` whose `breakpoints` is absent, `undefined`, `{}` or not
+ *   statically resolvable (or a `Grid.Col` in one). `Grid` takes its container branch only on a
+ *   truthy map, and an empty one emits no query at all — so none of these is the container law,
+ *   and an unreadable map is reported rather than trusted. Flagged.
  * - `undefined` — not a container grid; the ordinary viewport law applies.
  *
  * `type` has to be the string literal `"container"`; a dynamic value is not a decision this rule
  * can read. `Grid.Col` takes its grid's mode by walking to the nearest enclosing `Grid` element.
+ * `consts` is the rule's same-file name→object map, so `breakpoints={map}` resolves like any value.
  */
-function containerGridMode(opening, mantineImports) {
+function containerGridMode(opening, mantineImports, consts) {
   let tag = resolveMantineTag(opening.name, mantineImports)
   let grid = opening
   if (tag === 'Grid.Col') {
     grid = undefined
-    for (
-      let node = opening.parent?.parent;
-      node !== null && node !== undefined;
-      node = node.parent
-    ) {
+    let node = opening.parent?.parent
+    for (let depth = 0; node !== null && node !== undefined; depth++, node = node.parent) {
+      if (depth > ANCESTRY_MAX_DEPTH || node.type === 'Program') break
       if (node.type !== 'JSXElement') continue
       if (resolveMantineTag(node.openingElement.name, mantineImports) !== 'Grid') continue
       grid = node.openingElement
@@ -4044,7 +4044,13 @@ function containerGridMode(opening, mantineImports) {
   )
     return undefined
   if (tag === 'SimpleGrid') return 'simple-grid'
-  return attr('breakpoints') === undefined ? 'fallback' : 'container'
+  const breakpoints = attr('breakpoints')
+  if (breakpoints === undefined) return 'fallback'
+  let map = attrValue(breakpoints)
+  if (map?.type === 'Identifier') map = consts.get(map.name)
+  const nonEmpty =
+    map?.type === 'ObjectExpression' && map.properties.some((prop) => prop.type === 'Property')
+  return nonEmpty ? 'container' : 'fallback'
 }
 
 /**
@@ -4231,7 +4237,7 @@ const rawBreakpoint = {
           const owner = node.parent
           if (owner === null || owner === undefined || owner.type !== 'JSXOpeningElement') continue
           if (resolveMantineTag(owner.name, mantineImports) === undefined) continue
-          const mode = containerGridMode(owner, mantineImports)
+          const mode = containerGridMode(owner, mantineImports, responsiveObjectConsts)
           if (mode === 'container') continue
           if (!containsResponsiveObjectValue(value, responsiveObjectConsts, mode !== undefined))
             continue
