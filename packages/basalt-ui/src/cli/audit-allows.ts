@@ -238,7 +238,7 @@ export function auditAllows(
           slot: waiverLines.length,
           rel,
           line: site.line,
-          ids: site.oxlintRules,
+          ids: site.bare ? ['every rule (bare annotation)'] : site.oxlintRules,
           site: label,
           suffix,
         })
