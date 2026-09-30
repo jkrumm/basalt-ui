@@ -864,8 +864,9 @@ export type GraceEntry = { since: string; promote: string; why: string }
 export const GRACE_PERIOD_KINDS: Partial<Record<GuardKind, GraceEntry>> = {
   'raw-selection-control': {
     since: '1.26.0',
-    promote: '1.32.0',
+    promote: '1.33.0',
     why:
+      "Extended 1.32.0 -> 1.33.0 at the 1.32.0 release, the last extension: basalt's own tree is at 0 (consumer-loop r1 dogfood) and argo is at 2, but RE-MEASURED 2026-09-30 the fleet carries ~33 (image-gen 11, rb 7, image-share 6, weatherorb 5, email-gateway 4, argo 2). The 1.32.0 fleet upgrade clears them while they warn, together with raw-breakpoint, so 1.33.0 promotes all four ids against a measured-clean fleet. " +
       'Extended 1.31.0 -> 1.32.0 at the 1.31.0 release: the basalt tree still carries incumbents (data-table, notifications center, theme-lab) and the argo sweep has not run. ' +
       'new in the wave-6 control guards (docs/CONTROLS-SPEC.md §6, law C1). The text lane cannot ' +
       'see ancestry, so "no home" is approximated by a 12-line host-tag window — the loosest ' +

@@ -83,6 +83,14 @@ consumer read this index, found nothing, and diffed a KPI row that had silently 
 
 ## Unreleased — `basalt/raw-breakpoint` gets its answer
 
+### The C1 pair (`control-outside-home` / `raw-selection-control`) — `error` at 1.33.0, the last extension
+
+Re-measured 2026-09-30: basalt's own tree 0, the fleet ~33 (image-gen 11, rb 7, image-share 6,
+weatherorb 5, email-gateway 4, argo 2). Clear them on 1.32.0 while they still warn — the remedies
+are unchanged (§ 1.31.0 below: a `PageBar` home, `basalt-ui/forms` rows, bound `FieldHandle`s, or a
+reasoned `theme-allow`). 1.33.0 promotes all four ids — this pair plus `raw-breakpoint` and
+`raw-media-query` — together.
+
 ### `basalt/raw-breakpoint`
 
 1.31.0 shipped this rule (`warn`) with a message that said "reach for a container query" and named
