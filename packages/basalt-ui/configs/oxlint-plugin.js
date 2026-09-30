@@ -3656,8 +3656,9 @@ export const DEPRECATED_EXPORTS = [
   {
     subpath: 'basalt-ui',
     name: 'useBreakpoint',
-    replacement: 'useSizeClass (compact/medium/expanded) or @container for a container concern',
-    removeIn: '1.31.0',
+    replacement:
+      'useSizeClass() for shell chrome; a page’s own layout swap is a container decision — a type="container" SimpleGrid/Grid or an @container rule',
+    removeIn: '1.33.0',
     fix: false,
   },
 ]
