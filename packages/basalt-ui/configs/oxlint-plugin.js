@@ -2703,9 +2703,8 @@ const CONTROL_OUTSIDE_HOME_MESSAGE =
 
 /**
  * The cross-file half of C1, and the one rule here that is openly a HEURISTIC: "this control has
- * no home" is a claim about layout intent, which no AST can see. It ships `warn` for that reason
- * and stays warn until the playground and the five consumer repos run it with ≤3 waivers
- * (docs/CONTROLS-SPEC.md §9 wave 7).
+ * no home" is a claim about layout intent, which no AST can see. That is why it sat in grace from
+ * 1.26.0 to 1.33.0, promoting only once basalt's tree and nine consumers measured at zero.
  *
  * Four exemptions carry the false-positive load: an overlay/settings-row/form-row ancestor
  * ({@link CONTROL_HOST_TAGS}, `FormRow`/`FormGroup` included), an {@link isOverlayConventionFile}
@@ -2713,7 +2712,7 @@ const CONTROL_OUTSIDE_HOME_MESSAGE =
  * `@mantine/form` (a form is the third home and its inputs are not filters), and the owner
  * exemption — a file DEFINING a basalt control cannot be told to use one.
  */
-// Ships: warn (grace → 1.33.0)
+// Ships: error
 const controlOutsideHome = {
   meta: {
     type: 'suggestion',
@@ -4263,7 +4262,7 @@ const RAW_BREAKPOINT_HOOK_NAMES = new Set(['useMediaQuery', 'useMatches', 'useVi
  * declares a shell home (or a control's own C9 swap) is exempt for all four shapes uniformly — the
  * shell's own responsive chrome is the sanctioned use, whatever shape it takes.
  */
-// Ships: warn (grace → 1.33.0)
+// Ships: error
 const rawBreakpoint = {
   meta: {
     type: 'suggestion',
@@ -4433,59 +4432,7 @@ const rawBreakpoint = {
  *
  * @type {Record<string, GraceEntry>}
  */
-export const PLUGIN_RULE_GRACE = {
-  'control-outside-home': {
-    since: '1.26.0',
-    promote: '1.33.0',
-    why:
-      "Extended 1.32.0 -> 1.33.0 at the 1.32.0 release, the last extension: basalt's own tree is at 0 (consumer-loop r1 dogfood) and argo is at 2, but RE-MEASURED 2026-09-30 the fleet carries ~33 (image-gen 11, rb 7, image-share 6, weatherorb 5, email-gateway 4, argo 2). The 1.32.0 fleet upgrade clears them while they warn, together with raw-breakpoint, so 1.33.0 promotes all four ids against a measured-clean fleet. " +
-      'Extended 1.31.0 -> 1.32.0 at the 1.31.0 release: the basalt tree still carries incumbents (data-table, notifications center, theme-lab) and the argo sweep has not run. ' +
-      'the wave-6 control guards (docs/CONTROLS-SPEC.md §6). The one openly HEURISTIC rule of the ' +
-      'set — "this control has no home" is a claim about layout intent, so its false-positive load ' +
-      'is carried by four exemptions (overlay/settings-row ancestor, the overlay FILENAME ' +
-      'convention below, @mantine/form, owner definition) rather than by certainty. The other five ' +
-      'wave-6 rules promoted at 1.27.0; this one has not, across three re-datings. ' +
-      'RE-MEASURED 2026-09-09, every consumer freshly migrated to 1.29.2 and basalt built from ' +
-      'master: 29 incumbents across five repos — image-gen 10, rb 8, image-share 6, the playground ' +
-      '3, argo 2 — and zero in linewatch, meteo and obsidian. The 1.28.0 prediction held: ' +
-      "{@link isOverlayConventionFile} took argo's 9 cross-file overlay warns down to 2, which is " +
-      'the part of the remainder that was ever going to fall to an exemption. ' +
-      'Extended to 1.31.0, and the argument is NOT the count — it is that 1.30.0 is the first ' +
-      'release in which this rule names an answer the 29 can reach. Every home it listed was a ' +
-      'shell slot (PageBar / Section / WidgetHeader), so a consumer that mounts `BasaltProvider` ' +
-      'and no `BasaltShell` had no reachable home at all: image-gen is a Tauri window with a ' +
-      'hand-rolled header and carries 10 of the 29 by itself, and `bound-control-outside-home` ' +
-      'closed the `ViewTabs` escape it would otherwise have taken. 1.30.0 adds the missing ' +
-      'sentence to both messages ({@link SHELL_LESS_HOME_HINT} — a `PageBar` outside a shell ' +
-      'renders in flow, sticky, with its own title, which is what `src/shell/page-bar.tsx` ' +
-      'actually does). Promoting a rule to `error` in the same minor that first makes it ' +
-      'satisfiable hands a consumer zero minors to act on the answer, which is exactly the failure ' +
-      'the grace mechanism exists to prevent. 1.31.0 is when the 29 have been through the new home ' +
-      'and the remainder is measured against that number. A file outside the convention that is ' +
-      "still an overlay's own body declares it with " +
-      '`theme-allow-file control-outside-home — overlay`.',
-  },
-  'raw-breakpoint': {
-    since: '1.31.0',
-    promote: '1.33.0',
-    why:
-      'New in the wave-11 responsive/touch guards. Catches four independent shapes at once — a ' +
-      'responsive-object Mantine prop, visibleFrom/hiddenFrom outside the three shell homes, the ' +
-      'three raw viewport hooks, and window.matchMedia/innerWidth — none of which basalt policed ' +
-      'before this wave, so every consumer on an earlier minor has a green build with all four ' +
-      "shapes already in it. basalt-ui/content's own article-card.tsx (a `SimpleGrid cols={{ base: " +
-      "1, sm: 2, lg }}`) was one incumbent measured in basalt's own tree at ship time — a real " +
-      'number, not zero, so it shipped warn rather than error. ' +
-      'Extended 1.32.0 -> 1.33.0: 1.31.0 shipped the rule naming "a container query" but no ' +
-      'primitive, and MIGRATING never mentioned it (argo: 42 warns, no documented target). 1.32.0 ' +
-      'is the first minor with a reachable, documented answer (Mantine type="container" grids keyed ' +
-      'on CONTAINER_CLASSES, exempted here), and promoting in the minor that first makes a rule ' +
-      'satisfiable hands a consumer zero minors to act on it — the control-outside-home ' +
-      "extension's reasoning. 1.33.0 is when the incumbents are expected to have moved to a " +
-      'container grid or a theme-allow with a stated reason. Promotes together with its CSS twin, ' +
-      'the `raw-media-query` guard kind.',
-  },
-}
+export const PLUGIN_RULE_GRACE = {}
 
 /**
  * Plugin rules that stay `warn` in the shipped preset PERMANENTLY — outside the C16 version gate,

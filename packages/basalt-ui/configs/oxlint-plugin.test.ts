@@ -1364,8 +1364,10 @@ describe('assertGraceLedger', () => {
 // A guard kind and a plugin rule that enforce ONE law in two lanes (CSS/text vs. JSX AST) must
 // promote together — a consumer failing one spelling and warned on the other is the confusion the
 // pairing exists to prevent. `raw-media-query` split from `basalt/raw-breakpoint` exactly that way
-// (1.32.0 vs 1.33.0). Twins are DERIVED, not hand-listed, from the two places they are declared: a
-// `WAIVER_ID_ALIASES` pair, and a guard entry whose `why` calls itself the twin of `basalt/<id>`.
+// (1.32.0 vs 1.33.0). Twins are DERIVED from declarations that outlive the grace window: a
+// `WAIVER_ID_ALIASES` pair, and a guard kind whose registry message names its `basalt/<id>` twin.
+// (Deriving them from the ledger, as this did until 1.33.0, went vacuous the moment the last pair
+// promoted.)
 
 const pluginGrace = PLUGIN_RULE_GRACE as Record<string, GraceEntry>
 const guardGrace = GRACE_PERIOD_KINDS as Record<string, GraceEntry>
@@ -1373,21 +1375,24 @@ const guardGrace = GRACE_PERIOD_KINDS as Record<string, GraceEntry>
 function twinLanes(): Array<[kind: string, rule: string]> {
   const pairs = new Map<string, string>()
   for (const [kind, aliases] of Object.entries(WAIVER_ID_ALIASES)) {
-    for (const rule of aliases) if (kind in guardGrace || rule in pluginGrace) pairs.set(kind, rule)
+    if (!Object.hasOwn(GUARD_RULES, kind)) continue
+    for (const rule of aliases) pairs.set(kind, rule)
   }
-  for (const [kind, entry] of Object.entries(guardGrace)) {
-    const match = /twin of the oxlint plugin's `basalt\/([a-z-]+)`/.exec(entry.why)
-    if (match?.[1] !== undefined) pairs.set(kind, match[1])
+  for (const [kind, rule] of Object.entries(GUARD_RULES)) {
+    for (const m of rule.message.matchAll(/basalt\/([a-z-]+)/g)) {
+      if (m[1] !== undefined && m[1] in basaltPlugin.rules) pairs.set(kind, m[1])
+    }
   }
-  return [...pairs].filter(([kind]) => kind in guardGrace)
+  return [...pairs]
 }
 
 describe('twin lanes share one promotion', () => {
-  it('derives the raw-media-query ↔ raw-breakpoint pair (the derivation is not silently empty)', () => {
+  it('derives the known pairs (the derivation is not silently empty)', () => {
     expect(twinLanes()).toContainEqual(['raw-media-query', 'raw-breakpoint'])
+    expect(twinLanes()).toContainEqual(['raw-selection-control', 'control-outside-home'])
   })
 
-  it.each(twinLanes())('%s and basalt/%s are both in grace with the same promote', (kind, rule) => {
+  it.each(twinLanes())('%s and basalt/%s share one grace state and promote', (kind, rule) => {
     expect([kind, rule, guardGrace[kind]?.promote]).toEqual([
       kind,
       rule,

@@ -902,27 +902,6 @@ export type GraceEntry = { since: string; promote: string; why: string }
  * }
  */
 export const GRACE_PERIOD_KINDS: Partial<Record<GuardKind, GraceEntry>> = {
-  'raw-selection-control': {
-    since: '1.26.0',
-    promote: '1.33.0',
-    why:
-      "Extended 1.32.0 -> 1.33.0 at the 1.32.0 release, the last extension: basalt's own tree is at 0 (consumer-loop r1 dogfood) and argo is at 2, but RE-MEASURED 2026-09-30 the fleet carries ~33 (image-gen 11, rb 7, image-share 6, weatherorb 5, email-gateway 4, argo 2). The 1.32.0 fleet upgrade clears them while they warn, together with raw-breakpoint, so 1.33.0 promotes all four ids against a measured-clean fleet. " +
-      'Extended 1.31.0 -> 1.32.0 at the 1.31.0 release: the basalt tree still carries incumbents (data-table, notifications center, theme-lab) and the argo sweep has not run. ' +
-      'new in the wave-6 control guards (docs/CONTROLS-SPEC.md §6, law C1). The text lane cannot ' +
-      'see ancestry, so "no home" is approximated by a 12-line host-tag window — the loosest ' +
-      'reading in the guard, and the reason this one lands warn rather than error even though its ' +
-      'law is settled. ONE LAW, TWO LANES, ONE PROMOTION: it moves with its AST twin, ' +
-      '`basalt/control-outside-home`, whose PLUGIN_RULE_GRACE entry carries the full argument and ' +
-      'the measurement, and it must never be promoted or extended alone — a consumer waiving one ' +
-      'spelling and failing the other is the exact confusion `WAIVER_ID_ALIASES` exists to close. ' +
-      'RE-MEASURED 2026-09-09 across the whole fleet on 1.29.2: 29 AST-lane incumbents in five ' +
-      "repos, plus three of basalt's own (data-table, notifications/center, theme-lab). Extended " +
-      'to 1.31.0 because 1.30.0 is the FIRST release in which either lane names a home a ' +
-      'provider-only consumer can reach — every home both messages listed was a shell slot, and ' +
-      'the shell-less `PageBar` sentence ships in this minor. Promoting in the same minor that ' +
-      'makes a rule satisfiable gives nobody a window to act. 1.31.0 is when the 29 are ' +
-      're-measured against that number.',
-  },
   'unknown-vx-token': {
     since: '1.33.0',
     promote: '1.34.0',
@@ -932,18 +911,6 @@ export const GRACE_PERIOD_KINDS: Partial<Record<GuardKind, GraceEntry>> = {
       'release accepted, so it lands warn for one minor. Measured at ship time: argo, linewatch, rb, ' +
       'rollhook, obsidian, weatherorb, image-share, email-gateway 0; image-gen 1 (a real unknown ' +
       '`--vx-surface-2` hidden behind a `transparent` fallback).',
-  },
-  'raw-media-query': {
-    since: '1.31.0',
-    promote: '1.33.0',
-    why:
-      "The CSS-text twin of the oxlint plugin's `basalt/raw-breakpoint` — ONE LAW, TWO LANES, ONE " +
-      'PROMOTION, so it moves with that rule and never alone (`configs/oxlint-plugin.test.ts` › twin lanes share one promotion pins the pair). New in ' +
-      'the wave-11 responsive/touch guards; reaching CSS is a NEW file type for this check, same ' +
-      "reasoning as `css-raw-surface`, with incumbents in basalt's own tree at ship time, so it " +
-      'shipped warn. Extended 1.32.0 -> 1.33.0 with its twin: 1.31.0 named ' +
-      'no reachable container primitive, and 1.32.0 is the first minor that documents one ' +
-      '(`CONTAINER_CLASSES` + the declared `@container` names, MIGRATING § `basalt/raw-breakpoint`).',
   },
 }
 

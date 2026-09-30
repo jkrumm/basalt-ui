@@ -2885,11 +2885,11 @@ describe('raw-selection-control', () => {
     },
   )
 
-  // Still warn at 1.27.0 — this kind and its AST twin `basalt/control-outside-home` are the C1 pair
-  // re-dated to `promote: '1.30.0'` while the other wave-6 entries promoted.
-  it('lands warn while the grace entry stands (C16)', () => {
+  // Promoted at 1.33.0 with its AST twin `basalt/control-outside-home` — the C1 pair's grace entry
+  // is gone, so the kind reports at the default `error`.
+  it('reports error now that the grace entry is gone (C16)', () => {
     const f = find(`<Select data={[]} />`)
-    expect(f.find((x) => x.kind === 'raw-selection-control')?.severity).toBe('warn')
+    expect(f.find((x) => x.kind === 'raw-selection-control')?.severity).toBe('error')
   })
 })
 
