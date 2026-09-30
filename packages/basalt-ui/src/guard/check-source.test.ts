@@ -1,7 +1,7 @@
 /**
  * Unit tests for checkSource — the pure (text, relPath, cfg) → Finding[] core.
  *
- * Covers all 27 guard kinds. Co-located with the guard, excluded from tsc
+ * Covers all 28 guard kinds. Co-located with the guard, excluded from tsc
  * (tsconfig exclude: src/**\/*.test.ts), run via `bun test`.
  *
  * The walker/reporter half is covered by the integration test in
@@ -3235,11 +3235,14 @@ describe("profile: 'tokens-only'", () => {
     // (SIZE_CLASSES/CONTAINER_CLASSES/`(pointer: coarse)`), not a Mantine component or prop, so a
     // tokens-only consumer (no Mantine, still shipping CSS) is exactly who this stays live for.
     'raw-media-query': false,
+    // A `var(--vx-*)` name basalt does not emit — `tokens.css` is exactly what a tokens-only
+    // consumer links, so a removed name there fails the same silent way.
+    'unknown-vx-token': false,
   }
 
   it('classifies every kind in the registry — the table is exhaustive', () => {
     expect(Object.keys(MANTINE_COUPLED).toSorted()).toEqual(Object.keys(GUARD_RULES).toSorted())
-    expect(Object.keys(MANTINE_COUPLED)).toHaveLength(27)
+    expect(Object.keys(MANTINE_COUPLED)).toHaveLength(28)
   })
 
   it('the disabled set is exactly the Mantine-coupled half — a complete partition', () => {
@@ -3713,5 +3716,52 @@ describe('in-body-page-title — a self-closing Title', () => {
   it('does not report, even with a later Title in the same file', () => {
     const f = find(`<Title order={1} />\n<Card />\n<Title order={3}>Section</Title>`)
     expect(kinds(f)).not.toContain('in-body-page-title')
+  })
+})
+
+// ── 28. unknown-vx-token ─────────────────────────────────────────────────────
+
+describe('unknown-vx-token', () => {
+  const vx = (text: string, relPath = 'src/a.css') =>
+    find(text, relPath).filter((f) => f.kind === 'unknown-vx-token')
+
+  it('flags the removed touch floor obsidian lost silently, and ships warn', () => {
+    const f = vx('.hit { min-height: var(--vx-space-touch-target); }')
+    expect(f.map((x) => [x.token, x.severity])).toEqual([['--vx-space-touch-target', 'warn']])
+    expect(guardKindRemedy('unknown-vx-token')).toContain('--vx-space-touch-target → --vx-hit')
+  })
+
+  it('flags an unknown name inside a basalt family, fallback or not', () => {
+    const f = vx(`<Box style={{ background: 'var(--vx-surface-2, transparent)' }} />`, PATH)
+    expect(f.map((x) => x.token)).toEqual(['--vx-surface-2'])
+  })
+
+  it('passes every live name, and a component-scoped one', () => {
+    expect(
+      vx('.a { min-height: var(--vx-hit); gap: var(--vx-hit-gap); color: var(--vx-ink); }'),
+    ).toEqual([])
+  })
+
+  it('never judges consumer series outside the basalt families', () => {
+    expect(vx('.a { fill: var(--vx-lp-lpCity); stroke: var(--vx-confidence-forgotten); }')).toEqual(
+      [],
+    )
+    expect(vx('.a { color: var(--vx-cloudHigh); }')).toEqual([])
+  })
+
+  it('skips a name computed at runtime', () => {
+    expect(vx('const c = `var(--vx-fill-${hue})`', PATH)).toEqual([])
+  })
+
+  it('skips a name the file declares itself', () => {
+    expect(vx(':root { --vx-space-rail: 12px; }\n.a { width: var(--vx-space-rail); }')).toEqual([])
+  })
+
+  it('is waivable by id', () => {
+    expect(
+      vx(
+        '/* theme-allow unknown-vx-token — defined in shell.css */\n.a { width: var(--vx-space-rail); }',
+      ),
+    ).toEqual([])
   })
 })

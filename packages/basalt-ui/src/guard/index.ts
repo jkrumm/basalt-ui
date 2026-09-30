@@ -1,10 +1,11 @@
 /**
  * ./guard — headless policy core. Mantine-free, dependency-free.
  *
- * GUARD_RULES: the closed registry of all 27 violation kinds.
+ * GUARD_RULES: the closed registry of all 28 violation kinds.
  * checkSource:  pure (text, relPath, cfg) → Finding[]. No FS, no walk, no console.
  */
 import type { Finding, GuardConfig, GuardKind, GuardSeverity } from './types'
+import { BASALT_VX_NAMES } from './vx-names'
 
 export type { Finding, GuardConfig, GuardKind, GuardSeverity }
 
@@ -285,6 +286,46 @@ const INLINE_FONT_SIZE =
 //     WITH_BORDER_PROP.
 const CARD_SURFACE_TAG = /<(?:Card|Paper)(?![\w.])(?:=>|[^>])*?>/g
 const WITH_BORDER_PROP = /\bwithBorder\b(?!\s*=\s*\{\s*false\s*\})/
+
+/**
+ * A `var(--vx-*)` REFERENCE with a literal name. The name must end on an alphanumeric and must not
+ * run into a `${…}` interpolation, so `var(--vx-fill-${hue})` — a name computed at runtime — never
+ * matches a truncated `--vx-fill`.
+ */
+const VX_VAR_REF = /var\(\s*(--vx-[A-Za-z0-9-]*[A-Za-z0-9])(?![A-Za-z0-9-]|\$\{)/g
+
+/** A `--vx-*` name the file declares itself — a consumer's own custom property, never unknown. */
+const VX_LOCAL_DECLARATION = /(--vx-[A-Za-z0-9-]*[A-Za-z0-9])['"]?\s*:/g
+
+/**
+ * `--vx-*` names basalt once emitted and no longer does, with the replacement MIGRATING names
+ * (`null`: deleted with no replacement). Hand-kept on purpose: it is history, it only grows, and
+ * `vx-names.test.ts` pins that none of these is live and every replacement is.
+ */
+const REMOVED_VX_NAMES: Readonly<Record<string, string | null>> = {
+  '--vx-space-touch-target': '--vx-hit',
+  '--vx-space-touch-control-height': '--vx-hit',
+  '--vx-space-app-header-mobile-actions-height': '--vx-space-sticky-header-clearance',
+  '--vx-space-sticky-header-clearance-mobile': '--vx-space-sticky-header-clearance',
+  '--vx-space-sidebar-brand-inset-top': null,
+}
+
+const KNOWN_VX_NAMES: ReadonlySet<string> = new Set(BASALT_VX_NAMES)
+
+/**
+ * The `--vx-<family>-` prefixes basalt owns, derived from the emitted names (`--vx-space-`,
+ * `--vx-surface-`, `--vx-text-`, …). An unknown name is only judged INSIDE one of these: a
+ * consumer's `defineSeries`/`groupTokens` series emit `--vx-<key>` / `--vx-<group>-<key>` under any
+ * name they choose (argo's `--vx-lp-*`, rb's `--vx-confidence-*`), and a closed allowlist over the
+ * whole namespace would flag every one of them.
+ */
+const BASALT_VX_FAMILIES: readonly string[] = [
+  ...new Set(
+    BASALT_VX_NAMES.map((n) => /^--vx-[A-Za-z0-9]+-/.exec(n)?.[0]).filter(
+      (p): p is string => p !== undefined,
+    ),
+  ),
+]
 
 // Raw Mantine ramp step used for surface color — gray/dark + a step digit.
 const OFF_SYSTEM_SURFACE_VAR = /var\(--mantine-color-(gray|dark)-\d/g
@@ -881,6 +922,16 @@ export const GRACE_PERIOD_KINDS: Partial<Record<GuardKind, GraceEntry>> = {
       'the shell-less `PageBar` sentence ships in this minor. Promoting in the same minor that ' +
       'makes a rule satisfiable gives nobody a window to act. 1.31.0 is when the 29 are ' +
       're-measured against that number.',
+  },
+  'unknown-vx-token': {
+    since: '1.33.0',
+    promote: '1.34.0',
+    why:
+      'New kind (consumer-loop r2 B3): obsidian lost its 44px touch floor to a removed ' +
+      '`var(--vx-space-touch-target)` that nothing reported. A new kind rejects code every previous ' +
+      'release accepted, so it lands warn for one minor. Measured at ship time: argo, linewatch, rb, ' +
+      'rollhook, obsidian, weatherorb, image-share, email-gateway 0; image-gen 1 (a real unknown ' +
+      '`--vx-surface-2` hidden behind a `transparent` fallback).',
   },
   'raw-media-query': {
     since: '1.31.0',
@@ -1973,7 +2024,7 @@ type GuardRule = {
 }
 
 /**
- * The closed registry of all 27 guard kinds. The triad test asserts
+ * The closed registry of all 28 guard kinds. The triad test asserts
  * `surface.guardKinds ⊆ keyof GUARD_RULES` at runtime.
  *
  * raw-surface, raw-html-layout, and sub-16-input-font are handled inline in checkSource
@@ -2215,6 +2266,17 @@ export const GUARD_RULES = {
     appliesTo: (relPath) => relPath.endsWith('.css'),
     message: `Raw viewport/container breakpoint in CSS — a width @media belongs to shell/** against SIZE_CLASSES (useSizeClass() is the JS seam); an @container name must be one of ${[...DECLARED_CONTAINER_NAMES].join(' / ')}, and a basalt-card or unnamed @container query must sit at a boundary in ${[...CONTAINER_CLASS_LITERALS_PX].map((px) => `${px}px`).join(' / ')} (the other declared names have no numeric table yet, so their literals are not judged); and a pointer query other than (pointer: coarse) or (pointer: fine) has no framework meaning. Same law the oxlint plugin enforces as basalt/raw-breakpoint over JSX; this is the CSS half.`,
   },
+  'unknown-vx-token': {
+    kind: 'unknown-vx-token',
+    pattern: VX_VAR_REF, // handled inline (removed map + family gate); entry keeps the registry complete
+    message: `var() names a --vx-* token basalt does not emit, so it resolves to its fallback (or to nothing) with no error anywhere — the name is removed or misspelled. Removed: ${Object.entries(
+      REMOVED_VX_NAMES,
+    )
+      .map(([from, to]) => `${from} → ${to ?? '(deleted, no replacement)'}`)
+      .join(
+        '; ',
+      )}. Otherwise check the name against basalt-ui/tokens.css. A consumer token inside a basalt family (${BASALT_VX_FAMILIES.map((f) => `${f}*`).join(', ')}) declared in another file needs a theme-allow; series from defineSeries/groupTokens are never judged.`,
+  },
 } as const satisfies Record<GuardKind, GuardRule>
 
 /**
@@ -2389,6 +2451,11 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
     [...codeText.matchAll(STYLE_BOUND_IDENTIFIER)].map((m) => m[1] ?? ''),
   )
 
+  /** `--vx-*` names this file declares — its own custom properties, which `unknown-vx-token` skips. */
+  const locallyDeclaredVx = new Set(
+    [...codeText.matchAll(VX_LOCAL_DECLARATION)].map((m) => m[1] ?? ''),
+  )
+
   for (let i = 0; i < lines.length; i++) {
     const line = codeLines[i] ?? ''
 
@@ -2494,6 +2561,17 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
       for (const m of line.matchAll(CSS_NON_COARSE_POINTER_QUERY)) {
         push('raw-media-query', i + 1, m[0].trim())
       }
+    }
+
+    // unknown-vx-token: a removed name anywhere; an unknown name only inside a basalt family.
+    for (const m of line.matchAll(VX_VAR_REF)) {
+      const name = m[1] ?? ''
+      if (KNOWN_VX_NAMES.has(name) || locallyDeclaredVx.has(name)) continue
+      if (
+        Object.hasOwn(REMOVED_VX_NAMES, name) ||
+        BASALT_VX_FAMILIES.some((family) => name.startsWith(family))
+      )
+        push('unknown-vx-token', i + 1, name)
     }
 
     // off-system-surface-var — pattern + gating from GUARD_RULES.

@@ -1,7 +1,7 @@
 /**
  * Guard types — Mantine-free, dependency-free (zero imports beyond TS types).
  *
- * GuardKind is the closed set of 27 violation kinds the theme guard can emit — `unframed-chart`
+ * GuardKind is the closed set of 28 violation kinds the theme guard can emit — `unframed-chart`
  * retired at the C2 consolidation wave: its only case (a hand-authored `<ChartLegend items={[...]}>`
  * array literal) is fully subsumed by the oxlint plugin's `basalt/chart-legend-literal`, which also
  * catches the `.map()`-over-a-non-series form the regex never could. `'unframed-chart'` stays a
@@ -11,7 +11,7 @@
  * GuardConfig is the per-run configuration that drives checkSource.
  */
 
-/** The 27 theme-guard violation kinds. */
+/** The 28 theme-guard violation kinds. */
 export type GuardKind =
   | 'raw-hex'
   | 'raw-color-fn'
@@ -40,6 +40,7 @@ export type GuardKind =
   | 'in-body-page-title'
   | 'raw-selection-control'
   | 'raw-media-query'
+  | 'unknown-vx-token'
 
 /**
  * How hard a finding lands. `error` fails the build; `warn` reports and passes.
