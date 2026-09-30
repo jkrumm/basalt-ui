@@ -3996,6 +3996,20 @@ function containsResponsiveObjectValue(node, consts, namedOnly = false, seen = n
 }
 
 /**
+ * The props each Mantine grid routes through `@container` queries under `type="container"` —
+ * confirmed in `@mantine/core` 9.3 source: `SimpleGridContainerVariables` reads `cols`/`spacing`/
+ * `verticalSpacing`, `GridVariables` reads `gap`/`rowGap`/`columnGap`, `GridColVariables` reads
+ * `span`/`offset`/`order`/`align`. Every OTHER responsive prop on the same element (`p`, `mt`,
+ * `mih`, …) is a Box style prop and still compiles to viewport `@media`, so the container exemption
+ * stops at this set. `Grid`'s own `breakpoints` is the container scale itself, not a viewport key.
+ */
+const CONTAINER_ROUTED_PROPS = {
+  SimpleGrid: new Set(['cols', 'spacing', 'verticalSpacing']),
+  Grid: new Set(['gap', 'rowGap', 'columnGap', 'breakpoints']),
+  'Grid.Col': new Set(['span', 'offset', 'order', 'align']),
+}
+
+/**
  * How Mantine 9 resolves a responsive object on this element's grid, read from `@mantine/core`
  * 9.3 source — the sanctioned answer to this rule, so it has to be exempt exactly where it works:
  *
@@ -4237,7 +4251,12 @@ const rawBreakpoint = {
           const owner = node.parent
           if (owner === null || owner === undefined || owner.type !== 'JSXOpeningElement') continue
           if (resolveMantineTag(owner.name, mantineImports) === undefined) continue
-          const mode = containerGridMode(owner, mantineImports, responsiveObjectConsts)
+          // The container law reaches only the props Mantine routes through the grid's container
+          // queries; a `p={{ base, lg }}` on the same element is still a viewport @media.
+          const routed = CONTAINER_ROUTED_PROPS[resolveMantineTag(owner.name, mantineImports)]
+          const mode = routed?.has(node.name.name)
+            ? containerGridMode(owner, mantineImports, responsiveObjectConsts)
+            : undefined
           if (mode === 'container') continue
           if (!containsResponsiveObjectValue(value, responsiveObjectConsts, mode !== undefined))
             continue
