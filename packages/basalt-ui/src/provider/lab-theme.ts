@@ -33,9 +33,9 @@
  * The delta also carries `other.basaltDerive`/`basaltRadius`/`basaltDensity`, so `BasaltBridge`'s
  * existing injection emits the matching `--vx-*` CSS off the running theme — one path, both halves.
  *
- * DEV-tool path only, twice over: it is compiled out of a production build entirely (see
- * the DEV-build gate on `useLabTheme`), and even in a dev build, with the "Apply" switch off — or in any app that
- * never mounts the panel, since the persisted key is written by nothing else —
+ * DEV-tool path only, twice over: it is compiled out of a production build entirely (see the
+ * DEV-build gate on `useLabTheme`), and even in a dev build, with the "Apply" switch off — or in
+ * any app that never mounts the panel, since the persisted key is written by nothing else —
  * {@link applyLabOverride} returns the consumer theme verbatim.
  */
 import { mergeThemeOverrides } from '@mantine/core'
@@ -165,9 +165,10 @@ function useLabThemeProd(overrides: MantineThemeOverride | undefined): MantineTh
 }
 
 /**
- * `BasaltProvider`'s theme resolution. Picked at module scope, not per render — both implementations
- * call their hooks unconditionally at their own top level, and which one is bound never changes for
- * the app's lifetime, so the hook order is as stable as a plain function's (a `dev ? use…()`
- * inline in one function body would be a conditional hook call and a `react/rules-of-hooks` error).
+ * `BasaltProvider`'s theme resolution. Picked at module scope, not per render — both
+ * implementations call their hooks unconditionally at their own top level, and which one is bound
+ * never changes for the app's lifetime, so the hook order is as stable as a plain function's (a
+ * `dev ? use…()` inline in one function body would be a conditional hook call and a
+ * `react/rules-of-hooks` error).
  */
 export const useLabTheme = process.env.NODE_ENV !== 'production' ? useLabThemeDev : useLabThemeProd
