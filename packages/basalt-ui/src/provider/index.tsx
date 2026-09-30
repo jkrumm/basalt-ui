@@ -242,8 +242,13 @@ export function composeInjectedCss(
 
 // ── Host attribute ────────────────────────────────────────────────────────────────────────────────
 
-/** Mount count backing `useHostAttribute`'s ref-counted removal — see that function's doc. */
-let hostAttributeCount = 0
+/** A module-level mount count across every `BasaltProvider`; each call returns the new count. */
+function createMountCounter(): { mount: () => number; unmount: () => number } {
+  let count = 0
+  return { mount: () => ++count, unmount: () => --count }
+}
+
+const hostAttributeMounts = createMountCounter()
 
 /**
  * `data-basalt-host` on `<html>` — the one place a `display-mode` query is read; CSS keys off it.
@@ -261,17 +266,16 @@ export function useHostAttribute(): void {
     document.documentElement.setAttribute('data-basalt-host', isPwa ? 'pwa' : 'web')
   }, [isPwa])
 
-  // Ref-counted across every mounted `BasaltProvider` — mirrors `useDuplicateProviderGuard`'s own
-  // module-level counter just below. A second provider (a nested route wrapping its own, two trees
-  // on one page) unmounting must not rip the attribute out from under a first one still mounted;
-  // only the LAST unmount removes it. Deliberately a SEPARATE effect from the one above: sharing one
-  // effect keyed on `[isPwa]` would decrement (and possibly zero out) this counter on every
-  // `isPwa` change, not only on a genuine unmount.
+  // Ref-counted across every mounted `BasaltProvider`: a second provider (a nested route wrapping
+  // its own, two trees on one page) unmounting must not rip the attribute out from under a first
+  // one still mounted; only the LAST unmount removes it. Deliberately a SEPARATE effect from the one
+  // above: sharing one keyed on `[isPwa]` would decrement this counter on every `isPwa` change.
   useIsomorphicLayoutEffect(() => {
-    hostAttributeCount++
+    hostAttributeMounts.mount()
     return () => {
-      hostAttributeCount--
-      if (hostAttributeCount === 0) document.documentElement.removeAttribute('data-basalt-host')
+      if (hostAttributeMounts.unmount() === 0) {
+        document.documentElement.removeAttribute('data-basalt-host')
+      }
     }
   }, [])
 }
@@ -374,21 +378,18 @@ function BasaltBridge({
  * misuse, not a false positive from React 18 StrictMode's double-invoke (that mounts/unmounts the
  * SAME instance in sequence, so the count returns to 0 before a second instance could ever exist).
  */
-let mountedProviderCount = 0
+const providerMounts = createMountCounter()
 
 function useDuplicateProviderGuard(): void {
   useEffect(() => {
-    mountedProviderCount++
-    if (mountedProviderCount > 1 && isDev()) {
+    if (providerMounts.mount() > 1 && isDev()) {
       console.warn(
         '[basalt] BasaltProvider: more than one instance is mounted at once — nested/duplicate ' +
           'BasaltProviders double-mount MantineProvider, the palette <style> and ' +
           'ConnectivityProvider. Mount exactly one, at the app root.',
       )
     }
-    return () => {
-      mountedProviderCount--
-    }
+    return () => void providerMounts.unmount()
   }, [])
 }
 
