@@ -1,4 +1,23 @@
 import { createContext } from 'react'
+import type { Dispatch } from 'react'
+
+/** One frame claiming or releasing the card's header legend slot. */
+export type LegendSlotAction = { type: 'claim' | 'release'; id: string }
+
+/**
+ * The ONE owner of the legend-slot protocol (`docs/waves/PLAN.md` wave 3, P2-9): claimants in claim
+ * order, and the head owns the slot. A later claimant is denied simply by not being the head, and
+ * it takes over the moment everything ahead of it releases — no retry signal, no ownership mirrored
+ * in a ref. Returns the same array on a no-op so a repeated claim/release never re-renders the card.
+ */
+export function legendSlotReducer(
+  claimants: readonly string[],
+  { type, id }: LegendSlotAction,
+): readonly string[] {
+  const held = claimants.includes(id)
+  if (type === 'claim') return held ? claimants : [...claimants, id]
+  return held ? claimants.filter((c) => c !== id) : claimants
+}
 
 /**
  * `ChartCard`'s internal context: `inCard` (a frame inside a card treats its computed height as a
@@ -9,29 +28,19 @@ import { createContext } from 'react'
  * 'dots' before it eats the plot floor (`docs/CHARTS-SPEC.md` §5, wave 11). `null`/`false` until the slot
  * mounts, and outside any card. Deliberately not exported from any barrel.
  *
- * `claimLegendSlot`/`releaseLegendSlot` arbitrate the slot when a card hosts more than one
- * `ChartFrame` (`docs/waves/PLAN.md` wave 3, P2-9): the first frame to claim an id keeps it for as
- * long as it holds it, every later claimant is told no and falls back to its own band legend
- * instead of a second frame silently portalling into the same node. Outside any card there is no
- * slot to contend for, so the default always grants the claim.
- *
- * `legendSlotVersion` bumps every time the owner releases the slot (round 3's carried gap): a
- * denied frame's claim attempt runs once, in its own mount effect, so with no signal that the slot
- * freed up it would sit denied forever even after the owning frame unmounts. Frames read it only to
- * put it in a dependency array — the effect re-running is the entire point, not the number itself.
+ * `legendOwner` is the head of {@link legendSlotReducer}'s claimants and `dispatchLegendSlot` feeds
+ * it. Outside any card there is no slot, so nothing ever claims.
  */
 export const ChartCardContext = createContext<{
   legendSlot: HTMLDivElement | null
   inCard: boolean
   short: boolean
-  claimLegendSlot: (id: string) => boolean
-  releaseLegendSlot: (id: string) => void
-  legendSlotVersion: number
+  legendOwner: string | null
+  dispatchLegendSlot: Dispatch<LegendSlotAction>
 }>({
   legendSlot: null,
   inCard: false,
   short: false,
-  claimLegendSlot: () => true,
-  releaseLegendSlot: () => {},
-  legendSlotVersion: 0,
+  legendOwner: null,
+  dispatchLegendSlot: () => {},
 })

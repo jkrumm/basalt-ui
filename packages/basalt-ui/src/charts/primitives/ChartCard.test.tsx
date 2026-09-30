@@ -334,15 +334,10 @@ describe('the legend portals into the header slot', () => {
 })
 
 /**
- * Regression: adding `legendSlotVersion` to the slot-ownership effect's OWN dependency array made
- * the OWNER'S cleanup (which unconditionally released the slot on every re-run, expecting to
- * reclaim it right after) bump the version, which — because the owner's effect was itself keyed on
- * that same version — re-ran the effect, released again, bumped again: an infinite
- * release → bump → re-run loop that threw "Maximum update depth exceeded". It surfaced two ways:
- * StrictMode's deliberate mount → cleanup → mount replay, and any ordinary prop change that flips
- * `legendVisible` (an `isPending` toggle), both of which re-run the OWNER's effect for a reason
- * that has nothing to do with the slot itself. Only a DENIED frame reacts to the version now — see
- * `ChartFrame.tsx`'s two-effect split.
+ * Regression (round 2): the old claim/retry protocol keyed the owner's effect on a release-version
+ * counter its own cleanup bumped — an infinite release → bump → re-run loop ("Maximum update depth
+ * exceeded") under StrictMode replay or a `legendVisible` flip. Ownership is now derived from one
+ * claimant queue (`legendSlotReducer`); these pin that neither trigger loops.
  */
 describe('legend-slot ownership effect does not loop (round 2 regression)', () => {
   // Same stub as "the legend portals into the header slot" above — a real width is what makes the

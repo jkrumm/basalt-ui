@@ -12,7 +12,7 @@
  * The header renders only when at least one of title/info/value/actions/icon/count is set — ending
  * the `''`-as-hidden-header sentinel a consumer used to reach for otherwise.
  */
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useMemo, useReducer, useState } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
 import { cx } from '../../common/props'
 import type { BasaltProps, SlotStylesProps } from '../../common/props'
@@ -21,7 +21,7 @@ import { WidgetHeader } from '../../dashboard/widget-header'
 import type { DeltaPolarity } from '../../dashboard/delta-badge'
 import { useChartSize } from '../hooks/useChartSize'
 import { useHysteresis } from '../hooks/use-hysteresis'
-import { ChartCardContext } from './chart-card-context'
+import { ChartCardContext, legendSlotReducer } from './chart-card-context'
 import { ChartEmpty, ChartError, ChartPending, resolveChartState } from './ChartPending'
 import type { ChartState } from './ChartPending'
 
@@ -212,32 +212,11 @@ export function ChartCard({
     false,
   )
 
-  const legendOwnerRef = useRef<string | null>(null)
-  // Bumped on every release so a previously-denied sibling's claim effect (keyed on the context
-  // value it reads, see `chart-card-context.ts`) re-runs and gets a chance to re-claim the slot the
-  // owner just gave up — without it a frame told "no" once stayed denied even after the owner
-  // unmounted.
-  const [legendSlotVersion, setLegendSlotVersion] = useState(0)
-  const claimLegendSlot = useCallback((id: string) => {
-    if (legendOwnerRef.current === null) legendOwnerRef.current = id
-    return legendOwnerRef.current === id
-  }, [])
-  const releaseLegendSlot = useCallback((id: string) => {
-    if (legendOwnerRef.current === id) {
-      legendOwnerRef.current = null
-      setLegendSlotVersion((v) => v + 1)
-    }
-  }, [])
+  const [claimants, dispatchLegendSlot] = useReducer(legendSlotReducer, [])
+  const legendOwner = claimants[0] ?? null
   const context = useMemo(
-    () => ({
-      legendSlot,
-      inCard: true,
-      short,
-      claimLegendSlot,
-      releaseLegendSlot,
-      legendSlotVersion,
-    }),
-    [legendSlot, short, claimLegendSlot, releaseLegendSlot, legendSlotVersion],
+    () => ({ legendSlot, inCard: true, short, legendOwner, dispatchLegendSlot }),
+    [legendSlot, short, legendOwner],
   )
 
   return (
