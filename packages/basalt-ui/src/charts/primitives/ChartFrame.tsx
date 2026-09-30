@@ -228,7 +228,7 @@ export function ChartFrame({
     inCard,
     legendSlot,
     short: cardShort,
-    legendOwner,
+    legendClaimants,
     dispatchLegendSlot,
   } = useContext(ChartCardContext)
   const frameId = useId()
@@ -249,8 +249,13 @@ export function ChartFrame({
   // the first frame to claim owns the slot, a later one is denied until everything ahead of it
   // releases, and each frame's only job is to claim while it wants the slot and release on the way
   // out (P2-9).
-  const ownsSlot = wantsHeaderSlot && legendOwner === frameId
-  const slotDenied = wantsHeaderSlot && legendOwner !== null && !ownsSlot
+  //
+  // Denied means THIS frame's own claim is in the queue and is not its head — never "someone else
+  // owns it" read before this frame has claimed. A new frame's first render can still see an
+  // owner that is unmounting in the same commit (a tab switch, a different `useId`); that is a
+  // hand-off, and warning off that stale head reported contention for a frame about to own it.
+  const ownsSlot = wantsHeaderSlot && legendClaimants[0] === frameId
+  const slotDenied = wantsHeaderSlot && !ownsSlot && legendClaimants.includes(frameId)
   useLayoutEffect(() => {
     if (!wantsHeaderSlot) return undefined
     dispatchLegendSlot({ type: 'claim', id: frameId })

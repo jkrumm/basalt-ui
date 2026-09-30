@@ -212,11 +212,10 @@ export function ChartCard({
     false,
   )
 
-  const [claimants, dispatchLegendSlot] = useReducer(legendSlotReducer, [])
-  const legendOwner = claimants[0] ?? null
+  const [legendClaimants, dispatchLegendSlot] = useReducer(legendSlotReducer, [])
   const context = useMemo(
-    () => ({ legendSlot, inCard: true, short, legendOwner, dispatchLegendSlot }),
-    [legendSlot, short, legendOwner],
+    () => ({ legendSlot, inCard: true, short, legendClaimants, dispatchLegendSlot }),
+    [legendSlot, short, legendClaimants],
   )
 
   return (

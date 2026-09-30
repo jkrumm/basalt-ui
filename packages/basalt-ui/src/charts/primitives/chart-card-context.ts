@@ -28,19 +28,19 @@ export function legendSlotReducer(
  * 'dots' before it eats the plot floor (`docs/CHARTS-SPEC.md` §5, wave 11). `null`/`false` until the slot
  * mounts, and outside any card. Deliberately not exported from any barrel.
  *
- * `legendOwner` is the head of {@link legendSlotReducer}'s claimants and `dispatchLegendSlot` feeds
- * it. Outside any card there is no slot, so nothing ever claims.
+ * `legendClaimants` is {@link legendSlotReducer}'s queue (its head owns the slot) and
+ * `dispatchLegendSlot` feeds it. Outside any card there is no slot, so nothing ever claims.
  */
 export const ChartCardContext = createContext<{
   legendSlot: HTMLDivElement | null
   inCard: boolean
   short: boolean
-  legendOwner: string | null
+  legendClaimants: readonly string[]
   dispatchLegendSlot: Dispatch<LegendSlotAction>
 }>({
   legendSlot: null,
   inCard: false,
   short: false,
-  legendOwner: null,
+  legendClaimants: [],
   dispatchLegendSlot: () => {},
 })
