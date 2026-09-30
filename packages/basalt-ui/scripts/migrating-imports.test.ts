@@ -32,13 +32,22 @@ const OLDEST_CHECKED_PROSE_SECTION = '## 1.30.0'
 
 type Claim = { symbol: string; subpath: string; where: string }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
 function subpathEntries(): Map<string, string> {
-  const pkg = JSON.parse(readFileSync(join(PKG, 'package.json'), 'utf8')) as {
-    exports: Record<string, string | { types?: string }>
-  }
+  const pkg: unknown = JSON.parse(readFileSync(join(PKG, 'package.json'), 'utf8'))
+  const exportsMap = isRecord(pkg) ? pkg.exports : undefined
+  if (!isRecord(exportsMap)) throw new Error('package.json#exports is missing or not an object')
   const entries = new Map<string, string>()
-  for (const [key, value] of Object.entries(pkg.exports)) {
-    if (typeof value === 'string' || !value.types) continue
+  for (const [key, value] of Object.entries(exportsMap)) {
+    if (typeof value === 'string') continue
+    if (!isRecord(value))
+      throw new Error(`package.json#exports["${key}"] is neither a string nor an object`)
+    if (value.types === undefined) continue
+    if (typeof value.types !== 'string')
+      throw new Error(`package.json#exports["${key}"].types is not a string`)
     const stem = value.types.replace(/^\.\/dist\//, 'src/').replace(/\.d\.ts$/, '')
     const file = [`${stem}.ts`, `${stem}.tsx`].map((f) => join(PKG, f)).find((f) => existsSync(f))
     if (!file) throw new Error(`no src entry for ${key} (${value.types})`)
@@ -100,7 +109,8 @@ function migratingClaims(): Claim[] {
   const cutoff = text.indexOf(OLDEST_CHECKED_PROSE_SECTION)
   if (cutoff === -1)
     throw new Error(`MIGRATING.md lost its ${OLDEST_CHECKED_PROSE_SECTION} section`)
-  const checkedProse = text.slice(0, text.indexOf('\n## ', cutoff + 1))
+  const nextSection = text.indexOf('\n## ', cutoff + 1)
+  const checkedProse = text.slice(0, nextSection === -1 ? text.length : nextSection)
   for (const m of checkedProse.matchAll(PROSE_CLAIM)) {
     const lineStart = checkedProse.lastIndexOf('\n', m.index ?? 0) + 1
     const beforeClaim = checkedProse.slice(lineStart, m.index)
