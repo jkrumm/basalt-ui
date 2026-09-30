@@ -811,6 +811,28 @@ describe('resets — a filter write drops a sibling page', () => {
     expect(currentSearch(router)['page']).toBe(3)
   })
 
+  /**
+   * The render captured `all`. The first write moves to `fuji` keeping page 5 (an explicit patch);
+   * the second moves BACK to `all` in the same tick — judged against the render it looks like a
+   * no-op and keeps page 5, judged against the URL it is a real move and drops it.
+   */
+  test('two writes in one tick judge the second against the URL, not the render', async () => {
+    const probe = sink()
+    const router = await mountApp({
+      validateSearch,
+      entry: '/dashboard?prefix=all&page=5',
+      Dashboard: fieldProbe(store.field.prefix, probe),
+    })
+    await act(async () => {
+      probe.current?.set('fuji', { patch: { page: 5 } })
+      probe.current?.set('all')
+    })
+    await waitFor(() => {
+      expect(currentSearch(router)['prefix']).toBe('all')
+    })
+    expect(currentSearch(router)['page']).toBe(1)
+  })
+
   test('an explicit patch naming the reset param wins over the declaration', async () => {
     const probe = sink()
     const router = await mountApp({
