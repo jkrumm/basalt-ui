@@ -1780,7 +1780,7 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
   )
 
   // The `renderCard` body — the same processed rows, states and activation as the table's.
-  const cardList = (
+  const renderCardList = () => (
     <Stack gap="xs" className={cx(classNames?.table)}>
       {queryError !== undefined
         ? errorNode
@@ -1891,10 +1891,10 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
       )}
       {projection.cards ? (
         maxHeight === undefined ? (
-          cardList
+          renderCardList()
         ) : (
           <ScrollArea.Autosize mah={maxHeight} type="hover" scrollbars="y">
-            {cardList}
+            {renderCardList()}
           </ScrollArea.Autosize>
         )
       ) : !foldEligible ? (
