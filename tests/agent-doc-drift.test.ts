@@ -8,9 +8,9 @@
  * denylisted name looks live again, and the real `agent/**` tree passes both checks post-fix.
  */
 import { describe, expect, it } from 'bun:test'
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { join, relative } from 'node:path'
 
 import {
   checkA,
@@ -121,6 +121,32 @@ describe('agent-doc-drift guard', () => {
     withFixture('The law is in docs/CHARTS-SPEC.md §8.\n', (file) => {
       expect(checkD([file], [])).toEqual([])
     })
+  })
+
+  it('findRepoMdFiles prunes node_modules/.git/dist/.claude at any depth and finds deep docs elsewhere', () => {
+    const root = mkdtempSync(join(tmpdir(), 'agent-doc-drift-walk-'))
+    const files = [
+      'README.md',
+      'docs/a/b/c/deep.md',
+      'packages/x/node_modules/dep/README.md',
+      '.git/info/notes.md',
+      'packages/x/dist/bundled.md',
+      '.claude/worktrees/w/AGENTS.md',
+      'apps/y/.claude/scratch.md',
+      'docs/notes.txt',
+    ]
+    try {
+      for (const file of files) {
+        mkdirSync(join(root, file, '..'), { recursive: true })
+        writeFileSync(join(root, file), '# x\n')
+      }
+      const found = findRepoMdFiles(root)
+        .map((file) => relative(root, file))
+        .toSorted()
+      expect(found).toEqual(['README.md', 'docs/a/b/c/deep.md'])
+    } finally {
+      rmSync(root, { recursive: true, force: true })
+    }
   })
 
   it('the real tree cites no deleted doc from any repo doc, src/** or configs/**', () => {
