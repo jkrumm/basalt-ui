@@ -150,13 +150,13 @@ Worked rule: a multi-toggle bar chart colours bars `isMulti ? series.x : VX.line
   keeps metric columns aligned (a Coinbase pattern). The type ladder itself is defined once in
   `src/tokens/index.ts` (`VX.text.*` / `--vx-text-*`) — no font-size literals at call sites.
 - **Responsive is three independent axes, not one breakpoint.** (1) **Size class** — the viewport,
-  `compact` < 840 / `medium` < 1200 / `expanded`, from `SIZE_CLASSES`; **shell chrome only** (bottom
-  bar, rail, sidebar, aside docking); `theme.breakpoints` is derived from it. (2) **Container
-  class** — a component's own inline size (`CONTAINER_CLASSES`: micro/compact/regular/wide) via
-  `@container`; card chrome and chart tiers never read the viewport. (3) **Pointer tier** — input
-  modality, not width: `--vx-hit` is 24px (WCAG 2.5.8 Target Size Minimum) and 44px under
-  `(pointer: coarse)` (WCAG 2.5.5 Target Size Enhanced), `hover` behaviour gates on
-  `(hover: hover)`. A narrow desktop window is not a phone; a tablet is not a wide phone.
+  `compact` < 840 / `medium` < 1200 / `expanded` (`SIZE_CLASSES`); **shell chrome only** (bottom bar,
+  rail, sidebar, aside docking); `theme.breakpoints` derives from it. (2) **Container class** — a
+  component's own inline size (`CONTAINER_CLASSES`) via `@container`; card chrome and chart tiers
+  never read the viewport. A container name is a SHARED boundary, not a per-component scope:
+  `StatGroup` and `WidgetGrid` both declare `basalt-grid`, and a query resolves against the nearest.
+  (3) **Pointer tier** — modality, not width: `--vx-hit` 24px (WCAG 2.5.8), 44px under `(pointer:
+coarse)` (2.5.5); hover gates on `(hover: hover)`. A narrow desktop is not a phone.
 
 ## Data visualization — the visx primitives contract
 
