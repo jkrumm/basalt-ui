@@ -4341,16 +4341,21 @@ export const PLUGIN_RULE_GRACE = {
     since: '1.31.0',
     promote: '1.33.0',
     why:
-      'Extended 1.32.0 -> 1.33.0: 1.31.0 shipped the rule naming "a container query" but no primitive, and MIGRATING never mentioned it (argo: 42 warns, no documented target). 1.32.0 is the first minor with a reachable, documented answer (Mantine type="container" grids keyed on CONTAINER_CLASSES, exempted here), and promoting in the minor that first makes a rule satisfiable hands a consumer zero minors to act on it — the control-outside-home extension\'s reasoning. ' +
-      'new in the wave-11 responsive/touch guards. Catches four ' +
-      'independent shapes at once — a responsive-object Mantine prop, visibleFrom/hiddenFrom outside ' +
-      'the three shell homes, the three raw viewport hooks, and window.matchMedia/innerWidth — none ' +
-      'of which basalt policed before this wave, so every consumer on an earlier minor has a green ' +
-      "build with all four shapes already in it. basalt-ui/content's own article-card.tsx (a " +
-      "`SimpleGrid cols={{ base: 1, sm: 2, lg }}`) is one incumbent measured in basalt's own tree at " +
-      'ship time — a real number, not zero, so this ships warn rather than error from the start. ' +
-      '1.33.0 is when that incumbent and any consumer-side ones are expected to have moved to a ' +
-      'container query or a theme-allow with a stated reason.',
+      'New in the wave-11 responsive/touch guards. Catches four independent shapes at once — a ' +
+      'responsive-object Mantine prop, visibleFrom/hiddenFrom outside the three shell homes, the ' +
+      'three raw viewport hooks, and window.matchMedia/innerWidth — none of which basalt policed ' +
+      'before this wave, so every consumer on an earlier minor has a green build with all four ' +
+      "shapes already in it. basalt-ui/content's own article-card.tsx (a `SimpleGrid cols={{ base: " +
+      "1, sm: 2, lg }}`) was one incumbent measured in basalt's own tree at ship time — a real " +
+      'number, not zero, so it shipped warn rather than error. ' +
+      'Extended 1.32.0 -> 1.33.0: 1.31.0 shipped the rule naming "a container query" but no ' +
+      'primitive, and MIGRATING never mentioned it (argo: 42 warns, no documented target). 1.32.0 ' +
+      'is the first minor with a reachable, documented answer (Mantine type="container" grids keyed ' +
+      'on CONTAINER_CLASSES, exempted here), and promoting in the minor that first makes a rule ' +
+      'satisfiable hands a consumer zero minors to act on it — the control-outside-home ' +
+      "extension's reasoning. 1.33.0 is when the incumbents are expected to have moved to a " +
+      'container grid or a theme-allow with a stated reason. Promotes together with its CSS twin, ' +
+      'the `raw-media-query` guard kind.',
   },
 }
 
