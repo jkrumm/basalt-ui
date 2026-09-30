@@ -1,3 +1,14 @@
+## [1.32.1](https://github.com/jkrumm/basalt-ui/compare/v1.32.0...v1.32.1) (2026-09-30)
+
+
+### Bug Fixes
+
+* align guard lanes on FormRow/FormGroup, drop basalt-main ([17e673d](https://github.com/jkrumm/basalt-ui/commit/17e673d421c3e2f93be01c2b8d24e10e56d5b71c))
+* bottom-align FormGroup's row direction so a trailing button isn't stretched ([e5ca2ab](https://github.com/jkrumm/basalt-ui/commit/e5ca2ab5e433e4e3ef15f505913c672b4912f0e9))
+* export the size- and container-class tables from basalt-ui/tokens ([14fb784](https://github.com/jkrumm/basalt-ui/commit/14fb784586c3348a3647280e74ea905b2df0091b))
+* point every § Unreleased reference at the section the release names ([bc17710](https://github.com/jkrumm/basalt-ui/commit/bc1771001048f2883607d6917e6f94cc397865be))
+* resolve consts before unwrapping raw-breakpoint conditionals ([4f9cc79](https://github.com/jkrumm/basalt-ui/commit/4f9cc7912ae0805eb5e574f8ed8a8f9c068e0ddf))
+
 # [1.32.0](https://github.com/jkrumm/basalt-ui/compare/v1.31.0...v1.32.0) (2026-09-30)
 
 
