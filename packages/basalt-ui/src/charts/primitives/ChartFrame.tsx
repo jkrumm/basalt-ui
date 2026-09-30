@@ -325,7 +325,7 @@ export function ChartFrame({
             'legend.maxRows',
             'nothing (the legend fits by measured width)',
             '1.32.0',
-            'Overflow folds into an `All N` disclosure; an explicit value still wins this release.',
+            `Its UNIT changed from rows to entries: \`maxRows: ${legend.maxRows}\` is now read as a cap of ${legend.maxRows} legend ENTRIES (not rows), with the rest folded into an \`All N\` disclosure. An explicit value still wins this release.`,
           )
         : null,
     [legend, legendItems.length],

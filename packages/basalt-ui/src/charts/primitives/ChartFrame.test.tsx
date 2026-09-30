@@ -549,6 +549,27 @@ describe('ChartFrame height warnings (dev, once)', () => {
   test('a numeric height above the floor is silent', () => {
     expect(mount(VX.minPlotHeight + 50).filter((m) => m.includes('plot floor'))).toEqual([])
   })
+
+  // F4: `legend.maxRows` changed UNIT (rows → entries) in its deprecation release — a consumer who
+  // meant rows silently got an entry cap, so the warning has to name the unit change itself.
+  test('a stated legend.maxRows warns that the value is now read as an entry cap, not rows', () => {
+    const many: SeriesStyle[] = Array.from({ length: 5 }, (_, i) => ({
+      key: `m${i}`,
+      label: `M${i}`,
+      color: '#000',
+      mark: 'line',
+    }))
+    const messages = captureErrors(() => {
+      render(
+        <ChartFrame series={many} legend={{ maxRows: 2 }} height={240}>
+          {() => null}
+        </ChartFrame>,
+      )
+    })
+    const warning = messages.find((m) => m.includes('legend.maxRows'))
+    expect(warning).toContain('from rows to entries')
+    expect(warning).toContain('cap of 2 legend ENTRIES (not rows)')
+  })
 })
 
 describe('an unmeasured ChartFrame without a BasaltProvider is not phone chrome', () => {
