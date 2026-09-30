@@ -9,8 +9,12 @@
  * 1. `buildPaletteCss()` with no options — the exact function `gen-tokens-css.mjs` writes
  *    `dist/tokens.css` from, so the palette half IS the published stylesheet's name set.
  * 2. The component-scoped names basalt's own source declares (`--vx-hit-gap`,
- *    `--vx-space-icon-size`, `--vx-keyboard-inset`): a CSS declaration or a quoted string literal
- *    in a non-test file outside `src/guard/`.
+ *    `--vx-space-icon-size`, `--vx-keyboard-inset`), from every non-test file outside `src/guard/`:
+ *    a declaration (`--vx-x:` — in a `.css` file or in CSS text inside a `.ts`/`.tsx` template
+ *    literal) and, in `.ts`/`.tsx`, ANY quoted `'--vx-x'` string literal. The quoted form is
+ *    deliberately broad — a style-object key, a `setProperty` name, a const — so a quoted
+ *    `--vx-*` anywhere in shipped source enters the allowlist. That errs toward NOT reporting; it
+ *    can never make the guard flag a name basalt emits.
  *
  * `src/guard/vx-names.test.ts` re-derives the set and fails on any drift, pointing back here.
  */
@@ -27,12 +31,15 @@ const QUOTED = /['"](--vx-[A-Za-z0-9-]*[A-Za-z0-9])['"]/g
 
 export function collectVxNames(): string[] {
   const names = new Set<string>()
-  for (const m of buildPaletteCss().matchAll(DECLARATION)) names.add(m[1] ?? '')
+  const add = (text: string, re: RegExp) => {
+    for (const [, name] of text.matchAll(re)) names.add(name as string) // group 1 is not optional
+  }
+  add(buildPaletteCss(), DECLARATION)
   for (const rel of new Glob('src/**/*.{ts,tsx,css}').scanSync(ROOT)) {
     if (rel.startsWith('src/guard/') || /\.test\.tsx?$/.test(rel)) continue
     const text = readFileSync(resolve(ROOT, rel), 'utf8')
-    const re = rel.endsWith('.css') ? DECLARATION : QUOTED
-    for (const m of text.matchAll(re)) names.add(m[1] ?? '')
+    add(text, DECLARATION)
+    if (!rel.endsWith('.css')) add(text, QUOTED)
   }
   return [...names].toSorted()
 }
