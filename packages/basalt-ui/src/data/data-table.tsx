@@ -39,6 +39,7 @@ import {
   Pagination,
   Select,
   Skeleton,
+  Stack,
   Table,
   Text,
   TextInput,
@@ -93,6 +94,7 @@ import { EnumFilter } from '../controls/enum-filter'
 import { MultiSelectFilter } from '../controls/multi-select-filter'
 import { CtlSlot } from '../theme'
 import { alpha, VX } from '../tokens'
+import { CONTAINER_CLASSES } from '../tokens/size-classes'
 import type { EnumField, FieldHandle, MultiField } from '../state'
 import { WidgetHeader } from '../dashboard'
 import { ErrorState } from '../dashboard/query-state'
@@ -596,6 +598,30 @@ export type BasaltDataTableProps<T> = BasaltProps &
      * <BasaltDataTable data={rows} columns={columns} onRowActivate={(row) => setSelected(row)} />
      */
     onRowActivate?: (row: T) => void
+
+    /**
+     * A compact card projection of one row, rendered INSTEAD of the table while the table's own box
+     * is narrower than the `regular` container class (`CONTAINER_CLASSES`, 480px) — keyed on the
+     * width this table actually has, never the viewport, so a table in a narrow aside or a split
+     * column swaps on a desktop too, and a full-width one does not swap early on a tablet.
+     *
+     * The cards are the SAME processed rows the table would draw — sorted, filtered and paged — so a
+     * list can never disagree with its table; a fixed card order is `initialSorting`, not a second
+     * sort. Everything around the body stays: the header (title · count · toolbar), the bulk bar,
+     * the pager, and `query` / `isLoading` / `emptyState`. `onRowActivate` makes each card
+     * activatable exactly as it does a row (click, or Enter on the focused card). The selection
+     * checkbox is not projected — a card list with a selection keeps its bulk bar but no ticks.
+     *
+     * Reach for it when the row carries more than the columns a phone can hold (a status + label +
+     * age header, a clamped title, a prose line). A table that only needs to shed a column or two
+     * already has that: the column fold hides the lowest-priority columns behind a per-row
+     * disclosure with no prop at all. Server render and first paint are the table.
+     *
+     * @example
+     * <BasaltDataTable data={items} columns={columns} onRowActivate={open}
+     *   renderCard={(item) => <ItemCard item={item} />} />
+     */
+    renderCard?: (row: T) => ReactNode
     /**
      * Prepends a checkbox column (header = select-all on the page) and arms TanStack's row-selection
      * feature. Selection is uncontrolled unless `rowSelection` is passed.
@@ -1388,6 +1414,51 @@ function useDataTableState<T>(props: BasaltDataTableProps<T>, defaultPageSize: n
   }
 }
 
+/** Whether the table renders as `renderCard` projections: its own root measured below the `regular`
+ * container class. A zero width is an un-laid-out ancestor, not a narrow table, so it moves nothing
+ * — the default (and the SSR answer) is the table. The root's width never depends on which body it
+ * holds, so the swap cannot oscillate. */
+function useCardProjection(enabled: boolean): {
+  rootRef: RefObject<HTMLDivElement | null>
+  cards: boolean
+} {
+  const rootRef = useRef<HTMLDivElement>(null)
+  const [narrow, setNarrow] = useState(false)
+  useMeasuredWidths({
+    resolveRoot: () => rootRef.current,
+    signature: '',
+    enabled,
+    onMeasure: (root) => {
+      if (root.clientWidth === 0) return
+      const next = root.clientWidth < CONTAINER_CLASSES.regular
+      setNarrow((current) => (current === next ? current : next))
+    },
+  })
+  return { rootRef, cards: enabled && narrow }
+}
+
+/** Click + Enter activation, shared by a row and its card. Enter only: Space is the browser's own
+ * page-scroll on a focused non-button, and stealing it from a keyboard reader moving down a long
+ * table costs more than the second activation key buys. */
+function activationProps<T>(onRowActivate: ((row: T) => void) | undefined, row: T) {
+  if (onRowActivate === undefined) return undefined
+  return {
+    className: classes.activatable,
+    'data-activatable': true,
+    tabIndex: 0,
+    onClick: () => onRowActivate(row),
+    onKeyDown: (event: ReactKeyboardEvent<HTMLElement>) => {
+      if (event.key !== 'Enter') return
+      // Only the element's own Enter. A cell or card may hold a button, a link or the selection
+      // checkbox, and keydown bubbles — so without this an Enter on a nested control fired that
+      // control AND opened the row's detail behind it.
+      if (event.target !== event.currentTarget) return
+      event.preventDefault()
+      onRowActivate(row)
+    },
+  }
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 /**
@@ -1441,6 +1512,7 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
     manualFiltering = false,
     actions,
     onRowActivate,
+    renderCard,
     enableRowSelection = false,
     getRowId,
     bulkActions,
@@ -1596,8 +1668,11 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
       columnFoldFixedIds: [...excluded],
     }
   }, [columns, columnPinning])
+  // The card projection unmounts the table, so the fold and the containment wrapper go inactive with
+  // it — their measuring effects re-attach to the remounted table when the width returns.
+  const projection = useCardProjection(renderCard !== undefined)
   const columnFold = useColumnFold({
-    active: foldEligible,
+    active: foldEligible && !projection.cards,
     order: columnFoldOrder,
     fixedIds: columnFoldFixedIds,
   })
@@ -1708,8 +1783,26 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
   // `useMeasuredContainment` drives instead: bare while the table fits, `overflow-x: auto` once it
   // does not. Its docblock carries the full accounting.
   const pageStickyHeader = !scrolls && stickyHeader === true
-  const containment = useMeasuredContainment(pageStickyHeader)
+  const containment = useMeasuredContainment(pageStickyHeader && !projection.cards)
   const resolvedStickyHeaderOffset = scrolls ? undefined : stickyHeaderOffset
+
+  // The error branch the table did not have (components audit #3) carries the query's OWN `refetch`
+  // behind Retry, so the failure is reported where the rows would have been — in a row spanning
+  // every rendered column, or in place of the card list.
+  const errorNode = queryError !== undefined && (
+    <ErrorState
+      error={queryError.error}
+      title="Could not load"
+      tier="section"
+      retrying={queryError.fetchStatus === 'fetching'}
+      onRetry={() => void queryError.refetch()}
+    />
+  )
+  const emptyNode = emptyState ?? (
+    <Text c="dimmed" ta="center" size="sm" py="sm">
+      No data to display.
+    </Text>
+  )
 
   const tableNode = (
     <Table
@@ -1777,19 +1870,8 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
       </Table.Thead>
       <Table.Tbody>
         {queryError !== undefined ? (
-          // The branch the table did not have (components audit #3). It spans every rendered
-          // column and carries the query's OWN `refetch` behind Retry, so the failure is reported
-          // where the rows would have been — not as an empty table saying nothing failed.
           <Table.Tr>
-            <Table.Td colSpan={columnCount}>
-              <ErrorState
-                error={queryError.error}
-                title="Could not load"
-                tier="section"
-                retrying={queryError.fetchStatus === 'fetching'}
-                onRetry={() => void queryError.refetch()}
-              />
-            </Table.Td>
+            <Table.Td colSpan={columnCount}>{errorNode}</Table.Td>
           </Table.Tr>
         ) : showSkeleton ? (
           Array.from({ length: skeletonRows }, (_, rowIndex) => (
@@ -1803,13 +1885,7 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
           ))
         ) : rows.length === 0 ? (
           <Table.Tr>
-            <Table.Td colSpan={columnCount}>
-              {emptyState ?? (
-                <Text c="dimmed" ta="center" size="sm" py="sm">
-                  No data to display.
-                </Text>
-              )}
-            </Table.Td>
+            <Table.Td colSpan={columnCount}>{emptyNode}</Table.Td>
           </Table.Tr>
         ) : (
           rows.map((row) => {
@@ -1825,24 +1901,7 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
               <Fragment key={row.id}>
                 <Table.Tr
                   {...(enableRowSelection && row.getIsSelected() && { 'data-selected': true })}
-                  {...(onRowActivate !== undefined && {
-                    className: classes.activatable,
-                    'data-activatable': true,
-                    tabIndex: 0,
-                    onClick: () => onRowActivate(row.original),
-                    // Enter only. Space is the browser's own page-scroll on a focused non-button, and
-                    // stealing it from a keyboard reader moving down a long table costs more than the
-                    // second activation key buys.
-                    onKeyDown: (event: ReactKeyboardEvent<HTMLTableRowElement>) => {
-                      if (event.key !== 'Enter') return
-                      // Only the ROW's own Enter. A cell may hold a button, a link or the selection
-                      // checkbox, and keydown bubbles — so without this an Enter on a nested control
-                      // fired that control AND opened the row's detail behind it.
-                      if (event.target !== event.currentTarget) return
-                      event.preventDefault()
-                      onRowActivate(row.original)
-                    },
-                  })}
+                  {...activationProps(onRowActivate, row.original)}
                 >
                   {hasFolded && (
                     <Table.Td className={classes.foldToggleCell}>
@@ -1911,7 +1970,11 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
   const rangeEnd = Math.min((paginationState.pageIndex + 1) * paginationState.pageSize, total)
 
   return (
-    <div className={cx(classNames?.root, className)} {...(style !== undefined && { style })}>
+    <div
+      ref={projection.rootRef}
+      className={cx(classNames?.root, className)}
+      {...(style !== undefined && { style })}
+    >
       {/*
        * ONE header row: the `WidgetHeader` (title · count) on the left, the toolbar right-aligned in
        * the SAME row. It was two stacked rows with `mb="xs"` on each, so a titled table with search
@@ -1985,7 +2048,23 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
       {bulkBarActions !== undefined && (
         <BulkActionBar count={selectedRows.length} actions={bulkBarActions} />
       )}
-      {!foldEligible ? (
+      {projection.cards ? (
+        <Stack gap="xs" className={cx(classNames?.table)}>
+          {queryError !== undefined
+            ? errorNode
+            : showSkeleton
+              ? Array.from({ length: skeletonRows }, (_, index) => (
+                  <Skeleton key={`skeleton-${index}`} height={48} radius="md" />
+                ))
+              : rows.length === 0
+                ? emptyNode
+                : rows.map((row) => (
+                    <Box key={row.id} {...activationProps(onRowActivate, row.original)}>
+                      {renderCard?.(row.original)}
+                    </Box>
+                  ))}
+        </Stack>
+      ) : !foldEligible ? (
         // An explicit `minWidth` is the one genuinely DECLARED horizontal floor — the column fold
         // never engages here (see `foldEligible`, above), so this shape keeps its exact
         // pre-existing DOM: no extra measuring wrapper for a table nothing folds.
