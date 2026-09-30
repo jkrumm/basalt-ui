@@ -13,11 +13,12 @@ import {
   TooltipBody,
   TooltipHeader,
   TooltipRow,
+  TooltipRows,
 } from '../primitives/ChartTooltip'
 import { ChartFrame, resolveLegend } from '../primitives/ChartFrame'
 import type { ResponsiveChartHeight } from '../primitives/ChartFrame'
 import { Crosshair, SeriesDot } from '../primitives/Crosshair'
-import { HoverOverlay } from '../primitives/HoverOverlay'
+import { cursorSliderProps, HoverOverlay } from '../primitives/HoverOverlay'
 import { ZoneRects } from '../primitives/ZoneRects'
 import type { ZoneSpec } from '../primitives/ZoneRects'
 import type { ChartState } from '../primitives/ChartPending'
@@ -595,18 +596,7 @@ function DualPanelPlot<T>(props: DualPanelPlotProps<T>) {
           <HoverOverlay
             width={xMax}
             height={topH + PANE_GAP}
-            onMove={cursor.onPointerMove}
-            onDown={cursor.onPointerDown}
-            onUp={cursor.onPointerUp}
-            onLeave={cursor.onPointerLeave}
-            onKeyDown={cursor.onKeyDown}
-            onBlur={cursor.onBlur}
-            valueMax={Math.max(data.length - 1, 0)}
-            {...(point !== null && {
-              valueNow: data.indexOf(point),
-              valueText: formatX(getX(point)),
-            })}
-            {...(ariaLabel !== undefined && { ariaLabel })}
+            {...cursorSliderProps({ cursor, data, getX, formatX, ariaLabel })}
           />
         </Group>
 
@@ -688,17 +678,7 @@ function DualPanelPlot<T>(props: DualPanelPlotProps<T>) {
             })()}
           />
           <TooltipBody>
-            {deriveTooltipRows(visibleSeries, point, formatTop).map((row) => (
-              <TooltipRow
-                key={row.key}
-                color={row.color}
-                label={row.label}
-                value={row.value}
-                shape={row.shape}
-                dashed={row.dashed}
-                {...(row.strokeWidth !== undefined && { strokeWidth: row.strokeWidth })}
-              />
-            ))}
+            <TooltipRows rows={deriveTooltipRows(visibleSeries, point, formatTop)} />
             {barVisible &&
               (() => {
                 const v = getBar(point)

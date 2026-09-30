@@ -10,22 +10,17 @@ import type { CursorResolution } from '../cursor/resolve'
 import { useBandPlot } from '../hooks/useBandPlot'
 import type { BandFold, BandTooltipConfig } from '../hooks/useBandPlot'
 import { probeAxisLabels } from '../layout/auto-margin'
-import { AxisBottomDate, AxisLeftNumeric } from '../primitives/Axes'
+import { AxisLeftNumeric } from '../primitives/Axes'
 import { ChartFrame, resolveLegend } from '../primitives/ChartFrame'
 import type { ResponsiveChartHeight } from '../primitives/ChartFrame'
-import {
-  ChartTooltipFloat,
-  TooltipBody,
-  TooltipHeader,
-  TooltipRow,
-} from '../primitives/ChartTooltip'
+import { TooltipRows } from '../primitives/ChartTooltip'
 import { Crosshair } from '../primitives/Crosshair'
 import { HatchPattern, hatchFill, hatchSizeFor } from '../primitives/HatchPattern'
-import { HoverOverlay } from '../primitives/HoverOverlay'
 import type { ChartState } from '../primitives/ChartPending'
 import { deriveTooltipRows } from '../series'
 import type { ChartLegendConfig, ChartSeries } from '../series'
 import { fmtAxisDate } from '../utils/format'
+import { BandAxisOverlay, BandTooltip, clampFraction } from './band-chrome'
 
 /** One of the two panes. Each resolves its own domain — that is the whole point of the kind. */
 export type MirroredBarPane = {
@@ -242,7 +237,7 @@ function MirroredBarsPlot<T>(props: MirroredBarsPlotProps<T>) {
     ...(tooltip !== undefined && { tooltip }),
   })
 
-  const { bands, margin, plotWidth, scale, cursor, point, crosshairX, step, bandWidth } = band
+  const { bands, margin, plotWidth, point, crosshairX, step, bandWidth } = band
 
   // ── Pass 2: the pane rects, now that the plot height is known ───────────────────────────────
   const barBand = Math.max(plot.height - margin.top - margin.bottom, 2)
@@ -346,8 +341,6 @@ function MirroredBarsPlot<T>(props: MirroredBarsPlotProps<T>) {
 
   if (plotWidth <= 0 || bands.length === 0) return null
 
-  const cfg = tooltip === false ? undefined : tooltip
-  const badge = cfg?.label === undefined || point === null ? null : cfg.label(point)
   // Each pane's row falls back to ITS OWN axis formatter, never the other pane's — the two panes
   // are in different units by construction (an explicit per-series `formatValue` still wins).
   const visibleSeries = series
@@ -419,68 +412,21 @@ function MirroredBarsPlot<T>(props: MirroredBarsPlotProps<T>) {
 
           {crosshairX !== null && <Crosshair x={crosshairX} top={0} bottom={barBand} />}
 
-          <AxisBottomDate
-            top={barBand}
-            scale={scale}
-            tickValues={band.tickValues}
-            tickFormat={(v) => formatX(String(v))}
-            anchorTerminals={band.xAnchorTerminals}
-            {...(band.xWrapWidth !== undefined && { wrapWidth: band.xWrapWidth })}
-          />
-
-          <HoverOverlay
-            width={plotWidth}
+          <BandAxisOverlay
+            band={band}
             height={barBand}
-            onMove={cursor.onPointerMove}
-            onDown={cursor.onPointerDown}
-            onUp={cursor.onPointerUp}
-            onLeave={cursor.onPointerLeave}
-            onKeyDown={cursor.onKeyDown}
-            onBlur={cursor.onBlur}
-            valueMax={Math.max(bands.length - 1, 0)}
-            {...(point !== null && {
-              valueNow: bands.indexOf(point),
-              valueText: formatX(getX(point)),
-            })}
-            {...(ariaLabel !== undefined && { ariaLabel })}
+            getX={getX}
+            formatX={formatX}
+            ariaLabel={ariaLabel}
           />
         </Group>
       </svg>
 
-      {band.showTooltip && point !== null && (
-        <ChartTooltipFloat anchor={band.tooltipAnchor} ariaLive={band.ariaLive}>
-          <TooltipHeader
-            date={getX(point)}
-            {...(cfg?.formatHeader !== undefined && {
-              format: (key: string) => cfg.formatHeader?.(key, point) ?? key,
-            })}
-            {...(badge !== null && { label: badge.text, labelColor: badge.color })}
-          />
-          <TooltipBody>
-            {cfg?.prependRows?.(point, { hidden })}
-            {rows.map((row) => (
-              <TooltipRow
-                key={row.key}
-                color={row.color}
-                label={row.label}
-                value={row.value}
-                shape={row.shape}
-                dashed={row.dashed}
-                {...(row.strokeWidth !== undefined && { strokeWidth: row.strokeWidth })}
-              />
-            ))}
-            {cfg?.extraRows?.(point, { hidden })}
-          </TooltipBody>
-        </ChartTooltipFloat>
-      )}
+      <BandTooltip band={band} tooltip={tooltip} getX={getX} hidden={hidden}>
+        <TooltipRows rows={rows} />
+      </BandTooltip>
     </>
   )
-}
-
-/** A 0..1 share, non-finite included — see `BandStrip`'s identical guard. */
-function clampFraction(value: number | undefined): number {
-  if (value === undefined || !Number.isFinite(value)) return 0
-  return Math.min(Math.max(value, 0), 1)
 }
 
 /** A drawable value, or null. See the call site for why NaN is not drawable. */

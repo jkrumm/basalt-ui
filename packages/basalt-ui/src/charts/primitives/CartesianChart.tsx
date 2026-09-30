@@ -32,9 +32,9 @@ import {
 } from './chart-layout'
 import { useChartContainerClass, useChartMetrics } from './chart-tier'
 import type { ChartState } from './ChartPending'
-import { ChartTooltipFloat, TooltipBody, TooltipHeader, TooltipRow } from './ChartTooltip'
+import { ChartTooltipFloat, TooltipBody, TooltipHeader, TooltipRows } from './ChartTooltip'
 import { Crosshair, SeriesDot } from './Crosshair'
-import { HoverOverlay } from './HoverOverlay'
+import { cursorSliderProps, HoverOverlay } from './HoverOverlay'
 import { XZoneRects } from './XZoneRects'
 import type { XZoneSpec } from './XZoneRects'
 import { ZoneRects } from './ZoneRects'
@@ -972,18 +972,7 @@ function CartesianPlot<T>({
           <HoverOverlay
             width={xMax}
             height={yMax}
-            onMove={cursor.onPointerMove}
-            onDown={cursor.onPointerDown}
-            onUp={cursor.onPointerUp}
-            onLeave={cursor.onPointerLeave}
-            onKeyDown={cursor.onKeyDown}
-            onBlur={cursor.onBlur}
-            valueMax={Math.max(data.length - 1, 0)}
-            {...(point !== null && {
-              valueNow: data.indexOf(point),
-              valueText: formatX(getX(point)),
-            })}
-            {...(ariaLabel !== undefined && { ariaLabel })}
+            {...cursorSliderProps({ cursor: cursor, data: data, getX, formatX, ariaLabel })}
           />
         </Group>
       </svg>
@@ -999,17 +988,7 @@ function CartesianPlot<T>({
           />
           <TooltipBody>
             {tooltipCfg?.prependRows?.(point, { visible, hidden })}
-            {rows.map((row) => (
-              <TooltipRow
-                key={row.key}
-                color={row.color}
-                label={row.label}
-                value={row.value}
-                shape={row.shape}
-                dashed={row.dashed}
-                {...(row.strokeWidth !== undefined && { strokeWidth: row.strokeWidth })}
-              />
-            ))}
+            <TooltipRows rows={rows} />
             {tooltipCfg?.extraRows?.(point, { visible, hidden })}
           </TooltipBody>
         </ChartTooltipFloat>

@@ -1,4 +1,5 @@
 import type { FocusEventHandler, KeyboardEventHandler, PointerEventHandler } from 'react'
+import type { ChartCursor } from '../hooks/useChartCursor'
 import styles from './HoverOverlay.module.css'
 
 /**
@@ -74,4 +75,31 @@ export function HoverOverlay({
       onPointerCancel={onLeave}
     />
   )
+}
+
+/**
+ * Everything a FOCUSABLE overlay over indexed data takes besides its rect: the cursor's pointer and
+ * keyboard handlers plus the slider label/position. `CartesianChart`, `DualPanel`'s top pane and
+ * the banded kinds all wire it identically, so it is stated once.
+ */
+export function cursorSliderProps<T>(input: {
+  cursor: ChartCursor<T>
+  data: readonly T[]
+  getX: (d: T) => string
+  formatX: (key: string) => string
+  ariaLabel: string | undefined
+}) {
+  const { cursor, data, getX, formatX, ariaLabel } = input
+  const { point } = cursor
+  return {
+    onMove: cursor.onPointerMove,
+    onDown: cursor.onPointerDown,
+    onUp: cursor.onPointerUp,
+    onLeave: cursor.onPointerLeave,
+    onKeyDown: cursor.onKeyDown,
+    onBlur: cursor.onBlur,
+    valueMax: Math.max(data.length - 1, 0),
+    ...(point !== null && { valueNow: data.indexOf(point), valueText: formatX(getX(point)) }),
+    ...(ariaLabel !== undefined && { ariaLabel }),
+  }
 }
