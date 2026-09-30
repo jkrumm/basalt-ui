@@ -1183,6 +1183,13 @@ export const WAIVER_ID_ALIASES: Readonly<Record<string, readonly string[]>> = {
   'raw-selection-control': ['control-outside-home'],
 }
 
+/**
+ * The ids that are a guard kind AND an oxlint plugin rule — one law, two lanes, one annotation.
+ * {@link PLUGIN_RULE_IDS} leaves them out by design, so `--audit-allows` would otherwise never ask
+ * oxlint about them. `waiver-audit.test.ts` pins this against the plugin's own rule table.
+ */
+const DUAL_LANE_IDS: ReadonlySet<string> = new Set(['in-body-page-title'])
+
 /** The shortest string accepted as a written reason — enough to exclude a stray separator. */
 const MIN_ALLOW_REASON_LENGTH = 4
 
@@ -2871,6 +2878,13 @@ export type AllowAnnotationSite = {
   readonly guardKinds: readonly GuardKind[]
   /** The subset of `rules` the oxlint plugin owns — outside `checkSource`'s reach. */
   readonly pluginRules: readonly string[]
+  /**
+   * Every id an `oxlint` run can prove live: `pluginRules`, plus a guard kind that is ALSO a plugin
+   * rule (`in-body-page-title`) or aliases one ({@link WAIVER_ID_ALIASES}). A waiver is live if
+   * EITHER lane still needs it — judging only `pluginRules` called rb's live `in-body-page-title`
+   * waivers dead, and deleting them made oxlint exit 1.
+   */
+  readonly oxlintRules: readonly string[]
   /** Words that occupied the id slot but name no rule. Their presence makes the parse fail closed. */
   readonly unknownRules: readonly string[]
   /** A written reason follows the ids. */
@@ -2917,6 +2931,13 @@ export function findAllowAnnotations(
     pluginRules: annotation.rules.filter(
       (id) => !Object.hasOwn(GUARD_RULES, id) && PLUGIN_RULE_IDS.has(id),
     ),
+    oxlintRules: [
+      ...new Set(
+        annotation.rules
+          .flatMap((id) => [id, ...(WAIVER_ID_ALIASES[id] ?? [])])
+          .filter((id) => PLUGIN_RULE_IDS.has(id) || DUAL_LANE_IDS.has(id)),
+      ),
+    ],
     unknownRules: [...annotation.unknownRules],
     hasReason: annotation.hasReason,
     bare: annotation.rules.length === 0 && annotation.unknownRules.length === 0,
