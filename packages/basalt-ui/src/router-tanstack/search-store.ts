@@ -44,11 +44,15 @@ export type CreateSearchStoreOptions<S extends Record<string, AnyField>> = {
   /** Envelope version — bump when the field set changes to discard stale localStorage. */
   version?: number
   /**
-   * Search params this store does NOT own that every field write drops from the URL, in the SAME
-   * navigate — `['page']` on a paginated list, so narrowing the set on page 5 lands on page 1 and
-   * Back restores both together. Dropped, not written: the route's own `validateSearch` resolves the
-   * default (`page` → 1), so the store never has to know it. Applies to a field's setter (when the
-   * value changes), its `clear()` and `useReset()`; an explicit `patch` naming the same key wins.
+   * Search params this store does NOT own that a URL-lane write drops, in the SAME navigate —
+   * `['page']` on a paginated list, so narrowing the set on page 5 lands on page 1 and Back restores
+   * both together. Dropped, not written: the route's own `validateSearch` resolves the default
+   * (`page` → 1), so the store never has to know it. Applies to a URL-lane field's setter and
+   * `clear()` when the value moves, and to `useReset()` when it navigates; an explicit `patch`
+   * naming the same key wins.
+   *
+   * **URL-lane writes only.** A `url: false` field (mirror-only or memory) makes no navigate, so it
+   * has none to ride — and a `useReset()` on a store with no URL-lane field keeps the page too.
    *
    * Store-wide by design: every filter of a list narrows the same list. A param the store owns is
    * refused at definition — reset a field with `useReset()` or its own `clear()`.

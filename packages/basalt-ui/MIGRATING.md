@@ -114,8 +114,8 @@ are CSS lengths, so ``[`${CONTAINER_CLASSES.regular}px`]`` stays the form.
 Additive; nothing to change unless you carry one of the two workarounds below.
 
 **`createSearchStore({ …, resets: ['page'] })`** drops the named sibling params — ones the store does
-NOT own — in the same navigate as every field write that moves a value, a field's `clear()` and
-`useReset()`. The route's own `validateSearch` resolves the default (`page` → 1). An explicit
+NOT own — in the same navigate as every URL-lane write that moves a value (setter, `clear()`,
+`useReset()`); a `url: false` field makes no navigate and keeps the page. The route's own `validateSearch` resolves the default (`page` → 1). An explicit
 `set(v, { patch: { page } })` still wins; naming a param the store owns throws at definition.
 Store-wide by design: every filter of a list narrows the same list, sort included.
 
