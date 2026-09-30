@@ -2708,7 +2708,7 @@ const CONTROL_OUTSIDE_HOME_MESSAGE =
  * `@mantine/form` (a form is the third home and its inputs are not filters), and the owner
  * exemption — a file DEFINING a basalt control cannot be told to use one.
  */
-// Ships: warn (grace → 1.32.0)
+// Ships: warn (grace → 1.33.0)
 const controlOutsideHome = {
   meta: {
     type: 'suggestion',
@@ -4312,8 +4312,9 @@ const rawBreakpoint = {
 export const PLUGIN_RULE_GRACE = {
   'control-outside-home': {
     since: '1.26.0',
-    promote: '1.32.0',
+    promote: '1.33.0',
     why:
+      "Extended 1.32.0 -> 1.33.0 at the 1.32.0 release, the last extension: basalt's own tree is at 0 (consumer-loop r1 dogfood) and argo is at 2, but RE-MEASURED 2026-09-30 the fleet carries ~33 (image-gen 11, rb 7, image-share 6, weatherorb 5, email-gateway 4, argo 2). The 1.32.0 fleet upgrade clears them while they warn, together with raw-breakpoint, so 1.33.0 promotes all four ids against a measured-clean fleet. " +
       'Extended 1.31.0 -> 1.32.0 at the 1.31.0 release: the basalt tree still carries incumbents (data-table, notifications center, theme-lab) and the argo sweep has not run. ' +
       'the wave-6 control guards (docs/CONTROLS-SPEC.md §6). The one openly HEURISTIC rule of the ' +
       'set — "this control has no home" is a claim about layout intent, so its false-positive load ' +
