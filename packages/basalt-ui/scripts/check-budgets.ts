@@ -1,7 +1,8 @@
 /**
  * The consolidation plan's numeric ceilings (`.claude/maturation/consolidation-plan.md`, "Budgets
- * are numbers"), enforced as one gate rather than six scattered opinions: public symbols, published
- * subpaths, shipped rule lines, spec prose, playground routes, and the CLI's own line count.
+ * are numbers"), enforced as one gate rather than seven scattered opinions: public symbols, published
+ * subpaths, shipped rule lines, spec prose, playground routes, the CLI's own line count, and the
+ * provider-only first-paint bytes.
  *
  * Every number is printed with its budget, in the order above, before any exit — so a `--report`
  * run (or a failing default run) always shows the full picture rather than stopping at the first
@@ -14,8 +15,11 @@
  *
  * Usage: bun packages/basalt-ui/scripts/check-budgets.ts [--report]
  */
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { gzipSync } from 'node:zlib'
+import { build } from 'vite'
+import type { Rolldown } from 'vite'
 
 const PKG_ROOT = join(import.meta.dir, '..')
 const REPO_ROOT = join(PKG_ROOT, '..', '..')
@@ -112,7 +116,61 @@ function cliNonTestLines(): number {
   return totalLines(paths)
 }
 
-function budgets(): Budget[] {
+// ── 7. Provider-only first paint (scripts/fixtures/provider-only.ts, gzip) ─────────────────────
+
+/**
+ * Gzip bytes of basalt's OWN code in an app that imports only `BasaltProvider` + `createBasaltTheme`
+ * — the floor every consumer pays on first paint. weatherorb's `/map` bar broke when 1.30.2 → 1.32.1
+ * grew it ~1 KB unnoticed (the theme lab's store rode into production behind an unfoldable
+ * `isDev()` gate); this is the number that would have said so.
+ *
+ * Bundled by the SAME bundler consumers run (Vite, i.e. Rolldown), in production mode, against the
+ * BUILT `dist` — esbuild without code splitting inlines `dev-dock`'s lazy `import('./theme-lab')` and
+ * wraps shared modules in lazy-init closures that defeat tree-shaking, so it over-reports. Peers are
+ * external (not basalt's bytes); CSS is excluded; the count is the entry chunk plus every chunk it
+ * statically imports — what loads before first paint, not what loads later.
+ */
+async function providerOnlyGzip(): Promise<number> {
+  const distEntry = join(PKG_ROOT, 'dist/index.js')
+  if (!existsSync(distEntry))
+    throw new Error('check-budgets: dist/ missing — run `bun run build` first')
+  const result = await build({
+    configFile: false,
+    logLevel: 'silent',
+    root: PKG_ROOT,
+    define: { 'process.env.NODE_ENV': '"production"' },
+    resolve: { alias: [{ find: /^basalt-ui$/, replacement: distEntry }] },
+    build: {
+      write: false,
+      minify: true,
+      lib: { entry: join(PKG_ROOT, 'scripts/fixtures/provider-only.ts'), formats: ['es'] },
+      rolldownOptions: {
+        // Bare specifiers (peers) are external; relative/absolute paths and Vite's `\u0000`
+        // virtual ids are basalt's own graph.
+        external: (id) => id !== 'basalt-ui' && !/^[./]/.test(id) && !id.startsWith('\u0000'),
+      },
+    },
+  })
+  const { output } = (Array.isArray(result) ? result[0] : result) as Rolldown.RolldownOutput
+  const chunks = new Map(
+    output.flatMap((o) => (o.type === 'chunk' ? [[o.fileName, o] as const] : [])),
+  )
+  const entry = [...chunks.values()].find((c) => c.isEntry)
+  if (entry === undefined) throw new Error('check-budgets: provider-only fixture emitted no entry')
+  const loaded = new Set<string>()
+  let bytes = 0
+  const visit = (name: string): void => {
+    const chunk = chunks.get(name)
+    if (chunk === undefined || loaded.has(name)) return
+    loaded.add(name)
+    bytes += gzipSync(chunk.code).length
+    chunk.imports.forEach(visit)
+  }
+  visit(entry.fileName)
+  return bytes
+}
+
+async function budgets(): Promise<Budget[]> {
   return [
     { label: 'public symbols (export-surface.json)', value: publicSymbols(), ceiling: 400 },
     { label: 'published subpaths (package.json exports)', value: publishedSubpaths(), ceiling: 24 },
@@ -124,12 +182,19 @@ function budgets(): Budget[] {
       ceiling: 15,
     },
     { label: 'CLI non-test lines (src/cli/**)', value: cliNonTestLines(), ceiling: 4000 },
+    // Landed value (1.33.0, lab store gated out; 1.30.2 measured 19393, 1.32.1 20379). Raise it
+    // deliberately, in the commit that spends it, never to make a red gate green.
+    {
+      label: 'provider-only first paint (gzip B, dist)',
+      value: await providerOnlyGzip(),
+      ceiling: 18900,
+    },
   ]
 }
 
-function main(): void {
+async function main(): Promise<void> {
   const reportOnly = process.argv.includes('--report')
-  const rows = budgets()
+  const rows = await budgets()
   const breaches = rows.filter((b) => b.value > b.ceiling)
 
   const width = Math.max(...rows.map((b) => b.label.length))
@@ -151,4 +216,4 @@ function main(): void {
   if (!reportOnly) process.exit(1)
 }
 
-main()
+await main()
