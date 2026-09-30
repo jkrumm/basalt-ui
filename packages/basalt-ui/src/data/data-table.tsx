@@ -608,7 +608,8 @@ export type BasaltDataTableProps<T> = BasaltProps &
      * list can never disagree with its table; a fixed card order is `initialSorting`, not a second
      * sort. Everything around the body stays: the header (title · count · toolbar), the bulk bar,
      * the pager, and `query` / `isLoading` / `emptyState`. `onRowActivate` makes each card
-     * activatable exactly as it does a row (click, or Enter on the focused card). The selection
+     * activatable exactly as it does a row (click, or Enter on the focused card — never Space, the
+     * browser's own page scroll on a focused non-button). The selection
      * checkbox is not projected — a card list with a selection keeps its bulk bar but no ticks.
      *
      * An activatable card takes `tabIndex=0` + `data-activatable`, never `role="button"`: a card is
@@ -616,7 +617,9 @@ export type BasaltDataTableProps<T> = BasaltProps &
      * descendant presentational, so those nested controls would vanish from the accessibility tree.
      * The affordance is the cursor and the focus ring, as on the row. `maxHeight` caps the card list
      * in a `ScrollArea`; `minWidth` does not apply — it is a horizontal floor for columns, and a
-     * card list has none.
+     * card list has none. `stickyHeader` has nothing to stick while the cards render. A card order
+     * with no user sort is `data`'s own order — sort it there (or `initialSorting`) for a domain
+     * order.
      *
      * Reach for it when the row carries more than the columns a phone can hold (a status + label +
      * age header, a clamped title, a prose line). A table that only needs to shed a column or two
@@ -760,6 +763,10 @@ export type BasaltDataTableProps<T> = BasaltProps &
      * this is set (`minWidth: 0` when it is not), so a table wider than its column scrolls inside
      * its own card instead of widening the page. Reach for this only to hold a MINIMUM table width
      * — e.g. so eight columns keep their readable widths and scroll rather than compress.
+     *
+     * Setting it also switches the column fold OFF (a declared floor is the caller saying "this
+     * table is at least this wide", which folding columns out would contradict), so a `minWidth`
+     * table scrolls where the same table without it folds. `maxHeight` alone keeps the fold.
      *
      * The one table whose wrapper is MEASURED rather than declared is `stickyHeader` with neither
      * this nor `maxHeight`; see that prop and `useMeasuredContainment` in the implementation for

@@ -346,6 +346,30 @@ function useMeasuredHeightVar(active: boolean): (el: HTMLDivElement | null) => v
   return attach
 }
 
+/**
+ * The page's control bar — row 1 (title/icon, `actions`, `sync`) and row 2 (`tabs`, `filters`,
+ * `filtersEnd`). Inside `BasaltShell` both rows portal into shell chrome; with no shell it renders
+ * ONE sticky bar in flow, `title` leading, and needs no `PageBarProvider`.
+ *
+ * @example
+ * // Shell-less (linewatch-shaped): the store is local, the bar is the page's first child.
+ * const filters = createLocalStore({ key: 'outages', fields: { q: field.string({ max: 60 }) } })
+ *
+ * function OutagesPage() {
+ *   const [q] = filters.field.q.use()
+ *   return (
+ *     <>
+ *       <PageBar
+ *         title="Outages"
+ *         actions={{ primary: { key: 'export', label: 'Export', onClick: exportCsv } }}
+ *         filters={<FilterSet><SearchFilter field={filters.field.q} placeholder="Find a line" /></FilterSet>}
+ *         classNames={{ root: classes.bleed }} // your gutter bleed — see `PageBarSlot`
+ *       />
+ *       <OutageTable query={q} />
+ *     </>
+ *   )
+ * }
+ */
 export function PageBar({
   title,
   icon,
