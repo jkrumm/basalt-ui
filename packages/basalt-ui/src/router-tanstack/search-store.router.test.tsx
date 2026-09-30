@@ -749,6 +749,131 @@ describe('the memory-only lane — url: false, persist: false', () => {
 })
 
 /**
+ * `resets` — a sibling param the page owns (a `page`) dropped by every field write, in the SAME
+ * navigate. image-share hand-rolled this as a `useEffect` keyed on the filters, which also snapped
+ * Back/Forward onto page 1 — the write is the only moment that knows a reader narrowed the set.
+ */
+describe('resets — a filter write drops a sibling page', () => {
+  const store = createSearchStore({
+    key: 'r-resets',
+    fields: {
+      prefix: field.enum(['all', 'fuji', 'blog'], 'all', { history: 'push' }),
+      q: field.string({}, { persist: false }),
+    },
+    resets: ['page'],
+  })
+
+  /** The page's own `page` — a real route composes the store with a schema that defaults it. */
+  const validateSearch = (raw: Record<string, unknown>): Record<string, unknown> => ({
+    ...store.validateSearch(raw),
+    page: typeof raw['page'] === 'number' ? raw['page'] : 1,
+  })
+
+  test('narrowing on page 5 lands on page 1 in one navigate, and Back restores both', async () => {
+    const probe = sink()
+    const router = await mountApp({
+      validateSearch,
+      entry: '/dashboard?prefix=all&page=5',
+      Dashboard: fieldProbe(store.field.prefix, probe),
+    })
+
+    const navigate = spyOn(router, 'navigate')
+    await act(async () => {
+      probe.current?.set('fuji')
+    })
+    expect(navigate).toHaveBeenCalledTimes(1)
+    navigate.mockRestore()
+    await waitFor(() => {
+      expect(currentSearch(router)['prefix']).toBe('fuji')
+    })
+    expect(currentSearch(router)['page']).toBe(1)
+
+    // ONE entry: Back undoes the filter AND the page together — no effect re-runs to snap it.
+    await act(async () => {
+      router.history.back()
+    })
+    await waitFor(() => {
+      expect(currentSearch(router)['prefix']).toBe('all')
+    })
+    expect(currentSearch(router)['page']).toBe(5)
+  })
+
+  test('a write that does not move the value keeps the page', async () => {
+    const probe = sink()
+    const router = await mountApp({
+      validateSearch,
+      entry: '/dashboard?prefix=blog&q=cat&page=3',
+      Dashboard: fieldProbe(store.field.q, probe),
+    })
+    await act(async () => {
+      probe.current?.set('cat')
+    })
+    expect(currentSearch(router)['page']).toBe(3)
+  })
+
+  test('an explicit patch naming the reset param wins over the declaration', async () => {
+    const probe = sink()
+    const router = await mountApp({
+      validateSearch,
+      entry: '/dashboard?prefix=all&page=5',
+      Dashboard: fieldProbe(store.field.prefix, probe),
+    })
+    await act(async () => {
+      probe.current?.set('blog', { patch: { page: 2 } })
+    })
+    await waitFor(() => {
+      expect(currentSearch(router)['prefix']).toBe('blog')
+    })
+    expect(currentSearch(router)['page']).toBe(2)
+  })
+
+  test('useReset and clear() drop it too — Reset all is a filter write', async () => {
+    let reset: (() => void) | null = null
+    const router = await mountApp({
+      validateSearch,
+      entry: '/dashboard?prefix=fuji&page=4',
+      Dashboard: () => {
+        reset = store.useReset()
+        return null
+      },
+    })
+    await act(async () => {
+      reset?.()
+    })
+    await waitFor(() => {
+      expect(currentSearch(router)['prefix']).toBe('all')
+    })
+    expect(currentSearch(router)['page']).toBe(1)
+  })
+
+  test('clear() on one field drops it', async () => {
+    const probe = sink()
+    const router = await mountApp({
+      validateSearch,
+      entry: '/dashboard?prefix=fuji&page=4',
+      Dashboard: fieldProbe(store.field.prefix, probe),
+    })
+    await act(async () => {
+      store.field.prefix.clear()
+    })
+    await waitFor(() => {
+      expect(currentSearch(router)['prefix']).toBe('all')
+    })
+    expect(currentSearch(router)['page']).toBe(1)
+  })
+
+  test('a param the store OWNS is refused at definition', () => {
+    expect(() =>
+      createSearchStore({
+        key: 'r-resets-owned',
+        fields: { prefix: field.enum(['all', 'fuji'], 'all'), q: field.string({}) },
+        resets: ['q'],
+      }),
+    ).toThrow(/`resets` names `q`, which this store's field 'q' owns/)
+  })
+})
+
+/**
  * `set(next, { patch })` — the sibling params a page owns and the store does not. Clearing one used
  * to need a second `navigate` beside the setter, which either raced the field's own write or left
  * two history entries where the reader made one change.
