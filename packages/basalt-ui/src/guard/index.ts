@@ -2847,7 +2847,9 @@ export type AllowAnnotationSite = {
    * Every id an `oxlint` run can prove live: `pluginRules`, plus a guard kind that is ALSO a plugin
    * rule (`in-body-page-title`) or aliases one ({@link WAIVER_ID_ALIASES}). A waiver is live if
    * EITHER lane still needs it — judging only `pluginRules` called rb's live `in-body-page-title`
-   * waivers dead, and deleting them made oxlint exit 1.
+   * waivers dead, and deleting them made oxlint exit 1. A bare LINE-scope annotation covers every
+   * plugin rule (the plugin's `allowCovers`), so it lists all of them; a bare file-scope one waives
+   * nothing in either lane and lists none.
    */
   readonly oxlintRules: readonly string[]
   /** Words that occupied the id slot but name no rule. Their presence makes the parse fail closed. */
@@ -2888,26 +2890,33 @@ export function findAllowAnnotations(
     cfg.allowComment,
     syntax,
   )
-  return declared.map(({ line, annotation }) => ({
-    line,
-    scope: annotation.scope,
-    rules: [...annotation.rules],
-    guardKinds: annotation.rules.filter((id): id is GuardKind => Object.hasOwn(GUARD_RULES, id)),
-    pluginRules: annotation.rules.filter(
-      (id) => !Object.hasOwn(GUARD_RULES, id) && PLUGIN_RULE_IDS.has(id),
-    ),
-    oxlintRules: [
-      ...new Set(
-        annotation.rules
-          .flatMap((id) => [id, ...(WAIVER_ID_ALIASES[id] ?? [])])
-          .filter((id) => PLUGIN_RULE_IDS.has(id) || DUAL_LANE_IDS.has(id)),
+  const everyOxlintRule = [...PLUGIN_RULE_IDS, ...DUAL_LANE_IDS]
+  return declared.map(({ line, annotation }) => {
+    const bare = annotation.rules.length === 0 && annotation.unknownRules.length === 0
+    return {
+      line,
+      scope: annotation.scope,
+      rules: [...annotation.rules],
+      guardKinds: annotation.rules.filter((id): id is GuardKind => Object.hasOwn(GUARD_RULES, id)),
+      pluginRules: annotation.rules.filter(
+        (id) => !Object.hasOwn(GUARD_RULES, id) && PLUGIN_RULE_IDS.has(id),
       ),
-    ],
-    unknownRules: [...annotation.unknownRules],
-    hasReason: annotation.hasReason,
-    bare: annotation.rules.length === 0 && annotation.unknownRules.length === 0,
-    text: lines[line - 1] ?? '',
-  }))
+      oxlintRules:
+        bare && annotation.scope === 'line'
+          ? everyOxlintRule
+          : [
+              ...new Set(
+                annotation.rules
+                  .flatMap((id) => [id, ...(WAIVER_ID_ALIASES[id] ?? [])])
+                  .filter((id) => PLUGIN_RULE_IDS.has(id) || DUAL_LANE_IDS.has(id)),
+              ),
+            ],
+      unknownRules: [...annotation.unknownRules],
+      hasReason: annotation.hasReason,
+      bare,
+      text: lines[line - 1] ?? '',
+    }
+  })
 }
 
 /** The token a neutralized annotation is rewritten to. Shares no substring with `theme-allow`. */

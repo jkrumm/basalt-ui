@@ -251,6 +251,27 @@ describe.skipIf(!existsSync(OXLINT_BIN))('check-theme --audit-allows — oxlint 
     expect(code).toBe(0)
   })
 
+  // A bare line-scope `theme-allow` covers every plugin rule (the plugin's `allowCovers`), so a
+  // text-lane miss must still ask oxlint — reporting it dead and deleting it fails the lint.
+  it('proves a bare line-scope waiver LIVE when only a plugin rule still needs it', () => {
+    write('package.json', JSON.stringify({ name: 'fixture', basalt: { roots: ['src'] } }))
+    write(
+      'src/charts/plot.tsx',
+      "import { AxisLeftNumeric } from 'basalt-ui/charts'\n\n" +
+        '// theme-allow\n' +
+        'export const Plot = () => <AxisLeftNumeric />\n',
+    )
+    withOxlint()
+    const { log } = audit()
+    expect(log).toContain('suppresses hand-rolled-plot@4 (oxlint)')
+    expect(log).not.toContain('SUPPRESSES NOTHING')
+  })
+
+  it('never sends a bare FILE-scope annotation to oxlint — it waives nothing in either lane', () => {
+    const [site] = findAllowAnnotations('// theme-allow-file\n', 'src/a.tsx', DEFAULT_GUARD_CONFIG)
+    expect([site?.bare, site?.scope, site?.oxlintRules]).toEqual([true, 'file', []])
+  })
+
   it('leaves no probe file behind — the neutralized copy is a temp file basalt owns', () => {
     write('package.json', JSON.stringify({ name: 'fixture', basalt: { roots: ['src'] } }))
     write(
