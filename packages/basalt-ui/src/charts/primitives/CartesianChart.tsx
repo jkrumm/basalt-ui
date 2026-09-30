@@ -405,46 +405,51 @@ function buildYScale<T>(
 }
 
 /**
- * `tickLabelPx`'s resolver, split out of a two-deep ternary: a 45° label projects wider than its
- * flat glyph box, so it measures through {@link rotatedXLabelPx} instead of the flat/wrapped
- * numbers every other rotation uses; a wrapped flat label (`wrapWidth` set) uses ITS width, an
- * unwrapped one the plain flat width. `rotate === 90` falls through to the flat/wrapped branch
- * unchanged — `wrapWidth` is only ever set for `rotate === 0` (see its own definition), so a 90°
- * axis always resolves to `flatLabelPx` here, matching the pre-split behaviour exactly.
+ * The x-axis margin ladder, as one pure decision. The flat (unrotated) margin is what every case
+ * resolves to except a rotated or wrapped axis, and it is what the rotation decision itself is
+ * measured against — deciding needs an `xMax`, and `xMax` needs a margin, so the flat pass breaks
+ * the loop. An explicit `xLabelRotate` always wins — including `0`, the documented "never rotate"
+ * opt-out; unset, only a categorical (band) axis wraps, and rotates only when even wrapped it
+ * doesn't fit (`planXLabels`) — a time or number domain only thins.
+ *
+ * Per rotation: 45° reuses its pre-measured margin and measures its tick room through
+ * {@link rotatedXLabelPx} (a rotated label projects wider than its glyph box); 90° measures fresh
+ * (one line box wide, so the flat label room governs its thinning); a wrapped flat axis re-measures
+ * for its extra line(s) and thins by the wrapped width.
  */
-function resolveTickLabelPx(input: {
-  rotate: 0 | 45 | 90
-  wrapWidth: number | undefined
-  xLabels: string[]
-  axisFont: number
-  flatLabelPx: number
-  wrappedLabelPx: number
-}): number {
-  const { rotate, wrapWidth, xLabels, axisFont, flatLabelPx, wrappedLabelPx } = input
-  if (rotate === 45) return rotatedXLabelPx(xLabels, axisFont)
-  return wrapWidth === undefined ? flatLabelPx : wrappedLabelPx
-}
-
-/**
- * `baseMargin`'s resolver, split out of the same two-deep ternary: an unrotated, unwrapped axis
- * keeps the already-measured flat margin; wrapping re-measures for the extra line(s)
- * (`bottomLines`); a 45° rotation reuses its own pre-measured margin ({@link rotated45Margin}); a
- * 90° one measures fresh (no pre-measured twin exists for it, unlike 45°).
- */
-function resolveBaseMargin(input: {
-  rotate: 0 | 45 | 90
-  wrapWidth: number | undefined
+function resolveXAxisLayout(input: {
+  marginInput: AutoMarginInput
   flatMargin: ChartMargin
   rotated45Margin: ChartMargin
-  marginInput: AutoMarginInput
-  xPlanLines: number
-}): ChartMargin {
-  const { rotate, wrapWidth, flatMargin, rotated45Margin, marginInput, xPlanLines } = input
-  if (rotate === 45) return rotated45Margin
-  if (rotate === 90) return autoMargin({ ...marginInput, rotate })
-  return wrapWidth === undefined
-    ? flatMargin
-    : autoMargin({ ...marginInput, bottomLines: xPlanLines })
+  flatLabelPx: number
+  xLabels: string[]
+  fontPx: number
+  plotWidth: number
+  categorical: boolean
+  xLabelRotate: 0 | 45 | 90 | undefined
+}): {
+  baseMargin: ChartMargin
+  rotate: 0 | 45 | 90
+  wrapWidth: number | undefined
+  tickLabelPx: number
+} {
+  const { marginInput, flatMargin, rotated45Margin, flatLabelPx, xLabels, fontPx, categorical } =
+    input
+  const flatXMax = Math.max(input.plotWidth - flatMargin.left - flatMargin.right, 0)
+  const xPlan = planXLabels({ labels: xLabels, plotWidth: flatXMax, fontPx, categorical })
+  const rotate = input.xLabelRotate ?? (categorical ? xPlan.rotate : 0)
+  if (rotate === 45) {
+    const tickLabelPx = rotatedXLabelPx(xLabels, fontPx)
+    return { baseMargin: rotated45Margin, rotate, wrapWidth: undefined, tickLabelPx }
+  }
+  if (rotate === 90) {
+    const baseMargin = autoMargin({ ...marginInput, rotate })
+    return { baseMargin, rotate, wrapWidth: undefined, tickLabelPx: flatLabelPx }
+  }
+  if (!xPlan.wrap)
+    return { baseMargin: flatMargin, rotate, wrapWidth: undefined, tickLabelPx: flatLabelPx }
+  const baseMargin = autoMargin({ ...marginInput, bottomLines: xPlan.lines })
+  return { baseMargin, rotate, wrapWidth: xPlan.wrapPx, tickLabelPx: xPlan.labelPx }
 }
 
 /**
@@ -665,16 +670,12 @@ function CartesianPlot<T>({
   // the actual law: only a band (category) domain wraps or rotates; time and number domains thin.
   const categorical = tight && classifyDomain(keys) === 'band'
 
-  /** The horizontal room one x tick label needs: the widest string that could be painted, plus
-   * breathing space to its neighbour. Feeds `smartTicks`, which otherwise thinned the axis by a
-   * constant that knew nothing about the label. Measured at the tick font the axis will actually
-   * paint, which the tier moves (`docs/CHARTS-SPEC.md` §8). */
-  const xLabelPx = useMemo(() => xLabelPxFor(xLabels, tier.axisFont), [xLabels, tier.axisFont])
-
-  /** Everything `autoMargin` measures except the rotation — shared by all three passes below so a
-   * measured label can never differ between the one that DECIDES and the one that PAINTS. */
-  const marginInput = useMemo(
-    () => ({
+  // Everything `autoMargin` measures except the rotation, measured once for every pass so a label
+  // can never differ between the one that DECIDES and the one that PAINTS — plus the 45° margin (a
+  // rotated label reaches into the left gutter) and `xLabelPx`, the room one flat x tick label
+  // needs at the tick font the axis will actually paint (`docs/CHARTS-SPEC.md` §8).
+  const measured = useMemo(() => {
+    const marginInput: AutoMarginInput = {
       left: yPlacement === 'outside' ? leftLabels : [],
       right: rightLabels,
       bottom: xLabels,
@@ -684,61 +685,34 @@ function CartesianPlot<T>({
       floor: resolveMarginFloor(yPlacement, tier.margin),
       anchorTerminals: tight,
       ...(marginOverride !== undefined && { override: marginOverride }),
-    }),
-    [
-      leftLabels,
-      rightLabels,
-      xLabels,
-      tier.axisFont,
-      tier.margin,
-      marginOverride,
-      tight,
-      yPlacement,
-    ],
-  )
-
-  /** The margin an UNROTATED axis resolves to. It is the final margin in every case except an
-   * auto-rotated phone axis, and it is what the rotation decision itself is measured against —
-   * deciding needs an `xMax`, and `xMax` needs a margin, so the unrotated pass breaks the loop. */
-  const flatMargin = useMemo(() => autoMargin(marginInput), [marginInput])
-
-  /** And the margin a 45° axis would resolve to — the OTHER half of the decision, needed only for
-   * a categorical (band) domain that still overflows once wrapped (`planXLabels`'s own rotate
-   * case). A rotated label reaches into the left gutter, so rotating spends plot width. */
-  const rotated45Margin = useMemo(() => autoMargin({ ...marginInput, rotate: 45 }), [marginInput])
-
-  // An explicit `xLabelRotate` always wins — including `0`, which is the documented "never rotate"
-  // opt-out. Only an unset one falls through to the domain-driven default: a categorical (band)
-  // axis wraps before it rotates, and rotates only when even wrapped it doesn't fit
-  // (`planXLabels`). A time or number domain never wraps or rotates — it only thins.
-  const flatXMax = Math.max(plot.width - flatMargin.left - flatMargin.right, 0)
-  const xPlan = useMemo(
-    () => planXLabels({ labels: xLabels, plotWidth: flatXMax, fontPx: tier.axisFont, categorical }),
-    [xLabels, flatXMax, tier.axisFont, categorical],
-  )
-  const rotate = xLabelRotate ?? (categorical ? xPlan.rotate : 0)
-  const wrapWidth = rotate === 0 && xPlan.wrap ? xPlan.wrapPx : undefined
-  // A 90° label is one line box wide, so the constant floor governs it; a 45° one projects wider.
-  const tickLabelPx = resolveTickLabelPx({
-    rotate,
-    wrapWidth,
+    }
+    return {
+      marginInput,
+      flatMargin: autoMargin(marginInput),
+      rotated45Margin: autoMargin({ ...marginInput, rotate: 45 }),
+      flatLabelPx: xLabelPxFor(xLabels, tier.axisFont),
+    }
+  }, [
+    leftLabels,
+    rightLabels,
     xLabels,
-    axisFont: tier.axisFont,
-    flatLabelPx: xLabelPx,
-    wrappedLabelPx: xPlan.labelPx,
-  })
-
-  const baseMargin = useMemo(
+    tier.axisFont,
+    tier.margin,
+    marginOverride,
+    tight,
+    yPlacement,
+  ])
+  const { baseMargin, rotate, wrapWidth, tickLabelPx } = useMemo(
     () =>
-      resolveBaseMargin({
-        rotate,
-        wrapWidth,
-        flatMargin,
-        rotated45Margin,
-        marginInput,
-        xPlanLines: xPlan.lines,
+      resolveXAxisLayout({
+        ...measured,
+        xLabels,
+        fontPx: tier.axisFont,
+        plotWidth: plot.width,
+        categorical,
+        xLabelRotate,
       }),
-    [flatMargin, rotated45Margin, marginInput, rotate, wrapWidth, xPlan.lines],
+    [measured, xLabels, tier.axisFont, plot.width, categorical, xLabelRotate],
   )
 
   // End-of-line labels are planned FIRST, against the base margin: the right gutter is reserved
