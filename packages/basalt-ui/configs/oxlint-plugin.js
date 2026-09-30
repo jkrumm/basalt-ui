@@ -4250,10 +4250,13 @@ const rawBreakpoint = {
           const value = unwrapExpressionContainer(node.value)
           const owner = node.parent
           if (owner === null || owner === undefined || owner.type !== 'JSXOpeningElement') continue
-          if (resolveMantineTag(owner.name, mantineImports) === undefined) continue
+          const tag = resolveMantineTag(owner.name, mantineImports)
+          if (tag === undefined) continue
           // The container law reaches only the props Mantine routes through the grid's container
           // queries; a `p={{ base, lg }}` on the same element is still a viewport @media.
-          const routed = CONTAINER_ROUTED_PROPS[resolveMantineTag(owner.name, mantineImports)]
+          const routed = Object.hasOwn(CONTAINER_ROUTED_PROPS, tag)
+            ? CONTAINER_ROUTED_PROPS[tag]
+            : undefined
           const mode = routed?.has(node.name.name)
             ? containerGridMode(owner, mantineImports, responsiveObjectConsts)
             : undefined

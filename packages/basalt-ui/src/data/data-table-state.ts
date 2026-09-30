@@ -94,9 +94,6 @@ function useReportedState<S>(
   return [value, update]
 }
 
-/** The table's own interactive state and the TanStack `on*Change` handlers that write it — every
- * piece uncontrolled with an optional change callback, except row selection, which is controlled
- * whenever `rowSelection` is passed. */
 /** The `BasaltDataTableProps` fields `useDataTableState` reads — declared here rather than picked
  * off the props type, so the hook owns its contract and this module never imports the component. */
 export type DataTableStateProps = {
@@ -112,6 +109,9 @@ export type DataTableStateProps = {
   onRowSelectionChange?: ((selection: RowSelectionState) => void) | undefined
 }
 
+/** The table's own interactive state and the TanStack `on*Change` handlers that write it — every
+ * piece uncontrolled with an optional change callback, except row selection, which is controlled
+ * whenever `rowSelection` is passed. */
 export function useDataTableState(props: DataTableStateProps, defaultPageSize: number) {
   const { rowSelection, onRowSelectionChange } = props
   const [sorting, onSortingChange] = useReportedState(

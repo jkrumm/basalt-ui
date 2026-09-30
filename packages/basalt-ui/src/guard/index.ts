@@ -887,7 +887,7 @@ export const GRACE_PERIOD_KINDS: Partial<Record<GuardKind, GraceEntry>> = {
     promote: '1.33.0',
     why:
       "The CSS-text twin of the oxlint plugin's `basalt/raw-breakpoint` — ONE LAW, TWO LANES, ONE " +
-      'PROMOTION, so it moves with that rule and never alone (`grace.test.ts` pins the pair). New in ' +
+      'PROMOTION, so it moves with that rule and never alone (`configs/oxlint-plugin.test.ts` › twin lanes share one promotion pins the pair). New in ' +
       'the wave-11 responsive/touch guards; reaching CSS is a NEW file type for this check, same ' +
       "reasoning as `css-raw-surface`, with incumbents in basalt's own tree at ship time, so it " +
       'shipped warn. Extended 1.32.0 -> 1.33.0 with its twin: 1.31.0 named ' +
