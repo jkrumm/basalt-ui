@@ -140,10 +140,7 @@ function resolveAiMajorSkewReason(cfg: BasaltConfig): {
  * Returns the exit code: 0 = all good, 1 = one or more hard failures.
  */
 export function doctor(invocationCwd: string = process.cwd(), flags: string[] = []): number {
-  if (conflictingProfileFlags(flags)) {
-    console.error('basalt-ui doctor: --tokens-only and --framework are alternatives — pass one.')
-    return 1
-  }
+  if (conflictingProfileFlags('doctor', flags)) return 1
   const project = resolveProjectDir(invocationCwd)
   const cwd = project.dir
   const cfg = readBasaltConfig(cwd)
