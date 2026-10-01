@@ -425,3 +425,18 @@ a container visibility-swap primitive (F6); a flash-free CSR size-class seam (F9
 hook (F16); a shell-less top-level nav (F17); removing `@mantine/form` from the `./forms` barrel (F12,
 needs a grace window); argo's warden `StateBadge` truncation; the CLI at 4000/4000; email-gateway's
 check-theme isn't wired into its lint (13 unenforced errors).
+
+## Consumer loop, round 4 (2026-10-01)
+
+All nine consumers took 1.33.0 with the four ids at `error` and stayed green. email-gateway wired
+both lanes for the first time (13 check-theme errors + 16 oxlint errors that had never run → 0).
+**1.34.0** ships what that round found:
+
+- `CONTAINER_KEYS` (SimpleGrid container keys; argo had 19 sites)
+- `useBreakpoint` removed (zero usage; it had outlived its `removeIn` twice — `check-grace` now
+  refuses that, and the preflight proves `export-surface.json` against dist first)
+- `unknown-vx-token` judges every unemitted name inside a basalt-owned family (grace restarted →
+  1.35.0)
+- the AST-lane-not-wired notice
+- `configs/oxlint-basalt.json` (guards-only preset)
+- icon-less nav items get a glyph and a name in the collapsed rail
