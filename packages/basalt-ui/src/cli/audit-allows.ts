@@ -30,7 +30,7 @@ type PluginProbe = {
   readonly rel: string
   /** 1-based line of the annotation, as {@link findAllowAnnotations} reports it. */
   readonly line: number
-  readonly ids: readonly string[]
+  readonly reach: string
   readonly site: string
   readonly suffix: string
 }
@@ -231,14 +231,15 @@ export function auditAllows(
         waiverLines.push(`${label} suppresses ${[...new Set(revealed)].join(', ')}${suffix}`)
         continue
       }
-      // Nothing in check-theme's reach moved. If any id is one oxlint judges (a dual-lane id too),
-      // the oxlint half decides it — a placeholder holds the slot so the report stays in order.
+      // Nothing the guard reaches moved: oxlint decides it (a placeholder keeps the report order).
       if (site.oxlintRules.length > 0) {
         pluginProbes.push({
           slot: waiverLines.length,
           rel,
           line: site.line,
-          ids: site.bare ? ['every rule (bare annotation)'] : site.oxlintRules,
+          reach: site.bare
+            ? 'a bare annotation, waiving every oxlint plugin rule on its line'
+            : `scoped to ${site.oxlintRules.join(', ')}, which oxlint judges`,
           site: label,
           suffix,
         })
@@ -266,8 +267,8 @@ export function auditAllows(
     if (revealed === undefined) {
       outOfReach++
       waiverLines[probe.slot] =
-        `${probe.site} scoped to ${probe.ids.join(', ')} — an oxlint plugin rule, and oxlint ` +
-        `could not be run here, so this audit cannot judge it${probe.suffix}`
+        `${probe.site} ${probe.reach} — and oxlint could not be run here, so this audit ` +
+        `cannot judge it${probe.suffix}`
       continue
     }
     if (revealed.length > 0) {
