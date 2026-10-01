@@ -90,6 +90,32 @@ describe('BasaltShell sidebarBlocks', () => {
     expect(body).toContain('Reply to Jo')
   })
 
+  test("a custom block with mobile:'more' and a label opens its node in a sheet", async () => {
+    render(
+      <MantineProvider>
+        <BasaltShell
+          brand={BRAND}
+          sections={ONE_SECTION}
+          sidebarBlocks={[
+            {
+              kind: 'custom',
+              key: 'albums',
+              label: 'Albums',
+              mobile: 'more',
+              node: <div data-testid="albums-tree">tree</div>,
+            },
+          ]}
+        />
+      </MantineProvider>,
+    )
+
+    fireEvent.click(screen.getByLabelText('More'))
+    await waitFor(() => expect(document.querySelector('[role="menu"]')).not.toBeNull())
+    fireEvent.click(screen.getByText('Albums'))
+    await waitFor(() => expect(document.querySelector('.mantine-Drawer-content')).not.toBeNull())
+    expect(document.querySelector('.mantine-Drawer-body')?.textContent).toContain('tree')
+  })
+
   test("mobile:'hidden' keeps the block off the More surface entirely", () => {
     render(
       <MantineProvider>

@@ -414,6 +414,25 @@
   color: var(--vx-ink);
 }
 
+/* A custom block's rail trigger (`rail: 'icon'`) — a footer-row-sized icon target. */
+.blockRailTrigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--vx-space-row-inset-y) var(--vx-space-row-inset-x);
+  border-radius: var(--vx-radius-ctrl);
+  color: var(--vx-faint);
+}
+
+.blockRailTrigger:hover {
+  background-color: color-mix(in srgb, var(--vx-ink) 6%, transparent);
+  color: var(--vx-ink);
+}
+
+.blockRailPopover {
+  min-width: 220px;
+}
+
 .blockIcon {
   position: relative;
   display: flex;
@@ -730,6 +749,11 @@
   .root[data-collapsed] .block[data-rail='hidden'],
   .root[data-collapsed] .block[data-rail='ring'] {
     display: none;
+  }
+
+  .root[data-collapsed] .block[data-rail='icon'] {
+    display: flex;
+    justify-content: center;
   }
 
   .root[data-collapsed] .block[data-rail='dot'] .blockHeader {

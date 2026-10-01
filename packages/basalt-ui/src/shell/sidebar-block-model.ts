@@ -26,11 +26,17 @@ export function sidebarBlockPlacement(block: SidebarBlock): 'nav' | 'bottom' {
 /**
  * The collapsed-rail projection. A list block earns a dot only when it carries a `count` — a rail
  * icon with no number behind it is a dot that means nothing — and a progress block a ring on the
- * settings row. A `custom` block has no rail representation at all (arbitrary content in ~48px of
- * icon column), which is exactly what `sidebarNavExtra` did before it.
+ * settings row. A `custom` block has a rail form only when it opts in (see below), which is
+ * `sidebarNavExtra`'s old hidden-in-the-rail behaviour otherwise.
  */
-export function sidebarBlockRail(block: SidebarBlock): 'dot' | 'ring' | 'hidden' {
-  if (block.kind === 'custom') return 'hidden'
+export function sidebarBlockRail(block: SidebarBlock): 'dot' | 'ring' | 'icon' | 'hidden' {
+  // A `custom` block is arbitrary content with no icon-column form of its own, so it is hidden
+  // unless the consumer supplied the icon AND the name that make a rail trigger. Like a list's dot,
+  // that overrides an explicit `rail: 'icon'` without them.
+  if (block.kind === 'custom') {
+    if (block.icon === undefined || block.label === undefined) return 'hidden'
+    return block.rail ?? 'icon'
+  }
   if (block.kind === 'progress') return block.rail ?? 'ring'
   // A dot has to sit ON something. With no `icon` there is no rail node to badge, and with no
   // `count` there is no number behind the dot — either way the block leaves the rail rather than
@@ -47,7 +53,9 @@ export function sidebarBlockRail(block: SidebarBlock): 'dot' | 'ring' | 'hidden'
  * threshold is measured against.
  */
 export function sidebarBlockMobile(block: SidebarBlock): 'more' | 'hidden' {
-  if (block.kind === 'custom') return 'hidden'
+  // A custom block's More row is named by `label`; without one there is nothing to name it.
+  if (block.kind === 'custom')
+    return block.mobile === 'more' && block.label !== undefined ? 'more' : 'hidden'
   if (block.kind === 'progress') return block.mobile ?? 'hidden'
   return block.mobile ?? 'more'
 }

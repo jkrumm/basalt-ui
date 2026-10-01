@@ -583,7 +583,7 @@ export function AppSidebar(props: AppSidebarProps) {
             <NavSection key={section.label} section={section} collapsed={collapsed} />
           ))}
           {navBlocks.map((block) => (
-            <SidebarBlockView key={block.key} block={block} />
+            <SidebarBlockView key={block.key} block={block} collapsed={collapsed} />
           ))}
         </Stack>
       </ScrollArea>
@@ -591,7 +591,7 @@ export function AppSidebar(props: AppSidebarProps) {
       {(bottomBlocks.length > 0 || settingsRow !== null || account !== undefined) && (
         <Stack gap={0} className={classes.footer}>
           {bottomBlocks.map((block) => (
-            <SidebarBlockView key={block.key} block={block} />
+            <SidebarBlockView key={block.key} block={block} collapsed={collapsed} />
           ))}
           {settingsRow}
           {account !== undefined && (
