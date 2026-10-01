@@ -15,17 +15,30 @@ export const CONTAINER_CLASSES = { micro: 0, compact: 240, regular: 480, wide: 8
 export type ContainerClass = keyof typeof CONTAINER_CLASSES
 
 /**
+ * `CONTAINER_CLASSES` as the CSS lengths `<SimpleGrid type="container">` keys take — Mantine writes
+ * each key verbatim into `@container simple-grid (min-width: <key>)`, so a theme name (`sm`) is a
+ * dead query and the key has to be a px length: `cols={{ base: 1, [CONTAINER_KEYS.regular]: 2 }}`.
+ * `micro` has no key — `base` is that class. `basalt/raw-breakpoint` judges theme names only, so a
+ * computed key is green.
+ */
+export const CONTAINER_KEYS = {
+  compact: `${CONTAINER_CLASSES.compact}px`,
+  regular: `${CONTAINER_CLASSES.regular}px`,
+  wide: `${CONTAINER_CLASSES.wide}px`,
+} as const
+
+/**
  * `CONTAINER_CLASSES` as the five-key map `<Grid type="container" breakpoints={…}>` takes (Mantine
  * types it `Record<MantineSize, string>`), so `Grid.Col` keys resolve onto the grid's own width:
  * `xs` opens compact, `sm` regular, `md`/`lg`/`xl` wide. `basalt/raw-breakpoint` trusts this import
  * by name (from `basalt-ui/tokens`) — any other imported map is unreadable to it and flagged.
  */
 export const CONTAINER_GRID_BREAKPOINTS = {
-  xs: `${CONTAINER_CLASSES.compact}px`,
-  sm: `${CONTAINER_CLASSES.regular}px`,
-  md: `${CONTAINER_CLASSES.wide}px`,
-  lg: `${CONTAINER_CLASSES.wide}px`,
-  xl: `${CONTAINER_CLASSES.wide}px`,
+  xs: CONTAINER_KEYS.compact,
+  sm: CONTAINER_KEYS.regular,
+  md: CONTAINER_KEYS.wide,
+  lg: CONTAINER_KEYS.wide,
+  xl: CONTAINER_KEYS.wide,
 } as const
 
 /** The class a MEASURED inline size falls in (`px` is a min-width boundary, so 240 is `compact`). */

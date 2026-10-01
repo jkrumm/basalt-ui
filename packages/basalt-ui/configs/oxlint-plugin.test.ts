@@ -3574,6 +3574,23 @@ describe('basalt/raw-breakpoint', () => {
       ).not.toContain('raw-breakpoint')
     })
 
+    it('does NOT flag CONTAINER_KEYS computed keys (named, aliased, namespace)', () => {
+      const keyed = (imp: string, key: string) =>
+        run(
+          `import { SimpleGrid } from '@mantine/core'\n${imp}\n` +
+            `export const C = () => <SimpleGrid type="container" cols={{ base: 1, [${key}.regular]: 2, [${key}.wide]: 3 }} />\n`,
+        ).rules
+      expect(
+        keyed(`import { CONTAINER_KEYS } from 'basalt-ui/tokens'`, 'CONTAINER_KEYS'),
+      ).not.toContain('raw-breakpoint')
+      expect(keyed(`import { CONTAINER_KEYS as CQ } from 'basalt-ui/tokens'`, 'CQ')).not.toContain(
+        'raw-breakpoint',
+      )
+      expect(
+        keyed(`import * as tokens from 'basalt-ui/tokens'`, 'tokens.CONTAINER_KEYS'),
+      ).not.toContain('raw-breakpoint')
+    })
+
     it('does NOT flag a lone `base` under type="container"', () => {
       expect(grid(`<SimpleGrid type="container" cols={{ base: 2 }} />`).rules).not.toContain(
         'raw-breakpoint',

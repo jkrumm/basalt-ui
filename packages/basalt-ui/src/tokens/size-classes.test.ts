@@ -3,6 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import {
   CONTAINER_CLASSES,
   CONTAINER_GRID_BREAKPOINTS,
+  CONTAINER_KEYS,
   SIZE_CLASSES,
   sizeClassMaxEm,
   toEm,
@@ -29,6 +30,17 @@ describe('CONTAINER_GRID_BREAKPOINTS', () => {
       md: `${wide}px`,
       lg: `${wide}px`,
       xl: `${wide}px`,
+    })
+  })
+})
+
+describe('CONTAINER_KEYS', () => {
+  test('is every non-zero CONTAINER_CLASSES boundary as a px length', () => {
+    const { compact, regular, wide } = CONTAINER_CLASSES
+    expect(CONTAINER_KEYS).toEqual({
+      compact: `${compact}px`,
+      regular: `${regular}px`,
+      wide: `${wide}px`,
     })
   })
 })
