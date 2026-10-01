@@ -192,7 +192,7 @@ fi
 # minor after it (docs/CONTROLS-SPEC.md §1).
 echo
 bun "$PACKAGE_PATH/scripts/check-grace.ts" "$version" ||
-  die "a ledger entry blocks v$version (see above) — promote or remove it before releasing."
+  die "a ledger entry blocks v$version (see above)."
 
 [ "$MODE" != "dry" ] || exit 0
 
