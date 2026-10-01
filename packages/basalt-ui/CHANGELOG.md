@@ -1,3 +1,29 @@
+# [1.34.0](https://github.com/jkrumm/basalt-ui/compare/v1.33.0...v1.34.0) (2026-10-01)
+
+
+### Bug Fixes
+
+* --merge-lint replaces a guards-only extends instead of stacking it ([b2e551b](https://github.com/jkrumm/basalt-ui/commit/b2e551bc1dc431a457f58db2f8727c5f2546a9f2))
+* card-with-border remedy names its card-inset half ([1edfae7](https://github.com/jkrumm/basalt-ui/commit/1edfae79a0366d0f6c4618a7bd07d8c2370a1753))
+* derive basalt's --vx-* families from every emitted name ([07ea183](https://github.com/jkrumm/basalt-ui/commit/07ea1834f4cfc14979bb81e4cd2afc5849f28712))
+* dev-gate the basalt-family ref warning and pin its version ([23396df](https://github.com/jkrumm/basalt-ui/commit/23396df7d4fbb1f7b16f0d2f192c07485b6a4e47))
+* give icon-less nav items a first-letter glyph and a name in the rail ([9095f15](https://github.com/jkrumm/basalt-ui/commit/9095f157d1652316f03e2ff1668faddb406a34ef))
+* name an icon-less row by aria-label only in the collapsed rail ([bc13e09](https://github.com/jkrumm/basalt-ui/commit/bc13e09ff3c12e56be98c5353cf95c5925463ff9))
+* never autofix a removed deprecation row ([0534a28](https://github.com/jkrumm/basalt-ui/commit/0534a287da5252b8699b9bd4eb5ec36c1279b1b9))
+* refuse a release that reaches a deprecation's removeIn while it still ships ([eb55145](https://github.com/jkrumm/basalt-ui/commit/eb5514507011e9b9fdb7f1a23e335bc1c478c3aa))
+* restore check-grace's singular 'grace entry' in the clear line ([6fca61c](https://github.com/jkrumm/basalt-ui/commit/6fca61cb5ec1dae71b1f8b9661817a17919ca9b5))
+* take the rail glyph from a real grapheme via Intl.Segmenter ([ff4e396](https://github.com/jkrumm/basalt-ui/commit/ff4e39637f12cddb8817cd4be9367bb63f0ab5fc))
+* treat a false icon as absent and expose a label-only glyph helper ([323ddbb](https://github.com/jkrumm/basalt-ui/commit/323ddbb0dc28c41b54c1c33271eb7d6a348ab1bd))
+
+
+### Features
+
+* check-theme names an unwired AST lane ([91472ef](https://github.com/jkrumm/basalt-ui/commit/91472efbf87b336716c1871392878e648b355cd0))
+* judge every unemitted name inside a basalt-owned --vx-* family ([4864a9d](https://github.com/jkrumm/basalt-ui/commit/4864a9d78a0a0ef95d1f6caee85043b0d64c75ea))
+* remove useBreakpoint, overdue since 1.33.0 ([d68f538](https://github.com/jkrumm/basalt-ui/commit/d68f538dde34acecda481f567c17ade5a86074d4))
+* ship a guards-only oxlint preset, configs/oxlint-basalt.json ([f96d150](https://github.com/jkrumm/basalt-ui/commit/f96d15097aabf5461b524270eb5ce523928bfab5))
+* ship CONTAINER_KEYS for SimpleGrid type="container" keys ([acb5933](https://github.com/jkrumm/basalt-ui/commit/acb5933cf407cfb203819ad09bb7cf0315f73e79))
+
 # [1.33.0](https://github.com/jkrumm/basalt-ui/compare/v1.32.1...v1.33.0) (2026-10-01)
 
 
