@@ -81,10 +81,29 @@ consumer read this index, found nothing, and diffed a KPI row that had silently 
 
 ---
 
-## Unreleased
+## Unreleased — the 1.35.0 minor
 
-_Nothing yet. Author the next section under this heading as `## Unreleased — <title>`; the
-release renames it and opens a new one here._
+### `useSizeClass()` does not flash in a client-rendered app
+
+Its JSDoc claimed the first client paint renders `sizeClassHint`. Only SSR and the `hydrateRoot`
+pass do; under `createRoot` the FIRST render already reads `matchMedia` (now pinned by a test). So a
+CSR app's page-level swap partnering shell chrome — a panel standing in for the sidebar at
+`compact` — is `useSizeClass() === 'compact' ? <A /> : <B />`: one mount, no flash, no waiver. A
+`hiddenFrom`/`visibleFrom` pair waived `raw-breakpoint` "so desktop never flashes" can go. No
+`<html data-basalt-size-class>` ships: CSS keyed on a JS-stamped attribute is a second viewport
+seam outside `shell/`, and it would flash under SSR exactly where the hook does not.
+
+### Design calls closed without new API
+
+Each was parked in the consumer loop pending a second named consumer; measured at 1.34.x:
+
+| Ask                                  | Verdict                                                                                                                                                    | Do instead                                                                       |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| a container class above `wide`       | none ships — one live site (a 1368px content-fit bar); the others moved to 800                                                                             | § 1.32.1 off-class table: own-name or `basalt-grid` query, no waiver             |
+| `ContainerSwap` primitive            | none ships — every hand-roll is the 4-line one-query form, and most query a container declared above the swapped pair, which a component would have to own | § 1.32.1 swap recipe                                                             |
+| shell-less top-level nav             | none ships — one app; `BasaltShell` is the one nav projection                                                                                              | `theme-allow control-outside-home — top-level nav, no shell`                     |
+| Modal bottom sheet on a fine pointer | keeps keying on the compact SIZE class — the sheet is that class's overlay layout; the pointer axis owns hit size only                                     | nothing — a desktop window under 840px is `compact` and gets the compact overlay |
+| `FormRow` `orientation` / width prop | none ships — one consumer                                                                                                                                  | `style={{ width }}` on the row                                                   |
 
 ## 1.35.0
 

@@ -4,6 +4,7 @@
  */
 import { act, cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, test } from 'bun:test'
+import { hydrateRoot } from 'react-dom/client'
 import { renderToString } from 'react-dom/server'
 import { SIZE_CLASSES } from '../tokens/size-classes'
 import { SizeClassHintContext, useSizeClass } from './use-size-class'
@@ -113,6 +114,44 @@ describe('useSizeClass', () => {
         </SizeClassHintContext.Provider>,
       )
       expect(screen.getByTestId('result').textContent).toBe('compact')
+    } finally {
+      viewport.restore()
+    }
+  })
+
+  // F9 (consumer loop): two CSR consumers waived `hiddenFrom`/`visibleFrom` swaps believing the
+  // first client paint renders the hint. It does not — only `hydrateRoot` reads the server snapshot.
+  test('a client-rendered first render already reads matchMedia, never the hint', () => {
+    const viewport = installViewport(1300)
+    const seen: SizeClass[] = []
+    function Recorder() {
+      seen.push(useSizeClass())
+      return null
+    }
+    try {
+      render(<Recorder />)
+      expect(seen).toEqual(['expanded'])
+    } finally {
+      viewport.restore()
+    }
+  })
+
+  test('a hydrated first render reads the hint, then the real class', async () => {
+    const viewport = installViewport(1300)
+    const seen: SizeClass[] = []
+    function Recorder() {
+      seen.push(useSizeClass())
+      return null
+    }
+    const container = document.createElement('div')
+    container.innerHTML = renderToString(<Recorder />)
+    seen.length = 0
+    try {
+      await act(async () => {
+        hydrateRoot(container, <Recorder />)
+      })
+      expect(seen[0]).toBe('compact')
+      expect(seen.at(-1)).toBe('expanded')
     } finally {
       viewport.restore()
     }

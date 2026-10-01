@@ -113,10 +113,11 @@ export type BasaltProviderProps = {
   connectivity?: Omit<ConnectivityProviderProps, 'children'>
   /**
    * The size class `useSizeClass()` reports on the server and during hydration, before `matchMedia`
-   * can answer. Default `'compact'` (mobile-first). An SSR app that knows the device class (UA
-   * hint, cookie) passes it so the first frame already matches. An SSR desktop app SHOULD pass it:
-   * without it the first paint is `'compact'`, and `PageAside`/`ThreadWorkspace` remount after
-   * hydration when the real class lands.
+   * can answer. Default `'compact'` (mobile-first). SSR only: a client-rendered (`createRoot`) app
+   * reads `matchMedia` on its first render and never sees this value. An SSR app that knows the
+   * device class (UA hint, cookie) passes it so the first frame already matches. An SSR desktop app
+   * SHOULD pass it: without it the first paint is `'compact'`, and `PageAside`/`ThreadWorkspace`
+   * remount after hydration when the real class lands.
    */
   sizeClassHint?: SizeClass
 } & Omit<MantineProviderProps, 'children' | 'theme' | 'defaultColorScheme' | 'cssVariablesResolver'>
