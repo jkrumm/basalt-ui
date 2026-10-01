@@ -1923,20 +1923,21 @@ describe('basalt/control-outside-home', () => {
     },
   )
 
-  // FormRow/FormGroup (`basalt-ui/forms`) are law C1's third home written for a `<form>` rather
-  // than a settings page — the same non-home treatment SettingsRow gets, via the same
-  // CONTROL_HOST_TAGS ancestry walk.
-  it.each(['FormRow', 'FormGroup'])(
-    'does NOT flag a raw Select nested inside a %s imported from basalt-ui/forms',
-    (host) => {
-      const { code, rules } = run(
-        `import { ${host} } from 'basalt-ui/forms'\n${MANTINE_IMPORT}` +
-          `export const C = () => <${host} label="L"><Select data={[]} /></${host}>\n`,
-      )
-      expect(code).toBe(0)
-      expect(rules).not.toContain('control-outside-home')
-    },
-  )
+  // FormRow/FormGroup (`basalt-ui/controls`, still re-exported from `basalt-ui/forms` until 1.37.0)
+  // are law C1's third home written for a `<form>` rather than a settings page — the same non-home
+  // treatment SettingsRow gets, via the same CONTROL_HOST_TAGS ancestry walk, which matches by NAME
+  // so either subpath is a home.
+  it.each(
+    ['FormRow', 'FormGroup'].flatMap((host) =>
+      ['basalt-ui/controls', 'basalt-ui/forms'].map((subpath) => [host, subpath] as const),
+    ),
+  )('does NOT flag a raw Select nested inside a %s imported from %s', (host, subpath) => {
+    const { rules } = run(
+      `import { ${host} } from '${subpath}'\n${MANTINE_IMPORT}` +
+        `export const C = () => <${host} label="L"><Select data={[]} /></${host}>\n`,
+    )
+    expect(rules).not.toContain('control-outside-home')
+  })
 
   it('still flags a bare Select in a page body with no FormRow/FormGroup around it', () => {
     const { rules } = run(
@@ -2202,7 +2203,7 @@ describe('basalt/bound-control-outside-home', () => {
   // FormRow/FormGroup are the same declared non-home as SettingsRow — shared CONTROL_HOST_TAGS walk.
   it.each(['FormRow', 'FormGroup'])('does NOT flag one inside a %s', (host) => {
     const { code, rules } = run(
-      `import { ${host} } from 'basalt-ui/forms'\n${CONTROLS_IMPORT}` +
+      `import { ${host} } from 'basalt-ui/controls'\n${CONTROLS_IMPORT}` +
         `export const C = () => <${host} label="L"><SelectFilter field={f} /></${host}>\n`,
     )
     expect(code).toBe(0)
@@ -3377,6 +3378,47 @@ describe('basalt/deprecated-export', () => {
     writeFileSync(resolve(dir, 'removed-fix.tsx'), source)
     Bun.spawnSync([OXLINT_BIN, '-c', '.oxlintrc.json', '--fix', 'removed-fix.tsx'], { cwd: dir })
     expect(readFileSync(resolve(dir, 'removed-fix.tsx'), 'utf8')).toBe(source)
+  })
+})
+
+// 1.36.0: the form layout moved `basalt-ui/forms` → `basalt-ui/controls`. A move BETWEEN subpaths is
+// not a drop-in rename — the autofix only rewrites the specifier inside its own import statement —
+// so these rows carry `fix: false` and the message names the new home.
+describe('basalt/deprecated-export — the form layout move', () => {
+  it.each(['FormSection', 'FormRow', 'FormGroup', 'FormActions'])(
+    'reports %s from basalt-ui/forms and names basalt-ui/controls',
+    (name) => {
+      const { rules, output } = run(
+        `import { ${name} } from 'basalt-ui/forms'\nexport const x = ${name}\n`,
+      )
+      expect(rules).toContain('deprecated-export')
+      expect(output).toContain(`'basalt-ui/controls'`)
+      expect(output).toContain('removed in 1.37.0')
+    },
+  )
+
+  it.each(['useForm', 'schemaResolver'])('reports %s from basalt-ui/forms', (name) => {
+    const { rules, output } = run(
+      `import { ${name} } from 'basalt-ui/forms'\nexport const x = ${name}\n`,
+    )
+    expect(rules).toContain('deprecated-export')
+    expect(output).toContain(`'@mantine/form'`)
+  })
+
+  it('does NOT report FormRow imported from basalt-ui/controls', () => {
+    const { rules } = run(
+      `import { FormRow } from 'basalt-ui/controls'\nexport const x = FormRow\n`,
+    )
+    expect(rules).not.toContain('deprecated-export')
+  })
+
+  it('never autofixes a cross-subpath row', () => {
+    const source = `import { FormRow } from 'basalt-ui/forms'\nexport const x = FormRow\n`
+    writeFileSync(resolve(dir, 'form-layout-fix.tsx'), source)
+    Bun.spawnSync([OXLINT_BIN, '-c', '.oxlintrc.json', '--fix', 'form-layout-fix.tsx'], {
+      cwd: dir,
+    })
+    expect(readFileSync(resolve(dir, 'form-layout-fix.tsx'), 'utf8')).toBe(source)
   })
 })
 

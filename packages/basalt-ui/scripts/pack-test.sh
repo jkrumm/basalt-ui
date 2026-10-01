@@ -446,6 +446,12 @@ if [ -d node_modules/@mantine/dates ]; then
   echo "FAILED: @mantine/dates ended up in a scratch install that never requested it — test setup is broken, not a package defect"
   exit 1
 fi
+# Same for `@mantine/form`: the form layout (FormRow & co) lives in ./controls since 1.36.0 so a
+# consumer rendering one never installs the form library. ./forms is the subpath that needs it.
+if [ -d node_modules/@mantine/form ]; then
+  echo "FAILED: @mantine/form ended up in a scratch install that never requested it — test setup is broken, not a package defect"
+  exit 1
+fi
 cat >controls.mjs <<'JS'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
@@ -488,6 +494,20 @@ if (!html.includes('USD')) throw new Error('FilterSet did not render its first c
 if (!html.includes('web')) throw new Error('FilterSet did not render its second child filter')
 if (!html.includes('Filters')) throw new Error('FilterSet did not render its mobile sheet pill')
 console.log('controls without @mantine/dates: resolution + render OK')
+
+// The form layout, with `@mantine/form` genuinely absent: resolves AND renders.
+for (const name of ['FormSection', 'FormRow', 'FormGroup', 'FormActions']) {
+  if (typeof controls[name] !== 'function') throw new Error(`controls.${name} missing`)
+}
+const rowHtml = renderToStaticMarkup(
+  createElement(
+    MantineProvider,
+    null,
+    createElement(controls.FormRow, { label: 'Email' }, createElement('input', { name: 'email' })),
+  ),
+)
+if (!rowHtml.includes('Email')) throw new Error('FormRow did not render its label')
+console.log('controls without @mantine/form: FormRow resolution + render OK')
 
 // The other direction: the split is only worth having if the peer is genuinely required THERE.
 let datesResolved = false

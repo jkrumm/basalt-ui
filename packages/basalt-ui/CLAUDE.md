@@ -21,7 +21,7 @@ Named exports only — **no default exports**. Files `kebab-case`, components `P
 | `.`                              | coupled  | provider + theme factory, `BasaltShell` (sidebar / mobile nav / breadcrumbs / `PageBar` / `PageAside`), `Section`, `WidgetHeader`, dashboard composites, `QueryState`, `createBasaltQueryClient`/`unwrap` (C1: absorbed from the dropped `./query`), `ConnectivityIndicator`/`useConnectivity` (C1: absorbed from the dropped `./connectivity`, provider auto-mounts it) |
 | `./charts`                       | **free** | `CartesianChart` + the kinds, sparklines, chart hooks, and a token re-export                                                                                                                                                                                                                                                                                             |
 | `./tokens`                       | **free** | `VX`, `alpha`, `BP`/`p`, `buildPaletteCss`, `defineSeries`, `seriesTokens`, `groupTokens`, `chartMargin`                                                                                                                                                                                                                                                                 |
-| `./controls`                     | coupled  | the control tier — `FilterSet`, the `FieldHandle`-bound filters, `ViewTabs`, `ActionGroup`, `OverflowMenu`, `SyncButton`; three surfaces (`pill` / `sheet` / `panel`) plus the aside's row primitives `PanelRow` + `SliderControl`                                                                                                                                       |
+| `./controls`                     | coupled  | the control tier — `FilterSet`, the `FieldHandle`-bound filters, `ViewTabs`, `ActionGroup`, `OverflowMenu`, `SyncButton`; three surfaces (`pill` / `sheet` / `panel`) plus the aside's row primitives `PanelRow` + `SliderControl`, and the form layout `FormSection`/`FormRow`/`FormGroup`/`FormActions` (moved from `./forms` in 1.36.0 — no `@mantine/form`)          |
 | `./controls-dates`               | coupled  | `DateRangePicker` only — the `@mantine/dates` implementation of `RangeFilter`'s picker seam. STAYS separate post-C1: inlining it would pull `@mantine/dates` into `./controls`                                                                                                                                                                                           |
 | `./state`                        | **free** | `createPersistedState` + the field vocabulary (`field.*`, `FieldHandle`, lanes) + `createLocalStore`                                                                                                                                                                                                                                                                     |
 | `./router-tanstack`              | **free** | the TanStack bridge: `defineNav`/`useNav`, `useBasaltNav`, `useRouterBreadcrumbs`, `createSearchStore`                                                                                                                                                                                                                                                                   |
@@ -105,7 +105,10 @@ props extend and `src/surfaces.ts` stays the SSOT for real subpaths.
   is banned in the free layer.
 - `./controls` must never import `@mantine/dates`, statically OR lazily: `basaltViteConfig`
   pre-bundles the whole `@mantine` scope, so a consumer without that peer would fail to resolve.
-  The picker is injected through `RangeFilter.customPicker` from `./controls-dates`.
+  The picker is injected through `RangeFilter.customPicker` from `./controls-dates`. `./controls`
+  must equally never reach `@mantine/form` (the form layout lives there so a `FormRow` costs no
+  peer): `peer-boundary.test.ts` walks the relative-import closure, `check-dist-layering.mjs` the
+  built graph, `pack-test.sh` renders one with the peer absent.
 
 ## Tests
 
@@ -422,6 +425,11 @@ whether a consumer gets a minor's notice.
 1.29.0's `BasaltNotifications` row is the reference: it names the exception, says why (superseded in
 1.2x, its own JSDoc warned against the double-mount) and takes the cost explicitly. An unexplained
 zero-window removal is a defect in this file's terms, not a judgement call.
+
+A row whose replacement lives in a DIFFERENT subpath or package (`FormRow` → `basalt-ui/controls`,
+`useForm` → `@mantine/form`) says `fix: false`: the autofix rewrites an import specifier inside its
+own `from '…'` statement and cannot change the module, so the finding names the new home and the
+import moves by hand.
 
 The sunset itself runs through four artifacts, and all four land in the SAME commit: the export
 stays shipped (`@deprecated` JSDoc, delegating to the replacement), a row in `DEPRECATED_EXPORTS`

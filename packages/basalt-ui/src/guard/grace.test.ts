@@ -163,6 +163,13 @@ describe('scripts/check-grace.ts', () => {
     expect(runCheckGrace('1.36.0').code).toBe(1)
   })
 
+  // The 1.36.0 form-layout aliases are dated 1.37.0: the release that reaches that date refuses
+  // until they are deleted (their own commit) — which is when this case moves to the next date.
+  it('refuses 1.37.0 while the form-layout aliases still ship', () => {
+    const { code, stderr } = runCheckGrace('1.37.0')
+    expect([code, stderr.includes('FormRow (basalt-ui/forms)')]).toEqual([1, true])
+  })
+
   it('exits 2 on a missing or malformed version rather than passing vacuously', () => {
     expect(runCheckGrace().code).toBe(2)
     expect(runCheckGrace('not-a-version').code).toBe(2)

@@ -21,7 +21,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { FormActions, FormGroup, FormRow, FormSection } from './form-layout'
-import { FormStateProvider } from './form-state'
+import { FormStateProvider } from '../forms/form-state'
 import type { ReactNode } from 'react'
 
 function render(tree: ReactNode): string {
