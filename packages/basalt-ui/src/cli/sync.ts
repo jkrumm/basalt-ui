@@ -20,6 +20,7 @@ import {
   isStringArray,
   managedFiles,
   normalizeForLedger,
+  noteRelocation,
   parseJsonc,
   placementNotices,
   pruneRetiredManagedFiles,
@@ -111,15 +112,10 @@ export function findManifestAbove(dir: string): string | null {
  */
 export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd()): number {
   const syncFlags = opts.flags ?? []
-  if (conflictingProfileFlags(syncFlags)) {
-    console.error('basalt-ui sync: --tokens-only and --framework are alternatives — pass one.')
-    return 1
-  }
+  if (conflictingProfileFlags('sync', syncFlags)) return 1
   const project = resolveProjectDir(invocationCwd)
   const cwd = project.dir
-  if (project.relocatedFrom !== null) {
-    console.log(`basalt-ui sync: BASALT_CWD relocated from ${project.relocatedFrom} to ${cwd}.`)
-  }
+  noteRelocation('sync', project)
 
   // Profile before the refusal, because in a tokens-only consumer the refusal's own advice is
   // wrong: it names `basalt-ui init`, and `doctor` in the same directory at the same version says

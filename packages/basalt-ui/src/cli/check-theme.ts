@@ -20,6 +20,7 @@ import {
   conflictingProfileFlags,
   declaredProfile,
   hasBasaltKey,
+  noteRelocation,
   packageRoot,
   parseJsonc,
   readBasaltConfig,
@@ -73,19 +74,10 @@ export function checkTheme(
   invocationCwd: string = process.cwd(),
   flags: readonly string[] = [],
 ): number {
-  if (conflictingProfileFlags(flags)) {
-    console.error(
-      'basalt-ui check-theme: --tokens-only and --framework are alternatives — pass one.',
-    )
-    return 1
-  }
+  if (conflictingProfileFlags('check-theme', flags)) return 1
   const project = resolveProjectDir(invocationCwd)
   const cwd = project.dir
-  if (project.relocatedFrom !== null) {
-    console.log(
-      `basalt-ui check-theme: BASALT_CWD relocated from ${project.relocatedFrom} to ${cwd}.`,
-    )
-  }
+  noteRelocation('check-theme', project)
   const cfg = readBasaltConfig(cwd)
   const roots = resolveRoots(cfg)
   const profile = declaredProfile(cfg, flags)

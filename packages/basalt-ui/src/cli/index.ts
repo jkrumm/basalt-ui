@@ -1,18 +1,9 @@
 /**
- * basalt-ui CLI — `init`, `sync`, `check-theme`, `doctor`.
- *
- * `checkTheme` is a thin FS walker over the headless guard core (`../guard`). It reads the
- * BasaltConfig, builds a GuardConfig, walks the source roots, calls `checkSource` per file,
- * collects Finding[], groups/reports findings, and returns an exit code.
- *
- * `init` / `sync` scaffold and reconcile the framework's *agentic* surface into a consumer repo:
- * Claude Code rules + skills, a managed CLAUDE.md block, a DESIGN.md seed, and the toolchain
- * seeds (oxlint / oxfmt / lefthook / CI). Both are sha256-manifest driven for safe,
- * idempotent three-way reconciliation. Dependency-free — Node/Bun built-ins only.
- *
- * Runtime-agnostic (Node or Bun) — built-ins only, no `bun`-module import, so the exported API is
- * safe to import under plain Node. Config is read from the consuming package.json `"basalt"` key;
- * argo's hardcoded values are the DEFAULTS.
+ * basalt-ui CLI — the dispatcher plus the plumbing `init`, `sync`, `check-theme` and `doctor` (each
+ * in its own file) share. `init`/`sync` reconcile the agentic surface and the toolchain seeds into
+ * a consumer repo through a sha256 manifest (three-way, idempotent). Runtime-agnostic and
+ * dependency-free — Node/Bun built-ins only, no `bun`-module import. Config is the consuming
+ * package.json's `"basalt"` key; argo's values are the defaults.
  */
 import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
@@ -320,23 +311,9 @@ export function resolveProjectDir(cwd: string): ProjectResolution {
 }
 
 /**
- * Which shape of consumer a project-scoped command is looking at.
- *
- * A tokens-only consumer took the `--vx-*` layer and nothing else. Every guard kind whose remedy is
- * a Mantine component or the React theme factory is meaningless there — telling a Mantine-free app
- * to swap its `<select>` for `@mantine/core`'s `Select` is advice it must not take.
- *
- * DECLARED, never inferred, when the answer SILENCES something. The two callers want opposite
- * failure directions and so do not share a default:
- *
- * - `check-theme` (`declaredProfile`) turns 17 kinds OFF, so it moves on an explicit signal only —
- *   `--tokens-only`, or `"basalt": { "profile": "tokens-only" }`. Inferring it from the ABSENCE of
- *   `@mantine/core` would silence the Mantine half of the guard on any repo that keeps its Mantine
- *   dependency in a workspace package rather than the one holding the basalt config, which is
- *   precisely this round's "reports green while enforcing nothing" failure with the guard's own
- *   hand on the switch.
- * - `doctor` no longer infers a profile at all (workspace-wide Mantine detection was deleted along
- *   with the rest of the multi-repo discovery); it reads the same declaration `check-theme` does.
+ * Which shape of consumer a project-scoped command is looking at — DECLARED, never inferred
+ * (`--tokens-only`, or `"basalt": { "profile": "tokens-only" }`), because the answer switches the
+ * Mantine-remedy guard kinds off. Why that direction: package CLAUDE.md § CLI.
  */
 export function declaredProfile(cfg: BasaltConfig, flags: readonly string[]): DoctorProfile {
   if (flags.includes('--tokens-only')) return 'tokens-only'
@@ -350,8 +327,21 @@ export function declaredProfile(cfg: BasaltConfig, flags: readonly string[]): Do
  * vs `--selector-attribute`. Silently preferring one meant a CI step that accumulated both flags
  * enforced whichever the code happened to test first.
  */
-export function conflictingProfileFlags(flags: readonly string[]): boolean {
-  return flags.includes('--tokens-only') && flags.includes('--framework')
+export function conflictingProfileFlags(command: string, flags: readonly string[]): boolean {
+  const both = flags.includes('--tokens-only') && flags.includes('--framework')
+  if (both)
+    console.error(
+      `basalt-ui ${command}: --tokens-only and --framework are alternatives — pass one.`,
+    )
+  return both
+}
+
+/** Says so when `BASALT_CWD` moved the command off the directory it was invoked in. */
+export function noteRelocation(command: string, project: ProjectResolution): void {
+  if (project.relocatedFrom === null) return
+  console.log(
+    `basalt-ui ${command}: BASALT_CWD relocated from ${project.relocatedFrom} to ${project.dir}.`,
+  )
 }
 
 /**
@@ -411,19 +401,11 @@ function appShellFiles(rootAbs: string): string[] {
 const PLAIN_JSON_HINT_PATH = 'manifest.json'
 
 /**
- * The waiver closer for a file, gated on the profile.
- *
- * `guardWaiverHint` keys off the file class, and for a `.webmanifest` it leads with
- * `basaltAppPlugin` — right for a Mantine app, since a hex in a manifest can never be *right* and
- * the plugin removes the hand-copy entirely. A `profile: tokens-only` consumer has definitionally
- * opted out of that layer: rollhook's Astro site has no `index.html` for the plugin to transform,
- * imports no basalt JavaScript at all, and owns maskable icons the plugin does not emit. Leading
- * with the plugin there is advice the consumer cannot take, in the one release that finally gave
- * that file class a remedy.
- *
- * So under tokens-only a manifest is treated as what it is to that consumer — plain JSON, with the
- * member as the whole answer — plus one sentence saying which remedy is being withheld and why.
- * The remedy text still comes from the guard's own registry; only the class mapping is decided here.
+ * The waiver closer for a file, gated on the profile. `guardWaiverHint` leads a `.webmanifest` with
+ * `basaltAppPlugin` — right for a Mantine app, advice a `profile: tokens-only` consumer cannot take
+ * (rollhook's Astro site has no `index.html` for the plugin and owns its maskable icons). There the
+ * manifest is plain JSON — the member is the whole answer, plus one sentence on the withheld remedy.
+ * The remedy text still comes from the guard's registry; only the class mapping is decided here.
  */
 export function waiverHintFor(relPath: string, profile: DoctorProfile): string {
   if (profile !== 'tokens-only' || !relPath.endsWith('.webmanifest')) {
@@ -1201,16 +1183,9 @@ export function normalizeForLedger(text: string): string {
 
 /**
  * Write a managed unit to disk (whole file, or marker-spliced region). Returns the unit's hash —
- * `sha256(normalizeForLedger(desired))`, NOT the raw bytes.
- *
- * This is the ledger: the manifest already records "what basalt shipped last sync", one entry per
- * dest — a stored NORMALIZED hash makes that same single entry survive both a downstream formatter
- * (the consumer's own lefthook oxfmt reformatting the written file/block after this function has
- * already returned) and a version bump that changed the template's own words since the recorded
- * entry — the argo cross-version case: current is v1.0.0's block, post-oxfmt; desired is v1.0.1's
- * (different words, e.g. the CLI bin rename). Recording the raw hash can never reconcile that;
- * recording the normalized hash lets `classify()` normalize `state.current` the same way and
- * compare directly against it, no separate historical-hash storage required.
+ * `sha256(normalizeForLedger(desired))`, NOT the raw bytes: the normalized hash is what lets one
+ * manifest entry survive a downstream formatter and a cross-version template change (`classify`'s
+ * path 2 is the reader).
  */
 export function writeUnit(file: ManagedFile, cwd: string, desired: string): string {
   const destAbs = resolve(cwd, file.dest)
@@ -1233,13 +1208,8 @@ export function writeUnit(file: ManagedFile, cwd: string, desired: string): stri
  *                 manifest (written before this fix, or by a still-running older CLI) holds the RAW
  *                 hash of what was written, not the normalized one; keep matching it directly so an
  *                 upgrade never mass-classifies a pristine tree as drifted.
- *                 Residual transitional gap: a manifest written by a pre-1.0.2 CLI holds a raw hash
- *                 of the exact old bytes, so if the on-disk block was ALSO reformatted by a
- *                 downstream formatter AND the template body changed cross-version in the same
- *                 upgrade, none of the three paths above match and it classifies `drifted`, needing
- *                 one `--force`. Once any sync since writes a normalized entry (path 2/3 or a
- *                 healed write), the gap is closed for good for that file. Deliberately not solved
- *                 by keeping a historical per-version ledger — that's a real but bounded tradeoff.
+ *                 (A pre-1.0.2 raw entry whose block was ALSO reformatted across a template change
+ *                 needs one `--force`; bounded, and deliberately not solved with a version ledger.)
  *              2. `sha256(normalizeForLedger(current)) === manifestHash` — the ledger proper.
  *                 `manifestHash` normally holds `sha256(normalizeForLedger(<bytes written at the
  *                 last sync>))` (see `writeUnit`); normalizing `current` the same way and comparing
