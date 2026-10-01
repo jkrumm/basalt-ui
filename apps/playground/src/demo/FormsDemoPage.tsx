@@ -1,19 +1,17 @@
 /**
  * FormsDemoPage — exercises basalt-ui/forms:
  * useBasaltForm + inputProps/fieldKey + FormErrorSummary + useFormDraft (autosave) with a Valibot
- * schema, laid out through FormSection/FormRow/FormActions — law C1's third home.
+ * schema, laid out through FormSection/FormRow/FormActions (basalt-ui/controls) — law C1's third home.
  *
  * Demo: a project entry form (name, email, budget) with draft persistence. The draft is autosaved
  * on every value change via `useFormDraft`'s own subscription (`autosave: true`), restored on
  * mount, and cleared on successful submit.
  */
 import { Divider, NumberInput, Paper, Stack, Text, TextInput } from '@mantine/core'
+import { FormActions, FormRow, FormSection } from 'basalt-ui/controls'
 import type { BarAction } from 'basalt-ui/controls'
 import {
-  FormActions,
   FormErrorSummary,
-  FormRow,
-  FormSection,
   fieldKey,
   inputProps,
   useBasaltForm,
