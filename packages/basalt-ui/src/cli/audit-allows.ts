@@ -13,8 +13,8 @@ import {
   unmatchedExemptPatterns,
 } from '../guard'
 import type { Finding, GuardConfig, GuardKind } from '../guard'
-import type { BasaltConfig, ExemptRuleEntry } from './index'
-import { exemptRulePaths, exemptRuleReason, resolveRoots } from './index'
+import { exemptRulePaths, exemptRuleReason, resolveRoots } from './config'
+import type { BasaltConfig, ExemptRuleEntry } from './config'
 
 // ── check-theme --audit-allows — every waiver, and whether it still suppresses anything ─────────
 

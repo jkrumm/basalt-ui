@@ -8,14 +8,8 @@ import { isAbsolute, relative, resolve } from 'node:path'
 import { DEFAULT_GUARD_CONFIG } from '../guard'
 import type { GuardConfig } from '../guard'
 import { evaluateGuardHook } from '../guard/guard-hook'
-import {
-  DEFAULT_ROOTS,
-  SKIP,
-  declaredProfile,
-  defaultExempt,
-  readBasaltConfig,
-  resolveExemptRules,
-} from './index'
+import { SKIP, declaredProfile, defaultExempt, readBasaltConfig, resolveExemptRules } from './index'
+import { DEFAULT_ROOTS } from './config'
 
 /**
  * guard-hook — PreToolUse stdin adapter.

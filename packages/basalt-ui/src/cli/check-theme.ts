@@ -15,15 +15,14 @@ import {
 } from '../guard'
 import type { Finding, GuardConfig } from '../guard'
 import { auditAllows } from './audit-allows'
+import { DEFAULT_ROOTS, resolveRoots } from './config'
 import {
   conflictingProfileFlags,
   declaredProfile,
-  DEFAULT_ROOTS,
   hasBasaltKey,
   readBasaltConfig,
   resolveExemptRules,
   resolveProjectDir,
-  resolveRoots,
   scannableFiles,
   SERIES_MODULE_HINT_RE,
   waiverHintFor,
