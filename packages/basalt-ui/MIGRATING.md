@@ -140,6 +140,14 @@ Widening restarts the grace: `warn` through 1.34.x, `error` at 1.35.0. Measured 
 argo, rb, image-gen, image-share, email-gateway, linewatch, obsidian, weatherorb all at 0
 (image-gen's one hit was already fixed by hand in r4).
 
+### `check-theme` says when the AST lane is not wired
+
+When the nearest `.oxlintrc.json` up to the repo root neither extends a shipped preset nor loads
+`configs/oxlint-plugin.js` with `basalt/*` rules on (or the target does not resolve), `check-theme`
+prints one line — `AST lane not enforced — N basalt/* rule ids unguarded (incl. the promoted
+control-outside-home, raw-breakpoint)`. Information only; the exit code is unchanged. `basalt-ui
+doctor` names the fix.
+
 ## 1.33.0 — the 1.33.0 minor
 
 ### `CONTAINER_GRID_BREAKPOINTS` — the `Grid type="container"` map ships

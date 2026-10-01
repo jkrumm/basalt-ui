@@ -785,3 +785,68 @@ describe('check-theme — the manifest waiver hint follows the profile', () => {
     expect(err).toContain('a tokens-only consumer has opted out of')
   })
 })
+
+// emailgw r4: a check-theme-only CI held none of the oxlint-lane promotions and said nothing.
+function wireOxlint(at: string, entry: string): void {
+  mkdirSync(resolve(at, 'node_modules/basalt-ui/configs'), { recursive: true })
+  writeFileSync(resolve(at, 'node_modules/basalt-ui/configs/oxlint.json'), '{}')
+  writeFileSync(resolve(at, '.oxlintrc.json'), JSON.stringify({ extends: [entry] }))
+}
+
+describe('check-theme AST-lane notice', () => {
+  const CLEAN = 'export const C = () => null\n'
+
+  it('prints one line, counting the shipped basalt/* rules, and keeps the exit code', () => {
+    fixture(CLEAN)
+    const { code, err } = run()
+    expect(code).toBe(0)
+    expect(err).toMatch(/AST lane not enforced — \d+ basalt\/\* rule ids unguarded/)
+  })
+
+  it('is silent when the nearest .oxlintrc.json up to the repo root extends the preset', () => {
+    fixture(CLEAN)
+    mkdirSync(resolve(dir, '.git'))
+    wireOxlint(dir, './node_modules/basalt-ui/configs/oxlint.json')
+    const pkg = resolve(dir, 'apps/web')
+    mkdirSync(resolve(pkg, 'src'), { recursive: true })
+    writeFileSync(resolve(pkg, 'package.json'), JSON.stringify({ basalt: { roots: ['src'] } }))
+    writeFileSync(resolve(pkg, 'src/C.tsx'), CLEAN)
+    expect(run().err).not.toContain('AST lane')
+    dir = pkg
+    expect(run().err).not.toContain('AST lane')
+    dir = resolve(pkg, '../..')
+  })
+
+  it('is silent when the config loads the basalt plugin AND switches its rules on (dogfood)', () => {
+    fixture(CLEAN)
+    mkdirSync(resolve(dir, 'configs'))
+    writeFileSync(resolve(dir, 'configs/oxlint-plugin.js'), '')
+    writeFileSync(
+      resolve(dir, '.oxlintrc.json'),
+      JSON.stringify({ jsPlugins: ['./configs/oxlint-plugin.js'] }),
+    )
+    expect(run().err).toContain('AST lane not enforced') // loaded, but no rule switched on
+    writeFileSync(
+      resolve(dir, '.oxlintrc.json'),
+      JSON.stringify({
+        jsPlugins: ['./configs/oxlint-plugin.js'],
+        rules: { 'basalt/card-inset': 'error' },
+      }),
+    )
+    expect(run().err).not.toContain('AST lane')
+  })
+
+  it('still prints when the extends entry resolves to nothing', () => {
+    fixture(CLEAN)
+    writeFileSync(
+      resolve(dir, '.oxlintrc.json'),
+      JSON.stringify({ extends: ['./node_modules/basalt-ui/configs/oxlint.json'] }),
+    )
+    expect(run().err).toContain('AST lane not enforced')
+  })
+
+  it('is silent under the tokens-only profile, which has no AST lane to wire', () => {
+    fixture(CLEAN, { roots: ['src'], profile: 'tokens-only' })
+    expect(run().err).not.toContain('AST lane')
+  })
+})
