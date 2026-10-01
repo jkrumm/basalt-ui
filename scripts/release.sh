@@ -83,9 +83,14 @@ bun "$PACKAGE_PATH/scripts/release-migrating.ts" --check ||
 # `export-surface.json`, so a stale snapshot would let it wave through an export that is still in
 # dist (or refuse one that is gone). Build and diff the snapshot against the built entries first —
 # ~6s, and the same check the pack-test runs against the tarball.
-(cd "$PACKAGE_PATH" && bun run build >/dev/null) || die "build failed — fix it, then release."
+# Quiet on success, but a failing build prints ALL its output: tsc reports on stdout, so a bare
+# `>/dev/null` threw away the one line saying why.
+build_log=$(cd "$PACKAGE_PATH" && bun run build 2>&1) || {
+  printf '%s\n' "$build_log" >&2
+  die "build failed (output above) — fix it, then release."
+}
 node --import "./$PACKAGE_PATH/scripts/css-noop-register.mjs" "$PACKAGE_PATH/scripts/export-surface.mjs" ||
-  die "export-surface.json does not match dist — check-grace would read a stale snapshot."
+  die "export-surface check failed (see above) — check-grace reads that snapshot, so the release stops here."
 
 # ── Run helpers ──────────────────────────────────────────────────────────────
 latest_run() {
