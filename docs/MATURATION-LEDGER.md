@@ -407,3 +407,21 @@ branching); `oxlint-plugin.test.ts` can go false-green if the JS plugin fails to
 spurious exit-0 failures seen once, not reproducible): a harness assertion that the plugin loaded
 would close it; a shipped `CONTAINER_GRID_BREAKPOINTS` const, if argo's container `Grid`s find the
 five-key map boilerplate painful.
+
+## Consumer loop, rounds 2–3 (2026-10-01)
+
+Nine consumers took 1.32.0 → 1.32.1 (argo, rb, image-gen, image-share, email-gateway, linewatch,
+rollhook, basalt-ui-obsidian, weatherorb in a branch) and reached 0 on all four ids, which
+1.33.0 promotes to `error`. **1.32.1** shipped the patch-safe findings: `CONTAINER_CLASSES` actually
+exported (6 consumers hit it), `FormRow`/`FormGroup` homes in both lanes, `basalt-main` dropped, a
+MIGRATING import test, and a `release-migrating` fix for stranded `§ Unreleased` refs.
+**1.33.0** adds `CONTAINER_GRID_BREAKPOINTS`, `createSearchStore resets`, `NumberFilter clearable`,
+`unknown-vx-token` (warn → 1.34.0) and dual-lane `--audit-allows`. It also folds every dev-only gate
+out of prod: provider-only first paint went 20379 → 18706 B gzip (1.30.2 was 19393), now budgeted,
+which unblocked weatherorb's `/map` bar.
+
+**Still open:** a fifth container class (F4: linewatch, rb and image-gen each worked around >800px);
+a container visibility-swap primitive (F6); a flash-free CSR size-class seam (F9); a pointer-class
+hook (F16); a shell-less top-level nav (F17); removing `@mantine/form` from the `./forms` barrel (F12,
+needs a grace window); argo's warden `StateBadge` truncation; the CLI at 4000/4000; email-gateway's
+check-theme isn't wired into its lint (13 unenforced errors).
