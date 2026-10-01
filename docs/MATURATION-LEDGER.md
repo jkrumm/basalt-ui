@@ -440,3 +440,23 @@ both lanes for the first time (13 check-theme errors + 16 oxlint errors that had
 - the AST-lane-not-wired notice
 - `configs/oxlint-basalt.json` (guards-only preset)
 - icon-less nav items get a glyph and a name in the collapsed rail
+
+## Consumer loop, design calls (2026-10-01, 1.36.0)
+
+The six calls rounds 2–4 parked, decided against the fleet at 1.34.x:
+
+| Call                             | Decision                                                                                           | Why                                                                                                                                                                                                                                                                                                    |
+| -------------------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| F4 fifth container class         | **no**                                                                                             | one live site above 800 (linewatch's 1368px content-fit bar); rb moved its rail to 800 and accepted it, image-gen never needed 5 columns. The 1.32.1 off-class table stays the answer                                                                                                                  |
+| F6 `ContainerSwap`               | **no**                                                                                             | every hand-roll is the 4-line one-query recipe; most query a container declared above the swapped pair, which a component would have to own                                                                                                                                                            |
+| F9 flash-free size-class seam    | **no new seam — the flash was not real**                                                           | `useSyncExternalStore` reads the server snapshot only under SSR/`hydrateRoot`; under `createRoot` the first render already reads `matchMedia`. The JSDoc said otherwise, and obsidian waived a swap on it. Now pinned by a test; no `data-basalt-size-class` (a second viewport seam outside `shell/`) |
+| F16 pointer class in JS          | **`useCoarsePointer()` exported** (it was chart-internal)                                          | rb `lock-screen.tsx`; the JS twin of `--vx-hit`'s query. image-gen's "no sheet on a fine pointer" is rejected: the sheet is the compact size class's overlay layout                                                                                                                                    |
+| F17 shell-less top-level nav     | **no — reasoned waiver**                                                                           | one app (image-gen); argo's case is a widget mode switch, not nav                                                                                                                                                                                                                                      |
+| F12 `@mantine/form` in `./forms` | **form layout → `./controls`**, `./forms` aliases + `useForm`/`schemaResolver` deprecated → 1.37.0 | `useBasaltForm` value-imports the peer through the same barrel, so dropping the re-export alone fixed nothing. `orientation`/width props: one consumer, no                                                                                                                                             |
+
+Also `unknown-vx-token` → `error` (fleet 0; its grace ran one minor past 1.35.0 to keep the
+factory throw out of the a11y release) and `groupTokens`/`seriesTokens` now throw on a basalt
+family name. Public symbols run 401/401 for the grace minor; 1.37.0 deletes six.
+
+**Still open:** the oxlint barrel scanner misses inline `@deprecated` specifier tags; the MIGRATING
+index table re-pads on every edit.
