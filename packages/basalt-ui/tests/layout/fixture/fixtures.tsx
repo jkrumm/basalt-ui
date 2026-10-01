@@ -14,10 +14,9 @@ import {
 } from '../../../src/charts'
 import type { BandStripSeries, BarsBar, ChartSeries, DonutDatum } from '../../../src/charts'
 import { BasaltOverlays, overlays } from '../../../src/commands'
-import { FilterSet, SelectFilter, ViewTabs } from '../../../src/controls'
+import { FilterSet, FormRow, SelectFilter, ViewTabs } from '../../../src/controls'
 import { BasaltDataTable } from '../../../src/data/table'
 import type { DataTableFacet } from '../../../src/data/table'
-import { FormRow } from '../../../src/forms'
 import type { ColumnDef } from '@tanstack/react-table'
 import { ActionIcon, Button } from '@mantine/core'
 import {

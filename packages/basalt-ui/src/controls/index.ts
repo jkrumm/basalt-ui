@@ -53,3 +53,19 @@ export { ViewTabs, type ViewTabsOption, type ViewTabsProps } from './view-tabs'
 // docs. The filters above render their own panel forms; there is nothing extra to import for them.
 export { PanelRow, type PanelRowProps } from './panel-row'
 export { SliderControl, type SliderControlProps } from './slider-control'
+
+// ── The form layout (moved from ./forms in 1.36.0) ────────────────────────────────────────────
+// Layout needs no `@mantine/form`, and `./forms`' barrel value-imports it — so a consumer rendering
+// a `FormRow` had to install a peer it never used. `./forms` re-exports these until 1.37.0.
+export {
+  FormSection,
+  FormRow,
+  FormGroup,
+  FormActions,
+  type FormSectionProps,
+  type FormSectionSlot,
+  type FormRowProps,
+  type FormRowSlot,
+  type FormGroupProps,
+  type FormActionsProps,
+} from './form-layout'

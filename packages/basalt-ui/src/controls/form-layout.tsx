@@ -1,6 +1,8 @@
 /**
- * ./forms — the form layout primitives: `FormSection`, `FormRow`, `FormGroup`, `FormActions`.
- * Mantine-coupled. Optional peer: @mantine/form (these four need none of it — they are layout).
+ * ./controls — the form layout primitives: `FormSection`, `FormRow`, `FormGroup`, `FormActions`.
+ * Mantine-coupled. They need no `@mantine/form` (layout only), which is why they live here and not
+ * in `./forms`, whose barrel value-imports it: importing a row from there made a consumer install a
+ * peer it never used. `./forms` re-exports them as deprecated aliases until 1.37.0.
  *
  * The gap they close (audit B #5 / §4): `./forms` shipped no layout at all, so the only row
  * primitive in the package was `SettingsRow` over in `./dashboard` — which is the SETTINGS-page
@@ -22,11 +24,11 @@ import type { ReactNode } from 'react'
 import { cx } from '../common/props'
 import type { BasaltProps, SlotStylesProps } from '../common/props'
 import { assertRequiredProps } from '../common/validate'
-import { BarActionSlot } from '../controls/actions'
-import type { SlotActions } from '../controls/actions'
+import { BarActionSlot } from './actions'
+import type { SlotActions } from './actions'
 import { WidgetHeader } from '../dashboard'
 import type { WidgetHeaderTitleProps } from '../dashboard'
-import { useFormState } from './form-state'
+import { useFormState } from '../forms/form-state'
 import classes from './form-layout.module.css'
 
 // ── the two fragments FormRow and FormGroup both paint ────────────────────────

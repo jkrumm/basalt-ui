@@ -25,7 +25,7 @@ const LINE_COMMENT = /\/\/.*$/gm
 /** Every static or dynamic reference to `spec` that survives to runtime. Type-only forms excluded. */
 function runtimeReferences(source: string, spec: string): boolean {
   const code = source.replace(BLOCK_COMMENT, '').replace(LINE_COMMENT, '')
-  const quoted = `['"]${spec.replace(/[/*]/g, (c) => `\\${c}`)}['"]`
+  const quoted = `['"]${spec.replace(/[/*]/g, (c) => `\\${c}`)}(?:/[^'"]*)?['"]`
   const staticForm = new RegExp(
     `^(?:import|export)\\s+(?!type\\b)[^\\n]*from\\s+${quoted}|^import\\s+(?!type\\b)${quoted}`,
     'm',
@@ -48,6 +48,61 @@ describe('./controls never reaches @mantine/dates', () => {
 
   test('no file under src/controls imports @mantine/dates, statically or lazily', () => {
     const violations = files
+      .filter((file) => runtimeReferences(readFileSync(file, 'utf8'), '@mantine/dates'))
+      .map((file) => file.slice(SRC.length + 1))
+    expect(violations).toEqual([])
+  })
+})
+
+/**
+ * `@mantine/form` is the second optional peer `./controls` must not reach — since 1.36.0 the form
+ * layout lives here, and `FormRow` needs no form library. Walks the RELATIVE import closure from the
+ * barrel rather than scanning `src/controls` alone, because `form-layout` reaches `../forms/form-state`
+ * (React-only) and a future edit there importing `@mantine/form` would put the peer in the graph
+ * through a file this folder does not own.
+ */
+describe('./controls never reaches @mantine/form', () => {
+  const RELATIVE = /(?:from|import)\s*\(?\s*['"](\.{1,2}\/[^'"]+)['"]/g
+
+  function closure(entry: string): string[] {
+    const seen = new Set<string>()
+    const stack = [entry]
+    const resolveFile = (from: string, spec: string): string | undefined => {
+      const base = join(from, '..', spec)
+      return [`${base}.ts`, `${base}.tsx`, join(base, 'index.ts'), join(base, 'index.tsx')].find(
+        (candidate) => Bun.file(candidate).size > 0,
+      )
+    }
+    while (stack.length > 0) {
+      const file = stack.pop() as string
+      if (seen.has(file)) continue
+      seen.add(file)
+      const code = readFileSync(file, 'utf8').replace(BLOCK_COMMENT, '').replace(LINE_COMMENT, '')
+      for (const [, spec] of code.matchAll(RELATIVE)) {
+        const target = resolveFile(file, spec as string)
+        if (target !== undefined) stack.push(target)
+      }
+    }
+    return [...seen]
+  }
+
+  const graph = closure(join(SRC, 'controls', 'index.ts'))
+
+  test('the closure includes the form layout and its form-state seam', () => {
+    const names = graph.map((file) => file.slice(SRC.length + 1))
+    expect(names).toContain('controls/form-layout.tsx')
+    expect(names).toContain('forms/form-state.tsx')
+  })
+
+  test('nothing in the closure imports @mantine/form, statically or lazily', () => {
+    const violations = graph
+      .filter((file) => runtimeReferences(readFileSync(file, 'utf8'), '@mantine/form'))
+      .map((file) => file.slice(SRC.length + 1))
+    expect(violations).toEqual([])
+  })
+
+  test('nothing in the closure imports @mantine/dates either', () => {
+    const violations = graph
       .filter((file) => runtimeReferences(readFileSync(file, 'utf8'), '@mantine/dates'))
       .map((file) => file.slice(SRC.length + 1))
     expect(violations).toEqual([])

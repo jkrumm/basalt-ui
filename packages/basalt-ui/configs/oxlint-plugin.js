@@ -2048,8 +2048,9 @@ const CONTROL_OWNER_NAMES = new Set([
  * `SettingsRow` is the form row — law C1's third home, not an exception to C1 — so
  * `control-outside-home` treating it as a home is the whole of the enforcement a settings page
  * gets, and the two tier rules deliberately do not reach inside it (see {@link SLOT_ATTRS}).
- * `FormRow`/`FormGroup` (`basalt-ui/forms`, `src/forms/form-layout.tsx`) are the SAME home written
- * for a `<form>` rather than a settings page — a `TextInput` bound to a field is read and typed
+ * `FormRow`/`FormGroup` (`basalt-ui/controls`, `src/controls/form-layout.tsx`; `basalt-ui/forms`
+ * re-exports them until 1.37.0 — the set is NAME-matched, so both subpaths are homes) are the SAME
+ * home written for a `<form>` rather than a settings page — a `TextInput` bound to a field is read and typed
  * into at Mantine's own tier, not a 30px chrome affordance — so they are added here rather than
  * given a second walk.
  *
@@ -3639,7 +3640,10 @@ const queryFnUnwrap = {
  * same edit. **That autofix is the row's contract**: only a DROP-IN rename belongs here. A
  * deprecation whose replacement takes a different shape (`createSearchParamStore` →
  * `createSearchStore` + a `fields` object) would need the fix suppressed before it could be a row,
- * and until then it lives in `MIGRATING.md` alone. A row WITH `prop` is a JSX ATTRIBUTE on the component `name`, imported from `subpath`
+ * and until then it lives in `MIGRATING.md` alone. A MOVE between subpaths (`FormRow` from
+ * `basalt-ui/forms` → `basalt-ui/controls`) is the same case: the fix only rewrites the specifier
+ * inside its own import statement and cannot change its module, so such a row says `fix: false` and
+ * reports without rewriting. A row WITH `prop` is a JSX ATTRIBUTE on the component `name`, imported from `subpath`
  * — no autofix, because the three connectivity props collapse into ONE object prop and a
  * per-attribute rewrite would produce three `connectivity=` attributes on one tag.
  *
@@ -3663,6 +3667,48 @@ export const DEPRECATED_EXPORTS = [
   // exports are no longer reachable from any public barrel in `src/charts`/`src/tokens` — a row
   // here would nudge a rewrite to an import that no longer resolves, i.e. "it still resolves today"
   // would be false.
+  {
+    subpath: 'basalt-ui/forms',
+    name: 'FormSection',
+    replacement: "FormSection from 'basalt-ui/controls'",
+    removeIn: '1.37.0',
+    fix: false,
+  },
+  {
+    subpath: 'basalt-ui/forms',
+    name: 'FormRow',
+    replacement: "FormRow from 'basalt-ui/controls'",
+    removeIn: '1.37.0',
+    fix: false,
+  },
+  {
+    subpath: 'basalt-ui/forms',
+    name: 'FormGroup',
+    replacement: "FormGroup from 'basalt-ui/controls'",
+    removeIn: '1.37.0',
+    fix: false,
+  },
+  {
+    subpath: 'basalt-ui/forms',
+    name: 'FormActions',
+    replacement: "FormActions from 'basalt-ui/controls'",
+    removeIn: '1.37.0',
+    fix: false,
+  },
+  {
+    subpath: 'basalt-ui/forms',
+    name: 'useForm',
+    replacement: "useForm from '@mantine/form'",
+    removeIn: '1.37.0',
+    fix: false,
+  },
+  {
+    subpath: 'basalt-ui/forms',
+    name: 'schemaResolver',
+    replacement: "schemaResolver from '@mantine/form'",
+    removeIn: '1.37.0',
+    fix: false,
+  },
   {
     subpath: 'basalt-ui',
     name: 'useBreakpoint',

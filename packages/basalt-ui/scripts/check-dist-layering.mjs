@@ -77,6 +77,31 @@ for (const { rel, banVisx } of subpaths) {
   if (!subpathFailed) console.log(`Mantine-free OK: ${rel} (${files.size} files in graph)`)
 }
 
+// ./controls is Mantine-coupled, but two OPTIONAL peers must stay off its graph: `@mantine/dates`
+// (only ./controls-dates needs it) and `@mantine/form` (the form layout lives in ./controls since
+// 1.36.0 precisely because it needs none — a barrel that value-imports it is what ./forms did).
+{
+  const rel = 'controls/index.js'
+  const entry = resolve(DIST, rel)
+  if (!existsSync(entry)) {
+    fail(`missing dist entry: ${rel}`)
+  } else {
+    const { files, bare } = walkGraph(entry)
+    let controlsFailed = false
+    for (const peer of ['@mantine/dates', '@mantine/form']) {
+      if ([...bare].some((spec) => spec === peer || spec.startsWith(`${peer}/`))) {
+        fail(`${rel} graph reaches the optional peer ${peer}`)
+        controlsFailed = true
+      }
+    }
+    if (!controlsFailed) {
+      console.log(
+        `optional peers OK: ${rel} reaches no @mantine/dates or @mantine/form (${files.size} files in graph)`,
+      )
+    }
+  }
+}
+
 // Root-barrel re-export guard.
 const barrel = resolve(DIST, 'index.js')
 if (!existsSync(barrel)) {
