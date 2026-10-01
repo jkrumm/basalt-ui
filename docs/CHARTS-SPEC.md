@@ -216,9 +216,9 @@ CBBI page did, and paid for it with `$31,623` gridlines).
 axes, `MultiLine`, `ZonedLine`, and `Bars` in `barLayout: 'grouped'`. `Bars` in the default
 `barLayout: 'stacked'` computes its own summed domain from `0` (§2's stacked-domain memo) — a
 stacked total has a real zero baseline, and a log axis has none, so `barLayout: 'stacked'` with
-`y.scale: 'log'` throws in dev (`isDev()`, the house gate — see `BandStrip`'s own throw for the
-same pattern) rather than silently rendering a broken stack; use `barLayout: 'grouped'` for a log
-axis instead.
+`y.scale: 'log'` throws in dev (the inlined `process.env.NODE_ENV` gate, pinned by
+`common/dev-gate.test.ts` — as `BandStrip`'s own throw) rather than silently rendering a broken
+stack; use `barLayout: 'grouped'` for a log axis instead.
 
 **Null is an absence, not a zero — and it is contagious across a stack.** `ChartSeries.getValue`
 documents `null` as a measurement GAP, never a zero: every line-shaped kind (`MultiLine`,
