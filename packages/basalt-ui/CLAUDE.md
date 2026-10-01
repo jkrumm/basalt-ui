@@ -344,8 +344,8 @@ belongs here is the properties that are easy to break:
 
 Two guard-scan invariants worth holding: **`profile: 'tokens-only'` must be DECLARED, never
 inferred** (inferring from a missing `@mantine/core` would silence the Mantine-remedy kinds on any
-repo keeping Mantine in a sibling package) while `doctor` DOES infer it, because its profile only
-changes which advice it prints — the asymmetry is the safety property. And **basalt-emitted CSS is
+repo keeping Mantine in a sibling package) — by every command, `doctor` included, all through
+`declaredProfile`. And **basalt-emitted CSS is
 skipped per LINE, not per file**: the canonical two-line `@generated` header earns the file nothing
 more than a chance, and then each line has to be a basalt custom property, a selector, a `}` or a
 self-closing comment. Whole-file marker trust was forgeable twice over.
