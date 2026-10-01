@@ -1,8 +1,17 @@
 import type { ReactNode } from 'react'
 
+/** `Intl.Segmenter` is in every supported runtime; the code-point split is the belt-and-braces fallback. */
+const segmenter =
+  typeof Intl !== 'undefined' && typeof Intl.Segmenter === 'function'
+    ? new Intl.Segmenter(undefined, { granularity: 'grapheme' })
+    : undefined
+
 /** The first grapheme of a label — the fallback body for an item or action shipping no icon. */
 export function initial(label: string): string {
-  return [...label][0]?.toUpperCase() ?? '?'
+  const first = segmenter
+    ? segmenter.segment(label)[Symbol.iterator]().next().value?.segment
+    : [...label][0]
+  return first?.toUpperCase() ?? '?'
 }
 
 /** False for everything React renders as nothing — `cond && <Icon />` yields `false`, not `null`. */
