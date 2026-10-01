@@ -196,12 +196,20 @@
               {
                 "name": "@mantine/dates",
                 "message": "@mantine/dates is an OPTIONAL peer (docs/CONTROLS-SPEC.md §3) — ./controls must resolve with no @mantine/dates installed. The one reach lives in src/controls-dates/, injected into range-filter.tsx’s customPicker seam."
+              },
+              {
+                "name": "@mantine/form",
+                "message": "@mantine/form is an OPTIONAL peer — ./controls (which owns the form layout since 1.36.0) must resolve with no @mantine/form installed. Only ./forms needs it."
               }
             ],
             "patterns": [
               {
                 "group": ["@mantine/dates/*"],
                 "message": "@mantine/dates is an OPTIONAL peer (docs/CONTROLS-SPEC.md §3) — ./controls must resolve with no @mantine/dates installed. The one reach lives in src/controls-dates/, injected into range-filter.tsx’s customPicker seam."
+              },
+              {
+                "group": ["@mantine/form/*"],
+                "message": "@mantine/form is an OPTIONAL peer — ./controls (which owns the form layout since 1.36.0) must resolve with no @mantine/form installed. Only ./forms needs it."
               }
             ]
           }
