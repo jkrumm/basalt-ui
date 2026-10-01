@@ -153,15 +153,10 @@ Each was parked in the consumer loop pending a second named consumer; measured a
 
 ## 1.35.0
 
-### Guards — `unknown-vx-token` is an `error`
-
-The last grace entry leaves the ledger, which is now empty. Measured 2026-10-01 on 1.34.x: all nine
-consumers — argo, rb, image-gen, image-share, email-gateway, linewatch, obsidian, rollhook,
-weatherorb — at 0 findings, basalt's own tree and the playground at 0 too. A finding after
-upgrading is a `var(--vx-*)` written since: take the replacement from the finding's remedy (the
-removed-name table in § 1.33.0) or a name from `basalt-ui/tokens.css`, or
-`theme-allow unknown-vx-token — <reason>`. `groupTokens` / `seriesTokens` now **throw** (dev builds)
-on a ref inside a basalt family instead of warning — rename the group (`groupTokens('app', …)`).
+Nothing to migrate: shell accessibility fixes only — the signed-out sidebar account row is named
+in the collapsed rail, a settings entry can be the current page, a custom sidebar block stays in the
+collapsed rail and the mobile drawer, and `raw-selection-control` judges by host-tag nesting instead
+of a 12-line window. `unknown-vx-token` stayed `warn` here; it promotes in § 1.36.0.
 
 ## 1.34.1 — the AST lane needs a binary
 
