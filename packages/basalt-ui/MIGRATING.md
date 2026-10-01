@@ -148,6 +148,11 @@ prints one line — `AST lane not enforced — N basalt/* rule ids unguarded (in
 control-outside-home, raw-breakpoint)`. Information only; the exit code is unchanged. `basalt-ui
 doctor` names the fix.
 
+### `card-with-border` names its `card-inset` half
+
+Dropping `withBorder` and keeping `padding="md"` satisfied `check-theme` and then failed oxlint's
+`basalt/card-inset`. The text-lane remedy now says to fix the inset in the same edit.
+
 ## 1.33.0 — the 1.33.0 minor
 
 ### `CONTAINER_GRID_BREAKPOINTS` — the `Grid type="container"` map ships

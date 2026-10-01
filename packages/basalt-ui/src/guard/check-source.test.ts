@@ -888,6 +888,12 @@ describe('card-with-border', () => {
     expect(finding?.line).toBe(3)
   })
 
+  // emailgw r4: a text-lane-only consumer dropped withBorder and kept padding="md", which the
+  // oxlint lane then flagged — the remedy names the inset half so the card is fixed once.
+  it('names the card-inset half in its remedy', () => {
+    expect(guardKindRemedy('card-with-border')).toContain('basalt/card-inset')
+  })
+
   it('does NOT flag a Card with no withBorder', () => {
     const f = find(`<Card padding="md" h="100%">{children}</Card>`)
     expect(kinds(f)).not.toContain('card-with-border')

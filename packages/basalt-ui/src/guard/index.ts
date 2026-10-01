@@ -2101,7 +2101,7 @@ export const GUARD_RULES = {
     // JSX-tag-shaped (`<Card withBorder>`) — never appears in CSS text.
     appliesTo: (relPath) => !relPath.endsWith('.css'),
     message:
-      'withBorder on a Card/Paper double-draws the edge — card depth is --vx-shadow-card, which already bakes a 1px ring into the shadow. Drop the prop (docs/DESIGN-SPEC.md doctrine inversion #1).',
+      'withBorder on a Card/Paper double-draws the edge — card depth is --vx-shadow-card, which already bakes a 1px ring into the shadow. Drop the prop (docs/DESIGN-SPEC.md doctrine inversion #1) — and fix the inset in the same edit: an explicit p/padding or radius on that Card/Paper is the other half of the idiom, which only the oxlint lane sees (basalt/card-inset); leave both to the theme or use py="xs" px="sm".',
   },
   'off-system-surface-var': {
     kind: 'off-system-surface-var',
