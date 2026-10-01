@@ -142,7 +142,10 @@ describe('headless Mantine-ban coverage', () => {
   const repoConfig = JSON.parse(readFileSync(join(root, '.oxlintrc.json'), 'utf8')) as {
     rules?: Record<string, unknown>
   }
-  const shippedConfig = JSON.parse(readFileSync(join(pkgRoot, 'configs/oxlint.json'), 'utf8')) as {
+  // The basalt/* levels live in the guards-only preset the full one extends.
+  const shippedConfig = JSON.parse(
+    readFileSync(join(pkgRoot, 'configs/oxlint-basalt.json'), 'utf8'),
+  ) as {
     rules?: Record<string, unknown>
   }
   const tokenLayerBoundaryRegistered = hasTokenLayerBoundaryRegistered(repoConfig.rules)

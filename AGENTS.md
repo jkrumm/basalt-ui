@@ -42,7 +42,7 @@ autonomously execute large roadmap phases.
 - **Budgets are numbers**, checked by `scripts/check-budgets.ts` in `pre`: public symbols, published
   subpaths, shipped rule lines, spec prose, playground routes, `cli/index.ts` size.
 - **Dogfood.** The repo loads its own shipped rules/skills; `/.oxlintrc.json` levels match
-  `configs/oxlint.json`.
+  `configs/oxlint-basalt.json` (the `basalt/*` levels `configs/oxlint.json` extends).
 
 ## Critical Rules (READ FIRST)
 
