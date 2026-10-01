@@ -19,7 +19,7 @@
  *
  * Excluded from tsc (tsconfig exclude: src/**\/*.test.ts), run via `bun test`.
  */
-import { describe, expect, it } from 'bun:test'
+import { describe, expect, it, spyOn } from 'bun:test'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { BP, groupTokens, p } from '../tokens/index'
@@ -165,6 +165,22 @@ describe('scripts/check-grace.ts', () => {
 // promotion that deletes the entry must also make them throw, or the guard's soundness rests on a
 // console line. This goes red on that promotion until tokens/index.ts throws.
 describe('unknown-vx-token promotion reaches the token factories', () => {
+  // The warning names the version it starts throwing in; that number is hand-written in tokens
+  // (which cannot import the guard), so it is pinned to the ledger here.
+  it('warns with the version the ledger promotes in', () => {
+    const entry = GRACE_PERIOD_KINDS['unknown-vx-token']
+    if (entry === undefined) return
+    const warn = spyOn(console, 'warn').mockImplementation(() => {})
+    try {
+      groupTokens('surface', { graceVersionProbe: p(BP.gray) })
+      expect(String(warn.mock.calls[0]?.[0]).match(/Throws from (\d+\.\d+\.\d+)/)?.[1]).toBe(
+        entry.promote,
+      )
+    } finally {
+      warn.mockRestore()
+    }
+  })
+
   it('groupTokens throws on a basalt family once the kind has left the ledger', () => {
     if (Object.hasOwn(GRACE_PERIOD_KINDS, 'unknown-vx-token')) return
     expect(() => groupTokens('surface', { x: p(BP.gray) })).toThrow('--vx-surface')
