@@ -820,17 +820,17 @@ describe('check-theme AST-lane notice', () => {
 
   it('is silent when the config loads the basalt plugin AND switches its rules on (dogfood)', () => {
     fixture(CLEAN)
-    mkdirSync(resolve(dir, 'configs'))
-    writeFileSync(resolve(dir, 'configs/oxlint-plugin.js'), '')
+    mkdirSync(resolve(dir, 'basalt-ui/configs'), { recursive: true })
+    writeFileSync(resolve(dir, 'basalt-ui/configs/oxlint-plugin.js'), '')
     writeFileSync(
       resolve(dir, '.oxlintrc.json'),
-      JSON.stringify({ jsPlugins: ['./configs/oxlint-plugin.js'] }),
+      JSON.stringify({ jsPlugins: ['./basalt-ui/configs/oxlint-plugin.js'] }),
     )
     expect(run().err).toContain('AST lane not enforced') // loaded, but no rule switched on
     writeFileSync(
       resolve(dir, '.oxlintrc.json'),
       JSON.stringify({
-        jsPlugins: ['./configs/oxlint-plugin.js'],
+        jsPlugins: ['./basalt-ui/configs/oxlint-plugin.js'],
         rules: { 'basalt/card-inset': 'error' },
       }),
     )

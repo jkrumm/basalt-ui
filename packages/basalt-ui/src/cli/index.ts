@@ -586,7 +586,7 @@ function buildTemplateVars(pkgRoot: string, cwd: string, cfg: BasaltConfig): Tem
     ACCENT_HUE: cfg.accentHue ?? 'blue',
     SERIES_MODULE_PATH: resolveSeriesModulePath(cfg),
     ROOTS_GLOBS: resolveRoots(cfg).map(toRootGlob).join(' '),
-    OXLINT_PRESET_PATH: shippedAssetPath(install, cwd, 'configs/oxlint.json'),
+    OXLINT_PRESET_PATH: shippedAssetPath(install, cwd, OXLINT_FILES.preset),
     LEFTHOOK_PRESET_PATH: shippedAssetPath(install, cwd, 'configs/lefthook.yml'),
     BASALT_BIN: basaltBinCommand(install, cwd),
   }
@@ -891,7 +891,7 @@ export function managedFiles(
   const oxlintrc: ManagedFile = {
     dest: '.oxlintrc.json',
     mode: 'seed',
-    source: 'configs/oxlint.json',
+    source: OXLINT_FILES.preset,
     render: (ctx) => `{\n  "extends": ["${ctx.vars.OXLINT_PRESET_PATH}"]\n}\n`,
   }
 
@@ -1467,23 +1467,26 @@ export function parseJsonc(text: string): Record<string, unknown> | null {
 /** Outcome of splicing the shipped preset into an `.oxlintrc.json` the consumer already had. */
 export type MergeLintResult = 'added' | 'already' | 'absent' | 'unreadable' | 'has-comments'
 
+/** The shipped oxlint files, package-relative — the one spelling every reader of them uses. */
+export const OXLINT_FILES = {
+  preset: 'configs/oxlint.json',
+  guards: 'configs/oxlint-basalt.json',
+  plugin: 'configs/oxlint-plugin.js',
+} as const
+
+/** Whether an `extends`/`jsPlugins` entry names that shipped basalt-ui file. */
+export const namesShipped = (entry: unknown, file: string): entry is string =>
+  typeof entry === 'string' && entry.endsWith(`basalt-ui/${file}`)
+
 /**
- * The `extends` entry pointing at a shipped oxlint preset — the full one or the guards-only
- * `oxlint-basalt.json` — or null when none does.
- *
- * Returns the ENTRY rather than a boolean because the string alone proves nothing: a consumer that
- * upgraded (or moved to an isolated linker) keeps a perfectly well-shaped
- * `./node_modules/basalt-ui/configs/oxlint.json` that resolves to nothing, and oxlint then refuses
- * to start with `NotFound` while a check built to prove the framework is ON reports green. The
- * caller resolves this against the config's own directory — see `extendsSeam`.
+ * The `extends` entry naming a shipped preset (full or guards-only), or null. The ENTRY, not a
+ * boolean: a well-shaped `./node_modules/basalt-ui/configs/oxlint.json` can resolve to nothing
+ * (an upgrade, an isolated linker), and oxlint then dies `NotFound` while a check built to prove the
+ * lane is ON reports green — callers resolve it against the config's own directory.
  */
 export function basaltPresetEntry(entries: unknown): string | null {
-  if (!Array.isArray(entries)) return null
-  const match = entries.find(
-    (entry): entry is string =>
-      typeof entry === 'string' && /basalt-ui\/configs\/oxlint(-basalt)?\.json$/.test(entry),
-  )
-  return match ?? null
+  const presets = [OXLINT_FILES.preset, OXLINT_FILES.guards]
+  return [entries].flat().find((e): e is string => presets.some((f) => namesShipped(e, f))) ?? null
 }
 
 // ── The lefthook gate — checked via `lefthook dump`, not hand-rolled YAML parsing ────────────────
@@ -1564,14 +1567,14 @@ export function mergeOxlintExtends(cwd: string, presetPath: string): MergeLintRe
   if (raw === null) return 'absent'
   const cfg = parseJsonc(raw)
   if (cfg === null) return 'unreadable'
-  if (basaltPresetEntry(cfg['extends'])?.endsWith('/oxlint.json') === true) return 'already'
+  if ([cfg['extends']].flat().some((e) => namesShipped(e, OXLINT_FILES.preset))) return 'already'
   // Rewriting a JSONC config through JSON.stringify would silently delete the consumer's comments,
   // which in a lint config are usually the WHY of every disabled rule. Refuse and say so.
   if (stripJsonc(raw) !== raw) return 'has-comments'
   // The guards-only preset is a subset of the full one — upgrading replaces it, never stacks it.
   const existing = [cfg['extends']]
     .flat()
-    .filter((e): e is string => typeof e === 'string' && !e.endsWith('configs/oxlint-basalt.json'))
+    .filter((e): e is string => typeof e === 'string' && !namesShipped(e, OXLINT_FILES.guards))
   // Rebuild rather than spread, so `extends` keeps its original position when it was already there
   // and lands first when it wasn't — a diff a human reviews should not reshuffle the whole file.
   const merged: Record<string, unknown> = 'extends' in cfg ? {} : { extends: [presetPath] }
