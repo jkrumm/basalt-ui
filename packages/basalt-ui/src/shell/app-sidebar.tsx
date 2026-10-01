@@ -191,14 +191,24 @@ function hasActiveDescendant(item: SidebarItem): boolean {
  * element. That is what replaced the old render callback — a callback had to re-derive basalt's
  * own styling to look right, and every consumer got it subtly wrong.
  */
-function NavLinkBody({ item, active }: { item: SidebarItem; active: boolean }) {
+function NavLinkBody({
+  item,
+  active,
+  collapsed = false,
+}: {
+  item: SidebarItem
+  active: boolean
+  collapsed?: boolean
+}) {
   const Anchor = item.Anchor
   const shared = {
     classNames: { root: classes.link },
     label: item.label,
     leftSection: iconOrInitial(item.icon, item.label),
-    // The collapsed rail hides the label (CSS), leaving the icon alone — name the link regardless.
-    'aria-label': item.label,
+    // Only the collapsed rail hides the label (CSS), leaving the icon alone — name the link there.
+    // Expanded, the visible text IS the name and carries the count badge; an `aria-label` would
+    // override both and drop the count ("Inbox 5" → "Inbox").
+    ...(collapsed && { 'aria-label': item.label }),
     rightSection: item.badge ?? (item.count ? <NavCountBadge count={item.count} /> : undefined),
     active,
     // Basalt is the one that stamps `aria-current`, not the theme and not a router `<Link>`'s own
@@ -308,7 +318,7 @@ function NavItemRow({ item, collapsed }: { item: SidebarItem; collapsed: boolean
               classNames={{ root: classes.link }}
               label={item.label}
               leftSection={iconOrInitial(item.icon, item.label)}
-              aria-label={item.label}
+              {...(collapsed && { 'aria-label': item.label })}
               data-disabled
             />
           </Box>
@@ -320,7 +330,7 @@ function NavItemRow({ item, collapsed }: { item: SidebarItem; collapsed: boolean
     return (
       <Tooltip key={item.key} label={item.label} position="right" withArrow disabled={!collapsed}>
         <Box className={classes.navItem}>
-          <NavLinkBody item={item} active={active} />
+          <NavLinkBody item={item} active={active} collapsed={collapsed} />
         </Box>
       </Tooltip>
     )
@@ -335,7 +345,7 @@ function NavItemRow({ item, collapsed }: { item: SidebarItem; collapsed: boolean
       <Box key={item.key}>
         <Tooltip label={item.label} position="right" withArrow disabled={!collapsed}>
           <Box className={classes.navItem}>
-            <NavLinkBody item={item} active={active} />
+            <NavLinkBody item={item} active={active} collapsed={collapsed} />
           </Box>
         </Tooltip>
         <Stack gap={0} className={classes.childList}>
@@ -348,7 +358,6 @@ function NavItemRow({ item, collapsed }: { item: SidebarItem; collapsed: boolean
                       classNames={{ root: classes.link }}
                       label={child.label}
                       leftSection={iconOrInitial(child.icon, child.label)}
-                      aria-label={child.label}
                       data-disabled
                     />
                   </Box>
@@ -388,7 +397,7 @@ function NavItemRow({ item, collapsed }: { item: SidebarItem; collapsed: boolean
             onFocus={scheduleOpen}
             onBlur={scheduleClose}
           >
-            <NavLinkBody item={item} active={active} />
+            <NavLinkBody item={item} active={active} collapsed={collapsed} />
           </Box>
         </Tooltip>
       </Popover.Target>
@@ -411,7 +420,6 @@ function NavItemRow({ item, collapsed }: { item: SidebarItem; collapsed: boolean
                       classNames={{ root: classes.link }}
                       label={child.label}
                       leftSection={iconOrInitial(child.icon, child.label)}
-                      aria-label={child.label}
                       data-disabled
                     />
                   </Box>
