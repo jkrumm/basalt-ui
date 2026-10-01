@@ -3650,8 +3650,8 @@ const queryFnUnwrap = {
  * separate commit that either deletes the row (the fix is manual from then on — say so in the
  * removal's MIGRATING row) or keeps it one minor past the removal with `removed: true` and
  * `removeIn` set to the removing minor, so the message reads "was removed in X" instead of "still
- * resolves". `scripts/check-grace.ts` refuses a release at or past a `removeIn` whose row is not
- * `removed` — the gap that let `useBreakpoint` outlive its date twice.
+ * resolves". `scripts/check-grace.ts` refuses a release at or past a `removeIn` whose export still
+ * ships — the gap that let `useBreakpoint` outlive its date twice.
  *
  * @type {readonly DeprecatedExport[]}
  */

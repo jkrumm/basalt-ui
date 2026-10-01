@@ -442,8 +442,13 @@ together while the `MIGRATING.md` row stays forever. **Deleting the `DEPRECATED_
 deletes the autofix**, which is a consumer-visible loss the removal has to state: 1.29.0 took
 `field` out of the ledger in the same minor it deleted the export, and that silently invalidated
 MIGRATING's own two-pass `oxlint --fix` recipe for anyone arriving from 1.27.x. Either keep the row
-one minor past the removal (the message already reads "removed in X"), or say plainly in the removal
-row that the fix is now manual.
+one minor past the removal as `removed: true` with `removeIn` = the removing minor (the message then
+reads "was removed in X"), or say plainly in the removal row that the fix is now manual.
+
+**The date is release-gated, like grace.** `scripts/check-grace.ts` refuses a computed version ≥ a
+row's `removeIn` while the export is still in `scripts/export-surface.json` (a prop row: until it is
+`removed`). Without it `useBreakpoint` was re-dated 1.31.0 → 1.33.0 and then shipped in 1.33.0
+anyway, turning master red on the floor test one release too late.
 
 `oxlint-plugin.test.ts` scans every `src/**/index.ts(x)` barrel for a JSDoc `@deprecated` with no
 ledger row, so the published half cannot be forgotten; a deprecation written deeper in the tree is
