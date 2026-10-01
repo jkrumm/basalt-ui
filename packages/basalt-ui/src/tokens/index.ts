@@ -22,6 +22,7 @@ import {
 import type { PaletteData, RadiusValues, SpaceValues } from './palette'
 import { SIZE_CLASSES, sizeClassMaxEm } from './size-classes'
 import { HIT_COARSE, HIT_FINE } from '../common/hit-floor'
+import { vxFamiliesIn, vxFamilyOf } from '../common/vx-family'
 
 // The raw hue families + pair-picker — the building blocks a consumer's series module composes
 // (`hrv: p(BP.blue)`). The doctrine sends every consumer here, so they are public surface, not
@@ -806,6 +807,29 @@ function frameworkDerived(data: PaletteData, only: 'core' | 'all', legacyAliases
   return legacyAliases ? `${canonical}\n${frameworkDerivedAliases(data)}` : canonical
 }
 
+// Memoized on the first seriesTokens/groupTokens call — a consumer's series module pays it, never
+// theme setup or the provider's first paint.
+let basaltFamilies: ReadonlySet<string> | undefined
+const warnedVxNames = new Set<string>()
+
+/**
+ * Warn, once per name, on a consumer series/group name inside a basalt-owned `--vx-*` family
+ * (`surface`, `space`, `ink`, …): `check-theme`'s `unknown-vx-token` judges every name there against
+ * what basalt emits, which is sound only while no consumer REF points there. A WARNING for the
+ * minor that kind is graced in (1.34.x); `grace.test.ts` requires this to throw once it promotes.
+ * The families come from basalt's own stylesheet — the source `gen-vx-names` writes the guard's
+ * copy from. Checked on the refs, not in `buildPaletteCss`, which runs on every first paint.
+ */
+function warnConsumerVxName(name: string): void {
+  basaltFamilies ??= new Set(vxFamiliesIn(buildPaletteCss()))
+  const family = vxFamilyOf(name)
+  if (!basaltFamilies.has(family) || warnedVxNames.has(name)) return
+  warnedVxNames.add(name)
+  console.warn(
+    `[basalt] ${name} is inside basalt's own --vx-${family} family — name your series group something basalt does not own (groupTokens('app', …)). Throws from 1.35.0.`,
+  )
+}
+
 /**
  * Wrap a map of `{ name: ColorPair }` into `var(--vx-<prefix><name>)` token refs — the runtime
  * companion to `buildPaletteCss`. Lets a consumer define its own series and read stable refs.
@@ -818,7 +842,10 @@ export function seriesTokens<const T extends SeriesMap>(
   prefix = '',
 ): { [K in keyof T]: string } {
   const out = {} as { [K in keyof T]: string }
-  for (const key of Object.keys(map) as (keyof T)[]) out[key] = `var(--vx-${prefix}${String(key)})`
+  for (const key of Object.keys(map) as (keyof T)[]) {
+    warnConsumerVxName(`--vx-${prefix}${String(key)}`)
+    out[key] = `var(--vx-${prefix}${String(key)})`
+  }
   return out
 }
 

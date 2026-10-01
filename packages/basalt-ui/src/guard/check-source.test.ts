@@ -3739,16 +3739,14 @@ describe('unknown-vx-token', () => {
     )
   })
 
-  // Cross-file, both directions: a per-file scan cannot see the file that declares a consumer
-  // group, so a name under a basalt family prefix is never judged — while a removed name and a bare
-  // root are judged no matter what any other file declares.
-  it('never judges a consumer group under a basalt family prefix declared in another file', () => {
-    const declaring = `export const SURFACE = groupTokens('surface', { custom: p(BP.gray) })\n`
-    expect(vx(declaring, 'src/lib/series.ts')).toEqual([])
-    expect(vx('.a { background: var(--vx-surface-custom); }', 'src/b.module.css')).toEqual([])
-    expect(vx('.a { background: var(--vx-surface-2, transparent); }', 'src/b.module.css')).toEqual(
-      [],
-    )
+  // image-gen r4: `var(--vx-surface-2, transparent)` rendered transparent since the file was
+  // written. A basalt-owned family is judged in full — groupTokens refuses to emit into one.
+  it('flags an unemitted name inside a basalt-owned family', () => {
+    const f = vx(`<Box style={{ background: 'var(--vx-surface-2, transparent)' }} />`, PATH)
+    expect(f.map((x) => x.token)).toEqual(['--vx-surface-2'])
+    expect(
+      vx('.a { color: var(--vx-ink3); gap: var(--vx-space-gutter); }').map((x) => x.token),
+    ).toEqual(['--vx-ink3', '--vx-space-gutter'])
   })
 
   it('judges a removed name and a bare root whatever another file declares', () => {
@@ -3769,6 +3767,8 @@ describe('unknown-vx-token', () => {
       [],
     )
     expect(vx('.a { color: var(--vx-cloudHigh); }')).toEqual([])
+    // A family is the leading lowercase run, so a longer word sharing a prefix is not basalt's.
+    expect(vx('.a { color: var(--vx-lineup-a); fill: var(--vx-texture); }')).toEqual([])
   })
 
   it('skips a name computed at runtime', () => {

@@ -118,6 +118,28 @@ fleet usage at removal was zero. The fix was never autofixable (the replacement 
 shape), so `basalt/deprecated-export` keeps its row through 1.34.0 only to say the import is gone
 instead of "still resolves".
 
+### Guards — `unknown-vx-token` judges basalt's families in full (`warn`, `error` moves to 1.35.0)
+
+`var(--vx-surface-2, transparent)` rendered transparent in image-gen since the file was written,
+and 1.33.0 said nothing: it judged only removed names and bare roots, because `groupTokens` could
+emit any name. Now:
+
+- **Judged: every unemitted name inside a basalt-owned family** — the leading lowercase run of the
+  name: `accent`, `fill`, `ink`, `line`, `radius`, `shadow`, `space`, `status`, `surface`, `text`,
+  `tooltip`, … (the full list is in the finding's remedy, generated from what basalt emits). So
+  `--vx-surface-2`, `--vx-ink3`, `--vx-space-gutter` and a bare `--vx-space` are all findings.
+- **Not judged: a name in any other family** (argo's `--vx-activity-*`, rb's `--vx-confidence-*`),
+  a computed name, and a name the same file declares.
+- **`groupTokens` / `seriesTokens` warn** (once per name) on a ref inside a basalt family —
+  `groupTokens('surface', …)`, a series key `ink3` — and **throw from 1.35.0**, when the kind
+  promotes. That refusal is what makes the guard's judgement sound. Rename the group
+  (`groupTokens('app', …)`), and its `buildPaletteCss` `groups` key with it. Measured: no consumer
+  names one. `on` is not judged: the theme emits `--vx-on-<color>` for your own colors too.
+
+Widening restarts the grace: `warn` through 1.34.x, `error` at 1.35.0. Measured at ship time:
+argo, rb, image-gen, image-share, email-gateway, linewatch, obsidian, weatherorb all at 0
+(image-gen's one hit was already fixed by hand in r4).
+
 ## 1.33.0 — the 1.33.0 minor
 
 ### `CONTAINER_GRID_BREAKPOINTS` — the `Grid type="container"` map ships
