@@ -1,6 +1,6 @@
 {
+  "extends": ["./oxlint-basalt.json"],
   "plugins": ["react", "typescript", "import", "unicorn", "jsx-a11y", "promise", "oxc"],
-  "jsPlugins": ["./oxlint-plugin.js"],
   "categories": {
     "correctness": "error",
     "suspicious": "warn"
@@ -22,35 +22,7 @@
       {
         "allow": ["__APP_VERSION__"]
       }
-    ],
-    "basalt/no-raw-font-size": "error",
-    "basalt/raw-size-literal": "error",
-    "basalt/card-inset": "error",
-    "basalt/chart-in-raw-surface": "error",
-    "basalt/hand-rolled-plot": "error",
-    "basalt/chart-legend-literal": "error",
-    "basalt/shadow-basalt-export": "warn",
-    "basalt/hand-rolled-shell": "error",
-    "basalt/raw-scroll-container": "error",
-    "basalt/hand-rolled-filter": "error",
-    "basalt/control-outside-home": "error",
-    "basalt/bound-control-outside-home": "error",
-    "basalt/control-size-literal": "error",
-    "basalt/page-bar-budget": "error",
-    "basalt/in-body-page-title": "error",
-    "basalt/responsive-twin": "error",
-    "basalt/search-literal-link": "error",
-    "basalt/use-search-from-literal": "error",
-    "basalt/provider-above-router": "error",
-    "basalt/query-fn-unwrap": "error",
-    "basalt/deprecated-export": "warn",
-    "basalt/forms-field-key": "error",
-    "basalt/visx-boundary": "error",
-    "basalt/visx-tooltip": "error",
-    "basalt/agent-resume-guard": "error",
-    "basalt/agent-no-raw-usechat": "error",
-    "basalt/ai-sdk-major": "error",
-    "basalt/raw-breakpoint": "error"
+    ]
   },
   "overrides": [
     {

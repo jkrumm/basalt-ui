@@ -789,7 +789,7 @@ describe('check-theme — the manifest waiver hint follows the profile', () => {
 // emailgw r4: a check-theme-only CI held none of the oxlint-lane promotions and said nothing.
 function wireOxlint(at: string, entry: string): void {
   mkdirSync(resolve(at, 'node_modules/basalt-ui/configs'), { recursive: true })
-  writeFileSync(resolve(at, 'node_modules/basalt-ui/configs/oxlint.json'), '{}')
+  writeFileSync(resolve(at, entry), '{}')
   writeFileSync(resolve(at, '.oxlintrc.json'), JSON.stringify({ extends: [entry] }))
 }
 
@@ -833,6 +833,12 @@ describe('check-theme AST-lane notice', () => {
         rules: { 'basalt/card-inset': 'error' },
       }),
     )
+    expect(run().err).not.toContain('AST lane')
+  })
+
+  it('is silent when the config extends the guards-only preset', () => {
+    fixture(CLEAN)
+    wireOxlint(dir, './node_modules/basalt-ui/configs/oxlint-basalt.json')
     expect(run().err).not.toContain('AST lane')
   })
 

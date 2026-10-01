@@ -662,7 +662,7 @@ export const SURFACES = {
     kind: 'tooling',
     layer: 'non-js-asset',
     description:
-      'Raw toolchain presets for consumer extends: oxlint.json, oxfmt.json, tsconfig.*.json, lefthook.yml, check.yml',
+      'Raw toolchain presets for consumer extends: oxlint.json (or the guards-only oxlint-basalt.json), oxfmt.json, tsconfig.*.json, lefthook.yml, check.yml',
     forbiddenImports: [],
   },
   './llms.txt': {

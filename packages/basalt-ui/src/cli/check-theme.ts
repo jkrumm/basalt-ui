@@ -50,11 +50,14 @@ function astLaneNotice(cwd: string): string | null {
     if (entry !== undefined && existsSync(resolve(dir, entry))) return null
     if (rc !== null || existsSync(resolve(dir, '.git')) || dirname(dir) === dir) break
   }
-  const n = (readSource(packageRoot(), 'configs/oxlint.json') ?? '').match(/"basalt\/[\w-]+":/g)
+  const n = (readSource(packageRoot(), 'configs/oxlint-basalt.json') ?? '').match(
+    /"basalt\/[\w-]+":/g,
+  )
   return (
     `ℹ basalt-ui check-theme: AST lane not enforced — ${n?.length ?? 0} basalt/* rule ids unguarded ` +
     '(incl. the promoted control-outside-home, raw-breakpoint): no .oxlintrc.json up to the repo ' +
-    'root extends basalt-ui/configs/oxlint.json. `basalt-ui doctor` names the fix.'
+    'root extends basalt-ui/configs/oxlint.json (or the guards-only oxlint-basalt.json). `basalt-ui ' +
+    'doctor` names the fix.'
   )
 }
 

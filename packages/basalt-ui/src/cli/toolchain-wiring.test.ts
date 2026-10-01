@@ -333,6 +333,17 @@ describe('init — describing the repo it is actually in', () => {
     const { log } = capture(() => init(dir, { mergeLint: true }))
     expect(log).toContain('already extends')
   })
+
+  it('--merge-lint upgrades a guards-only extends to the full preset', () => {
+    write('package.json', JSON.stringify({ name: 'app' }))
+    write(
+      '.oxlintrc.json',
+      '{ "extends": ["./node_modules/basalt-ui/configs/oxlint-basalt.json"] }',
+    )
+    capture(() => init(dir, { mergeLint: true }))
+    const cfg = JSON.parse(read('.oxlintrc.json')) as { extends: string[] }
+    expect(cfg.extends[0]).toContain('basalt-ui/configs/oxlint.json')
+  })
 })
 
 describe('init — seeds resolve basalt where it actually installed', () => {
@@ -694,6 +705,18 @@ describe('doctor — the oxlint-preset check resolves the path, not just the str
     const { code, log } = capture(() => doctor(dir))
     expect(code).toBe(0)
     expect(log).toContain('extends the shipped basalt-ui oxlint preset')
+  })
+
+  it('passes on the guards-only preset too', () => {
+    healthyFixture()
+    write('node_modules/basalt-ui/configs/oxlint-basalt.json', '{}')
+    write(
+      '.oxlintrc.json',
+      '{ "extends": ["./node_modules/basalt-ui/configs/oxlint-basalt.json"] }',
+    )
+    const { code, log } = capture(() => doctor(dir))
+    expect(code).toBe(0)
+    expect(log).toContain('(./node_modules/basalt-ui/configs/oxlint-basalt.json)')
   })
 })
 

@@ -153,6 +153,25 @@ doctor` names the fix.
 Dropping `withBorder` and keeping `padding="md"` satisfied `check-theme` and then failed oxlint's
 `basalt/card-inset`. The text-lane remedy now says to fix the inset in the same edit.
 
+### `configs/oxlint-basalt.json` — the guard lane without the generic preset
+
+Wiring `configs/oxlint.json` into a repo with history turns on the generic jsx-a11y / unicorn /
+import / promise set alongside the `basalt/*` rules, and email-gateway hit unrelated errors before a
+single guard could land. The new guards-only preset is the `basalt/*` plugin rules at their shipped
+levels and nothing else:
+
+```json
+{ "extends": ["./node_modules/basalt-ui/configs/oxlint-basalt.json"] }
+```
+
+Take it first, move to `configs/oxlint.json` when the generic debt is paid. The full preset now
+`extends` the guards-only one, so every `basalt/*` level lives in one file; extending the full one
+behaves exactly as before. `doctor` and `check-theme` accept either.
+
+The full preset assumes the shipped `tsconfig.react-app.json` base (`lib: ES2023`): its
+`unicorn/no-array-sort` warning steers to `toSorted()`, which an older `lib` does not type. Extend
+that tsconfig rather than waiving the rule.
+
 ## 1.33.0 — the 1.33.0 minor
 
 ### `CONTAINER_GRID_BREAKPOINTS` — the `Grid type="container"` map ships
