@@ -382,7 +382,8 @@ hard-fail their build.
 - **A rule whose OWN doc comment states its level states it in one place, in one form.** Each rule
   carries a single `// Ships: error` / `// Ships: warn (grace → 1.30.0)` / `// Ships: warn
 (advisory)` / `// Ships: repo-local only` line directly above its `const`, and
-  `oxlint-plugin.test.ts` asserts every one against `oxlint.json` and the two ledgers. The C16 gate
+  `oxlint-plugin.test.ts` asserts every one against `oxlint-basalt.json` (the guards-only preset
+  `oxlint.json` extends — the one home of every `basalt/*` level) and the two ledgers. The C16 gate
   could not catch the drift it replaces — the ledger is asserted against the preset, and a prose
   comment is outside the ledger, so `raw-size-literal` spent several minors telling readers it
   shipped `warn` while the preset said `error`.

@@ -872,6 +872,9 @@ The `./configs/*` export gives consumer apps raw presets to `extends` or copy vi
 { "extends": ["./node_modules/basalt-ui/configs/oxlint.json"] }
 ```
 
+`configs/oxlint-basalt.json` is the guard lane alone — the `basalt/*` rules, none of the generic
+jsx-a11y / unicorn / import set — for a repo with history to take first; `oxlint.json` extends it.
+
 `tsconfig.json` `extends` resolves the SAME way, through package exports (`bundler`
 `moduleResolution`, CI-verified by `scripts/pack-test.sh`) — three raw presets, `base` (the shared
 strict flags), `react-app` (`base` + DOM/JSX libs) and `node` (`base` + Node types):

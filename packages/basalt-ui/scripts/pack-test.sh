@@ -49,7 +49,7 @@ for f in \
   dist/controls/index.js dist/controls/index.d.ts dist/controls/controls.module.css \
   dist/controls-dates/index.js dist/controls-dates/index.d.ts \
   src/index.ts \
-  configs/oxlint.json configs/tsconfig.base.json configs/tsconfig.react-app.json \
+  configs/oxlint.json configs/oxlint-basalt.json configs/tsconfig.base.json configs/tsconfig.react-app.json \
   agent/rules/basalt-tokens.md agent/rules/basalt-charts.md agent/rules/basalt-batteries.md \
   agent/templates/DESIGN.md.tpl agent/templates/CLAUDE-block.md.tpl \
   agent/skills/basalt-app/SKILL.md agent/skills/basalt-charts/SKILL.md \
@@ -180,6 +180,7 @@ if (format.money(1234, { currency: 'USD', locale: 'en-US' }) !== '$1,234') {
 
 // the raw oxlint preset must resolve via ./configs/* and be valid JSON
 JSON.parse(readFileSync(require.resolve('basalt-ui/configs/oxlint.json'), 'utf8'))
+JSON.parse(readFileSync(require.resolve('basalt-ui/configs/oxlint-basalt.json'), 'utf8'))
 
 // the exports map's own './package.json' entry must resolve to a parseable manifest naming the package
 const pkgJson = JSON.parse(readFileSync(require.resolve('basalt-ui/package.json'), 'utf8'))
@@ -214,23 +215,30 @@ echo "==> scratch-consumer oxlint preset contract (extends the shipped preset fo
 # extends the shipped preset via the documented node_modules-relative path, linted for real.
 # A config PARSE failure (e.g. an unknown top-level key) must fail the pack test; ordinary
 # lint findings on the trivial fixture below are expected and must NOT fail it.
-cat >.oxlintrc.json <<'JSON'
-{ "extends": ["./node_modules/basalt-ui/configs/oxlint.json"] }
-JSON
-cat >lint-fixture.ts <<'TS'
-export const scratchLintFixture = 1
-TS
+# Both presets: the full one, and the guards-only one it extends. The `.tsx` fixture trips
+# basalt/card-inset, proving the chained extends still loads the plugin from inside the tarball.
+cat >lint-fixture.tsx <<'TSX'
+import { Card } from '@mantine/core'
+export const ScratchLintFixture = () => <Card padding="md" />
+TSX
 # Captured to a file, then grepped from the file — same reason as `require` above: a
 # `echo "$VAR" | grep -q` pipeline can report SIGPIPE (141) instead of grep's own verdict.
 OXLINT_LOG=$(mktemp)
-set +e
-bunx oxlint lint-fixture.ts >"$OXLINT_LOG" 2>&1
-set -e
-cat "$OXLINT_LOG"
-if grep -qiF "failed to parse" "$OXLINT_LOG"; then
-  echo "FAILED: shipped oxlint preset does not parse for a real consumer (config parse failure)"
-  exit 1
-fi
+for preset in oxlint oxlint-basalt; do
+  printf '{ "extends": ["./node_modules/basalt-ui/configs/%s.json"] }\n' "$preset" >.oxlintrc.json
+  set +e
+  bunx oxlint lint-fixture.tsx >"$OXLINT_LOG" 2>&1
+  set -e
+  cat "$OXLINT_LOG"
+  if grep -qiF "failed to parse" "$OXLINT_LOG"; then
+    echo "FAILED: shipped $preset.json does not parse for a real consumer (config parse failure)"
+    exit 1
+  fi
+  if ! grep -qF "basalt/card-inset" "$OXLINT_LOG"; then
+    echo "FAILED: extending $preset.json did not run the basalt/* rules"
+    exit 1
+  fi
+done
 echo "scratch-consumer oxlint preset contract OK"
 
 echo "==> scratch-consumer theme guard (the shipped rules, run against a consumer tree)"

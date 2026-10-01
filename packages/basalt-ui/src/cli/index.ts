@@ -1472,7 +1472,8 @@ export function parseJsonc(text: string): Record<string, unknown> | null {
 export type MergeLintResult = 'added' | 'already' | 'absent' | 'unreadable' | 'has-comments'
 
 /**
- * The `extends` entry pointing at the shipped oxlint preset, or null when none does.
+ * The `extends` entry pointing at a shipped oxlint preset — the full one or the guards-only
+ * `oxlint-basalt.json` — or null when none does.
  *
  * Returns the ENTRY rather than a boolean because the string alone proves nothing: a consumer that
  * upgraded (or moved to an isolated linker) keeps a perfectly well-shaped
@@ -1484,7 +1485,7 @@ export function basaltPresetEntry(entries: unknown): string | null {
   if (!Array.isArray(entries)) return null
   const match = entries.find(
     (entry): entry is string =>
-      typeof entry === 'string' && entry.endsWith('basalt-ui/configs/oxlint.json'),
+      typeof entry === 'string' && /basalt-ui\/configs\/oxlint(-basalt)?\.json$/.test(entry),
   )
   return match ?? null
 }
@@ -1567,7 +1568,7 @@ export function mergeOxlintExtends(cwd: string, presetPath: string): MergeLintRe
   if (raw === null) return 'absent'
   const cfg = parseJsonc(raw)
   if (cfg === null) return 'unreadable'
-  if (basaltPresetEntry(cfg['extends']) !== null) return 'already'
+  if (basaltPresetEntry(cfg['extends'])?.endsWith('/oxlint.json') === true) return 'already'
   // Rewriting a JSONC config through JSON.stringify would silently delete the consumer's comments,
   // which in a lint config are usually the WHY of every disabled rule. Refuse and say so.
   if (stripJsonc(raw) !== raw) return 'has-comments'

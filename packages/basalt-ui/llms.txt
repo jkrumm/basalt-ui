@@ -155,7 +155,7 @@ Layer: non-js-asset
 
 ## basalt-ui/configs/*
 Asset: basalt-ui/configs/*
-Description: Raw toolchain presets for consumer extends: oxlint.json, oxfmt.json, tsconfig.*.json, lefthook.yml, check.yml
+Description: Raw toolchain presets for consumer extends: oxlint.json (or the guards-only oxlint-basalt.json), oxfmt.json, tsconfig.*.json, lefthook.yml, check.yml
 Layer: non-js-asset
 
 ## basalt-ui/llms.txt

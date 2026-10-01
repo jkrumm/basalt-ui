@@ -644,7 +644,7 @@ describe('basalt/ai-sdk-major', () => {
 describe('basalt/raw-scroll-container promotion', () => {
   it('ships "error" (not "warn"/"off") in the consumer preset', () => {
     const shipped = JSON.parse(
-      readFileSync(resolve(import.meta.dirname, 'oxlint.json'), 'utf8'),
+      readFileSync(resolve(import.meta.dirname, 'oxlint-basalt.json'), 'utf8'),
     ) as { rules: Record<string, unknown> }
     expect(shipped.rules['basalt/raw-scroll-container']).toBe('error')
   })
@@ -682,7 +682,7 @@ describe('basalt agent rules promotion', () => {
     '%s ships "error" (not "warn"/"off") in the consumer preset',
     (rule) => {
       const shipped = JSON.parse(
-        readFileSync(resolve(import.meta.dirname, 'oxlint.json'), 'utf8'),
+        readFileSync(resolve(import.meta.dirname, 'oxlint-basalt.json'), 'utf8'),
       ) as { rules: Record<string, unknown> }
       expect(shipped.rules[rule]).toBe('error')
     },
@@ -1402,7 +1402,9 @@ describe('twin lanes share one promotion', () => {
 })
 
 describe('PLUGIN_RULE_GRACE', () => {
-  const shipped = JSON.parse(readFileSync(resolve(import.meta.dirname, 'oxlint.json'), 'utf8')) as {
+  const shipped = JSON.parse(
+    readFileSync(resolve(import.meta.dirname, 'oxlint-basalt.json'), 'utf8'),
+  ) as {
     rules: Record<string, unknown>
   }
   const pkgVersion = (
@@ -4113,7 +4115,9 @@ describe('DEPRECATED_EXPORTS', () => {
 describe('the `Ships:` line above each rule', () => {
   const source = readFileSync(resolve(import.meta.dirname, 'oxlint-plugin.js'), 'utf8')
   const lines = source.split('\n')
-  const shipped = JSON.parse(readFileSync(resolve(import.meta.dirname, 'oxlint.json'), 'utf8')) as {
+  const shipped = JSON.parse(
+    readFileSync(resolve(import.meta.dirname, 'oxlint-basalt.json'), 'utf8'),
+  ) as {
     rules: Record<string, unknown>
   }
   // The registry block maps rule id → the `const` implementing it.
@@ -4126,7 +4130,7 @@ describe('the `Ships:` line above each rule', () => {
   })
 
   for (const { id, binding } of registry) {
-    it(`${id}: the claim matches oxlint.json`, () => {
+    it(`${id}: the claim matches oxlint-basalt.json`, () => {
       const at = lines.indexOf(`const ${binding} = {`)
       expect([id, at]).not.toEqual([id, -1])
       const claim = /^\/\/ Ships: (.+)$/.exec(lines[at - 1] as string)?.[1]
@@ -4150,4 +4154,30 @@ describe('the `Ships:` line above each rule', () => {
       expect([id, level]).toEqual([id, 'error'])
     })
   }
+})
+
+// emailgw r4b: wiring the full preset on a repo with history forced unrelated jsx-a11y/unicorn
+// errors before a single basalt/* rule could land. The guards-only preset is the guard lane alone,
+// and the full preset extends it, so every basalt/* level is stated in exactly one file.
+describe('configs/oxlint-basalt.json — the guards-only preset', () => {
+  const read = (file: string) =>
+    JSON.parse(readFileSync(resolve(import.meta.dirname, file), 'utf8')) as Record<string, unknown>
+  const guards = read('oxlint-basalt.json')
+  const full = read('oxlint.json')
+
+  it('carries the plugin and basalt/* rules, nothing from the generic preset', () => {
+    expect(Object.keys(guards).toSorted()).toEqual(['jsPlugins', 'rules'])
+    expect(guards['jsPlugins']).toEqual(['./oxlint-plugin.js'])
+    const ids = Object.keys(guards['rules'] as object)
+    expect(ids.filter((id) => !id.startsWith('basalt/'))).toEqual([])
+    expect(ids.length).toBeGreaterThan(0)
+  })
+
+  it('is extended by the full preset, which states no basalt/* level of its own', () => {
+    expect(full['extends']).toEqual(['./oxlint-basalt.json'])
+    expect(full['jsPlugins']).toBeUndefined()
+    expect(Object.keys(full['rules'] as object).filter((id) => id.startsWith('basalt/'))).toEqual(
+      [],
+    )
+  })
 })
