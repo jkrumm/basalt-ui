@@ -82,5 +82,7 @@ if (import.meta.main) {
   const names = collectVxNames()
   writeFileSync(VX_NAMES_PATH, renderVxNames(names))
   writeFileSync(VX_FAMILIES_PATH, renderVxFamilies(names))
-  console.log(`gen-vx-names: ${names.length} names → src/guard/vx-names.ts`)
+  console.log(
+    `gen-vx-names: ${names.length} names → src/guard/vx-names.ts, families → src/common/vx-families.ts`,
+  )
 }
