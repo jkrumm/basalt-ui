@@ -1542,9 +1542,10 @@ export function mergeOxlintExtends(cwd: string, presetPath: string): MergeLintRe
   // Rewriting a JSONC config through JSON.stringify would silently delete the consumer's comments,
   // which in a lint config are usually the WHY of every disabled rule. Refuse and say so.
   if (stripJsonc(raw) !== raw) return 'has-comments'
-  const existing = Array.isArray(cfg['extends'])
-    ? (cfg['extends'] as unknown[]).filter((entry) => typeof entry === 'string')
-    : []
+  // The guards-only preset is a subset of the full one — upgrading replaces it, never stacks it.
+  const existing = [cfg['extends']]
+    .flat()
+    .filter((e): e is string => typeof e === 'string' && !e.endsWith('configs/oxlint-basalt.json'))
   // Rebuild rather than spread, so `extends` keeps its original position when it was already there
   // and lands first when it wasn't — a diff a human reviews should not reshuffle the whole file.
   const merged: Record<string, unknown> = 'extends' in cfg ? {} : { extends: [presetPath] }
