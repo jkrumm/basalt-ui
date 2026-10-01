@@ -9,9 +9,9 @@
  * `assertGraceLedger` is tested directly against synthetic entries below rather than only through
  * the real ledger: every pre-existing entry promoted or moved to `PLUGIN_RULE_ADVISORY`'s guard-side
  * sibling, and an `it.each` over the empty ledger that left behind ran zero assertions, which proved
- * nothing about the gate actually firing. Since 1.33.0 the ledger carries ONE kind,
- * `unknown-vx-token` (promote 1.36.0 — widened at 1.34.0, which restarts its grace) — the C1 pair and `raw-media-query` promoted — and the
- * real-ledger check below runs against it.
+ * nothing about the gate actually firing. The ledger is empty since 1.36.0 (`unknown-vx-token`, its
+ * last tenant, promoted), so the real-ledger check below pins THAT, and the gate's firing is proven
+ * on synthetic ledgers (here and in `scripts/check-grace.test.ts`).
  *
  * This gate measures the version already PUBLISHED, so it can only go red after the release that
  * shipped a due entry. `scripts/check-grace.ts` is the other end — `scripts/release.sh` runs it
@@ -19,7 +19,7 @@
  *
  * Excluded from tsc (tsconfig exclude: src/**\/*.test.ts), run via `bun test`.
  */
-import { describe, expect, it, spyOn } from 'bun:test'
+import { describe, expect, it } from 'bun:test'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { BP, groupTokens, p } from '../tokens/index'
@@ -132,36 +132,18 @@ describe('scripts/check-grace.ts', () => {
     expect([code, stdout.includes('clear of all')]).toEqual([0, true])
   })
 
-  it('refuses a version that has reached a promote, naming the entries', () => {
-    const { code, stderr } = runCheckGrace('9.9.9')
-    expect(code).toBe(1)
-    expect(stderr).toContain('unknown-vx-token')
-  })
-
   // 1.27.0 promoted five of the six wave-6 plugin rules and one of the two guard kinds; 1.30.0
-  // promoted four more, all measured at zero incumbents across the fleet. 1.33.0 promoted the last
-  // four — the C1 pair (`raw-selection-control` + `basalt/control-outside-home`) and the breakpoint
-  // pair (`raw-media-query` + `basalt/raw-breakpoint`) — against nine consumers measured at zero on
-  // 1.32.1. What is LEFT is `unknown-vx-token`, new in 1.33.0 and widened in 1.34.0 (in-family
-  // names), so 1.34.x and 1.35.x must now PASS.
-  it.each([
-    '1.30.0',
-    '1.31.0',
-    '1.32.0',
-    '1.32.9',
-    '1.33.0',
-    '1.33.9',
-    '1.34.0',
-    '1.34.9',
-    '1.35.0',
-    '1.35.9',
-  ])('passes %s — nothing is due until 1.36.0', (v) => {
-    expect(runCheckGrace(v).code).toBe(0)
-  })
-
-  it('refuses the version unknown-vx-token is due in (1.36.0)', () => {
-    expect(runCheckGrace('1.36.0').code).toBe(1)
-  })
+  // promoted four more; 1.33.0 the C1 and breakpoint pairs; 1.36.0 the last, `unknown-vx-token`
+  // (its grace ran one minor past 1.35.0). With nothing left in the ledger, every version below the
+  // first deprecation `removeIn` is clear of the grace half. That the gate REFUSES a due entry is
+  // proven on synthetic ledgers in `scripts/check-grace.test.ts`.
+  it.each(['1.30.0', '1.34.9', '1.35.0', '1.36.0', '1.36.9'])(
+    'passes %s — the ledger is empty',
+    (v) => {
+      const { code, stdout } = runCheckGrace(v)
+      expect([code, stdout.includes('clear of all 0 grace entries')]).toEqual([0, true])
+    },
+  )
 
   // The 1.36.0 form-layout aliases are dated 1.37.0: the release that reaches that date refuses
   // until they are deleted (their own commit) — which is when this case moves to the next date.
@@ -176,28 +158,14 @@ describe('scripts/check-grace.ts', () => {
   })
 })
 
-// The token factories WARN on a ref inside a basalt family while unknown-vx-token is graced; the
-// promotion that deletes the entry must also make them throw, or the guard's soundness rests on a
-// console line. This goes red on that promotion until tokens/index.ts throws.
+// `unknown-vx-token` judges every name inside a basalt family, which is sound only while the token
+// factories refuse to point there; the promotion that emptied the ledger made them throw.
 describe('unknown-vx-token promotion reaches the token factories', () => {
-  // The warning names the version it starts throwing in; that number is hand-written in tokens
-  // (which cannot import the guard), so it is pinned to the ledger here.
-  it('warns with the version the ledger promotes in', () => {
-    const entry = GRACE_PERIOD_KINDS['unknown-vx-token']
-    if (entry === undefined) return
-    const warn = spyOn(console, 'warn').mockImplementation(() => {})
-    try {
-      groupTokens('surface', { graceVersionProbe: p(BP.gray) })
-      expect(String(warn.mock.calls[0]?.[0]).match(/Throws from (\d+\.\d+\.\d+)/)?.[1]).toBe(
-        entry.promote,
-      )
-    } finally {
-      warn.mockRestore()
-    }
+  it('the ledger no longer carries the kind', () => {
+    expect(Object.keys(GRACE_PERIOD_KINDS)).toEqual([])
   })
 
-  it('groupTokens throws on a basalt family once the kind has left the ledger', () => {
-    if (Object.hasOwn(GRACE_PERIOD_KINDS, 'unknown-vx-token')) return
+  it('groupTokens throws on a basalt family', () => {
     expect(() => groupTokens('surface', { x: p(BP.gray) })).toThrow('--vx-surface')
   })
 })

@@ -2,7 +2,7 @@
 
 /**
  * The families every emitted `--vx-*` name lives in (`basaltVxFamilies`) — basalt-owned:
- * `unknown-vx-token` judges every name inside one, and `groupTokens`/`seriesTokens` warn on a
+ * `unknown-vx-token` judges every name inside one, and `groupTokens`/`seriesTokens` throw on a
  * consumer ref there.
  */
 export const BASALT_VX_FAMILIES: readonly string[] = [
