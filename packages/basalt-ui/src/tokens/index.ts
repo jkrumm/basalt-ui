@@ -824,7 +824,7 @@ function warnConsumerVxName(name: string): void {
   if (!BASALT_VX_FAMILIES.includes(family) || warnedVxNames.has(name)) return
   warnedVxNames.add(name)
   console.warn(
-    `[basalt] ${name} is inside basalt's own --vx-${family} family — name your series group something basalt does not own (groupTokens('app', …)). Throws from 1.35.0.`,
+    `[basalt] ${name} is inside basalt's own --vx-${family} family — name your series group something basalt does not own (groupTokens('app', …)). Throws from 1.36.0.`,
   )
 }
 
