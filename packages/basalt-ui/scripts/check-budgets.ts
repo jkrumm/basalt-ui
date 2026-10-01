@@ -28,8 +28,11 @@ type Budget = {
   /** `null` = could not be measured here (only ever tolerated under `--report`). */
   readonly value: number | null
   readonly ceiling: number
-  /** Why `value` is `null`, printed in place of the number. */
-  readonly skipped?: string
+  /**
+   * Why `value` is `null`, printed in place of the number: `skipped` when an input is absent
+   * (no `dist/`), `failed` when measuring it threw (a bundler error).
+   */
+  readonly unmeasured?: { readonly kind: 'skipped' | 'failed'; readonly reason: string }
 }
 
 /** Every regular file under `dir` whose name matches `pattern`, recursing into subdirectories. */
@@ -185,6 +188,49 @@ async function providerOnlyGzip(): Promise<number> {
 }
 
 const PROVIDER_ONLY_LABEL = 'provider-only first paint (gzip B, dist)'
+// Landed value (1.33.0: lab store + every isDev()/DEV-const gate folded; 1.30.2 19393, 1.32.1
+// 20379). Raise it deliberately, in the commit that spends it, never to make a red gate green.
+const PROVIDER_ONLY_CEILING = 18710
+
+/** An ANSI color sequence. Built from a char code: a control char in a regex literal is banned. */
+const ANSI_SGR = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, 'g')
+
+/**
+ * One readable line for an error, ANSI stripped. A Rolldown failure is a multi-line colored frame
+ * whose first line is only a header (`Build failed with 1 error:`), so a header ending in `:` takes
+ * the next line too (`[PARSE_ERROR] Unexpected token`).
+ */
+function summarizeError(error: unknown): string {
+  const text = error instanceof Error ? error.message : String(error)
+  const lines = text
+    .replaceAll(ANSI_SGR, '')
+    .split('\n')
+    .map((l) => l.trim())
+  const [head, next] = lines.filter((line) => line !== '')
+  if (head === undefined) return 'unknown error'
+  return head.endsWith(':') && next !== undefined ? `${head} ${next}` : head
+}
+
+/**
+ * The provider-only row, never a throw: a missing `dist/` is `skipped`, a bundler failure is
+ * `failed` with its first line — both print in order after the other budgets and both fail the
+ * gate (an unmeasured number cannot vouch for the ceiling).
+ */
+async function providerOnlyRow(): Promise<Budget> {
+  const row = { label: PROVIDER_ONLY_LABEL, ceiling: PROVIDER_ONLY_CEILING }
+  if (!existsSync(PROVIDER_ONLY_DIST)) {
+    return {
+      ...row,
+      value: null,
+      unmeasured: { kind: 'skipped', reason: 'dist/ missing, run `bun run build`' },
+    }
+  }
+  try {
+    return { ...row, value: await providerOnlyGzip() }
+  } catch (error) {
+    return { ...row, value: null, unmeasured: { kind: 'failed', reason: summarizeError(error) } }
+  }
+}
 
 async function budgets(): Promise<Budget[]> {
   return [
@@ -198,17 +244,7 @@ async function budgets(): Promise<Budget[]> {
       ceiling: 15,
     },
     { label: 'CLI non-test lines (src/cli/**)', value: cliNonTestLines(), ceiling: 4000 },
-    // Landed value (1.33.0: lab store + every isDev()/DEV-const gate folded; 1.30.2 19393,
-    // 1.32.1 20379). Raise it deliberately, in the commit that spends it, never to make a red
-    // gate green.
-    existsSync(PROVIDER_ONLY_DIST)
-      ? { label: PROVIDER_ONLY_LABEL, value: await providerOnlyGzip(), ceiling: 18710 }
-      : {
-          label: PROVIDER_ONLY_LABEL,
-          value: null,
-          ceiling: 18710,
-          skipped: 'skipped: dist/ missing, run `bun run build`',
-        },
+    await providerOnlyRow(),
   ]
 }
 
@@ -222,7 +258,9 @@ async function main(): Promise<void> {
   const width = Math.max(...rows.map((b) => b.label.length))
   for (const b of rows) {
     if (b.value === null) {
-      console.log(`- ${b.label.padEnd(width)}  ${b.skipped ?? 'skipped'} / ${b.ceiling}`)
+      const { kind, reason } = b.unmeasured ?? { kind: 'skipped', reason: 'not measured' }
+      const mark = kind === 'failed' ? '✖' : '-'
+      console.log(`${mark} ${b.label.padEnd(width)}  ${kind}: ${reason} / ${b.ceiling}`)
       continue
     }
     const mark = b.value > b.ceiling ? '✖' : '✓'
