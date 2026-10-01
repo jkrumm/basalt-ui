@@ -564,8 +564,8 @@ export const SURFACES = {
     layer: 'mantine-coupled',
     rule: 'controls',
     skill: ['basalt-design'],
-    // The text lane of law C1 — the plugin's `control-outside-home` seen through a 12-line host-tag
-    // window, since a regex scan has no ancestry. Same law, same wave, same promotion.
+    // The text lane of law C1 — the plugin's `control-outside-home` seen through a host-tag nesting
+    // count, since a regex scan has no AST. Same law, same wave, same promotion.
     guardKinds: ['raw-selection-control'],
     // The control tier itself (laws C1/C3/C5/C9). `hand-rolled-filter`, `control-size-literal` and
     // `responsive-twin` all ship `error`; the two C1 placement rules are the grace entries in

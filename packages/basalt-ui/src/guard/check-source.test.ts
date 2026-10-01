@@ -2767,9 +2767,26 @@ describe('raw-selection-control', () => {
     },
   )
 
-  // The window is 12 lines; past it the approximation would start swallowing the NEXT row's control.
-  it('DOES flag one 20 lines below the host tag — the window is bounded', () => {
-    const f = find(`<Modal>\n${'  <Text>x</Text>\n'.repeat(20)}  <Select data={[]} />\n</Modal>`)
+  // Ancestry by tag nesting, like the plugin's: depth is what homes a control, not distance.
+  it('does NOT flag one 40 lines below its host tag while the host is still open', () => {
+    const f = find(
+      `<FormRow label="Volume">\n${'  <Text>x</Text>\n'.repeat(40)}  <Select data={[]} />\n</FormRow>`,
+    )
+    expect(kinds(f)).not.toContain('raw-selection-control')
+  })
+
+  it('does NOT flag one whose host opens with an arrow function in its props', () => {
+    const f = find(`<FormRow onClick={() => go()} label="x">\n  <Select data={[]} />\n</FormRow>`)
+    expect(kinds(f)).not.toContain('raw-selection-control')
+  })
+
+  it('DOES flag one right after its host closed — a neighbour row is not homed by the last one', () => {
+    const f = find(`<FormRow label="a">\n  <Text>x</Text>\n</FormRow>\n<Select data={[]} />`)
+    expect(kinds(f)).toContain('raw-selection-control')
+  })
+
+  it('DOES flag one next to a self-closing host, which opens nothing', () => {
+    const f = find(`<Modal opened />\n<Select data={[]} />`)
     expect(kinds(f)).toContain('raw-selection-control')
   })
 
@@ -2855,7 +2872,7 @@ describe('raw-selection-control', () => {
   // The CROSS-FILE exemption — the same basename convention the plugin's `control-outside-home`
   // applies, so both lanes agree on the same file (one law, two lanes, one exemption). argo carried
   // 9 of these: a control in a modal/form module whose `<Modal>` is rendered by the parent, which is
-  // outside the 12-line host window because the host tag is not in the file at all.
+  // outside any in-file ancestry because the host tag is not in the file at all.
   it.each([
     'src/edit-session-modal.tsx',
     'src/filters-drawer.tsx',
