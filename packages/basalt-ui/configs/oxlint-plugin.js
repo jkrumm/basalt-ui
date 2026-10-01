@@ -3623,6 +3623,7 @@ const queryFnUnwrap = {
  *   prop?: string
  *   replacement: string
  *   removeIn: string
+ *   removed?: true
  *   fix?: false
  * }} DeprecatedExport
  */
@@ -3646,7 +3647,11 @@ const queryFnUnwrap = {
  * `removeIn` at least one minor out, add the `MIGRATING.md` row, and this rule starts nudging.
  * `oxlint-plugin.test.ts` scans every `src/**\/index.ts(x)` barrel for a JSDoc `@deprecated` and
  * fails when one has no row here, so the barrel half cannot be forgotten. Removing the export is a
- * separate commit that deletes the row in the same change.
+ * separate commit that either deletes the row (the fix is manual from then on — say so in the
+ * removal's MIGRATING row) or keeps it one minor past the removal with `removed: true` and
+ * `removeIn` set to the removing minor, so the message reads "was removed in X" instead of "still
+ * resolves". `scripts/check-grace.ts` refuses a release at or past a `removeIn` whose row is not
+ * `removed` — the gap that let `useBreakpoint` outlive its date twice.
  *
  * @type {readonly DeprecatedExport[]}
  */
@@ -3662,7 +3667,8 @@ export const DEPRECATED_EXPORTS = [
     name: 'useBreakpoint',
     replacement:
       'useSizeClass() for shell chrome; a page’s own layout swap is a container decision — a type="container" SimpleGrid/Grid or an @container rule',
-    removeIn: '1.33.0',
+    removeIn: '1.34.0',
+    removed: true,
     fix: false,
   },
 ]
@@ -3672,6 +3678,13 @@ function deprecatedExportMessage(row) {
     row.prop === undefined
       ? `\`${row.name}\` from ${row.subpath}`
       : `\`${row.prop}\` on <${row.name}>`
+  if (row.removed === true) {
+    return (
+      `Removed basalt export — ${what} was removed in ${row.removeIn} and no longer resolves; use ` +
+      `\`${row.replacement}\` instead (packages/basalt-ui/MIGRATING.md carries the row). ` +
+      '(basalt/deprecated-export)'
+    )
+  }
   return (
     `Deprecated basalt export — ${what} is superseded by \`${row.replacement}\` and is removed in ` +
     `${row.removeIn}. It still resolves today, so nothing is broken yet; migrate before that minor ` +
