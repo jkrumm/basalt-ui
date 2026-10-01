@@ -81,10 +81,12 @@ consumer read this index, found nothing, and diffed a KPI row that had silently 
 
 ---
 
-## Unreleased
+## Unreleased — the AST lane needs a binary
 
-_Nothing yet. Author the next section under this heading as `## Unreleased — <title>`; the
-release renames it and opens a new one here._
+`check-theme`'s "AST lane not enforced" notice and `doctor`'s `oxlint-preset` check now count the
+lane as wired only when `.oxlintrc.json` extends the shipped preset AND an `oxlint` bin resolves
+(`node_modules/.bin/oxlint`, from the project up to the repo root) — a config with no binary lints
+nothing; add `oxlint` as a devDependency (no API change).
 
 ## 1.34.0 — the 1.34.0 minor
 

@@ -238,13 +238,12 @@ export function relativePosix(fromDir: string, toPath: string): string {
 /**
  * Where `basalt-ui` actually resolves from, seen from a consumer directory.
  *
- * Every toolchain seam basalt seeds (`.oxlintrc.json`'s `extends`, `lefthook.yml`'s `extends`, the
- * CI `run:` steps) used to hardcode `./node_modules/basalt-ui` at the repo ROOT. Under bun's
- * isolated linker a library package that declares basalt a peer + devDependency gets
- * `<pkg>/node_modules/basalt-ui` and NOTHING at the root, so all three silently failed to resolve
- * and `bunx` fetched a second, different copy from npm instead. Resolution therefore walks
- * OUTWARD from the consumer dir first, then across the workspace packages — and every caller
- * renders its paths from the answer rather than assuming the root.
+ * Every seam basalt seeds (oxlint/lefthook `extends`, the CI `run:` steps) used to hardcode
+ * `./node_modules/basalt-ui` at the repo ROOT; under bun's isolated linker a package that declares
+ * basalt a peer + devDependency gets it at `<pkg>/node_modules` and NOTHING at the root, so all three
+ * silently failed to resolve and `bunx` fetched a second, different copy. Resolution therefore walks
+ * OUTWARD from the consumer dir, then across the workspace packages — and every caller renders its
+ * paths from the answer rather than assuming the root.
  */
 export type BasaltInstall = {
   /** Absolute path of the resolved `node_modules/basalt-ui` directory, or null when unresolvable. */
@@ -721,6 +720,17 @@ export function findRepoRoot(dir: string): string {
     const parent = dirname(current)
     if (parent === current) return dir
     current = parent
+  }
+}
+
+/** The AST lane's other half: an `oxlint` bin in `node_modules/.bin`, `dir` up to the repo root. */
+export const OXLINT_NO_BIN =
+  'oxlint config found but no oxlint binary — the AST lane never runs; add oxlint as a devDependency'
+export function oxlintBinResolves(dir: string): boolean {
+  const root = findRepoRoot(dir)
+  for (let d = dir; ; d = dirname(d)) {
+    if (existsSync(resolve(d, 'node_modules/.bin/oxlint'))) return true
+    if (d === root || dirname(d) === d) return false
   }
 }
 
@@ -1228,24 +1238,16 @@ export function writeUnit(file: ManagedFile, cwd: string, desired: string): stri
  * Classify a managed file against the manifest for a sync run.
  * - missing  : the managed unit is absent on disk → recreate.
  * - current  : on disk == desired → nothing to do.
- * - unchanged: on disk matches a KNOWN-SHIPPED rendering of this template, checked three ways (any
- *              one is sufficient) — but != desired as-is → safe overwrite:
- *              1. `sha256(current) === manifestHash` — legacy raw-hash path. An existing consumer
- *                 manifest (written before this fix, or by a still-running older CLI) holds the RAW
- *                 hash of what was written, not the normalized one; keep matching it directly so an
- *                 upgrade never mass-classifies a pristine tree as drifted.
- *                 (A pre-1.0.2 raw entry whose block was ALSO reformatted across a template change
- *                 needs one `--force`; bounded, and deliberately not solved with a version ledger.)
- *              2. `sha256(normalizeForLedger(current)) === manifestHash` — the ledger proper.
- *                 `manifestHash` normally holds `sha256(normalizeForLedger(<bytes written at the
- *                 last sync>))` (see `writeUnit`); normalizing `current` the same way and comparing
- *                 survives a downstream formatter reformatting the file AND a version bump that
- *                 changed the template's own words between the sync that wrote this manifest entry
- *                 and the version being synced now — the argo cross-version false positive.
+ * - unchanged: on disk matches a KNOWN-SHIPPED rendering of this template (any one is sufficient) —
+ *              but != desired as-is → safe overwrite:
+ *              1. `sha256(current) === manifestHash` — legacy raw-hash path (manifests written before
+ *                 the ledger normalized hold the RAW hash; keep matching so an upgrade never
+ *                 mass-classifies a pristine tree as drifted).
+ *              2. `sha256(normalizeForLedger(current)) === manifestHash` — the ledger proper (see
+ *                 `writeUnit`): survives a downstream formatter AND a version bump that changed the
+ *                 template's own words since the manifest entry was written (the argo false positive).
  *              3. `normalizeForLedger(current) === normalizeForLedger(desired)` — same-version
- *                 fallback for when there is no manifest entry to compare against at all (e.g. it
- *                 was dropped), but the on-disk bytes still match today's rendering modulo
- *                 formatting noise.
+ *                 fallback when no manifest entry exists at all.
  * - drifted  : on disk matches NONE of the above (a real, word-level local edit) → skip unless
  *              --force.
  */

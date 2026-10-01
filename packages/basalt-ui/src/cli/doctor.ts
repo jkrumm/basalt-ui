@@ -17,6 +17,8 @@ import {
   findRepoRoot,
   inspectLefthookGate,
   OXLINT_FILES,
+  OXLINT_NO_BIN,
+  oxlintBinResolves,
   parseJsonc,
   readBasaltConfig,
   readIfExists,
@@ -115,20 +117,15 @@ function resolveAiMajorSkewReason(cfg: BasaltConfig): {
  *      version agrees with the manifest's `basaltVersion`.
  *   3. `guard-scan`: `check-theme` would scan more than zero files, sharing `scannableFiles` so the
  *      two cannot disagree. Both RESTORED in 1.30.0 after four minors gone with no MIGRATING row —
- *      README § `doctor` carries what their absence cost (a no-op CI gate, a green guard scanning
- *      nothing, and two basalt-WRITTEN docs describing output the CLI no longer produced).
+ *      README § `doctor` carries what their absence cost.
  *   4. `oxlint-preset` ("rules in sync"): the consumer's `.oxlintrc.json` extends the shipped
- *      preset AND that path resolves. `init` keeps an existing config, so the framework's whole
+ *      preset AND that path resolves (warns when no `oxlint` bin does). `init` keeps an existing config, so the framework's whole
  *      lint half can be silently off — one repo carried six real violations invisibly across five
  *      minors this way.
  *   6. `ai-major-parity`: within THIS package.json, `dependencies`/`devDependencies`/
- *      `peerDependencies` agree on the `ai` package's major. `basalt/ai-sdk-major` (the oxlint
- *      plugin rule) already catches this per linted FILE against its nearest package.json; this
- *      check exists for the shape a lint run cannot see — a package whose own manifest asks its
- *      dependents for one major while it itself runs another. A detected skew is exempt-able via
- *      `basalt.aiMajorSkewReason` (a non-empty reason string, not a bare `true`); missing or
- *      invalid still hard-fails as if the key were absent. A declared reason when the majors
- *      already agree warns that the exemption is stale.
+ *      `peerDependencies` agree on the `ai` package's major — the shape `basalt/ai-sdk-major` (per
+ *      linted FILE) cannot see. A skew is exempt-able via `basalt.aiMajorSkewReason` (a non-empty
+ *      reason, not a bare `true`); a declared reason when the majors agree warns it is stale.
  *
  * Warning (non-fatal):
  *   5. `lefthook-preset` ("lefthook wired"): a pre-commit command runs `check-theme`, read from
@@ -267,6 +264,8 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
               'oxlint refuses to start on a missing extends target (`NotFound`), so nothing is ' +
               `linted at all. Repoint it at "${correct}", where basalt-ui actually resolves.`,
           )
+        } else if (!oxlintBinResolves(cwd)) {
+          warn(`.oxlintrc.json extends the shipped preset (${entry}), but ${OXLINT_NO_BIN}`)
         } else {
           pass(`.oxlintrc.json extends the shipped basalt-ui oxlint preset (${entry})`)
         }

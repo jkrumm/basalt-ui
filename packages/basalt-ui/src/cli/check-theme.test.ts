@@ -788,8 +788,12 @@ describe('check-theme — the manifest waiver hint follows the profile', () => {
 })
 
 // emailgw r4: a check-theme-only CI held none of the oxlint-lane promotions and said nothing.
-function wireOxlint(at: string, entry: string): void {
+function wireOxlint(at: string, entry: string, withBin = true): void {
   mkdirSync(resolve(at, 'node_modules/basalt-ui/configs'), { recursive: true })
+  if (withBin) {
+    mkdirSync(resolve(at, 'node_modules/.bin'), { recursive: true })
+    writeFileSync(resolve(at, 'node_modules/.bin/oxlint'), '')
+  }
   writeFileSync(resolve(at, entry), '{}')
   writeFileSync(resolve(at, '.oxlintrc.json'), JSON.stringify({ extends: [entry] }))
 }
@@ -822,6 +826,8 @@ describe('check-theme AST-lane notice', () => {
     fixture(CLEAN)
     mkdirSync(resolve(dir, 'basalt-ui/configs'), { recursive: true })
     writeFileSync(resolve(dir, 'basalt-ui/configs/oxlint-plugin.js'), '')
+    mkdirSync(resolve(dir, 'node_modules/.bin'), { recursive: true })
+    writeFileSync(resolve(dir, 'node_modules/.bin/oxlint'), '')
     writeFileSync(
       resolve(dir, '.oxlintrc.json'),
       JSON.stringify({ jsPlugins: ['./basalt-ui/configs/oxlint-plugin.js'] }),
@@ -841,6 +847,32 @@ describe('check-theme AST-lane notice', () => {
     fixture(CLEAN)
     wireOxlint(dir, './node_modules/basalt-ui/configs/oxlint-basalt.json')
     expect(run().err).not.toContain('AST lane')
+  })
+
+  it('names the missing binary when the config wires the lane but no oxlint bin resolves', () => {
+    fixture(CLEAN)
+    wireOxlint(dir, './node_modules/basalt-ui/configs/oxlint.json', false)
+    const { code, err } = run()
+    expect(code).toBe(0)
+    expect(err).toContain('oxlint config found but no oxlint binary — the AST lane never runs')
+    expect(err).not.toContain('rule ids unguarded')
+  })
+
+  it('counts a bin hoisted to the repo root for a nested package', () => {
+    fixture(CLEAN)
+    mkdirSync(resolve(dir, '.git'))
+    wireOxlint(dir, './node_modules/basalt-ui/configs/oxlint.json', false)
+    const pkg = resolve(dir, 'apps/web')
+    mkdirSync(resolve(pkg, 'src'), { recursive: true })
+    writeFileSync(resolve(pkg, 'package.json'), JSON.stringify({ basalt: { roots: ['src'] } }))
+    writeFileSync(resolve(pkg, 'src/C.tsx'), CLEAN)
+    const root = dir
+    dir = pkg
+    expect(run().err).toContain('no oxlint binary')
+    mkdirSync(resolve(root, 'node_modules/.bin'), { recursive: true })
+    writeFileSync(resolve(root, 'node_modules/.bin/oxlint'), '')
+    expect(run().err).not.toContain('AST lane')
+    dir = root
   })
 
   // A worktree's `.git` is a FILE; the ascent stops there, so a wired config ABOVE the repo root

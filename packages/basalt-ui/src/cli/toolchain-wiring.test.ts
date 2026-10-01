@@ -100,6 +100,7 @@ function healthyFixture(): void {
   write('.oxlintrc.json', '{ "extends": ["./node_modules/basalt-ui/configs/oxlint.json"] }')
   write(MANIFEST_PATH, JSON.stringify({ version: 1, files: {}, basaltVersion: CLI_VERSION }))
   installBasalt()
+  write('node_modules/.bin/oxlint', '')
 }
 
 /**

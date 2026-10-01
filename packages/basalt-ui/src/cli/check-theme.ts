@@ -24,6 +24,8 @@ import {
   namesShipped,
   noteRelocation,
   OXLINT_FILES,
+  OXLINT_NO_BIN,
+  oxlintBinResolves,
   packageRoot,
   parseJsonc,
   readBasaltConfig,
@@ -61,7 +63,8 @@ function astLaneNotice(cwd: string): string | null {
   const root = findRepoRoot(cwd)
   for (let dir = cwd; ; dir = dirname(dir)) {
     const lane = oxlintLaneAt(dir)
-    if (lane === 'wired') return null
+    if (lane === 'wired')
+      return oxlintBinResolves(cwd) ? null : `ℹ basalt-ui check-theme: ${OXLINT_NO_BIN}.`
     if (lane === 'unwired' || dir === root || dirname(dir) === dir) break
   }
   const preset = readSource(packageRoot(), OXLINT_FILES.guards)
