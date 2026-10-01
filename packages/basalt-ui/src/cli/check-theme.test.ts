@@ -842,6 +842,23 @@ describe('check-theme AST-lane notice', () => {
     expect(run().err).not.toContain('AST lane')
   })
 
+  // A worktree's `.git` is a FILE; the ascent stops there, so a wired config ABOVE the repo root
+  // (a parent checkout) never vouches for this one.
+  it('stops at the repo root, worktree .git file included', () => {
+    wireOxlint(dir, './node_modules/basalt-ui/configs/oxlint.json')
+    const repo = resolve(dir, 'wt')
+    mkdirSync(resolve(repo, 'src'), { recursive: true })
+    writeFileSync(resolve(repo, '.git'), 'gitdir: ../.git/worktrees/wt\n')
+    writeFileSync(resolve(repo, 'package.json'), JSON.stringify({ basalt: { roots: ['src'] } }))
+    writeFileSync(resolve(repo, 'src/C.tsx'), CLEAN)
+    const outer = dir
+    dir = repo
+    expect(run().err).toContain('AST lane not enforced')
+    wireOxlint(repo, './node_modules/basalt-ui/configs/oxlint-basalt.json')
+    expect(run().err).not.toContain('AST lane')
+    dir = outer
+  })
+
   it('still prints when the extends entry resolves to nothing', () => {
     fixture(CLEAN)
     writeFileSync(
