@@ -115,6 +115,32 @@ describe('check-theme --audit-allows — theme-allow annotations', () => {
     expect(code).toBe(0)
   })
 
+  // A bare annotation names no rule, so the verdict must not read as if it were scoped to one.
+  it.each([
+    [
+      'a bare line-scope waiver',
+      '// theme-allow\nexport const c = 1\n',
+      'a bare annotation, waiving every oxlint plugin rule on its line',
+    ],
+    [
+      'an id-scoped waiver',
+      '// theme-allow hand-rolled-plot — not a plot\nexport const c = 1\n',
+      'scoped to hand-rolled-plot, which oxlint judges',
+    ],
+  ])('words the cannot-judge verdict for %s by what it waives', (_, source, reach) => {
+    fixture(source)
+    const originalPath = process.env['PATH']
+    process.env['PATH'] = ''
+    let log: string
+    try {
+      log = audit().log
+    } finally {
+      process.env['PATH'] = originalPath
+    }
+    expect(log).toContain(`${reach} — and oxlint could not be run here`)
+    expect(log).not.toContain('scoped to every')
+  })
+
   it('names the scope it audited, so "0 dead" is never read as "0 dead anywhere"', () => {
     // The audit reads exactly what check-theme reads, and that is WIDER than `basalt.roots` — two
     // consumers reported a live `public/site.webmanifest` waiver under a scope line claiming
