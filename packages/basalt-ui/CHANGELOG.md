@@ -1,3 +1,12 @@
+# [1.36.0](https://github.com/jkrumm/basalt-ui/compare/v1.35.0...v1.36.0) (2026-10-01)
+
+
+### Features
+
+* export useCoarsePointer from the root barrel ([060764f](https://github.com/jkrumm/basalt-ui/commit/060764fb75169148a0beb3913d2f6d457d2c3cf0))
+* move the form layout to basalt-ui/controls ([18f9eec](https://github.com/jkrumm/basalt-ui/commit/18f9eecfbac4e27c13ace023257f61ce27ab656e))
+* promote unknown-vx-token to error ([0ac5008](https://github.com/jkrumm/basalt-ui/commit/0ac5008d86b1b1f5a4a9dbec82335452837c3d1c))
+
 # [1.35.0](https://github.com/jkrumm/basalt-ui/compare/v1.34.1...v1.35.0) (2026-10-01)
 
 
