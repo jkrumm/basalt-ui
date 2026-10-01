@@ -47,6 +47,12 @@
   margin-inline-end: var(--vx-space-nav-icon-gap);
 }
 
+/* The first-letter fallback for an icon-less row (`nav-glyph.tsx`) — a glyph, not a text run. */
+.link :global(.mantine-NavLink-section[data-position='left']) > [data-nav-glyph] {
+  line-height: 1;
+  font-weight: 600;
+}
+
 /* Inactive rows: muted text + faint icon. Active rows keep the theme's ink text (via `--nl-color`)
  * untouched — this selector only ever matches when `data-active` is absent. `aria-current` is no
  * longer part of the exclusion: `use-nav.ts` is the sole authority on active, stamping exactly one

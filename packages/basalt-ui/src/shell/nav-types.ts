@@ -31,6 +31,7 @@ export type SidebarItem = {
   short?: string
   /** Mobile placement. `true` ≡ `'tab'`, `false` ≡ `'hidden'`. @default 'more' */
   mobile?: boolean | NavMobilePlacement
+  /** The collapsed rail and landscape tab bar show the icon alone; `null` falls back to the label's first letter. */
   icon: ReactNode
   /**
    * The router seam. basalt renders every pixel of chrome (desktop row, 56px slot, 44px sheet

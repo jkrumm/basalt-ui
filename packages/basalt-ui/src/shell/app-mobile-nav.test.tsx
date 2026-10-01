@@ -120,6 +120,15 @@ describe('MobileNav', () => {
     expect(drawer()).toBeNull()
   })
 
+  test('1b. an icon-less link slot shows the label first letter, aria-hidden, and keeps its name', () => {
+    renderBar([{ label: 'Main', items: [item('home', { mobile: 'tab', short: 'start' })] }])
+
+    const tab = screen.getByLabelText('Home')
+    const glyph = tab.querySelector('span[aria-hidden]')
+    expect(glyph?.textContent).toBe('S')
+    expect(glyph?.getAttribute('aria-hidden')).toBe('true')
+  })
+
   /** §2.5 — re-tapping the slot you are already on is a scroll-to-top, not a redundant history
    *  entry. `preventDefault` is what suppresses the router's own click handler — and it is now
    *  conditional on the scroll having somewhere to go (test 16), so the target is scrolled down

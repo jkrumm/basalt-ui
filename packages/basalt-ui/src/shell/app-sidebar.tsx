@@ -39,6 +39,7 @@ import { assertRequiredProps } from '../common/validate'
 import type { BrandConfig, SettingsMenuItem } from './index'
 import type { SidebarBlock, SidebarItem, SidebarSection } from './nav-types'
 import { NavCountBadge } from './nav-count-badge'
+import { iconOrInitial } from './nav-glyph'
 import { SidebarAccount } from './app-sidebar-account'
 import type { AccountMenuItem, BasaltAccountProps } from './account-types'
 import { SidebarSearch } from './sidebar-search'
@@ -195,7 +196,9 @@ function NavLinkBody({ item, active }: { item: SidebarItem; active: boolean }) {
   const shared = {
     classNames: { root: classes.link },
     label: item.label,
-    leftSection: item.icon,
+    leftSection: iconOrInitial(item.icon, item.label),
+    // The collapsed rail hides the label (CSS), leaving the icon alone — name the link regardless.
+    'aria-label': item.label,
     rightSection: item.badge ?? (item.count ? <NavCountBadge count={item.count} /> : undefined),
     active,
     // Basalt is the one that stamps `aria-current`, not the theme and not a router `<Link>`'s own
@@ -304,7 +307,8 @@ function NavItemRow({ item, collapsed }: { item: SidebarItem; collapsed: boolean
             <NavLink
               classNames={{ root: classes.link }}
               label={item.label}
-              leftSection={item.icon}
+              leftSection={iconOrInitial(item.icon, item.label)}
+              aria-label={item.label}
               data-disabled
             />
           </Box>
@@ -343,7 +347,8 @@ function NavItemRow({ item, collapsed }: { item: SidebarItem; collapsed: boolean
                     <NavLink
                       classNames={{ root: classes.link }}
                       label={child.label}
-                      leftSection={child.icon}
+                      leftSection={iconOrInitial(child.icon, child.label)}
+                      aria-label={child.label}
                       data-disabled
                     />
                   </Box>
@@ -405,7 +410,8 @@ function NavItemRow({ item, collapsed }: { item: SidebarItem; collapsed: boolean
                     <NavLink
                       classNames={{ root: classes.link }}
                       label={child.label}
-                      leftSection={child.icon}
+                      leftSection={iconOrInitial(child.icon, child.label)}
+                      aria-label={child.label}
                       data-disabled
                     />
                   </Box>
