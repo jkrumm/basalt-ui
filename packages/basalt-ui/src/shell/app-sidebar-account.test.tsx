@@ -59,3 +59,12 @@ describe('a missing `state` throws a named message', () => {
     )
   })
 })
+
+describe('unauthenticated row', () => {
+  test('is named "Sign in" independent of its text (the collapsed rail hides the text)', () => {
+    mount(<SidebarAccount state={{ status: 'unauthenticated' }} />)
+    expect(screen.getByRole('button', { name: 'Sign in' }).getAttribute('aria-label')).toBe(
+      'Sign in',
+    )
+  })
+})
