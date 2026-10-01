@@ -562,6 +562,41 @@ describe('an icon-less nav item survives the collapsed rail', () => {
   })
 })
 
+/**
+ * Child rows carry no `aria-label` (they are never in the rail — the inline list is hidden there
+ * and the popover shows labels), so their name must come from the visible text, glyph excluded.
+ * A disabled row has no `href`, hence no `link` role: its name is asserted from the same source —
+ * no override, and the `aria-hidden` glyph contributes nothing.
+ */
+describe('child rows are named by their visible label', () => {
+  const kids = [
+    { key: 'on', label: 'enabled kid', icon: null, href: '/on' },
+    { key: 'off', label: 'disabled kid', icon: null, disabled: true },
+  ]
+
+  test.each([
+    ['inline list', true],
+    ['hover popover', false],
+  ])('%s', (_branch, active) => {
+    renderSidebar({
+      sections: [
+        {
+          label: 'Main',
+          items: [{ key: 'parent', label: 'Parent', icon: null, active, children: kids }],
+        },
+      ],
+    })
+
+    const enabled = screen.getByRole('link', { name: 'enabled kid', hidden: true })
+    expect(enabled.getAttribute('aria-label')).toBeNull()
+    expect(enabled.querySelector('[data-nav-glyph]')?.textContent).toBe('E')
+
+    const disabled = screen.getByText('disabled kid').closest('[data-disabled]')
+    expect(disabled?.getAttribute('aria-label')).toBeNull()
+    expect(disabled?.querySelector('[data-nav-glyph]')?.getAttribute('aria-hidden')).toBe('true')
+  })
+})
+
 describe('nav item active/ancestor state (useNav exclusivity — router-tanstack/use-nav.test.tsx)', () => {
   test('only the active row carries aria-current="page"', () => {
     renderSidebar({
