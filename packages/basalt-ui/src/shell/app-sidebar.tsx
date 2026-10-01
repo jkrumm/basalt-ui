@@ -229,6 +229,32 @@ function NavLinkBody({
 }
 
 /**
+ * One child row, shared by the inline child list and the hover popover. Never in the rail (the
+ * inline list is hidden there and the popover shows labels), so it carries no `aria-label`.
+ */
+function ChildRow({ child }: { child: SidebarItem }) {
+  if (!child.disabled) {
+    return (
+      <Box>
+        <NavLinkBody item={child} active={Boolean(child.active)} />
+      </Box>
+    )
+  }
+  return (
+    <Tooltip label="Coming soon" position="right" withArrow>
+      <Box>
+        <NavLink
+          classNames={{ root: classes.link }}
+          label={child.label}
+          leftSection={iconOrInitial(child.icon, child.label)}
+          data-disabled
+        />
+      </Box>
+    </Tooltip>
+  )
+}
+
+/**
  * Group label — a micro-label (docs/DESIGN-SPEC.md §3: mono, uppercase, tracked, faint). Typography
  * lives entirely in `.sectionLabel` (app-sidebar.module.css), not Mantine `Text` props, since the
  * treatment is a shell-specific micro-label rather than a themed primitive. Flush (no intrinsic
@@ -349,28 +375,9 @@ function NavItemRow({ item, collapsed }: { item: SidebarItem; collapsed: boolean
           </Box>
         </Tooltip>
         <Stack gap={0} className={classes.childList}>
-          {item.children!.map((child) => {
-            if (child.disabled) {
-              return (
-                <Tooltip key={child.key} label="Coming soon" position="right" withArrow>
-                  <Box>
-                    <NavLink
-                      classNames={{ root: classes.link }}
-                      label={child.label}
-                      leftSection={iconOrInitial(child.icon, child.label)}
-                      data-disabled
-                    />
-                  </Box>
-                </Tooltip>
-              )
-            }
-            const childActive = Boolean(child.active)
-            return (
-              <Box key={child.key}>
-                <NavLinkBody item={child} active={childActive} />
-              </Box>
-            )
-          })}
+          {item.children!.map((child) => (
+            <ChildRow key={child.key} child={child} />
+          ))}
         </Stack>
       </Box>
     )
@@ -411,28 +418,9 @@ function NavItemRow({ item, collapsed }: { item: SidebarItem; collapsed: boolean
         onBlur={scheduleClose}
       >
         <Stack gap={0}>
-          {item.children!.map((child) => {
-            if (child.disabled) {
-              return (
-                <Tooltip key={child.key} label="Coming soon" position="right" withArrow>
-                  <Box>
-                    <NavLink
-                      classNames={{ root: classes.link }}
-                      label={child.label}
-                      leftSection={iconOrInitial(child.icon, child.label)}
-                      data-disabled
-                    />
-                  </Box>
-                </Tooltip>
-              )
-            }
-            const childActive = Boolean(child.active)
-            return (
-              <Box key={child.key}>
-                <NavLinkBody item={child} active={childActive} />
-              </Box>
-            )
-          })}
+          {item.children!.map((child) => (
+            <ChildRow key={child.key} child={child} />
+          ))}
         </Stack>
       </Popover.Dropdown>
 
