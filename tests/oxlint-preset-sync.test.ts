@@ -7,6 +7,7 @@ import { hasTokenLayerBoundaryRegistered } from '../packages/basalt-ui/src/surfa
 const root = join(import.meta.dir, '..')
 const OXLINT_BIN = join(root, 'node_modules', '.bin', 'oxlint')
 const SHIPPED_CONFIG_PATH = join(root, 'packages/basalt-ui/configs/oxlint.json')
+const GUARDS_CONFIG_PATH = join(root, 'packages/basalt-ui/configs/oxlint-basalt.json')
 const FIXTURE_PATH = join(root, 'tests/fixtures/oxlint-parse-fixture.ts')
 const EQEQEQ_FIXTURE_PATH = join(root, 'tests/fixtures/eqeqeq-smart-fixture.ts')
 
@@ -150,9 +151,12 @@ describe('oxlint preset sync contract', () => {
     expect(parsed.extends).toEqual(['./node_modules/basalt-ui/configs/oxlint.json'])
   })
 
+  // The basalt/* levels live in the guards-only preset, which the full one extends.
   it('the preset the playground extends carries the visx boundaries but NOT token-layer-boundary', () => {
+    const shipped = JSON.parse(readFileSync(SHIPPED_CONFIG_PATH, 'utf8')) as { extends?: string[] }
+    expect(shipped.extends).toEqual(['./oxlint-basalt.json'])
     const rules = (
-      JSON.parse(readFileSync(SHIPPED_CONFIG_PATH, 'utf8')) as {
+      JSON.parse(readFileSync(GUARDS_CONFIG_PATH, 'utf8')) as {
         rules?: Record<string, unknown>
       }
     ).rules
@@ -163,8 +167,8 @@ describe('oxlint preset sync contract', () => {
     expect(hasTokenLayerBoundaryRegistered(rules)).toBe(false)
   })
 
-  it('shipped configs/oxlint.json actually parses in oxlint (not just JSON.parse)', () => {
-    const result = Bun.spawnSync([OXLINT_BIN, '--config', SHIPPED_CONFIG_PATH, FIXTURE_PATH])
+  it.each([SHIPPED_CONFIG_PATH, GUARDS_CONFIG_PATH])('%s actually parses in oxlint', (config) => {
+    const result = Bun.spawnSync([OXLINT_BIN, '--config', config, FIXTURE_PATH])
     const output = `${result.stdout}${result.stderr}`
     expect(output).not.toContain('Failed to parse')
     expect(output).not.toContain('unknown field')
