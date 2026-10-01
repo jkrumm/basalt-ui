@@ -814,7 +814,8 @@ const warnedVxNames = new Set<string>()
  * Warn, once per name, on a consumer series/group name inside a basalt-owned `--vx-*` family
  * (`surface`, `space`, `ink`, …): `check-theme`'s `unknown-vx-token` judges every name there against
  * what basalt emits, which is sound only while no consumer REF points there. A WARNING for the
- * minor that kind is graced in (1.34.x); `grace.test.ts` requires this to throw once it promotes.
+ * minor that kind is graced in (1.34.x), dev builds only; `grace.test.ts` pins the message's
+ * version to the ledger's `promote` and requires a throw once the kind promotes.
  * The families are the guard's own generated `BASALT_VX_FAMILIES`. Checked on the refs, not in
  * `buildPaletteCss`, which runs on every first paint.
  */
@@ -840,7 +841,8 @@ export function seriesTokens<const T extends SeriesMap>(
 ): { [K in keyof T]: string } {
   const out = {} as { [K in keyof T]: string }
   for (const key of Object.keys(map) as (keyof T)[]) {
-    warnConsumerVxName(`--vx-${prefix}${String(key)}`)
+    // Literal read at the branch, so a production bundle drops the check (common/dev-gate.test.ts).
+    if (process.env.NODE_ENV !== 'production') warnConsumerVxName(`--vx-${prefix}${String(key)}`)
     out[key] = `var(--vx-${prefix}${String(key)})`
   }
   return out
