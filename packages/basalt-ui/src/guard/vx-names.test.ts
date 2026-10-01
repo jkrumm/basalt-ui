@@ -4,10 +4,17 @@
  */
 import { describe, expect, it, spyOn } from 'bun:test'
 import { readFileSync } from 'node:fs'
-import { collectVxNames, renderVxNames, VX_NAMES_PATH } from '../../scripts/gen-vx-names'
+import {
+  collectVxNames,
+  renderVxFamilies,
+  renderVxNames,
+  VX_FAMILIES_PATH,
+  VX_NAMES_PATH,
+} from '../../scripts/gen-vx-names'
 import { BP, groupTokens, p, seriesTokens } from '../tokens/index'
 import { checkSource, DEFAULT_GUARD_CONFIG, guardKindRemedy } from './index'
-import { BASALT_VX_FAMILIES, BASALT_VX_NAMES } from './vx-names'
+import { BASALT_VX_FAMILIES } from '../common/vx-families'
+import { BASALT_VX_NAMES } from './vx-names'
 
 describe('BASALT_VX_NAMES', () => {
   it('matches the names basalt emits — regenerate with `bun scripts/gen-vx-names.ts`', () => {
@@ -16,6 +23,7 @@ describe('BASALT_VX_NAMES', () => {
 
   it('is the generator output byte for byte (no hand edits)', () => {
     expect(readFileSync(VX_NAMES_PATH, 'utf8')).toBe(renderVxNames(collectVxNames()))
+    expect(readFileSync(VX_FAMILIES_PATH, 'utf8')).toBe(renderVxFamilies(collectVxNames()))
   })
 
   it('carries --vx-hit and the component-scoped names', () => {
@@ -59,6 +67,15 @@ describe('basalt-owned families', () => {
     } finally {
       warn.mockRestore()
     }
+  })
+
+  // basalt-lead pre-release: deriving the families from buildPaletteCss() alone missed every
+  // component-scoped one, so `var(--vx-keyboard)` passed silently.
+  it('covers the component-scoped families, not just the stylesheet', () => {
+    expect(BASALT_VX_FAMILIES).toContain('keyboard')
+    expect(kinds('--vx-keyboard')).toEqual(['unknown-vx-token'])
+    expect(kinds('--vx-keyboard-x')).toEqual(['unknown-vx-token'])
+    expect(kinds('--vx-keyboard-inset')).toEqual([])
   })
 
   it('leaves `on` to the consumer — the theme emits --vx-on-<color> for every color', () => {
