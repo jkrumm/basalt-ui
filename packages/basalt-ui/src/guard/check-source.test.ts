@@ -3799,6 +3799,21 @@ describe('unknown-vx-token', () => {
     expect(vx(`${declaring}\nconst s = 'var(--vx-surface)'`, PATH)).toEqual([])
   })
 
+  it('sees a var() a formatter wrapped across lines, reporting the line the name is on', () => {
+    const f = vx('.a {\n  min-height: var(\n    --vx-space-touch-target,\n    44px\n  );\n}')
+    expect(f.map((x) => [x.token, x.line])).toEqual([['--vx-space-touch-target', 3]])
+  })
+
+  it('ignores a name inside a block comment that spans lines', () => {
+    expect(vx('/*\n  was: var(--vx-space-touch-target)\n*/\n.a { color: red; }')).toEqual([])
+  })
+
+  it('a waiver above a wrapped var() covers the name line it reports on', () => {
+    const src =
+      '.a {\n  min-height: var(\n    /* theme-allow unknown-vx-token — legacy shim */\n    --vx-space-touch-target\n  );\n}'
+    expect(vx(src)).toEqual([])
+  })
+
   it('is waivable by id', () => {
     expect(
       vx(
