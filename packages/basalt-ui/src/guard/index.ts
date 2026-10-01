@@ -294,8 +294,22 @@ const WITH_BORDER_PROP = /\bwithBorder\b(?!\s*=\s*\{\s*false\s*\})/
  */
 const VX_VAR_REF = /var\(\s*(--vx-[A-Za-z0-9-]*[A-Za-z0-9])(?![A-Za-z0-9-]|\$\{)/g
 
-/** A `--vx-*` name the file declares itself — a consumer's own custom property, never unknown. */
-const VX_LOCAL_DECLARATION = /(--vx-[A-Za-z0-9-]*[A-Za-z0-9])['"]?\s*:/g
+/**
+ * A `--vx-*` name the file DECLARES — a consumer's own custom property, never unknown. Only a real
+ * declaration position counts, because the set is file-wide and one false hit silences every
+ * finding for that name in the file:
+ *
+ * - a CSS declaration (`--vx-x: …`, in a stylesheet or in CSS text inside a template literal),
+ *   directly after a line start, `{` or `;`;
+ * - a quoted style-object key (`{ '--vx-x': … }`), directly after `{` or `,` — but not a TS
+ *   member key (`'--vx-x'?: …`, or one typed `string`/`number`);
+ * - `setProperty('--vx-x', …)`.
+ *
+ * A quoted name used as an EXPRESSION — a ternary arm, a `case` label, an argument — is a reference,
+ * not a declaration, and never matches.
+ */
+const VX_LOCAL_DECLARATION =
+  /(?:^|[{;])\s*(--vx-[A-Za-z0-9-]*[A-Za-z0-9])\s*:|[{,]\s*(['"])(--vx-[A-Za-z0-9-]*[A-Za-z0-9])\2\s*:(?!\s*(?:string|number)\b)|\bsetProperty\(\s*['"](--vx-[A-Za-z0-9-]*[A-Za-z0-9])['"]/gm
 
 /**
  * `--vx-*` names basalt once emitted and no longer does, with the replacement MIGRATING names
@@ -2428,7 +2442,7 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
 
   /** `--vx-*` names this file declares — its own custom properties, which `unknown-vx-token` skips. */
   const locallyDeclaredVx = new Set(
-    [...codeText.matchAll(VX_LOCAL_DECLARATION)].map((m) => m[1] ?? ''),
+    [...codeText.matchAll(VX_LOCAL_DECLARATION)].map((m) => m[1] ?? m[3] ?? m[4] ?? ''),
   )
 
   for (let i = 0; i < lines.length; i++) {

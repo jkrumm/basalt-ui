@@ -3779,6 +3779,26 @@ describe('unknown-vx-token', () => {
     expect(vx(':root { --vx-space: 12px; }\n.a { width: var(--vx-space); }')).toEqual([])
   })
 
+  // The local-declaration set is file-wide, so a quoted name used as an EXPRESSION must not count
+  // as a declaration — it would silence every real finding for that name in the file.
+  it.each([
+    ['a ternary arm', "const v = wide ? '--vx-space-touch-target' : '--vx-hit'"],
+    ['a case label', "switch (k) {\n  case '--vx-space-touch-target':\n    break\n}"],
+    ['a TS member key', "type Vars = { '--vx-space-touch-target': string }"],
+    ['an optional TS member key', "type Vars = { '--vx-space-touch-target'?: string }"],
+  ])('does not treat %s as a declaration', (_, decoy) => {
+    const f = vx(`${decoy}\nconst s = 'var(--vx-space-touch-target)'`, PATH)
+    expect(f.map((x) => x.token)).toEqual(['--vx-space-touch-target'])
+  })
+
+  it.each([
+    ['a style-object key', "const s = { color: 'red', '--vx-surface': '#000' }"],
+    ['setProperty', "el.style.setProperty('--vx-surface', v)"],
+    ['CSS text in a template literal', 'const css = `:root {\n  --vx-surface: 0;\n}`'],
+  ])('does treat %s as a declaration', (_, declaring) => {
+    expect(vx(`${declaring}\nconst s = 'var(--vx-surface)'`, PATH)).toEqual([])
+  })
+
   it('is waivable by id', () => {
     expect(
       vx(
