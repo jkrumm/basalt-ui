@@ -1,3 +1,42 @@
+# [1.33.0](https://github.com/jkrumm/basalt-ui/compare/v1.32.1...v1.33.0) (2026-10-01)
+
+
+### Bug Fixes
+
+* audit-allows asks oxlint about dual-lane and mixed waivers ([9e0a3d5](https://github.com/jkrumm/basalt-ui/commit/9e0a3d5a43cd9e27625801dd28c3360975f155ed))
+* audit-allows probes bare line-scope waivers through oxlint ([b5d53f9](https://github.com/jkrumm/basalt-ui/commit/b5d53f9c8e3ac1712e455dd0fd7310d88358104f))
+* break the audit-allows → index → check-theme → audit-allows cycle ([98d746c](https://github.com/jkrumm/basalt-ui/commit/98d746cd13e36b7cbf5fa809e120c91cd9d23c53))
+* count only real declaration positions as a local --vx declaration ([4b5b723](https://github.com/jkrumm/basalt-ui/commit/4b5b723c994c6f6c2b01612f5a303649881f3cc2))
+* gate the lab store on the dotted NODE_ENV form, record the fold matrix ([7d336b5](https://github.com/jkrumm/basalt-ui/commit/7d336b5209aa7be846ba11faa935e31e5aa8f795))
+* gen-vx-names reads CSS declarations in ts/tsx and says what QUOTED admits ([238cdb9](https://github.com/jkrumm/basalt-ui/commit/238cdb9fb887b6b703e61c684d0c657d3a9a6a5c))
+* harden the provider-only budget's build, dist and externals handling ([8a20d0f](https://github.com/jkrumm/basalt-ui/commit/8a20d0f49784e496b7db9634a2ac83f97c01903d))
+* judge a resets write against the URL at navigate time, not the render ([74a6dc7](https://github.com/jkrumm/basalt-ui/commit/74a6dc762965e470525e9aabe14e9f5e0972b07b))
+* judge only the vx names basalt claims — removed names and bare roots ([bf15dab](https://github.com/jkrumm/basalt-ui/commit/bf15dab0704858022ec2c157b74e8183dda71586))
+* keep the page when clear() leaves a field where it was ([2a6b40f](https://github.com/jkrumm/basalt-ui/commit/2a6b40faebb38011b2203b10382411c97fb6d551))
+* keep the page when Reset all moves no field ([c12d01a](https://github.com/jkrumm/basalt-ui/commit/c12d01ae7fa998f569369b3fb347bc941c56cf6c))
+* print a failed provider-only build as a budget row, not a stack ([66361ef](https://github.com/jkrumm/basalt-ui/commit/66361ef1a41019b6f096e33ffc0d13d28913e639))
+* resolve the CONTAINER_GRID_BREAKPOINTS trust through the scope manager ([26f664b](https://github.com/jkrumm/basalt-ui/commit/26f664b6c5af662ce89f09ff1d839fd8fc34830e))
+* see a --vx reference a formatter wrapped across lines ([ba469b1](https://github.com/jkrumm/basalt-ui/commit/ba469b12cc7513d90fbc5171e570cfacc83312bf))
+* stop NumberFilter's Clear from committing the draft on its way ([04e3156](https://github.com/jkrumm/basalt-ui/commit/04e315682571ad9cca24cadd451accce0a312134))
+* trust CONTAINER_GRID_BREAKPOINTS read off a namespace import ([cc15f76](https://github.com/jkrumm/basalt-ui/commit/cc15f760fbcafa041404b750f1e588c712108745))
+* word the bare-waiver oxlint verdict by what it waives, not a fake id ([3b5e3b2](https://github.com/jkrumm/basalt-ui/commit/3b5e3b2757b0ff7b875dc1a337f4a8137e8c4bc3))
+
+
+### Features
+
+* add clearable to NumberFilter for parity with SelectFilter ([a46d805](https://github.com/jkrumm/basalt-ui/commit/a46d805f97c1b60b93017ade2f6edb5a293fd302))
+* add resets to createSearchStore for sibling params like page ([e809fd7](https://github.com/jkrumm/basalt-ui/commit/e809fd78e0b397f1ea52bb860b68bda5353c4943))
+* promote the C1 and breakpoint twin pairs to error ([d49a5e2](https://github.com/jkrumm/basalt-ui/commit/d49a5e22b4f678f82f2377485f15ce6bc65c1be6))
+* report removed and misspelled --vx-* names as unknown-vx-token ([6405f1a](https://github.com/jkrumm/basalt-ui/commit/6405f1af265cb7659026c1806bead121a22253f6))
+* ship CONTAINER_GRID_BREAKPOINTS and let raw-breakpoint trust it ([4e3addb](https://github.com/jkrumm/basalt-ui/commit/4e3addbf50d1d358d8037389ad679d434ba00d98))
+
+
+### Performance Improvements
+
+* budget the provider-only first paint in check-budgets ([d36bed2](https://github.com/jkrumm/basalt-ui/commit/d36bed2c9c898490fddde0de126a36541ee25860))
+* fold every dev-only gate out of production bundles ([25f94b7](https://github.com/jkrumm/basalt-ui/commit/25f94b79e81b045c05fe5eefb9479edebe195c43))
+* keep the theme lab's store out of production first paint ([4e7512b](https://github.com/jkrumm/basalt-ui/commit/4e7512b41846e54fbb3d196ec157435c03b1c582))
+
 ## [1.32.1](https://github.com/jkrumm/basalt-ui/compare/v1.32.0...v1.32.1) (2026-09-30)
 
 
