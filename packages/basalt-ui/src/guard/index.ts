@@ -334,7 +334,7 @@ const KNOWN_VX_NAMES: ReadonlySet<string> = new Set(BASALT_VX_NAMES)
  * emitted set, so `--vx-surface-2` and a bare root like `--vx-space` are both findings.
  *
  * That judgement is honest only because no consumer ref may point into these families:
- * `groupTokens`/`seriesTokens` warn on a name inside one (and throw once this kind promotes). A name in any OTHER family (argo's
+ * `groupTokens`/`seriesTokens` throw on a name inside one. A name in any OTHER family (argo's
  * `--vx-activity-*`, rb's `--vx-confidence-*`) may be a consumer group declared in a file this scan
  * cannot see, and is never judged.
  */
@@ -893,6 +893,8 @@ export type GraceEntry = { since: string; promote: string; why: string }
 
 /**
  * Kinds still inside their grace minor — reported, not fatal, until the next minor promotes them.
+ * Empty since 1.36.0: `unknown-vx-token`, the last tenant, promoted (its grace ran one minor past
+ * 1.35.0 to keep the factory throw out of the a11y release).
  * See {@link GuardSeverity} for the doctrine and why basalt-ui in particular needs it.
  *
  * Adding a kind here is part of shipping it; removing the entry IS the promotion, and belongs in
@@ -929,19 +931,7 @@ export type GraceEntry = { since: string; promote: string; why: string }
  *   'raw-font-family': { since: '1.4.0', promote: '1.5.0', why: 'introduced 1.4.0 — …' },
  * }
  */
-export const GRACE_PERIOD_KINDS: Partial<Record<GuardKind, GraceEntry>> = {
-  'unknown-vx-token': {
-    since: '1.34.0',
-    promote: '1.36.0',
-    why:
-      'New kind at 1.33.0 (consumer-loop r2 B3): obsidian lost its 44px touch floor to a removed ' +
-      '`var(--vx-space-touch-target)` that nothing reported. WIDENED at 1.34.0 (image-gen r4: ' +
-      '`var(--vx-surface-2)` rendered transparent, unreported) to every unemitted name inside a ' +
-      'basalt-owned family, so the grace restarts: warn through 1.34.x, error at 1.35.0. EXTENDED one minor at 1.35.0: that ' +
-      'minor ships the shell a11y fixes consumers are upgrading for, and the promotion also turns the ' +
-      'seriesTokens warning into a throw — not a change to bundle into that bump. Error at 1.36.0.',
-  },
-}
+export const GRACE_PERIOD_KINDS: Partial<Record<GuardKind, GraceEntry>> = {}
 
 /** A kind's effective severity: consumer override first, then the grace table, then `error`. */
 function severityOf(kind: GuardKind, cfg: GuardConfig): GuardSeverity {
@@ -2272,7 +2262,7 @@ export const GUARD_RULES = {
   'unknown-vx-token': {
     kind: 'unknown-vx-token',
     pattern: VX_VAR_REF, // handled inline (basalt-owned families); entry keeps the registry complete
-    message: `var() names a --vx-* token basalt does not emit, so it resolves to its fallback (or to nothing) with no error anywhere. Judged: every name inside a basalt-owned family (${[...BASALT_VX_FAMILY_SET].join(', ')}) — pick the token from basalt-ui/tokens.css; your own series belong in a family of their own (groupTokens warns on one inside basalt's). Removed names and their replacements: ${Object.entries(
+    message: `var() names a --vx-* token basalt does not emit, so it resolves to its fallback (or to nothing) with no error anywhere. Judged: every name inside a basalt-owned family (${[...BASALT_VX_FAMILY_SET].join(', ')}) — pick the token from basalt-ui/tokens.css; your own series belong in a family of their own (groupTokens throws on one inside basalt's, in dev builds). Removed names and their replacements: ${Object.entries(
       REMOVED_VX_NAMES,
     )
       .map(([from, to]) => `${from} → ${to ?? '(deleted, no replacement)'}`)

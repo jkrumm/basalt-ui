@@ -77,11 +77,22 @@ consumer read this index, found nothing, and diffed a KPI row that had silently 
 | **dashboard** (`.`)           | `StatCard`: `unit`, `breakdown`, delta format (§ `StatCard`) | `StatGroup`, `WidgetGrid`, query-aware `StatCard` — additive                           | —                                                                                              | **the column law keys on the CONTAINER; `cols={4}` is 2-up at `sm`** (§ Dashboard) | —                                                                     | —      | —                                                                                                     | —                                                                         | —                                                                                                               | —                                                                             | —                                  | —      | —      | —                                                                                            |
 | **toolchain** (`./configs/*`) | —                                                            | —                                                                                      | the shipped lefthook preset's `check-theme` BROKE — the CLI resolver stopped ascending (§ CLI) | the preset's default bin, and the `root:` recipe (§ Toolchain)                     | —                                                                     | —      | —                                                                                                     | —                                                                         | —                                                                                                               | —                                                                             | —                                  | —      | —      | —                                                                                            |
 | **CLI** (`basalt-ui`)         | —                                                            | —                                                                                      | **resolver stops relocating; `doctor` loses 6 of 10 checks** (§ CLI)                           | —                                                                                  | —                                                                     | —      | —                                                                                                     | —                                                                         | —                                                                                                               | —                                                                             | —                                  | —      | —      | —                                                                                            |
-| **guards**                    | five rules → `error` (§ Guards)                              | six new ids at `warn` (§ preamble)                                                     | `query-dual-import` retired in 1.29.1 (§ Guards)                                               | four rules → `error` (§ Guards)                                                    | —                                                                     | —      | —                                                                                                     | `raw-breakpoint`: the container-grid answer, `error` at 1.33.0 (§ 1.32.0) | `FormRow`/`FormGroup` homes in both lanes; `basalt-main` dropped (§ Fixes)                                      | C1 + breakpoint pairs → `error`; `unknown-vx-token` `warn` (§ Guards)         | —                                  | —      | —      | —                                                                                            |
+| **guards**                    | five rules → `error` (§ Guards)                              | six new ids at `warn` (§ preamble)                                                     | `query-dual-import` retired in 1.29.1 (§ Guards)                                               | four rules → `error` (§ Guards)                                                    | —                                                                     | —      | —                                                                                                     | `raw-breakpoint`: the container-grid answer, `error` at 1.33.0 (§ 1.32.0) | `FormRow`/`FormGroup` homes in both lanes; `basalt-main` dropped (§ Fixes)                                      | C1 + breakpoint pairs → `error`; `unknown-vx-token` `warn` (§ Guards)         | —                                  | —      | —      | `unknown-vx-token` → `error`; the token factories throw (§ Guards)                           |
 
 ---
 
 ## Unreleased — the 1.36.0 minor
+
+### Guards — `unknown-vx-token` is an `error`
+
+The last grace entry leaves the ledger, which is now empty. Its grace ran one minor past 1.35.0 so
+the factory throw below stayed out of the shell a11y release. Measured 2026-10-01 on 1.34.x: all
+nine consumers — argo, rb, image-gen, image-share, email-gateway, linewatch, obsidian, rollhook,
+weatherorb — at 0 findings, basalt's own tree and the playground at 0 too. A finding after
+upgrading is a `var(--vx-*)` written since: take the replacement from the finding's remedy (the
+removed-name table in § 1.33.0) or a name from `basalt-ui/tokens.css`, or
+`theme-allow unknown-vx-token — <reason>`. `groupTokens` / `seriesTokens` now **throw** (dev builds)
+on a ref inside a basalt family instead of warning — rename the group (`groupTokens('app', …)`).
 
 ### `useSizeClass()` does not flash in a client-rendered app
 
@@ -137,8 +148,15 @@ Each was parked in the consumer loop pending a second named consumer; measured a
 
 ## 1.35.0
 
-_Nothing yet. Author the next section under this heading as `## Unreleased — <title>`; the
-release renames it and opens a new one here._
+### Guards — `unknown-vx-token` is an `error`
+
+The last grace entry leaves the ledger, which is now empty. Measured 2026-10-01 on 1.34.x: all nine
+consumers — argo, rb, image-gen, image-share, email-gateway, linewatch, obsidian, rollhook,
+weatherorb — at 0 findings, basalt's own tree and the playground at 0 too. A finding after
+upgrading is a `var(--vx-*)` written since: take the replacement from the finding's remedy (the
+removed-name table in § 1.33.0) or a name from `basalt-ui/tokens.css`, or
+`theme-allow unknown-vx-token — <reason>`. `groupTokens` / `seriesTokens` now **throw** (dev builds)
+on a ref inside a basalt family instead of warning — rename the group (`groupTokens('app', …)`).
 
 ## 1.34.1 — the AST lane needs a binary
 

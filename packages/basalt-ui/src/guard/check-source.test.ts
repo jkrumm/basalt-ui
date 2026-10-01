@@ -3748,9 +3748,9 @@ describe('unknown-vx-token', () => {
   const vx = (text: string, relPath = 'src/a.css') =>
     find(text, relPath).filter((f) => f.kind === 'unknown-vx-token')
 
-  it('flags the removed touch floor obsidian lost silently, and ships warn', () => {
+  it('flags the removed touch floor obsidian lost silently, and ships error', () => {
     const f = vx('.hit { min-height: var(--vx-space-touch-target); }')
-    expect(f.map((x) => [x.token, x.severity])).toEqual([['--vx-space-touch-target', 'warn']])
+    expect(f.map((x) => [x.token, x.severity])).toEqual([['--vx-space-touch-target', 'error']])
     expect(guardKindRemedy('unknown-vx-token')).toContain('--vx-space-touch-target → --vx-hit')
   })
 

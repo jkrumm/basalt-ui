@@ -2,7 +2,7 @@
  * Pins `BASALT_VX_NAMES` to what basalt actually emits. The list is a checked-in literal because
  * the guard is dependency-free; this test is what stops it drifting from `dist/tokens.css`.
  */
-import { describe, expect, it, spyOn } from 'bun:test'
+import { describe, expect, it } from 'bun:test'
 import { readFileSync } from 'node:fs'
 import {
   collectVxNames,
@@ -55,18 +55,8 @@ function kinds(name: string): string[] {
 
 describe('basalt-owned families', () => {
   it.each(BASALT_VX_FAMILIES.map((f) => [f]))('the factories refuse a %s group', (family) => {
-    const warn = spyOn(console, 'warn').mockImplementation(() => {})
-    try {
-      groupTokens(family, { x: p(BP.gray) })
-      seriesTokens({ [`${family}2`]: p(BP.gray) })
-      seriesTokens({ [`${family}2`]: p(BP.gray) }) // once per name
-      expect(warn.mock.calls.map(([m]) => String(m).split(' ')[1])).toEqual([
-        `--vx-${family}-x`,
-        `--vx-${family}2`,
-      ])
-    } finally {
-      warn.mockRestore()
-    }
+    expect(() => groupTokens(family, { x: p(BP.gray) })).toThrow(`--vx-${family}-x`)
+    expect(() => seriesTokens({ [`${family}2`]: p(BP.gray) })).toThrow(`--vx-${family}2`)
   })
 
   // basalt-lead pre-release: deriving the families from buildPaletteCss() alone missed every

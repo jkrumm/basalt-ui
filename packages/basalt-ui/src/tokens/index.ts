@@ -808,23 +808,20 @@ function frameworkDerived(data: PaletteData, only: 'core' | 'all', legacyAliases
   return legacyAliases ? `${canonical}\n${frameworkDerivedAliases(data)}` : canonical
 }
 
-const warnedVxNames = new Set<string>()
-
 /**
- * Warn, once per name, on a consumer series/group name inside a basalt-owned `--vx-*` family
- * (`surface`, `space`, `ink`, …): `check-theme`'s `unknown-vx-token` judges every name there against
- * what basalt emits, which is sound only while no consumer REF points there. A WARNING for the
- * minor that kind is graced in (1.34.x), dev builds only; `grace.test.ts` pins the message's
- * version to the ledger's `promote` and requires a throw once the kind promotes.
- * The families are the guard's own generated `BASALT_VX_FAMILIES`. Checked on the refs, not in
- * `buildPaletteCss`, which runs on every first paint.
+ * Throw on a consumer series/group name inside a basalt-owned `--vx-*` family (`surface`, `space`,
+ * `ink`, …): `check-theme`'s `unknown-vx-token` judges every name there against what basalt emits,
+ * which is sound only while no consumer REF points there. Dev builds only (the call sits behind a
+ * literal NODE_ENV read); `unknown-vx-token` left the grace ledger at 1.36.0, which is when this
+ * went from a once-per-name warning to a throw. The families are the guard's own generated
+ * `BASALT_VX_FAMILIES`. Checked on the refs, not in `buildPaletteCss`, which runs on every first
+ * paint.
  */
-function warnConsumerVxName(name: string): void {
+function assertConsumerVxName(name: string): void {
   const family = vxFamilyOf(name)
-  if (!BASALT_VX_FAMILIES.includes(family) || warnedVxNames.has(name)) return
-  warnedVxNames.add(name)
-  console.warn(
-    `[basalt] ${name} is inside basalt's own --vx-${family} family — name your series group something basalt does not own (groupTokens('app', …)). Throws from 1.36.0.`,
+  if (!BASALT_VX_FAMILIES.includes(family)) return
+  throw new Error(
+    `[basalt] ${name} is inside basalt's own --vx-${family} family — name your series group something basalt does not own (groupTokens('app', …)).`,
   )
 }
 
@@ -842,7 +839,7 @@ export function seriesTokens<const T extends SeriesMap>(
   const out = {} as { [K in keyof T]: string }
   for (const key of Object.keys(map) as (keyof T)[]) {
     // Literal read at the branch, so a production bundle drops the check (common/dev-gate.test.ts).
-    if (process.env.NODE_ENV !== 'production') warnConsumerVxName(`--vx-${prefix}${String(key)}`)
+    if (process.env.NODE_ENV !== 'production') assertConsumerVxName(`--vx-${prefix}${String(key)}`)
     out[key] = `var(--vx-${prefix}${String(key)})`
   }
   return out
