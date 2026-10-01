@@ -40,6 +40,8 @@ function setupPassingLayout(): void {
   // The preset the `extends` above names has to BE there: matching the string alone passed in the
   // exact tree where oxlint died with `NotFound`.
   writeFixture('node_modules/basalt-ui/configs/oxlint.json', '{}')
+  // …and the AST lane only runs when an oxlint binary resolves.
+  writeFixture('node_modules/.bin/oxlint', '')
 
   // 1. manifest
   writeFixture(MANIFEST_PATH, JSON.stringify({ version: 1, files: {} }, null, 2))
@@ -165,29 +167,29 @@ describe('basalt doctor — ai-major-parity within one package.json', () => {
   })
 })
 
+function runDoctorIn(dir: string): { code: number; out: string } {
+  const originalLog = console.log
+  const originalError = console.error
+  let out = ''
+  const sink = (...args: unknown[]) => {
+    out += `${args.join(' ')}\n`
+  }
+  console.log = sink
+  console.error = sink
+  try {
+    return { code: doctor(dir), out }
+  } finally {
+    console.log = originalLog
+    console.error = originalError
+  }
+}
+
 /**
  * `sync` refuses in a non-install package by NAMING the parent install (1.22.0's "stop scaffolding
  * a second consumer" fix); `doctor` in the same directory kept prescribing `basalt-ui init`, so
  * following it literally performed the exact mistake that fix prevents.
  */
 describe('basalt doctor — a package under a configured repo is not an unscaffolded consumer', () => {
-  function runDoctorIn(dir: string): { code: number; out: string } {
-    const originalLog = console.log
-    const originalError = console.error
-    let out = ''
-    const sink = (...args: unknown[]) => {
-      out += `${args.join(' ')}\n`
-    }
-    console.log = sink
-    console.error = sink
-    try {
-      return { code: doctor(dir), out }
-    } finally {
-      console.log = originalLog
-      console.error = originalError
-    }
-  }
-
   it('names the parent install instead of recommending init', () => {
     setupPassingLayout()
     // A sub-package carrying its own basalt config, so resolveProjectDir stays put rather than
@@ -214,5 +216,20 @@ describe('basalt doctor — a package under a configured repo is not an unscaffo
     writeFixture('src/app.tsx', 'export const App = () => null\n')
     const { out } = runDoctorIn(tmpDir)
     expect(out).toContain('run `basalt-ui init` to scaffold the consumer repo')
+  })
+})
+
+describe('basalt doctor — the oxlint binary', () => {
+  it('passes the oxlint-preset check with a resolvable bin', () => {
+    setupPassingLayout()
+    expect(runDoctorIn(tmpDir).out).toContain('extends the shipped basalt-ui oxlint preset')
+  })
+
+  it('warns, without failing, when the preset is extended but no oxlint bin resolves', () => {
+    setupPassingLayout()
+    rmSync(join(tmpDir, 'node_modules/.bin'), { recursive: true })
+    const { code, out } = runDoctorIn(tmpDir)
+    expect(code).toBe(0)
+    expect(out).toContain('oxlint config found but no oxlint binary')
   })
 })
