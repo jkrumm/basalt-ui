@@ -12,7 +12,8 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { resolve } from 'node:path'
 
-import { checkTheme } from './index.ts'
+import type { BasaltConfig } from './config.ts'
+import { checkTheme, resolveGuardConfig } from './index.ts'
 
 let dir: string
 
@@ -871,5 +872,20 @@ describe('check-theme AST-lane notice', () => {
   it('is silent under the tokens-only profile, which has no AST lane to wire', () => {
     fixture(CLEAN, { roots: ['src'], profile: 'tokens-only' })
     expect(run().err).not.toContain('AST lane')
+  })
+})
+
+// basalt-lead pre-release: the passthrough is an explicit key list, so an untyped `null` from
+// package.json falls back to the default and a non-guard `basalt` key never reaches the guard.
+describe('resolveGuardConfig', () => {
+  it('passes set keys through, defaults a null, and ignores non-guard keys', () => {
+    const cfg = {
+      rawSurface: false,
+      cardWithBorder: null,
+      roots: ['src'],
+    } as unknown as BasaltConfig
+    const g = resolveGuardConfig(cfg, 'framework')
+    expect([g.rawSurface, g.cardWithBorder, 'roots' in g]).toEqual([false, true, false])
+    expect(resolveGuardConfig({}, 'tokens-only').profile).toBe('tokens-only')
   })
 })
