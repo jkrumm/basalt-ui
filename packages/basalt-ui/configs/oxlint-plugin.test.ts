@@ -3983,6 +3983,7 @@ describe('basalt/raw-breakpoint', () => {
         `export const useTouch = () => useMediaQuery('(hover: none)')\n`,
     )
     expect(output).toContain('@media (pointer: coarse)')
+    expect(output).toContain('useCoarsePointer() from basalt-ui')
   })
 
   // obsidian r2 #7: a test-setup polyfill lives in `tests/`, not in a `.test` file.

@@ -1,9 +1,10 @@
 import type { CSSProperties, MouseEvent, ReactNode } from 'react'
 import type { BasaltProps } from '../../common/props'
+import { useCoarsePointer } from '../../common/use-media-query'
 import { alpha, VX } from '../../tokens'
 import type { SeriesRole, LegendPlacement } from '../series'
 import { DOTS_HIT_GAP, LEGEND_DOT_SIZE, LEGEND_ROW_GAP, orderEntries } from './chart-frame-layout'
-import { useChartMetrics, useCoarsePointer } from './chart-tier'
+import { useChartMetrics } from './chart-tier'
 import { LegendDisclosure, useLegendDisclosure } from './legend-disclosure'
 
 export type LegendEntry = {

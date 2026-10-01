@@ -31,6 +31,7 @@ export {
   cx,
   scrollParentOf,
   SCROLLPORT_ATTRIBUTE,
+  useCoarsePointer,
 } from './common'
 
 export { createBasaltTheme, baseTheme, cssVariablesResolver } from './theme'

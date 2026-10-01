@@ -299,7 +299,7 @@ export const SURFACES = {
       "no second cssVariablesResolver — don't hand-build createTheme or re-add the resolver basalt already installs",
     ],
     description:
-      'BasaltProvider, createBasaltTheme, BasaltShell + sidebar/mobile-nav/breadcrumbs, PageBar, PageAside, useSizeClass, NavCountBadge, ThemeToggle, ThreadWorkspace + thread-chat components, WidgetHeader, dashboard composites (DeltaBadge, StatCard with threshold tone, EmptyState, QueryState/LoadingState/ErrorState, SettingsSection/SettingsRow/DangerZone), ConnectivityProvider/useConnectivity/ConnectivityIndicator (auto-mounted, C1: absorbed from the dropped ./connectivity), createBasaltQueryClient/unwrap/BasaltQueryDevtools (C1: absorbed from the dropped ./query), BasaltDevDock (C5: lazy Router/Query devtools + theme lab in one dock)',
+      'BasaltProvider, createBasaltTheme, BasaltShell + sidebar/mobile-nav/breadcrumbs, PageBar, PageAside, useSizeClass, useCoarsePointer, NavCountBadge, ThemeToggle, ThreadWorkspace + thread-chat components, WidgetHeader, dashboard composites (DeltaBadge, StatCard with threshold tone, EmptyState, QueryState/LoadingState/ErrorState, SettingsSection/SettingsRow/DangerZone), ConnectivityProvider/useConnectivity/ConnectivityIndicator (auto-mounted, C1: absorbed from the dropped ./connectivity), createBasaltQueryClient/unwrap/BasaltQueryDevtools (C1: absorbed from the dropped ./query), BasaltDevDock (C5: lazy Router/Query devtools + theme lab in one dock)',
     optionalPeers: [
       'react-markdown',
       'remark-gfm',
