@@ -1216,13 +1216,25 @@ describe('NumberFilter — the stepper form', () => {
     })
   })
 
-  test('no Clear without the prop, and none at the fallback', async () => {
+  test('no Clear without the prop', async () => {
     await mountPage({
       validateSearch: store.validateSearch,
       entry: '/dashboard?minDuration=90',
       Page: () => <NumberFilter field={store.field.minDuration} label="Min duration" />,
     })
     await openPill('90')
+    expect(screen.queryByRole('button', { name: 'Clear', hidden: true })).toBeNull()
+  })
+
+  test('no Clear at the fallback, even with clearable — there is nothing to clear', async () => {
+    await mountPage({
+      validateSearch: store.validateSearch,
+      entry: '/dashboard?minDuration=0',
+      Page: () => <NumberFilter field={store.field.minDuration} label="Min duration" clearable />,
+    })
+    await openPill('0')
+    // The box is mounted, so the popover is open — the absence below is the gate, not a closed body.
+    expect(screen.getByRole('textbox', { name: 'Min duration', hidden: true })).toBeDefined()
     expect(screen.queryByRole('button', { name: 'Clear', hidden: true })).toBeNull()
   })
 })
