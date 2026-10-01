@@ -16,6 +16,7 @@ import {
   findBasaltInstall,
   findRepoRoot,
   inspectLefthookGate,
+  OXLINT_FILES,
   parseJsonc,
   readBasaltConfig,
   readIfExists,
@@ -253,7 +254,7 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
         )
       } else {
         const entry = basaltPresetEntry(parsed['extends'])
-        const correct = shippedAssetPath(install, cwd, 'configs/oxlint.json')
+        const correct = shippedAssetPath(install, cwd, OXLINT_FILES.preset)
         if (entry === null) {
           fail(
             '.oxlintrc.json does NOT extend the shipped preset — every basalt/* design rule is off ' +

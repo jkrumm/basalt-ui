@@ -21,7 +21,9 @@ import {
   findRepoRoot,
   declaredProfile,
   hasBasaltKey,
+  namesShipped,
   noteRelocation,
+  OXLINT_FILES,
   packageRoot,
   parseJsonc,
   readBasaltConfig,
@@ -34,9 +36,6 @@ import {
   waiverHintFor,
 } from './index'
 
-const isBasaltPlugin = (entry: unknown): entry is string =>
-  typeof entry === 'string' && entry.endsWith('configs/oxlint-plugin.js')
-
 /**
  * What the `.oxlintrc.json` in `dir` does for the AST lane. A plugin load alone enables no rule, so
  * it counts only beside a `basalt/*` rule of its own; an extends counts when it is a shipped preset.
@@ -46,7 +45,9 @@ function oxlintLaneAt(dir: string): 'absent' | 'wired' | 'unwired' {
   if (raw === null) return 'absent'
   const rc = parseJsonc(raw)
   const ownRules = Object.keys(Object(rc?.['rules'])).some((id) => id.startsWith('basalt/'))
-  const plugin = ownRules ? [rc?.['jsPlugins']].flat().find(isBasaltPlugin) : undefined
+  const plugin = ownRules
+    ? [rc?.['jsPlugins']].flat().find((e) => namesShipped(e, OXLINT_FILES.plugin))
+    : undefined
   const entry = basaltPresetEntry(rc?.['extends']) ?? plugin
   return entry !== undefined && existsSync(resolve(dir, entry)) ? 'wired' : 'unwired'
 }
@@ -63,10 +64,10 @@ function astLaneNotice(cwd: string): string | null {
     if (lane === 'wired') return null
     if (lane === 'unwired' || dir === root || dirname(dir) === dir) break
   }
-  const preset = readSource(packageRoot(), 'configs/oxlint-basalt.json')
+  const preset = readSource(packageRoot(), OXLINT_FILES.guards)
   const count =
     preset === null
-      ? 'every (configs/oxlint-basalt.json unreadable, so uncounted)'
+      ? `every (${OXLINT_FILES.guards} unreadable, so uncounted)`
       : String(preset.match(/"basalt\/[\w-]+":/g)?.length ?? 0)
   return (
     `ℹ basalt-ui check-theme: AST lane not enforced — ${count} basalt/* rule ids unguarded ` +

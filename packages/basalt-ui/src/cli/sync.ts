@@ -21,6 +21,7 @@ import {
   managedFiles,
   normalizeForLedger,
   noteRelocation,
+  OXLINT_FILES,
   parseJsonc,
   placementNotices,
   pruneRetiredManagedFiles,
@@ -45,14 +46,8 @@ import {
 
 /** The oxlint plugins the shipped preset switches on — read from the preset, never restated. */
 export function readOxlintPresetPlugins(pkgRoot: string): string[] {
-  const raw = readSource(pkgRoot, 'configs/oxlint.json')
-  if (raw === null) return []
-  try {
-    const plugins = (JSON.parse(raw) as { plugins?: unknown }).plugins
-    return isStringArray(plugins) ? plugins : []
-  } catch {
-    return []
-  }
+  const plugins = parseJsonc(readSource(pkgRoot, OXLINT_FILES.preset) ?? 'null')?.['plugins']
+  return isStringArray(plugins) ? plugins : []
 }
 
 export type SyncOptions = {
@@ -261,7 +256,7 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
     console.error(
       `⚠ basalt-ui sync: .oxlintrc.json extends "${oxlintEntry}", which does not exist — oxlint ` +
         'refuses to start on a missing extends target (`NotFound`). Repoint it at ' +
-        `"${shippedAssetPath(install, cwd, 'configs/oxlint.json')}".`,
+        `"${shippedAssetPath(install, cwd, OXLINT_FILES.preset)}".`,
     )
   }
 
