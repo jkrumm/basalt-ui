@@ -3357,8 +3357,17 @@ describe('basalt/query-fn-unwrap', () => {
 
 // ── deprecated-export (B4) ───────────────────────────────────────────────────
 
-// deprecated-export's behaviour tests were removed with the last ledger row in 1.29.0; the
-// ledger-shape and barrel-scan assertions below keep the mechanism honest until the next row.
+describe('basalt/deprecated-export', () => {
+  it('reports a removed row as gone, never as "still resolves"', () => {
+    const { code, rules, output } = run(
+      `import { useBreakpoint } from 'basalt-ui'\nexport const x = useBreakpoint\n`,
+    )
+    expect(code).toBe(1)
+    expect(rules).toContain('deprecated-export')
+    expect(output).toContain('was removed in 1.34.0')
+    expect(output).not.toContain('still resolves')
+  })
+})
 
 // ── forms-field-key ──────────────────────────────────────────────────────────
 
@@ -4014,13 +4023,36 @@ describe('DEPRECATED_EXPORTS', () => {
     }
   ).version
 
-  it('carries a replacement and a removeIn at least one minor out on every row', () => {
-    const [major, minor] = pkgVersion.split('.').map(Number)
-    const floor = `${major}.${(minor as number) + 1}.0`
+  const [major, minor] = pkgVersion.split('.').map(Number)
+  const floor = `${major}.${(minor as number) + 1}.0`
+  const surface = JSON.parse(
+    readFileSync(resolve(import.meta.dirname, '..', 'scripts', 'export-surface.json'), 'utf8'),
+  ) as Record<string, string[]>
+  const shipped = (row: (typeof DEPRECATED_EXPORTS)[number]) =>
+    surface[row.subpath === 'basalt-ui' ? '.' : row.subpath.replace('basalt-ui', '.')]?.includes(
+      row.name,
+    ) === true
+
+  it('carries a replacement and a well-formed removeIn on every row', () => {
     for (const row of DEPRECATED_EXPORTS) {
       expect([row.name, row.replacement.length > 0]).toEqual([row.name, true])
       expect([row.name, /^\d+\.\d+\.\d+$/.test(row.removeIn)]).toEqual([row.name, true])
+    }
+  })
+
+  // A live row still ships, so its removal is still ahead: at least the next minor.
+  it('dates every live row at least one minor out', () => {
+    for (const row of DEPRECATED_EXPORTS.filter((r) => r.removed !== true)) {
       expect([row.name, compareSemver(row.removeIn, floor) >= 0]).toEqual([row.name, true])
+    }
+  })
+
+  // A removed row is kept past the removal only for its message: the export must really be gone,
+  // and the removing minor is the next one at the latest — never a date still ahead.
+  it('pins every removed row to an export that no longer ships', () => {
+    for (const row of DEPRECATED_EXPORTS.filter((r) => r.removed === true)) {
+      expect([row.name, compareSemver(row.removeIn, floor) <= 0]).toEqual([row.name, true])
+      if (row.prop === undefined) expect([row.name, shipped(row)]).toEqual([row.name, false])
     }
   })
 
