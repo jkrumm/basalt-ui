@@ -249,6 +249,21 @@
   color: var(--vx-ink);
 }
 
+/* A settings entry that IS the current page (`SettingsMenuItem.current: 'page'`) — the nav row's
+ * active treatment (theme/nav-link.module.css): accent fill, weight 600, accent icon. */
+.footerBtn[aria-current='page'],
+.settingsMenuItem[aria-current='page'] {
+  background-color: color-mix(in srgb, var(--vx-accent) 12%, transparent);
+  color: var(--vx-ink);
+  font-weight: 600;
+}
+
+.footerBtn[aria-current='page'] > svg,
+.footerBtn[aria-current='page'] .footerIconSlot > svg,
+.settingsMenuItem[aria-current='page'] [data-position='left'] {
+  color: var(--vx-accent);
+}
+
 .footerText {
   flex: 1;
   text-align: left;

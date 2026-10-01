@@ -42,5 +42,6 @@ declare const classes: {
   readonly footerLinks: string
   readonly footerIconSlot: string
   readonly footerVersion: string
+  readonly settingsMenuItem: string
 }
 export default classes

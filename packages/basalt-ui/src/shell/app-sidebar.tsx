@@ -183,6 +183,12 @@ function hasActiveDescendant(item: SidebarItem): boolean {
   return item.children?.some((c) => hasActiveDescendant(c)) ?? false
 }
 
+/** `aria-current` for a settings entry: `"page"` for a destination, `"true"` for a chosen value. */
+function settingsCurrent(entry: SettingsMenuItem): 'page' | 'true' | undefined {
+  if (!entry.active) return undefined
+  return entry.current === 'page' ? 'page' : 'true'
+}
+
 /**
  * Renders a nav link body without the Tooltip/Box wrapper.
  *
@@ -488,7 +494,7 @@ export function AppSidebar(props: AppSidebarProps) {
             className={classes.footerBtn}
             onClick={entry.onClick}
             aria-label={entry.label}
-            aria-current={entry.active ? 'true' : undefined}
+            aria-current={settingsCurrent(entry)}
           >
             {/* A FIXED slot, so rows align on one icon column whether or not each ships an icon —
                 and the gear fallback is functional, not decorative: in the collapsed rail the label
@@ -501,7 +507,7 @@ export function AppSidebar(props: AppSidebarProps) {
             </Text>
             {/* The rail ring rides the FIRST row only — one progress block is one mark. */}
             {index === 0 ? ringMark : null}
-            {entry.active ? <IconCheck /> : null}
+            {entry.active && entry.current !== 'page' ? <IconCheck /> : null}
           </UnstyledButton>
         ))}
         {versionLabel !== undefined && (
@@ -526,10 +532,11 @@ export function AppSidebar(props: AppSidebarProps) {
             {settingsItems.map((entry) => (
               <Menu.Item
                 key={entry.key}
+                className={classes.settingsMenuItem}
                 leftSection={entry.icon}
-                rightSection={entry.active ? <IconCheck /> : undefined}
+                rightSection={entry.active && entry.current !== 'page' ? <IconCheck /> : undefined}
                 onClick={entry.onClick}
-                aria-current={entry.active ? 'true' : undefined}
+                aria-current={settingsCurrent(entry)}
               >
                 {entry.label}
               </Menu.Item>
