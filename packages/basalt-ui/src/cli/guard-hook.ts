@@ -5,11 +5,11 @@
  */
 import { isAbsolute, relative, resolve } from 'node:path'
 
-import { DEFAULT_GUARD_CONFIG } from '../guard'
-import type { GuardConfig } from '../guard'
 import { evaluateGuardHook } from '../guard/guard-hook'
-import { SKIP, declaredProfile, defaultExempt, readBasaltConfig, resolveExemptRules } from './index'
+import { SKIP, declaredProfile, defaultExempt, readBasaltConfig, resolveGuardConfig } from './index'
 import { DEFAULT_ROOTS } from './config'
+
+const ALLOW = '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow"}}\n'
 
 /**
  * guard-hook — PreToolUse stdin adapter.
@@ -31,9 +31,7 @@ export async function guardHook(cwd: string = process.cwd()): Promise<number> {
     }
   } catch {
     // Unreadable stdin → allow
-    process.stdout.write(
-      '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow"}}\n',
-    )
+    process.stdout.write(ALLOW)
     return 0
   }
 
@@ -42,36 +40,13 @@ export async function guardHook(cwd: string = process.cwd()): Promise<number> {
     payload = JSON.parse(raw)
   } catch {
     // Malformed JSON → allow (never block on a bad payload)
-    process.stdout.write(
-      '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow"}}\n',
-    )
+    process.stdout.write(ALLOW)
     return 0
   }
 
   const cfg = readBasaltConfig(cwd)
-  const guardCfg: GuardConfig = {
-    spacingSteps: cfg.spacingSteps ?? DEFAULT_GUARD_CONFIG.spacingSteps,
-    rawRadius: cfg.rawRadius ?? DEFAULT_GUARD_CONFIG.rawRadius,
-    forbiddenAccents: cfg.forbiddenAccents ?? DEFAULT_GUARD_CONFIG.forbiddenAccents,
-    mantineShadeIndex: cfg.mantineShadeIndex ?? DEFAULT_GUARD_CONFIG.mantineShadeIndex,
-    rawSurface: cfg.rawSurface ?? DEFAULT_GUARD_CONFIG.rawSurface,
-    cardWithBorder: cfg.cardWithBorder ?? DEFAULT_GUARD_CONFIG.cardWithBorder,
-    offSystemSurfaceVar: cfg.offSystemSurfaceVar ?? DEFAULT_GUARD_CONFIG.offSystemSurfaceVar,
-    rawHtmlLayout: cfg.rawHtmlLayout ?? DEFAULT_GUARD_CONFIG.rawHtmlLayout,
-    inlineSpacing: cfg.inlineSpacing ?? DEFAULT_GUARD_CONFIG.inlineSpacing,
-    inlineDisplay: cfg.inlineDisplay ?? DEFAULT_GUARD_CONFIG.inlineDisplay,
-    rawVisxAxis: cfg.rawVisxAxis ?? DEFAULT_GUARD_CONFIG.rawVisxAxis,
-    rawMotionValue: cfg.rawMotionValue ?? DEFAULT_GUARD_CONFIG.rawMotionValue,
-    chartMissingAriaLabel: cfg.chartMissingAriaLabel ?? DEFAULT_GUARD_CONFIG.chartMissingAriaLabel,
-    rawFormControl: cfg.rawFormControl ?? DEFAULT_GUARD_CONFIG.rawFormControl,
-    sub16InputFont: cfg.sub16InputFont ?? DEFAULT_GUARD_CONFIG.sub16InputFont,
-    allowComment: 'theme-allow',
-    exemptRules: resolveExemptRules(cfg),
-    severity: cfg.severity ?? DEFAULT_GUARD_CONFIG.severity,
-    // Same detection check-theme uses: the hook must never block an edit over advice the app
-    // cannot take ("use @mantine/core's Select") in a repo with no Mantine.
-    ...(declaredProfile(cfg, []) === 'tokens-only' ? { profile: 'tokens-only' as const } : {}),
-  }
+  // Same profile as check-theme: never block an edit over advice a no-Mantine app cannot take.
+  const guardCfg = resolveGuardConfig(cfg, declaredProfile(cfg, []))
 
   // Honor the consumer's roots / exempt / skip config so the hook never blocks edits to exempted
   // palette source or files outside the guarded roots (mirrors checkTheme's file-walk scoping).
@@ -101,9 +76,7 @@ export async function guardHook(cwd: string = process.cwd()): Promise<number> {
       }) + '\n',
     )
   } else {
-    process.stdout.write(
-      '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow"}}\n',
-    )
+    process.stdout.write(ALLOW)
   }
   return 0
 }

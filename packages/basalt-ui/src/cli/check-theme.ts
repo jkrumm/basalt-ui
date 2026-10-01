@@ -3,30 +3,60 @@
  * Imports its shared plumbing (config/project resolution) back from `./index`, and its
  * `--audit-allows` mode from `./audit-allows`.
  */
-import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { existsSync, readFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
 
 import {
   checkSource,
-  DEFAULT_GUARD_CONFIG,
   guardKindRemedy,
   TOKENS_ONLY_DISABLED_KINDS,
   unmatchedExemptPatterns,
 } from '../guard'
-import type { Finding, GuardConfig } from '../guard'
+import type { Finding } from '../guard'
 import { auditAllows } from './audit-allows'
 import { DEFAULT_ROOTS, resolveRoots } from './config'
 import {
+  basaltPresetEntry,
   conflictingProfileFlags,
   declaredProfile,
   hasBasaltKey,
+  packageRoot,
+  parseJsonc,
   readBasaltConfig,
-  resolveExemptRules,
+  readIfExists,
+  readSource,
+  resolveGuardConfig,
   resolveProjectDir,
   scannableFiles,
   SERIES_MODULE_HINT_RE,
   waiverHintFor,
 } from './index'
+
+/**
+ * One line when the nearest `.oxlintrc.json` (up to the repo root) neither extends the shipped
+ * preset nor loads its plugin: the basalt/* rules — two of the 1.33.0 promotions among them — live only in that lane,
+ * and a check-theme-only CI otherwise reads as the whole guard (emailgw r4). Doctor names the fix.
+ */
+function astLaneNotice(cwd: string): string | null {
+  for (let dir = cwd; ; dir = dirname(dir)) {
+    const rc = parseJsonc(readIfExists(resolve(dir, '.oxlintrc.json')) ?? 'null')
+    const plugin = [rc?.['jsPlugins']]
+      .flat()
+      .find((p) => `${p}`.endsWith('configs/oxlint-plugin.js'))
+    // A plugin load alone enables no rule — it counts only beside a basalt/* rule of its own.
+    const own = Object.keys((rc?.['rules'] ?? {}) as object).some((id) => id.startsWith('basalt/'))
+    const entry =
+      basaltPresetEntry(rc?.['extends']) ?? (own ? (plugin as string | undefined) : undefined)
+    if (entry !== undefined && existsSync(resolve(dir, entry))) return null
+    if (rc !== null || existsSync(resolve(dir, '.git')) || dirname(dir) === dir) break
+  }
+  const n = (readSource(packageRoot(), 'configs/oxlint.json') ?? '').match(/"basalt\/[\w-]+":/g)
+  return (
+    `ℹ basalt-ui check-theme: AST lane not enforced — ${n?.length ?? 0} basalt/* rule ids unguarded ` +
+    '(incl. the promoted control-outside-home, raw-breakpoint): no .oxlintrc.json up to the repo ' +
+    'root extends basalt-ui/configs/oxlint.json. `basalt-ui doctor` names the fix.'
+  )
+}
 
 /**
  * Theme guard — thin FS walker over the headless `../guard` core. Reads BasaltConfig, builds a
@@ -64,27 +94,7 @@ export function checkTheme(
     )
   }
 
-  const guardCfg: GuardConfig = {
-    spacingSteps: cfg.spacingSteps ?? DEFAULT_GUARD_CONFIG.spacingSteps,
-    rawRadius: cfg.rawRadius ?? DEFAULT_GUARD_CONFIG.rawRadius,
-    forbiddenAccents: cfg.forbiddenAccents ?? DEFAULT_GUARD_CONFIG.forbiddenAccents,
-    mantineShadeIndex: cfg.mantineShadeIndex ?? DEFAULT_GUARD_CONFIG.mantineShadeIndex,
-    rawSurface: cfg.rawSurface ?? DEFAULT_GUARD_CONFIG.rawSurface,
-    cardWithBorder: cfg.cardWithBorder ?? DEFAULT_GUARD_CONFIG.cardWithBorder,
-    offSystemSurfaceVar: cfg.offSystemSurfaceVar ?? DEFAULT_GUARD_CONFIG.offSystemSurfaceVar,
-    rawHtmlLayout: cfg.rawHtmlLayout ?? DEFAULT_GUARD_CONFIG.rawHtmlLayout,
-    inlineSpacing: cfg.inlineSpacing ?? DEFAULT_GUARD_CONFIG.inlineSpacing,
-    inlineDisplay: cfg.inlineDisplay ?? DEFAULT_GUARD_CONFIG.inlineDisplay,
-    rawVisxAxis: cfg.rawVisxAxis ?? DEFAULT_GUARD_CONFIG.rawVisxAxis,
-    rawMotionValue: cfg.rawMotionValue ?? DEFAULT_GUARD_CONFIG.rawMotionValue,
-    chartMissingAriaLabel: cfg.chartMissingAriaLabel ?? DEFAULT_GUARD_CONFIG.chartMissingAriaLabel,
-    rawFormControl: cfg.rawFormControl ?? DEFAULT_GUARD_CONFIG.rawFormControl,
-    sub16InputFont: cfg.sub16InputFont ?? DEFAULT_GUARD_CONFIG.sub16InputFont,
-    allowComment: 'theme-allow',
-    exemptRules: resolveExemptRules(cfg),
-    severity: cfg.severity ?? DEFAULT_GUARD_CONFIG.severity,
-    ...(profile === 'tokens-only' ? { profile: 'tokens-only' as const } : {}),
-  }
+  const guardCfg = resolveGuardConfig(cfg, profile)
 
   const findings: Finding[] = []
   const scanned = scannableFiles(cwd, cfg)
@@ -141,6 +151,9 @@ export function checkTheme(
             'config review while enforcing as much as an empty object.'),
     )
   }
+
+  const notice = profile === 'tokens-only' ? null : astLaneNotice(cwd)
+  if (notice !== null) console.error(notice)
 
   if (findings.length === 0) {
     console.log('✓ Theme guard: no off-palette colors.')

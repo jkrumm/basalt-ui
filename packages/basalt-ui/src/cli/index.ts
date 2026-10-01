@@ -43,17 +43,27 @@ import { DEFAULT_ROOT, exemptRulePaths, resolveRoots } from './config'
 import type { BasaltConfig } from './config'
 
 /**
- * The guard-shaped `exemptRules` — paths only. The reason the object form carries never reaches
- * the guard: it is accountability for a human reading a diff and for `--audit-allows`, and giving
- * the scan a second shape to understand would only be a way for the two to disagree.
+ * The consumer's `GuardConfig`: every `basalt` key the guard knows, over `DEFAULT_GUARD_CONFIG`.
+ * One builder for `check-theme` and `guard-hook`, so the hook never judges an edit by a different
+ * config than the build. `exemptRules` reaches the guard as paths only — the reason the object form
+ * carries is accountability for a human and for `--audit-allows`, not a second shape to scan.
  */
-export function resolveExemptRules(cfg: BasaltConfig): GuardConfig['exemptRules'] {
-  if (cfg.exemptRules === undefined) return DEFAULT_GUARD_CONFIG.exemptRules
-  const out: Partial<Record<GuardKind, string[]>> = {}
-  for (const [kind, entry] of Object.entries(cfg.exemptRules)) {
-    out[kind as GuardKind] = exemptRulePaths(entry)
+export function resolveGuardConfig(cfg: BasaltConfig, profile: DoctorProfile): GuardConfig {
+  const exemptRules: Partial<Record<GuardKind, string[]>> = {}
+  for (const [kind, entry] of Object.entries(cfg.exemptRules ?? {})) {
+    exemptRules[kind as GuardKind] = exemptRulePaths(entry)
   }
-  return out
+  return {
+    ...DEFAULT_GUARD_CONFIG,
+    ...Object.fromEntries(
+      Object.entries(cfg).filter(
+        ([k, v]) => (v ?? null) !== null && Object.hasOwn(DEFAULT_GUARD_CONFIG, k),
+      ),
+    ),
+    allowComment: 'theme-allow',
+    exemptRules,
+    ...(profile === 'tokens-only' ? { profile: 'tokens-only' as const } : {}),
+  }
 }
 
 /**
