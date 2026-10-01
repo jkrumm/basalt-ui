@@ -173,8 +173,9 @@ export type BasaltShellProps = BasaltProps & {
    * Because they are data, basalt owns the projections the two `ReactNode` slots could not express:
    * a `list` with a `count` becomes a dot on its icon in the collapsed rail, a `progress` block
    * becomes a ring on the settings row, and a block with `mobile: 'more'` becomes one More-sheet
-   * row opening a nested sheet of its items. A `kind: 'custom'` block is desktop-only, exactly as
-   * `sidebarNavExtra` was.
+   * row opening a nested sheet of its items. A `kind: 'custom'` block is desktop-only and hidden in the rail, exactly
+   * as `sidebarNavExtra` was, unless it opts in with `icon` + `label` (a rail icon opening it in a
+   * popover) and `mobile: 'more'` (a More row opening it in a sheet).
    */
   sidebarBlocks?: SidebarBlock[]
   /**

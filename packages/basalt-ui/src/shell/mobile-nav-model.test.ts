@@ -572,8 +572,11 @@ describe('blockRowCount', () => {
     expect(blockRowCount([{ ...progress, mobile: 'more' }])).toBe(1)
   })
 
-  test('a custom block never reaches mobile — it is desktop-only by kind', () => {
-    expect(blockRowCount([{ kind: 'custom', key: 'tree', node: null }])).toBe(0)
+  test('a custom block reaches mobile only with mobile: more AND a label to name the row', () => {
+    const custom = { kind: 'custom', key: 'tree', node: null } as const
+    expect(blockRowCount([custom])).toBe(0)
+    expect(blockRowCount([{ ...custom, mobile: 'more' }])).toBe(0)
+    expect(blockRowCount([{ ...custom, mobile: 'more', label: 'Albums' }])).toBe(1)
   })
 
   /** Same rule the renderer applies: an empty list would open a sheet with nothing in it. */

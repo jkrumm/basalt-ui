@@ -33,6 +33,7 @@ import type {
   SidebarBlock,
   SidebarBlockItem,
   SidebarItem,
+  SidebarCustomBlock,
   SidebarListBlock,
   SidebarProgressBlock,
 } from './nav-types'
@@ -362,12 +363,13 @@ export function MobileNav({
    * applies — the count that picked `menu` vs `sheet` and the rows that render must agree.
    */
   const moreBlocks = (blocks ?? []).filter(
-    (block): block is SidebarListBlock | SidebarProgressBlock =>
-      block.kind !== 'custom' &&
-      sidebarBlockMobile(block) === 'more' &&
-      (block.kind !== 'list' || block.items.length > 0),
+    (block): block is SidebarListBlock | SidebarProgressBlock | SidebarCustomBlock =>
+      sidebarBlockMobile(block) === 'more' && (block.kind !== 'list' || block.items.length > 0),
   )
-  const listBlocks = moreBlocks.filter((block): block is SidebarListBlock => block.kind === 'list')
+  // The blocks that open a nested sheet — a list's rows, or a custom block's node.
+  const sheetBlocks = moreBlocks.filter(
+    (block): block is SidebarListBlock | SidebarCustomBlock => block.kind !== 'progress',
+  )
 
   /**
    * Whether the More surface's UNLABELLED tail (blocks + account + settings) opens its own band —
@@ -378,10 +380,10 @@ export function MobileNav({
   const tailRule = (slot: SurfaceSlot): boolean =>
     moreBlocks.length + extraRows.length > 0 && slotHasRows(slot)
 
-  /** A list block raises its nested sheet; a progress block just fires its own handler. */
+  /** A list or custom block raises its nested sheet; a progress block just fires its own handler. */
   const activateBlock = (block: (typeof moreBlocks)[number]) => {
     close()
-    if (block.kind === 'list') {
+    if (block.kind !== 'progress') {
       // ONE FRAME, deliberately. `close()` starts the Menu's `returnFocus` (it restores focus to
       // the More tab) while the nested Drawer traps focus on mount — in the same handler the two
       // race, and focus lands wherever the loser wrote last, which is how a tap on a block row
@@ -783,7 +785,7 @@ export function MobileNav({
    * exit transition would play against a blank sheet; a closed Mantine Drawer renders nothing, so N
    * instances cost N nothings.
    */
-  const blockSheet = (block: SidebarListBlock) => (
+  const blockSheet = (block: SidebarListBlock | SidebarCustomBlock) => (
     <Drawer
       key={`block-${block.key}`}
       opened={openBlockKey === block.key}
@@ -809,7 +811,11 @@ export function MobileNav({
       }}
     >
       <ScrollArea.Autosize mah="62dvh" type="scroll" offsetScrollbars="present" scrollbarSize={8}>
-        <Stack gap={1}>{block.items.map(blockItemRow)}</Stack>
+        {block.kind === 'list' ? (
+          <Stack gap={1}>{block.items.map(blockItemRow)}</Stack>
+        ) : (
+          block.node
+        )}
       </ScrollArea.Autosize>
     </Drawer>
   )
@@ -825,13 +831,16 @@ export function MobileNav({
         if (slot.kind === 'menu') return menuSlot(slot)
         return sheetSlot(slot)
       })}
-      {listBlocks.map(blockSheet)}
+      {sheetBlocks.map(blockSheet)}
     </nav>
   )
 }
 
 /** `Awaiting action · 3` — the row's whole job is to say how much is behind it. */
-function blockRowLabel(block: SidebarListBlock | SidebarProgressBlock): string {
+function blockRowLabel(
+  block: SidebarListBlock | SidebarProgressBlock | SidebarCustomBlock,
+): string {
+  if (block.kind === 'custom') return block.label ?? ''
   return block.kind === 'list'
     ? `${block.label} · ${block.count ?? block.items.length}`
     : `${block.label} · ${block.value} of ${block.total}`

@@ -43,5 +43,7 @@ declare const classes: {
   readonly footerIconSlot: string
   readonly footerVersion: string
   readonly settingsMenuItem: string
+  readonly blockRailTrigger: string
+  readonly blockRailPopover: string
 }
 export default classes

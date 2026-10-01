@@ -139,9 +139,10 @@ export type SidebarProgressBlock = {
 }
 
 /**
- * DESKTOP ONLY — arbitrary consumer content (a tree, a filter panel) that no set of rows can
- * express. Replaced `BasaltShellProps.sidebarNavExtra`; hidden on the collapsed rail and absent
- * from mobile for the same reason that prop was.
+ * Arbitrary consumer content (a tree, a filter panel) that no set of rows can express. Replaced
+ * `BasaltShellProps.sidebarNavExtra`. By default desktop-only and hidden on the collapsed rail,
+ * exactly as that prop was; `icon` + `label` opt it into the rail (as an icon opening the node in a
+ * popover) and `mobile: 'more'` into the More sheet.
  */
 export type SidebarCustomBlock = {
   kind: 'custom'
@@ -149,6 +150,21 @@ export type SidebarCustomBlock = {
   node: ReactNode
   /** @default 'nav' */
   placement?: 'nav' | 'bottom'
+  /** The rail icon. Needs `label` too: an icon-only trigger must be nameable. */
+  icon?: ReactNode
+  /** The rail icon's accessible name, the popover heading and the More row / sheet title. */
+  label?: string
+  /**
+   * Collapsed-rail projection: `'icon'` swaps the node for `icon`, which opens it in a popover.
+   * @default 'icon' when both `icon` and `label` are set, `'hidden'` otherwise
+   */
+  rail?: 'icon' | 'hidden'
+  /**
+   * Below `sm` there is no sidebar: `'more'` makes one More row, labelled `label`, that opens the
+   * node in a sheet. Needs `label`.
+   * @default 'hidden'
+   */
+  mobile?: 'more' | 'hidden'
 }
 
 /**

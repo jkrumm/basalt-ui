@@ -289,6 +289,41 @@ describe('sidebar blocks — rail projection', () => {
     expect(railOf(container)).toBe('hidden')
   })
 
+  test("a custom block with icon + label is data-rail='icon'; without either it stays hidden", () => {
+    const node = <span>tree</span>
+    const icon = <svg data-testid="rail-icon" />
+    const withBoth = renderSidebar({
+      blocks: [{ kind: 'custom', key: 'tree', node, icon, label: 'Tree' }],
+    })
+    expect(railOf(withBoth.container)).toBe('icon')
+    withBoth.unmount()
+    const noLabel = renderSidebar({ blocks: [{ kind: 'custom', key: 'tree', node, icon }] })
+    expect(railOf(noLabel.container)).toBe('hidden')
+    noLabel.unmount()
+    const optedOut = renderSidebar({
+      blocks: [{ kind: 'custom', key: 'tree', node, icon, label: 'Tree', rail: 'hidden' }],
+    })
+    expect(railOf(optedOut.container)).toBe('hidden')
+  })
+
+  test('collapsed, an icon custom block is a named trigger that opens the node in a popover', async () => {
+    renderSidebar({
+      collapsed: true,
+      blocks: [
+        {
+          kind: 'custom',
+          key: 'tree',
+          node: <span data-testid="tree-node">tree</span>,
+          icon: <svg data-testid="rail-icon" />,
+          label: 'Albums',
+        },
+      ],
+    })
+    expect(screen.queryByTestId('tree-node')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Albums' }))
+    await waitFor(() => expect(screen.getByTestId('tree-node')).toBeTruthy())
+  })
+
   test("a progress block is data-rail='ring', and the ring renders on the SETTINGS row when collapsed", () => {
     const { container } = renderSidebar({
       collapsed: true,

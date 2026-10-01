@@ -12,7 +12,7 @@
  * module's class. A second CSS module would hash `.block*` into a different name than the rail
  * rules could ever select.
  */
-import { Collapse, NavLink, Progress, Text, UnstyledButton } from '@mantine/core'
+import { Collapse, NavLink, Popover, Progress, Text, UnstyledButton } from '@mantine/core'
 import { useState } from 'react'
 import type { ReactNode } from 'react'
 import type {
@@ -280,10 +280,33 @@ function ProgressBlock({ block }: { block: SidebarProgressBlock }) {
   )
 }
 
-/** A `kind: 'custom'` block — consumer content, hidden on the rail exactly as `navExtra` was. */
-function CustomBlock({ block }: { block: SidebarCustomBlock }) {
+/**
+ * A `kind: 'custom'` block — consumer content. Without `icon` + `label` it is hidden on the rail
+ * exactly as `navExtra` was (CSS only, the node stays mounted). With them the rail swaps the node
+ * for its icon, which opens the node in a popover: that swap is JS-gated on `collapsed`, because
+ * the trigger is a different element and nothing in the node's own subtree could express it. The
+ * popover mounts only while open, so the inline node is never duplicated.
+ */
+function CustomBlock({ block, collapsed }: { block: SidebarCustomBlock; collapsed: boolean }) {
+  const rail = sidebarBlockRail(block)
+  if (collapsed && rail === 'icon') {
+    return (
+      <div className={classes.block} data-rail="icon">
+        <Popover position="right-start" withArrow={false} offset={4} withinPortal zIndex={400}>
+          <Popover.Target>
+            <UnstyledButton className={classes.blockRailTrigger} aria-label={block.label}>
+              <IconSlot>{block.icon}</IconSlot>
+            </UnstyledButton>
+          </Popover.Target>
+          <Popover.Dropdown p="xs" className={classes.blockRailPopover}>
+            {block.node}
+          </Popover.Dropdown>
+        </Popover>
+      </div>
+    )
+  }
   return (
-    <div className={classes.block} data-rail="hidden">
+    <div className={classes.block} data-rail={rail}>
       {block.node}
     </div>
   )
@@ -292,10 +315,12 @@ function CustomBlock({ block }: { block: SidebarCustomBlock }) {
 /** One block, whichever kind it is. `AppSidebar` places it; this decides nothing but the paint. */
 export function SidebarBlockView({
   block,
+  collapsed = false,
 }: {
   block: SidebarListBlock | SidebarProgressBlock | SidebarCustomBlock
+  collapsed?: boolean
 }) {
   if (block.kind === 'list') return <ListBlock block={block} />
   if (block.kind === 'progress') return <ProgressBlock block={block} />
-  return <CustomBlock block={block} />
+  return <CustomBlock block={block} collapsed={collapsed} />
 }
