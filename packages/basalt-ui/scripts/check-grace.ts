@@ -126,11 +126,15 @@ function main(): void {
     process.exit(1)
   }
 
-  const graceCount = Object.keys(grace).length
-  console.log(
+  console.log(clearLine(version, Object.keys(grace).length, deprecations.length))
+}
+
+/** `main()`'s success line — exported so its singular/plural forms are testable without a ledger. */
+export function clearLine(version: string, graceCount: number, deprecationCount: number): string {
+  return (
     `✓ check-grace: v${version} is clear of all ${graceCount} grace entr` +
-      `${graceCount === 1 ? 'y' : 'ies'} and ${deprecations.length} deprecation ` +
-      `row${deprecations.length === 1 ? '' : 's'}.`,
+    `${graceCount === 1 ? 'y' : 'ies'} and ${deprecationCount} deprecation ` +
+    `row${deprecationCount === 1 ? '' : 's'}.`
   )
 }
 

@@ -35,6 +35,7 @@ import {
   fontsCss,
   init,
   MANIFEST_PATH,
+  mergeOxlintExtends,
   normalizeColorFunctions,
   sync,
   tokensCss,
@@ -332,6 +333,18 @@ describe('init — describing the repo it is actually in', () => {
     write('.oxlintrc.json', '{ "extends": ["./node_modules/basalt-ui/configs/oxlint.json"] }')
     const { log } = capture(() => init(dir, { mergeLint: true }))
     expect(log).toContain('already extends')
+  })
+
+  // oxlint's `extends` is an array, but a hand-written config may carry a bare string — the merge
+  // must read it as the one entry it is, in both directions.
+  it.each([
+    ['a guards-only one, which it replaces', 'oxlint-basalt.json', 'added'],
+    ['the full preset, which it leaves alone', 'oxlint.json', 'already'],
+  ] as const)('--merge-lint reads a bare-string extends: %s', (_, file, outcome) => {
+    write('.oxlintrc.json', `{ "extends": "./node_modules/basalt-ui/configs/${file}" }\n`)
+    expect(mergeOxlintExtends(dir, './node_modules/basalt-ui/configs/oxlint.json')).toBe(outcome)
+    const cfg = JSON.parse(read('.oxlintrc.json')) as { extends: unknown }
+    expect([cfg.extends].flat()).toEqual(['./node_modules/basalt-ui/configs/oxlint.json'])
   })
 
   it('--merge-lint upgrades a guards-only extends to the full preset', () => {

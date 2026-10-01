@@ -4,7 +4,7 @@
  * because this gate only read the grace ledger.
  */
 import { describe, expect, it } from 'bun:test'
-import { findReleaseBlockers } from './check-grace'
+import { clearLine, findReleaseBlockers } from './check-grace'
 
 const USE_BREAKPOINT = { subpath: 'basalt-ui', name: 'useBreakpoint', removeIn: '1.33.0' }
 const SHIPPED = { '.': ['BasaltShell', 'useBreakpoint'] }
@@ -73,5 +73,19 @@ describe('findReleaseBlockers — grace', () => {
 
   it('clears a version before promote', () => {
     expect(blockers({ version: '1.32.1', grace: { 'basalt/x': entry } })).toEqual([])
+  })
+})
+
+describe('clearLine — main()’s success line', () => {
+  it('is singular for one entry and one row', () => {
+    expect(clearLine('1.34.0', 1, 1)).toBe(
+      '✓ check-grace: v1.34.0 is clear of all 1 grace entry and 1 deprecation row.',
+    )
+  })
+
+  it('is plural for none and for many', () => {
+    expect(clearLine('1.34.0', 0, 2)).toBe(
+      '✓ check-grace: v1.34.0 is clear of all 0 grace entries and 2 deprecation rows.',
+    )
   })
 })
