@@ -127,6 +127,14 @@ type ActionRow = {
   onClick?: ((e: MouseEvent<HTMLElement>) => void) | undefined
   /** Mirrors `SettingsMenuItem.active` — a trailing check + `aria-current` in every row form. */
   active?: boolean
+  /** Mirrors `SettingsMenuItem.current` — `'page'` swaps the check for the nav active style. */
+  current?: 'selection' | 'page'
+}
+
+/** `aria-current` for an action row — `"page"` for a destination, `"true"` for a chosen value. */
+function rowCurrent(row: ActionRow): 'page' | 'true' | undefined {
+  if (!row.active) return undefined
+  return row.current === 'page' ? 'page' : 'true'
 }
 
 /**
@@ -198,6 +206,7 @@ function settingsRows(items: SettingsMenuItem[] | undefined): ActionRow[] {
     icon: item.icon,
     onClick: item.onClick,
     ...(item.active !== undefined && { active: item.active }),
+    ...(item.current !== undefined && { current: item.current }),
   }))
 }
 
@@ -248,10 +257,10 @@ const menuActionRow = (row: ActionRow, sectionStart = false) => (
     key={row.key}
     className={sectionStart ? `${classes.menuItem} ${classes.menuSectionStart}` : classes.menuItem}
     leftSection={row.icon}
-    rightSection={row.active ? <IconCheck /> : undefined}
+    rightSection={row.active && row.current !== 'page' ? <IconCheck /> : undefined}
     {...(row.danger ? { color: 'red' } : {})}
     onClick={(event: MouseEvent<HTMLElement>) => row.onClick?.(event)}
-    aria-current={row.active ? 'true' : undefined}
+    aria-current={rowCurrent(row)}
   >
     {row.label}
   </Menu.Item>
@@ -614,13 +623,14 @@ export function MobileNav({
       classNames={{ root: classes.row }}
       label={row.label}
       leftSection={row.icon}
-      rightSection={row.active ? <IconCheck /> : undefined}
+      rightSection={row.active && row.current !== 'page' ? <IconCheck /> : undefined}
       {...(row.danger ? { color: 'red' } : {})}
       onClick={(event: MouseEvent<HTMLElement>) => {
         row.onClick?.(event)
         close()
       }}
-      aria-current={row.active ? 'true' : undefined}
+      active={row.active === true && row.current === 'page'}
+      aria-current={rowCurrent(row)}
     />
   )
 

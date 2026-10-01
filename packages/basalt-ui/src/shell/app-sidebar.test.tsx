@@ -409,7 +409,34 @@ describe('settingsMenuItems — flat at three or fewer', () => {
         settingsMenuItems: [{ ...three[0]!, active: true }, three[1]!, three[2]!],
       })
       expect(screen.getByLabelText('Settings').getAttribute('aria-current')).toBe('true')
+      // The control for the `current: 'page'` test below, which asserts this glyph's ABSENCE.
+      expect(
+        screen.getByLabelText('Settings').querySelector('svg path[d="M5 12l5 5l10 -10"]'),
+      ).not.toBeNull()
       expect(screen.getByLabelText('Integrations').getAttribute('aria-current')).toBeNull()
+    })
+
+    test('current: \'page\' — aria-current is "page" and no check renders (flat form)', () => {
+      renderSidebar({
+        settingsMenuItems: [{ ...three[0]!, active: true, current: 'page' }, three[1]!, three[2]!],
+      })
+      const row = screen.getByLabelText('Settings')
+      expect(row.getAttribute('aria-current')).toBe('page')
+      expect(row.querySelector('svg path[d="M5 12l5 5l10 -10"]')).toBeNull()
+    })
+
+    test('current: \'page\' — aria-current is "page" inside the dropdown', async () => {
+      renderSidebar({
+        settingsMenuItems: [
+          ...three,
+          { key: 'devtools', label: 'Devtools', onClick: () => {}, active: true, current: 'page' },
+        ],
+      })
+      fireEvent.click(screen.getByLabelText('Settings'))
+      await waitFor(() => expect(document.querySelector('[role="menu"]')).not.toBeNull())
+      expect(
+        screen.getByText('Devtools').closest('[role="menuitem"]')?.getAttribute('aria-current'),
+      ).toBe('page')
     })
 
     test('menu form: the active entry is aria-current inside the dropdown', async () => {

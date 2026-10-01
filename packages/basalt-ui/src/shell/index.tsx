@@ -130,10 +130,16 @@ export type SettingsMenuItem = {
   label: string
   icon?: ReactNode
   onClick?: (e: MouseEvent) => void
-  /** This entry is the current selection (e.g. the active theme radio, the open dev tool) — a
-   * trailing check glyph renders in every form (flat footer row, gear `Menu.Item`, the mobile
-   * More-sheet row) and the row carries `aria-current="true"`. */
+  /** This entry is the current one (e.g. the active theme radio, the open dev tool, the open
+   * settings page) — how it shows is `current`. */
   active?: boolean
+  /**
+   * What `active` means. `'selection'` (default) is a chosen value: a trailing check glyph in every
+   * form (flat footer row, gear `Menu.Item`, the mobile More-sheet row) and `aria-current="true"`.
+   * `'page'` is a navigation destination: no check, the nav-item active style, and
+   * `aria-current="page"` — what a router-backed settings entry wants.
+   */
+  current?: 'selection' | 'page'
 }
 
 export type BasaltShellProps = BasaltProps & {

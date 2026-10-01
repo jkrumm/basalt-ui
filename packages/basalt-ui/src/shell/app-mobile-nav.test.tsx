@@ -827,4 +827,40 @@ describe('SettingsMenuItem.active reaches the More surface', () => {
     expect(active?.getAttribute('aria-current')).toBe('true')
     expect(inactive?.getAttribute('aria-current')).toBeNull()
   })
+  test('a settings entry with current: \'page\' is aria-current="page" with no check', async () => {
+    const model = projectMobileNav(
+      [
+        {
+          label: 'Main',
+          items: [item('home', { mobile: 'tab' }), item('activity', { mobile: 'tab' })],
+        },
+      ],
+      { extraMoreRows: 1 },
+    )
+    render(
+      <MantineProvider>
+        <MobileNav
+          model={model}
+          settingsMenuItems={[
+            {
+              key: 'settings',
+              label: 'Settings',
+              onClick: () => {},
+              active: true,
+              current: 'page',
+            },
+          ]}
+        />
+      </MantineProvider>,
+    )
+
+    fireEvent.click(screen.getByLabelText('More'))
+    await waitFor(() => expect(menu()).not.toBeNull())
+
+    const row = Array.from(document.querySelectorAll('.mantine-Menu-item')).find((r) =>
+      r.textContent?.includes('Settings'),
+    )
+    expect(row?.getAttribute('aria-current')).toBe('page')
+    expect(row?.querySelector('svg')).toBeNull()
+  })
 })
