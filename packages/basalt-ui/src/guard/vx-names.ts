@@ -255,3 +255,37 @@ export const BASALT_VX_NAMES: readonly string[] = [
   '--vx-warnRef',
   '--vx-warnSolid',
 ]
+
+/**
+ * The families `dist/tokens.css` declares into (`vxFamiliesIn`) — basalt-owned: `unknown-vx-token`
+ * judges every name inside one, and `groupTokens`/`seriesTokens` refuse a consumer name there (they
+ * derive the same set from the same stylesheet at runtime, so neither side ships the other).
+ */
+export const BASALT_VX_FAMILIES: readonly string[] = [
+  'accent',
+  'area',
+  'axis',
+  'bad',
+  'crosshair',
+  'divider',
+  'dot',
+  'faint',
+  'fill',
+  'good',
+  'grid',
+  'hit',
+  'ink',
+  'legend',
+  'line',
+  'muted',
+  'neutral',
+  'prose',
+  'radius',
+  'shadow',
+  'space',
+  'status',
+  'surface',
+  'text',
+  'tooltip',
+  'warn',
+]

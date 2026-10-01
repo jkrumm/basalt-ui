@@ -16,11 +16,14 @@
  *    `--vx-*` anywhere in shipped source enters the allowlist. That errs toward NOT reporting; it
  *    can never make the guard flag a name basalt emits.
  *
+ * It also emits `BASALT_VX_FAMILIES`, the families `buildPaletteCss()` declares into (`vxFamiliesIn`).
+ *
  * `src/guard/vx-names.test.ts` re-derives the set and fails on any drift, pointing back here.
  */
 import { readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { Glob } from 'bun'
+import { vxFamiliesIn } from '../src/common/vx-family.ts'
 import { buildPaletteCss } from '../src/tokens/index.ts'
 
 const ROOT = resolve(import.meta.dirname, '..')
@@ -51,6 +54,15 @@ export function renderVxNames(names: readonly string[]): string {
     '/** Every `--vx-*` name basalt emits: `dist/tokens.css` plus its component-scoped names. */',
     'export const BASALT_VX_NAMES: readonly string[] = [',
     ...names.map((n) => `  '${n}',`),
+    ']',
+    '',
+    '/**',
+    ' * The families `dist/tokens.css` declares into (`vxFamiliesIn`) — basalt-owned: `unknown-vx-token`',
+    ' * judges every name inside one, and `groupTokens`/`seriesTokens` refuse a consumer name there (they',
+    ' * derive the same set from the same stylesheet at runtime, so neither side ships the other).',
+    ' */',
+    'export const BASALT_VX_FAMILIES: readonly string[] = [',
+    ...vxFamiliesIn(buildPaletteCss()).map((f) => `  '${f}',`),
     ']',
     '',
   ].join('\n')
