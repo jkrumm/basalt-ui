@@ -3369,6 +3369,15 @@ describe('basalt/deprecated-export', () => {
     expect(output).toContain('was removed in 1.34.0')
     expect(output).not.toContain('still resolves')
   })
+
+  // The row no longer says `fix: false`; `removed` alone must suppress the rewrite, because a
+  // removed row's replacement is prose (`useSizeClass() for shell chrome; …`), not a name.
+  it('never autofixes a removed row', () => {
+    const source = `import { useBreakpoint } from 'basalt-ui'\nexport const x = useBreakpoint\n`
+    writeFileSync(resolve(dir, 'removed-fix.tsx'), source)
+    Bun.spawnSync([OXLINT_BIN, '-c', '.oxlintrc.json', '--fix', 'removed-fix.tsx'], { cwd: dir })
+    expect(readFileSync(resolve(dir, 'removed-fix.tsx'), 'utf8')).toBe(source)
+  })
 })
 
 // ── forms-field-key ──────────────────────────────────────────────────────────
