@@ -338,11 +338,12 @@ describe('init — describing the repo it is actually in', () => {
     write('package.json', JSON.stringify({ name: 'app' }))
     write(
       '.oxlintrc.json',
-      '{ "extends": ["./node_modules/basalt-ui/configs/oxlint-basalt.json"] }',
+      '{ "extends": ["./node_modules/basalt-ui/configs/oxlint-basalt.json", "./team.json"] }',
     )
     capture(() => init(dir, { mergeLint: true }))
     const cfg = JSON.parse(read('.oxlintrc.json')) as { extends: string[] }
-    expect(cfg.extends[0]).toContain('basalt-ui/configs/oxlint.json')
+    // The stale guards-only entry goes; the consumer's own entry stays.
+    expect(cfg.extends).toEqual(['./node_modules/basalt-ui/configs/oxlint.json', './team.json'])
   })
 })
 
