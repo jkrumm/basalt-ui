@@ -8,6 +8,7 @@ import {
   legendSlotContention,
   plotBelowFloor,
 } from '../../common/errors'
+import { useCoarsePointer } from '../../common/use-media-query'
 import { reportOnce, useValidateProps } from '../../common/validate'
 import { SizeClassHintContext, useSizeClass } from '../../shell/use-size-class'
 import { VX } from '../../tokens'
@@ -18,7 +19,7 @@ import { ChartCardContext } from './chart-card-context'
 import { resolveChartLayout, resolveFrameClass } from './chart-layout'
 import { resolveFrameHeight, resolveLegendRollup, resolvePlotRect } from './chart-frame-layout'
 import type { ResponsiveChartHeight } from './chart-frame-layout'
-import { ChartTierProvider, useCoarsePointer, useViewportHeight } from './chart-tier'
+import { ChartTierProvider, useViewportHeight } from './chart-tier'
 import { ChartLegend } from './ChartLegend'
 import { ChartEmpty, ChartError, ChartPending, resolveChartState } from './ChartPending'
 import type { ChartState } from './ChartPending'

@@ -54,3 +54,13 @@ export function useMediaQuery(query: string, serverFallback: boolean): boolean {
   const getServerSnapshot = useCallback(() => serverFallback, [serverFallback])
   return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
 }
+
+/**
+ * Whether the primary pointer is coarse — the JS twin of `--vx-hit`'s `(pointer: coarse)` query.
+ * For a branch CSS cannot express (mount one of two components, attach a keydown listener); styling
+ * stays `@media (pointer: coarse)` in a CSS module. Server and hydration snapshot is `false`; a
+ * `createRoot` app reads the real pointer on its first render.
+ */
+export function useCoarsePointer(): boolean {
+  return useMediaQuery('(pointer: coarse)', false)
+}

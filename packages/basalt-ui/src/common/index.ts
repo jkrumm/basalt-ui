@@ -19,4 +19,5 @@ export {
 } from './errors'
 export { useValidateProps, assertRequiredProps, resetValidatedProps } from './validate'
 export { scrollParentOf, SCROLLPORT_ATTRIBUTE } from './scroll-parent'
+export { useCoarsePointer } from './use-media-query'
 export { MOTION_DURATION, MOTION_EASE_STANDARD, MOTION_SPRING } from './motion'
