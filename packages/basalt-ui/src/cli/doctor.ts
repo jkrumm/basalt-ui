@@ -6,7 +6,7 @@
 import { existsSync } from 'node:fs'
 import { relative, resolve } from 'node:path'
 
-import type { BasaltConfig } from './index'
+import type { BasaltConfig } from './config'
 import {
   MANIFEST_PATH,
   basaltBinCommand,
@@ -21,10 +21,10 @@ import {
   readIfExists,
   readManifest,
   resolveProjectDir,
-  resolveRoots,
   scannableFiles,
   shippedAssetPath,
 } from './index'
+import { resolveRoots } from './config'
 import { findManifestAbove, parentInstallAdvice } from './sync'
 
 export type DoctorResult = {
