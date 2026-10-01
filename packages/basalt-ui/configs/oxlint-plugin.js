@@ -3650,8 +3650,9 @@ const queryFnUnwrap = {
  * separate commit that either deletes the row (the fix is manual from then on — say so in the
  * removal's MIGRATING row) or keeps it one minor past the removal with `removed: true` and
  * `removeIn` set to the removing minor, so the message reads "was removed in X" instead of "still
- * resolves". `scripts/check-grace.ts` refuses a release at or past a `removeIn` whose export still
- * ships — the gap that let `useBreakpoint` outlive its date twice.
+ * resolves" — and never autofixes, whatever `fix` says. `scripts/check-grace.ts` refuses a release
+ * at or past a `removeIn` whose export still ships — the gap that let `useBreakpoint` outlive its
+ * date twice.
  *
  * @type {readonly DeprecatedExport[]}
  */
@@ -3669,7 +3670,6 @@ export const DEPRECATED_EXPORTS = [
       'useSizeClass() for shell chrome; a page’s own layout swap is a container decision — a type="container" SimpleGrid/Grid or an @container rule',
     removeIn: '1.34.0',
     removed: true,
-    fix: false,
   },
 ]
 
@@ -3737,7 +3737,8 @@ const deprecatedExport = {
           context.report({
             node: spec,
             message: deprecatedExportMessage(row),
-            ...(row.fix === false
+            // A removed row's replacement is prose for a gone import, never a drop-in name.
+            ...(row.fix === false || row.removed === true
               ? {}
               : { fix: (fixer) => fixer.replaceText(spec, `${row.replacement} as ${local}`) }),
           })
