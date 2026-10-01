@@ -39,18 +39,44 @@ import type { BasaltConfig } from './config'
  * config than the build. `exemptRules` reaches the guard as paths only — the reason the object form
  * carries is accountability for a human and for `--audit-allows`, not a second shape to scan.
  */
+type PassthroughKey = Exclude<keyof GuardConfig, 'allowComment' | 'exemptRules' | 'profile'>
+
+/**
+ * The `basalt` keys that reach the guard verbatim — named, never matched by name at runtime.
+ * `satisfies Record<…>` makes a GuardConfig key missing here, or one that is not a key, a tsc error.
+ */
+const GUARD_PASSTHROUGH = {
+  spacingSteps: true,
+  rawRadius: true,
+  forbiddenAccents: true,
+  mantineShadeIndex: true,
+  rawSurface: true,
+  cardWithBorder: true,
+  offSystemSurfaceVar: true,
+  rawHtmlLayout: true,
+  inlineSpacing: true,
+  inlineDisplay: true,
+  rawVisxAxis: true,
+  rawMotionValue: true,
+  chartMissingAriaLabel: true,
+  rawFormControl: true,
+  sub16InputFont: true,
+  severity: true,
+} as const satisfies Record<PassthroughKey, true>
+
 export function resolveGuardConfig(cfg: BasaltConfig, profile: DoctorProfile): GuardConfig {
   const exemptRules: Partial<Record<GuardKind, string[]>> = {}
   for (const [kind, entry] of Object.entries(cfg.exemptRules ?? {})) {
     exemptRules[kind as GuardKind] = exemptRulePaths(entry)
   }
+  // Typed as the guard's shape, so a BasaltConfig field whose type drifts from it fails to compile.
+  const from: Partial<Pick<GuardConfig, PassthroughKey>> = cfg
+  const set = (Object.keys(GUARD_PASSTHROUGH) as PassthroughKey[]).filter(
+    (k) => (from[k] ?? null) !== null,
+  )
   return {
     ...DEFAULT_GUARD_CONFIG,
-    ...Object.fromEntries(
-      Object.entries(cfg).filter(
-        ([k, v]) => (v ?? null) !== null && Object.hasOwn(DEFAULT_GUARD_CONFIG, k),
-      ),
-    ),
+    ...Object.fromEntries(set.map((k) => [k, from[k]])),
     allowComment: 'theme-allow',
     exemptRules,
     ...(profile === 'tokens-only' ? { profile: 'tokens-only' as const } : {}),
