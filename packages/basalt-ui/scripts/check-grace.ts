@@ -126,9 +126,11 @@ function main(): void {
     process.exit(1)
   }
 
+  const graceCount = Object.keys(grace).length
   console.log(
-    `✓ check-grace: v${version} is clear of all ${Object.keys(grace).length} grace entries and ` +
-      `${deprecations.length} deprecation row${deprecations.length === 1 ? '' : 's'}.`,
+    `✓ check-grace: v${version} is clear of all ${graceCount} grace entr` +
+      `${graceCount === 1 ? 'y' : 'ies'} and ${deprecations.length} deprecation ` +
+      `row${deprecations.length === 1 ? '' : 's'}.`,
   )
 }
 
