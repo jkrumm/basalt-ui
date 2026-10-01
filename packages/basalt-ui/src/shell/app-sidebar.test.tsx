@@ -462,6 +462,42 @@ describe('search.actions', () => {
   })
 })
 
+describe('an icon-less nav item survives the collapsed rail', () => {
+  test('falls back to the first letter, aria-hidden, and the link is named by its label', () => {
+    renderSidebar({
+      collapsed: true,
+      sections: [
+        {
+          label: 'Main',
+          items: [
+            { key: 'inbox', label: 'inbox', icon: null },
+            { key: 'soon', label: 'Soon', icon: undefined, disabled: true },
+          ],
+        },
+      ],
+    })
+    const link = screen.getByLabelText('inbox')
+    const glyph = link.querySelector('.mantine-NavLink-section[data-position="left"] > span')
+    expect(glyph?.textContent).toBe('I')
+    expect(glyph?.getAttribute('aria-hidden')).toBe('true')
+    expect(screen.getByLabelText('Soon').querySelector('[aria-hidden]')?.textContent).toBe('S')
+  })
+
+  test('a supplied icon is rendered as-is, with no fallback glyph', () => {
+    renderSidebar({
+      sections: [
+        {
+          label: 'Main',
+          items: [{ key: 'home', label: 'Home', icon: <svg data-testid="own-icon" /> }],
+        },
+      ],
+    })
+    const link = screen.getByLabelText('Home')
+    expect(link.querySelector('[data-testid="own-icon"]')).toBeTruthy()
+    expect(link.querySelector('span[aria-hidden]')).toBeNull()
+  })
+})
+
 describe('nav item active/ancestor state (useNav exclusivity — router-tanstack/use-nav.test.tsx)', () => {
   test('only the active row carries aria-current="page"', () => {
     renderSidebar({

@@ -13,6 +13,7 @@ import { OverflowMenu } from '../controls/actions'
 import type { BarAction } from '../controls/actions'
 import { cx } from '../common/props'
 import type { BasaltProps } from '../common/props'
+import { initial } from './nav-glyph'
 import classes from './sidebar-search.module.css'
 
 /**
@@ -53,11 +54,6 @@ function IconSearch() {
       <path d="M21 21l-4.35 -4.35" />
     </svg>
   )
-}
-
-/** The first grapheme of a label — the fallback body for an action shipping no icon. */
-function initial(label: string): string {
-  return [...label][0]?.toUpperCase() ?? '?'
 }
 
 /**
