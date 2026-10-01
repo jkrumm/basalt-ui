@@ -39,7 +39,7 @@ import type {
 import type { BasaltAccountProps } from './account-types'
 import type { SettingsMenuItem } from './index'
 import { NavCountBadge } from './nav-count-badge'
-import { iconOrInitial } from './nav-glyph'
+import { hasIcon, initialGlyph } from './nav-glyph'
 import { SidebarBlockToneDot } from './sidebar-blocks'
 import { sidebarBlockMobile } from './sidebar-block-model'
 import { useBasaltSpacing } from '../theme'
@@ -457,8 +457,13 @@ export function MobileNav({
   const tabInner = (slot: MobileNavSlot) => (
     <>
       <span className={classes.tabIcon}>
-        {slot.icon ??
-          (slot.kind !== 'link' && slot.isMore ? <IconMore /> : iconOrInitial(null, slot.short))}
+        {hasIcon(slot.icon) ? (
+          slot.icon
+        ) : slot.kind !== 'link' && slot.isMore ? (
+          <IconMore />
+        ) : (
+          initialGlyph(slot.short)
+        )}
         {hasCount(slot) ? <span className={classes.tabDot} aria-hidden /> : null}
       </span>
       <Text className={classes.label}>{slot.short}</Text>

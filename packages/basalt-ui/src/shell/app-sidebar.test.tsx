@@ -483,6 +483,13 @@ describe('an icon-less nav item survives the collapsed rail', () => {
     expect(screen.getByLabelText('Soon').querySelector('[aria-hidden]')?.textContent).toBe('S')
   })
 
+  test('an icon of `false` (`cond && <Icon />`) is absent too', () => {
+    renderSidebar({
+      sections: [{ label: 'Main', items: [{ key: 'a', label: 'Alpha', icon: false }] }],
+    })
+    expect(document.querySelector('[data-nav-glyph]')?.textContent).toBe('A')
+  })
+
   test('a supplied icon is rendered as-is, with no fallback glyph', () => {
     renderSidebar({
       sections: [

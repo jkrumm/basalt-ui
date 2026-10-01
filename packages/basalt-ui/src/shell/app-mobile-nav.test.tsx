@@ -129,6 +129,12 @@ describe('MobileNav', () => {
     expect(glyph?.getAttribute('aria-hidden')).toBe('true')
   })
 
+  test('1c. an icon of `false` (`cond && <Icon />`) gets the glyph too', () => {
+    renderBar([{ label: 'Main', items: [item('home', { mobile: 'tab', icon: false })] }])
+
+    expect(document.querySelector('[data-nav-glyph]')?.textContent).toBe('H')
+  })
+
   /** §2.5 — re-tapping the slot you are already on is a scroll-to-top, not a redundant history
    *  entry. `preventDefault` is what suppresses the router's own click handler — and it is now
    *  conditional on the scroll having somewhere to go (test 16), so the target is scrolled down
