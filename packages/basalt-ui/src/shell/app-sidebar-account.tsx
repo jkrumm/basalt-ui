@@ -101,6 +101,9 @@ export function SidebarAccount(props: BasaltAccountProps & BasaltProps) {
     return (
       <UnstyledButton
         className={cx(classes.accountRow, className)}
+        // The collapsed rail hides `.accountText` (display:none), which drops "Sign in" from the
+        // accessibility tree — the label keeps the button nameable with only the glyph showing.
+        aria-label="Sign in"
         onClick={actions?.onSignIn}
         {...(style !== undefined && { style })}
       >
