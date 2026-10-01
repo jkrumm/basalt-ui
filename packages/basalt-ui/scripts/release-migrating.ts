@@ -95,6 +95,15 @@ export function renameUnreleased(markdown: string, version: string): string {
   // The title (everything after `Unreleased`) is carried over verbatim; only the word moves.
   lines[headingIdx] = heading.replace(`## ${UNRELEASED}`, `## ${version}`)
 
+  // A release nobody authored a section for must not ship the "Nothing yet" placeholder as its
+  // released body — 1.35.0 did, and a later rebase then filled that empty section with another
+  // release's text. Say plainly that there is nothing to migrate.
+  const bodyEnd = lines.findIndex((line, i) => i > headingIdx && line.startsWith('## '))
+  const body = lines.slice(headingIdx + 1, bodyEnd === -1 ? lines.length : bodyEnd)
+  if (body.join('\n').includes('_Nothing yet.')) {
+    lines.splice(headingIdx + 1, body.length, '', '_Nothing to migrate in this release._', '')
+  }
+
   // The fresh section opens ABOVE the one just named, so the file stays newest-first.
   lines.splice(
     headingIdx,

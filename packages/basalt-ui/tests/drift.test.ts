@@ -447,6 +447,15 @@ describe('renameUnreleased', () => {
       '| Surface | 1.29.0 | 1.30.0 | 1.30.1 | Unreleased |',
     )
   })
+
+  it('never releases the "Nothing yet" placeholder as a section body', () => {
+    const second = renameUnreleased(out, '1.30.1')
+    const body = second.slice(second.indexOf('## 1.30.1'), second.indexOf('## 1.30.0'))
+    expect(body).not.toContain('_Nothing yet.')
+    expect(body).toContain('_Nothing to migrate in this release._')
+    // The fresh section above it still carries the authoring placeholder.
+    expect(second.slice(0, second.indexOf('## 1.30.1'))).toContain('_Nothing yet.')
+  })
 })
 
 // ── Failing closed — every one of these used to be "silently changed nothing" ─────────────────────
