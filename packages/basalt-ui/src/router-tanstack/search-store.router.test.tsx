@@ -868,6 +868,26 @@ describe('resets — a filter write drops a sibling page', () => {
     expect(currentSearch(router)['page']).toBe(1)
   })
 
+  test('useReset with every field already at its fallback keeps the page', async () => {
+    let reset: (() => void) | null = null
+    const router = await mountApp({
+      validateSearch,
+      entry: '/dashboard?prefix=all&page=4',
+      Dashboard: () => {
+        reset = store.useReset()
+        return null
+      },
+    })
+    const navigate = spyOn(router, 'navigate')
+    await act(async () => {
+      reset?.()
+    })
+    expect(navigate).toHaveBeenCalledTimes(1)
+    navigate.mockRestore()
+    // `replace: true` — a page dropped here would be gone from history too.
+    expect(currentSearch(router)['page']).toBe(4)
+  })
+
   test('clear() on one field drops it', async () => {
     const probe = sink()
     const router = await mountApp({

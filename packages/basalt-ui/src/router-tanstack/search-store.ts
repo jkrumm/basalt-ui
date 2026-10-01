@@ -48,7 +48,7 @@ export type CreateSearchStoreOptions<S extends Record<string, AnyField>> = {
    * `['page']` on a paginated list, so narrowing the set on page 5 lands on page 1 and Back restores
    * both together. Dropped, not written: the route's own `validateSearch` resolves the default
    * (`page` → 1), so the store never has to know it. Applies to a URL-lane field's setter and
-   * `clear()` when the value moves, and to `useReset()` when it navigates; an explicit `patch`
+   * `clear()` when the value moves, and to `useReset()` when any field moves; an explicit `patch`
    * naming the same key wins.
    *
    * **URL-lane writes only.** A `url: false` field (mirror-only or memory) makes no navigate, so it
@@ -528,7 +528,15 @@ export function buildSearchStore<const S extends Record<string, AnyField>>(
         }
         navigate({
           to: '.',
-          search: (prev: Record<string, unknown>) => ({ ...prev, ...resetPatch, ...patch }),
+          // `resets` only when some field actually moves — the same gate as the setter and
+          // `clear()`. A `Reset all` with everything already at its fallback must keep the page:
+          // this navigate REPLACES, so a page dropped here could not be got back with Back.
+          search: (prev: Record<string, unknown>) => {
+            const moved = validatedEntries.some(
+              (entry) => resetsFor(entry, prev, entry.codec.fallback) !== undefined,
+            )
+            return { ...prev, ...(moved ? resetPatch : undefined), ...patch }
+          },
           replace: true,
           // Same reason as a single field's write above — a `Reset all` pressed from the mobile
           // sheet must not also scroll the page it was pressed on.
