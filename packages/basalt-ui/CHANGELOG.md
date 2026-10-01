@@ -1,3 +1,10 @@
+## [1.34.1](https://github.com/jkrumm/basalt-ui/compare/v1.34.0...v1.34.1) (2026-10-01)
+
+
+### Bug Fixes
+
+* count the oxlint lane as wired only when an oxlint binary resolves ([013c496](https://github.com/jkrumm/basalt-ui/commit/013c496d84b17d9f2715e94e49e4c7d2de50d8fc))
+
 # [1.34.0](https://github.com/jkrumm/basalt-ui/compare/v1.33.0...v1.34.0) (2026-10-01)
 
 
