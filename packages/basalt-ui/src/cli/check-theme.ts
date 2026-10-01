@@ -18,6 +18,7 @@ import { DEFAULT_ROOTS, resolveRoots } from './config'
 import {
   basaltPresetEntry,
   conflictingProfileFlags,
+  findRepoRoot,
   declaredProfile,
   hasBasaltKey,
   noteRelocation,
@@ -33,29 +34,42 @@ import {
   waiverHintFor,
 } from './index'
 
+const isBasaltPlugin = (entry: unknown): entry is string =>
+  typeof entry === 'string' && entry.endsWith('configs/oxlint-plugin.js')
+
 /**
- * One line when the nearest `.oxlintrc.json` (up to the repo root) neither extends the shipped
- * preset nor loads its plugin: the basalt/* rules — two of the 1.33.0 promotions among them — live only in that lane,
- * and a check-theme-only CI otherwise reads as the whole guard (emailgw r4). Doctor names the fix.
+ * What the `.oxlintrc.json` in `dir` does for the AST lane. A plugin load alone enables no rule, so
+ * it counts only beside a `basalt/*` rule of its own; an extends counts when it is a shipped preset.
+ */
+function oxlintLaneAt(dir: string): 'absent' | 'wired' | 'unwired' {
+  const raw = readIfExists(resolve(dir, '.oxlintrc.json'))
+  if (raw === null) return 'absent'
+  const rc = parseJsonc(raw)
+  const ownRules = Object.keys(Object(rc?.['rules'])).some((id) => id.startsWith('basalt/'))
+  const plugin = ownRules ? [rc?.['jsPlugins']].flat().find(isBasaltPlugin) : undefined
+  const entry = basaltPresetEntry(rc?.['extends']) ?? plugin
+  return entry !== undefined && existsSync(resolve(dir, entry)) ? 'wired' : 'unwired'
+}
+
+/**
+ * One line when the nearest `.oxlintrc.json` up to the repo root does not wire the AST lane: the
+ * basalt/* rules — two of the 1.33.0 promotions among them — live only there, and a
+ * check-theme-only CI otherwise reads as the whole guard (emailgw r4). Doctor names the fix.
  */
 function astLaneNotice(cwd: string): string | null {
+  const root = findRepoRoot(cwd)
   for (let dir = cwd; ; dir = dirname(dir)) {
-    const rc = parseJsonc(readIfExists(resolve(dir, '.oxlintrc.json')) ?? 'null')
-    const plugin = [rc?.['jsPlugins']]
-      .flat()
-      .find((p) => `${p}`.endsWith('configs/oxlint-plugin.js'))
-    // A plugin load alone enables no rule — it counts only beside a basalt/* rule of its own.
-    const own = Object.keys((rc?.['rules'] ?? {}) as object).some((id) => id.startsWith('basalt/'))
-    const entry =
-      basaltPresetEntry(rc?.['extends']) ?? (own ? (plugin as string | undefined) : undefined)
-    if (entry !== undefined && existsSync(resolve(dir, entry))) return null
-    if (rc !== null || existsSync(resolve(dir, '.git')) || dirname(dir) === dir) break
+    const lane = oxlintLaneAt(dir)
+    if (lane === 'wired') return null
+    if (lane === 'unwired' || dir === root || dirname(dir) === dir) break
   }
-  const n = (readSource(packageRoot(), 'configs/oxlint-basalt.json') ?? '').match(
-    /"basalt\/[\w-]+":/g,
-  )
+  const preset = readSource(packageRoot(), 'configs/oxlint-basalt.json')
+  const count =
+    preset === null
+      ? 'every (configs/oxlint-basalt.json unreadable, so uncounted)'
+      : String(preset.match(/"basalt\/[\w-]+":/g)?.length ?? 0)
   return (
-    `ℹ basalt-ui check-theme: AST lane not enforced — ${n?.length ?? 0} basalt/* rule ids unguarded ` +
+    `ℹ basalt-ui check-theme: AST lane not enforced — ${count} basalt/* rule ids unguarded ` +
     '(incl. the promoted control-outside-home, raw-breakpoint): no .oxlintrc.json up to the repo ' +
     'root extends basalt-ui/configs/oxlint.json (or the guards-only oxlint-basalt.json). `basalt-ui ' +
     'doctor` names the fix.'
