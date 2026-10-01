@@ -932,12 +932,14 @@ export type GraceEntry = { since: string; promote: string; why: string }
 export const GRACE_PERIOD_KINDS: Partial<Record<GuardKind, GraceEntry>> = {
   'unknown-vx-token': {
     since: '1.34.0',
-    promote: '1.35.0',
+    promote: '1.36.0',
     why:
       'New kind at 1.33.0 (consumer-loop r2 B3): obsidian lost its 44px touch floor to a removed ' +
       '`var(--vx-space-touch-target)` that nothing reported. WIDENED at 1.34.0 (image-gen r4: ' +
       '`var(--vx-surface-2)` rendered transparent, unreported) to every unemitted name inside a ' +
-      'basalt-owned family, so the grace restarts: warn through 1.34.x, error at 1.35.0.',
+      'basalt-owned family, so the grace restarts: warn through 1.34.x, error at 1.35.0. EXTENDED one minor at 1.35.0: that ' +
+      'minor ships the shell a11y fixes consumers are upgrading for, and the promotion also turns the ' +
+      'seriesTokens warning into a throw — not a change to bundle into that bump. Error at 1.36.0.',
   },
 }
 

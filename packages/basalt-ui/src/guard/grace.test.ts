@@ -10,7 +10,7 @@
  * the real ledger: every pre-existing entry promoted or moved to `PLUGIN_RULE_ADVISORY`'s guard-side
  * sibling, and an `it.each` over the empty ledger that left behind ran zero assertions, which proved
  * nothing about the gate actually firing. Since 1.33.0 the ledger carries ONE kind,
- * `unknown-vx-token` (promote 1.35.0 — widened at 1.34.0, which restarts its grace) — the C1 pair and `raw-media-query` promoted — and the
+ * `unknown-vx-token` (promote 1.36.0 — widened at 1.34.0, which restarts its grace) — the C1 pair and `raw-media-query` promoted — and the
  * real-ledger check below runs against it.
  *
  * This gate measures the version already PUBLISHED, so it can only go red after the release that
@@ -143,16 +143,24 @@ describe('scripts/check-grace.ts', () => {
   // four — the C1 pair (`raw-selection-control` + `basalt/control-outside-home`) and the breakpoint
   // pair (`raw-media-query` + `basalt/raw-breakpoint`) — against nine consumers measured at zero on
   // 1.32.1. What is LEFT is `unknown-vx-token`, new in 1.33.0 and widened in 1.34.0 (in-family
-  // names), so 1.34.x must now PASS.
-  it.each(['1.30.0', '1.31.0', '1.32.0', '1.32.9', '1.33.0', '1.33.9', '1.34.0', '1.34.9'])(
-    'passes %s — nothing is due until 1.35.0',
-    (v) => {
-      expect(runCheckGrace(v).code).toBe(0)
-    },
-  )
+  // names), so 1.34.x and 1.35.x must now PASS.
+  it.each([
+    '1.30.0',
+    '1.31.0',
+    '1.32.0',
+    '1.32.9',
+    '1.33.0',
+    '1.33.9',
+    '1.34.0',
+    '1.34.9',
+    '1.35.0',
+    '1.35.9',
+  ])('passes %s — nothing is due until 1.36.0', (v) => {
+    expect(runCheckGrace(v).code).toBe(0)
+  })
 
-  it('refuses the version unknown-vx-token is due in (1.35.0)', () => {
-    expect(runCheckGrace('1.35.0').code).toBe(1)
+  it('refuses the version unknown-vx-token is due in (1.36.0)', () => {
+    expect(runCheckGrace('1.36.0').code).toBe(1)
   })
 
   it('exits 2 on a missing or malformed version rather than passing vacuously', () => {
