@@ -492,9 +492,66 @@ describe('an icon-less nav item survives the collapsed rail', () => {
         },
       ],
     })
-    const link = screen.getByLabelText('Home')
-    expect(link.querySelector('[data-testid="own-icon"]')).toBeTruthy()
-    expect(link.querySelector('span[aria-hidden]')).toBeNull()
+    expect(document.querySelector('[data-testid="own-icon"]')).toBeTruthy()
+    expect(document.querySelector('[data-nav-glyph]')).toBeNull()
+  })
+
+  test('the expanded row keeps its count in the accessible name; the rail row is named by the label', () => {
+    const sections: AppSidebarProps['sections'] = [
+      {
+        label: 'Main',
+        items: [{ key: 'inbox', label: 'Inbox', icon: null, count: 5, href: '/inbox' }],
+      },
+    ]
+    const { unmount } = renderSidebar({ sections })
+    expect(screen.getByRole('link', { name: /Inbox\s*5/, hidden: true })).toBeTruthy()
+    unmount()
+
+    renderSidebar({ sections, collapsed: true })
+    expect(
+      screen.getByRole('link', { name: 'Inbox', hidden: true }).getAttribute('aria-label'),
+    ).toBe('Inbox')
+  })
+
+  test('an icon-less disabled child falls back to its first letter in the inline list', () => {
+    renderSidebar({
+      sections: [
+        {
+          label: 'Main',
+          items: [
+            {
+              key: 'parent',
+              label: 'Parent',
+              icon: null,
+              active: true,
+              children: [{ key: 'kid', label: 'kid', icon: null, disabled: true }],
+            },
+          ],
+        },
+      ],
+    })
+    const kid = screen.getByText('kid').closest('[data-disabled]')
+    expect(kid?.querySelector('[data-nav-glyph]')?.textContent).toBe('K')
+  })
+
+  test('an icon-less disabled child falls back to its first letter in the hover popover', () => {
+    renderSidebar({
+      sections: [
+        {
+          label: 'Main',
+          items: [
+            {
+              key: 'parent',
+              label: 'Parent',
+              icon: null,
+              children: [{ key: 'kid', label: 'kid', icon: null, disabled: true }],
+            },
+          ],
+        },
+      ],
+    })
+    const kid = screen.getByText('kid').closest('[data-disabled]')
+    expect(kid?.querySelector('[data-nav-glyph]')?.textContent).toBe('K')
   })
 })
 
