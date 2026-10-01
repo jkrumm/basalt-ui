@@ -15,9 +15,8 @@ export function vxFamilyOf(name: string): string {
  */
 const CONSUMER_EXTENSIBLE_FAMILIES: ReadonlySet<string> = new Set(['on'])
 
-/** The basalt-owned families `css` declares into — run over `buildPaletteCss()`. */
-export function vxFamiliesIn(css: string): string[] {
-  const names = [...css.matchAll(/(--vx-[A-Za-z0-9-]*[A-Za-z0-9])\s*:/g)].map((m) => m[1] ?? '')
+/** The basalt-owned families among `names` — run over every name basalt emits (`collectVxNames`). */
+export function basaltVxFamilies(names: readonly string[]): string[] {
   const families = new Set(names.map(vxFamilyOf))
   return [...families].filter((f) => f !== '' && !CONSUMER_EXTENSIBLE_FAMILIES.has(f)).toSorted()
 }

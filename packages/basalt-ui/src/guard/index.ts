@@ -6,7 +6,8 @@
  */
 import type { Finding, GuardConfig, GuardKind, GuardSeverity } from './types'
 import { vxFamilyOf } from '../common/vx-family'
-import { BASALT_VX_FAMILIES, BASALT_VX_NAMES } from './vx-names'
+import { BASALT_VX_FAMILIES } from '../common/vx-families'
+import { BASALT_VX_NAMES } from './vx-names'
 
 export type { Finding, GuardConfig, GuardKind, GuardSeverity }
 
@@ -328,8 +329,8 @@ const REMOVED_VX_NAMES: Readonly<Record<string, string | null>> = {
 const KNOWN_VX_NAMES: ReadonlySet<string> = new Set(BASALT_VX_NAMES)
 
 /**
- * The families basalt owns (`vxFamilyOf`: `surface`, `space`, `ink`, `status`, `fill`, …), which
- * the generator reads off `buildPaletteCss()`. Every name inside one is judged against the exact
+ * The families basalt owns (`vxFamilyOf`: `surface`, `space`, `ink`, `keyboard`, …), which the
+ * generator reads off every name basalt emits. Every name inside one is judged against the exact
  * emitted set, so `--vx-surface-2` and a bare root like `--vx-space` are both findings.
  *
  * That judgement is honest only because no consumer ref may point into these families:
