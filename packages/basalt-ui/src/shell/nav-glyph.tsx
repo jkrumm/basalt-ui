@@ -5,17 +5,25 @@ export function initial(label: string): string {
   return [...label][0]?.toUpperCase() ?? '?'
 }
 
+/** False for everything React renders as nothing — `cond && <Icon />` yields `false`, not `null`. */
+export function hasIcon(icon: ReactNode): boolean {
+  return icon !== null && icon !== undefined && typeof icon !== 'boolean' && icon !== ''
+}
+
 /**
- * A nav item's icon, or — when it ships none — the label's first grapheme as a decorative glyph.
- * The collapsed rail and the landscape tab bar show the icon ALONE, so a null icon would render a
- * nameless, empty target. `aria-hidden`: the accessible name comes from the label, never the glyph.
+ * The label's first grapheme as a decorative glyph. The collapsed rail and the landscape tab bar
+ * show the icon ALONE, so an absent icon would render a nameless, empty target. `aria-hidden`: the
+ * accessible name comes from the label, never the glyph.
  */
-export function iconOrInitial(icon: ReactNode, label: string): ReactNode {
+export function initialGlyph(label: string): ReactNode {
   return (
-    icon ?? (
-      <span aria-hidden data-nav-glyph>
-        {initial(label)}
-      </span>
-    )
+    <span aria-hidden data-nav-glyph>
+      {initial(label)}
+    </span>
   )
+}
+
+/** A nav item's icon, or its label's first-letter glyph when it ships none. */
+export function iconOrInitial(icon: ReactNode, label: string): ReactNode {
+  return hasIcon(icon) ? icon : initialGlyph(label)
 }
