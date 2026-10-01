@@ -57,6 +57,7 @@ export type { SpaceValues } from './palette'
 export {
   CONTAINER_CLASSES,
   CONTAINER_GRID_BREAKPOINTS,
+  CONTAINER_KEYS,
   resolveContainerClass,
   SIZE_CLASSES,
 } from './size-classes'
