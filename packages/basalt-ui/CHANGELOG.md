@@ -1,3 +1,18 @@
+# [1.35.0](https://github.com/jkrumm/basalt-ui/compare/v1.34.1...v1.35.0) (2026-10-01)
+
+
+### Bug Fixes
+
+* extend the unknown-vx-token grace one minor to 1.36.0 ([a618388](https://github.com/jkrumm/basalt-ui/commit/a618388e27ea1fc650b592f75f70a753946b55a7))
+* judge raw-selection-control by host-tag nesting, not a 12-line window ([98724ad](https://github.com/jkrumm/basalt-ui/commit/98724ad2d1c46cbced5aef8d834f9f6c26cf81c4))
+* name the signed-out sidebar account row in the collapsed rail ([9e4ccad](https://github.com/jkrumm/basalt-ui/commit/9e4ccadf04b759ce58501cc146ee808f4c0bb449))
+
+
+### Features
+
+* keep a custom sidebar block in the collapsed rail and the mobile drawer ([136481c](https://github.com/jkrumm/basalt-ui/commit/136481cb6485543c9bdd4b386590c5080ed14c3c))
+* let a settings entry be the current page, not only a checked selection ([1da042c](https://github.com/jkrumm/basalt-ui/commit/1da042ce10855e6d6cc364b94358220be2064c4d))
+
 ## [1.34.1](https://github.com/jkrumm/basalt-ui/compare/v1.34.0...v1.34.1) (2026-10-01)
 
 
