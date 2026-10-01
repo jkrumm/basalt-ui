@@ -1,3 +1,10 @@
+## [1.36.1](https://github.com/jkrumm/basalt-ui/compare/v1.36.0...v1.36.1) (2026-10-01)
+
+
+### Bug Fixes
+
+* release an unauthored MIGRATING section as nothing-to-migrate ([f02a5d9](https://github.com/jkrumm/basalt-ui/commit/f02a5d9b9909b0d226470e8ed8bcfb27c7452f01))
+
 # [1.36.0](https://github.com/jkrumm/basalt-ui/compare/v1.35.0...v1.36.0) (2026-10-01)
 
 
