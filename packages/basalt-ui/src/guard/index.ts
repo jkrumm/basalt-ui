@@ -2445,6 +2445,17 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
     [...codeText.matchAll(VX_LOCAL_DECLARATION)].map((m) => m[1] ?? m[3] ?? m[4] ?? ''),
   )
 
+  // unknown-vx-token: a removed name, or a bare family root nothing emits — see the roots' doc.
+  // Scanned over the whole comment-stripped text rather than per line, so a formatter-wrapped
+  // `var(\n  --vx-x\n)` is seen; the finding lands on the line the NAME is on.
+  for (const m of codeText.matchAll(VX_VAR_REF)) {
+    const name = m[1] ?? ''
+    if (locallyDeclaredVx.has(name)) continue
+    if (!Object.hasOwn(REMOVED_VX_NAMES, name) && !BASALT_VX_FAMILY_ROOTS.has(name)) continue
+    const at = (m.index ?? 0) + m[0].length - name.length
+    push('unknown-vx-token', lineStarts.findLastIndex((start) => start <= at) + 1, name)
+  }
+
   for (let i = 0; i < lines.length; i++) {
     const line = codeLines[i] ?? ''
 
@@ -2550,14 +2561,6 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
       for (const m of line.matchAll(CSS_NON_COARSE_POINTER_QUERY)) {
         push('raw-media-query', i + 1, m[0].trim())
       }
-    }
-
-    // unknown-vx-token: a removed name, or a bare family root nothing emits — see the roots' doc.
-    for (const m of line.matchAll(VX_VAR_REF)) {
-      const name = m[1] ?? ''
-      if (locallyDeclaredVx.has(name)) continue
-      if (Object.hasOwn(REMOVED_VX_NAMES, name) || BASALT_VX_FAMILY_ROOTS.has(name))
-        push('unknown-vx-token', i + 1, name)
     }
 
     // off-system-surface-var — pattern + gating from GUARD_RULES.
