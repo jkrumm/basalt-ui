@@ -738,8 +738,8 @@ const PROSE_CONTEXT_TAG = /<(?:Prose|ArticleLayout|Modal|Drawer)(?![\w])/
  * does not need to: both mean "a raw control here is not homeless".
  *
  * The three subtree homes are the plugin's `BASALT_HOST_TAGS`, mirrored here so one law does not
- * read differently in the two lanes. The plugin gates them on the tag's basalt IMPORT; a 12-line
- * regex window has no import graph, so this lane matches by name and accepts the missed warn on a
+ * read differently in the two lanes. The plugin gates them on the tag's basalt IMPORT; a regex walk
+ * has no import graph, so this lane matches by name and accepts the missed warn on a
  * consumer's own `PanelRow` — the same direction every approximation in this scan already leans.
  *
  * The name set is the plugin's `CONTROL_HOST_TAGS` ∪ `BASALT_HOST_TAGS`; `oxlint-plugin.test.ts` ›
@@ -749,16 +749,31 @@ const CONTROL_HOST_TAG =
   /<(?:SettingsRow|FormRow|FormGroup|Modal|Drawer|Popover\.Dropdown|Menu\.Dropdown|Composer|FilterSet|PageAside|PanelRow)(?![\w])/
 
 /**
- * How far ABOVE a control the host-tag window reaches, in lines.
- *
- * The text lane has no ancestry, so "inside a SettingsRow" is approximated by "a SettingsRow opens
- * within the last N lines". 12 covers every row shape in the five consumer repos (label +
- * description + the `control={` line); past that the window would start swallowing the next row's
- * control, which is the direction that makes the kind silent rather than noisy. The plugin rule
- * (`basalt/control-outside-home`) is the one that answers this exactly — this kind exists for the
- * PreToolUse hook lane, which sees one file's TEXT and no AST at all.
+ * Open and close tags of the same host names, for the ancestry walk in {@link insideHostTag}. The
+ * opening alternative tolerates `=>` inside props (`onChange={(v) => …}`) like
+ * {@link RAW_SELECTION_CONTROL_TAG} does, and a `/>` ending marks a self-closing host, which opens
+ * nothing.
  */
-const CONTROL_HOST_WINDOW_LINES = 12
+const CONTROL_HOST_TAG_SCAN = new RegExp(
+  `<(/?)(?:${/\(\?:([^)]*)\)/.exec(CONTROL_HOST_TAG.source)?.[1] ?? ''})(?![\\w])(?:=>|[^>])*?>`,
+  'g',
+)
+
+/**
+ * Whether `offset` sits inside a host tag — one opened before it and not yet closed. The text lane
+ * has no AST, but the nesting of host tags in plain JSX is countable: +1 per opening tag, −1 per
+ * closing one, self-closing tags neither. That is what the plugin's `control-outside-home` answers
+ * by walking ancestors, so a control 40 lines under its `<SettingsRow>` is as homed here as there,
+ * and one after the row closed is not — the cases a fixed line window got wrong in both directions.
+ */
+function insideHostTag(codeText: string, offset: number): boolean {
+  let depth = 0
+  for (const m of codeText.slice(0, offset).matchAll(CONTROL_HOST_TAG_SCAN)) {
+    if (m[1] === '/') depth = Math.max(0, depth - 1)
+    else if (!m[0].endsWith('/>')) depth += 1
+  }
+  return depth > 0
+}
 
 /**
  * A file whose BASENAME declares it is an overlay's or a form's own body — the cross-file half of
@@ -768,7 +783,7 @@ const CONTROL_HOST_WINDOW_LINES = 12
  *
  * Law C1's cross-file case is advisory by declaration (`docs/CONTROLS-SPEC.md` §6, "Honest
  * coverage"), and this kind was paying for it: a `<Select>` inside `edit-session-modal.tsx` whose
- * `<Modal>` is rendered by the parent route is outside BOTH the 12-line host window and any
+ * `<Modal>` is rendered by the parent route is outside any
  * ancestry walk, because the host tag is not in the file at all. argo carried 9 of them.
  *
  * KEBAB and PascalCase both count, because a repo picks one file-naming law and the convention has
@@ -2232,7 +2247,7 @@ export const GUARD_RULES = {
   },
   'raw-selection-control': {
     kind: 'raw-selection-control',
-    pattern: RAW_SELECTION_CONTROL_TAG, // handled inline (full-text tag-scoped scan + host window)
+    pattern: RAW_SELECTION_CONTROL_TAG, // handled inline (full-text tag-scoped scan + host ancestry)
     // JSX-tag-shaped (`<Select …>`) — never appears in CSS text.
     appliesTo: (relPath) => !relPath.endsWith('.css'),
     message:
@@ -2760,7 +2775,7 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
     }
   }
 
-  // raw-selection-control — full-text tag scan plus the host WINDOW (see CONTROL_HOST_WINDOW_LINES).
+  // raw-selection-control — full-text tag scan plus the host ancestry walk (see insideHostTag).
   // Three file-level exemptions mirror the plugin rule's, so the two lanes agree on the same file:
   // a file that DEFINES a basalt control (and imports none — see CONTROL_OWNER_DEF) cannot be told
   // to use one, a file importing `@mantine/form` is a form — C1's third home, whose inputs are not
@@ -2774,8 +2789,7 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
   ) {
     for (const m of codeText.matchAll(RAW_SELECTION_CONTROL_TAG)) {
       const startLine = codeText.slice(0, m.index ?? 0).split('\n').length
-      const windowStart = Math.max(0, startLine - 1 - CONTROL_HOST_WINDOW_LINES)
-      if (CONTROL_HOST_TAG.test(codeLines.slice(windowStart, startLine).join('\n'))) continue
+      if (insideHostTag(codeText, m.index ?? 0)) continue
       const endLine = startLine + (m[0].split('\n').length - 1)
       if (isAllowedInRange(startLine, endLine, 'raw-selection-control')) continue
       findings.push({
