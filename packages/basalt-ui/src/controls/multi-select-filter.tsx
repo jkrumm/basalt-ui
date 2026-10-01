@@ -22,7 +22,7 @@
  * // arrive as a map rather than baked into the labels the way the runtime catalogue does it.
  * <MultiSelectFilter field={shipments.field.origin} label="Origin" counts={countsByOrigin} />
  */
-import { Button, Checkbox, Stack } from '@mantine/core'
+import { Checkbox, Stack } from '@mantine/core'
 import { useState } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
 import type { BasaltProps } from '../common/props'
@@ -31,7 +31,7 @@ import type { FieldHandle, MultiField } from '../state'
 import type { FilterOption } from './select-filter'
 import classes from './controls.module.css'
 import { POPOVER_ROW_HIT_GAP, useFilterRegistration, useFilterSurface } from './filter-context'
-import { FilterPill } from './filter-pill'
+import { FilterClearButton, FilterPill } from './filter-pill'
 import { CheckGlyph, useControlName } from './filter-sheet'
 import { PanelRow } from './panel-row'
 
@@ -153,17 +153,7 @@ export function MultiSelectFilter<T extends string>(props: MultiSelectFilterProp
           />
         ))}
       </Stack>
-      {!isDefault && (
-        <Button
-          variant="subtle"
-          size="ctl"
-          onClick={() => {
-            field.clear()
-          }}
-        >
-          Clear
-        </Button>
-      )}
+      {!isDefault && <FilterClearButton onClear={() => field.clear()} />}
     </Checkbox.Group>
   )
 

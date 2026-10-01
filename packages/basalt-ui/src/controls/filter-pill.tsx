@@ -124,9 +124,9 @@ export function FilterPill({
 }
 
 /**
- * The popover's `Clear` — `EnumFilter`'s and `NumberFilter`'s, one button. Its mousedown keeps focus
- * where it is: a stepper commits its draft on blur, so a press that blurred first would land the typed
- * value in the URL a tick before the clear replaced it.
+ * The popover's `Clear` — one button for `EnumFilter`, `NumberFilter` and `MultiSelectFilter`. Its
+ * mousedown keeps focus where it is: a stepper commits its draft on blur, so a press that blurred
+ * first would land the typed value in the URL a tick before the clear replaced it.
  */
 export function FilterClearButton({ onClear }: { readonly onClear: () => void }): ReactNode {
   return (
