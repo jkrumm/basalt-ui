@@ -243,12 +243,12 @@ swap to a list inside a `min-width` query. `BasaltDataTable` needs the optional
 **Layouts that need a step above `wide` (800px).** There is no fifth class; one ships when two named
 consumers need the same width. Until then, verified against the 1.32.0 plugin:
 
-| Where                                                                    | Off-class width (e.g. `1200px`)                                                                                         |
-| ------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
-| `SimpleGrid type="container"` px key — `cols={{ base: 1, '1200px': 5 }}` | passes: `raw-breakpoint` does not judge px keys, only theme names (`sm`)                                                |
-| `Grid type="container"` `breakpoints` map value — `xl: '1200px'`         | passes: the map's values are not judged                                                                                 |
-| `@container basalt-card` or unnamed, in CSS                              | flagged — `theme-allow raw-media-query — <why this layout needs 1200px>`                                                |
-| `@container <your-own-name>` or `basalt-grid`, in CSS                    | passes today; a later minor may judge `basalt-grid` — prefer a reasoned `theme-allow` over relying on the unjudged name |
+| Where                                                                    | Off-class width (e.g. `1200px`)                                                                                                                   |
+| ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SimpleGrid type="container"` px key — `cols={{ base: 1, '1200px': 5 }}` | passes: `raw-breakpoint` does not judge px keys, only theme names (`sm`)                                                                          |
+| `Grid type="container"` `breakpoints` map value — `xl: '1200px'`         | passes: the map's values are not judged                                                                                                           |
+| `@container basalt-card` or unnamed, in CSS                              | flagged — `theme-allow raw-media-query — <why this layout needs 1200px>`                                                                          |
+| `@container <your-own-name>` or `basalt-grid`, in CSS                    | passes — the name is unjudged, so write no waiver (`--audit-allows` reports one dead); a minor that starts judging `basalt-grid` will say so here |
 
 Either way, write the reason next to the width: it is the evidence the fifth class is waiting on.
 
