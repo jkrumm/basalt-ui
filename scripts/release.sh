@@ -16,7 +16,9 @@
 #     way to get one by accident is a stray `feat!:`/`BREAKING CHANGE:` reaching master. Nothing
 #     else in the pipeline checks;
 #   • the C16 grace gate against the COMPUTED version (`packages/basalt-ui/scripts/check-grace.ts`),
-#     which is the only place it can fire before the release instead of one minor after it;
+#     which is the only place it can fire before the release instead of one minor after it — grace
+#     entries and deprecation `removeIn` dates alike, behind a build + export-surface check so its
+#     "still ships" reads a snapshot proven against dist;
 #   • one confirmation, on the number itself rather than on the intent;
 #   • follow-through to the registry, so a green exit means "on npm" rather than "the job finished".
 #
@@ -76,6 +78,14 @@ git fetch origin --quiet
 # anything is dispatched.
 bun "$PACKAGE_PATH/scripts/release-migrating.ts" --check ||
   die "MIGRATING.md is not in a shape the release-time rename can rewrite — fix it, then release."
+
+# check-grace below decides "does this deprecated export still ship" from the committed
+# `export-surface.json`, so a stale snapshot would let it wave through an export that is still in
+# dist (or refuse one that is gone). Build and diff the snapshot against the built entries first —
+# ~6s, and the same check the pack-test runs against the tarball.
+(cd "$PACKAGE_PATH" && bun run build >/dev/null) || die "build failed — fix it, then release."
+node --import "./$PACKAGE_PATH/scripts/css-noop-register.mjs" "$PACKAGE_PATH/scripts/export-surface.mjs" ||
+  die "export-surface.json does not match dist — check-grace would read a stale snapshot."
 
 # ── Run helpers ──────────────────────────────────────────────────────────────
 latest_run() {
