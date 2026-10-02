@@ -2049,7 +2049,7 @@ const CONTROL_OWNER_NAMES = new Set([
  * `control-outside-home` treating it as a home is the whole of the enforcement a settings page
  * gets, and the two tier rules deliberately do not reach inside it (see {@link SLOT_ATTRS}).
  * `FormRow`/`FormGroup` (`basalt-ui/controls`, `src/controls/form-layout.tsx`; `basalt-ui/forms`
- * re-exports them until 1.37.0 — the set is NAME-matched, so both subpaths are homes) are the SAME
+ * re-exports them until 1.38.0 — the set is NAME-matched, so both subpaths are homes) are the SAME
  * home written for a `<form>` rather than a settings page — a `TextInput` bound to a field is read and typed
  * into at Mantine's own tier, not a 30px chrome affordance — so they are added here rather than
  * given a second walk.
@@ -3671,42 +3671,42 @@ export const DEPRECATED_EXPORTS = [
     subpath: 'basalt-ui/forms',
     name: 'FormSection',
     replacement: "FormSection from 'basalt-ui/controls'",
-    removeIn: '1.37.0',
+    removeIn: '1.38.0',
     fix: false,
   },
   {
     subpath: 'basalt-ui/forms',
     name: 'FormRow',
     replacement: "FormRow from 'basalt-ui/controls'",
-    removeIn: '1.37.0',
+    removeIn: '1.38.0',
     fix: false,
   },
   {
     subpath: 'basalt-ui/forms',
     name: 'FormGroup',
     replacement: "FormGroup from 'basalt-ui/controls'",
-    removeIn: '1.37.0',
+    removeIn: '1.38.0',
     fix: false,
   },
   {
     subpath: 'basalt-ui/forms',
     name: 'FormActions',
     replacement: "FormActions from 'basalt-ui/controls'",
-    removeIn: '1.37.0',
+    removeIn: '1.38.0',
     fix: false,
   },
   {
     subpath: 'basalt-ui/forms',
     name: 'useForm',
     replacement: "useForm from '@mantine/form'",
-    removeIn: '1.37.0',
+    removeIn: '1.38.0',
     fix: false,
   },
   {
     subpath: 'basalt-ui/forms',
     name: 'schemaResolver',
     replacement: "schemaResolver from '@mantine/form'",
-    removeIn: '1.37.0',
+    removeIn: '1.38.0',
     fix: false,
   },
   {
