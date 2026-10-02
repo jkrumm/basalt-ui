@@ -243,11 +243,17 @@
   align-items: center;
 }
 
+/* WCAG 2.5.8 (target-size, AA): the 11px glyph button is a real 24x24 box, not just a `::after`
+ * overlay — axe and assistive tech measure the element. The negative margin hands the extra
+ * (24 - 11) / 2 back on every side, so the glyph and the row around it keep their drawn size. */
 .infoTrigger {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  min-height: 24px;
+  margin: calc((11px - 24px) / 2);
   appearance: none;
-  margin: 0;
   padding: 0;
   border: none;
   background: none;
