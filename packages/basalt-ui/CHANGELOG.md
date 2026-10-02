@@ -1,3 +1,16 @@
+# [1.37.0](https://github.com/jkrumm/basalt-ui/compare/v1.36.1...v1.37.0) (2026-10-02)
+
+
+### Bug Fixes
+
+* give the widget info glyph a real 24px target (WCAG 2.5.8) ([70451f8](https://github.com/jkrumm/basalt-ui/commit/70451f8cb24fbf4eb1dcec8dc32575dc5fd9b4a9))
+* re-date the forms layout deprecations to 1.38.0 ([da1a4a1](https://github.com/jkrumm/basalt-ui/commit/da1a4a146f7ad8467819b953895f7e837c06fd4f))
+
+
+### Features
+
+* let a settings menu entry render as the router link ([55d4023](https://github.com/jkrumm/basalt-ui/commit/55d402360347cf74703530bd843b0c2eae765f6b))
+
 ## [1.36.1](https://github.com/jkrumm/basalt-ui/compare/v1.36.0...v1.36.1) (2026-10-01)
 
 
