@@ -452,11 +452,11 @@ The six calls rounds 2–4 parked, decided against the fleet at 1.34.x:
 | F9 flash-free size-class seam    | **no new seam — the flash was not real**                                                           | `useSyncExternalStore` reads the server snapshot only under SSR/`hydrateRoot`; under `createRoot` the first render already reads `matchMedia`. The JSDoc said otherwise, and obsidian waived a swap on it. Now pinned by a test; no `data-basalt-size-class` (a second viewport seam outside `shell/`) |
 | F16 pointer class in JS          | **`useCoarsePointer()` exported** (it was chart-internal)                                          | rb `lock-screen.tsx`; the JS twin of `--vx-hit`'s query. image-gen's "no sheet on a fine pointer" is rejected: the sheet is the compact size class's overlay layout                                                                                                                                    |
 | F17 shell-less top-level nav     | **no — reasoned waiver**                                                                           | one app (image-gen); argo's case is a widget mode switch, not nav                                                                                                                                                                                                                                      |
-| F12 `@mantine/form` in `./forms` | **form layout → `./controls`**, `./forms` aliases + `useForm`/`schemaResolver` deprecated → 1.37.0 | `useBasaltForm` value-imports the peer through the same barrel, so dropping the re-export alone fixed nothing. `orientation`/width props: one consumer, no                                                                                                                                             |
+| F12 `@mantine/form` in `./forms` | **form layout → `./controls`**, `./forms` aliases + `useForm`/`schemaResolver` deprecated → 1.38.0 | `useBasaltForm` value-imports the peer through the same barrel, so dropping the re-export alone fixed nothing. `orientation`/width props: one consumer, no                                                                                                                                             |
 
 Also `unknown-vx-token` → `error` (fleet 0; its grace ran one minor past 1.35.0 to keep the
 factory throw out of the a11y release) and `groupTokens`/`seriesTokens` now throw on a basalt
-family name. Public symbols run 401/401 for the grace minor; 1.37.0 deletes six.
+family name. Public symbols run 401/401 for the grace minor; 1.38.0 deletes six.
 
 **Still open:** the oxlint barrel scanner misses inline `@deprecated` specifier tags; the MIGRATING
 index table re-pads on every edit.
