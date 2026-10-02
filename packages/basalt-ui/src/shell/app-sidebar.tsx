@@ -492,7 +492,8 @@ export function AppSidebar(props: AppSidebarProps) {
           <UnstyledButton
             key={entry.key}
             className={classes.footerBtn}
-            onClick={entry.onClick}
+            {...(entry.Anchor && { component: entry.Anchor })}
+            {...(entry.onClick && { onClick: entry.onClick })}
             aria-label={entry.label}
             aria-current={settingsCurrent(entry)}
           >
@@ -533,9 +534,10 @@ export function AppSidebar(props: AppSidebarProps) {
               <Menu.Item
                 key={entry.key}
                 className={classes.settingsMenuItem}
+                {...(entry.Anchor && { component: entry.Anchor })}
                 leftSection={entry.icon}
                 rightSection={entry.active && entry.current !== 'page' ? <IconCheck /> : undefined}
-                onClick={entry.onClick}
+                {...(entry.onClick && { onClick: entry.onClick })}
                 aria-current={settingsCurrent(entry)}
               >
                 {entry.label}

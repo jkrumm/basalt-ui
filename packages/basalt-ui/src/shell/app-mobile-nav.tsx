@@ -30,6 +30,7 @@ import type {
   MobileNavGroup,
   MobileNavModel,
   MobileNavSlot,
+  NavAnchor,
   SidebarBlock,
   SidebarBlockItem,
   SidebarItem,
@@ -126,6 +127,8 @@ type ActionRow = {
   icon?: ReactNode
   danger?: boolean
   onClick?: ((e: MouseEvent<HTMLElement>) => void) | undefined
+  /** Mirrors `SettingsMenuItem.Anchor` — the row renders as the consumer's router link. */
+  Anchor?: NavAnchor | undefined
   /** Mirrors `SettingsMenuItem.active` — a trailing check + `aria-current` in every row form. */
   active?: boolean
   /** Mirrors `SettingsMenuItem.current` — `'page'` swaps the check for the nav active style. */
@@ -206,6 +209,7 @@ function settingsRows(items: SettingsMenuItem[] | undefined): ActionRow[] {
     label: item.label,
     icon: item.icon,
     onClick: item.onClick,
+    ...(item.Anchor !== undefined && { Anchor: item.Anchor }),
     ...(item.active !== undefined && { active: item.active }),
     ...(item.current !== undefined && { current: item.current }),
   }))
@@ -260,6 +264,7 @@ const menuActionRow = (row: ActionRow, sectionStart = false) => (
     leftSection={row.icon}
     rightSection={row.active && row.current !== 'page' ? <IconCheck /> : undefined}
     {...(row.danger ? { color: 'red' } : {})}
+    {...(row.Anchor && { component: row.Anchor })}
     onClick={(event: MouseEvent<HTMLElement>) => row.onClick?.(event)}
     aria-current={rowCurrent(row)}
   >
@@ -627,6 +632,7 @@ export function MobileNav({
       leftSection={row.icon}
       rightSection={row.active && row.current !== 'page' ? <IconCheck /> : undefined}
       {...(row.danger ? { color: 'red' } : {})}
+      {...(row.Anchor && { component: row.Anchor })}
       onClick={(event: MouseEvent<HTMLElement>) => {
         row.onClick?.(event)
         close()

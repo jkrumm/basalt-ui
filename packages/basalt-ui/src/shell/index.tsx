@@ -130,6 +130,12 @@ export type SettingsMenuItem = {
   label: string
   icon?: ReactNode
   onClick?: (e: MouseEvent) => void
+  /**
+   * The router seam, same as `SidebarItem.Anchor`: the row renders AS this link (a real `<a>`
+   * with the router's own `href`), in every form — flat footer row, gear `Menu.Item`, the mobile
+   * More surface. Pair with `current: 'page'` for a router-backed settings destination.
+   */
+  Anchor?: NavAnchor
   /** This entry is the current one (e.g. the active theme radio, the open dev tool, the open
    * settings page) — how it shows is `current`. */
   active?: boolean
