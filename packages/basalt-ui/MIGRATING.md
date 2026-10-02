@@ -125,15 +125,15 @@ import. `FormRow`/`FormGroup` stay law C1's form-row home from either subpath.
 
 | Was (`basalt-ui/forms`)                                                               | Now                                                                 | Removed in |
 | ------------------------------------------------------------------------------------- | ------------------------------------------------------------------- | ---------- |
-| `FormSection`, `FormRow`, `FormGroup`, `FormActions` (+ their `*Props`/`*Slot` types) | the same names from `basalt-ui/controls`                            | 1.37.0     |
-| `useForm`, `schemaResolver`, `UseFormReturnType`, `UseFormInput`                      | `@mantine/form` directly (zero consumers imported them from basalt) | 1.37.0     |
+| `FormSection`, `FormRow`, `FormGroup`, `FormActions` (+ their `*Props`/`*Slot` types) | the same names from `basalt-ui/controls`                            | 1.38.0     |
+| `useForm`, `schemaResolver`, `UseFormReturnType`, `UseFormInput`                      | `@mantine/form` directly (zero consumers imported them from basalt) | 1.38.0     |
 
-**Grace:** every old import still resolves in 1.36.x. `basalt/deprecated-export` warns on the six
+**Grace:** every old import still resolves in 1.36.x and 1.37.x (re-dated from 1.37.0: consumers still import them). `basalt/deprecated-export` warns on the six
 values, but the rows are `fix: false` — the autofix rewrites a specifier inside its own import
 statement and cannot change the module — so move the import by hand
 (`import { FormRow } from 'basalt-ui/controls'`). Both subpaths are homes for
 `control-outside-home`/`raw-selection-control` throughout. The `public symbols` budget runs at 401
-during the grace minor; 1.37.0 removes six.
+during the grace minor; 1.38.0 removes six.
 
 ### `useCoarsePointer()` — the pointer class in JS
 

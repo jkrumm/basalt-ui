@@ -137,18 +137,19 @@ describe('scripts/check-grace.ts', () => {
   // (its grace ran one minor past 1.35.0). With nothing left in the ledger, every version below the
   // first deprecation `removeIn` is clear of the grace half. That the gate REFUSES a due entry is
   // proven on synthetic ledgers in `scripts/check-grace.test.ts`.
-  it.each(['1.30.0', '1.34.9', '1.35.0', '1.36.0', '1.36.9'])(
-    'passes %s — the ledger is empty',
+  it.each(['1.30.0', '1.34.9', '1.35.0', '1.36.0', '1.36.9', '1.37.0', '1.37.9'])(
+    'passes %s — nothing is due until 1.38.0',
     (v) => {
       const { code, stdout } = runCheckGrace(v)
       expect([code, stdout.includes('clear of all 0 grace entries')]).toEqual([0, true])
     },
   )
 
-  // The 1.36.0 form-layout aliases are dated 1.37.0: the release that reaches that date refuses
-  // until they are deleted (their own commit) — which is when this case moves to the next date.
-  it('refuses 1.37.0 while the form-layout aliases still ship', () => {
-    const { code, stderr } = runCheckGrace('1.37.0')
+  // The 1.36.0 form-layout aliases are dated 1.38.0 (re-dated at 1.37.0: shutterflow still imports
+  // them): the release that reaches that date refuses until they are deleted (their own commit) —
+  // which is when this case moves to the next date.
+  it('refuses 1.38.0 while the form-layout aliases still ship', () => {
+    const { code, stderr } = runCheckGrace('1.38.0')
     expect([code, stderr.includes('FormRow (basalt-ui/forms)')]).toEqual([1, true])
   })
 

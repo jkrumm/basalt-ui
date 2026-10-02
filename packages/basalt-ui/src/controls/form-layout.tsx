@@ -2,7 +2,7 @@
  * ./controls — the form layout primitives: `FormSection`, `FormRow`, `FormGroup`, `FormActions`.
  * Mantine-coupled. They need no `@mantine/form` (layout only), which is why they live here and not
  * in `./forms`, whose barrel value-imports it: importing a row from there made a consumer install a
- * peer it never used. `./forms` re-exports them as deprecated aliases until 1.37.0.
+ * peer it never used. `./forms` re-exports them as deprecated aliases until 1.38.0.
  *
  * The gap they close (audit B #5 / §4): `./forms` shipped no layout at all, so the only row
  * primitive in the package was `SettingsRow` over in `./dashboard` — which is the SETTINGS-page
