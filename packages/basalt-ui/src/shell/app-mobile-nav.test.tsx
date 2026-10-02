@@ -863,4 +863,38 @@ describe('SettingsMenuItem.active reaches the More surface', () => {
     expect(row?.getAttribute('aria-current')).toBe('page')
     expect(row?.querySelector('svg')).toBeNull()
   })
+
+  test('Anchor — the More-menu row renders as the consumer link', async () => {
+    const model = projectMobileNav(
+      [
+        {
+          label: 'Main',
+          items: [item('home', { mobile: 'tab' }), item('activity', { mobile: 'tab' })],
+        },
+      ],
+      { extraMoreRows: 1 },
+    )
+    const Anchor = ({ children, ...props }: NavAnchorProps) => (
+      <a href="/settings" {...props}>
+        {children}
+      </a>
+    )
+    render(
+      <MantineProvider>
+        <MobileNav
+          model={model}
+          settingsMenuItems={[
+            { key: 'settings', label: 'Settings', Anchor, active: true, current: 'page' },
+          ]}
+        />
+      </MantineProvider>,
+    )
+    fireEvent.click(screen.getByLabelText('More'))
+    await waitFor(() => expect(menu()).not.toBeNull())
+    const row = Array.from(document.querySelectorAll('a.mantine-Menu-item')).find((r) =>
+      r.textContent?.includes('Settings'),
+    )
+    expect(row?.getAttribute('href')).toBe('/settings')
+    expect(row?.getAttribute('aria-current')).toBe('page')
+  })
 })

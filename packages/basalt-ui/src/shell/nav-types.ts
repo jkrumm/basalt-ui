@@ -18,7 +18,8 @@ export type NavAnchorProps = {
   className?: string
   children?: ReactNode
   onClick?: (e: MouseEvent<HTMLElement>) => void
-  'aria-current'?: 'page' | undefined
+  /** `'true'` only reaches a `SettingsMenuItem.Anchor` row marked a selection, never a nav item. */
+  'aria-current'?: 'page' | 'true' | undefined
   'aria-label'?: string
 }
 export type NavAnchor = (props: NavAnchorProps) => ReactNode

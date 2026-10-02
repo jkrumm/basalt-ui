@@ -16,7 +16,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, test } from 'bun:test'
 import { AppSidebar } from './app-sidebar'
 import type { AppSidebarProps } from './app-sidebar'
-import type { SidebarBlock } from './nav-types'
+import type { NavAnchorProps, SidebarBlock } from './nav-types'
 
 const BRAND = { name: 'Argo' }
 const ONE_SECTION: AppSidebarProps['sections'] = [
@@ -472,6 +472,44 @@ describe('settingsMenuItems — flat at three or fewer', () => {
       expect(
         screen.getByText('Devtools').closest('[role="menuitem"]')?.getAttribute('aria-current'),
       ).toBe('page')
+    })
+
+    test("Anchor — the flat row renders as the router's link, aria-current stays 'page'", () => {
+      const Anchor = ({ children, ...props }: NavAnchorProps) => (
+        <a href="/settings" {...props}>
+          {children}
+        </a>
+      )
+      renderSidebar({
+        settingsMenuItems: [
+          { ...three[0]!, Anchor, active: true, current: 'page' },
+          three[1]!,
+          three[2]!,
+        ],
+      })
+      const row = screen.getByRole('link', { name: 'Settings' })
+      expect(row.getAttribute('href')).toBe('/settings')
+      expect(row.getAttribute('aria-current')).toBe('page')
+      expect(row.querySelector('svg path[d="M5 12l5 5l10 -10"]')).toBeNull()
+    })
+
+    test('Anchor — the gear-menu entry renders as a link too', async () => {
+      const Anchor = ({ children, ...props }: NavAnchorProps) => (
+        <a href="/devtools" {...props}>
+          {children}
+        </a>
+      )
+      renderSidebar({
+        settingsMenuItems: [
+          ...three,
+          { key: 'devtools', label: 'Devtools', Anchor, active: true, current: 'page' },
+        ],
+      })
+      fireEvent.click(screen.getByLabelText('Settings'))
+      await waitFor(() => expect(document.querySelector('[role="menu"]')).not.toBeNull())
+      const row = screen.getByText('Devtools').closest('a')
+      expect(row?.getAttribute('href')).toBe('/devtools')
+      expect(row?.getAttribute('aria-current')).toBe('page')
     })
 
     test('menu form: the active entry is aria-current inside the dropdown', async () => {
