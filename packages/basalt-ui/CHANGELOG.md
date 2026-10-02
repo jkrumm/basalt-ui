@@ -1,3 +1,10 @@
+## [1.37.1](https://github.com/jkrumm/basalt-ui/compare/v1.37.0...v1.37.1) (2026-10-02)
+
+
+### Bug Fixes
+
+* stop the measured fold folding a row that fits to the sub-pixel ([67aebae](https://github.com/jkrumm/basalt-ui/commit/67aebae33ee966acca555fc98cb609df33a81a6c))
+
 # [1.37.0](https://github.com/jkrumm/basalt-ui/compare/v1.36.1...v1.37.0) (2026-10-02)
 
 
