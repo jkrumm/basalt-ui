@@ -240,6 +240,13 @@ describe('the subtitle folds into the info glyph in a card under 480px (CSS-only
     expect(screen.getByRole('tooltip').textContent).toBe('How it is computed.Basis.')
   })
 
+  test('the info glyph button is a real 24px target whose margin gives the size back', () => {
+    const trigger = block('.infoTrigger')
+    expect(trigger).toContain('min-width: 24px')
+    expect(trigger).toContain('min-height: 24px')
+    expect(trigger).toContain('margin: calc((11px - 24px) / 2)')
+  })
+
   test('the container rules hide the visible subtitle and show the fold pieces, and only there', () => {
     expect(block('.foldGlyph,\n.foldNote')).toContain('display: none')
     const narrow = CSS.slice(CSS.indexOf('@container basalt-card (max-width: 479.9px)'))
