@@ -590,6 +590,16 @@ describe('BarActionRow — the measured fold reaching the DOM', () => {
     await waitFor(() => expect(screen.getByText('CCCCCCCCCC')).toBeDefined())
   })
 
+  test('a row within a sub-pixel of its measured width stays whole (clientWidth rounds)', () => {
+    // A slot row's content spans 3 x 100 + 2 x 6 = 312px; a 311px integer clientWidth is the same
+    // row, rounded down.
+    room = 311
+    render(ui(actions(['AAAAAAAAAA', 'BBBBBBBBBB', 'CCCCCCCCCC'], false), 'slot'))
+
+    expect(barKeys()).toEqual(['k0', 'k1', 'k2'])
+    expect(screen.queryByRole('button', { name: 'More' })).toBeNull()
+  })
+
   test('a row that fits renders whole with no More', () => {
     room = 400
     render(ui(actions(['AAAAAAAAAA', 'BBBBBBBBBB', 'CCCCCCCCCC'], false)))

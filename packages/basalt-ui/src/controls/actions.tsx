@@ -477,6 +477,9 @@ function joinRuns<T extends BarAction>(
 
 type FoldStep = 'icon' | 'overflow'
 
+/** `clientWidth` rounds to a whole pixel; the measured boxes do not — see `useMeasuredFold`. */
+const SUBPIXEL_SLACK = 1
+
 /** The `More` trigger's estimated width — reserved only once something has folded (cf. `FOLD_PILL_WIDTH`). */
 const MORE_WIDTH = 80
 
@@ -612,7 +615,16 @@ function useMeasuredFold(input: {
       const rendered = elements.reduce((sum, el) => sum + el.offsetWidth + BAR_GAP, 0)
       const moreNow = hasMenus || Object.values(foldsRef.current).includes('overflow')
       const fixed = used - rendered - (moreNow ? MORE_WIDTH + BAR_GAP : 0)
-      const next = planBarFold({ room: row.clientWidth, fixed, gap: BAR_GAP, hasMenus, items })
+      // `clientWidth` is a rounded integer, the rects above are fractional: a row that is exactly as
+      // wide as its content (a `slot` host's shrink-wrapped `Group`, measured against itself) would
+      // read 123.4px of content in 123px of room and fold a button that fits.
+      const next = planBarFold({
+        room: row.clientWidth + SUBPIXEL_SLACK,
+        fixed,
+        gap: BAR_GAP,
+        hasMenus,
+        items,
+      })
       const prev = foldsRef.current
       const same =
         Object.keys(next).length === Object.keys(prev).length &&
