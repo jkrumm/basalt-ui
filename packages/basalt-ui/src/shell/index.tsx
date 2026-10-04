@@ -232,6 +232,17 @@ export type BasaltShellProps = BasaltProps & {
    * a no-op when omitted.
    */
   onCollapsedChange?: (collapsed: boolean) => void
+  /**
+   * The header row's height in px — default `SPACE_STEP.appShellHeaderHeight` (44, tracking the
+   * density level). ONE number at every width and in both sidebar forms (law C14): the navbar's and
+   * aside's top, the page-bar band, the aside's shell header and Main all derive from Mantine's
+   * `--app-shell-header-height`, so they follow it with no second value to keep in step. Brand,
+   * breadcrumb, page actions and globals centre vertically in the row. For a host that draws its
+   * own chrome into the header, e.g. a native macOS unified-toolbar title bar (~52): pair it with
+   * `--basalt-shell-lead-inset`. Keep it at or above the `ctl` control height (32) — the row holds
+   * one `ctl`-tier control.
+   */
+  headerHeight?: number
   /** Page content. */
   children?: ReactNode
 }
@@ -349,6 +360,7 @@ function ShellFrame({
   storageKey = 'basalt-sidebar-collapsed',
   collapsed: collapsedProp,
   onCollapsedChange,
+  headerHeight,
   account,
   search,
   children,
@@ -466,7 +478,7 @@ function ShellFrame({
         // bar to the RIGHT of the sidebar instead of above it.
         header={{
           // ONE height at every width (law C14): nothing reserves a second mobile row any more.
-          height: step.appShellHeaderHeight,
+          height: headerHeight ?? step.appShellHeaderHeight,
         }}
         navbar={{
           width: { base: step.appShellNavbarWidth, sm: navbarWidth },

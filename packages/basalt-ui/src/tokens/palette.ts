@@ -611,6 +611,8 @@ const SPACE_STEP_BASE = {
    *  folds that row's overflow into a kebab and moves its filters/tabs into the page flow, so the
    *  bar is one row on a phone too and there is no sum to keep in step any more.
    *
+   *  Consumer-settable per shell through `BasaltShell`'s `headerHeight` (px); this is its default.
+   *
    *  44, down from 48. The band holds ONE `ctl`-tier row (32 since this pass), so 48 left 8px of
    *  dead air above and below it — the "too much spacing at the top bar" the header reads as. 44
    *  keeps 6px of breathing room a side, still clears `controlHeight` (42) for a `size="md"`
