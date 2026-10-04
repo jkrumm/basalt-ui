@@ -3672,6 +3672,7 @@ export const DEPRECATED_EXPORTS = [
     name: 'FormSection',
     replacement: "FormSection from 'basalt-ui/controls'",
     removeIn: '1.39.0',
+    removed: true,
     fix: false,
   },
   {
@@ -3679,6 +3680,7 @@ export const DEPRECATED_EXPORTS = [
     name: 'FormRow',
     replacement: "FormRow from 'basalt-ui/controls'",
     removeIn: '1.39.0',
+    removed: true,
     fix: false,
   },
   {
@@ -3686,6 +3688,7 @@ export const DEPRECATED_EXPORTS = [
     name: 'FormGroup',
     replacement: "FormGroup from 'basalt-ui/controls'",
     removeIn: '1.39.0',
+    removed: true,
     fix: false,
   },
   {
@@ -3693,6 +3696,7 @@ export const DEPRECATED_EXPORTS = [
     name: 'FormActions',
     replacement: "FormActions from 'basalt-ui/controls'",
     removeIn: '1.39.0',
+    removed: true,
     fix: false,
   },
   {
@@ -3700,6 +3704,7 @@ export const DEPRECATED_EXPORTS = [
     name: 'useForm',
     replacement: "useForm from '@mantine/form'",
     removeIn: '1.39.0',
+    removed: true,
     fix: false,
   },
   {
@@ -3707,6 +3712,7 @@ export const DEPRECATED_EXPORTS = [
     name: 'schemaResolver',
     replacement: "schemaResolver from '@mantine/form'",
     removeIn: '1.39.0',
+    removed: true,
     fix: false,
   },
   {

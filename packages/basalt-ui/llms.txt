@@ -70,7 +70,7 @@ OptionalPeers: @tanstack/react-router@^1.170.0
 
 ## basalt-ui/forms
 Import: import { ... } from 'basalt-ui/forms'
-Description: Mantine form layer: useBasaltForm + inputProps/fieldKey (two calls — a spread `key` is a React 19 warning; the deprecated `field` alias for `inputProps` was removed in 1.29.0, C1 consolidation), useFormSubmit (submit state, decoded errors, server fieldErrors, focus-first-error, validateAsync), FormStateProvider disable propagation, useFieldArray, FormErrorSummary, useFormDraft with autosave (Standard Schema). The FormSection/FormRow/FormGroup/FormActions layout moved to ./controls in 1.36.0 and the useForm/schemaResolver re-exports are deprecated (import from @mantine/form); all six stay here until 1.37.0
+Description: Mantine form layer: useBasaltForm + inputProps/fieldKey (two calls — a spread `key` is a React 19 warning; the deprecated `field` alias for `inputProps` was removed in 1.29.0, C1 consolidation), useFormSubmit (submit state, decoded errors, server fieldErrors, focus-first-error, validateAsync), FormStateProvider disable propagation, useFieldArray, FormErrorSummary, useFormDraft with autosave (Standard Schema). The FormSection/FormRow/FormGroup/FormActions layout lives in ./controls (moved in 1.36.0) and useForm/schemaResolver come from @mantine/form; the six re-exports here were removed in 1.39.0
 Layer: mantine-coupled
 Rule: basalt-batteries
 OptionalPeers: @mantine/form@^9.3.0

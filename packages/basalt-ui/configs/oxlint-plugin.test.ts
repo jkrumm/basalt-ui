@@ -3393,7 +3393,7 @@ describe('basalt/deprecated-export — the form layout move', () => {
       )
       expect(rules).toContain('deprecated-export')
       expect(output).toContain(`'basalt-ui/controls'`)
-      expect(output).toContain('removed in 1.39.0')
+      expect(output).toContain('was removed in 1.39.0')
     },
   )
 
@@ -3403,6 +3403,7 @@ describe('basalt/deprecated-export — the form layout move', () => {
     )
     expect(rules).toContain('deprecated-export')
     expect(output).toContain(`'@mantine/form'`)
+    expect(output).toContain('was removed in 1.39.0')
   })
 
   it('does NOT report FormRow imported from basalt-ui/controls', () => {
