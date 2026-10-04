@@ -1923,7 +1923,7 @@ describe('basalt/control-outside-home', () => {
     },
   )
 
-  // FormRow/FormGroup (`basalt-ui/controls`, still re-exported from `basalt-ui/forms` until 1.38.0)
+  // FormRow/FormGroup (`basalt-ui/controls`, still re-exported from `basalt-ui/forms` until 1.39.0)
   // are law C1's third home written for a `<form>` rather than a settings page — the same non-home
   // treatment SettingsRow gets, via the same CONTROL_HOST_TAGS ancestry walk, which matches by NAME
   // so either subpath is a home.
@@ -3393,7 +3393,7 @@ describe('basalt/deprecated-export — the form layout move', () => {
       )
       expect(rules).toContain('deprecated-export')
       expect(output).toContain(`'basalt-ui/controls'`)
-      expect(output).toContain('removed in 1.38.0')
+      expect(output).toContain('removed in 1.39.0')
     },
   )
 
