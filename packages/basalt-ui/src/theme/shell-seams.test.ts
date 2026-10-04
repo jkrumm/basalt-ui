@@ -146,8 +146,12 @@ describe('the shared top bands — brand zone and aside header at one appShellHe
 
     const brand = readFileSync(join(SHELL_DIR, 'app-brand.module.css'), 'utf8')
     const zone = ruleBody(brand, '.zone {')
-    expect(zone).toContain('flex: 0 0 var(--app-shell-navbar-offset')
-    expect(zone).toContain('width: var(--app-shell-navbar-offset')
+    // The width is `max(navbar offset, lead inset + toggle)` through one private var
+    // (`--basalt-shell-lead-inset`'s contract, `app-brand.module.css.test.ts`): the offset is still
+    // the term that decides it whenever the inset is unset.
+    expect(zone).toMatch(/--basalt-shell-zone-width:\s*max\(\s*var\(--app-shell-navbar-offset/)
+    expect(zone).toContain('flex: 0 0 var(--basalt-shell-zone-width)')
+    expect(zone).toContain('width: var(--basalt-shell-zone-width)')
     // No px literal anywhere in the zone's own box: a fixed width would stop tracking the rail.
     expect(zone).not.toMatch(/:\s*\d+px/)
   })

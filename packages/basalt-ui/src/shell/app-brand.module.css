@@ -15,10 +15,27 @@
  * 10px of `.root` frame inset plus 10px of NavLink inset (`rowInsetX`) = 20. One vertical line
  * across the seam — a claim this comment used to make while the gutter was 13, and that the
  * 13 -> 20 move made true.
+ *
+ * `--basalt-shell-lead-inset` (default 0px, set by the consumer on `:root`) is the opt-in native
+ * title-bar contract: a macOS overlay title bar paints its traffic lights ON TOP of this zone, so a
+ * consumer publishes their span (~70px) and the zone (a) grows its inline-start padding by it and
+ * (b) is never narrower than inset + the collapse toggle, so the 48px rail does not clip the toggle
+ * under `overflow: hidden` (the toggle lands right of the lights; the breadcrumb after a widened
+ * rail zone shifts right by the same amount — accepted). Unset, every value below resolves to
+ * exactly what it was before the property existed: `max(offset, 0px + toggle)` is the offset
+ * (256 / 48 are both above the 28px toggle) and the added padding is 0px.
  */
 .zone {
-  flex: 0 0 var(--app-shell-navbar-offset, 0rem);
-  width: var(--app-shell-navbar-offset, 0rem);
+  /* The collapse toggle's box — `app-brand.tsx`'s `size={28}`, which is Mantine's rem-scaled
+   * `--ai-size-md` (1.75rem). Mantine defines that var on the ActionIcon, not on `:root`, so the
+   * zone restates the same arithmetic; `app-brand.module.css.test.ts` pins the two together. */
+  --basalt-shell-toggle-size: calc(1.75rem * var(--mantine-scale, 1));
+  --basalt-shell-zone-width: max(
+    var(--app-shell-navbar-offset, 0rem),
+    calc(var(--basalt-shell-lead-inset, 0px) + var(--basalt-shell-toggle-size))
+  );
+  flex: 0 0 var(--basalt-shell-zone-width);
+  width: var(--basalt-shell-zone-width);
   min-width: 0;
   display: flex;
   align-items: center;
@@ -27,6 +44,7 @@
   align-self: stretch;
   margin-inline-start: calc(-1 * var(--app-shell-padding, 0px));
   padding-inline: var(--app-shell-padding, 0px);
+  padding-inline-start: calc(var(--app-shell-padding, 0px) + var(--basalt-shell-lead-inset, 0px));
   overflow: hidden;
   /* Mantine's own AppShell timing, so the zone and the navbar under it move as one box. */
   transition-property: flex-basis, width;
@@ -101,11 +119,12 @@
 /*
  * The rail form, mirroring exactly what the sidebar's own brand row did when collapsed: the lead
  * (logo + name) hides and the toggle centres. The zone drops its inset so the toggle's centre lands
- * on the rail's icon column rather than 13px right of it.
+ * on the rail's icon column rather than 13px right of it. The lead inset is the one padding the
+ * rail keeps: the toggle sits right of the native title-bar controls, not centred under them.
  */
 @media (min-width: 52.5em) {
   .zone[data-collapsed] {
-    padding-inline: 0;
+    padding-inline: var(--basalt-shell-lead-inset, 0px) 0;
   }
 
   .zone[data-collapsed] .brand {
