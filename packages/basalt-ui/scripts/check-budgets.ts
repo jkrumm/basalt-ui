@@ -70,7 +70,7 @@ function publicSymbols(): number {
 
 /**
  * 1.36.x grace: the four form-layout aliases in ./forms (`FormRow` is the marker) + useForm/schemaResolver
- * sit one over 400; 1.38.0 removes them, and this derives back to 400 on its own — the grace cannot outlive them.
+ * sit one over 400; 1.39.0 removes them, and this derives back to 400 on its own — the grace cannot outlive them.
  */
 function publicSymbolsCeiling(): number {
   const surface = JSON.parse(

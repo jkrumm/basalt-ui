@@ -56,7 +56,7 @@ export { SliderControl, type SliderControlProps } from './slider-control'
 
 // ── The form layout (moved from ./forms in 1.36.0) ────────────────────────────────────────────
 // Layout needs no `@mantine/form`, and `./forms`' barrel value-imports it — so a consumer rendering
-// a `FormRow` had to install a peer it never used. `./forms` re-exports these until 1.38.0.
+// a `FormRow` had to install a peer it never used. `./forms` re-exports these until 1.39.0.
 export {
   FormSection,
   FormRow,
