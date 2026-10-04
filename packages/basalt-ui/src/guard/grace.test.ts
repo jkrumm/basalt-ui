@@ -145,12 +145,11 @@ describe('scripts/check-grace.ts', () => {
     },
   )
 
-  // The 1.36.0 form-layout aliases are dated 1.39.0 (re-dated at 1.37.0 and again at 1.38.0:
-  // shutterflow still imports them): the release that reaches that date refuses until they are deleted (their own commit) —
-  // which is when this case moves to the next date.
-  it('refuses 1.39.0 while the form-layout aliases still ship', () => {
-    const { code, stderr } = runCheckGrace('1.39.0')
-    expect([code, stderr.includes('FormRow (basalt-ui/forms)')]).toEqual([1, true])
+  // The 1.36.0 form-layout aliases and the useForm/schemaResolver re-exports were deleted in 1.39.0
+  // (their own commit), so the release that reached their date is clear.
+  it('passes 1.39.0 — the form-layout aliases are gone', () => {
+    const { code, stdout } = runCheckGrace('1.39.0')
+    expect([code, stdout.includes('clear of all 0 grace entries')]).toEqual([0, true])
   })
 
   it('exits 2 on a missing or malformed version rather than passing vacuously', () => {

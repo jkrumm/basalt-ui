@@ -81,10 +81,24 @@ consumer read this index, found nothing, and diffed a KPI row that had silently 
 
 ---
 
-## Unreleased
+## Unreleased — the forms aliases leave
 
-_Nothing yet. Author the next section under this heading as `## Unreleased — <title>`; the
-release renames it and opens a new one here._
+**Added: `BasaltShell headerHeight?: number`** (px, default unchanged — the density-tracking
+`appShellHeaderHeight`, 44). One value for both sidebar forms and every width; the navbar and aside
+tops, the page-bar band and Main follow it. A native unified-toolbar title bar sets ~52.
+
+**Removed (grace ended — deprecated in 1.36.0, re-dated twice):** the six `basalt-ui/forms`
+re-exports below. No autofix: move the import by hand.
+
+| Was (`basalt-ui/forms`)                                                               | Now                                      |
+| ------------------------------------------------------------------------------------- | ---------------------------------------- |
+| `FormSection`, `FormRow`, `FormGroup`, `FormActions` (+ their `*Props`/`*Slot` types) | the same names from `basalt-ui/controls` |
+| `useForm`, `schemaResolver`, `UseFormReturnType`, `UseFormInput`                      | `@mantine/form` directly                 |
+
+`basalt/deprecated-export` keeps the rows as `removed: true`, so an old import still gets a finding
+that names the new home. `useBasaltForm`, `inputProps`, `fieldKey`, `useFormSubmit`,
+`FormStateProvider`, `useFieldArray`, `FormErrorSummary` and `useFormDraft` are unchanged.
+The `public symbols` budget is back to 400.
 
 ## 1.38.1 — the content inset
 
@@ -100,9 +114,7 @@ No export changed. Two default numbers moved, both from `sm` up (the phone gutte
 The block inset is `stack-sm` from `sm` up and stays `stack-md` (12) on a phone. The breadcrumb
 now sits exactly on Main's content edge (it was 7px short of it); the brand mark no longer borrows
 the page gutter for its x — it is the nav-icon column (`row-inset-x` twice) on its own, so it stays
-at 20 while the gutter is 16. **Added: `BasaltShell headerHeight?: number`** (px, default unchanged — the density-tracking
-`appShellHeaderHeight`, 44). One value for both sidebar forms and every width; the navbar and aside
-tops, the page-bar band and Main follow it. A native unified-toolbar title bar sets ~52.
+at 20 while the gutter is 16.
 
 A consumer that wants the old numbers has no knob for them: the gutter
 is a `SPACE_STEP` entry, so retune it through the density level or accept the new default.

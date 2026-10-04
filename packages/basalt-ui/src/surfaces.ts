@@ -443,7 +443,7 @@ export const SURFACES = {
     // consumer ships today (`PLUGIN_RULE_GRACE`).
     pluginRules: ['forms-field-key'],
     description:
-      'Mantine form layer: useBasaltForm + inputProps/fieldKey (two calls — a spread `key` is a React 19 warning; the deprecated `field` alias for `inputProps` was removed in 1.29.0, C1 consolidation), useFormSubmit (submit state, decoded errors, server fieldErrors, focus-first-error, validateAsync), FormStateProvider disable propagation, useFieldArray, FormErrorSummary, useFormDraft with autosave (Standard Schema). The FormSection/FormRow/FormGroup/FormActions layout moved to ./controls in 1.36.0 and the useForm/schemaResolver re-exports are deprecated (import from @mantine/form); all six stay here until 1.37.0',
+      'Mantine form layer: useBasaltForm + inputProps/fieldKey (two calls — a spread `key` is a React 19 warning; the deprecated `field` alias for `inputProps` was removed in 1.29.0, C1 consolidation), useFormSubmit (submit state, decoded errors, server fieldErrors, focus-first-error, validateAsync), FormStateProvider disable propagation, useFieldArray, FormErrorSummary, useFormDraft with autosave (Standard Schema). The FormSection/FormRow/FormGroup/FormActions layout lives in ./controls (moved in 1.36.0) and useForm/schemaResolver come from @mantine/form; the six re-exports here were removed in 1.39.0',
     optionalPeers: ['@mantine/form'],
     forbiddenImports: [],
   },
