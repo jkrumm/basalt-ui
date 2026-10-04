@@ -124,13 +124,14 @@ bun run fmt                # oxfmt (write)
 bun run fmt:check          # oxfmt (check only)
 bun run typecheck          # tsc across package + playground (see the dist footgun below)
 bun run pre                # fmt:check && lint && typecheck && check-theme && bun test
-make verify                # build + pre + the layout suite + pack-test — the full gate
+make check                 # build + pre + the layout suite + pack-test — the full local gate
+make verify                # probe production (curl basalt-ui.com) — not the local gate
 ```
 
 `pre` runs the unit suite; the **layout** suite (real CSS geometry in headless Chrome, ~10s) stays
-out of it and is reached by `make layout` or by `make verify`. `make verify` builds FIRST on
+out of it and is reached by `make layout` or by `make check`. `make check` builds FIRST on
 purpose — `pre`'s `check-theme` and the playground's typecheck both resolve through `dist`, so a
-verify that built last would grade the previous build.
+check that built last would grade the previous build.
 
 **Package (`packages/basalt-ui`):**
 
@@ -148,15 +149,51 @@ same family — build before trusting a typecheck or a theme check that spans bo
 playground only exercises `src/`, never `dist/` — the pack-test is what proves the published
 artifact resolves.
 
-## Validation & Quality Workflow
+## Validate
+
+`make check` is the local equivalent of CI (`.github/workflows/ci.yml`): it runs the generation sync
+checks, builds first, then `pre` (fmt:check + lint + typecheck + check-theme + check-budgets + unit
+tests), the layout suite, the coverage and agent-doc-drift gates, and the pack-test. It exits
+non-zero on the first failure and writes only gitignored output (`dist/`, `*.tgz`). `pre` alone is
+the fast inner loop.
 
 1. Make changes.
-2. Run `bun run pre` (fmt:check + lint + typecheck + check-theme + tests) to validate; `make
-verify` adds the layout suite, the build and the pack-test.
+2. Run `bun run pre` to validate quickly; `make check` adds the build, the layout suite and the
+   pack-test.
 3. Fix errors in changed files only — don't refactor untouched code.
 4. Commit with conventional format (empty scope).
 
 The user validates running apps manually — don't start dev servers.
+
+## Deploy
+
+The marketing/docs site (basalt-ui.com) deploys continuously on every push to `master` via RollHook
+(`.github/workflows/deploy.yml`); `make deploy` is a no-op that prints `deployed by CI on push`. npm
+publishing is NOT a deploy — it is the release process (`make release`, below), gated by
+`scripts/release.sh`.
+
+## Verify & Monitor
+
+- **Health URL**: https://basalt-ui.com/ — `make verify` curls it with `-fsS`; exit 0 means live. The
+  image is static nginx, so there is no application `/health` endpoint to probe.
+- **Uptime Kuma monitor**: none recorded here — this repo declares no monitor, and the monitor list
+  lives in a separate infra repo outside this checkout, so it could not be confirmed from here.
+- **OTel `service.name`**: none — this repository ships no OpenTelemetry instrumentation.
+
+## Gotchas
+
+- **`dist` is read by typecheck and `check-theme`.** Both resolve `basalt-ui/*` through
+  `node_modules → dist/*.d.ts`, so a new or widened export stays invisible until `make check` builds.
+  Never trust a bare `bun run typecheck` on a cold tree — `make check` builds FIRST on purpose.
+- **Basalt-ui package changes are their own commit.** The lefthook `isolated-basalt-ui` hook fails a
+  staging set that mixes `packages/basalt-ui/` and non-package files.
+- **`make verify` probes production; `make check` is the local gate.** They are not interchangeable:
+  `verify` makes a network call and does not run the tests.
+- **The layout suite needs Chrome.** It runs in CI and `make check`, never in `pre`.
+- **`apps/marketing/AGENTS.md` describes the pre-Mantine (Tailwind/Biome) era** and is stale; the
+  root + package conventions here are authoritative.
+- **No majors.** `feat!:` / `BREAKING CHANGE:` are banned; a nominal breaking change ships as a plain
+  `feat:` with a `MIGRATING.md` entry.
 
 ## Git Workflow
 

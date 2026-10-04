@@ -39,10 +39,10 @@ controls waves, the 2026-09 maturation round, and three sections that had drifte
 
 ## Validation
 
-Gates: `bun run pre` (fmt:check + lint + typecheck + check-theme + `bun test`) → `make verify`
+Gates: `bun run pre` (fmt:check + lint + typecheck + check-theme + `bun test`) → `make check`
 (build first, then `pre` + the layout suite + `scripts/pack-test.sh`). The pack-test is the only
 one that exercises `dist` — the playground aliases `basalt-ui` to `src`, so neither the running app
-nor `bun run typecheck` alone proves the published artifact resolves. Run `make verify` before a
+nor `bun run typecheck` alone proves the published artifact resolves. Run `make check` before a
 release; don't quote a stale count here, run it.
 
 ## Deferred by design — still not built, on purpose

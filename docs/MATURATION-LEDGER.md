@@ -290,7 +290,7 @@ inside the exact `docs/*.md` prose ceiling (2480/2480) and the shipped-rule-line
 unchanged — no rule file touched, only the generated `<!-- basalt:coverage -->` blocks for the two
 new guards).
 
-Gate: `make verify` green (build, `bun run pre` 4781/4781 pass, layout suite 120/120, pack-test);
+Gate: `make check` green (build, `bun run pre` 4781/4781 pass, layout suite 120/120, pack-test);
 `bun packages/basalt-ui/scripts/check-budgets.ts --report` all 6 within ceiling; two `/review` passes
 (sideclaw multi-angle high + native `code-review` high) — sideclaw's 6 blocking findings and the
 native pass's in-scope findings all fixed; out-of-scope/pre-existing findings recorded above.
@@ -372,7 +372,7 @@ chart-layout regression. Full recapture (`r2/capture.mjs`, all 5 viewports × da
 horizontal overflow anywhere; a critic pass over the dashboard/data/charts/landscape shots found no
 visual regression.
 
-Gate: `make verify` green (build, `bun run pre` 4828/4828 pass, layout suite, pack-test);
+Gate: `make check` green (build, `bun run pre` 4828/4828 pass, layout suite, pack-test);
 `bun packages/basalt-ui/scripts/check-budgets.ts --report` all 6 within ceiling; two `/review` passes
 (sideclaw multi-angle high, twice — once on the wave's own diff, once on the fix-up) — every blocking
 finding fixed before commit, in-scope non-blocking findings fixed alongside, out-of-scope/pre-existing
