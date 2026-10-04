@@ -1,3 +1,10 @@
+## [1.38.1](https://github.com/jkrumm/basalt-ui/compare/v1.38.0...v1.38.1) (2026-10-04)
+
+
+### Bug Fixes
+
+* take the page content inset one step down, 20/12 to 16/8 from sm up ([cf61c05](https://github.com/jkrumm/basalt-ui/commit/cf61c05410df114d5c6182ed4a8c5ed38b308a56))
+
 # [1.38.0](https://github.com/jkrumm/basalt-ui/compare/v1.37.1...v1.38.0) (2026-10-04)
 
 
