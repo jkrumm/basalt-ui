@@ -247,6 +247,13 @@ Three tiers: **palette data** (pure data, zero React/Mantine/DOM) → **`--vx-*`
   ResizeObserver fires once with a zero box while the element is still laid out, and publishing that
   zero is what collapsed a consumer's sticky offset mid-navigation. **No header height is React
   state**, and the header is one token tall on every viewport. An empty home renders nothing (C14).
+- **`--basalt-shell-lead-inset` is the one opt-in CSS contract of the header's leading zone**
+  (`app-brand.module.css`, JSDoc on `BasaltShell`): a consumer with a native macOS overlay title bar
+  sets it on `:root` to the traffic-light span (~70px, default `0px`). The zone's inline-start
+  padding grows by it and its width is `max(--app-shell-navbar-offset, inset + the 28px toggle)`, so
+  the rail keeps the toggle right of the lights instead of clipping it; unset is byte-identical
+  (`app-brand.module.css.test.ts`, measured in `tests/layout/shell-chrome`). The breadcrumb after a
+  widened rail zone shifts right by the same amount — accepted.
 - **Mobile nav is a TAB BAR, not a menu**, and `projectMobileNav` is a PURE projection: the surface
   is INFERRED from row count (0 drops the slot, 1 is a plain link, ≤ `menuMax` is a menu, more is a
   sheet). The `menu` surface is a compact POPOVER, not a bottom sheet, and **`menuMax` is no longer

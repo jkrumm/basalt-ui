@@ -36,6 +36,7 @@ import {
   HEADER_LEAD,
   HEADER_PAGE_BAR,
   HEADER_ROW,
+  HEADER_ZONE,
   LAPTOP_900,
   LAPTOP_1024,
   MAIN,
@@ -169,6 +170,14 @@ async function collapseSidebar(p: LayoutPage): Promise<void> {
       Math.abs((document.querySelector(navbar)?.getBoundingClientRect().width ?? 0) - rail) < 0.5,
     [NAVBAR, SPACE_STEP.appShellNavbarRailWidth] as const,
   )
+  await p.settle()
+}
+
+/** Publishes the opt-in native title-bar inset the way a consumer does — on the root element. */
+async function setLeadInset(p: LayoutPage, value: string): Promise<void> {
+  await p.raw.evaluate((v) => {
+    document.documentElement.style.setProperty('--basalt-shell-lead-inset', v)
+  }, value)
   await p.settle()
 }
 
@@ -604,6 +613,94 @@ layout('shell chrome — the header row, the gutter, the sidebar footer', () => 
     throw new Error(
       '\nLAYOUT INVARIANT VIOLATED — the gap between two rail sections moved\n\n' +
         `  seam = ${seam.toFixed(1)}px, expected ${SPACE_STEP.sidebarSectionGap}px (sidebarSectionGap)\n`,
+    )
+  })
+
+  /**
+   * `--basalt-shell-lead-inset` — the opt-in native title-bar leading inset.
+   *
+   * UNSET is the contract's default and must be byte-identical to before: the zone is the navbar
+   * offset wide (256 / 48), the rail's toggle is centred on the 48px rail, the expanded zone
+   * starts its content at the page gutter. SET to a macOS traffic-light span (70px), the content
+   * moves right of it in both forms and the rail grows just enough to hold inset + toggle, so the
+   * toggle is never clipped by the zone's `overflow: hidden`.
+   */
+  test('with the inset unset the zone is exactly as it was', async () => {
+    const p = await openFixture(UNLABELLED, DESKTOP_1440)
+    await p.settle()
+
+    const zone = await p.box('zone', HEADER_ZONE)
+    const expandedPadding = await computedPx(p, HEADER_ZONE, 'padding-left')
+    if (
+      Math.abs(zone.box.width - SPACE_STEP.appShellNavbarWidth) > 0.5 ||
+      Math.abs(expandedPadding - SPACE_STEP.appShellInset) > 0.5
+    ) {
+      throw new Error(
+        `LAYOUT: expanded zone is ${zone.box.width}px wide with ${expandedPadding}px inline-start ` +
+          `padding; expected ${SPACE_STEP.appShellNavbarWidth} / ${SPACE_STEP.appShellInset}`,
+      )
+    }
+
+    await collapseSidebar(p)
+    const rail = await p.box('rail zone', HEADER_ZONE)
+    const toggle = await p.box('toggle', COLLAPSE_TOGGLE)
+    const railPadding = await computedPx(p, HEADER_ZONE, 'padding-left')
+    const centre = toggle.box.left + toggle.box.width / 2
+    if (
+      Math.abs(rail.box.width - SPACE_STEP.appShellNavbarRailWidth) > 0.5 ||
+      railPadding !== 0 ||
+      Math.abs(centre - (rail.box.left + rail.box.width / 2)) > 0.5
+    ) {
+      throw new Error(
+        `LAYOUT: rail zone is ${rail.box.width}px wide, padding-left ${railPadding}px, toggle ` +
+          `centre ${centre.toFixed(1)} vs zone centre ${(rail.box.left + rail.box.width / 2).toFixed(1)}; ` +
+          'expected the 48px rail with a centred toggle and no padding',
+      )
+    }
+  })
+
+  const TRAFFIC_LIGHTS_PX = 70
+
+  test('a lead inset pushes the expanded brand clear of the traffic lights', async () => {
+    const p = await openFixture(UNLABELLED, DESKTOP_1440)
+    await p.settle()
+    await setLeadInset(p, `${TRAFFIC_LIGHTS_PX}px`)
+
+    const zone = await p.box('zone', HEADER_ZONE)
+    const toggle = await p.box('toggle', COLLAPSE_TOGGLE)
+    const brand = await p.box('brand', `${HEADER_ZONE} > :first-child`)
+    expectFullyInside(toggle, zone, 'the toggle stays inside the zone', p.viewport)
+    if (
+      Math.abs(zone.box.width - SPACE_STEP.appShellNavbarWidth) > 0.5 ||
+      brand.box.left < zone.box.left + TRAFFIC_LIGHTS_PX - 0.5
+    ) {
+      throw new Error(
+        `LAYOUT: expanded zone ${zone.box.width}px wide (expected the 256px navbar offset), ` +
+          `brand content starts at ${(brand.box.left - zone.box.left).toFixed(1)}px — it must ` +
+          `start at or right of the ${TRAFFIC_LIGHTS_PX}px inset`,
+      )
+    }
+  })
+
+  test('a lead inset keeps the rail toggle right of the traffic lights, unclipped', async () => {
+    const p = await openFixture(UNLABELLED, DESKTOP_1440)
+    await p.settle()
+    await setLeadInset(p, `${TRAFFIC_LIGHTS_PX}px`)
+    await collapseSidebar(p)
+
+    const zone = await p.box('rail zone', HEADER_ZONE)
+    const toggle = await p.box('toggle', COLLAPSE_TOGGLE)
+    expectFullyInside(
+      toggle,
+      zone,
+      'the rail zone grows to hold inset + toggle — a 48px rail would clip the toggle under ' +
+        '`overflow: hidden`',
+      p.viewport,
+    )
+    if (toggle.box.left >= zone.box.left + TRAFFIC_LIGHTS_PX - 0.5) return
+    throw new Error(
+      `LAYOUT: rail toggle starts ${(toggle.box.left - zone.box.left).toFixed(1)}px into the zone, ` +
+        `under the ${TRAFFIC_LIGHTS_PX}px traffic-light span`,
     )
   })
 })

@@ -319,6 +319,13 @@ function collapseStore(key: string): CollapseStore {
  * inside it: `PageBarProvider` owns the header portal and the single-kebab claim, `AsideProvider`
  * owns the aside portal, the region CLAIM and the claiming page's fold state — which `ShellFrame`
  * has to READ to size `AppShell.Aside`, so it cannot be the component that provides it.
+ *
+ * **Native title bar (opt-in CSS contract).** A desktop host with a macOS overlay title bar paints
+ * its traffic lights ON TOP of the header's leading zone. Set `--basalt-shell-lead-inset` on
+ * `:root` to their span (e.g. `html { --basalt-shell-lead-inset: 70px }`; default `0px`, which
+ * changes nothing): the zone's inline-start padding grows by it, and the zone is never narrower than
+ * the inset plus the collapse toggle, so the 48px rail pushes the toggle to the right of the lights
+ * instead of clipping it. The breadcrumb after a widened rail zone shifts right by the same amount.
  */
 export function BasaltShell(props: BasaltShellProps) {
   assertRequiredProps('BasaltShell', props, ['brand', 'sections'])
