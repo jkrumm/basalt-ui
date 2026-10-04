@@ -94,6 +94,11 @@ export const NAVBAR = '.mantine-AppShell-navbar'
 export const NAV_VIEWPORT = `${NAVBAR} .mantine-ScrollArea-viewport`
 /** Nav rows, SCOPED to that viewport so the footer's own rows never count as nav rows. */
 export const NAV_ROWS = `${NAV_VIEWPORT} .mantine-NavLink-root`
+/** The header's leading zone — the brand name plus the collapse toggle, `--app-shell-navbar-offset` wide. */
+export const HEADER_ZONE = `${HEADER_ROW} > ${moduleClass('zone')}`
+/** The collapse toggle, whichever way it currently points. */
+export const COLLAPSE_TOGGLE = `${HEADER_ZONE} button[aria-label$=" sidebar"]`
+
 /** The sidebar's pinned footer region — settings rows plus the account row. */
 export const SIDEBAR_FOOTER = `${NAVBAR} ${moduleClass('footer')}`
 

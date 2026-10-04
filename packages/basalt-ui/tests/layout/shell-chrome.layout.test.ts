@@ -29,6 +29,8 @@ import type { FixtureSpec } from './fixture/spec'
 import type { LayoutPage, Named, Viewport } from './harness'
 import {
   CLOSE_BUDGET_MS,
+  COLLAPSE_TOGGLE,
+  DESKTOP_1440,
   HEADER,
   HEADER_GLOBAL,
   HEADER_LEAD,
@@ -37,6 +39,7 @@ import {
   LAPTOP_900,
   LAPTOP_1024,
   MAIN,
+  NAVBAR,
   NAV_ROWS,
   NAV_VIEWPORT,
   PHONE,
@@ -156,6 +159,31 @@ function rightOfLead(row: Named, lead: Named): Named {
       width: Math.max(0, row.box.right - lead.box.right),
     },
   }
+}
+
+/** Collapses the sidebar and waits for the navbar to finish easing to the rail width. */
+async function collapseSidebar(p: LayoutPage): Promise<void> {
+  await p.raw.click(COLLAPSE_TOGGLE)
+  await p.raw.waitForFunction(
+    ([navbar, rail]) =>
+      Math.abs((document.querySelector(navbar)?.getBoundingClientRect().width ?? 0) - rail) < 0.5,
+    [NAVBAR, SPACE_STEP.appShellNavbarRailWidth] as const,
+  )
+  await p.settle()
+}
+
+/** A shell whose first section is UNLABELLED — the shape whose band is zero-height. */
+const UNLABELLED: FixtureSpec = {
+  sections: [
+    {
+      label: '',
+      items: [
+        { key: 'a', label: 'Overview', active: true },
+        { key: 'b', label: 'Reports' },
+      ],
+    },
+  ],
+  sidebar: { account: true, settings: 2 },
 }
 
 layout('shell chrome — the header row, the gutter, the sidebar footer', () => {
@@ -481,6 +509,101 @@ layout('shell chrome — the header row, the gutter, the sidebar footer', () => 
       'the scroll END-STOP is a full region gap of air under the last row — the same number the ' +
         "column opens with at the other end, so both of the nav region's edges read the same",
       p.viewport,
+    )
+  })
+  /**
+   * THE FOOTER'S BOTTOM INSET EQUALS THE COLUMN'S SIDE INSET — expanded and in the rail.
+   *
+   * `.footer` carried `padding-top` only, so the last row (settings link / account row) sat FLUSH
+   * on the navbar's bottom edge against a 10px gap at its sides. One `rowInsetX` below the last row
+   * closes it, and it is the footer's own edge, so the rail cannot double it.
+   */
+  for (const collapsed of [false, true]) {
+    test(`the last footer row clears the navbar bottom by the side inset (${collapsed ? 'rail' : 'expanded'})`, async () => {
+      const p = await openFixture(UNLABELLED, DESKTOP_1440)
+      await p.settle()
+      if (collapsed) await collapseSidebar(p)
+
+      const navbar = await p.box('navbar', NAVBAR)
+      const rows = await p.boxes(`${SIDEBAR_FOOTER} > *`)
+      const last = rows.at(-1)
+      if (!last) throw new Error('LAYOUT: the footer rendered no rows — the fixture is wrong')
+
+      const gap = navbar.box.bottom - last.bottom
+      if (Math.abs(gap - SPACE.rowInsetX) <= 0.5) return
+      throw new Error(
+        '\nLAYOUT INVARIANT VIOLATED — the sidebar footer must end one side inset above the navbar ' +
+          'bottom\n\n' +
+          `  navbar.bottom − last footer row.bottom = ${gap.toFixed(1)}px\n` +
+          `  expected: ${SPACE.rowInsetX}px (the column's horizontal inset)\n` +
+          `  viewport ${p.viewport.width}x${p.viewport.height} (${p.viewport.name})\n`,
+      )
+    })
+  }
+
+  /**
+   * THE FIRST NAV ROW SITS AT THE SAME y EXPANDED AND IN THE RAIL.
+   *
+   * Expanded, an unlabelled first section's band is zero-height and contributes only its
+   * `margin-bottom` (`sidebarSectionLabelGap`); the rail's rule zeroed that margin, so the first
+   * icon landed flush on the navbar top, a gap higher than the same row expanded. The rail now
+   * keeps the FIRST band's margin only — the equal-offset contract, and the non-vacuous half: the
+   * offset is asserted to be the token, not merely "the same".
+   */
+  test('the first nav row has the same top offset expanded and collapsed', async () => {
+    const p = await openFixture(UNLABELLED, DESKTOP_1440)
+    await p.settle()
+
+    const offset = async (): Promise<number> => {
+      const navbar = await p.box('navbar', NAVBAR)
+      const [first] = await p.boxes(NAV_ROWS)
+      if (!first) throw new Error('LAYOUT: the sidebar rendered no nav rows — the fixture is wrong')
+      return first.top - navbar.box.top
+    }
+
+    const expanded = await offset()
+    await collapseSidebar(p)
+    const rail = await offset()
+
+    if (
+      Math.abs(expanded - rail) <= 0.5 &&
+      Math.abs(rail - SPACE_STEP.sidebarSectionLabelGap) <= 0.5
+    )
+      return
+    throw new Error(
+      '\nLAYOUT INVARIANT VIOLATED — the first nav row moved when the sidebar collapsed\n\n' +
+        `  first row top offset expanded = ${expanded.toFixed(1)}px, rail = ${rail.toFixed(1)}px\n` +
+        `  expected: both = ${SPACE_STEP.sidebarSectionLabelGap}px (sidebarSectionLabelGap)\n`,
+    )
+  })
+
+  /**
+   * THE RAIL'S SECTION SEAM IS UNCHANGED — only the FIRST band keeps a margin.
+   *
+   * Un-zeroing every band's `margin-bottom` in the rail would also have widened the seam between
+   * sections by the label gap (`sectionGap` + 6), for a label that is not there. The rail's
+   * icon-to-icon distance across a seam is `sectionGap` alone, as before.
+   */
+  test('the rail does not widen the gap between sections', async () => {
+    const p = await openFixture(
+      {
+        sections: [
+          { label: '', items: [{ key: 'a', label: 'One', active: true }] },
+          { label: '', items: [{ key: 'b', label: 'Two' }] },
+        ],
+      },
+      DESKTOP_1440,
+    )
+    await p.settle()
+    await collapseSidebar(p)
+
+    const [one, two] = await p.boxes(NAV_ROWS)
+    if (!one || !two) throw new Error('LAYOUT: expected two nav rows — the fixture is wrong')
+    const seam = two.top - one.bottom
+    if (Math.abs(seam - SPACE_STEP.sidebarSectionGap) <= 0.5) return
+    throw new Error(
+      '\nLAYOUT INVARIANT VIOLATED — the gap between two rail sections moved\n\n' +
+        `  seam = ${seam.toFixed(1)}px, expected ${SPACE_STEP.sidebarSectionGap}px (sidebarSectionGap)\n`,
     )
   })
 })

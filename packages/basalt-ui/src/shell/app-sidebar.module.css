@@ -212,6 +212,11 @@
 .footer {
   flex-shrink: 0;
   padding-top: var(--vx-space-sidebar-region-gap);
+  /* The bottom inset equals the column's side inset (`.root`'s `row-inset-x`), so the last row —
+   * the settings link, the account row or a bottom progress block — does not sit FLUSH on the
+   * navbar's bottom edge against a 10px side gap. Rail and expanded alike: this is the footer's own
+   * edge, not a rail rule, so a collapsed sidebar cannot double it. */
+  padding-bottom: var(--vx-space-row-inset-x);
 }
 
 .footer > * + * {
@@ -695,6 +700,17 @@
 
   .root[data-collapsed] .sectionBand > * {
     display: none;
+  }
+
+  /* The FIRST section's band keeps its label gap in the rail. Expanded, that band's
+   * `margin-bottom` is what seats the first nav row `section-label-gap` below the navbar top (an
+   * unlabelled band is zero-height); zeroing it above left the rail's first icon flush at 0, a few
+   * px higher than the same row expanded. Only the first band: every later band's zeroed margin is
+   * what keeps the gap BETWEEN sections at `section-gap` in the rail, where the label it separated
+   * from the rows is gone. (A labelled first section expands to label + gap, which the rail cannot
+   * match — its label is `display: none`; the equal-offset contract is the unlabelled case.) */
+  .root[data-collapsed] .nav > div:first-child > .sectionBand {
+    margin-bottom: var(--vx-space-sidebar-section-label-gap);
   }
 
   /* Collapse every nav row to its icon. Targets `.navItem` — the wrapper Box present on EVERY render
