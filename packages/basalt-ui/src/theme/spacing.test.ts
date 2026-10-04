@@ -413,7 +413,7 @@ const SPACE_STEP_SWEEP: ReadonlyArray<
   // The page gutter — the ONE `appShell*` dimension with a `--vx-*` var, and in PX, not the `rem`
   // its controls-tier neighbours use: it is a layout margin against a viewport, not a box sized to
   // text. Both halves of the reason are in `spaceDecls`'s own comment (`tokens/index.ts`).
-  ['appShellInset', 20, 'space-app-shell-inset'],
+  ['appShellInset', 16, 'space-app-shell-inset'],
   ['appShellInsetMobile', 8, 'space-app-shell-inset-mobile'],
   // The header's breadcrumb floor — the third `appShell*` dimension with a `--vx-*` var, for the
   // ordinary reason (a CSS module reads it), not for the gutter's special one.
