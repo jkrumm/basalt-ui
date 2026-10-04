@@ -8,13 +8,15 @@
  *
  * The zone's WIDTH is `--app-shell-navbar-offset`, so it tracks the rail collapse with no React
  * state and lands its trailing edge exactly on the sidebar|main seam. The negative
- * `margin-inline-start` cancels `AppShell.Header`'s own `px` inset so the zone starts at the
- * viewport edge and re-applies that inset as padding — which is what puts the brand lead on the
- * same x as the sidebar's nav ICON column below it. The arithmetic, now that the page gutter is
- * `SPACE.appShellInset`: the zone re-applies `--app-shell-padding` = 20, and a nav icon sits at
- * 10px of `.root` frame inset plus 10px of NavLink inset (`rowInsetX`) = 20. One vertical line
- * across the seam — a claim this comment used to make while the gutter was 13, and that the
- * 13 -> 20 move made true.
+ * `margin-inline-start` cancels `AppShell.Header`'s own `px` inset (the page gutter,
+ * `--app-shell-padding`) so the zone starts at the viewport edge, and the zone's OWN inline padding
+ * is the sidebar's nav-icon column — 10px of `.root` frame inset plus 10px of NavLink inset, i.e.
+ * `row-inset-x` twice — which is what puts the brand lead on the same x as the nav ICON column below
+ * it. That padding used to BE the page gutter (`--app-shell-padding`, 20, the same number by
+ * coincidence); the gutter is 16 now, and the two are different claims, so each is stated on its
+ * own. The breadcrumb lands on Main's content edge: the zone's trailing margin is the gutter minus
+ * the header row's flex gap (`app-header.module.css`'s `--basalt-header-gap`), so zone end + margin
+ * + gap = seam + gutter.
  *
  * `--basalt-shell-lead-inset` (default 0px, set by the consumer on `:root`) is the opt-in native
  * title-bar contract: a macOS overlay title bar paints its traffic lights ON TOP of this zone, so a
@@ -30,6 +32,8 @@
    * `--ai-size-md` (1.75rem). Mantine defines that var on the ActionIcon, not on `:root`, so the
    * zone restates the same arithmetic; `app-brand.module.css.test.ts` pins the two together. */
   --basalt-shell-toggle-size: calc(1.75rem * var(--mantine-scale, 1));
+  /* The sidebar's nav-icon column: `.root` inset + NavLink inset, both `row-inset-x`. */
+  --basalt-nav-icon-x: calc(2 * var(--vx-space-row-inset-x));
   --basalt-shell-zone-width: max(
     var(--app-shell-navbar-offset, 0rem),
     calc(var(--basalt-shell-lead-inset, 0px) + var(--basalt-shell-toggle-size))
@@ -43,8 +47,9 @@
    * like, and the rail's centred toggle centres against the whole row. */
   align-self: stretch;
   margin-inline-start: calc(-1 * var(--app-shell-padding, 0px));
-  padding-inline: var(--app-shell-padding, 0px);
-  padding-inline-start: calc(var(--app-shell-padding, 0px) + var(--basalt-shell-lead-inset, 0px));
+  margin-inline-end: calc(var(--app-shell-padding, 0px) - var(--basalt-header-gap, 0px));
+  padding-inline: var(--basalt-nav-icon-x);
+  padding-inline-start: calc(var(--basalt-nav-icon-x) + var(--basalt-shell-lead-inset, 0px));
   overflow: hidden;
   /* Mantine's own AppShell timing, so the zone and the navbar under it move as one box. */
   transition-property: flex-basis, width;

@@ -50,9 +50,15 @@ describe('app-brand.module.css — the --basalt-shell-lead-inset contract', () =
   })
 
   it('unset, the inline padding is the shell padding on both sides', () => {
-    expect(zone.get('padding-inline')).toBe('var(--app-shell-padding, 0px)')
+    // The nav-icon column (`.root` inset + NavLink inset), not the page gutter.
+    expect(zone.get('--basalt-nav-icon-x')).toBe('calc(2 * var(--vx-space-row-inset-x))')
+    expect(zone.get('padding-inline')).toBe('var(--basalt-nav-icon-x)')
     expect(zone.get('padding-inline-start')).toBe(
-      'calc(var(--app-shell-padding, 0px) + var(--basalt-shell-lead-inset, 0px))',
+      'calc(var(--basalt-nav-icon-x) + var(--basalt-shell-lead-inset, 0px))',
+    )
+    // Zone end + this margin + the row gap = seam + gutter: the breadcrumb on Main's content edge.
+    expect(zone.get('margin-inline-end')).toBe(
+      'calc(var(--app-shell-padding, 0px) - var(--basalt-header-gap, 0px))',
     )
   })
 

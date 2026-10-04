@@ -17,9 +17,12 @@
  * `alt` — never a border in this module.
  */
 .bar {
+  /* Named so the leading zone (`app-brand.module.css`) can offset its trailing margin by exactly
+   * this gap and land the breadcrumb on Main's content edge. */
+  --basalt-header-gap: var(--mantine-spacing-sm);
   display: flex;
   align-items: center;
-  gap: var(--mantine-spacing-sm);
+  gap: var(--basalt-header-gap);
   width: 100%;
   height: 100%;
 }

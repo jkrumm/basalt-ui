@@ -650,13 +650,13 @@ const SPACE_STEP_BASE = {
    *  `tokens/index.ts` for why), because it is the single most visible spacing number the framework
    *  ships and a consumer retuning its identity has to be able to reach it.
    *
-   *  20, up from the 13 (`SPACE_SCALE.sm`) the main column used to borrow. The sidebar's nav ICON
-   *  column already sits at x=20 — 10px of `.root` frame inset plus 10px of NavLink inset
-   *  (`rowInsetX`) — and the brand row claims to align with it while sitting at 13. 20 makes that
-   *  claim true across the seam: brand mark, nav icons and the page's first column all start on one
-   *  vertical line, and the content gets a seam-side gutter that reads deliberate instead of
-   *  incidental. */
-  appShellInset: 20,
+   *  16, down from 20 (and from the 13 `SPACE_SCALE.sm` the main column borrowed before that): at 20
+   *  the content read as pushed away from the seam. 16 sits on the 4px grid. It is NOT the sidebar's
+   *  nav-icon column any more (x=20: 10px of `.root` frame inset plus 10px of NavLink inset,
+   *  `rowInsetX` twice) — the header's brand zone aligns to that column on its own
+   *  (`shell/app-brand.module.css`), so the page gutter is free to be a gutter. The header's
+   *  breadcrumb, the page-bar band and Main all land on this one number. */
+  appShellInset: 16,
   /** The page gutter BELOW `sm` — the phone half of `appShellInset` above. A separate entry rather
    *  than one responsive value for the same reason `appShellNavbarWidth` is one: there is no sidebar
    *  seam to align to on a phone, so the number is answering a different question (how much of a

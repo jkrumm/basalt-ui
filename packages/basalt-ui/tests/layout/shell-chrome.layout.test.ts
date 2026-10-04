@@ -358,35 +358,72 @@ layout('shell chrome — the header row, the gutter, the sidebar footer', () => 
   }
 
   /**
-   * THE GUTTER IS SPLIT BY AXIS, and only the inline half is responsive.
+   * THE GUTTER IS SPLIT BY AXIS — inline is the responsive pair, block is a rung of the stack scale.
    *
-   * `.main`'s padding stopped being a shorthand of one value this round: inline tracks
-   * `--app-shell-padding` because it is an ALIGNMENT constraint against the sidebar seam, block is
-   * `--vx-space-stack-md` because it is breathing room under the band's divider and nothing aligns
-   * to it. A future "simplification" back to one value would be invisible at `sm`+ (both are set)
-   * and would silently take 8px off the top of every phone page — so the invariant asserted is that
-   * the BLOCK inset does not move across the step, which is the half that has no other guard.
+   * `.main`'s padding is not a shorthand of one value: inline tracks `--app-shell-padding` (an
+   * ALIGNMENT constraint — the header's breadcrumb and globals land on the same edges), block is
+   * breathing room under the band's divider and nothing aligns to it. Phone: 12 (`stack-md`), from
+   * `sm` up one rung down, `stack-sm` — 8. The numbers are read from the token table so a retune
+   * moves the test with it; what is pinned is WHICH rung each width uses and that the inline half
+   * is the gutter at the same time.
    */
-  test('the block inset does not step with the inline one', async () => {
-    const below = await openFixture(HEADER_PAGE, {
-      name: 'under sm',
-      width: SM_PX - 1,
-      height: 720,
+  for (const [viewport, inline, block] of [
+    [
+      { name: 'one px under sm', width: SM_PX - 1, height: 720 },
+      SPACE_STEP.appShellInsetMobile,
+      SPACE.stackMd,
+    ],
+    [{ name: 'sm exactly', width: SM_PX, height: 720 }, SPACE_STEP.appShellInset, SPACE.stackSm],
+  ] as const satisfies readonly (readonly [Viewport, number, number])[]) {
+    test(`Main's inner box starts ${inline}px from the seam and ${block}px under the header (${viewport.name})`, async () => {
+      const p = await openFixture(HEADER_PAGE, viewport)
+      await p.settle()
+      const blockActual = await computedPx(p, MAIN, 'padding-top')
+      const inlineActual = await computedPx(p, MAIN, 'padding-left')
+      if (Math.abs(blockActual - block) <= 0.5 && Math.abs(inlineActual - inline) <= 0.5) return
+      throw new Error(
+        `LAYOUT: Main's inset is ${inlineActual.toFixed(1)}px inline / ${blockActual.toFixed(1)}px ` +
+          `block at ${viewport.width}px; expected ${inline} / ${block}`,
+      )
     })
-    await below.settle()
-    const blockBelow = await computedPx(below, MAIN, 'padding-top')
+  }
 
-    const at = await openFixture(HEADER_PAGE, { name: 'at sm', width: SM_PX, height: 720 })
-    await at.settle()
-    const blockAt = await computedPx(at, MAIN, 'padding-top')
+  /**
+   * THE HEADER LINES UP WITH THE COLUMNS BELOW IT, expanded and in the rail.
+   *
+   * Two alignments, deliberately separate because they are different numbers: the brand MARK sits
+   * on the sidebar's nav-icon column (`.root` inset + NavLink inset — 20, NOT the page gutter),
+   * and the breadcrumb sits on Main's content edge (seam + page gutter). The first used to hold
+   * only because the gutter was also 20.
+   */
+  for (const collapsed of [false, true]) {
+    test(`the brand and the breadcrumb land on their columns (${collapsed ? 'rail' : 'expanded'})`, async () => {
+      const p = await openFixture(HEADER_PAGE, DESKTOP_1440)
+      await p.settle()
+      if (collapsed) await collapseSidebar(p)
 
-    if (Math.abs(blockBelow - blockAt) <= 0.5) return
-    throw new Error(
-      `LAYOUT: Main's BLOCK padding moved across the sm step — ${blockBelow.toFixed(1)}px under, ` +
-        `${blockAt.toFixed(1)}px at. Only the inline axis is responsive; a gap under a divider is ` +
-        'not a gutter beside a seam, and the two were split for exactly that reason.',
-    )
-  })
+      const main = await p.box('main', MAIN)
+      const crumb = await p.box('breadcrumb', `${HEADER_LEAD} > *`)
+      const expectedCrumb = main.box.left + SPACE_STEP.appShellInset
+      if (Math.abs(crumb.box.left - expectedCrumb) > 0.5) {
+        throw new Error(
+          `LAYOUT: the breadcrumb starts at x=${crumb.box.left.toFixed(1)}, Main's content edge is ` +
+            `x=${expectedCrumb.toFixed(1)}`,
+        )
+      }
+      if (collapsed) return
+
+      const brand = await p.box('brand', `${HEADER_ZONE} > :first-child`)
+      const [icon] = await p.boxes(`${NAV_ROWS} .mantine-NavLink-section`)
+      if (!icon) throw new Error('LAYOUT: no nav icon rendered — the fixture is wrong')
+      if (Math.abs(brand.box.left - icon.left) > 0.5) {
+        throw new Error(
+          `LAYOUT: the brand starts at x=${brand.box.left.toFixed(1)}, the nav icon column at ` +
+            `x=${icon.left.toFixed(1)}`,
+        )
+      }
+    })
+  }
 
   /**
    * THE SIDEBAR FOOTER OWNS ITS OWN AIR.
@@ -633,11 +670,11 @@ layout('shell chrome — the header row, the gutter, the sidebar footer', () => 
     const expandedPadding = await computedPx(p, HEADER_ZONE, 'padding-left')
     if (
       Math.abs(zone.box.width - SPACE_STEP.appShellNavbarWidth) > 0.5 ||
-      Math.abs(expandedPadding - SPACE_STEP.appShellInset) > 0.5
+      Math.abs(expandedPadding - 2 * SPACE.rowInsetX) > 0.5
     ) {
       throw new Error(
         `LAYOUT: expanded zone is ${zone.box.width}px wide with ${expandedPadding}px inline-start ` +
-          `padding; expected ${SPACE_STEP.appShellNavbarWidth} / ${SPACE_STEP.appShellInset}`,
+          `padding; expected ${SPACE_STEP.appShellNavbarWidth} / ${2 * SPACE.rowInsetX}`,
       )
     }
 
