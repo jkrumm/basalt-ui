@@ -1,3 +1,16 @@
+# [1.38.0](https://github.com/jkrumm/basalt-ui/compare/v1.37.1...v1.38.0) (2026-10-04)
+
+
+### Bug Fixes
+
+* inset the sidebar footer and seat the rail first icon like the expanded row ([7d9e980](https://github.com/jkrumm/basalt-ui/commit/7d9e980b9c1d6cd062e0d8f43a4800f7002b174d))
+* re-date the forms layout deprecations to 1.39.0 ([fe9e785](https://github.com/jkrumm/basalt-ui/commit/fe9e785439c8404dfe09bdcecb774db758123026))
+
+
+### Features
+
+* add --basalt-shell-lead-inset for a native title bar over the header lead ([980c2ff](https://github.com/jkrumm/basalt-ui/commit/980c2ff707a39ec150b64d27780b3ceecb98b922))
+
 ## [1.37.1](https://github.com/jkrumm/basalt-ui/compare/v1.37.0...v1.37.1) (2026-10-02)
 
 
