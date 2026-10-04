@@ -1,3 +1,11 @@
+# [1.39.0](https://github.com/jkrumm/basalt-ui/compare/v1.38.1...v1.39.0) (2026-10-04)
+
+
+### Features
+
+* add BasaltShell headerHeight for a deliberate, consumer-set header row ([3561361](https://github.com/jkrumm/basalt-ui/commit/3561361279664d3ee51d245586331e057dd62844))
+* remove the deprecated forms layout and useForm re-exports ([9e8b8c6](https://github.com/jkrumm/basalt-ui/commit/9e8b8c69241ea33d8bdf47532358166a809eb4ce))
+
 ## [1.38.1](https://github.com/jkrumm/basalt-ui/compare/v1.38.0...v1.38.1) (2026-10-04)
 
 
