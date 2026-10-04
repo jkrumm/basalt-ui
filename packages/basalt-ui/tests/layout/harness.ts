@@ -94,6 +94,11 @@ export const NAVBAR = '.mantine-AppShell-navbar'
 export const NAV_VIEWPORT = `${NAVBAR} .mantine-ScrollArea-viewport`
 /** Nav rows, SCOPED to that viewport so the footer's own rows never count as nav rows. */
 export const NAV_ROWS = `${NAV_VIEWPORT} .mantine-NavLink-root`
+/** The shell's page-bar band — the in-flow strip between the header and Main's scrollport. */
+export const MAIN_BAND = `.mantine-AppShell-root > ${moduleClass('band')}`
+/** `AppShell.Aside` — the right-hand region a route claims with `PageAside`. */
+export const ASIDE_REGION = 'aside.mantine-AppShell-aside'
+
 /** The header's leading zone — the brand name plus the collapse toggle, `--app-shell-navbar-offset` wide. */
 export const HEADER_ZONE = `${HEADER_ROW} > ${moduleClass('zone')}`
 /** The collapse toggle, whichever way it currently points. */

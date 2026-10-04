@@ -285,6 +285,8 @@ export type FixtureSpec = {
   agent?: AgentSpec
   /** Mounts `BasaltOverlays` and a button (`data-testid="open-confirm"`) opening `overlays.confirm`. */
   confirm?: true
+  /** `BasaltShell`'s `headerHeight` in px. Omitted ⇒ the token default. */
+  headerHeight?: number
   /** Fills the sidebar's pinned FOOTER region, which otherwise does not render at all. */
   sidebar?: SidebarSpec
   /**

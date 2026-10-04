@@ -40,6 +40,8 @@ import {
   LAPTOP_900,
   LAPTOP_1024,
   MAIN,
+  MAIN_BAND,
+  ASIDE_REGION,
   NAVBAR,
   NAV_ROWS,
   NAV_VIEWPORT,
@@ -740,4 +742,68 @@ layout('shell chrome — the header row, the gutter, the sidebar footer', () => 
         `under the ${TRAFFIC_LIGHTS_PX}px traffic-light span`,
     )
   })
+  /**
+   * `BasaltShell headerHeight` — ONE deliberate header height, expanded and in the rail.
+   *
+   * Default (prop omitted) is the token, unchanged. Overridden to a native unified-toolbar 52, the
+   * header, the navbar's and aside's top, the page-bar band and Main all follow it — they derive
+   * from the same Mantine var, so this measures that nothing kept a copy of 44 — and the row's
+   * content (brand, toggle, breadcrumb) stays vertically centred in it.
+   */
+  const ASIDE_HEADER_SPEC: FixtureSpec = { ...HEADER_PAGE, aside: { title: 'Inspector' } }
+  for (const [headerHeight, label] of [
+    [undefined, 'default'],
+    [52, '52px override'],
+  ] as const) {
+    const expected = headerHeight ?? SPACE_STEP.appShellHeaderHeight
+    for (const collapsed of [false, true]) {
+      test(`the header is ${expected}px and everything under it starts there (${label}, ${collapsed ? 'rail' : 'expanded'})`, async () => {
+        const p = await openFixture(
+          { ...ASIDE_HEADER_SPEC, ...(headerHeight !== undefined && { headerHeight }) },
+          DESKTOP_1440,
+        )
+        await p.settle()
+        if (collapsed) await collapseSidebar(p)
+
+        const header = await p.box('header', HEADER)
+        const navbar = await p.box('navbar', NAVBAR)
+        const band = await p.box('page-bar band', MAIN_BAND)
+        const aside = await p.box('aside', ASIDE_REGION)
+        const main = await p.box('main', MAIN)
+        const row = await p.box('header row', HEADER_ROW)
+
+        const tops = [
+          ['header height', header.box.height],
+          ['navbar top', navbar.box.top],
+          ['page-bar band top', band.box.top],
+          ['aside top', aside.box.top],
+        ] as const
+        for (const [name, value] of tops) {
+          if (Math.abs(value - expected) <= 0.5) continue
+          throw new Error(
+            `LAYOUT: ${name} = ${value.toFixed(1)}px, expected ${expected}px (${label}) — something ` +
+              'under the header kept its own copy of the header height',
+          )
+        }
+        if (Math.abs(main.box.top - band.box.bottom) > 0.5) {
+          throw new Error('LAYOUT: Main does not start at the band bottom — the column is broken')
+        }
+
+        const rowCentre = row.box.top + row.box.height / 2
+        for (const [name, selector] of [
+          ['brand zone', HEADER_ZONE],
+          ['collapse toggle', COLLAPSE_TOGGLE],
+          ['breadcrumb', HEADER_LEAD],
+        ] as const) {
+          const box = (await p.box(name, selector)).box
+          const centre = box.top + box.height / 2
+          if (Math.abs(centre - rowCentre) <= 1) continue
+          throw new Error(
+            `LAYOUT: ${name} centre y=${centre.toFixed(1)} is off the header row centre ` +
+              `y=${rowCentre.toFixed(1)} (${label})`,
+          )
+        }
+      })
+    }
+  }
 })

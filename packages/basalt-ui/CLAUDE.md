@@ -254,6 +254,11 @@ Three tiers: **palette data** (pure data, zero React/Mantine/DOM) → **`--vx-*`
   the rail keeps the toggle right of the lights instead of clipping it; unset is byte-identical
   (`app-brand.module.css.test.ts`, measured in `tests/layout/shell-chrome`). The breadcrumb after a
   widened rail zone shifts right by the same amount — accepted.
+- **`BasaltShell headerHeight` (px, default the `appShellHeaderHeight` token, 44) is the header's one
+  consumer-settable height** — same in both sidebar forms and at every width (law C14). It is only
+  the number handed to Mantine's `AppShell header.height`: the navbar/aside top, the page-bar band,
+  Main and the aside's shell header all read `--app-shell-header-height`, so nothing keeps a copy of 44. A native macOS unified-toolbar host sets ~52 together with `--basalt-shell-lead-inset`
+  (`tests/layout/shell-chrome` measures both).
 - **Mobile nav is a TAB BAR, not a menu**, and `projectMobileNav` is a PURE projection: the surface
   is INFERRED from row count (0 drops the slot, 1 is a plain link, ≤ `menuMax` is a menu, more is a
   sheet). The `menu` surface is a compact POPOVER, not a bottom sheet, and **`menuMax` is no longer

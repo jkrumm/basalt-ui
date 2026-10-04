@@ -436,6 +436,22 @@ describe('BasaltShell header height (law C14)', () => {
     expect(css).toContain('--app-shell-footer-height:0rem')
   })
 
+  test('headerHeight replaces the token, still as one unconditional declaration', () => {
+    render(
+      <MantineProvider>
+        <BasaltShell brand={BRAND} sections={ONE_SECTION} headerHeight={52} />
+      </MantineProvider>,
+    )
+    const css = [...document.querySelectorAll('style')]
+      .map((tag) => tag.textContent ?? '')
+      .find((text) => text.includes('--app-shell-header-height'))
+    const heights = [...(css ?? '').matchAll(/--app-shell-header-height:\s*([^;]+)/g)].map(
+      (m) => m[1],
+    )
+    expect(heights).toEqual([mantineRem(52)])
+    expect(css).toContain(`--app-shell-header-offset:${mantineRem(52)}`)
+  })
+
   test('a route with no PageAside pays for no aside column — zero width, collapsed', () => {
     render(
       <MantineProvider>

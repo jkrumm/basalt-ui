@@ -909,6 +909,7 @@ export function ShellFixture({ spec }: { spec: FixtureSpec }): ReactElement {
     <BasaltShell
       brand={{ name: 'Fixture' }}
       sections={sections}
+      {...(spec.headerHeight !== undefined && { headerHeight: spec.headerHeight })}
       {...(spec.nav && { mobileNav: spec.nav })}
       {...(spec.globals !== undefined && { globalActions: globalActionsFor(spec.globals) })}
       {...(spec.sidebar?.account === true && { account: FIXTURE_ACCOUNT })}
