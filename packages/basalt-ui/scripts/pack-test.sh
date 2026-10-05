@@ -109,7 +109,7 @@ echo '{ "name": "scratch", "private": true, "type": "module" }' >package.json
 # vite is pinned to the package's own dev version: an unpinned `vite` resolves to the registry's
 # latest, and the gate then grades whatever rolldown published minutes ago — CI went red on
 # 2026-09-02 because rolldown 1.2.7 was live while its linux-x64 binding was still at 1.2.6. The
-# gate proves the ARTIFACT resolves; vite compatibility is the playground's and `make verify`'s job.
+# gate proves the ARTIFACT resolves; vite compatibility is the playground's and `make check`'s job.
 scratch_install "$ABS_TGZ" \
   react react-dom \
   @mantine/core @mantine/hooks \
