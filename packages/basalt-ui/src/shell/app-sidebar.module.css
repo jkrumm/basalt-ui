@@ -275,8 +275,8 @@
 }
 
 /*
- * Sidebar account row (SidebarAccount) — mock footer geometry: padding 11px 8px 3px, gap 10, NO
- * border; hover = the same ink-6% tint as every other row, rounded 6.
+ * Sidebar account row (SidebarAccount, authenticated) — a nav row's padding and gap, so its leading
+ * block starts on the nav icon column; NO border; hover = the same ink-6% tint as every other row.
  */
 .accountRow {
   flex: 1;
@@ -284,8 +284,7 @@
   display: flex;
   align-items: center;
   gap: var(--vx-space-nav-icon-gap);
-  padding: var(--vx-space-sidebar-account-inset-top) var(--vx-space-sidebar-account-inset-x)
-    var(--vx-space-sidebar-account-inset-bottom);
+  padding: var(--vx-space-row-inset-y) var(--vx-space-row-inset-x);
   border-radius: var(--vx-radius-ctrl);
 }
 

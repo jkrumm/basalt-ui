@@ -818,7 +818,7 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
         // density. `sm`/`md` SegmentedControls (forms) are untouched, keeping Mantine's own sizing.
         styles: (_theme, props) => ({
           root: {
-            backgroundColor: 'color-mix(in srgb, var(--vx-ink) 6%, transparent)',
+            backgroundColor: 'color-mix(in srgb, var(--vx-ink) 8%, transparent)',
             padding: `${SPACE_FIXED.segmentedTrackInset}px`,
             // The OUTER safety net a `.control`'s own `min-width: 0` (`segmented-control.module.css`)
             // cannot provide by itself: that rule only lets each SEGMENT shrink below its own label's
@@ -835,8 +835,14 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
             minWidth: 'max-content',
           },
           indicator: {
-            backgroundColor: 'color-mix(in srgb, var(--vx-ink) 12%, var(--vx-surface-panel))',
-            boxShadow: 'var(--vx-shadow-ctrl)',
+            // A RAISED pill, not a darker one: the selected segment is the panel surface (lighter
+            // than the ink-tinted track in both schemes) + the shared raised shadow + a 1px ink outline.
+            // Same model as Mantine's default (white indicator, shadow, on a grey track) and
+            // shadcn's Tabs/ToggleGroup (`bg-background` + shadow on a `bg-muted` track). The old
+            // ink-12% fill sat one shade from the track and read as a hover state.
+            backgroundColor: 'var(--vx-surface-panel)',
+            boxShadow: 'var(--vx-shadow-raised)',
+            outline: '1px solid color-mix(in srgb, var(--vx-ink) 14%, transparent)',
             borderRadius: 'var(--vx-radius-tight)',
           },
           // Conditionally spread the WHOLE key (never a present `label: undefined`) — the package

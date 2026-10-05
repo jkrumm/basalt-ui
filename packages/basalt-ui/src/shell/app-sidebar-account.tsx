@@ -18,6 +18,7 @@
  */
 import { Group, Menu, Skeleton, Stack, Text, UnstyledButton } from '@mantine/core'
 import { useBasaltSpacing } from '../theme'
+import { VX } from '../tokens'
 import { cx } from '../common/props'
 import type { BasaltProps } from '../common/props'
 import { assertRequiredProps } from '../common/validate'
@@ -100,15 +101,19 @@ export function SidebarAccount(props: BasaltAccountProps & BasaltProps) {
   if (state.status === 'unauthenticated') {
     return (
       <UnstyledButton
-        className={cx(classes.accountRow, className)}
+        // A footer row IS a nav row's geometry (`.footerBtn`) — same padding, icon column, muted
+        // rest state and hover as the Settings row above it, so the footer reads as one cluster.
+        className={cx(classes.footerBtn, className)}
         // The collapsed rail hides `.accountText` (display:none), which drops "Sign in" from the
         // accessibility tree — the label keeps the button nameable with only the glyph showing.
         aria-label="Sign in"
         onClick={actions?.onSignIn}
         {...(style !== undefined && { style })}
       >
-        <IconUser />
-        <Text className={classes.accountText} size="sm" fw={500}>
+        <span className={classes.footerIconSlot}>
+          <IconUser />
+        </span>
+        <Text className={classes.accountText} fz={VX.text.md}>
           Sign in
         </Text>
       </UnstyledButton>
