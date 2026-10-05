@@ -307,7 +307,9 @@ const SURFACE_TONE: Record<Side, Record<SurfaceKey, number>> = {
 export type InkKey = 'ink' | 'ink2' | 'muted' | 'faint'
 
 const INK_TONE: Record<Side, Record<InkKey, number>> = {
-  light: { ink: 15.16, ink2: 27.09, muted: 34.88, faint: 48.44 },
+  // light `faint` is tone 44.5 so tertiary text clears WCAG AA (4.5:1) on every text surface
+  // (bg / panel / subtle / field); 48.44 landed at 4.23–4.31:1 on bg and subtle.
+  light: { ink: 15.16, ink2: 27.09, muted: 34.88, faint: 44.5 },
   dark: { ink: 90.94, ink2: 88.12, muted: 84.91, faint: 66.24 },
 }
 
