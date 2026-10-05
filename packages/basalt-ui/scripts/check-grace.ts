@@ -21,7 +21,7 @@
  * with the tests: `since` before `promote`, ledger ↔ shipped-preset severity, a written `why`, and a
  * live deprecation row dated at least one minor out.
  *
- * "Still ships" reads `scripts/export-surface.json` — the snapshot `make verify` pins to the built
+ * "Still ships" reads `scripts/export-surface.json` — the snapshot `make check` pins to the built
  * dist — for an import row. A prop row has no snapshot to read, so it counts as shipped until the
  * row says `removed: true`; a `removed` import row that is still in the snapshot is refused too.
  *
