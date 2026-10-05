@@ -236,8 +236,9 @@ export function composeInjectedCss(
   fontsCss: string,
   radiusCss: string,
   densityCss: string,
+  inputsCss = '',
 ): string {
-  return [base, fontsCss, radiusCss, densityCss].filter(Boolean).join('\n')
+  return [base, fontsCss, radiusCss, densityCss, inputsCss].filter(Boolean).join('\n')
 }
 
 // ── Host attribute ────────────────────────────────────────────────────────────────────────────────
@@ -325,6 +326,7 @@ function BasaltBridge({
   const fontsConfig = theme.other?.basaltFonts
   const radiusConfig = theme.other?.basaltRadius
   const densityConfig = theme.other?.basaltDensity
+  const desktopInputs = theme.other?.['basaltInputs'] === 'desktop'
   const paletteCss = useMemo(() => {
     if (!injectPalette) return ''
     const base =
@@ -336,8 +338,18 @@ function BasaltBridge({
     const fontsCss = buildFontsCss(fontsConfig)
     const radiusCss = buildRadiusCss(radiusConfig)
     const densityCss = buildDensityCss(densityConfig)
-    return composeInjectedCss(base, fontsCss, radiusCss, densityCss)
-  }, [injectPalette, deriveConfig, fontsConfig, radiusConfig, densityConfig, paletteOptions])
+    // `createBasaltTheme({ inputs: 'desktop' })` — lifts the iOS 16px input-font floor (`styles.css`).
+    const inputsCss = desktopInputs ? ':root {\n--basalt-input-fz-floor: 0px;\n}' : ''
+    return composeInjectedCss(base, fontsCss, radiusCss, densityCss, inputsCss)
+  }, [
+    injectPalette,
+    deriveConfig,
+    fontsConfig,
+    radiusConfig,
+    densityConfig,
+    desktopInputs,
+    paletteOptions,
+  ])
 
   useEffect(() => {
     // SSR guard — window is not available in server contexts

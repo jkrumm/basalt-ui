@@ -59,6 +59,8 @@ describe('styles.css !important budget', () => {
   it('uses !important exactly once — the iOS input-zoom floor', () => {
     const uses = [...declarations.matchAll(/!important/g)]
     expect(uses).toHaveLength(1)
-    expect(declarations).toContain('font-size: max(16px, var(--input-fz, 1rem)) !important')
+    expect(declarations).toContain(
+      'font-size: max(var(--basalt-input-fz-floor, 16px), var(--input-fz, 1rem)) !important',
+    )
   })
 })
