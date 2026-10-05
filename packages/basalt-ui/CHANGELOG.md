@@ -1,3 +1,10 @@
+## [1.40.1](https://github.com/jkrumm/basalt-ui/compare/v1.40.0...v1.40.1) (2026-10-05)
+
+
+### Bug Fixes
+
+* lift the selected segment above the track in dark mode ([a8315a9](https://github.com/jkrumm/basalt-ui/commit/a8315a90b9b067470f9d6ae3a0005117e713934b))
+
 # [1.40.0](https://github.com/jkrumm/basalt-ui/compare/v1.39.0...v1.40.0) (2026-10-05)
 
 
