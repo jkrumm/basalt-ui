@@ -1,3 +1,15 @@
+# [1.40.0](https://github.com/jkrumm/basalt-ui/compare/v1.39.0...v1.40.0) (2026-10-05)
+
+
+### Bug Fixes
+
+* raised segmented indicator, nav-row geometry for the sidebar account row ([d800ea1](https://github.com/jkrumm/basalt-ui/commit/d800ea1dad17091aa558c05d33117adc7cf31310))
+
+
+### Features
+
+* createBasaltTheme inputs option for desktop-sized inputs ([51a3d7f](https://github.com/jkrumm/basalt-ui/commit/51a3d7f023a5379c9c55f226c1671d83e732ea59))
+
 # [1.39.0](https://github.com/jkrumm/basalt-ui/compare/v1.38.1...v1.39.0) (2026-10-04)
 
 
