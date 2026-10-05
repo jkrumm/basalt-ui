@@ -66,7 +66,8 @@ export function HoverOverlay({
         'aria-orientation': 'horizontal' as const,
         'aria-valuemin': 0,
         ...(valueMax !== undefined && { 'aria-valuemax': valueMax }),
-        ...(valueNow !== undefined && { 'aria-valuenow': valueNow }),
+        // `aria-valuenow` is required on a slider: 0 (the first point) until the cursor lands on one.
+        'aria-valuenow': valueNow ?? 0,
         ...(valueText !== undefined && { 'aria-valuetext': valueText }),
         onKeyDown,
         ...(onBlur !== undefined && { onBlur }),

@@ -311,7 +311,7 @@ describe('DualPanel — ariaLabel reaches the slider, not only the frame', () =>
 })
 
 describe('DualPanel — slider value attributes', () => {
-  test('aria-valuemax is always present; aria-valuenow/valuetext appear only once a point is hovered', () => {
+  test('aria-valuemax and aria-valuenow (a required slider attribute) are always present; valuetext appears only once a point is hovered', () => {
     render(
       <DualPanel<Row>
         data={rows}
@@ -329,7 +329,7 @@ describe('DualPanel — slider value attributes', () => {
 
     const slider = screen.getByRole('slider')
     expect(slider.getAttribute('aria-valuemax')).toBe('0')
-    expect(slider.hasAttribute('aria-valuenow')).toBe(false)
+    expect(slider.getAttribute('aria-valuenow')).toBe('0')
     expect(slider.hasAttribute('aria-valuetext')).toBe(false)
 
     fireEvent.keyDown(slider, { key: 'ArrowRight' })
