@@ -1,3 +1,12 @@
+## [1.40.3](https://github.com/jkrumm/basalt-ui/compare/v1.40.2...v1.40.3) (2026-10-05)
+
+
+### Bug Fixes
+
+* chart cursor slider always carries aria-valuenow ([e1bce15](https://github.com/jkrumm/basalt-ui/commit/e1bce15e7b280a4f203bb05173d4478c0a64c7f3))
+* light-scheme text, links, errors and badges clear WCAG AA ([bfa4c0e](https://github.com/jkrumm/basalt-ui/commit/bfa4c0e329138daa0f6ffe7d6a9678644a1b0440))
+* shortcut display uses platform glyphs and Title-case words for named keys ([77733e9](https://github.com/jkrumm/basalt-ui/commit/77733e916892138b42b398188f85dae234877181))
+
 ## [1.40.2](https://github.com/jkrumm/basalt-ui/compare/v1.40.1...v1.40.2) (2026-10-05)
 
 
