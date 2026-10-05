@@ -54,3 +54,19 @@
   font-family: var(--basalt-font-mono);
   font-size: var(--vx-text-xs);
 }
+
+/*
+ * Selected-segment fill — LIGHTER than the ink-8% track in both schemes, which is what reads as
+ * raised. The two schemes need different recipes: the track is an ink tint, so on light it is
+ * darker than the page (the panel surface sits above it) while on dark it is LIGHTER than the page,
+ * and the same panel surface would then sink below it. Dark therefore lifts the elevated surface
+ * with ink. In the module (not the theme's inline `styles`) so the scheme can be selected on —
+ * same ancestor-attribute pattern as `controls.module.css`.
+ */
+.indicator {
+  background-color: var(--vx-surface-elevated);
+}
+
+html[data-mantine-color-scheme='dark'] .indicator {
+  background-color: color-mix(in srgb, var(--vx-ink) 14%, var(--vx-surface-elevated));
+}
