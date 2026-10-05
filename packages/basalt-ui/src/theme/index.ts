@@ -383,13 +383,20 @@ const basaltVariantColorResolver: VariantColorsResolver = (input) => {
       : resolved
   }
 
+  // `outline`: the tone's own text colour, pulled toward ink so the label keeps its hue at AA
+  // (grey outline badges measured 3.9:1 on the light page).
+  if (input.variant === 'outline') {
+    return { ...resolved, color: `color-mix(in srgb, ${resolved.color} 70%, var(--vx-ink))` }
+  }
+
   if (input.variant !== 'light') return resolved
   const ink = `var(--mantine-color-${colorName}-light-color)`
   return {
     ...resolved,
     background: `color-mix(in srgb, ${ink} 13%, transparent)`,
     hover: `color-mix(in srgb, ${ink} 20%, transparent)`,
-    color: ink,
+    // Same pull toward ink as `outline`: the saturated tone text sat at 3.2–4.4:1 on its own tint.
+    color: `color-mix(in srgb, ${ink} 70%, var(--vx-ink))`,
     border: 'none',
   }
 }
@@ -1464,6 +1471,12 @@ function buildCssVariablesResolver(data: PaletteData): CSSVariablesResolver {
       '--mantine-color-default-border': 'transparent',
       '--mantine-color-dimmed': `var(--vx-neutral, ${NEUTRAL.neutral.light})`, // secondary / muted text
       '--mantine-color-text': `var(--vx-ink, ${INK.ink.light})`, // primary body/heading text
+      // Field errors: Mantine's own error red measures 1.98:1 (dark) / 4.37:1 (light). The solid status red
+      // pulled toward ink clears AA on every text surface in both schemes.
+      '--mantine-color-error': 'color-mix(in srgb, var(--vx-bad-solid) 85%, var(--vx-ink))',
+      // Links: Mantine reads the accent FILL shade (4.38:1 on the light page, under WCAG AA); the hover
+      // accent is the next step darker and clears 4.5:1 on every light text surface.
+      '--mantine-color-anchor': 'var(--vx-accent-hover)',
       // `--app-shell-border-color` is set by `components.AppShell.extend({ vars })` above — this
       // entry was dead (an element-level declaration always beats an inherited `:root` value).
       // THE strict-surface lever. Mantine components do NOT chain border/surface colors through
@@ -1492,6 +1505,9 @@ function buildCssVariablesResolver(data: PaletteData): CSSVariablesResolver {
       '--mantine-color-default-border': 'transparent',
       '--mantine-color-dimmed': `var(--vx-neutral, ${NEUTRAL.neutral.dark})`,
       '--mantine-color-text': `var(--vx-ink, ${INK.ink.dark})`,
+      // Field errors: Mantine's own error red measures 1.98:1 (dark) / 4.37:1 (light). The solid status red
+      // pulled toward ink clears AA on every text surface in both schemes.
+      '--mantine-color-error': 'color-mix(in srgb, var(--vx-bad-solid) 85%, var(--vx-ink))',
       // See the light block above — `--app-shell-border-color` is set by `AppShell.extend` now.
       // Dark components read `--mantine-color-dark-4` (border) raw. `buildDarkTuple` already sets
       // dark-4, but to a slightly lighter step than the hairline token, so layout borders read

@@ -28,3 +28,20 @@ describe('the fill-page contrast clamp', () => {
     })
   }
 })
+
+describe('the ink ramp clears WCAG AA on every text surface', () => {
+  const data = deriveTokens(DEFAULT_DERIVE_CONFIG)
+  const TEXT_SURFACES = ['bg', 'panel', 'panelHover', 'elevated', 'subtle', 'field'] as const
+
+  for (const side of ['light', 'dark'] as const) {
+    for (const key of ['ink', 'ink2', 'muted', 'faint'] as const) {
+      test(`${side} ${key} ≥ 4.5:1`, () => {
+        for (const surface of TEXT_SURFACES) {
+          expect(
+            contrastRatio(data.ink[key][side], data.surface[surface][side]),
+          ).toBeGreaterThanOrEqual(4.5)
+        }
+      })
+    }
+  }
+})

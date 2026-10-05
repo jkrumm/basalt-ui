@@ -14,6 +14,14 @@
 }
 
 /*
+ * Inactive labels read ink2, not Mantine's gray-7 (4.0:1 on the light track): the active segment is
+ * told apart by the raised pill and weight 600, so the inactive text can stay at full AA contrast.
+ */
+.label:not([data-active], [data-disabled]) {
+  color: var(--vx-ink2);
+}
+
+/*
  * Mantine's own `.control` ships `flex: 1` with no `min-width` override, so its initial value
  * (`auto`) floors every option at its min-content width — a `fullWidth` track therefore still
  * splits UNEVENLY (a long label's column stays wider than its siblings) instead of dividing the
