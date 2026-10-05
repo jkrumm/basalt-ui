@@ -205,9 +205,8 @@
  * bottom-placed block (a `kind: 'progress'` block defaults to `'bottom'`) stacked FLUSH on the
  * settings and account rows and on the scroll region above, which is the "cramped" footer.
  *
- * `region-gap` (12) above the cluster, `stack-sm` (8) between its parts — deliberately tighter
- * than the nav's `section-gap` (16): the footer is ONE pinned cluster whose rows belong together,
- * not a list of peer sections.
+ * `region-gap` (12) above the cluster, `stack-sm` (8) between BLOCKS, and the settings/account rows
+ * on the nav's own 1px pitch (see `.footerLinks + *` below): the footer rows are one list with the nav.
  */
 .footer {
   flex-shrink: 0;
@@ -221,6 +220,12 @@
 
 .footer > * + * {
   margin-top: var(--vx-space-stack-sm);
+}
+
+/* Footer rows ARE a list like the nav's (`Stack gap={1}`): the settings rows and the account row
+ * sit on the nav's 1px pitch, not the cluster gap that separates blocks from rows. */
+.footer > .footerLinks + * {
+  margin-top: 1px;
 }
 
 /*
@@ -237,6 +242,9 @@
   padding: var(--vx-space-row-inset-y) var(--vx-space-row-inset-x);
   border-radius: var(--vx-radius-ctrl);
   font-size: var(--vx-text-md);
+  /* The nav row's line-height, so a footer row is exactly as tall as a nav row (Mantine's `Text`
+   * would otherwise bring its own 1.55 and add ~3px). */
+  line-height: var(--vx-space-row-line-height);
   color: var(--vx-muted);
 }
 
@@ -272,6 +280,7 @@
 .footerText {
   flex: 1;
   text-align: left;
+  line-height: var(--vx-space-row-line-height);
 }
 
 /*
@@ -296,6 +305,7 @@
   flex: 1;
   min-width: 0;
   text-align: left;
+  line-height: var(--vx-space-row-line-height);
 }
 
 /*
@@ -584,6 +594,7 @@
 .footerLinks {
   display: flex;
   flex-direction: column;
+  gap: 1px;
 }
 
 /* Fixed 18px icon column for a flat footer row — an icon-less row keeps the label aligned with

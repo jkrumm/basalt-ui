@@ -432,8 +432,10 @@ layout('shell chrome — the header row, the gutter, the sidebar footer', () => 
    *
    * The footer's rows used to stack FLUSH on the scroll region above them and on each other — the
    * `Stack` wrapping them is `gap={0}`, so with no rule of its own the region had no rhythm at all.
-   * What landed is SPACE, not a seam: `.footer` opens with one `sidebarRegionGap` and its children
-   * separate by `stack-sm`. A `--vx-divider` hairline on `.footer` was the obvious alternative and
+   * What landed is SPACE, not a seam: `.footer` opens with one `sidebarRegionGap`, and the rows
+   * inside it run on the NAV's own 1px pitch (owner feedback, shutterflow round 3: the sidebar bottom
+   * must read as one list — an earlier `stack-sm` gap between Settings and the account row put the
+   * footer on a 42px pitch against the nav's 33). A `--vx-divider` hairline on `.footer` was the obvious alternative and
    * `app-sidebar.module.css` rejects it in as many words — the boundary is already carried by that
    * padding and by the account row's own inset, so a rule there would answer a question nobody
    * asked (and would put the module into `theme/divider-law.test.ts`'s hairline inventory for it).
@@ -477,9 +479,9 @@ layout('shell chrome — the header row, the gutter, the sidebar footer', () => 
     expectSeparatedBy(
       { name: 'settings rows', box: first },
       { name: 'account row', box: second },
-      SPACE.stackSm - 0.5,
-      'the footer is ONE cluster of rows that belong together, but its parts still separate — ' +
-        'flush is the "cramped footer", and it is what `gap={0}` gives you unstyled',
+      0.5,
+      'the footer rows keep the nav list\'s 1px pitch — they separate, never flush (the "cramped ' +
+        'footer", what `gap={0}` gives you unstyled), but they do not take the region gap',
       p.viewport,
     )
   })
