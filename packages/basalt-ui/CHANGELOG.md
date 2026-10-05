@@ -1,3 +1,10 @@
+## [1.40.2](https://github.com/jkrumm/basalt-ui/compare/v1.40.1...v1.40.2) (2026-10-05)
+
+
+### Bug Fixes
+
+* sidebar footer rows sit on the nav row's height and 1px pitch ([bbd5c66](https://github.com/jkrumm/basalt-ui/commit/bbd5c66a223af61888df28cca837b89ef95181b1))
+
 ## [1.40.1](https://github.com/jkrumm/basalt-ui/compare/v1.40.0...v1.40.1) (2026-10-05)
 
 
