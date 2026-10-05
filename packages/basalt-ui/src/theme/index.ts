@@ -810,6 +810,7 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
         classNames: {
           label: segmentedControlClasses.label,
           control: segmentedControlClasses.control,
+          indicator: segmentedControlClasses.indicator,
         },
         // `label` gets a `ctl`-only min-height (function-form `styles`, same `props.size === …` gate
         // as Button/ActionIcon/Input's `vars` overrides above) so a `size="ctl"` SegmentedControl
@@ -835,12 +836,11 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
             minWidth: 'max-content',
           },
           indicator: {
-            // A RAISED pill, not a darker one: the selected segment is the panel surface (lighter
-            // than the ink-tinted track in both schemes) + the shared raised shadow + a 1px ink outline.
+            // A RAISED pill, not a darker one: its fill (`segmented-control.module.css`, per scheme) is
+            // lighter than the ink-tinted track in both schemes, + the shared raised shadow + a 1px ink outline.
             // Same model as Mantine's default (white indicator, shadow, on a grey track) and
             // shadcn's Tabs/ToggleGroup (`bg-background` + shadow on a `bg-muted` track). The old
             // ink-12% fill sat one shade from the track and read as a hover state.
-            backgroundColor: 'var(--vx-surface-panel)',
             boxShadow: 'var(--vx-shadow-raised)',
             outline: '1px solid color-mix(in srgb, var(--vx-ink) 14%, transparent)',
             borderRadius: 'var(--vx-radius-tight)',
