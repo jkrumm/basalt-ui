@@ -9,7 +9,7 @@
  * parseShortcut('Mod+S', false)  // ['Ctrl', 'S']
  *
  * // Single display string for Spotlight description:
- * formatShortcutDisplay('Mod+S', true)   // '⌘ S' on mac
+ * formatShortcutDisplay('Mod+S', true)   // '⌘S' on mac
  * formatShortcutDisplay('Mod+S', false)  // 'Ctrl+S' on windows
  */
 
@@ -30,19 +30,54 @@ export function detectMac(): boolean {
 
 // ── parseShortcut ─────────────────────────────────────────────────────────────
 
+/** Named keys → [mac glyph, other-platform word]. Keys are the lower-cased shortcut token. */
+const NAMED_KEYS: Record<string, readonly [mac: string, other: string]> = {
+  backspace: ['⌫', 'Backspace'],
+  delete: ['⌦', 'Delete'],
+  del: ['⌦', 'Delete'],
+  arrowleft: ['←', 'Left'],
+  arrowright: ['→', 'Right'],
+  arrowup: ['↑', 'Up'],
+  arrowdown: ['↓', 'Down'],
+  left: ['←', 'Left'],
+  right: ['→', 'Right'],
+  up: ['↑', 'Up'],
+  down: ['↓', 'Down'],
+  escape: ['⎋', 'Esc'],
+  esc: ['⎋', 'Esc'],
+  enter: ['↩', 'Enter'],
+  return: ['↩', 'Enter'],
+  tab: ['⇥', 'Tab'],
+  space: ['␣', 'Space'],
+  home: ['↖', 'Home'],
+  end: ['↘', 'End'],
+  pageup: ['⇞', 'PgUp'],
+  pagedown: ['⇟', 'PgDn'],
+}
+
+/** A key that is not a modifier or a named key: a single character upper-cases (`s` → `S`), any
+ * other word title-cases (`f5` → `F5`, `insert` → `Insert`). */
+function plainKey(key: string): string {
+  return key.length === 1 ? key.toUpperCase() : key.charAt(0).toUpperCase() + key.slice(1)
+}
+
 /**
  * Convert a shortcut string to a list of Kbd-friendly tokens.
  * 'Mod+S' → ['⌘', 'S'] (mac) or ['Ctrl', 'S'] (other).
  * 'Shift+Mod+P' → ['⇧', '⌘', 'P'] (mac) or ['Shift', 'Ctrl', 'P'] (other).
+ * Named keys read as glyphs on mac and Title-case words elsewhere:
+ * 'Mod+Backspace' → ['⌘', '⌫'] (mac) or ['Ctrl', 'Backspace'] (other).
  * isMac is the post-mount platform flag; defaults false on SSR / first render.
  *
  * @example
  * parseShortcut('Mod+S', true)         // ['⌘', 'S']
  * parseShortcut('Shift+Mod+P', false)  // ['Shift', 'Ctrl', 'P']
+ * parseShortcut('ArrowLeft', true)     // ['←']
  */
 export function parseShortcut(shortcut: string, isMac: boolean): string[] {
   return shortcut.split('+').map((key) => {
-    switch (key.toLowerCase()) {
+    const lower = key.toLowerCase()
+    switch (lower) {
       case 'mod':
         return isMac ? '⌘' : 'Ctrl'
       case 'shift':
@@ -52,9 +87,12 @@ export function parseShortcut(shortcut: string, isMac: boolean): string[] {
       case 'meta':
         return isMac ? '⌘' : 'Meta'
       case 'ctrl':
-        return isMac ? '^' : 'Ctrl'
-      default:
-        return key.toUpperCase()
+        return isMac ? '⌃' : 'Ctrl'
+      default: {
+        const named = NAMED_KEYS[lower]
+        if (named !== undefined) return isMac ? named[0] : named[1]
+        return plainKey(key)
+      }
     }
   })
 }
@@ -63,7 +101,8 @@ export function parseShortcut(shortcut: string, isMac: boolean): string[] {
 
 /**
  * Format a shortcut string for inline display (e.g. Spotlight action description).
- * Returns a compact string like '⌘ S' (mac) or 'Ctrl+S' (windows).
+ * Returns a compact string like '⌘S' / '⌘⌫' (mac, glyphs with no separator) or 'Ctrl+S' /
+ * 'Ctrl+Backspace' (elsewhere, Title-case words joined with '+').
  *
  * isMac is the post-mount platform flag. Pass false on SSR / first client render.
  *
@@ -72,12 +111,12 @@ export function parseShortcut(shortcut: string, isMac: boolean): string[] {
  * always-on and produces the same tokens via parseShortcut.
  *
  * @example
- * formatShortcutDisplay('Mod+S', true)         // '⌘ S'
+ * formatShortcutDisplay('Mod+S', true)          // '⌘S'
+ * formatShortcutDisplay('Mod+Backspace', true)  // '⌘⌫'
  * formatShortcutDisplay('Mod+S', false)         // 'Ctrl+S'
- * formatShortcutDisplay('Shift+Mod+P', true)    // '⇧ ⌘ P'
+ * formatShortcutDisplay('Shift+Mod+P', true)    // '⇧⌘P'
  */
 export function formatShortcutDisplay(shortcut: string, isMac: boolean): string {
   const tokens = parseShortcut(shortcut, isMac)
-  // Mac uses space-separated symbols (⌘ S); windows uses + (Ctrl+S)
-  return isMac ? tokens.join(' ') : tokens.join('+')
+  return tokens.join(isMac ? '' : '+')
 }
