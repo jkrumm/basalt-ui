@@ -97,11 +97,15 @@
      and re-opens the zoom bug — a floor a `style` prop can override is not a floor, it's a
      suggestion. `check-theme`'s `raw-form-control` + `sub-16-input-font` guard kinds catch the
      authoring mistake at build time; this `!important` is the runtime backstop that makes it
-     un-defeatable even when a violation slips through. */
+     un-defeatable even when a violation slips through.
+
+     `--basalt-input-fz-floor` is the one knob: `createBasaltTheme(…, { inputs: 'desktop' })` has the
+     provider set it to 0px for an app that never runs on iOS Safari (a Tauri/desktop shell), where
+     the 16px floor is only visual weight. Default stays 16px. */
   input,
   select,
   textarea {
-    font-size: max(16px, var(--input-fz, 1rem)) !important;
+    font-size: max(var(--basalt-input-fz-floor, 16px), var(--input-fz, 1rem)) !important;
   }
 
   /* `data-numeric` — one typographic law, every element. A number read as a MEASUREMENT (a preset

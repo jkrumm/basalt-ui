@@ -21,8 +21,8 @@ describe('styles.css — iOS input floor', () => {
     expect(css).toMatch(/input\s*,\s*\n?\s*select\s*,\s*\n?\s*textarea\s*\{/)
   })
 
-  it('keeps max(16px, …) — a FLOOR, not a pin', () => {
-    expect(css).toContain('max(16px')
+  it('keeps max(<16px floor var>, …) — a FLOOR, not a pin', () => {
+    expect(css).toContain('max(var(--basalt-input-fz-floor, 16px)')
   })
 
   it('is !important — un-defeatable by an inline style attribute', () => {
@@ -30,7 +30,7 @@ describe('styles.css — iOS input floor', () => {
       /input\s*,\s*\n?\s*select\s*,\s*\n?\s*textarea\s*\{\s*\n?\s*font-size:\s*([^;]+);/,
     )
     expect(ruleMatch).not.toBeNull()
-    expect(ruleMatch?.[1]).toContain('max(16px')
+    expect(ruleMatch?.[1]).toContain('max(var(--basalt-input-fz-floor, 16px)')
     expect(ruleMatch?.[1]).toContain('!important')
   })
 })

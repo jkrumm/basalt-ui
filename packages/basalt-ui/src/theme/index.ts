@@ -1583,6 +1583,22 @@ export type CreateBasaltThemeOptions = {
    * createBasaltTheme(undefined, { density: -2 })
    */
   density?: number
+
+  /**
+   * Input sizing for the platform the app runs on. `'touch'` (default) keeps the shipped identity:
+   * `md` inputs (42px) with the 16px font floor that stops iOS Safari's focus-zoom. `'desktop'` is
+   * for an app that never runs in a mobile browser (a Tauri/Electron shell): the Input family
+   * (`TextInput`, `NumberInput`, `PasswordInput`, `Select`, `Textarea`, `Input`) defaults to
+   * Mantine's `sm` (36px, `--vx-text-sm` font) and the provider drops the 16px floor, so every
+   * input Mantine ships — `MultiSelect`/`TagsInput`/pills included, they already default to `sm` —
+   * renders at its own size. An explicit `size` prop still wins. Stashed on
+   * `theme.other.basaltInputs` (only when non-default); `BasaltProvider` emits the floor override,
+   * so `injectPalette={false}` also opts it out.
+   *
+   * @example
+   * createBasaltTheme(undefined, { inputs: 'desktop' })
+   */
+  inputs?: 'touch' | 'desktop'
 }
 
 /**
@@ -1593,6 +1609,20 @@ export type CreateBasaltThemeOptions = {
  */
 function hasFontsConfig(fonts: BasaltFontsConfig | undefined): fonts is BasaltFontsConfig {
   return fonts !== undefined && Object.values(fonts).some((value) => value !== undefined)
+}
+
+/** `{ inputs: 'desktop' }` — see {@link CreateBasaltThemeOptions.inputs}. Merged AFTER the base
+ * theme, so `defaultProps.size: 'sm'` replaces the base's `'md'` and `other` deep-merges. */
+const DESKTOP_INPUTS_THEME: MantineThemeOverride = {
+  components: {
+    Input: Input.extend({ defaultProps: { size: 'sm' } }),
+    TextInput: TextInput.extend({ defaultProps: { size: 'sm' } }),
+    NumberInput: NumberInput.extend({ defaultProps: { size: 'sm' } }),
+    PasswordInput: PasswordInput.extend({ defaultProps: { size: 'sm' } }),
+    Select: Select.extend({ defaultProps: { size: 'sm' } }),
+    Textarea: Textarea.extend({ defaultProps: { size: 'sm' } }),
+  },
+  other: { basaltInputs: 'desktop' },
 }
 
 /**
@@ -1631,6 +1661,7 @@ export function createBasaltTheme(
   const spaceValues = deriveSpacing(densityLevel)
   const isDefaultDensity = densityLevel === 0
   const isDefaultDerive = isDefaultDeriveConfig(resolvedConfig)
+  const desktopInputs = options?.inputs === 'desktop'
 
   let theme: MantineThemeOverride
   if (isDefaultDerive && isDefaultRadius && isDefaultDensity) {
@@ -1652,6 +1683,7 @@ export function createBasaltTheme(
   if (hasFontsConfig(fontsConfig)) {
     theme = mergeThemeOverrides(theme, { other: { basaltFonts: fontsConfig } })
   }
+  if (desktopInputs) theme = mergeThemeOverrides(theme, DESKTOP_INPUTS_THEME)
   if (!overrides) return theme
   // `theme.breakpoints` is derived from `SIZE_CLASSES` — a JS caller's override is dropped.
   return { ...mergeThemeOverrides(theme, overrides), breakpoints: SIZE_CLASS_BREAKPOINTS }
