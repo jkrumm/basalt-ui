@@ -69,7 +69,7 @@ Two `basalt` oxlint plugin rules make the contract above a build failure, not ju
 non-single-plot shapes) and `basalt/chart-legend-literal` (a hand-written array literal passed to
 `ChartLegend`'s `items` instead of a `series`-derived one). Full AST pattern and rationale: each
 rule's own JSDoc in `packages/basalt-ui/configs/oxlint-plugin.js` — that is the home, not restated
-here. Grace/promotion mechanics: `packages/basalt-ui/CLAUDE.md` § grace period.
+here. Grace/promotion mechanics: `packages/basalt-ui/MAINTAINING.md` § grace period.
 
 ## 1. Auto-measured margins
 

@@ -28,7 +28,7 @@ consumer exercise. Items are ordered by how much they'd help the next consumer, 
 >   is a brand menu. A nested SUBMENU under `settingsMenuItems` is still unsupported, and the footer
 >   now renders flat up to three rows by design. Recorded as a shape decision, not a gap.
 > - **2, 22, 23, 24 RESOLVED as documented stances** — the `dist`-reading CLI is a named footgun in
->   the package `CLAUDE.md`; the "colours beyond the four intents live outside the registry" stance,
+>   the package `MAINTAINING.md`; the "colours beyond the four intents live outside the registry" stance,
 >   the no-`title`-in-a-spec decision and the commands circular-inference fix are all in
 >   `agent/rules/basalt-batteries.md`, which every consumer receives.
 > - **25 — the docs note landed in 2026-07; the CAPABILITY did not.** `useBasaltForm` still
