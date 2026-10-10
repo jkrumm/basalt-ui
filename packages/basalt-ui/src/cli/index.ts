@@ -14,6 +14,7 @@ import {
   readFileSync,
   rmdirSync,
   statSync,
+  realpathSync,
   unlinkSync,
   writeFileSync,
 } from 'node:fs'
@@ -452,7 +453,7 @@ export function waiverHintFor(relPath: string, profile: DoctorProfile): string {
  *
  * - `managed` : basalt owns it. sync refreshes it to the shipped version; a local edit is skipped
  *               and reported (`--force` overwrites); `--check` exits 1 on drift. Applies to exactly
- *               what Claude reads (.claude/rules/*, .claude/skills/*, the CLAUDE.md block) —
+ *               what Claude reads (.claude/rules/*, .claude/skills/*, the AGENTS.md block) —
  *               Claude Code cannot load rules or skills from node_modules, and that platform limit
  *               is the only reason anything is copied at all. The sync diff is the review gate.
  * - `seed`    : written once if absent, then owned entirely by the consumer. sync never overwrites
@@ -462,7 +463,7 @@ export function waiverHintFor(relPath: string, profile: DoctorProfile): string {
  *               the package while the consumer still owns the file.
  *
  * A managed file with `markers: true` is spliced as a `<!-- basalt:begin -->…<!-- basalt:end -->`
- * region inside a host file the consumer otherwise owns (CLAUDE.md) — not a third mode, just
+ * region inside a host file the consumer otherwise owns (AGENTS.md) — not a third mode, just
  * managed ownership scoped to a region.
  */
 type Mode = 'managed' | 'seed'
@@ -518,11 +519,15 @@ type TemplateVars = {
   BASALT_BIN: string
 }
 
-// The block markers the CLAUDE.md template emits. The begin marker carries the framework version
+// The block markers the AGENTS.md template emits. The begin marker carries the framework version
 // (`<!-- basalt:begin 1.0.0 -->`), so the region is matched by the begin PREFIX, not an exact string.
 const BLOCK_BEGIN_PREFIX = '<!-- basalt:begin'
 const BLOCK_END = '<!-- basalt:end -->'
 export const MANIFEST_PATH = '.basalt/manifest.json'
+/** The host file the managed block is spliced into (and its manifest key). */
+export const AGENTS_MD = 'AGENTS.md'
+/** Where the block lived before it moved to {@link AGENTS_MD} — read only to migrate out of it. */
+export const LEGACY_BLOCK_HOST = 'CLAUDE.md'
 
 export function sha256(text: string): string {
   return createHash('sha256').update(text, 'utf8').digest('hex')
@@ -631,6 +636,71 @@ function applyBlock(host: string, block: string): string {
   }
   const base = host.trimEnd()
   return base.length === 0 ? `${block.trim()}\n` : `${base}\n\n${block.trim()}\n`
+}
+
+function sameFile(a: string, b: string): boolean {
+  try {
+    return realpathSync(a) === realpathSync(b)
+  } catch {
+    return false
+  }
+}
+
+/** True when the host text carries a managed block (begin marker present). */
+export function hasManagedBlock(host: string | null): boolean {
+  return host !== null && host.includes(BLOCK_BEGIN_PREFIX)
+}
+
+export type BlockMigration = {
+  /** The legacy host (`CLAUDE.md`) carried a managed block that has to move. */
+  pending: boolean
+  /** The legacy host was left empty (or `@AGENTS.md` only) and removed. */
+  deletedHost: boolean
+}
+
+/**
+ * Move the managed block out of `CLAUDE.md` into `AGENTS.md` (an install from before the move).
+ * Idempotent: a second run finds nothing and returns `pending: false`.
+ *  1. The ledger entry is re-keyed `CLAUDE.md` → `AGENTS.md` in memory (the caller persists it), so
+ *     an unedited legacy block classifies `unchanged`, not untracked.
+ *  2. The region is cut out of `CLAUDE.md` and — unless `AGENTS.md` already has one — spliced into
+ *     `AGENTS.md` AS IT IS, not as the new rendering: the normal three-way classify then sees a
+ *     hand-edit and skips it like any drifted unit. The rest of `CLAUDE.md` is consumer-owned and
+ *     stays, except the file is deleted when nothing but whitespace or `@AGENTS.md` is left.
+ * `dryRun` (`sync --check`) writes nothing but still reports `pending`.
+ */
+export function migrateBlockToAgentsMd(
+  cwd: string,
+  manifest: Manifest,
+  opts: { dryRun?: boolean } = {},
+): BlockMigration {
+  const legacyHash = manifest.files[LEGACY_BLOCK_HOST]
+  if (legacyHash !== undefined) {
+    manifest.files[AGENTS_MD] ??= legacyHash
+    delete manifest.files[LEGACY_BLOCK_HOST]
+  }
+  const none: BlockMigration = { pending: false, deletedHost: false }
+  const legacyAbs = resolve(cwd, LEGACY_BLOCK_HOST)
+  const legacy = readIfExists(legacyAbs)
+  // A symlinked pair is one file: cutting the block out of "CLAUDE.md" would cut AGENTS.md too.
+  if (legacy === null || sameFile(legacyAbs, resolve(cwd, AGENTS_MD))) return none
+  const region = findBlockRegion(legacy)
+  if (region === null) return none
+
+  const before = legacy.slice(0, region.start).trimEnd()
+  const after = legacy.slice(region.end).trimStart()
+  const remainder = before === '' || after === '' ? `${before}${after}` : `${before}\n\n${after}`
+  const deletedHost = remainder === '' || remainder === '@AGENTS.md'
+  if (opts.dryRun === true) return { pending: true, deletedHost }
+
+  const agentsAbs = resolve(cwd, AGENTS_MD)
+  const agents = readIfExists(agentsAbs) ?? ''
+  if (!hasManagedBlock(agents)) {
+    writeFileEnsuringDir(agentsAbs, applyBlock(agents, legacy.slice(region.start, region.end)))
+  }
+  if (deletedHost) unlinkSync(legacyAbs)
+  else writeFileSync(legacyAbs, `${remainder.trimEnd()}\n`)
+  return { pending: true, deletedHost }
 }
 
 /**
@@ -809,15 +879,17 @@ export function managedFiles(
     render: (ctx: RenderContext) => readSource(ctx.pkgRoot, `agent/skills/${name}/SKILL.md`),
   }))
 
-  const claudeBlock: ManagedFile = {
-    dest: 'CLAUDE.md',
+  // AGENTS.md, not CLAUDE.md: Claude Code loads a repo-root AGENTS.md directly, but ANY CLAUDE.md
+  // in or above the cwd suppresses it — so the block must not be the reason a CLAUDE.md exists.
+  const agentsBlock: ManagedFile = {
+    dest: AGENTS_MD,
     mode: 'managed',
     markers: true,
-    source: 'agent/templates/CLAUDE-block.md.tpl',
+    source: 'agent/templates/AGENTS-block.md.tpl',
     // With markers, render() returns the fully-rendered region INCLUDING its begin/end markers.
-    // The writer splices it into the consumer's host CLAUDE.md at apply time.
+    // The writer splices it into the consumer's host AGENTS.md at apply time.
     render: (ctx) => {
-      const tpl = readSource(ctx.pkgRoot, 'agent/templates/CLAUDE-block.md.tpl')
+      const tpl = readSource(ctx.pkgRoot, 'agent/templates/AGENTS-block.md.tpl')
       if (tpl === null) return null
       return fillTemplate(tpl, ctx.vars).trim()
     },
@@ -946,7 +1018,7 @@ export function managedFiles(
   // lefthook/CI config, and writing over or beside it is worse than not writing at all.
   const rootTooling: ManagedFile[] = placement.isPackageRepoRoot ? [lefthook, ci] : []
 
-  return [...rules, ...skills, claudeBlock, design, oxfmt, ...rootTooling, oxlintrc, ...scaffolds]
+  return [...rules, ...skills, agentsBlock, design, oxfmt, ...rootTooling, oxlintrc, ...scaffolds]
 }
 
 /**
@@ -1086,6 +1158,18 @@ export function reportPrune(pruned: PruneResult): void {
   )
 }
 
+/** Name what {@link migrateBlockToAgentsMd} did — a file leaving a consumer's tree is never silent. */
+export function reportBlockMigration(migration: BlockMigration, command: 'init' | 'sync'): void {
+  if (!migration.pending) return
+  const tail = migration.deletedHost
+    ? `${LEGACY_BLOCK_HOST} held nothing else and was deleted.`
+    : `the rest of ${LEGACY_BLOCK_HOST} is yours; while it exists Claude Code loads it INSTEAD of ` +
+      `${AGENTS_MD} unless it imports @${AGENTS_MD} — move your content over and delete it.`
+  console.log(
+    `\nbasalt-ui ${command}: moved the basalt block from ${LEGACY_BLOCK_HOST} to ${AGENTS_MD} — ${tail}`,
+  )
+}
+
 /**
  * Delete the managed rule/skill files this basalt version retired, and drop their manifest entries.
  *
@@ -1194,7 +1278,7 @@ type Classification = 'unchanged' | 'drifted' | 'missing' | 'current'
  *  - Blank out the per-release `BASALT_VERSION` token in a marker's begin line
  *    (`<!-- basalt:begin 1.0.1 -->` → `<!-- basalt:begin -->`). It changes on every release and is
  *    the only per-release variable that lands INSIDE the hashed region (the rest of
- *    `CLAUDE-block.md.tpl` has no other `{{…}}` placeholders today), so stripping it is what lets
+ *    `AGENTS-block.md.tpl` has no other `{{…}}` placeholders today), so stripping it is what lets
  *    one normalized rendering stand in for every version of a given template body instead of
  *    needing one ledger entry per release. If a future marker template interpolates another
  *    per-release var inside its region, extend this normalization the same way.

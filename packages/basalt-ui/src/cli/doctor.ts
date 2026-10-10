@@ -8,6 +8,8 @@ import { relative, resolve } from 'node:path'
 
 import type { BasaltConfig } from './config'
 import {
+  AGENTS_MD,
+  LEGACY_BLOCK_HOST,
   MANIFEST_PATH,
   basaltBinCommand,
   basaltPresetEntry,
@@ -15,6 +17,7 @@ import {
   declaredProfile,
   findBasaltInstall,
   findRepoRoot,
+  hasManagedBlock,
   inspectLefthookGate,
   OXLINT_FILES,
   OXLINT_NO_BIN,
@@ -193,7 +196,7 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
 
   const install = findBasaltInstall(cwd)
 
-  // ── Hard check 2: install matches the manifest, and doctor says WHERE (the CLAUDE-block's claim)
+  // ── Hard check 2: install matches the manifest, and doctor says WHERE (the AGENTS-block's claim)
   const manifestVersion = profile === 'tokens-only' ? undefined : readManifest(cwd).basaltVersion
   const at = install.dir === null ? '' : `${relative(cwd, install.dir)} (${install.version})`
   if (install.dir === null) {
@@ -300,7 +303,18 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
     )
   }
 
-  // ── Hard check 6: ai package major version parity within THIS package.json ─
+  // ── Warn check 6: no stale basalt block left in CLAUDE.md ───────────────────
+  // The managed block lives in AGENTS.md now. A block left behind in CLAUDE.md is a second,
+  // frozen copy of the doctrine — and the CLAUDE.md that holds it also stops Claude Code loading
+  // AGENTS.md at all. Warn only: `sync` is the fix and `sync --check` is the gate.
+  if (profile !== 'tokens-only' && hasManagedBlock(readIfExists(resolve(cwd, LEGACY_BLOCK_HOST)))) {
+    warn(
+      `${LEGACY_BLOCK_HOST} still carries a stale basalt block — it moved to ${AGENTS_MD}. Run ` +
+        '`basalt-ui sync` to migrate it.',
+    )
+  }
+
+  // ── Hard check 7: ai package major version parity within THIS package.json ─
   // basalt/ai-sdk-major (the lint rule) is per-file against the NEAREST package.json, so a lint
   // run scoped to one workspace package only ever sees that package's own `ai` major and is
   // perfectly happy. This check reads the SAME package.json across its dependencies/

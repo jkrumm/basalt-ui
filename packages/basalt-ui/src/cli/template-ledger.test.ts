@@ -109,7 +109,7 @@ afterEach(() => {
 
 describe('classify ledger: cross-version format-only drift vs a real edit', () => {
   it('a raw legacy manifest hash + reformat + a cross-version word change classifies drifted — the documented transitional gap, healed by one --force', () => {
-    const currentBlock = read('CLAUDE.md').trimEnd() // == today's desired (v1.0.1-shaped) block
+    const currentBlock = read('AGENTS.md').trimEnd() // == today's desired (v1.0.1-shaped) block
     expect(currentBlock).toContain('basalt-ui')
 
     // Simulate the v1.0.0 body: genuinely different WORDS (the pre-rename bin name), not just an
@@ -125,7 +125,7 @@ describe('classify ledger: cross-version format-only drift vs a real edit', () =
     write(
       MANIFEST_PATH,
       JSON.stringify(
-        { version: 1, basaltVersion: '1.0.0', files: { 'CLAUDE.md': manifestHash } },
+        { version: 1, basaltVersion: '1.0.0', files: { 'AGENTS.md': manifestHash } },
         null,
         2,
       ),
@@ -135,31 +135,31 @@ describe('classify ledger: cross-version format-only drift vs a real edit', () =
     // oxfmt AFTER that older sync — the real argo repro shape.
     const onDisk = simulateOxfmtReformat(olderBlock)
     expect(onDisk).not.toBe(olderBlock)
-    write('CLAUDE.md', `${onDisk}\n`)
+    write('AGENTS.md', `${onDisk}\n`)
 
     const { code, log } = capture(() => sync({}, dir))
     expect(code).toBe(0)
     // NOT healed — none of classify's three paths match a raw legacy hash once the words have
     // also changed cross-version. This is the residual transitional gap documented on `classify`.
-    expect(read('CLAUDE.md')).toBe(`${onDisk}\n`)
+    expect(read('AGENTS.md')).toBe(`${onDisk}\n`)
     expect(log).toContain('locally edited')
 
     expect(silenced(() => sync({ check: true }, dir))).toBe(1)
 
     // One --force heals it straight to the CURRENT (v1.0.1-shaped) rendering.
     silenced(() => sync({ force: true }, dir))
-    expect(read('CLAUDE.md').trimEnd()).toBe(currentBlock)
+    expect(read('AGENTS.md').trimEnd()).toBe(currentBlock)
   })
 
   it('a raw legacy manifest hash + reformat only (no word change) still classifies unchanged via the same-version fallback, heals without --force, and the manifest is rewritten with the normalized hash', () => {
-    const currentBlock = read('CLAUDE.md').trimEnd() // == today's desired block; body unchanged
+    const currentBlock = read('AGENTS.md').trimEnd() // == today's desired block; body unchanged
 
     // What a PRE-1.0.2 CLI's writeUnit recorded for THIS SAME body: a raw hash, not normalized.
     const manifestHash = sha256(currentBlock)
     write(
       MANIFEST_PATH,
       JSON.stringify(
-        { version: 1, basaltVersion: '1.0.0', files: { 'CLAUDE.md': manifestHash } },
+        { version: 1, basaltVersion: '1.0.0', files: { 'AGENTS.md': manifestHash } },
         null,
         2,
       ),
@@ -169,51 +169,51 @@ describe('classify ledger: cross-version format-only drift vs a real edit', () =
     // template-body change since the manifest entry was written.
     const onDisk = simulateOxfmtReformat(currentBlock)
     expect(onDisk).not.toBe(currentBlock)
-    write('CLAUDE.md', `${onDisk}\n`)
+    write('AGENTS.md', `${onDisk}\n`)
 
     const { code, log } = capture(() => sync({}, dir))
     expect(code).toBe(0)
     // Healed straight to the current rendering, no --force needed: the same-version fallback
     // (`normalizeForLedger(current) === normalizeForLedger(desired)`) matches regardless of what
     // the manifest hash says.
-    expect(read('CLAUDE.md').trimEnd()).toBe(currentBlock)
+    expect(read('AGENTS.md').trimEnd()).toBe(currentBlock)
     expect(log).not.toContain('locally edited')
 
     // The gap is now closed for good for this consumer: the healing sync rewrote the manifest
     // entry with the NORMALIZED hash (writeUnit's form), not the raw legacy one.
     const manifest = JSON.parse(read(MANIFEST_PATH)) as { files: Record<string, string> }
-    expect(manifest.files['CLAUDE.md']).toBe(sha256(normalizeForLedger(currentBlock)))
+    expect(manifest.files['AGENTS.md']).toBe(sha256(normalizeForLedger(currentBlock)))
 
     expect(silenced(() => sync({ check: true }, dir))).toBe(0)
   })
 
   it('a genuine word-level edit inside the block classifies drifted and is skipped without --force', () => {
-    const original = read('CLAUDE.md')
+    const original = read('AGENTS.md')
     const edited = original.replace('React 19', 'React 18 (pinned by our team)')
     expect(edited).not.toBe(original)
-    write('CLAUDE.md', edited)
+    write('AGENTS.md', edited)
 
     const { code, log } = capture(() => sync({}, dir))
     expect(code).toBe(0)
     // Untouched — a real edit is never silently overwritten.
-    expect(read('CLAUDE.md')).toBe(edited)
+    expect(read('AGENTS.md')).toBe(edited)
     expect(log).toContain('locally edited')
 
     expect(silenced(() => sync({ check: true }, dir))).toBe(1)
 
     silenced(() => sync({ force: true }, dir))
-    expect(read('CLAUDE.md')).toBe(original)
+    expect(read('AGENTS.md')).toBe(original)
   })
 
   it('reformatting AND a real edit together still classifies drifted (whitespace normalization never masks word changes)', () => {
-    const original = read('CLAUDE.md')
+    const original = read('AGENTS.md')
     const reformattedAndEdited = simulateOxfmtReformat(original).replace(
       'React 19',
       'React 18 (pinned by our team)',
     )
-    write('CLAUDE.md', reformattedAndEdited)
+    write('AGENTS.md', reformattedAndEdited)
 
     expect(silenced(() => sync({ check: true }, dir))).toBe(1)
-    expect(read('CLAUDE.md')).toBe(reformattedAndEdited)
+    expect(read('AGENTS.md')).toBe(reformattedAndEdited)
   })
 })

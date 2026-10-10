@@ -153,23 +153,23 @@ describe('doctor — a check that cannot run is not a check that passed', () => 
  * `install-parity` and `guard-scan`, RESTORED in 1.30.0 after four minors absent with no MIGRATING
  * row. Both had named consumers while gone: image-gen ran `doctor` in CI specifically to catch an
  * install/manifest version mismatch and that step was a silent no-op, `guard-scan` is what makes a
- * `basalt.roots` resolving to zero files impossible to ship green, and the CLAUDE-block basalt
+ * `basalt.roots` resolving to zero files impossible to ship green, and the AGENTS-block basalt
  * itself writes told a consumer's agent that "`basalt-ui doctor` prints where" it installed.
  */
 describe('doctor — install-parity and guard-scan', () => {
-  it('prints WHERE basalt resolved and at what version — the CLAUDE-block’s claim', () => {
+  it('prints WHERE basalt resolved and at what version — the AGENTS-block’s claim', () => {
     healthyFixture()
     const { log } = capture(() => doctor(dir))
     expect(log).toContain('node_modules/basalt-ui')
     expect(log).toContain(CLI_VERSION)
   })
 
-  // The pair, pinned together: the shipped CLAUDE-block tells a consumer's AGENT that doctor prints
-  // the install directory, and basalt WRITES that sentence into the consumer's own CLAUDE.md during
+  // The pair, pinned together: the shipped AGENTS-block tells a consumer's AGENT that doctor prints
+  // the install directory, and basalt WRITES that sentence into the consumer's own AGENTS.md during
   // `sync`. For four minors it described output the CLI had removed. Whichever half moves next, the
   // other one has to move with it.
-  it('the shipped CLAUDE-block’s "doctor prints where" is a promise doctor keeps', () => {
-    const tpl = readFileSync(resolve(PKG_ROOT, 'agent/templates/CLAUDE-block.md.tpl'), 'utf8')
+  it('the shipped AGENTS-block’s "doctor prints where" is a promise doctor keeps', () => {
+    const tpl = readFileSync(resolve(PKG_ROOT, 'agent/templates/AGENTS-block.md.tpl'), 'utf8')
     expect(tpl).toContain('`basalt-ui doctor` prints where')
     healthyFixture()
     expect(capture(() => doctor(dir)).log).toContain('basalt-ui resolves at')

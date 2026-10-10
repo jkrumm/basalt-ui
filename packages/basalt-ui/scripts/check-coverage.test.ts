@@ -73,7 +73,7 @@ describe('checkCoverage', () => {
     for (const skill of ['basalt-app', 'basalt-design', 'basalt-charts']) {
       expect(lines(`agent/skills/${skill}/SKILL.md`)).toBeLessThanOrEqual(100)
     }
-    expect(lines('agent/templates/CLAUDE-block.md.tpl')).toBeLessThanOrEqual(40)
+    expect(lines('agent/templates/AGENTS-block.md.tpl')).toBeLessThanOrEqual(40)
     expect(lines('agent/templates/DESIGN.md.tpl')).toBeLessThanOrEqual(45)
   })
 })

@@ -13,6 +13,7 @@ import {
   findBasaltInstall,
   managedFiles,
   mergeOxlintExtends,
+  migrateBlockToAgentsMd,
   normalizeForLedger,
   patchPackageJson,
   placementNotices,
@@ -20,6 +21,7 @@ import {
   readManifest,
   reconcileRoots,
   renderContext,
+  reportBlockMigration,
   reportPrune,
   resolvePeerFlags,
   resolvePlacement,
@@ -86,6 +88,9 @@ export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags =
   const placement = resolvePlacement(cwd)
   const files = managedFiles(peers, placement)
 
+  // Before the loop: an install from before the move carries the block in CLAUDE.md.
+  const migration = migrateBlockToAgentsMd(cwd, manifest)
+
   const writtenFiles: string[] = []
   const keptFiles: string[] = []
   const missingSources: string[] = []
@@ -131,6 +136,7 @@ export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags =
     `basalt-ui init: ${writtenFiles.length} written, ${keptFiles.length} kept, manifest at ${MANIFEST_PATH}`,
   )
   reportPrune(pruned)
+  reportBlockMigration(migration, 'init')
   if (missingSources.length > 0) {
     console.log(
       `basalt-ui init: ${missingSources.length} shipped asset(s) not present, skipped: ${missingSources.join(', ')}`,
