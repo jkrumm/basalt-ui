@@ -7,7 +7,7 @@ help: ## List targets
 # The local gate: the validation CI runs (.github/workflows/ci.yml), all in one target. Builds FIRST
 # on purpose — `bun run pre` runs `check-theme`, and the playground's typecheck resolves
 # `basalt-ui/*` through the package's `exports` — both read `dist`, not the working tree, so a gate
-# that built last would grade the previous build (packages/basalt-ui/CLAUDE.md, "a gate reading
+# that built last would grade the previous build (packages/basalt-ui/MAINTAINING.md, "a gate reading
 # dist"). `pack-test` rebuilds anyway; the point of the first build is what `pre` reads.
 check: ## Local CI gate: gen sync checks + build + pre + layout + coverage/doc-drift + pack-test
 	@bun packages/basalt-ui/scripts/gen-oxlint.ts --check

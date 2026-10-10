@@ -14,7 +14,7 @@ CSS theme into the Mantine framework above. The old `./css` and `./starlight` Ta
 
 ## Precedence (this repo)
 
-Shipped rules in `/.claude/rules/` (when dogfooded) > `packages/basalt-ui/CLAUDE.md` > this file >
+Shipped rules in `/.claude/rules/` (when dogfooded) > `packages/basalt-ui/MAINTAINING.md` > this file >
 `docs/*.md`. When two disagree, fix the lower one to match, or update both deliberately. The
 consumer-side chain is a different stack, stated in its own terms by
 `packages/basalt-ui/agent/templates/AGENTS-block.md.tpl` (`consumer DESIGN.md > the six shipped
@@ -26,7 +26,7 @@ overridden by restraint, and the global `visx-charts.md` rule is superseded by t
 ## Working Instructions
 
 The full S0→S5 argo extraction is **implemented and on `master`** — `packages/basalt-ui/src/**` is
-real code, not stubs (see `packages/basalt-ui/CLAUDE.md`'s Status section). `docs/STATUS.md` is the
+real code, not stubs (see `packages/basalt-ui/MAINTAINING.md`'s Status section). `docs/STATUS.md` is the
 live single-source-of-truth for current state. Do what is explicitly requested — don't
 autonomously execute large roadmap phases.
 
@@ -37,8 +37,8 @@ autonomously execute large roadmap phases.
 - **Net-negative waves.** A consolidation PR deletes more lines than it adds; a new export needs a
   named consumer in the brief.
 - **One doctrine, one home.** Home = the most-enforced surface stating it (shipped rule > package
-  CLAUDE.md > guard JSDoc). Everything else is a one-line link. `check-agent-doc-drift.ts` covers
-  `docs/**`, the package CLAUDE.md and this file too.
+  MAINTAINING.md > guard JSDoc). Everything else is a one-line link. `check-agent-doc-drift.ts` covers
+  `docs/**`, the package MAINTAINING.md and this file too.
 - **Budgets are numbers**, checked by `scripts/check-budgets.ts` in `pre`: public symbols, published
   subpaths, shipped rule lines, spec prose, playground routes, `cli/index.ts` size.
 - **Dogfood.** The repo loads its own shipped rules/skills; `/.oxlintrc.json` levels match
@@ -79,7 +79,7 @@ Every single-plot cartesian chart composes **`CartesianChart`**, enforced by
 
 `src/charts/**`/`src/tokens/**` stay Mantine-free, `@visx/*` stays inside `charts/**` — three
 independent oxlint rules. Full layering + packaging rationale (repo-internal, not a consumer
-contract): `packages/basalt-ui/CLAUDE.md` § Layering.
+contract): `packages/basalt-ui/MAINTAINING.md` § Layering.
 
 ## Tech Stack
 
@@ -101,11 +101,10 @@ basalt-ui/
 ├── apps/playground/        # @basalt-ui/playground — workspace:* consumer, everyday iteration surface
 ├── apps/marketing/         # basalt-ui.com — CONTENT-FROZEN until rebuilt on Mantine post-migration
 ├── docs/archive/BLUEPRINT.md  # the 5-stage argo-extraction plan (superseded, do not execute)
-├── AGENTS.md               # you are here
-└── CLAUDE.md               # `@AGENTS.md` shim so every Claude Code lane loads it
+└── AGENTS.md               # you are here — the only agent file (no CLAUDE.md anywhere: it would suppress this one)
 ```
 
-- `packages/basalt-ui` — the published framework. See its own `CLAUDE.md`.
+- `packages/basalt-ui` — the published framework. Maintainer invariants: `packages/basalt-ui/MAINTAINING.md` (repo only, not shipped).
 - `apps/playground` — the everyday iteration surface; grows as the package gains surface. Instant
   HMR, exact types, zero linking via `workspace:*`.
 - `apps/marketing` — basalt-ui.com. Content-frozen until rebuilt on Mantine post-migration; will
@@ -142,7 +141,7 @@ cd packages/basalt-ui && bun run build   # dist-first tsup + styles.css copy + t
 **The dist-reads-not-src footgun spans two builds you have to trust in order:** the playground's
 typecheck resolves `basalt-ui/*` through `node_modules` → `dist/**/*.d.ts` even though Vite aliases
 it to `src/` for the running app, so a new/widened export is invisible to `bun run typecheck` until
-`bun run build` runs. `packages/basalt-ui/CLAUDE.md` names the third footgun (`check-theme`) in the
+`bun run build` runs. `packages/basalt-ui/MAINTAINING.md` names the third footgun (`check-theme`) in the
 same family — build before trusting a typecheck or a theme check that spans both packages.
 
 **Pack-test (the dist gate, runs in CI):** `bun pm pack` + scratch-install of the tarball. The

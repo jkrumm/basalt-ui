@@ -1,4 +1,4 @@
-// The compile-time regression guard for `QueryStateLike` (`packages/basalt-ui/CLAUDE.md` states it
+// The compile-time regression guard for `QueryStateLike` (`packages/basalt-ui/MAINTAINING.md` states it
 // as an invariant: "a composed, derived or hand-rolled result must be passable without a cast").
 // Only the runtime half (`assertQueryStateLike`) had a test before this file — this pins the
 // STRUCTURAL half: a hand-rolled object with the five required fields (plus one extra a real
