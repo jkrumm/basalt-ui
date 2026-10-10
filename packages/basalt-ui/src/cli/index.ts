@@ -339,7 +339,7 @@ export function resolveProjectDir(cwd: string): ProjectResolution {
 /**
  * Which shape of consumer a project-scoped command is looking at — DECLARED, never inferred
  * (`--tokens-only`, or `"basalt": { "profile": "tokens-only" }`), because the answer switches the
- * Mantine-remedy guard kinds off. Why that direction: package CLAUDE.md § CLI.
+ * Mantine-remedy guard kinds off. Why that direction: package MAINTAINING.md § CLI.
  */
 export function declaredProfile(cfg: BasaltConfig, flags: readonly string[]): DoctorProfile {
   if (flags.includes('--tokens-only')) return 'tokens-only'

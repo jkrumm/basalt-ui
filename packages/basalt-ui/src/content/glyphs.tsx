@@ -4,7 +4,7 @@
  * hand-drawn ones that drift apart.
  *
  * Inline SVG rather than an icon dep: the framework takes icons as `ReactNode` from the consumer
- * (see the package CLAUDE.md) and ships none, but these are internal chrome of a shipped component,
+ * (see the package MAINTAINING.md) and ships none, but these are internal chrome of a shipped component,
  * not a consumer-facing slot. `currentColor` + `1em`-agnostic sizing keeps them steerable from CSS
  * — the heading anchor sizes its glyph as an optical ratio of whatever step the heading lands on
  * (docs/DESIGN-SPEC.md §3), while the code-block chrome pins a fixed 14px.

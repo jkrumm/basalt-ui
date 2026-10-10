@@ -569,7 +569,7 @@ const SIZE_ATTRS = new Set(['size', 'fz', 'fontSize'])
  * And a separate id can carry its own severity: this rule ships `error` in the consumer preset —
  * it is a NEW form the sibling rule never caught (a numeric-only check let every string form walk
  * straight past it), not a narrowing of code that previously passed, so the grace-minor doctrine in
- * the package CLAUDE.md does not apply to it. Widening `no-raw-font-size` in place would have meant
+ * the package MAINTAINING.md does not apply to it. Widening `no-raw-font-size` in place would have meant
  * the widened check inherited whatever level the sibling id already carried, with no way to give
  * this specific form its own severity.
  *
@@ -2106,7 +2106,7 @@ const BASALT_HOST_TAGS = new Set(['FilterSet', 'PageAside', 'PanelRow'])
  *
  * TWO dialects, because a repo picks one file-naming law and the convention has to survive either:
  * `edit-session-modal.tsx` (kebab) and `CbbiPanel.tsx` (PascalCase — what a repo mandating
- * `PascalCase.tsx` for component files writes, basalt's own root `CLAUDE.md` included). The kebab
+ * `PascalCase.tsx` for component files writes, basalt's own root `AGENTS.md` included). The kebab
  * form alone could never match a component file in such a repo, which is exactly how the CBBI panel
  * — a `PageAside` child whose `<PageAside>` is in the PARENT page — collected four warns that no
  * ancestry walk in that file could ever have avoided.
@@ -2839,7 +2839,7 @@ export const CTL_THEME_TAGS = new Set([
  *
  * `ChartCard` lives inside the Mantine-free chart layer (`src/charts/primitives/`), which means it
  * cannot render a `MantineThemeProvider` at all — it writes `data-basalt-tier="widget"` by hand and
- * nothing else (`../CLAUDE.md`, "A home sizes its own SLOT"; `docs/CONTROLS-SPEC.md` §5). So this
+ * nothing else (`../MAINTAINING.md`, "A home sizes its own SLOT"; `docs/CONTROLS-SPEC.md` §5). So this
  * rule's whole message — "the HOME sets the tier, drop the prop" — is FALSE in exactly one slot: a
  * `Switch` in `ChartCard.actions` with no `size` renders at Mantine's default, not at `ctl`.
  *
@@ -3633,7 +3633,7 @@ const queryFnUnwrap = {
  * The deprecation ledger — every export that is `@deprecated` but still SHIPPED, with what to
  * write instead and the minor it goes away in. B4: majors are banned here, so a rename cannot be
  * signalled by a version number; the lifecycle is instead "ship the alias, lint the old name, write
- * the MIGRATING row, remove it a minor later" (`../CLAUDE.md`, "Deprecation lifecycle").
+ * the MIGRATING row, remove it a minor later" (`../MAINTAINING.md`, "Deprecation lifecycle").
  *
  * A row without `prop` is a NAMED IMPORT from `subpath` — reported on the specifier, with an
  * autofix that rewrites it to `{ <replacement> as <local> }` so no call site has to move in the
@@ -4526,7 +4526,7 @@ export const PLUGIN_RULE_ADVISORY = {
   'deprecated-export': {
     since: '1.28.0',
     why:
-      'B4, the sunset half of the deprecation lifecycle (`../CLAUDE.md`). A deprecation is a ' +
+      'B4, the sunset half of the deprecation lifecycle (`../MAINTAINING.md`). A deprecation is a ' +
       'SCHEDULE, not a defect: the code compiles, runs and is correct until the `removeIn` minor, ' +
       'so promoting this to `error` would fail a consumer build over something that still works — ' +
       'the one outcome the no-majors doctrine exists to avoid. There is no version at which that ' +

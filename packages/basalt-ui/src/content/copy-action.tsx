@@ -6,7 +6,7 @@
  *
  * The check + tooltip are the entire success signal — no notification (docs/CONTENT-SPEC.md §7).
  * `color="teal"` resolves through the bridged Mantine family, so it stays on the token layer in
- * both schemes (see the package CLAUDE.md on `cssVariablesResolver`).
+ * both schemes (see the package MAINTAINING.md on `cssVariablesResolver`).
  *
  * Not part of the public surface — reach it through `CodeBlock` / `HeadingAnchor`.
  */

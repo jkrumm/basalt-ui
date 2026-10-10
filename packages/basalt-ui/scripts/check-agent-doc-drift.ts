@@ -349,7 +349,7 @@ export function checkDenylistIsGenuinelyRemoved(validNames: ReadonlySet<string>)
 // A comment or doc that cites `docs/waves/RESPONSIVE-SPEC.md` reads as authoritative and leads a
 // reader to a path that isn't there — the drift `Check A`/`Check B` cannot see, because it names
 // neither an export nor a removed API. Every deleted doc is hand-listed with its current home(s);
-// the scan covers every markdown file in the repo (agent docs, `docs/**`, both CLAUDE.mds) and the
+// the scan covers every markdown file in the repo (agent docs, `docs/**`, the root AGENTS.md, MAINTAINING.md) and the
 // shipped oxlint plugin's own message strings (`configs/**/*.js`, where the `raw-breakpoint` rule's
 // messages live — a rule message is as consumer-visible as prose), both scanned RAW; `src/**` JSDoc
 // is the one masked half, so a string literal that merely happens to contain a dead path is not a
@@ -403,8 +403,8 @@ export function checkD(
 
 /**
  * Every markdown file in the repo, minus the directories nothing here owns. Wider than Check A/B's
- * `agent/**` on purpose — the count below is stated in the package README, both
- * CLAUDE.mds, MIGRATING, two `agent/` docs and two root `docs/` pages. `.claude/` is excluded: its
+ * `agent/**` on purpose — the count below is stated in the package README, the root AGENTS.md,
+ * MAINTAINING.md, MIGRATING, two `agent/` docs and two root `docs/` pages. `.claude/` is excluded: its
  * only markdown is gitignored agent scratch (review dumps, wave notes) that a CI checkout never
  * has, so scanning it would make the check depend on the working tree it happens to sit in.
  */

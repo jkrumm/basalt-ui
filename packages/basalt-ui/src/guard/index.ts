@@ -788,7 +788,7 @@ function insideHostTag(codeText: string, offset: number): boolean {
  *
  * KEBAB and PascalCase both count, because a repo picks one file-naming law and the convention has
  * to survive either: `edit-session-modal.tsx`, and `CbbiPanel.tsx` in a repo mandating
- * `PascalCase.tsx` for component files (basalt's own root `CLAUDE.md` included). Each needs the
+ * `PascalCase.tsx` for component files (basalt's own root `AGENTS.md` included). Each needs the
  * leading SUBJECT — a bare `modal.tsx` / `Panel.tsx` is a page module, not the convention.
  *
  * The trade is that a whole file goes unscanned on a naming convention — the same bargain
