@@ -19,23 +19,31 @@ check: ## Local CI gate: gen sync checks + build + pre + layout + coverage/doc-d
 	@bun packages/basalt-ui/scripts/check-agent-doc-drift.ts
 	@cd packages/basalt-ui && bun run pack-test
 
-# Production probe, NOT the local gate (`make check`). `curl -fsS` exits non-zero on any 4xx/5xx or
-# connection failure, so a green run means basalt-ui.com answered 2xx. The site is a static nginx
-# image; there is no application `/health` endpoint to hit.
-verify: ## Probe production — exit 0 means https://basalt-ui.com/ is live and healthy
-	@curl -fsS --max-time 15 -o /dev/null https://basalt-ui.com/
-	@echo "OK https://basalt-ui.com/"
+# Production probe, NOT the local gate (`make check`). basalt-ui is a published library with no
+# runtime of its own to ping, so "live" is the registry serving a version at least as new as this
+# checkout: `npm view basalt-ui version` equal to or newer than packages/basalt-ui/package.json
+# exits 0, while an unreachable registry or an OLDER published version exits non-zero with the why.
+verify: ## Probe production — exit 0 when the published npm package is live
+	@local=$$(node -p "require('./packages/basalt-ui/package.json').version"); \
+	registry=$$(timeout 20 npm view basalt-ui version 2>/dev/null); \
+	if [ -z "$$registry" ]; then \
+		echo "verify: npm registry unreachable — 'timeout 20 npm view basalt-ui version' returned nothing"; \
+		exit 1; \
+	fi; \
+	if [ "$$registry" != "$$local" ] && \
+		[ "$$registry" != "$$(printf '%s\n%s\n' "$$local" "$$registry" | sort -V | tail -n1)" ]; then \
+		echo "verify: npm serves basalt-ui@$$registry, OLDER than local $$local"; \
+		exit 1; \
+	fi; \
+	echo "OK basalt-ui@$$registry is live on npm (local $$local)"
 
-# The marketing/docs site deploys continuously on every push to master via RollHook
-# (.github/workflows/deploy.yml), so there is nothing to run by hand here. npm publishing is a
-# release process, not a deploy — it lives in `make release`.
-deploy: ## No-op — the site is deployed by CI on push (npm publishing is `make release`)
-	@echo "deployed by CI on push"
+# Publishing is `make release` (below), not a deploy — there is nothing for a deploy target to do.
+deploy: ## No-op — publishing is `make release`
+	@echo "published by make release; nothing to deploy"
 
-# Bounded tail, never -f: reads the production marketing container's logs and returns. The compose
-# service name matches the deploy image (basalt-ui-marketing, .github/workflows/deploy.yml).
-logs: ## Print the last 200 lines of the production container's logs, then exit
-	@ssh vps 'docker logs --tail 200 $$(docker ps -q --filter "label=com.docker.compose.service=basalt-ui-marketing" | head -n1)'
+# A published library has no runtime to tail: it is files on npm, not a server or a container.
+logs: ## No-op — a library has no runtime logs
+	@echo "library: no runtime logs"
 
 pre: ## fmt:check + lint + typecheck + check-theme + bun test (run before committing)
 	@bun run pre

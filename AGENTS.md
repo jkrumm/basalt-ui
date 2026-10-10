@@ -125,7 +125,7 @@ bun run fmt:check          # oxfmt (check only)
 bun run typecheck          # tsc across package + playground (see the dist footgun below)
 bun run pre                # fmt:check && lint && typecheck && check-theme && bun test
 make check                 # build + pre + the layout suite + pack-test — the full local gate
-make verify                # probe production (curl basalt-ui.com) — not the local gate
+make verify                # probe the published package on npm — not the local gate
 ```
 
 `pre` runs the unit suite; the **layout** suite (real CSS geometry in headless Chrome, ~10s) stays
@@ -167,15 +167,18 @@ The user validates running apps manually — don't start dev servers.
 
 ## Deploy
 
-The marketing/docs site (basalt-ui.com) deploys continuously on every push to `master` via RollHook
-(`.github/workflows/deploy.yml`); `make deploy` is a no-op that prints `deployed by CI on push`. npm
-publishing is NOT a deploy — it is the release process (`make release`, below), gated by
-`scripts/release.sh`.
+`make deploy` is a no-op that prints `published by make release; nothing to deploy` — publishing is
+NOT a deploy, it is the release process (`make release`, below), gated by `scripts/release.sh`.
+`make logs` is likewise a no-op (`library: no runtime logs`). The marketing/docs site
+(basalt-ui.com) deploys continuously on every push to `master` via RollHook
+(`.github/workflows/deploy.yml`).
 
 ## Verify & Monitor
 
-- **Health URL**: https://basalt-ui.com/ — `make verify` curls it with `-fsS`; exit 0 means live. The
-  image is static nginx, so there is no application `/health` endpoint to probe.
+- **Health URL**: the npm registry page for `basalt-ui`
+  (https://www.npmjs.com/package/basalt-ui) — `make verify` compares `npm view basalt-ui version`
+  against `packages/basalt-ui/package.json`; exit 0 means the published package is live (registry
+  equal to or newer than local).
 - **Uptime Kuma monitor**: none recorded here — this repo declares no monitor, and the monitor list
   lives in a separate infra repo outside this checkout, so it could not be confirmed from here.
 - **OTel `service.name`**: none — this repository ships no OpenTelemetry instrumentation.
@@ -187,8 +190,8 @@ publishing is NOT a deploy — it is the release process (`make release`, below)
   Never trust a bare `bun run typecheck` on a cold tree — `make check` builds FIRST on purpose.
 - **Basalt-ui package changes are their own commit.** The lefthook `isolated-basalt-ui` hook fails a
   staging set that mixes `packages/basalt-ui/` and non-package files.
-- **`make verify` probes production; `make check` is the local gate.** They are not interchangeable:
-  `verify` makes a network call and does not run the tests.
+- **`make verify` probes the published package; `make check` is the local gate.** They are not
+  interchangeable: `verify` makes a registry call and does not run the tests.
 - **The layout suite needs Chrome.** It runs in CI and `make check`, never in `pre`.
 - **`apps/marketing/AGENTS.md` describes the pre-Mantine (Tailwind/Biome) era** and is stale; the
   root + package conventions here are authoritative.
