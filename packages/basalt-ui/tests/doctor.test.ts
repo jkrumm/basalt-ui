@@ -66,7 +66,7 @@ beforeEach(() => {
 })
 
 afterEach(() => {
-  // tmp dirs are cleaned up by the OS; no explicit removal needed for CI
+  rmSync(tmpDir, { recursive: true, force: true })
 })
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
