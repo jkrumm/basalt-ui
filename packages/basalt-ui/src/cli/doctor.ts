@@ -17,7 +17,6 @@ import {
   declaredProfile,
   findBasaltInstall,
   findRepoRoot,
-  hasManagedBlock,
   inspectLefthookGate,
   OXLINT_FILES,
   OXLINT_NO_BIN,
@@ -27,7 +26,9 @@ import {
   readIfExists,
   readManifest,
   resolveProjectDir,
+  sameFile,
   scannableFiles,
+  scanBlock,
   shippedAssetPath,
 } from './index'
 import { resolveRoots } from './config'
@@ -111,7 +112,7 @@ function resolveAiMajorSkewReason(cfg: BasaltConfig): {
  * Check a consumer repo's basalt integration and print a pass/warn report.
  *
  * Narrowed to what a single-directory-scoped run can actually verify — no workspace-glob walking,
- * no ascend/descend project discovery (see {@link resolveProjectDir}). Six checks, numbered in
+ * no ascend/descend project discovery (see {@link resolveProjectDir}). Seven checks, numbered in
  * the order they run and print:
  *
  * Hard failures (exit non-zero):
@@ -125,7 +126,7 @@ function resolveAiMajorSkewReason(cfg: BasaltConfig): {
  *      preset AND that path resolves (warns when no `oxlint` bin does). `init` keeps an existing config, so the framework's whole
  *      lint half can be silently off — one repo carried six real violations invisibly across five
  *      minors this way.
- *   6. `ai-major-parity`: within THIS package.json, `dependencies`/`devDependencies`/
+ *   7. `ai-major-parity`: within THIS package.json, `dependencies`/`devDependencies`/
  *      `peerDependencies` agree on the `ai` package's major — the shape `basalt/ai-sdk-major` (per
  *      linted FILE) cannot see. A skew is exempt-able via `basalt.aiMajorSkewReason` (a non-empty
  *      reason, not a bare `true`); a declared reason when the majors agree warns it is stale.
@@ -137,6 +138,9 @@ function resolveAiMajorSkewReason(cfg: BasaltConfig): {
  *      gate elsewhere); a config that resolves but wires no guard command warns; a config lefthook
  *      dump could not read at all (binary missing, or the dump failed) warns and says so, rather
  *      than inventing a verdict.
+ *   6. `claude-md`: a project-root `CLAUDE.md` that does not import `@AGENTS.md` suppresses
+ *      `AGENTS.md` (and with it the managed block); one that still carries a basalt block — or a
+ *      malformed one — says so. A `CLAUDE.md` symlinked to `AGENTS.md` is one file and passes.
  *
  * Returns the exit code: 0 = all good, 1 = one or more hard failures.
  */
@@ -303,15 +307,30 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
     )
   }
 
-  // ── Warn check 6: no stale basalt block left in CLAUDE.md ───────────────────
-  // The managed block lives in AGENTS.md now. A block left behind in CLAUDE.md is a second,
-  // frozen copy of the doctrine — and the CLAUDE.md that holds it also stops Claude Code loading
-  // AGENTS.md at all. Warn only: `sync` is the fix and `sync --check` is the gate.
-  if (profile !== 'tokens-only' && hasManagedBlock(readIfExists(resolve(cwd, LEGACY_BLOCK_HOST)))) {
-    warn(
-      `${LEGACY_BLOCK_HOST} still carries a stale basalt block — it moved to ${AGENTS_MD}. Run ` +
-        '`basalt-ui sync` to migrate it.',
-    )
+  // ── Warn check 6: a project-root CLAUDE.md that shadows AGENTS.md ───────────
+  // The managed block lives in AGENTS.md. Claude Code loads a repo-root AGENTS.md directly, but ANY
+  // CLAUDE.md in or above the cwd suppresses it unless that file imports `@AGENTS.md` — so a
+  // leftover CLAUDE.md means the block (and the rest of AGENTS.md) is not loaded, whether or not it
+  // still carries a block. A symlink to AGENTS.md is one file and is fine. Warn only: `sync`
+  // migrates the block, `sync --check` is the gate, and what else CLAUDE.md holds is the consumer's.
+  const legacyHost = resolve(cwd, LEGACY_BLOCK_HOST)
+  const legacy = profile === 'tokens-only' ? null : readIfExists(legacyHost)
+  if (legacy !== null && !sameFile(legacyHost, resolve(cwd, AGENTS_MD))) {
+    const scan = scanBlock(legacy)
+    const issues: string[] = []
+    if (scan.problem !== null) {
+      issues.push(`has a malformed basalt block (${scan.problem}) — fix it by hand, then \`sync\``)
+    } else if (scan.region !== null) {
+      issues.push(`still carries a stale basalt block — run \`basalt-ui sync\` to move it`)
+    }
+    if (!/(^|\s)@AGENTS\.md\b/.test(legacy)) {
+      issues.push(
+        `does not import \`@${AGENTS_MD}\`, so Claude Code loads it INSTEAD of ${AGENTS_MD} and the ` +
+          `basalt block never reaches the agent — move its content into ${AGENTS_MD} and delete it, ` +
+          `or add \`@${AGENTS_MD}\``,
+      )
+    }
+    if (issues.length > 0) warn(`${LEGACY_BLOCK_HOST} ${issues.join('; and ')}.`)
   }
 
   // ── Hard check 7: ai package major version parity within THIS package.json ─

@@ -23,14 +23,14 @@ import {
   readFileSync,
   rmSync,
   statSync,
+  symlinkSync,
   writeFileSync,
 } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { createHash } from 'node:crypto'
 
-import { init, MANIFEST_PATH, normalizeForLedger, sync } from './index.ts'
+import { init, MANIFEST_PATH, normalizeForLedger, sha256, sync } from './index.ts'
 
 const PKG_ROOT = fileURLToPath(new URL('../../', import.meta.url))
 const SHIPPED_RULE = readFileSync(resolve(PKG_ROOT, 'agent/rules/basalt-tokens.md'), 'utf8')
@@ -204,10 +204,6 @@ function manifestFiles(): Record<string, string> {
   return (JSON.parse(read(MANIFEST_PATH)) as { files: Record<string, string> }).files
 }
 
-function sha256(text: string): string {
-  return createHash('sha256').update(text, 'utf8').digest('hex')
-}
-
 /**
  * An install as a pre-move basalt-ui left it: the block in CLAUDE.md (wrapped by `claudeMd`), no
  * AGENTS.md, and the ledger entry under the old `CLAUDE.md` key. Returns the pristine block.
@@ -320,16 +316,78 @@ describe('the managed block lives in AGENTS.md', () => {
     expect(silenced(() => sync({ check: true }, dir))).toBe(0)
   })
 
-  it('drops a stale CLAUDE.md block when AGENTS.md already has the current one', () => {
+  it('drops a legacy CLAUDE.md block that equals the AGENTS.md one (normalized: version token only differs)', () => {
     legacyInstall((block) => `# mine\n\n${block}\n`)
     silenced(() => init(dir)) // writes the block into AGENTS.md (and migrates)
-    write('CLAUDE.md', '# mine\n\n<!-- basalt:begin 0.1.0 -->\nstale\n<!-- basalt:end -->\n')
     const agents = read('AGENTS.md')
+    const block = agents.slice(
+      agents.indexOf('<!-- basalt:begin'),
+      agents.indexOf('<!-- basalt:end -->') + 19,
+    )
+    write('CLAUDE.md', `# mine\n\n${block.replace(/basalt:begin \S+/, 'basalt:begin 0.1.0')}\n`)
     expect(silenced(() => sync({ check: true }, dir))).toBe(1)
     silenced(() => sync({}, dir))
     expect(read('CLAUDE.md')).toBe('# mine\n')
     expect(read('AGENTS.md')).toBe(agents)
     expect(silenced(() => sync({ check: true }, dir))).toBe(0)
+  })
+
+  it('a CLAUDE.md symlinked to AGENTS.md is one file: no-op, the block is not cut', () => {
+    silenced(() => init(dir))
+    rmSync(join(dir, 'CLAUDE.md'), { force: true })
+    symlinkSync('AGENTS.md', join(dir, 'CLAUDE.md'))
+    const before = snapshotDir()
+    expect(silenced(() => sync({ check: true }, dir))).toBe(0)
+    expect(silenced(() => sync({}, dir))).toBe(0)
+    expect(snapshotDir()).toEqual(before)
+    expect(read('AGENTS.md')).toContain('<!-- basalt:begin')
+  })
+
+  it('a stale CLAUDE.md manifest key with CLAUDE.md already deleted reconciles without throwing', () => {
+    silenced(() => init(dir))
+    const manifest = JSON.parse(read(MANIFEST_PATH)) as { files: Record<string, string> }
+    manifest.files['CLAUDE.md'] = manifest.files['AGENTS.md']!
+    delete manifest.files['AGENTS.md']
+    write(MANIFEST_PATH, JSON.stringify(manifest, null, 2))
+    expect(silenced(() => sync({ check: true }, dir))).toBe(0)
+    expect(silenced(() => sync({}, dir))).toBe(0)
+    expect(Object.keys(manifestFiles())).toContain('AGENTS.md')
+    expect(Object.keys(manifestFiles())).not.toContain('CLAUDE.md')
+  })
+
+  describe.each([
+    ['duplicate begin markers', (b: string) => `${b}\n\n${b}\n`, /duplicate/],
+    [
+      'an unterminated block',
+      (b: string) => `${b.replace('<!-- basalt:end -->', '')}\n`,
+      /no matching/,
+    ],
+  ])('%s in CLAUDE.md', (_name, wrap, problem) => {
+    it('fails loudly in sync and sync --check, naming the file; both files stay byte-identical', () => {
+      legacyInstall(wrap)
+      write('AGENTS.md', '# agents\n')
+      const before = snapshotDir()
+      for (const opts of [{}, { check: true }]) {
+        const { code, log } = capture(() => sync(opts, dir))
+        expect(code).toBe(1)
+        expect(log).toContain('CLAUDE.md:')
+        expect(log).toMatch(problem)
+      }
+      expect(capture(() => init(dir)).code).toBe(1)
+      expect(snapshotDir()).toEqual(before)
+    })
+  })
+
+  it('differing blocks in CLAUDE.md and AGENTS.md are a conflict: reported, nothing discarded, --check red', () => {
+    const pristine = legacyInstall((block) => `# mine\n\n${block}\n`)
+    write('AGENTS.md', `# agents\n\n${pristine.replace('React 19', 'React 18 (pinned)')}\n`)
+    const before = snapshotDir()
+    for (const opts of [{}, { check: true }]) {
+      const { code, log } = capture(() => sync(opts, dir))
+      expect(code).toBe(1)
+      expect(log).toContain('each carry a basalt block and they differ')
+    }
+    expect(snapshotDir()).toEqual(before)
   })
 
   it('init migrates a legacy install the same way', () => {

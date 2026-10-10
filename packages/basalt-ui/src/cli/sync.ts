@@ -162,6 +162,10 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
   // Before the loop: the block moved from CLAUDE.md to AGENTS.md, and the loop reads AGENTS.md.
   // `--check` only reports it (and stays red until a real sync moves it).
   const migration = migrateBlockToAgentsMd(cwd, manifest, { dryRun: opts.check === true })
+  if (migration.problem !== null) {
+    console.error(`✖ basalt-ui sync: ${migration.problem}`)
+    return 1
+  }
 
   let updated = 0
   // `created` and `recreated` were one counter, and `0 updated, 20 recreated` is what a full
@@ -284,10 +288,10 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
           'AGENTS.md. Run `basalt-ui sync` to move it.',
       )
     }
-    if (staleForCheck > 0 || migration.pending) {
+    if (staleForCheck > 0) {
       console.error(`basalt-ui sync --check: ${staleForCheck} managed file(s) out of date.`)
-      return 1
     }
+    if (staleForCheck > 0 || migration.pending) return 1
     const n = placementSkips.length
     const skips = n === 0 ? '' : ` (${n} permanent placement skip(s) — --verbose for detail)`
     console.log(`✓ basalt-ui sync --check: all managed files current.${skips}`)

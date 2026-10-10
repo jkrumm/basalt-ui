@@ -90,6 +90,10 @@ export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags =
 
   // Before the loop: an install from before the move carries the block in CLAUDE.md.
   const migration = migrateBlockToAgentsMd(cwd, manifest)
+  if (migration.problem !== null) {
+    console.error(`✖ basalt-ui init: ${migration.problem}`)
+    return 1
+  }
 
   const writtenFiles: string[] = []
   const keptFiles: string[] = []
