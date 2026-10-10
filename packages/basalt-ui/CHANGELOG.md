@@ -1,3 +1,16 @@
+# [1.41.0](https://github.com/jkrumm/basalt-ui/compare/v1.40.3...v1.41.0) (2026-10-10)
+
+
+### Bug Fixes
+
+* refuse a bad block before any write, and never crash on sameFile ([e98edb5](https://github.com/jkrumm/basalt-ui/commit/e98edb57d9983838bb0d17adb4ba1f0379f32af8))
+* report malformed or conflicting blocks, warn on a shadowing CLAUDE.md ([61c32de](https://github.com/jkrumm/basalt-ui/commit/61c32de15dc6cc1379ceda220e6b551eb54da572))
+
+
+### Features
+
+* place the managed block in AGENTS.md and migrate it out of CLAUDE.md ([ce26af8](https://github.com/jkrumm/basalt-ui/commit/ce26af8a4df0bad33f94a3d697b58c1c7e94f73c))
+
 ## [1.40.3](https://github.com/jkrumm/basalt-ui/compare/v1.40.2...v1.40.3) (2026-10-05)
 
 
