@@ -17,7 +17,7 @@ CSS theme into the Mantine framework above. The old `./css` and `./starlight` Ta
 Shipped rules in `/.claude/rules/` (when dogfooded) > `packages/basalt-ui/CLAUDE.md` > this file >
 `docs/*.md`. When two disagree, fix the lower one to match, or update both deliberately. The
 consumer-side chain is a different stack, stated in its own terms by
-`packages/basalt-ui/agent/templates/CLAUDE-block.md.tpl` (`consumer DESIGN.md > the six shipped
+`packages/basalt-ui/agent/templates/AGENTS-block.md.tpl` (`consumer DESIGN.md > the six shipped
 basalt-* rules > basalt-* skills`) — don't conflate the two. Two global-skill over­rides apply
 inside a basalt-ui consumer (see the template): `/frontend-design`'s "bold aesthetic" push is
 overridden by restraint, and the global `visx-charts.md` rule is superseded by the shipped
