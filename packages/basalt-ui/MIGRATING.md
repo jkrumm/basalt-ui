@@ -97,9 +97,13 @@ from `CLAUDE.md` to `AGENTS.md`.
   `CLAUDE.md` instead of `AGENTS.md`;
 - a hand-edited block is carried over as it is and treated as drift (skipped, reported;
   `sync --force` restores the shipped text) — the same rule every other managed unit follows;
-- `sync --check` exits 1 until the move has happened, then 0.
+- `sync --check` exits 1 until the move has happened, then 0;
+- nothing is discarded silently: if `AGENTS.md` already has a block that differs from the one in
+  `CLAUDE.md`, or either file has duplicate or unterminated markers, `sync` and `sync --check` exit 1
+  naming the file, and both files stay untouched until you resolve it by hand.
 
-`doctor` now warns (never fails) when a basalt block is still in `CLAUDE.md`.
+`doctor` now warns (never fails) when a project-root `CLAUDE.md` does not import `@AGENTS.md` — it
+suppresses `AGENTS.md` — or still carries a basalt block.
 
 ## 1.40.3
 

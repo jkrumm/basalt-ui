@@ -2,7 +2,7 @@
  * Tests for the `basalt doctor` subcommand.
  * Run: bun test packages/basalt-ui/tests/doctor.test.ts
  */
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -98,24 +98,66 @@ describe('basalt doctor', () => {
     expect(doctor(tmpDir)).toBe(0)
   })
 
-  it('warns (exit 0) when a stale basalt block remains in CLAUDE.md, and stays silent otherwise', () => {
-    setupPassingLayout()
-    const originalLog = console.log
-    let out = ''
-    console.log = (...args: unknown[]) => {
-      out += `${args.join(' ')}\n`
+  describe('a project-root CLAUDE.md that shadows AGENTS.md', () => {
+    function doctorOut(): { code: number; out: string } {
+      const originalLog = console.log
+      let out = ''
+      console.log = (...args: unknown[]) => {
+        out += `${args.join(' ')}\n`
+      }
+      try {
+        return { code: doctor(tmpDir), out }
+      } finally {
+        console.log = originalLog
+      }
     }
-    try {
-      expect(doctor(tmpDir)).toBe(0)
-      expect(out).not.toContain('stale basalt block')
 
+    it('is silent when there is no CLAUDE.md', () => {
+      setupPassingLayout()
+      const { code, out } = doctorOut()
+      expect(code).toBe(0)
+      expect(out).not.toContain('CLAUDE.md')
+    })
+
+    it('warns (exit 0) on a CLAUDE.md with a stale block and no @AGENTS.md import', () => {
+      setupPassingLayout()
       writeFixture('CLAUDE.md', '# mine\n\n<!-- basalt:begin 1.0.0 -->\nold\n<!-- basalt:end -->\n')
-      out = ''
-      expect(doctor(tmpDir)).toBe(0)
+      const { code, out } = doctorOut()
+      expect(code).toBe(0)
       expect(out).toContain('CLAUDE.md still carries a stale basalt block')
-    } finally {
-      console.log = originalLog
-    }
+      expect(out).toContain('does not import `@AGENTS.md`')
+    })
+
+    it('warns on a leftover CLAUDE.md with no block at all, because it still suppresses AGENTS.md', () => {
+      setupPassingLayout()
+      writeFixture('CLAUDE.md', '# my own instructions\n')
+      const { code, out } = doctorOut()
+      expect(code).toBe(0)
+      expect(out).toContain('does not import `@AGENTS.md`')
+      expect(out).not.toContain('stale basalt block')
+    })
+
+    it('is silent for a CLAUDE.md that imports @AGENTS.md and holds no block', () => {
+      setupPassingLayout()
+      writeFixture('CLAUDE.md', '@AGENTS.md\n')
+      expect(doctorOut().out).not.toContain('CLAUDE.md')
+    })
+
+    it('names a malformed block (no end marker)', () => {
+      setupPassingLayout()
+      writeFixture('CLAUDE.md', '@AGENTS.md\n\n<!-- basalt:begin 1.0.0 -->\nold\n')
+      const { out } = doctorOut()
+      expect(out).toContain('malformed basalt block')
+      expect(out).not.toContain('does not import')
+    })
+
+    it('is silent when CLAUDE.md is a symlink to AGENTS.md', () => {
+      setupPassingLayout()
+      symlinkSync('AGENTS.md', join(tmpDir, 'CLAUDE.md'))
+      const { code, out } = doctorOut()
+      expect(code).toBe(0)
+      expect(out).not.toContain('CLAUDE.md')
+    })
   })
 
   it('returns 0 (warn only) when some rule files are missing', () => {

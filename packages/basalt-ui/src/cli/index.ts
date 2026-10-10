@@ -638,11 +638,13 @@ function applyBlock(host: string, block: string): string {
   return base.length === 0 ? `${block.trim()}\n` : `${base}\n\n${block.trim()}\n`
 }
 
-function sameFile(a: string, b: string): boolean {
+/** True when both paths resolve to one file (a symlinked pair). A missing path is simply "no". */
+export function sameFile(a: string, b: string): boolean {
   try {
     return realpathSync(a) === realpathSync(b)
-  } catch {
-    return false
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return false
+    throw error
   }
 }
 
@@ -651,11 +653,32 @@ export function hasManagedBlock(host: string | null): boolean {
   return host !== null && host.includes(BLOCK_BEGIN_PREFIX)
 }
 
+/**
+ * The block region of a host, or why it cannot be read: duplicate begin markers, or a begin marker
+ * with no end. The ONE detector `migrateBlockToAgentsMd` and `doctor` share, so they cannot disagree
+ * about whether a `CLAUDE.md` is well-formed.
+ */
+export function scanBlock(host: string): {
+  region: { start: number; end: number } | null
+  problem: string | null
+} {
+  if (!hasManagedBlock(host)) return { region: null, problem: null }
+  try {
+    const region = findBlockRegion(host)
+    if (region !== null) return { region, problem: null }
+    return { region: null, problem: `\`${BLOCK_BEGIN_PREFIX}\` has no matching \`${BLOCK_END}\`` }
+  } catch (error) {
+    return { region: null, problem: (error as Error).message }
+  }
+}
+
 export type BlockMigration = {
   /** The legacy host (`CLAUDE.md`) carried a managed block that has to move. */
   pending: boolean
   /** The legacy host was left empty (or `@AGENTS.md` only) and removed. */
   deletedHost: boolean
+  /** Why nothing was moved and the run must fail: malformed markers, or two differing blocks. */
+  problem: string | null
 }
 
 /**
@@ -667,7 +690,10 @@ export type BlockMigration = {
  *     `AGENTS.md` AS IT IS, not as the new rendering: the normal three-way classify then sees a
  *     hand-edit and skips it like any drifted unit. The rest of `CLAUDE.md` is consumer-owned and
  *     stays, except the file is deleted when nothing but whitespace or `@AGENTS.md` is left.
- * `dryRun` (`sync --check`) writes nothing but still reports `pending`.
+ *  3. Nothing is discarded silently: if `AGENTS.md` already has a block that differs (normalized,
+ *     as the ledger compares) from the legacy one, or either file's markers are malformed, BOTH
+ *     files are left byte-identical and `problem` says what to resolve by hand.
+ * `dryRun` (`sync --check`) writes nothing but still reports `pending` and `problem`.
  */
 export function migrateBlockToAgentsMd(
   cwd: string,
@@ -679,28 +705,47 @@ export function migrateBlockToAgentsMd(
     manifest.files[AGENTS_MD] ??= legacyHash
     delete manifest.files[LEGACY_BLOCK_HOST]
   }
-  const none: BlockMigration = { pending: false, deletedHost: false }
+  const none: BlockMigration = { pending: false, deletedHost: false, problem: null }
   const legacyAbs = resolve(cwd, LEGACY_BLOCK_HOST)
+  const agentsAbs = resolve(cwd, AGENTS_MD)
   const legacy = readIfExists(legacyAbs)
   // A symlinked pair is one file: cutting the block out of "CLAUDE.md" would cut AGENTS.md too.
-  if (legacy === null || sameFile(legacyAbs, resolve(cwd, AGENTS_MD))) return none
-  const region = findBlockRegion(legacy)
+  if (legacy === null || sameFile(legacyAbs, agentsAbs)) return none
+  const legacyScan = scanBlock(legacy)
+  const { region } = legacyScan
+  if (legacyScan.problem !== null) {
+    return { ...none, problem: `${LEGACY_BLOCK_HOST}: ${legacyScan.problem}` }
+  }
   if (region === null) return none
+
+  const agents = readIfExists(agentsAbs) ?? ''
+  const agentsScan = scanBlock(agents)
+  if (agentsScan.problem !== null)
+    return { ...none, problem: `${AGENTS_MD}: ${agentsScan.problem}` }
+  const legacyBlock = legacy.slice(region.start, region.end)
+  if (
+    agentsScan.region !== null &&
+    normalizeForLedger(agents.slice(agentsScan.region.start, agentsScan.region.end)) !==
+      normalizeForLedger(legacyBlock)
+  ) {
+    return {
+      ...none,
+      problem:
+        `${LEGACY_BLOCK_HOST} and ${AGENTS_MD} each carry a basalt block and they differ — ` +
+        `delete the one you do not want (the block in ${AGENTS_MD} is the managed one), then re-run.`,
+    }
+  }
 
   const before = legacy.slice(0, region.start).trimEnd()
   const after = legacy.slice(region.end).trimStart()
   const remainder = before === '' || after === '' ? `${before}${after}` : `${before}\n\n${after}`
   const deletedHost = remainder === '' || remainder === '@AGENTS.md'
-  if (opts.dryRun === true) return { pending: true, deletedHost }
+  if (opts.dryRun === true) return { pending: true, deletedHost, problem: null }
 
-  const agentsAbs = resolve(cwd, AGENTS_MD)
-  const agents = readIfExists(agentsAbs) ?? ''
-  if (!hasManagedBlock(agents)) {
-    writeFileEnsuringDir(agentsAbs, applyBlock(agents, legacy.slice(region.start, region.end)))
-  }
+  if (agentsScan.region === null) writeFileEnsuringDir(agentsAbs, applyBlock(agents, legacyBlock))
   if (deletedHost) unlinkSync(legacyAbs)
   else writeFileSync(legacyAbs, `${remainder.trimEnd()}\n`)
-  return { pending: true, deletedHost }
+  return { pending: true, deletedHost, problem: null }
 }
 
 /**
