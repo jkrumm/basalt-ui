@@ -1,6 +1,6 @@
 /**
  * Format-idempotency for every shipped template that lands in a consumer VERBATIM — the `managed`
- * files (rules, skills, the marker-spliced CLAUDE block; see `./index.ts`'s `managedFiles()`).
+ * files (rules, skills, the marker-spliced AGENTS block; see `./index.ts`'s `managedFiles()`).
  * `seed` templates are excluded: they are a one-time starting point the consumer immediately owns
  * and may reformat however they like, so their shipped formatting is not load-bearing.
  *
@@ -9,7 +9,7 @@
  * `basalt sync`, or just commit) puts oxlint/oxfmt and `sync --check` in permanent disagreement:
  * `basalt sync` writes the drifted bytes, the lefthook pre-commit hook's own `oxfmt --check`
  * rejects the commit, running `oxfmt` to fix it re-drifts the file from what `sync --check`
- * expects. This is exactly how `CLAUDE-block.md.tpl` shipped: no blank line after
+ * expects. This is exactly how `AGENTS-block.md.tpl` shipped: no blank line after
  * `<!-- basalt:begin -->`, which oxfmt's own block-HTML-comment rule then rewrites, re-triggering
  * drift forever. Assert every copy/block template round-trips through the exact oxfmt binary +
  * config basalt-ui ships, unchanged — this class of "basalt's own gates fighting each other" bug
@@ -38,12 +38,12 @@ function expectOxfmtNoop(fileName: string, content: string): void {
 }
 
 describe('shipped managed templates are oxfmt-clean', () => {
-  it('CLAUDE-block.md.tpl (managed, marker-spliced) round-trips unchanged with placeholders filled', () => {
-    const tpl = readFileSync(resolve(PKG_ROOT, 'agent/templates/CLAUDE-block.md.tpl'), 'utf8')
+  it('AGENTS-block.md.tpl (managed, marker-spliced) round-trips unchanged with placeholders filled', () => {
+    const tpl = readFileSync(resolve(PKG_ROOT, 'agent/templates/AGENTS-block.md.tpl'), 'utf8')
     const filled = tpl
       .replace(/\{\{BASALT_VERSION\}\}/g, '1.0.0')
       .replace(/\{\{APP_NAME\}\}/g, 'app')
-    expectOxfmtNoop('CLAUDE.md', filled)
+    expectOxfmtNoop('AGENTS.md', filled)
   })
 
   it.each([...RULE_NAMES])('agent/rules/basalt-%s.md (managed) round-trips unchanged', (name) => {

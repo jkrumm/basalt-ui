@@ -61,7 +61,7 @@ That's the whole install — there is no plugin, no marketplace, and no second v
 
 - `.claude/rules/basalt-*.md` — six Claude Code rules (`basalt-tokens`, `basalt-mantine`, `basalt-charts`, `basalt-state`, `basalt-controls`, `basalt-batteries`), each with a generated coverage header naming what enforces it
 - `.claude/skills/basalt-{app,design,charts}/SKILL.md` — the three skills (`/basalt-app`, `/basalt-design`, `/basalt-charts`), same managed path as the rules
-- A managed `<!-- basalt:begin/end -->` block in `CLAUDE.md` — stack facts, the DESIGN.md pointer, and the frontend-design restraint override
+- A managed `<!-- basalt:begin/end -->` block in `AGENTS.md` — stack facts, the DESIGN.md pointer, and the frontend-design restraint override
 - A thin `DESIGN.md` seed — your app's deltas (series dictionary, identity, deviations)
 - Toolchain seeds: `.oxlintrc.json` and `lefthook.yml` as `extends` stubs into `node_modules/basalt-ui/configs/` (the presets auto-update with the package), plus `.oxfmtrc.json` and `.github/workflows/check.yml` as starting copies
 - `.basalt/manifest.json` — sha256 per managed file + the basalt-ui version, for `sync` three-way diff and `doctor`

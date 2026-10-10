@@ -51,7 +51,7 @@ for f in \
   src/index.ts \
   configs/oxlint.json configs/oxlint-basalt.json configs/tsconfig.base.json configs/tsconfig.react-app.json \
   agent/rules/basalt-tokens.md agent/rules/basalt-charts.md agent/rules/basalt-batteries.md \
-  agent/templates/DESIGN.md.tpl agent/templates/CLAUDE-block.md.tpl \
+  agent/templates/DESIGN.md.tpl agent/templates/AGENTS-block.md.tpl \
   agent/skills/basalt-app/SKILL.md agent/skills/basalt-charts/SKILL.md \
   agent/skills/basalt-design/SKILL.md \
   llms.txt \

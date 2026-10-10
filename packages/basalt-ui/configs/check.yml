@@ -4,7 +4,7 @@
 # `basalt-ui check-theme` is the palette guard shipped by basalt-ui (fails on raw
 # color literals / off-identity accents that bypass the --vx-* token system).
 # `basalt-ui sync --check` fails when the basalt-managed files (rules, skills, the
-# CLAUDE block) have drifted from the installed basalt-ui version.
+# AGENTS block) have drifted from the installed basalt-ui version.
 # The oxfmt globs below are rendered from `basalt.roots` at init time — `init` writes that
 # key from the repo's real layout (workspace packages included), so a monorepo does not
 # seed a `src/**` that matches nothing.

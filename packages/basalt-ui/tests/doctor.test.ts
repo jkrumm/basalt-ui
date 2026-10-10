@@ -46,9 +46,9 @@ function setupPassingLayout(): void {
   // 1. manifest
   writeFixture(MANIFEST_PATH, JSON.stringify({ version: 1, files: {} }, null, 2))
 
-  // 2. CLAUDE.md with managed block
+  // 2. AGENTS.md with managed block
   writeFixture(
-    'CLAUDE.md',
+    'AGENTS.md',
     '# My App\n\n<!-- basalt:begin 1.0.0 -->\nmanaged block\n<!-- basalt:end -->\n',
   )
 
@@ -80,8 +80,8 @@ describe('basalt doctor', () => {
   })
 
   it('fails (exit 1) when manifest is missing', () => {
-    // Omit the manifest — only set up CLAUDE.md and rule files
-    writeFixture('CLAUDE.md', '<!-- basalt:begin 1.0.0 -->\nblock\n<!-- basalt:end -->\n')
+    // Omit the manifest — only set up AGENTS.md and rule files
+    writeFixture('AGENTS.md', '<!-- basalt:begin 1.0.0 -->\nblock\n<!-- basalt:end -->\n')
     for (const name of RULE_NAMES) {
       writeFixture(`.claude/rules/basalt-${name}.md`, `# basalt-${name}\n`)
     }
@@ -89,13 +89,33 @@ describe('basalt doctor', () => {
     expect(exitCode).toBe(1)
   })
 
-  it('returns 0 (warn only) when CLAUDE.md is missing', () => {
-    // Placed-file drift is `sync --check`'s job, not doctor's — a missing CLAUDE.md is not a
+  it('returns 0 (warn only) when AGENTS.md is missing', () => {
+    // Placed-file drift is `sync --check`'s job, not doctor's — a missing AGENTS.md is not a
     // doctor failure. Built from the passing layout minus that one file so the assertion is about
-    // CLAUDE.md and not about some other check the fixture happens to be missing.
+    // AGENTS.md and not about some other check the fixture happens to be missing.
     setupPassingLayout()
-    rmSync(join(tmpDir, 'CLAUDE.md'), { force: true })
+    rmSync(join(tmpDir, 'AGENTS.md'), { force: true })
     expect(doctor(tmpDir)).toBe(0)
+  })
+
+  it('warns (exit 0) when a stale basalt block remains in CLAUDE.md, and stays silent otherwise', () => {
+    setupPassingLayout()
+    const originalLog = console.log
+    let out = ''
+    console.log = (...args: unknown[]) => {
+      out += `${args.join(' ')}\n`
+    }
+    try {
+      expect(doctor(tmpDir)).toBe(0)
+      expect(out).not.toContain('stale basalt block')
+
+      writeFixture('CLAUDE.md', '# mine\n\n<!-- basalt:begin 1.0.0 -->\nold\n<!-- basalt:end -->\n')
+      out = ''
+      expect(doctor(tmpDir)).toBe(0)
+      expect(out).toContain('CLAUDE.md still carries a stale basalt block')
+    } finally {
+      console.log = originalLog
+    }
   })
 
   it('returns 0 (warn only) when some rule files are missing', () => {

@@ -551,7 +551,7 @@ Code cannot load rules or skills from `node_modules`, which is the only reason a
   sharing that `rule`), `--check` is the CI gate, and a block that DISAGREES is a hard failure. `not guarded`
   is printed even when empty, because a rule claiming full coverage is a claim someone can check.
 - **Say each thing once**: the identity and the `theme-allow` grammar live in `basalt-tokens.md`, the
-  precedence in `CLAUDE-block.md.tpl`, the overlay mount in `basalt-mantine.md`, the Eden footguns in
+  precedence in `AGENTS-block.md.tpl`, the overlay mount in `basalt-mantine.md`, the Eden footguns in
   `basalt-batteries.md`. The guard-kind list lives nowhere — the generated headers carry it.
 - **No API reference, no version history, no incident narrative in a rule.** Those belong in JSDoc /
   `llms.txt`, `CHANGELOG.md` / `MIGRATING.md`, and `../../docs/ARGO-MIGRATION-LEARNINGS.md`.

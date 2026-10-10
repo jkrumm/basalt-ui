@@ -172,7 +172,7 @@ const AGENT_LINE_BUDGETS: Readonly<Record<string, number>> = {
   'agent/skills/basalt-app/SKILL.md': 100,
   'agent/skills/basalt-design/SKILL.md': 100,
   'agent/skills/basalt-charts/SKILL.md': 100,
-  'agent/templates/CLAUDE-block.md.tpl': 40,
+  'agent/templates/AGENTS-block.md.tpl': 40,
   'agent/templates/DESIGN.md.tpl': 45,
 }
 

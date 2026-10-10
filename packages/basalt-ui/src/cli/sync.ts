@@ -19,6 +19,7 @@ import {
   inspectLefthookGate,
   isStringArray,
   managedFiles,
+  migrateBlockToAgentsMd,
   normalizeForLedger,
   noteRelocation,
   OXLINT_FILES,
@@ -32,6 +33,7 @@ import {
   reconcileRoots,
   relativePosix,
   renderContext,
+  reportBlockMigration,
   reportPrune,
   resolvePeerFlags,
   resolvePlacement,
@@ -157,6 +159,10 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
   const placement = resolvePlacement(cwd)
   const files = managedFiles(peers, placement)
 
+  // Before the loop: the block moved from CLAUDE.md to AGENTS.md, and the loop reads AGENTS.md.
+  // `--check` only reports it (and stays red until a real sync moves it).
+  const migration = migrateBlockToAgentsMd(cwd, manifest, { dryRun: opts.check === true })
+
   let updated = 0
   // `created` and `recreated` were one counter, and `0 updated, 20 recreated` is what a full
   // scaffold printed — a word that means "it was here, it went missing, I put it back" describing
@@ -272,7 +278,13 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
           `${retired.join(', ')} — run \`basalt-ui sync\`.`,
       )
     }
-    if (staleForCheck > 0) {
+    if (migration.pending) {
+      console.error(
+        'basalt-ui sync --check: the basalt block is still in CLAUDE.md — it now lives in ' +
+          'AGENTS.md. Run `basalt-ui sync` to move it.',
+      )
+    }
+    if (staleForCheck > 0 || migration.pending) {
       console.error(`basalt-ui sync --check: ${staleForCheck} managed file(s) out of date.`)
       return 1
     }
@@ -291,6 +303,7 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
       `${skippedDrift} skipped (drift), ${pruned.removed.length} retired.`,
   )
   reportPrune(pruned)
+  reportBlockMigration(migration, 'sync')
   if (driftLines.length > 0) {
     console.log('Locally-edited files were skipped (run with --force to overwrite):')
     for (const l of driftLines) console.log(l)
