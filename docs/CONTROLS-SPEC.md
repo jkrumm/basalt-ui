@@ -2,8 +2,8 @@
 
 Ground truth from 1.26.0 for every interactive control: filters, view tabs, refresh/sync, actions,
 widget/section headers, sidebar blocks, their persistence binding, size tier, mobile policy and
-guards. Supersedes `MANTINE-THEMING.md` §"page header" (A1), the root `CLAUDE.md` "Search Param
-Persistence" block, and the placement prose in `basalt-router.md` / `basalt-state.md`. Evidence and
+guards. Supersedes `MANTINE-THEMING.md` §"page header" (A1), the former root `CLAUDE.md` "Search Param
+Persistence" block (deleted; in git history), and the placement prose in `basalt-router.md` / `basalt-state.md`. Evidence and
 the ledger live in `docs/archive/CONTROLS-SYNTHESIS.md`; ids (A1..D16) are cited, not restated.
 Verified against `packages/basalt-ui/src` at 1.25.0 and the installed `@mantine/core` 9.3.0; new
 exports are marked _(new)_.
@@ -463,7 +463,7 @@ composition over `store.validateSearch(raw)`. `warnLinkPinsFallback` moves over 
 `createSearchParamStore` and `createMultiSearchParamStore` become `@deprecated` six-line wrappers
 returning the old `{ validateSearch, useStore, readStored, linkSearch }` shape (`basalt-ui-obsidian`
 is a two-hop consumer), removed in 1.29.0. `createSearchSchemaStore` is struck from `STATUS.md:358`,
-`CLAUDE.md:282-285` and `basalt-router.md:74-78` — `createSearchStore` is what those paragraphs were
+the former root `CLAUDE.md:282-285` (deleted; in git history) and `basalt-router.md:74-78` — `createSearchStore` is what those paragraphs were
 waiting for. `useOnlineStatus` (A12) is deleted with the same MIGRATING row.
 
 ## 5. Sizing tokens
