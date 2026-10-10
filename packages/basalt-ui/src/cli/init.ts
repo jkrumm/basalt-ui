@@ -10,6 +10,7 @@ import { deriveSpacing } from '../tokens'
 import type { MergeLintResult, ScaffoldFlags } from './index'
 import {
   MANIFEST_PATH,
+  blockMigrationProblem,
   findBasaltInstall,
   managedFiles,
   mergeOxlintExtends,
@@ -54,6 +55,13 @@ const KEPT_FILE_COST: Record<string, string> = {
 
 /** Scaffold all managed files into the consumer repo, then write the manifest. Idempotent. Returns 0. */
 export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags = {}): number {
+  // First, before anything is written: a block that cannot be moved safely refuses the whole run.
+  const blockProblem = blockMigrationProblem(cwd)
+  if (blockProblem !== null) {
+    console.error(`✖ basalt-ui init: ${blockProblem}`)
+    return 1
+  }
+
   // ── Describe the repo BEFORE rendering anything ───────────────────────────
   // Every roots-derived seed (the CI oxfmt globs, DESIGN.md's series path, the default scan
   // exemption) renders from `basalt.roots`, so the key has to exist first. Writing it is what
@@ -90,10 +98,6 @@ export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags =
 
   // Before the loop: an install from before the move carries the block in CLAUDE.md.
   const migration = migrateBlockToAgentsMd(cwd, manifest)
-  if (migration.problem !== null) {
-    console.error(`✖ basalt-ui init: ${migration.problem}`)
-    return 1
-  }
 
   const writtenFiles: string[] = []
   const keptFiles: string[] = []

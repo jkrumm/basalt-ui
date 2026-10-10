@@ -17,6 +17,7 @@ import {
   declaredProfile,
   findBasaltInstall,
   findRepoRoot,
+  importsAgentsMd,
   inspectLefthookGate,
   OXLINT_FILES,
   OXLINT_NO_BIN,
@@ -33,6 +34,15 @@ import {
 } from './index'
 import { resolveRoots } from './config'
 import { findManifestAbove, parentInstallAdvice } from './sync'
+
+/** `sameFile`, but doctor never crashes: a path that cannot be inspected is "not provably the same". */
+function isSameFile(a: string, b: string): boolean {
+  try {
+    return sameFile(a, b)
+  } catch {
+    return false
+  }
+}
 
 export type DoctorResult = {
   /** Number of hard failures (exit non-zero). */
@@ -315,7 +325,7 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
   // migrates the block, `sync --check` is the gate, and what else CLAUDE.md holds is the consumer's.
   const legacyHost = resolve(cwd, LEGACY_BLOCK_HOST)
   const legacy = profile === 'tokens-only' ? null : readIfExists(legacyHost)
-  if (legacy !== null && !sameFile(legacyHost, resolve(cwd, AGENTS_MD))) {
+  if (legacy !== null && !isSameFile(legacyHost, resolve(cwd, AGENTS_MD))) {
     const scan = scanBlock(legacy)
     const issues: string[] = []
     if (scan.problem !== null) {
@@ -323,7 +333,7 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
     } else if (scan.region !== null) {
       issues.push(`still carries a stale basalt block — run \`basalt-ui sync\` to move it`)
     }
-    if (!/(^|\s)@AGENTS\.md\b/.test(legacy)) {
+    if (!importsAgentsMd(legacy)) {
       issues.push(
         `does not import \`@${AGENTS_MD}\`, so Claude Code loads it INSTEAD of ${AGENTS_MD} and the ` +
           `basalt block never reaches the agent — move its content into ${AGENTS_MD} and delete it, ` +

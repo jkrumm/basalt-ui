@@ -253,8 +253,8 @@ async function budgets(providerOnlyDist: string): Promise<Budget[]> {
       value: playgroundRouteFiles(),
       ceiling: 15,
     },
-    // 4000 -> 4190: the AGENTS.md block move + CLAUDE.md migration/doctor checks (`migrateBlockToAgentsMd`).
-    { label: 'CLI non-test lines (src/cli/**)', value: cliNonTestLines(), ceiling: 4190 },
+    // 4000 -> 4250: the AGENTS.md block move + CLAUDE.md migration/doctor checks (`migrateBlockToAgentsMd`).
+    { label: 'CLI non-test lines (src/cli/**)', value: cliNonTestLines(), ceiling: 4250 },
     await providerOnlyRow(providerOnlyDist),
   ]
 }

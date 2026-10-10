@@ -662,14 +662,32 @@ export function scanBlock(host: string): {
   region: { start: number; end: number } | null
   problem: string | null
 } {
-  if (!hasManagedBlock(host)) return { region: null, problem: null }
+  const begin = hasManagedBlock(host)
+  if (!begin && !host.includes(BLOCK_END)) return { region: null, problem: null }
+  const bad = (problem: string): { region: null; problem: string } => ({ region: null, problem })
+  if (!begin) return bad(`\`${BLOCK_END}\` with no \`${BLOCK_BEGIN_PREFIX}\``)
+  let region: { start: number; end: number } | null
   try {
-    const region = findBlockRegion(host)
-    if (region !== null) return { region, problem: null }
-    return { region: null, problem: `\`${BLOCK_BEGIN_PREFIX}\` has no matching \`${BLOCK_END}\`` }
+    region = findBlockRegion(host)
   } catch (error) {
-    return { region: null, problem: (error as Error).message }
+    return bad((error as Error).message)
   }
+  if (region === null) return bad(`\`${BLOCK_BEGIN_PREFIX}\` has no matching \`${BLOCK_END}\``)
+  // Exactly one end marker, after the begin: an orphan or extra one means the region is a guess.
+  if (host.indexOf(BLOCK_END) < region.start || host.indexOf(BLOCK_END, region.end) !== -1) {
+    return bad(`an extra or misplaced \`${BLOCK_END}\` outside the basalt block`)
+  }
+  return { region, problem: null }
+}
+
+/** One line that is exactly the `@AGENTS.md` import — not a prose or code-span mention, not `.bak`. */
+export function isAgentsImportLine(line: string): boolean {
+  return line.trim() === `@${AGENTS_MD}`
+}
+
+/** Whether a `CLAUDE.md` imports `AGENTS.md`, so Claude Code still loads it. */
+export function importsAgentsMd(text: string): boolean {
+  return text.split(/\r?\n/).some(isAgentsImportLine)
 }
 
 export type BlockMigration = {
@@ -709,8 +727,15 @@ export function migrateBlockToAgentsMd(
   const legacyAbs = resolve(cwd, LEGACY_BLOCK_HOST)
   const agentsAbs = resolve(cwd, AGENTS_MD)
   const legacy = readIfExists(legacyAbs)
+  if (legacy === null) return none
   // A symlinked pair is one file: cutting the block out of "CLAUDE.md" would cut AGENTS.md too.
-  if (legacy === null || sameFile(legacyAbs, agentsAbs)) return none
+  // Fail closed when that cannot be proven (EACCES, ELOOP, …) — and say so, not a stack trace.
+  try {
+    if (sameFile(legacyAbs, agentsAbs)) return none
+  } catch (error) {
+    const why = (error as NodeJS.ErrnoException).code ?? (error as Error).message
+    return { ...none, problem: `cannot tell whether ${LEGACY_BLOCK_HOST} is ${AGENTS_MD} (${why})` }
+  }
   const legacyScan = scanBlock(legacy)
   const { region } = legacyScan
   if (legacyScan.problem !== null) {
@@ -732,20 +757,35 @@ export function migrateBlockToAgentsMd(
       ...none,
       problem:
         `${LEGACY_BLOCK_HOST} and ${AGENTS_MD} each carry a basalt block and they differ — ` +
-        `delete the one you do not want (the block in ${AGENTS_MD} is the managed one), then re-run.`,
+        `delete the stale block from ${LEGACY_BLOCK_HOST} (or the one in ${AGENTS_MD}, if ` +
+        `${LEGACY_BLOCK_HOST}'s is the one you want kept), then re-run.`,
     }
   }
 
   const before = legacy.slice(0, region.start).trimEnd()
   const after = legacy.slice(region.end).trimStart()
   const remainder = before === '' || after === '' ? `${before}${after}` : `${before}\n\n${after}`
-  const deletedHost = remainder === '' || remainder === '@AGENTS.md'
+  const deletedHost = remainder
+    .split(/\r?\n/)
+    .every((l) => l.trim() === '' || isAgentsImportLine(l))
   if (opts.dryRun === true) return { pending: true, deletedHost, problem: null }
 
   if (agentsScan.region === null) writeFileEnsuringDir(agentsAbs, applyBlock(agents, legacyBlock))
   if (deletedHost) unlinkSync(legacyAbs)
   else writeFileSync(legacyAbs, `${remainder.trimEnd()}\n`)
   return { pending: true, deletedHost, problem: null }
+}
+
+/**
+ * The refusal `init` and `sync` run BEFORE any side effect (roots patch, package.json script,
+ * manifest): a dry-run migration against a scratch manifest, so a block that cannot be moved
+ * safely stops the command with nothing written. Null = safe to proceed.
+ */
+export function blockMigrationProblem(cwd: string): string | null {
+  const { problem } = migrateBlockToAgentsMd(cwd, { version: 1, files: {} }, { dryRun: true })
+  return problem === null
+    ? null
+    : `${problem.replace(/\.$/, '')}. Nothing else was reconciled — resolve this by hand, then re-run.`
 }
 
 /**

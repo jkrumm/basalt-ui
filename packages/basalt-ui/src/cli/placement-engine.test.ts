@@ -362,20 +362,63 @@ describe('the managed block lives in AGENTS.md', () => {
       (b: string) => `${b.replace('<!-- basalt:end -->', '')}\n`,
       /no matching/,
     ],
+    ['an extra end marker', (b: string) => `${b}\n<!-- basalt:end -->\n`, /extra or misplaced/],
+    [
+      'an orphan end marker before the block',
+      (b: string) => `<!-- basalt:end -->\n${b}\n`,
+      /extra or misplaced/,
+    ],
+    ['an end marker with no begin', () => '# mine\n<!-- basalt:end -->\n', /with no/],
   ])('%s in CLAUDE.md', (_name, wrap, problem) => {
-    it('fails loudly in sync and sync --check, naming the file; both files stay byte-identical', () => {
+    it('fails loudly in sync, sync --check and init, naming the file; nothing at all is written', () => {
       legacyInstall(wrap)
       write('AGENTS.md', '# agents\n')
+      // Strip basalt.roots so a refusal that came AFTER reconcileRoots would show up as a write.
+      write('package.json', JSON.stringify({ name: 'fixture' }))
       const before = snapshotDir()
       for (const opts of [{}, { check: true }]) {
         const { code, log } = capture(() => sync(opts, dir))
         expect(code).toBe(1)
         expect(log).toContain('CLAUDE.md:')
         expect(log).toMatch(problem)
+        expect(log).toContain('Nothing else was reconciled')
       }
       expect(capture(() => init(dir)).code).toBe(1)
       expect(snapshotDir()).toEqual(before)
     })
+
+    it('refuses init on a never-inited fixture without writing anything', () => {
+      write('CLAUDE.md', wrap(`<!-- basalt:begin 1.0.0 -->\nbody\n<!-- basalt:end -->`))
+      const before = snapshotDir()
+      const { code, log } = capture(() => init(dir))
+      expect(code).toBe(1)
+      expect(log).toMatch(problem)
+      expect(snapshotDir()).toEqual(before)
+    })
+  })
+
+  it('`@AGENTS.md.bak` or a prose mention is not an import: the CLAUDE.md remainder survives', () => {
+    legacyInstall((block) => `see @AGENTS.md.bak and \`@AGENTS.md\`\n\n${block}\n`)
+    silenced(() => sync({}, dir))
+    expect(read('CLAUDE.md')).toBe('see @AGENTS.md.bak and `@AGENTS.md`\n')
+  })
+
+  it('an indented @AGENTS.md line is the import: a CLAUDE.md of only that is deleted', () => {
+    legacyInstall((block) => `  @AGENTS.md  \n\n${block}\n`)
+    silenced(() => sync({}, dir))
+    expect(existsSync(join(dir, 'CLAUDE.md'))).toBe(false)
+  })
+
+  it('a path that cannot be inspected (ELOOP) fails closed with a message, not a stack trace', () => {
+    legacyInstall((block) => `# mine\n\n${block}\n`)
+    const before = snapshotDir() // no AGENTS.md yet
+    symlinkSync('AGENTS.md', join(dir, 'AGENTS.md')) // a self-referencing link: realpath -> ELOOP
+    const { code, log } = capture(() => sync({}, dir))
+    expect(code).toBe(1)
+    expect(log).toContain('cannot tell whether CLAUDE.md is AGENTS.md (ELOOP)')
+    expect(capture(() => init(dir)).code).toBe(1)
+    rmSync(join(dir, 'AGENTS.md')) // the link itself cannot be snapshotted
+    expect(snapshotDir()).toEqual(before)
   })
 
   it('differing blocks in CLAUDE.md and AGENTS.md are a conflict: reported, nothing discarded, --check red', () => {
@@ -386,6 +429,8 @@ describe('the managed block lives in AGENTS.md', () => {
       const { code, log } = capture(() => sync(opts, dir))
       expect(code).toBe(1)
       expect(log).toContain('each carry a basalt block and they differ')
+      expect(log).toContain('delete the stale block from CLAUDE.md')
+      expect(log).toContain('Nothing else was reconciled')
     }
     expect(snapshotDir()).toEqual(before)
   })

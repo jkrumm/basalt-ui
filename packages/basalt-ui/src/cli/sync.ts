@@ -17,7 +17,10 @@ import {
   diffSummary,
   findBasaltInstall,
   inspectLefthookGate,
+  AGENTS_MD,
+  blockMigrationProblem,
   isStringArray,
+  LEGACY_BLOCK_HOST,
   managedFiles,
   migrateBlockToAgentsMd,
   normalizeForLedger,
@@ -151,6 +154,13 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
     return 1
   }
 
+  // A block that cannot be moved safely refuses the whole run BEFORE reconcileRoots writes anything.
+  const blockProblem = blockMigrationProblem(cwd)
+  if (blockProblem !== null) {
+    console.error(`✖ basalt-ui sync: ${blockProblem}`)
+    return 1
+  }
+
   // Before renderContext, which reads `basalt.roots` for the roots-derived template variables.
   const rootsState = reconcileRoots(cwd, { write: opts.check !== true })
   const ctx = renderContext(cwd)
@@ -162,10 +172,6 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
   // Before the loop: the block moved from CLAUDE.md to AGENTS.md, and the loop reads AGENTS.md.
   // `--check` only reports it (and stays red until a real sync moves it).
   const migration = migrateBlockToAgentsMd(cwd, manifest, { dryRun: opts.check === true })
-  if (migration.problem !== null) {
-    console.error(`✖ basalt-ui sync: ${migration.problem}`)
-    return 1
-  }
 
   let updated = 0
   // `created` and `recreated` were one counter, and `0 updated, 20 recreated` is what a full
@@ -284,8 +290,8 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
     }
     if (migration.pending) {
       console.error(
-        'basalt-ui sync --check: the basalt block is still in CLAUDE.md — it now lives in ' +
-          'AGENTS.md. Run `basalt-ui sync` to move it.',
+        `basalt-ui sync --check: the basalt block is still in ${LEGACY_BLOCK_HOST} — it now ` +
+          `lives in ${AGENTS_MD}. Run \`basalt-ui sync\` to move it.`,
       )
     }
     if (staleForCheck > 0) {

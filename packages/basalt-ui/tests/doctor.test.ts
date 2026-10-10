@@ -151,6 +151,28 @@ describe('basalt doctor', () => {
       expect(out).not.toContain('does not import')
     })
 
+    it('warns for `@AGENTS.md.bak` and for a prose or code-span mention: only a bare import line counts', () => {
+      setupPassingLayout()
+      writeFixture('CLAUDE.md', 'see @AGENTS.md.bak and `@AGENTS.md`\n')
+      expect(doctorOut().out).toContain('does not import `@AGENTS.md`')
+    })
+
+    it('flags an orphan end marker as malformed', () => {
+      setupPassingLayout()
+      writeFixture('CLAUDE.md', '@AGENTS.md\n<!-- basalt:end -->\n')
+      expect(doctorOut().out).toContain('malformed basalt block')
+    })
+
+    it('never crashes when the pair cannot be inspected (ELOOP): it just warns', () => {
+      setupPassingLayout()
+      writeFixture('CLAUDE.md', '# mine\n')
+      rmSync(join(tmpDir, 'AGENTS.md'))
+      symlinkSync('AGENTS.md', join(tmpDir, 'AGENTS.md'))
+      const { code, out } = doctorOut()
+      expect(code).toBe(0)
+      expect(out).toContain('does not import')
+    })
+
     it('is silent when CLAUDE.md is a symlink to AGENTS.md', () => {
       setupPassingLayout()
       symlinkSync('AGENTS.md', join(tmpDir, 'CLAUDE.md'))
