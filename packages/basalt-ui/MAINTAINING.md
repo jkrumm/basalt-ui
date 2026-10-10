@@ -1,6 +1,8 @@
-# Basalt UI — Package
+# Basalt UI — Maintaining
 
-**Inherits from**: `../../CLAUDE.md` (monorepo conventions).
+The maintainer invariants file for the package. Lives in the repo only — it is not in `files`, so it never
+ships in the tarball. The repo-root `AGENTS.md` is the monorepo file; `AGENTS.md` next to this one is the
+shipped consumer quick reference.
 
 The only published package (npm: `basalt-ui`). An opinionated framework for Mantine v9 + visx React
 apps: a Mantine theme + `cssVariablesResolver`, `BasaltProvider`, an app shell with a page bar and a

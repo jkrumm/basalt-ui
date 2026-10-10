@@ -2089,7 +2089,7 @@ describe('basalt/control-outside-home', () => {
     })
 
     // The SECOND dialect: a repo mandating `PascalCase.tsx` for component files (basalt's own root
-    // CLAUDE.md included) can never write `foo-panel.tsx`, so the kebab form alone exempted nothing
+    // AGENTS.md included) can never write `foo-panel.tsx`, so the kebab form alone exempted nothing
     // there — which is how the CBBI panel collected four warns for a `<PageAside>` in its parent.
     it.each(['src/EditSessionModal.tsx', 'src/FiltersDrawer.tsx', 'src/CbbiPanel.tsx'])(
       'does NOT flag %s — the PascalCase dialect of the same convention',

@@ -1,5 +1,7 @@
 ## basalt-ui — Agent Quick Reference
 
+> Maintaining this package? Read `packages/basalt-ui/MAINTAINING.md` first (repo-only — not in the tarball).
+
 React 19 + Mantine v9 framework: `BasaltProvider` + `createBasaltTheme`, app shell, visx chart
 system with a three-tier `--vx-*` CSS-variable token system, and TanStack adapter batteries.
 Toolchain: Bun runtime, oxlint + oxfmt, conventional commits (empty scope), `master` branch.
@@ -67,10 +69,10 @@ correct for them **and only while basalt is not installed here** — once it is,
 local bin like everything else. See the note below.
 
 ```bash
-bunx basalt-ui init         # FIRST STEP: scaffold .claude/rules/ + .claude/skills/, managed CLAUDE.md block, DESIGN.md seed, toolchain seeds
+bunx basalt-ui init         # FIRST STEP: scaffold .claude/rules/ + .claude/skills/, managed AGENTS.md block, DESIGN.md seed, toolchain seeds
 basalt-ui --version         # one bare line, exit 0 — which CLI is actually running (also -v / version)
 basalt-ui check-theme       # fail on off-palette colors in consumer source
-basalt-ui sync              # reconcile managed files (.claude/rules/, .claude/skills/, CLAUDE.md block) + delete the ones this version retired
+basalt-ui sync              # reconcile managed files (.claude/rules/, .claude/skills/, AGENTS.md block) + delete the ones this version retired
 basalt-ui sync --check      # CI freshness gate — exits non-zero if any managed file drifted or a retired one is still present
 basalt-ui doctor            # integration health — SKIPPED is a third outcome and exits non-zero
 bunx basalt-ui tokens:css   # emit the --vx-* stylesheet (no React, no Mantine, no bundler) — bunx ONLY if basalt is not installed

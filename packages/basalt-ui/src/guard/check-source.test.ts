@@ -274,7 +274,7 @@ describe('mantine-shade-index', () => {
     expect(kinds(f)).not.toContain('mantine-shade-index')
   })
 
-  // The grace-minor doctrine (package CLAUDE.md): a kind that rejects previously-passing code
+  // The grace-minor doctrine (package MAINTAINING.md): a kind that rejects previously-passing code
   // lands as `warn` for one minor, then its GRACE_PERIOD_KINDS entry is deleted and it becomes an
   // error. This one ran its grace across FOUR minors — introduced 1.7.0, then deferred by 1.8.0
   // (shipped the same day as 1.7.0), 1.9.0 (carried the chart-layer batch the same consumer was

@@ -97,7 +97,7 @@ export type PartRenderContext<TPart = ForeignPart> = {
 export type PartRenderer<TPart = ForeignPart> = (ctx: PartRenderContext<TPart>) => ReactNode
 
 /**
- * Canonical const-generic factory (`packages/basalt-ui/CLAUDE.md`, "Canonical token-factory
+ * Canonical const-generic factory (`packages/basalt-ui/MAINTAINING.md`, "Canonical token-factory
  * contract") — identity passthrough, exact-keyed return, no builder, no config bag. Mirrors
  * `defineSeries` (`tokens/index.ts:648-650`) and `defineNotifications`
  * (`notifications/define-notifications.ts:112-115`).

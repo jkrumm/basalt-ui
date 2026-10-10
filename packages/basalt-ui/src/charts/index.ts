@@ -166,7 +166,7 @@ export {
 } from './sparklines'
 
 // ── Re-exported visx primitives ──────────────────────────────────────────
-// Bespoke charts (genuinely unique compositions per CLAUDE.md) need raw
+// Bespoke charts (genuinely unique compositions per the package AGENTS.md) need raw
 // visx primitives. Re-exporting them keeps the dependency declared in one
 // place and preserves the rule that consumers only import from `basalt-ui/charts`.
 export { Group } from '@visx/group'

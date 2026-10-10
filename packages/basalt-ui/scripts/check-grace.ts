@@ -86,7 +86,7 @@ export function findReleaseBlockers({
     const what = row.prop === undefined ? `${row.name} (${row.subpath})` : `${row.name} ${row.prop}`
     blockers.push(
       `${what} — deprecated, removeIn ${row.removeIn}, still ships: remove it (its own commit, ` +
-        'packages/basalt-ui/CLAUDE.md § Deprecation lifecycle) or re-date `removeIn` with a reason',
+        'packages/basalt-ui/MAINTAINING.md § Deprecation lifecycle) or re-date `removeIn` with a reason',
     )
   }
   return blockers

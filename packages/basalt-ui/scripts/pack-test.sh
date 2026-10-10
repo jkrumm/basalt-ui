@@ -59,7 +59,7 @@ for f in \
 # CSS-module type decls must NOT be transpiled into runtime JS (the tsup *.d.ts exclude).
 # The retired rule files must not ship either: `files` globs `agent/`, so a rule deleted from the
 # repo but left in a stale worktree would be published and placed into consumers by `sync`.
-for f in src/index.css src/starlight.css tailwind.config.js \
+for f in src/index.css src/starlight.css tailwind.config.js MAINTAINING.md \
   agent/rules/basalt-router.md agent/rules/basalt-app.md agent/rules/basalt-query.md \
   dist/shell/app-sidebar.module.css.d.js dist/shell/app-mobile-nav.module.css.d.js \
   dist/shell/app-header.module.css.d.js; do forbid "$f"; done

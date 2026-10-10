@@ -146,7 +146,7 @@ export type BasaltVirtualListHandle = {
   /**
    * The underlying `@tanstack/react-virtual` instance — the full escape hatch. Returns the RAW
    * `@tanstack/react-virtual` `Virtualizer`, so a future major of that library reaching this shape
-   * ships here as a plain `feat:` under the no-majors doctrine (`../../CLAUDE.md` "Commit type
+   * ships here as a plain `feat:` under the no-majors doctrine (root `AGENTS.md` "Commit type
    * discipline"), not a silent break.
    */
   getVirtualizer: () => Virtualizer<HTMLDivElement, Element>
