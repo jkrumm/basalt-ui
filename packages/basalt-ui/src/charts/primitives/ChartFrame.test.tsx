@@ -280,7 +280,7 @@ describe('legendEntryCap — only a fill frame rolls its legend up, and only whe
 })
 
 /**
- * The consumer report this fixes (meteo, 1.30.0): a 7-entry meteogram legend in a 92–150px docked
+ * The consumer report this fixes (weatherorb, 1.30.0): a 7-entry meteogram legend in a 92–150px docked
  * `fill` row rendered 2 entries at `maxRows` 3, 6 AND 99 — five series drawn in colours nothing
  * named, behind a rollup the box had no room to expand into. 1.30.0's own halves were both right;
  * `ChartFrame` ran the measured fit over the honoured cap, so this covers the COMPOSITION, which
@@ -288,33 +288,35 @@ describe('legendEntryCap — only a fill frame rolls its legend up, and only whe
  */
 describe('resolveLegendRollup — a stated maxRows outranks the width fit AND the height fit', () => {
   const seven = ['a', 'b', 'c', 'd', 'e', 'f', 'g'].map((k) => entry(k, `Series ${k}`))
-  /** meteo's row: 150px tall, `VX.minPlotHeight` 120, so the legend's share is 30px. */
-  const meteo = { items: seven, containerW: 380, available: 150 - VX.minPlotHeight } as const
+  /** weatherorb's row: 150px tall, `VX.minPlotHeight` 120, so the legend's share is 30px. */
+  const weatherorb = { items: seven, containerW: 380, available: 150 - VX.minPlotHeight } as const
 
   test('the measured fit is what pinned it — the state before the fix', () => {
-    expect(legendEntryCap({ ...meteo, defaultMaxRows: 99 })).toBeLessThan(seven.length)
+    expect(legendEntryCap({ ...weatherorb, defaultMaxRows: 99 })).toBeLessThan(seven.length)
   })
 
   test('every stated number now survives the same box, and the plot pays', () => {
     for (const statedMaxRows of [3, 6, 99]) {
       expect(
-        resolveLegendRollup({ ...meteo, statedMaxRows, fittedMaxRows: 2, fillBand: true }),
+        resolveLegendRollup({ ...weatherorb, statedMaxRows, fittedMaxRows: 2, fillBand: true }),
       ).toEqual({ maxRows: statedMaxRows, legendWins: true })
     }
   })
 
   test('stating nothing still gets the height fit, bounded by the width fit', () => {
-    const rollup = resolveLegendRollup({ ...meteo, fittedMaxRows: 2, fillBand: true })
+    const rollup = resolveLegendRollup({ ...weatherorb, fittedMaxRows: 2, fillBand: true })
     expect(rollup.legendWins).toBe(false)
     expect(rollup.maxRows).toBeLessThanOrEqual(2)
   })
 
   test('off a fill band nothing is measured — the frame grows instead', () => {
-    expect(resolveLegendRollup({ ...meteo, fittedMaxRows: 2, fillBand: false })).toEqual({
+    expect(resolveLegendRollup({ ...weatherorb, fittedMaxRows: 2, fillBand: false })).toEqual({
       maxRows: 2,
       legendWins: false,
     })
-    expect(resolveLegendRollup({ ...meteo, fittedMaxRows: undefined, fillBand: false })).toEqual({
+    expect(
+      resolveLegendRollup({ ...weatherorb, fittedMaxRows: undefined, fillBand: false }),
+    ).toEqual({
       maxRows: undefined,
       legendWins: false,
     })
@@ -322,7 +324,7 @@ describe('resolveLegendRollup — a stated maxRows outranks the width fit AND th
 
   test('a stated cap off a fill band is honoured too, and costs the plot nothing', () => {
     expect(
-      resolveLegendRollup({ ...meteo, statedMaxRows: 6, fittedMaxRows: 2, fillBand: false }),
+      resolveLegendRollup({ ...weatherorb, statedMaxRows: 6, fittedMaxRows: 2, fillBand: false }),
     ).toEqual({ maxRows: 6, legendWins: false })
   })
 })
