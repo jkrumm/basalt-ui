@@ -55,7 +55,7 @@ Each consumer's `basalt-ui` pin at scan time:
 | `./vite`            | 2          | 0          | 0            | 0           | 0         | 0         | 3           | 0          |
 | `./guard`           | 0          | 0          | 14           | 0           | 0         | 0         | 7           | 0          |
 | `./format`          | 8          | 0          | 9            | 3           | 0         | 0         | 12          | 0          |
-| `./forms`           | 0          | 3          | 8            | 0           | 0         | 0         | 10          | 0          |
+| `./forms`           | 3          | 0          | 8            | 0           | 0         | 0         | 10          | 0          |
 | `./commands`        | 6          | 0          | 16           | 0           | 1         | 0         | 18          | 0          |
 | `./notifications`   | 0          | 3          | 20           | 0           | 0         | 0         | 15          | 0          |
 | `./router-tanstack` | 0          | 7          | 2            | 0           | 0         | 2         | 39          | 0          |
@@ -65,21 +65,21 @@ Each consumer's `basalt-ui` pin at scan time:
 | `./agent-chat`      | 0          | 4          | 5            | 0           | 0         | 3         | 12          | 0          |
 | `./content`         | 8          | 0          | 21           | 0           | 9         | 0         | 28          | 0          |
 | `./controls`        | 11         | 0          | 14           | 0           | 2         | 0         | 31          | 0          |
-| `./controls-dates`  | 0          | 1          | 0            | 0           | 0         | 0         | 1           | 0          |
+| `./controls-dates`  | 1          | 0          | 0            | 0           | 0         | 0         | 1           | 0          |
 | `./state`           | 3          | 0          | 1            | 0           | 3         | 0         | 21          | 0          |
-| **total**           | 72         | 22         | 200          | 101         | 35        | 7         | 406         | 69         |
+| **total**           | 76         | 18         | 200          | 101         | 35        | 7         | 406         | 69         |
 
-The 94 keep or move value rows collapse to 91 unique names; the duplicates are `field`, and
+The 94 keep-or-move value rows collapse to 91 unique names; the duplicates are `field`, and
 `createLocalStore` and `createPersistedState` from the root. Adding `createBasaltRouter` gives 92
 non-chart value symbols in 2.0. Kept types collapse to 39 unique names, and `BasaltRouterContext` and
 `BasaltEvent` bring that to 41.
 
-| Subpaths            | Count                                                                                                                 |
-| ------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| 1.41 `exports` keys | 24                                                                                                                    |
-| 2.0 (V2-SPEC § 1)   | 13                                                                                                                    |
-| dropped outright    | 6 (`./guard`, `./theme-lab`, `./data/virtual`, `./tokens.css`, `./llms.txt`, `./package.json`)                        |
-| folded or renamed   | 6 (`./router-tanstack`, `./forms`, `./controls-dates`, `./notifications`, `./agent-chat`, `./data/table` → `./table`) |
+| Subpaths            | Count                                                                                          |
+| ------------------- | ---------------------------------------------------------------------------------------------- |
+| 1.41 `exports` keys | 24                                                                                             |
+| 2.0 (V2-SPEC § 1)   | 15                                                                                             |
+| dropped outright    | 6 (`./guard`, `./theme-lab`, `./data/virtual`, `./tokens.css`, `./llms.txt`, `./package.json`) |
+| folded or renamed   | 4 (`./router-tanstack`, `./notifications`, `./agent-chat`, `./data/table` → `./table`)         |
 
 Baseline `bun packages/basalt-ui/scripts/check-budgets.ts --report` on the base commit:
 
