@@ -40,8 +40,9 @@
  */
 import { useState } from 'react'
 import type { CSSProperties } from 'react'
-import { Stack, Switch, Text } from '@mantine/core'
-import { PageBar, WidgetGrid } from 'basalt-ui'
+import { SimpleGrid, Stack, Switch, Text } from '@mantine/core'
+import { CONTAINER_KEYS } from 'basalt-ui/tokens'
+import { PageBar } from 'basalt-ui'
 import { ViewTabs } from 'basalt-ui/controls'
 import { createLocalStore, field } from 'basalt-ui/state'
 import {
@@ -446,7 +447,7 @@ function CursorScopeBlock() {
         <code>ChartCursorScope</code>: hovering either of the two below moves only each other,
         isolated from every other chart on the page.
       </Text>
-      <WidgetGrid cols={2}>
+      <SimpleGrid type="container" cols={{ base: 1, [CONTAINER_KEYS.regular]: 2 }}>
         <ChartCard title="Unscoped — Revenue" subtitle="Shares the page cursor">
           <ZonedLine<DayPoint>
             data={SERIES_DATA}
@@ -463,9 +464,9 @@ function CursorScopeBlock() {
             series={SCOPE_B_SERIES}
           />
         </ChartCard>
-      </WidgetGrid>
+      </SimpleGrid>
       <ChartCursorScope>
-        <WidgetGrid cols={2}>
+        <SimpleGrid type="container" cols={{ base: 1, [CONTAINER_KEYS.regular]: 2 }}>
           <ChartCard title="Scoped — Tenant 1" subtitle="Isolated pair, via ChartCursorScope">
             <ZonedLine<DayPoint>
               data={SERIES_DATA}
@@ -482,7 +483,7 @@ function CursorScopeBlock() {
               series={SCOPE_B_SERIES}
             />
           </ChartCard>
-        </WidgetGrid>
+        </SimpleGrid>
       </ChartCursorScope>
     </Stack>
   )
@@ -558,7 +559,7 @@ export function ChartsPage() {
             />
           </ChartCard>
 
-          <WidgetGrid cols={2}>
+          <SimpleGrid type="container" cols={{ base: 1, [CONTAINER_KEYS.regular]: 2 }}>
             <ChartCard
               title="Volume mix"
               subtitle="Stacked daily totals across three series"
@@ -630,9 +631,9 @@ export function ChartsPage() {
                 onFollow
               />
             </ChartCard>
-          </WidgetGrid>
+          </SimpleGrid>
 
-          <WidgetGrid cols={2}>
+          <SimpleGrid type="container" cols={{ base: 1, [CONTAINER_KEYS.regular]: 2 }}>
             <ChartCard
               title="Sessions vs revenue"
               subtitle="Two series, same date axis, independent scales — left axis counts, right axis $k"
@@ -648,7 +649,7 @@ export function ChartsPage() {
             >
               <WeeklyDigestChart chartId="charts-weekly-digest" />
             </ChartCard>
-          </WidgetGrid>
+          </SimpleGrid>
         </Stack>
       )}
 
@@ -691,7 +692,7 @@ export function ChartsPage() {
             />
           </ChartCard>
 
-          <WidgetGrid cols={2}>
+          <SimpleGrid type="container" cols={{ base: 1, [CONTAINER_KEYS.regular]: 2 }}>
             <ChartCard
               title="Activity by hour"
               subtitle="Sessions across the day-of-week × hour grid — self-measuring, like every kind"
@@ -711,7 +712,7 @@ export function ChartsPage() {
             </ChartCard>
 
             <ChannelMixCard />
-          </WidgetGrid>
+          </SimpleGrid>
 
           {/* ── Regression guard: deliberately high-cardinality legend ────────────────── */}
           <ChartCard

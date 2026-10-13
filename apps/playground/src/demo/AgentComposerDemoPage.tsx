@@ -30,8 +30,8 @@ import {
   Switch,
   Text,
 } from '@mantine/core'
-import type { ComposerAttachment, ComposerHandle, ComposerSubmit } from 'basalt-ui/agent-chat'
-import { Composer } from 'basalt-ui/agent-chat'
+import { Composer } from 'basalt-ui/agent'
+import type { ComposerHandle, ComposerSubmit } from 'basalt-ui/agent'
 import { VX } from 'basalt-ui/tokens'
 import type { ClipboardEvent } from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -79,6 +79,8 @@ function VoiceRecordButton({ recording, onClick }: { recording: boolean; onClick
     </ActionIcon>
   )
 }
+
+type ComposerAttachment = ComposerSubmit['attachments'][number]
 
 // ── Attachments ──────────────────────────────────────────────────────────────────
 // `attachmentFromFile` mints an object URL per selection; the page below is the only owner of that

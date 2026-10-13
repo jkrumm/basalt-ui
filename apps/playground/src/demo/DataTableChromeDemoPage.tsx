@@ -12,10 +12,11 @@
  */
 import { ActionIcon, Alert, Card, Code, Group, Menu, Stack, Switch } from '@mantine/core'
 import { Section } from 'basalt-ui'
-import { BasaltDataTable, createColumnHelper } from 'basalt-ui/data/table'
-import type { DataTableAlign } from 'basalt-ui/data/table'
+import { BasaltDataTable, createColumnHelper } from 'basalt-ui/table'
 import { Component, useMemo, useState } from 'react'
 import type { ErrorInfo, ReactNode } from 'react'
+
+type DataTableAlign = 'left' | 'center' | 'right'
 
 type Session = {
   when: string
@@ -95,42 +96,48 @@ export function DataTableChromeDemoPage() {
       <Section
         title="Data table — capped body, sticky header, column alignment"
         subtitle="40 rows in a card that must not grow past 320px."
-        actions={
-          <Group gap="sm" wrap="wrap">
-            <Switch
-              label="maxHeight 320"
-              checked={capped}
-              onChange={(event) => setCapped(event.currentTarget.checked)}
-            />
-            <Switch
-              label="stickyHeader"
-              checked={sticky}
-              onChange={(event) => setSticky(event.currentTarget.checked)}
-            />
-            <Switch
-              label="Right-aligned"
-              checked={aligned}
-              onChange={(event) => setAligned(event.currentTarget.checked)}
-            />
-            <Menu position="bottom-end" withinPortal shadow="md">
-              <Menu.Target>
-                <ActionIcon variant="subtle" color="gray" aria-label="More table options">
-                  ⋯
-                </ActionIcon>
-              </Menu.Target>
-              <Menu.Dropdown>
-                <Menu.Item
-                  color="orange"
-                  onClick={() => setBad(!bad)}
-                  aria-pressed={bad}
-                  closeMenuOnClick={false}
-                >
-                  {bad ? '✓ ' : ''}Bad align value (&apos;end&apos;)
-                </Menu.Item>
-              </Menu.Dropdown>
-            </Menu>
-          </Group>
-        }
+        actions={[
+          {
+            key: 'actions',
+            kind: 'custom',
+            node: (
+              <Group gap="sm" wrap="wrap">
+                <Switch
+                  label="maxHeight 320"
+                  checked={capped}
+                  onChange={(event) => setCapped(event.currentTarget.checked)}
+                />
+                <Switch
+                  label="stickyHeader"
+                  checked={sticky}
+                  onChange={(event) => setSticky(event.currentTarget.checked)}
+                />
+                <Switch
+                  label="Right-aligned"
+                  checked={aligned}
+                  onChange={(event) => setAligned(event.currentTarget.checked)}
+                />
+                <Menu position="bottom-end" withinPortal shadow="md">
+                  <Menu.Target>
+                    <ActionIcon variant="subtle" color="gray" aria-label="More table options">
+                      ⋯
+                    </ActionIcon>
+                  </Menu.Target>
+                  <Menu.Dropdown>
+                    <Menu.Item
+                      color="orange"
+                      onClick={() => setBad(!bad)}
+                      aria-pressed={bad}
+                      closeMenuOnClick={false}
+                    >
+                      {bad ? '✓ ' : ''}Bad align value (&apos;end&apos;)
+                    </Menu.Item>
+                  </Menu.Dropdown>
+                </Menu>
+              </Group>
+            ),
+          },
+        ]}
       >
         {/* theme-allow card-inset — flush table card: the header row and the scroll body manage
             their own px/py so the capped body can scroll edge to edge under a sticky header.

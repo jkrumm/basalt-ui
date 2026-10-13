@@ -17,26 +17,23 @@
  * The data is a pure function of the filter state (`demo/analytics-data.ts`): a re-render caused by
  * opening the `Filters (n)` sheet must not reshuffle the numbers behind it.
  */
-import { ActionIcon, Stack } from '@mantine/core'
-import { PageAside, PageBar, Section, StatCard, StatGroup, WidgetGrid } from 'basalt-ui'
-import type { QueryStateLike } from 'basalt-ui'
+import { ActionIcon, Box, SimpleGrid, Stack } from '@mantine/core'
+import { PageAside, PageBar, Section, StatCard, StatGroup } from 'basalt-ui'
+import type { QueryStateLike } from './query-state-like'
 import {
-  CompareFilter,
   FilterSet,
   MultiSelectFilter,
   RangeFilter,
   SelectFilter,
-  SliderControl,
   ToggleFilter,
   ViewTabs,
 } from 'basalt-ui/controls'
 import { DateRangePicker } from 'basalt-ui/controls-dates'
 import { BarSparkline, ChartCard, MultiLine, VX } from 'basalt-ui/charts'
 import type { ZoneSpec } from 'basalt-ui/charts'
-import { alpha } from 'basalt-ui/tokens'
-import { BasaltDataTable } from 'basalt-ui/data/table'
-import { field } from 'basalt-ui/router-tanstack'
-import { createLocalStore } from 'basalt-ui/state'
+import { CONTAINER_KEYS, alpha } from 'basalt-ui/tokens'
+import { BasaltDataTable } from 'basalt-ui/table'
+import { createLocalStore, field } from 'basalt-ui/state'
 import { useCallback, useMemo, useState } from 'react'
 import {
   bucketByGrain,
@@ -261,11 +258,6 @@ function targetBands(points: readonly SalesPoint[]): ZoneSpec[] | undefined {
   ]
 }
 
-/** The `Smoothing` row's readout — `off` at the fallback, so the row states its own rest state. */
-function smoothingReadout(value: number): string {
-  return value <= 1 ? 'off' : `${value} pts`
-}
-
 export function DashboardPage() {
   const filters = dashboardFilters.useValues()
   // A local store exposes `field` handles, not a values object — each field's own `use()` is the
@@ -319,38 +311,37 @@ export function DashboardPage() {
   return (
     <Stack gap="sm">
       <PageBar
-        actions={{
+        actions={[
           // An ICON on the primary is what picks its mobile form (`docs/CONTROLS-SPEC.md` §2.1): with
           // one it becomes a filled `ActionIcon`, without one a compact filled button carrying the
           // label. This page takes the icon branch because it still shares the phone bar with a
           // sync, two shell globals and the kebab; `ControlsMobilePage`'s `Export` primary ships no
           // icon and demonstrates the labelled branch.
-          primary: {
+          {
             key: 'save',
             label: 'Save as report',
             icon: <IconReport />,
             onClick: () => {},
+            primary: true,
           },
-          secondary: [
-            // `kind: 'custom'` — the escape hatch for a control basalt does not model (linewatch's
-            // live chip, argo's timer). basalt owns only the PLACEMENT: the node renders with no
-            // button chrome on desktop.
-            //
-            // `'more'`, not the `'bar'` it shipped with, and the reversal is a WIDTH verdict rather
-            // than a change of mind about the live-state law. That law still holds and is why
-            // `GlobalAction`'s doc states it: a `'more'` node is mounted a SECOND time inside the
-            // kebab's dropdown, so a control that owns a subscription pays twice. This chip owns a
-            // 1s interval, the second mount exists only while the dropdown is open, and against that
-            // the `'bar'` form cost ~81px of a 374px content box — measured at 390x844 it left the
-            // breadcrumb 101px against its own 96px floor (`app-header.module.css`), i.e. the page
-            // title truncated to buy a badge counting seconds. Law C7 says row 1 below `sm` is the
-            // primary plus ONE kebab; a page demonstrating the framework should not be the one place
-            // that reads as four rigid entries plus a kebab.
-            { key: 'live', kind: 'custom', node: <LiveChip />, mobile: 'more' },
-            { key: 'accounts', label: 'Accounts', icon: <IconUser />, onClick: () => {} },
-            { key: 'export', label: 'Export CSV', onClick: () => {}, mobile: 'more' },
-          ],
-        }}
+          // `kind: 'custom'` — the escape hatch for a control basalt does not model (linewatch's
+          // live chip, argo's timer). basalt owns only the PLACEMENT: the node renders with no
+          // button chrome on desktop.
+          //
+          // `'more'`, not the `'bar'` it shipped with, and the reversal is a WIDTH verdict rather
+          // than a change of mind about the live-state law. That law still holds and is why
+          // `GlobalAction`'s doc states it: a `'more'` node is mounted a SECOND time inside the
+          // kebab's dropdown, so a control that owns a subscription pays twice. This chip owns a
+          // 1s interval, the second mount exists only while the dropdown is open, and against that
+          // the `'bar'` form cost ~81px of a 374px content box — measured at 390x844 it left the
+          // breadcrumb 101px against its own 96px floor (`app-header.module.css`), i.e. the page
+          // title truncated to buy a badge counting seconds. Law C7 says row 1 below `sm` is the
+          // primary plus ONE kebab; a page demonstrating the framework should not be the one place
+          // that reads as four rigid entries plus a kebab.
+          { key: 'live', kind: 'custom', node: <LiveChip />, mobile: 'more' },
+          { key: 'accounts', label: 'Accounts', icon: <IconUser />, onClick: () => {} },
+          { key: 'export', label: 'Export CSV', onClick: () => {}, mobile: 'more' },
+        ]}
         // Stays on the phone bar, and not because it earned the slot: `PageBar.sync` takes no
         // `mobile` placement, and law C12 says a page's refresh has exactly ONE shape — so folding
         // it into the kebab from here would mean re-declaring it as a `kind: 'custom'` action,
@@ -361,7 +352,6 @@ export function DashboardPage() {
         filters={
           <FilterSet>
             <RangeFilter field={dashboardFilters.field.range} customPicker={DateRangePicker} />
-            <CompareFilter field={dashboardFilters.field.compare} />
             <SelectFilter
               field={dashboardFilters.field.currency}
               label="Currency"
@@ -463,8 +453,11 @@ export function DashboardPage() {
         ))}
       </StatGroup>
 
-      <WidgetGrid cols={3}>
-        <WidgetGrid.Item span={2}>
+      <SimpleGrid
+        type="container"
+        cols={{ base: 1, [CONTAINER_KEYS.regular]: 2, [CONTAINER_KEYS.wide]: 3 }}
+      >
+        <Box style={{ gridColumn: 'span 2' }}>
           <ChartCard
             title="Total sales over time"
             icon={<IconChart />}
@@ -519,7 +512,7 @@ export function DashboardPage() {
               ]}
             />
           </ChartCard>
-        </WidgetGrid.Item>
+        </Box>
         <ChartCard
           title="Sales by channel"
           info="Each channel's share of the selected window, with its own trend."
@@ -532,7 +525,7 @@ export function DashboardPage() {
         >
           <BreakdownList rows={data.breakdown} metric={metric} />
         </ChartCard>
-      </WidgetGrid>
+      </SimpleGrid>
 
       {/*
        * A SECTION with both `tabs` and `actions` — the tier between the page bar and a card
@@ -554,13 +547,22 @@ export function DashboardPage() {
             ]}
           />
         }
-        actions={
-          <ActionIcon variant="subtle" aria-label="Export funnel">
-            <IconExport />
-          </ActionIcon>
-        }
+        actions={[
+          {
+            key: 'actions',
+            kind: 'custom',
+            node: (
+              <ActionIcon variant="subtle" aria-label="Export funnel">
+                <IconExport />
+              </ActionIcon>
+            ),
+          },
+        ]}
       >
-        <WidgetGrid cols={3}>
+        <SimpleGrid
+          type="container"
+          cols={{ base: 1, [CONTAINER_KEYS.regular]: 2, [CONTAINER_KEYS.wide]: 3 }}
+        >
           {SMALL_CHARTS.map((chart) => {
             const format = funnelView === 'rate' ? chart.rateFormat : chart.format
             return (
@@ -591,7 +593,7 @@ export function DashboardPage() {
               </ChartCard>
             )
           })}
-        </WidgetGrid>
+        </SimpleGrid>
       </Section>
 
       {/* A SECTION wrapping the table, so the page shows both a section-level action and a
@@ -601,11 +603,17 @@ export function DashboardPage() {
         title="Top pages"
         icon={<IconChart />}
         subtitle="Every page that took traffic in the selected window."
-        actions={
-          <ActionIcon variant="subtle" aria-label="Export top pages">
-            <IconExport />
-          </ActionIcon>
-        }
+        actions={[
+          {
+            key: 'actions',
+            kind: 'custom',
+            node: (
+              <ActionIcon variant="subtle" aria-label="Export top pages">
+                <IconExport />
+              </ActionIcon>
+            ),
+          },
+        ]}
       >
         <BasaltDataTable
           title="All pages"
@@ -651,12 +659,6 @@ export function DashboardPage() {
           {/* Two options, so `PanelChoice` keeps the full-width track rather than folding to a
               `Select` — and the labels come off `dashboardFilters.labels()`, not a prop. */}
           <SelectFilter field={dashboardFilters.field.scale} label="Y scale" />
-          <SliderControl
-            field={dashboardFilters.field.smoothing}
-            label="Smoothing"
-            hint="A centered rolling mean over the plotted points — 0 draws the raw series."
-            format={smoothingReadout}
-          />
           <ToggleFilter field={dashboardFilters.field.bands} label="Target band" />
         </Section>
       </PageAside>

@@ -11,30 +11,20 @@
  *
  * Structurally it mirrors `demo/DashboardPage.tsx`: one `PageBar` (tabs · a range filter · sync),
  * one store for every interactive field (`cbbi-store.ts`, laws C2–C4), `StatCard`/`ChartCard`/
- * `Section` for the tiers, and `QueryState` for the four data branches. The panel is the SHELL
+ * `Section` for the tiers, and a plain Mantine `Alert`/`Loader` for the data branches. The panel is the SHELL
  * ASIDE now (`PageAside`, `docs/ASIDE-SPEC.md` §0): the page owns no width, no `flexShrink` and no
  * responsive `align` — it writes the panel after the main column and the region takes it from there
  * (G12/G13 closed). Below `sm` that same one node stacks under the body, no twin (C9).
  */
-import { Stack, Text } from '@mantine/core'
-import {
-  createBasaltQueryClient,
-  PageAside,
-  PageBar,
-  QueryState,
-  Section,
-  StatCard,
-  StatGroup,
-  WidgetGrid,
-} from 'basalt-ui'
+import { Alert, Loader, SimpleGrid, Stack, Text } from '@mantine/core'
+import { PageAside, PageBar, Section, StatCard, StatGroup } from 'basalt-ui'
 import type { StatCardTone } from 'basalt-ui'
 import { ChartCard, Heatmap, LineSparkline, MultiLine, VX, ZonedLine } from 'basalt-ui/charts'
 import type { AxisConfig, ChartSeries, ZoneSpec } from 'basalt-ui/charts'
 import { FilterSet, RangeFilter, ViewTabs } from 'basalt-ui/controls'
-import { BasaltDataTable } from 'basalt-ui/data/table'
-import { QueryClientProvider } from '@tanstack/react-query'
-import { alpha } from 'basalt-ui/tokens'
-import { useMemo, useState } from 'react'
+import { BasaltDataTable } from 'basalt-ui/table'
+import { CONTAINER_KEYS, alpha } from 'basalt-ui/tokens'
+import { useMemo } from 'react'
 import { IconActivity, IconChart, IconComponents, IconCurrency } from '../icons'
 import { CbbiDistributionBars, CbbiPanel } from './CbbiPanel'
 import {
@@ -179,17 +169,6 @@ const VIEW_OPTIONS = [
 ]
 
 export function CbbiPage() {
-  // The playground mounts no app-wide client (`main.tsx` wires `BasaltProvider` only), so the page
-  // owns one — the same page-local shape `QueryDemoPage` uses.
-  const [client] = useState(() => createBasaltQueryClient())
-  return (
-    <QueryClientProvider client={client}>
-      <CbbiPageBody />
-    </QueryClientProvider>
-  )
-}
-
-function CbbiPageBody() {
   const filters = cbbiFilters.useValues()
   const weights = useCbbiWeights()
   const query = useCbbi()
@@ -210,13 +189,15 @@ function CbbiPageBody() {
         }
       />
 
-      <QueryState
-        query={query}
-        errorTitle="Could not load the CBBI series"
-        errorFallback="colintalkscrypto.com did not answer."
-      >
-        {(rows) => <CbbiBody rows={rows} filters={filters} weights={weights} />}
-      </QueryState>
+      {query.data !== undefined ? (
+        <CbbiBody rows={query.data} filters={filters} weights={weights} />
+      ) : query.isError ? (
+        <Alert color="red" title="Could not load the CBBI series">
+          colintalkscrypto.com did not answer.
+        </Alert>
+      ) : (
+        <Loader size="sm" />
+      )}
     </Stack>
   )
 }
@@ -576,7 +557,10 @@ function CbbiMetricGrid({
   }
 
   return (
-    <WidgetGrid cols={3}>
+    <SimpleGrid
+      type="container"
+      cols={{ base: 1, [CONTAINER_KEYS.regular]: 2, [CONTAINER_KEYS.wide]: 3 }}
+    >
       {shown.map((metric) => {
         const value = latest.metrics[metric.key]
         return (
@@ -602,7 +586,7 @@ function CbbiMetricGrid({
           </ChartCard>
         )
       })}
-    </WidgetGrid>
+    </SimpleGrid>
   )
 }
 

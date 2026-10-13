@@ -6,8 +6,7 @@
 // a real page; the RangeFilter instances below exist only to pin the field-handle generic, not to
 // paint a home.
 import type { ReactNode } from 'react'
-import { createSearchStore } from 'basalt-ui/router-tanstack'
-import { field } from 'basalt-ui/state'
+import { createSearchStore, field } from 'basalt-ui/state'
 import { RangeFilter } from 'basalt-ui/controls'
 
 const store = createSearchStore({

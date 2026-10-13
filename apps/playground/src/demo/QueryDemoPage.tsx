@@ -1,23 +1,15 @@
 /**
- * QueryDemoPage — exercises createBasaltQueryClient, unwrap, BasaltQueryDevtools (root barrel,
- * C1 dropped `./query`) + QueryClientProvider from @tanstack/react-query, with a mock Eden-shaped
- * response.
+ * QueryDemoPage — exercises `unwrap` (root barrel) against the router's QueryClient (created by
+ * `createBasaltRouter`, provided by `BasaltProvider`), with a mock Eden-shaped response.
  * No backend required: the mock queryFn resolves a static { data, error } envelope.
  *
  * Edge states: toggle the error switch to force the error envelope — unwrap() throws,
  * the query enters the error state, and the error message renders in the table section.
  */
 import { Alert, Badge, Button, Group, Paper, Stack, Switch, Table, Tabs, Text } from '@mantine/core'
-import { BasaltQueryDevtools, createBasaltQueryClient, toErrorMessage, unwrap } from 'basalt-ui'
-import {
-  QueryClientProvider,
-  useQuery,
-  useQueryClient,
-  useQueryErrorResetBoundary,
-} from '@tanstack/react-query'
+import { unwrap } from 'basalt-ui'
+import { useQuery, useQueryClient, useQueryErrorResetBoundary } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
-import { QueryStateDemoPage } from './QueryStateDemoPage'
-import { StatesPage } from './StatesPage'
 
 // ── Mock data ─────────────────────────────────────────────────────────────────────────────────────
 
@@ -44,7 +36,14 @@ function mockFetchMetrics(
   return Promise.resolve({ data: MOCK_ROWS, error: null })
 }
 
-// ── Inner content (must be inside QueryClientProvider) ────────────────────────────────────────────
+/** Readable text for a thrown value: an `Error`, a plain `{ message }` envelope, or a string. */
+function errorText(err: unknown): string {
+  if (err instanceof Error) return err.message
+  if (typeof err === 'object' && err !== null && 'message' in err) return String(err.message)
+  return String(err)
+}
+
+// ── Inner content (reads the router's QueryClientProvider) ────────────────────────────────────────────
 
 function MetricsTable({ forceError }: { forceError: boolean }) {
   const qc = useQueryClient()
@@ -58,7 +57,7 @@ function MetricsTable({ forceError }: { forceError: boolean }) {
     return (
       <Stack gap="xs">
         <Alert color="red" title="Query error">
-          {toErrorMessage(error)}
+          {errorText(error)}
         </Alert>
         <Button
           size="compact-sm"
@@ -116,8 +115,8 @@ function ResetBoundaryNote() {
 // ── Page ──────────────────────────────────────────────────────────────────────────────────────────
 
 export function QueryDemoPage() {
-  // oxlint-disable-next-line react/hook-use-state -- stable singleton; setter intentionally omitted
-  const [client] = useState(() => createBasaltQueryClient())
+  // The router's client — `createBasaltRouter` created it, `BasaltProvider` provides it.
+  const client = useQueryClient()
   const [forceError, setForceError] = useState(false)
   const staleTimeMs = useMemo(() => {
     const st = client.getDefaultOptions().queries?.staleTime
@@ -125,15 +124,11 @@ export function QueryDemoPage() {
   }, [client])
 
   return (
-    <QueryClientProvider client={client}>
+    <>
       <Tabs defaultValue="client">
         <Tabs.List>
           <Tabs.Tab value="client">Client</Tabs.Tab>
-          <Tabs.Tab value="query-state">Query state</Tabs.Tab>
-          <Tabs.Tab value="states">States</Tabs.Tab>
         </Tabs.List>
-        {/* `/query-state` and `/states` absorbed here (audit E §7) — neither carries its own
-            `PageBar`, so nesting them under this tab set adds none (law C6). */}
         <Tabs.Panel value="client" pt="md">
           <QueryClientPanel
             staleTimeMs={staleTimeMs}
@@ -141,15 +136,8 @@ export function QueryDemoPage() {
             setForceError={setForceError}
           />
         </Tabs.Panel>
-        <Tabs.Panel value="query-state" pt="md">
-          <QueryStateDemoPage />
-        </Tabs.Panel>
-        <Tabs.Panel value="states" pt="md">
-          <StatesPage />
-        </Tabs.Panel>
       </Tabs>
-      <BasaltQueryDevtools initialIsOpen={false} />
-    </QueryClientProvider>
+    </>
   )
 }
 
@@ -168,8 +156,8 @@ function QueryClientPanel({
         {/* No in-body `<Title>` — the /data bar's "Query" tab names this view; the subpath it
             demos moves into the lead (ComponentsPage's module doc has the wave's rule). */}
         <Text size="sm" c="dimmed">
-          <code>./query</code>: createBasaltQueryClient + unwrap + BasaltQueryDevtools (optional
-          peer, lazy, prod-safe) + error-envelope edge state
+          <code>createBasaltRouter</code> owns the client; <code>unwrap</code> (optional peer, lazy,
+          prod-safe) + error-envelope edge state
         </Text>
 
         <Paper p="sm">

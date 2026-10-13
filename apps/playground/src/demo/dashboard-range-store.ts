@@ -1,4 +1,4 @@
-import { createSearchStore, field } from 'basalt-ui/router-tanstack'
+import { createSearchStore, field } from 'basalt-ui/state'
 import { CHANNEL_KEYS } from './analytics-data'
 
 /**

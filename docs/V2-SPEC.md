@@ -66,12 +66,12 @@ source); method and counts: `docs/waves/evidence/w1/core.md`.
 wiring, § 2), `BasaltRouterContext` (the root route's context type, § 2), `BasaltEvent` (the
 telemetry seam, § 7). Each names argo as its first consumer in `v2-surface.md` § New in 2.0.
 
-| Budget (`check-budgets.ts`)              | 1.41                       | 2.0 target                                                |
-| ---------------------------------------- | -------------------------- | --------------------------------------------------------- |
-| public value symbols                     | 395                        | ≤ 140 (non-chart 92 + § 9's chart allowance 48)           |
-| barrel type exports, non-chart (W3 adds) | 517 (447 = 517 − 70 → § 9) | ≤ 60 (40 kept); chart types count against § 9's allowance |
-| published subpaths                       | 24                         | 15                                                        |
-| shipped rule lines (`agent/rules/*.md`)  | 750                        | ≤ 450                                                     |
+| Budget (`check-budgets.ts`)              | 1.41                       | 2.0 target                                                                                |
+| ---------------------------------------- | -------------------------- | ----------------------------------------------------------------------------------------- |
+| public value symbols                     | 395                        | ≤ 140 (non-chart 92 + § 9's chart allowance 48); gated at 92 + charts' landed 97 until W4 |
+| barrel type exports, non-chart (W3 adds) | 517 (447 = 517 − 70 → § 9) | ≤ 60 (40 kept); chart types count against § 9's allowance                                 |
+| published subpaths                       | 24                         | 15                                                                                        |
+| shipped rule lines (`agent/rules/*.md`)  | 750                        | ≤ 450 (gated at the landed 750 until W9 rewrites them)                                    |
 
 **Open:**
 
@@ -614,7 +614,7 @@ three-axis law's only chart axis). The compiled `chart: ({ width }) => spec` rea
 ### 9.7 a11y and SSR
 
 - `ariaLabel: string` is required on every kind. Keyboard: TanStack's first-party focus (`tabIndex
-0`; ←/→, Home/End; Enter/Space pins; Escape) replaces `HoverOverlay`'s `role="slider"`.
+  0`; ←/→, Home/End; Enter/Space pins; Escape) replaces `HoverOverlay`'s `role="slider"`.
 - SSR: `renderToString` emits the full accessible SVG at `initialWidth` (spike). Hydration adopts
   it; `idPrefix` comes from `useId`. The engine's React-free `renderChartSvg` stays unexposed until
   a consumer names it.

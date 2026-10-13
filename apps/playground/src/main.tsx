@@ -5,59 +5,17 @@ import '@mantine/dates/styles.layer.css'
 import '@mantine/notifications/styles.layer.css'
 import '@mantine/spotlight/styles.layer.css'
 import 'basalt-ui/styles.css'
-import { RouterProvider, createRouter } from '@tanstack/react-router'
-import { BasaltProvider, createBasaltTheme } from 'basalt-ui'
-import { BasaltOverlays } from 'basalt-ui/commands'
-import { applyOverrides, loadOverrides } from 'basalt-ui/theme-lab'
+import { BasaltProvider, createBasaltRouter } from 'basalt-ui'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-// Side-effect import: registers the app's global command registry (basalt-ui/commands'
-// defineCommands) before BasaltOverlays mounts, so Spotlight/ShortcutsHelp see it from boot.
+// Side-effect import: registers the app's command registry (`defineCommands`) and the nav
+// definition (`defineNav`) before the provider mounts, so Spotlight and the hotkeys see them at boot.
 import './demo/commands'
-import { buildPaletteActions } from './demo/palette-actions'
+import './demo/nav-model'
 import { demoPaletteGroups } from './demo/series'
 import { routeTree } from './routeTree.gen'
 
-// ── SSR / Next.js manual-provider path (reference) ───────────────────────────
-//
-// Consumers who cannot use BasaltProvider directly (e.g. Next.js App Router where the
-// provider must be in a Server Component boundary, or apps that already own their
-// MantineProvider) can compose the three pieces manually:
-//
-//   import { MantineProvider } from '@mantine/core'
-//   import { baseTheme, cssVariablesResolver, createBasaltTheme } from 'basalt-ui'
-//
-//   // Option A — use baseTheme as-is (zero overrides):
-//   <MantineProvider theme={baseTheme} cssVariablesResolver={cssVariablesResolver}>
-//     {children}
-//   </MantineProvider>
-//
-//   // Option B — merge consumer overrides on top (createBasaltTheme is mergeThemeOverrides):
-//   const theme = createBasaltTheme({ primaryColor: 'teal' })
-//   <MantineProvider theme={theme} cssVariablesResolver={cssVariablesResolver}>
-//     {children}
-//   </MantineProvider>
-//
-// NOTE: This path skips BasaltProvider's error boundary, palette injection, and the Vx
-// chart theme context. Add those pieces manually if needed:
-//   - Palette:      emit buildPaletteCss() as a <style> tag in your document <head>.
-//   - Chart bridge: wrap children in <VxThemeProvider colorScheme={resolved}>.
-//   - Error boundary: wrap with <BasaltErrorBoundary onError={…}>.
-//
-// ─────────────────────────────────────────────────────────────────────────────
-
-// The theme lab owns only the editing UI — the host re-applies any persisted overrides at boot, so
-// a tuning session survives a refresh (per the theme-lab contract).
-applyOverrides(loadOverrides())
-
-// createBasaltTheme exercises the export. A consumer can build a full MantineThemeOverride
-// and pass it to BasaltProvider.theme — the provider merges it onto the base internally.
-// Extracting it here (rather than inlining) proves the named export resolves at build time.
-const playgroundTheme = createBasaltTheme()
-
-// Browser-history router built from the generated route tree. Registering its type below makes
-// every <Link>/useNavigate across the app type-safe against the real route set.
-const router = createRouter({ routeTree })
+const router = createBasaltRouter({ routeTree })
 
 declare module '@tanstack/react-router' {
   interface Register {
@@ -65,20 +23,14 @@ declare module '@tanstack/react-router' {
   }
 }
 
-// The full palette action list — Pages (nav definition → breadcrumb trails) + the command bus,
-// each with a kind badge. `projectCommands={false}` below hands the whole list here so nothing is
-// projected twice. The one `as never` is at `router.navigate`'s own untyped boundary over a
-// heterogeneous action list — the nav definition itself carries zero casts.
-const spotlightActions = buildPaletteActions((href) => void router.navigate({ to: href as never }))
-
 // Literal env checks, so a build without either flag drops the dynamic import and its chunk.
 // `VITE_TELEMETRY=1` builds the telemetry in (exporter URL then comes from `window.__BASALT_OTLP__`
 // at runtime); `VITE_OTLP_ENDPOINT` bakes the URL in. See docs/waves/evidence/w2/observability.md.
 // A telemetry failure must never block mounting the app.
-let telemetry: ReturnType<typeof import('./telemetry').startTelemetry> | undefined
+let telemetry: typeof import('./telemetry').telemetry | undefined
 if (import.meta.env['VITE_TELEMETRY'] === '1' || import.meta.env['VITE_OTLP_ENDPOINT']) {
   try {
-    telemetry = (await import('./telemetry')).startTelemetry(router)
+    telemetry = (await import('./telemetry')).telemetry
   } catch (error) {
     // oxlint-disable-next-line no-console
     console.error('[basalt] telemetry failed to start', error)
@@ -92,23 +44,10 @@ createRoot(root).render(
   <StrictMode>
     {/* paletteOptions.groups emits the consumer's `--vx-demo-*` custom properties alongside the
         framework primitives, so the app-side series colors resolve per scheme just like the chrome. */}
-    {/* theme={playgroundTheme}: exercises createBasaltTheme — the result is a valid MantineThemeOverride.
-        BasaltProvider merges it with mergeThemeOverrides(base, overrides), so no-override call is safe. */}
     <BasaltProvider
-      theme={playgroundTheme}
+      router={router}
       paletteOptions={{ groups: demoPaletteGroups }}
-      onError={(error, ctx) => {
-        // oxlint-disable-next-line no-console
-        console.error('[basalt]', ctx, error)
-        telemetry?.onError(error, ctx)
-      }}
-    >
-      {/* hotkeys={false}: the demo commands are registered page-locally in CommandsDemoPage, which
-          binds them itself via useCommandHotkeys(). A real app registers commands app-wide and keeps
-          the default (hotkeys enabled) so BasaltOverlays binds them globally. */}
-      <BasaltOverlays hotkeys={false} projectCommands={false} spotlightActions={spotlightActions}>
-        <RouterProvider router={router} />
-      </BasaltOverlays>
-    </BasaltProvider>
+      {...(telemetry && { telemetry })}
+    />
   </StrictMode>,
 )

@@ -1,6 +1,6 @@
 /**
  * Settings page — a grown-up settings surface built from what basalt-ui already ships: the
- * account contract, notifications registry, connectivity aggregator, command shortcuts, the
+ * account contract, notifications registry, command shortcuts, the
  * theme lab, and the dashboard-composite `SettingsSection`/`SettingsRow`/`DangerZone` building
  * blocks. Rebuilt from the former raw demo dump (AccountDrawer + BillingDrawer + an inline
  * theme-lab-only /settings) into one real page with section cards.
@@ -13,7 +13,7 @@
  *
  * Sections: Account (+ a `DangerZone` for account deletion), Billing, Appearance (color scheme +
  * a collapsed Theme lab accordion), Notifications (per-intent Switch rows), Shortcuts
- * (ShortcutsHelp), Connectivity (useConnectivity + ConnectivityIndicator), Developer (the
+ * (ShortcutsHelp), Developer (the
  * createPersistedState counter demo).
  *
  * The sidebar account menu deep-links here via `navigate({ to: '/settings', hash: 'account' | 'billing' })`
@@ -23,13 +23,10 @@
  * load-bearing anchors.
  */
 import type { CSSProperties } from 'react'
-import { useState } from 'react'
 import {
-  Accordion,
   Alert,
   Badge,
   Button,
-  Code,
   Group,
   SegmentedControl,
   Stack,
@@ -38,25 +35,13 @@ import {
   TextInput,
   useMantineColorScheme,
 } from '@mantine/core'
-import {
-  ConnectivityIndicator,
-  DangerZone,
-  SettingsRow,
-  SettingsSection,
-  useConnectivity,
-} from 'basalt-ui'
-import type { AccountBadgeTone } from 'basalt-ui'
+import { DangerZone, SettingsRow, SettingsSection } from 'basalt-ui'
 import { ShortcutsHelp } from 'basalt-ui/commands'
-import type { NotificationIntent } from 'basalt-ui/notifications'
 import { createPersistedState } from 'basalt-ui/state'
-import { COLOR_GROUPS, DeriveControls, ThemeLabControls } from 'basalt-ui/theme-lab'
 import { alpha, VX } from 'basalt-ui/tokens'
-import { ConnectivityDemoPage } from './ConnectivityDemoPage'
-import { IconCopy, IconReset } from './icons'
-import { DEMO_SERIES } from './series'
 import { UserStatePage } from './UserStatePage'
 import { scenarioToAccountState, scenarioToPlan, useUserScenario } from './user-scenario-store'
-import type { UserScenario } from './user-scenario-store'
+import type { AccountBadgeTone, UserScenario } from './user-scenario-store'
 
 // ── Shared type styles (mirrors docs/DESIGN-SPEC.md §3, per-page convention — see DashboardPage) ──
 
@@ -331,27 +316,14 @@ function BillingSection() {
 
 // ── Appearance ────────────────────────────────────────────────────────────────────────────────
 
-/** Consumer-augmented theme-lab groups: structural framework chrome + the app's own Demo series. */
-const LAB_GROUPS = [
-  ...COLOR_GROUPS,
-  {
-    title: 'Demo series',
-    items: Object.keys(DEMO_SERIES).map((key) => ({
-      var: `--vx-demo-${key}`,
-      label: key[0]!.toUpperCase() + key.slice(1),
-    })),
-  },
-]
-
 function AppearanceSection() {
   const { colorScheme, setColorScheme } = useMantineColorScheme()
-  const [copied, setCopied] = useState<string | null>(null)
 
   return (
     <div id="appearance">
       <SettingsSection
         title="Appearance"
-        subtitle="Color scheme, palette derivation, and low-level token inspection."
+        subtitle="Color scheme. Palette derivation and token inspection live in the dev dock (Spotlight: dev.theme)."
       >
         <SettingsRow
           label="Color scheme"
@@ -369,47 +341,6 @@ function AppearanceSection() {
             />
           }
         />
-
-        <Accordion variant="separated">
-          <Accordion.Item value="derive">
-            <Accordion.Control>Derive</Accordion.Control>
-            <Accordion.Panel>
-              <Text size="sm" c="dimmed" mb="sm">
-                Retune the whole palette from one accent seed + a neutral family + four level knobs
-                (`basalt-ui/tokens`'s `deriveTokens`), plus a fifth, color-independent radius level
-                (`deriveRadius`) and a sixth, color-independent density level (`deriveSpacing`).
-                This is the dev-tuning path — bake a config into production via
-                `createBasaltTheme`'s `derive`/`radius`/`density` options instead.
-              </Text>
-              <DeriveControls resetIcon={<IconReset />} />
-            </Accordion.Panel>
-          </Accordion.Item>
-          <Accordion.Item value="theme-lab">
-            <Accordion.Control>Theme lab</Accordion.Control>
-            <Accordion.Panel>
-              <Text size="sm" c="dimmed" mb="sm">
-                Low-level inspector for the structural `--vx-*` vars the derive engine doesn't own
-                (chart-only status hues, chart line/dot chrome, the overlay surface) plus this app's
-                own Demo series — not an identity tuner (use Derive above for that). Overrides are
-                written as inline styles on &lt;html&gt; and persist to localStorage.
-              </Text>
-              <ThemeLabControls
-                groups={LAB_GROUPS}
-                copyIcon={<IconCopy />}
-                resetIcon={<IconReset />}
-                onCopy={(json) => setCopied(json)}
-              />
-              {copied && (
-                <Stack gap={4} mt="sm">
-                  <Text size="xs" c="dimmed">
-                    Copied overrides (paste into palette.ts to bake in):
-                  </Text>
-                  <Code block>{copied}</Code>
-                </Stack>
-              )}
-            </Accordion.Panel>
-          </Accordion.Item>
-        </Accordion>
       </SettingsSection>
     </div>
   )
@@ -417,10 +348,9 @@ function AppearanceSection() {
 
 // ── Notifications ─────────────────────────────────────────────────────────────────────────────
 
-/** Per-intent notification opt-in — reflects `basalt-ui/notifications`' `NotificationIntent`
- * union directly (success/info/warning/error), so the toggle set never drifts from the package's
- * actual typed surface. Playground-only preference; it doesn't gate the notify helpers demoed on
- * /notifications. */
+type NotificationIntent = 'success' | 'info' | 'warning' | 'error'
+
+/** Per-intent notification opt-in. Playground-only preference; it doesn't gate anything. */
 const useNotificationPrefs = createPersistedState({
   key: 'notification-prefs',
   version: 1,
@@ -493,25 +423,6 @@ function ShortcutsSection() {
   )
 }
 
-// ── Connectivity ──────────────────────────────────────────────────────────────────────────────
-
-function ConnectivitySection() {
-  const snap = useConnectivity()
-
-  return (
-    <SettingsSection
-      title="Connectivity"
-      subtitle="Aggregates browser online/offline, React Query cache, SSE, and health-check pings."
-    >
-      <SettingsRow
-        label="Connection"
-        description={`Status: ${snap.status}`}
-        control={<ConnectivityIndicator />}
-      />
-    </SettingsSection>
-  )
-}
-
 // ── Developer ─────────────────────────────────────────────────────────────────────────────────
 
 // Created once at module scope — the hook is stable across renders and tabs.
@@ -561,12 +472,10 @@ export function SettingsPage() {
       <AppearanceSection />
       <NotificationsSection />
       <ShortcutsSection />
-      <ConnectivitySection />
       <DeveloperSection />
-      {/* `/user` and `/connectivity` absorbed here (audit E §7) — same `SettingsSection` idiom as
+      {/* `/user` absorbed here (audit E §7) — same `SettingsSection` idiom as
           every block above, no PageBar of their own to conflict with (law C6). */}
       <UserStatePage />
-      <ConnectivityDemoPage />
     </Stack>
   )
 }

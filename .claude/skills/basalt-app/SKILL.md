@@ -41,11 +41,11 @@ import '@mantine/core/styles.layer.css'
 import '@mantine/notifications/styles.layer.css' // one per MOUNTED battery: notifications, spotlight…
 import '@mantine/spotlight/styles.layer.css'
 import 'basalt-ui/styles.css'
-import { BasaltProvider, createBasaltTheme } from 'basalt-ui'
-import { BasaltOverlays } from 'basalt-ui/commands'
-;<BasaltProvider theme={createBasaltTheme(/* app deltas only */)} defaultColorScheme="dark">
-  <BasaltOverlays>{/* data layer, then the router */}</BasaltOverlays>
-</BasaltProvider>
+import { createRoot } from 'react-dom/client'
+import { BasaltProvider, createBasaltRouter } from 'basalt-ui'
+import { routeTree } from './routeTree.gen'
+const router = createBasaltRouter({ routeTree })
+createRoot(document.getElementById('root')!).render(<BasaltProvider router={router} />)
 ```
 
 ```ts

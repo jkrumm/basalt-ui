@@ -40,16 +40,10 @@ Let the theme carry size, radius, depth and font — a prop you did not have to 
 
 ## 4. Tune by eye, then bake
 
-A static POC never translates 1:1 to visx + Mantine. Tune in the REAL app with the shipped lab
-(`basalt-ui/theme-lab`), which writes inline `--vx-*` overrides on `<html>` — they beat the
-stylesheet, so everything restyles instantly with no React re-render.
-
-```tsx
-import { ThemeLabControls, applyOverrides, loadOverrides } from 'basalt-ui/theme-lab'
-
-applyOverrides(loadOverrides()) // at boot — the control body does NOT do the initial apply
-;<ThemeLabControls groups={[...COLOR_GROUPS, appSeriesGroup]} onCopy={notifyCopied} />
-```
+A static POC never translates 1:1 to visx + Mantine. Tune in the REAL app with the theme lab —
+`BasaltProvider` mounts it in dev (the dev dock, opened by the `dev.theme` Spotlight command) and
+applies the persisted overrides at boot. It writes inline `--vx-*` overrides on `<html>`, which beat
+the stylesheet, so everything restyles instantly with no React re-render. There is no import.
 
 1. Adjust colors and the area-gradient strength by eye — in BOTH schemes.
 2. Toggle the scheme and re-check: a saturated mid-tone glows on dark (step lighter, slightly
@@ -59,9 +53,9 @@ applyOverrides(loadOverrides()) // at boot — the control body does NOT do the 
    identity itself, into the derive config's knobs rather than a hand-picked hex.
 4. Remove the override and confirm the baked palette matches.
 
-`DeriveControls` is the identity/colour knobs (seed + the bounded levels + radius + density) and is
-faithful to `createBasaltTheme`; `ThemeLabControls` is the low-level inspector for the non-derived
-structural tokens. Both are DEV tools and inert in a production build — run the dev server.
+The lab's identity controls (seed + the bounded levels + radius + density) are faithful to
+`createBasaltTheme`; its structural-token inspector covers the non-derived tokens. Both are DEV
+tools and inert in a production build — run the dev server.
 
 ## 5. Verify before calling it done
 

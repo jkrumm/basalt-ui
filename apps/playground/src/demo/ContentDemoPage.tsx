@@ -1,9 +1,9 @@
 /**
  * Content demo — the full `basalt-ui/content` surface (docs/CONTENT-SPEC.md). A real technical
  * article ("Reading dashboards") framed by `ArticleLayout` (meta header, sticky TOC rail, opt-in
- * reading progress, a "Content overview" next link) — exercising `CodeBlock` (a titled TypeScript
- * snippet + an untitled bash snippet), `Callout` (all four kinds), a GFM-style table, a
- * blockquote, and links, with headings self-registering into the rail via `headingSlug`.
+ * reading progress, a "Content overview" next link) — exercising fenced code through `Markdown` (a
+ * titled TypeScript snippet + an untitled bash snippet), `Callout` (all four kinds), a GFM-style
+ * table, a blockquote, and links, with headings carrying ids the rail collects.
  *
  * The "Markdown pipeline" section exercises the streaming layer: a rendered `Markdown` document
  * (GFM table, a `[!WARNING]` alert, a titled code fence, hardened links/images), a settled mermaid
@@ -13,14 +13,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Button, Tabs } from '@mantine/core'
 import { Link } from '@tanstack/react-router'
-import {
-  ArticleLayout,
-  Callout,
-  CodeBlock,
-  HeadingAnchor,
-  headingSlug,
-  Markdown,
-} from 'basalt-ui/content'
+import { ArticleLayout, Callout, Markdown } from 'basalt-ui/content'
 import { ContentOverviewPage } from './ContentOverviewPage'
 
 const VITE_CONFIG_SNIPPET = `import { defineConfig } from 'vite'
@@ -32,21 +25,23 @@ export default defineConfig({
   plugins: [react()],
 })`
 
+const fence = (info: string, code: string) => `\`\`\`${info}\n${code}\n\`\`\``
+
 const INSTALL_SNIPPET = `bun add basalt-ui
 bun run dev`
 
-// Hoisted so each heading can pass the SAME id to both its `id` attribute and its HeadingAnchor —
-// the hand-authored counterpart to what `Markdown`/MDX slugged headings do for themselves.
-const WHY_IGNORED_ID = headingSlug('Why dashboards get ignored')
-const ALERT_FATIGUE_ID = headingSlug('Alert fatigue')
-const MISSING_BASELINES_ID = headingSlug('Missing baselines')
-const FIVE_SECOND_ID = headingSlug('Designing for the five-second glance')
-const INSTRUMENTING_ID = headingSlug('Instrumenting the pipeline')
-const PLAYBOOK_ID = headingSlug('Operational playbook')
-const MARKDOWN_PIPELINE_ID = headingSlug('Markdown pipeline')
-const RENDERED_MARKDOWN_ID = headingSlug('A rendered markdown document')
-const MERMAID_ID = headingSlug('A mermaid diagram')
-const STREAMING_ID = headingSlug('A streaming simulation')
+// Hoisted ids for the hand-authored headings — the counterpart to what `Markdown` slugs for
+// itself, and what the TableOfContents rail collects.
+const WHY_IGNORED_ID = 'why-dashboards-get-ignored'
+const ALERT_FATIGUE_ID = 'alert-fatigue'
+const MISSING_BASELINES_ID = 'missing-baselines'
+const FIVE_SECOND_ID = 'designing-for-the-five-second-glance'
+const INSTRUMENTING_ID = 'instrumenting-the-pipeline'
+const PLAYBOOK_ID = 'operational-playbook'
+const MARKDOWN_PIPELINE_ID = 'markdown-pipeline'
+const RENDERED_MARKDOWN_ID = 'a-rendered-markdown-document'
+const MERMAID_ID = 'a-mermaid-diagram'
+const STREAMING_ID = 'a-streaming-simulation'
 
 // Exercises GFM tables, a WARNING alert, a titled ts fence, inline code, a same-origin relative
 // link, an external https link, a `javascript:` link (must render neutralized), and an image on a
@@ -184,40 +179,28 @@ function ContentArticleDemo() {
       next={{ label: 'Content overview', href: '/content-overview' }}
       renderLink={(target, node) => <Link to={target.href as never}>{node}</Link>}
     >
-      <h2 id={WHY_IGNORED_ID}>
-        Why dashboards get ignored
-        <HeadingAnchor id={WHY_IGNORED_ID} />
-      </h2>
+      <h2 id={WHY_IGNORED_ID}>Why dashboards get ignored</h2>
       <p>
         The failure mode is rarely &ldquo;no data.&rdquo; It&rsquo;s too much data, with no
         hierarchy between the number that changes the plan and the number that&rsquo;s merely
         interesting.
       </p>
 
-      <h3 id={ALERT_FATIGUE_ID}>
-        Alert fatigue
-        <HeadingAnchor id={ALERT_FATIGUE_ID} />
-      </h3>
+      <h3 id={ALERT_FATIGUE_ID}>Alert fatigue</h3>
       <p>
         A team that pages on every threshold breach stops trusting pages. The same logic applies to
         dashboards — a page with twenty equally-weighted KPI cards trains the eye to skim past all
         of them.
       </p>
 
-      <h3 id={MISSING_BASELINES_ID}>
-        Missing baselines
-        <HeadingAnchor id={MISSING_BASELINES_ID} />
-      </h3>
+      <h3 id={MISSING_BASELINES_ID}>Missing baselines</h3>
       <p>
         A raw value (&ldquo;1,204 sessions&rdquo;) tells you nothing without a comparison. Every
         headline metric needs a delta against a stated period — WoW, MoM, or a fixed baseline — or
         the viewer has to hold last week&rsquo;s number in their head.
       </p>
 
-      <h2 id={FIVE_SECOND_ID}>
-        Designing for the five-second glance
-        <HeadingAnchor id={FIVE_SECOND_ID} />
-      </h2>
+      <h2 id={FIVE_SECOND_ID}>Designing for the five-second glance</h2>
       <p>
         Lead with the delta, not the absolute. A card reading <code>+12.4%</code> next to a muted{' '}
         <code>vs last week</code> label carries the whole story; the raw count is secondary context,
@@ -228,26 +211,20 @@ function ContentArticleDemo() {
         <p>If a viewer has to ask &ldquo;compared to what?&rdquo;, the chart has already failed.</p>
       </blockquote>
 
-      <h2 id={INSTRUMENTING_ID}>
-        Instrumenting the pipeline
-        <HeadingAnchor id={INSTRUMENTING_ID} />
-      </h2>
+      <h2 id={INSTRUMENTING_ID}>Instrumenting the pipeline</h2>
       <p>
         Getting a dashboard on screen is the easy part — see the{' '}
         <a href={`#${PLAYBOOK_ID}`}>operational playbook</a> below for the thresholds that actually
         page someone.
       </p>
 
-      <CodeBlock code={INSTALL_SNIPPET} language="bash" />
+      <Markdown>{fence('bash', INSTALL_SNIPPET)}</Markdown>
 
       <p>Wire the shared token layer into the build so charts and chrome read one palette:</p>
 
-      <CodeBlock title="vite.config.ts" language="ts" code={VITE_CONFIG_SNIPPET} />
+      <Markdown>{fence('ts title="vite.config.ts"', VITE_CONFIG_SNIPPET)}</Markdown>
 
-      <h2 id={PLAYBOOK_ID}>
-        Operational playbook
-        <HeadingAnchor id={PLAYBOOK_ID} />
-      </h2>
+      <h2 id={PLAYBOOK_ID}>Operational playbook</h2>
       <p>Three signals, three thresholds, three responses — nothing on this list is optional:</p>
 
       <table>
@@ -296,40 +273,28 @@ function ContentArticleDemo() {
         <p>p95 latency breached the 400ms threshold three times in the last hour.</p>
       </Callout>
 
-      <h2 id={MARKDOWN_PIPELINE_ID}>
-        Markdown pipeline
-        <HeadingAnchor id={MARKDOWN_PIPELINE_ID} />
-      </h2>
+      <h2 id={MARKDOWN_PIPELINE_ID}>Markdown pipeline</h2>
       <p>
         The streaming layer of <code>basalt-ui/content</code>: a streaming-aware{' '}
-        <code>Markdown</code> renderer, <code>MermaidDiagram</code>, and the MDX component map. The
-        three demos below all route through the same primitives as the hand-authored article above.
+        <code>Markdown</code> renderer with built-in code and mermaid fences. The three demos below
+        all route through the same primitives as the hand-authored article above.
       </p>
 
-      <h3 id={RENDERED_MARKDOWN_ID}>
-        A rendered markdown document
-        <HeadingAnchor id={RENDERED_MARKDOWN_ID} />
-      </h3>
+      <h3 id={RENDERED_MARKDOWN_ID}>A rendered markdown document</h3>
       <p>
         GFM tables, a GFM alert, a titled code fence, inline code, and hardened links/images — the
         stray <code>javascript:</code> link and the off-origin image are both neutralized.
       </p>
       <Markdown allowedImagePrefixes={['/']}>{PIPELINE_MARKDOWN}</Markdown>
 
-      <h3 id={MERMAID_ID}>
-        A mermaid diagram
-        <HeadingAnchor id={MERMAID_ID} />
-      </h3>
+      <h3 id={MERMAID_ID}>A mermaid diagram</h3>
       <p>
         A settled <code>mermaid</code> fence renders as a real diagram, themed off the{' '}
         <code>--vx-*</code> token layer.
       </p>
       <Markdown>{PIPELINE_DIAGRAM_MARKDOWN}</Markdown>
 
-      <h3 id={STREAMING_ID}>
-        A streaming simulation
-        <HeadingAnchor id={STREAMING_ID} />
-      </h3>
+      <h3 id={STREAMING_ID}>A streaming simulation</h3>
       <p>
         Replay a simulated AI stream — watch the bold word repair itself, the code fence render
         plain while in flight, and the mermaid fence upgrade to a diagram once it settles.

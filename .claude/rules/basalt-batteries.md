@@ -1,6 +1,6 @@
 ---
 source: basalt-ui
-description: The adapter batteries — query, forms, notifications, commands, data, content, agent — plus app bootstrapping (vite preset, CSS layer order, init/sync). One doctrine each: use the shipped seam, don't re-roll it.
+description: The adapter batteries — query, forms, commands (incl. notifications), table, content, agent — plus app bootstrapping (vite preset, CSS layer order, init/sync). One doctrine each: use the shipped seam, don't re-roll it.
 paths:
   - 'src/**'
   - 'apps/**/src/**'
@@ -21,7 +21,7 @@ failure this rule prevents. Every peer is OPTIONAL — install before importing.
 shipped types, JSDoc and `llms.txt` at the install directory — this file is only what a reader gets
 wrong without being told.
 
-**Not guarded, honestly**: `forms`, `notifications`, `commands`, `data` and `content` carry zero
+**Not guarded, honestly**: `forms`, `commands`, `table` and `content` carry zero
 guard kinds or oxlint rules — the `not guarded: —` line above is real, not aspirational. Nothing
 fails a build if you re-roll one of these seams by hand; follow the doctrine below on trust.
 
@@ -31,11 +31,11 @@ binding). The replacement and removal minor are always in `MIGRATING.md` § Unre
 the deprecation ships — that file, not the warning text, is where you confirm what to migrate to.
 Maintainer notes (`MAINTAINING.md` in the repo, not shipped): § Deprecation lifecycle.
 
-## Query — `createBasaltQueryClient`/`unwrap` (root barrel, C1: `./query` dropped)
+## Query — `unwrap` + the router-owned client (root barrel)
 
-`unwrap()` throws on the error branch AND on a `null` data with no error — both are caller bugs.
-Render with `QueryState`, never a hand-written switch (precedence: error-without-data → empty →
-loading → children). One factory per resource via `queryOptions`, never a raw string key.
+`createBasaltRouter` builds the one `QueryClient` (1.x defaults; extend via its `query:` option) —
+never construct a second. `unwrap()` throws on the error branch AND on a `null` data with no error —
+both are caller bugs. One factory per resource via `queryOptions`, never a raw string key.
 
 ## Eden Treaty — three silent `any`s (stated once)
 
@@ -45,41 +45,36 @@ aliases, and a response schema on a streaming route (Eden #231) all silently deg
 
 ## `./forms` — `@mantine/form`
 
-`useBasaltForm` (`mode: 'uncontrolled'`, `StandardSchemaV1` never `ZodSchema`) +
-`useFormSubmit`/`useFieldArray`/`FormErrorSummary`/`useFormDraft`. A field is two calls, never one
-object (`basalt/forms-field-key` guards + autofixes it) — dropping `key` keeps stale text through
-`form.reset()`.
+`useBasaltForm` (`mode: 'uncontrolled'`, `StandardSchemaV1` never `ZodSchema`) with
+`inputProps`/`fieldKey`. A field is two calls, never one object (`basalt/forms-field-key` guards +
+autofixes it) — dropping `key` keeps stale text through `form.reset()`. Form layout
+(`FormRow`/`FormGroup`) is `basalt-ui/controls`.
 
-## `./notifications` — `@mantine/notifications`
+## `./commands` — the command bus and notifications
 
-`notify({ intent, message })` — intent, never a raw color, drives the Mantine color AND the aria
-`role`. `defineNotifications`/`emit` is the typed registry; only persisted-history calls
-(`notify`/`notifyPromise`) reach the bell/center. `notifyUndo` owns the undo-window contract.
+`defineCommands`, `defineOverlays`/`overlays.open` — call each factory once, at app boot;
+`BasaltProvider` projects them into Spotlight and the hotkeys, never a hand-authored second list.
+`overlays.confirm`/`confirmDelete` need no registry entry. `defineNotifications`/`emit` is the typed
+notification registry (intent, never a raw color); `NotificationBell` reads its persisted history.
 
-## `./commands` — the command bus
+## `./table` — TanStack Table
 
-`defineCommands`/`runCommand`, `defineOverlays`/`overlays.open` — call each factory once, at app
-boot. Project via `toSpotlightActions`/`toShortcutList`/`toHotkeyBindings`, never a hand-authored
-second list. `overlays.confirm`/`confirmDelete` need no registry entry.
+`BasaltDataTable` + the basalt-owned `createColumnHelper`. Read the props before hand-rolling anything
+(facets, pagination, `meta.align`/`meta.numeral`). `manualPagination` imposes a contract on
+sorting/filtering/count — unresolved, it throws in dev.
 
-## `./data/table` + `./data/virtual` — TanStack Table + Virtual (C1: no bare `./data`)
+## `./content` — prose and markdown
 
-Read the props before hand-rolling anything (facets, pagination, `meta.align`/`meta.numeral`).
-`manualPagination` imposes a contract on sorting/filtering/count — unresolved, it throws in dev.
-`BasaltVirtualList` above a few hundred rows only.
+`Prose` and `Markdown` share one typography layer. `streaming` is a rendering mode, not a trust claim
+— any surface rendering agent/model output pins `contentTrust="untrusted"`. Every optional peer
+degrades gracefully except the sanitizer, which is always on.
 
-## `./content` — prose, markdown, MDX
+## `./agent` — streaming chat
 
-`Prose`/`Markdown`/`mdxComponents` share one typography layer. `streaming` is a rendering mode, not
-a trust claim — any surface rendering agent/model output pins `contentTrust="untrusted"`. Every
-optional peer degrades gracefully except the sanitizer, which is always on.
-
-## `./agent` + `./agent-chat` — streaming chat
-
-`./agent` is headless/Mantine-free; `./agent-chat` is the chrome. Every `AgentPart` switch ends
-`default: return assertNever(part)`. `useAgentStream` runs one turn, `useAgentThreadRuns` runs N by
-thread id. Stream resumption reconnects a MOUNT (page reload mid-stream), it never continues a
-click — `retry()`/`regenerate()` always start a fresh stream from the cached input.
+Headless runtime plus the chat UI (`ThreadFeed`, `Composer`, `ToolChip`); the thread store is
+consumer-owned. Every `AgentPart` switch ends `default: return assertNever(part)`.
+`useAgentThreadRuns` runs N turns by thread id. Stream resumption reconnects a MOUNT (page reload
+mid-stream), it never continues a click — `retry()` always starts a fresh stream from the cached input.
 
 **Why the three lint guards exist** (a consumer's build fails on one of these; all honour
 `basalt-agent-allow`, never `theme-allow`): `basalt/agent-resume-guard` — an unguarded
