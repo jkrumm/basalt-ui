@@ -45,17 +45,17 @@ describe('oxlint preset sync contract', () => {
     expect(committed).toEqual(projected)
   })
 
-  // ── @visx/*-only-in-charts + Mantine-free charts/tokens: moved to basalt/visx-boundary + ────────
+  // ── @visx/*-only-in-charts + Mantine-free charts/tokens: moved to basalt/chart-engine-boundary + ────────
   // ── basalt/token-layer-boundary ──────────────────────────────────────────────────────────────
   // These boundaries used to live in per-glob no-restricted-imports overrides, with the charts
   // block's implicit OMISSION of the @visx/* ban acting as the "re-allow" — an artifact of oxlint's
   // last-writer-wins override resolution, which a consumer's own no-restricted-imports override on
-  // an overlapping glob could silently clobber. They're now enforced by the `basalt/visx-boundary`
+  // an overlapping glob could silently clobber. They're now enforced by the `basalt/chart-engine-boundary`
   // and `basalt/token-layer-boundary` oxlint plugin rules instead (configs/oxlint-plugin.js), each
   // of which a consumer can only disable explicitly, by name — never silently. The generator
   // therefore no longer emits a no-restricted-imports override for charts/tokens at all.
 
-  it('shipped no longer carries a charts override (boundary moved to basalt/visx-boundary)', () => {
+  it('shipped no longer carries a charts override (boundary moved to basalt/chart-engine-boundary)', () => {
     const projected = projectBanList('shipped')
     expect(findBlock(projected, '**/charts/**')).toBeUndefined()
   })
@@ -78,10 +78,10 @@ describe('oxlint preset sync contract', () => {
   })
 
   // ── Surfaces the plugin rules do NOT cover keep their Mantine-free no-restricted-imports ban ──
-  // The plugins only fire on charts/tokens path segments (see oxlint-plugin.js's visx-boundary and
+  // The plugins only fire on charts/tokens path segments (see oxlint-plugin.js's chart-engine-boundary and
   // token-layer-boundary rules), so the agent runtime and state stay enforced the old
-  // way — minus the now-redundant @visx/* pattern, since basalt/visx-boundary bans @visx/* outside
-  // charts universally.
+  // way — minus the now-redundant @visx/* pattern, since basalt/chart-engine-boundary bans @visx/*
+  // everywhere.
 
   it('repo headless surfaces outside charts/tokens still ban @mantine/* but no longer @visx/*', () => {
     const projected = projectBanList('repo')
@@ -105,7 +105,7 @@ describe('oxlint preset sync contract', () => {
     }
   })
 
-  it('no override anywhere still bans the @visx/* pattern (fully superseded by basalt/visx-boundary)', () => {
+  it('no override anywhere still bans the @visx/* pattern (fully superseded by basalt/chart-engine-boundary)', () => {
     for (const target of ['shipped', 'repo'] as const) {
       const projected = projectBanList(target)
       for (const block of projected as OverrideBlock[]) {
@@ -147,7 +147,7 @@ describe('oxlint preset sync contract', () => {
   })
 
   // The basalt/* levels live in the guards-only preset, which the full one extends.
-  it('the preset the playground extends carries the visx boundaries but NOT token-layer-boundary', () => {
+  it('the preset the playground extends carries the engine boundary but NOT the repo-only boundaries', () => {
     const shipped = JSON.parse(readFileSync(SHIPPED_CONFIG_PATH, 'utf8')) as { extends?: string[] }
     expect(shipped.extends).toEqual(['./oxlint-basalt.json'])
     const rules = (
@@ -155,8 +155,11 @@ describe('oxlint preset sync contract', () => {
         rules?: Record<string, unknown>
       }
     ).rules
-    expect(rules?.['basalt/visx-boundary']).toBe('error')
-    expect(rules?.['basalt/visx-tooltip']).toBe('error')
+    expect(rules?.['basalt/chart-engine-boundary']).toBe('error')
+    expect(rules?.['basalt/visx-boundary']).toBeUndefined()
+    expect(rules?.['basalt/visx-tooltip']).toBeUndefined()
+    // Repo-only like token-layer-boundary: `@tanstack/charts/react` is basalt's own host seam.
+    expect(rules?.['basalt/chart-host-single']).toBeUndefined()
     // Repo-local by design — guards basalt's internal layering, never a consumer contract.
     // surfaces-coverage.test.ts asserts the mirror image against the repo-local config.
     expect(hasTokenLayerBoundaryRegistered(rules)).toBe(false)
