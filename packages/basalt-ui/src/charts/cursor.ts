@@ -38,8 +38,7 @@ const INERT: ChartCursorController = {
 
 const isServer = (): boolean => typeof window === 'undefined'
 
-/** Drops `key` one microtask after its entry has no subscribers (a host re-binding releases before
- * it re-acquires, and must not lose the entry in between). */
+/** Drops `key` a microtask after its entry idles: a host re-binding releases before it re-acquires. */
 function sweepWhenIdle<E extends { subscribers: number }>(
   map: Map<string, E>,
   key: string,
@@ -50,8 +49,7 @@ function sweepWhenIdle<E extends { subscribers: number }>(
   })
 }
 
-/** Counts one live subscription on `entry`. The returned release runs `unsubscribe` once and sweeps
- * the entry when it was the last. */
+/** Counts a live subscription; the returned release runs `unsubscribe` once, sweeping at zero. */
 function retain<E extends { subscribers: number }>(
   map: Map<string, E>,
   key: string,
@@ -103,7 +101,10 @@ const facade = (group: string): ChartCursorController => ({
 export function chartCursor(group = 'default'): ChartCursorController {
   if (isServer()) return INERT
   let controller = facades.get(group)
-  if (!controller) facades.set(group, (controller = facade(group)))
+  if (!controller) {
+    controller = facade(group)
+    facades.set(group, controller)
+  }
   return controller
 }
 
@@ -190,17 +191,17 @@ function makeView(
       const hit = memo.get(state)
       if (hit !== undefined) return hit
       const snapped = snap(x)
-      // A foreign value of another x type never shows (`undefined`); otherwise a copy at the snap.
-      const next =
-        snapped === x
-          ? state
-          : snapped === undefined
-            ? null
-            : { ...state, value: { ...state.value, x: snapped } }
+      const next = snapped === x ? state : snappedState(state, snapped)
       memo.set(state, next)
       return next
     },
   }
+}
+
+/** A foreign value of another x type never shows (`undefined`); otherwise a copy at the snap. */
+function snappedState(state: NonNullable<CursorState>, x: ChartValue | undefined): CursorState {
+  if (x === undefined) return null
+  return { ...state, value: { ...state.value, x } }
 }
 
 /**

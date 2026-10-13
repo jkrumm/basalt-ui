@@ -66,11 +66,22 @@ const DEFAULT_BAR_OPACITY = 0.85
 const paint = (color: string, opacity: number): string =>
   opacity >= 1 ? color : `color-mix(in srgb, ${color} ${Math.round(opacity * 100)}%, transparent)`
 
+let warnedLogStack = false
+
+/** A stack sums bar heights and a log axis has no additive zero to sum from (V2-SPEC § 9.9): dev
+ * throws, production logs once and draws what it can. Lines-only and grouped charts are fine. */
+function guardLogStack(layout: string, onLog: boolean): void {
+  if (!onLog || layout === 'grouped') return
+  const message = `Bars: ${layout} bars cannot use a log axis; use layout: 'grouped'`
+  if (process.env.NODE_ENV !== 'production') throw new Error(message)
+  // oxlint-disable-next-line no-console -- the production leg of a dev-only throw
+  if (!warnedLogStack) console.error(message)
+  warnedLogStack = true
+}
+
 export function Bars<T, X extends ChartX = ChartX>(props: BarsProps<T, X>): ReactElement {
   const { bars, lines, layout = 'stacked', barOpacity, ...rest } = props
-  // A stack sums bar heights and a log axis has no additive zero to sum from (V2-SPEC § 9.9).
-  if (process.env.NODE_ENV !== 'production' && layout !== 'grouped' && rest.y?.scale === 'log')
-    throw new Error(`Bars: ${layout} bars cannot use a log axis; use layout: 'grouped'`)
+  guardLogStack(layout, bars.length > 0 && rest.y?.scale === 'log')
   const series = useMemo<ChartSeries<T>[]>(
     () => [
       ...bars.map((b) => ({ ...b, mark: 'bar' as const })),

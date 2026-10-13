@@ -285,8 +285,7 @@ type Axes<T> = {
   scaleId: (side: 'left' | 'right' | undefined) => 'y' | 'y2'
 }
 
-/** The finite overlay bounds each axis must keep inside its domain. A bound lands on the axis its
- * mark is drawn on: `'right'` without a `y2` is the left axis. */
+/** Overlay bounds per axis; `'right'` without a `y2` lands on the left. */
 function overlayBounds<T, X extends ChartX>(
   input: CartesianInput<T, X>,
 ): { left: number[]; right: number[] } {
@@ -298,8 +297,7 @@ function overlayBounds<T, X extends ChartX>(
   return bounds
 }
 
-/** A stack changes only the AUTO rule: a tuple is fixed, and a domain function gets the real
- * visible series (its own seam for summing a stack). */
+/** A stack changes only the AUTO rule; a tuple is fixed and a domain function gets the real series. */
 function leftDomain<T, X extends ChartX>(
   input: CartesianInput<T, X>,
   series: readonly ChartSeries<T>[],
@@ -406,14 +404,15 @@ const refLineMarks = <T, X extends ChartX>(
     }),
   )
 
-function buildScales<T, X extends ChartX>(
-  input: CartesianInput<T, X>,
-  model: XScaleModel<X>,
-  axes: Axes<T>,
-  formatX: (v: ChartValue) => string,
-  cls: ContainerClass,
-  zoneScale: boolean,
-): StoredChartSpec['scales'] {
+function buildScales<T, X extends ChartX>(opts: {
+  input: CartesianInput<T, X>
+  model: XScaleModel<X>
+  axes: Axes<T>
+  formatX: (v: ChartValue) => string
+  cls: ContainerClass
+  zoneScale: boolean
+}): StoredChartSpec['scales'] {
+  const { input, model, axes, formatX, cls, zoneScale } = opts
   const { left, right } = axes
   return {
     x: {
@@ -478,28 +477,15 @@ function rowsOf<T, X extends ChartX>(
   }
 }
 
-/** A point's datum is a `plot.rows()` row, or a consumer mark's own datum (taken as `T`). */
-function sourceOf<T, X extends ChartX>(
-  point: ChartPoint,
-  keys: ReadonlySet<string>,
-): { x: ChartValue; d: T } {
-  const datum = point.datum
-  if (typeof datum === 'object' && datum !== null && 'datum' in datum && 'series' in datum) {
-    const row = datum as PlotRow<T, X>
-    if (keys.has(row.series)) return { x: row.x, d: row.datum }
-  }
-  return { x: point.xValue, d: datum as T }
-}
-
-function tooltipSpec<T, X extends ChartX>(
-  input: CartesianInput<T, X>,
-  axes: Axes<T>,
-  visible: readonly ChartSeries<T>[],
-  formatX: (v: ChartValue) => string,
-): NonNullable<CartesianDefinition['tooltip']> {
-  const config = input.tooltip === false ? undefined : input.tooltip
-  const keys = new Set(input.series.map((s) => s.key))
-  const visibleKeys = new Set(visible.map((s) => s.key))
+function tooltipSpec<T, X extends ChartX>(opts: {
+  input: CartesianInput<T, X>
+  axes: Axes<T>
+  visible: readonly ChartSeries<T>[]
+  keys: ReadonlySet<string>
+  visibleKeys: ReadonlySet<string>
+  formatX: (v: ChartValue) => string
+}): NonNullable<CartesianDefinition['tooltip']> {
+  const { input, axes, visible, keys, visibleKeys, formatX } = opts
   const hidden = input.series.filter((s) => !visibleKeys.has(s.key))
   const rowSeries = (input.reverseRows ? visible.toReversed() : visible).filter(
     (s) => s.tooltip !== false,
@@ -511,7 +497,13 @@ function tooltipSpec<T, X extends ChartX>(
     content: (points: readonly ChartPoint[]) => {
       const primary = points[0]
       if (!primary) return { rows: [] }
-      const { x, d } = sourceOf<T, X>(primary, keys)
+      // A point's datum is a `plot.rows()` row, or a consumer mark's own datum (taken as `T`).
+      const datum = primary.datum
+      const row =
+        typeof datum === 'object' && datum !== null && 'datum' in datum && 'series' in datum
+          ? (datum as PlotRow<T, X>)
+          : undefined
+      const [x, d] = row && keys.has(row.series) ? [row.x, row.datum] : [primary.xValue, datum as T]
       const rows: EngineTooltipRow[] = []
       for (const s of rowSeries) {
         const v = s.getValue(d)
@@ -525,7 +517,8 @@ function tooltipSpec<T, X extends ChartX>(
           ...(input.highlighted === s.key && { active: true }),
         })
       }
-      const extra: readonly ChartTooltipRow[] = config?.rows?.(d, { visible, hidden }) ?? []
+      const extra: readonly ChartTooltipRow[] =
+        (input.tooltip || undefined)?.rows?.(d, { visible, hidden }) ?? []
       return { title: tooltipHeader(input, formatX, x, d), rows: [...rows, ...extra] }
     },
   }
@@ -536,6 +529,7 @@ export function compileCartesian<T, X extends ChartX>(
 ): CartesianDefinition {
   const visible = visibleSeries(input.series, input.hidden ?? new Set<string>())
   const visibleKeys = new Set(visible.map((s) => s.key))
+  const keys = new Set(input.series.map((s) => s.key))
   const model = xScaleFor(input.data.map(input.x), input.band === true)
   const axes = resolveAxes(input, visible)
   const under = underlayMarks(input, model, axes)
@@ -563,7 +557,7 @@ export function compileCartesian<T, X extends ChartX>(
       })
       return {
         marks: [...under, ...kindMarks, ...over, crosshair({ x: CROSSHAIR, y: false })],
-        scales: buildScales(input, model, axes, formatX, cls, under.length > 0),
+        scales: buildScales({ input, model, axes, formatX, cls, zoneScale: under.length > 0 }),
         theme: CHART_THEME,
         ...(gradients.length > 0 && { gradients }),
         clip: true,
@@ -583,6 +577,9 @@ export function compileCartesian<T, X extends ChartX>(
       mode: input.cursorResolution ?? 'nearest',
       pin: input.coarse === true,
     }),
-    tooltip: input.tooltip === false ? false : tooltipSpec(input, axes, visible, formatX),
+    tooltip:
+      input.tooltip === false
+        ? false
+        : tooltipSpec({ input, axes, visible, keys, visibleKeys, formatX }),
   }
 }

@@ -2,12 +2,13 @@
  * `Lines`, `Bars` and `ChartCard` behaviour through their public props: what the compiled
  * definition and the rendered DOM say, never the engine's internals.
  */
-import { afterEach, describe, expect, test } from 'bun:test'
+import { afterEach, describe, expect, spyOn, test } from 'bun:test'
 import type { ChartPoint, StoredChartSpec } from '@tanstack/charts/types/core'
 import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { renderToString } from 'react-dom/server'
 import { Bars } from './Bars'
+import { CartesianChart } from './CartesianChart'
 import { ChartCard } from './ChartCard'
 import { compileCartesian } from './compile'
 import { Lines } from './Lines'
@@ -338,17 +339,18 @@ describe('ChartCard', () => {
 const build = (def: ReturnType<typeof compileCartesian>): StoredChartSpec =>
   def.chart({ width: 640, height: 240, defaultTheme: {} as never })
 
-function tooltipOf(
-  tooltip: ReturnType<typeof compileCartesian>['tooltip'],
-  at: number,
+function contentOf(
+  def: ReturnType<typeof compileCartesian>,
+  datum: unknown,
+  xValue: unknown,
 ): { title?: string | undefined; rows: readonly { label: string; value: string }[] } {
+  const tooltip = def.tooltip
   if (!tooltip || !('content' in tooltip) || !tooltip.content) throw new Error('no tooltip')
-  const point = {
-    datum: { x: day(at), y: 0, series: 'a', datum: data[at - 1] },
-    xValue: day(at),
-  } as ChartPoint
-  return tooltip.content([point], {} as never)
+  return tooltip.content([{ datum, xValue } as ChartPoint], {} as never)
 }
+
+const tooltipOf = (def: ReturnType<typeof compileCartesian>, at: number) =>
+  contentOf(def, { x: day(at), y: 0, series: 'a', datum: data[at - 1] }, day(at))
 
 describe('x-zones', () => {
   const base = { chartId: 'xz', data, x, series: [a], marks: () => [] }
@@ -363,11 +365,12 @@ describe('x-zones', () => {
   })
 })
 
+const noMarks = (): never[] => []
 const tipBase = { chartId: 'tt', data, x, series: [a, b], marks: () => [] }
 const labelsOf = (reverseRows: boolean): string[] =>
-  tooltipOf(compileCartesian({ ...tipBase, reverseRows }).tooltip, 2).rows.map((r) => r.label)
+  tooltipOf(compileCartesian({ ...tipBase, reverseRows }), 2).rows.map((r) => r.label)
 const headerOf = (extra: object): string | undefined =>
-  tooltipOf(compileCartesian({ ...tipBase, ...extra }).tooltip, 2).title
+  tooltipOf(compileCartesian({ ...tipBase, ...extra }), 2).title
 
 describe('tooltip', () => {
   const base = tipBase
@@ -382,7 +385,7 @@ describe('tooltip', () => {
       compileCartesian({
         ...base,
         series: [{ ...a, note: 'est.', formatValue: (v) => `${v} ms` }],
-      }).tooltip,
+      }),
       2,
     ).rows
     expect(rows).toEqual([expect.objectContaining({ label: 'Alpha · est.', value: '20 ms' })])
@@ -400,10 +403,8 @@ describe('tooltip', () => {
   test('a non-midnight instant adds its UTC time to the date header', () => {
     const at = new Date(Date.UTC(2026, 8, 2, 13, 5))
     const def = compileCartesian({ ...base, data: [{ ...data[1], t: at } as Row] })
-    const tooltip = def.tooltip
-    if (!tooltip || !('content' in tooltip) || !tooltip.content) throw new Error('no tooltip')
-    const point = { datum: { x: at, y: 0, series: 'a', datum: { t: at, a: 1 } }, xValue: at }
-    expect(tooltip.content([point as ChartPoint], {} as never).title).toBe('Wed Sep 2 2026 13:05')
+    const datum = { x: at, y: 0, series: 'a', datum: { t: at, a: 1 } }
+    expect(contentOf(def, datum, at).title).toBe('Wed Sep 2 2026 13:05')
   })
 
   test('a number x with no formatX reads through the axis format', () => {
@@ -414,10 +415,7 @@ describe('tooltip', () => {
       series: [{ key: 'v', label: 'V', color: 'c', getValue: (d: { v: number }) => d.v }],
       marks: () => [],
     })
-    const tooltip = def.tooltip
-    if (!tooltip || !('content' in tooltip) || !tooltip.content) throw new Error('no tooltip')
-    const point = { datum: { n: 1500, v: 1 }, xValue: 1500 } as unknown as ChartPoint
-    expect(tooltip.content([point], {} as never).title).toBe('1.5k')
+    expect(contentOf(def, { n: 1500, v: 1 }, 1500).title).toBe('1.5k')
   })
 })
 
@@ -437,10 +435,12 @@ describe('legend', () => {
         n.getAttribute('data-legend-key'),
       ),
     ).toEqual(['a', 'b', 'c'])
-    const hidden = (groups: boolean): number =>
-      renderToString(<Lines ariaLabel="L" data={data} x={x} series={roled} legend={{ groups }} />)
-        .split('data-basalt-chart-legend')[1]!
-        .split('aria-hidden="true"').length - 1
+    const hidden = (groups: boolean): number => {
+      const html = renderToString(
+        <Lines ariaLabel="L" data={data} x={x} series={roled} legend={{ groups }} />,
+      )
+      return html.split('aria-hidden="true"').length - 1
+    }
     expect(hidden(true) - hidden(false)).toBe(2) // one divider between each pair of groups
     expect(legend?.textContent).toContain('daily')
   })
@@ -454,6 +454,26 @@ describe('Bars on a log axis', () => {
     bars: [{ key: 'b', label: 'B', color: 'var(--vx-line)', getValue: (d: Row) => d.b }],
     y: { scale: 'log' as const },
   }
+  test('a lines-only Bars on a log axis is fine', () => {
+    expect(() =>
+      renderToString(<Bars {...props} bars={[]} lines={[{ ...a, key: 'l', label: 'L' }]} />),
+    ).not.toThrow()
+  })
+
+  test('production logs once instead of throwing', () => {
+    const env = process.env['NODE_ENV'] ?? 'test'
+    const spy = spyOn(console, 'error').mockImplementation(() => {})
+    process.env['NODE_ENV'] = 'production'
+    try {
+      renderToString(<Bars {...props} />)
+      renderToString(<Bars {...props} />)
+      expect(spy).toHaveBeenCalledTimes(1)
+    } finally {
+      process.env['NODE_ENV'] = env
+      spy.mockRestore()
+    }
+  })
+
   test('stacked and normalized throw; grouped draws', () => {
     expect(() => renderToString(<Bars {...props} />)).toThrow(/stacked bars cannot use a log axis/)
     expect(() => renderToString(<Bars {...props} layout="normalized" />)).toThrow(/log axis/)
@@ -493,5 +513,33 @@ describe('ChartCard slots', () => {
     )
     expect(el.textContent).not.toContain('alone')
     expect(el.firstElementChild?.getAttribute('aria-busy')).toBe('true')
+  })
+})
+
+describe('compile memo', () => {
+  test('compiles once per changed prop and not at all on a shallow-equal rerender', async () => {
+    let compiles = 0
+    const one = [data[0] as Row]
+    const counted = (d: Row): Date => {
+      compiles += 1 // compileCartesian maps `x` over the data exactly once per compile
+      return d.t
+    }
+    const series = [a]
+    const view = (refLines?: { value: number; color: string }[]) => (
+      <CartesianChart
+        ariaLabel="C"
+        data={one}
+        x={counted}
+        series={series}
+        marks={noMarks}
+        {...(refLines && { refLines })}
+      />
+    )
+    await mount(view())
+    expect(compiles).toBe(1)
+    await act(async () => root?.render(view()))
+    expect(compiles).toBe(1)
+    await act(async () => root?.render(view([{ value: 1, color: 'red' }])))
+    expect(compiles).toBe(2)
   })
 })
