@@ -160,18 +160,7 @@ Worked rule: a multi-toggle bar chart colours bars `isMulti ? series.x : VX.line
 
 ## Data visualization — the chart contract
 
-The signature surface. The discipline is structural: a small set of primitives, always composed; a
-kind-registry for recurring shapes; never loosen the primitives to fit a one-off.
-
-Full contract, enforcement mechanics and the non-single-plot shapes: `docs/V2-SPEC.md` § 9
-(ground truth). The law in one paragraph: every single-plot cartesian chart composes
-`CartesianChart` and nothing else from the assembly primitives by hand — it owns margins, scales,
-axes, cursor, crosshair, hover overlay and tooltip, the caller supplies only `series` + marks.
-`series` is the single source of truth for legend and tooltip rows (never hand-authored in
-parallel). The cursor is shared by default, module-level, no provider. Every mark is `VX.*` —
-never a raw hex, never `localStorage.getItem('theme')`. Sparklines (`charts/sparklines/`) are
-exempt from the `ChartCard`/legend/tooltip wrapper contract but still token-only and
-scheme-reactive.
+The signature surface. Ownership, the rung and its law: `docs/V2-SPEC.md` § 9.1.
 
 ### Kinds vs bespoke (Rule of Three)
 

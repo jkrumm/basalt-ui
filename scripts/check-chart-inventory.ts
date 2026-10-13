@@ -3,13 +3,28 @@
  * the per-kind totals table and the headline prose. Exits 1 listing every disagreement.
  */
 import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 
-const FILE = 'docs/waves/v2-chart-inventory.md'
-const text = readFileSync(FILE, 'utf8')
-const errors: string[] = []
+export const INVENTORY_FILE = join(import.meta.dir, '../docs/waves/v2-chart-inventory.md')
 
-const REPOS = { argo: 'a', linewatch: 'l', weatherorb: 'w' } as const
-type Repo = keyof typeof REPOS
+const REPO_PREFIX = { argo: 'a', linewatch: 'l', weatherorb: 'w' } as const
+type Repo = keyof typeof REPO_PREFIX
+const REPOS = Object.keys(REPO_PREFIX) as Repo[]
+
+/** A structurally malformed doc (missing section, short row): reported, never a TypeError. */
+class InventoryError extends Error {}
+
+interface Row {
+  repo: Repo
+  kind: string
+  dev: boolean
+}
+
+export interface InventoryResult {
+  errors: string[]
+  production: number
+  dev: number
+}
 
 const cells = (line: string): string[] =>
   line
@@ -17,9 +32,16 @@ const cells = (line: string): string[] =>
     .slice(1, -1)
     .map((c) => c.trim())
 
-const section = (heading: RegExp): string => {
+const mustGet = (row: readonly string[], index: number, what: string): string => {
+  const value = row[index]
+  if (value === undefined || value === '')
+    throw new InventoryError(`${what}: empty or missing cell ${index + 1}`)
+  return value
+}
+
+const section = (text: string, heading: RegExp): string => {
   const start = text.search(heading)
-  if (start < 0) throw new Error(`missing section ${heading}`)
+  if (start < 0) throw new InventoryError(`missing section ${heading}`)
   const rest = text.slice(start + 1)
   const end = rest.search(/\n##/)
   return end < 0 ? rest : rest.slice(0, end)
@@ -31,74 +53,100 @@ const kindOf = (cell: string): string =>
     .replace(/\s*\(.*\)$/, '')
     .trim()
 
-interface Row {
-  repo: Repo
-  kind: string
-  dev: boolean
+function parseRows(text: string): Row[] {
+  return REPOS.flatMap((repo) => {
+    const lines = section(text, new RegExp(`^### ${repo}`, 'm'))
+      .split('\n')
+      .filter((l) => new RegExp(`^\\| ${REPO_PREFIX[repo]}\\d+ `).test(l))
+    if (lines.length === 0) throw new InventoryError(`section ${repo} has no chart rows`)
+    return lines.map((line) => {
+      const c = cells(line)
+      const id = mustGet(c, 0, `${repo} row`)
+      return {
+        repo,
+        kind: kindOf(mustGet(c, 3, `${repo} row ${id}, 2.0 column`)),
+        dev: mustGet(c, 1, `${repo} row ${id}, file column`).includes('(dev)'),
+      }
+    })
+  })
 }
 
-const rows: Row[] = (Object.keys(REPOS) as Repo[]).flatMap((repo) =>
-  section(new RegExp(`^### ${repo}`, 'm'))
-    .split('\n')
-    .filter((l) => new RegExp(`^\\| ${REPOS[repo]}\\d+ `).test(l))
-    .map(cells)
-    .map((c) => ({ repo, kind: kindOf(c[3]), dev: c[1].includes('(dev)') })),
-)
+export function checkInventory(text: string): InventoryResult {
+  const errors: string[] = []
+  const expectEq = (what: string, stated: number, counted: number): void => {
+    if (stated !== counted) errors.push(`${what}: stated ${stated}, counted ${counted}`)
+  }
+  let rows: Row[]
+  try {
+    rows = parseRows(text)
+  } catch (e) {
+    if (!(e instanceof InventoryError)) throw e
+    return { errors: [e.message], production: 0, dev: 0 }
+  }
+  const count = (match: (r: Row) => boolean): number => rows.filter(match).length
+  const production = count((r) => !r.dev)
+  const dev = count((r) => r.dev)
 
-const count = (match: (r: Row) => boolean): number => rows.filter(match).length
-const production = count((r) => !r.dev)
-const devTotal = count((r) => r.dev)
+  // "**59 production charts** in 3 repos — argo 40, linewatch 11, weatherorb 8 — plus 3 on argo's dev-only"
+  const head = text
+    .replace(/\s+/g, ' ')
+    .match(
+      /\*\*(\d+) production charts\*\* in 3 repos — argo (\d+), linewatch (\d+), weatherorb (\d+) — plus (\d+) on argo's dev-only/,
+    )
+  if (head) {
+    expectEq('production total (prose)', Number(head[1]), production)
+    REPOS.forEach((repo, i) =>
+      expectEq(
+        `${repo} (prose)`,
+        Number(head[i + 2]),
+        count((r) => r.repo === repo && !r.dev),
+      ),
+    )
+    expectEq('dev total (prose)', Number(head[5]), dev)
+  } else {
+    errors.push('headline prose not found')
+  }
 
-const expectEq = (what: string, stated: number, counted: number): void => {
-  if (stated !== counted) errors.push(`${what}: stated ${stated}, counted ${counted}`)
+  const named = new Set<string>()
+  try {
+    const totals = section(text, /^### Totals/m)
+      .split('\n')
+      .filter((l) => l.startsWith('|') && !/^\|\s*-/.test(l))
+      .map(cells)
+      .slice(1)
+    if (totals.length === 0) throw new InventoryError('Totals table has no rows')
+    for (const row of totals) checkTotalsRow(row, rows, { production, dev }, named, expectEq)
+  } catch (e) {
+    if (!(e instanceof InventoryError)) throw e
+    errors.push(e.message)
+  }
+
+  for (const kind of new Set(rows.map((r) => r.kind)))
+    if (!named.has(kind)) errors.push(`kind ${kind} has rows but is missing from § Totals`)
+
+  return { errors, production, dev }
 }
 
-// "**59 production charts** in 3 repos — argo 40, linewatch 11, weatherorb 8 — plus 3 on argo's dev-only"
-const head = text
-  .replace(/\s+/g, ' ')
-  .match(
-    /\*\*(\d+) production charts\*\* in 3 repos — argo (\d+), linewatch (\d+), weatherorb (\d+) — plus (\d+) on argo's dev-only/,
-  )
-if (head) {
-  expectEq('production total (prose)', Number(head[1]), production)
-  expectEq(
-    'argo (prose)',
-    Number(head[2]),
-    count((r) => r.repo === 'argo' && !r.dev),
-  )
-  expectEq(
-    'linewatch (prose)',
-    Number(head[3]),
-    count((r) => r.repo === 'linewatch' && !r.dev),
-  )
-  expectEq(
-    'weatherorb (prose)',
-    Number(head[4]),
-    count((r) => r.repo === 'weatherorb' && !r.dev),
-  )
-  expectEq('dev total (prose)', Number(head[5]), devTotal)
-} else {
-  errors.push('headline prose not found')
-}
-
-// Totals table: first cell names the kind(s) "A / B", second the counts "2 / 1" (+ "(+N dev)").
-const totals = section(/^### Totals/m)
-  .split('\n')
-  .filter((l) => l.startsWith('|') && !/^\|\s*-/.test(l))
-  .map(cells)
-  .slice(1)
-
-const named = new Set<string>()
-for (const [name, counts, from] of totals) {
-  const isTotal = name === '**Total**'
+/** One Totals row: "A / B" kinds, "2 / 1" counts (each optionally "(+N dev)"), a per-repo split. */
+function checkTotalsRow(
+  row: readonly string[],
+  rows: readonly Row[],
+  total: { production: number; dev: number },
+  named: Set<string>,
+  expectEq: (what: string, stated: number, counted: number) => void,
+): void {
+  const name = mustGet(row, 0, 'Totals row')
+  const stated = mustGet(row, 1, `Totals row ${name}`).replace(/\*/g, '').split(' / ')
+  const count = (match: (r: Row) => boolean): number => rows.filter(match).length
   const kinds = name.split(' / ').map(kindOf)
-  const stated = counts.replace(/\*/g, '').split(' / ')
+  const isTotal = name === '**Total**'
+
   kinds.forEach((kind, i) => {
     const m = stated[i]?.match(/^(\d+)(?: \(\+(\d+) dev\))?/)
-    if (!m) return void errors.push(`unparseable count for ${kind}: ${stated[i]}`)
+    if (!m) throw new InventoryError(`Totals row ${kind}: unparseable count "${stated[i] ?? ''}"`)
     if (isTotal) {
-      expectEq('Total production', Number(m[1]), production)
-      return expectEq('Total dev', Number(m[2] ?? 0), devTotal)
+      expectEq('Total production', Number(m[1]), total.production)
+      return expectEq('Total dev', Number(m[2] ?? 0), total.dev)
     }
     named.add(kind)
     expectEq(
@@ -111,25 +159,38 @@ for (const [name, counts, from] of totals) {
       Number(m[2] ?? 0),
       count((r) => r.kind === kind && r.dev),
     )
-    const byRepo = from.match(/^argo (\d+), linewatch (\d+), weatherorb (\d+)$/)
-    if (byRepo && kinds.length === 1)
-      (Object.keys(REPOS) as Repo[]).forEach((repo, j) =>
-        expectEq(
-          `${kind} from ${repo}`,
-          Number(byRepo[j + 1]),
-          count((r) => r.repo === repo && r.kind === kind && !r.dev),
-        ),
-      )
+  })
+
+  if (isTotal || kinds.length !== 1) return
+  const [kind] = kinds
+  const from = mustGet(row, 2, `Totals row ${kind}`)
+  const items = from.split(', ').map((item) => item.match(/^(.+?) (\d+)(?: \(.*\))?$/))
+  if (items.some((m) => m === null))
+    throw new InventoryError(`Totals row ${kind}: unparseable breakdown "${from}"`)
+  const parts = items.flatMap((m) => (m ? [{ label: m[1] ?? '', n: Number(m[2]) }] : []))
+  const production = count((r) => r.kind === kind && !r.dev)
+  const isRepoSplit = parts.length === REPOS.length && parts.every((p, i) => p.label === REPOS[i])
+  if (!isRepoSplit)
+    return expectEq(
+      `${kind} breakdown`,
+      parts.reduce((sum, p) => sum + p.n, 0),
+      production,
+    )
+  parts.forEach((p, i) => {
+    const repo = REPOS[i] as Repo
+    expectEq(
+      `${kind} from ${repo}`,
+      p.n,
+      count((r) => r.repo === repo && r.kind === kind && !r.dev),
+    )
   })
 }
 
-for (const kind of new Set(rows.map((r) => r.kind)))
-  if (!named.has(kind)) errors.push(`kind ${kind} has rows but is missing from § Totals`)
-
-if (errors.length > 0) {
-  console.error(`${FILE}: ${errors.length} disagreement(s)\n- ${errors.join('\n- ')}`)
-  process.exit(1)
+if (import.meta.main) {
+  const { errors, production, dev } = checkInventory(readFileSync(INVENTORY_FILE, 'utf8'))
+  if (errors.length > 0) {
+    console.error(`${INVENTORY_FILE}: ${errors.length} disagreement(s)\n- ${errors.join('\n- ')}`)
+    process.exit(1)
+  }
+  console.log(`v2-chart-inventory.md: ${production} production + ${dev} dev, totals agree`)
 }
-console.log(
-  `${FILE}: ${production} production + ${devTotal} dev, per-repo and per-kind totals agree`,
-)
