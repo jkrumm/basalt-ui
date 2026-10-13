@@ -80,9 +80,12 @@ Each consumer's `basalt-ui` pin at scan time:
 
 The 94 keep-or-move value rows collapse to 91 unique names, because three symbols appear twice:
 `field` (`./state` and `./router-tanstack`), `createLocalStore` (`./state` and `.`) and
-`createPersistedState` (`./state` and `.`). Each keeps `./state` as its one 2.0 home. Adding `createBasaltRouter` gives 92
-non-chart value symbols in 2.0. Kept types collapse to 38 unique names, and `BasaltRouterContext` and
-`BasaltEvent` bring that to 40.
+`createPersistedState` (`./state` and `.`). Each keeps `./state` as its one 2.0 home. Adding
+`createBasaltRouter` gives 92 non-chart value symbols in 2.0. The 41 keep-or-move type rows (34
+keep, 7 move) collapse to 38 unique names, because three types appear twice: `RangeWindow`
+(`./state` and `./router-tanstack`), `BarAction` and `GlobalAction` (`./controls` and `.`).
+`BasaltRouterContext` and `BasaltEvent` bring that to 40. The 2.0 type budget's 1.41 basis is 447
+non-chart type rows, which is 517 minus the 70 sent to § 9 (including `./tokens` `ChartMargin`).
 
 | Subpaths            | Count                                                                                          |
 | ------------------- | ---------------------------------------------------------------------------------------------- |
@@ -188,7 +191,7 @@ console.log(out.join('\n'))
 `scan.ts` (`bun scan.ts`, writes `hits.tsv` / `subs.tsv` / `versions.tsv`):
 
 ```ts
-// Counts imports of basalt-ui symbols across consumer repos. Output TSV: subpath name kind files refs
+// Counts imports of basalt-ui symbols across consumer repos. hits.tsv columns: subpath, name, file count, files (space-separated repo:path)
 import { Glob } from 'bun'
 const home = process.env.HOME + '/SourceRoot/'
 const repos = [

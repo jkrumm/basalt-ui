@@ -27,19 +27,19 @@ source); method and counts: `docs/waves/evidence/w1/core.md`.
 | `./agent`          | `aiSdkTransport`, `useAgentThreadRuns`, `parseAgentPart`, `ThreadFeed`, `ThreadFeedRow`, `Composer`, `ToolChip`                                                                                                                                                                                                                                                                                                                       | argo `features/hermes-chat/*`                                          | `./agent-chat`                    |
 | `./content`        | `Prose`, `Markdown`, `settledOnly`, `mergeSanitizeSchema`, `Callout`, `TableOfContents`, `ArticleLayout`, `GuideLink`                                                                                                                                                                                                                                                                                                                 | rb, basalt-ui-obsidian, linewatch, argo                                | —                                 |
 | `./vite`           | `basaltViteConfig`, `basaltAppPlugin`                                                                                                                                                                                                                                                                                                                                                                                                 | all 7 app consumers                                                    | —                                 |
-| `./styles.css`     | the one stylesheet (it `@import`s the Mantine layer bundles first, § 2)                                                                                                                                                                                                                                                                                                                                                               | all 7 app consumers                                                    | —                                 |
+| `./styles.css`     | the one stylesheet (it `@import`s the Mantine layer bundles first, § 1 Open)                                                                                                                                                                                                                                                                                                                                                          | all 7 app consumers                                                    | —                                 |
 | `./configs/*`      | oxlint / tsconfig / lefthook / oxfmt presets                                                                                                                                                                                                                                                                                                                                                                                          | argo, linewatch, rb, image-gateway, … (`.oxlintrc.json`, `tsconfig.*`) | —                                 |
 
 **Dropped:** `./guard` (CLI-internal), `./theme-lab` (provider-mounted in dev), `./data/virtual`,
 `./llms.txt` and `./package.json` (0 imports; files stay in the tarball), `./tokens.css` (weatherorb
 1.30 and rollhook 1.36 only; `basalt-ui tokens:css` emits it). Folds:
 
-| Fold (1.x split reason)                                                                                         | 2.0                                                                                                                                                                                                                                                                                                                                          |
-| --------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `./controls-dates` stays separate (`./controls` must never reach `@mantine/dates`, `MAINTAINING.md` § Layering) | kept. Folding would make `@mantine/dates` + `dayjs` required peers of every `./controls` consumer and add the 3.4 KB gzip `@mantine/dates/styles.layer.css` to the one stylesheet (CSS never tree-shakes). That cost lands on four consumers for argo's 3 files                                                                              |
-| `./forms` stays separate (`./controls` must never reach `@mantine/form`, same section)                          | kept. § 8 keeps `@mantine/form`; that peer stays out of `./controls`                                                                                                                                                                                                                                                                         |
-| `./agent-chat` → `./agent` (`./agent` is in the Mantine-free dist-layering set; `motion` eager in the chat UI)  | Mantine is a required peer of the 2.0 framework, and no consumer imports the headless half alone (argo uses both). `src/agent/**` runtime stays Mantine-free as a repo-local lint boundary, `./agent` leaves `check-dist-layering`'s list, and `motion` becomes a required peer (§ 5). Unused chat UI tree-shakes (`sideEffects: ['*.css']`) |
-| `./notifications` → `./commands` (`@mantine/notifications` was an optional peer)                                | no new peer: `BasaltProvider` mounts `Notifications`, `ModalsProvider` and `Spotlight` (§ 2), so all three are required peers of `.` already                                                                                                                                                                                                 |
+| Fold (1.x split reason)                                                                                         | 2.0                                                                                                                                                                                                                                                                                                                                                         |
+| --------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `./controls-dates` stays separate (`./controls` must never reach `@mantine/dates`, `MAINTAINING.md` § Layering) | kept. Folding would make `@mantine/dates` + `dayjs` required peers of every `./controls` consumer and add the 3.4 KB gzip `@mantine/dates/styles.layer.css` to the one stylesheet (CSS never tree-shakes). That cost lands on four consumers for argo's 3 files                                                                                             |
+| `./forms` stays separate (`./controls` must never reach `@mantine/form`, same section)                          | kept. § 8 keeps `@mantine/form`; that peer stays out of `./controls`                                                                                                                                                                                                                                                                                        |
+| `./agent-chat` → `./agent` (`./agent` is in the Mantine-free dist-layering set; `motion` eager in the chat UI)  | Mantine is a required peer of the 2.0 framework, and no consumer imports the headless half alone (argo uses both). `src/agent/**` runtime stays Mantine-free as a repo-local lint boundary, `./agent` leaves `check-dist-layering`'s list, and `motion` becomes subpath-required for `./agent` (§ 5). Unused chat UI tree-shakes (`sideEffects: ['*.css']`) |
+| `./notifications` → `./commands` (`@mantine/notifications` was an optional peer)                                | no new peer: `BasaltProvider` mounts `Notifications`, `ModalsProvider` and `Spotlight` (§ 2), so all three are required peers of `.` already                                                                                                                                                                                                                |
 
 **Rules.** W3 delivers the gates for all three in `check-budgets.ts`; none exists in 1.41:
 
@@ -47,21 +47,31 @@ source); method and counts: `docs/waves/evidence/w1/core.md`.
 - A public symbol needs a named consumer outside `apps/playground` (charter 1). W3 adds
   `scripts/consumers.json`, keyed by symbol name (a moved symbol keeps the consumer it has under its
   1.41 specifier), and a symbol missing from it will fail the gate.
-- Peers: a peer imported statically outside its own dedicated subpath, or named by a public `.d.ts`,
-  is required (Hotkeys `0.13.0` exact, § 8). `optional` is for peers reached only through `import()`
-  (`ai`, `remend`, `shiki`, `beautiful-mermaid`, devtools, `vite-plugin-pwa`) or only by
-  `./controls-dates` / `./forms` / `./table` / `./vite`. A dist-graph walk will assert it.
+- Peers, defined once here. W3's dist-graph and `.d.ts` walk will assert all three classes:
+  - **Required:** every consumer installs it, because `.` or `./styles.css` imports it statically
+    or names it. These are `react`, `react-dom`, `@mantine/{core,hooks,modals,notifications,spotlight}`,
+    `@tanstack/react-router`, `@tanstack/react-query` and the three `@fontsource-variable/*`.
+  - **Subpath-required:** a peer named by a subpath's public `.d.ts`, or imported statically by it,
+    is required for that subpath's consumers and stays `optional` in `package.json`. `./commands`:
+    `@tanstack/react-hotkeys` `0.13.0` exact; `./agent`: `ai`, `@ai-sdk/provider`, `motion`; `./table`:
+    `@tanstack/react-table` `9.2.8` exact; `./forms`: `@mantine/form`; `./controls-dates`:
+    `@mantine/dates`, `dayjs`; `./content`: `react-markdown` (`MarkdownComponents`); `./vite`: `vite`;
+    `./charts`: § 9.
+  - **Optional:** reached only through `import()` and named by no public type. These are `remend`,
+    `shiki`, `@shikijs/*`, `beautiful-mermaid`, `remark-gfm`, `rehype-sanitize`, both devtools and
+    `vite-plugin-pwa`. `.`'s `.d.ts` reaches no subpath-required peer, and no basalt module imports
+    `@ai-sdk/react`.
 
 **Charter 2 exceptions** (wiring, no 1.41 consumer yet): `createBasaltRouter` (router + Query
 wiring, § 2), `BasaltRouterContext` (the root route's context type, § 2), `BasaltEvent` (the
 telemetry seam, § 7). Each names argo as its first consumer in `v2-surface.md` § New in 2.0.
 
-| Budget (`check-budgets.ts`)              | 1.41                | 2.0 target                                                |
-| ---------------------------------------- | ------------------- | --------------------------------------------------------- |
-| public value symbols                     | 395                 | ≤ 140 (non-chart 92 + § 9's chart allowance 48)           |
-| barrel type exports, non-chart (W3 adds) | 517 (448 non-chart) | ≤ 60 (40 kept); chart types count against § 9's allowance |
-| published subpaths                       | 24                  | 15                                                        |
-| shipped rule lines (`agent/rules/*.md`)  | 750                 | ≤ 450                                                     |
+| Budget (`check-budgets.ts`)              | 1.41                       | 2.0 target                                                |
+| ---------------------------------------- | -------------------------- | --------------------------------------------------------- |
+| public value symbols                     | 395                        | ≤ 140 (non-chart 92 + § 9's chart allowance 48)           |
+| barrel type exports, non-chart (W3 adds) | 517 (447 = 517 − 70 → § 9) | ≤ 60 (40 kept); chart types count against § 9's allowance |
+| published subpaths                       | 24                         | 15                                                        |
+| shipped rule lines (`agent/rules/*.md`)  | 750                        | ≤ 450                                                     |
 
 **Open:**
 
@@ -74,18 +84,18 @@ One `BasaltProvider` owns the whole provider tree, the router included. The cons
 route tree, the nav, and the registries (commands, notifications). 1.x left argo 220 lines of wiring
 (`main.tsx` 61 + `__root.tsx` 159); the target below is 25 lines of code.
 
-| Basalt wires                                                                                                                                                                                                                                                   | Where                                                                                                                | Replaces in 1.x                                                                  |
-| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| `MantineProvider` + theme (`theme` defaults to `createBasaltTheme()`, § 4) + resolver + palette `<style>`                                                                                                                                                      | `BasaltProvider`                                                                                                     | unchanged                                                                        |
-| `createRouter` with `context.queryClient`, `defaultPreload: 'intent'`, `defaultPreloadStaleTime: 0` (Query owns freshness), `scrollRestoration: true`, `defaultPendingComponent`, `defaultErrorComponent`, `defaultNotFoundComponent`, `defaultOnCatch` → § 7  | `createBasaltRouter({ routeTree, context?, query? })`                                                                | argo `lib/router.ts`, `__root.tpl`, `QueryState`/`LoadingState`/`ErrorState`     |
-| `QueryClient` with 1.x defaults (`staleTime` 30 s, `gcTime` 5 min, `retry` 2, no refetch on focus; `src/query-client.ts`), merged with `query: QueryClientConfig`; one client per `createBasaltRouter` call, so an SSR entry gets one per request              | `createBasaltRouter`                                                                                                 | `createBasaltQueryClient`, `query-client.ts.tpl`                                 |
-| `QueryClientProvider` > `ModalsProvider` (wrapping, real context) > `RouterProvider`; `Notifications` and `Spotlight` as siblings                                                                                                                              | `BasaltProvider router={router}`                                                                                     | `BasaltOverlays`, the `provider-above-router` rule                               |
-| hotkeys from the `defineCommands` registry: `@tanstack/react-hotkeys` `0.13.0` exact is a required peer (its `Hotkey` types `CommandDef.shortcut`); the runtime loads through `import()` in the provider, off first paint (§ 8)                                | `BasaltProvider`                                                                                                     | `useCommandHotkeys`, `toHotkeyBindings`                                          |
-| Spotlight actions from the command registry plus `flattenNav`                                                                                                                                                                                                  | `BasaltProvider`                                                                                                     | `toSpotlightActions`, `basaltSpotlight`                                          |
-| root error boundary (`fallback` prop), `window` `error`/`unhandledrejection` listeners, all routed to `telemetry` (§ 7)                                                                                                                                        | `BasaltProvider`                                                                                                     | `BasaltErrorBoundary`, `onError`                                                 |
-| dev dock (router + query devtools, theme lab, persisted lab overrides applied) and three Spotlight commands `dev.router` / `dev.query` / `dev.theme`; `BasaltDevDock` is the one dock, mounted here and not exported (§ 8 rejects the TanStack Devtools shell) | `BasaltProvider`, behind a literal `process.env.NODE_ENV !== 'production'` check at the `lazy(() => import(…))` site | `BasaltDevDock`, `BasaltQueryDevtools`, argo's `applyOverrides(loadOverrides())` |
-| nav → sidebar + mobile bar + breadcrumbs                                                                                                                                                                                                                       | `BasaltShell nav={NAV}`                                                                                              | `useNav` spread, `useRouterBreadcrumbs`                                          |
-| route-change transition (§ 5)                                                                                                                                                                                                                                  | `BasaltShell` main region                                                                                            | —                                                                                |
+| Basalt wires                                                                                                                                                                                                                                                                                   | Where                                                                                                                | Replaces in 1.x                                                                  |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `MantineProvider` + theme (`theme` defaults to `createBasaltTheme()`, § 4) + resolver + palette `<style>`                                                                                                                                                                                      | `BasaltProvider`                                                                                                     | unchanged                                                                        |
+| `createRouter` with `context.queryClient`, `defaultPreload: 'intent'`, `defaultPreloadStaleTime: 0` (Query owns freshness), `scrollRestoration: true`, `defaultPendingComponent`, `defaultErrorComponent`, `defaultNotFoundComponent`, `defaultOnCatch` → § 7                                  | `createBasaltRouter({ routeTree, context?, query? })`                                                                | argo `lib/router.ts`, `__root.tpl`, `QueryState`/`LoadingState`/`ErrorState`     |
+| `QueryClient` with 1.x defaults (`staleTime` 30 s, `gcTime` 5 min, `retry` 2, no refetch on focus; `src/query-client.ts`), merged with `query: QueryClientConfig`; one client per `createBasaltRouter` call, so an SSR entry gets one per request                                              | `createBasaltRouter`                                                                                                 | `createBasaltQueryClient`, `query-client.ts.tpl`                                 |
+| `QueryClientProvider` > `ModalsProvider` (wrapping, real context) > `RouterProvider`; `Notifications` and `Spotlight` as siblings                                                                                                                                                              | `BasaltProvider router={router}`                                                                                     | `BasaltOverlays`, the `provider-above-router` rule                               |
+| hotkeys from the `defineCommands` registry, only when one exists: `defineCommands` (`./commands`, where `@tanstack/react-hotkeys` is subpath-required for `CommandDef.shortcut`) registers the `import()` loader, so `.` never references the peer and its runtime stays off first paint (§ 8) | `BasaltProvider`                                                                                                     | `useCommandHotkeys`, `toHotkeyBindings`                                          |
+| Spotlight actions from the command registry plus `flattenNav`                                                                                                                                                                                                                                  | `BasaltProvider`                                                                                                     | `toSpotlightActions`, `basaltSpotlight`                                          |
+| root error boundary (`fallback` prop), `window` `error`/`unhandledrejection` listeners, all routed to `telemetry` (§ 7)                                                                                                                                                                        | `BasaltProvider`                                                                                                     | `BasaltErrorBoundary`, `onError`                                                 |
+| dev dock (router + query devtools, theme lab, persisted lab overrides applied) and three Spotlight commands `dev.router` / `dev.query` / `dev.theme`; `BasaltDevDock` is the one dock, mounted here and not exported (§ 8 rejects the TanStack Devtools shell)                                 | `BasaltProvider`, behind a literal `process.env.NODE_ENV !== 'production'` check at the `lazy(() => import(…))` site | `BasaltDevDock`, `BasaltQueryDevtools`, argo's `applyOverrides(loadOverrides())` |
+| nav → sidebar + mobile bar + breadcrumbs                                                                                                                                                                                                                                                       | `BasaltShell nav={NAV}`                                                                                              | `useNav` spread, `useRouterBreadcrumbs`                                          |
+| route-change transition (§ 5)                                                                                                                                                                                                                                                                  | `BasaltShell` main region                                                                                            | —                                                                                |
 
 The dev gate is a literal `process.env.NODE_ENV` read, so production drops the branch (an `isDev()`
 helper shipped the theme lab into weatherorb's first paint). TanStack Store is never exposed and
@@ -161,18 +171,11 @@ match them). These carry over unchanged: `no-raw-font-size`, `raw-size-literal`,
 `hand-rolled-shell` (raw `AppShell.*` only), `raw-scroll-container`, `hand-rolled-filter`,
 `control-outside-home`, `bound-control-outside-home`, `control-size-literal`, `in-body-page-title`,
 `responsive-twin`, `search-literal-link`, `use-search-from-literal`, `query-fn-unwrap`,
-`ai-sdk-major`, `raw-breakpoint`. These change:
-
-- `shadow-basalt-export` moves from warn to error.
-- `forms-field-key` stays (`@mantine/form`, § 8).
-- `agent-no-raw-usechat` widens to the `Chat` class (`@ai-sdk/react` `dist/index.d.ts:90`).
-
-These are new:
-
-- `router-view-transition` bans `viewTransition` on `Link`/`navigate` and
-  `document.startViewTransition` in app code.
-- `no-dev-helper` (repo-local) requires dev-only `import()`s to be gated by a literal
-  `process.env.NODE_ENV` read.
+`ai-sdk-major`, `raw-breakpoint`, `forms-field-key` (`@mantine/form`, § 8). `shadow-basalt-export`
+moves from warn to error; `agent-no-raw-usechat` widens to the `Chat` class (`@ai-sdk/react`
+`dist/index.d.ts:90`). New: `router-view-transition` bans `viewTransition` on `Link`/`navigate` and
+`document.startViewTransition` in app code; `no-dev-helper` (repo-local) requires a literal
+`process.env.NODE_ENV` gate on dev-only `import()`s.
 
 All 28 `check-theme` guard kinds are already `error` (`src/guard/index.ts:937`, empty
 `GRACE_PERIOD_KINDS`) and carry over, except `raw-visx-axis` and `chart-missing-aria-label`, which
@@ -229,7 +232,7 @@ router path is banned (§ 3). `<ViewTransition>` is stable in 19.3 and `<Activit
 | theme toggle icon                          | CSS transition                                                                                                                              | motion was overkill (`theme/theme-toggle.tsx`)                                                                                   |
 
 **`motion` survives only for list insert/reorder.** Of its three 1.41 import sites, `theme-toggle.tsx`
-drops it, `thread-detail-panel.tsx` is deleted, and `thread-feed.tsx` keeps it. That makes `motion` a required peer of `./agent` (§ 1 peer rule), bumped to 14 (W3).
+drops it, `thread-detail-panel.tsx` is deleted, and `thread-feed.tsx` keeps it. That makes `motion` subpath-required for `./agent` (§ 1), bumped to 14 (W3).
 
 **Reduced motion**, one switch per mechanism, all driven by the OS setting:
 
@@ -264,7 +267,7 @@ is re-stated as basalt's own contract.
 | `ai` major         | `ai-sdk-major` + `doctor` `ai-major-parity` stay. argo's skew (dashboard `ai` 7.0.107, api 5.0.196) is decision D3 (§ 8)                                                                                                                                                                                                                                                          |
 | streaming markdown | `<Markdown streaming contentTrust="untrusted">` for every model output. Settled blocks are memoized; the tail is repaired by remend (lazy). remend 1.4 emits `![alt](streamdown:incomplete-image)` (`remend` 1.4.0 `dist/index.d.ts:2,36`). `content/url-hardening.ts` treats it exactly like `streamdown:incomplete-link`: alt text, never an `<img src>`                        |
 | code and diagrams  | shiki ^4.5 and beautiful-mermaid are lazy fence renderers. `CodeBlock`/`MermaidDiagram` stop being public, so a fence is the only entry                                                                                                                                                                                                                                           |
-| peers              | `ai`, `remend`, `shiki`, `@shikijs/*` and `beautiful-mermaid` stay optional because they are reached only through `import()` (§ 1)                                                                                                                                                                                                                                                |
+| peers              | `ai` (`aiSdkTransport` names `ChatTransport<UIMessage>`) and `@ai-sdk/provider` (`ReasoningLevel`) are subpath-required for `./agent`; `@ai-sdk/react` is never imported. `remend`, `shiki`, `@shikijs/*` and `beautiful-mermaid` stay optional (§ 1)                                                                                                                             |
 
 ## 7. Observability
 
@@ -275,7 +278,7 @@ and has no OTel dependency. The consumer maps events to its own SDK. `onError` a
 ```ts
 type At = { start: number } // epoch ms (performance.timeOrigin + performance.now())
 type Span = At & { duration: number } // ms
-type Failure = { 'exception.type': string; 'basalt.error.kind': ErrorKind } // family or AgentError['kind']
+type Failure = { 'exception.type': string; 'basalt.error.kind': ErrorKind } // family or an AgentError kind, as literals
 type Ok<T, A> = Span & { type: T; failed: false; attributes: A }
 type Err<T, A, S = At> = S & { type: T; failed: true; attributes: A & Failure }
 
@@ -328,12 +331,10 @@ export function telemetry(e: BasaltEvent): void {
 
 Resource and SDK:
 
-- `service.name` follows the fleet's kebab `<project>-<component>` convention: `argo-dashboard` and
-  `argo-api` today (argo `lib/hyperdx.ts`, `api/.env.local.tpl`), `basalt-playground` for W2, with
-  `service.version` and `deployment.environment`. argo's browser SDK (`@hyperdx/browser` ^0.23.1)
-  already traces `fetch` and propagates `traceparent` to `/api/`.
-- W2 wires the playground with the OTel web tracer SDK, exporting OTLP/HTTP to the local
-  collector's `:4318/v1/traces`. Package versions are pinned from `npm view` in W2's evidence.
+- `service.name` is the fleet's kebab `<project>-<component>` (`argo-dashboard`, `argo-api`;
+  `basalt-playground` for W2), plus `service.version` and `deployment.environment`. argo's
+  `@hyperdx/browser` ^0.23.1 already traces `fetch` and propagates `traceparent` to `/api/`.
+- W2: OTel web tracer SDK → OTLP/HTTP `:4318/v1/traces` on the local collector, pinned via `npm view`.
 
 **Open:**
 
@@ -422,17 +423,17 @@ argo paths are relative to `apps/dashboard/` (argo @ `95d63d6`).
   server migration D3 (`argo:docs/HERMES-CHAT-V2.md:52`) exists to avoid. W8 drops "TanStack AI per
   the ledger".
 
-### Verdicts to apply mechanically (`⟂ § 8` lines in § 1 / § 2 / § 6)
+### Former `⟂ § 8` markers (resolved)
 
-| Where | Line resolves to                                                                                                                                                                                                                            |
-| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| § 1   | `./table`: `BasaltDataTable`, `createColumnHelper` (basalt-owned, 1 generic). No `useTable`, `createTableHook`, `tableFeatures`, `flexRender` or row-model re-export                                                                        |
-| § 1   | `./commands`: `HotkeyBinding` deleted; `toHotkeyBindings()` returns the peer's `UseHotkeyDefinition[]`                                                                                                                                      |
-| § 1   | `BasaltQueryDevtools` deleted, folded into `BasaltDevDock` (§ 1 records it)                                                                                                                                                                 |
-| § 1   | no direct `@tanstack/{store,react-store,pacer,react-pacer,db,react-db,devtools,react-devtools,react-form,ai,ai-react}` peer, dependency or symbol; the transitive `react-store` (Router, Table, Hotkeys) stays                              |
-| § 2   | peers: `@tanstack/react-table 9.2.8` exact (required by `./table` only), `@tanstack/react-hotkeys 0.13.0` exact (**required** for every consumer per § 1's peer rule, type-level; runtime loaded lazily by `BasaltProvider` via `import()`) |
-| § 2   | devtools mount = `BasaltDevDock` (router + query + theme lab), lazy and dev-only; no TanStack Devtools shell                                                                                                                                |
-| § 6   | chat runtime = AI SDK 7 (`ai`, `@ai-sdk/react`); no TanStack AI adapter or transport                                                                                                                                                        |
+| Where | Line resolves to                                                                                                                                                                                                                                                |
+| ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| § 1   | `./table`: `BasaltDataTable`, `createColumnHelper` (basalt-owned, 1 generic). No `useTable`, `createTableHook`, `tableFeatures`, `flexRender` or row-model re-export                                                                                            |
+| § 1   | `./commands`: `HotkeyBinding` and `toHotkeyBindings` deleted as public exports; the projector is provider-internal, loaded through the loader `defineCommands` registers                                                                                        |
+| § 1   | `BasaltQueryDevtools` deleted, folded into `BasaltDevDock` (§ 1 records it)                                                                                                                                                                                     |
+| § 1   | no direct `@tanstack/{store,react-store,pacer,react-pacer,db,react-db,devtools,react-devtools,react-form,ai,ai-react}` peer, dependency or symbol; the transitive `react-store` (Router, Table, Hotkeys) stays                                                  |
+| § 2   | peers: `@tanstack/react-table 9.2.8` exact (subpath-required for `./table`), `@tanstack/react-hotkeys 0.13.0` exact (subpath-required for `./commands` per § 1, type-level; runtime loaded through `import()` only when `defineCommands` registered a registry) |
+| § 2   | devtools mount = `BasaltDevDock` (router + query + theme lab), lazy and dev-only; no TanStack Devtools shell                                                                                                                                                    |
+| § 6   | chat runtime = AI SDK 7 (`ai` + `@ai-sdk/provider` types, subpath-required for `./agent`; basalt never imports `@ai-sdk/react`); no TanStack AI adapter or transport                                                                                            |
 
 **Open:**
 
