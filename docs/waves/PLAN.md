@@ -259,6 +259,10 @@ Charts), `docs/archive/CHARTS-SPEC-1x.md`, `docs/DESIGN-CORE.md`, `packages/basa
   check` ran on the host; re-measure before reading it as a regression. chat-profile stays blind
   until W8. The W1 chart spike's 12 tests are ported, so `spike/w1-charts` is no longer cited as proof
   (`spike/w1-ledger` still is, until W6).
+- **CI note:** #131's engine-exports test read `<root>/node_modules/@tanstack/charts`, present only in
+  the lint worktree (a hand copy), so CI on master went red after #131; the close-out repoints it to
+  `packages/basalt-ui/node_modules`. A worker validating against a dependency it copied in by hand
+  proves nothing about a clean install.
 - **Budgets:** chart value symbols 5 (≤ 48), non-chart 93, spec prose ceiling 3166 → 2663.
 
 ## Wave 5 — Chart kinds, complete <!-- status: active -->
