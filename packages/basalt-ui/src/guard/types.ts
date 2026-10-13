@@ -1,17 +1,15 @@
 /**
  * Guard types — Mantine-free, dependency-free (zero imports beyond TS types).
  *
- * GuardKind is the closed set of 28 violation kinds the theme guard can emit — `unframed-chart`
- * retired at the C2 consolidation wave: its only case (a hand-authored `<ChartLegend items={[...]}>`
- * array literal) is fully subsumed by the oxlint plugin's `basalt/chart-legend-literal`, which also
- * catches the `.map()`-over-a-non-series form the regex never could. `'unframed-chart'` stays a
- * recognized id in `PLUGIN_RULE_IDS`/`KNOWN_RULE_IDS` so an existing `theme-allow unframed-chart`
- * reads as a dead waiver, not a typo.
+ * GuardKind is the closed set of 26 violation kinds the theme guard can emit. Retired kinds
+ * (`unframed-chart`, `raw-visx-axis`, `chart-missing-aria-label`) stay recognized ids in
+ * `PLUGIN_RULE_IDS`/`KNOWN_RULE_IDS` so an existing `theme-allow <id>` reads as a dead waiver, not
+ * a typo.
  * Finding is the structured result per violation, replacing the old `Violation` shape.
  * GuardConfig is the per-run configuration that drives checkSource.
  */
 
-/** The 28 theme-guard violation kinds. */
+/** The 26 theme-guard violation kinds. */
 export type GuardKind =
   | 'raw-hex'
   | 'raw-color-fn'
@@ -26,9 +24,7 @@ export type GuardKind =
   | 'raw-html-layout'
   | 'inline-spacing'
   | 'inline-display'
-  | 'raw-visx-axis'
   | 'raw-motion-value'
-  | 'chart-missing-aria-label'
   | 'raw-form-control'
   | 'sub-16-input-font'
   | 'raw-font-family'
@@ -129,17 +125,8 @@ export type GuardConfig = {
   readonly inlineSpacing: boolean
   /** Flag display:flex|grid|inline-flex|inline-grid in an inline style={{}}. Default true. */
   readonly inlineDisplay: boolean
-  /** Flag raw <AxisLeft>/<AxisBottom>/<AxisRight> JSX inside chart files. Default true. */
-  readonly rawVisxAxis: boolean
   /** Flag a hardcoded duration/spring/ease literal in a `transition={{...}}` prop. Default true. */
   readonly rawMotionValue: boolean
-  /**
-   * Flag a chart-kind JSX usage (`<MultiLine>`, `<Bars>`, `<Donut>`, `<DualPanel>`, `<Heatmap>`,
-   * `<ZonedLine>`, `<StackedArea>`, `<LineSparkline>`, `<BarSparkline>`) missing an `ariaLabel`
-   * prop — screen readers otherwise get an unlabeled empty graphic. Default `true` (ON). Set
-   * `false` to disable the `chart-missing-aria-label` check.
-   */
-  readonly chartMissingAriaLabel: boolean
   /**
    * Flag a raw lowercase `<input>` / `<select>` / `<textarea>` JSX element — it bypasses the
    * ENTIRE theme (no field surface, no `shadow-card` depth, no focus ring, no `--input-*` vars),
@@ -184,7 +171,7 @@ export type GuardConfig = {
   /**
    * Per-rule, per-path exemptions — complements whole-file `exempt` (BasaltConfig, which skips
    * ALL rules for a file) and code-level `appliesTo` (hardcoded per-kind path scoping, e.g.
-   * raw-visx-axis → chart files only). This is the config-driven counterpart: a consumer can say
+   * raw-color-fn → non-chart files). This is the config-driven counterpart: a consumer can say
    * "kind K does not apply under path P" without exempting the whole file or forking the rule.
    *
    * Each value is a list of path-segment patterns matched against a finding's `relPath`. A pattern

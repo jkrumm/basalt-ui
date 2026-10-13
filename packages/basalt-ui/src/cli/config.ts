@@ -94,25 +94,11 @@ export type BasaltConfig = {
    */
   inlineDisplay?: boolean
   /**
-   * Flag raw `<AxisLeft>` / `<AxisBottom>` / `<AxisRight>` visx JSX inside chart files (a path
-   * containing `/charts/`) — these bypass the `AxisLeftNumeric` / `AxisBottomDate` /
-   * `AxisRightNumeric` primitives that carry the theme tokens + smart ticks. The legitimate wrapper
-   * (`Axes.tsx`, which IS the primitive) is exempt. Default: `true` (ON). Set `false` to disable the
-   * `raw-visx-axis` check.
-   */
-  rawVisxAxis?: boolean
-  /**
    * Flag a hardcoded duration/spring/ease literal inline in a `transition={{...}}` prop — route it
    * through `MOTION_DURATION` / `MOTION_SPRING` / `MOTION_EASE_STANDARD` instead. Default: `true`
    * (ON). Set `false` to disable the `raw-motion-value` check.
    */
   rawMotionValue?: boolean
-  /**
-   * Flag a chart entry-point JSX tag (`MultiLine`/`Bars`/`Donut`/`DualPanel`/`Heatmap`/`ZonedLine`/
-   * `StackedArea`/`LineSparkline`/`BarSparkline`) missing an `ariaLabel` prop. Default: `true`
-   * (ON). Set `false` to disable the `chart-missing-aria-label` check.
-   */
-  chartMissingAriaLabel?: boolean
   /**
    * Flag a raw lowercase `<input>`/`<select>`/`<textarea>` JSX element — it bypasses the entire
    * theme, not just the iOS font-size floor. Use the Mantine equivalents (`TextInput`,
@@ -134,8 +120,7 @@ export type BasaltConfig = {
   seriesModulePath?: string
   /**
    * Per-rule, per-path exemptions — complements whole-file `exempt` (which skips ALL rules for a
-   * file) and the hardcoded per-kind `appliesTo` scoping (e.g. `raw-visx-axis` → chart files
-   * only). Each value is a list of patterns matched against a finding's relative path. A pattern
+   * file) and the hardcoded per-kind `appliesTo` scoping (e.g. `raw-color-fn` → non-chart files). Each value is a list of patterns matched against a finding's relative path. A pattern
    * may be a whole path segment (`'agent'` matches `src/agent/x.tsx`, not `src/agenting.ts`), a
    * relative path (`'public/site.webmanifest'`), a directory prefix, or a glob — `*` stops at `/`,
    * `**` does not, and a slash-free glob also matches the basename, so `'*.module.css'` works.

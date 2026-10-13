@@ -1,7 +1,7 @@
 /**
  * Unit tests for checkSource — the pure (text, relPath, cfg) → Finding[] core.
  *
- * Covers all 28 guard kinds. Co-located with the guard, excluded from tsc
+ * Covers all 26 guard kinds. Co-located with the guard, excluded from tsc
  * (tsconfig exclude: src/**\/*.test.ts), run via `bun test`.
  *
  * The walker/reporter half is covered by the integration test in
@@ -619,57 +619,6 @@ describe('inline-display', () => {
   })
 })
 
-// ── 12. raw-visx-axis ────────────────────────────────────────────────────────
-
-describe('raw-visx-axis', () => {
-  it('flags <AxisLeft> in a chart file', () => {
-    const f = find(`<AxisLeft scale={s} numTicks={4} />`, CHART_PATH)
-    expect(kinds(f)).toContain('raw-visx-axis')
-    expect(f.find((x) => x.kind === 'raw-visx-axis')?.token).toBe('<AxisLeft')
-  })
-
-  it('flags <AxisBottom> in a chart file', () => {
-    const f = find(`<AxisBottom scale={x} />`, CHART_PATH)
-    expect(kinds(f)).toContain('raw-visx-axis')
-  })
-
-  it('flags <AxisRight> in a chart file', () => {
-    const f = find(`<AxisRight scale={y} />`, CHART_PATH)
-    expect(kinds(f)).toContain('raw-visx-axis')
-  })
-
-  it('does NOT flag <AxisLeft> in a NON-chart path', () => {
-    const f = find(`<AxisLeft scale={s} />`, PATH)
-    expect(kinds(f)).not.toContain('raw-visx-axis')
-  })
-
-  it('does NOT flag <AxisLeftNumeric> in a chart file (not a raw axis)', () => {
-    const f = find(`<AxisLeftNumeric scale={s} />`, CHART_PATH)
-    expect(kinds(f)).not.toContain('raw-visx-axis')
-  })
-
-  it('does NOT flag <AxisLeft> in Axes.tsx (the wrapper primitive)', () => {
-    const f = find(
-      `export const AxisLeftNumeric = (p) => <AxisLeft {...p} />`,
-      'src/charts/primitives/Axes.tsx',
-    )
-    expect(kinds(f)).not.toContain('raw-visx-axis')
-  })
-
-  it('does NOT flag when rawVisxAxis is false', () => {
-    const f = checkSource(`<AxisLeft scale={s} />`, CHART_PATH, {
-      ...DEFAULT_GUARD_CONFIG,
-      rawVisxAxis: false,
-    })
-    expect(kinds(f)).not.toContain('raw-visx-axis')
-  })
-
-  it('does NOT flag a theme-allow line in a chart file', () => {
-    const f = find(`<AxisLeft scale={s} /> // theme-allow: bespoke`, CHART_PATH)
-    expect(kinds(f)).not.toContain('raw-visx-axis')
-  })
-})
-
 // ── 13. raw-motion-value ─────────────────────────────────────────────────────
 
 describe('raw-motion-value', () => {
@@ -709,163 +658,6 @@ describe('raw-motion-value', () => {
   it('does NOT flag a theme-allow line', () => {
     const f = find(`<motion.div transition={{ duration: 0.3 }} /> // theme-allow: bespoke`)
     expect(kinds(f)).not.toContain('raw-motion-value')
-  })
-})
-
-// ── 15. chart-missing-aria-label ─────────────────────────────────────────────
-
-describe('chart-missing-aria-label', () => {
-  it('flags a chart kind tag without ariaLabel', () => {
-    const f = find(`<ZonedLine data={points} height={240} chartId="x" />`)
-    expect(kinds(f)).toContain('chart-missing-aria-label')
-  })
-
-  it('does NOT flag a tag carrying ariaLabel', () => {
-    const f = find(`<ZonedLine ariaLabel="HRV trend" data={points} height={240} />`)
-    expect(kinds(f)).not.toContain('chart-missing-aria-label')
-  })
-
-  it('sees ariaLabel PAST an arrow function in an earlier prop (=> must not end the tag)', () => {
-    const f = find(`<ZonedLine data={points} getX={(d) => d.date} ariaLabel="HRV trend" />`)
-    expect(kinds(f)).not.toContain('chart-missing-aria-label')
-  })
-
-  it('sees ariaLabel past an explicit JSX generic argument', () => {
-    const text = [
-      '<MultiLine<ChartPoint>',
-      '  data={points}',
-      '  getX={(d) => d.date}',
-      '  ariaLabel="Body weight trend"',
-      '/>',
-    ].join('\n')
-    const f = find(text)
-    expect(kinds(f)).not.toContain('chart-missing-aria-label')
-  })
-
-  it('still flags a generic + arrow-function tag genuinely missing ariaLabel', () => {
-    const f = find(`<MultiLine<ChartPoint> data={points} getX={(d) => d.date} />`)
-    expect(kinds(f)).toContain('chart-missing-aria-label')
-  })
-
-  it('does NOT flag raw-radius when rawRadius is false (framework-internal repos)', () => {
-    const f = checkSource(`<Paper radius={6} />`, PATH, {
-      ...DEFAULT_GUARD_CONFIG,
-      rawRadius: false,
-    })
-    expect(kinds(f)).not.toContain('raw-radius')
-  })
-
-  it('does NOT flag when chartMissingAriaLabel is false', () => {
-    const f = checkSource(`<ZonedLine data={points} />`, PATH, {
-      ...DEFAULT_GUARD_CONFIG,
-      chartMissingAriaLabel: false,
-    })
-    expect(kinds(f)).not.toContain('chart-missing-aria-label')
-  })
-
-  // ── reported line: the tag's OPENING line, not the end of the match ─────────
-  //
-  // The scan used to compute its line from the END of the matched tag, so on a multi-line-
-  // formatted chart element the reported line was the closing `/>` rather than the `<Bars` line
-  // that is actually missing the prop. Invisible while the report only printed `token`; visible
-  // the moment `Finding.text` started quoting the reported source line back.
-
-  it('reports the OPENING tag line (and quotes it in text) for a multi-line-formatted chart element', () => {
-    const text = ['<Bars', '  data={points}', '  height={240}', '/>'].join('\n')
-    const f = find(text)
-    const hit = f.find((x) => x.kind === 'chart-missing-aria-label')
-    expect(hit?.line).toBe(1)
-    expect(hit?.text).toBe('<Bars')
-  })
-
-  it('reports the same line as before for a single-line chart element (no regression)', () => {
-    const f = find(`<ZonedLine data={points} height={240} chartId="x" />`)
-    const hit = f.find((x) => x.kind === 'chart-missing-aria-label')
-    expect(hit?.line).toBe(1)
-  })
-
-  it('a theme-allow comment on the CLOSING line of a multi-line tag still suppresses the finding (back-compat)', () => {
-    const text = ['<Bars', '  data={points}', '  height={240}', '/> // theme-allow'].join('\n')
-    const f = find(text)
-    expect(kinds(f)).not.toContain('chart-missing-aria-label')
-  })
-
-  it('a theme-allow comment on the OPENING line of a multi-line tag also suppresses the finding', () => {
-    const text = ['<Bars // theme-allow', '  data={points}', '  height={240}', '/>'].join('\n')
-    const f = find(text)
-    expect(kinds(f)).not.toContain('chart-missing-aria-label')
-  })
-
-  // ── tag provenance ─────────────────────────────────────────────────────────
-  //
-  // The rule keys on a tag NAME, so a consumer's OWN component sharing a shipped kind's name
-  // collected an unactionable `ariaLabel` demand (reported against 1.23.0: a hand-composed local
-  // `MirroredBars`, 235 lines, nothing to do with the kind). The gate is a one-directional
-  // narrowing — skip only what this file DEFINES and does not import from basalt-ui.
-
-  it('does NOT flag a tag this file DEFINES itself (a local component sharing a kind name)', () => {
-    const text = [
-      'function MirroredBars({ data }: Props) {',
-      '  return <svg />',
-      '}',
-      'export function Panel() {',
-      '  return <MirroredBars data={points} />',
-      '}',
-    ].join('\n')
-    expect(kinds(find(text))).not.toContain('chart-missing-aria-label')
-  })
-
-  it('skips a locally defined kind name however it is declared (const/memo, not just function)', () => {
-    const text = ['const BandStrip = memo(Inner)', '<BandStrip data={rows} />'].join('\n')
-    expect(kinds(find(text))).not.toContain('chart-missing-aria-label')
-  })
-
-  it('STILL flags when the same file also imports that name from basalt-ui (a real shadow)', () => {
-    const text = [
-      "import { MirroredBars } from 'basalt-ui/charts'",
-      'function Panel() {',
-      '  return <MirroredBars data={points} />',
-      '}',
-    ].join('\n')
-    expect(kinds(find(text))).toContain('chart-missing-aria-label')
-  })
-
-  it('STILL flags a tag imported from a consumer BARREL that re-exports the kind', () => {
-    const text = ["import { MultiLine } from '../charts'", '<MultiLine data={points} />'].join('\n')
-    expect(kinds(find(text))).toContain('chart-missing-aria-label')
-  })
-
-  it('STILL flags a file with no imports and no local definition (coverage is not import-gated)', () => {
-    expect(kinds(find('<Donut data={slices} />'))).toContain('chart-missing-aria-label')
-  })
-
-  it('honours an aliased basalt import, since the alias is the tag the JSX writes', () => {
-    const text = [
-      "import { Bars as BasaltBars } from 'basalt-ui/charts'",
-      'const Bars = () => null',
-      '<Bars data={points} />',
-    ].join('\n')
-    // `Bars` is defined locally here and only `BasaltBars` came from basalt — the local one is skipped.
-    expect(kinds(find(text))).not.toContain('chart-missing-aria-label')
-  })
-
-  // ── `>=`/`<=`/`>>` inside a prop expression must not close the tag early ────
-  //
-  // The scan used to treat `=>` as the only `>`-shaped decoy it could survive, so a `>=`/`<=`
-  // comparison inside a prop expression (e.g. a ternary fed to `tooltipLabel`) truncated the match
-  // before a LATER `ariaLabel` prop was seen, reporting a false "missing aria-label". Reported
-  // against a real `<DualPanel>` whose `tooltipLabel` compared a value with `>=`.
-
-  it('sees ariaLabel PAST a `>=` comparison in an earlier prop expression', () => {
-    const f = find(
-      `<DualPanel data={points} tooltipLabel={(d) => (d.v >= 0 ? 'a' : 'b')} ariaLabel="x" />`,
-    )
-    expect(kinds(f)).not.toContain('chart-missing-aria-label')
-  })
-
-  it('still flags the same tag shape genuinely missing ariaLabel', () => {
-    const f = find(`<DualPanel data={points} tooltipLabel={(d) => (d.v >= 0 ? 'a' : 'b')} />`)
-    expect(kinds(f)).toContain('chart-missing-aria-label')
   })
 })
 
@@ -1328,20 +1120,6 @@ describe('stripComments pre-pass', () => {
   })
 })
 
-// ── isChartFile gates raw-visx-axis ──────────────────────────────────────────
-
-describe('isChartFile path gate', () => {
-  it('fires raw-visx-axis in src/charts/kinds/k.tsx', () => {
-    const f = checkSource(`<AxisLeft scale={s} />`, 'src/charts/kinds/k.tsx', DEFAULT_GUARD_CONFIG)
-    expect(kinds(f)).toContain('raw-visx-axis')
-  })
-
-  it('does NOT fire raw-visx-axis in src/page.tsx', () => {
-    const f = checkSource(`<AxisLeft scale={s} />`, 'src/page.tsx', DEFAULT_GUARD_CONFIG)
-    expect(kinds(f)).not.toContain('raw-visx-axis')
-  })
-})
-
 // ── CSS applicability — the CLI walker now scans .css, so checkSource's per-kind gating over
 // CSS-shaped input matters for real: color-meaningful kinds must still fire, JSX/tag-shaped kinds
 // must not false-positive on genuine CSS syntax ──────────────────────────────────────────────────
@@ -1534,15 +1312,13 @@ describe('CSS applicability', () => {
     expect(kinds(f)).not.toContain('off-identity-accent')
   })
 
-  it('does NOT false-positive card-with-border/chart-missing-aria-label/raw-visx-axis on CSS class selectors that echo JSX names', () => {
+  it('does NOT false-positive card-with-border on CSS class selectors that echo JSX names', () => {
     const f = checkSource(
       '.Card {\n  border: 1px solid red;\n}\n.ChartLegend {\n  display: flex;\n}\n.AxisLeft {\n  color: red;\n}\n',
       'src/charts/kinds/Card.module.css',
       DEFAULT_GUARD_CONFIG,
     )
     expect(kinds(f)).not.toContain('card-with-border')
-    expect(kinds(f)).not.toContain('chart-missing-aria-label')
-    expect(kinds(f)).not.toContain('raw-visx-axis')
   })
 
   it('does NOT false-positive localstorage-theme on CSS text', () => {
@@ -1986,7 +1762,7 @@ describe('theme-allow scoping', () => {
   })
 
   it('accepts a basalt/-prefixed plugin rule id as accountable', () => {
-    const f = find(`const x = 1 // theme-allow basalt/hand-rolled-plot — multi-pane, not one plot`)
+    const f = find(`const x = 1 // theme-allow basalt/chart-in-raw-surface — bespoke wrapper`)
     expect(f).toHaveLength(0)
   })
 
@@ -3239,9 +3015,7 @@ describe("profile: 'tokens-only'", () => {
     'raw-html-layout': true,
     'inline-spacing': true,
     'inline-display': true,
-    'raw-visx-axis': true,
     'raw-motion-value': true,
-    'chart-missing-aria-label': true,
     'raw-form-control': true,
     'sub-16-input-font': true,
     'raw-font-family': false,
@@ -3265,7 +3039,7 @@ describe("profile: 'tokens-only'", () => {
 
   it('classifies every kind in the registry — the table is exhaustive', () => {
     expect(Object.keys(MANTINE_COUPLED).toSorted()).toEqual(Object.keys(GUARD_RULES).toSorted())
-    expect(Object.keys(MANTINE_COUPLED)).toHaveLength(28)
+    expect(Object.keys(MANTINE_COUPLED)).toHaveLength(26)
   })
 
   it('the disabled set is exactly the Mantine-coupled half — a complete partition', () => {
@@ -3646,7 +3420,7 @@ describe('findAllowAnnotations', () => {
     const src = [
       `// theme-allow raw-hex — a guard kind`,
       `const a = '#f00'`,
-      `// theme-allow hand-rolled-plot — a plugin rule, outside checkSource's reach`,
+      `// theme-allow chart-in-raw-surface — a plugin rule, outside checkSource's reach`,
       `const b = 1`,
       `// theme-allow raw-hexx — a typo`,
       `const c = 2`,
@@ -3657,7 +3431,7 @@ describe('findAllowAnnotations', () => {
 
     expect(sites.map((s) => s.line)).toEqual([1, 3, 5, 7])
     expect(sites[0]).toMatchObject({ guardKinds: ['raw-hex'], pluginRules: [], bare: false })
-    expect(sites[1]).toMatchObject({ guardKinds: [], pluginRules: ['hand-rolled-plot'] })
+    expect(sites[1]).toMatchObject({ guardKinds: [], pluginRules: ['chart-in-raw-surface'] })
     expect(sites[2]).toMatchObject({ rules: [], unknownRules: ['raw-hexx'], bare: false })
     expect(sites[3]).toMatchObject({ bare: true, hasReason: false })
   })

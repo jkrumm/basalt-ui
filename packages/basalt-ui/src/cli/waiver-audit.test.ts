@@ -92,11 +92,11 @@ describe('check-theme --audit-allows — theme-allow annotations', () => {
   })
 
   it('says oxlint could not be run rather than calling a plugin-rule waiver dead', () => {
-    // `hand-rolled-plot` lives in the plugin, so `checkSource` can never see what it suppresses.
+    // `chart-in-raw-surface` lives in the plugin, so `checkSource` can never see what it suppresses.
     // With no oxlint reachable from the fixture the honest answer is "cannot judge" — reporting
     // "delete it" here would be the command telling someone to remove a live waiver.
     fixture(
-      '// theme-allow hand-rolled-plot — DualPanel is not a single cartesian plot\nexport const c = 1\n',
+      '// theme-allow chart-in-raw-surface — the wrapper is a bespoke surface\nexport const c = 1\n',
     )
     // The fixture sits under tmpdir, so the node_modules walk-up finds nothing — but
     // `resolveToolBin` then probes PATH, and under `bun run` PATH carries this repo's
@@ -124,8 +124,8 @@ describe('check-theme --audit-allows — theme-allow annotations', () => {
     ],
     [
       'an id-scoped waiver',
-      '// theme-allow hand-rolled-plot — not a plot\nexport const c = 1\n',
-      'scoped to hand-rolled-plot, which oxlint judges',
+      '// theme-allow chart-in-raw-surface — a bespoke surface\nexport const c = 1\n',
+      'scoped to chart-in-raw-surface, which oxlint judges',
     ],
   ])('words the cannot-judge verdict for %s by what it waives', (_, source, reach) => {
     fixture(source)
@@ -214,13 +214,13 @@ describe.skipIf(!existsSync(OXLINT_BIN))('check-theme --audit-allows — oxlint 
     write('package.json', JSON.stringify({ name: 'fixture', basalt: { roots: ['src'] } }))
     write(
       'src/charts/plot.tsx',
-      "import { AxisLeftNumeric } from 'basalt-ui/charts'\n\n" +
-        '// theme-allow hand-rolled-plot — this pane is not a single cartesian plot\n' +
-        'export const Plot = () => <AxisLeftNumeric />\n',
+      "import { Lines } from 'basalt-ui/charts'\n\n" +
+        '// theme-allow chart-in-raw-surface — the wrapper is a bespoke surface\n' +
+        'export const Plot = () => <Card><Lines /></Card>\n',
     )
     withOxlint()
     const { code, log } = audit()
-    expect(log).toContain('suppresses hand-rolled-plot@4 (oxlint)')
+    expect(log).toContain('suppresses chart-in-raw-surface@4 (oxlint)')
     expect(code).toBe(0)
   })
 
@@ -228,7 +228,7 @@ describe.skipIf(!existsSync(OXLINT_BIN))('check-theme --audit-allows — oxlint 
     write('package.json', JSON.stringify({ name: 'fixture', basalt: { roots: ['src'] } }))
     write(
       'src/charts/plot.tsx',
-      '// theme-allow hand-rolled-plot — this pane is not a single cartesian plot\n' +
+      '// theme-allow chart-in-raw-surface — the wrapper is a bespoke surface\n' +
         'export const Plot = () => null\n',
     )
     withOxlint()
@@ -267,13 +267,13 @@ describe.skipIf(!existsSync(OXLINT_BIN))('check-theme --audit-allows — oxlint 
     write('package.json', JSON.stringify({ name: 'fixture', basalt: { roots: ['src'] } }))
     write(
       'src/charts/plot.tsx',
-      "import { AxisLeftNumeric } from 'basalt-ui/charts'\n\n" +
-        '// theme-allow raw-hex, hand-rolled-plot — this pane is not a single cartesian plot\n' +
-        'export const Plot = () => <AxisLeftNumeric />\n',
+      "import { Lines } from 'basalt-ui/charts'\n\n" +
+        '// theme-allow raw-hex, chart-in-raw-surface — the wrapper is a bespoke surface\n' +
+        'export const Plot = () => <Card><Lines /></Card>\n',
     )
     withOxlint()
     const { code, log } = audit()
-    expect(log).toContain('suppresses hand-rolled-plot@4 (oxlint)')
+    expect(log).toContain('suppresses chart-in-raw-surface@4 (oxlint)')
     expect(code).toBe(0)
   })
 
@@ -283,13 +283,13 @@ describe.skipIf(!existsSync(OXLINT_BIN))('check-theme --audit-allows — oxlint 
     write('package.json', JSON.stringify({ name: 'fixture', basalt: { roots: ['src'] } }))
     write(
       'src/charts/plot.tsx',
-      "import { AxisLeftNumeric } from 'basalt-ui/charts'\n\n" +
+      "import { Lines } from 'basalt-ui/charts'\n\n" +
         '// theme-allow\n' +
-        'export const Plot = () => <AxisLeftNumeric />\n',
+        'export const Plot = () => <Card><Lines /></Card>\n',
     )
     withOxlint()
     const { log } = audit()
-    expect(log).toContain('suppresses hand-rolled-plot@4 (oxlint)')
+    expect(log).toContain('suppresses chart-in-raw-surface@4 (oxlint)')
     expect(log).not.toContain('SUPPRESSES NOTHING')
   })
 
@@ -302,9 +302,9 @@ describe.skipIf(!existsSync(OXLINT_BIN))('check-theme --audit-allows — oxlint 
     write('package.json', JSON.stringify({ name: 'fixture', basalt: { roots: ['src'] } }))
     write(
       'src/charts/plot.tsx',
-      "import { AxisLeftNumeric } from 'basalt-ui/charts'\n\n" +
-        '// theme-allow hand-rolled-plot — this pane is not a single cartesian plot\n' +
-        'export const Plot = () => <AxisLeftNumeric />\n',
+      "import { Lines } from 'basalt-ui/charts'\n\n" +
+        '// theme-allow chart-in-raw-surface — the wrapper is a bespoke surface\n' +
+        'export const Plot = () => <Card><Lines /></Card>\n',
     )
     withOxlint()
     audit()
@@ -330,6 +330,6 @@ describe('AllowAnnotationSite.oxlintRules', () => {
       const expected = pluginRules.has(kind) || kind === 'raw-selection-control'
       expect([kind, oxlintJudged(kind).length > 0]).toEqual([kind, expected])
     }
-    expect(oxlintJudged('hand-rolled-plot')).toEqual(['hand-rolled-plot'])
+    expect(oxlintJudged('chart-in-raw-surface')).toEqual(['chart-in-raw-surface'])
   })
 })

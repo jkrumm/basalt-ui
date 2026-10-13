@@ -30,7 +30,7 @@
  * filesystem (reads ancestor `package.json`s, memoized per directory so a lint run does one walk
  * per directory, not per file) — every other rule here is pure AST + filename-string matching.
  *
- * ── The three boundary rules (`visx-boundary` / `visx-tooltip` / `token-layer-boundary`) ─────────
+ * ── The three boundary rules (`chart-engine-boundary` / `chart-host-single` / `token-layer-boundary`) ─────────
  * These used to be one bundled `import-boundary` rule sharing a single on/off toggle — that meant
  * a consumer disabling the one check they disagreed with silently dropped the other two as well.
  * Each is now its own rule id with its own `meta`/`create`/registration, so a consumer can only
@@ -66,8 +66,7 @@
  * per-glob last-writer-wins for `no-restricted-imports` — a base ban does NOT merge into an
  * override glob, so any ban that must also hold inside an override is duplicated into that
  * override, AND a consumer's own `no-restricted-imports` override on an overlapping glob silently
- * REPLACES basalt's ban rather than merging with it. That is exactly why the `@visx/*`-only-in-
- * charts and token-layer charts/tokens boundaries live in plugin rules below instead of
+ * REPLACES basalt's ban rather than merging with it. That is exactly why the chart-engine and token-layer charts/tokens boundaries live in plugin rules below instead of
  * `no-restricted-imports`: a jsPlugin rule has its own rule id, so a consumer can only turn it off
  * explicitly, by name — never silently. `configs/oxlint.json` is generated from `SURFACES` by
  * `scripts/gen-oxlint.ts` (`--check` is the CI drift gate) — its top-level keys are limited to what
@@ -86,8 +85,7 @@ import { fileURLToPath } from 'node:url'
  * `check-theme --audit-allows`, never as a typo.
  *
  * - `unframed-chart` (regex: a `<ChartLegend items={[...]}>` array literal) →
- *   `basalt/chart-legend-literal`, which also catches the `.map()`-over-a-non-series form the
- *   regex never could reach.
+ *   `basalt/chart-legend-literal`, itself retired in 2.0 with the public `ChartLegend`.
  * - `duplicate-notifications-mount` — its only case, `<BasaltNotifications />` mounted beside
  *   `<BasaltOverlays notifications>`, is unreachable now that `BasaltNotifications` no longer
  *   exists as a standalone export; the rule had nothing left to fire on.
@@ -98,6 +96,14 @@ import { fileURLToPath } from 'node:url'
  */
 export const RETIRED_RULE_IDS = new Set([
   'unframed-chart',
+  // 2.0 (V2-SPEC § 9.8): the visx lint/guard layer, replaced by `chart-engine-boundary` or made
+  // unrepresentable by the rung.
+  'visx-boundary',
+  'visx-tooltip',
+  'hand-rolled-plot',
+  'chart-legend-literal',
+  'raw-visx-axis',
+  'chart-missing-aria-label',
   'duplicate-notifications-mount',
   'query-dual-import',
 ])
@@ -119,8 +125,6 @@ export const KNOWN_RULE_IDS = new Set([
   'raw-size-literal',
   'card-inset',
   'chart-in-raw-surface',
-  'hand-rolled-plot',
-  'chart-legend-literal',
   'hand-rolled-shell',
   'shadow-basalt-export',
   'raw-scroll-container',
@@ -139,8 +143,8 @@ export const KNOWN_RULE_IDS = new Set([
   'forms-field-key',
   // `in-body-page-title` is BOTH a plugin rule and a guard kind — one id, two lanes, so one
   // annotation waives both. It is listed once, below, with the guard kinds.
-  'visx-boundary',
-  'visx-tooltip',
+  'chart-engine-boundary',
+  'chart-host-single',
   'token-layer-boundary',
   'no-import-meta-env',
   'raw-breakpoint',
@@ -163,9 +167,7 @@ export const KNOWN_RULE_IDS = new Set([
   'raw-html-layout',
   'inline-spacing',
   'inline-display',
-  'raw-visx-axis',
   'raw-motion-value',
-  'chart-missing-aria-label',
   'raw-form-control',
   'sub-16-input-font',
   'raw-font-family',
@@ -665,11 +667,9 @@ const CHART_TAGS = new Set([
   'DualPanel',
   'Heatmap',
   'MirroredBars',
-  'MultiLine',
+  'Lines',
   'StackedArea',
-  'ZonedLine',
-  'BarSparkline',
-  'LineSparkline',
+  'Sparkline',
 ])
 
 const CHART_IN_RAW_SURFACE_MESSAGE =
@@ -767,7 +767,7 @@ const RAW_SCROLL_CONTAINER_HOME_MESSAGE =
  *
  * Scoped by ANCESTRY only, with no hoisted-binding lookup: a style object hoisted to a `const` has
  * no JSX ancestor at all, so a hoisted `{ overflowX: 'auto' }` handed to a slot is a known false
- * negative here — the same gap `chart-legend-literal` documents for a hoisted `items` array, and
+ * negative here — the same gap the retired `chart-legend-literal` had for a hoisted `items` array, and
  * for the same reason (following it means local flow analysis for a bypass nobody reaches by
  * accident).
  */
@@ -865,12 +865,6 @@ const rawScrollContainer = {
 
 // Message bodies mirror the wording that used to live in the shipped `no-restricted-imports`
 // overrides (configs/oxlint.json) verbatim, so the DX doesn't regress.
-const VISX_BOUNDARY_MESSAGE =
-  'Direct @visx/* imports are only allowed inside the charts boundary (**/charts/**). ' +
-  '(basalt/visx-boundary)'
-const VISX_TOOLTIP_MESSAGE =
-  'Use ChartTooltip + TooltipHeader/Row/Body from basalt-ui charts primitives. ' +
-  '(basalt/visx-tooltip)'
 const TOKEN_LAYER_BOUNDARY_MESSAGES = {
   charts:
     'charts must stay upstream-of-Mantine (no Mantine imports) — read color via --vx-* tokens, ' +
@@ -926,55 +920,123 @@ function boundaryVisitor(reportFor) {
   }
 }
 
-// Rule 5 — visx-boundary: @visx/* only allowed inside a `charts` path segment. Matching any path
-// segment named `charts` is deliberately permissive, not restrictive — it only ever widens where
-// visx is allowed, never narrows where it's flagged elsewhere. "Your visx lives in a charts/ dir"
-// is the intended convention.
+// Rule 5 — chart-engine-boundary (V2-SPEC § 9.8): `@visx/*` is banned everywhere; outside basalt's
+// own `src/`, `@tanstack/charts` is an ALLOWLIST of mark/scale/transform subpaths. The bare root
+// re-exports `defineChart`, `createChartRuntime`, `mountChart`, `renderChartSvg` and `createMark`
+// (a second chart runtime), `/react` is the host (basalt owns the one), and any NEW engine
+// subpath is an error until `oxlint-plugin.test.ts` classifies it against the engine's `exports`.
+// Inside `packages/basalt-ui/src/` only the visx ban applies — `basalt/chart-host-single` polices
+// the one place `/react` may be imported. Deliberately NO `hasThemeAllow` escape (see
+// token-layer-boundary below).
+const visxBanned = (source) => source === '@visx' || source.startsWith('@visx/')
+
+/** Exact `@tanstack/charts` subpaths a consumer may import. Kept in step with V2-SPEC § 9.8. */
+export const CHART_ENGINE_ALLOWED_SUBPATHS = new Set([
+  'line',
+  'area',
+  'area-x',
+  'bar',
+  'rect',
+  'rule',
+  'dot',
+  'tick',
+  'text',
+  'vector',
+  'link',
+  'arrow',
+  'difference',
+  'stack',
+  'mark/decorative',
+  'd3/shape',
+  'types',
+])
+
+/** Allowed subpath FAMILIES: `scales/*` and `transform/*` (the bare `transform` is not one). */
+export const CHART_ENGINE_ALLOWED_PREFIXES = ['scales/', 'transform/']
+
+/** True when `subpath` (the part after `@tanstack/charts/`) is on the allowlist. */
+export function isAllowedChartEngineSubpath(subpath) {
+  return (
+    CHART_ENGINE_ALLOWED_SUBPATHS.has(subpath) ||
+    CHART_ENGINE_ALLOWED_PREFIXES.some(
+      (prefix) => subpath.startsWith(prefix) && subpath.length > prefix.length,
+    )
+  )
+}
+
+const CHART_ENGINE_ALLOWED_LIST =
+  [...CHART_ENGINE_ALLOWED_SUBPATHS].join(', ') + ', scales/*, transform/*'
+const CHART_ENGINE_MESSAGE =
+  "Import chart kinds from 'basalt-ui/charts', or the rung's `marks` (CartesianChart) for custom " +
+  'marks — only these @tanstack/charts subpaths are allowed: ' +
+  CHART_ENGINE_ALLOWED_LIST +
+  ". The bare root, /react and every other subpath are basalt's to own. (basalt/chart-engine-boundary)"
+const VISX_BANNED_MESSAGE =
+  "@visx/* is gone in 2.0 — use 'basalt-ui/charts' kinds, or the rung's `marks` built from the " +
+  'allowed @tanstack/charts subpaths. (basalt/chart-engine-boundary)'
+
+/** True for basalt's own package source — the one place the engine allowlist does not apply. */
+function inBasaltSource(filename) {
+  return filename.replaceAll('\\', '/').includes('/packages/basalt-ui/src/')
+}
+
 // Ships: error
-const visxBoundary = {
+const chartEngineBoundary = {
   meta: {
-    type: 'suggestion',
+    type: 'problem',
     docs: {
-      description: 'Disallow direct @visx/* imports outside a charts/ directory.',
+      description:
+        'Ban @visx/* everywhere and restrict @tanstack/charts to the allowed mark subpaths.',
     },
     schema: [],
   },
   create(context) {
-    const inCharts = hasPathSegment(getFilename(context), 'charts')
+    const ownSource = inBasaltSource(getFilename(context))
 
-    // Deliberately NO `hasThemeAllow` escape here (unlike the four design-guard rules above).
-    // `theme-allow` exists so the theme/palette source can opt out of DESIGN guidance (raw font
-    // sizes, raw colors) — it is not a license to punch through an ARCHITECTURE boundary. The whole
-    // point of moving this check into its own plugin rule instead of `no-restricted-imports` was
-    // that it can only be turned off explicitly, by rule id (see the file-header comment); a stray
-    // `theme-allow` comment (which also matches the line above the flagged node) must not silently
-    // bypass it. Do not "restore consistency" by adding it back.
     function reportFor(node, source) {
-      if (typeof source !== 'string' || !source.startsWith('@visx/')) return
-      if (source === '@visx/tooltip') return // basalt/visx-tooltip owns this one, everywhere
-      if (!inCharts) context.report({ node, message: VISX_BOUNDARY_MESSAGE })
+      if (typeof source !== 'string') return
+      if (visxBanned(source)) {
+        context.report({ node, message: VISX_BANNED_MESSAGE })
+        return
+      }
+      if (ownSource) return
+      if (source !== '@tanstack/charts' && !source.startsWith('@tanstack/charts/')) return
+      const subpath = source.slice('@tanstack/charts/'.length)
+      if (source !== '@tanstack/charts' && isAllowedChartEngineSubpath(subpath)) return
+      context.report({ node, message: CHART_ENGINE_MESSAGE })
     }
 
     return boundaryVisitor(reportFor)
   },
 }
 
-// Rule 6 — visx-tooltip: @visx/tooltip banned everywhere, including inside charts. Fires ahead of
-// (and instead of) basalt/visx-boundary for that one specifier — basalt's own src/ never imports
-// @visx/tooltip, so no theme-allow-style exemption is needed here either.
-// Ships: error
-const visxTooltip = {
+// Rule 6 — chart-host-single (V2-SPEC § 9.8): `@tanstack/charts/react` is imported by
+// `packages/basalt-ui/src/charts/host.tsx` alone, so measured sizing, legend and state chrome live
+// in one component. Repo-local only, like token-layer-boundary — never in the consumer preset.
+const CHART_HOST_FILE = 'packages/basalt-ui/src/charts/host.tsx'
+const CHART_HOST_MESSAGE =
+  '@tanstack/charts/react may only be imported by ' +
+  CHART_HOST_FILE +
+  ' — render charts through the host. (basalt/chart-host-single)'
+// Ships: repo-local only
+const chartHostSingle = {
   meta: {
-    type: 'suggestion',
+    type: 'problem',
     docs: {
-      description: 'Disallow @visx/tooltip everywhere — use basalt-ui ChartTooltip instead.',
+      description: 'Allow @tanstack/charts/react only in packages/basalt-ui/src/charts/host.tsx.',
     },
     schema: [],
   },
   create(context) {
+    const isHost = getFilename(context)
+      .replaceAll('\\', '/')
+      .endsWith('/' + CHART_HOST_FILE)
+
     function reportFor(node, source) {
-      if (source !== '@visx/tooltip') return
-      context.report({ node, message: VISX_TOOLTIP_MESSAGE })
+      if (typeof source !== 'string' || isHost) return
+      if (source === '@tanstack/charts/react' || source.startsWith('@tanstack/charts/react/')) {
+        context.report({ node, message: CHART_HOST_MESSAGE })
+      }
     }
 
     return boundaryVisitor(reportFor)
@@ -1000,7 +1062,7 @@ const tokenLayerBoundary = {
     const inCharts = hasPathSegment(filename, 'charts')
     const inTokens = hasPathSegment(filename, 'tokens')
 
-    // Deliberately NO `hasThemeAllow` escape — see basalt/visx-boundary's comment above for why.
+    // Deliberately NO `hasThemeAllow` escape — see the chart-engine-boundary comment above for why.
     function reportFor(node, source) {
       if (typeof source !== 'string') return
       if (
@@ -1046,7 +1108,7 @@ function propertyKeyName(node) {
   return undefined
 }
 
-// Deliberately NO `hasThemeAllow` escape — see basalt/visx-boundary's comment for why these
+// Deliberately NO `hasThemeAllow` escape — see the chart-engine-boundary comment above for why these
 // guards use their own token (`basalt-agent-allow`, see the file-header comment) instead.
 // Ships: error
 const agentResumeGuard = {
@@ -1318,227 +1380,6 @@ const aiSdkMajor = {
         if (hasAgentAllow(context, node)) return
 
         context.report({ node, message: aiSdkMajorMessage(consumerMajor) })
-      },
-    }
-  },
-}
-
-// ── Rule 12 — hand-rolled-plot ───────────────────────────────────────────────────────────────────
-
-/**
- * The primitives `CartesianChart` assembles. Rendering one of these directly means the file is
- * re-implementing the plot assembly — margins, scales, axes, cursor, crosshair, tooltip — that the
- * primitive owns for every other chart, which is exactly how charts drift apart from each other.
- */
-const PLOT_ASSEMBLY_TAGS = new Set([
-  'AxisLeftNumeric',
-  'AxisRightNumeric',
-  'AxisBottomDate',
-  'HoverOverlay',
-  'Crosshair',
-])
-
-/**
- * KNOWN LIMIT, deliberately not closed: a chart drawn out of DOM instead of the chart layer is
- * structurally invisible here.
- *
- * argo has two — a 3×3 Mantine `SimpleGrid` matrix and absolutely-positioned `Box` bullet bars —
- * that import only `ChartCard` and `VX`, render no basalt primitive, and therefore cannot trip any
- * tag-name check. The candidate widenings all fail on false positives in a rule that SHIPS to
- * consumers: adding `ChartTooltipFloat`/`useChartSize` to this set flags `Donut` and `Heatmap`,
- * which compose them legitimately; "renders `ChartCard` and a raw `<svg>`" flags an inline icon in
- * a card header. Detecting "this Box grid is a chart" needs intent, not syntax. Naming the gap here
- * is the honest answer — a noisy rule gets switched off, and then it guards nothing at all.
- */
-
-/**
- * Composing this means the file is USING the chart system rather than re-implementing it.
- * `ChartFrame` deliberately does NOT count: composing the frame directly and then hand-assembling
- * axes and a cursor on top of it IS the drift this rule exists to catch. A genuinely non-single-
- * plot shape does exactly that — and declares it with a `theme-allow` comment, so the exception is
- * a decision someone wrote down rather than a default anyone can fall into.
- */
-const PLOT_OWNER_TAGS = new Set(['CartesianChart'])
-
-/**
- * Import sources that make a JSX tag one of BASALT's chart primitives rather than a component the
- * consumer happens to have named `Crosshair`. Matching bare tag names would false-positive on any
- * app with its own overlay component — and this rule ships to consumers, so that matters.
- */
-const CHART_IMPORT_SOURCE = /(^|\/)basalt-ui\/charts|(^|\/)charts(\/|$)|(^|\.\.\/)primitives\//
-
-/** Local names imported from a basalt charts entry — the only tags either chart rule considers. */
-function collectChartImports(node, into) {
-  if (!CHART_IMPORT_SOURCE.test(node.source?.value ?? '')) return
-  for (const spec of node.specifiers ?? []) {
-    if (spec.local?.name !== undefined) into.add(spec.local.name)
-  }
-}
-
-const HAND_ROLLED_PLOT_MESSAGE =
-  'Chart assembly primitive rendered without composing CartesianChart — that primitive already ' +
-  'owns the measured margins, both y scales, the axes, grid, shared cursor, crosshair and ' +
-  'tooltip. Hand-assembling them is how two charts stop matching. Compose CartesianChart and ' +
-  'render only marks. A genuinely non-single-plot shape (multi-pane, radial, matrix) composes ' +
-  'ChartFrame instead — declare that with `theme-allow-file hand-rolled-plot — <why>` anywhere in ' +
-  'the file. To waive just THIS node and stay policed on the rest, write `theme-allow ' +
-  'hand-rolled-plot — <why>` on its own line above it. (basalt/hand-rolled-plot)'
-
-// Ships: error
-const handRolledPlot = {
-  meta: {
-    type: 'suggestion',
-    docs: {
-      description:
-        'Disallow assembling a cartesian plot by hand instead of composing CartesianChart.',
-    },
-    schema: [],
-  },
-  create(context) {
-    if (isTestFile(context)) return {}
-    // File-scoped, not node-scoped: the verdict depends on whether a plot OWNER appears anywhere
-    // in the file, which is only known once the whole file has been walked.
-    const assemblyNodes = []
-    const chartImports = new Set()
-    let ownsPlot = false
-    let definesOwner = false
-
-    // A rule that says "compose CartesianChart" cannot fire inside the module that DEFINES
-    // CartesianChart — that file is the assembly. Detected by declaration rather than by path so
-    // it stays honest: this is definitional, not basalt exempting itself for convenience (the
-    // self-exemption habit is what let the 1.4.0 regression reach consumers — see docs/STATUS.md).
-    const notesOwnerDefinition = (name) => {
-      if (name === 'CartesianChart') definesOwner = true
-    }
-
-    return {
-      ImportDeclaration(node) {
-        collectChartImports(node, chartImports)
-      },
-      FunctionDeclaration(node) {
-        notesOwnerDefinition(node.id?.name)
-      },
-      VariableDeclarator(node) {
-        notesOwnerDefinition(node.id?.name)
-      },
-      JSXOpeningElement(node) {
-        const tagName = node.name?.name
-        if (PLOT_OWNER_TAGS.has(tagName)) ownsPlot = true
-        else if (PLOT_ASSEMBLY_TAGS.has(tagName)) assemblyNodes.push(node)
-      },
-      'Program:exit'() {
-        if (ownsPlot || definesOwner) return
-        // The CHECK stays file-scoped — forced by the shape of the correct pattern:
-        // `<CartesianChart>{() => <AxisLeftNumeric …/>}</CartesianChart>` puts the axis inside a
-        // render-prop arrow, a different function from the component that owns the chart, so
-        // component scope would flag the canonical usage.
-        //
-        // The SUPPRESSION no longer is. Reporting only the first node and testing the waiver there
-        // meant one comment — any comment, about anything — bought a whole file permanent immunity:
-        // every axis, overlay and crosshair added to that file afterwards went unreported forever
-        // (linewatch: three files, one 604 lines). Now every assembly node is reported and waived on
-        // its own, EXCEPT when the file carries a written declaration — a `theme-allow` that names
-        // `basalt/hand-rolled-plot` and gives a reason. That is the shape a genuinely non-single-plot
-        // kind already uses (`DualPanel`), and it is the difference between a line waiver and a
-        // decision about the file.
-        const nodes = assemblyNodes.filter((node) => chartImports.has(node.name?.name))
-        if (nodes.length === 0) return
-        if (hasFileDeclaration(context, 'hand-rolled-plot')) return
-        for (const node of nodes) {
-          if (hasThemeAllow(context, node, 'hand-rolled-plot')) continue
-          context.report({ node, message: HAND_ROLLED_PLOT_MESSAGE })
-        }
-      },
-    }
-  },
-}
-
-// ── Rule 13 — chart-legend-literal ───────────────────────────────────────────────────────────────
-
-const CHART_LEGEND_LITERAL_MESSAGE =
-  'Hand-authored ChartLegend items — the legend must be DERIVED from the same `series` array the ' +
-  'chart draws (deriveLegend, or just let ChartFrame/CartesianChart do it). A hand-written list ' +
-  'is a second source of truth that silently goes stale: it keeps naming a series after the plot ' +
-  'stops drawing it. (basalt/chart-legend-literal)'
-
-/**
- * Does this expression derive from the chart's own `series`?
- *
- * The contract is derivation from `series` — not derivation from *an* array. `items={refLines.map(
- * (r) => ({ key, label, color, shape }))}` and `items={PACE_ZONES.map(…)}` are hand-authored
- * legends by any reading: every field is written at the call site, and the list can name a band the
- * plot no longer draws exactly like a `[...]` literal can. Walks the base of a member/call chain so
- * `visibleSeries.filter(…).map(…)` and `deriveLegend(series)` both read as derived.
- */
-function derivesFromSeries(node, depth = 0) {
-  if (node === null || node === undefined || depth > 8) return false
-  if (node.type === 'Identifier') return /series$/i.test(node.name ?? '')
-  if (node.type === 'MemberExpression') {
-    return derivesFromSeries(node.object, depth + 1) || derivesFromSeries(node.property, depth + 1)
-  }
-  if (node.type === 'CallExpression') {
-    if (node.callee?.type === 'Identifier' && node.callee.name === 'deriveLegend') return true
-    return (
-      derivesFromSeries(node.callee, depth + 1) ||
-      (node.arguments ?? []).some((arg) => derivesFromSeries(arg, depth + 1))
-    )
-  }
-  return false
-}
-
-/** `X.map(…)` — the derivation-shaped form that is only derivation when `X` is the series. */
-function isMapCall(node) {
-  return (
-    node?.type === 'CallExpression' &&
-    node.callee?.type === 'MemberExpression' &&
-    node.callee.property?.name === 'map'
-  )
-}
-
-// Ships: error
-const chartLegendLiteral = {
-  meta: {
-    type: 'suggestion',
-    docs: { description: 'Require ChartLegend items to be derived from the series descriptor.' },
-    schema: [],
-  },
-  create(context) {
-    if (isTestFile(context)) return {}
-    const chartImports = new Set()
-
-    return {
-      ImportDeclaration(node) {
-        collectChartImports(node, chartImports)
-      },
-      JSXOpeningElement(node) {
-        if (node.name?.name !== 'ChartLegend' || !chartImports.has('ChartLegend')) return
-        const items = node.attributes?.find(
-          (attr) => attr.type === 'JSXAttribute' && attr.name?.name === 'items',
-        )
-        const expression = items?.value?.expression
-        // The `.map()` half — a list built by mapping over something that is NOT the series. See
-        // `derivesFromSeries`. Reported under the same id as the array-literal half because it is
-        // the same defect (a second source of truth for the legend), just written as a call.
-        if (isMapCall(expression) && !derivesFromSeries(expression.callee?.object)) {
-          if (hasThemeAllow(context, node, 'chart-legend-literal')) return
-          context.report({ node, message: CHART_LEGEND_LITERAL_MESSAGE })
-          return
-        }
-        if (expression?.type !== 'ArrayExpression') return
-        // Only a list that is ENTIRELY object literals is a hand-authored legend. An array that
-        // spreads or calls something (`[...deriveLegend(series), note]`) is derived-and-extended,
-        // which is legitimate — flagging it would push people to disable the rule.
-        //
-        // Known and accepted gap: hoisting the literal to a `const` one line up
-        // (`const items = [...]; <ChartLegend items={items} />`) reads as an Identifier here and
-        // is not flagged. Following that would mean local flow analysis for a bypass nobody
-        // reaches by accident; the rule targets the shape people actually write.
-        const allObjectLiterals =
-          expression.elements.length > 0 &&
-          expression.elements.every((el) => el?.type === 'ObjectExpression')
-        if (!allObjectLiterals) return
-        if (hasThemeAllow(context, node, 'chart-legend-literal')) return
-        context.report({ node, message: CHART_LEGEND_LITERAL_MESSAGE })
       },
     }
   },
@@ -4544,8 +4385,6 @@ export default {
     'raw-size-literal': rawSizeLiteral,
     'card-inset': cardInset,
     'chart-in-raw-surface': chartInRawSurface,
-    'hand-rolled-plot': handRolledPlot,
-    'chart-legend-literal': chartLegendLiteral,
     'shadow-basalt-export': shadowBasaltExport,
     'hand-rolled-shell': handRolledShell,
     'raw-scroll-container': rawScrollContainer,
@@ -4562,8 +4401,8 @@ export default {
     'query-fn-unwrap': queryFnUnwrap,
     'deprecated-export': deprecatedExport,
     'forms-field-key': formsFieldKey,
-    'visx-boundary': visxBoundary,
-    'visx-tooltip': visxTooltip,
+    'chart-engine-boundary': chartEngineBoundary,
+    'chart-host-single': chartHostSingle,
     'token-layer-boundary': tokenLayerBoundary,
     'agent-resume-guard': agentResumeGuard,
     'agent-no-raw-usechat': agentNoRawUseChat,

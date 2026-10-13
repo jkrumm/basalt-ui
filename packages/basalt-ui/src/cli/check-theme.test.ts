@@ -26,7 +26,7 @@ function fixture(source: string, basalt: Record<string, unknown> = { roots: ['sr
 
 /**
  * Write a consumer fixture at an arbitrary path under the scanned root (e.g. a `charts/` subdir),
- * so the path-gated `raw-visx-axis` guard can be exercised. `relPath` is relative to `src`.
+ * so a path-gated guard can be exercised. `relPath` is relative to `src`.
  */
 function fixtureAt(
   relPath: string,
@@ -357,75 +357,6 @@ describe('check-theme inline-display', () => {
   })
 })
 
-describe('check-theme raw-visx-axis', () => {
-  it('flags a raw <AxisLeft> in a chart file', () => {
-    fixtureAt(
-      'charts/kinds/Foo.tsx',
-      `export const Foo = () => <AxisLeft scale={s} numTicks={4} />\n`,
-    )
-    const { code, err } = run()
-    expect(code).toBe(1)
-    expect(err).toContain('raw-visx-axis')
-  })
-
-  it('flags a raw <AxisBottom> and <AxisRight> in a chart file', () => {
-    fixtureAt(
-      'charts/kinds/Foo.tsx',
-      `export const Foo = () => (\n  <>\n    <AxisBottom scale={x} />\n    <AxisRight scale={y} />\n  </>\n)\n`,
-    )
-    const { code, err } = run()
-    expect(code).toBe(1)
-    expect(err).toContain('raw-visx-axis')
-  })
-
-  it('does NOT flag a chart-path <AxisLeft> carrying a theme-allow comment', () => {
-    fixtureAt(
-      'charts/kinds/Foo.tsx',
-      `export const Foo = () => <AxisLeft scale={s} /> // theme-allow raw-visx-axis — bespoke dual-panel\n`,
-    )
-    const { code, err } = run()
-    expect(code).toBe(0)
-    expect(err).not.toContain('raw-visx-axis')
-  })
-
-  it('does NOT flag a raw <AxisLeft> in a NON-chart path', () => {
-    fixtureAt('widgets/Foo.tsx', `export const Foo = () => <AxisLeft scale={s} />\n`)
-    const { code, err } = run()
-    expect(code).toBe(0)
-    expect(err).not.toContain('raw-visx-axis')
-  })
-
-  it('does NOT flag AxisLeftNumeric usage in a chart file', () => {
-    fixtureAt(
-      'charts/kinds/Foo.tsx',
-      `export const Foo = () => <AxisLeftNumeric scale={s} numTicks={4} />\n`,
-    )
-    const { code, err } = run()
-    expect(code).toBe(0)
-    expect(err).not.toContain('raw-visx-axis')
-  })
-
-  it('does NOT flag raw <AxisLeft> in the Axes.tsx wrapper primitive', () => {
-    fixtureAt(
-      'charts/primitives/Axes.tsx',
-      `export const AxisLeftNumeric = (p) => <AxisLeft {...p} />\n`,
-    )
-    const { code, err } = run()
-    expect(code).toBe(0)
-    expect(err).not.toContain('raw-visx-axis')
-  })
-
-  it('respects the rawVisxAxis:false config knob', () => {
-    fixtureAt('charts/kinds/Foo.tsx', `export const Foo = () => <AxisLeft scale={s} />\n`, {
-      roots: ['src'],
-      rawVisxAxis: false,
-    })
-    const { code, err } = run()
-    expect(code).toBe(0)
-    expect(err).not.toContain('raw-visx-axis')
-  })
-})
-
 describe('check-theme raw-form-control', () => {
   it('fails the build on a raw <input>', () => {
     fixture(`export const C = () => <input type="text" value={v} />\n`)
@@ -667,11 +598,11 @@ describe('check-theme comment skipping', () => {
   it('does NOT flag a banned element mentioned in a pure line comment', () => {
     fixtureAt(
       'charts/kinds/Foo.tsx',
-      `// never render a raw <AxisLeft> — use AxisLeftNumeric\nexport const Foo = () => <AxisLeftNumeric scale={s} />\n`,
+      `// never render a raw <input> — use TextInput\nexport const Foo = () => <TextInput />\n`,
     )
     const { code, err } = run()
     expect(code).toBe(0)
-    expect(err).not.toContain('raw-visx-axis')
+    expect(err).not.toContain('raw-form-control')
   })
 
   it('does NOT flag a banned token mentioned in a JSDoc body line', () => {
@@ -686,11 +617,11 @@ describe('check-theme comment skipping', () => {
   it('still flags the real violation on a code line even when a comment mentions it too', () => {
     fixtureAt(
       'charts/kinds/Foo.tsx',
-      `// raw <AxisLeft> is banned\nexport const Foo = () => <AxisLeft scale={s} />\n`,
+      `// raw <input> is banned\nexport const Foo = () => <input type="text" />\n`,
     )
     const { code, err } = run()
     expect(code).toBe(1)
-    expect(err).toContain('raw-visx-axis')
+    expect(err).toContain('raw-form-control')
   })
 })
 
