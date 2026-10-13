@@ -31,7 +31,7 @@ import type {
 import { ViewTabs } from 'basalt-ui/controls'
 import { BasaltDataTable, createColumnHelper } from 'basalt-ui/table'
 import { alpha, CONTAINER_KEYS, VX } from 'basalt-ui/tokens'
-import { chartViews } from './charts-store'
+import { BUCKET_COUNT, chartViews } from './charts-store'
 import {
   ACTIVITY,
   buildAvailability,
@@ -39,6 +39,7 @@ import {
   buildThroughput,
   FORECAST,
   HOURS,
+  LINK_FULL_MBIT,
   mergeAvailability,
   mergeLink,
   mergeThroughput,
@@ -126,12 +127,17 @@ const LINK_STATES: BandStripSeries<LinkSlot>[] = [
   { key: 'absent', label: 'Not measured', color: VX.neutral },
 ]
 
+const SPEED_FLOOR = 0.25
+const SPEED_RANGE = 0.65
+
 function linkBand(d: LinkSlot): BandSpan {
   if (d.mbit === null) return { state: 'absent' }
-  if (d.renegotiated) return { state: 'speed', marker: { state: 'transition' } }
-  // Intensity relative to the fastest rate the window saw — a property of the hardware, so a
-  // `fill` inside one state and not a second state.
-  return { state: 'speed', fill: alpha(VX.line, 0.25 + 0.65 * (d.mbit / 1000)) }
+  // Intensity relative to the fastest rate the link negotiates — a property of the hardware, so a
+  // `fill` inside one state and not a second state. A renegotiated band keeps it: the marker
+  // adds the transition, it does not replace the reading.
+  const fill = alpha(VX.line, SPEED_FLOOR + SPEED_RANGE * (d.mbit / LINK_FULL_MBIT))
+  if (d.renegotiated) return { state: 'speed', fill, marker: { state: 'transition' } }
+  return { state: 'speed', fill }
 }
 
 const THROUGHPUT_SERIES: MirroredBarsSeries<ThroughputSlot>[] = [
@@ -168,6 +174,9 @@ function throughputRows(d: ThroughputSlot): ChartTooltipRow[] {
 
 const stripHeader = (_: Date, d: { start: Date }): string => fmtStamp(d.start)
 
+/** A bar that lost samples to placement is real but understated — drawn dimmer, not hidden. */
+const UNDERSTATED_BAR_OPACITY = 0.45
+
 const AVAILABILITY_FOLD = { merge: mergeAvailability }
 const LINK_FOLD = { merge: mergeLink }
 const THROUGHPUT_FOLD = { merge: mergeThroughput }
@@ -176,7 +185,7 @@ const DOWN_PANE = { key: 'down', format: fmtRate, ticks: 3 }
 
 export function StripsTab() {
   const [size] = chartViews.field.buckets.use()
-  const count = Number(size)
+  const count = BUCKET_COUNT[size]
   const availability = useMemo(() => buildAvailability(count), [count])
   const link = useMemo(() => buildLink(count), [count])
   const throughput = useMemo(() => buildThroughput(count), [count])
@@ -238,7 +247,7 @@ export function StripsTab() {
             up={UP_PANE}
             down={DOWN_PANE}
             getAbsentFraction={(d) => d.unmeasured / d.foldedFrom}
-            getBarOpacity={(d) => (d.skipped > 0 ? 0.45 : 1)}
+            getBarOpacity={(d) => (d.skipped > 0 ? UNDERSTATED_BAR_OPACITY : 1)}
             fold={THROUGHPUT_FOLD}
             height={220}
             tooltip={{ onFollow: true, formatHeader: stripHeader, rows: throughputRows }}

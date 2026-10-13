@@ -39,6 +39,16 @@ const DASH_SEARCH = {
 // The charts route's store has two fields; the same hand-spelled-shape rule applies.
 const CHARTS_SEARCH = { tab: 'linked', buckets: '288' } as const
 
+// The charts row, pinned: a link into the route carries the store's whole shape, and a value
+// outside a field's options is a compile error.
+export const chartsLink = linkOptions({ to: '/charts', search: CHARTS_SEARCH })
+
+// @ts-expect-error `/charts` has a required search shape — a bare link is a compile error
+export const chartsBare = linkOptions({ to: '/charts' })
+
+// @ts-expect-error 'nope' is not one of the `tab` field's options
+export const chartsBadTab = linkOptions({ to: '/charts', search: { tab: 'nope', buckets: '288' } })
+
 // ── the definition under test ────────────────────────────────────────────────────────────────────
 
 export const NAV = defineNav({

@@ -518,8 +518,8 @@ export function ChartsPage() {
         </Stack>
       )}
 
-      {/* ── Standalone kinds ────────────────────────────────────────────────────────── */}
-      {tab === 'kinds' && (
+      {/* ── Cartesian kinds ────────────────────────────────────────────────────────── */}
+      {tab === 'cartesian' && (
         <>
           <ChartCard
             title="Estimated 1RM trend"
