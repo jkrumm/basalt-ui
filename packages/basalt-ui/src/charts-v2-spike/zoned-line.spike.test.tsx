@@ -17,6 +17,7 @@ import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { renderToString } from 'react-dom/server'
 import { cursorController } from './cursor'
+import { chartEngineCss } from './theme-bridge'
 import { ZonedLine, zonedLine } from './ZonedLine'
 
 type Row = { day: string; v: number | null }
@@ -37,6 +38,10 @@ const props = {
   refLines: [{ value: 30, color: 'var(--vx-good-ref)', dashed: true }],
 }
 
+// One element per host that painted a tooltip. (`hidden` is no signal here: happy-dom has zero
+// geometry, so the portal's viewport-collision check marks every tooltip hidden.)
+const tooltips = () => [...document.querySelectorAll('.ts-chart-tooltip')]
+
 describe('SSR', () => {
   test('React renderToString emits the complete accessible SVG', () => {
     const html = renderToString(<ZonedLine {...props} ariaLabel="Load" />)
@@ -52,7 +57,7 @@ describe('SSR', () => {
 
   test('framework-free renderChartSvg returns a string with no DOM', () => {
     const runtime = createChartRuntime()
-    const scene = runtime.render(zonedLine(props), { width: 720, height: 240 })
+    const scene = runtime.render(zonedLine(props, 'ssr'), { width: 720, height: 240 })
     const svg = renderChartSvg(scene, { ariaLabel: 'Load', idPrefix: 'load' })
     runtime.destroy()
     expect(svg.startsWith('<svg')).toBe(true)
@@ -63,15 +68,25 @@ describe('SSR', () => {
 describe('theme bridge', () => {
   test('every paint is a --vx-* reference; no TanStack default hex leaks', () => {
     const html = renderToString(<ZonedLine {...props} ariaLabel="Load" />)
-    expect(html).toContain('--ts-chart-tooltip-background:var(--vx-tooltip-bg)')
-    expect(html).toContain('stroke="var(--vx-grid)"')
-    expect(html).toContain('fill="var(--vx-muted)"')
+    expect(html).toContain('stroke="var(--vx-grid)"') // theme.grid
+    expect(html).toContain('fill="var(--vx-axis)"') // theme.muted → tick labels
+    expect(html).not.toContain('--ts-chart-') // engine vars live on :root, never on the host
     for (const hex of ['#2563eb', '#f97316', '#10b981', '#3ca951', '#4269d0', '#64748b'])
       expect(html).not.toContain(hex)
   })
 
+  test('chartEngineCss emits the engine vars as one :root block', () => {
+    const css = chartEngineCss()
+    expect(css.startsWith(':root{')).toBe(true)
+    expect(css).toContain('--ts-chart-tooltip-background:var(--vx-tooltip-bg)')
+    expect(css).toContain('--ts-chart-tooltip-border:var(--vx-tooltip-border)')
+  })
+
   test('y domain is basalt-resolved: a zone does not widen it', () => {
-    const spec = zonedLine({ ...props, zones: [{ from: 0, to: 500, fill: 'var(--vx-good)' }] })
+    const spec = zonedLine(
+      { ...props, zones: [{ from: 0, to: 500, fill: 'var(--vx-good)' }] },
+      'dom',
+    )
     const built = spec.chart({
       width: 640,
       height: 240,
@@ -98,13 +113,17 @@ test('dual axis: a named y scale on the right side is native', () => {
 
 describe('shared cursor', () => {
   let root: ReturnType<typeof createRoot> | undefined
-  afterEach(() => act(() => root?.unmount()))
+  afterEach(() => {
+    act(() => root?.unmount())
+    cursorController().setState(null)
+    document.body.innerHTML = ''
+  })
 
-  test('a pointer on chart A paints chart B at the same semantic x', async () => {
+  const b = { ...load, key: 'b', label: 'B', color: 'var(--vx-accent)' }
+  async function hoverAOverB(bTooltip?: { onFollow: boolean }) {
     const el = document.createElement('div')
     document.body.append(el)
     root = createRoot(el)
-    const b = { ...load, key: 'b', label: 'B', color: 'var(--vx-accent)' }
     await act(async () => {
       root?.render(
         <>
@@ -112,7 +131,13 @@ describe('shared cursor', () => {
             <ZonedLine data={rows(30)} x={x} series={load} ariaLabel="A" />
           </div>
           <div id="B">
-            <ZonedLine data={rows(10)} x={x} series={b} ariaLabel="B" />
+            <ZonedLine
+              data={rows(10)}
+              x={x}
+              series={b}
+              ariaLabel="B"
+              {...(bTooltip && { tooltip: bTooltip })}
+            />
           </div>
         </>,
       )
@@ -125,6 +150,11 @@ describe('shared cursor', () => {
       )
       await new Promise((r) => setTimeout(r, 30))
     })
+    return el
+  }
+
+  test('a pointer on chart A paints chart B at the same semantic x; only A shows a tooltip', async () => {
+    const el = await hoverAOverB()
     const state = cursorController().getState()
     expect(state?.source).toBe('pointer')
     expect(state?.anchor).toBe('value')
@@ -132,8 +162,32 @@ describe('shared cursor', () => {
       el.querySelector(`#${id} .ts-chart__crosshair-rule--x`)?.getAttribute('x1')
     expect(ruleX('A')).toBeDefined()
     expect(ruleX('B')).toBe(ruleX('A'))
-    // Finding: 1.1.0 shows the tooltip on every bound host, followers included.
-    expect(document.querySelectorAll('.ts-chart-tooltip[role="status"]').length).toBe(2)
+    // Source-only: one tooltip, one live region, and it is A's (series "Load", not "B").
+    const tips = tooltips()
+    expect(tips.length).toBe(1)
+    expect(tips[0]?.getAttribute('role')).toBe('status')
+    expect(tips[0]?.textContent).toContain('Load')
+    expect(document.querySelectorAll('[aria-live]').length).toBe(1)
+  })
+
+  test('tooltip.onFollow opts a follower back into its own tooltip (the 1.x opt-in)', async () => {
+    await hoverAOverB({ onFollow: true })
+    const tips = tooltips()
+    expect(tips.length).toBe(2)
+    expect(tips.map((t) => t.textContent).join(' ')).toContain('B')
+  })
+
+  test('the portal fallback reparents the tooltip under <body>, out of the host', async () => {
+    await hoverAOverB()
+    const [tip] = tooltips()
+    if (!tip) throw new Error('no tooltip')
+    // happy-dom has no Popover, so the portal took its fixed fallback: the tooltip is a child of
+    // <body>, and vars set on the host would not reach it. That is why the engine vars live on
+    // :root (`chartEngineCss`). happy-dom does not cascade custom properties at all, so the
+    // inheritance itself is the W4 layout suite's job, in Chrome.
+    expect(tip.parentElement).toBe(document.body)
+    expect(tip.closest('.ts-chart-host')).toBeNull()
+    expect(tip.getAttribute('data-ts-chart-tooltip-portal')).toBe('fallback')
   })
 
   test('a weekly chart follows a daily one through basalt resolution, and clears with it', async () => {
@@ -156,6 +210,7 @@ describe('shared cursor', () => {
               series={s}
               ariaLabel="W"
               cursorResolution="leading"
+              tooltip={{ onFollow: true }}
             />
           </div>
         </>,

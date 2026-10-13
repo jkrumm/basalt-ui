@@ -10,7 +10,7 @@ import { scaleLinear } from '@tanstack/charts/scales/linear'
 import { tooltip } from '@tanstack/charts/tooltip'
 import { portal } from '@tanstack/charts/tooltip/portal'
 import { scaleLog, scaleUtc } from 'd3-scale'
-import { cursorBinding } from './cursor'
+import { cursorBinding, sourceOnlyFocus } from './cursor'
 import type { CursorResolution } from './cursor'
 import { CHART_THEME } from './theme-bridge'
 
@@ -35,12 +35,26 @@ export type AxisSpec = {
 }
 export type YZone = { from: number; to: number; fill: string }
 export type RefLine = { value: number; color: string; dashed?: boolean }
+export type ChartTooltipRow = { label: string; value: string; color?: string }
+export type ChartTooltipConfig<T> = {
+  /** Data rows appended after the per-series rows (replaces 1.x `TooltipRow`/`extraRows`). */
+  rows?: (
+    d: T,
+    ctx: { visible: readonly Series<T>[]; hidden: readonly Series<T>[] },
+  ) => readonly ChartTooltipRow[]
+  /** Show this chart's tooltip while it FOLLOWS a sibling's cursor (1.x `onFollow`). */
+  onFollow?: boolean
+}
+/** What a kind's `marks` receives. */
+export type PlotContext<T> = { rows: (key: string) => CartesianRow<T>[] }
 
 // The rung is generic over arbitrary TanStack marks; their generics are erased at this seam.
 // oxlint-disable-next-line typescript/no-explicit-any -- spike: TanStack's own erased-mark type
 type AnyMark = ChartMark<any, any, any, any, any, any, any>
 
 export type CartesianSpec<T> = {
+  /** Unique per mounted chart (React `useId`): owns what this chart publishes to the cursor. */
+  chartId: string
   data: readonly T[]
   x: (d: T) => Date
   series: readonly Series<T>[]
@@ -53,7 +67,8 @@ export type CartesianSpec<T> = {
   /** How a sibling's cursor value lands on this chart's x keys. Default `'nearest'`. */
   cursorResolution?: CursorResolution
   /** The kind's marks — the ONLY thing a kind supplies. */
-  marks: (rows: (s: Series<T>) => CartesianRow<T>[]) => readonly AnyMark[]
+  marks: (plot: PlotContext<T>) => readonly AnyMark[]
+  tooltip?: ChartTooltipConfig<T>
 }
 
 /**
@@ -86,12 +101,17 @@ const DASH = '6 4'
 export type CartesianDefinition<T> = ResponsiveChartDefinition<CartesianRow<T>, Date, number, 'dom'>
 
 export function cartesian<T>(spec: CartesianSpec<T>): CartesianDefinition<T> {
-  const rowsFor = (s: Series<T>): CartesianRow<T>[] =>
-    spec.data.map((d) => ({ x: spec.x(d), y: s.getValue(d), series: s.key, datum: d }))
+  const seriesBy = new Map(spec.series.map((s) => [s.key, s]))
+  const plot: PlotContext<T> = {
+    rows: (key) => {
+      const s = seriesBy.get(key)
+      if (!s) throw new Error(`[basalt] CartesianChart: no series "${key}"`)
+      return spec.data.map((d) => ({ x: spec.x(d), y: s.getValue(d), series: s.key, datum: d }))
+    },
+  }
   const xs = spec.data.map(spec.x)
   const x0 = xs[0]
   const x1 = xs[xs.length - 1]
-  const seriesBy = new Map(spec.series.map((s) => [s.key, s]))
   const values = spec.series.flatMap((s) =>
     spec.data.map(s.getValue).filter((v): v is number => v !== null && Number.isFinite(v)),
   )
@@ -132,7 +152,7 @@ export function cartesian<T>(spec: CartesianSpec<T>): CartesianDefinition<T> {
       return {
         marks: [
           ...underlay,
-          ...spec.marks(rowsFor),
+          ...spec.marks(plot),
           ...overlay,
           crosshair({ x: true, y: false, strokeDasharray: '3 3' }),
         ],
@@ -162,23 +182,27 @@ export function cartesian<T>(spec: CartesianSpec<T>): CartesianDefinition<T> {
         clip: true,
       }
     },
-    focus: 'group-x',
+    // Followers draw the crosshair only, unless the chart opts into following tooltips.
+    focus: spec.tooltip?.onFollow ? 'group-x' : sourceOnlyFocus(spec.cursorGroup, spec.chartId),
     maxFocusDistance: Number.POSITIVE_INFINITY,
-    cursor: cursorBinding(spec.cursorGroup, xs, spec.cursorResolution ?? 'nearest'),
+    cursor: cursorBinding(spec.cursorGroup, spec.chartId, xs, spec.cursorResolution ?? 'nearest'),
     tooltip: {
       use: tooltip,
       portal,
       anchor: 'group-center',
       // Structured rows: heading = the formatted x, one row per series with its own formatter.
-      content: (points) => ({
-        title: formatX(points[0]?.xValue),
-        rows: points.flatMap((p) => {
+      content: (points) => {
+        const series = points.flatMap((p) => {
           const s = seriesBy.get(String(p.groupLabel))
           const v = p.yValue
           if (!s || typeof v !== 'number') return []
           return [{ label: s.label, value: (s.format ?? formatY)(v), color: s.color }]
-        }),
-      }),
+        })
+        // ...then the consumer's data rows (spike: nothing is hidden, there is no legend yet).
+        const d = (points[0]?.datum as CartesianRow<T> | undefined)?.datum
+        const extra = d ? (spec.tooltip?.rows?.(d, { visible: spec.series, hidden: [] }) ?? []) : []
+        return { title: formatX(points[0]?.xValue), rows: [...series, ...extra] }
+      },
     },
   }
 }

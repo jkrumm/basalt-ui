@@ -1,11 +1,12 @@
 import { areaY, differenceY, lineY } from '@tanstack/charts'
 import { decorative } from '@tanstack/charts/mark/decorative'
-import { useMemo } from 'react'
+import { useId, useMemo } from 'react'
 import { BasaltChart } from './BasaltChart'
 import { cartesian } from './cartesian'
 import type { CursorResolution } from './cursor'
 import type {
   AxisSpec,
+  ChartTooltipConfig,
   CartesianDefinition,
   CartesianRow,
   RefLine,
@@ -28,6 +29,7 @@ export type ZonedLineProps<T> = {
   formatX?: (d: Date) => string
   cursorGroup?: string
   cursorResolution?: CursorResolution
+  tooltip?: ChartTooltipConfig<T>
   height?: number
 }
 
@@ -36,8 +38,10 @@ const isValue = (r: CartesianRow<unknown>) => r.y !== null
 /** Single-series line over y-zones, with one-sided threshold fills and an optional area. */
 export function zonedLine<T>(
   p: Omit<ZonedLineProps<T>, 'ariaLabel' | 'height'>,
+  chartId: string,
 ): CartesianDefinition<T> {
   return cartesian({
+    chartId,
     data: p.data,
     x: p.x,
     series: [p.series],
@@ -47,8 +51,9 @@ export function zonedLine<T>(
     ...(p.formatX && { formatX: p.formatX }),
     ...(p.cursorGroup && { cursorGroup: p.cursorGroup }),
     ...(p.cursorResolution && { cursorResolution: p.cursorResolution }),
-    marks: (rows) => {
-      const pts = rows(p.series)
+    ...(p.tooltip && { tooltip: p.tooltip }),
+    marks: (plot) => {
+      const pts = plot.rows(p.series.key)
       const fills = (p.thresholds ?? []).map((t, i) =>
         decorative(
           differenceY(pts.filter(isValue), {
@@ -102,9 +107,11 @@ export function ZonedLine<T>({ ariaLabel, height, ...p }: ZonedLineProps<T>) {
     formatX,
     cursorGroup,
     cursorResolution,
+    tooltip,
   } = p
+  const chartId = useId()
   const definition = useMemo(
-    () => zonedLine(p),
+    () => zonedLine(p, chartId),
     // oxlint-disable-next-line react-hooks/exhaustive-deps -- `p` is the rest object; its fields are listed
     [
       data,
@@ -118,6 +125,8 @@ export function ZonedLine<T>({ ariaLabel, height, ...p }: ZonedLineProps<T>) {
       formatX,
       cursorGroup,
       cursorResolution,
+      tooltip,
+      chartId,
     ],
   )
   return <BasaltChart definition={definition} ariaLabel={ariaLabel} {...(height && { height })} />
