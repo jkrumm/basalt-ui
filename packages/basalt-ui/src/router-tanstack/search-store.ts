@@ -31,8 +31,15 @@
  */
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import { createStoreCore } from '../state/fields'
-import type { FieldWrite, StoreEntry } from '../state/fields'
-import type { AnyField, FieldHandle, FieldSetOptions, SearchValues, StoredValues } from '../state'
+import type {
+  AnyField,
+  FieldHandle,
+  FieldSetOptions,
+  FieldWrite,
+  SearchValues,
+  StoreEntry,
+  StoredValues,
+} from '../state/fields'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 

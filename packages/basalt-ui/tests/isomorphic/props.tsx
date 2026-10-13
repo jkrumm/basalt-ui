@@ -26,7 +26,6 @@ import type { ChartSeries } from '../../src/charts'
 import { scaleBand, scaleLinear, scalePoint } from '../../src/charts'
 import { DateRangePicker } from '../../src/controls-dates'
 import { defineCommands } from '../../src/commands'
-import { createThreadsStore } from '../../src/agent'
 
 /* ----------------------------------------------------------------- fixtures */
 
@@ -87,8 +86,6 @@ const THREAD = {
   updatedAt: 0,
 }
 
-const useIsoThreads = createThreadsStore({ key: 'isomorphic-smoke-threads', version: 1 })
-
 /**
  * `ShortcutsHelp` has NO prop that makes it render — it reads the command registry, and an empty
  * one returns `null`. So the fixture is a registration, not a `MINIMAL_PROPS` row: without it the
@@ -100,12 +97,6 @@ const useIsoThreads = createThreadsStore({ key: 'isomorphic-smoke-threads', vers
 defineCommands({
   'iso:save': { label: 'Save', group: 'File', shortcut: 'Mod+S', run: () => {} },
 })
-
-const isoTransport = {
-  stream: (): never => {
-    throw new Error('isomorphic harness: the transport must never be reached by a smoke render')
-  },
-}
 
 /* ------------------------------------------------------------- the prop map */
 
@@ -273,11 +264,7 @@ export const MINIMAL_PROPS: Record<string, Record<string, unknown>> = {
   NumberFilter: { field: store.field.nights, label: 'Nights' },
   ViewTabs: { field: store.field.currency, options: OPTIONS },
   SliderControl: { field: store.field.nights, label: 'Nights' },
-  PanelRow: { label: 'Row', children: TEXT },
-  ControlGroup: { children: TEXT },
   FilterSet: { children: TEXT },
-  ActionGroup: { actions: [] },
-  OverflowMenu: { actions: [] },
   SyncButton: { onSync: () => {} },
   DateRangePicker: { value: [null, null], onChange: () => {} },
 
@@ -291,17 +278,6 @@ export const MINIMAL_PROPS: Record<string, Record<string, unknown>> = {
   SettingsSection: { title: 'Settings', children: TEXT },
   SettingsRow: { label: 'Row', control: TEXT },
   DangerZone: { children: TEXT },
-  QueryState: {
-    query: {
-      data: [{ id: 1 }],
-      isError: false,
-      error: null,
-      fetchStatus: 'idle',
-      refetch: () => undefined,
-    },
-    empty: { title: 'No rows' },
-    children: (rows: { id: number }[]) => <div>{rows.length}</div>,
-  },
 
   /* --- shell --------------------------------------------------------------- */
   NavCountBadge: { count: 3 },
@@ -341,8 +317,6 @@ export const MINIMAL_PROPS: Record<string, Record<string, unknown>> = {
   FormSection: { title: 'Billing', children: TEXT },
   FormRow: { label: 'Email', children: TEXT },
   FormGroup: { label: 'Notify me about', children: TEXT },
-  FormActions: { actions: TEXT },
-  FormStateProvider: { children: TEXT },
 
   /* --- content ------------------------------------------------------------- */
   Prose: { children: TEXT },
@@ -382,11 +356,6 @@ export const MINIMAL_PROPS: Record<string, Record<string, unknown>> = {
     onSend: () => {},
     onStop: () => {},
     onClose: () => {},
-  },
-  ThreadWorkspace: {
-    useThreads: useIsoThreads,
-    transport: isoTransport,
-    resolveOutcome: () => ({ title: 'Iso', summary: '', status: 'done' }),
   },
 }
 
@@ -460,12 +429,7 @@ export const EXPECTED_DEFECTS: Record<string, ExpectedDefect> = {}
 export const NO_CLASSNAME: Record<string, 'provider' | 'svg' | 'portal' | 'gap'> = {
   // provider — renders no box of its own (context, portal host, error boundary); nothing to put a
   // class on.
-  BasaltErrorBoundary: 'provider',
-  BasaltOverlays: 'provider',
-  BasaltQueryDevtools: 'provider',
   ChartCursorScope: 'provider',
-  ConnectivityProvider: 'provider',
-  FormStateProvider: 'provider',
   VxThemeProvider: 'provider',
 
   // svg — paints SVG children only; a class would land on a `<g>`/`<rect>`, a different styling
@@ -483,21 +447,11 @@ export const NO_CLASSNAME: Record<string, 'provider' | 'svg' | 'portal' | 'gap'>
   ZoneRects: 'svg',
 
   // portal — forwards the class onto a node outside the probe's container. Not a gap.
-  GuideDrawer: 'portal',
 
   // gap — renders a real box and drops the class.
-  ActionGroup: 'gap',
-  AppBreadcrumbs: 'gap',
-  ArticleGrid: 'gap',
   ChartTooltipFloat: 'gap',
-  CtlSlot: 'gap',
   DateRangePicker: 'gap',
   DeltaBadge: 'gap',
-  DeriveControls: 'gap',
-  OverflowMenu: 'gap',
-  PartList: 'gap',
-  QueryState: 'gap',
-  ThemeLabControls: 'gap',
   TooltipBody: 'gap',
   TooltipHeader: 'gap',
   TooltipRow: 'gap',

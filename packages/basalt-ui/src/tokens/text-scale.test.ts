@@ -7,7 +7,7 @@
  * band makes the next request answerable with arithmetic instead of taste.
  */
 import { describe, expect, it } from 'bun:test'
-import { VX } from './index'
+import { VX } from './core'
 
 /** Every adjacent pair of the shipped ladder, ascending. */
 const STEPS = Object.values(VX.text)

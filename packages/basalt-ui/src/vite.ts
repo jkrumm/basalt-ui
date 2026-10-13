@@ -25,7 +25,7 @@ import type { HtmlTagDescriptor, Plugin, PluginOption, UserConfig } from 'vite'
 import { SURFACE } from './tokens/palette'
 import { resolveColorMix } from './vite-color-mix'
 
-export type BasaltViteOptions = {
+type BasaltViteOptions = {
   /** Dev server port. Passed with `strictPort: true` so the app fails fast on a busy port. */
   port: number
   /** Dev server host (bind address, or `true` to listen on all interfaces). */
@@ -206,7 +206,7 @@ const ICON_FILES = {
  * `site.webmanifest`. `src` is root-relative (`'/favicon.svg'` or `'favicon.svg'`, both resolve the
  * same) and is prefixed with Vite's `base` exactly like basalt's built-in set.
  */
-export type BasaltAppIcon = {
+type BasaltAppIcon = {
   /** Root-relative path under `public/`. Prefixed with Vite's resolved `base`. */
   src: string
   /** Manifest `sizes`. `'any'` for a scalable SVG; `'192x192'` for a raster. */
@@ -222,7 +222,7 @@ export type BasaltAppIcon = {
   rel?: 'icon' | 'shortcut icon' | 'apple-touch-icon' | 'mask-icon'
 }
 
-export type BasaltAppOptions = {
+type BasaltAppOptions = {
   /** App display name — used verbatim as the manifest `name` and (unless overridden) OG title. */
   name: string
   /** Short name for home-screen labels. Default: `name`. */

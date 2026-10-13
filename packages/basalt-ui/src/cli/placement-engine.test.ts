@@ -469,9 +469,9 @@ describe('--check performs zero writes', () => {
 
 // A real consumer's repo root (an API + collector) had its dashboard package in `web/`, one level
 // below the repo `.git`. `init`/`sync` used to seed lefthook.yml, .github/workflows/check.yml, and
-// src/query-client.ts relative to the PACKAGE dir regardless — none of which anything reads from
+// relative to the PACKAGE dir regardless — none of which anything reads from
 // there, and re-created on every sync even after the consumer relocated them by hand.
-describe('repo-root-shaped seeds (lefthook.yml / check.yml / query-client.ts)', () => {
+describe('repo-root-shaped seeds (lefthook.yml / check.yml)', () => {
   it('package IS the repo root (a bare .git dir present): writes lefthook.yml and check.yml, unchanged', () => {
     mkdirSync(join(dir, '.git'))
     silenced(() => init(dir))
@@ -517,37 +517,5 @@ describe('repo-root-shaped seeds (lefthook.yml / check.yml / query-client.ts)', 
     expect(existsSync(join(webDir, 'lefthook.yml'))).toBe(false)
     expect(existsSync(join(webDir, '.github/workflows/check.yml'))).toBe(false)
     expect(log).toContain('lefthook.yml')
-  })
-
-  it('an existing query-client.ts elsewhere under src/ suppresses the seed and names the found file', () => {
-    writeFileSync(
-      join(dir, 'package.json'),
-      JSON.stringify({ name: 'fixture', dependencies: { '@tanstack/react-query': '^5.101.0' } }),
-    )
-    write('src/lib/query-client.ts', 'export const queryClient = 1\n')
-
-    const { code, log } = capture(() => init(dir))
-
-    expect(code).toBe(0)
-    expect(existsSync(join(dir, 'src/query-client.ts'))).toBe(false)
-    expect(read('src/lib/query-client.ts')).toBe('export const queryClient = 1\n')
-    expect(log).toContain('src/lib/query-client.ts')
-  })
-
-  it('an existing query-client.ts elsewhere under src/ keeps suppressing the seed on sync', () => {
-    writeFileSync(
-      join(dir, 'package.json'),
-      JSON.stringify({ name: 'fixture', dependencies: { '@tanstack/react-query': '^5.101.0' } }),
-    )
-    silenced(() => init(dir))
-    expect(existsSync(join(dir, 'src/query-client.ts'))).toBe(true)
-    rmSync(join(dir, 'src/query-client.ts'))
-    write('src/lib/query-client.ts', 'export const queryClient = 1\n')
-
-    const { code, log } = capture(() => sync({}, dir))
-
-    expect(code).toBe(0)
-    expect(existsSync(join(dir, 'src/query-client.ts'))).toBe(false)
-    expect(log).toContain('src/lib/query-client.ts')
   })
 })

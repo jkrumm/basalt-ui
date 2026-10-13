@@ -23,7 +23,8 @@ import {
 } from '@tanstack/react-router'
 import type { SidebarItem, SidebarSection } from '../shell/nav-types'
 import type { AnyNavItem } from './nav'
-import { defineNav, navGroup } from './nav'
+import { navGroup } from './nav'
+import { defineNav } from '../../tests/support/nav-test-utils'
 import { useNav } from './use-nav'
 
 const NAV = defineNav({

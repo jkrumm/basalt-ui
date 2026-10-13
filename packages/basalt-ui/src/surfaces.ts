@@ -13,8 +13,8 @@ import type { GuardKind } from './guard/types'
  *
  * One rule file per DOCTRINE, not per subpath: `state` also owns the router bridge's placement law
  * (the two were one argument split across two files), and `batteries` owns every adapter surface
- * whose doctrine is "use the shipped thing" — query, forms, notifications, commands, data, content,
- * agent and the app-global layer. Thirteen files carried 4,177 lines, 55% of it with no guard
+ * whose doctrine is "use the shipped thing" — forms, commands, table, content, agent and the
+ * app-global layer. Thirteen files carried 4,177 lines, 55% of it with no guard
  * behind it and the identity paragraph restated six times (`docs/CONTROLS-SPEC.md` §7).
  *
  * @example
@@ -233,7 +233,7 @@ const MANTINE_BANS = [
 
 /**
  * The one hard source for the enforcement seam. Keys split into two kinds:
- * - JS-subpath keys (., ./charts, ./tokens, ./theme-lab, ./vite, ./guard, ./router-tanstack, ./forms, ./notifications, ./commands, ./data/table, ./data/virtual, ./agent, ./state) — real package.json exports. `./query`, `./connectivity` and bare `./data` are dropped (C1) — their public surface is absorbed onto `.`.
+ * - JS-subpath keys (., ./charts, ./tokens, ./controls, ./controls-dates, ./forms, ./state, ./table, ./format, ./commands, ./agent, ./content, ./vite) — real package.json exports (the 15-subpath map of docs/V2-SPEC.md §1, with ./styles.css and ./configs/* as the non-JS assets).
  * - #-prefixed synthetic keys (#app) — the synthetic global app-wide ban layer. The #-prefix
  *   guarantees it is never mistaken for an export path.
  *
@@ -299,9 +299,8 @@ export const SURFACES = {
       "no second cssVariablesResolver — don't hand-build createTheme or re-add the resolver basalt already installs",
     ],
     description:
-      'BasaltProvider, createBasaltTheme, BasaltShell + sidebar/mobile-nav/breadcrumbs, PageBar, PageAside, useSizeClass, useCoarsePointer, NavCountBadge, ThemeToggle, ThreadWorkspace + thread-chat components, WidgetHeader, dashboard composites (DeltaBadge, StatCard with threshold tone, EmptyState, QueryState/LoadingState/ErrorState, SettingsSection/SettingsRow/DangerZone), ConnectivityProvider/useConnectivity/ConnectivityIndicator (auto-mounted, C1: absorbed from the dropped ./connectivity), createBasaltQueryClient/unwrap/BasaltQueryDevtools (C1: absorbed from the dropped ./query), BasaltDevDock (C5: lazy Router/Query devtools + theme lab in one dock)',
+      'Wiring (`BasaltProvider`, `createBasaltTheme`, `createBasaltRouter`, `unwrap`), shell + nav (`BasaltShell`, `PageBar`, `PageAside`, `PageTitle`, `ThemeToggle`, `defineNav`/`navGroup`/`navTarget`/`flattenNav`, `useBasaltNav`, `useSizeClass`, `useCoarsePointer`), dashboard (`Section`, `WidgetHeader`, `StatCard`, `StatGroup`, `DeltaBadge`, `EmptyState`, `SettingsSection`/`SettingsRow`/`DangerZone`). Reaches no subpath-required peer.',
     optionalPeers: [
-      'react-markdown',
       'remark-gfm',
       'rehype-sanitize',
       'remend',
@@ -376,13 +375,6 @@ export const SURFACES = {
     // ./charts above and that rule's file-header comment for why).
     forbiddenImports: [],
   },
-  './theme-lab': {
-    kind: 'tooling',
-    layer: 'mantine-coupled',
-    description:
-      'ThemeLabControls, applyOverrides, COLOR_GROUPS — a low-level inspector for the non-derived structural tokens; identity/color tuning lives in DeriveControls',
-    forbiddenImports: [],
-  },
   './vite': {
     kind: 'tooling',
     layer: 'build-tooling',
@@ -391,44 +383,15 @@ export const SURFACES = {
     optionalPeers: ['vite-plugin-pwa'],
     forbiddenImports: [],
   },
-  './guard': {
-    kind: 'tooling',
-    layer: 'headless',
-    description: 'checkSource, GUARD_RULES, Finding types — the headless theme-guard core',
-    globs: {
-      shipped: [],
-      repo: ['packages/basalt-ui/src/guard/**'],
-    },
-    // @visx/* ban dropped — `basalt/visx-boundary` now bans it universally outside charts.
-    forbiddenImports: [...MANTINE_BANS],
-  }, // 6th JS subpath
   './format': {
     kind: 'tooling',
     layer: 'headless',
     description:
-      'money/percent/integer/compact/deltaPct/duration/durationClock/clock/relativeTime/weekday/km/kcal — Intl-backed, Mantine-free, React-free formatting; charts/utils/format.ts re-exports fmtCompact/fmtPercent/fmtCurrency/fmtInt/fmtAxisDate/fmtTooltipDate from here (C5 consolidation, one implementation)',
+      'integer/money/percent/durationClock/relativeTime/weekday/km/kcal — Intl-backed, Mantine-free, React-free formatting; the chart formatters (fmtCompact/fmtPercent/fmtCurrency/fmtInt/fmtAxisDate/fmtTooltipDate) share this implementation',
     globs: {
       shipped: [],
       repo: ['packages/basalt-ui/src/format/**'],
     },
-    forbiddenImports: [...MANTINE_BANS],
-  },
-  './router-tanstack': {
-    kind: 'doctrine',
-    layer: 'headless',
-    rule: 'state',
-    skill: ['basalt-app'],
-    guardKinds: [],
-    // Law C10 — a nav link's `search` and a reader's `from` are both this bridge's contract.
-    pluginRules: ['search-literal-link', 'use-search-from-literal'],
-    description:
-      'TanStack Router bridge: defineNav/navGroup/navTarget (one typed nav definition) + useNav (sections + mobileNav, spread onto BasaltShell) + useBasaltNav (active route) + useRouterBreadcrumbs + createSearchStore (typed URL > localStorage > fallback store over field.enum/multi/range/number/boolean/string; the deprecated createSearchParamStore/createMultiSearchParamStore wrappers were removed in 1.29.0, C1 consolidation)',
-    optionalPeers: ['@tanstack/react-router'],
-    globs: {
-      shipped: [],
-      repo: ['packages/basalt-ui/src/router-tanstack/**'],
-    },
-    // @visx/* ban dropped — `basalt/visx-boundary` now bans it universally outside charts.
     forbiddenImports: [...MANTINE_BANS],
   },
   './forms': {
@@ -443,20 +406,8 @@ export const SURFACES = {
     // consumer ships today (`PLUGIN_RULE_GRACE`).
     pluginRules: ['forms-field-key'],
     description:
-      'Mantine form layer: useBasaltForm + inputProps/fieldKey (two calls — a spread `key` is a React 19 warning; the deprecated `field` alias for `inputProps` was removed in 1.29.0, C1 consolidation), useFormSubmit (submit state, decoded errors, server fieldErrors, focus-first-error, validateAsync), FormStateProvider disable propagation, useFieldArray, FormErrorSummary, useFormDraft with autosave (Standard Schema). The FormSection/FormRow/FormGroup/FormActions layout lives in ./controls (moved in 1.36.0) and useForm/schemaResolver come from @mantine/form; the six re-exports here were removed in 1.39.0',
+      'Mantine form layer: useBasaltForm + inputProps/fieldKey (two calls — a spread `key` is a React 19 warning), on @mantine/form',
     optionalPeers: ['@mantine/form'],
-    forbiddenImports: [],
-  },
-  './notifications': {
-    kind: 'doctrine',
-    layer: 'mantine-coupled',
-    rule: 'batteries',
-    skill: ['basalt-app'],
-    guardKinds: [],
-    pluginRules: [],
-    description:
-      'Mantine notifications: notify helpers, typed registry, persisted history, NotificationBell, NotificationCenter',
-    optionalPeers: ['@mantine/notifications'],
     forbiddenImports: [],
   },
   './commands': {
@@ -467,11 +418,11 @@ export const SURFACES = {
     guardKinds: [],
     pluginRules: [],
     description:
-      'typed command bus + overlay controller, toSpotlightActions, ShortcutsHelp, BasaltOverlays',
-    optionalPeers: ['@mantine/spotlight', '@mantine/modals', '@tanstack/react-hotkeys'],
+      'defineCommands (typed command bus), defineOverlays/overlays, setColorScheme, toggleSidebar, ShortcutsHelp, defineNotifications/emit/NotificationBell (folded in from ./notifications); BasaltProvider mounts Spotlight, Modals and Notifications',
+    optionalPeers: ['@tanstack/react-hotkeys'],
     forbiddenImports: [],
   },
-  './data/table': {
+  './table': {
     kind: 'doctrine',
     layer: 'mantine-coupled',
     rule: 'batteries',
@@ -479,63 +430,35 @@ export const SURFACES = {
     guardKinds: [],
     pluginRules: [],
     description:
-      'BasaltDataTable: a sortable data table over TanStack Table, rendered with Mantine (Mantine-rendered)',
+      'BasaltDataTable and createColumnHelper: a data table over TanStack Table v9, rendered with Mantine (renamed from ./data/table)',
     optionalPeers: ['@tanstack/react-table'],
-    forbiddenImports: [],
-  },
-  './data/virtual': {
-    kind: 'doctrine',
-    layer: 'mantine-coupled',
-    rule: 'batteries',
-    skill: ['basalt-design'],
-    guardKinds: [],
-    pluginRules: [],
-    description:
-      'BasaltVirtualList: a windowed virtual list over TanStack Virtual, rendered with Mantine (Mantine-rendered)',
-    optionalPeers: ['@tanstack/react-virtual'],
     forbiddenImports: [],
   },
   './agent': {
     kind: 'doctrine',
-    layer: 'headless',
+    layer: 'mantine-coupled',
     rule: 'batteries',
     skill: ['basalt-app'],
     guardKinds: [],
     // The three agent-chat correctness rules — they honour `basalt-agent-allow`, not `theme-allow`.
     pluginRules: ['agent-resume-guard', 'agent-no-raw-usechat', 'ai-sdk-major'],
     description:
-      'Headless streaming-chat layer: useAgentStream, aiSdkTransport (recommended default) + edenTransport, isResumable/ResumableAgentTransport (stream-resumption seam), PartList, coalesceParts, the ForeignPart/definePartRenderers/narrowAgentPart open part-registry seam, plus the multi-thread createThreadsStore + useAgentThreadRuns + outcome-resolver seam (Mantine-free)',
-    optionalPeers: ['ai', 'use-stick-to-bottom'],
+      'Streaming-chat surface: aiSdkTransport, useAgentThreadRuns, parseAgentPart, the open part-registry types, the consumer-owned thread contracts (AgentThread/ThreadsStore/ChatMessage), and the Mantine chat UI folded in from ./agent-chat (ThreadFeed, ThreadFeedRow, Composer, ToolChip). motion is subpath-required: the chat UI imports it eagerly',
+    optionalPeers: [
+      'ai',
+      '@ai-sdk/provider',
+      'motion',
+      'use-stick-to-bottom',
+      '@tanstack/react-virtual',
+    ],
+    // The chat UI (src/agent/chat/**) is Mantine-styled; the runtime beside it stays Mantine-free.
+    // `*` does not cross `/`, so the two globs below cover the runtime files and not chat/.
     globs: {
       shipped: [],
-      repo: ['packages/basalt-ui/src/agent/**'],
+      repo: ['packages/basalt-ui/src/agent/*.ts', 'packages/basalt-ui/src/agent/*.tsx'],
     },
     // @visx/* ban dropped — `basalt/visx-boundary` now bans it universally outside charts.
     forbiddenImports: [...MANTINE_BANS],
-  },
-  './agent-chat': {
-    kind: 'doctrine',
-    layer: 'mantine-coupled',
-    rule: 'batteries',
-    skill: ['basalt-app'],
-    guardKinds: [],
-    pluginRules: [],
-    description:
-      'Mantine-styled thread-chat components over basalt-ui/agent: ThreadWorkspace, ThreadFeed (variant/renderRow), ThreadFeedRow (inline-expanding Slack row, lazily mounted + kept mounted), ThreadOutcomeCard, ThreadDetailPanel, Composer, ThreadTranscript (open part-renderer registry via its renderers/fallbackRenderer props, per-message MessageAffordances, groupConsecutive, and an optional virtualize/height windowing mode whose VirtualizeOptions carry overscan/estimateSize/initialScroll — a virtualized transcript opens scrolled to the newest message unless initialScroll is "start"), threadPartRenderers, ToolChip (Mantine-coupled). motion is required, not optional — ThreadFeed/ThreadDetailPanel import motion/react eagerly, so this subpath fails to resolve without it installed even though peerDependenciesMeta marks it optional (npm has no per-subpath optionality). remend is genuinely optional here — ThreadTranscript reaches it only through the lazy dynamic import() inside content/markdown.tsx, and @tanstack/react-virtual the same way through the lazy import() behind ThreadTranscript virtualize (absent peer degrades to an unwindowed, height-bound pane).',
-    optionalPeers: [
-      'ai',
-      'motion',
-      'remend',
-      'use-stick-to-bottom',
-      'react-markdown',
-      'remark-gfm',
-      'shiki',
-      '@shikijs/langs',
-      '@shikijs/themes',
-      'beautiful-mermaid',
-      '@tanstack/react-virtual',
-    ],
-    forbiddenImports: [],
   },
   './content': {
     kind: 'doctrine',
@@ -545,7 +468,7 @@ export const SURFACES = {
     guardKinds: [],
     pluginRules: [],
     description:
-      'Prose (article/chat typography), CodeBlock (shiki, optional peer), Callout, TableOfContents, ReadingProgress, Markdown (react-markdown + remark-gfm, optional peers; `streaming` is a rendering mode ONLY — `contentTrust` is the independent security input, and any surface rendering agent/model output must pin `contentTrust="untrusted"`, the sole input to the image-origin allowlist; a `fenceRenderers` registry — settledOnly/FenceRenderer/FenceRenderers/FenceRenderContext; `sanitizeSchema`, an additions-only SanitizeSchemaExtension merged over BASALT_SANITIZE_SCHEMA via mergeSanitizeSchema; the remend streaming-repair pass is now a lazy optional peer), MermaidDiagram (beautiful-mermaid, optional peer), mdxComponents/createMdxComponents, ArticleLayout (docs-page frame), ArticleCard/ArticleGrid (overview cards), Article model (sortArticles/filterArticles/formatArticleDate), FilterSet/ViewTabs/MultiSelectFilter re-exported from ./controls (they replaced the controlled ArticleFilterBar), toArticleActions (Spotlight projector, @mantine/spotlight type-only), GuideLink/GuideDrawer (contextual-help drawer) — the content/prose surface',
+      'Prose (article/chat typography), Callout, TableOfContents, Markdown (react-markdown + remark-gfm, optional peers; `streaming` is a rendering mode ONLY — `contentTrust` is the independent security input, and any surface rendering agent/model output must pin `contentTrust="untrusted"`, the sole input to the image-origin allowlist; `fenceRenderers` extends fenced-block rendering — settledOnly/FenceRenderer/FenceRenderers; `sanitizeSchema` is an additions-only SanitizeSchemaExtension merged over the default via mergeSanitizeSchema; shiki code blocks, beautiful-mermaid diagrams and the remend streaming repair load lazily from optional peers), ArticleLayout (docs-page frame), GuideLink (contextual-help link) — the content/prose surface',
     optionalPeers: [
       'shiki',
       '@shikijs/langs',
@@ -555,7 +478,6 @@ export const SURFACES = {
       'remark-gfm',
       'rehype-sanitize',
       'remend',
-      '@mantine/spotlight',
     ],
     forbiddenImports: [],
   },
@@ -627,7 +549,7 @@ export const SURFACES = {
     pluginRules: [],
     description:
       "DateRangePicker — the @mantine/dates implementation of RangeFilter's customPicker seam. Its own subpath because @mantine/dates is an optional peer and basaltViteConfig pre-bundles the whole @mantine scope, so a consumer without the peer (linewatch) must never resolve it: nothing under src/controls may import it, statically or lazily (docs/CONTROLS-SPEC.md §3).",
-    optionalPeers: ['@mantine/dates'],
+    optionalPeers: ['@mantine/dates', 'dayjs'],
     forbiddenImports: [],
   },
   './state': {
@@ -636,16 +558,22 @@ export const SURFACES = {
     rule: 'state',
     skill: ['basalt-design'],
     guardKinds: ['localstorage-theme'],
-    pluginRules: [],
+    // Law C10 — a nav link's `search` and a reader's `from` are both the search store's contract
+    // (the store half of the former `./router-tanstack`).
+    pluginRules: ['search-literal-link', 'use-search-from-literal'],
     description:
-      'createPersistedState (versioned localStorage) + the store field vocabulary (field.enum/multi/range/number/boolean/string, FieldHandle, lanes) + createLocalStore, the router-free store — Mantine-free state primitives',
+      'field.enum/multi/range/number/boolean/string (the store field vocabulary), createSearchStore (typed URL > localStorage > fallback store), createLocalStore (the router-free store), createPersistedState (versioned localStorage)',
     optionalPeers: [],
     // Consumers import basalt-ui/state from node_modules (lint-ignored), so there is nothing to
     // enforce consumer-side, and a shipped **/state* glob would wrongly hit consumers' own
     // Mantine-using state files. Enforce basalt's own barrel AND its implementation files.
     globs: {
       shipped: [],
-      repo: ['packages/basalt-ui/src/state.ts', 'packages/basalt-ui/src/state/**'],
+      repo: [
+        'packages/basalt-ui/src/state.ts',
+        'packages/basalt-ui/src/state/**',
+        'packages/basalt-ui/src/router-tanstack/search-store.ts',
+      ],
     },
     // @visx/* ban dropped — `basalt/visx-boundary` now bans it universally outside charts.
     forbiddenImports: [...MANTINE_BANS],
@@ -659,25 +587,11 @@ export const SURFACES = {
       'Mandatory CSS import (after the Mantine styles.layer.css bundles) — @layer basalt base styles, iOS input safety net, font stack',
     forbiddenImports: [],
   },
-  './tokens.css': {
-    kind: 'tooling',
-    layer: 'non-js-asset',
-    description:
-      'Prebuilt --vx-* token stylesheet — the default buildPaletteCss() output as a plain file, for a consumer that has a bundler to resolve the subpath but no React and no Mantine; with no bundler, emit a file you own via `basalt-ui tokens:css`',
-    forbiddenImports: [],
-  },
   './configs/*': {
     kind: 'tooling',
     layer: 'non-js-asset',
     description:
       'Raw toolchain presets for consumer extends: oxlint.json (or the guards-only oxlint-basalt.json), oxfmt.json, tsconfig.*.json, lefthook.yml, check.yml',
-    forbiddenImports: [],
-  },
-  './llms.txt': {
-    kind: 'tooling',
-    layer: 'non-js-asset',
-    description:
-      'Machine-readable surface map — one entry per published subpath with import specifier, description, layer, and optional peers',
     forbiddenImports: [],
   },
 

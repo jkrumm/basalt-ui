@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { chartMargin, VX } from './index'
+import { chartMargin, VX } from './core'
 
 describe('chartMargin', () => {
   test('a bare call deep-equals VX.margin', () => {

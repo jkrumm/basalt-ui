@@ -20,7 +20,7 @@
 import { describe, expect, test } from 'bun:test'
 import { applyLabOverride, themeOverrideDelta } from './lab-theme'
 import { baseTheme, createBasaltTheme } from '../theme'
-import { pxRem } from '../tokens'
+import { pxRem } from '../tokens/core'
 import { DEFAULT_DERIVE_CONFIG } from '../tokens/derive'
 import { deriveRadius, deriveSpacing } from '../tokens/palette'
 import type { DeriveOverride } from '../theme-lab/derive-state'

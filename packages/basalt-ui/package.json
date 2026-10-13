@@ -62,71 +62,6 @@
       "import": "./dist/tokens/index.js",
       "default": "./dist/tokens/index.js"
     },
-    "./theme-lab": {
-      "types": "./dist/theme-lab/index.d.ts",
-      "import": "./dist/theme-lab/index.js",
-      "default": "./dist/theme-lab/index.js"
-    },
-    "./vite": {
-      "types": "./dist/vite.d.ts",
-      "import": "./dist/vite.js",
-      "default": "./dist/vite.js"
-    },
-    "./guard": {
-      "types": "./dist/guard/index.d.ts",
-      "import": "./dist/guard/index.js",
-      "default": "./dist/guard/index.js"
-    },
-    "./format": {
-      "types": "./dist/format/index.d.ts",
-      "import": "./dist/format/index.js",
-      "default": "./dist/format/index.js"
-    },
-    "./forms": {
-      "types": "./dist/forms/index.d.ts",
-      "import": "./dist/forms/index.js",
-      "default": "./dist/forms/index.js"
-    },
-    "./commands": {
-      "types": "./dist/commands/index.d.ts",
-      "import": "./dist/commands/index.js",
-      "default": "./dist/commands/index.js"
-    },
-    "./notifications": {
-      "types": "./dist/notifications/index.d.ts",
-      "import": "./dist/notifications/index.js",
-      "default": "./dist/notifications/index.js"
-    },
-    "./router-tanstack": {
-      "types": "./dist/router-tanstack/index.d.ts",
-      "import": "./dist/router-tanstack/index.js",
-      "default": "./dist/router-tanstack/index.js"
-    },
-    "./data/table": {
-      "types": "./dist/data/table.d.ts",
-      "import": "./dist/data/table.js",
-      "default": "./dist/data/table.js"
-    },
-    "./data/virtual": {
-      "types": "./dist/data/virtual.d.ts",
-      "import": "./dist/data/virtual.js",
-      "default": "./dist/data/virtual.js"
-    },
-    "./agent": {
-      "types": "./dist/agent/index.d.ts",
-      "import": "./dist/agent/index.js",
-      "default": "./dist/agent/index.js"
-    },
-    "./agent-chat": {
-      "types": "./dist/agent-chat/index.d.ts",
-      "import": "./dist/agent-chat/index.js",
-      "default": "./dist/agent-chat/index.js"
-    },
-    "./content": {
-      "types": "./dist/content/index.d.ts",
-      "import": "./dist/content/index.js",
-      "default": "./dist/content/index.js"
-    },
     "./controls": {
       "types": "./dist/controls/index.d.ts",
       "import": "./dist/controls/index.js",
@@ -137,16 +72,48 @@
       "import": "./dist/controls-dates/index.js",
       "default": "./dist/controls-dates/index.js"
     },
+    "./forms": {
+      "types": "./dist/forms/index.d.ts",
+      "import": "./dist/forms/index.js",
+      "default": "./dist/forms/index.js"
+    },
     "./state": {
       "types": "./dist/state.d.ts",
       "import": "./dist/state.js",
       "default": "./dist/state.js"
     },
+    "./table": {
+      "types": "./dist/table/index.d.ts",
+      "import": "./dist/table/index.js",
+      "default": "./dist/table/index.js"
+    },
+    "./format": {
+      "types": "./dist/format/index.d.ts",
+      "import": "./dist/format/index.js",
+      "default": "./dist/format/index.js"
+    },
+    "./commands": {
+      "types": "./dist/commands/index.d.ts",
+      "import": "./dist/commands/index.js",
+      "default": "./dist/commands/index.js"
+    },
+    "./agent": {
+      "types": "./dist/agent/index.d.ts",
+      "import": "./dist/agent/index.js",
+      "default": "./dist/agent/index.js"
+    },
+    "./content": {
+      "types": "./dist/content/index.d.ts",
+      "import": "./dist/content/index.js",
+      "default": "./dist/content/index.js"
+    },
+    "./vite": {
+      "types": "./dist/vite.d.ts",
+      "import": "./dist/vite.js",
+      "default": "./dist/vite.js"
+    },
     "./styles.css": "./dist/styles.css",
-    "./tokens.css": "./dist/tokens.css",
-    "./configs/*": "./configs/*",
-    "./llms.txt": "./llms.txt",
-    "./package.json": "./package.json"
+    "./configs/*": "./configs/*"
   },
   "publishConfig": {
     "access": "public",
@@ -201,6 +168,7 @@
     "vite-plugin-pwa": "^1.3.0"
   },
   "peerDependencies": {
+    "@ai-sdk/provider": "^4.0.26",
     "@fontsource-variable/hubot-sans": "5.2.8",
     "@fontsource-variable/jetbrains-mono": "5.2.8",
     "@fontsource-variable/nunito-sans": "5.2.7",
@@ -231,6 +199,7 @@
     "@visx/threshold": "4.0.0",
     "ai": "^7.0.137",
     "beautiful-mermaid": "^1.1.0",
+    "dayjs": "^1.11.0",
     "motion": "14.1.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
@@ -244,25 +213,13 @@
     "vite-plugin-pwa": "^1.3.0"
   },
   "peerDependenciesMeta": {
-    "@fontsource-variable/hubot-sans": {
-      "optional": true
-    },
-    "@fontsource-variable/jetbrains-mono": {
-      "optional": true
-    },
-    "@fontsource-variable/nunito-sans": {
-      "optional": true
-    },
-    "@mantine/core": {
+    "@ai-sdk/provider": {
       "optional": true
     },
     "@mantine/dates": {
       "optional": true
     },
     "@mantine/form": {
-      "optional": true
-    },
-    "@mantine/hooks": {
       "optional": true
     },
     "@shikijs/langs": {
@@ -274,22 +231,7 @@
     "@tanstack/react-hotkeys": {
       "optional": true
     },
-    "@mantine/modals": {
-      "optional": true
-    },
-    "@mantine/notifications": {
-      "optional": true
-    },
-    "@mantine/spotlight": {
-      "optional": true
-    },
-    "@tanstack/react-query": {
-      "optional": true
-    },
     "@tanstack/react-query-devtools": {
-      "optional": true
-    },
-    "@tanstack/react-router": {
       "optional": true
     },
     "@tanstack/react-router-devtools": {
@@ -334,13 +276,10 @@
     "beautiful-mermaid": {
       "optional": true
     },
+    "dayjs": {
+      "optional": true
+    },
     "motion": {
-      "optional": true
-    },
-    "react": {
-      "optional": true
-    },
-    "react-dom": {
       "optional": true
     },
     "react-markdown": {
@@ -374,7 +313,7 @@
     ],
     "exempt": [
       "src/tokens/palette.ts",
-      "src/tokens/index.ts",
+      "src/tokens/core.ts",
       "src/tokens/derive.ts",
       "src/tokens/hct.ts",
       "src/theme/index.ts",

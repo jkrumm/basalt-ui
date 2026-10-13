@@ -10,7 +10,7 @@
  * constants below, never hand-editing a hex in `palette.ts`.
  */
 import { contrastRatio, hctToHex, hexToHct, yToTone } from './hct'
-import type { ColorPair } from './index'
+import type { ColorPair } from './core'
 
 export type DeriveConfig = {
   /**

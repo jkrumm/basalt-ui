@@ -28,7 +28,7 @@ const BUTTONS = `${CONTENT} .mantine-Group-root > button`
 const HIT_MIN = 44
 
 /**
- * `BasaltOverlays` lazy-loads `@mantine/modals`, so a tap can land before the provider is live and
+ * `BasaltProvider` mounts the modals layer, so a tap can land before the provider is live and
  * `overlays.confirm` rejects (a named error, by design). Retrying the tap is the honest wait.
  */
 async function openConfirm(viewport: Viewport) {

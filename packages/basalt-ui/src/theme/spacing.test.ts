@@ -55,7 +55,7 @@
 import { DEFAULT_THEME, mergeMantineTheme } from '@mantine/core'
 import type { MantineTheme } from '@mantine/core'
 import { describe, expect, test } from 'bun:test'
-import { buildPaletteCss, pxRem } from '../tokens'
+import { buildPaletteCss, pxRem } from '../tokens/core'
 import { SPACE, SPACE_FIXED, SPACE_SCALE, SPACE_STEP } from '../tokens/palette'
 import { baseTheme } from './index'
 

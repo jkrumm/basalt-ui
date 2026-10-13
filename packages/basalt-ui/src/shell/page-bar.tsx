@@ -37,7 +37,7 @@ import {
 import { FilterPill } from '../controls/filter-pill'
 import { FilterSheet } from '../controls/filter-sheet'
 import { SyncButton } from '../controls/sync-button'
-import type { ActionGroupProps, BarAction, GlobalAction } from '../controls/actions'
+import type { BarAction, GlobalAction, PageBarActions } from '../controls/actions'
 import type { SyncButtonProps } from '../controls/sync-button'
 import { useIsomorphicLayoutEffect } from '../common/isomorphic-layout-effect'
 import classes from './page-bar.module.css'
@@ -267,7 +267,7 @@ export type PageBarProps = BasaltProps &
      */
     title?: string
     icon?: ReactNode
-    actions?: ActionGroupProps
+    actions?: PageBarActions
     /** `scope` is fixed to `'page'` — a global sync belongs in the shell's `globalActions` (law C12). */
     sync?: Omit<SyncButtonProps, 'scope'>
     /** `FilterSet` descendants only (law C1). */
@@ -438,7 +438,7 @@ export function PageBar({
                 One `CtlSlot` for the whole row now, so the sync button and the buttons around it
                 resolve the tier from the same provider. */}
             <BarActionRow
-              {...actions}
+              {...(actions !== undefined && { primary: actions[0], secondary: actions.slice(1) })}
               host="page"
               mobileOnly={filtersEndActions}
               {...(sync !== undefined && { syncNode: <SyncButton {...sync} scope="page" /> })}

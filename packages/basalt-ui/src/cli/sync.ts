@@ -7,7 +7,7 @@
 import { existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 
-import { deriveSpacing } from '../tokens'
+import { deriveSpacing } from '../tokens/core'
 import {
   MANIFEST_PATH,
   basaltPresetEntry,

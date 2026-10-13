@@ -29,7 +29,7 @@
 import { Radio, Stack } from '@mantine/core'
 import type { ReactNode } from 'react'
 import type { BasaltProps } from '../common/props'
-import type { FieldOption } from '../state'
+import type { FieldOption } from '../state/fields'
 import classes from './controls.module.css'
 import { POPOVER_ROW_HIT_GAP, useFilterRegistration, useFilterSurface } from './filter-context'
 import { FilterClearButton, FilterPill } from './filter-pill'

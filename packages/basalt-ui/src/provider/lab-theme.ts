@@ -44,6 +44,7 @@ import { useMemo } from 'react'
 import { useDeriveControlsState, toDeriveOverride } from '../theme-lab/derive-state'
 import type { DeriveOverride } from '../theme-lab/derive-state'
 import { baseTheme, createBasaltTheme } from '../theme'
+import type { BasaltDensityLevel, BasaltRadiusLevel } from '../theme'
 
 type Plain = Record<string, unknown>
 
@@ -115,8 +116,8 @@ export function applyLabOverride(
   if (override === null) return theme
   const labTheme = createBasaltTheme(undefined, {
     derive: override.config,
-    radius: override.radiusLevel,
-    density: override.densityLevel,
+    radius: override.radiusLevel as BasaltRadiusLevel,
+    density: override.densityLevel as BasaltDensityLevel,
   })
   // An all-defaults override resolves back to `baseTheme` itself, so the delta is empty and this
   // merge is a no-op — the "Apply" switch on at level 0 changes nothing, as it should.

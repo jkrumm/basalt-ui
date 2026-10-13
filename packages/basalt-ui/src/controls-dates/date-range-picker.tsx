@@ -29,7 +29,7 @@ import type { RangeCustomPickerProps } from '../controls/range-filter'
 
 export function DateRangePicker(props: RangeCustomPickerProps): ReactNode {
   // F-ERR-1 — without this a missing `value` surfaces as `undefined is not an object
-  // (evaluating 'value.from')`, caught by `BasaltErrorBoundary`.
+  // (evaluating 'value.from')`, caught by `RootBoundary`.
   assertRequiredProps('DateRangePicker', props, ['value'], {
     value: "pass `{ from, to }` — usually injected by `RangeFilter`'s `customPicker`.",
   })

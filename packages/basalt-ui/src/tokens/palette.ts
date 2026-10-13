@@ -31,7 +31,7 @@
 
 import { DEFAULT_DERIVE_CONFIG, deriveTokens, isDefaultDeriveConfig } from './derive'
 import type { DeriveConfig } from './derive'
-import type { ColorPair } from './index'
+import type { ColorPair } from './core'
 
 /**
  * Basalt palette. Each family is shade 1→5 (index 0 = darkest, 4 = lightest).

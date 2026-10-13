@@ -63,7 +63,8 @@ import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { BasaltProps } from '../common/props'
 import { assertRequiredProps } from '../common/validate'
-import type { FieldHandle, NumberField } from '../state'
+import type { FieldHandle } from '../state'
+import type { NumberField } from '../state/fields'
 import classes from './controls.module.css'
 import { EnumFilter } from './enum-filter'
 import type { ChoiceHandle } from './enum-filter'
@@ -71,6 +72,7 @@ import { useFilterRegistration, useFilterSurface } from './filter-context'
 import { FilterClearButton, FilterPill } from './filter-pill'
 import { useControlName } from './filter-sheet'
 import { PanelRow } from './panel-row'
+import type { UncontrolledProps } from './uncontrolled'
 
 /** One row of a numeric preset set. Narrower than `FilterOption` — a preset is never `disabled`:
  *  the set is declared at the call site, so a row that should not be offered is left out. */
@@ -79,7 +81,7 @@ export type NumberFilterOption = {
   readonly label: string
 }
 
-export type NumberFilterProps = BasaltProps & {
+export type NumberFilterProps = UncontrolledProps & {
   readonly field: FieldHandle<NumberField>
   /** The popover/sheet heading and the accessible name — never the pill text, which reads the
    *  VALUE (see `EnumFilter`'s doc for why a pill may only print what is selected). */
@@ -102,7 +104,7 @@ export type NumberFilterProps = BasaltProps & {
 
 export function NumberFilter(props: NumberFilterProps): ReactNode {
   // F-ERR-1 — without this a missing `field` surfaces as `undefined is not an object
-  // (evaluating 'field.use')`, caught by `BasaltErrorBoundary`.
+  // (evaluating 'field.use')`, caught by `RootBoundary`.
   assertRequiredProps('NumberFilter', props, ['field'], {
     field: 'bind it to a store field (`store.field.<name>`), never a value/onChange pair.',
   })

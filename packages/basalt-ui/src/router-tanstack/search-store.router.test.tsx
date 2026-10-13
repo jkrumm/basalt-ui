@@ -17,7 +17,8 @@ import {
   createRoute,
   createRouter,
 } from '@tanstack/react-router'
-import type { AnyField, FieldHandle, FieldSetOptions } from '../state'
+import type { FieldHandle } from '../state'
+import type { AnyField, FieldSetOptions } from '../state/fields'
 import { field } from '../state'
 import { createSearchStore } from './search-store'
 

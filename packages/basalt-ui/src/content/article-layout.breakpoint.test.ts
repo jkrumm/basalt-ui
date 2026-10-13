@@ -19,7 +19,7 @@ import { readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'bun:test'
-import { BREAKPOINTS } from '../tokens'
+import { BREAKPOINTS } from '../tokens/core'
 
 const CSS_PATH = resolve(dirname(fileURLToPath(import.meta.url)), 'article-layout.module.css')
 

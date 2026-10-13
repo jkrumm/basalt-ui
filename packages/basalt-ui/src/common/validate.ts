@@ -83,7 +83,7 @@ export function resetValidatedProps(): void {
  *
  * This is the F-ERR-1 remedy, and the reason it is not dev-gated: the component was going to crash
  * either way (`undefined is not an object (evaluating 'field.use')`), so the only thing in question
- * is whether the stack reaching `BasaltErrorBoundary` names the component and the prop. It does
+ * is whether the stack reaching `RootBoundary` names the component and the prop. It does
  * now. A prop that is merely questionable belongs in `useValidateProps`, not here.
  *
  * @example

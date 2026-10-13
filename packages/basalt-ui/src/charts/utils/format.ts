@@ -4,9 +4,8 @@
  * instead of two). This file stays so every existing relative import inside `src/charts/**`
  * (`../utils/format`) keeps resolving unchanged.
  */
+export { fmtAxisDate, fmtTooltipDate, formatters } from '../../format'
 export {
-  fmtAxisDate,
-  fmtTooltipDate,
   fmtCompact,
   type FmtCompactOptions,
   fmtPercent,
@@ -14,6 +13,5 @@ export {
   fmtCurrency,
   type FmtCurrencyOptions,
   fmtInt,
-  formatters,
-  NON_FINITE,
-} from '../../format'
+} from '../../format/number'
+export { NON_FINITE } from '../../format/shared'

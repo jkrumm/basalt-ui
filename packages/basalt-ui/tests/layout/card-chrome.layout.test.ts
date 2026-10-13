@@ -162,26 +162,25 @@ layout('card chrome by container', () => {
   })
 
   /**
-   * `StatGroup`/`WidgetGrid` key on `@container basalt-grid`: the `sm` count opens at the `wide`
+   * `StatGroup` keys on `@container basalt-grid`: the `sm` count opens at the `wide`
    * container class (800px, the viewport-era 768 before 1.32.0) and the full count at the grids'
-   * own 1200. `cols={5}` → 2 / 3 / 5 for StatGroup (sm = min(cols, 3)); `cols={3}` → 1 / 2 / 3 for
-   * WidgetGrid (sm = min(cols, 2)). Tracks are read from the RESOLVED template — the only way to
+   * own 1200. `cols={5}` → 2 / 3 / 5 (sm = min(cols, 3)). Tracks are read from the RESOLVED template — the only way to
    * see which tier won.
    */
   test.each([
-    [799, 2, 1],
-    [800, 3, 2],
-    [1199, 3, 2],
-    [1200, 5, 3],
-  ])('a %ipx container: StatGroup %i tracks, WidgetGrid %i', async (width, stat, widget) => {
+    [799, 2],
+    [800, 3],
+    [1199, 3],
+    [1200, 5],
+  ])('a %ipx container: StatGroup %i tracks', async (width, stat) => {
     const tracks = await p.raw.evaluate((w) => {
       const count = (sel: string) => {
         const el = document.querySelector(`[data-testid="grid-probe-${w}"] ${sel}`)
         if (!el) throw new Error(`no ${sel} in the ${w}px probe`)
         return getComputedStyle(el).gridTemplateColumns.split(/\s+/).filter(Boolean).length
       }
-      return { stat: count('[data-sm-cols]'), widget: count('[data-cols]:not([data-sm-cols])') }
+      return count('[data-sm-cols]')
     }, width)
-    expect(tracks).toEqual({ stat, widget })
+    expect(tracks).toBe(stat)
   })
 })

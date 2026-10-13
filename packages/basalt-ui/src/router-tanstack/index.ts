@@ -1,62 +1,22 @@
 /**
- * ./router-tanstack — headless TanStack Router bridge for the app shell.
- * Optional peer: @tanstack/react-router.
- * Carries the typed navigation definition (`defineNav`/`navGroup`/`navTarget`/`flattenNav`) and
- * `useNav`, which resolves it into `BasaltShell`'s `sections` + `mobileNav` props; plus the
- * StaticDataRouteOption augmentation (title/icon/navSection) for router-derived breadcrumbs, plus
- * `createSearchStore` + the `field.*` vocabulary — no Mantine, no JSX.
+ * ./router-tanstack — headless TanStack Router bridge. The nav half (`defineNav`, `navGroup`,
+ * `navTarget`, `flattenNav`, `useBasaltNav`, `NavItemId`) moves to the root barrel in 2.0 and the
+ * store half (`createSearchStore`) to `./state`, which re-exports it from `./search-store` directly.
+ * `useNav` stays until `BasaltShell` takes a `nav` prop (V2-SPEC § 2), then it is deleted.
+ * Optional peer: @tanstack/react-router. No Mantine, no JSX.
  */
-
-export { createSearchStore, type CreateSearchStoreOptions, type SearchStore } from './search-store'
-export { field } from '../state'
-export type {
-  AnyField,
-  BooleanField,
-  EnumField,
-  FieldFallback,
-  FieldHandle,
-  FieldLane,
-  FieldOption,
-  FieldSetOptions,
-  FieldValue,
-  MultiField,
-  NumberField,
-  RangeField,
-  RangeParams,
-  RangePresets,
-  RangeValue,
-  RangeWindow,
-  RangeWindows,
-  ResolvedLane,
-  SearchValues,
-  StoredValues,
-  StringField,
-} from '../state'
-export { defineNav, navGroup, navTarget, flattenNav } from './nav'
-export type {
-  NavItemMeta,
-  NavGroupMeta,
-  AnyNavItem,
-  AnyNavGroup,
-  AnyNavLink,
-  FlatNavItem,
-  NavConfig,
-  NavItemId,
-  NavGroupId,
-  NavTabId,
-  NavIndex,
-} from './nav'
-export { useNav } from './use-nav'
-export type { UseNavOptions, NavBinding } from './use-nav'
-export type { NavAnchor, NavAnchorProps, NavMobilePlacement } from '../shell/nav-types'
 import type { ReactNode } from 'react'
-import { useLocation, useMatches } from '@tanstack/react-router'
+import { useLocation } from '@tanstack/react-router'
+
+export { defineNav, navGroup, navTarget, flattenNav } from './nav'
+export type { NavItemId } from './nav'
+export { useNav } from './use-nav'
 
 // ── StaticDataRouteOption augmentation ───────────────────────────────────────────────────────────
 
 declare module '@tanstack/react-router' {
   interface StaticDataRouteOption {
-    /** Page/section title — drives breadcrumbs via useRouterBreadcrumbs(). */
+    /** Page/section title. */
     title?: string
     /** Nav icon — ReactNode passed through to the shell SidebarItem. */
     icon?: ReactNode
@@ -67,33 +27,19 @@ declare module '@tanstack/react-router' {
 
 // ── useBasaltNav ──────────────────────────────────────────────────────────────────────────────────
 
-/** Reactive nav-active state derived from the current TanStack Router location. */
-export type BasaltNav = {
-  /** Current pathname (reactive, updates on every navigation). */
-  currentPath: string
-  /**
-   * True when `href` matches the current route.
-   * Default: prefix match so a parent nav item stays active on child routes.
-   * Pass `{ exact: true }` for exact-only matching.
-   * The root `'/'` always matches exactly regardless of the option.
-   */
-  isActive: (href: string, opts?: { exact?: boolean }) => boolean
-}
-
 /**
- * Returns the current path and an `isActive` predicate for nav highlighting.
- * Reads only `useLocation` — no navigate, no typed-route `to` casts.
- * Navigation stays with TanStack's own typed `<Link>` / `useNavigate`.
+ * The current path and an `isActive` predicate for nav highlighting. `isActive(href)` is a prefix
+ * match so a parent stays active on child routes; `{ exact: true }` matches exactly, and `'/'` is
+ * always exact. Reads only `useLocation` — navigation stays with TanStack's own `<Link>`.
  *
  * @example
- * import { useBasaltNav } from 'basalt-ui/router-tanstack'
- *
- * function NavItem({ href, label }: { href: string; label: string }) {
- *   const { isActive } = useBasaltNav()
- *   return <NavLink href={href} active={isActive(href)}>{label}</NavLink>
- * }
+ * const { isActive } = useBasaltNav()
+ * <NavLink href={href} active={isActive(href)}>{label}</NavLink>
  */
-export function useBasaltNav(): BasaltNav {
+export function useBasaltNav(): {
+  currentPath: string
+  isActive: (href: string, opts?: { exact?: boolean }) => boolean
+} {
   const currentPath = useLocation({ select: (l) => l.pathname })
 
   const isActive = (href: string, opts?: { exact?: boolean }): boolean => {
@@ -103,43 +49,4 @@ export function useBasaltNav(): BasaltNav {
   }
 
   return { currentPath, isActive }
-}
-
-// ── useRouterBreadcrumbs ──────────────────────────────────────────────────────────────────────────
-
-/** A single breadcrumb entry projected from route staticData. */
-export type BasaltBreadcrumb = {
-  /** The route's `staticData.title`. */
-  title: string
-  /** The matched pathname for this ancestor (usable as `<Link to={href}>` target). */
-  href: string
-}
-
-/**
- * Returns the ancestor→deepest breadcrumb trail derived from `staticData.title` on each match.
- * Routes without a `staticData.title` are silently omitted.
- * Uses the `select` form of `useMatches` for re-render gating — only re-renders when the
- * projected breadcrumb array actually changes shape.
- *
- * @example
- * import { useRouterBreadcrumbs } from 'basalt-ui/router-tanstack'
- *
- * function AppBreadcrumbs() {
- *   const crumbs = useRouterBreadcrumbs()
- *   return (
- *     <nav aria-label="breadcrumb">
- *       {crumbs.map((c) => <a key={c.href} href={c.href}>{c.title}</a>)}
- *     </nav>
- *   )
- * }
- */
-export function useRouterBreadcrumbs(): BasaltBreadcrumb[] {
-  return useMatches({
-    select: (matches) =>
-      matches.flatMap((m) =>
-        typeof m.staticData?.title === 'string'
-          ? [{ title: m.staticData.title, href: m.pathname }]
-          : [],
-      ),
-  })
 }

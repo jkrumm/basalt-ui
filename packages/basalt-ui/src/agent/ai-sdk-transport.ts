@@ -1,7 +1,7 @@
 /**
  * aiSdkTransport — an AgentTransport backed by Vercel AI SDK's native streaming + resumption
  * primitives (the `ai` npm package). This is the RECOMMENDED DEFAULT transport for LLM chat use
- * cases — edenTransport remains the zero-extra-dependency alternative (see agent/rules/basalt-agent.md).
+ * cases.
  *
  * OPTIONAL PEER: `ai` is not a required dependency. Importing 'basalt-ui/agent' (and calling this
  * factory) does NOT eagerly resolve it — the package is loaded via a memoized dynamic import()
@@ -9,7 +9,7 @@
  * contract used by BasaltStickToBottom. Unlike that, there is no meaningful "plain text" fallback
  * for a missing transport: if 'ai' is not installed, the dynamic import
  * rejects and the error propagates through the async generator to the consumer's EXISTING error
- * handling (useAgentStream sets status: 'error'; useAgentThreadRuns falls back to its
+ * handling (useAgentThreadRuns falls back to its
  * onFailureStatus) — no separate crash path is introduced.
  *
  * Install the optional peer:
@@ -18,33 +18,26 @@
  * WHY DIFFING IS NEEDED: AI SDK's `readUIMessageStream` yields the FULL accumulated `UIMessage`
  * snapshot (a growing `parts` array, with existing parts' content growing in place) on every
  * update — it is not itself a delta stream. basalt-ui's whole part-accumulation model
- * (useAgentStream / useAgentThreadRuns, and every consumer's own coalescing) is delta-based: many
+ * (useAgentThreadRuns, and every consumer's own coalescing) is delta-based: many
  * small parts merged at render time. This module diffs consecutive snapshots and yields only the
  * new deltas as AgentParts, so nothing is double-rendered.
  *
  * CHAT ID BINDING: AI SDK's convention is that the chat id is known client-side before the
  * request (unlike a river/server-minted id) — `aiSdkTransport(options)` mints ONE stable chat id
- * at construction time, so the returned object is immediately usable with useAgentStream (a single
+ * at construction time, so the returned object is immediately usable as-is (a single
  * ongoing conversation). `.forThread(threadId)` returns a transport bound to an arbitrary
  * caller-supplied id instead — pass a basalt-ui thread id here to plug into
  * useAgentThreadRuns's per-thread transport-factory form, so a thread's turns (and its mount-time
  * resume) share one continuous AI SDK chat session:
  *
  * @example
- * import { useAgentStream, aiSdkTransport } from 'basalt-ui/agent'
+ * import { useAgentThreadRuns, aiSdkTransport } from 'basalt-ui/agent'
  *
- * const transport = aiSdkTransport({ api: '/api/chat' })
- * const { parts, status, send } = useAgentStream({ transport })
- *
- * @example
- * import { useAgentThreadRuns, aiSdkTransport, createThreadsStore, heuristicOutcome } from 'basalt-ui/agent'
- *
- * const useThreads = createThreadsStore({ key: 'main-threads', version: 1 })
  * const transport = aiSdkTransport({ api: '/api/chat' })
  * const { runs, start } = useAgentThreadRuns({
  *   transport: (threadId) => transport.forThread(threadId),
- *   store: useThreads(),
- *   resolveOutcome: heuristicOutcome,
+ *   store, // your consumer-owned ThreadsStore
+ *   resolveOutcome, // your OutcomeResolver
  * })
  */
 import { assertNever } from '../register'
@@ -376,13 +369,12 @@ async function* diffChunkStream<TPart>(
 /**
  * Wraps AI SDK's `DefaultChatTransport` + `readUIMessageStream` into an AgentTransport.
  *
- * The returned object is immediately usable with useAgentStream (one fixed, stable chat id for
+ * The returned object is immediately usable as-is (one fixed, stable chat id for
  * the whole conversation). Call `.forThread(threadId)` to get a transport bound to a different
  * (caller-supplied) chat id — the per-thread form for useAgentThreadRuns.
  *
  * @example
  * const transport = aiSdkTransport<AgentPart>({ api: '/api/chat' })
- * const { send, parts, status } = useAgentStream({ transport })
  */
 export function aiSdkTransport<TPart = AgentPart>(
   options: AiSdkTransportOptions,
@@ -410,7 +402,7 @@ export function aiSdkTransport<TPart = AgentPart>(
           // idempotency-key cost as basalt's own ChatMessage.id (see mintMessageId's doc). Prefer
           // the caller's OWN idempotency key (ctx.messageId — the id useAgentThreadRuns.start()
           // already minted for this turn's ChatMessage) so the two never diverge for one turn; only
-          // a caller that omits ctx (useAgentStream, a hand-rolled stream() call) falls back to
+          // a caller that omits ctx (a hand-rolled stream() call) falls back to
           // minting a fresh one here.
           id: ctx?.messageId ?? mintMessageId(),
           role: 'user',

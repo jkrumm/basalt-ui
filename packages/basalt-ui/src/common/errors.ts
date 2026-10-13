@@ -3,7 +3,7 @@
  * here, so the prefix, the `Component: …` shape and the em-dash-then-remedy rhythm are one decision
  * instead of 60. It is the generalisation of `assertQueryStateLike`, which was the ONLY component
  * in the library naming itself in its own failure (isomorphic finding F-ERR-1: the other 54 fail as
- * raw `TypeError`s that `BasaltErrorBoundary` swallows into a blank subtree).
+ * raw `TypeError`s that `RootBoundary` swallows into a blank subtree).
  *
  * Every builder returns a string; nothing here throws or logs. The caller decides which it is —
  * `assertRequiredProps` throws, `useValidateProps` logs, the mount guards log.

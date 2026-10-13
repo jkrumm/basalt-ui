@@ -1,36 +1,17 @@
 /**
- * `BasaltDevDock` — a fixed, dev-only bottom drawer hosting the in-app tooling: TanStack Router
- * devtools, TanStack Query devtools (the embeddable `ReactQueryDevtoolsPanel` — NOT
- * `BasaltQueryDevtools`, which wraps the floating-button `ReactQueryDevtools` and would duplicate
- * this dock's own chrome), and the theme lab (`basalt-ui/theme-lab`'s `ThemeLabControls`). Ported
- * from argo's `components/dev-dock.tsx` (91 lines) — same three-tool shape, same "only renders the
- * ACTIVE panel" contract: the launcher (which tool is open) lives wherever the consumer puts it —
- * a `SettingsMenuItem` per tool with `active` set to the currently-open one (C5's
- * `SettingsMenuItem.active`) is the seeded pattern — this component owns only the render.
+ * The dev dock — mounted by `BasaltProvider` behind a literal `NODE_ENV` check and not exported
+ * from the barrel (V2-SPEC § 2). A fixed bottom drawer hosting the Router devtools, the Query
+ * devtools panel and the theme lab; it renders only the ACTIVE panel, and the provider's three
+ * `dev.*` Spotlight commands choose which.
  *
- * Every dependency is an OPTIONAL peer, loaded lazily so importing (or even rendering, with
- * `tool={null}`) this module never requires `@tanstack/react-router-devtools`,
- * `@tanstack/react-query-devtools` or `@tanstack/react-router` unless a consumer actually opens
- * that tool — same discipline as `BasaltQueryDevtools` (`query-devtools.tsx`) and
- * `ThemeLabControls`'s own `React.lazy` wrapper here. In production this returns `null`
- * immediately, before any dynamic import fires.
- *
- * @example
- * import { BasaltDevDock, type BasaltDevDockTool } from 'basalt-ui'
- * import { useState } from 'react'
- * import { useRouter } from '@tanstack/react-router'
- *
- * function DevTools() {
- *   const [tool, setTool] = useState<BasaltDevDockTool | null>(null)
- *   const router = useRouter()
- *   return <BasaltDevDock tool={tool} onClose={() => setTool(null)} router={router} />
- * }
- * // wire the launchers as settings-menu entries with `active: tool === 'router'` etc.
+ * Every dependency is an OPTIONAL peer loaded through `import()` when its tool opens, so neither
+ * devtools package is required until then. In production this returns `null` before any import.
  */
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import type { ReactNode } from 'react'
 import { Box, CloseButton, Flex, Group, Text } from '@mantine/core'
 import type { BasaltProps } from './common/props'
+import { applyOverrides, loadOverrides } from './theme-lab/boot'
 import type { ThemeLabControlsProps } from './theme-lab'
 
 /** Which panel is open. `null` renders nothing (the dock is unmounted, not hidden). */
@@ -98,6 +79,12 @@ export function BasaltDevDock({
   className,
   style,
 }: BasaltDevDockProps): ReactNode {
+  // The theme lab owns only the editing UI — re-apply persisted overrides at boot so a tuning
+  // session survives a refresh, whether or not the dock is open.
+  useEffect(() => {
+    if (process.env['NODE_ENV'] === 'production') return
+    applyOverrides(loadOverrides())
+  }, [])
   if (process.env['NODE_ENV'] === 'production') return null
   if (tool === null) return null
 

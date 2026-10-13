@@ -4,14 +4,12 @@
  * subpaths, shipped rule lines, spec prose, playground routes, the CLI's own line count, and the
  * provider-only first-paint bytes.
  *
- * Every number is printed with its budget, in the order above, before any exit — so a `--report`
- * run (or a failing default run) always shows the full picture rather than stopping at the first
- * breach. `--report` prints and exits 0 unconditionally; the default exits 1 on any breach, for
- * wiring into a CI gate once every consolidation wave has landed.
- *
- * Several budgets are EXPECTED red until sibling waves land (C3 shrinks playground routes, C4
- * shrinks docs and the shipped rules, this wave's own CLI split did not complete) — `--report` is
- * how the orchestrator watches progress without a red gate blocking unrelated work in the interim.
+ * Every number is printed with its budget, in the order above, before any exit — so a failing run
+ * (or `--report`) always shows the full picture rather than stopping at the first breach. The
+ * default exits 1 on any breach and is the gate: root `pre` runs it as `bun run check-budgets`, so
+ * it must pass. `--report` prints the same table and exits 0 unconditionally, for watching progress
+ * without gating. The ceilings are LANDED values, each with its 2.0 TARGET beside it (`TARGETS` /
+ * `CEILINGS` below); a wave that closes the gap lowers its ceiling to the target in the same commit.
  *
  * Usage: bun packages/basalt-ui/scripts/check-budgets.ts [--report]
  *
@@ -23,8 +21,36 @@ import { join } from 'node:path'
 import { gzipSync } from 'node:zlib'
 import { build } from 'vite'
 
+import {
+  CHART_SUBPATH,
+  consumerViolations,
+  duplicateSymbols,
+  peerClassViolations,
+} from './surface-gates'
+import type { Manifest, Surface } from './surface-gates'
+
 const PKG_ROOT = join(import.meta.dir, '..')
 const REPO_ROOT = join(PKG_ROOT, '..', '..')
+
+/**
+ * The docs/V2-SPEC.md § 1 budget table in one block: `TARGETS` are the spec's 2.0 numbers,
+ * `CEILINGS` what the gate enforces today. They differ only where a wave owns the deferral, and that
+ * wave deletes its override (so the ceiling falls to the target) in the commit that lands the work.
+ */
+const TARGETS = {
+  /** Non-chart value symbols; 140 total = 92 + § 9's chart allowance. */
+  nonChartSymbols: 92,
+  chartSymbols: 48,
+  barrelTypes: 60,
+  subpaths: 15,
+  ruleLines: 450,
+} as const
+const CEILINGS = {
+  ...TARGETS,
+  nonChartSymbols: 97, // landed: +4 helpers `./charts` still imports from `./tokens`/`./format` (W4 removes them), +1 `useNav` (leaves with `BasaltShell nav`)
+  chartSymbols: 97, // deferred to W4: landed count until W4 reshapes `./charts` down to the target
+  ruleLines: 750, // deferred to W9: landed count until W9 rewrites the shipped rules down to the target
+} as const
 
 type Budget = {
   readonly label: string
@@ -36,6 +62,30 @@ type Budget = {
    * (no `dist/`), `failed` when measuring it threw (a bundler error).
    */
   readonly unmeasured?: { readonly kind: 'skipped' | 'failed'; readonly reason: string }
+  /** Violation lines printed under the row (the gate-style rows, whose `value` is their count). */
+  readonly detail?: readonly string[]
+}
+
+/**
+ * Symbols `./charts` still re-exports or imports across the subpath line: W4 owns `src/charts/**`
+ * and deletes these in its wave (V2-SPEC § 9), at which point this list and its filter go. Landed
+ * values: 10 duplicate homes, 4 symbols without a consumer entry.
+ */
+const W4_DEFERRED = new Set([
+  'VX',
+  'alpha',
+  'buildPaletteCss',
+  'chartMargin',
+  'defineSeries',
+  'fmtAxisDate',
+  'fmtTooltipDate',
+  'formatters',
+  'groupTokens',
+  'seriesTokens',
+])
+
+function withoutW4Deferred(violations: readonly string[]): string[] {
+  return violations.filter((line) => !W4_DEFERRED.has(line.split(/[ :]/)[0] ?? ''))
 }
 
 /** Every regular file under `dir` whose name matches `pattern`, recursing into subdirectories. */
@@ -57,22 +107,51 @@ function totalLines(paths: readonly string[]): number {
   return paths.reduce((sum, path) => sum + lineCount(path), 0)
 }
 
-// ── 1. Public symbols (scripts/export-surface.json) ────────────────────────────────────────────
+// ── 1. Public symbols (scripts/export-surface.json) ───────────────────────────────────────────
 
-function publicSymbols(): number {
-  const surface = JSON.parse(
-    readFileSync(join(PKG_ROOT, 'scripts/export-surface.json'), 'utf8'),
-  ) as Record<string, readonly string[]>
-  return Object.values(surface).reduce((sum, names) => sum + names.length, 0)
+function readSurface(): Surface {
+  return JSON.parse(readFileSync(join(PKG_ROOT, 'scripts/export-surface.json'), 'utf8')) as Surface
+}
+
+/** Value exports of every subpath except `./charts`, which W4 reshapes and is gated apart. */
+function nonChartSymbols(surface: Surface): number {
+  return Object.entries(surface)
+    .filter(([subpath]) => subpath !== CHART_SUBPATH)
+    .reduce((sum, [, names]) => sum + names.length, 0)
 }
 
 // ── 2. Published subpaths (package.json exports) ───────────────────────────────────────────────
 
-function publishedSubpaths(): number {
-  const pkg = JSON.parse(readFileSync(join(PKG_ROOT, 'package.json'), 'utf8')) as {
-    exports?: Record<string, unknown>
+function readManifest(): Manifest {
+  return JSON.parse(readFileSync(join(PKG_ROOT, 'package.json'), 'utf8')) as Manifest
+}
+
+function publishedSubpaths(manifest: Manifest): number {
+  return Object.keys(manifest.exports ?? {}).length
+}
+
+/**
+ * Non-chart barrel type exports: names in `export type { … }` / `export { type X }` clauses of each
+ * non-chart subpath's source entry. Counted from source so it needs no build; `null` when an entry
+ * is missing (a half-moved tree cannot vouch for the number).
+ */
+function barrelTypeExports(manifest: Manifest): { value: number | null; reason?: string } {
+  let total = 0
+  for (const [subpath, target] of Object.entries(manifest.exports ?? {})) {
+    const js = typeof target === 'object' && target !== null ? target.import : undefined
+    if (js === undefined || subpath === CHART_SUBPATH) continue
+    const base = join(PKG_ROOT, 'src', js.replace(/^\.\/dist\//, '').replace(/\.js$/, ''))
+    const entry = [`${base}.ts`, `${base}.tsx`, join(base, 'index.ts')].find(existsSync)
+    if (entry === undefined) return { value: null, reason: `no source entry for ${subpath}` }
+    const source = readFileSync(entry, 'utf8')
+    for (const m of source.matchAll(/export\s+type\s*\{([^}]*)\}/g)) {
+      total += (m[1] ?? '').split(',').filter((name) => name.trim() !== '').length
+    }
+    for (const m of source.matchAll(/export\s*\{([^}]*)\}/g)) {
+      total += (m[1] ?? '').split(',').filter((name) => /^\s*type\s/.test(name)).length
+    }
   }
-  return Object.keys(pkg.exports ?? {}).length
+  return { value: total }
 }
 
 // ── 3. Shipped rule lines (agent/rules/*.md) ────────────────────────────────────────────────────
@@ -196,7 +275,9 @@ const PROVIDER_ONLY_LABEL = 'provider-only first paint (gzip B, dist)'
 // (16 B measured) — it is a regression gate for KB-scale growth, not a byte-exact snapshot. Raise it
 // deliberately, in the commit that spends it, never to make a red gate green.
 // 18900 → 19000: the AA anchor/error vars and the badge/outline ink mix in the resolver (18904 locally).
-const PROVIDER_ONLY_CEILING = 19000
+// 19000 → 20800: `BasaltProvider` now wires the whole tree (router, query, modals, telemetry, hotkeys,
+// Spotlight actions, § 2); 20655 landed. Peers stay external, so these are basalt's own bytes.
+const PROVIDER_ONLY_CEILING = 20800
 
 /** An ANSI color sequence. Built from a char code: a control char in a regex literal is banned. */
 const ANSI_SGR = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, 'g')
@@ -238,15 +319,71 @@ async function providerOnlyRow(distEntry: string): Promise<Budget> {
   }
 }
 
+/** A gate-shaped row: `value` is the violation count, the ceiling is zero. */
+function gateRow(label: string, violations: readonly string[]): Budget {
+  return { label, value: violations.length, ceiling: 0, detail: violations }
+}
+
+/** The peer-class row needs the built dist: absent dist is `skipped`, which fails closed. */
+function peerClassRow(manifest: Manifest): Budget {
+  const label = 'peer classes (dist graph + .d.ts vs package.json)'
+  if (!existsSync(join(PKG_ROOT, 'dist/index.js'))) {
+    return {
+      label,
+      value: null,
+      ceiling: 0,
+      unmeasured: { kind: 'skipped', reason: 'dist/ missing, run `bun run build`' },
+    }
+  }
+  return gateRow(label, peerClassViolations(PKG_ROOT, manifest))
+}
+
 async function budgets(providerOnlyDist: string): Promise<Budget[]> {
+  const surface = readSurface()
+  const manifest = readManifest()
+  const types = barrelTypeExports(manifest)
+  const consumers = JSON.parse(
+    readFileSync(join(PKG_ROOT, 'scripts/consumers.json'), 'utf8'),
+  ) as Record<string, string>
   return [
+    // docs/V2-SPEC.md § 1: 140 public value symbols = 92 non-chart + § 9's chart allowance of 48.
     {
-      label: 'public symbols (export-surface.json)',
-      value: publicSymbols(),
-      ceiling: 400,
+      label: 'public value symbols, non-chart (export-surface.json)',
+      value: nonChartSymbols(surface),
+      ceiling: CEILINGS.nonChartSymbols,
     },
-    { label: 'published subpaths (package.json exports)', value: publishedSubpaths(), ceiling: 24 },
-    { label: 'shipped rule lines (agent/rules/*.md)', value: agentRuleLines(), ceiling: 750 },
+    {
+      label: 'public value symbols, ./charts (export-surface.json)',
+      value: surface[CHART_SUBPATH]?.length ?? 0,
+      ceiling: CEILINGS.chartSymbols,
+    },
+    {
+      label: 'barrel type exports, non-chart (src entries)',
+      value: types.value,
+      ceiling: CEILINGS.barrelTypes,
+      ...(types.reason === undefined
+        ? {}
+        : { unmeasured: { kind: 'skipped' as const, reason: types.reason } }),
+    },
+    {
+      label: 'published subpaths (package.json exports)',
+      value: publishedSubpaths(manifest),
+      ceiling: CEILINGS.subpaths,
+    },
+    {
+      label: 'shipped rule lines (agent/rules/*.md)',
+      value: agentRuleLines(),
+      ceiling: CEILINGS.ruleLines,
+    },
+    gateRow(
+      'symbols under more than one subpath (one import path per symbol)',
+      withoutW4Deferred(duplicateSymbols(surface)),
+    ),
+    gateRow(
+      'public symbols without a named consumer (scripts/consumers.json)',
+      withoutW4Deferred(consumerViolations(surface, consumers)),
+    ),
+    peerClassRow(manifest),
     // 2480 -> 3166: transitional, docs/V2-SPEC.md at its Wave 1 landed size while the 1.x specs it
     // replaces are still live. Each wave that archives a 1.x spec lowers it by that spec's lines; a
     // wave that must grow the spec raises it deliberately, in the commit that spends the lines.
@@ -291,6 +428,7 @@ export async function runBudgets({
     }
     const mark = b.value > b.ceiling ? '✖' : '✓'
     log(`${mark} ${b.label.padEnd(width)}  ${b.value} / ${b.ceiling}`)
+    for (const line of b.detail ?? []) log(`    ${line}`)
   }
 
   if (breaches.length === 0) {

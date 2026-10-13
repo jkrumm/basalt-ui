@@ -45,16 +45,14 @@ function walkGraph(entry) {
   return { files: seen, bare }
 }
 
-// Mantine-free Layer-0 + root-reachable subpath dist entries.
+// Mantine-free Layer-0 subpath dist entries (2.0: `./agent` left the set — Mantine is a required peer
+// and the chat UI ships in it; its runtime half stays Mantine-free as a repo-local lint boundary).
 // visx is allowed ONLY inside the charts graph.
 const subpaths = [
   { rel: 'tokens/index.js', banVisx: true },
   { rel: 'charts/index.js', banVisx: false },
-  { rel: 'guard/index.js', banVisx: true },
   { rel: 'format/index.js', banVisx: true },
   { rel: 'state.js', banVisx: true },
-  { rel: 'router-tanstack/index.js', banVisx: true },
-  { rel: 'agent/index.js', banVisx: true },
 ]
 for (const { rel, banVisx } of subpaths) {
   const entry = resolve(DIST, rel)

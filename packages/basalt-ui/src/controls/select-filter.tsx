@@ -30,10 +30,11 @@
  * />
  */
 import type { ReactNode } from 'react'
-import type { BasaltProps } from '../common/props'
 import { assertRequiredProps } from '../common/validate'
-import type { EnumField, FieldHandle, StringField } from '../state'
+import type { EnumField, FieldHandle } from '../state'
+import type { StringField } from '../state/fields'
 import { EnumFilter } from './enum-filter'
+import type { UncontrolledProps } from './uncontrolled'
 
 /**
  * One row of a runtime catalogue. Wider than the store's own `FieldOption` by exactly one member:
@@ -47,7 +48,7 @@ export type FilterOption = {
   readonly disabled?: boolean
 }
 
-type SelectFilterCommon = BasaltProps & {
+type SelectFilterCommon = UncontrolledProps & {
   readonly label: string
   readonly icon?: ReactNode
   /** Adds a `Clear` action that writes the field back to its fallback. */
@@ -82,7 +83,7 @@ export function SelectFilter(props: SelectFilterStringProps): ReactNode
 export function SelectFilter<T extends string>(props: SelectFilterProps<T>): ReactNode {
   // F-ERR-1: without this, a `field` that never arrived surfaces as
   // `undefined is not an object (evaluating 'field.use')` from inside `EnumFilter`, caught by
-  // `BasaltErrorBoundary` and rendered as a blank subtree. `field` is not optional in the type, so
+  // `RootBoundary` and rendered as a blank subtree. `field` is not optional in the type, so
   // this only ever fires on untyped JS, a `props` object built at runtime, or a store key that
   // resolved to nothing — all three of which the message now names.
   assertRequiredProps('SelectFilter', props, ['field'], {

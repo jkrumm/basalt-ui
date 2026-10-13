@@ -1,11 +1,8 @@
 /**
- * `useBasaltNav` and `useRouterBreadcrumbs` under a REAL TanStack memory router — both read
- * `@tanstack/react-router` hooks (`useLocation`/`useMatches`) that need a live router context, so
- * (like `search-store.router.test.tsx` and `use-nav.test.tsx`) this cannot be tested headlessly.
- *
- * Two-level route tree (`/dashboard` → `/dashboard/detail`) covers the shape both hooks exist for:
- * `useBasaltNav.isActive` staying true on a parent while a nested child is the current route, and
- * `useRouterBreadcrumbs` building the ancestor→deepest trail from `staticData.title`.
+ * `useBasaltNav` under a REAL TanStack memory router — it reads `useLocation`, which needs a live
+ * router context, so (like `search-store.router.test.tsx` and `use-nav.test.tsx`) this cannot be
+ * tested headlessly. Two-level route tree (`/dashboard` → `/dashboard/detail`): `isActive` stays
+ * true on a parent while a nested child is the current route.
  */
 import { describe, expect, test } from 'bun:test'
 import type { ReactNode } from 'react'
@@ -18,22 +15,19 @@ import {
   createRoute,
   createRouter,
 } from '@tanstack/react-router'
-import { useBasaltNav, useRouterBreadcrumbs } from './index'
-import type { BasaltBreadcrumb, BasaltNav } from './index'
+import { useBasaltNav } from './index'
 
-type Sink = { nav: BasaltNav | null; crumbs: BasaltBreadcrumb[] | null }
+type Sink = { nav: ReturnType<typeof useBasaltNav> | null }
 
 function probe(sink: Sink) {
   return function Probe(): ReactNode {
     sink.nav = useBasaltNav()
-    sink.crumbs = useRouterBreadcrumbs()
     return null
   }
 }
 
 /**
- * The probe mounts once, at the ROOT — both hooks read global router state (`useLocation`,
- * `useMatches`), not anything scoped to the route the component happens to render under, so one
+ * The probe mounts once, at the ROOT — the hook reads global router state (`useLocation`), not anything scoped to the route the component happens to render under, so one
  * mount sees the full picture regardless of how deep the current match is.
  */
 async function mountApp(entry: string, sink: Sink) {
@@ -76,7 +70,7 @@ async function mountApp(entry: string, sink: Sink) {
 
 describe('useBasaltNav', () => {
   test('reports the active route, and stays active on a nested child (prefix match)', async () => {
-    const sink: Sink = { nav: null, crumbs: null }
+    const sink: Sink = { nav: null }
     await mountApp('/dashboard/detail', sink)
 
     expect(sink.nav?.currentPath).toBe('/dashboard/detail')
@@ -87,30 +81,10 @@ describe('useBasaltNav', () => {
   })
 
   test('exact mode only matches the current route itself', async () => {
-    const sink: Sink = { nav: null, crumbs: null }
+    const sink: Sink = { nav: null }
     await mountApp('/dashboard/detail', sink)
 
     expect(sink.nav?.isActive('/dashboard', { exact: true })).toBe(false)
     expect(sink.nav?.isActive('/dashboard/detail', { exact: true })).toBe(true)
-  })
-})
-
-describe('useRouterBreadcrumbs', () => {
-  test('yields the ancestor→deepest crumb chain for a two-level route', async () => {
-    const sink: Sink = { nav: null, crumbs: null }
-    await mountApp('/dashboard/detail', sink)
-
-    expect(sink.crumbs).toEqual([
-      { title: 'Dashboard', href: '/dashboard' },
-      { title: 'Detail', href: '/dashboard/detail' },
-    ])
-  })
-
-  test('a route with no staticData.title is silently omitted', async () => {
-    const sink: Sink = { nav: null, crumbs: null }
-    await mountApp('/other', sink)
-
-    // Neither the root nor `/other` carries a title — the trail is empty, not padded with blanks.
-    expect(sink.crumbs).toEqual([])
   })
 })

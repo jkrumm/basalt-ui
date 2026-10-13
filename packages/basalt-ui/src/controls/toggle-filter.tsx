@@ -13,14 +13,15 @@
 import { Switch } from '@mantine/core'
 import { useId } from 'react'
 import type { ReactNode } from 'react'
-import type { BasaltProps } from '../common/props'
 import { assertRequiredProps } from '../common/validate'
-import type { BooleanField, FieldHandle } from '../state'
+import type { FieldHandle } from '../state'
+import type { BooleanField } from '../state/fields'
 import { useFilterRegistration, useFilterSurface } from './filter-context'
 import { FilterPill } from './filter-pill'
 import { PanelRow } from './panel-row'
+import type { UncontrolledProps } from './uncontrolled'
 
-export type ToggleFilterProps = BasaltProps & {
+export type ToggleFilterProps = UncontrolledProps & {
   readonly field: FieldHandle<BooleanField>
   readonly label: string
   readonly icon?: ReactNode
@@ -28,7 +29,7 @@ export type ToggleFilterProps = BasaltProps & {
 
 export function ToggleFilter(props: ToggleFilterProps): ReactNode {
   // F-ERR-1 — without this a missing `field` surfaces as `undefined is not an object
-  // (evaluating 'field.use')`, caught by `BasaltErrorBoundary`.
+  // (evaluating 'field.use')`, caught by `RootBoundary`.
   assertRequiredProps('ToggleFilter', props, ['field'], {
     field: 'bind it to a store field (`store.field.<name>`), never a value/onChange pair.',
   })

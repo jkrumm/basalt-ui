@@ -1012,7 +1012,7 @@ describe('basalt/shadow-basalt-export', () => {
   })
 
   it('sees the content layer too', () => {
-    const { rules } = run(`export function ReadingProgress() { return null }\n`)
+    const { rules } = run(`export function Callout() { return null }\n`)
     expect(rules).toContain('shadow-basalt-export')
   })
 

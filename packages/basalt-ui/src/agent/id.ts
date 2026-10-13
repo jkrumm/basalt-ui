@@ -1,9 +1,8 @@
 /**
  * Id-minting helpers shared across the agent layer: `mintThreadId` (a low-stakes client-side id —
- * threads, run/chat namespaces — used by `./thread`'s `createThreadsStore`, `./adapter`'s
- * `createAdapterThreadsStore`/`threadsStoreAdapterContract`, `./use-agent-stream`'s per-send run
- * id, and `aiSdkTransport`'s fixed chat id), `mintMessageId` (the higher-stakes id `appendMessage`
- * treats as its only idempotency key), and `withPartIds` (stamps sequence ids onto streamed
+ * threads, run/chat namespaces — used by `useAgentThreadRuns`'s per-send run id and
+ * `aiSdkTransport`'s fixed chat id; the thread store itself is consumer-owned), `mintMessageId`
+ * (the higher-stakes id `appendMessage` treats as its only idempotency key), and `withPartIds` (stamps sequence ids onto streamed
  * parts). Grouped here because they're the id-minting leaves every store/hook/transport in this
  * layer sits above — not because they share a mechanism (`mintMessageId` deliberately diverges
  * from `mintThreadId` on rung 3; see its own doc).

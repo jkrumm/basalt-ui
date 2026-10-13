@@ -25,7 +25,6 @@ A store is defined wherever the feature lives (`src/lib/`, `src/features/…`), 
 | anything a control reads or writes — filter, tab, range, pagination | a **field** on `createSearchStore` / `createLocalStore`                  |
 | color scheme                                                        | `useMantineColorScheme()` — never a store, never `localStorage['theme']` |
 | a preference that must survive navigation but is not URL-worthy     | `createPersistedState` (`basalt-ui/state`)                               |
-| network status                                                      | `useConnectivity()` — auto-mounted by `BasaltProvider`                   |
 
 **Never `useState` for a filter, a tab, a range or a view** (law C3). It resets on navigation, it
 cannot be linked, and it is the state a basalt control refuses to take (`value`/`onChange` do not
@@ -35,7 +34,7 @@ component; basalt ships and depends on none.
 ## `createSearchStore` — one factory over typed fields
 
 ```ts
-import { createSearchStore, field } from 'basalt-ui/router-tanstack'
+import { createSearchStore, field } from 'basalt-ui/state'
 
 export const analytics = createSearchStore({
   key: 'analytics',
@@ -93,7 +92,7 @@ type error against a store-backed route.
 ## The typed nav definition
 
 The whole navigation — desktop sidebar and mobile bar — is declared ONCE with `defineNav` /
-`navGroup` in a **leaf** module (`src/lib/nav.tsx`) that never imports `routeTree.gen` or
+`navGroup` (from `basalt-ui`) in a **leaf** module (`src/lib/nav.tsx`) that never imports `routeTree.gen` or
 `__root.tsx`, so palettes and redirects can import it without closing a cycle. `useNav(NAV)` resolves
 it against the live router and returns `{ sections, mobileNav }` — both `BasaltShell` props, so
 spread it. `navTarget(NAV, id)` is one destination's link options, typed per id, for a `<Link>`, a
@@ -109,8 +108,7 @@ the nav into Spotlight in one `.map()`).
   errors** — `RegisteredRouter` falls back to `AnyRouter`, every `to` widens to `string`. Verify
   once by changing a `to` to garbage and confirming the compile error. **Never reach for
   `as never`** to quiet one — the checking is the entire point.
-- `staticData` (`title`/`icon`/`navSection`) drives `useRouterBreadcrumbs` and needs the generated
-  route tree.
+- `staticData` (`title`/`icon`/`navSection`) needs the generated route tree.
 
 ## `createPersistedState` — the localStorage primitive
 
@@ -118,4 +116,4 @@ Call it once at module scope; use the returned hook anywhere, no provider. SSR-s
 the `storage` event, versioned (bump `version` on a shape change, stale values fall back to
 `initial`). Keys are namespaced `basalt:<key>` automatically; `readPersistedValue(key, v)` is the
 non-React read. Every basalt module that persists — shell collapse, `Section` fold, a sidebar
-block, a form draft, notification history — goes through this one primitive.
+block, notification history — goes through this one primitive.

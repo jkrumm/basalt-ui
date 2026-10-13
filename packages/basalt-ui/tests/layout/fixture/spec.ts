@@ -1,3 +1,5 @@
+import type { BasaltDensityLevel, BasaltRadiusLevel } from '../../../src/theme'
+
 /**
  * The wire format between a layout test (Bun) and the fixture app (browser).
  *
@@ -213,7 +215,7 @@ export type CardsSpec = {
   /** A `divided` `StatGroup` of four cards in a wrapper this many px wide (`data-testid="group"`). */
   groupWidth?: number
   /**
-   * A `StatGroup cols={5}` and a `WidgetGrid cols={3}` per width, each in a wrapper of exactly that
+   * A `StatGroup cols={5}` per width, each in a wrapper of exactly that
    * many px (`data-testid="grid-probe-<w>"`) — the `basalt-grid` container boundaries, measured.
    */
   gridProbes?: number[]
@@ -247,7 +249,7 @@ export type FixtureSpec = {
   sections: SectionSpec[]
   nav?: { maxTabs?: number; menuMax?: number; moreLabel?: string }
   /** −3..+3 density knob. Every touch-target floor must hold at every level. */
-  density?: number
+  density?: BasaltDensityLevel
   /**
    * `false` builds every destination WITHOUT an `icon` — a consumer shipping no icon dependency,
    * which basalt supports. The active pill is the icon slot's own background, so this is the shape
@@ -255,7 +257,7 @@ export type FixtureSpec = {
    */
   icons?: boolean
   /** −5..+5 radius knob. */
-  radius?: number
+  radius?: BasaltRadiusLevel
   colorScheme?: 'light' | 'dark'
   /** Filler height in px above the `[data-testid="content-end"]` sentinel. */
   bodyHeight?: number
@@ -283,7 +285,7 @@ export type FixtureSpec = {
   charts?: ChartsSpec
   /** Renders a `basalt-ui/agent-chat` transcript above the filler. Omitted ⇒ no transcript. */
   agent?: AgentSpec
-  /** Mounts `BasaltOverlays` and a button (`data-testid="open-confirm"`) opening `overlays.confirm`. */
+  /** Renders a button (`data-testid="open-confirm"`) opening `overlays.confirm`. */
   confirm?: true
   /** `BasaltShell`'s `headerHeight` in px. Omitted ⇒ the token default. */
   headerHeight?: number

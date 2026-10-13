@@ -2,7 +2,7 @@
  * ShortcutsHelp — renders a keyboard shortcut reference list grouped by command group.
  *
  * Reads from the active command registry at render time via `toShortcutList()`. The same
- * Command.shortcut field also drives live key binding via useCommandHotkeys().
+ * Command.shortcut field also drives live key binding in `BasaltProvider`.
  *
  * Platform-aware label: 'Mod' → '⌘' on mac, 'Ctrl' elsewhere.
  * Platform detection defers to post-mount (useEffect) to avoid SSR/client hydration mismatch.
