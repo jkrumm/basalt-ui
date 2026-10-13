@@ -33,8 +33,9 @@ import {
   Text,
 } from '@mantine/core'
 import { Section } from 'basalt-ui'
-import { Bars, VX } from 'basalt-ui/charts'
+import { Bars } from 'basalt-ui/charts'
 import { SelectFilter, ToggleFilter } from 'basalt-ui/controls'
+import { VX } from 'basalt-ui/tokens'
 import { useMemo } from 'react'
 import type { ReactNode } from 'react'
 import { CBBI_METRICS, ratio } from './cbbi-data'
@@ -58,26 +59,18 @@ import { IconReset } from '../icons'
 const CBBI_SOURCE = 'https://colintalkscrypto.com/cbbi/'
 
 /** The distribution bars, at both widths — one declaration so the panel copy cannot drift. */
-const BIN_BARS = [{ key: 'count', label: 'Days', color: VX.accent }]
+const BIN_BARS = [
+  { key: 'count', label: 'Days', color: VX.accent, getValue: (d: HistogramBin) => d.count },
+]
 
-export function CbbiDistributionBars({
-  bins,
-  height,
-  chartId,
-}: {
-  bins: HistogramBin[]
-  height: number
-  chartId: string
-}) {
+export function CbbiDistributionBars({ bins, height }: { bins: HistogramBin[]; height: number }) {
   return (
     <Bars
       data={bins}
       height={height}
-      chartId={chartId}
       ariaLabel="Distribution of the official confidence index"
-      getX={(d) => d.key}
-      getValue={(d) => d.count}
-      positiveBars={BIN_BARS}
+      x={(d) => d.key}
+      bars={BIN_BARS}
       y={{ domain: 'auto', format: (v) => String(Math.round(v)) }}
       legend={false}
     />
@@ -392,7 +385,7 @@ export function CbbiPanel({
         subtitle="Every day since 2011, by index reading."
         count={bins.length}
       >
-        <CbbiDistributionBars bins={bins} height={140} chartId="cbbi-distribution-aside" />
+        <CbbiDistributionBars bins={bins} height={140} />
       </Section>
 
       <Section title="About">

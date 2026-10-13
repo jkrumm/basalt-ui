@@ -3,12 +3,12 @@
  * `DashboardPage.tsx` so that file reads as the page's SHAPE (one `PageBar`, four grids) rather than
  * as the internals of two small components.
  */
-import { Badge, Box, Group, Stack, Text } from '@mantine/core'
-import { LineSparkline, VX } from 'basalt-ui/charts'
+import { Badge, Group, Stack, Text } from '@mantine/core'
+import { VX } from 'basalt-ui/tokens'
 import { useEffect, useState } from 'react'
 import type { BreakdownMetric, BreakdownRow } from './analytics-data'
 
-/** One breakdown row: label · value · a tiny trend. A row list, not a table — four columns of text
+/** One breakdown row: label · value. A row list, not a table — four columns of text
  * would out-shout the number that matters.
  *
  * `data-numeric` is a GLOBAL rule in `basalt-ui/styles.css` — the attribute puts any element in the
@@ -34,15 +34,6 @@ export function BreakdownList({
             <Text data-numeric size="xs" fw={500}>
               {metric === 'revenue' ? row.value : row.orders}
             </Text>
-            <Box w={72}>
-              <LineSparkline
-                data={row.history}
-                width={72}
-                height={20}
-                color={VX.faint}
-                ariaLabel={`${row.label} trend`}
-              />
-            </Box>
           </Group>
         </Group>
       ))}

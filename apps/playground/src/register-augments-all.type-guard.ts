@@ -1,5 +1,5 @@
 // J.2 apps/playground/src/register-augments-all.type-guard.ts
-import type { SeriesKey } from 'basalt-ui/charts' // resolves to DEMO_SERIES keys via the playground augment
+import type { SeriesKey } from 'basalt-ui' // resolves to DEMO_SERIES keys via the playground augment
 const SYM: unique symbol = Symbol()
 export function f2(k: SeriesKey) {
   const ok: 'sessions' | 'signups' | 'revenue' | 'churn' = k // exact union, no widening, no symbol leak

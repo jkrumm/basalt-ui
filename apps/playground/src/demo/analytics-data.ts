@@ -87,6 +87,14 @@ const CURRENCY_SYMBOL: Record<Currency, string> = { USD: '$', EUR: '€' }
 /** Fixed conversion, so switching currency changes the numbers visibly and reproducibly. */
 const CURRENCY_RATE: Record<Currency, number> = { USD: 1, EUR: 0.92 }
 
+/**
+ * A chart x for a fixture label: an ISO day becomes a UTC `Date` (so the axis is a time scale), an
+ * hour or a funnel step stays the string it is (so the axis is categorical).
+ */
+export function xOf(label: string): Date | string {
+  return /^\d{4}-\d{2}-\d{2}$/.test(label) ? new Date(`${label}T00:00:00Z`) : label
+}
+
 /** Point count and label shape per range — `'custom'` reads as the 30-day window. */
 function shape(range: AnalyticsRange): { count: number; hourly: boolean } {
   if (range === '1d') return { count: 24, hourly: true }

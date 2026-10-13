@@ -6,8 +6,11 @@
  *                  `button[data-legend-key]` hides/shows a series, which re-derives the y-domain,
  *                  tooltip rows and marks (a full chart re-render). Click → second rAF, plus rAF
  *                  frame times and long tasks over the whole burst.
- *  - hover         synthetic `pointermove` on the hover overlay → the rAF in which the tooltip
- *                  text first changes. Consecutive moves land on different data points.
+ *  - hover         synthetic `pointermove` on the chart `<svg>` (the TanStack Charts surface listens
+ *                  on its container, so it bubbles) → the rAF in which the visible
+ *                  `.ts-chart-tooltip` text first changes. Consecutive moves land on different data
+ *                  points. The burst ends with a `mouseleave` on the surface/host, which is how the
+ *                  engine clears transient focus.
  *
  * Median of RUNS fresh-context runs per CPU throttle (unthrottled and 4x). N is in every output.
  */
@@ -32,9 +35,11 @@ const UPDATES_PER_RUN = 40
 const HOVERS_PER_RUN = 40
 const HOVER_TIMEOUT_MS = 1000
 
-/** The chart `<svg>` is identified by its hover overlay; `data-testid="chart-frame"` exists only in
- * the layout-suite fixture, not in the playground build. */
-const CHART_PATH = 'svg:has(rect[role="slider"]) path'
+/** The chart `<svg>` is the engine surface `svg.ts-chart`; `data-testid="chart-frame"` exists only
+ * in the layout-suite fixture, not in the playground build. First-paint = the first mark (line/area
+ * `<path>` or bar `<rect>`) with a real box. */
+const CHART_SVG = '.ts-chart-host svg.ts-chart'
+const CHART_PATH = `${CHART_SVG} g.ts-chart__marks :is(path, rect)`
 
 /** Marks the first frame in which any chart path has a real box. Runs before page scripts. */
 const FIRST_PAINT_INIT = `(() => {
@@ -89,15 +94,25 @@ async function measureUpdates(page: Page): Promise<Burst> {
 
 async function measureHover(page: Page): Promise<Burst> {
   return page.evaluate(
-    async ([n, timeout]) => {
+    async ([n, timeout, chartSvg]) => {
       const raf = () => new Promise<number>((r) => requestAnimationFrame(r))
-      const overlay = document.querySelector<SVGRectElement>('rect[role="slider"]')
-      if (!overlay) throw new Error('charts-perf: no hover overlay on /charts')
-      const box = overlay.getBoundingClientRect()
+      const svg = [...document.querySelectorAll<SVGSVGElement>(chartSvg)].find((s) => {
+        const r = s.getBoundingClientRect()
+        return r.width > 0 && r.height > 0
+      })
+      if (!svg) throw new Error('charts-perf: no chart surface (svg.ts-chart) on /charts')
+      // Hover across the plotted marks' extent (the engine's nearest-point radius is bounded, so the
+      // axis gutters would miss); fall back to the whole svg when the marks have no box.
+      const marks = svg.querySelector('g.ts-chart__marks')?.getBoundingClientRect()
+      const box = marks && marks.width > 0 && marks.height > 0 ? marks : svg.getBoundingClientRect()
+      // The tooltip is portalled (top layer / under <body>), so read it document-wide; a hidden
+      // tooltip (cleared focus) reads as ''.
       const signature = () =>
-        [...document.querySelectorAll('[role="tooltip"]')].map((t) => t.textContent).join('|')
+        [...document.querySelectorAll('.ts-chart-tooltip:not([hidden])')]
+          .map((t) => t.textContent)
+          .join('|')
       const fire = (type: string, x: number) =>
-        overlay.dispatchEvent(
+        svg.dispatchEvent(
           new PointerEvent(type, {
             bubbles: true,
             cancelable: true,
@@ -117,10 +132,6 @@ async function measureHover(page: Page): Promise<Burst> {
         const slot = (i * 7) % 31
         const x = box.left + box.width * ((slot + 0.5) / 31)
         const start = performance.now()
-        if (i === 0) {
-          fire('pointerover', x)
-          fire('pointerenter', x)
-        }
         fire('pointermove', x)
         let seen = false
         while (performance.now() - start < timeout) {
@@ -135,9 +146,14 @@ async function measureHover(page: Page): Promise<Burst> {
         if (seen) latencies.push(performance.now() - start)
         else misses++
       }
-      return { t0, t1: performance.now(), latencies, misses }
+      const t1 = performance.now()
+      // Clear transient focus: the engine listens for `mouseleave` (non-bubbling) on its container,
+      // the `.ts-chart-surface` wrapping the svg.
+      for (const node of [svg.parentElement, svg.closest('.ts-chart-host')])
+        node?.dispatchEvent(new MouseEvent('mouseleave'))
+      return { t0, t1, latencies, misses }
     },
-    [HOVERS_PER_RUN, HOVER_TIMEOUT_MS] as [number, number],
+    [HOVERS_PER_RUN, HOVER_TIMEOUT_MS, CHART_SVG] as [number, number, string],
   )
 }
 

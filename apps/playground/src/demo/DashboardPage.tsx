@@ -29,9 +29,9 @@ import {
   ViewTabs,
 } from 'basalt-ui/controls'
 import { DateRangePicker } from 'basalt-ui/controls-dates'
-import { BarSparkline, ChartCard, MultiLine, VX } from 'basalt-ui/charts'
+import { ChartCard, Lines } from 'basalt-ui/charts'
 import type { ZoneSpec } from 'basalt-ui/charts'
-import { CONTAINER_KEYS, alpha } from 'basalt-ui/tokens'
+import { CONTAINER_KEYS, VX, alpha } from 'basalt-ui/tokens'
 import { BasaltDataTable } from 'basalt-ui/table'
 import { createLocalStore, field } from 'basalt-ui/state'
 import { useCallback, useMemo, useState } from 'react'
@@ -41,9 +41,8 @@ import {
   CHANNEL_KEYS,
   CHANNEL_LABEL,
   deltaPeriodLabel,
-  downsample,
-  sparklineBars,
   topPageColumns,
+  xOf,
 } from './analytics-data'
 import type { Analytics, SalesPoint } from './analytics-data'
 import { BreakdownList, LiveChip } from './analytics-widgets'
@@ -126,39 +125,6 @@ function buildBreakdownQuery(variant: KpiQueryVariant): QueryStateLike<unknown> 
 }
 
 /**
- * The KPI trend's bar fill. `alpha(VX.ink, 0.33)` over `BarSparkline`'s own 0.75 fill-opacity lands
- * the reference's ink-25% — a token expression, never a hex (`--vx-*` re-resolves per scheme).
- */
-const KPI_BAR_COLOR = alpha(VX.ink, 0.33)
-
-/**
- * The KPI sparkline, as a render prop over the slot's MEASURED box.
- *
- * This is what the render prop buys that a `ReactNode` could not: the BAR COUNT follows the width.
- * The same expression draws ~10 bars in the 72px `'right'` slot (the reference treatment) and ~33 in
- * the full-bleed slot `'right'` collapses to below `sm` — with no viewport branch, no second mount
- * and no media query at the call site (law C9). A hardcoded `width={72}` was only ever right for one
- * of the two, and a fixed bar count for neither.
- *
- * `emphasizeLast` is the reading a KPI trend actually owes: where the series ends, in accent, beside
- * the number it qualifies.
- */
-function kpiSparkline(title: string, history: readonly number[]) {
-  return ({ width, height }: { width: number; height: number }) => (
-    <BarSparkline
-      data={downsample(history, sparklineBars(width))}
-      width={width}
-      height={height}
-      color={KPI_BAR_COLOR}
-      barGap={2}
-      barRadius={1}
-      emphasizeLast
-      ariaLabel={`${title} trend`}
-    />
-  )
-}
-
-/**
  * The 3-up secondary row, declared rather than repeated: three near-identical single-series cards
  * differing only in title, source, unit and hue. Written out three times it was the same 24 lines
  * three times over, and the fourth copy is where one of them silently loses its `ariaLabel`.
@@ -215,7 +181,7 @@ const SMALL_CHARTS: readonly {
  * a 30-point series is a visible lie about WHEN sales moved. The window shrinks at the edges instead
  * of dropping points, so the line still spans the whole calendar rather than starting three days in.
  *
- * `span <= 1` returns the input BY IDENTITY, so "smoothing off" allocates nothing and `MultiLine`
+ * `span <= 1` returns the input BY IDENTITY, so "smoothing off" allocates nothing and `Lines`
  * sees the same `data` reference it saw before — a memoized chart must not re-lay-out because a
  * slider the reader never touched produced a fresh array.
  *
@@ -400,11 +366,9 @@ export function DashboardPage() {
             // the period label comes from the compare field, never from the range.
             {...(kpi.delta !== undefined && { delta: kpi.delta })}
             // No `deltaPeriod` on a KPI card, deliberately: `vs prior` doubles the badge's width in
-            // a card that also holds a 72px sparkline, and the period is already stated once for the
-            // whole page by the `Compare` pill in the bar. The big chart card below, which has the
-            // room, keeps it.
-            sparklinePlacement="right"
-            sparkline={kpiSparkline(kpi.title, kpi.history)}
+            // a card that also holds a trend, and the period is already stated once for the whole
+            // page by the `Compare` pill in the bar. The big chart card below, which has the room,
+            // keeps it.
             // Only the FIRST card carries one, deliberately: `docs/CONTROLS-SPEC.md` §2.2's
             // `actions` slot is a per-card affordance, and four identical kebabs across a KPI row
             // is chrome. It is a raw `ActionIcon` with no `size` — `StatCard` wraps the slot in a
@@ -476,15 +440,14 @@ export function DashboardPage() {
               />
             }
           >
-            <MultiLine
+            <Lines
               // The one chart on this page the ASIDE governs: `plotPoints` carries its smoothing,
               // `y.scale` its axis and `zones` its target corridor. The `Bucket` tabs in this card's
               // own header stay the CARD's (law C1's third home) — the aside would be the wrong
               // reach for a control that formats exactly one widget.
               data={plotPoints}
-              chartId="analytics-sales"
               ariaLabel="Total sales over time"
-              getX={(d) => d.date}
+              x={(d) => xOf(d.date)}
               y={{ domain: 'auto', scale: filters.scale }}
               {...(bands !== undefined && { zones: bands })}
               series={[
@@ -492,7 +455,6 @@ export function DashboardPage() {
                   key: 'sales',
                   label: 'Sales',
                   color: VX.accent,
-                  mark: 'line',
                   getValue: (d) => d.sales,
                 },
                 ...(filters.compare === 'none'
@@ -503,7 +465,6 @@ export function DashboardPage() {
                         label:
                           filters.compare === 'year' ? 'Same period last year' : 'Prior window',
                         color: VX.faint,
-                        mark: 'line' as const,
                         dash: 'dashed' as const,
                         strokeWidth: 1.5,
                         getValue: (d: (typeof plotPoints)[number]) => d.previous,
@@ -567,11 +528,10 @@ export function DashboardPage() {
             const format = funnelView === 'rate' ? chart.rateFormat : chart.format
             return (
               <ChartCard key={chart.key} title={chart.title} info={chart.info}>
-                <MultiLine
+                <Lines
                   data={chart.points(data)}
-                  chartId={`analytics-${chart.key}`}
                   ariaLabel={chart.title}
-                  getX={(d) => d.x}
+                  x={(d) => xOf(d.x)}
                   y={{
                     domain: 'auto',
                     // `chart.format` is omitted for a plain count (funnel), which exercises the
@@ -584,7 +544,6 @@ export function DashboardPage() {
                       key: 'value',
                       label: chart.title,
                       color: chart.color,
-                      mark: 'line',
                       getValue: (d) =>
                         funnelView === 'rate' ? chart.toRate(d.value, data) : d.value,
                     },

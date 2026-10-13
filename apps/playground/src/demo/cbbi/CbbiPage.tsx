@@ -19,11 +19,11 @@
 import { Alert, Loader, SimpleGrid, Stack, Text } from '@mantine/core'
 import { PageAside, PageBar, Section, StatCard, StatGroup } from 'basalt-ui'
 import type { StatCardTone } from 'basalt-ui'
-import { ChartCard, Heatmap, LineSparkline, MultiLine, VX, ZonedLine } from 'basalt-ui/charts'
+import { ChartCard, Lines } from 'basalt-ui/charts'
 import type { AxisConfig, ChartSeries, ZoneSpec } from 'basalt-ui/charts'
 import { FilterSet, RangeFilter, ViewTabs } from 'basalt-ui/controls'
 import { BasaltDataTable } from 'basalt-ui/table'
-import { CONTAINER_KEYS, alpha } from 'basalt-ui/tokens'
+import { CONTAINER_KEYS, VX, alpha } from 'basalt-ui/tokens'
 import { useMemo } from 'react'
 import { IconActivity, IconChart, IconComponents, IconCurrency } from '../icons'
 import { CbbiDistributionBars, CbbiPanel } from './CbbiPanel'
@@ -43,12 +43,9 @@ import { cbbiFilters, useCbbiWeights } from './cbbi-store'
 import {
   buildPoints,
   buildSummary,
-  CBBI_HEAT_COLS,
   cbbiMonthColumns,
-  heatYears,
   hotMetricNames,
   isDefaultComposition,
-  monthlyHeat,
   monthlyTable,
 } from './cbbi-view'
 import type { CbbiPoint, CbbiScale } from './cbbi-view'
@@ -59,7 +56,6 @@ const HISTOGRAM_BINS = 20
 /** The history table's window — two years of monthly rows is what fits without pagination. */
 const TABLE_MONTHS = 24
 
-const HEAT_HEIGHT = 300
 const MAIN_CHART_HEIGHT = 260
 const METRIC_CHART_HEIGHT = 150
 /** The combined price+confidence chart's height — one tall plot in place of two 260px ones. */
@@ -101,15 +97,19 @@ const CONFIDENCE_ZONES_RIGHT = withAxisSide(CONFIDENCE_ZONES, 'right')
 const CONFIDENCE_AXIS: AxisConfig<CbbiPoint> = { domain: [0, 1], format: pct }
 
 /**
- * The x accessors, at module scope.
+ * The x accessors and the x/tooltip formatters, at module scope.
  *
- * `CartesianChart` keys its measured margins and its scales on `[data, getX]`, and every chart kind
- * here is `memo`ized — so a `(d) => d.key` written inline is a new identity on every commit and
- * re-measures and re-scales up to nine charts over as many as 5,541 points, on nothing more than a
- * `isFetching` flip. `row.day` is the same string, stamped once at parse (`cbbi-data.ts`).
+ * `CartesianChart` keys its scales on `[data, x]`, and every chart kind here is `memo`ized — so a
+ * `(d) => new Date(d.key)` written inline is a new identity on every commit and re-scales up to nine
+ * charts over as many as 5,541 points, on nothing more than a `isFetching` flip. The key is a
+ * `YYYY-MM-DD` day, read as a UTC `Date` so the axis is a time scale.
  */
-const pointDay = (d: CbbiPoint): string => d.key
-const rowDay = (d: CbbiRow): string => d.day
+const dayDate = (key: string): Date => new Date(`${key}T00:00:00Z`)
+const pointDay = (d: CbbiPoint): Date => dayDate(d.key)
+const rowDay = (d: CbbiRow): Date => dayDate(d.day)
+const fmtMonthDate = (x: Date): string => fmtMonthTick(x.toISOString().slice(0, 10))
+/** `formatX` collapses a tick to `Aug 26`; the tooltip header keeps the full day. */
+const DAY_TOOLTIP = { formatHeader: (x: Date): string => x.toISOString().slice(0, 10) }
 
 /** The price line — static: it closes over nothing the page can change. `formatValue` is unneeded
  * now that `getValue` returns the raw price directly and the axis already formats it with `money`
@@ -128,7 +128,7 @@ const METRIC_AXIS: AxisConfig<CbbiRow> = { domain: [0, 1], format: pct }
 
 /**
  * One series declaration per metric, built ONCE — it depends only on the metric's key and label,
- * both static, so a literal per card per render would defeat `memo(ZonedLine)` for no gain.
+ * both static, so a literal per card per render would defeat `memo(Lines)` for no gain.
  */
 const METRIC_SERIES = Object.fromEntries(
   CBBI_METRICS.map((metric) => [
@@ -144,23 +144,6 @@ const METRIC_SERIES = Object.fromEntries(
     ] satisfies ChartSeries<CbbiRow>[],
   ]),
 ) as Record<CbbiMetricKey, ChartSeries<CbbiRow>[]>
-
-/**
- * The price card's trend, as a render prop over the slot's MEASURED box — hoisted for the reason
- * `DashboardPage.kpiSparkline` is: a closure defined during render is a fresh component identity
- * every commit, and the render prop is what lets the sparkline follow the slot's width instead of
- * hardcoding one.
- */
-function priceSparkline(history: readonly number[]) {
-  return ({ width, height }: { width: number; height: number }) => (
-    <LineSparkline
-      data={[...history]}
-      width={width}
-      height={height}
-      ariaLabel="BTC price, last 90 days"
-    />
-  )
-}
 
 const VIEW_OPTIONS = [
   { value: 'overview' as const, label: 'Overview' },
@@ -299,7 +282,7 @@ function CbbiOverview({
   reweighted: boolean
 }) {
   // Every chart input below is memoized on what it actually varies with: the kinds are `memo`ized
-  // and `CartesianChart` re-measures on a new `getX`/`data`, so a fresh literal per commit would
+  // and `CartesianChart` re-scales on a new `x`/`data`, so a fresh literal per commit would
   // re-lay-out three charts over up to 5,541 points each time the sync indicator blinks.
   const priceAxis = useMemo<AxisConfig<CbbiPoint>>(
     () => ({
@@ -421,8 +404,6 @@ function CbbiOverview({
           value={money(summary.price)}
           {...(summary.priceDelta !== undefined && { delta: summary.priceDelta })}
           deltaPeriod="30d"
-          sparklinePlacement="right"
-          sparkline={priceSparkline(summary.priceHistory)}
         />
         <StatCard
           icon={<IconChart />}
@@ -435,12 +416,10 @@ function CbbiOverview({
       </StatGroup>
 
       {/*
-       * Price and confidence are TWO cards, not one `DualPanel`, in the `split` layout.
-       * `DualPanel`'s bottom pane is a signed histogram with its own symmetric domain — it cannot
-       * draw a 0..1 line, take zone bands on that pane, or express a log top pane — so the shape it
-       * generalizes is not this one. Two `ChartCard`s over the same `getX` keys share the page
-       * cursor anyway, which is the property the dual pane was wanted for. `combined` folds both
-       * into one dual-axis `MultiLine` instead — the layout filter picks between the two readings.
+       * Price and confidence are TWO cards in the `split` layout: the confidence index is a 0..1
+       * line with zone bands, the price a (possibly log) dollar axis. Two `ChartCard`s over the
+       * same day keys share the page cursor anyway. `combined` folds both into one dual-axis
+       * `Lines` instead — the layout filter picks between the two readings.
        */}
       {layout === 'split' ? (
         <>
@@ -452,13 +431,13 @@ function CbbiOverview({
             {...(summary.priceDelta !== undefined && { delta: summary.priceDelta })}
             deltaPeriod="30d"
           >
-            <MultiLine
+            <Lines
               data={points}
               height={MAIN_CHART_HEIGHT}
-              chartId="cbbi-price"
               ariaLabel="Bitcoin price"
-              getX={pointDay}
-              formatX={fmtMonthTick}
+              x={pointDay}
+              formatX={fmtMonthDate}
+              tooltip={DAY_TOOLTIP}
               y={priceAxis}
               series={PRICE_SERIES}
             />
@@ -470,13 +449,13 @@ function CbbiOverview({
             info="0 is a cycle bottom, 1 a cycle top. The bands mark the 0.1 and 0.9 thresholds."
             value={pct(summary.official)}
           >
-            <MultiLine
+            <Lines
               data={points}
               height={MAIN_CHART_HEIGHT}
-              chartId="cbbi-confidence"
               ariaLabel="CBBI confidence index"
-              getX={pointDay}
-              formatX={fmtMonthTick}
+              x={pointDay}
+              formatX={fmtMonthDate}
+              tooltip={DAY_TOOLTIP}
               y={CONFIDENCE_AXIS}
               {...(zonesOn && { zones: CONFIDENCE_ZONES })}
               series={confidenceSeries}
@@ -492,13 +471,13 @@ function CbbiOverview({
           value={money(summary.price)}
           subtitle={`${pct(summary.official)} confidence`}
         >
-          <MultiLine
+          <Lines
             data={points}
             height={COMBINED_CHART_HEIGHT}
-            chartId="cbbi-combined"
             ariaLabel="Bitcoin price and CBBI confidence index"
-            getX={pointDay}
-            formatX={fmtMonthTick}
+            x={pointDay}
+            formatX={fmtMonthDate}
+            tooltip={DAY_TOOLTIP}
             y={priceAxis}
             y2={CONFIDENCE_AXIS}
             {...(zonesOn && { zones: CONFIDENCE_ZONES_RIGHT })}
@@ -515,11 +494,7 @@ function CbbiOverview({
         subtitle="The hero value is today's reading — find it along the axis."
         count={bins.length}
       >
-        <CbbiDistributionBars
-          bins={bins}
-          height={MAIN_CHART_HEIGHT}
-          chartId="cbbi-distribution-overview"
-        />
+        <CbbiDistributionBars bins={bins} height={MAIN_CHART_HEIGHT} />
       </ChartCard>
     </Stack>
   )
@@ -571,13 +546,13 @@ function CbbiMetricGrid({
             value={value === null ? '—' : ratio(value)}
             subtitle={`Weight ×${weights[metric.key].toFixed(2)}`}
           >
-            <ZonedLine
+            <Lines
               data={rows}
               height={METRIC_CHART_HEIGHT}
-              chartId={`cbbi-metric-${metric.key}`}
               ariaLabel={metric.label}
-              getX={rowDay}
-              formatX={fmtMonthTick}
+              x={rowDay}
+              formatX={fmtMonthDate}
+              tooltip={DAY_TOOLTIP}
               y={METRIC_AXIS}
               {...(zonesOn && { zones: CONFIDENCE_ZONES })}
               legend={false}
@@ -593,34 +568,10 @@ function CbbiMetricGrid({
 // ── History ──────────────────────────────────────────────────────────────────────────────────────
 
 function CbbiHistory({ rows }: { rows: CbbiRow[] }) {
-  const cells = useMemo(() => monthlyHeat(rows), [rows])
-  const years = useMemo(() => heatYears(cells), [cells])
   const table = useMemo(() => monthlyTable(bucketRows(rows, 'month'), TABLE_MONTHS), [rows])
 
   return (
     <Stack gap="sm">
-      <ChartCard
-        title="Mean confidence by month"
-        icon={<IconChart />}
-        info="Every calendar month of the series, averaged — the four cycles read as four bands."
-        count={cells.length}
-      >
-        <Heatmap
-          data={cells}
-          height={HEAT_HEIGHT}
-          chartId="cbbi-heat"
-          ariaLabel="Mean CBBI confidence by year and month"
-          getRow={(d) => d.year}
-          getCol={(d) => d.month}
-          getValue={(d) => d.value}
-          rows={years}
-          cols={[...CBBI_HEAT_COLS]}
-          color={VX.accent}
-          formatValue={pct}
-          legend={{ min: '0%', max: '100%' }}
-        />
-      </ChartCard>
-
       <Section
         title="Monthly readings"
         icon={<IconActivity />}
