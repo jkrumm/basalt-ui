@@ -8,7 +8,6 @@
  */
 import { useCallback, useEffect, useId, useMemo, useState } from 'react'
 import type { CSSProperties, ReactElement, ReactNode } from 'react'
-import type { ContainerClass } from '../tokens/size-classes'
 import { useChartCard } from './card-context'
 import { compileCartesian } from './compile'
 import { ChartEngine } from './host'
@@ -28,24 +27,19 @@ export type RungOptions = {
   stack?: 'stacked' | 'normalized'
 }
 
-/** Micro has no legend, compact shows dots, regular and wide show chips (§ 9.6). */
-function legendMode(shown: boolean, cls: ContainerClass): LegendMode | null {
-  if (!shown || cls === 'micro') return null
-  return cls === 'compact' ? 'dots' : 'chips'
-}
-
 const rootStyle: CSSProperties = { display: 'flex', flexDirection: 'column', gap: 6, minWidth: 0 }
 
 /** `useId` output (`«r1»`, `:r1:`) is not a safe SVG id fragment. */
 const idPrefixOf = (id: string): string => `basalt-chart-${id.replaceAll(/[^\w-]/g, '')}`
 
 /** The previous object while every field is `Object.is`-equal: a one-dependency memo key. */
-function useShallowStable<V extends object>(next: V): V {
+function useShallowStable<V extends Record<string, unknown>>(next: V): V {
   const [kept, setKept] = useState(next)
-  const prev = kept as Record<string, unknown>
-  const entries = Object.entries(next)
-  const same =
-    entries.length === Object.keys(prev).length && entries.every(([k, v]) => Object.is(prev[k], v))
+  // Union of keys: an omitted prop and an explicit `undefined` are different inputs.
+  const same = [...new Set([...Object.keys(kept), ...Object.keys(next)])].every((k) =>
+    Object.is(kept[k], next[k]),
+  )
+  // Render-phase setState: React re-renders at once with `kept` replaced, no effect, no stale frame.
   if (!same) setKept(next)
   return same ? kept : next
 }
@@ -53,21 +47,23 @@ function useShallowStable<V extends object>(next: V): V {
 export function CartesianRung<T, X extends ChartX>(
   props: CartesianChartProps<T, X> & RungOptions,
 ): ReactElement {
-  const { ariaLabel, legend, height, state, className, style, ...spec } = props
-  const { series } = props
+  const { ariaLabel, legend, height, state, className, style, series, ...spec } = props
   const chartId = useId()
   const card = useChartCard()
   const { ref, size, coarse } = useChartSize(height)
   const [hidden, setHidden] = useState<ReadonlySet<string>>(() => new Set())
   const [highlighted, setHighlighted] = useState<string | null>(null)
 
-  const input = useShallowStable({ ...spec, chartId, hidden, highlighted, coarse })
+  const input = useShallowStable({ ...spec, series, chartId, hidden, highlighted, coarse })
   const definition = useMemo(() => compileCartesian(input), [input])
 
   // ── legend: micro has none, compact shows dots, regular and wide show chips ────────────────────
   const config = legend === false ? null : (legend ?? {})
   const entryCount = legendEntries(series, false)[0]?.length ?? 0
-  const mode = legendMode(config !== null && entryCount > 0, size.containerClass)
+  // Micro has no legend, compact shows dots, regular and wide show chips (§ 9.6).
+  const cls = size.containerClass
+  const shown = config !== null && entryCount > 0 && cls !== 'micro'
+  const mode: LegendMode | null = shown ? (cls === 'compact' ? 'dots' : 'chips') : null
   const toggle = config?.toggle ?? entryCount >= 2
   const onToggle = useCallback((key: string) => {
     setHidden((prev) => {
