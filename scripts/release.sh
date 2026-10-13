@@ -25,9 +25,9 @@
 #         scripts/release.sh         — dry run, confirm, publish
 #         YES=1 scripts/release.sh   — same without the prompt (non-interactive callers)
 
-# ── Pure rules ───────────────────────────────────────────────────────────────
-# Sourced by scripts/release.test.ts with RELEASE_SH_LIB=1: the rules below are defined and the file
-# returns before `set -euo pipefail`, so sourcing does not change the caller's shell options.
+# ── Library half: rules and registry reads ─────────────────────────────────
+# Sourcing this file (scripts/release.test.ts) defines the functions below and returns before
+# `set -euo pipefail`, so it never changes the caller's shell options or releases anything.
 
 # versions_from_json — stdin: `npm view … versions --json` (an array, or a bare string when only one
 # version exists). Prints one version per line; any other shape (an object, mixed types) fails.
@@ -44,47 +44,72 @@ versions_from_json() {
 }
 
 # registry_versions — every published version, one per line. Bounded retry (a transient failure
-# must not read as "no 2.x"), each attempt bounded by npm's own fetch timeout; returns 1 when the
-# registry cannot be read within REGISTRY_READ_TIMEOUT seconds.
+# must not read as "no 2.x"); each attempt is bounded by npm's own fetch timeout. REGISTRY_READ_TIMEOUT
+# is this pre-release read; REGISTRY_TIMEOUT is the separate post-publish wait in `await_registry`.
+# On failure it returns 1 and prints the last attempt's stderr on ITS stderr (the caller's `die`
+# follows it).
 registry_versions() {
-  local deadline=$((SECONDS + ${REGISTRY_READ_TIMEOUT:-60})) json list
+  local deadline=$((SECONDS + ${REGISTRY_READ_TIMEOUT:-60})) json list err_file last_err=''
+  err_file=$(mktemp)
   while :; do
-    if json=$(npm view --prefer-online --fetch-timeout=15000 --fetch-retries=0 basalt-ui versions --json 2>/dev/null) &&
+    if json=$(npm view --prefer-online --fetch-timeout=15000 --fetch-retries=0 basalt-ui versions --json 2>"$err_file") &&
       list=$(versions_from_json <<<"$json"); then
+      rm -f "$err_file"
       echo "$list"
       return 0
     fi
-    [ "$SECONDS" -lt "$deadline" ] || return 1
+    last_err=$(<"$err_file")
+    if [ "$SECONDS" -ge "$deadline" ]; then
+      rm -f "$err_file"
+      echo "registry read failed: ${last_err:-unexpected response shape}" >&2
+      return 1
+    fi
     sleep "${REGISTRY_RETRY_SLEEP:-5}"
   done
 }
 
 # version_gate <bump> <version> <registry-versions, one per line>
-# The only releasable versions are exactly 2.0.0 while no stable 2.x is published, and non-major 2.x
-# once one is. Everything else — any 1.x (frozen at v1.41.0), a 3.x, a second 2.0.0 — returns 1 with
-# the reason and the remedy on stderr. It judges the computed VERSION, not the commit.
+# Fails closed on an unparsed bump or an empty version. The only releasable versions are exactly
+# 2.0.0 while no stable 2.x is published, and non-major 2.x once one is. Everything else — any 1.x, a
+# 3.x, a second 2.0.0 — returns 1 with the reason and remedy on stderr. It judges the computed
+# VERSION, not the commit.
 version_gate() {
-  local bump="$1" version="$2" registry="$3" published=false
-  grep -qE '^2\.[0-9]+\.[0-9]+$' <<<"$registry" && published=true
+  local bump="${1:-}" version="${2:-}" registry="${3:-}"
+  local stable_2x='^2\.[0-9]+\.[0-9]+$' published=false
+  local remedy="Rewrite a stray feat!:/BREAKING CHANGE footer as a plain feat:."
+
+  case "$bump" in
+    major | minor | patch) ;;
+    *)
+      echo "version gate: unparsed bump '$bump' — cannot judge v$version." >&2
+      return 1
+      ;;
+  esac
+  if [ -z "$version" ]; then
+    echo "version gate: no computed version." >&2
+    return 1
+  fi
+
+  grep -qE "$stable_2x" <<<"$registry" && published=true
 
   if [[ "$version" == 1.* ]]; then
-    echo "1.x is frozen at v1.41.0 and cannot be released (computed v$version, $bump). A fix:/feat: touching the package landed before 2.0.0 — nothing is releasable until it does." >&2
+    echo "1.x is frozen at v1.41.0: computed v$version ($bump); nothing ships on 1.x — 2.0.0 must be released first." >&2
     return 1
   fi
   if [ "$published" = false ]; then
     [ "$version" = "2.0.0" ] && return 0
-    echo "only 2.0.0 is releasable before a 2.x is published (computed v$version, $bump). Rewrite a stray feat!:/BREAKING CHANGE footer as a plain feat:." >&2
+    echo "only 2.0.0 is releasable before a 2.x is published (computed v$version, $bump). $remedy" >&2
     return 1
   fi
-  if [[ "$version" =~ ^2\.[0-9]+\.[0-9]+$ && "$bump" != major ]]; then
+  if [[ "$version" =~ $stable_2x && "$bump" != major ]]; then
     return 0
   fi
-  echo "a 2.x is published: only non-major 2.x releases remain (computed v$version, $bump). Rewrite a stray feat!:/BREAKING CHANGE footer as a plain feat:." >&2
+  echo "a 2.x is published: only non-major 2.x releases remain (computed v$version, $bump). $remedy" >&2
   return 1
 }
 
-# A direct run ignores RELEASE_SH_LIB; only a `source` stops here.
-if [ -n "${RELEASE_SH_LIB:-}" ] && [ "${BASH_SOURCE[0]}" != "$0" ]; then
+# Sourced (not run): stop here, before the release flow and before `set -euo pipefail`.
+if [ "${BASH_SOURCE[0]}" != "$0" ]; then
   return 0
 fi
 
@@ -256,7 +281,7 @@ bump=$(grep -oE 'Analysis of [0-9]+ commits complete: [a-z]+ release' <<<"$log" 
 echo
 echo "  ${last_tag:-none} → v$version  (${bump:-unknown})"
 
-registry=$(registry_versions) || die "cannot read the published versions from the registry — the version gate needs them."
+registry=$(registry_versions) || die "cannot read the published versions from the registry (reason above) — the version gate needs them."
 version_gate "$bump" "$version" "$registry" || die "v$version is not releasable (reason above)."
 
 # ── The C16 grace gate, against the version about to be cut ──────────────────
