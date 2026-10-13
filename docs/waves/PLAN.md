@@ -7,7 +7,8 @@ with screenshots, performance and render measurements, and logs/traces against a
 baseline.
 
 **Gate (every wave):** `make check` green; `/review` clean on every merged diff; the wave's evidence
-written under `docs/waves/evidence/w<n>.md` (an index; per-lane files under `docs/waves/evidence/w<n>/`). From W2 on, that evidence is `make evidence` output
+written under `docs/waves/evidence/w<n>.md`. That file is an index; per-lane files live under
+`docs/waves/evidence/w<n>/`. From W2 on, that evidence is `make evidence` output
 diffed against the baseline, and a regression has to be fixed or explicitly accepted in the wave's
 **Left behind**.
 
@@ -120,8 +121,9 @@ Charts), `docs/CHARTS-SPEC.md`, `docs/DESIGN-CORE.md`, `packages/basalt-ui/MAINT
 was` fails intermittently under load (rail measured 171 px, expected 48 px). Clean master passed
   3/3; the merge train failed on it four times. #111 and #113 merged with `--no-check` after a
   direct `make check` exited 0 on the exact SHA. W2's harness reuses the layout infrastructure, so
-  fix the root cause there.
-- **Budget:** the spec prose ceiling is tightened to its landed value.
+  fix the root cause there. W2 should also make the spike evidence reproducible without the spike
+  branches (the W1 numbers cite them until W4/W6 port their tests).
+- **Budget:** the spec prose ceiling went 3200 → 3166, its landed value.
 
 ## Wave 2 — Baseline and the evidence harness <!-- status: active -->
 
@@ -242,7 +244,8 @@ was` fails intermittently under load (rail measured 171 px, expected 48 px). Cle
 
 ## Wave 12 — argo, part 2: every chart, production <!-- status: pending -->
 
-- [ ] All argo charts on the 2.x kinds; basalt fixes found here ship as 2.x minors. Evidence vs argo's baseline (render, bundle, screenshots).
+- [ ] All argo charts on the 2.x kinds; basalt fixes found here ship as 2.x minors. Evidence vs argo's
+      baseline (render, bundle, screenshots).
 - [ ] argo merged and deployed. Verify it is live: health, OTel traces/logs, Uptime Kuma.
 
 **Left behind:**
