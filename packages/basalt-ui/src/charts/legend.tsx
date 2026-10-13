@@ -59,7 +59,12 @@ const buttonStyle: CSSProperties = {
 }
 const noteStyle: CSSProperties = { color: VX.axis }
 
-function Swatch({ s, mode }: { s: ChartSeries<unknown>; mode: LegendMode }): ReactElement {
+type SwatchStyle = Pick<
+  ChartSeries<never>,
+  'color' | 'mark' | 'dash' | 'strokeOpacity' | 'fillOpacity'
+>
+
+function Swatch({ s, mode }: { s: SwatchStyle; mode: LegendMode }): ReactElement {
   if (mode === 'dots')
     return (
       <span
@@ -131,7 +136,7 @@ export function ChartLegend<T>(props: ChartLegendProps<T>): ReactElement | null 
           const off = props.hidden.has(s.key)
           const content = (
             <>
-              <Swatch s={s as ChartSeries<unknown>} mode={props.mode} />
+              <Swatch s={s} mode={props.mode} />
               <span>{s.label}</span>
               {s.note !== undefined && <span style={noteStyle}>{s.note}</span>}
             </>

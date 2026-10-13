@@ -12,8 +12,7 @@ import { useCallback, useMemo } from 'react'
 import type { ReactElement } from 'react'
 import { CartesianRung } from './CartesianChart'
 import { chartCurve } from './curves'
-import { LINE_STROKE_WIDTH } from './Lines'
-import { DASH } from './theme'
+import { DASH, DIMMED, LINE_STROKE_WIDTH } from './theme'
 import { rowX } from './types'
 import type {
   CartesianChartProps,
@@ -65,8 +64,6 @@ export type BarsProps<T, X extends ChartX = ChartX> = Omit<
 }
 
 const DEFAULT_BAR_OPACITY = 0.85
-/** A non-highlighted series while a legend entry is hovered. */
-const DIMMED = 0.3
 
 const paint = (color: string, opacity: number): string =>
   opacity >= 1 ? color : `color-mix(in srgb, ${color} ${Math.round(opacity * 100)}%, transparent)`

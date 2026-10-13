@@ -1,6 +1,6 @@
 /**
  * BasaltProvider — the one provider tree (V2-SPEC § 2): `MantineProvider` with the Basalt theme and
- * resolver, the `--vx-*` palette `<style>`, the chart theme bridge, and then
+ * resolver, the `--vx-*` palette `<style>`, and then
  * `QueryClientProvider > ModalsProvider > RouterProvider` with `Notifications` and `Spotlight` as
  * siblings. The consumer writes the route tree, the nav and the registries.
  *
@@ -206,8 +206,8 @@ export function useHostAttribute(): void {
 // ── Inner bridge ──────────────────────────────────────────────────────────────────────────────────
 
 /**
- * Inner bridge — must render INSIDE `MantineProvider` to read the active color scheme. Provides
- * the Vx chart theme context and injects the palette `<style>`. Mirrors argo's `VxBridge`.
+ * Inner bridge — must render INSIDE `MantineProvider` (it reads the theme and registers the
+ * color-scheme handle). Injects the palette `<style>`; charts paint through those CSS variables.
  */
 function BasaltBridge({
   children,

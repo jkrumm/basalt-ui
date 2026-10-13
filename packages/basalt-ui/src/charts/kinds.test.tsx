@@ -82,6 +82,20 @@ describe('Lines', () => {
     expect(yDomainOf(build(new Set(['a'])))[1]).toBeLessThan(10)
   })
 
+  test("a right-axis reference line without y2 stays inside the left axis' domain", () => {
+    const def = compileCartesian({
+      chartId: 'r',
+      data,
+      x,
+      series: [a],
+      marks: () => [],
+      refLines: [{ value: 200, color: 'var(--vx-bad)', axis: 'right' }],
+    })
+    expect(
+      yDomainOf(def.chart({ width: 640, height: 240, defaultTheme: {} as never }))[1],
+    ).toBeGreaterThanOrEqual(200)
+  })
+
   test('one legend entry: no toggle; legend={false}: no legend', async () => {
     const one = await mount(<Lines ariaLabel="L" data={data} x={x} series={[a]} />)
     expect(one.querySelector('button[data-legend-key]')).toBeNull()
@@ -298,6 +312,15 @@ describe('ChartCard', () => {
     const slot = el.querySelector('[data-basalt-legend-slot]')
     expect(slot?.querySelector('button[data-legend-key="b"]')).not.toBeNull()
     expect(el.querySelector('[data-basalt-chart] [data-basalt-chart-legend]')).toBeNull()
+  })
+
+  test('a header legend renders in a card that has no other header field', async () => {
+    const el = await mount(
+      <ChartCard>
+        <Lines ariaLabel="L" data={data} x={x} series={[a, b]} legend={{ placement: 'header' }} />
+      </ChartCard>,
+    )
+    expect(el.querySelector('[data-basalt-legend-slot] button[data-legend-key="a"]')).not.toBeNull()
   })
 
   test('the card state replaces the body and keeps the header', () => {

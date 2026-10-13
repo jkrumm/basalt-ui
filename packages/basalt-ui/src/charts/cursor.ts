@@ -9,7 +9,9 @@
  * effect. Bindings resolve their controller per call, never at compile time.
  *
  * TEARDOWN. A group's entry is refcounted by its live `subscribe` registrations; the last
- * unsubscribe drops it, and `getState` on a missing group returns `null` without creating one.
+ * unsubscribe drops it one microtask later (a host re-binding unsubscribes before it resubscribes,
+ * and must not lose the group's state in between), and `getState` on a missing group returns `null`
+ * without creating one.
  */
 import { createChartCursor, cursorHost } from '@tanstack/charts/cursor'
 import type { ChartCursorController } from '@tanstack/charts/cursor'
@@ -59,7 +61,10 @@ function facade(group: string): ChartCursorController {
         live = false
         unsubscribe()
         entry.subscribers -= 1
-        if (entry.subscribers === 0 && groups.get(group) === entry) groups.delete(group)
+        if (entry.subscribers > 0) return
+        queueMicrotask(() => {
+          if (entry.subscribers === 0 && groups.get(group) === entry) groups.delete(group)
+        })
       }
     },
   }
@@ -140,25 +145,34 @@ function snapper(
   }
 }
 
-/**
- * Each chart's view of its group's controller. Two jobs:
- *  - stamp what this chart publishes with its id (ownership, above);
- *  - snap a foreign value onto THIS chart's x values. TanStack matches a shared value exactly, so a
- *    weekly chart following a daily one would paint an unsnapped rule. Identity is preserved: the
- *    same object when no snap is needed, one memoized copy otherwise.
- */
-export function chartCursorView(
+type Snap = { snap: ReturnType<typeof snapper>; memo: WeakMap<object, CursorState> }
+type View = { controller: ChartCursorController; config: Snap; subscribers: number }
+
+/** One stable view per mounted chart: TanStack compares the binding's controller by reference and
+ * re-creates the cursor session when it changes, so a fresh object per compile would reset it on
+ * every re-render. Recompiling only swaps the view's snapping config. */
+const views = new Map<string, View>()
+
+function makeView(
   group: string | undefined,
   chartId: string,
-  keys: readonly ChartX[],
-  mode: CursorResolution,
+  config: () => Snap,
+  onSubscribers?: (delta: 1 | -1) => void,
 ): ChartCursorController {
   // Resolved per call, never at build time: a definition compiled during SSR holds no controller.
   const shared = (): ChartCursorController => chartCursor(group)
-  const snap = snapper(keys, mode)
-  const memo = new WeakMap<object, CursorState>()
   return {
-    subscribe: (listener) => shared().subscribe(listener),
+    subscribe: (listener) => {
+      const unsubscribe = shared().subscribe(listener)
+      onSubscribers?.(1)
+      let live = true
+      return () => {
+        if (!live) return
+        live = false
+        unsubscribe()
+        onSubscribers?.(-1)
+      }
+    },
     setState: (next) =>
       shared().setState(
         typeof next === 'function' ? (prev) => stamp(next(prev), chartId) : stamp(next, chartId),
@@ -166,20 +180,63 @@ export function chartCursorView(
     getState: () => {
       const state = shared().getState()
       const x = valueX(state)
+      const { snap, memo } = config()
       if (!state || !snap || x === undefined) return state
       const hit = memo.get(state)
       if (hit !== undefined) return hit
       const snapped = snap(x)
-      const next: CursorState =
-        snapped === undefined
-          ? null
-          : snapped === x
-            ? state
-            : { ...state, value: { ...state.value, x: snapped } }
+      const next = snapped === x ? state : snappedState(state, snapped)
       memo.set(state, next)
       return next
     },
   }
+}
+
+/** A foreign value of another x type never shows (`undefined`); otherwise a copy at the snap. */
+function snappedState(state: NonNullable<CursorState>, x: ChartValue | undefined): CursorState {
+  if (x === undefined) return null
+  return { ...state, value: { ...state.value, x } }
+}
+
+/**
+ * Each chart's view of its group's controller. Two jobs:
+ *  - stamp what this chart publishes with its id (ownership, above);
+ *  - snap a foreign value onto THIS chart's x values. TanStack matches a shared value exactly, so a
+ *    weekly chart following a daily one would paint an unsnapped rule. State identity is preserved:
+ *    the same object when no snap is needed, one memoized copy otherwise.
+ *
+ * The view object itself is stable per `group` + `chartId` on the client (see `views`); its entry
+ * is dropped a microtask after its last subscription ends.
+ */
+export function chartCursorView(
+  group: string | undefined,
+  chartId: string,
+  keys: readonly ChartX[],
+  mode: CursorResolution,
+): ChartCursorController {
+  const config: Snap = { snap: snapper(keys, mode), memo: new WeakMap() }
+  if (isServer()) return makeView(group, chartId, () => config)
+  const id = `${group ?? 'default'}\u0000${chartId}`
+  const existing = views.get(id)
+  if (existing) {
+    existing.config = config
+    return existing.controller
+  }
+  const view: View = { controller: INERT, config, subscribers: 0 }
+  view.controller = makeView(
+    group,
+    chartId,
+    () => view.config,
+    (delta) => {
+      view.subscribers += delta
+      if (view.subscribers > 0) return
+      queueMicrotask(() => {
+        if (view.subscribers === 0 && views.get(id) === view) views.delete(id)
+      })
+    },
+  )
+  views.set(id, view)
+  return view.controller
 }
 
 /**
@@ -204,13 +261,14 @@ export function cursorBinding(opts: {
   chartId: string
   keys: readonly ChartX[]
   mode: CursorResolution
+  /** Activation pins and unpins the cursor — on for a coarse pointer (§ 9.6: tap to pin). */
+  pin: boolean
 }): ChartCursorBinding {
   return {
     use: cursorHost,
     controller: chartCursorView(opts.group, opts.chartId, opts.keys, opts.mode),
     mode: 'focus',
     match: 'x',
-    // Tap pins and unpins (§ 9.6); on a fine pointer it is click-to-pin, the 1.x keyboard parity.
-    pin: true,
+    pin: opts.pin,
   }
 }

@@ -8,6 +8,7 @@
  */
 import { useCallback, useEffect, useId, useMemo, useState } from 'react'
 import type { CSSProperties, ReactElement, ReactNode } from 'react'
+import type { ContainerClass } from '../tokens/size-classes'
 import { useChartCard } from './card-context'
 import { compileCartesian } from './compile'
 import { ChartEngine } from './host'
@@ -25,6 +26,12 @@ export type RungOptions = {
   reverseRows?: boolean
   /** How the bar series combine for the auto domain. */
   stack?: 'stacked' | 'normalized'
+}
+
+/** Micro has no legend, compact shows dots, regular and wide show chips (§ 9.6). */
+function legendMode(shown: boolean, cls: ContainerClass): LegendMode | null {
+  if (!shown || cls === 'micro') return null
+  return cls === 'compact' ? 'dots' : 'chips'
 }
 
 const rootStyle: CSSProperties = { display: 'flex', flexDirection: 'column', gap: 6, minWidth: 0 }
@@ -119,12 +126,7 @@ export function CartesianRung<T, X extends ChartX>(
   // ── legend: micro has none, compact shows dots, regular and wide show chips ────────────────────
   const config = legend === false ? null : (legend ?? {})
   const entryCount = legendEntries(series, false)[0]?.length ?? 0
-  const mode: LegendMode | null =
-    config === null || entryCount === 0 || size.containerClass === 'micro'
-      ? null
-      : size.containerClass === 'compact'
-        ? 'dots'
-        : 'chips'
+  const mode = legendMode(config !== null && entryCount > 0, size.containerClass)
   const toggle = config?.toggle ?? entryCount >= 2
   const onToggle = useCallback((key: string) => {
     setHidden((prev) => {
