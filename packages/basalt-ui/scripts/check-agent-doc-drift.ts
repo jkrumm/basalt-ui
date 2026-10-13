@@ -337,28 +337,6 @@ function maskToComments(source: string): string {
  * elsewhere in the package still fails.
  */
 export const CHECK_B_SRC_ALLOWLIST: ReadonlySet<string> = new Set([
-  // W4: the guard's own fixtures and rule tables name 1.x chart symbols on purpose (a scanner
-  // fixture is source text, not a pointer to a live API). The lint wave owns these files and drops
-  // the visx-only entries with the rules they serve.
-  ...['AxisLeftNumeric', 'ZonedLine', 'MultiLine', 'ChartLegend'].map(
-    (name) => `src/guard/check-source.test.ts::${name}`,
-  ),
-  ...['ChartLegend', 'MultiLine', 'ZonedLine', 'LineSparkline', 'BarSparkline'].map(
-    (name) => `src/guard/types.ts::${name}`,
-  ),
-  ...['MultiLine', 'ChartLegend', 'AxisBottomDate', 'AxisLeftNumeric', 'AxisRightNumeric'].map(
-    (name) => `src/guard/index.ts::${name}`,
-  ),
-  ...[
-    'AxisBottomDate',
-    'AxisLeftNumeric',
-    'AxisRightNumeric',
-    'ZonedLine',
-    'MultiLine',
-    'LineSparkline',
-    'BarSparkline',
-  ].map((name) => `src/cli/config.ts::${name}`),
-  'src/cli/check-theme.test.ts::AxisLeftNumeric',
   'src/connectivity/use-connectivity.ts::useOnlineStatus',
   'src/surfaces.ts::ArticleFilterBar',
   'src/shell/page-bar.tsx::PageActions',

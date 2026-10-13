@@ -1035,8 +1035,8 @@ export const PLUGIN_RULE_IDS: ReadonlySet<string> = new Set([
   'agent-resume-guard',
   'agent-no-raw-usechat',
   'ai-sdk-major',
-  // Retired guard kinds — `unframed-chart`'s only case (`<ChartLegend items={[...]}>`) died with
-  // the public `ChartLegend` (2.0). Kept here (mirrored by the plugin's own
+  // Retired guard kinds — `unframed-chart`'s only case (a hand-written legend array) died with
+  // the public legend component (2.0). Kept here (mirrored by the plugin's own
   // `RETIRED_RULE_IDS`) so an existing `theme-allow unframed-chart` reads as a dead waiver via
   // `--audit-allows`, never as an unknown-id typo.
   'unframed-chart',

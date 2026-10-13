@@ -103,6 +103,66 @@ function hasRelevantRuleOverride(
   )
 }
 
+// ── React-compiler rule exemptions (repo-only) ────────────────────────────────────────────────────
+// The compiler rules are `error` repo-wide. Each entry below is a file that predates them and
+// legitimately reads a ref in render / sets state in an effect (measure-then-render, hydration
+// seeds, test harnesses that reassign a module-level spy). One block per rule, listed by file —
+// never a blanket off. Delete an entry when its file is reworked; the sync test pins the output.
+const P = 'packages/basalt-ui/'
+const REPO_COMPILER_RULE_EXEMPTIONS: readonly { rule: string; reason: string; files: string[] }[] =
+  [
+    {
+      rule: 'react/globals',
+      reason: 'test harnesses reassign a module-level spy/probe declared outside the component',
+      files: [
+        `${P}src/agent/use-agent-thread-runs.wedge.test.tsx`,
+        `${P}src/theme/use-basalt-spacing.test.tsx`,
+      ],
+    },
+    {
+      rule: 'react/immutability',
+      reason: 'a stable-callback ref written during render / a test mutating a captured fixture',
+      files: [`${P}src/agent/chat/thread-message.tsx`, `${P}src/router-tanstack/use-nav.test.tsx`],
+    },
+    {
+      rule: 'react/incompatible-library',
+      reason: 'TanStack Table useReactTable returns unmemoizable functions; the table is the host',
+      files: [`${P}src/table/data-table.tsx`],
+    },
+    {
+      rule: 'react/refs',
+      reason: 'latest-value / measured-width refs read during render by design (pre-compiler code)',
+      files: [
+        `${P}src/agent/chat/composer.tsx`,
+        `${P}src/agent/chat/thread-message.tsx`,
+        `${P}src/common/use-measured-widths.ts`,
+        `${P}src/content/article-layout.tsx`,
+        `${P}src/content/mermaid.tsx`,
+        `${P}src/controls/filter-context.tsx`,
+        `${P}src/controls/number-filter.tsx`,
+        `${P}src/controls/search-filter.tsx`,
+        `${P}src/dashboard/stat-card.tsx`,
+        `${P}src/provider/index.tsx`,
+        `${P}src/shell/page-bar.tsx`,
+        `${P}src/table/data-table.tsx`,
+      ],
+    },
+    {
+      rule: 'react/set-state-in-effect',
+      reason: 'effect-seeded state (hydration, prop-sync, mount flags) that predates the rule',
+      files: [
+        `${P}src/agent/chat/thread-feed.tsx`,
+        `${P}src/commands/ShortcutsHelp.tsx`,
+        `${P}src/controls/filter-set.tsx`,
+        `${P}src/controls/sync-button.tsx`,
+        `${P}src/provider/index.tsx`,
+        `${P}src/table/data-table.tsx`,
+        `${P}src/theme-lab/derive-controls.tsx`,
+        `${P}tests/layout/fixture/fixtures.tsx`,
+      ],
+    },
+  ]
+
 export function projectBanList(target: Target): OverrideBlock[] {
   const blocks: OverrideBlock[] = []
 
@@ -194,6 +254,12 @@ export function projectBanList(target: Target): OverrideBlock[] {
         ],
         rules: { 'no-console': 'off' },
       })
+    }
+  }
+
+  if (target === 'repo') {
+    for (const { rule, files } of REPO_COMPILER_RULE_EXEMPTIONS) {
+      blocks.push({ files, rules: { [rule]: 'off' } })
     }
   }
 

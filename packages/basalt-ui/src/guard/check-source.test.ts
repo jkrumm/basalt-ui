@@ -1819,7 +1819,7 @@ describe('theme-allow scoping', () => {
   // ── prose after a resolved id is prose, not a typo ────────────────────────────────────────────
   //
   // The id slot closes at the first space no comma opened. `theme-allow raw-surface sub-scale …`
-  // is one em-dash away from annotations this package itself ships (see ChartLegend), and reading
+  // is one em-dash away from annotations this package itself once shipped, and reading
   // `sub-scale` as an attempted id made a scoped, reasoned waiver report as unscoped.
 
   it('reads an unknown word after a resolved id as the reason', () => {
