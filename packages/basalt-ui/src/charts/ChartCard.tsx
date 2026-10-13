@@ -110,16 +110,10 @@ export type ChartCardProps = BasaltProps &
     children?: ReactNode
   }
 
+/** A header renders when one of these is set (a subtitle or delta alone does not). */
+const HEADER_TRIGGERS = ['title', 'info', 'value', 'icon', 'count'] as const
+
 export function ChartCard({
-  title,
-  icon,
-  subtitle,
-  info,
-  value,
-  delta,
-  deltaPeriod,
-  deltaPolarity,
-  count,
   actions,
   state,
   placeholderHeight = 240,
@@ -128,6 +122,7 @@ export function ChartCard({
   classNames,
   style,
   children,
+  ...header
 }: ChartCardProps): ReactElement {
   const [legend, setLegend] = useState<{ owner: string; node: ReactNode } | null>(null)
   const setHeaderLegend = useCallback((owner: string, node: ReactNode | null) => {
@@ -139,13 +134,7 @@ export function ChartCard({
   const context = useMemo(() => ({ setHeaderLegend }), [setHeaderLegend])
   const { ref, short } = useShortCard()
   const resolved = resolveChartState(state)
-  const hasHeader =
-    title !== undefined ||
-    info !== undefined ||
-    value !== undefined ||
-    actions !== undefined ||
-    icon !== undefined ||
-    count !== undefined
+  const hasHeader = actions !== undefined || HEADER_TRIGGERS.some((k) => header[k] !== undefined)
 
   return (
     <ChartCardContext.Provider value={context}>
@@ -164,15 +153,8 @@ export function ChartCard({
             {hasHeader && (
               <WidgetHeader
                 tier="widget"
-                title={title ?? ''}
-                {...(icon !== undefined && { icon })}
-                {...(subtitle !== undefined && { subtitle })}
-                {...(info !== undefined && { info })}
-                {...(value !== undefined && { value })}
-                {...(delta !== undefined && { delta })}
-                {...(deltaPeriod !== undefined && { deltaPeriod })}
-                {...(deltaPolarity !== undefined && { deltaPolarity })}
-                {...(count !== undefined && { count })}
+                {...header}
+                title={header.title ?? ''}
                 {...(actions !== undefined && {
                   actions: <span data-basalt-tier="widget">{actions}</span>,
                 })}

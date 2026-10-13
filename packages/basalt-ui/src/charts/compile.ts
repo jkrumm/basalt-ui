@@ -38,7 +38,6 @@ import type {
   ChartSeries,
   ChartTooltipRow,
   ChartX,
-  PlotContext,
   PlotRow,
 } from './types'
 
@@ -242,9 +241,8 @@ export function areaGradient(index: number, color: string): ChartGradient {
 
 const isBar = <T>(s: ChartSeries<T>): boolean => s.mark === 'bar'
 
-/** A stack's auto domain reads its per-x totals: the positive sum and the negative sum stand in for
- * the bar series; every other series counts as itself. */
-/** The two synthetic totals standing in for a stack's bars in its AUTO domain only. */
+/** The two synthetic totals standing in for a stack's bars in its AUTO domain only: the positive
+ * sum and the negative sum per x; every other series counts as itself. */
 const STACK_POSITIVE_KEY = '__stack+'
 const STACK_NEGATIVE_KEY = '__stack-'
 
@@ -279,40 +277,58 @@ function normalizedDomain<T>(
   return negative ? [-1, 1] : [0, 1]
 }
 
-export function compileCartesian<T, X extends ChartX>(
-  input: CartesianInput<T, X>,
-): CartesianDefinition {
-  const hidden = input.hidden ?? new Set<string>()
-  const highlighted = input.highlighted ?? null
-  const visible = visibleSeries(input.series, hidden)
-  const visibleKeys = new Set(visible.map((s) => s.key))
-  const seriesBy = new Map(input.series.map((s) => [s.key, s]))
-  const xs = input.data.map(input.x)
-  const model = xScaleFor(xs, input.band === true)
-  const hasY2 = input.y2 !== undefined
+type Axes<T> = {
+  left: YAxis
+  right: YAxis | null
+  onRight: (s: ChartSeries<T>) => boolean
+  axisOf: (side: 'left' | 'right' | undefined) => YAxis
+  scaleId: (side: 'left' | 'right' | undefined) => 'y' | 'y2'
+}
 
-  // ── y domains: basalt's, from the VISIBLE series plus this axis' finite overlay bounds ────────
+/** The finite overlay bounds each axis must keep inside its domain. A bound lands on the axis its
+ * mark is drawn on: `'right'` without a `y2` is the left axis. */
+function overlayBounds<T, X extends ChartX>(
+  input: CartesianInput<T, X>,
+): { left: number[]; right: number[] } {
   const bounds = { left: [] as number[], right: [] as number[] }
-  // A bound lands on the axis its mark is drawn on: `'right'` without a `y2` is the left axis.
   const sideOf = (side: 'left' | 'right' | undefined): 'left' | 'right' =>
-    side === 'right' && hasY2 ? 'right' : 'left'
+    side === 'right' && input.y2 !== undefined ? 'right' : 'left'
   for (const z of input.zones ?? []) bounds[sideOf(z.axisSide)].push(z.from, z.to)
   for (const l of input.refLines ?? []) bounds[sideOf(l.axis)].push(l.value)
+  return bounds
+}
+
+/** A stack changes only the AUTO rule: a tuple is fixed, and a domain function gets the real
+ * visible series (its own seam for summing a stack). */
+function leftDomain<T, X extends ChartX>(
+  input: CartesianInput<T, X>,
+  series: readonly ChartSeries<T>[],
+  bounds: readonly number[],
+): readonly [number, number] {
+  const auto = input.y?.domain === undefined || input.y.domain === 'auto'
+  if (auto && input.stack === 'normalized') return normalizedDomain(input.data, series)
+  return resolveYDomain(
+    input.y,
+    input.data,
+    auto && input.stack ? stackedSeries(series) : series,
+    bounds,
+  )
+}
+
+/** Both y domains (basalt's, from the VISIBLE series plus this axis' overlay bounds) and scales. */
+function resolveAxes<T, X extends ChartX>(
+  input: CartesianInput<T, X>,
+  visible: readonly ChartSeries<T>[],
+): Axes<T> {
+  const hasY2 = input.y2 !== undefined
+  const bounds = overlayBounds(input)
   const onRight = (s: ChartSeries<T>): boolean => hasY2 && s.axis === 'right'
-  const leftSeries = visible.filter((s) => !onRight(s))
-  // A stack changes only the AUTO rule: a tuple is fixed, and a domain function gets the real
-  // visible series (its own seam for summing a stack).
-  const autoLeft = input.y?.domain === undefined || input.y.domain === 'auto'
   const left: YAxis = {
-    domain:
-      input.stack === 'normalized' && autoLeft
-        ? normalizedDomain(input.data, leftSeries)
-        : resolveYDomain(
-            input.y,
-            input.data,
-            input.stack && autoLeft ? stackedSeries(leftSeries) : leftSeries,
-            bounds.left,
-          ),
+    domain: leftDomain(
+      input,
+      visible.filter((s) => !onRight(s)),
+      bounds.left,
+    ),
     format: input.y?.format ?? defaultNumberFormat,
   }
   const right: YAxis | null = hasY2
@@ -321,25 +337,24 @@ export function compileCartesian<T, X extends ChartX>(
         format: input.y2?.format ?? defaultNumberFormat,
       }
     : null
-  const yLeft = yScaleFor(input.y, left.domain)
-  const yRight = right ? yScaleFor(input.y2, right.domain) : null
-  const axisOf = (side: 'left' | 'right' | undefined): YAxis =>
-    side === 'right' && right ? right : left
-  const yScaleId = (side: 'left' | 'right' | undefined): 'y' | 'y2' =>
-    side === 'right' && hasY2 ? 'y2' : 'y'
-
-  const formatX = (v: ChartValue): string =>
-    input.formatX ? input.formatX(v as X) : defaultFormatX(v)
-  const header = (v: ChartValue, d: T): string => {
-    if (input.tooltip && input.tooltip.formatHeader) return input.tooltip.formatHeader(v as X, d)
-    if (v instanceof Date && !input.formatX) return utcHeaderDate(v)
-    return formatX(v)
+  return {
+    left,
+    right,
+    onRight,
+    axisOf: (side) => (side === 'right' && right ? right : left),
+    scaleId: (side) => (side === 'right' && hasY2 ? 'y2' : 'y'),
   }
+}
 
-  // ── fixed paint: zones and x-zones under the marks, reference lines over them ────────────────
+/** Fixed paint under the kind's marks: zones, then x-zones. */
+function underlayMarks<T, X extends ChartX>(
+  input: CartesianInput<T, X>,
+  model: XScaleModel<X>,
+  axes: Axes<T>,
+): ChartMarks {
   const fractionRows = [{ f0: 0, f1: 1 }]
-  const zoneMarks = (input.zones ?? []).map((z, i) => {
-    const domain = axisOf(z.axisSide).domain
+  const zones = (input.zones ?? []).map((z, i) => {
+    const domain = axes.axisOf(z.axisSide).domain
     return decorative(
       rect(fractionRows, {
         id: `zone-${i}`,
@@ -348,13 +363,13 @@ export function compileCartesian<T, X extends ChartX>(
         y1: () => clampTo(z.from, domain),
         y2: () => clampTo(z.to, domain),
         xScale: 'zx',
-        yScale: yScaleId(z.axisSide),
+        yScale: axes.scaleId(z.axisSide),
         fill: z.fill,
         inset: 0,
       }),
     )
   })
-  const xZoneMarks = (input.xZones ?? []).flatMap((z, i) => {
+  const xZones = (input.xZones ?? []).flatMap((z, i) => {
     const f = xZoneFractions(z, model)
     if (!f) return []
     return [
@@ -363,8 +378,8 @@ export function compileCartesian<T, X extends ChartX>(
           id: `xzone-${i}`,
           x1: 'f0',
           x2: 'f1',
-          y1: () => left.domain[0],
-          y2: () => left.domain[1],
+          y1: () => axes.left.domain[0],
+          y2: () => axes.left.domain[1],
           xScale: 'zx',
           fill: z.fill,
           inset: 0,
@@ -372,18 +387,81 @@ export function compileCartesian<T, X extends ChartX>(
       ),
     ]
   })
-  const refMarks = (input.refLines ?? []).map((r, i) =>
+  return [...zones, ...xZones]
+}
+
+/** Reference lines, over the marks. */
+const refLineMarks = <T, X extends ChartX>(
+  input: CartesianInput<T, X>,
+  axes: Axes<T>,
+): ChartMarks =>
+  (input.refLines ?? []).map((r, i) =>
     ruleY([r.value], {
       id: `ref-${i}`,
       stroke: r.color,
       strokeOpacity: 1,
       strokeWidth: 1,
-      yScale: yScaleId(r.axis),
+      yScale: axes.scaleId(r.axis),
       ...(r.dashed && { strokeDasharray: DASH }),
     }),
   )
 
-  const rowsFor = (key: string): PlotRow<T, X>[] => {
+function buildScales<T, X extends ChartX>(
+  input: CartesianInput<T, X>,
+  model: XScaleModel<X>,
+  axes: Axes<T>,
+  formatX: (v: ChartValue) => string,
+  cls: ContainerClass,
+  zoneScale: boolean,
+): StoredChartSpec['scales'] {
+  const { left, right } = axes
+  return {
+    x: {
+      scale: model.scale,
+      ...xGuide({ model, xTicks: input.xTicks, format: formatX, cls }),
+    },
+    y: {
+      scale: yScaleFor(input.y, left.domain),
+      ...yGuide({ cfg: input.y, axis: left, cls, side: 'left', grid: input.y?.grid ?? true }),
+    },
+    ...(right && {
+      y2: {
+        channel: 'y' as const,
+        scale: yScaleFor(input.y2, right.domain),
+        ...yGuide({
+          cfg: input.y2,
+          axis: right,
+          cls,
+          side: 'right',
+          grid: input.y2?.grid ?? false,
+        }),
+      },
+    }),
+    ...(zoneScale && {
+      zx: { channel: 'x' as const, scale: scaleLinear().domain([0, 1]), axis: false as const },
+    }),
+  }
+}
+
+/** The tooltip title: the consumer's header, a long UTC date for a Date x, else the axis format. */
+function tooltipHeader<T, X extends ChartX>(
+  input: CartesianInput<T, X>,
+  formatX: (v: ChartValue) => string,
+  v: ChartValue,
+  d: T,
+): string {
+  if (input.tooltip && input.tooltip.formatHeader) return input.tooltip.formatHeader(v as X, d)
+  if (v instanceof Date && !input.formatX) return utcHeaderDate(v)
+  return formatX(v)
+}
+
+/** `plot.rows`: one row per datum for a visible series, `[]` for a hidden one, a throw for a typo. */
+function rowsOf<T, X extends ChartX>(
+  input: CartesianInput<T, X>,
+  visibleKeys: ReadonlySet<string>,
+): (key: string) => PlotRow<T, X>[] {
+  const seriesBy = new Map(input.series.map((s) => [s.key, s]))
+  return (key) => {
     const s = seriesBy.get(key)
     if (!s)
       throw new Error(`[basalt] CartesianChart: marks asked for series "${key}", not in \`series\``)
@@ -398,22 +476,73 @@ export function compileCartesian<T, X extends ChartX>(
       }
     })
   }
+}
 
-  const tooltip = input.tooltip === false ? undefined : input.tooltip
-  // A point's datum is a `plot.rows()` row, or a consumer mark's own datum (taken as `T`).
-  const sourceOf = (point: ChartPoint): { x: ChartValue; d: T } => {
-    const datum = point.datum
-    if (typeof datum === 'object' && datum !== null && 'datum' in datum && 'series' in datum) {
-      const row = datum as PlotRow<T, X>
-      if (seriesBy.has(row.series)) return { x: row.x, d: row.datum }
-    }
-    return { x: point.xValue, d: datum as T }
+/** A point's datum is a `plot.rows()` row, or a consumer mark's own datum (taken as `T`). */
+function sourceOf<T, X extends ChartX>(
+  point: ChartPoint,
+  keys: ReadonlySet<string>,
+): { x: ChartValue; d: T } {
+  const datum = point.datum
+  if (typeof datum === 'object' && datum !== null && 'datum' in datum && 'series' in datum) {
+    const row = datum as PlotRow<T, X>
+    if (keys.has(row.series)) return { x: row.x, d: row.datum }
   }
+  return { x: point.xValue, d: datum as T }
+}
+
+function tooltipSpec<T, X extends ChartX>(
+  input: CartesianInput<T, X>,
+  axes: Axes<T>,
+  visible: readonly ChartSeries<T>[],
+  formatX: (v: ChartValue) => string,
+): NonNullable<CartesianDefinition['tooltip']> {
+  const config = input.tooltip === false ? undefined : input.tooltip
+  const keys = new Set(input.series.map((s) => s.key))
+  const visibleKeys = new Set(visible.map((s) => s.key))
+  const hidden = input.series.filter((s) => !visibleKeys.has(s.key))
   const rowSeries = (input.reverseRows ? visible.toReversed() : visible).filter(
     (s) => s.tooltip !== false,
   )
-  const hiddenSeries = input.series.filter((s) => !visibleKeys.has(s.key))
-  const zoneScale = zoneMarks.length > 0 || xZoneMarks.length > 0
+  return {
+    use: tooltipHost,
+    portal,
+    anchor: 'group-center',
+    content: (points: readonly ChartPoint[]) => {
+      const primary = points[0]
+      if (!primary) return { rows: [] }
+      const { x, d } = sourceOf<T, X>(primary, keys)
+      const rows: EngineTooltipRow[] = []
+      for (const s of rowSeries) {
+        const v = s.getValue(d)
+        if (v === null || !Number.isFinite(v)) continue
+        rows.push({
+          label: s.note === undefined ? s.label : `${s.label} · ${s.note}`,
+          value: s.formatValue
+            ? s.formatValue(v, d)
+            : axes.axisOf(axes.onRight(s) ? 'right' : 'left').format(v),
+          color: s.color,
+          ...(input.highlighted === s.key && { active: true }),
+        })
+      }
+      const extra: readonly ChartTooltipRow[] = config?.rows?.(d, { visible, hidden }) ?? []
+      return { title: tooltipHeader(input, formatX, x, d), rows: [...rows, ...extra] }
+    },
+  }
+}
+
+export function compileCartesian<T, X extends ChartX>(
+  input: CartesianInput<T, X>,
+): CartesianDefinition {
+  const visible = visibleSeries(input.series, input.hidden ?? new Set<string>())
+  const visibleKeys = new Set(visible.map((s) => s.key))
+  const model = xScaleFor(input.data.map(input.x), input.band === true)
+  const axes = resolveAxes(input, visible)
+  const under = underlayMarks(input, model, axes)
+  const over = refLineMarks(input, axes)
+  const rows = rowsOf(input, visibleKeys)
+  const formatX = (v: ChartValue): string =>
+    input.formatX ? input.formatX(v as X) : defaultFormatX(v)
   const gradients = input.series.flatMap((s, i) =>
     s.area ? [areaGradient(i, typeof s.area === 'string' ? s.area : s.color)] : [],
   )
@@ -421,63 +550,31 @@ export function compileCartesian<T, X extends ChartX>(
   return {
     chart: ({ width, height }: ChartBuildContext): StoredChartSpec => {
       const cls = resolveContainerClass(width)
-      const plot: PlotContext<T, X> = {
-        rows: rowsFor,
+      const kindMarks = input.marks({
+        rows,
         visible,
-        highlighted,
+        highlighted: input.highlighted ?? null,
         containerClass: cls,
         width,
         height,
-        y2: hasY2 ? 'y2' : undefined,
-        yDomain: left.domain,
-        y2Domain: right?.domain,
-      }
-      const kindMarks: ChartMarks = input.marks(plot)
-      const scales = {
-        x: {
-          scale: model.scale,
-          ...xGuide({ model, xTicks: input.xTicks, format: formatX, cls }),
-        },
-        y: {
-          scale: yLeft,
-          ...yGuide({ cfg: input.y, axis: left, cls, side: 'left', grid: input.y?.grid ?? true }),
-        },
-        ...(right &&
-          yRight && {
-            y2: {
-              channel: 'y' as const,
-              scale: yRight,
-              ...yGuide({
-                cfg: input.y2,
-                axis: right,
-                cls,
-                side: 'right',
-                grid: input.y2?.grid ?? false,
-              }),
-            },
-          }),
-        ...(zoneScale && {
-          zx: { channel: 'x' as const, scale: scaleLinear().domain([0, 1]), axis: false as const },
-        }),
-      } satisfies StoredChartSpec['scales']
-      const inside = cls === 'compact'
+        y2: axes.right ? 'y2' : undefined,
+        yDomain: axes.left.domain,
+        y2Domain: axes.right?.domain,
+      })
       return {
-        marks: [
-          ...zoneMarks,
-          ...xZoneMarks,
-          ...kindMarks,
-          ...refMarks,
-          crosshair({ x: CROSSHAIR, y: false }),
-        ],
-        scales,
+        marks: [...under, ...kindMarks, ...over, crosshair({ x: CROSSHAIR, y: false })],
+        scales: buildScales(input, model, axes, formatX, cls, under.length > 0),
         theme: CHART_THEME,
         ...(gradients.length > 0 && { gradients }),
         clip: true,
-        ...(inside && { margin: { left: 0, ...(right && { right: 0 }) } }),
+        ...(cls === 'compact' && { margin: { left: 0, ...(axes.right && { right: 0 }) } }),
       }
     },
     // Followers paint the crosshair only, unless the chart opts into following tooltips.
-    focus: tooltip?.onFollow ? 'group-x' : sourceOnlyFocus(input.cursorGroup, input.chartId),
+    focus:
+      typeof input.tooltip === 'object' && input.tooltip.onFollow
+        ? 'group-x'
+        : sourceOnlyFocus(input.cursorGroup, input.chartId),
     maxFocusDistance: Number.POSITIVE_INFINITY,
     cursor: cursorBinding({
       group: input.cursorGroup,
@@ -486,35 +583,6 @@ export function compileCartesian<T, X extends ChartX>(
       mode: input.cursorResolution ?? 'nearest',
       pin: input.coarse === true,
     }),
-    tooltip:
-      input.tooltip === false
-        ? false
-        : {
-            use: tooltipHost,
-            portal,
-            anchor: 'group-center',
-            content: (points: readonly ChartPoint[]) => {
-              const primary = points[0]
-              if (!primary) return { rows: [] }
-              const { x, d } = sourceOf(primary)
-              const rows: EngineTooltipRow[] = []
-              for (const s of rowSeries) {
-                const v = s.getValue(d)
-                if (v === null || !Number.isFinite(v)) continue
-                const value = s.formatValue
-                  ? s.formatValue(v, d)
-                  : axisOf(onRight(s) ? 'right' : 'left').format(v)
-                rows.push({
-                  label: s.note === undefined ? s.label : `${s.label} · ${s.note}`,
-                  value,
-                  color: s.color,
-                  ...(highlighted === s.key && { active: true }),
-                })
-              }
-              const extra: readonly ChartTooltipRow[] =
-                tooltip?.rows?.(d, { visible, hidden: hiddenSeries }) ?? []
-              return { title: header(x, d), rows: [...rows, ...extra] }
-            },
-          },
+    tooltip: input.tooltip === false ? false : tooltipSpec(input, axes, visible, formatX),
   }
 }

@@ -68,6 +68,9 @@ const paint = (color: string, opacity: number): string =>
 
 export function Bars<T, X extends ChartX = ChartX>(props: BarsProps<T, X>): ReactElement {
   const { bars, lines, layout = 'stacked', barOpacity, ...rest } = props
+  // A stack sums bar heights and a log axis has no additive zero to sum from (V2-SPEC § 9.9).
+  if (process.env.NODE_ENV !== 'production' && layout !== 'grouped' && rest.y?.scale === 'log')
+    throw new Error(`Bars: ${layout} bars cannot use a log axis; use layout: 'grouped'`)
   const series = useMemo<ChartSeries<T>[]>(
     () => [
       ...bars.map((b) => ({ ...b, mark: 'bar' as const })),
