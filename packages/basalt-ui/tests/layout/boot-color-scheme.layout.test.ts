@@ -26,7 +26,8 @@ import {
   serveDocument,
 } from './harness'
 import { basaltAppPlugin } from '../../src/vite'
-import type { BasaltAppOptions } from '../../src/vite'
+
+type BasaltAppOptions = Parameters<typeof basaltAppPlugin>[0]
 
 /**
  * Booted at MODULE TOP LEVEL, the same shape as `mobile-nav.layout.test.ts`.

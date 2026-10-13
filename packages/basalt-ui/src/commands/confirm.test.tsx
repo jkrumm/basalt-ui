@@ -2,13 +2,11 @@
  * `overlays.confirm` / `overlays.confirmDelete` (audit B #12) — the two-button dialog every
  * consumer was writing as a `defineOverlays` entry with its own button pair.
  *
- * The dialog is served by a SIBLING `ModalsProvider` over `@mantine/modals`' window event bus
- * (see `overlays-mount.tsx`), so these tests mount the provider and drive the real buttons — the
+ * The dialog is served by a `ModalsProvider` over `@mantine/modals`' window event bus (mounted by
+ * `BasaltProvider` in an app), so these tests mount the provider and drive the real buttons — the
  * promise's value, the exactly-once callbacks and the destructive tone are all DOM-observable.
  *
- * Availability is a COUNTER of live providers, not `BasaltOverlays`' `modals` flag, so both ways of
- * getting one on screen are exercised here: basalt's own mount, and a consumer's provider declared
- * with `registerModalsProvider()`.
+ * Availability is a COUNTER of live providers declared with `registerModalsProvider()`.
  */
 import { MantineProvider } from '@mantine/core'
 import { ModalsProvider, modals } from '@mantine/modals'
@@ -16,11 +14,10 @@ import { act, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, spyOn, test } from 'bun:test'
 import { useEffect } from 'react'
 import type { ReactNode } from 'react'
-import { BasaltOverlays } from './overlays-mount'
 import { overlays, registerModalsProvider } from './define-overlays'
 
-/** A consumer mounting the provider ITSELF — the documented remedy, registration included. */
-function ConsumerModalsHost({ children }: { children?: ReactNode }) {
+/** A `ModalsProvider` plus its registration — what `BasaltProvider` mounts. */
+function ModalsHost({ children }: { children?: ReactNode }) {
   useEffect(() => registerModalsProvider(), [])
   return <ModalsProvider>{children ?? <div />}</ModalsProvider>
 }
@@ -28,18 +25,7 @@ function ConsumerModalsHost({ children }: { children?: ReactNode }) {
 function renderModalsHost() {
   return render(
     <MantineProvider>
-      <ConsumerModalsHost />
-    </MantineProvider>,
-  )
-}
-
-/** `<BasaltOverlays>` with only the modals layer up — basalt's own registration path. */
-function renderOverlaysHost() {
-  return render(
-    <MantineProvider>
-      <BasaltOverlays spotlight={false} notifications={false} hotkeys={false}>
-        <div />
-      </BasaltOverlays>
+      <ModalsHost />
     </MantineProvider>,
   )
 }
@@ -232,12 +218,7 @@ describe('overlays.confirm', () => {
   })
 })
 
-/**
- * WHICH modals layer is live, and the counter that answers it. The flag this replaced was
- * `BasaltOverlays`' own `modals` prop, which refused the call whenever a shell passed
- * `modals={false}` — even with the consumer's own `<ModalsProvider>` up, the remedy the error
- * message itself names.
- */
+/** WHICH modals layer is live, and the counter that answers it. */
 describe('the modals-layer availability counter', () => {
   test('rejects with a named [basalt] error when no provider is mounted at all', async () => {
     let confirmed = 0
@@ -252,43 +233,12 @@ describe('the modals-layer availability counter', () => {
     expect(confirmed).toBe(0)
   })
 
-  test("BasaltOverlays' own modals layer serves the dialog", async () => {
-    const host = renderOverlaysHost()
-    await flush()
-
-    const answer = overlays.confirm({ title: 'Discard draft?', onConfirm: () => {} })
-    await flush()
-    await click('Confirm')
-
-    expect(await answer).toBe(true)
-    host.unmount()
-  })
-
-  test('a consumer provider declared with registerModalsProvider serves it too', async () => {
-    // The exact combination the old flag refused: basalt's layer off, the consumer's own up.
-    const host = render(
-      <MantineProvider>
-        <BasaltOverlays modals={false} spotlight={false} notifications={false} hotkeys={false}>
-          <ConsumerModalsHost />
-        </BasaltOverlays>
-      </MantineProvider>,
-    )
-    await flush()
-
-    const answer = overlays.confirm({ title: 'Discard draft?', onConfirm: () => {} })
-    await flush()
-    await click('Confirm')
-
-    expect(await answer).toBe(true)
-    host.unmount()
-  })
-
-  test('two overlapping BasaltOverlays mounts keep the count honest', async () => {
-    // A route swap mounts the next shell BEFORE unmounting the previous one. A last-write-wins
+  test('two overlapping provider mounts keep the count honest', async () => {
+    // A route swap mounts the next provider BEFORE unmounting the previous one. A last-write-wins
     // flag reported the old one's teardown as "no layer" while the new one was already serving.
-    const first = renderOverlaysHost()
+    const first = renderModalsHost()
     await flush()
-    const second = renderOverlaysHost()
+    const second = renderModalsHost()
     await flush()
     first.unmount()
 

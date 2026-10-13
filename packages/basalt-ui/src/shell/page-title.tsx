@@ -2,7 +2,7 @@
  * `PageTitle` — the shell-less page-title primitive (C5 consolidation). Law C8
  * (`docs/CONTROLS-SPEC.md` §2.2) names two sanctioned spots for a page's ONE name: the breadcrumb
  * inside `BasaltShell`, or `PageBar.title` in a shell-less app — but neither fits a surface that
- * has no `PageBar` at all, which is exactly what `BasaltErrorBoundary`'s default fallback and an
+ * has no `PageBar` at all, which is exactly what the provider's `RootBoundary` default fallback and an
  * auth gate ARE. Both were the two named `in-body-page-title` waivers this primitive closes
  * (argo's `lib/error-boundary.tsx:36`, `lib/auth-gate.tsx:30` — each a bare `<Title order={2}>` +
  * a muted subtitle line, hand-copied).

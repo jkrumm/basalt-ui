@@ -13,7 +13,7 @@
  * Run: bun test packages/basalt-ui/tests/palette-css.test.ts
  */
 import { describe, expect, it } from 'bun:test'
-import { buildPaletteCss } from '../src/tokens'
+import { buildPaletteCss, groupTokens } from '../src/tokens'
 import { buildPaletteData, SPACE, SPACE_STEP } from '../src/tokens/palette'
 
 /** Every `--vx-*` NAME declared inside the block a selector opens, in source order (dupes kept). */
@@ -66,7 +66,7 @@ describe('buildPaletteCss default output', () => {
   })
 
   it('stays on the legacy shape for the options that do not touch the selector', () => {
-    expect(buildPaletteCss({ groups: {}, derived: [] })).toBe(css)
+    expect(buildPaletteCss({ groups: [], derived: [] })).toBe(css)
   })
 })
 
@@ -144,9 +144,9 @@ describe('buildPaletteCss color-scheme selector', () => {
       scheme: { attribute: 'data-theme' },
       defaultScheme: 'none',
       mediaFallback: true,
-      groups: { '': { hrv: { light: '#111111', dark: '#eeeeee' } } },
+      groups: [groupTokens('x', { hrv: { light: '#111111', dark: '#eeeeee' } })],
     })
-    expect([...css.matchAll(/--vx-hrv:/g)]).toHaveLength(4) // 2 attribute blocks + 2 media blocks
+    expect([...css.matchAll(/--vx-x-hrv:/g)]).toHaveLength(4) // 2 attribute blocks + 2 media blocks
   })
 })
 

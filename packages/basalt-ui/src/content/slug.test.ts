@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { headingSlug, readingTime, SlugTracker } from './slug'
+import { headingSlug, SlugTracker } from './slug'
 
 describe('headingSlug', () => {
   test('lowercases and hyphenates spaces', () => {
@@ -37,26 +37,5 @@ describe('SlugTracker', () => {
     const b = new SlugTracker()
     expect(a.slug('Setup')).toBe('setup')
     expect(b.slug('Setup')).toBe('setup')
-  })
-})
-
-describe('readingTime', () => {
-  test('rounds up to the nearest whole minute', () => {
-    const words = Array.from({ length: 300 }, () => 'word').join(' ')
-    const result = readingTime(words)
-    expect(result.words).toBe(300)
-    expect(result.minutes).toBe(2)
-  })
-
-  test('returns 1 minute for short text', () => {
-    const result = readingTime('a short sentence')
-    expect(result.words).toBe(3)
-    expect(result.minutes).toBe(1)
-  })
-
-  test('returns 0 minutes for empty text', () => {
-    const result = readingTime('')
-    expect(result.words).toBe(0)
-    expect(result.minutes).toBe(0)
   })
 })

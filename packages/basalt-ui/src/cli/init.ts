@@ -6,7 +6,7 @@
 import { existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 
-import { deriveSpacing } from '../tokens'
+import { deriveSpacing } from '../tokens/core'
 import type { MergeLintResult, ScaffoldFlags } from './index'
 import {
   MANIFEST_PATH,
@@ -179,19 +179,12 @@ export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags =
   if (seededLintScript) {
     console.log(`basalt-ui init: added the "lint:basalt" script (${lintScript}) to package.json.`)
   }
-  // The permanent placement skips (repo-root-shaped tooling, a relocated scaffold) — one text,
+  // The permanent placement skips (repo-root-shaped tooling) — one text,
   // shared with `sync`. See {@link placementNotices}.
   for (const line of placementNotices(cwd, placement)) {
     console.log(`basalt-ui init: ${line}`)
   }
-  // query-client.ts / __root.tsx reference the optional TanStack peers directly — seeding them
-  // without the peer installed would ship an unresolved import. Hint how to opt in instead.
-  if (!peers.hasQuery) {
-    console.log(
-      'basalt-ui init: skipped src/query-client.ts (no @tanstack/react-query dependency detected) — ' +
-        'install it, or re-run with --with-query, to scaffold it.',
-    )
-  }
+  // __root.tsx needs both TanStack peers — seeding it without them would ship an unresolved import.
   if (!peers.hasRouter || !peers.hasQuery) {
     console.log(
       'basalt-ui init: skipped src/routes/__root.tsx (needs both @tanstack/react-router and ' +

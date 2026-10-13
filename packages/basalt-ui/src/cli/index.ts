@@ -848,18 +848,12 @@ export type PlacementFlags = {
   /** Absolute path of the detected repo root. Meaningful only when `isPackageRepoRoot` is false —
    *  otherwise it equals the package dir and is never read. */
   repoRoot: string
-  /** Absolute path of a `query-client.ts` already present elsewhere under the package's `src/` (the
-   *  consumer relocated it — e.g. to `src/lib/query-client.ts`), or null. The seed's OWN
-   *  destination is deliberately excluded here — that exact-path case is handled by the ordinary
-   *  skip-if-exists logic every seed file already goes through, unchanged. */
-  relocatedQueryClient: string | null
 }
 
 /** The default placement — today's single-package-at-repo-root behaviour, unconditionally. */
 export const ROOT_PLACEMENT: PlacementFlags = {
   isPackageRepoRoot: true,
   repoRoot: '',
-  relocatedQueryClient: null,
 }
 
 /**
@@ -889,55 +883,12 @@ export function oxlintBinResolves(dir: string): boolean {
   }
 }
 
-/**
- * First path under `dir` (recursive) whose basename is `filename`, or null. Skips dependency/build
- * dirs, mirroring `walkSourceFiles`'s scoping.
- */
-function findFileNamed(dir: string, filename: string): string | null {
-  let entries: string[]
-  try {
-    entries = readdirSync(dir)
-  } catch {
-    return null
-  }
-  for (const name of entries) {
-    if (name === 'node_modules' || name === '.git' || name === 'dist') continue
-    const abs = resolve(dir, name)
-    let isDir: boolean
-    try {
-      isDir = statSync(abs).isDirectory()
-    } catch {
-      continue
-    }
-    if (isDir) {
-      const found = findFileNamed(abs, filename)
-      if (found !== null) return found
-    } else if (name === filename) {
-      return abs
-    }
-  }
-  return null
-}
-
-/**
- * Absolute path of a `query-client.ts` living elsewhere under the package's `src/`, or null. The
- * seed's own destination is excluded — reseeding on top of a RELOCATED client (the failure this
- * exists to prevent) is a different case from the seed's own path already being occupied, which the
- * ordinary skip-if-exists logic handles unchanged.
- */
-function findRelocatedQueryClient(cwd: string): string | null {
-  const seedAbs = resolve(cwd, 'src/query-client.ts')
-  const found = findFileNamed(resolve(cwd, 'src'), 'query-client.ts')
-  return found !== null && found !== seedAbs ? found : null
-}
-
 /** Resolve a run's placement flags once, from the consumer cwd. */
 export function resolvePlacement(cwd: string): PlacementFlags {
   const repoRoot = findRepoRoot(cwd)
   return {
     isPackageRepoRoot: repoRoot === cwd,
     repoRoot,
-    relocatedQueryClient: findRelocatedQueryClient(cwd),
   }
 }
 
@@ -1065,18 +1016,6 @@ export function managedFiles(
   // ── Seed scaffolds: written by init, never overwritten by sync ─────────────
   // These are starting-point files owned entirely by the consumer after first write.
 
-  /** TanStack Query client bootstrap (seed — consumer-owned after init). */
-  const queryClient: ManagedFile = {
-    dest: 'src/query-client.ts',
-    mode: 'seed',
-    source: 'agent/templates/query-client.ts.tpl',
-    render: (ctx) => {
-      const tpl = readSource(ctx.pkgRoot, 'agent/templates/query-client.ts.tpl')
-      if (tpl === null) return null
-      return fillTemplate(tpl, ctx.vars)
-    },
-  }
-
   /** TanStack Router root route with QueryClient context wiring (seed — consumer-owned after init). */
   const rootRoute: ManagedFile = {
     dest: 'src/routes/__root.tsx',
@@ -1089,12 +1028,9 @@ export function managedFiles(
     },
   }
 
-  // `query-client.ts` only needs @tanstack/react-query; `__root.tsx` imports BOTH
-  // @tanstack/react-router (createRootRouteWithContext) and @tanstack/react-query (the QueryClient
-  // type) — both are documented optional peers, so seeding either scaffold without its peer(s)
-  // installed would ship a file with an unresolved import.
+  // `__root.tsx` imports @tanstack/react-router (createRootRouteWithContext) and basalt-ui's
+  // `BasaltRouterContext`, which names the QueryClient type — so it needs both peers installed.
   const scaffolds: ManagedFile[] = []
-  if (peers.hasQuery && placement.relocatedQueryClient === null) scaffolds.push(queryClient)
   if (peers.hasRouter && peers.hasQuery) scaffolds.push(rootRoute)
 
   // lefthook.yml / .github/workflows/check.yml are repo-root-shaped: lefthook and GitHub Actions
@@ -1132,13 +1068,6 @@ export function placementNotices(cwd: string, placement: PlacementFlags): string
         `repo root; copy the steps from ${asset('configs/check.yml')} into your root CI workflow ` +
         `instead, and give each one \`working-directory: ${pkg}\` — the same relocation \`root:\` ` +
         'performs for lefthook, and needed for the same reason.',
-    )
-  }
-  if (placement.relocatedQueryClient !== null) {
-    out.push(
-      `skipped src/query-client.ts (found an existing query client at ` +
-        `${relative(cwd, placement.relocatedQueryClient)}) — import it from there instead of ` +
-        're-seeding at the original path.',
     )
   }
   return out
@@ -1199,7 +1128,7 @@ export function readManifest(cwd: string): Manifest {
  *
  * Scoped to these two patterns on purpose, and never applied to the manifest wholesale: several
  * managed/seed entries are legitimately absent from `managedFiles()` for a run (`lefthook.yml` and
- * `check.yml` when the package is not the repo root, `src/query-client.ts` when it was relocated,
+ * `check.yml` when the package is not the repo root, and
  * the scaffolds without their peers). Deleting a dest just because this run did not place it would
  * remove a consumer's CI workflow on a monorepo.
  */

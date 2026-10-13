@@ -51,7 +51,7 @@ describe('className reaches the root of every state branch', () => {
 })
 
 // F-ERR-1: `state` is read for its `status` on the first line of the body, so a missing one used to
-// surface as a raw `TypeError` swallowed by `BasaltErrorBoundary` — a blank sidebar footer.
+// surface as a raw `TypeError` swallowed by `RootBoundary` — a blank sidebar footer.
 describe('a missing `state` throws a named message', () => {
   test('SidebarAccount names itself and the prop', () => {
     expect(() => mount(<SidebarAccount {...({} as unknown as BasaltAccountProps)} />)).toThrow(

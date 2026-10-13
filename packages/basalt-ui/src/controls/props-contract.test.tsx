@@ -10,7 +10,6 @@
 import { describe, expect, test } from 'bun:test'
 import type { ReactNode } from 'react'
 import { createLocalStore, field } from '../state'
-import { CompareFilter } from './compare-filter'
 import { MultiSelectFilter } from './multi-select-filter'
 import { NumberFilter } from './number-filter'
 import { RangeFilter } from './range-filter'
@@ -61,8 +60,6 @@ function Rejected(): ReactNode {
       <RangeFilter field={local.field.currency} />
       {/* @ts-expect-error a string field is not a boolean field. */}
       <ToggleFilter field={local.field.q} label="Errors only" />
-      {/* @ts-expect-error CompareFilter's enum is the three basalt names, not any enum. */}
-      <CompareFilter field={local.field.currency} />
       {/* @ts-expect-error `label` is required on SelectFilter — the pill needs a name at rest. */}
       <SelectFilter field={local.field.currency} />
       {/* A string field declares no values, so `options` is the only possible row source — without
@@ -109,7 +106,6 @@ function Accepted(): ReactNode {
       {/* A string field WITH options — the id set an enum cannot close over. */}
       <SelectFilter field={local.field.q} label="Project" options={PROJECTS} />
       <MultiSelectFilter field={local.field.channels} label="All channels" options={CHANNELS} />
-      <CompareFilter field={local.field.compare} />
       <MultiSelectFilter field={local.field.channels} label="All channels" noun="channels" />
       <RangeFilter field={local.field.range} />
       <ToggleFilter field={local.field.errorsOnly} label="Errors only" />

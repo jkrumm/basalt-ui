@@ -7,7 +7,7 @@
  * its own, so this suite calls it directly rather than mounting anything.
  */
 import { describe, expect, test } from 'bun:test'
-import { buildFontsCss } from './index'
+import { buildFontsCss } from './core'
 
 describe('buildFontsCss', () => {
   test('returns empty string when fonts is undefined', () => {

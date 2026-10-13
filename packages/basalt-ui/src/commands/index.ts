@@ -1,107 +1,24 @@
 /**
- * ./commands — command bus, overlay controller, Spotlight projection, shortcuts display,
- * live keybindings, and composable overlay mount for basalt-ui apps.
+ * ./commands — the command bus, overlay controller, shortcuts help and the notification registry.
  *
- * Optional peers: @mantine/modals ^9.3.0, @mantine/spotlight ^9.3.0,
- *   @mantine/notifications ^9.3.0, @tanstack/react-hotkeys 0.10.0.
- *
- * Install with: bun add @mantine/modals @mantine/spotlight @mantine/notifications @tanstack/react-hotkeys
- * Also import the Spotlight styles in main.tsx (the layered bundle — the unlayered one outranks
- * basalt's `@layer basalt` styles regardless of specificity): import '@mantine/spotlight/styles.layer.css'
+ * `BasaltProvider` mounts modals, Spotlight, hotkeys and notifications; this barrel is only what
+ * an app declares and calls.
  *
  * @example
- * // commands.ts (app-side) — define + augment:
- * import { defineCommands } from 'basalt-ui/commands'
+ * import { defineCommands, defineNotifications, emit } from 'basalt-ui/commands'
  * export const COMMANDS = defineCommands({
  *   'file:save': { label: 'Save', group: 'File', shortcut: 'Mod+S', run: () => save() },
  * })
  * declare module 'basalt-ui' {
  *   interface BasaltRegister { commands: typeof COMMANDS }
  * }
- *
- * // main.tsx — mount composable overlays:
- * import { BasaltOverlays } from 'basalt-ui/commands'
- * import '@mantine/spotlight/styles.layer.css'
- * <BasaltProvider><BasaltOverlays><App /></BasaltOverlays></BasaltProvider>
- *
- * // usage.ts — run a command:
- * import { runCommand } from 'basalt-ui/commands'
- * runCommand('file:save')
- *
- * // usage.ts — the registry-free confirm dialog:
- * import { overlays } from 'basalt-ui/commands'
- * const ok = await overlays.confirm({ title: 'Discard draft?', onConfirm: () => reset() })
- * overlays.confirmDelete({ subject: 'item', count: 3, onConfirm: () => removeSelected() })
- *
- * // Mounting ModalsProvider yourself instead of letting <BasaltOverlays> do it:
- * import { registerModalsProvider } from 'basalt-ui/commands'
- * useEffect(() => registerModalsProvider(), [])
- *
- * // Open/close Spotlight programmatically:
- * import { openSpotlight, closeSpotlight } from 'basalt-ui/commands'
- * openSpotlight()
  */
 
-// ── defineCommands + runCommand ───────────────────────────────────────────────
-export {
-  defineCommands,
-  defineCommand,
-  runCommand,
-  type Command,
-  type CommandMap,
-  type CommandId,
-  type CommandRunContext,
-} from './define-commands'
+export { defineCommands, type Command } from './define-commands'
+export { defineOverlays, overlays } from './define-overlays'
+export { setColorScheme, toggleSidebar } from './shell-bridge'
+export { ShortcutsHelp } from './ShortcutsHelp'
 
-// ── defineOverlays + defineOverlay + overlays controller ─────────────────────
-export {
-  defineOverlays,
-  defineOverlay,
-  overlays,
-  registerModalsProvider,
-  type Overlay,
-  type OverlayMap,
-  type OverlayKey,
-  type ConfirmOptions,
-  type ConfirmDeleteOptions,
-} from './define-overlays'
-
-// ── Projectors ────────────────────────────────────────────────────────────────
-export {
-  toSpotlightActions,
-  toRouteActions,
-  toShortcutList,
-  toHotkeyBindings,
-  type RouteActionItem,
-  type RouteActionSection,
-  type ToRouteActionsOptions,
-  type ShortcutEntry,
-  type HotkeyBinding,
-} from './projectors'
-
-// ── Imperative shell handles (setColorScheme/toggleSidebar) ──────────────────
-export {
-  setColorScheme,
-  toggleSidebar,
-  type ColorScheme,
-  type ColorSchemeSetter,
-  type SidebarToggle,
-} from './shell-bridge'
-
-// ── Shortcut format utils ─────────────────────────────────────────────────────
-export { parseShortcut, detectMac, formatShortcutDisplay } from './shortcut-format'
-
-// ── useCommandHotkeys hook ────────────────────────────────────────────────────
-export { useCommandHotkeys } from './useCommandHotkeys'
-
-// ── ShortcutsHelp ─────────────────────────────────────────────────────────────
-export { ShortcutsHelp, type ShortcutsHelpProps } from './ShortcutsHelp'
-
-// ── BasaltOverlays mount + Spotlight controls ─────────────────────────────────
-export {
-  BasaltOverlays,
-  type BasaltOverlaysProps,
-  basaltSpotlight,
-  openSpotlight,
-  closeSpotlight,
-} from './overlays-mount'
+// ── Notifications (folded in from `./notifications`) ──────────────────────────
+export { defineNotifications, emit } from './notifications/define-notifications'
+export { NotificationBell } from './notifications/bell'

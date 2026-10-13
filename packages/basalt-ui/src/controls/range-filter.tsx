@@ -30,15 +30,16 @@
 import { SegmentedControl, Select, Stack } from '@mantine/core'
 import { useEffect, useRef, useState } from 'react'
 import type { ComponentType, ReactNode } from 'react'
-import type { BasaltProps } from '../common/props'
 import { assertRequiredProps } from '../common/validate'
-import type { FieldHandle, RangeField, RangeValue } from '../state'
+import type { FieldHandle } from '../state'
+import type { RangeField, RangeValue } from '../state/fields'
 import classes from './controls.module.css'
 import { useFilterRegistration, useFilterSurface } from './filter-context'
 import { FilterPill } from './filter-pill'
 import { CalendarGlyph } from './glyphs'
 import { useControlName } from './filter-sheet'
 import { PanelRow } from './panel-row'
+import type { UncontrolledProps } from './uncontrolled'
 
 /** Past four presets the track goes vertical. */
 const VERTICAL_FROM = 5
@@ -81,7 +82,7 @@ export type RangeCustomPickerProps = {
 }
 
 /** Everything about the props that does not depend on the field's `custom` flag. */
-type RangeFilterBase<P extends string, C extends boolean> = BasaltProps & {
+type RangeFilterBase<P extends string, C extends boolean> = UncontrolledProps & {
   /**
    * A range handle from either store factory. Generic over the field's `custom` flag so a
    * `field.range({ ... })` WITHOUT `custom` (whose handle is `RangeField<P, false>`, and whose
@@ -112,7 +113,7 @@ export function RangeFilter<P extends string, C extends boolean = boolean>(
   props: RangeFilterProps<P, C>,
 ): ReactNode {
   // F-ERR-1 — without this a missing `field` surfaces as `undefined is not an object
-  // (evaluating 'field.use')`, caught by `BasaltErrorBoundary`.
+  // (evaluating 'field.use')`, caught by `RootBoundary`.
   assertRequiredProps('RangeFilter', props, ['field'], {
     field: 'bind it to a store field (`store.field.<name>`), never a value/onChange pair.',
   })

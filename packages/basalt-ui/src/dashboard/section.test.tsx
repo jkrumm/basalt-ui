@@ -1,7 +1,7 @@
 /**
  * `Section` — the tier-2 heading composer (docs/CONTROLS-SPEC.md §2.2): the collapse contract
  * (persisted vs local, header stays drawn, body unmounts, tabs hide), the scroll-anchor style, and
- * the two dev-only misuse warnings (the ≤3-actions budget, C6, and a persistKey with no fold), plus
+ * the dev-only persistKey-with-no-fold warning, plus
  * the `className`/`classNames`/`style` contract from `common/props.ts`.
  */
 import { MantineProvider } from '@mantine/core'
@@ -153,7 +153,7 @@ describe('id — the scroll-anchor contract', () => {
 })
 
 /**
- * The two dev-only misuse warnings, both on `useValidateProps` — so both print through
+ * The dev-only misuse warning, on `useValidateProps` — so both print through
  * `console.error`, not `console.warn`, and both dedup on `${component} ${message}` in MODULE state
  * that outlives a render, a remount and this file. `resetValidatedProps()` between cases is what
  * keeps each test's expectation about its own render rather than about test order.
@@ -164,46 +164,6 @@ describe('id — the scroll-anchor contract', () => {
 describe('the dev-only misuse warnings', () => {
   beforeEach(() => {
     resetValidatedProps()
-  })
-
-  // `Children.count` (like every `Children.*` helper) does not recurse into a Fragment passed as
-  // a single node — an ARRAY of actions is what the count actually sees, same shape a consumer
-  // building the list programmatically would pass.
-  test('4 actions warns (C6)', () => {
-    const error = spyOn(console, 'error').mockImplementation(() => {})
-    renderWith(
-      <Section
-        title="Usage"
-        actions={[1, 2, 3, 4].map((n) => (
-          <button key={n} type="button">
-            {n}
-          </button>
-        ))}
-      >
-        <div>body</div>
-      </Section>,
-    )
-    expect(error).toHaveBeenCalledTimes(1)
-    expect(String(error.mock.calls[0]?.[0])).toContain('≤3 budget')
-    error.mockRestore()
-  })
-
-  test('3 actions does not warn', () => {
-    const error = spyOn(console, 'error').mockImplementation(() => {})
-    renderWith(
-      <Section
-        title="Usage"
-        actions={[1, 2, 3].map((n) => (
-          <button key={n} type="button">
-            {n}
-          </button>
-        ))}
-      >
-        <div>body</div>
-      </Section>,
-    )
-    expect(error).not.toHaveBeenCalled()
-    error.mockRestore()
   })
 
   test('a persistKey with no collapsible names the section and both props', () => {
@@ -523,7 +483,7 @@ describe('query — the four container states', () => {
  * did that already — but that basalt owns the C7 fold and the mobile kebab once the caller hands it
  * data instead of nodes.
  */
-describe('actions — the BarAction[] | ReactNode union', () => {
+describe('actions — typed BarAction data', () => {
   test('a BarAction[] renders whole inside the header when nothing is measured', () => {
     renderWith(
       <Section
@@ -532,7 +492,6 @@ describe('actions — the BarAction[] | ReactNode union', () => {
           { key: 'a', label: 'Alpha' },
           { key: 'b', label: 'Bravo' },
           { key: 'c', label: 'Charlie' },
-          { key: 'd', label: 'Delta' },
         ]}
       >
         <div>body</div>
@@ -543,7 +502,7 @@ describe('actions — the BarAction[] | ReactNode union', () => {
     // A slot host (and any host without layout) has no measured fold: the row stays whole. The fold
     // itself is `planBarFold`'s, pinned in controls/actions.test.tsx.
     expect(desktop.textContent).toContain('Alpha')
-    expect(desktop.textContent).toContain('Delta')
+    expect(desktop.textContent).toContain('Charlie')
     expect(desktop.textContent).not.toContain('More')
   })
 
@@ -556,35 +515,5 @@ describe('actions — the BarAction[] | ReactNode union', () => {
     )
     fireEvent.click(screen.getAllByRole('button', { name: 'Export' })[0] as HTMLElement)
     expect(onClick).toHaveBeenCalledTimes(1)
-  })
-
-  test('a ReactNode row is unchanged — rendered verbatim, no group around it', () => {
-    renderWith(
-      <Section title="Runs" actions={<button type="button">Export</button>}>
-        <div>body</div>
-      </Section>,
-    )
-    expect(screen.getByRole('button', { name: 'Export' })).toBeDefined()
-    expect(document.querySelector('.mantine-visible-from-sm')).toBeNull()
-  })
-
-  test('the C6 budget counts the ARRAY exactly, not as one child', () => {
-    resetValidatedProps()
-    const spy = spyOn(console, 'error').mockImplementation(() => {})
-    renderWith(
-      <Section
-        title="Overbudget"
-        actions={[
-          { key: 'a', label: 'A' },
-          { key: 'b', label: 'B' },
-          { key: 'c', label: 'C' },
-          { key: 'd', label: 'D' },
-        ]}
-      >
-        <div>body</div>
-      </Section>,
-    )
-    expect(spy.mock.calls.flat().join(' ')).toContain('4 actions exceeds the ≤3 budget')
-    spy.mockRestore()
   })
 })

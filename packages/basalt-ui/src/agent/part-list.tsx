@@ -241,7 +241,7 @@ const DEFAULT_RENDERERS: AgentPartRenderers = {
 // ── PartList ──────────────────────────────────────────────────────────────────
 
 export type PartListProps<TPart extends AgentPart = AgentPart> = {
-  /** The parts accumulator from useAgentStream. */
+  /** The parts accumulator from useAgentThreadRuns. */
   readonly parts: TPart[]
   /**
    * Override individual part renderers. Omitted keys fall back to the headless defaults.

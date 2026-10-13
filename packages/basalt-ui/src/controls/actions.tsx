@@ -74,6 +74,29 @@ export type BarActionCustom = {
 
 export type BarAction = BarActionItem | BarActionMenu | BarActionCustom
 
+/** The one primary action of a page bar (law C6): the first tuple entry, flagged `primary: true`. */
+type PrimaryBarAction = BarAction & { primary: true }
+/** Every other page-bar action; `primary` may only be absent or `false`. */
+type MoreBarAction = BarAction & { primary?: false }
+
+/**
+ * `PageBar.actions`: exactly one primary first, then up to four more. Law C6 as a type — a missing
+ * or second primary and a sixth entry are tsc errors (`docs/V2-SPEC.md` §3).
+ */
+export type PageBarActions =
+  | [PrimaryBarAction]
+  | [PrimaryBarAction, MoreBarAction]
+  | [PrimaryBarAction, MoreBarAction, MoreBarAction]
+  | [PrimaryBarAction, MoreBarAction, MoreBarAction, MoreBarAction]
+  | [PrimaryBarAction, MoreBarAction, MoreBarAction, MoreBarAction, MoreBarAction]
+
+/** `Section.actions`: at most three (law C6). */
+export type SectionActions =
+  | []
+  | [BarAction]
+  | [BarAction, BarAction]
+  | [BarAction, BarAction, BarAction]
+
 /**
  * A home's `actions` slot. `primary` is SINGULAR by type — that is the whole enforcement of law
  * C6's "exactly one primary"; there is no runtime check because a second one cannot be written.

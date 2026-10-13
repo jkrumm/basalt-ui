@@ -18,11 +18,10 @@
 import { describe, expect, test } from 'bun:test'
 import { render } from '@testing-library/react'
 import { renderToString } from 'react-dom/server'
-import { QueryClientProvider } from '@tanstack/react-query'
+import { MantineProvider } from '@mantine/core'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type { ReactElement, ReactNode } from 'react'
-import { BasaltProvider } from '../../src/provider'
-import { createBasaltTheme } from '../../src/theme'
-import { createBasaltQueryClient } from '../../src/query-client'
+import { createBasaltTheme, cssVariablesResolver } from '../../src/theme'
 import { describeOutcome, detectComponents, probeElement, renderProbe, ssrProbe } from './harness'
 import {
   EXPECTED_DEFECTS,
@@ -34,15 +33,19 @@ import {
 } from './props'
 
 const theme = createBasaltTheme()
-const queryClient = createBasaltQueryClient()
+const queryClient = new QueryClient()
 
 /** The Mantine-coupled tree: everything a root-barrel component may assume exists. */
 function Coupled({ children }: { children: ReactNode }): ReactElement {
   return (
     <QueryClientProvider client={queryClient}>
-      <BasaltProvider theme={theme} defaultColorScheme="dark">
+      <MantineProvider
+        theme={theme}
+        cssVariablesResolver={cssVariablesResolver}
+        defaultColorScheme="dark"
+      >
         {children}
-      </BasaltProvider>
+      </MantineProvider>
     </QueryClientProvider>
   )
 }
@@ -81,16 +84,10 @@ const SUBPATHS: Subpath[] = await Promise.all(
       ['./controls', '../../src/controls/index.ts', false],
       ['./controls-dates', '../../src/controls-dates/index.ts', false],
       ['./forms', '../../src/forms/index.ts', false],
-      ['./dashboard', '../../src/dashboard/index.ts', false],
-      ['./shell', '../../src/shell/index.tsx', false],
-      ['./data/table', '../../src/data/table.ts', false],
-      ['./data/virtual', '../../src/data/virtual.ts', false],
-      ['./notifications', '../../src/notifications/index.ts', false],
+      ['./table', '../../src/table/index.ts', false],
       ['./commands', '../../src/commands/index.ts', false],
       ['./content', '../../src/content/index.ts', false],
-      ['./agent', '../../src/agent/index.ts', true],
-      ['./agent-chat', '../../src/agent-chat/index.ts', false],
-      ['./theme-lab', '../../src/theme-lab/index.tsx', false],
+      ['./agent', '../../src/agent/index.ts', false],
     ] as const
   ).map(async ([id, path, mantineFree]) => ({
     id,
@@ -198,6 +195,6 @@ describe('renderToString — every component must survive with no DOM', () => {
  */
 test('every coupled subpath enumerated at least one component', () => {
   const empty = SUBPATHS.filter((s) => detectComponents(s.mod).length === 0).map((s) => s.id)
-  // `./tokens` is pure data by design and exports no component — the only permitted entry.
-  expect(empty).toEqual(['./tokens'])
+  // `./tokens` is pure data by design and `./forms` is hooks-only since 2.0 — the only permitted entries.
+  expect(empty).toEqual(['./tokens', './forms'])
 })

@@ -19,29 +19,25 @@ Basalt UI is the extraction of that setup from a production app. Install once, g
 
 ```bash
 bun add basalt-ui
-bun add react react-dom @mantine/core @mantine/hooks @tanstack/react-query
+bun add react react-dom @mantine/core @mantine/hooks @mantine/modals @mantine/notifications @mantine/spotlight \
+  @tanstack/react-router @tanstack/react-query \
+  @fontsource-variable/hubot-sans @fontsource-variable/jetbrains-mono @fontsource-variable/nunito-sans
 ```
 
-The root `.` entry needs all five: `react` / `react-dom` `^19`, `@mantine/core` +
-`@mantine/hooks` `^9.3`, and `@tanstack/react-query` (`BasaltProvider` hard-requires it at build
-time). **Install them yourself — every peer is declared `optional`**, so no package manager adds
-them for you and a missing one surfaces as an unresolved import when you build, not as a warning
-when you install. That optionality is what lets the Mantine-free subpaths cost nothing (below);
-version mismatches on an installed peer still warn.
+That is the **required** set: `BasaltProvider` mounts the router, Query, Modals, Notifications and
+Spotlight, and `basalt-ui/styles.css` imports the three fonts. Install the peers yourself — a
+missing one surfaces as an unresolved import at build time, not as an install warning. A real app
+also needs `@types/react @types/react-dom` (dev) and a standard Vite `vite-env.d.ts`. Exact
+versions: `peerDependencies` in `package.json`.
 
-A real app also needs `@types/react @types/react-dom` (dev) and a standard Vite `vite-env.d.ts`
-for `tsc --noEmit` to pass.
+| Class            | Peers                                                                                                                                                                                                                                                        | Rule                                                                                                     |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------- |
+| Required         | `react`, `react-dom`, `@mantine/{core,hooks,modals,notifications,spotlight}`, `@tanstack/react-router`, `@tanstack/react-query`, the three `@fontsource-variable/*`                                                                                          | every consumer; `.` or `./styles.css` imports or names it                                                |
+| Subpath-required | `./commands`: `@tanstack/react-hotkeys` · `./agent`: `ai`, `@ai-sdk/provider`, `motion` · `./table`: `@tanstack/react-table` · `./forms`: `@mantine/form` · `./controls-dates`: `@mantine/dates`, `dayjs` · `./content`: `react-markdown` · `./vite`: `vite` | needed only by consumers of that subpath; declared `optional` in `peerDependenciesMeta`                  |
+| Optional         | `remend`, `shiki`, `@shikijs/*`, `beautiful-mermaid`, `remark-gfm`, `rehype-sanitize`, `@tanstack/react-query-devtools`, `@tanstack/react-router-devtools`, `vite-plugin-pwa`                                                                                | reached through `import()` only; absent, the feature degrades (dev devtools panels, plain-text markdown) |
 
-Two more peers are needed by specific named exports of the root `.` entry, not by
-`BasaltProvider` itself: `bun add motion` if you use `ThemeToggle`, `ThreadFeed` or
-`ThreadDetailPanel`, and the three `@fontsource-variable` packages
-(`bun add @fontsource-variable/hubot-sans @fontsource-variable/jetbrains-mono
-@fontsource-variable/nunito-sans`, all exact-pinned — see `packages/basalt-ui/package.json` for the
-versions) if you import `basalt-ui/styles.css`, which `@import`s them for the three-font system.
-Both are optional peers, so neither installs automatically.
-
-**No React?** `./tokens`, `./charts`, `./state` and `./guard` resolve with none of the five
-installed, and the token system is consumable with no package at all:
+**No React?** `./tokens` imports no `@mantine/*`, and the token system is consumable with no package
+at all:
 
 ```bash
 bunx basalt-ui tokens:css --selector-attribute data-theme --only core --out src/tokens.css
@@ -83,73 +79,62 @@ reported — exactly the files Claude reads, which cannot load from `node_module
 
 ## Wire the runtime
 
-After `bunx basalt-ui init`, wire the provider, overlays, and vite preset. This mirrors the canonical
-reference, `apps/playground/src/main.tsx`:
+After `bunx basalt-ui init`, two files wire the app. `BasaltProvider` owns the whole provider tree —
+Mantine + theme, Query, Modals (wrapping the router), the router, Notifications, Spotlight, the root
+error boundary, command hotkeys, and in dev the dev dock. Canonical reference:
+`apps/playground/src/main.tsx`.
 
 ```tsx
-// main.tsx — plain Vite CSR entry. BasaltProvider defaults to the dark color scheme and reads any
-// stored scheme from localStorage before mount, so a client-only app needs no ColorSchemeScript.
-import '@mantine/core/styles.layer.css'
+// src/main.tsx
 import '@mantine/notifications/styles.layer.css'
 import '@mantine/spotlight/styles.layer.css'
 import 'basalt-ui/styles.css'
-import { BasaltProvider, createBasaltTheme } from 'basalt-ui'
-import { BasaltOverlays } from 'basalt-ui/commands'
-import { applyOverrides, loadOverrides } from 'basalt-ui/theme-lab'
 import { createRoot } from 'react-dom/client'
-import { App } from './App'
-import { paletteGroups } from './theme/series'
+import { BasaltProvider, createBasaltRouter } from 'basalt-ui'
+import { routeTree } from './routeTree.gen'
+import { telemetry } from './lib/telemetry'
+import './lib/commands'
 
-// The theme lab owns only the editing UI — the host re-applies any persisted overrides at boot, so
-// a tuning session survives a refresh. `applyOverrides`/`loadOverrides` (and `readVar`) live in
-// `theme-lab/boot.ts`, a Mantine-free, SSR-safe module re-exported through this same
-// `basalt-ui/theme-lab` subpath — no `document` guard needed at the call site, and it never throws
-// under SSR. A production bundler that tree-shakes unused named exports drops `ThemeLabControls`'s
-// Mantine imports when a prod entry (like this one) only ever names these three functions; an
-// unbundled dev build still evaluates the whole subpath module.
-applyOverrides(loadOverrides())
-
-const theme = createBasaltTheme({/* app deltas only */})
+const router = createBasaltRouter({ routeTree })
+declare module '@tanstack/react-router' {
+  interface Register {
+    router: typeof router
+  }
+}
 
 createRoot(document.getElementById('root')!).render(
-  <BasaltProvider theme={theme} paletteOptions={{ groups: paletteGroups }}>
-    <BasaltOverlays>
-      <App />
-    </BasaltOverlays>
-  </BasaltProvider>,
+  <BasaltProvider router={router} telemetry={telemetry} />,
 )
 ```
 
-> Use the **layered** `*.layer.css` bundles, never the plain ones — Mantine's unlayered bundle
-> outranks basalt's `@layer basalt` styles (including the iOS 16px input floor) regardless of
-> specificity. Only import `@mantine/notifications/styles.layer.css` /
-> `@mantine/spotlight/styles.layer.css` if you install those optional-peer batteries
-> (`./notifications` / `./commands` — see [Adapter batteries](#adapter-batteries) below).
-
-### Composition order
-
-The canonical stack, once a router and a query client join the example above:
-
 ```tsx
-<BasaltProvider theme={theme}>
-  <QueryClientProvider client={queryClient}>
-    <BasaltOverlays>
-      <RouterProvider router={router} />
-    </BasaltOverlays>
-  </QueryClientProvider>
-</BasaltProvider>
+// src/routes/__root.tsx
+import { Outlet, createRootRouteWithContext } from '@tanstack/react-router'
+import { BasaltShell, useNav, type BasaltRouterContext } from 'basalt-ui'
+import { NAV } from '../lib/nav'
+
+export const Route = createRootRouteWithContext<BasaltRouterContext>()({
+  component: () => (
+    <BasaltShell brand={{ name: 'Argo' }} {...useNav(NAV)}>
+      <Outlet />
+    </BasaltShell>
+  ),
+})
 ```
 
-The order is load-bearing, not stylistic: `BasaltProvider` auto-mounts `ConnectivityProvider`
-(C1: absorbed onto the root barrel from the dropped `./connectivity`), which aggregates
-React-Query's own status and so must sit **above** the query client; `BasaltOverlays` must sit **inside** the theme, since Modals/Spotlight/Notifications
-resolve `--vx-*` tokens through Mantine's context; the router goes **last** so every route
-component renders with the theme, the data layer and the overlay layer already mounted above it.
-`agent/rules/basalt-mantine.md` points here rather than restating the tree.
+`createBasaltRouter({ routeTree, context?, query? })` creates one `QueryClient` per call (1.x
+defaults, `query` merges over them) and carries it on `context.queryClient`; extra context extends
+`BasaltRouterContext`. `BasaltProvider` takes `router` (required), `theme` (defaults to
+`createBasaltTheme()`), `telemetry` (typed `BasaltEvent`s, no sink → no events) and `fallback` (the
+root error boundary's UI). `useNav` is transitional until `BasaltShell` takes a `nav` prop.
+
+> Use the **layered** `*.layer.css` bundles, never the plain ones — Mantine's unlayered bundle
+> outranks basalt's `@layer basalt` styles (including the iOS 16px input floor) regardless of
+> specificity. `basalt-ui/styles.css` already imports the core layer bundle.
 
 **No `'use client'` directive ships anywhere in the package.** A Next.js App Router consumer wraps
-this whole composition in its own client file (`'use client'` at the top) and renders that from a
-server layout — basalt stays framework-agnostic and does not guess at the boundary.
+the provider in its own client file and renders that from a server layout — basalt stays
+framework-agnostic and does not guess at the boundary.
 
 ### Theming
 
@@ -167,12 +152,9 @@ const theme = createBasaltTheme(
 `lightLevel` / `darkLevel` / `vibrancy` / `accentBrightness` (`-5..5`, all optional — omitted knobs
 keep the shipped default). Never hand-edit a palette hex to retune the identity.
 
-`BasaltOverlays` (from `basalt-ui/commands`) is the composable overlay mount: it bundles
-`ModalsProvider`, `Spotlight`, and `Notifications` into a single mount point — it is the one
-notifications mount. `paletteOptions={{ groups: paletteGroups }}` emits your
-app-specific series colors (see
-[Consumer-series extensibility](#consumer-series-extensibility) below) alongside the framework
-palette. Skip both — `BasaltOverlays` and `paletteGroups` — if you don't use those batteries yet.
+`paletteOptions={{ groups: paletteGroups }}` on `BasaltProvider` emits your app-specific series
+colors (see [Consumer-series extensibility](#consumer-series-extensibility) below) alongside the
+framework palette. Skip it if you have no app-specific series yet.
 
 > **SSR only:** Next.js / React Router (SSR) consumers must additionally render
 > `<ColorSchemeScript defaultColorScheme="dark" />` (matching `BasaltProvider`'s default) in the
@@ -181,8 +163,7 @@ palette. Skip both — `BasaltOverlays` and `paletteGroups` — if you don't use
 
 ```tsx
 // Shell — sidebar / mobile nav / breadcrumbs / PageBar; router-agnostic
-import { BasaltShell, NavCountBadge, PageBar } from 'basalt-ui'
-import type { SidebarBlock, SidebarSection } from 'basalt-ui'
+import { BasaltShell, PageBar } from 'basalt-ui'
 ```
 
 ```ts
@@ -323,33 +304,29 @@ deleted rather than silently surviving into the next real skew.
 
 ## Subpath exports
 
-| Subpath             | Mantine? | Purpose                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| ------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `.`                 | coupled  | `BasaltProvider`, `createBasaltTheme` / `baseTheme` / `cssVariablesResolver`, `BasaltShell` + sidebar / mobile nav / breadcrumbs / `PageBar` / `PageAside`, `Section` / `WidgetHeader`, `NavCountBadge`, `SidebarAccount` + the provider-agnostic account contract (`BasaltAccountProps`/`State`/`Actions`), `ThreadWorkspace` + thread-chat components, dashboard composites (`DeltaBadge`, `StatCard`, `EmptyState`, `SettingsSection`/`SettingsRow`/`DangerZone`), the query-branch trio `QueryState` / `LoadingState` / `ErrorState`, `createBasaltQueryClient` / `unwrap` / `toErrorMessage` / `errorStatus` / `BasaltQueryDevtools` (C1: absorbed from the dropped `./query`), `ConnectivityProvider` (auto-mounted) / `useConnectivity` / `ConnectivityIndicator` (C1: absorbed from the dropped `./connectivity`), shell types — the root entry still re-exports the thread-chat components; `./agent-chat` takes the same components standalone, without `BasaltProvider`, the shell, or the dashboard composites |
-| `./charts`          | **free** | `CartesianChart` + visx primitives, kinds, sparklines, hooks, token re-exports                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| `./tokens`          | **free** | `VX` token refs, `buildPaletteCss`, `defineSeries`, `seriesTokens`, `groupTokens`, `alpha`, `ColorPair` / `SeriesMap` types                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| `./theme-lab`       | coupled  | `ThemeLabControls`, `applyOverrides`, `loadOverrides`, `COLOR_GROUPS` for live theme inspection                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| `./vite`            | —        | `basaltViteConfig(opts)` — Vite preset for basalt-ui consumer apps; `basaltAppPlugin(opts)` — PWA head, manifest, and icon metadata derived from the token palette                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| `./guard`           | **free** | `checkSource`, `GUARD_RULES`, `Finding` types — the headless theme-guard core; plus the annotation reader `--audit-allows` is built on: `findAllowAnnotations`, `neutralizeAllowAnnotation`, `NEUTRALIZED_ALLOW_TOKEN`, `PLUGIN_RULE_IDS`, `AllowAnnotationSite`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| `./format`          | **free** | `Intl`-backed, Mantine-free, React-free formatting: `money`/`percent`/`integer`/`compact`/`deltaPct`, `duration`/`durationClock`/`clock`/`weekday`/`relativeTime`, `km`/`kcal`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| `./router-tanstack` | **free** | TanStack Router bridge: `defineNav`/`navGroup`/`navTarget`/`flattenNav` + `useNav` (→ `{ sections, mobileNav }`), `useBasaltNav` (active route), `useRouterBreadcrumbs`, and `createSearchStore` + the `field.*` vocabulary                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| `./forms`           | coupled  | Mantine form adapter: `useBasaltForm`, `inputProps`, `FormErrorSummary`, `useFormDraft` (Standard Schema)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| `./notifications`   | coupled  | Mantine notifications: `notify` helpers, typed registry, persisted history, `NotificationBell`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| `./commands`        | coupled  | Typed command bus + overlay controller, `toSpotlightActions`, `ShortcutsHelp`, `BasaltOverlays`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| `./data/table`      | coupled  | `BasaltDataTable` — sortable data table over TanStack Table, rendered with Mantine                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| `./data/virtual`    | coupled  | `BasaltVirtualList` — windowed virtual list over TanStack Virtual, rendered with Mantine                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| `./agent`           | **free** | Headless streaming layer (`useAgentStream`, `PartList`) + multi-thread `createThreadsStore` / `useAgentThreadRuns` / outcome seam                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| `./agent-chat`      | coupled  | Mantine-styled thread-chat components over `./agent`: `ThreadWorkspace`, `ThreadFeed` (`variant`/`renderRow`), `ThreadFeedRow` (inline-expanding Slack row, lazily mounted + kept mounted), `ThreadOutcomeCard`, `ThreadDetailPanel`, `Composer`, `ThreadTranscript` (`groupConsecutive`/`affordances`/`virtualize` — windowed transcripts open at the newest message unless `initialScroll: 'start'`; `virtualize` is enabled by the optional `@tanstack/react-virtual` peer, absent it degrades to an unwindowed, height-bound pane), `threadPartRenderers` — **requires `motion`**, not merely an optional peer; see [Requirements](#requirements)                                                                                                                                                                                                                                                                                                                                                                      |
-| `./content`         | coupled  | `Prose`, `CodeBlock`, `Callout`, `TableOfContents`, `ReadingProgress`, `Markdown`, `MermaidDiagram`, `ArticleLayout`, `ArticleCard` / `ArticleGrid`, `GuideLink` / `GuideDrawer`, `mdxComponents`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| `./controls`        | coupled  | The control tier: `FilterSet` + the `FieldHandle`-bound filters (`RangeFilter`/`CompareFilter`/`SelectFilter`/`MultiSelectFilter`/`NumberFilter`/`SearchFilter`/`ToggleFilter`), `ViewTabs`, `ActionGroup`/`OverflowMenu`/`SyncButton`, plus the aside's `PanelRow`/`SliderControl` row primitives — `pill`/`sheet`/`panel` surfaces, picked by the home, never a prop                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| `./controls-dates`  | coupled  | `DateRangePicker` — the `@mantine/dates` implementation of `RangeFilter`'s `customPicker` seam; its own subpath so `./controls` resolves and renders with no `@mantine/dates` installed                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| `./state`           | **free** | createPersistedState (versioned localStorage) + the store field vocabulary (field.enum/multi/range/number/boolean/string, FieldHandle, lanes) + createLocalStore, the router-free store — Mantine-free state primitives                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| `./styles.css`      | —        | `@layer basalt` base styles, iOS input safety net, font stack                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| `./tokens.css`      | **free** | Prebuilt `--vx-*` stylesheet — the default `buildPaletteCss()` output as a plain file, for a consumer with a bundler but no React or Mantine. **With no bundler, use the `basalt-ui tokens:css` CLI instead** and commit the emitted file: importing this subpath needs bare-specifier resolution. See [`docs/FRAMEWORK-FREE.md`](https://github.com/jkrumm/basalt-ui/blob/master/docs/FRAMEWORK-FREE.md)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| `./configs/*`       | —        | Raw toolchain presets — oxlint, oxfmt, tsconfig (base/react-app/node), lefthook                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| `./llms.txt`        | —        | Machine-readable surface map — one entry per published subpath with import specifier, description, layer, and optional peers                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+15 subpaths. One import path per symbol; named exports only — no default exports.
 
-Named exports only — no default exports.
+| Subpath            | Purpose                                                                                                                                                                                                                                                                 |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `.`                | Wiring (`BasaltProvider`, `createBasaltTheme`, `createBasaltRouter`, `unwrap`), shell + nav (`BasaltShell`, `PageBar`, `PageAside`, `defineNav`, `navGroup`, `flattenNav`, `useBasaltNav`), dashboard atoms (`Section`, `StatCard`, `EmptyState`, `SettingsSection`, …) |
+| `./tokens`         | **Mantine-free.** `VX` token refs, `alpha`, `defineSeries`, `seriesTokens`, `groupTokens`, `buildPaletteCss`, layout (`BP`, `p`, `CONTAINER_*`)                                                                                                                         |
+| `./charts`         | **Mantine-free.** `CartesianChart` + visx primitives, kinds, sparklines, hooks                                                                                                                                                                                          |
+| `./controls`       | `FilterSet` + the `FieldHandle`-bound filters, `ViewTabs`, `SyncButton`, `FormRow`, `FormGroup`                                                                                                                                                                         |
+| `./controls-dates` | `DateRangePicker` — its own subpath so `./controls` resolves with no `@mantine/dates`                                                                                                                                                                                   |
+| `./forms`          | `useBasaltForm`, `inputProps`, `fieldKey` on `@mantine/form`                                                                                                                                                                                                            |
+| `./state`          | `field`, `createSearchStore`, `createLocalStore`, `createPersistedState`                                                                                                                                                                                                |
+| `./table`          | `BasaltDataTable`, `createColumnHelper<Row>()` over TanStack Table                                                                                                                                                                                                      |
+| `./format`         | `Intl`-backed, React-free formatting: `integer`, `money`, `percent`, `durationClock`, `relativeTime`, `weekday`, `km`, `kcal`                                                                                                                                           |
+| `./commands`       | `defineCommands`, `defineOverlays`, `overlays`, `setColorScheme`, `toggleSidebar`, `ShortcutsHelp`, `defineNotifications`, `emit`, `NotificationBell`                                                                                                                   |
+| `./agent`          | Streaming-chat runtime (`aiSdkTransport`, `useAgentThreadRuns`, `parseAgentPart`) and its Mantine chat UI (`ThreadFeed`, `ThreadFeedRow`, `Composer`, `ToolChip`)                                                                                                       |
+| `./content`        | `Prose`, `Markdown`, `Callout`, `TableOfContents`, `ArticleLayout`, `GuideLink`                                                                                                                                                                                         |
+| `./vite`           | `basaltViteConfig(opts)` preset, `basaltAppPlugin(opts)` PWA head / manifest / icons                                                                                                                                                                                    |
+| `./styles.css`     | The one stylesheet: `@layer basalt` base styles, iOS input floor, fonts                                                                                                                                                                                                 |
+| `./configs/*`      | Raw toolchain presets — oxlint, oxfmt, tsconfig (base/react-app/node), lefthook                                                                                                                                                                                         |
+
+The theme lab and the dev dock are mounted by `BasaltProvider` in dev only; `basalt-ui tokens:css`
+emits the prebuilt `--vx-*` stylesheet. Every dropped 1.x subpath and its new home:
+[`MIGRATING.md`](./MIGRATING.md) § 2.0.0.
 
 ---
 
@@ -513,87 +490,26 @@ It resolves ahead of the `xTicks` COUNT, which is unchanged; omit both and ticks
 Reach for values on a dense time axis — the tick chooser appends the final key unconditionally, so
 a count that misses the last index collides two labels at the right edge at every count.
 
-### Query — `createBasaltQueryClient` / `unwrap` (root barrel)
+### Query — `unwrap` (root barrel)
 
-`./query` was dropped in 1.29.0 (C1 consolidation) — its two exports moved onto the root barrel,
-which already requires `@tanstack/react-query` as a peer. TanStack itself
-(`QueryClientProvider`, hooks, `queryOptions`) is imported straight from `@tanstack/react-query`,
-never re-exported by basalt.
-
-```bash
-bun add @tanstack/react-query @tanstack/react-query-devtools
-```
+`createBasaltRouter` owns the `QueryClient` (one per call, `context.queryClient`); there is no
+separate client factory. `unwrap` turns an Eden-style `{ data, error }` envelope into a thrown error
+so `useQuery` sees it. TanStack itself (`useQuery`, `queryOptions`) is imported straight from
+`@tanstack/react-query`, never re-exported by basalt.
 
 ```tsx
-import { createBasaltQueryClient } from 'basalt-ui'
-import { QueryClientProvider } from '@tanstack/react-query'
-
-const [client] = useState(() => createBasaltQueryClient())
 // queryFn: () => unwrap(api.users.get())
 ```
 
-`toErrorMessage(err, fallback?)` and `errorStatus(err)` also live on the root barrel — decode an
-unknown thrown value into something renderable, folding an HTTP status into the fallback when the
-body decodes to nothing usable (`''`, `'{}'`, `'[object Object]'`, …). `BasaltQueryDevtools` (lazy)
-is there too.
+Dev only: the dock `BasaltProvider` mounts holds the router and query devtools; open them from
+Spotlight (`dev.router`, `dev.query`, `dev.theme`). Install the optional
+`@tanstack/react-router-devtools` / `@tanstack/react-query-devtools` to get those panels.
 
-#### Rendering a query — `QueryState`
-
-```tsx
-import { QueryState } from 'basalt-ui'
-
-function Library() {
-  const q = useQuery(imageQueries.list()) // { data, isError, error, fetchStatus, refetch }
-  return (
-    <QueryState
-      query={q}
-      variant="page" // or "section"
-      errorTitle="Could not load images"
-      errorFallback="The request failed."
-      errorAction={<Button onClick={openSupport}>Get help</Button>}
-      empty={{ title: 'No images yet', description: 'Upload one to get started.' }}
-      isEmpty={(d) => d.items.length === 0}
-    >
-      {(data) => <ImageGrid items={data.items} />}
-    </QueryState>
-  )
-}
-```
-
-**Ship it instead of writing the switch yourself.** Rendering only the empty branch is the mistake
-this exists to retire: a consumer's library showed `No images` on a **500** and a share detail
-showed `Share not found` on a dropped connection, because "nothing here" is what an app renders when
-nobody wrote the other three branches. `LoadingState` and `ErrorState` ship beside it as the escape
-hatch for a page that must place its branches in different DOM positions.
-
-Branch precedence, in the order it is evaluated:
-
-| Condition                           | Renders                                                                   |
-| ----------------------------------- | ------------------------------------------------------------------------- |
-| `isError` and no `data`             | `ErrorState` — `errorTitle` / `errorFallback` / `errorAction`, with Retry |
-| no `data`, `fetchStatus === 'idle'` | the `empty` copy (or nothing, if `empty` is omitted)                      |
-| no `data`                           | `loading`, else `LoadingState`                                            |
-| `data`, `isEmpty(data)`             | the `empty` copy                                                          |
-| `data`                              | `children` — a node, or `(data) => node`                                  |
-| `data` **and** `isError`            | a section-variant _stale data_ banner above `children`                    |
-
-The stale-data banner carries its own fixed copy (`Showing cached data`); `errorTitle` /
-`errorFallback` / `errorAction` apply to the no-data error branch only.
-
-`query` is typed as a five-field structural subset, not TanStack's `UseQueryResult` — a
-hand-composed object is legal, and basalt couples to no query-library version. That subset removes
-the compiler, so **the shape is checked at runtime and a missing `isError` throws**, naming the
-field. That is deliberate: a missing `isError` is exactly the bug above, and degrading quietly would
-reproduce it.
-
-### `./router-tanstack` — TanStack Router bridge
-
-```bash
-bun add @tanstack/react-router
-```
+### Nav and stores — `.` and `./state`
 
 ```tsx
-import { createSearchStore, defineNav, field, useNav } from 'basalt-ui/router-tanstack'
+import { defineNav, navGroup, useNav } from 'basalt-ui'
+import { createSearchStore, field } from 'basalt-ui/state'
 
 export const NAV = defineNav({
   groups: [/* navGroup(...) */],
@@ -607,8 +523,9 @@ const nav = useNav(NAV) // spread onto <BasaltShell {...nav} />
 // route: validateSearch: analytics.validateSearch — nav link: search: analytics.linkSearch
 ```
 
-`useBasaltNav` (active route) and `useRouterBreadcrumbs` ship here too. A control binds to
-`analytics.field.range`, never to `value`/`onChange` — see `basalt-ui/controls`.
+`defineNav` needs the `Register` augmentation from `main.tsx` (it validates links against the route
+tree); `useBasaltNav` returns the active route. A control binds to `analytics.field.range`, never to
+`value`/`onChange` — see `basalt-ui/controls`.
 
 ### `./forms` — Mantine form adapter
 
@@ -617,53 +534,39 @@ bun add @mantine/form
 ```
 
 ```tsx
-import { useBasaltForm, inputProps, FormErrorSummary } from 'basalt-ui/forms'
+import { useBasaltForm, inputProps } from 'basalt-ui/forms'
 
 const form = useBasaltForm({ initialValues: { email: '' } })
 ```
 
-### `./notifications` — Mantine notifications
+### `./commands` — command bus, overlays, notifications
 
 ```bash
-bun add @mantine/notifications
+bun add @tanstack/react-hotkeys
 ```
+
+`BasaltProvider` mounts `ModalsProvider`, `Notifications` and `Spotlight`, and binds every
+`defineCommands` shortcut (the hotkeys runtime loads lazily; absent the peer, shortcuts simply do not
+bind). The subpath is only what an app declares and calls:
 
 ```tsx
-import { notifySuccess, notifyError } from 'basalt-ui/notifications'
-import { BasaltOverlays } from 'basalt-ui/commands'
-
-// in main.tsx: <BasaltProvider><BasaltOverlays notifications><App /></BasaltOverlays></BasaltProvider>
-notifySuccess('Saved')
-notifyError('Upload failed', { title: 'Error' })
-```
-
-### `./commands` — command bus + Spotlight overlay
-
-```bash
-bun add @mantine/spotlight @mantine/modals @mantine/notifications @tanstack/react-hotkeys
-```
-
-```tsx
-import { defineCommands, runCommand, BasaltOverlays } from 'basalt-ui/commands'
+import { defineCommands, defineNotifications, emit, overlays } from 'basalt-ui/commands'
 
 export const COMMANDS = defineCommands({
   'file:save': { label: 'Save', group: 'File', shortcut: 'Mod+S', run: () => save() },
 })
-// in main.tsx: <BasaltProvider><BasaltOverlays><App /></BasaltOverlays></BasaltProvider>
-runCommand('file:save')
+// commands appear in Spotlight (Mod+K) alongside the `defineNav` destinations
+await overlays.confirm({ title: 'Discard draft?', onConfirm: () => reset() })
 ```
 
-### `./data/table` + `./data/virtual` — TanStack Table + Virtual
-
-Two subpaths, one per peer group (C1: there is no bare `./data` barrel) — install only what you
-use.
+### `./table` — TanStack Table
 
 ```bash
-bun add @tanstack/react-table @tanstack/react-virtual
+bun add @tanstack/react-table
 ```
 
 ```tsx
-import { BasaltDataTable, createColumnHelper } from 'basalt-ui/data/table'
+import { BasaltDataTable, createColumnHelper } from 'basalt-ui/table'
 
 const col = createColumnHelper<Row>()
 const columns = [
@@ -692,26 +595,6 @@ const columns = [
 longer. Column defs cost more than JSX rows when every cell is bespoke. Adopt the props for what
 they actually buy — the `type="native"` footgun, alignment stated once instead of on both `th` and
 `td`, and sorting/filtering/pagination owned by basalt — not for a line count.
-
-#### `./data/table` — BasaltDataTable only
-
-```bash
-bun add @tanstack/react-table
-```
-
-```tsx
-import { BasaltDataTable, createColumnHelper } from 'basalt-ui/data/table'
-```
-
-#### `./data/virtual` — BasaltVirtualList only
-
-```bash
-bun add @tanstack/react-virtual
-```
-
-```tsx
-import { BasaltVirtualList } from 'basalt-ui/data/virtual'
-```
 
 ### `./content` — prose + markdown
 
@@ -751,49 +634,23 @@ otherwise exfiltrate via a remote image URL. Any surface rendering agent/model o
 ### `./agent` — streaming-chat layer
 
 ```bash
-bun add ai use-stick-to-bottom
+bun add ai @ai-sdk/provider motion use-stick-to-bottom
 ```
 
-Ships no markdown renderer — `agent/** -> content` is lint-blocked by design, so `PartList` takes
-a consumer-supplied `components.text`. Basalt's own is [`./content`](#content--prose--markdown)'s
-`Markdown`, already wired in by `ThreadWorkspace`.
-
-Single conversation — headless streaming primitives, `aiSdkTransport` (recommended default, optional
-peer: `ai`):
+`aiSdkTransport` (over the `ai` package) is the one transport and `useAgentThreadRuns` the one
+runner: it streams one turn per thread, concurrently, over a consumer-owned `ThreadsStore`. The chat
+UI (`ThreadFeed`, `ThreadFeedRow`, `Composer`, `ToolChip`) ships from the same subpath.
 
 ```tsx
-import { useAgentStream, aiSdkTransport, PartList } from 'basalt-ui/agent'
+import { aiSdkTransport, useAgentThreadRuns, ThreadFeed, Composer } from 'basalt-ui/agent'
 
 const transport = aiSdkTransport({ api: '/api/chat' })
-const { parts, send, status } = useAgentStream({ transport })
+const { runs, start, stop } = useAgentThreadRuns({ transport, store, resolveOutcome })
 ```
 
-Many short chats — the `ThreadWorkspace` composite (a distilled-outcome feed + a detail panel).
-The headless multi-thread layer lives in `./agent`; the Mantine chrome ships from
-`basalt-ui/agent-chat` (also re-exported from the root entry):
-
-```tsx
-import { ThreadWorkspace } from 'basalt-ui/agent-chat'
-import { createThreadsStore, heuristicOutcome } from 'basalt-ui/agent'
-
-// Once at module scope:
-const useThreads = createThreadsStore({ key: 'main-threads', version: 1 })
-
-function Inbox() {
-  return (
-    <ThreadWorkspace
-      useThreads={useThreads}
-      transport={transport}
-      resolveOutcome={heuristicOutcome} // swap for your LLM-backed {title, summary} resolver
-      newThreadPlaceholder="Ask anything…"
-    />
-  )
-}
-```
-
-`useAgentThreadRuns` streams each thread concurrently in the background; the feed shows only the
-distilled `{ title, summary }` outcome, never the raw prompt or thinking. See
-`agent/rules/basalt-agent.md` for the full doctrine.
+The feed shows only the distilled `{ title, summary }` outcome, never the raw prompt or thinking. It
+ships no markdown renderer — pass `./content`'s `Markdown` where a part needs one. Doctrine:
+`agent/rules/basalt-agent.md`.
 
 ### `./vite` — PWA / head metadata (optional peer)
 
@@ -839,7 +696,7 @@ declare module 'basalt-ui' {
 }
 ```
 
-Current slots: `series` (read by `./charts` + `./tokens`), `commands` (read by `./commands`), and `overlays` / `notifications` (read by `./commands` / `./notifications`). An un-augmented slot defaults to a never-keyed `{}` — augment only the slots you use.
+Current slots: `series` (read by `./charts` + `./tokens`), `commands` (read by `./commands`), and `overlays` / `notifications` (both read by `./commands`). An un-augmented slot defaults to a never-keyed `{}` — augment only the slots you use.
 
 ---
 
@@ -902,27 +759,9 @@ straight back into it.
 
 ## Requirements
 
-| Peer                      | Version        | Notes                                                                                                                                                                                                                                         |
-| ------------------------- | -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `react` / `react-dom`     | `^19`          | required                                                                                                                                                                                                                                      |
-| `@mantine/core`           | `^9.3`         | required                                                                                                                                                                                                                                      |
-| `@mantine/hooks`          | `^9.3`         | required                                                                                                                                                                                                                                      |
-| `@tanstack/react-query`   | —              | required for the root `.` entry — `BasaltProvider` hard-requires it at build time; NOT required by `./agent-chat`, which doesn't touch it                                                                                                     |
-| `motion`                  | `12.42.0`      | required for both the root `.` entry and `./agent-chat` — both export `ThreadFeed`/`ThreadDetailPanel` (`agent-chat/thread-feed.tsx` / `thread-detail-panel.tsx`), which import `motion/react` eagerly; the root's `ThemeToggle` also uses it |
-| `@tanstack/react-virtual` | `>=3.13.26 <4` | optional for `./agent-chat` — enables `ThreadTranscript`'s `virtualize` windowing mode via a lazy `import()`; absent it degrades to an unwindowed, height-bound pane                                                                          |
-
-`remend` was required through 1.10.x — `content/markdown.tsx` imported it at the top of the module,
-so both the root `.` entry and `./agent-chat`'s `ThreadWorkspace`/`ThreadTranscript` hard-required it
-transitively. It is now a genuinely optional, lazy peer (dynamic `import()`); see
-[`./content`](#content--prose--markdown) below.
-
-`./agent-chat`'s `optionalPeers` in `llms.txt`/`surfaces.ts` lists `remend`, `motion`, and
-`@tanstack/react-virtual` (npm has no per-subpath optionality in `peerDependenciesMeta`) — only
-`motion` needs to be treated as required when installing just this subpath; `remend` and
-`@tanstack/react-virtual` are accurately optional there too, both reached only through a lazy
-`import()` (the latter behind `ThreadTranscript`'s `virtualize` option).
-
-Optional peer batteries and their packages are listed per battery above.
+Peers by class — required, subpath-required and optional — are listed under
+[Install](#1-install); exact ranges are in `packages/basalt-ui/package.json`. Optional peers that a
+subpath uses are named in that subpath's section above.
 
 ---
 

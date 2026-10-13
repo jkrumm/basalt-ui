@@ -61,10 +61,12 @@ describe('the default theme is unchanged by the radius option existing', () => {
 
 describe('a malformed radius level throws through createBasaltTheme', () => {
   test('rejects a non-integer', () => {
+    // @ts-expect-error — the type rejects it first; the runtime guard backs a JS caller
     expect(() => createBasaltTheme(undefined, { radius: 1.5 })).toThrow()
   })
 
   test('rejects an out-of-range level', () => {
+    // @ts-expect-error — the type rejects it first; the runtime guard backs a JS caller
     expect(() => createBasaltTheme(undefined, { radius: 10 })).toThrow()
   })
 })

@@ -25,21 +25,22 @@
 import { Checkbox, Stack } from '@mantine/core'
 import { useState } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
-import type { BasaltProps } from '../common/props'
 import { assertRequiredProps } from '../common/validate'
-import type { FieldHandle, MultiField } from '../state'
+import type { FieldHandle } from '../state'
+import type { MultiField } from '../state/fields'
 import type { FilterOption } from './select-filter'
 import classes from './controls.module.css'
 import { POPOVER_ROW_HIT_GAP, useFilterRegistration, useFilterSurface } from './filter-context'
 import { FilterClearButton, FilterPill } from './filter-pill'
 import { CheckGlyph, useControlName } from './filter-sheet'
 import { PanelRow } from './panel-row'
+import type { UncontrolledProps } from './uncontrolled'
 
 /** How many facet rows a panel shows before the rest fold behind `Show N more`. Six is the point at
  *  which a facet column stops being a list you scan and starts being one you scroll. */
 const PANEL_FACET_MAX = 6
 
-export type MultiSelectFilterProps<T extends string> = BasaltProps & {
+export type MultiSelectFilterProps<T extends string> = UncontrolledProps & {
   readonly field: FieldHandle<MultiField<T>>
   readonly label: string
   readonly icon?: ReactNode
@@ -75,7 +76,7 @@ export type MultiSelectFilterProps<T extends string> = BasaltProps & {
 
 export function MultiSelectFilter<T extends string>(props: MultiSelectFilterProps<T>): ReactNode {
   // F-ERR-1 — without this a missing `field` surfaces as `undefined is not an object
-  // (evaluating 'field.use')`, caught by `BasaltErrorBoundary`.
+  // (evaluating 'field.use')`, caught by `RootBoundary`.
   assertRequiredProps('MultiSelectFilter', props, ['field'], {
     field: 'bind it to a store field (`store.field.<name>`), never a value/onChange pair.',
   })

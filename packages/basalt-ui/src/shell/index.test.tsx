@@ -11,7 +11,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { ActionGroup } from '../controls/actions'
 import { baseTheme } from '../theme'
-import { pxRem } from '../tokens'
+import { pxRem } from '../tokens/core'
 import { SPACE_STEP } from '../tokens/palette'
 import { PageAside } from './page-aside'
 import { BasaltShell, PageBar } from './index'
@@ -577,7 +577,7 @@ describe('BasaltShell globalActions mobile policy', () => {
     render(
       <MantineProvider>
         <BasaltShell brand={BRAND} sections={ONE_SECTION} globalActions={ACTIONS}>
-          <PageBar actions={{ secondary: [{ key: 'export', label: 'Export' }] }} />
+          <PageBar actions={[{ key: 'export', label: 'Export', primary: true }]} />
         </BasaltShell>
       </MantineProvider>,
     )
@@ -592,7 +592,7 @@ describe('BasaltShell globalActions mobile policy', () => {
       <MantineProvider>
         <BasaltShell brand={BRAND} sections={ONE_SECTION} globalActions={ACTIONS}>
           <PageBar
-            actions={{ secondary: [{ key: 'export', label: 'Export CSV' }] }}
+            actions={[{ key: 'export', label: 'Export CSV', primary: true }]}
             filtersEnd={[{ key: 'metrics', label: 'Manage metrics' }]}
           />
         </BasaltShell>
@@ -613,7 +613,7 @@ describe('BasaltShell globalActions mobile policy', () => {
       <MantineProvider>
         <BasaltShell brand={BRAND} sections={ONE_SECTION} globalActions={ACTIONS}>
           <PageBar
-            actions={{ secondary: [{ key: 'export', label: 'Export CSV' }] }}
+            actions={[{ key: 'export', label: 'Export CSV', primary: true }]}
             filtersEnd={[{ key: 'metrics', label: 'Manage metrics' }]}
           />
         </BasaltShell>

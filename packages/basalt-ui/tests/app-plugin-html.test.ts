@@ -18,7 +18,8 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { build } from 'vite'
 import { basaltAppPlugin } from '../src/vite'
-import type { BasaltAppOptions } from '../src/vite'
+
+type BasaltAppOptions = Parameters<typeof basaltAppPlugin>[0]
 
 /**
  * A realistic app shell — argo's, reduced to its shape: the charset, a title, and the boot script

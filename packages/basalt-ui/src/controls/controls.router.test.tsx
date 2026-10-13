@@ -21,7 +21,6 @@ import {
 } from '@tanstack/react-router'
 import { field } from '../state'
 import { createSearchStore } from '../router-tanstack/search-store'
-import { COMPARE_LABELS, COMPARE_VALUES, CompareFilter } from './compare-filter'
 import { FilterSetScope } from './filter-context'
 import { FilterSet } from './filter-set'
 import { MultiSelectFilter } from './multi-select-filter'
@@ -327,83 +326,6 @@ describe('SelectFilter — options as a runtime catalogue', () => {
     expect(
       screen.getByRole('radio', { name: 'Retired app', hidden: true }).hasAttribute('disabled'),
     ).toBe(true)
-  })
-})
-
-describe('CompareFilter', () => {
-  const store = createSearchStore({
-    key: 'c-compare',
-    fields: { compare: field.enum(['none', 'previous', 'year'], 'none') },
-  }).labels({ compare: { none: 'No comparison', previous: 'Previous period', year: 'Last year' } })
-
-  test('reads the selected basis at the fallback too, and writes the chosen one', async () => {
-    const router = await mountPage({
-      validateSearch: store.validateSearch,
-      entry: '/dashboard',
-      Page: () => <CompareFilter field={store.field.compare} />,
-    })
-
-    // At the fallback the pill reads `No comparison`, not `Compare` — the exact regression the
-    // playground's bar showed, where the pill said `Compare` while the URL said `previous`.
-    await openPill('No comparison')
-    fireEvent.click(screen.getByRole('radio', { name: 'Previous period', hidden: true }))
-
-    await waitFor(() => {
-      expect(search(router)['compare']).toBe('previous')
-    })
-    expect(screen.getByRole('button', { name: 'Previous period' })).toBeDefined()
-    expect(screen.queryByRole('button', { name: 'Compare' })).toBeNull()
-  })
-
-  test('a consumer label wins over basalt’s default for the same value', async () => {
-    // This store labels `year` as `Last year`. basalt's default is `Same period last year`; a
-    // deliberate label is not something the framework overrides.
-    await mountPage({
-      validateSearch: store.validateSearch,
-      entry: '/dashboard?compare=year',
-      Page: () => <CompareFilter field={store.field.compare} />,
-    })
-    expect(screen.getByRole('button', { name: 'Last year' })).toBeDefined()
-  })
-
-  test('label= still names the POPOVER, which is the only thing it names now', async () => {
-    await mountPage({
-      validateSearch: store.validateSearch,
-      entry: '/dashboard',
-      Page: () => <CompareFilter field={store.field.compare} />,
-    })
-    await openPill('No comparison')
-    expect(screen.getByRole('radiogroup', { name: 'Compare', hidden: true })).toBeDefined()
-  })
-})
-
-describe('CompareFilter — the three option labels are basalt’s, not each app’s', () => {
-  // An UNLABELLED field: `field.enum` labels each option with the raw value until `store.labels()`
-  // is called, so this popover used to read `none` / `previous` / `year` and every consumer wrote
-  // the same three strings itself. `COMPARE_LABELS` is the default the control now supplies.
-  const store = createSearchStore({
-    key: 'c-compare-unlabelled',
-    fields: { compare: field.enum(['none', 'previous', 'year'], 'none') },
-  })
-
-  test('an unlabelled field still renders the three spec’d strings', async () => {
-    await mountPage({
-      validateSearch: store.validateSearch,
-      entry: '/dashboard',
-      Page: () => <CompareFilter field={store.field.compare} />,
-    })
-
-    expect(COMPARE_LABELS).toEqual({
-      none: 'No comparison',
-      previous: 'Previous period',
-      year: 'Same period last year',
-    })
-
-    await openPill('No comparison')
-    for (const value of COMPARE_VALUES) {
-      expect(screen.getByRole('radio', { name: COMPARE_LABELS[value], hidden: true })).toBeDefined()
-    }
-    expect(screen.queryByRole('radio', { name: 'previous', hidden: true })).toBeNull()
   })
 })
 

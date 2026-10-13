@@ -83,9 +83,9 @@ describe('PageBar inside a BasaltShell', () => {
       <MantineProvider>
         <BasaltShell brand={BRAND} sections={ONE_SECTION}>
           <PageBar
-            actions={{
-              primary: { key: 'row1', kind: 'custom', node: <span data-testid="row1" /> },
-            }}
+            actions={[
+              { key: 'row1', kind: 'custom', node: <span data-testid="row1" />, primary: true },
+            ]}
             tabs={<span data-testid="row2" />}
           />
         </BasaltShell>
@@ -491,7 +491,7 @@ describe('the aside pill, and the row 2 it needs to exist at all', () => {
     render(
       <MantineProvider>
         <BasaltShell brand={BRAND} sections={ONE_SECTION}>
-          <PageBar actions={{ primary: { key: 'new', label: 'New' } }} />
+          <PageBar actions={[{ key: 'new', label: 'New', primary: true }]} />
           <PageAside title="Inspector">
             <div data-testid="aside-child">Body</div>
           </PageAside>

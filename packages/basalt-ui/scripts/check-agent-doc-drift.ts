@@ -29,6 +29,11 @@
  * stale export nor a removed API, so A/B/C all miss it; the path is hand-listed with its new home
  * and scanned across `agent/**`, `src/**` comments and the shipped `configs/**` plugin.
  *
+ * Check E — import specifiers. Every `basalt-ui[/sub]` specifier inside a fenced code block of an
+ * `agent/**` doc must resolve against `package.json` `exports` (`basalt-ui` ↔ `.`, `basalt-ui/x` ↔
+ * `./x`, `./configs/*` is a glob). A folded or dropped subpath (`basalt-ui/notifications`) keeps
+ * compiling in prose and fails only in the consumer's editor, which is how it shipped before.
+ *
  * Repo-local only: `scripts/` is absent from package.json's `files`, so this reads
  * non-shipped state (`scripts/export-surface.json`) and must not be reachable from a consumer's
  * `node_modules/basalt-ui` — unlike `check-coverage`, it does not belong behind the shipped CLI.
@@ -274,7 +279,7 @@ export const CHECK_B_SRC_ALLOWLIST: ReadonlySet<string> = new Set([
   'src/surfaces.ts::ArticleFilterBar',
   'src/shell/page-bar.tsx::PageActions',
   'src/content/index.ts::ArticleFilterBar',
-  'src/data/data-table.tsx::toolbarActions',
+  'src/table/data-table.tsx::toolbarActions',
   'src/charts/cursor/scope.tsx::ChartHoverSync',
   'src/charts/cursor/store.ts::ChartHoverSync',
   'src/charts/primitives/ChartTooltip.tsx::useChartTooltip',
@@ -449,6 +454,61 @@ export function checkC(mdFiles: readonly string[], actual: number): CheckCFailur
   return failures
 }
 
+// ── Check E: import specifiers in fenced code blocks resolve against package.json exports ──────
+
+/** The `exports` keys of package.json (`.`, `./charts`, …, `./configs/*`). */
+export function collectExportKeys(): string[] {
+  const pkg = JSON.parse(readFileSync(join(pkgRoot, 'package.json'), 'utf8')) as {
+    exports: Record<string, unknown>
+  }
+  return Object.keys(pkg.exports)
+}
+
+const FENCE_RE = /^\s*```/
+const SPECIFIER_RE = /(['"])(basalt-ui(?:\/[^'"\s]*)?)\1/g
+
+function resolvesToExport(specifier: string, exportKeys: readonly string[]): boolean {
+  const key = specifier === 'basalt-ui' ? '.' : `./${specifier.slice('basalt-ui/'.length)}`
+  return exportKeys.some((exportKey) =>
+    exportKey.endsWith('/*') ? key.startsWith(exportKey.slice(0, -1)) : exportKey === key,
+  )
+}
+
+export type CheckEFailure = { line: number; specifier: string }
+
+/** Dead `basalt-ui[/sub]` specifiers inside the fenced code blocks of one markdown document. */
+export function findDeadSpecifiers(
+  markdown: string,
+  exportKeys: readonly string[],
+): CheckEFailure[] {
+  const failures: CheckEFailure[] = []
+  let inFence = false
+  markdown.split('\n').forEach((lineText, idx) => {
+    if (FENCE_RE.test(lineText)) {
+      inFence = !inFence
+      return
+    }
+    if (!inFence) return
+    for (const match of lineText.matchAll(SPECIFIER_RE)) {
+      const specifier = match[2] ?? ''
+      if (!resolvesToExport(specifier, exportKeys)) failures.push({ line: idx + 1, specifier })
+    }
+  })
+  return failures
+}
+
+export function checkE(
+  mdFiles: readonly string[],
+  exportKeys: readonly string[],
+): (CheckEFailure & { file: string })[] {
+  return mdFiles.flatMap((file) =>
+    findDeadSpecifiers(readFileSync(file, 'utf8'), exportKeys).map((f) => ({
+      ...f,
+      file: relative(pkgRoot, file),
+    })),
+  )
+}
+
 // ── main ──────────────────────────────────────────────────────────────────────
 
 function main(): void {
@@ -464,6 +524,7 @@ function main(): void {
   // `repoMdFiles` already contains `mdFiles`; configs `.js` are raw (their message strings are
   // consumer-visible), only `src/**` goes through the comment mask.
   const dFailures = checkD([...repoMdFiles, ...configsJsFiles], srcTsFiles)
+  const eFailures = checkE(mdFiles, collectExportKeys())
   const selfFailures = [
     ...checkDenylistIsGenuinelyRemoved(validNames),
     ...checkMasksUrlSlashesCorrectly(),
@@ -486,6 +547,10 @@ function main(): void {
     ),
     ...dFailures.map(
       (f) => `${f.file}:${f.line}: cites deleted doc '${f.doc}' — use ${f.replacement} instead`,
+    ),
+    ...eFailures.map(
+      (f) =>
+        `${f.file}:${f.line}: imports '${f.specifier}', which package.json 'exports' does not resolve`,
     ),
     ...selfFailures,
   ]

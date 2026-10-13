@@ -1,5 +1,5 @@
 /**
- * headingSlug + readingTime — small, pure, zero-dep utils for the content surface.
+ * headingSlug + SlugTracker — small, pure, zero-dep utils for the content surface.
  *
  * `headingSlug` follows the github-slugger algorithm (lowercase, strip punctuation, spaces → `-`)
  * so headings authored in `<Prose>`, markdown, or MDX land on the SAME anchor ids GitHub itself
@@ -43,19 +43,4 @@ export class SlugTracker {
     this.counts.set(base, seen + 1)
     return seen === 0 ? base : `${base}-${seen}`
   }
-}
-
-/** The distilled reading-time estimate for a body of text. */
-export type ReadingTime = {
-  readonly minutes: number
-  readonly words: number
-}
-
-const WORDS_PER_MINUTE = 225
-
-/** Estimate reading time at 225 wpm, rounded up to the nearest whole minute. */
-export function readingTime(text: string): ReadingTime {
-  const words = text.trim().split(WHITESPACE_RE).filter(Boolean).length
-  const minutes = Math.ceil(words / WORDS_PER_MINUTE)
-  return { minutes, words }
 }

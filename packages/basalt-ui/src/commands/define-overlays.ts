@@ -5,7 +5,7 @@
  * `overlays` imperative controller — unknown keys are tsc errors. The type slot gives the
  * compile-time key union; the module-level stash gives the runtime values.
  *
- * Uses @mantine/modals under the hood. ModalsProvider must be mounted (BasaltOverlays does this).
+ * Uses @mantine/modals under the hood. ModalsProvider must be mounted (BasaltProvider does this).
  *
  * @example
  * // overlays.ts (app-side)
@@ -26,7 +26,6 @@
  * overlays.open('nonexistent', {})                         // ✗ tsc error
  */
 import type { ReactNode } from 'react'
-import { useEffect } from 'react'
 import { missingLayer } from '../common/errors'
 import type { Slot } from '../register'
 
@@ -48,32 +47,22 @@ function loadModals(): Promise<ModalsSingleton | undefined> {
 // ── Modals-layer availability ─────────────────────────────────────────────────
 
 /**
- * How many `ModalsProvider`s are live right now — a COUNTER, not a flag, for the same reason
- * `notifications/mount-guard.ts` counts: two overlapping mounts are normal (a route swap mounts the
- * next `BasaltOverlays` before unmounting the previous one), and a last-write-wins boolean reports
- * the teardown of the OLD one as "no layer" while the new one is serving.
+ * How many `ModalsProvider`s are live right now — a COUNTER, not a flag: two overlapping mounts
+ * are normal (a route swap mounts the next provider before unmounting the previous one), and a
+ * last-write-wins boolean reports the teardown of the OLD one as "no layer" while the new one is
+ * serving.
  *
  * It is the availability test `overlays.confirm` runs, because `@mantine/modals`' imperative API is
  * a window event bus: with nothing subscribed the dialog never appears and the promise never
- * settles. The previous version read `BasaltOverlays`' own `modals` flag instead, which refused the
- * call whenever a mounted shell passed `modals={false}` — even though the consumer had mounted their
- * own `<ModalsProvider>`, which is the very remedy the error message names.
+ * settles.
  */
 let mountedModalsProviders = 0
 
 /**
- * Declare that a `@mantine/modals` `<ModalsProvider>` is mounted and serving, and get back the
- * function that retracts it. `BasaltOverlays` calls this for its own provider; a consumer mounting
- * the provider THEMSELVES (with `<BasaltOverlays modals={false} />`, or with no `BasaltOverlays` at
- * all) calls it too, or `overlays.confirm` cannot tell their provider from no provider and rejects.
- *
- * There is no way to detect the provider from outside React — its context is only readable through
- * `useModals()`, and `confirm` is an imperative call with no component to read it from. So the
- * registration is explicit.
- *
- * @example
- * useEffect(() => registerModalsProvider(), [])
- * // …beside your own <ModalsProvider> mount.
+ * Internal — `BasaltProvider` declares its `ModalsProvider` as live for as long as it is mounted,
+ * and gets back the function that retracts it. There is no way to detect the provider from outside
+ * React (its context is only readable through `useModals()`, and `confirm` is an imperative call),
+ * so the registration is explicit. Not on the `./commands` barrel.
  */
 export function registerModalsProvider(): () => void {
   mountedModalsProviders++
@@ -85,18 +74,6 @@ export function registerModalsProvider(): () => void {
     released = true
     mountedModalsProviders--
   }
-}
-
-/**
- * Internal — `BasaltOverlays` registers its OWN lazy `ModalsProvider` here, and only when it
- * actually renders one. Deliberately NOT on the `./commands` barrel (internal wiring only, same as
- * `notifications/mount-guard`); the consumer-facing half is {@link registerModalsProvider}.
- */
-export function useModalsLayer(enabled: boolean): void {
-  useEffect(() => {
-    if (!enabled) return
-    return registerModalsProvider()
-  }, [enabled])
 }
 
 // ── Overlay + OverlayMap ──────────────────────────────────────────────────────
@@ -267,7 +244,7 @@ async function confirm(options: ConfirmOptions): Promise<boolean> {
       missingLayer(
         'overlays.confirm',
         '@mantine/modals',
-        'install the @mantine/modals peer and mount <BasaltOverlays>',
+        'install the @mantine/modals peer and mount <BasaltProvider>',
       ),
     )
   }
@@ -276,8 +253,7 @@ async function confirm(options: ConfirmOptions): Promise<boolean> {
       missingLayer(
         'overlays.confirm',
         'a mounted <ModalsProvider>',
-        'drop `modals={false}` from <BasaltOverlays>, or mount <ModalsProvider> yourself and call ' +
-          'registerModalsProvider() from an effect for as long as it is up',
+        'mount <BasaltProvider> at the app root before calling it',
       ),
     )
   }

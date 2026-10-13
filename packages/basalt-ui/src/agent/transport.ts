@@ -1,7 +1,7 @@
 /**
- * AgentTransport — the injected seam between useAgentStream and a concrete backend client.
+ * AgentTransport — the injected seam between useAgentThreadRuns and a concrete backend client.
  *
- * The default transport path is Eden-native typed streaming (zero extra deps). The transport is
+ * The one shipped transport is `aiSdkTransport`. The transport is
  * generic over the part type and input shape so consumers can extend AgentPart with domain-specific
  * variants while keeping the hook interface unchanged.
  *
@@ -16,26 +16,14 @@
  * a concrete resumable backend (e.g. Redis-backed) is the consumer's responsibility. Transports
  * that don't support resumption simply omit `resume`.
  *
- * @example
- * // Server-side Elysia route (consumer's app — NOT basalt-ui):
- * app.post('/chat', async function* ({ body }): AsyncGenerator<AgentPart> {
- *   yield { type: 'text', text: 'Hello' }
- *   yield { type: 'text', text: ' world' }
- * })
- *
- * // Client-side wiring:
- * import { edenTransport } from 'basalt-ui/agent'
- * const transport = edenTransport<AgentPart>((input, signal) =>
- *   api.chat.post({ body: { message: input }, fetch: { signal } }),
- * )
  */
-import type { AgentPart, AgentPartDraft } from './parts'
+import type { AgentPartDraft } from './parts'
 
 // ── AgentTransport ────────────────────────────────────────────────────────────
 
 /**
  * The injected transport seam. `stream(input, signal, ctx)` returns an async generator of parts.
- * Implement this interface for any backend — Eden, fetch-based SSE, AI SDK, or a mock.
+ * Implement this interface for any backend — fetch-based SSE, AI SDK, or a mock.
  *
  * The default `TPart` is `AgentPartDraft` (not `AgentPart`): transports yield DRAFTS — `id`
  * optional — and the consuming hooks (or `withPartIds`) normalize a draft into a fully-identified
@@ -49,7 +37,7 @@ import type { AgentPart, AgentPartDraft } from './parts'
  * transport MAY use `ctx.messageId` as its outbound message id instead of minting a fresh one. The
  * param is optional and appended last so an existing two-arg transport keeps compiling unchanged —
  * only `useAgentThreadRuns.start()`/`retry()` pass it; a bare `stream(input, signal)` call (e.g.
- * `useAgentStream`, a hand-rolled caller) omits it and a transport falls back to minting its own.
+ * a hand-rolled caller) omits it and a transport falls back to minting its own.
  *
  * @example
  * // Minimal mock transport for tests / playground:
@@ -103,77 +91,4 @@ export function isResumable<TPart, TInput>(
     typeof t.resume === 'function' &&
     (t as Partial<ResumableAgentTransport<TPart, TInput>>).idempotentReplay === true
   )
-}
-
-// ── edenTransport ─────────────────────────────────────────────────────────────
-
-/**
- * Wraps a consumer's Eden async-generator call into an AgentTransport.
- *
- * The `call` parameter is the typed Eden client method — e.g. `api.chat.post`. Eden Treaty
- * resolves the streaming route as `AsyncGenerator<TPart>` when the server handler carries the
- * correct explicit return type annotation (no response schema — see Eden #231 doctrine).
- *
- * `stream(input, signal)` awaits the call, asserts no error, then yields from the data generator.
- * The optional AbortSignal is forwarded to the fetch layer via the `fetch: { signal }` option in
- * the Eden call (the consumer must pass it through — see example).
- *
- * The optional second argument, `resumeCall`, mirrors `call`'s shape but takes a `resumeToken`
- * instead of the original input — e.g. `api.chat.resume.post`. When provided, the returned
- * transport gets a `resume` method built the same way as `stream`. When omitted, the returned
- * object has NO `resume` key at all (not `resume: undefined`) — consumers that don't wire a
- * resumable backend get a transport that behaves exactly as before.
- *
- * `resumeCall` alone does NOT make the transport resumable per `isResumable` — pass
- * `{ idempotentReplay: true }` as the third argument to opt in EXPLICITLY once the server-side
- * `resumeCall` route is verified to re-emit every text/reasoning delta with an authoritative
- * `offset` (never a bare append). This is an opt-in, not an inference: a `resumeCall` whose deltas
- * aren't offset-accurate would double-render on replay if treated as resumable.
- *
- * @example
- * import { edenTransport, type AgentPart } from 'basalt-ui/agent'
- *
- * // api is the consumer's Eden treaty client (import from their own api-client module)
- * // The Eden call must forward `signal` so stop() aborts the in-flight request:
- * const transport = edenTransport<AgentPart>(
- *   (input, signal) => api.chat.post({ body: { message: input }, fetch: { signal } }),
- *   (resumeToken, signal) => api.chat.resume.post({ body: { resumeToken }, fetch: { signal } }),
- *   { idempotentReplay: true },
- * )
- *
- * // Wire into useAgentStream:
- * const { send, stop, parts, status } = useAgentStream({ transport })
- */
-export function edenTransport<TPart = AgentPart, TInput = string>(
-  call: (
-    input: TInput,
-    signal?: AbortSignal,
-  ) => Promise<{ data: AsyncGenerator<TPart> | null; error: unknown }>,
-  resumeCall?: (
-    resumeToken: string,
-    signal?: AbortSignal,
-  ) => Promise<{ data: AsyncGenerator<TPart> | null; error: unknown }>,
-  options?: { readonly idempotentReplay?: true },
-): AgentTransport<TPart, TInput> | ResumableAgentTransport<TPart, TInput> {
-  const stream = async function* (input: TInput, signal?: AbortSignal): AsyncGenerator<TPart> {
-    const { data, error } = await call(input, signal)
-    if (error) throw error
-    if (data === null) return
-    yield* data
-  }
-
-  if (resumeCall === undefined) return { stream }
-
-  const resume = async function* (
-    resumeToken: string,
-    signal?: AbortSignal,
-  ): AsyncGenerator<TPart> {
-    const { data, error } = await resumeCall(resumeToken, signal)
-    if (error) throw error
-    if (data === null) return
-    yield* data
-  }
-
-  if (options?.idempotentReplay !== true) return { stream, resume }
-  return { stream, resume, idempotentReplay: true }
 }

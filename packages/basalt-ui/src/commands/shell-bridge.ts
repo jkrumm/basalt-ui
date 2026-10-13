@@ -50,8 +50,8 @@ export function registerSidebarToggle(toggle: SidebarToggle | null): void {
 
 /**
  * Set the color scheme from outside the React tree. A no-op (with a dev-only console warning)
- * when no `BasaltProvider` is mounted yet — the same "not wired" shape `runCommand`/
- * `overlays.open` already use for an unregistered id.
+ * when no `BasaltProvider` is mounted yet — the same "not wired" shape
+ * `overlays.open` already uses for an unregistered id.
  *
  * @example
  * setColorScheme('dark')
@@ -59,7 +59,7 @@ export function registerSidebarToggle(toggle: SidebarToggle | null): void {
 export function setColorScheme(scheme: ColorScheme): void {
   if (colorSchemeSetterRef === null) {
     if (process.env['NODE_ENV'] !== 'production') {
-      // eslint-disable-next-line no-console -- dev-only diagnostic, mirrors runCommand's own
+      // eslint-disable-next-line no-console -- dev-only diagnostic
       console.warn('[basalt] setColorScheme: no BasaltProvider is mounted yet')
     }
     return
@@ -77,7 +77,7 @@ export function setColorScheme(scheme: ColorScheme): void {
 export function toggleSidebar(): void {
   if (sidebarToggleRef === null) {
     if (process.env['NODE_ENV'] !== 'production') {
-      // eslint-disable-next-line no-console -- dev-only diagnostic, mirrors runCommand's own
+      // eslint-disable-next-line no-console -- dev-only diagnostic
       console.warn('[basalt] toggleSidebar: no BasaltShell is mounted yet')
     }
     return

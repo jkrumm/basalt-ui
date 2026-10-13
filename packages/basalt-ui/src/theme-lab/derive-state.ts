@@ -14,7 +14,8 @@
  * whole dev-tool UI (Slider/ColorInput/SegmentedControl) along with the six lines of state it
  * actually needs. This module has zero `@mantine/*` and zero JSX for exactly that reason.
  */
-import { createPersistedState, readPersistedValue } from '../state'
+import { createPersistedState } from '../state'
+import { readPersistedValue } from '../state/persisted'
 import { DEFAULT_DERIVE_CONFIG, resolveDeriveConfig } from '../tokens/derive'
 import type { DeriveConfig } from '../tokens/derive'
 

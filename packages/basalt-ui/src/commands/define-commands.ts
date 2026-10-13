@@ -1,9 +1,9 @@
 /**
  * define-commands — const-generic factory for typed command registries.
  *
- * Consumer defines their commands with defineCommands, augments BasaltRegister.commands, then uses
- * runCommand — unknown ids are tsc errors. The type slot gives the compile-time id union; the
- * module-level stash gives the runtime values (type augmentation is erased at runtime).
+ * Consumer defines their commands with defineCommands and augments BasaltRegister.commands.
+ * `BasaltProvider` reads the module-level stash for its Spotlight actions and hotkeys (type
+ * augmentation is erased at runtime; the stash is the live source).
  *
  * @example
  * // commands.ts (app-side)
@@ -16,11 +16,6 @@
  * declare module 'basalt-ui' {
  *   interface BasaltRegister { commands: typeof COMMANDS }
  * }
- *
- * // usage.ts
- * import { runCommand } from 'basalt-ui/commands'
- * runCommand('file:save')    // ✓ typed
- * runCommand('nonexistent')  // ✗ tsc error
  */
 import type { ReactNode } from 'react'
 import type { Slot } from '../register'
@@ -36,7 +31,7 @@ import type { Slot } from '../register'
  * })
  */
 export type CommandRunContext = {
-  /** Close the command palette (if open) before executing. Injected by BasaltOverlays. */
+  /** Close the command palette (if open) before executing. Injected by the palette. */
   close?: () => void
 }
 
@@ -63,7 +58,7 @@ export type Command = {
   icon?: ReactNode
   /**
    * Optional keyboard shortcut string. Drives BOTH the ShortcutsHelp display AND live key
-   * binding via useCommandHotkeys() (which registers with @tanstack/react-hotkeys optional peer).
+   * binding by `BasaltProvider` (through the @tanstack/react-hotkeys optional peer).
    * Convention: 'Mod+S' (Mod = Cmd on mac, Ctrl elsewhere), 'Shift+Mod+P', etc.
    */
   shortcut?: string
@@ -109,7 +104,7 @@ export type CommandId = Extract<keyof Commands, string>
 /**
  * Module-level runtime registry. The BasaltRegister type-slot gives the compile-time id union,
  * but the augmentation is erased at runtime — so defineCommands also stashes the runtime map here
- * for runCommand and the projectors to resolve Command objects. Call defineCommands once (the
+ * for the provider and the projectors to resolve Command objects. Call defineCommands once (the
  * app's single command registry); the last call wins.
  */
 let activeCommands: CommandMap = {}
@@ -118,10 +113,10 @@ let activeCommands: CommandMap = {}
 
 /**
  * Define a typed command map. Const-generic identity passthrough — preserves the exact literal
- * keys so `runCommand('nonexistent')` is a tsc error after augmenting BasaltRegister.
+ * keys so the id union is exact after augmenting BasaltRegister.
  *
- * Stashes the runtime map so `runCommand` and `toSpotlightActions` resolve correctly at runtime
- * (type augmentation is erased; the stash is the live source).
+ * Stashes the runtime map so the provider resolves commands at runtime (type augmentation is
+ * erased; the stash is the live source).
  *
  * @example
  * export const COMMANDS = defineCommands({
@@ -144,7 +139,7 @@ export function defineCommands<const T extends CommandMap>(spec: T): T {
  *
  * WARNING: defineCommand only TYPES a command — it does NOT register it into the runtime stash.
  * Only defineCommands(map) registers commands. Calling defineCommand alone means the command will
- * never appear in the palette or be reachable via runCommand.
+ * never appear in the palette or bind its shortcut.
  *
  * @example
  * const saveCmd = defineCommand({ label: 'Save', shortcut: 'Mod+S', run: () => save() })
@@ -154,31 +149,7 @@ export function defineCommand(cmd: Command): Command {
   return cmd
 }
 
-// ── runCommand ────────────────────────────────────────────────────────────────
-
-/**
- * Run a registered command by id. The id must be a key of the consumer's registered
- * `BasaltRegister.commands` map — any other string is a tsc error.
- *
- * Resolves the command's run function from the runtime stash (NOT from the type slot — that is
- * erased). Un-augmented (Commands = {}): CommandId = never → `runCommand` is effectively
- * uncallable. Augmented: only the registered keys are accepted.
- *
- * @example
- * runCommand('file:save')
- * await runCommand('data:sync', { close: () => closeModal() })
- */
-export function runCommand(id: CommandId, ctx?: CommandRunContext): void | Promise<void> {
-  const cmd = activeCommands[id as string]
-  if (cmd === undefined) {
-    if (process.env.NODE_ENV !== 'production')
-      console.warn(`[basalt] runCommand: no command registered for "${id}"`)
-    return
-  }
-  return cmd.run(ctx)
-}
-
-/** @internal — exposed for projectors.ts to iterate the runtime stash. Returns a readonly view. */
+/** @internal — exposed to the provider and projectors.ts to iterate the runtime stash. Returns a readonly view. */
 export function getActiveCommands(): Readonly<CommandMap> {
   return activeCommands
 }

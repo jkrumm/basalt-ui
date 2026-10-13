@@ -8,7 +8,7 @@
  * src/cli/check-theme.test.ts (temp-dir + exit-code contract).
  */
 import { describe, expect, it } from 'bun:test'
-import { pxRem } from '../tokens'
+import { pxRem } from '../tokens/core'
 import { SPACE_SCALE } from '../tokens/palette'
 import { CONTAINER_CLASSES } from '../tokens/size-classes'
 import {

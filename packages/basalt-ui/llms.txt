@@ -13,20 +13,19 @@
 # Subpaths: use the exact import specifier below — do not guess.
 # Charts and tokens are Mantine-free; the root (.) is Mantine-coupled.
 # Optional peers are listed per subpath; install only what you use.
-# Every peer is optional: ./tokens, ./charts, ./state and ./guard resolve with
-# no React and no Mantine installed. A consumer with no React at all can take the
-# token system alone — `bunx basalt-ui tokens:css --out tokens.css`, or the prebuilt
-# ./tokens.css subpath. Guide: docs/FRAMEWORK-FREE.md in the repo.
+# Every peer is optional: ./tokens, ./charts and ./state resolve with no Mantine
+# installed. A consumer with no React at all can take the token system alone —
+# `bunx basalt-ui tokens:css --out tokens.css`. Guide: docs/FRAMEWORK-FREE.md in the repo.
 
 Package: basalt-ui
 Version: 1.41.0
 
 ## basalt-ui
 Import: import { ... } from 'basalt-ui'
-Description: BasaltProvider, createBasaltTheme, BasaltShell + sidebar/mobile-nav/breadcrumbs, PageBar, PageAside, useSizeClass, useCoarsePointer, NavCountBadge, ThemeToggle, ThreadWorkspace + thread-chat components, WidgetHeader, dashboard composites (DeltaBadge, StatCard with threshold tone, EmptyState, QueryState/LoadingState/ErrorState, SettingsSection/SettingsRow/DangerZone), ConnectivityProvider/useConnectivity/ConnectivityIndicator (auto-mounted, C1: absorbed from the dropped ./connectivity), createBasaltQueryClient/unwrap/BasaltQueryDevtools (C1: absorbed from the dropped ./query), BasaltDevDock (C5: lazy Router/Query devtools + theme lab in one dock)
+Description: Wiring (`BasaltProvider`, `createBasaltTheme`, `createBasaltRouter`, `unwrap`), shell + nav (`BasaltShell`, `PageBar`, `PageAside`, `PageTitle`, `ThemeToggle`, `defineNav`/`navGroup`/`navTarget`/`flattenNav`, `useBasaltNav`, `useSizeClass`, `useCoarsePointer`), dashboard (`Section`, `WidgetHeader`, `StatCard`, `StatGroup`, `DeltaBadge`, `EmptyState`, `SettingsSection`/`SettingsRow`/`DangerZone`). Reaches no subpath-required peer.
 Layer: mantine-coupled
 Rule: basalt-mantine
-OptionalPeers: react-markdown@^10.1.0, remark-gfm@^4.0.1, rehype-sanitize@^6.0.0, remend@1.4.0, shiki@^4.5.0, beautiful-mermaid@^1.1.0, @tanstack/react-router-devtools@^1.166.13
+OptionalPeers: remark-gfm@^4.0.1, rehype-sanitize@^6.0.0, remend@1.4.0, shiki@^4.5.0, beautiful-mermaid@^1.1.0, @tanstack/react-router-devtools@^1.166.13
 
 ## basalt-ui/charts
 Import: import { ... } from 'basalt-ui/charts'
@@ -40,89 +39,51 @@ Description: VX token refs, buildPaletteCss, defineSeries, seriesTokens, groupTo
 Layer: headless
 Rule: basalt-tokens
 
-## basalt-ui/theme-lab
-Import: import { ... } from 'basalt-ui/theme-lab'
-Description: ThemeLabControls, applyOverrides, COLOR_GROUPS — a low-level inspector for the non-derived structural tokens; identity/color tuning lives in DeriveControls
-Layer: mantine-coupled
-
 ## basalt-ui/vite
 Import: import { ... } from 'basalt-ui/vite'
 Description: basaltViteConfig(opts) — Vite preset for basalt-ui consumer apps; basaltAppPlugin(opts) — PWA head, manifest, and icon metadata derived from the token palette
 Layer: build-tooling
 OptionalPeers: vite-plugin-pwa@^1.3.0
 
-## basalt-ui/guard
-Import: import { ... } from 'basalt-ui/guard'
-Description: checkSource, GUARD_RULES, Finding types — the headless theme-guard core
-Layer: headless
-
 ## basalt-ui/format
 Import: import { ... } from 'basalt-ui/format'
-Description: money/percent/integer/compact/deltaPct/duration/durationClock/clock/relativeTime/weekday/km/kcal — Intl-backed, Mantine-free, React-free formatting; charts/utils/format.ts re-exports fmtCompact/fmtPercent/fmtCurrency/fmtInt/fmtAxisDate/fmtTooltipDate from here (C5 consolidation, one implementation)
+Description: integer/money/percent/durationClock/relativeTime/weekday/km/kcal — Intl-backed, Mantine-free, React-free formatting; the chart formatters (fmtCompact/fmtPercent/fmtCurrency/fmtInt/fmtAxisDate/fmtTooltipDate) share this implementation
 Layer: headless
-
-## basalt-ui/router-tanstack
-Import: import { ... } from 'basalt-ui/router-tanstack'
-Description: TanStack Router bridge: defineNav/navGroup/navTarget (one typed nav definition) + useNav (sections + mobileNav, spread onto BasaltShell) + useBasaltNav (active route) + useRouterBreadcrumbs + createSearchStore (typed URL > localStorage > fallback store over field.enum/multi/range/number/boolean/string; the deprecated createSearchParamStore/createMultiSearchParamStore wrappers were removed in 1.29.0, C1 consolidation)
-Layer: headless
-Rule: basalt-state
-OptionalPeers: @tanstack/react-router@^1.170.0
 
 ## basalt-ui/forms
 Import: import { ... } from 'basalt-ui/forms'
-Description: Mantine form layer: useBasaltForm + inputProps/fieldKey (two calls — a spread `key` is a React 19 warning; the deprecated `field` alias for `inputProps` was removed in 1.29.0, C1 consolidation), useFormSubmit (submit state, decoded errors, server fieldErrors, focus-first-error, validateAsync), FormStateProvider disable propagation, useFieldArray, FormErrorSummary, useFormDraft with autosave (Standard Schema). The FormSection/FormRow/FormGroup/FormActions layout lives in ./controls (moved in 1.36.0) and useForm/schemaResolver come from @mantine/form; the six re-exports here were removed in 1.39.0
+Description: Mantine form layer: useBasaltForm + inputProps/fieldKey (two calls — a spread `key` is a React 19 warning), on @mantine/form
 Layer: mantine-coupled
 Rule: basalt-batteries
 OptionalPeers: @mantine/form@^9.7.0
 
-## basalt-ui/notifications
-Import: import { ... } from 'basalt-ui/notifications'
-Description: Mantine notifications: notify helpers, typed registry, persisted history, NotificationBell, NotificationCenter
-Layer: mantine-coupled
-Rule: basalt-batteries
-OptionalPeers: @mantine/notifications@^9.7.0
-
 ## basalt-ui/commands
 Import: import { ... } from 'basalt-ui/commands'
-Description: typed command bus + overlay controller, toSpotlightActions, ShortcutsHelp, BasaltOverlays
+Description: defineCommands (typed command bus), defineOverlays/overlays, setColorScheme, toggleSidebar, ShortcutsHelp, defineNotifications/emit/NotificationBell (folded in from ./notifications); BasaltProvider mounts Spotlight, Modals and Notifications
 Layer: mantine-coupled
 Rule: basalt-batteries
-OptionalPeers: @mantine/spotlight@^9.7.0, @mantine/modals@^9.7.0, @tanstack/react-hotkeys@0.13.0
+OptionalPeers: @tanstack/react-hotkeys@0.13.0
 
-## basalt-ui/data/table
-Import: import { ... } from 'basalt-ui/data/table'
-Description: BasaltDataTable: a sortable data table over TanStack Table, rendered with Mantine (Mantine-rendered)
+## basalt-ui/table
+Import: import { ... } from 'basalt-ui/table'
+Description: BasaltDataTable and createColumnHelper: a data table over TanStack Table v9, rendered with Mantine (renamed from ./data/table)
 Layer: mantine-coupled
 Rule: basalt-batteries
 OptionalPeers: @tanstack/react-table@>=8 <9
 
-## basalt-ui/data/virtual
-Import: import { ... } from 'basalt-ui/data/virtual'
-Description: BasaltVirtualList: a windowed virtual list over TanStack Virtual, rendered with Mantine (Mantine-rendered)
-Layer: mantine-coupled
-Rule: basalt-batteries
-OptionalPeers: @tanstack/react-virtual@>=3.13.26 <4
-
 ## basalt-ui/agent
 Import: import { ... } from 'basalt-ui/agent'
-Description: Headless streaming-chat layer: useAgentStream, aiSdkTransport (recommended default) + edenTransport, isResumable/ResumableAgentTransport (stream-resumption seam), PartList, coalesceParts, the ForeignPart/definePartRenderers/narrowAgentPart open part-registry seam, plus the multi-thread createThreadsStore + useAgentThreadRuns + outcome-resolver seam (Mantine-free)
-Layer: headless
-Rule: basalt-batteries
-OptionalPeers: ai@^7.0.137, use-stick-to-bottom@^1.1.6
-
-## basalt-ui/agent-chat
-Import: import { ... } from 'basalt-ui/agent-chat'
-Description: Mantine-styled thread-chat components over basalt-ui/agent: ThreadWorkspace, ThreadFeed (variant/renderRow), ThreadFeedRow (inline-expanding Slack row, lazily mounted + kept mounted), ThreadOutcomeCard, ThreadDetailPanel, Composer, ThreadTranscript (open part-renderer registry via its renderers/fallbackRenderer props, per-message MessageAffordances, groupConsecutive, and an optional virtualize/height windowing mode whose VirtualizeOptions carry overscan/estimateSize/initialScroll — a virtualized transcript opens scrolled to the newest message unless initialScroll is "start"), threadPartRenderers, ToolChip (Mantine-coupled). motion is required, not optional — ThreadFeed/ThreadDetailPanel import motion/react eagerly, so this subpath fails to resolve without it installed even though peerDependenciesMeta marks it optional (npm has no per-subpath optionality). remend is genuinely optional here — ThreadTranscript reaches it only through the lazy dynamic import() inside content/markdown.tsx, and @tanstack/react-virtual the same way through the lazy import() behind ThreadTranscript virtualize (absent peer degrades to an unwindowed, height-bound pane).
+Description: Streaming-chat surface: aiSdkTransport, useAgentThreadRuns, parseAgentPart, the open part-registry types, the consumer-owned thread contracts (AgentThread/ThreadsStore/ChatMessage), and the Mantine chat UI folded in from ./agent-chat (ThreadFeed, ThreadFeedRow, Composer, ToolChip). motion is subpath-required: the chat UI imports it eagerly
 Layer: mantine-coupled
 Rule: basalt-batteries
-OptionalPeers: ai@^7.0.137, motion@14.1.0, remend@1.4.0, use-stick-to-bottom@^1.1.6, react-markdown@^10.1.0, remark-gfm@^4.0.1, shiki@^4.5.0, @shikijs/langs@^4.5.0, @shikijs/themes@^4.5.0, beautiful-mermaid@^1.1.0, @tanstack/react-virtual@>=3.13.26 <4
+OptionalPeers: ai@^7.0.137, @ai-sdk/provider@^4.0.26, motion@14.1.0, use-stick-to-bottom@^1.1.6, @tanstack/react-virtual@>=3.13.26 <4
 
 ## basalt-ui/content
 Import: import { ... } from 'basalt-ui/content'
-Description: Prose (article/chat typography), CodeBlock (shiki, optional peer), Callout, TableOfContents, ReadingProgress, Markdown (react-markdown + remark-gfm, optional peers; `streaming` is a rendering mode ONLY — `contentTrust` is the independent security input, and any surface rendering agent/model output must pin `contentTrust="untrusted"`, the sole input to the image-origin allowlist; a `fenceRenderers` registry — settledOnly/FenceRenderer/FenceRenderers/FenceRenderContext; `sanitizeSchema`, an additions-only SanitizeSchemaExtension merged over BASALT_SANITIZE_SCHEMA via mergeSanitizeSchema; the remend streaming-repair pass is now a lazy optional peer), MermaidDiagram (beautiful-mermaid, optional peer), mdxComponents/createMdxComponents, ArticleLayout (docs-page frame), ArticleCard/ArticleGrid (overview cards), Article model (sortArticles/filterArticles/formatArticleDate), FilterSet/ViewTabs/MultiSelectFilter re-exported from ./controls (they replaced the controlled ArticleFilterBar), toArticleActions (Spotlight projector, @mantine/spotlight type-only), GuideLink/GuideDrawer (contextual-help drawer) — the content/prose surface
+Description: Prose (article/chat typography), Callout, TableOfContents, Markdown (react-markdown + remark-gfm, optional peers; `streaming` is a rendering mode ONLY — `contentTrust` is the independent security input, and any surface rendering agent/model output must pin `contentTrust="untrusted"`, the sole input to the image-origin allowlist; `fenceRenderers` extends fenced-block rendering — settledOnly/FenceRenderer/FenceRenderers; `sanitizeSchema` is an additions-only SanitizeSchemaExtension merged over the default via mergeSanitizeSchema; shiki code blocks, beautiful-mermaid diagrams and the remend streaming repair load lazily from optional peers), ArticleLayout (docs-page frame), GuideLink (contextual-help link) — the content/prose surface
 Layer: mantine-coupled
 Rule: basalt-batteries
-OptionalPeers: shiki@^4.5.0, @shikijs/langs@^4.5.0, @shikijs/themes@^4.5.0, beautiful-mermaid@^1.1.0, react-markdown@^10.1.0, remark-gfm@^4.0.1, rehype-sanitize@^6.0.0, remend@1.4.0, @mantine/spotlight@^9.7.0
+OptionalPeers: shiki@^4.5.0, @shikijs/langs@^4.5.0, @shikijs/themes@^4.5.0, beautiful-mermaid@^1.1.0, react-markdown@^10.1.0, remark-gfm@^4.0.1, rehype-sanitize@^6.0.0, remend@1.4.0
 
 ## basalt-ui/controls
 Import: import { ... } from 'basalt-ui/controls'
@@ -135,11 +96,11 @@ Import: import { ... } from 'basalt-ui/controls-dates'
 Description: DateRangePicker — the @mantine/dates implementation of RangeFilter's customPicker seam. Its own subpath because @mantine/dates is an optional peer and basaltViteConfig pre-bundles the whole @mantine scope, so a consumer without the peer (linewatch) must never resolve it: nothing under src/controls may import it, statically or lazily (docs/CONTROLS-SPEC.md §3).
 Layer: mantine-coupled
 Rule: basalt-controls
-OptionalPeers: @mantine/dates@^9.7.0
+OptionalPeers: @mantine/dates@^9.7.0, dayjs@^1.11.0
 
 ## basalt-ui/state
 Import: import { ... } from 'basalt-ui/state'
-Description: createPersistedState (versioned localStorage) + the store field vocabulary (field.enum/multi/range/number/boolean/string, FieldHandle, lanes) + createLocalStore, the router-free store — Mantine-free state primitives
+Description: field.enum/multi/range/number/boolean/string (the store field vocabulary), createSearchStore (typed URL > localStorage > fallback store), createLocalStore (the router-free store), createPersistedState (versioned localStorage)
 Layer: headless
 Rule: basalt-state
 
@@ -148,17 +109,7 @@ Asset: basalt-ui/styles.css
 Description: Mandatory CSS import (after the Mantine styles.layer.css bundles) — @layer basalt base styles, iOS input safety net, font stack
 Layer: non-js-asset
 
-## basalt-ui/tokens.css
-Asset: basalt-ui/tokens.css
-Description: Prebuilt --vx-* token stylesheet — the default buildPaletteCss() output as a plain file, for a consumer that has a bundler to resolve the subpath but no React and no Mantine; with no bundler, emit a file you own via `basalt-ui tokens:css`
-Layer: non-js-asset
-
 ## basalt-ui/configs/*
 Asset: basalt-ui/configs/*
 Description: Raw toolchain presets for consumer extends: oxlint.json (or the guards-only oxlint-basalt.json), oxfmt.json, tsconfig.*.json, lefthook.yml, check.yml
-Layer: non-js-asset
-
-## basalt-ui/llms.txt
-Asset: basalt-ui/llms.txt
-Description: Machine-readable surface map — one entry per published subpath with import specifier, description, layer, and optional peers
 Layer: non-js-asset

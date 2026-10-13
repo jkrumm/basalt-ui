@@ -11,9 +11,10 @@
  */
 import '@mantine/core/styles.layer.css'
 import '../../../src/styles.css'
+import { createRootRoute } from '@tanstack/react-router'
 import { createRoot } from 'react-dom/client'
 import type { Root } from 'react-dom/client'
-import { BasaltProvider, createBasaltTheme } from '../../../src/index'
+import { BasaltProvider, createBasaltRouter, createBasaltTheme } from '../../../src/index'
 import { ShellFixture, resetAsideMounts } from './fixtures'
 import type { FixtureSpec } from './spec'
 
@@ -32,13 +33,18 @@ window.basaltMountFixture = async (spec: FixtureSpec) => {
   window.basaltNavigations = []
   resetAsideMounts()
   root = createRoot(container)
+  // The fixture is the root route's component, and its not-found component too, so the page URL
+  // the harness serves never matters.
+  const component = () => <ShellFixture spec={spec} />
+  const router = createBasaltRouter({
+    routeTree: createRootRoute({ component, notFoundComponent: component }),
+  })
   root.render(
     <BasaltProvider
+      router={router}
       theme={createBasaltTheme(undefined, { density: spec.density ?? 0, radius: spec.radius ?? 0 })}
       defaultColorScheme={spec.colorScheme ?? 'dark'}
-    >
-      <ShellFixture spec={spec} />
-    </BasaltProvider>,
+    />,
   )
   await frame() // React commit
   await frame() // Mantine CSS-var + AppShell layout pass

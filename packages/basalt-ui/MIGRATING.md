@@ -81,10 +81,302 @@ consumer read this index, found nothing, and diffed a KPI row that had silently 
 
 ---
 
+## 2.0.0
+
+_Wave 3 — surface deletion. Sub-sections are per area so parallel waves do not collide._
+
+### AI, content, commands, state and table (`w3/delete-agent-data`)
+
+Subpath folds: `basalt-ui/agent-chat` → `basalt-ui/agent`, `basalt-ui/notifications` → `basalt-ui/commands`, `basalt-ui/data/table` → `basalt-ui/table`. `basalt-ui/data/virtual` is removed. A `move` changes only the import specifier; the name is unchanged.
+
+| Old import                                                | New                  | Why                                                                                 |
+| --------------------------------------------------------- | -------------------- | ----------------------------------------------------------------------------------- |
+| `basalt-ui/commands`: `defineCommand`                     | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/commands`: `runCommand`                        | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/commands`: `CommandMap`                        | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/commands`: `CommandId`                         | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/commands`: `CommandRunContext`                 | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/commands`: `defineOverlay`                     | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/commands`: `registerModalsProvider`            | deleted              | provider-internal (§ 2)                                                             |
+| `basalt-ui/commands`: `Overlay`                           | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/commands`: `OverlayMap`                        | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/commands`: `OverlayKey`                        | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/commands`: `ConfirmOptions`                    | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/commands`: `ConfirmDeleteOptions`              | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/commands`: `toSpotlightActions`                | deleted              | provider-internal                                                                   |
+| `basalt-ui/commands`: `toRouteActions`                    | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/commands`: `toShortcutList`                    | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/commands`: `toHotkeyBindings`                  | deleted              | provider-internal (§ 2); § 8 replaces the mirrored hotkey types                     |
+| `basalt-ui/commands`: `RouteActionItem`                   | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/commands`: `RouteActionSection`                | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/commands`: `ToRouteActionsOptions`             | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/commands`: `ShortcutEntry`                     | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/commands`: `HotkeyBinding`                     | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/commands`: `ColorScheme`                       | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/commands`: `ColorSchemeSetter`                 | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/commands`: `SidebarToggle`                     | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/commands`: `parseShortcut`                     | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/commands`: `detectMac`                         | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/commands`: `formatShortcutDisplay`             | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/commands`: `useCommandHotkeys`                 | deleted              | provider binds the `defineCommands` registry, Hotkeys 0.13 loaded lazily (§ 2, § 8) |
+| `basalt-ui/commands`: `ShortcutsHelpProps`                | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/commands`: `BasaltOverlays`                    | deleted              | `BasaltProvider` mounts modals, spotlight, hotkeys, notifications (§ 2)             |
+| `basalt-ui/commands`: `BasaltOverlaysProps`               | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/commands`: `basaltSpotlight`                   | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/commands`: `openSpotlight`                     | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/commands`: `closeSpotlight`                    | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/notifications`: `notify`                       | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/notifications`: `notifySuccess`                | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/notifications`: `notifyError`                  | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/notifications`: `notifyWarning`                | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/notifications`: `notifyInfo`                   | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/notifications`: `notifyPromise`                | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/notifications`: `notifyUndo`                   | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/notifications`: `notifyUndoable`               | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/notifications`: `NotifyOptions`                | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/notifications`: `NotifyPromiseMessages`        | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/notifications`: `NotifyUndoOptions`            | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/notifications`: `NotifyUndoHandle`             | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/notifications`: `defineNotification`           | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/notifications`: `defineNotifications`          | `basalt-ui/commands` | ./notifications folds into ./commands                                               |
+| `basalt-ui/notifications`: `emit`                         | `basalt-ui/commands` | ./notifications folds into ./commands                                               |
+| `basalt-ui/notifications`: `resolveAction`                | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/notifications`: `NotificationAction`           | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/notifications`: `NotificationKind`             | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/notifications`: `NotificationSpec`             | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/notifications`: `NotificationSpecMap`          | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/notifications`: `NotificationIntent`           | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/notifications`: `add`                          | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/notifications`: `markRead`                     | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/notifications`: `markAllRead`                  | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/notifications`: `dismiss`                      | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/notifications`: `dismissAll`                   | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/notifications`: `remove`                       | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/notifications`: `clear`                        | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/notifications`: `needsAttention`               | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/notifications`: `useNotificationHistory`       | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/notifications`: `NotificationActionRef`        | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/notifications`: `NotificationHistoryItem`      | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/notifications`: `NotificationHistoryState`     | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/notifications`: `UseNotificationHistoryReturn` | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/notifications`: `NotificationBell`             | `basalt-ui/commands` | ./notifications folds into ./commands                                               |
+| `basalt-ui/notifications`: `NotificationBellProps`        | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/notifications`: `NotificationCenter`           | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/notifications`: `NotificationCenterProps`      | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/data/table`: `BasaltDataTable`                 | `basalt-ui/table`    | ./data/table folds into ./table                                                     |
+| `basalt-ui/data/table`: `BasaltDataTableProps`            | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/data/table`: `BasaltDataTableSlot`             | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/data/table`: `DataTableAlign`                  | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/data/table`: `DataTableColumnId`               | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/data/table`: `DataTableColumnPinning`          | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/data/table`: `DataTableFacet`                  | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/data/table`: `DataTableFacetOption`            | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/data/table`: `createColumnHelper`              | `basalt-ui/table`    | becomes basalt-owned: `createColumnHelper<Row>()` over Table v9 (§ 8)               |
+| `basalt-ui/data/virtual`: `BasaltVirtualList`             | deleted              | no consumer; Virtual stays an internal dep of the transcript/table                  |
+| `basalt-ui/data/virtual`: `BasaltVirtualListHandle`       | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/data/virtual`: `BasaltVirtualListProps`        | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/data/virtual`: `BasaltVirtualListSlot`         | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/agent`: `AgentPartDraft`                       | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/agent`: `Drafted`                              | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/agent`: `StartPart`                            | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/agent`: `TextPart`                             | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/agent`: `ReasoningPart`                        | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/agent`: `ToolCallState`                        | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/agent`: `SourcePart`                           | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/agent`: `ErrorPart`                            | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/agent`: `isStartPart`                          | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/agent`: `isToolCallSettled`                    | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/agent`: `TERMINAL_TOOL_STATES`                 | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/agent`: `mergePart`                            | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/agent`: `withPartIds`                          | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/agent`: `coalesceParts`                        | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/agent`: `definePartRenderers`                  | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/agent`: `narrowAgentPart`                      | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/agent`: `ConsumerPart`                         | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/agent`: `PartRenderContext`                    | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/agent`: `AgentTransport`                       | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/agent`: `ResumableAgentTransport`              | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/agent`: `edenTransport`                        | deleted              | no consumer; `aiSdkTransport` is the one transport (§ 6)                            |
+| `basalt-ui/agent`: `isResumable`                          | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/agent`: `AiSdkTransport`                       | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/agent`: `AiSdkTransportOptions`                | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/agent`: `useAgentStream`                       | deleted              | no consumer; `useAgentThreadRuns` is the one runner                                 |
+| `basalt-ui/agent`: `StreamStatus`                         | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/agent`: `UseAgentStreamReturn`                 | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/agent`: `UseAgentThreadRunsArgs`               | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/agent`: `UseAgentThreadRunsReturn`             | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/agent`: `PartList`                             | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/agent`: `PartListProps`                        | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/agent`: `AgentPartRenderers`                   | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/agent`: `TextPartRenderer`                     | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/agent`: `ReasoningPartRenderer`                | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/agent`: `ToolCallPartRenderer`                 | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/agent`: `SourcePartRenderer`                   | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/agent`: `ErrorPartRenderer`                    | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/agent`: `BasaltStickToBottom`                  | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/agent`: `BasaltStickToBottomProps`             | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/agent`: `createChatHistoryStore`               | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/agent`: `ChatHistoryStore`                     | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/agent`: `ChatHistoryStoreOptions`              | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/agent`: `createThreadsStore`                   | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/agent`: `ThreadsStoreOptions`                  | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/agent`: `heuristicOutcome`                     | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/agent`: `createAdapterThreadsStore`            | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/agent`: `threadsStoreAdapterContract`          | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/agent`: `AdapterThreadsStoreOptions`           | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/agent`: `ThreadsStoreAdapter`                  | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/agent`: `ThreadsStoreAdapterContractCase`      | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/agent-chat`: `ThreadWorkspace`                 | deleted              | no consumer                                                                         |
+| `basalt-ui/agent-chat`: `ThreadWorkspaceProps`            | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/agent-chat`: `ThreadFeed`                      | `basalt-ui/agent`    | ./agent-chat folds into ./agent                                                     |
+| `basalt-ui/agent-chat`: `ThreadFeedProps`                 | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/agent-chat`: `ThreadFeedRow`                   | `basalt-ui/agent`    | ./agent-chat folds into ./agent                                                     |
+| `basalt-ui/agent-chat`: `ThreadFeedRowProps`              | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/agent-chat`: `MessageAffordances`              | `basalt-ui/agent`    | ./agent-chat folds into ./agent                                                     |
+| `basalt-ui/agent-chat`: `RowHeightProps`                  | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/agent-chat`: `VirtualizeOptions`               | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/agent-chat`: `VirtualizeProps`                 | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/agent-chat`: `ThreadOutcomeCard`               | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/agent-chat`: `ThreadOutcomeCardProps`          | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/agent-chat`: `ThreadDetailPanel`               | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/agent-chat`: `ThreadDetailPanelProps`          | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/agent-chat`: `Composer`                        | `basalt-ui/agent`    | ./agent-chat folds into ./agent                                                     |
+| `basalt-ui/agent-chat`: `ComposerAttachment`              | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/agent-chat`: `ComposerHandle`                  | `basalt-ui/agent`    | ./agent-chat folds into ./agent                                                     |
+| `basalt-ui/agent-chat`: `ComposerProps`                   | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/agent-chat`: `ComposerSubmit`                  | `basalt-ui/agent`    | ./agent-chat folds into ./agent                                                     |
+| `basalt-ui/agent-chat`: `threadPartRenderers`             | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/agent-chat`: `ThreadTranscript`                | deleted              | no consumer; argo renders turns through `ThreadFeedRow`                             |
+| `basalt-ui/agent-chat`: `ThreadTranscriptProps`           | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/agent-chat`: `ToolChip`                        | `basalt-ui/agent`    | ./agent-chat folds into ./agent                                                     |
+| `basalt-ui/agent-chat`: `ToolChipProps`                   | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/content`: `ProseDensity`                       | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/content`: `ProseProps`                         | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/content`: `CodeBlock`                          | deleted              | rendered by `Markdown` fences; no direct consumer                                   |
+| `basalt-ui/content`: `CodeBlockProps`                     | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/content`: `CalloutProps`                       | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/content`: `TableOfContentsProps`               | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/content`: `ReadingProgress`                    | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/content`: `ReadingProgressProps`               | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/content`: `headingSlug`                        | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/content`: `readingTime`                        | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/content`: `SlugTracker`                        | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/content`: `ReadingTime`                        | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/content`: `HeadingAnchor`                      | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/content`: `HeadingAnchorProps`                 | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/content`: `FenceRenderContext`                 | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/content`: `MarkdownContentTrust`               | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/content`: `BASALT_SANITIZE_SCHEMA`             | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/content`: `SanitizePropertyDefinition`         | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/content`: `SanitizeSchema`                     | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/content`: `MermaidDiagram`                     | deleted              | rendered by `Markdown` fences; no direct consumer                                   |
+| `basalt-ui/content`: `MermaidDiagramProps`                | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/content`: `blockSplit`                         | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/content`: `createMdxComponents`                | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/content`: `mdxComponents`                      | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/content`: `CreateMdxComponentsOptions`         | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/content`: `ArticleLayoutProps`                 | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/content`: `ArticleNavTarget`                   | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/content`: `ArticleCard`                        | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/content`: `ArticleGrid`                        | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/content`: `ArticleCardProps`                   | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/content`: `ArticleGridProps`                   | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/content`: `filterArticles`                     | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/content`: `formatArticleDate`                  | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/content`: `sortArticles`                       | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/content`: `Article`                            | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/content`: `ArticleFilterQuery`                 | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/content`: `ArticleOrder`                       | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/content`: `toArticleActions`                   | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/content`: `ToArticleActionsOptions`            | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/content`: `FilterSet`                          | deleted              | duplicate of `./controls`; one import path per symbol                               |
+| `basalt-ui/content`: `MultiSelectFilter`                  | deleted              | duplicate of `./controls`; one import path per symbol                               |
+| `basalt-ui/content`: `ViewTabs`                           | deleted              | duplicate of `./controls`; one import path per symbol                               |
+| `basalt-ui/content`: `FilterSetProps`                     | deleted              | duplicate of `./controls`; one import path per symbol                               |
+| `basalt-ui/content`: `MultiSelectFilterProps`             | deleted              | duplicate of `./controls`; one import path per symbol                               |
+| `basalt-ui/content`: `ViewTabsOption`                     | deleted              | duplicate of `./controls`; one import path per symbol                               |
+| `basalt-ui/content`: `ViewTabsProps`                      | deleted              | duplicate of `./controls`; one import path per symbol                               |
+| `basalt-ui/content`: `GuideDrawer`                        | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/content`: `GuideDrawerProps`                   | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/content`: `GuideLinkProps`                     | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/state`: `PersistedStateOptions`                | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/state`: `readPersistedValue`                   | deleted              | no consumer outside the playground                                                  |
+| `basalt-ui/state`: `LocalStore`                           | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/state`: `FieldLane`                            | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/state`: `ResolvedLane`                         | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/state`: `ResolveLane`                          | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/state`: `RangeValue`                           | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/state`: `RangeParams`                          | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/state`: `RangePresets`                         | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/state`: `RangeWindows`                         | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/state`: `FieldFallback`                        | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/state`: `FieldSetOptions`                      | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/state`: `MultiField`                           | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/state`: `RangeField`                           | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/state`: `NumberField`                          | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/state`: `BooleanField`                         | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/state`: `StringField`                          | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/state`: `AnyField`                             | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/state`: `FieldValue`                           | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/state`: `FieldOption`                          | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/state`: `SearchValues`                         | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+| `basalt-ui/state`: `StoredValues`                         | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
+
 ## Unreleased
 
 _Nothing yet. Author the next section under this heading as `## Unreleased — <title>`; the
 release renames it and opens a new one here._
+
+## 2.0.0
+
+Contract: `docs/V2-SPEC.md`. Every removal and move is one row; each worker appends under a
+sub-heading named for its area.
+
+### Subpaths, peers and gates (W3 gates)
+
+| 1.41 import                                    | 2.0                          | Reason                                                                              |
+| ---------------------------------------------- | ---------------------------- | ----------------------------------------------------------------------------------- |
+| `basalt-ui/agent-chat`                         | `basalt-ui/agent`            | the chat UI folds into `./agent`; `motion` is subpath-required there                |
+| `basalt-ui/notifications`                      | `basalt-ui/commands`         | no new peer: `BasaltProvider` mounts `Notifications`, `ModalsProvider`, `Spotlight` |
+| `basalt-ui/router-tanstack` (nav half)         | `basalt-ui`                  | nav lives in the root barrel                                                        |
+| `basalt-ui/router-tanstack` (store half)       | `basalt-ui/state`            | stores live with `field` and the search store                                       |
+| `basalt-ui/data/table`                         | `basalt-ui/table`            | renamed; `@tanstack/react-table` is subpath-required                                |
+| `basalt-ui/data/virtual`                       | deleted                      | 0 imports across the fleet                                                          |
+| `basalt-ui/guard`                              | deleted                      | CLI-internal                                                                        |
+| `basalt-ui/theme-lab`                          | deleted                      | provider-mounted in dev                                                             |
+| `basalt-ui/tokens.css`                         | `basalt-ui tokens:css` (CLI) | weatherorb 1.30 and rollhook 1.36 only                                              |
+| `basalt-ui/llms.txt`, `basalt-ui/package.json` | deleted from `exports`       | 0 imports; both files stay in the tarball                                           |
+
+Peers: `react`, `react-dom`, `@mantine/{core,hooks,modals,notifications,spotlight}`,
+`@tanstack/{react-router,react-query}` and the three `@fontsource-variable/*` are now **required**
+(no longer `optional`). `@ai-sdk/provider` (`./agent`) and `dayjs` (`./controls-dates`) are new
+optional, subpath-required peers.
+
+### Provider and wiring
+
+| Old import                                                                         | New / deleted                                                                                                                                                                               | Why                                                                     |
+| ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| `BasaltProvider` `children`, `onError`, `connectivity` props                       | `router` (required), `telemetry?`, `fallback?`; `theme` defaults to `createBasaltTheme()`                                                                                                   | the provider mounts the router and every overlay (V2-SPEC § 2)          |
+| `createBasaltQueryClient` (`basalt-ui`)                                            | `createBasaltRouter({ routeTree, context?, query? })`                                                                                                                                       | one QueryClient per router, 1.x defaults kept, `query` merges over them |
+| `BasaltErrorBoundary`, `BasaltErrorBoundaryProps`                                  | deleted: `BasaltProvider fallback` + telemetry `render.error`; routes get `defaultErrorComponent`                                                                                           | the provider mounts the root boundary                                   |
+| `BasaltErrorContext`                                                               | `BasaltEvent` (type)                                                                                                                                                                        | `onError` is replaced by the `telemetry` seam (V2-SPEC § 7)             |
+| `BasaltOverlays`, `useCommandHotkeys` glue (`basalt-ui/commands`)                  | deleted: the provider mounts `ModalsProvider` (wrapping the router), `Notifications`, `Spotlight`, and binds registry hotkeys                                                               | no second mount, no `modals={false}` escape                             |
+| `BasaltQueryDevtools`, `BasaltDevDock`, `BasaltDevDockProps`, `BasaltDevDockTool`  | deleted: the provider mounts one dev dock in dev (router + query devtools, theme lab) behind a literal `NODE_ENV` gate; Spotlight commands `dev.router` / `dev.query` / `dev.theme` open it | one dock, never in production                                           |
+| `ConnectivityProvider`, `ConnectivityIndicator`, `useConnectivity` and their types | deleted                                                                                                                                                                                     | no consumer; the auto-mount is gone                                     |
+| `toErrorMessage`, `errorStatus` (`basalt-ui`)                                      | deleted                                                                                                                                                                                     | no consumer outside the playground                                      |
+| `queryClient` seed `agent/templates/query-client.ts.tpl`                           | deleted; `__root.tpl` seeds `createRootRouteWithContext<BasaltRouterContext>()`                                                                                                             | the router owns the client                                              |
+
+### Router bridge (`basalt-ui/router-tanstack`)
+
+| Old import                                                                                                                                                                                                                     | New / deleted                                                                | Why                                                                 |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| `defineNav`, `navGroup`, `navTarget`, `flattenNav`, `useBasaltNav`, `NavItemId`                                                                                                                                                | move to `basalt-ui`                                                          | `./router-tanstack` folds into `.`                                  |
+| `createSearchStore`                                                                                                                                                                                                            | `basalt-ui/state`                                                            | the store half folds into `./state`                                 |
+| `field` and the 20 `Field`/`Range*`/`Search*` types re-exported here                                                                                                                                                           | `basalt-ui/state` (same names)                                               | one import path per symbol                                          |
+| `defineNav(config)` without the `Register` augmentation                                                                                                                                                                        | compile error: the parameter becomes `'basalt: declare Register { router }'` | the definition validated nothing (V2-SPEC § 3)                      |
+| `useRouterBreadcrumbs`, `BasaltBreadcrumb`, `BasaltNav`                                                                                                                                                                        | deleted                                                                      | shell-internal / unnamed                                            |
+| `NavItemMeta`, `NavGroupMeta`, `AnyNavItem`, `AnyNavGroup`, `AnyNavLink`, `FlatNavItem`, `NavConfig`, `NavGroupId`, `NavTabId`, `NavIndex`, `UseNavOptions`, `NavBinding`, `NavAnchor`, `NavAnchorProps`, `NavMobilePlacement` | deleted                                                                      | no consumer names them; derive with `ComponentProps` / `Parameters` |
+| `useNav`                                                                                                                                                                                                                       | kept until `BasaltShell nav={NAV}` lands, then deleted                       | the shell resolves the nav itself                                   |
 
 ## 1.41.0 — the managed block moves to AGENTS.md
 
@@ -3589,3 +3881,360 @@ minor flips the default.
 the shipped `dist/shell/app-breadcrumbs.d.ts` (`parentAnchor?: NavAnchor`, with `parentHref` as the
 no-router fallback). The type is inline on the component rather than an exported `AppBreadcrumbsProps`,
 which is why the export-surface diff never saw it.
+
+## 2.0.0
+
+### Root, shell, controls, dashboard, format, forms, tokens, theme (W3 delete-core)
+
+Source of the rows: `docs/waves/v2-surface.md`. A deleted export has no replacement unless the
+row names one; a deleted type is derived with `ComponentProps<typeof X>` / `Parameters<typeof f>[0]`.
+
+Behaviour and type changes (`docs/V2-SPEC.md` §§ 3–4):
+
+| Was                                                               | Now                                                                                                                                                                  |
+| ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `<PageBar actions={{ primary, secondary: [...] }} />`             | `actions` is a tuple: the first entry carries `primary: true`, then up to four more (`PageBarActions`); a missing or second primary and a sixth entry are tsc errors |
+| `<Section actions={...} />` taking a `ReactNode` or `BarAction[]` | `actions` is a tuple of at most three `BarAction`s (`SectionActions`); wrap a custom node as `{ key, kind: 'custom', node }`                                         |
+| a filter or tab given `value`, `onChange` or `size`               | still an error, now named: the slots are typed `never` on every filter and `ViewTabs`                                                                                |
+| `createBasaltTheme(_, { radius: number, density: number })`       | `radius` is `-5 … 5`, `density` is `-3 … 3` (literal unions)                                                                                                         |
+| `createBasaltTheme(_, { inputs: 'desktop' })`                     | deleted — four dimensions: `derive`, `fonts`, `radius`, `density`                                                                                                    |
+| `paletteOptions.groups` as a string-keyed record                  | `SeriesGroup[]`: pass what `groupTokens` returned, so the `name-` key is written once                                                                                |
+| `Section` dev warning for a fourth action                         | gone — the tuple type rejects it                                                                                                                                     |
+
+Removed or moved exports (old import → new):
+
+| Was                                                   | Now                                                                                                |
+| ----------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `BasaltProps` — `basalt-ui`                           | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `SlotClassNames` — `basalt-ui`                        | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `SlotStylesProps` — `basalt-ui`                       | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `Tone` — `basalt-ui`                                  | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `ToneWithNeutral` — `basalt-ui`                       | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `Tier` — `basalt-ui`                                  | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `cx` — `basalt-ui`                                    | deleted — no consumer outside the playground                                                       |
+| `SCROLLPORT_ATTRIBUTE` — `basalt-ui`                  | deleted — no consumer outside the playground                                                       |
+| `baseTheme` — `basalt-ui`                             | deleted — provider-internal                                                                        |
+| `cssVariablesResolver` — `basalt-ui`                  | deleted — provider-internal; a second resolver is the misuse it invites                            |
+| `BasaltFontsConfig` — `basalt-ui`                     | deleted — duplicate of ./tokens; one import path per symbol                                        |
+| `CreateBasaltThemeOptions` — `basalt-ui`              | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `CTL_THEME` — `basalt-ui`                             | deleted — no consumer outside the playground                                                       |
+| `CtlSlot` — `basalt-ui`                               | deleted — no consumer outside the playground                                                       |
+| `CtlSlotProps` — `basalt-ui`                          | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `useBasaltSpacing` — `basalt-ui`                      | deleted — no consumer outside the playground                                                       |
+| `ThemeToggleProps` — `basalt-ui`                      | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `ActionGroup` — `basalt-ui`                           | deleted — duplicate of ./controls; one import path per symbol                                      |
+| `BarAction` — `basalt-ui`                             | import from `basalt-ui/controls` instead — duplicate of ./controls; one import path per symbol     |
+| `ActionGroupProps` — `basalt-ui`                      | deleted — duplicate of ./controls; one import path per symbol                                      |
+| `GlobalAction` — `basalt-ui`                          | import from `basalt-ui/controls` instead — duplicate of ./controls; one import path per symbol     |
+| `MOTION_DURATION` — `basalt-ui`                       | deleted — no consumer outside the playground                                                       |
+| `MOTION_SPRING` — `basalt-ui`                         | deleted — no consumer outside the playground                                                       |
+| `MOTION_EASE_STANDARD` — `basalt-ui`                  | deleted — no consumer outside the playground                                                       |
+| `NavCountBadge` — `basalt-ui`                         | deleted — no consumer outside the playground                                                       |
+| `NavCountBadgeProps` — `basalt-ui`                    | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `AppSidebar` — `basalt-ui`                            | deleted — BasaltShell is the one mount (§ 3)                                                       |
+| `SidebarSearch` — `basalt-ui`                         | deleted — BasaltShell search prop                                                                  |
+| `SidebarSearchProps` — `basalt-ui`                    | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `SidebarSearchConfig` — `basalt-ui`                   | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `SidebarSearchActions` — `basalt-ui`                  | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `SidebarAccount` — `basalt-ui`                        | deleted — BasaltShell account prop                                                                 |
+| `MobileNav` — `basalt-ui`                             | deleted — BasaltShell is the one mount (§ 3)                                                       |
+| `MobileNavProps` — `basalt-ui`                        | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `projectMobileNav` — `basalt-ui`                      | deleted — shell-internal                                                                           |
+| `ProjectMobileNavOptions` — `basalt-ui`               | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `MOBILE_MAX_TABS_DEFAULT` — `basalt-ui`               | deleted — no consumer outside the playground                                                       |
+| `MOBILE_MENU_MAX_DEFAULT` — `basalt-ui`               | deleted — no consumer outside the playground                                                       |
+| `MOBILE_MORE_KEY` — `basalt-ui`                       | deleted — no consumer outside the playground                                                       |
+| `AppBreadcrumbs` — `basalt-ui`                        | deleted — BasaltShell is the one mount (§ 3)                                                       |
+| `AppBreadcrumbsProps` — `basalt-ui`                   | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `PageBarProps` — `basalt-ui`                          | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `PageBarSlot` — `basalt-ui`                           | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `PageAsideProps` — `basalt-ui`                        | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `PageAsideSlot` — `basalt-ui`                         | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `SizeClass` — `basalt-ui`                             | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `PageTitleProps` — `basalt-ui`                        | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `PageTitleSlot` — `basalt-ui`                         | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `SidebarSection` — `basalt-ui`                        | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `SidebarItem` — `basalt-ui`                           | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `SidebarBlockItem` — `basalt-ui`                      | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `SidebarBlockTone` — `basalt-ui`                      | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `SidebarListBlock` — `basalt-ui`                      | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `SidebarProgressBlock` — `basalt-ui`                  | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `SidebarCustomBlock` — `basalt-ui`                    | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `NavAnchor` — `basalt-ui`                             | deleted — duplicate of ./router-tanstack; one import path per symbol                               |
+| `NavAnchorProps` — `basalt-ui`                        | deleted — duplicate of ./router-tanstack; one import path per symbol                               |
+| `NavMobilePlacement` — `basalt-ui`                    | deleted — duplicate of ./router-tanstack; one import path per symbol                               |
+| `NavSectionMobile` — `basalt-ui`                      | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `MobileNavConfig` — `basalt-ui`                       | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `MobileNavGroup` — `basalt-ui`                        | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `MobileNavModel` — `basalt-ui`                        | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `MobileNavSlot` — `basalt-ui`                         | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `MobileNavSurface` — `basalt-ui`                      | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `BasaltShellProps` — `basalt-ui`                      | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `BrandConfig` — `basalt-ui`                           | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `AppSidebarProps` — `basalt-ui`                       | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `AccountBadgeTone` — `basalt-ui`                      | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `BasaltIdentity` — `basalt-ui`                        | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `BasaltRole` — `basalt-ui`                            | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `BasaltPlan` — `basalt-ui`                            | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `AccountMenuItem` — `basalt-ui`                       | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `BasaltAccountState` — `basalt-ui`                    | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `BasaltAccountActions` — `basalt-ui`                  | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `BasaltAccountProps` — `basalt-ui`                    | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `Slot` — `basalt-ui`                                  | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `Series` — `basalt-ui`                                | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `SeriesKey` — `basalt-ui`                             | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `AsyncState` — `basalt-ui`                            | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `assertNever` — `basalt-ui`                           | deleted — no consumer; x satisfies never needs no import                                           |
+| `StandardSchemaV1` — `basalt-ui`                      | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `createPersistedState` — `basalt-ui`                  | import from `basalt-ui/state` instead — duplicate of ./state; one import path per symbol           |
+| `PersistedStateOptions` — `basalt-ui`                 | deleted — duplicate of ./state; one import path per symbol                                         |
+| `readPersistedValue` — `basalt-ui`                    | deleted — duplicate of ./state; one import path per symbol                                         |
+| `createLocalStore` — `basalt-ui`                      | import from `basalt-ui/state` instead — duplicate of ./state; one import path per symbol           |
+| `LocalStore` — `basalt-ui`                            | deleted — duplicate of ./state; one import path per symbol                                         |
+| `AnyField` — `basalt-ui`                              | deleted — duplicate of ./state; one import path per symbol                                         |
+| `BooleanField` — `basalt-ui`                          | deleted — duplicate of ./state; one import path per symbol                                         |
+| `EnumField` — `basalt-ui`                             | deleted — duplicate of ./state; one import path per symbol                                         |
+| `FieldFallback` — `basalt-ui`                         | deleted — duplicate of ./state; one import path per symbol                                         |
+| `FieldHandle` — `basalt-ui`                           | deleted — duplicate of ./state; one import path per symbol                                         |
+| `FieldLane` — `basalt-ui`                             | deleted — duplicate of ./state; one import path per symbol                                         |
+| `FieldOption` — `basalt-ui`                           | deleted — duplicate of ./state; one import path per symbol                                         |
+| `FieldSetOptions` — `basalt-ui`                       | deleted — duplicate of ./state; one import path per symbol                                         |
+| `FieldValue` — `basalt-ui`                            | deleted — duplicate of ./state; one import path per symbol                                         |
+| `MultiField` — `basalt-ui`                            | deleted — duplicate of ./state; one import path per symbol                                         |
+| `NumberField` — `basalt-ui`                           | deleted — duplicate of ./state; one import path per symbol                                         |
+| `RangeField` — `basalt-ui`                            | deleted — duplicate of ./state; one import path per symbol                                         |
+| `RangeParams` — `basalt-ui`                           | deleted — duplicate of ./state; one import path per symbol                                         |
+| `RangePresets` — `basalt-ui`                          | deleted — duplicate of ./state; one import path per symbol                                         |
+| `RangeValue` — `basalt-ui`                            | deleted — duplicate of ./state; one import path per symbol                                         |
+| `RangeWindow` — `basalt-ui`                           | deleted — duplicate of ./state; one import path per symbol                                         |
+| `RangeWindows` — `basalt-ui`                          | deleted — duplicate of ./state; one import path per symbol                                         |
+| `ResolvedLane` — `basalt-ui`                          | deleted — duplicate of ./state; one import path per symbol                                         |
+| `ResolveLane` — `basalt-ui`                           | deleted — duplicate of ./state; one import path per symbol                                         |
+| `SearchValues` — `basalt-ui`                          | deleted — duplicate of ./state; one import path per symbol                                         |
+| `StoredValues` — `basalt-ui`                          | deleted — duplicate of ./state; one import path per symbol                                         |
+| `StringField` — `basalt-ui`                           | deleted — duplicate of ./state; one import path per symbol                                         |
+| `WidgetHeaderDeltaProps` — `basalt-ui`                | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `WidgetHeaderMetricProps` — `basalt-ui`               | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `WidgetHeaderProps` — `basalt-ui`                     | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `WidgetHeaderSlot` — `basalt-ui`                      | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `WidgetHeaderTier` — `basalt-ui`                      | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `WidgetHeaderTitleProps` — `basalt-ui`                | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `DeltaBadgeProps` — `basalt-ui`                       | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `DeltaPolarity` — `basalt-ui`                         | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `SectionProps` — `basalt-ui`                          | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `SectionSlot` — `basalt-ui`                           | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `StatCardProps` — `basalt-ui`                         | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `StatCardSlot` — `basalt-ui`                          | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `WidgetGrid` — `basalt-ui`                            | deleted — no consumer outside the playground                                                       |
+| `WidgetGridCols` — `basalt-ui`                        | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `WidgetGridItemProps` — `basalt-ui`                   | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `WidgetGridProps` — `basalt-ui`                       | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `StatGroupCols` — `basalt-ui`                         | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `StatGroupProps` — `basalt-ui`                        | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `EmptyStateProps` — `basalt-ui`                       | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `EmptyStateSlot` — `basalt-ui`                        | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `SettingsSectionProps` — `basalt-ui`                  | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `SettingsSectionSlot` — `basalt-ui`                   | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `SettingsRowProps` — `basalt-ui`                      | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `SettingsRowSlot` — `basalt-ui`                       | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `DangerZoneProps` — `basalt-ui`                       | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `QueryState` — `basalt-ui`                            | deleted — router defaultPendingComponent/defaultErrorComponent + suspense queries replace it (§ 2) |
+| `QueryStateProps` — `basalt-ui`                       | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `QueryStateLike` — `basalt-ui`                        | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `QueryStateSlot` — `basalt-ui`                        | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `QueryStateTier` — `basalt-ui`                        | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `QueryEmptyCopy` — `basalt-ui`                        | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `LoadingState` — `basalt-ui`                          | deleted — router defaultPendingComponent (§ 2)                                                     |
+| `LoadingStateProps` — `basalt-ui`                     | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `ErrorState` — `basalt-ui`                            | deleted — router defaultErrorComponent (§ 2)                                                       |
+| `ErrorStateProps` — `basalt-ui`                       | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `SurfaceSpec` — `basalt-ui`                           | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `RuleName` — `basalt-ui`                              | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `SkillName` — `basalt-ui`                             | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `GuardKind` — `basalt-ui`                             | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `ThreadWorkspace` — `basalt-ui`                       | deleted — duplicate of ./agent-chat; one import path per symbol                                    |
+| `ThreadFeed` — `basalt-ui`                            | deleted — duplicate of ./agent-chat; one import path per symbol                                    |
+| `ThreadFeedRow` — `basalt-ui`                         | deleted — duplicate of ./agent-chat; one import path per symbol                                    |
+| `ThreadOutcomeCard` — `basalt-ui`                     | deleted — duplicate of ./agent-chat; one import path per symbol                                    |
+| `ThreadDetailPanel` — `basalt-ui`                     | deleted — duplicate of ./agent-chat; one import path per symbol                                    |
+| `Composer` — `basalt-ui`                              | deleted — duplicate of ./agent-chat; one import path per symbol                                    |
+| `threadPartRenderers` — `basalt-ui`                   | deleted — duplicate of ./agent-chat; one import path per symbol                                    |
+| `ThreadTranscript` — `basalt-ui`                      | deleted — duplicate of ./agent-chat; one import path per symbol                                    |
+| `ToolChip` — `basalt-ui`                              | deleted — duplicate of ./agent-chat; one import path per symbol                                    |
+| `ThreadWorkspaceProps` — `basalt-ui`                  | deleted — duplicate of ./agent-chat; one import path per symbol                                    |
+| `ThreadFeedProps` — `basalt-ui`                       | deleted — duplicate of ./agent-chat; one import path per symbol                                    |
+| `ThreadFeedRowProps` — `basalt-ui`                    | deleted — duplicate of ./agent-chat; one import path per symbol                                    |
+| `ThreadOutcomeCardProps` — `basalt-ui`                | deleted — duplicate of ./agent-chat; one import path per symbol                                    |
+| `ThreadDetailPanelProps` — `basalt-ui`                | deleted — duplicate of ./agent-chat; one import path per symbol                                    |
+| `ComposerProps` — `basalt-ui`                         | deleted — duplicate of ./agent-chat; one import path per symbol                                    |
+| `ComposerSubmit` — `basalt-ui`                        | deleted — duplicate of ./agent-chat; one import path per symbol                                    |
+| `ComposerAttachment` — `basalt-ui`                    | deleted — duplicate of ./agent-chat; one import path per symbol                                    |
+| `ComposerHandle` — `basalt-ui`                        | deleted — duplicate of ./agent-chat; one import path per symbol                                    |
+| `ThreadTranscriptProps` — `basalt-ui`                 | deleted — duplicate of ./agent-chat; one import path per symbol                                    |
+| `MessageAffordances` — `basalt-ui`                    | deleted — duplicate of ./agent-chat; one import path per symbol                                    |
+| `VirtualizeOptions` — `basalt-ui`                     | deleted — duplicate of ./agent-chat; one import path per symbol                                    |
+| `VirtualizeProps` — `basalt-ui`                       | deleted — duplicate of ./agent-chat; one import path per symbol                                    |
+| `RowHeightProps` — `basalt-ui`                        | deleted — duplicate of ./agent-chat; one import path per symbol                                    |
+| `ToolChipProps` — `basalt-ui`                         | deleted — duplicate of ./agent-chat; one import path per symbol                                    |
+| `createAdapterThreadsStore` — `basalt-ui`             | deleted — duplicate of ./agent; one import path per symbol                                         |
+| `createThreadsStore` — `basalt-ui`                    | deleted — duplicate of ./agent; one import path per symbol                                         |
+| `heuristicOutcome` — `basalt-ui`                      | deleted — duplicate of ./agent; one import path per symbol                                         |
+| `threadsStoreAdapterContract` — `basalt-ui`           | deleted — duplicate of ./agent; one import path per symbol                                         |
+| `useAgentThreadRuns` — `basalt-ui`                    | deleted — duplicate of ./agent; one import path per symbol                                         |
+| `AdapterThreadsStoreOptions` — `basalt-ui`            | deleted — duplicate of ./agent; one import path per symbol                                         |
+| `AgentThread` — `basalt-ui`                           | deleted — duplicate of ./agent; one import path per symbol                                         |
+| `AgentOutcome` — `basalt-ui`                          | deleted — duplicate of ./agent; one import path per symbol                                         |
+| `ThreadStatus` — `basalt-ui`                          | deleted — duplicate of ./agent; one import path per symbol                                         |
+| `ThreadsStore` — `basalt-ui`                          | deleted — duplicate of ./agent; one import path per symbol                                         |
+| `ThreadsStoreAdapter` — `basalt-ui`                   | deleted — duplicate of ./agent; one import path per symbol                                         |
+| `ThreadsStoreAdapterContractCase` — `basalt-ui`       | deleted — duplicate of ./agent; one import path per symbol                                         |
+| `ThreadsStoreOptions` — `basalt-ui`                   | deleted — duplicate of ./agent; one import path per symbol                                         |
+| `OutcomeResolver` — `basalt-ui`                       | deleted — duplicate of ./agent; one import path per symbol                                         |
+| `ChatMessage` — `basalt-ui`                           | deleted — duplicate of ./agent; one import path per symbol                                         |
+| `AgentPart` — `basalt-ui`                             | deleted — duplicate of ./agent; one import path per symbol                                         |
+| `AgentTransport` — `basalt-ui`                        | deleted — duplicate of ./agent; one import path per symbol                                         |
+| `pxRem` — `basalt-ui/tokens`                          | deleted — no consumer outside the playground                                                       |
+| `buildFontsCss` — `basalt-ui/tokens`                  | deleted — provider/CLI-internal                                                                    |
+| `buildRadiusCss` — `basalt-ui/tokens`                 | deleted — provider/CLI-internal                                                                    |
+| `buildDensityCss` — `basalt-ui/tokens`                | deleted — provider/CLI-internal                                                                    |
+| `DEFAULT_DERIVE_CONFIG` — `basalt-ui/tokens`          | deleted — no consumer outside the playground                                                       |
+| `deriveTokens` — `basalt-ui/tokens`                   | deleted — no consumer outside the playground                                                       |
+| `resolveDeriveConfig` — `basalt-ui/tokens`            | deleted — no consumer outside the playground                                                       |
+| `DeriveConfig` — `basalt-ui/tokens`                   | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `DerivedPalette` — `basalt-ui/tokens`                 | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `deriveRadius` — `basalt-ui/tokens`                   | deleted — no consumer outside the playground                                                       |
+| `RadiusValues` — `basalt-ui/tokens`                   | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `deriveSpacing` — `basalt-ui/tokens`                  | deleted — no consumer outside the playground                                                       |
+| `SpaceValues` — `basalt-ui/tokens`                    | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `resolveContainerClass` — `basalt-ui/tokens`          | deleted — no consumer outside the playground                                                       |
+| `SIZE_CLASSES` — `basalt-ui/tokens`                   | deleted — no consumer outside the playground                                                       |
+| `ContainerClass` — `basalt-ui/tokens`                 | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `BREAKPOINTS` — `basalt-ui/tokens`                    | deleted — no consumer outside the playground                                                       |
+| `ColorSchemeSelector` — `basalt-ui/tokens`            | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `BuildPaletteOpts` — `basalt-ui/tokens`               | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `BasaltFontsConfig` — `basalt-ui/tokens`              | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `ThemeLabControls` — `basalt-ui/theme-lab`            | deleted — dev-only; provider-internal (§ 2) (no longer a subpath)                                  |
+| `DeriveControls` — `basalt-ui/theme-lab`              | deleted — dev-only; provider-internal (§ 2) (no longer a subpath)                                  |
+| `DeriveControlsProps` — `basalt-ui/theme-lab`         | deleted — dev-only; provider-internal (§ 2) (no longer a subpath)                                  |
+| `applyOverrides` — `basalt-ui/theme-lab`              | deleted — provider applies persisted lab overrides in dev (§ 2) (no longer a subpath)              |
+| `AREA_BOTTOM_VAR` — `basalt-ui/theme-lab`             | deleted — dev-only; provider-internal (§ 2) (no longer a subpath)                                  |
+| `AREA_TOP_VAR` — `basalt-ui/theme-lab`                | deleted — dev-only; provider-internal (§ 2) (no longer a subpath)                                  |
+| `COLOR_GROUPS` — `basalt-ui/theme-lab`                | deleted — dev-only; provider-internal (§ 2) (no longer a subpath)                                  |
+| `loadOverrides` — `basalt-ui/theme-lab`               | deleted — provider applies persisted lab overrides in dev (§ 2) (no longer a subpath)              |
+| `readVar` — `basalt-ui/theme-lab`                     | deleted — dev-only; provider-internal (§ 2) (no longer a subpath)                                  |
+| `saveOverrides` — `basalt-ui/theme-lab`               | deleted — dev-only; provider-internal (§ 2) (no longer a subpath)                                  |
+| `ColorGroup` — `basalt-ui/theme-lab`                  | deleted — dev-only; provider-internal (§ 2) (no longer a subpath)                                  |
+| `ColorTunable` — `basalt-ui/theme-lab`                | deleted — dev-only; provider-internal (§ 2) (no longer a subpath)                                  |
+| `Overrides` — `basalt-ui/theme-lab`                   | deleted — dev-only; provider-internal (§ 2) (no longer a subpath)                                  |
+| `ThemeLabControlsProps` — `basalt-ui/theme-lab`       | deleted — dev-only; provider-internal (§ 2) (no longer a subpath)                                  |
+| `BasaltViteOptions` — `basalt-ui/vite`                | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `BasaltAppIcon` — `basalt-ui/vite`                    | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `BasaltAppOptions` — `basalt-ui/vite`                 | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `unmatchedExemptPatterns` — `basalt-ui/guard`         | deleted — CLI-internal; no import consumer (no longer a subpath)                                   |
+| `guardKindRemedy` — `basalt-ui/guard`                 | deleted — CLI-internal; no import consumer (no longer a subpath)                                   |
+| `guardWaiverHint` — `basalt-ui/guard`                 | deleted — CLI-internal; no import consumer (no longer a subpath)                                   |
+| `checkSource` — `basalt-ui/guard`                     | deleted — CLI-internal; no import consumer (no longer a subpath)                                   |
+| `findAllowAnnotations` — `basalt-ui/guard`            | deleted — CLI-internal; no import consumer (no longer a subpath)                                   |
+| `neutralizeAllowAnnotation` — `basalt-ui/guard`       | deleted — CLI-internal; no import consumer (no longer a subpath)                                   |
+| `Finding` — `basalt-ui/guard`                         | deleted — CLI-internal; no import consumer (no longer a subpath)                                   |
+| `GuardConfig` — `basalt-ui/guard`                     | deleted — CLI-internal; no import consumer (no longer a subpath)                                   |
+| `GuardKind` — `basalt-ui/guard`                       | deleted — duplicate of .; one import path per symbol (no longer a subpath)                         |
+| `GuardSeverity` — `basalt-ui/guard`                   | deleted — CLI-internal; no import consumer (no longer a subpath)                                   |
+| `DEFAULT_GUARD_CONFIG` — `basalt-ui/guard`            | deleted — CLI-internal; no import consumer (no longer a subpath)                                   |
+| `GraceEntry` — `basalt-ui/guard`                      | deleted — CLI-internal; no import consumer (no longer a subpath)                                   |
+| `GRACE_PERIOD_KINDS` — `basalt-ui/guard`              | deleted — CLI-internal; no import consumer (no longer a subpath)                                   |
+| `UnmatchedExemptPattern` — `basalt-ui/guard`          | deleted — CLI-internal; no import consumer (no longer a subpath)                                   |
+| `PLUGIN_RULE_IDS` — `basalt-ui/guard`                 | deleted — CLI-internal; no import consumer (no longer a subpath)                                   |
+| `WAIVER_ID_ALIASES` — `basalt-ui/guard`               | deleted — CLI-internal; no import consumer (no longer a subpath)                                   |
+| `GENERATED_HEADER_LINE` — `basalt-ui/guard`           | deleted — CLI-internal; no import consumer (no longer a subpath)                                   |
+| `TOKENS_ONLY_DISABLED_KINDS` — `basalt-ui/guard`      | deleted — CLI-internal; no import consumer (no longer a subpath)                                   |
+| `GUARD_RULES` — `basalt-ui/guard`                     | deleted — CLI-internal; no import consumer (no longer a subpath)                                   |
+| `AllowAnnotationSite` — `basalt-ui/guard`             | deleted — CLI-internal; no import consumer (no longer a subpath)                                   |
+| `NEUTRALIZED_ALLOW_TOKEN` — `basalt-ui/guard`         | deleted — CLI-internal; no import consumer (no longer a subpath)                                   |
+| `compact` — `basalt-ui/format`                        | deleted — no consumer outside the playground                                                       |
+| `deltaPct` — `basalt-ui/format`                       | deleted — no consumer outside the playground                                                       |
+| `DeltaPctOptions` — `basalt-ui/format`                | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `fmtCompact` — `basalt-ui/format`                     | deleted — alias of compact — one name per formatter                                                |
+| `FmtCompactOptions` — `basalt-ui/format`              | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `fmtCurrency` — `basalt-ui/format`                    | deleted — alias of money                                                                           |
+| `FmtCurrencyOptions` — `basalt-ui/format`             | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `fmtInt` — `basalt-ui/format`                         | deleted — alias of integer                                                                         |
+| `fmtPercent` — `basalt-ui/format`                     | deleted — alias of percent                                                                         |
+| `FmtPercentOptions` — `basalt-ui/format`              | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `LocaleOption` — `basalt-ui/format`                   | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `NON_FINITE` — `basalt-ui/format`                     | deleted — no consumer outside the playground                                                       |
+| `clock` — `basalt-ui/format`                          | deleted — no consumer outside the playground                                                       |
+| `ClockOptions` — `basalt-ui/format`                   | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `duration` — `basalt-ui/format`                       | deleted — no consumer outside the playground                                                       |
+| `DurationOptions` — `basalt-ui/format`                | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `DurationUnit` — `basalt-ui/format`                   | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `RelativeTimeOptions` — `basalt-ui/format`            | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `WeekdayOptions` — `basalt-ui/format`                 | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `KcalOptions` — `basalt-ui/format`                    | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `KmOptions` — `basalt-ui/format`                      | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `UseBasaltFormOptions` — `basalt-ui/forms`            | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `useFormSubmit` — `basalt-ui/forms`                   | deleted — no consumer outside the playground                                                       |
+| `isFieldErrorEnvelope` — `basalt-ui/forms`            | deleted — no consumer outside the playground                                                       |
+| `FormFieldErrors` — `basalt-ui/forms`                 | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `UseFormSubmitOptions` — `basalt-ui/forms`            | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `UseFormSubmitReturn` — `basalt-ui/forms`             | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `FormStateProvider` — `basalt-ui/forms`               | deleted — no consumer outside the playground                                                       |
+| `useFormState` — `basalt-ui/forms`                    | deleted — no consumer outside the playground                                                       |
+| `FormState` — `basalt-ui/forms`                       | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `FormStateProviderProps` — `basalt-ui/forms`          | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `useFieldArray` — `basalt-ui/forms`                   | deleted — no consumer outside the playground                                                       |
+| `UseFieldArrayReturn` — `basalt-ui/forms`             | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `FormErrorSummary` — `basalt-ui/forms`                | deleted — no consumer outside the playground                                                       |
+| `FormErrorSummaryProps` — `basalt-ui/forms`           | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `useFormDraft` — `basalt-ui/forms`                    | deleted — no consumer outside the playground                                                       |
+| `DEFAULT_AUTOSAVE_DEBOUNCE_MS` — `basalt-ui/forms`    | deleted — no consumer outside the playground                                                       |
+| `UseFormDraftOptions` — `basalt-ui/forms`             | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `UseFormDraftReturn` — `basalt-ui/forms`              | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `ActionGroup` — `basalt-ui/controls`                  | deleted — no consumer outside the playground                                                       |
+| `OverflowMenu` — `basalt-ui/controls`                 | deleted — no consumer outside the playground                                                       |
+| `MOBILE_GLOBAL_BAR_MAX` — `basalt-ui/controls`        | deleted — no consumer outside the playground                                                       |
+| `barActionMobile` — `basalt-ui/controls`              | deleted — no consumer outside the playground                                                       |
+| `globalActionMobile` — `basalt-ui/controls`           | deleted — no consumer outside the playground                                                       |
+| `BarActionItem` — `basalt-ui/controls`                | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `BarActionMenu` — `basalt-ui/controls`                | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `BarActionCustom` — `basalt-ui/controls`              | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `ActionGroupProps` — `basalt-ui/controls`             | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `OverflowMenuProps` — `basalt-ui/controls`            | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `formatAge` — `basalt-ui/controls`                    | deleted — no consumer outside the playground                                                       |
+| `AGE_REFRESH_MS` — `basalt-ui/controls`               | deleted — no consumer outside the playground                                                       |
+| `SyncButtonProps` — `basalt-ui/controls`              | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `ControlGroup` — `basalt-ui/controls`                 | deleted — no consumer outside the playground                                                       |
+| `ControlGroupProps` — `basalt-ui/controls`            | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `FilterSetProps` — `basalt-ui/controls`               | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `RangeCustomPickerProps` — `basalt-ui/controls`       | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `RangeFilterProps` — `basalt-ui/controls`             | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `CompareFilter` — `basalt-ui/controls`                | deleted — no consumer outside the playground                                                       |
+| `COMPARE_VALUES` — `basalt-ui/controls`               | deleted — no consumer outside the playground                                                       |
+| `CompareFilterProps` — `basalt-ui/controls`           | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `CompareValue` — `basalt-ui/controls`                 | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `FilterOption` — `basalt-ui/controls`                 | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `SelectFilterEnumProps` — `basalt-ui/controls`        | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `SelectFilterProps` — `basalt-ui/controls`            | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `SelectFilterStringProps` — `basalt-ui/controls`      | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `MultiSelectFilterProps` — `basalt-ui/controls`       | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `NumberFilterOption` — `basalt-ui/controls`           | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `NumberFilterProps` — `basalt-ui/controls`            | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `SearchFilterProps` — `basalt-ui/controls`            | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `ToggleFilterProps` — `basalt-ui/controls`            | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `ViewTabsOption` — `basalt-ui/controls`               | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `ViewTabsProps` — `basalt-ui/controls`                | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `PanelRow` — `basalt-ui/controls`                     | deleted — no consumer outside the playground                                                       |
+| `PanelRowProps` — `basalt-ui/controls`                | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `SliderControl` — `basalt-ui/controls`                | deleted — no consumer outside the playground                                                       |
+| `SliderControlProps` — `basalt-ui/controls`           | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `FormSection` — `basalt-ui/controls`                  | deleted — no consumer outside the playground                                                       |
+| `FormActions` — `basalt-ui/controls`                  | deleted — no consumer outside the playground                                                       |
+| `FormSectionProps` — `basalt-ui/controls`             | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `FormSectionSlot` — `basalt-ui/controls`              | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `FormRowProps` — `basalt-ui/controls`                 | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `FormRowSlot` — `basalt-ui/controls`                  | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `FormGroupProps` — `basalt-ui/controls`               | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `FormActionsProps` — `basalt-ui/controls`             | deleted — type only; derive it with `ComponentProps`/`Parameters`                                  |
+| `RangeCustomPickerProps` — `basalt-ui/controls-dates` | deleted — duplicate of ./controls; one import path per symbol                                      |
+
+Still exported from `basalt-ui` in this wave, because the provider, query and dev-dock lanes replace them (V2-SPEC §§ 2, 7): `BasaltProviderProps`, `BasaltErrorBoundary`(`Props`), `BasaltErrorContext`, the `Connectivity*` family, `createBasaltQueryClient`, `BasaltQueryDevtools`, `toErrorMessage`, `errorStatus`, `BasaltDevDock`(`Props`/`Tool`). `BasaltRegister` is also kept: `declare module` augmentation only merges when the entry exports it.

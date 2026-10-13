@@ -32,7 +32,7 @@ const SMALL_MAX_EM = sizeClassMaxEm(SIZE_CLASSES.medium)
 //    registered with a `roundedBy` reason (moved verbatim from shadow-surfaces.test.ts).
 // ════════════════════════════════════════════════════════════════════════════════════════════════
 
-const SHADOW_DEFINITION_FILES = new Set(['tokens/index.ts', 'tokens/palette.ts'])
+const SHADOW_DEFINITION_FILES = new Set(['tokens/core.ts', 'tokens/palette.ts'])
 
 function collectSourceFiles(dir: string, out: string[]): void {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
@@ -292,17 +292,17 @@ const SHADOW_SURFACES: readonly ShadowSurfaceEntry[] = [
     roundedBy: 'borderRadius: 8 (co-declared in the same TOOLTIP_STYLES object).',
   },
   {
-    file: 'agent-chat/thread-outcome-card.tsx',
+    file: 'agent/chat/thread-outcome-card.tsx',
     site: 'default',
     roundedBy: 'borderRadius: VX.radiusCard (co-declared in the same inline style object).',
   },
   {
-    file: 'agent-chat/thread-message.tsx',
+    file: 'agent/chat/thread-message.tsx',
     site: 'default',
     roundedBy: 'borderRadius: VX.radiusCard (co-declared in the same inline style object).',
   },
   {
-    file: 'agent-chat/thread-feed-row.tsx',
+    file: 'agent/chat/thread-feed-row.tsx',
     site: 'default',
     roundedBy:
       'borderRadius: VX.radiusCard (co-declared in the same inline style object as the shadow). ' +

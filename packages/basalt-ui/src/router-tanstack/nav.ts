@@ -11,6 +11,7 @@
  *
  * No JSX and no Mantine in this module — `./router-tanstack` is a headless barrel by contract.
  */
+import type { RegisteredRouter } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
 import type { NavMobilePlacement, NavSectionMobile } from '../shell/nav-types'
 
@@ -154,8 +155,33 @@ export function navGroup<const M extends NavGroupMeta, const T extends ReadonlyA
 export function defineNav<
   const G extends ReadonlyArray<AnyNavGroup>,
   const T extends ReadonlyArray<NavTabId<G>>,
->(config: NavConfig<G, T>): NavConfig<G, T> {
-  return config
+>(config: RegisteredOr<NavConfig<G, T>>): NavConfig<G, T> {
+  const nav = config as unknown as NavConfig<G, T>
+  activeNav = nav
+  return nav
+}
+
+/**
+ * Without the `Register` augmentation `RegisteredRouter` is `AnyRouter`, every `to` widens to
+ * `string` and the definition validates nothing — so the parameter becomes an unsatisfiable string
+ * literal whose text is the fix (V2-SPEC § 3).
+ */
+type RegisteredOr<T> = 0 extends 1 & RegisteredRouter['routeTree']
+  ? 'basalt: declare Register { router }'
+  : T
+
+/**
+ * The runtime stash `defineNav` fills (the last call wins, like `defineCommands`), read by
+ * `BasaltProvider` to project the nav into Spotlight. Type augmentation is erased, so this is the
+ * live source.
+ *
+ * @internal
+ */
+let activeNav: { groups: ReadonlyArray<AnyNavGroup> } | undefined
+
+/** @internal */
+export function getActiveNav(): { groups: ReadonlyArray<AnyNavGroup> } | undefined {
+  return activeNav
 }
 
 // ── readers ──────────────────────────────────────────────────────────────────────────────────────

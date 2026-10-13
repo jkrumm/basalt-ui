@@ -21,7 +21,7 @@ echo "==> publint"
 bunx publint --strict "$TGZ"
 
 echo "==> attw (are-the-types-wrong)"
-bunx attw "$TGZ" --profile esm-only --ignore-rules cjs-resolves-to-esm named-exports --exclude-entrypoints ./styles.css ./tokens.css ./llms.txt ./package.json
+bunx attw "$TGZ" --profile esm-only --ignore-rules cjs-resolves-to-esm named-exports --exclude-entrypoints ./styles.css
 
 echo "==> assert tarball contents"
 # Assert against a FILE, never `echo "$LIST" | grep -q`. Under this script's `set -o pipefail`,
@@ -40,10 +40,12 @@ for f in \
   dist/index.js dist/index.d.ts dist/index.d.ts.map \
   dist/charts/index.js dist/charts/index.d.ts \
   dist/tokens/index.js dist/tokens/index.d.ts \
-  dist/guard/index.js dist/guard/index.d.ts \
+  dist/table/index.js dist/table/index.d.ts \
+  dist/commands/index.js dist/commands/index.d.ts \
+  dist/agent/index.js dist/agent/index.d.ts \
   dist/state.js dist/state.d.ts \
   dist/vite.js dist/vite.d.ts \
-  dist/theme-lab/index.js dist/cli/index.js dist/styles.css dist/tokens.css \
+  dist/cli/index.js dist/styles.css \
   dist/shell/index.js \
   dist/shell/app-sidebar.module.css dist/shell/app-mobile-nav.module.css dist/shell/app-header.module.css \
   dist/controls/index.js dist/controls/index.d.ts dist/controls/controls.module.css \
@@ -96,7 +98,26 @@ scratch_install() {
   rm -f "$log"
 }
 
+# The peer classes of docs/V2-SPEC.md § 1 "Peers": scripts/surface-gates.ts holds the one list (the
+# graph-side assertion reads it too), `scripts/surface-peers.ts` prints it for this script, so the
+# shell cannot drift from the gate. Scratch installs take each peer at the range the tarball declares,
+# so a range bump in package.json is exercised here without a second edit.
+# One `name@range` line per peer, read into an array by `peer_array` (bash 3.2 has no mapfile).
+peer_array() {
+  local out=$1 line
+  shift
+  eval "$out=()"
+  while IFS= read -r line; do eval "$out+=(\"\$line\")"; done < <(
+    for name in "$@"; do
+      node -p "'$name@' + require('$PWD_PKG/package.json').peerDependencies['$name']"
+    done
+  )
+}
+
+PWD_PKG="$PWD"
 echo "==> scratch-consumer resolution test (with optional peers)"
+# Every declared peer at its declared range, except vite (pinned below).
+peer_array ALL_PEERS $(node -p "Object.keys(require('$PWD/package.json').peerDependencies).filter((n) => n !== 'vite').join(' ')")
 ABS_TGZ="$PWD/$TGZ"
 SCRATCH=$(mktemp -d)
 SCRATCH2=""
@@ -111,23 +132,8 @@ echo '{ "name": "scratch", "private": true, "type": "module" }' >package.json
 # 2026-09-02 because rolldown 1.2.7 was live while its linux-x64 binding was still at 1.2.6. The
 # gate proves the ARTIFACT resolves; vite compatibility is the playground's and `make check`'s job.
 scratch_install "$ABS_TGZ" \
-  react react-dom \
-  @mantine/core @mantine/hooks \
-  @mantine/dates \
-  @mantine/form @mantine/notifications @mantine/spotlight @mantine/modals \
-  "@tanstack/react-query@^5.101.0" "@tanstack/react-query-devtools@^5.101.0" \
-  "@tanstack/react-router@^1.170.0" \
-  "@tanstack/react-table@>=8 <9" "@tanstack/react-virtual@>=3.13.26 <4" \
-  "react-markdown@^10.1.0" "remark-gfm@^4.0.1" \
-  "use-stick-to-bottom@^1.1.6" \
-  "vite@8.0.16" \
-  typescript \
-  "@visx/axis@4.0.0" "@visx/curve@4.0.0" "@visx/event@4.0.0" "@visx/grid@4.0.0" \
-  "@visx/group@4.0.0" "@visx/responsive@4.0.0" "@visx/scale@4.0.0" "@visx/shape@4.0.0" \
-  "@visx/threshold@4.0.0" \
-  "motion@12.42.0" "remend@1.3.0" \
-  "@fontsource-variable/hubot-sans@5.2.8" "@fontsource-variable/jetbrains-mono@5.2.8" \
-  "@fontsource-variable/nunito-sans@5.2.7"
+  "vite@8.0.16" typescript \
+  "${ALL_PEERS[@]}"
 cat >test.mjs <<'JS'
 import { readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
@@ -137,25 +143,17 @@ const subpaths = [
   'basalt-ui',
   'basalt-ui/charts',
   'basalt-ui/tokens',
-  'basalt-ui/guard',
-  'basalt-ui/format',
-  'basalt-ui/state',
-  'basalt-ui/vite',
-  'basalt-ui/theme-lab',
-  'basalt-ui/styles.css',
-  'basalt-ui/tokens.css',
-  'basalt-ui/router-tanstack',
-  'basalt-ui/forms',
-  'basalt-ui/notifications',
-  'basalt-ui/commands',
-  'basalt-ui/data/table',
-  'basalt-ui/data/virtual',
-  'basalt-ui/agent',
-  'basalt-ui/agent-chat',
-  'basalt-ui/content',
   'basalt-ui/controls',
   'basalt-ui/controls-dates',
-  'basalt-ui/package.json',
+  'basalt-ui/forms',
+  'basalt-ui/state',
+  'basalt-ui/table',
+  'basalt-ui/format',
+  'basalt-ui/commands',
+  'basalt-ui/agent',
+  'basalt-ui/content',
+  'basalt-ui/vite',
+  'basalt-ui/styles.css',
 ]
 for (const s of subpaths) {
   const url = import.meta.resolve(s)
@@ -166,10 +164,6 @@ for (const s of subpaths) {
 // the Mantine-free tokens entry must fully load (no peer deps required)
 const tokens = await import('basalt-ui/tokens')
 if (typeof tokens.buildPaletteCss !== 'function') throw new Error('tokens.buildPaletteCss missing')
-
-// the Mantine-free guard entry must load with checkSource present
-const guard = await import('basalt-ui/guard')
-if (typeof guard.checkSource !== 'function') throw new Error('guard.checkSource missing')
 
 // the Mantine-free, React-free format entry must load and format
 const format = await import('basalt-ui/format')
@@ -182,25 +176,19 @@ if (format.money(1234, { currency: 'USD', locale: 'en-US' }) !== '$1,234') {
 JSON.parse(readFileSync(require.resolve('basalt-ui/configs/oxlint.json'), 'utf8'))
 JSON.parse(readFileSync(require.resolve('basalt-ui/configs/oxlint-basalt.json'), 'utf8'))
 
-// the exports map's own './package.json' entry must resolve to a parseable manifest naming the package
-const pkgJson = JSON.parse(readFileSync(require.resolve('basalt-ui/package.json'), 'utf8'))
-if (pkgJson.name !== 'basalt-ui') throw new Error(`basalt-ui/package.json name is '${pkgJson.name}', not 'basalt-ui'`)
-
 // headless adapter smoke imports (peers installed — these load without a DOM/provider)
 const agentMod = await import('basalt-ui/agent')
-if (typeof agentMod.useAgentStream !== 'function') throw new Error('agent.useAgentStream missing')
-if (typeof agentMod.edenTransport !== 'function') throw new Error('agent.edenTransport missing')
+if (typeof agentMod.aiSdkTransport !== 'function') throw new Error('agent.aiSdkTransport missing')
 console.log('smoke: basalt-ui/agent OK')
 
-const routerTanstackMod = await import('basalt-ui/router-tanstack')
-if (typeof routerTanstackMod.createSearchStore !== 'function') {
-  throw new Error('router-tanstack.createSearchStore missing')
-}
-console.log('smoke: basalt-ui/router-tanstack OK')
+const stateMod = await import('basalt-ui/state')
+if (typeof stateMod.createSearchStore !== 'function') throw new Error('state.createSearchStore missing')
+console.log('smoke: basalt-ui/state OK')
 
 console.log(`scratch resolution OK (${subpaths.length} subpaths)`)
 JS
-node test.mjs
+# `./agent` ships the Mantine chat UI, whose CSS-module imports plain Node cannot load.
+node --import "$(dirname "$ABS_TGZ")/scripts/css-noop-register.mjs" test.mjs
 
 echo "==> export-surface snapshot (named-export completeness per subpath)"
 # publint/attw validate the export MAP, not named-export completeness — a barrel that drops a
@@ -262,8 +250,9 @@ mkdir -p guard-fixture
 # a literal: the bug being guarded against IS a literal that stopped matching the scale. Written
 # this way, the step asserts the shipped guard and the shipped tokens agree — from a consumer's
 # vantage, against the real artifact — which is the check that was missing when they disagreed.
+# `deriveSpacing` is internal since 2.0, so it is read off the installed file, not the export map.
 bun -e "
-import { deriveSpacing } from 'basalt-ui/tokens'
+import { deriveSpacing } from './node_modules/basalt-ui/dist/tokens/palette.js'
 import { writeFileSync } from 'node:fs'
 const md = deriveSpacing(0).scale.md
 writeFileSync(
@@ -328,44 +317,26 @@ cat >tsconfig.dist-vantage.json <<'JSON'
 }
 JSON
 # Write a consumer .ts that imports from the installed basalt-ui dist .d.ts files.
-# Uses Slot<>, AsyncState + assertNever, and SeriesKey — one per published surface.
+# Uses createBasaltTheme's literal-union knobs, groupTokens' branded SeriesGroup, the BasaltRegister
+# augmentation seam and SeriesKey — one per published surface.
 cat >dist-vantage.ts <<'TS'
-import type { Slot, AsyncState } from 'basalt-ui'
-import { assertNever } from 'basalt-ui'
+import { createBasaltTheme } from 'basalt-ui'
+import type { BasaltRegister } from 'basalt-ui'
+import { buildPaletteCss, defineSeries, groupTokens } from 'basalt-ui/tokens'
 import type { SeriesKey } from 'basalt-ui/charts'
-import type { GuardKind, GuardSeverity, Finding } from 'basalt-ui/guard'
 
-// Slot: un-augmented slot is never-keyed {}
-type EmptySlot = Slot<'nonexistent', Record<string, unknown>>
-const _k: keyof EmptySlot = undefined as never
+// radius/density are literal unions (V2-SPEC section 3)
+const _theme = createBasaltTheme(undefined, { radius: 2, density: -1 })
 
-// AsyncState: exhaustive switch via assertNever
-function render(s: AsyncState<number>): string {
-  switch (s.status) {
-    case 'idle':    return 'idle'
-    case 'loading': return 'loading'
-    case 'success': return String(s.data)
-    case 'error':   return String(s.error)
-    default:        return assertNever(s)
-  }
-}
+// groupTokens returns a branded SeriesGroup that paletteOptions.groups accepts
+const _group = groupTokens('x', defineSeries({ a: { light: '#111111', dark: '#eeeeee' } }))
+const _css = buildPaletteCss({ groups: [_group] })
 
-// SeriesKey resolves (never when un-augmented — valid, no tsc error)
+// An un-augmented register is never-keyed; SeriesKey resolves (never when un-augmented)
+const _k: keyof BasaltRegister = undefined as never
 const _sk: SeriesKey = undefined as never
 
-// GuardKind, GuardSeverity and Finding are present in the .d.ts
-const _gk: GuardKind = 'raw-hex'
-const _sev: GuardSeverity = 'error'
-const _f: Finding = {
-  relPath: 'x',
-  line: 1,
-  token: '#fff',
-  text: 'color: #fff',
-  kind: 'raw-hex',
-  severity: _sev,
-}
-
-export { render, _k, _sk, _gk, _sev, _f }
+export { _theme, _css, _k, _sk }
 TS
 bunx tsc --project tsconfig.dist-vantage.json
 echo "dist-vantage tsc OK"
@@ -458,7 +429,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { MantineProvider } from '@mantine/core'
 
 const controls = await import('basalt-ui/controls')
-for (const name of ['FilterSet', 'RangeFilter', 'SelectFilter', 'MultiSelectFilter', 'SearchFilter', 'ToggleFilter', 'ViewTabs', 'CompareFilter']) {
+for (const name of ['FilterSet', 'RangeFilter', 'SelectFilter', 'MultiSelectFilter', 'SearchFilter', 'ToggleFilter', 'ViewTabs']) {
   if (typeof controls[name] !== 'function') throw new Error(`controls.${name} missing`)
 }
 
@@ -496,7 +467,7 @@ if (!html.includes('Filters')) throw new Error('FilterSet did not render its mob
 console.log('controls without @mantine/dates: resolution + render OK')
 
 // The form layout, with `@mantine/form` genuinely absent: resolves AND renders.
-for (const name of ['FormSection', 'FormRow', 'FormGroup', 'FormActions']) {
+for (const name of ['FormRow', 'FormGroup']) {
   if (typeof controls[name] !== 'function') throw new Error(`controls.${name} missing`)
 }
 const rowHtml = renderToStaticMarkup(
@@ -531,79 +502,111 @@ console.log('controls-dates correctly requires @mantine/dates')
 JS
 node --import "$PKGDIR/scripts/css-noop-register.mjs" controls.mjs
 
-echo "==> agent-chat + root-entry minimal-peer resolution (motion required, remend genuinely optional)"
-# `./agent-chat`'s optionalPeers list (surfaces.ts) cannot express that `motion` is a HARD static
-# requirement while `remend` is genuinely optional — npm has no per-subpath optionality. The
-# scratch-consumer step above installs every optional peer at once, so it can never catch a peer
-# that is secretly required; this step is the minimal install that would catch that class of defect
-# (a peer silently required, documented as optional). Models the shape of the charts/tokens-only
-# step above rather than inventing a new mechanism.
-#
-# Ground truth (verified against the import graph, not assumed): `thread-feed.tsx` and
-# `thread-detail-panel.tsx` import `motion/react` eagerly, and the root entry's `./provider` ->
-# `./connectivity` chain imports `@tanstack/react-query` eagerly (ConnectivityProvider, auto-mounted
-# by BasaltProvider) — both genuinely required to resolve their entries even though
-# `peerDependenciesMeta` marks them optional. `remend` is NOT — `thread-message.tsx` reaches
-# `content/markdown.tsx`'s `Markdown`, but markdown.tsx's own `remend` dependency is a lazy
-# `import('remend')`, so the static chain stops there. This is F2: `markdown.tsx` used to have a
-# STATIC top-level `import remend from 'remend'`, which meant the ROOT entry — which re-exports
-# `./agent-chat` (see src/index.ts) — hard-required `remend` too, even though `peerDependenciesMeta`
-# marks it optional. `remend` is deliberately NOT installed below (motion and @tanstack/react-query
-# ARE, since both are genuinely required) so this step also proves F2 from outside the package
-# boundary: the built, packed, INSTALLED artifact resolves and evaluates both `./agent-chat` and the
-# root entry with `remend` absent — not just "absent from source", which is the strongest claim a
-# source-level regression test can make.
+echo "==> subpath-required peers: installed vs absent (docs/V2-SPEC.md § 1 Peers)"
+# `peerDependenciesMeta` marks every subpath-required peer optional, and npm has no per-subpath
+# optionality, so the ONLY proof that a classification holds is a pair of installs: the required
+# peers alone (every subpath-required peer ABSENT), then the same tree plus the subpath-required
+# peers (PRESENT). Absent: the root entry must still resolve (`.` reaches no subpath-required peer),
+# and a subpath may either load or fail with ERR_MODULE_NOT_FOUND naming ITS OWN peer — never any
+# other module. Present: every subpath must load. `remend` is genuinely optional (lazy `import()`)
+# and is installed in neither tree, so the F2 regression (a static `remend` import in the root
+# chain) shows up as the root entry failing in the absent pass.
 SCRATCH4=$(mktemp -d)
 cd "$SCRATCH4"
-echo '{ "name": "scratch-agent-chat", "private": true, "type": "module" }' >package.json
-scratch_install "$ABS_TGZ" react react-dom \
-  @mantine/core @mantine/hooks \
-  "motion@12.42.0" "@tanstack/react-query@^5.101.0"
-if [ -d node_modules/remend ]; then
-  echo "FAILED: remend ended up in a scratch install that never requested it — test setup is broken, not a package defect"
-  exit 1
-fi
-cat >agent-chat.mjs <<'JS'
-// react/react-dom + @mantine/core + @mantine/hooks + motion is the FULL peer set `./agent-chat`
-// genuinely, statically requires (@tanstack/react-query is installed too, for the root-entry import
-// below — it is not needed by agent-chat itself) — deliberately NOT installed: remend, ai,
-// use-stick-to-bottom, react-markdown, remark-gfm, shiki, @shikijs/langs, @shikijs/themes,
-// beautiful-mermaid. Every one of those is reached only via `lazy()`/dynamic `import()`, so the
-// subpath must still resolve and its top-level exports must still be functions without them.
-try {
-  const agentChat = await import('basalt-ui/agent-chat')
-  if (typeof agentChat.ThreadWorkspace !== 'function') throw new Error('agent-chat.ThreadWorkspace missing')
-  if (typeof agentChat.ThreadTranscript !== 'function') throw new Error('agent-chat.ThreadTranscript missing')
-  if (typeof agentChat.ThreadFeed !== 'function') throw new Error('agent-chat.ThreadFeed missing')
-  if (typeof agentChat.ThreadDetailPanel !== 'function') throw new Error('agent-chat.ThreadDetailPanel missing')
-} catch (err) {
-  console.error(err)
-  throw new Error(
-    'basalt-ui/agent-chat failed to resolve/evaluate with remend NOT installed — an optional peer ' +
-      'has regressed to a hard, static import (the F2 defect). This subpath must load for every ' +
-      'agent-chat consumer who never installs remend.',
-  )
+echo '{ "name": "scratch-peers", "private": true, "type": "module" }' >package.json
+REQUIRED_PEER_NAMES=()
+while IFS= read -r name; do REQUIRED_PEER_NAMES+=("$name"); done < <(bun "$PKGDIR/scripts/surface-peers.ts" required)
+SUBPATH_PEER_NAMES=()
+while IFS= read -r name; do SUBPATH_PEER_NAMES+=("$name"); done < <(bun "$PKGDIR/scripts/surface-peers.ts" subpath)
+OWN_PEERS=$(bun "$PKGDIR/scripts/surface-peers.ts" own)
+export OWN_PEERS
+peer_array REQUIRED_PEERS "${REQUIRED_PEER_NAMES[@]}"
+scratch_install "$ABS_TGZ" "${REQUIRED_PEERS[@]}"
+for absent in remend "${SUBPATH_PEER_NAMES[@]}"; do
+  if [ -d "node_modules/$absent" ]; then
+    echo "FAILED: $absent ended up in the required-peers-only install — test setup is broken, not a package defect"
+    exit 1
+  fi
+done
+cat >peers.mjs <<'JS'
+// subpath -> the peers whose absence may legitimately break it (V2-SPEC.md § 1 Peers). The
+// subpath-required half is printed by scripts/surface-peers.ts from surface-gates.ts (OWN_PEERS);
+// the peer-free subpaths are listed here so they are still imported.
+const own = {
+  ...JSON.parse(process.env.OWN_PEERS),
+  'basalt-ui/controls': [],
+  'basalt-ui/state': [],
+  'basalt-ui/format': [],
+  'basalt-ui/tokens': [],
 }
-console.log('agent-chat minimal-peer resolution OK (motion required, remend not installed)')
-
-// F2 regression proof: the ROOT entry re-exports `./agent-chat` (src/index.ts), so a static `remend`
-// import anywhere in that chain doesn't just break agent-chat users — it breaks EVERY consumer of
-// `basalt-ui`'s root entry, including ones who never touch agent-chat at all.
-try {
-  const root = await import('basalt-ui')
-  if (typeof root.ThreadWorkspace !== 'function') throw new Error('root entry ThreadWorkspace missing')
-} catch (err) {
-  console.error(err)
-  throw new Error(
-    'basalt-ui root entry hard-requires an optional peer: it failed to resolve/evaluate with remend ' +
-      'not installed at all. The root entry re-exports ./agent-chat, so this is the F2 defect — a ' +
-      'lazy dynamic import() regressed back to a static one — and it means EVERY consumer of the ' +
-      'root entry now needs remend installed, not just agent-chat consumers.',
-  )
+const phase = process.argv[2]
+let failed = false
+for (const [subpath, peers] of [['basalt-ui', []], ...Object.entries(own)]) {
+  try {
+    await import(subpath)
+    console.log(`${phase}: ${subpath} loads`)
+  } catch (err) {
+    // Deferred gap (surface-gates DEFERRED_PEER_GAPS): the root's ThemeToggle still imports motion
+    // until V2-SPEC section 5 lands (W7).
+    const deferred = subpath === 'basalt-ui' && String(err.message).includes("'motion")
+    if (phase === 'absent' && err.code === 'ERR_MODULE_NOT_FOUND' && deferred) {
+      console.log('absent: basalt-ui still needs motion (ThemeToggle, deferred to W7)')
+      continue
+    }
+    const named = peers.some((p) => String(err.message).includes(`'${p}`))
+    if (phase === 'absent' && err.code === 'ERR_MODULE_NOT_FOUND' && named) {
+      console.log(`absent: ${subpath} needs its own peer (${err.message.split("'")[1]})`)
+      continue
+    }
+    console.error(`${phase}: ${subpath} failed unexpectedly:`, err.message)
+    failed = true
+  }
 }
-console.log('F2 proof: root entry resolved and evaluated with remend NOT installed at all')
+if (failed) process.exit(1)
 JS
-node --import "$PKGDIR/scripts/css-noop-register.mjs" agent-chat.mjs
+node --import "$PKGDIR/scripts/css-noop-register.mjs" peers.mjs absent
+# vite is installed at the pinned version below, not at its declared range (see the first install).
+INSTALL_PEER_NAMES=()
+for name in "${SUBPATH_PEER_NAMES[@]}"; do [ "$name" = vite ] || INSTALL_PEER_NAMES+=("$name"); done
+peer_array SUBPATH_PEERS "${INSTALL_PEER_NAMES[@]}"
+scratch_install "$ABS_TGZ" "${SUBPATH_PEERS[@]}" "use-stick-to-bottom@^1.1.6" "@tanstack/react-virtual@>=3.13.26 <4" "vite@8.0.16"
+node --import "$PKGDIR/scripts/css-noop-register.mjs" peers.mjs present
+echo "subpath-required peers OK (absent: own-peer failures only; present: every subpath loads)"
+
+echo "==> ./styles.css @importing Mantine's layer CSS (V2-SPEC.md § 1 Open)"
+# The shipped stylesheet must itself `@import '@mantine/core/styles.layer.css'`, and bundling it with
+# the bundler consumers run (Vite, i.e. Rolldown) must land Mantine's `@layer mantine` block before
+# `@layer basalt`, so basalt wins by layer order exactly as the declared `@layer mantine, basalt;`
+# promises. The `@layer` statement itself is folded away by the bundler; declaration order is what
+# survives, so that is what is asserted.
+cat >styles-proof.mjs <<'JS'
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs'
+import { createRequire } from 'node:module'
+import { build } from 'vite'
+const require = createRequire(import.meta.url)
+const css = readFileSync(require.resolve('basalt-ui/styles.css'), 'utf8')
+if (!css.includes("@import '@mantine/core/styles.layer.css'")) {
+  throw new Error("the shipped styles.css does not `@import '@mantine/core/styles.layer.css'`")
+}
+mkdirSync('styles-proof', { recursive: true })
+writeFileSync('styles-proof/styles.css', css)
+writeFileSync('styles-proof/main.js', "import './styles.css'\n")
+const result = await build({
+  configFile: false,
+  logLevel: 'silent',
+  root: 'styles-proof',
+  build: { write: false, rolldownOptions: { input: 'main.js' } },
+})
+const bundle = Array.isArray(result) ? result[0] : result
+const out = bundle.output.filter((o) => o.fileName.endsWith('.css')).map((o) => String(o.source)).join('\n')
+const mantine = out.indexOf('@layer mantine{')
+const basalt = out.indexOf('@layer basalt{')
+if (mantine === -1 || basalt === -1) throw new Error(`layers missing from the bundled CSS (mantine ${mantine}, basalt ${basalt})`)
+if (mantine > basalt) throw new Error('@layer basalt precedes @layer mantine: basalt would lose to Mantine')
+if (!out.includes('--mantine-color-scheme')) throw new Error('Mantine rules are missing from the bundled CSS')
+console.log('styles.css + Mantine layer CSS OK (shipped import)')
+JS
+node styles-proof.mjs
 
 echo "==> tokens-only install is light (no peers at all)"
 # The property this whole change exists to prove: a consumer who only wants the token layer

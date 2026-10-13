@@ -239,8 +239,8 @@ describe('sync — retired rules and skills', () => {
 })
 
 /**
- * `sync --check` sits in consumers' CI `check` chains, and it printed three permanent "skipped"
- * paragraphs (lefthook.yml, .github/workflows/check.yml, src/query-client.ts) on EVERY run — a
+ * `sync --check` sits in consumers' CI `check` chains, and it printed permanent "skipped"
+ * paragraphs (lefthook.yml, .github/workflows/check.yml) on EVERY run — a
  * state that is correct, unchanging, and in a CI log indistinguishable from the drift the gate
  * exists to report. The count survives; the paragraphs move behind `--verbose`.
  */
@@ -282,24 +282,5 @@ describe('sync --check — a permanent skip is not drift', () => {
     const { code, log } = capture(() => sync({ check: true }, dir))
     expect(code).toBe(0)
     expect(log).not.toContain('placement skip')
-  })
-})
-
-/**
- * The seeded query client is a FACTORY, not a module-level singleton. `export const queryClient =
- * createBasaltQueryClient()` is created once per PROCESS, so an SSR consumer (weatherorb is a TanStack
- * Start app that prerenders routes) serves every request from one shared cache.
- */
-describe('the seeded query client is SSR-safe', () => {
-  it('seeds a makeQueryClient() factory, never a module-level singleton', () => {
-    writeFixture(
-      'package.json',
-      JSON.stringify({ name: 'fixture', dependencies: { '@tanstack/react-query': '^5' } }),
-    )
-    capture(() => init(dir))
-    const seed = readFileSync(join(dir, 'src/query-client.ts'), 'utf8')
-    expect(seed).toContain('export function makeQueryClient()')
-    expect(seed).not.toMatch(/^export const queryClient =/m)
-    expect(seed).toContain('once per request')
   })
 })

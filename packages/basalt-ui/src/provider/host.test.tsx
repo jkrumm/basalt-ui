@@ -1,6 +1,7 @@
 /** `data-basalt-host` on `<html>` — set by `BasaltProvider`, the only `display-mode` reader. */
 import { act, cleanup, render } from '@testing-library/react'
 import { afterEach, describe, expect, test } from 'bun:test'
+import { testRouter } from './test-router'
 import { BasaltProvider, useHostAttribute } from './index'
 
 afterEach(() => {
@@ -57,7 +58,7 @@ describe('BasaltProvider data-basalt-host', () => {
   test('web in a browser tab', () => {
     const restore = stubDisplayMode(false)
     try {
-      render(<BasaltProvider>x</BasaltProvider>)
+      render(<BasaltProvider router={testRouter()} />)
       expect(document.documentElement.getAttribute('data-basalt-host')).toBe('web')
     } finally {
       restore()
@@ -67,7 +68,7 @@ describe('BasaltProvider data-basalt-host', () => {
   test('pwa when display-mode is standalone', () => {
     const restore = stubDisplayMode(true)
     try {
-      render(<BasaltProvider>x</BasaltProvider>)
+      render(<BasaltProvider router={testRouter()} />)
       expect(document.documentElement.getAttribute('data-basalt-host')).toBe('pwa')
     } finally {
       restore()
@@ -77,7 +78,7 @@ describe('BasaltProvider data-basalt-host', () => {
   test('the attribute is removed on unmount', () => {
     const restore = stubDisplayMode(false)
     try {
-      const { unmount } = render(<BasaltProvider>x</BasaltProvider>)
+      const { unmount } = render(<BasaltProvider router={testRouter()} />)
       unmount()
       expect(document.documentElement.getAttribute('data-basalt-host')).toBeNull()
     } finally {
@@ -88,7 +89,7 @@ describe('BasaltProvider data-basalt-host', () => {
   test('follows a display-mode change between web and pwa', () => {
     const stub = stubChangeableDisplayMode()
     try {
-      render(<BasaltProvider>x</BasaltProvider>)
+      render(<BasaltProvider router={testRouter()} />)
       expect(document.documentElement.getAttribute('data-basalt-host')).toBe('web')
       act(() => stub.flip(true))
       expect(document.documentElement.getAttribute('data-basalt-host')).toBe('pwa')

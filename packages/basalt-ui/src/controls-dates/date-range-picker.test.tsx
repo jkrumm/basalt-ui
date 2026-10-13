@@ -1,6 +1,6 @@
 /**
  * `DateRangePicker` — F-ERR-1: a missing `value` used to surface from inside the read as
- * `undefined is not an object (evaluating 'value.from')`, caught by `BasaltErrorBoundary` into a
+ * `undefined is not an object (evaluating 'value.from')`, caught by `RootBoundary` into a
  * blank subtree. `assertRequiredProps` names the component and the prop instead.
  */
 import { MantineProvider } from '@mantine/core'

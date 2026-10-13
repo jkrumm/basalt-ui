@@ -61,7 +61,7 @@ import {
 } from '@mantine/core'
 import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
-import { buildDensityCss, buildPaletteCss, buildRadiusCss } from '../tokens'
+import { buildDensityCss, buildPaletteCss, buildRadiusCss } from '../tokens/core'
 import type { DeriveConfig } from '../tokens/derive'
 import { buildPaletteData, deriveRadius, deriveSpacing } from '../tokens/palette'
 import {
