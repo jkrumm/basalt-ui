@@ -164,12 +164,19 @@ function rightOfLead(row: Named, lead: Named): Named {
   }
 }
 
-/** Collapses the sidebar and waits for the navbar to finish easing to the rail width. */
+/**
+ * Collapses the sidebar and waits for the SETTLED rail geometry. The navbar and the header zone
+ * ease on separate transitions (`reducedMotion` does not stop them), and on a loaded host the
+ * navbar can land first — measuring the zone then reads it mid-ease (171px for a 48px rail).
+ * So wait for the navbar AND for every running animation to finish (the zone's own width is not
+ * pinned to the rail — a lead inset legitimately widens it).
+ */
 async function collapseSidebar(p: LayoutPage): Promise<void> {
   await p.raw.click(COLLAPSE_TOGGLE)
   await p.raw.waitForFunction(
     ([navbar, rail]) =>
-      Math.abs((document.querySelector(navbar)?.getBoundingClientRect().width ?? 0) - rail) < 0.5,
+      Math.abs((document.querySelector(navbar)?.getBoundingClientRect().width ?? 0) - rail) < 0.5 &&
+      document.getAnimations().every((a) => a.playState !== 'running'),
     [NAVBAR, SPACE_STEP.appShellNavbarRailWidth] as const,
   )
   await p.settle()
