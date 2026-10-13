@@ -17,7 +17,7 @@ paths:
 
 ## The identity (stated once, here)
 
-basalt-ui ships ONE identity shared by the Mantine chrome and the visx charts: **cool-neutral zinc
+basalt-ui ships ONE identity shared by the Mantine chrome and the charts: **cool-neutral zinc
 surfaces on both schemes**, a page slightly darker than its panels, depth from a whisper shadow with
 a 1px ring baked in rather than a hairline border, and **one saturated sky-blue accent** that only
 points. Neutrals carry ~90% of the surface.
@@ -39,7 +39,7 @@ and the theme; read raw numbers, if you need them, off `tokens/palette.ts`.
 ## Color — never a raw literal
 
 - **No raw `#hex` / `rgb()` / `rgba()` / `hsl()` in scanned source.** Route color through `VX.*`
-  (from `basalt-ui/tokens` or `basalt-ui/charts` — they are CSS vars, so they work in components AND
+  (from `basalt-ui/tokens` — they are CSS vars, so they work in components AND
   in non-component files) or through the Mantine theme (`color` / `c` / `bg`, `theme.colors`).
 - **Opacity is `alpha(token, a)`** (`color-mix`), never `rgba()` — so the hue keeps resolving per
   scheme.
@@ -102,7 +102,7 @@ theme-allow-file <id>[, <id>…] — <why>       → the WHOLE FILE, those rules
 ```
 
 An id is a guard kind (`raw-surface`, `inline-spacing`, …) or an oxlint plugin rule
-(`hand-rolled-plot`, `hand-rolled-filter`, …), with or without the `basalt/` prefix.
+(`chart-in-raw-surface`, `hand-rolled-filter`, …), with or without the `basalt/` prefix.
 
 ```tsx
 // theme-allow raw-surface — third-party widget needs a literal corner

@@ -42,9 +42,9 @@ describe('agent-doc-drift guard', () => {
 
   it('collects a non-trivial valid-name surface (value exports ∪ barrel type exports)', () => {
     expect(validNames.size).toBeGreaterThan(100)
-    expect(validNames.has('ChartTooltipFloat')).toBe(true)
+    expect(validNames.has('ChartTooltipConfig')).toBe(true)
     expect(validNames.has('CartesianChart')).toBe(true)
-    expect(validNames.has('AxisBottomDate')).toBe(true)
+    expect(validNames.has('Lines')).toBe(true)
   })
 
   // ── Check A: bolded-backtick claim ──────────────────────────────────────────
@@ -59,7 +59,7 @@ describe('agent-doc-drift guard', () => {
   })
 
   it('Check A passes a fixture naming a real export in the bolded-backtick form', () => {
-    withFixture('Compose **`ChartTooltipFloat`** for the floating tooltip.\n', (file) => {
+    withFixture('Compose **`ChartTooltipConfig`** for the floating tooltip.\n', (file) => {
       expect(checkA([file], validNames)).toEqual([])
     })
   })
@@ -84,12 +84,12 @@ describe('agent-doc-drift guard', () => {
       expect(failures).toHaveLength(1)
       expect(failures[0]?.line).toBe(1)
       expect(failures[0]?.name).toBe('ChartTooltip')
-      expect(failures[0]?.replacement).toBe('ChartTooltipFloat')
+      expect(failures[0]?.replacement).toBe('the `tooltip` prop (ChartTooltipConfig)')
     })
   })
 
   it('Check B passes a fixture using only the live replacement name', () => {
-    withFixture('Tooltip = `ChartCard` / `ChartTooltipFloat` primitives.\n', (file) => {
+    withFixture('Tooltip = `ChartCard` / `ChartTooltipConfig` primitives.\n', (file) => {
       expect(checkB([file])).toEqual([])
     })
   })
