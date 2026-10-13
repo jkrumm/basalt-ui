@@ -15,8 +15,9 @@ CSS theme into the Mantine framework above. The old `./css` and `./starlight` Ta
 ## Precedence (this repo)
 
 Shipped rules in `/.claude/rules/` (when dogfooded) > `packages/basalt-ui/MAINTAINING.md` > this file >
-`docs/*.md`. When two disagree, fix the lower one to match, or update both deliberately. The
-consumer-side chain is a different stack, stated in its own terms by
+`docs/*.md`. When two disagree, fix the lower one to match, or update both deliberately. For 2.0
+work, `docs/V2-SPEC.md` is the ground truth and wins over the 1.x specs (plan: `docs/waves/PLAN.md`).
+The consumer-side chain is a different stack, stated in its own terms by
 `packages/basalt-ui/agent/templates/AGENTS-block.md.tpl` (`consumer DESIGN.md > the six shipped
 basalt-* rules > basalt-* skills`) — don't conflate the two. Two global-skill over­rides apply
 inside a basalt-ui consumer (see the template): `/frontend-design`'s "bold aesthetic" push is
