@@ -12,9 +12,11 @@
 #     `release-migrating.ts --check`, because `prepareCmd`'s MIGRATING rename runs in the `prepare`
 #     step, which a dry run SKIPS, so nothing else in the pipeline can catch a shape it can't fix;
 #   • a dry run first, ALWAYS, with the computed version read back before the real one is offered;
-#   • a hard refusal on a major — majors are banned here by design (see AGENTS.md), and the one
-#     way to get one by accident is a stray `feat!:`/`BREAKING CHANGE:` reaching master. Nothing
-#     else in the pipeline checks;
+#   • a refusal on a major (`version_gate`, tested in scripts/release.test.ts). Majors are banned
+#     here by design except the ONE sanctioned 2.0.0: a computed major passes only if it is exactly
+#     2.0.0 and the registry has no 2.x yet. A 3.0 or a second 2.0.0 dies. It checks the computed
+#     VERSION, not the commit: it cannot tell the designated BREAKING CHANGE commit from a stray
+#     one — review keeps it to one (packages/basalt-ui/MAINTAINING.md § The one sanctioned major);
 #   • the C16 grace gate against the COMPUTED version (`packages/basalt-ui/scripts/check-grace.ts`),
 #     which is the only place it can fire before the release instead of one minor after it — grace
 #     entries and deprecation `removeIn` dates alike, behind a build + export-surface check so its
@@ -26,6 +28,25 @@
 #         scripts/release.sh         — dry run, confirm, publish
 #         YES=1 scripts/release.sh   — same without the prompt (non-interactive callers)
 set -euo pipefail
+
+# version_gate <bump> <version> <registry-versions, one per line>
+# Returns 0 unless the computed version is a major other than the once-only 2.0.0; otherwise prints
+# why on stderr. Pure, so scripts/release.test.ts can source it (RELEASE_SH_LIB=1) without releasing.
+version_gate() {
+  local bump="$1" version="$2" registry="$3"
+  [ "$bump" = "major" ] || return 0
+  if [ "$version" = "2.0.0" ] && ! grep -qE '^2\.[0-9]+\.[0-9]+$' <<<"$registry"; then
+    return 0
+  fi
+  echo "a MAJOR is banned in this repo except the one sanctioned 2.0.0 (computed v$version; 2.x already published: $(grep -qE '^2\.[0-9]+\.[0-9]+$' <<<"$registry" && echo yes || echo no))." >&2
+  return 1
+}
+
+# Sourced with RELEASE_SH_LIB=1 (tests) this file defines the rule and stops here; a direct run
+# ignores the variable.
+if [ -n "${RELEASE_SH_LIB:-}" ] && [ "${BASH_SOURCE[0]}" != "$0" ]; then
+  return 0
+fi
 
 MODE="${1:-full}"
 case "$MODE" in
@@ -194,9 +215,12 @@ echo
 echo "  ${last_tag:-none} → v$version  (${bump:-unknown})"
 
 if [ "$bump" = "major" ]; then
-  die "a MAJOR is banned in this repo (AGENTS.md: no majors, 1.x absorbs breaks).
-   Something on $BRANCH carries \`feat!:\` or a BREAKING CHANGE footer. Rewrite it as a plain
-   \`feat:\` documenting the change in the body, then release again."
+  registry_versions=$(npm view --prefer-online basalt-ui versions --json 2>/dev/null |
+    node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{console.log([].concat(JSON.parse(s)).join("\n"))}catch{}})' ||
+    true)
+  [ -n "$registry_versions" ] || die "cannot read the published versions from the registry — the major gate needs them."
+  version_gate "$bump" "$version" "$registry_versions" ||
+    die "v$version is not releasable (reason above). Rewrite a stray \`feat!:\`/BREAKING CHANGE footer as a plain \`feat:\`."
 fi
 
 # ── The C16 grace gate, against the version about to be cut ──────────────────
