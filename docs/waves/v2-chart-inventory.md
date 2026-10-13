@@ -114,7 +114,7 @@ with `maxRows`, compact heights, and a cursor synced to the map timeline through
 | `Bars`                                               | 9               | Bars 9                                                               |
 | `Sparkline`                                          | 9 (+1 dev)      | LineSparkline 7, BarSparkline 2                                      |
 | `StackedArea`                                        | 3               | StackedArea 3                                                        |
-| `Heatmap`                                            | 3               | three bespoke grids; the 1.x kind has 0 uses                         |
+| `Heatmap`                                            | 3               | bespoke grids 3 (the 1.x kind has 0 uses)                            |
 | `DualPanel` / `BandStrip` / `MirroredBars` / `Donut` | 2 / 2 / 1 / 1   | same kind                                                            |
 | **Total**                                            | **59** (+3 dev) |                                                                      |
 

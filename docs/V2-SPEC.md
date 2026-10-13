@@ -663,6 +663,8 @@ numbers and the commands: `docs/waves/evidence/w1/charts.md`.
 
 1. **Hatch.** 5 linewatch charts hatch the absent state; TanStack's SVG resources are gradients and
    clips only. A custom hatch mark, or a flat `--vx-neutral` absent fill?
+2. **Stacked `Bars` on a log axis.** A stack has no zero on a log axis; the 1.x kind threw in dev,
+   2.0 `Bars` does not. W5 decides: throw, or document the gap.
 
 **Resolved (W4): legend hover emphasis.** The definition is rebuilt per legend hover. Mark `states`
 can neither show legend-only entries nor drop hidden series from the y domain.
@@ -711,7 +713,7 @@ A kind is proven by porting a real consumer's call sites, not by a demo page.
   series from the plot, the tooltip and the auto domain together. `legend={false}` removes it.
 - `placement`: `bottom` (default), `top`, or `header` (the enclosing `ChartCard`'s header row; `top`
   outside a card). `groups` separates series | overlay | reference.
-- Hovering an entry emphasises its series; the definition is rebuilt with `highlighted`.
+- Hovering an entry emphasises its series (§ 9.9, resolved).
 
 **State**
 
@@ -734,8 +736,7 @@ A kind is proven by porting a real consumer's call sites, not by a demo page.
 | `Heatmap`      | `cell`, band × band, no cursor                                                       |
 | `Sparkline`    | no card, legend or tooltip; token-only                                               |
 
-No kind is exempt from the rung's host: `basalt/hand-rolled-plot` is deleted (§ 9.8). Stacked `Bars`
-on a log axis must throw in dev (a stack has no zero on a log axis); today it does not.
+No kind is exempt from the rung's host: `basalt/hand-rolled-plot` is deleted (§ 9.8).
 
 ## 10. Open questions
 
@@ -753,6 +754,7 @@ that settles each engineering question.
 | 7   | `chat.turn` cannot parent the chat `fetch` span; join on `basalt.chat.thread_id` | § 7 Open | W8                         |
 | 8   | Absent-state hatch: custom mark or flat `--vx-neutral` fill                      | § 9 Open | W5                         |
 | 9   | Legend hover emphasis: rebuild per hover or mark `states`                        | § 9.9    | settled W4: rebuild        |
+| 10  | Stacked `Bars` on a log axis: throw in dev, or document the gap                  | § 9.9    | W5                         |
 
 Resolved by the lead in W1: § 9 keeps 8 1.x value names and adds a handful (`Lines`, `Sparkline`,
 `chartCursor`, …), well inside § 1's 48 allowance, so the ≤ 140 value ceiling stands; W3 sets the
