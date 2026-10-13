@@ -1,5 +1,5 @@
 /**
- * `release.sh`'s pure rules, sourced through `RELEASE_SH_LIB=1` so nothing is dispatched: the
+ * `release.sh`'s pure rules, sourced (not run) so nothing is dispatched: the
  * version gate (1.x frozen, the one sanctioned 2.0.0, then 2.x non-majors) and the registry reads.
  */
 import { describe, expect, it } from 'bun:test'
@@ -11,12 +11,16 @@ type Run = { exitCode: number; stdout: string; stderr: string }
 
 /** Runs `body` after sourcing release.sh; values arrive as positional args, never interpolated. */
 function run(body: string, ...args: string[]): Run {
+  return runWith({}, body, ...args)
+}
+
+function runWith(env: Record<string, string>, body: string, ...args: string[]): Run {
   const result = Bun.spawnSync(
-    ['bash', '-c', `RELEASE_SH_LIB=1 source "$1"; shift; ${body}`, '_', script, ...args],
+    ['bash', '-c', `source "$1"; shift; ${body}`, '_', script, ...args],
     {
       stdout: 'pipe',
       stderr: 'pipe',
-      env: { ...process.env, REGISTRY_RETRY_SLEEP: '0', REGISTRY_READ_TIMEOUT: '0' },
+      env: { ...process.env, REGISTRY_RETRY_SLEEP: '0', REGISTRY_READ_TIMEOUT: '0', ...env },
     },
   )
   return {
@@ -87,35 +91,51 @@ describe('versions_from_json', () => {
   })
 })
 
+describe('version_gate — fails closed', () => {
+  it.each<[string, string, string]>([
+    ['', '2.0.0', 'unparsed bump'],
+    ['unknown', '2.0.0', 'unparsed bump'],
+    ['major', '', 'no computed version'],
+  ])('refuses bump %p version %p', (bump, version, reason) => {
+    const result = gate(bump, version, BEFORE)
+    expect(result.exitCode).toBe(1)
+    expect(result.stderr).toContain(reason)
+  })
+})
+
 describe('registry_versions', () => {
-  it('fails — rather than reading as "no 2.x" — when npm cannot be read', () => {
-    const result = run('npm() { return 1; }; registry_versions')
+  it('retries a transient failure and then returns the versions', () => {
+    // The stub runs in a command substitution, so its attempt counter lives in a file.
+    const flaky = [
+      'count=$(mktemp)',
+      'npm() { echo x >>"$count"; if [ "$(wc -l <"$count")" -lt 2 ]; then echo ETIMEDOUT >&2; return 1; fi; echo \'["1.41.0","2.0.0"]\'; }',
+      'registry_versions',
+    ].join('; ')
+    const result = runWith({ REGISTRY_READ_TIMEOUT: '5' }, flaky)
+    expect(result.exitCode).toBe(0)
+    expect(result.stdout).toBe('1.41.0\n2.0.0')
+  })
+
+  it('exits 1 and surfaces the last npm error when the registry stays unreadable', () => {
+    const result = run('npm() { echo "ECONNRESET" >&2; return 1; }; registry_versions')
     expect(result.exitCode).toBe(1)
     expect(result.stdout).toBe('')
+    expect(result.stderr).toContain('registry read failed: ECONNRESET')
   })
 
   it('fails when npm answers with an object', () => {
     expect(run('npm() { echo "{}"; }; registry_versions').exitCode).toBe(1)
   })
-
-  it('returns the versions npm reports', () => {
-    expect(run('npm() { echo \'["1.41.0","2.0.0"]\'; }; registry_versions').stdout).toBe(
-      '1.41.0\n2.0.0',
-    )
-  })
 })
 
 describe('sourcing and direct runs', () => {
-  it('sourcing does not turn on errexit in the caller', () => {
-    expect(run('[[ $- != *e* ]] && echo clean').stdout).toBe('clean')
+  it('sourcing leaves errexit, nounset and pipefail off', () => {
+    const result = run('[[ $- != *e* && $- != *u* ]] && ! shopt -oq pipefail && echo clean')
+    expect(result.stdout).toBe('clean')
   })
 
-  it('a direct run ignores a stray RELEASE_SH_LIB (usage error, exit 2)', () => {
-    const result = Bun.spawnSync(['bash', script, 'bogus'], {
-      env: { ...process.env, RELEASE_SH_LIB: '1' },
-      stdout: 'pipe',
-      stderr: 'pipe',
-    })
+  it('a direct run still parses its mode argument (usage error, exit 2)', () => {
+    const result = Bun.spawnSync(['bash', script, 'bogus'], { stdout: 'pipe', stderr: 'pipe' })
     expect(result.exitCode).toBe(2)
   })
 })
