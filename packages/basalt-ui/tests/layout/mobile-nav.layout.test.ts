@@ -365,7 +365,7 @@ layout('mobile nav — real layout', () => {
    */
   test('touch targets hold the 44/44/48px floors at density −3, 0 and +3', async () => {
     const p = await openFixture(sheetSpec(7))
-    for (const density of [-3, 0, 3]) {
+    for (const density of [-3, 0, 3] as const) {
       await p.remount(sheetSpec(7, { density }))
 
       expectHeightAtLeast(
@@ -535,7 +535,7 @@ layout('mobile nav — real layout', () => {
   test('the active pill is identical with and without an icon, at every density', async () => {
     const p = await openFixture(pillSpec())
 
-    for (const density of [-3, 0, 3]) {
+    for (const density of [-3, 0, 3] as const) {
       await p.remount(pillSpec({ density }))
       const withIcon = await p.box(`pill with icon @density ${density}`, ACTIVE_PILL)
 
@@ -576,7 +576,7 @@ layout('mobile nav — real layout', () => {
     const horizontal: [string, number][] = []
     const vertical: [string, number][] = []
 
-    for (const density of [-3, 0, 3]) {
+    for (const density of [-3, 0, 3] as const) {
       await p.remount(pillSpec({ density }))
       const pill = await p.box(`pill @density ${density}`, ACTIVE_PILL)
       const glyph = await p.box(`glyph @density ${density}`, ACTIVE_PILL_ICON)

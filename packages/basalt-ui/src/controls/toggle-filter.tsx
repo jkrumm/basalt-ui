@@ -13,14 +13,14 @@
 import { Switch } from '@mantine/core'
 import { useId } from 'react'
 import type { ReactNode } from 'react'
-import type { BasaltProps } from '../common/props'
 import { assertRequiredProps } from '../common/validate'
 import type { BooleanField, FieldHandle } from '../state'
 import { useFilterRegistration, useFilterSurface } from './filter-context'
 import { FilterPill } from './filter-pill'
 import { PanelRow } from './panel-row'
+import type { UncontrolledProps } from './uncontrolled'
 
-export type ToggleFilterProps = BasaltProps & {
+export type ToggleFilterProps = UncontrolledProps & {
   readonly field: FieldHandle<BooleanField>
   readonly label: string
   readonly icon?: ReactNode

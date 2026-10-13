@@ -30,13 +30,13 @@
 import { SegmentedControl, Select } from '@mantine/core'
 import type { ReactNode } from 'react'
 import { cx } from '../common/props'
-import type { BasaltProps } from '../common/props'
 import { assertRequiredProps } from '../common/validate'
 import type { EnumField, FieldHandle } from '../state'
 import classes from './controls.module.css'
 import { useFilterSurface } from './filter-context'
 import { useControlName } from './filter-sheet'
 import { PanelChoice, PanelRow, useTrackFits } from './panel-row'
+import type { UncontrolledProps } from './uncontrolled'
 
 /** Past three options the phone form is a `Select`, not a track. */
 const PHONE_TRACK_MAX = 3
@@ -48,7 +48,7 @@ export type ViewTabsOption<T extends string> = {
   readonly only?: 'sm-up' | 'sm-down'
 }
 
-export type ViewTabsProps<T extends string> = BasaltProps & {
+export type ViewTabsProps<T extends string> = UncontrolledProps & {
   readonly field: FieldHandle<EnumField<T>>
   /** Defaults to `field.options` (every declared value, labelled by `store.labels()`). */
   readonly options?: readonly ViewTabsOption<T>[]

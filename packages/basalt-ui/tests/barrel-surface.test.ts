@@ -13,7 +13,6 @@ import { describe, expect, it } from 'bun:test'
 import * as agentBarrel from '../src/agent'
 import * as agentChatBarrel from '../src/agent-chat'
 import * as chartsBarrel from '../src/charts'
-import * as rootBarrel from '../src/index'
 import * as tokensBarrel from '../src/tokens'
 
 const RAW_PALETTE_KEYS = [
@@ -103,14 +102,6 @@ describe('barrel surface', () => {
 
     it('does not export the internal ToolChipRenderer adapter', () => {
       expect(Object.prototype.hasOwnProperty.call(agentChatBarrel, 'ToolChipRenderer')).toBe(false)
-    })
-  })
-
-  // root (.) — the B2 convergence-pass fix: `ToolChip` is documented ("from `./agent-chat` and
-  // `.`") but was missing from the root's selective re-export of `./agent-chat`.
-  describe('. (root)', () => {
-    it("exports 'ToolChip'", () => {
-      expect((rootBarrel as Record<string, unknown>)['ToolChip']).toBeDefined()
     })
   })
 })

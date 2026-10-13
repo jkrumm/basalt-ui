@@ -30,7 +30,6 @@
 import { SegmentedControl, Select, Stack } from '@mantine/core'
 import { useEffect, useRef, useState } from 'react'
 import type { ComponentType, ReactNode } from 'react'
-import type { BasaltProps } from '../common/props'
 import { assertRequiredProps } from '../common/validate'
 import type { FieldHandle, RangeField, RangeValue } from '../state'
 import classes from './controls.module.css'
@@ -39,6 +38,7 @@ import { FilterPill } from './filter-pill'
 import { CalendarGlyph } from './glyphs'
 import { useControlName } from './filter-sheet'
 import { PanelRow } from './panel-row'
+import type { UncontrolledProps } from './uncontrolled'
 
 /** Past four presets the track goes vertical. */
 const VERTICAL_FROM = 5
@@ -81,7 +81,7 @@ export type RangeCustomPickerProps = {
 }
 
 /** Everything about the props that does not depend on the field's `custom` flag. */
-type RangeFilterBase<P extends string, C extends boolean> = BasaltProps & {
+type RangeFilterBase<P extends string, C extends boolean> = UncontrolledProps & {
   /**
    * A range handle from either store factory. Generic over the field's `custom` flag so a
    * `field.range({ ... })` WITHOUT `custom` (whose handle is `RangeField<P, false>`, and whose

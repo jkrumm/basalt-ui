@@ -2,70 +2,19 @@
  * `basalt-ui/controls` — the Mantine-coupled control tier (`docs/CONTROLS-SPEC.md` §3).
  *
  * Every control here renders at the `ctl` tier from the home that hosts it and owns its own
- * desktop/mobile swap in CSS (law C9). Actions and sync land in wave 3; the filter/tab family
- * follows in wave 4.
+ * desktop/mobile swap in CSS (law C9).
  */
-export {
-  ActionGroup,
-  OverflowMenu,
-  MOBILE_GLOBAL_BAR_MAX,
-  barActionMobile,
-  globalActionMobile,
-  type BarAction,
-  type BarActionItem,
-  type BarActionMenu,
-  type BarActionCustom,
-  type ActionGroupProps,
-  type GlobalAction,
-  type OverflowMenuProps,
-} from './actions'
-export { SyncButton, formatAge, AGE_REFRESH_MS, type SyncButtonProps } from './sync-button'
-export { ControlGroup, type ControlGroupProps } from './control-group'
+export { type BarAction, type GlobalAction } from './actions'
+export { SyncButton } from './sync-button'
 
-// ── Filters + tabs (wave 4) ───────────────────────────────────────────────────────────────────
 // `FilterPill`, `FilterSheet` and the `EnumFilter` body are deliberately NOT here: reaching for
-// them is hand-rolling a filter (`basalt/hand-rolled-filter`), and `useFilterSurface` is only
-// meaningful to a control living inside a `FilterSet` — i.e. to this folder.
-export { FilterSet, type FilterSetProps } from './filter-set'
-export { RangeFilter, type RangeCustomPickerProps, type RangeFilterProps } from './range-filter'
-export {
-  CompareFilter,
-  COMPARE_VALUES,
-  type CompareFilterProps,
-  type CompareValue,
-} from './compare-filter'
-export {
-  SelectFilter,
-  type FilterOption,
-  type SelectFilterEnumProps,
-  type SelectFilterProps,
-  type SelectFilterStringProps,
-} from './select-filter'
-export { MultiSelectFilter, type MultiSelectFilterProps } from './multi-select-filter'
-export { NumberFilter, type NumberFilterOption, type NumberFilterProps } from './number-filter'
-export { SearchFilter, type SearchFilterProps } from './search-filter'
-export { ToggleFilter, type ToggleFilterProps } from './toggle-filter'
-export { ViewTabs, type ViewTabsOption, type ViewTabsProps } from './view-tabs'
-
-// ── The `panel` surface (docs/ASIDE-SPEC.md wave 2) ───────────────────────────────────────────
-// The two row-level primitives an aside body needs. `PanelRow` is the home (it wraps its slots in
-// `CtlSlot`), and `SliderControl` is the one bound control that has no pill form at all — see their
-// docs. The filters above render their own panel forms; there is nothing extra to import for them.
-export { PanelRow, type PanelRowProps } from './panel-row'
-export { SliderControl, type SliderControlProps } from './slider-control'
-
-// ── The form layout (moved from ./forms in 1.36.0) ────────────────────────────────────────────
-// Layout needs no `@mantine/form`, and `./forms`' barrel value-imports it — so a consumer rendering
-// a `FormRow` had to install a peer it never used. `./forms` re-exports these until 1.39.0.
-export {
-  FormSection,
-  FormRow,
-  FormGroup,
-  FormActions,
-  type FormSectionProps,
-  type FormSectionSlot,
-  type FormRowProps,
-  type FormRowSlot,
-  type FormGroupProps,
-  type FormActionsProps,
-} from './form-layout'
+// them is hand-rolling a filter (`basalt/hand-rolled-filter`).
+export { FilterSet } from './filter-set'
+export { RangeFilter } from './range-filter'
+export { SelectFilter } from './select-filter'
+export { MultiSelectFilter } from './multi-select-filter'
+export { NumberFilter } from './number-filter'
+export { SearchFilter } from './search-filter'
+export { ToggleFilter } from './toggle-filter'
+export { ViewTabs } from './view-tabs'
+export { FormRow, FormGroup } from './form-layout'

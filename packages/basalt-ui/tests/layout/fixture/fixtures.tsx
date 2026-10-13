@@ -19,16 +19,11 @@ import { BasaltDataTable } from '../../../src/data/table'
 import type { DataTableFacet } from '../../../src/data/table'
 import type { ColumnDef } from '@tanstack/react-table'
 import { ActionIcon, Button } from '@mantine/core'
-import {
-  BasaltShell,
-  PageAside,
-  PageBar,
-  StatCard,
-  StatGroup,
-  WidgetGrid,
-} from '../../../src/index'
-import type { BasaltAccountProps, SettingsMenuItem } from '../../../src/index'
+import { BasaltShell, PageAside, PageBar, StatCard, StatGroup } from '../../../src/index'
+import type { SettingsMenuItem } from '../../../src/index'
 import type { GlobalAction } from '../../../src/controls'
+import type { PageBarActions } from '../../../src/controls/actions'
+import type { BasaltAccountProps } from '../../../src/shell/account-types'
 import type { NavAnchor, SidebarItem, SidebarSection } from '../../../src/shell/nav-types'
 import { createLocalStore, field } from '../../../src/state'
 import type {
@@ -265,10 +260,9 @@ function BarFixture({ spec }: { spec: BarSpec }): ReactElement {
         ),
       })}
       {...(actions.length > 0 && {
-        actions: {
-          primary: actions[0]!,
-          ...(actions.length > 1 && { secondary: actions.slice(1) }),
-        },
+        actions: actions.map((action, i) =>
+          i === 0 ? { ...action, primary: true } : action,
+        ) as PageBarActions,
       })}
     />
   )
@@ -351,11 +345,6 @@ function CardsFixture({ spec }: { spec: CardsSpec }): ReactElement {
               <div key={n}>{`Metric ${n}`}</div>
             ))}
           </StatGroup>
-          <WidgetGrid cols={3}>
-            {[1, 2, 3].map((n) => (
-              <div key={n}>{`Widget ${n}`}</div>
-            ))}
-          </WidgetGrid>
         </div>
       ))}
       {spec.stretchedRow !== undefined && (

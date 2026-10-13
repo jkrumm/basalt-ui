@@ -198,6 +198,6 @@ describe('renderToString — every component must survive with no DOM', () => {
  */
 test('every coupled subpath enumerated at least one component', () => {
   const empty = SUBPATHS.filter((s) => detectComponents(s.mod).length === 0).map((s) => s.id)
-  // `./tokens` is pure data by design and exports no component — the only permitted entry.
-  expect(empty).toEqual(['./tokens'])
+  // `./tokens` is pure data by design and `./forms` is hooks-only since 2.0 — the only permitted entries.
+  expect(empty).toEqual(['./tokens', './forms'])
 })

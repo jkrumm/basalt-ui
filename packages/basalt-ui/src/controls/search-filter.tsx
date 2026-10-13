@@ -15,17 +15,17 @@
 import { TextInput } from '@mantine/core'
 import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
-import type { BasaltProps } from '../common/props'
 import { assertRequiredProps } from '../common/validate'
 import type { FieldHandle, StringField } from '../state'
 import { useFilterRegistration, useFilterSurface } from './filter-context'
 import { useControlName } from './filter-sheet'
 import { PanelRow } from './panel-row'
+import type { UncontrolledProps } from './uncontrolled'
 
 /** One navigation per typed phrase, not per keystroke. */
 const DEBOUNCE_MS = 200
 
-export type SearchFilterProps = BasaltProps & {
+export type SearchFilterProps = UncontrolledProps & {
   readonly field: FieldHandle<StringField>
   readonly placeholder?: string
   /** Sheet-form heading. @default 'Search' */

@@ -47,16 +47,6 @@ export function CalendarGlyph(): ReactNode {
   )
 }
 
-/** `CompareFilter`'s default leading icon — the arrows-swap glyph. */
-export function SwapGlyph(): ReactNode {
-  return (
-    <Stroke>
-      <path d="M4 8h13l-3.5 -3.5" />
-      <path d="M20 16h-13l3.5 3.5" />
-    </Stroke>
-  )
-}
-
 /** The mobile `Filters (n)` pill's leading icon. */
 export function FunnelGlyph(): ReactNode {
   return (

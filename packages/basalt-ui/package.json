@@ -374,7 +374,7 @@
     ],
     "exempt": [
       "src/tokens/palette.ts",
-      "src/tokens/index.ts",
+      "src/tokens/core.ts",
       "src/tokens/derive.ts",
       "src/tokens/hct.ts",
       "src/theme/index.ts",

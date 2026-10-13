@@ -46,15 +46,15 @@
  *   <UsageChart />
  * </Section>
  */
-import { Children, useId } from 'react'
+import { useId } from 'react'
 import type { ReactNode } from 'react'
 import { cx } from '../common/props'
 import type { BasaltProps, SlotStylesProps } from '../common/props'
 import { BASALT_PREFIX } from '../common/errors'
 import { useValidateProps } from '../common/validate'
 import { CtlSlot } from '../theme'
-import { BarActionSlot, isBarActionList } from '../controls/actions'
-import type { SlotActions } from '../controls/actions'
+import { BarActionSlot } from '../controls/actions'
+import type { SectionActions } from '../controls/actions'
 import { useFilterSurface } from '../controls/filter-context'
 import { QueryState } from './query-state'
 import type { QueryEmptyCopy, QueryStateLike } from './query-state'
@@ -79,12 +79,10 @@ export type SectionProps = Omit<WidgetHeaderProps, 'tier' | 'classNames' | 'acti
   BasaltProps &
   SlotStylesProps<SectionSlot> & {
     /**
-     * Header actions, in either form (law C15): a typed `BarAction[]`, which basalt projects through
-     * the SAME row `PageBar` and `ActionGroup` use — ≤3 inline, the rest folded into `More`, one
-     * kebab below `sm` — or an opaque `ReactNode` a caller drew itself, rendered verbatim. The ≤3
-     * budget (C6) is checked against whichever form is given.
+     * Header actions as typed data (law C15), projected through the SAME row `PageBar` uses — one
+     * kebab below `sm`. At most three: a fourth is a tsc error (law C6, `docs/V2-SPEC.md` §3).
      */
-    actions?: SlotActions
+    actions?: SectionActions
     /**
      * The section's async result. Given one, the BODY renders through `QueryState` at the section
      * tier — pending / error-with-retry / empty each REPLACE `children`, data renders them — while
@@ -121,27 +119,6 @@ export type SectionProps = Omit<WidgetHeaderProps, 'tier' | 'classNames' | 'acti
     id?: string
     children: ReactNode
   }
-
-/**
- * ≤3 actions is C6 (docs/CONTROLS-SPEC.md §1) — the AST guard (`basalt/page-bar-budget`) lands in
- * wave 6; this is the dev-only stopgap so the budget is visible before the lint rule exists.
- *
- * Returns the message rather than logging it, because it is a {@link useValidateProps} check now:
- * it used to `console.warn` straight from the render body, which said it again on every keystroke
- * that re-rendered the page. The title is IN the message on purpose — the dedup key is
- * `${component} ${message}`, so two over-budget sections only both get heard because they name
- * themselves.
- */
-function actionBudgetMessage(title: string, actions: SlotActions): string | null {
-  // Both arms of the union are counted, and the typed one is counted EXACTLY: `Children.count` over
-  // a `BarAction[]` would report the array's length as one child.
-  const count = isBarActionList(actions) ? actions.length : Children.count(actions)
-  if (count <= 3) return null
-  return (
-    `${BASALT_PREFIX} Section "${title}": ${count} actions exceeds the ≤3 budget ` +
-    '(docs/CONTROLS-SPEC.md C6) — move the rest behind a menu.'
-  )
-}
 
 function ChevronToggle({
   open,
@@ -196,13 +173,9 @@ export function Section({
 }: SectionProps) {
   const { title } = headerProps
 
-  // Two dev-only checks, one hook — both are misuses that RENDER fine, which is what puts them in
-  // `useValidateProps` rather than in `assertRequiredProps`.
-  //
-  //  1. A `persistKey` with nothing to fold writes a localStorage key nobody ever reads back — the
-  //     shape a consumer lands on after deleting `collapsible` and leaving the key behind.
-  //  2. More than three header actions (C6). This used to `console.warn` from the render body, so a
-  //     page that re-rendered on every keystroke reprinted it every keystroke.
+  // A `persistKey` with nothing to fold writes a localStorage key nobody ever reads back — the
+  // shape a consumer lands on after deleting `collapsible` and leaving the key behind. It renders
+  // fine, which is what puts it in `useValidateProps` rather than in `assertRequiredProps`.
   useValidateProps(
     'Section',
     () => [
@@ -210,9 +183,8 @@ export function Section({
         ? `${BASALT_PREFIX} Section "${title}": \`persistKey\` is set but \`collapsible\` is ` +
           'false — there is no fold to persist. Add `collapsible`, or drop `persistKey`.'
         : null,
-      actions === undefined ? null : actionBudgetMessage(title, actions),
     ],
-    [persistKey, collapsible, title, actions],
+    [persistKey, collapsible, title],
   )
 
   const [open, setOpen] = usePersistedOrLocal({

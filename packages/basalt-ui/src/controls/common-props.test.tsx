@@ -10,8 +10,6 @@ import { describe, expect, test } from 'bun:test'
 import type { ReactNode } from 'react'
 import { createLocalStore, field } from '../state'
 import { ActionGroup, OverflowMenu } from './actions'
-import { CompareFilter } from './compare-filter'
-import type { CompareFilterProps } from './compare-filter'
 import { ControlGroup } from './control-group'
 import { FilterSet } from './filter-set'
 import { MultiSelectFilter } from './multi-select-filter'
@@ -22,8 +20,6 @@ import { RangeFilter } from './range-filter'
 import type { RangeFilterProps } from './range-filter'
 import { SearchFilter } from './search-filter'
 import type { SearchFilterProps } from './search-filter'
-import { SliderControl } from './slider-control'
-import type { SliderControlProps } from './slider-control'
 import { SyncButton } from './sync-button'
 import { ToggleFilter } from './toggle-filter'
 import type { ToggleFilterProps } from './toggle-filter'
@@ -87,11 +83,6 @@ describe('className lands on the root', () => {
     expect(hasClass('probe-filter-set')).toBe(true)
   })
 
-  test('CompareFilter', () => {
-    mount(<CompareFilter field={store.field.compare} className="probe-compare-filter" />)
-    expect(hasClass('probe-compare-filter')).toBe(true)
-  })
-
   test('MultiSelectFilter', () => {
     mount(
       <MultiSelectFilter
@@ -120,13 +111,6 @@ describe('className lands on the root', () => {
     expect(hasClass('probe-search-filter')).toBe(true)
   })
 
-  test('SliderControl', () => {
-    mount(
-      <SliderControl field={store.field.nights} label="Nights" className="probe-slider-control" />,
-    )
-    expect(hasClass('probe-slider-control')).toBe(true)
-  })
-
   test('ToggleFilter', () => {
     mount(
       <ToggleFilter
@@ -145,12 +129,6 @@ describe('className lands on the root', () => {
 })
 
 describe('a missing `field` throws a named message, not a raw TypeError', () => {
-  test('CompareFilter', () => {
-    expect(() => {
-      mount(<CompareFilter {...({ label: 'Compare' } as unknown as CompareFilterProps)} />)
-    }).toThrow('[basalt] CompareFilter: prop "field" is required')
-  })
-
   test('MultiSelectFilter', () => {
     expect(() => {
       mount(
@@ -177,12 +155,6 @@ describe('a missing `field` throws a named message, not a raw TypeError', () => 
     expect(() => {
       mount(<SearchFilter {...({} as unknown as SearchFilterProps)} />)
     }).toThrow('[basalt] SearchFilter: prop "field" is required')
-  })
-
-  test('SliderControl', () => {
-    expect(() => {
-      mount(<SliderControl {...({ label: 'Nights' } as unknown as SliderControlProps)} />)
-    }).toThrow('[basalt] SliderControl: prop "field" is required')
   })
 
   test('ToggleFilter', () => {

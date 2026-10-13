@@ -32,7 +32,7 @@ const SMALL_MAX_EM = sizeClassMaxEm(SIZE_CLASSES.medium)
 //    registered with a `roundedBy` reason (moved verbatim from shadow-surfaces.test.ts).
 // ════════════════════════════════════════════════════════════════════════════════════════════════
 
-const SHADOW_DEFINITION_FILES = new Set(['tokens/index.ts', 'tokens/palette.ts'])
+const SHADOW_DEFINITION_FILES = new Set(['tokens/core.ts', 'tokens/palette.ts'])
 
 function collectSourceFiles(dir: string, out: string[]): void {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {

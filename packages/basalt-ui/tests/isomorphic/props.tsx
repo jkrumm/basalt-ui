@@ -273,11 +273,7 @@ export const MINIMAL_PROPS: Record<string, Record<string, unknown>> = {
   NumberFilter: { field: store.field.nights, label: 'Nights' },
   ViewTabs: { field: store.field.currency, options: OPTIONS },
   SliderControl: { field: store.field.nights, label: 'Nights' },
-  PanelRow: { label: 'Row', children: TEXT },
-  ControlGroup: { children: TEXT },
   FilterSet: { children: TEXT },
-  ActionGroup: { actions: [] },
-  OverflowMenu: { actions: [] },
   SyncButton: { onSync: () => {} },
   DateRangePicker: { value: [null, null], onChange: () => {} },
 
@@ -291,17 +287,6 @@ export const MINIMAL_PROPS: Record<string, Record<string, unknown>> = {
   SettingsSection: { title: 'Settings', children: TEXT },
   SettingsRow: { label: 'Row', control: TEXT },
   DangerZone: { children: TEXT },
-  QueryState: {
-    query: {
-      data: [{ id: 1 }],
-      isError: false,
-      error: null,
-      fetchStatus: 'idle',
-      refetch: () => undefined,
-    },
-    empty: { title: 'No rows' },
-    children: (rows: { id: number }[]) => <div>{rows.length}</div>,
-  },
 
   /* --- shell --------------------------------------------------------------- */
   NavCountBadge: { count: 3 },
@@ -341,8 +326,6 @@ export const MINIMAL_PROPS: Record<string, Record<string, unknown>> = {
   FormSection: { title: 'Billing', children: TEXT },
   FormRow: { label: 'Email', children: TEXT },
   FormGroup: { label: 'Notify me about', children: TEXT },
-  FormActions: { actions: TEXT },
-  FormStateProvider: { children: TEXT },
 
   /* --- content ------------------------------------------------------------- */
   Prose: { children: TEXT },
@@ -465,7 +448,6 @@ export const NO_CLASSNAME: Record<string, 'provider' | 'svg' | 'portal' | 'gap'>
   BasaltQueryDevtools: 'provider',
   ChartCursorScope: 'provider',
   ConnectivityProvider: 'provider',
-  FormStateProvider: 'provider',
   VxThemeProvider: 'provider',
 
   // svg — paints SVG children only; a class would land on a `<g>`/`<rect>`, a different styling
@@ -486,17 +468,13 @@ export const NO_CLASSNAME: Record<string, 'provider' | 'svg' | 'portal' | 'gap'>
   GuideDrawer: 'portal',
 
   // gap — renders a real box and drops the class.
-  ActionGroup: 'gap',
   AppBreadcrumbs: 'gap',
   ArticleGrid: 'gap',
   ChartTooltipFloat: 'gap',
-  CtlSlot: 'gap',
   DateRangePicker: 'gap',
   DeltaBadge: 'gap',
   DeriveControls: 'gap',
-  OverflowMenu: 'gap',
   PartList: 'gap',
-  QueryState: 'gap',
   ThemeLabControls: 'gap',
   TooltipBody: 'gap',
   TooltipHeader: 'gap',

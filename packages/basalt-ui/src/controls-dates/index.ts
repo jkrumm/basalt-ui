@@ -5,4 +5,3 @@
  * Proven from outside the package by `scripts/pack-test.sh`.
  */
 export { DateRangePicker } from './date-range-picker'
-export type { RangeCustomPickerProps } from '../controls/range-filter'

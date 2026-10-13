@@ -1,7 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 import type { HtmlTagDescriptor, Plugin, ResolvedConfig } from 'vite'
-import type { BasaltAppOptions } from './vite'
 import { basaltAppPlugin } from './vite'
+
+type BasaltAppOptions = Parameters<typeof basaltAppPlugin>[0]
 
 /** Fixed, palette-independent theme colors so these tests never couple to `tokens/palette.ts`. */
 const THEME_COLOR = { light: '#ffffff', dark: '#111111' } as const

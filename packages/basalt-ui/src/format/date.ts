@@ -41,30 +41,6 @@ export function fmtTooltipDate(date: unknown): string {
   return `${SHORT_DAYS[d.getDay()]} ${MONTHS[d.getMonth()]} ${d.getDate()} ${d.getFullYear()}`
 }
 
-export type ClockOptions = LocaleOption & {
-  /** IANA zone (`'Europe/Vienna'`). Default the runtime's own zone — the same "local" argo's
-   * `d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })` call sites meant. */
-  timeZone?: string
-  /** Render `:ss` too. Default false. */
-  seconds?: boolean
-}
-
-/** A local clock reading — `"09:41"`. Seeds: `m365-explorer/explorer-page.tsx`,
- * `walking-pad/session-history.tsx` (both `toLocaleTimeString([...], { hour: '2-digit', minute:
- * '2-digit' })`). A non-finite/unparseable input prints {@link NON_FINITE}. */
-export function clock(value: Date | number | string, options: ClockOptions = {}): string {
-  const date = toDate(value)
-  if (date === null) return NON_FINITE
-  const { locale, timeZone, seconds = false } = options
-  return dateFormat(locale, {
-    hour: '2-digit',
-    minute: '2-digit',
-    ...(seconds && { second: '2-digit' }),
-    hour12: false,
-    ...(timeZone !== undefined && { timeZone }),
-  }).format(date)
-}
-
 export type WeekdayOptions = LocaleOption & {
   /** `Intl.DateTimeFormat`'s own weekday widths. Default `'short'` (`"Mon"`). */
   format?: 'short' | 'long' | 'narrow'
@@ -137,37 +113,6 @@ export function relativeTime(
   if (absMs < 60_000) return 'just now'
   const unit = RELATIVE_TIME_UNITS.find(({ ms }) => absMs >= ms) ?? RELATIVE_TIME_UNITS.at(-1)!
   return relativeTimeFormat(locale).format(Math.round(diffMs / unit.ms), unit.unit)
-}
-
-export type DurationUnit = 'seconds' | 'minutes'
-
-export type DurationOptions = {
-  /** Unit of the input value. Default `'seconds'`. */
-  unit?: DurationUnit
-}
-
-/**
- * Human duration — `"1h 02m"`, `"5m"`, `"42s"`. Minutes zero-pad once an hour is present (`"1h
- * 02m"`, a clock-reading convention); alone they don't (`"5m"`). Seconds show only under a minute
- * (`"42s"`). A non-finite value prints {@link NON_FINITE}.
- *
- * The one signature standing in for argo's four duration spellings: `walking-pad/
- * formatters.ts#formatDuration` (seconds, `<60s` → `"Ns"` — this IS that shape),
- * `reading/format.ts#formatReadTime` (seconds, no `<60s` branch, floors at `"0m"` — pass a value
- * `>= 60` and the shapes match), `astro-window/formulas.ts#fmtMinutes` (minutes as input — pass
- * `{ unit: 'minutes' }`). The fourth, `walking-pad/formatters.ts#formatDurationClock` (`h:mm:ss`),
- * is {@link durationClock} below, not this.
- */
-export function duration(value: number, options: DurationOptions = {}): string {
-  if (!Number.isFinite(value)) return NON_FINITE
-  const { unit = 'seconds' } = options
-  const totalSeconds = Math.max(0, Math.round(unit === 'minutes' ? value * 60 : value))
-  if (totalSeconds < 60) return `${totalSeconds}s`
-  const totalMinutes = Math.round(totalSeconds / 60)
-  const h = Math.floor(totalMinutes / 60)
-  const m = totalMinutes % 60
-  if (h === 0) return `${m}m`
-  return `${h}h ${String(m).padStart(2, '0')}m`
 }
 
 /** Clock-style duration — `"1:02:03"`, `"04:12"`. Seeded from `walking-pad/

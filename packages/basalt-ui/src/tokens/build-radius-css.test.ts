@@ -6,7 +6,7 @@
  */
 import { describe, expect, test } from 'bun:test'
 import { deriveRadius } from './palette'
-import { buildRadiusCss } from './index'
+import { buildRadiusCss } from './core'
 
 describe('buildRadiusCss', () => {
   test('returns empty string when radius is undefined', () => {

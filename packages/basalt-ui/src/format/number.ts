@@ -43,9 +43,6 @@ export function fmtCompact(value: number, options: FmtCompactOptions = {}): stri
     .replace(COMPACT_K, '$1k')
 }
 
-/** `compact` — the `basalt-ui/format` name for {@link fmtCompact}. */
-export const compact = fmtCompact
-
 export type FmtPercentOptions = LocaleOption & {
   /** Fraction digits. Default 0 (`42%`). */
   digits?: number
@@ -70,25 +67,6 @@ export function fmtPercent(value: number, options: FmtPercentOptions = {}): stri
 
 /** `percent` — the `basalt-ui/format` name for {@link fmtPercent}. */
 export const percent = fmtPercent
-
-export type DeltaPctOptions = FmtPercentOptions
-
-/**
- * A signed percentage delta: `+4%`, `-12%`, `0%` — argo's `walking-pad/formatters.ts#formatPct`
- * (a `+`-prefixed ratio) generalized onto `Intl`'s own `signDisplay: 'exceptZero'`, which adds the
- * `+`/`-` sign the same way `Intl`'s own minus sign already does, and adds nothing for zero. A
- * non-finite value prints {@link NON_FINITE}.
- */
-export function deltaPct(value: number, options: DeltaPctOptions = {}): string {
-  if (!Number.isFinite(value)) return NON_FINITE
-  const { digits = 0, input = 'ratio', locale } = options
-  return numberFormat(locale, {
-    style: 'percent',
-    signDisplay: 'exceptZero',
-    minimumFractionDigits: digits,
-    maximumFractionDigits: digits,
-  }).format(input === 'percent' ? value / 100 : value)
-}
 
 export type FmtCurrencyOptions = LocaleOption & {
   /** ISO 4217 code — required. There is no default currency. */

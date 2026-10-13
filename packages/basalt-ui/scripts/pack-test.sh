@@ -262,8 +262,9 @@ mkdir -p guard-fixture
 # a literal: the bug being guarded against IS a literal that stopped matching the scale. Written
 # this way, the step asserts the shipped guard and the shipped tokens agree — from a consumer's
 # vantage, against the real artifact — which is the check that was missing when they disagreed.
+# `deriveSpacing` is internal since 2.0, so it is read off the installed file, not the export map.
 bun -e "
-import { deriveSpacing } from 'basalt-ui/tokens'
+import { deriveSpacing } from './node_modules/basalt-ui/dist/tokens/palette.js'
 import { writeFileSync } from 'node:fs'
 const md = deriveSpacing(0).scale.md
 writeFileSync(
@@ -328,44 +329,26 @@ cat >tsconfig.dist-vantage.json <<'JSON'
 }
 JSON
 # Write a consumer .ts that imports from the installed basalt-ui dist .d.ts files.
-# Uses Slot<>, AsyncState + assertNever, and SeriesKey — one per published surface.
+# Uses createBasaltTheme's literal-union knobs, groupTokens' branded SeriesGroup, the BasaltRegister
+# augmentation seam and SeriesKey — one per published surface.
 cat >dist-vantage.ts <<'TS'
-import type { Slot, AsyncState } from 'basalt-ui'
-import { assertNever } from 'basalt-ui'
+import { createBasaltTheme } from 'basalt-ui'
+import type { BasaltRegister } from 'basalt-ui'
+import { buildPaletteCss, defineSeries, groupTokens } from 'basalt-ui/tokens'
 import type { SeriesKey } from 'basalt-ui/charts'
-import type { GuardKind, GuardSeverity, Finding } from 'basalt-ui/guard'
 
-// Slot: un-augmented slot is never-keyed {}
-type EmptySlot = Slot<'nonexistent', Record<string, unknown>>
-const _k: keyof EmptySlot = undefined as never
+// radius/density are literal unions (V2-SPEC section 3)
+const _theme = createBasaltTheme(undefined, { radius: 2, density: -1 })
 
-// AsyncState: exhaustive switch via assertNever
-function render(s: AsyncState<number>): string {
-  switch (s.status) {
-    case 'idle':    return 'idle'
-    case 'loading': return 'loading'
-    case 'success': return String(s.data)
-    case 'error':   return String(s.error)
-    default:        return assertNever(s)
-  }
-}
+// groupTokens returns a branded SeriesGroup that paletteOptions.groups accepts
+const _group = groupTokens('x', defineSeries({ a: { light: '#111111', dark: '#eeeeee' } }))
+const _css = buildPaletteCss({ groups: [_group] })
 
-// SeriesKey resolves (never when un-augmented — valid, no tsc error)
+// An un-augmented register is never-keyed; SeriesKey resolves (never when un-augmented)
+const _k: keyof BasaltRegister = undefined as never
 const _sk: SeriesKey = undefined as never
 
-// GuardKind, GuardSeverity and Finding are present in the .d.ts
-const _gk: GuardKind = 'raw-hex'
-const _sev: GuardSeverity = 'error'
-const _f: Finding = {
-  relPath: 'x',
-  line: 1,
-  token: '#fff',
-  text: 'color: #fff',
-  kind: 'raw-hex',
-  severity: _sev,
-}
-
-export { render, _k, _sk, _gk, _sev, _f }
+export { _theme, _css, _k, _sk }
 TS
 bunx tsc --project tsconfig.dist-vantage.json
 echo "dist-vantage tsc OK"
@@ -458,7 +441,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { MantineProvider } from '@mantine/core'
 
 const controls = await import('basalt-ui/controls')
-for (const name of ['FilterSet', 'RangeFilter', 'SelectFilter', 'MultiSelectFilter', 'SearchFilter', 'ToggleFilter', 'ViewTabs', 'CompareFilter']) {
+for (const name of ['FilterSet', 'RangeFilter', 'SelectFilter', 'MultiSelectFilter', 'SearchFilter', 'ToggleFilter', 'ViewTabs']) {
   if (typeof controls[name] !== 'function') throw new Error(`controls.${name} missing`)
 }
 
@@ -496,7 +479,7 @@ if (!html.includes('Filters')) throw new Error('FilterSet did not render its mob
 console.log('controls without @mantine/dates: resolution + render OK')
 
 // The form layout, with `@mantine/form` genuinely absent: resolves AND renders.
-for (const name of ['FormSection', 'FormRow', 'FormGroup', 'FormActions']) {
+for (const name of ['FormRow', 'FormGroup']) {
   if (typeof controls[name] !== 'function') throw new Error(`controls.${name} missing`)
 }
 const rowHtml = renderToStaticMarkup(
@@ -586,18 +569,18 @@ try {
 }
 console.log('agent-chat minimal-peer resolution OK (motion required, remend not installed)')
 
-// F2 regression proof: the ROOT entry re-exports `./agent-chat` (src/index.ts), so a static `remend`
-// import anywhere in that chain doesn't just break agent-chat users — it breaks EVERY consumer of
-// `basalt-ui`'s root entry, including ones who never touch agent-chat at all.
+// F2 regression proof: the root entry no longer re-exports `./agent-chat` (one import path per
+// symbol, V2-SPEC section 1), but a static `remend` import reachable from it would still break
+// EVERY consumer of `basalt-ui`'s root entry, including ones who never touch agent-chat at all.
 try {
   const root = await import('basalt-ui')
-  if (typeof root.ThreadWorkspace !== 'function') throw new Error('root entry ThreadWorkspace missing')
+  if (typeof root.BasaltShell !== 'function') throw new Error('root entry BasaltShell missing')
 } catch (err) {
   console.error(err)
   throw new Error(
     'basalt-ui root entry hard-requires an optional peer: it failed to resolve/evaluate with remend ' +
-      'not installed at all. The root entry re-exports ./agent-chat, so this is the F2 defect — a ' +
-      'lazy dynamic import() regressed back to a static one — and it means EVERY consumer of the ' +
+      'not installed at all. This is the F2 defect — a lazy dynamic import() regressed back to a ' +
+      'static one — and it means EVERY consumer of the ' +
       'root entry now needs remend installed, not just agent-chat consumers.',
   )
 }

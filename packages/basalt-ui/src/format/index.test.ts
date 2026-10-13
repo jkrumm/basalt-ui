@@ -6,25 +6,12 @@
  * the re-export shim.
  */
 import { describe, expect, test } from 'bun:test'
-import {
-  clock,
-  compact,
-  deltaPct,
-  duration,
-  durationClock,
-  integer,
-  kcal,
-  km,
-  money,
-  NON_FINITE,
-  percent,
-  relativeTime,
-  weekday,
-} from './index'
+import { durationClock, integer, kcal, km, money, percent, relativeTime, weekday } from './index'
+import { NON_FINITE } from './shared'
 
 const en = { locale: 'en-US' } as const
 
-describe('money / percent / integer / compact', () => {
+describe('money / percent / integer', () => {
   test('money formats a currency amount', () => {
     expect(money(1234, { ...en, currency: 'USD' })).toBe('$1,234')
   })
@@ -37,55 +24,10 @@ describe('money / percent / integer / compact', () => {
     expect(integer(12_480.4, en)).toBe('12,480')
   })
 
-  test('compact abbreviates large numbers', () => {
-    expect(compact(1200, en)).toBe('1.2k')
-  })
-
-  test('all four print the non-finite sentinel for non-finite input', () => {
+  test('all three print the non-finite sentinel for non-finite input', () => {
     expect(money(NaN, { ...en, currency: 'USD' })).toBe(NON_FINITE)
     expect(percent(Infinity, en)).toBe(NON_FINITE)
     expect(integer(NaN, en)).toBe(NON_FINITE)
-    expect(compact(-Infinity, en)).toBe(NON_FINITE)
-  })
-})
-
-describe('deltaPct', () => {
-  test('signs a positive delta', () => {
-    expect(deltaPct(0.04, en)).toBe('+4%')
-  })
-
-  test('signs a negative delta with a real minus, not a double sign', () => {
-    expect(deltaPct(-0.12, en)).toBe('-12%')
-  })
-
-  test('a zero delta carries no sign', () => {
-    expect(deltaPct(0, en)).toBe('0%')
-  })
-
-  test('input: "percent" skips the ×100', () => {
-    expect(deltaPct(4, { ...en, input: 'percent' })).toBe('+4%')
-  })
-})
-
-describe('duration', () => {
-  test('the brief example: 3723s → "1h 02m"', () => {
-    expect(duration(3723)).toBe('1h 02m')
-  })
-
-  test('under a minute renders seconds', () => {
-    expect(duration(45)).toBe('45s')
-  })
-
-  test('minutes alone are not zero-padded', () => {
-    expect(duration(300)).toBe('5m')
-  })
-
-  test('unit: "minutes" scales the input first', () => {
-    expect(duration(90, { unit: 'minutes' })).toBe('1h 30m')
-  })
-
-  test('non-finite input prints the sentinel', () => {
-    expect(duration(NaN)).toBe(NON_FINITE)
   })
 })
 
@@ -96,16 +38,6 @@ describe('durationClock', () => {
 
   test('mm:ss under an hour', () => {
     expect(durationClock(70)).toBe('01:10')
-  })
-})
-
-describe('clock', () => {
-  test('renders a local (per timeZone) HH:mm', () => {
-    expect(clock(new Date('2026-01-01T09:41:00Z'), { timeZone: 'UTC', ...en })).toBe('09:41')
-  })
-
-  test('non-finite/unparseable input prints the sentinel', () => {
-    expect(clock('not a date')).toBe(NON_FINITE)
   })
 })
 

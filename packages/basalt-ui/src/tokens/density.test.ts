@@ -13,7 +13,7 @@
  * shipped" — the LAW at non-zero levels is a different concern, same split radius already made.
  */
 import { describe, expect, test } from 'bun:test'
-import { buildDensityCss, VX } from './index'
+import { buildDensityCss, VX } from './core'
 import { deriveSpacing, scaleSpace } from './palette'
 
 // The "deriveSpacing(0) matches SPACE/SPACE_SCALE/SPACE_STEP/ROW_LINE_HEIGHT byte-for-byte" check

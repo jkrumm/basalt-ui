@@ -18,38 +18,9 @@
  * weekday('2026-09-02')                    // "Wed"
  * relativeTime(Date.now() - 3_600_000)     // "1 hour ago"
  */
-export {
-  compact,
-  deltaPct,
-  type DeltaPctOptions,
-  fmtCompact,
-  type FmtCompactOptions,
-  fmtCurrency,
-  type FmtCurrencyOptions,
-  fmtInt,
-  fmtPercent,
-  type FmtPercentOptions,
-  integer,
-  type LocaleOption,
-  money,
-  NON_FINITE,
-  percent,
-} from './number'
-export {
-  clock,
-  type ClockOptions,
-  duration,
-  durationClock,
-  type DurationOptions,
-  type DurationUnit,
-  fmtAxisDate,
-  fmtTooltipDate,
-  relativeTime,
-  type RelativeTimeOptions,
-  weekday,
-  type WeekdayOptions,
-} from './date'
-export { kcal, type KcalOptions, km, type KmOptions } from './measure'
+export { integer, money, percent } from './number'
+export { durationClock, fmtAxisDate, fmtTooltipDate, relativeTime, weekday } from './date'
+export { kcal, km } from './measure'
 
 import { fmtCompact, fmtCurrency, fmtInt, fmtPercent } from './number'
 import { fmtAxisDate, fmtTooltipDate } from './date'
