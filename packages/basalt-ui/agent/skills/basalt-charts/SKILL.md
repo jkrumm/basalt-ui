@@ -10,10 +10,10 @@ props themselves are in the shipped types and `llms.txt` at the install director
 
 ## 1. Pick the path (Rule of Three)
 
-1. **A shipped kind fits** → use it: `Lines`, `Bars`. Read their props before assuming a gap: dual
-   axis, zones, x-zones, thresholds, refLines, per-point markers, per-series formatting and `state`
-   are all declarative already. Stacked areas, dual panes, mirrored bars, band strips, donuts,
-   heatmaps and sparklines are not shipped in 2.0.0 (`MIGRATING.md` § 2.0): compose `CartesianChart`.
+1. **A shipped kind fits** → use it: `Lines`, `Bars`, `StackedArea`, `DualPanel`, `MirroredBars`,
+   `BandStrip`, `Donut`, `Heatmap`, `Sparkline`. Read their props before assuming a gap: dual axis,
+   zones, x-zones, thresholds, refLines, per-point markers, per-series formatting and `state` are all
+   declarative already.
 2. **This is the SECOND instance of a shape with no kind** → extract a kind and migrate both call
    sites. Not on the first, not past the third.
 3. **Genuinely unique** → stay bespoke in the page's own chart file, composing the primitive

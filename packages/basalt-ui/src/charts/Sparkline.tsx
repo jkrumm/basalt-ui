@@ -17,7 +17,7 @@ import type { BasaltProps } from '../common/props'
 import { VX } from '../tokens'
 import type { CartesianDefinition } from './compile'
 import { chartCurve } from './curves'
-import { ChartEngine } from './host'
+import { ChartEngine, idPrefixOf } from './host'
 import { CHART_THEME } from './theme'
 
 export type SparklineProps = BasaltProps & {
@@ -134,7 +134,6 @@ function compileSparkline(
 }
 
 /** `useId` output (`«r1»`, `:r1:`) is not a safe SVG id fragment. */
-const idPrefixOf = (id: string): string => `basalt-spark-${id.replaceAll(/[^\w-]/g, '')}`
 
 export function Sparkline(props: SparklineProps): ReactElement {
   const {
@@ -168,7 +167,7 @@ export function Sparkline(props: SparklineProps): ReactElement {
           definition={definition}
           ariaLabel={ariaLabel}
           height={height}
-          idPrefix={idPrefixOf(id)}
+          idPrefix={idPrefixOf(id, 'spark')}
           coarse={false}
         />
       )}
