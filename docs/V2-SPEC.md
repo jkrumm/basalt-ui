@@ -659,6 +659,81 @@ numbers and the commands: `docs/waves/evidence/w1/charts.md`.
    with `interactiveColorLegend`. The latter cannot show legend-only entries and keeps hidden series
    in the domains.
 
+### 9.10 Law carried over from 1.x
+
+Engine-independent; the 1.x mechanics (axis components, auto-margin, tick rotation, `ChartFrame`,
+the cursor store) are gone with visx. The 1.x text is under `docs/archive/`.
+
+**Series and colour**
+
+- `series` is the one source of the mark, the legend entry and the tooltip row; a chart cannot show a
+  row it does not draw. `ChartSeries.formatValue` is `(v, d)`, so a row can cite the datum.
+- Series colour is consumer domain data: one guard-exempt file per app, `defineSeries` →
+  `seriesTokens` / `groupTokens` → `buildPaletteCss` (§ 4). There is no `VX.series`. A new colour is
+  a `{light,dark}` pair in the palette data, its `--vx-*` var and a `VX.*` ref; never a raw hex.
+  Scheme change is pure CSS, with no re-render.
+- `null` is a gap, never a zero: lines break, nothing interpolates. A stack gaps every band where any
+  visible band is `null`; a log axis gaps a non-positive value. Legend-hiding the sparse band closes
+  the gap.
+- `y.scale: 'log'` floors at the smallest positive visible value; `nice` is off by default; the auto
+  max floor clamps before padding. Stacked `Bars` on a log axis throw in dev (use grouped).
+- Bucket-start x keys (a Monday, a 1st) take `cursorResolution="leading"`; `BandStrip` defaults to it.
+
+**Extracting a kind (Rule of Three)**
+
+| Situation                                 | Do                                                                             |
+| ----------------------------------------- | ------------------------------------------------------------------------------ |
+| Fits a shipped kind                       | Use it                                                                         |
+| Second instance of a shape without a kind | Extract it, migrate both call sites; ship the "still cannot express" list      |
+| Genuinely unique                          | Stay bespoke: `CartesianChart` with consumer `marks`, in the page's chart file |
+| Doesn't fit the rung                      | Add a kind; never loosen the rung, never a `<Chart type config>` switch        |
+
+A kind is proven by porting a real consumer's call sites, not by a demo page.
+
+**Shapes that are not one plot rect**
+
+| 1.x exception  | 2.0                                                       |
+| -------------- | --------------------------------------------------------- |
+| `DualPanel`    | `composeViews` + `grid` + `alignX`: one host, one tooltip |
+| `MirroredBars` | same, two bar views with their own domains                |
+| `BandStrip`    | band marks, no y axis                                     |
+| `Donut`        | `polar`                                                   |
+| `Heatmap`      | `cell`, band × band, no cursor                            |
+
+All five go through the one host. There is no waiver: `basalt/hand-rolled-plot` is deleted (§ 9.8).
+
+**Height and chrome**
+
+- Sizing modes resolve in order: `fill` (the parent's box), `aspectRatio`, fixed `height`. Unstated
+  `height` is width × class ratio (§ 9.6). `{ base, regular, wide }` steps key on the container class;
+  a numeric literal overrides and warns once in dev when it leaves the plot under the floor.
+- The plot never collapses under a wrapping legend: `VX.minPlotHeight` is its floor, and a fixed-height
+  frame grows by the legend's rows. In a `ChartCard`, `height` is a minimum.
+- Every chart lives in a `ChartCard` (`chart-in-raw-surface`); sparklines are the exemption (no card,
+  legend or tooltip) and stay token-only. `ChartCard` takes `BasaltProps` and the `root | header | body`
+  slot styles; every kind sets `displayName`.
+- A short card (measured < 280 px) or a `compact` class folds the header legend to dots; the name stays
+  in `aria-label`. The host's wrapper is `role="group"`, never `role="img"`, which hides descendants.
+
+**Legend**
+
+- Interactive at ≥ 2 entries: click toggles a series. One entry stays static, and is suppressed when
+  `legend` is unset. `legend={{ toggle: false }}` opts out; `legend={false}` removes it.
+- Hiding a series removes it from the plot, the tooltip and the auto domain together (§ 9.2).
+- Overflow is an `All N` disclosure (`aria-expanded`): a popover on a fine pointer, a bottom sheet on
+  a coarse one. `Donut`: ≤ 6 slices + `Other`; the legend sits beside the ring at W/H > 1.5, below at
+  compact. `y2` tints that axis's ticks with its series colour instead of a text suffix.
+
+**State**
+
+- `state?: { pending?, error?, empty? }`; precedence is fixed, **pending → error → empty**, so a
+  refetch over a stale error is pending. All three drop the legend; only `pending` sets `aria-busy`.
+  `error` is `role="alert"`, the others `role="status"`.
+- Never fake an empty dataset for a pending query: `data ?? []` turns "not asked" into "measured
+  and absent".
+- Every `./format` formatter returns `NON_FINITE` (an em dash) for `NaN`, `±Infinity`, `Invalid Date`;
+  a finite `0` formats normally. `fmtPercent` declares its `input`.
+
 ## 10. Open questions
 
 Index of every section's **Open** list; the section holds the detail. Owner calls first, then the wave

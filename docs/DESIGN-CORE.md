@@ -156,14 +156,14 @@ Worked rule: a multi-toggle bar chart colours bars `isMulti ? series.x : VX.line
   never read the viewport. A container name is a SHARED boundary, not a per-component scope:
   `StatGroup` and `WidgetGrid` both declare `basalt-grid`, and a query resolves against the nearest.
   (3) **Pointer tier** — modality, not width: `--vx-hit` 24px (WCAG 2.5.8), 44px under `(pointer:
-coarse)` (2.5.5); hover gates on `(hover: hover)`. A narrow desktop is not a phone.
+  coarse)` (2.5.5); hover gates on `(hover: hover)`. A narrow desktop is not a phone.
 
-## Data visualization — the visx primitives contract
+## Data visualization — the chart contract
 
 The signature surface. The discipline is structural: a small set of primitives, always composed; a
 kind-registry for recurring shapes; never loosen the primitives to fit a one-off.
 
-Full contract, enforcement mechanics and the five non-single-plot exceptions: `docs/CHARTS-SPEC.md`
+Full contract, enforcement mechanics and the non-single-plot shapes: `docs/V2-SPEC.md` § 9
 (ground truth). The law in one paragraph: every single-plot cartesian chart composes
 `CartesianChart` and nothing else from the assembly primitives by hand — it owns margins, scales,
 axes, cursor, crosshair, hover overlay and tooltip, the caller supplies only `series` + marks.
@@ -175,21 +175,8 @@ scheme-reactive.
 
 ### Kinds vs bespoke (Rule of Three)
 
-A **kind** is a recurring chart shape reusable across datasets (`ZonedLine`, `Bars`, `StackedArea`,
-`Donut`). Props are declarative — `data`, `chartId`, `getX` accessor, `height`/`aspectRatio`/`fill`,
-zones/thresholds/refLines as plain arrays, one `AxisConfig` object per axis — config-first, no
-god-object `config` prop.
-
-1. **Second instance of an existing pattern?** Extract a kind and migrate both call sites. (Rule of
-   Three: don't extract on the first, don't wait past the third.)
-2. **Genuinely unique** (e.g. a dual-panel MACD)? Stay bespoke — compose the primitives directly in
-   the page's chart file, not in `charts/kinds/`.
-3. **Adds a new colour?** Add a `{light,dark}` pair in the palette data, wire the `--vx-*` var,
-   expose the `VX.*` ref — never inline a hex.
-
-**The rule of thumb:** _if the new chart doesn't fit the primitives, add a kind — don't loosen the
-primitives._ The anti-pattern is a single `<Chart type="..." config={...} />` that switches by kind;
-prefer N small kinds.
+A **kind** is a recurring chart shape (`Lines`, `Bars`, `StackedArea`, `Donut`) with declarative,
+config-first props. When to extract one, stay bespoke or add a colour: `docs/V2-SPEC.md` § 9.10.
 
 ### Design rules for the marks
 
@@ -213,9 +200,7 @@ basalt. The framework ships the primitives; the consumer defines its own series 
 import { defineSeries, seriesTokens, groupTokens, buildPaletteCss } from 'basalt-ui/tokens'
 
 // Domain series colours: a {light,dark} pair per series, in ONE app-side file.
-const series = defineSeries({
-  /* metricA: { light, dark }, metricB: { light, dark }, ... */
-})
+const series = defineSeries({/* metricA: { light, dark }, metricB: { light, dark }, ... */})
 
 // Read stable, exact-keyed token refs (a stale key fails tsc).
 const tokens = seriesTokens(series) // → { metricA: 'var(--vx-metricA)', ... }
@@ -239,12 +224,12 @@ The teeth that keep the law from drifting:
   Configurable per consumer via the package.json `"basalt"` key
   (`{ roots?, exempt?, spacingSteps?, forbiddenAccents? }`). Exempts the palette/token-definition
   files; escape hatch is a `theme-allow` line comment.
-- **The `basalt` oxlint plugin rules** — `basalt/visx-tooltip` bans `@visx/tooltip` everywhere (use
-  `ChartTooltip`); `basalt/visx-boundary` confines `@visx/*` to `charts/` directories (shipped in
-  the consumer preset too); `basalt/token-layer-boundary` keeps `src/charts/**` and `src/tokens/**`
+- **The `basalt` oxlint plugin rules** — `basalt/chart-engine-boundary` bans `@visx/*` and every
+  engine import outside the allowlist (`docs/V2-SPEC.md` § 9.8, shipped in the consumer preset
+  too); `basalt/token-layer-boundary` keeps `src/charts/**` and `src/tokens/**`
   Mantine-free — upstream of Mantine in the layering (repo-local only, a basalt-internal invariant,
   not a consumer contract) AND resolving/rendering with no `@mantine/*` installed (CI-tested via
   `scripts/pack-test.sh` + `scripts/check-dist-layering.mjs`).
-- **The `ChartCard`/`ChartLegend`/`ChartTooltip` contract is social** — it's easier to compose the
+- **The `ChartCard` contract is social** — it's easier to compose the
   primitives than to work around them. A markdown rule alone drifts; the colour/spacing guard is the
   failing build that makes the rest stick.

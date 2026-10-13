@@ -1,3 +1,6 @@
+> **Historical (1.x, visx).** Superseded by `docs/V2-SPEC.md` § 9; kept for the reasoning behind
+> the measured-margin and cursor laws. Not a contract.
+
 # The chart layer
 
 Ground truth for how charts are built and enforced. visx stays; what basalt puts on top of it is
@@ -445,8 +448,8 @@ pair has two, and needs band widths.
 
 - **`BandStrip<T>`** — one rect per slot over a shared x axis, no y dimension at all. Props:
   `data · chartId · getX · series: BandStripSeries<T>[] · getBand: (d) => BandSpan · height ·
-fill · formatX · xTickValues · fold · cursorResolution · tooltip · legend · absentState ·
-margin · ariaLabel · isPending`. `BandSpan = { state, fill?, absentFraction?, marker? }` — the three
+  fill · formatX · xTickValues · fold · cursorResolution · tooltip · legend · absentState ·
+  margin · ariaLabel · isPending`. `BandSpan = { state, fill?, absentFraction?, marker? }` — the three
   qualifications a state strip cannot do without: an intensity ramp inside one state (`fill`), the
   share of a folded slot nothing measured (`absentFraction`, drawn hatched), and a fact that must
   not be readable off the ramp (`marker`). `series` IS the state set: it drives the legend, each
@@ -454,7 +457,7 @@ margin · ariaLabel · isPending`. `BandSpan = { state, fill?, absentFraction?, 
   `cursorResolution` defaults `'leading'` here, not `'nearest'` — a band IS a bucket.
 - **`MirroredBars<T>`** — two bar panes over one x scale, mirrored around one baseline, each in its
   own domain. `up`/`down` are `MirroredBarPane = { key, max?: number | 'auto', autoMaxFloor?,
-ticks?, format }` (`format` required, `ticks` default 3). Plus `upFraction` (default 0.35 — the
+  ticks?, format }` (`format` required, `ticks` default 3). Plus `upFraction` (default 0.35 — the
   up pane's share of the band height, which is where the shared baseline sits), `getAbsentFraction`
   and `getBarOpacity`.
 

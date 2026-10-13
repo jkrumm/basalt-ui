@@ -38,7 +38,7 @@ is a downstream _library_, not an app. Round-10/11 consumer sweeps ran against 1
 The June-era roadmap/handover docs in `docs/archive/` still phrase built work as "remaining"; that
 language is historical, see the banner on each. Full round-by-round narrative (rounds 4–11,
 controls waves, the 2026-09 maturation round, and three sections that had drifted into duplicating
-`CHARTS-SPEC`/`basalt-mantine.md`/`FRAMEWORK-FREE`): `docs/archive/STATUS-HISTORY.md`.
+the 1.x chart spec (now under `docs/archive/`)/`basalt-mantine.md`/`FRAMEWORK-FREE`): `docs/archive/STATUS-HISTORY.md`.
 
 ## Validation
 
@@ -62,7 +62,7 @@ Intentional cut-line calls, not gaps:
 - **`@example` JSDoc markdown-compile harness** (the playground demos already are canonical
   compiling examples).
 - **`react-perf` lint** — dropped after evidence (141 false-positive warnings on idiomatic
-  Mantine/visx; React Compiler supersedes manual memoization).
+  Mantine/visx (1.x); React Compiler supersedes manual memoization).
 - **`@deprecated` back-compat aliases** — every shim slated for 1.29.0 removal is tracked in
   `docs/MATURATION-LEDGER.md` § Consolidation and `MIGRATING.md` § Unreleased, not here.
 
@@ -76,7 +76,7 @@ charts/tokens API, the shell, or the query/forms/notifications/commands batterie
 ## Doc map
 
 - **Living reference** — **`STATUS.md`** (this file), `DESIGN-CORE.md`, `MANTINE-THEMING.md`,
-  `CHARTS-SPEC.md`, `CONTROLS-SPEC.md`, `ASIDE-SPEC.md`, `FRAMEWORK-FREE.md` (consuming the token
+  `V2-SPEC.md` § 9 (charts), `CONTROLS-SPEC.md`, `ASIDE-SPEC.md`, `FRAMEWORK-FREE.md` (consuming the token
   system with no React/Mantine/bundler), `MATURATION-LEDGER.md` (the running checklist for the
   current maturation + consolidation loops — one row per finding, `.claude/maturation/` holds the
   untracked per-session audit evidence it cites), `ARGO-MIGRATION-LEARNINGS.md`.

@@ -2,7 +2,7 @@
 
 An opinionated framework for **Mantine-based React apps**, extracted from argo (the POC). A
 consumer app instantly gets: a Mantine theme + `cssVariablesResolver`, a `BasaltProvider`, an app
-shell (`BasaltShell` + sidebar / mobile-nav / breadcrumbs / page-header), a visx chart system, a
+shell (`BasaltShell` + sidebar / mobile-nav / breadcrumbs / page-header), a chart system, a
 three-tier `--vx-*` token system, a theme-lab, a Vite preset, raw toolchain config presets, and a
 `basalt-ui` CLI (bin named like the package — never `bunx basalt`).
 
@@ -72,14 +72,14 @@ autonomously execute large roadmap phases.
 
 ## Charts
 
-Every single-plot cartesian chart composes **`CartesianChart`**, enforced by
-`basalt/hand-rolled-plot`; five declared non-single-plot exceptions. Ground truth:
-`docs/CHARTS-SPEC.md`.
+Every cartesian chart composes **`CartesianChart`** (the kinds are `CartesianChart` with fixed marks).
+Engine `@tanstack/charts` behind one host; `basalt/chart-engine-boundary` bans the rest of the engine
+surface and `@visx/*` (§ 9.8). Ground truth: `docs/V2-SPEC.md` § 9.
 
 ## Mantine-Free Boundary
 
-`src/charts/**`/`src/tokens/**` stay Mantine-free, `@visx/*` stays inside `charts/**` — three
-independent oxlint rules. Full layering + packaging rationale (repo-internal, not a consumer
+`src/charts/**`/`src/tokens/**` stay Mantine-free; `@tanstack/charts/react` is imported by
+`src/charts/host.tsx` alone — independent oxlint rules. Full layering + packaging rationale (repo-internal, not a consumer
 contract): `packages/basalt-ui/MAINTAINING.md` § Layering.
 
 ## Tech Stack
@@ -88,7 +88,7 @@ contract): `packages/basalt-ui/MAINTAINING.md` § Layering.
 - **Monorepo**: Bun workspaces (`packages/*`, `apps/*`)
 - **UI**: Mantine v9 (`@mantine/core` + `@mantine/hooks` `^9.3`)
 - **React**: 19 (peer)
-- **Charts**: visx (9 `@visx/*` packages, pinned exact stable `4.0.0`)
+- **Charts**: `@tanstack/charts` 1.1.0 + `d3-scale` 4.0.2 (exact optional peers of `./charts`)
 - **Lint/format**: oxlint + oxfmt
 - **Type-check**: tsc (strict)
 - **Git**: conventional commits enforced via commitlint; lefthook pre-commit hooks
