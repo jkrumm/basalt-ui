@@ -8,12 +8,21 @@ const BUCKET_MINUTES = 5
 const WINDOW_START = Date.UTC(2026, 7, 20, 0, 0, 0)
 
 /** Deterministic pseudo-random in [0, 1). */
-export function rand(seed: number, salt = 12.9898): number {
+function rand(seed: number, salt = 12.9898): number {
   const x = Math.sin(seed * salt) * 43758.5453
   return x - Math.floor(x)
 }
 
 const slotStart = (i: number): Date => new Date(WINDOW_START + i * BUCKET_MINUTES * 60_000)
+
+/**
+ * Every scenario below repeats each `SCENARIO_PERIOD` buckets, so the 48-bucket (unfolded) window
+ * already holds a gap, an outage and a renegotiation — and the 288-bucket one holds six of each,
+ * which is what gives the fold something to merge.
+ */
+const SCENARIO_PERIOD = 48
+const phaseOf = (i: number): number => i % SCENARIO_PERIOD
+const within = (phase: number, from: number, to: number): boolean => phase >= from && phase <= to
 
 // ── Availability strip (l1) ─────────────────────────────────────────────────────
 
@@ -25,17 +34,35 @@ export type AvailabilitySlot = {
   cyclesDown: number
 }
 
+/** Phases of the availability scenario: a coverage gap, then an outage. */
+const AVAILABILITY_GAP: readonly [number, number] = [10, 15]
+const AVAILABILITY_OUTAGE: readonly [number, number] = [22, 24]
+const CYCLES_PER_BUCKET = 10
+/** Share of buckets with some loss, and the loss range they draw from. It straddles the demo's
+ * full-intensity loss (5%), so the ramp has both a weak and a saturated end. */
+const LOSSY_SHARE = 0.07
+const LOSS_MIN_PCT = 0.2
+const LOSS_SPAN_PCT = 8
+
+function lossAt(i: number, phase: number): number | null {
+  if (within(phase, ...AVAILABILITY_GAP)) return null
+  if (within(phase, ...AVAILABILITY_OUTAGE)) return 100
+  const r = rand(i + 1)
+  if (r <= 1 - LOSSY_SHARE) return 0
+  const t = (r - (1 - LOSSY_SHARE)) / LOSSY_SHARE
+  return Number((LOSS_MIN_PCT + t * LOSS_SPAN_PCT).toFixed(2))
+}
+
 export function buildAvailability(count: number): AvailabilitySlot[] {
   return Array.from({ length: count }, (_, i) => {
-    const gap = (i > 61 && i < 74) || (i > 190 && i < 197)
-    const outage = i > 128 && i < 133
-    const r = rand(i + 1)
-    const lossPct = gap ? null : outage ? 100 : r > 0.93 ? Number((r * 8).toFixed(2)) : 0
+    const phase = phaseOf(i)
+    const gap = within(phase, ...AVAILABILITY_GAP)
+    const outage = within(phase, ...AVAILABILITY_OUTAGE)
     return {
       start: slotStart(i),
-      lossPct,
-      cycles: gap ? 0 : 10,
-      cyclesDown: outage ? 10 : 0,
+      lossPct: lossAt(i, phase),
+      cycles: gap ? 0 : CYCLES_PER_BUCKET,
+      cyclesDown: outage ? CYCLES_PER_BUCKET : 0,
     }
   })
 }
@@ -56,22 +83,39 @@ export function mergeAvailability(group: AvailabilitySlot[]): AvailabilitySlot {
 
 export type LinkSlot = { start: Date; mbit: number | null; renegotiated: boolean }
 
+/** The fastest rate the link negotiates — the top of the demo's intensity ramp. */
+export const LINK_FULL_MBIT = 1000
+const LINK_FALLBACK_MBIT = 100
+/** Phases of the link scenario: a gap, a drop to the fallback rate, and the recovery. */
+const LINK_GAP: readonly [number, number] = [10, 15]
+const LINK_DROP_PHASE = 30
+const LINK_RECOVER_PHASE = 40
+
 export function buildLink(count: number): LinkSlot[] {
-  return Array.from({ length: count }, (_, i) => ({
-    start: slotStart(i),
-    mbit: i > 61 && i < 74 ? null : i < 96 || i >= 174 ? 1000 : 100,
-    renegotiated: i === 96 || i === 174,
-  }))
+  return Array.from({ length: count }, (_, i) => {
+    const phase = phaseOf(i)
+    const degraded = phase >= LINK_DROP_PHASE && phase < LINK_RECOVER_PHASE
+    let mbit: number | null = degraded ? LINK_FALLBACK_MBIT : LINK_FULL_MBIT
+    if (within(phase, ...LINK_GAP)) mbit = null
+    return {
+      start: slotStart(i),
+      mbit,
+      renegotiated: phase === LINK_DROP_PHASE || phase === LINK_RECOVER_PHASE,
+    }
+  })
 }
 
-/** The slowest speed wins and a renegotiation anywhere in the group survives the fold. */
+/**
+ * A group holding a renegotiation keeps the rate the link renegotiated TO — that is the fact the
+ * marker names ("N Mbit after"), and a minimum would report a rate it left. Otherwise the slowest
+ * measured speed wins; a group with no measurement stays absent.
+ */
 export function mergeLink(group: LinkSlot[]): LinkSlot {
-  const measured = group.filter((g) => g.mbit !== null)
-  return {
-    start: (group[0] as LinkSlot).start,
-    mbit: measured.length === 0 ? null : Math.min(...measured.map((g) => g.mbit ?? 0)),
-    renegotiated: group.some((g) => g.renegotiated),
-  }
+  const start = (group[0] as LinkSlot).start
+  const renegotiation = group.find((g) => g.renegotiated)
+  if (renegotiation) return { start, mbit: renegotiation.mbit, renegotiated: true }
+  const speeds = group.flatMap((g) => (g.mbit === null ? [] : [g.mbit]))
+  return { start, mbit: speeds.length === 0 ? null : Math.min(...speeds), renegotiated: false }
 }
 
 // ── Throughput (l7) ─────────────────────────────────────────────────────────────
@@ -89,17 +133,32 @@ export type ThroughputSlot = {
   unmeasured: number
 }
 
+/** Phases of the throughput scenario: a gap, and the busy evening that follows. */
+const THROUGHPUT_GAP: readonly [number, number] = [10, 15]
+const EVENING_FROM_PHASE = 36
+const EVENING_FACTOR = 3
+const INTERVALS_PER_BUCKET = 20
+const MAX_DOWN_BYTES_PER_S = 2_400_000
+const MAX_UP_BYTES_PER_S = 180_000
+/** A bucket whose draw exceeds this lost some samples to placement: real, but understated. */
+const SKIPPED_DRAW = 0.9
+const SKIPPED_SAMPLES = 4
+const THROUGHPUT_SALT = 7.3319
+
 export function buildThroughput(count: number): ThroughputSlot[] {
   return Array.from({ length: count }, (_, i) => {
-    const gap = (i > 61 && i < 74) || (i > 210 && i < 216)
-    const r = rand(i + 1, 7.3319)
-    const evening = i > 200 ? 3 : 1
+    const phase = phaseOf(i)
+    const gap = within(phase, ...THROUGHPUT_GAP)
+    const r = rand(i + 1, THROUGHPUT_SALT)
+    const evening = phase >= EVENING_FROM_PHASE ? EVENING_FACTOR : 1
     return {
       start: slotStart(i),
-      downBytesPerS: gap ? null : Math.round(r * 2_400_000 * evening),
-      upBytesPerS: gap ? null : Math.round(rand(i + 999, 7.3319) * 180_000 * evening),
-      intervals: gap ? 0 : 20,
-      skipped: !gap && r > 0.9 ? 4 : 0,
+      downBytesPerS: gap ? null : Math.round(r * MAX_DOWN_BYTES_PER_S * evening),
+      upBytesPerS: gap
+        ? null
+        : Math.round(rand(i + 999, THROUGHPUT_SALT) * MAX_UP_BYTES_PER_S * evening),
+      intervals: gap ? 0 : INTERVALS_PER_BUCKET,
+      skipped: !gap && r > SKIPPED_DRAW ? SKIPPED_SAMPLES : 0,
       foldedFrom: 1,
       unmeasured: gap ? 1 : 0,
     }
@@ -111,10 +170,10 @@ export function buildThroughput(count: number): ThroughputSlot[] {
 export function mergeThroughput(group: ThroughputSlot[]): ThroughputSlot {
   const measured = group.filter((p) => p.downBytesPerS !== null)
   const intervals = measured.reduce((s, p) => s + p.intervals, 0)
-  const rate = (pick: (p: ThroughputSlot) => number | null): number | null =>
-    intervals === 0
-      ? null
-      : measured.reduce((s, p) => s + (pick(p) ?? 0) * p.intervals, 0) / intervals
+  const rate = (pick: (p: ThroughputSlot) => number | null): number | null => {
+    if (intervals === 0) return null
+    return measured.reduce((s, p) => s + (pick(p) ?? 0) * p.intervals, 0) / intervals
+  }
   return {
     start: (group[0] as ThroughputSlot).start,
     downBytesPerS: rate((p) => p.downBytesPerS),
