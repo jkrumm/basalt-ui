@@ -117,10 +117,7 @@ function scaleToExactSum(weights: readonly number[], targetSum: number, decimals
 }
 
 /** The 30-day dashboard series — KPI totals pinned exactly to the handoff mock. */
-function generateDashboard30d(): {
-  series: DayPoint[]
-  sparks: { sessions: number[]; signups: number[]; revenue: number[] }
-} {
+function generateDashboard30d(): { series: DayPoint[] } {
   const sessions = scaleToExactSum(DASHBOARD_30D_WEIGHT, 31306)
   const signups = scaleToExactSum(DASHBOARD_30D_WEIGHT, 1849)
   const revenue = scaleToExactSum(DASHBOARD_30D_WEIGHT, 85.4, 1)
@@ -137,22 +134,16 @@ function generateDashboard30d(): {
     health: health[i] ?? 0,
   }))
 
-  return { series, sparks: { sessions, signups, revenue } }
+  return { series }
 }
 
-export function generateDashboardData(range: DateRange): {
-  series: DayPoint[]
-  sparks: { sessions: number[]; signups: number[]; revenue: number[] }
-} {
+export function generateDashboardData(range: DateRange): { series: DayPoint[] } {
   if (range === '30d') return generateDashboard30d()
 
   const count = range === '1d' ? 24 : 7
   const isHourly = range === '1d'
 
   const series: DayPoint[] = []
-  const sSessions: number[] = []
-  const sSignups: number[] = []
-  const sRevenue: number[] = []
 
   for (let i = 0; i < count; i++) {
     const wave = isHourly ? hourlyWave(i) : dayWave(i)
@@ -170,12 +161,9 @@ export function generateDashboardData(range: DateRange): {
       churn,
       health,
     })
-    sSessions.push(sessions)
-    sSignups.push(signups)
-    sRevenue.push(revenue)
   }
 
-  return { series, sparks: { sessions: sSessions, signups: sSignups, revenue: sRevenue } }
+  return { series }
 }
 
 // ── Lift trend demo: per-lift e1RM trend + trailing MA + PR markers ──────────

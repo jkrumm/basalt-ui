@@ -28,9 +28,14 @@ export function integer(value: number): string {
   return Math.round(value).toLocaleString('en-US')
 }
 
+/** An ISO day (`2026-08-28`) as a UTC-midnight `Date` — the x that makes a chart a time scale. */
+export function isoDayToDate(day: string): Date {
+  return new Date(`${day}T00:00:00Z`)
+}
+
 /** `2026-08-28` → `Aug 26` — an axis tick that stays legible across a four-year window. */
 export function fmtMonthTick(key: string): string {
-  const date = new Date(`${key}T00:00:00Z`)
+  const date = isoDayToDate(key)
   if (Number.isNaN(date.getTime())) return key
   return date.toLocaleDateString('en-US', { month: 'short', year: '2-digit', timeZone: 'UTC' })
 }

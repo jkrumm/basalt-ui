@@ -8,6 +8,7 @@
  */
 
 import { createColumnHelper } from 'basalt-ui/table'
+import { isoDayToDate } from './fixtures/format'
 
 export const CHANNEL_KEYS = ['direct', 'organic', 'referral', 'social', 'paid'] as const
 export type ChannelKey = (typeof CHANNEL_KEYS)[number]
@@ -24,7 +25,6 @@ export type Kpi = {
   value: string
   /** Absent when `compare` is `'none'` — there is no comparison window, so there is no delta. */
   delta?: number
-  history: number[]
 }
 export type BreakdownRow = {
   key: ChannelKey
@@ -33,7 +33,6 @@ export type BreakdownRow = {
   value: string
   /** Formatted order count — the same rows under the card's other metric. */
   orders: string
-  history: number[]
 }
 export type FunnelPoint = { step: string; visitors: number }
 export type TopPage = {
@@ -92,7 +91,7 @@ const CURRENCY_RATE: Record<Currency, number> = { USD: 1, EUR: 0.92 }
  * hour or a funnel step stays the string it is (so the axis is categorical).
  */
 export function xOf(label: string): Date | string {
-  return /^\d{4}-\d{2}-\d{2}$/.test(label) ? new Date(`${label}T00:00:00Z`) : label
+  return /^\d{4}-\d{2}-\d{2}$/.test(label) ? isoDayToDate(label) : label
 }
 
 /** Point count and label shape per range — `'custom'` reads as the 30-day window. */
@@ -178,45 +177,6 @@ function series(o: {
 }
 
 /**
- * One bar's ideal footprint, in px, including its gap. A KPI sparkline is sized from the slot it got
- * rather than from a fixed bar count, and this is the constant that converts one into the other.
- *
- * A fixed count cannot be right for both slots the card has. Ten bars is the reference treatment in
- * the 72px `'right'` slot (≈7px each — individually legible, and the accented last one reads); the
- * same ten bars in the full-bleed mobile slot are 23px each, which is a bar chart taking a third of
- * the card, not a trend qualifying a number. Ten bars was also wrong the other way before that: one
- * bar per point drew 30 bars at 2.4px in a 72px slot, which is a texture.
- */
-const SPARKLINE_BAR_FOOTPRINT = 7
-/** Bar-count floor/ceiling — below 8 a bar chart stops being a series, above 40 it is texture. */
-const SPARKLINE_BAR_MIN = 8
-const SPARKLINE_BAR_MAX = 40
-
-/**
- * How many bars a sparkline slot of `width` px should hold. Exported because the CARD is the only
- * thing that knows its own width — `StatCard`'s `sparkline` render prop hands the MEASURED box down,
- * so the bar count follows the box with no viewport branch anywhere (law C9).
- */
-export function sparklineBars(width: number): number {
-  const ideal = Math.round(width / SPARKLINE_BAR_FOOTPRINT)
-  return Math.min(Math.max(ideal, SPARKLINE_BAR_MIN), SPARKLINE_BAR_MAX)
-}
-
-/**
- * Mean-buckets a series down to `buckets` values. The MEAN and not every Nth sample: sampling a wave
- * at a stride close to its period aliases it into a straight line, and every series on this page is
- * trigonometric.
- */
-export function downsample(values: readonly number[], buckets: number): number[] {
-  if (values.length <= buckets) return [...values]
-  const size = values.length / buckets
-  return Array.from({ length: buckets }, (_, index) => {
-    const slice = values.slice(Math.floor(index * size), Math.floor((index + 1) * size))
-    return Math.round(sum(slice) / Math.max(slice.length, 1))
-  })
-}
-
-/**
  * Re-buckets a sales series by grain — the `Total sales over time` card's `Day` / `Week` control.
  * `week` SUMS (a week's sales is its days added up, not their average), which is also why the card's
  * y axis rescales rather than just thinning out.
@@ -281,9 +241,6 @@ export function buildAnalytics(o: {
   const sessions = orders / 0.041
   const priorSessions = priorOrders / 0.039
 
-  const ordersHistory = points.map((point) => Math.round(point.sales / 148))
-  const aovHistory = points.map((_, index) => Math.round(148 * wave(index, 2.6)))
-  const conversionHistory = points.map((_, index) => Math.round(410 * wave(index, 1.4)))
   const aov = total / orders
   const priorAov = prior / priorOrders
   const conversion = (orders / sessions) * 100
@@ -295,28 +252,24 @@ export function buildAnalytics(o: {
       title: 'Total sales',
       value: money(total, o.currency),
       ...deltaOf({ compare: o.compare, current: total, prior }),
-      history: points.map((point) => point.sales),
     },
     {
       key: 'orders',
       title: 'Orders',
       value: integer(orders),
       ...deltaOf({ compare: o.compare, current: orders, prior: priorOrders }),
-      history: ordersHistory,
     },
     {
       key: 'aov',
       title: 'Average order value',
       value: money(aov, o.currency),
       ...deltaOf({ compare: o.compare, current: aov, prior: priorAov }),
-      history: aovHistory,
     },
     {
       key: 'conversion',
       title: 'Conversion rate',
       value: percent(conversion),
       ...deltaOf({ compare: o.compare, current: conversion, prior: priorConversion }),
-      history: conversionHistory,
     },
   ]
 
@@ -331,7 +284,6 @@ export function buildAnalytics(o: {
       label: CHANNEL_LABEL[key],
       value: money(channelTotal, o.currency),
       orders: integer(channelTotal / 148),
-      history: channelPoints,
     }
   })
 
@@ -390,4 +342,4 @@ export const topPageColumns = [
   }),
 ]
 
-export { CHANNEL_LABEL, integer, money, percent }
+export { CHANNEL_LABEL }

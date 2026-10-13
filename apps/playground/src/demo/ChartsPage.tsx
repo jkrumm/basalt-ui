@@ -36,11 +36,16 @@ import { decorative } from '@tanstack/charts/mark/decorative'
 import { PageBar } from 'basalt-ui'
 import { Bars, CartesianChart, ChartCard, Lines } from 'basalt-ui/charts'
 import type {
+  AxisConfig,
   BarsBar,
   BarsLine,
   ChartSeries,
+  ChartTooltipConfig,
   ChartTooltipRow,
   PlotContext,
+  RefLine,
+  Threshold,
+  XZoneSpec,
   ZoneSpec,
 } from 'basalt-ui/charts'
 import { ViewTabs } from 'basalt-ui/controls'
@@ -49,14 +54,13 @@ import { alpha, CONTAINER_KEYS, VX } from 'basalt-ui/tokens'
 import { CHANNEL_VOLUME, LIFT_TREND, LOAD_TREND, SERIES_DATA, WEEKLY_DIGEST } from './data'
 import type { ChannelVolumePoint, DayPoint, LiftPoint, LoadPoint } from './data'
 import { demoColors } from './series'
+import { isoDayToDate } from './fixtures/format'
 
 const fmtInt = (v: number) => Math.round(v).toLocaleString('en-US')
 const fmtKg = (v: number) => `${Math.round(v)} kg`
 const fmtSigned = (v: number) => `${v > 0 ? '+' : ''}${Math.round(v)}`
 
-/** An ISO day as a UTC `Date` — the x that makes a chart a time scale and shares the cursor. */
-const day = (iso: string): Date => new Date(`${iso}T00:00:00Z`)
-const dayOf = (d: { date: string }): Date => day(d.date)
+const dayOf = (d: { date: string }): Date => isoDayToDate(d.date)
 
 const HEALTH_ZONES: ZoneSpec[] = [
   { from: 0, to: 50, fill: alpha(VX.badSolid, 0.1) },
@@ -83,6 +87,32 @@ function healthRows(
   rows.push({ label: 'Vs. 80 goal', value: fmtSigned(d.health - 80), color: VX.goodRef })
   return rows
 }
+
+// Hoisted so the Health score chart's props keep a stable identity across re-renders (the chart's
+// definition memo keys on them).
+const HEALTH_Y: AxisConfig<DayPoint> = { domain: [0, 100], format: (v) => `${Math.round(v)}` }
+
+const HEALTH_X_ZONES: XZoneSpec<Date>[] = [
+  {
+    from: isoDayToDate('2026-03-08'),
+    to: isoDayToDate('2026-03-14'),
+    fill: alpha(VX.accent, 0.05),
+  },
+  {
+    from: isoDayToDate('2026-03-12'),
+    to: isoDayToDate('2026-03-12'),
+    fill: alpha(VX.goodSolid, 0.18),
+    align: 'edge',
+  },
+]
+
+const HEALTH_THRESHOLDS: Threshold[] = [
+  { value: 80, side: 'above', fill: alpha(VX.goodSolid, 0.14) },
+]
+
+const HEALTH_REF_LINES: RefLine[] = [{ value: 80, color: VX.goodRef, dashed: true }]
+
+const HEALTH_TOOLTIP: ChartTooltipConfig<DayPoint, Date> = { rows: healthRows, onFollow: true }
 
 const HEALTH_SERIES: ChartSeries<DayPoint>[] = [
   {
@@ -430,20 +460,12 @@ export function ChartsPage() {
               ariaLabel="Health score trend, 0 to 100, March 1 to 14"
               x={dayOf}
               series={HEALTH_SERIES}
-              y={{ domain: [0, 100], format: (v) => `${Math.round(v)}` }}
+              y={HEALTH_Y}
               zones={HEALTH_ZONES}
-              xZones={[
-                { from: day('2026-03-08'), to: day('2026-03-14'), fill: alpha(VX.accent, 0.05) },
-                {
-                  from: day('2026-03-12'),
-                  to: day('2026-03-12'),
-                  fill: alpha(VX.goodSolid, 0.18),
-                  align: 'edge',
-                },
-              ]}
-              thresholds={[{ value: 80, side: 'above', fill: alpha(VX.goodSolid, 0.14) }]}
-              refLines={[{ value: 80, color: VX.goodRef, dashed: true }]}
-              tooltip={{ rows: healthRows, onFollow: true }}
+              xZones={HEALTH_X_ZONES}
+              thresholds={HEALTH_THRESHOLDS}
+              refLines={HEALTH_REF_LINES}
+              tooltip={HEALTH_TOOLTIP}
             />
           </ChartCard>
 
