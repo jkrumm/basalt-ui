@@ -12,11 +12,8 @@
 #     `release-migrating.ts --check`, because `prepareCmd`'s MIGRATING rename runs in the `prepare`
 #     step, which a dry run SKIPS, so nothing else in the pipeline can catch a shape it can't fix;
 #   • a dry run first, ALWAYS, with the computed version read back before the real one is offered;
-#   • a refusal on a major (`version_gate`, tested in scripts/release.test.ts). Majors are banned
-#     here by design except the ONE sanctioned 2.0.0: a computed major passes only if it is exactly
-#     2.0.0 and the registry has no 2.x yet. A 3.0 or a second 2.0.0 dies. It checks the computed
-#     VERSION, not the commit: it cannot tell the designated BREAKING CHANGE commit from a stray
-#     one — review keeps it to one (packages/basalt-ui/MAINTAINING.md § The one sanctioned major);
+#   • the version gate (`version_gate`, tested in scripts/release.test.ts): only 2.0.0, then 2.x
+#     non-majors, are releasable — packages/basalt-ui/MAINTAINING.md § The one sanctioned major;
 #   • the C16 grace gate against the COMPUTED version (`packages/basalt-ui/scripts/check-grace.ts`),
 #     which is the only place it can fire before the release instead of one minor after it — grace
 #     entries and deprecation `removeIn` dates alike, behind a build + export-surface check so its
@@ -27,26 +24,71 @@
 # Usage:  scripts/release.sh dry     — dry run only, print the verdict, change nothing
 #         scripts/release.sh         — dry run, confirm, publish
 #         YES=1 scripts/release.sh   — same without the prompt (non-interactive callers)
-set -euo pipefail
+
+# ── Pure rules ───────────────────────────────────────────────────────────────
+# Sourced by scripts/release.test.ts with RELEASE_SH_LIB=1: the rules below are defined and the file
+# returns before `set -euo pipefail`, so sourcing does not change the caller's shell options.
+
+# versions_from_json — stdin: `npm view … versions --json` (an array, or a bare string when only one
+# version exists). Prints one version per line; any other shape (an object, mixed types) fails.
+versions_from_json() {
+  node -e '
+    let raw = ""
+    process.stdin.on("data", (chunk) => (raw += chunk)).on("end", () => {
+      let parsed
+      try { parsed = JSON.parse(raw) } catch { process.exit(1) }
+      const list = typeof parsed === "string" ? [parsed] : parsed
+      if (!Array.isArray(list) || list.length === 0 || !list.every((v) => typeof v === "string")) process.exit(1)
+      console.log(list.join("\n"))
+    })'
+}
+
+# registry_versions — every published version, one per line. Bounded retry (a transient failure
+# must not read as "no 2.x"), each attempt bounded by npm's own fetch timeout; returns 1 when the
+# registry cannot be read within REGISTRY_READ_TIMEOUT seconds.
+registry_versions() {
+  local deadline=$((SECONDS + ${REGISTRY_READ_TIMEOUT:-60})) json list
+  while :; do
+    if json=$(npm view --prefer-online --fetch-timeout=15000 --fetch-retries=0 basalt-ui versions --json 2>/dev/null) &&
+      list=$(versions_from_json <<<"$json"); then
+      echo "$list"
+      return 0
+    fi
+    [ "$SECONDS" -lt "$deadline" ] || return 1
+    sleep "${REGISTRY_RETRY_SLEEP:-5}"
+  done
+}
 
 # version_gate <bump> <version> <registry-versions, one per line>
-# Returns 0 unless the computed version is a major other than the once-only 2.0.0; otherwise prints
-# why on stderr. Pure, so scripts/release.test.ts can source it (RELEASE_SH_LIB=1) without releasing.
+# The only releasable versions are exactly 2.0.0 while no stable 2.x is published, and non-major 2.x
+# once one is. Everything else — any 1.x (frozen at v1.41.0), a 3.x, a second 2.0.0 — returns 1 with
+# the reason and the remedy on stderr. It judges the computed VERSION, not the commit.
 version_gate() {
-  local bump="$1" version="$2" registry="$3"
-  [ "$bump" = "major" ] || return 0
-  if [ "$version" = "2.0.0" ] && ! grep -qE '^2\.[0-9]+\.[0-9]+$' <<<"$registry"; then
+  local bump="$1" version="$2" registry="$3" published=false
+  grep -qE '^2\.[0-9]+\.[0-9]+$' <<<"$registry" && published=true
+
+  if [[ "$version" == 1.* ]]; then
+    echo "1.x is frozen at v1.41.0 and cannot be released (computed v$version, $bump). A fix:/feat: touching the package landed before 2.0.0 — nothing is releasable until it does." >&2
+    return 1
+  fi
+  if [ "$published" = false ]; then
+    [ "$version" = "2.0.0" ] && return 0
+    echo "only 2.0.0 is releasable before a 2.x is published (computed v$version, $bump). Rewrite a stray feat!:/BREAKING CHANGE footer as a plain feat:." >&2
+    return 1
+  fi
+  if [[ "$version" =~ ^2\.[0-9]+\.[0-9]+$ && "$bump" != major ]]; then
     return 0
   fi
-  echo "a MAJOR is banned in this repo except the one sanctioned 2.0.0 (computed v$version; 2.x already published: $(grep -qE '^2\.[0-9]+\.[0-9]+$' <<<"$registry" && echo yes || echo no))." >&2
+  echo "a 2.x is published: only non-major 2.x releases remain (computed v$version, $bump). Rewrite a stray feat!:/BREAKING CHANGE footer as a plain feat:." >&2
   return 1
 }
 
-# Sourced with RELEASE_SH_LIB=1 (tests) this file defines the rule and stops here; a direct run
-# ignores the variable.
+# A direct run ignores RELEASE_SH_LIB; only a `source` stops here.
 if [ -n "${RELEASE_SH_LIB:-}" ] && [ "${BASH_SOURCE[0]}" != "$0" ]; then
   return 0
 fi
+
+set -euo pipefail
 
 MODE="${1:-full}"
 case "$MODE" in
@@ -214,14 +256,8 @@ bump=$(grep -oE 'Analysis of [0-9]+ commits complete: [a-z]+ release' <<<"$log" 
 echo
 echo "  ${last_tag:-none} → v$version  (${bump:-unknown})"
 
-if [ "$bump" = "major" ]; then
-  registry_versions=$(npm view --prefer-online basalt-ui versions --json 2>/dev/null |
-    node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{console.log([].concat(JSON.parse(s)).join("\n"))}catch{}})' ||
-    true)
-  [ -n "$registry_versions" ] || die "cannot read the published versions from the registry — the major gate needs them."
-  version_gate "$bump" "$version" "$registry_versions" ||
-    die "v$version is not releasable (reason above). Rewrite a stray \`feat!:\`/BREAKING CHANGE footer as a plain \`feat:\`."
-fi
+registry=$(registry_versions) || die "cannot read the published versions from the registry — the version gate needs them."
+version_gate "$bump" "$version" "$registry" || die "v$version is not releasable (reason above)."
 
 # ── The C16 grace gate, against the version about to be cut ──────────────────
 # The test-time gate reads package.json, i.e. the version already PUBLISHED, so it can only go red
