@@ -1,0 +1,14 @@
+/**
+ * Test-only `defineNav` for suites that run WITHOUT the `Register` augmentation: the shipped
+ * `defineNav` rejects such a call at compile time (V2-SPEC § 3), and these suites exercise runtime
+ * behaviour only. The strict signature is proven in the playground's `nav.type-guard.tsx`.
+ */
+import { defineNav as strictDefineNav } from './nav'
+import type { AnyNavGroup, NavConfig, NavTabId } from './nav'
+
+export const defineNav = strictDefineNav as unknown as <
+  const G extends ReadonlyArray<AnyNavGroup>,
+  const T extends ReadonlyArray<NavTabId<G>> = [],
+>(
+  config: NavConfig<G, T>,
+) => NavConfig<G, T>

@@ -6,13 +6,17 @@
  * here, so a tokens/charts-only consumer never pulls in `@mantine/*`.
  */
 
+export { BasaltProvider } from './provider'
+export { createBasaltRouter, type BasaltRouterContext } from './provider/create-router'
+export type { BasaltEvent } from './telemetry'
 export {
-  BasaltProvider,
-  type BasaltProviderProps,
-  BasaltErrorBoundary,
-  type BasaltErrorBoundaryProps,
-  type BasaltErrorContext,
-} from './provider'
+  defineNav,
+  navGroup,
+  navTarget,
+  flattenNav,
+  useBasaltNav,
+  type NavItemId,
+} from './router-tanstack'
 // -- Common primitives (src/common) ------------------------------------------------------------
 // Not a subpath of its own: `BasaltProps` is the base every component's props extend, so it belongs
 // on the entry a consumer already imports. The module is Mantine-free (`common/boundary.test.ts`),
@@ -222,26 +226,7 @@ export {
   type ErrorStateProps,
 } from './dashboard'
 
-// ── Connectivity (auto-mounted by BasaltProvider, merged into ./provider — dropped ./connectivity
-// subpath) ──────────────────────────────────────────────────────────────────────────────────────
-export { ConnectivityProvider } from './provider/connectivity-provider'
-export { ConnectivityIndicator } from './provider/connectivity-indicator'
-export { useConnectivity } from './provider/use-connectivity'
-export type {
-  ConnectivityStatus,
-  ConnectivitySnapshot,
-  ConnectivityProviderProps,
-  ConnectivityOverride,
-} from './provider/connectivity-types'
-export type { ConnectivityIndicatorProps } from './provider/connectivity-indicator'
-
-// ── Query (createBasaltQueryClient, unwrap, lazy devtools — dropped ./query subpath) ──────────────
-export { createBasaltQueryClient, unwrap } from './query-client'
-export { BasaltQueryDevtools } from './query-devtools'
-export { toErrorMessage, errorStatus } from './common/errors'
-
-// ── BasaltDevDock (C5 consolidation) ────────────────────────────────────────────────────────────
-export { BasaltDevDock, type BasaltDevDockProps, type BasaltDevDockTool } from './dev-dock'
+export { unwrap } from './query-client'
 
 // ── Type-only re-exports for compile fixtures (H.4) ──────────────────────────────────────────────
 // SurfaceSpec/RuleName/SkillName: the value SURFACES stays internal; types only for surfaces-broken

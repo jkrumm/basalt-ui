@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
-import { defineNav, flattenNav, navGroup, navTarget } from './nav'
+import { flattenNav, navGroup, navTarget } from './nav'
+import { defineNav } from './nav-test-utils'
 
 /**
  * The definition below is deliberately built with the real builders (not object literals) so the

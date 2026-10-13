@@ -2,7 +2,7 @@
  * `unwrap` — its runtime branches (a `Promise` of the envelope, or the already-resolved envelope
  * itself, one generic signature since 1.29.1 — see `query-client.type-guard.test.ts` for the
  * compile-time proof) and the null/undefined absence guard (C5 consolidation: `undefined` joined
- * `null`). `createBasaltQueryClient` is a thin config-merge wrapper with no branching to test here.
+ * `null`). `makeQueryClient` is covered in `provider/create-router.test.ts`.
  */
 import { describe, expect, test } from 'bun:test'
 import { unwrap } from './query-client'

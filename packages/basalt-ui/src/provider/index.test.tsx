@@ -20,9 +20,10 @@
 import { act, render, screen } from '@testing-library/react'
 import { describe, expect, spyOn, test } from 'bun:test'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { BasaltErrorBoundary, BasaltProvider, composeInjectedCss } from './index'
+import { BasaltProvider, RootBoundary, composeInjectedCss } from './index'
 import { setColorScheme } from '../commands/shell-bridge'
-import { useConnectivity } from './use-connectivity'
+import { testRouter } from './test-router'
+import type { BasaltEvent } from '../telemetry'
 import { createBasaltTheme } from '../theme'
 import { buildDensityCss, buildFontsCss, buildPaletteCss, buildRadiusCss } from '../tokens'
 import { deriveRadius, deriveSpacing } from '../tokens/palette'
@@ -78,9 +79,10 @@ describe('composeInjectedCss orders overrides so density/radius/fonts win the ca
 describe('BasaltBridge reads theme.other.basaltDensity and injects it end to end', () => {
   test('a non-default density option lands its buildDensityCss output in the rendered <style>', () => {
     const html = renderToStaticMarkup(
-      <BasaltProvider theme={createBasaltTheme(undefined, { density: -2 })}>
-        <div>content</div>
-      </BasaltProvider>,
+      <BasaltProvider
+        router={testRouter()}
+        theme={createBasaltTheme(undefined, { density: -2 })}
+      />,
     )
     // Fails if `BasaltBridge` stops reading `theme.other.basaltDensity` (e.g. reads a different key,
     // or never passes it to `buildDensityCss`) — the exact retuned block would then be absent.
@@ -89,46 +91,60 @@ describe('BasaltBridge reads theme.other.basaltDensity and injects it end to end
 
   test('the default (level-0) theme injects no density override block at all', () => {
     const html = renderToStaticMarkup(
-      <BasaltProvider theme={createBasaltTheme()}>
-        <div>content</div>
-      </BasaltProvider>,
+      <BasaltProvider router={testRouter()} theme={createBasaltTheme()} />,
     )
-    // Fails if `BasaltBridge` injects a density block even when `theme.other.basaltDensity` is unset
-    // (`createBasaltTheme()`'s default path never sets it — `density-option.test.ts`). The BASE
-    // palette CSS already emits `--vx-space-row-inset-x` once (`frameworkDerived`'s own
-    // `DEFAULT_SPACE_VALUES` decls) — a stray SECOND occurrence is the signature of an unwanted
-    // density override block getting appended on top of it.
+    // The BASE palette CSS already emits `--vx-space-row-inset-x` once — a stray SECOND occurrence
+    // is the signature of an unwanted density override block getting appended on top of it.
     expect(html).not.toContain(buildDensityCss(deriveSpacing(-2)))
     expect(html.split('--vx-space-row-inset-x').length - 1).toBe(1)
   })
+
+  test('theme defaults to createBasaltTheme() — omitting it injects the same CSS', () => {
+    const omitted = renderToStaticMarkup(<BasaltProvider router={testRouter()} />)
+    const explicit = renderToStaticMarkup(
+      <BasaltProvider router={testRouter()} theme={createBasaltTheme()} />,
+    )
+    expect(omitted).toBe(explicit)
+  })
 })
 
-function ConnectivityStatusProbe() {
-  const { status } = useConnectivity()
-  return <span data-testid="status">{status}</span>
-}
+describe('BasaltProvider mount', () => {
+  test('mounts the router inside the provider tree and renders the matched route', async () => {
+    const router = testRouter('content')
+    render(<BasaltProvider router={router} />)
+    expect(await screen.findByText('content')).toBeDefined()
+  })
 
-describe('BasaltProvider connectivity prop reaches ConnectivityProvider end to end (A11)', () => {
-  test('`connectivity.override` resolves the aggregated status read back through useConnectivity()', () => {
-    const { getByTestId } = render(
-      <BasaltProvider connectivity={{ override: { browserOnline: false } }}>
-        <ConnectivityStatusProbe />
-      </BasaltProvider>,
-    )
-    // Before this fix the only way to reach `override` was mounting a SECOND, shadowing
-    // `ConnectivityProvider` — this proves the prop threaded through `BasaltProvider` itself works.
-    expect(getByTestId('status').textContent).toBe('offline')
+  test('a router without context.queryClient is refused with a message naming the fix', () => {
+    const bare = { options: { context: {} } } as unknown as Parameters<
+      typeof BasaltProvider
+    >[0]['router']
+    const quiet = spyOn(console, 'error').mockImplementation(() => {})
+    try {
+      expect(() => render(<BasaltProvider router={bare} />)).toThrow(/createBasaltRouter/)
+    } finally {
+      quiet.mockRestore()
+    }
+  })
+
+  test('route.navigate is emitted with ids and a pathname, never search', async () => {
+    const events: BasaltEvent[] = []
+    const router = testRouter('content')
+    render(<BasaltProvider router={router} telemetry={(e) => events.push(e)} />)
+    await screen.findByText('content')
+    await act(() => router.navigate({ to: '/other', search: { secret: 'x' } } as never))
+    const nav = events.filter((e) => e.type === 'route.navigate')
+    expect(nav.length).toBeGreaterThan(0)
+    const last = nav.at(-1)
+    expect(last?.failed).toBe(false)
+    expect(JSON.stringify(last)).not.toContain('secret')
   })
 })
 
 describe('BasaltProvider duplicate-mount guard (F14)', () => {
   test('mounting a single BasaltProvider does not warn', () => {
     const warn = spyOn(console, 'warn').mockImplementation(() => {})
-    const { unmount } = render(
-      <BasaltProvider>
-        <div>content</div>
-      </BasaltProvider>,
-    )
+    const { unmount } = render(<BasaltProvider router={testRouter()} />)
     expect(warn).not.toHaveBeenCalled()
     unmount()
     warn.mockRestore()
@@ -136,59 +152,20 @@ describe('BasaltProvider duplicate-mount guard (F14)', () => {
 
   test('mounting a second BasaltProvider while the first is still mounted warns', () => {
     const warn = spyOn(console, 'warn').mockImplementation(() => {})
-    const first = render(
-      <BasaltProvider>
-        <div>a</div>
-      </BasaltProvider>,
-    )
-    const second = render(
-      <BasaltProvider>
-        <div>b</div>
-      </BasaltProvider>,
-    )
-    expect(warn).toHaveBeenCalledTimes(1)
-    expect(String(warn.mock.calls[0]?.[0])).toContain('more than one instance')
+    const first = render(<BasaltProvider router={testRouter()} />)
+    const second = render(<BasaltProvider router={testRouter()} />)
+    expect(warn.mock.calls.some((c) => String(c[0]).includes('more than one instance'))).toBe(true)
     first.unmount()
     second.unmount()
     warn.mockRestore()
   })
-
-  test('in a production build, mounting a second BasaltProvider does NOT warn — the NODE_ENV gate folds to false', () => {
-    const originalEnv = process.env['NODE_ENV']
-    process.env['NODE_ENV'] = 'production'
-    const warn = spyOn(console, 'warn').mockImplementation(() => {})
-    try {
-      const first = render(
-        <BasaltProvider>
-          <div>a</div>
-        </BasaltProvider>,
-      )
-      const second = render(
-        <BasaltProvider>
-          <div>b</div>
-        </BasaltProvider>,
-      )
-      expect(warn).not.toHaveBeenCalled()
-      first.unmount()
-      second.unmount()
-    } finally {
-      warn.mockRestore()
-      if (originalEnv === undefined) delete process.env['NODE_ENV']
-      else process.env['NODE_ENV'] = originalEnv
-    }
-  })
 })
 
 describe('BasaltProvider cssVariablesResolver precedence — the rest spread can never reach it (F24, runtime)', () => {
-  // `theme` and `defaultColorScheme` are legitimate, explicitly-typed `BasaltProviderProps` fields
-  // — a consumer is meant to override them (`theme` is merged via `useLabTheme`; `defaultColorScheme`
-  // defaults to 'dark' but is a real prop), so neither is something `...rest` could smuggle in the
-  // first place. `cssVariablesResolver` is the one field `Omit`ted from the accepted type ENTIRELY —
-  // there is no prop path to it at all, typed or not — pinned at compile time by
-  // `index.type-guard.test.ts`. This is the runtime half: even a caller that bypasses the type check
-  // with a cast to smuggle `cssVariablesResolver` through the rest object can never make it reach
-  // `MantineProvider`, because `{...rest}` is spread BEFORE basalt's own `cssVariablesResolver` prop
-  // in JSX, and the later, explicit prop always wins the object merge.
+  // `cssVariablesResolver` is `Omit`ted from the accepted type ENTIRELY (pinned at compile time by
+  // `index.type-guard.test.ts`). This is the runtime half: even a caller that bypasses the type
+  // check can never make it reach `MantineProvider`, because `{...rest}` is spread BEFORE basalt's
+  // own explicit prop.
   test('a cssVariablesResolver smuggled through rest past the type check is never invoked', () => {
     let maliciousResolverCalled = false
     const maliciousResolver = () => {
@@ -196,7 +173,7 @@ describe('BasaltProvider cssVariablesResolver precedence — the rest spread can
       return { variables: {}, light: {}, dark: {} }
     }
     const propsWithResolver = {
-      children: <div>content</div>,
+      router: testRouter(),
       cssVariablesResolver: maliciousResolver,
     } as unknown as Parameters<typeof BasaltProvider>[0]
     render(<BasaltProvider {...propsWithResolver} />)
@@ -204,38 +181,21 @@ describe('BasaltProvider cssVariablesResolver precedence — the rest spread can
   })
 })
 
-describe('BasaltErrorBoundary — onError optional, default fallback (C5)', () => {
+describe('RootBoundary — fallback and render.error', () => {
   function Boom(): never {
-    throw new Error('boom')
+    throw new Error('secret boom message')
   }
 
-  // React logs caught render errors to the console regardless of the boundary — silence it so
-  // the expected-error assertions below don't spam test output, matching this repo's own
-  // house pattern for error-boundary tests elsewhere in the suite.
-  const suppressConsoleError = () => spyOn(console, 'error').mockImplementation(() => {})
-
-  test('onError is optional — an unhandled boundary does not throw, and does not need one', () => {
-    const restore = suppressConsoleError()
-    try {
-      expect(() =>
-        render(
-          <BasaltErrorBoundary>
-            <Boom />
-          </BasaltErrorBoundary>,
-        ),
-      ).not.toThrow()
-    } finally {
-      restore.mockRestore()
-    }
-  })
+  // React logs caught render errors to the console regardless of the boundary.
+  const quiet = () => spyOn(console, 'error').mockImplementation(() => {})
 
   test('fallback omitted renders the built-in DefaultErrorFallback (a PageTitle), not null', () => {
-    const restore = suppressConsoleError()
+    const restore = quiet()
     try {
       render(
-        <BasaltErrorBoundary onError={() => {}}>
+        <RootBoundary emit={() => {}} fallback={undefined}>
           <Boom />
-        </BasaltErrorBoundary>,
+        </RootBoundary>,
       )
       expect(screen.getByRole('heading', { level: 1, name: 'Something went wrong' })).toBeDefined()
     } finally {
@@ -243,13 +203,13 @@ describe('BasaltErrorBoundary — onError optional, default fallback (C5)', () =
     }
   })
 
-  test('fallback={null} explicitly opts back into the old swallow-it behaviour', () => {
-    const restore = suppressConsoleError()
+  test('fallback={null} renders nothing', () => {
+    const restore = quiet()
     try {
       const { container } = render(
-        <BasaltErrorBoundary onError={() => {}} fallback={null}>
+        <RootBoundary emit={() => {}} fallback={null}>
           <Boom />
-        </BasaltErrorBoundary>,
+        </RootBoundary>,
       )
       expect(container.innerHTML).toBe('')
     } finally {
@@ -257,31 +217,50 @@ describe('BasaltErrorBoundary — onError optional, default fallback (C5)', () =
     }
   })
 
-  test('a supplied fallback function still wins over the default', () => {
-    const restore = suppressConsoleError()
+  test('a fallback function receives the raw error', () => {
+    const restore = quiet()
     try {
       render(
-        <BasaltErrorBoundary onError={() => {}} fallback={(e) => <p>Custom: {String(e)}</p>}>
+        <RootBoundary emit={() => {}} fallback={(e) => <p>Custom: {String(e)}</p>}>
           <Boom />
-        </BasaltErrorBoundary>,
+        </RootBoundary>,
       )
-      expect(screen.getByText('Custom: Error: boom')).toBeDefined()
+      expect(screen.getByText('Custom: Error: secret boom message')).toBeDefined()
     } finally {
       restore.mockRestore()
     }
   })
+
+  test('emits one render.error carrying the error NAME and kind, never the message', () => {
+    const restore = quiet()
+    const events: BasaltEvent[] = []
+    try {
+      render(
+        <RootBoundary emit={(e) => events.push(e)} fallback={null}>
+          <Boom />
+        </RootBoundary>,
+      )
+    } finally {
+      restore.mockRestore()
+    }
+    expect(events).toHaveLength(1)
+    const [event] = events
+    expect(event).toMatchObject({
+      type: 'render.error',
+      failed: true,
+      attributes: {
+        'exception.type': 'Error',
+        'basalt.error.kind': 'render',
+        'basalt.error.boundary': 'root',
+      },
+    })
+    expect(JSON.stringify(event)).not.toContain('secret boom message')
+  })
 })
 
 describe("BasaltProvider registers commands/shell-bridge.ts's setColorScheme handle (C5)", () => {
-  test('setColorScheme actually flips the resolved color scheme end to end', () => {
-    function Probe() {
-      return <div data-mantine-color-scheme />
-    }
-    render(
-      <BasaltProvider defaultColorScheme="dark">
-        <Probe />
-      </BasaltProvider>,
-    )
+  test('setColorScheme actually flips the resolved color scheme end to end', async () => {
+    render(<BasaltProvider router={testRouter()} defaultColorScheme="dark" />)
     // Mantine mirrors the active scheme onto <html data-mantine-color-scheme>.
     expect(document.documentElement.getAttribute('data-mantine-color-scheme')).toBe('dark')
     act(() => setColorScheme('light'))

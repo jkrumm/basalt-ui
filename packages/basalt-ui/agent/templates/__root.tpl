@@ -1,19 +1,15 @@
 /**
- * TanStack Router root route — wires QueryClient into the router context so
- * loader functions and components can call `Route.useRouteContext()`.
+ * TanStack Router root route. `BasaltRouterContext` types the context `createBasaltRouter` fills
+ * (the QueryClient); extend it for your own context and pass the value to
+ * `createBasaltRouter({ routeTree, context })`.
  *
  * Scaffold written by `basalt-ui init`. This file is yours — `basalt-ui sync` will not overwrite it.
  */
 import { Outlet, createRootRouteWithContext } from '@tanstack/react-router'
-import type { QueryClient } from '@tanstack/react-query'
-
 import { BasaltShell } from 'basalt-ui'
+import type { BasaltRouterContext } from 'basalt-ui'
 
-type RouterContext = {
-  queryClient: QueryClient
-}
-
-export const Route = createRootRouteWithContext<RouterContext>()({
+export const Route = createRootRouteWithContext<BasaltRouterContext>()({
   component: RootComponent,
 })
 

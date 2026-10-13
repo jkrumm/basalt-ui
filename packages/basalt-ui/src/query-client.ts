@@ -1,14 +1,9 @@
 /**
- * `createBasaltQueryClient` + `unwrap` — the two TanStack Query primitives basalt ships. Folded
- * onto the root barrel (C1 consolidation, dropping the `./query` subpath): the root already
- * requires `@tanstack/react-query` as a peer, so a dedicated Mantine-free subpath bought nothing —
- * and it re-exported 10 raw TanStack symbols no consumer imported through it.
- * Optional peer: @tanstack/react-query.
+ * `unwrap` plus the QueryClient factory `createBasaltRouter` owns (V2-SPEC § 2): one client per
+ * router, so an SSR entry gets one per request. Optional peer: @tanstack/react-query.
  */
 import { QueryClient } from '@tanstack/react-query'
 import type { QueryClientConfig } from '@tanstack/react-query'
-
-// ── createBasaltQueryClient ───────────────────────────────────────────────────────────────────────
 
 const BASALT_QUERY_DEFAULTS = {
   staleTime: 30_000,
@@ -17,21 +12,8 @@ const BASALT_QUERY_DEFAULTS = {
   refetchOnWindowFocus: false,
 } as const
 
-/**
- * Wraps QueryClient with basalt dashboard defaults. All options are mergeable — consumer
- * overrides win per-query, framework defaults are the fallback.
- *
- * @example
- * import { createBasaltQueryClient } from 'basalt-ui'
- * import { QueryClientProvider } from '@tanstack/react-query'
- * import { useState } from 'react'
- *
- * function Root({ children }: { children: React.ReactNode }) {
- *   const [client] = useState(() => createBasaltQueryClient())
- *   return <QueryClientProvider client={client}>{children}</QueryClientProvider>
- * }
- */
-export function createBasaltQueryClient(config?: QueryClientConfig): QueryClient {
+/** QueryClient with the basalt dashboard defaults; consumer `config` wins per-query. */
+export function makeQueryClient(config?: QueryClientConfig): QueryClient {
   return new QueryClient({
     ...config,
     defaultOptions: {
