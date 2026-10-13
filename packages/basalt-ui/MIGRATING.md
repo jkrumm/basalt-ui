@@ -86,6 +86,31 @@ consumer read this index, found nothing, and diffed a KPI row that had silently 
 _Nothing yet. Author the next section under this heading as `## Unreleased — <title>`; the
 release renames it and opens a new one here._
 
+## 2.0.0
+
+Contract: `docs/V2-SPEC.md`. Every removal and move is one row; each worker appends under a
+sub-heading named for its area.
+
+### Subpaths, peers and gates (W3 gates)
+
+| 1.41 import                                    | 2.0                          | Reason                                                                              |
+| ---------------------------------------------- | ---------------------------- | ----------------------------------------------------------------------------------- |
+| `basalt-ui/agent-chat`                         | `basalt-ui/agent`            | the chat UI folds into `./agent`; `motion` is subpath-required there                |
+| `basalt-ui/notifications`                      | `basalt-ui/commands`         | no new peer: `BasaltProvider` mounts `Notifications`, `ModalsProvider`, `Spotlight` |
+| `basalt-ui/router-tanstack` (nav half)         | `basalt-ui`                  | nav lives in the root barrel                                                        |
+| `basalt-ui/router-tanstack` (store half)       | `basalt-ui/state`            | stores live with `field` and the search store                                       |
+| `basalt-ui/data/table`                         | `basalt-ui/table`            | renamed; `@tanstack/react-table` is subpath-required                                |
+| `basalt-ui/data/virtual`                       | deleted                      | 0 imports across the fleet                                                          |
+| `basalt-ui/guard`                              | deleted                      | CLI-internal                                                                        |
+| `basalt-ui/theme-lab`                          | deleted                      | provider-mounted in dev                                                             |
+| `basalt-ui/tokens.css`                         | `basalt-ui tokens:css` (CLI) | weatherorb 1.30 and rollhook 1.36 only                                              |
+| `basalt-ui/llms.txt`, `basalt-ui/package.json` | deleted from `exports`       | 0 imports; both files stay in the tarball                                           |
+
+Peers: `react`, `react-dom`, `@mantine/{core,hooks,modals,notifications,spotlight}`,
+`@tanstack/{react-router,react-query}` and the three `@fontsource-variable/*` are now **required**
+(no longer `optional`). `@ai-sdk/provider` (`./agent`) and `dayjs` (`./controls-dates`) are new
+optional, subpath-required peers.
+
 ## 1.41.0 — the managed block moves to AGENTS.md
 
 **Changed: `init` and `sync` splice the `<!-- basalt:begin … -->` block into `AGENTS.md`, not

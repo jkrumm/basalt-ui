@@ -23,6 +23,14 @@ import { join } from 'node:path'
 import { gzipSync } from 'node:zlib'
 import { build } from 'vite'
 
+import {
+  CHART_SUBPATH,
+  consumerViolations,
+  duplicateSymbols,
+  peerClassViolations,
+} from './surface-gates'
+import type { Manifest, Surface } from './surface-gates'
+
 const PKG_ROOT = join(import.meta.dir, '..')
 const REPO_ROOT = join(PKG_ROOT, '..', '..')
 
@@ -36,6 +44,8 @@ type Budget = {
    * (no `dist/`), `failed` when measuring it threw (a bundler error).
    */
   readonly unmeasured?: { readonly kind: 'skipped' | 'failed'; readonly reason: string }
+  /** Violation lines printed under the row (the gate-style rows, whose `value` is their count). */
+  readonly detail?: readonly string[]
 }
 
 /** Every regular file under `dir` whose name matches `pattern`, recursing into subdirectories. */
@@ -57,22 +67,51 @@ function totalLines(paths: readonly string[]): number {
   return paths.reduce((sum, path) => sum + lineCount(path), 0)
 }
 
-// ── 1. Public symbols (scripts/export-surface.json) ────────────────────────────────────────────
+// ── 1. Public symbols (scripts/export-surface.json) ───────────────────────────────────────────
 
-function publicSymbols(): number {
-  const surface = JSON.parse(
-    readFileSync(join(PKG_ROOT, 'scripts/export-surface.json'), 'utf8'),
-  ) as Record<string, readonly string[]>
-  return Object.values(surface).reduce((sum, names) => sum + names.length, 0)
+function readSurface(): Surface {
+  return JSON.parse(readFileSync(join(PKG_ROOT, 'scripts/export-surface.json'), 'utf8')) as Surface
+}
+
+/** Value exports of every subpath except `./charts`, which W4 reshapes and is gated apart. */
+function nonChartSymbols(surface: Surface): number {
+  return Object.entries(surface)
+    .filter(([subpath]) => subpath !== CHART_SUBPATH)
+    .reduce((sum, [, names]) => sum + names.length, 0)
 }
 
 // ── 2. Published subpaths (package.json exports) ───────────────────────────────────────────────
 
-function publishedSubpaths(): number {
-  const pkg = JSON.parse(readFileSync(join(PKG_ROOT, 'package.json'), 'utf8')) as {
-    exports?: Record<string, unknown>
+function readManifest(): Manifest {
+  return JSON.parse(readFileSync(join(PKG_ROOT, 'package.json'), 'utf8')) as Manifest
+}
+
+function publishedSubpaths(manifest: Manifest): number {
+  return Object.keys(manifest.exports ?? {}).length
+}
+
+/**
+ * Non-chart barrel type exports: names in `export type { … }` / `export { type X }` clauses of each
+ * non-chart subpath's source entry. Counted from source so it needs no build; `null` when an entry
+ * is missing (a half-moved tree cannot vouch for the number).
+ */
+function barrelTypeExports(manifest: Manifest): { value: number | null; reason?: string } {
+  let total = 0
+  for (const [subpath, target] of Object.entries(manifest.exports ?? {})) {
+    const js = typeof target === 'object' && target !== null ? target.import : undefined
+    if (js === undefined || subpath === CHART_SUBPATH) continue
+    const base = join(PKG_ROOT, 'src', js.replace(/^\.\/dist\//, '').replace(/\.js$/, ''))
+    const entry = [`${base}.ts`, `${base}.tsx`, join(base, 'index.ts')].find(existsSync)
+    if (entry === undefined) return { value: null, reason: `no source entry for ${subpath}` }
+    const source = readFileSync(entry, 'utf8')
+    for (const m of source.matchAll(/export\s+type\s*\{([^}]*)\}/g)) {
+      total += (m[1] ?? '').split(',').filter((name) => name.trim() !== '').length
+    }
+    for (const m of source.matchAll(/export\s*\{([^}]*)\}/g)) {
+      total += (m[1] ?? '').split(',').filter((name) => /^\s*type\s/.test(name)).length
+    }
   }
-  return Object.keys(pkg.exports ?? {}).length
+  return { value: total }
 }
 
 // ── 3. Shipped rule lines (agent/rules/*.md) ────────────────────────────────────────────────────
@@ -190,6 +229,9 @@ async function providerOnlyGzip(distEntry: string): Promise<number> {
   return bytes
 }
 
+/** Landed rule lines; V2-SPEC.md § 1's target is 450 (W9). */
+const RULE_LINES_CEILING = 750
+
 const PROVIDER_ONLY_LABEL = 'provider-only first paint (gzip B, dist)'
 // Landed 18706 locally / 18722 in CI (1.33.0: lab store + every isDev()/DEV-const gate folded;
 // 1.30.2 19393, 1.32.1 20379). The ~1% margin absorbs the zlib/runtime difference between machines
@@ -238,15 +280,74 @@ async function providerOnlyRow(distEntry: string): Promise<Budget> {
   }
 }
 
+/** A gate-shaped row: `value` is the violation count, the ceiling is zero. */
+function gateRow(label: string, violations: readonly string[]): Budget {
+  return { label, value: violations.length, ceiling: 0, detail: violations }
+}
+
+/** The peer-class row needs the built dist: absent dist is `skipped`, which fails closed. */
+function peerClassRow(manifest: Manifest): Budget {
+  const label = 'peer classes (dist graph + .d.ts vs package.json)'
+  if (!existsSync(join(PKG_ROOT, 'dist/index.js'))) {
+    return {
+      label,
+      value: null,
+      ceiling: 0,
+      unmeasured: { kind: 'skipped', reason: 'dist/ missing, run `bun run build`' },
+    }
+  }
+  return gateRow(label, peerClassViolations(PKG_ROOT, manifest))
+}
+
 async function budgets(providerOnlyDist: string): Promise<Budget[]> {
+  const surface = readSurface()
+  const manifest = readManifest()
+  const types = barrelTypeExports(manifest)
+  const consumers = JSON.parse(
+    readFileSync(join(PKG_ROOT, 'scripts/consumers.json'), 'utf8'),
+  ) as Record<string, string>
   return [
+    // docs/V2-SPEC.md § 1: 140 public value symbols = 92 non-chart + § 9's chart allowance of 48.
+    // The chart half is gated at its landed count (97 as of W3) until W4 reshapes it; then its
+    // ceiling drops to 48 in the commit that lands the reshape.
     {
-      label: 'public symbols (export-surface.json)',
-      value: publicSymbols(),
-      ceiling: 400,
+      label: 'public value symbols, non-chart (export-surface.json)',
+      value: nonChartSymbols(surface),
+      ceiling: 92,
     },
-    { label: 'published subpaths (package.json exports)', value: publishedSubpaths(), ceiling: 24 },
-    { label: 'shipped rule lines (agent/rules/*.md)', value: agentRuleLines(), ceiling: 750 },
+    {
+      label: 'public value symbols, ./charts (export-surface.json)',
+      value: surface[CHART_SUBPATH]?.length ?? 0,
+      ceiling: 97,
+    },
+    {
+      label: 'barrel type exports, non-chart (src entries)',
+      value: types.value,
+      ceiling: 60,
+      ...(types.reason === undefined
+        ? {}
+        : { unmeasured: { kind: 'skipped' as const, reason: types.reason } }),
+    },
+    {
+      label: 'published subpaths (package.json exports)',
+      value: publishedSubpaths(manifest),
+      ceiling: 15,
+    },
+    // TODO(W9): rules are rewritten then; the V2-SPEC target is 450. Gated at the landed value now.
+    {
+      label: 'shipped rule lines (agent/rules/*.md)',
+      value: agentRuleLines(),
+      ceiling: RULE_LINES_CEILING,
+    },
+    gateRow(
+      'symbols under more than one subpath (one import path per symbol)',
+      duplicateSymbols(surface),
+    ),
+    gateRow(
+      'public symbols without a named consumer (scripts/consumers.json)',
+      consumerViolations(surface, consumers),
+    ),
+    peerClassRow(manifest),
     // 2480 -> 3166: transitional, docs/V2-SPEC.md at its Wave 1 landed size while the 1.x specs it
     // replaces are still live. Each wave that archives a 1.x spec lowers it by that spec's lines; a
     // wave that must grow the spec raises it deliberately, in the commit that spends the lines.
@@ -291,6 +392,7 @@ export async function runBudgets({
     }
     const mark = b.value > b.ceiling ? '✖' : '✓'
     log(`${mark} ${b.label.padEnd(width)}  ${b.value} / ${b.ceiling}`)
+    for (const line of b.detail ?? []) log(`    ${line}`)
   }
 
   if (breaches.length === 0) {
