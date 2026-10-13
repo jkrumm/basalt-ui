@@ -54,7 +54,7 @@ autonomously execute large roadmap phases.
   `packages/basalt-ui/src/tokens/derive.ts` at a default seed/config — never hand-edit a palette
   hex; retune the derive config/constants instead. A consumer retunes the identity via
   `createBasaltTheme(overrides?, { derive: { accent, neutral, lightLevel, darkLevel, vibrancy,
-accentBrightness } })` — one accent seed + five bounded knobs, contrast guaranteed by derivation.
+  accentBrightness } })` — one accent seed + five bounded knobs, contrast guaranteed by derivation.
   The same options object also carries `fonts: { sans?, head?, mono? }`, `radius` (integer −5..+5),
   and `density` (integer −3..+3) — one config surface for every theme dimension. Full law:
   `docs/DESIGN-CORE.md`.
