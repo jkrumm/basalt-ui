@@ -8,31 +8,336 @@ spec disagree about 2.0, this file wins.
 
 ## 1. Public surface
 
-<!-- owner: v2-core -->
+2.0 ships 13 subpaths (1.41: 24) and 92 non-chart value symbols (1.41: 294 non-chart of 395). Every
+symbol, its verdict and its named consumer: `docs/waves/v2-surface.md` (Wave 3's deletion checklist,
+the source of `MIGRATING.md` § 2.0). Counts and method: `docs/waves/evidence/w1/core.md`.
+
+| 2.0 subpath    | Symbol groups                                                                                                                                                                                                                                                                                                                                                                                                                         | Named consumer                                                         | Folds in (1.41)                                     |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- | --------------------------------------------------- |
+| `.`            | wiring (`BasaltProvider`, `createBasaltTheme`, `createBasaltRouter`, `unwrap`); shell + nav (`BasaltShell`, `PageBar`, `PageAside`, `PageTitle`, `ThemeToggle`, `defineNav`, `navGroup`, `navTarget`, `flattenNav`, `useBasaltNav`, `useSizeClass`, `useCoarsePointer`, `scrollParentOf`); dashboard (`Section`, `WidgetHeader`, `StatCard`, `StatGroup`, `DeltaBadge`, `EmptyState`, `SettingsSection`, `SettingsRow`, `DangerZone`) | argo `main.tsx`, `routes/__root.tsx`; rb; basalt-ui-obsidian           | `.`, nav half of `./router-tanstack`, `./theme-lab` |
+| `./tokens`     | `VX`, `alpha`, series (`defineSeries`, `seriesTokens`, `groupTokens`, `buildPaletteCss`), layout (`BP`, `p`, `CONTAINER_*`)                                                                                                                                                                                                                                                                                                           | argo, rb, weatherorb                                                   | —                                                   |
+| `./charts`     | § 9                                                                                                                                                                                                                                                                                                                                                                                                                                   | § 9                                                                    | —                                                   |
+| `./controls`   | filters + `ViewTabs`, `SyncButton`, `FormRow`, `FormGroup`, `DateRangePicker`, the form hook (`useBasaltForm`, `inputProps`, `fieldKey`) ⟂ § 8                                                                                                                                                                                                                                                                                        | argo, linewatch, rb, email-gateway, image-gateway                      | `./controls-dates`, `./forms`                       |
+| `./state`      | `field`, `createSearchStore`, `createLocalStore`, `createPersistedState`                                                                                                                                                                                                                                                                                                                                                              | argo `lib/window-stores.ts`, linewatch, email-gateway                  | store half of `./router-tanstack`                   |
+| `./table`      | `BasaltDataTable`, `createColumnHelper` ⟂ § 8                                                                                                                                                                                                                                                                                                                                                                                         | argo `features/warden/issues-section.tsx`                              | `./data/table` (renamed)                            |
+| `./format`     | `integer`, `money`, `percent`, `durationClock`, `relativeTime`, `weekday`, `km`, `kcal`                                                                                                                                                                                                                                                                                                                                               | argo, image-gateway                                                    | —                                                   |
+| `./commands`   | `defineCommands`, `defineOverlays`, `overlays`, `setColorScheme`, `toggleSidebar`, `ShortcutsHelp`, `defineNotifications`, `emit`, `NotificationBell`                                                                                                                                                                                                                                                                                 | argo `lib/commands.tsx`, `lib/notifications.ts`                        | `./notifications`                                   |
+| `./agent`      | `aiSdkTransport`, `useAgentThreadRuns`, `parseAgentPart`, `ThreadFeed`, `ThreadFeedRow`, `Composer`, `ToolChip`                                                                                                                                                                                                                                                                                                                       | argo `features/hermes-chat/*`                                          | `./agent-chat`                                      |
+| `./content`    | `Prose`, `Markdown`, `settledOnly`, `mergeSanitizeSchema`, `Callout`, `TableOfContents`, `ArticleLayout`, `GuideLink`                                                                                                                                                                                                                                                                                                                 | rb, basalt-ui-obsidian, linewatch, argo                                | —                                                   |
+| `./vite`       | `basaltViteConfig`, `basaltAppPlugin`                                                                                                                                                                                                                                                                                                                                                                                                 | all 7 app consumers                                                    | —                                                   |
+| `./styles.css` | the one stylesheet (it `@import`s the Mantine layer bundles first, § 2)                                                                                                                                                                                                                                                                                                                                                               | all 7 app consumers                                                    | —                                                   |
+| `./configs/*`  | oxlint / tsconfig / lefthook / oxfmt presets                                                                                                                                                                                                                                                                                                                                                                                          | argo, linewatch, rb, image-gateway, … (`.oxlintrc.json`, `tsconfig.*`) | —                                                   |
+
+**Dropped subpaths:** `./guard` (CLI-internal, 0 imports), `./theme-lab` (provider-mounted in dev),
+`./data/virtual` (0 imports), `./tokens.css` (only weatherorb 1.30 and rollhook 1.36 import it;
+`basalt-ui tokens:css` emits the file), `./llms.txt` and `./package.json` (0 imports; only
+`pack-test.sh:158,186` resolves them; the files stay in the tarball, read by path). Plus the five
+folded ones above.
+
+**Rules** (checked in W3 by `check-budgets.ts` and `export-surface.json`):
+
+- One import path per symbol: no name appears under two subpaths (1.41 has 107 such names).
+- A public symbol has a named consumer outside `apps/playground` (charter 1), recorded per symbol in
+  `scripts/consumers.json`; a symbol missing from it fails the gate.
+- Peers: a peer imported statically by any published module is a required peer. `optional` is only
+  for peers reached solely through `import()` (`ai`, `remend`, `shiki`, `beautiful-mermaid`,
+  devtools, `vite-plugin-pwa`). A dist-graph walk asserts it.
+
+**Charter 2 exceptions** (wiring, no 1.41 consumer yet): `createBasaltRouter` (router + Query
+wiring, § 2), `BasaltRouterContext` (the root route's context type, § 2), `BasaltEvent` (the
+telemetry seam, § 7). Each names argo as its first consumer in `v2-surface.md` § New in 2.0.
+
+| Budget (`check-budgets.ts`)             | 1.41 | 2.0 target                                      |
+| --------------------------------------- | ---- | ----------------------------------------------- |
+| public value symbols                    | 395  | ≤ 140 (non-chart 92 + § 9's chart allowance 48) |
+| barrel type exports (new budget)        | 517  | ≤ 60                                            |
+| published subpaths                      | 24   | 13                                              |
+| shipped rule lines (`agent/rules/*.md`) | 750  | ≤ 450                                           |
+
+**Open:**
+
+- § 9's chart symbol count against the 48 allowance; the lead reconciles the total ceiling.
+- `./styles.css` importing the Mantine layer CSS has to resolve in a scratch install. W3's pack-test
+  proves it, or the consumer keeps the two-line CSS order from 1.x.
 
 ## 2. Provider and wiring
 
-<!-- owner: v2-core -->
+One `BasaltProvider` owns the whole provider tree, the router included. The consumer writes the
+route tree, the nav, and the registries (commands, notifications). 1.x left argo 220 lines of wiring
+(`main.tsx` 61 + `__root.tsx` 159); the target below is 25 lines of code.
+
+| Basalt wires                                                                                                                                                                                                                                                  | Where                                                                                                                | Replaces in 1.x                                                                  |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `MantineProvider` + theme (`theme` defaults to `createBasaltTheme()`, § 4) + resolver + palette `<style>`                                                                                                                                                     | `BasaltProvider`                                                                                                     | unchanged                                                                        |
+| `createRouter` with `context.queryClient`, `defaultPreload: 'intent'`, `defaultPreloadStaleTime: 0` (Query owns freshness), `scrollRestoration: true`, `defaultPendingComponent`, `defaultErrorComponent`, `defaultNotFoundComponent`, `defaultOnCatch` → § 7 | `createBasaltRouter({ routeTree, context?, query? })`                                                                | argo `lib/router.ts`, `__root.tpl`, `QueryState`/`LoadingState`/`ErrorState`     |
+| `QueryClient` with 1.x defaults (`staleTime` 30 s, `gcTime` 5 min, `retry` 2, no refetch on focus; `src/query-client.ts`), merged with `query: QueryClientConfig`; one client per `createBasaltRouter` call, so an SSR entry gets one per request             | `createBasaltRouter`                                                                                                 | `createBasaltQueryClient`, `query-client.ts.tpl`                                 |
+| `QueryClientProvider` > `ModalsProvider` (wrapping, real context) > `RouterProvider`; `Notifications` and `Spotlight` as siblings                                                                                                                             | `BasaltProvider router={router}`                                                                                     | `BasaltOverlays`, the `provider-above-router` rule                               |
+| hotkeys from the `defineCommands` registry (`@tanstack/react-hotkeys`) ⟂ § 8                                                                                                                                                                                  | `BasaltProvider`                                                                                                     | `useCommandHotkeys`, `toHotkeyBindings`                                          |
+| Spotlight actions from the command registry plus `flattenNav`                                                                                                                                                                                                 | `BasaltProvider`                                                                                                     | `toSpotlightActions`, `basaltSpotlight`                                          |
+| root error boundary (`fallback` prop), `window` `error`/`unhandledrejection` listeners, all routed to `telemetry` (§ 7)                                                                                                                                       | `BasaltProvider`                                                                                                     | `BasaltErrorBoundary`, `onError`                                                 |
+| dev dock (router + query devtools, theme lab, persisted lab overrides applied) and three Spotlight commands `dev.router` / `dev.query` / `dev.theme` ⟂ § 8                                                                                                    | `BasaltProvider`, behind a literal `process.env.NODE_ENV !== 'production'` check at the `lazy(() => import(…))` site | `BasaltDevDock`, `BasaltQueryDevtools`, argo's `applyOverrides(loadOverrides())` |
+| nav → sidebar + mobile bar + breadcrumbs                                                                                                                                                                                                                      | `BasaltShell nav={NAV}`                                                                                              | `useNav` spread, `useRouterBreadcrumbs`                                          |
+| route-change transition (§ 5)                                                                                                                                                                                                                                 | `BasaltShell` main region                                                                                            | —                                                                                |
+
+The dev gate is a literal `process.env.NODE_ENV` read, so production drops the branch (an `isDev()`
+helper shipped the theme lab into weatherorb's first paint). Stores keep their `useSyncExternalStore`
+core ⟂ § 8 (Store); forms keep `@mantine/form` ⟂ § 8 (Form).
+
+`src/main.tsx` (15 lines of code):
+
+```tsx
+import 'basalt-ui/styles.css'
+import { createRoot } from 'react-dom/client'
+import { BasaltProvider, createBasaltRouter } from 'basalt-ui'
+import { routeTree } from './routeTree.gen'
+import { telemetry } from './lib/telemetry'
+import './lib/commands'
+
+const router = createBasaltRouter({ routeTree })
+declare module '@tanstack/react-router' {
+  interface Register {
+    router: typeof router
+  }
+}
+
+createRoot(document.getElementById('root')!).render(
+  <BasaltProvider router={router} telemetry={telemetry} />,
+)
+```
+
+`src/routes/__root.tsx` (10 lines of code):
+
+```tsx
+import { Outlet, createRootRouteWithContext } from '@tanstack/react-router'
+import { BasaltShell, type BasaltRouterContext } from 'basalt-ui'
+import { NAV } from '../lib/nav'
+
+export const Route = createRootRouteWithContext<BasaltRouterContext>()({
+  component: () => (
+    <BasaltShell brand={{ name: 'Argo' }} nav={NAV}>
+      <Outlet />
+    </BasaltShell>
+  ),
+})
+```
+
+App-specific context (argo's auth) extends the type: `createBasaltRouter({ routeTree, context: {
+auth } })` with `createRootRouteWithContext<BasaltRouterContext & { auth: Auth }>()`. argo's 401
+handling stays its own `query: { queryCache: new QueryCache({ onError }) }`. Basalt subscribes to the
+cache (§ 7) and never replaces it.
+
+**Open:**
+
+- `ModalsProvider` wrapping the tree instead of sitting beside it changes the re-render surface of
+  `modals.*`. W3 measures it before the `modals={false}` escape is deleted.
 
 ## 3. Strictness
 
-<!-- owner: v2-core -->
+Wrong usage fails `tsc` first and lint second. A rule that only lives in prose does not ship
+(charter 5). The consumer tsconfig preset (`configs/tsconfig.base.json`: `strict`,
+`exactOptionalPropertyTypes`, `noUncheckedIndexedAccess`) is what these types assume, and `doctor`
+fails when the app's tsconfig does not extend it.
+
+**Type errors**
+
+| Mistake                                              | 1.41 enforcement                                                   | 2.0 type                                                                                                                                               |
+| ---------------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| a filter/tab given `value`, `onChange` or `size`     | props absent (excess-property check)                               | kept, plus named slots `value?: never; onChange?: never; size?: never`, so the error names the mistake                                                 |
+| `PageBar` > 5 actions or ≠ 1 primary; `Section` > 3  | `basalt/page-bar-budget` lint                                      | `actions: [P] \| [P, M] \| [P, M, M] \| [P, M, M, M] \| [P, M, M, M, M]` (`P` = `{ primary: true }`, `M` = `{ primary?: false }`); `Section` caps at 3 |
+| theme knob out of range                              | `radius?: number`, `density?: number` (`theme/index.ts:1578,1601`) | `radius?: -5 \| … \| 5`, `density?: -3 \| … \| 3`                                                                                                      |
+| series group key retyped wrong (`'x'` vs `'x-'`)     | silent: refs to undeclared vars (`basalt-tokens.md`)               | `groupTokens` returns a branded `SeriesGroup`; `paletteOptions.groups` takes `SeriesGroup[]`, so no key is written twice                               |
+| nav defined without the `Register` augmentation      | prose ("validates NOTHING")                                        | `defineNav`'s parameter becomes the string literal `'basalt: declare Register { router }'` while `RegisteredRouter` is `AnyRouter`                     |
+| router-driven view transitions next to React's (§ 5) | —                                                                  | `createBasaltRouter` options carry `defaultViewTransition?: never`                                                                                     |
+| a closed union switched non-exhaustively             | `assertNever` export + rule text                                   | `AgentPart`, `ThreadStatus`, `AgentError`, `BasaltEvent` are closed; a switch ends `default: return x satisfies never`                                 |
+| hand-built theme, second resolver, sub-shell mounts  | exports + `hand-rolled-shell`                                      | unrepresentable: `cssVariablesResolver`, `baseTheme`, `AppSidebar`, `MobileNav`, `AppBreadcrumbs` are not exported                                     |
+| provider below the router, overlays mounted twice    | `basalt/provider-above-router`, `BasaltOverlays`                   | unrepresentable: `BasaltProvider` mounts `RouterProvider` and every overlay (§ 2)                                                                      |
+
+**Lint at `error` in 2.0** (`configs/oxlint-basalt.json`, the dogfood levels in `/.oxlintrc.json`
+match them). These carry over unchanged: `no-raw-font-size`, `raw-size-literal`, `card-inset`,
+`hand-rolled-shell` (raw `AppShell.*` only), `raw-scroll-container`, `hand-rolled-filter`,
+`control-outside-home`, `bound-control-outside-home`, `control-size-literal`, `in-body-page-title`,
+`responsive-twin`, `search-literal-link`, `use-search-from-literal`, `query-fn-unwrap`,
+`ai-sdk-major`, `raw-breakpoint`. These change:
+
+- `shadow-basalt-export` moves from warn to error.
+- `forms-field-key` stays ⟂ § 8.
+- `agent-no-raw-usechat` widens to the `Chat` class (`@ai-sdk/react` `dist/index.d.ts:90`).
+
+These are new:
+
+- `router-view-transition` bans `viewTransition` on `Link`/`navigate` and
+  `document.startViewTransition` in app code.
+- `no-dev-helper` (repo-local) requires dev-only `import()`s to be gated by a literal
+  `process.env.NODE_ENV` read.
+
+All 28 `check-theme` guard kinds are already `error` (`src/guard/index.ts:937`, empty
+`GRACE_PERIOD_KINDS`) and carry over, except `raw-visx-axis` and `chart-missing-aria-label`, which
+go → § 9.
+
+| 1.x rule dies                                                                                       | Because 2.0 makes the concern unrepresentable                                                                             |
+| --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `provider-above-router`                                                                             | the provider mounts the router                                                                                            |
+| `page-bar-budget`                                                                                   | the actions tuple type                                                                                                    |
+| `agent-resume-guard`                                                                                | `resumeStream` is only reachable on `useChat`/`Chat`, both banned by the widened `agent-no-raw-usechat`                   |
+| `deprecated-export`                                                                                 | 2.0.0 ships no deprecations; every removal is a `MIGRATING.md` § 2.0 row. The rule returns with the first 2.x deprecation |
+| `visx-boundary`, `visx-tooltip`, `hand-rolled-plot`, `chart-in-raw-surface`, `chart-legend-literal` | chart layer: § 9 decides                                                                                                  |
+
+**Carried forward:**
+
+- Adopt-or-delete: a symbol without a `scripts/consumers.json` entry fails `check-budgets` (§ 1).
+- C16 grace: from 2.0.0 every rule lands at `error`, because the major is the channel. The
+  warn-then-promote path (C16) applies again to rules added after 2.0.0.
+- Budgets: § 1 table.
 
 ## 4. Tokens and theme
 
-<!-- owner: v2-core -->
+The law does not change: `docs/DESIGN-CORE.md`, the three-tier `--vx-*` system, the generated
+palette (`src/tokens/derive.ts`), and `createBasaltTheme(overrides?, { derive, fonts, radius,
+density })`. 2.0 changes only the surface around it:
+
+| 1.41                                                                                                                | 2.0                                                                         |
+| ------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| every consumer passes `theme={createBasaltTheme()}` (7 of 7, all bare)                                              | `BasaltProvider theme` is optional and defaults to that call                |
+| `createBasaltTheme(_, { inputs: 'desktop' })`, an undocumented fifth dimension (`theme/index.ts:1611`), 0 consumers | deleted, four dimensions                                                    |
+| `radius`/`density` typed `number`; `paletteOptions.groups` string-keyed                                             | literal-union knobs; `SeriesGroup[]` (§ 3)                                  |
+| `./tokens.css` export; `build{Fonts,Radius,Density}Css`, `derive*`, `DEFAULT_DERIVE_CONFIG` public                  | internal to the provider and the CLI; `basalt-ui tokens:css` emits the file |
+| theme lab on `./theme-lab`                                                                                          | dev-only, mounted by the provider (§ 2)                                     |
+
+`injectPalette` and `nonce` stay for SSR head injection. The `--vx-*` → chart theme bridge is § 9.
 
 ## 5. Transitions
 
-<!-- owner: v2-core -->
+One mechanism per surface, and React owns every view transition. Evidence:
+
+- TanStack Router runs every navigation inside `React.startTransition` (`@tanstack/react-router`
+  1.170.38 `dist/esm/Transitioner.js:20`; `link.d.ts:63`: "All navigations now use startTransition").
+  So a React `<ViewTransition>` already fires on route changes.
+- `defaultViewTransition` calls `document.startViewTransition` directly (`@tanstack/router-core`
+  1.171.32 `dist/esm/router.js:490-505`). React interrupts a non-React view transition
+  (react.dev `ViewTransition` reference). Running both on one navigation fights, so the router path
+  is banned (§ 3).
+- `<ViewTransition>` and `addTransitionType` are stable in React 19.3; `<Activity>` has been stable
+  since 19.2 (`@types/react` 19.3.0 `index.d.ts:2002-2101`). A plain `setState` never activates
+  `<ViewTransition>`; `startTransition`, `useDeferredValue` and Suspense reveals do (react.dev).
+
+| Surface                                    | Mechanism                                                                                                                                   | Why this one                                                                                                                     |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| route change                               | `<ViewTransition key={leafRouteId} enter="basalt-route-in" exit="basalt-route-out" update="none">` around the shell's main slot             | navigations are already transitions; keying by route id means search-only navigations (filters, tabs, pagination) do not animate |
+| aside open/close                           | fold setter inside `startTransition` + `<ViewTransition>` on the aside region; body under `<Activity mode={folded ? 'hidden' : 'visible'}>` | `Activity` keeps scroll and inputs across folds without a remount                                                                |
+| tab swap (`ViewTabs`)                      | none: instant swap                                                                                                                          | a same-route navigation; motion delays reading a data view (DESIGN-CORE restraint)                                               |
+| chat thread swap (`ThreadFeedRow` expand)  | open/close inside `startTransition` + `<ViewTransition>`; the expanded body under `<Activity>`                                              | replaces 1.x's hand-rolled keep-mounted row and motion in `thread-detail-panel.tsx`                                              |
+| modal, drawer, popover, menu               | Mantine `transitionProps` (theme default, Mantine `respectReducedMotion`)                                                                   | Mantine owns portal mount/unmount; a view transition would snapshot the page                                                     |
+| list insert / reorder (feed rows, history) | `motion/react` `layout` + `AnimatePresence`                                                                                                 | streamed inserts are urgent `setState`, which never activates `<ViewTransition>`                                                 |
+| theme toggle icon                          | CSS transition                                                                                                                              | motion was overkill (`theme/theme-toggle.tsx`)                                                                                   |
+
+**`motion` survives only for list insert/reorder.** Of its four 1.41 import sites, `surfaces.ts`
+and `theme-toggle.tsx` drop it, `thread-detail-panel.tsx` is deleted, and `thread-feed.tsx` keeps
+it. That makes `motion` a required peer of `./agent` (§ 1 peer rule), bumped to 14 (W3).
+
+**Reduced motion**, one switch per mechanism, all driven by the OS setting:
+
+- `styles.css` sets `animation: none` on `::view-transition-group(*)`, `-old(*)` and `-new(*)`
+  under `prefers-reduced-motion: reduce`. React does not do this itself (react.dev).
+- The provider mounts `<MotionConfig reducedMotion="user">` (motion 14 `ReducedMotionConfig`:
+  `'always' | 'never' | 'user'`).
+- The base theme sets Mantine's `respectReducedMotion: true`.
+
+**Accepted:** Back/Forward through `popstate` does not animate, because React skips it (react.dev).
+
+**Open:**
+
+- How `<ViewTransition>` falls back when `document.startViewTransition` is missing: commit without
+  animation is reported only by a third-party guide. W7 records the behaviour per browser in its
+  evidence.
 
 ## 6. AI and content
 
-<!-- owner: v2-core -->
+Written against AI SDK 7 (`ai` 7.0.138, `@ai-sdk/react` 4.0.141); TanStack AI vs AI SDK ⟂ § 8.
+`./agent` reads the stream itself (`readUIMessageStream` over a `ChatTransport`,
+`src/agent/ai-sdk-transport.ts:58-66`). It does not call `useChat`, so every `useChat` semantic below
+is re-stated as basalt's own contract.
+
+| Concern            | 2.0 contract                                                                                                                                                                                                                                                                                                                                               |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| transport seam     | `aiSdkTransport({ api, headers?, credentials?, fetch? })` or `aiSdkTransport({ transport })`, where `transport` is any AI SDK `ChatTransport<UIMessage>`. `WebSocketChatTransport` (`ai` `dist/index.d.ts:6500`) plugs in there: documented, never wrapped. `edenTransport` is deleted. The `forThread(id)` binding stays (argo `hermes-transport.ts:54`)  |
+| status             | `ThreadRunState.status` gains `'submitted'`, held from send until the first content part (text, reasoning, tool). 1.41 sets `'streaming'` with `parts: []` (`use-agent-thread-runs.ts:626`). This mirrors `ChatStatus` `'submitted' \| 'streaming' \| 'ready' \| 'error'` (`ai` `dist/index.d.ts:5985`); `chat.turn` TTFT (§ 7) is measured at that edge   |
+| errors             | `ThreadRunState.error: AgentError`, a closed union: `{ kind: 'http'; status }` · `{ kind: 'stream'; chunkType; chunkId }` (from `UIMessageStreamError`, `ai` `dist/index.d.ts:8282`) · `{ kind: 'server'; message }` (an `error` chunk) · `{ kind: 'aborted' }`. argo's body parsing (`hermes-transport.ts:111-136`) becomes a `kind` switch               |
+| `ReasoningLevel`   | the provider's own type, `LanguageModelV4CallOptions['reasoning']` = `'provider-default' \| 'none' \| 'minimal' \| 'low' \| 'medium' \| 'high' \| 'xhigh' \| 'max'` (`@ai-sdk/provider` 4.0.27 `dist/index.d.ts:1563`), never a basalt copy. Any basalt label map is `Record<ReasoningLevel, string>`, so a new level is a type error                      |
+| `throttle`         | `useAgentThreadRuns({ throttle })` in ms batches part commits, with the semantics of `useChat`'s stable `throttle` (`@ai-sdk/react` `dist/index.d.ts:119`; `experimental_throttle` is deprecated). W8 sets the default from commit counts                                                                                                                  |
+| `ai` major         | `ai-sdk-major` + `doctor` `ai-major-parity` stay. argo's skew (dashboard `ai` 7.0.107, api 5.0.196) is decision D3 ⟂ § 8                                                                                                                                                                                                                                   |
+| streaming markdown | `<Markdown streaming contentTrust="untrusted">` for every model output. Settled blocks are memoized; the tail is repaired by remend (lazy). remend 1.4 emits `![alt](streamdown:incomplete-image)` (`remend` 1.4.0 `dist/index.d.ts:2,36`). `content/url-hardening.ts` treats it exactly like `streamdown:incomplete-link`: alt text, never an `<img src>` |
+| code and diagrams  | shiki ^4.5 and beautiful-mermaid are lazy fence renderers. `CodeBlock`/`MermaidDiagram` stop being public, so a fence is the only entry                                                                                                                                                                                                                    |
+| peers              | `ai`, `remend`, `shiki`, `@shikijs/*` and `beautiful-mermaid` stay optional because they are reached only through `import()` (§ 1)                                                                                                                                                                                                                         |
 
 ## 7. Observability
 
-<!-- owner: v2-core -->
+Basalt emits typed events through one seam, `BasaltProvider telemetry?: (event: BasaltEvent) => void`,
+and has no OTel dependency. The consumer maps events to its own SDK. `onError` and
+`BasaltErrorContext` are replaced by this seam.
+
+```ts
+type BasaltEvent = {
+  type: BasaltEventType // closed union of the seven types in the table below
+  start: number // epoch ms (performance.timeOrigin + performance.now())
+  duration?: number // ms; present on span-shaped events
+  error?: unknown
+  attributes: Record<string, string | number | boolean> // flat, OTel-style keys
+}
+```
+
+| `type`           | Source (where W3 wires it)                                                                                   | `attributes`                                                                                                        |
+| ---------------- | ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------- |
+| `route.navigate` | `router.subscribe('onBeforeNavigate')` → `'onResolved'` (router-core `router.d.ts:433-449`)                  | `basalt.route.id`, `basalt.route.from`, `url.path` (pathname only, never search)                                    |
+| `route.error`    | router `defaultOnCatch` (react-router `router.d.ts:66`), set by `createBasaltRouter`                         | `basalt.route.id`                                                                                                   |
+| `query.error`    | `queryCache.subscribe`, `type: 'updated'` with `action.type: 'error'` (query-core `NotifyEventQueryUpdated`) | `basalt.query.hash`, `basalt.query.failure_count`                                                                   |
+| `mutation.error` | `mutationCache.subscribe`, same shape                                                                        | `basalt.mutation.key`                                                                                               |
+| `render.error`   | the provider's root boundary                                                                                 | `basalt.error.boundary: 'root'`                                                                                     |
+| `window.error`   | `window` `error` / `unhandledrejection`                                                                      | `basalt.error.source`                                                                                               |
+| `chat.turn`      | `useAgentThreadRuns`, on settle                                                                              | `basalt.chat.thread_id`, `basalt.chat.ttft_ms`, `basalt.chat.parts`, `basalt.chat.status`, `basalt.chat.error_kind` |
+
+Delivery rules:
+
+- The sink is called synchronously and wrapped in `try/catch`, so a throwing sink never breaks a
+  render.
+- Events carry ids, hashes, counts and durations only. Message text, search params and query data
+  never leave basalt.
+- With no sink, error events go to `console.error` behind a literal `process.env.NODE_ENV` check, and
+  production does nothing.
+
+**Consumer wiring.** This is argo's `lib/telemetry.ts` and the W2 playground's, verbatim:
+
+```ts
+import { SpanStatusCode, trace } from '@opentelemetry/api'
+import type { BasaltEvent } from 'basalt-ui'
+
+const tracer = trace.getTracer('basalt-ui')
+
+export function telemetry(e: BasaltEvent): void {
+  const span = tracer.startSpan(e.type, { startTime: e.start, attributes: e.attributes })
+  if (e.error !== undefined) {
+    span.recordException(e.error instanceof Error ? e.error : String(e.error))
+    span.setStatus({ code: SpanStatusCode.ERROR })
+  }
+  span.end(e.start + (e.duration ?? 0))
+}
+```
+
+Resource and SDK:
+
+- `service.name` follows the fleet's kebab `<project>-<component>` convention: `argo-dashboard` and
+  `argo-api` today (argo `lib/hyperdx.ts`, `api/.env.local.tpl`), `basalt-playground` for W2, with
+  `service.version` and `deployment.environment`. argo's browser SDK (`@hyperdx/browser` ^0.23.1)
+  already traces `fetch` and propagates `traceparent` to `/api/`.
+- W2 wires the playground with the OTel web tracer SDK, exporting OTLP/HTTP to the local
+  collector's `:4318/v1/traces`. Package versions are pinned from `npm view` in W2's evidence.
+
+**Open:**
+
+- Does `@hyperdx/browser` register the global `@opentelemetry/api` tracer provider, so argo can use
+  the adapter unchanged? W11 verifies; otherwise argo maps to `HyperDX.addAction`.
+- `chat.turn` is emitted after the turn, so it cannot parent the chat `fetch` span. W8's end-to-end
+  trace correlates on `basalt.chat.thread_id`, which the server span `hermes.stream-lifecycle` must
+  also carry. A live start/end span would need a second event phase.
 
 ## 8. Library adoption ledger
 
