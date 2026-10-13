@@ -10,8 +10,8 @@
  *
  * TEARDOWN. A group's entry is refcounted by its live `subscribe` registrations; the last
  * unsubscribe drops it one microtask later (a host re-binding unsubscribes before it resubscribes,
- * and must not lose the group's state in between), and `getState` on a missing group returns `null`
- * without creating one.
+ * and must not lose the group's state in between). Only `subscribe` creates an entry: `getState` on
+ * a missing group returns `null` and `setState` on one is a no-op.
  */
 import { createChartCursor, cursorHost } from '@tanstack/charts/cursor'
 import type { ChartCursorController } from '@tanstack/charts/cursor'
@@ -50,7 +50,8 @@ function ensure(group: string): Entry {
 function facade(group: string): ChartCursorController {
   return {
     getState: () => groups.get(group)?.controller.getState() ?? null,
-    setState: (next) => ensure(group).controller.setState(next),
+    // No subscriber, no entry: a write to a group nothing listens to would only leak one.
+    setState: (next) => groups.get(group)?.controller.setState(next),
     subscribe: (listener) => {
       const entry = ensure(group)
       entry.subscribers += 1
@@ -206,7 +207,8 @@ function snappedState(state: NonNullable<CursorState>, x: ChartValue | undefined
  *    the same object when no snap is needed, one memoized copy otherwise.
  *
  * The view object itself is stable per `group` + `chartId` on the client (see `views`); its entry
- * is dropped a microtask after its last subscription ends.
+ * is dropped a microtask after its last subscription ends, or after its creation if nothing
+ * subscribed by then.
  */
 export function chartCursorView(
   group: string | undefined,
@@ -223,19 +225,23 @@ export function chartCursorView(
     return existing.controller
   }
   const view: View = { controller: INERT, config, subscribers: 0 }
+  // Swept unless subscribed by then — a chart rendering a `state` placeholder compiles a view it
+  // never mounts, and must not leave a permanent entry.
+  const sweep = (): void =>
+    queueMicrotask(() => {
+      if (view.subscribers === 0 && views.get(id) === view) views.delete(id)
+    })
   view.controller = makeView(
     group,
     chartId,
     () => view.config,
     (delta) => {
       view.subscribers += delta
-      if (view.subscribers > 0) return
-      queueMicrotask(() => {
-        if (view.subscribers === 0 && views.get(id) === view) views.delete(id)
-      })
+      if (view.subscribers === 0) sweep()
     },
   )
   views.set(id, view)
+  sweep()
   return view.controller
 }
 
@@ -272,3 +278,7 @@ export function cursorBinding(opts: {
     pin: opts.pin,
   }
 }
+
+/** Test seam: whether a chart's view entry exists. */
+export const hasCursorView = (group: string | undefined, chartId: string): boolean =>
+  views.has(`${group ?? 'default'}\u0000${chartId}`)

@@ -18,7 +18,8 @@ export type ChartEngineProps = {
   coarse: boolean
 }
 
-/** `currentColor` is the axis ink; the inherited font is what TanStack measures guides with. */
+/** `currentColor` is the axis ink. The font is pinned to mono (the 1.x tick look) and inherited by
+ * the svg — TanStack measures guides with the host's computed font. */
 const HOST_STYLE: CSSProperties = {
   color: 'var(--vx-axis)',
   fontFamily: 'var(--basalt-font-mono)',

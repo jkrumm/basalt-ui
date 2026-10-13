@@ -5,10 +5,14 @@
 import { describe, expect, test } from 'bun:test'
 import type { StoredChartSpec } from '@tanstack/charts/types/core'
 import { compileCartesian, dateTicks, utcAxisDate, utcHeaderDate } from './compile'
-import { chartCursor, chartCursorView, hasCursorGroup } from './cursor'
+import { chartCursor, chartCursorView, hasCursorGroup, hasCursorView } from './cursor'
 import { chartCurve } from './curves'
 import { resolveYDomain, xScaleFor, xZoneFractions } from './scales'
 import { resolveChartSize } from './sizing'
+import { resolveChartState } from './state'
+import { Lines } from './Lines'
+import { createElement } from 'react'
+import { renderToString } from 'react-dom/server'
 import type { ChartSeries } from './types'
 
 type Row = { t: Date; v: number | null }
@@ -51,6 +55,29 @@ describe('cursor groups', () => {
     const again = chartCursorView('stable', 'c1', [day(1), day(2)], 'exact')
     expect(again).toBe(first)
     expect(chartCursorView('stable', 'c2', [day(1)], 'nearest')).not.toBe(first)
+  })
+
+  test('setState on a group nothing subscribes to is a no-op and creates nothing', () => {
+    chartCursor('write-only').setState(programmatic(day(1)))
+    expect(hasCursorGroup('write-only')).toBe(false)
+    expect(chartCursor('write-only').getState()).toBeNull()
+  })
+
+  test('a view no chart ever subscribes (a placeholder render) is swept after a microtask', async () => {
+    chartCursorView('sweep', 'never-mounted', [day(1)], 'nearest')
+    expect(hasCursorView('sweep', 'never-mounted')).toBe(true)
+    await Promise.resolve()
+    expect(hasCursorView('sweep', 'never-mounted')).toBe(false)
+  })
+
+  test('a subscribed view survives the sweep and goes after its last unsubscribe', async () => {
+    const view = chartCursorView('sweep', 'mounted', [day(1)], 'nearest')
+    const off = view.subscribe(() => {})
+    await Promise.resolve()
+    expect(hasCursorView('sweep', 'mounted')).toBe(true)
+    off()
+    await Promise.resolve()
+    expect(hasCursorView('sweep', 'mounted')).toBe(false)
   })
 
   test('getState on a missing group is null and creates nothing', () => {
@@ -226,5 +253,107 @@ describe('curves', () => {
         [10, 5],
       ]),
     ).toBe('M0,0L10,0L10,5')
+  })
+})
+
+describe('y domain law (resolveYDomain)', () => {
+  type V = { v: number | null }
+  const s: ChartSeries<V> = { key: 's', label: 'S', color: 'c', getValue: (d) => d.v }
+  const at = (...vs: (number | null)[]): V[] => vs.map((n) => ({ v: n }))
+
+  test('log: non-positive values drop out; the floor is the smallest positive value, padded', () => {
+    const [lo, hi] = resolveYDomain({ scale: 'log' }, at(-5, 0, 10, 100), [s])
+    expect(lo).toBeCloseTo(10 / 1.1)
+    expect(hi).toBeCloseTo(110)
+    expect(resolveYDomain({ scale: 'log' }, at(0, -1), [s])).toEqual([1, 10])
+  })
+  test('a flat series still has extent; all-null falls back to [0, 1]', () => {
+    const [lo, hi] = resolveYDomain(undefined, at(5, 5), [s])
+    expect(lo).toBe(0)
+    expect(hi).toBeGreaterThan(5)
+    expect(resolveYDomain(undefined, at(null, null), [s])).toEqual([0, 1])
+    expect(resolveYDomain({ autoMaxFloor: 4 }, at(null), [s])).toEqual([0, 4])
+  })
+  test('a domain function receives the data and the visible series', () => {
+    let seen: readonly ChartSeries<V>[] = []
+    const domain = resolveYDomain({ domain: (_d, visible) => ((seen = visible), [1, 2]) }, at(3), [
+      s,
+    ])
+    expect(domain).toEqual([1, 2])
+    expect(seen.map((x) => x.key)).toEqual(['s'])
+  })
+  test('autoMinCeil: Infinity pads down from the data minimum instead of zero', () => {
+    const [lo] = resolveYDomain({ autoMinCeil: Infinity }, at(78, 90), [s])
+    expect(lo).toBeCloseTo(78 / 1.1)
+    expect(resolveYDomain({ autoMinCeil: -10 }, at(5, 9), [s])[0]).toBeCloseTo(-11)
+  })
+  test('a stack hands a domain function the real series, never the synthetic totals', () => {
+    let keys: string[] = []
+    const def = compileCartesian({
+      chartId: 'stack-fn',
+      data: rows,
+      x: (d) => d.t,
+      series: [{ ...v, mark: 'bar' }],
+      marks: () => [],
+      band: true,
+      stack: 'stacked',
+      y: { domain: (_d, visible) => ((keys = visible.map((x) => x.key)), [0, 1]) },
+    })
+    def.chart({ width: 640, height: 240, defaultTheme: {} as never })
+    expect(keys).toEqual(['v'])
+  })
+})
+
+describe('compile edges', () => {
+  test('a single x sample still gets an axis of width, with the point centred', () => {
+    const model = xScaleFor([day(1)], false)
+    expect(model.fraction(day(1))).toBeCloseTo(0.5)
+    expect(xScaleFor([7], false).fraction(7)).toBeCloseTo(0.5)
+  })
+
+  test('marks naming an unknown series throw a message that names it', () => {
+    const def = compileCartesian({
+      chartId: 'unknown',
+      data: rows,
+      x: (d) => d.t,
+      series: [v],
+      marks: (plot) => (plot.rows('nope'), []),
+    })
+    expect(() => def.chart({ width: 640, height: 240, defaultTheme: {} as never })).toThrow(
+      '[basalt] CartesianChart: marks asked for series "nope", not in `series`',
+    )
+  })
+
+  test('state precedence: pending, then error, then empty', () => {
+    expect(resolveChartState({ pending: true, error: new Error('x'), empty: true })).toBe('pending')
+    expect(resolveChartState({ error: new Error('x'), empty: 'Nothing' })).toBe('error')
+    expect(resolveChartState({ empty: 'Nothing' })).toBe('empty')
+    expect(resolveChartState({ pending: false, error: null, empty: false })).toBeNull()
+    expect(resolveChartState(undefined)).toBeNull()
+  })
+
+  test('with y2, a right-side zone is drawn on the right scale', () => {
+    type R = { t: Date; a: number; b: number }
+    const data: R[] = [1, 2, 3].map((d) => ({ t: day(d), a: d * 10, b: d / 10 }))
+    const html = renderToString(
+      createElement(Lines<R, Date>, {
+        ariaLabel: 'z',
+        data,
+        x: (d) => d.t,
+        y: { domain: [0, 40] },
+        y2: { domain: [0, 0.4] },
+        legend: false,
+        series: [
+          { key: 'a', label: 'A', color: 'c1', getValue: (d) => d.a },
+          { key: 'b', label: 'B', color: 'c2', getValue: (d) => d.b, axis: 'right' },
+        ],
+        // Half of the RIGHT domain: on the left scale it would be a hairline.
+        zones: [{ from: 0, to: 0.2, fill: 'zone-fill', axisSide: 'right' }],
+      }),
+    )
+    const zone = html.match(/<rect[^>]*fill="zone-fill"[^>]*>/)?.[0] ?? ''
+    const height = Number(zone.match(/height="([\d.]+)"/)?.[1])
+    const clip = Number(html.match(/<clipPath[^>]*><rect[^>]*height="([\d.]+)"/)?.[1])
+    expect(height / clip).toBeCloseTo(0.5, 1)
   })
 })
