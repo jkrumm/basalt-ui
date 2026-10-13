@@ -550,10 +550,9 @@ const BANNED_ENGINE_SUBPATHS: readonly string[] = [
   'waffle',
 ]
 
+// The package that declares the peer: bun's isolated linker installs it there, never at the root.
 const ENGINE_PACKAGE_JSON = resolve(
   import.meta.dirname,
-  '..',
-  '..',
   '..',
   'node_modules',
   '@tanstack',
