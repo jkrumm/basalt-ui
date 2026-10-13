@@ -1,123 +1,32 @@
 /**
- * basalt-ui/agent — headless, Mantine-free streaming-chat layer over an injected transport seam.
- *
- * `aiSdkTransport` (backed by the `ai` npm package) is the RECOMMENDED DEFAULT transport for LLM
- * chat use cases; `edenTransport` remains the zero-extra-dependency alternative. Optional peers
- * (ai, use-stick-to-bottom) are all lazily loaded — importing this module does NOT eagerly resolve
- * either of them. This module ships no markdown renderer — `agent/** -> content` is lint-blocked
- * by design, so `PartList` takes a consumer-supplied `components.text`; basalt's own is
- * `basalt-ui/content`'s `Markdown`.
- *
- * Install optional peers:
- *   bun add ai                                   # aiSdkTransport
- *   bun add use-stick-to-bottom                  # BasaltStickToBottom
+ * basalt-ui/agent — the AI chat surface: a Mantine-free streaming runtime (`src/agent/**` outside
+ * `chat/`) plus the chat UI (`src/agent/chat/**`). `aiSdkTransport` (the `ai` npm package) is the
+ * one transport; `useAgentThreadRuns` is the one runner. Optional peers (`ai`,
+ * `use-stick-to-bottom`) load lazily — importing this module does not resolve either.
  *
  * @example
- * import { useAgentStream, edenTransport, PartList, BasaltStickToBottom } from 'basalt-ui/agent'
- *
- * const transport = edenTransport((input, signal) =>
- *   api.chat.post({ body: { message: input }, fetch: { signal } }),
- * )
- *
- * function Chat() {
- *   const { parts, status, send, stop } = useAgentStream({ transport })
- *   return (
- *     <BasaltStickToBottom style={{ height: '400px', overflow: 'auto' }}>
- *       <PartList parts={parts} />
- *       <button onClick={() => send('Hello')}>Send</button>
- *       {status === 'streaming' && <button onClick={stop}>Stop</button>}
- *     </BasaltStickToBottom>
- *   )
- * }
+ * import { aiSdkTransport, useAgentThreadRuns, ThreadFeed, Composer } from 'basalt-ui/agent'
  */
 
-// ── AgentPart discriminated union ─────────────────────────────────────────────
-export type {
-  AgentPart,
-  AgentPartDraft,
-  Drafted,
-  StartPart,
-  TextPart,
-  ReasoningPart,
-  ToolCallPart,
-  ToolCallState,
-  SourcePart,
-  ErrorPart,
-} from './parts'
-export { parseAgentPart, isStartPart, isToolCallSettled, TERMINAL_TOOL_STATES } from './parts'
+// ── Parts ─────────────────────────────────────────────────────────────────────
+export type { AgentPart, ToolCallPart } from './parts'
+export { parseAgentPart } from './parts'
+export type { ForeignPart, TranscriptPart, PartRenderers, PartRenderer } from './foreign'
 
-// ── mergePart (identity-addressed accumulator) ───────────────────────────────
-export { mergePart } from './merge'
-
-// ── withPartIds (drafts → identified parts) ──────────────────────────────────
-export { withPartIds } from './id'
-
-// ── coalesceParts (adjacent + by-id merge for display) ───────────────────────
-export { coalesceParts } from './coalesce'
-
-// ── foreign parts (the open half of the part-renderer registry) ──────────────
-export { definePartRenderers, narrowAgentPart } from './foreign'
-export type {
-  ForeignPart,
-  TranscriptPart,
-  ConsumerPart,
-  PartRenderers,
-  PartRenderContext,
-  PartRenderer,
-} from './foreign'
-
-// ── AgentTransport + edenTransport ───────────────────────────────────────────
-export type { AgentTransport, ResumableAgentTransport } from './transport'
-export { edenTransport, isResumable } from './transport'
-
-// ── aiSdkTransport (recommended default, optional peer: ai) ──────────────────
+// ── Transport and runner ──────────────────────────────────────────────────────
 export { aiSdkTransport } from './ai-sdk-transport'
-export type { AiSdkTransport, AiSdkTransportOptions } from './ai-sdk-transport'
-
-// ── useAgentStream ────────────────────────────────────────────────────────────
-export { useAgentStream } from './use-agent-stream'
-export type { StreamStatus, UseAgentStreamReturn } from './use-agent-stream'
-
-// ── useAgentThreadRuns ────────────────────────────────────────────────────────
 export { useAgentThreadRuns } from './use-agent-thread-runs'
-export type {
-  ThreadRunState,
-  UseAgentThreadRunsArgs,
-  UseAgentThreadRunsReturn,
-} from './use-agent-thread-runs'
+export type { ThreadRunState } from './use-agent-thread-runs'
 
-// ── PartList + renderer types ─────────────────────────────────────────────────
-export { PartList } from './part-list'
-export type {
-  PartListProps,
-  AgentPartRenderers,
-  TextPartRenderer,
-  ReasoningPartRenderer,
-  ToolCallPartRenderer,
-  SourcePartRenderer,
-  ErrorPartRenderer,
-} from './part-list'
-
-// ── BasaltStickToBottom (lazy, optional peer: use-stick-to-bottom) ────────────
-export { BasaltStickToBottom } from './stick-to-bottom'
-export type { BasaltStickToBottomProps } from './stick-to-bottom'
-
-// ── createChatHistoryStore + ChatMessage ──────────────────────────────────────
-export { createChatHistoryStore } from './history'
-export type { ChatMessage, ChatHistoryStore, ChatHistoryStoreOptions } from './history'
-
-// ── createThreadsStore + AgentThread ──────────────────────────────────────────
-export { createThreadsStore } from './thread'
-export type { AgentThread, ThreadStatus, ThreadsStore, ThreadsStoreOptions } from './thread'
-
-// ── AgentOutcome + heuristicOutcome ────────────────────────────────────────────
-export { heuristicOutcome } from './outcome'
+// ── Thread contracts (the store is consumer-owned) ────────────────────────────
+export type { ChatMessage } from './history'
+export type { AgentThread, ThreadStatus, ThreadsStore } from './thread'
 export type { AgentOutcome, OutcomeResolver } from './outcome'
 
-// ── createAdapterThreadsStore + threadsStoreAdapterContract ──────────────────
-export { createAdapterThreadsStore, threadsStoreAdapterContract } from './adapter'
-export type {
-  AdapterThreadsStoreOptions,
-  ThreadsStoreAdapter,
-  ThreadsStoreAdapterContractCase,
-} from './adapter'
+// ── Chat UI ───────────────────────────────────────────────────────────────────
+export { ThreadFeed } from './chat/thread-feed'
+export { ThreadFeedRow } from './chat/thread-feed-row'
+export type { MessageAffordances } from './chat/message-affordances'
+export { Composer } from './chat/composer'
+export type { ComposerHandle, ComposerSubmit } from './chat/composer'
+export { ToolChip } from './chat/tool-chip'

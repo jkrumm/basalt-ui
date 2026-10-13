@@ -65,7 +65,7 @@ import type { CommandId } from './define-commands'
 import { useModalsLayer } from './define-overlays'
 import { toSpotlightActions } from './projectors'
 import { useCommandHotkeys } from './useCommandHotkeys'
-import { useNotificationsMountGuard } from '../notifications/mount-guard'
+import { useNotificationsMountGuard } from './notifications/mount-guard'
 
 // ── Lazy @mantine/spotlight resolution (module-wide singleton) ────────────────
 

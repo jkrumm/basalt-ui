@@ -1,7 +1,6 @@
 /**
  * useAgentThreadRuns — concurrent multi-thread stream run manager.
  *
- * Unlike useAgentStream (ONE in-flight turn — a new send() aborts the previous one),
  * useAgentThreadRuns runs N CONCURRENT streams, one per thread id, so a user can fire many
  * short chats that each stream and resolve independently in the background. Each thread's
  * turn is appended to an injected ThreadsStore and distilled into an AgentOutcome via an
@@ -14,19 +13,16 @@
  * per thread id and cached: `transport: (threadId) => aiSdkTransport(opts).forThread(threadId)`.
  *
  * @example
- * import { useAgentThreadRuns, createThreadsStore, edenTransport, heuristicOutcome } from 'basalt-ui/agent'
+ * import { useAgentThreadRuns, aiSdkTransport } from 'basalt-ui/agent'
  *
- * const useThreads = createThreadsStore({ key: 'main-threads', version: 1 })
- * const transport = edenTransport((input, signal) =>
- *   api.chat.post({ body: { message: input }, fetch: { signal } }),
- * )
+ * const transport = aiSdkTransport({ api: '/api/chat' })
  *
  * function ThreadFeed() {
  *   const store = useThreads()
  *   const { runs, start, stop } = useAgentThreadRuns({
  *     transport,
  *     store,
- *     resolveOutcome: heuristicOutcome,
+ *     resolveOutcome, // your OutcomeResolver
  *   })
  *   const id = store.create()
  *   return (
