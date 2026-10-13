@@ -20,6 +20,7 @@ import { linkOptions } from '@tanstack/react-router'
 import type { SidebarBlock } from 'basalt-ui'
 import { defineNav, navGroup } from 'basalt-ui'
 import { cbbiFilters } from './cbbi/cbbi-store'
+import { chartViews } from './charts-store'
 import { dashboardFilters } from './dashboard-range-store'
 import {
   IconActivity,
@@ -77,7 +78,7 @@ export const NAV = defineNav({
           label: 'Charts',
           mobile: 'tab',
           icon: <IconChart />,
-          link: linkOptions({ to: '/charts' }),
+          link: linkOptions({ to: '/charts', search: chartViews.linkSearch }),
         },
         {
           id: 'components',

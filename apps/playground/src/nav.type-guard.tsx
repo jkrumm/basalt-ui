@@ -36,6 +36,9 @@ const DASH_SEARCH = {
   bands: false,
 } as const
 
+// The charts route's store has two fields; the same hand-spelled-shape rule applies.
+const CHARTS_SEARCH = { tab: 'linked', buckets: '288' } as const
+
 // ── the definition under test ────────────────────────────────────────────────────────────────────
 
 export const NAV = defineNav({
@@ -57,14 +60,22 @@ export const NAV = defineNav({
             // against it: it is `Exact`-checked like any other item (row 4b), and it is present in
             // the id union `navTarget` takes (row 11).
             children: [
-              { id: 'session-detail', label: 'Detail', link: linkOptions({ to: '/charts' }) },
+              {
+                id: 'session-detail',
+                label: 'Detail',
+                link: linkOptions({ to: '/charts', search: CHARTS_SEARCH }),
+              },
             ],
           },
         ],
       },
     ]),
     navGroup({ id: 'lab', label: 'Lab', mobile: { tab: true } }, [
-      { id: 'charts', label: 'Charts', link: linkOptions({ to: '/charts' }) },
+      {
+        id: 'charts',
+        label: 'Charts',
+        link: linkOptions({ to: '/charts', search: CHARTS_SEARCH }),
+      },
     ]),
   ],
   mobile: { tabs: ['dash', 'lab'], maxTabs: 4 },
@@ -130,8 +141,13 @@ export const unknownChildKey = defineNav({
         label: 'X',
         link: linkOptions({ to: '/dashboard', search: DASH_SEARCH }),
         children: [
-          // @ts-expect-error 'colour' is not a NavItemMeta key — the recursion types it `never` too
-          { id: 'y', label: 'Y', colour: 'red', link: linkOptions({ to: '/charts' }) },
+          {
+            id: 'y',
+            label: 'Y',
+            // @ts-expect-error 'colour' is not a NavItemMeta key — the recursion types it `never` too
+            colour: 'red',
+            link: linkOptions({ to: '/charts', search: CHARTS_SEARCH }),
+          },
         ],
       },
     ]),
