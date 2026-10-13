@@ -1,6 +1,6 @@
 /**
  * The pure sizing seam (`docs/V2-SPEC.md` § 9.2, § 9.6): measured width → container class →
- * height. `resolveChartSize` is the law; `useChartSize` only measures and feeds it. Neither knows
+ * height. `resolveChartSize` is the law; the hook below only measures and feeds it. Neither knows
  * the engine, the legend or the card.
  */
 import { useCallback, useRef, useState, useSyncExternalStore } from 'react'

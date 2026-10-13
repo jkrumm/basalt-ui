@@ -3,11 +3,11 @@
 [![npm version](https://img.shields.io/npm/v/basalt-ui.svg)](https://www.npmjs.com/package/basalt-ui)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](https://github.com/jkrumm/basalt-ui/blob/master/LICENSE)
 
-> Opinionated framework for Mantine v9 + visx React apps — theme, app shell, chart system, and the agentic layer to drive them.
+> Opinionated framework for Mantine v9 + TanStack Charts React apps — theme, app shell, chart system, and the agentic layer to drive them.
 
 **[Documentation](#quick-start)** · **[GitHub](https://github.com/jkrumm/basalt-ui)** · **[npm](https://www.npmjs.com/package/basalt-ui)**
 
-Building a dashboard app means wiring a Mantine theme, a visx chart system, a typed token layer, and an app shell — each with its own opinions, and none of them talking to each other.
+Building a dashboard app means wiring a Mantine theme, a TanStack Charts chart system, a typed token layer, and an app shell — each with its own opinions, and none of them talking to each other.
 
 Basalt UI is the extraction of that setup from a production app. Install once, get a coherent system.
 
@@ -30,11 +30,11 @@ missing one surfaces as an unresolved import at build time, not as an install wa
 also needs `@types/react @types/react-dom` (dev) and a standard Vite `vite-env.d.ts`. Exact
 versions: `peerDependencies` in `package.json`.
 
-| Class            | Peers                                                                                                                                                                                                                                                        | Rule                                                                                                     |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------- |
-| Required         | `react`, `react-dom`, `@mantine/{core,hooks,modals,notifications,spotlight}`, `@tanstack/react-router`, `@tanstack/react-query`, the three `@fontsource-variable/*`                                                                                          | every consumer; `.` or `./styles.css` imports or names it                                                |
-| Subpath-required | `./commands`: `@tanstack/react-hotkeys` · `./agent`: `ai`, `@ai-sdk/provider`, `motion` · `./table`: `@tanstack/react-table` · `./forms`: `@mantine/form` · `./controls-dates`: `@mantine/dates`, `dayjs` · `./content`: `react-markdown` · `./vite`: `vite` | needed only by consumers of that subpath; declared `optional` in `peerDependenciesMeta`                  |
-| Optional         | `remend`, `shiki`, `@shikijs/*`, `beautiful-mermaid`, `remark-gfm`, `rehype-sanitize`, `@tanstack/react-query-devtools`, `@tanstack/react-router-devtools`, `vite-plugin-pwa`                                                                                | reached through `import()` only; absent, the feature degrades (dev devtools panels, plain-text markdown) |
+| Class            | Peers                                                                                                                                                                                                                                                                                                     | Rule                                                                                                     |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| Required         | `react`, `react-dom`, `@mantine/{core,hooks,modals,notifications,spotlight}`, `@tanstack/react-router`, `@tanstack/react-query`, the three `@fontsource-variable/*`                                                                                                                                       | every consumer; `.` or `./styles.css` imports or names it                                                |
+| Subpath-required | `./charts`: `@tanstack/charts`, `d3-scale` · `./commands`: `@tanstack/react-hotkeys` · `./agent`: `ai`, `@ai-sdk/provider`, `motion` · `./table`: `@tanstack/react-table` · `./forms`: `@mantine/form` · `./controls-dates`: `@mantine/dates`, `dayjs` · `./content`: `react-markdown` · `./vite`: `vite` | needed only by consumers of that subpath; declared `optional` in `peerDependenciesMeta`                  |
+| Optional         | `remend`, `shiki`, `@shikijs/*`, `beautiful-mermaid`, `remark-gfm`, `rehype-sanitize`, `@tanstack/react-query-devtools`, `@tanstack/react-router-devtools`, `vite-plugin-pwa`                                                                                                                             | reached through `import()` only; absent, the feature degrades (dev devtools panels, plain-text markdown) |
 
 **No React?** `./tokens` imports no `@mantine/*`, and the token system is consumable with no package
 at all:
@@ -310,7 +310,7 @@ deleted rather than silently surviving into the next real skew.
 | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `.`                | Wiring (`BasaltProvider`, `createBasaltTheme`, `createBasaltRouter`, `unwrap`), shell + nav (`BasaltShell`, `PageBar`, `PageAside`, `defineNav`, `navGroup`, `flattenNav`, `useBasaltNav`), dashboard atoms (`Section`, `StatCard`, `EmptyState`, `SettingsSection`, …) |
 | `./tokens`         | **Mantine-free.** `VX` token refs, `alpha`, `defineSeries`, `seriesTokens`, `groupTokens`, `buildPaletteCss`, layout (`BP`, `p`, `CONTAINER_*`)                                                                                                                         |
-| `./charts`         | **Mantine-free.** `CartesianChart` + visx primitives, kinds, sparklines, hooks                                                                                                                                                                                          |
+| `./charts`         | **Mantine-free.** `CartesianChart` + the `Lines`/`Bars` kinds, `ChartCard`, `chartCursor` on `@tanstack/charts`                                                                                                                                                         |
 | `./controls`       | `FilterSet` + the `FieldHandle`-bound filters, `ViewTabs`, `SyncButton`, `FormRow`, `FormGroup`                                                                                                                                                                         |
 | `./controls-dates` | `DateRangePicker` — its own subpath so `./controls` resolves with no `@mantine/dates`                                                                                                                                                                                   |
 | `./forms`          | `useBasaltForm`, `inputProps`, `fieldKey` on `@mantine/form`                                                                                                                                                                                                            |
@@ -332,9 +332,9 @@ emits the prebuilt `--vx-*` stylesheet. Every dropped 1.x subpath and its new ho
 
 ## Mantine-free boundary
 
-`./charts` and `./tokens` import zero `@mantine/*`. `@visx/*` is only allowed inside `src/charts/**`. The root barrel (`.`) does not re-export `./charts` or `./tokens`.
+`./charts` and `./tokens` import zero `@mantine/*`. `@visx/*` is banned everywhere, and `@tanstack/charts/react` is imported by `src/charts/host.tsx` alone. The root barrel (`.`) does not re-export `./charts` or `./tokens`.
 
-The Mantine-free part protects two things. First, layering: `tokens` is pure data that `cssVariablesResolver` reads to bind Mantine's surfaces to the same `--vx-*` vars charts use, so an `@mantine/*` import in either would cycle back through the theme layer or let a chart bypass `--vx-*` and fork chrome/charts apart. Second, packaging: `./charts` and `./tokens` resolve and render with **no `@mantine/*` installed** — a charts/tokens-only consumer never pulls Mantine into their bundle. This is real and CI-tested (`scripts/pack-test.sh`'s "charts/tokens-only (no-Mantine) resolution + render" step scratch-installs the tarball with only `react`/`react-dom` and SSR-renders `basalt-ui/charts`; `scripts/check-dist-layering.mjs` walks the built dist graph and fails if those entries reach `@mantine/*`; the root barrel not re-exporting them is the third leg). The LAYER is Mantine-free — the FRAMEWORK is not: `.` requires Mantine (`@mantine/core`/`@mantine/hooks` are required, non-optional peers); only `./charts`/`./tokens` don't. Both consequences are a basalt-internal invariant enforced by the repo-local-only `basalt/token-layer-boundary` oxlint plugin rule — not a consumer contract, so it is deliberately absent from the shipped consumer preset. The `@visx/*`-only-in-charts part (`basalt/visx-boundary`) IS shipped, so that constraint holds downstream too.
+The Mantine-free part protects two things. First, layering: `tokens` is pure data that `cssVariablesResolver` reads to bind Mantine's surfaces to the same `--vx-*` vars charts use, so an `@mantine/*` import in either would cycle back through the theme layer or let a chart bypass `--vx-*` and fork chrome/charts apart. Second, packaging: `./charts` and `./tokens` resolve and render with **no `@mantine/*` installed** — a charts/tokens-only consumer never pulls Mantine into their bundle. This is real and CI-tested (`scripts/pack-test.sh`'s "charts/tokens-only (no-Mantine) resolution + render" step scratch-installs the tarball with only `react`/`react-dom` and SSR-renders `basalt-ui/charts`; `scripts/check-dist-layering.mjs` walks the built dist graph and fails if those entries reach `@mantine/*`; the root barrel not re-exporting them is the third leg). The LAYER is Mantine-free — the FRAMEWORK is not: `.` requires Mantine (`@mantine/core`/`@mantine/hooks` are required, non-optional peers); only `./charts`/`./tokens` don't. Both consequences are a basalt-internal invariant enforced by the repo-local-only `basalt/token-layer-boundary` oxlint plugin rule — not a consumer contract, so it is deliberately absent from the shipped consumer preset. The chart-engine part (`basalt/chart-engine-boundary`: no `@visx/*`, and `@tanstack/charts` only through an allowlist of mark subpaths) IS shipped, so that constraint holds downstream too.
 
 ---
 
@@ -418,77 +418,55 @@ Every `defineX` factory is const-generic and exact-keyed — the return type mir
 
 Seven optional-peer batteries extend the core. Install only what you use — core resolves without them.
 
-### `./charts` — visx chart primitives
+### `./charts` — TanStack Charts
 
 ```bash
-bun add @visx/axis @visx/curve @visx/event @visx/grid @visx/group @visx/responsive @visx/scale @visx/shape @visx/threshold
+bun add @tanstack/charts d3-scale
 ```
 
 `./charts` is Mantine-free (see [Mantine-free boundary](#mantine-free-boundary) above) but not
-dependency-free: it needs the nine `@visx/*` packages, all pinned exact at `4.0.0`. They ship as
-optional peers, not bundled dependencies, so a `./tokens`-only consumer never installs them.
+dependency-free: it needs `@tanstack/charts` and `d3-scale`, both pinned exact (`1.1.0` and
+`4.0.2`). They ship as optional peers, not bundled dependencies, so a `./tokens`-only consumer never
+installs them. visx is gone: no dependency, peer or re-export.
 
-`CartesianChart` is the entry point: it owns the measured margins, both y scales and their
-domains, the axes, grid, the page-shared cursor, the crosshair and the derived tooltip, so a chart
-supplies its `series` and draws only marks. Legends toggle series, margins size themselves from
-the tick labels actually painted, and charts share a cursor with no provider.
+`CartesianChart` is the entry point: it compiles one engine definition and owns the measured
+margins, both y domains, the x scale, the grid, zones, the page-shared cursor, the crosshair,
+keyboard focus, the legend and the derived tooltip, so a chart supplies its `series` and returns
+only marks. `ariaLabel` is required. The x scale follows the value `x` returns: a `Date` is a
+proportional time axis, a `number` is linear, a `string` is a point (lines) or band (bars) scale.
+Marks come straight from `@tanstack/charts/*` subpaths (`basalt/chart-engine-boundary` allowlists
+them); `basalt-ui/charts` re-exports none, and tokens and formatters live in `basalt-ui/tokens` and
+`basalt-ui/format`.
 
 ```tsx
-import { CartesianChart, LinePath, VX } from 'basalt-ui/charts'
+import { lineY } from '@tanstack/charts/line'
+import { CartesianChart } from 'basalt-ui/charts'
+import { VX } from 'basalt-ui/tokens'
 ;<CartesianChart
+  ariaLabel="Sessions"
   data={rows}
-  chartId="sessions"
-  getX={(d) => d.date}
-  series={[
-    {
-      key: 'sessions',
-      label: 'Sessions',
-      color: VX.accent,
-      mark: 'line',
-      getValue: (d) => d.sessions,
-    },
-  ]}
+  x={(d) => d.date}
+  series={[{ key: 'sessions', label: 'Sessions', color: VX.accent, getValue: (d) => d.sessions }]}
   y={{ format: (v) => v.toFixed(0) }}
   height={260}
->
-  {({ visible, xScale, yScale }) =>
-    visible.map((s) => (
-      <LinePath
-        key={s.key}
-        data={rows}
-        x={(d) => xScale(d.date) ?? 0}
-        y={(d) => yScale(s.getValue(d) ?? 0)}
-        stroke={s.color}
-      />
-    ))
+  marks={(plot) =>
+    plot.visible.map((s) =>
+      lineY(plot.rows(s.key), { x: (row) => row.x, y: 'y', z: 'series', stroke: s.color }),
+    )
   }
-</CartesianChart>
+/>
 ```
 
-Shipped kinds (`Bars`, `MultiLine`, `StackedArea`, `ZonedLine`, `Donut`, `DualPanel`, `Heatmap`,
-`BandStrip`, `MirroredBars`) are that same composition, pre-wired. The last five compose
-`ChartFrame` directly, because a ring, a matrix, two panes or a strip is not a single plot rect:
-**`BandStrip`** draws 1-D categorical bands with no y dimension at all (`CartesianChart` renders a
-left numeric axis unconditionally, so it could never host one), and **`MirroredBars`** draws two
-bar panes over one x scale and one baseline, each in its own domain. Both fold their domain by
-width, hatch the share of a slot nothing measured, and share the page cursor like every other
-chart.
+Shipped kinds are that same composition, pre-wired: `Lines` (n series, `area`, `thresholds`, zones,
+reference lines, `y2`) and `Bars` (stacked, grouped or normalised, ± bars, overlay lines). The
+other 1.x kinds (`StackedArea`, `DualPanel`, `MirroredBars`, `BandStrip`, `Donut`, `Heatmap`, the
+sparklines) are not shipped in 2.0.0 and return in Wave 5 only if a consumer needs them; the
+[`MIGRATING.md`](./MIGRATING.md) § 2.0.0 Charts table maps every 1.x chart export.
 
-On a strip, `series` IS the state set, so a `state` naming no entry has no colour, no legend entry
-and no tooltip row. It **throws in dev**, naming the key and the valid set; in production it draws a
-dashed neutral outline band — a treatment no legend entry and no state fill uses — plus an
-`Unknown state` tooltip row. Drawing nothing was the old behaviour and the wrong one: on a
-measured/not-measured strip a missing band claims a coverage gap. `absentState` and `MirroredBars`'
-`up.key`/`down.key` are PROPS rather than data, so those throw in every environment; an
-unresolvable pane key used to hide the pane and its axis, which reads as a measured zero.
-`BandStripSeries.formatValue` returns `string | null`, `null` rendering an em dash — an absent
-reading, distinct from `''`, which is a state whose label is the whole row.
-
-Which x ticks get painted is `xTickValues?: (keys, xMax) => readonly string[]`, on
-`CartesianChart` and forwarded by `Bars`/`MultiLine`/`StackedArea`/`ZonedLine` and both band kinds.
-It resolves ahead of the `xTicks` COUNT, which is unchanged; omit both and ticks are chosen to fit.
-Reach for values on a dense time axis — the tick chooser appends the final key unconditionally, so
-a count that misses the last index collides two labels at the right edge at every count.
+Charts share a cursor with no provider (`cursorGroup="…"` isolates one; `chartCursor(group?)` reads
+it for app code), and only the chart under the pointer or keyboard focus shows a tooltip
+(`tooltip.onFollow` opts a follower in). `x` ticks are `xTicks` (a count or the values) and
+collision is the engine's `tickLabels.thin`; labels never rotate.
 
 ### Query — `unwrap` (root barrel)
 

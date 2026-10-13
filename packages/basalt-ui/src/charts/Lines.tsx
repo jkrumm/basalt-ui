@@ -1,5 +1,5 @@
 /**
- * `Lines` — n line series over the rung (`docs/V2-SPEC.md` § 9.3; 1.x `ZonedLine` + `MultiLine`).
+ * `Lines` — n line series over the rung (`docs/V2-SPEC.md` § 9.3; the two 1.x line kinds, merged).
  * Per series: an optional `area` gradient, dash, curve, markers, the right axis. Per chart:
  * `thresholds` (fills between the first series and a value, Date/number x only). Zones, x-zones,
  * reference lines, `y2`, legend, cursor and tooltip are the rung's.

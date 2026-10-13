@@ -152,7 +152,7 @@ export const VX = {
   // The ONE dashed pattern — plotted stroke, legend swatch, tooltip swatch all read this.
   dashArray: '6 4' as const,
   // Legend layout — single-sourced from `SPACE_STEP.chartLegendGap` (density-tracking; see that
-  // constant's doc). Still a raw number here (not `var()`) — ChartLegend applies it via inline
+  // constant's doc). Still a raw number here (not `var()`) — the chart legend applies it via inline
   // `style`, and this is the one static (level-0) value; `createBasaltTheme({ density })` has no
   // wiring into chart render props yet, so this number does NOT move live with the knob (same
   // "dev slider/production JS defaultProps" gap as Timeline's `bulletSize` — see `deriveSpacing`'s
@@ -226,8 +226,8 @@ export const VX = {
   legendText: 'var(--vx-legend-text)',
 
   // Tooltip chrome — muted (secondary) text inside a bespoke tooltip. The other tooltip vars
-  // (bg/text/border/shadow) are only exposed via `useVxTheme()` (see `charts/theme.tsx`); this
-  // one is flattened onto `VX` too because bespoke-tooltip authors reached for `VX.muted` (the
+  // (bg/text/border/shadow) reach the engine tooltip as `--ts-chart-tooltip-*` (`charts/theme.ts`);
+  // this one is flattened onto `VX` too because bespoke-tooltip authors reached for `VX.muted` (the
   // general ink-ramp muted) instead and got the wrong token — same pattern as `VX.muted` below.
   tooltipMuted: 'var(--vx-tooltip-muted)',
 
@@ -286,7 +286,7 @@ export const VX = {
     neutral: 'var(--vx-status-neutral)',
   },
 
-  // Shared sizing — single-sourced from `SPACE_STEP.chartMargin*` (density-tracking; same
+  // Shared sizing — single-sourced from the `SPACE_STEP` chart-margin steps (density-tracking; same
   // static-value/no-live-wiring note as `legendGap` above).
   margin: {
     top: SPACE_STEP.chartMarginTop,
@@ -296,7 +296,7 @@ export const VX = {
   },
   minPxPerTick: 55,
   /**
-   * Floor on a chart's plot rect height, in px (`ChartFrame`). A legend wrapping to five rows at
+   * Floor on a chart's plot rect height, in px (the 1.x chart frame). A legend wrapping to five rows at
    * phone width used to eat a fixed `height={240}` toward zero and the plot simply stopped
    * rendering — the plot never shrinks past this, the frame grows instead (or, under `fill`, the
    * legend rolls up).

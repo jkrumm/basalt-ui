@@ -40,7 +40,7 @@ const RELEASED = new Set<string>([
 
 /**
  * basalt's own version line is 0.x / 1.x, so a literal with any other major belongs to a peer
- * (visx 4.0.0, motion 12.42.0, the fontsource 5.2.x trio) and is none of this gate's business. A
+ * (motion 12.42.0, the fontsource 5.2.x trio) and is none of this gate's business. A
  * `^`/`~`/`@`-prefixed literal is a dependency RANGE for the same reason — `vite-plugin-pwa
  * (^1.3.0)` shares a major with basalt and is still not a claim about basalt.
  */

@@ -41,7 +41,7 @@
  *
  * Usage: bun packages/basalt-ui/scripts/check-agent-doc-drift.ts
  */
-import { readdirSync, readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join, relative } from 'node:path'
 
 import { TOKENS_ONLY_DISABLED_KINDS } from '../src/guard/index'
@@ -156,15 +156,77 @@ export function checkA(
  * than shipping unnoticed.
  */
 export const REMOVED_APIS: Readonly<Record<string, string>> = {
-  ChartTooltip: 'ChartTooltipFloat',
-  useChartTooltip: 'useChartCursor',
-  useHoverSync: 'useChartCursor',
-  HoverContext: 'ChartCursorScope',
-  ChartHoverSync: 'ChartCursorScope',
-  ResponsiveChart: 'ChartFrame',
-  useTooltipStyles: 'ChartTooltipFloat',
+  ChartTooltip: 'the `tooltip` prop (ChartTooltipConfig)',
+  useChartTooltip: 'the `tooltip` prop (ChartTooltipConfig)',
+  useHoverSync: 'chartCursor',
+  HoverContext: 'chartCursor',
+  ChartHoverSync: 'cursorGroup',
+  ResponsiveChart: 'CartesianChart',
+  useTooltipStyles: 'the `tooltip` prop (ChartTooltipConfig)',
   BarsAxisConfig: 'AxisConfig',
-  ZonedLineTooltipLabel: 'TooltipRow',
+  ZonedLineTooltipLabel: 'tooltip.rows',
+  // ── 2.0 chart layer (docs/V2-SPEC.md § 9; the full fate table is MIGRATING.md § 2.0) ──
+  // Kinds folded into `Lines` / `Sparkline`. The deleted kinds that W5 may rebuild under their own
+  // name (StackedArea, DualPanel, MirroredBars, BandStrip, Donut, Heatmap) are NOT denylisted: the
+  // docs name them as "not shipped", and an entry here would ban that sentence and the return.
+  ZonedLine: 'Lines',
+  ZonedLineProps: 'LinesProps',
+  ZonedLineThreshold: 'Threshold',
+  ZonedLineRefLine: 'RefLine',
+  MultiLine: 'Lines',
+  MultiLineProps: 'LinesProps',
+  BarsRefLine: 'RefLine',
+  LineSparkline: 'Sparkline (not shipped in 2.0.0)',
+  BarSparkline: 'Sparkline (not shipped in 2.0.0)',
+  // The assembly and hand-drawn primitives: the host owns frame, axes, overlay and tooltip now.
+  ChartFrame: 'CartesianChart',
+  ChartFrameProps: 'CartesianChartProps',
+  ChartFrameLegend: 'ChartLegendConfig',
+  ChartLegend: 'legend.placement',
+  ChartTooltipFloat: 'the `tooltip` prop (ChartTooltipConfig)',
+  TooltipHeader: 'tooltip.formatHeader',
+  TooltipRow: 'tooltip.rows',
+  TooltipBody: 'tooltip.rows',
+  CartesianTooltipConfig: 'ChartTooltipConfig',
+  BandTooltipConfig: 'ChartTooltipConfig',
+  Crosshair: 'the engine crosshair',
+  SeriesDot: 'the engine focus ring',
+  HoverOverlay: 'the engine keyboard focus',
+  AxisBottomDate: 'CartesianChart',
+  AxisBottomNumeric: 'CartesianChart',
+  AxisLeftNumeric: 'AxisConfig',
+  AxisRightNumeric: 'AxisConfig (y2)',
+  ZoneRects: 'ZoneSpec',
+  XZoneRects: 'XZoneSpec',
+  AreaGradient: 'ChartSeries.area',
+  areaFillUrl: 'ChartSeries.area',
+  HatchPattern: 'a flat fill (V2-SPEC § 9 Open item)',
+  hatchFill: 'a flat fill (V2-SPEC § 9 Open item)',
+  hatchSizeFor: 'a flat fill (V2-SPEC § 9 Open item)',
+  VxThemeProvider: 'var(--vx-*) references',
+  useVxTheme: 'var(--vx-*) references',
+  useChartSize: 'the host measures',
+  // Cursor: the 1.x store and hooks became `chartCursor(group?)` + `cursorGroup`.
+  ChartCursorScope: 'cursorGroup',
+  ChartCursorScopeProps: 'cursorGroup',
+  globalCursorStore: 'chartCursor',
+  createCursorStore: 'chartCursor',
+  useCursorState: 'chartCursor + useSyncExternalStore',
+  useChartCursor: 'chartCursor',
+  // Layout and ticks: measured by the engine.
+  autoMargin: 'the engine measured guides',
+  probeAxisLabels: 'the engine measured guides',
+  measureText: 'the engine measured guides',
+  maxTextWidth: 'the engine measured guides',
+  smartTicks: 'xTicks + tickLabels.thin',
+  smartTicksEvery: 'xTicks + tickLabels.thin',
+  xLabelPxFor: 'xTicks + tickLabels.thin',
+  autoXLabelRotate: 'xTicks + tickLabels.thin (labels never rotate)',
+  chartMargin: 'the engine measured guides',
+  ChartMargin: 'the engine measured guides',
+  // Formatters: `./format` only.
+  fmtAxisDate: 'basalt-ui/format',
+  fmtTooltipDate: 'basalt-ui/format',
   // ── 1.19.0 native mobile nav: the render-callback seam became a component seam ──
   // `SidebarItem.Anchor` (a `NavAnchor`) replaces all three render callbacks, and the mobile
   // model's own row/section types moved into `src/nav/types.ts`.
@@ -275,17 +337,33 @@ function maskToComments(source: string): string {
  * elsewhere in the package still fails.
  */
 export const CHECK_B_SRC_ALLOWLIST: ReadonlySet<string> = new Set([
+  // W4: the guard's own fixtures and rule tables name 1.x chart symbols on purpose (a scanner
+  // fixture is source text, not a pointer to a live API). The lint wave owns these files and drops
+  // the visx-only entries with the rules they serve.
+  ...['AxisLeftNumeric', 'ZonedLine', 'MultiLine', 'ChartLegend'].map(
+    (name) => `src/guard/check-source.test.ts::${name}`,
+  ),
+  ...['ChartLegend', 'MultiLine', 'ZonedLine', 'LineSparkline', 'BarSparkline'].map(
+    (name) => `src/guard/types.ts::${name}`,
+  ),
+  ...['MultiLine', 'ChartLegend', 'AxisBottomDate', 'AxisLeftNumeric', 'AxisRightNumeric'].map(
+    (name) => `src/guard/index.ts::${name}`,
+  ),
+  ...[
+    'AxisBottomDate',
+    'AxisLeftNumeric',
+    'AxisRightNumeric',
+    'ZonedLine',
+    'MultiLine',
+    'LineSparkline',
+    'BarSparkline',
+  ].map((name) => `src/cli/config.ts::${name}`),
+  'src/cli/check-theme.test.ts::AxisLeftNumeric',
   'src/connectivity/use-connectivity.ts::useOnlineStatus',
   'src/surfaces.ts::ArticleFilterBar',
   'src/shell/page-bar.tsx::PageActions',
   'src/content/index.ts::ArticleFilterBar',
   'src/table/data-table.tsx::toolbarActions',
-  'src/charts/cursor/scope.tsx::ChartHoverSync',
-  'src/charts/cursor/store.ts::ChartHoverSync',
-  'src/charts/primitives/ChartTooltip.tsx::useChartTooltip',
-  'src/charts/primitives/ChartFrame.tsx::ResponsiveChart',
-  'src/charts/hooks/useChartCursor.ts::useChartTooltip',
-  'src/charts/hooks/useChartCursor.ts::useHoverSync',
 ])
 
 export function checkBSrc(tsFiles: readonly string[]): CheckBFailure[] {
@@ -363,7 +441,10 @@ export function checkDenylistIsGenuinelyRemoved(validNames: ReadonlySet<string>)
 /** Deleted bare filename → the doc path(s) its citations should now point at. */
 export const DELETED_DOCS: Readonly<Record<string, string>> = {
   'RESPONSIVE-SPEC.md':
-    'docs/DESIGN-CORE.md § Layout, elevation, shapes / docs/CHARTS-SPEC.md / docs/CONTROLS-SPEC.md §2, §6',
+    'docs/DESIGN-CORE.md § Layout, elevation, shapes / docs/V2-SPEC.md § 9 / docs/CONTROLS-SPEC.md §2, §6',
+  // Archived with the 1.x chart layer; the 2.0 chart law is V2-SPEC § 9. The key carries the
+  // `docs/` prefix so a citation of the archived copy (`docs/archive/CHARTS-SPEC.md`) still passes.
+  'docs/CHARTS-SPEC.md': 'docs/V2-SPEC.md § 9',
 }
 
 /** Every `.js` file under `configs/**` — the shipped oxlint plugin carries citations in messages. */
@@ -387,7 +468,11 @@ export function checkD(
   commentFiles: readonly string[],
 ): CheckDFailure[] {
   const failures: CheckDFailure[] = []
-  const entries = Object.entries(DELETED_DOCS)
+  // A path-keyed entry fires only once that doc is gone from THIS tree: a doc is listed in the
+  // wave that archives it, which may land on master before or after the branch citing it.
+  const entries = Object.entries(DELETED_DOCS).filter(
+    ([doc]) => !doc.includes('/') || !existsSync(join(pkgRoot, '..', '..', doc)),
+  )
   const scan = (file: string, lines: string[]): void => {
     lines.forEach((lineText, idx) => {
       for (const [doc, replacement] of entries) {
