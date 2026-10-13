@@ -30,6 +30,9 @@ pnpm-debug.log*
 lerna-debug.log*
 bun-debug.log*
 
+# Evidence harness output (the summary md under docs/waves/evidence is committed)
+.evidence/
+
 # Testing
 coverage/
 .nyc_output/
