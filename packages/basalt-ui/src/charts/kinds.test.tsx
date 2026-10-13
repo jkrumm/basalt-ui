@@ -158,8 +158,7 @@ describe('Lines', () => {
       tooltip: { rows: (d, { visible }) => [{ label: 'Visible', value: String(visible.length) }] },
     })
     const tooltip = def.tooltip
-    if (!tooltip || tooltip === true || !('content' in tooltip) || !tooltip.content)
-      throw new Error('no tooltip')
+    if (!tooltip || !('content' in tooltip) || !tooltip.content) throw new Error('no tooltip')
     const point = {
       datum: { x: day(2), y: 20, series: 'a', datum: data[1] },
       xValue: day(2),
