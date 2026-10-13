@@ -7,7 +7,7 @@ with screenshots, performance and render measurements, and logs/traces against a
 baseline.
 
 **Gate (every wave):** `make check` green; `/review` clean on every merged diff; the wave's evidence
-written under `docs/waves/evidence/w<n>.md`. From W2 on, that evidence is `make evidence` output
+written under `docs/waves/evidence/w<n>.md` (an index; per-lane files under `docs/waves/evidence/w<n>/`). From W2 on, that evidence is `make evidence` output
 diffed against the baseline, and a regression has to be fixed or explicitly accepted in the wave's
 **Left behind**.
 
@@ -47,21 +47,16 @@ These six points are the acceptance test for every decision.
 `docs/archive/STATUS-HISTORY.md` § Chart-layer rebuild (the four ideas carried over from TanStack
 Charts), `docs/CHARTS-SPEC.md`, `docs/DESIGN-CORE.md`, `packages/basalt-ui/MAINTAINING.md`.
 
-**Branching:**
+**Branching** (owner decision 2026-10-13, superseding the first draft): `master` is the only line;
+1.x is frozen at `v1.41.0` with no maintenance; consumers stay exact-pinned until they migrate.
 
-- `master` becomes the 2.0 line.
-- `1.x` is cut from tag `v1.41.0` as the semantic-release maintenance branch for consumer hotfixes.
-- Consumers stay exact-pinned on 1.41.x until they migrate.
-- argo consumes `2.0.0-next.N` prereleases (npm dist-tag `next`) before final.
+## Wave 1 — Contract: the 2.0 spec and the doctrine change <!-- status: done -->
 
-## Wave 1 — Contract: the 2.0 spec and the doctrine change <!-- status: active -->
-
-- [ ] Doctrine. AGENTS.md § "No majors", `MAINTAINING.md`, `scripts/release.sh` and the
+- [x] Doctrine. AGENTS.md § "No majors", `MAINTAINING.md`, `scripts/release.sh` and the
       `never-trigger-releases` memory now sanction exactly one major (2.0.0, owner decision 2026-10-13).
       Everything after 2.0 goes back to no-majors. Give `release.sh` an explicit, once-only path for
-      2.0.0, a `1.x` maintenance branch, and a `next` prerelease channel in the semantic-release config.
-      Cut and push `1.x` from `v1.41.0`.
-- [ ] `docs/V2-SPEC.md`, the single ground truth that replaces the 1.x specs as each one is ported:
+      2.0.0.
+- [x] `docs/V2-SPEC.md`, the single ground truth that replaces the 1.x specs as each one is ported:
   - the public surface table (subpaths and symbols, each with its named consumer)
   - the provider and wiring contract (one `BasaltProvider`, router + query + hotkeys + devtools)
   - the strictness rules
@@ -70,7 +65,7 @@ Charts), `docs/CHARTS-SPEC.md`, `docs/DESIGN-CORE.md`, `packages/basalt-ui/MAINT
     `defaultViewTransition`: pick one per surface)
   - the AI/content contract
   - the observability contract (what the framework logs and traces, and how a consumer wires OTel)
-- [ ] The library adoption ledger in the spec, one row per library, with a playground spike where a
+- [x] The library adoption ledger in the spec, one row per library, with a playground spike where a
       verdict needs evidence:
   - Table v9 (`createTableHook`)
   - Store (Table v9 already depends on it)
@@ -80,7 +75,7 @@ Charts), `docs/CHARTS-SPEC.md`, `docs/DESIGN-CORE.md`, `packages/basalt-ui/MAINT
   - Hotkeys 0.13
   - Form vs `@mantine/form`
   - TanStack AI vs AI SDK 7 (argo's ai@5→ai@7 skew decision D3 is an input)
-- [ ] The chart contract: the 2.0 chart API on `@tanstack/charts`. It covers:
+- [x] The chart contract: the 2.0 chart API on `@tanstack/charts`. It covers:
   - kinds, the composition rung that replaces `CartesianChart`, cursor sync, tooltip, zones,
     dual-axis, plot-first mobile
   - a `--vx-*` → chart theme bridge
@@ -90,12 +85,45 @@ Charts), `docs/CHARTS-SPEC.md`, `docs/DESIGN-CORE.md`, `packages/basalt-ui/MAINT
 
   Read the installed `@tanstack/charts@1.1.0` docs and skills, not memory.
 
-- [ ] A spec-level `/review` pass, then commit the spec and the doctrine as separate concerns (package
+- [x] A spec-level `/review` pass, then commit the spec and the doctrine as separate concerns (package
       vs non-package commits).
 
 **Left behind:**
 
-## Wave 2 — Baseline and the evidence harness <!-- status: pending -->
+- **Landed** (all via `rd merge`): #109 spec skeleton + transitional prose ceiling, #110 release
+  doctrine, #111 § 1–7 + `docs/waves/v2-surface.md` (W3's per-symbol deletion checklist), #112 § 8,
+  #113 § 9 + `docs/waves/v2-chart-inventory.md`, then this close-out. Evidence index:
+  `docs/waves/evidence/w1.md`. Spike branches are evidence, never merged: `spike/w1-ledger` @
+  `5f8e614`, `spike/w1-charts` @ `f74f671`.
+- **Owner reversal mid-wave:** no `1.x` maintenance branch, no `next` channel. The `1.x` and
+  `latest` branches and the `v2.0.0-placeholder.0` tag pushed earlier in the wave were deleted;
+  `.releaserc.json` and the workflows are unchanged from 1.41.
+- **Release state:** `release.sh`'s gate now refuses every computed 1.x version, so nothing is
+  releasable until 2.0.0. W3 lands the ONE designated `feat:` commit with a `BREAKING CHANGE:`
+  footer pointing at `MIGRATING.md` § 2.0 (MAINTAINING.md § The one sanctioned major). The gate
+  checks the computed version, not the commit, so review keeps it to one.
+- **Owner calls before the dependent wave** (V2-SPEC § 10): accept TanStack Charts' +14.5 KB gzip on
+  the first chart (before W4); accept Table v9's +4 070 B (before W6).
+- **Deferred tests and gates, by wave** (review findings, accepted as later work):
+  - W3: the `check-budgets` gates § 1 names (`consumers.json` keyed per symbol name, non-chart type
+    budget ≤ 60, one import path per symbol); commit the W1 surface scan scripts; `*.type-guard`
+    fixtures per § 3 row; `BasaltEvent` union test and telemetry sink tests; `createBasaltRouter`
+    defaults test; a `pack-test` pair for each subpath-required peer; `no-dev-helper` fixtures.
+  - W4: port the chart spike's 12 tests; a test that the § 9.8 allowlist matches the engine's
+    exports; the ChartHost split; layout cases per container class; cursor-group teardown; a
+    recompute check for the inventory counts.
+  - W6: port the ledger spike tests (`table-parity`, `table-v9-nosortfns`, `table-v9.type-guard`,
+    `hotkeys.type-guard`, `hotkeys-dispatch`); add pinned-column offset and `datetime` sort cases;
+    re-run them before any Table 9.3.x bump (9.3.1 was blocked by `minimumReleaseAge` until
+    2026-10-15).
+- **Flake for W2:** the layout test `shell chrome … with the inset unset the zone is exactly as it
+was` fails intermittently under load (rail measured 171 px, expected 48 px). Clean master passed
+  3/3; the merge train failed on it four times. #111 and #113 merged with `--no-check` after a
+  direct `make check` exited 0 on the exact SHA. W2's harness reuses the layout infrastructure, so
+  fix the root cause there.
+- **Budget:** the spec prose ceiling is tightened to its landed value.
+
+## Wave 2 — Baseline and the evidence harness <!-- status: active -->
 
 - [ ] `make evidence`: one command, deterministic output under `.evidence/<label>/` (gitignored), with
       a summary md that is committed. It records:
@@ -151,7 +179,8 @@ Charts), `docs/CHARTS-SPEC.md`, `docs/DESIGN-CORE.md`, `packages/basalt-ui/MAINT
 
 ## Wave 6 — Data and state <!-- status: pending -->
 
-- [ ] DataTable on Table v9 (`useTable`/`tableFeatures`, `createTableHook` per spec). Virtual 3.14.
+- [ ] DataTable on Table v9 (`useTable` + one module-scope `tableFeatures` set; no `createTableHook`,
+      per spec § 8). Virtual 3.14.
       Query `queryClient.query` migration. Store/Pacer/DB per the adoption ledger.
 - [ ] Commands/hotkeys on 0.13. Forms per the spec verdict.
 - [ ] Evidence: 10k-row table scroll/sort timings vs baseline.
@@ -197,32 +226,31 @@ Charts), `docs/CHARTS-SPEC.md`, `docs/DESIGN-CORE.md`, `packages/basalt-ui/MAINT
 - [ ] Full playground validation: every route through `make evidence` plus `@verifier`. Fix the
       regressions found.
 - [ ] Docs: README, `MIGRATING.md` § 2.0 complete, the ledger closed, the 1.x specs archived.
-- [ ] Publish `2.0.0-next.1` through `make release` (prerelease channel). The mother triggers the
+- [ ] Publish `2.0.0` through `make release` (the one sanctioned major). The mother triggers the
       publish after reviewing the close-out.
 
 **Left behind:**
 
 ## Wave 11 — argo, part 1: setup, shell, data, chat <!-- status: pending -->
 
-- [ ] argo branch on `basalt-ui@2.0.0-next.N`: `basalt-ui init`/`sync` (the agent-layer DX test
-      again), provider/shell/routing, tables, AI chat.
-- [ ] Feed back every basalt friction as a basalt fix plus a new `next` prerelease. Don't work around
-      it in argo.
+- [ ] argo branch on `basalt-ui@2.x`: `basalt-ui init`/`sync` (the agent-layer DX test again),
+      provider/shell/routing, tables, AI chat.
+- [ ] Feed back every basalt friction as a basalt fix shipped as a 2.x minor. Don't work around it in
+      argo.
 
 **Left behind:**
 
 ## Wave 12 — argo, part 2: every chart, production <!-- status: pending -->
 
-- [ ] All argo charts on the 2.0 kinds. Evidence vs argo's baseline (render, bundle, screenshots).
+- [ ] All argo charts on the 2.x kinds; basalt fixes found here ship as 2.x minors. Evidence vs argo's baseline (render, bundle, screenshots).
 - [ ] argo merged and deployed. Verify it is live: health, OTel traces/logs, Uptime Kuma.
 
 **Left behind:**
 
-## Wave 13 — 2.0.0 final and the fleet plan <!-- status: pending -->
+## Wave 13 — argo learnings and the fleet plan <!-- status: pending -->
 
-- [ ] Fold the argo learnings in, publish `2.0.0` via `make release`, and restore the no-majors
-      doctrine.
-- [ ] Write the follow-up plan for linewatch, weatherorb, rb, rollhook and basalt-ui-obsidian (each
-      stays on 1.x until then).
+- [ ] Fold the argo learnings in as 2.x minors and restate the no-majors doctrine.
+- [ ] Write the fleet plan for linewatch, weatherorb, rb, rollhook and basalt-ui-obsidian (each stays
+      exact-pinned on 1.41.x until then).
 
 **Left behind:**
