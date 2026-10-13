@@ -50,7 +50,7 @@ Each consumer's `basalt-ui` pin at scan time:
 | ------------------- | ---------- | ---------- | ------------ | ----------- | --------- | --------- | ----------- | ---------- |
 | `.`                 | 20         | 2          | 50           | 0           | 4         | 2         | 154         | 0          |
 | `./charts`          | 0          | 0          | 0            | 97          | 0         | 0         | 0           | 69         |
-| `./tokens`          | 11         | 0          | 12           | 1           | 3         | 0         | 8           | 0          |
+| `./tokens`          | 11         | 0          | 12           | 1           | 2         | 0         | 8           | 1          |
 | `./theme-lab`       | 0          | 0          | 9            | 0           | 0         | 0         | 5           | 0          |
 | `./vite`            | 2          | 0          | 0            | 0           | 0         | 0         | 3           | 0          |
 | `./guard`           | 0          | 0          | 14           | 0           | 0         | 0         | 7           | 0          |
@@ -67,12 +67,12 @@ Each consumer's `basalt-ui` pin at scan time:
 | `./controls`        | 11         | 0          | 14           | 0           | 2         | 0         | 31          | 0          |
 | `./controls-dates`  | 1          | 0          | 0            | 0           | 0         | 0         | 1           | 0          |
 | `./state`           | 3          | 0          | 1            | 0           | 3         | 0         | 21          | 0          |
-| **total**           | 76         | 18         | 200          | 101         | 35        | 7         | 406         | 69         |
+| **total**           | 76         | 18         | 200          | 101         | 34        | 7         | 406         | 70         |
 
 The 94 keep-or-move value rows collapse to 91 unique names; the duplicates are `field`, and
 `createLocalStore` and `createPersistedState` from the root. Adding `createBasaltRouter` gives 92
-non-chart value symbols in 2.0. Kept types collapse to 39 unique names, and `BasaltRouterContext` and
-`BasaltEvent` bring that to 41.
+non-chart value symbols in 2.0. Kept types collapse to 38 unique names, and `BasaltRouterContext` and
+`BasaltEvent` bring that to 40.
 
 | Subpaths            | Count                                                                                          |
 | ------------------- | ---------------------------------------------------------------------------------------------- |
