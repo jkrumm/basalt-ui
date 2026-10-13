@@ -8,7 +8,7 @@
  * binary and returns the parsed set of `basalt/<rule>` diagnostics it printed.
  */
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'bun:test'
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, resolve } from 'node:path'
 // eslint-disable-next-line -- the plugin is plain JS; the ledger + id set are named exports beside it
@@ -561,52 +561,45 @@ const ENGINE_PACKAGE_JSON = resolve(
   'package.json',
 )
 
-// `@tanstack/charts` arrives as a dependency with the engine swap (w4/engine). Until that merges the
-// package is not installed and there is nothing to classify against.
-describe.skipIf(!existsSync(ENGINE_PACKAGE_JSON))(
-  'chart-engine-boundary ↔ @tanstack/charts exports',
-  () => {
-    const exportKeys = (): string[] => {
-      const manifest = JSON.parse(readFileSync(ENGINE_PACKAGE_JSON, 'utf8')) as {
-        exports: Record<string, unknown>
-      }
-      return Object.keys(manifest.exports).map((key) =>
-        key === '.' ? '' : key.replace(/^\.\//, ''),
-      )
+describe('chart-engine-boundary ↔ @tanstack/charts exports', () => {
+  const exportKeys = (): string[] => {
+    const manifest = JSON.parse(readFileSync(ENGINE_PACKAGE_JSON, 'utf8')) as {
+      exports: Record<string, unknown>
     }
+    return Object.keys(manifest.exports).map((key) => (key === '.' ? '' : key.replace(/^\.\//, '')))
+  }
 
-    it('every exact allowlisted subpath exists in the engine', () => {
-      const exports = new Set(exportKeys())
-      for (const subpath of CHART_ENGINE_ALLOWED_SUBPATHS) {
-        expect([subpath, exports.has(subpath)]).toEqual([subpath, true])
-      }
-    })
+  it('every exact allowlisted subpath exists in the engine', () => {
+    const exports = new Set(exportKeys())
+    for (const subpath of CHART_ENGINE_ALLOWED_SUBPATHS) {
+      expect([subpath, exports.has(subpath)]).toEqual([subpath, true])
+    }
+  })
 
-    it('every allowlisted family matches at least one engine subpath', () => {
-      for (const prefix of CHART_ENGINE_ALLOWED_PREFIXES) {
-        expect([prefix, exportKeys().some((key) => key.startsWith(prefix))]).toEqual([prefix, true])
-      }
-    })
+  it('every allowlisted family matches at least one engine subpath', () => {
+    for (const prefix of CHART_ENGINE_ALLOWED_PREFIXES) {
+      expect([prefix, exportKeys().some((key) => key.startsWith(prefix))]).toEqual([prefix, true])
+    }
+  })
 
-    it('every engine subpath is allowlisted or deliberately banned', () => {
-      const unclassified = exportKeys().filter(
-        (key) => !isAllowedChartEngineSubpath(key) && !BANNED_ENGINE_SUBPATHS.includes(key),
-      )
-      expect(unclassified).toEqual([])
-    })
+  it('every engine subpath is allowlisted or deliberately banned', () => {
+    const unclassified = exportKeys().filter(
+      (key) => !isAllowedChartEngineSubpath(key) && !BANNED_ENGINE_SUBPATHS.includes(key),
+    )
+    expect(unclassified).toEqual([])
+  })
 
-    it('the banned list has no stale or allowlisted entries', () => {
-      const exports = new Set(exportKeys())
-      for (const subpath of BANNED_ENGINE_SUBPATHS) {
-        expect([subpath, exports.has(subpath), isAllowedChartEngineSubpath(subpath)]).toEqual([
-          subpath,
-          true,
-          false,
-        ])
-      }
-    })
-  },
-)
+  it('the banned list has no stale or allowlisted entries', () => {
+    const exports = new Set(exportKeys())
+    for (const subpath of BANNED_ENGINE_SUBPATHS) {
+      expect([subpath, exports.has(subpath), isAllowedChartEngineSubpath(subpath)]).toEqual([
+        subpath,
+        true,
+        false,
+      ])
+    }
+  })
+})
 
 // ── token-layer-boundary ─────────────────────────────────────────────────────
 

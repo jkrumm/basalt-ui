@@ -13,7 +13,7 @@ export type BasaltConfig = {
    * off every guard kind whose remedy is a Mantine component, a Mantine prop or the React theme
    * factory, leaving the color and typography kinds live. Default: `'mantine'`.
    *
-   * Deliberately not inferred from a missing `@mantine/core`: silencing 17 rules (the live count is
+   * Deliberately not inferred from a missing `@mantine/core`: silencing the Mantine-coupled rules (the live count is
    * `TOKENS_ONLY_DISABLED_KINDS.size`, which the check-theme banner prints) is a decision, and
    * a repo that keeps Mantine in a workspace package would otherwise switch off half its own guard
    * without saying so. `basalt-ui doctor` detects the shape and tells you to set this.

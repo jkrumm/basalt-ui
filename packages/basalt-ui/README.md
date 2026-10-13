@@ -227,7 +227,7 @@ guard, and this sentence described a check that did not exist.) Each root's **pa
 contributes its `index.html` and its `public/` tree — the Vite layout `basaltViteConfig` assumes,
 and where a raw `theme-color` or webmanifest `background_color` actually lives. `.json` is never
 blanket-scanned; `include` names one explicitly and is the only route to it. `profile:
-"tokens-only"` turns off the 18 kinds whose remedy is a Mantine component or prop, and must be
+"tokens-only"` turns off the 16 kinds whose remedy is a Mantine component or prop, and must be
 declared (or `--tokens-only`) — it is deliberately never inferred from a missing `@mantine/core`,
 which would silence half the guard on any repo keeping Mantine in a different workspace package.
 Other keys (`exempt`, `severity`, `spacingSteps`, `forbiddenAccents`, …) are documented on the
@@ -275,7 +275,7 @@ nothing, so a typo is never the blanket form.
 what it still suppresses, proved by re-running the scan with that one waiver neutralized. Exits 1 on
 a dead waiver, so it is usable as a CI gate. Since 1.22.0 it runs **both** halves — `checkSource` for
 a guard kind, oxlint over one neutralized sibling file for a plugin rule — so a waiver naming
-`hand-rolled-plot` is judged rather than skipped. **It needs oxlint reachable**; where it is not, the
+a plugin rule is judged rather than skipped. **It needs oxlint reachable**; where it is not, the
 verdict is "cannot judge", never "dead". The report prints the scope it audited, because `0 dead`
 over `basalt.roots` is not `0 dead anywhere`. Two known gaps: `basalt.exempt` is not audited at all,
 and the `scoped to …` line does not distinguish `theme-allow` from `theme-allow-file`.
