@@ -267,14 +267,14 @@ const SHADOW_SURFACES: readonly ShadowSurfaceEntry[] = [
     roundedBy:
       'border-radius: var(--vx-radius-card) (co-declared in the same .infoBubble rule as the ' +
       'box-shadow, so the ring follows this box’s own shape). This is the info-tooltip bubble that ' +
-      'used to live in charts/primitives/ChartCard.tsx as `bubbleStyle`; it moved down into ' +
+      'used to live in the 1.x charts/primitives/ChartCard.tsx as `bubbleStyle`; it moved down into ' +
       'WidgetHeader when ChartCard started composing it, so every tier gets the same ' +
       'hover/focus/click affordance. Nothing clips it: its host `.info` span is `position: ' +
       'relative` with no overflow, and ChartCard deliberately keeps its header outside the chart ' +
       'body’s clip box for exactly this reason.',
   },
   {
-    file: 'charts/primitives/ChartCard.tsx',
+    file: 'charts/ChartCard.tsx',
     site: 'default',
     roundedBy:
       'One shadowed box in this file: cardStyle — the outer card box co-declares borderRadius: ' +
@@ -285,11 +285,6 @@ const SHADOW_SURFACES: readonly ShadowSurfaceEntry[] = [
       'either way (an element’s own overflow never clips its own shadow). The second shadowed box ' +
       'this entry used to cover, `bubbleStyle`, now lives in widget-header.module.css’s ' +
       '.infoBubble (registered above).',
-  },
-  {
-    file: 'charts/primitives/ChartTooltip.tsx',
-    site: 'default',
-    roundedBy: 'borderRadius: 8 (co-declared in the same TOOLTIP_STYLES object).',
   },
   {
     file: 'agent/chat/thread-outcome-card.tsx',
