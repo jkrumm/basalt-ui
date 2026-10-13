@@ -25,9 +25,9 @@ The gate checks the computed version only; the designated commit above is synthe
 ## `release.sh` major gate (`bun test scripts/release.test.ts`)
 
 ```text
- 25 pass
+ 28 pass
  0 fail
-Ran 25 tests across 1 file. [585.00ms]
+Ran 28 tests across 1 file. [614.00ms]
 ```
 
 `bash -n scripts/release.sh` exits 0.

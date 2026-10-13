@@ -226,12 +226,9 @@ fails a mixed staging set.
 **No majors, bar the one sanctioned 2.0.0** — the full statement is
 `packages/basalt-ui/MAINTAINING.md` § The one sanctioned major.
 
-**`feat!:` and `BREAKING CHANGE:` footers are banned** (bar the one designated commit). basalt-ui has multiple consumer
-repos in the same hands, upgradeable in lockstep, with a private-repo blast radius — that is what
-the doctrine rests on, not a consumer count. `packages/basalt-ui/MIGRATING.md` is the mandatory
-place a removed or renamed export gets written down. A behavior change that would nominally be
-"breaking" ships as a plain `feat:`; document the change and the opt-out in the commit body, never
-in the version number. Don't raise, propose, or reach for a major.
+**`feat!:` and `BREAKING CHANGE:` footers are banned** (bar the one designated commit): a nominal
+breaking change ships as a plain `feat:` with a `packages/basalt-ui/MIGRATING.md` entry and its
+opt-out in the commit body, never in the version number. Don't raise, propose, or reach for a major.
 
 ## Release Process
 
