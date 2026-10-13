@@ -14,7 +14,7 @@
     "fmt:check": "oxfmt --check --ignore-path=.gitignore --ignore-path=.oxfmtignore packages apps/playground *.json *.md",
     "format": "bun run fmt",
     "lint": "oxlint",
-    "typecheck": "bun --filter basalt-ui --filter @basalt-ui/playground typecheck",
+    "typecheck": "bun --filter basalt-ui --filter @basalt-ui/playground typecheck && cd packages/basalt-ui && ./node_modules/.bin/tsc -p ../../scripts/evidence",
     "test": "bun test",
     "test:layout": "bun --config=./packages/basalt-ui/tests/layout/bunfig.toml test --timeout 60000 packages/basalt-ui/tests/layout",
     "check-theme": "cd packages/basalt-ui && bun bin/basalt-ui.mjs check-theme",
@@ -22,6 +22,7 @@
     "prepare": "lefthook install",
     "hooks:install": "lefthook install",
     "hooks:uninstall": "lefthook uninstall",
+    "evidence": "bun scripts/evidence/index.ts",
     "check-budgets": "cd packages/basalt-ui && bun scripts/check-budgets.ts"
   },
   "devDependencies": {
@@ -37,8 +38,10 @@
     "@semantic-release/release-notes-generator": "^14.1.1",
     "@testing-library/dom": "10.4.2",
     "@testing-library/react": "16.3.3",
+    "chrome-launcher": "^1.2.2",
     "happy-dom": "20.14.5",
     "lefthook": "^2.1.14",
+    "lighthouse": "^13.5.0",
     "oxfmt": "^0.53.0",
     "oxlint": "^1.68.0",
     "playwright-core": "1.63.0",

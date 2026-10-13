@@ -71,6 +71,20 @@ declare module '@tanstack/react-router' {
 // heterogeneous action list — the nav definition itself carries zero casts.
 const spotlightActions = buildPaletteActions((href) => void router.navigate({ to: href as never }))
 
+// Literal env checks, so a build without either flag drops the dynamic import and its chunk.
+// `VITE_TELEMETRY=1` builds the telemetry in (exporter URL then comes from `window.__BASALT_OTLP__`
+// at runtime); `VITE_OTLP_ENDPOINT` bakes the URL in. See docs/waves/evidence/w2/observability.md.
+// A telemetry failure must never block mounting the app.
+let telemetry: ReturnType<typeof import('./telemetry').startTelemetry> | undefined
+if (import.meta.env['VITE_TELEMETRY'] === '1' || import.meta.env['VITE_OTLP_ENDPOINT']) {
+  try {
+    telemetry = (await import('./telemetry')).startTelemetry(router)
+  } catch (error) {
+    // oxlint-disable-next-line no-console
+    console.error('[basalt] telemetry failed to start', error)
+  }
+}
+
 const root = document.getElementById('root')
 if (!root) throw new Error('root element not found')
 
@@ -83,8 +97,11 @@ createRoot(root).render(
     <BasaltProvider
       theme={playgroundTheme}
       paletteOptions={{ groups: demoPaletteGroups }}
-      // oxlint-disable-next-line no-console
-      onError={(error, ctx) => console.error('[basalt]', ctx, error)}
+      onError={(error, ctx) => {
+        // oxlint-disable-next-line no-console
+        console.error('[basalt]', ctx, error)
+        telemetry?.onError(error, ctx)
+      }}
     >
       {/* hotkeys={false}: the demo commands are registered page-locally in CommandsDemoPage, which
           binds them itself via useCommandHotkeys(). A real app registers commands app-wide and keeps
