@@ -31,7 +31,7 @@ pure CSS with zero JS branching.
    emits --vx-*            createTheme() + cssVariablesResolver
    (charts)                emits/overrides --mantine-*  ←──binds to──  --vx-*
         │                       │
-   visx charts             Mantine components
+   charts                  Mantine components
         └──────────┬───────────┘
               one identity, one set of surfaces
 ```
@@ -240,7 +240,7 @@ detection, badge counts) stays **consumer-side** — the shell is presentational
   over a grouped sidebar, transparent, region seam on the bar's bottom edge. `withBorder` still
   gates each region's edge as Mantine ships it; the theme changes only the COLOUR every gated edge
   paints, once, via `AppShell.extend({ vars: () => ({ root: { '--app-shell-border-color':
-'var(--vx-divider)' } }) })` — no module sets that var or `withBorder` directly except the aside
+  'var(--vx-divider)' } }) })` — no module sets that var or `withBorder` directly except the aside
   (`withBorder={aside.claimed}`, gated on the claim). Runs Mantine's DEFAULT layout, not `alt`: the
   header spans the full viewport width, sidebar/aside seams start under it.
 - **`AppShell.Main` is the scrollport.** Mantine offsets Main with `padding-*`, which puts the
@@ -249,7 +249,7 @@ detection, badge counts) stays **consumer-side** — the shell is presentational
   because Mantine's own rules sit inside `@layer mantine` (layered import required).
 - **The AppShell ROOT is a column flex.** Its only in-flow children are the page-bar band and Main
   (every other region is `position: fixed`), so `band { flex: 0 0 auto }` + `main { flex: 1 1 auto;
-min-height: 0 }` sizes Main to whatever the band leaves — no height arithmetic, nothing to go
+  min-height: 0 }` sizes Main to whatever the band leaves — no height arithmetic, nothing to go
   stale between a route change and a ResizeObserver.
 - **Top-bar slots own the page header** — a page slot (the active route portals its control row in
   via `PageActions`, dropping the in-body `<Title>`) and a shell-owned global slot (persistent
