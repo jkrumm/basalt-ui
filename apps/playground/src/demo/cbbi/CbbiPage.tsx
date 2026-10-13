@@ -25,6 +25,7 @@ import { FilterSet, RangeFilter, ViewTabs } from 'basalt-ui/controls'
 import { BasaltDataTable } from 'basalt-ui/table'
 import { CONTAINER_KEYS, VX, alpha } from 'basalt-ui/tokens'
 import { useMemo } from 'react'
+import { isoDayToDate } from '../fixtures/format'
 import { IconActivity, IconChart, IconComponents, IconCurrency } from '../icons'
 import { CbbiDistributionBars, CbbiPanel } from './CbbiPanel'
 import {
@@ -104,9 +105,8 @@ const CONFIDENCE_AXIS: AxisConfig<CbbiPoint> = { domain: [0, 1], format: pct }
  * charts over as many as 5,541 points, on nothing more than a `isFetching` flip. The key is a
  * `YYYY-MM-DD` day, read as a UTC `Date` so the axis is a time scale.
  */
-const dayDate = (key: string): Date => new Date(`${key}T00:00:00Z`)
-const pointDay = (d: CbbiPoint): Date => dayDate(d.key)
-const rowDay = (d: CbbiRow): Date => dayDate(d.day)
+const pointDay = (d: CbbiPoint): Date => isoDayToDate(d.key)
+const rowDay = (d: CbbiRow): Date => isoDayToDate(d.day)
 const fmtMonthDate = (x: Date): string => fmtMonthTick(x.toISOString().slice(0, 10))
 /** `formatX` collapses a tick to `Aug 26`; the tooltip header keeps the full day. */
 const DAY_TOOLTIP = { formatHeader: (x: Date): string => x.toISOString().slice(0, 10) }

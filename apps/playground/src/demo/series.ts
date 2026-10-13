@@ -16,13 +16,13 @@ declare module 'basalt-ui' {
 }
 
 /** The group prefix the palette CSS uses (`--vx-demo-<key>`). */
-export const DEMO_GROUP = 'demo'
+const DEMO_GROUP = 'demo'
 
 /**
  * Demo series — one per Blueprint-leaning hue, declared as light/dark pairs so each keeps its hue
  * identity but shifts shade across schemes (lighter on dark to avoid glow, deeper on light).
  */
-export const DEMO_SERIES = defineSeries({
+const DEMO_SERIES = defineSeries({
   sessions: { light: '#4f78a4', dark: '#7099c4' },
   signups: { light: '#3f8a63', dark: '#62c08f' },
   revenue: { light: '#d9822b', dark: '#f0a868' },

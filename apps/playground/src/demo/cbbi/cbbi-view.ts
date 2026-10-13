@@ -116,54 +116,6 @@ export function hotMetricNames(keys: readonly CbbiMetricKey[]): string | undefin
 
 // ── History view ─────────────────────────────────────────────────────────────────────────────────
 
-export type CbbiHeatCell = { year: string; month: string; value: number }
-
-const MONTH_LABELS = [
-  'Jan',
-  'Feb',
-  'Mar',
-  'Apr',
-  'May',
-  'Jun',
-  'Jul',
-  'Aug',
-  'Sep',
-  'Oct',
-  'Nov',
-  'Dec',
-]
-
-export const CBBI_HEAT_COLS: readonly string[] = MONTH_LABELS
-
-/** Mean official confidence per calendar month, as heatmap cells (row = year, col = month). */
-export function monthlyHeat(rows: readonly CbbiRow[]): CbbiHeatCell[] {
-  const sums = new Map<string, { sum: number; count: number }>()
-  for (const row of rows) {
-    const key = isoMonth(row.t)
-    const entry = sums.get(key)
-    if (entry) {
-      entry.sum += row.confidence
-      entry.count += 1
-    } else {
-      sums.set(key, { sum: row.confidence, count: 1 })
-    }
-  }
-
-  const cells: CbbiHeatCell[] = []
-  for (const [key, { sum, count }] of sums) {
-    const year = key.slice(0, 4)
-    const monthIndex = Number(key.slice(5, 7)) - 1
-    const month = MONTH_LABELS[monthIndex]
-    if (month === undefined) continue
-    cells.push({ year, month, value: sum / count })
-  }
-  return cells
-}
-
-export function heatYears(cells: readonly CbbiHeatCell[]): string[] {
-  return [...new Set(cells.map((cell) => cell.year))].toSorted()
-}
-
 /** One monthly row of the history table — the metrics flattened so a column can name one. */
 export type CbbiMonthRow = {
   month: string

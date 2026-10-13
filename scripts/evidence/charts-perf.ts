@@ -147,9 +147,9 @@ async function measureHover(page: Page): Promise<Burst> {
         else misses++
       }
       const t1 = performance.now()
-      // Clear transient focus: the engine listens for `mouseleave` (non-bubbling) on its container,
-      // the `.ts-chart-surface` wrapping the svg.
-      for (const node of [svg.parentElement, svg.closest('.ts-chart-host')])
+      // Clear transient focus the way the layout suite's leave() does: `mouseleave` (non-bubbling)
+      // on the svg, its `.ts-chart-surface` container and the host, each once.
+      for (const node of new Set([svg, svg.parentElement, svg.closest('.ts-chart-host')]))
         node?.dispatchEvent(new MouseEvent('mouseleave'))
       return { t0, t1, latencies, misses }
     },
