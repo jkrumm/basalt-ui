@@ -46,7 +46,7 @@ These six points are the acceptance test for every decision.
 
 **Inputs:** `docs/waves/audit-h-ecosystem-2026-10.md` (versions, verdicts, consumer blast radius),
 `docs/archive/STATUS-HISTORY.md` § Chart-layer rebuild (the four ideas carried over from TanStack
-Charts), `docs/CHARTS-SPEC.md`, `docs/DESIGN-CORE.md`, `packages/basalt-ui/MAINTAINING.md`.
+Charts), `docs/archive/CHARTS-SPEC-1x.md`, `docs/DESIGN-CORE.md`, `packages/basalt-ui/MAINTAINING.md`.
 
 **Branching** (owner decision 2026-10-13, superseding the first draft): `master` is the only line;
 1.x is frozen at `v1.41.0` with no maintenance; consumers stay exact-pinned until they migrate.
@@ -220,7 +220,7 @@ Charts), `docs/CHARTS-SPEC.md`, `docs/DESIGN-CORE.md`, `packages/basalt-ui/MAINT
       `make evidence`.
 - [ ] Remove every `@visx/*` dependency, peer and re-export. Replace the visx lint rules and the
       `raw-visx-axis` guard with their 2.0 equivalents.
-- [ ] Rewrite `docs/CHARTS-SPEC.md` for 2.0, or fold it into V2-SPEC.
+- [ ] Rewrite the 1.x chart spec for 2.0, or fold it into V2-SPEC.
 
 **Left behind:**
 
