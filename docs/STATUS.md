@@ -8,7 +8,7 @@
 > `docs/waves/PLAN.md`; the contract: `docs/V2-SPEC.md`.
 
 **Published version: read it, don't trust a doc.** `npm view basalt-ui version` for what is on npm
-(1.27.0 as of this writing), `packages/basalt-ui/CHANGELOG.md` for the release notes,
+(1.41.0, the frozen 1.x line), `packages/basalt-ui/CHANGELOG.md` for the release notes,
 `packages/basalt-ui/MIGRATING.md` for the breaking half. What `master`/the working branch carries
 beyond it is `git log $(git describe --tags --abbrev=0)..HEAD`.
 

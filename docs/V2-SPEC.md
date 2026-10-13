@@ -676,7 +676,7 @@ that settles each engineering question.
 | 8   | Absent-state hatch: custom mark or flat `--vx-neutral` fill                      | § 9 Open | W5               |
 | 9   | Legend hover emphasis: rebuild per hover or mark `states`                        | § 9 Open | W4               |
 
-Resolved by the lead in W1: § 9's chart values come to about 13 (8 kept plus `Lines`, `Bars`,
-`Sparkline`, `chartCursor`, …), inside § 1's 48 allowance, so the ≤ 140 value ceiling stands and W3
-sets the budget to the landed count. Follower tooltips are source-only by default (§ 9.4). Peers
+Resolved by the lead in W1: § 9 keeps 8 1.x value names and adds a handful (`Lines`, `Sparkline`,
+`chartCursor`, …), well inside § 1's 48 allowance, so the ≤ 140 value ceiling stands; W3 sets the
+budget to the landed count. Follower tooltips are source-only by default (§ 9.4). Peers
 have two senses (§ 1). `./controls-dates` and `./forms` stay separate subpaths.
