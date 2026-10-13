@@ -46,6 +46,9 @@ const rowStyle: CSSProperties = {
 const dividerStyle: CSSProperties = { width: 1, alignSelf: 'stretch', background: VX.divider }
 const buttonStyle: CSSProperties = {
   all: 'unset',
+  // `all: unset` would also drop styles.css's `position: relative` (an inline style outranks the
+  // layer), and the `[data-basalt-hit]::after` overlay would anchor to an ancestor — over the plot.
+  position: 'relative',
   // theme-allow raw-surface — an invisible 1px: the edge the `[data-basalt-hit]` overlap cap assumes every control carries (styles.css)
   border: '1px solid transparent',
   display: 'inline-flex',
