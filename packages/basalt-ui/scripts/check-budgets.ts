@@ -362,10 +362,10 @@ async function budgets(providerOnlyDist: string): Promise<Budget[]> {
       consumerViolations(surface, consumers),
     ),
     peerClassRow(manifest),
-    // 2480 -> 3166 (W1, V2-SPEC landed beside the live 1.x specs) -> 2663 (W4 archived CHARTS-SPEC).
+    // 2480 -> 3166 (W1, V2-SPEC landed beside the live 1.x specs) -> 2663 (W4 archived CHARTS-SPEC) -> 2651 (W5 folded the kind law into the code).
     // Each wave that archives a 1.x spec lowers it by that spec's lines; a wave that must grow the
     // spec raises it deliberately, in the commit that spends the lines.
-    { label: 'spec prose (docs/*.md, non-archive)', value: docsProseLines(), ceiling: 2663 },
+    { label: 'spec prose (docs/*.md, non-archive)', value: docsProseLines(), ceiling: 2651 },
     {
       label: 'playground route files (apps/playground/src/routes/**)',
       value: playgroundRouteFiles(),
