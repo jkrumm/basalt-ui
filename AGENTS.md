@@ -79,8 +79,8 @@ surface and `@visx/*` (§ 9.8). Ground truth: `docs/V2-SPEC.md` § 9.
 ## Mantine-Free Boundary
 
 `src/charts/**`/`src/tokens/**` stay Mantine-free; `@tanstack/charts/react` is imported by
-`src/charts/host.tsx` alone — independent oxlint rules. Full layering + packaging rationale (repo-internal, not a consumer
-contract): `packages/basalt-ui/MAINTAINING.md` § Layering.
+`src/charts/host.tsx` alone — independent oxlint rules. Full layering + packaging rationale
+(repo-internal, not a consumer contract): `packages/basalt-ui/MAINTAINING.md` § Layering.
 
 ## Tech Stack
 

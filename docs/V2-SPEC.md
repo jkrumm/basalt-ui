@@ -482,15 +482,20 @@ import { lineY } from '@tanstack/charts/line'
 />
 ```
 
-| Layer (private)           | Contract                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `compileCartesian(props)` | pure, React-free → `ResponsiveChartDefinition<Row<T>, X, number, 'dom'>`, return type annotated (inferred TanStack types fail declaration emit: TS2883/TS4058)                                                                                                                                                                                                                                                                                       |
-| `ChartHost`               | the only importer of `@tanstack/charts/react`; measured width → container class → `height`; `initialWidth: 640`; legend; `state` placeholders; `ChartCard` header slot. Too many jobs for one component; the split is **deferred W4 design debt**. The planned W4 seam has three parts: a pure sizing hook (measured width → container class → height), the bare engine mount, and the legend, `state` and `ChartCard` chrome composed outside both. |
+| Layer (private)           | Contract                                                                                                                                                                 |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `compileCartesian(props)` | pure, React-free → `ResponsiveChartDefinition<Row<T>, X, number, 'dom'>`, return type annotated (inferred TanStack types fail declaration emit: TS2883/TS4058)           |
+| `sizing.ts`               | pure `resolveChartSize` (measured width → container class → height) plus `useChartSize`; `INITIAL_WIDTH` 640; knows no engine, legend or card                            |
+| `host.tsx`                | the bare engine mount and the only importer of `@tanstack/charts/react`; a definition, a size and an `ariaLabel`                                                         |
+| `CartesianRung`           | in `CartesianChart.tsx`: the derived legend, the `state` placeholders, and the hand-off of a `placement: 'header'` legend to `ChartCard` through context, with no portal |
 
 - `marks(plot)` returns TanStack marks imported from the allowed subpaths (§ 9.8; basalt
   re-exports none). `plot.rows(key)` is `{ x, y, series, datum }[]`, a `null` y kept as a gap.
   Hidden series emit no rows, so a legend toggle hides plot, tooltip and auto domain together.
 - Paint order is fixed: zones, x-zones (`decorative`) → `marks` → ref lines → crosshair.
+- **W5 design debt:** decompose `compileCartesian`; shrink `CartesianRung`'s `useMemo` dependency list;
+  simplify `ChartCard`; one refcount helper for cursor groups and views.
+- Exported types include `ChartMarks` and `ChartX`; `SeriesKey` lives on `.` only.
 - `DualPanel`/`MirroredBars`: `composeViews` + `grid` + `alignX` (one host, one tooltip). `Donut`:
   `polar`. `Sparkline`: `guides: false, margin: 0`. Formatters: `./format` only.
 
@@ -526,7 +531,7 @@ import { lineY } from '@tanstack/charts/line'
 
 - One `createChartCursor()` per group in a module map, no provider. `'default'` is shared;
   `cursorGroup="…"` isolates (replaces `ChartCursorScope`).
-- `chartCursor(group?)` → the controller, for app sync (weatherorb's timeline):
+- `chartCursor(group?)` → the controller, for app sync (named consumer: weatherorb's timeline):
   `useSyncExternalStore(controller.subscribe, controller.getState, () => null)`. It is `getState`;
   TanStack has no `getSnapshot`.
 - Teardown (W4; not spiked): a refcount per group of live `subscribe` registrations. The last
@@ -544,6 +549,7 @@ import { lineY } from '@tanstack/charts/line'
   - it snaps a foreign value onto this chart's keys, because TanStack matches exactly.
     `cursorResolution` is `'nearest'` (the default), `'leading'` or `'exact'`; strings are exact.
 - Charts whose x value types differ never sync (the 1.x `DomainKind` partition).
+- `Date` x labels (ticks and tooltip title) format in UTC, to match `scaleUtc`.
 
 **Tooltip**
 
@@ -590,13 +596,14 @@ tooltip under `<body>` (spike). Inheritance from `:root` is a W4 layout-suite as
 | `tooltip-border-radius`                                       | `var(--vx-radius-ctrl)`                                                                                    |
 | `crosshair-label-halo`, `crosshair-marker-fill`, `focus-fill` | `var(--vx-surface-panel)`                                                                                  |
 
-- The host sets `color: var(--vx-axis)` (`currentColor` = axis ink) and inherits the font. Series
+- The host sets `color: var(--vx-axis)` (`currentColor` = axis ink) and pins
+  `font-family: var(--basalt-font-mono)` (tick labels in mono, the 1.x look). Series
   paint is `ChartSeries.color` (`VX.*` or a consumer series token); `raw-hex`/`raw-color-fn` cover
   mark paint. The spike asserts zero TanStack default hexes in the SSR output.
 
 ### 9.6 Responsive and plot-first mobile
 
-The host measures the width and resolves the container class (`resolveContainerClass`, the 1.x
+`useChartSize` measures the width and resolves the container class (`resolveContainerClass`, the 1.x
 three-axis law's only chart axis). The compiled `chart: ({ width }) => spec` reads the same class:
 
 | Class         | y axis                                                 | Ticks x / y | Font         | Legend              |
@@ -607,9 +614,9 @@ three-axis law's only chart axis). The compiled `chart: ({ width }) => spec` rea
 | wide          | outside; `Lines` end labels when ≤ 3 lines and no `y2` | 6 / 5       | `TEXT.micro` | chips or end labels |
 
 - The height law is unchanged (width × class ratio, clamped 160–420, ≤ 45 vh on a coarse pointer);
-  the host passes it as `height`. SSR renders the regular class (`initialWidth: 640`).
-- Tick labels never rotate; collision is `tickLabels.thin`. Touch: `pin: true` (tap pins and unpins)
-  and the host sets `touch-action: pan-y`. W4 proves both, and y labels inside the plot.
+  the rung passes it as `height`. SSR renders the regular class (`initialWidth: 640`).
+- Tick labels never rotate; collision is `tickLabels.thin`. Touch: `pin` is on for coarse pointers only (tap pins and
+  unpins) and the host sets `touch-action: pan-y`. W4 proves both, and y labels inside the plot.
 
 ### 9.7 a11y and SSR
 
@@ -622,7 +629,8 @@ three-axis law's only chart axis). The compiled `chart: ({ width }) => spec` rea
 ### 9.8 Boundary and lint (every rule at `error`)
 
 `src/charts/**` imports only `@tanstack/charts/*`, `d3-scale`, `react`, `../tokens`, `../format`
-and `../common`.
+and `../common`. Two W4 exceptions: curves are in-house (`curves.ts`, so no `d3-shape` peer), and
+`ChartCard` imports `../dashboard/widget-header` (Mantine-free).
 
 `basalt/chart-engine-boundary`:
 
@@ -655,14 +663,14 @@ numbers and the commands: `docs/waves/evidence/w1/charts.md`.
 
 1. **Hatch.** 5 linewatch charts hatch the absent state; TanStack's SVG resources are gradients and
    clips only. A custom hatch mark, or a flat `--vx-neutral` absent fill?
-2. **Legend hover emphasis.** Either rebuild the definition per hover, or use TanStack mark `states`
-   with `interactiveColorLegend`. The latter cannot show legend-only entries and keeps hidden series
-   in the domains.
+
+**Resolved (W4): legend hover emphasis.** The definition is rebuilt per legend hover. Mark `states`
+can neither show legend-only entries nor drop hidden series from the y domain.
 
 ### 9.10 Law carried over from 1.x
 
-Engine-independent; the 1.x mechanics (axis components, auto-margin, tick rotation, `ChartFrame`,
-the cursor store) are gone with visx. The 1.x text is under `docs/archive/`.
+Engine-independent. The 1.x text is under `docs/archive/`. Everything here is true of the shipped
+rung, `Lines` and `Bars`, except the **W5 contract** block.
 
 **Series and colour**
 
@@ -672,12 +680,11 @@ the cursor store) are gone with visx. The 1.x text is under `docs/archive/`.
   `seriesTokens` / `groupTokens` → `buildPaletteCss` (§ 4). There is no `VX.series`. A new colour is
   a `{light,dark}` pair in the palette data, its `--vx-*` var and a `VX.*` ref; never a raw hex.
   Scheme change is pure CSS, with no re-render.
-- `null` is a gap, never a zero: lines break, nothing interpolates. A stack gaps every band where any
-  visible band is `null`; a log axis gaps a non-positive value. Legend-hiding the sparse band closes
-  the gap.
+- `null` is a gap, never a zero: lines break, no tooltip row, out of the domain. A series whose
+  `getValue` is always `null` is a legend-only entry.
 - `y.scale: 'log'` floors at the smallest positive visible value; `nice` is off by default; the auto
-  max floor clamps before padding. Stacked `Bars` on a log axis throw in dev (use grouped).
-- Bucket-start x keys (a Monday, a 1st) take `cursorResolution="leading"`; `BandStrip` defaults to it.
+  max floor clamps before padding.
+- A series keyed by a bucket's leading edge (a Monday, a 1st) takes `cursorResolution="leading"`.
 
 **Extracting a kind (Rule of Three)**
 
@@ -690,49 +697,45 @@ the cursor store) are gone with visx. The 1.x text is under `docs/archive/`.
 
 A kind is proven by porting a real consumer's call sites, not by a demo page.
 
-**Shapes that are not one plot rect**
-
-| 1.x exception  | 2.0                                                       |
-| -------------- | --------------------------------------------------------- |
-| `DualPanel`    | `composeViews` + `grid` + `alignX`: one host, one tooltip |
-| `MirroredBars` | same, two bar views with their own domains                |
-| `BandStrip`    | band marks, no y axis                                     |
-| `Donut`        | `polar`                                                   |
-| `Heatmap`      | `cell`, band × band, no cursor                            |
-
-All five go through the one host. There is no waiver: `basalt/hand-rolled-plot` is deleted (§ 9.8).
-
 **Height and chrome**
 
-- Sizing modes resolve in order: `fill` (the parent's box), `aspectRatio`, fixed `height`. Unstated
-  `height` is width × class ratio (§ 9.6). `{ base, regular, wide }` steps key on the container class;
-  a numeric literal overrides and warns once in dev when it leaves the plot under the floor.
-- The plot never collapses under a wrapping legend: `VX.minPlotHeight` is its floor, and a fixed-height
-  frame grows by the legend's rows. In a `ChartCard`, `height` is a minimum.
-- Every chart lives in a `ChartCard` (`chart-in-raw-surface`); sparklines are the exemption (no card,
-  legend or tooltip) and stay token-only. `ChartCard` takes `BasaltProps` and the `root | header | body`
-  slot styles; every kind sets `displayName`.
-- A short card (measured < 280 px) or a `compact` class folds the header legend to dots; the name stays
-  in `aria-label`. The host's wrapper is `role="group"`, never `role="img"`, which hides descendants.
+- `height` is a number (fixed) or `{ base, regular, wide }` (`base` below regular). Unstated, it is
+  width × class ratio (§ 9.6). On a coarse pointer every height, a literal included, is capped at 45 %
+  of the viewport.
+- `ChartCard` takes `BasaltProps` and `classNames` for `root | header | body`. Under 280 px it
+  renders short: the header folds its subtitle and trims its top inset (hysteresis of 24 px).
 
 **Legend**
 
-- Interactive at ≥ 2 entries: click toggles a series. One entry stays static, and is suppressed when
-  `legend` is unset. `legend={{ toggle: false }}` opts out; `legend={false}` removes it.
-- Hiding a series removes it from the plot, the tooltip and the auto domain together (§ 9.2).
-- Overflow is an `All N` disclosure (`aria-expanded`): a popover on a fine pointer, a bottom sheet on
-  a coarse one. `Donut`: ≤ 6 slices + `Other`; the legend sits beside the ring at W/H > 1.5, below at
-  compact. `y2` tints that axis's ticks with its series colour instead of a text suffix.
+- Derived from `series`. Toggle is on at ≥ 2 entries (`legend.toggle` overrides); a click hides the
+  series from the plot, the tooltip and the auto domain together. `legend={false}` removes it.
+- `placement`: `bottom` (default), `top`, or `header` (the enclosing `ChartCard`'s header row; `top`
+  outside a card). `groups` separates series | overlay | reference.
+- Hovering an entry emphasises its series; the definition is rebuilt with `highlighted`.
 
 **State**
 
-- `state?: { pending?, error?, empty? }`; precedence is fixed, **pending → error → empty**, so a
-  refetch over a stale error is pending. All three drop the legend; only `pending` sets `aria-busy`.
-  `error` is `role="alert"`, the others `role="status"`.
+- `state?: { pending?, error?, empty? }`, in the rung and in `ChartCard`; precedence is fixed,
+  **pending → error → empty**, so a refetch over a stale error is pending. `pending` is an
+  `aria-busy` `<output>`, `error` a `role="alert"` block, `empty` an `<output>` (`true` or its label).
 - Never fake an empty dataset for a pending query: `data ?? []` turns "not asked" into "measured
   and absent".
-- Every `./format` formatter returns `NON_FINITE` (an em dash) for `NaN`, `±Infinity`, `Invalid Date`;
-  a finite `0` formats normally. `fmtPercent` declares its `input`.
+- Every `./format` formatter (`percent`, `money`, …) returns `NON_FINITE` (an em dash) for `NaN`,
+  `±Infinity` and `Invalid Date`.
+
+**W5 contract** (kinds not built yet)
+
+| Kind           | Law                                                                                  |
+| -------------- | ------------------------------------------------------------------------------------ |
+| `DualPanel`    | `composeViews` + `grid` + `alignX`: one host, one tooltip                            |
+| `MirroredBars` | same, two bar views with their own domains                                           |
+| `BandStrip`    | band marks, no y axis; `cursorResolution` defaults to `leading`                      |
+| `Donut`        | `polar`; legend beside the ring at W/H > 1.5, below at compact; ≤ 6 slices + `Other` |
+| `Heatmap`      | `cell`, band × band, no cursor                                                       |
+| `Sparkline`    | no card, legend or tooltip; token-only                                               |
+
+No kind is exempt from the rung's host: `basalt/hand-rolled-plot` is deleted (§ 9.8). Stacked `Bars`
+on a log axis must throw in dev (a stack has no zero on a log axis); today it does not.
 
 ## 10. Open questions
 
@@ -749,7 +752,7 @@ that settles each engineering question.
 | 6   | `@hyperdx/browser` registers the global OTel tracer provider?                    | § 7 Open | W11                        |
 | 7   | `chat.turn` cannot parent the chat `fetch` span; join on `basalt.chat.thread_id` | § 7 Open | W8                         |
 | 8   | Absent-state hatch: custom mark or flat `--vx-neutral` fill                      | § 9 Open | W5                         |
-| 9   | Legend hover emphasis: rebuild per hover or mark `states`                        | § 9 Open | W4                         |
+| 9   | Legend hover emphasis: rebuild per hover or mark `states`                        | § 9.9    | settled W4: rebuild        |
 
 Resolved by the lead in W1: § 9 keeps 8 1.x value names and adds a handful (`Lines`, `Sparkline`,
 `chartCursor`, …), well inside § 1's 48 allowance, so the ≤ 140 value ceiling stands; W3 sets the
