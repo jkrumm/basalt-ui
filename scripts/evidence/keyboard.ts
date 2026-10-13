@@ -7,7 +7,8 @@
  * Per chart: focus the surface, press ArrowRight ×3, Home, End, Enter, Escape. After every key the
  * lane records a signature (the surface's aria-label + the visible tooltip text) and whether it
  * changed. A screenshot is taken at the keyboard-focused state (after End, before Enter). Light
- * scheme, desktop. Only ArrowRight is judged: PASS = at least one ArrowRight moved the cursor; a
+ * scheme, desktop. A chart that is not a focus target, or that neither moves on ArrowRight nor shows
+ * a hover tooltip (sparklines), is N/A: not counted as failing. Only ArrowRight is judged: PASS = at least one ArrowRight moved the cursor; a
  * chart that ignores it is a FAIL row. Home/End/Enter/Escape are recorded, not judged. Enter does
  * NOT pin on a fine pointer (`pin` is coarse-only, `compile.ts`), so there is no pinned state here.
  */
@@ -42,8 +43,22 @@ const POLL_MS = 16
 const VIEW_SETTLE_MS = 250
 
 export type KeyStep = { key: Key; signature: string; moved: boolean }
-export type ChartWalk = { name: string; view: string; focusable: boolean; steps: KeyStep[] }
-export type Verdict = { pass: boolean; moved: number; total: number }
+export type ChartWalk = {
+  name: string
+  view: string
+  /** The host's `tabindex` attribute; `0` is the engine's keyboard contract. */
+  tabIndex: string | null
+  focusable: boolean
+  /** Probed only when the keyboard walk failed: did hovering the chart show a tooltip? `null` = not probed. */
+  hoverTooltip: boolean | null
+  steps: KeyStep[]
+}
+export type Status = 'PASS' | 'FAIL' | 'N/A'
+export type Verdict = { status: Status; moved: number; total: number }
+
+/** A host without `tabindex=0` is not a focus target: not walked, not judged. NB the engine gives
+ * Sparkline `tabindex=0` anyway (a dead tab stop), so `verdictOf` also reads the hover probe. */
+export const isInteractive = (tabIndex: string | null): boolean => tabIndex === '0'
 
 /** `Revenue by day / (EUR)` → `revenue-by-day-eur`; empty → `chart`. */
 export const chartSlug = (label: string): string =>
@@ -69,11 +84,21 @@ export function toSteps(
   })
 }
 
-/** PASS iff a chart is focusable and at least one ArrowRight changed what it shows. */
-export function verdictOf(walk: Pick<ChartWalk, 'focusable' | 'steps'>): Verdict {
+/**
+ * PASS: focusable and an ArrowRight changed what it shows. N/A (non-interactive, `V2-SPEC.md`
+ * § 9.3/9.10 — Sparkline has no cursor or tooltip): not a focus target, or the keyboard moved nothing
+ * AND hovering shows no tooltip either. FAIL: a chart that responds to the pointer but not to
+ * ArrowRight, or one that never got a hover probe.
+ */
+export function verdictOf(
+  walk: Pick<ChartWalk, 'tabIndex' | 'focusable' | 'hoverTooltip' | 'steps'>,
+): Verdict {
   const moved = walk.steps.filter((s) => s.moved).length
+  const total = walk.steps.length
+  if (!isInteractive(walk.tabIndex)) return { status: 'N/A', moved, total }
   const arrowMoved = walk.steps.some((s) => s.key === 'ArrowRight' && s.moved)
-  return { pass: walk.focusable && arrowMoved, moved, total: walk.steps.length }
+  if (walk.focusable && arrowMoved) return { status: 'PASS', moved, total }
+  return { status: walk.hoverTooltip === false ? 'N/A' : 'FAIL', moved, total }
 }
 
 /** Names stay unique across the whole run: a duplicate gets the first free `#n` suffix, and a
@@ -89,20 +114,21 @@ export function uniqueNames(labels: readonly string[]): string[] {
 }
 
 export function summaryRows(walks: readonly ChartWalk[]): LaneResult['summary'] {
-  const rows = walks.map((w) => {
-    const v = verdictOf(w)
-    return {
-      metric: w.name,
-      value: v.pass ? 'PASS' : 'FAIL',
-      unit: `${v.moved}/${v.total} steps moved`,
-    }
-  })
-  const failed = walks.filter((w) => !verdictOf(w).pass).length
+  const verdicts = walks.map((w) => ({ w, v: verdictOf(w) }))
+  const count = (status: Status): number => verdicts.filter(({ v }) => v.status === status).length
   return [
     { metric: 'charts walked', value: walks.length },
-    { metric: 'charts failing', value: failed },
+    { metric: 'charts failing', value: count('FAIL') },
+    { metric: 'charts N/A (non-interactive)', value: count('N/A') },
     { metric: 'judged', value: 'ArrowRight only', unit: 'Home/End/Enter/Escape recorded' },
-    ...rows,
+    ...verdicts.map(({ w, v }) => ({
+      metric: w.name,
+      value: v.status,
+      unit:
+        v.status === 'N/A'
+          ? `non-interactive (tabindex ${w.tabIndex ?? 'absent'}, no keyboard, no tooltip)`
+          : `${v.moved}/${v.total} steps moved`,
+    })),
   ]
 }
 
@@ -128,6 +154,21 @@ async function settledSignature(page: Page, chart: Locator, previous: string): P
   return current
 }
 
+/** Does hovering the middle of the chart show a tooltip within `KEY_TIMEOUT_MS`? */
+async function hoverShowsTooltip(page: Page, chart: Locator): Promise<boolean> {
+  const box = await chart.boundingBox()
+  if (!box) return false
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  const deadline = Date.now() + KEY_TIMEOUT_MS
+  let shown = false
+  while (!shown && Date.now() < deadline) {
+    await page.waitForTimeout(POLL_MS)
+    shown = (await page.locator(TOOLTIP_SELECTOR).count()) > 0
+  }
+  await page.mouse.move(0, 0)
+  return shown
+}
+
 async function walkChart(
   page: Page,
   chart: Locator,
@@ -135,6 +176,9 @@ async function walkChart(
   view: string,
   shotPath: string,
 ): Promise<ChartWalk> {
+  const tabIndex = await chart.getAttribute('tabindex')
+  if (!isInteractive(tabIndex))
+    return { name, view, tabIndex, focusable: false, hoverTooltip: null, steps: [] }
   await chart.scrollIntoViewIfNeeded()
   await chart.focus()
   const focusable = await chart.evaluate((el) => document.activeElement === el)
@@ -148,7 +192,12 @@ async function walkChart(
     previous = await settledSignature(page, chart, previous)
     observed.push({ key, signature: previous })
   }
-  return { name, view, focusable, steps: toSteps(initial, observed) }
+  const steps = toSteps(initial, observed)
+  const hoverTooltip =
+    verdictOf({ tabIndex, focusable, hoverTooltip: null, steps }).status === 'PASS'
+      ? null
+      : await hoverShowsTooltip(page, chart)
+  return { name, view, tabIndex, focusable, hoverTooltip, steps }
 }
 
 type View = { value: string; label: Locator }
@@ -220,7 +269,8 @@ export const keyboard: Lane = async ({ outDir, baseUrl, openBrowser }): Promise<
   }
   for (const w of walks) {
     // oxlint-disable-next-line no-console -- failing charts are named on the terminal, not thrown
-    if (!verdictOf(w).pass) console.error(`[evidence] keyboard FAIL: ${w.name} (${w.view})`)
+    if (verdictOf(w).status === 'FAIL')
+      console.error(`[evidence] keyboard FAIL: ${w.name} (${w.view})`)
   }
   return {
     lane: 'keyboard',

@@ -6,7 +6,15 @@ import { gzipBytes, routeChunks, routeOfKey, subpathEntries } from './bundle'
 import type { Manifest } from './bundle'
 import { renderSummary, stableStringify } from './index'
 import type { LaneOutcome } from './index'
-import { chartSlug, signatureOf, summaryRows, toSteps, uniqueNames, verdictOf } from './keyboard'
+import {
+  chartSlug,
+  isInteractive,
+  signatureOf,
+  summaryRows,
+  toSteps,
+  uniqueNames,
+  verdictOf,
+} from './keyboard'
 import type { Key, KeyStep } from './keyboard'
 import { median } from './perf-util'
 import { routeSlug } from './screens'
@@ -216,21 +224,51 @@ describe('keyboard lane (pure parts)', () => {
     expect(signatureOf(' a ', ' x\n y ')).toBe('a | x y')
   })
 
-  it('FAILs a chart that ignores ArrowRight or cannot take focus, without throwing', () => {
+  it('FAILs a focusable chart that ignores ArrowRight but answers the pointer', () => {
     const still = [step('ArrowRight', false), step('Home', true)]
-    expect(verdictOf({ focusable: true, steps: still })).toEqual({
-      pass: false,
-      moved: 1,
-      total: 2,
-    })
-    expect(verdictOf({ focusable: false, steps: [step('ArrowRight', true)] }).pass).toBe(false)
-    expect(verdictOf({ focusable: true, steps: [step('ArrowRight', true)] }).pass).toBe(true)
-    const rows = summaryRows([{ name: 'A', view: 'default', focusable: true, steps: still }])
-    expect(rows).toEqual([
-      { metric: 'charts walked', value: 1 },
+    const walk = { tabIndex: '0', focusable: true, hoverTooltip: true, steps: still }
+    expect(verdictOf(walk)).toEqual({ status: 'FAIL', moved: 1, total: 2 })
+    expect(verdictOf({ ...walk, hoverTooltip: null }).status).toBe('FAIL')
+    expect(verdictOf({ ...walk, focusable: false }).status).toBe('FAIL')
+    expect(verdictOf({ ...walk, steps: [step('ArrowRight', true)] }).status).toBe('PASS')
+  })
+
+  it('classifies non-interactive charts as N/A and reports them apart from failures', () => {
+    expect(isInteractive('0')).toBe(true)
+    expect(isInteractive('-1')).toBe(false)
+    expect(isInteractive(null)).toBe(false)
+    const still = [step('ArrowRight', false)]
+    // Not tabbable, and the engine's tabindex=0 Sparkline (no keyboard, no tooltip) both read N/A.
+    const untabbable = {
+      name: 'T',
+      view: 'v',
+      tabIndex: '-1',
+      focusable: false,
+      hoverTooltip: null,
+      steps: [],
+    }
+    const spark = {
+      name: 'S',
+      view: 'v',
+      tabIndex: '0',
+      focusable: true,
+      hoverTooltip: false,
+      steps: still,
+    }
+    const bad = {
+      name: 'A',
+      view: 'v',
+      tabIndex: '0',
+      focusable: true,
+      hoverTooltip: true,
+      steps: still,
+    }
+    expect(verdictOf(untabbable).status).toBe('N/A')
+    expect(verdictOf(spark)).toEqual({ status: 'N/A', moved: 0, total: 1 })
+    expect(summaryRows([bad, spark, untabbable]).slice(0, 3)).toEqual([
+      { metric: 'charts walked', value: 3 },
       { metric: 'charts failing', value: 1 },
-      { metric: 'judged', value: 'ArrowRight only', unit: 'Home/End/Enter/Escape recorded' },
-      { metric: 'A', value: 'FAIL', unit: '1/2 steps moved' },
+      { metric: 'charts N/A (non-interactive)', value: 2 },
     ])
   })
 })
