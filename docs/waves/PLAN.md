@@ -265,17 +265,50 @@ Charts), `docs/archive/CHARTS-SPEC-1x.md`, `docs/DESIGN-CORE.md`, `packages/basa
   proves nothing about a clean install.
 - **Budgets:** chart value symbols 5 (≤ 48), non-chart 93, spec prose ceiling 3166 → 2663.
 
-## Wave 5 — Chart kinds, complete <!-- status: active -->
+## Wave 5 — Chart kinds, complete <!-- status: done -->
 
-- [ ] Port the remaining kinds and sparklines (StackedArea, MultiLine, DualPanel, Donut, Heatmap,
-      BandStrip, MirroredBars, LineSparkline, BarSparkline). Add only the new kinds the consumer
+- [x] Port the remaining kinds and sparklines (StackedArea, DualPanel, Donut, Heatmap, BandStrip,
+      MirroredBars, Sparkline; MultiLine folded into Lines, the two sparklines into one). Add only the new kinds the consumer
       inventory demands (Rule of Three).
-- [ ] Playground chart routes rebuilt. Evidence must show no render or hover regression vs the 1.41
+- [x] Playground chart routes rebuilt. Evidence must show no render or hover regression vs the 1.41
       baseline (or a written acceptance), plus a11y keyboard walk screenshots.
 
 **Left behind:**
 
-## Wave 6 — Data and state <!-- status: pending -->
+- **Landed** (all via `rd merge`, `make check` green on each rebased SHA): #137 rung debt, #134
+  `StackedArea` + `Sparkline`, #135 `BandStrip`, #136 `Donut` + `Heatmap`, #138 `DualPanel` +
+  `MirroredBars`, #139 barrel/budget/rule wiring, #140 playground demos, #141 + #142 the `keyboard`
+  evidence lane, then this close-out. Every worker diff got an agent-gateway `/review` and the
+  blocking findings were fixed before merge. Evidence index: `docs/waves/evidence/w5.md`.
+- **Owner call from W4, decided by the lead (flag if you disagree):** accept the real first-chart
+  cost (`Lines` +31.5 KB over `ZonedLine`; `/charts` +59 % in-app, `./charts` −32 %) in V2-SPEC § 9.9.
+  Update and first paint are flat, hover is flat against its control. Trim candidate if bytes matter
+  later: basalt's own 17.8 KB.
+- **Decided in W5** (V2-SPEC § 9.9): the absent state is a flat `--vx-neutral` fill, no hatch mark;
+  stacked `Bars` on a log axis throws in dev and logs once in production; `StackedArea` rejects
+  `y.scale` by type. Nine kinds ship (`Lines`, `Bars`, `StackedArea`, `Sparkline`, `BandStrip`,
+  `Donut`, `Heatmap`, `DualPanel`, `MirroredBars`), each with a named consumer in `consumers.json`; the
+  13 consumer-bespoke charts stay `CartesianChart` with `marks`. The rung debt is paid (net −9 source
+  lines; `idPrefixOf` now lives in `host.tsx`, `DualPanel`/`MirroredBars` share `panel.tsx` and the rung's
+  guides).
+- **Known gaps, not blocking:**
+  - `BandStrip`: top margin is the engine's 4 px (the rung has no margin seam), marker inset is
+    approximate, and a transparent `xZones` entry forces the rung's hidden x scale (`ZX_ANCHOR`). A
+    rung option would remove both; its `BandSpan.state` is a plain `string`, so a typo is a dev throw,
+    not a compile error (parameterising `BandStripSeries<T, K>` is a package follow-up).
+  - Compact `DualPanel`/`MirroredBars` now take the rung's compact y labels (inside the plot); check one
+    by eye before argo relies on it. The panels' tooltip header and row source (~15 lines) still
+    duplicate the rung's `tooltipSpec`. `Donut` and `Heatmap` hand-roll ~20 lines of chart shell each
+    (size, state, id prefix); extract a shared shell before a third non-cartesian kind.
+  - A pinned cursor is not dismissed by an outside tap (engine early-exit), carried from W4.
+  - The `keyboard` lane judges ArrowRight only; its Enter frame is the focused state because pin is
+    coarse-pointer only.
+  - `ChartKindsTabs.tsx` in the playground is one 500-line file (review suggested a split).
+- **chat-profile stays blind until W8**, so `make evidence` exits 2 on that lane alone.
+- **W9 inherits** the shipped rule lines (710 by the budget script, which counts one more per file than the 704 recorded in W4; same set, target 450) and the
+  `basalt-charts` skill now lists the nine kinds; the React-compiler overrides stay as in W4.
+
+## Wave 6 — Data and state <!-- status: active -->
 
 - [ ] DataTable on Table v9 (`useTable` + one module-scope `tableFeatures` set; no `createTableHook`,
       per spec § 8). Virtual 3.14.

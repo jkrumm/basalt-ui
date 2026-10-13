@@ -493,8 +493,6 @@ import { lineY } from '@tanstack/charts/line'
   re-exports none). `plot.rows(key)` is `{ x, y, series, datum }[]`, a `null` y kept as a gap.
   Hidden series emit no rows, so a legend toggle hides plot, tooltip and auto domain together.
 - Paint order is fixed: zones, x-zones (`decorative`) → `marks` → ref lines → crosshair.
-- **W5 design debt:** decompose `compileCartesian`; shrink `CartesianRung`'s `useMemo` dependency list;
-  simplify `ChartCard`; one refcount helper for cursor groups and views.
 - Exported types include `ChartMarks` and `ChartX`; `SeriesKey` lives on `.` only.
 - `DualPanel`/`MirroredBars`: `composeViews` + `grid` + `alignX` (one host, one tooltip). `Donut`:
   `polar`. `Sparkline`: `guides: false, margin: 0`. Formatters: `./format` only.
@@ -517,7 +515,7 @@ import { lineY } from '@tanstack/charts/line'
 - Merged: `ZonedLine` + `MultiLine` → `Lines` (zones, x-zones, ref lines and `y2` moved to the rung;
   only thresholds and area differed); the two sparklines → `Sparkline`. No new kinds: bands and
   ribbons (4 charts, 2 repos) are one `areaY` with `y1`/`y2`, a mark.
-- `Heatmap` replaces argo's time-of-day grid and linewatch's `CategoryGrid` (×2), or W5 deletes it.
+- `Heatmap` replaces argo's time-of-day grid and linewatch's `CategoryGrid` (×2).
 
 ### 9.4 x scales, cursor, tooltip
 
@@ -659,12 +657,12 @@ numbers and the commands: `docs/waves/evidence/w1/charts.md`.
 
 **Accepted** (owner, 2026-10-13): the first chart's +14.5 KB gzip, for SSR, a11y and the marks.
 
-**Open:**
+**Accepted** (lead, W5, 2026-10-14; supersedes the +14.5 KB figure above): the real first-chart cost, `Lines` +31.5 KB over 1.x `ZonedLine`
+(`/charts` 129.9 KB beyond initial against 81.7 KB, `./charts` itself −32 %). Update p50 and first paint @1x are flat to 1.41 (−21 % update at W4); basalt's own 17.8 KB is the trim candidate if a later wave needs bytes.
 
-1. **Hatch.** 5 linewatch charts hatch the absent state; TanStack's SVG resources are gradients and
-   clips only. A custom hatch mark, or a flat `--vx-neutral` absent fill?
-2. **Stacked `Bars` on a log axis.** A stack has no zero on a log axis; the 1.x kind threw in dev,
-   2.0 `Bars` does not. W5 decides: throw, or document the gap.
+**Resolved (W5):** the absent state is a flat `--vx-neutral` fill, no custom hatch mark. Stacked `Bars`
+on a log axis throws in dev and logs once in production, as 1.x did. `StackedArea` rejects
+`y.scale` in its type.
 
 **Resolved (W4): legend hover emphasis.** The definition is rebuilt per legend hover. Mark `states`
 can neither show legend-only entries nor drop hidden series from the y domain.
@@ -672,7 +670,7 @@ can neither show legend-only entries nor drop hidden series from the y domain.
 ### 9.10 Law carried over from 1.x
 
 Engine-independent. The 1.x text is under `docs/archive/`. Everything here is true of the shipped
-rung, `Lines` and `Bars`, except the **W5 contract** block.
+rung and the nine kinds.
 
 **Series and colour**
 
@@ -725,17 +723,6 @@ A kind is proven by porting a real consumer's call sites, not by a demo page.
 - Every `./format` formatter (`percent`, `money`, …) returns `NON_FINITE` (an em dash) for `NaN`,
   `±Infinity` and `Invalid Date`.
 
-**W5 contract** (kinds not built yet)
-
-| Kind           | Law                                                                                  |
-| -------------- | ------------------------------------------------------------------------------------ |
-| `DualPanel`    | `composeViews` + `grid` + `alignX`: one host, one tooltip                            |
-| `MirroredBars` | same, two bar views with their own domains                                           |
-| `BandStrip`    | band marks, no y axis; `cursorResolution` defaults to `leading`                      |
-| `Donut`        | `polar`; legend beside the ring at W/H > 1.5, below at compact; ≤ 6 slices + `Other` |
-| `Heatmap`      | `cell`, band × band, no cursor                                                       |
-| `Sparkline`    | no card, legend or tooltip; token-only                                               |
-
 No kind is exempt from the rung's host: `basalt/hand-rolled-plot` is deleted (§ 9.8).
 
 ## 10. Open questions
@@ -743,18 +730,18 @@ No kind is exempt from the rung's host: `basalt/hand-rolled-plot` is deleted (§
 Index of every section's **Open** list; the section holds the detail. Owner calls first, then the wave
 that settles each engineering question.
 
-| #   | Question                                                                         | Section  | Settled by                 |
-| --- | -------------------------------------------------------------------------------- | -------- | -------------------------- |
-| 1   | Accept the engine's +14.5 KB gzip on the first chart for SSR, a11y, marks?       | § 9.9    | owner: accepted 2026-10-13 |
-| 2   | Accept Table v9's +4 070 B (+6 969 B without Store dedupe), or offset in W6?     | § 8 Open | owner, before W6           |
-| 3   | `./styles.css` importing Mantine's layer CSS resolves in a scratch install       | § 1 Open | W3 pack-test               |
-| 4   | `ModalsProvider` wrapping the tree: `modals.*` re-render cost                    | § 2 Open | W3                         |
-| 5   | `<ViewTransition>` fallback without `document.startViewTransition`               | § 5 Open | W7 evidence                |
-| 6   | `@hyperdx/browser` registers the global OTel tracer provider?                    | § 7 Open | W11                        |
-| 7   | `chat.turn` cannot parent the chat `fetch` span; join on `basalt.chat.thread_id` | § 7 Open | W8                         |
-| 8   | Absent-state hatch: custom mark or flat `--vx-neutral` fill                      | § 9 Open | W5                         |
-| 9   | Legend hover emphasis: rebuild per hover or mark `states`                        | § 9.9    | settled W4: rebuild        |
-| 10  | Stacked `Bars` on a log axis: throw in dev, or document the gap                  | § 9.9    | W5                         |
+| #   | Question                                                                         | Section  | Settled by             |
+| --- | -------------------------------------------------------------------------------- | -------- | ---------------------- |
+| 1   | Accept the engine's +14.5 KB gzip on the first chart for SSR, a11y, marks?       | § 9.9    | accepted; W5: +31.5 KB |
+| 2   | Accept Table v9's +4 070 B (+6 969 B without Store dedupe), or offset in W6?     | § 8 Open | owner, before W6       |
+| 3   | `./styles.css` importing Mantine's layer CSS resolves in a scratch install       | § 1 Open | W3 pack-test           |
+| 4   | `ModalsProvider` wrapping the tree: `modals.*` re-render cost                    | § 2 Open | W3                     |
+| 5   | `<ViewTransition>` fallback without `document.startViewTransition`               | § 5 Open | W7 evidence            |
+| 6   | `@hyperdx/browser` registers the global OTel tracer provider?                    | § 7 Open | W11                    |
+| 7   | `chat.turn` cannot parent the chat `fetch` span; join on `basalt.chat.thread_id` | § 7 Open | W8                     |
+| 8   | Absent-state hatch: custom mark or flat `--vx-neutral` fill                      | § 9.9    | settled W5: flat fill  |
+| 9   | Legend hover emphasis: rebuild per hover or mark `states`                        | § 9.9    | settled W4: rebuild    |
+| 10  | Stacked `Bars` on a log axis: throw in dev, or document the gap                  | § 9.9    | settled W5: throw      |
 
 Resolved by the lead in W1: § 9 keeps 8 1.x value names and adds a handful (`Lines`, `Sparkline`,
 `chartCursor`, …), well inside § 1's 48 allowance, so the ≤ 140 value ceiling stands; W3 sets the
