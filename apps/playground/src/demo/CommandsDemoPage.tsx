@@ -1,29 +1,27 @@
 /**
  * CommandsDemoPage — exercises basalt-ui/commands:
- * runCommand, defineOverlays, overlays.open, toSpotlightActions,
- * ShortcutsHelp, BasaltOverlays, useCommandHotkeys (live keybindings), openSpotlight.
+ * runCommand, defineOverlays, overlays.open, toSpotlightActions, ShortcutsHelp, and the live
+ * keybindings `BasaltProvider` binds from the registry.
  *
  * The commands themselves (including this page's `demo:*` showcase set) are registered once, at
  * app boot, in `./commands.ts` — see that file's header for why: `defineCommands`'s own contract
  * is "call it once, the last call wins", so a real app's whole registry lives in one dedicated
  * file, imported eagerly by main.tsx. This page only *exercises* that shared registry (runCommand,
- * useCommandHotkeys, ShortcutsHelp) and augments `BasaltRegister.overlays` for its demo overlay.
+ * ShortcutsHelp) and augments `BasaltRegister.overlays` for its demo overlay.
  *
  * LIVE KEYBINDINGS PROOF: Pressing Mod+G greets, Mod+L logs to console, Mod+T toggles
- * the highlight box below. useCommandHotkeys() is called here so the shortcuts are active
- * while this page is rendered.
+ * the highlight box below. `BasaltProvider` binds every registry shortcut app-wide.
  */
 import { useEffect, useState } from 'react'
 import { Alert, Badge, Button, Divider, Group, Paper, Stack, Text } from '@mantine/core'
+import { spotlight } from '@mantine/spotlight'
 import {
   defineOverlays,
-  openSpotlight,
   overlays,
   runCommand,
   ShortcutsHelp,
   toShortcutList,
   toSpotlightActions,
-  useCommandHotkeys,
 } from 'basalt-ui/commands'
 import { registerDemoToggleSetter } from './commands'
 
@@ -65,14 +63,14 @@ function SpotlightSection() {
         Spotlight (mod + K)
       </Text>
       <Text size="sm">
-        The command palette is mounted via <code>BasaltOverlays</code> in main.tsx. Press{' '}
-        <kbd>Mod+K</kbd> or click the button to open it. Commands registered via{' '}
-        <code>defineCommands</code> are projected automatically. Spotlight uses a basalt-owned store
-        (<code>basaltSpotlight</code>) — import <code>openSpotlight</code> from{' '}
-        <code>basalt-ui/commands</code> for programmatic control.
+        The command palette is mounted by <code>BasaltProvider</code>. Press <kbd>Mod+K</kbd> or
+        click the button to open it. Commands registered via <code>defineCommands</code> and the{' '}
+        <code>defineNav</code> destinations are projected automatically;{' '}
+        <code>spotlight.open()</code> from <code>@mantine/spotlight</code> drives it
+        programmatically.
       </Text>
       <Group gap="xs">
-        <Button size="compact-sm" variant="default" onClick={() => openSpotlight()}>
+        <Button size="compact-sm" variant="default" onClick={() => spotlight.open()}>
           Open Spotlight
         </Button>
       </Group>
@@ -86,10 +84,10 @@ function LiveHotkeysSection({ toggled }: { toggled: boolean }) {
   return (
     <Stack gap="xs">
       <Text size="xs" tt="uppercase" fw={600} c="dimmed">
-        Live keybindings (useCommandHotkeys)
+        Live keybindings
       </Text>
       <Text size="sm">
-        <code>useCommandHotkeys()</code> is called in this page — the shortcuts below are LIVE.
+        <code>BasaltProvider</code> binds every registry shortcut — the shortcuts below are LIVE.
         Press them now and observe the effect.
       </Text>
       <Alert color={toggled ? 'teal' : 'gray'} title={toggled ? 'Toggled ON ✓' : 'Toggled OFF'}>
@@ -146,10 +144,9 @@ function OverlaysSection() {
         overlays.open
       </Text>
       <Text size="sm">
-        Opens a modal via <code>@mantine/modals</code>. <code>BasaltOverlays</code> mounts{' '}
-        <code>ModalsProvider</code> automatically — as a sibling of the app, not a wrapper, so{' '}
-        <code>useModals()</code>/<code>openContextModal</code> still need a <code>false</code>{' '}
-        <code>modals</code> prop plus your own <code>ModalsProvider</code>.
+        Opens a modal via <code>@mantine/modals</code>. <code>BasaltProvider</code> mounts{' '}
+        <code>ModalsProvider</code> around the router, so <code>useModals()</code> and{' '}
+        <code>openContextModal</code> work in any route.
       </Text>
       <Group gap="xs" wrap="wrap">
         <Button
@@ -247,17 +244,13 @@ export function CommandsDemoPage() {
     return () => registerDemoToggleSetter(null)
   }, [])
 
-  // LIVE KEYBINDINGS: activate all registered command shortcuts for this page.
-  // useCommandHotkeys() degrades to a no-op when @tanstack/react-hotkeys is absent.
-  useCommandHotkeys()
-
   return (
     <Stack gap="md">
       {/* No in-body `<Title>` — the breadcrumb names the page; the subpath the page demos is
           stated in the lead instead (ComponentsPage's module doc has the wave's rule). */}
       <Text size="sm" c="dimmed">
         <code>./commands</code>: defineCommands + runCommand + defineOverlays + overlays.open +
-        Spotlight + ShortcutsHelp + BasaltOverlays mount + useCommandHotkeys (live keybindings)
+        Spotlight + ShortcutsHelp + live keybindings
       </Text>
 
       <Paper p="sm">
@@ -268,9 +261,8 @@ export function CommandsDemoPage() {
           <Text size="sm">
             The <code>./commands</code> battery provides a typed command bus (defineCommands +
             runCommand), a typed overlay controller (defineOverlays + overlays.open), Spotlight
-            projection (toSpotlightActions) with a live basalt-owned store, a shortcut display
-            (ShortcutsHelp), live keybindings (useCommandHotkeys), and a composable overlay mount
-            (BasaltOverlays) that bundles ModalsProvider + Spotlight + Notifications + hotkeys.
+            projection (toSpotlightActions), and a shortcut display (ShortcutsHelp); BasaltProvider
+            mounts ModalsProvider, Spotlight and Notifications and binds the registry's shortcuts.
           </Text>
         </Stack>
       </Paper>

@@ -1,6 +1,6 @@
 /**
  * Settings page — a grown-up settings surface built from what basalt-ui already ships: the
- * account contract, notifications registry, connectivity aggregator, command shortcuts, the
+ * account contract, notifications registry, command shortcuts, the
  * theme lab, and the dashboard-composite `SettingsSection`/`SettingsRow`/`DangerZone` building
  * blocks. Rebuilt from the former raw demo dump (AccountDrawer + BillingDrawer + an inline
  * theme-lab-only /settings) into one real page with section cards.
@@ -13,7 +13,7 @@
  *
  * Sections: Account (+ a `DangerZone` for account deletion), Billing, Appearance (color scheme +
  * a collapsed Theme lab accordion), Notifications (per-intent Switch rows), Shortcuts
- * (ShortcutsHelp), Connectivity (useConnectivity + ConnectivityIndicator), Developer (the
+ * (ShortcutsHelp), Developer (the
  * createPersistedState counter demo).
  *
  * The sidebar account menu deep-links here via `navigate({ to: '/settings', hash: 'account' | 'billing' })`
@@ -38,20 +38,13 @@ import {
   TextInput,
   useMantineColorScheme,
 } from '@mantine/core'
-import {
-  ConnectivityIndicator,
-  DangerZone,
-  SettingsRow,
-  SettingsSection,
-  useConnectivity,
-} from 'basalt-ui'
+import { DangerZone, SettingsRow, SettingsSection } from 'basalt-ui'
 import type { AccountBadgeTone } from 'basalt-ui'
 import { ShortcutsHelp } from 'basalt-ui/commands'
 import type { NotificationIntent } from 'basalt-ui/notifications'
 import { createPersistedState } from 'basalt-ui/state'
 import { COLOR_GROUPS, DeriveControls, ThemeLabControls } from 'basalt-ui/theme-lab'
 import { alpha, VX } from 'basalt-ui/tokens'
-import { ConnectivityDemoPage } from './ConnectivityDemoPage'
 import { IconCopy, IconReset } from './icons'
 import { DEMO_SERIES } from './series'
 import { UserStatePage } from './UserStatePage'
@@ -493,25 +486,6 @@ function ShortcutsSection() {
   )
 }
 
-// ── Connectivity ──────────────────────────────────────────────────────────────────────────────
-
-function ConnectivitySection() {
-  const snap = useConnectivity()
-
-  return (
-    <SettingsSection
-      title="Connectivity"
-      subtitle="Aggregates browser online/offline, React Query cache, SSE, and health-check pings."
-    >
-      <SettingsRow
-        label="Connection"
-        description={`Status: ${snap.status}`}
-        control={<ConnectivityIndicator />}
-      />
-    </SettingsSection>
-  )
-}
-
 // ── Developer ─────────────────────────────────────────────────────────────────────────────────
 
 // Created once at module scope — the hook is stable across renders and tabs.
@@ -561,12 +535,10 @@ export function SettingsPage() {
       <AppearanceSection />
       <NotificationsSection />
       <ShortcutsSection />
-      <ConnectivitySection />
       <DeveloperSection />
-      {/* `/user` and `/connectivity` absorbed here (audit E §7) — same `SettingsSection` idiom as
+      {/* `/user` absorbed here (audit E §7) — same `SettingsSection` idiom as
           every block above, no PageBar of their own to conflict with (law C6). */}
       <UserStatePage />
-      <ConnectivityDemoPage />
     </Stack>
   )
 }

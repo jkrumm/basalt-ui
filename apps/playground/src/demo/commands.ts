@@ -9,7 +9,8 @@
  * `/commands` has ever been visited: previously the registry was only populated once the
  * `/commands` route lazy-loaded, so the `/settings` Shortcuts card rendered empty.
  */
-import { defineCommands, openSpotlight, overlays } from 'basalt-ui/commands'
+import { spotlight } from '@mantine/spotlight'
+import { defineCommands, overlays } from 'basalt-ui/commands'
 
 // Module-level mutable setter — CommandsDemoPage wires this to its local highlight-box state
 // while mounted so the demo:toggle command (Mod+T) can flip it. Registered/cleared via
@@ -36,8 +37,9 @@ export const COMMANDS = defineCommands({
   'nav:search': {
     label: 'Open search',
     group: 'Navigation',
-    shortcut: 'Mod+K',
-    run: () => openSpotlight(),
+    // No `shortcut`: `BasaltProvider`'s Spotlight owns Mod+K, and a hotkey binding as well would
+    // toggle it closed and straight back open.
+    run: () => spotlight.open(),
   },
   'appearance:light': {
     label: 'Switch to light theme',

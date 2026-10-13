@@ -17,24 +17,14 @@
  * (G12/G13 closed). Below `sm` that same one node stacks under the body, no twin (C9).
  */
 import { Stack, Text } from '@mantine/core'
-import {
-  createBasaltQueryClient,
-  PageAside,
-  PageBar,
-  QueryState,
-  Section,
-  StatCard,
-  StatGroup,
-  WidgetGrid,
-} from 'basalt-ui'
+import { PageAside, PageBar, QueryState, Section, StatCard, StatGroup, WidgetGrid } from 'basalt-ui'
 import type { StatCardTone } from 'basalt-ui'
 import { ChartCard, Heatmap, LineSparkline, MultiLine, VX, ZonedLine } from 'basalt-ui/charts'
 import type { AxisConfig, ChartSeries, ZoneSpec } from 'basalt-ui/charts'
 import { FilterSet, RangeFilter, ViewTabs } from 'basalt-ui/controls'
 import { BasaltDataTable } from 'basalt-ui/data/table'
-import { QueryClientProvider } from '@tanstack/react-query'
 import { alpha } from 'basalt-ui/tokens'
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { IconActivity, IconChart, IconComponents, IconCurrency } from '../icons'
 import { CbbiDistributionBars, CbbiPanel } from './CbbiPanel'
 import {
@@ -179,17 +169,6 @@ const VIEW_OPTIONS = [
 ]
 
 export function CbbiPage() {
-  // The playground mounts no app-wide client (`main.tsx` wires `BasaltProvider` only), so the page
-  // owns one — the same page-local shape `QueryDemoPage` uses.
-  const [client] = useState(() => createBasaltQueryClient())
-  return (
-    <QueryClientProvider client={client}>
-      <CbbiPageBody />
-    </QueryClientProvider>
-  )
-}
-
-function CbbiPageBody() {
   const filters = cbbiFilters.useValues()
   const weights = useCbbiWeights()
   const query = useCbbi()

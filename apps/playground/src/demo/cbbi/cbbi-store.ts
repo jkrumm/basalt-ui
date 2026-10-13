@@ -17,7 +17,8 @@
  * No control below reads or writes a param by hand: each is handed a `FieldHandle` (C2), so there
  * is no `useState`, no `navigate` and no `onChange` plumbing on the page (C3).
  */
-import { createSearchStore, field } from 'basalt-ui/router-tanstack'
+import { field } from 'basalt-ui/state'
+import { createSearchStore } from 'basalt-ui/router-tanstack'
 import { useCallback, useMemo } from 'react'
 import { CBBI_METRIC_KEYS, CBBI_METRICS } from './cbbi-data'
 import type { CbbiMetricKey } from './cbbi-data'

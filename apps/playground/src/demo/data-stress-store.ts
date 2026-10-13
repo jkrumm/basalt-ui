@@ -1,4 +1,5 @@
-import { createSearchStore, field } from 'basalt-ui/router-tanstack'
+import { field } from 'basalt-ui/state'
+import { createSearchStore } from 'basalt-ui/router-tanstack'
 
 /**
  * `/data-stress`'s filter state — a `RangeFilter` + `SearchFilter` pair, store-bound like every

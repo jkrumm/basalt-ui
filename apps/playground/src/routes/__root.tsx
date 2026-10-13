@@ -16,12 +16,17 @@
  * Page content renders through `<Outlet />`; each destination is a file route under `routes/`.
  */
 import { useMantineColorScheme } from '@mantine/core'
-import { Outlet, createRootRoute, useNavigate } from '@tanstack/react-router'
-import { BasaltShell, ConnectivityIndicator, ThemeToggle } from 'basalt-ui'
-import type { AccountMenuItem, BasaltAccountActions, GlobalAction } from 'basalt-ui'
+import { Outlet, createRootRouteWithContext, useNavigate } from '@tanstack/react-router'
+import { BasaltShell, ThemeToggle } from 'basalt-ui'
+import type {
+  AccountMenuItem,
+  BasaltAccountActions,
+  BasaltRouterContext,
+  GlobalAction,
+} from 'basalt-ui'
 import { useNav } from 'basalt-ui/router-tanstack'
 import { NotificationBell } from 'basalt-ui/notifications'
-import { openSpotlight } from 'basalt-ui/commands'
+import { spotlight } from '@mantine/spotlight'
 import { useEffect } from 'react'
 import { registerColorSchemeControl } from '../demo/commands'
 import { IconPalette, IconSparkle } from '../demo/icons'
@@ -40,27 +45,11 @@ declare const __APP_VERSION__: string
 const navBadges = { dashboard: 4 }
 
 /**
- * `globalActions` is DECLARED DATA (`GlobalAction[]`, was a `ReactNode` row), so basalt owns the
- * mobile projection rather than the caller: the first two default to `'bar'`, the rest to the
- * header's single kebab, and a page's `PageBar` shares that same kebab.
- *
- * The policy per entry is deliberate, not cosmetic. Connectivity and the notification bell hold
- * LIVE state and stay `'bar'` — a `'more'` node is mounted a second time inside the kebab's
- * dropdown, which for a live indicator means two subscriptions and two readings. `ThemeToggle` is
- * self-contained and idempotent, so it folds into `'more'`; the color scheme is also reachable
- * from the account menu's settings rows, so nothing is lost on a phone.
- *
- * Re-checked against the phone header's width budget rather than re-argued (2026-09-09), because
- * `/dashboard` had overrun it. At 390x844 the header's content box is 374px and the two globals are
- * `ctl` `ActionIcon`s: ~30px each plus one 6px gap, ~66px for the pair. The overrun was the PAGE's
- * — a `kind: 'custom'` live chip at ~81px on top of the primary, the kebab and sync — and it is
- * fixed where it was made (`demo/DashboardPage.tsx`). With that gone the rigid side is ~192px, so
- * the breadcrumb keeps ~182px against its 96px floor. Both globals therefore keep `'bar'`: they are
- * the two things a phone reader needs AT A GLANCE (am I online, is anything waiting), each is one
- * icon, and demoting either would trade the law above for width the row no longer needs.
- *
- * The date-range filter that used to sit here is gone: a page-level filter belongs in that page's
- * `PageBar.filters` (law C1), not in a persistent header slot every route pays for.
+ * `globalActions` is DECLARED DATA (`GlobalAction[]`), so basalt owns the mobile projection: the
+ * first two default to `'bar'`, the rest fold into the header's single kebab. The bell holds LIVE
+ * state and stays `'bar'` — a `'more'` node is mounted a second time inside the kebab's dropdown,
+ * which for a live node means two subscriptions. `ThemeToggle` is self-contained and idempotent, so
+ * it folds into `'more'`; the color scheme is also reachable from the account menu.
  */
 /**
  * The workspace switcher's rows (`brand.menu`). Static and hoisted, same as `navBadges` — a fresh
@@ -73,7 +62,6 @@ const WORKSPACE_MENU: AccountMenuItem[] = [
 ]
 
 const GLOBAL_ACTIONS: GlobalAction[] = [
-  { key: 'connectivity', node: <ConnectivityIndicator />, mobile: 'bar' },
   { key: 'notifications', node: <NotificationBell />, mobile: 'bar' },
   { key: 'theme', node: <ThemeToggle />, mobile: 'more' },
 ]
@@ -111,9 +99,9 @@ function RootLayout() {
       // `actions` is a TUPLE of one or two — a third icon would squeeze the ⌘K trigger under the
       // width where its placeholder still reads, so the type refuses it rather than the layout.
       search={{
-        onOpen: () => openSpotlight(),
+        onOpen: () => spotlight.open(),
         actions: [
-          { key: 'new', label: 'New page', icon: <IconSparkle />, onClick: () => openSpotlight() },
+          { key: 'new', label: 'New page', icon: <IconSparkle />, onClick: () => spotlight.open() },
           { key: 'theme-lab', label: 'Theme lab', icon: <IconPalette />, onClick: () => {} },
         ],
       }}
@@ -129,7 +117,7 @@ function RootLayout() {
   )
 }
 
-export const Route = createRootRoute({
+export const Route = createRootRouteWithContext<BasaltRouterContext>()({
   staticData: { title: 'Home' },
   component: RootLayout,
 })

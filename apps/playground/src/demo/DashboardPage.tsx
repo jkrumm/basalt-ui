@@ -35,8 +35,7 @@ import { BarSparkline, ChartCard, MultiLine, VX } from 'basalt-ui/charts'
 import type { ZoneSpec } from 'basalt-ui/charts'
 import { alpha } from 'basalt-ui/tokens'
 import { BasaltDataTable } from 'basalt-ui/data/table'
-import { field } from 'basalt-ui/router-tanstack'
-import { createLocalStore } from 'basalt-ui/state'
+import { createLocalStore, field } from 'basalt-ui/state'
 import { useCallback, useMemo, useState } from 'react'
 import {
   bucketByGrain,
