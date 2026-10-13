@@ -126,9 +126,9 @@ was` fails intermittently under load (rail measured 171 px, expected 48 px). Cle
   branches (the W1 numbers cite them until W4/W6 port their tests).
 - **Budget:** the spec prose ceiling went 3200 → 3166, its landed value.
 
-## Wave 2 — Baseline and the evidence harness <!-- status: active -->
+## Wave 2 — Baseline and the evidence harness <!-- status: done -->
 
-- [ ] `make evidence`: one command, deterministic output under `.evidence/<label>/` (gitignored), with
+- [x] `make evidence`: one command, deterministic output under `.evidence/<label>/` (gitignored), with
       a summary md that is committed. It records:
   - gzip bytes per subpath and per playground route chunk
   - chart render timings (first paint, update under streaming data, hover latency) through a
@@ -136,15 +136,41 @@ was` fails intermittently under load (rail measured 171 px, expected 48 px). Cle
   - React Profiler commit counts for chat streaming
   - Lighthouse for 3 playground routes
   - screenshots per route × light/dark × desktop/mobile
-- [ ] Record the 1.41 baseline: playground, plus argo's dashboard routes against a local build (no dev
+- [x] Record the 1.41 baseline: playground, plus argo's dashboard routes against a local build (no dev
       servers left running).
-- [ ] Observability: decide the framework's logging/tracing hooks per the V2-SPEC observability
+- [x] Observability: decide the framework's logging/tracing hooks per the V2-SPEC observability
       contract. Wire the playground to the local OTel collector so evidence includes traces.
-- [ ] Commit the harness and the baseline summary.
+- [x] Commit the harness and the baseline summary.
 
 **Left behind:**
 
-## Wave 3 — Foundation: toolchain, deletions, skeleton <!-- status: pending -->
+- **Landed:** #115 lane contract, flake fix (`7489033`, `4c5c51c`), then #120 `make evidence` with all lanes
+  plus both baselines. Index: `docs/waves/evidence/w2.md`. Usage:
+  `make evidence LABEL=<l> [DIST=<dir>] [ROUTES=<file>]`; a clean run takes ~6 min.
+- **Flake:** root cause was `collapseSidebar` waiting on the navbar only while the header zone eased
+  on its own transition. Fixed by waiting for all running animations; 9/10 to 10/10 under load, and the
+  merge train passed its layout suite on #120. Diagnosis: `evidence/w2/flake.md`.
+- **Baselines:** playground at 1.41 (`evidence/w2/baseline-1.41.md`) and argo's dashboard at its pinned
+  **1.36.0** (`evidence/w2/argo-baseline-1.36.md`; argo never moved to 1.41). The argo run covers only
+  the bundle, screens and lighthouse lanes: charts-perf, chat-profile and otel are playground-specific
+  and fail on argo's DOM, recorded as such. Argo has no API behind a static build, so its screenshots
+  show empty/error states; chart-render and streaming comparison for argo happens in W12 on a real stack.
+- **Observability:** V2-SPEC § 7 adopted unchanged (`evidence/w2/observability.md`). The playground emits
+  the § 7 events by hand through `telemetry.ts` (build flag `VITE_TELEMETRY=1`, runtime sink
+  `window.__BASALT_OTLP__`); W3 swaps the sources for the real `telemetry` seam. `route.error`,
+  `query.error`, `mutation.error` are not measurable until W3 (no app-level client, no
+  `createBasaltRouter`). The local collector was not used: the lane runs an in-process OTLP receiver.
+- **Measurement caveat for W4/W5:** headless Chrome here has a ~66 ms idle rAF frame (control row in the
+  tables). Compare deltas against the same-machine control, never absolute frame times.
+- **Review fixes applied:** discarded `toSorted`, missing `VITE_TELEMETRY` on the evidence build, a
+  boot-blocking telemetry import, duplicated `median`/`withTimeout`/`sortKeys`, `routes` into `LaneCtx`,
+  `scripts/evidence` added to `typecheck`.
+- **Deferred (accepted):** unit tests for `telemetry.ts` pairing/mapping and `serve.ts` edge cases; an
+  `AbortSignal` in `LaneCtx` so a timed-out lane stops its work; `lighthouse()`/`main()` complexity;
+  `lighthouse` and `index.ts` decomposition; `fmt` does not cover `scripts/`. The spike-branch
+  numbers from W1 are still cited until W4/W6 port their tests (W1 deferral stands).
+
+## Wave 3 — Foundation: toolchain, deletions, skeleton <!-- status: active -->
 
 - [ ] Toolchain per audit H W1: Mantine ^9.7, React 19.3, Query 5.104, AI SDK 7.0.138, shiki 4.5,
       remend 1.4 (plus `incomplete-image` hardening), motion 14, Hotkeys 0.13, oxlint 1.88, oxfmt 0.72,
