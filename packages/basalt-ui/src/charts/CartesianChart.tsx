@@ -39,89 +39,30 @@ const rootStyle: CSSProperties = { display: 'flex', flexDirection: 'column', gap
 /** `useId` output (`«r1»`, `:r1:`) is not a safe SVG id fragment. */
 const idPrefixOf = (id: string): string => `basalt-chart-${id.replaceAll(/[^\w-]/g, '')}`
 
+/** The previous object while every field is `Object.is`-equal: a one-dependency memo key. */
+function useShallowStable<V extends object>(next: V): V {
+  const [kept, setKept] = useState(next)
+  const prev = kept as Record<string, unknown>
+  const entries = Object.entries(next)
+  const same =
+    entries.length === Object.keys(prev).length && entries.every(([k, v]) => Object.is(prev[k], v))
+  if (!same) setKept(next)
+  return same ? kept : next
+}
+
 export function CartesianRung<T, X extends ChartX>(
   props: CartesianChartProps<T, X> & RungOptions,
 ): ReactElement {
-  const {
-    ariaLabel,
-    data,
-    x,
-    series,
-    marks,
-    y,
-    y2,
-    xTicks,
-    formatX,
-    zones,
-    xZones,
-    refLines,
-    legend,
-    height,
-    state,
-    cursorGroup,
-    cursorResolution,
-    tooltip,
-    band,
-    reverseRows,
-    stack,
-    className,
-    style,
-  } = props
+  const { ariaLabel, legend, height, state, className, style, ...spec } = props
+  const { series } = props
   const chartId = useId()
   const card = useChartCard()
   const { ref, size, coarse } = useChartSize(height)
   const [hidden, setHidden] = useState<ReadonlySet<string>>(() => new Set())
   const [highlighted, setHighlighted] = useState<string | null>(null)
 
-  const definition = useMemo(
-    () =>
-      compileCartesian({
-        chartId,
-        data,
-        x,
-        series,
-        marks,
-        hidden,
-        highlighted,
-        coarse,
-        ...(y !== undefined && { y }),
-        ...(y2 !== undefined && { y2 }),
-        ...(xTicks !== undefined && { xTicks }),
-        ...(formatX !== undefined && { formatX }),
-        ...(zones !== undefined && { zones }),
-        ...(xZones !== undefined && { xZones }),
-        ...(refLines !== undefined && { refLines }),
-        ...(cursorGroup !== undefined && { cursorGroup }),
-        ...(cursorResolution !== undefined && { cursorResolution }),
-        ...(tooltip !== undefined && { tooltip }),
-        ...(band !== undefined && { band }),
-        ...(reverseRows !== undefined && { reverseRows }),
-        ...(stack !== undefined && { stack }),
-      }),
-    [
-      chartId,
-      data,
-      x,
-      series,
-      marks,
-      hidden,
-      highlighted,
-      coarse,
-      y,
-      y2,
-      xTicks,
-      formatX,
-      zones,
-      xZones,
-      refLines,
-      cursorGroup,
-      cursorResolution,
-      tooltip,
-      band,
-      reverseRows,
-      stack,
-    ],
-  )
+  const input = useShallowStable({ ...spec, chartId, hidden, highlighted, coarse })
+  const definition = useMemo(() => compileCartesian(input), [input])
 
   // ── legend: micro has none, compact shows dots, regular and wide show chips ────────────────────
   const config = legend === false ? null : (legend ?? {})

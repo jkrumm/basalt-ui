@@ -357,3 +357,15 @@ describe('compile edges', () => {
     expect(height / clip).toBeCloseTo(0.5, 1)
   })
 })
+
+describe('string x follower', () => {
+  test('a string-keyed view takes a foreign value verbatim, and an unsnapped one stays the same object', () => {
+    const off = chartCursor('str').subscribe(() => {})
+    const view = chartCursorView('str', 'cat', ['a', 'b', 'c'], 'nearest')
+    const state = { anchor: 'value', value: { x: 'b' }, source: 'programmatic' } as never
+    chartCursor('str').setState(state)
+    expect(view.getState()).toBe(state)
+    off()
+    chartCursor('str').setState(null)
+  })
+})

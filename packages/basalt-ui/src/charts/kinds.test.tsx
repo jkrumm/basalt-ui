@@ -334,3 +334,164 @@ describe('ChartCard', () => {
     expect(html).not.toContain('never')
   })
 })
+
+const build = (def: ReturnType<typeof compileCartesian>): StoredChartSpec =>
+  def.chart({ width: 640, height: 240, defaultTheme: {} as never })
+
+function tooltipOf(
+  tooltip: ReturnType<typeof compileCartesian>['tooltip'],
+  at: number,
+): { title?: string | undefined; rows: readonly { label: string; value: string }[] } {
+  if (!tooltip || !('content' in tooltip) || !tooltip.content) throw new Error('no tooltip')
+  const point = {
+    datum: { x: day(at), y: 0, series: 'a', datum: data[at - 1] },
+    xValue: day(at),
+  } as ChartPoint
+  return tooltip.content([point], {} as never)
+}
+
+describe('x-zones', () => {
+  const base = { chartId: 'xz', data, x, series: [a], marks: () => [] }
+  test('an x-zone adds a decorative mark and the shared fraction scale', () => {
+    const plain = build(compileCartesian(base))
+    const zoned = build(
+      compileCartesian({ ...base, xZones: [{ from: day(2), to: day(3), fill: 'var(--vx-line)' }] }),
+    )
+    expect(zoned.marks.length).toBe(plain.marks.length + 1)
+    expect(plain.scales['zx']).toBeUndefined()
+    expect(zoned.scales['zx']?.channel).toBe('x')
+  })
+})
+
+const tipBase = { chartId: 'tt', data, x, series: [a, b], marks: () => [] }
+const labelsOf = (reverseRows: boolean): string[] =>
+  tooltipOf(compileCartesian({ ...tipBase, reverseRows }).tooltip, 2).rows.map((r) => r.label)
+const headerOf = (extra: object): string | undefined =>
+  tooltipOf(compileCartesian({ ...tipBase, ...extra }).tooltip, 2).title
+
+describe('tooltip', () => {
+  const base = tipBase
+
+  test('reverseRows lists the series bottom-up, so a stack reads top-down', () => {
+    expect(labelsOf(false)).toEqual(['Alpha', 'Beta'])
+    expect(labelsOf(true)).toEqual(['Beta', 'Alpha'])
+  })
+
+  test('a series note joins its label; a formatValue beats the axis format', () => {
+    const rows = tooltipOf(
+      compileCartesian({
+        ...base,
+        series: [{ ...a, note: 'est.', formatValue: (v) => `${v} ms` }],
+      }).tooltip,
+      2,
+    ).rows
+    expect(rows).toEqual([expect.objectContaining({ label: 'Alpha · est.', value: '20 ms' })])
+  })
+
+  test('header: formatHeader wins, then a long UTC date, then formatX', () => {
+    expect(headerOf({})).toBe('Wed Sep 2 2026')
+    expect(headerOf({ formatX: () => 'X' })).toBe('X')
+    expect(headerOf({ formatX: () => 'X', tooltip: { formatHeader: () => 'H' } })).toBe('H')
+    expect(headerOf({ tooltip: { formatHeader: (d: Date) => d.toISOString().slice(0, 4) } })).toBe(
+      '2026',
+    )
+  })
+
+  test('a non-midnight instant adds its UTC time to the date header', () => {
+    const at = new Date(Date.UTC(2026, 8, 2, 13, 5))
+    const def = compileCartesian({ ...base, data: [{ ...data[1], t: at } as Row] })
+    const tooltip = def.tooltip
+    if (!tooltip || !('content' in tooltip) || !tooltip.content) throw new Error('no tooltip')
+    const point = { datum: { x: at, y: 0, series: 'a', datum: { t: at, a: 1 } }, xValue: at }
+    expect(tooltip.content([point as ChartPoint], {} as never).title).toBe('Wed Sep 2 2026 13:05')
+  })
+
+  test('a number x with no formatX reads through the axis format', () => {
+    const def = compileCartesian({
+      chartId: 'nx',
+      data: [{ n: 1500, v: 1 }],
+      x: (d) => d.n,
+      series: [{ key: 'v', label: 'V', color: 'c', getValue: (d: { v: number }) => d.v }],
+      marks: () => [],
+    })
+    const tooltip = def.tooltip
+    if (!tooltip || !('content' in tooltip) || !tooltip.content) throw new Error('no tooltip')
+    const point = { datum: { n: 1500, v: 1 }, xValue: 1500 } as unknown as ChartPoint
+    expect(tooltip.content([point], {} as never).title).toBe('1.5k')
+  })
+})
+
+describe('legend', () => {
+  test('groups split series | overlay | reference with a divider, notes beside the label', async () => {
+    const roled: ChartSeries<Row>[] = [
+      { ...a, note: 'daily' },
+      { ...b, role: 'overlay' },
+      { ...a, key: 'c', label: 'Ref', role: 'reference' },
+    ]
+    const el = await mount(
+      <Lines ariaLabel="L" data={data} x={x} series={roled} legend={{ groups: true }} />,
+    )
+    const legend = el.querySelector('[data-basalt-chart-legend]')
+    expect(
+      [...(legend?.querySelectorAll('[data-legend-key]') ?? [])].map((n) =>
+        n.getAttribute('data-legend-key'),
+      ),
+    ).toEqual(['a', 'b', 'c'])
+    const hidden = (groups: boolean): number =>
+      renderToString(<Lines ariaLabel="L" data={data} x={x} series={roled} legend={{ groups }} />)
+        .split('data-basalt-chart-legend')[1]!
+        .split('aria-hidden="true"').length - 1
+    expect(hidden(true) - hidden(false)).toBe(2) // one divider between each pair of groups
+    expect(legend?.textContent).toContain('daily')
+  })
+})
+
+describe('Bars on a log axis', () => {
+  const props = {
+    ariaLabel: 'B',
+    data,
+    x,
+    bars: [{ key: 'b', label: 'B', color: 'var(--vx-line)', getValue: (d: Row) => d.b }],
+    y: { scale: 'log' as const },
+  }
+  test('stacked and normalized throw; grouped draws', () => {
+    expect(() => renderToString(<Bars {...props} />)).toThrow(/stacked bars cannot use a log axis/)
+    expect(() => renderToString(<Bars {...props} layout="normalized" />)).toThrow(/log axis/)
+    expect(() => renderToString(<Bars {...props} layout="grouped" />)).not.toThrow()
+  })
+})
+
+describe('ChartCard slots', () => {
+  test('actions, count, subtitle and slot classNames land on their boxes', async () => {
+    const el = await mount(
+      <ChartCard
+        title="Card"
+        subtitle="Sub"
+        count={7}
+        actions={<button type="button">Act</button>}
+        className="own"
+        classNames={{ root: 'r', header: 'h', body: 'b' }}
+        style={{ width: 321 }}
+      >
+        <span id="child" />
+      </ChartCard>,
+    )
+    const card = el.firstElementChild as HTMLElement
+    expect(card.className).toBe('r own')
+    expect(card.style.width).toBe('321px')
+    expect(el.querySelector('.h')?.textContent).toContain('Card')
+    expect(el.querySelector('.h')?.textContent).toContain('Sub')
+    expect(el.querySelector('.h [data-basalt-tier="widget"] button')?.textContent).toBe('Act')
+    expect(el.querySelector('.b #child')).not.toBeNull()
+  })
+
+  test('no title, info, value, icon, count or actions: no header; pending sets aria-busy', async () => {
+    const el = await mount(
+      <ChartCard subtitle="alone" state={{ pending: true }}>
+        <span />
+      </ChartCard>,
+    )
+    expect(el.textContent).not.toContain('alone')
+    expect(el.firstElementChild?.getAttribute('aria-busy')).toBe('true')
+  })
+})

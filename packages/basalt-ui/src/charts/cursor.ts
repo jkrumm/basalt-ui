@@ -38,6 +38,37 @@ const INERT: ChartCursorController = {
 
 const isServer = (): boolean => typeof window === 'undefined'
 
+/** Drops `key` one microtask after its entry has no subscribers (a host re-binding releases before
+ * it re-acquires, and must not lose the entry in between). */
+function sweepWhenIdle<E extends { subscribers: number }>(
+  map: Map<string, E>,
+  key: string,
+  entry: E,
+): void {
+  queueMicrotask(() => {
+    if (entry.subscribers === 0 && map.get(key) === entry) map.delete(key)
+  })
+}
+
+/** Counts one live subscription on `entry`. The returned release runs `unsubscribe` once and sweeps
+ * the entry when it was the last. */
+function retain<E extends { subscribers: number }>(
+  map: Map<string, E>,
+  key: string,
+  entry: E,
+  unsubscribe: () => void,
+): () => void {
+  entry.subscribers += 1
+  let live = true
+  return () => {
+    if (!live) return
+    live = false
+    unsubscribe()
+    entry.subscribers -= 1
+    if (entry.subscribers === 0) sweepWhenIdle(map, key, entry)
+  }
+}
+
 function ensure(group: string): Entry {
   let entry = groups.get(group)
   if (!entry) {
@@ -47,29 +78,15 @@ function ensure(group: string): Entry {
   return entry
 }
 
-function facade(group: string): ChartCursorController {
-  return {
-    getState: () => groups.get(group)?.controller.getState() ?? null,
-    // No subscriber, no entry: a write to a group nothing listens to would only leak one.
-    setState: (next) => groups.get(group)?.controller.setState(next),
-    subscribe: (listener) => {
-      const entry = ensure(group)
-      entry.subscribers += 1
-      const unsubscribe = entry.controller.subscribe(listener)
-      let live = true
-      return () => {
-        if (!live) return
-        live = false
-        unsubscribe()
-        entry.subscribers -= 1
-        if (entry.subscribers > 0) return
-        queueMicrotask(() => {
-          if (entry.subscribers === 0 && groups.get(group) === entry) groups.delete(group)
-        })
-      }
-    },
-  }
-}
+const facade = (group: string): ChartCursorController => ({
+  getState: () => groups.get(group)?.controller.getState() ?? null,
+  // No subscriber, no entry: a write to a group nothing listens to would only leak one.
+  setState: (next) => groups.get(group)?.controller.setState(next),
+  subscribe: (listener) => {
+    const entry = ensure(group)
+    return retain(groups, group, entry, entry.controller.subscribe(listener))
+  },
+})
 
 /**
  * The cursor controller for a group (default `'default'`), for app-side sync — a map timeline that
@@ -86,10 +103,7 @@ function facade(group: string): ChartCursorController {
 export function chartCursor(group = 'default'): ChartCursorController {
   if (isServer()) return INERT
   let controller = facades.get(group)
-  if (!controller) {
-    controller = facade(group)
-    facades.set(group, controller)
-  }
+  if (!controller) facades.set(group, (controller = facade(group)))
   return controller
 }
 
@@ -158,22 +172,12 @@ function makeView(
   group: string | undefined,
   chartId: string,
   config: () => Snap,
-  onSubscribers?: (delta: 1 | -1) => void,
+  track: (unsubscribe: () => void) => () => void = (unsubscribe) => unsubscribe,
 ): ChartCursorController {
   // Resolved per call, never at build time: a definition compiled during SSR holds no controller.
   const shared = (): ChartCursorController => chartCursor(group)
   return {
-    subscribe: (listener) => {
-      const unsubscribe = shared().subscribe(listener)
-      onSubscribers?.(1)
-      let live = true
-      return () => {
-        if (!live) return
-        live = false
-        unsubscribe()
-        onSubscribers?.(-1)
-      }
-    },
+    subscribe: (listener) => track(shared().subscribe(listener)),
     setState: (next) =>
       shared().setState(
         typeof next === 'function' ? (prev) => stamp(next(prev), chartId) : stamp(next, chartId),
@@ -186,17 +190,17 @@ function makeView(
       const hit = memo.get(state)
       if (hit !== undefined) return hit
       const snapped = snap(x)
-      const next = snapped === x ? state : snappedState(state, snapped)
+      // A foreign value of another x type never shows (`undefined`); otherwise a copy at the snap.
+      const next =
+        snapped === x
+          ? state
+          : snapped === undefined
+            ? null
+            : { ...state, value: { ...state.value, x: snapped } }
       memo.set(state, next)
       return next
     },
   }
-}
-
-/** A foreign value of another x type never shows (`undefined`); otherwise a copy at the snap. */
-function snappedState(state: NonNullable<CursorState>, x: ChartValue | undefined): CursorState {
-  if (x === undefined) return null
-  return { ...state, value: { ...state.value, x } }
 }
 
 /**
@@ -225,23 +229,16 @@ export function chartCursorView(
     return existing.controller
   }
   const view: View = { controller: INERT, config, subscribers: 0 }
-  // Swept unless subscribed by then — a chart rendering a `state` placeholder compiles a view it
-  // never mounts, and must not leave a permanent entry.
-  const sweep = (): void =>
-    queueMicrotask(() => {
-      if (view.subscribers === 0 && views.get(id) === view) views.delete(id)
-    })
   view.controller = makeView(
     group,
     chartId,
     () => view.config,
-    (delta) => {
-      view.subscribers += delta
-      if (view.subscribers === 0) sweep()
-    },
+    (unsubscribe) => retain(views, id, view, unsubscribe),
   )
   views.set(id, view)
-  sweep()
+  // Swept unless subscribed by then — a chart rendering a `state` placeholder compiles a view it
+  // never mounts, and must not leave a permanent entry.
+  sweepWhenIdle(views, id, view)
   return view.controller
 }
 
