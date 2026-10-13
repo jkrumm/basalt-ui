@@ -7,14 +7,12 @@ import '@mantine/spotlight/styles.layer.css'
 import 'basalt-ui/styles.css'
 import { RouterProvider, createRouter } from '@tanstack/react-router'
 import { BasaltProvider, createBasaltTheme } from 'basalt-ui'
-import { BasaltOverlays } from 'basalt-ui/commands'
 import { applyOverrides, loadOverrides } from 'basalt-ui/theme-lab'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 // Side-effect import: registers the app's global command registry (basalt-ui/commands'
-// defineCommands) before BasaltOverlays mounts, so Spotlight/ShortcutsHelp see it from boot.
+// defineCommands) so Spotlight/ShortcutsHelp see it from boot.
 import './demo/commands'
-import { buildPaletteActions } from './demo/palette-actions'
 import { demoPaletteGroups } from './demo/series'
 import { routeTree } from './routeTree.gen'
 
@@ -65,12 +63,6 @@ declare module '@tanstack/react-router' {
   }
 }
 
-// The full palette action list — Pages (nav definition → breadcrumb trails) + the command bus,
-// each with a kind badge. `projectCommands={false}` below hands the whole list here so nothing is
-// projected twice. The one `as never` is at `router.navigate`'s own untyped boundary over a
-// heterogeneous action list — the nav definition itself carries zero casts.
-const spotlightActions = buildPaletteActions((href) => void router.navigate({ to: href as never }))
-
 // Literal env checks, so a build without either flag drops the dynamic import and its chunk.
 // `VITE_TELEMETRY=1` builds the telemetry in (exporter URL then comes from `window.__BASALT_OTLP__`
 // at runtime); `VITE_OTLP_ENDPOINT` bakes the URL in. See docs/waves/evidence/w2/observability.md.
@@ -103,12 +95,7 @@ createRoot(root).render(
         telemetry?.onError(error, ctx)
       }}
     >
-      {/* hotkeys={false}: the demo commands are registered page-locally in CommandsDemoPage, which
-          binds them itself via useCommandHotkeys(). A real app registers commands app-wide and keeps
-          the default (hotkeys enabled) so BasaltOverlays binds them globally. */}
-      <BasaltOverlays hotkeys={false} projectCommands={false} spotlightActions={spotlightActions}>
-        <RouterProvider router={router} />
-      </BasaltOverlays>
+      <RouterProvider router={router} />
     </BasaltProvider>
   </StrictMode>,
 )

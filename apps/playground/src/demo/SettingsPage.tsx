@@ -47,7 +47,6 @@ import {
 } from 'basalt-ui'
 import type { AccountBadgeTone } from 'basalt-ui'
 import { ShortcutsHelp } from 'basalt-ui/commands'
-import type { NotificationIntent } from 'basalt-ui/notifications'
 import { createPersistedState } from 'basalt-ui/state'
 import { COLOR_GROUPS, DeriveControls, ThemeLabControls } from 'basalt-ui/theme-lab'
 import { alpha, VX } from 'basalt-ui/tokens'
@@ -417,10 +416,9 @@ function AppearanceSection() {
 
 // ── Notifications ─────────────────────────────────────────────────────────────────────────────
 
-/** Per-intent notification opt-in — reflects `basalt-ui/notifications`' `NotificationIntent`
- * union directly (success/info/warning/error), so the toggle set never drifts from the package's
- * actual typed surface. Playground-only preference; it doesn't gate the notify helpers demoed on
- * /notifications. */
+type NotificationIntent = 'success' | 'info' | 'warning' | 'error'
+
+/** Per-intent notification opt-in (success/info/warning/error). Playground-only preference. */
 const useNotificationPrefs = createPersistedState({
   key: 'notification-prefs',
   version: 1,

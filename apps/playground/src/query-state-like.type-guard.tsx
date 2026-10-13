@@ -5,7 +5,7 @@
 // `UseQueryResult` also carries, `isPending`, proving excess fields don't break assignability
 // through a variable) reaches every one of the four consumers with no cast.
 import type { ReactNode } from 'react'
-import { BasaltDataTable, createColumnHelper } from 'basalt-ui/data/table'
+import { BasaltDataTable, createColumnHelper } from 'basalt-ui/table'
 import { QueryState, Section, StatCard } from 'basalt-ui'
 
 type Row = { name: string; cost: number }

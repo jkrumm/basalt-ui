@@ -3,8 +3,8 @@
 // PROVES: AgentPart exhaustiveness is enforced via assertNever — adding a variant without a case
 // is a tsc error. Mirrors the asyncstate-fourth-variant.type-guard.ts mechanism (fixture J.4).
 //
-// The production path: PartList's switch ends with `default: return assertNever(part)` using the
-// same mechanism — this fixture proves the gate works end-to-end at compile time.
+// The consumer path: a part switch ending in `default: return assertNever(part)` — this fixture
+// proves the gate works end-to-end at compile time.
 import { assertNever } from 'basalt-ui'
 import type { AgentPart } from 'basalt-ui/agent'
 
@@ -58,4 +58,4 @@ export function describeExtended(part: ExtendedPart): string {
 }
 
 // PROVES: basalt-ui/agent's AgentPart exhaustiveness is real — any unhandled variant is a
-// tsc error via assertNever. This gates PartList's exhaustive switch enforcement.
+// tsc error via assertNever.

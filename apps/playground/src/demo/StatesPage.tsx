@@ -11,7 +11,6 @@ import { EmptyState, ErrorState, LoadingState, QueryState, Section, WidgetGrid }
 import type { QueryStateLike } from 'basalt-ui'
 import { ChartCard, MultiLine } from 'basalt-ui/charts'
 import { RangeFilter, ViewTabs } from 'basalt-ui/controls'
-import { BasaltVirtualList } from 'basalt-ui/data/virtual'
 import { createLocalStore, field } from 'basalt-ui/state'
 import { SERIES_DATA } from './data'
 import type { DayPoint } from './data'
@@ -34,14 +33,11 @@ const statesStore = createLocalStore({
     range: field.range({ presets: ['7d', '30d'], fallback: '30d' }),
     /** `Section`'s own `query` demo — independent lever from the chart above. */
     sectionVariant: field.enum(VARIANT_VALUES, 'data'),
-    /** `BasaltVirtualList`'s own `query` demo — independent lever from both above. */
-    listVariant: field.enum(VARIANT_VALUES, 'data'),
   },
 }).labels({
   variant: { pending: 'Pending', error: 'Error', empty: 'Empty', data: 'Data' },
   range: { '7d': 'Last 7 days', '30d': 'Last 30 days' },
   sectionVariant: { pending: 'Pending', error: 'Error', empty: 'Empty', data: 'Data' },
-  listVariant: { pending: 'Pending', error: 'Error', empty: 'Empty', data: 'Data' },
 })
 
 function buildChartQuery(variant: Variant, refetch: () => void): QueryStateLike<DayPoint[]> {
@@ -150,39 +146,6 @@ function SectionQueryBlock() {
   )
 }
 
-/** `BasaltVirtualList`'s own `query` — pending / error-with-retry / empty replace the scroll box,
- * data renders `items` (here `query.data ?? []`, the shipped `<BasaltDataTable data={q.data ?? []}
- * query={q} />` idiom). */
-function VirtualListQueryBlock() {
-  const [variant] = statesStore.field.listVariant.use()
-  const [retries, setRetries] = useState(0)
-  const query = buildChartQuery(variant, () => setRetries((n) => n + 1))
-
-  return (
-    <Section
-      title="BasaltVirtualList — query"
-      subtitle={`refetch() calls: ${retries}`}
-      actions={<ViewTabs field={statesStore.field.listVariant} options={VARIANT_OPTIONS} />}
-    >
-      <BasaltVirtualList
-        items={query.data ?? []}
-        query={query}
-        height={200}
-        estimateSize={36}
-        getItemKey={(item) => item.date}
-        renderItem={(item) => (
-          <Group px="xs" h="100%" justify="space-between" wrap="nowrap">
-            <Text size="sm">{item.date}</Text>
-            <Text size="sm" c="dimmed">
-              {item.sessions} sessions
-            </Text>
-          </Group>
-        )}
-      />
-    </Section>
-  )
-}
-
 function BuildingBlocksBlock() {
   return (
     <Stack gap="xs">
@@ -260,7 +223,6 @@ export function StatesPage() {
     <Stack gap="lg">
       <ChartStatesWidget />
       <SectionQueryBlock />
-      <VirtualListQueryBlock />
       <BuildingBlocksBlock />
     </Stack>
   )

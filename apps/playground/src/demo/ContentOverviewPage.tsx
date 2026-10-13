@@ -1,34 +1,11 @@
 /**
- * ContentOverviewPage — a docs-landing demo exercising the docs-framing layer of
- * `basalt-ui/content`: `filterArticles`/`sortArticles` over the fixture article list (`ARTICLES`),
- * rendered through the shipped `ArticleGrid`/`ArticleCard`, plus `GuideLink`/`GuideDrawer` (the
- * contextual-help pattern) mounted in a couple of `StatCard` action slots the way a real dashboard
- * would use them ("this metric has a guide").
- *
- * The filter bar is the replacement for the removed controlled `ArticleFilterBar`: a `ViewTabs`
- * over the category axis and a `MultiSelectFilter` over tags, both bound to `articleFilters` by
- * `FieldHandle`. There is no `useState`, no `onChange` and no `navigate` here — each control owns
- * its URL param and its localStorage mirror (laws C2/C3), and both live inside `PageBar` slots
- * rather than a hand-rolled row (law C1).
+ * ContentOverviewPage — `GuideLink` (the contextual-help pattern) mounted in a couple of `StatCard`
+ * action slots the way a real dashboard would use it ("this metric has a guide").
  */
 import { Box, Group, Stack, Text } from '@mantine/core'
 import { Link } from '@tanstack/react-router'
-import { EmptyState, PageBar, Section, StatCard } from 'basalt-ui'
-import {
-  ArticleCard,
-  ArticleGrid,
-  filterArticles,
-  FilterSet,
-  GuideLink,
-  MultiSelectFilter,
-  sortArticles,
-  ViewTabs,
-} from 'basalt-ui/content'
-import type { ArticleNavTarget } from 'basalt-ui/content'
-import type { ReactNode } from 'react'
-import { articleFilters } from './article-filter-stores'
-import { ARTICLES, articleHref } from './articles'
-import { IconSearch } from './icons'
+import { Section, StatCard } from 'basalt-ui'
+import { GuideLink } from 'basalt-ui/content'
 
 const GUIDE_MARKDOWN_FIXTURE = `## How this metric is measured
 
@@ -50,70 +27,8 @@ export function p95(samples: number[]): number {
 `
 
 export function ContentOverviewPage() {
-  // The store's own reader — no `useSearch({ from: '/content-overview' })`, which would break the
-  // moment this component rendered under a sibling route (law C10).
-  const { category, tags } = articleFilters.useValues()
-
-  // 'all' is a UI sentinel declared on the store, not an `Article` model concept — filterArticles
-  // treats undefined as "no constraint" and deliberately does NOT special-case 'all'.
-  const effectiveCategory = category === 'all' ? undefined : category
-  const articles = sortArticles(
-    filterArticles(ARTICLES, {
-      ...(effectiveCategory !== undefined && { category: effectiveCategory }),
-      tags,
-    }),
-  )
-
   return (
     <Stack gap="md">
-      <PageBar
-        tabs={<ViewTabs field={articleFilters.field.category} />}
-        filters={
-          <FilterSet>
-            <MultiSelectFilter field={articleFilters.field.tags} label="All tags" noun="tags" />
-          </FilterSet>
-        }
-      />
-
-      <Section
-        title="Guides"
-        subtitle="Every article below is rendered by the SAME basalt-ui/content primitives — hand-authored JSX, a rendered markdown file, or an MDX guide are visually indistinguishable."
-        count={articles.length}
-      >
-        {articles.length === 0 ? (
-          <EmptyState
-            icon={<IconSearch />}
-            title="No matching guides"
-            description="Try a different category or clear the selected tags."
-            tier="section"
-          />
-        ) : (
-          <ArticleGrid>
-            {articles.map((article) => {
-              const href = articleHref(article)
-              const isRealRoute = href !== '#'
-              return (
-                <ArticleCard
-                  key={article.slug}
-                  title={article.title}
-                  description={article.description}
-                  date={article.date}
-                  category={article.category}
-                  tags={article.tags}
-                  readingTime={article.readingTime}
-                  href={href}
-                  {...(isRealRoute && {
-                    renderLink: (target: ArticleNavTarget, node: ReactNode) => (
-                      <Link to={target.href as never}>{node}</Link>
-                    ),
-                  })}
-                />
-              )
-            })}
-          </ArticleGrid>
-        )}
-      </Section>
-
       <Section title="Contextual guides">
         <Stack gap="sm">
           <Text size="sm" c="dimmed">

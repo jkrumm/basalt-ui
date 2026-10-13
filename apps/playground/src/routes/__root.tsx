@@ -15,16 +15,11 @@
  *
  * Page content renders through `<Outlet />`; each destination is a file route under `routes/`.
  */
-import { useMantineColorScheme } from '@mantine/core'
 import { Outlet, createRootRoute, useNavigate } from '@tanstack/react-router'
 import { BasaltShell, ConnectivityIndicator, ThemeToggle } from 'basalt-ui'
 import type { AccountMenuItem, BasaltAccountActions, GlobalAction } from 'basalt-ui'
 import { useNav } from 'basalt-ui/router-tanstack'
-import { NotificationBell } from 'basalt-ui/notifications'
-import { openSpotlight } from 'basalt-ui/commands'
-import { useEffect } from 'react'
-import { registerColorSchemeControl } from '../demo/commands'
-import { IconPalette, IconSparkle } from '../demo/icons'
+import { NotificationBell } from 'basalt-ui/commands'
 import { NAV, SIDEBAR_BLOCKS } from '../demo/nav-model'
 import { scenarioToAccountState, useUserScenario } from '../demo/user-scenario-store'
 
@@ -81,12 +76,6 @@ const GLOBAL_ACTIONS: GlobalAction[] = [
 function RootLayout() {
   const navigate = useNavigate()
   const [scenario, setScenario] = useUserScenario()
-  const { setColorScheme } = useMantineColorScheme()
-
-  useEffect(() => {
-    registerColorSchemeControl({ setColorScheme })
-    return () => registerColorSchemeControl(null)
-  }, [setColorScheme])
 
   const accountState = scenarioToAccountState(scenario)
   const accountActions: BasaltAccountActions = {
@@ -108,15 +97,6 @@ function RootLayout() {
       // the same shape the account menu takes, so there is no second vocabulary for one dropdown.
       brand={{ name: 'Basalt', version: __APP_VERSION__, menu: WORKSPACE_MENU }}
       {...nav}
-      // `actions` is a TUPLE of one or two — a third icon would squeeze the ⌘K trigger under the
-      // width where its placeholder still reads, so the type refuses it rather than the layout.
-      search={{
-        onOpen: () => openSpotlight(),
-        actions: [
-          { key: 'new', label: 'New page', icon: <IconSparkle />, onClick: () => openSpotlight() },
-          { key: 'theme-lab', label: 'Theme lab', icon: <IconPalette />, onClick: () => {} },
-        ],
-      }}
       // All three block kinds, declared once (`demo/nav-model.tsx`) and projected by basalt onto the
       // desktop sidebar, the collapsed rail and the mobile More sheet — the two `ReactNode` extras
       // this replaced (`sidebarNavExtra`, `mobileNav.moreExtra`) could express none of that.

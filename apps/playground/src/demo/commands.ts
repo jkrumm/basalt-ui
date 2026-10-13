@@ -3,56 +3,26 @@
  *
  * `defineCommands`'s own contract is "call it once — the app's single command registry; the last
  * call wins" (see its JSDoc in basalt-ui/commands). Imported eagerly by main.tsx so every command
- * below — the real global one (`nav:search`) alongside CommandsDemoPage's showcase commands — is
- * registered at boot, before any route mounts. That's what makes `ShortcutsHelp`'s data source
- * (`toShortcutList()`, which reads this same registry) honest on `/settings` regardless of whether
- * `/commands` has ever been visited: previously the registry was only populated once the
- * `/commands` route lazy-loaded, so the `/settings` Shortcuts card rendered empty.
+ * below is registered at boot, before any route mounts, which is what keeps `ShortcutsHelp` (the
+ * `/settings` Shortcuts card reads this same registry) populated on every route.
  */
-import { defineCommands, openSpotlight, overlays } from 'basalt-ui/commands'
-
-// Module-level mutable setter — CommandsDemoPage wires this to its local highlight-box state
-// while mounted so the demo:toggle command (Mod+T) can flip it. Registered/cleared via
-// `registerDemoToggleSetter`; a no-op when the demo page isn't mounted.
-let demoToggleSetter: ((updater: (prev: boolean) => boolean) => void) | null = null
-
-/** Called by CommandsDemoPage on mount (and with `null` on unmount) to wire demo:toggle's target. */
-export function registerDemoToggleSetter(
-  setter: ((updater: (prev: boolean) => boolean) => void) | null,
-): void {
-  demoToggleSetter = setter
-}
-
-type ColorSchemeControl = { setColorScheme: (value: 'light' | 'dark' | 'auto') => void }
-
-let colorSchemeControl: ColorSchemeControl | null = null
-
-/** Wired by RootLayout (and cleared on unmount) so the Appearance commands can set the scheme. */
-export function registerColorSchemeControl(control: ColorSchemeControl | null): void {
-  colorSchemeControl = control
-}
+import { defineCommands, setColorScheme } from 'basalt-ui/commands'
 
 export const COMMANDS = defineCommands({
-  'nav:search': {
-    label: 'Open search',
-    group: 'Navigation',
-    shortcut: 'Mod+K',
-    run: () => openSpotlight(),
-  },
   'appearance:light': {
     label: 'Switch to light theme',
     group: 'Appearance',
-    run: () => colorSchemeControl?.setColorScheme('light'),
+    run: () => setColorScheme('light'),
   },
   'appearance:dark': {
     label: 'Switch to dark theme',
     group: 'Appearance',
-    run: () => colorSchemeControl?.setColorScheme('dark'),
+    run: () => setColorScheme('dark'),
   },
   'appearance:system': {
     label: 'Match system theme',
     group: 'Appearance',
-    run: () => colorSchemeControl?.setColorScheme('auto'),
+    run: () => setColorScheme('auto'),
   },
   'demo:greet': {
     label: 'Greet user',
@@ -70,22 +40,6 @@ export const COMMANDS = defineCommands({
     run: () => {
       // oxlint-disable-next-line no-console
       console.log('[basalt commands] runCommand demo triggered')
-    },
-  },
-  'demo:toggle': {
-    label: 'Toggle highlight box',
-    group: 'Demo',
-    shortcut: 'Mod+T',
-    run: () => {
-      demoToggleSetter?.((prev) => !prev)
-    },
-  },
-  'demo:overlay': {
-    label: 'Open demo overlay',
-    group: 'Demo',
-    shortcut: 'Mod+Shift+O',
-    run: () => {
-      overlays.open('demo:info', { message: 'Opened from the command bus!' })
     },
   },
   'demo:async': {
