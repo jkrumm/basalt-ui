@@ -10,6 +10,10 @@ records the surface's aria-label plus the visible tooltip text and whether that 
   one ArrowRight moved the cursor; a chart that ignores ArrowRight is a FAIL row, never an exception.
 - Artifacts (gitignored): `.evidence/<label>/keyboard.json` and `.evidence/<label>/keyboard/NN-<chart>.png`
   (screenshot of the keyboard-focused state, after End and before Enter).
+- `N/A` (non-interactive, V2-SPEC § 9.3/9.10): the host is not `tabindex=0`, or the chart neither moves
+  on ArrowRight nor shows a tooltip on hover (Sparkline — the engine still gives it `tabindex=0`, a
+  dead tab stop). Not walked-and-failed; counted in its own summary row. A chart that answers the
+  pointer but not ArrowRight stays `FAIL`.
 - Only ArrowRight is judged; Home/End/Enter/Escape are recorded. Enter does not pin on a fine pointer
   (`pin` is coarse-only in `compile.ts`), so there is no pinned state to capture.
 - Views are found in the route's radiogroup; the lane throws if fewer than three exist or a view
