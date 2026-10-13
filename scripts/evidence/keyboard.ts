@@ -219,6 +219,7 @@ export const keyboard: Lane = async ({ outDir, baseUrl, openBrowser }): Promise<
     await context.close()
   }
   for (const w of walks) {
+    // oxlint-disable-next-line no-console -- failing charts are named on the terminal, not thrown
     if (!verdictOf(w).pass) console.error(`[evidence] keyboard FAIL: ${w.name} (${w.view})`)
   }
   return {
