@@ -191,8 +191,9 @@ publishing is NOT a deploy — it is the release process (`make release`, below)
 - **The layout suite needs Chrome.** It runs in CI and `make check`, never in `pre`.
 - **`apps/marketing/AGENTS.md` describes the pre-Mantine (Tailwind/Biome) era** and is stale; the
   root + package conventions here are authoritative.
-- **No majors.** `feat!:` / `BREAKING CHANGE:` are banned; a nominal breaking change ships as a plain
-  `feat:` with a `MIGRATING.md` entry.
+- **No majors** — except the one sanctioned 2.0.0 (owner decision 2026-10-13). `feat!:` /
+  `BREAKING CHANGE:` stay banned; a nominal breaking change ships as a plain `feat:` with a
+  `MIGRATING.md` entry. Doctrine: `packages/basalt-ui/MAINTAINING.md` § The one sanctioned major.
 
 ## Git Workflow
 
@@ -222,12 +223,18 @@ fails a mixed staging set.
 - `ci:` — CI/CD, lefthook, workflow changes; never triggers a release.
 - `chore:` / `docs:` / `refactor:` — no release.
 
-**No majors. `feat!:` and `BREAKING CHANGE:` footers are banned.** basalt-ui has multiple consumer
+**No majors, with exactly one exception: 2.0.0** (owner decision 2026-10-13), published straight from
+`master` via `make release`. There is no `1.x` maintenance line and no prerelease channel: 1.x stays
+frozen at `v1.41.0`, consumers stay exact-pinned until they migrate, and fixes after 2.0.0 ship as
+2.x minors. The trigger, what the release gate does and does not check, and the return to no-majors:
+`packages/basalt-ui/MAINTAINING.md` § The one sanctioned major. A 3.0 is never sanctioned.
+
+**`feat!:` and `BREAKING CHANGE:` footers are banned** (bar the one designated commit). basalt-ui has multiple consumer
 repos in the same hands, upgradeable in lockstep, with a private-repo blast radius — that is what
 the doctrine rests on, not a consumer count. `packages/basalt-ui/MIGRATING.md` is the mandatory
 place a removed or renamed export gets written down. A behavior change that would nominally be
 "breaking" ships as a plain `feat:` on the 1.x line; document the change and the opt-out in the
-commit body, never in the version number. Don't raise, propose, or reach for a major.
+commit body, never in the version number. Don't raise, propose, or reach for a major beyond 2.0.0.
 
 ## Release Process
 
@@ -252,9 +259,9 @@ the read was a single unretried `npm view` interpolated into the success message
 to anything. It now retries (`--prefer-online`, so a cached metadata document can't answer) and
 `die`s on a version that never arrives.
 
-`YES=1 make release` skips only the prompt. **The wrapper hard-refuses a major** — the one way to
-get one by accident is a stray `feat!:`/`BREAKING CHANGE:` footer reaching `master`.
-Rewrite it as a plain `feat:` and release again.
+`YES=1 make release` skips only the prompt. **The wrapper refuses any major except a first
+`2.0.0`** (none published yet) — the way to get a stray one is a `feat!:`/`BREAKING CHANGE:` footer
+reaching `master`. Rewrite it as a plain `feat:` and release again.
 
 **Releasing is allowed — through `make release`, and only there.** No per-release permission is
 needed; the wrapper is itself the gate. Never dispatch the workflow by hand. Releasing is a
