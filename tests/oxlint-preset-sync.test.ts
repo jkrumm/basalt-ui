@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'bun:test'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { projectBanList } from '../packages/basalt-ui/scripts/gen-oxlint'
+import {
+  COMPILER_RULES,
+  PKG_ROOT,
+  PLAYGROUND_COMPILER_RULE_EXEMPTIONS,
+  REPO_COMPILER_RULE_EXEMPTIONS,
+  projectBanList,
+  projectPlaygroundOverrides,
+} from '../packages/basalt-ui/scripts/gen-oxlint'
 import { hasTokenLayerBoundaryRegistered } from '../packages/basalt-ui/src/surfaces'
 
 const root = join(import.meta.dir, '..')
@@ -192,4 +199,44 @@ describe('shipped preset — eqeqeq smart mode', () => {
   it('still flags a genuine loose comparison', () => {
     expect(output()).toContain('Expected === and instead saw ==')
   })
+})
+
+describe('React-compiler rules stay on', () => {
+  const topLevelRules = (path: string): Record<string, unknown> =>
+    (JSON.parse(readFileSync(path, 'utf8')) as { rules: Record<string, unknown> }).rules
+
+  it.each([join(root, '.oxlintrc.json'), join(root, 'apps/playground/.oxlintrc.json')])(
+    '%s sets all seven rules to error',
+    (path) => {
+      const rules = topLevelRules(path)
+      for (const rule of COMPILER_RULES) expect(rules[rule]).toBe('error')
+    },
+  )
+
+  it('playground overrides match the projection (drift = red)', () => {
+    const committed = readOverrides(join(root, 'apps/playground/.oxlintrc.json'))
+    expect(committed).toEqual(projectPlaygroundOverrides())
+  })
+
+  const allowed = new Set<string>(COMPILER_RULES)
+
+  it.each([
+    ['repo', REPO_COMPILER_RULE_EXEMPTIONS, ''],
+    ['playground', PLAYGROUND_COMPILER_RULE_EXEMPTIONS, 'apps/playground/'],
+  ] as const)(
+    '%s exemptions: real files, a reason, one rule each, never src/charts',
+    (_, list, base) => {
+      for (const { rule, reason, files } of list) {
+        expect(allowed.has(rule)).toBe(true)
+        expect(reason.trim().length).toBeGreaterThan(0)
+        expect(files.length).toBeGreaterThan(0)
+        for (const file of files) {
+          expect(existsSync(join(root, base, file))).toBe(true)
+          expect(file.startsWith(`${PKG_ROOT}src/charts/`)).toBe(false)
+        }
+      }
+      const keys = list.flatMap(({ rule }) => rule)
+      expect(new Set(keys).size).toBe(keys.length)
+    },
+  )
 })
