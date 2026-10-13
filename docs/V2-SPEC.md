@@ -442,7 +442,224 @@ argo paths are relative to `apps/dashboard/` (argo @ `95d63d6`).
 
 ## 9. Charts
 
-<!-- owner: v2-charts -->
+Engine: `@tanstack/charts` **1.1.0** and `d3-scale` **4.0.2**, exact optional peers of `./charts`
+(bun's isolated linker hides TanStack's own `d3-scale`). visx is gone: no dependency, peer or
+re-export. Evidence: `spike/w1-charts` @ `f74f671`, `docs/waves/evidence/w1/charts.md`. Inventory
+(59 production charts) and the 1.x → 2.0 symbol map: `docs/waves/v2-chart-inventory.md`.
+
+**Upgrade test** (W4-gated): chart + layout suites pass unmodified, per-kind `make evidence` (W2)
+gzip moves ≤ 5 %. W4 ports the spike's 12 tests (version compat included); until then, the evidence
+file's reproduce commands are the proof.
+
+### 9.1 Ownership
+
+| Concern                                                            | Owner    | How                                                 |
+| ------------------------------------------------------------------ | -------- | --------------------------------------------------- |
+| Marks, scales, scene, SVG, reconciliation, motion                  | TanStack | definition → keyed scene                            |
+| Margins and tick collision                                         | TanStack | measured guide solve + `tickLabels.thin`            |
+| Pointer/keyboard focus, crosshair, tooltip surface, SSR, hydration | TanStack | DOM host behind `@tanstack/charts/react`            |
+| y/y2 domains (auto rule, floors, pad, hidden series)               | basalt   | configured scale instances; TanStack never infers y |
+| x scale choice, cursor groups, cursor resolution                   | basalt   | § 9.4                                               |
+| Series, zones, x-zones, thresholds, ref lines                      | basalt   | compiled to marks, fixed paint order                |
+| Theme                                                              | basalt   | § 9.5                                               |
+| Legend, height law, `state`, `ChartCard` slots                     | basalt   | the host (HTML, Mantine-free)                       |
+| Tooltip content                                                    | basalt   | structured rows; the surface is TanStack's          |
+
+### 9.2 The composition rung
+
+`CartesianChart` stays the one cartesian rung and changes nature: a **definition compiler plus one
+host**, not an SVG assembly. Every cartesian kind is `CartesianChart` with fixed `marks`.
+
+```tsx
+import { lineY } from '@tanstack/charts/line'
+;<CartesianChart
+  ariaLabel="Load" // required by the type
+  data={rows}
+  x={(d) => d.at} // Date | number | string, § 9.4
+  series={[{ key: 'load', label: 'Load', color: VX.line, getValue: (d) => d.load }]}
+  y={{ domain: [0, 100], format: fmtCompact }}
+  zones={zones} // + xZones, refLines, y2, legend, height, state, cursorGroup
+  marks={(plot) => [lineY(plot.rows('load'), { x: 'x', y: 'y' })]}
+  tooltip={{ rows: (d, { visible, hidden }) => [{ label: 'Target', value: '70' }] }}
+/>
+```
+
+| Layer (private)           | Contract                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `compileCartesian(props)` | pure, React-free → `ResponsiveChartDefinition<Row<T>, X, number, 'dom'>`, return type annotated (inferred TanStack types fail declaration emit: TS2883/TS4058)                                                                                                                                                                                                                                                                                       |
+| `ChartHost`               | the only importer of `@tanstack/charts/react`; measured width → container class → `height`; `initialWidth: 640`; legend; `state` placeholders; `ChartCard` header slot. Too many jobs for one component; the split is **deferred W4 design debt**. The planned W4 seam has three parts: a pure sizing hook (measured width → container class → height), the bare engine mount, and the legend, `state` and `ChartCard` chrome composed outside both. |
+
+- `marks(plot)` returns TanStack marks imported from the allowed subpaths (§ 9.8; basalt
+  re-exports none). `plot.rows(key)` is `{ x, y, series, datum }[]`, a `null` y kept as a gap.
+  Hidden series emit no rows, so a legend toggle hides plot, tooltip and auto domain together.
+- Paint order is fixed: zones, x-zones (`decorative`) → `marks` → ref lines → crosshair.
+- `DualPanel`/`MirroredBars`: `composeViews` + `grid` + `alignX` (one host, one tooltip). `Donut`:
+  `polar`. `Sparkline`: `guides: false, margin: 0`. Formatters: `./format` only.
+
+### 9.3 Kinds
+
+| 2.0              | 1.x                                                   | Charts | Must support                                                                                                      |
+| ---------------- | ----------------------------------------------------- | ------ | ----------------------------------------------------------------------------------------------------------------- |
+| `CartesianChart` | `CartesianChart`, bespoke `ChartFrame` bodies         | 13     | numeric x, `areaY` y1/y2 bands, `vector` glyphs, `rect`/`ruleX` annotations, `tickY` whiskers, step curves        |
+| `Lines`          | `ZonedLine` + `MultiLine`, line-only `CartesianChart` | 16     | n series, `area` gradient, `thresholds` (Date/number x only), markers, overlay/reference roles, dash, curve, `y2` |
+| `Bars`           | `Bars`                                                | 9      | stacked/grouped/normalised, ± bars, overlay lines on `y`/`y2`, opacity fn, `scaleBand` over `Date`/string         |
+| `StackedArea`    | `StackedArea`                                         | 3      | dynamic keys + color fn, `y.format`                                                                               |
+| `DualPanel`      | `DualPanel`                                           | 2      | fill-between (`differenceY`), ± bars, `topFraction`, per-pane domains                                             |
+| `MirroredBars`   | `MirroredBars`                                        | 1      | per-pane domains, absent fraction, `fold`                                                                         |
+| `BandStrip`      | `BandStrip`                                           | 2      | state fills, `fold`, absent state, transition markers                                                             |
+| `Donut`          | `Donut`                                               | 1      | center labels, `colorForKey`, ≤ 6 slices + Other                                                                  |
+| `Heatmap`        | `Heatmap` (0 uses)                                    | 3      | `cell` band × band, absolute intensity, absent state, `colorGradientLegend`, per-cell rows, no cursor             |
+| `Sparkline`      | `LineSparkline` + `BarSparkline`                      | 9      | `mark: 'line' \| 'bar'`, emphasise last, width optional (host measures)                                           |
+
+- Merged: `ZonedLine` + `MultiLine` → `Lines` (zones, x-zones, ref lines and `y2` moved to the rung;
+  only thresholds and area differed); the two sparklines → `Sparkline`. No new kinds: bands and
+  ribbons (4 charts, 2 repos) are one `areaY` with `y1`/`y2`, a mark.
+- `Heatmap` replaces argo's time-of-day grid and linewatch's `CategoryGrid` (×2), or W5 deletes it.
+
+### 9.4 x scales, cursor, tooltip
+
+| `x` returns | Line/area kinds                                 | Bar kinds           |
+| ----------- | ----------------------------------------------- | ------------------- |
+| `Date`      | `scaleUtc`, proportional (closes 1.x issue #52) | `scaleBand<Date>`   |
+| `number`    | `scaleLinear`                                   | `scaleBand<number>` |
+| `string`    | `scalePoint`                                    | `scaleBand`         |
+
+**Cursor**
+
+- One `createChartCursor()` per group in a module map, no provider. `'default'` is shared;
+  `cursorGroup="…"` isolates (replaces `ChartCursorScope`).
+- `chartCursor(group?)` → the controller, for app sync (weatherorb's timeline):
+  `useSyncExternalStore(controller.subscribe, controller.getState, () => null)`. It is `getState`;
+  TanStack has no `getSnapshot`.
+- Teardown (W4; not spiked): a refcount per group of live `subscribe` registrations. The last
+  unsubscribe drops the entry; `getState` on a missing group returns `null` without creating one.
+- **Client-only by construction**, so no state crosses concurrent SSR requests.
+  - Without `window`, `chartCursor()` returns an inert controller (null, no-op set/subscribe) and
+    creates no map entry. Bindings resolve their controller per call, not at compile time.
+  - The engine reads no binding on the server: SSR runs `adapter.prerender()` only, and
+    `mountChartRenderer` (`dist/renderer.js:51`) consumes the binding from a layout effect.
+  - Proven by spike test `SSR cursor isolation`.
+- Binding `{ use: cursorHost, mode: 'focus', match: 'x' }` (+ `pin`, § 9.6) on a per-chart **view**
+  keyed by `chartId` (`useId`). It is identity-preserving, because TanStack clears only the object a
+  host published:
+  - it stamps the states this chart publishes (a `WeakMap`);
+  - it snaps a foreign value onto this chart's keys, because TanStack matches exactly.
+    `cursorResolution` is `'nearest'` (the default), `'leading'` or `'exact'`; strings are exact.
+- Charts whose x value types differ never sync (the 1.x `DomainKind` partition).
+
+**Tooltip**
+
+- Surface: TanStack's tooltip + `portal` (the Popover top layer, or `position: fixed` under `body`).
+- Content is a compiled `content(points) → { title, rows }`. `title` is `formatHeader(x)`. Rows are
+  one per visible series, then `tooltip.rows(d, { visible, hidden })` → `ChartTooltipRow[]`, which
+  replaces `TooltipRow`, `label`, `prependRows` and `extraRows`. `tooltip={false}` disables it.
+- **Source-only by default.** The crosshair paints on every chart in the group (the 1.x law). Only
+  the chart under the pointer or keyboard focus shows a tooltip and a live region.
+  - A 1.1.0 host shows a tooltip only for a resolved focus point. It resolves a shared state's
+    point through the definition's focus strategy; the crosshair needs no point.
+  - basalt therefore wraps the public `group-x` strategy (`resolveChartFocusStrategy`,
+    `@tanstack/charts/cursor/host`): `group` returns `[]` while the state isn't this chart's stamp,
+    so unstamped programmatic states show only the crosshair.
+- `tooltip.onFollow: true` opts a follower back in (7 of 59 charts). Spike: 1 tooltip, 2 with
+  `onFollow`; the engine trace is in the evidence file.
+
+### 9.5 Theme bridge
+
+The definition's `theme` and guide options:
+
+| Key                         | Value                                                                                               |
+| --------------------------- | --------------------------------------------------------------------------------------------------- |
+| `theme.foreground`          | `var(--vx-ink2)`                                                                                    |
+| `theme.muted` (tick labels) | `var(--vx-axis)`; `tickLabels.opacity: 1`                                                           |
+| `theme.grid`                | `var(--vx-grid)`; `grid.strokeOpacity: 1` (the token is pre-mixed; TanStack's 0.11 would dilute it) |
+| `theme.background`          | `transparent`                                                                                       |
+| `theme.palette`             | `var(--ts-chart-1)` … `var(--ts-chart-6)`                                                           |
+| axis line (W4, not spiked)  | `var(--vx-axis-stroke)`                                                                             |
+| crosshair (W4, not spiked)  | `var(--vx-crosshair)`                                                                               |
+| dash (W4, not spiked)       | `VX.dashArray`                                                                                      |
+
+The charts layer emits these as one `:root` block (`chartEngineCss()`, appended to `styles.css`);
+`buildPaletteCss` stays engine-agnostic. The host is no option: the portal's fallback reparents the
+tooltip under `<body>` (spike). Inheritance from `:root` is a W4 layout-suite assertion in Chrome.
+
+| `--ts-chart-…`                                                | value                                                                                                      |
+| ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `1` … `6`                                                     | `var(--vx-line)`, `--vx-accent`, `--vx-fill-cyan`, `--vx-fill-orange`, `--vx-fill-grape`, `--vx-fill-lime` |
+| `tooltip-background`                                          | `var(--vx-tooltip-bg)`                                                                                     |
+| `tooltip-color`                                               | `var(--vx-tooltip-text)`                                                                                   |
+| `tooltip-border`                                              | `var(--vx-tooltip-border)`                                                                                 |
+| `tooltip-shadow`                                              | `var(--vx-tooltip-shadow)`                                                                                 |
+| `tooltip-border-radius`                                       | `var(--vx-radius-ctrl)`                                                                                    |
+| `crosshair-label-halo`, `crosshair-marker-fill`, `focus-fill` | `var(--vx-surface-panel)`                                                                                  |
+
+- The host sets `color: var(--vx-axis)` (`currentColor` = axis ink) and inherits the font. Series
+  paint is `ChartSeries.color` (`VX.*` or a consumer series token); `raw-hex`/`raw-color-fn` cover
+  mark paint. The spike asserts zero TanStack default hexes in the SSR output.
+
+### 9.6 Responsive and plot-first mobile
+
+The host measures the width and resolves the container class (`resolveContainerClass`, the 1.x
+three-axis law's only chart axis). The compiled `chart: ({ width }) => spec` reads the same class:
+
+| Class         | y axis                                                 | Ticks x / y | Font         | Legend              |
+| ------------- | ------------------------------------------------------ | ----------- | ------------ | ------------------- |
+| micro < 240   | none                                                   | 2 / —       | `TEXT.nano`  | none                |
+| compact < 480 | labels inside the plot                                 | 3 / 3       | `TEXT.nano`  | dots                |
+| regular < 800 | outside                                                | 5 / 5       | `TEXT.micro` | chips               |
+| wide          | outside; `Lines` end labels when ≤ 3 lines and no `y2` | 6 / 5       | `TEXT.micro` | chips or end labels |
+
+- The height law is unchanged (width × class ratio, clamped 160–420, ≤ 45 vh on a coarse pointer);
+  the host passes it as `height`. SSR renders the regular class (`initialWidth: 640`).
+- Tick labels never rotate; collision is `tickLabels.thin`. Touch: `pin: true` (tap pins and unpins)
+  and the host sets `touch-action: pan-y`. W4 proves both, and y labels inside the plot.
+
+### 9.7 a11y and SSR
+
+- `ariaLabel: string` is required on every kind. Keyboard: TanStack's first-party focus (`tabIndex
+0`; ←/→, Home/End; Enter/Space pins; Escape) replaces `HoverOverlay`'s `role="slider"`.
+- SSR: `renderToString` emits the full accessible SVG at `initialWidth` (spike). Hydration adopts
+  it; `idPrefix` comes from `useId`. The engine's React-free `renderChartSvg` stays unexposed until
+  a consumer names it.
+
+### 9.8 Boundary and lint (every rule at `error`)
+
+`src/charts/**` imports only `@tanstack/charts/*`, `d3-scale`, `react`, `../tokens`, `../format`
+and `../common`.
+
+`basalt/chart-engine-boundary`:
+
+- `@visx/*` is banned everywhere.
+- Outside basalt, `@tanstack/charts` is an **allowlist**: `/line`, `/area`, `/area-x`, `/bar`,
+  `/rect`, `/rule`, `/dot`, `/tick`, `/text`, `/vector`, `/link`, `/arrow`, `/difference`,
+  `/stack`, `/scales/*`, `/transform/*`, `/mark/decorative`, `/d3/shape` and `/types`.
+- Everything else is an error: the bare root (it re-exports `defineChart`, `createChartRuntime`,
+  `mountChart`, `renderChartSvg`, `createMark`) and any new engine subpath.
+
+| 1.x                                                                   | 2.0                                                                                                       |
+| --------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `basalt/visx-boundary`, `basalt/visx-tooltip`                         | `basalt/chart-engine-boundary`, above                                                                     |
+| `basalt/hand-rolled-plot`                                             | deleted: with hosts banned, a plot without the rung cannot render                                         |
+| `raw-visx-axis` guard                                                 | deleted: there is no axis component to hand-roll                                                          |
+| `basalt/chart-legend-literal`                                         | deleted with the public `ChartLegend`                                                                     |
+| `chart-missing-aria-label` guard                                      | deleted: required prop                                                                                    |
+| `basalt/token-layer-boundary` (repo-only)                             | kept: no `@mantine/*` in `src/charts/**` or `src/tokens/**`                                               |
+| —                                                                     | repo-only `basalt/chart-host-single`: `@tanstack/charts/react` is imported by `src/charts/host.tsx` alone |
+| `chart-in-raw-surface`, `unknown-vx-token`, `raw-hex`, `raw-color-fn` | kept                                                                                                      |
+
+### 9.9 Cost
+
+`ZonedLine` + engine, gzip, `react` external: 57 642 B (visx) → 72 114 B (+25.1 %). All other
+numbers and the commands: `docs/waves/evidence/w1/charts.md`.
+
+**Open:**
+
+1. **Engine cost.** The first chart costs +14.5 KB gzip. Is that accepted in exchange for SSR,
+   first-party a11y and the mark catalogue?
+2. **Hatch.** 5 linewatch charts hatch the absent state; TanStack's SVG resources are gradients and
+   clips only. A custom hatch mark, or a flat `--vx-neutral` absent fill?
+3. **Legend hover emphasis.** Either rebuild the definition per hover, or use TanStack mark `states`
+   with `interactiveColorLegend`. The latter cannot show legend-only entries and keeps hidden series
+   in the domains.
 
 ## 10. Open questions
 
