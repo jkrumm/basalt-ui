@@ -420,6 +420,36 @@ type BorderAllowlistEntry = {
 /** See border-coverage.test.ts's former header for the full doctrine; entries unchanged. */
 const BORDER_ALLOWLIST: readonly BorderAllowlistEntry[] = [
   {
+    component: 'Cascader',
+    kind: 'layout-divider',
+    reason:
+      'New in Mantine 9.7. The border-inline-end is the divider between cascading option columns (structural, like Tree/Splitter). Not used by basalt; theming it is an adopt-or-delete decision (docs/waves/audit-h-ecosystem-2026-10.md).',
+  },
+  {
+    component: 'DataList',
+    kind: 'layout-divider',
+    reason:
+      'New in Mantine 9.7. The border-top is the hairline between list rows (same family as Table row dividers). Not used by basalt; basalt has its own dashboard list primitives — adopt-or-delete verdict pending.',
+  },
+  {
+    component: 'Toggle',
+    kind: 'not-a-surface',
+    reason:
+      'New in Mantine 9.7. A pressable button-like control, not a floating panel — the border is the control outline, so the panel-surface doctrine does not apply. Not used by basalt; adopt-or-delete verdict pending.',
+  },
+  {
+    component: 'Toolbar',
+    kind: 'not-a-surface',
+    reason:
+      'New in Mantine 9.7. The border is opt-in via [data-with-border] and off by default, so there is no stock hairline unless a consumer asks for it. Not used by basalt; adopt-or-delete verdict pending.',
+  },
+  {
+    component: 'Tour',
+    kind: 'not-a-surface',
+    reason:
+      'New in Mantine 9.7. A transient onboarding tooltip layered over the page, not a page surface. Not used by basalt; revisit if the shipped surface adopts it.',
+  },
+  {
     component: 'AppShell',
     kind: 'layout-divider',
     reason:
