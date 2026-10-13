@@ -196,13 +196,14 @@ describe('output', () => {
   })
 })
 
-describe('keyboard lane (pure parts)', () => {
-  const step = (key: Key, moved: boolean): KeyStep => ({ key, signature: key, moved })
+const step = (key: Key, moved: boolean): KeyStep => ({ key, signature: key, moved })
 
+describe('keyboard lane (pure parts)', () => {
   it('slugs labels and de-duplicates names', () => {
     expect(chartSlug('Revenue by day (EUR)')).toBe('revenue-by-day-eur')
     expect(chartSlug('***')).toBe('chart')
     expect(uniqueNames(['A', 'B', 'A', 'A'])).toEqual(['A', 'B', 'A #2', 'A #3'])
+    expect(uniqueNames(['A', 'A #2', 'A'])).toEqual(['A', 'A #2', 'A #3'])
   })
 
   it('marks a step moved only when the signature differs from the previous one', () => {
@@ -228,6 +229,7 @@ describe('keyboard lane (pure parts)', () => {
     expect(rows).toEqual([
       { metric: 'charts walked', value: 1 },
       { metric: 'charts failing', value: 1 },
+      { metric: 'judged', value: 'ArrowRight only', unit: 'Home/End/Enter/Escape recorded' },
       { metric: 'A', value: 'FAIL', unit: '1/2 steps moved' },
     ])
   })

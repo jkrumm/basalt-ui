@@ -28,6 +28,7 @@ import {
   round,
   sortKeys,
   summarizeWindow,
+  TOOLTIP_SELECTOR,
 } from './perf-util'
 import type { Throttle } from './perf-util'
 
@@ -94,7 +95,7 @@ async function measureUpdates(page: Page): Promise<Burst> {
 
 async function measureHover(page: Page): Promise<Burst> {
   return page.evaluate(
-    async ([n, timeout, chartSvg]) => {
+    async ([n, timeout, chartSvg, tooltipSelector]) => {
       const raf = () => new Promise<number>((r) => requestAnimationFrame(r))
       const svg = [...document.querySelectorAll<SVGSVGElement>(chartSvg)].find((s) => {
         const r = s.getBoundingClientRect()
@@ -108,9 +109,7 @@ async function measureHover(page: Page): Promise<Burst> {
       // The tooltip is portalled (top layer / under <body>), so read it document-wide; a hidden
       // tooltip (cleared focus) reads as ''.
       const signature = () =>
-        [...document.querySelectorAll('.ts-chart-tooltip:not([hidden])')]
-          .map((t) => t.textContent)
-          .join('|')
+        [...document.querySelectorAll(tooltipSelector)].map((t) => t.textContent).join('|')
       const fire = (type: string, x: number) =>
         svg.dispatchEvent(
           new PointerEvent(type, {
@@ -153,7 +152,12 @@ async function measureHover(page: Page): Promise<Burst> {
         node?.dispatchEvent(new MouseEvent('mouseleave'))
       return { t0, t1, latencies, misses }
     },
-    [HOVERS_PER_RUN, HOVER_TIMEOUT_MS, CHART_SVG] as [number, number, string],
+    [HOVERS_PER_RUN, HOVER_TIMEOUT_MS, CHART_SVG, TOOLTIP_SELECTOR] as [
+      number,
+      number,
+      string,
+      string,
+    ],
   )
 }
 

@@ -147,3 +147,7 @@ export async function freshPage(
 
 /** Cell label for the summary table: `1x` / `4x`. */
 export const cell = (rate: Throttle): string => `${rate}x`
+
+/** The visible tooltip(s). Portalled (top layer / under `<body>`), so read it document-wide; a
+ * hidden tooltip (cleared focus) reads as `''`. */
+export const TOOLTIP_SELECTOR = '.ts-chart-tooltip:not([hidden])'
