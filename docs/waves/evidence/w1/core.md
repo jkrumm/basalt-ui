@@ -18,7 +18,16 @@ the inventory below and on installed or packed sources.
    - One count is one file. Every consumer import resolves to a 1.41 export (0 unmatched names).
    - `configs/*` references in JSON/YAML were found separately with grep.
    - Script: `scan.ts` below.
-3. **Join and verdicts.** Surface × consumers is joined per `(subpath, name)`. The default rules
+3. **Second pass: the import forms the first scan cannot see** (added after the lead's review).
+   `scan-extra.ts` below matches `import('basalt-ui…')`, `require(…)`, `require.resolve(…)`,
+   `export * [as X] from`, `import * as X from` (expanding to every `X.member`) and `vi.mock`/`jest.mock`
+   across `*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}` with the same skip list.
+   - Result: **0 hits** in the 300 files that mention `basalt-ui`. No verdict flips, so every count
+     below and in V2-SPEC § 1 stands.
+   - Cross-check: a plain `grep -rnE` for the same forms, including `.claude/` worktrees, also finds
+     nothing. `*.{md,mdx,astro,vue,svelte,html}` hits are only the code snippets in four `DESIGN.md`
+     files (argo, rb, basalt-ui-obsidian, image-gateway), which no bundler compiles; they are not counted.
+4. **Join and verdicts.** Surface × consumers is joined per `(subpath, name)`. The default rules
    apply, plus the overrides recorded in the reason column of `docs/waves/v2-surface.md`.
    `apps/playground` is not scanned (charter 1).
 
@@ -69,8 +78,9 @@ Each consumer's `basalt-ui` pin at scan time:
 | `./state`           | 3          | 0          | 1            | 0           | 3         | 0         | 21          | 0          |
 | **total**           | 76         | 18         | 200          | 101         | 34        | 7         | 406         | 70         |
 
-The 94 keep-or-move value rows collapse to 91 unique names; the duplicates are `field`, and
-`createLocalStore` and `createPersistedState` from the root. Adding `createBasaltRouter` gives 92
+The 94 keep-or-move value rows collapse to 91 unique names, because three symbols appear twice:
+`field` (`./state` and `./router-tanstack`), `createLocalStore` (`./state` and `.`) and
+`createPersistedState` (`./state` and `.`). Each keeps `./state` as its one 2.0 home. Adding `createBasaltRouter` gives 92
 non-chart value symbols in 2.0. Kept types collapse to 38 unique names, and `BasaltRouterContext` and
 `BasaltEvent` bring that to 40.
 
@@ -121,6 +131,18 @@ Baseline `bun packages/basalt-ui/scripts/check-budgets.ts --report` on the base 
 | Fleet `service.name` convention `<project>-<component>` (argo-api, argo-dashboard, fpp-server, audio-gateway, research-gateway, …)                                                                                                                                                          | same Explore pass, grep of `OTEL_SERVICE_NAME` / `.env.tpl` names (no values)                                                          |
 
 Tarballs were extracted under `/tmp/v2pk/<pkg>/`, one fresh directory per package.
+
+## BasaltEvent type check (V2-SPEC § 7)
+
+The § 7 union and the OTel adapter shape were compiled with the repo's TypeScript 6.0.3 (`--strict
+--exactOptionalPropertyTypes`, stubbed `ThreadStatus`/`AgentError` and OTel's `Attributes` index
+type). `tsc` exits 0. The test file asserts four things:
+
+- An exhaustive `switch (e.type)` ends in `e satisfies never`.
+- Three negative controls each raise an error: reading `exception.type` on a `route.navigate`
+  event, a `query.error` with `failed: false`, and a failed `chat.turn` without the failure
+  attributes.
+- `{ ...e.attributes }` is assignable to `Attributes`.
 
 ## Scripts
 
@@ -235,6 +257,71 @@ await Bun.write(
     .join('\n') + '\n',
 )
 await Bun.write('/tmp/v2inv/versions.tsv', versions.join('\n') + '\n')
+```
+
+`scan-extra.ts` (`bun scan-extra.ts`, prints one TSV line per hit; it printed none):
+
+```ts
+// Second pass: the import forms scan.ts does not see. Prints every hit; namespace imports are expanded to X.member.
+import { Glob } from 'bun'
+const home = process.env.HOME + '/SourceRoot/'
+const repos = [
+  'argo',
+  'linewatch',
+  'weatherorb',
+  'rb',
+  'rollhook',
+  'basalt-ui-obsidian',
+  'email-gateway',
+  'image-gateway',
+]
+const skip =
+  /(^|\/)(node_modules|dist|build|\.git|\.claude|\.output|\.vinxi|\.turbo|coverage|\.evidence)\//
+const SPEC = `['"\`](basalt-ui(?:\\/[^'"\`]*)?)['"\`]`
+const forms: Record<string, RegExp> = {
+  dynamicImport: new RegExp(`import\\s*\\(\\s*${SPEC}`, 'g'),
+  require: new RegExp(`require\\s*\\(\\s*${SPEC}`, 'g'),
+  requireResolve: new RegExp(`require\\.resolve\\s*\\(\\s*${SPEC}`, 'g'),
+  exportStar: new RegExp(`export\\s+\\*\\s+(?:as\\s+\\w+\\s+)?from\\s+${SPEC}`, 'g'),
+  namespace: new RegExp(`import\\s+(?:type\\s+)?\\*\\s+as\\s+(\\w+)\\s+from\\s+${SPEC}`, 'g'),
+  viMock: new RegExp(`(?:vi|jest|mock)\\.mock\\s*\\(\\s*${SPEC}`, 'g'),
+}
+let files = 0
+for (const repo of repos) {
+  const root = home + repo
+  for (const f of new Glob('**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}').scanSync({ cwd: root })) {
+    if (skip.test(f)) continue
+    const src = await Bun.file(`${root}/${f}`).text()
+    if (!src.includes('basalt-ui')) continue
+    files++
+    for (const [form, re] of Object.entries(forms)) {
+      for (const m of src.matchAll(re)) {
+        if (form === 'namespace') {
+          const members = new Set(
+            [...src.matchAll(new RegExp(`\\b${m[1]}\\.(\\w+)`, 'g'))].map((x) => x[1]),
+          )
+          console.log(`${form}\t${m[2]}\t${repo}:${f}\t${[...members].join(',')}`)
+        } else if (form === 'dynamicImport') {
+          // destructured members right after the import, e.g. `const { X } = await import('basalt-ui')` or `.then((m) => m.X)`
+          const tail = src.slice(m.index!, m.index! + 300)
+          const members = [...tail.matchAll(/\b(?:m|mod|module)\.(\w+)/g)].map((x) => x[1])
+          const head = src.slice(Math.max(0, m.index! - 200), m.index!)
+          const destr = head.match(/\{([^}]*)\}\s*=\s*await\s*$/)?.[1] ?? ''
+          console.log(
+            `${form}\t${m[1]}\t${repo}:${f}\t${[
+              ...members,
+              ...destr
+                .split(',')
+                .map((s) => s.trim())
+                .filter(Boolean),
+            ].join(',')}`,
+          )
+        } else console.log(`${form}\t${m[1]}\t${repo}:${f}`)
+      }
+    }
+  }
+}
+console.error(`files mentioning basalt-ui: ${files}`)
 ```
 
 `docs/waves/v2-surface.md` is generated from `surface.tsv` joined with `hits.tsv`. The default
