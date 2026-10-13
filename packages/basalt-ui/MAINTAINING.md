@@ -574,12 +574,15 @@ sanctioned. The doctrine's home is here; AGENTS.md links.
 
 - **The trigger is one commit**: a `feat:` with a `BREAKING CHANGE:` footer pointing at
   `MIGRATING.md` § 2.0, landed by the deletion wave. semantic-release computes `2.0.0` from it.
-- **What `scripts/release.sh` enforces** (`version_gate`, `scripts/release.test.ts`): a computed
-  major passes only if it is exactly `2.0.0` and the registry has no 2.x yet. A 3.0 or a second
-  2.0.0 dies. **It checks the computed version, not the commit**: a stray `BREAKING CHANGE:` footer
-  landing before the designated one also computes `2.0.0`. Keeping it to one commit is review's job.
-- **Nothing else changes**: `.releaserc.json` stays `["master"]`; every other `feat!:` / `BREAKING
-CHANGE:` stays banned.
+- **What `scripts/release.sh` enforces** (`version_gate`, `scripts/release.test.ts`), reading the
+  registry on every release: the only releasable versions are exactly `2.0.0` while no stable 2.x
+  is published, and non-major 2.x once one is. Any 1.x is refused — 1.x is frozen, so a `fix:` or
+  `feat:` touching the package before 2.0.0 lands cannot publish `1.41.1` or `1.42.0`. A 3.0 or a
+  second 2.0.0 dies. **It judges the computed version, not the commit**: a stray `BREAKING CHANGE:`
+  footer landing before the designated one also computes `2.0.0`. Keeping it to one commit is
+  review's job.
+- **Nothing else changes**: `.releaserc.json` stays `["master"]`; every other `feat!:` /
+  `BREAKING CHANGE:` stays banned.
 
 ## Development guidelines
 
