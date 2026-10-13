@@ -10,7 +10,6 @@
 import { areaY } from '@tanstack/charts/area'
 import { differenceY } from '@tanstack/charts/difference'
 import { dot } from '@tanstack/charts/dot'
-import { lineY } from '@tanstack/charts/line'
 import { decorative } from '@tanstack/charts/mark/decorative'
 import { text } from '@tanstack/charts/text'
 import { useCallback } from 'react'
@@ -19,7 +18,7 @@ import { VX } from '../tokens'
 import { CartesianRung } from './CartesianChart'
 import { areaGradientId } from './compile'
 import { chartCurve } from './curves'
-import { DASH, DIMMED, LINE_STROKE_WIDTH } from './theme'
+import { lineMark, yScaleOf } from './marks'
 import { rowX } from './types'
 import type {
   CartesianChartProps,
@@ -46,45 +45,50 @@ export type LinesProps<T, X extends ChartX = ChartX> = Omit<CartesianChartProps<
 
 const hasValue = <T, X extends ChartX>(r: PlotRow<T, X>): boolean => r.y !== null
 
+type MarkerGroup<T, X extends ChartX> = {
+  color: string
+  opacity: number
+  ring: boolean
+  rows: (PlotRow<T, X> & { r: number })[]
+}
+
 function markersOf<T, X extends ChartX>(
   s: ChartSeries<T>,
   rows: readonly PlotRow<T, X>[],
-  yScale: string | undefined,
+  yScale: 'y2' | undefined,
 ): ChartMarks {
   const getMarker = s.getMarker
   if (!getMarker) return []
   // `dot.fill` is constant, so one decorative dot mark per distinct marker paint.
-  const byPaint = new Map<
-    string,
-    { rows: (PlotRow<T, X> & { r: number })[]; opacity: number; ring: boolean }
-  >()
+  const groups: MarkerGroup<T, X>[] = []
   for (const row of rows) {
     if (row.y === null) continue
     const m = getMarker(row.datum)
     if (!m) continue
-    const color = m.color ?? s.color
-    const ring = m.ring !== false
-    const opacity = m.fillOpacity ?? 1
-    const key = `${color}|${opacity}|${ring}`
-    const group = byPaint.get(key) ?? { rows: [], opacity, ring }
+    const paint = { color: m.color ?? s.color, opacity: m.fillOpacity ?? 1, ring: m.ring !== false }
+    let group = groups.find(
+      (g) => g.color === paint.color && g.opacity === paint.opacity && g.ring === paint.ring,
+    )
+    if (!group) {
+      group = { ...paint, rows: [] }
+      groups.push(group)
+    }
     group.rows.push({ ...row, r: m.r ?? VX.dotR })
-    byPaint.set(key, group)
   }
-  return [...byPaint.entries()].map(([key, group], i) => {
-    const color = key.slice(0, key.indexOf('|'))
-    return decorative(
+  return groups.map((group, i) =>
+    decorative(
       dot(group.rows, {
         id: `${s.key}-marker-${i}`,
         x: rowX,
         y: 'y',
         r: 'r',
-        fill: color,
+        fill: group.color,
         fillOpacity: group.opacity,
         ...(group.ring && { stroke: VX.surface.panel, strokeWidth: 1.5 }),
         ...(yScale !== undefined && { yScale }),
       }),
-    )
-  })
+    ),
+  )
 }
 
 function endLabels<T, X extends ChartX>(
@@ -98,8 +102,9 @@ function endLabels<T, X extends ChartX>(
     return row ? [{ s, row }] : []
   })
   // Collision check in pixels from the plot height: labels that would overlap are not drawn at all.
-  const ys = last.map(({ s, row }) => {
-    const domain = s.axis === 'right' && plot.y2Domain ? plot.y2Domain : plot.yDomain
+  // No `y2` here (returned above), so every label reads the left domain.
+  const domain = plot.yDomain
+  const ys = last.map(({ row }) => {
     if (row.y === null) return Number.NaN
     return ((row.y - domain[0]) / (domain[1] - domain[0] || 1)) * plot.height
   })
@@ -132,13 +137,6 @@ export function Lines<T, X extends ChartX = ChartX>(props: LinesProps<T, X>): Re
   const marks = useCallback(
     (plot: PlotContext<T, X>): ChartMarks => {
       const indexOf = new Map(series.map((s, i) => [s.key, i]))
-      const yScaleOf = (s: ChartSeries<T>): 'y2' | undefined =>
-        s.axis === 'right' ? plot.y2 : undefined
-      const opacityOf = (s: ChartSeries<T>): number => {
-        const base = s.strokeOpacity ?? 1
-        const h = plot.highlighted
-        return h === null || h === s.key || h === s.parent ? base : base * DIMMED
-      }
       const plotted = plot.visible.filter((s) => plot.rows(s.key).some(hasValue))
       const primary = plotted[0]
       const out: ChartMarks[number][] = []
@@ -159,7 +157,7 @@ export function Lines<T, X extends ChartX = ChartX>(props: LinesProps<T, X>): Re
                 fillOpacity: 1,
                 stroke: 'none',
                 comparisonStroke: 'none',
-                ...(yScaleOf(primary) !== undefined && { yScale: 'y2' }),
+                ...(yScaleOf(plot, primary) !== undefined && { yScale: 'y2' }),
               }),
             ),
           )
@@ -177,27 +175,14 @@ export function Lines<T, X extends ChartX = ChartX>(props: LinesProps<T, X>): Re
               fill: `url(#${areaGradientId(indexOf.get(s.key) ?? 0)})`,
               fillOpacity: 1,
               curve: chartCurve(s.curve ?? 'monotone'),
-              ...(yScaleOf(s) !== undefined && { yScale: 'y2' }),
+              ...(yScaleOf(plot, s) !== undefined && { yScale: 'y2' }),
             }),
           ),
         )
       }
       for (const s of plot.visible) {
-        out.push(
-          lineY(plot.rows(s.key), {
-            id: s.key,
-            x: rowX,
-            y: 'y',
-            z: 'series',
-            stroke: s.color,
-            strokeWidth: s.strokeWidth ?? LINE_STROKE_WIDTH,
-            strokeOpacity: opacityOf(s),
-            curve: chartCurve(s.curve ?? 'monotone'),
-            ...(s.dash === 'dashed' && { strokeDasharray: DASH }),
-            ...(yScaleOf(s) !== undefined && { yScale: 'y2' }),
-          }),
-        )
-        out.push(...markersOf(s, plot.rows(s.key), yScaleOf(s)))
+        out.push(lineMark(plot, s))
+        out.push(...markersOf(s, plot.rows(s.key), yScaleOf(plot, s)))
       }
       out.push(
         ...endLabels(

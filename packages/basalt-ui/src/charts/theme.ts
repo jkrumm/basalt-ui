@@ -44,8 +44,9 @@ export const CHART_ENGINE_VARS: Readonly<Record<`--ts-chart-${string}`, string>>
 }
 
 /**
- * The charts layer's stylesheet block: one `:root` rule. `styles.css` carries it verbatim between two
- * generated markers (`scripts/gen-chart-css.ts` writes them, `theme.test.ts` fails on drift), so the
+ * The charts layer's stylesheet block: one `:root` rule. `styles.css` carries the same declarations
+ * (formatter-laid-out) between two generated markers — `scripts/gen-chart-css.ts` writes them from this
+ * function's output, and `engine.test.tsx` fails on drift, whitespace aside — so the
  * source tree a Vite alias or the layout fixture serves and the published `dist/styles.css` agree.
  */
 export function chartEngineCss(): string {

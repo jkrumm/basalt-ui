@@ -6,13 +6,11 @@
  */
 import { barY } from '@tanstack/charts/bar'
 import { group } from '@tanstack/charts/group'
-import { lineY } from '@tanstack/charts/line'
 import { stack } from '@tanstack/charts/stack'
 import { useCallback, useMemo } from 'react'
 import type { ReactElement } from 'react'
 import { CartesianRung } from './CartesianChart'
-import { chartCurve } from './curves'
-import { DASH, DIMMED, LINE_STROKE_WIDTH } from './theme'
+import { emphasis, lineMark } from './marks'
 import { rowX } from './types'
 import type {
   CartesianChartProps,
@@ -89,7 +87,7 @@ export function Bars<T, X extends ChartX = ChartX>(props: BarsProps<T, X>): Reac
         const bar = byKey.get(row.series)
         if (!bar) return 'transparent'
         const base = barOpacity?.(row.datum, row.series) ?? bar.fillOpacity ?? DEFAULT_BAR_OPACITY
-        return paint(bar.color, h === null || h === row.series ? base : base * DIMMED)
+        return paint(bar.color, base * emphasis(h, { key: row.series }))
       }
       const order = visibleBars.map((s) => s.key)
       const out: ChartMarks[number][] = []
@@ -109,21 +107,7 @@ export function Bars<T, X extends ChartX = ChartX>(props: BarsProps<T, X>): Reac
         )
       for (const s of plot.visible) {
         if (barKeys.has(s.key)) continue
-        const dim = h !== null && h !== s.key
-        out.push(
-          lineY(plot.rows(s.key), {
-            id: s.key,
-            x: rowX,
-            y: 'y',
-            z: 'series',
-            stroke: s.color,
-            strokeWidth: s.strokeWidth ?? LINE_STROKE_WIDTH,
-            strokeOpacity: (s.strokeOpacity ?? 1) * (dim ? DIMMED : 1),
-            curve: chartCurve(s.curve ?? 'monotone'),
-            ...(s.dash === 'dashed' && { strokeDasharray: DASH }),
-            ...(s.axis === 'right' && plot.y2 !== undefined && { yScale: 'y2' }),
-          }),
-        )
+        out.push(lineMark(plot, s))
       }
       return out
     },

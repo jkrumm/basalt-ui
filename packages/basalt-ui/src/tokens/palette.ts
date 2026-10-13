@@ -709,9 +709,6 @@ const SPACE_STEP_BASE = {
   chartMarginTop: 12,
   /** Chart plot-area margin, right (`VX.margin.right`). */
   chartMarginRight: 16,
-  /** Minimum right margin when a right axis is rendered — labels like "100"/"60m" need
-   * more room than the no-right-axis default (the 1.x right-axis margin). */
-  chartMarginRightAxis: 40,
   /** Chart plot-area margin, bottom (`VX.margin.bottom`). */
   chartMarginBottom: 30,
   /** Chart plot-area margin, left (`VX.margin.left`). */

@@ -8,6 +8,7 @@ import { scaleBand } from '@tanstack/charts/scales/band'
 import { scaleLinear } from '@tanstack/charts/scales/linear'
 import { scalePoint } from '@tanstack/charts/scales/point'
 import { scaleLog, scaleUtc } from 'd3-scale'
+import type { ChartPositionScaleOptions } from '@tanstack/charts/types/core'
 import type { AxisConfig, ChartSeries, ChartX, XZoneSpec } from './types'
 
 const DEFAULT_AUTO_PAD = 1.1
@@ -122,8 +123,8 @@ const BAND_PADDING_OUTER = 0.1
 export type XScaleModel<X extends ChartX> = {
   kind: XKind
   band: boolean
-  // The concrete instance is opaque here: it goes straight into `scales.x.scale`.
-  scale: unknown
+  /** Goes straight into `scales.x.scale`. */
+  scale: ChartPositionScaleOptions['scale']
   values: readonly X[]
   /** Center of `x` as a plot fraction; `null` for a value the scale does not contain. */
   fraction: (x: X) => number | null

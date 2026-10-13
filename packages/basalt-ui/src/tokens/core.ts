@@ -472,7 +472,7 @@ function frameworkPrimitives(side: Side, data: PaletteData, legacyAliases: boole
  * appShellHeaderHeight,appShellNavbarWidth,appShellNavbarRailWidth,appShellAsideWidth,
  * appShellAsideRailWidth,
  * mobileNavBarHeight}` are numeric Mantine component props (Menu `width`, AppShell `header`/
- * `navbar`/`footer`); and `{chartLegendGap,chartMarginTop,chartMarginRight,chartMarginRightAxis,
+ * `navbar`/`footer`); and `{chartLegendGap,chartMarginTop,chartMarginRight,
  * chartMarginBottom,chartMarginLeft,chartDotR}` are visx SVG props via
  * `VX.legendGap`/`VX.margin`/`VX.dotR` in this file's own `VX` object. The full list is locked
  * against the `SpaceValues` key set by `tokens/density.test.ts`'s declaration-set test, so adding a

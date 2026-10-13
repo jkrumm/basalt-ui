@@ -62,7 +62,7 @@ async function hover(p: LayoutPage, frame: string, fx = 0.5, fy = 0.5): Promise<
 async function leave(p: LayoutPage, frame: string): Promise<void> {
   await p.raw.evaluate((sel) => {
     const svg = document.querySelector(`${sel} svg.ts-chart`)
-    for (const node of [svg, svg?.parentElement, svg?.closest('.ts-chart-host')])
+    for (const node of new Set([svg, svg?.parentElement, svg?.closest('.ts-chart-host')]))
       node?.dispatchEvent(new MouseEvent('mouseleave'))
   }, frame)
   await p.settle()
@@ -225,7 +225,7 @@ layout('Charts — 2.0 layout', () => {
     expect(await p.computed(HOST, 'touch-action')).toBe('pan-y')
   })
 
-  test('a tap pins the cursor: the crosshair outlives the lift', async () => {
+  test('a tap pins the cursor past the lift, and a second tap unpins it', async () => {
     const p = await openFixture(chartFixture({ kind: 'lines' }), PHONE)
     await p.settle()
     await p.raw.evaluate(
@@ -246,6 +246,45 @@ layout('Charts — 2.0 layout', () => {
     await p.settle()
     await new Promise((r) => setTimeout(r, 300))
     expect(await paintedRules(p, FRAME)).toHaveLength(1)
+    // Unpin with a tap on the plot clear of the pinned tooltip: the engine ignores a tap ON the
+    // tooltip (it is the pinned surface), and does not dismiss a pinned CURSOR from outside the chart.
+    await p.raw.touchscreen.tap(
+      svg.box.left + svg.box.width * 0.1,
+      svg.box.top + svg.box.height * 0.85,
+    )
+    await p.settle()
+    await new Promise((r) => setTimeout(r, 300))
+    expect(await paintedRules(p, FRAME)).toHaveLength(0)
+  })
+
+  test('keyboard: Tab focuses the chart, ←/→ walk the points, Escape clears', async () => {
+    const p = await openFixture(chartFixture({ kind: 'lines', width: 640 }), DESKTOP)
+    await p.settle()
+    // Tab until the chart's own svg holds focus (the shell's controls come first).
+    let focused = false
+    for (let i = 0; i < 60 && !focused; i++) {
+      await p.raw.keyboard.press('Tab')
+      focused = await p.raw.evaluate(
+        (sel) => document.activeElement === document.querySelector(sel),
+        SVG,
+      )
+    }
+    expect(focused).toBe(true)
+    await p.settle()
+    const first = await paintedRules(p, FRAME)
+    expect(first).toHaveLength(1)
+    await p.raw.keyboard.press('ArrowRight')
+    await p.raw.keyboard.press('ArrowRight')
+    await p.settle()
+    const moved = await paintedRules(p, FRAME)
+    expect(moved[0] ?? 0).toBeGreaterThan(first[0] ?? 0)
+    await p.raw.keyboard.press('ArrowLeft')
+    await p.settle()
+    const back = await paintedRules(p, FRAME)
+    expect(back[0] ?? 0).toBeLessThan(moved[0] ?? 0)
+    await p.raw.keyboard.press('Escape')
+    await p.settle()
+    expect(await paintedRules(p, FRAME)).toHaveLength(0)
   })
 
   // ── legend ──────────────────────────────────────────────────────────────────────────────────
