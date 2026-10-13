@@ -1,7 +1,8 @@
 # W1 evidence — the TanStack library adoption ledger (`docs/V2-SPEC.md` § 8)
 
 Base: `origin/master` @ `3f6e5fc`. Spike: branch `spike/w1-ledger` @
-`a89a088715c7059a8ab8c455af3a36472c11405d` (pushed, never PR'd). argo read at `95d63d6`, read-only;
+`5f8e6144418da57bf53dc39b2d3bf50952f754d3` (pushed, never PR'd; `a89a088` holds the spikes and
+`5f8e614` adds the hotkeys keyboard-dispatch test). argo read at `95d63d6`, read-only;
 `argo:src/…` below means `apps/dashboard/src/…`.
 
 ## Versions (`npm view <pkg> version`, 2026-10-13)
@@ -21,7 +22,7 @@ Base: `origin/master` @ `3f6e5fc`. Spike: branch `spike/w1-ledger` @
 Dependency facts (`npm view <pkg>@<ver> dependencies peerDependencies`):
 
 - `react-table@9.3.1`, `react-hotkeys@0.13.0`, `react-pacer@0.24.1`, `react-form@1.33.5` and
-  `react-router@1.170.38` (`bun.lock:1118`) all depend on `@tanstack/react-store ^0.11`. The spike
+  `react-router@1.170.38` (`bun.lock:1107` on `master`, which resolves `react-store` 0.11.0 at `:1111`) all depend on `@tanstack/react-store ^0.11`. The spike
   lockfile resolved two copies (0.11.0 for Router/Hotkeys 0.10, 0.11.2 for the rest).
 - `devtools@0.15.0` renders with `solid-js ^1.9.9` + `goober`, and pulls `@neodrag/* 3.0.0-next.11`.
 - `ai@0.68.0` depends on `@ag-ui/core 1.0.0`; `ai-react@0.30.3` on `@tanstack/markdown ^0.0.13` and
@@ -43,14 +44,15 @@ Aliases keep v8/0.10 (the incumbents the playground already uses) side by side w
 ## Bytes
 
 Isolated: `SPIKE_ENTRY=src/spike/<f> bunx vite build -c spike.vite.config.ts`. React, react-dom and
-`@mantine/core` stay external, and so does `@mantine/hooks` (a required peer already). `_nostore` means
+`@mantine/core` stay external, and so does `@mantine/hooks`. basalt 1.41 marks it an optional peer, but `@mantine/core` 9.7.2 peers it
+exactly and non-optionally, so every basalt app has it. `_nostore` means
 `@tanstack/{react-,}store` was also external. The gzip comes from `zlib.gzipSync` over every emitted `.js`.
 
 | Entry                                             | gzip B | `_nostore` | Non-comment LOC |
 | ------------------------------------------------- | -----: | ---------: | --------------: |
 | `table-v8.tsx` (incumbent, `useReactTable`)       | 15 699 |          — |             108 |
-| `table-v9-use.tsx` (`useTable` + hidden features) | 22 668 |     19 769 | 102 (+54 once¹) |
-| `table-v9-hook.tsx` (`createTableHook`)           | 23 323 |     20 411 | 104 (+54 once¹) |
+| `table-v9-use.tsx` (`useTable` + hidden features) | 22 668 |     19 769 | 156 (102 + 54¹) |
+| `table-v9-hook.tsx` (`createTableHook`)           | 23 323 |     20 411 | 158 (104 + 54¹) |
 | `debounce-incumbent.ts` (search-filter.tsx:95)    |    313 |          — |              27 |
 | `debounce-pacer.ts` (`useDebouncedCallback`)      |  4 861 |      1 810 |              28 |
 | `debounce-mantine.ts` (`@mantine/hooks`)          |    292 |          — |              25 |
@@ -64,7 +66,10 @@ Deltas: Table v9 is **+6 969 B** gz over v8 for the same features. Of that, +2 8
 is shared with Router once one `react-store` copy dedupes, so the floor is **+4 070 B**.
 `createTableHook` adds **+655 B** over `useTable`. Pacer adds **+4 548 B** (+1 497 B with the store
 shared) over the incumbent, while `@mantine/hooks` adds −21 B. Hotkeys 0.13 adds **+1 401 B**
-(+1 567 B with the store shared); this is a lazy `import()` chunk, off the first paint.
+(+1 567 B with the store shared); this is a lazy `import()` chunk, off the first paint. The
+store-shared delta is larger because the bundled Store shrinks: 0.10 carries `store` 0.11.0 at
+5 794 − 3 844 = 1 950 B, and 0.13 carries 0.11.2 at 7 195 − 5 411 = 1 784 B. That 166 B saving
+offsets part of Hotkeys' own growth.
 
 Playground (`bunx vite build`, total gzip of `dist/**/*.js`):
 
@@ -79,7 +84,7 @@ The total delta is **+23 756 B**. The new route chunk is 20 052 B. The rest is r
 
 ## Behaviour
 
-`bun test apps/playground/src/spike` — **9 pass, 0 fail** (13 expects):
+`bun test apps/playground/src/spike` — **11 pass, 0 fail**:
 
 - `table-parity.test.tsx`: v8, v9 `useTable` and v9 `createTableHook` render identical cells for
   `revenue desc` page 1/25 and for `name asc` (alphanumeric: `Project 2` before `Project 10`).
@@ -88,6 +93,12 @@ The total delta is **+23 756 B**. The new route chunk is 20 052 B. The rest is r
   resolved these implicitly.
 - `debounce.test.tsx`: the incumbent, Pacer and Mantine each commit once (`['abc']`) for three
   keystrokes inside 200 ms, and each follows an outside reset.
+- `hotkeys-dispatch.test.tsx` (`5f8e614`): this is the keyboard leg for Hotkeys, which is an
+  incumbent-peer upgrade, so it has no playground demo route. The test drives basalt's
+  `useCommandHotkeys` register shape (`register(shortcut, cb, { preventDefault: false })`, `when()`
+  gated at press time, `unregister()` on unmount) with real `keydown` events on `document`. On both
+  0.10.0 and 0.13.0, `Mod+B` runs the command once with `defaultPrevented`, a false `when()` leaves
+  the event untouched, and `unregister()` stops it.
 
 ## Types
 
@@ -114,7 +125,7 @@ load-bearing (an unused one fails the build).
 | Area      | basalt today                                                                                                                                                                | argo (`95d63d6`)                                                                                                                                                                                                                                                                                   |
 | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Table     | `useReactTable` (`data-table.tsx:1514`), physical pinning `getStart('left')` (`:934`), `columnPinning.left/right` (`:1486`), `createColumnHelper` re-export (`table.ts:39`) | 8 tables, all `createColumnHelper` from `basalt-ui/data/table` (e.g. `argo:src/features/agents/agents-table.tsx:2`). None filter, select or virtualize. `PaginationState` is imported directly (`session-history.tsx:4`), and v9 still exports it with the same shape                              |
-| Store     | `./state` core: a 30-line listener set + `useSyncExternalStore` (`state/fields.ts:860-890`) under 1 147 lines of lane/field vocabulary                                      | zustand ×3 (`argo:src/lib/store.ts:25`, `auth.ts:10`, `timer-store.ts:120`); `createLocalStore`/`createSearchStore`/`createPersistedState` for everything a control reads                                                                                                                          |
+| Store     | `./state` core: a 30-line listener set + `useSyncExternalStore` (`state/fields.ts:860-890`) inside `state/fields.ts` (1 147 lines, mostly lane/field vocabulary)            | zustand ×3 (`argo:src/lib/store.ts:25`, `auth.ts:10`, `timer-store.ts:120`); `createLocalStore`/`createSearchStore`/`createPersistedState` for everything a control reads                                                                                                                          |
 | Debounce  | `SearchFilter` (`search-filter.tsx:95`), `useFormDraft` autosave (`use-form-draft.ts:235-260`); `DataTable` global search is **not** debounced (`data-table.tsx:1865`)      | All hand-rolled: `diagram-shared.tsx:7-13` (250 ms), `workout-draft.ts:64,174-180` (900 ms), throttle `audio-player-card.tsx:109-138`; m365 filter is undebounced (`explorer-page.tsx:219-222`)                                                                                                    |
 | Live data | —                                                                                                                                                                           | Polling only, no push channel (`argo:src/lib/queries/gym.ts:22`), no sync engine (Elysia + drizzle + postgres). Optimistic writes by hand (`gym.ts:110-119`); `ThreadsStore` (`features/hermes-chat/threads-store.ts:1-40`) is a hand-written optimistic collection                                |
 | Devtools  | `BasaltDevDock` (`dev-dock.tsx`, 162 lines: router + query panels + theme lab), `BasaltQueryDevtools` (`query-devtools.tsx`, 40 lines)                                      | Dock only: `argo:src/routes/__root.tsx:15,155`; no direct devtools import                                                                                                                                                                                                                          |
