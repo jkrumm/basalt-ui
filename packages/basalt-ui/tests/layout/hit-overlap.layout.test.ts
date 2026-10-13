@@ -33,7 +33,7 @@ const SPEC: FixtureSpec = {
   ],
   bar: { pills: 4, tabs: 2, actions: 4, actionIcons: true },
   // The legend entries are `[data-basalt-hit]` buttons 22px apart — `--vx-hit-gap` caps them.
-  charts: { kind: 'multiLine', legendEntries: 4 },
+  charts: { kind: 'lines', legendEntries: 4 },
 }
 
 type HitBox = { id: string; left: number; top: number; right: number; bottom: number }

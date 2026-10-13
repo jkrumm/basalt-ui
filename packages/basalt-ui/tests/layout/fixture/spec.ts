@@ -145,39 +145,22 @@ export type AsideSpec = {
 }
 
 /**
- * One chart from `basalt-ui/charts`, mounted in the shell body. Exists for the invariants happy-dom
- * cannot see at all: measured margins, the phone-tier tick font, a real pointer-driven tooltip
- * anchor, and the plot-floor/legend-rollup arithmetic in `chart-frame-layout.ts` — all of them
- * ResizeObserver- and getBoundingClientRect-driven (`docs/CHARTS-SPEC.md` §1, §6, §8).
+ * One chart from `basalt-ui/charts`, mounted in the shell body. Exists for what happy-dom cannot see
+ * at all: the measured container class and the guide ladder it drives, the engine's real pointer
+ * focus, crosshair and portalled tooltip, and CSS inheritance from `:root` (docs/V2-SPEC.md § 9.5,
+ * § 9.6).
  */
 export type ChartsSpec = {
   /** A real kind from `basalt-ui/charts` — never a hand-rolled stand-in. */
-  kind: 'multiLine' | 'bars' | 'heatmap' | 'donut' | 'bandStrip'
-  /** Number of series (legend entries) `multiLine`/`bars`/`donut` draw. Default 3. */
+  kind: 'lines' | 'bars'
+  /** Number of series (legend entries). Default 3. */
   legendEntries?: number
-  /** Fixed height in px, forwarded to the kind. Default 240 (the kind's own default). */
+  /** Fixed height in px, forwarded to the kind. Omitted ⇒ the height law. */
   height?: number
-  /** Fill the parent's measured height instead of a fixed one — `heatmap` and `bandStrip` expose
-   * this. `bandStrip` is the only one of the two that ALSO carries a `ChartFrame` legend, which is
-   * what the `legendWins` invariants need: a top/bottom legend band on a box that cannot grow. */
-  fill?: boolean
-  /** height = round(containerWidth / aspectRatio) — `heatmap` only exposes this. */
-  aspectRatio?: number
-  /** Wraps the chart in a fixed-height container of this many px, so `fill` has a real box to
-   * fill. Omitted ⇒ the chart sits in the shell body's normal flow. */
-  containerHeight?: number
-  /** `'short'` (the kind's own default `fmtAxisDate`) or `'wide'` — an unavoidably wide label
-   * (`'Mar 08 14:00'`-shaped) that forces the §1 tick-spacing/rotation laws to actually fire. */
-  formatX?: 'short' | 'wide'
-  /** Forwarded verbatim — `0` opts out of the phone tier's auto-rotation, `45`/`90` forces it. */
-  xLabelRotate?: 0 | 45 | 90
-  /** `legend.maxRows` stated by the CALLER — the number nothing (tier default, measured fit) may
-   * trim, and the one that hands the legend the height under `fill` (`legendWins`). */
-  legendMaxRows?: number
-  /** Number of x-axis keys. Default 30. `bandStrip` is the one categorical-by-construction kind
-   * here, so a small count is how a `formatX: 'wide'` label is made to actually WRAP (fit every
-   * key) rather than thin flat — the 30-key default is too dense to ever wrap at phone width. */
-  days?: number
+  /** Wraps the chart in a box exactly this many px wide, pinning its container class. */
+  width?: number
+  /** Mounts a second `Lines` on the same Date x (`data-testid="chart-frame-2"`): the cursor pair. */
+  pair?: true
 }
 
 /**

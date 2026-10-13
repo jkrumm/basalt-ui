@@ -70,7 +70,7 @@ const CROWDED: FixtureSpec = {
   bar: { pills: 4, actions: 3 },
   stats: 2,
   table: { rows: 12, columns: 6, stickyHeader: false, search: true, facets: 2 },
-  charts: { kind: 'multiLine', legendEntries: 3, height: 200 },
+  charts: { kind: 'lines', legendEntries: 3, height: 200 },
 }
 
 /**
