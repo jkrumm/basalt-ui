@@ -16,8 +16,6 @@ import {
   useQueryErrorResetBoundary,
 } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
-import { QueryStateDemoPage } from './QueryStateDemoPage'
-import { StatesPage } from './StatesPage'
 
 // ── Mock data ─────────────────────────────────────────────────────────────────────────────────────
 
@@ -129,23 +127,13 @@ export function QueryDemoPage() {
       <Tabs defaultValue="client">
         <Tabs.List>
           <Tabs.Tab value="client">Client</Tabs.Tab>
-          <Tabs.Tab value="query-state">Query state</Tabs.Tab>
-          <Tabs.Tab value="states">States</Tabs.Tab>
         </Tabs.List>
-        {/* `/query-state` and `/states` absorbed here (audit E §7) — neither carries its own
-            `PageBar`, so nesting them under this tab set adds none (law C6). */}
         <Tabs.Panel value="client" pt="md">
           <QueryClientPanel
             staleTimeMs={staleTimeMs}
             forceError={forceError}
             setForceError={setForceError}
           />
-        </Tabs.Panel>
-        <Tabs.Panel value="query-state" pt="md">
-          <QueryStateDemoPage />
-        </Tabs.Panel>
-        <Tabs.Panel value="states" pt="md">
-          <StatesPage />
         </Tabs.Panel>
       </Tabs>
       <BasaltQueryDevtools initialIsOpen={false} />

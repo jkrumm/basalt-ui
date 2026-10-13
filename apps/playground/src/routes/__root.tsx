@@ -18,7 +18,8 @@
 import { useMantineColorScheme } from '@mantine/core'
 import { Outlet, createRootRoute, useNavigate } from '@tanstack/react-router'
 import { BasaltShell, ConnectivityIndicator, ThemeToggle } from 'basalt-ui'
-import type { AccountMenuItem, BasaltAccountActions, GlobalAction } from 'basalt-ui'
+import type { GlobalAction } from 'basalt-ui/controls'
+import type { ComponentProps } from 'react'
 import { useNav } from 'basalt-ui/router-tanstack'
 import { NotificationBell } from 'basalt-ui/notifications'
 import { openSpotlight } from 'basalt-ui/commands'
@@ -66,6 +67,10 @@ const navBadges = { dashboard: 4 }
  * The workspace switcher's rows (`brand.menu`). Static and hoisted, same as `navBadges` — a fresh
  * array per render would be a new identity into the brand row on every commit.
  */
+type Account = NonNullable<ComponentProps<typeof BasaltShell>['account']>
+type BasaltAccountActions = NonNullable<Account['actions']>
+type AccountMenuItem = NonNullable<BasaltAccountActions['extraMenuItems']>[number]
+
 const WORKSPACE_MENU: AccountMenuItem[] = [
   { key: 'switch', label: 'Switch workspace', onClick: () => {} },
   { key: 'new', label: 'New workspace', onClick: () => {} },

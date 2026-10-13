@@ -45,7 +45,6 @@ import {
   SettingsSection,
   useConnectivity,
 } from 'basalt-ui'
-import type { AccountBadgeTone } from 'basalt-ui'
 import { ShortcutsHelp } from 'basalt-ui/commands'
 import type { NotificationIntent } from 'basalt-ui/notifications'
 import { createPersistedState } from 'basalt-ui/state'
@@ -56,7 +55,7 @@ import { IconCopy, IconReset } from './icons'
 import { DEMO_SERIES } from './series'
 import { UserStatePage } from './UserStatePage'
 import { scenarioToAccountState, scenarioToPlan, useUserScenario } from './user-scenario-store'
-import type { UserScenario } from './user-scenario-store'
+import type { AccountBadgeTone, UserScenario } from './user-scenario-store'
 
 // ── Shared type styles (mirrors docs/DESIGN-SPEC.md §3, per-page convention — see DashboardPage) ──
 

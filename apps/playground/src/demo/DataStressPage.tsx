@@ -16,7 +16,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Button, Group, Stack, Text } from '@mantine/core'
 import { PageAside, Section } from 'basalt-ui'
-import type { QueryStateLike } from 'basalt-ui'
+import type { QueryStateLike } from './query-state-like'
 import { overlays } from 'basalt-ui/commands'
 import { ViewTabs } from 'basalt-ui/controls'
 import { BasaltDataTable, createColumnHelper } from 'basalt-ui/data/table'
@@ -153,13 +153,19 @@ function ManualPaginationTable({
       title="Sessions"
       subtitle="manualPagination — the table renders exactly one page; the pager bar reads 'of N' from rowCount, not from data.length"
       count={filtered.length}
-      actions={
-        <ViewTabs
-          field={tableViews.field.queryVariant}
-          label="Query"
-          options={TABLE_QUERY_OPTIONS}
-        />
-      }
+      actions={[
+        {
+          key: 'actions',
+          kind: 'custom',
+          node: (
+            <ViewTabs
+              field={tableViews.field.queryVariant}
+              label="Query"
+              options={TABLE_QUERY_OPTIONS}
+            />
+          ),
+        },
+      ]}
     >
       <BasaltDataTable
         data={tableQuery.data ?? []}

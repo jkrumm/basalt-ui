@@ -43,4 +43,4 @@ export function demoColor(key: SeriesKey): string {
 }
 
 /** The `paletteOptions.groups` shape `BasaltProvider` forwards to `buildPaletteCss`. */
-export const demoPaletteGroups = { [`${DEMO_GROUP}-`]: DEMO_SERIES }
+export const demoPaletteGroups = [demoColors]

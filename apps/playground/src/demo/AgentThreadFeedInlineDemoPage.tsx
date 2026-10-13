@@ -55,8 +55,8 @@
  *     composer sends a message — that call happens from a click, long after both StrictMode mount
  *     passes have settled, so it never meets the race above.
  */
-import { Badge, Box, Button, Group, Paper, Stack, Text } from '@mantine/core'
-import { WidgetGrid } from 'basalt-ui'
+import { Badge, Box, Button, Group, Paper, SimpleGrid, Stack, Text } from '@mantine/core'
+import { CONTAINER_KEYS } from 'basalt-ui/tokens'
 import { createThreadsStore, heuristicOutcome, useAgentThreadRuns } from 'basalt-ui/agent'
 import type {
   AgentPart,
@@ -324,7 +324,7 @@ export function AgentThreadFeedInlineDemoPage() {
         while it streams.
       </Text>
 
-      <WidgetGrid cols={2}>
+      <SimpleGrid type="container" cols={{ base: 1, [CONTAINER_KEYS.regular]: 2 }}>
         <Paper p="sm">
           <Text size="xs" tt="uppercase" fw={600} c="dimmed" mb={6}>
             variant=&quot;inline&quot; (renderRow → ThreadFeedRow)
@@ -351,7 +351,7 @@ export function AgentThreadFeedInlineDemoPage() {
             />
           </Box>
         </Paper>
-      </WidgetGrid>
+      </SimpleGrid>
 
       <Group gap="xs">
         <Button radius="md" variant="default" leftSection={<IconReset />} onClick={handleReset}>

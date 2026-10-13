@@ -1,22 +1,13 @@
 /**
  * FormsDemoPage — exercises basalt-ui/forms:
- * useBasaltForm + inputProps/fieldKey + FormErrorSummary + useFormDraft (autosave) with a Valibot
- * schema, laid out through FormSection/FormRow/FormActions (basalt-ui/controls) — law C1's third home.
+ * useBasaltForm + inputProps/fieldKey with a Valibot schema, laid out through FormRow
+ * (basalt-ui/controls) — law C1's third home.
  *
- * Demo: a project entry form (name, email, budget) with draft persistence. The draft is autosaved
- * on every value change via `useFormDraft`'s own subscription (`autosave: true`), restored on
- * mount, and cleared on successful submit.
+ * Demo: a project entry form (name, email, budget).
  */
-import { Divider, NumberInput, Paper, Stack, Text, TextInput } from '@mantine/core'
-import { FormActions, FormRow, FormSection } from 'basalt-ui/controls'
-import type { BarAction } from 'basalt-ui/controls'
-import {
-  FormErrorSummary,
-  fieldKey,
-  inputProps,
-  useBasaltForm,
-  useFormDraft,
-} from 'basalt-ui/forms'
+import { Button, Divider, Group, NumberInput, Paper, Stack, Text, TextInput } from '@mantine/core'
+import { FormRow } from 'basalt-ui/controls'
+import { fieldKey, inputProps, useBasaltForm } from 'basalt-ui/forms'
 import { useState } from 'react'
 import * as v from 'valibot'
 
@@ -43,48 +34,15 @@ function ProjectForm() {
     mode: 'uncontrolled',
   })
 
-  const { hasDraft, clearDraft } = useFormDraft<ProjectValues>(form, {
-    key: 'demo-project-form',
-    version: 1,
-    schema: ProjectSchema,
-    autosave: true,
-  })
-
   const handleSubmit = (values: ProjectValues): void => {
     setSubmitted(values)
-    clearDraft()
     form.reset()
   }
 
-  const actions: BarAction[] = [
-    { key: 'submit', label: 'Submit', onClick: () => form.onSubmit(handleSubmit)() },
-    { key: 'validate', label: 'Force validate', onClick: () => form.validate() },
-    ...(hasDraft
-      ? [
-          {
-            key: 'clear-draft',
-            label: 'Clear draft',
-            onClick: () => {
-              clearDraft()
-              form.reset()
-            },
-          } satisfies BarAction,
-        ]
-      : []),
-  ]
-
   return (
     <Stack gap="md">
-      {hasDraft && (
-        <Text size="sm" c="dimmed">
-          Draft restored — your unsaved work has been loaded.
-        </Text>
-      )}
-
       <form onSubmit={form.onSubmit(handleSubmit)} noValidate>
-        <FormSection title="Project entry">
-          <FormErrorSummary form={form} title="Fix these errors before submitting" />
-
+        <Stack gap="sm">
           <FormRow label="Project name">
             <TextInput
               key={fieldKey(form, 'name')}
@@ -113,19 +71,24 @@ function ProjectForm() {
             />
           </FormRow>
 
-          <FormActions actions={actions} />
+          <Group gap="xs">
+            <Button type="submit">Submit</Button>
+            <Button variant="default" onClick={() => form.validate()}>
+              Force validate
+            </Button>
+          </Group>
           <Text size="xs" c="dimmed">
             "Force validate" surfaces all errors before the first submit attempt — useful for guided
             wizards or save-and-review flows where the user hasn't touched every field.
           </Text>
-        </FormSection>
+        </Stack>
       </form>
 
       {submitted !== null && (
         <>
           <Divider />
           <Text size="sm" fw={600} c="teal">
-            Submitted values (draft cleared):
+            Submitted values:
           </Text>
           <Paper p="xs">
             {/* theme-allow: bespoke raw JSON-dump sizing, no matching token */}
@@ -145,8 +108,7 @@ export function FormsDemoPage() {
       {/* No in-body `<Title>` — the breadcrumb names the page; the subpath the page demos is
           stated in the lead instead (ComponentsPage's module doc has the wave's rule). */}
       <Text size="sm" c="dimmed">
-        <code>./forms</code>: useBasaltForm + inputProps/fieldKey + FormErrorSummary + useFormDraft
-        (autosave), laid out through FormSection/FormRow/FormActions
+        <code>./forms</code>: useBasaltForm + inputProps/fieldKey, laid out through FormRow
       </Text>
 
       <Paper p="sm">
@@ -154,10 +116,7 @@ export function FormsDemoPage() {
           <Text size="xs" tt="uppercase" fw={600} c="dimmed">
             Behaviour
           </Text>
-          <Text size="sm">
-            Fill the form and navigate away — your draft is saved automatically on every change.
-            Reload the page to see it restored. Submit to clear the draft.
-          </Text>
+          <Text size="sm">Submit with invalid values to see each field's schema error inline.</Text>
         </Stack>
       </Paper>
 

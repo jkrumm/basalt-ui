@@ -21,11 +21,12 @@
  *    the SAME `Bars` the main column does, at the aside's content width, because G6 is wave 3 and
  *    the difference should stay visible rather than argued.
  */
-import { ActionIcon, Anchor, Badge, Button, Stack, Switch, Text } from '@mantine/core'
+import { ActionIcon, Anchor, Badge, Button, Group, Stack, Switch, Text } from '@mantine/core'
 import { Section } from 'basalt-ui'
 import { Bars, VX } from 'basalt-ui/charts'
-import { PanelRow, SelectFilter, SliderControl, ToggleFilter } from 'basalt-ui/controls'
+import { SelectFilter, ToggleFilter } from 'basalt-ui/controls'
 import { useMemo } from 'react'
+import type { ReactNode } from 'react'
 import { CBBI_METRICS, ratio } from './cbbi-data'
 import type { CbbiMetricKey, CbbiRow, HistogramBin } from './cbbi-data'
 import { activePreset, CBBI_PRESETS, diagnoseAll, DIAGNOSTIC_WINDOW } from './cbbi-diagnostics'
@@ -105,22 +106,54 @@ function compositionReadout(weight: number): string {
   return `×${weight.toFixed(2)}`
 }
 
+/**
+ * A panel row: label (+ hint) on the left, mono readout and an end control on the right, optional
+ * body below. Local to this page — the framework's `PanelRow` is no longer public (V2-SPEC § 1).
+ */
+function PanelRow({
+  label,
+  hint,
+  readout,
+  end,
+  children,
+}: {
+  label: string
+  hint?: string
+  readout?: string
+  end?: ReactNode
+  children?: ReactNode
+}) {
+  return (
+    <Stack gap={2} py={4}>
+      <Group justify="space-between" wrap="nowrap" gap="xs">
+        <Text size="sm" truncate>
+          {label}
+        </Text>
+        <Group gap="xs" wrap="nowrap">
+          {readout !== undefined && (
+            <Text size="xs" ff="monospace" c="dimmed">
+              {readout}
+            </Text>
+          )}
+          {end}
+        </Group>
+      </Group>
+      {hint !== undefined && (
+        <Text size="xs" c="dimmed">
+          {hint}
+        </Text>
+      )}
+      {children}
+    </Stack>
+  )
+}
+
 /** The diagnostics readout — today's reading, then the trust score it earned. */
 function diagnosticsReadout(value: number | null, j: number): string {
   return `${value === null ? '—' : ratio(value)} · J ${j.toFixed(2)}`
 }
 
-/**
- * One metric's composition row.
- *
- * Its own component for the reason the hand-built row was: nine `use()` calls become nine
- * COMPONENTS with one hook each (inside `SliderControl`), so dragging one weight re-renders one row.
- *
- * The readout is an OVERRIDE rather than a `format` so a FLAGGED row can swap it for the verdict
- * badge entirely — a caveat and a weight number both fit at panel width, `SliderControl`'s readout
- * slot doesn't, and the verdict is the more actionable of the two. An unflagged row still gets the
- * FUNCTION form, so the weight tracks the thumb per frame from the control's own drag draft.
- */
+/** One metric's composition row: its label, today's weight (or the verdict badge) and the switch. */
 function CompositionRow({
   metricKey,
   label,
@@ -137,22 +170,22 @@ function CompositionRow({
   onToggle: (next: boolean) => void
 }) {
   const flagged = health.verdict !== 'ok' && health.verdict !== 'insufficient'
+  const [weight] = cbbiWeightField[metricKey].use()
 
   return (
-    <SliderControl
-      field={cbbiWeightField[metricKey]}
+    <PanelRow
       label={label}
       hint={hint}
-      disabled={!enabled}
-      readout={flagged ? <VerdictBadge verdict={health.verdict} /> : compositionReadout}
+      {...(!flagged && { readout: compositionReadout(weight) })}
       end={
-        // G14 (`docs/ASIDE-SPEC.md` §2): membership of ONE key in a `field.multi` has no bound
-        // control, so this row writes the field by hand. Wave 3 owes it a `MembershipToggle`.
-        <Switch
-          checked={enabled}
-          onChange={(event) => onToggle(event.currentTarget.checked)}
-          aria-label={`Include ${label}`}
-        />
+        <>
+          {flagged && <VerdictBadge verdict={health.verdict} />}
+          <Switch
+            checked={enabled}
+            onChange={(event) => onToggle(event.currentTarget.checked)}
+            aria-label={`Include ${label}`}
+          />
+        </>
       }
     />
   )
@@ -269,11 +302,17 @@ export function CbbiPanel({
         count={enabled.length}
         collapsible
         persistKey="cbbi-composition"
-        actions={
-          <ActionIcon variant="subtle" aria-label="Reset weights" onClick={resetCbbiWeights}>
-            <IconReset />
-          </ActionIcon>
-        }
+        actions={[
+          {
+            key: 'actions',
+            kind: 'custom',
+            node: (
+              <ActionIcon variant="subtle" aria-label="Reset weights" onClick={resetCbbiWeights}>
+                <IconReset />
+              </ActionIcon>
+            ),
+          },
+        ]}
       >
         {CBBI_METRICS.map((metric) => (
           <CompositionRow

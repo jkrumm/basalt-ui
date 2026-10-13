@@ -6,7 +6,7 @@
  * to `--vx-surface-bg`. `--vx-surface-border`/`line` is reserved for layout dividers, not the
  * card/panel edge.
  *
- * Pure Mantine: only components and layout primitives (Stack / Group / WidgetGrid / Box) — no raw
+ * Pure Mantine: only components and layout primitives (Stack / Group / SimpleGrid / Box) — no raw
  * <div>, no inline-styled layout.
  *
  * PAGE-CHROME RULE for this wave, applied to every demo page in the phone-readiness pass and
@@ -33,15 +33,17 @@ import {
   Radio,
   SegmentedControl,
   Select,
+  SimpleGrid,
   Stack,
   Switch,
   Table,
   Tabs,
   Text,
-  Textarea,
   TextInput,
+  Textarea,
 } from '@mantine/core'
-import { EmptyState, PageBar, SettingsSection, WidgetGrid } from 'basalt-ui'
+import { CONTAINER_KEYS } from 'basalt-ui/tokens'
+import { EmptyState, PageBar, SettingsSection } from 'basalt-ui'
 import { ViewTabs } from 'basalt-ui/controls'
 import { createLocalStore, field } from 'basalt-ui/state'
 import type { ReactNode } from 'react'
@@ -82,7 +84,7 @@ export function ComponentsPage() {
           set is row 2's `tabs` slot, which is the only home a bound control may enter (law C1). */}
       <PageBar
         tabs={<ViewTabs field={componentViews.field.tab} label="Section" />}
-        actions={{ secondary: [{ key: 'export', label: 'Export', onClick: () => {} }] }}
+        actions={[{ key: 'export', label: 'Export', onClick: () => {}, primary: true }]}
       />
 
       {/* `/primitives` and `/activity` absorbed here (audit E §7) — one PageBar for the whole
@@ -112,7 +114,7 @@ export function ComponentsPage() {
 function ComponentsSurfaces() {
   return (
     <Stack gap="md">
-      <WidgetGrid cols={2}>
+      <SimpleGrid type="container" cols={{ base: 1, [CONTAINER_KEYS.regular]: 2 }}>
         <ComponentGroup title="Buttons">
           <Group gap="sm">
             <Button variant="filled">Filled</Button>
@@ -182,7 +184,7 @@ function ComponentsSurfaces() {
             ]}
           />
         </ComponentGroup>
-      </WidgetGrid>
+      </SimpleGrid>
 
       <ComponentGroup title="Table">
         <Table withTableBorder striped highlightOnHover>
@@ -205,7 +207,7 @@ function ComponentsSurfaces() {
         </Table>
       </ComponentGroup>
 
-      <WidgetGrid cols={2}>
+      <SimpleGrid type="container" cols={{ base: 1, [CONTAINER_KEYS.regular]: 2 }}>
         <ComponentGroup title="Accordion">
           <Accordion variant="contained" defaultValue="acquisition">
             <Accordion.Item value="acquisition">
@@ -262,9 +264,9 @@ function ComponentsSurfaces() {
             </Popover>
           </Group>
         </ComponentGroup>
-      </WidgetGrid>
+      </SimpleGrid>
 
-      <WidgetGrid cols={2}>
+      <SimpleGrid type="container" cols={{ base: 1, [CONTAINER_KEYS.regular]: 2 }}>
         <ComponentGroup title="Badges & code">
           <Stack gap="sm">
             <Group gap="sm">
@@ -293,7 +295,7 @@ function ComponentsSurfaces() {
             </Radio.Group>
           </Stack>
         </ComponentGroup>
-      </WidgetGrid>
+      </SimpleGrid>
 
       <ComponentGroup title="Empty state">
         <EmptyState

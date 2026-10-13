@@ -11,7 +11,8 @@
  * which is why it carries no `PageBar`: that route's one bar (law C6) is the tab set itself.
  */
 import { Stack, Text } from '@mantine/core'
-import { createThreadsStore, ThreadWorkspace } from 'basalt-ui'
+import { createThreadsStore } from 'basalt-ui/agent'
+import { ThreadWorkspace } from 'basalt-ui/agent-chat'
 import type { JSX } from 'react'
 import { AgentThreadFeedInlineDemoPage } from '../AgentThreadFeedInlineDemoPage'
 import { mockOutcomeResolver, mockThreadTransport } from './thread-scenarios'
