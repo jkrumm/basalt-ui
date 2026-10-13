@@ -64,11 +64,15 @@ const LEVELS = 8
 const MIN_LEVEL = 0.14
 const ROW_PITCH = 26
 const CHROME = 64
+// The default height law's bounds, mirrored from `sizing.ts` (which does not export them).
 const HEIGHT_MIN = 160
 const HEIGHT_MAX = 420
 const CELL_INSET = 1
 
-type Cell<T> = { row: string; col: string; value: number | null; datum: T | undefined }
+/** One grid position. `id` is its row-major index: the mark key, so no row/col pair can collide. */
+type Cell<T> = { id: number; row: string; col: string; value: number | null; datum: T | undefined }
+
+const identityLabel = (band: string): string => band
 
 const firstSeen = (keys: Iterable<string>): string[] => [...new Set(keys)]
 
@@ -107,8 +111,8 @@ export function Heatmap<T>(props: HeatmapProps<T>): ReactElement {
     color = VX.line,
     domain,
     formatValue = String,
-    formatRow = (row: string) => row,
-    formatCol = (col: string) => col,
+    formatRow = identityLabel,
+    formatCol = identityLabel,
     legend,
     tooltip,
     height,
@@ -118,41 +122,67 @@ export function Heatmap<T>(props: HeatmapProps<T>): ReactElement {
     style,
   } = props
   const chartId = useId()
+  // Primitives, so the definition does not rebuild for a fresh `{ label }` / `{ rows }` literal.
+  const showLegend = legend !== false
+  const legendLabel = legend === false ? undefined : legend?.label
+  const showTooltip = tooltip !== false
+  const tooltipRows = tooltip === false ? undefined : tooltip?.rows
   const rows = useMemo(() => props.rows ?? firstSeen(data.map(getRow)), [props.rows, data, getRow])
   const cols = useMemo(() => props.cols ?? firstSeen(data.map(getCol)), [props.cols, data, getCol])
   const fixedHeight =
     height ?? Math.min(Math.max(rows.length * ROW_PITCH + CHROME, HEIGHT_MIN), HEIGHT_MAX)
   const { ref, size, coarse } = useChartSize(matchHeight ? undefined : fixedHeight)
   const fill = useMeasuredHeight(matchHeight)
+  const measureHeight = fill.ref
+  const rootRef = useCallback(
+    (el: HTMLElement | null) => {
+      ref(el)
+      if (matchHeight) measureHeight(el)
+    },
+    [ref, measureHeight, matchHeight],
+  )
   const chartHeight = matchHeight && fill.h > 0 ? fill.h : size.height
 
   const definition = useMemo<CartesianDefinition>(() => {
-    const byPair = new Map<string, T>()
-    for (const d of data) byPair.set(`${getRow(d)}\u0000${getCol(d)}`, d)
-    const grid: Cell<T>[] = rows.flatMap((row) =>
-      cols.map((col) => {
-        const datum = byPair.get(`${row}\u0000${col}`)
-        const value = datum === undefined ? null : getValue(datum)
-        return { row, col, datum, value: value !== null && Number.isFinite(value) ? value : null }
-      }),
-    )
-    const present = grid.filter((c) => c.value !== null)
-    const absentWithDatum = grid.filter((c) => c.value === null && c.datum !== undefined)
-    const absentEmpty = grid.filter((c) => c.datum === undefined)
+    const byBand = new Map<string, Map<string, T>>()
+    for (const d of data) {
+      const row = getRow(d)
+      const inRow = byBand.get(row) ?? new Map<string, T>()
+      inRow.set(getCol(d), d)
+      byBand.set(row, inRow)
+    }
+    // One pass: split the grid into measured, absent-with-a-datum and absent-with-none.
+    const present: Cell<T>[] = []
+    const absentWithDatum: Cell<T>[] = []
+    const absentEmpty: Cell<T>[] = []
     let max = 0
-    for (const c of present) max = Math.max(max, c.value ?? 0)
-    const [lo, hi] = domain ?? [0, max > 0 ? max : 1]
-    const scale = scaleQuantize<string>().domain([lo, hi]).range(ramp(color))
+    for (const [r, row] of rows.entries()) {
+      for (const [c, col] of cols.entries()) {
+        const datum = byBand.get(row)?.get(col)
+        const raw = datum === undefined ? null : getValue(datum)
+        const value = raw !== null && Number.isFinite(raw) ? raw : null
+        const cellAt: Cell<T> = { id: r * cols.length + c, row, col, datum, value }
+        if (value !== null) {
+          present.push(cellAt)
+          max = Math.max(max, value)
+        } else if (datum === undefined) absentEmpty.push(cellAt)
+        else absentWithDatum.push(cellAt)
+      }
+    }
+    const [lo, hi] = domain ?? [0, max]
+    // A flat or inverted domain would map every value to one step; widen it to a unit.
+    const scale = scaleQuantize<string>()
+      .domain([lo, hi > lo ? hi : lo + 1])
+      .range(ramp(color))
     const header = (c: Cell<T>): string => `${formatRow(c.row)} · ${formatCol(c.col)}`
 
     return {
       chart: ({ width }: ChartBuildContext): StoredChartSpec => {
-        const ticks = {
-          line: false as const,
-          size: 0,
-          tickLabels: {
-            fontSize: resolveContainerClass(width) === 'wide' ? VX.text.micro : VX.text.nano,
-          },
+        const ticks = { line: false as const, size: 0 }
+        const tickLabels = {
+          fontSize: resolveContainerClass(width) === 'wide' ? VX.text.micro : VX.text.nano,
+          opacity: 1,
+          thin: true,
         }
         const marks = [
           decorative(
@@ -172,7 +202,7 @@ export function Heatmap<T>(props: HeatmapProps<T>): ReactElement {
             fill: VX.neutral,
             fillOpacity: 0.12,
             inset: CELL_INSET,
-            key: (c) => `${c.row}\u0000${c.col}`,
+            key: 'id',
           }),
           cell(present, {
             id: 'cells',
@@ -180,7 +210,7 @@ export function Heatmap<T>(props: HeatmapProps<T>): ReactElement {
             y: 'row',
             color: 'value',
             inset: CELL_INSET,
-            key: (c) => `${c.row}\u0000${c.col}`,
+            key: 'id',
           }),
         ]
         return {
@@ -191,7 +221,7 @@ export function Heatmap<T>(props: HeatmapProps<T>): ReactElement {
               axis: {
                 line: AXIS_LINE,
                 ticks: { values: cols, format: (v) => formatCol(String(v)), ...ticks },
-                tickLabels: { ...ticks.tickLabels, opacity: 1, thin: true },
+                tickLabels,
               },
             },
             y: {
@@ -199,42 +229,47 @@ export function Heatmap<T>(props: HeatmapProps<T>): ReactElement {
               axis: {
                 line: false,
                 ticks: { values: rows, format: (v) => formatRow(String(v)), ...ticks },
-                tickLabels: { ...ticks.tickLabels, opacity: 1, thin: true },
+                tickLabels,
               },
             },
           },
           color: {
             scale,
-            ...(legend !== false && {
+            ...(showLegend && {
               legend: colorGradientLegend({
                 steps: LEVELS,
                 format: formatValue,
                 placement: 'bottom',
-                ...(legend?.label !== undefined && { label: legend.label }),
+                ...(legendLabel !== undefined && { label: legendLabel }),
               }),
             }),
           },
           theme: CHART_THEME,
         }
       },
-      tooltip:
-        tooltip === false
-          ? false
-          : {
-              use: tooltipHost,
-              portal,
-              content: (points: readonly ChartPoint[]) => {
-                const point = points[0]
-                const c = point?.datum as Cell<T> | undefined
-                if (!point || !c) return { rows: [] }
-                const extra = c.datum === undefined ? [] : (tooltip?.rows?.(c.datum) ?? [])
-                const value: readonly ChartTooltipRow[] =
-                  c.value === null
-                    ? [{ label: 'Value', value: 'No data' }]
-                    : [{ label: 'Value', value: formatValue(c.value), color: point.color }]
-                return { title: header(c), rows: [...value, ...extra] }
-              },
+      tooltip: showTooltip
+        ? {
+            use: tooltipHost,
+            portal,
+            content: (points: readonly ChartPoint[]) => {
+              const point = points[0]
+              const c = point?.datum as Cell<T> | undefined
+              if (!point || !c) return { rows: [] }
+              const extra = c.datum === undefined ? [] : (tooltipRows?.(c.datum) ?? [])
+              const value: readonly ChartTooltipRow[] =
+                c.value === null
+                  ? [{ label: 'Value', value: 'No data' }]
+                  : [
+                      {
+                        label: 'Value',
+                        value: formatValue(c.value),
+                        ...(point.color && { color: point.color }),
+                      },
+                    ]
+              return { title: header(c), rows: [...value, ...extra] }
             },
+          }
+        : false,
     }
   }, [
     data,
@@ -248,17 +283,16 @@ export function Heatmap<T>(props: HeatmapProps<T>): ReactElement {
     formatValue,
     formatRow,
     formatCol,
-    legend,
-    tooltip,
+    legendLabel,
+    showLegend,
+    showTooltip,
+    tooltipRows,
   ])
 
   const resolved = resolveChartState(state)
   return (
     <div
-      ref={(el) => {
-        ref(el)
-        if (matchHeight) fill.ref(el)
-      }}
+      ref={rootRef}
       data-basalt-chart=""
       {...(className !== undefined && { className })}
       style={matchHeight ? { ...fillStyle, ...style } : style}

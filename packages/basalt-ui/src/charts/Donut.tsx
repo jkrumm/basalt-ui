@@ -18,7 +18,7 @@ import { ChartEngine } from './host'
 import { ChartLegend } from './legend'
 import { useChartSize } from './sizing'
 import { ChartPlaceholder, resolveChartState } from './state'
-import { CHART_THEME } from './theme'
+import { CHART_THEME, DIMMED } from './theme'
 import type { ChartSeries, ChartState, ResponsiveChartHeight } from './types'
 
 export type DonutDatum<K extends string = string> = { key: K; value: number }
@@ -31,7 +31,7 @@ export type DonutProps<K extends string = string> = BasaltProps & {
   colorForKey: (key: K) => string
   formatValue: (v: number) => string
   /** Legend and tooltip label for a key. Default: the key. */
-  seriesLabel?: (key: string) => string
+  seriesLabel?: (key: K) => string
   /** The ring's centre text, and the smaller line under it. */
   centerLabel?: string
   centerSubLabel?: string
@@ -42,35 +42,51 @@ export type DonutProps<K extends string = string> = BasaltProps & {
 
 /** Slices kept before the rest fold into "Other". */
 const MAX_SLICES = 6
-const OTHER_KEY = '__other'
 /** W/H above which the legend sits beside the ring, and the ring's share of the width then. */
 const SIDE_ASPECT = 1.5
 const SIDE_RING_SHARE = 0.55
 const DEFAULT_HEIGHT = 240
 const INNER_RATIO = 0.62
 
-type Slice = { key: string; label: string; color: string; value: number }
+/** `id` is the internal identity (legend key, hidden set, arc key): `k:<key>` for a datum, `other`
+ * for the fold. A consumer key can never equal `other`, whatever it is called. */
+type Slice = { id: string; label: string; color: string; value: number }
+const OTHER_ID = 'other'
 
-const safe = (v: number): number => (Number.isFinite(v) && v > 0 ? v : 0)
+const identityLabel = (key: string): string => key
 
+/** Duplicate keys add up; a non-finite or non-positive value is an ABSENCE and drops out, it is
+ * not a zero-width slice. First-seen order. */
+function aggregate<K extends string>(data: readonly DonutDatum<K>[]): DonutDatum<K>[] {
+  const sums = new Map<K, number>()
+  for (const d of data) {
+    if (!Number.isFinite(d.value) || d.value <= 0) continue
+    sums.set(d.key, (sums.get(d.key) ?? 0) + d.value)
+  }
+  return [...sums].map(([key, value]) => ({ key, value }))
+}
+
+/** The six largest keep their place; everything else sums into one trailing remainder. */
 function foldOther<K extends string>(
-  data: readonly DonutDatum<K>[],
+  all: readonly DonutDatum<K>[],
 ): {
   kept: DonutDatum<K>[]
   other: number | null
 } {
-  const all = data.map((d) => ({ key: d.key, value: safe(d.value) }))
-  if (all.length <= MAX_SLICES) return { kept: all, other: null }
+  if (all.length <= MAX_SLICES) return { kept: [...all], other: null }
   const top = new Set(
     all
       .toSorted((a, b) => b.value - a.value)
       .slice(0, MAX_SLICES)
       .map((d) => d.key),
   )
-  return {
-    kept: all.filter((d) => top.has(d.key)),
-    other: all.reduce((sum, d) => (top.has(d.key) ? sum : sum + d.value), 0),
+  let other = 0
+  const kept: DonutDatum<K>[] = []
+  for (const d of all) {
+    if (top.has(d.key)) kept.push(d)
+    else other += d.value
   }
+  return { kept, other }
 }
 
 const percent = (value: number, total: number): string =>
@@ -95,7 +111,7 @@ export function Donut<K extends string = string>(props: DonutProps<K>): ReactEle
     data,
     colorForKey,
     formatValue,
-    seriesLabel = (key: string) => key,
+    seriesLabel = identityLabel,
     centerLabel,
     centerSubLabel,
     height = DEFAULT_HEIGHT,
@@ -106,6 +122,7 @@ export function Donut<K extends string = string>(props: DonutProps<K>): ReactEle
   const chartId = useId()
   const { ref, size, coarse } = useChartSize(height)
   const [hidden, setHidden] = useState<ReadonlySet<string>>(() => new Set())
+  const [highlighted, setHighlighted] = useState<string | null>(null)
   const onToggle = useCallback((key: string) => {
     setHidden((prev) => {
       const next = new Set(prev)
@@ -115,15 +132,15 @@ export function Donut<K extends string = string>(props: DonutProps<K>): ReactEle
   }, [])
 
   const slices = useMemo<Slice[]>(() => {
-    const { kept, other } = foldOther(data)
+    const { kept, other } = foldOther(aggregate(data))
     const out: Slice[] = kept.map((d) => ({
-      key: d.key,
+      id: `k:${d.key}`,
       label: seriesLabel(d.key),
       color: colorForKey(d.key),
       value: d.value,
     }))
     if (other !== null)
-      out.push({ key: OTHER_KEY, label: 'Other', color: alpha(VX.neutral, 0.5), value: other })
+      out.push({ id: OTHER_ID, label: 'Other', color: alpha(VX.neutral, 0.5), value: other })
     return out
   }, [data, colorForKey, seriesLabel])
   const total = slices.reduce((sum, s) => sum + s.value, 0)
@@ -131,7 +148,7 @@ export function Donut<K extends string = string>(props: DonutProps<K>): ReactEle
   const series = useMemo<ChartSeries<Slice>[]>(
     () =>
       slices.map((s) => ({
-        key: s.key,
+        key: s.id,
         label: s.label,
         color: s.color,
         mark: 'bar' as const,
@@ -142,7 +159,7 @@ export function Donut<K extends string = string>(props: DonutProps<K>): ReactEle
   )
 
   const definition = useMemo<CartesianDefinition>(() => {
-    const drawn = slices.filter((s) => !hidden.has(s.key))
+    const drawn = slices.filter((s) => !hidden.has(s.id))
     const arcs = pie(drawn, { value: 'value' })
     return {
       chart: (): StoredChartSpec => ({
@@ -152,10 +169,11 @@ export function Donut<K extends string = string>(props: DonutProps<K>): ReactEle
             scales: { angle: null, radius: null },
             marks: [
               radialArc(arcs, {
-                key: 'key',
+                key: 'id',
                 innerRadius: ({ radius }) => radius * INNER_RATIO,
                 cornerRadius: 3,
-                fill: (a) => a.color,
+                fill: (a) =>
+                  highlighted === null || highlighted === a.id ? a.color : alpha(a.color, DIMMED),
               }),
             ],
           }),
@@ -168,7 +186,7 @@ export function Donut<K extends string = string>(props: DonutProps<K>): ReactEle
         portal,
         content: (points: readonly ChartPoint[]) => {
           const slice = points[0]?.datum as Slice | undefined
-          if (!slice || !slices.some((s) => s.key === slice.key)) return { rows: [] }
+          if (!slice) return { rows: [] }
           return {
             title: slice.label,
             rows: [
@@ -179,7 +197,7 @@ export function Donut<K extends string = string>(props: DonutProps<K>): ReactEle
         },
       },
     }
-  }, [slices, hidden, total, formatValue])
+  }, [slices, hidden, highlighted, total, formatValue])
 
   const side =
     size.containerClass !== 'micro' &&
@@ -193,7 +211,7 @@ export function Donut<K extends string = string>(props: DonutProps<K>): ReactEle
       groups={false}
       toggle={series.length >= 2}
       onToggle={onToggle}
-      onHighlight={() => {}}
+      onHighlight={setHighlighted}
     />
   )
   const resolved = resolveChartState(state)
@@ -229,7 +247,7 @@ export function Donut<K extends string = string>(props: DonutProps<K>): ReactEle
           <ChartPlaceholder state={state} height={size.height} />
         )}
         {resolved === null && (centerLabel !== undefined || centerSubLabel !== undefined) && (
-          <div aria-hidden style={centerStyle}>
+          <div style={centerStyle}>
             {centerLabel !== undefined && (
               <span style={{ color: VX.ink, fontSize: VX.text.lg, fontWeight: 600 }}>
                 {centerLabel}
