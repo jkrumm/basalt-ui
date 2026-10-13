@@ -1,53 +1,31 @@
 /**
- * Layout invariants for the chart layer — audit finding D7: the layout suite never measured a
- * chart. Everything here is ResizeObserver- and getBoundingClientRect-driven
- * (`docs/CHARTS-SPEC.md` §1 measured margins, §6 the one responsive path, §8 the phone tier), so
- * happy-dom (a hard-coded `DOMRect`, `offsetWidth`/`offsetHeight` pinned to `0`) cannot see any of
- * it — a green `bun test` run here would prove nothing about the geometry it claims to cover.
+ * Layout invariants for the 2.0 chart layer (docs/V2-SPEC.md § 9.4–§ 9.6) — everything here is
+ * measured or computed by a real browser, which happy-dom cannot do: the container class the host
+ * resolves from its MEASURED width and the guide ladder it drives, y labels inside the plot at the
+ * compact class, the crosshair the engine paints on every chart of a cursor group and clears on
+ * `mouseleave`, `:root`'s `--ts-chart-*` reaching the portalled tooltip, and `touch-action` on a
+ * coarse pointer (the harness context is `isMobile` + `hasTouch`, i.e. `(pointer: coarse)`).
  *
- * `[data-testid="chart-frame"]` is the fixture's own wrapper (`fixture/fixtures.tsx`), not a
- * basalt export — it exists so every kind the fixture can mount has ONE stable selector for "the
- * chart's own box" regardless of which real kind (`MultiLine` / `Bars` / `Heatmap` / `Donut`) is
- * underneath.
+ * `[data-testid="chart-frame"]` is the fixture's own wrapper (`fixture/fixtures.tsx`), not a basalt
+ * export; with `width` set it pins the chart's container class.
  */
 import { afterAll, describe, expect, test } from 'bun:test'
-import { VX } from '../../src/tokens'
 import type { ChartsSpec, FixtureSpec } from './fixture/spec'
 import type { LayoutPage, Viewport } from './harness'
-import {
-  CLOSE_BUDGET_MS,
-  PHONE,
-  PHONE_SMALL,
-  closeLayoutSuite,
-  expectFullyInside,
-  expectHeightAtLeast,
-  initLayoutSuite,
-  openFixture,
-} from './harness'
+import { CLOSE_BUDGET_MS, PHONE, closeLayoutSuite, initLayoutSuite, openFixture } from './harness'
 
-// Booted at MODULE TOP LEVEL, the same shape as every other layout file — Bun caps a hook at an
-// undeclared 5000 ms that the cold boot does not reliably fit inside.
 const ready = await initLayoutSuite()
 const layout = ready ? describe : describe.skip
 
 const DESKTOP: Viewport = { name: 'desktop', width: 1440, height: 900 }
 
 const FRAME = '[data-testid="chart-frame"]'
-const SVG = `${FRAME} svg`
-/** The PLOT's own svg, and only it — `SVG` also matches the nested `<svg>` visx's axis wraps each
- * tick label in, so a bare `count(SVG)` is 6 on a chart with 5 ticks and cannot say "no plot". */
-const PLOT_SVG = `${FRAME} > div > svg`
-/** The `HoverOverlay` — focusable and `role="slider"` whenever the chart wires a keyboard handler,
- * which `CartesianChart` always does (`primitives/HoverOverlay.tsx`). */
-const OVERLAY = `${FRAME} rect[role="slider"]`
-const TICK_TEXT = `${FRAME} .visx-axis-bottom .visx-axis-tick text`
-const TOOLTIP = '[role="tooltip"]'
-/** A toggle entry (`ChartLegend`'s per-series button) vs. the "+N more" disclosure — two different
- * buttons, two different a11y attributes, so the selectors can't collide. */
-const LEGEND_ENTRY = `${FRAME} button[aria-pressed]`
-const LEGEND_MORE = `${FRAME} button[aria-expanded]`
+const FRAME_2 = '[data-testid="chart-frame-2"]'
+const HOST = `${FRAME} .ts-chart-host`
+const SVG = `${FRAME} svg.ts-chart`
+const TOOLTIP = '.ts-chart-tooltip'
+const RULE_X = '.ts-chart__crosshair-rule--x'
 
-/** One chart above the filler, in an otherwise minimal shell. */
 function chartFixture(charts: ChartsSpec): FixtureSpec {
   return {
     sections: [
@@ -57,276 +35,229 @@ function chartFixture(charts: ChartsSpec): FixtureSpec {
   }
 }
 
-/**
- * Dispatches a real `PointerEvent` at viewport coordinates `(x, y)` directly on `selector`,
- * bypassing `page.mouse.move` — the fixture context runs `hasTouch: true, isMobile: true`
- * (`harness.ts`'s `openFixture`), and a synthesized OS-level mouse move is a second layer of
- * emulation this suite does not need: `useChartCursor.onPointerMove` reads `event.currentTarget`
- * and `event.clientX/clientY` off whatever pointer event lands on the overlay rect, real or not.
- */
-async function hoverAt(p: LayoutPage, selector: string, x: number, y: number): Promise<void> {
+/** A real `PointerEvent` at a fraction of the plot, on the chart's svg (the engine listens there). */
+async function hover(p: LayoutPage, frame: string, fx = 0.5, fy = 0.5): Promise<void> {
   await p.raw.evaluate(
-    ([sel, cx, cy]) => {
-      const el = document.querySelector(sel)
-      if (!el) throw new Error(`LAYOUT: no element matched \`${sel}\``)
-      el.dispatchEvent(
+    ([sel, x, y]) => {
+      const svg = document.querySelector(`${sel} svg.ts-chart`)
+      const marks = svg?.querySelector('g.ts-chart__marks')
+      if (!svg || !marks) throw new Error(`LAYOUT: no chart plot under \`${sel}\``)
+      const r = marks.getBoundingClientRect()
+      svg.dispatchEvent(
         new PointerEvent('pointermove', {
           bubbles: true,
-          clientX: cx,
-          clientY: cy,
+          clientX: r.left + r.width * x,
+          clientY: r.top + r.height * y,
           pointerId: 1,
           pointerType: 'mouse',
         }),
       )
     },
-    [selector, x, y] as [string, number, number],
+    [frame, fx, fy] as const,
   )
   await p.settle()
 }
 
-layout('Charts — real layout', () => {
+/** The engine clears transient focus on the container's `mouseleave` (not `pointerleave`). */
+async function leave(p: LayoutPage, frame: string): Promise<void> {
+  await p.raw.evaluate((sel) => {
+    const svg = document.querySelector(`${sel} svg.ts-chart`)
+    for (const node of [svg, svg?.parentElement, svg?.closest('.ts-chart-host')])
+      node?.dispatchEvent(new MouseEvent('mouseleave'))
+  }, frame)
+  await p.settle()
+}
+
+/** Painted crosshair rules under `frame`: present, visible, with a box. */
+async function paintedRules(p: LayoutPage, frame: string): Promise<number[]> {
+  return p.raw.evaluate(
+    ([sel, rule]) =>
+      [...document.querySelectorAll(`${sel} ${rule}`)].flatMap((el) => {
+        const r = el.getBoundingClientRect()
+        const hidden = el.closest('[visibility="hidden"]') !== null
+        const style = getComputedStyle(el)
+        if (hidden || style.visibility === 'hidden' || style.display === 'none' || r.height === 0)
+          return []
+        return [Math.round(r.left - (el.closest('svg')?.getBoundingClientRect().left ?? 0))]
+      }),
+    [frame, RULE_X] as const,
+  )
+}
+
+layout('Charts — 2.0 layout', () => {
   afterAll(closeLayoutSuite, CLOSE_BUDGET_MS)
 
-  /**
-   * INVARIANT 1 — the plot floor (`docs/CHARTS-SPEC.md` §6). An 8-entry legend at a FIXED
-   * `height={240}` used to eat the plot toward zero as the legend wrapped; the plot now stops at
-   * `VX.minPlotHeight` and the frame's own box grows instead. The SVG must also never spill past
-   * its own container — the width half of the same "chart never collapses/overflows" promise.
-   */
-  for (const viewport of [PHONE, PHONE_SMALL]) {
-    test(`8-entry legend at height=240 holds the plot floor and never overflows (${viewport.name})`, async () => {
-      const p = await openFixture(
-        chartFixture({ kind: 'multiLine', legendEntries: 8, height: 240 }),
-        viewport,
+  // ── one case per container class (§ 9.6) ───────────────────────────────────────────────────
+  type ClassCase = {
+    readonly cls: string
+    readonly width: number
+    readonly height: number
+    readonly yLabels: 'none' | 'inside' | 'outside'
+    readonly legend: 'none' | 'dots' | 'chips'
+  }
+  const CLASSES: readonly ClassCase[] = [
+    // The height law: width × class ratio, clamped 160–420 (≤ 45vh = 405 at 900 tall).
+    { cls: 'micro', width: 200, height: 160, yLabels: 'none', legend: 'none' },
+    { cls: 'compact', width: 360, height: 223, yLabels: 'inside', legend: 'dots' },
+    { cls: 'regular', width: 640, height: 320, yLabels: 'outside', legend: 'chips' },
+    { cls: 'wide', width: 960, height: 384, yLabels: 'outside', legend: 'chips' },
+  ]
+
+  for (const c of CLASSES) {
+    test(`${c.cls} (${c.width}px): height law, y labels ${c.yLabels}, legend ${c.legend}`, async () => {
+      const p = await openFixture(chartFixture({ kind: 'lines', width: c.width }), DESKTOP)
+      await p.settle()
+      const svg = await p.box('chart svg', SVG)
+      expect(Math.round(svg.box.width)).toBe(c.width)
+      expect(Math.round(svg.box.height)).toBe(c.height)
+
+      const geometry = await p.raw.evaluate((sel) => {
+        const svgEl = document.querySelector(sel)
+        const grid = svgEl?.querySelector('[data-ts-key^="y-grid:"]')
+        const labels = [...(svgEl?.querySelectorAll('[data-ts-key^="y-tick-label:"]') ?? [])]
+        const plotLeft = grid?.getBoundingClientRect().left ?? Number.NaN
+        return {
+          plotLeft,
+          labels: labels.map((l) => {
+            const r = l.getBoundingClientRect()
+            return { left: r.left, right: r.right }
+          }),
+        }
+      }, SVG)
+      if (c.yLabels === 'none') expect(geometry.labels).toHaveLength(0)
+      else expect(geometry.labels.length).toBeGreaterThan(1)
+      for (const label of geometry.labels) {
+        if (c.yLabels === 'inside') expect(label.left).toBeGreaterThanOrEqual(geometry.plotLeft)
+        else expect(label.right).toBeLessThanOrEqual(geometry.plotLeft + 0.5)
+      }
+
+      const legend = await p.raw.evaluate(
+        (sel) =>
+          document
+            .querySelector(`${sel} [data-basalt-chart-legend]`)
+            ?.getAttribute('data-basalt-chart-legend') ?? 'none',
+        FRAME,
       )
-      const svg = await p.box('svg', SVG)
-      expectHeightAtLeast(
-        svg,
-        VX.minPlotHeight,
-        'a wrapping 8-entry legend must not eat the plot toward zero — it is floored at ' +
-          'VX.minPlotHeight and the frame grows instead',
-      )
-      const frame = await p.box('chart frame', FRAME)
-      expect(svg.box.right).toBeLessThanOrEqual(frame.box.right + 0.5)
+      expect(legend).toBe(c.legend)
     })
   }
 
-  /**
-   * INVARIANT 2 — tick labels never overlap or clip (`docs/CHARTS-SPEC.md` §1). A wide `formatX`
-   * (`'Mar 08 14:00'`-shaped) is exactly the case `smartTicks`' measured-not-assumed pitch and
-   * `autoXLabelRotate`'s fit check exist for. `xLabelRotate={45}` pins the historical regression
-   * verbatim: a rotated label used to run 3.2–5.7px past the SVG's own left edge because the
-   * measured gutter and the painted (nudged + rotated) glyph box disagreed.
-   */
-  for (const viewport of [PHONE, PHONE_SMALL]) {
-    test(`wide x labels never overlap or clip the SVG edges (${viewport.name})`, async () => {
-      const p = await openFixture(chartFixture({ kind: 'bars', formatX: 'wide' }), viewport)
-      const svg = await p.box('svg', SVG)
-      const labels = await p.boxes(TICK_TEXT)
-      expect(labels.length).toBeGreaterThan(0)
-
-      const sorted = labels.toSorted((a, b) => a.left - b.left)
-      for (let i = 1; i < sorted.length; i++) {
-        const prev = sorted[i - 1] as (typeof sorted)[number]
-        const cur = sorted[i] as (typeof sorted)[number]
-        expect(cur.left).toBeGreaterThanOrEqual(prev.right - 0.5)
+  test('compact: the first x label is not clipped by the locked-zero left margin', async () => {
+    const p = await openFixture(chartFixture({ kind: 'lines', width: 360 }), DESKTOP)
+    await p.settle()
+    const { svgLeft, firstLabel } = await p.raw.evaluate((sel) => {
+      const svgEl = document.querySelector(sel)
+      const first = svgEl?.querySelector('[data-ts-key^="x-tick-label:"]')
+      return {
+        svgLeft: svgEl?.getBoundingClientRect().left ?? 0,
+        firstLabel: first?.getBoundingClientRect().left ?? Number.NaN,
       }
-      for (const box of sorted) {
-        expect(box.left).toBeGreaterThanOrEqual(svg.box.left - 0.5)
-        expect(box.right).toBeLessThanOrEqual(svg.box.right + 0.5)
+    }, SVG)
+    expect(firstLabel).toBeGreaterThanOrEqual(svgLeft - 0.5)
+  })
+
+  // ── crosshair across a cursor group, cleared on mouseleave (§ 9.4) ─────────────────────────
+  test('a hover paints the crosshair on both charts of the group and mouseleave clears it', async () => {
+    const p = await openFixture(chartFixture({ kind: 'lines', width: 640, pair: true }), DESKTOP)
+    await p.settle()
+    await hover(p, FRAME, 0.4)
+    const source = await paintedRules(p, FRAME)
+    const follower = await paintedRules(p, FRAME_2)
+    expect(source).toHaveLength(1)
+    expect(follower).toHaveLength(1)
+    // Same data, same width, same x: the follower's rule sits where the source's does.
+    expect(Math.abs((follower[0] ?? 0) - (source[0] ?? 0))).toBeLessThanOrEqual(1)
+    // Source-only: one tooltip, the source's.
+    expect(await p.count(`${TOOLTIP}:not([hidden])`)).toBe(1)
+
+    await leave(p, FRAME)
+    expect(await paintedRules(p, FRAME)).toHaveLength(0)
+    expect(await paintedRules(p, FRAME_2)).toHaveLength(0)
+  })
+
+  // ── the theme bridge reaches the portalled tooltip from :root (§ 9.5) ───────────────────────
+  test('the tooltip inherits --ts-chart-* from :root and paints the --vx-* tooltip tokens', async () => {
+    const p = await openFixture(chartFixture({ kind: 'lines', width: 640 }), DESKTOP)
+    await p.settle()
+    await hover(p, FRAME, 0.5)
+    const read = await p.raw.evaluate((tip) => {
+      const el = document.querySelector<HTMLElement>(`${tip}:not([hidden])`)
+      if (!el) return null
+      // What the tokens resolve to, measured through a probe that paints them directly.
+      const probe = document.createElement('div')
+      probe.style.background = 'var(--vx-tooltip-bg)'
+      probe.style.color = 'var(--vx-tooltip-text)'
+      document.body.append(probe)
+      const want = getComputedStyle(probe)
+      const expected = { bg: want.backgroundColor, color: want.color }
+      probe.remove()
+      const got = getComputedStyle(el)
+      return {
+        rootVar: getComputedStyle(document.documentElement)
+          .getPropertyValue('--ts-chart-tooltip-background')
+          .trim(),
+        tipVar: got.getPropertyValue('--ts-chart-tooltip-background').trim(),
+        bg: got.backgroundColor,
+        color: got.color,
+        expected,
       }
-    })
-
-    test(`wide x labels rotated 45° stay anchored inside the SVG (${viewport.name})`, async () => {
-      const p = await openFixture(
-        chartFixture({ kind: 'bars', formatX: 'wide', xLabelRotate: 45 }),
-        viewport,
-      )
-      const svg = await p.box('svg', SVG)
-      const labels = await p.boxes(TICK_TEXT)
-      expect(labels.length).toBeGreaterThan(0)
-      const first = labels.toSorted((a, b) => a.left - b.left)[0] as (typeof labels)[number]
-      expect(first.left).toBeGreaterThanOrEqual(svg.box.left - 0.5)
-      expect(first.bottom).toBeLessThanOrEqual(svg.box.bottom + 0.5)
-    })
-  }
-
-  /**
-   * INVARIANT 3 — the phone tier is measured, never a media query (`docs/CHARTS-SPEC.md` §8). The
-   * axis tick font is one type step down (`TEXT.micro` → `TEXT.nano`) below `VX.phoneChartWidth`
-   * (480) regardless of the VIEWPORT — both fixtures here sit in the same minimal shell, so a
-   * failure here would mean the tier stopped reading its measured container width.
-   */
-  test('axis tick font is smaller at PHONE than at a 1440 desktop viewport', async () => {
-    const spec = chartFixture({ kind: 'bars', legendEntries: 2 })
-    const phone = await openFixture(spec, PHONE)
-    const phoneFont = parseFloat(await phone.computed(TICK_TEXT, 'font-size'))
-
-    const desktop = await openFixture(spec, DESKTOP)
-    const desktopFont = parseFloat(await desktop.computed(TICK_TEXT, 'font-size'))
-
-    expect(phoneFont).toBeLessThan(desktopFont)
+    }, TOOLTIP)
+    if (!read) throw new Error('LAYOUT: no visible tooltip after hovering the plot')
+    expect(read.rootVar).not.toBe('')
+    expect(read.tipVar).toBe(read.rootVar)
+    expect(read.bg).toBe(read.expected.bg)
+    expect(read.color).toBe(read.expected.color)
   })
 
-  /**
-   * INVARIANT 4 — the three sizing modes resolve to real geometry (`docs/CHARTS-SPEC.md` §6).
-   * `Heatmap` is the one kind exposing all three (`height` / `aspectRatio` / `fill`) — a `fill`
-   * frame fills its parent's MEASURED height (no legend band on a heatmap, so the whole box goes
-   * to the plot) and `aspectRatio` derives height from the measured width.
-   */
-  test('fill sizes the plot to a fixed-height 260px container', async () => {
-    const p = await openFixture(
-      chartFixture({ kind: 'heatmap', fill: true, containerHeight: 260 }),
-      PHONE,
-    )
-    const svg = await p.box('svg', SVG)
-    expect(svg.box.height).toBeGreaterThanOrEqual(258)
-    expect(svg.box.height).toBeLessThanOrEqual(262)
+  test('the tooltip stays inside the viewport when hovering near the right edge (phone)', async () => {
+    const p = await openFixture(chartFixture({ kind: 'lines' }), PHONE)
+    await p.settle()
+    await hover(p, FRAME, 0.98)
+    const box = await p.box('tooltip', `${TOOLTIP}:not([hidden])`)
+    expect(box.box.left).toBeGreaterThanOrEqual(0)
+    expect(box.box.right).toBeLessThanOrEqual(PHONE.width)
   })
 
-  test('aspectRatio=2 yields a plot whose width is ~2x its height', async () => {
-    const p = await openFixture(chartFixture({ kind: 'heatmap', aspectRatio: 2 }), PHONE)
-    const svg = await p.box('svg', SVG)
-    expect(svg.box.width / svg.box.height).toBeCloseTo(2, 1)
+  // ── touch (§ 9.6) ───────────────────────────────────────────────────────────────────────────
+  test('a coarse pointer gets touch-action: pan-y on the host, so a swipe still scrolls', async () => {
+    const p = await openFixture(chartFixture({ kind: 'lines' }), PHONE)
+    await p.settle()
+    expect(await p.computed(HOST, 'touch-action')).toBe('pan-y')
   })
 
-  /**
-   * INVARIANT 5 — the floating tooltip clamps to the viewport (`docs/CHARTS-SPEC.md` §4). Hovering
-   * 4px off the plot's own right edge is exactly the case `ChartTooltipFloat`'s flip-and-clamp
-   * exists for: an anchor that close to the viewport edge would place an unclamped tooltip
-   * partially off-screen.
-   */
-  test('tooltip stays inside the viewport when hovering the plot near its right edge', async () => {
-    const p = await openFixture(chartFixture({ kind: 'multiLine' }), PHONE)
-    const overlay = await p.box('overlay', OVERLAY)
-
-    await hoverAt(p, OVERLAY, overlay.box.right - 4, overlay.box.top + overlay.box.height / 2)
-    await p.waitFor(TOOLTIP)
-
-    const tooltip = await p.box('tooltip', TOOLTIP)
-    expectFullyInside(
-      tooltip,
-      p.bounds(),
-      'the floating tooltip must clamp to the viewport, not run off-screen, when the hovered ' +
-        'point sits near the plot edge',
-      PHONE,
+  test('a tap pins the cursor: the crosshair outlives the lift', async () => {
+    const p = await openFixture(chartFixture({ kind: 'lines' }), PHONE)
+    await p.settle()
+    await p.raw.evaluate(
+      (sel) => document.querySelector(sel)?.scrollIntoView({ block: 'center' }),
+      FRAME,
     )
+    await p.settle()
+    const svg = await p.box('chart svg', SVG)
+    const cx = svg.box.left + svg.box.width / 2
+    const cy = svg.box.top + svg.box.height / 2
+    // Nothing sits over the plot: a legend entry's hit overlay once anchored to the chart root.
+    const top = await p.raw.evaluate(
+      ([x, y]) => document.elementFromPoint(x, y)?.closest('svg.ts-chart') !== null,
+      [cx, cy] as const,
+    )
+    expect(top).toBe(true)
+    await p.raw.touchscreen.tap(cx, cy)
+    await p.settle()
+    await new Promise((r) => setTimeout(r, 300))
+    expect(await paintedRules(p, FRAME)).toHaveLength(1)
   })
 
-  /**
-   * INVARIANT 6 — the legend's "All N" is a disclosure, not a caption (`docs/CHARTS-SPEC.md` §8).
-   * The band shows what fits its measured width (never rolling up fewer than 2); the chip is a REAL
-   * `aria-expanded` toggle opening every entry in a sheet (coarse pointer), and opening it must
-   * not cost the plot its floor or grow the band.
-   */
-  test('the phone legend overflow discloses every entry on tap and the plot keeps its floor', async () => {
-    const p = await openFixture(
-      chartFixture({ kind: 'multiLine', legendEntries: 8, height: 240 }),
-      PHONE,
-    )
-
-    expect(await p.count(LEGEND_MORE)).toBe(1)
-    expect(await p.count(`${LEGEND_MORE}[aria-expanded="false"]`)).toBe(1)
-    const banded = await p.count(LEGEND_ENTRY)
-    expect(banded).toBeGreaterThanOrEqual(2)
-    expect(banded).toBeLessThan(8)
-    const before = await p.box('svg', SVG)
-
-    await p.tap(LEGEND_MORE)
-
-    expect(await p.count(`${LEGEND_MORE}[aria-expanded="true"]`)).toBe(1)
-    expect(await p.count('dialog[open] button[aria-pressed]')).toBe(8)
-
-    const svg = await p.box('svg', SVG)
-    expectHeightAtLeast(
-      svg,
-      VX.minPlotHeight,
-      'opening the legend disclosure must not shrink the plot below its floor',
-    )
-    expect(svg.box.height).toBe(before.box.height)
-  })
-
-  /**
-   * INVARIANT 7 — a stated `legend.maxRows` on a `fill` frame must never cost the chart ITSELF
-   * (1.30.1's `legendWins`). `legendWins` drops `resolvePlotRect`'s `VX.minPlotHeight` floor to 0
-   * so the caller's row count is honoured out of the frame's own cell; the cell is `containerH`,
-   * which `ChartFrame` measures on its OWN node (`useChartSize` → visx `useParentSize` observes the
-   * element the ref is on, its name notwithstanding). In an UNSIZED parent the frame's `height:
-   * 100%` therefore resolves against nothing and the only content it has is the legend — so the
-   * floor was the sole thing lifting it off zero, and dropping it has a FIXPOINT at zero: plot 0 →
-   * content = legend → containerH = legendH → plot = max(legendH − legendH, 0) = 0, forever.
-   *
-   * happy-dom cannot see one frame of this: `getBoundingClientRect` is a bare `DOMRect` and there
-   * is no `ResizeObserver` feedback loop to converge at all.
-   */
-  test('a stated maxRows on a fill frame in an UNSIZED parent still draws a plot', async () => {
-    const p = await openFixture(
-      chartFixture({ kind: 'bandStrip', fill: true, legendEntries: 7, legendMaxRows: 3 }),
-      PHONE,
-    )
-    await p.quiesce()
-
-    expect(await p.count(PLOT_SVG)).toBe(1)
-    const svg = await p.box('svg', SVG)
-    expectHeightAtLeast(
-      svg,
-      VX.minPlotHeight,
-      'a fill frame whose parent states no height has only its own content to measure — a stated ' +
-        'legend.maxRows must not be able to settle it at a zero-height plot',
-    )
-  })
-
-  /**
-   * INVARIANT 7, the CONTROL — the documented `fill` shape (a parent that states a height) is
-   * unaffected: the legend takes the rows it asked for and the plot takes the REST of the cell,
-   * below `VX.minPlotHeight` if that is what the caller's arithmetic comes to. That yielding is
-   * the whole point of `legendWins` and must survive whatever fixes the unsized case.
-   */
-  test('a stated maxRows on a fill frame in a SIZED parent yields the cell to the legend', async () => {
-    const p = await openFixture(
-      chartFixture({
-        kind: 'bandStrip',
-        fill: true,
-        legendEntries: 7,
-        legendMaxRows: 3,
-        containerHeight: 150,
-      }),
-      PHONE,
-    )
-    await p.quiesce()
-
-    const frame = await p.box('chart frame', FRAME)
-    expect(frame.box.height).toBeGreaterThanOrEqual(148)
-    expect(frame.box.height).toBeLessThanOrEqual(152)
-
-    expect(await p.count(PLOT_SVG)).toBe(1)
-    const svg = await p.box('svg', SVG)
-    expect(svg.box.height).toBeGreaterThan(0)
-    // The caller stated 3 and there are 7 entries, so the rollup chip is present and the legend is
-    // NOT trimmed below the stated number by the measured fit — 1.30.1's actual promise.
-    expect(await p.count(LEGEND_ENTRY)).toBe(3)
-    expect(await p.count(LEGEND_MORE)).toBe(1)
-    expectFullyInside(
-      svg,
-      frame,
-      'the plot yields height to the stated legend rows, but never spills past the cell it was ' +
-        'given',
-    )
-  })
-
-  test('a wrapped label anchors below the tick, never growing up into the axis line (R2C-7)', async () => {
-    // A `bandStrip` (categorical by construction) with only 6 wide "Jan DD HH:MM" keys: narrow
-    // enough that every key wraps and fits (R2C-6's law), so this actually exercises the wrap path
-    // — the 30-key default is too dense to ever wrap at phone width, it only thins.
-    const p = await openFixture(
-      chartFixture({ kind: 'bandStrip', formatX: 'wide', days: 6 }),
-      PHONE,
-    )
-    const axisLine = await p.box('axis line', `${FRAME} .visx-axis-bottom .visx-axis-line`)
-    const labels = await p.boxes(TICK_TEXT)
-    expect(labels.length).toBeGreaterThan(0)
-    for (const label of labels) {
-      expect(label.top).toBeGreaterThanOrEqual(axisLine.box.bottom - 0.5)
+  // ── legend ──────────────────────────────────────────────────────────────────────────────────
+  test('an 8-entry legend wraps inside the chart box on a phone', async () => {
+    const p = await openFixture(chartFixture({ kind: 'bars', legendEntries: 8 }), PHONE)
+    await p.settle()
+    const frame = await p.box('frame', FRAME)
+    const entries = await p.boxes(`${FRAME} [data-legend-key]`)
+    expect(entries).toHaveLength(8)
+    for (const e of entries) {
+      expect(e.left).toBeGreaterThanOrEqual(frame.box.left - 0.5)
+      expect(e.right).toBeLessThanOrEqual(frame.box.right + 0.5)
     }
   })
 })

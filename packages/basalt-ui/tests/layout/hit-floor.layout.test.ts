@@ -40,7 +40,7 @@ const SPEC: FixtureSpec = {
   ],
   bar: { pills: 3, tabs: 2, actions: 3, actionIcons: true },
   table: { rows: 12, columns: 3, search: true },
-  charts: { kind: 'multiLine', legendEntries: 3 },
+  charts: { kind: 'lines', legendEntries: 3 },
 }
 
 const INTERACTIVE =

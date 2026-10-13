@@ -3,17 +3,8 @@ import type { ReactElement } from 'react'
 import { ThreadFeedRow } from '../../../src/agent'
 import type { AgentThread, ChatMessage, StreamStatus, TranscriptPart } from '../../../src/agent'
 import { ThreadTranscript } from '../../../src/agent/chat/thread-message'
-import {
-  BandStrip,
-  ChartCard,
-  Bars,
-  BarSparkline,
-  Donut,
-  Heatmap,
-  MultiLine,
-  fmtAxisDate,
-} from '../../../src/charts'
-import type { BandStripSeries, BarsBar, ChartSeries, DonutDatum } from '../../../src/charts'
+import { Bars, ChartCard, Lines } from '../../../src/charts'
+import type { BarsBar, ChartSeries } from '../../../src/charts'
 import { overlays } from '../../../src/commands'
 import { FilterSet, FormRow, SelectFilter, ViewTabs } from '../../../src/controls'
 import { BasaltDataTable } from '../../../src/table'
@@ -271,8 +262,6 @@ function BarFixture({ spec }: { spec: BarSpec }): ReactElement {
 
 // ── The KPI row ───────────────────────────────────────────────────────────────────────────────
 
-const SPARK_DATA = Array.from({ length: 24 }, (_, i) => 10 + ((i * 7) % 19))
-
 /**
  * Production-length KPI values (`wide`). `--vx-text-kpi` mono at ~195px each, MEASURED at 1440x900
  * — wider than a 4-up cell in a shell that also carries an aside (~200px, ~174px inside the card's
@@ -286,7 +275,7 @@ const SPARK_DATA = Array.from({ length: 24 }, (_, i) => 10 + ((i * 7) % 19))
  */
 const WIDE_STAT_VALUES = ['$12,847,301.55', '$8,204,663.10', '$1,975,428.06', '$640,119.42']
 
-/** `StatGroup` + `StatCard` with a BLED sparkline — the render-prop form, so the mark sizes itself
+/** `StatGroup` + `StatCard` with a BLED sparkline slot — the render-prop form, so the mark sizes itself
  * to the card's measured inner width rather than to a hardcoded one. That measurement is exactly
  * what can overshoot a 320px page if a card's own box does not stay inside its column. */
 function StatsFixture({ count, wide }: { count: number; wide: boolean }): ReactElement {
@@ -299,9 +288,8 @@ function StatsFixture({ count, wide }: { count: number; wide: boolean }): ReactE
           value={
             wide ? (WIDE_STAT_VALUES[i % WIDE_STAT_VALUES.length] as string) : `${(i + 1) * 1234}`
           }
-          sparkline={({ width, height }) => (
-            <BarSparkline data={SPARK_DATA} width={width} height={height} />
-          )}
+          // A box of exactly the measured size: the slot geometry is under test, not a mark.
+          sparkline={({ width, height }) => <svg aria-hidden width={width} height={height} />}
         />
       ))}
     </StatGroup>
@@ -544,10 +532,9 @@ function AsideFixture({ spec }: { spec: AsideSpec }): ReactElement {
 
 // ── Charts ────────────────────────────────────────────────────────────────────────────────────
 
-type ChartPoint = { date: string; values: number[] }
+type ChartPoint = { at: Date; values: number[] }
 
-/** Distinct swatches — a plain hex set, not `VX.series` (which is consumer data per
- * `docs/CHARTS-SPEC.md` §"Series color is consumer data" — the framework ships no series map). */
+/** Distinct swatches — a plain hex set: series color is consumer data, the framework ships none. */
 const CHART_COLORS = [
   '#3b82f6',
   '#f97316',
@@ -559,24 +546,12 @@ const CHART_COLORS = [
   '#ef4444',
 ]
 
-/** UTC so the fixture is deterministic regardless of the host machine's timezone. */
-function isoDate(dayIndex: number): string {
-  return new Date(Date.UTC(2024, 0, 1 + dayIndex)).toISOString().slice(0, 10)
-}
-
-/** `Mar 08 14:00`-shaped — deliberately wide, to force the §1 tick-spacing/rotation laws to fire. */
-function fmtWide(key: string): string {
-  const d = new Date(key)
-  const month = d.toLocaleString('en-US', { month: 'short', timeZone: 'UTC' })
-  const day = String(d.getUTCDate()).padStart(2, '0')
-  return `${month} ${day} 14:00`
-}
-
 const CHART_DAYS = 30
 
+/** UTC days, so the fixture is deterministic whatever the host's timezone. */
 function buildChartData(seriesCount: number, days: number = CHART_DAYS): ChartPoint[] {
   return Array.from({ length: days }, (_, i) => ({
-    date: isoDate(i),
+    at: new Date(Date.UTC(2024, 0, 1 + i)),
     values: Array.from(
       { length: seriesCount },
       (_, s) => 20 + Math.round(12 * Math.sin((i + s * 2) / 4)) + s * 3,
@@ -589,135 +564,59 @@ function buildLineSeries(seriesCount: number): ChartSeries<ChartPoint>[] {
     key: `s${i}`,
     label: `Series ${i + 1}`,
     color: CHART_COLORS[i % CHART_COLORS.length] as string,
-    mark: 'line' as const,
     getValue: (d: ChartPoint) => d.values[i] ?? null,
   }))
 }
 
-function buildPositiveBars(seriesCount: number): BarsBar<ChartPoint>[] {
-  return Array.from({ length: seriesCount }, (_, i) => ({
-    key: `s${i}`,
-    label: `Series ${i + 1}`,
-    color: CHART_COLORS[i % CHART_COLORS.length] as string,
-  }))
+function buildBars(seriesCount: number): BarsBar<ChartPoint>[] {
+  return buildLineSeries(seriesCount)
 }
 
-const barGetValue = (d: ChartPoint, key: string): number | null => {
-  const value = d.values[Number(key.slice(1))]
-  return value ?? null
-}
+const chartX = (d: ChartPoint): Date => d.at
 
-type HeatCell = { row: string; col: string; value: number }
-const HEAT_ROWS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']
-const HEAT_COLS = ['00', '06', '12', '18']
-const HEAT_DATA: HeatCell[] = HEAT_ROWS.flatMap((row, ri) =>
-  HEAT_COLS.map((col, ci) => ({ row, col, value: (ri + 1) * (ci + 1) })),
-)
-
-/** Band states, one per legend entry — `BandStrip` is the only `fill`-capable kind that also
- * carries a `ChartFrame` legend, so it is what the `legendWins` invariants mount. */
-function buildBandSeries(seriesCount: number): BandStripSeries<ChartPoint>[] {
-  return Array.from({ length: seriesCount }, (_, i) => ({
-    key: `s${i}`,
-    label: `Series ${i + 1}`,
-    color: CHART_COLORS[i % CHART_COLORS.length] as string,
-    mark: 'bar' as const,
-  }))
-}
-
-function buildDonutData(seriesCount: number): DonutDatum<string>[] {
-  return Array.from({ length: seriesCount }, (_, i) => ({ key: `s${i}`, value: 10 + i * 3 }))
-}
-
-/** One real `basalt-ui/charts` kind, picked by `spec.kind` — never a hand-rolled stand-in. Wrapped
- * in a `data-testid` box so a layout test has one stable selector for "the chart's own container"
- * regardless of which kind is mounted, and — only when `containerHeight` is set — a fixed-height
- * box so `fill` has something real to fill (`docs/CHARTS-SPEC.md` §6). */
+/** One real `basalt-ui/charts` kind, picked by `spec.kind`, in a `data-testid` box so a test has one
+ * stable selector for "the chart's own container" — fixed-width when `width` pins its class. */
 function ChartsFixture({ spec }: { spec: ChartsSpec }): ReactElement {
   const seriesCount = spec.legendEntries ?? 3
-  const formatX = spec.formatX === 'wide' ? fmtWide : fmtAxisDate
-  const sizing = {
-    ...(spec.height !== undefined && { height: spec.height }),
-    ...(spec.fill !== undefined && { fill: spec.fill }),
-    ...(spec.aspectRatio !== undefined && { aspectRatio: spec.aspectRatio }),
-  }
-  const legend = spec.legendMaxRows === undefined ? {} : { legend: { maxRows: spec.legendMaxRows } }
-
-  const chart = (() => {
-    switch (spec.kind) {
-      case 'bars':
-        return (
-          <Bars
-            data={buildChartData(seriesCount)}
-            chartId="fixture-chart"
-            getX={(d) => d.date}
-            getValue={barGetValue}
-            positiveBars={buildPositiveBars(seriesCount)}
-            formatX={formatX}
-            {...(spec.xLabelRotate !== undefined && { xLabelRotate: spec.xLabelRotate })}
-            {...(spec.height !== undefined && { height: spec.height })}
-            {...legend}
-          />
-        )
-      case 'bandStrip':
-        return (
-          <BandStrip
-            data={buildChartData(seriesCount, spec.days)}
-            chartId="fixture-chart"
-            getX={(d) => d.date}
-            series={buildBandSeries(seriesCount)}
-            getBand={(d) => ({ state: `s${Number(d.date.slice(-2)) % seriesCount}` })}
-            formatX={formatX}
-            {...sizing}
-            {...legend}
-          />
-        )
-      case 'heatmap':
-        return (
-          <Heatmap
-            data={HEAT_DATA}
-            chartId="fixture-chart"
-            getRow={(d) => d.row}
-            getCol={(d) => d.col}
-            getValue={(d) => d.value}
-            {...sizing}
-          />
-        )
-      case 'donut':
-        return (
-          <Donut
-            data={buildDonutData(seriesCount)}
-            colorForKey={(k) => CHART_COLORS[Number(k.slice(1)) % CHART_COLORS.length] as string}
-            formatValue={(v) => `${v}`}
-            {...(spec.height !== undefined && { height: spec.height })}
-          />
-        )
-      case 'multiLine':
-      default:
-        return (
-          <MultiLine
-            data={buildChartData(seriesCount)}
-            chartId="fixture-chart"
-            getX={(d) => d.date}
-            series={buildLineSeries(seriesCount)}
-            formatX={formatX}
-            {...(spec.xLabelRotate !== undefined && { xLabelRotate: spec.xLabelRotate })}
-            {...(spec.height !== undefined && { height: spec.height })}
-            {...legend}
-          />
-        )
-    }
-  })()
-
+  const data = useMemo(() => buildChartData(seriesCount), [seriesCount])
+  const height = spec.height === undefined ? {} : { height: spec.height }
+  const chart =
+    spec.kind === 'bars' ? (
+      <Bars
+        ariaLabel="Fixture bars"
+        data={data}
+        x={chartX}
+        bars={buildBars(seriesCount)}
+        {...height}
+      />
+    ) : (
+      <Lines
+        ariaLabel="Fixture lines"
+        data={data}
+        x={chartX}
+        series={buildLineSeries(seriesCount)}
+        {...height}
+      />
+    )
+  // theme-allow -- the wrapper width IS the fixture's payload (a container-class probe)
+  const box = spec.width === undefined ? undefined : { width: spec.width }
   return (
-    <div
-      data-testid="chart-frame"
-      // theme-allow -- a measured fixed-height BOX is the fixture's payload for the `fill` sizing
-      // mode (docs/CHARTS-SPEC.md §6), not a themed size
-      style={spec.containerHeight !== undefined ? { height: spec.containerHeight } : undefined}
-    >
-      {chart}
-    </div>
+    <>
+      <div data-testid="chart-frame" style={box}>
+        {chart}
+      </div>
+      {spec.pair && (
+        <div data-testid="chart-frame-2" style={box}>
+          <Lines
+            ariaLabel="Fixture follower"
+            data={data}
+            x={chartX}
+            series={buildLineSeries(1)}
+            {...height}
+          />
+        </div>
+      )}
+    </>
   )
 }
 
