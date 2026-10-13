@@ -1,0 +1,78 @@
+/**
+ * Screenshot lane — every route × light/dark × desktop/mobile at fixed viewports and DPR 1, written
+ * to `<outDir>/screens/`. The md summary carries counts only; pixels are never hashed or listed.
+ */
+import { mkdir } from 'node:fs/promises'
+import { join } from 'node:path'
+import { loadRoutes } from './serve'
+import type { Lane } from './types'
+
+const VIEWPORTS = [
+  { name: 'desktop', width: 1280, height: 800, mobile: false },
+  { name: 'mobile', width: 390, height: 844, mobile: true },
+] as const
+const SCHEMES = ['light', 'dark'] as const
+const NAV_TIMEOUT_MS = 30_000
+
+/** `/dashboard/revenue` → `dashboard-revenue`; `/` → `root`. */
+export const routeSlug = (route: string): string =>
+  route.replace(/^\/|\/$/g, '').replace(/\//g, '-') || 'root'
+
+export const screens: Lane = async ({ outDir, baseUrl, openBrowser }) => {
+  const routes = await loadRoutes()
+  const dir = join(outDir, 'screens')
+  await mkdir(dir, { recursive: true })
+  const browser = await openBrowser()
+
+  const failed: string[] = []
+  let count = 0
+  for (const scheme of SCHEMES) {
+    for (const vp of VIEWPORTS) {
+      const context = await browser.newContext({
+        viewport: { width: vp.width, height: vp.height },
+        deviceScaleFactor: 1,
+        isMobile: vp.mobile,
+        hasTouch: vp.mobile,
+        colorScheme: scheme,
+        reducedMotion: 'reduce',
+      })
+      // Mantine's default storage key — the provider reads it before first paint.
+      await context.addInitScript(
+        (value) => localStorage.setItem('mantine-color-scheme-value', value),
+        scheme,
+      )
+      const page = await context.newPage()
+      page.setDefaultTimeout(NAV_TIMEOUT_MS)
+      for (const route of routes) {
+        const name = `${routeSlug(route)}--${scheme}--${vp.name}`
+        try {
+          await page.goto(baseUrl + route, { waitUntil: 'networkidle' })
+          await page.evaluate(() => document.fonts.ready.then(() => undefined))
+          await page.screenshot({
+            path: join(dir, `${name}.png`),
+            animations: 'disabled',
+            caret: 'hide',
+          })
+          count++
+        } catch {
+          failed.push(name)
+        }
+      }
+      await context.close()
+    }
+  }
+
+  return {
+    lane: 'screens',
+    summary: [
+      { metric: 'routes', value: routes.length },
+      { metric: 'screenshots', value: count },
+      { metric: 'failed', value: failed.length },
+      {
+        metric: 'viewports',
+        value: VIEWPORTS.map((v) => `${v.name} ${v.width}x${v.height}`).join(', '),
+      },
+    ],
+    detail: { routes, schemes: SCHEMES, viewports: VIEWPORTS, failed },
+  }
+}

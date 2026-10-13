@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help check verify deploy logs pre test layout build release release-dry sync-self
+.PHONY: help check verify deploy logs pre test layout build evidence release release-dry sync-self
 
 help: ## List targets
 	@grep -hE '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -48,6 +48,13 @@ layout: ## Run the layout regression suite (real CSS geometry, headless Chrome)
 
 build: ## Build the published package (dist-first tsup + declarations)
 	@cd packages/basalt-ui && bun run build
+
+# Measurement harness (scripts/evidence): builds the package + playground unless DIST is given, serves
+# the dist on an ephemeral port, runs every lane, writes .evidence/<LABEL>/ (gitignored) and the
+# committed docs/waves/evidence/w2/<LABEL>.md. ROUTES = file with one path per line (external dists).
+evidence: ## Measure bundle/screens/lighthouse/...: make evidence LABEL=<label> [DIST=<dir>] [ROUTES=<file>]
+	@test -n "$(LABEL)" || { echo "usage: make evidence LABEL=<label> [DIST=<dir>] [ROUTES=<file>]"; exit 2; }
+	@bun scripts/evidence/index.ts --label "$(LABEL)" $(if $(DIST),--dist "$(DIST)") $(if $(ROUTES),--routes "$(ROUTES)")
 
 release-dry: ## Preview the next release — dry run only, publishes nothing
 	@scripts/release.sh dry
