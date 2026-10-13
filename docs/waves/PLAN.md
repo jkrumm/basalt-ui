@@ -119,7 +119,8 @@ Charts), `docs/CHARTS-SPEC.md`, `docs/DESIGN-CORE.md`, `packages/basalt-ui/MAINT
     2026-10-15).
 - **Flake for W2:** the layout test `shell chrome … with the inset unset the zone is exactly as it
 was` fails intermittently under load (rail measured 171 px, expected 48 px). Clean master passed
-  3/3; the merge train failed on it four times. #111 and #113 merged with `--no-check` after a
+  3/3 and direct `make check` passed on every merged SHA, while the merge train failed on it every
+  time (5/5), so suspect the train's environment (`host_run`) before load. #111 and #113 merged with `--no-check` after a
   direct `make check` exited 0 on the exact SHA. W2's harness reuses the layout infrastructure, so
   fix the root cause there. W2 should also make the spike evidence reproducible without the spike
   branches (the W1 numbers cite them until W4/W6 port their tests).
