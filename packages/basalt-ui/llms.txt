@@ -1,5 +1,5 @@
 # basalt-ui v1.41.0
-# Opinionated framework for Mantine-based React apps — theme, app shell, visx charts, toolchain presets
+# Opinionated framework for Mantine-based React apps — theme, app shell, TanStack Charts, toolchain presets
 #
 # basalt-ui is an opinionated framework for Mantine-based React apps.
 # It provides a theme + cssVariablesResolver, a BasaltProvider, an app shell
@@ -29,9 +29,10 @@ OptionalPeers: remark-gfm@^4.0.1, rehype-sanitize@^6.0.0, remend@1.4.0, shiki@^4
 
 ## basalt-ui/charts
 Import: import { ... } from 'basalt-ui/charts'
-Description: CartesianChart + visx chart primitives, kinds, sparklines, hooks, and token re-exports (Mantine-free)
+Description: CartesianChart (the TanStack Charts rung), the Lines and Bars kinds, ChartCard and the shared chartCursor (Mantine-free; @tanstack/charts + d3-scale peers)
 Layer: headless
 Rule: basalt-charts
+OptionalPeers: @tanstack/charts@1.1.0, d3-scale@4.0.2
 
 ## basalt-ui/tokens
 Import: import { ... } from 'basalt-ui/tokens'
@@ -47,7 +48,7 @@ OptionalPeers: vite-plugin-pwa@^1.3.0
 
 ## basalt-ui/format
 Import: import { ... } from 'basalt-ui/format'
-Description: integer/money/percent/durationClock/relativeTime/weekday/km/kcal — Intl-backed, Mantine-free, React-free formatting; the chart formatters (fmtCompact/fmtPercent/fmtCurrency/fmtInt/fmtAxisDate/fmtTooltipDate) share this implementation
+Description: integer/money/percent/durationClock/relativeTime/weekday/km/kcal — Intl-backed, Mantine-free, React-free formatting; the chart layer formats through the same implementation
 Layer: headless
 
 ## basalt-ui/forms

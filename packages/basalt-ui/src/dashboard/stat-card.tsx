@@ -19,8 +19,8 @@
  * carries them as a muted line, and `info` puts "how this number is computed" behind the glyph
  * beside the title instead of inside the heading's accessible name.
  *
- * `src/dashboard` stays @visx-free — `sparkline` is a plain `ReactNode` slot, never a chart import
- * here. Pass a `LineSparkline`/`BarSparkline` from `basalt-ui/charts` at the call site.
+ * `src/dashboard` stays chart-free — `sparkline` is a plain `ReactNode` slot, never a chart import
+ * here. Pass your own sparkline at the call site (basalt ships no `Sparkline` kind in 2.0.0).
  *
  * `query` hands the card's pending/error/empty branch to `QueryState` at the `'section'` tier,
  * rendered under the header rather than over it — the title row is chrome and must not flicker.
@@ -39,15 +39,14 @@
  *
  * @example
  * import { StatCard } from 'basalt-ui'
- * import { LineSparkline } from 'basalt-ui/charts'
  *
  * // `sparkline` is a RENDER PROP over the slot's measured box, so full-bleed is genuinely the
- * // card's width — no `useChartSize` wrapper component, no hardcoded pixel value.
+ * // card's width — no measuring wrapper component, no hardcoded pixel value.
  * <StatCard
  *   title="Active Users"
  *   value="12,483"
  *   delta={4.2}
- *   sparkline={({ width, height }) => <LineSparkline data={history} width={width} height={height} />}
+ *   sparkline={({ width, height }) => <MySparkline data={history} width={width} height={height} />}
  * />
  *
  * @example
@@ -59,7 +58,7 @@
  *   delta={4.2}
  *   sparklinePlacement="right"
  *   sparkline={({ width, height }) => (
- *     <BarSparkline data={history} width={width} height={height} ariaLabel="Active users trend" />
+ *     <MySparkline data={history} width={width} height={height} ariaLabel="Active users trend" />
  *   )}
  * />
  *
@@ -152,9 +151,9 @@ const SPARKLINE_RIGHT_HEIGHT = 26
 /**
  * The measured box a `sparkline` render prop receives.
  *
- * A `LineSparkline`/`BarSparkline` takes `width`/`height` as NUMBERS (they are SVG attributes — an
+ * An SVG sparkline takes `width`/`height` as NUMBERS (they are SVG attributes — an
  * svg cannot size itself from CSS and then scale its scales), so "full bleed" was never expressible
- * as a `ReactNode`: the caller had to guess a pixel width, or write its own `useChartSize` wrapper
+ * as a `ReactNode`: the caller had to guess a pixel width, or write its own measuring wrapper
  * component. Four consumers wrote that wrapper; two of them hardcoded a width and drew a sparkline
  * that stopped short of the card edge on every viewport but the one they built on.
  */
@@ -164,9 +163,8 @@ export type StatCardSparklineSize = {
 }
 
 /**
- * Measures a slot and re-measures on resize. Plain `ResizeObserver`, not `useChartSize`:
- * `src/dashboard/**` is Mantine-coupled and @visx-FREE (see the module doc), and `useChartSize`
- * wraps `@visx/responsive`.
+ * Measures a slot and re-measures on resize. Plain `ResizeObserver`: `src/dashboard/**` is
+ * Mantine-coupled and chart-FREE (see the module doc).
  *
  * The `undefined` guard is for the test DOM — happy-dom ships no `ResizeObserver`, and the one-shot
  * measure above it is what keeps a mounted card rendering its sparkline there.
@@ -266,14 +264,14 @@ export type StatCardProps = BasaltProps &
     /**
      * Optional trend visual. Either a node, or a RENDER PROP receiving the slot's measured box.
      *
-     * Prefer the render prop for anything from `basalt-ui/charts`: those take numeric `width`/`height`
+     * Prefer the render prop for any SVG sparkline: those take numeric `width`/`height`
      * (SVG attributes), so a plain node has to hardcode a width, and a hardcoded width is not
      * full-bleed on any viewport but the one it was typed on. With `sparklinePlacement="bleed"` the
      * measured width is the card's own inner width including the bled inset; with `'right'` it is the
      * fixed 72×26 slot (see {@link SPARKLINE_RIGHT_WIDTH} for why that one is not measured).
      *
      * @example
-     * sparkline={({ width, height }) => <BarSparkline data={history} width={width} height={height} />}
+     * sparkline={({ width, height }) => <MySparkline data={history} width={width} height={height} />}
      */
     sparkline?: ReactNode | ((size: StatCardSparklineSize) => ReactNode)
     /** Where `sparkline` sits. `'bleed'` (default) is today's full-width row bled to the card edges;

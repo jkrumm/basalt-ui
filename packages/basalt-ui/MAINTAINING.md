@@ -4,9 +4,9 @@ The maintainer invariants file for the package. Lives in the repo only — it is
 ships in the tarball. The repo-root `AGENTS.md` is the monorepo file; `AGENTS.md` next to this one is the
 shipped consumer quick reference.
 
-The only published package (npm: `basalt-ui`). An opinionated framework for Mantine v9 + visx React
-apps: a Mantine theme + `cssVariablesResolver`, `BasaltProvider`, an app shell with a page bar and a
-control tier, a visx chart system, a three-tier `--vx-*` token system, a theme-lab, a Vite preset,
+The only published package (npm: `basalt-ui`). An opinionated framework for Mantine v9 + TanStack Charts
+React apps: a Mantine theme + `cssVariablesResolver`, `BasaltProvider`, an app shell with a page bar and a
+control tier, a TanStack Charts chart system, a three-tier `--vx-*` token system, a theme-lab, a Vite preset,
 raw toolchain presets, and the `basalt-ui` CLI.
 
 This file is **invariants and footguns** — the things that are load-bearing and not obvious from the
@@ -21,8 +21,8 @@ Named exports only — **no default exports**. Files `kebab-case`, components `P
 | Subpath            | Mantine? | Owns                                                                                                                                                                                                                                                                                                                                                                     |
 | ------------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `.`                | coupled  | provider + theme factory, `BasaltShell` (sidebar / mobile nav / breadcrumbs / `PageBar` / `PageAside`), `Section`, `WidgetHeader`, dashboard composites, `QueryState`, `createBasaltQueryClient`/`unwrap` (C1: absorbed from the dropped `./query`), `ConnectivityIndicator`/`useConnectivity` (C1: absorbed from the dropped `./connectivity`, provider auto-mounts it) |
-| `./charts`         | **free** | `CartesianChart` + the kinds, sparklines, chart hooks, and a token re-export                                                                                                                                                                                                                                                                                             |
-| `./tokens`         | **free** | `VX`, `alpha`, `BP`/`p`, `buildPaletteCss`, `defineSeries`, `seriesTokens`, `groupTokens`, `chartMargin`                                                                                                                                                                                                                                                                 |
+| `./charts`         | **free** | `CartesianChart` + the `Lines`/`Bars` kinds, `ChartCard`, `chartCursor` — no token, formatter or engine re-export                                                                                                                                                                                                                                                        |
+| `./tokens`         | **free** | `VX`, `alpha`, `BP`/`p`, `buildPaletteCss`, `defineSeries`, `seriesTokens`, `groupTokens`                                                                                                                                                                                                                                                                                |
 | `./controls`       | coupled  | the control tier — `FilterSet`, the `FieldHandle`-bound filters, `ViewTabs`, `ActionGroup`, `OverflowMenu`, `SyncButton`; three surfaces (`pill` / `sheet` / `panel`) plus the aside's row primitives `PanelRow` + `SliderControl`, and the form layout `FormSection`/`FormRow`/`FormGroup`/`FormActions` (moved from `./forms` in 1.36.0 — no `@mantine/form`)          |
 | `./controls-dates` | coupled  | `DateRangePicker` only — the `@mantine/dates` implementation of `RangeFilter`'s picker seam. STAYS separate post-C1: inlining it would pull `@mantine/dates` into `./controls`                                                                                                                                                                                           |
 | `./state`          | **free** | `field.*`, `createSearchStore`, `createLocalStore`, `createPersistedState`                                                                                                                                                                                                                                                                                               |
@@ -65,14 +65,14 @@ props extend and `src/surfaces.ts` stays the SSOT for real subpaths.
   in every build, before the component reads into the prop — that is the F-ERR-1 remedy. F-ERR-1
   originally named 54 call sites failing as a raw `TypeError` swallowed by `BasaltErrorBoundary`
   (only `QueryState` named itself); six adopter waves remedied 33 of them, leaving 22 still raw —
-  visx-adjacent chart primitives (`AreaClosed`, `CartesianChart`, `ChartFrame`, …) and three misses
+  chart primitives (since replaced by the TanStack Charts rung) and three misses
   (`OverflowMenu`, `ThreadDetailPanel`, the third-party `QueryClientProvider` re-export). `useValidateProps` is dev-only, `console.error`s each message ONCE per
   `(component, message)`, and constant-folds away in production. A misuse that would crash anyway
   throws; one that merely renders the wrong thing warns. `SelectFilter` and `Section` are the two
   reference adoptions.
 - **Every message is built in `common/errors.ts`** — `requiredProp` / `oneOf` / `deprecatedProp` /
   `duplicateMount` over one `BASALT_PREFIX`, so consumers can grep `[basalt] <Component>:`.
-- **The module is Mantine-free and `@visx`-free**, enforced twice: a `no-restricted-imports`
+- **The module is Mantine-free and `@visx`-free** (the test keeps the `@visx` ban as a tripwire for a stray import), enforced twice: a `no-restricted-imports`
   override in `.oxlintrc.json` (repo-local, like `state`/`query`/`guard`) and
   `src/common/boundary.test.ts`, which also forbids a VALUE import reaching outside `common/` or
   `utils/`. That is what lets `./charts` and `./tokens` reach `cx`/`mergeRefs` without breaching the
@@ -85,10 +85,15 @@ props extend and `src/surfaces.ts` stays the SSOT for real subpaths.
 
 ## Layering: Mantine-coupled vs Mantine-free
 
-- `src/charts/**` and `src/tokens/**` import zero `@mantine/*`; `@visx/*` may only be imported
-  inside `src/charts/**`. Three independent oxlint plugin rules enforce it —
-  `basalt/visx-boundary` and `basalt/visx-tooltip` ship in the consumer preset too;
-  `basalt/token-layer-boundary` is **repo-local only**.
+- `src/charts/**` and `src/tokens/**` import zero `@mantine/*`. The chart engine is
+  `@tanstack/charts` `1.1.0` (+ `d3-scale` `4.0.2`, exact optional peers, subpath-required for
+  `./charts`); `@visx/*` is banned everywhere. `src/charts/**` imports only `@tanstack/charts/*`,
+  `d3-scale`, `react`, `../tokens`, `../format` and `../common`. Three independent oxlint plugin
+  rules enforce it: `basalt/chart-engine-boundary` ships in the consumer preset too (`@visx/*`
+  banned; outside basalt `@tanstack/charts` is an allowlist of mark subpaths, the bare root is an
+  error); `basalt/token-layer-boundary` and `basalt/chart-host-single` are **repo-local only** — the
+  latter keeps `@tanstack/charts/react` inside `src/charts/host.tsx`, the single importer of the
+  engine's DOM host.
 - It protects two things. **Layering**: `tokens` is pure data that `cssVariablesResolver`
   (Mantine-coupled) reads to bind Mantine's surfaces to the same vars charts read, so an import the
   other way cycles through the theme layer or lets a chart fork chrome and charts apart.
@@ -155,7 +160,7 @@ bun run build   # tsup && tsc --emitDeclarationOnly && copy-assets && fix-esm-ex
   resolution error instead of an install warning. Version-mismatch warnings are unaffected and must
   stay that way, so every peer stays listed in `peerDependencies` (`tests/required-peers.test.ts`
   pins both halves).
-- Exact-pinned peers: the nine `@visx/*`, `motion`, `remend`, the three `@fontsource-variable/*`.
+- Exact-pinned peers: `@tanstack/charts`, `d3-scale`, `motion`, `remend`, the three `@fontsource-variable/*`.
   `motion` is subpath-required for `./agent` (the chat UI imports it eagerly) even though it is
   marked optional; `remend` is `./content`'s one eagerly-imported peer.
 - **NO** zustand, **NO** `@tanstack/*` as a dependency, **NO** icon package — icons are `ReactNode`.
@@ -582,7 +587,7 @@ sanctioned. The doctrine's home is here; AGENTS.md links.
 
 - Strict TS, no `any`, explicit types on public exports; typed object params, low nesting, early
   returns. Function components only; no `React.FC`, no default exports.
-- Respect the Mantine-free boundary and the `@visx/*`-only-in-charts rule.
+- Respect the Mantine-free boundary and the chart-engine boundary (`host.tsx` is the one `@tanstack/charts/react` importer).
 - Don't reintroduce Tailwind, OKLCH foundation palettes, ShadCN/Tremor/Starlight compat, or any
   `import.meta.env` reference in shipped code.
 - When extending the public API, keep it grounded in the consumer need that drove it, and update

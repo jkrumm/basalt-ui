@@ -7,7 +7,7 @@ Framework-owned: edit `DESIGN.md` or your own files — this block is overwritte
 
 **Stack:** React 19 + Mantine v9 themed by `basalt-ui` (`BasaltProvider` + `createBasaltTheme`), Bun,
 oxlint + oxfmt (no ESLint/Biome/Prettier), no Tailwind. Color is the three-tier `--vx-*` token system —
-`VX.*` or a series token, never a raw hex. Charts are visx via `basalt-ui/charts`; `check-theme` + the
+`VX.*` or a series token, never a raw hex. Charts are TanStack Charts via `basalt-ui/charts`; `check-theme` + the
 `basalt/*` oxlint rules are the teeth.
 
 **Precedence — the only statement of it.** Highest wins; a lower layer fills gaps and never

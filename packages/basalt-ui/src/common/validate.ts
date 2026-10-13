@@ -60,7 +60,7 @@ export function useValidateProps(
 /**
  * The same once-per-`(component, message)` dev diagnostic {@link useValidateProps} logs, for a
  * caller that already owns the effect a check would otherwise race — a decision made synchronously
- * inside a `useLayoutEffect` (e.g. `ChartFrame`'s header-slot claim, P2-9) has no business waiting a
+ * inside a `useLayoutEffect` (e.g. a card's header-slot claim, P2-9) has no business waiting a
  * further render for a REACTIVE check on state that effect itself just set: that state update lags
  * one commit behind the decision, and a passive-effect check racing it warns about instances that
  * are about to win in the very next render.

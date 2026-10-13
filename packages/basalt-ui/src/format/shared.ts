@@ -1,9 +1,8 @@
 /**
  * Shared low-level pieces of `basalt-ui/format` — the em-dash sentinel and the memoized
  * `Intl.NumberFormat` cache every number formatter in this module reuses. Moved here (out of
- * `src/charts/utils/format.ts`, C5 consolidation) so the subpath is the single implementation and
- * `charts/utils/format.ts` becomes a thin re-export (`docs/CHARTS-SPEC.md` still calls it home for
- * chart callers, but the code lives here now).
+ * `src/charts/utils/format.ts`, C5 consolidation) so the subpath is the single implementation;
+ * 2.0's chart layer imports it directly (`docs/V2-SPEC.md` § 9).
  */
 
 /**

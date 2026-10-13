@@ -703,13 +703,13 @@ const SPACE_STEP_BASE = {
   // `VX.lineWidth`/`VX.line2Width` are DELIBERATELY absent here — they are stroke WEIGHTS (line
   // thickness), not spacing/gaps/sizes, so they stay fixed regardless of density (see `VX` in
   // `tokens/index.ts`). The six below are gaps/margins/a marker footprint — genuinely spacing.
-  /** `ChartLegend`'s column/row gap (`VX.legendGap`). */
+  /** The chart legend's column gap (`VX.legendGap`). */
   chartLegendGap: 22,
   /** Chart plot-area margin, top (`VX.margin.top`). */
   chartMarginTop: 12,
   /** Chart plot-area margin, right (`VX.margin.right`). */
   chartMarginRight: 16,
-  /** Minimum right margin when an `AxisRightNumeric` is rendered — labels like "100"/"60m" need
+  /** Minimum right margin when a right axis is rendered — labels like "100"/"60m" need
    * more room than the no-right-axis default (the 1.x right-axis margin). */
   chartMarginRightAxis: 40,
   /** Chart plot-area margin, bottom (`VX.margin.bottom`). */
@@ -1205,8 +1205,7 @@ function buildPaletteDataUncached(config: DeriveConfig) {
   const inkLight = DERIVED.ink.ink.light
 
   /**
-   * Theme-resolved neutrals (line / axis / grid / tooltip chrome). Mirrors the old
-   * useVxTheme() outputs, retuned to the zinc identity.
+   * Theme-resolved neutrals (line / axis / grid / tooltip chrome), retuned to the zinc identity.
    */
   const NEUTRAL = {
     line: { light: BP.gray[0], dark: BP.gray[4] }, // primary line

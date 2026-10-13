@@ -1,7 +1,7 @@
 ---
 name: basalt-design
-description: Design and restyle dashboards, charts and metric UIs in a basalt-ui app (Mantine v9 + visx) — the procedure: read the law, decide before coding, tune by eye in the theme lab, bake the values back into the palette. Use when building or restyling charts/dashboards, choosing or tuning a palette, or when a UI looks childish / inconsistent / over-colored.
-when_to_use: User is building or restyling charts, dashboards or metric UIs in a basalt-ui consumer; picking or tuning a palette; deciding dark/light shades; or complaining that a UI looks "AI default", inconsistent across tabs or over-saturated. Also the entry point for any "make this look professional" request in a Mantine + visx app.
+description: Design and restyle dashboards, charts and metric UIs in a basalt-ui app (Mantine v9 + TanStack Charts) — the procedure: read the law, decide before coding, tune by eye in the theme lab, bake the values back into the palette. Use when building or restyling charts/dashboards, choosing or tuning a palette, or when a UI looks childish / inconsistent / over-colored.
+when_to_use: User is building or restyling charts, dashboards or metric UIs in a basalt-ui consumer; picking or tuning a palette; deciding dark/light shades; or complaining that a UI looks "AI default", inconsistent across tabs or over-saturated. Also the entry point for any "make this look professional" request in a Mantine + TanStack Charts app.
 ---
 
 `/basalt-design` is the METHOD. The law is the `basalt-*` rules plus this app's `DESIGN.md`, and the
@@ -40,7 +40,7 @@ Let the theme carry size, radius, depth and font — a prop you did not have to 
 
 ## 4. Tune by eye, then bake
 
-A static POC never translates 1:1 to visx + Mantine. Tune in the REAL app with the theme lab —
+A static POC never translates 1:1 to TanStack Charts + Mantine. Tune in the REAL app with the theme lab —
 `BasaltProvider` mounts it in dev (the dev dock, opened by the `dev.theme` Spotlight command) and
 applies the persisted overrides at boot. It writes inline `--vx-*` overrides on `<html>`, which beat
 the stylesheet, so everything restyles instantly with no React re-render. There is no import.

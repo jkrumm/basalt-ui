@@ -324,7 +324,8 @@ export const SURFACES = {
       'visx-tooltip',
     ],
     description:
-      'CartesianChart + visx chart primitives, kinds, sparklines, hooks, and token re-exports (Mantine-free)',
+      'CartesianChart (the TanStack Charts rung), the Lines and Bars kinds, ChartCard and the shared chartCursor (Mantine-free; @tanstack/charts + d3-scale peers)',
+    optionalPeers: ['@tanstack/charts', 'd3-scale'],
     globs: {
       shipped: ['**/charts/**'],
       repo: ['packages/basalt-ui/src/charts/**'],
@@ -387,7 +388,7 @@ export const SURFACES = {
     kind: 'tooling',
     layer: 'headless',
     description:
-      'integer/money/percent/durationClock/relativeTime/weekday/km/kcal — Intl-backed, Mantine-free, React-free formatting; the chart formatters (fmtCompact/fmtPercent/fmtCurrency/fmtInt/fmtAxisDate/fmtTooltipDate) share this implementation',
+      'integer/money/percent/durationClock/relativeTime/weekday/km/kcal — Intl-backed, Mantine-free, React-free formatting; the chart layer formats through the same implementation',
     globs: {
       shipped: [],
       repo: ['packages/basalt-ui/src/format/**'],

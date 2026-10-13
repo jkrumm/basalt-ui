@@ -6,7 +6,7 @@
  * **Desktop.** One row, `wrap: nowrap`, and it NEVER scrolls (C7). When the measured pill widths
  * exceed the container the tail folds into a `+N` menu pill — a `ResizeObserver` on the row plus
  * per-slot `offsetWidth`, because the fold point depends on the labels actually painted (the same
- * reasoning as the charts' `autoMargin`), not on a guessed pill width.
+ * reasoning as the charts' measured margins), not on a guessed pill width.
  *
  * **Mobile (`< sm`).** The first `inline` children stay pills; every child — inline ones included —
  * also renders its full-width sheet form inside the `Filters (n)` Drawer — which exists only when
