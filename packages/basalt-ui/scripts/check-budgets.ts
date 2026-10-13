@@ -247,9 +247,9 @@ async function budgets(providerOnlyDist: string): Promise<Budget[]> {
     },
     { label: 'published subpaths (package.json exports)', value: publishedSubpaths(), ceiling: 24 },
     { label: 'shipped rule lines (agent/rules/*.md)', value: agentRuleLines(), ceiling: 750 },
-    // 2480 -> 3200: transitional, for docs/V2-SPEC.md while the 1.x specs it replaces are still live.
-    // Wave 1 tightens it to the landed value; the 2.0 docs wave archives the 1.x specs and lowers it.
-    { label: 'spec prose (docs/*.md, non-archive)', value: docsProseLines(), ceiling: 3200 },
+    // 2480 -> 3166: transitional, docs/V2-SPEC.md at its Wave 1 landed size while the 1.x specs it
+    // replaces are still live. Each wave that archives a 1.x spec lowers it by that spec's lines.
+    { label: 'spec prose (docs/*.md, non-archive)', value: docsProseLines(), ceiling: 3166 },
     {
       label: 'playground route files (apps/playground/src/routes/**)',
       value: playgroundRouteFiles(),
