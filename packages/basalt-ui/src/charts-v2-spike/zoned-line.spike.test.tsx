@@ -13,10 +13,12 @@ import {
 import { scaleLinear } from '@tanstack/charts/scales/linear'
 import { scaleUtc } from 'd3-scale'
 import type { StoredChartSpec } from '@tanstack/charts/types/core'
+import { readFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
 import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { renderToString } from 'react-dom/server'
-import { cursorController } from './cursor'
+import { cursorController, getServerCursorSnapshot, hasCursorGroup } from './cursor'
 import { chartEngineCss } from './theme-bridge'
 import { ZonedLine, zonedLine } from './ZonedLine'
 
@@ -62,6 +64,52 @@ describe('SSR', () => {
     runtime.destroy()
     expect(svg.startsWith('<svg')).toBe(true)
     expect(svg).toContain('stroke="var(--vx-line)"')
+  })
+})
+
+/** The package.json above a resolved entry (neither package exports `./package.json`). */
+function manifestOf(specifier: string): { version: string; dependencies?: Record<string, string> } {
+  let dir = dirname(Bun.resolveSync(specifier, import.meta.dir))
+  while (!dir.endsWith('/node_modules')) {
+    try {
+      const pkg = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'))
+      if (pkg.name === specifier) return pkg
+    } catch {}
+    dir = dirname(dir)
+  }
+  throw new Error(`no manifest for ${specifier}`)
+}
+
+test('version compat: basalt resolves the engine pin and the d3-scale the engine depends on', () => {
+  const engine = manifestOf('@tanstack/charts')
+  expect(engine.version).toBe('1.1.0')
+  expect(manifestOf('d3-scale').version).toBe(engine.dependencies?.['d3-scale'] ?? 'missing')
+})
+
+describe('SSR cursor isolation', () => {
+  test('without window no controller is created, read or written', () => {
+    const g = globalThis as { window?: unknown }
+    const win = g.window
+    delete g.window // simulate a server request
+    try {
+      expect(typeof window).toBe('undefined')
+      const html = renderToString(<ZonedLine {...props} ariaLabel="Load" cursorGroup="ssr-probe" />)
+      expect(html).toContain('role="img"')
+      const server = cursorController('ssr-probe')
+      server.setState({
+        anchor: 'value',
+        value: { x: new Date() },
+        source: 'programmatic',
+      } as never)
+      expect(server.getState()).toBeNull()
+      expect(getServerCursorSnapshot()).toBeNull()
+      expect(hasCursorGroup('ssr-probe')).toBe(false)
+    } finally {
+      g.window = win
+    }
+    // Nothing the "server" did reached the client's (lazily created) controller.
+    expect(hasCursorGroup('ssr-probe')).toBe(false)
+    expect(cursorController('ssr-probe').getState()).toBeNull()
   })
 })
 

@@ -12,11 +12,26 @@ type CursorState = ReturnType<Controller['getState']>
 
 /**
  * Shared by default: every chart joins the `'default'` group unless it names another. A module
- * map, not a React context — nothing to mount, identical on server and client.
+ * map, not a React context — nothing to mount.
+ *
+ * CLIENT-ONLY BY CONSTRUCTION. The map is module state, so on a server it would be shared by every
+ * concurrent request. Without `window` no controller is created and nothing is stored: callers get
+ * the inert controller (null state, no-op set/subscribe). The engine never reads the binding
+ * during SSR anyway — `prerender()` renders the scene; the binding is consumed by
+ * `mountChartRenderer`, which runs from a layout effect.
  */
 const groups = new Map<string, Controller>()
 
+const INERT: Controller = {
+  getState: () => null,
+  setState: () => {},
+  subscribe: () => () => {},
+}
+
+const isServer = () => typeof window === 'undefined'
+
 export function cursorController(group = 'default'): Controller {
+  if (isServer()) return INERT
   let controller = groups.get(group)
   if (!controller) {
     controller = createChartCursor<Date, number>()
@@ -24,6 +39,12 @@ export function cursorController(group = 'default'): Controller {
   }
   return controller
 }
+
+/** Test seam: whether a group's controller exists (it never does after server-only work). */
+export const hasCursorGroup = (group: string): boolean => groups.has(group)
+
+/** For `useSyncExternalStore(subscribe, getState, getServerSnapshot)`: always null on the server. */
+export const getServerCursorSnapshot = (): CursorState => null
 
 /**
  * Which chart published a state. Keyed by the state OBJECT (never a copy): TanStack's cleanup
@@ -59,7 +80,8 @@ export function chartCursorView(
   keys: readonly Date[],
   mode: CursorResolution,
 ): Controller {
-  const shared = cursorController(group)
+  // Resolved per call, never at build time: a definition compiled during SSR holds no controller.
+  const shared = () => cursorController(group)
   const ts = keys.map((d) => d.getTime()).toSorted((a, b) => a - b)
   const memo = new WeakMap<object, CursorState>()
   const snap = (t: number): number => {
@@ -68,13 +90,13 @@ export function chartCursorView(
     return ts[Math.max(i, 0)]!
   }
   return {
-    subscribe: (listener) => shared.subscribe(listener),
+    subscribe: (listener) => shared().subscribe(listener),
     setState: (next) =>
-      shared.setState(
+      shared().setState(
         typeof next === 'function' ? (prev) => stamp(next(prev), chartId) : stamp(next, chartId),
       ),
     getState: () => {
-      const state = shared.getState()
+      const state = shared().getState()
       const x = state?.anchor === 'value' ? state.value.x : undefined
       if (!state || mode === 'exact' || ts.length === 0 || !(x instanceof Date)) return state
       const snapped = snap(x.getTime())
