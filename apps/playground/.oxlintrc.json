@@ -1,12 +1,19 @@
 {
   "extends": ["./node_modules/basalt-ui/configs/oxlint.json"],
   "rules": {
-    "react/globals": "off",
-    "react/immutability": "off",
-    "react/incompatible-library": "off",
-    "react/preserve-manual-memoization": "off",
-    "react/refs": "off",
-    "react/set-state-in-effect": "off",
-    "no-constant-binary-expression": "off"
-  }
+    "react/globals": "error",
+    "react/immutability": "error",
+    "react/incompatible-library": "error",
+    "react/preserve-manual-memoization": "error",
+    "react/refs": "error",
+    "react/set-state-in-effect": "error",
+    "no-constant-binary-expression": "error"
+  },
+  "overrides": [
+    { "files": ["src/demo/DataStressPage.tsx"], "rules": { "react/set-state-in-effect": "off" } },
+    {
+      "files": ["src/demo/cbbi/CbbiPanel.tsx"],
+      "rules": { "react/preserve-manual-memoization": "off" }
+    }
+  ]
 }
