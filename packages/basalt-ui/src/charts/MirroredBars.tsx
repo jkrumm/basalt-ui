@@ -20,9 +20,9 @@ import { scaleLinear } from '@tanstack/charts/scales/linear'
 import type { ChartTooltipRow as EngineTooltipRow, ChartValue } from '@tanstack/charts/types/core'
 import { useCallback, useMemo } from 'react'
 import type { ReactElement } from 'react'
-import { VX } from '../tokens'
+import { VX, alpha } from '../tokens'
 import { resolveContainerClass } from '../tokens/size-classes'
-import { visibleSeries } from './compile'
+import { defaultNumberFormat, visibleSeries } from './compile'
 import { PanelRung, defaultFormatX, rowsOf, xGuide, yGuide } from './DualPanel'
 import type { PaneBuilder, PanelPlan } from './DualPanel'
 import { emphasis } from './marks'
@@ -95,9 +95,6 @@ const BAND_FILL = 0.8
 
 const clamp01 = (v: number | undefined): number =>
   v === undefined || !Number.isFinite(v) ? 0 : Math.min(Math.max(v, 0), 1)
-
-const paint = (color: string, opacity: number): string =>
-  opacity >= 1 ? color : `color-mix(in srgb, ${color} ${Math.round(opacity * 100)}%, transparent)`
 
 /** At most `cap` slots: adjacent data merged in equal runs. */
 function fold<T>(data: readonly T[], cap: number, merge: (group: T[]) => T): T[] {
@@ -200,8 +197,12 @@ export function MirroredBars<T, X extends ChartX = ChartX>(
           )
           const byOpacity = (rs: PlotRow<T, X>[]): [number, PlotRow<T, X>[]][] => {
             const groups = new Map<number, PlotRow<T, X>[]>()
-            for (const r of rs)
-              groups.set(opacity(r.datum), [...(groups.get(opacity(r.datum)) ?? []), r])
+            for (const r of rs) {
+              const o = opacity(r.datum)
+              const group = groups.get(o)
+              if (group) group.push(r)
+              else groups.set(o, [r])
+            }
             return [...groups]
           }
           const gaps = (on ? drawn : []).flatMap((d, i) => {
@@ -222,7 +223,7 @@ export function MirroredBars<T, X extends ChartX = ChartX>(
                 x: rowX,
                 y: 'y',
                 fill: (row: PlotRow<T, X>) =>
-                  absent(row.datum) > 0 ? 'transparent' : paint(s.color, opacity(row.datum)),
+                  absent(row.datum) > 0 ? 'transparent' : alpha(s.color, opacity(row.datum)),
               }),
               // A rect's fill is constant, so one mark per distinct opacity.
               ...byOpacity(measured).map(([o, group]) =>
@@ -234,7 +235,7 @@ export function MirroredBars<T, X extends ChartX = ChartX>(
                     y1: () => 0,
                     y2: (r) => r.y ?? 0,
                     xScale: 'zx',
-                    fill: paint(s.color, o),
+                    fill: alpha(s.color, o),
                     inset: 0,
                   }),
                 ),
@@ -282,7 +283,8 @@ export function MirroredBars<T, X extends ChartX = ChartX>(
             const v = s.getValue(d)
             if (s.tooltip === false || v === null || !Number.isFinite(v)) continue
             // Each pane's row falls back to ITS OWN formatter: the panes are in different units.
-            const fallback = s.key === up.key ? up.format : down.format
+            const fallback =
+              s.key === up.key ? up.format : s.key === down.key ? down.format : defaultNumberFormat
             out.push({
               label: s.note === undefined ? s.label : `${s.label} · ${s.note}`,
               value: s.formatValue ? s.formatValue(v, d) : fallback(v),
