@@ -7,8 +7,9 @@
  * The header renders only when one of title/info/value/actions/icon/count is set. A chart inside
  * with `legend={{ placement: 'header' }}` renders its legend in the header row.
  */
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import type { CSSProperties, ReactElement, ReactNode } from 'react'
+import { useIsomorphicLayoutEffect } from '../common/isomorphic-layout-effect'
 import { cx } from '../common/props'
 import type { BasaltProps, SlotStylesProps } from '../common/props'
 import type { DeltaPolarity } from '../dashboard/delta-badge'
@@ -34,8 +35,42 @@ const cardStyle: CSSProperties = {
 const headerStyle: CSSProperties = {
   padding: 'var(--vx-space-card-inset-y, 0.6875rem) var(--vx-space-card-inset-x, 0.8125rem) 4px',
 }
+// A short card trims the header's top inset: the subtitle and the value row have already folded.
+const headerShortStyle: CSSProperties = {
+  padding: '4px var(--vx-space-card-inset-x, 0.8125rem) 4px',
+}
 const headerLegendStyle: CSSProperties = { paddingTop: 6 }
-const bodyStyle: CSSProperties = {
+
+/**
+ * Below this rendered height the header folds its subtitle whatever the width (the header-economy
+ * law): `data-basalt-card-short` is the hook `widget-header.module.css` reacts to. Leaving the
+ * state needs `CARD_SHORT_HEIGHT + SHORT_EXIT_SLACK`: the fold changes the card's own height, and
+ * without the band a card whose unfolded height sits just above the line flip-flops forever.
+ */
+const CARD_SHORT_HEIGHT = 280
+const SHORT_EXIT_SLACK = 24
+
+/** The card's measured height through the hysteresis band above. */
+function useShortCard(): { ref: (el: HTMLDivElement | null) => void; short: boolean } {
+  const [node, setNode] = useState<HTMLDivElement | null>(null)
+  const [short, setShort] = useState(false)
+  const shortRef = useRef(false)
+  useIsomorphicLayoutEffect(() => {
+    if (!node || typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver((entries) => {
+      const height = entries[0]?.borderBoxSize[0]?.blockSize ?? node.offsetHeight
+      const limit = shortRef.current ? CARD_SHORT_HEIGHT + SHORT_EXIT_SLACK : CARD_SHORT_HEIGHT
+      const next = height > 0 && height < limit
+      if (next === shortRef.current) return
+      shortRef.current = next
+      setShort(next)
+    })
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [node])
+  return { ref: setNode, short }
+}
+const bodyClipStyle: CSSProperties = {
   borderBottomLeftRadius: VX.radiusCard,
   borderBottomRightRadius: VX.radiusCard,
   overflow: 'hidden',
@@ -102,6 +137,7 @@ export function ChartCard({
     })
   }, [])
   const context = useMemo(() => ({ setHeaderLegend }), [setHeaderLegend])
+  const { ref, short } = useShortCard()
   const resolved = resolveChartState(state)
   const hasHeader =
     title !== undefined ||
@@ -114,14 +150,16 @@ export function ChartCard({
   return (
     <ChartCardContext.Provider value={context}>
       <div
+        ref={ref}
         className={cx(classNames?.root, className)}
         style={{ ...cardStyle, ...style }}
         {...(resolved === 'pending' && { 'aria-busy': 'true' })}
+        {...(short && { 'data-basalt-card-short': '' })}
       >
         {hasHeader && (
           <div
             {...(classNames?.header !== undefined && { className: classNames.header })}
-            style={headerStyle}
+            style={short ? headerShortStyle : headerStyle}
           >
             <WidgetHeader
               tier="widget"
@@ -147,7 +185,7 @@ export function ChartCard({
         )}
         <div
           {...(classNames?.body !== undefined && { className: classNames.body })}
-          style={bodyStyle}
+          style={bodyClipStyle}
         >
           {resolved === null ? (
             children

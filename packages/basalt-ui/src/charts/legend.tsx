@@ -12,6 +12,12 @@ export type LegendMode = 'dots' | 'chips'
 
 const ROLE_ORDER = ['series', 'overlay', 'reference'] as const
 
+/**
+ * Dots sit wider apart than chips: a dot is 8px, and two 44px coarse-pointer hit areas centred on
+ * 8px hosts only stop overlapping once the pitch clears 44 (44 − 8 − 2, plus headroom).
+ */
+const DOTS_GAP = 38
+
 /** The entries a series list derives, in display order (by role when `groups`). */
 export function legendEntries<T>(
   series: readonly ChartSeries<T>[],
@@ -32,7 +38,6 @@ const rowStyle: CSSProperties = {
   display: 'flex',
   flexWrap: 'wrap',
   alignItems: 'center',
-  columnGap: VX.legendGap,
   rowGap: 4,
   fontSize: VX.legendFontSize,
   color: VX.ink2,
@@ -41,6 +46,8 @@ const rowStyle: CSSProperties = {
 const dividerStyle: CSSProperties = { width: 1, alignSelf: 'stretch', background: VX.divider }
 const buttonStyle: CSSProperties = {
   all: 'unset',
+  // theme-allow raw-surface — an invisible 1px: the edge the `[data-basalt-hit]` overlap cap assumes every control carries (styles.css)
+  border: '1px solid transparent',
   display: 'inline-flex',
   alignItems: 'center',
   gap: 6,
@@ -103,8 +110,18 @@ export type ChartLegendProps<T> = {
 export function ChartLegend<T>(props: ChartLegendProps<T>): ReactElement | null {
   const groups = legendEntries(props.series, props.groups)
   if (groups.length === 0) return null
+  const gap = props.mode === 'dots' ? DOTS_GAP : VX.legendGap
   return (
-    <fieldset aria-label="Legend" data-basalt-chart-legend={props.mode} style={rowStyle}>
+    <fieldset
+      aria-label="Legend"
+      data-basalt-chart-legend={props.mode}
+      style={{
+        ...rowStyle,
+        columnGap: gap,
+        // Caps each entry's `[data-basalt-hit]` overlay at the real gap between entries.
+        ...({ '--vx-hit-gap': `${gap}px` } as CSSProperties),
+      }}
+    >
       {groups.map((group, gi) => [
         gi > 0 && <span key={`divider-${gi}`} aria-hidden style={dividerStyle} />,
         ...group.map((s) => {
