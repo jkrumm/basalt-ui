@@ -244,6 +244,10 @@ const isBar = <T>(s: ChartSeries<T>): boolean => s.mark === 'bar'
 
 /** A stack's auto domain reads its per-x totals: the positive sum and the negative sum stand in for
  * the bar series; every other series counts as itself. */
+/** The two synthetic totals standing in for a stack's bars in its AUTO domain only. */
+const STACK_POSITIVE_KEY = '__stack+'
+const STACK_NEGATIVE_KEY = '__stack-'
+
 function stackedSeries<T>(series: readonly ChartSeries<T>[]): ChartSeries<T>[] {
   const bars = series.filter(isBar)
   if (bars.length === 0) return [...series]
@@ -261,8 +265,8 @@ function stackedSeries<T>(series: readonly ChartSeries<T>[]): ChartSeries<T>[] {
   const base = bars[0] as ChartSeries<T>
   return [
     ...series.filter((s) => !isBar(s)),
-    { ...base, key: '__stack+', getValue: (d) => sum(d, 1) },
-    { ...base, key: '__stack-', getValue: (d) => sum(d, -1) },
+    { ...base, key: STACK_POSITIVE_KEY, getValue: (d) => sum(d, 1) },
+    { ...base, key: STACK_NEGATIVE_KEY, getValue: (d) => sum(d, -1) },
   ]
 }
 
@@ -296,14 +300,17 @@ export function compileCartesian<T, X extends ChartX>(
   for (const l of input.refLines ?? []) bounds[sideOf(l.axis)].push(l.value)
   const onRight = (s: ChartSeries<T>): boolean => hasY2 && s.axis === 'right'
   const leftSeries = visible.filter((s) => !onRight(s))
+  // A stack changes only the AUTO rule: a tuple is fixed, and a domain function gets the real
+  // visible series (its own seam for summing a stack).
+  const autoLeft = input.y?.domain === undefined || input.y.domain === 'auto'
   const left: YAxis = {
     domain:
-      input.stack === 'normalized' && input.y?.domain === undefined
+      input.stack === 'normalized' && autoLeft
         ? normalizedDomain(input.data, leftSeries)
         : resolveYDomain(
             input.y,
             input.data,
-            input.stack ? stackedSeries(leftSeries) : leftSeries,
+            input.stack && autoLeft ? stackedSeries(leftSeries) : leftSeries,
             bounds.left,
           ),
     format: input.y?.format ?? defaultNumberFormat,
@@ -381,10 +388,10 @@ export function compileCartesian<T, X extends ChartX>(
     if (!s)
       throw new Error(`[basalt] CartesianChart: marks asked for series "${key}", not in \`series\``)
     if (!visibleKeys.has(key)) return []
-    return input.data.map((d, i) => {
+    return input.data.map((d) => {
       const v = s.getValue(d)
       return {
-        x: xs[i] as X,
+        x: input.x(d),
         y: v === null || !Number.isFinite(v) ? null : v,
         series: s.key,
         datum: d,
@@ -426,9 +433,9 @@ export function compileCartesian<T, X extends ChartX>(
         y2Domain: right?.domain,
       }
       const kindMarks: ChartMarks = input.marks(plot)
-      const scales: Record<string, ChartPositionScaleOptions | null> = {
+      const scales = {
         x: {
-          scale: model.scale as ChartPositionScaleOptions['scale'],
+          scale: model.scale,
           ...xGuide({ model, xTicks: input.xTicks, format: formatX, cls }),
         },
         y: {
@@ -452,7 +459,7 @@ export function compileCartesian<T, X extends ChartX>(
         ...(zoneScale && {
           zx: { channel: 'x' as const, scale: scaleLinear().domain([0, 1]), axis: false as const },
         }),
-      }
+      } satisfies StoredChartSpec['scales']
       const inside = cls === 'compact'
       return {
         marks: [
@@ -462,7 +469,7 @@ export function compileCartesian<T, X extends ChartX>(
           ...refMarks,
           crosshair({ x: CROSSHAIR, y: false }),
         ],
-        scales: scales as StoredChartSpec['scales'],
+        scales,
         theme: CHART_THEME,
         ...(gradients.length > 0 && { gradients }),
         clip: true,

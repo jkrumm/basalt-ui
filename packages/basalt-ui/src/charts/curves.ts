@@ -85,7 +85,10 @@ function pathFor(name: CurveName, points: readonly Point[], reversed: boolean): 
     case 'stepBefore':
       return step(points, reversed ? 1 : 0)
     default:
-      return name satisfies never
+      // Exhaustive at compile time; a JS caller's unknown name draws straight segments, never the
+      // name itself as path data.
+      void (name satisfies never)
+      return linear(points)
   }
 }
 
