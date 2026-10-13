@@ -118,7 +118,7 @@ describe('agent-doc-drift guard', () => {
   })
 
   it('Check D passes a fixture naming the current home instead', () => {
-    withFixture('The law is in docs/CHARTS-SPEC.md §8.\n', (file) => {
+    withFixture('The law is in docs/V2-SPEC.md §9.\n', (file) => {
       expect(checkD([file], [])).toEqual([])
     })
   })
