@@ -7,7 +7,7 @@ paths:
 
 <!-- basalt:coverage -->
 <!-- GENERATED from src/surfaces.ts — `bun scripts/check-coverage.ts --write`. Do not hand-edit. -->
-<!-- backed by: guard kinds — chart-missing-aria-label, raw-color-fn, raw-hex, raw-visx-axis · oxlint rules — basalt/chart-in-raw-surface, basalt/chart-legend-literal, basalt/hand-rolled-plot, basalt/visx-boundary, basalt/visx-tooltip -->
+<!-- backed by: guard kinds — raw-color-fn, raw-hex · oxlint rules — basalt/chart-engine-boundary, basalt/chart-host-single, basalt/chart-in-raw-surface -->
 <!-- not guarded: — -->
 <!-- /basalt:coverage -->
 
