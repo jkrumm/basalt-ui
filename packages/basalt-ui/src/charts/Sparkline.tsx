@@ -46,16 +46,25 @@ const BAR_GAP = 0.15
 
 const finite = (v: number): number | null => (Number.isFinite(v) ? v : null)
 
+/** Min and max of the finite values, by loop (a spread overflows the stack on long series). */
+function extent(rows: readonly Point[]): readonly [number, number] | null {
+  let lo = Number.POSITIVE_INFINITY
+  let hi = Number.NEGATIVE_INFINITY
+  for (const r of rows) {
+    if (r.v === null) continue
+    if (r.v < lo) lo = r.v
+    if (r.v > hi) hi = r.v
+  }
+  return lo <= hi ? [lo, hi] : null
+}
+
 function compileSparkline(
-  data: readonly number[],
+  rows: readonly Point[],
+  [lo, hi]: readonly [number, number],
   mark: 'line' | 'bar',
   color: string,
-  emphasis: string | null,
+  emphasisColor: string | null,
 ): CartesianDefinition {
-  const rows: Point[] = data.map((v, i) => ({ i, v: finite(v) }))
-  const values = rows.flatMap((r) => (r.v === null ? [] : [r.v]))
-  const lo = Math.min(...values)
-  const hi = Math.max(...values)
   const last = rows.at(-1)
   return {
     chart: () => {
@@ -66,13 +75,19 @@ function compileSparkline(
               id: 'bars',
               x: 'i',
               y: 'v',
-              fill: (r: Point) => (emphasis !== null && r.i === rows.length - 1 ? emphasis : color),
+              fill: (r: Point) =>
+                emphasisColor !== null && r.i === rows.length - 1 ? emphasisColor : color,
             }),
           ],
           scales: {
-            x: { scale: scaleBand<number>().padding(BAR_GAP), axis: false as const },
+            x: {
+              scale: scaleBand<number>()
+                .domain(rows.map((r) => r.i))
+                .padding(BAR_GAP),
+              axis: false as const,
+            },
             y: {
-              scale: scaleLinear().domain([Math.min(lo, 0), Math.max(hi, 1)]),
+              scale: scaleLinear().domain([Math.min(lo, 0), Math.max(hi, 0) || 1]),
               axis: false as const,
             },
           },
@@ -83,6 +98,8 @@ function compileSparkline(
       }
       // A flat or single-point series needs an extent; 10% air keeps the stroke inside the box.
       const pad = (hi - lo) * 0.1 || 1
+      // Half a dot of air at each end, in index units, so the last-point dot is not clipped.
+      const xPad = emphasisColor === null ? 0 : (rows.length - 1) * 0.04 || 0.5
       return {
         marks: [
           lineY(rows, {
@@ -93,13 +110,17 @@ function compileSparkline(
             strokeWidth: LINE_WIDTH,
             curve: chartCurve('monotone'),
           }),
-          ...(emphasis !== null && last !== undefined && last.v !== null
-            ? [decorative(dot([last], { id: 'last', x: 'i', y: 'v', r: DOT_R, fill: emphasis }))]
+          ...(emphasisColor !== null && last !== undefined && last.v !== null
+            ? [
+                decorative(
+                  dot([last], { id: 'last', x: 'i', y: 'v', r: DOT_R, fill: emphasisColor }),
+                ),
+              ]
             : []),
         ],
         scales: {
           x: {
-            scale: scaleLinear().domain([0, Math.max(rows.length - 1, 1)]),
+            scale: scaleLinear().domain([-xPad, Math.max(rows.length - 1, 1) + xPad]),
             axis: false as const,
           },
           y: { scale: scaleLinear().domain([lo - pad, hi + pad]), axis: false as const },
@@ -129,17 +150,20 @@ export function Sparkline(props: SparklineProps): ReactElement {
     style,
   } = props
   const id = useId()
-  const definition = useMemo(
-    () => compileSparkline(data, mark, color, emphasizeLast ? emphasisColor : null),
-    [data, mark, color, emphasizeLast, emphasisColor],
-  )
+  const definition = useMemo(() => {
+    const rows: Point[] = data.map((v, i) => ({ i, v: finite(v) }))
+    const range = extent(rows)
+    // No finite value means nothing to scale: the empty render, never an Infinity domain.
+    if (range === null) return null
+    return compileSparkline(rows, range, mark, color, emphasizeLast ? emphasisColor : null)
+  }, [data, mark, color, emphasizeLast, emphasisColor])
   return (
     <div
       data-basalt-sparkline=""
       {...(className !== undefined && { className })}
       style={{ width: width ?? '100%', height, minWidth: 0, ...style }}
     >
-      {data.length > 0 && (
+      {definition !== null && (
         <ChartEngine
           definition={definition}
           ariaLabel={ariaLabel}
