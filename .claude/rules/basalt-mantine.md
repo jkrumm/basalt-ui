@@ -86,8 +86,8 @@ Depth-tier law (which token for which surface, why static, why the ring is inset
   fix in row code. Only Mantine-free `src/charts/**` uses raw `<div>` freely.
 - **Inputs come from `@mantine/core`**, never a native `<select>` — the form tier's font size
   clears the iOS zoom threshold via an `!important` floor (`sub-16-input-font` flags a smaller one).
-- **Charts measure themselves** — pass `height`/`aspectRatio`/`fill` only; never `useElementSize`
-  in a chart file (Mantine is banned there), never raw `@visx/responsive` outside `charts/**`.
+- **Charts measure themselves** — pass `height` only; never `useElementSize` in a chart file
+  (Mantine is banned there).
 - **A page's layout keys on its container, not the viewport** (`type="container"` grids, `CONTAINER_CLASSES`).
   `useSizeClass()`: shell chrome (and what stands in for it at `compact`), overlay form, `ViewTabs only: 'sm-down'` partners — flash-free under `createRoot`. Recipes: `MIGRATING.md`.
 
