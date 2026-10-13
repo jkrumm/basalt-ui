@@ -3,6 +3,9 @@
 > **Single source of truth for current state.** As of **2026-09-02**. Per-release narratives moved
 > to `docs/archive/STATUS-HISTORY.md`; the rest of `docs/archive/` is superseded scope ledgers.
 > This file is what's true now.
+>
+> **2.0 rewrite in progress** (2026-10-13): 1.x is frozen at `v1.41.0`. The plan and its live state:
+> `docs/waves/PLAN.md`; the contract: `docs/V2-SPEC.md`.
 
 **Published version: read it, don't trust a doc.** `npm view basalt-ui version` for what is on npm
 (1.27.0 as of this writing), `packages/basalt-ui/CHANGELOG.md` for the release notes,
