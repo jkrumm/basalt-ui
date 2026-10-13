@@ -19,12 +19,22 @@ import type { CartesianChartProps, ChartMarks, ChartSeries, ChartX, PlotContext 
 
 const DEFAULT_BAND_OPACITY = 0.85
 
+/** A band. Stacked areas read the left axis and draw no line, so the line fields are absent. */
+export type StackedAreaBand<T> = Pick<
+  ChartSeries<T>,
+  'key' | 'label' | 'color' | 'getValue' | 'formatValue' | 'tooltip' | 'legend' | 'role' | 'note'
+> & {
+  /** Default 0.85. */
+  fillOpacity?: number
+}
+
 export type StackedAreaProps<T, X extends ChartX = ChartX> = Omit<
   CartesianChartProps<T, X>,
-  'marks' | 'y2' | 'series'
+  'marks' | 'y' | 'y2' | 'series'
 > & {
-  /** The bands, bottom to top. Linear y only: a log axis has no additive zero to stack from. */
-  series: readonly ChartSeries<T>[]
+  /** The bands, bottom to top. */
+  series: readonly StackedAreaBand<T>[]
+  /** No `scale`: a log axis has no additive zero to stack from. */
   y?: Omit<NonNullable<CartesianChartProps<T, X>['y']>, 'scale'>
 }
 
@@ -43,11 +53,10 @@ export function StackedArea<T, X extends ChartX = ChartX>(
     if (visible.length === 0) return []
     const byKey = new Map(visible.map((s) => [s.key, s]))
     const h = plot.highlighted
-    const dense = (i: number): boolean =>
-      visible.every((s) => (plot.rows(s.key)[i]?.y ?? null) !== null)
-    const rows = visible.flatMap((s) =>
-      plot.rows(s.key).map((r, i) => (dense(i) ? r : { ...r, y: null })),
-    )
+    const columns = visible.map((s) => plot.rows(s.key))
+    // A row is dense when every visible band has a value there; one pass over the columns.
+    const dense = columns[0]?.map((_, i) => columns.every((col) => col[i]?.y !== null)) ?? []
+    const rows = columns.flatMap((col) => col.map((r, i) => (dense[i] ? r : { ...r, y: null })))
     return [
       areaY(rows, {
         id: 'bands',
