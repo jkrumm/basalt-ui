@@ -90,32 +90,6 @@
       }
     },
     {
-      "files": ["packages/basalt-ui/src/guard/**"],
-      "rules": {
-        "no-restricted-imports": [
-          "error",
-          {
-            "paths": [
-              {
-                "name": "@mantine/core",
-                "message": "guard must be Mantine-free — no Mantine imports allowed."
-              },
-              {
-                "name": "@mantine/hooks",
-                "message": "guard must be Mantine-free — no Mantine imports allowed."
-              }
-            ],
-            "patterns": [
-              {
-                "group": ["@mantine/*"],
-                "message": "guard must be Mantine-free — no Mantine imports allowed."
-              }
-            ]
-          }
-        ]
-      }
-    },
-    {
       "files": ["packages/basalt-ui/src/format/**"],
       "rules": {
         "no-restricted-imports": [
@@ -142,33 +116,7 @@
       }
     },
     {
-      "files": ["packages/basalt-ui/src/router-tanstack/**"],
-      "rules": {
-        "no-restricted-imports": [
-          "error",
-          {
-            "paths": [
-              {
-                "name": "@mantine/core",
-                "message": "router-tanstack must be Mantine-free — no Mantine imports allowed."
-              },
-              {
-                "name": "@mantine/hooks",
-                "message": "router-tanstack must be Mantine-free — no Mantine imports allowed."
-              }
-            ],
-            "patterns": [
-              {
-                "group": ["@mantine/*"],
-                "message": "router-tanstack must be Mantine-free — no Mantine imports allowed."
-              }
-            ]
-          }
-        ]
-      }
-    },
-    {
-      "files": ["packages/basalt-ui/src/agent/**"],
+      "files": ["packages/basalt-ui/src/agent/*.ts", "packages/basalt-ui/src/agent/*.tsx"],
       "rules": {
         "no-restricted-imports": [
           "error",
@@ -224,7 +172,11 @@
       }
     },
     {
-      "files": ["packages/basalt-ui/src/state.ts", "packages/basalt-ui/src/state/**"],
+      "files": [
+        "packages/basalt-ui/src/state.ts",
+        "packages/basalt-ui/src/state/**",
+        "packages/basalt-ui/src/router-tanstack/search-store.ts"
+      ],
       "rules": {
         "no-restricted-imports": [
           "error",

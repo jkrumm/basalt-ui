@@ -1,11 +1,8 @@
 /**
  * The one query behind the CBBI page.
  *
- * `@tanstack/react-query` is a direct peer (C1 dropped the `./query` subpath's raw re-exports —
- * basalt ships only `createBasaltQueryClient`/`unwrap` off the root barrel now), so the page
- * imports the hook straight from upstream. The playground mounts NO app-wide
- * `QueryClientProvider` — `main.tsx` only wires `BasaltProvider` — so the provider is page-local,
- * exactly as `QueryDemoPage` does it.
+ * `@tanstack/react-query` is a direct peer, so the page imports the hook straight from upstream;
+ * the client is the router's (`createBasaltRouter`), provided by `BasaltProvider`.
  *
  * The upstream file is `cache-control: max-age=3600` and ~1.5 MB, so the client mirrors it: an hour
  * of freshness, a four-hour cache floor above it (a `gcTime` below `staleTime` would evict a

@@ -15,7 +15,7 @@
 //
 // Each directive suppresses exactly ONE following line, so every bad literal is on its own line.
 import { Link, linkOptions, redirect } from '@tanstack/react-router'
-import { defineNav, navGroup, navTarget } from 'basalt-ui/router-tanstack'
+import { defineNav, navGroup, navTarget } from 'basalt-ui'
 
 // `/dashboard`'s store validates SEVEN fields (`demo/dashboard-range-store.ts` — the page bar's
 // four plus the aside's three), and `validateSearch` returns every one of them resolved, so

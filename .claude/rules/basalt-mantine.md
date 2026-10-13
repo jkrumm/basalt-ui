@@ -20,23 +20,14 @@ live in basalt-tokens.md — not restated here.
 
 ## Provider and overlay mount
 
-Mount `BasaltProvider` at the top of the tree, **above the router** (Mantine's context must exist
-before any route renders), with `theme={createBasaltTheme(overrides)}`. Then the data layer, then
-`RouterProvider`. Don't hand-build `createTheme` and don't add a second `cssVariablesResolver`. The
-canonical composition — `BasaltProvider > QueryClientProvider > BasaltOverlays > RouterProvider`,
-and why that order is load-bearing — is the README's "Composition order" section; don't restate the
-tree here. No `'use client'` directive ships in the package; a Next.js App Router consumer wraps
-the composition in its own client file.
-
-**Overlays mount exactly once, through `BasaltOverlays`** (`basalt-ui/commands`), inside
-`BasaltProvider`: it composes `ModalsProvider`, Spotlight (against basalt's own store), the command
-hotkeys and `<Notifications>` in one place, each disableable with `false`. `ModalsProvider` mounts
-as a **sibling** of `children`, not a wrapper — the imperative `modals.*`/`overlays.*` API works
-untouched, but `useModals()`/`openContextModal` need real React context, which a sibling cannot
-provide: pass `modals={false}` and mount your own `ModalsProvider` when you need either.
-`<BasaltOverlays notifications />` is the ONE notifications mount; there is no standalone
-component any more. Import the **layered** style bundle for every `@mantine/*` battery, then
-`basalt-ui/styles.css` last.
+One mount owns the whole tree: `const router = createBasaltRouter({ routeTree })`, then
+`<BasaltProvider router={router} />` (V2-SPEC § 2). It mounts Mantine with the Basalt theme (pass
+`theme={createBasaltTheme(overrides)}`; don't hand-build `createTheme` and don't add a second
+`cssVariablesResolver`), `QueryClientProvider > ModalsProvider > RouterProvider`, and
+`Notifications` + `Spotlight` as siblings, plus the command hotkeys. There is no overlay component to
+mount and no second `<Notifications>`; `useModals()` works because `ModalsProvider` wraps the router.
+No `'use client'` directive ships; a Next.js App Router consumer wraps it in its own client file.
+Import the **layered** style bundle for every `@mantine/*` battery, then `basalt-ui/styles.css` last.
 
 Color scheme is read and written through `useMantineColorScheme()` only — never a client store,
 never `localStorage.getItem('theme')` (guard-enforced; see basalt-state.md).
@@ -64,7 +55,7 @@ Extension points are **declared data, not `ReactNode` slots**, so basalt owns th
   is the consumer's `<Link>`; absent, the row falls back to `<a href>` + `onClick`. The
   breadcrumb's equivalent is `parentAnchor`. No `renderNavLink`/`renderBreadcrumbLink` surface.
 - **`AppBreadcrumbs` is prop-driven** (`section`/`parent`/`parentAnchor`/`parentHref`/`page`),
-  renders `null` without `page`; `useRouterBreadcrumbs` (basalt-state.md) sources a custom trail.
+  renders `null` without `page`; the shell breadcrumbs (basalt-state.md) sources a custom trail.
 - **Collapse persists through `createPersistedState`**, keyed `basalt:<storageKey>` — read with
   `readPersistedValue`, never a bare `localStorage.getItem`.
 - **The account row is presentational, provider-agnostic** — no `./auth`. Authenticated leads with

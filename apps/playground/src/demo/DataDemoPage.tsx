@@ -1,8 +1,7 @@
 /**
- * DataDemoPage — exercises basalt-ui/data:
- * BasaltDataTable (sortable, filterable, paginated, isLoading, skeletonRows), a second
- * BasaltDataTable demonstrating `enablePinning` over a wider column set, + BasaltVirtualList
- * (1 000 rows).
+ * DataDemoPage — exercises basalt-ui/table:
+ * BasaltDataTable (sortable, filterable, paginated, isLoading, skeletonRows) and a second
+ * BasaltDataTable demonstrating `enablePinning` over a wider column set.
  *
  * Edge states:
  *   • Clear data → the real `EmptyState` (tier="section") renders via `emptyState`.
@@ -11,22 +10,19 @@
  *     filtered count.
  *
  * The table uses a small typed dataset with ColumnDef<T>[] columns (createColumnHelper).
- * The virtual list renders 1 000 items in a fixed-height 300px box to prove windowing.
  */
-import { Badge, Box, Button, Divider, Group, Paper, Stack, Switch, Tabs, Text } from '@mantine/core'
+import { Button, Divider, Group, Paper, Stack, Switch, Tabs, Text } from '@mantine/core'
 import { EmptyState, PageBar } from 'basalt-ui'
 import { FilterSet, RangeFilter, SearchFilter, ViewTabs } from 'basalt-ui/controls'
 import { createLocalStore, field } from 'basalt-ui/state'
-import { BasaltDataTable, createColumnHelper } from 'basalt-ui/data/table'
-import type { DataTableFacet } from 'basalt-ui/data/table'
+import { BasaltDataTable, createColumnHelper } from 'basalt-ui/table'
 import { dataStressFilters } from './data-stress-store'
 import { DataStressPage } from './DataStressPage'
 import { DataTableChromeDemoPage } from './DataTableChromeDemoPage'
 import { QueryDemoPage } from './QueryDemoPage'
-import { BasaltVirtualList } from 'basalt-ui/data/virtual'
-import { VX } from 'basalt-ui/tokens'
 import type { SortingState } from '@tanstack/react-table'
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
+import type { ComponentProps } from 'react'
 import { IconSearch } from './icons'
 
 // The route's view switch, store-bound (law C3) so a back navigation lands on the tab left behind.
@@ -146,7 +142,7 @@ const ROLE_OPTIONS = [
   { value: 'Product Analyst', label: 'Product Analyst' },
 ]
 
-const TABLE_FACETS: DataTableFacet[] = [
+const TABLE_FACETS: NonNullable<ComponentProps<typeof BasaltDataTable>['facets']> = [
   { columnId: 'department', label: 'Department', options: DEPARTMENT_OPTIONS },
   { columnId: 'role', label: 'Role', multiple: true, options: ROLE_OPTIONS },
 ]
@@ -284,60 +280,6 @@ function PinnedTableSection() {
   )
 }
 
-// ── Virtual list demo ─────────────────────────────────────────────────────────
-
-type ListRow = { id: number; label: string; category: string }
-
-const CATEGORIES = ['Alpha', 'Beta', 'Gamma', 'Delta', 'Epsilon']
-
-function VirtualListSection() {
-  const items = useMemo<ListRow[]>(
-    () =>
-      Array.from({ length: 1_000 }, (_, i) => ({
-        id: i,
-        label: `Item #${String(i + 1).padStart(4, '0')}`,
-        category: CATEGORIES[i % CATEGORIES.length] ?? 'Alpha',
-      })),
-    [],
-  )
-
-  return (
-    <Stack gap="xs">
-      <Text size="xs" tt="uppercase" fw={600} c="dimmed">
-        BasaltVirtualList — 1 000 rows (300 px height)
-      </Text>
-      <Text size="sm">
-        Only the visible rows + <code>overscan</code> are mounted. Scroll to verify windowing.
-        Powered by <code>@tanstack/react-virtual</code> with <code>useFlushSync: false</code> (React
-        19 safe).
-      </Text>
-      <BasaltVirtualList
-        items={items}
-        height={300}
-        estimateSize={40}
-        overscan={5}
-        getItemKey={(item) => item.id}
-        renderItem={(item, index) => (
-          <Box
-            style={{
-              height: '100%',
-              borderBottom: '1px solid var(--vx-surface-border)',
-              background: index % 2 === 0 ? VX.surface.bg : VX.surface.subtle,
-            }}
-          >
-            <Group px="xs" h="100%" justify="space-between" align="center" wrap="nowrap">
-              <Text size="sm">{item.label}</Text>
-              <Badge size="xs" variant="light">
-                {item.category}
-              </Badge>
-            </Group>
-          </Box>
-        )}
-      />
-    </Stack>
-  )
-}
-
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export function DataDemoPage() {
@@ -365,7 +307,7 @@ export function DataDemoPage() {
       />
 
       <Text size="sm" c="dimmed">
-        BasaltDataTable (TanStack Table + Mantine) + BasaltVirtualList (TanStack Virtual + Mantine)
+        BasaltDataTable (TanStack Table + Mantine)
       </Text>
 
       <Paper p="sm">
@@ -374,13 +316,11 @@ export function DataDemoPage() {
             About
           </Text>
           <Text size="sm">
-            The <code>./data</code> battery provides two headless-backed, Mantine-rendered
-            primitives: a sortable, filterable, paginated data table and a windowed virtual list.
-            Both optional peers (<code>@tanstack/react-table</code> +{' '}
-            <code>@tanstack/react-virtual</code>) must be installed by the consumer. The table's
-            toolbar (global search + faceted Select/MultiSelect filters), its pagination bar, and
-            sticky column pinning are all opt-in chrome — row selection is still out of scope for
-            1.0.
+            The <code>./table</code> battery provides a headless-backed, Mantine-rendered sortable,
+            filterable, paginated data table. The optional peer (<code>@tanstack/react-table</code>)
+            must be installed by the consumer. The table's toolbar (global search + faceted
+            Select/MultiSelect filters), its pagination bar, and sticky column pinning are all
+            opt-in chrome — row selection is still out of scope for 1.0.
           </Text>
         </Stack>
       </Paper>
@@ -395,8 +335,6 @@ export function DataDemoPage() {
               <TableSection />
               <Divider />
               <PinnedTableSection />
-              <Divider />
-              <VirtualListSection />
             </Stack>
           </Paper>
         </Tabs.Panel>

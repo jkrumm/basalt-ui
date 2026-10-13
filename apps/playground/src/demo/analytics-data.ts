@@ -7,7 +7,7 @@
  * it. The waves are plain trigonometry over the point index: same input, same series, every time.
  */
 
-import { createColumnHelper } from 'basalt-ui/data/table'
+import { createColumnHelper } from 'basalt-ui/table'
 
 export const CHANNEL_KEYS = ['direct', 'organic', 'referral', 'social', 'paid'] as const
 export type ChannelKey = (typeof CHANNEL_KEYS)[number]

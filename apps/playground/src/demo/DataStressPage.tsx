@@ -2,9 +2,7 @@
  * DataStressPage — audit-c-charts.md top-15 #6 and #14: `BasaltDataTable` with `manualPagination`
  * inside a `Section` under a sticky `PageBar` toolbar (store-bound `RangeFilter` + `SearchFilter`),
  * `stickyHeader` clearing the measured `--basalt-page-bar-h`, and `minWidth` forcing horizontal
- * scroll at phone width — plus `BasaltVirtualList` (imported from the narrow `basalt-ui/data/virtual`
- * subpath, audit-b-components.md #17) with a `LineSparkline` per row and the ref handle
- * (`scrollToIndex`/`scrollToEnd`).
+ * scroll at phone width.
  *
  * The toolbar this page demonstrates is REAL but no longer mounted here: `/data` folds this page
  * in as a tab, and Mantine keeps an inactive `Tabs.Panel` mounted, so a `PageBar` in this file was
@@ -13,17 +11,13 @@
  * tab is active — same store (`dataStressFilters`), same band, same published
  * `--basalt-page-bar-h` the table below clears.
  */
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { Button, Group, Stack, Text } from '@mantine/core'
+import { useEffect, useMemo, useState } from 'react'
+import { Stack, Text } from '@mantine/core'
 import { PageAside, Section } from 'basalt-ui'
-import type { QueryStateLike } from 'basalt-ui'
+import type { QueryStateLike } from './query-state-like'
 import { overlays } from 'basalt-ui/commands'
 import { ViewTabs } from 'basalt-ui/controls'
-import { BasaltDataTable, createColumnHelper } from 'basalt-ui/data/table'
-import { BasaltVirtualList } from 'basalt-ui/data/virtual'
-import type { BasaltVirtualListHandle } from 'basalt-ui/data/virtual'
-import { LineSparkline, VX } from 'basalt-ui/charts'
-import { notifySuccess, notifyUndo } from 'basalt-ui/notifications'
+import { BasaltDataTable, createColumnHelper } from 'basalt-ui/table'
 import type { PaginationState } from '@tanstack/react-table'
 import { createLocalStore, field } from 'basalt-ui/state'
 import { dataStressFilters } from './data-stress-store'
@@ -153,13 +147,19 @@ function ManualPaginationTable({
       title="Sessions"
       subtitle="manualPagination — the table renders exactly one page; the pager bar reads 'of N' from rowCount, not from data.length"
       count={filtered.length}
-      actions={
-        <ViewTabs
-          field={tableViews.field.queryVariant}
-          label="Query"
-          options={TABLE_QUERY_OPTIONS}
-        />
-      }
+      actions={[
+        {
+          key: 'actions',
+          kind: 'custom',
+          node: (
+            <ViewTabs
+              field={tableViews.field.queryVariant}
+              label="Query"
+              options={TABLE_QUERY_OPTIONS}
+            />
+          ),
+        },
+      ]}
     >
       <BasaltDataTable
         data={tableQuery.data ?? []}
@@ -182,12 +182,6 @@ function ManualPaginationTable({
         enableRowSelection
         bulkActions={(rows) => [
           {
-            key: 'export',
-            label: `Export ${rows.length}`,
-            onClick: () =>
-              notifySuccess(`Exported ${rows.length} session${rows.length === 1 ? '' : 's'}`),
-          },
-          {
             key: 'delete',
             label: 'Delete',
             danger: true,
@@ -198,15 +192,6 @@ function ManualPaginationTable({
                 onConfirm: () => {
                   const ids = rows.map((row) => row.id)
                   setRemovedIds((prev) => new Set([...prev, ...ids]))
-                  notifyUndo({
-                    message: `${rows.length} session${rows.length === 1 ? '' : 's'} deleted`,
-                    onUndo: () =>
-                      setRemovedIds((prev) => {
-                        const next = new Set(prev)
-                        for (const id of ids) next.delete(id)
-                        return next
-                      }),
-                  })
                 },
               })
             },
@@ -218,78 +203,10 @@ function ManualPaginationTable({
   )
 }
 
-// ── The virtualized list, narrow subpath + a sparkline per row + the imperative handle ──────────
-
-type ListRow = { id: number; label: string; trend: number[] }
-
-function trendFor(seed: number): number[] {
-  return Array.from(
-    { length: 12 },
-    (_, i) => 4 + Math.round(Math.sin((seed + i) / 2) * 3 + i * 0.4),
-  )
-}
-
-function VirtualListBlock() {
-  const listRef = useRef<BasaltVirtualListHandle>(null)
-  const items = useMemo<ListRow[]>(
-    () =>
-      Array.from({ length: 1_000 }, (_, i) => ({
-        id: i,
-        label: `Row #${String(i + 1).padStart(4, '0')}`,
-        trend: trendFor(i),
-      })),
-    [],
-  )
-
-  return (
-    <Section
-      title="BasaltVirtualList — narrow subpath, a sparkline per row"
-      subtitle="basalt-ui/data/virtual — the sub-path that never value-imports @tanstack/react-table"
-    >
-      <Group mb="xs" gap="xs">
-        <Button
-          size="compact-xs"
-          onClick={() => listRef.current?.scrollToIndex(500, { align: 'center' })}
-        >
-          Scroll to #0500
-        </Button>
-        <Button size="compact-xs" variant="default" onClick={() => listRef.current?.scrollToEnd()}>
-          Scroll to end
-        </Button>
-      </Group>
-      <BasaltVirtualList
-        ref={listRef}
-        items={items}
-        height={300}
-        estimateSize={44}
-        overscan={6}
-        getItemKey={(item) => item.id}
-        renderItem={(item, index) => (
-          <Group
-            px="xs"
-            h="100%"
-            justify="space-between"
-            align="center"
-            wrap="nowrap"
-            style={{
-              borderBottom: '1px solid var(--vx-surface-border)',
-              background: index % 2 === 0 ? VX.surface.bg : VX.surface.subtle,
-            }}
-          >
-            <Text size="sm">{item.label}</Text>
-            <LineSparkline data={item.trend} width={80} height={24} color={VX.line} />
-          </Group>
-        )}
-      />
-    </Section>
-  )
-}
-
 export function DataStressPage() {
   const [range] = dataStressFilters.field.range.use()
   const [query] = dataStressFilters.field.query.use()
-  // The optimistic-delete lane the table's bulk action writes to; `notifyUndo`'s `onUndo` restores
-  // an id, `onExpire` is where a real app would commit the mutation.
+  // The delete lane the table's bulk action writes to.
   const [removedIds, setRemovedIds] = useState<ReadonlySet<number>>(new Set())
 
   // Derived at PAGE level, not inside the table, because the aside reads the same set: a detail
@@ -331,7 +248,6 @@ export function DataStressPage() {
         setRemovedIds={setRemovedIds}
         onRowActivate={(row) => setSelectedId(row.id)}
       />
-      <VirtualListBlock />
 
       <PageAside title="Session detail" persistKey="data-stress">
         {selected === null ? (

@@ -1,22 +1,11 @@
-// The compile-time regression guard for `WidgetGrid.Item`'s `span` union, `StatGroup`'s `cols`
-// union, and `Section`'s `actions` prop accepting both halves of `SlotActions` (law C15).
+// The compile-time regression guard for `StatGroup`'s `cols` union and `Section`'s action budget,
+// written from the CONSUMER's vantage (the built `basalt-ui` entry, not `src/`). Each
+// `@ts-expect-error` is proven by `tsc --noEmit`; an unused directive fails the build.
+import { Section, StatGroup } from 'basalt-ui'
+import type { BarAction } from 'basalt-ui/controls'
 import type { ReactNode } from 'react'
-import { Section, StatGroup, WidgetGrid } from 'basalt-ui'
-import type { BarAction } from 'basalt-ui'
 
-// ── 1. WidgetGrid.Item span — WidgetGridCols = 1 | 2 | 3 | 4 ────────────────────────────────────
-
-export function Grid(): ReactNode {
-  return (
-    <WidgetGrid>
-      <WidgetGrid.Item span={2}>a</WidgetGrid.Item>
-      {/* @ts-expect-error 5 is not a WidgetGridCols member (1 | 2 | 3 | 4) */}
-      <WidgetGrid.Item span={5}>b</WidgetGrid.Item>
-    </WidgetGrid>
-  )
-}
-
-// ── 2. StatGroup cols — StatGroupCols = 2 | 3 | 4 | 5 ────────────────────────────────────────────
+// ── 1. StatGroup cols — StatGroupCols = 2 | 3 | 4 | 5 ────────────────────────────────────────────
 
 export function Group(): ReactNode {
   return (
@@ -30,22 +19,24 @@ export function Group(): ReactNode {
   )
 }
 
-// ── 3. Section actions — SlotActions = BarAction[] | ReactNode (law C15) ────────────────────────
+// ── 2. Section actions — at most three typed actions (law C6) ───────────────────────────────────
 
-const barActions: BarAction[] = [{ key: 'export', label: 'Export' }]
+const action: BarAction = { key: 'export', label: 'Export' }
+const four: [BarAction, BarAction, BarAction, BarAction] = [action, action, action, action]
 
 export function Actions(): ReactNode {
   return (
     <>
-      <Section title="Typed actions" actions={barActions}>
+      <Section title="Typed actions" actions={[action, action, action]}>
         body
       </Section>
-      <Section title="Node actions" actions={<button type="button">Custom</button>}>
+      {/* @ts-expect-error a fourth action is over the budget */}
+      <Section title="Too many" actions={four}>
         body
       </Section>
     </>
   )
 }
 
-// PROVES: WidgetGrid.Item's span and StatGroup's cols reject out-of-range literals at the
-// consumer/dist vantage, and Section's actions slot takes either half of SlotActions with no cast.
+// PROVES: StatGroup's cols rejects out-of-range literals and Section's actions tuple caps at three,
+// at the consumer/dist vantage.

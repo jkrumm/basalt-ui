@@ -8,8 +8,7 @@
  * and builds each destination's `<Link>` anchor, which is what deleted the old `withActive` walk
  * and the two render callbacks.
  *
- * Consumed by `routes/__root.tsx` (sidebar + mobile bar) and `demo/palette-actions.tsx` (Spotlight
- * pages). It imports NOTHING from `routes/` or `routeTree.gen`, so either side can read it without
+ * Consumed by `routes/__root.tsx` (sidebar + mobile bar). It imports NOTHING from `routes/` or `routeTree.gen`, so either side can read it without
  * a cycle.
  *
  * Shrunk from ~45 destinations to 14 (consolidation wave C3, audit E §7): every route this file
@@ -19,7 +18,7 @@
 import { Text } from '@mantine/core'
 import { linkOptions } from '@tanstack/react-router'
 import type { SidebarBlock } from 'basalt-ui'
-import { defineNav, navGroup } from 'basalt-ui/router-tanstack'
+import { defineNav, navGroup } from 'basalt-ui'
 import { cbbiFilters } from './cbbi/cbbi-store'
 import { dashboardFilters } from './dashboard-range-store'
 import {
@@ -29,7 +28,6 @@ import {
   IconChart,
   IconComponents,
   IconDashboard,
-  IconPalette,
   IconSettings,
   IconSparkle,
 } from './icons'
@@ -113,19 +111,6 @@ export const NAV = defineNav({
           label: 'Forms',
           icon: <IconComponents />,
           link: linkOptions({ to: '/forms' }),
-        },
-        {
-          id: 'notifications',
-          label: 'Notifications',
-          short: 'Notify',
-          icon: <IconActivity />,
-          link: linkOptions({ to: '/notifications' }),
-        },
-        {
-          id: 'commands',
-          label: 'Commands',
-          icon: <IconPalette />,
-          link: linkOptions({ to: '/commands' }),
         },
         {
           id: 'content',
