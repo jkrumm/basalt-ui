@@ -118,7 +118,7 @@ Charts), `docs/CHARTS-SPEC.md`, `docs/DESIGN-CORE.md`, `packages/basalt-ui/MAINT
     re-run them before any Table 9.3.x bump (9.3.1 was blocked by `minimumReleaseAge` until
     2026-10-15).
 - **Flake for W2:** the layout test `shell chrome … with the inset unset the zone is exactly as it
-was` fails intermittently under load (rail measured 171 px, expected 48 px). Clean master passed
+  was` fails intermittently under load (rail measured 171 px, expected 48 px). Clean master passed
   3/3 and direct `make check` passed on every merged SHA, while the merge train failed on it every
   time (5/5), so suspect the train's environment (`host_run`) before load. #111 and #113 merged with `--no-check` after a
   direct `make check` exited 0 on the exact SHA. W2's harness reuses the layout infrastructure, so
@@ -170,20 +170,48 @@ was` fails intermittently under load (rail measured 171 px, expected 48 px). Cle
   `lighthouse` and `index.ts` decomposition; `fmt` does not cover `scripts/`. The spike-branch
   numbers from W1 are still cited until W4/W6 port their tests (W1 deferral stands).
 
-## Wave 3 — Foundation: toolchain, deletions, skeleton <!-- status: active -->
+## Wave 3 — Foundation: toolchain, deletions, skeleton <!-- status: done -->
 
-- [ ] Toolchain per audit H W1: Mantine ^9.7, React 19.3, Query 5.104, AI SDK 7.0.138, shiki 4.5,
+- [x] Toolchain per audit H W1: Mantine ^9.7, React 19.3, Query 5.104, AI SDK 7.0.138, shiki 4.5,
       remend 1.4 (plus `incomplete-image` hardening), motion 14, Hotkeys 0.13, oxlint 1.88, oxfmt 0.72,
       root tooling. TypeScript stays 6.x until 7.1 ships an API.
-- [ ] Delete everything the spec marks "not in 2.0" (1.x shims, on-notice exports, dead subpaths).
+- [x] Delete everything the spec marks "not in 2.0" (1.x shims, on-notice exports, dead subpaths).
       Write each removal into `MIGRATING.md` § 2.0.
-- [ ] The 2.0 subpath skeleton and the budgets (`check-budgets.ts`) reset to the spec's targets.
-- [ ] The provider/wiring contract implemented (`BasaltProvider` plus TanStack wiring per the
+- [x] The 2.0 subpath skeleton and the budgets (`check-budgets.ts`) reset to the spec's targets.
+- [x] The provider/wiring contract implemented (`BasaltProvider` plus TanStack wiring per the
       spec), with playground root and `agent/templates/__root.tpl` on it.
 
 **Left behind:**
 
-## Wave 4 — Chart engine on TanStack Charts <!-- status: pending -->
+- **Landed:** #122 toolchain, then #127 as three linear commits on `master`: `refactor:` package,
+  `chore:` playground/docs/root, and the ONE designated `feat:` commit carrying `BREAKING CHANGE:`
+  (release.sh's gate is now satisfiable; nothing was released). Four topic PRs (#123 gates, #124
+  agent/data, #125 provider, #126 core) built in parallel were integrated on `w3/integrate` and closed
+  as superseded; the merge train cannot rebase merge commits, so a topic-merge history has to be
+  linearised first. Evidence index: `docs/waves/evidence/w3.md` (−15k lines net; budgets all green).
+- **Toolchain floors:** Mantine ^9.7, React 19.3, Query ^5.104, `ai` ^7.0.137, shiki ^4.5, remend 1.4.0 +
+  `incomplete-image` hardening, motion 14.1.0, hotkeys 0.13.0, oxfmt ^0.72. **Blocked by
+  `minimumReleaseAge`, re-check later:** motion 14.2.0, oxlint 1.88 (on ^1.87). The new React-compiler
+  oxlint rules and `no-constant-binary-expression` are off in the root and playground configs (about 90
+  hits, mostly `src/charts/**`): W4 turns them back on for the chart layer.
+- **Deviations from V2-SPEC, to resolve in the named wave:**
+  - non-chart value symbols 97 vs 92: four helpers exist only for `./charts` (W4 deletes), plus `useNav`
+    on the root barrel because `BasaltShell` has no `nav` prop yet (W7).
+  - `@tanstack/react-table` is still `>=8 <9`; the 9.2.8 exact pin lands with Table v9 (W6).
+  - `ThemeToggle` still imports `motion` at the root (spec § 5 drops it, W7); the peer-class gate carries
+    a deferred list for it and for `ai`/`@ai-sdk/provider`/hotkeys/`dayjs` classifications (W7/W8).
+  - rule lines 734 (target 450) and charts 97 (48) are gated at landed values.
+  - `src/charts/utils/format.ts` import paths were edited once to compile; W4 will see a small conflict.
+- **Not done / owner of the gap:** `no-dev-helper` fixtures and the `router-view-transition` rule (W9);
+  `*.type-guard` fixtures exist for the §3 rows implemented, `BasaltEvent` and `createBasaltRouter`
+  defaults tests exist; `chat.turn` has a type and no source (W8).
+- **chat-profile evidence lane is blind** until W8 (its page is deleted surface); every other lane ran.
+- **Open owner-less review nits (accepted):** notify.tsx duplication with `state/persisted.ts`, `cli/init`
+  vs `sync` clones, `surface-scan/*` hard-coded paths, `peer_array` eval in pack-test.sh.
+- **Spotlight `when()`** is recomputed on open; `defineNav` is a last-write-wins global (mirrors
+  `defineCommands`), revisit when W7 gives `BasaltShell` its `nav` prop.
+
+## Wave 4 — Chart engine on TanStack Charts <!-- status: active -->
 
 - [ ] Chart core: the composition rung, theme bridge, shared cursor/focus sync, tooltip (Mantine-free
       in the chart layer), axes/format, zones and thresholds, dual-axis, responsive and plot-first
