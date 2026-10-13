@@ -108,60 +108,98 @@ function hasRelevantRuleOverride(
 // legitimately reads a ref in render / sets state in an effect (measure-then-render, hydration
 // seeds, test harnesses that reassign a module-level spy). One block per rule, listed by file —
 // never a blanket off. Delete an entry when its file is reworked; the sync test pins the output.
-const P = 'packages/basalt-ui/'
-const REPO_COMPILER_RULE_EXEMPTIONS: readonly { rule: string; reason: string; files: string[] }[] =
-  [
-    {
-      rule: 'react/globals',
-      reason: 'test harnesses reassign a module-level spy/probe declared outside the component',
-      files: [
-        `${P}src/agent/use-agent-thread-runs.wedge.test.tsx`,
-        `${P}src/theme/use-basalt-spacing.test.tsx`,
-      ],
-    },
-    {
-      rule: 'react/immutability',
-      reason: 'a stable-callback ref written during render / a test mutating a captured fixture',
-      files: [`${P}src/agent/chat/thread-message.tsx`, `${P}src/router-tanstack/use-nav.test.tsx`],
-    },
-    {
-      rule: 'react/incompatible-library',
-      reason: 'TanStack Table useReactTable returns unmemoizable functions; the table is the host',
-      files: [`${P}src/table/data-table.tsx`],
-    },
-    {
-      rule: 'react/refs',
-      reason: 'latest-value / measured-width refs read during render by design (pre-compiler code)',
-      files: [
-        `${P}src/agent/chat/composer.tsx`,
-        `${P}src/agent/chat/thread-message.tsx`,
-        `${P}src/common/use-measured-widths.ts`,
-        `${P}src/content/article-layout.tsx`,
-        `${P}src/content/mermaid.tsx`,
-        `${P}src/controls/filter-context.tsx`,
-        `${P}src/controls/number-filter.tsx`,
-        `${P}src/controls/search-filter.tsx`,
-        `${P}src/dashboard/stat-card.tsx`,
-        `${P}src/provider/index.tsx`,
-        `${P}src/shell/page-bar.tsx`,
-        `${P}src/table/data-table.tsx`,
-      ],
-    },
-    {
-      rule: 'react/set-state-in-effect',
-      reason: 'effect-seeded state (hydration, prop-sync, mount flags) that predates the rule',
-      files: [
-        `${P}src/agent/chat/thread-feed.tsx`,
-        `${P}src/commands/ShortcutsHelp.tsx`,
-        `${P}src/controls/filter-set.tsx`,
-        `${P}src/controls/sync-button.tsx`,
-        `${P}src/provider/index.tsx`,
-        `${P}src/table/data-table.tsx`,
-        `${P}src/theme-lab/derive-controls.tsx`,
-        `${P}tests/layout/fixture/fixtures.tsx`,
-      ],
-    },
-  ]
+export const PKG_ROOT = 'packages/basalt-ui/'
+
+/** The React-compiler rules plus its sibling, `error` at the top level of both repo configs. */
+export const COMPILER_RULES = [
+  'react/globals',
+  'react/immutability',
+  'react/incompatible-library',
+  'react/preserve-manual-memoization',
+  'react/refs',
+  'react/set-state-in-effect',
+  'no-constant-binary-expression',
+] as const
+
+type CompilerRuleExemption = { rule: string; reason: string; files: OverrideBlock['files'] }
+
+export const REPO_COMPILER_RULE_EXEMPTIONS: readonly CompilerRuleExemption[] = [
+  {
+    rule: 'react/globals',
+    reason: 'test harnesses reassign a module-level spy/probe declared outside the component',
+    files: [
+      `${PKG_ROOT}src/agent/use-agent-thread-runs.wedge.test.tsx`,
+      `${PKG_ROOT}src/theme/use-basalt-spacing.test.tsx`,
+    ],
+  },
+  {
+    rule: 'react/immutability',
+    reason: 'a stable-callback ref written during render / a test mutating a captured fixture',
+    files: [
+      `${PKG_ROOT}src/agent/chat/thread-message.tsx`,
+      `${PKG_ROOT}src/router-tanstack/use-nav.test.tsx`,
+    ],
+  },
+  {
+    rule: 'react/incompatible-library',
+    reason: 'TanStack Table useReactTable returns unmemoizable functions; the table is the host',
+    files: [`${PKG_ROOT}src/table/data-table.tsx`],
+  },
+  {
+    rule: 'react/refs',
+    reason: 'latest-value / measured-width refs read during render by design (pre-compiler code)',
+    files: [
+      `${PKG_ROOT}src/agent/chat/composer.tsx`,
+      `${PKG_ROOT}src/agent/chat/thread-message.tsx`,
+      `${PKG_ROOT}src/common/use-measured-widths.ts`,
+      `${PKG_ROOT}src/content/article-layout.tsx`,
+      `${PKG_ROOT}src/content/mermaid.tsx`,
+      `${PKG_ROOT}src/controls/filter-context.tsx`,
+      `${PKG_ROOT}src/controls/number-filter.tsx`,
+      `${PKG_ROOT}src/controls/search-filter.tsx`,
+      `${PKG_ROOT}src/dashboard/stat-card.tsx`,
+      `${PKG_ROOT}src/provider/index.tsx`,
+      `${PKG_ROOT}src/shell/page-bar.tsx`,
+      `${PKG_ROOT}src/table/data-table.tsx`,
+    ],
+  },
+  {
+    rule: 'react/set-state-in-effect',
+    reason: 'effect-seeded state (hydration, prop-sync, mount flags) that predates the rule',
+    files: [
+      `${PKG_ROOT}src/agent/chat/thread-feed.tsx`,
+      `${PKG_ROOT}src/commands/ShortcutsHelp.tsx`,
+      `${PKG_ROOT}src/controls/filter-set.tsx`,
+      `${PKG_ROOT}src/controls/sync-button.tsx`,
+      `${PKG_ROOT}src/provider/index.tsx`,
+      `${PKG_ROOT}src/table/data-table.tsx`,
+      `${PKG_ROOT}src/theme-lab/derive-controls.tsx`,
+      `${PKG_ROOT}tests/layout/fixture/fixtures.tsx`,
+    ],
+  },
+]
+
+/** Paths are relative to `apps/playground` (oxlint resolves a nested config's globs from its dir). */
+export const PLAYGROUND_COMPILER_RULE_EXEMPTIONS: readonly CompilerRuleExemption[] = [
+  {
+    rule: 'react/set-state-in-effect',
+    reason: 'demo page seeds state from an effect; predates the rule',
+    files: ['src/demo/DataStressPage.tsx'],
+  },
+  {
+    rule: 'react/preserve-manual-memoization',
+    reason: 'demo panel memoizes over a mutable dependency; predates the rule',
+    files: ['src/demo/cbbi/CbbiPanel.tsx'],
+  },
+]
+
+/** The playground's `overrides`, pinned against `apps/playground/.oxlintrc.json` by the sync test. */
+export function projectPlaygroundOverrides(): OverrideBlock[] {
+  return PLAYGROUND_COMPILER_RULE_EXEMPTIONS.map(({ rule, files }) => ({
+    files,
+    rules: { [rule]: 'off' },
+  }))
+}
 
 export function projectBanList(target: Target): OverrideBlock[] {
   const blocks: OverrideBlock[] = []
@@ -247,11 +285,7 @@ export function projectBanList(target: Target): OverrideBlock[] {
     )
     if (hasNoConsole) {
       blocks.push({
-        files: [
-          'packages/basalt-ui/src/cli/**',
-          'packages/basalt-ui/bin/**',
-          'packages/basalt-ui/scripts/**',
-        ],
+        files: [`${PKG_ROOT}src/cli/**`, `${PKG_ROOT}bin/**`, `${PKG_ROOT}scripts/**`],
         rules: { 'no-console': 'off' },
       })
     }
