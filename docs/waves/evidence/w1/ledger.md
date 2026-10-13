@@ -7,17 +7,17 @@ Base: `origin/master` @ `3f6e5fc`. Spike: branch `spike/w1-ledger` @
 
 ## Versions (`npm view <pkg> version`, 2026-10-13)
 
-| Package                                             | Latest                    | Published  | Note                                                    |
-| --------------------------------------------------- | ------------------------- | ---------- | ------------------------------------------------------- |
-| `@tanstack/react-table` / `table-core`              | 9.3.1 / 9.3.1             | 2026-10-12 | inside the 3-day `minimum-release-age` until 2026-10-15 |
-| `@tanstack/react-store` / `store`                   | 0.11.2 / 0.11.2           | 2026-09-29 | `1.0.0-alpha.0` published 2026-10-10                    |
-| `@tanstack/react-pacer` / `pacer`                   | 0.24.1 / 0.23.1           | 2026-10-05 |                                                         |
-| `@tanstack/react-db` / `db` / `query-db-collection` | 0.5.8 / 0.13.0 / 1.4.3    | 2026-10-10 |                                                         |
-| `@tanstack/react-devtools` / `devtools`             | 0.10.13 / 0.15.0          | 2026-09-23 |                                                         |
-| `@tanstack/react-hotkeys` / `hotkeys`               | 0.13.0 / 0.11.0           | 2026-10-04 | 0.10.0 → core 0.8.0                                     |
-| `@tanstack/react-form` / `form-core`                | 1.33.5 / 1.33.5           | 2026-08-11 | `2.0.0-alpha.2` published 2026-08-21                    |
-| `@tanstack/ai` / `ai-react`                         | 0.68.0 / 0.30.3           | 2026-10-09 | 100 versions, 13 in the last 30 days                    |
-| `ai` / `@ai-sdk/react` / `@mantine/form`            | 7.0.138 / 4.0.141 / 9.7.2 | 2026-10-12 |                                                         |
+| Package                                             | Latest                    | Published  | Note                                                  |
+| --------------------------------------------------- | ------------------------- | ---------- | ----------------------------------------------------- |
+| `@tanstack/react-table` / `table-core`              | 9.3.1 / 9.3.1             | 2026-10-12 | inside the 3-day `minimumReleaseAge` until 2026-10-15 |
+| `@tanstack/react-store` / `store`                   | 0.11.2 / 0.11.2           | 2026-09-29 | `1.0.0-alpha.0` published 2026-10-10                  |
+| `@tanstack/react-pacer` / `pacer`                   | 0.24.1 / 0.23.1           | 2026-10-05 |                                                       |
+| `@tanstack/react-db` / `db` / `query-db-collection` | 0.5.8 / 0.13.0 / 1.4.3    | 2026-10-10 |                                                       |
+| `@tanstack/react-devtools` / `devtools`             | 0.10.13 / 0.15.0          | 2026-09-23 |                                                       |
+| `@tanstack/react-hotkeys` / `hotkeys`               | 0.13.0 / 0.11.0           | 2026-10-04 | 0.10.0 → core 0.8.0                                   |
+| `@tanstack/react-form` / `form-core`                | 1.33.5 / 1.33.5           | 2026-08-11 | `2.0.0-alpha.2` published 2026-08-21                  |
+| `@tanstack/ai` / `ai-react`                         | 0.68.0 / 0.30.3           | 2026-10-09 | 100 versions, 13 in the last 30 days                  |
+| `ai` / `@ai-sdk/react` / `@mantine/form`            | 7.0.138 / 4.0.141 / 9.7.2 | 2026-10-12 |                                                       |
 
 Dependency facts (`npm view <pkg>@<ver> dependencies peerDependencies`):
 
@@ -38,14 +38,16 @@ bun add -d "@tanstack/react-table-v9@npm:@tanstack/react-table@9.2.8" \
   "@tanstack/react-hotkeys-v13@npm:@tanstack/react-hotkeys@0.13.0" "@tanstack/react-pacer@0.24.1"
 ```
 
-9.2.8, not 9.3.1: `~/.bunfig.toml`'s 3-day `minimum-release-age` refuses 9.3.1 until 2026-10-15.
+9.2.8, not 9.3.1: `~/.bunfig.toml`'s 3-day `minimumReleaseAge` refuses 9.3.1 until 2026-10-15.
 Aliases keep v8/0.10 (the incumbents the playground already uses) side by side with the candidates.
 
 ## Bytes
 
 Isolated: `SPIKE_ENTRY=src/spike/<f> bunx vite build -c spike.vite.config.ts`. React, react-dom and
-`@mantine/core` stay external, and so does `@mantine/hooks`. basalt 1.41 marks it an optional peer, but `@mantine/core` 9.7.2 peers it
-exactly and non-optionally, so every basalt app has it. `_nostore` means
+`@mantine/core` stay external, and so does `@mantine/hooks`. basalt 1.41 marks it an optional peer, but `@mantine/core` 9.3.0 (as resolved in `master`'s
+`bun.lock:727`) peers `@mantine/hooks` exactly and non-optionally, so every basalt app has it. The
+spike tree resolved `@mantine/hooks` 9.3.0 too, and `@mantine/core` 9.7.2 on npm keeps the same
+peer. `_nostore` means
 `@tanstack/{react-,}store` was also external. The gzip comes from `zlib.gzipSync` over every emitted `.js`.
 
 | Entry                                             | gzip B | `_nostore` | Non-comment LOC |
