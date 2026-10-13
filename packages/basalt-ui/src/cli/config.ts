@@ -120,7 +120,8 @@ export type BasaltConfig = {
   seriesModulePath?: string
   /**
    * Per-rule, per-path exemptions — complements whole-file `exempt` (which skips ALL rules for a
-   * file) and the hardcoded per-kind `appliesTo` scoping (e.g. `raw-color-fn` → non-chart files). Each value is a list of patterns matched against a finding's relative path. A pattern
+   * file) and the hardcoded per-kind `appliesTo` scoping (e.g. `raw-html-layout` → non-chart
+   * files). Each value is a list of patterns matched against a finding's relative path. A pattern
    * may be a whole path segment (`'agent'` matches `src/agent/x.tsx`, not `src/agenting.ts`), a
    * relative path (`'public/site.webmanifest'`), a directory prefix, or a glob — `*` stops at `/`,
    * `**` does not, and a slash-free glob also matches the basename, so `'*.module.css'` works.

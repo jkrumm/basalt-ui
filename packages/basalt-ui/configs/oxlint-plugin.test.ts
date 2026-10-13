@@ -324,6 +324,33 @@ describe('basalt/chart-engine-boundary', () => {
     expect(output).toContain('basalt-ui/charts')
   })
 
+  it.each([
+    "const m = require('@visx/scale')\n",
+    "const m = require('@tanstack/charts')\n",
+    "const m = require('@tanstack/charts/react')\n",
+    "const m = require('@tanstack/charts/scales/../react')\n",
+  ])('bans a literal require: %s', (source) => {
+    const { code, rules } = run(`${source}export { m }\n`, 'lib.ts')
+    expect([source, code]).toEqual([source, 1])
+    expect(rules).toContain('chart-engine-boundary')
+  })
+
+  it('allows a literal require of an allowed subpath and ignores computed ones', () => {
+    const { code } = run(
+      `const a = require('@tanstack/charts/line')\nconst b = require(name)\nexport { a, b }\n`,
+      'lib.ts',
+    )
+    expect(code).toBe(0)
+  })
+
+  it('bans a traversal out of an allowed family', () => {
+    const { rules } = run(
+      `import * as m from '@tanstack/charts/scales/../react'\nexport { m }\n`,
+      'lib.ts',
+    )
+    expect(rules).toContain('chart-engine-boundary')
+  })
+
   it('bans a re-export of the bare root outside basalt', () => {
     const { rules } = run(`export { defineChart } from '@tanstack/charts'\n`, 'lib.ts')
     expect(rules).toContain('chart-engine-boundary')
@@ -347,6 +374,28 @@ describe('basalt/chart-engine-boundary', () => {
   })
 })
 
+describe('isAllowedChartEngineSubpath', () => {
+  it.each([...CHART_ENGINE_ALLOWED_SUBPATHS, 'scales/linear', 'transform/bin-time'])(
+    'allows %s',
+    (subpath) => expect(isAllowedChartEngineSubpath(subpath)).toBe(true),
+  )
+
+  it.each([
+    '',
+    'scales',
+    'scales/',
+    'transform',
+    'transform/',
+    'react',
+    'line/extra',
+    'scales/../react',
+    'scales/./linear',
+    'scales//linear',
+    '../line',
+    'line/..',
+  ])('rejects %j', (subpath) => expect(isAllowedChartEngineSubpath(subpath)).toBe(false))
+})
+
 // ── chart-host-single ────────────────────────────────────────────────────────
 
 describe('basalt/chart-host-single', () => {
@@ -360,20 +409,48 @@ describe('basalt/chart-host-single', () => {
   it.each([
     'packages/basalt-ui/src/charts/kinds/lines.tsx',
     'packages/basalt-ui/src/charts/host.ts',
-    'apps/playground/src/chart.tsx',
-    'host.tsx',
+    'packages/basalt-ui/src/chart.tsx',
   ])('flags it in %s', (file) => {
     const { code, rules } = run(REACT_IMPORT, file)
     expect([file, code]).toEqual([file, 1])
     expect(rules).toContain('chart-host-single')
   })
 
+  it('stays silent outside basalt source — chart-engine-boundary owns that one diagnostic', () => {
+    for (const file of ['apps/playground/src/chart.tsx', 'host.tsx']) {
+      const { rules } = run(REACT_IMPORT, file)
+      expect([file, rules.has('chart-host-single')]).toEqual([file, false])
+    }
+  })
+
+  it('is not waived by theme-allow', () => {
+    const { rules } = run(
+      `// theme-allow chart-host-single — just this once\n${REACT_IMPORT}`,
+      'packages/basalt-ui/src/charts/kinds/lines.tsx',
+    )
+    expect(rules).toContain('chart-host-single')
+  })
+
+  it('flags require() of the react entry', () => {
+    const { rules } = run(
+      `const { Chart } = require('@tanstack/charts/react')\nexport { Chart }\n`,
+      'packages/basalt-ui/src/charts/a.ts',
+    )
+    expect(rules).toContain('chart-host-single')
+  })
+
   it('flags the react sub-entries and a dynamic import too', () => {
     expect(
-      run(`import 'x'\nexport * from '@tanstack/charts/react/tooltip'\n`, 'a.ts').rules,
+      run(
+        `import 'x'\nexport * from '@tanstack/charts/react/tooltip'\n`,
+        'packages/basalt-ui/src/a.ts',
+      ).rules,
     ).toContain('chart-host-single')
     expect(
-      run(`export const l = () => import('@tanstack/charts/react')\n`, 'b.ts').rules,
+      run(
+        `export const l = () => import('@tanstack/charts/react')\n`,
+        'packages/basalt-ui/src/b.ts',
+      ).rules,
     ).toContain('chart-host-single')
   })
 
@@ -403,28 +480,30 @@ const BANNED_ENGINE_SUBPATHS: readonly string[] = [
   'cursor',
   'cursor/host',
   'd3/area-x',
-  'dom',
   'dodge',
+  'dom',
   'export',
   'facet',
   'focus',
+  'focus/disabled',
   'focus/guide',
   'focus/mark',
-  'focus/disabled',
   'frame',
-  'group',
   'geo',
+  'group',
   'hexagon',
+  'hierarchy/sunburst',
   'hierarchy/tree',
   'hierarchy/treemap',
-  'hierarchy/sunburst',
-  'interaction/signal',
   'interaction/brush',
   'interaction/cursor',
   'interaction/handle',
+  'interaction/signal',
   'interaction/zoom',
   'legend',
   'lit',
+  'mark/composite',
+  'mark/scale-values',
   'motion',
   'motion/definition',
   'network/force',
@@ -432,43 +511,41 @@ const BANNED_ENGINE_SUBPATHS: readonly string[] = [
   'octane',
   'octane/canvas',
   'octane/core',
-  'mark/composite',
-  'spring',
-  'spatial/contour',
-  'spatial/delaunay',
-  'spatial/density',
-  'spatial/hexbin',
-  'spatial/voronoi',
-  'svelte',
-  'mark/scale-values',
   'polar',
   'preact',
   'react',
+  'react-native',
+  'react-native/tooltip',
   'react/canvas',
   'react/core',
   'react/tooltip',
-  'react-native',
-  'react-native/tooltip',
-  'universal',
   'reconcile',
   'regression',
-  'selection',
   'renderer',
   'renderer/rect',
   'ridgeline',
   'runtime',
   'scene',
+  'selection',
   'solid',
+  'spatial/contour',
+  'spatial/delaunay',
+  'spatial/density',
+  'spatial/hexbin',
+  'spatial/voronoi',
+  'spring',
+  'svelte',
   'svg',
   'svg/renderer',
   'svg/resources',
-  'transform',
   'tooltip',
   'tooltip/model',
   'tooltip/portal',
+  'transform',
   'types/core',
-  'violin',
+  'universal',
   'view',
+  'violin',
   'vue',
   'waffle',
 ]
@@ -572,7 +649,7 @@ describe('rule independence', () => {
     )
     const { code, rules } = run(
       `import { scaleLinear } from '@visx/scale'\nimport { Chart } from '@tanstack/charts/react'\n`,
-      'lib.ts',
+      'packages/basalt-ui/src/lib.ts',
     )
     expect(code).toBe(1)
     expect(rules).not.toContain('chart-engine-boundary')

@@ -171,7 +171,7 @@ export type GuardConfig = {
   /**
    * Per-rule, per-path exemptions — complements whole-file `exempt` (BasaltConfig, which skips
    * ALL rules for a file) and code-level `appliesTo` (hardcoded per-kind path scoping, e.g.
-   * raw-color-fn → non-chart files). This is the config-driven counterpart: a consumer can say
+   * raw-html-layout → non-chart files). This is the config-driven counterpart: a consumer can say
    * "kind K does not apply under path P" without exempting the whole file or forking the rule.
    *
    * Each value is a list of path-segment patterns matched against a finding's `relPath`. A pattern
