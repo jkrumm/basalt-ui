@@ -649,13 +649,13 @@ and `../common`.
 `ZonedLine` + engine, gzip, `react` external: 57 642 B (visx) → 72 114 B (+25.1 %). All other
 numbers and the commands: `docs/waves/evidence/w1/charts.md`.
 
+**Accepted** (owner, 2026-10-13): the first chart's +14.5 KB gzip, for SSR, a11y and the marks.
+
 **Open:**
 
-1. **Engine cost.** The first chart costs +14.5 KB gzip. Is that accepted in exchange for SSR,
-   first-party a11y and the mark catalogue?
-2. **Hatch.** 5 linewatch charts hatch the absent state; TanStack's SVG resources are gradients and
+1. **Hatch.** 5 linewatch charts hatch the absent state; TanStack's SVG resources are gradients and
    clips only. A custom hatch mark, or a flat `--vx-neutral` absent fill?
-3. **Legend hover emphasis.** Either rebuild the definition per hover, or use TanStack mark `states`
+2. **Legend hover emphasis.** Either rebuild the definition per hover, or use TanStack mark `states`
    with `interactiveColorLegend`. The latter cannot show legend-only entries and keeps hidden series
    in the domains.
 
@@ -664,17 +664,17 @@ numbers and the commands: `docs/waves/evidence/w1/charts.md`.
 Index of every section's **Open** list; the section holds the detail. Owner calls first, then the wave
 that settles each engineering question.
 
-| #   | Question                                                                         | Section  | Settled by       |
-| --- | -------------------------------------------------------------------------------- | -------- | ---------------- |
-| 1   | Accept the engine's +14.5 KB gzip on the first chart for SSR, a11y, marks?       | § 9 Open | owner, before W4 |
-| 2   | Accept Table v9's +4 070 B (+6 969 B without Store dedupe), or offset in W6?     | § 8 Open | owner, before W6 |
-| 3   | `./styles.css` importing Mantine's layer CSS resolves in a scratch install       | § 1 Open | W3 pack-test     |
-| 4   | `ModalsProvider` wrapping the tree: `modals.*` re-render cost                    | § 2 Open | W3               |
-| 5   | `<ViewTransition>` fallback without `document.startViewTransition`               | § 5 Open | W7 evidence      |
-| 6   | `@hyperdx/browser` registers the global OTel tracer provider?                    | § 7 Open | W11              |
-| 7   | `chat.turn` cannot parent the chat `fetch` span; join on `basalt.chat.thread_id` | § 7 Open | W8               |
-| 8   | Absent-state hatch: custom mark or flat `--vx-neutral` fill                      | § 9 Open | W5               |
-| 9   | Legend hover emphasis: rebuild per hover or mark `states`                        | § 9 Open | W4               |
+| #   | Question                                                                         | Section  | Settled by                 |
+| --- | -------------------------------------------------------------------------------- | -------- | -------------------------- |
+| 1   | Accept the engine's +14.5 KB gzip on the first chart for SSR, a11y, marks?       | § 9.9    | owner: accepted 2026-10-13 |
+| 2   | Accept Table v9's +4 070 B (+6 969 B without Store dedupe), or offset in W6?     | § 8 Open | owner, before W6           |
+| 3   | `./styles.css` importing Mantine's layer CSS resolves in a scratch install       | § 1 Open | W3 pack-test               |
+| 4   | `ModalsProvider` wrapping the tree: `modals.*` re-render cost                    | § 2 Open | W3                         |
+| 5   | `<ViewTransition>` fallback without `document.startViewTransition`               | § 5 Open | W7 evidence                |
+| 6   | `@hyperdx/browser` registers the global OTel tracer provider?                    | § 7 Open | W11                        |
+| 7   | `chat.turn` cannot parent the chat `fetch` span; join on `basalt.chat.thread_id` | § 7 Open | W8                         |
+| 8   | Absent-state hatch: custom mark or flat `--vx-neutral` fill                      | § 9 Open | W5                         |
+| 9   | Legend hover emphasis: rebuild per hover or mark `states`                        | § 9 Open | W4                         |
 
 Resolved by the lead in W1: § 9 keeps 8 1.x value names and adds a handful (`Lines`, `Sparkline`,
 `chartCursor`, …), well inside § 1's 48 allowance, so the ≤ 140 value ceiling stands; W3 sets the
