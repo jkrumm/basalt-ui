@@ -245,6 +245,21 @@ describe('shared cursor', () => {
     expect(document.querySelectorAll('[aria-live]').length).toBe(1)
   })
 
+  test('a re-render (new series identity) keeps the live cursor state', async () => {
+    const el = await hoverAOverB()
+    expect(chartCursor().getState()).not.toBeNull()
+    await act(async () => {
+      root?.render(
+        <div id="A">
+          <Lines data={rows(30)} x={x} series={[{ ...load }]} ariaLabel="A" legend={false} />
+        </div>,
+      )
+      await new Promise((r) => setTimeout(r, 30))
+    })
+    expect(el.querySelector('#A svg')).not.toBeNull()
+    expect(chartCursor().getState()).not.toBeNull()
+  })
+
   test('tooltip.onFollow opts a follower back into its own tooltip', async () => {
     await hoverAOverB({ onFollow: true })
     const tips = tooltips()

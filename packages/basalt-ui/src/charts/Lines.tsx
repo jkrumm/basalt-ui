@@ -19,7 +19,7 @@ import { VX } from '../tokens'
 import { CartesianRung } from './CartesianChart'
 import { areaGradientId } from './compile'
 import { chartCurve } from './curves'
-import { DASH } from './theme'
+import { DASH, DIMMED, LINE_STROKE_WIDTH } from './theme'
 import { rowX } from './types'
 import type {
   CartesianChartProps,
@@ -31,10 +31,6 @@ import type {
   Threshold,
 } from './types'
 
-/** The default plotted stroke: the redesign's 1.9px line overlay. */
-export const LINE_STROKE_WIDTH = 1.9
-/** A non-highlighted series while a legend entry is hovered. */
-const DIMMED = 0.25
 const MAX_END_LABELS = 3
 /** Below this vertical gap two end labels would collide; then none is drawn. */
 const END_LABEL_MIN_GAP = 13

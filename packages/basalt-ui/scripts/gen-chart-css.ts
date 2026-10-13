@@ -25,7 +25,7 @@ const css = readFileSync(FILE, 'utf8')
 const from = css.indexOf(START)
 const to = css.indexOf(END)
 const next =
-  from === -1 || to === -1
+  from === -1 || to === -1 || to < from
     ? `${css.trimEnd()}\n\n${block}\n`
     : `${css.slice(0, from)}${block}${css.slice(to + END.length)}`
 

@@ -35,6 +35,9 @@ const pendingStyle: CSSProperties = {
   background: `linear-gradient(90deg, transparent, ${VX.surface.subtle}, transparent)`,
 }
 
+const emptyLabel = (state: ChartState | undefined): string =>
+  typeof state?.empty === 'string' ? state.empty : 'No data'
+
 export function ChartPlaceholder(props: {
   state: ChartState | undefined
   height: number
@@ -48,9 +51,7 @@ export function ChartPlaceholder(props: {
   const label =
     kind === 'error'
       ? toErrorMessage(props.state?.error, 'The chart failed to load.')
-      : typeof props.state?.empty === 'string'
-        ? props.state.empty
-        : 'No data'
+      : emptyLabel(props.state)
   const body = (
     <>
       <span>{label}</span>

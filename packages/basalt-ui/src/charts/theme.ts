@@ -58,3 +58,7 @@ export const AXIS_LINE = { stroke: VX.axisStroke, strokeOpacity: 1 } as const
 export const GRID_LINE = { strokeDasharray: '2 3', strokeOpacity: 1 } as const
 export const CROSSHAIR = { stroke: VX.crosshair, strokeOpacity: 1, strokeDasharray: '3 3' } as const
 export const DASH = VX.dashArray
+/** The default plotted stroke: the redesign's 1.9px line overlay. */
+export const LINE_STROKE_WIDTH = 1.9
+/** A series' opacity multiplier while ANOTHER legend entry is hovered (one value for every kind). */
+export const DIMMED = 0.25

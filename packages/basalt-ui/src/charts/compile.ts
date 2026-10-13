@@ -249,14 +249,14 @@ function stackedSeries<T>(series: readonly ChartSeries<T>[]): ChartSeries<T>[] {
   if (bars.length === 0) return [...series]
   const sum = (d: T, sign: 1 | -1): number | null => {
     let total = 0
-    let any = false
+    let summed = false
     for (const s of bars) {
       const v = s.getValue(d)
       if (v === null || !Number.isFinite(v) || Math.sign(v) !== sign) continue
       total += v
-      any = true
+      summed = true
     }
-    return any ? total : null
+    return summed ? total : null
   }
   const base = bars[0] as ChartSeries<T>
   return [
@@ -289,9 +289,11 @@ export function compileCartesian<T, X extends ChartX>(
 
   // ── y domains: basalt's, from the VISIBLE series plus this axis' finite overlay bounds ────────
   const bounds = { left: [] as number[], right: [] as number[] }
-  for (const z of input.zones ?? [])
-    bounds[z.axisSide === 'right' ? 'right' : 'left'].push(z.from, z.to)
-  for (const l of input.refLines ?? []) bounds[l.axis === 'right' ? 'right' : 'left'].push(l.value)
+  // A bound lands on the axis its mark is drawn on: `'right'` without a `y2` is the left axis.
+  const sideOf = (side: 'left' | 'right' | undefined): 'left' | 'right' =>
+    side === 'right' && hasY2 ? 'right' : 'left'
+  for (const z of input.zones ?? []) bounds[sideOf(z.axisSide)].push(z.from, z.to)
+  for (const l of input.refLines ?? []) bounds[sideOf(l.axis)].push(l.value)
   const onRight = (s: ChartSeries<T>): boolean => hasY2 && s.axis === 'right'
   const leftSeries = visible.filter((s) => !onRight(s))
   const left: YAxis = {
@@ -470,15 +472,13 @@ export function compileCartesian<T, X extends ChartX>(
     // Followers paint the crosshair only, unless the chart opts into following tooltips.
     focus: tooltip?.onFollow ? 'group-x' : sourceOnlyFocus(input.cursorGroup, input.chartId),
     maxFocusDistance: Number.POSITIVE_INFINITY,
-    cursor: {
-      ...cursorBinding({
-        group: input.cursorGroup,
-        chartId: input.chartId,
-        keys: model.values,
-        mode: input.cursorResolution ?? 'nearest',
-      }),
+    cursor: cursorBinding({
+      group: input.cursorGroup,
+      chartId: input.chartId,
+      keys: model.values,
+      mode: input.cursorResolution ?? 'nearest',
       pin: input.coarse === true,
-    },
+    }),
     tooltip:
       input.tooltip === false
         ? false

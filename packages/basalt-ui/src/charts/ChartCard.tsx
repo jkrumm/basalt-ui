@@ -4,8 +4,8 @@
  * so `./charts` still resolves with no `@mantine/*` installed. The `actions` slot carries only
  * `data-basalt-tier="widget"`; a basalt control there sizes itself.
  *
- * The header renders only when one of title/info/value/actions/icon/count is set. A chart inside
- * with `legend={{ placement: 'header' }}` renders its legend in the header row.
+ * The header renders only when one of title/info/value/actions/icon/count is set, or a chart inside
+ * hands it a `legend={{ placement: 'header' }}` legend (then the row holds the legend alone).
  */
 import { useCallback, useMemo, useRef, useState } from 'react'
 import type { CSSProperties, ReactElement, ReactNode } from 'react'
@@ -58,7 +58,7 @@ function useShortCard(): { ref: (el: HTMLDivElement | null) => void; short: bool
   useIsomorphicLayoutEffect(() => {
     if (!node || typeof ResizeObserver === 'undefined') return
     const observer = new ResizeObserver((entries) => {
-      const height = entries[0]?.borderBoxSize[0]?.blockSize ?? node.offsetHeight
+      const height = entries[0]?.borderBoxSize?.[0]?.blockSize ?? node.offsetHeight
       const limit = shortRef.current ? CARD_SHORT_HEIGHT + SHORT_EXIT_SLACK : CARD_SHORT_HEIGHT
       const next = height > 0 && height < limit
       if (next === shortRef.current) return
@@ -156,26 +156,28 @@ export function ChartCard({
         {...(resolved === 'pending' && { 'aria-busy': 'true' })}
         {...(short && { 'data-basalt-card-short': '' })}
       >
-        {hasHeader && (
+        {(hasHeader || legend) && (
           <div
             {...(classNames?.header !== undefined && { className: classNames.header })}
             style={short ? headerShortStyle : headerStyle}
           >
-            <WidgetHeader
-              tier="widget"
-              title={title ?? ''}
-              {...(icon !== undefined && { icon })}
-              {...(subtitle !== undefined && { subtitle })}
-              {...(info !== undefined && { info })}
-              {...(value !== undefined && { value })}
-              {...(delta !== undefined && { delta })}
-              {...(deltaPeriod !== undefined && { deltaPeriod })}
-              {...(deltaPolarity !== undefined && { deltaPolarity })}
-              {...(count !== undefined && { count })}
-              {...(actions !== undefined && {
-                actions: <span data-basalt-tier="widget">{actions}</span>,
-              })}
-            />
+            {hasHeader && (
+              <WidgetHeader
+                tier="widget"
+                title={title ?? ''}
+                {...(icon !== undefined && { icon })}
+                {...(subtitle !== undefined && { subtitle })}
+                {...(info !== undefined && { info })}
+                {...(value !== undefined && { value })}
+                {...(delta !== undefined && { delta })}
+                {...(deltaPeriod !== undefined && { deltaPeriod })}
+                {...(deltaPolarity !== undefined && { deltaPolarity })}
+                {...(count !== undefined && { count })}
+                {...(actions !== undefined && {
+                  actions: <span data-basalt-tier="widget">{actions}</span>,
+                })}
+              />
+            )}
             {legend && (
               <div data-basalt-legend-slot="" style={headerLegendStyle}>
                 {legend.node}

@@ -19,7 +19,7 @@ const programmatic = (x: Date) =>
   ({ anchor: 'value', value: { x }, source: 'programmatic' }) as never
 
 describe('cursor groups', () => {
-  test('a group exists while it has subscribers and is dropped by the last unsubscribe', () => {
+  test('a group exists while it has subscribers and is dropped after the last unsubscribe', async () => {
     const cursor = chartCursor('teardown')
     expect(hasCursorGroup('teardown')).toBe(false)
     const a = cursor.subscribe(() => {})
@@ -29,7 +29,28 @@ describe('cursor groups', () => {
     a() // idempotent: a second call must not steal b's registration
     expect(hasCursorGroup('teardown')).toBe(true)
     b()
+    // Deferred one microtask: a host re-binding unsubscribes before it resubscribes.
+    expect(hasCursorGroup('teardown')).toBe(true)
+    await Promise.resolve()
     expect(hasCursorGroup('teardown')).toBe(false)
+  })
+
+  test('an unsubscribe + resubscribe in one tick keeps the group and its state', async () => {
+    const cursor = chartCursor('rebind')
+    const a = cursor.subscribe(() => {})
+    cursor.setState(programmatic(day(3)))
+    a()
+    const b = cursor.subscribe(() => {})
+    await Promise.resolve()
+    expect(cursor.getState()).not.toBeNull()
+    b()
+  })
+
+  test('a chart keeps one cursor view across recompiles (TanStack compares it by reference)', () => {
+    const first = chartCursorView('stable', 'c1', [day(1)], 'nearest')
+    const again = chartCursorView('stable', 'c1', [day(1), day(2)], 'exact')
+    expect(again).toBe(first)
+    expect(chartCursorView('stable', 'c2', [day(1)], 'nearest')).not.toBe(first)
   })
 
   test('getState on a missing group is null and creates nothing', () => {
@@ -52,8 +73,8 @@ describe('cursor groups', () => {
   test('the resolving view snaps a foreign value onto its own keys, identity-preserving', () => {
     const off = chartCursor('snap').subscribe(() => {})
     const weekly = [day(7), day(14)]
-    const leading = chartCursorView('snap', 'w', weekly, 'leading')
-    const nearest = chartCursorView('snap', 'w', weekly, 'nearest')
+    const leading = chartCursorView('snap', 'w-lead', weekly, 'leading')
+    const nearest = chartCursorView('snap', 'w-near', weekly, 'nearest')
     const state = programmatic(day(12))
     chartCursor('snap').setState(state)
     const x = (s: ReturnType<typeof leading.getState>) => (s?.anchor === 'value' ? s.value.x : null)
