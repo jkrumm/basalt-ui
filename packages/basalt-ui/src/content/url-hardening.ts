@@ -11,6 +11,11 @@ import type { UrlTransform } from 'react-markdown'
 
 const SCHEME_RE = /^[a-z][a-z0-9+.-]*:/i
 
+// remend's repair sentinels (`[text](streamdown:incomplete-link)`, `![alt](streamdown:incomplete-image)`)
+// are placeholders for a half-streamed URL, never a destination. Rejected before the allowlist so a
+// permissive consumer prefix (`''`, `'streamdown:'`) can't turn one into a real `href`/`img src`.
+const INCOMPLETE_SENTINEL_RE = /^streamdown:incomplete-(?:link|image)$/i
+
 function isAllowedUrl(url: string, prefixes: readonly string[]): boolean {
   return prefixes.some((prefix) => url.startsWith(prefix))
 }
@@ -33,12 +38,13 @@ export type CreateUrlTransformOptions = {
 
 /**
  * Builds the `urlTransform` passed to `<ReactMarkdown>`. Disallowed URLs (including remend's
- * `streamdown:incomplete-link` sentinel — never a member of the default allowlist) resolve to
+ * `streamdown:incomplete-link` / `streamdown:incomplete-image` sentinels, which no allowlist can admit) resolve to
  * `null`, which react-markdown renders as an `href`/`src`-less element; the `a`/`img` component
  * overrides in `./markdown` turn that into an unlinked span / dropped image.
  */
 export function createUrlTransform(opts: CreateUrlTransformOptions): UrlTransform {
   return (url, key) => {
+    if (INCOMPLETE_SENTINEL_RE.test(url)) return null
     const prefixes = key === 'src' ? opts.allowedImagePrefixes : opts.allowedLinkPrefixes
     if (!isAllowedUrl(url, prefixes)) return null
     return resolveRelativeUrl(url, opts.defaultOrigin)
