@@ -167,41 +167,40 @@ export function ArticleLayout({
         </div>
       )}
 
-      {toc &&
-        !showTocRail && (
-          // `.tocTrigger`'s `grid-row: 2` (article-layout.module.css) is EXPLICIT, matching
-          // `.content`'s own row — not left to CSS Grid's auto-placement, which used to land this
-          // in its own row below the content instead of at its top (both are `grid-column: 1`, and
-          // the auto-placement cursor moves past row 2 once `.content` claims it).
-          <Popover
-            opened={tocOpen}
-            onChange={setTocOpen}
-            onDismiss={() => setTocOpen(false)}
-            position="bottom-end"
-            withinPortal
-            shadow="md"
-            radius="sm"
-            trapFocus
-          >
-            <Popover.Target>
-              <Button
-                variant="subtle"
-                color="gray"
-                size="compact-xs"
-                className={classes.tocTrigger}
-                classNames={{ label: classes.tocTriggerLabel }}
-                onClick={() => setTocOpen((current) => !current)}
-              >
-                On this page
-              </Button>
-            </Popover.Target>
-            <Popover.Dropdown className={classes.tocDropdown}>
-              <ScrollArea.Autosize mah="calc(100vh - 108px)" type="hover">
-                <TableOfContents containerRef={articleRef} onNavigate={() => setTocOpen(false)} />
-              </ScrollArea.Autosize>
-            </Popover.Dropdown>
-          </Popover>
-        )}
+      {toc && !showTocRail && (
+        // `.tocTrigger`'s `grid-row: 2` (article-layout.module.css) is EXPLICIT, matching
+        // `.content`'s own row — not left to CSS Grid's auto-placement, which used to land this
+        // in its own row below the content instead of at its top (both are `grid-column: 1`, and
+        // the auto-placement cursor moves past row 2 once `.content` claims it).
+        <Popover
+          opened={tocOpen}
+          onChange={setTocOpen}
+          onDismiss={() => setTocOpen(false)}
+          position="bottom-end"
+          withinPortal
+          shadow="md"
+          radius="sm"
+          trapFocus
+        >
+          <Popover.Target>
+            <Button
+              variant="subtle"
+              color="gray"
+              size="compact-xs"
+              className={classes.tocTrigger}
+              classNames={{ label: classes.tocTriggerLabel }}
+              onClick={() => setTocOpen((current) => !current)}
+            >
+              On this page
+            </Button>
+          </Popover.Target>
+          <Popover.Dropdown className={classes.tocDropdown}>
+            <ScrollArea.Autosize mah="calc(100vh - 108px)" type="hover">
+              <TableOfContents containerRef={articleRef} onNavigate={() => setTocOpen(false)} />
+            </ScrollArea.Autosize>
+          </Popover.Dropdown>
+        </Popover>
+      )}
 
       {(prev !== undefined || next !== undefined) && (
         <footer className={classes.footer}>

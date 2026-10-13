@@ -109,9 +109,7 @@ import { paletteGroups } from './theme/series'
 // unbundled dev build still evaluates the whole subpath module.
 applyOverrides(loadOverrides())
 
-const theme = createBasaltTheme({
-  /* app deltas only */
-})
+const theme = createBasaltTheme({/* app deltas only */})
 
 createRoot(document.getElementById('root')!).render(
   <BasaltProvider theme={theme} paletteOptions={{ groups: paletteGroups }}>
@@ -160,9 +158,7 @@ bounded knobs, with contrast guaranteed by derivation rather than hand-tuning:
 
 ```ts
 const theme = createBasaltTheme(
-  {
-    /* app deltas only */
-  },
+  {/* app deltas only */},
   { derive: { accent: '#7c3aed', neutral: 'zinc', vibrancy: 1 } },
 )
 ```
@@ -600,9 +596,7 @@ bun add @tanstack/react-router
 import { createSearchStore, defineNav, field, useNav } from 'basalt-ui/router-tanstack'
 
 export const NAV = defineNav({
-  groups: [
-    /* navGroup(...) */
-  ],
+  groups: [/* navGroup(...) */],
 })
 export const analytics = createSearchStore({
   key: 'analytics',
