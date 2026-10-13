@@ -12,7 +12,6 @@
 import { barY } from '@tanstack/charts/bar'
 import { crosshair } from '@tanstack/charts/crosshair'
 import { differenceY } from '@tanstack/charts/difference'
-import { dot } from '@tanstack/charts/dot'
 import { decorative } from '@tanstack/charts/mark/decorative'
 import { ruleY } from '@tanstack/charts/rule'
 import { scaleLinear } from '@tanstack/charts/scales/linear'
@@ -31,7 +30,7 @@ import type { ComposableResponsiveChartDefinition } from '@tanstack/charts/view'
 import { scaleUtc } from 'd3-scale'
 import { useCallback, useEffect, useId, useMemo, useState } from 'react'
 import type { ReactElement, ReactNode } from 'react'
-import { VX } from '../tokens'
+import { VX, alpha } from '../tokens'
 import { resolveContainerClass } from '../tokens/size-classes'
 import type { ContainerClass } from '../tokens/size-classes'
 import { useChartCard } from './card-context'
@@ -47,7 +46,7 @@ import { cursorBinding, sourceOnlyFocus } from './cursor'
 import { ChartEngine } from './host'
 import { ChartLegend, legendEntries } from './legend'
 import type { LegendMode } from './legend'
-import { emphasis, lineMark } from './marks'
+import { emphasis, lineMark, markersOf } from './marks'
 import { xScaleFor } from './scales'
 import type { XScaleModel } from './scales'
 import { useChartSize } from './sizing'
@@ -125,7 +124,9 @@ const LADDER = {
 const { background: _background, focusRing: _focusRing, ...PANE_THEME } = CHART_THEME
 
 /** Space between the panes of `DualPanel`; `MirroredBars` has none (one baseline). */
-export const PANE_GAP = 8
+const PANE_GAP = 8
+/** The least share of the height either pane keeps. */
+const MIN_PANE_SHARE = 0.02
 
 export function yGuide(opts: {
   format: (v: number) => string
@@ -206,10 +207,12 @@ function paneView(build: PaneBuilder): ComposableResponsiveChartDefinition {
 }
 
 /** A plotted datum is a `PlotRow` (or any row carrying `datum` + `series`): its source datum. */
-function sourceOf<T>(point: ChartPoint): { x: ChartValue; d: T } {
+function sourceOf<T>(point: ChartPoint, owned: ReadonlySet<string>): { x: ChartValue; d: T } {
   const datum = point.datum
-  if (typeof datum === 'object' && datum !== null && 'datum' in datum && 'series' in datum)
-    return { x: point.xValue, d: (datum as PlotRow<T>).datum }
+  if (typeof datum === 'object' && datum !== null && 'datum' in datum && 'series' in datum) {
+    const row = datum as PlotRow<T>
+    if (owned.has(row.series)) return { x: point.xValue, d: row.datum }
+  }
   return { x: point.xValue, d: datum as T }
 }
 
@@ -226,12 +229,17 @@ function panelDefinition<T, X extends ChartX>(opts: {
 }): CartesianDefinition {
   const { plan, series, hidden, chartId, formatX, cursorGroup, coarse } = opts
   const tooltip = opts.tooltip === false ? undefined : opts.tooltip
+  // The grid needs positive, finite tracks: a share outside 0..1 (or NaN) is clamped to leave each
+  // pane a sliver rather than throw.
+  const topFraction = Number.isFinite(plan.topFraction)
+    ? Math.min(Math.max(plan.topFraction, MIN_PANE_SHARE), 1 - MIN_PANE_SHARE)
+    : 0.5
   const composed = composeViews({
     views: { top: paneView(plan.top), bottom: paneView(plan.bottom) },
     layout: grid({
       rows: [
-        { id: 'top', grow: plan.topFraction },
-        { id: 'bottom', grow: 1 - plan.topFraction },
+        { id: 'top', grow: topFraction },
+        { id: 'bottom', grow: 1 - topFraction },
       ],
       columns: [{ id: 'main', grow: 1 }],
       gap: plan.gap,
@@ -242,6 +250,7 @@ function panelDefinition<T, X extends ChartX>(opts: {
     }),
     links: [alignX('top', 'bottom')],
   })
+  const owned = new Set(series.map((s) => s.key))
   const visible = visibleSeries(series, hidden)
   const hiddenSeries = series.filter((s) => !visible.includes(s))
   const format = (v: ChartValue): string => (formatX ? formatX(v as X) : defaultFormatX(v))
@@ -271,7 +280,7 @@ function panelDefinition<T, X extends ChartX>(opts: {
             content: (points: readonly ChartPoint[]) => {
               const primary = points[0]
               if (!primary) return { rows: [] }
-              const { x, d } = sourceOf<T>(primary)
+              const { x, d } = sourceOf<T>(primary, owned)
               const extra: readonly ChartTooltipRow[] =
                 tooltip?.rows?.(d, { visible, hidden: hiddenSeries }) ?? []
               return { title: header(x, d), rows: [...plan.rows(d), ...extra] }
@@ -389,8 +398,8 @@ export function PanelRung<T, X extends ChartX>(props: PanelRungProps<T, X>): Rea
 
 // ── DualPanel ───────────────────────────────────────────────────────────────────────────────────
 
+/** The bar's legend/toggle key. Reserved: a line may not use it. */
 const BAR_KEY = '__bar'
-const FILL_KEY = '__fill'
 const DEFAULT_TOP_FRACTION = 0.62
 const BAR_OPACITY = 0.7
 const TOP_PAD = 0.08
@@ -465,56 +474,20 @@ export type DualPanelProps<T, X extends Date | number = Date | number> = Pick<
   topFraction?: number
 }
 
-type FillRow<T, X> = { x: X; from: number; to: number; series: typeof FILL_KEY; datum: T }
+type FillRow<T, X> = { x: X; from: number; to: number; series: string; datum: T }
 
 /** A padded span, or the unit interval for no data. */
 function spanDomain(values: readonly number[]): [number, number] {
   if (values.length === 0) return [0, 1]
-  const lo = Math.min(...values)
-  const hi = Math.max(...values)
+  let lo = Infinity
+  let hi = -Infinity
+  for (const v of values) {
+    if (v < lo) lo = v
+    if (v > hi) hi = v
+  }
   const span = hi - lo || Math.abs(hi) || 1
   return [lo - span * TOP_PAD, hi + span * TOP_PAD]
 }
-
-/** Dots at the points a series marks, one mark per distinct paint (a dot's fill is constant). */
-function markersOf<T, X extends ChartX>(
-  s: ChartSeries<T>,
-  rows: readonly PlotRow<T, X>[],
-): ChartMarks {
-  const getMarker = s.getMarker
-  if (!getMarker) return []
-  const groups = new Map<
-    string,
-    { color: string; opacity: number; ring: boolean; rows: (PlotRow<T, X> & { r: number })[] }
-  >()
-  for (const row of rows) {
-    const m = row.y === null ? null : getMarker(row.datum)
-    if (!m) continue
-    const color = m.color ?? s.color
-    const opacity = m.fillOpacity ?? 1
-    const ring = m.ring !== false
-    const id = `${color}|${opacity}|${ring}`
-    const group = groups.get(id) ?? { color, opacity, ring, rows: [] }
-    group.rows.push({ ...row, r: m.r ?? VX.dotR })
-    groups.set(id, group)
-  }
-  return [...groups.values()].map((g, i) =>
-    decorative(
-      dot(g.rows, {
-        id: `${s.key}-marker-${i}`,
-        x: rowX,
-        y: 'y',
-        r: 'r',
-        fill: g.color,
-        fillOpacity: g.opacity,
-        ...(g.ring && { stroke: VX.surface.panel, strokeWidth: 1.5 }),
-      }),
-    ),
-  )
-}
-
-const paint = (color: string, opacity: number): string =>
-  opacity >= 1 ? color : `color-mix(in srgb, ${color} ${Math.round(opacity * 100)}%, transparent)`
 
 export function DualPanel<T, X extends Date | number = Date | number>(
   props: DualPanelProps<T, X>,
@@ -523,6 +496,8 @@ export function DualPanel<T, X extends Date | number = Date | number>(
   const { ariaLabel, formatX, legend, height, state, cursorGroup, cursorResolution } = props
   const { tooltip, className, style } = props
 
+  if (series.some((s) => s.key === BAR_KEY))
+    throw new Error(`[basalt] DualPanel: the series key "${BAR_KEY}" is reserved for the bar`)
   const lines = useMemo<ChartSeries<T>[]>(
     () => series.map((s) => ({ ...s, mark: 'line' as const })),
     [series],
@@ -582,21 +557,19 @@ export function DualPanel<T, X extends Date | number = Date | number>(
       const barScale = scaleLinear().domain(fixedBar ? [...fixedBar] : [-maxAbs, maxAbs])
       if (!fixedBar) barScale.nice()
 
-      const fillLines = fillBetween
-        ? [
-            visible.find((s) => s.key === fillBetween.from),
-            visible.find((s) => s.key === fillBetween.to),
-          ]
-        : []
-      const fillOn = fillBetween !== undefined && fillLines.every((s) => s !== undefined)
+      const fromLine = fillBetween && visible.find((s) => s.key === fillBetween.from)
+      const toLine = fillBetween && visible.find((s) => s.key === fillBetween.to)
+      // The fill needs both lines visible: hiding either drops it.
+      const fill =
+        fillBetween && fromLine && toLine ? { ...fillBetween, fromLine, toLine } : undefined
       const fillRows: FillRow<T, Date | number>[] = []
-      if (fillOn) {
-        const [from, to] = fillLines as ChartSeries<T>[]
+      if (fill) {
         for (const d of data) {
-          const a = from?.getValue(d) ?? null
-          const b = to?.getValue(d) ?? null
+          const a = fill.fromLine.getValue(d)
+          const b = fill.toLine.getValue(d)
           if (a === null || b === null || !Number.isFinite(a) || !Number.isFinite(b)) continue
-          fillRows.push({ x: x(d), from: a, to: b, series: FILL_KEY, datum: d })
+          // Owned by the `to` line, so a hovered fill point resolves to its datum.
+          fillRows.push({ x: x(d), from: a, to: b, series: fill.to, datum: d })
         }
       }
 
@@ -619,7 +592,7 @@ export function DualPanel<T, X extends Date | number = Date | number>(
         }
         return {
           marks: [
-            ...(fillOn && fillBetween
+            ...(fill
               ? [
                   decorative(
                     differenceY(fillRows, {
@@ -627,8 +600,8 @@ export function DualPanel<T, X extends Date | number = Date | number>(
                       x: (r) => r.x,
                       y1: (r) => r.from,
                       y2: (r) => r.to,
-                      positiveFill: fillBetween.aboveFill ?? fillBetween.fill,
-                      negativeFill: fillBetween.fill,
+                      positiveFill: fill.aboveFill ?? fill.fill,
+                      negativeFill: fill.fill,
                       fillOpacity: 1,
                       stroke: 'none',
                       comparisonStroke: 'none',
@@ -636,7 +609,7 @@ export function DualPanel<T, X extends Date | number = Date | number>(
                   ),
                 ]
               : []),
-            ...visible.flatMap((s) => [lineMark(plot, s), ...markersOf(s, rows(s))]),
+            ...visible.flatMap((s) => [lineMark(plot, s), ...markersOf(s, rows(s), undefined)]),
           ],
           scales: {
             x: { scale: xScale(), axis: false },
@@ -657,7 +630,7 @@ export function DualPanel<T, X extends Date | number = Date | number>(
               x: rowX,
               y: 'y',
               fill: (row: PlotRow<T, Date | number>) =>
-                paint((row.y ?? 0) >= 0 ? bar.positive : bar.negative, BAR_OPACITY * dim),
+                alpha((row.y ?? 0) >= 0 ? bar.positive : bar.negative, BAR_OPACITY * dim),
             }),
           ],
           scales: {

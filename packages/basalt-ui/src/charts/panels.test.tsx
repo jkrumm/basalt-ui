@@ -1,6 +1,7 @@
 /**
  * `DualPanel` and `MirroredBars` behaviour through their public props: what the rendered DOM says
- * (one host, two composed panes), never the engine's internals.
+ * (one host, two composed panes). Everything that knows how the engine names a composed view's
+ * nodes lives in the helper block below; the tests read through it.
  */
 import { afterEach, describe, expect, test } from 'bun:test'
 import { act } from 'react'
@@ -50,6 +51,87 @@ async function mount(node: React.ReactNode): Promise<HTMLElement> {
   return el
 }
 
+const ssr = (node: React.ReactNode): HTMLElement => {
+  const el = document.createElement('div')
+  el.innerHTML = renderToString(node)
+  return el
+}
+
+// ── the engine's naming of a composed view, in one place ────────────────────────────────────────
+
+type Pane = 'top' | 'bottom'
+const key = (pane: Pane, rest: string): string => `view-composition-0:${pane}:${rest}`
+
+/** A mark's group (`id` is the mark id the kind gave it, or a prefix of it). */
+const markGroup = (el: Element, pane: Pane, id: string): Element | null =>
+  el.querySelector(`[data-ts-key^="${key(pane, id)}"]`)
+
+const markRects = (el: Element, pane: Pane, id: string): Element[] => [
+  ...el.querySelectorAll(`[data-ts-key^="${key(pane, id)}"] rect`),
+]
+
+/** The pane's allocated frame: its offset and size in the chart. */
+function frame(el: Element, pane: Pane): { y: number; height: number } {
+  const view = el.querySelector(`[data-ts-key="${key(pane, 'view')}"]`)
+  const clip = el.querySelector(`[data-ts-key="${key(pane, 'view:clip-defs')}"] rect`)
+  const y = view?.getAttribute('transform')?.match(/translate\(\S+ ([\d.]+)\)/)?.[1]
+  return { y: Number(y), height: Number(clip?.getAttribute('height')) }
+}
+
+/** The pane's plot rectangle (inside its margins). */
+function plot(el: Element, pane: Pane): { x: number; y: number; width: number; height: number } {
+  const rect = el.querySelector(`[data-ts-key="${key(pane, 'marks:clip-defs')}"] rect`)
+  return {
+    x: Number(rect?.getAttribute('x')),
+    y: Number(rect?.getAttribute('y')),
+    width: Number(rect?.getAttribute('width')),
+    height: Number(rect?.getAttribute('height')),
+  }
+}
+
+/** The pane's y tick labels as text. */
+const yTicks = (el: Element, pane: Pane): string[] =>
+  [...el.querySelectorAll(`[data-ts-key="${key(pane, 'view')}"] text[data-ts-key^="y-tick"]`)].map(
+    (n) => n.textContent ?? '',
+  )
+
+const yTickValues = (el: Element, pane: Pane): number[] =>
+  yTicks(el, pane)
+    .map((t) => parseFloat(t))
+    .toSorted((p, q) => p - q)
+
+const maxTick = (el: Element, pane: Pane): number => Math.max(...yTickValues(el, pane))
+
+const num = (r: Element | undefined | null, name: string): number => Number(r?.getAttribute(name))
+
+const hover = async (el: HTMLElement, x = 200, y = 40): Promise<void> => {
+  const svg = el.querySelector('svg')
+  if (!svg) throw new Error('no chart')
+  await act(async () => {
+    svg.dispatchEvent(new PointerEvent('pointermove', { clientX: x, clientY: y, bubbles: true }))
+    await new Promise((r) => setTimeout(r, 30))
+  })
+}
+
+const tooltips = (): Element[] => [...document.querySelectorAll('.ts-chart-tooltip')]
+const tooltipRows = (tip: Element | undefined): (string | null)[] =>
+  [...(tip?.querySelectorAll('.ts-chart-tooltip__row > span:nth-child(2)') ?? [])].map(
+    (n) => n.textContent,
+  )
+
+const legendButton = (el: Element, k: string): HTMLButtonElement => {
+  const b = el.querySelector(`button[data-legend-key="${k}"]`)
+  if (!(b instanceof HTMLButtonElement)) throw new Error(`no toggleable legend entry "${k}"`)
+  return b
+}
+
+const mouseOver = (b: HTMLElement): Promise<void> =>
+  act(async () => {
+    b.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }))
+  })
+
+// ── DualPanel ───────────────────────────────────────────────────────────────────────────────────
+
 const dualProps: DualPanelProps<Row, Date> = {
   ariaLabel: 'Divergence',
   data,
@@ -68,75 +150,82 @@ const dualProps: DualPanelProps<Row, Date> = {
   },
 }
 
-const keys = (el: Element, pane: string): string[] =>
-  [...el.querySelectorAll(`[data-ts-key^="view-composition-0:${pane}:"]`)].map(
-    (n) => n.getAttribute('data-ts-key') ?? '',
-  )
+const withBar = (bar: Partial<DualPanelProps<Row, Date>['bar']>): DualPanelProps<Row, Date> => ({
+  ...dualProps,
+  bar: { ...dualProps.bar, ...bar },
+})
 
-const yDomainLabels = (el: Element, pane: string): number[] =>
-  [
-    ...el.querySelectorAll(
-      `[data-ts-key="view-composition-0:${pane}:view"] text[data-ts-key^="y-tick"]`,
-    ),
-  ]
-    .map((n) => Number(n.textContent?.replace('%', '')))
-    .toSorted((p, q) => p - q)
+const { fillBetween: _fill, ...dualNoFill } = dualProps
 
-const bottomLabels = (floor?: number): number[] => {
-  const el = document.createElement('div')
-  el.innerHTML = renderToString(
-    <DualPanel {...dualProps} bar={{ ...dualProps.bar, ...(floor && { maxAbsFloor: floor }) }} />,
-  )
-  return yDomainLabels(el, 'bottom')
+const oneLine: DualPanelProps<Row, Date>['series'] = [
+  { key: 'a', label: 'A', color: 'var(--vx-line)', getValue: (d) => 1000 + d.a },
+]
+
+const heightRatio = (fraction: number): number => {
+  const el = ssr(<DualPanel {...dualProps} topFraction={fraction} height={400} />)
+  return frame(el, 'top').height / frame(el, 'bottom').height
 }
 
-const heightRatio = (f: number): number => paneHeight(f, 'top') / paneHeight(f, 'bottom')
-
-const paneHeight = (fraction: number, pane: string): number => {
-  const el = document.createElement('div')
-  el.innerHTML = renderToString(<DualPanel {...dualProps} topFraction={fraction} height={400} />)
-  const rect = el.querySelector(`[data-ts-key="view-composition-0:${pane}:view:clip-defs"] rect`)
-  return Number(rect?.getAttribute('height'))
-}
+const fillOf = (el: Element, side: 'positive' | 'negative'): string | null | undefined =>
+  markGroup(el, 'top', `fill-between:${side}`)?.querySelector('path')?.getAttribute('fill')
 
 describe('DualPanel', () => {
   test('one host, one label, two composed panes', async () => {
     const el = await mount(<DualPanel {...dualProps} />)
     expect(el.querySelectorAll('svg[role="img"]').length).toBe(1)
     expect(el.querySelector('svg')?.getAttribute('aria-label')).toBe('Divergence')
-    expect(keys(el, 'top').length).toBeGreaterThan(0)
-    expect(keys(el, 'bottom').length).toBeGreaterThan(0)
+    expect(markGroup(el, 'top', 'a:')).not.toBeNull()
+    expect(markGroup(el, 'bottom', 'bars')).not.toBeNull()
   })
 
   test('top pane: both lines and the fill between them; bottom pane: the signed bars', () => {
-    const html = renderToString(<DualPanel {...dualProps} />)
-    expect(html).toContain('view-composition-0:top:fill-between:positive')
-    expect(html).toContain('view-composition-0:top:fill-between:negative')
-    expect(html).toContain('stroke-dasharray="6 4"')
+    const el = ssr(<DualPanel {...dualProps} />)
+    expect(el.innerHTML).toContain('stroke-dasharray="6 4"')
     // The fill takes `aboveFill` where `to` runs above `from`, `fill` elsewhere.
-    expect(html).toContain('fill="var(--vx-good)"')
-    expect(html).toContain('fill="var(--vx-bad)"')
-    // A null bar is a gap, not a zero: 3 of 4 samples are drawn.
-    expect(html.match(/view-composition-0:bottom:bars:object/g)?.length).toBe(3)
-    // Positive and negative bars take their own colour, dimmed.
-    expect(html).toContain('color-mix(in srgb, var(--vx-good) 70%, transparent)')
-    expect(html).toContain('color-mix(in srgb, var(--vx-bad) 70%, transparent)')
+    expect(fillOf(el, 'positive')).toBe('var(--vx-good)')
+    expect(fillOf(el, 'negative')).toBe('var(--vx-bad)')
+    // A null bar is a gap, not a zero: 3 of 4 samples are drawn, each coloured by its sign.
+    expect(markRects(el, 'bottom', 'bars').map((r) => r.getAttribute('fill'))).toEqual([
+      'color-mix(in srgb, var(--vx-good) 70%, transparent)',
+      'color-mix(in srgb, var(--vx-bad) 70%, transparent)',
+      'color-mix(in srgb, var(--vx-bad) 70%, transparent)',
+    ])
+  })
+
+  test('without aboveFill both sides take fill', () => {
+    const { aboveFill: _, ...plain } = dualProps.fillBetween ?? { from: 'a', to: 'b', fill: '' }
+    const el = ssr(<DualPanel {...dualProps} fillBetween={plain} />)
+    expect(fillOf(el, 'positive')).toBe('var(--vx-bad)')
+    expect(fillOf(el, 'negative')).toBe('var(--vx-bad)')
   })
 
   test('the bottom pane is symmetric around zero; maxAbsFloor floors it', () => {
-    const auto = bottomLabels()
+    const auto = yTickValues(ssr(<DualPanel {...dualProps} />), 'bottom')
     expect(Math.min(...auto)).toBe(-Math.max(...auto))
     expect(Math.max(...auto)).toBeLessThan(10)
-    const floored = bottomLabels(20)
+    const floored = yTickValues(ssr(<DualPanel {...withBar({ maxAbsFloor: 20 })} />), 'bottom')
     expect(Math.max(...floored)).toBeGreaterThanOrEqual(20)
     expect(Math.min(...floored)).toBe(-Math.max(...floored))
   })
 
+  test('a fixed bar.domain is used verbatim, asymmetric included', () => {
+    const el = ssr(<DualPanel {...withBar({ domain: [-10, 40] })} />)
+    // Zero sits 40 of the 50 units down the pane.
+    const box = plot(el, 'bottom')
+    const zero = num(markGroup(el, 'bottom', 'zero')?.querySelector('line'), 'y1')
+    expect((zero - box.y) / box.height).toBeCloseTo(0.8, 2)
+    expect(maxTick(el, 'bottom')).toBeLessThanOrEqual(40)
+  })
+
   test('each pane keeps its own domain; a fixed top domain is used verbatim', () => {
-    const el = document.createElement('div')
-    el.innerHTML = renderToString(<DualPanel {...dualProps} top={{ domain: [0, 100] }} />)
-    expect(Math.max(...yDomainLabels(el, 'top'))).toBe(100)
-    expect(Math.max(...yDomainLabels(el, 'bottom'))).toBeLessThan(10)
+    const el = ssr(<DualPanel {...dualProps} top={{ domain: [0, 100] }} />)
+    expect(maxTick(el, 'top')).toBe(100)
+    expect(maxTick(el, 'bottom')).toBeLessThan(10)
+  })
+
+  test('the auto top domain follows the visible lines, not zero', () => {
+    const el = ssr(<DualPanel {...dualNoFill} series={oneLine} top={{ format: String }} />)
+    expect(Math.min(...yTickValues(el, 'top'))).toBeGreaterThan(900)
   })
 
   test('topFraction splits the height between the panes', () => {
@@ -144,54 +233,68 @@ describe('DualPanel', () => {
     expect(heightRatio(0.7)).toBeGreaterThan(2)
   })
 
-  test('the panes share one plot range: alignX lines up the x axis', () => {
-    const el = document.createElement('div')
-    el.innerHTML = renderToString(<DualPanel {...dualProps} />)
-    const plotRect = (pane: string): [string | null, string | null] => {
-      const rect = el.querySelector(
-        `[data-ts-key="view-composition-0:${pane}:marks:clip-defs"] rect`,
-      )
-      return [rect?.getAttribute('x') ?? null, rect?.getAttribute('width') ?? null]
+  test('a topFraction outside 0..1 or NaN still renders, clamped', () => {
+    for (const f of [-1, 5, Number.NaN]) {
+      const el = ssr(<DualPanel {...dualProps} topFraction={f} height={400} />)
+      expect(el.querySelector('svg')).not.toBeNull()
+      expect(frame(el, 'top').height).toBeGreaterThanOrEqual(0)
+      expect(frame(el, 'bottom').height).toBeGreaterThanOrEqual(0)
     }
-    expect(plotRect('top')).toEqual(plotRect('bottom'))
+    // Clamped to 1 the top pane takes everything.
+    const all = ssr(<DualPanel {...dualProps} topFraction={5} height={400} />)
+    const half = ssr(<DualPanel {...dualProps} topFraction={0.5} height={400} />)
+    expect(frame(all, 'bottom').height).toBeLessThan(frame(half, 'bottom').height)
+  })
+
+  test('the panes share one plot range: alignX lines up the x axis', () => {
+    const el = ssr(<DualPanel {...dualProps} />)
+    expect(plot(el, 'top').x).toBe(plot(el, 'bottom').x)
+    expect(plot(el, 'top').width).toBe(plot(el, 'bottom').width)
   })
 
   test('a legend toggle hides the line, the fill and the bar together', async () => {
     const el = await mount(<DualPanel {...dualProps} />)
-    const toggle = (key: string): Promise<void> =>
-      act(async () =>
-        (el.querySelector(`button[data-legend-key="${key}"]`) as HTMLButtonElement).click(),
-      )
-    expect(el.querySelector('[data-ts-key^="view-composition-0:top:a:"]')).not.toBeNull()
-    await toggle('a')
-    expect(el.querySelector('[data-ts-key^="view-composition-0:top:a:"]')).toBeNull()
-    expect(el.querySelector('[data-ts-key*=":fill-between:"]')).toBeNull()
-    expect(el.querySelector('[data-ts-key^="view-composition-0:top:b:"]')).not.toBeNull()
-    await toggle('__bar')
-    expect(el.querySelector('[data-ts-key*=":bottom:bars"] rect')).toBeNull()
-    expect(el.querySelector('[data-legend-key="__bar"]')?.textContent).toContain('Divergence')
+    expect(markGroup(el, 'top', 'a:')).not.toBeNull()
+    await act(async () => legendButton(el, 'a').click())
+    expect(markGroup(el, 'top', 'a:')).toBeNull()
+    expect(markGroup(el, 'top', 'fill-between')).toBeNull()
+    expect(markGroup(el, 'top', 'b:')).not.toBeNull()
+    await act(async () => legendButton(el, '__bar').click())
+    expect(markRects(el, 'bottom', 'bars').length).toBe(0)
+    expect(legendButton(el, '__bar').textContent).toContain('Divergence')
+  })
+
+  test('hovering a legend entry dims the others, bars included', async () => {
+    const el = await mount(<DualPanel {...dualProps} />)
+    const strokeOf = (k: string): string | null | undefined =>
+      markGroup(el, 'top', `${k}:`)?.querySelector('path')?.getAttribute('stroke-opacity')
+    expect(strokeOf('b')).toBe('1')
+    await mouseOver(legendButton(el, 'a'))
+    expect(strokeOf('a')).toBe('1')
+    expect(strokeOf('b')).toBe('0.25')
+    expect(markRects(el, 'bottom', 'bars')[0]?.getAttribute('fill')).toBe(
+      'color-mix(in srgb, var(--vx-good) 18%, transparent)',
+    )
   })
 
   test('markers draw as dots on a line', () => {
-    const html = renderToString(
+    const [first] = dualProps.series
+    if (!first) throw new Error('no series')
+    const el = ssr(
       <DualPanel
         {...dualProps}
-        series={[
-          {
-            ...(dualProps.series[0] as NonNullable<DualPanelProps<Row, Date>['series']>[number]),
-            getMarker: (d) => (d.a === 20 ? { color: 'var(--vx-warn)' } : null),
-          },
-        ]}
+        series={[{ ...first, getMarker: (d) => (d.a === 20 ? { color: 'var(--vx-warn)' } : null) }]}
       />,
     )
-    expect(html).toContain('a-marker-0')
-    expect(html).toContain('fill="var(--vx-warn)"')
+    expect(markGroup(el, 'top', 'a-marker-0')?.querySelector('circle')?.getAttribute('fill')).toBe(
+      'var(--vx-warn)',
+    )
   })
 
   test('state replaces the plot with its placeholder', () => {
-    expect(renderToString(<DualPanel {...dualProps} state={{ pending: true }} />)).toContain(
-      'aria-busy="true"',
-    )
+    const el = ssr(<DualPanel {...dualProps} state={{ pending: true }} />)
+    expect(el.querySelector('[aria-busy]')).not.toBeNull()
+    expect(el.querySelector('svg[role="img"]')).toBeNull()
   })
 
   test('one tooltip for both panes: line rows, the bar row, then consumer rows', async () => {
@@ -202,22 +305,70 @@ describe('DualPanel', () => {
         legend={false}
       />,
     )
-    const svg = el.querySelector('svg')
-    if (!svg) throw new Error('no chart')
-    await act(async () => {
-      svg.dispatchEvent(
-        new PointerEvent('pointermove', { clientX: 200, clientY: 40, bubbles: true }),
-      )
-      await new Promise((r) => setTimeout(r, 30))
-    })
-    const tips = [...document.querySelectorAll('.ts-chart-tooltip')]
-    expect(tips.length).toBe(1)
-    const labels = [
-      ...(tips[0]?.querySelectorAll('.ts-chart-tooltip__row > span:nth-child(2)') ?? []),
-    ].map((n) => n.textContent)
-    expect(labels).toEqual(['Acute', 'Chronic', 'Divergence', 'Day'])
+    await hover(el)
+    expect(tooltips().length).toBe(1)
+    expect(tooltipRows(tooltips()[0])).toEqual(['Acute', 'Chronic', 'Divergence', 'Day'])
+  })
+
+  test('the bar row reads bar.formatValue, falling back to bar.format', async () => {
+    const el = await mount(
+      <DualPanel
+        {...withBar({ formatValue: (v, d) => `${v} on ${d.t.getUTCDate()}` })}
+        legend={false}
+      />,
+    )
+    await hover(el)
+    expect(tooltips()[0]?.textContent).toMatch(/-?\d+ on \d/)
+  })
+
+  test('tooltip={false} paints no tooltip', async () => {
+    const el = await mount(<DualPanel {...dualProps} tooltip={false} legend={false} />)
+    await hover(el)
+    expect(tooltips().length).toBe(0)
+  })
+
+  test('degenerate data renders: empty, one sample, all-null', () => {
+    expect(ssr(<DualPanel {...dualProps} data={[]} />).querySelector('svg')).not.toBeNull()
+    expect(
+      ssr(<DualPanel {...dualProps} data={data.slice(0, 1)} />).querySelector('svg'),
+    ).not.toBeNull()
+    const nulls = ssr(
+      <DualPanel
+        {...dualNoFill}
+        data={data.map((d) => ({ ...d, v: null }))}
+        series={[{ key: 'a', label: 'A', color: 'var(--vx-line)', getValue: () => null }]}
+      />,
+    )
+    expect(nulls.innerHTML).not.toContain('NaN')
+    expect(maxTick(nulls, 'bottom')).toBeGreaterThan(0)
+  })
+
+  test('a large series does not overflow the stack computing the domain', () => {
+    const big = Array.from({ length: 150_000 }, (_, i) => ({ ...(data[0] as Row), a: i % 97 }))
+    const el = ssr(
+      <DualPanel
+        {...dualNoFill}
+        data={big}
+        series={[{ key: 'a', label: 'A', color: 'var(--vx-line)', getValue: (d) => d.a }]}
+        legend={false}
+      />,
+    )
+    expect(el.querySelector('svg')).not.toBeNull()
+  })
+
+  test('the bar key is reserved', () => {
+    expect(() =>
+      renderToString(
+        <DualPanel
+          {...dualProps}
+          series={[{ key: '__bar', label: 'x', color: 'var(--vx-line)', getValue: () => 1 }]}
+        />,
+      ),
+    ).toThrow('"__bar" is reserved')
   })
 })
+
+// ── MirroredBars ────────────────────────────────────────────────────────────────────────────────
 
 const mirrored: MirroredBarsProps<Row, Date> = {
   ariaLabel: 'Throughput',
@@ -232,170 +383,213 @@ const mirrored: MirroredBarsProps<Row, Date> = {
   down: { key: 'down', format: (v) => `${v} MB` },
 }
 
-const attr = (el: Element, selector: string, name: string): number =>
-  Number(el.querySelector(selector)?.getAttribute(name))
+const withUp = (up: Partial<MirroredBarsProps<Row, Date>['up']>): MirroredBarsProps<Row, Date> => ({
+  ...mirrored,
+  up: { ...mirrored.up, ...up },
+})
 
-const maxTopTick = (pane: Partial<MirroredBarsProps<Row, Date>['up']>): number => {
-  const el = document.createElement('div')
-  el.innerHTML = renderToString(<MirroredBars {...mirrored} up={{ ...mirrored.up, ...pane }} />)
-  return Math.max(
-    ...[
-      ...el.querySelectorAll(
-        '[data-ts-key="view-composition-0:top:view"] text[data-ts-key^="y-tick"]',
-      ),
-    ].map((n) => parseFloat(n.textContent ?? '')),
-  )
+/** `n` five-minute slots; slot 7 spikes upload to 99. */
+const slots = (n: number): Row[] =>
+  Array.from({ length: n }, (_, i) => ({
+    t: new Date(Date.UTC(2026, 8, 1, 0, i * 5)),
+    a: 0,
+    b: 0,
+    v: 0,
+    up: i === 7 ? 99 : 1,
+    down: 1,
+    gap: 0,
+  }))
+const keepSpike = (g: Row[]): Row => ({ ...(g[0] as Row), up: Math.max(...g.map((r) => r.up)) })
+const upBars = (el: Element): Element[] => markRects(el, 'top', 'up-bars')
+const downBars = (el: Element): Element[] => markRects(el, 'bottom', 'down-bars')
+const baselineY = (el: Element, pane: Pane): number =>
+  num(markGroup(el, pane, 'baseline')?.querySelector('line'), 'y1')
+
+/** How many measured and absent rects a first-datum absent fraction of `f` draws. */
+const absentCounts = (f: number): { measured: number; absent: number } => {
+  const el = ssr(<MirroredBars {...mirrored} getAbsentFraction={(d) => (d.up === 10 ? f : 0)} />)
+  return {
+    measured: markRects(el, 'top', 'up-measured-').length,
+    absent: markRects(el, 'top', 'up-absent').length,
+  }
 }
 
 describe('MirroredBars', () => {
   test('one host; the up pane grows up, the down pane grows down from one baseline', () => {
-    const el = document.createElement('div')
-    el.innerHTML = renderToString(<MirroredBars {...mirrored} />)
+    const el = ssr(<MirroredBars {...mirrored} />)
     expect(el.querySelectorAll('svg[role="img"]').length).toBe(1)
-    const up = el.querySelector('[data-ts-key$=":top:up-bars"] rect')
-    const down = el.querySelector('[data-ts-key$=":bottom:down-bars"] rect')
-    const upBase = Number(up?.getAttribute('y')) + Number(up?.getAttribute('height'))
-    const upLine = attr(el, '[data-ts-key$=":top:baseline"] line', 'y1')
-    const downLine = attr(el, '[data-ts-key$=":bottom:baseline"] line', 'y1')
-    expect(upBase).toBeCloseTo(upLine, 1)
-    // The down bar hangs from the top of its pane, which is the baseline.
-    expect(Number(down?.getAttribute('y'))).toBeCloseTo(downLine, 1)
+    const up = upBars(el)[0]
+    const down = downBars(el)[0]
+    expect(num(up, 'y') + num(up, 'height')).toBeCloseTo(baselineY(el, 'top'), 1)
+    expect(num(down, 'y')).toBeCloseTo(baselineY(el, 'bottom'), 1)
   })
 
   test('each pane resolves its own domain, in its own units', () => {
-    const el = document.createElement('div')
-    el.innerHTML = renderToString(<MirroredBars {...mirrored} />)
-    const ticks = (pane: string): string[] =>
-      [
-        ...el.querySelectorAll(
-          `[data-ts-key="view-composition-0:${pane}:view"] text[data-ts-key^="y-tick"]`,
-        ),
-      ].map((n) => n.textContent ?? '')
-    expect(ticks('top').every((t) => t.endsWith(' kB'))).toBe(true)
-    expect(ticks('bottom').every((t) => t.endsWith(' MB'))).toBe(true)
+    const el = ssr(<MirroredBars {...mirrored} />)
+    expect(yTicks(el, 'top').every((t) => t.endsWith(' kB'))).toBe(true)
+    expect(yTicks(el, 'bottom').every((t) => t.endsWith(' MB'))).toBe(true)
     // up peaks at 20, down at 4: shared, the download would be a sliver.
-    expect(Math.max(...ticks('top').map((t) => parseFloat(t)))).toBeGreaterThanOrEqual(20)
-    expect(Math.max(...ticks('bottom').map((t) => parseFloat(t)))).toBeLessThan(10)
+    expect(maxTick(el, 'top')).toBeGreaterThanOrEqual(20)
+    expect(maxTick(el, 'bottom')).toBeLessThan(10)
   })
 
-  test('a pinned max and autoMaxFloor bound the pane', () => {
-    expect(maxTopTick({ max: 100 })).toBe(100)
-    expect(maxTopTick({ autoMaxFloor: 80 })).toBeGreaterThanOrEqual(80)
+  test('a pinned max wins; autoMaxFloor floors the auto max', () => {
+    expect(maxTick(ssr(<MirroredBars {...withUp({ max: 100 })} />), 'top')).toBe(100)
+    expect(
+      maxTick(ssr(<MirroredBars {...withUp({ autoMaxFloor: 80 })} />), 'top'),
+    ).toBeGreaterThanOrEqual(80)
+    // A floor below the data changes nothing.
+    expect(maxTick(ssr(<MirroredBars {...withUp({ autoMaxFloor: 1 })} />), 'top')).toBe(
+      maxTick(ssr(<MirroredBars {...mirrored} />), 'top'),
+    )
+  })
+
+  test('a window with no traffic keeps a drawable domain; a hidden pane falls back to one', async () => {
+    const quiet = ssr(
+      <MirroredBars {...mirrored} data={data.map((d) => ({ ...d, up: 0, down: 0 }))} />,
+    )
+    expect(quiet.innerHTML).not.toContain('NaN')
+    expect(maxTick(quiet, 'top')).toBeGreaterThan(0)
+    const el = await mount(<MirroredBars {...mirrored} />)
+    await act(async () => legendButton(el, 'up').click())
+    expect(maxTick(el, 'top')).toBeLessThanOrEqual(1)
+    expect(maxTick(el, 'bottom')).toBeGreaterThan(1)
   })
 
   test('upFraction splits the height; the panes meet at one baseline (no gap)', () => {
-    const el = document.createElement('div')
-    el.innerHTML = renderToString(<MirroredBars {...mirrored} upFraction={0.25} height={400} />)
-    const clip = (pane: string): number =>
-      attr(el, `[data-ts-key="view-composition-0:${pane}:view:clip-defs"] rect`, 'height')
-    expect(clip('bottom') / clip('top')).toBeCloseTo(3, 0)
-    const offset = (pane: string): number =>
-      Number(
-        el
-          .querySelector(`[data-ts-key="view-composition-0:${pane}:view"]`)
-          ?.getAttribute('transform')
-          ?.match(/translate\(0 ([\d.]+)\)/)?.[1],
-      )
-    expect(offset('bottom')).toBeCloseTo(clip('top'), 1)
+    const el = ssr(<MirroredBars {...mirrored} upFraction={0.25} height={400} />)
+    expect(frame(el, 'bottom').height / frame(el, 'top').height).toBeCloseTo(3, 0)
+    expect(frame(el, 'bottom').y).toBeCloseTo(frame(el, 'top').height, 1)
+  })
+
+  test('an upFraction outside 0..1 still renders, clamped', () => {
+    for (const f of [-1, 5, Number.NaN])
+      expect(ssr(<MirroredBars {...mirrored} upFraction={f} />).querySelector('svg')).not.toBeNull()
   })
 
   test('an absent fraction is a flat neutral slice at the bar edge, across the full pane', () => {
-    const el = document.createElement('div')
-    el.innerHTML = renderToString(<MirroredBars {...mirrored} getAbsentFraction={(d) => d.gap} />)
-    for (const pane of ['top', 'bottom']) {
-      const slice = el.querySelector(
-        `[data-ts-key$=":${pane}:${pane === 'top' ? 'up' : 'down'}-absent"] rect`,
-      )
-      expect(slice?.getAttribute('fill')).toBe('var(--vx-neutral)')
-      expect(slice?.getAttribute('fill')).not.toContain('url(')
-    }
-    // The 2nd of 4 samples is half absent: measured + slice exactly tile the band the engine draws
-    // for its neighbours (same x, same width).
-    const bar = (i: number): [number, number] => {
-      const r = el.querySelectorAll('[data-ts-key$=":top:up-bars"] rect')[i]
-      return [Number(r?.getAttribute('x')), Number(r?.getAttribute('width'))]
-    }
-    const [bandX, bandW] = bar(1)
-    const measured = el.querySelector('[data-ts-key*=":top:up-measured-"] rect')
-    const slice = el.querySelector('[data-ts-key$=":top:up-absent"] rect')
-    expect(Number(measured?.getAttribute('x'))).toBeCloseTo(bandX, 1)
-    expect(Number(measured?.getAttribute('width'))).toBeCloseTo(bandW / 2, 1)
-    expect(Number(slice?.getAttribute('x'))).toBeCloseTo(bandX + bandW / 2, 1)
-    expect(Number(slice?.getAttribute('width'))).toBeCloseTo(bandW / 2, 1)
-    // The bar itself stays as the (invisible) hover target.
-    expect(bar(1)[1]).toBeCloseTo(bandW, 1)
-    expect(el.querySelectorAll('[data-ts-key$=":top:up-bars"] rect')[1]?.getAttribute('fill')).toBe(
-      'transparent',
+    const el = ssr(<MirroredBars {...mirrored} getAbsentFraction={(d) => d.gap} />)
+    expect(markRects(el, 'top', 'up-absent')[0]?.getAttribute('fill')).toBe('var(--vx-neutral)')
+    expect(markRects(el, 'bottom', 'down-absent')[0]?.getAttribute('fill')).toBe(
+      'var(--vx-neutral)',
     )
+    // The 2nd of 4 samples is half absent: measured + slice tile the band the engine draws.
+    const band = upBars(el)[1]
+    const measured = markRects(el, 'top', 'up-measured-')[0]
+    const slice = markRects(el, 'top', 'up-absent')[0]
+    expect(num(measured, 'x')).toBeCloseTo(num(band, 'x'), 1)
+    expect(num(measured, 'width')).toBeCloseTo(num(band, 'width') / 2, 1)
+    expect(num(slice, 'x')).toBeCloseTo(num(band, 'x') + num(band, 'width') / 2, 1)
+    expect(num(slice, 'width')).toBeCloseTo(num(band, 'width') / 2, 1)
+    // The bar itself stays as the (invisible) hover target.
+    expect(band?.getAttribute('fill')).toBe('transparent')
   })
 
-  test('getBarOpacity dims a bar', () => {
-    const html = renderToString(
-      <MirroredBars {...mirrored} getBarOpacity={(d) => (d.up === 5 ? 0.4 : 1)} />,
+  test('a fully absent bar is all neutral; out-of-range fractions clamp', () => {
+    expect(absentCounts(1)).toEqual({ measured: 0, absent: 1 })
+    expect(absentCounts(1.5)).toEqual({ measured: 0, absent: 1 })
+    expect(absentCounts(-0.5)).toEqual({ measured: 0, absent: 0 })
+    expect(absentCounts(Number.NaN)).toEqual({ measured: 0, absent: 0 })
+    expect(absentCounts(0.3)).toEqual({ measured: 1, absent: 1 })
+  })
+
+  test('getBarOpacity dims a bar; partly absent bars of two opacities are two marks', () => {
+    const dim = ssr(<MirroredBars {...mirrored} getBarOpacity={(d) => (d.up === 5 ? 0.4 : 1)} />)
+    expect(upBars(dim)[0]?.getAttribute('fill')).toBe(
+      'color-mix(in srgb, var(--vx-accent) 40%, transparent)',
     )
-    expect(html).toContain('color-mix(in srgb, var(--vx-accent) 40%, transparent)')
+    const two = ssr(
+      <MirroredBars
+        {...mirrored}
+        getAbsentFraction={(d) => (d.up <= 10 ? 0.5 : 0)}
+        getBarOpacity={(d) => (d.up === 5 ? 0.4 : 1)}
+      />,
+    )
+    expect(markRects(two, 'top', 'up-measured-').map((r) => r.getAttribute('fill'))).toEqual([
+      'color-mix(in srgb, var(--vx-accent) 40%, transparent)',
+      'color-mix(in srgb, var(--vx-accent) 100%, transparent)',
+    ])
   })
 
   test('fold collapses adjacent data to fit the width, merging by the consumer', () => {
-    const many: Row[] = Array.from({ length: 400 }, (_, i) => ({
-      t: new Date(Date.UTC(2026, 8, 1, 0, i * 5)),
-      a: 0,
-      b: 0,
-      v: 0,
-      up: i === 7 ? 99 : 1,
-      down: 1,
-      gap: 0,
-    }))
-    const merge = (g: Row[]): Row => ({
-      ...(g[0] as Row),
-      up: Math.max(...g.map((r) => r.up)),
-    })
-    const bars = (fold: boolean): number => {
-      const el = document.createElement('div')
-      el.innerHTML = renderToString(
-        <MirroredBars {...mirrored} data={many} {...(fold && { fold: { merge } })} />,
-      )
-      return el.querySelectorAll('[data-ts-key$=":top:up-bars"] rect').length
-    }
-    expect(bars(false)).toBe(400)
-    expect(bars(true)).toBeLessThanOrEqual(Math.floor(640 / 3))
+    const many = slots(400)
+    expect(upBars(ssr(<MirroredBars {...mirrored} data={many} />)).length).toBe(400)
+    const folded = ssr(<MirroredBars {...mirrored} data={many} fold={{ merge: keepSpike }} />)
+    // The default width is 640 and the default pitch 3px.
+    expect(upBars(folded).length).toBeLessThanOrEqual(Math.floor(640 / 3))
+    expect(upBars(folded).length).toBeGreaterThan(100)
+    // The merge kept the spike: a max, not a mean.
+    const tallest = Math.min(...upBars(folded).map((r) => num(r, 'y')))
+    expect(tallest).toBeCloseTo(plot(folded, 'top').y, 0)
+    const wide = ssr(
+      <MirroredBars {...mirrored} data={many} fold={{ merge: keepSpike, minBandPx: 20 }} />,
+    )
+    expect(upBars(wide).length).toBeLessThanOrEqual(Math.floor(640 / 20))
+  })
+
+  test('fold leaves data that already fits untouched', () => {
+    const el = ssr(<MirroredBars {...mirrored} fold={{ merge: () => data[0] as Row }} />)
+    expect(upBars(el).length).toBe(4)
   })
 
   test('a pane key naming no series throws, naming the key', () => {
     expect(() =>
       renderToString(<MirroredBars {...mirrored} up={{ key: 'nope', format: String }} />),
     ).toThrow('up.key "nope"')
+    expect(() =>
+      renderToString(<MirroredBars {...mirrored} down={{ key: 'nope', format: String }} />),
+    ).toThrow('down.key "nope"')
   })
 
-  test('a legend toggle hides a pane', async () => {
+  test('a legend toggle hides a pane; the legend-only entry has nothing to hide', async () => {
     const el = await mount(<MirroredBars {...mirrored} />)
-    expect(el.querySelector('[data-ts-key$=":bottom:down-bars"] rect')).not.toBeNull()
-    await act(async () =>
-      (el.querySelector('button[data-legend-key="down"]') as HTMLButtonElement).click(),
-    )
-    expect(el.querySelector('[data-ts-key$=":bottom:down-bars"] rect')).toBeNull()
-    expect(el.querySelector('[data-ts-key$=":top:up-bars"] rect')).not.toBeNull()
-    // The legend-only entry names absence and has nothing to hide.
+    expect(downBars(el).length).toBe(4)
+    await act(async () => legendButton(el, 'down').click())
+    expect(downBars(el).length).toBe(0)
+    expect(upBars(el).length).toBe(4)
     expect(el.querySelector('[data-legend-key="gap"]')).not.toBeNull()
+  })
+
+  test('hovering a legend entry dims the other pane', async () => {
+    const el = await mount(<MirroredBars {...mirrored} />)
+    await mouseOver(legendButton(el, 'down'))
+    expect(downBars(el)[0]?.getAttribute('fill')).toBe(
+      'color-mix(in srgb, var(--vx-line) 100%, transparent)',
+    )
+    expect(upBars(el)[0]?.getAttribute('fill')).toBe(
+      'color-mix(in srgb, var(--vx-accent) 25%, transparent)',
+    )
   })
 
   test('one tooltip: each pane row in its own format, a legend-only entry has no row', async () => {
     const el = await mount(<MirroredBars {...mirrored} legend={false} />)
-    const svg = el.querySelector('svg')
-    if (!svg) throw new Error('no chart')
-    await act(async () => {
-      svg.dispatchEvent(
-        new PointerEvent('pointermove', { clientX: 200, clientY: 40, bubbles: true }),
-      )
-      await new Promise((r) => setTimeout(r, 30))
-    })
-    const tips = [...document.querySelectorAll('.ts-chart-tooltip')]
-    expect(tips.length).toBe(1)
-    const text = tips[0]?.textContent ?? ''
-    expect(text).toContain('Download')
-    expect(text).toMatch(/\d MB/)
-    expect(text).toContain('Upload')
-    expect(text).toMatch(/\d kB/)
+    await hover(el)
+    expect(tooltips().length).toBe(1)
+    const text = tooltips()[0]?.textContent ?? ''
+    expect(text).toMatch(/Download.*\d MB/)
+    expect(text).toMatch(/Upload.*\d kB/)
     expect(text).not.toContain('No data')
+  })
+
+  test('tooltip={false} paints no tooltip', async () => {
+    const el = await mount(<MirroredBars {...mirrored} tooltip={false} legend={false} />)
+    await hover(el)
+    expect(tooltips().length).toBe(0)
+  })
+
+  test('a series outside both panes falls back to the default number format', async () => {
+    const extra = { key: 'x', label: 'Extra', color: 'var(--vx-bad)', getValue: () => 1234 }
+    const el = await mount(
+      <MirroredBars {...mirrored} series={[...mirrored.series, extra]} legend={false} />,
+    )
+    await hover(el)
+    expect(tooltips()[0]?.textContent).toContain('1.2k')
+  })
+
+  test('degenerate data renders: empty and one sample', () => {
+    expect(ssr(<MirroredBars {...mirrored} data={[]} />).querySelector('svg')).not.toBeNull()
+    const one = ssr(<MirroredBars {...mirrored} data={data.slice(0, 1)} />)
+    expect(one.innerHTML).not.toContain('NaN')
+    expect(upBars(one).length).toBe(1)
   })
 })

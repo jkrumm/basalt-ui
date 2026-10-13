@@ -9,7 +9,6 @@
  */
 import { areaY } from '@tanstack/charts/area'
 import { differenceY } from '@tanstack/charts/difference'
-import { dot } from '@tanstack/charts/dot'
 import { decorative } from '@tanstack/charts/mark/decorative'
 import { text } from '@tanstack/charts/text'
 import { useCallback } from 'react'
@@ -18,7 +17,7 @@ import { VX } from '../tokens'
 import { CartesianRung } from './CartesianChart'
 import { areaGradientId } from './compile'
 import { chartCurve } from './curves'
-import { lineMark, yScaleOf } from './marks'
+import { lineMark, markersOf, yScaleOf } from './marks'
 import { rowX } from './types'
 import type {
   CartesianChartProps,
@@ -44,52 +43,6 @@ export type LinesProps<T, X extends ChartX = ChartX> = Omit<CartesianChartProps<
 }
 
 const hasValue = <T, X extends ChartX>(r: PlotRow<T, X>): boolean => r.y !== null
-
-type MarkerGroup<T, X extends ChartX> = {
-  color: string
-  opacity: number
-  ring: boolean
-  rows: (PlotRow<T, X> & { r: number })[]
-}
-
-function markersOf<T, X extends ChartX>(
-  s: ChartSeries<T>,
-  rows: readonly PlotRow<T, X>[],
-  yScale: 'y2' | undefined,
-): ChartMarks {
-  const getMarker = s.getMarker
-  if (!getMarker) return []
-  // `dot.fill` is constant, so one decorative dot mark per distinct marker paint.
-  const groups: MarkerGroup<T, X>[] = []
-  for (const row of rows) {
-    if (row.y === null) continue
-    const m = getMarker(row.datum)
-    if (!m) continue
-    const paint = { color: m.color ?? s.color, opacity: m.fillOpacity ?? 1, ring: m.ring !== false }
-    let group = groups.find(
-      (g) => g.color === paint.color && g.opacity === paint.opacity && g.ring === paint.ring,
-    )
-    if (!group) {
-      group = { ...paint, rows: [] }
-      groups.push(group)
-    }
-    group.rows.push({ ...row, r: m.r ?? VX.dotR })
-  }
-  return groups.map((group, i) =>
-    decorative(
-      dot(group.rows, {
-        id: `${s.key}-marker-${i}`,
-        x: rowX,
-        y: 'y',
-        r: 'r',
-        fill: group.color,
-        fillOpacity: group.opacity,
-        ...(group.ring && { stroke: VX.surface.panel, strokeWidth: 1.5 }),
-        ...(yScale !== undefined && { yScale }),
-      }),
-    ),
-  )
-}
 
 function endLabels<T, X extends ChartX>(
   plot: PlotContext<T, X>,
