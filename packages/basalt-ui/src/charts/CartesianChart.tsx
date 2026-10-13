@@ -10,12 +10,13 @@ import { useCallback, useEffect, useId, useMemo, useState } from 'react'
 import type { CSSProperties, ReactElement, ReactNode } from 'react'
 import { useChartCard } from './card-context'
 import { compileCartesian } from './compile'
+import type { CartesianDefinition } from './compile'
 import { ChartEngine } from './host'
 import { ChartLegend, legendEntries } from './legend'
 import type { LegendMode } from './legend'
 import { useChartSize } from './sizing'
 import { ChartPlaceholder, resolveChartState } from './state'
-import type { CartesianChartProps, ChartX } from './types'
+import type { CartesianChartProps, ChartSeries, ChartX } from './types'
 
 /** Kind-only compile switches, never on the public props. */
 export type RungOptions = {
@@ -44,18 +45,50 @@ function useShallowStable<V extends Record<string, unknown>>(next: V): V {
   return same ? kept : next
 }
 
-export function CartesianRung<T, X extends ChartX>(
-  props: CartesianChartProps<T, X> & RungOptions,
-): ReactElement {
-  const { ariaLabel, legend, height, state, className, style, series, ...spec } = props
+/** What a chart's definition is compiled from, besides its own props: the chrome's live state. */
+export type ShellContext = {
+  /** Unique per mounted chart (React `useId`). */
+  chartId: string
+  /** Series keys the legend has toggled off. */
+  hidden: ReadonlySet<string>
+  /** The legend entry under the pointer. */
+  highlighted: string | null
+  /** A coarse primary pointer. */
+  coarse: boolean
+  /** The measured width; 0 unless the shell was asked to track it (`byWidth`). */
+  width: number
+}
+
+export type ChartShellProps<T> = Pick<
+  CartesianChartProps<T, ChartX>,
+  'ariaLabel' | 'legend' | 'height' | 'state' | 'className' | 'style'
+> & {
+  /** The legend and tooltip source. */
+  series: readonly ChartSeries<T>[]
+  /** Compiles the definition; memoized on its own identity and the context. Keep it stable. */
+  compile: (ctx: ShellContext) => CartesianDefinition
+  /** Recompile when the measured width changes (default: it is not an input). */
+  byWidth?: boolean
+}
+
+/**
+ * The chrome around every chart: size, the `hidden`/`highlighted` legend state, the derived legend
+ * (and its `ChartCard` header slot), the `state` placeholders and the engine mount. The rung and
+ * the composed kinds differ only in the definition they compile.
+ */
+export function ChartShell<T>(props: ChartShellProps<T>): ReactElement {
+  const { ariaLabel, legend, height, state, className, style, series, compile, byWidth } = props
   const chartId = useId()
   const card = useChartCard()
   const { ref, size, coarse } = useChartSize(height)
   const [hidden, setHidden] = useState<ReadonlySet<string>>(() => new Set())
   const [highlighted, setHighlighted] = useState<string | null>(null)
 
-  const input = useShallowStable({ ...spec, series, chartId, hidden, highlighted, coarse })
-  const definition = useMemo(() => compileCartesian(input), [input])
+  const width = byWidth ? size.width : 0
+  const definition = useMemo(
+    () => compile({ chartId, hidden, highlighted, coarse, width }),
+    [compile, chartId, hidden, highlighted, coarse, width],
+  )
 
   // ── legend: micro has none, compact shows dots, regular and wide show chips ────────────────────
   const config = legend === false ? null : (legend ?? {})
@@ -117,6 +150,29 @@ export function CartesianRung<T, X extends ChartX>(
       )}
       {!atTop && !inHeader && legendNode}
     </div>
+  )
+}
+
+export function CartesianRung<T, X extends ChartX>(
+  props: CartesianChartProps<T, X> & RungOptions,
+): ReactElement {
+  const { ariaLabel, legend, height, state, className, style, series, ...spec } = props
+  const stable = useShallowStable({ ...spec, series })
+  const compile = useCallback(
+    (ctx: ShellContext) => compileCartesian({ ...stable, ...ctx }),
+    [stable],
+  )
+  return (
+    <ChartShell
+      series={series}
+      compile={compile}
+      ariaLabel={ariaLabel}
+      {...(legend !== undefined && { legend })}
+      {...(height !== undefined && { height })}
+      {...(state !== undefined && { state })}
+      {...(className !== undefined && { className })}
+      {...(style !== undefined && { style })}
+    />
   )
 }
 

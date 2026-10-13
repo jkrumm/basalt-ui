@@ -126,7 +126,7 @@ export function dateTicks(domain: readonly [Date, Date], count: number, stepMs: 
   return days.length >= 2 ? days : ticks.filter((_, i, all) => i === 0 || i === all.length - 1)
 }
 
-function defaultFormatX(v: ChartValue): string {
+export function defaultFormatX(v: ChartValue): string {
   if (v instanceof Date) return utcAxisDate(v)
   if (typeof v === 'number') return defaultNumberFormat(v)
   return String(v)
@@ -147,7 +147,7 @@ export function visibleSeries<T>(
 
 type YAxis = { domain: readonly [number, number]; format: (v: number) => string }
 
-function yGuide<T>(opts: {
+export function yGuide<T>(opts: {
   cfg: AxisConfig<T> | undefined
   axis: YAxis
   cls: ContainerClass
@@ -196,7 +196,7 @@ function xTickPolicy<X extends ChartX>(
   return { count: xTicks }
 }
 
-function xGuide<X extends ChartX>(opts: {
+export function xGuide<X extends ChartX>(opts: {
   model: XScaleModel<X>
   xTicks: number | readonly X[] | undefined
   format: (v: ChartValue) => string

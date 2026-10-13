@@ -22,10 +22,10 @@ import { useCallback, useMemo } from 'react'
 import type { ReactElement } from 'react'
 import { VX, alpha } from '../tokens'
 import { resolveContainerClass } from '../tokens/size-classes'
-import { defaultNumberFormat, visibleSeries } from './compile'
-import { PanelRung, defaultFormatX, rowsOf, xGuide, yGuide } from './DualPanel'
-import type { PaneBuilder, PanelPlan } from './DualPanel'
+import { defaultFormatX, defaultNumberFormat, visibleSeries } from './compile'
 import { emphasis } from './marks'
+import { PanelRung, paneX, paneY, rowsOf } from './panel'
+import type { PaneBuilder, PanelInput, PanelPlan } from './panel'
 import { xScaleFor } from './scales'
 import { rowX } from './types'
 import type { CartesianChartProps, ChartSeries, ChartX, PlotRow } from './types'
@@ -135,10 +135,10 @@ function assertPaneKey<T>(
 export function MirroredBars<T, X extends ChartX = ChartX>(
   props: MirroredBarsProps<T, X>,
 ): ReactElement {
-  const { data, x, series, up, down, upFraction = DEFAULT_UP_FRACTION } = props
-  const { getAbsentFraction, getBarOpacity, fold: foldConfig, formatX } = props
-  const { ariaLabel, legend, height, state, cursorGroup, tooltip, className, style } = props
-  const { cursorResolution = 'leading' } = props
+  const { data, x, series, up, down, upFraction = DEFAULT_UP_FRACTION, ...more } = props
+  const { getAbsentFraction, getBarOpacity, fold: foldConfig, cursorResolution = 'leading' } = more
+  const { getAbsentFraction: _a, getBarOpacity: _b, fold: _f, cursorResolution: _c, ...rung } = more
+  const { formatX } = rung
 
   const bars = useMemo<ChartSeries<T>[]>(
     () => series.map((s) => ({ ...s, mark: 'bar' as const })),
@@ -146,15 +146,7 @@ export function MirroredBars<T, X extends ChartX = ChartX>(
   )
 
   const plan = useCallback(
-    ({
-      hidden,
-      highlighted,
-      width,
-    }: {
-      hidden: ReadonlySet<string>
-      highlighted: string | null
-      width: number
-    }): PanelPlan<T> => {
+    ({ hidden, highlighted, width }: PanelInput): PanelPlan<T> => {
       const upSeries = assertPaneKey('up', up.key, bars)
       const downSeries = assertPaneKey('down', down.key, bars)
       const drawn = foldConfig
@@ -185,6 +177,8 @@ export function MirroredBars<T, X extends ChartX = ChartX>(
         ): PaneBuilder =>
         ({ width: w }) => {
           const cls = resolveContainerClass(w)
+          // The down pane's zero is at its top.
+          const domain: [number, number] = side === 'up' ? [0, max] : [max, 0]
           const rows: PlotRow<T, X>[] = on ? rowsOf(drawn, x, s) : []
           const opacity = (d: T): number =>
             (getBarOpacity?.(d) ?? BAR_OPACITY) * emphasis(highlighted, s)
@@ -256,16 +250,15 @@ export function MirroredBars<T, X extends ChartX = ChartX>(
             scales: {
               x:
                 side === 'down'
-                  ? {
-                      scale: bandScale(),
-                      ...xGuide({ ticks: { values: model.values }, format, cls }),
-                    }
+                  ? paneX({ scale: bandScale(), model, format, cls })
                   : { scale: bandScale(), axis: false },
-              y: {
-                scale:
-                  side === 'up' ? scaleLinear().domain([0, max]) : scaleLinear().domain([max, 0]),
-                ...yGuide({ format: cfg.format, ticks: cfg.ticks ?? DEFAULT_PANE_TICKS, cls }),
-              },
+              y: paneY({
+                scale: scaleLinear().domain(domain),
+                domain,
+                format: cfg.format,
+                ticks: cfg.ticks ?? DEFAULT_PANE_TICKS,
+                cls,
+              }),
               zx: { channel: 'x', scale: scaleLinear().domain([0, 1]), axis: false },
             },
           }
@@ -301,19 +294,11 @@ export function MirroredBars<T, X extends ChartX = ChartX>(
 
   return (
     <PanelRung
-      ariaLabel={ariaLabel}
+      {...rung}
       series={bars}
       plan={plan}
       byWidth={foldConfig !== undefined}
       cursorResolution={cursorResolution}
-      {...(formatX !== undefined && { formatX })}
-      {...(legend !== undefined && { legend })}
-      {...(height !== undefined && { height })}
-      {...(state !== undefined && { state })}
-      {...(cursorGroup !== undefined && { cursorGroup })}
-      {...(tooltip !== undefined && { tooltip })}
-      {...(className !== undefined && { className })}
-      {...(style !== undefined && { style })}
     />
   )
 }
