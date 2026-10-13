@@ -19,7 +19,15 @@ import { loadRoutes, serveDist } from './serve'
 import type { Lane, LaneCtx, LaneResult } from './types'
 
 const ROOT = resolve(import.meta.dirname, '../..')
-const LANES = ['bundle', 'screens', 'lighthouse', 'charts-perf', 'chat-profile', 'otel'] as const
+const LANES = [
+  'bundle',
+  'screens',
+  'lighthouse',
+  'charts-perf',
+  'chat-profile',
+  'keyboard',
+  'otel',
+] as const
 const BUILD_TIMEOUT_MS = 300_000
 const LANE_TIMEOUT_MS = 20 * 60_000
 

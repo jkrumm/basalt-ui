@@ -6,6 +6,8 @@ import { gzipBytes, routeChunks, routeOfKey, subpathEntries } from './bundle'
 import type { Manifest } from './bundle'
 import { renderSummary, stableStringify } from './index'
 import type { LaneOutcome } from './index'
+import { chartSlug, signatureOf, summaryRows, toSteps, uniqueNames, verdictOf } from './keyboard'
+import type { Key, KeyStep } from './keyboard'
 import { median } from './perf-util'
 import { routeSlug } from './screens'
 import { parseRoutes, routesFromDir } from './serve'
@@ -191,5 +193,42 @@ describe('output', () => {
     expect(md).toContain('lane failed: boom')
     expect(md).not.toContain('stack')
     expect(renderSummary('t', outcomes)).toBe(md)
+  })
+})
+
+describe('keyboard lane (pure parts)', () => {
+  const step = (key: Key, moved: boolean): KeyStep => ({ key, signature: key, moved })
+
+  it('slugs labels and de-duplicates names', () => {
+    expect(chartSlug('Revenue by day (EUR)')).toBe('revenue-by-day-eur')
+    expect(chartSlug('***')).toBe('chart')
+    expect(uniqueNames(['A', 'B', 'A', 'A'])).toEqual(['A', 'B', 'A #2', 'A #3'])
+  })
+
+  it('marks a step moved only when the signature differs from the previous one', () => {
+    const steps = toSteps('s0', [
+      { key: 'ArrowRight', signature: 's1' },
+      { key: 'ArrowRight', signature: 's1' },
+      { key: 'Home', signature: 's0' },
+    ])
+    expect(steps.map((s) => s.moved)).toEqual([true, false, true])
+    expect(signatureOf(' a ', ' x\n y ')).toBe('a | x y')
+  })
+
+  it('FAILs a chart that ignores ArrowRight or cannot take focus, without throwing', () => {
+    const still = [step('ArrowRight', false), step('Home', true)]
+    expect(verdictOf({ focusable: true, steps: still })).toEqual({
+      pass: false,
+      moved: 1,
+      total: 2,
+    })
+    expect(verdictOf({ focusable: false, steps: [step('ArrowRight', true)] }).pass).toBe(false)
+    expect(verdictOf({ focusable: true, steps: [step('ArrowRight', true)] }).pass).toBe(true)
+    const rows = summaryRows([{ name: 'A', view: 'default', focusable: true, steps: still }])
+    expect(rows).toEqual([
+      { metric: 'charts walked', value: 1 },
+      { metric: 'charts failing', value: 1 },
+      { metric: 'A', value: 'FAIL', unit: '1/2 steps moved' },
+    ])
   })
 })
