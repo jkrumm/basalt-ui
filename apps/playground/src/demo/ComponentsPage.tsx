@@ -276,9 +276,9 @@ function ComponentsSurfaces() {
             </Group>
             <Divider />
             <Text size="sm">
-              Inline <Code>useVxTheme()</Code> reads the token refs.
+              Inline <Code>VX.line</Code> is a token ref.
             </Text>
-            <Code block>{`import { VX } from 'basalt-ui/charts'\nconst stroke = VX.line`}</Code>
+            <Code block>{`import { VX } from 'basalt-ui/tokens'\nconst stroke = VX.line`}</Code>
           </Stack>
         </ComponentGroup>
 

@@ -10,7 +10,7 @@ export type DayPoint = {
   signups: number
   revenue: number
   churn: number
-  /** Composite health 0–100 driving the ZonedLine demo. */
+  /** Composite health 0–100 driving the health-score demo. */
   health: number
 }
 
@@ -25,22 +25,8 @@ export function resolveDateRange(preset: string): DateRange {
   return preset === '1d' || preset === '7d' ? preset : '30d'
 }
 
-const DAY_LABELS = [
-  'Mar 01',
-  'Mar 02',
-  'Mar 03',
-  'Mar 04',
-  'Mar 05',
-  'Mar 06',
-  'Mar 07',
-  'Mar 08',
-  'Mar 09',
-  'Mar 10',
-  'Mar 11',
-  'Mar 12',
-  'Mar 13',
-  'Mar 14',
-]
+/** The fixture's 14-day calendar: ISO days, read by the chart pages as UTC `Date`s. */
+const DAY_LABELS = Array.from({ length: 14 }, (_, i) => `2026-03-${String(i + 1).padStart(2, '0')}`)
 
 // Hand-tuned series — a believable shape, all positive, with one churn dip the zones can frame.
 const SESSIONS = [820, 910, 870, 1040, 1180, 760, 690, 1220, 1310, 1280, 1390, 1450, 980, 1010]
@@ -69,8 +55,8 @@ export type WeeklyPoint = { date: string; sessions: number }
 const sum = (arr: readonly number[]): number => arr.reduce((s, v) => s + v, 0)
 
 export const WEEKLY_DIGEST: WeeklyPoint[] = [
-  { date: 'Mar 01', sessions: sum(SESSIONS.slice(0, 7)) },
-  { date: 'Mar 08', sessions: sum(SESSIONS.slice(7, 14)) },
+  { date: '2026-03-01', sessions: sum(SESSIONS.slice(0, 7)) },
+  { date: '2026-03-08', sessions: sum(SESSIONS.slice(7, 14)) },
 ]
 
 // ── Date-range data generator ────────────────────────────────────────────────
@@ -192,21 +178,7 @@ export function generateDashboardData(range: DateRange): {
   return { series, sparks: { sessions: sSessions, signups: sSignups, revenue: sRevenue } }
 }
 
-/** Channel mix for the Donut demo. */
-export type ChannelSlice = { key: string; label: string; value: number }
-export const CHANNEL_MIX: ChannelSlice[] = [
-  { key: 'sessions', label: 'Direct', value: 4200 },
-  { key: 'signups', label: 'Referral', value: 2600 },
-  { key: 'revenue', label: 'Organic', value: 1900 },
-  { key: 'churn', label: 'Paid', value: 1100 },
-]
-
-/** Bare number arrays for the sparklines (one per KPI tile). */
-export const SPARK_SESSIONS = SESSIONS
-export const SPARK_SIGNUPS = SIGNUPS
-export const SPARK_REVENUE = REVENUE
-
-// ── MultiLine demo: per-lift e1RM trend + trailing MA + PR markers ──────────
+// ── Lift trend demo: per-lift e1RM trend + trailing MA + PR markers ──────────
 
 /** Trailing moving average (deterministic) — window-sized mean ending at each index. */
 function trailingMa(arr: number[], window: number): number[] {
@@ -265,7 +237,7 @@ export const LIFT_TREND: LiftPoint[] = BENCH.map((_, i) => ({
   deadPr: DEAD_PR[i] ?? false,
 }))
 
-// ── DualPanel demo: acute vs chronic load + signed divergence histogram ─────
+// ── Training-load demo: acute vs chronic load, the gap shaded ───────────────
 
 const ACUTE = [48, 55, 60, 52, 46, 58, 66, 70, 64, 55, 50, 62, 68, 58]
 const CHRONIC = [50, 51, 52, 52, 53, 54, 55, 57, 58, 58, 57, 58, 60, 60]
@@ -276,7 +248,7 @@ export type LoadPoint = {
   acute: number
   /** 28-day chronic training load (baseline). */
   chronic: number
-  /** Signed acute − chronic (the bottom-pane histogram). */
+  /** Signed acute − chronic. */
   divergence: number
 }
 
@@ -288,38 +260,11 @@ export const LOAD_TREND: LoadPoint[] = DAY_LABELS.map((date, i) => ({
   divergence: ACUTE[i]! - CHRONIC[i]!,
 }))
 
-// ── Heatmap demo: day-of-week × hour-of-day session intensity ───────────────
-
-const HEATMAP_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const
-const HEATMAP_HOURS = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19] as const
-
-/** Deterministic intensity: weekday morning + evening peaks, lighter weekends. */
-function sessionLoad(dayIdx: number, hour: number): number {
-  const weekend = dayIdx >= 5
-  const morning = Math.max(0, 10 - Math.abs(hour - 10) * 2.2)
-  const evening = Math.max(0, 12 - Math.abs(hour - 18) * 2.6)
-  const base = morning + evening
-  const dayFactor = weekend ? 0.45 : 1 - dayIdx * 0.05
-  return Math.round(base * dayFactor)
-}
-
-export type HeatCell = { day: string; hour: string; sessions: number }
-
-/** 7×12 grid of session counts (84 cells). */
-export const ACTIVITY_HEATMAP: HeatCell[] = HEATMAP_DAYS.flatMap((day, di) =>
-  HEATMAP_HOURS.map((hour) => ({
-    day,
-    hour: `${hour}:00`,
-    sessions: sessionLoad(di, hour),
-  })),
-)
-
 // ── Channel volume demo: high-cardinality legend regression guard ──────────
 //
 // 4 acquisition-channel bars (stacked) + a 3-week moving-average overlay + 3 threshold
-// reference lines = 8 legend entries. Deliberately exercises `ChartLegend`'s flexWrap,
-// `role`-based grouping (series/overlay/reference), and the `maxRows` "+N more" rollup so the
-// weekly-volume-class overlap/overflow regression can't silently return.
+// reference lines = 8 legend entries. Deliberately exercises the legend's wrapping and `role`-based
+// grouping (series/overlay/reference) so the weekly-volume-class overlap regression can't return.
 
 const WEEK_LABELS = ['W1', 'W2', 'W3', 'W4', 'W5', 'W6', 'W7', 'W8'] as const
 

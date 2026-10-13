@@ -4,16 +4,13 @@
  * route).
  *
  * `WidgetHeader` at all three tiers (`section`/`widget`/`group`) × the full prop set — title,
- * subtitle, icon, info, value, unit, delta (+ polarity/format/glyph/period), count, sparkline,
+ * subtitle, icon, info, value, unit, delta (+ polarity/format/glyph/period), count,
  * actions. `DeltaBadge` both polarities, zero, and no-glyph, standalone.
  */
 import type { ReactNode } from 'react'
 import { Button, Group, Paper, Stack, Text } from '@mantine/core'
 import { DeltaBadge, WidgetHeader } from 'basalt-ui'
-import { LineSparkline, VX } from 'basalt-ui/charts'
 import { IconChart } from './icons'
-
-const SPARK_DATA = [4, 6, 5, 8, 7, 9, 8, 11, 10, 13, 12, 15]
 
 function Card({ children }: { children: ReactNode }) {
   return (
@@ -29,7 +26,7 @@ function WidgetHeaderTierBlock() {
       <Text size="sm" c="dimmed">
         The one heading primitive behind every section, card and table title — three tiers, all the
         way through the full prop set (title/subtitle/icon/info/value/unit/delta family/count/
-        sparkline/actions).
+        actions).
       </Text>
 
       <Card>
@@ -53,7 +50,7 @@ function WidgetHeaderTierBlock() {
 
       <Card>
         <Text size="xs" tt="uppercase" fw={600} c="dimmed" mb="xs">
-          tier=&quot;widget&quot; — the card heading, with a sparkline and a bad-is-up delta
+          tier=&quot;widget&quot; — the card heading, with a bad-is-up delta
         </Text>
         <WidgetHeader
           tier="widget"
@@ -64,7 +61,6 @@ function WidgetHeaderTierBlock() {
           delta={4.4}
           deltaPolarity="up-bad"
           deltaPeriod="WoW"
-          sparkline={<LineSparkline data={SPARK_DATA} width={96} height={28} color={VX.line} />}
           actions={<Button variant="subtle">Pin to top</Button>}
         />
       </Card>

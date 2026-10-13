@@ -7,8 +7,7 @@
  * `paletteOptions.groups` so the matching `--vx-demo-*` custom properties are emitted into the
  * palette stylesheet. Both halves (CSS emission + token refs) trace back to this single source.
  */
-import { defineSeries, groupTokens } from 'basalt-ui/charts'
-import type { SeriesKey } from 'basalt-ui/charts'
+import { defineSeries, groupTokens } from 'basalt-ui/tokens'
 
 declare module 'basalt-ui' {
   interface BasaltRegister {
@@ -36,11 +35,6 @@ export const DEMO_SERIES = defineSeries({
  * without any manual re-keying.
  */
 export const demoColors = groupTokens(DEMO_GROUP, DEMO_SERIES)
-
-/** Exact-keyed accessor for the dynamic-group/donut call sites — no cast, no fallback. */
-export function demoColor(key: SeriesKey): string {
-  return demoColors[key]
-}
 
 /** The `paletteOptions.groups` shape `BasaltProvider` forwards to `buildPaletteCss`. */
 export const demoPaletteGroups = [demoColors]
