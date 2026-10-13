@@ -579,13 +579,12 @@ const MOTION_TRANSITION_NUMERIC =
   /\btransition\s*=\s*\{\{[^}]*\b(?:duration|stiffness|damping|mass)\s*:\s*-?\d/g
 const MOTION_TRANSITION_EASE_ARRAY = /\btransition\s*=\s*\{\{[^}]*\bease\s*:\s*\[/g
 
-// Raw lowercase form-control element — line-scoped, line-scoped. `\b` after the
+// Raw lowercase form-control element — line-scoped. `\b` after the
 // tag name rejects a same-prefixed custom component (`<inputRef`, `<selectAll`).
 const RAW_FORM_CONTROL = /<(?:input|select|textarea)\b/g
 
-// A raw form-control's own opening tag — bounded full-text scan (same shape as CARD_SURFACE_TAG /
-// CHART_ENTRY_POINT_TAG_START), used ONLY by sub-16-input-font to search the tag's own inline `style`
-// for a sub-floor fontSize.
+// A raw form-control's own opening tag — bounded full-text scan (same shape as CARD_SURFACE_TAG),
+// used ONLY by sub-16-input-font to search the tag's own inline `style` for a sub-floor fontSize.
 const RAW_FORM_CONTROL_TAG = /<(?:input|select|textarea)\b(?:=>|[^>])*?>/g
 
 // ── Control-home patterns (docs/CONTROLS-SPEC.md §6 — the text lane of laws C1/C8) ──────────────
@@ -1936,8 +1935,8 @@ type GuardRule = {
  * This file and `src/cli/index.ts` are `exempt` in the package's own `basalt` config, and must
  * stay that way: a rule's `pattern` and its `message` both spell the anti-pattern out literally
  * (`'Raw <input>/<select>/<textarea> …'`), so the guard flags its own definitions when the package
- * self-scans. Any kind matching a literal tag hits this — Fixture files are already
- * covered by the scanner's own `SKIP` (`*.test.ts`), for the same reason.
+ * self-scans. Any kind matching a literal tag hits this. Fixture files are already covered by the
+ * scanner's own `SKIP` (`*.test.ts`), for the same reason.
  */
 export const GUARD_RULES = {
   'raw-hex': {

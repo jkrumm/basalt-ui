@@ -917,6 +917,12 @@ function boundaryVisitor(reportFor) {
     ExportAllDeclaration(node) {
       reportFor(node, exportSource(node))
     },
+    // CommonJS `require('<spec>')` with a literal specifier; a computed one cannot be judged.
+    CallExpression(node) {
+      const [arg] = node.arguments
+      if (node.callee?.type !== 'Identifier' || node.callee.name !== 'require') return
+      if (arg?.type === 'Literal') reportFor(node, arg.value)
+    },
   }
 }
 
@@ -954,8 +960,14 @@ export const CHART_ENGINE_ALLOWED_SUBPATHS = new Set([
 /** Allowed subpath FAMILIES: `scales/*` and `transform/*` (the bare `transform` is not one). */
 export const CHART_ENGINE_ALLOWED_PREFIXES = ['scales/', 'transform/']
 
-/** True when `subpath` (the part after `@tanstack/charts/`) is on the allowlist. */
+/**
+ * True when `subpath` (the part after `@tanstack/charts/`) is on the allowlist. A `.`, `..` or empty
+ * segment is rejected first: `scales/../react` starts with an allowed family but resolves outside
+ * it. Within a family the length guard rejects the bare prefix (`scales/`), which names no module.
+ */
 export function isAllowedChartEngineSubpath(subpath) {
+  if (subpath.split('/').some((segment) => segment === '' || segment === '.' || segment === '..'))
+    return false
   return (
     CHART_ENGINE_ALLOWED_SUBPATHS.has(subpath) ||
     CHART_ENGINE_ALLOWED_PREFIXES.some(
@@ -964,8 +976,10 @@ export function isAllowedChartEngineSubpath(subpath) {
   )
 }
 
-const CHART_ENGINE_ALLOWED_LIST =
-  [...CHART_ENGINE_ALLOWED_SUBPATHS].join(', ') + ', scales/*, transform/*'
+const CHART_ENGINE_ALLOWED_LIST = [
+  ...CHART_ENGINE_ALLOWED_SUBPATHS,
+  ...CHART_ENGINE_ALLOWED_PREFIXES.map((p) => `${p}*`),
+].join(', ')
 const CHART_ENGINE_MESSAGE =
   "Import chart kinds from 'basalt-ui/charts', or the rung's `marks` (CartesianChart) for custom " +
   'marks — only these @tanstack/charts subpaths are allowed: ' +
@@ -1028,12 +1042,13 @@ const chartHostSingle = {
     schema: [],
   },
   create(context) {
-    const isHost = getFilename(context)
-      .replaceAll('\\', '/')
-      .endsWith('/' + CHART_HOST_FILE)
+    const filename = getFilename(context)
+    // Scoped to basalt source: elsewhere `chart-engine-boundary` already bans /react, one diagnostic.
+    const exempt =
+      !inBasaltSource(filename) || filename.replaceAll('\\', '/').endsWith('/' + CHART_HOST_FILE)
 
     function reportFor(node, source) {
-      if (typeof source !== 'string' || isHost) return
+      if (typeof source !== 'string' || exempt) return
       if (source === '@tanstack/charts/react' || source.startsWith('@tanstack/charts/react/')) {
         context.report({ node, message: CHART_HOST_MESSAGE })
       }
