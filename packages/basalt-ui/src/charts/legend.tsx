@@ -1,0 +1,153 @@
+/**
+ * The derived legend — HTML, Mantine-free, outside the engine. Entries come from `series` only (a
+ * legend cannot name what the plot does not draw); a companion (`legend: false` + `parent`) rides
+ * its parent's entry. Toggling an entry hides the series from the plot, the tooltip and the auto
+ * domain together; hovering one emphasizes it (the definition is rebuilt with `highlighted`).
+ */
+import type { CSSProperties, ReactElement } from 'react'
+import { VX } from '../tokens'
+import type { ChartSeries } from './types'
+
+export type LegendMode = 'dots' | 'chips'
+
+const ROLE_ORDER = ['series', 'overlay', 'reference'] as const
+
+/** The entries a series list derives, in display order (by role when `groups`). */
+export function legendEntries<T>(
+  series: readonly ChartSeries<T>[],
+  groups: boolean,
+): ChartSeries<T>[][] {
+  const entries = series.filter((s) => s.legend !== false)
+  if (!groups) return entries.length ? [entries] : []
+  return ROLE_ORDER.map((role) => entries.filter((s) => (s.role ?? 'series') === role)).filter(
+    (g) => g.length > 0,
+  )
+}
+
+const rowStyle: CSSProperties = {
+  border: 0,
+  margin: 0,
+  padding: 0,
+  minWidth: 0,
+  display: 'flex',
+  flexWrap: 'wrap',
+  alignItems: 'center',
+  columnGap: VX.legendGap,
+  rowGap: 4,
+  fontSize: VX.legendFontSize,
+  color: VX.ink2,
+  lineHeight: 1.35,
+}
+const dividerStyle: CSSProperties = { width: 1, alignSelf: 'stretch', background: VX.divider }
+const buttonStyle: CSSProperties = {
+  all: 'unset',
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 6,
+  cursor: 'pointer',
+  borderRadius: VX.radiusCtrl,
+}
+const noteStyle: CSSProperties = { color: VX.axis }
+
+function Swatch({ s, mode }: { s: ChartSeries<unknown>; mode: LegendMode }): ReactElement {
+  if (mode === 'dots')
+    return (
+      <span
+        aria-hidden
+        // theme-allow raw-surface — a legend dot is a circle, not a surface corner
+        style={{ width: 8, height: 8, borderRadius: '50%', background: s.color, flex: 'none' }}
+      />
+    )
+  if ((s.mark ?? 'line') === 'line')
+    return (
+      <svg aria-hidden width={16} height={8} style={{ flex: 'none' }}>
+        <line
+          x1={1}
+          x2={15}
+          y1={4}
+          y2={4}
+          stroke={s.color}
+          strokeWidth={2}
+          strokeLinecap="round"
+          strokeOpacity={s.strokeOpacity ?? 1}
+          {...(s.dash === 'dashed' && { strokeDasharray: '4 3' })}
+        />
+      </svg>
+    )
+  return (
+    <span
+      aria-hidden
+      style={{
+        width: 10,
+        height: 10,
+        // theme-allow raw-surface — swatch geometry, not a surface corner
+        borderRadius: 2,
+        background: s.color,
+        opacity: s.fillOpacity ?? 1,
+        flex: 'none',
+      }}
+    />
+  )
+}
+
+export type ChartLegendProps<T> = {
+  series: readonly ChartSeries<T>[]
+  hidden: ReadonlySet<string>
+  mode: LegendMode
+  groups: boolean
+  toggle: boolean
+  onToggle: (key: string) => void
+  onHighlight: (key: string | null) => void
+}
+
+export function ChartLegend<T>(props: ChartLegendProps<T>): ReactElement | null {
+  const groups = legendEntries(props.series, props.groups)
+  if (groups.length === 0) return null
+  return (
+    <fieldset aria-label="Legend" data-basalt-chart-legend={props.mode} style={rowStyle}>
+      {groups.map((group, gi) => [
+        gi > 0 && <span key={`divider-${gi}`} aria-hidden style={dividerStyle} />,
+        ...group.map((s) => {
+          const off = props.hidden.has(s.key)
+          const content = (
+            <>
+              <Swatch s={s as ChartSeries<unknown>} mode={props.mode} />
+              <span>{s.label}</span>
+              {s.note !== undefined && <span style={noteStyle}>{s.note}</span>}
+            </>
+          )
+          const itemStyle: CSSProperties = { ...buttonStyle, opacity: off ? 0.4 : 1 }
+          if (!props.toggle)
+            return (
+              <span
+                key={s.key}
+                data-legend-key={s.key}
+                style={itemStyle}
+                onMouseEnter={() => props.onHighlight(s.key)}
+                onMouseLeave={() => props.onHighlight(null)}
+              >
+                {content}
+              </span>
+            )
+          return (
+            <button
+              key={s.key}
+              type="button"
+              data-legend-key={s.key}
+              data-basalt-hit=""
+              aria-pressed={!off}
+              style={itemStyle}
+              onClick={() => props.onToggle(s.key)}
+              onMouseEnter={() => props.onHighlight(s.key)}
+              onMouseLeave={() => props.onHighlight(null)}
+              onFocus={() => props.onHighlight(s.key)}
+              onBlur={() => props.onHighlight(null)}
+            >
+              {content}
+            </button>
+          )
+        }),
+      ])}
+    </fieldset>
+  )
+}
