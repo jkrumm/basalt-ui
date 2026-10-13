@@ -454,6 +454,12 @@ export function findConfigsJsFiles(): string[] {
   return entries.filter((rel) => rel.endsWith('.js')).map((rel) => join(configsRoot, rel))
 }
 
+/** History cites docs as they were then; rewriting it would falsify it (mirrors check-budgets' `APPEND_ONLY_DOCS`). */
+const isHistory = (file: string): boolean => {
+  const rel = relative(join(pkgRoot, '..', '..'), file).replaceAll('\\', '/')
+  return rel.startsWith('docs/archive/') || rel === 'docs/MATURATION-LEDGER.md'
+}
+
 export type CheckDFailure = { file: string; line: number; doc: string; replacement: string }
 
 /**
@@ -482,7 +488,9 @@ export function checkD(
       }
     })
   }
-  for (const file of rawFiles) scan(file, readFileSync(file, 'utf8').split('\n'))
+  for (const file of rawFiles.filter((f) => !isHistory(f))) {
+    scan(file, readFileSync(file, 'utf8').split('\n'))
+  }
   for (const file of commentFiles) {
     scan(file, maskToComments(readFileSync(file, 'utf8')).split('\n'))
   }
