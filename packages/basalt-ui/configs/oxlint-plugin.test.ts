@@ -8,7 +8,7 @@
  * binary and returns the parsed set of `basalt/<rule>` diagnostics it printed.
  */
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'bun:test'
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, resolve } from 'node:path'
 // eslint-disable-next-line -- the plugin is plain JS; the ledger + id set are named exports beside it
@@ -17,6 +17,9 @@ import basaltPlugin, {
   WAIVER_ID_ALIASES,
   DEPRECATED_EXPORTS,
   KNOWN_RULE_IDS,
+  CHART_ENGINE_ALLOWED_PREFIXES,
+  CHART_ENGINE_ALLOWED_SUBPATHS,
+  isAllowedChartEngineSubpath,
   PLUGIN_RULE_ADVISORY,
   PLUGIN_RULE_GRACE,
   RAW_BREAKPOINT_RECIPE,
@@ -53,8 +56,6 @@ beforeEach(() => {
         'basalt/raw-size-literal': 'error',
         'basalt/card-inset': 'error',
         'basalt/chart-in-raw-surface': 'error',
-        'basalt/hand-rolled-plot': 'error',
-        'basalt/chart-legend-literal': 'error',
         'basalt/shadow-basalt-export': 'error',
         'basalt/hand-rolled-shell': 'error',
         'basalt/raw-scroll-container': 'error',
@@ -67,8 +68,8 @@ beforeEach(() => {
         'basalt/responsive-twin': 'error',
         'basalt/search-literal-link': 'error',
         'basalt/use-search-from-literal': 'error',
-        'basalt/visx-boundary': 'error',
-        'basalt/visx-tooltip': 'error',
+        'basalt/chart-engine-boundary': 'error',
+        'basalt/chart-host-single': 'error',
         'basalt/token-layer-boundary': 'error',
         'basalt/agent-resume-guard': 'error',
         'basalt/agent-no-raw-usechat': 'error',
@@ -245,90 +246,290 @@ describe('basalt/card-inset', () => {
 
 describe('basalt/chart-in-raw-surface', () => {
   it('flags a chart-kind element inside a raw Card', () => {
-    const { code, rules } = run(`export const C = () => <Card><ZonedLine data={[]} /></Card>\n`)
+    const { code, rules } = run(`export const C = () => <Card><Lines data={[]} /></Card>\n`)
     expect(code).toBe(1)
     expect(rules).toContain('chart-in-raw-surface')
   })
 
   it('does NOT flag a chart passed as a prop value (not a Card/Paper subtree)', () => {
     const { code, rules } = run(
-      `export const C = () => <Card><StatCard sparkline={<LineSparkline />} /></Card>\n`,
+      `export const C = () => <Card><StatCard sparkline={<Sparkline />} /></Card>\n`,
     )
     expect(code).toBe(0)
     expect(rules).not.toContain('chart-in-raw-surface')
   })
 })
 
-// ── visx-boundary ────────────────────────────────────────────────────────────
+// ── chart-engine-boundary ────────────────────────────────────────────────────
 
-describe('basalt/visx-boundary', () => {
-  it('flags a @visx/* import outside charts', () => {
-    const { code, rules } = run(`import { scaleLinear } from '@visx/scale'\n`, 'lib.ts')
+describe('basalt/chart-engine-boundary', () => {
+  it.each([
+    ['@visx/scale', `import { scaleLinear } from '@visx/scale'\n`],
+    ['@visx/tooltip', `import { Tooltip } from '@visx/tooltip'\n`],
+    ['a source-bearing named re-export', `export { scaleLinear } from '@visx/scale'\n`],
+    ['a wildcard re-export', `export * from '@visx/scale'\n`],
+    ['a dynamic import', `export const load = () => import('@visx/shape')\n`],
+  ])('bans %s outside basalt', (_label, source) => {
+    const { code, rules } = run(source, 'lib.ts')
     expect(code).toBe(1)
-    expect(rules).toContain('visx-boundary')
+    expect(rules).toContain('chart-engine-boundary')
   })
 
-  it('does NOT flag a @visx/* import inside charts', () => {
-    const { code, rules } = run(`import { scaleLinear } from '@visx/scale'\n`, 'charts/lib.ts')
-    expect(code).toBe(0)
-    expect(rules).not.toContain('visx-boundary')
+  it('bans @visx/* inside basalt source and a charts/ directory too', () => {
+    for (const file of ['charts/lib.tsx', 'packages/basalt-ui/src/charts/lib.tsx']) {
+      const { code, rules } = run(`import { Bar } from '@visx/shape'\n`, file)
+      expect([file, code]).toEqual([file, 1])
+      expect(rules).toContain('chart-engine-boundary')
+    }
   })
 
-  it('does NOT flag a @mantine/* import (out of scope for this rule)', () => {
-    const { code, rules } = run(`import { Button } from '@mantine/core'\n`, 'lib.tsx')
-    expect(code).toBe(0)
-    expect(rules).not.toContain('visx-boundary')
-  })
-
-  it('still flags a @visx/* import outside charts carrying a theme-allow comment (no escape hatch)', () => {
-    const { code, rules } = run(
-      `// theme-allow: legacy\nimport { scaleLinear } from '@visx/scale'\n`,
+  it('still bans @visx/* under a theme-allow comment (no escape hatch)', () => {
+    const { rules } = run(
+      `// theme-allow chart-engine-boundary — legacy\nimport { scaleLinear } from '@visx/scale'\n`,
       'lib.ts',
     )
-    expect(code).toBe(1)
-    expect(rules).toContain('visx-boundary')
+    expect(rules).toContain('chart-engine-boundary')
   })
 
-  it('flags a source-bearing named re-export of @visx/* outside charts', () => {
-    const { code, rules } = run(`export { scaleLinear } from '@visx/scale'\n`, 'lib.ts')
-    expect(code).toBe(1)
-    expect(rules).toContain('visx-boundary')
+  it.each([
+    '@tanstack/charts/line',
+    '@tanstack/charts/area-x',
+    '@tanstack/charts/mark/decorative',
+    '@tanstack/charts/d3/shape',
+    '@tanstack/charts/scales/linear',
+    '@tanstack/charts/transform/bin',
+    '@tanstack/charts/types',
+  ])('allows %s outside basalt', (specifier) => {
+    const { code, rules } = run(`import * as m from '${specifier}'\nexport { m }\n`, 'lib.ts')
+    expect([specifier, code]).toEqual([specifier, 0])
+    expect(rules).not.toContain('chart-engine-boundary')
   })
 
-  it('flags a wildcard re-export of @visx/* outside charts', () => {
-    const { code, rules } = run(`export * from '@visx/scale'\n`, 'lib.ts')
-    expect(code).toBe(1)
-    expect(rules).toContain('visx-boundary')
+  it.each([
+    '@tanstack/charts',
+    '@tanstack/charts/react',
+    '@tanstack/charts/react/tooltip',
+    '@tanstack/charts/svg',
+    '@tanstack/charts/mark/composite',
+    '@tanstack/charts/transform',
+    '@tanstack/charts/scales/',
+    '@tanstack/charts/line/extra',
+  ])('bans %s outside basalt and names the allowed alternative', (specifier) => {
+    const { code, rules, output } = run(
+      `import * as m from '${specifier}'\nexport { m }\n`,
+      'lib.ts',
+    )
+    expect([specifier, code]).toEqual([specifier, 1])
+    expect(rules).toContain('chart-engine-boundary')
+    expect(output).toContain('basalt-ui/charts')
   })
 
-  it('does NOT flag a plain local named export (no source)', () => {
-    const { code, rules } = run(`const x = 1\nexport { x }\n`, 'lib.ts')
+  it('bans a re-export of the bare root outside basalt', () => {
+    const { rules } = run(`export { defineChart } from '@tanstack/charts'\n`, 'lib.ts')
+    expect(rules).toContain('chart-engine-boundary')
+  })
+
+  it('does NOT apply the allowlist inside basalt source', () => {
+    const { code, rules } = run(
+      `import { ChartRuntime } from '@tanstack/charts/react'\nexport { ChartRuntime }\n`,
+      'packages/basalt-ui/src/charts/host.tsx',
+    )
     expect(code).toBe(0)
-    expect(rules).not.toContain('visx-boundary')
+    expect(rules).not.toContain('chart-engine-boundary')
+  })
+
+  it('does not touch unrelated @tanstack packages', () => {
+    const { code } = run(
+      `import { useQuery } from '@tanstack/react-query'\nexport { useQuery }\n`,
+      'lib.ts',
+    )
+    expect(code).toBe(0)
   })
 })
 
-// ── visx-tooltip ─────────────────────────────────────────────────────────────
+// ── chart-host-single ────────────────────────────────────────────────────────
 
-describe('basalt/visx-tooltip', () => {
-  it('flags @visx/tooltip even inside charts', () => {
-    const { code, rules } = run(`import { Tooltip } from '@visx/tooltip'\n`, 'charts/lib.tsx')
-    expect(code).toBe(1)
-    expect(rules).toContain('visx-tooltip')
+describe('basalt/chart-host-single', () => {
+  const REACT_IMPORT = `import { Chart } from '@tanstack/charts/react'\nexport { Chart }\n`
+
+  it('allows @tanstack/charts/react in packages/basalt-ui/src/charts/host.tsx', () => {
+    const { rules } = run(REACT_IMPORT, 'packages/basalt-ui/src/charts/host.tsx')
+    expect(rules).not.toContain('chart-host-single')
   })
 
-  it('flags @visx/tooltip outside charts too', () => {
-    const { code, rules } = run(`import { Tooltip } from '@visx/tooltip'\n`, 'lib.tsx')
-    expect(code).toBe(1)
-    expect(rules).toContain('visx-tooltip')
+  it.each([
+    'packages/basalt-ui/src/charts/kinds/lines.tsx',
+    'packages/basalt-ui/src/charts/host.ts',
+    'apps/playground/src/chart.tsx',
+    'host.tsx',
+  ])('flags it in %s', (file) => {
+    const { code, rules } = run(REACT_IMPORT, file)
+    expect([file, code]).toEqual([file, 1])
+    expect(rules).toContain('chart-host-single')
   })
 
-  it('takes precedence over basalt/visx-boundary for @visx/tooltip specifically', () => {
-    const { rules } = run(`import { Tooltip } from '@visx/tooltip'\n`, 'lib.tsx')
-    expect(rules).toContain('visx-tooltip')
-    expect(rules).not.toContain('visx-boundary')
+  it('flags the react sub-entries and a dynamic import too', () => {
+    expect(
+      run(`import 'x'\nexport * from '@tanstack/charts/react/tooltip'\n`, 'a.ts').rules,
+    ).toContain('chart-host-single')
+    expect(
+      run(`export const l = () => import('@tanstack/charts/react')\n`, 'b.ts').rules,
+    ).toContain('chart-host-single')
+  })
+
+  it('leaves the mark subpaths alone', () => {
+    const { rules } = run(`import { line } from '@tanstack/charts/line'\nexport { line }\n`, 'a.ts')
+    expect(rules).not.toContain('chart-host-single')
   })
 })
+
+// ── chart-engine-boundary ↔ the engine's `exports` (V2-SPEC § 9.8) ──────────────────────────────
+
+/**
+ * Every `@tanstack/charts` subpath that is deliberately NOT importable outside basalt, classified
+ * against 1.1.0's `exports` ('' is the bare root). A new engine subpath is in neither this list nor
+ * the allowlist, so the test below fails until someone decides which it is.
+ */
+const BANNED_ENGINE_SUBPATHS: readonly string[] = [
+  '',
+  'adapter',
+  'adapter/renderer',
+  'alpine',
+  'angular',
+  'band',
+  'box',
+  'canvas',
+  'crosshair',
+  'cursor',
+  'cursor/host',
+  'd3/area-x',
+  'dom',
+  'dodge',
+  'export',
+  'facet',
+  'focus',
+  'focus/guide',
+  'focus/mark',
+  'focus/disabled',
+  'frame',
+  'group',
+  'geo',
+  'hexagon',
+  'hierarchy/tree',
+  'hierarchy/treemap',
+  'hierarchy/sunburst',
+  'interaction/signal',
+  'interaction/brush',
+  'interaction/cursor',
+  'interaction/handle',
+  'interaction/zoom',
+  'legend',
+  'lit',
+  'motion',
+  'motion/definition',
+  'network/force',
+  'network/sankey',
+  'octane',
+  'octane/canvas',
+  'octane/core',
+  'mark/composite',
+  'spring',
+  'spatial/contour',
+  'spatial/delaunay',
+  'spatial/density',
+  'spatial/hexbin',
+  'spatial/voronoi',
+  'svelte',
+  'mark/scale-values',
+  'polar',
+  'preact',
+  'react',
+  'react/canvas',
+  'react/core',
+  'react/tooltip',
+  'react-native',
+  'react-native/tooltip',
+  'universal',
+  'reconcile',
+  'regression',
+  'selection',
+  'renderer',
+  'renderer/rect',
+  'ridgeline',
+  'runtime',
+  'scene',
+  'solid',
+  'svg',
+  'svg/renderer',
+  'svg/resources',
+  'transform',
+  'tooltip',
+  'tooltip/model',
+  'tooltip/portal',
+  'types/core',
+  'violin',
+  'view',
+  'vue',
+  'waffle',
+]
+
+const ENGINE_PACKAGE_JSON = resolve(
+  import.meta.dirname,
+  '..',
+  '..',
+  '..',
+  'node_modules',
+  '@tanstack',
+  'charts',
+  'package.json',
+)
+
+// `@tanstack/charts` arrives as a dependency with the engine swap (w4/engine). Until that merges the
+// package is not installed and there is nothing to classify against.
+describe.skipIf(!existsSync(ENGINE_PACKAGE_JSON))(
+  'chart-engine-boundary ↔ @tanstack/charts exports',
+  () => {
+    const exportKeys = (): string[] => {
+      const manifest = JSON.parse(readFileSync(ENGINE_PACKAGE_JSON, 'utf8')) as {
+        exports: Record<string, unknown>
+      }
+      return Object.keys(manifest.exports).map((key) =>
+        key === '.' ? '' : key.replace(/^\.\//, ''),
+      )
+    }
+
+    it('every exact allowlisted subpath exists in the engine', () => {
+      const exports = new Set(exportKeys())
+      for (const subpath of CHART_ENGINE_ALLOWED_SUBPATHS) {
+        expect([subpath, exports.has(subpath)]).toEqual([subpath, true])
+      }
+    })
+
+    it('every allowlisted family matches at least one engine subpath', () => {
+      for (const prefix of CHART_ENGINE_ALLOWED_PREFIXES) {
+        expect([prefix, exportKeys().some((key) => key.startsWith(prefix))]).toEqual([prefix, true])
+      }
+    })
+
+    it('every engine subpath is allowlisted or deliberately banned', () => {
+      const unclassified = exportKeys().filter(
+        (key) => !isAllowedChartEngineSubpath(key) && !BANNED_ENGINE_SUBPATHS.includes(key),
+      )
+      expect(unclassified).toEqual([])
+    })
+
+    it('the banned list has no stale or allowlisted entries', () => {
+      const exports = new Set(exportKeys())
+      for (const subpath of BANNED_ENGINE_SUBPATHS) {
+        expect([subpath, exports.has(subpath), isAllowedChartEngineSubpath(subpath)]).toEqual([
+          subpath,
+          true,
+          false,
+        ])
+      }
+    })
+  },
+)
 
 // ── token-layer-boundary ─────────────────────────────────────────────────────
 
@@ -353,31 +554,29 @@ describe('basalt/token-layer-boundary', () => {
 })
 
 // ── rule independence ──────────────────────────────────────────────────────────
-// The three rules used to be one bundled `import-boundary` rule with a single on/off toggle — a
-// consumer disabling the one check they disagreed with silently dropped the other two. Proves
-// disabling one of the three leaves the other two enforced.
+// Each boundary rule has its own id, so disabling one leaves the others enforced.
 
 describe('rule independence', () => {
-  it('disabling basalt/visx-boundary leaves basalt/visx-tooltip enforced', () => {
+  it('disabling basalt/chart-engine-boundary leaves basalt/chart-host-single enforced', () => {
     writeFileSync(
       resolve(dir, '.oxlintrc.json'),
       JSON.stringify({
         plugins: [],
         jsPlugins: [PLUGIN_PATH],
         rules: {
-          'basalt/visx-boundary': 'off',
-          'basalt/visx-tooltip': 'error',
+          'basalt/chart-engine-boundary': 'off',
+          'basalt/chart-host-single': 'error',
           'basalt/token-layer-boundary': 'error',
         },
       }),
     )
     const { code, rules } = run(
-      `import { scaleLinear } from '@visx/scale'\nimport { Tooltip } from '@visx/tooltip'\n`,
+      `import { scaleLinear } from '@visx/scale'\nimport { Chart } from '@tanstack/charts/react'\n`,
       'lib.ts',
     )
     expect(code).toBe(1)
-    expect(rules).not.toContain('visx-boundary')
-    expect(rules).toContain('visx-tooltip')
+    expect(rules).not.toContain('chart-engine-boundary')
+    expect(rules).toContain('chart-host-single')
   })
 })
 
@@ -699,189 +898,71 @@ describe('basalt agent rules promotion', () => {
   )
 })
 
-// ── hand-rolled-plot ─────────────────────────────────────────────────────────
-
-const CHARTS_IMPORT = `import { AxisLeftNumeric, CartesianChart, ChartLegend, Crosshair, HoverOverlay } from 'basalt-ui/charts'\n`
-
-describe('basalt/hand-rolled-plot', () => {
-  it('flags an axis primitive in a file that never composes CartesianChart', () => {
-    const { code, rules } = run(
-      `${CHARTS_IMPORT}export const C = () => <svg><AxisLeftNumeric scale={s} /></svg>\n`,
-    )
-    expect(code).toBe(1)
-    expect(rules).toContain('hand-rolled-plot')
-  })
-
-  it('does NOT flag the same primitive when CartesianChart is composed', () => {
-    const { code, rules } = run(
-      `${CHARTS_IMPORT}export const C = () => <CartesianChart>{() => <AxisLeftNumeric scale={s} />}</CartesianChart>\n`,
-    )
-    expect(code).toBe(0)
-    expect(rules).not.toContain('hand-rolled-plot')
-  })
-
-  // `theme-allow-file` is the written declaration about the file, and it covers every assembly node
-  // in it — the DualPanel shape.
-  it('a theme-allow-file declaration covers the whole file', () => {
-    const { code, rules } = run(
-      `${CHARTS_IMPORT}export const C = () => (
-  <svg>
-    {/* theme-allow-file basalt/hand-rolled-plot: multi-pane shape, not a single cartesian plot */}
-    <AxisLeftNumeric scale={a} />
-    <HoverOverlay width={1} height={1} />
-    <Crosshair x={0} top={0} bottom={1} />
-  </svg>
-)\n`,
-    )
-    expect(code).toBe(0)
-    expect(rules).not.toContain('hand-rolled-plot')
-  })
-
-  // The other half of the 1.20.0 fix. Naming the rule AND giving a reason used to promote the
-  // waiver to the whole file, which made whole-file the ONLY expressible scope: the shape the rule's
-  // own message asks for was the shape that granted immunity. It is now what it reads as — one node.
-  it('a named-with-a-reason theme-allow waives its own node ONLY, not the file', () => {
-    const { code, rules } = run(
-      `${CHARTS_IMPORT}export const C = () => (
-  <svg>
-    {/* theme-allow basalt/hand-rolled-plot — this one axis is drawn against a second scale */}
-    <AxisLeftNumeric scale={a} />
-    <HoverOverlay width={1} height={1} />
-  </svg>
-)\n`,
-    )
-    expect(code).toBe(1)
-    expect(rules).toContain('hand-rolled-plot')
-  })
-
-  // The linewatch defect: a BARE comment used to buy the whole file permanent immunity, because
-  // only the first node was reported and the waiver was tested there. It now waives its own node
-  // and nothing else, so everything added to the file afterwards is still reported.
-  it('a bare theme-allow waives only the node it sits above, not the file', () => {
-    const { code, rules } = run(
-      `${CHARTS_IMPORT}export const C = () => (
-  <svg>
-    {/* theme-allow */}
-    <AxisLeftNumeric scale={a} />
-    <HoverOverlay width={1} height={1} />
-  </svg>
-)\n`,
-    )
-    expect(code).toBe(1)
-    expect(rules).toContain('hand-rolled-plot')
-  })
-
-  // A comment written about something else must not double as a licence to hand-assemble a plot.
-  it('a theme-allow scoped to a DIFFERENT rule does not waive this one', () => {
-    const { code, rules } = run(
-      `${CHARTS_IMPORT}export const C = () => (
-  <svg>
-    {/* theme-allow raw-hex — the swatch below is a measured pixel */}
-    <AxisLeftNumeric scale={a} />
-  </svg>
-)\n`,
-    )
-    expect(code).toBe(1)
-    expect(rules).toContain('hand-rolled-plot')
-  })
-
-  it('does NOT flag a same-named component that is NOT a basalt chart primitive', () => {
-    const { code, rules } = run(
-      `import { Crosshair } from './my-own-widgets'
-export const C = () => <svg><Crosshair x={0} /></svg>\n`,
-    )
-    expect(code).toBe(0)
-    expect(rules).not.toContain('hand-rolled-plot')
-  })
-
-  // `code` is 1 in both of these and that is correct: a CONSUMER file declaring `CartesianChart`
-  // shadows a basalt export, which `shadow-basalt-export` now sees since it reads the charts barrel
-  // too. The assertion under test is that `hand-rolled-plot` stays silent — a rule saying "compose
-  // X" cannot fire inside X.
-  it('does NOT flag the module that DEFINES CartesianChart (function form)', () => {
-    const { rules } = run(
-      `import { AxisBottomDate } from '../primitives/Axes'
-export function CartesianChart() {
-  return <svg><AxisBottomDate scale={s} top={0} tickValues={[]} /></svg>
-}\n`,
-    )
-    expect(rules).not.toContain('hand-rolled-plot')
-  })
-
-  it('does NOT flag the module that DEFINES CartesianChart (const form)', () => {
-    const { rules } = run(
-      `import { AxisBottomDate } from '../primitives/Axes'
-export const CartesianChart = () => <svg><AxisBottomDate scale={s} top={0} tickValues={[]} /></svg>\n`,
-    )
-    expect(rules).not.toContain('hand-rolled-plot')
-  })
-})
-
 // ── theme-allow grammar — the accepted and rejected shapes, exhaustively ─────
 //
 // Two rounds produced three holes in this one contract, so it gets a matrix rather than a case.
-// `hand-rolled-plot` is the vehicle: it is the only rule with BOTH scopes, so one fixture shape
+// `card-inset` is the vehicle: a node-level rule honouring both scopes, so one fixture shape
 // exercises the node waiver, the file declaration and the prefix rule at once.
 
 describe('theme-allow grammar', () => {
-  /** Two assembly nodes, with `annotation` placed as a comment-only line above the first. */
+  /** Two flagged nodes, with `annotation` placed as a comment-only line above the first. */
   function twoNodes(annotation: string): { code: number; rules: Set<string> } {
     return run(
-      `${CHARTS_IMPORT}export const C = () => (
-  <svg>
+      `export const C = () => (
+  <div>
     ${annotation}
-    <AxisLeftNumeric scale={a} />
-    <HoverOverlay width={1} height={1} />
-  </svg>
+    <Card p="lg" />
+    <Card p="lg" />
+  </div>
 )\n`,
     )
   }
 
   const waivesFirstNodeOnly = (annotation: string) => {
     const { rules } = twoNodes(annotation)
-    expect([annotation, rules.has('hand-rolled-plot')]).toEqual([annotation, true])
+    expect([annotation, rules.has('card-inset')]).toEqual([annotation, true])
   }
   const waivesWholeFile = (annotation: string) => {
     const { rules } = twoNodes(annotation)
-    expect([annotation, rules.has('hand-rolled-plot')]).toEqual([annotation, false])
+    expect([annotation, rules.has('card-inset')]).toEqual([annotation, false])
   }
 
   // ── ACCEPTED as a NODE waiver (the second node still reports) ──────────────
 
   it.each([
     '{/* theme-allow */}',
-    '{/* theme-allow hand-rolled-plot */}',
-    '{/* theme-allow hand-rolled-plot — a reason */}',
-    '{/* theme-allow basalt/hand-rolled-plot: a reason */}',
-    '{/* theme-allow hand-rolled-plot, raw-hex — two ids */}',
-    '{/*theme-allow hand-rolled-plot — no space after the opener*/}',
+    '{/* theme-allow card-inset */}',
+    '{/* theme-allow card-inset — a reason */}',
+    '{/* theme-allow basalt/card-inset: a reason */}',
+    '{/* theme-allow card-inset, raw-hex — two ids */}',
+    '{/*theme-allow card-inset — no space after the opener*/}',
   ])('%s waives its own node and leaves the rest policed', waivesFirstNodeOnly)
 
   // ── ACCEPTED as a FILE declaration (nothing in the file reports) ───────────
 
   it.each([
-    '{/* theme-allow-file hand-rolled-plot — a reason */}',
-    '{/* theme-allow-file basalt/hand-rolled-plot: a reason */}',
-    '{/* theme-allow-file hand-rolled-plot */}',
-    '{/* theme-allow-file hand-rolled-plot, chart-legend-literal — two ids */}',
+    '{/* theme-allow-file card-inset — a reason */}',
+    '{/* theme-allow-file basalt/card-inset: a reason */}',
+    '{/* theme-allow-file card-inset */}',
+    '{/* theme-allow-file card-inset, raw-hex — two ids */}',
   ])('%s declares the whole file', waivesWholeFile)
 
   it('a theme-allow-file inside a docblock, detached from any node, declares the file', () => {
     const { code, rules } = run(
-      `${CHARTS_IMPORT}/**
- * A two-pane shape.
+      `/**
+ * A bespoke shape.
  *
- * theme-allow-file hand-rolled-plot — two panes over one x scale is not a single plot
+ * theme-allow-file card-inset — the inset is dictated by a third-party embed
  */
 export const C = () => (
-  <svg>
-    <AxisLeftNumeric scale={a} />
-    <HoverOverlay width={1} height={1} />
-  </svg>
+  <div>
+    <Card p="lg" />
+    <Card p="lg" />
+  </div>
 )\n`,
     )
     expect(code).toBe(0)
-    expect(rules).not.toContain('hand-rolled-plot')
+    expect(rules).not.toContain('card-inset')
   })
 
   // ── REJECTED — prose that merely MENTIONS the token (the linewatch defect) ─
@@ -897,14 +978,14 @@ export const C = () => (
   ])('%s is prose, not an annotation — it waives nothing', (annotation) => {
     const { code, rules } = twoNodes(annotation)
     expect([annotation, code]).toEqual([annotation, 1])
-    expect([annotation, rules.has('hand-rolled-plot')]).toEqual([annotation, true])
+    expect([annotation, rules.has('card-inset')]).toEqual([annotation, true])
   })
 
   it('a prose docblock line mentioning theme-allow-file does not declare the file', () => {
     const { rules } = twoNodes(
-      '{/* the shape to write here is a theme-allow-file hand-rolled-plot — see the docs */}',
+      '{/* the shape to write here is a theme-allow-file card-inset — see the docs */}',
     )
-    expect(rules).toContain('hand-rolled-plot')
+    expect(rules).toContain('card-inset')
   })
 
   // ── REJECTED — a longer word that merely STARTS with the token ─────────────
@@ -913,7 +994,7 @@ export const C = () => (
   // fall through to the empty-`rules` branch, and read as a blanket waiver.
   it('a comment starting with the kind name `theme-allow-unscoped` is not an annotation', () => {
     const { rules } = twoNodes('{/* theme-allow-unscoped is what reports a bare waiver */}')
-    expect(rules).toContain('hand-rolled-plot')
+    expect(rules).toContain('card-inset')
   })
 
   // ── REJECTED — a bare file declaration, and a typo'd id ────────────────────
@@ -921,63 +1002,24 @@ export const C = () => (
   it('a BARE theme-allow-file waives nothing — file scope must name its ids', () => {
     const { code, rules } = twoNodes('{/* theme-allow-file — everything in here is bespoke */}')
     expect(code).toBe(1)
-    expect(rules).toContain('hand-rolled-plot')
+    expect(rules).toContain('card-inset')
   })
 
   it("a theme-allow-file naming a typo'd id waives nothing", () => {
-    const { rules } = twoNodes('{/* theme-allow-file hand-rolled-plott — a reason */}')
-    expect(rules).toContain('hand-rolled-plot')
+    const { rules } = twoNodes('{/* theme-allow-file card-insett — a reason */}')
+    expect(rules).toContain('card-inset')
   })
 
   it('a theme-allow-file scoped to a DIFFERENT rule does not waive this one', () => {
     const { rules } = twoNodes('{/* theme-allow-file raw-hex — the swatch is a measured pixel */}')
-    expect(rules).toContain('hand-rolled-plot')
+    expect(rules).toContain('card-inset')
   })
 
   // ── REJECTED — the token inside a string literal, not a comment ────────────
 
   it('the token inside a string literal is code, not an annotation', () => {
-    const { rules } = twoNodes("{'theme-allow hand-rolled-plot — a reason'}")
-    expect(rules).toContain('hand-rolled-plot')
-  })
-})
-
-// ── chart-legend-literal ─────────────────────────────────────────────────────
-
-describe('basalt/chart-legend-literal', () => {
-  it('flags a hand-authored items array', () => {
-    const { code, rules } = run(
-      `${CHARTS_IMPORT}export const C = () => <ChartLegend items={[{ key: 'a', label: 'A', color: 'red' }]} />\n`,
-    )
-    expect(code).toBe(1)
-    expect(rules).toContain('chart-legend-literal')
-  })
-
-  it('does NOT flag items derived from the series descriptor', () => {
-    const { code, rules } = run(
-      `${CHARTS_IMPORT}export const C = () => <ChartLegend items={deriveLegend(series)} />\n`,
-    )
-    expect(code).toBe(0)
-    expect(rules).not.toContain('chart-legend-literal')
-  })
-
-  it('does NOT flag a derived-and-extended list — that is legitimate composition', () => {
-    const { code, rules } = run(
-      `${CHARTS_IMPORT}export const C = () => <ChartLegend items={[...deriveLegend(series), note]} />\n`,
-    )
-    expect(code).toBe(0)
-    expect(rules).not.toContain('chart-legend-literal')
-  })
-
-  it('honors a theme-allow escape', () => {
-    const { code, rules } = run(
-      `${CHARTS_IMPORT}export const C = () => (
-  // theme-allow: static reference legend, no series behind it
-  <ChartLegend items={[{ key: 'a', label: 'A', color: 'red' }]} />
-)\n`,
-    )
-    expect(code).toBe(0)
-    expect(rules).not.toContain('chart-legend-literal')
+    const { rules } = twoNodes("{'theme-allow card-inset — a reason'}")
+    expect(rules).toContain('card-inset')
   })
 })
 
@@ -1474,47 +1516,6 @@ describe('PLUGIN_RULE_GRACE', () => {
         )
       }
     }
-  })
-})
-
-// ── chart-legend-literal: the .map() half ────────────────────────────────────
-
-describe('basalt/chart-legend-literal — derived-from-series', () => {
-  const IMPORT = `import { ChartLegend } from 'basalt-ui/charts'\n`
-
-  // Deriving from *an* array is not deriving from *the* series: every field of a
-  // `refLines.map(...)` / `PACE_ZONES.map(...)` legend is authored at the call site, and the list
-  // can keep naming a band the plot no longer draws exactly like a `[...]` literal can.
-  it('flags a .map() over a non-series array', () => {
-    const { code, rules } = run(
-      `${IMPORT}export const C = () => <ChartLegend items={refLines.map((r) => ({ key: r.k, label: r.l }))} />\n`,
-    )
-    expect(code).toBe(1)
-    expect(rules).toContain('chart-legend-literal')
-  })
-
-  it('does NOT flag a .map() over the series', () => {
-    const { code, rules } = run(
-      `${IMPORT}export const C = () => <ChartLegend items={series.map((s) => ({ key: s.key }))} />\n`,
-    )
-    expect(code).toBe(0)
-    expect(rules).not.toContain('chart-legend-literal')
-  })
-
-  it('does NOT flag a .map() over a derived series binding', () => {
-    const { code, rules } = run(
-      `${IMPORT}export const C = () => <ChartLegend items={visibleSeries.map((s) => ({ key: s.key }))} />\n`,
-    )
-    expect(code).toBe(0)
-    expect(rules).not.toContain('chart-legend-literal')
-  })
-
-  it('does NOT flag deriveLegend(series)', () => {
-    const { code, rules } = run(
-      `${IMPORT}export const C = () => <ChartLegend items={deriveLegend(series)} />\n`,
-    )
-    expect(code).toBe(0)
-    expect(rules).not.toContain('chart-legend-literal')
   })
 })
 

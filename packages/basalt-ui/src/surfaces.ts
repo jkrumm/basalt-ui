@@ -41,8 +41,6 @@ export const PLUGIN_RULE_ID_LIST = [
   'raw-size-literal',
   'card-inset',
   'chart-in-raw-surface',
-  'hand-rolled-plot',
-  'chart-legend-literal',
   'shadow-basalt-export',
   'hand-rolled-shell',
   'raw-scroll-container',
@@ -59,8 +57,8 @@ export const PLUGIN_RULE_ID_LIST = [
   'query-fn-unwrap',
   'deprecated-export',
   'forms-field-key',
-  'visx-boundary',
-  'visx-tooltip',
+  'chart-engine-boundary',
+  'chart-host-single',
   'token-layer-boundary',
   'agent-resume-guard',
   'agent-no-raw-usechat',
@@ -221,7 +219,7 @@ const vg = (spec: string, message: string, extra?: Partial<ForbiddenImport>): Fo
 // Mantine-free ban for headless surfaces the `basalt/token-layer-boundary` plugin rule does NOT
 // cover (it only enforces charts/tokens path segments, and is registered repo-local only — see
 // oxlint-plugin.js). `./charts` and `./tokens` no longer use this: their Mantine-free boundary is
-// enforced by that plugin rule instead (and their @visx/* boundary by `basalt/visx-boundary`), so
+// enforced by that plugin rule instead (and their engine boundary by `basalt/chart-engine-boundary`), so
 // duplicating the ban here would be redundant no-restricted-imports config.
 const MANTINE_BANS = [
   v('@mantine/core', '{ctx} must be Mantine-free — no Mantine imports allowed.'),
@@ -315,14 +313,8 @@ export const SURFACES = {
     layer: 'headless',
     rule: 'charts',
     skill: ['basalt-charts'],
-    guardKinds: ['raw-hex', 'raw-color-fn', 'raw-visx-axis', 'chart-missing-aria-label'],
-    pluginRules: [
-      'hand-rolled-plot',
-      'chart-legend-literal',
-      'chart-in-raw-surface',
-      'visx-boundary',
-      'visx-tooltip',
-    ],
+    guardKinds: ['raw-hex', 'raw-color-fn'],
+    pluginRules: ['chart-in-raw-surface', 'chart-engine-boundary', 'chart-host-single'],
     description:
       'CartesianChart (the TanStack Charts rung), the Lines and Bars kinds, ChartCard and the shared chartCursor (Mantine-free; @tanstack/charts + d3-scale peers)',
     optionalPeers: ['@tanstack/charts', 'd3-scale'],
@@ -330,8 +322,9 @@ export const SURFACES = {
       shipped: ['**/charts/**'],
       repo: ['packages/basalt-ui/src/charts/**'],
     },
-    // The @visx/*-only-in-charts boundary is enforced by the `basalt/visx-boundary` oxlint plugin
-    // rule, and the Mantine-free boundary by `basalt/token-layer-boundary` (repo-local only — see
+    // The engine boundary (@visx/* banned, @tanstack/charts allowlisted) is enforced by the
+    // `basalt/chart-engine-boundary` oxlint plugin rule, `@tanstack/charts/react` by the
+    // repo-local `basalt/chart-host-single`, and the Mantine-free boundary by `basalt/token-layer-boundary` (repo-local only — see
     // that rule's file-header comment for why) — both configs/oxlint-plugin.js, not
     // no-restricted-imports.
     forbiddenImports: [],
@@ -458,7 +451,7 @@ export const SURFACES = {
       shipped: [],
       repo: ['packages/basalt-ui/src/agent/*.ts', 'packages/basalt-ui/src/agent/*.tsx'],
     },
-    // @visx/* ban dropped — `basalt/visx-boundary` now bans it universally outside charts.
+    // @visx/* ban dropped — `basalt/chart-engine-boundary` bans it everywhere.
     forbiddenImports: [...MANTINE_BANS],
   },
   './content': {
@@ -576,7 +569,7 @@ export const SURFACES = {
         'packages/basalt-ui/src/router-tanstack/search-store.ts',
       ],
     },
-    // @visx/* ban dropped — `basalt/visx-boundary` now bans it universally outside charts.
+    // @visx/* ban dropped — `basalt/chart-engine-boundary` bans it everywhere.
     forbiddenImports: [...MANTINE_BANS],
   },
 
@@ -612,9 +605,9 @@ export const SURFACES = {
     pluginRules: ['query-fn-unwrap'],
     globs: {
       // Shipped is a catch-all (not just src/**+app/**) so consumer code under components/, lib/,
-      // features/, etc. is also covered. The @visx/*-only-in-charts and Mantine-free charts/tokens
+      // features/, etc. is also covered. The chart-engine and Mantine-free charts/tokens
       // boundaries used to live here too and need last-writer-wins EMIT_ORDER games against the
-      // narrower ./tokens/./charts overrides — they're now enforced by `basalt/visx-boundary` and
+      // narrower ./tokens/./charts overrides — they're now enforced by `basalt/chart-engine-boundary` and
       // `basalt/token-layer-boundary` (plugin rules, immune to that class of clobbering) instead,
       // so the bans left below (antd, framer-motion) are plain global bans with no narrower
       // override to out-order.

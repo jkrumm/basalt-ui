@@ -1,7 +1,7 @@
 /**
  * ./guard — headless policy core. Mantine-free, dependency-free.
  *
- * GUARD_RULES: the closed registry of all 28 violation kinds.
+ * GUARD_RULES: the closed registry of all 26 violation kinds.
  * checkSource:  pure (text, relPath, cfg) → Finding[]. No FS, no walk, no console.
  */
 import type { Finding, GuardConfig, GuardKind, GuardSeverity } from './types'
@@ -277,7 +277,7 @@ const INLINE_FONT_SIZE =
 // A `Card` / `Paper` opening tag carrying `withBorder`. Card depth is `--vx-shadow-card`, whose 1px
 // ring lives INSIDE the shadow value; `withBorder` therefore adds a SECOND, real `border` property
 // on top of it (the theme's `styles.root` pins bg/shadow/radius but never clears `border`), and the
-// card reads heavy/boxed. Bounded full-text tag scan, same shape as CHART_ENTRY_POINT_TAG_START below,
+// card reads heavy/boxed. Bounded full-text tag scan, same shape as RAW_FORM_CONTROL_TAG below,
 // so a multi-line-formatted tag still resolves to one match.
 //
 // Two deliberate non-matches:
@@ -570,10 +570,6 @@ function isSubScaleCssSpacing(line: string, matchIndex: number): boolean {
 // display:flex/grid/inline-flex/inline-grid in an inline style.
 const INLINE_DISPLAY = /\bdisplay\s*:\s*['"](?:inline-)?(?:flex|grid)['"]/g
 
-// Raw visx axis JSX — only inside chart files, not in the Axes.tsx wrapper.
-const RAW_VISX_AXIS = /<Axis(?:Left|Bottom|Right)\b/g
-const AXIS_WRAPPER_FILE = /(?:^|\/)Axes\.tsx$/
-
 // radius prop with a numeric literal (module-level so it is not re-created per call).
 const RADIUS_PROP_RE = /\bradius=(?:\{[0-9]+\}|"[0-9]+")/g
 
@@ -583,96 +579,7 @@ const MOTION_TRANSITION_NUMERIC =
   /\btransition\s*=\s*\{\{[^}]*\b(?:duration|stiffness|damping|mass)\s*:\s*-?\d/g
 const MOTION_TRANSITION_EASE_ARRAY = /\btransition\s*=\s*\{\{[^}]*\bease\s*:\s*\[/g
 
-// A chart entry-point JSX tag (the 7 kinds + 2 sparklines) — matches the opening `<Name` plus an
-// optional explicit JSX generic argument (`<MultiLine<Point>`); the rest of the tag (up to its
-// closing `>`) is resolved by `scanChartTagClose` below, brace-depth aware, so it survives every
-// `>`-shaped decoy inside a prop expression — arrow functions (`=>`), comparisons (`>=`, `<=`),
-// shifts (`>>`) — without needing to enumerate them: a `>` only closes the tag outside every `{…}`.
-const CHART_ENTRY_POINT_TAG_START =
-  /<(MultiLine|Bars|BandStrip|Donut|DualPanel|Heatmap|MirroredBars|ZonedLine|StackedArea|LineSparkline|BarSparkline)\b(?:<[^<>]*>)?/g
-const HAS_ARIA_LABEL_PROP = /\bariaLabel\s*=/
-
-/**
- * Scans forward from `start` (immediately after a chart tag's name/generic-args) for the `>` that
- * closes the JSX tag. Curly-brace depth aware: a `>` only closes the tag at depth 0, so anything
- * living inside a `{…}` prop expression — `=>`, `>=`, `<=`, `>>`, a nested JSX child's own `>` —
- * never ends the tag early. String/template literals are skipped verbatim so a quoted `>`
- * cannot perturb the depth count either. Returns the index of the closing `>`, or -1 if the tag
- * never closes (malformed/truncated source — the caller treats that as no match).
- */
-function scanChartTagClose(codeText: string, start: number): number {
-  let depth = 0
-  let i = start
-  while (i < codeText.length) {
-    const ch = codeText[i]
-    if (ch === '"' || ch === "'" || ch === '`') {
-      const quote = ch
-      i++
-      while (i < codeText.length && codeText[i] !== quote) {
-        i += codeText[i] === '\\' ? 2 : 1
-      }
-      i++
-      continue
-    }
-    if (ch === '{') {
-      depth++
-    } else if (ch === '}') {
-      depth = Math.max(0, depth - 1)
-    } else if (ch === '>' && depth === 0) {
-      return i
-    }
-    i++
-  }
-  return -1
-}
-
-// ── Tag provenance, shared by chart-missing-aria-label ────────────────────────────────────────────
-//
-// `chart-missing-aria-label` keys on a JSX tag NAME, which is the whole of its signal — so a
-// consumer's OWN component that merely shares a shipped kind's name collected the finding too.
-// Reported by a consumer on 1.23.0: a hand-composed local `<MirroredBars>` was
-// told to pass an `ariaLabel` prop it does not accept, by a rule that presents as a correctness
-// finding rather than as a naming one. `shadow-basalt-export` / `ai-sdk-major` scope through
-// `isBasaltScopedFile` (package-level); the analogous file-level signal here is where the name in
-// THIS file came from.
-//
-// The gate is deliberately a one-directional NARROWING: a tag is skipped only when the file DEFINES
-// a component of that name and does not also import it from basalt-ui. Everything else still fires
-// — a tag imported from basalt-ui, one imported from a consumer barrel that re-exports it (`import
-// { MultiLine } from '../charts'`, the shape a downstream component library uses), and one the scan
-// cannot attribute at all. Requiring a POSITIVE basalt import instead would have silently switched
-// both rules off for every barrel-wrapping consumer and for every file with no import statements —
-// a far bigger hole than the false positive it closes.
-const LOCAL_COMPONENT_DEF =
-  /(?:^|[\n;}])\s*(?:export\s+)?(?:default\s+)?(?:async\s+)?(?:function|class|const|let|var)\s+([A-Z]\w*)/g
-// `from 'basalt-ui'` and every subpath (`basalt-ui/charts`, `basalt-ui/tokens`, …).
-const BASALT_NAMED_IMPORT =
-  /import\s+(?:type\s+)?\{([^}]*)\}\s+from\s+['"]basalt-ui(?:\/[^'"]*)?['"]/g
-
-/** Component-shaped names DEFINED in this file — the provable "not the shipped kind" signal. */
-function localComponentNames(codeText: string): ReadonlySet<string> {
-  const out = new Set<string>()
-  for (const m of codeText.matchAll(LOCAL_COMPONENT_DEF)) out.add(m[1] as string)
-  return out
-}
-
-/** Names bound in this file by a named import from `basalt-ui` — the local binding, so
- * `{ Bars as BasaltBars }` records `BasaltBars`, which is the name the JSX tag will use. */
-function basaltImportedNames(codeText: string): ReadonlySet<string> {
-  const out = new Set<string>()
-  for (const m of codeText.matchAll(BASALT_NAMED_IMPORT)) {
-    for (const raw of (m[1] as string).split(',')) {
-      const spec = raw.trim().replace(/^type\s+/, '')
-      if (spec.length === 0) continue
-      const parts = spec.split(/\s+as\s+/)
-      const bound = (parts[parts.length - 1] as string).trim()
-      if (bound.length > 0) out.add(bound)
-    }
-  }
-  return out
-}
-
-// Raw lowercase form-control element — line-scoped, same shape as RAW_VISX_AXIS. `\b` after the
+// Raw lowercase form-control element — line-scoped, line-scoped. `\b` after the
 // tag name rejects a same-prefixed custom component (`<inputRef`, `<selectAll`).
 const RAW_FORM_CONTROL = /<(?:input|select|textarea)\b/g
 
@@ -683,7 +590,7 @@ const RAW_FORM_CONTROL_TAG = /<(?:input|select|textarea)\b(?:=>|[^>])*?>/g
 
 // ── Control-home patterns (docs/CONTROLS-SPEC.md §6 — the text lane of laws C1/C8) ──────────────
 //
-// Bounded full-text tag scans, the CARD_SURFACE_TAG / CHART_ENTRY_POINT_TAG_START shape: a `<Title>` and a
+// Bounded full-text tag scans, the CARD_SURFACE_TAG shape: a `<Title>` and a
 // `<Select>` are both routinely formatted across lines, so a per-line regex would see neither.
 
 /** A `<Title …>` opening tag, however it is wrapped. `order` is judged separately, on the tag text. */
@@ -872,9 +779,7 @@ export const DEFAULT_GUARD_CONFIG: GuardConfig = {
   rawHtmlLayout: true,
   inlineSpacing: true,
   inlineDisplay: true,
-  rawVisxAxis: true,
   rawMotionValue: true,
-  chartMissingAriaLabel: true,
   rawFormControl: true,
   sub16InputFont: true,
   allowComment: 'theme-allow',
@@ -957,7 +862,7 @@ function textForFinding(sourceLine: string | undefined, fallbackToken: string): 
 // ── Path predicate ────────────────────────────────────────────────────────────────────────────────
 
 function isChartFile(relPath: string): boolean {
-  return relPath.includes('/charts/') && !AXIS_WRAPPER_FILE.test(relPath)
+  return relPath.includes('/charts/')
 }
 
 /**
@@ -1093,8 +998,6 @@ export const PLUGIN_RULE_IDS: ReadonlySet<string> = new Set([
   'raw-size-literal',
   'card-inset',
   'chart-in-raw-surface',
-  'hand-rolled-plot',
-  'chart-legend-literal',
   'hand-rolled-shell',
   'shadow-basalt-export',
   'raw-scroll-container',
@@ -1120,8 +1023,8 @@ export const PLUGIN_RULE_IDS: ReadonlySet<string> = new Set([
   // `in-body-page-title` is deliberately ABSENT: it is a plugin rule AND a guard kind under one id
   // (one law, two lanes, one annotation), and this set is the ids OUTSIDE `checkSource`'s reach.
   // `check-source.test.ts` asserts the two registries stay disjoint.
-  'visx-boundary',
-  'visx-tooltip',
+  'chart-engine-boundary',
+  'chart-host-single',
   'token-layer-boundary',
   'no-import-meta-env',
   // AST-only, same reason as `bound-control-outside-home`: a responsive-object prop, a shell-home
@@ -1133,11 +1036,19 @@ export const PLUGIN_RULE_IDS: ReadonlySet<string> = new Set([
   'agent-resume-guard',
   'agent-no-raw-usechat',
   'ai-sdk-major',
-  // Retired guard kinds — `unframed-chart`'s only case (`<ChartLegend items={[...]}>`) is fully
-  // subsumed by `basalt/chart-legend-literal`. Kept here (mirrored by the plugin's own
+  // Retired guard kinds — `unframed-chart`'s only case (`<ChartLegend items={[...]}>`) died with
+  // the public `ChartLegend` (2.0). Kept here (mirrored by the plugin's own
   // `RETIRED_RULE_IDS`) so an existing `theme-allow unframed-chart` reads as a dead waiver via
   // `--audit-allows`, never as an unknown-id typo.
   'unframed-chart',
+  // Retired in 2.0 (V2-SPEC § 9.8): the visx lint/guard layer. Mirrored by the plugin's own
+  // `RETIRED_RULE_IDS`.
+  'visx-boundary',
+  'visx-tooltip',
+  'hand-rolled-plot',
+  'chart-legend-literal',
+  'raw-visx-axis',
+  'chart-missing-aria-label',
   // Retired plugin rule — `<BasaltNotifications />` mounted beside `<BasaltOverlays
   // notifications>` is unreachable now that `BasaltNotifications` no longer exists as a
   // standalone export. Mirrored by the plugin's own `RETIRED_RULE_IDS`.
@@ -1787,9 +1698,7 @@ export const TOKENS_ONLY_DISABLED_KINDS: ReadonlySet<GuardKind> = new Set([
   'hidden-inline-style',
   'inline-spacing',
   'inline-display',
-  'raw-visx-axis',
   'raw-motion-value',
-  'chart-missing-aria-label',
   'raw-form-control',
   'sub-16-input-font',
   // Both wave-6 control kinds: `<Title>` is a Mantine component and the remedy for either one is a
@@ -2008,7 +1917,7 @@ type GuardRule = {
   readonly kind: GuardKind
   /** Static regex, or a builder over cfg for the 3 dynamic kinds (forbiddenAccent/spacing/radius). */
   readonly pattern: RegExp | ((cfg: GuardConfig) => RegExp)
-  /** Path-applicability: raw-visx-axis only fires in chart files. */
+  /** Path-applicability: a kind that only fires in some files. */
   readonly appliesTo?: (relPath: string) => boolean
   /** Knob gating; always-on kinds omit this. */
   readonly enabled?: (cfg: GuardConfig) => boolean
@@ -2017,7 +1926,7 @@ type GuardRule = {
 }
 
 /**
- * The closed registry of all 28 guard kinds. The triad test asserts
+ * The closed registry of all 26 guard kinds. The triad test asserts
  * `surface.guardKinds ⊆ keyof GUARD_RULES` at runtime.
  *
  * raw-surface, raw-html-layout, and sub-16-input-font are handled inline in checkSource
@@ -2027,8 +1936,7 @@ type GuardRule = {
  * This file and `src/cli/index.ts` are `exempt` in the package's own `basalt` config, and must
  * stay that way: a rule's `pattern` and its `message` both spell the anti-pattern out literally
  * (`'Raw <input>/<select>/<textarea> …'`), so the guard flags its own definitions when the package
- * self-scans. Any kind matching a literal tag hits this — `raw-visx-axis` only escaped it by
- * accident, via an `appliesTo` that happens to exclude non-chart files. Fixture files are already
+ * self-scans. Any kind matching a literal tag hits this — Fixture files are already
  * covered by the scanner's own `SKIP` (`*.test.ts`), for the same reason.
  */
 export const GUARD_RULES = {
@@ -2150,16 +2058,6 @@ export const GUARD_RULES = {
     appliesTo: (relPath) => !isChartFile(relPath) && !relPath.endsWith('.css'),
     message: 'Use <Flex>/<Grid>/<Group> instead of an inline display:flex/grid.',
   },
-  'raw-visx-axis': {
-    kind: 'raw-visx-axis',
-    pattern: RAW_VISX_AXIS,
-    enabled: (cfg: GuardConfig) => cfg.rawVisxAxis,
-    // Compose the existing chart-file scope with the CSS gate — a chart-file CSS module (none
-    // exist today, but the boundary should hold regardless) still can't carry a JSX axis tag.
-    appliesTo: (relPath) => isChartFile(relPath) && !relPath.endsWith('.css'),
-    message:
-      'Raw <AxisLeft>/<AxisBottom>/<AxisRight> in a chart file — use AxisLeftNumeric / AxisBottomDate / AxisRightNumeric.',
-  },
   'raw-motion-value': {
     kind: 'raw-motion-value',
     pattern: MOTION_TRANSITION_NUMERIC, // handled inline (2-regex kind); entry keeps registry complete
@@ -2169,15 +2067,6 @@ export const GUARD_RULES = {
     appliesTo: (relPath) => !relPath.endsWith('.css'),
     message:
       'Route animation timing through MOTION_DURATION / MOTION_SPRING / MOTION_EASE_STANDARD (basalt-ui motion tokens) instead of a hardcoded duration/spring/ease.',
-  },
-  'chart-missing-aria-label': {
-    kind: 'chart-missing-aria-label',
-    pattern: CHART_ENTRY_POINT_TAG_START, // handled inline (full-text tag-scoped scan); entry keeps registry complete
-    enabled: (cfg: GuardConfig) => cfg.chartMissingAriaLabel,
-    // JSX-tag-shaped (`<MultiLine …>`) — never appears in CSS text.
-    appliesTo: (relPath) => !relPath.endsWith('.css'),
-    message:
-      'Chart has no accessible text alternative — pass ariaLabel="…" so screen readers get more than an unlabeled graphic.',
   },
   'raw-form-control': {
     kind: 'raw-form-control',
@@ -2622,17 +2511,6 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
       }
     }
 
-    // raw-visx-axis — pattern + gating + path applicability (chart-file scope AND CSS gate,
-    // composed on the registry's own appliesTo) from GUARD_RULES.
-    if (
-      GUARD_RULES['raw-visx-axis'].enabled!(cfg) &&
-      GUARD_RULES['raw-visx-axis'].appliesTo!(relPath)
-    ) {
-      for (const m of line.matchAll(GUARD_RULES['raw-visx-axis'].pattern as RegExp)) {
-        push('raw-visx-axis', i + 1, m[0])
-      }
-    }
-
     // raw-motion-value: 2 separate regex checks, one kind — gated via GUARD_RULES entry.
     if (GUARD_RULES['raw-motion-value'].enabled!(cfg) && ruleApplies('raw-motion-value', relPath)) {
       for (const m of line.matchAll(MOTION_TRANSITION_NUMERIC))
@@ -2675,43 +2553,6 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
         line: startLine,
         token: '<raw-html style>',
         kind: 'hidden-inline-style',
-      })
-    }
-  }
-
-  // The aria-label tag rule below gates on tag PROVENANCE (see the block above LOCAL_COMPONENT_DEF).
-  // Computed once, and only if the rule actually runs.
-  const ariaLabelRuns =
-    GUARD_RULES['chart-missing-aria-label'].enabled!(cfg) &&
-    ruleApplies('chart-missing-aria-label', relPath)
-  const localNames = ariaLabelRuns ? localComponentNames(codeText) : new Set<string>()
-  const basaltNames = ariaLabelRuns ? basaltImportedNames(codeText) : new Set<string>()
-  const isShippedTag = (tag: string): boolean => basaltNames.has(tag) || !localNames.has(tag)
-
-  // chart-missing-aria-label — full-text tag-scoped scan.
-  // A tag is a violation only when its own (possibly multi-line) prop list has no `ariaLabel=`.
-  // Reports at the tag's OPENING line, like card-with-border below and unlike the end-of-match
-  // arithmetic this used to do: on a multi-line-formatted chart the end lands on the closing `/>`,
-  // which is what `Finding.text` would then quote back — the closing bracket rather than the tag
-  // that is missing the prop. The allow-comment is honored anywhere in the tag's span, so a
-  // `theme-allow` that used to sit on the closing line keeps working.
-  if (ariaLabelRuns) {
-    for (const m of codeText.matchAll(CHART_ENTRY_POINT_TAG_START)) {
-      const matchStart = m.index ?? 0
-      // A tag this file defines itself is not the shipped kind — it does not take `ariaLabel`.
-      if (!isShippedTag(m[1] as string)) continue
-      const closeIdx = scanChartTagClose(codeText, matchStart + m[0].length)
-      if (closeIdx === -1) continue
-      const tagText = codeText.slice(matchStart, closeIdx + 1)
-      if (HAS_ARIA_LABEL_PROP.test(tagText)) continue
-      const startLine = codeText.slice(0, matchStart).split('\n').length
-      const endLine = startLine + (tagText.split('\n').length - 1)
-      if (isAllowedInRange(startLine, endLine, 'chart-missing-aria-label')) continue
-      findings.push({
-        relPath,
-        line: startLine,
-        token: tagText.slice(0, 40),
-        kind: 'chart-missing-aria-label',
       })
     }
   }
