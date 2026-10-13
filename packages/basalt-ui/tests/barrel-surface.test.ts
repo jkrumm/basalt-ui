@@ -1,12 +1,15 @@
 /**
- * Barrel surface guard: `./tokens` and `./charts` are the published, Mantine-free surfaces —
- * consumers reach for `VX` / `alpha` / the factory helpers plus the two doctrine-prescribed
+ * Barrel surface guard: `./tokens` and `./charts` are the published, Mantine-free surfaces.
+ * `./tokens` is the ONE home of the token layer — consumers reach for `VX` / `alpha` / the factory
+ * helpers plus the two doctrine-prescribed
  * building blocks `BP` (raw hue families) and `p` (pair-picker), which every consumer series
  * module composes (`hrv: p(BP.blue)` — argo's series.ts, the DESIGN.md recipe). The REST of the
  * raw palette data (`ACCENT`, `FILL`, `INK`, `NEUTRAL`, `SEMANTIC`, `SHADOW`, `STATUS`,
  * `SURFACE`) stays internal. Locks down that boundary so a future re-export of the internal data
  * is a red test, not a silent surface-area leak — and so BP/p can never silently drop off the
- * barrel again (they were missing at 1.0.0 and hard-failed argo's build).
+ * barrel again (they were missing at 1.0.0 and hard-failed argo's build). `./charts` (2.0,
+ * docs/V2-SPEC.md § 9) is exactly its five values and re-exports nothing from `./tokens`,
+ * `./format` or the engine.
  */
 import { describe, expect, it } from 'bun:test'
 
@@ -35,8 +38,9 @@ const REQUIRED_KEYS = [
 ] as const
 
 // BP/p are `./tokens`-only: a series module imports its building blocks from basalt-ui/tokens.
-// `./charts` re-exports the token REFS it needs, not the raw hue families.
 const TOKENS_ONLY_KEYS = ['BP', 'p'] as const
+
+const CHART_VALUES = ['Bars', 'CartesianChart', 'ChartCard', 'Lines', 'chartCursor'] as const
 
 describe('barrel surface', () => {
   describe('./tokens', () => {
@@ -55,16 +59,13 @@ describe('barrel surface', () => {
   })
 
   describe('./charts', () => {
-    for (const key of [...RAW_PALETTE_KEYS, ...TOKENS_ONLY_KEYS]) {
-      it(`does not export raw palette data '${key}'`, () => {
-        expect(Object.prototype.hasOwnProperty.call(chartsBarrel, key)).toBe(false)
-        expect((chartsBarrel as Record<string, unknown>)[key]).toBeUndefined()
-      })
-    }
+    it('exports exactly the 2.0 chart values', () => {
+      expect(Object.keys(chartsBarrel).toSorted()).toEqual([...CHART_VALUES])
+    })
 
-    for (const key of REQUIRED_KEYS) {
-      it(`still exports '${key}'`, () => {
-        expect((chartsBarrel as Record<string, unknown>)[key]).toBeDefined()
+    for (const key of [...RAW_PALETTE_KEYS, ...TOKENS_ONLY_KEYS, ...REQUIRED_KEYS]) {
+      it(`does not re-export the token layer's '${key}'`, () => {
+        expect(Object.prototype.hasOwnProperty.call(chartsBarrel, key)).toBe(false)
       })
     }
   })

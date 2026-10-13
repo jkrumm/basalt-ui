@@ -1,9 +1,8 @@
 #!/usr/bin/env node
 // Dist-layering guard: walks the built dist/ graph of the Mantine-free subpaths and
-// fails on any @mantine/* (and @visx/* where forbidden) import reachable from them, and
-// asserts the root barrel (dist/index.js) never RE-EXPORTS the ./charts or ./tokens entry
-// (provider/theme legitimately deep-import ../charts/theme + ../tokens in their OWN files —
-// those never surface through the barrel, so this guard does not see them).
+// fails on any @mantine/* or @visx/* import reachable from them, holds the ./charts graph to its
+// docs/V2-SPEC.md § 9.8 import set (the engine's subpaths, d3-scale, react), and asserts the root
+// barrel (dist/index.js) never RE-EXPORTS the ./charts or ./tokens entry.
 import { existsSync, readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 
@@ -47,14 +46,15 @@ function walkGraph(entry) {
 
 // Mantine-free Layer-0 subpath dist entries (2.0: `./agent` left the set — Mantine is a required peer
 // and the chat UI ships in it; its runtime half stays Mantine-free as a repo-local lint boundary).
-// visx is allowed ONLY inside the charts graph.
+// visx is gone (2.0): banned on every graph. `onlyBare` pins a graph's external imports to a set.
+const CHART_BARE = [/^@tanstack\/charts\//, /^d3-scale$/, /^react(\/jsx-runtime)?$/]
 const subpaths = [
-  { rel: 'tokens/index.js', banVisx: true },
-  { rel: 'charts/index.js', banVisx: false },
-  { rel: 'format/index.js', banVisx: true },
-  { rel: 'state.js', banVisx: true },
+  { rel: 'tokens/index.js' },
+  { rel: 'charts/index.js', onlyBare: CHART_BARE },
+  { rel: 'format/index.js' },
+  { rel: 'state.js' },
 ]
-for (const { rel, banVisx } of subpaths) {
+for (const { rel, onlyBare } of subpaths) {
   const entry = resolve(DIST, rel)
   if (!existsSync(entry)) {
     fail(`missing dist entry: ${rel}`)
@@ -67,8 +67,12 @@ for (const { rel, banVisx } of subpaths) {
       fail(`${rel} graph reaches Mantine import: ${spec}`)
       subpathFailed = true
     }
-    if (banVisx && spec.startsWith('@visx/')) {
+    if (spec.startsWith('@visx/')) {
       fail(`${rel} graph reaches visx import: ${spec}`)
+      subpathFailed = true
+    }
+    if (onlyBare && !spec.endsWith('.css') && !onlyBare.some((re) => re.test(spec))) {
+      fail(`${rel} graph reaches ${spec}, outside its allowed import set`)
       subpathFailed = true
     }
   }

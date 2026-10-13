@@ -2,8 +2,8 @@
  * `basalt-ui/format` — Mantine-free, React-free `Intl`-backed formatting. One implementation for
  * numbers/percentages/money, dates/times/durations and the two measurement units argo needed
  * (`km`/`kcal`) — replacing argo's `features/*\/{formatters,formulas,format}.ts` (~350 of 643
- * lines across four duration spellings) and the chart layer's own `charts/utils/format.ts`, which
- * now re-exports from here.
+ * lines across four duration spellings) and the 1.x chart layer's own formatters (2.0's charts
+ * import the internals directly).
  *
  * Every formatter takes `(value, opts?)`; `locale` on every `opts` defaults to `undefined` —
  * `Intl`'s own "use the runtime's locale". Every non-finite/unparseable input prints the same
@@ -19,22 +19,5 @@
  * relativeTime(Date.now() - 3_600_000)     // "1 hour ago"
  */
 export { integer, money, percent } from './number'
-export { durationClock, fmtAxisDate, fmtTooltipDate, relativeTime, weekday } from './date'
+export { durationClock, relativeTime, weekday } from './date'
 export { kcal, km } from './measure'
-
-import { fmtCompact, fmtCurrency, fmtInt, fmtPercent } from './number'
-import { fmtAxisDate, fmtTooltipDate } from './date'
-
-/**
- * Every shipped chart-facing formatter under one name, so a chart can be handed the whole set
- * (`format={formatters.compact}`). Unchanged shape from `charts/utils/format.ts` — this is the
- * SAME object, not a second one, so an existing `formatters.x` call site keeps working verbatim.
- */
-export const formatters = {
-  compact: fmtCompact,
-  percent: fmtPercent,
-  currency: fmtCurrency,
-  int: fmtInt,
-  axisDate: fmtAxisDate,
-  tooltipDate: fmtTooltipDate,
-} as const

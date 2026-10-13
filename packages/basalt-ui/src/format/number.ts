@@ -1,12 +1,11 @@
 /**
  * Number formatting — `Intl.NumberFormat` with the arguments already decided, so a caller states
- * WHAT a number is rather than how to punctuate it. Moved here from `src/charts/utils/format.ts`
- * (C5 consolidation) — that file now re-exports from this module so charts keep working through
- * one implementation.
+ * WHAT a number is rather than how to punctuate it. One implementation: the chart layer imports
+ * `fmtCompact` from here for its default axis format.
  *
  * `money`/`percent`/`integer`/`compact`/`deltaPct` are the argo-facing names (seeded from
  * `features/*\/{formatters,formulas}.ts`); `fmtCurrency`/`fmtPercent`/`fmtInt`/`fmtCompact` are the
- * original chart-formatter names, kept for source compatibility and delegated to by the new names.
+ * original chart-formatter names, internal since 2.0 and delegated to by the public names.
  */
 import { NON_FINITE, numberFormat } from './shared'
 import type { LocaleOption } from './shared'

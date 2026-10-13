@@ -47,8 +47,8 @@ const TARGETS = {
 } as const
 const CEILINGS = {
   ...TARGETS,
-  nonChartSymbols: 97, // landed: +4 helpers `./charts` still imports from `./tokens`/`./format` (W4 removes them), +1 `useNav` (leaves with `BasaltShell nav`)
-  chartSymbols: 97, // deferred to W4: landed count until W4 reshapes `./charts` down to the target
+  nonChartSymbols: 93, // landed: +1 `useNav` (leaves with `BasaltShell nav`)
+  chartSymbols: 5, // landed (W4): the rung, `Lines`, `Bars`, `ChartCard`, `chartCursor`; W5's kinds raise it toward 48
   ruleLines: 750, // deferred to W9: landed count until W9 rewrites the shipped rules down to the target
 } as const
 
@@ -64,28 +64,6 @@ type Budget = {
   readonly unmeasured?: { readonly kind: 'skipped' | 'failed'; readonly reason: string }
   /** Violation lines printed under the row (the gate-style rows, whose `value` is their count). */
   readonly detail?: readonly string[]
-}
-
-/**
- * Symbols `./charts` still re-exports or imports across the subpath line: W4 owns `src/charts/**`
- * and deletes these in its wave (V2-SPEC § 9), at which point this list and its filter go. Landed
- * values: 10 duplicate homes, 4 symbols without a consumer entry.
- */
-const W4_DEFERRED = new Set([
-  'VX',
-  'alpha',
-  'buildPaletteCss',
-  'chartMargin',
-  'defineSeries',
-  'fmtAxisDate',
-  'fmtTooltipDate',
-  'formatters',
-  'groupTokens',
-  'seriesTokens',
-])
-
-function withoutW4Deferred(violations: readonly string[]): string[] {
-  return violations.filter((line) => !W4_DEFERRED.has(line.split(/[ :]/)[0] ?? ''))
 }
 
 /** Every regular file under `dir` whose name matches `pattern`, recursing into subdirectories. */
@@ -113,7 +91,7 @@ function readSurface(): Surface {
   return JSON.parse(readFileSync(join(PKG_ROOT, 'scripts/export-surface.json'), 'utf8')) as Surface
 }
 
-/** Value exports of every subpath except `./charts`, which W4 reshapes and is gated apart. */
+/** Value exports of every subpath except `./charts`, which is budgeted apart. */
 function nonChartSymbols(surface: Surface): number {
   return Object.entries(surface)
     .filter(([subpath]) => subpath !== CHART_SUBPATH)
@@ -377,11 +355,11 @@ async function budgets(providerOnlyDist: string): Promise<Budget[]> {
     },
     gateRow(
       'symbols under more than one subpath (one import path per symbol)',
-      withoutW4Deferred(duplicateSymbols(surface)),
+      duplicateSymbols(surface),
     ),
     gateRow(
       'public symbols without a named consumer (scripts/consumers.json)',
-      withoutW4Deferred(consumerViolations(surface, consumers)),
+      consumerViolations(surface, consumers),
     ),
     peerClassRow(manifest),
     // 2480 -> 3166: transitional, docs/V2-SPEC.md at its Wave 1 landed size while the 1.x specs it

@@ -24,20 +24,21 @@ describe('duplicateSymbols', () => {
 
 describe('consumerViolations', () => {
   const surface = { '.': ['A', 'B'], './charts': ['ChartOnly'] }
-  test('a symbol without a consumer fails; charts are exempt', () => {
+  test('a symbol without a consumer fails, chart symbols included (W4)', () => {
     expect(consumerViolations(surface, { A: 'argo:x.tsx' })).toEqual([
       'B: public symbol has no named consumer in scripts/consumers.json',
+      'ChartOnly: public symbol has no named consumer in scripts/consumers.json',
     ])
   })
   test('an entry naming no public symbol is stale', () => {
-    expect(consumerViolations(surface, { A: 'x', B: 'y', Gone: 'z' })).toEqual([
-      'Gone: in scripts/consumers.json but not a public non-chart value symbol',
+    expect(consumerViolations(surface, { A: 'x', B: 'y', ChartOnly: 'w', Gone: 'z' })).toEqual([
+      'Gone: in scripts/consumers.json but not a public value symbol',
     ])
   })
   test('consumers.json is value-only: a type name (absent from the value snapshot) is stale', () => {
-    expect(consumerViolations(surface, { A: 'x', B: 'y', SomeProps: 'z' })).toEqual([
-      'SomeProps: in scripts/consumers.json but not a public non-chart value symbol',
-    ])
+    expect(consumerViolations(surface, { A: 'x', B: 'y', ChartOnly: 'w', SomeProps: 'z' })).toEqual(
+      ['SomeProps: in scripts/consumers.json but not a public value symbol'],
+    )
   })
 })
 

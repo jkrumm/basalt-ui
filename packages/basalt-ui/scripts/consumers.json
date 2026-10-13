@@ -1,6 +1,7 @@
 {
   "ArticleLayout": "basalt-ui-obsidian:packages/basalt-ui-obsidian/src/render/note-view.tsx",
   "BP": "argo:apps/dashboard/src/lib/series.ts",
+  "Bars": "argo:apps/dashboard/src/features/walking-pad/charts/daily-activity-chart.tsx",
   "BasaltDataTable": "argo:apps/dashboard/src/features/warden/issues-section.tsx",
   "BasaltProvider": "argo:apps/dashboard/src/main.tsx",
   "BasaltShell": "argo:apps/dashboard/src/routes/__root.tsx",
@@ -8,6 +9,8 @@
   "CONTAINER_GRID_BREAKPOINTS": "argo:apps/dashboard/src/routes/strength-tracker.tsx",
   "CONTAINER_KEYS": "argo:apps/dashboard/src/routes/strength-tracker.tsx",
   "Callout": "linewatch:web/src/routes/index.tsx",
+  "CartesianChart": "argo:apps/dashboard/src/features/garmin-health/charts/fitness-trends-chart.tsx",
+  "ChartCard": "argo:apps/dashboard/src/features/usage-tracking/charts/cache-hit-ratio.tsx",
   "Composer": "argo:apps/dashboard/src/features/hermes-chat/chat-page.tsx",
   "DangerZone": "rb:apps/web/src/features/settings/page.tsx",
   "DateRangePicker": "argo:apps/dashboard/src/routes/strength-tracker.tsx",
@@ -16,8 +19,8 @@
   "FilterSet": "argo:apps/dashboard/src/routes/strength-tracker.tsx",
   "FormGroup": "image-gateway:app/src/views/Create.tsx",
   "FormRow": "argo:apps/dashboard/src/features/m365-explorer/explorer-page.tsx",
-  "useNav": "argo:apps/dashboard/src/routes/__root.tsx",
   "GuideLink": "linewatch:web/src/components/guided-chart.tsx",
+  "Lines": "argo:apps/dashboard/src/features/usage-tracking/charts/cache-hit-ratio.tsx",
   "Markdown": "argo:apps/dashboard/src/features/hermes-chat/markdown-part.tsx",
   "MultiSelectFilter": "argo:apps/dashboard/src/routes/strength-tracker.tsx",
   "NotificationBell": "argo:apps/dashboard/src/routes/__root.tsx",
@@ -50,6 +53,7 @@
   "basaltAppPlugin": "argo:apps/dashboard/vite.config.ts",
   "basaltViteConfig": "argo:apps/dashboard/vite.config.ts",
   "buildPaletteCss": "rb:apps/web/src/lib/series.test.ts",
+  "chartCursor": "weatherorb:apps/web/src/map/point/meteogram.tsx",
   "createBasaltRouter": "argo:apps/dashboard/src/lib/router.ts",
   "createBasaltTheme": "argo:apps/dashboard/src/main.tsx",
   "createColumnHelper": "argo:apps/dashboard/src/features/warden/issues-section.tsx",
@@ -90,6 +94,7 @@
   "useBasaltForm": "argo:apps/dashboard/src/lib/auth-gate.tsx",
   "useBasaltNav": "basalt-ui-obsidian:apps/demo/src/routes/__root.tsx",
   "useCoarsePointer": "rb:apps/web/src/components/lock-screen.tsx",
+  "useNav": "argo:apps/dashboard/src/routes/__root.tsx",
   "useSizeClass": "argo:apps/dashboard/src/routes/strength-tracker.tsx",
   "weekday": "argo:apps/dashboard/src/features/astro-window/formulas.ts"
 }

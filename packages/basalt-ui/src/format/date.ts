@@ -1,45 +1,10 @@
 /**
- * Date/time/duration formatting. `fmtAxisDate`/`fmtTooltipDate` moved here from
- * `src/charts/utils/format.ts` (C5 consolidation) — that file now re-exports from this module.
- * The rest (`clock`/`weekday`/`relativeTime`/`duration`/`durationClock`) are new, seeded from argo
- * consumers (`features/{walking-pad,reading,astro-window,garmin-health}/{formatters,format,
+ * Date/time/duration formatting (`clock`/`weekday`/`relativeTime`/`duration`/`durationClock`),
+ * seeded from argo consumers (`features/{walking-pad,reading,astro-window,garmin-health}/{formatters,format,
  * formulas}.ts` — read those files' own JSDoc for the exact call sites this generalizes).
  */
 import { dateFormat, NON_FINITE, toDate } from './shared'
 import type { LocaleOption } from './shared'
-
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-const SHORT_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-
-/** Axis-friendly short date: DD.MM. A non-finite or invalid date prints {@link NON_FINITE}. */
-export function fmtAxisDate(value: unknown): string {
-  if (typeof value === 'number' && !Number.isFinite(value)) return NON_FINITE
-  if (value instanceof Date) {
-    if (Number.isNaN(value.getTime())) return NON_FINITE
-    const dd = String(value.getDate()).padStart(2, '0')
-    const mm = String(value.getMonth() + 1).padStart(2, '0')
-    return `${dd}.${mm}`
-  }
-  const s = String(value ?? '')
-  const match = s.match(/(\d{4})-(\d{2})-(\d{2})/)
-  if (match) return `${match[3]}.${match[2]}`
-  return s
-}
-
-/** Tooltip-friendly long date: "Mon Apr 21 2026". A non-finite or invalid date prints
- * {@link NON_FINITE}. */
-export function fmtTooltipDate(date: unknown): string {
-  if (typeof date === 'number' && !Number.isFinite(date)) return NON_FINITE
-  if (date instanceof Date) {
-    if (Number.isNaN(date.getTime())) return NON_FINITE
-    return `${SHORT_DAYS[date.getDay()]} ${MONTHS[date.getMonth()]} ${date.getDate()} ${date.getFullYear()}`
-  }
-  const s = String(date ?? '')
-  const match = s.match(/(\d{4})-(\d{2})-(\d{2})/)
-  if (!match) return s
-  const d = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]))
-  return `${SHORT_DAYS[d.getDay()]} ${MONTHS[d.getMonth()]} ${d.getDate()} ${d.getFullYear()}`
-}
 
 export type WeekdayOptions = LocaleOption & {
   /** `Intl.DateTimeFormat`'s own weekday widths. Default `'short'` (`"Mon"`). */

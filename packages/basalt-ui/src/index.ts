@@ -55,4 +55,4 @@ export { unwrap } from './query-client'
 // merges when the entry exports the interface. `v2-surface.md` marks it `delete` (no consumer
 // *names* it), but every typed registry (commands, overlays, notifications, series) resolves
 // through it — augmentation is not an import, so the consumer count missed it.
-export type { BasaltRegister } from './register'
+export type { BasaltRegister, SeriesKey } from './register'

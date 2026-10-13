@@ -8,12 +8,10 @@ export { CONTAINER_CLASSES, CONTAINER_GRID_BREAKPOINTS, CONTAINER_KEYS } from '.
 export {
   alpha,
   buildPaletteCss,
-  chartMargin,
   defineSeries,
   groupTokens,
   seriesTokens,
   VX,
-  type ChartMargin,
   type ColorPair,
   type SeriesGroup,
   type SeriesMap,

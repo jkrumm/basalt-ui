@@ -323,7 +323,7 @@ cat >dist-vantage.ts <<'TS'
 import { createBasaltTheme } from 'basalt-ui'
 import type { BasaltRegister } from 'basalt-ui'
 import { buildPaletteCss, defineSeries, groupTokens } from 'basalt-ui/tokens'
-import type { SeriesKey } from 'basalt-ui/charts'
+import type { SeriesKey } from 'basalt-ui'
 
 // radius/density are literal unions (V2-SPEC section 3)
 const _theme = createBasaltTheme(undefined, { radius: 2, density: -1 })
@@ -362,10 +362,8 @@ echo "==> charts/tokens-only (no-Mantine) resolution + render"
 SCRATCH2=$(mktemp -d)
 cd "$SCRATCH2"
 echo '{ "name": "scratch-free", "private": true, "type": "module" }' >package.json
-scratch_install "$ABS_TGZ" react react-dom \
-  "@visx/axis@4.0.0" "@visx/curve@4.0.0" "@visx/event@4.0.0" "@visx/grid@4.0.0" \
-  "@visx/group@4.0.0" "@visx/responsive@4.0.0" "@visx/scale@4.0.0" "@visx/shape@4.0.0" \
-  "@visx/threshold@4.0.0"
+# The chart layer's two subpath-required peers (docs/V2-SPEC.md § 9) and React — nothing else.
+scratch_install "$ABS_TGZ" react react-dom "@tanstack/charts@1.1.0" "d3-scale@4.0.2"
 cat >free.mjs <<'JS'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
@@ -374,25 +372,19 @@ const charts = await import('basalt-ui/charts')
 const tokens = await import('basalt-ui/tokens')
 if (typeof tokens.buildPaletteCss !== 'function') throw new Error('tokens.buildPaletteCss missing')
 if (typeof tokens.buildPaletteCss() !== 'string') throw new Error('buildPaletteCss() did not return a string')
-// Render proof: Bars accepts explicit width+height and uses VX token refs (plain var() strings,
-// SSR-safe). Wrapped in VxThemeProvider (also Mantine-free) so useVxTheme() resolves; the
-// provider itself has no @mantine dependency. renderToStaticMarkup works with all React hooks
-// (useCallback/useMemo/useRef/useContext run synchronously in SSR).
-const { VxThemeProvider, Bars } = charts
-const data = [{ x: '2024-01', v: 10 }, { x: '2024-02', v: 20 }, { x: '2024-03', v: 15 }]
-const chart = createElement(Bars, {
-  data,
-  width: 400,
-  height: 200,
-  chartId: 'test',
-  getX: (d) => d.x,
-  getValue: (d, key) => key === 'v' ? d.v : null,
-  positiveBars: [{ key: 'v', label: 'Value', color: 'var(--vx-blue)' }],
-  leftAxis: { domain: [0, 30] },
-})
-const wrapped = createElement(VxThemeProvider, { colorScheme: 'light' }, chart)
-const html = renderToStaticMarkup(wrapped)
-if (!html.includes('<svg')) throw new Error('chart kind did not render an <svg>')
+// Render proof: a kind renders the engine's accessible SVG on the server, at the SSR width, with
+// every paint a VX token ref (plain var() strings).
+const data = [{ at: '2024-01-01', v: 10 }, { at: '2024-01-02', v: 20 }, { at: '2024-01-03', v: 15 }]
+const html = renderToStaticMarkup(
+  createElement(charts.Bars, {
+    ariaLabel: 'Value',
+    data,
+    x: (d) => new Date(`${d.at}T00:00:00Z`),
+    bars: [{ key: 'v', label: 'Value', color: 'var(--vx-accent)', getValue: (d) => d.v }],
+    y: { domain: [0, 30] },
+  }),
+)
+if (!html.includes('<svg') || !html.includes('role="img"')) throw new Error('chart kind did not render an accessible <svg>')
 console.log('charts/tokens-only resolution + render OK')
 JS
 # `--import css-noop-register` (same as the agent-chat step below): `ChartCard` composes the
@@ -610,22 +602,22 @@ node styles-proof.mjs
 
 echo "==> tokens-only install is light (no peers at all)"
 # The property this whole change exists to prove: a consumer who only wants the token layer
-# installs basalt-ui and gets NOTHING else — no visx/d3 chart stack, no fonts, no Mantine. Every
+# installs basalt-ui and gets NOTHING else — no chart engine, no fonts, no Mantine. Every
 # peer above (including the fourteen moved out of `dependencies` in this change) is optional, so a
 # bare `bun add basalt-ui` must not pull any of them in transitively.
 SCRATCH3=$(mktemp -d)
 cd "$SCRATCH3"
 echo '{ "name": "scratch-light", "private": true, "type": "module" }' >package.json
 scratch_install "$ABS_TGZ"
-if [ -d node_modules/@visx/scale ]; then
-  echo "FAILED: @visx/scale present in a tokens-only install — dependency weight regression"
+if [ -d node_modules/@tanstack/charts ]; then
+  echo "FAILED: @tanstack/charts present in a tokens-only install — the engine is an optional peer"
   exit 1
 fi
 cat >light.mjs <<'JS'
 const tokens = await import('basalt-ui/tokens')
 if (typeof tokens.buildPaletteCss !== 'function') throw new Error('tokens.buildPaletteCss missing')
 if (typeof tokens.buildPaletteCss() !== 'string') throw new Error('buildPaletteCss() did not return a string')
-console.log('tokens-only resolution OK, no @visx/scale in tree')
+console.log('tokens-only resolution OK, no chart engine in tree')
 JS
 node light.mjs
 echo "tokens-only install is light OK"
