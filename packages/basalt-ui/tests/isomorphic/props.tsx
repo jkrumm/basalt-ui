@@ -22,8 +22,8 @@
  */
 import type { ReactNode } from 'react'
 import { createLocalStore, field } from '../../src/state'
+import { lineY } from '@tanstack/charts/line'
 import type { ChartSeries } from '../../src/charts'
-import { scaleBand, scaleLinear, scalePoint } from '../../src/charts'
 import { DateRangePicker } from '../../src/controls-dates'
 import { defineCommands } from '../../src/commands'
 
@@ -37,19 +37,12 @@ const ROWS: Row[] = [
   { date: '2026-08-03', a: 25, b: 5 },
 ]
 
-const KEYS = ROWS.map((d) => d.date)
-const getX = (d: Row): string => d.date
+const x = (d: Row): Date => new Date(`${d.date}T00:00:00Z`)
 
 const SERIES: ChartSeries<Row>[] = [
   { key: 'a', label: 'A', color: '#4c7cf3', mark: 'line', getValue: (d) => d.a },
   { key: 'b', label: 'B', color: '#e0803a', mark: 'line', getValue: (d) => d.b },
 ]
-
-const bandScale = scaleBand<string>({ domain: KEYS, range: [0, 200] })
-const pointScale = scalePoint<string>({ domain: KEYS, range: [0, 200] })
-const linearScale = scaleLinear<number>({ domain: [0, 50], range: [100, 0] })
-
-const num = (v: number): string => String(v)
 
 const store = createLocalStore({
   key: 'isomorphic-smoke',
@@ -101,158 +94,24 @@ defineCommands({
 /* ------------------------------------------------------------- the prop map */
 
 export const MINIMAL_PROPS: Record<string, Record<string, unknown>> = {
-  /* --- charts: assembly primitives ---------------------------------------- */
+  /* --- charts (docs/V2-SPEC.md § 9) --------------------------------------- */
   CartesianChart: {
+    ariaLabel: 'Cartesian',
     data: ROWS,
-    chartId: 'iso-cartesian',
-    getX,
+    x,
     series: SERIES,
     height: 200,
-    // Required: the mark-drawing callback, invoked INSIDE the chart's own `<svg>`.
-    children: () => <g />,
+    marks: () => [lineY(ROWS, { x, y: (d: Row) => d.a })],
   },
-  ChartFrame: {
-    series: [{ key: 'a', label: 'A', color: '#4c7cf3' }],
-    height: 120,
-    // `ChartFrame` owns the container div and hands the plot rect to the caller — the caller draws
-    // the `<svg>`. Returning a bare `<g>` here would be the harness rendering SVG into a div.
-    children: () => <svg />,
+  Lines: { ariaLabel: 'Lines', data: ROWS, x, series: SERIES, height: 200 },
+  Bars: {
+    ariaLabel: 'Bars',
+    data: ROWS,
+    x,
+    bars: [{ key: 'a', label: 'A', color: '#4c7cf3', getValue: (d: Row) => d.a }],
+    height: 200,
   },
   ChartCard: { title: 'Card', children: TEXT },
-  ChartCenter: { width: 200, height: 120, children: TEXT },
-  ChartPending: { width: 200, height: 120 },
-  ChartCursorScope: { children: TEXT },
-  ChartLegend: { items: [{ key: 'a', label: 'A', color: '#4c7cf3' }] },
-  ChartTooltipFloat: { anchor: { x: 10, y: 10 }, children: TEXT },
-  VxThemeProvider: { children: TEXT, colorScheme: 'dark' },
-  TooltipBody: { children: TEXT },
-  TooltipHeader: { date: '2026-08-01' },
-  TooltipRow: { color: '#4c7cf3', label: 'A', value: '10' },
-
-  /* --- charts: SVG-hosted primitives -------------------------------------- */
-  AreaGradient: { id: 'iso-grad', color: '#4c7cf3' },
-  HatchPattern: { id: 'iso-hatch', color: '#4c7cf3' },
-  Crosshair: { x: 10, top: 0, bottom: 100 },
-  SeriesDot: { cx: 10, cy: 20, color: '#4c7cf3' },
-  HoverOverlay: { width: 200, height: 100, onMove: () => {}, onLeave: () => {} },
-  ZoneRects: { zones: [{ from: 0, to: 10, fill: '#4c7cf3' }], width: 200, leftScale: linearScale },
-  XZoneRects: { zones: [], height: 100, xScale: pointScale },
-  AxisLeftNumeric: { scale: linearScale },
-  AxisRightNumeric: { scale: linearScale, left: 200 },
-  AxisBottomDate: { scale: bandScale, top: 100, tickValues: KEYS },
-  AxisBottomNumeric: { scale: linearScale, top: 100 },
-
-  /* --- charts: the kinds -------------------------------------------------- */
-  MultiLine: { data: ROWS, chartId: 'iso-multiline', getX, series: SERIES, height: 200 },
-  StackedArea: { data: ROWS, chartId: 'iso-stacked', getX, series: SERIES, height: 200 },
-  Bars: {
-    data: ROWS,
-    chartId: 'iso-bars',
-    getX,
-    getValue: (d: Row, key: string) => (key === 'a' ? d.a : d.b),
-    positiveBars: [{ key: 'a', label: 'A', color: '#4c7cf3' }],
-    height: 200,
-  },
-  ZonedLine: { data: ROWS, chartId: 'iso-zoned', getX, series: SERIES, height: 200 },
-  BandStrip: {
-    data: ROWS,
-    chartId: 'iso-band',
-    getX,
-    series: [{ key: 'up', label: 'Up', color: '#4c7cf3' }],
-    getBand: () => ({ state: 'up' }),
-    height: 120,
-  },
-  MirroredBars: {
-    data: ROWS,
-    chartId: 'iso-mirror',
-    getX,
-    series: [
-      { key: 'a', label: 'A', color: '#4c7cf3', mark: 'bar', getValue: (d: Row) => d.a },
-      { key: 'b', label: 'B', color: '#e0803a', mark: 'bar', getValue: (d: Row) => d.b },
-    ],
-    up: { key: 'a', format: num },
-    down: { key: 'b', format: num },
-    height: 160,
-  },
-  DualPanel: {
-    data: ROWS,
-    chartId: 'iso-dual',
-    getX,
-    series: SERIES,
-    getBar: (d: Row) => d.b,
-    barLabel: 'Delta',
-    barColorPositive: '#4c7cf3',
-    barColorNegative: '#e0803a',
-    formatTop: num,
-    formatBottom: num,
-    height: 240,
-  },
-  Donut: {
-    data: [
-      { key: 'a', value: 10 },
-      { key: 'b', value: 4 },
-    ],
-    colorForKey: () => '#4c7cf3',
-    formatValue: num,
-    height: 160,
-  },
-  Heatmap: {
-    data: [{ row: 'mon', col: 'am', value: 1 }],
-    chartId: 'iso-heat',
-    getRow: (d: { row: string }) => d.row,
-    getCol: (d: { col: string }) => d.col,
-    getValue: (d: { value: number }) => d.value,
-    height: 160,
-  },
-  LineSparkline: { data: [1, 2, 3, 4], width: 80, height: 24 },
-  BarSparkline: { data: [1, 2, 3, 4], width: 80, height: 24 },
-
-  /* --- charts: the visx re-exports ----------------------------------------
-   * Third-party components basalt republishes. Their props are visx's contract, not basalt's —
-   * the assertion here is only that the re-export RESOLVES and renders, which is what a broken
-   * pin or a dropped transitive dep would break. */
-  Group: {},
-  Bar: { x: 0, y: 0, width: 10, height: 10 },
-  Line: { from: { x: 0, y: 0 }, to: { x: 10, y: 10 } },
-  LinePath: { data: ROWS, x: (_d: Row, i: number) => i * 10, y: (d: Row) => d.a },
-  GridRows: { scale: linearScale, width: 200 },
-  GridColumns: { scale: bandScale, height: 100 },
-  AreaClosed: {
-    data: ROWS,
-    x: (_d: Row, i: number) => i * 10,
-    y: (d: Row) => d.a,
-    yScale: linearScale,
-  },
-  AreaStack: { data: ROWS, keys: ['a', 'b'], x: (_d: unknown, i: number) => i * 10 },
-  BarStack: {
-    data: ROWS,
-    keys: ['a', 'b'],
-    x: getX,
-    xScale: bandScale,
-    yScale: linearScale,
-    color: () => '#4c7cf3',
-  },
-  BarGroup: {
-    data: ROWS,
-    keys: ['a', 'b'],
-    height: 100,
-    x0: getX,
-    x0Scale: bandScale,
-    x1Scale: scaleBand<string>({ domain: ['a', 'b'], range: [0, 60] }),
-    yScale: linearScale,
-    color: () => '#4c7cf3',
-  },
-  Pie: { data: ROWS, pieValue: (d: Row) => d.a },
-  Threshold: {
-    id: 'iso-threshold',
-    data: ROWS,
-    x: (_d: Row, i: number) => i * 10,
-    y0: (d: Row) => d.a,
-    y1: (d: Row) => d.b,
-    yScale: linearScale,
-    clipAboveTo: 0,
-    clipBelowTo: 100,
-  },
 
   /* --- controls ------------------------------------------------------------ */
   SelectFilter: { field: store.field.currency, label: 'Currency', options: OPTIONS },
@@ -363,31 +222,7 @@ export const MINIMAL_PROPS: Record<string, Record<string, unknown>> = {
  * Rendered inside an `<svg>` rather than a `<div>`. Everything here paints SVG children directly;
  * React's "unrecognized tag" console error outside an SVG host would be a harness artifact.
  */
-export const SVG_HOSTED: ReadonlySet<string> = new Set([
-  'AreaClosed',
-  'AreaGradient',
-  'AreaStack',
-  'AxisBottomDate',
-  'AxisBottomNumeric',
-  'AxisLeftNumeric',
-  'AxisRightNumeric',
-  'Bar',
-  'BarGroup',
-  'BarStack',
-  'Crosshair',
-  'GridColumns',
-  'GridRows',
-  'Group',
-  'HatchPattern',
-  'HoverOverlay',
-  'Line',
-  'LinePath',
-  'Pie',
-  'SeriesDot',
-  'Threshold',
-  'XZoneRects',
-  'ZoneRects',
-])
+export const SVG_HOSTED: ReadonlySet<string> = new Set([])
 
 /* -------------------------------------------------------------------- skips */
 
@@ -429,32 +264,15 @@ export const EXPECTED_DEFECTS: Record<string, ExpectedDefect> = {}
 export const NO_CLASSNAME: Record<string, 'provider' | 'svg' | 'portal' | 'gap'> = {
   // provider — renders no box of its own (context, portal host, error boundary); nothing to put a
   // class on.
-  ChartCursorScope: 'provider',
-  VxThemeProvider: 'provider',
 
   // svg — paints SVG children only; a class would land on a `<g>`/`<rect>`, a different styling
   // question from the chrome components' one.
-  AreaGradient: 'svg',
-  AxisBottomDate: 'svg',
-  AxisBottomNumeric: 'svg',
-  AxisLeftNumeric: 'svg',
-  AxisRightNumeric: 'svg',
-  Crosshair: 'svg',
-  HatchPattern: 'svg',
-  HoverOverlay: 'svg',
-  SeriesDot: 'svg',
-  XZoneRects: 'svg',
-  ZoneRects: 'svg',
 
   // portal — forwards the class onto a node outside the probe's container. Not a gap.
 
   // gap — renders a real box and drops the class.
-  ChartTooltipFloat: 'gap',
   DateRangePicker: 'gap',
   DeltaBadge: 'gap',
-  TooltipBody: 'gap',
-  TooltipHeader: 'gap',
-  TooltipRow: 'gap',
 }
 
 /**

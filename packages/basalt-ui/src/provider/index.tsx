@@ -10,12 +10,7 @@
  * The palette injection is pure CSS keyed off Mantine's `[data-mantine-color-scheme]` attribute, so
  * dark/light resolution needs no React re-render.
  */
-import {
-  MantineProvider,
-  useComputedColorScheme,
-  useMantineColorScheme,
-  useMantineTheme,
-} from '@mantine/core'
+import { MantineProvider, useMantineColorScheme, useMantineTheme } from '@mantine/core'
 import type { MantineProviderProps } from '@mantine/core'
 import { ModalsProvider } from '@mantine/modals'
 import { Notifications } from '@mantine/notifications'
@@ -27,7 +22,6 @@ import { RouterProvider } from '@tanstack/react-router'
 import type { AnyRouter } from '@tanstack/react-router'
 import { Component, Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ErrorInfo, ReactNode } from 'react'
-import { VxThemeProvider } from '../charts/theme'
 import fallbackClasses from './error-fallback.module.css'
 import { cssVariablesResolver } from '../theme'
 import { useLabTheme } from './lab-theme'
@@ -226,10 +220,6 @@ function BasaltBridge({
   paletteOptions: BuildPaletteOpts | undefined
   nonce: string | undefined
 }) {
-  // Resolve via Mantine's computed scheme so 'auto' follows the OS prefers-color-scheme
-  // (fallback 'dark' before hydration, matching the provider's defaultColorScheme).
-  const resolved = useComputedColorScheme('dark')
-
   // `commands/shell-bridge.ts`'s `setColorScheme` handle — registered here (already inside
   // `MantineProvider`) so a consumer's `commands.tsx` calls it with ZERO `__root.tsx` wiring.
   const { setColorScheme: setMantineColorScheme } = useMantineColorScheme()
@@ -264,10 +254,10 @@ function BasaltBridge({
   }, [injectPalette, deriveConfig, fontsConfig, radiusConfig, densityConfig, paletteOptions])
 
   return (
-    <VxThemeProvider colorScheme={resolved}>
+    <>
       {injectPalette ? <style nonce={nonce}>{paletteCss}</style> : null}
       {children}
-    </VxThemeProvider>
+    </>
   )
 }
 

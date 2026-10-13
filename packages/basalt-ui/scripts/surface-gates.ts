@@ -3,7 +3,7 @@
  * run on fixtures while `check-budgets.ts` feeds them the real snapshot, manifest and dist:
  *
  * 1. one import path per symbol — no name under two subpaths;
- * 2. every public non-chart symbol has a named consumer in `scripts/consumers.json`;
+ * 2. every public value symbol has a named consumer in `scripts/consumers.json`;
  * 3. peer classes — required / subpath-required / optional — hold in the built dist graph and `.d.ts`.
  *
  * Every function returns violation strings; empty means green.
@@ -14,7 +14,7 @@ import { dirname, join, resolve } from 'node:path'
 /** A `Record<subpath, exported names>` — the shape of `scripts/export-surface.json`. */
 export type Surface = Readonly<Record<string, readonly string[]>>
 
-/** Subpaths owned by the chart layer (§ 9): exempt from the consumer gate, counted separately. */
+/** The chart layer's subpath (§ 9): its symbols are budgeted apart from the non-chart ones. */
 export const CHART_SUBPATH = './charts'
 
 /** Names exported from more than one subpath, as `name (./a, ./b)`. */
@@ -29,7 +29,7 @@ export function duplicateSymbols(surface: Surface): string[] {
 }
 
 /**
- * Non-chart public VALUE symbols with no `consumers.json` entry, plus entries naming none. The
+ * Public VALUE symbols with no `consumers.json` entry, plus entries naming none. The
  * snapshot (`export-surface.json`) lists runtime exports only, so `consumers.json` is value-only
  * too: a type name in it is stale. Types are gated by the "barrel type exports" budget instead.
  */
@@ -37,17 +37,13 @@ export function consumerViolations(
   surface: Surface,
   consumers: Readonly<Record<string, string>>,
 ): string[] {
-  const publicNames = new Set(
-    Object.entries(surface)
-      .filter(([subpath]) => subpath !== CHART_SUBPATH)
-      .flatMap(([, names]) => names),
-  )
+  const publicNames = new Set(Object.values(surface).flat())
   const missing = [...publicNames]
     .filter((name) => !consumers[name])
     .map((name) => `${name}: public symbol has no named consumer in scripts/consumers.json`)
   const stale = Object.keys(consumers)
     .filter((name) => !publicNames.has(name))
-    .map((name) => `${name}: in scripts/consumers.json but not a public non-chart value symbol`)
+    .map((name) => `${name}: in scripts/consumers.json but not a public value symbol`)
   return [...missing, ...stale]
 }
 
@@ -71,8 +67,7 @@ export const REQUIRED_PEERS: readonly string[] = [
 
 /**
  * § 1 "Peers": per subpath, the optional-in-`package.json` peers its consumers must install because
- * the subpath imports them statically or names them in its public `.d.ts`. `./charts` is § 9's
- * (matched by prefix, see `SUBPATH_REQUIRED_PREFIXES`).
+ * the subpath imports them statically or names them in its public `.d.ts`.
  */
 export const SUBPATH_REQUIRED_PEERS: Readonly<Record<string, readonly string[]>> = {
   './commands': ['@tanstack/react-hotkeys'],
@@ -82,6 +77,7 @@ export const SUBPATH_REQUIRED_PEERS: Readonly<Record<string, readonly string[]>>
   './controls-dates': ['@mantine/dates', 'dayjs'],
   './content': ['react-markdown'],
   './vite': ['vite'],
+  [CHART_SUBPATH]: ['@tanstack/charts', 'd3-scale'],
 }
 
 /**
@@ -102,11 +98,6 @@ export const DEFERRED_PEER_GAPS: {
   tolerated: {
     '.': ['motion'], // `ThemeToggle` drops motion with § 5 (W7)
   },
-}
-
-/** Subpaths whose peer set is another section's: any peer under these prefixes is allowed. */
-const SUBPATH_REQUIRED_PREFIXES: Readonly<Record<string, readonly string[]>> = {
-  [CHART_SUBPATH]: ['@visx/'],
 }
 
 /** The bare package a specifier names: `@scope/pkg/deep` → `@scope/pkg`, `pkg/deep` → `pkg`. */
@@ -203,11 +194,10 @@ export function peerClassViolations(root: string, manifest: Manifest): string[] 
     if (!js || !types) continue
     const { staticPeers, typePeers } = reachFromEntry(resolve(root, js), resolve(root, types))
     const allowed = SUBPATH_REQUIRED_PEERS[subpath] ?? []
-    const prefixes = SUBPATH_REQUIRED_PREFIXES[subpath] ?? []
     const reached = new Set([...staticPeers, ...typePeers])
     for (const name of reached) {
       if (!peers.includes(name) || REQUIRED_PEERS.includes(name)) continue
-      if (allowed.includes(name) || prefixes.some((p) => name.startsWith(p))) continue
+      if (allowed.includes(name)) continue
       if (DEFERRED_PEER_GAPS.tolerated[subpath]?.includes(name)) continue
       const how = staticPeers.has(name) ? 'imports' : 'names in its .d.ts'
       violations.push(
