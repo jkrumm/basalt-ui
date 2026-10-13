@@ -7,20 +7,20 @@ import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { renderToString } from 'react-dom/server'
 import { BandStrip } from './BandStrip'
-import type { BandSpan, BandStripProps, BandStripState } from './BandStrip'
+import type { BandSpan, BandStripProps, BandStripSeries } from './BandStrip'
 
 type Slot = { t: string; s: string; loss?: number }
 const slots = (n: number, state: (i: number) => string = () => 'up'): Slot[] =>
   Array.from({ length: n }, (_, i) => ({ t: `s${String(i).padStart(3, '0')}`, s: state(i) }))
 
-const up: BandStripState<Slot> = { key: 'up', label: 'Up', color: 'var(--vx-good)' }
-const down: BandStripState<Slot> = {
+const up: BandStripSeries<Slot> = { key: 'up', label: 'Up', color: 'var(--vx-good)' }
+const down: BandStripSeries<Slot> = {
   key: 'down',
   label: 'Down',
   color: 'var(--vx-bad)',
   formatValue: (d) => (d.loss === undefined ? null : `${d.loss}% loss`),
 }
-const none: BandStripState<Slot> = {
+const none: BandStripSeries<Slot> = {
   key: 'none',
   label: 'Not measured',
   color: 'var(--vx-neutral)',
@@ -64,6 +64,25 @@ async function mount(node: React.ReactNode): Promise<HTMLElement> {
   })
   return el
 }
+
+/** Moves the pointer over the first chart in `el` and waits for the tooltip to paint. */
+async function hover(el: HTMLElement): Promise<string> {
+  const svg = el.querySelector('svg')
+  if (!svg) throw new Error('chart did not mount')
+  await act(async () => {
+    svg.dispatchEvent(
+      new PointerEvent('pointermove', { clientX: 300, clientY: 100, bubbles: true }),
+    )
+    await new Promise((r) => setTimeout(r, 30))
+  })
+  return document.querySelector('.ts-chart-tooltip')?.textContent ?? ''
+}
+
+/** The `band-N` groups in paint order, as the fill of their first rect. */
+const layerFills = (root: ParentNode): (string | null | undefined)[] =>
+  [...root.querySelectorAll('g[data-ts-key^="band-"]')].map((g) =>
+    g.querySelector('rect')?.getAttribute('fill'),
+  )
 
 describe('BandStrip', () => {
   test('draws one gap-free band per slot, each in its state color', () => {
@@ -194,41 +213,105 @@ describe('BandStrip', () => {
   test('a state outside `states` throws in development', () => {
     expect(() =>
       renderToString(<BandStrip {...props({ getBand: () => ({ state: 'typo' }) })} />),
-    ).toThrow('names no `states` entry')
+    ).toThrow('BandSpan.state')
   })
 
   test('the tooltip shows one row for the hovered band: its state and formatted reading', async () => {
     const data = slots(10, () => 'down').map((d) => ({ ...d, loss: 5 }))
     const el = await mount(<BandStrip {...props({ data })} />)
-    const svg = el.querySelector('svg')
-    if (!svg) throw new Error('chart did not mount')
-    await act(async () => {
-      svg.dispatchEvent(
-        new PointerEvent('pointermove', { clientX: 300, clientY: 100, bubbles: true }),
-      )
-      await new Promise((r) => setTimeout(r, 30))
-    })
-    const tip = document.querySelector('.ts-chart-tooltip')
-    expect(tip?.textContent).toContain('Down')
-    expect(tip?.textContent).toContain('5% loss')
-    expect(tip?.textContent).not.toContain('Up')
+    const text = await hover(el)
+    expect(text).toContain('Down')
+    expect(text).toContain('5% loss')
+    expect(text).not.toContain('Up')
   })
 
   test('a null reading renders an em dash, not an empty value', async () => {
     const el = await mount(<BandStrip {...props({ data: slots(10, () => 'down') })} />)
-    const svg = el.querySelector('svg')
-    if (!svg) throw new Error('chart did not mount')
-    await act(async () => {
-      svg.dispatchEvent(
-        new PointerEvent('pointermove', { clientX: 300, clientY: 100, bubbles: true }),
-      )
-      await new Promise((r) => setTimeout(r, 30))
-    })
-    expect(document.querySelector('.ts-chart-tooltip')?.textContent).toContain('—')
+    const text = await hover(el)
+    expect(text).toContain('—')
   })
 
   test('draws no y axis labels', () => {
     const doc = html(<BandStrip {...props()} />)
     expect(doc.querySelector('[data-ts-key^="y-tick-label"]')).toBeNull()
+  })
+
+  test('markers paint after every base band, even a marker in another state', () => {
+    // An up band carrying a down marker, then a down band: the marker must not sit under it.
+    const data = slots(4, (i) => (i < 2 ? 'up' : 'down'))
+    const doc = html(
+      <BandStrip
+        {...props({
+          data,
+          getBand: (d) => ({ state: d.s, ...(d.s === 'up' && { marker: { state: 'down' } }) }),
+        })}
+      />,
+    )
+    const order = layerFills(doc)
+    expect(order.at(-1)).toBe('var(--vx-bad)')
+    expect(order.slice(0, -1).every((f) => f?.startsWith('color-mix'))).toBe(true)
+    expect(order.length).toBe(3)
+  })
+
+  test('a marker naming no state throws in development, like a band does', () => {
+    expect(() =>
+      renderToString(
+        <BandStrip {...props({ getBand: (d) => ({ state: d.s, marker: { state: 'typo' } }) })} />,
+      ),
+    ).toThrow('BandSpan.marker.state')
+  })
+
+  test('hovering a legend entry dims the other states', async () => {
+    const el = await mount(<BandStrip {...props()} />)
+    const entry = el.querySelector('button[data-legend-key="down"]')
+    if (!entry) throw new Error('no legend entry')
+    await act(async () => {
+      entry.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }))
+    })
+    const opacity = (fill: string): string | null | undefined =>
+      [...el.querySelectorAll('[data-ts-key^="band-"]')]
+        .find((g) => g.querySelector('rect')?.getAttribute('fill')?.includes(fill))
+        ?.getAttribute('fill-opacity') ??
+      el.querySelector(`[fill*="${fill}"]`)?.getAttribute('fill-opacity')
+    expect(opacity('--vx-bad')).toBeNull()
+    expect(Number(opacity('--vx-good'))).toBeLessThan(1)
+  })
+
+  test('empty data and a single datum render', () => {
+    expect(bands(html(<BandStrip {...props({ data: [] })} />)).length).toBe(0)
+    const one = html(<BandStrip {...props({ data: slots(1) })} />)
+    expect(bands(one).length).toBe(1)
+    expect(Number(bands(one)[0]?.getAttribute('width'))).toBeGreaterThan(600)
+  })
+
+  test('fold: data that equals the cap is drawn whole, one more folds in pairs', () => {
+    const fold = { merge: (g: Slot[]) => g[0] as Slot }
+    // 640px / 3px floor = 213 bands.
+    expect(bands(html(<BandStrip {...props({ data: slots(213), fold })} />)).length).toBe(213)
+    expect(bands(html(<BandStrip {...props({ data: slots(214), fold })} />)).length).toBe(107)
+  })
+
+  test('fold: a count that does not divide leaves a shorter final group', () => {
+    const sizes: number[] = []
+    const fold = {
+      merge: (g: Slot[]) => {
+        sizes.push(g.length)
+        return g[0] as Slot
+      },
+    }
+    const doc = html(<BandStrip {...props({ data: slots(500), fold })} />)
+    // ceil(500 / 213) = 3 per group: 166 full groups and one of 2.
+    expect(bands(doc).length).toBe(167)
+    expect(sizes.filter((n) => n === 3).length).toBe(166)
+    expect(sizes.at(-1)).toBe(2)
+  })
+
+  test('hovering a folded band reads the merged datum', async () => {
+    const data = slots(600, () => 'up')
+    const fold = { merge: (g: Slot[]) => ({ ...(g[0] as Slot), s: 'down', loss: g.length }) }
+    const el = await mount(<BandStrip {...props({ data, fold })} />)
+    const text = await hover(el)
+    expect(text).toContain('Down')
+    expect(text).toContain('3% loss')
   })
 })
