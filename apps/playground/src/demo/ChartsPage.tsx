@@ -49,10 +49,11 @@ import type {
   ZoneSpec,
 } from 'basalt-ui/charts'
 import { ViewTabs } from 'basalt-ui/controls'
-import { createLocalStore, field } from 'basalt-ui/state'
 import { alpha, CONTAINER_KEYS, VX } from 'basalt-ui/tokens'
 import { CHANNEL_VOLUME, LIFT_TREND, LOAD_TREND, SERIES_DATA, WEEKLY_DIGEST } from './data'
 import type { ChannelVolumePoint, DayPoint, LiftPoint, LoadPoint } from './data'
+import { chartViews } from './charts-store'
+import { CompositionTab, PanelsTab, SparklinesTab, StripsTab } from './ChartKindsTabs'
 import { demoColors } from './series'
 import { isoDayToDate } from './fixtures/format'
 
@@ -417,25 +418,6 @@ function CursorScopeBlock() {
   )
 }
 
-/**
- * The page's three groups. This page used to stack ~20 fixed-height charts in one column with no
- * page bar and no anchor — at 390px that is a single ~6000px scroll a phone has no way to navigate.
- * The groups are the phone treatment: one loads at a time, the switch lives in the bar's `tabs`
- * slot like every other route's, and `ViewTabs` collapses past three options to a `Select` in CSS
- * (law C9). Grouping is also what keeps the cursor claim honest — the shared-cursor demo is the
- * `linked` group, and it stays whole.
- */
-const chartViews = createLocalStore({
-  key: 'charts-view',
-  fields: { tab: field.enum(['linked', 'kinds', 'cursor'], 'linked') },
-}).labels({
-  tab: {
-    linked: 'Linked series',
-    kinds: 'Standalone kinds',
-    cursor: 'Cursor scope',
-  },
-})
-
 export function ChartsPage() {
   const [tab] = chartViews.field.tab.use()
   return (
@@ -558,6 +540,10 @@ export function ChartsPage() {
         </>
       )}
 
+      {tab === 'strips' && <StripsTab />}
+      {tab === 'composition' && <CompositionTab />}
+      {tab === 'panels' && <PanelsTab />}
+      {tab === 'sparklines' && <SparklinesTab />}
       {tab === 'cursor' && <CursorScopeBlock />}
     </Stack>
   )
