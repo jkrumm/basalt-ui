@@ -14,7 +14,7 @@ import type { CSSProperties, ReactElement } from 'react'
 import type { BasaltProps } from '../common/props'
 import { alpha, VX } from '../tokens'
 import type { CartesianDefinition } from './compile'
-import { ChartEngine } from './host'
+import { ChartEngine, idPrefixOf } from './host'
 import { ChartLegend } from './legend'
 import { useChartSize } from './sizing'
 import { ChartPlaceholder, resolveChartState } from './state'
@@ -240,7 +240,7 @@ export function Donut<K extends string = string>(props: DonutProps<K>): ReactEle
             definition={definition}
             ariaLabel={ariaLabel}
             height={size.height}
-            idPrefix={`basalt-chart-${chartId.replaceAll(/[^\w-]/g, '')}`}
+            idPrefix={idPrefixOf(chartId)}
             coarse={coarse}
           />
         ) : (

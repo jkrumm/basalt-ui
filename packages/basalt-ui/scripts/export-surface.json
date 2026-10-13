@@ -28,7 +28,20 @@
     "useNav",
     "useSizeClass"
   ],
-  "./charts": ["Bars", "CartesianChart", "ChartCard", "Lines", "chartCursor"],
+  "./charts": [
+    "BandStrip",
+    "Bars",
+    "CartesianChart",
+    "ChartCard",
+    "Donut",
+    "DualPanel",
+    "Heatmap",
+    "Lines",
+    "MirroredBars",
+    "Sparkline",
+    "StackedArea",
+    "chartCursor"
+  ],
   "./tokens": [
     "BP",
     "CONTAINER_CLASSES",

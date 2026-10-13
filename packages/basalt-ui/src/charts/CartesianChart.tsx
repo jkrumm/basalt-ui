@@ -11,7 +11,7 @@ import type { CSSProperties, ReactElement, ReactNode } from 'react'
 import { useChartCard } from './card-context'
 import { compileCartesian } from './compile'
 import type { CartesianDefinition } from './compile'
-import { ChartEngine } from './host'
+import { ChartEngine, idPrefixOf } from './host'
 import { ChartLegend, legendEntries } from './legend'
 import type { LegendMode } from './legend'
 import { useChartSize } from './sizing'
@@ -31,7 +31,6 @@ export type RungOptions = {
 const rootStyle: CSSProperties = { display: 'flex', flexDirection: 'column', gap: 6, minWidth: 0 }
 
 /** `useId` output (`«r1»`, `:r1:`) is not a safe SVG id fragment. */
-const idPrefixOf = (id: string): string => `basalt-chart-${id.replaceAll(/[^\w-]/g, '')}`
 
 /** The previous object while every field is `Object.is`-equal: a one-dependency memo key. */
 function useShallowStable<V extends Record<string, unknown>>(next: V): V {

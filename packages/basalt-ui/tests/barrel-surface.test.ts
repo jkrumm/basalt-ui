@@ -40,7 +40,20 @@ const REQUIRED_KEYS = [
 // BP/p are `./tokens`-only: a series module imports its building blocks from basalt-ui/tokens.
 const TOKENS_ONLY_KEYS = ['BP', 'p'] as const
 
-const CHART_VALUES = ['Bars', 'CartesianChart', 'ChartCard', 'Lines', 'chartCursor'] as const
+const CHART_VALUES = [
+  'BandStrip',
+  'Bars',
+  'CartesianChart',
+  'ChartCard',
+  'Donut',
+  'DualPanel',
+  'Heatmap',
+  'Lines',
+  'MirroredBars',
+  'Sparkline',
+  'StackedArea',
+  'chartCursor',
+] as const
 
 describe('barrel surface', () => {
   describe('./tokens', () => {

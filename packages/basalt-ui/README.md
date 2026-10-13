@@ -458,9 +458,8 @@ import { VX } from 'basalt-ui/tokens'
 ```
 
 Shipped kinds are that same composition, pre-wired: `Lines` (n series, `area`, `thresholds`, zones,
-reference lines, `y2`) and `Bars` (stacked, grouped or normalised, ± bars, overlay lines). The
-other 1.x kinds (`StackedArea`, `DualPanel`, `MirroredBars`, `BandStrip`, `Donut`, `Heatmap`, the
-sparklines) are not shipped in 2.0.0 and return in Wave 5 only if a consumer needs them; the
+reference lines, `y2`) and `Bars` (stacked, grouped or normalised, ± bars, overlay lines), plus `StackedArea`,
+`DualPanel`, `MirroredBars`, `BandStrip`, `Donut`, `Heatmap` and `Sparkline`. The
 [`MIGRATING.md`](./MIGRATING.md) § 2.0.0 Charts table maps every 1.x chart export.
 
 Charts share a cursor with no provider (`cursorGroup="…"` isolates one; `chartCursor(group?)` reads

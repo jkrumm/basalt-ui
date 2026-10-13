@@ -20,7 +20,7 @@ import type { BasaltProps } from '../common/props'
 import { alpha, VX } from '../tokens'
 import { resolveContainerClass } from '../tokens/size-classes'
 import type { CartesianDefinition } from './compile'
-import { ChartEngine } from './host'
+import { ChartEngine, idPrefixOf } from './host'
 import { useChartSize } from './sizing'
 import { ChartPlaceholder, resolveChartState } from './state'
 import { AXIS_LINE, CHART_THEME } from './theme'
@@ -302,7 +302,7 @@ export function Heatmap<T>(props: HeatmapProps<T>): ReactElement {
           definition={definition}
           ariaLabel={ariaLabel}
           height={chartHeight}
-          idPrefix={`basalt-chart-${chartId.replaceAll(/[^\w-]/g, '')}`}
+          idPrefix={idPrefixOf(chartId)}
           coarse={coarse}
         />
       ) : (

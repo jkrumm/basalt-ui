@@ -26,8 +26,8 @@ zones, the cursor, crosshair, keyboard focus, tooltip, legend and height. The ca
 `series` and `marks(plot)`, which returns engine marks and nothing else. **`ariaLabel` is required**
 on every chart (a type error without it).
 
-`StackedArea`, `DualPanel`, `MirroredBars`, `BandStrip`, `Donut`, `Heatmap` and `Sparkline` are not
-shipped in 2.0.0 (`MIGRATING.md` § 2.0); compose `CartesianChart` with engine marks until one returns.
+Kinds beyond `Lines` and `Bars`: `StackedArea`, `DualPanel`, `MirroredBars`, `BandStrip`, `Donut`,
+`Heatmap`, `Sparkline`. Anything else is `CartesianChart` with engine marks.
 
 ## `series` is the single source of truth
 

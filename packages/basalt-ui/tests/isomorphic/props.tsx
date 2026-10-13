@@ -112,6 +112,67 @@ export const MINIMAL_PROPS: Record<string, Record<string, unknown>> = {
     height: 200,
   },
   ChartCard: { title: 'Card', children: TEXT },
+  StackedArea: {
+    ariaLabel: 'Stacked',
+    data: ROWS,
+    x,
+    series: [
+      { key: 'a', label: 'A', color: '#4c7cf3', getValue: (d: Row) => d.a },
+      { key: 'b', label: 'B', color: '#e0803a', getValue: (d: Row) => d.b },
+    ],
+    height: 200,
+  },
+  Sparkline: { ariaLabel: 'Spark', data: [1, 3, 2, 5], height: 28, width: 80 },
+  BandStrip: {
+    ariaLabel: 'Strip',
+    data: ROWS,
+    x,
+    states: [{ key: 'up', label: 'Up', color: '#4c7cf3' }],
+    getBand: () => ({ state: 'up' }),
+    height: 60,
+  },
+  Donut: {
+    ariaLabel: 'Donut',
+    data: [
+      { key: 'a', value: 3 },
+      { key: 'b', value: 1 },
+    ],
+    colorForKey: () => '#4c7cf3',
+    formatValue: (v: number) => String(v),
+  },
+  Heatmap: {
+    ariaLabel: 'Heat',
+    data: ROWS,
+    getRow: (d: Row) => d.date,
+    getCol: () => 'c',
+    getValue: (d: Row) => d.a,
+  },
+  DualPanel: {
+    ariaLabel: 'Dual',
+    data: ROWS,
+    x,
+    series: [{ key: 'a', label: 'A', color: '#4c7cf3', getValue: (d: Row) => d.a }],
+    bar: {
+      label: 'B',
+      getValue: (d: Row) => d.b,
+      positive: '#4c7cf3',
+      negative: '#e0803a',
+      format: (v: number) => String(v),
+    },
+    height: 240,
+  },
+  MirroredBars: {
+    ariaLabel: 'Mirrored',
+    data: ROWS,
+    x,
+    series: [
+      { key: 'a', label: 'A', color: '#4c7cf3', getValue: (d: Row) => d.a },
+      { key: 'b', label: 'B', color: '#e0803a', getValue: (d: Row) => d.b },
+    ],
+    up: { key: 'a', format: (v: number) => String(v) },
+    down: { key: 'b', format: (v: number) => String(v) },
+    height: 240,
+  },
 
   /* --- controls ------------------------------------------------------------ */
   SelectFilter: { field: store.field.currency, label: 'Currency', options: OPTIONS },

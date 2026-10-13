@@ -45,3 +45,7 @@ export function ChartEngine({
     />
   )
 }
+
+/** Scopes the engine's SVG resource ids per chart instance (`useId` output carries colons). */
+export const idPrefixOf = (id: string, prefix = 'chart'): string =>
+  `basalt-${prefix}-${id.replaceAll(/[^\w-]/g, '')}`
