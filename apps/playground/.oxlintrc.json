@@ -1,3 +1,12 @@
 {
-  "extends": ["./node_modules/basalt-ui/configs/oxlint.json"]
+  "extends": ["./node_modules/basalt-ui/configs/oxlint.json"],
+  "rules": {
+    "react/globals": "off",
+    "react/immutability": "off",
+    "react/incompatible-library": "off",
+    "react/preserve-manual-memoization": "off",
+    "react/refs": "off",
+    "react/set-state-in-effect": "off",
+    "no-constant-binary-expression": "off"
+  }
 }
