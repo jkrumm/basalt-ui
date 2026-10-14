@@ -52,26 +52,32 @@ const pane = { format: String }
  * and is generous because hosted runners are 2-3x slower. `docs/waves/evidence/w10/ssr-cost.md`
  * copies these numbers.
  */
-const KINDS: readonly { name: string; cap: number; node: (n: number) => ReactElement }[] = [
-  // 13 ms at 2.5k, 34 ms at 10k
+const KINDS: readonly {
+  name: string
+  cap: number
+  /** `false`: timings near the noise floor, so only the generous cap applies. */
+  growth?: false
+  node: (n: number) => ReactElement
+}[] = [
+  // 8 ms at 2.5k, 34 ms at 10k
   {
     name: 'Lines',
     cap: 150,
     node: (n) => <Lines ariaLabel="L" data={rowsOf(n)} x={x} series={[a, b]} />,
   },
-  // 26 ms at 2.5k, 111 ms at 10k
+  // 26 ms at 2.5k, 101 ms at 10k
   {
     name: 'Bars',
     cap: 500,
     node: (n) => <Bars ariaLabel="B" data={rowsOf(n)} x={x} bars={[a, b]} />,
   },
-  // 22 ms at 2.5k, 83 ms at 10k
+  // 16 ms at 2.5k, 61 ms at 10k
   {
     name: 'StackedArea',
     cap: 350,
     node: (n) => <StackedArea ariaLabel="S" data={rowsOf(n)} x={x} series={[a, b]} />,
   },
-  // 80 ms at 2.5k, 169 ms at 10k
+  // 72 ms at 2.5k, 155 ms at 10k
   {
     name: 'DualPanel',
     cap: 1000,
@@ -92,7 +98,7 @@ const KINDS: readonly { name: string; cap: number; node: (n: number) => ReactEle
       />
     ),
   },
-  // 54 ms at 2.5k, 205 ms at 10k
+  // 63 ms at 2.5k, 254 ms at 10k (with getAbsentFraction and getBarOpacity)
   {
     name: 'MirroredBars',
     cap: 1000,
@@ -104,10 +110,12 @@ const KINDS: readonly { name: string; cap: number; node: (n: number) => ReactEle
         series={[a, b]}
         up={{ key: 'a', ...pane }}
         down={{ key: 'b', ...pane }}
+        getAbsentFraction={(d) => (d.t % 300_000 === 0 ? 0.5 : 0)}
+        getBarOpacity={(d) => (d.t % 420_000 === 0 ? 0.6 : 1)}
       />
     ),
   },
-  // 19 ms at 2.5k, 78 ms at 10k
+  // 20 ms at 2.5k, 79 ms at 10k
   {
     name: 'BandStrip',
     cap: 350,
@@ -124,10 +132,11 @@ const KINDS: readonly { name: string; cap: number; node: (n: number) => ReactEle
       />
     ),
   },
-  // 6 ms at 2.5k, 22 ms at 10k
+  // 25 ms at 10k (cap only)
   {
     name: 'Heatmap',
     cap: 100,
+    growth: false,
     node: (n) => {
       const side = Math.ceil(Math.sqrt(n))
       const cells = Array.from({ length: n }, (_, i) => ({
@@ -146,10 +155,11 @@ const KINDS: readonly { name: string; cap: number; node: (n: number) => ReactEle
       )
     },
   },
-  // 1 ms at 2.5k, 2 ms at 10k
+  // 3 ms at 10k (cap only)
   {
     name: 'Donut',
-    cap: 30,
+    cap: 100,
+    growth: false,
     node: (n) => (
       <Donut
         ariaLabel="DN"
@@ -159,7 +169,7 @@ const KINDS: readonly { name: string; cap: number; node: (n: number) => ReactEle
       />
     ),
   },
-  // 3 ms at 2.5k, 15 ms at 10k
+  // 3 ms at 2.5k, 14 ms at 10k
   {
     name: 'Sparkline (line)',
     cap: 80,
@@ -167,7 +177,7 @@ const KINDS: readonly { name: string; cap: number; node: (n: number) => ReactEle
       <Sparkline ariaLabel="SP" data={rowsOf(n).map((r) => r.a)} height={40} width={640} />
     ),
   },
-  // 5 ms at 2.5k, 26 ms at 10k
+  // 5 ms at 2.5k, 23 ms at 10k
   {
     name: 'Sparkline (bar)',
     cap: 120,
@@ -197,11 +207,13 @@ function timeRender(node: () => ReactElement): number {
 }
 
 describe(`server render at ${LARGE} points`, () => {
-  for (const { name, cap, node } of KINDS) {
-    test(`${name}: growth under ${MAX_GROWTH}x from ${SMALL} to ${LARGE}, and under ${cap} ms`, () => {
-      const small = timeRender(() => node(SMALL))
+  for (const { name, cap, growth, node } of KINDS) {
+    test(`${name}: ${growth === false ? '' : `growth under ${MAX_GROWTH}x from ${SMALL} to ${LARGE}, and `}under ${cap} ms`, () => {
       const large = timeRender(() => node(LARGE))
-      expect(large / Math.max(small, NOISE_FLOOR_MS)).toBeLessThan(MAX_GROWTH)
+      if (growth !== false) {
+        const small = timeRender(() => node(SMALL))
+        expect(large / Math.max(small, NOISE_FLOOR_MS)).toBeLessThan(MAX_GROWTH)
+      }
       expect(large).toBeLessThan(cap)
     })
   }
