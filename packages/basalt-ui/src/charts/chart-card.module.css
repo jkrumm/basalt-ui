@@ -16,9 +16,9 @@
   }
 }
 
-/* A card that measures short (< 280px, `ChartCard`'s ResizeObserver) trims it at any width. That
- * flag is the one post-hydration input left: it only flips for a card whose chart states a small
- * `height`, never for the height-law default. */
-[data-basalt-card-short] .header {
+/* A short card trims it at any width: its chart states a small `height` (`data-basalt-chart-short`,
+ * in the server HTML), or, for a body that is not a chart, `ChartCard` measured it under 280px. */
+[data-basalt-card-short] .header,
+[data-basalt-chart-card]:has([data-basalt-chart-short]) .header {
   padding-top: 4px;
 }

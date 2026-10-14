@@ -227,6 +227,18 @@ export function App(): ReactElement {
             <Lines ariaLabel="Revenue" data={DATA} x={x} series={[A]} legend={false} />
           </ChartCard>
         </Probe>
+        <Probe name="card-short-chart">
+          <ChartCard
+            title="Revenue"
+            subtitle="Short card subtitle"
+            info="Net of refunds"
+            value="$12.4k"
+            delta={4.2}
+            deltaPeriod="vs prior"
+          >
+            <Lines ariaLabel="Short" data={DATA} x={x} series={[A]} legend={false} height={120} />
+          </ChartCard>
+        </Probe>
         <Probe name="card-loaded">
           <ChartCard title="Streamed section">
             <Lines ariaLabel="Card" data={DATA} x={x} series={[A]} legend={false} />
