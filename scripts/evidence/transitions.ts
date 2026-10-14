@@ -471,6 +471,8 @@ export const transitions: Lane = async ({ outDir, baseUrl, openBrowser }) => {
     )
     timed[name] = end.timedAnimations
     if (end.errors.length > 0) problems.push(`${name}: ${end.errors.join('; ')}`)
+    if (counted.consoleErrors.length > 0)
+      problems.push(`${name}: ${counted.consoleErrors.length} console error(s), e.g. a 404 asset`)
     detail[name] = { api, afterCollapse, end, consoleErrors: counted.consoleErrors }
     await counted.context.close()
 
