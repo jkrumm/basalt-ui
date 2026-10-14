@@ -19,3 +19,11 @@ root barrel, so unit and layout suites can drive the shell without a router.
   `@ts-expect-error` on a mistyped badge id.
 - Playground `__root.tsx` has no `useNav` call and no spread.
 - Budgets: non-chart value symbols 93 → 92 (`useNav` leaves the barrel); ceiling override removed.
+
+## Deferred
+
+`ShellBody` (the former `ShellFrame` body) is a long component; splitting it is pre-existing size,
+not this change, and stays out of this PR.
+
+`init` now seeds a leaf `src/lib/nav.tsx` next to `__root.tsx` (`agent/templates/nav.tpl`) so the
+scaffold respects the no-cycle rule (`NAV` never imports `__root.tsx`).

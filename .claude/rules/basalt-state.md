@@ -1,6 +1,6 @@
 ---
 source: basalt-ui
-description: Where each kind of state lives in a basalt-ui app — createSearchStore over typed fields (URL > localStorage > fallback), the lanes, FieldHandle, linkSearch by reference, defineNav/useNav, createPersistedState. Partly enforced by basalt/search-literal-link, basalt/use-search-from-literal and the localstorage-theme guard kind.
+description: Where each kind of state lives in a basalt-ui app — createSearchStore over typed fields (URL > localStorage > fallback), the lanes, FieldHandle, linkSearch by reference, defineNav + BasaltShell nav, createPersistedState. Partly enforced by basalt/search-literal-link, basalt/use-search-from-literal and the localstorage-theme guard kind.
 paths:
   - 'src/**'
   - 'apps/**/src/**'
