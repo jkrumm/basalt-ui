@@ -1,5 +1,5 @@
 /**
- * `useNav` — resolve a `defineNav` definition into the two props `BasaltShell` needs.
+ * `useNav` — resolve a `defineNav` definition into the two props `BasaltShell` renders from.
  *
  * One `defineNav([...])` in a leaf module produces the desktop sidebar AND the mobile bar: this
  * hook resolves active state through the router and builds each destination's anchor, which is
@@ -28,20 +28,20 @@ export type UseNavOptions<G extends ReadonlyArray<AnyNavGroup>> = {
   getScrollElement?: () => HTMLElement | null
 }
 
-/** Spread straight onto `<BasaltShell {...nav} />` — both keys are `BasaltShellProps` keys. */
-export type NavBinding = { sections: SidebarSection[]; mobileNav: MobileNavConfig }
-
 /**
- * Resolve a nav definition against the live router.
- *
- * @example
- * const nav = useNav(NAV, { badges: { calendar: 3 } })
- * return <BasaltShell brand={brand} {...nav}>{children}</BasaltShell>
+ * Resolve a nav definition against the live router into `BasaltShell`'s internal `ShellFrame`
+ * props. Shell-internal: a consumer passes `nav={NAV}` to `BasaltShell` and never calls this.
  */
 export function useNav<
   const G extends ReadonlyArray<AnyNavGroup>,
   const T extends ReadonlyArray<NavTabId<G>>,
->(config: NavConfig<G, T>, opts?: UseNavOptions<G>): NavBinding {
+>(
+  config: NavConfig<G, T>,
+  opts?: UseNavOptions<G>,
+): {
+  sections: SidebarSection[]
+  mobileNav: MobileNavConfig
+} {
   // `useMatchRoute` is `useCallback(fn, [router])` — a STABLE identity across renders — and it
   // subscribes internally to `router.stores.matchRouteDeps`, so the component still re-renders on
   // navigation. That makes it safe as a memo dep, and makes the memo below actually hit.

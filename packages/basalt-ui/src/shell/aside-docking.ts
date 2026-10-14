@@ -1,5 +1,5 @@
 /**
- * Aside docking (`docs/DESIGN-CORE.md` § Layout, elevation, shapes) — the pure decision `ShellFrame`
+ * Aside docking (`docs/DESIGN-CORE.md` § Layout, elevation, shapes) — the pure decision `ShellBody`
  * sizes `AppShell.Aside` from. An open aside pushes main only in `expanded` while main keeps
  * `MAIN_MIN_WIDTH` beside the navbar; otherwise the region reserves just its rail and an open panel
  * overlays main. Unclaimed, the region is zero-wide.

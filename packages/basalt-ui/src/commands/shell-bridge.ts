@@ -15,7 +15,7 @@
  *
  * basalt registers BOTH setters itself — `BasaltProvider` calls {@link registerColorSchemeSetter}
  * from inside `MantineProvider` (`provider/index.tsx`'s `BasaltBridge`), `BasaltShell` calls
- * {@link registerSidebarToggle} (`shell/index.tsx`'s `ShellFrame`) — so a consumer's own
+ * {@link registerSidebarToggle} (`shell/index.tsx`'s `ShellBody`) — so a consumer's own
  * `commands.tsx` needs no `__root.tsx` wiring at all, unlike argo's hand-rolled version: mount
  * `BasaltProvider`/`BasaltShell` once, and `setColorScheme`/`toggleSidebar` just work.
  *

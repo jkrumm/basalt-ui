@@ -471,7 +471,7 @@ describe('BasaltShell header height (law C14)', () => {
    * actually RESPONSIVE rather than merely written as an object.
    *
    * The two roads are asserted separately on purpose, because they are genuinely two mechanisms
-   * (verified in the installed Mantine 9.3 source, see `ShellFrame`'s own comment): `AppShell
+   * (verified in the installed Mantine 9.3 source, see `ShellBody`'s own comment): `AppShell
    * padding` becomes an `--app-shell-padding` variable through `assignPaddingVariables`, while
    * `AppShell.Header px` is a Box STYLE PROP that emits `padding-inline` on a generated class. Both
    * step at the same `(min-width: 48em)`, which is what keeps the header's inline padding on the
