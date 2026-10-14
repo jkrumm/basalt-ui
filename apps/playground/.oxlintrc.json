@@ -9,11 +9,5 @@
     "react/set-state-in-effect": "error",
     "no-constant-binary-expression": "error"
   },
-  "overrides": [
-    { "files": ["src/demo/DataStressPage.tsx"], "rules": { "react/set-state-in-effect": "off" } },
-    {
-      "files": ["src/demo/cbbi/CbbiPanel.tsx"],
-      "rules": { "react/preserve-manual-memoization": "off" }
-    }
-  ]
+  "overrides": []
 }

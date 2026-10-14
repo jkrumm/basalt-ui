@@ -211,36 +211,8 @@
     },
     {
       "files": [
-        "packages/basalt-ui/src/agent/use-agent-thread-runs.wedge.test.tsx",
-        "packages/basalt-ui/src/theme/use-basalt-spacing.test.tsx"
-      ],
-      "rules": {
-        "react/globals": "off"
-      }
-    },
-    {
-      "files": [
-        "packages/basalt-ui/src/agent/chat/thread-message.tsx",
-        "packages/basalt-ui/src/router-tanstack/use-nav.test.tsx"
-      ],
-      "rules": {
-        "react/immutability": "off"
-      }
-    },
-    {
-      "files": [
-        "packages/basalt-ui/src/agent/chat/composer.tsx",
-        "packages/basalt-ui/src/agent/chat/thread-message.tsx",
-        "packages/basalt-ui/src/common/use-measured-widths.ts",
-        "packages/basalt-ui/src/content/article-layout.tsx",
-        "packages/basalt-ui/src/content/mermaid.tsx",
-        "packages/basalt-ui/src/controls/filter-context.tsx",
-        "packages/basalt-ui/src/controls/number-filter.tsx",
-        "packages/basalt-ui/src/controls/search-filter.tsx",
-        "packages/basalt-ui/src/dashboard/stat-card.tsx",
-        "packages/basalt-ui/src/provider/index.tsx",
         "packages/basalt-ui/src/shell/page-bar.tsx",
-        "packages/basalt-ui/src/table/data-table.tsx"
+        "packages/basalt-ui/src/provider/index.tsx"
       ],
       "rules": {
         "react/refs": "off"
@@ -248,13 +220,7 @@
     },
     {
       "files": [
-        "packages/basalt-ui/src/agent/chat/thread-feed.tsx",
-        "packages/basalt-ui/src/commands/ShortcutsHelp.tsx",
-        "packages/basalt-ui/src/controls/filter-set.tsx",
-        "packages/basalt-ui/src/controls/sync-button.tsx",
         "packages/basalt-ui/src/provider/index.tsx",
-        "packages/basalt-ui/src/table/data-table.tsx",
-        "packages/basalt-ui/src/theme-lab/derive-controls.tsx",
         "packages/basalt-ui/tests/layout/fixture/fixtures.tsx"
       ],
       "rules": {
