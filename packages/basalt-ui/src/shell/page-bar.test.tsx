@@ -18,7 +18,7 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { useEffect } from 'react'
 import type { ReactNode } from 'react'
-import { BasaltShell, PageBar } from './index'
+import { ShellFrame, PageBar } from './index'
 import { PageAside } from './page-aside'
 import type { SidebarSection } from './index'
 
@@ -81,14 +81,14 @@ describe('PageBar inside a BasaltShell', () => {
   const renderInShell = () =>
     render(
       <MantineProvider>
-        <BasaltShell brand={BRAND} sections={ONE_SECTION}>
+        <ShellFrame brand={BRAND} sections={ONE_SECTION}>
           <PageBar
             actions={[
               { key: 'row1', kind: 'custom', node: <span data-testid="row1" />, primary: true },
             ]}
             tabs={<span data-testid="row2" />}
           />
-        </BasaltShell>
+        </ShellFrame>
       </MantineProvider>,
     )
 
@@ -140,9 +140,9 @@ describe('PageBar inside a BasaltShell', () => {
   test('title is ignored inside a shell — the breadcrumb names the page (law C8)', () => {
     render(
       <MantineProvider>
-        <BasaltShell brand={BRAND} sections={ONE_SECTION}>
+        <ShellFrame brand={BRAND} sections={ONE_SECTION}>
           <PageBar title="Ignored" tabs={<span data-testid="row2" />} />
-        </BasaltShell>
+        </ShellFrame>
       </MantineProvider>,
     )
     expect(screen.queryByText('Ignored')).toBeNull()
@@ -327,9 +327,9 @@ describe('className reaches the bar root in both forms', () => {
   test('in a shell: it joins row 2s sticky wrapper, not the portalled row 1', () => {
     render(
       <MantineProvider>
-        <BasaltShell brand={BRAND} sections={ONE_SECTION}>
+        <ShellFrame brand={BRAND} sections={ONE_SECTION}>
           <PageBar tabs={<span data-testid="row2" />} className="argo-bleed" />
-        </BasaltShell>
+        </ShellFrame>
       </MantineProvider>,
     )
     expect(shellRow()?.classList.contains('argo-bleed')).toBe(true)
@@ -362,9 +362,9 @@ describe('row 2 folds into two declared lines, not a wrap', () => {
   test('tabs + filters: the tabs line precedes the pills line, both direct children of row 2', () => {
     render(
       <MantineProvider>
-        <BasaltShell brand={BRAND} sections={ONE_SECTION}>
+        <ShellFrame brand={BRAND} sections={ONE_SECTION}>
           <PageBar tabs={<span data-testid="tabs" />} filters={<span data-testid="filters" />} />
-        </BasaltShell>
+        </ShellFrame>
       </MantineProvider>,
     )
     const row = shellRow()
@@ -385,9 +385,9 @@ describe('row 2 folds into two declared lines, not a wrap', () => {
   test('tabs only: no pills line renders (law C14 — an empty line reserves nothing)', () => {
     render(
       <MantineProvider>
-        <BasaltShell brand={BRAND} sections={ONE_SECTION}>
+        <ShellFrame brand={BRAND} sections={ONE_SECTION}>
           <PageBar tabs={<span data-testid="tabs" />} />
-        </BasaltShell>
+        </ShellFrame>
       </MantineProvider>,
     )
     expect(row2Line('tabs')).not.toBeNull()
@@ -397,9 +397,9 @@ describe('row 2 folds into two declared lines, not a wrap', () => {
   test('filters only: no tabs line renders', () => {
     render(
       <MantineProvider>
-        <BasaltShell brand={BRAND} sections={ONE_SECTION}>
+        <ShellFrame brand={BRAND} sections={ONE_SECTION}>
           <PageBar filters={<span data-testid="filters" />} />
-        </BasaltShell>
+        </ShellFrame>
       </MantineProvider>,
     )
     expect(row2Line('pills')).not.toBeNull()
@@ -416,9 +416,9 @@ describe('row 2 folds into two declared lines, not a wrap', () => {
   test('the tabs line wraps its content in exactly one `data-basalt-tier` slot — what the mobile CSS selects through', () => {
     render(
       <MantineProvider>
-        <BasaltShell brand={BRAND} sections={ONE_SECTION}>
+        <ShellFrame brand={BRAND} sections={ONE_SECTION}>
           <PageBar tabs={<span data-testid="tabs" />} />
-        </BasaltShell>
+        </ShellFrame>
       </MantineProvider>,
     )
     const tabsLine = row2Line('tabs')
@@ -467,12 +467,12 @@ describe('the aside pill, and the row 2 it needs to exist at all', () => {
     installMobileMatchMedia()
     render(
       <MantineProvider>
-        <BasaltShell brand={BRAND} sections={ONE_SECTION}>
+        <ShellFrame brand={BRAND} sections={ONE_SECTION}>
           <PageBar tabs={<span data-testid="tabs" />} />
           <PageAside title="Inspector">
             <div data-testid="aside-child">Body</div>
           </PageAside>
-        </BasaltShell>
+        </ShellFrame>
       </MantineProvider>,
     )
     // `docs/ASIDE-SPEC.md` §0: the title names the CONTENT, never the region. "Panel" told a phone
@@ -490,12 +490,12 @@ describe('the aside pill, and the row 2 it needs to exist at all', () => {
     const warn = spyOn(console, 'warn').mockImplementation(() => {})
     render(
       <MantineProvider>
-        <BasaltShell brand={BRAND} sections={ONE_SECTION}>
+        <ShellFrame brand={BRAND} sections={ONE_SECTION}>
           <PageBar actions={[{ key: 'new', label: 'New', primary: true }]} />
           <PageAside title="Inspector">
             <div data-testid="aside-child">Body</div>
           </PageAside>
-        </BasaltShell>
+        </ShellFrame>
       </MantineProvider>,
     )
     // The behaviour is unchanged and deliberate (`page-aside.test.tsx` pins it): with no row 2 the
@@ -512,12 +512,12 @@ describe('the aside pill, and the row 2 it needs to exist at all', () => {
     const warn = spyOn(console, 'warn').mockImplementation(() => {})
     render(
       <MantineProvider>
-        <BasaltShell brand={BRAND} sections={ONE_SECTION}>
+        <ShellFrame brand={BRAND} sections={ONE_SECTION}>
           <PageBar tabs={<span data-testid="tabs" />} />
           <PageAside title="Inspector">
             <div data-testid="aside-child">Body</div>
           </PageAside>
-        </BasaltShell>
+        </ShellFrame>
       </MantineProvider>,
     )
     expect(warn).not.toHaveBeenCalled()

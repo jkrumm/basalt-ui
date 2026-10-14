@@ -47,7 +47,6 @@ const TARGETS = {
 } as const
 const CEILINGS = {
   ...TARGETS,
-  nonChartSymbols: 93, // landed: +1 `useNav` (leaves with `BasaltShell nav`)
   chartSymbols: 12, // landed (W5): the rung, nine kinds, `ChartCard`, `chartCursor`
   ruleLines: 750, // deferred to W9: landed count until W9 rewrites the shipped rules down to the target
 } as const

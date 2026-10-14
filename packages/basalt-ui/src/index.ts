@@ -19,9 +19,6 @@ export {
   navTarget,
   flattenNav,
   useBasaltNav,
-  // Transitional: `useNav` goes when `BasaltShell` takes a `nav` prop (V2-SPEC § 2); the
-  // playground and argo's root route spread it until then.
-  useNav,
   type NavItemId,
 } from './router-tanstack'
 export { scrollParentOf, useCoarsePointer } from './common'

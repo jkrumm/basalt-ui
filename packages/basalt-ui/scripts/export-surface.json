@@ -25,7 +25,6 @@
     "unwrap",
     "useBasaltNav",
     "useCoarsePointer",
-    "useNav",
     "useSizeClass"
   ],
   "./charts": [

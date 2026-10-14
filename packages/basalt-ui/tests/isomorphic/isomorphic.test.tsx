@@ -20,6 +20,12 @@ import { render } from '@testing-library/react'
 import { renderToString } from 'react-dom/server'
 import { MantineProvider } from '@mantine/core'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import {
+  RouterContextProvider,
+  createMemoryHistory,
+  createRootRoute,
+  createRouter,
+} from '@tanstack/react-router'
 import type { ReactElement, ReactNode } from 'react'
 import { createBasaltTheme, cssVariablesResolver } from '../../src/theme'
 import { describeOutcome, detectComponents, probeElement, renderProbe, ssrProbe } from './harness'
@@ -61,7 +67,21 @@ function Free({ children }: { children: ReactNode }): ReactElement {
  * console findings this suite exists to surface.
  */
 function hosted(name: string, ui: ReactElement): ReactElement {
+  if (ROUTER_HOSTED.has(name)) return <RouterHost>{ui}</RouterHost>
   return SVG_HOSTED.has(name) ? <svg>{ui}</svg> : ui
+}
+
+/** Components that resolve against the live router (`BasaltShell nav`) and need one above them. */
+const ROUTER_HOSTED = new Set(['BasaltShell'])
+
+function RouterHost({ children }: { children: ReactElement }): ReactElement {
+  const router = createRouter({
+    routeTree: createRootRoute(),
+    history: createMemoryHistory({ initialEntries: ['/'] }),
+  })
+  // The context provider, not `RouterProvider`: it hosts the shell SYNCHRONOUSLY (the probes read
+  // the DOM right after `render`), where `RouterProvider` mounts its matches after an async load.
+  return <RouterContextProvider router={router}>{children}</RouterContextProvider>
 }
 
 type Subpath = {

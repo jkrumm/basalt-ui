@@ -101,7 +101,6 @@
   "useBasaltForm": "argo:apps/dashboard/src/lib/auth-gate.tsx",
   "useBasaltNav": "basalt-ui-obsidian:apps/demo/src/routes/__root.tsx",
   "useCoarsePointer": "rb:apps/web/src/components/lock-screen.tsx",
-  "useNav": "argo:apps/dashboard/src/routes/__root.tsx",
   "useSizeClass": "argo:apps/dashboard/src/routes/strength-tracker.tsx",
   "weekday": "argo:apps/dashboard/src/features/astro-window/formulas.ts"
 }
