@@ -1,3 +1,17 @@
+# [2.3.0](https://github.com/jkrumm/basalt-ui/compare/v2.2.0...v2.3.0) (2026-10-14)
+
+
+### Bug Fixes
+
+* accept an explicit undefined on every optional chart prop ([e65ca44](https://github.com/jkrumm/basalt-ui/commit/e65ca447c40d9e38c162e35ca2a2fb98ece43ddf))
+* widen the remaining optional chart props and guard every kind ([fbdb293](https://github.com/jkrumm/basalt-ui/commit/fbdb29371ce7c355a732b8e7f03e5dfd78dcf0be))
+
+
+### Features
+
+* export chartCurve so CartesianChart marks can select a curve ([f4ed0b4](https://github.com/jkrumm/basalt-ui/commit/f4ed0b4aaa9e98f55f919ee5547842df7c57d0ae))
+* zone-coloured area fill via ChartSeries.area 'zones' ([14da3a0](https://github.com/jkrumm/basalt-ui/commit/14da3a08628a644e4fa0ef2f75af35f41aabad0e))
+
 # [2.2.0](https://github.com/jkrumm/basalt-ui/compare/v2.1.0...v2.2.0) (2026-10-14)
 
 
