@@ -5,26 +5,17 @@ import {
   analyzeStream,
   clsOf,
   foldBrowserRun,
-  medianOrNull,
-  sectionsIn,
   summaryRows,
 } from './ssr'
 import type { BrowserRaw, BrowserRun, Chunk } from './ssr'
 import { SECTION_KEYS } from './ssr-fixture/contract'
 import type { SectionKey } from './ssr-fixture/contract'
+import { medianOrNull } from './perf-util'
 import type { Throttle } from './perf-util'
 
 const chunk = (ms: number, text: string): Chunk => ({ ms, text, bytes: text.length })
 const times = (v: number | null): Record<SectionKey, number | null> =>
   Object.fromEntries(SECTION_KEYS.map((k) => [k, v])) as Record<SectionKey, number | null>
-
-describe('sectionsIn', () => {
-  test('finds each ready marker, ignores the fallback and the shell', () => {
-    const html =
-      '<div data-ssr-fallback="kpis"></div><div data-ssr-ready="trend"></div><div data-ssr-shell>'
-    expect(sectionsIn(html)).toEqual(['trend'])
-  })
-})
 
 describe('analyzeStream', () => {
   const stream = [
@@ -49,6 +40,26 @@ describe('analyzeStream', () => {
     const stats = analyzeStream([chunk(5, 'plain'), chunk(9, '<div data-ssr-ready="kpis">')])
     expect(stats.shellMs).toBeNull()
     expect(stats.sectionMs).toEqual({ kpis: 9, trend: null, mix: null, table: null })
+  })
+
+  test('a marker split across two reads counts at the chunk that completes it', () => {
+    const stats = analyzeStream([
+      chunk(2, '<div data-ssr-sh'),
+      chunk(9, 'ell><div data-ssr-ready="kp'),
+      chunk(20, 'is"></div>'),
+    ])
+    expect(stats.shellMs).toBe(9)
+    expect(stats.sectionMs.kpis).toBe(20)
+  })
+
+  test('the first occurrence wins when a marker repeats', () => {
+    const stats = analyzeStream([
+      chunk(1, 'data-ssr-ready="mix"'),
+      chunk(5, 'data-ssr-ready="mix" data-ssr-shell'),
+      chunk(8, 'data-ssr-shell'),
+    ])
+    expect(stats.sectionMs.mix).toBe(1)
+    expect(stats.shellMs).toBe(5)
   })
 
   test('a buffered document is ONE chunk: shell and every section at the same time', () => {
@@ -112,6 +123,15 @@ describe('foldBrowserRun', () => {
     })
   })
 
+  test('a missing navigation entry or a non-finite stamp reads null, never NaN', () => {
+    const run = foldBrowserRun(
+      raw({ ttfb: null, fcp: Number.NaN, shellMs: Number.POSITIVE_INFINITY }),
+    )
+    expect(run.ttfbMs).toBeNull()
+    expect(run.fcpMs).toBeNull()
+    expect(run.shellMs).toBeNull()
+  })
+
   test('hydration that never ended has no duration', () => {
     expect(foldBrowserRun(raw({ hydrateEnd: null })).hydrationMs).toBeNull()
   })
@@ -172,5 +192,27 @@ describe('summaryRows', () => {
 
   test('every metric name is unique', () => {
     expect(new Set(rows.map((r) => r.metric)).size).toBe(rows.length)
+  })
+})
+
+describe('empty aggregates', () => {
+  test('aggregateServer([]) has no numbers, only nulls', () => {
+    const agg = aggregateServer([])
+    expect(agg.shellMs).toBeNull()
+    expect(agg.chunks).toBeNull()
+    expect(Object.values(agg.sectionMs).every((v) => v === null)).toBe(true)
+  })
+
+  test('aggregateBrowser([]) has nulls, zero errors and zero complete runs', () => {
+    const agg = aggregateBrowser([])
+    expect(agg).toMatchObject({
+      ttfbMs: null,
+      cls: null,
+      hydrationMs: null,
+      errors: 0,
+      complete: 0,
+      runs: 0,
+    })
+    expect(Object.values(agg.revealedMs).every((v) => v === null)).toBe(true)
   })
 })

@@ -4,8 +4,6 @@ import { playgroundResolver } from './resolve'
 
 const HERE = import.meta.dirname
 
-export const CLIENT_JS = 'client.js'
-export const CLIENT_CSS = 'client.css'
 export const SERVER_JS = 'server-entry.js'
 
 async function bundle(entry: string, outdir: string, target: 'browser' | 'bun'): Promise<void> {

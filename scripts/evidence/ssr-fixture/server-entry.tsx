@@ -11,14 +11,14 @@ import {
 import { FixtureApp, createFixtureRouter } from './app'
 import type { FixtureRouter } from './app'
 
-const stream = defineHandlerCallback(({ request, router, responseHeaders }) =>
+const stream = defineHandlerCallback<FixtureRouter>(({ request, router, responseHeaders }) =>
   renderRouterToStream({
     request,
     router,
     responseHeaders,
-    children: <FixtureApp router={router as FixtureRouter} />,
+    children: <FixtureApp router={router} />,
   }),
 )
 
-export const render = (request: Request): Promise<Response | unknown> =>
+export const render = (request: Request): Promise<Response> =>
   createRequestHandler({ createRouter: createFixtureRouter, request })(stream)

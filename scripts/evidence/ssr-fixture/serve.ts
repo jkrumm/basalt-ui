@@ -1,14 +1,13 @@
 /** `Bun.serve` on an ephemeral port: the built SSR handler at `/`, the hydration bundle beside it. */
 import { join } from 'node:path'
-import { CLIENT_CSS, CLIENT_JS, SERVER_JS, buildFixture } from './build'
+import { SERVER_JS, buildFixture } from './build'
+import { CLIENT_CSS, CLIENT_JS } from './contract'
 
 export type FixtureServer = { origin: string; stop: () => void }
 
 export async function startFixtureServer(outdir: string): Promise<FixtureServer> {
   await buildFixture(outdir)
-  const { render } = (await import(join(outdir, SERVER_JS))) as {
-    render: (request: Request) => Promise<Response>
-  }
+  const { render } = (await import(join(outdir, SERVER_JS))) as typeof import('./server-entry')
   const assets: Record<string, string> = {
     [`/${CLIENT_JS}`]: join(outdir, CLIENT_JS),
     [`/${CLIENT_CSS}`]: join(outdir, CLIENT_CSS),

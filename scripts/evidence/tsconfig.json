@@ -2,8 +2,25 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "lib": ["ES2023", "DOM"],
+    "jsx": "react-jsx",
     "typeRoots": ["../../packages/basalt-ui/node_modules/@types"],
-    "types": ["bun"]
+    "types": ["bun"],
+    "paths": {
+      "basalt-ui": ["../../apps/playground/node_modules/basalt-ui/dist/index.d.ts"],
+      "basalt-ui/charts": ["../../apps/playground/node_modules/basalt-ui/dist/charts/index.d.ts"],
+      "basalt-ui/table": ["../../apps/playground/node_modules/basalt-ui/dist/table/index.d.ts"],
+      "basalt-ui/tokens": ["../../apps/playground/node_modules/basalt-ui/dist/tokens/index.d.ts"],
+      "react": ["../../apps/playground/node_modules/@types/react"],
+      "react/*": ["../../apps/playground/node_modules/@types/react/*"],
+      "react-dom/*": ["../../apps/playground/node_modules/@types/react-dom/*"],
+      "@tanstack/react-router/ssr/client": [
+        "../../apps/playground/node_modules/@tanstack/react-router/dist/esm/ssr/client.d.ts"
+      ],
+      "@tanstack/react-router/ssr/server": [
+        "../../apps/playground/node_modules/@tanstack/react-router/dist/esm/ssr/server.d.ts"
+      ],
+      "*": ["../../apps/playground/node_modules/*"]
+    }
   },
-  "include": ["*.ts"]
+  "include": ["*.ts", "ssr-fixture/**/*"]
 }

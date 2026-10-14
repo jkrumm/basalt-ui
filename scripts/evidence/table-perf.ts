@@ -26,13 +26,16 @@ import {
   PROBE_INIT,
   RUNS,
   freshPage,
-  median,
+  medianOrNull,
   percentile,
   readProbe,
   round,
   sortKeys,
   summarizeWindow,
 } from './perf-util'
+import type { SummaryRow } from './perf-util'
+
+export { medianOrNull }
 
 /** What the fixture page (`TablePerfPage.tsx`) must provide; `table-perf.test.ts` pins it. */
 export const FIXTURE = {
@@ -75,12 +78,6 @@ export function scrollOffsets(max: number, frames: number): number[] {
 export const p50OrNull = (values: readonly number[]): number | null =>
   values.length === 0 ? null : round(percentile(values, 50))
 
-/** Median of the non-null values; `null` when every run lacked one. */
-export function medianOrNull(values: readonly (number | null)[]): number | null {
-  const present = values.filter((v): v is number => v !== null)
-  return present.length === 0 ? null : round(median(present))
-}
-
 export type RunMetrics = {
   firstRenderMs: number
   idleFrameP50Ms: number
@@ -93,7 +90,7 @@ export type RunMetrics = {
   scrollLongTasks: number
 }
 
-type Row = LaneResult['summary'][number]
+type Row = SummaryRow
 
 /** Median of each run's own `pick(run) − run.idleFrameP50Ms`; `null` when no run has a value. */
 export function medianOverControl(
