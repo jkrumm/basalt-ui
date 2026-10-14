@@ -128,7 +128,19 @@ describe('pinned-column offsets (logical start/end, computed from getStart/getAf
   ]
   const data = [{ a: 'a', b: 'b', c: 'c', d: 'd', e: 'e' }]
 
-  function headerStyles(): Record<string, CSSStyleDeclaration> {
+  /** A declaration read off the inline style text: the logical properties are what make `dir=rtl` mirror. */
+  const inline = (el: HTMLElement | undefined, property: string): string | undefined =>
+    new RegExp(`${property}:\\s*([^;]+)`).exec(el?.getAttribute('style') ?? '')?.[1]
+
+  test('pinned offsets are logical insets, never physical left/right', () => {
+    const styles = headerStyles()
+    for (const id of ['A', 'B', 'D', 'E']) {
+      expect(inline(styles[id], 'left')).toBeUndefined()
+      expect(inline(styles[id], 'right')).toBeUndefined()
+    }
+  })
+
+  function headerStyles(): Record<string, HTMLElement> {
     const { container } = render(
       <MantineProvider>
         <BasaltDataTable
@@ -140,26 +152,26 @@ describe('pinned-column offsets (logical start/end, computed from getStart/getAf
       </MantineProvider>,
     )
     return Object.fromEntries(
-      [...container.querySelectorAll('th')].map((th) => [th.textContent ?? '', th.style]),
+      [...container.querySelectorAll('th')].map((th) => [th.textContent ?? '', th]),
     )
   }
 
   test('start-pinned columns stick at the sum of the start columns before them', () => {
     const styles = headerStyles()
-    expect(styles['A']?.left).toBe('0px')
-    expect(styles['B']?.left).toBe('100px')
+    expect(Number.parseFloat(inline(styles['A'], 'inset-inline-start') ?? 'NaN')).toBe(0)
+    expect(inline(styles['B'], 'inset-inline-start')).toBe('100px')
   })
 
   test('end-pinned columns stick at the sum of the end columns after them', () => {
     const styles = headerStyles()
-    expect(styles['E']?.right).toBe('0px')
-    expect(styles['D']?.right).toBe('60px')
+    expect(Number.parseFloat(inline(styles['E'], 'inset-inline-end') ?? 'NaN')).toBe(0)
+    expect(inline(styles['D'], 'inset-inline-end')).toBe('60px')
   })
 
   test('the unpinned column is not sticky', () => {
     const styles = headerStyles()
-    expect(styles['C']?.position).not.toBe('sticky')
-    expect(styles['A']?.position).toBe('sticky')
-    expect(styles['E']?.position).toBe('sticky')
+    expect(styles['C']?.style.position).not.toBe('sticky')
+    expect(styles['A']?.style.position).toBe('sticky')
+    expect(styles['E']?.style.position).toBe('sticky')
   })
 })
