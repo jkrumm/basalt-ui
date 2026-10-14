@@ -46,7 +46,7 @@ function createTestThreadsStore(initial: AgentThread<AgentPart>[]): ThreadsStore
         read: false,
         createdAt: now,
         updatedAt: now,
-        ...(opts?.meta !== undefined ? { meta: opts.meta } : {}),
+        meta: opts?.meta,
       }
       threads = [thread, ...threads]
       return id
@@ -71,10 +71,9 @@ function createTestThreadsStore(initial: AgentThread<AgentPart>[]): ThreadsStore
     setResumeToken(id, token) {
       threads = threads.map((thread) => {
         if (thread.id !== id) return thread
-        const { resumeToken: _resumeToken, ...rest } = thread
         return {
-          ...rest,
-          ...(token !== undefined ? { resumeToken: token } : {}),
+          ...thread,
+          resumeToken: token,
           updatedAt: Date.now(),
         }
       })
@@ -141,8 +140,7 @@ describe('useAgentThreadRuns — mount-time reconcile', () => {
   })
 
   test('no resumeToken on the persisted thread → falls back to interrupted, even with a resumable transport', async () => {
-    // exactOptionalPropertyTypes forbids `resumeToken: undefined` as an override — build the
-    // thread directly, simply omitting the key, to represent "never had a resumeToken".
+    // An explicit `resumeToken: undefined` is "never had a resumeToken" — same as an absent key.
     const now = Date.now()
     const userMessage: ChatMessage<AgentPart> = {
       id: crypto.randomUUID(),
@@ -158,6 +156,7 @@ describe('useAgentThreadRuns — mount-time reconcile', () => {
       read: false,
       createdAt: now,
       updatedAt: now,
+      resumeToken: undefined,
     }
     const store = createTestThreadsStore([thread])
 
@@ -346,8 +345,7 @@ describe('useAgentThreadRuns — reconcile effect keyed on store.hydrated (R3)',
       setResumeToken(id, token) {
         threads = threads.map((thread) => {
           if (thread.id !== id) return thread
-          const { resumeToken: _resumeToken, ...rest } = thread
-          return { ...rest, ...(token !== undefined ? { resumeToken: token } : {}) }
+          return { ...thread, resumeToken: token }
         })
       },
       markRead() {},

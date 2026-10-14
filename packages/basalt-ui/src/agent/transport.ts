@@ -49,7 +49,7 @@ export type AgentTransport<TPart = AgentPartDraft, TInput = string> = {
     ctx?: { readonly messageId: string },
   ) => AsyncGenerator<TPart>
   /** Optional: resume a previously-started run from its resumeToken (see StartPart). Transports that don't support resumption simply omit this. */
-  resume?: (resumeToken: string, signal?: AbortSignal) => AsyncGenerator<TPart>
+  resume?: ((resumeToken: string, signal?: AbortSignal) => AsyncGenerator<TPart>) | undefined
 }
 
 // ── ResumableAgentTransport ───────────────────────────────────────────────────

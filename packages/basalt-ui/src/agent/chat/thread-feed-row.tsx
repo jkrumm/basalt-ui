@@ -254,12 +254,12 @@ export function ThreadFeedRow(props: ThreadFeedRowProps): JSX.Element {
   const transcript = (
     <ThreadTranscript
       messages={transcriptMessages}
-      {...(liveParts !== undefined ? { liveParts } : {})}
-      {...(liveStatus !== undefined ? { liveStatus } : {})}
-      {...(renderers !== undefined ? { renderers } : {})}
-      {...(fallbackRenderer !== undefined ? { fallbackRenderer } : {})}
-      {...(affordances !== undefined ? { affordances } : {})}
-      {...(groupConsecutive !== undefined ? { groupConsecutive } : {})}
+      liveParts={liveParts}
+      liveStatus={liveStatus}
+      renderers={renderers}
+      fallbackRenderer={fallbackRenderer}
+      affordances={affordances}
+      groupConsecutive={groupConsecutive}
       {...virtualizeProps}
     />
   )

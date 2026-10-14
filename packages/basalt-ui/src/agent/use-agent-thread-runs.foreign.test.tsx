@@ -42,7 +42,7 @@ function createTestThreadsStore(): ThreadsStore<TranscriptPart> {
         read: false,
         createdAt: now,
         updatedAt: now,
-        ...(createOpts?.meta !== undefined ? { meta: createOpts.meta } : {}),
+        meta: createOpts?.meta,
       }
       threads = [thread, ...threads]
       return id
@@ -67,10 +67,9 @@ function createTestThreadsStore(): ThreadsStore<TranscriptPart> {
     setResumeToken(id, token) {
       threads = threads.map((thread) => {
         if (thread.id !== id) return thread
-        const { resumeToken: _resumeToken, ...rest } = thread
         return {
-          ...rest,
-          ...(token !== undefined ? { resumeToken: token } : {}),
+          ...thread,
+          resumeToken: token,
           updatedAt: Date.now(),
         }
       })

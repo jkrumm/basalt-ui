@@ -130,7 +130,7 @@ type Identified = ToolCallBase & { readonly toolCallId: string }
  * test that built one. A `''` toolCallId is not a value any state accepts; `parseToolCallPart`
  * normalizes one to absent at the wire boundary, so it never reaches the type or a consumer.
  */
-type MaybeIdentified = ToolCallBase & { readonly toolCallId?: string }
+type MaybeIdentified = ToolCallBase & { readonly toolCallId?: string | undefined }
 
 export type ToolCallPart =
   | (Identified & { readonly state: 'input-streaming'; readonly input?: unknown })

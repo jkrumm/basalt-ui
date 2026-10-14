@@ -102,7 +102,7 @@ function createTestThreadsStore(initial: AgentThread<AgentPart>[] = []): Threads
         read: false,
         createdAt: now,
         updatedAt: now,
-        ...(opts?.meta !== undefined ? { meta: opts.meta } : {}),
+        meta: opts?.meta,
       }
       threads = [thread, ...threads]
       return id
@@ -127,10 +127,9 @@ function createTestThreadsStore(initial: AgentThread<AgentPart>[] = []): Threads
     setResumeToken(id, token) {
       threads = threads.map((thread) => {
         if (thread.id !== id) return thread
-        const { resumeToken: _resumeToken, ...rest } = thread
         return {
-          ...rest,
-          ...(token !== undefined ? { resumeToken: token } : {}),
+          ...thread,
+          resumeToken: token,
           updatedAt: Date.now(),
         }
       })
