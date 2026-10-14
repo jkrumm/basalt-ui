@@ -4,6 +4,7 @@
  * `.evidence/<label>/<lane>.json` (gitignored) and the committed `docs/waves/evidence/w2/<label>.md`.
  *
  *   bun scripts/evidence/index.ts --label <label> [--dist <dir>] [--routes <file>]
+ *                               [--lanes a,b]   (default: all)
  *
  * Lanes are plain modules exporting a `Lane` (see `types.ts`); a missing module is recorded as
  * "lane absent", a throwing lane as "lane failed" (and fails the run after everything is written).
@@ -26,6 +27,7 @@ const LANES = [
   'charts-perf',
   'chat-profile',
   'keyboard',
+  'table-perf',
   'otel',
 ] as const
 const BUILD_TIMEOUT_MS = 300_000
@@ -66,6 +68,15 @@ export function renderSummary(label: string, outcomes: Map<string, LaneOutcome>)
     }
   }
   return out.join('\n')
+}
+
+/** `--lanes a,b` runs those only (fixed `LANES` order); unset runs all. Unknown names throw. */
+export function selectLanes(arg: string | undefined): readonly string[] {
+  if (!arg) return LANES
+  const wanted = new Set(arg.split(',').map((l) => l.trim()))
+  const unknown = [...wanted].filter((l) => !(LANES as readonly string[]).includes(l))
+  if (unknown.length > 0) throw new Error(`unknown lane(s): ${unknown.join(', ')}`)
+  return LANES.filter((l) => wanted.has(l))
 }
 
 // ── Lanes ─────────────────────────────────────────────────────────────────────────────────────
@@ -114,6 +125,7 @@ async function main(): Promise<number> {
       label: { type: 'string' },
       dist: { type: 'string' },
       routes: { type: 'string' },
+      lanes: { type: 'string' },
     },
   })
   const label = values.label
@@ -126,6 +138,7 @@ async function main(): Promise<number> {
   const distDir = values.dist ? resolve(values.dist) : await buildPlayground()
   if (!existsSync(join(distDir, 'index.html'))) throw new Error(`no index.html in ${distDir}`)
 
+  const lanes = selectLanes(values.lanes)
   const routes = await loadRoutes(values.routes ? resolve(values.routes) : undefined)
   const outDir = join(ROOT, '.evidence', label)
   await mkdir(outDir, { recursive: true })
@@ -151,7 +164,7 @@ async function main(): Promise<number> {
 
   const outcomes = new Map<string, LaneOutcome>()
   try {
-    for (const name of LANES) {
+    for (const name of lanes) {
       let outcome: LaneOutcome
       try {
         const lane = await loadLane(name)
