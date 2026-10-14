@@ -217,6 +217,14 @@ export type FieldSetOptions = {
 /** One option of an enum / multi / range field, labelled through `store.labels()`. */
 export type FieldOption = { value: string; label: string }
 
+/** The one label law: a declared label, else the value itself. */
+function labelledOptions(
+  values: readonly string[],
+  labels: Readonly<Record<string, string | undefined>> | undefined,
+): readonly FieldOption[] {
+  return values.map((value) => ({ value, label: labels?.[value] ?? value }))
+}
+
 /** `toWindow` exists on a range handle and nowhere else — it is not an optional convenience. */
 type RangeHandleExtras<F> = F extends {
   kind: 'range'
@@ -978,8 +986,7 @@ export function createStoreCore(o: StoreCoreOptions): StoreCore {
   const readRecord = (): StoreRecord => toRecord(readPersistedValue(o.key, version))
 
   const optionsFor = (entry: StoreEntry): readonly FieldOption[] => {
-    const map = labels.get(entry.name)
-    return entry.codec.optionValues.map((value) => ({ value, label: map?.[value] ?? value }))
+    return labelledOptions(entry.codec.optionValues, labels.get(entry.name))
   }
 
   const clearField = (name: string): void => {
@@ -1207,52 +1214,61 @@ export function createLocalStore<const S extends Record<string, AnyField>>(o: {
 // ── externalField — a handle over a value another store owns ──────────────────────────────────
 
 /**
+ * The non-hook surface of a store basalt does not own — what zustand's `store.getState` /
+ * `store.setState` / `store.subscribe` already are, and what `useSyncExternalStore` wants.
+ */
+export type ExternalStore<T> = {
+  get: () => T
+  set: (next: T) => void
+  subscribe: (onChange: () => void) => () => void
+}
+
+/**
  * A closed-enum field whose value lives in a store basalt does not own (a zustand slice, a context)
  * — the bridge for a runtime mode that is neither page view state (URL) nor a preference
  * (localStorage), so no `createSearchStore` / `createLocalStore` field may hold it without forking
  * the truth. Returns the SAME `FieldHandle` those stores hand out, so `ViewTabs`, `SelectFilter`
  * and `EnumFilter` bind to it as `field=` with no `value`/`onChange`.
  *
- * There is no lane: the handle reads and writes ONLY through `use`. It never touches the URL,
- * localStorage or the memory lane. Labels are declared here, at definition, like every other
- * field's. `use` is a hook — called in render by the control — and its setter's `opts` are ignored
- * (there is no navigate to merge a `patch` into). `clear()` has no "unset" in a foreign store: it
- * calls the most recent setter `use` returned with `fallback`, and is a no-op until a control has
- * rendered the handle.
+ * There is no lane: the handle reads and writes ONLY through `store`, which is taken at
+ * DEFINITION so a write never depends on a render — `clear()` calls `store.set(fallback)` directly
+ * (a foreign store has no "unset"), mounted or not, however many controls bind the handle. Labels
+ * are declared here like every other field's. The setter ignores `FieldSetOptions`: `patch` merges
+ * into a URL navigate and a lane-less write has none, the same contract the local lane documents.
  *
  * @example
  * const timerMode = externalField({
  *   values: ['rest', 'interval'],
  *   fallback: 'rest',
  *   labels: { rest: 'Rest Timer', interval: 'Interval Timer' },
- *   use: () => [useTimerStore((s) => s.mode), useTimerStore((s) => s.setMode)],
+ *   store: {
+ *     get: () => useTimerStore.getState().mode,
+ *     set: (mode) => useTimerStore.getState().setMode(mode),
+ *     subscribe: useTimerStore.subscribe,
+ *   },
  * })
  * // <WidgetHeader actions={<ViewTabs field={timerMode} label="Timer mode" />} />
  */
 export function externalField<const T extends string>(o: {
   values: readonly T[]
-  fallback: T
+  fallback: NoInfer<T>
   /** Option labels, keyed by value; an unlabelled value shows as itself. */
   labels?: Partial<Record<T, string>>
-  /** A hook: `[value, set]` read from the external store. Called by the control in render. */
-  use: () => readonly [T, (next: T) => void]
+  store: ExternalStore<T>
 }): FieldHandle<EnumField<T>> {
-  const options: readonly FieldOption[] = o.values.map((value) => ({
-    value,
-    label: o.labels?.[value] ?? value,
-  }))
-  let write: ((next: T) => void) | undefined
-  const handle = {
-    kind: 'enum',
-    fallback: o.fallback,
-    options,
-    use: () => {
-      const [value, set] = o.use()
-      write = set
-      return [value, (next: T) => set(next)] as const
-    },
-    clear: () => write?.(o.fallback),
-    isDefault: (v: T) => v === o.fallback,
+  const { values, fallback, store } = o
+  if (!values.includes(fallback)) {
+    throw new Error(
+      `basalt-ui: externalField fallback '${fallback}' is not one of its values (${values.join(', ')}).`,
+    )
   }
-  return handle as unknown as FieldHandle<EnumField<T>>
+  const setter = (next: T): void => store.set(next)
+  return {
+    kind: 'enum',
+    fallback,
+    options: labelledOptions(values, o.labels),
+    use: () => [useSyncExternalStore(store.subscribe, store.get, store.get), setter] as const,
+    clear: () => store.set(fallback),
+    isDefault: (v) => v === fallback,
+  }
 }
