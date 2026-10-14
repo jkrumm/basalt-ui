@@ -43,9 +43,12 @@ fold's transition has no second named group.
 | Base transition (`document.startViewTransition(fn)`)   | 111    | 18.0   | 144     |
 | `types` / `:active-view-transition-type()` (direction) | 125    | 18.2   | 147     |
 
-Below the `types` row the router passes the bare callback (`router-core` router.js:495-504), so the page
-crossfades with no direction and no named content region. Below the base row the router calls `fn()`
-directly (router.js:493, 507): no transition.
+Route transitions are types-gated. `createBasaltRouter` sets `defaultViewTransition` only where
+`CSS.supports('selector(:active-view-transition-type(a))')` holds (the router's own test, router.js:495):
+Chrome 125 / Safari 18.2 / Firefox 147. Without that support the router never calls the `types` callback,
+so an ungated option would give first load and every search-only change (filters) a full-page UA
+crossfade, shell included. Older browsers, and the server, navigate without animation. The base row is
+what React's own `<ViewTransition>` (the aside fold) needs.
 
 Not seen: only Chrome 155 was observed. Safari and Firefox rows come from the audit, not from this run.
 Not looked at: the animation frames themselves (no route screenshots were taken).
