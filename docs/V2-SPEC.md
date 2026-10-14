@@ -58,10 +58,10 @@ source); method and counts: `docs/waves/evidence/w1/core.md`.
     `@tanstack/react-table` `9.2.8` exact; `./forms`: `@mantine/form`; `./controls-dates`:
     `@mantine/dates`, `dayjs`; `./content`: `react-markdown` (`MarkdownComponents`); `./vite`: `vite`;
     `./charts`: § 9.
-  - **Optional:** reached only through `import()` and named by no public type. These are `remend`,
-    `shiki`, `@shikijs/*`, `beautiful-mermaid`, `remark-gfm`, `rehype-sanitize`, both devtools and
-    `vite-plugin-pwa`. `.`'s `.d.ts` reaches no subpath-required peer, and no basalt module imports
-    `@ai-sdk/react`.
+  - **Optional:** lazy (`import()`), in no public type, degrades when missing: `remend`, `shiki`,
+    `@shikijs/*`, `beautiful-mermaid`, `remark-gfm`, `rehype-sanitize`, both devtools, `vite-plugin-pwa`.
+    `doctor` `subpath-peers` names the lazy ones a subpath needs in full (`./content`: `shiki`,
+    `@shikijs/*`). `.`'s `.d.ts` reaches no subpath-required peer; nothing imports `@ai-sdk/react`.
 
 **Charter 2 exceptions** (wiring, no 1.41 consumer yet): `createBasaltRouter` (router + Query
 wiring, § 2), `BasaltRouterContext` (the root route's context type, § 2), `BasaltEvent` (the
