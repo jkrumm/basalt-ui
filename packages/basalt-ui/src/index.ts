@@ -40,6 +40,7 @@ export {
   Section,
   StatCard,
   type StatCardBreakdownRow,
+  type StatCardSparklineSize,
   type StatCardTone,
   StatGroup,
   EmptyState,
