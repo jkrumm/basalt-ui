@@ -228,12 +228,6 @@
       }
     },
     {
-      "files": ["packages/basalt-ui/src/table/data-table.tsx"],
-      "rules": {
-        "react/incompatible-library": "off"
-      }
-    },
-    {
       "files": [
         "packages/basalt-ui/src/agent/chat/composer.tsx",
         "packages/basalt-ui/src/agent/chat/thread-message.tsx",

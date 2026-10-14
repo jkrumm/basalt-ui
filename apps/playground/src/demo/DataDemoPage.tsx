@@ -9,7 +9,7 @@
  *   • Search / department / role filters narrow the row set; the pagination bar tracks the
  *     filtered count.
  *
- * The table uses a small typed dataset with ColumnDef<T>[] columns (createColumnHelper).
+ * The table uses a small typed dataset with BasaltColumnDef<T>[] columns (createColumnHelper).
  */
 import { Button, Divider, Group, Paper, Stack, Switch, Tabs, Text } from '@mantine/core'
 import { EmptyState, PageBar } from 'basalt-ui'
@@ -111,7 +111,7 @@ const EMPLOYEES: Employee[] = [
 const col = createColumnHelper<Employee>()
 
 // Accessor columns sort by value — BasaltDataTable accepts the heterogeneous
-// ColumnDef<Employee, any>[] so each accessor keeps its own inferred value type.
+// BasaltColumnDef<Employee>[] so each accessor keeps its own inferred value type.
 const TABLE_COLUMNS = [
   col.accessor('name', { header: 'Name' }),
   col.accessor('department', { header: 'Department' }),
@@ -273,7 +273,7 @@ function PinnedTableSection() {
         data={PINNED_EMPLOYEES}
         columns={PINNED_COLUMNS}
         enablePinning
-        initialColumnPinning={{ left: ['name'] }}
+        initialColumnPinning={{ start: ['name'] }}
         striped
       />
     </Stack>
