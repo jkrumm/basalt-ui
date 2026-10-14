@@ -561,7 +561,7 @@ node --import "$PKGDIR/scripts/css-noop-register.mjs" peers.mjs absent
 INSTALL_PEER_NAMES=()
 for name in "${SUBPATH_PEER_NAMES[@]}"; do [ "$name" = vite ] || INSTALL_PEER_NAMES+=("$name"); done
 peer_array SUBPATH_PEERS "${INSTALL_PEER_NAMES[@]}"
-scratch_install "$ABS_TGZ" "${SUBPATH_PEERS[@]}" "use-stick-to-bottom@^1.1.6" "@tanstack/react-virtual@>=3.13.26 <4" "vite@8.0.16"
+scratch_install "$ABS_TGZ" "${SUBPATH_PEERS[@]}" "use-stick-to-bottom@^1.1.6" "@tanstack/react-virtual@>=3.14.0 <4" "vite@8.0.16"
 node --import "$PKGDIR/scripts/css-noop-register.mjs" peers.mjs present
 echo "subpath-required peers OK (absent: own-peer failures only; present: every subpath loads)"
 

@@ -70,14 +70,14 @@ Import: import { ... } from 'basalt-ui/table'
 Description: BasaltDataTable and createColumnHelper: a data table over TanStack Table v9, rendered with Mantine (renamed from ./data/table)
 Layer: mantine-coupled
 Rule: basalt-batteries
-OptionalPeers: @tanstack/react-table@>=8 <9
+OptionalPeers: @tanstack/react-table@9.2.8
 
 ## basalt-ui/agent
 Import: import { ... } from 'basalt-ui/agent'
 Description: Streaming-chat surface: aiSdkTransport, useAgentThreadRuns, parseAgentPart, the open part-registry types, the consumer-owned thread contracts (AgentThread/ThreadsStore/ChatMessage), and the Mantine chat UI folded in from ./agent-chat (ThreadFeed, ThreadFeedRow, Composer, ToolChip). motion is subpath-required: the chat UI imports it eagerly
 Layer: mantine-coupled
 Rule: basalt-batteries
-OptionalPeers: ai@^7.0.137, @ai-sdk/provider@^4.0.26, motion@14.1.0, use-stick-to-bottom@^1.1.6, @tanstack/react-virtual@>=3.13.26 <4
+OptionalPeers: ai@^7.0.137, @ai-sdk/provider@^4.0.26, motion@14.1.0, use-stick-to-bottom@^1.1.6, @tanstack/react-virtual@>=3.14.0 <4
 
 ## basalt-ui/content
 Import: import { ... } from 'basalt-ui/content'

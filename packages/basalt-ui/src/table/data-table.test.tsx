@@ -287,6 +287,23 @@ describe('the toolbar has no fixed-width literals and resolves controls to the c
     expect(searchStyle).not.toContain('width: 220px')
   })
 
+  test('typing is instant in the input but filters (and reports) only once typing pauses', async () => {
+    const reported: string[] = []
+    const { container } = renderTable({
+      enableGlobalFilter: true,
+      onGlobalFilterChange: (value) => reported.push(value),
+    })
+    const input = container.querySelector<HTMLInputElement>('input[placeholder="Search…"]')!
+    fireEvent.change(input, { target: { value: 'argo' } })
+    fireEvent.change(input, { target: { value: 'lin' } })
+    expect(input.value).toBe('lin')
+    expect(container.querySelectorAll('tbody tr')).toHaveLength(2)
+    expect(reported).toEqual([])
+    await waitFor(() => expect(container.querySelectorAll('tbody tr')).toHaveLength(1))
+    expect(reported).toEqual(['lin'])
+    expect(container.querySelector('tbody')?.textContent).toContain('linewatch')
+  })
+
   test('the toolbar renders inside a data-basalt-tier="ctl" slot', () => {
     const { container } = renderTable({
       enableGlobalFilter: true,
@@ -587,10 +604,10 @@ describe('onColumnFiltersChange — the seam server-side faceting needs', () => 
 })
 
 describe('initialColumnPinning', () => {
-  test('a column named in `left` renders sticky; an unnamed column does not', () => {
+  test('a column named in `start` renders sticky; an unnamed column does not', () => {
     const { container } = renderTable({
       enablePinning: true,
-      initialColumnPinning: { left: ['project'] },
+      initialColumnPinning: { start: ['project'] },
     })
     const headers = [...container.querySelectorAll('th')]
     const project = headers.find((th) => th.textContent === 'Project')

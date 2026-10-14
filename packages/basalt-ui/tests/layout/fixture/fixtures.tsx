@@ -9,7 +9,7 @@ import { overlays } from '../../../src/commands'
 import { FilterSet, FormRow, SelectFilter, ViewTabs } from '../../../src/controls'
 import { BasaltDataTable } from '../../../src/table'
 import type { DataTableFacet } from '../../../src/table/data-table'
-import type { ColumnDef } from '@tanstack/react-table'
+import type { BasaltColumnDef } from '../../../src/table/table-features'
 import { ActionIcon, Button } from '@mantine/core'
 import { BasaltShell, PageAside, PageBar, StatCard, StatGroup } from '../../../src/index'
 import type { SettingsMenuItem } from '../../../src/index'
@@ -105,8 +105,8 @@ type TableRow = { id: number; name: string; value: number }
  * (`Row 1 · segment 3` has no wrap opportunity a narrow column could take), because a table that
  * CAN reflow proves nothing about containment.
  */
-function tableColumns(count: number): ColumnDef<TableRow>[] {
-  const base: ColumnDef<TableRow>[] = [
+function tableColumns(count: number): BasaltColumnDef<TableRow>[] {
+  const base: BasaltColumnDef<TableRow>[] = [
     { accessorKey: 'name', header: 'Name' },
     { accessorKey: 'value', header: 'Value' },
   ]

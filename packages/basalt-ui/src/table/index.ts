@@ -1,10 +1,10 @@
 /**
- * ./table — BasaltDataTable: a sortable data table over @tanstack/react-table, rendered with
+ * ./table — BasaltDataTable: a sortable data table over @tanstack/react-table v9, rendered with
  * Mantine primitives. Opt-in chrome: a search/facet toolbar, a pagination bar (client-side or
- * server-driven) and sticky column pinning. Table v9 and a basalt-owned `createColumnHelper`
- * land in a later wave; this is the 1.x behaviour at its new home.
+ * server-driven) and sticky column pinning. `createColumnHelper` is basalt's own, bound to the
+ * table's feature set — no TanStack hook, feature or row-model symbol leaves this subpath.
  *
- * Optional peer: @tanstack/react-table >=8 <9.
+ * Optional peer: @tanstack/react-table 9.2.8 (exact).
  *
  * @example
  * import { BasaltDataTable, createColumnHelper } from 'basalt-ui/table'
@@ -15,4 +15,4 @@
  */
 
 export { BasaltDataTable } from './data-table'
-export { createColumnHelper } from '@tanstack/react-table'
+export { createColumnHelper } from './table-features'
