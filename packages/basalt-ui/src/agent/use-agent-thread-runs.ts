@@ -35,7 +35,7 @@
  *   )
  * }
  */
-import { useCallback, useContext, useEffect, useRef, useState } from 'react'
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import type { Dispatch, MutableRefObject, SetStateAction } from 'react'
 import type { ChatMessage } from './history'
 import { toAgentError } from './error'
@@ -46,7 +46,10 @@ import type { PartLike } from './merge'
 import type { AgentOutcome, OutcomeResolver } from './outcome'
 import { isStartPart } from './parts'
 import type { AgentPart } from './parts'
-import type { AgentThread, ThreadStatus, ThreadsStore } from './thread'
+import { createRunCommitter, isContentPart } from './run-committer'
+import { beginRun, endRun, failedThreadIds, isLive, planStop, sweepFlushed } from './run-records'
+import type { RunRecord, RunRecords } from './run-records'
+import type { AgentThread, LiveRunStatus, ThreadStatus, ThreadsStore } from './thread'
 import { isResumable } from './transport'
 import type { AgentTransport } from './transport'
 import { TelemetryContext, createEmitter, errorName, now } from '../telemetry'
@@ -88,9 +91,6 @@ export type ThreadRunState<TPart = AgentPart> =
       readonly parts: TPart[]
       readonly error: AgentError
     }
-
-/** The two states a turn is live in. */
-type LiveRunStatus = 'submitted' | 'streaming'
 
 // ── useAgentThreadRuns args ───────────────────────────────────────────────────
 
@@ -179,10 +179,10 @@ export type UseAgentThreadRunsReturn<TPart = AgentPart> = {
    * A FAILED turn's entry (`status: 'error'`) has no controller: `stop()` just dismisses it and
    * leaves the thread's `'error'` status alone. A turn that has already settled is a no-op.
    *
-   * Defense-in-depth: if `runs` reports `threadId` as live but no controller is registered for it
-   * (a phantom entry — not reachable via any path in this hook today, since the unmount-cleanup
-   * effect and `finalizeStop` both tear down `controllersRef` and `runs` together), `stop()`
-   * still settles it instead of silently no-opping forever.
+   * Defense-in-depth: if `runs` reports `threadId` as live but no run record exists for it (a
+   * phantom entry — not reachable via any path in this hook today, since the unmount-cleanup
+   * effect and `finalizeStop` both tear down the records and `runs` together), `stop()` still
+   * settles it, once, instead of silently no-opping forever.
    */
   readonly stop: (threadId: string) => void
   /**
@@ -234,66 +234,6 @@ function buildDoneSnapshot<TPart>(
   }
 }
 
-// ── commit throttle ───────────────────────────────────────────────────────────
-
-type RunCommitter<TPart> = {
-  /** Queue a commit; `immediate` (or `wait <= 0`) bypasses the window and drops any pending one. */
-  readonly push: (parts: TPart[], status: LiveRunStatus, immediate?: boolean) => void
-  /** Commit the pending snapshot now, if any. */
-  readonly flush: () => void
-  /** Drop the pending snapshot and its timer. */
-  readonly cancel: () => void
-}
-
-/**
- * Leading + trailing throttle over `runs` commits (the semantics of `useChat`'s stable
- * `throttle`): the first push commits at once, pushes inside the window collapse into one trailing
- * commit of the LATEST snapshot.
- */
-function createRunCommitter<TPart>(
-  wait: number,
-  commit: (parts: TPart[], status: LiveRunStatus) => void,
-): RunCommitter<TPart> {
-  let timer: ReturnType<typeof setTimeout> | undefined
-  let lastCommitAt = Number.NEGATIVE_INFINITY
-  let pending: { parts: TPart[]; status: LiveRunStatus } | undefined
-
-  const clear = (): void => {
-    if (timer === undefined) return
-    clearTimeout(timer)
-    timer = undefined
-  }
-  const flush = (): void => {
-    clear()
-    if (pending === undefined) return
-    const { parts, status } = pending
-    pending = undefined
-    lastCommitAt = Date.now()
-    commit(parts, status)
-  }
-  return {
-    push(parts, status, immediate = false) {
-      pending = { parts, status }
-      const windowOpen = timer === undefined && Date.now() - lastCommitAt >= wait
-      if (wait <= 0 || immediate || windowOpen) {
-        flush()
-        return
-      }
-      timer ??= setTimeout(flush, Math.max(0, wait - (Date.now() - lastCommitAt)))
-    },
-    flush,
-    cancel() {
-      clear()
-      pending = undefined
-    },
-  }
-}
-
-/** True for the parts that end `'submitted'`: model output, not the synthetic start/source/error. */
-function isContentPart(part: PartLike): boolean {
-  return part.type === 'text' || part.type === 'reasoning' || part.type === 'tool'
-}
-
 /**
  * Consumes an in-flight (or resumed) generator for one thread, accumulating parts into `runs`,
  * skipping StartParts (recording their resumeToken via setResumeToken instead of rendering them),
@@ -309,15 +249,12 @@ function isContentPart(part: PartLike): boolean {
  */
 async function consumeAndFinalize<TPart extends PartLike>(args: {
   threadId: string
-  controller: AbortController
+  record: RunRecord<TPart>
   generator: AsyncGenerator<TPart>
   userMessage: ChatMessage<TPart>
-  controllersRef: MutableRefObject<Map<string, AbortController>>
-  appendedRef: MutableRefObject<Map<string, AbortController>>
+  recordsRef: MutableRefObject<RunRecords<TPart>>
   storeRef: MutableRefObject<ThreadsStore<TPart>>
   resolveOutcome: OutcomeResolver<TPart>
-  livePartsRef: MutableRefObject<Map<string, TPart[]>>
-  endedRef: MutableRefObject<Map<string, 'settled' | 'failed'>>
   setRuns: Dispatch<SetStateAction<Map<string, ThreadRunState<TPart>>>>
   onFailureStatus: ThreadStatus
   throttle: number
@@ -326,28 +263,27 @@ async function consumeAndFinalize<TPart extends PartLike>(args: {
 }): Promise<void> {
   const {
     threadId,
-    controller,
+    record,
     generator,
     userMessage,
-    controllersRef,
-    appendedRef,
+    recordsRef,
     storeRef,
     resolveOutcome,
-    livePartsRef,
-    endedRef,
     setRuns,
     onFailureStatus,
     throttle,
     emit,
     onError,
   } = args
+  const { controller } = record
+  const live = (): boolean => isLive(recordsRef.current, threadId, controller)
   let parts: TPart[] = []
   const startedAt = now()
   let firstContentAt: number | undefined
   // Every commit re-checks run ownership: a trailing timer that fires after stop()/unmount/a newer
   // run took the thread over must not resurrect or clobber its `runs` entry.
   const committer = createRunCommitter<TPart>(throttle, (committed, status) => {
-    if (controllersRef.current.get(threadId) !== controller) return
+    if (!live()) return
     setRuns((prev) => {
       const next = new Map(prev)
       next.set(threadId, { status, parts: committed })
@@ -356,22 +292,12 @@ async function consumeAndFinalize<TPart extends PartLike>(args: {
   })
   try {
     for await (const part of generator) {
-      // Guard: a newer call superseded this stream's controller for this thread, or it
-      // was aborted — stop updating state.
-      //
-      // Deliberately NOT a `runs` teardown site (considered and rejected): `controllersRef`
-      // mismatch here is ambiguous between "this run was aborted and nothing replaced it" and "a
-      // newer run (a mount-reconcile resume, keyed by the SAME threadId) has already taken over
-      // and is live in `runs` right now". Only the first case should ever clear `runs[threadId]`,
-      // and only the abort's OWN originator can tell the two apart without a race — the unmount-
-      // cleanup effect (see its doc) does that teardown synchronously, in the same tick as the
-      // abort, before any newer run could exist to be confused with. If this guard also deleted
-      // `runs[threadId]`, a superseding resume's fresh entry would be clobbered out from under it
-      // by its OWN predecessor's late-settling loop iteration — reintroducing a wedge instead of
-      // fixing one. `stop()`'s own abort path has the same property (finalizeStop's teardown runs
-      // synchronously before `stop()` returns, never racing a subsequent call).
-      if (controllersRef.current.get(threadId) !== controller) return
-      if (controller.signal.aborted) return
+      // Guard: the run ended (stop(), unmount) or a newer run replaced its record — stop updating
+      // state. Deliberately NOT a `runs` teardown site: a mismatch is ambiguous between "aborted
+      // and nothing replaced it" and "a newer run (a mount-reconcile resume on the SAME threadId)
+      // is live in `runs` right now", and only the ender can tell which; stop() and the unmount
+      // cleanup tear `runs` down synchronously with the end, before a newer run can exist.
+      if (!live()) return
       if (isStartPart(part)) {
         storeRef.current.setResumeToken(threadId, part.resumeToken)
         continue
@@ -380,7 +306,7 @@ async function consumeAndFinalize<TPart extends PartLike>(args: {
       // array it returns), so the local accumulator and the rendered `runs` snapshot below stay
       // identical: a replayed/resumed delta rewrites its part instead of duplicating it.
       parts = mergePart(parts, part)
-      livePartsRef.current.set(threadId, parts)
+      record.parts = parts
       // The submitted → streaming edge commits at once (it is the TTFT mark and must not wait on
       // the throttle window); later parts ride the throttle.
       const firstContent = firstContentAt === undefined && isContentPart(part)
@@ -389,10 +315,8 @@ async function consumeAndFinalize<TPart extends PartLike>(args: {
     }
     // The throttle's trailing commit: the last parts must reach `runs` before the settle below.
     committer.flush()
-    // Only proceed if this stream is still the current one and wasn't aborted.
-    if (controllersRef.current.get(threadId) !== controller || controller.signal.aborted) {
-      return
-    }
+    // Only proceed if this stream is still the current one.
+    if (!live()) return
 
     const assistantMessage: ChatMessage<TPart> = {
       // appendMessage's idempotency key — mintMessageId, never mintThreadId (see that helper's
@@ -404,32 +328,32 @@ async function consumeAndFinalize<TPart extends PartLike>(args: {
       finish: 'complete',
     }
     storeRef.current.appendMessage(threadId, assistantMessage)
-    // Record the terminal-append fact for THIS run (identified by `controller`, mirroring
-    // controllersRef's own per-thread/per-run keying) — see appendedRef's doc on why this, and not
-    // array-reference equality, is what finalizeStop checks.
-    appendedRef.current.set(threadId, controller)
+    // The terminal-append fact for THIS run, on its record: stop() reads it to avoid a second
+    // message, and the failure path reads it to avoid re-rendering the landed content as live.
+    record.appended = true
 
     const priorThread = storeRef.current.threads.find((thread) => thread.id === threadId)
     const snapshot = buildDoneSnapshot(priorThread, threadId, userMessage, assistantMessage)
+    record.resolving = true
     const outcome: AgentOutcome = await resolveOutcome(snapshot)
+    record.resolving = false
 
-    // Re-check: resolveOutcome above is the only await in this function's success path, and
-    // stop() may have run while it was pending — aborting the controller, appending its own
-    // 'stopped' message only if appendedRef didn't already carry this run's marker (see
-    // finalizeStop), and already forcing the thread to 'done'. Without this recheck, a slow
-    // resolveOutcome settling AFTER stop() has already finalized the thread would silently
-    // overwrite that outcome with whatever THIS call resolved to.
-    if (controllersRef.current.get(threadId) !== controller || controller.signal.aborted) {
+    // Re-check: resolveOutcome above is the only await in this success path. If stop() ran while
+    // it was pending, stop() already settled the thread to 'done' (appending nothing: the message
+    // had landed) and deliberately did NOT call resolveOutcome a second time; this result is the
+    // one outcome of the turn, so it is recorded here. Any other end (unmount, a newer run)
+    // leaves the thread to whoever ended it.
+    if (!live()) {
+      if (record.ended === 'stopped' && record.appended) {
+        storeRef.current.setOutcome(threadId, outcome)
+      }
       return
     }
 
     storeRef.current.setOutcome(threadId, outcome)
     storeRef.current.setStatus(threadId, outcome.status)
     storeRef.current.setResumeToken(threadId, undefined)
-    controllersRef.current.delete(threadId)
-    endedRef.current.set(threadId, 'settled')
-    appendedRef.current.delete(threadId)
-    livePartsRef.current.delete(threadId)
+    endRun(record, 'settled')
     setRuns((prev) => {
       if (!prev.has(threadId)) return prev
       const next = new Map(prev)
@@ -450,20 +374,15 @@ async function consumeAndFinalize<TPart extends PartLike>(args: {
       },
     })
   } catch (err) {
-    // Guard: don't corrupt state if a newer stream has taken over this thread.
-    if (controllersRef.current.get(threadId) !== controller) return
-    // Guard: don't overwrite a user-cancelled state if the signal was aborted — stop(), supersede
-    // and unmount all abort the controller first, so only an abort from somewhere else gets here.
-    if (controller.signal.aborted) return
+    // Guard: the run ended (stop(), unmount — which abort the controller, so their AbortError lands
+    // here) or a newer stream took the thread over. Only an abort from somewhere else gets past.
+    if (!live()) return
     const agentError = toAgentError(err)
     // The turn's final message already landed in the thread (resolveOutcome or a store call failed
     // AFTER appendMessage): the feed renders it from the thread, so the error entry keeps no parts.
-    const messageLanded = appendedRef.current.get(threadId) === controller
+    const messageLanded = record.appended
+    endRun(record, 'failed')
     storeRef.current.setStatus(threadId, onFailureStatus)
-    controllersRef.current.delete(threadId)
-    endedRef.current.set(threadId, 'failed')
-    appendedRef.current.delete(threadId)
-    livePartsRef.current.delete(threadId)
     // The failed entry stays visible, with the error and the parts received so far, until the next
     // start()/retry() on this thread replaces it or stop() dismisses it.
     const failedParts = messageLanded ? [] : parts
@@ -497,15 +416,17 @@ async function consumeAndFinalize<TPart extends PartLike>(args: {
  * Finalizes a stop() call for `threadId` — the counterpart to consumeAndFinalize's success path,
  * reused so the persist/settle/resolve sequence exists exactly once. `parts` is the accumulated
  * (possibly partial) content read out of the run's `ThreadRunState` at the moment stop() was
- * called; the caller has already aborted the controller and cleared `controllersRef` before
- * invoking this. `alreadyAppended` is precomputed by the caller (stop()) from `appendedRef` — see
- * that ref's doc for why this is an explicit marker rather than an inferred comparison.
+ * called; the caller has already ended the run's record and aborted its controller before
+ * invoking this. `alreadyAppended` is read by the caller (stop()) off the record's `appended` flag
+ * — an explicit marker rather than an inferred comparison. `outcomeInFlight` is the record's
+ * `resolving` flag: `consumeAndFinalize`'s own `resolveOutcome` is pending and records the
+ * outcome, so this function must not resolve a second time.
  *
  * Ordering / the append-failure guard: the append is attempted FIRST (so a successful stop still
  * reads as 'done' with its partial content intact — this is the common case and the one that
  * matters most), but it is wrapped in its own try/catch that CANNOT prevent the terminal
  * transition below it. This is deliberate, not incidental: by the time this function runs, `stop()`
- * has already deleted `threadId` from `controllersRef` and `appendedRef` (see `stop()`'s own doc),
+ * has already ended the run's record (see `stop()`'s own doc),
  * so a second `stop()` call is unconditionally a no-op regardless of what happens here — if the
  * append (or `mintMessageId`, which now also throws on rung 3 — see `./id.ts`) throws and nothing
  * downstream ran, the thread would be wedged at 'streaming' FOREVER with no way for the user to
@@ -528,7 +449,7 @@ async function consumeAndFinalize<TPart extends PartLike>(args: {
  * append leaves the identical wedge one line further down. The single thing that must ALWAYS run
  * is the `setRuns` teardown — that entry is the HOOK'S OWN state, it is what `runs.get(threadId)`
  * reports to the UI as "a turn is in flight", and by this point `stop()` has already deleted the
- * thread from `controllersRef`, so no later `stop()` can ever reach here again to clean it up. A
+ * run's record, so no later `stop()` can ever reach here again to clean it up. A
  * throw above it therefore strands a phantom run for the lifetime of the hook. Each store call
  * gets its OWN try so a failing `setStatus` cannot also skip clearing the resume token — a
  * surviving token is separately harmful (it is what a later resume replays from).
@@ -537,11 +458,14 @@ async function finalizeStop<TPart extends PartLike>(args: {
   threadId: string
   parts: TPart[]
   alreadyAppended: boolean
+  /** `consumeAndFinalize`'s own `resolveOutcome` is pending and will record the outcome. */
+  outcomeInFlight: boolean
   storeRef: MutableRefObject<ThreadsStore<TPart>>
   resolveOutcome: OutcomeResolver<TPart>
   setRuns: Dispatch<SetStateAction<Map<string, ThreadRunState<TPart>>>>
 }): Promise<void> {
-  const { threadId, parts, alreadyAppended, storeRef, resolveOutcome, setRuns } = args
+  const { threadId, parts, alreadyAppended, outcomeInFlight, storeRef, resolveOutcome, setRuns } =
+    args
 
   let appendFailed = false
   if (!alreadyAppended && parts.length > 0) {
@@ -585,7 +509,7 @@ async function finalizeStop<TPart extends PartLike>(args: {
 
   // No outcome to resolve for a turn whose own terminal message never landed, or whose settle
   // never took — see this function's doc on why this mirrors consumeAndFinalize's catch path.
-  if (settleFailed) return
+  if (settleFailed || outcomeInFlight) return
 
   const snapshot = storeRef.current.threads.find((thread) => thread.id === threadId)
   if (snapshot === undefined) return
@@ -631,39 +555,12 @@ export function useAgentThreadRuns<TPart extends PartLike = AgentPart>({
   telemetryRef.current = telemetry ?? providerSink
   const throttleRef = useRef(throttle)
   throttleRef.current = throttle
-  // The unthrottled accumulator per live thread. `runs` may lag it by one throttle window, and
-  // stop() must persist everything that arrived, not what was last committed.
-  const livePartsRef = useRef<Map<string, TPart[]>>(new Map())
-  // How each thread's LAST run ended, written synchronously where `controllersRef` is cleared.
-  // `runsRef` only mirrors the last flushed render, so between a settle's `setRuns` and the render
-  // that applies it, stop() cannot tell a phantom entry from a run that just ended; this can.
-  // Cleared when a new run registers a controller for the thread, and on unmount.
-  const endedRef = useRef<Map<string, 'settled' | 'failed'>>(new Map())
-
-  // Refs: mutable per-render state that must not trigger re-renders.
-  const controllersRef = useRef<Map<string, AbortController>>(new Map())
-  // Explicit single-writer marker: has THIS run's terminal assistant message already been
-  // appended? Keyed the same way as controllersRef (threadId -> the specific run's controller),
-  // set by consumeAndFinalize the instant it appends, and cleared on every path that ends a run
-  // (normal completion, the error path, stop(), and unmount) — same lifecycle discipline as
-  // controllersRef, deliberately, since that's the existing coordination channel between
-  // consumeAndFinalize and stop()/finalizeStop.
-  //
-  // This replaces an earlier reference-equality check (`lastMessage.parts === parts`) that
-  // compared the array runsRef mirrors against the array the message actually persisted. That
-  // comparison implicitly depended on THREE things staying true at once: the run-state mirror not
-  // re-copying `parts` on every delta, the accumulator reassigning (never mutating) `parts`, and —
-  // the one that actually broke it — React's flush timing: runsRef is only updated during a
-  // render (`runsRef.current = runs`, assigned unconditionally on every render, not in an effect),
-  // so a setRuns dispatch that hasn't yet flushed into a render leaves runsRef holding an EARLIER
-  // parts array. A stop() landing between consumeAndFinalize's post-loop appendMessage and its
-  // `await resolveOutcome` resolving could observe exactly that staleness and defeat the
-  // reference-equality guard, double-appending — see the regression test with "resolveOutcome"
-  // in its name. Keying by controller identity (an AbortController, freshly minted per run) makes
-  // a false-positive match across two different runs on the same thread structurally
-  // impossible — no render, no array-copy semantics, no accumulator-reassignment assumption is
-  // load-bearing anymore.
-  const appendedRef = useRef<Map<string, AbortController>>(new Map())
+  // One record per thread id holds the run's lifecycle — controller, unthrottled parts, whether its
+  // terminal message landed, how it ended — written together through `./run-records` (see there for
+  // why these are not separate maps). A run is live while its record's `ended` is undefined.
+  const recordsRef = useRef<RunRecords<TPart>>(new Map())
+  const hasLiveRun = (threadId: string): boolean =>
+    recordsRef.current.get(threadId)?.ended === undefined && recordsRef.current.has(threadId)
   // Caches the last user input per thread so retry() can replay a failed turn without the
   // caller having to hold onto (or re-collect) what was typed.
   const lastInputRef = useRef<Map<string, string>>(new Map())
@@ -686,7 +583,11 @@ export function useAgentThreadRuns<TPart extends PartLike = AgentPart>({
   const toUserPartsRef = useRef(resolvedToUserParts)
   toUserPartsRef.current = resolvedToUserParts
 
-  const emitTelemetry: Telemetry = (event) => createEmitter(telemetryRef.current)(event)
+  // Stable over the sink ref, so an inline `telemetry` function never changes what `start` closes over.
+  const emitTelemetry = useMemo<Telemetry>(
+    () => createEmitter((event) => telemetryRef.current?.(event)),
+    [],
+  )
 
   // Resolves the transport for `threadId`: the shared object as-is for the plain-object form
   // (unchanged behavior), or the factory's result — resolved once per thread id and cached in
@@ -703,21 +604,21 @@ export function useAgentThreadRuns<TPart extends PartLike = AgentPart>({
   }
 
   // Abort every in-flight stream on unmount to stop the async generators. Also clears the map —
-  // leaving aborted entries behind would make the mount-reconcile effect below see a
-  // `controllersRef.current.has(id)` of `true` for a thread whose only consumer was just aborted,
+  // leaving aborted records behind would make the mount-reconcile effect below see a live run
+  // for a thread whose only consumer was just aborted,
   // skipping the orphan-resume path and wedging the thread in 'streaming' forever. Reachable
   // whenever this fiber's effects re-run without the fiber itself unmounting (React 19 StrictMode
   // double-invoke; `<Activity>` hide/show) — see this hook's `@example`-adjacent doc / the F3 note.
   //
   // Also tears down the matching `runs` entries — the F3 fix above stopped this from wedging
-  // `controllersRef`/the *persisted* thread status, but left `runs` (this hook's own transient
+  // the run records/the *persisted* thread status, but left `runs` (this hook's own transient
   // state) untouched, and on a re-run-without-unmount the component (and its `runs` state) survive
   // this cleanup. Without this, the entry the aborted controller was updating stays in `runs`
   // reporting `status: 'streaming'` forever: the mount-reconcile effect below DOES correctly settle
   // the persisted thread (to a resumed run, or to 'interrupted' if not resumable), but a consumer
   // deriving "is this thread live" from `runs.has(id)` — the whole reason `runs` exists — keeps
   // seeing a phantom in-flight turn no controller is driving anymore, and `stop()` on it was a
-  // permanent no-op (nothing left in `controllersRef` to abort) — see `stop()`'s own doc. Scoped to
+  // permanent no-op (no live record left to abort) — see `stop()`'s own doc. Scoped to
   // exactly the threadIds this pass is aborting (not a blind `runs.clear()`): the mount-reconcile
   // effect below runs AFTER this cleanup completes, in the same synchronous commit — StrictMode's
   // dev-only double-invoke and `<Activity>` hide/show both destroy-then-recreate EVERY mount effect
@@ -731,12 +632,13 @@ export function useAgentThreadRuns<TPart extends PartLike = AgentPart>({
   // itself aborting is exact, not merely defensive.
   useEffect(
     () => () => {
-      const abortedThreadIds = Array.from(controllersRef.current.keys())
-      controllersRef.current.forEach((controller) => controller.abort())
-      controllersRef.current.clear()
-      appendedRef.current.clear()
-      livePartsRef.current.clear()
-      endedRef.current.clear()
+      const abortedThreadIds: string[] = []
+      for (const [threadId, record] of recordsRef.current) {
+        if (record.ended !== undefined) continue
+        abortedThreadIds.push(threadId)
+        record.controller.abort()
+      }
+      recordsRef.current.clear()
       if (abortedThreadIds.length === 0) return
       setRuns((prev) => {
         let next: Map<string, ThreadRunState<TPart>> | undefined
@@ -751,8 +653,14 @@ export function useAgentThreadRuns<TPart extends PartLike = AgentPart>({
     [],
   )
 
+  // Once a render shows a run's outcome, its terminal record has done its job (covering the window
+  // before that render); drop it so thread ids are not retained for the life of the hook.
+  useEffect(() => {
+    sweepFlushed(recordsRef.current, runs)
+  })
+
   // Reconcile orphaned in-flight threads once the store is HYDRATED: a persisted thread can be
-  // stuck 'pending' or 'streaming' after a reload/remount, since controllersRef and `runs` both
+  // stuck 'pending' or 'streaming' after a reload/remount, since the run records and `runs` both
   // start empty — nothing would otherwise resolve that skeleton. If the transport supports
   // resumption and the thread has a resumeToken (from a StartPart emitted before the disconnect)
   // plus a user message to resume from, attempt to reconnect the run instead. Any other case — no
@@ -784,8 +692,7 @@ export function useAgentThreadRuns<TPart extends PartLike = AgentPart>({
     if (!store.hydrated) return
     for (const thread of storeRef.current.threads) {
       const orphaned =
-        (thread.status === 'pending' || thread.status === 'streaming') &&
-        !controllersRef.current.has(thread.id)
+        (thread.status === 'pending' || thread.status === 'streaming') && !hasLiveRun(thread.id)
       if (!orphaned) continue
 
       const resumeToken = thread.resumeToken
@@ -805,9 +712,7 @@ export function useAgentThreadRuns<TPart extends PartLike = AgentPart>({
       const resume = resolvedTransport.resume
 
       const controller = new AbortController()
-      controllersRef.current.set(thread.id, controller)
-      livePartsRef.current.set(thread.id, [])
-      endedRef.current.delete(thread.id)
+      const record = beginRun(recordsRef.current, thread.id, controller)
       setRuns((prev) => {
         const next = new Map(prev)
         next.set(thread.id, { status: 'submitted', parts: [] })
@@ -816,7 +721,7 @@ export function useAgentThreadRuns<TPart extends PartLike = AgentPart>({
 
       void consumeAndFinalize({
         threadId: thread.id,
-        controller,
+        record,
         // Namespaced by thread.id (stable across a thread's whole lifetime, including this
         // resume) rather than per-call — see withPartIds' own doc for why this is NOT a replay-
         // convergence guarantee on its own: it only protects against two id-less drafts within
@@ -826,12 +731,9 @@ export function useAgentThreadRuns<TPart extends PartLike = AgentPart>({
         // providing that safety.
         generator: withPartIds(thread.id, resume(resumeToken, controller.signal)),
         userMessage: lastUserMessage,
-        controllersRef,
-        appendedRef,
+        recordsRef,
         storeRef,
         resolveOutcome,
-        livePartsRef,
-        endedRef,
         setRuns,
         onFailureStatus: 'interrupted',
         throttle: throttleRef.current,
@@ -848,7 +750,7 @@ export function useAgentThreadRuns<TPart extends PartLike = AgentPart>({
   const start = useCallback(
     (threadId: string, input: string): void => {
       // Ignore a second concurrent turn on the SAME thread; different threads run concurrently.
-      if (controllersRef.current.has(threadId)) return
+      if (hasLiveRun(threadId)) return
 
       lastInputRef.current.set(threadId, input)
 
@@ -868,16 +770,14 @@ export function useAgentThreadRuns<TPart extends PartLike = AgentPart>({
       })
 
       const controller = new AbortController()
-      controllersRef.current.set(threadId, controller)
-      livePartsRef.current.set(threadId, [])
-      endedRef.current.delete(threadId)
+      const record = beginRun(recordsRef.current, threadId, controller)
       const resolvedTransport = resolveTransport(threadId)
 
       // Non-awaited: this consumer runs in the background so start() returns immediately and
       // multiple threads can stream at once.
       void consumeAndFinalize({
         threadId,
-        controller,
+        record,
         // Namespaced by threadId — same choice, same caveat, as the mount-time resume call above.
         // ctx.messageId is this turn's OWN idempotency key (userMessage.id, just minted above) —
         // a transport that accepts it (aiSdkTransport) mints its wire-level message with the SAME
@@ -887,12 +787,9 @@ export function useAgentThreadRuns<TPart extends PartLike = AgentPart>({
           resolvedTransport.stream(input, controller.signal, { messageId: userMessage.id }),
         ),
         userMessage,
-        controllersRef,
-        appendedRef,
+        recordsRef,
         storeRef,
         resolveOutcome,
-        livePartsRef,
-        endedRef,
         setRuns,
         onFailureStatus: 'error',
         throttle: throttleRef.current,
@@ -900,7 +797,7 @@ export function useAgentThreadRuns<TPart extends PartLike = AgentPart>({
         onError: (info) => onErrorRef.current?.(info),
       })
     },
-    [resolveOutcome],
+    [emitTelemetry, resolveOutcome],
   )
 
   const retry = useCallback(
@@ -912,97 +809,54 @@ export function useAgentThreadRuns<TPart extends PartLike = AgentPart>({
     [start],
   )
 
+  const dismiss = useCallback((threadId: string): void => {
+    setRuns((prev) => {
+      if (!prev.has(threadId)) return prev
+      const next = new Map(prev)
+      next.delete(threadId)
+      return next
+    })
+  }, [])
+
   const stop = useCallback(
     (threadId: string): void => {
-      const controller = controllersRef.current.get(threadId)
-      // No in-flight run for this thread — true no-op, matching this hook's stop() JSDoc. Decided
-      // from controllersRef, NOT runsRef: controllersRef is written synchronously by start() (line
-      // ~509, before consumeAndFinalize is even invoked), while runsRef only mirrors `runs` as of
-      // the last FLUSHED RENDER (`runsRef.current = runs`, assigned during render, above). A
-      // start() immediately followed by stop() in the same synchronous tick/act() batch — e.g.
-      // `onClick={() => { start(id, text); stop(id) }}` — has controllersRef already populated but
-      // runsRef still holding the PREVIOUS render's (empty) map. Gating on runsRef here would read
-      // `undefined`, wrongly treat this as a no-op, leave the controller registered and never
-      // abort it — stranding the run in 'streaming' (see the F4 regression test).
-      if (controller === undefined) {
-        // No controller — but if `runs` still reports this thread as live, that's a phantom entry
-        // (see this hook's `stop()` JSDoc): nothing is driving it, and with no controller to key
-        // off of, this is the only remaining path that can ever settle it. Not reachable via any
-        // path in THIS file today (the unmount-cleanup effect and finalizeStop both tear down
-        // `controllersRef` and `runs` in the same synchronous step — see their docs), but a true
-        // no-op here would mean "the UI shows this thread streaming forever, and Stop can never
-        // clear it" the instant that invariant is ever broken by a future change. Settle it via the
-        // same finalizeStop() the normal path uses, so there is still exactly one teardown routine
-        // for "a run is ending" regardless of how it got here.
-        // How the last run ended is decided from `endedRef` (written synchronously at the settle),
-        // never from `runsRef`, which can still hold the live entry in the microtask window between
-        // a settle's `setRuns` and the render that applies it.
-        const ended = endedRef.current.get(threadId)
-        // Already settled (its terminal message and status are in the store): nothing to stop.
-        if (ended === 'settled') return
-        const dismiss = (): void => {
-          livePartsRef.current.delete(threadId)
-          setRuns((prev) => {
-            if (!prev.has(threadId)) return prev
-            const next = new Map(prev)
-            next.delete(threadId)
-            return next
-          })
-        }
-        // A failed run already settled its thread; stop() only dismisses the error entry.
-        if (ended === 'failed') {
-          dismiss()
-          return
-        }
-        const phantom = runsRef.current.get(threadId)
-        if (phantom === undefined) return
-        // Reachable: an unmount-cleanup re-run (StrictMode, `<Activity>`) clears `endedRef` but the
-        // component's `runs` state survives, so a failed entry can outlive its marker.
-        if (phantom.status === 'error') {
-          dismiss()
-          return
-        }
-        // Phantom live entry: `livePartsRef` first, else the last flushed render's parts.
-        const parts = livePartsRef.current.get(threadId) ?? phantom.parts
-        const alreadyAppended = appendedRef.current.has(threadId)
-        appendedRef.current.delete(threadId)
-        void finalizeStop({ threadId, parts, alreadyAppended, storeRef, resolveOutcome, setRuns })
+      // Decided from the run's record, which start() writes synchronously — NOT from `runsRef`,
+      // which only mirrors the last flushed render. `onClick={() => { start(id, text); stop(id) }}`
+      // has a live record but no rendered entry yet, and a settle's `setRuns` leaves the entry
+      // visible to `runsRef` until the next render; reading `runs` here stranded the first and
+      // double-appended the second. `planStop` falls back to the rendered entry only when no
+      // record exists.
+      const plan = planStop(recordsRef.current, threadId, runsRef.current.get(threadId))
+      if (plan.kind === 'noop') return
+      if (plan.kind === 'dismiss') {
+        dismiss(threadId)
         return
       }
-
-      controllersRef.current.delete(threadId)
-      // Written with the delete, so a second stop() in the same tick is the settled no-op above.
-      endedRef.current.set(threadId, 'settled')
-      // `livePartsRef` is the authoritative accumulator while a run is live. `runsRef` (the last
-      // flushed render) is only the fallback for a run whose accumulator was never written;
-      // `[]` covers the synchronous start()-then-stop() case above, where no render has flushed
-      // yet — finalizeStop treats an empty `parts` as "nothing to persist".
-      const parts = livePartsRef.current.get(threadId) ?? runsRef.current.get(threadId)?.parts ?? []
-      livePartsRef.current.delete(threadId)
-
-      controller.abort()
-
-      // Was THIS run's terminal message already appended by consumeAndFinalize's own success path
-      // (it can race this call — see appendedRef's doc)? Matched by controller identity, not by
-      // comparing `parts` against anything React-observed, so this is correct regardless of
-      // whether runsRef has flushed the latest delta yet.
-      const alreadyAppended = appendedRef.current.get(threadId) === controller
-      appendedRef.current.delete(threadId)
-
-      void finalizeStop({ threadId, parts, alreadyAppended, storeRef, resolveOutcome, setRuns })
+      const { record, parts } = plan
+      // Capture before endRun empties the record.
+      const { appended, resolving } = record
+      endRun(record, 'stopped')
+      record.controller.abort()
+      void finalizeStop({
+        threadId,
+        parts,
+        alreadyAppended: appended,
+        outcomeInFlight: resolving,
+        storeRef,
+        resolveOutcome,
+        setRuns,
+      })
     },
-    [resolveOutcome],
+    [dismiss, resolveOutcome],
   )
 
   const stopAll = useCallback((): void => {
-    for (const threadId of Array.from(controllersRef.current.keys())) {
-      stop(threadId)
+    for (const [threadId, record] of Array.from(recordsRef.current)) {
+      if (record.ended === undefined) stop(threadId)
     }
-    // Failed entries have no controller; `endedRef` (synchronous) finds them even before the
-    // render that shows them.
-    for (const [threadId, ended] of Array.from(endedRef.current)) {
-      if (ended === 'failed') stop(threadId)
-    }
+    // Failed entries have no live run. Sweep the records AND what `runs` shows: an unmount re-run
+    // (StrictMode, `<Activity>`) clears the records while the failed entries survive.
+    for (const threadId of failedThreadIds(recordsRef.current, runsRef.current)) stop(threadId)
   }, [stop])
 
   return { runs, start, retry, stop, stopAll }
