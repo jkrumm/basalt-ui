@@ -1,3 +1,11 @@
+## [2.0.4](https://github.com/jkrumm/basalt-ui/compare/v2.0.3...v2.0.4) (2026-10-14)
+
+
+### Bug Fixes
+
+* assert the visible strip above the sticky header, not raw row overlap ([13b5a7e](https://github.com/jkrumm/basalt-ui/commit/13b5a7e736cfdf4be2c212b9894ea0ab6b1fd41e))
+* seal the sticky table header under the app bar, keep narrow columns legible ([9046f21](https://github.com/jkrumm/basalt-ui/commit/9046f2174adaef3d9d71acacc216fe4663181ef5))
+
 ## [2.0.3](https://github.com/jkrumm/basalt-ui/compare/v2.0.2...v2.0.3) (2026-10-14)
 
 
