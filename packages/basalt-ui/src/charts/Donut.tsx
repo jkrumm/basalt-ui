@@ -2,8 +2,9 @@
  * `Donut` — a share-of-total ring on the engine's `polar` container (`docs/V2-SPEC.md` § 9.3).
  * At most six slices are drawn; the rest fold into a neutral "Other". The legend is derived from
  * the slices (a toggle drops a slice from the ring and the tooltip; every share is still taken of
- * ALL slices, so the legend and the tooltip never disagree). It sits beside the ring on a frame
- * wider than 1.5 × its height, below it otherwise. No cursor: a ring has no shared axis.
+ * ALL slices, so the legend and the tooltip never disagree). It sits beside the ring in a 480px
+ * container or wider, below it otherwise (`donut.module.css`, decided in CSS so the server HTML is
+ * the hydrated layout). No cursor: a ring has no shared axis.
  */
 import { tooltip as tooltipHost } from '@tanstack/charts/tooltip'
 import { portal } from '@tanstack/charts/tooltip/portal'
@@ -17,6 +18,7 @@ import type { CartesianDefinition } from './compile'
 import { ChartEngine, idPrefixOf } from './host'
 import { ChartLegend } from './legend'
 import { useCoarsePointer } from '../common/use-media-query'
+import { chartBoxVars } from './box'
 import classes from './donut.module.css'
 import { ChartPlaceholder, resolveChartState } from './state'
 import { CHART_THEME, DIMMED } from './theme'
@@ -43,7 +45,6 @@ export type DonutProps<K extends string = string> = BasaltProps & {
 
 /** Slices kept before the rest fold into "Other". */
 const MAX_SLICES = 6
-/** W/H above which the legend sits beside the ring, and the ring's share of the width then. */
 const DEFAULT_HEIGHT = 240
 const INNER_RATIO = 0.62
 
@@ -218,7 +219,7 @@ export function Donut<K extends string = string>(props: DonutProps<K>): ReactEle
       style={{ ...rootStyle, ...style }}
     >
       <div className={classes.row}>
-        <div className={classes.ring} style={{ '--bc-donut-h': `${height}px` } as CSSProperties}>
+        <div className={classes.ring} style={chartBoxVars(height)}>
           {resolved === null ? (
             <ChartEngine
               definition={definition}

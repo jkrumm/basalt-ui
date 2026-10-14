@@ -21,8 +21,7 @@ import { Lines } from './Lines'
 import { MirroredBars } from './MirroredBars'
 import { Sparkline } from './Sparkline'
 import { StackedArea } from './StackedArea'
-import { chartBoxVars } from './box'
-import { resolveChartSize } from './sizing'
+import { chartBoxVars, isShortChart } from './box'
 import type { ChartSeries } from './types'
 
 type Row = { t: Date; a: number; b: number; v: number | null; up: number; down: number }
@@ -148,6 +147,62 @@ const kinds: [string, () => ReactElement][] = [
     () => <Lines ariaLabel="L" data={data} x={x} series={[a]} height={{ base: 150, wide: 260 }} />,
   ],
   [
+    'error state',
+    () => (
+      <Lines ariaLabel="L" data={data} x={x} series={[a]} state={{ error: new Error('boom') }} />
+    ),
+  ],
+  [
+    'empty state',
+    () => <Lines ariaLabel="L" data={data} x={x} series={[a]} state={{ empty: true }} />,
+  ],
+  [
+    'Donut with a responsive height',
+    () => (
+      <Donut
+        ariaLabel="D"
+        data={[
+          { key: 'a', value: 3 },
+          { key: 'b', value: 5 },
+        ]}
+        colorForKey={() => 'var(--vx-line)'}
+        formatValue={String}
+        height={{ base: 150, wide: 260 }}
+      />
+    ),
+  ],
+  [
+    'Heatmap matchHeight',
+    () => (
+      <div style={{ height: 300 }}>
+        <Heatmap
+          ariaLabel="H"
+          data={[{ r: 'Mon', c: '0', v: 1 }]}
+          getRow={(d) => d.r}
+          getCol={(d) => d.c}
+          getValue={(d) => d.v}
+          matchHeight
+        />
+      </div>
+    ),
+  ],
+  [
+    'legend at the top',
+    () => <Lines ariaLabel="L" data={data} x={x} series={[a, b]} legend={{ placement: 'top' }} />,
+  ],
+  [
+    'legend at the bottom, grouped',
+    () => (
+      <Lines
+        ariaLabel="L"
+        data={data}
+        x={x}
+        series={[a, { ...b, role: 'overlay' }]}
+        legend={{ placement: 'bottom', groups: true }}
+      />
+    ),
+  ],
+  [
     'ChartCard with a header legend',
     () => (
       <ChartCard title="Card">
@@ -203,6 +258,21 @@ describe('chart SSR hydration', () => {
     },
   )
 
+  test('a Donut with a responsive height writes real numbers, never an object', () => {
+    const html = renderToString(
+      <Donut
+        ariaLabel="D"
+        data={[{ key: 'a', value: 3 }]}
+        colorForKey={() => 'var(--vx-line)'}
+        formatValue={String}
+        height={{ base: 150, wide: 260 }}
+      />,
+    )
+    expect(html).not.toContain('[object')
+    expect(html).toContain('--bc-wide:260px')
+    expect(html).toContain('--bc-micro:150px')
+  })
+
   test('the box is in the server HTML: four per-class heights, no measured number', () => {
     const html = renderToString(<Lines ariaLabel="L" data={data} x={x} series={[a]} />)
     for (const k of ['micro', 'compact', 'regular', 'wide'])
@@ -227,7 +297,12 @@ describe('chart SSR hydration', () => {
   })
 })
 
-describe('the CSS height law mirrors resolveChartSize', () => {
+describe('the CSS height law', () => {
+  /** The law in pixels, written out independently of the CSS it is held to (V2-SPEC § 9.6). */
+  const lawPx = (width: number): number => {
+    const ratio = width >= 800 ? 0.4 : width >= 480 ? 0.5 : width >= 240 ? 0.62 : 0.5
+    return Math.min(Math.max(width * ratio, 160), 420)
+  }
   /** Evaluates `clamp(Npx, Mcqw, Kpx)` at a container width. */
   const evaluate = (value: string, width: number): number => {
     const m = /^clamp\((\d+)px, ([\d.]+)cqw, (\d+)px\)$/.exec(value)
@@ -235,32 +310,56 @@ describe('the CSS height law mirrors resolveChartSize', () => {
     return Math.min(Math.max((width * Number(m[2])) / 100, Number(m[1])), Number(m[3]))
   }
   const heightAt = (width: number): number => {
-    const vars = chartBoxVars(undefined) as Record<string, string>
-    const cls =
-      width >= 800 ? 'wide' : width >= 480 ? 'regular' : width >= 240 ? 'compact' : 'micro'
-    return evaluate(vars[`--bc-${cls}`] as string, width)
+    const vars = chartBoxVars(undefined)
+    if (width >= 800) return evaluate(vars['--bc-wide'], width)
+    if (width >= 480) return evaluate(vars['--bc-regular'], width)
+    if (width >= 240) return evaluate(vars['--bc-compact'], width)
+    return evaluate(vars['--bc-micro'], width)
   }
 
   test.each([120, 200, 239, 240, 358, 479, 480, 640, 799, 800, 1248, 3000])(
-    'width %ipx: the CSS law is the pixel law, to the rounding',
+    'width %ipx: the CSS law is the pixel law',
     (width) => {
-      const px = resolveChartSize({ width, coarse: false, viewportH: 0 }).height
-      expect(Math.abs(heightAt(width) - px)).toBeLessThanOrEqual(0.5)
+      expect(heightAt(width)).toBeCloseTo(lawPx(width), 5)
     },
   )
 
   test('a stated height is the same at every class; a responsive one steps down to base', () => {
-    expect(chartBoxVars(200) as Record<string, string>).toEqual({
+    expect(chartBoxVars(200)).toEqual({
       '--bc-micro': '200px',
       '--bc-compact': '200px',
       '--bc-regular': '200px',
       '--bc-wide': '200px',
     })
-    expect(chartBoxVars({ base: 150, wide: 260 }) as Record<string, string>).toEqual({
+    expect(chartBoxVars({ base: 150, wide: 260 })).toEqual({
       '--bc-micro': '150px',
       '--bc-compact': '150px',
       '--bc-regular': '150px',
       '--bc-wide': '260px',
     })
+  })
+})
+
+describe('the short-card marker', () => {
+  test.each<[string, Parameters<typeof isShortChart>[0], boolean]>([
+    ['180', 180, true],
+    ['181', 181, false],
+    ['{ base: 180 }', { base: 180 }, true],
+    ['{ base: 150, wide: 260 }', { base: 150, wide: 260 }, false],
+    ['{ base: 150, regular: 180 }', { base: 150, regular: 180 }, true],
+    ["'fill'", 'fill', false],
+    ['unstated (the law)', undefined, false],
+  ])('%s → short = %p', (_name, height, short) => {
+    expect(isShortChart(height)).toBe(short)
+    const html = renderToString(
+      <Lines
+        ariaLabel="L"
+        data={data}
+        x={x}
+        series={[a]}
+        {...(height !== undefined && typeof height !== 'string' && { height })}
+      />,
+    )
+    expect(html.includes('data-basalt-chart-short')).toBe(short)
   })
 })

@@ -5,6 +5,7 @@
 declare const classes: {
   readonly frame: string
   readonly box: string
+  readonly fillFrame: string
   readonly fill: string
   readonly state: string
 }

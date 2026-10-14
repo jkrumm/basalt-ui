@@ -17,8 +17,8 @@
 @container (min-width: 240px) {
   .auto {
     display: flex;
-    column-gap: 38px;
-    --vx-hit-gap: 38px;
+    column-gap: var(--bc-dots-gap);
+    --vx-hit-gap: var(--bc-dots-gap);
   }
 }
 

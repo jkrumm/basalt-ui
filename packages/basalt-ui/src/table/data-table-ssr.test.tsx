@@ -106,4 +106,22 @@ describe('planColumnFold on a server-painted table', () => {
       planColumnFold({ room: 1248 - 60, toggleWidth: 44, overhead: 0, order, widths }).size,
     ).toBeGreaterThan(0)
   })
+
+  // Five foldable columns: slack = (5 + 0 + 1) / 2 = 3. Their rounded sum is 1249.
+  test('the boundary: exactly the slack over still fits, one pixel more folds', () => {
+    expect(planColumnFold({ room: 1246, toggleWidth: 44, overhead: 0, order, widths }).size).toBe(0)
+    expect(
+      planColumnFold({ room: 1245, toggleWidth: 44, overhead: 0, order, widths }).size,
+    ).toBeGreaterThan(0)
+  })
+
+  // The same five, plus two fixed (pinned) columns summed in `overhead` (200): 1449 in all, and
+  // slack = (5 + 2 + 1) / 2 = 4, so a 1445 room fits and 1444 does not.
+  test('pinned / fixed columns add their own half pixel each', () => {
+    const fixed = { toggleWidth: 44, overhead: 200, order, widths }
+    expect(planColumnFold({ ...fixed, room: 1445, fixedCount: 2 }).size).toBe(0)
+    expect(planColumnFold({ ...fixed, room: 1444, fixedCount: 2 }).size).toBeGreaterThan(0)
+    // Without `fixedCount` the same fixed columns get no slack of their own.
+    expect(planColumnFold({ ...fixed, room: 1445 }).size).toBeGreaterThan(0)
+  })
 })

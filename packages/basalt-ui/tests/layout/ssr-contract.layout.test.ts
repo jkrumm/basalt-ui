@@ -125,10 +125,22 @@ type Facts = {
   legend: Record<string, { dot: string; chip: string; row: string }>
   donut: { ringRight: number; legendLeft: number; legendTop: number; ringBottom: number }
   headerLegend: { titleBottom: number; legendTop: number; chartTop: number }
+  /** `Heatmap matchHeight`: its parent's height against the box that fills it. */
+  fill: { parent: number; frame: number; box: number }
   /** The short card's subtitle is folded (not rendered) — in the server HTML, by CSS. */
   shortSubtitleRendered: boolean
 }
-type Run = { server: Phase; hydrated: Phase; errors: string[]; facts: Facts; shifts: string[] }
+type Run = {
+  server: Phase
+  hydrated: Phase
+  errors: string[]
+  /** Geometry of the pre-hydration server paint, and of the hydrated page. */
+  serverFacts: Facts
+  facts: Facts
+  /** The `[data-probe]` names the page rendered, in order. */
+  probes: string[]
+  shifts: string[]
+}
 
 const facts = (page: Page): Promise<Facts> =>
   page.evaluate(() => {
@@ -143,6 +155,7 @@ const facts = (page: Page): Promise<Facts> =>
       donut: { ringRight: 0, legendLeft: 0, legendTop: 0, ringBottom: 0 },
       headerLegend: { titleBottom: 0, legendTop: 0, chartTop: 0 },
       shortSubtitleRendered: true,
+      fill: { parent: 0, frame: 0, box: 0 },
     }
     for (const name of [
       'lines',
@@ -192,6 +205,15 @@ const facts = (page: Page): Promise<Facts> =>
       legendTop: card.querySelector('[data-basalt-chart-legend]')!.getBoundingClientRect().top,
       chartTop: card.querySelector('svg.ts-chart')!.getBoundingClientRect().top,
     }
+    const fillProbe = probe('heatmap-fill')
+    const frame = fillProbe.querySelector('[data-basalt-box]')
+    if (!frame?.parentElement || !frame.firstElementChild) throw new Error('LAYOUT: no fill box')
+    out.fill = {
+      // The probe's own wrapper: the 300px div `Heatmap` fills.
+      parent: fillProbe.firstElementChild!.getBoundingClientRect().height,
+      frame: frame.getBoundingClientRect().height,
+      box: frame.firstElementChild.getBoundingClientRect().height,
+    }
     const subtitle = [...probe('card-short-chart').querySelectorAll('*')].find(
       (el) => el.children.length === 0 && el.textContent === 'Short card subtitle',
     )
@@ -210,6 +232,10 @@ async function run(width: number): Promise<Run> {
   await page.evaluate(() => document.fonts.ready)
   await frames(page)
   const server = await measure(page)
+  const serverFacts = await facts(page)
+  const probes = await page.evaluate(() =>
+    [...document.querySelectorAll('[data-probe]')].map((el) => el.getAttribute('data-probe') ?? ''),
+  )
   await page.evaluate(() => {
     const w = window as unknown as { basaltCls: number; basaltShifts: string[] }
     w.basaltCls = 0
@@ -248,7 +274,9 @@ async function run(width: number): Promise<Run> {
     server: { boxes: server, cls: 0 },
     hydrated: { boxes: hydrated, cls },
     errors,
+    serverFacts,
     facts: measured,
+    probes,
     shifts,
   }
 }
@@ -274,36 +302,59 @@ layout('SSR-first contract: hydration moves nothing', () => {
         expect({ cls: hydrated.cls, shifts }).toEqual({ cls: 0, shifts: [] })
       }, 60_000)
 
-      test('the engine fills the CSS-owned box, never a height of its own', async () => {
-        const { facts: f } = await runAt(width)
-        expect(f.svgFill['lines-fixed-height']!.box).toBe(200)
-        expect(f.svgFill['lines-responsive-height']!.box).toBe(width >= 800 ? 300 : 180)
-        for (const [name, { box, svg }] of Object.entries(f.svgFill)) {
-          expect({ name, delta: Math.abs(box - svg) <= 1 }).toEqual({ name, delta: true })
-        }
+      test('the page renders exactly the probes the test knows', async () => {
+        const { probes } = await runAt(width)
+        expect(probes).toEqual([...PROBES])
       }, 60_000)
 
+      // Geometry holds on the server paint (no script yet) and on the hydrated page alike.
+      for (const phase of ['serverFacts', 'facts'] as const) {
+        test(`${phase}: the engine fills the CSS-owned box, never a height of its own`, async () => {
+          const f = (await runAt(width))[phase]
+          expect(f.svgFill['lines-fixed-height']!.box).toBe(200)
+          expect(f.svgFill['lines-responsive-height']!.box).toBe(width >= 800 ? 300 : 180)
+          for (const [name, { box, svg }] of Object.entries(f.svgFill)) {
+            expect({ name, delta: Math.abs(box - svg) <= 1 }).toEqual({ name, delta: true })
+          }
+        }, 60_000)
+
+        test(`${phase}: Heatmap matchHeight fills its parent, frame and box`, async () => {
+          const { fill } = (await runAt(width))[phase]
+          expect(fill.parent).toBe(300)
+          expect(fill.frame).toBe(fill.parent)
+          expect(fill.box).toBe(fill.parent)
+        }, 60_000)
+      }
+
       test('the legend mode follows the width in CSS, in the server HTML', async () => {
-        const { facts: f, server } = await runAt(width)
-        for (const name of ['lines', 'stacked-area', 'card-header-legend']) {
-          const mode = f.legend[name]!
-          expect(mode.row).toBe('flex')
-          if (width >= 480)
-            expect(mode).toEqual({ row: 'flex', dot: 'none', chip: expect.any(String) })
-          else expect(mode.dot).not.toBe('none')
+        const { serverFacts, facts: hydratedFacts } = await runAt(width)
+        for (const f of [serverFacts, hydratedFacts]) {
+          for (const name of ['lines', 'stacked-area', 'card-header-legend']) {
+            const mode = f.legend[name]!
+            expect(mode.row).toBe('flex')
+            if (width >= 480) {
+              expect(mode.dot).toBe('none')
+              expect(mode.chip).not.toBe('none')
+            } else {
+              expect(mode.dot).not.toBe('none')
+              expect(mode.chip).toBe('none')
+            }
+          }
         }
-        expect(server.boxes['lines']!.height).toBeGreaterThan(0)
       }, 60_000)
 
       test('the header legend sits under the header, above the plot', async () => {
-        const { facts: f } = await runAt(width)
-        expect(f.headerLegend.legendTop).toBeGreaterThanOrEqual(f.headerLegend.titleBottom)
-        expect(f.headerLegend.chartTop).toBeGreaterThan(f.headerLegend.legendTop)
+        const { serverFacts, facts: f } = await runAt(width)
+        for (const h of [serverFacts.headerLegend, f.headerLegend]) {
+          expect(h.legendTop).toBeGreaterThanOrEqual(h.titleBottom)
+          expect(h.chartTop).toBeGreaterThan(h.legendTop)
+        }
       }, 60_000)
 
       test('a short card (stated chart height 120) folds its header in the server HTML', async () => {
-        const { facts: f, server, hydrated } = await runAt(width)
+        const { serverFacts, facts: f, server, hydrated } = await runAt(width)
         // At 1280 px the width fold is off, so only the height fold can hide the subtitle.
+        expect(serverFacts.shortSubtitleRendered).toBe(false)
         expect(f.shortSubtitleRendered).toBe(false)
         expect(hydrated.boxes['card-short-chart']).toEqual(server.boxes['card-short-chart'])
       }, 60_000)
@@ -338,19 +389,19 @@ layout('SSR-first contract: hydration moves nothing', () => {
           0,
         )
         expect(CHART_PROBES).toContain('lines-fixed-height')
-        // 200 px fixed (less the legend row's height): the box is the stated number.
-        expect(server.boxes['heatmap-fill']!.height).toBe(300)
       }, 60_000)
     })
   }
 
   test('1280px: the donut puts its legend beside the ring', async () => {
-    const { facts: f } = await runAt(1280)
-    expect(f.donut.legendLeft).toBeGreaterThanOrEqual(f.donut.ringRight)
+    const { serverFacts, facts: f } = await runAt(1280)
+    for (const d of [serverFacts.donut, f.donut])
+      expect(d.legendLeft).toBeGreaterThanOrEqual(d.ringRight)
   }, 60_000)
 
   test('390px: the donut stacks its legend under the ring', async () => {
-    const { facts: f } = await runAt(390)
-    expect(f.donut.legendTop).toBeGreaterThanOrEqual(f.donut.ringBottom)
+    const { serverFacts, facts: f } = await runAt(390)
+    for (const d of [serverFacts.donut, f.donut])
+      expect(d.legendTop).toBeGreaterThanOrEqual(d.ringBottom)
   }, 60_000)
 })

@@ -17,8 +17,11 @@ const errors = window.basaltHydrationErrors
 // oxlint-disable-next-line no-console -- the hydration warnings are the signal this probe collects
 const originalError = console.error
 // oxlint-disable-next-line no-console -- same
+// Only React's hydration complaints are the signal; anything else still reaches the console.
+const HYDRATION_MESSAGE = /hydrat|did not match|mismatch/i
 console.error = (...args: unknown[]) => {
-  errors.push(args.map(String).join(' '))
+  const message = args.map(String).join(' ')
+  if (HYDRATION_MESSAGE.test(message)) errors.push(message)
   originalError(...args)
 }
 hydrateRoot(container, <App />, {

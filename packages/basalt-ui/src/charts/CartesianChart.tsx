@@ -13,7 +13,7 @@ import { compileCartesian } from './compile'
 import type { CartesianDefinition } from './compile'
 import { ChartEngine, idPrefixOf } from './host'
 import { ChartLegend, legendEntries } from './legend'
-import { useChartSize } from './sizing'
+import { INITIAL_WIDTH, useChartSize } from './sizing'
 import { ChartPlaceholder, resolveChartState } from './state'
 import type { CartesianChartProps, ChartSeries, ChartX } from './types'
 
@@ -89,11 +89,13 @@ export function ChartShell<T>(props: ChartShellProps<T>): ReactElement {
   const { ariaLabel, legend, height, state, className, style, series, compile, byWidth } = props
   const chartId = useId()
   const inCard = useInChartCard()
-  const { ref, size, coarse } = useChartSize(height)
+  const { ref, width: measured, coarse } = useChartSize()
   const [hidden, setHidden] = useState<ReadonlySet<string>>(() => new Set())
   const [highlighted, setHighlighted] = useState<string | null>(null)
 
-  const width = byWidth ? size.width : 0
+  // Unmeasured (the server, the first client frame) is the regular class, as the engine's
+  // `initialWidth` is.
+  const width = byWidth ? measured || INITIAL_WIDTH : 0
   const definition = useMemo(
     () => compile({ chartId, hidden, highlighted, coarse, width }),
     [compile, chartId, hidden, highlighted, coarse, width],
