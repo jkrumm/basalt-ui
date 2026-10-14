@@ -1027,7 +1027,6 @@ export const PLUGIN_RULE_IDS: ReadonlySet<string> = new Set([
   // exemption and a hook import all need the import graph and JSX ancestry, neither of which a
   // 12-line text window has. `raw-media-query` is its CSS-text twin and lives in `GUARD_RULES`.
   'raw-breakpoint',
-  'router-view-transition',
   'no-dev-helper',
   // These two honour `basalt-agent-allow`, never `theme-allow` — but they are still REAL ids, so
   // a `theme-allow ai-sdk-major` must parse as a (useless) scoped annotation rather than as prose.
