@@ -50,9 +50,9 @@ export type HeatmapProps<T> = BasaltProps & {
   formatRow?: ((row: string) => string) | undefined
   formatCol?: ((col: string) => string) | undefined
   /** `false` hides the gradient legend; `label` titles it. */
-  legend?: false | { label?: string } | undefined
+  legend?: false | { label?: string | undefined } | undefined
   /** Rows after the value row, per cell (a sample count, a failure reason). Called with the datum. */
-  tooltip?: (false | { rows?: (d: T) => readonly ChartTooltipRow[] }) | undefined
+  tooltip?: (false | { rows?: ((d: T) => readonly ChartTooltipRow[]) | undefined }) | undefined
   /** A fixed height, or one per container class. Default: by row count (160–420px). */
   height?: number | ResponsiveChartHeight | undefined
   /** Fill the parent's height instead. Overrides `height`. CSS-owned like every other kind's box

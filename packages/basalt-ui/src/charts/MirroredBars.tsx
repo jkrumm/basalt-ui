@@ -80,7 +80,7 @@ export type MirroredBarsProps<T, X extends ChartX = ChartX> = Pick<
    * Collapse adjacent data where one band per datum would be sub-pixel. `merge` is the consumer's
    * (max, sum, or a rate from summed parts) and must keep `group[0]`'s x, the slot start.
    */
-  fold?: { minBandPx?: number; merge: (group: T[]) => T } | undefined
+  fold?: { minBandPx?: number | undefined; merge: (group: T[]) => T } | undefined
   /** Default `'leading'`: x is a slot's start. */
   cursorResolution?: CartesianChartProps<T, X>['cursorResolution'] | undefined
 }

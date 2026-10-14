@@ -92,30 +92,36 @@ export type ChartCardSlot = 'root' | 'header' | 'body'
 
 export type ChartCardProps = BasaltProps &
   SlotStylesProps<ChartCardSlot> & {
-    title?: string
+    title?: string | undefined
     icon?: ReactNode
     /** A muted line below the title row; does not by itself render the header. */
-    subtitle?: string
+    subtitle?: string | undefined
     /** `WidgetHeader`'s info glyph beside the title. */
-    info?: string
+    info?: string | undefined
     /** A pre-formatted metric value, with `delta` on the hero row. */
-    value?: string
-    delta?: number
-    deltaPeriod?: string
-    deltaPolarity?: DeltaPolarity
+    value?: string | undefined
+    delta?: number | undefined
+    deltaPeriod?: string | undefined
+    deltaPolarity?: DeltaPolarity | undefined
     /** A mono count tag after the title. */
-    count?: number
+    count?: number | undefined
     /** Right-aligned controls. */
     actions?: ReactNode
     /** A resolved state replaces `children` with its placeholder; the header stays. */
-    state?: ChartState
+    state?: ChartState | undefined
     /** Body height while a placeholder shows. Default: the chart height law, i.e. exactly the box an
      * unsized chart takes — pass the chart's own `height` when it states one, so a `<Suspense
      * fallback={<ChartCard state={{ pending: true }} …/>}>` reserves the final size. */
-    placeholderHeight?: number | ResponsiveChartHeight
+    placeholderHeight?: number | ResponsiveChartHeight | undefined
     /** A retry button or a "clear filters" link under the placeholder. */
     stateAction?: ReactNode
     children?: ReactNode
+  }
+
+/** Drops explicit `undefined`s: `WidgetHeader` is exact-optional, this props type is not. */
+const definedOnly = <T extends object>(o: T): { [K in keyof T]?: Exclude<T[K], undefined> } =>
+  Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined)) as {
+    [K in keyof T]?: Exclude<T[K], undefined>
   }
 
 /** A header renders when one of these is set (a subtitle or delta alone does not). */
@@ -150,7 +156,7 @@ export function ChartCard({
           <div className={cx(classes.header, classNames?.header)}>
             <WidgetHeader
               tier="widget"
-              {...header}
+              {...definedOnly(header)}
               title={header.title ?? ''}
               {...(actions !== undefined && {
                 actions: <span data-basalt-tier="widget">{actions}</span>,

@@ -55,7 +55,12 @@ export type ChartSeries<T> = {
   formatValue?: ((v: number, d: T) => string) | undefined
   /** A marker at a point (a PR star, a status dot); `null` for none. */
   getMarker?:
-    | ((d: T) => { color?: string; r?: number; fillOpacity?: number; ring?: boolean } | null)
+    | ((d: T) => {
+        color?: string | undefined
+        r?: number | undefined
+        fillOpacity?: number | undefined
+        ring?: boolean | undefined
+      } | null)
     | undefined
 }
 
@@ -175,7 +180,7 @@ export type ResponsiveChartHeight = {
 export type ChartState = {
   pending?: boolean | undefined
   /** Truthy = the query failed; an `Error`'s message is the label. */
-  error?: unknown | undefined
+  error?: unknown
   /** `true`, or the empty label itself. The label is the one way to say WHY (`'No runs match the
    * filter'` vs `'No runs yet'`): § 9 fixes the state shape, so there is no reason field. */
   empty?: boolean | string | undefined

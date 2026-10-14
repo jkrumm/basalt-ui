@@ -91,12 +91,19 @@ export type DualPanelProps<T, X extends Date | number = Date | number> = Pick<
   series: readonly DualPanelLine<T>[]
   /** Top pane y axis. Default domain `'auto'`: the visible lines' span plus 8%, rounded to nice
    * ticks (not zero-based: the interesting range is often a narrow band far from zero). */
-  top?: { domain?: readonly [number, number] | 'auto'; format?: (v: number) => string } | undefined
+  top?:
+    | {
+        domain?: readonly [number, number] | 'auto' | undefined
+        format?: ((v: number) => string) | undefined
+      }
+    | undefined
   /**
    * Shades the band between two top lines (by key), where both are visible. `aboveFill` colours the
    * side where `to` runs above `from`; omitted, both sides take `fill`.
    */
-  fillBetween?: { from: string; to: string; fill: string; aboveFill?: string } | undefined
+  fillBetween?:
+    | { from: string; to: string; fill: string; aboveFill?: string | undefined }
+    | undefined
   bar: DualPanelBar<T>
   /** The top pane's share of the chart height. Default 0.62. */
   topFraction?: number | undefined
