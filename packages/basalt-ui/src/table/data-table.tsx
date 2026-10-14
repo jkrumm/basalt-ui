@@ -407,9 +407,10 @@ export type BasaltDataTableProps<T extends RowData> = BasaltProps &
     // ── Header (WidgetHeader, docs/CONTROLS-SPEC.md §2.2) ──────────────────────────
 
     /**
-     * Optional heading rendered above the toolbar via `WidgetHeader tier="widget"`. `count` always
-     * reads `table.getRowCount()` (C11) — never a raw `data.length` — so it tracks the row model
-     * (post-filter/-pagination) rather than the unfiltered input.
+     * Optional heading rendered above the toolbar via `WidgetHeader tier="widget"`. The count tag
+     * beside it is automatic, not a prop (there is no `count`): it reads `table.getRowCount()` (C11)
+     * — never a raw `data.length` — so it tracks the row model (post-filter/-pagination) rather
+     * than the unfiltered input.
      */
     title?: string
     /** Optional leading icon, forwarded to `WidgetHeader`. */

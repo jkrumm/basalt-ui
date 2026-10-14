@@ -47,9 +47,12 @@ export type StartPart = PartBase & {
 }
 
 /**
- * A streamed text fragment from the assistant. `offset` is the character position of this delta
- * inside its part (undefined = append at the tail) — the mechanism `mergePart` uses to splice a
- * replayed delta in place rather than duplicating it.
+ * A streamed text fragment from the assistant. `text` is a DELTA, not the cumulative text: parts
+ * sharing an `id` are merged into one, in order. `offset` is the character position in that
+ * accumulated text where this delta starts (undefined = append at the tail, which is what a plain
+ * transport emits; `aiSdkTransport` sets it to the length already seen). The merge writes `text`
+ * over `[offset, offset + text.length)`, so replaying a whole run from `offset: 0` rebuilds the same
+ * text instead of duplicating it. An out-of-range offset is clamped, never thrown on.
  */
 export type TextPart = PartBase & {
   readonly type: 'text'

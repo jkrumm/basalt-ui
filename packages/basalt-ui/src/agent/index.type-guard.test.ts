@@ -15,6 +15,8 @@ import type { ComponentProps } from 'react'
 
 import type {
   AgentPart,
+  AgentTransport,
+  ResumableAgentTransport,
   AgentThread,
   ChatMessage,
   MessageAffordances,
@@ -29,7 +31,6 @@ import type {
 } from './index'
 // @ts-expect-error `StreamStatus` is internal to './thread', no longer exported from the './index' barrel
 import type { StreamStatus } from './index'
-import type { AgentTransport } from './transport'
 import type { RowHeightProps, VirtualizeProps } from './chat/virtualize'
 
 type Derived = NonNullable<ComponentProps<typeof ThreadFeedRow>['liveStatus']>
@@ -65,6 +66,7 @@ const props: {
   runnerOptions: AcceptsUndefined<Parameters<typeof useAgentThreadRuns>[0]>
   transportOptions: AcceptsUndefined<Extract<Parameters<typeof aiSdkTransport>[0], { api: string }>>
   transport: AcceptsUndefined<AgentTransport>
+  resumableTransport: AcceptsUndefined<ResumableAgentTransport>
   settledToolPart: AcceptsUndefined<ToolPart>
   textPart: AcceptsUndefined<Extract<AgentPart, { type: 'text' }>>
   startPart: AcceptsUndefined<Extract<AgentPart, { type: 'start' }>>
@@ -81,6 +83,7 @@ const props: {
   runnerOptions: true,
   transportOptions: true,
   transport: true,
+  resumableTransport: true,
   settledToolPart: true,
   textPart: true,
   startPart: true,
