@@ -1,3 +1,19 @@
+# [2.5.0](https://github.com/jkrumm/basalt-ui/compare/v2.4.0...v2.5.0) (2026-10-14)
+
+
+### Bug Fixes
+
+* keep short-chart y labels inside only and lift ref swatch contrast ([480ca90](https://github.com/jkrumm/basalt-ui/commit/480ca90ae9ed3d7c4b9d057051bbf5308e7a871b))
+* thread the short-chart label rule through composed panes ([7d56a17](https://github.com/jkrumm/basalt-ui/commit/7d56a17e6de2942a4ad7ceb385d59e40d6a4b1ff))
+
+
+### Features
+
+* carry a call-site fallback from a store field into its control ([cb8819b](https://github.com/jkrumm/basalt-ui/commit/cb8819bd36a832258616915778ab84786291fcb7))
+* make withFallback the only call-site fallback ([f946e67](https://github.com/jkrumm/basalt-ui/commit/f946e6750b52543389aea55bbf44fc11b6f2368d))
+* propagate the chat turn's trace context to the chat endpoint ([c321b55](https://github.com/jkrumm/basalt-ui/commit/c321b555f4f443046ec00c1eec10d2cd124c8390))
+* settle a superseded turn's trace and export the trace-context types ([7aa3781](https://github.com/jkrumm/basalt-ui/commit/7aa3781e807b0c89fc0e5dd6853240596ab000ff))
+
 # [2.4.0](https://github.com/jkrumm/basalt-ui/compare/v2.3.0...v2.4.0) (2026-10-14)
 
 
