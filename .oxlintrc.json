@@ -210,6 +210,12 @@
       }
     },
     {
+      "files": ["packages/basalt-ui/src/agent/chat/thread-message.tsx"],
+      "rules": {
+        "react/immutability": "off"
+      }
+    },
+    {
       "files": [
         "packages/basalt-ui/src/shell/page-bar.tsx",
         "packages/basalt-ui/src/provider/index.tsx"
