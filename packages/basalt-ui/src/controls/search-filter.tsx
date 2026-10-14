@@ -100,7 +100,11 @@ function useDebouncedField(
 ): { value: string; set: (next: string) => void } {
   const [draft, setDraft] = useState(value)
   const seen = useRef(value)
+  const held = useRef(value)
+  held.current = value
   const commit = useDebouncedCallback((next: string) => {
+    // A phrase typed and erased inside the window ends where it began: nothing to write.
+    if (next === held.current) return
     seen.current = next
     setValue(next)
   }, DEBOUNCE_MS)

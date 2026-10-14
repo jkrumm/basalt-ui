@@ -64,14 +64,14 @@ function plainKey(key: string): string {
 /**
  * Convert a shortcut string to a list of Kbd-friendly tokens.
  * 'Mod+S' → ['⌘', 'S'] (mac) or ['Ctrl', 'S'] (other).
- * 'Shift+Mod+P' → ['⇧', '⌘', 'P'] (mac) or ['Shift', 'Ctrl', 'P'] (other).
+ * 'Mod+Shift+P' → ['⌘', '⇧', 'P'] (mac) or ['Ctrl', 'Shift', 'P'] (other).
  * Named keys read as glyphs on mac and Title-case words elsewhere:
  * 'Mod+Backspace' → ['⌘', '⌫'] (mac) or ['Ctrl', 'Backspace'] (other).
  * isMac is the post-mount platform flag; defaults false on SSR / first render.
  *
  * @example
  * parseShortcut('Mod+S', true)         // ['⌘', 'S']
- * parseShortcut('Shift+Mod+P', false)  // ['Shift', 'Ctrl', 'P']
+ * parseShortcut('Mod+Shift+P', false)  // ['Ctrl', 'Shift', 'P']
  * parseShortcut('ArrowLeft', true)     // ['←']
  */
 export function parseShortcut(shortcut: string, isMac: boolean): string[] {
@@ -114,7 +114,7 @@ export function parseShortcut(shortcut: string, isMac: boolean): string[] {
  * formatShortcutDisplay('Mod+S', true)          // '⌘S'
  * formatShortcutDisplay('Mod+Backspace', true)  // '⌘⌫'
  * formatShortcutDisplay('Mod+S', false)         // 'Ctrl+S'
- * formatShortcutDisplay('Shift+Mod+P', true)    // '⇧⌘P'
+ * formatShortcutDisplay('Mod+Shift+P', true)    // '⌘⇧P'
  */
 export function formatShortcutDisplay(shortcut: string, isMac: boolean): string {
   const tokens = parseShortcut(shortcut, isMac)

@@ -61,7 +61,7 @@ export type Command = {
    * Optional keyboard shortcut, typed as the peer's `Hotkey` so a typo (`'Cmd+B'`) is a compile
    * error. Drives BOTH the ShortcutsHelp display AND live key
    * binding by `BasaltProvider` (through the @tanstack/react-hotkeys optional peer).
-   * Convention: 'Mod+S' (Mod = Cmd on mac, Ctrl elsewhere), 'Shift+Mod+P', etc.
+   * Convention: 'Mod+S' (Mod = Cmd on mac, Ctrl elsewhere), 'Mod+Shift+P', etc.
    */
   shortcut?: Hotkey
   /**

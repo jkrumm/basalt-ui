@@ -91,7 +91,6 @@ export const DEFERRED_PEER_GAPS: {
   readonly tolerated: Readonly<Record<string, readonly string[]>>
 } = {
   unreached: {
-    './commands': ['@tanstack/react-hotkeys'], // `CommandDef.shortcut` is not typed from the peer yet
     './agent': ['ai', '@ai-sdk/provider'], // `aiSdkTransport` reaches `ai` only via import()
     './controls-dates': ['dayjs'], // named by `@mantine/dates`, not imported by basalt
   },
