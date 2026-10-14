@@ -49,7 +49,7 @@ import { assertNever } from '../register'
 import { mintMessageId, mintThreadId } from './id'
 import { TERMINAL_TOOL_STATES } from './parts'
 import type { AgentPart, AgentPartDraft } from './parts'
-import type { ResumableAgentTransport } from './transport'
+import type { AgentStreamContext, ResumableAgentTransport } from './transport'
 
 // ── ai (optional peer) — TYPE-ONLY imports, erased at runtime ────────────────
 // verbatimModuleSyntax-safe: these never trigger a runtime resolution of 'ai'. The actual runtime
@@ -415,7 +415,7 @@ export function aiSdkTransport<TPart = AgentPart>(
       async *stream(
         input: string,
         signal?: AbortSignal,
-        ctx?: { readonly messageId: string },
+        ctx?: AgentStreamContext,
       ): AsyncGenerator<TPart> {
         // Synthesized locally, first — we already know the chat id client-side, so there is no
         // need to wait on the server to hand us a run id (unlike a river-style protocol).
@@ -439,6 +439,9 @@ export function aiSdkTransport<TPart = AgentPart>(
           trigger: 'submit-message',
           messageId: undefined,
           abortSignal: signal,
+          // Per-turn trace context goes to the chat endpoint only (merged over the static headers by
+          // AI SDK's HTTP transport); absent, the request is exactly what it was.
+          ...(ctx?.headers !== undefined ? { headers: { ...ctx.headers } } : {}),
         })
         yield* diffChunkStream<TPart>(chatId, chunkStream, readStream, signal)
       },

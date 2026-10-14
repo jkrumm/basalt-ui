@@ -36,7 +36,13 @@ import { useIsomorphicLayoutEffect } from '../common/isomorphic-layout-effect'
 import { PageTitle } from '../shell/page-title'
 import { SizeClassHintContext } from '../shell/use-size-class'
 import type { SizeClass } from '../shell/use-size-class'
-import { TelemetryContext, bindRouterTelemetry, createEmitter, errorName, now } from '../telemetry'
+import {
+  TelemetryContext,
+  bindRouterTelemetry,
+  createLiveEmitter,
+  errorName,
+  now,
+} from '../telemetry'
 import type { Telemetry } from '../telemetry'
 import type { BasaltDevDockTool } from '../dev-dock'
 import type { BasaltRouter, BasaltRouterContext } from './create-router'
@@ -426,7 +432,7 @@ export function BasaltProvider({
   useEffect(() => {
     sinkRef.current = telemetry
   })
-  const emit = useMemo(() => createEmitter((event) => sinkRef.current?.(event)), [])
+  const emit = useMemo(() => createLiveEmitter(() => sinkRef.current), [])
   useWindowErrors(emit)
   useRegistryHotkeys()
   // `overlays.confirm` is an imperative call; this tells it a `ModalsProvider` is live.

@@ -28,6 +28,8 @@ export type RunRecord<TPart> = {
   ended: RunEnd | undefined
   /** A newer run began on the same thread (set by `beginRun` on the record it replaces). */
   superseded: boolean
+  /** The turn's telemetry `settle`, run once by `settleTrace`. */
+  settle: ((end: RunEnd) => void) | undefined
 }
 
 export type RunRecords<TPart> = Map<string, RunRecord<TPart>>
@@ -45,11 +47,23 @@ export function beginRun<TPart>(
     resolving: false,
     ended: undefined,
     superseded: false,
+    settle: undefined,
   }
   const previous = records.get(threadId)
   if (previous !== undefined) previous.superseded = true
   records.set(threadId, record)
   return record
+}
+
+/** Runs the turn's telemetry `settle` once; a throwing consumer hook never breaks the run. */
+export function settleTrace<TPart>(record: RunRecord<TPart>, end: RunEnd): void {
+  const { settle } = record
+  record.settle = undefined
+  try {
+    settle?.(end)
+  } catch {
+    // a throwing sink must never break the app (§ 7 delivery rules)
+  }
 }
 
 /** Marks a run as no longer driven and drops the content it held. */
