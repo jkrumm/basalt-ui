@@ -18,11 +18,13 @@ import { tmpdir } from 'node:os'
 import { resolve } from 'node:path'
 
 import { GUARD_RULES } from '../src/guard/index'
-import { RULE_NAMES, SURFACES } from '../src/surfaces'
+import { RULE_NAMES, SKILL_NAMES, SURFACES } from '../src/surfaces'
 import {
   COVERAGE_BLOCK_CLOSE,
   COVERAGE_BLOCK_OPEN,
   applyCoverageBlock,
+  AGENT_LAYER_TOTAL_BUDGET,
+  AGENT_LINE_BUDGETS,
   checkCoverage,
   coverageBlock,
   coverageFor,
@@ -61,20 +63,22 @@ describe('checkCoverage', () => {
     expect(checkCoverage(['--write', '--check'])).toBe(1)
   })
 
-  it('holds every shipped agent-layer file inside its budget, and the rules inside the total', () => {
+  it('holds every shipped agent-layer file inside its budget, and the layer inside the total', () => {
     // Assertion 10, read off the real layer rather than a fixture: the budgets ARE the doctrine, so
-    // the interesting failure is a shipped rule growing past one, not a synthetic file doing it.
+    // the interesting failure is a shipped file growing past one, not a synthetic file doing it.
     const pkgRoot = resolve(import.meta.dir, '..')
     const lines = (rel: string) =>
       readFileSync(resolve(pkgRoot, rel), 'utf8').split('\n').length - 1
-    const total = RULE_NAMES.reduce((sum, rule) => sum + lines(`agent/rules/basalt-${rule}.md`), 0)
-    expect(total).toBeLessThanOrEqual(1050)
     expect(RULE_NAMES.length).toBe(6)
-    for (const skill of ['basalt-app', 'basalt-design', 'basalt-charts']) {
-      expect(lines(`agent/skills/${skill}/SKILL.md`)).toBeLessThanOrEqual(100)
+    for (const [rel, budget] of Object.entries(AGENT_LINE_BUDGETS)) {
+      expect(lines(rel)).toBeLessThanOrEqual(budget)
     }
-    expect(lines('agent/templates/AGENTS-block.md.tpl')).toBeLessThanOrEqual(40)
-    expect(lines('agent/templates/DESIGN.md.tpl')).toBeLessThanOrEqual(45)
+    const layer = [
+      ...RULE_NAMES.map((rule) => `agent/rules/basalt-${rule}.md`),
+      ...SKILL_NAMES.map((skill) => `agent/skills/${skill}/SKILL.md`),
+      'agent/templates/AGENTS-block.md.tpl',
+    ].reduce((sum, rel) => sum + lines(rel), 0)
+    expect(layer).toBeLessThanOrEqual(AGENT_LAYER_TOTAL_BUDGET)
   })
 })
 

@@ -475,16 +475,13 @@ Majors are banned, so the version number can never warn a consumer their charts 
 `agent/**` ships in the tarball and is placed into a consumer's `.claude/` by `init`/`sync` — Claude
 Code cannot load rules or skills from `node_modules`, which is the only reason anything is copied.
 
-- **Six rules, three skills, two templates**, with budgets enforced by `scripts/check-coverage.ts`
-  (C2, 1.29.0: moved off the CLI). Consolidation wave (C4, 2026-09-02) target `AGENT_RULE_TOTAL_BUDGET`
-  ≤620 (tokens ≤130 / mantine ≤110 / charts ≤95 / state ≤100 / controls ≤120 / batteries ≤85);
-  **landed at 744** (tokens 139 / mantine 122 / charts 111 / state 121 / controls 154 /
-  batteries 97) — the C1-C16 laws table and the homes table in `basalt-controls.md` are markdown
-  tables (one row per law, not compressible by line-count) and the agent-chat WHY block moved into
-  `basalt-batteries.md` per this wave's own brief, both pushing past the stretch target; set the
-  ceiling from the landed numbers, not the target, or the next edit fails CI on day one. Thirteen
-  files carried 4,177 lines pre-consolidation, 55% of it unguarded, with the identity paragraph
-  restated six times.
+- **Six rules, three skills, two templates**, budgeted by `scripts/check-coverage.ts`: per-file
+  ceilings in `AGENT_LINE_BUDGETS` and a whole-layer ceiling (rules + skills + the AGENTS block) in
+  `AGENT_LAYER_TOTAL_BUDGET`, both set to the LANDED values (W9: rules 272, layer 415) so the next
+  edit fails CI on growth. `check-budgets.ts` `ruleLines` bounds the rules alone (spec target 450).
+  A rule bullet ends in its enforcement tag (`[basalt/<rule>]`, `[check-theme <kind>]`,
+  `[type <Name>]`); `check-agent-doc-drift.ts` (Checks F–H) resolves the tags, rejects prose
+  outside bullets, repo-local and removed rule ids, and unpublished names in the llms.txt header.
 - **Every rule file opens with a GENERATED `<!-- basalt:coverage -->` block** —
   `bun scripts/check-coverage.ts --write` renders it from `SURFACES` (the union over every surface
   sharing that `rule`), `--check` is the CI gate, and a block that DISAGREES is a hard failure. `not guarded`
