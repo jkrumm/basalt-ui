@@ -3,6 +3,7 @@
  * One place for stroke width, dash, curve, the right-axis binding and legend-hover emphasis (a
  * companion keeps full strength while its `parent` is the highlighted entry).
  */
+import { barY } from '@tanstack/charts/bar'
 import { dot } from '@tanstack/charts/dot'
 import { lineY } from '@tanstack/charts/line'
 import { decorative } from '@tanstack/charts/mark/decorative'
@@ -92,4 +93,95 @@ export function markersOf<T, X extends ChartX>(
       }),
     ),
   )
+}
+
+/**
+ * A single-series `barY`. The engine stacks every `barY` that has no explicit extent, and a row with
+ * no `z`/`color` channel is its own series: an N-by-N matrix (a 5k-row `DualPanel` took 10 s). So
+ * the extent is explicit (`y1: 0`) unless the caller asks for a series (`z`, `color`) or a `layout`.
+ * Every bar that is not `Bars`' stacked/grouped one is drawn through this.
+ */
+export const barMark = ((rows: Iterable<unknown>, options: Record<string, unknown> = {}) => {
+  const seriesAsked = 'z' in options || 'color' in options || 'layout' in options
+  return barY(rows, (seriesAsked ? options : { y1: 0, ...options }) as never)
+}) as unknown as typeof barY
+
+/** Rows per plot pixel beyond which {@link thinFill} thins. */
+const FILL_ROWS_PER_PX = 4
+
+type Extreme = { value: number; index: number }
+type Bucket = {
+  first: number
+  last: number
+  minFrom: Extreme
+  maxFrom: Extreme
+  minTo: Extreme
+  maxTo: Extreme
+  minGap: Extreme
+  maxGap: Extreme
+}
+
+const extreme = (value: number, index: number): Extreme => ({ value, index })
+const lower = (e: Extreme, value: number, index: number): void => {
+  if (value < e.value) Object.assign(e, { value, index })
+}
+const upper = (e: Extreme, value: number, index: number): void => {
+  if (value > e.value) Object.assign(e, { value, index })
+}
+
+/**
+ * A band fill drawn at `width` px: each pixel column of the plot keeps its first and last row and the
+ * rows holding the extremes of `from`, `to` and `to - from`, so the silhouette and every sign
+ * crossing survive while a 10k-row series stops costing the engine a scene point per row. `at` is a
+ * row's x as a plot fraction (0..1), so an irregularly sampled series (bursts, then a gap) is
+ * bucketed by where it is drawn, not by its array index. The series' own first and last row are
+ * always kept. Below {@link FILL_ROWS_PER_PX} rows per pixel, or for an unmeasured width, the rows
+ * come back unchanged. Order is preserved; pure in its inputs, so the server render and the first
+ * client render agree. Only for decorative fills: hover and focus must read the full series.
+ */
+export function thinFill<R extends { from: number; to: number }>(
+  rows: readonly R[],
+  width: number,
+  at: (row: R) => number,
+): R[] {
+  const buckets = Math.floor(width)
+  if (!(buckets >= 1) || rows.length <= buckets * FILL_ROWS_PER_PX) return rows.slice()
+  const kept = new Set<number>([0, rows.length - 1])
+  const columns = new Map<number, Bucket>()
+  for (const [i, r] of rows.entries()) {
+    const position = at(r)
+    // A row with no position cannot be placed in a column: keep it.
+    if (!Number.isFinite(position)) {
+      kept.add(i)
+      continue
+    }
+    const column = Math.min(buckets - 1, Math.max(0, Math.floor(position * buckets)))
+    const gap = r.to - r.from
+    const b = columns.get(column)
+    if (!b) {
+      columns.set(column, {
+        first: i,
+        last: i,
+        minFrom: extreme(r.from, i),
+        maxFrom: extreme(r.from, i),
+        minTo: extreme(r.to, i),
+        maxTo: extreme(r.to, i),
+        minGap: extreme(gap, i),
+        maxGap: extreme(gap, i),
+      })
+      continue
+    }
+    b.last = i
+    lower(b.minFrom, r.from, i)
+    upper(b.maxFrom, r.from, i)
+    lower(b.minTo, r.to, i)
+    upper(b.maxTo, r.to, i)
+    lower(b.minGap, gap, i)
+    upper(b.maxGap, gap, i)
+  }
+  for (const b of columns.values()) {
+    for (const i of [b.first, b.last]) kept.add(i)
+    for (const e of [b.minFrom, b.maxFrom, b.minTo, b.maxTo, b.minGap, b.maxGap]) kept.add(e.index)
+  }
+  return [...kept].toSorted((p, q) => p - q).flatMap((i) => (rows[i] ? [rows[i]] : []))
 }

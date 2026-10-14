@@ -5,7 +5,6 @@
  * compiles a bare definition and mounts it on the same host. `width` omitted, the host measures
  * the container, which is what a `StatCard` sparkline slot or a flex row wants.
  */
-import { barY } from '@tanstack/charts/bar'
 import { dot } from '@tanstack/charts/dot'
 import { decorative } from '@tanstack/charts/mark/decorative'
 import { lineY } from '@tanstack/charts/line'
@@ -17,6 +16,7 @@ import type { BasaltProps } from '../common/props'
 import { VX } from '../tokens'
 import type { CartesianDefinition } from './compile'
 import { chartCurve } from './curves'
+import { barMark } from './marks'
 import { ChartEngine, idPrefixOf } from './host'
 import { CHART_THEME } from './theme'
 
@@ -71,11 +71,9 @@ function compileSparkline(
       if (mark === 'bar') {
         return {
           marks: [
-            barY(rows, {
+            barMark(rows, {
               id: 'bars',
               x: 'i',
-              // An explicit extent: without it the engine stacks one series per row (quadratic).
-              y1: 0,
               y: 'v',
               fill: (r: Point) =>
                 emphasisColor !== null && r.i === rows.length - 1 ? emphasisColor : color,

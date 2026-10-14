@@ -12,7 +12,6 @@
  * of both panes in one flat `--vx-neutral` fill: a `getAbsentFraction` share of a bar's width that no
  * source sample covers. A bar that measured zero draws nothing; an absent one draws neutral.
  */
-import { barY } from '@tanstack/charts/bar'
 import { decorative } from '@tanstack/charts/mark/decorative'
 import { rect } from '@tanstack/charts/rect'
 import { ruleY } from '@tanstack/charts/rule'
@@ -23,7 +22,7 @@ import type { ReactElement } from 'react'
 import { VX, alpha } from '../tokens'
 import { resolveContainerClass } from '../tokens/size-classes'
 import { defaultFormatX, defaultNumberFormat, visibleSeries } from './compile'
-import { emphasis } from './marks'
+import { barMark, emphasis } from './marks'
 import { PanelRung, paneX, paneY, rowsOf } from './panel'
 import type { PaneBuilder, PanelInput, PanelPlan } from './panel'
 import { xScaleFor } from './scales'
@@ -212,11 +211,9 @@ export function MirroredBars<T, X extends ChartX = ChartX>(
                 strokeOpacity: 1,
                 strokeWidth: 1,
               }),
-              barY(rows, {
+              barMark(rows, {
                 id: `${side}-bars`,
                 x: rowX,
-                // An explicit extent: without it the engine stacks one series per row (quadratic).
-                y1: 0,
                 y: 'y',
                 fill: (row: PlotRow<T, X>) =>
                   absent(row.datum) > 0 ? 'transparent' : alpha(s.color, opacity(row.datum)),

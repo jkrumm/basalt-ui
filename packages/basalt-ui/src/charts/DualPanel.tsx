@@ -4,7 +4,6 @@
  * shade the band between two of its lines (`differenceY`); the bottom pane draws a signed value as
  * bars around zero. Each pane resolves its own y domain; x is a Date or number, shared by both.
  */
-import { barY } from '@tanstack/charts/bar'
 import { differenceY } from '@tanstack/charts/difference'
 import { decorative } from '@tanstack/charts/mark/decorative'
 import { ruleY } from '@tanstack/charts/rule'
@@ -16,7 +15,7 @@ import type { ReactElement } from 'react'
 import { VX, alpha } from '../tokens'
 import { resolveContainerClass } from '../tokens/size-classes'
 import { defaultFormatX, defaultNumberFormat, visibleSeries } from './compile'
-import { emphasis, lineMark, markersOf } from './marks'
+import { barMark, emphasis, lineMark, markersOf, thinFill } from './marks'
 import { PanelRung, paneX, paneY, rowsOf } from './panel'
 import type { PaneBuilder, PanelInput, PanelPlan } from './panel'
 import { xScaleFor } from './scales'
@@ -118,47 +117,6 @@ function spanDomain(values: readonly number[]): [number, number] {
   return [lo - span * TOP_PAD, hi + span * TOP_PAD]
 }
 
-/** Rows per plot pixel beyond which the decorative fill is thinned. */
-const FILL_ROWS_PER_PX = 4
-
-/**
- * The fill drawn at `width` px: one bucket per pixel column keeps its first and last row plus the
- * rows holding the extremes of `from`, `to` and the gap between them, so the shaded silhouette (and
- * a sign crossing) survives while a 10k-row series stops costing the engine a scene point per row.
- * The fill is decorative: hover, focus and the tooltip read the line and bar rows, never these.
- * Deterministic in `(rows, width)`, so the server and the first client render agree.
- */
-function thinFill<R extends { from: number; to: number }>(rows: readonly R[], width: number): R[] {
-  const buckets = Math.max(1, Math.floor(width))
-  if (rows.length <= buckets * FILL_ROWS_PER_PX) return rows.slice()
-  const keep = new Set<number>()
-  const size = rows.length / buckets
-  for (let b = 0; b < buckets; b += 1) {
-    const start = Math.floor(b * size)
-    const end = Math.min(rows.length, Math.floor((b + 1) * size))
-    if (end <= start) continue
-    keep.add(start)
-    keep.add(end - 1)
-    let minFrom = start
-    let maxFrom = start
-    let minTo = start
-    let maxTo = start
-    let minGap = start
-    let maxGap = start
-    for (let i = start; i < end; i += 1) {
-      const r = rows[i] as R
-      if (r.from < (rows[minFrom] as R).from) minFrom = i
-      if (r.from > (rows[maxFrom] as R).from) maxFrom = i
-      if (r.to < (rows[minTo] as R).to) minTo = i
-      if (r.to > (rows[maxTo] as R).to) maxTo = i
-      if (r.to - r.from < (rows[minGap] as R).to - (rows[minGap] as R).from) minGap = i
-      if (r.to - r.from > (rows[maxGap] as R).to - (rows[maxGap] as R).from) maxGap = i
-    }
-    for (const i of [minFrom, maxFrom, minTo, maxTo, minGap, maxGap]) keep.add(i)
-  }
-  return [...keep].toSorted((a, b) => a - b).map((i) => rows[i] as R)
-}
-
 export function DualPanel<T, X extends Date | number = Date | number>(
   props: DualPanelProps<T, X>,
 ): ReactElement {
@@ -205,6 +163,9 @@ export function DualPanel<T, X extends Date | number = Date | number>(
         model.kind === 'date'
           ? scaleUtc().domain([new Date(lo - pad), new Date(hi + pad)])
           : scaleLinear().domain([lo - pad, hi + pad])
+      // A row's x as a fraction of the plot (the domain is padded half a step each side).
+      const fillAt = (v: Date | number): number =>
+        ((v instanceof Date ? v.getTime() : v) - (lo - pad)) / (hi - lo + 2 * pad)
       const format = (v: ChartValue): string => (formatX ? formatX(v as X) : defaultFormatX(v))
 
       const visible = visibleSeries(lines, hidden)
@@ -274,17 +235,20 @@ export function DualPanel<T, X extends Date | number = Date | number>(
             ...(fill
               ? [
                   decorative(
-                    differenceY(thinFill(fillRows, width), {
-                      id: 'fill-between',
-                      x: (r) => r.x,
-                      y1: (r) => r.from,
-                      y2: (r) => r.to,
-                      positiveFill: fill.aboveFill ?? fill.fill,
-                      negativeFill: fill.fill,
-                      fillOpacity: 1,
-                      stroke: 'none',
-                      comparisonStroke: 'none',
-                    }),
+                    differenceY(
+                      thinFill(fillRows, width, (r) => fillAt(r.x)),
+                      {
+                        id: 'fill-between',
+                        x: (r) => r.x,
+                        y1: (r) => r.from,
+                        y2: (r) => r.to,
+                        positiveFill: fill.aboveFill ?? fill.fill,
+                        negativeFill: fill.fill,
+                        fillOpacity: 1,
+                        stroke: 'none',
+                        comparisonStroke: 'none',
+                      },
+                    ),
                   ),
                 ]
               : []),
@@ -304,12 +268,9 @@ export function DualPanel<T, X extends Date | number = Date | number>(
         return {
           marks: [
             ruleY([0], { id: 'zero', stroke: VX.axisStroke, strokeOpacity: 1, strokeWidth: 1 }),
-            barY(barRows, {
+            barMark(barRows, {
               id: 'bars',
               x: rowX,
-              // An explicit extent: without it the engine stacks, and a row with no series key is
-              // its own series, an N-by-N matrix (a 5k-row server render took 12 s).
-              y1: 0,
               y: 'y',
               fill: (row: PlotRow<T, Date | number>) =>
                 alpha((row.y ?? 0) >= 0 ? bar.positive : bar.negative, BAR_OPACITY * dim),
