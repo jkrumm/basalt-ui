@@ -5,8 +5,8 @@
  * Command.shortcut field also drives live key binding in `BasaltProvider`.
  *
  * Platform-aware label: 'Mod' → '⌘' on mac, 'Ctrl' elsewhere.
- * Platform detection defers to post-mount (useEffect) to avoid SSR/client hydration mismatch.
- * Server and first client render both use non-mac glyphs; the client updates after mount.
+ * Platform detection reads through `useSyncExternalStore` with a non-mac server snapshot, so SSR and
+ * the hydrating render agree and the client updates right after.
  *
  * @example
  * import { ShortcutsHelp } from 'basalt-ui/commands'
@@ -17,12 +17,14 @@
  * // With a custom title and max width:
  * <ShortcutsHelp title="Keyboard shortcuts" maw={480} />
  */
-import { useEffect, useState } from 'react'
+import { useSyncExternalStore } from 'react'
 import { Box, Group, Kbd, Stack, Text, Title } from '@mantine/core'
 import type { BasaltProps } from '../common/props'
 import { cx } from '../common/props'
 import { toShortcutList } from './projectors'
 import { detectMac, parseShortcut } from './shortcut-format'
+
+const subscribeNever = (): (() => void) => () => {}
 import { VX } from '../tokens'
 
 // ── ShortcutsHelpProps ────────────────────────────────────────────────────────
@@ -79,10 +81,7 @@ export function ShortcutsHelp({
 }: ShortcutsHelpProps) {
   // Default false — SSR and first client render produce non-mac glyphs (no hydration mismatch).
   // Post-mount effect flips to true on macOS, triggering a single client-only re-render.
-  const [isMac, setIsMac] = useState(false)
-  useEffect(() => {
-    setIsMac(detectMac())
-  }, [])
+  const isMac = useSyncExternalStore(subscribeNever, detectMac, () => false)
 
   const shortcuts = toShortcutList()
 

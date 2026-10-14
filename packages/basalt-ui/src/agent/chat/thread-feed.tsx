@@ -21,7 +21,7 @@ import { Box, ScrollArea, Stack } from '@mantine/core'
 import { useReducedMotion } from '@mantine/hooks'
 import { AnimatePresence, MotionConfig, motion } from 'motion/react'
 import type { JSX, ReactNode } from 'react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import type { AgentThread } from '../thread'
 import { BasaltStickToBottom } from '../stick-to-bottom'
 import { cx } from '../../common/props'
@@ -54,8 +54,8 @@ export type ThreadFeedProps = BasaltProps & {
    * directly (the previous shape) meant a plain `onSelect={setActiveId}` consumer could never
    * collapse a row, since re-selecting the same id is a no-op state update. Collapsing here is
    * local, UI-only state, reset whenever `activeId` changes to point at a DIFFERENT thread. Since
-   * this reset is a `useEffect` keyed on `activeId`, re-driving it to the SAME id from outside
-   * this component is a no-op React dep comparison, so it does not clear the override.
+   * this reset compares `activeId` against the last one seen, re-driving it to the SAME id from outside
+   * this component is a no-op comparison, so it does not clear the override.
    */
   readonly variant?: 'outcome' | 'inline'
   /**
@@ -143,9 +143,11 @@ export function ThreadFeed({
   // thread re-selected after being manually collapsed) does NOT re-run this effect. A collapse
   // triggered by this component's own header click does NOT touch `activeId` at all (see
   // `handleInlineToggle`), so it does not re-trigger this effect either.
-  useEffect(() => {
+  const [seenActiveId, setSeenActiveId] = useState(activeId)
+  if (seenActiveId !== activeId) {
+    setSeenActiveId(activeId)
     setCollapsedId(null)
-  }, [activeId])
+  }
 
   function handleInlineToggle(id: string): void {
     const isOpen = id === activeId && id !== collapsedId

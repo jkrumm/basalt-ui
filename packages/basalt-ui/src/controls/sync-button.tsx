@@ -21,7 +21,7 @@
  * button relying on its visible children would be an unnamed icon on a phone.
  */
 import { ActionIcon, Button, Tooltip } from '@mantine/core'
-import { useEffect, useState } from 'react'
+import { useSyncExternalStore } from 'react'
 import type { ReactNode } from 'react'
 import { cx } from '../common/props'
 import type { BasaltProps } from '../common/props'
@@ -73,30 +73,24 @@ function toMillis(at: number | Date | null | undefined): number | undefined {
  * The age string, refreshed on an interval that exists ONLY while the component is mounted and
  * only while there is an age to show — a sync control on a background route costs no timer.
  *
- * The clock is read in the EFFECT, never during render. A global `SyncButton` in `globalActions`
+ * The clock is read through `useSyncExternalStore`, whose server snapshot omits the age. A global `SyncButton` in `globalActions`
  * renders inline in the shell header (no portal), so under SSR the server would emit `just now` and
  * a client hydrating a minute later would emit `1m ago` — a React text mismatch that discards the
  * subtree. Server and first client paint both omit the age; the effect fills it in after mount.
  * That also makes the interval the only thing that re-renders, so the old `setTick` counter is gone.
  */
 function useRelativeAge(at: number | Date | null | undefined): string | undefined {
-  const [age, setAge] = useState<string | undefined>(undefined)
   const timestamp = toMillis(at)
+  return useSyncExternalStore(
+    subscribeAgeTick,
+    () => (timestamp === undefined ? undefined : formatAge(Date.now() - timestamp)),
+    () => undefined,
+  )
+}
 
-  useEffect(() => {
-    if (timestamp === undefined) {
-      setAge(undefined)
-      return
-    }
-    const publish = (): void => {
-      setAge(formatAge(Date.now() - timestamp))
-    }
-    publish()
-    const id = setInterval(publish, AGE_REFRESH_MS)
-    return () => clearInterval(id)
-  }, [timestamp])
-
-  return age
+function subscribeAgeTick(onTick: () => void): () => void {
+  const id = setInterval(onTick, AGE_REFRESH_MS)
+  return () => clearInterval(id)
 }
 
 function RefreshGlyph({ spinning }: { spinning: boolean }) {

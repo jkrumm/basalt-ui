@@ -114,7 +114,9 @@ export function useFilterRegistration(isActive: boolean, reset: () => void): voi
   // A ref, so a `reset` closure that is fresh every render does not re-run the effect (and so
   // `Reset all` always calls the LATEST setter, not the one captured at registration).
   const resetRef = useRef(reset)
-  resetRef.current = reset
+  useEffect(() => {
+    resetRef.current = reset
+  })
   const stableReset = useCallback(() => {
     resetRef.current()
   }, [])

@@ -312,8 +312,8 @@ export function StatCard({
   const isRender = typeof sparkline === 'function'
   const bleeds = sparklinePlacement === 'bleed'
   // Only a render prop needs a measurement; a plain node sizes itself.
-  const slot = useSlotWidth(isRender)
-  const measured: StatCardSparklineSize = { width: slot.width, height: SPARKLINE_RIGHT_HEIGHT }
+  const { ref: slotRef, width: slotWidth } = useSlotWidth(isRender)
+  const measured: StatCardSparklineSize = { width: slotWidth, height: SPARKLINE_RIGHT_HEIGHT }
 
   // A `<dl>`, not a table and not a stack of divs: each row IS a term and its value, which is the
   // one semantic that survives a reader meeting the card out of context.
@@ -348,7 +348,7 @@ export function StatCard({
   const sparklineNode: ReactNode =
     sparkline === undefined ? null : (
       <div
-        ref={slot.ref}
+        ref={slotRef}
         className={cx(
           bleeds ? classes.sparklineBleed : classes.sparklineRight,
           classNames?.sparkline,

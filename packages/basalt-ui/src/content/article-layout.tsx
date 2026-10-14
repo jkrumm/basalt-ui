@@ -129,9 +129,9 @@ export function ArticleLayout({
   // THIS component, not the Popover, so crossing back below the breakpoint would otherwise remount
   // it already open with no user action. Adjusted during render (React's own pattern for resetting
   // state when a derived value changes), not an effect, so there is no open-then-close flash.
-  const prevShowTocRailRef = useRef(showTocRail)
-  if (prevShowTocRailRef.current !== showTocRail) {
-    prevShowTocRailRef.current = showTocRail
+  const [prevShowTocRail, setPrevShowTocRail] = useState(showTocRail)
+  if (prevShowTocRail !== showTocRail) {
+    setPrevShowTocRail(showTocRail)
     if (tocOpen) setTocOpen(false)
   }
 

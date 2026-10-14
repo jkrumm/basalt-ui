@@ -318,7 +318,9 @@ function useCommittedNumber(
   const [draft, setDraft] = useState<number | string>(value)
   const seen = useRef(value)
   const commitRef = useRef(setValue)
-  commitRef.current = setValue
+  useEffect(() => {
+    commitRef.current = setValue
+  })
 
   useEffect(() => {
     if (seen.current === value) return

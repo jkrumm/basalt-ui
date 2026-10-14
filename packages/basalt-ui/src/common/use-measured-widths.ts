@@ -44,11 +44,14 @@ export function useMeasuredWidths(options: UseMeasuredWidthsOptions): UseMeasure
 
   // Read through refs so a fresh closure each render does not re-run the effect.
   const resolveRef = useRef(resolveRoot)
-  resolveRef.current = resolveRoot
   const extraRef = useRef(extra)
-  extraRef.current = extra
   const onMeasureRef = useRef(onMeasure)
-  onMeasureRef.current = onMeasure
+  // Declared before the measuring effect, so the refs are current by the time it reads them.
+  useIsomorphicLayoutEffect(() => {
+    resolveRef.current = resolveRoot
+    extraRef.current = extra
+    onMeasureRef.current = onMeasure
+  })
 
   useIsomorphicLayoutEffect(() => {
     if (signatureRef.current !== signature) {

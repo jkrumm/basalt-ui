@@ -125,68 +125,21 @@ type CompilerRuleExemption = { rule: string; reason: string; files: OverrideBloc
 
 export const REPO_COMPILER_RULE_EXEMPTIONS: readonly CompilerRuleExemption[] = [
   {
-    rule: 'react/globals',
-    reason: 'test harnesses reassign a module-level spy/probe declared outside the component',
-    files: [
-      `${PKG_ROOT}src/agent/use-agent-thread-runs.wedge.test.tsx`,
-      `${PKG_ROOT}src/theme/use-basalt-spacing.test.tsx`,
-    ],
-  },
-  {
-    rule: 'react/immutability',
-    reason: 'a stable-callback ref written during render / a test mutating a captured fixture',
-    files: [
-      `${PKG_ROOT}src/agent/chat/thread-message.tsx`,
-      `${PKG_ROOT}src/router-tanstack/use-nav.test.tsx`,
-    ],
-  },
-  {
     rule: 'react/refs',
-    reason: 'latest-value / measured-width refs read during render by design (pre-compiler code)',
-    files: [
-      `${PKG_ROOT}src/agent/chat/composer.tsx`,
-      `${PKG_ROOT}src/agent/chat/thread-message.tsx`,
-      `${PKG_ROOT}src/common/use-measured-widths.ts`,
-      `${PKG_ROOT}src/content/article-layout.tsx`,
-      `${PKG_ROOT}src/content/mermaid.tsx`,
-      `${PKG_ROOT}src/controls/filter-context.tsx`,
-      `${PKG_ROOT}src/controls/number-filter.tsx`,
-      `${PKG_ROOT}src/controls/search-filter.tsx`,
-      `${PKG_ROOT}src/dashboard/stat-card.tsx`,
-      `${PKG_ROOT}src/provider/index.tsx`,
-      `${PKG_ROOT}src/shell/page-bar.tsx`,
-      `${PKG_ROOT}src/table/data-table.tsx`,
-    ],
+    reason:
+      'page-bar: the ref callback runs at commit, before any effect, so the first publish reads `active` from a ref written in render; provider: the telemetry sink is read through a ref by an emitter built once (an effect event cannot reach router/window callbacks, and a dep on it rebuilds the emitter every render)',
+    files: [`${PKG_ROOT}src/shell/page-bar.tsx`, `${PKG_ROOT}src/provider/index.tsx`],
   },
   {
     rule: 'react/set-state-in-effect',
-    reason: 'effect-seeded state (hydration, prop-sync, mount flags) that predates the rule',
-    files: [
-      `${PKG_ROOT}src/agent/chat/thread-feed.tsx`,
-      `${PKG_ROOT}src/commands/ShortcutsHelp.tsx`,
-      `${PKG_ROOT}src/controls/filter-set.tsx`,
-      `${PKG_ROOT}src/controls/sync-button.tsx`,
-      `${PKG_ROOT}src/provider/index.tsx`,
-      `${PKG_ROOT}src/table/data-table.tsx`,
-      `${PKG_ROOT}src/theme-lab/derive-controls.tsx`,
-      `${PKG_ROOT}tests/layout/fixture/fixtures.tsx`,
-    ],
+    reason:
+      'provider: the Spotlight action list is rebuilt on mount and at each open so `when()` and `detectMac` never run during render; fixtures: the aside probe takes its mount ordinal from a page-global counter bumped by that same mount effect',
+    files: [`${PKG_ROOT}src/provider/index.tsx`, `${PKG_ROOT}tests/layout/fixture/fixtures.tsx`],
   },
 ]
 
 /** Paths are relative to `apps/playground` (oxlint resolves a nested config's globs from its dir). */
-export const PLAYGROUND_COMPILER_RULE_EXEMPTIONS: readonly CompilerRuleExemption[] = [
-  {
-    rule: 'react/set-state-in-effect',
-    reason: 'demo page seeds state from an effect; predates the rule',
-    files: ['src/demo/DataStressPage.tsx'],
-  },
-  {
-    rule: 'react/preserve-manual-memoization',
-    reason: 'demo panel memoizes over a mutable dependency; predates the rule',
-    files: ['src/demo/cbbi/CbbiPanel.tsx'],
-  },
-]
+export const PLAYGROUND_COMPILER_RULE_EXEMPTIONS: readonly CompilerRuleExemption[] = []
 
 /** The playground's `overrides`, pinned against `apps/playground/.oxlintrc.json` by the sync test. */
 export function projectPlaygroundOverrides(): OverrideBlock[] {

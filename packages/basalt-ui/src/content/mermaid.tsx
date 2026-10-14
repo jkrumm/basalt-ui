@@ -20,7 +20,7 @@
  * <MermaidDiagram code={'graph TD\n  A --> B'} />
  */
 import type { CSSProperties, ReactNode } from 'react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { CodeBlock } from './code-block'
 import classes from './mermaid.module.css'
 
@@ -67,7 +67,7 @@ export type MermaidDiagramProps = {
 
 export function MermaidDiagram({ code, className, style, fallback }: MermaidDiagramProps) {
   const [mod, setMod] = useState<MermaidModule | null | undefined>(undefined)
-  const lastGoodRef = useRef<string | null>(null)
+  const [lastGood, setLastGood] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -82,16 +82,16 @@ export function MermaidDiagram({ code, className, style, fallback }: MermaidDiag
 
   // Pure and synchronous once `mod` is resolved — parse errors keep the last successfully
   // rendered SVG (docs/CONTENT-SPEC.md §2 decision 4) instead of blanking a settled diagram.
-  const html = useMemo(() => {
+  const rendered = useMemo(() => {
     if (!mod) return null
     try {
-      const svg = mod.renderMermaidSVG(code, MERMAID_THEME_OPTIONS)
-      lastGoodRef.current = svg
-      return svg
+      return mod.renderMermaidSVG(code, MERMAID_THEME_OPTIONS)
     } catch {
-      return lastGoodRef.current
+      return undefined
     }
   }, [mod, code])
+  if (typeof rendered === 'string' && rendered !== lastGood) setLastGood(rendered)
+  const html = rendered === undefined ? lastGood : rendered
 
   if (html === null) {
     return (
