@@ -8,7 +8,8 @@
  * augmentation, which `src` is not written against; `make check` builds before it tests.)
  *
  * The scratch directory also holds a stand-in for the `routeTree.gen.ts` the TanStack router
- * plugin generates: one `/dashboard` route, so a snippet may link to and declare it. Unmarked
+ * plugin generates: a `/dashboard` route, so a snippet may link to and declare it, and a `/live`
+ * route whose loader returns an unawaited promise (the streaming snippet). Unmarked
  * fences (a fragment, a shell line) are not checked.
  */
 import { describe, expect, test } from 'bun:test'
@@ -30,7 +31,12 @@ const ROUTE_TREE_STUB = `import { createRootRoute, createRoute } from '@tanstack
 
 const rootRoute = createRootRoute()
 const dashboardRoute = createRoute({ getParentRoute: () => rootRoute, path: '/dashboard' })
-export const routeTree = rootRoute.addChildren([dashboardRoute])
+const liveRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/live',
+  loader: () => ({ points: Promise.resolve<{ t: number; v: number }[]>([]) }),
+})
+export const routeTree = rootRoute.addChildren([dashboardRoute, liveRoute])
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
@@ -39,6 +45,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof dashboardRoute
+      parentRoute: typeof rootRoute
+    }
+    '/live': {
+      id: '/live'
+      path: '/live'
+      fullPath: '/live'
+      preLoaderRoute: typeof liveRoute
       parentRoute: typeof rootRoute
     }
   }
