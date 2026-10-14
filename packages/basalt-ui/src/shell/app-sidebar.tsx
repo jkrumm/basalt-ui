@@ -207,14 +207,28 @@ function NavLinkBody({
   collapsed?: boolean
 }) {
   const Anchor = item.Anchor
+  const icon = iconOrInitial(item.icon, item.label)
+  // The rail hides the right section (where the badge lives), so a badged row keeps a dot on its
+  // icon instead — the count rides the accessible name since the number itself has no room.
+  const railDot =
+    collapsed && ((item.badge !== undefined && item.badge !== null) || Boolean(item.count))
   const shared = {
     classNames: { root: classes.link },
     label: item.label,
-    leftSection: iconOrInitial(item.icon, item.label),
+    leftSection: railDot ? (
+      <span className={classes.navIconDotHost}>
+        {icon}
+        <span className={classes.blockDot} data-basalt-rail-dot aria-hidden />
+      </span>
+    ) : (
+      icon
+    ),
     // Only the collapsed rail hides the label (CSS), leaving the icon alone — name the link there.
     // Expanded, the visible text IS the name and carries the count badge; an `aria-label` would
     // override both and drop the count ("Inbox 5" → "Inbox").
-    ...(collapsed && { 'aria-label': item.label }),
+    ...(collapsed && {
+      'aria-label': item.count ? `${item.label}, ${item.count}` : item.label,
+    }),
     rightSection: item.badge ?? (item.count ? <NavCountBadge count={item.count} /> : undefined),
     active,
     // Basalt is the one that stamps `aria-current`, not the theme and not a router `<Link>`'s own

@@ -472,6 +472,12 @@
   box-shadow: 0 0 0 2px var(--mantine-color-body);
 }
 
+/* Host for a nav row's rail dot: the dot anchors on the icon itself, not the 48px row. */
+.navIconDotHost {
+  position: relative;
+  display: inline-flex;
+}
+
 .blockItems {
   display: flex;
   flex-direction: column;

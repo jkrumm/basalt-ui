@@ -603,7 +603,7 @@ describe('an icon-less nav item survives the collapsed rail', () => {
     expect(document.querySelector('[data-nav-glyph]')).toBeNull()
   })
 
-  test('the expanded row keeps its count in the accessible name; the rail row is named by the label', () => {
+  test('the expanded row keeps its count in the accessible name; the rail row carries it in its aria-label', () => {
     const sections: AppSidebarProps['sections'] = [
       {
         label: 'Main',
@@ -616,8 +616,8 @@ describe('an icon-less nav item survives the collapsed rail', () => {
 
     renderSidebar({ sections, collapsed: true })
     expect(
-      screen.getByRole('link', { name: 'Inbox', hidden: true }).getAttribute('aria-label'),
-    ).toBe('Inbox')
+      screen.getByRole('link', { name: 'Inbox, 5', hidden: true }).getAttribute('aria-label'),
+    ).toBe('Inbox, 5')
   })
 
   test('an icon-less disabled child falls back to its first letter in the inline list', () => {
@@ -742,5 +742,46 @@ describe('common props (`common/props.ts`)', () => {
   test('className reaches the sidebar root', () => {
     const { container } = renderSidebar({ className: 'my-sidebar' })
     expect(container.querySelector('.my-sidebar')).toBeTruthy()
+  })
+})
+
+describe('nav badges in the collapsed rail', () => {
+  const BADGED: AppSidebarProps['sections'] = [
+    {
+      label: 'Main',
+      items: [
+        { key: 'cal', label: 'Calendar', icon: null, count: 4, href: '/cal' },
+        { key: 'plain', label: 'Home', icon: null, href: '/' },
+      ],
+    },
+    {
+      label: 'Other',
+      items: [{ key: 'm365', label: 'M365', icon: null, href: '/m365', badge: <span>new</span> }],
+    },
+  ]
+
+  test('collapsed, a counted row gets a rail dot and its count in the accessible name', () => {
+    renderSidebar({ sections: BADGED, collapsed: true })
+    const calendar = screen.getByRole('link', { name: 'Calendar, 4', hidden: true })
+    expect(calendar.querySelector('[data-basalt-rail-dot]')).not.toBeNull()
+  })
+
+  test('a custom badge in a non-primary section also earns the dot; unbadged rows do not', () => {
+    renderSidebar({ sections: BADGED, collapsed: true })
+    expect(
+      screen
+        .getByRole('link', { name: 'M365', hidden: true })
+        .querySelector('[data-basalt-rail-dot]'),
+    ).not.toBeNull()
+    expect(
+      screen
+        .getByRole('link', { name: 'Home', hidden: true })
+        .querySelector('[data-basalt-rail-dot]'),
+    ).toBeNull()
+  })
+
+  test('expanded, no rail dot renders and the name keeps the visible count', () => {
+    const { container } = renderSidebar({ sections: BADGED, collapsed: false })
+    expect(container.querySelector('[data-basalt-rail-dot]')).toBeNull()
   })
 })

@@ -29,6 +29,7 @@ declare const classes: {
   readonly blockHeaderButton: string
   readonly blockIcon: string
   readonly blockDot: string
+  readonly navIconDotHost: string
   readonly blockItems: string
   readonly blockRow: string
   readonly blockRowStatic: string
