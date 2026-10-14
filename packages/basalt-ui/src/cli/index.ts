@@ -148,23 +148,11 @@ function sanitizeSeverity(cfg: BasaltConfig): BasaltConfig {
 /** Does `cwd`'s own `package.json` carry a `basalt` key? — "misconfigured roots" vs "wrong
  *  directory", the failure a root-invoked hook hits since 1.29.0's single resolver. Never a walk. */
 export function hasBasaltKey(cwd: string): boolean {
-  const raw = readIfExists(resolve(cwd, 'package.json'))
-  try {
-    return raw !== null && (JSON.parse(raw) as { basalt?: unknown }).basalt !== undefined
-  } catch {
-    return false
-  }
+  return readPackageJson<{ basalt?: unknown }>(cwd)?.basalt !== undefined
 }
 
 export function readBasaltConfig(cwd: string): BasaltConfig {
-  try {
-    const pkg = JSON.parse(readFileSync(resolve(cwd, 'package.json'), 'utf8')) as {
-      basalt?: BasaltConfig
-    }
-    return sanitizeSeverity(pkg.basalt ?? {})
-  } catch {
-    return {}
-  }
+  return sanitizeSeverity(readPackageJson<{ basalt?: BasaltConfig }>(cwd)?.basalt ?? {})
 }
 
 /**
@@ -237,13 +225,10 @@ const UNRESOLVED_INSTALL: BasaltInstall = { dir: null, version: null, how: null 
 /** `<dir>/node_modules/basalt-ui` when it holds a readable package.json, else null. */
 function basaltInstallAt(dir: string): { dir: string; version: string | null } | null {
   const installDir = resolve(dir, 'node_modules', 'basalt-ui')
-  const raw = readIfExists(resolve(installDir, 'package.json'))
-  if (raw === null) return null
-  try {
-    const pkg = JSON.parse(raw) as { version?: string }
-    return { dir: installDir, version: pkg.version ?? null }
-  } catch {
-    return { dir: installDir, version: null }
+  if (readIfExists(resolve(installDir, 'package.json')) === null) return null
+  return {
+    dir: installDir,
+    version: readPackageJson<{ version?: string }>(installDir)?.version ?? null,
   }
 }
 
@@ -500,31 +485,30 @@ export function readIfExists(abs: string): string | null {
   }
 }
 
+/** `<dir>/package.json` parsed as `T`; null when absent or not JSON. */
+export function readPackageJson<T>(dir: string): T | null {
+  const raw = readIfExists(resolve(dir, 'package.json'))
+  try {
+    return raw === null ? null : (JSON.parse(raw) as T)
+  } catch {
+    return null
+  }
+}
+
 /** Read a shipped source asset from the package root; null if the sibling hasn't authored it yet. */
 export function readSource(pkgRoot: string, source: string): string | null {
   return readIfExists(resolve(pkgRoot, source))
 }
 
 function readPackageName(cwd: string): string {
-  try {
-    const pkg = JSON.parse(readFileSync(resolve(cwd, 'package.json'), 'utf8')) as { name?: string }
-    if (pkg.name && pkg.name.length > 0) return pkg.name
-  } catch {
-    // fall through to dir name
-  }
+  const name = readPackageJson<{ name?: string }>(cwd)?.name
+  if (name && name.length > 0) return name
   return cwd.split('/').filter(Boolean).pop() ?? 'app'
 }
 
 /** The framework's own published version, read from the package root package.json. */
 export function readFrameworkVersion(pkgRoot: string): string {
-  try {
-    const pkg = JSON.parse(readFileSync(resolve(pkgRoot, 'package.json'), 'utf8')) as {
-      version?: string
-    }
-    return pkg.version ?? '0.0.0'
-  } catch {
-    return '0.0.0'
-  }
+  return readPackageJson<{ version?: string }>(pkgRoot)?.version ?? '0.0.0'
 }
 
 /**
@@ -733,20 +717,18 @@ export function resolveAppDir(root: string): AppResolution {
 
 /** True when `pkgName` appears in the consumer's dependencies, devDependencies, or peerDependencies. */
 function hasDependency(cwd: string, pkgName: string): boolean {
-  try {
-    const pkg = JSON.parse(readFileSync(resolve(cwd, 'package.json'), 'utf8')) as {
-      dependencies?: Record<string, string>
-      devDependencies?: Record<string, string>
-      peerDependencies?: Record<string, string>
-    }
-    return Boolean(
-      pkg.dependencies?.[pkgName] ??
-      pkg.devDependencies?.[pkgName] ??
-      pkg.peerDependencies?.[pkgName],
-    )
-  } catch {
-    return false
-  }
+  const pkg =
+    readPackageJson<
+      Record<
+        'dependencies' | 'devDependencies' | 'peerDependencies',
+        Record<string, string> | undefined
+      >
+    >(cwd)
+  return Boolean(
+    pkg?.dependencies?.[pkgName] ??
+    pkg?.devDependencies?.[pkgName] ??
+    pkg?.peerDependencies?.[pkgName],
+  )
 }
 
 /**
@@ -1275,14 +1257,8 @@ export function patchPackageJson(
 ): boolean {
   const abs = resolve(cwd, 'package.json')
   const raw = readIfExists(abs)
-  if (raw === null) return false
-  let pkg: Record<string, unknown>
-  try {
-    pkg = JSON.parse(raw) as Record<string, unknown>
-  } catch {
-    return false
-  }
-  if (!mutate(pkg)) return false
+  const pkg = readPackageJson<Record<string, unknown>>(cwd)
+  if (raw === null || pkg === null || !mutate(pkg)) return false
   const indent = /\n([ \t]+)"/.exec(raw)?.[1] ?? '  '
   writeFileSync(abs, JSON.stringify(pkg, null, indent) + (raw.endsWith('\n') ? '\n' : ''))
   return true
@@ -1689,15 +1665,8 @@ function expandWorkspaceGlobs(cwd: string, patterns: readonly string[]): string[
  * an unrecognized `workspaces` shape.
  */
 function collectWorkspacePackages(cwd: string): WorkspaceWalk {
-  const raw = readIfExists(resolve(cwd, 'package.json'))
-  if (raw === null) return { packages: [], hasWorkspacesField: false }
-
-  let parsed: { workspaces?: unknown; name?: string }
-  try {
-    parsed = JSON.parse(raw) as { workspaces?: unknown; name?: string }
-  } catch {
-    return { packages: [], hasWorkspacesField: false }
-  }
+  const parsed = readPackageJson<{ workspaces?: unknown; name?: string }>(cwd)
+  if (parsed === null) return { packages: [], hasWorkspacesField: false }
 
   const patterns = isStringArray(parsed.workspaces)
     ? parsed.workspaces

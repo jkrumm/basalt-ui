@@ -987,6 +987,13 @@ optional, subpath-required peers.
 | `NavItemMeta`, `NavGroupMeta`, `AnyNavItem`, `AnyNavGroup`, `AnyNavLink`, `FlatNavItem`, `NavConfig`, `NavGroupId`, `NavTabId`, `NavIndex`, `UseNavOptions`, `NavBinding`, `NavAnchor`, `NavAnchorProps`, `NavMobilePlacement` | deleted                                                                                                                                                                                                                                                                                                                                                                                                                                                    | no consumer names them; derive with `ComponentProps` / `Parameters` |
 | `useNav`, and `BasaltShell`'s `sections` / `mobileNav` props                                                                                                                                                                   | deleted: pass `nav={NAV}` (plus `badges`, `isActive`, `getScrollElement` — the old `useNav` options) to `BasaltShell`; it resolves the sidebar, the mobile bar and the breadcrumb itself. `mobileNav` tuning moves to `defineNav`'s `mobile`. argo `apps/dashboard/src/routes/__root.tsx`: replace `const nav = useNav(NAV, { badges })` + `{...nav}` with `nav={NAV} badges={…}` (migrates in W12; 1.x consumers stay on their pinned version until then) |
 
+## Unreleased — subpath peers
+
+- `doctor` gains `subpath-peers`: when your source imports a basalt-ui subpath whose required peers
+  are not installed (e.g. `shiki`, `@shikijs/langs`, `@shikijs/themes` for `basalt-ui/content`) it
+  fails with the `bun add` line to run. Without them the build succeeded and the chunk threw
+  "Could not resolve" at load. `CodeBlock` also warns once in dev when the highlighter cannot load.
+
 ## Unreleased
 
 _Nothing yet. Author the next section under this heading as `## Unreleased — <title>`; the
@@ -1003,10 +1010,6 @@ release renames it and opens a new one here._
   smaller than its label — that is a column width, not a table default.
 - The column-fold toggle column's header cell carries a visually hidden `Details` label instead of
   an empty `aria-hidden` cell.
-- `doctor` gains `subpath-peers`: when your source imports a basalt-ui subpath whose required peers
-  are not installed (e.g. `shiki`, `@shikijs/langs`, `@shikijs/themes` for `basalt-ui/content`) it
-  fails with the `bun add` line to run. Without them the build succeeded and the chunk threw
-  "Could not resolve" at load. `CodeBlock` also warns once in dev when the highlighter cannot load.
 
 ## 2.0.3 — argo shell and CI friction
 

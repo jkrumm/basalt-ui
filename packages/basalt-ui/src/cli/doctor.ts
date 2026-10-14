@@ -6,7 +6,6 @@
 import { existsSync } from 'node:fs'
 import { relative, resolve } from 'node:path'
 
-import type { BasaltConfig } from './config'
 import {
   AGENTS_MD,
   LEGACY_BLOCK_HOST,
@@ -26,6 +25,7 @@ import {
   readBasaltConfig,
   readIfExists,
   readManifest,
+  readPackageJson,
   resolveAppDir,
   resolveProjectDir,
   ROUTER_SEED_DESTS,
@@ -86,32 +86,13 @@ type AiMajorField = (typeof AI_MAJOR_FIELDS)[number]
 
 /** The `ai` major per dependency field of THIS package.json (not walked across workspaces). */
 function aiMajorsAt(dir: string): Partial<Record<AiMajorField, number>> {
-  const raw = readIfExists(resolve(dir, 'package.json'))
-  if (raw === null) return {}
-  try {
-    const pkg = JSON.parse(raw) as Partial<Record<AiMajorField, Record<string, string>>>
-    const out: Partial<Record<AiMajorField, number>> = {}
-    for (const field of AI_MAJOR_FIELDS) {
-      const major = majorOf(pkg[field]?.['ai'])
-      if (major !== null) out[field] = major
-    }
-    return out
-  } catch {
-    return {}
+  const pkg = readPackageJson<Partial<Record<AiMajorField, Record<string, string>>>>(dir) ?? {}
+  const out: Partial<Record<AiMajorField, number>> = {}
+  for (const field of AI_MAJOR_FIELDS) {
+    const major = majorOf(pkg[field]?.['ai'])
+    if (major !== null) out[field] = major
   }
-}
-
-/** `basalt.aiMajorSkewReason` as a validated reason, plus whether the key was present but invalid. */
-function resolveAiMajorSkewReason(cfg: BasaltConfig): {
-  reason: string | null
-  presentButInvalid: boolean
-} {
-  const raw = cfg.aiMajorSkewReason
-  if (raw === undefined) return { reason: null, presentButInvalid: false }
-  if (typeof raw === 'string' && raw.trim().length > 0) {
-    return { reason: raw, presentButInvalid: false }
-  }
-  return { reason: null, presentButInvalid: true }
+  return out
 }
 
 /**
@@ -154,21 +135,10 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
   const result: DoctorResult = { hardFailures: 0, warnings: 0, skipped: 0 }
   const lines: string[] = [`\nbasalt-ui doctor — ${cwd}\n`]
 
-  function pass(msg: string): void {
-    lines.push(`  ✓ ${msg}`)
-  }
-  function warn(msg: string): void {
-    lines.push(`  ⚠ ${msg}`)
-    result.warnings++
-  }
-  function fail(msg: string): void {
-    lines.push(`  ✖ ${msg}`)
-    result.hardFailures++
-  }
-  function skip(msg: string): void {
-    lines.push(`  ? SKIPPED ${msg}`)
-    result.skipped++
-  }
+  const pass = (msg: string): number => lines.push(`  ✓ ${msg}`)
+  const warn = (msg: string): number => lines.push(`  ⚠ ${msg}`) && result.warnings++
+  const fail = (msg: string): number => lines.push(`  ✖ ${msg}`) && result.hardFailures++
+  const skip = (msg: string): number => lines.push(`  ? SKIPPED ${msg}`) && result.skipped++
 
   if (project.relocatedFrom !== null) {
     lines.push(`  → BASALT_CWD relocated from ${project.relocatedFrom} to ${cwd}.\n`)
@@ -369,8 +339,11 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
   const aiEntries = AI_MAJOR_FIELDS.filter((field) => aiMajors[field] !== undefined).map(
     (field) => ({ field, major: aiMajors[field] as number }),
   )
-  const { reason: aiMajorSkewReason, presentButInvalid: aiMajorSkewReasonInvalid } =
-    resolveAiMajorSkewReason(cfg)
+  // `basalt.aiMajorSkewReason`: a non-blank string exempts a skew; any other present value is invalid.
+  const rawSkewReason = cfg.aiMajorSkewReason
+  const aiMajorSkewReason =
+    typeof rawSkewReason === 'string' && rawSkewReason.trim().length > 0 ? rawSkewReason : null
+  const aiMajorSkewReasonInvalid = aiMajorSkewReason === null && rawSkewReason !== undefined
   if (aiEntries.length > 0) {
     const distinctMajors = new Set(aiEntries.map((entry) => entry.major))
     if (distinctMajors.size > 1) {
