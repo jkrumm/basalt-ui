@@ -28,6 +28,7 @@ import {
   Paper,
   Stack,
   Switch,
+  Tabs,
   Text,
 } from '@mantine/core'
 import { Composer } from 'basalt-ui/agent'
@@ -35,6 +36,7 @@ import type { ComposerHandle, ComposerSubmit } from 'basalt-ui/agent'
 import { VX } from 'basalt-ui/tokens'
 import type { ClipboardEvent } from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { AgentStreamDemo } from './AgentStreamDemo'
 import { IconMic, IconPaperclip, IconSparkle } from './icons'
 
 // ── Simulated voice input (a stand-in for a real speech-to-text recorder) ────────────────────────
@@ -113,7 +115,7 @@ function sleep(ms: number): Promise<void> {
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
-export function AgentComposerDemoPage() {
+function ComposerDemo() {
   const composerRef = useRef<ComposerHandle>(null)
   const [attachments, setAttachments] = useState<readonly ComposerAttachment[]>([])
   const [failNext, setFailNext] = useState(false)
@@ -336,5 +338,22 @@ export function AgentComposerDemoPage() {
         )}
       </Paper>
     </Stack>
+  )
+}
+
+export function AgentComposerDemoPage() {
+  return (
+    <Tabs defaultValue="composer" keepMounted={false}>
+      <Tabs.List mb="md">
+        <Tabs.Tab value="composer">Composer</Tabs.Tab>
+        <Tabs.Tab value="stream">Stream</Tabs.Tab>
+      </Tabs.List>
+      <Tabs.Panel value="composer">
+        <ComposerDemo />
+      </Tabs.Panel>
+      <Tabs.Panel value="stream">
+        <AgentStreamDemo />
+      </Tabs.Panel>
+    </Tabs>
   )
 }

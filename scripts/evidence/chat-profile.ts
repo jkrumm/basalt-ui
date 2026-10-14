@@ -2,10 +2,10 @@
  * Evidence lane: React commit counts + frame cost while the playground `/agent` route streams a
  * reply. The playground source is NOT touched:
  *
- *  - Stream: `/agent` → "Core" tab (`AgentDemoPage`) drives `useAgentStream` over
- *    `scenarioTransport(AGENT_SCENARIOS[0], 'normal')` — a deterministic in-memory mock (`rich`:
- *    reasoning + markdown with a code fence, a mermaid block and an alert), one delta per 28 ms.
- *    No network, no model; only `crypto.randomUUID()` part ids vary between runs.
+ *  - Stream: `/agent` → "Stream" tab (`AgentStreamDemo`) drives `useAgentThreadRuns` over
+ *    `richTransport` — a deterministic in-memory mock (~1500 words over ~3 s: reasoning, markdown
+ *    with lists and a link, a ts fence, a mermaid block, an alert, a tool call), one delta per
+ *    28 ms, rendered by `ThreadFeed` + `Composer`. No network, no model, content-stable part ids.
  *  - Commits: a `__REACT_DEVTOOLS_GLOBAL_HOOK__` stub installed by `addInitScript` counts every
  *    `onCommitFiberRoot` call (React calls it from production builds too). It is a counter, not a
  *    Profiler: it says HOW MANY commits, not how long each took — frame times and long tasks over
@@ -73,6 +73,7 @@ async function oneRun(
   try {
     page.setDefaultTimeout(STREAM_TIMEOUT_MS)
     await page.goto(`${baseUrl}/agent`, { waitUntil: 'load' })
+    await page.getByRole('tab', { name: 'Stream' }).click()
     await page.waitForSelector(COMPOSER)
     await page.waitForLoadState('networkidle')
     await page.waitForTimeout(500)
@@ -120,7 +121,7 @@ export const chatProfile: Lane = async (ctx): Promise<LaneResult> => {
   const detail: Record<string, unknown> = {
     idleControlMs: IDLE_CONTROL_MS,
     prompt: PROMPT,
-    route: '/agent (Core tab, scenario "rich", speed "normal")',
+    route: '/agent (Stream tab, scenario "rich")',
     runs: RUNS,
   }
   for (const rate of THROTTLES) {
