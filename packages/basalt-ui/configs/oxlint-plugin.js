@@ -150,7 +150,6 @@ export const KNOWN_RULE_IDS = new Set([
   'token-layer-boundary',
   'no-import-meta-env',
   'raw-breakpoint',
-  'router-view-transition',
   'no-dev-helper',
   // These two honour `basalt-agent-allow`, never `theme-allow` — but they are real ids, so an
   // annotation naming one must parse as a (useless) scoped annotation rather than as prose.
@@ -3857,215 +3856,6 @@ const rawBreakpoint = {
   },
 }
 
-// ── Rule 33 — router-view-transition ────────────────────────────────────────────────────────────
-
-const ROUTER_VIEW_TRANSITION_MESSAGE =
-  "Router-driven view transition — `document.startViewTransition` interrupts React's own " +
-  '`<ViewTransition>`, and a route change commits through `useSyncExternalStore`, so it never ' +
-  'activates one anyway (V2-SPEC § 5). Drop `viewTransition` / `defaultViewTransition` and the ' +
-  "direct call; animate with React's `<ViewTransition>` inside a `startTransition` via " +
-  'basalt-ui instead. (basalt/router-view-transition)'
-
-/** `@tanstack/react-router` and its subpaths — never `@tanstack/react-router-devtools`. */
-const TANSTACK_ROUTER_SOURCE = /^@tanstack\/react-router(?:\/|$)/
-/** Router components whose `viewTransition` prop asks for a document view transition. */
-const VIEW_TRANSITION_TAGS = new Set(['Link', 'Navigate'])
-/** Router calls whose first-argument object may carry `viewTransition`. */
-const VIEW_TRANSITION_CALLS = new Set(['navigate', 'redirect', 'linkOptions'])
-
-/** TS wrappers that still READ the value they wrap (`Dock as X`, `Dock!`, `Dock satisfies X`). */
-const TS_VALUE_WRAPPERS = new Set([
-  'TSAsExpression',
-  'TSNonNullExpression',
-  'TSSatisfiesExpression',
-  'TSInstantiationExpression',
-  'TSTypeAssertion',
-])
-
-/** `x as T`, `x!`, `x satisfies T`, `f<T>`, `<T>x` → `x`. */
-function unwrapTs(node) {
-  let current = node
-  while (current && TS_VALUE_WRAPPERS.has(current.type)) current = current.expression
-  return current
-}
-
-/** How deep a router binding is chased through `const x = useNavigate()`-style initialisers. */
-const ROUTER_RESOLVE_DEPTH = 4
-
-/** What a router factory call returns: the kind a binding initialised from it stands for. */
-const ROUTER_CALL_KIND = {
-  useNavigate: 'navigate',
-  useRouter: 'router',
-  createRouter: 'router',
-  createFileRoute: 'route',
-  createLazyFileRoute: 'route',
-  createRoute: 'route',
-  createLazyRoute: 'route',
-  createRootRoute: 'route',
-  createRootRouteWithContext: 'route',
-  getRouteApi: 'route',
-}
-
-/** The router export a binding was imported as — `{ imported }` or `{ namespace }` — else undefined. */
-function routerImport(sourceCode, identifier) {
-  const def = soleDefinition(sourceCode, identifier)
-  if (def?.type !== 'ImportBinding') return undefined
-  const decl = def.parent
-  const source = decl?.source?.value
-  if (decl?.importKind === 'type' || typeof source !== 'string') return undefined
-  if (!TANSTACK_ROUTER_SOURCE.test(source)) return undefined
-  if (def.node.type === 'ImportNamespaceSpecifier') return { namespace: true }
-  if (def.node.type !== 'ImportSpecifier') return undefined
-  const imported = def.node.imported
-  return { imported: imported.type === 'Identifier' ? imported.name : imported.value }
-}
-
-/** What a router factory CALL yields (`useNavigate()` → 'navigate', `createFileRoute(p)(o)` → 'route'). */
-function routerCallKind(sourceCode, call, depth) {
-  let callee = unwrapTs(call.callee)
-  while (callee?.type === 'CallExpression') callee = unwrapTs(callee.callee)
-  const name = routerName(sourceCode, callee, depth + 1)
-  return name !== undefined && Object.hasOwn(ROUTER_CALL_KIND, name)
-    ? ROUTER_CALL_KIND[name]
-    : undefined
-}
-
-/** A plain identifier: an import from the router, or a binding initialised from a router factory. */
-function routerBindingName(sourceCode, node, depth) {
-  const bound = routerImport(sourceCode, node)
-  if (bound?.imported !== undefined) return bound.imported
-  const def = soleDefinition(sourceCode, node)
-  const init = def?.type === 'Variable' ? unwrapTs(def.node?.init) : undefined
-  return init?.type === 'CallExpression' ? routerCallKind(sourceCode, init, depth) : undefined
-}
-
-/** Initializers that make a receiver a plain data object — never a router or a route. */
-const NON_ROUTER_INITIALIZERS = new Set([
-  'ObjectExpression',
-  'ArrayExpression',
-  'Literal',
-  'TemplateLiteral',
-  'ClassExpression',
-])
-
-/** True only when `object` PROVABLY is not a router: a local plain object, array, literal or class instance. */
-function provablyNotRouter(sourceCode, object) {
-  if (object?.type === 'Identifier') {
-    const def = soleDefinition(sourceCode, object)
-    if (def?.type !== 'Variable') return false
-    return provablyData(sourceCode, unwrapTs(def.node?.init))
-  }
-  return provablyData(sourceCode, object)
-}
-
-function provablyData(sourceCode, node) {
-  if (node === null || node === undefined) return false
-  if (NON_ROUTER_INITIALIZERS.has(node.type)) return true
-  if (node.type !== 'NewExpression' || node.callee?.type !== 'Identifier') return false
-  return soleDefinition(sourceCode, node.callee)?.type === 'ClassName'
-}
-
-/**
- * `ns.redirect` on a router namespace import, and `X.useNavigate` / `X.navigate` on anything that
- * is not PROVABLY plain data. Fail closed: a route reached through `createRootRouteWithContext<C>()(…)`,
- * a sibling-module import, a prop or a call result cannot be traced to its factory here, and the
- * shipped rule must not go silent on them.
- */
-function routerMemberName(sourceCode, node) {
-  const object = node.object
-  const property = node.property?.name
-  if (object?.type === 'Identifier' || object?.type === 'JSXIdentifier') {
-    if (routerImport(sourceCode, object)?.namespace === true) return property
-  }
-  if (property !== 'useNavigate' && property !== 'navigate') return undefined
-  return provablyNotRouter(sourceCode, object) ? undefined : property
-}
-
-/**
- * Which router export `node` is — `Link`, `redirect`, `createRouter` — or `'navigate'` for the
- * binding `useNavigate()` returned (whatever it is called) and for `router.navigate`, `'router'` /
- * `'route'` for the result of the router and route factories. `undefined` for anything without
- * router provenance, so a local `Link`, `navigate` or `api.useNavigate` is clean.
- */
-function routerName(sourceCode, node, depth = 0) {
-  if (node === null || node === undefined || depth > ROUTER_RESOLVE_DEPTH) return undefined
-  switch (node.type) {
-    case 'TSNonNullExpression':
-    case 'TSInstantiationExpression':
-    case 'TSAsExpression':
-    case 'TSSatisfiesExpression':
-      return routerName(sourceCode, unwrapTs(node), depth + 1)
-    case 'Identifier':
-    case 'JSXIdentifier':
-      return routerBindingName(sourceCode, node, depth)
-    case 'MemberExpression':
-      return node.computed ? undefined : routerMemberName(sourceCode, node)
-    case 'JSXMemberExpression':
-      return routerMemberName(sourceCode, node)
-    case 'CallExpression':
-      return routerCallKind(sourceCode, node, depth)
-    default:
-      return undefined
-  }
-}
-
-/** `viewTransition={false}` / `{ viewTransition: false }` asks for no transition; anything else does. */
-function asksForTransition(value) {
-  if (value === null || value === undefined) return true
-  const expression = value.type === 'JSXExpressionContainer' ? value.expression : value
-  return !(expression?.type === 'Literal' && expression.value === false)
-}
-
-// Ships: error
-const routerViewTransition = {
-  meta: {
-    type: 'problem',
-    docs: {
-      description:
-        'Disallow router-driven view transitions: viewTransition on Link/navigate/redirect and document.startViewTransition.',
-    },
-    schema: [],
-  },
-  create(context) {
-    if (isTestFile(context)) return {}
-    const sourceCode = context.sourceCode ?? context.getSourceCode?.()
-    const report = (node) => {
-      if (hasThemeAllow(context, node, 'router-view-transition')) return
-      context.report({ node, message: ROUTER_VIEW_TRANSITION_MESSAGE })
-    }
-    return {
-      JSXAttribute(node) {
-        if (node.name?.type !== 'JSXIdentifier' || node.name.name !== 'viewTransition') return
-        if (!VIEW_TRANSITION_TAGS.has(routerName(sourceCode, node.parent?.name) ?? '')) return
-        if (asksForTransition(node.value)) report(node)
-      },
-      CallExpression(node) {
-        const callee = node.callee
-        if (
-          callee?.type === 'MemberExpression' &&
-          callee.object?.type === 'Identifier' &&
-          callee.object.name === 'document' &&
-          callee.property?.name === 'startViewTransition'
-        ) {
-          report(node)
-          return
-        }
-        const arg0 = node.arguments?.[0]
-        if (arg0?.type !== 'ObjectExpression') return
-        const name = routerName(sourceCode, callee)
-        let banned
-        if (name === 'createRouter') banned = 'defaultViewTransition'
-        else if (VIEW_TRANSITION_CALLS.has(name ?? '')) banned = 'viewTransition'
-        if (banned === undefined) return
-        for (const prop of arg0.properties) {
-          if (prop.type !== 'Property' || propertyKeyName(prop) !== banned) continue
-          if (asksForTransition(prop.value)) report(prop)
-        }
-      },
-    }
-  },
-}
-
 // ── Rule 34 — no-dev-helper ─────────────────────────────────────────────────────────────────────
 
 const NO_DEV_HELPER_MESSAGE =
@@ -4076,6 +3866,15 @@ const NO_DEV_HELPER_MESSAGE =
 
 /** Specifiers of dev-only modules: the dev dock, the theme lab, any `*-devtools` package. */
 const DEV_MODULE_SPECIFIER = /(?:^|[/.-])(?:dev-dock|theme-lab|devtools)(?:$|[/.-])/
+/** TS wrappers that still READ the value they wrap (`Dock as X`, `Dock!`, `Dock satisfies X`). */
+const TS_VALUE_WRAPPERS = new Set([
+  'TSAsExpression',
+  'TSNonNullExpression',
+  'TSSatisfiesExpression',
+  'TSInstantiationExpression',
+  'TSTypeAssertion',
+])
+
 /** The dev modules themselves — reachable only through a gated import, so their own imports are exempt. */
 const DEV_MODULE_FILE = /(?:^|[\\/])(?:dev-dock\.[cm]?[jt]sx?|theme-lab[\\/])/
 
@@ -4323,7 +4122,6 @@ export default {
     'ai-sdk-major': aiSdkMajor,
     'no-import-meta-env': noImportMetaEnv,
     'raw-breakpoint': rawBreakpoint,
-    'router-view-transition': routerViewTransition,
     'no-dev-helper': noDevHelper,
   },
 }

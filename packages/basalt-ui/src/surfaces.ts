@@ -61,7 +61,6 @@ export const PLUGIN_RULE_ID_LIST = [
   'ai-sdk-major',
   'no-import-meta-env',
   'raw-breakpoint',
-  'router-view-transition',
   'no-dev-helper',
 ] as const
 
@@ -276,8 +275,6 @@ export const SURFACES = {
       'in-body-page-title',
       'raw-scroll-container',
       'shadow-basalt-export',
-      // V2-SPEC § 5: React owns every view transition; the router path is banned.
-      'router-view-transition',
       // Dev-only `import()`s need a literal NODE_ENV gate to fold out of production (repo-local).
       'no-dev-helper',
       // `import.meta.env` is a Vite-ism that fails outside a Vite build (SSR/server code, Node

@@ -69,7 +69,6 @@ beforeEach(() => {
         'basalt/agent-no-raw-usechat': 'error',
         'basalt/ai-sdk-major': 'error',
         'basalt/raw-breakpoint': 'error',
-        'basalt/router-view-transition': 'error',
         'basalt/no-dev-helper': 'error',
       },
     }),
@@ -3865,168 +3864,6 @@ describe('basalt/agent-no-raw-usechat — Chat', () => {
   })
 })
 
-// ── router-view-transition ───────────────────────────────────────────────────
-
-const ROUTER = `@tanstack/react-router`
-
-describe('basalt/router-view-transition', () => {
-  it.each([
-    [
-      'viewTransition on <Link>',
-      `import { Link } from '${ROUTER}'\nexport const C = () => <Link to="/a" viewTransition />\n`,
-    ],
-    [
-      'viewTransition on an aliased Link',
-      `import { Link as Foo } from '${ROUTER}'\nexport const C = () => <Foo to="/a" viewTransition />\n`,
-    ],
-    [
-      'viewTransition on a namespace Router.Link',
-      `import * as Router from '${ROUTER}'\nexport const C = () => <Router.Link to="/a" viewTransition />\n`,
-    ],
-    [
-      'viewTransition on <Navigate>',
-      `import { Navigate } from '${ROUTER}'\nexport const C = () => <Navigate to="/a" viewTransition />\n`,
-    ],
-    [
-      'the binding useNavigate() returned, whatever its name',
-      `import { useNavigate } from '${ROUTER}'\nexport const useGo = () => {\n  const go = useNavigate()\n  go({ to: '/a', viewTransition: true })\n}\n`,
-    ],
-    [
-      'the route API useNavigate',
-      `import { createFileRoute } from '${ROUTER}'\nconst Route = createFileRoute('/a')({})\nconst go = Route.useNavigate()\ngo({ to: '/a', viewTransition: true })\n`,
-    ],
-    [
-      'createRootRouteWithContext<Ctx>()({})',
-      `import { createRootRouteWithContext } from '${ROUTER}'\nconst Route = createRootRouteWithContext<Ctx>()({})\nRoute.useNavigate()({ viewTransition: true })\n`,
-    ],
-    [
-      'an as-asserted route initializer',
-      `import { createFileRoute } from '${ROUTER}'\nconst Route = createFileRoute('/a')({}) as AnyRoute\nRoute.useNavigate()({ viewTransition: true })\n`,
-    ],
-    [
-      'a Route imported from a sibling module',
-      `import { Route } from './route'\nRoute.useNavigate()({ viewTransition: true })\n`,
-    ],
-    [
-      'a route passed as a prop',
-      `export const C = ({ route }: { route: AnyRoute }) => {\n  route.useNavigate()({ viewTransition: true })\n  return null\n}\n`,
-    ],
-    [
-      'a call-result receiver',
-      `const Route = makeRoute()\nRoute.useNavigate()({ viewTransition: true })\n`,
-    ],
-    [
-      'getRouteApi(id).useNavigate',
-      `import { getRouteApi } from '${ROUTER}'\ngetRouteApi('/a').useNavigate()({ viewTransition: true })\n`,
-    ],
-    [
-      'a bare viewTransition attribute',
-      `import { Link } from '${ROUTER}'\nexport const C = () => <Link to="/a" viewTransition />\n`,
-    ],
-    [
-      'viewTransition={true}',
-      `import { Link } from '${ROUTER}'\nexport const C = () => <Link to="/a" viewTransition={true} />\n`,
-    ],
-    [
-      'viewTransition={expression}',
-      `import { Link } from '${ROUTER}'\nexport const C = ({ on }: { on: boolean }) => <Link to="/a" viewTransition={on} />\n`,
-    ],
-    [
-      'router.navigate',
-      `import { useRouter } from '${ROUTER}'\nexport const useGo = () => {\n  const router = useRouter()\n  router.navigate({ to: '/a', viewTransition: true })\n}\n`,
-    ],
-    [
-      'redirect',
-      `import { redirect } from '${ROUTER}'\nthrow redirect({ to: '/a', viewTransition: true })\n`,
-    ],
-    [
-      'a namespace redirect',
-      `import * as R from '${ROUTER}'\nthrow R.redirect({ to: '/a', viewTransition: true })\n`,
-    ],
-    [
-      'linkOptions',
-      `import { linkOptions } from '${ROUTER}'\nlinkOptions({ to: '/a', viewTransition: true })\n`,
-    ],
-    [
-      'createRouter({ defaultViewTransition })',
-      `import { createRouter } from '${ROUTER}'\ncreateRouter({ routeTree, defaultViewTransition: true })\n`,
-    ],
-    ['document.startViewTransition()', `document.startViewTransition(() => update())\n`],
-  ])('flags %s', (_name, source) => {
-    const { code, rules, output } = run(source, 'lib.tsx')
-    expect(code).toBe(1)
-    expect(rules).toContain('router-view-transition')
-    expect(output).toContain('<ViewTransition>')
-  })
-
-  it.each([
-    [
-      'a plain router <Link>',
-      `import { Link } from '${ROUTER}'\nexport const C = () => <Link to="/a" />\n`,
-    ],
-    [
-      'a local Link that is not the router’s',
-      `const Link = (p: object) => <a {...p} />\nexport const C = () => <Link viewTransition />\n`,
-    ],
-    [
-      'a Link from another package',
-      `import { Link } from './my-link'\nexport const C = () => <Link viewTransition />\n`,
-    ],
-    [
-      'a local navigate that is not from useNavigate',
-      `const navigate = (o: object) => o\nnavigate({ to: '/a', viewTransition: true })\n`,
-    ],
-    [
-      'a local redirect',
-      `function redirect(o: object) { return o }\nredirect({ viewTransition: true })\n`,
-    ],
-    [
-      'a useNavigate property on a local object',
-      `const api = { useNavigate: () => (o: object) => o }\napi.useNavigate()({ to: '/a', viewTransition: true })\n`,
-    ],
-    [
-      'a useNavigate property on an array, a literal, a class instance',
-      `const a = [1]\nconst l = 'x'\nclass K { useNavigate() { return (o: object) => o } }\nconst k = new K()\na.useNavigate?.()({ viewTransition: true })\nl.useNavigate()({ viewTransition: true })\nk.useNavigate()({ viewTransition: true })\n`,
-    ],
-    [
-      'a shorthand local object, even as-asserted',
-      `const useNavigate = () => (o: object) => o\nconst api = { useNavigate } as const\napi.useNavigate()({ viewTransition: true })\n`,
-    ],
-    [
-      'viewTransition={false}',
-      `import { Link } from '${ROUTER}'\nexport const C = () => <Link to="/a" viewTransition={false} />\n`,
-    ],
-    [
-      'navigate({ viewTransition: false })',
-      `import { useNavigate } from '${ROUTER}'\nconst n = useNavigate()\nn({ to: '/a', viewTransition: false })\n`,
-    ],
-    [
-      'createRouter({ defaultViewTransition: false })',
-      `import { createRouter } from '${ROUTER}'\ncreateRouter({ routeTree, defaultViewTransition: false })\n`,
-    ],
-    [
-      'viewTransition on an unrelated element',
-      `import { Link } from '${ROUTER}'\nexport const C = () => <Foo viewTransition />\n`,
-    ],
-    [
-      'navigate without it',
-      `import { useNavigate } from '${ROUTER}'\nconst n = useNavigate()\nn({ to: '/a' })\n`,
-    ],
-    [
-      'React’s own <ViewTransition>',
-      `export const C = () => <ViewTransition>{x}</ViewTransition>\n`,
-    ],
-    [
-      'a waived call',
-      `// theme-allow router-view-transition — legacy embed\ndocument.startViewTransition(go)\n`,
-    ],
-  ])('does NOT flag %s', (_name, source) => {
-    const { code, rules } = run(source, 'lib.tsx')
-    expect(code).toBe(0)
-    expect(rules).not.toContain('router-view-transition')
-  })
-})
-
 // ── no-dev-helper ────────────────────────────────────────────────────────────
 
 describe('basalt/no-dev-helper', () => {
@@ -4167,11 +4004,6 @@ describe('rule level locks', () => {
     (JSON.parse(readFileSync(path, 'utf8')) as { rules: Record<string, unknown> }).rules
   const shipped = levels(resolve(import.meta.dirname, 'oxlint-basalt.json'))
   const repo = levels(resolve(import.meta.dirname, '..', '..', '..', '.oxlintrc.json'))
-
-  it('router-view-transition is error in both configs', () => {
-    expect(shipped['basalt/router-view-transition']).toBe('error')
-    expect(repo['basalt/router-view-transition']).toBe('error')
-  })
 
   it('no-dev-helper is repo-local only, at error', () => {
     expect(shipped).not.toHaveProperty('basalt/no-dev-helper')
