@@ -12,6 +12,7 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, test } from 'bun:test'
 import type { ReactNode } from 'react'
 import { createLocalStore, field } from '../state'
+import { FilterSet } from './filter-set'
 import { SelectFilter } from './select-filter'
 import type { SelectFilterEnumProps } from './select-filter'
 
@@ -107,13 +108,20 @@ describe('a call-site fallback (`withFallback`) reaches the control, not just th
 
   const pill = (name: string) => screen.getByRole('button', { name })
   const hook = () => screen.getByTestId('hook').textContent
+  /** The CHECKED radio in the open popover — the control's selected state, not just a pill label. */
+  const selected = async (): Promise<string | undefined> => {
+    const radios = await screen.findAllByRole('radio')
+    return radios.find((r) => (r as HTMLInputElement).checked)?.getAttribute('value') ?? undefined
+  }
 
-  test('unset: hook and control agree on the leader, and nothing is persisted', () => {
+  test('unset: hook and control agree on the leader, and nothing is persisted', async () => {
     localStorage.clear()
     mount(<Probe leader="bench" />)
     expect(hook()).toBe('bench')
-    expect(pill('bench')).toBeDefined()
+    fireEvent.click(pill('bench'))
+    expect(await selected()).toBe('bench')
     expect(localStorage.getItem('basalt:select-filter-leader')).toBeNull()
+    expect(lifts.readStored()).toEqual({})
   })
 
   test('a leader change while unset moves both', () => {
@@ -146,5 +154,29 @@ describe('a call-site fallback (`withFallback`) reaches the control, not just th
     })
     await waitFor(() => expect(hook()).toBe('bench'))
     expect(pill('bench')).toBeDefined()
+    expect(lifts.readStored()).toEqual({})
+  })
+
+  test('a stored value off the fallback is an active filter; Reset all returns to the fallback', async () => {
+    localStorage.clear()
+    const handle = lifts.field.exercise.withFallback('bench')
+    expect(handle.isDefault('squat')).toBe(false)
+    expect(handle.isDefault('bench')).toBe(true)
+
+    localStorage.setItem(
+      'basalt:select-filter-leader',
+      JSON.stringify({ v: 1, value: { exercise: 'squat' } }),
+    )
+    mount(
+      <FilterSet>
+        <SelectFilter field={handle} label="Lift" />
+        <SelectFilter field={store.field.currency} label="Currency" />
+      </FilterSet>,
+    )
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Filters (1)' })).toBeDefined())
+    fireEvent.click(screen.getByRole('button', { name: 'Filters (1)' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Reset all', hidden: true }))
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Filters' })).toBeDefined())
+    expect(lifts.readStored()).toEqual({})
   })
 })

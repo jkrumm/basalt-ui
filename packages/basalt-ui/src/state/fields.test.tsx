@@ -8,6 +8,7 @@
  */
 import { beforeEach, describe, expect, test } from 'bun:test'
 import { act, renderHook } from '@testing-library/react'
+import { createSearchStore } from '../router-tanstack/search-store'
 import { createLocalStore, field } from './fields'
 
 function storedRecord(key: string): Record<string, unknown> | null {
@@ -551,14 +552,14 @@ describe('createLocalStore — a number handle republishes its bounds', () => {
   })
 })
 
-describe('field.use({ fallback }) — a call-site default', () => {
+describe('field.withFallback — a call-site default', () => {
   // argo's strength-composite: the selected exercise defaults to the leader, a prop.
   const store = createLocalStore({
     key: 'l-leader',
     fields: { exercise: field.enum(['squat', 'bench', 'deadlift'], 'squat') },
   })
   type Leader = 'squat' | 'bench' | 'deadlift'
-  const useExercise = (leader: Leader) => store.field.exercise.use({ fallback: leader })
+  const useExercise = (leader: Leader) => store.field.exercise.withFallback(leader).use()
 
   test('unset → leader; leader change while unset → new leader', () => {
     const { result, rerender } = renderHook(({ leader }) => useExercise(leader), {
@@ -608,7 +609,7 @@ describe('field.use({ fallback }) — a call-site default', () => {
       },
     })
     const { result } = renderHook(() => ({
-      exercise: two.field.exercise.use({ fallback: 'bench' }),
+      exercise: two.field.exercise.withFallback('bench').use(),
       view: two.field.view.use(),
       zoom: two.field.zoom.use(),
     }))
@@ -645,9 +646,9 @@ describe('field.use({ fallback }) — a call-site default', () => {
       },
     })
     const { result } = renderHook(() => ({
-      n: falsy.field.n.use({ fallback: 0 })[0],
-      b: falsy.field.b.use({ fallback: false })[0],
-      t: falsy.field.t.use({ fallback: '' })[0],
+      n: falsy.field.n.withFallback(0).use()[0],
+      b: falsy.field.b.withFallback(false).use()[0],
+      t: falsy.field.t.withFallback('').use()[0],
     }))
     expect(result.current).toEqual({ n: 0, b: false, t: '' })
   })
@@ -670,7 +671,7 @@ describe('field.use({ fallback }) — a call-site default', () => {
       fields: { picks: field.multi(['a', 'b', 'c'], [], { persist: false }) },
     })
     const fallback = ['b'] as const
-    const { result, rerender } = renderHook(() => mem.field.picks.use({ fallback }))
+    const { result, rerender } = renderHook(() => mem.field.picks.withFallback(fallback).use())
     const first = result.current[0]
     expect(first).toBe(fallback)
     rerender()
@@ -683,7 +684,7 @@ describe('field.use({ fallback }) — a call-site default', () => {
       key: 'l-leader-mem',
       fields: { pick: field.enum(['a', 'b'], 'a', { persist: false }) },
     })
-    const { result } = renderHook(() => mem.field.pick.use({ fallback: 'b' }))
+    const { result } = renderHook(() => mem.field.pick.withFallback('b').use())
     expect(result.current[0]).toBe('b')
     act(() => result.current[1]('a'))
     expect(result.current[0]).toBe('a')
@@ -720,6 +721,41 @@ describe('field.withFallback — the derived handle', () => {
     expect(handle.isDefault('squat')).toBe(false)
     expect(store.field.exercise.fallback).toBe('squat')
     expect(handle.options).toEqual(store.field.exercise.options)
+  })
+
+  test('a primitive cache holds the last value only; a changed-then-reverted value is stable while unchanged', () => {
+    const f = store.field.exercise
+    const a = f.withFallback('bench')
+    expect(f.withFallback('bench')).toBe(a)
+    const b = f.withFallback('deadlift')
+    expect(f.withFallback('deadlift')).toBe(b)
+    // The slot moved on: 'bench' derives afresh, then is stable again.
+    const a2 = f.withFallback('bench')
+    expect(a2).not.toBe(a)
+    expect(f.withFallback('bench')).toBe(a2)
+  })
+
+  test('1000 distinct primitive fallbacks leave one cached handle', () => {
+    const since = createLocalStore({ key: 'l-cache', fields: { d: field.string() } })
+    const handles = Array.from({ length: 1000 }, (_, i) => since.field.d.withFallback(`2026-${i}`))
+    expect(new Set(handles).size).toBe(1000)
+    // Only the last survives: re-asking for it is stable, re-asking for the first is not.
+    expect(since.field.d.withFallback('2026-999')).toBe(handles.at(-1)!)
+    expect(since.field.d.withFallback('2026-0')).not.toBe(handles.at(0)!)
+  })
+
+  test('a derived handle does not derive again, and a search store has no withFallback', () => {
+    const derived = store.field.exercise.withFallback('bench')
+    // @ts-expect-error — `withFallback` is declared on the store's handle only
+    expect(derived.withFallback).toBeUndefined()
+    const search = createSearchStore({ key: 's-no-wf', fields: { x: field.enum(['a', 'b'], 'a') } })
+    // @ts-expect-error — search stores have no call-site fallback
+    expect(search.field.x.withFallback).toBeUndefined()
+  })
+
+  test('readStored never contains the call-site value', () => {
+    renderHook(() => store.field.exercise.withFallback('bench').use())
+    expect(store.readStored()).toEqual({})
   })
 
   test('stable for a stable fallback: primitives by value, objects by identity', () => {
