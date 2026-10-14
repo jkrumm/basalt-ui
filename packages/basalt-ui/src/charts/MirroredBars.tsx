@@ -215,6 +215,8 @@ export function MirroredBars<T, X extends ChartX = ChartX>(
               barY(rows, {
                 id: `${side}-bars`,
                 x: rowX,
+                // An explicit extent: without it the engine stacks one series per row (quadratic).
+                y1: 0,
                 y: 'y',
                 fill: (row: PlotRow<T, X>) =>
                   absent(row.datum) > 0 ? 'transparent' : alpha(s.color, opacity(row.datum)),

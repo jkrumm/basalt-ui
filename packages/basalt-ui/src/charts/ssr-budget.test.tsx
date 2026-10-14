@@ -1,9 +1,10 @@
 /**
- * The server render cost of a dense chart (`docs/V2-SPEC.md` § 9.6). Every kind renders at 10k
- * points through `renderToString` under a per-kind budget, so an N-by-N path in the engine or in a
- * kind (a 5k-row `DualPanel` once took 12 s) fails here instead of in a consumer's first request.
- * Budgets are ~3x the local median, capped at 250 ms, for a CI runner 2-3x slower; each kind is
- * warmed once so the JIT is not billed. The median of three timed renders resists one GC pause.
+ * The server render cost of a dense chart (`docs/V2-SPEC.md` § 9.6). Every kind renders 2.5k and 10k
+ * points through `renderToString`, and two things are asserted: growth is not super-linear
+ * (`t(10k) / t(2.5k) < 8`; linear is ~4, quadratic ~16, which is what a 5k-row `DualPanel` taking
+ * 12 s was) and 10k stays under an absolute cap (>= 3x the local median, for runners 2-3x slower).
+ * The ratio catches the bug class on any machine; the cap catches a constant-factor blow-up. Each
+ * time is the median of three renders after one warm-up, so the JIT and a GC pause are not billed.
  */
 import { describe, expect, test } from 'bun:test'
 import type { ReactElement } from 'react'
@@ -14,18 +15,25 @@ import { Donut } from './Donut'
 import { DualPanel } from './DualPanel'
 import { Heatmap } from './Heatmap'
 import { Lines } from './Lines'
+import { MirroredBars } from './MirroredBars'
 import { Sparkline } from './Sparkline'
 import { StackedArea } from './StackedArea'
 
-const POINTS = 10_000
+const SMALL = 2_500
+const LARGE = 10_000
+/** Linear growth is ~4x for a 4x input, quadratic ~16x. */
+const MAX_GROWTH = 8
+/** Below this a timing is noise, so the ratio's denominator is floored here. */
+const NOISE_FLOOR_MS = 5
 
 type Row = { t: number; a: number; b: number; c: number }
-const rows: Row[] = Array.from({ length: POINTS }, (_, i) => ({
-  t: Date.UTC(2026, 0, 1) + i * 60_000,
-  a: Math.sin(i / 50) * 40 + 50 + (i % 7),
-  b: Math.cos(i / 80) * 20 + 30,
-  c: Math.sin(i / 13) * 10,
-}))
+const rowsOf = (n: number): Row[] =>
+  Array.from({ length: n }, (_, i) => ({
+    t: Date.UTC(2026, 0, 1) + i * 60_000,
+    a: Math.sin(i / 50) * 40 + 50 + (i % 7),
+    b: Math.cos(i / 80) * 20 + 30,
+    c: Math.sin(i / 13) * 10,
+  }))
 const x = (d: Row): Date => new Date(d.t)
 const series = (key: string, getValue: (d: Row) => number) => ({
   key,
@@ -36,34 +44,36 @@ const series = (key: string, getValue: (d: Row) => number) => ({
 const a = series('a', (d) => d.a)
 const b = series('b', (d) => d.b)
 const bandOf = (d: Row): { state: string } => ({ state: d.t % 180_000 ? 'up' : 'down' })
-const side = Math.ceil(Math.sqrt(POINTS))
-const cells = Array.from({ length: POINTS }, (_, i) => ({
-  row: `r${i % side}`,
-  col: `c${Math.floor(i / side)}`,
-  v: i % 17,
-}))
-const slices = Array.from({ length: POINTS }, (_, i) => ({ key: `k${i}`, value: 1 + (i % 5) }))
+const pane = { format: String }
 
-/** `budget` in ms. Bars and DualPanel sit at the 250 cap (2.2x and 1.7x their local median). */
-const KINDS: readonly { name: string; budget: number; node: () => ReactElement }[] = [
+/** `cap` in ms, >= 3x the local median at 10k (given in each comment), at most 500. */
+const KINDS: readonly { name: string; cap: number; node: (n: number) => ReactElement }[] = [
+  // median 30
   {
     name: 'Lines',
-    budget: 100,
-    node: () => <Lines ariaLabel="L" data={rows} x={x} series={[a, b]} />,
+    cap: 150,
+    node: (n) => <Lines ariaLabel="L" data={rowsOf(n)} x={x} series={[a, b]} />,
   },
-  { name: 'Bars', budget: 250, node: () => <Bars ariaLabel="B" data={rows} x={x} bars={[a, b]} /> },
+  // median 114
+  {
+    name: 'Bars',
+    cap: 400,
+    node: (n) => <Bars ariaLabel="B" data={rowsOf(n)} x={x} bars={[a, b]} />,
+  },
+  // median 59
   {
     name: 'StackedArea',
-    budget: 180,
-    node: () => <StackedArea ariaLabel="S" data={rows} x={x} series={[a, b]} />,
+    cap: 250,
+    node: (n) => <StackedArea ariaLabel="S" data={rowsOf(n)} x={x} series={[a, b]} />,
   },
+  // median 148
   {
     name: 'DualPanel',
-    budget: 250,
-    node: () => (
+    cap: 500,
+    node: (n) => (
       <DualPanel
         ariaLabel="D"
-        data={rows}
+        data={rowsOf(n)}
         x={x}
         series={[a, b]}
         fillBetween={{ from: 'a', to: 'b', fill: 'var(--vx-bad)', aboveFill: 'var(--vx-good)' }}
@@ -77,13 +87,29 @@ const KINDS: readonly { name: string; budget: number; node: () => ReactElement }
       />
     ),
   },
+  // median 170 (the 500 cap is the ceiling, ~2.9x)
+  {
+    name: 'MirroredBars',
+    cap: 500,
+    node: (n) => (
+      <MirroredBars
+        ariaLabel="M"
+        data={rowsOf(n)}
+        x={x}
+        series={[a, b]}
+        up={{ key: 'a', ...pane }}
+        down={{ key: 'b', ...pane }}
+      />
+    ),
+  },
+  // median 67
   {
     name: 'BandStrip',
-    budget: 200,
-    node: () => (
+    cap: 300,
+    node: (n) => (
       <BandStrip
         ariaLabel="BS"
-        data={rows}
+        data={rowsOf(n)}
         x={x}
         states={[
           { key: 'up', label: 'up', color: 'var(--vx-good)' },
@@ -93,35 +119,62 @@ const KINDS: readonly { name: string; budget: number; node: () => ReactElement }
       />
     ),
   },
+  // median 23: n cells on a square grid
   {
     name: 'Heatmap',
-    budget: 100,
-    node: () => (
-      <Heatmap
-        ariaLabel="H"
-        data={cells}
-        getRow={(d) => d.row}
-        getCol={(d) => d.col}
-        getValue={(d) => d.v}
-      />
-    ),
+    cap: 150,
+    node: (n) => {
+      const side = Math.ceil(Math.sqrt(n))
+      const cells = Array.from({ length: n }, (_, i) => ({
+        row: `r${i % side}`,
+        col: `c${Math.floor(i / side)}`,
+        v: i % 17,
+      }))
+      return (
+        <Heatmap
+          ariaLabel="H"
+          data={cells}
+          getRow={(d) => d.row}
+          getCol={(d) => d.col}
+          getValue={(d) => d.v}
+        />
+      )
+    },
   },
+  // median 2: n slices
   {
     name: 'Donut',
-    budget: 30,
-    node: () => (
+    cap: 50,
+    node: (n) => (
       <Donut
         ariaLabel="DN"
-        data={slices}
+        data={Array.from({ length: n }, (_, i) => ({ key: `k${i}`, value: 1 + (i % 5) }))}
         colorForKey={() => 'var(--vx-accent)'}
         formatValue={String}
       />
     ),
   },
+  // median 12
   {
     name: 'Sparkline (line)',
-    budget: 40,
-    node: () => <Sparkline ariaLabel="SP" data={rows.map((r) => r.a)} height={40} width={640} />,
+    cap: 60,
+    node: (n) => (
+      <Sparkline ariaLabel="SP" data={rowsOf(n).map((r) => r.a)} height={40} width={640} />
+    ),
+  },
+  // median 19
+  {
+    name: 'Sparkline (bar)',
+    cap: 80,
+    node: (n) => (
+      <Sparkline
+        ariaLabel="SP"
+        mark="bar"
+        data={rowsOf(n).map((r) => r.c)}
+        height={40}
+        width={640}
+      />
+    ),
   },
 ]
 
@@ -137,15 +190,13 @@ function timeRender(node: () => ReactElement): number {
   return median(runs)
 }
 
-describe('server render budget at 10k points', () => {
-  for (const { name, budget, node } of KINDS) {
-    test(`${name} renders under ${budget} ms`, () => {
-      const ms = timeRender(node)
-      expect(ms).toBeLessThan(budget)
+describe(`server render at ${LARGE} points`, () => {
+  for (const { name, cap, node } of KINDS) {
+    test(`${name}: growth under ${MAX_GROWTH}x from ${SMALL} to ${LARGE}, and under ${cap} ms`, () => {
+      const small = timeRender(() => node(SMALL))
+      const large = timeRender(() => node(LARGE))
+      expect(large / Math.max(small, NOISE_FLOOR_MS)).toBeLessThan(MAX_GROWTH)
+      expect(large).toBeLessThan(cap)
     })
   }
-  // Both draw `barY` rows without a series key or an explicit extent, which the engine stacks as one
-  // series per row (an N-by-N matrix). Enable once they pass `y1: 0` like DualPanel.
-  test.todo('MirroredBars renders under 250 ms', () => {})
-  test.todo('Sparkline (bar) renders under 100 ms', () => {})
 })

@@ -74,6 +74,8 @@ function compileSparkline(
             barY(rows, {
               id: 'bars',
               x: 'i',
+              // An explicit extent: without it the engine stacks one series per row (quadratic).
+              y1: 0,
               y: 'v',
               fill: (r: Point) =>
                 emphasisColor !== null && r.i === rows.length - 1 ? emphasisColor : color,
