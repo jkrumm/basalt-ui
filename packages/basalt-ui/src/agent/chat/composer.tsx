@@ -38,7 +38,7 @@
  */
 import { ActionIcon, Box, Group, Kbd, Stack, Text, Textarea } from '@mantine/core'
 import type { ClipboardEvent, ComponentProps, JSX, KeyboardEvent, ReactNode, Ref } from 'react'
-import { useImperativeHandle, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { useImperativeHandle, useLayoutEffect, useMemo, useRef, useSyncExternalStore } from 'react'
 import { cx } from '../../common/props'
 import type { BasaltProps, SlotStylesProps } from '../../common/props'
 import { readPersistedValue } from '../../state/persisted'
@@ -396,7 +396,7 @@ export function Composer({
 }: ComposerProps): JSX.Element {
   // Per-instance fallback for the un-keyed case, so two keyless Composers never share a draft.
   // Create-once state React never re-renders on; the store's own subscription drives updates.
-  const [memoryStore] = useState<DraftStore>(() => createDraftStore(null))
+  const memoryStore = useMemo<DraftStore>(() => createDraftStore(null), [])
   const store = draftKey === undefined ? memoryStore : persistedDraftStore(draftKey)
   const value = useSyncExternalStore(
     isServer ? noopSubscribe : store.subscribe,

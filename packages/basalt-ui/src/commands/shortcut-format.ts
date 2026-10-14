@@ -18,7 +18,8 @@
 /**
  * Returns true when running on macOS. SSR-safe — returns false when navigator is unavailable.
  * Uses userAgentData.platform when available; falls back to userAgent string regex.
- * Never call during render — use only inside useEffect to avoid hydration mismatches.
+ * Reads the client's platform, so during SSR/hydration render it through `useSyncExternalStore`
+ * with a `false` server snapshot (as `ShortcutsHelp` does) rather than calling it bare in render.
  */
 export function detectMac(): boolean {
   if (typeof navigator === 'undefined') return false

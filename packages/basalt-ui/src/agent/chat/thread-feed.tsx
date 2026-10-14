@@ -138,11 +138,11 @@ export function ThreadFeed({
   // meaningful for the id it names; a stale value left over for a since-deselected thread is inert
   // (the per-row `expanded` check below always requires `thread.id === activeId` too).
   const [collapsedId, setCollapsedId] = useState<string | null>(null)
-  // Any externally-driven move of `activeId` to a DIFFERENT thread clears a stale override. React
-  // bails on a same-value dep, so re-driving `activeId` to the id it already holds (e.g. the SAME
-  // thread re-selected after being manually collapsed) does NOT re-run this effect. A collapse
-  // triggered by this component's own header click does NOT touch `activeId` at all (see
-  // `handleInlineToggle`), so it does not re-trigger this effect either.
+  // Any externally-driven move of `activeId` to a DIFFERENT thread clears a stale override, by
+  // comparing against the last `activeId` seen during render. Re-driving `activeId` to the id it
+  // already holds (e.g. the SAME thread re-selected after being manually collapsed) is no change, so
+  // it does not clear the override. A collapse triggered by this component's own header click does
+  // NOT touch `activeId` at all (see `handleInlineToggle`), so it does not clear it either.
   const [seenActiveId, setSeenActiveId] = useState(activeId)
   if (seenActiveId !== activeId) {
     setSeenActiveId(activeId)
