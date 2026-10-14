@@ -142,8 +142,8 @@ export type UseAgentThreadRunsArgs<TPart = AgentPart> = {
    * Minimum ms between `runs` commits while a part stream is flowing — `useChat`'s stable
    * `throttle` semantics: the first part commits immediately, later parts within the window are
    * batched into one trailing commit. The `submitted → streaming` edge, a failure, the end of the
-   * stream and `stop()` never wait on it, so no final part is lost. `0` (default) commits every
-   * part.
+   * stream and `stop()` never wait on it, so no final part is lost. Default `100`; `0` commits
+   * every part.
    */
   readonly throttle?: number
   /**
@@ -606,7 +606,7 @@ export function useAgentThreadRuns<TPart extends PartLike = AgentPart>({
   resolveOutcome,
   toUserParts,
   onError,
-  throttle = 0,
+  throttle = 100,
   telemetry,
 }: UseAgentThreadRunsArgs<TPart>): UseAgentThreadRunsReturn<TPart> {
   const [runs, setRuns] = useState<Map<string, ThreadRunState<TPart>>>(new Map())
