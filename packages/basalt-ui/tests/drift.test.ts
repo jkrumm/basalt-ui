@@ -155,7 +155,10 @@ describe('jsdoc-specifiers', () => {
 
   function findSourceFiles(): string[] {
     const glob = new Bun.Glob('**/*.{ts,tsx}')
-    return [...glob.scanSync({ cwd: srcRoot })].map((rel) => join(srcRoot, rel))
+    // Tests are not shipped JSDoc, and some name dropped subpaths on purpose (doctor's fixtures).
+    return [...glob.scanSync({ cwd: srcRoot })]
+      .filter((rel) => !/\.test\.tsx?$/.test(rel))
+      .map((rel) => join(srcRoot, rel))
   }
 
   function packageExportKeys(): string[] {
