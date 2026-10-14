@@ -8,6 +8,7 @@ import type { ChartPoint } from '@tanstack/charts/types/core'
 import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { renderToString } from 'react-dom/server'
+import { CartesianChart } from './CartesianChart'
 import { compileCartesian, dashedSwatch, engineRow, refLegendSeries } from './compile'
 import { chartCursor } from './cursor'
 import { Lines } from './Lines'
@@ -152,5 +153,137 @@ describe('row 31: reference-line legend entries', () => {
     })
     expect(keyed(el, 'ref-0').length).toBe(0)
     expect(keyed(el, 'ref-1').length).toBe(1)
+  })
+})
+
+describe('row 33a: cursorValue', () => {
+  const track: ChartSeries<Row> = {
+    key: 'track',
+    label: 'Track',
+    color: 'var(--vx-accent)',
+    getValue: () => null,
+    cursorValue: (d) => d.track,
+  }
+  const chart = (series: ChartSeries<Row>[]) => (
+    <CartesianChart ariaLabel="C" data={data} x={x} series={series} marks={() => []} />
+  )
+
+  test('a dot per datum with a finite value, in the series color, hidden until the cursor', () => {
+    const el = ssr(chart([a, track]))
+    const dots = [...keyed(el, 'track-cursor')[0]!.querySelectorAll('circle')]
+    expect(dots.length).toBe(3)
+    expect(dots.every((c) => c.getAttribute('fill') === 'var(--vx-accent)')).toBe(true)
+    expect(dots.every((c) => c.getAttribute('fill-opacity') === '0')).toBe(true)
+  })
+
+  test('a series without cursorValue draws none, and a legend toggle drops the dots', async () => {
+    expect(keyed(ssr(chart([a])), 'a-cursor').length).toBe(0)
+    const el = await mount(chart([a, track]))
+    expect(keyed(el, 'track-cursor').length).toBe(1)
+    const toggle = el.querySelector('button[data-legend-key="track"]')
+    if (!(toggle instanceof HTMLButtonElement)) throw new Error('no toggle')
+    await act(async () => {
+      toggle.click()
+    })
+    expect(keyed(el, 'track-cursor').length).toBe(0)
+  })
+
+  test('hovering a datum shows exactly its dot', async () => {
+    const el = await mount(chart([a, track]))
+    const svg = el.querySelector('svg')
+    if (!svg) throw new Error('no chart')
+    await act(async () => {
+      svg.dispatchEvent(
+        new PointerEvent('pointermove', { clientX: 200, clientY: 40, bubbles: true }),
+      )
+      await new Promise((r) => setTimeout(r, 30))
+    })
+    const shown = [...keyed(el, 'track-cursor')[0]!.querySelectorAll('circle')].filter(
+      (c) => c.getAttribute('fill-opacity') === '1',
+    )
+    expect(shown.length).toBe(1)
+  })
+
+  test('the dots are focus points: the tooltip reaches the datum through them', () => {
+    const def = compileCartesian({
+      chartId: 'cv',
+      data,
+      x,
+      series: [a, track],
+      marks: () => [],
+    })
+    // A dot's datum is a plot row of the series; its source datum feeds the other series' rows.
+    const tooltip = def.tooltip
+    if (!tooltip || !('content' in tooltip) || !tooltip.content) throw new Error('no tooltip')
+    const datum = { x: day(2), y: 2, series: 'track', datum: data[1] }
+    const content = tooltip.content([{ datum, xValue: day(2) } as ChartPoint], {} as never)
+    expect(content.rows.map((r) => r.label)).toEqual(['Alpha'])
+  })
+})
+
+describe('row 33c: band edge rules', () => {
+  const zone = { from: 15, to: 35, fill: 'var(--vx-good)' }
+  const edge = { color: 'var(--vx-accent)' }
+  const zoned = (z: object) =>
+    ssr(
+      <Lines
+        ariaLabel="L"
+        data={data}
+        x={x}
+        series={[a]}
+        y={{ domain: [0, 50] }}
+        zones={[{ ...zone, ...z }]}
+      />,
+    )
+  const edges = (el: Element): string[] =>
+    ['zone-0-top', 'zone-0-bottom'].filter((k) => keyed(el, k).length === 1)
+
+  test('top, bottom or both; none without `edge`', () => {
+    expect(edges(zoned({}))).toEqual([])
+    expect(edges(zoned({ edge: { ...edge, side: 'top' } }))).toEqual(['zone-0-top'])
+    expect(edges(zoned({ edge: { ...edge, side: 'bottom' } }))).toEqual(['zone-0-bottom'])
+    expect(edges(zoned({ edge: { ...edge, side: 'both' } }))).toEqual([
+      'zone-0-top',
+      'zone-0-bottom',
+    ])
+  })
+
+  test('a bound at the plot edge (infinite, or outside the domain) draws no rule', () => {
+    const el = zoned({ to: Infinity, edge: { ...edge, side: 'both' } })
+    expect(edges(el)).toEqual(['zone-0-bottom'])
+  })
+
+  test('paint: color, width and dash', () => {
+    const el = zoned({ edge: { ...edge, side: 'top', width: 2, dashed: true } })
+    const line = keyed(el, 'zone-0-top')[0]!.querySelector('line')
+    expect(line?.getAttribute('stroke')).toBe('var(--vx-accent)')
+    expect(line?.getAttribute('stroke-width')).toBe('2')
+    expect(line?.getAttribute('stroke-dasharray')).not.toBeNull()
+  })
+
+  const xzoned = (z: object) =>
+    ssr(
+      <Lines
+        ariaLabel="L"
+        data={data}
+        x={x}
+        series={[a]}
+        xZones={[{ from: day(2), to: day(3), fill: 'var(--vx-good)', ...z }]}
+      />,
+    )
+  const xEdges = (el: Element): string[] =>
+    ['xzone-0-start', 'xzone-0-end'].filter((k) => keyed(el, k).length === 1)
+
+  test('x-zone: start, end or both, and none for an omitted bound', () => {
+    expect(xEdges(xzoned({}))).toEqual([])
+    expect(xEdges(xzoned({ edge: { ...edge, side: 'start' } }))).toEqual(['xzone-0-start'])
+    expect(xEdges(xzoned({ edge: { ...edge, side: 'end' } }))).toEqual(['xzone-0-end'])
+    expect(xEdges(xzoned({ edge: { ...edge, side: 'both' } }))).toEqual([
+      'xzone-0-start',
+      'xzone-0-end',
+    ])
+    expect(xEdges(xzoned({ to: undefined, edge: { ...edge, side: 'both' } }))).toEqual([
+      'xzone-0-start',
+    ])
   })
 })

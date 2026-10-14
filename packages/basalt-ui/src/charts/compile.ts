@@ -8,7 +8,7 @@
 import { crosshair } from '@tanstack/charts/crosshair'
 import { decorative } from '@tanstack/charts/mark/decorative'
 import { rect } from '@tanstack/charts/rect'
-import { ruleY } from '@tanstack/charts/rule'
+import { ruleX, ruleY } from '@tanstack/charts/rule'
 import { scaleLinear } from '@tanstack/charts/scales/linear'
 import { scaleUtc } from 'd3-scale'
 import { tooltip as tooltipHost } from '@tanstack/charts/tooltip'
@@ -27,6 +27,7 @@ import { fmtCompact } from '../format/number'
 import { VX } from '../tokens'
 import type { ContainerClass } from '../tokens/size-classes'
 import { cursorBinding, sourceOnlyFocus } from './cursor'
+import { cursorDots } from './marks'
 import { resolveContainerClass } from '../tokens/size-classes'
 import { resolveYDomain, xScaleFor, xZoneFractions, yScaleFor } from './scales'
 import type { XScaleModel } from './scales'
@@ -40,6 +41,7 @@ import type {
   ChartX,
   PlotRow,
   RefLine,
+  ZoneEdge,
   ZoneSpec,
 } from './types'
 
@@ -479,32 +481,79 @@ function resolveAxes<T, X extends ChartX>(
   }
 }
 
-/** Fixed paint under the kind's marks: zones, then x-zones. */
+/** The sides a `ZoneEdge` names, in a fixed order: the lower bound first. */
+const edgeSides = <A extends string, B extends string>(
+  edge: ZoneEdge<A | B> | undefined,
+  lower: A,
+  upper: B,
+): { lower: boolean; upper: boolean } => ({
+  lower: edge !== undefined && (edge.side === lower || edge.side === 'both'),
+  upper: edge !== undefined && (edge.side === upper || edge.side === 'both'),
+})
+
+const edgePaint = (edge: ZoneEdge<string>) => ({
+  stroke: edge.color,
+  strokeOpacity: 1,
+  strokeWidth: edge.width ?? 1,
+  ...(edge.dashed && { strokeDasharray: DASH }),
+})
+
+/** Fixed paint under the kind's marks: zones, then x-zones, each with its edge rules. */
 function underlayMarks<T, X extends ChartX>(
   input: CartesianInput<T, X>,
   model: XScaleModel<X>,
   axes: Axes<T>,
 ): ChartMarks {
   const fractionRows = [{ f0: 0, f1: 1 }]
-  const zones = (input.zones ?? []).map((z, i) => {
+  const zones = (input.zones ?? []).flatMap((z, i) => {
     const domain = axes.axisOf(z.axisSide).domain
-    return decorative(
-      rect(fractionRows, {
-        id: `zone-${i}`,
-        x1: 'f0',
-        x2: 'f1',
-        y1: () => clampTo(z.from, domain),
-        y2: () => clampTo(z.to, domain),
-        xScale: 'zx',
-        yScale: axes.scaleId(z.axisSide),
-        fill: z.fill,
-        inset: 0,
-      }),
-    )
+    const [lo, hi] = [Math.min(...domain), Math.max(...domain)]
+    const rule = (value: number, name: string) =>
+      // A bound outside the domain (or infinite) is not on the plot: no rule.
+      value > lo && value < hi
+        ? [
+            decorative(
+              ruleY([value], {
+                id: `zone-${i}-${name}`,
+                yScale: axes.scaleId(z.axisSide),
+                ...(z.edge && edgePaint(z.edge)),
+              }),
+            ),
+          ]
+        : []
+    const sides = edgeSides(z.edge, 'bottom', 'top')
+    return [
+      decorative(
+        rect(fractionRows, {
+          id: `zone-${i}`,
+          x1: 'f0',
+          x2: 'f1',
+          y1: () => clampTo(z.from, domain),
+          y2: () => clampTo(z.to, domain),
+          xScale: 'zx',
+          yScale: axes.scaleId(z.axisSide),
+          fill: z.fill,
+          inset: 0,
+        }),
+      ),
+      ...(sides.lower ? rule(Math.min(z.from, z.to), 'bottom') : []),
+      ...(sides.upper ? rule(Math.max(z.from, z.to), 'top') : []),
+    ]
   })
   const xZones = (input.xZones ?? []).flatMap((z, i) => {
     const f = xZoneFractions(z, model)
     if (!f) return []
+    const sides = edgeSides(z.edge, 'start', 'end')
+    const rule = (at: number, name: string) => [
+      decorative(
+        ruleX([at], {
+          id: `xzone-${i}-${name}`,
+          x: (v: number) => v,
+          xScale: 'zx',
+          ...(z.edge && edgePaint(z.edge)),
+        }),
+      ),
+    ]
     return [
       decorative(
         rect([{ f0: f[0], f1: f[1] }], {
@@ -518,6 +567,9 @@ function underlayMarks<T, X extends ChartX>(
           inset: 0,
         }),
       ),
+      // An omitted bound is the plot edge: nothing to draw a rule on.
+      ...(sides.lower && z.from !== undefined ? rule(f[0], 'start') : []),
+      ...(sides.upper && z.to !== undefined ? rule(f[1], 'end') : []),
     ]
   })
   return [...zones, ...xZones]
@@ -617,6 +669,25 @@ function rowsOf<T, X extends ChartX>(
   }
 }
 
+/** The cursor dots of the visible series that opt in with `cursorValue`. */
+function cursorDotMarks<T, X extends ChartX>(
+  input: CartesianInput<T, X>,
+  visible: readonly ChartSeries<T>[],
+  axes: Axes<T>,
+): ChartMarks {
+  return visible.flatMap((s) => {
+    const { cursorValue } = s
+    if (!cursorValue) return []
+    const rows = input.data.flatMap((d): PlotRow<T, X>[] => {
+      const y = cursorValue(d)
+      return y === null || !Number.isFinite(y)
+        ? []
+        : [{ x: input.x(d), y, series: s.key, datum: d }]
+    })
+    return [cursorDots(s, rows, axes.onRight(s) ? 'y2' : undefined)]
+  })
+}
+
 function tooltipSpec<T, X extends ChartX>(opts: {
   input: CartesianInput<T, X>
   axes: Axes<T>
@@ -702,7 +773,13 @@ export function compileCartesian<T, X extends ChartX>(
         y2Domain: axes.right?.domain,
       })
       return {
-        marks: [...under, ...kindMarks, ...over, crosshair({ x: CROSSHAIR, y: false })],
+        marks: [
+          ...under,
+          ...kindMarks,
+          ...cursorDotMarks(input, visible, axes),
+          ...over,
+          crosshair({ x: CROSSHAIR, y: false }),
+        ],
         scales: buildScales({ input, model, axes, formatX, cls, zoneScale: under.length > 0 }),
         theme: CHART_THEME,
         ...(gradients.length > 0 && { gradients }),
