@@ -1106,11 +1106,16 @@ describe('doctor — subpath-peers', () => {
     const pkg = JSON.parse(readFileSync(join(PKG_ROOT, 'package.json'), 'utf8')) as {
       peerDependencies: Record<string, string>
     }
-    const surfaces: Record<string, { optionalPeers?: readonly string[] }> = SURFACES
+    const peersOf = (sub: string): readonly string[] => {
+      const surface = Object.entries(SURFACES).find(([key]) => key === `./${sub}`)?.[1]
+      return surface !== undefined && 'optionalPeers' in surface
+        ? (surface.optionalPeers ?? [])
+        : []
+    }
     for (const [sub, peers] of Object.entries(SUBPATH_REQUIRED_PEERS)) {
       for (const peer of peers) {
         expect(pkg.peerDependencies[peer]).toBeDefined()
-        expect(surfaces[`./${sub}`]?.optionalPeers).toContain(peer)
+        expect(peersOf(sub)).toContain(peer)
       }
     }
   })
