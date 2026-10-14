@@ -50,6 +50,7 @@ export type Checked = [
   Ok<Strict<ZoneSpec>>,
   Ok<Strict<XZoneSpec>>,
   Ok<Strict<RefLine>>,
+  Ok<Strict<NonNullable<RefLine['legend']>>>,
   Ok<Strict<ChartTooltipRow>>,
   Ok<Strict<ChartTooltipConfig<Row>>>,
   Ok<Strict<ChartLegendConfig>>,

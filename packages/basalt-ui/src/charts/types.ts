@@ -121,6 +121,11 @@ export type RefLine = {
   color: string
   dashed?: boolean | undefined
   axis?: 'left' | 'right' | undefined
+  /**
+   * Names the line in the legend (its color, dashed as `dashed`; a toggle hides the line), so a
+   * threshold needs no always-`null` series. `mark` is the swatch shape. Default `'line'`.
+   */
+  legend?: { label: string; mark?: 'line' | 'bar' | undefined } | undefined
 }
 
 /** A fill between the line and a value, on one side of it, tracking the line. */

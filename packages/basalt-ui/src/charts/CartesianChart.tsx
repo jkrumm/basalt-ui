@@ -9,7 +9,7 @@
 import { useCallback, useId, useMemo, useState } from 'react'
 import type { CSSProperties, ReactElement, ReactNode } from 'react'
 import { useInChartCard } from './card-context'
-import { compileCartesian } from './compile'
+import { compileCartesian, refLegendSeries } from './compile'
 import type { CartesianDefinition } from './compile'
 import { ChartEngine, idPrefixOf } from './host'
 import { ChartLegend, legendEntries } from './legend'
@@ -170,9 +170,14 @@ export function CartesianRung<T, X extends ChartX>(
     (ctx: ShellContext) => compileCartesian({ ...stable, ...ctx }),
     [stable],
   )
+  // Reference lines that name themselves join the legend after the series (role `reference`).
+  const legendSeries = useMemo(
+    () => [...series, ...refLegendSeries<T>(props.refLines)],
+    [series, props.refLines],
+  )
   return (
     <ChartShell
-      series={series}
+      series={legendSeries}
       compile={compile}
       ariaLabel={ariaLabel}
       {...(legend !== undefined && { legend })}

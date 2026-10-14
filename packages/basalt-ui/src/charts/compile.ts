@@ -39,6 +39,7 @@ import type {
   ChartTooltipRow,
   ChartX,
   PlotRow,
+  RefLine,
   ZoneSpec,
 } from './types'
 
@@ -154,6 +155,29 @@ export function engineRow(
     ...(color !== undefined && { color: swatch === 'dashed' ? dashedSwatch(color) : color }),
     ...(active && { active }),
   }
+}
+
+/** The legend key of a reference line that names itself (`RefLine.legend`). */
+export const refLegendKey = (index: number): string => `__ref-${index}`
+
+/** Legend-only entries for the reference lines that name themselves, in line order. */
+export function refLegendSeries<T>(refLines: readonly RefLine[] | undefined): ChartSeries<T>[] {
+  return (refLines ?? []).flatMap((r, i) =>
+    r.legend === undefined
+      ? []
+      : [
+          {
+            key: refLegendKey(i),
+            label: r.legend.label,
+            color: r.color,
+            role: 'reference' as const,
+            tooltip: false,
+            getValue: () => null,
+            ...(r.legend.mark !== undefined && { mark: r.legend.mark }),
+            ...(r.dashed && { dash: 'dashed' as const }),
+          },
+        ],
+  )
 }
 
 /** The visible series: not toggled off, and not a companion whose parent is. */
@@ -504,15 +528,20 @@ const refLineMarks = <T, X extends ChartX>(
   input: CartesianInput<T, X>,
   axes: Axes<T>,
 ): ChartMarks =>
-  (input.refLines ?? []).map((r, i) =>
-    ruleY([r.value], {
-      id: `ref-${i}`,
-      stroke: r.color,
-      strokeOpacity: 1,
-      strokeWidth: 1,
-      yScale: axes.scaleId(r.axis),
-      ...(r.dashed && { strokeDasharray: DASH }),
-    }),
+  (input.refLines ?? []).flatMap((r, i) =>
+    // A line that names itself in the legend can be toggled off there.
+    input.hidden?.has(refLegendKey(i))
+      ? []
+      : [
+          ruleY([r.value], {
+            id: `ref-${i}`,
+            stroke: r.color,
+            strokeOpacity: 1,
+            strokeWidth: 1,
+            yScale: axes.scaleId(r.axis),
+            ...(r.dashed && { strokeDasharray: DASH }),
+          }),
+        ],
   )
 
 function buildScales<T, X extends ChartX>(opts: {
