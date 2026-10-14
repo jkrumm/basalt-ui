@@ -9,6 +9,7 @@
 import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { SURFACES } from '../src/surfaces'
+import { readSignatures } from './llms-signatures'
 import { SUBPATH_REQUIRED_PEERS } from './surface-gates'
 
 const root = join(import.meta.dirname, '..', '..', '..')
@@ -39,36 +40,18 @@ const optionalPeerSet = new Set(
 
 const publishedExportKeys = new Set(Object.keys(pkgExports))
 
-// ── ./format signatures ──────────────────────────────────────────────────────────────────────────
-// One line per formatter, hand-kept; every name must be a published `./format` export, so a rename
-// fails the generator rather than shipping a stale signature.
+// ── Signatures ───────────────────────────────────────────────────────────────────────────────────
+// One line per public value export of every JS subpath, read from source by the TS checker.
 
-const FORMAT_SIGNATURES: readonly (readonly [string, string])[] = [
-  ['integer', 'integer(value: number, { locale? }) => string'],
-  ['money', 'money(value: number, { currency: string, compact?, digits?, locale? }) => string'],
-  [
-    'percent',
-    "percent(value: number, { input?: 'ratio' | 'percent', digits?, locale? }) => string",
-  ],
-  ['km', 'km(meters: number, { digits? }) => string'],
-  ['kcal', 'kcal(value: number, { digits? }) => string'],
-  ['durationClock', 'durationClock(seconds: number) => string'],
-  ['relativeTime', 'relativeTime(value: number | Date | string, { now?, locale? }) => string'],
-  [
-    'weekday',
-    "weekday(value: Date | number | string, { format?: 'short' | 'long' | 'narrow', locale? }) => string",
-  ],
-]
-const publishedFormat = new Set(
-  (
-    JSON.parse(
-      readFileSync(join(root, 'packages/basalt-ui/scripts/export-surface.json'), 'utf8'),
-    ) as Record<string, string[]>
-  )['./format'],
+const SIGNATURES = readSignatures(
+  Object.fromEntries(
+    Object.entries(pkgExports).flatMap(([key, value]) =>
+      typeof value === 'object' && value !== null && 'types' in value
+        ? [[key, String((value as { types: string }).types)]]
+        : [],
+    ),
+  ),
 )
-for (const [name] of FORMAT_SIGNATURES) {
-  if (!publishedFormat.has(name)) throw new Error(`gen-llms: './format' no longer exports ${name}`)
-}
 
 /** Peer ranges like `^7 || ^8` contain spaces and pipes; quote any spec the shell would split. */
 const SHELL_SAFE_RE = /^[\w@/.^~-]+$/
@@ -84,7 +67,7 @@ type Row = {
   isAsset?: boolean
   /** The one `bun add` line for this subpath's subpath-required peers (V2-SPEC § 1 "Peers"). */
   install?: string
-  /** Hand-kept one-line signatures, guarded against the export surface. */
+  /** One-line signature per public value export, generated from source. */
   signatures?: readonly string[]
   /** Doctrine rule name — present only for doctrine surfaces */
   rule?: string
@@ -129,7 +112,7 @@ for (const [key, spec] of Object.entries(SURFACES)) {
             return SHELL_SAFE_RE.test(installSpec) ? installSpec : `'${installSpec}'`
           })
           .join(' ')}`
-  const signatures = key === './format' ? FORMAT_SIGNATURES.map(([, line]) => line) : undefined
+  const signatures = SIGNATURES[key]
 
   rows.push({
     importSpec,
