@@ -5,7 +5,7 @@
  */
 import { afterEach, describe, expect, test } from 'bun:test'
 import { cleanup, render, waitFor } from '@testing-library/react'
-import { detectPlatform } from '@tanstack/react-hotkeys'
+import { detectPlatform, getHotkeyManager } from '@tanstack/react-hotkeys'
 import { defineCommands } from '../commands/define-commands'
 import { useRegistryHotkeys } from './hotkeys'
 
@@ -44,9 +44,9 @@ describe('useRegistryHotkeys dispatch', () => {
       },
     })
     const view = render(<Bound />)
-    // The peer binds through a lazy import(), so poll until the first press lands.
+    // The peer binds through a lazy import(); wait for the registration without pressing anything.
     await waitFor(() => {
-      expect(press().defaultPrevented).toBe(true)
+      expect(getHotkeyManager().registrations.state.size).toBeGreaterThan(0)
     })
     const before = runs
 
