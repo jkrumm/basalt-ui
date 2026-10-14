@@ -243,6 +243,44 @@ describe('ThreadFeedRow — composer reflects liveStatus', () => {
     expect((screen.getByRole('textbox') as HTMLTextAreaElement).disabled).toBe(true)
   })
 
+  test('liveStatus="submitted" is live: Stop shows and the textarea is disabled', () => {
+    render(
+      <MantineProvider>
+        <ThreadFeedRow
+          thread={buildThread([])}
+          expanded
+          onToggle={() => {}}
+          liveStatus="submitted"
+          onStop={() => {}}
+          onSend={() => {}}
+        />
+      </MantineProvider>,
+    )
+
+    expect(screen.queryByLabelText('Send message')).toBeNull()
+    expect(screen.getByLabelText('Stop generating')).toBeDefined()
+    expect((screen.getByRole('textbox') as HTMLTextAreaElement).disabled).toBe(true)
+  })
+
+  test('liveStatus="error" (a failed run) is not live: Send, no Stop, textarea enabled', () => {
+    render(
+      <MantineProvider>
+        <ThreadFeedRow
+          thread={buildThread([])}
+          expanded
+          onToggle={() => {}}
+          liveStatus="error"
+          onStop={() => {}}
+          onSend={() => {}}
+        />
+      </MantineProvider>,
+    )
+
+    expect(screen.getByLabelText('Send message')).toBeDefined()
+    expect(screen.queryByLabelText('Stop generating')).toBeNull()
+    expect((screen.getByRole('textbox') as HTMLTextAreaElement).disabled).toBe(false)
+  })
+
   test('liveStatus="done" (or unset) shows Send, not Stop, and leaves the textarea enabled', () => {
     render(
       <MantineProvider>

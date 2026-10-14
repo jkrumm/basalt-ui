@@ -118,3 +118,8 @@ export type ThreadsStore<TPart = AgentPart> = {
  * gated) exactly like `'streaming'`.
  */
 export type StreamStatus = 'idle' | 'submitted' | 'streaming' | 'done' | 'error'
+
+/** True while a turn is in flight (`'submitted'` or `'streaming'`); `'error'` and the rest are not. */
+export function isLiveStatus(status: StreamStatus | undefined): boolean {
+  return status === 'submitted' || status === 'streaming'
+}

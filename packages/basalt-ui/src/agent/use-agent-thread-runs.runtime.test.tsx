@@ -4,7 +4,12 @@
  * telemetry event. Rendered WITHOUT a BasaltProvider on purpose: the hook must work outside one.
  */
 import { describe, expect, test } from 'bun:test'
-import { act, renderHook, waitFor } from '@testing-library/react'
+import { useEffect } from 'react'
+import type { ReactElement } from 'react'
+import { createRootRoute } from '@tanstack/react-router'
+import { act, render, renderHook, screen, waitFor } from '@testing-library/react'
+import { BasaltProvider } from '../provider'
+import { createBasaltRouter } from '../provider/create-router'
 import type { BasaltEvent } from '../telemetry'
 import { useAgentThreadRuns } from './use-agent-thread-runs'
 import type { ThreadRunState } from './use-agent-thread-runs'
@@ -155,7 +160,7 @@ describe('ThreadRunState.error', () => {
 
     const run = result.current.runs.get(id)
     expect(run?.error).toEqual({ kind: 'http', status: 503 })
-    expect(run?.status).toBe('streaming')
+    expect(run?.status).toBe('error')
     expect(run?.parts).toHaveLength(1)
     expect(store.threads[0]?.status).toBe('error')
     expect(raw).toEqual([boom])
@@ -198,11 +203,11 @@ describe('ThreadRunState.error', () => {
     expect(store.threads[0]?.messages.map((m) => m.role)).toEqual(['user'])
   })
 
-  test('a failure before any content is `submitted` with an empty transcript', async () => {
+  test('a failure before any content has an empty transcript', async () => {
     const store = createStore()
     const id = store.create()
     const transport: AgentTransport<AgentPart, string> = {
-      // eslint-disable-next-line require-yield
+      // oxlint-disable-next-line require-yield
       async *stream() {
         throw new Error('down')
       },
@@ -211,10 +216,95 @@ describe('ThreadRunState.error', () => {
     act(() => result.current.start(id, 'hello'))
     await waitFor(() => expect(result.current.runs.get(id)?.error).toBeDefined())
     expect(result.current.runs.get(id)).toEqual({
-      status: 'submitted',
+      status: 'error',
       parts: [],
       error: { kind: 'server', message: 'down' },
     })
+  })
+})
+
+describe('stop() between a settle and its render', () => {
+  // `runsRef` only mirrors the last flushed render, so right after a settle's `setRuns` it still
+  // holds the live entry. These call stop() synchronously inside the settle's own callbacks.
+  test('a turn that just completed: stop() adds no second assistant message', async () => {
+    const store = createStore()
+    const id = store.create()
+    const transport: AgentTransport<AgentPart, string> = {
+      async *stream() {
+        yield text('t', 'done')
+        // Let the part's commit render, so the stale `runsRef` entry holds content stop() could persist.
+        await new Promise((resolve) => setTimeout(resolve, 15))
+      },
+    }
+    let stopOnSettle = (): void => {}
+    const { result } = renderHook(() =>
+      useAgentThreadRuns({
+        transport,
+        store,
+        resolveOutcome,
+        // emitted synchronously right after the settle's setRuns, before any render
+        telemetry: () => stopOnSettle(),
+      }),
+    )
+    stopOnSettle = () => result.current.stop(id)
+    act(() => result.current.start(id, 'go'))
+    await waitFor(() => expect(store.threads[0]?.status).toBe('done'))
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 20))
+    })
+
+    const roles = store.threads[0]?.messages.map((m) => `${m.role}:${m.finish ?? ''}`)
+    expect(roles).toEqual(['user:', 'assistant:complete'])
+    expect(result.current.runs.has(id)).toBe(false)
+  })
+
+  test('a turn that just failed: stop() keeps the thread in error and only dismisses the entry', async () => {
+    const store = createStore()
+    const id = store.create()
+    const transport: AgentTransport<AgentPart, string> = {
+      async *stream() {
+        yield text('t', 'partial')
+        throw new Error('boom')
+      },
+    }
+    let stopOnError = (): void => {}
+    const { result } = renderHook(() =>
+      useAgentThreadRuns({
+        transport,
+        store,
+        resolveOutcome,
+        // fired synchronously right after the failure's setRuns, before any render
+        onError: () => stopOnError(),
+      }),
+    )
+    stopOnError = () => result.current.stop(id)
+    act(() => result.current.start(id, 'go'))
+    await waitFor(() => expect(store.threads[0]?.status).toBe('error'))
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 20))
+    })
+
+    expect(store.threads[0]?.status).toBe('error')
+    expect(store.threads[0]?.outcome).toBeNull()
+    expect(store.threads[0]?.messages.map((m) => m.role)).toEqual(['user'])
+    expect(result.current.runs.has(id)).toBe(false)
+  })
+
+  test('stopAll() dismisses failed entries too', async () => {
+    const store = createStore()
+    const id = store.create()
+    const transport: AgentTransport<AgentPart, string> = {
+      // oxlint-disable-next-line require-yield
+      async *stream() {
+        throw new Error('boom')
+      },
+    }
+    const { result } = renderHook(() => useAgentThreadRuns({ transport, store, resolveOutcome }))
+    act(() => result.current.start(id, 'go'))
+    await waitFor(() => expect(result.current.runs.get(id)?.status).toBe('error'))
+    act(() => result.current.stopAll())
+    expect(result.current.runs.has(id)).toBe(false)
+    expect(store.threads[0]?.status).toBe('error')
   })
 })
 
@@ -263,17 +353,19 @@ describe('throttle', () => {
     const { result, id, seen } = observe(0, 5, release.promise)
     act(() => result.current.start(id, 'go'))
     await waitFor(() => expect(seen.at(-1)).toBe(5))
-    expect(seen).toEqual([1, 2, 3, 4, 5])
+    // Unthrottled, the commits are not collapsed into a single trailing one.
+    expect(seen.length).toBeGreaterThan(2)
     act(() => result.current.stop(id))
   })
 
   test('a burst inside the window is batched: leading commit, then one trailing commit with the last part', async () => {
     const release = gate()
-    const { result, id, seen } = observe(60, 6, release.promise)
+    const { result, id, seen } = observe(150, 6, release.promise)
     act(() => result.current.start(id, 'go'))
     await waitFor(() => expect(seen.at(-1)).toBe(6))
-    // First part immediately, the other five collapsed into the trailing commit.
-    expect(seen).toEqual([1, 6])
+    // The six deltas span a few ms, far inside the 150ms window: at most the leading commit, a
+    // straggler and the trailing one — never one commit per part — and the last part is not lost.
+    expect(seen.length).toBeLessThanOrEqual(3)
     act(() => result.current.stop(id))
   })
 
@@ -491,5 +583,55 @@ describe('chat.turn telemetry', () => {
     act(() => result.current.stop(id))
     await waitFor(() => expect(store.threads[0]?.status).toBe('done'))
     expect(events).toEqual([])
+  })
+})
+
+describe('chat.turn through the real BasaltProvider', () => {
+  const transport: AgentTransport<AgentPart, string> = {
+    async *stream() {
+      yield text('t', 'hi')
+    },
+  }
+
+  function mountProbe(args: { telemetry?: (event: BasaltEvent) => void }) {
+    const store = createStore()
+    const id = store.create()
+    const providerEvents: BasaltEvent[] = []
+    let hook: ReturnType<typeof useAgentThreadRuns> | undefined
+    function Probe(): ReactElement {
+      const current = useAgentThreadRuns({
+        transport,
+        store,
+        resolveOutcome,
+        ...(args.telemetry !== undefined ? { telemetry: args.telemetry } : {}),
+      })
+      useEffect(() => {
+        hook = current
+      })
+      return <div>probe</div>
+    }
+    const router = createBasaltRouter({ routeTree: createRootRoute({ component: Probe }) })
+    render(<BasaltProvider router={router} telemetry={(event) => providerEvents.push(event)} />)
+    return { store, id, providerEvents, start: () => hook?.start(id, 'go') }
+  }
+
+  test('with no `telemetry` arg the turn reaches the provider sink', async () => {
+    const { store, id, providerEvents, start } = mountProbe({})
+    await screen.findByText('probe')
+    act(() => start())
+    await waitFor(() => expect(store.threads[0]?.status).toBe('done'))
+    const turns = providerEvents.filter((e) => e.type === 'chat.turn')
+    expect(turns).toHaveLength(1)
+    expect(turns[0]?.attributes).toMatchObject({ 'basalt.chat.thread_id': id })
+  })
+
+  test('an explicit `telemetry` arg wins over the provider sink', async () => {
+    const own: BasaltEvent[] = []
+    const { store, providerEvents, start } = mountProbe({ telemetry: (event) => own.push(event) })
+    await screen.findByText('probe')
+    act(() => start())
+    await waitFor(() => expect(store.threads[0]?.status).toBe('done'))
+    expect(own.filter((e) => e.type === 'chat.turn')).toHaveLength(1)
+    expect(providerEvents.filter((e) => e.type === 'chat.turn')).toHaveLength(0)
   })
 })

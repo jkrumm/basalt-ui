@@ -147,6 +147,18 @@ describe('aiSdkTransport — { transport } form', () => {
     expect(parts.some((p) => p.type === 'text')).toBe(true)
   })
 
+  test('`transport: undefined` falls back to the HTTP form', async () => {
+    const transport = aiSdkTransport({
+      api: '/api/chat',
+      transport: undefined,
+      fetch: asFetch(async () => new Response('nope', { status: 500 })),
+    })
+    expect(toAgentError(await failureOf(transport.stream('hi')))).toEqual({
+      kind: 'http',
+      status: 500,
+    })
+  })
+
   test('a custom transport that rejects surfaces its error unchanged', async () => {
     const boom = Object.assign(new Error('socket closed'), { statusCode: 502 })
     const transport = aiSdkTransport({
@@ -166,17 +178,50 @@ describe('aiSdkTransport — { transport } form', () => {
 })
 
 describe('toAgentError', () => {
-  test('an AbortError is "aborted"', () => {
+  test('an AbortError is "aborted" — including a DOMException, which is not an Error', () => {
     const abort = new Error('aborted')
     abort.name = 'AbortError'
     expect(toAgentError(abort)).toEqual({ kind: 'aborted' })
+    // A browser's DOMException is not an Error in every engine; model it as a bare named object.
+    expect(toAgentError({ name: 'AbortError', message: 'The operation was aborted.' })).toEqual({
+      kind: 'aborted',
+    })
+    expect(toAgentError(new DOMException('The operation was aborted.', 'AbortError'))).toEqual({
+      kind: 'aborted',
+    })
   })
 
-  test('anything else is "server" with its message; a non-Error throw is stringified', () => {
+  test('anything else is "server" with its message', () => {
     expect(toAgentError(new TypeError('Failed to fetch'))).toEqual({
       kind: 'server',
       message: 'Failed to fetch',
     })
+    expect(toAgentError({ message: 'plain object' })).toEqual({
+      kind: 'server',
+      message: 'plain object',
+    })
+  })
+
+  test('non-object throws are stringified', () => {
     expect(toAgentError('plain')).toEqual({ kind: 'server', message: 'plain' })
+    expect(toAgentError(null)).toEqual({ kind: 'server', message: 'null' })
+    expect(toAgentError(undefined)).toEqual({ kind: 'server', message: 'undefined' })
+    expect(toAgentError(42)).toEqual({ kind: 'server', message: '42' })
+  })
+
+  test('a non-numeric statusCode or a half-formed stream error does not match http / stream', () => {
+    expect(toAgentError(Object.assign(new Error('x'), { statusCode: '503' }))).toEqual({
+      kind: 'server',
+      message: 'x',
+    })
+    expect(toAgentError(Object.assign(new Error('y'), { chunkType: 'text-delta' }))).toEqual({
+      kind: 'server',
+      message: 'y',
+    })
+  })
+
+  test('statusCode wins over a stream-shaped error', () => {
+    const both = Object.assign(new Error('z'), { statusCode: 500, chunkType: 't', chunkId: 'i' })
+    expect(toAgentError(both)).toEqual({ kind: 'http', status: 500 })
   })
 })

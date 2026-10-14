@@ -6,6 +6,7 @@
  * search param or query data. A `failed: true` event additionally carries `exception.type` and
  * `basalt.error.kind`; a `failed: false` event carries neither, and the types enforce both ways.
  */
+import { createContext } from 'react'
 import type { ThreadStatus } from './agent/thread'
 
 /** Epoch ms (`performance.timeOrigin + performance.now()`). */
@@ -87,6 +88,12 @@ export function createEmitter(sink: Telemetry | undefined): Telemetry {
 }
 
 function noop(): void {}
+
+/**
+ * The provider's wrapped emitter, for hooks that emit their own events (`useAgentThreadRuns`'
+ * `chat.turn`). `undefined` outside a `BasaltProvider`, where such a hook emits nothing.
+ */
+export const TelemetryContext = createContext<Telemetry | undefined>(undefined)
 
 /** The event sink of the provider mounted on a router, read by `createBasaltRouter`'s `onCatch`. */
 const routerSinks = new WeakMap<object, Telemetry>()

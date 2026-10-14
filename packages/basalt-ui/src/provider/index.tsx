@@ -36,7 +36,7 @@ import { useIsomorphicLayoutEffect } from '../common/isomorphic-layout-effect'
 import { PageTitle } from '../shell/page-title'
 import { SizeClassHintContext } from '../shell/use-size-class'
 import type { SizeClass } from '../shell/use-size-class'
-import { bindRouterTelemetry, createEmitter, errorName, now } from '../telemetry'
+import { TelemetryContext, bindRouterTelemetry, createEmitter, errorName, now } from '../telemetry'
 import type { Telemetry } from '../telemetry'
 import type { BasaltDevDockTool } from '../dev-dock'
 import type { BasaltRouter, BasaltRouterContext } from './create-router'
@@ -455,27 +455,33 @@ export function BasaltProvider({
     >
       <RootBoundary emit={emit} fallback={fallback}>
         <BasaltBridge injectPalette={injectPalette} paletteOptions={paletteOptions} nonce={nonce}>
-          <SizeClassHintContext.Provider value={sizeClassHint}>
-            <QueryClientProvider client={client}>
-              {/* ModalsProvider WRAPS the router, so `useModals()` / `openContextModal` have real context. */}
-              <ModalsProvider>
-                <RouterProvider router={router} />
-                {/* The literal read sits at the branch, so a production build drops the import. */}
-                {process.env.NODE_ENV !== 'production' && (
-                  <Suspense fallback={null}>
-                    <LazyDevDock tool={devTool} onClose={() => setDevTool(null)} router={router} />
-                  </Suspense>
-                )}
-              </ModalsProvider>
-            </QueryClientProvider>
-            <Notifications position="bottom-right" autoClose={4000} limit={5} />
-            <Spotlight
-              actions={actions}
-              onSpotlightOpen={refreshActions}
-              shortcut="mod + K"
-              maxHeight={420}
-            />
-          </SizeClassHintContext.Provider>
+          <TelemetryContext.Provider value={emit}>
+            <SizeClassHintContext.Provider value={sizeClassHint}>
+              <QueryClientProvider client={client}>
+                {/* ModalsProvider WRAPS the router, so `useModals()` / `openContextModal` have real context. */}
+                <ModalsProvider>
+                  <RouterProvider router={router} />
+                  {/* The literal read sits at the branch, so a production build drops the import. */}
+                  {process.env.NODE_ENV !== 'production' && (
+                    <Suspense fallback={null}>
+                      <LazyDevDock
+                        tool={devTool}
+                        onClose={() => setDevTool(null)}
+                        router={router}
+                      />
+                    </Suspense>
+                  )}
+                </ModalsProvider>
+              </QueryClientProvider>
+              <Notifications position="bottom-right" autoClose={4000} limit={5} />
+              <Spotlight
+                actions={actions}
+                onSpotlightOpen={refreshActions}
+                shortcut="mod + K"
+                maxHeight={420}
+              />
+            </SizeClassHintContext.Provider>
+          </TelemetryContext.Provider>
         </BasaltBridge>
       </RootBoundary>
     </MantineProvider>
