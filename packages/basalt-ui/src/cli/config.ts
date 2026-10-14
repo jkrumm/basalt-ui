@@ -178,3 +178,15 @@ export const DEFAULT_ROOTS = [DEFAULT_ROOT]
 export function resolveRoots(cfg: BasaltConfig): string[] {
   return cfg.roots?.length ? cfg.roots : DEFAULT_ROOTS
 }
+
+/** Every `BasaltConfig` key, as data for `doctor`'s `config-keys` (a test pins it to the type). */
+export const BASALT_CONFIG_KEYS = (
+  'roots exempt profile include spacingSteps severity forbiddenAccents accentHue rawRadius rawSurface ' +
+  'cardWithBorder offSystemSurfaceVar mantineShadeIndex rawHtmlLayout inlineSpacing inlineDisplay ' +
+  'rawMotionValue rawFormControl sub16InputFont seriesModulePath exemptRules aiMajorSkewReason'
+).split(' ') as (keyof BasaltConfig)[]
+
+/** Keys removed from `BasaltConfig`, with the reason `doctor` prints. */
+export const RETIRED_CONFIG_KEYS: Readonly<Record<string, string>> = {
+  chartMissingAriaLabel: 'its guard kind is gone in 2.0 (`ariaLabel` is required on a chart now)',
+}

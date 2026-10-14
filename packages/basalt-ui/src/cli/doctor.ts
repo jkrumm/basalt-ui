@@ -36,8 +36,10 @@ import { resolveRoots } from './config'
 import {
   appWiringCheck,
   droppedSubpathsCheck,
+  exactPeersCheck,
   retiredLintRulesCheck,
   tsconfigBaseCheck,
+  unknownConfigKeysCheck,
 } from './doctor-upgrade'
 import type { Check } from './doctor-upgrade'
 import { findManifestAbove, parentInstallAdvice } from './sync'
@@ -120,7 +122,8 @@ function resolveAiMajorSkewReason(cfg: BasaltConfig): {
  *   4. `oxlint-preset`: `.oxlintrc.json` extends the shipped preset AND that path resolves.
  *   7. `ai-major-parity`: the `ai` major agrees across this package.json's dependency fields
  *      (exempt via `basalt.aiMajorSkewReason`; a stale reason warns).
- *   8-11. `tsconfig-base`, `retired-lint-rules`, `dropped-subpaths`, `app-wiring` (./doctor-upgrade);
+ *   8-13. `tsconfig-base`, `retired-lint-rules`, `dropped-subpaths`, `app-wiring`, `exact-peers`,
+ *      `config-keys` (./doctor-upgrade);
  *      a check that cannot run is SKIPPED and exits non-zero.
  *
  * Warning (non-fatal):
@@ -370,7 +373,7 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
     pass('ai-major-parity: this package.json declares no ai dependency — nothing to compare')
   }
 
-  // ── Hard checks 8-11: strictness and the 1.x → 2.0 upgrade path (./doctor-upgrade) ──────────
+  // ── Hard checks 8-13: strictness and the 1.x → 2.0 upgrade path (./doctor-upgrade) ──────────
   if (profile === 'tokens-only') {
     pass(
       'tsconfig-base / retired-lint-rules / dropped-subpaths / app-wiring: n/a — a tokens-only consumer',
@@ -389,6 +392,11 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
       [
         'app-wiring: the entry mounts BasaltProvider and the router tree is generated',
         appWiringCheck(cwd),
+      ],
+      ['exact-peers: installed exact-pinned peers match basalt-ui', exactPeersCheck(cwd, install)],
+      [
+        'config-keys: the basalt config block sets only keys basalt-ui reads',
+        unknownConfigKeysCheck(cwd),
       ],
     ]
     for (const [ok, check] of upgrade) {

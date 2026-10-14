@@ -16,13 +16,17 @@ import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { BASALT_CONFIG_KEYS } from './config'
+import type { BasaltConfig } from './config'
 import { doctor } from './doctor'
 import {
   appWiringCheck,
   droppedSubpathsCheck,
+  exactPeersCheck,
   retiredLintRulesCheck,
   seedTsconfigExtends,
   tsconfigBaseCheck,
+  unknownConfigKeysCheck,
 } from './doctor-upgrade'
 import type { Check } from './doctor-upgrade'
 import {
@@ -171,6 +175,76 @@ describe('doctor — retired-lint-rules', () => {
     )
     expect(problem).toContain('basalt/visx-boundary')
     expect(problem).not.toContain('basalt/card-inset')
+  })
+})
+
+describe('doctor — config-keys', () => {
+  it('BASALT_CONFIG_KEYS is exactly the keys of BasaltConfig', () => {
+    const all = Object.fromEntries(BASALT_CONFIG_KEYS.map((k) => [k, true])) as Record<
+      keyof BasaltConfig,
+      true
+    >
+    expect(Object.keys(all)).toHaveLength(BASALT_CONFIG_KEYS.length)
+    // Compile-time half: a key missing from the type or the list fails typecheck here.
+    const _exhaustive: Record<keyof BasaltConfig, true> = all
+    expect(_exhaustive).toBe(all)
+  })
+
+  it('flags the 2.0-deleted key by name and passes every declared key', () => {
+    write('package.json', JSON.stringify({ basalt: { roots: ['src'], rawRadius: false } }))
+    expect(text(unknownConfigKeysCheck(dir))).toBeNull()
+    write(
+      'package.json',
+      JSON.stringify({ basalt: { roots: ['src'], chartMissingAriaLabel: 'warn', typo: 1 } }),
+    )
+    const problem = text(unknownConfigKeysCheck(dir))
+    expect(problem).toContain('basalt.chartMissingAriaLabel (its guard kind is gone')
+    expect(problem).toContain('basalt.typo (not a basalt key)')
+    expect(problem).not.toContain('basalt.roots')
+  })
+
+  it('passes with no basalt block or no package.json', () => {
+    expect(text(unknownConfigKeysCheck(dir))).toBeNull()
+    write('package.json', '{}')
+    expect(text(unknownConfigKeysCheck(dir))).toBeNull()
+  })
+})
+
+describe('doctor — exact-peers', () => {
+  const install = (): { dir: string; version: null; how: 'cwd' } => ({
+    dir: join(dir, 'node_modules/basalt-ui'),
+    version: null,
+    how: 'cwd',
+  })
+
+  it('names a mismatched exact peer with its fix; ranges, matches and absent peers pass', () => {
+    write(
+      'node_modules/basalt-ui/package.json',
+      JSON.stringify({
+        peerDependencies: {
+          motion: '14.1.0',
+          remend: '1.4.0',
+          shiki: '^4.5.0',
+          'd3-scale': '4.0.2',
+        },
+      }),
+    )
+    write('node_modules/motion/package.json', '{"version":"14.0.0"}')
+    write('node_modules/remend/package.json', '{"version":"1.4.0"}')
+    write('node_modules/shiki/package.json', '{"version":"4.9.0"}')
+    const problem = text(exactPeersCheck(dir, install()))
+    expect(problem).toContain('motion@14.0.0 (basalt-ui pins 14.1.0): `bun add motion@14.1.0`')
+    expect(problem).not.toContain('remend')
+    expect(problem).not.toContain('shiki')
+    expect(problem).not.toContain('d3-scale')
+    write('node_modules/motion/package.json', '{"version":"14.1.0"}')
+    expect(exactPeersCheck(dir, install())).toBeNull()
+  })
+
+  it('skips when basalt-ui does not resolve', () => {
+    expect(text(exactPeersCheck(dir, { dir: null, version: null, how: null }))).toContain(
+      'exact-peers',
+    )
   })
 })
 
