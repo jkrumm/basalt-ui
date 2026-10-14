@@ -19,7 +19,7 @@
  */
 import { Box, ScrollArea, Stack } from '@mantine/core'
 import { useReducedMotion } from '@mantine/hooks'
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, MotionConfig, motion } from 'motion/react'
 import type { JSX, ReactNode } from 'react'
 import { useEffect, useState } from 'react'
 import type { AgentThread } from '../thread'
@@ -178,20 +178,23 @@ export function ThreadFeed({
     </Stack>
   ) : (
     <Stack gap="sm" p="sm" {...stackAnchorProps}>
-      <AnimatePresence mode="popLayout" initial={false}>
-        {threads.map((thread) => (
-          <motion.div
-            key={thread.id}
-            layout
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.97 }}
-            transition={MOTION_SPRING}
-          >
-            {rowFor(thread)}
-          </motion.div>
-        ))}
-      </AnimatePresence>
+      {/* V2-SPEC § 5: the OS setting also reaches `motion`'s own transforms. */}
+      <MotionConfig reducedMotion="user">
+        <AnimatePresence mode="popLayout" initial={false}>
+          {threads.map((thread) => (
+            <motion.div
+              key={thread.id}
+              layout
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.97 }}
+              transition={MOTION_SPRING}
+            >
+              {rowFor(thread)}
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </MotionConfig>
     </Stack>
   )
 

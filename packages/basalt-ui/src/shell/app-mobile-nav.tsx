@@ -295,8 +295,9 @@ export function MobileNav({
   const [openKey, setOpenKey] = useState<string | null>(null)
   // The nested block sheet, keyed the same way and for the same reason.
   const [openBlockKey, setOpenBlockKey] = useState<string | null>(null)
-  // `DEFAULT_THEME.respectReducedMotion` is false in Mantine 9.3 and `createBasaltTheme` does not
-  // set it, so the preference has to be read explicitly at the call site.
+  // `createBasaltTheme` sets `respectReducedMotion: true`, which covers Mantine's own `<Transition>`
+  // timing. `scrollTo({ behavior })` below is not Mantine's, so that read stays explicit here; the
+  // `duration` literals are kept as the belt to the theme's braces, not proven redundant.
   const reduceMotion = useReducedMotion()
   const { step } = useBasaltSpacing()
 

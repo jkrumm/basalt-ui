@@ -35,6 +35,19 @@ const REQUIRED_PEERS = [
   'react-dom',
 ]
 
+const REMEND_BLOCK_COMMENT_RE = /\/\*[\s\S]*?\*\//g
+const REMEND_LINE_COMMENT_RE = /\/\/.*$/gm
+
+function stripComments(source: string): string {
+  return source.replace(REMEND_BLOCK_COMMENT_RE, '').replace(REMEND_LINE_COMMENT_RE, '')
+}
+
+function findSourceFiles(): string[] {
+  const srcRoot = join(pkgRoot, 'src')
+  const glob = new Bun.Glob('**/*.{ts,tsx}')
+  return [...glob.scanSync({ cwd: srcRoot })].map((rel) => join(srcRoot, rel))
+}
+
 describe('peer declarations', () => {
   const pkg = JSON.parse(readFileSync(join(pkgRoot, 'package.json'), 'utf8')) as {
     peerDependencies?: Record<string, string>
@@ -106,20 +119,8 @@ describe('remend root-entry requirement (F2) — resolved, now a regression guar
   //  2. the side-effect form — `import\s+(?!type\b)['"]remend['"]` — has no `from` clause at all,
   //     so alternative 1 can never match it; `import type 'remend'` is not valid syntax, but the
   //     lookahead is kept for symmetry and cost nothing.
-  const REMEND_BLOCK_COMMENT_RE = /\/\*[\s\S]*?\*\//g
-  const REMEND_LINE_COMMENT_RE = /\/\/.*$/gm
   const STATIC_REMEND_IMPORT_RE =
     /^(?:import|export)\s+(?!type\b)[^\n]*from\s+['"]remend['"]|^import\s+(?!type\b)['"]remend['"]/m
-
-  function stripComments(source: string): string {
-    return source.replace(REMEND_BLOCK_COMMENT_RE, '').replace(REMEND_LINE_COMMENT_RE, '')
-  }
-
-  function findSourceFiles(): string[] {
-    const srcRoot = join(pkgRoot, 'src')
-    const glob = new Bun.Glob('**/*.{ts,tsx}')
-    return [...glob.scanSync({ cwd: srcRoot })].map((rel) => join(srcRoot, rel))
-  }
 
   const files = findSourceFiles()
 
@@ -138,15 +139,22 @@ describe('remend root-entry requirement (F2) — resolved, now a regression guar
 })
 
 describe('motion static importers', () => {
-  // `motion` is subpath-required for `./agent` (the chat UI imports it eagerly). `ThemeToggle` still
-  // imports it too; V2-SPEC section 5 drops that in 2.0 (W7), at which point the root stops
-  // reaching it and this list shrinks to the chat UI.
-  it.each(['src/agent/chat/thread-feed.tsx', 'src/theme/theme-toggle.tsx'])(
-    '%s imports motion/react statically',
-    (file) => {
-      expect(readFileSync(join(pkgRoot, file), 'utf8')).toMatch(/^import .+ from 'motion\/react'$/m)
-    },
-  )
+  // `motion` is subpath-required for `./agent` (the chat UI imports it eagerly) and nothing else:
+  // `ThemeToggle` dropped it for a CSS transition (V2-SPEC section 5), so the root never reaches it.
+  it.each(['src/agent/chat/thread-feed.tsx'])('%s imports motion/react statically', (file) => {
+    expect(readFileSync(join(pkgRoot, file), 'utf8')).toMatch(/^import .+ from 'motion\/react'$/m)
+  })
+
+  it('no other src/** file imports motion', () => {
+    const hits = findSourceFiles()
+      .filter((file) => !/\.test\.tsx?$/.test(file))
+      .filter((file) =>
+        /^import .+ from 'motion\/react'$/m.test(stripComments(readFileSync(file, 'utf8'))),
+      )
+      .map((file) => file.slice(pkgRoot.length + 1))
+      .toSorted()
+    expect(hits).toEqual(['src/agent/chat/thread-feed.tsx'])
+  })
 
   it("surfaces.ts states motion as ./agent's requirement in its description", () => {
     const source = readFileSync(join(pkgRoot, 'src/surfaces.ts'), 'utf8')

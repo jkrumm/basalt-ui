@@ -538,13 +538,6 @@ for (const [subpath, peers] of [['basalt-ui', []], ...Object.entries(own)]) {
     await import(subpath)
     console.log(`${phase}: ${subpath} loads`)
   } catch (err) {
-    // Deferred gap (surface-gates DEFERRED_PEER_GAPS): the root's ThemeToggle still imports motion
-    // until V2-SPEC section 5 lands (W7).
-    const deferred = subpath === 'basalt-ui' && String(err.message).includes("'motion")
-    if (phase === 'absent' && err.code === 'ERR_MODULE_NOT_FOUND' && deferred) {
-      console.log('absent: basalt-ui still needs motion (ThemeToggle, deferred to W7)')
-      continue
-    }
     const named = peers.some((p) => String(err.message).includes(`'${p}`))
     if (phase === 'absent' && err.code === 'ERR_MODULE_NOT_FOUND' && named) {
       console.log(`absent: ${subpath} needs its own peer (${err.message.split("'")[1]})`)

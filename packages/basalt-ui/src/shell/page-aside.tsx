@@ -46,7 +46,18 @@
  * read stays in JS — through `useSyncExternalStore`, so SSR, hydration and the first paint agree.
  * Recorded in `docs/CONTROLS-SPEC.md` §1 (C9) and `docs/ASIDE-SPEC.md` §0.
  */
-import { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react'
+import {
+  Activity,
+  ViewTransition,
+  createContext,
+  startTransition,
+  useCallback,
+  useContext,
+  useDeferredValue,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import type { ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { cx } from '../common/props'
@@ -255,11 +266,21 @@ export function PageAside(props: PageAsideProps): ReactNode {
   // children. `useSizeClass` (`useSyncExternalStore`) keeps SSR, the hydration pass and the first
   // client paint agreeing on which single node exists.
   const isCompact = useSizeClass() === 'compact'
-  const [folded, setFolded] = usePersistedOrLocal({
+  const [folded, storeFolded] = usePersistedOrLocal({
     scope: 'aside',
     persistKey,
     initial: defaultFolded ?? !docks,
   })
+  // V2-SPEC § 5: a fold runs in a transition so the region's `<ViewTransition>` fires. A persisted
+  // fold is a `useSyncExternalStore` read, which always commits synchronously and so never
+  // activates one; `useDeferredValue` re-renders at transition priority, which is what does.
+  // `folded` is the truth (the toggle's `aria-*`, the reserved width published to the shell);
+  // `shownFolded` only decides what is painted, one transition later.
+  const shownFolded = useDeferredValue(folded)
+  const setFolded = useCallback(
+    (next: boolean) => startTransition(() => storeFolded(next)),
+    [storeFolded],
+  )
 
   const portalled = inShell && !isCompact
   // Below `sm` the panel goes into the page bar's row 2 IF there is one. Without a row 2 there is
@@ -329,26 +350,29 @@ export function PageAside(props: PageAsideProps): ReactNode {
       aria-label={title}
       {...(style !== undefined && { style })}
     >
-      {portalled && folded ? (
+      {portalled && shownFolded && (
         <div className={classes.rail}>
-          <FoldButton folded onToggle={() => setFolded(false)} />
+          <FoldButton folded={folded} onToggle={() => setFolded(false)} />
         </div>
-      ) : (
-        <>
-          <div className={cx(classes.header, classNames?.header)} data-basalt-page-aside-header="">
-            <span className={classes.title}>{title}</span>
-            {portalled && <FoldButton folded={false} onToggle={() => setFolded(true)} />}
-          </div>
-          <div className={cx(classes.body, classNames?.body)}>
-            {/* The aside body IS a home (law C1) and a filter surface: `panel` is what turns every
-                bound control inside into an inspector row. `registry: null` because there is no
-                census here — no `Filters (n)`, no `Reset all`. */}
-            <FilterSetScope surface="panel" registry={null}>
-              {children}
-            </FilterSetScope>
-          </div>
-        </>
       )}
+      {/* Hidden, not unmounted: scroll position, input values and `useState` survive a fold. A
+          hidden `Activity` runs the subtree's effect cleanups and re-runs the effects on re-show
+          (`agent/chat/thread-feed-row.tsx`), so a subscribing or streaming child resumes from its
+          own state, but anything an effect set up (a timer, a socket) is torn down while folded. */}
+      <Activity mode={portalled && shownFolded ? 'hidden' : 'visible'}>
+        <div className={cx(classes.header, classNames?.header)} data-basalt-page-aside-header="">
+          <span className={classes.title}>{title}</span>
+          {portalled && <FoldButton folded={false} onToggle={() => setFolded(true)} />}
+        </div>
+        <div className={cx(classes.body, classNames?.body)}>
+          {/* The aside body IS a home (law C1) and a filter surface: `panel` is what turns every
+              bound control inside into an inspector row. `registry: null` because there is no
+              census here — no `Filters (n)`, no `Reset all`. */}
+          <FilterSetScope surface="panel" registry={null}>
+            {children}
+          </FilterSetScope>
+        </div>
+      </Activity>
     </section>
   )
 
@@ -372,5 +396,5 @@ export function PageAside(props: PageAsideProps): ReactNode {
   if (!portalled) return inShell && !settled ? null : panel
   // `target` is null for the first commit only — the outlet's ref sets it.
   if (target === null) return null
-  return createPortal(panel, target)
+  return createPortal(<ViewTransition>{panel}</ViewTransition>, target)
 }

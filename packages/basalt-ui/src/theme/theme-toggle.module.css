@@ -1,0 +1,30 @@
+/*
+ * The sun/moon glyph: both icons stacked in one grid cell, the inactive one faded, shrunk and
+ * rotated away. A CSS transition, not `motion` (V2-SPEC § 5); reduced motion swaps instantly.
+ */
+.glyph {
+  display: inline-grid;
+  place-items: center;
+}
+
+.sun,
+.moon {
+  grid-area: 1 / 1;
+  display: inline-flex;
+  transition:
+    opacity 150ms ease,
+    transform 250ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glyph[data-dark='true'] .sun,
+.glyph[data-dark='false'] .moon {
+  opacity: 0;
+  transform: scale(0.6) rotate(30deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sun,
+  .moon {
+    transition: none;
+  }
+}
