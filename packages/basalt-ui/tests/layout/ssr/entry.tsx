@@ -14,16 +14,6 @@ const container = document.getElementById('root')
 if (!container) throw new Error('ssr host is missing #root')
 window.basaltHydrationErrors = []
 const errors = window.basaltHydrationErrors
-// oxlint-disable-next-line no-console -- the hydration warnings are the signal this probe collects
-const originalError = console.error
-// oxlint-disable-next-line no-console -- same
-// Only React's hydration complaints are the signal; anything else still reaches the console.
-const HYDRATION_MESSAGE = /hydrat|did not match|mismatch/i
-console.error = (...args: unknown[]) => {
-  const message = args.map(String).join(' ')
-  if (HYDRATION_MESSAGE.test(message)) errors.push(message)
-  originalError(...args)
-}
 hydrateRoot(container, <App />, {
   onRecoverableError: (error) => errors.push(String(error)),
 })

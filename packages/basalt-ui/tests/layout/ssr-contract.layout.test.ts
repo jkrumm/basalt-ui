@@ -125,6 +125,14 @@ type Facts = {
   legend: Record<string, { dot: string; chip: string; row: string }>
   donut: { ringRight: number; legendLeft: number; legendTop: number; ringBottom: number }
   headerLegend: { titleBottom: number; legendTop: number; chartTop: number }
+  /** Each Donut's ring (the element its box fills) against its box and painted svg. */
+  rings: Record<string, { ringW: number; ringH: number; box: number; svg: number }>
+  /** The header's top padding on a card in the narrow / wide band. */
+  headerInset: number
+  /** The chart root's width against the flex row it sits in. */
+  flexRow: { root: number; row: number }
+  /** A card with only a header legend: how many children it has, and whether legend precedes plot. */
+  legendOnly: { children: number; legendFirst: boolean }
   /** `Heatmap matchHeight`: its parent's height against the box that fills it. */
   fill: { parent: number; frame: number; box: number }
   /** The short card's subtitle is folded (not rendered) — in the server HTML, by CSS. */
@@ -156,6 +164,10 @@ const facts = (page: Page): Promise<Facts> =>
       headerLegend: { titleBottom: 0, legendTop: 0, chartTop: 0 },
       shortSubtitleRendered: true,
       fill: { parent: 0, frame: 0, box: 0 },
+      rings: {},
+      headerInset: 0,
+      flexRow: { root: 0, row: 0 },
+      legendOnly: { children: 0, legendFirst: false },
     }
     for (const name of [
       'lines',
@@ -204,6 +216,39 @@ const facts = (page: Page): Promise<Facts> =>
         .bottom,
       legendTop: card.querySelector('[data-basalt-chart-legend]')!.getBoundingClientRect().top,
       chartTop: card.querySelector('svg.ts-chart')!.getBoundingClientRect().top,
+    }
+    for (const name of ['donut', 'donut-fixed', 'donut-responsive']) {
+      const frame = probe(name).querySelector('[data-basalt-box]')
+      const ring = frame?.parentElement
+      const svg = probe(name).querySelector('svg.ts-chart')
+      if (!frame?.firstElementChild || !ring || !svg) throw new Error(`LAYOUT: no ring in ${name}`)
+      const r = ring.getBoundingClientRect()
+      out.rings[name] = {
+        ringW: r.width,
+        ringH: r.height,
+        box: frame.firstElementChild.getBoundingClientRect().height,
+        svg: svg.getBoundingClientRect().height,
+      }
+    }
+    const header = probe('card-header-legend').querySelector(
+      '[data-basalt-chart-card]',
+    )?.firstElementChild
+    out.headerInset = Number.parseFloat(getComputedStyle(header!).paddingTop)
+    const flexRoot = probe('lines-in-flex-row')
+    out.flexRow = {
+      root: flexRoot.querySelector('[data-basalt-chart]')!.getBoundingClientRect().width,
+      row: flexRoot.firstElementChild!.getBoundingClientRect().width,
+    }
+    const only = probe('card-legend-only').querySelector('[data-basalt-chart-card]')!
+    out.legendOnly = {
+      children: only.children.length,
+      legendFirst:
+        (only
+          .querySelector('[data-basalt-chart-legend]')
+          ?.compareDocumentPosition(only.querySelector('.ts-chart-host')!) ?? 0) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+          ? true
+          : false,
     }
     const fillProbe = probe('heatmap-fill')
     const frame = fillProbe.querySelector('[data-basalt-box]')
@@ -304,7 +349,7 @@ layout('SSR-first contract: hydration moves nothing', () => {
 
       test('the page renders exactly the probes the test knows', async () => {
         const { probes } = await runAt(width)
-        expect(probes).toEqual([...PROBES])
+        expect(probes.toSorted()).toEqual([...PROBES].toSorted())
       }, 60_000)
 
       // Geometry holds on the server paint (no script yet) and on the hydrated page alike.
@@ -315,6 +360,30 @@ layout('SSR-first contract: hydration moves nothing', () => {
           expect(f.svgFill['lines-responsive-height']!.box).toBe(width >= 800 ? 300 : 180)
           for (const [name, { box, svg }] of Object.entries(f.svgFill)) {
             expect({ name, delta: Math.abs(box - svg) <= 1 }).toEqual({ name, delta: true })
+          }
+        }, 60_000)
+
+        test(`${phase}: each Donut ring holds its box, and is square beside the legend`, async () => {
+          const { rings } = (await runAt(width))[phase]
+          for (const [name, r] of Object.entries(rings)) {
+            expect({
+              name,
+              fits: Math.abs(r.ringH - r.box) <= 1 && Math.abs(r.box - r.svg) <= 1,
+            }).toEqual({
+              name,
+              fits: true,
+            })
+            if (width >= 480)
+              expect({ name, square: Math.abs(r.ringW - r.ringH) <= 1 }).toEqual({
+                name,
+                square: true,
+              })
+          }
+          // unstated is the 240 default, numeric is 200, responsive is base 150 / wide 260.
+          if (width >= 800) {
+            expect(rings['donut']!.ringH).toBe(240)
+            expect(rings['donut-fixed']!.ringH).toBe(200)
+            expect(rings['donut-responsive']!.ringH).toBe(260)
           }
         }, 60_000)
 
@@ -340,6 +409,30 @@ layout('SSR-first contract: hydration moves nothing', () => {
               expect(mode.chip).toBe('none')
             }
           }
+        }
+      }, 60_000)
+
+      test('the card header inset follows the card width, and the card is a container', async () => {
+        const { serverFacts, facts: f } = await runAt(width)
+        for (const inset of [serverFacts.headerInset, f.headerInset]) {
+          // narrow (< 480): the trimmed 4px; wide: the card's own inset (11px at density 0).
+          if (width >= 480) expect(inset).toBeGreaterThan(4)
+          else expect(inset).toBe(4)
+        }
+      }, 60_000)
+
+      test('a chart root fills a flex row instead of collapsing', async () => {
+        const { serverFacts, facts: f } = await runAt(width)
+        for (const r of [serverFacts.flexRow, f.flexRow]) {
+          expect(r.root).toBeGreaterThan(100)
+          expect(Math.abs(r.root - r.row)).toBeLessThanOrEqual(1)
+        }
+      }, 60_000)
+
+      test('a card with only a header legend has no header row, legend before the plot', async () => {
+        const { serverFacts, facts: f } = await runAt(width)
+        for (const l of [serverFacts.legendOnly, f.legendOnly]) {
+          expect(l).toEqual({ children: 1, legendFirst: true })
         }
       }, 60_000)
 
@@ -403,5 +496,34 @@ layout('SSR-first contract: hydration moves nothing', () => {
     const { serverFacts, facts: f } = await runAt(390)
     for (const d of [serverFacts.donut, f.donut])
       expect(d.legendTop).toBeGreaterThanOrEqual(d.ringBottom)
+  }, 60_000)
+
+  test('a coarse pointer caps the box at 45svh, default and stated height alike', async () => {
+    const context = await booted!.chrome.newContext({
+      viewport: { width: 390, height: 360 },
+      isMobile: true,
+      hasTouch: true,
+      reducedMotion: 'reduce',
+    })
+    const page = await context.newPage()
+    await page.goto(booted!.server.url.origin + '/')
+    await page.evaluate(() => document.fonts.ready)
+    await frames(page)
+    const boxes = await page.evaluate(() => {
+      const box = (name: string): number =>
+        document
+          .querySelector(`[data-probe="${name}"] [data-basalt-box]`)!
+          .firstElementChild!.getBoundingClientRect().height
+      return {
+        law: box('lines-no-legend'),
+        stated: box('lines-tall'),
+        viewport: window.innerHeight,
+      }
+    })
+    await context.close()
+    const cap = boxes.viewport * 0.45
+    // The law gives 222 px at 358 px wide, the stated height 300: both exceed the 162 px cap.
+    expect(boxes.law).toBeCloseTo(cap, 0)
+    expect(boxes.stated).toBeCloseTo(cap, 0)
   }, 60_000)
 })

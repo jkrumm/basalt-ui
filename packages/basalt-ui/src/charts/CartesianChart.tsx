@@ -2,9 +2,9 @@
  * `CartesianChart` — the one cartesian rung (`docs/V2-SPEC.md` § 9.2): a definition compiler plus
  * one host. Every cartesian kind is this component with fixed `marks`.
  *
- * Three layers, composed here and nowhere else: the pure sizing hook (`sizing.ts`: measured width
- * → container class → height), the bare engine mount (`host.tsx`), and the chrome — the derived
- * legend, the `state` placeholders and the `ChartCard` header slot — around both.
+ * Three layers, composed here and nowhere else: the width hook (`sizing.ts`), the bare engine mount
+ * in its CSS-owned box (`host.tsx`, `box.tsx`: the height exists before JS runs), and the chrome —
+ * the derived legend (its mode picked in CSS) and the `state` placeholders — around both.
  */
 import { useCallback, useId, useMemo, useState } from 'react'
 import type { CSSProperties, ReactElement, ReactNode } from 'react'
@@ -33,11 +33,14 @@ const rootStyle: CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
   gap: 6,
+  // `width: 100%` because a size container cannot take its width from its content: without it
+  // the root collapses to 0 in a flex row or an auto grid track.
+  width: '100%',
   minWidth: 0,
   containerType: 'inline-size',
 }
-// The card header's legend row, rendered in the body: the header's bottom inset plus its 6px
-// padding, less the body's own 2px top inset.
+// A `placement: 'header'` legend inside a `ChartCard` sits where the header's legend row did: the
+// header's 4px bottom inset plus the row's 6px top padding is 10px, less the body's own 2px top inset.
 const headerLegendStyle: CSSProperties = { marginTop: 8 }
 
 /** `useId` output (`«r1»`, `:r1:`) is not a safe SVG id fragment. */

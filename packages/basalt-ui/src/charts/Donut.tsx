@@ -18,7 +18,7 @@ import type { CartesianDefinition } from './compile'
 import { ChartEngine, idPrefixOf } from './host'
 import { ChartLegend } from './legend'
 import { useCoarsePointer } from '../common/use-media-query'
-import { chartBoxVars } from './box'
+import { chartBoxVars, isShortChart } from './box'
 import classes from './donut.module.css'
 import { ChartPlaceholder, resolveChartState } from './state'
 import { CHART_THEME, DIMMED } from './theme'
@@ -104,7 +104,8 @@ const centerStyle: CSSProperties = {
 }
 
 // A size container: the row inside lays the legend beside or under the ring by this width (CSS).
-const rootStyle: CSSProperties = { containerType: 'inline-size', minWidth: 0 }
+// `width: 100%`: a size container takes no width from its content (see `CartesianChart`'s root).
+const rootStyle: CSSProperties = { containerType: 'inline-size', width: '100%', minWidth: 0 }
 
 export function Donut<K extends string = string>(props: DonutProps<K>): ReactElement {
   const {
@@ -219,17 +220,21 @@ export function Donut<K extends string = string>(props: DonutProps<K>): ReactEle
       style={{ ...rootStyle, ...style }}
     >
       <div className={classes.row}>
-        <div className={classes.ring} style={chartBoxVars(height)}>
+        <div
+          className={classes.ring}
+          style={chartBoxVars(height)}
+          {...(isShortChart(height) && { 'data-basalt-chart-short': '' })}
+        >
           {resolved === null ? (
             <ChartEngine
               definition={definition}
               ariaLabel={ariaLabel}
-              height={height}
+              height="fill"
               idPrefix={idPrefixOf(chartId)}
               coarse={coarse}
             />
           ) : (
-            <ChartPlaceholder state={state} height={height} />
+            <ChartPlaceholder state={state} height="fill" />
           )}
           {resolved === null && (centerLabel !== undefined || centerSubLabel !== undefined) && (
             <div style={centerStyle}>
