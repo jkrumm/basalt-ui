@@ -1,3 +1,10 @@
+## [2.0.1](https://github.com/jkrumm/basalt-ui/compare/v2.0.0...v2.0.1) (2026-10-14)
+
+
+### Bug Fixes
+
+* close argo friction rows 1-3 ([41627c3](https://github.com/jkrumm/basalt-ui/commit/41627c328ad278fc303ca9317cada2d2ab5f99a4))
+
 # [2.0.0](https://github.com/jkrumm/basalt-ui/compare/v1.41.0...v2.0.0) (2026-10-14)
 
 
