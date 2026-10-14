@@ -11,14 +11,16 @@ import { StatCard } from './stat-card'
 import type { StatCardSparklineSize } from './stat-card'
 import type { QueryStateLike } from './query-state'
 
-const original = HTMLElement.prototype.getBoundingClientRect
+// Stubbed on Element.prototype, where the method lives: assigning it back onto a subclass would
+// leave an own property that shadows every later file's stub of the real one.
+const original = Element.prototype.getBoundingClientRect
 beforeEach(() => {
-  HTMLElement.prototype.getBoundingClientRect = () => ({ width: 120 }) as DOMRect
+  Element.prototype.getBoundingClientRect = () => ({ width: 120 }) as DOMRect
 })
 
 let root: ReturnType<typeof createRoot> | undefined
 afterEach(() => {
-  HTMLElement.prototype.getBoundingClientRect = original
+  Element.prototype.getBoundingClientRect = original
   act(() => root?.unmount())
   root = undefined
   document.body.innerHTML = ''
