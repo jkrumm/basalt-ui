@@ -1,0 +1,38 @@
+/*
+ * The derived legend's responsive mode, in CSS (docs/V2-SPEC.md § 9.6, W10 SSR contract): none below
+ * 240px, dots below 480px, chips from 480px, by the enclosing chart's inline size — so the legend in
+ * the server HTML is the legend of the hydrated page. `ChartLegend` renders both swatches; this
+ * file shows one. Literals are CONTAINER_CLASSES (`breakpoint-literals.test.ts`); the container is
+ * the chart root (`CartesianChart.tsx`), whose `container-type` this relies on.
+ */
+
+.auto {
+  display: none;
+}
+
+.auto .chip {
+  display: none;
+}
+
+@container (min-width: 240px) {
+  .auto {
+    display: flex;
+    column-gap: 38px;
+    --vx-hit-gap: 38px;
+  }
+}
+
+@container (min-width: 480px) {
+  .auto {
+    column-gap: var(--bc-legend-gap);
+    --vx-hit-gap: var(--bc-legend-gap);
+  }
+
+  .auto .dot {
+    display: none;
+  }
+
+  .auto .chip {
+    display: inline-flex;
+  }
+}

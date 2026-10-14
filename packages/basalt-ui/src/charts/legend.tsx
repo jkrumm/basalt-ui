@@ -6,9 +6,11 @@
  */
 import type { CSSProperties, ReactElement } from 'react'
 import { VX } from '../tokens'
+import classes from './chart-legend.module.css'
 import type { ChartSeries } from './types'
 
-export type LegendMode = 'dots' | 'chips'
+/** `auto` renders both swatches and lets the container decide: none, dots or chips (CSS). */
+export type LegendMode = 'dots' | 'chips' | 'auto'
 
 const ROLE_ORDER = ['series', 'overlay', 'reference'] as const
 
@@ -65,17 +67,25 @@ type SwatchStyle = Pick<
 >
 
 function Swatch({ s, mode }: { s: SwatchStyle; mode: LegendMode }): ReactElement {
+  if (mode === 'auto')
+    return (
+      <>
+        <Swatch s={s} mode="dots" />
+        <Swatch s={s} mode="chips" />
+      </>
+    )
   if (mode === 'dots')
     return (
       <span
         aria-hidden
+        className={classes.dot}
         // theme-allow raw-surface — a legend dot is a circle, not a surface corner
         style={{ width: 8, height: 8, borderRadius: '50%', background: s.color, flex: 'none' }}
       />
     )
   if ((s.mark ?? 'line') === 'line')
     return (
-      <svg aria-hidden width={16} height={8} style={{ flex: 'none' }}>
+      <svg aria-hidden className={classes.chip} width={16} height={8} style={{ flex: 'none' }}>
         <line
           x1={1}
           x2={15}
@@ -92,6 +102,7 @@ function Swatch({ s, mode }: { s: SwatchStyle; mode: LegendMode }): ReactElement
   return (
     <span
       aria-hidden
+      className={classes.chip}
       style={{
         width: 10,
         height: 10,
@@ -118,17 +129,28 @@ export type ChartLegendProps<T> = {
 export function ChartLegend<T>(props: ChartLegendProps<T>): ReactElement | null {
   const groups = legendEntries(props.series, props.groups)
   if (groups.length === 0) return null
+  const auto = props.mode === 'auto'
   const gap = props.mode === 'dots' ? DOTS_GAP : VX.legendGap
   return (
     <fieldset
       aria-label="Legend"
       data-basalt-chart-legend={props.mode}
-      style={{
-        ...rowStyle,
-        columnGap: gap,
-        // Caps each entry's `[data-basalt-hit]` overlay at the real gap between entries.
-        ...({ '--vx-hit-gap': `${gap}px` } as CSSProperties),
-      }}
+      {...(auto && { className: classes.auto })}
+      style={
+        auto
+          ? // `display` and the gaps are the stylesheet's: the container picks them by width.
+            ({
+              ...rowStyle,
+              display: undefined,
+              '--bc-legend-gap': `${VX.legendGap}px`,
+            } as CSSProperties)
+          : {
+              ...rowStyle,
+              columnGap: gap,
+              // Caps each entry's `[data-basalt-hit]` overlay at the real gap between entries.
+              ...({ '--vx-hit-gap': `${gap}px` } as CSSProperties),
+            }
+      }
     >
       {groups.map((group, gi) => [
         gi > 0 && <span key={`divider-${gi}`} aria-hidden style={dividerStyle} />,

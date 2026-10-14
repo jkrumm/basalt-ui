@@ -1,24 +1,23 @@
 /**
- * The pure sizing seam (`docs/V2-SPEC.md` § 9.2, § 9.6): measured width → container class →
- * height. `resolveChartSize` is the law; the hook below only measures and feeds it. Neither knows
- * the engine, the legend or the card.
+ * The pure sizing seam (`docs/V2-SPEC.md` § 9.2, § 9.6): measured width → container class (what the
+ * compiled definition keys its ticks and fonts on). The BOX height is not decided here: `box.tsx`
+ * and `chart-box.module.css` own it in CSS so it exists before JS runs (W10 SSR contract);
+ * `resolveChartSize` is that law in pixels, the reference its tests hold the CSS to.
  */
-import { useCallback, useRef, useState, useSyncExternalStore } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import type { RefCallback } from 'react'
 import { useIsomorphicLayoutEffect } from '../common/isomorphic-layout-effect'
 import { useCoarsePointer } from '../common/use-media-query'
 import { resolveContainerClass } from '../tokens/size-classes'
 import type { ContainerClass } from '../tokens/size-classes'
+import { HEIGHT_MAX, HEIGHT_MIN, HEIGHT_RATIO } from './box'
 import type { ResponsiveChartHeight } from './types'
 
 /** Server and first-paint width before the host measures (TanStack `initialWidth`): the regular
- * class, so SSR markup and the first client frame agree. */
+ * class, so SSR markup and the first client frame agree. Only the svg's internal geometry follows
+ * the real width; the box around it is already final. */
 export const INITIAL_WIDTH = 640
 
-/** Height = width × ratio, per container class. */
-const HEIGHT_RATIO = { micro: 0.5, compact: 0.62, regular: 0.5, wide: 0.4 } as const
-const HEIGHT_MIN = 160
-const HEIGHT_MAX = 420
 /** A coarse pointer never gets a chart taller than this share of the viewport. */
 const COARSE_VIEWPORT_SHARE = 0.45
 
@@ -55,29 +54,8 @@ export function resolveChartSize(input: {
   return { width, containerClass, height }
 }
 
-/** Viewport height is quantized, so a collapsing mobile URL bar does not relayout every chart. */
-const VIEWPORT_H_STEP = 50
-const viewportListeners = new Set<() => void>()
-let viewportAttached = false
-
-function subscribeViewport(onChange: () => void): () => void {
-  if (typeof window === 'undefined') return () => {}
-  if (!viewportAttached) {
-    viewportAttached = true
-    window.addEventListener('resize', () => {
-      for (const listener of viewportListeners) listener()
-    })
-  }
-  viewportListeners.add(onChange)
-  return () => viewportListeners.delete(onChange)
-}
-
-const readViewport = (): number =>
-  typeof window === 'undefined'
-    ? 0
-    : Math.round(window.innerHeight / VIEWPORT_H_STEP) * VIEWPORT_H_STEP
-
-/** Measures the element `ref` lands on and resolves its size through {@link resolveChartSize}. */
+/** Measures the element `ref` lands on and resolves its size through {@link resolveChartSize}. The
+ * viewport is not an input: the coarse-pointer cap lives in the box's CSS. */
 export function useChartSize(height: number | ResponsiveChartHeight | undefined): {
   ref: RefCallback<HTMLElement>
   size: ChartSize
@@ -86,7 +64,6 @@ export function useChartSize(height: number | ResponsiveChartHeight | undefined)
   const [width, setWidth] = useState(0)
   const [node, setNode] = useState<HTMLElement | null>(null)
   const coarse = useCoarsePointer()
-  const viewportH = useSyncExternalStore(subscribeViewport, readViewport, () => 0)
   const last = useRef(0)
 
   useIsomorphicLayoutEffect(() => {
@@ -108,5 +85,5 @@ export function useChartSize(height: number | ResponsiveChartHeight | undefined)
   }, [node])
 
   const ref = useCallback<RefCallback<HTMLElement>>((el) => setNode(el), [])
-  return { ref, size: resolveChartSize({ width, height, coarse, viewportH }), coarse }
+  return { ref, size: resolveChartSize({ width, height, coarse, viewportH: 0 }), coarse }
 }

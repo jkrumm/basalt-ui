@@ -1,0 +1,24 @@
+/*
+ * ChartCard's header inset, by the card's own inline size (W10 SSR contract). A card under 480px
+ * trims the header's top inset: the subtitle has already folded into the info glyph there, and the
+ * chart below is sized by the 160–420px law, so a narrow card is a short one. Decided in CSS, not
+ * from a post-hydration height measurement, so the server HTML is the hydrated header. The literal
+ * is CONTAINER_CLASSES.regular (`breakpoint-literals.test.ts`).
+ */
+
+.header {
+  padding: 4px var(--vx-space-card-inset-x, 0.8125rem) 4px;
+}
+
+@container (min-width: 480px) {
+  .header {
+    padding-top: var(--vx-space-card-inset-y, 0.6875rem);
+  }
+}
+
+/* A card that measures short (< 280px, `ChartCard`'s ResizeObserver) trims it at any width. That
+ * flag is the one post-hydration input left: it only flips for a card whose chart states a small
+ * `height`, never for the height-law default. */
+[data-basalt-card-short] .header {
+  padding-top: 4px;
+}

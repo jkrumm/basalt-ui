@@ -1,0 +1,59 @@
+/*
+ * The chart box — the one place a chart's height is decided (docs/V2-SPEC.md § 9.6, W10 SSR
+ * contract). The box is sized by CSS from its container's own width, so the server HTML, the first
+ * paint and the hydrated page all agree before any script runs; the engine MEASURES this box, it
+ * is never handed a height. Only the svg's internal geometry may change after hydration.
+ *
+ * `box.tsx` writes the four per-class heights as `--bc-*`; the unnamed container queries below pick
+ * one by the frame's inline size. The literals are CONTAINER_CLASSES (a query cannot read a custom
+ * property); `breakpoint-literals.test.ts` pins them. Mantine-free: `src/charts/**` imports no
+ * `@mantine/*`.
+ */
+
+.frame {
+  container-type: inline-size;
+  width: 100%;
+  min-width: 0;
+}
+
+.box {
+  position: relative;
+  height: var(--bc-micro);
+}
+
+@container (min-width: 240px) {
+  .box {
+    height: var(--bc-compact);
+  }
+}
+
+@container (min-width: 480px) {
+  .box {
+    height: var(--bc-regular);
+  }
+}
+
+@container (min-width: 800px) {
+  .box {
+    height: var(--bc-wide);
+  }
+}
+
+/* A coarse pointer never gets a chart taller than 45% of the viewport (small viewport: a
+ * collapsing mobile URL bar must not resize it). */
+@media (pointer: coarse) {
+  .box {
+    max-height: 45svh;
+  }
+}
+
+/* Fills its parent (a Heatmap that matches a sibling's height). */
+.fill {
+  height: 100%;
+  max-height: none;
+}
+
+.state {
+  width: 100%;
+  height: 100%;
+}

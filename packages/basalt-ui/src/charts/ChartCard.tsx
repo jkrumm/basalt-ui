@@ -4,10 +4,11 @@
  * so `./charts` still resolves with no `@mantine/*` installed. The `actions` slot carries only
  * `data-basalt-tier="widget"`; a basalt control there sizes itself.
  *
- * The header renders only when one of title/info/value/actions/icon/count is set, or a chart inside
- * hands it a `legend={{ placement: 'header' }}` legend (then the row holds the legend alone).
+ * The header renders only when one of title/info/value/actions/icon/count is set. A chart's
+ * `legend={{ placement: 'header' }}` legend is drawn by the chart, at the top of the body under the
+ * header, so it is in the server HTML and the header never grows on hydration.
  */
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import type { CSSProperties, ReactElement, ReactNode } from 'react'
 import { useIsomorphicLayoutEffect } from '../common/isomorphic-layout-effect'
 import { cx } from '../common/props'
@@ -16,6 +17,7 @@ import type { DeltaPolarity } from '../dashboard/delta-badge'
 import { WidgetHeader } from '../dashboard/widget-header'
 import { VX } from '../tokens'
 import { ChartCardContext } from './card-context'
+import classes from './chart-card.module.css'
 import { ChartPlaceholder, resolveChartState } from './state'
 import type { ChartState } from './types'
 
@@ -32,15 +34,6 @@ const cardStyle: CSSProperties = {
   boxShadow: VX.shadowCard,
   backgroundColor: VX.surface.panel,
 }
-const headerStyle: CSSProperties = {
-  padding: 'var(--vx-space-card-inset-y, 0.6875rem) var(--vx-space-card-inset-x, 0.8125rem) 4px',
-}
-// A short card trims the header's top inset: the subtitle and the value row have already folded.
-const headerShortStyle: CSSProperties = {
-  padding: '4px var(--vx-space-card-inset-x, 0.8125rem) 4px',
-}
-const headerLegendStyle: CSSProperties = { paddingTop: 6 }
-
 /**
  * Below this rendered height the header folds its subtitle whatever the width (the header-economy
  * law): `data-basalt-card-short` is the hook `widget-header.module.css` reacts to. Leaving the
@@ -103,7 +96,9 @@ export type ChartCardProps = BasaltProps &
     actions?: ReactNode
     /** A resolved state replaces `children` with its placeholder; the header stays. */
     state?: ChartState
-    /** Body height while a placeholder shows. Default 240. */
+    /** Body height while a placeholder shows. Default: the chart height law, i.e. exactly the box an
+     * unsized chart takes — pass the chart's own `height` when it states one, so a `<Suspense
+     * fallback={<ChartCard state={{ pending: true }} …/>}>` reserves the final size. */
     placeholderHeight?: number
     /** A retry button or a "clear filters" link under the placeholder. */
     stateAction?: ReactNode
@@ -116,7 +111,7 @@ const HEADER_TRIGGERS = ['title', 'info', 'value', 'icon', 'count'] as const
 export function ChartCard({
   actions,
   state,
-  placeholderHeight = 240,
+  placeholderHeight,
   stateAction,
   className,
   classNames,
@@ -124,20 +119,12 @@ export function ChartCard({
   children,
   ...header
 }: ChartCardProps): ReactElement {
-  const [legend, setLegend] = useState<{ owner: string; node: ReactNode } | null>(null)
-  const setHeaderLegend = useCallback((owner: string, node: ReactNode | null) => {
-    setLegend((prev) => {
-      if (node !== null) return { owner, node }
-      return prev?.owner === owner ? null : prev
-    })
-  }, [])
-  const context = useMemo(() => ({ setHeaderLegend }), [setHeaderLegend])
   const { ref, short } = useShortCard()
   const resolved = resolveChartState(state)
   const hasHeader = actions !== undefined || HEADER_TRIGGERS.some((k) => header[k] !== undefined)
 
   return (
-    <ChartCardContext.Provider value={context}>
+    <ChartCardContext.Provider value>
       <div
         ref={ref}
         className={cx(classNames?.root, className)}
@@ -145,26 +132,16 @@ export function ChartCard({
         {...(resolved === 'pending' && { 'aria-busy': 'true' })}
         {...(short && { 'data-basalt-card-short': '' })}
       >
-        {(hasHeader || legend) && (
-          <div
-            {...(classNames?.header !== undefined && { className: classNames.header })}
-            style={short ? headerShortStyle : headerStyle}
-          >
-            {hasHeader && (
-              <WidgetHeader
-                tier="widget"
-                {...header}
-                title={header.title ?? ''}
-                {...(actions !== undefined && {
-                  actions: <span data-basalt-tier="widget">{actions}</span>,
-                })}
-              />
-            )}
-            {legend && (
-              <div data-basalt-legend-slot="" style={headerLegendStyle}>
-                {legend.node}
-              </div>
-            )}
+        {hasHeader && (
+          <div className={cx(classes.header, classNames?.header)}>
+            <WidgetHeader
+              tier="widget"
+              {...header}
+              title={header.title ?? ''}
+              {...(actions !== undefined && {
+                actions: <span data-basalt-tier="widget">{actions}</span>,
+              })}
+            />
           </div>
         )}
         <div
@@ -174,7 +151,11 @@ export function ChartCard({
           {resolved === null ? (
             children
           ) : (
-            <ChartPlaceholder state={state} height={placeholderHeight} action={stateAction} />
+            <ChartPlaceholder
+              state={state}
+              {...(placeholderHeight !== undefined && { height: placeholderHeight })}
+              action={stateAction}
+            />
           )}
         </div>
       </div>

@@ -13,15 +13,14 @@ import { tooltip as tooltipHost } from '@tanstack/charts/tooltip'
 import { portal } from '@tanstack/charts/tooltip/portal'
 import type { ChartBuildContext, ChartPoint, StoredChartSpec } from '@tanstack/charts/types/core'
 import { scaleQuantize } from 'd3-scale'
-import { useCallback, useId, useMemo, useState } from 'react'
+import { useId, useMemo } from 'react'
 import type { CSSProperties, ReactElement } from 'react'
-import { useIsomorphicLayoutEffect } from '../common/isomorphic-layout-effect'
 import type { BasaltProps } from '../common/props'
 import { alpha, VX } from '../tokens'
 import { resolveContainerClass } from '../tokens/size-classes'
 import type { CartesianDefinition } from './compile'
 import { ChartEngine, idPrefixOf } from './host'
-import { useChartSize } from './sizing'
+import { useCoarsePointer } from '../common/use-media-query'
 import { ChartPlaceholder, resolveChartState } from './state'
 import { AXIS_LINE, CHART_THEME } from './theme'
 import type { ChartState, ChartTooltipRow, ResponsiveChartHeight } from './types'
@@ -81,24 +80,6 @@ const ramp = (color: string): string[] =>
     alpha(color, MIN_LEVEL + ((1 - MIN_LEVEL) * i) / (LEVELS - 1)),
   )
 
-/** The measured height of the element `ref` lands on, `0` until measured. */
-function useMeasuredHeight(enabled: boolean): { ref: (el: HTMLElement | null) => void; h: number } {
-  const [node, setNode] = useState<HTMLElement | null>(null)
-  const [h, setH] = useState(0)
-  useIsomorphicLayoutEffect(() => {
-    if (!enabled || !node) return
-    setH(Math.round(node.getBoundingClientRect().height))
-    if (typeof ResizeObserver === 'undefined') return
-    const observer = new ResizeObserver((entries) => {
-      const entry = entries[0]
-      if (entry) setH(Math.round(entry.contentRect.height))
-    })
-    observer.observe(node)
-    return () => observer.disconnect()
-  }, [node, enabled])
-  return { ref: useCallback((el: HTMLElement | null) => setNode(el), []), h }
-}
-
 const fillStyle: CSSProperties = { position: 'relative', height: '100%', minHeight: HEIGHT_MIN }
 
 export function Heatmap<T>(props: HeatmapProps<T>): ReactElement {
@@ -131,17 +112,8 @@ export function Heatmap<T>(props: HeatmapProps<T>): ReactElement {
   const cols = useMemo(() => props.cols ?? firstSeen(data.map(getCol)), [props.cols, data, getCol])
   const fixedHeight =
     height ?? Math.min(Math.max(rows.length * ROW_PITCH + CHROME, HEIGHT_MIN), HEIGHT_MAX)
-  const { ref, size, coarse } = useChartSize(matchHeight ? undefined : fixedHeight)
-  const fill = useMeasuredHeight(matchHeight)
-  const measureHeight = fill.ref
-  const rootRef = useCallback(
-    (el: HTMLElement | null) => {
-      ref(el)
-      if (matchHeight) measureHeight(el)
-    },
-    [ref, measureHeight, matchHeight],
-  )
-  const chartHeight = matchHeight && fill.h > 0 ? fill.h : size.height
+  const coarse = useCoarsePointer()
+  const boxHeight = matchHeight ? 'fill' : fixedHeight
 
   const definition = useMemo<CartesianDefinition>(() => {
     const byBand = new Map<string, Map<string, T>>()
@@ -292,7 +264,6 @@ export function Heatmap<T>(props: HeatmapProps<T>): ReactElement {
   const resolved = resolveChartState(state)
   return (
     <div
-      ref={rootRef}
       data-basalt-chart=""
       {...(className !== undefined && { className })}
       style={matchHeight ? { ...fillStyle, ...style } : style}
@@ -301,12 +272,12 @@ export function Heatmap<T>(props: HeatmapProps<T>): ReactElement {
         <ChartEngine
           definition={definition}
           ariaLabel={ariaLabel}
-          height={chartHeight}
+          height={boxHeight}
           idPrefix={idPrefixOf(chartId)}
           coarse={coarse}
         />
       ) : (
-        <ChartPlaceholder state={state} height={chartHeight} />
+        <ChartPlaceholder state={state} height={boxHeight} />
       )}
     </div>
   )

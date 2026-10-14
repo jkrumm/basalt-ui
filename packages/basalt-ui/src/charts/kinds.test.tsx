@@ -304,24 +304,25 @@ describe('Bars', () => {
 })
 
 describe('ChartCard', () => {
-  test('a header-placed legend renders in the card header row', async () => {
-    const el = await mount(
+  test('a header-placed legend is in the server HTML, under the card header', () => {
+    const html = renderToString(
       <ChartCard title="Card">
         <Lines ariaLabel="L" data={data} x={x} series={[a, b]} legend={{ placement: 'header' }} />
       </ChartCard>,
     )
-    const slot = el.querySelector('[data-basalt-legend-slot]')
-    expect(slot?.querySelector('button[data-legend-key="b"]')).not.toBeNull()
-    expect(el.querySelector('[data-basalt-chart] [data-basalt-chart-legend]')).toBeNull()
+    // Rendered by the chart itself, so hydration has nothing to add to the header.
+    expect(html).toContain('data-legend-key="b"')
+    expect(html.indexOf('Card')).toBeLessThan(html.indexOf('data-basalt-chart-legend'))
+    expect(html.indexOf('data-basalt-chart-legend')).toBeLessThan(html.indexOf('ts-chart-host'))
   })
 
-  test('a header legend renders in a card that has no other header field', async () => {
-    const el = await mount(
+  test('a header legend renders in a card that has no other header field', () => {
+    const html = renderToString(
       <ChartCard>
         <Lines ariaLabel="L" data={data} x={x} series={[a, b]} legend={{ placement: 'header' }} />
       </ChartCard>,
     )
-    expect(el.querySelector('[data-basalt-legend-slot] button[data-legend-key="a"]')).not.toBeNull()
+    expect(html).toContain('data-legend-key="a"')
   })
 
   test('the card state replaces the body and keeps the header', () => {
