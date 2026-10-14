@@ -9,12 +9,10 @@ Procedure only; the law is `.claude/rules/basalt-*.md`.
 ## Scaffold
 
 1. `bun add basalt-ui && bunx basalt-ui init` (the only `bunx` call; use `./node_modules/.bin/basalt-ui` after).
-2. Replace `src/main.tsx` (CSS order is load-bearing):
+2. Check the seeded `src/main.tsx` (`init` writes it when absent); `basalt-ui/styles.css` is the only stylesheet import:
 
 ```tsx
-import '@mantine/core/styles.layer.css'
 import 'basalt-ui/styles.css'
-import { createRoot } from 'react-dom/client'
 import { BasaltProvider, createBasaltRouter } from 'basalt-ui'
 import { routeTree } from './routeTree.gen'
 
@@ -24,10 +22,10 @@ declare module '@tanstack/react-router' {
     router: typeof router
   }
 }
-createRoot(document.getElementById('root')!).render(<BasaltProvider router={router} />)
+// createRoot(root).render(<BasaltProvider router={router} />)
 ```
 
-3. Add one `@mantine/<battery>/styles.layer.css` import before `basalt-ui/styles.css` for each Mantine battery you mount.
+3. If you use `basalt-ui/controls-dates`, import `@mantine/dates/styles.layer.css` before `basalt-ui/styles.css`.
 4. In `vite.config.ts`: `...basaltViteConfig({ port, apiTarget })` and `plugins: [react(), ...basaltAppPlugin({ name, description })]`.
 5. In `src/routes/__root.tsx`: `<BasaltShell brand={{ name }} nav={NAV}><Outlet /></BasaltShell>`; build `NAV` with `defineNav` in `src/lib/nav.tsx`.
 6. Fill in `DESIGN.md` (identity, series dictionary, deviations).

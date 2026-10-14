@@ -9,7 +9,7 @@ paths:
 
 <!-- basalt:coverage -->
 <!-- GENERATED from src/surfaces.ts — `bun scripts/check-coverage.ts --write`. Do not hand-edit. -->
-<!-- backed by: guard kinds — css-raw-surface, inline-font-size, off-identity-accent, off-system-surface-var, raw-color-fn, raw-font-family, raw-hex, raw-radius, raw-surface, surface-shadow-override, theme-allow-unscoped, unknown-vx-token · oxlint rules — basalt/no-raw-font-size, basalt/raw-size-literal, basalt/token-layer-boundary -->
+<!-- backed by: guard kinds — css-raw-surface, inline-font-size, off-identity-accent, off-system-surface-var, raw-color-fn, raw-font-family, raw-hex, raw-radius, raw-surface, surface-shadow-override, theme-allow-unscoped, unknown-vx-token · oxlint rules — basalt/no-raw-font-size, basalt/raw-size-literal -->
 <!-- not guarded: — -->
 <!-- /basalt:coverage -->
 
@@ -50,6 +50,9 @@ Every value is a `VX.*` reference or a theme prop; the palette is derived, never
 
 ## Escape hatch
 
-- `theme-allow <id> — <why>` waives one rule on its line; bare `theme-allow` or a missing why is itself a finding. [check-theme theme-allow-unscoped]
-- `theme-allow-file <id> — <why>` waives a whole file; the annotation must start its comment. [check-theme theme-allow-unscoped]
+- `theme-allow <id>[, <id>…] — <why>` waives those rules on its line; bare `theme-allow` or a missing why is itself a finding. [check-theme theme-allow-unscoped]
+- An `<id>` is a guard kind or an oxlint plugin rule, with or without the `basalt/` prefix; an unknown id waives nothing. [check-theme theme-allow-unscoped]
+- The annotation must start its comment and sits on the line, on a comment-only line directly above it, or (CSS) trailing the declaration; a blank line ends the reach. [check-theme theme-allow-unscoped]
+- `theme-allow-file <id> — <why>` waives a whole file; a bare one waives nothing. [check-theme theme-allow-unscoped]
+- JSON and `.webmanifest` take the member form `"basalt:theme-allow": "<id> — <why>"` (`"basalt:theme-allow-file"` for the file). [check-theme theme-allow-unscoped]
 - `basalt-ui check-theme --audit-allows` exits 1 on a waiver that suppresses nothing. [check-theme theme-allow-unscoped]

@@ -1,10 +1,23 @@
 import { describe, expect, test } from 'bun:test'
 
-import { mkdtempSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-import { checkF, checkG, collectExportKeys, findDeadSpecifiers } from './check-agent-doc-drift'
+import {
+  checkF,
+  checkG,
+  checkLlmsNames,
+  checkRuleSets,
+  collectExportKeys,
+  collectPublishedNames,
+  findAgentFiles,
+  findDeadSpecifiers,
+  findRuleFiles,
+  loadTagSources,
+  pluginRuleIds,
+} from './check-agent-doc-drift'
+import { coverageBlock } from './check-coverage'
 import type { TagSources } from './check-agent-doc-drift'
 
 const fence = '```'
@@ -68,7 +81,7 @@ describe('checkF', () => {
 
   test('flags a bullet with no tag', () => {
     expect(checkF(doc('- No tag here.'), sources)).toEqual([
-      { line: 7, message: 'bullet carries no enforcement tag' },
+      { line: 7, message: 'bullet does not end in an enforcement tag' },
     ])
   })
 
@@ -95,9 +108,30 @@ describe('checkF', () => {
     )
   })
 
-  test('flags a second prose line and a table row', () => {
-    const md = doc('Intro.', 'Second paragraph.', '', '| a | b |')
-    expect(checkF(md, sources).map((f) => f.line)).toEqual([8, 10])
+  test('flags a tag that is not at the end of the bullet', () => {
+    expect(checkF(doc('- Tagged [type PageBar] but trailing prose.'), sources)).toHaveLength(1)
+    expect(checkF(doc('- Long [type PageBar]', '  trailing words'), sources)).toHaveLength(1)
+  })
+
+  test('judges nested bullets', () => {
+    expect(checkF(doc('- Parent [type PageBar]', '  - nested, untagged'), sources)).toEqual([
+      { line: 8, message: 'bullet does not end in an enforcement tag' },
+    ])
+  })
+
+  test('allows prose only directly under the H1', () => {
+    expect(checkF(doc('Intro.'), sources)).toEqual([])
+    const later = doc('Intro.', '', '## A', '', 'Prose after a heading.', '', '| a | b |')
+    expect(checkF(later, sources).map((f) => f.line)).toEqual([11, 13])
+    expect(
+      checkF(doc('- Tagged [type PageBar]', '', 'Prose after a bullet.'), sources),
+    ).toHaveLength(1)
+  })
+
+  test('flags a removed rule id used as a tag', () => {
+    expect(checkF(doc('- A [basalt/page-bar-budget]'), sources)[0]?.message).toBe(
+      '[basalt/page-bar-budget] was removed in 2.0',
+    )
   })
 })
 
@@ -108,6 +142,14 @@ const scan = (text: string): string[] => {
 }
 
 describe('checkG', () => {
+  test('reports a repo-local id inside a coverage block too', () => {
+    expect(
+      scan(
+        '<!-- basalt:coverage -->\n<!-- backed by: basalt/chart-host-single -->\n<!-- /basalt:coverage -->',
+      ),
+    ).toEqual(['chart-host-single'])
+  })
+
   test('rejects repo-local and removed rule ids', () => {
     expect(scan('see basalt/chart-host-single\nand `no-dev-helper`')).toEqual([
       'chart-host-single',
@@ -118,5 +160,62 @@ describe('checkG', () => {
 
   test('does not match a longer id that contains one', () => {
     expect(scan('basalt/agent-resume-guard-extra')).toEqual([])
+  })
+})
+
+describe('checkRuleSets', () => {
+  test('flags a repo-local id the plugin lost and a removed id it never retired', () => {
+    const messages = checkRuleSets([], new Set())
+    expect(messages).toContain(
+      "REPO_LOCAL_RULES['chart-host-single'] is not registered in configs/oxlint-plugin.js",
+    )
+    expect(messages).toContain(
+      "REMOVED_RULES['page-bar-budget'] is not in RETIRED_RULE_IDS (configs/oxlint-plugin.js)",
+    )
+  })
+})
+
+describe('pluginRuleIds', () => {
+  test('names the problem when the default export is not a plugin', () => {
+    expect(() => pluginRuleIds({})).toThrow("has no 'rules' object")
+  })
+})
+
+describe('checkLlmsNames', () => {
+  const published = new Set(['BasaltProvider', 'VX'])
+  test('flags a hand-written header name that is not published', () => {
+    const text = [
+      '# basalt-ui            BasaltProvider, Gone',
+      '# prose line  not, an, entry',
+    ].join('\n')
+    expect(checkLlmsNames(text, published)).toEqual([{ line: 1, name: 'Gone' }])
+  })
+})
+
+describe('collectPublishedNames', () => {
+  test('covers the entry files only', () => {
+    const names = collectPublishedNames()
+    expect(names.has('BarAction')).toBe(true)
+    expect(names.has('BasaltProviderProps')).toBe(false)
+  })
+})
+
+describe('coverageBlock', () => {
+  test('never names a repo-local rule id', () => {
+    for (const rule of ['tokens', 'mantine', 'charts', 'state', 'controls', 'batteries'] as const) {
+      expect(coverageBlock(rule)).not.toMatch(
+        /chart-host-single|token-layer-boundary|no-dev-helper|no-import-meta-env/,
+      )
+    }
+  })
+})
+
+describe('the shipped agent layer', () => {
+  test('every rule bullet is tagged and resolves, and no agent file cites a bad rule', () => {
+    const sources = loadTagSources()
+    for (const file of findRuleFiles()) {
+      expect(checkF(readFileSync(file, 'utf8'), sources)).toEqual([])
+    }
+    expect(checkG(findAgentFiles())).toEqual([])
   })
 })
