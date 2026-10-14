@@ -343,19 +343,6 @@ describe('DualPanel', () => {
     expect(maxTick(nulls, 'bottom')).toBeGreaterThan(0)
   })
 
-  test('a large series does not overflow the stack computing the domain', () => {
-    const big = Array.from({ length: 150_000 }, (_, i) => ({ ...(data[0] as Row), a: i % 97 }))
-    const el = ssr(
-      <DualPanel
-        {...dualNoFill}
-        data={big}
-        series={[{ key: 'a', label: 'A', color: 'var(--vx-line)', getValue: (d) => d.a }]}
-        legend={false}
-      />,
-    )
-    expect(el.querySelector('svg')).not.toBeNull()
-  })
-
   test('the bar key is reserved', () => {
     expect(() =>
       renderToString(

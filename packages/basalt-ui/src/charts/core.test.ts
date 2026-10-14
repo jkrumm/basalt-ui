@@ -211,6 +211,14 @@ describe('scales', () => {
     expect(xScaleFor(['a', 'b'], false).band).toBe(false)
     expect(xScaleFor([day(1), day(2)], true).band).toBe(true)
   })
+  test('a large series does not overflow the stack computing the domain', () => {
+    // 1M distinct values exceed the call-argument limit, so a spread into Math.min/max throws.
+    const big = Array.from({ length: 1_000_000 }, (_, i) => i)
+    const model = xScaleFor(big, false)
+    expect(model.extent).toEqual([0, 999_999])
+    const series = [{ key: 'a', label: 'A', color: 'var(--vx-line)', getValue: (v: number) => v }]
+    expect(resolveYDomain(undefined, big, series)[1]).toBeGreaterThan(999_999)
+  })
   test('a Date x is proportional: a gap in the data is a gap on the axis', () => {
     const model = xScaleFor([day(1), day(2), day(10)], false)
     expect(model.fraction(day(2))).toBeCloseTo(1 / 9)
