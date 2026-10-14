@@ -30,6 +30,7 @@ export {
   PageAside,
   useSizeClass,
   PageTitle,
+  type ShellBaseProps,
   type SidebarBlock,
   type SettingsMenuItem,
 } from './shell'

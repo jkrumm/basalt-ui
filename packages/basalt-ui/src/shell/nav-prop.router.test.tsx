@@ -17,6 +17,7 @@ import {
 import type { ReactNode } from 'react'
 import type { AnyNavItem, NavItemId } from '../router-tanstack/nav'
 import type { GlobalAction } from '../controls/actions'
+import type { BasaltAccountProps } from './account-types'
 import type { SidebarBlock } from './nav-types'
 import { navGroup } from '../router-tanstack/nav'
 import { defineNav } from '../../tests/support/nav-test-utils'
@@ -39,7 +40,12 @@ const NAV = defineNav({
 
 type ShellProps = {
   badges?: Partial<Record<NavItemId<typeof NAV.groups>, number | ReactNode>>
-  isActive?: (item: AnyNavItem) => boolean
+  isActive?: (item: AnyNavItem & { id: NavItemId<typeof NAV.groups> }) => boolean
+  account?: BasaltAccountProps
+  search?: { onOpen: () => void; placeholder?: string }
+  collapsed?: boolean
+  onCollapsedChange?: (collapsed: boolean) => void
+  storageKey?: string
   globalActions?: GlobalAction[]
   sidebarBlocks?: SidebarBlock[]
 }
@@ -48,11 +54,11 @@ async function mountShell(entry: string, props: ShellProps = {}) {
   const rootRoute = createRootRoute({
     component: () => <BasaltShell brand={{ name: 'Argo' }} nav={NAV} {...props} />,
   })
-  const children = ['/', '/dashboard', '/dashboard/sessions'].map((path) =>
+  const childRoutes = ['/', '/dashboard', '/dashboard/sessions'].map((path) =>
     createRoute({ getParentRoute: () => rootRoute, path, component: () => null }),
   )
   const router = createRouter({
-    routeTree: rootRoute.addChildren(children),
+    routeTree: rootRoute.addChildren(childRoutes),
     history: createMemoryHistory({ initialEntries: [entry] }),
   })
   render(
@@ -68,6 +74,9 @@ const BAR = 'nav[aria-label="Primary"]'
 /** The sidebar's current-page anchors — the mobile bar is asserted separately. */
 const currentPages = (): Element[] =>
   [...document.querySelectorAll('a[aria-current="page"]')].filter((a) => !a.closest(BAR))
+/** The Dashboard destination's sidebar row (the anchor IS the NavLink root, badge included). */
+const dashboardRow = (): Element =>
+  [...document.querySelectorAll('a[href="/dashboard"]')].find((a) => !a.closest(BAR))!
 const header = (): string => document.querySelector('header')!.textContent ?? ''
 
 afterEach(cleanup)
@@ -99,12 +108,12 @@ describe('BasaltShell nav prop', () => {
 
   test('a number badge reaches the sidebar row as a count', async () => {
     await mountShell('/', { badges: { dashboard: 4 } })
-    expect(screen.getAllByText('4').length).toBeGreaterThan(0)
+    expect(dashboardRow().textContent).toContain('4')
   })
 
   test('a ReactNode badge renders verbatim on the row', async () => {
     await mountShell('/', { badges: { dashboard: <span data-testid="beta">beta</span> } })
-    expect(screen.getAllByTestId('beta').length).toBeGreaterThan(0)
+    expect(dashboardRow().querySelector('[data-testid="beta"]')).not.toBeNull()
   })
 
   test('the mobile bar derives from defineNav mobile.tabs and marks the active slot', async () => {
@@ -126,13 +135,19 @@ describe('BasaltShell nav prop', () => {
     expect(currentPages()).toHaveLength(1)
     expect(currentPages()[0]?.textContent).toContain('Dashboard')
     expect(current.some((el) => el.textContent?.includes('Home'))).toBe(false)
+    // Same hooks on the winner as the default path: the override re-stamps `data-status`.
+    expect(currentPages()[0]?.getAttribute('data-status')).toBe('active')
+    const stamped = [...document.querySelectorAll('a[data-status="active"]')].filter(
+      (a) => !a.closest(BAR),
+    )
+    expect(stamped).toHaveLength(1)
     expect(header()).toContain('Dashboard')
     expect(header()).not.toContain('Home')
   })
 
   test('a zero-count badge renders no badge', async () => {
     await mountShell('/', { badges: { dashboard: 0 } })
-    expect(screen.queryByText('0')).toBeNull()
+    expect(dashboardRow().textContent).not.toContain('0')
   })
 
   test('globalActions and sidebarBlocks still reach the frame through the rest spread', async () => {
@@ -146,16 +161,54 @@ describe('BasaltShell nav prop', () => {
 
   test('a missing nav or brand throws the written required-prop message', () => {
     const error = spyOn(console, 'error').mockImplementation(() => {})
-    const bare = (props: object) => () =>
-      render(
-        <MantineProvider>
-          {/* @ts-expect-error deliberately incomplete props */}
-          <BasaltShell {...props} />
-        </MantineProvider>,
-      )
-    expect(bare({ brand: { name: 'Argo' } })).toThrow(/nav/)
-    expect(bare({ nav: NAV })).toThrow(/brand/)
-    error.mockRestore()
+    try {
+      const bare = (props: object) => () =>
+        render(
+          <MantineProvider>
+            {/* @ts-expect-error deliberately incomplete props */}
+            <BasaltShell {...props} />
+          </MantineProvider>,
+        )
+      expect(bare({ brand: { name: 'Argo' } })).toThrow(/nav/)
+      expect(bare({ nav: NAV })).toThrow(/brand/)
+    } finally {
+      error.mockRestore()
+    }
+  })
+
+  test('account and search forward through the public BasaltShell', async () => {
+    await mountShell('/', {
+      collapsed: false,
+      account: {
+        state: {
+          status: 'authenticated',
+          identity: { id: 'u1', name: 'Jo', email: 'jo@example.com' },
+          plan: { key: 'free', label: 'Free', isFree: true },
+        },
+        actions: {},
+      },
+      search: { onOpen: () => {}, placeholder: 'Find anything' },
+    })
+    expect(screen.getAllByText('Find anything').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Jo').length).toBeGreaterThan(0)
+  })
+
+  test('storageKey forwards: an uncontrolled toggle persists under it', async () => {
+    localStorage.clear()
+    await mountShell('/', { storageKey: 'nav-prop-collapse' })
+    const toggle = document.querySelector<HTMLElement>(
+      'button[aria-label="Collapse sidebar"], button[aria-label="Expand sidebar"]',
+    )!
+    act(() => toggle.click())
+    expect(localStorage.getItem('basalt:nav-prop-collapse')).not.toBeNull()
+  })
+
+  test('a controlled collapsed value reports toggles through onCollapsedChange', async () => {
+    const seen: boolean[] = []
+    await mountShell('/', { collapsed: false, onCollapsedChange: (next) => seen.push(next) })
+    const toggle = document.querySelector<HTMLElement>('button[aria-label="Collapse sidebar"]')!
+    act(() => toggle.click())
+    expect(seen).toEqual([true])
   })
 
   test('sections, mobileNav and a mistyped badge id are compile errors', () => {

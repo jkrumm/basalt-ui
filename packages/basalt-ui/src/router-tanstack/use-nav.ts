@@ -10,7 +10,7 @@
  * no-JSX `.ts` module per its own barrel contract.
  */
 import { createElement, forwardRef, useMemo } from 'react'
-import type { ElementType, ReactNode } from 'react'
+import type { AnchorHTMLAttributes, ElementType, ReactNode } from 'react'
 import { Link, useMatchRoute, useRouterState } from '@tanstack/react-router'
 import type { MobileNavConfig, NavAnchor, SidebarItem, SidebarSection } from '../shell/nav-types'
 import { flattenNav } from './nav'
@@ -24,29 +24,45 @@ export type UseNavOptions<G extends ReadonlyArray<AnyNavGroup>> = {
    */
   badges?: Partial<Record<NavItemId<G>, number | ReactNode>>
   /** Override active detection entirely. */
-  isActive?: (item: AnyNavItem) => boolean
+  isActive?: (item: AnyNavItem & { id: NavItemId<G> }) => boolean
   getScrollElement?: () => HTMLElement | null
 }
 
+type OverriddenAnchorProps = AnchorHTMLAttributes<HTMLAnchorElement> & {
+  'data-status'?: string
+  'data-basalt-current'?: 'page' | 'true'
+  _asChild?: unknown
+}
+
 /**
- * The host `Link` renders as when `isActive` overrides the router. A `Link` stamps
- * `aria-current="page"` / `data-status` from ITS OWN match as the last props it spreads, so under an
- * override a router-matched loser would still claim the page. This host drops those two and
- * re-applies only basalt's own verdict, which the anchor smuggles through `data-basalt-current`.
+ * The host `Link` renders as when `isActive` overrides the router. A `Link` computes its own
+ * `isActive` and spreads `aria-current="page"` + `data-status="active"` as the LAST props it
+ * applies (`@tanstack/react-router` 1.170.x `dist/esm/link.js`, `applyLinkState`), so under an
+ * override a router-matched loser would still claim the page. `Link` renders `props._asChild` as
+ * its host element in place of `'a'` (same file, `Link`: `const host = props._asChild || "a"`) —
+ * an underscore-prefixed, undocumented seam, so `MAINTAINING.md` names it for re-verification on
+ * every router bump. This host drops the router's two attributes and re-applies only basalt's own
+ * verdict, which the anchor smuggles through `data-basalt-current`; `data-status` is re-stamped
+ * for it so both paths expose the same hooks on the winner.
  */
-const OverriddenAnchor = forwardRef<HTMLAnchorElement, Record<string, unknown>>((props, ref) => {
+const OverriddenAnchor = forwardRef<HTMLAnchorElement, OverriddenAnchorProps>((props, ref) => {
   const {
     'aria-current': _routerCurrent,
     'data-status': _routerStatus,
     'data-basalt-current': current,
+    _asChild: _host,
     ...rest
   } = props
   return createElement('a', {
     ...rest,
-    ...(current !== undefined && { 'aria-current': current }),
+    ...(current !== undefined && { 'aria-current': current, 'data-status': 'active' }),
     ref,
   })
 })
+OverriddenAnchor.displayName = 'OverriddenAnchor'
+
+/** What this resolver turns a definition into: `ShellFrame`'s sidebar sections and mobile-bar tuning. */
+export type ResolvedNav = { sections: SidebarSection[]; mobileNav: MobileNavConfig }
 
 /**
  * Resolve a nav definition against the live router into `BasaltShell`'s internal `ShellFrame`
@@ -55,13 +71,7 @@ const OverriddenAnchor = forwardRef<HTMLAnchorElement, Record<string, unknown>>(
 export function useNav<
   const G extends ReadonlyArray<AnyNavGroup>,
   const T extends ReadonlyArray<NavTabId<G>>,
->(
-  config: NavConfig<G, T>,
-  opts?: UseNavOptions<G>,
-): {
-  sections: SidebarSection[]
-  mobileNav: MobileNavConfig
-} {
+>(config: NavConfig<G, T>, opts?: UseNavOptions<G>): ResolvedNav {
   // `useMatchRoute` is `useCallback(fn, [router])` — a STABLE identity across renders — and it
   // subscribes internally to `router.stores.matchRouteDeps`, so the component still re-renders on
   // navigation. That makes it safe as a memo dep, and makes the memo below actually hit.
@@ -81,7 +91,7 @@ export function useNav<
     // `active` on its own — it only says "on the path", and the pass below picks ONE winner
     // across the whole definition so a parent and its child can no longer both read `active`.
     const matchOf = (item: AnyNavItem): boolean =>
-      isActiveOverride?.(item) ??
+      isActiveOverride?.(item as AnyNavItem & { id: NavItemId<G> }) ??
       Boolean(
         matchRoute({
           to: item.link.to,

@@ -153,7 +153,7 @@ export type SettingsMenuItem = {
 }
 
 /** Everything `BasaltShell` and `ShellFrame` share — the nav arrives differently in each. */
-type ShellBaseProps = BasaltProps & {
+export type ShellBaseProps = BasaltProps & {
   /**
    * Brand identity for the sidebar header. Supplying `menu` turns the brand row into a `Name ▾`
    * workspace switcher — the rows are `AccountMenuItem`s, the shape the account menu already uses.
@@ -338,24 +338,13 @@ function collapseStore(key: string): CollapseStore {
   return store
 }
 
-/**
- * The shell's two page-level regions are providers, and both wrap the frame rather than living
- * inside it: `PageBarProvider` owns the header portal and the single-kebab claim, `AsideProvider`
- * owns the aside portal, the region CLAIM and the claiming page's fold state — which `ShellBody`
- * has to READ to size `AppShell.Aside`, so it cannot be the component that provides it.
- *
- * **Native title bar (opt-in CSS contract).** A desktop host with a macOS overlay title bar paints
- * its traffic lights ON TOP of the header's leading zone. Set `--basalt-shell-lead-inset` on
- * `:root` to their span (e.g. `html { --basalt-shell-lead-inset: 70px }`; default `0px`, which
- * changes nothing): the zone's inline-start padding grows by it, and the zone is never narrower than
- * the inset plus the collapse toggle, so the 48px rail pushes the toggle to the right of the lights
- * instead of clipping it. The breadcrumb after a widened rail zone shifts right by the same amount.
- */
+/** The application shell. `nav` is resolved against the router; the rest is `ShellBaseProps`. */
 export function BasaltShell<
   const G extends ReadonlyArray<AnyNavGroup>,
   const T extends ReadonlyArray<NavTabId<G>>,
->({ nav, badges, isActive, getScrollElement, ...rest }: BasaltShellProps<G, T>) {
-  assertRequiredProps('BasaltShell', { nav, ...rest }, ['brand', 'nav'])
+>(props: BasaltShellProps<G, T>) {
+  assertRequiredProps('BasaltShell', props, ['brand', 'nav'])
+  const { nav, badges, isActive, getScrollElement, ...rest } = props
   const { sections, mobileNav } = useNav(nav, {
     ...(badges !== undefined && { badges }),
     ...(isActive !== undefined && { isActive }),
@@ -376,7 +365,21 @@ export type ShellFrameProps = ShellBaseProps & {
   mobileNav?: MobileNavConfig
 }
 
-/** @internal Renders resolved `sections`; consumers use `BasaltShell nav` instead. */
+/**
+ * @internal Renders resolved `sections`; consumers use `BasaltShell nav` instead.
+ *
+ * The shell's two page-level regions are providers, and both wrap the frame rather than living
+ * inside it: `PageBarProvider` owns the header portal and the single-kebab claim, `AsideProvider`
+ * owns the aside portal, the region CLAIM and the claiming page's fold state — which `ShellBody`
+ * has to READ to size `AppShell.Aside`, so it cannot be the component that provides it.
+ *
+ * **Native title bar (opt-in CSS contract).** A desktop host with a macOS overlay title bar paints
+ * its traffic lights ON TOP of the header's leading zone. Set `--basalt-shell-lead-inset` on
+ * `:root` to their span (e.g. `html { --basalt-shell-lead-inset: 70px }`; default `0px`, which
+ * changes nothing): the zone's inline-start padding grows by it, and the zone is never narrower than
+ * the inset plus the collapse toggle, so the 48px rail pushes the toggle to the right of the lights
+ * instead of clipping it. The breadcrumb after a widened rail zone shifts right by the same amount.
+ */
 export function ShellFrame(props: ShellFrameProps) {
   return (
     <PageBarProvider globalActions={props.globalActions ?? []}>

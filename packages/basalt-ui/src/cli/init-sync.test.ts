@@ -284,3 +284,46 @@ describe('sync --check — a permanent skip is not drift', () => {
     expect(log).not.toContain('placement skip')
   })
 })
+
+describe('router seeds — the nav module and the root route', () => {
+  const PEERS = {
+    name: 'fixture',
+    dependencies: { '@tanstack/react-router': '^1.0.0', '@tanstack/react-query': '^5.0.0' },
+  }
+
+  it('init seeds a leaf NAV module and a root route that passes nav={NAV}', () => {
+    writeFixture('package.json', JSON.stringify(PEERS))
+    init(dir)
+    const nav = readFileSync(resolve(dir, 'src/lib/nav.tsx'), 'utf8')
+    const root = readFileSync(resolve(dir, 'src/routes/__root.tsx'), 'utf8')
+    expect(nav).toContain('export const NAV = defineNav(')
+    expect(nav).not.toContain("from '../routes/__root'")
+    expect(root).toContain("import { NAV } from '../lib/nav'")
+    expect(root).toContain('nav={NAV}')
+    expect(root).not.toContain('sections=')
+    expect(root).not.toContain('useNav')
+  })
+
+  it('a second sync leaves both consumer-owned seeds untouched and undrifted', () => {
+    writeFixture('package.json', JSON.stringify(PEERS))
+    init(dir)
+    const before = ['src/lib/nav.tsx', 'src/routes/__root.tsx'].map((f) =>
+      readFileSync(resolve(dir, f), 'utf8'),
+    )
+    writeFixture('src/lib/nav.tsx', `${before[0]}// local edit\n`)
+    const { code } = capture(() => sync({ check: true }, dir))
+    expect(code).toBe(0)
+    capture(() => sync({}, dir))
+    expect(readFileSync(resolve(dir, 'src/lib/nav.tsx'), 'utf8')).toBe(
+      `${before[0]}// local edit\n`,
+    )
+    expect(readFileSync(resolve(dir, 'src/routes/__root.tsx'), 'utf8')).toBe(before[1]!)
+  })
+
+  it('without both peers the skip notice names both seeds', () => {
+    writeFixture('package.json', JSON.stringify({ name: 'fixture' }))
+    const { log } = capture(() => init(dir))
+    expect(log).toContain('skipped src/lib/nav.tsx and src/routes/__root.tsx')
+    expect(existsSync(resolve(dir, 'src/lib/nav.tsx'))).toBe(false)
+  })
+})
