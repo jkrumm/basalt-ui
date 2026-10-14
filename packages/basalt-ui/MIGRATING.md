@@ -987,7 +987,7 @@ optional, subpath-required peers.
 | `NavItemMeta`, `NavGroupMeta`, `AnyNavItem`, `AnyNavGroup`, `AnyNavLink`, `FlatNavItem`, `NavConfig`, `NavGroupId`, `NavTabId`, `NavIndex`, `UseNavOptions`, `NavBinding`, `NavAnchor`, `NavAnchorProps`, `NavMobilePlacement` | deleted                                                                                                                                                                                                                                                                                                                                                                                                                                                    | no consumer names them; derive with `ComponentProps` / `Parameters` |
 | `useNav`, and `BasaltShell`'s `sections` / `mobileNav` props                                                                                                                                                                   | deleted: pass `nav={NAV}` (plus `badges`, `isActive`, `getScrollElement` — the old `useNav` options) to `BasaltShell`; it resolves the sidebar, the mobile bar and the breadcrumb itself. `mobileNav` tuning moves to `defineNav`'s `mobile`. argo `apps/dashboard/src/routes/__root.tsx`: replace `const nav = useNav(NAV, { badges })` + `{...nav}` with `nav={NAV} badges={…}` (migrates in W12; 1.x consumers stay on their pinned version until then) |
 
-## Unreleased — tooltip swatches, reference legends, `tooltipFormat`
+## Unreleased — tooltip swatches, reference legends, `tooltipFormat`, band edges
 
 All additive; no call site changes. Named consumers are argo `apps/dashboard/src/features/…`.
 
@@ -1004,6 +1004,20 @@ All additive; no call site changes. Named consumers are argo `apps/dashboard/src
 - `DualPanelBar.tooltipFormat` and `DualPanelProps.top.tooltipFormat` format the tooltip rows while
   `format` keeps the axis ticks (default: `format`; `formatValue` still wins per row). argo
   `strength-tracker/charts/momentum-chart.tsx`: drop the separate `formatValue` copy of the axis format.
+- `ChartSeries.cursorValue: (d) => number | null` gives a series drawn from your own `marks` a cursor
+  dot: the y at each datum, shown while the cursor is on that x, in the series color. Pass a series
+  with `getValue: () => null` (no tooltip row) and the mark stays yours. argo
+  `astro-window/charts/sky-panorama.tsx` (the sun track).
+- `ZoneSpec.edge` (`side: 'top' | 'bottom' | 'both'`) and `XZoneSpec.edge` (`'start' | 'end' | 'both'`)
+  draw a rule along the band's boundary, with `color`, `dashed` and `width`. A bound at the plot edge
+  (infinite, outside the domain, or an omitted x bound) draws none. argo
+  `astro-window/charts/night-timeline-chart.tsx`: the shooting-window `rect` + two `ruleX` become one
+  `xZones` entry with `edge: { side: 'both', color: VX.accent, width: 2 }`.
+- Not added: a per-datum `fill` for the engine's `rect`. `@tanstack/charts` 1.1.0 types `RectOptions.fill`
+  as a `string`; its `color` channel resolves through the chart's own color scale, which `marks` cannot
+  reach. Keep one `rect` per fill bucket (argo `astro-window/charts/sky-panorama.tsx`, skyglow).
+- The night-timeline lines can use `chartCurve(s.curve ?? 'monotone')` from 2.3.0 unchanged; nothing
+  is missing there.
 
 ## 2.3.0 — optional-safe chart props, `chartCurve`, zone-coloured area
 

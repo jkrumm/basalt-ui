@@ -97,6 +97,31 @@ export function markersOf<T, X extends ChartX>(
 }
 
 /**
+ * The cursor dot of a series the consumer draws itself (`ChartSeries.cursorValue`): a dot per datum,
+ * invisible until the cursor is on that datum's x. It is NOT decorative, so the engine counts it as
+ * a focus point and the shared cursor, the focus group and the tooltip reach the series.
+ */
+export function cursorDots<T, X extends ChartX>(
+  s: ChartSeries<T>,
+  rows: readonly PlotRow<T, X>[],
+  yScale: 'y2' | undefined,
+): ChartMarks[number] {
+  return dot(rows, {
+    id: `${s.key}-cursor`,
+    x: rowX,
+    y: 'y',
+    r: VX.dotR,
+    fill: s.color,
+    fillOpacity: 0,
+    stroke: VX.surface.panel,
+    strokeWidth: 1.5,
+    strokeOpacity: 0,
+    states: [{ when: { focus: 'x' }, style: { fillOpacity: 1, strokeOpacity: 1 } }],
+    ...(yScale !== undefined && { yScale }),
+  })
+}
+
+/**
  * A single-series `barY`. The engine stacks every `barY` that has no explicit extent, and a row with
  * no `z`/`color` channel is its own series: an N-by-N matrix (a 5k-row `DualPanel` took 10 s). So
  * the extent is explicit (`y1: 0`) unless the caller asks for a series (`z`, `color`) or a `layout`.

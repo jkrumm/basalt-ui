@@ -53,6 +53,12 @@ export type ChartSeries<T> = {
   note?: string | undefined
   /** Per-series tooltip value format; receives the datum so a row can read more than the value. */
   formatValue?: ((v: number, d: T) => string) | undefined
+  /**
+   * A cursor dot for a series whose mark the consumer draws itself (`marks`, so `getValue` stays
+   * `null`): the y of the dot at each datum, `null` for none. The dot shows while the cursor is on
+   * that datum's x and takes the series color. A series drawn from `plot.rows` already has one.
+   */
+  cursorValue?: ((d: T) => number | null) | undefined
   /** A marker at a point (a PR star, a status dot); `null` for none. */
   getMarker?:
     | ((d: T) => {
@@ -95,12 +101,23 @@ export type AxisConfig<T> = {
   scale?: 'linear' | 'log' | undefined
 }
 
+/** A rule along a band's boundary, painted with the band. A bound at the plot edge draws none. */
+export type ZoneEdge<S extends string> = {
+  side: S | 'both'
+  color: string
+  dashed?: boolean | undefined
+  /** Default `1`. */
+  width?: number | undefined
+}
+
 /** A horizontal band on one y axis. `±Infinity` reaches the plot edge. */
 export type ZoneSpec = {
   from: number
   to: number
   fill: string
   axisSide?: 'left' | 'right' | undefined
+  /** A rule on the band's `top` (`to`) and/or `bottom` (`from`) boundary. */
+  edge?: ZoneEdge<'top' | 'bottom'> | undefined
 }
 
 /**
@@ -113,6 +130,8 @@ export type XZoneSpec<X extends ChartX = ChartX> = {
   to?: X | undefined
   fill: string
   align?: 'center' | 'edge' | undefined
+  /** A rule on the band's `start` (`from`) and/or `end` (`to`) boundary; an omitted bound has none. */
+  edge?: ZoneEdge<'start' | 'end'> | undefined
 }
 
 /** A horizontal reference line — annotation only, no domain role beyond staying inside the plot. */
