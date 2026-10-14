@@ -548,9 +548,9 @@ in the generated header — claiming full coverage there is the false-`not guard
 
 ## 7. Agent layer
 
-Six shipped rule files, one line + one link per doctrine, budgets in
-`AGENT_RULE_TOTAL_BUDGET`/per-file ceilings (code, not prose — see `packages/basalt-ui/MAINTAINING.md`
-§ The agent layer for the current numbers). Every rule header is a generated
-`<!-- basalt:coverage -->` block from `SURFACES`, diffed by `check-agent-doc-drift.ts`, which also
-fails CI over budget. The 13→6 file merge, the per-file content assignment, and the full A1-D16
+Six shipped rule files, each bullet ending in the lint rule, guard kind or type that enforces it.
+Budgets are code, not prose: `AGENT_LINE_BUDGETS` and `AGENT_LAYER_TOTAL_BUDGET` in
+`scripts/check-coverage.ts`, `ruleLines` in `scripts/check-budgets.ts` (current numbers:
+`packages/basalt-ui/MAINTAINING.md` § The agent layer). Every rule header is a generated
+`<!-- basalt:coverage -->` block from `SURFACES`; `check-agent-doc-drift.ts` checks the tags. The 13→6 file merge, the per-file content assignment, and the full A1-D16
 ledger disposition are the historical execution record: `docs/archive/CONTROLS-SYNTHESIS.md`.
