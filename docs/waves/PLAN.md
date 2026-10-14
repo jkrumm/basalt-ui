@@ -470,7 +470,7 @@ Charts), `docs/archive/CHARTS-SPEC-1x.md`, `docs/DESIGN-CORE.md`, `packages/basa
   React-compiler exemptions 26 → 5, #162 rules/skills/AGENTS block rewrite with the tag law, #163 plugin at 2.0
   strictness, #164 `doctor`/`sync` upgrade path, #165 `styles.css` carries the notifications + spotlight layers,
   #166 `router-view-transition` deleted, #167–#173 DX-trial fixes. Index: `docs/waves/evidence/w9.md`.
-- **Agent layer:** rules 704 → 271 lines, layer 995 → 576 (1.41: 1,136); every rule bullet ends in a tag
+- **Agent layer:** rules 704 → 271 lines, rules + skills + block 995 → 576 (1.41: 1,034; the whole `agent/` tree 1,136); every rule bullet ends in a tag
   (`[basalt/…]`, `[check-theme …]`, `[type …]`) that `check-agent-doc-drift` resolves, unenforced bullets
   deleted (Eden Treaty section included, W8 leftover). Skill snippets marked `// @check` are type-checked in
   `bun test`. Budgets gated at the landed values (`ruleLines` 277, per-file and layer totals in `check-coverage`).
@@ -489,7 +489,7 @@ Charts), `docs/archive/CHARTS-SPEC-1x.md`, `docs/DESIGN-CORE.md`, `packages/basa
   merges the lint preset, reorders create-vite's build; `doctor` `app-wiring`; `AgentTransport` exported; every
   public optional in `./agent` takes `undefined`; chat/table/route/router-plugin snippets; per-subpath `Install:`
   lines in `llms.txt`).
-- **Runtime** (`evidence/w9/runtime.md`): chat commits per reply unchanged vs W8 (126/86 at the 100 ms default),
+- **Runtime** (`evidence/w9/runtime.md`): chat commits per reply within ±2 of W8 (126/86 at the 100 ms default),
   table 10k rows no regression vs W6, frame p95 within one rAF quantum; `styles.css` +257 B gzip.
 - **Deferred, accepted:** `ThreadsStore` has 13 required members, so the skill's in-memory store is ~45 lines; a
   shipped `createMemoryThreadsStore` has no named consumer outside the playground yet (W11 decides with argo).
@@ -499,10 +499,14 @@ Charts), `docs/archive/CHARTS-SPEC-1x.md`, `docs/DESIGN-CORE.md`, `packages/basa
 - **Ops notes:** `rd say` with a long brief to an agent in `done` state sometimes leaves it pasted but unsent —
   check the agent went `working`; headless `claude -p` cannot refresh OAuth from a tool shell on the mini, so the DX
   trial ran as an `rd wave` agent (a new folder needs the `~/.claude.json` trust entry `rd fan` writes).
-- **Next:** the orchestrator inserts the rendering wave (SSR, streaming, route transitions) before the release
-  candidate; Wave 10 below is flipped to `active` only as the plan's next step.
+- **Also fixed at close-out:** `MIGRATING.md` § 2.0 and `v2-surface.md` listed `AgentTransport` and
+  `ResumableAgentTransport` as deleted; #170 keeps them, the rows now say so. Untested: the hand-kept top-level
+  `rules` of the shipped `configs/oxlint.json` (`gen-oxlint --check` compares only `overrides`). The DX trial
+  loaded the owner's global `~/.claude` layer (no basalt knowledge in it; stated as a limitation).
+- **Next:** no wave is `active` — the orchestrator inserts the rendering wave (SSR, streaming, route
+  transitions) ahead of the release candidate and activates it.
 
-## Wave 10 — Release candidate <!-- status: active -->
+## Wave 10 — Release candidate <!-- status: pending -->
 
 - [ ] Full playground validation: every route through `make evidence` plus `@verifier`. Fix the
       regressions found.

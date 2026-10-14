@@ -19,7 +19,7 @@ Before = `cbdc9124` (W8 close-out), after = `master` at the W9 close-out. Counte
 | `templates/AGENTS-block`    | 40     | 30    |
 | **layer total**             | 995    | 576   |
 
-1.41's layer was 1,136 lines; the plan's target was "fewer". `check-budgets` gates rule lines at the landed 277
+On this table's definition (rules + skills + AGENTS block) 1.41 had 1,034 lines; the plan's 1,136 is the whole `agent/` tree including the seeded templates. `check-budgets` gates rule lines at the landed 277
 (its own count, one extra per file; spec target ≤ 450) and `check-coverage` gates every file and the layer total
 at the landed values. `basalt-app` grew by the chat, table, route and router-plugin snippets the DX trial asked
 for (`w9/dx-trial.md`); every one of them is type-checked in `bun test`.
@@ -33,15 +33,15 @@ prose fails. Bullets that had no enforcement were deleted (Eden Treaty section, 
 
 ## oxlint plugin
 
-| Measure                                 | Before                                     | After                                                                                                 |
-| --------------------------------------- | ------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
-| `configs/oxlint-plugin.js` lines        | 4 428                                      | 4 127                                                                                                 |
-| shipped `basalt/*` rules                | 25 (23 error, 2 warn)                      | 21, all `error`                                                                                       |
-| retired (unrepresentable in 2.0)        | —                                          | `provider-above-router`, `page-bar-budget`, `agent-resume-guard`, `deprecated-export`                 |
-| widened                                 | —                                          | `agent-no-raw-usechat` (+ `Chat`, namespace imports, re-exports); `shadow-basalt-export` warn → error |
-| new, repo-local                         | —                                          | `no-dev-helper`; `no-import-meta-env` enabled (was registered, enabled nowhere)                       |
-| shipped generic preset                  | compiler rules off, `no-explicit-any` warn | React-compiler rules, `no-constant-binary-expression`, `no-explicit-any` at `error`                   |
-| React-compiler exemptions in basalt src | 26 file × rule                             | 5                                                                                                     |
+| Measure                                       | Before                                     | After                                                                                                 |
+| --------------------------------------------- | ------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
+| `configs/oxlint-plugin.js` lines              | 4 428                                      | 4 127                                                                                                 |
+| shipped `basalt/*` rules                      | 25 (23 error, 2 warn)                      | 21, all `error`                                                                                       |
+| retired (unrepresentable in 2.0)              | —                                          | `provider-above-router`, `page-bar-budget`, `agent-resume-guard`, `deprecated-export`                 |
+| widened                                       | —                                          | `agent-no-raw-usechat` (+ `Chat`, namespace imports, re-exports); `shadow-basalt-export` warn → error |
+| new, repo-local                               | —                                          | `no-dev-helper`; `no-import-meta-env` enabled (was registered, enabled nowhere)                       |
+| shipped generic preset                        | compiler rules off, `no-explicit-any` warn | React-compiler rules, `no-constant-binary-expression`, `no-explicit-any` at `error`                   |
+| React-compiler exemptions (repo + playground) | 26 file × rule (24 + 2)                    | 5                                                                                                     |
 
 `router-view-transition` was built and merged (#163), then deleted (#166) on the owner's decision of 2026-10-14:
 route view transitions come back through the router, so the replacement rule belongs to the rendering wave.

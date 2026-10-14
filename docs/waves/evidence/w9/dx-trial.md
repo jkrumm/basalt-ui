@@ -2,7 +2,7 @@
 
 **Setup (each run):** `bun create vite <app> --template react-ts`, `bun add <packed basalt-ui tarball from master>`,
 `./node_modules/.bin/basalt-ui init`, then a fresh Claude Code agent (Sonnet, `rd wave`, the owner's global
-`~/.claude` layer loaded as in any real session) gets one prompt and nothing else:
+`~/.claude` layer loaded, as in any of the owner's real consumer sessions) gets one prompt and nothing else:
 
 > Build a dashboard route at /dashboard in this app: a line chart of daily active users over the last 30 days, a
 > table of the top 20 accounts (name, plan, MRR, last seen), and an AI chat panel where I can ask questions about the
@@ -25,22 +25,22 @@ container-query fix and the agent applied it on the next call (the rule doing it
 
 ## Findings and their source fixes
 
-| #   | Wrong turn (run)                                                                                                | Fix at the source                                                               | PR         |
-| --- | --------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- | ---------- |
-| 1   | `init` skipped `main.tsx`/`__root.tsx`/`nav.tsx` though the router peers were installed (scaffold)              | router seeds unconditional for an app profile; flags deleted                    | #167       |
-| 2   | create-vite's own `.oxlintrc.json` kept → shipped preset off (scaffold)                                         | `init` merges the preset by default, `--no-merge-lint` opts out                 | #167       |
-| 3   | stock `main.tsx` kept, `doctor` still "All checks passed" (scaffold)                                            | hard `doctor` check `app-wiring` (entry + router plugin)                        | #167       |
-| 4   | `DESIGN.md` snippet `paletteGroups = { 'app-': … }` (1)                                                         | template: `paletteGroups = [series]`                                            | #168       |
-| 5   | TanStack Table v8 `sortingFn` (1)                                                                               | batteries rule bullet + checked table snippet                                   | #168, #172 |
-| 6   | `exactOptionalPropertyTypes` vs `summary?: string`, `resumeToken?: string` → `summary=''`, omit-destructure (1) | every public optional in `basalt-ui/agent` is `?: T \| undefined`               | #169       |
-| 7   | router plugin and `routeTree.gen.ts` undocumented (1)                                                           | `basalt-app` skill step                                                         | #168       |
-| 8   | 12 subpath peers found by reading `package.json` (1)                                                            | `llms.txt` emits one `Install: bun add …` line per subpath                      | #168       |
-| 9   | chat wiring undocumented → 59-line hand-rolled store after ~13 `dist` reads (1)                                 | checked chat snippet in `basalt-app` (store contract, transport per thread)     | #168       |
-| 10  | `AgentTransport` not exported → untyped mock transport, TS2305/TS7006 (2)                                       | `AgentTransport`, `ResumableAgentTransport` exported; TextPart delta JSDoc      | #170       |
-| 11  | `tsc -b && vite build` fails before the first `vite build` (TS2307 `./routeTree.gen`) (1, 2)                    | `init` rewrites the stock script to `vite build && tsc -b`                      | #171       |
-| 12  | invented `count` prop on `BasaltDataTable` from its `title` JSDoc (2)                                           | JSDoc fixed; table snippet                                                      | #170, #172 |
-| 13  | `only-export-components` on every route file (1–3)                                                              | preset `allowExportNames: ['Route']` (#171); seeds/snippet export the component | #171, #173 |
-| 14  | notifications/spotlight unstyled unless the consumer imports their layer CSS (pre-trial review)                 | `styles.css` `@import`s every layer bundle the provider mounts                  | #165       |
+| #   | Wrong turn (run)                                                                                                | Fix at the source                                                                     | PR         |
+| --- | --------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- | ---------- |
+| 1   | `init` skipped `main.tsx`/`__root.tsx`/`nav.tsx` though the router peers were installed (scaffold)              | router seeds unconditional for an app profile; flags deleted                          | #167       |
+| 2   | create-vite's own `.oxlintrc.json` kept → shipped preset off (scaffold)                                         | `init` merges the preset by default, `--no-merge-lint` opts out                       | #167       |
+| 3   | stock `main.tsx` kept, `doctor` still "All checks passed" (scaffold)                                            | hard `doctor` check `app-wiring` (entry + router plugin)                              | #167       |
+| 4   | `DESIGN.md` snippet `paletteGroups = { 'app-': … }` (1)                                                         | template: `paletteGroups = [series]`                                                  | #168       |
+| 5   | TanStack Table v8 `sortingFn` (1)                                                                               | batteries rule bullet + checked table snippet                                         | #168, #172 |
+| 6   | `exactOptionalPropertyTypes` vs `summary?: string`, `resumeToken?: string` → `summary=''`, omit-destructure (1) | every public optional in `basalt-ui/agent` is `?: T \| undefined`                     | #169       |
+| 7   | router plugin and `routeTree.gen.ts` undocumented (1)                                                           | `basalt-app` skill step                                                               | #168       |
+| 8   | 12 subpath peers found by reading `package.json` (1)                                                            | `llms.txt` emits an `Install: bun add …` line per subpath with subpath-required peers | #168       |
+| 9   | chat wiring undocumented → 59-line hand-rolled store after ~13 `dist` reads (1)                                 | checked chat snippet in `basalt-app` (store contract, transport per thread)           | #168       |
+| 10  | `AgentTransport` not exported → untyped mock transport, TS2305/TS7006 (2)                                       | `AgentTransport`, `ResumableAgentTransport` exported; TextPart delta JSDoc            | #170       |
+| 11  | `tsc -b && vite build` fails before the first `vite build` (TS2307 `./routeTree.gen`) (1, 2)                    | `init` rewrites the stock script to `vite build && tsc -b`                            | #171       |
+| 12  | invented `count` prop on `BasaltDataTable` from its `title` JSDoc (2)                                           | JSDoc fixed; table snippet                                                            | #170, #172 |
+| 13  | `only-export-components` on every route file (1–3)                                                              | preset `allowExportNames: ['Route']` (#171); seeds/snippet export the component       | #171, #173 |
+| 14  | notifications/spotlight unstyled unless the consumer imports their layer CSS (pre-trial review)                 | `styles.css` `@import`s every layer bundle the provider mounts                        | #165       |
 
 Every snippet in the shipped skills marked `// @check` is extracted and type-checked against the built package
 under the shipped `tsconfig.base` in `bun test` (#168), so a renamed prop fails CI instead of a consumer.
@@ -48,6 +48,8 @@ under the shipped `tsconfig.base` in `bun test` (#168), so a renamed prop fails 
 **Not fixed, on purpose:** `ThreadsStore` has 13 required members, so the in-memory store in the `basalt-app` chat
 snippet is ~45 lines. A shipped `createMemoryThreadsStore` would be a new export with no named consumer outside the
 playground (adopt-or-delete); W11 decides it with argo. The skill snippets grew `basalt-app` from 100 to 217 lines.
+
+**Limitation:** the global `~/.claude` layer (the owner's operating contract and lazy rules) was loaded. It carries no basalt-ui knowledge — its one chart rule is the generic visx rule the AGENTS block overrides — so it can bias against the shipped layer, not for it; an isolated run was not possible (below).
 
 **Harness notes:** headless `claude -p` cannot refresh OAuth from a tool shell on the mini, so each run is an
 `rd wave` agent in `~/SourceRoot/basalt-dx-trial` with a one-line `docs/waves/PLAN.md`; the scratch app is deleted
