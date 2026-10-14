@@ -19,7 +19,7 @@ paths:
 ## Provider
 
 - Mount once: `createBasaltRouter({ routeTree })`, then `<BasaltProvider router={router} />`. It owns Mantine, Query, modals, notifications, Spotlight and the router. [type BasaltProvider]
-- Never pass `cssVariablesResolver` or a hand-built `createTheme`; pass `theme={createBasaltTheme(...)}` if you retune. [type BasaltProvider]
+- Never pass `cssVariablesResolver` to `BasaltProvider`; retune with `theme={createBasaltTheme(...)}`. [type BasaltProvider]
 - Read and write the color scheme with `useMantineColorScheme()` only. [check-theme localstorage-theme]
 
 ## Shell

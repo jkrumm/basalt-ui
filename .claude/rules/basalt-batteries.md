@@ -1,6 +1,6 @@
 ---
 source: basalt-ui
-description: The adapter batteries — query, forms, commands, table, content, agent. Use the shipped seam.
+description: The adapter batteries — query, forms, table, content, agent. Use the shipped seam.
 paths:
   - 'src/**'
   - 'apps/**/src/**'
@@ -19,7 +19,7 @@ paths:
 ## Query
 
 - Wrap every `queryFn` response in `unwrap()`; it throws on the error branch and on `null` data. [basalt/query-fn-unwrap]
-- Build the client with `createBasaltRouter` (extend via its `query:` option); never construct a second `QueryClient`. [type createBasaltRouter]
+- The client comes from `createBasaltRouter`; extend it via its `query:` option. [type createBasaltRouter]
 
 ## Forms
 
