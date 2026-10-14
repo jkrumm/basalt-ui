@@ -4,6 +4,7 @@
  */
 import { expect, test } from 'bun:test'
 import { buildPaletteCss, defineSeries, groupTokens } from './index'
+import type { SeriesGroup } from './index'
 
 const MAP = defineSeries({ a: { light: '#111111', dark: '#eeeeee' } })
 const ACTIVITY = groupTokens('activity', MAP)
@@ -30,4 +31,9 @@ test('the group emits under the prefix it was named with, and its refs point at 
   expect(buildPaletteCss({ groups: [ACTIVITY] })).toContain('--vx-activity-a')
   expect(String(ACTIVITY.a)).toBe('var(--vx-activity-a)')
   expect(Object.keys(ACTIVITY)).toEqual(['a'])
+})
+
+test('a hand-built group without the groupTokens payload throws, naming groupTokens', () => {
+  const handBuilt: SeriesGroup = { a: ACTIVITY.a }
+  expect(() => buildPaletteCss({ groups: [handBuilt] })).toThrow(/must come from groupTokens/)
 })
