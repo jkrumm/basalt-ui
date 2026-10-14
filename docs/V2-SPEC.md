@@ -213,22 +213,23 @@ density })`. 2.0 changes only the surface around it:
 
 ## 5. Transitions
 
-One mechanism per surface; React owns every view transition. Every router navigation already runs
-in `React.startTransition` (`@tanstack/react-router` 1.170.38 `Transitioner.js:20`), so
-`<ViewTransition>` fires on it. `defaultViewTransition` calls `document.startViewTransition` itself
-(`router-core` 1.171.32 `router.js:490-505`), and React interrupts a non-React transition, so the
+One mechanism per surface; React owns every view transition. A router navigation runs in
+`React.startTransition` (`@tanstack/react-router` 1.170.38 `Transitioner.js:20`), but its state is a
+`useSyncExternalStore` read, which commits synchronously, so `<ViewTransition>` never fires on it.
+`defaultViewTransition` calls `document.startViewTransition` itself (`router-core` 1.171.32
+`router.js:490-505`), and React interrupts a non-React transition, so the
 router path is banned (§ 3). `<ViewTransition>` is stable in 19.3 and `<Activity>` since 19.2
 (`@types/react` 19.3.0 `index.d.ts:2002-2101`); plain `setState` never activates it (react.dev).
 
-| Surface                                    | Mechanism                                                                                                                                   | Why this one                                                                                                                     |
-| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| route change                               | `<ViewTransition key={leafRouteId} enter="basalt-route-in" exit="basalt-route-out" update="none">` around the shell's main slot             | navigations are already transitions; keying by route id means search-only navigations (filters, tabs, pagination) do not animate |
-| aside open/close                           | fold setter inside `startTransition` + `<ViewTransition>` on the aside region; body under `<Activity mode={folded ? 'hidden' : 'visible'}>` | `Activity` keeps scroll and inputs across folds without a remount                                                                |
-| tab swap (`ViewTabs`)                      | none: instant swap                                                                                                                          | a same-route navigation; motion delays reading a data view (DESIGN-CORE restraint)                                               |
-| chat thread swap (`ThreadFeedRow` expand)  | open/close inside `startTransition` + `<ViewTransition>`; the expanded body under `<Activity>`                                              | replaces 1.x's hand-rolled keep-mounted row and motion in `thread-detail-panel.tsx`                                              |
-| modal, drawer, popover, menu               | Mantine `transitionProps` (theme default, Mantine `respectReducedMotion`)                                                                   | Mantine owns portal mount/unmount; a view transition would snapshot the page                                                     |
-| list insert / reorder (feed rows, history) | `motion/react` `layout` + `AnimatePresence`                                                                                                 | streamed inserts are urgent `setState`, which never activates `<ViewTransition>`                                                 |
-| theme toggle icon                          | CSS transition                                                                                                                              | motion was overkill (`theme/theme-toggle.tsx`)                                                                                   |
+| Surface                                    | Mechanism                                                                                                                                                                                                         | Why this one                                                                                              |
+| ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| route change                               | none: the router commits through `useSyncExternalStore`, so `<ViewTransition>` never activates (evidence `w7/transitions.md`); revisit if TanStack Router publishes match state through a transition-capable read | a route `<ViewTransition>` would be inert code                                                            |
+| aside open/close                           | fold setter inside `startTransition` + `<ViewTransition>` on the aside region; body under `<Activity mode={folded ? 'hidden' : 'visible'}>`                                                                       | `Activity` keeps scroll and inputs across folds without a remount                                         |
+| tab swap (`ViewTabs`)                      | none: instant swap                                                                                                                                                                                                | a same-route navigation; motion delays reading a data view (DESIGN-CORE restraint)                        |
+| chat thread swap (`ThreadFeedRow` expand)  | none: lazy first mount, then kept mounted with plain-CSS `display: none`; no `Activity` (hidden `Activity` re-fires every transcript effect) and no `<ViewTransition>`                                            | `thread-feed-row.tsx` owns show/hide so a Mantine `keepMountedMode` default change cannot replay a stream |
+| modal, drawer, popover, menu               | Mantine `transitionProps` (theme default, Mantine `respectReducedMotion`)                                                                                                                                         | Mantine owns portal mount/unmount; a view transition would snapshot the page                              |
+| list insert / reorder (feed rows, history) | `motion/react` `layout` + `AnimatePresence`                                                                                                                                                                       | streamed inserts are urgent `setState`, which never activates `<ViewTransition>`                          |
+| theme toggle icon                          | CSS transition                                                                                                                                                                                                    | motion was overkill (`theme/theme-toggle.tsx`)                                                            |
 
 **`motion` survives only for list insert/reorder.** Of its three 1.41 import sites, `theme-toggle.tsx`
 drops it, `thread-detail-panel.tsx` is deleted, and `thread-feed.tsx` keeps it. That makes `motion` subpath-required for `./agent` (§ 1), bumped to 14 (W3).
@@ -237,17 +238,16 @@ drops it, `thread-detail-panel.tsx` is deleted, and `thread-feed.tsx` keeps it. 
 
 - `styles.css` sets `animation: none` on `::view-transition-group(*)`, `-old(*)` and `-new(*)`
   under `prefers-reduced-motion: reduce`. React does not do this itself (react.dev).
-- The provider mounts `<MotionConfig reducedMotion="user">` (motion 14 `ReducedMotionConfig`:
-  `'always' | 'never' | 'user'`).
+- `ThreadFeed` mounts `<MotionConfig reducedMotion="user">` (motion 14 `ReducedMotionConfig`:
+  `'always' | 'never' | 'user'`); the provider does not, so the root never reaches `motion`.
 - The base theme sets Mantine's `respectReducedMotion: true`.
 
 **Accepted:** Back/Forward through `popstate` does not animate, because React skips it (react.dev).
 
 **Open:**
 
-- How `<ViewTransition>` falls back when `document.startViewTransition` is missing: commit without
-  animation is reported only by a third-party guide. W7 records the behaviour per browser in its
-  evidence.
+- With `document.startViewTransition` deleted (Chrome 155) the aside folds and expands without
+  error and React commits without animation (W7 evidence). Safari and Firefox are not observed.
 
 ## 6. AI and content
 

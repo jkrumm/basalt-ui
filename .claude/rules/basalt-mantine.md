@@ -110,4 +110,4 @@ Destructive actions confirm through `modals.openConfirmModal` first.
 - **Import from `motion/react`, never `framer-motion`** — exact-pinned optional PEER. Mantine's
   `<Transition>` for a mount fade; `motion` for a crossfade, spring or gesture.
 - **Always branch on `useReducedMotion`** with a real unanimated path, not just `duration: 0`
-  (`ThemeToggle` is the pattern). Restraint applies to motion too — no looping idle animation.
+  (`ThemeToggle` has the CSS equivalent: a transition with a `prefers-reduced-motion: reduce` override). Restraint applies to motion too — no looping idle animation.
