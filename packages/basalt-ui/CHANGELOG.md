@@ -1,3 +1,12 @@
+## [2.0.3](https://github.com/jkrumm/basalt-ui/compare/v2.0.2...v2.0.3) (2026-10-14)
+
+
+### Bug Fixes
+
+* follow the router import in app-wiring and let CI run make check ([47b6152](https://github.com/jkrumm/basalt-ui/commit/47b61526ab3ae959c1d9e4595916782defb0454f))
+* label the provider's nav commands and drop duplicate nav entries ([08ec6ee](https://github.com/jkrumm/basalt-ui/commit/08ec6eef320f1ae8e072584c48a903f672222364))
+* show nav badges in the collapsed rail ([5e09ea0](https://github.com/jkrumm/basalt-ui/commit/5e09ea07f05822f853c118a19c2cf72fe593501a))
+
 ## [2.0.2](https://github.com/jkrumm/basalt-ui/compare/v2.0.1...v2.0.2) (2026-10-14)
 
 
