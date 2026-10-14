@@ -587,15 +587,15 @@ own site dropped it (2026-07-24); revisit on a 2.x minor if that changes.
   `mktemp`. A `rd say` body with backticks inside double quotes is eaten by the shell; send from a file.
 - **Next:** W11 (release candidate) is `active`.
 
-## Wave 11 — Release candidate <!-- status: active -->
+## Wave 11 — Release candidate <!-- status: done -->
 
 - [x] Full playground validation: every route through `make evidence` plus `@verifier`. Fix the
       regressions found.
 - [x] Docs: README, `MIGRATING.md` § 2.0 complete, the ledger closed, the 1.x specs archived.
-- [ ] Publish `2.0.0` through `make release` (the one sanctioned major). The mother triggers the
+- [x] Publish `2.0.0` through `make release` (the one sanctioned major). The mother triggers the
       publish after reviewing the close-out.
 
-**Left behind:** the RC is ready; nothing is published (the box above stays unticked for the orchestrator).
+**Left behind:** the RC was handed to the orchestrator unpublished; it published (last bullet).
 PRs #183 (astro), #184 (docs), #185 (fold 404s) and this close-out are merged; no direct pushes.
 
 - **Validation:** `make evidence LABEL=w11` (all 11 lanes, `docs/waves/evidence/w2/w11.md`) and a quiet re-run
@@ -620,8 +620,10 @@ PRs #183 (astro), #184 (docs), #185 (fold 404s) and this close-out are merged; n
   "Upgrading from 1.x" lead (a diff of 1.41.0 exports against HEAD found no missing row).
 - **Found, not fixed (pre-existing since W5, 1.x design):** on mobile the sticky "On this page" trigger sits over
   the right end of a long first content heading (`content--*--mobile.png`). Cosmetic; belongs to the loop.
+- **Published 2026-10-14 by the orchestrator:** `make release` computed v1.41.0 → v2.0.0, the registry serves
+  `2.0.0` as `latest`.
 
-## Wave 12 — argo: the migration plan <!-- status: pending -->
+## Wave 12 — argo: the migration plan <!-- status: active -->
 
 Owner direction 2026-10-14: argo's migration is its own fleet run, and argo and basalt-ui then loop on
 each other until they converge, before any other consumer moves.
