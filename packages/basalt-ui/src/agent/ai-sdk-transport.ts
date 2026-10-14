@@ -441,7 +441,7 @@ export function aiSdkTransport<TPart = AgentPart>(
           abortSignal: signal,
           // Per-turn trace context goes to the chat endpoint only (merged over the static headers by
           // AI SDK's HTTP transport); absent, the request is exactly what it was.
-          ...(ctx?.headers !== undefined ? { headers: { ...ctx.headers } } : {}),
+          ...(ctx?.headers !== undefined ? { headers: ctx.headers } : {}),
         })
         yield* diffChunkStream<TPart>(chatId, chunkStream, readStream, signal)
       },

@@ -12,10 +12,12 @@
  * covers: it outlives the run only until a render shows the outcome (`sweepFlushed`).
  */
 
+import type { ChatTurnEnd, ChatTurnTrace } from '../telemetry'
+
 /** The part of a rendered `runs` entry this module reads. */
 type RenderedRun<TPart> = { readonly status: string; readonly parts: TPart[] }
 
-export type RunEnd = 'settled' | 'failed' | 'stopped'
+export type RunEnd = ChatTurnEnd
 
 export type RunRecord<TPart> = {
   readonly controller: AbortController
@@ -29,16 +31,21 @@ export type RunRecord<TPart> = {
   /** A newer run began on the same thread (set by `beginRun` on the record it replaces). */
   superseded: boolean
   /** The turn's telemetry `settle`, run once by `settleTrace`. */
-  settle: ((end: RunEnd) => void) | undefined
+  settle: ChatTurnTrace['settle']
 }
 
 export type RunRecords<TPart> = Map<string, RunRecord<TPart>>
 
-/** Registers a live run for `threadId`, replacing whatever record the previous run left. */
+/**
+ * Registers a live run for `threadId`, replacing whatever record the previous run left. A previous
+ * run still being driven is cut short: its trace settles as `stopped`. `settle` is the new turn's
+ * telemetry hook (absent for a resume).
+ */
 export function beginRun<TPart>(
   records: RunRecords<TPart>,
   threadId: string,
   controller: AbortController,
+  settle?: ChatTurnTrace['settle'],
 ): RunRecord<TPart> {
   const record: RunRecord<TPart> = {
     controller,
@@ -47,10 +54,13 @@ export function beginRun<TPart>(
     resolving: false,
     ended: undefined,
     superseded: false,
-    settle: undefined,
+    settle,
   }
   const previous = records.get(threadId)
-  if (previous !== undefined) previous.superseded = true
+  if (previous !== undefined) {
+    previous.superseded = true
+    settleTrace(previous, 'stopped')
+  }
   records.set(threadId, record)
   return record
 }

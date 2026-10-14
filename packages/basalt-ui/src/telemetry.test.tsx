@@ -6,21 +6,21 @@ import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, spyOn, test } from 'bun:test'
 import { BasaltProvider } from './provider'
 import { queryClientOf, testRouter } from './provider/test-router'
-import { createEmitter } from './telemetry'
+import { createLiveEmitter } from './telemetry'
 import type { BasaltEvent } from './telemetry'
 
 afterEach(cleanup)
 
-describe('createEmitter', () => {
+describe('createLiveEmitter', () => {
   test('calls the sink synchronously', () => {
     const seen: string[] = []
-    const emit = createEmitter((e) => seen.push(e.type))
+    const emit = createLiveEmitter(() => (e) => void seen.push(e.type))
     emit({ type: 'route.error', failed: true, start: 0, attributes: failure() })
     expect(seen).toEqual(['route.error'])
   })
 
   test('a throwing sink is swallowed', () => {
-    const emit = createEmitter(() => {
+    const emit = createLiveEmitter(() => () => {
       throw new Error('sink bug')
     })
     expect(() =>
@@ -30,7 +30,7 @@ describe('createEmitter', () => {
 
   test('no sink, no events', () => {
     expect(() =>
-      createEmitter(undefined)({
+      createLiveEmitter(() => undefined)({
         type: 'route.error',
         failed: true,
         start: 0,
