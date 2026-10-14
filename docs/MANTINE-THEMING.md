@@ -233,8 +233,7 @@ The chrome advances in lockstep with `createBasaltTheme` and `DESIGN-CORE.md` so
 
 `BasaltShell` composes a full-height grouped sidebar (desktop only), a slim breadcrumb top bar with
 page-header slots, a collapsible desktop icon-rail, and a mobile bottom tab bar (no drawer — the
-full-height mobile sidebar drawer was deleted in 1.19.0). Router coupling (typed navigation, active
-detection, badge counts) stays **consumer-side** — the shell is presentational and router-agnostic.
+full-height mobile sidebar drawer was deleted in 1.19.0). `nav` (a `defineNav` definition) resolves active state, badges and each `<Link>` against TanStack Router.
 
 - **App shell.** A full-width top bar (brand zone, breadcrumb, `PageBar` row 1, global actions)
   over a grouped sidebar, transparent, region seam on the bar's bottom edge. `withBorder` still
