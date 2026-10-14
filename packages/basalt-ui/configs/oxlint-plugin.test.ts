@@ -3157,6 +3157,14 @@ describe('basalt/query-fn-unwrap', () => {
     expect(rules).not.toContain('query-fn-unwrap')
   })
 
+  it('flags a fetching queryFn in a file importing the root barrel', () => {
+    const { code, rules } = run(
+      `import { unwrap } from 'basalt-ui'\nexport const o = { queryKey: ['t'], queryFn: () => fetch('/api/t') }\n`,
+    )
+    expect(code).toBe(1)
+    expect(rules).toContain('query-fn-unwrap')
+  })
+
   it('honours a theme-allow naming the rule', () => {
     const { code, rules } = run(
       `${IMPORT}export const o = {\n  queryKey: ['t'],\n` +

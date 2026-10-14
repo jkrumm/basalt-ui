@@ -3135,11 +3135,14 @@ const boundControlOutsideHome = {
 
 /** The `basalt-ui/query` subpath, exactly — kept for `query-fn-unwrap`'s own gate below. */
 const BASALT_QUERY_SOURCE = 'basalt-ui/query'
+/** `unwrap` ships from the root since 1.29.0; the `./query` subpath is gone, so the root counts too. */
+const QUERY_UNWRAP_SOURCES = new Set([BASALT_QUERY_SOURCE, 'basalt-ui'])
 
 // ── Rule 28 — query-fn-unwrap ───────────────────────────────────────────────────────────────────
 
 const QUERY_FN_UNWRAP_MESSAGE =
-  'queryFn fetches without unwrap() — `unwrap` throws on the error branch AND on a null data with ' +
+  'queryFn calls fetch( without unwrap() (scope: an inline queryFn with a literal fetch( call in a ' +
+  'file importing basalt-ui; a mock queryFn returning plain data is exempt) — `unwrap` throws on the error branch AND on a null data with ' +
   'no error (a 204, a silent transport failure), and both are caller bugs that have to surface as ' +
   'a rejected query rather than as `data: null` rendered through the success branch ' +
   '(agent/rules/basalt-batteries.md). Wrap the call: `queryFn: () => unwrap(client.thing.get())`. ' +
@@ -3165,7 +3168,7 @@ const UNWRAP_CALL = /\bunwrap\s*\(/
  * something else. A stricter version would need the call graph. The narrow version fires on the
  * form a consumer writes by reflex on day one, which is the one the law exists for.
  *
- * Scoped to files importing `basalt-ui/query` literally, for the reason {@link queryDualImport}
+ * Scoped to files importing `basalt-ui` or `basalt-ui/query` literally, for the reason {@link queryDualImport}
  * gives: without that gate it is an opinion about `fetch`, which basalt does not have.
  */
 // Ships: error
@@ -3182,7 +3185,7 @@ const queryFnUnwrap = {
 
     return {
       ImportDeclaration(node) {
-        if (node.source?.value === BASALT_QUERY_SOURCE) basaltQuery = true
+        if (QUERY_UNWRAP_SOURCES.has(node.source?.value)) basaltQuery = true
       },
       Property(node) {
         if (propertyKeyName(node) !== 'queryFn') return
