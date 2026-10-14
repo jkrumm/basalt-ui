@@ -24,6 +24,11 @@ import { StackedArea } from './StackedArea'
 
 const SMALL = 2_500
 const LARGE = 10_000
+/** The cheap pre-flight sizes: a quadratic render is ~90 s at 10k but ~1 s at 1k, so it fails here. */
+const PROBE_SMALL = 250
+const PROBE_LARGE = 1_000
+/** Linear is ~4x for 4x points, quadratic ~16x; the margin covers fixed cost and timer noise. */
+const PROBE_MAX_GROWTH = 6
 /** Linear growth is ~4x for a 4x input, quadratic ~16x. */
 const MAX_GROWTH = 8
 /** Below this a timing is noise, so the ratio's denominator is floored here. */
@@ -208,7 +213,8 @@ function bestOf(runs: number, fn: () => unknown): number {
   return best
 }
 
-const timeRender = (node: () => ReactElement): number => bestOf(5, () => renderToString(node()))
+const timeRender = (node: () => ReactElement, runs = 5): number =>
+  bestOf(runs, () => renderToString(node()))
 
 /** `calibration()` on an idle dev machine, in ms (best of five, 4.6 on the reference host). */
 const CALIBRATION_IDLE_MS = 5
@@ -226,6 +232,15 @@ const loadFactor = (): number => Math.max(1, calibration() / CALIBRATION_IDLE_MS
 describe(`server render at ${LARGE} points`, () => {
   for (const { name, cap, growth, node } of KINDS) {
     test(`${name}: ${growth === false ? '' : `growth under ${MAX_GROWTH}x from ${SMALL} to ${LARGE}, and `}under ${cap} ms`, () => {
+      if (growth !== false) {
+        const probe =
+          timeRender(() => node(PROBE_LARGE), 3) /
+          Math.max(
+            timeRender(() => node(PROBE_SMALL), 3),
+            NOISE_FLOOR_MS,
+          )
+        expect(probe).toBeLessThan(PROBE_MAX_GROWTH)
+      }
       const factor = loadFactor()
       const large = timeRender(() => node(LARGE))
       if (growth !== false) {
