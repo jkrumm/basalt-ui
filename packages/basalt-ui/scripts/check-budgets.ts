@@ -49,7 +49,7 @@ const CEILINGS = {
   ...TARGETS,
   chartSymbols: 12, // landed (W5): the rung, nine kinds, `ChartCard`, `chartCursor`
   barrelTypes: 46, // landed (W9): `StreamStatus` left the `./agent` barrel
-  ruleLines: 278, // landed (W9): the shipped rules, 450 is the spec target
+  ruleLines: 277, // landed (W9): the shipped rules, 450 is the spec target
 } as const
 
 type Budget = {

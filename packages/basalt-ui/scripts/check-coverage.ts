@@ -177,7 +177,7 @@ export function reconcileCoverageBlocks(
  */
 export const AGENT_LINE_BUDGETS: Readonly<Record<string, number>> = {
   'agent/rules/basalt-tokens.md': 58,
-  'agent/rules/basalt-mantine.md': 50,
+  'agent/rules/basalt-mantine.md': 49,
   'agent/rules/basalt-charts.md': 37,
   'agent/rules/basalt-state.md': 39,
   'agent/rules/basalt-controls.md': 46,
@@ -194,7 +194,7 @@ export const AGENT_LINE_BUDGETS: Readonly<Record<string, number>> = {
  * can be satisfied by adding a seventh rule file or a fourth skill. The seeded `DESIGN.md.tpl` is
  * the consumer's own file after `init`, so it is outside the sum.
  */
-export const AGENT_LAYER_TOTAL_BUDGET = 415
+export const AGENT_LAYER_TOTAL_BUDGET = 414
 
 /**
  * Assert the 11 invariants against the live SURFACES + GUARD_RULES + the shipped agent layer, and
