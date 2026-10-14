@@ -221,7 +221,7 @@ function NavLinkBody({
     // default (which a consumer's `SidebarItem.Anchor` may compute independently) — mirrors
     // `app-mobile-nav.tsx`'s identical pattern so both surfaces agree on what "active" means.
     'aria-current': active ? ('page' as const) : undefined,
-    // `item.ancestor` (a parent on the winner's path — `useNav`'s exclusivity pass) is NEVER
+    // `item.ancestor` (a parent on the winner's path — the nav resolver's exclusivity pass) is NEVER
     // active and never carries `aria-current`; it only earns a `data-ancestor` hook for CSS. A
     // leaf item never has `ancestor` set, so this is a no-op there — shared here rather than
     // duplicated per render path.

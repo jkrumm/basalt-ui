@@ -1734,7 +1734,7 @@ const HAND_ROLLED_SHELL_MESSAGE =
   'Application shell assembled by hand — AppShell parts / Burger / NavLink in a file that does not ' +
   'render BasaltShell. The shell is the framework: BasaltShell owns the sidebar, the mobile tab ' +
   'bar and its More sheet, breadcrumbs, the page header and the collapse state, all driven by ONE ' +
-  'typed nav definition (defineNav + useNav). A hand-rolled AppShell + burger drawer is the exact ' +
+  'typed nav definition (defineNav + BasaltShell nav={NAV}). A hand-rolled AppShell + burger drawer is the exact ' +
   'layer the 1.19 nav contract replaces, and no palette guard can see it — it uses the right ' +
   'tokens. Declare a deliberate exception with `theme-allow-file hand-rolled-shell — <why>`. ' +
   '(basalt/hand-rolled-shell)'

@@ -85,7 +85,7 @@ type AsideRegion = {
   publishFolded: (folded: boolean) => void
   /**
    * Bumped by `requestClose` — never 0 again once a close has been requested, so `PageAside` can
-   * treat "changed since mount" as "fold now" without a ref of its own. `ShellFrame` is the one
+   * treat "changed since mount" as "fold now" without a ref of its own. `ShellBody` is the one
    * caller, on Escape while the aside renders as an overlay.
    */
   closeSignal: number
@@ -152,7 +152,7 @@ export function useAsideRegion(): Pick<AsideRegion, 'claimed' | 'folded' | 'requ
 
 /**
  * Internal — whether an OPEN aside would push the main column (expanded, main keeps its floor)
- * rather than overlay it. Provided by `ShellFrame`, which alone knows the navbar width, from the
+ * rather than overlay it. Provided by `ShellBody`, which alone knows the navbar width, from the
  * same render that computes it: a state published after mount would make the first pass read
  * "cannot dock" and fold a default-open aside for one commit.
  */
@@ -324,7 +324,7 @@ export function PageAside(props: PageAsideProps): ReactNode {
   // fold before the user ever asked. `closeSignalBaseline` captures the value THIS instance mounted
   // with, so only a change AFTER that point — a close requested while this instance is live — folds
   // it; a later-mounted instance still respects its own `defaultFolded`/persisted state. Guarded on
-  // `portalled`, matching where `ShellFrame` can even observe an overlay to escape out of.
+  // `portalled`, matching where `ShellBody` can even observe an overlay to escape out of.
   //
   // The baseline ADVANCES to every `closeSignal` it acts on — not just at mount. Without that, a
   // portalled false→true transition (the aside leaving and rejoining the shell, e.g. a viewport

@@ -26,6 +26,7 @@ import {
   createRootRoute,
   createRouter,
 } from '@tanstack/react-router'
+import { useState } from 'react'
 import type { ReactElement, ReactNode } from 'react'
 import { createBasaltTheme, cssVariablesResolver } from '../../src/theme'
 import { describeOutcome, detectComponents, probeElement, renderProbe, ssrProbe } from './harness'
@@ -75,10 +76,12 @@ function hosted(name: string, ui: ReactElement): ReactElement {
 const ROUTER_HOSTED = new Set(['BasaltShell'])
 
 function RouterHost({ children }: { children: ReactElement }): ReactElement {
-  const router = createRouter({
-    routeTree: createRootRoute(),
-    history: createMemoryHistory({ initialEntries: ['/'] }),
-  })
+  const [router] = useState(() =>
+    createRouter({
+      routeTree: createRootRoute(),
+      history: createMemoryHistory({ initialEntries: ['/'] }),
+    }),
+  )
   // The context provider, not `RouterProvider`: it hosts the shell SYNCHRONOUSLY (the probes read
   // the DOM right after `render`), where `RouterProvider` mounts its matches after an async load.
   return <RouterContextProvider router={router}>{children}</RouterContextProvider>

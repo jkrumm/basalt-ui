@@ -10,12 +10,13 @@
  * why the More surface must also carry the account and settings rows the sidebar footer holds on
  * desktop.
  *
- * Router-agnostic: argo's router coupling (typed `navigate`, `useMatchRoute` active detection, the
- * sidebar-collapse zustand store) stays consumer-side. The consumer resolves `item.active`,
- * `item.onClick`, `item.badge`/`item.count` and supplies `item.Anchor` — its router `<Link>`,
- * which basalt HOSTS rather than delegating rendering to. The breadcrumb is derived from the
- * active item across `sections`, not from a router hook. Collapse is persisted via basalt's own
- * `createPersistedStore` (`../state/persisted`, `createPersistedState` plus an `isSet` flag) keyed
+ * Router-coupled through ONE seam: `nav` (a `defineNav` definition) is resolved here against the
+ * TanStack Router — `useMatchRoute` active detection, each destination's `<Link>` as its
+ * `item.Anchor`, `badges` as `item.count`/`item.badge` — so the consumer wires no router callback.
+ * The pieces below (`ShellFrame`, the sidebar, the mobile bar) stay presentational and take already
+ * resolved `sections`. The breadcrumb is derived from the active item across those sections, not
+ * from a router hook. Collapse is persisted via basalt's own `createPersistedStore`
+ * (`../state/persisted`, `createPersistedState` plus an `isSet` flag) keyed
  * by `storageKey` — see `collapseStore`. While nothing is persisted the size class picks the
  * default (rail in `medium`); any stored value, `false` included, wins.
  */
@@ -49,8 +50,13 @@ import type {
 import { CtlSlot, useBasaltSpacing } from '../theme'
 import { createPersistedStore } from '../state/persisted'
 import { useNav } from '../router-tanstack/use-nav'
-import type { UseNavOptions } from '../router-tanstack/use-nav'
-import type { AnyNavGroup, NavConfig, NavTabId } from '../router-tanstack/nav'
+import type {
+  AnyNavGroup,
+  AnyNavItem,
+  NavConfig,
+  NavItemId,
+  NavTabId,
+} from '../router-tanstack/nav'
 import { SizeClassHintContext, useSizeClass } from './use-size-class'
 import brandClasses from './app-brand.module.css'
 import headerClasses from './app-header.module.css'
@@ -151,26 +157,13 @@ export type SettingsMenuItem = {
   current?: 'selection' | 'page'
 }
 
-export type BasaltShellProps<
-  G extends ReadonlyArray<AnyNavGroup> = ReadonlyArray<AnyNavGroup>,
-  T extends ReadonlyArray<NavTabId<G>> = ReadonlyArray<NavTabId<G>>,
-> = BasaltProps & {
+/** Everything `BasaltShell` and `ShellFrame` share — the nav arrives differently in each. */
+type ShellBaseProps = BasaltProps & {
   /**
    * Brand identity for the sidebar header. Supplying `menu` turns the brand row into a `Name ▾`
    * workspace switcher — the rows are `AccountMenuItem`s, the shape the account menu already uses.
    */
   brand: BrandConfig & { menu?: AccountMenuItem[] }
-  /**
-   * The `defineNav` definition — the ONE nav, resolved against the router here: the sidebar, the
-   * mobile bar (its tuning rides `defineNav`'s `mobile`) and the breadcrumb all derive from it.
-   */
-  nav: NavConfig<G, T>
-  /** Live per-destination badges, keys typed to the definition's id union. See `UseNavOptions`. */
-  badges?: UseNavOptions<G>['badges']
-  /** Override active detection entirely. */
-  isActive?: UseNavOptions<G>['isActive']
-  /** The mobile bar's scroll container, for its hide-on-scroll. */
-  getScrollElement?: UseNavOptions<G>['getScrollElement']
   /**
    * Persistent, shell-owned header actions (timer, notifications, a global `SyncButton`) — DECLARED
    * DATA, not a `ReactNode` slot, so basalt owns the mobile projection: the first two ride the bar,
@@ -257,6 +250,27 @@ export type BasaltShellProps<
   children?: ReactNode
 }
 
+export type BasaltShellProps<
+  G extends ReadonlyArray<AnyNavGroup> = ReadonlyArray<AnyNavGroup>,
+  T extends ReadonlyArray<NavTabId<G>> = ReadonlyArray<NavTabId<G>>,
+> = ShellBaseProps & {
+  /**
+   * The `defineNav` definition — the ONE nav, resolved against the router here: the sidebar, the
+   * mobile bar (its tuning rides `defineNav`'s `mobile`) and the breadcrumb all derive from it.
+   */
+  nav: NavConfig<G, T>
+  /**
+   * Live per-destination badges, keys typed to the definition's id union. A `number` becomes
+   * `item.count` (desktop `NavCountBadge` + mobile dot); anything else becomes `item.badge`
+   * (desktop only). Hoist or memoize the object — it is a memo dependency.
+   */
+  badges?: Partial<Record<NavItemId<G>, number | ReactNode>>
+  /** Override active detection entirely. */
+  isActive?: (item: AnyNavItem) => boolean
+  /** The mobile bar's scroll container, for its hide-on-scroll. */
+  getScrollElement?: () => HTMLElement | null
+}
+
 /** Active nav item across all sections → the breadcrumb's `{ section, parent?, …, page }`. */
 function findActiveCrumb(sections: SidebarSection[]): ActiveCrumb | undefined {
   for (const section of sections) {
@@ -338,7 +352,7 @@ function collapseStore(key: string): CollapseStore {
 /**
  * The shell's two page-level regions are providers, and both wrap the frame rather than living
  * inside it: `PageBarProvider` owns the header portal and the single-kebab claim, `AsideProvider`
- * owns the aside portal, the region CLAIM and the claiming page's fold state — which `ShellFrame`
+ * owns the aside portal, the region CLAIM and the claiming page's fold state — which `ShellBody`
  * has to READ to size `AppShell.Aside`, so it cannot be the component that provides it.
  *
  * **Native title bar (opt-in CSS contract).** A desktop host with a macOS overlay title bar paints
@@ -362,10 +376,12 @@ export function BasaltShell<
 }
 
 /** The resolved-nav shell: what `BasaltShell` renders once `nav` is a router-resolved `sections`. */
-export type ShellFrameProps = Omit<
-  BasaltShellProps,
-  'nav' | 'badges' | 'isActive' | 'getScrollElement'
-> & { sections: SidebarSection[]; mobileNav?: MobileNavConfig }
+export type ShellFrameProps = ShellBaseProps & {
+  /** Grouped nav sections — rendered as the sidebar and projected onto the mobile bar. */
+  sections: SidebarSection[]
+  /** Mobile bar tuning; every field optional (see `projectMobileNav`'s zero-config fallback). */
+  mobileNav?: MobileNavConfig
+}
 
 export function ShellFrame(props: ShellFrameProps) {
   return (

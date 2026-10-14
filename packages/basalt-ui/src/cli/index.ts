@@ -1026,10 +1026,18 @@ export function managedFiles(
     },
   }
 
+  /** The leaf `NAV` module `__root.tsx` imports (seed — consumer-owned after init). */
+  const navModule: ManagedFile = {
+    dest: 'src/lib/nav.tsx',
+    mode: 'seed',
+    source: 'agent/templates/nav.tpl',
+    render: (ctx) => readSource(ctx.pkgRoot, 'agent/templates/nav.tpl'),
+  }
+
   // `__root.tsx` imports @tanstack/react-router (createRootRouteWithContext) and basalt-ui's
   // `BasaltRouterContext`, which names the QueryClient type — so it needs both peers installed.
   const scaffolds: ManagedFile[] = []
-  if (peers.hasRouter && peers.hasQuery) scaffolds.push(rootRoute)
+  if (peers.hasRouter && peers.hasQuery) scaffolds.push(navModule, rootRoute)
 
   // lefthook.yml / .github/workflows/check.yml are repo-root-shaped: lefthook and GitHub Actions
   // only ever read config at the repo root, so a package living in a subdirectory (a monorepo's

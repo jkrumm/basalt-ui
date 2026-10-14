@@ -26,7 +26,7 @@ import classes from './actions.module.css'
 
 /**
  * A button-shaped action. `Anchor` is the router seam basalt HOSTS (the same seam `SidebarItem`
- * uses — pass the one `useNav` builds, or your router's `Link`); `link` is the no-router fallback
+ * uses — pass your router's `Link`); `link` is the no-router fallback
  * and only its `to` is honoured, since resolving `search`/`params` needs a router. Supply `Anchor`
  * whenever the destination carries either.
  */

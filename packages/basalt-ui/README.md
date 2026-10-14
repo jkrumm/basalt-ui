@@ -162,7 +162,7 @@ framework palette. Skip it if you have no app-specific series yet.
 > need it — there is no hydration to mismatch. See `docs/MANTINE-THEMING.md`.
 
 ```tsx
-// Shell — sidebar / mobile nav / breadcrumbs / PageBar; router-agnostic
+// Shell — sidebar / mobile nav / breadcrumbs / PageBar; resolved against the router from `nav`
 import { BasaltShell, PageBar } from 'basalt-ui'
 ```
 

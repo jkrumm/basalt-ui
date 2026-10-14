@@ -162,6 +162,7 @@ export const REMOVED_APIS: Readonly<Record<string, string>> = {
   HoverContext: 'chartCursor',
   ChartHoverSync: 'cursorGroup',
   ResponsiveChart: 'CartesianChart',
+  useNav: '<BasaltShell nav={NAV}>',
   useTooltipStyles: 'the `tooltip` prop (ChartTooltipConfig)',
   BarsAxisConfig: 'AxisConfig',
   ZonedLineTooltipLabel: 'tooltip.rows',
