@@ -374,7 +374,8 @@ async function budgets(providerOnlyDist: string): Promise<Budget[]> {
     // 4000 -> 4250: the AGENTS.md block move + the doctor checks (the CLAUDE.md migration was removed in 2.0).
     // 4250 -> 4350: doctor's `exact-peers` and `config-keys` (argo friction rows 1-3).
     // 4350 -> 4450: `resolveAppDir` + the app-dir seeds/doctor check (argo friction rows 4-5).
-    { label: 'CLI non-test lines (src/cli/**)', value: cliNonTestLines(), ceiling: 4450 },
+    // 4450 -> 4525: the import-graph `app-wiring` follow + the Makefile-aware CI gate (argo friction rows 11-12).
+    { label: 'CLI non-test lines (src/cli/**)', value: cliNonTestLines(), ceiling: 4525 },
     await providerOnlyRow(providerOnlyDist),
   ]
 }

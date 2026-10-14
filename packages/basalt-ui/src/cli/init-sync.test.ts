@@ -89,6 +89,27 @@ describe('seeds derive from basalt.roots', () => {
     expect(ci).not.toContain('{{ROOTS_GLOBS}}')
   })
 
+  it('runs make check after the drift steps when the repo has a Makefile check target', () => {
+    writeFixture('package.json', JSON.stringify(MONOREPO))
+    writeFixture('Makefile', '.PHONY: check\ncheck:\n\tbun run test\n')
+    init(dir)
+    const ci = readFileSync(resolve(dir, '.github/workflows/check.yml'), 'utf8')
+    expect(ci).toMatch(/doctor'\n\s+- run: '[^']*sync --check'\n\s+- run: make check\n/)
+    expect(ci).not.toContain('- run: bunx oxlint')
+    expect(ci).not.toContain('- run: bunx oxfmt')
+    expect(ci).not.toContain('{{')
+  })
+
+  it('keeps the built-in steps without a Makefile check target', () => {
+    writeFixture('package.json', JSON.stringify(MONOREPO))
+    writeFixture('Makefile', 'build:\n\ttrue\n')
+    init(dir)
+    const ci = readFileSync(resolve(dir, '.github/workflows/check.yml'), 'utf8')
+    expect(ci).toContain('- run: bunx oxlint .')
+    expect(ci).toContain('check-theme')
+    expect(ci).not.toContain('- run: make check')
+  })
+
   it('renders every root, not just the first', () => {
     writeFixture(
       'package.json',

@@ -1020,6 +1020,14 @@ _Nothing to migrate in this release._
   fail with a message naming `basalt.app`. `doctor` run inside the app package finds the root
   manifest, and warns about a router seed an earlier `sync` left at the root — delete it.
 
+- `doctor`'s `app-wiring` follows the entry's relative imports (three deep): `createBasaltRouter`
+  may be called in `src/lib/router.ts` (or any module `main.tsx` imports), not only in `main.tsx`.
+- The seeded `.github/workflows/check.yml` runs `make check` when the repo's Makefile has a
+  `check:` target, after `doctor` and `sync --check` (which always run, so drift is never
+  skippable); otherwise it keeps the built-in lint, theme and format steps. `init` decides once, on
+  seeding. An already-seeded workflow is yours and unchanged: replace its lint/theme/format steps
+  with `- run: make check` to adopt it.
+
 ## 2.0.0
 
 _Nothing to migrate in this release._
