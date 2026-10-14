@@ -1642,7 +1642,11 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
 
   const tableNode = (
     <Table
-      className={cx(classNames?.table)}
+      className={cx(
+        classes.table,
+        pageStickyHeader && !contained && classes.pageSticky,
+        classNames?.table,
+      )}
       {...(striped !== undefined && { striped })}
       {...(highlightOnHover !== undefined && { highlightOnHover })}
       {...(stickyHeader !== undefined && { stickyHeader })}
@@ -1659,7 +1663,11 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
           <Table.Tr key={headerGroup.id}>
             {/* The disclosure toggle column has no header of its own — nothing is "sorted" or
                 "selected all" across it, only revealed per row. */}
-            {hasFolded && <Table.Th className={classes.foldToggleCell} aria-hidden />}
+            {hasFolded && (
+              <Table.Th className={classes.foldToggleCell}>
+                <span className={classes.srOnly}>Details</span>
+              </Table.Th>
+            )}
             {headerGroup.headers.map((header) => {
               const canSort = sortingEnabled && header.column.getCanSort()
               const sorted = header.column.getIsSorted()

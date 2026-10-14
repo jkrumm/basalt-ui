@@ -268,17 +268,16 @@ layout('BasaltDataTable sticky header — real layout', () => {
       )
     }
 
-    // Main's CONTENT top, not its border box: the sticky constraint resolves against the scrollport
-    // minus its own padding, and Main carries `--app-shell-padding`.
-    const contentTop = main.box.top + Number.parseFloat(await p.computed(MAIN, 'padding-top'))
-    const scrollport = band("Main's content box", contentTop, main.box.bottom, after)
+    // Main's top edge, not its content top: the page-sticky offset cancels Main's block padding so
+    // no strip of scrolling rows shows above the header (invariant 8).
+    const scrollport = band("Main's box", main.box.top, main.box.bottom, after)
     expectGapAtMost(
       scrollport,
       after,
       'top',
       0.5,
       "a bare wrapper leaves `AppShell.Main` as the sticky header's scrollport — the `<thead>` " +
-        "must pin to Main's content top, not ride away with the rows",
+        "must pin flush to Main's top edge, not ride away with the rows",
       DESKTOP,
     )
     expectFullyInside(
@@ -431,15 +430,123 @@ layout('BasaltDataTable sticky header — real layout', () => {
 
     const main = await p.box('main', MAIN)
     const thead = await p.box('thead', THEAD)
-    const contentTop = main.box.top + Number.parseFloat(await p.computed(MAIN, 'padding-top'))
     expectGapAtMost(
-      band("Main's content box", contentTop, main.box.bottom, thead),
+      band("Main's box", main.box.top, main.box.bottom, thead),
       thead,
       'top',
       0.5,
       'a folded PageBar row 2 is a shell region, not scrollport content — the sticky header must ' +
-        "still pin to Main's content top with no offset",
+        "still pin to Main's top edge with no offset",
       PHONE,
     )
+  })
+
+  /**
+   * INVARIANT 8 — inside the shell a page-sticky header sits FLUSH under the app chrome, and no body
+   * row shows above it (argo friction row 14).
+   *
+   * `AppShell.Main` carries block padding, and a sticky `<thead>` resolves against the scrollport's
+   * content edge, so at `top: 0` it parked `stack-md`/`stack-sm` below the band and rows scrolled
+   * through that strip. Asserted at both padding steps (phone `stack-md`, desktop `stack-sm`), with
+   * the header opaque, and with a consumer `stickyHeaderOffset` still winning.
+   */
+  for (const viewport of [DESKTOP, PHONE]) {
+    test(`${viewport.name}: the sticky header is flush under the chrome and seals the rows`, async () => {
+      const p = await openFixture(
+        { ...tableSpec(), bar: { pills: 2 }, table: { rows: 60 }, stats: 2, bodyHeight: 400 },
+        viewport,
+      )
+      await p.raw.evaluate((sel) => {
+        const element = document.querySelector(sel)
+        if (element === null) throw new Error(`LAYOUT: no scrollport matched \`${sel}\``)
+        element.scrollTo({ top: 600, behavior: 'instant' })
+      }, MAIN)
+      await p.settle()
+
+      const main = await p.box('main', MAIN)
+      const thead = await p.box('thead', THEAD)
+      expectGapAtMost(
+        band("Main's box", main.box.top, main.box.bottom, thead),
+        thead,
+        'top',
+        0.5,
+        'the sticky header must sit flush under the app chrome — a gap lets rows show through',
+        viewport,
+      )
+
+      const leak = await p.raw.evaluate(
+        ({ mainSel, theadSel }) => {
+          const mainTop = document.querySelector(mainSel)?.getBoundingClientRect().top ?? 0
+          const headTop = document.querySelector(theadSel)?.getBoundingClientRect().top ?? 0
+          return [...document.querySelectorAll('table tbody tr')]
+            .map((row) => row.getBoundingClientRect())
+            .filter(
+              (box) =>
+                box.bottom > mainTop + 0.5 && box.top < headTop - 0.5 && box.bottom > mainTop,
+            )
+            .map((box) => ({ top: box.top, bottom: box.bottom }))
+        },
+        { mainSel: MAIN, theadSel: THEAD },
+      )
+      if (leak.length > 0) {
+        throw new Error(
+          `LAYOUT INVARIANT VIOLATED — body rows are visible above the sticky header: ${JSON.stringify(leak)}`,
+        )
+      }
+
+      const background = await p.computed('table thead th', 'background-color')
+      if (/rgba\(.*,\s*0\)$/.test(background) || background === 'transparent') {
+        throw new Error(`LAYOUT INVARIANT VIOLATED — the header cell is not opaque: ${background}`)
+      }
+    })
+  }
+
+  test('a consumer stickyHeaderOffset still wins over the shell default', async () => {
+    const p = await openFixture(
+      { ...tableSpec(), table: { rows: 40, stickyHeaderOffset: PAGE_OFFSET } },
+      DESKTOP,
+    )
+    const top = await p.computed(THEAD, 'top')
+    if (top !== `${PAGE_OFFSET}px`) {
+      throw new Error(
+        `LAYOUT INVARIANT VIOLATED — an explicit offset must beat the shell default.\n  expected: ${PAGE_OFFSET}px\n  actual:   ${top}`,
+      )
+    }
+  })
+
+  /**
+   * INVARIANT 9 — a Badge column never truncates its label (argo friction row 16: `WORKING` read
+   * `WOR…` at 1280px). Asserted as the label's own overflow: `scrollWidth <= clientWidth`.
+   */
+  for (const viewport of [{ name: '1280', width: 1280, height: 800 }, PHONE]) {
+    test(`${viewport.name}: a Badge cell keeps its whole label`, async () => {
+      const p = await openFixture(
+        { ...tableSpec(), table: { rows: 6, badges: true, stickyHeader: false } },
+        viewport,
+      )
+      const clipped = await p.raw.evaluate(() =>
+        [...document.querySelectorAll('table .mantine-Badge-label')]
+          .filter((label) => label.scrollWidth > label.clientWidth)
+          .map((label) => `${label.textContent} (${label.scrollWidth} > ${label.clientWidth})`),
+      )
+      if (clipped.length > 0) {
+        throw new Error(
+          `LAYOUT INVARIANT VIOLATED — Badge labels are clipped: ${clipped.join(', ')}`,
+        )
+      }
+    })
+  }
+
+  test('a folded table renders no EMPTY header cell', async () => {
+    const p = await openFixture({ ...tableSpec(), table: { rows: 10, columns: 8 } }, PHONE)
+    const empty = await p.raw.evaluate(
+      () =>
+        [...document.querySelectorAll('table thead th')].filter(
+          (th) => (th.textContent ?? '').trim() === '',
+        ).length,
+    )
+    if (empty > 0) {
+      throw new Error(`LAYOUT INVARIANT VIOLATED — ${empty} header cell(s) carry no label at all`)
+    }
   })
 })

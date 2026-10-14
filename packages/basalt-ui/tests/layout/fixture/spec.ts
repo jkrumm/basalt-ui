@@ -65,6 +65,12 @@ export type TableSpec = {
    * production one and not a stand-in.
    */
   facets?: number
+  /**
+   * Adds a `State` column of `Badge` cells beside breakable prose columns, the shape that shrank
+   * `WORKING` to `WOR…` in argo: a Badge's clipped label has a ~0 min-content, so an auto-layout
+   * column of nothing else gave up its width to the wrapping text next to it.
+   */
+  badges?: true
 }
 
 /**
