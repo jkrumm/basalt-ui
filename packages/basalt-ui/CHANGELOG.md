@@ -1,3 +1,20 @@
+# [2.2.0](https://github.com/jkrumm/basalt-ui/compare/v2.1.0...v2.2.0) (2026-10-14)
+
+
+### Bug Fixes
+
+* read subpath peers from the app package in a monorepo ([ca1263d](https://github.com/jkrumm/basalt-ui/commit/ca1263d04ceb41e966c0e93ef3243db4f1359bd1))
+* scan the app package for dropped subpaths in a monorepo ([a4a076c](https://github.com/jkrumm/basalt-ui/commit/a4a076ceee33d70a4180c1f45eb1cbd8a43087aa))
+* stride Heatmap x labels to the container class tick count ([00c93b2](https://github.com/jkrumm/basalt-ui/commit/00c93b2aa34d99e1afd67f979e1e39a9f79f3630))
+* stub getBoundingClientRect on Element.prototype in the sparkline state test ([3ceeb9f](https://github.com/jkrumm/basalt-ui/commit/3ceeb9f5041978d85fbb1e696bc142bef8872402))
+
+
+### Features
+
+* export StatCardSparklineSize and allow render props in the preset ([29fcc01](https://github.com/jkrumm/basalt-ui/commit/29fcc01b6a9565aad34001a7ac2e281022cb8b1f))
+* give Sparkline a state and derive it from StatCard query ([4fb9b39](https://github.com/jkrumm/basalt-ui/commit/4fb9b394105f28cec4ca7753d755cb99b6154514))
+* re-export StatCardSparklineSize from the root ([2c9629d](https://github.com/jkrumm/basalt-ui/commit/2c9629d2cfe042b2ba18947f8ffdf56915ddedc8))
+
 # [2.1.0](https://github.com/jkrumm/basalt-ui/compare/v2.0.5...v2.1.0) (2026-10-14)
 
 
