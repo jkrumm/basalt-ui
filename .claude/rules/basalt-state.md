@@ -93,9 +93,8 @@ type error against a store-backed route.
 
 The whole navigation — desktop sidebar and mobile bar — is declared ONCE with `defineNav` /
 `navGroup` (from `basalt-ui`) in a **leaf** module (`src/lib/nav.tsx`) that never imports `routeTree.gen` or
-`__root.tsx`, so palettes and redirects can import it without closing a cycle. `useNav(NAV)` resolves
-it against the live router and returns `{ sections, mobileNav }` — both `BasaltShell` props, so
-spread it. `navTarget(NAV, id)` is one destination's link options, typed per id, for a `<Link>`, a
+`__root.tsx`, so palettes and redirects can import it without closing a cycle. `<BasaltShell nav={NAV}>`
+resolves it against the live router (sidebar, mobile bar and breadcrumb) — no hook, no spread. `navTarget(NAV, id)` is one destination's link options, typed per id, for a `<Link>`, a
 `navigate()` or a `redirect()`. `flattenNav` is the leaf every other surface reads (e.g. projecting
 the nav into Spotlight in one `.map()`).
 

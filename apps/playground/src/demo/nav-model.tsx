@@ -4,7 +4,7 @@
  * `defineNav` wraps TanStack's own `linkOptions`, so every `to`/`search` below rides the router's
  * validator against the generated route tree: a typo in a path, a missing required search object,
  * an unknown metadata key or a `mobile.tabs` id that names nothing are all compile errors. There
- * is no `active` plumbing here — `useNav(NAV)` in `routes/__root.tsx` resolves it from the router
+ * is no `active` plumbing here — `BasaltShell nav={NAV}` in `routes/__root.tsx` resolves it from the router
  * and builds each destination's `<Link>` anchor, which is what deleted the old `withActive` walk
  * and the two render callbacks.
  *
