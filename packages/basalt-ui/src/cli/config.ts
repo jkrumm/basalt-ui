@@ -119,21 +119,14 @@ export type BasaltConfig = {
    */
   seriesModulePath?: string
   /**
-   * Per-rule, per-path exemptions — complements whole-file `exempt` (which skips ALL rules for a
-   * file) and the hardcoded per-kind `appliesTo` scoping (e.g. `raw-html-layout` → non-chart
-   * files). Each value is a list of patterns matched against a finding's relative path. A pattern
-   * may be a whole path segment (`'agent'` matches `src/agent/x.tsx`, not `src/agenting.ts`), a
-   * relative path (`'public/site.webmanifest'`), a directory prefix, or a glob — `*` stops at `/`,
-   * `**` does not, and a slash-free glob also matches the basename, so `'*.module.css'` works.
-   * A trailing `/` is stripped. An entry that suppresses nothing is reported, and
-   * `check-theme --audit-allows` exits 1 on it. Default: `{}` (no exemptions).
+   * Per-rule, per-path exemptions, complementing whole-file `exempt`. A pattern is matched against a
+   * finding's relative path: a path segment (`'agent'` matches `src/agent/x.tsx`, not
+   * `src/agenting.ts`), a relative path, a directory prefix, or a glob (`*` stops at `/`, `**` does
+   * not; a slash-free glob also matches the basename). An entry that suppresses nothing is reported
+   * and `check-theme --audit-allows` exits 1 on it. Default: `{}`.
    *
-   * Two forms per kind. The bare array is paths only. The object form adds the REASON, which is
-   * the half a `theme-allow` carries and this key could not: JSON has no comments, so a
-   * `.webmanifest` / `.json` finding's only escape is this key, and it was un-reviewable by
-   * construction — the rationale ended up in a CLAUDE.md paragraph nobody reads next to the diff.
-   * `check-theme --audit-allows` prints the reason (or names its absence) beside what the entry
-   * still suppresses. The array form stays supported and unchanged; nothing here is required.
+   * The bare array is paths only; the object form adds the REASON (JSON has no comments, so a
+   * `.webmanifest` finding's only escape is this key), which `--audit-allows` prints.
    *
    * @example
    * { exemptRules: { 'inline-display': ['agent'] } } // inline-display never fires under src/agent/**
@@ -143,22 +136,14 @@ export type BasaltConfig = {
    */
   exemptRules?: Partial<Record<GuardKind, ExemptRuleEntry>>
   /**
-   * Declares an intentional `ai` package major-version skew across workspace packages, exempting
-   * `doctor`'s `ai-major-parity` hard check. The value IS the reason — a bare `true` is rejected,
-   * because the whole point of this key is that the pairing is written down, not just switched off.
-   * A written declaration is the pin `basalt/ai-sdk-major`'s own comment notes is otherwise missing.
-   *
-   * Semantics: absent (or present but not a non-empty string) → the skew still hard-fails exactly as
-   * without this key. A non-empty string with a skew present → `doctor` passes, echoing both the
-   * skew and this reason. A non-empty string with NO skew present → `doctor` warns that the
-   * exemption is stale and can be deleted (an exemption nobody re-checks is how a real, later skew
-   * slips through unnoticed).
+   * Declares an intentional `ai` package major-version skew, exempting `doctor`'s `ai-major-parity`
+   * hard check. The value IS the reason; a bare `true` is rejected. Absent or empty: the skew still
+   * fails. A reason with a skew: `doctor` passes and echoes both. A reason with NO skew: `doctor`
+   * warns the exemption is stale.
    *
    * @example
-   * // apps/api streams on ai@5; apps/dashboard parses on ai@7; a producer-side TransformStream
-   * // neutralizes the one enum value that differs between the two majors.
-   * { aiMajorSkewReason: 'apps/api pinned to ai@5, apps/dashboard on ai@7 — the skew is neutralized '
-   *   + 'by a producer-side TransformStream in apps/api/src/stream-transform.ts' }
+   * { aiMajorSkewReason: 'apps/api pinned to ai@5, apps/dashboard on ai@7 — neutralized by a '
+   *   + 'producer-side TransformStream in apps/api/src/stream-transform.ts' }
    */
   aiMajorSkewReason?: string
 }

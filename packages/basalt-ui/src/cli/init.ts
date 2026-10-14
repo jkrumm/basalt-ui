@@ -12,6 +12,7 @@ import {
   MANIFEST_PATH,
   declaredProfile,
   readBasaltConfig,
+  ROUTER_SEED_DESTS,
   findBasaltInstall,
   managedFiles,
   mergeOxlintExtends,
@@ -39,10 +40,6 @@ import { readOxlintPresetPlugins } from './sync'
  * whole lint half stays off, and every gate downstream reports green over it.
  */
 const KEPT_FILE_COST: Record<string, string> = {
-  '.oxlintrc.json':
-    'the shipped oxlint preset (the basalt/* design rules AND the jsx-a11y / import / promise / ' +
-    'unicorn plugins) is NOT active — nothing else turns it on, and every gate stays green ' +
-    'without it. See the oxlint line below; add the `extends` by hand if init could not.',
   'lefthook.yml':
     'the pre-commit oxlint / oxfmt / check-theme jobs are not wired — add `extends: ' +
     '[<preset>]` to your own file.',
@@ -55,6 +52,19 @@ const KEPT_FILE_COST: Record<string, string> = {
     '`<BasaltProvider router={router} />`. Without them the seeded src/lib/nav.tsx fails tsc.',
   '.oxfmtrc.json': 'your existing formatter config stands; basalt formats nothing on its own.',
   'DESIGN.md': 'the design brief Claude reads is yours, not the seeded one.',
+}
+
+/** What happened to a kept `.oxlintrc.json`, by the merge result (null: `--no-merge-lint`). */
+function oxlintrcCost(merge: MergeLintResult | null): string {
+  if (merge === 'added' || merge === 'already') {
+    return 'now extends the shipped preset: the basalt/* design rules and the jsx-a11y / import / promise / unicorn plugins are on.'
+  }
+  const why =
+    merge === null ? 'init ran with --no-merge-lint' : 'init could not splice the extends in'
+  return (
+    `the shipped oxlint preset (the basalt/* rules, jsx-a11y, import, promise, unicorn) is NOT active: ${why}, ` +
+    'nothing else turns it on, and every gate stays green without it. Add the `extends` by hand.'
+  )
 }
 
 /** Scaffold all managed files into the consumer repo, then write the manifest. Idempotent. Returns 0. */
@@ -90,7 +100,10 @@ export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags =
 
   const manifest = readManifest(cwd)
   const placement = resolvePlacement(cwd)
-  const files = managedFiles(placement)
+  // A tokens-only consumer has no use for the Mantine/React scaffolds (doctor skips them there too).
+  const tokensOnly = declaredProfile(readBasaltConfig(cwd), []) === 'tokens-only'
+  const routerSeeds: string[] = Object.values(ROUTER_SEED_DESTS)
+  const files = managedFiles(placement).filter((f) => !(tokensOnly && routerSeeds.includes(f.dest)))
 
   const writtenFiles: string[] = []
   const keptFiles: string[] = []
@@ -148,7 +161,7 @@ export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags =
   if (keptFiles.length > 0) {
     console.log(`\nKept (already present — basalt did not touch them):`)
     for (const dest of keptFiles) {
-      const cost = KEPT_FILE_COST[dest]
+      const cost = dest === '.oxlintrc.json' ? oxlintrcCost(mergeLint) : KEPT_FILE_COST[dest]
       console.log(cost === undefined ? `  · ${dest}` : `  · ${dest} — ${cost}`)
     }
   }
@@ -162,9 +175,7 @@ export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags =
   }
   const mergeLine = mergeLint === null ? undefined : mergeMessage[mergeLint]
   if (mergeLine !== undefined) console.log(`basalt-ui init: oxlint — ${mergeLine}`)
-  // A tokens-only consumer has no use for the Mantine/React preset (doctor skips it there too).
-  const tsconfigLine =
-    declaredProfile(readBasaltConfig(cwd), []) === 'tokens-only' ? null : seedTsconfigExtends(cwd)
+  const tsconfigLine = tokensOnly ? null : seedTsconfigExtends(cwd)
   if (tsconfigLine !== null) console.log(`basalt-ui init: ${tsconfigLine}`)
   const rootsMessages = rootsNotices(rootsState)
   for (const line of rootsMessages.log) console.log(`basalt-ui init: ${line}`)

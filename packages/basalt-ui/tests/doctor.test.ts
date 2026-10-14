@@ -34,7 +34,10 @@ function setupPassingLayout(): void {
   writeFixture('src/app.tsx', 'export const App = () => null\n')
   writeFixture('tsconfig.json', '{ "extends": "basalt-ui/configs/tsconfig.react-app.json" }')
   writeFixture('src/main.tsx', 'createBasaltRouter(); <BasaltProvider router={router} />\n')
-  writeFixture('vite.config.ts', 'plugins: [tanstackRouter()]\n')
+  writeFixture(
+    'vite.config.ts',
+    "import { tanstackRouter } from '@tanstack/router-plugin/vite'\nexport default { plugins: [tanstackRouter()] }\n",
+  )
   writeFixture('.oxlintrc.json', '{ "extends": ["./node_modules/basalt-ui/configs/oxlint.json"] }')
   writeFixture(
     'node_modules/basalt-ui/package.json',

@@ -100,7 +100,10 @@ function healthyFixture(): void {
   write('tsconfig.json', '{ "extends": "basalt-ui/configs/tsconfig.react-app.json" }')
   // app-wiring: an entry that mounts the provider on a basalt router, and the router plugin.
   write('src/main.tsx', 'createBasaltRouter(); <BasaltProvider router={router} />\n')
-  write('vite.config.ts', 'plugins: [tanstackRouter()]\n')
+  write(
+    'vite.config.ts',
+    "import { tanstackRouter } from '@tanstack/router-plugin/vite'\nexport default { plugins: [tanstackRouter()] }\n",
+  )
   write('.oxlintrc.json', '{ "extends": ["./node_modules/basalt-ui/configs/oxlint.json"] }')
   write(MANIFEST_PATH, JSON.stringify({ version: 1, files: {}, basaltVersion: CLI_VERSION }))
   installBasalt()
@@ -307,7 +310,7 @@ describe('init — describing the repo it is actually in', () => {
     write('package.json', JSON.stringify({ name: 'app' }))
     write('src/app.tsx', 'export const App = () => null\n')
     write('.oxlintrc.json', '{ "rules": {} }')
-    const { log } = capture(() => init(dir))
+    const { log } = capture(() => init(dir, { noMergeLint: true }))
     expect(log).toContain('Kept (already present')
     expect(log).toContain('.oxlintrc.json')
     expect(log).toContain('is NOT active')
@@ -355,14 +358,14 @@ describe('init — describing the repo it is actually in', () => {
   it.each([
     ['a guards-only one, which it replaces', 'oxlint-basalt.json', 'added'],
     ['the full preset, which it leaves alone', 'oxlint.json', 'already'],
-  ] as const)('--merge-lint reads a bare-string extends: %s', (_, file, outcome) => {
+  ] as const)('mergeOxlintExtends reads a bare-string extends: %s', (_, file, outcome) => {
     write('.oxlintrc.json', `{ "extends": "./node_modules/basalt-ui/configs/${file}" }\n`)
     expect(mergeOxlintExtends(dir, './node_modules/basalt-ui/configs/oxlint.json')).toBe(outcome)
     const cfg = JSON.parse(read('.oxlintrc.json')) as { extends: unknown }
     expect([cfg.extends].flat()).toEqual(['./node_modules/basalt-ui/configs/oxlint.json'])
   })
 
-  it('--merge-lint upgrades a guards-only extends to the full preset', () => {
+  it('init upgrades a guards-only extends to the full preset', () => {
     write('package.json', JSON.stringify({ name: 'app' }))
     write(
       '.oxlintrc.json',
