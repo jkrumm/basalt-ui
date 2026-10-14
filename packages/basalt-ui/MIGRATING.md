@@ -343,6 +343,10 @@ Contract: `docs/V2-SPEC.md` § 5. React owns every view transition; React 19.3 i
 - `ThemeToggle` animates with a CSS transition, not `motion`. `motion` is no longer reached from the package root; it is required only by `basalt-ui/agent`.
 - `styles.css` sets `animation: none` on `::view-transition-group(*)`, `-old(*)` and `-new(*)` under `prefers-reduced-motion: reduce`, and the base theme sets Mantine `respectReducedMotion: true`. A consumer theme that sets `respectReducedMotion: false` opts Mantine's own transitions back out.
 
+### Content streaming (`w8/content-streaming`)
+
+`Markdown` no longer drops a blocked or unfinished image silently: when the `src` is refused (an off-origin image under `contentTrust="untrusted"`, or remend's `streamdown:incomplete-image` placeholder mid-stream) it renders the `alt` text as a plain `<span>` instead of an empty `<span aria-label>`. No `<img>` and no URL reaches the DOM either way. No action needed; a test that asserted the empty span must assert the alt text.
+
 ### Root, shell, controls, dashboard, format, forms, tokens, theme (W3 delete-core)
 
 Source of the rows: `docs/waves/v2-surface.md`. A deleted export has no replacement unless the

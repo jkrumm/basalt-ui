@@ -29,7 +29,7 @@
  *    through (`./callout-alert`).
  *  - `a`/`img` — hardened via `allowedLinkPrefixes`/`allowedImagePrefixes`/`defaultOrigin`
  *    (`./url-hardening`); a disallowed URL (including remend's `streamdown:incomplete-link`
- *    sentinel) drops the `href`/`src`, and the component renders an unlinked span / nothing.
+ *    sentinel) drops the `href`/`src`, and the component renders an unlinked span / the image's alt text.
  *
  * Streaming mode (`streaming`): `blockSplit` splits `children` into top-level blocks. Every block
  * except the last renders through a memoized renderer (`React.memo`, referentially stable
@@ -183,8 +183,9 @@ function LinkRenderer({ href, children, node: _node, ...rest }: LinkProps) {
 
 function ImageRenderer({ src, alt }: ImgProps) {
   // A blocked src arrives as undefined OR '' depending on how urlTransform dropped it — an
-  // `<img src="">` renders the broken-image glyph, so both cases must skip the element entirely.
-  if (typeof src !== 'string' || src === '') return <span aria-label={alt} />
+  // `<img src="">` renders the broken-image glyph, so both cases skip the element and keep the alt
+  // as plain text — the same "text, never a destination" degrade an unfinished link gets.
+  if (typeof src !== 'string' || src === '') return alt ? <span>{alt}</span> : null
   return <img src={src} alt={alt ?? ''} loading="lazy" />
 }
 
