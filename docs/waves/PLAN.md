@@ -554,7 +554,7 @@ own site dropped it (2026-07-24); revisit on a 2.x minor if that changes.
   **gated on `:active-view-transition-type()` support** (Chrome 125 / Safari 18.2 / Firefox 147; below that and
   on the server, no animation — ungated, the router would crossfade the whole page on every filter change).
   Only `[data-basalt-scrollport]` moves (`basalt-main`). A once-per-document `startViewTransition` patch swallows
-  skip rejections on `ready`/`finished` and `reportError`s anything else once. New shipped rule
+  skip rejections on `ready` and every `finished` rejection, and `reportError`s a non-skip `ready` once. New shipped rule
   `basalt/route-view-transition` (error). `defaultViewTransition?: never` stays on the options type (basalt sets
   it, the consumer cannot). Chrome 155: 12/12 (W7 0/12). Safari/Firefox not observed.
 - **SSR cost:** the 12 s was `@tanstack/charts` `barY` stacking one series per row (N×N) when given neither `z` nor
@@ -572,8 +572,8 @@ own site dropped it (2026-07-24); revisit on a 2.x minor if that changes.
   Suspense reveals (in DOM at the delay, revealed ~400 ms / ~1 s later); budgets belong on in-DOM and CLS.
 - **Agent layer:** three tagged bullets (route transition, chart fallback, table fallback) and a `// @check`
   "Stream a slow section" snippet in `basalt-app` (the snippet harness's route stub gains a `/live` route with a
-  loader). **Lead call, flag if you disagree:** the agent-layer budget rises 576 → 606 lines (`basalt-app` 217 → 247) for
-  that snippet; the shipped rule lines stay 277 (the route rule folded into the shell bullet), spec prose stays 2650. Version drift: the audit names router 1.170.44; installed
+  loader). **Lead call, flag if you disagree:** the agent-layer budget rises 576 → 614 lines (`basalt-app` 217 → 255; the snippet renders the error state too) for
+  that snippet; the shipped rule lines stay 277 (the route rule folded into the shell bullet), spec prose sits at its 2650 ceiling, zero headroom (W11 must cut before it adds). Version drift: the audit names router 1.170.44; installed
   is 1.170.38 (no bump in this wave).
 - **Deferred, accepted:** a consumer `barY` inside `CartesianChart` `marks` can still hit the N×N path — candidate
   lint rule ("a `barY` sets `z` or `y1`"), not built (no named consumer yet; argo's charts in W13 decide). A
