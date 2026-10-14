@@ -10,7 +10,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 
-import { init, MANIFEST_PATH, sync } from './index.ts'
+import { init, MANIFEST_PATH, run, sync } from './index.ts'
 
 let dir: string
 
@@ -320,10 +320,17 @@ describe('router seeds — the nav module and the root route', () => {
     expect(readFileSync(resolve(dir, 'src/routes/__root.tsx'), 'utf8')).toBe(before[1]!)
   })
 
-  it('without both peers the skip notice names both seeds', () => {
+  it('seeds all three router files with no flags and no TanStack deps declared', () => {
     writeFixture('package.json', JSON.stringify({ name: 'fixture' }))
     const { log } = capture(() => init(dir))
-    expect(log).toContain('skipped src/lib/nav.tsx, src/routes/__root.tsx and src/main.tsx')
-    expect(existsSync(resolve(dir, 'src/lib/nav.tsx'))).toBe(false)
+    for (const dest of ['src/lib/nav.tsx', 'src/routes/__root.tsx', 'src/main.tsx']) {
+      expect(existsSync(resolve(dir, dest))).toBe(true)
+    }
+    expect(log).not.toContain('skipped src/lib/nav.tsx')
+  })
+
+  it('rejects the retired peer flags', () => {
+    expect(run(['init', '--with-router'], dir)).toBe(1)
+    expect(run(['init', '--merge-lint'], dir)).toBe(1)
   })
 })

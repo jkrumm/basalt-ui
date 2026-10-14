@@ -12,7 +12,6 @@ import {
   MANIFEST_PATH,
   declaredProfile,
   readBasaltConfig,
-  ROUTER_SEED_DESTS,
   findBasaltInstall,
   managedFiles,
   mergeOxlintExtends,
@@ -24,7 +23,6 @@ import {
   reconcileRoots,
   renderContext,
   reportPrune,
-  resolvePeerFlags,
   resolvePlacement,
   rootsNotices,
   sha256,
@@ -44,15 +42,17 @@ const KEPT_FILE_COST: Record<string, string> = {
   '.oxlintrc.json':
     'the shipped oxlint preset (the basalt/* design rules AND the jsx-a11y / import / promise / ' +
     'unicorn plugins) is NOT active — nothing else turns it on, and every gate stays green ' +
-    'without it. Re-run with `--merge-lint` to splice the extends in, or add it by hand.',
+    'without it. See the oxlint line below; add the `extends` by hand if init could not.',
   'lefthook.yml':
     'the pre-commit oxlint / oxfmt / check-theme jobs are not wired — add `extends: ' +
     '[<preset>]` to your own file.',
   '.github/workflows/check.yml':
     'CI does not run check-theme or the sync drift gate — copy those steps into your own workflow.',
   'src/main.tsx':
-    'it must mount `<BasaltProvider router={router}>` and declare the `Register` augmentation ' +
-    '(`interface Register { router: typeof router }`), or the seeded src/lib/nav.tsx fails tsc.',
+    'change it to match node_modules/basalt-ui/agent/templates/main.tpl: import ' +
+    "'basalt-ui/styles.css'; `const router = createBasaltRouter({ routeTree })`; declare " +
+    "`interface Register { router: typeof router }` in module '@tanstack/react-router'; render " +
+    '`<BasaltProvider router={router} />`. Without them the seeded src/lib/nav.tsx fails tsc.',
   '.oxfmtrc.json': 'your existing formatter config stands; basalt formats nothing on its own.',
   'DESIGN.md': 'the design brief Claude reads is yours, not the seeded one.',
 }
@@ -89,9 +89,8 @@ export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags =
   })
 
   const manifest = readManifest(cwd)
-  const peers = resolvePeerFlags(cwd, scaffoldFlags)
   const placement = resolvePlacement(cwd)
-  const files = managedFiles(peers, placement)
+  const files = managedFiles(placement)
 
   const writtenFiles: string[] = []
   const keptFiles: string[] = []
@@ -128,7 +127,7 @@ export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags =
   const pruned = pruneRetiredManagedFiles(cwd, manifest, files)
 
   const mergeLint: MergeLintResult | null =
-    scaffoldFlags.mergeLint === true ? mergeOxlintExtends(cwd, ctx.vars.OXLINT_PRESET_PATH) : null
+    scaffoldFlags.noMergeLint === true ? null : mergeOxlintExtends(cwd, ctx.vars.OXLINT_PRESET_PATH)
 
   manifest.basaltVersion = ctx.vars.BASALT_VERSION
   manifest.spacingScale = { ...deriveSpacing(0).scale }
@@ -153,19 +152,16 @@ export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags =
       console.log(cost === undefined ? `  · ${dest}` : `  · ${dest} — ${cost}`)
     }
   }
-  if (mergeLint !== null) {
-    const mergeMessage: Record<MergeLintResult, string> = {
-      added: `spliced "${ctx.vars.OXLINT_PRESET_PATH}" into the existing .oxlintrc.json extends`,
-      already: '.oxlintrc.json already extends the shipped preset — nothing to do',
-      absent:
-        'no existing .oxlintrc.json to merge into (the seeded one already extends the preset)',
-      unreadable: '.oxlintrc.json is not valid JSON — merge the extends entry by hand',
-      'has-comments':
-        '.oxlintrc.json carries comments; rewriting it would delete them (usually the reason each ' +
-        `rule is off). Add "extends": ["${ctx.vars.OXLINT_PRESET_PATH}"] as the first entry by hand.`,
-    }
-    console.log(`basalt-ui init: --merge-lint — ${mergeMessage[mergeLint]}`)
+  // `already` / `absent` need no words: the preset is on, or the seeded config just made it so.
+  const mergeMessage: Partial<Record<MergeLintResult, string>> = {
+    added: `spliced "${ctx.vars.OXLINT_PRESET_PATH}" into the existing .oxlintrc.json extends`,
+    unreadable: '.oxlintrc.json is not valid JSON — merge the extends entry by hand',
+    'has-comments':
+      '.oxlintrc.json carries comments; rewriting it would delete them (usually the reason each ' +
+      `rule is off). Add "extends": ["${ctx.vars.OXLINT_PRESET_PATH}"] as the first entry by hand.`,
   }
+  const mergeLine = mergeLint === null ? undefined : mergeMessage[mergeLint]
+  if (mergeLine !== undefined) console.log(`basalt-ui init: oxlint — ${mergeLine}`)
   // A tokens-only consumer has no use for the Mantine/React preset (doctor skips it there too).
   const tsconfigLine =
     declaredProfile(readBasaltConfig(cwd), []) === 'tokens-only' ? null : seedTsconfigExtends(cwd)
@@ -180,15 +176,6 @@ export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags =
   // shared with `sync`. See {@link placementNotices}.
   for (const line of placementNotices(cwd, placement)) {
     console.log(`basalt-ui init: ${line}`)
-  }
-  // The nav + root-route seeds import both TanStack peers — seeding without them ships an
-  // unresolved import.
-  if (!peers.hasRouter || !peers.hasQuery) {
-    console.log(
-      `basalt-ui init: skipped ${ROUTER_SEED_DESTS.nav}, ${ROUTER_SEED_DESTS.root} and ${ROUTER_SEED_DESTS.main} (need both ` +
-        '@tanstack/react-router and @tanstack/react-query) — install both, or re-run with ' +
-        '--with-router --with-query, to scaffold them.',
-    )
   }
   // The guard-hook PreToolUse registration is NOT written automatically — add it manually to
   // .claude/settings.json so every Write/Edit/MultiEdit goes through the theme guard.

@@ -21,7 +21,7 @@ const entries = new Set(
 )
 
 const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'))
-const sources = [...new Set(managedFiles({ hasRouter: true, hasQuery: true }).map((f) => f.source))]
+const sources = [...new Set(managedFiles().map((f) => f.source))]
 const binPaths = Object.values(pkg.bin ?? {}).map((p) => p.replace(/^\.\//, ''))
 
 /**

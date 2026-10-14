@@ -26,7 +26,7 @@ function coveredByFilesField(path: string): boolean {
   })
 }
 
-const sources = [...new Set(managedFiles({ hasRouter: true, hasQuery: true }).map((f) => f.source))]
+const sources = [...new Set(managedFiles().map((f) => f.source))]
 
 describe('tarball parity (files-field approximation)', () => {
   it.each(sources)('CLI-read source %s exists and is covered by the files field', (source) => {

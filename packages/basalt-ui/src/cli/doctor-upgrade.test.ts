@@ -3,13 +3,22 @@
  * checks, `sync` carrying a 1.41-shaped install forward, and the seeds compiling against `dist`.
  */
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+  symlinkSync,
+} from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { doctor } from './doctor'
 import {
+  appWiringCheck,
   droppedSubpathsCheck,
   retiredLintRulesCheck,
   seedTsconfigExtends,
@@ -628,17 +637,83 @@ describe('init — the src/main.tsx seed', () => {
     expect(main).not.toContain('@mantine')
   })
 
-  it('is kept when present, and the kept notice says what it must contain', () => {
+  it('is kept when present, and the kept notice says exactly what to change', () => {
     write('package.json', JSON.stringify({ name: 'fixture', ...PEERS }))
     write('src/main.tsx', '// mine\n')
     const { log } = capture(() => init(dir))
     expect(read('src/main.tsx')).toBe('// mine\n')
-    expect(log).toContain('src/main.tsx — it must mount `<BasaltProvider router={router}>`')
+    expect(log).toContain(
+      'src/main.tsx — change it to match node_modules/basalt-ui/agent/templates/main.tpl',
+    )
+    expect(log).toContain('createBasaltRouter({ routeTree })')
+    expect(log).toContain('<BasaltProvider router={router} />')
   })
 
-  it('is skipped, with the others, without both peers', () => {
+  it('is written even when package.json declares no TanStack dependency (they are required peers)', () => {
     write('package.json', JSON.stringify({ name: 'fixture' }))
     capture(() => init(dir))
-    expect(existsSync(join(dir, 'src/main.tsx'))).toBe(false)
+    expect(existsSync(join(dir, 'src/main.tsx'))).toBe(true)
+  })
+})
+
+describe('doctor — app-wiring', () => {
+  const STOCK_MAIN =
+    "import { createRoot } from 'react-dom/client'\nimport App from './App.tsx'\ncreateRoot(document.getElementById('root')!).render(<App />)\n"
+
+  it('is red on a stock create-vite entry until main.tsx is the seed, then green', () => {
+    write('package.json', JSON.stringify({ name: 'fixture' }))
+    write('index.html', '<div id="root"></div><script type="module" src="/src/main.tsx"></script>')
+    write('src/main.tsx', STOCK_MAIN)
+    write('vite.config.ts', 'export default { plugins: [react()] }\n')
+    capture(() => init(dir))
+    const red = capture(() => doctor(dir))
+    expect(red.code).toBe(1)
+    expect(red.log).toContain('✖ app-wiring: src/main.tsx does not mount BasaltProvider')
+    expect(red.log).toContain('agent/templates/main.tpl')
+    expect(text(appWiringCheck(dir))).toContain('does not mount BasaltProvider')
+    write('src/main.tsx', readFileSync(join(PKG_ROOT, 'agent/templates/main.tpl'), 'utf8'))
+    expect(text(appWiringCheck(dir))).toContain(
+      'no vite.config registers the TanStack router plugin',
+    )
+    expect(text(appWiringCheck(dir))).toContain('@tanstack/router-plugin/vite')
+    write('vite.config.ts', "import { tanstackRouter } from '@tanstack/router-plugin/vite'\n")
+    expect(appWiringCheck(dir)).toBeNull()
+  })
+
+  it('follows the entry named by index.html and accepts an existing routeTree.gen', () => {
+    write('index.html', '<script type="module" src="/app/boot.tsx"></script>')
+    write('app/boot.tsx', 'createBasaltRouter(); <BasaltProvider router={r} />')
+    write('src/routeTree.gen.ts', 'export {}\n')
+    expect(appWiringCheck(dir)).toBeNull()
+    rmSync(join(dir, 'app/boot.tsx'))
+    expect(text(appWiringCheck(dir))).toContain('app/boot.tsx does not exist')
+  })
+
+  it('is n/a for a tokens-only consumer', () => {
+    write('package.json', JSON.stringify({ name: 'site', basalt: { profile: 'tokens-only' } }))
+    expect(capture(() => doctor(dir)).log).toContain('app-wiring: n/a')
+  })
+})
+
+describe('init — merging a create-vite .oxlintrc.json', () => {
+  const OXLINT = join(PKG_ROOT, '../../node_modules/.bin/oxlint')
+
+  it.skipIf(!existsSync(OXLINT))('extends the preset and really enables a jsx-a11y rule', () => {
+    write('package.json', JSON.stringify({ name: 'fixture' }))
+    write('node_modules/basalt-ui', '')
+    rmSync(join(dir, 'node_modules/basalt-ui'))
+    symlinkSync(PKG_ROOT, join(dir, 'node_modules/basalt-ui'))
+    write(
+      '.oxlintrc.json',
+      JSON.stringify({ plugins: ['react', 'typescript', 'oxc'], rules: {} }, null, 2),
+    )
+    write('src/t.jsx', 'export const A = () => <img src="x" />\n')
+    const { log } = capture(() => init(dir))
+    expect(log).toContain('oxlint — spliced')
+    const cfg = JSON.parse(read('.oxlintrc.json')) as { extends: string[]; plugins: string[] }
+    expect(cfg.extends[0]).toContain('basalt-ui/configs/oxlint.json')
+    // A child `plugins` list unions with the preset's: it must not switch the preset's plugins off.
+    const run = Bun.spawnSync([OXLINT, '-c', '.oxlintrc.json', 'src/t.jsx'], { cwd: dir })
+    expect(run.stdout.toString()).toContain('jsx-a11y')
   })
 })

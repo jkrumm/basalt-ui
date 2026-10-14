@@ -33,7 +33,6 @@ import {
   relativePosix,
   renderContext,
   reportPrune,
-  resolvePeerFlags,
   resolvePlacement,
   resolveProjectDir,
   rootsNotices,
@@ -110,7 +109,7 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
   // Refuse BEFORE reconcileRoots, which writes `basalt.roots` into package.json.
   if (!existsSync(resolve(cwd, MANIFEST_PATH))) {
     const elsewhere = findManifestAbove(cwd)
-    const wouldWrite = managedFiles(resolvePeerFlags(cwd, {}), resolvePlacement(cwd)).length
+    const wouldWrite = managedFiles(resolvePlacement(cwd)).length
     console.error(
       `✖ basalt-ui sync: no ${MANIFEST_PATH} at ${cwd} — refusing to scaffold. ` +
         `\`sync\` refreshes an EXISTING basalt install; creating one is \`basalt-ui init\`'s ` +
@@ -128,9 +127,8 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
   const rootsState = reconcileRoots(cwd, { write: opts.check !== true })
   const ctx = renderContext(cwd)
   const manifest = readManifest(cwd)
-  const peers = resolvePeerFlags(cwd, {})
   const placement = resolvePlacement(cwd)
-  const files = managedFiles(peers, placement)
+  const files = managedFiles(placement)
 
   let updated = 0
   // `created` and `recreated` were one counter, and `0 updated, 20 recreated` is what a full

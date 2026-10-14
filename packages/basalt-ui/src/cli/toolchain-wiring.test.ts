@@ -98,6 +98,9 @@ function healthyFixture(): void {
   write('package.json', JSON.stringify({ name: 'fixture', basalt: { roots: ['src'] } }))
   write('src/app.tsx', 'export const App = () => null\n')
   write('tsconfig.json', '{ "extends": "basalt-ui/configs/tsconfig.react-app.json" }')
+  // app-wiring: an entry that mounts the provider on a basalt router, and the router plugin.
+  write('src/main.tsx', 'createBasaltRouter(); <BasaltProvider router={router} />\n')
+  write('vite.config.ts', 'plugins: [tanstackRouter()]\n')
   write('.oxlintrc.json', '{ "extends": ["./node_modules/basalt-ui/configs/oxlint.json"] }')
   write(MANIFEST_PATH, JSON.stringify({ version: 1, files: {}, basaltVersion: CLI_VERSION }))
   installBasalt()
@@ -137,7 +140,7 @@ describe('doctor — a check that cannot run is not a check that passed', () => 
     write('.oxlintrc.json', '{ "rules": {} }')
     const { code, log } = capture(() => doctor(dir))
     expect(log).toContain('does NOT extend the shipped preset')
-    expect(log).toContain('--merge-lint')
+    expect(log).toContain('basalt-ui init')
     expect(code).toBe(1)
   })
 
@@ -208,7 +211,7 @@ describe('doctor — install-parity and guard-scan', () => {
     healthyFixture()
     write('src/second.tsx', 'export const B = () => null\n')
     const { log } = capture(() => doctor(dir))
-    expect(log).toContain('guard-scan: check-theme covers 2 file(s) under src')
+    expect(log).toContain('guard-scan: check-theme covers 3 file(s) under src')
     expect(capture(() => checkTheme(dir)).code).toBe(0)
   })
 })
@@ -320,21 +323,31 @@ describe('init — describing the repo it is actually in', () => {
     expect(log).toContain('lefthook install')
   })
 
-  it('--merge-lint splices the shipped preset into an .oxlintrc.json init would otherwise keep', () => {
+  it('splices the shipped preset into an existing .oxlintrc.json by default', () => {
     write('package.json', JSON.stringify({ name: 'app' }))
     write('.oxlintrc.json', JSON.stringify({ rules: { 'no-debugger': 'error' } }, null, 2))
-    const { log } = capture(() => init(dir, { mergeLint: true }))
+    const { log } = capture(() => init(dir))
     const cfg = JSON.parse(read('.oxlintrc.json')) as { extends: string[]; rules: unknown }
     expect(cfg.extends[0]).toContain('basalt-ui/configs/oxlint.json')
     expect(cfg.rules).toEqual({ 'no-debugger': 'error' })
-    expect(log).toContain('--merge-lint')
+    expect(log).toContain('oxlint — spliced')
   })
 
-  it('--merge-lint is idempotent', () => {
+  it('--no-merge-lint leaves an existing .oxlintrc.json alone and says what that costs', () => {
+    write('package.json', JSON.stringify({ name: 'app' }))
+    const own = JSON.stringify({ rules: { 'no-debugger': 'error' } })
+    write('.oxlintrc.json', own)
+    const { log } = capture(() => init(dir, { noMergeLint: true }))
+    expect(read('.oxlintrc.json')).toBe(own)
+    expect(log).toContain('.oxlintrc.json — the shipped oxlint preset')
+  })
+
+  it('a second init is idempotent on the merged config', () => {
     write('package.json', JSON.stringify({ name: 'app' }))
     write('.oxlintrc.json', '{ "extends": ["./node_modules/basalt-ui/configs/oxlint.json"] }')
-    const { log } = capture(() => init(dir, { mergeLint: true }))
-    expect(log).toContain('already extends')
+    const before = read('.oxlintrc.json')
+    capture(() => init(dir))
+    expect(read('.oxlintrc.json')).toBe(before)
   })
 
   // oxlint's `extends` is an array, but a hand-written config may carry a bare string — the merge
@@ -355,7 +368,7 @@ describe('init — describing the repo it is actually in', () => {
       '.oxlintrc.json',
       '{ "extends": ["./node_modules/basalt-ui/configs/oxlint-basalt.json", "./team.json"] }',
     )
-    capture(() => init(dir, { mergeLint: true }))
+    capture(() => init(dir))
     const cfg = JSON.parse(read('.oxlintrc.json')) as { extends: string[] }
     // The stale guards-only entry goes; the consumer's own entry stays.
     expect(cfg.extends).toEqual(['./node_modules/basalt-ui/configs/oxlint.json', './team.json'])
