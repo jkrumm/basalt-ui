@@ -2,6 +2,7 @@ import { expect, test } from 'bun:test'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { chatTurns, relative } from './chat-turn-trace'
 import { assertSpansObserved, summarise } from './otel'
 import { decodeOtlp } from './otel-receiver'
 import { median } from './perf-util'
@@ -91,4 +92,16 @@ test('decodeOtlp flattens an OTLP/HTTP JSON export', () => {
       attributes: { 'url.path': '/x' },
     },
   ])
+})
+
+test('chatTurns splits chat.turn spans by outcome; relative drops the absolute clock', () => {
+  const spans = [
+    { ...span('route.navigate'), start: 1000 },
+    { ...span('chat.turn'), start: 1500 },
+    { ...span('chat.turn', true), start: 1600 },
+  ]
+  const turns = chatTurns(spans)
+  expect(turns.ok).toHaveLength(1)
+  expect(turns.failed).toHaveLength(1)
+  expect(relative(spans).map((s) => s.startMs)).toEqual([0, 500, 600])
 })
