@@ -181,8 +181,13 @@ export function xScaleFor<X extends ChartX>(raw: readonly X[], band: boolean): X
   }
 
   const nums = values.map((v) => (v instanceof Date ? v.getTime() : (v as number)))
-  let lo = Math.min(...nums)
-  let hi = Math.max(...nums)
+  // A loop, not Math.min(...nums): a spread of a long series overflows the call stack.
+  let lo = Infinity
+  let hi = -Infinity
+  for (const v of nums) {
+    if (v < lo) lo = v
+    if (v > hi) hi = v
+  }
   if (!Number.isFinite(lo)) [lo, hi] = [0, 1]
   if (lo === hi) {
     // One sample: give the axis a day (or a unit) of width so the point sits in the middle.
