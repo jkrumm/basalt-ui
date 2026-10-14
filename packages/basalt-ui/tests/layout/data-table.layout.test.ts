@@ -430,13 +430,14 @@ layout('BasaltDataTable sticky header — real layout', () => {
 
     const main = await p.box('main', MAIN)
     const thead = await p.box('thead', THEAD)
+    const contentTop = main.box.top + Number.parseFloat(await p.computed(MAIN, 'padding-top'))
     expectGapAtMost(
-      band("Main's box", main.box.top, main.box.bottom, thead),
+      band("Main's content box", contentTop, main.box.bottom, thead),
       thead,
       'top',
       0.5,
       'a folded PageBar row 2 is a shell region, not scrollport content — the sticky header must ' +
-        "still pin to Main's top edge with no offset",
+        "still rest at Main's content top with no offset",
       PHONE,
     )
   })
@@ -478,19 +479,20 @@ layout('BasaltDataTable sticky header — real layout', () => {
         ({ mainSel, theadSel }) => {
           const mainTop = document.querySelector(mainSel)?.getBoundingClientRect().top ?? 0
           const headTop = document.querySelector(theadSel)?.getBoundingClientRect().top ?? 0
-          return [...document.querySelectorAll('table tbody tr')]
-            .map((row) => row.getBoundingClientRect())
-            .filter(
-              (box) =>
-                box.bottom > mainTop + 0.5 && box.top < headTop - 0.5 && box.bottom > mainTop,
-            )
-            .map((box) => ({ top: box.top, bottom: box.bottom }))
+          return (
+            [...document.querySelectorAll('table tbody tr')]
+              .map((row) => row.getBoundingClientRect())
+              // The part of a row that is inside Main AND above the header: rows scrolled out of
+              // Main's top, or hidden behind the header, are not visible.
+              .filter((box) => Math.min(box.bottom, headTop) - Math.max(box.top, mainTop) > 0.5)
+              .map((box) => ({ top: box.top, bottom: box.bottom }))
+          )
         },
         { mainSel: MAIN, theadSel: THEAD },
       )
       if (leak.length > 0) {
         throw new Error(
-          `LAYOUT INVARIANT VIOLATED — body rows are visible above the sticky header: ${JSON.stringify(leak)}`,
+          `LAYOUT INVARIANT VIOLATED — body rows are visible above the sticky header: ${JSON.stringify(leak)} (main.top=${main.box.top}, thead.top=${thead.box.top})`,
         )
       }
 
