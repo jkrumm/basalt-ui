@@ -3893,7 +3893,23 @@ describe('basalt/router-view-transition', () => {
     ],
     [
       'the route API useNavigate',
-      `const go = Route.useNavigate()\ngo({ to: '/a', viewTransition: true })\n`,
+      `import { createFileRoute } from '${ROUTER}'\nconst Route = createFileRoute('/a')({})\nconst go = Route.useNavigate()\ngo({ to: '/a', viewTransition: true })\n`,
+    ],
+    [
+      'getRouteApi(id).useNavigate',
+      `import { getRouteApi } from '${ROUTER}'\ngetRouteApi('/a').useNavigate()({ viewTransition: true })\n`,
+    ],
+    [
+      'a bare viewTransition attribute',
+      `import { Link } from '${ROUTER}'\nexport const C = () => <Link to="/a" viewTransition />\n`,
+    ],
+    [
+      'viewTransition={true}',
+      `import { Link } from '${ROUTER}'\nexport const C = () => <Link to="/a" viewTransition={true} />\n`,
+    ],
+    [
+      'viewTransition={expression}',
+      `import { Link } from '${ROUTER}'\nexport const C = ({ on }: { on: boolean }) => <Link to="/a" viewTransition={on} />\n`,
     ],
     [
       'router.navigate',
@@ -3945,6 +3961,26 @@ describe('basalt/router-view-transition', () => {
       `function redirect(o: object) { return o }\nredirect({ viewTransition: true })\n`,
     ],
     [
+      'a useNavigate property on a local object',
+      `const api = { useNavigate: () => (o: object) => o }\napi.useNavigate()({ to: '/a', viewTransition: true })\n`,
+    ],
+    [
+      'a Route that is not from the router',
+      `const Route = makeRoute()\nRoute.useNavigate()({ viewTransition: true })\n`,
+    ],
+    [
+      'viewTransition={false}',
+      `import { Link } from '${ROUTER}'\nexport const C = () => <Link to="/a" viewTransition={false} />\n`,
+    ],
+    [
+      'navigate({ viewTransition: false })',
+      `import { useNavigate } from '${ROUTER}'\nconst n = useNavigate()\nn({ to: '/a', viewTransition: false })\n`,
+    ],
+    [
+      'createRouter({ defaultViewTransition: false })',
+      `import { createRouter } from '${ROUTER}'\ncreateRouter({ routeTree, defaultViewTransition: false })\n`,
+    ],
+    [
       'viewTransition on an unrelated element',
       `import { Link } from '${ROUTER}'\nexport const C = () => <Foo viewTransition />\n`,
     ],
@@ -3989,6 +4025,11 @@ describe('basalt/no-dev-helper', () => {
       'a lazy binding with one ungated use',
       `${LAZY}export const C = () => (\n  <>\n    {process.env.NODE_ENV !== 'production' && <Dock />}\n    <Dock />\n  </>\n)\n`,
     ],
+    ['a TS-wrapped ungated use', `const load = () => import('./dev-dock')\nload!()\n`],
+    [
+      'a gate that only holds in production',
+      `const load = () => import('./dev-dock')\nif (ok && process.env.NODE_ENV === 'production') load()\n`,
+    ],
     [
       'a component that merely contains the import (its uses are not the dev uses)',
       `const App = () => { useEffect(() => { void import('./dev-dock') }, []); return null }\nexport const C = () => <App />\n`,
@@ -4027,6 +4068,30 @@ describe('basalt/no-dev-helper', () => {
     [
       'another binding that shadows the lazy name',
       `${LAZY}export const A = () => process.env.NODE_ENV !== 'production' && <Dock />\nexport const B = (Dock: unknown) => String(Dock)\n`,
+    ],
+    [
+      'a plain loader called under the gate',
+      `const load = () => import('./dev-dock')\nif (process.env.NODE_ENV !== 'production') load()\n`,
+    ],
+    [
+      'a gate inside an && chain',
+      `const load = () => import('./dev-dock')\nexport const f = (ok: boolean) => ok && process.env.NODE_ENV !== 'production' && load()\n`,
+    ],
+    [
+      'a negated production test',
+      `const load = () => import('./dev-dock')\nif (!(process.env.NODE_ENV === 'production')) load()\n`,
+    ],
+    [
+      'a negated || test',
+      `const load = () => import('./dev-dock')\nif (!(ok || process.env.NODE_ENV === 'production')) load()\n`,
+    ],
+    [
+      'the literal on the left',
+      `const load = () => import('./dev-dock')\nif ('production' !== process.env.NODE_ENV) load()\n`,
+    ],
+    [
+      'TS-wrapped uses under the gate plus a class member of the same name',
+      `${LAZY}class K { Dock = 1 }\nexport const C = () => process.env.NODE_ENV !== 'production' && (Dock as unknown as () => null)\n`,
     ],
     ['an unrelated import()', `const m = import('rehype-sanitize')\n`],
   ])('does NOT flag %s', (_name, source) => {
@@ -4070,6 +4135,23 @@ describe('basalt/no-import-meta-env', () => {
   it('is silent elsewhere (the playground is a consumer) and in tests', () => {
     expect(visit(`${PKG_ROOT}/../../apps/playground/src/main.tsx`)).toBe(0)
     expect(visit(`${PKG_ROOT}/src/x.test.ts`)).toBe(0)
+  })
+})
+
+describe('rule level locks', () => {
+  const levels = (path: string) =>
+    (JSON.parse(readFileSync(path, 'utf8')) as { rules: Record<string, unknown> }).rules
+  const shipped = levels(resolve(import.meta.dirname, 'oxlint-basalt.json'))
+  const repo = levels(resolve(import.meta.dirname, '..', '..', '..', '.oxlintrc.json'))
+
+  it('router-view-transition is error in both configs', () => {
+    expect(shipped['basalt/router-view-transition']).toBe('error')
+    expect(repo['basalt/router-view-transition']).toBe('error')
+  })
+
+  it('no-dev-helper is repo-local only, at error', () => {
+    expect(shipped).not.toHaveProperty('basalt/no-dev-helper')
+    expect(repo['basalt/no-dev-helper']).toBe('error')
   })
 })
 
