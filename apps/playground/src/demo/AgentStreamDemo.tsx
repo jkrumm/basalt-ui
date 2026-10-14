@@ -8,7 +8,7 @@ import { Badge, Box, Group, Stack, Text } from '@mantine/core'
 import { ThreadFeed, ThreadFeedRow, useAgentThreadRuns } from 'basalt-ui/agent'
 import type { AgentPart, AgentThread, OutcomeResolver, ThreadsStore } from 'basalt-ui/agent'
 import { useMemo, useState } from 'react'
-import { richTransport } from './agent-scenarios'
+import { DELTA_MS, richParts, richTransport } from './agent-scenarios'
 
 const THREAD_ID = 'stream-demo'
 const THREAD_TITLE = 'Deep modules and coupling'
@@ -64,6 +64,30 @@ function useMemoryThreadsStore(): ThreadsStore<AgentPart> {
   }, [threads, activeId])
 }
 
+/** Parts delivered before the forced failure, so the error entry keeps a partial reply. */
+const FAIL_AFTER_PARTS = 3
+
+/** `?fail=1`: streams a few parts, then throws what AI SDK's `APICallError` looks like (a 500). */
+const failingTransport = {
+  async *stream(): AsyncGenerator<AgentPart> {
+    for (const part of richParts().slice(0, FAIL_AFTER_PARTS)) {
+      await new Promise((resolve) => setTimeout(resolve, DELTA_MS))
+      yield part
+    }
+    throw Object.assign(new Error('Internal Server Error'), { statusCode: 500 })
+  },
+}
+
+/** `?throttle=<ms>` — the evidence lane's sweep knob; anything not a non-negative number is 0. */
+function readParams(): { throttle: number; fail: boolean } {
+  const params = new URLSearchParams(window.location.search)
+  const throttle = Number(params.get('throttle'))
+  return {
+    throttle: Number.isFinite(throttle) && throttle > 0 ? throttle : 0,
+    fail: params.get('fail') === '1',
+  }
+}
+
 const resolveOutcome: OutcomeResolver<AgentPart> = (thread) => ({
   title: THREAD_TITLE,
   summary: `${thread.messages.length} messages`,
@@ -72,8 +96,10 @@ const resolveOutcome: OutcomeResolver<AgentPart> = (thread) => ({
 
 export function AgentStreamDemo() {
   const store = useMemoryThreadsStore()
+  const [{ throttle, fail }] = useState(readParams)
   const { runs, start, stop } = useAgentThreadRuns({
-    transport: richTransport,
+    transport: fail ? failingTransport : richTransport,
+    throttle,
     store,
     resolveOutcome,
   })
