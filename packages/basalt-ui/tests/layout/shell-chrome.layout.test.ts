@@ -190,6 +190,21 @@ async function setLeadInset(p: LayoutPage, value: string): Promise<void> {
   await p.settle()
 }
 
+/** A counted row in the primary group and one in a non-primary group — the rail-dot shape. */
+const BADGED_RAIL: FixtureSpec = {
+  sections: [
+    {
+      label: 'Main',
+      items: [
+        { key: 'a', label: 'Overview', active: true },
+        { key: 'cal', label: 'Calendar', count: 3 },
+      ],
+    },
+    { label: 'Other', items: [{ key: 'm365', label: 'M365', count: 2 }] },
+  ],
+  sidebar: { account: true, settings: 2 },
+}
+
 /** A shell whose first section is UNLABELLED — the shape whose band is zero-height. */
 const UNLABELLED: FixtureSpec = {
   sections: [
@@ -607,6 +622,40 @@ layout('shell chrome — the header row, the gutter, the sidebar footer', () => 
    * keeps the FIRST band's margin only — the equal-offset contract, and the non-vacuous half: the
    * offset is asserted to be the token, not merely "the same".
    */
+  /**
+   * RAIL BADGES — the rail hides a row's right section (where its count badge lives), so a badged
+   * row carries a dot on its ICON instead. The dot has to be visible (not `display: none`) and sit
+   * on the icon's top-end corner, inside the row — in the primary group and the non-primary one.
+   */
+  test('a badged nav row shows a visible dot on its icon in the rail', async () => {
+    const p = await openFixture(BADGED_RAIL, DESKTOP_1440)
+    await p.settle()
+    await collapseSidebar(p)
+
+    for (const label of ['Calendar', 'M365']) {
+      const row = `${NAVBAR} a[aria-label^="${label}"]`
+      const dot = `${row} [data-basalt-rail-dot]`
+      const display = await p.computed(dot, 'display')
+      if (display === 'none') throw new Error(`LAYOUT: the ${label} rail dot is display: none`)
+      const rowBox = (await p.box(`${label} row`, row)).box
+      const dotBox = (await p.box(`${label} dot`, dot)).box
+      const [icon] = await p.boxes(`${row} .mantine-NavLink-section`)
+      if (!icon) throw new Error(`LAYOUT: ${label} has no icon section`)
+      const insideRow =
+        dotBox.width > 0 &&
+        dotBox.left >= rowBox.left &&
+        dotBox.right <= rowBox.right &&
+        dotBox.top >= rowBox.top
+      const onIconCorner =
+        Math.abs(dotBox.right - icon.right) <= 6 && Math.abs(dotBox.top - icon.top) <= 6
+      if (insideRow && onIconCorner) continue
+      throw new Error(
+        `LAYOUT: the ${label} rail dot is misplaced — dot ${JSON.stringify(dotBox)}, ` +
+          `icon ${JSON.stringify(icon)}, row ${JSON.stringify(rowBox)}`,
+      )
+    }
+  })
+
   test('the first nav row has the same top offset expanded and collapsed', async () => {
     const p = await openFixture(UNLABELLED, DESKTOP_1440)
     await p.settle()
