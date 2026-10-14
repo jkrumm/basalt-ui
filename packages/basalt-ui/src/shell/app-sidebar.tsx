@@ -327,7 +327,9 @@ function NavSection({ section, collapsed }: { section: SidebarSection; collapsed
         <SectionLabel>{section.label}</SectionLabel>
         <IconChevron open={!folded} />
       </UnstyledButton>
-      <Collapse expanded={!folded}>
+      {/* The rail hides the header (the only way to unfold), so a folded section would strand its
+          destinations and their badges: the rail ignores the fold; expanding restores it. */}
+      <Collapse expanded={!folded || collapsed}>
         <Stack gap={1}>{items}</Stack>
       </Collapse>
     </div>

@@ -23,7 +23,14 @@ export type ItemSpec = {
 }
 
 /** `tab: true` gives the whole SECTION one bar slot — the menu/sheet cardinality-inference path. */
-export type SectionSpec = { label: string; items: ItemSpec[]; tab?: true }
+export type SectionSpec = {
+  label: string
+  items: ItemSpec[]
+  tab?: true
+  /** A foldable section; `defaultCollapsed` seeds it folded — argo's "Other" shape. */
+  collapsible?: true
+  defaultCollapsed?: true
+}
 
 /**
  * A `BasaltDataTable` rendered in the shell body. Exists for ONE invariant class: a sticky

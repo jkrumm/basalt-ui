@@ -755,7 +755,7 @@ describe('nav badges in the collapsed rail', () => {
       ],
     },
     {
-      label: 'Other',
+      label: 'Elsewhere',
       items: [{ key: 'm365', label: 'M365', icon: null, href: '/m365', badge: <span>new</span> }],
     },
   ]
@@ -783,5 +783,39 @@ describe('nav badges in the collapsed rail', () => {
   test('expanded, no rail dot renders and the name keeps the visible count', () => {
     const { container } = renderSidebar({ sections: BADGED, collapsed: false })
     expect(container.querySelector('[data-basalt-rail-dot]')).toBeNull()
+  })
+})
+
+/** argo's nav shape: a section that is collapsible AND folded by default, holding a badged row. */
+const foldedOther = (label: string): AppSidebarProps['sections'] => [
+  { label: 'Main', items: [{ key: 'home', label: 'Home', icon: null }] },
+  {
+    label,
+    collapsible: true,
+    defaultCollapsed: true,
+    items: [{ key: 'm365', label: 'M365 Explorer', href: '/m365', icon: <span />, count: 10 }],
+  },
+]
+
+describe('folded collapsible sections on the rail', () => {
+  test('the rail shows a folded section’s rows, each with its rail dot', () => {
+    localStorage.clear()
+    const { container } = renderSidebar({
+      sections: foldedOther('Rail Elsewhere'),
+      collapsed: true,
+    })
+
+    const link = screen.getByRole('link', { name: 'M365 Explorer, 10' })
+    expect(link.closest('[aria-hidden="true"], [hidden]')).toBeNull()
+    expect(container.querySelector('[data-basalt-rail-dot]')).not.toBeNull()
+  })
+
+  test('expanded, the same section stays folded', () => {
+    localStorage.clear()
+    renderSidebar({ sections: foldedOther('Expanded Elsewhere'), collapsed: false })
+
+    expect(
+      screen.getByText('Expanded Elsewhere').closest('button')?.getAttribute('aria-expanded'),
+    ).toBe('false')
   })
 })
