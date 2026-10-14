@@ -987,10 +987,17 @@ optional, subpath-required peers.
 | `NavItemMeta`, `NavGroupMeta`, `AnyNavItem`, `AnyNavGroup`, `AnyNavLink`, `FlatNavItem`, `NavConfig`, `NavGroupId`, `NavTabId`, `NavIndex`, `UseNavOptions`, `NavBinding`, `NavAnchor`, `NavAnchorProps`, `NavMobilePlacement` | deleted                                                                                                                                                                                                                                                                                                                                                                                                                                                    | no consumer names them; derive with `ComponentProps` / `Parameters` |
 | `useNav`, and `BasaltShell`'s `sections` / `mobileNav` props                                                                                                                                                                   | deleted: pass `nav={NAV}` (plus `badges`, `isActive`, `getScrollElement` — the old `useNav` options) to `BasaltShell`; it resolves the sidebar, the mobile bar and the breadcrumb itself. `mobileNav` tuning moves to `defineNav`'s `mobile`. argo `apps/dashboard/src/routes/__root.tsx`: replace `const nav = useNav(NAV, { badges })` + `{...nav}` with `nav={NAV} badges={…}` (migrates in W12; 1.x consumers stay on their pinned version until then) |
 
-## Unreleased
+## Unreleased — optional-safe chart props, `chartCurve`, zone-coloured area
 
-_Nothing yet. Author the next section under this heading as `## Unreleased — <title>`; the
-release renames it and opens a new one here._
+- Every optional prop of `ChartState`, `ChartSeries`, `AxisConfig`, the tooltip config and the chart
+  kinds' own props accepts an explicit `undefined` under `exactOptionalPropertyTypes`, so
+  `state={{ empty: rows.length === 0 ? 'No runs' : undefined }}` type-checks where it needed
+  `cond ? msg : false`. Widening only: no call site changes.
+- `basalt-ui/charts` exports `chartCurve(name)` and the `CurveName` union (`'monotone'`, `'linear'`,
+  `'step'`, `'stepAfter'`, `'stepBefore'`). A `CartesianChart` `marks` function passes it to the
+  engine mark: `lineY(rows, { x: 'x', y: 'y', curve: chartCurve('monotone') })`. `Lines` already took
+  `ChartSeries.curve` (default `'monotone'`); a hand-written `lineY` without `curve` still draws the
+  engine's default, so argo's fitness-trends RHR/HRV lines add the option there.
 
 ## 2.2.0 — `doctor` in a monorepo, sparkline state, heatmap ticks
 

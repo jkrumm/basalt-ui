@@ -28,6 +28,7 @@ export {
 } from './MirroredBars'
 export { ChartCard, type ChartCardProps, type ChartCardSlot } from './ChartCard'
 export { chartCursor } from './cursor'
+export { chartCurve, type CurveName } from './curves'
 export type {
   AxisConfig,
   CartesianChartProps,
