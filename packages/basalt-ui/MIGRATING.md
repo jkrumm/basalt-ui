@@ -987,20 +987,33 @@ optional, subpath-required peers.
 | `NavItemMeta`, `NavGroupMeta`, `AnyNavItem`, `AnyNavGroup`, `AnyNavLink`, `FlatNavItem`, `NavConfig`, `NavGroupId`, `NavTabId`, `NavIndex`, `UseNavOptions`, `NavBinding`, `NavAnchor`, `NavAnchorProps`, `NavMobilePlacement` | deleted                                                                                                                                                                                                                                                                                                                                                                                                                                                    | no consumer names them; derive with `ComponentProps` / `Parameters` |
 | `useNav`, and `BasaltShell`'s `sections` / `mobileNav` props                                                                                                                                                                   | deleted: pass `nav={NAV}` (plus `badges`, `isActive`, `getScrollElement` — the old `useNav` options) to `BasaltShell`; it resolves the sidebar, the mobile bar and the breadcrumb itself. `mobileNav` tuning moves to `defineNav`'s `mobile`. argo `apps/dashboard/src/routes/__root.tsx`: replace `const nav = useNav(NAV, { badges })` + `{...nav}` with `nav={NAV} badges={…}` (migrates in W12; 1.x consumers stay on their pinned version until then) |
 
-## Unreleased
+## Unreleased — argo shell and CI friction
 
-_Nothing yet. Author the next section under this heading as `## Unreleased — <title>`; the
-release renames it and opens a new one here._
+- `doctor`'s `app-wiring` follows the entry's relative imports (three deep): `createBasaltRouter`
+  may be called in `src/lib/router.ts` (or any module `main.tsx` imports), not only in `main.tsx`.
+- The seeded `.github/workflows/check.yml` runs `make check` when the repo's Makefile has a
+  `check:` target, after `doctor` and `sync --check` (which always run, so drift is never
+  skippable); otherwise it keeps the built-in lint, theme and format steps. `init` decides once, on
+  seeding. An already-seeded workflow is yours and unchanged: replace its lint/theme/format steps
+  with `- run: make check` to adopt it.
+- The collapsed `BasaltShell` rail shows a dot on the icon of any nav item with a count or badge,
+  and the link's accessible name carries the count (e.g. "Calendar, 3"). Expanded rendering is
+  unchanged.
+- `BasaltProvider` takes `navCommandLabel?: (item) => string` to label the Spotlight `nav.<id>`
+  entries it generates from the nav (e.g. "Go to …"); default unchanged. A `defineCommands` entry
+  with id `nav.<id>` now replaces the generated one instead of showing twice.
 
 ## 2.0.2
 
-_Nothing to migrate in this release._
+- `doctor` and `sync` are monorepo-aware. The manifest, `.claude/` and the AGENTS block stay at the
+  install root; the app-scoped half (`tsconfig-base`, `app-wiring`, the `src/main.tsx`,
+  `src/lib/nav.tsx` and `src/routes/__root.tsx` seeds) targets the app package: `basalt.app`
+  (relative path, e.g. `"apps/dashboard"`) in the root package.json, else the one workspace package
+  that depends on basalt-ui and has `src/main.tsx` or `index.html`, else the cwd. Two candidates
+  fail with a message naming `basalt.app`. `doctor` run inside the app package finds the root
+  manifest, and warns about a router seed an earlier `sync` left at the root — delete it.
 
 ## 2.0.1
-
-_Nothing to migrate in this release._
-
-## Next patch — doctor reads the peers and the config
 
 - `doctor` gains `exact-peers`: for each exact-pinned peer of the installed basalt-ui (the three
   `@fontsource-variable/*`, `motion`, `remend`, …) it compares your installed version and prints a
@@ -1012,25 +1025,6 @@ _Nothing to migrate in this release._
 - Corrected the § 2.0 "Upgrading from 1.x" step 2: delete only the core, notifications and
   spotlight layer imports; extension packages (`@mantine/dates`, `@mantine/schedule`) stay, after
   `basalt-ui/styles.css`.
-- `doctor` and `sync` are monorepo-aware. The manifest, `.claude/` and the AGENTS block stay at the
-  install root; the app-scoped half (`tsconfig-base`, `app-wiring`, the `src/main.tsx`,
-  `src/lib/nav.tsx` and `src/routes/__root.tsx` seeds) targets the app package: `basalt.app`
-  (relative path, e.g. `"apps/dashboard"`) in the root package.json, else the one workspace package
-  that depends on basalt-ui and has `src/main.tsx` or `index.html`, else the cwd. Two candidates
-  fail with a message naming `basalt.app`. `doctor` run inside the app package finds the root
-  manifest, and warns about a router seed an earlier `sync` left at the root — delete it.
-
-- `doctor`'s `app-wiring` follows the entry's relative imports (three deep): `createBasaltRouter`
-  may be called in `src/lib/router.ts` (or any module `main.tsx` imports), not only in `main.tsx`.
-- The seeded `.github/workflows/check.yml` runs `make check` when the repo's Makefile has a
-  `check:` target, after `doctor` and `sync --check` (which always run, so drift is never
-  skippable); otherwise it keeps the built-in lint, theme and format steps. `init` decides once, on
-  seeding. An already-seeded workflow is yours and unchanged: replace its lint/theme/format steps
-  with `- run: make check` to adopt it.
-
-## 2.0.0
-
-_Nothing to migrate in this release._
 
 ## 1.41.0 — the managed block moves to AGENTS.md
 
