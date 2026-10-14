@@ -100,7 +100,7 @@ const INIT = ({ variant, scheme }: { variant: Variant; scheme: Scheme }) => {
 
 // ── Route transitions ─────────────────────────────────────────────────────────────────────────────
 
-type RouteCall = { types: string[] | null; at: string }
+type RouteCall = { types: string[] | null }
 type RouteProbe = {
   calls: RouteCall[]
   errors: string[]
@@ -129,13 +129,16 @@ const ROUTE_INIT = ({ observe }: { observe: boolean }) => {
     const arg = args[0]
     probe.calls.push({
       types: typeof arg === 'object' && arg !== null ? [...(arg.types ?? [])] : null,
-      at: location.pathname,
     })
     const t = original(...args)
     if (probe.observe) t.ready.then(undefined, () => probe.skipped++)
     return t
   }
 }
+
+/** The playground sidebar's links; the lane clicks these, and their DOM order is the nav order. */
+const SIDEBAR_LINK = '.mantine-AppShell-navbar a[href^="/"]'
+const sidebarLink = (path: string): string => `.mantine-AppShell-navbar a[href^="${path}"]`
 
 async function routeSection(
   browser: import('playwright-core').Browser,
@@ -162,12 +165,10 @@ async function routeSection(
         return window.__route
       })
     /** Distinct pathnames of the sidebar's visible links, in DOM (nav) order. */
-    const links = await page.evaluate(() => {
+    const links = await page.evaluate((selector) => {
       const seen = new Set<string>()
       const out: string[] = []
-      for (const a of document.querySelectorAll<HTMLAnchorElement>(
-        '.mantine-AppShell-navbar a[href^="/"]',
-      )) {
+      for (const a of document.querySelectorAll<HTMLAnchorElement>(selector)) {
         if (a.offsetParent === null) continue
         const path = new URL(a.href).pathname
         if (seen.has(path)) continue
@@ -175,22 +176,26 @@ async function routeSection(
         out.push(path)
       }
       return out
-    })
+    }, SIDEBAR_LINK)
     const click = (path: string) =>
-      page
-        .locator(`.mantine-AppShell-navbar a[href^="${path}"]`)
-        .filter({ visible: true })
-        .first()
-        .click()
+      page.locator(sidebarLink(path)).filter({ visible: true }).first().click()
     return { context, page, consoleErrors, probe, links, click }
   }
 
   // 12 navigations, each to a different page than the one it leaves, settled before the next.
   const main = await session(false)
-  if (main.links.length < 3) problems.push(`route: only ${main.links.length} sidebar links found`)
+  if (main.links.length < 2) {
+    await main.context.close()
+    return {
+      summary,
+      detail: { links: main.links },
+      problems: [`route: ${main.links.length} sidebar link(s) found, need at least 2`],
+    }
+  }
   const sequence: string[] = []
   let current = '/dashboard'
-  for (let i = 0; sequence.length < 12; i++) {
+  // Bounded: every link but the current one is a candidate, so 12 picks need at most 2 passes per pick.
+  for (let i = 0; sequence.length < 12 && i < 24 * main.links.length; i++) {
     const next = main.links[i % main.links.length]
     if (next === undefined || next === current) continue
     sequence.push(next)
@@ -216,6 +221,16 @@ async function routeSection(
     },
     { metric: 'route: types received', value: typeSet.join(', ') },
   )
+  // Direction: the links are in nav order, so a later link is `forward` and an earlier one `back`.
+  let from = '/dashboard'
+  for (const nav of perNav) {
+    const expected =
+      main.links.indexOf(nav.to) > main.links.indexOf(from) ? 'basalt-forward' : 'basalt-back'
+    const got = nav.types.map((t) => t?.join('+') ?? 'none').join(',')
+    if (got !== expected)
+      problems.push(`route: ${from} to ${nav.to}: expected ${expected}, got ${got || 'no call'}`)
+    from = nav.to
+  }
   if (counted !== perNav.length)
     problems.push(`route: ${counted}/${perNav.length} navigations started a transition`)
 
@@ -252,15 +267,13 @@ async function routeSection(
   for (const observe of [true, false]) {
     const r = await session(observe)
     await r.page.evaluate(
-      async (paths) => {
+      async ({ paths, selectorFor }) => {
         for (const path of paths) {
-          document
-            .querySelector<HTMLAnchorElement>(`.mantine-AppShell-navbar a[href^="${path}"]`)
-            ?.click()
+          document.querySelector<HTMLAnchorElement>(selectorFor.replace('{path}', path))?.click()
           await new Promise((resolve) => setTimeout(resolve, 40))
         }
       },
-      r.links.slice(0, 8),
+      { paths: r.links.slice(0, 8), selectorFor: sidebarLink('{path}') },
     )
     await r.page.waitForTimeout(1500)
     const probe = await r.probe()
