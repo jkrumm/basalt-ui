@@ -40,6 +40,7 @@ import {
   droppedSubpathsCheck,
   exactPeersCheck,
   retiredLintRulesCheck,
+  subpathPeersCheck,
   tsconfigBaseCheck,
   unknownConfigKeysCheck,
 } from './doctor-upgrade'
@@ -124,8 +125,8 @@ function resolveAiMajorSkewReason(cfg: BasaltConfig): {
  *   4. `oxlint-preset`: `.oxlintrc.json` extends the shipped preset AND that path resolves.
  *   7. `ai-major-parity`: the `ai` major agrees across this package.json's dependency fields
  *      (exempt via `basalt.aiMajorSkewReason`; a stale reason warns).
- *   8-13. `tsconfig-base`, `retired-lint-rules`, `dropped-subpaths`, `app-wiring`, `exact-peers`,
- *      `config-keys` (./doctor-upgrade);
+ *   8-14. `tsconfig-base`, `retired-lint-rules`, `dropped-subpaths`, `app-wiring`, `exact-peers`,
+ *      `subpath-peers`, `config-keys` (./doctor-upgrade);
  *      a check that cannot run is SKIPPED and exits non-zero.
  *
  * Warning (non-fatal):
@@ -428,6 +429,10 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
         appWiringCheck(appDir),
       ],
       ['exact-peers: installed exact-pinned peers match basalt-ui', exactPeersCheck(cwd, install)],
+      [
+        'subpath-peers: every imported basalt-ui subpath has its required peers installed',
+        subpathPeersCheck(cwd, cfg, install),
+      ],
       [
         'config-keys: the basalt config block sets only keys basalt-ui reads',
         unknownConfigKeysCheck(cwd),

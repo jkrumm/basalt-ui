@@ -11,7 +11,7 @@
  */
 import { MantineProvider } from '@mantine/core'
 import { render, screen, waitFor } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, mock, spyOn, test } from 'bun:test'
 import { CodeBlock } from './code-block'
 import { Markdown } from './markdown'
 
@@ -80,6 +80,7 @@ describe('shiki degrade', () => {
     mock.module('shiki/core', () => ({
       createHighlighterCore: () => Promise.reject(new Error('shiki failed to initialise')),
     }))
+    const warn = spyOn(console, 'warn').mockImplementation(() => undefined)
     try {
       const fresh = (await import(
         freshSpecifier('./highlighter', 'no-shiki')
@@ -87,7 +88,13 @@ describe('shiki degrade', () => {
       await expect(fresh.highlightCode('const a = 1', 'ts')).resolves.toBeNull()
       // Cached: the failed load is not retried per call, and still never rejects.
       await expect(fresh.highlightCode('const b = 2', 'ts')).resolves.toBeNull()
+      // Reported once, with the fix, never thrown into the tree.
+      expect(warn).toHaveBeenCalledTimes(1)
+      expect(String(warn.mock.calls[0]?.[0])).toContain(
+        'bun add shiki @shikijs/langs @shikijs/themes',
+      )
     } finally {
+      warn.mockRestore()
       mock.module('shiki/core', () => real)
     }
   })
