@@ -483,8 +483,8 @@ export const SURFACES = {
     // `responsive-twin` all ship `error`; the two C1 placement rules are the grace entries in
     // `PLUGIN_RULE_GRACE`, both promoting at 1.30.0 — `control-outside-home` re-dated against the
     // wave-7 measurement, `bound-control-outside-home` new since 1.28.0 (ASIDE-SPEC G5: the basalt
-    // half of C1, where a bound control in a section body rendered as a stray pill). The budget
-    // rules live on `.` with `PageBar` itself.
+    // half of C1, where a bound control in a section body rendered as a stray pill). The action
+    // budgets are types now (`PageBarActions` / `SectionActions`, `controls/actions.tsx`).
     pluginRules: [
       'hand-rolled-filter',
       'control-outside-home',
