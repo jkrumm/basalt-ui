@@ -14,9 +14,7 @@ import { parseArgs } from 'node:util'
 
 export const COMMAND_OPTIONS: Record<string, Record<string, { type: 'string' | 'boolean' }>> = {
   init: {
-    'with-router': { type: 'boolean' },
-    'with-query': { type: 'boolean' },
-    'merge-lint': { type: 'boolean' },
+    'no-merge-lint': { type: 'boolean' },
   },
   sync: {
     force: { type: 'boolean' },
@@ -65,7 +63,7 @@ export function unknownFlag(cmd: string, flags: readonly string[]): string | nul
 
 /** The one usage string — printed by `basalt help` / `--help` / `-h` AND the unknown-command fallback. */
 export const USAGE =
-  'Usage: basalt-ui <--version | init [--with-router] [--with-query] [--merge-lint] |\n' +
+  'Usage: basalt-ui <--version | init [--no-merge-lint] |\n' +
   '                  sync [--force] [--check] [--verbose] [--tokens-only|--framework] |\n' +
   '                  check-theme [--audit-allows] |\n' +
   '                  doctor [--tokens-only|--framework] | guard-hook | tokens:css | fonts:css | help>\n\n' +

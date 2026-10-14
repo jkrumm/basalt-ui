@@ -663,26 +663,15 @@ export function importsAgentsMd(text: string): boolean {
   return text.split(/\r?\n/).some(isAgentsImportLine)
 }
 
-/**
- * Explicit `--with-router` / `--with-query` CLI flags force-include a router/query scaffold even
- * when the peer isn't detected in the consumer's package.json yet (e.g. it's about to be added).
- */
-export type ScaffoldFlags = {
-  withRouter?: boolean
-  withQuery?: boolean
-  /** `--merge-lint`: splice the shipped preset's `extends` into an `.oxlintrc.json` init would keep. */
-  mergeLint?: boolean
-}
+/** Scaffold options. `noMergeLint`: `--no-merge-lint` leaves an existing `.oxlintrc.json` untouched. */
+export type ScaffoldFlags = { noMergeLint?: boolean }
 
-/** The seeds that need both TanStack peers — one list for the scaffold entries and the skip notice. */
+/** The router seeds (TanStack Router and Query are required peers of `.`, so they are always written). */
 export const ROUTER_SEED_DESTS = {
   nav: 'src/lib/nav.tsx',
   root: 'src/routes/__root.tsx',
   main: 'src/main.tsx',
 } as const
-
-/** Router/query peer presence, resolved from detection + explicit flags. */
-export type PeerFlags = { hasRouter: boolean; hasQuery: boolean }
 
 /** True when `pkgName` appears in the consumer's dependencies, devDependencies, or peerDependencies. */
 function hasDependency(cwd: string, pkgName: string): boolean {
@@ -699,19 +688,6 @@ function hasDependency(cwd: string, pkgName: string): boolean {
     )
   } catch {
     return false
-  }
-}
-
-/**
- * Resolves whether the consumer has the optional TanStack router/query peers — auto-detected from
- * package.json, or forced via `--with-router` / `--with-query`. Both `basalt-ui init` (for gating
- * which seed scaffolds to write) and `basalt-ui sync` (so it doesn't silently re-seed a scaffold whose
- * peer was never installed) call this once, up front.
- */
-export function resolvePeerFlags(cwd: string, flags: ScaffoldFlags): PeerFlags {
-  return {
-    hasRouter: flags.withRouter === true || hasDependency(cwd, '@tanstack/react-router'),
-    hasQuery: flags.withQuery === true || hasDependency(cwd, '@tanstack/react-query'),
   }
 }
 
@@ -775,10 +751,7 @@ export function resolvePlacement(cwd: string): PlacementFlags {
 }
 
 /** The full managed-file manifest. Stable, declarative — the single source of truth for init/sync. */
-export function managedFiles(
-  peers: PeerFlags,
-  placement: PlacementFlags = ROOT_PLACEMENT,
-): ManagedFile[] {
+export function managedFiles(placement: PlacementFlags = ROOT_PLACEMENT): ManagedFile[] {
   // ── managed: exactly what Claude reads ──────────────────────────────────────
   const rules: ManagedFile[] = RULE_NAMES.map((name) => ({
     dest: `.claude/rules/basalt-${name}.md`,
@@ -925,10 +898,7 @@ export function managedFiles(
     source: 'agent/templates/main.tpl',
     render: (ctx) => readSource(ctx.pkgRoot, 'agent/templates/main.tpl'),
   }
-  // `__root.tsx` imports @tanstack/react-router (createRootRouteWithContext) and basalt-ui's
-  // `BasaltRouterContext`, which names the QueryClient type — so all three seeds need both peers.
-  const scaffolds: ManagedFile[] = []
-  if (peers.hasRouter && peers.hasQuery) scaffolds.push(navModule, rootRoute, mainEntry)
+  const scaffolds: ManagedFile[] = [navModule, rootRoute, mainEntry]
 
   // lefthook.yml / .github/workflows/check.yml are repo-root-shaped: lefthook and GitHub Actions
   // only ever read config at the repo root, so a package living in a subdirectory (a monorepo's
@@ -1025,8 +995,7 @@ export function readManifest(cwd: string): Manifest {
  *
  * Scoped to these two patterns on purpose, and never applied to the manifest wholesale: several
  * managed/seed entries are legitimately absent from `managedFiles()` for a run (`lefthook.yml` and
- * `check.yml` when the package is not the repo root, and
- * the scaffolds without their peers). Deleting a dest just because this run did not place it would
+ * `check.yml` when the package is not the repo root). Deleting a dest just because this run did not place it would
  * remove a consumer's CI workflow on a monorepo.
  */
 const RETIREABLE_DEST_PATTERNS: readonly RegExp[] = [
@@ -1501,10 +1470,9 @@ export function inspectLefthookGate(repoRoot: string): LefthookGate {
 }
 
 /**
- * Splice the shipped preset into an EXISTING `.oxlintrc.json` (`init --merge-lint`). Opt-in, not
- * automatic: turning the framework on adds real lint debt to previously-clean code (see the
- * lint-debt notice `init` prints), and that is a decision, not a scaffold step. Prepends the preset
- * so the consumer's own `extends` entries still win.
+ * Splice the shipped preset into an EXISTING `.oxlintrc.json` (`init` does this unless
+ * `--no-merge-lint`; the lint-debt notice says what it switches on). Prepends the preset so the
+ * consumer's own `extends` entries still win. A child `plugins` list unions with the preset's.
  */
 export function mergeOxlintExtends(cwd: string, presetPath: string): MergeLintResult {
   const abs = resolve(cwd, '.oxlintrc.json')
@@ -1737,9 +1705,7 @@ export function run(argv: string[], cwd: string = process.cwd()): number | Promi
   switch (cmd) {
     case 'init':
       return init(cwd, {
-        withRouter: flags.includes('--with-router'),
-        withQuery: flags.includes('--with-query'),
-        mergeLint: flags.includes('--merge-lint'),
+        noMergeLint: flags.includes('--no-merge-lint'),
       })
     case 'sync':
       return sync(

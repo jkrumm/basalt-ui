@@ -253,6 +253,7 @@ describe('the managed block lives in AGENTS.md', () => {
   })
 
   it('a CLAUDE.md symlinked to AGENTS.md is one file: no-op, the block is not cut', () => {
+    write('src/app.tsx', 'export {}\n') // a real app has src before init; its seeds must not create it
     silenced(() => init(dir))
     rmSync(join(dir, 'CLAUDE.md'), { force: true })
     symlinkSync('AGENTS.md', join(dir, 'CLAUDE.md'))

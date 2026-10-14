@@ -33,7 +33,12 @@ import {
   shippedAssetPath,
 } from './index'
 import { resolveRoots } from './config'
-import { droppedSubpathsCheck, retiredLintRulesCheck, tsconfigBaseCheck } from './doctor-upgrade'
+import {
+  appWiringCheck,
+  droppedSubpathsCheck,
+  retiredLintRulesCheck,
+  tsconfigBaseCheck,
+} from './doctor-upgrade'
 import type { Check } from './doctor-upgrade'
 import { findManifestAbove, parentInstallAdvice } from './sync'
 
@@ -115,7 +120,7 @@ function resolveAiMajorSkewReason(cfg: BasaltConfig): {
  *   4. `oxlint-preset`: `.oxlintrc.json` extends the shipped preset AND that path resolves.
  *   7. `ai-major-parity`: the `ai` major agrees across this package.json's dependency fields
  *      (exempt via `basalt.aiMajorSkewReason`; a stale reason warns).
- *   8-10. `tsconfig-base`, `retired-lint-rules`, `dropped-subpaths` — see ./doctor-upgrade. A
+ *   8-11. `tsconfig-base`, `retired-lint-rules`, `dropped-subpaths`, `app-wiring` — see ./doctor-upgrade. A
  *      check that cannot run is reported SKIPPED and exits non-zero on its own.
  *
  * Warning (non-fatal):
@@ -247,7 +252,7 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
           fail(
             '.oxlintrc.json does NOT extend the shipped preset — every basalt/* design rule is off ' +
               `and oxlint reports green without them. Add "extends": ["${correct}"], or re-run ` +
-              '`basalt-ui init --merge-lint` to splice it in.',
+              '`basalt-ui init` to splice it in (or add it by hand).',
           )
         } else if (!existsSync(resolve(cwd, entry))) {
           fail(
@@ -365,9 +370,11 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
     pass('ai-major-parity: this package.json declares no ai dependency — nothing to compare')
   }
 
-  // ── Hard checks 8-10: strictness and the 1.x → 2.0 upgrade path (./doctor-upgrade) ──────────
+  // ── Hard checks 8-11: strictness and the 1.x → 2.0 upgrade path (./doctor-upgrade) ──────────
   if (profile === 'tokens-only') {
-    pass('tsconfig-base / retired-lint-rules / dropped-subpaths: n/a — a tokens-only consumer')
+    pass(
+      'tsconfig-base / retired-lint-rules / dropped-subpaths / app-wiring: n/a — a tokens-only consumer',
+    )
   } else {
     const upgrade: [string, Check][] = [
       ['tsconfig-base: tsconfig.json extends the shipped preset', tsconfigBaseCheck(cwd)],
@@ -378,6 +385,10 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
       [
         'dropped-subpaths: no import of a basalt-ui subpath the install lacks',
         droppedSubpathsCheck(cwd, cfg, install),
+      ],
+      [
+        'app-wiring: the entry mounts BasaltProvider and the router tree is generated',
+        appWiringCheck(cwd),
       ],
     ]
     for (const [ok, check] of upgrade) {

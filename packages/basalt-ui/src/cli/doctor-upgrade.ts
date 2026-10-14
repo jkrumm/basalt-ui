@@ -2,7 +2,7 @@
  * `doctor`'s 2.0 strictness and upgrade checks. Each returns null (pass), `{ fail }` (the problem
  * plus its fix) or `{ skip }` (the check could not run: a check that cannot run is not a pass).
  */
-import { readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { dirname, relative, resolve } from 'node:path'
 
@@ -293,4 +293,40 @@ export function seedTsconfigExtends(cwd: string): string | null {
   const key = `\n  "extends": "${TSCONFIG_PRESET_ID}"${comma}`
   writeFileSync(target, `${text.slice(0, at)}${key}${text.slice(at)}`)
   return `added "extends": "${TSCONFIG_PRESET_ID}" to ${name}.`
+}
+
+const VITE_CONFIGS = ['ts', 'mts', 'cts', 'js', 'mjs', 'cjs'].map((e) => `vite.config.${e}`)
+const ROUTER_PLUGIN_FIX =
+  "Fix: `bun add -D @tanstack/router-plugin`, add `tanstackRouter({ target: 'react', autoCodeSplitting: true })` " +
+  "from '@tanstack/router-plugin/vite' to `plugins` in vite.config.ts (before react()), then run vite once " +
+  'to generate src/routeTree.gen.ts.'
+
+/**
+ * `app-wiring`: the entry module `index.html` loads (default src/main.tsx) mounts `BasaltProvider`
+ * on a `createBasaltRouter` router, and the router tree is generated: the TanStack router plugin is
+ * in the vite config, or a `routeTree.gen.*` already exists. (`basaltViteConfig` does not register
+ * that plugin, so naming it alone proves nothing.)
+ */
+export function appWiringCheck(cwd: string): Check {
+  const src = /<script[^>]*type=["']module["'][^>]*src=["']([^"']+)["']/i.exec(
+    readIfExists(resolve(cwd, 'index.html')) ?? '',
+  )?.[1]
+  const entry = (src ?? 'src/main.tsx').replace(/^\//, '')
+  const text = readIfExists(resolve(cwd, entry))
+  const seed = 'node_modules/basalt-ui/agent/templates/main.tpl'
+  if (text === null || !(text.includes('BasaltProvider') && text.includes('createBasaltRouter'))) {
+    return {
+      fail:
+        `app-wiring: ${entry} ${text === null ? 'does not exist' : 'does not mount BasaltProvider on a createBasaltRouter router'}. ` +
+        `Fix: make it match ${seed} (\`init\` seeds it only when the file is absent).`,
+    }
+  }
+  const vite = VITE_CONFIGS.map((f) => readIfExists(resolve(cwd, f))).find((t) => t !== null) ?? ''
+  const generated = ['ts', 'tsx', 'js'].some((e) =>
+    existsSync(resolve(cwd, `src/routeTree.gen.${e}`)),
+  )
+  if (generated || /router-plugin|tanstackRouter|TanStackRouter/.test(vite)) return null
+  return {
+    fail: `app-wiring: no vite.config registers the TanStack router plugin and src/routeTree.gen.ts does not exist. ${ROUTER_PLUGIN_FIX}`,
+  }
 }
