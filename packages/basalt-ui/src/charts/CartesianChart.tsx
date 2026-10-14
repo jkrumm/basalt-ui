@@ -6,14 +6,13 @@
  * → container class → height), the bare engine mount (`host.tsx`), and the chrome — the derived
  * legend, the `state` placeholders and the `ChartCard` header slot — around both.
  */
-import { useCallback, useEffect, useId, useMemo, useState } from 'react'
+import { useCallback, useId, useMemo, useState } from 'react'
 import type { CSSProperties, ReactElement, ReactNode } from 'react'
-import { useChartCard } from './card-context'
+import { useInChartCard } from './card-context'
 import { compileCartesian } from './compile'
 import type { CartesianDefinition } from './compile'
 import { ChartEngine, idPrefixOf } from './host'
 import { ChartLegend, legendEntries } from './legend'
-import type { LegendMode } from './legend'
 import { useChartSize } from './sizing'
 import { ChartPlaceholder, resolveChartState } from './state'
 import type { CartesianChartProps, ChartSeries, ChartX } from './types'
@@ -28,7 +27,18 @@ export type RungOptions = {
   stack?: 'stacked' | 'normalized'
 }
 
-const rootStyle: CSSProperties = { display: 'flex', flexDirection: 'column', gap: 6, minWidth: 0 }
+// A size container: the legend picks none/dots/chips from this box's width in CSS, so the server
+// HTML already carries the right one (`chart-legend.module.css`).
+const rootStyle: CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 6,
+  minWidth: 0,
+  containerType: 'inline-size',
+}
+// The card header's legend row, rendered in the body: the header's bottom inset plus its 6px
+// padding, less the body's own 2px top inset.
+const headerLegendStyle: CSSProperties = { marginTop: 8 }
 
 /** `useId` output (`«r1»`, `:r1:`) is not a safe SVG id fragment. */
 
@@ -78,7 +88,7 @@ export type ChartShellProps<T> = Pick<
 export function ChartShell<T>(props: ChartShellProps<T>): ReactElement {
   const { ariaLabel, legend, height, state, className, style, series, compile, byWidth } = props
   const chartId = useId()
-  const card = useChartCard()
+  const inCard = useInChartCard()
   const { ref, size, coarse } = useChartSize(height)
   const [hidden, setHidden] = useState<ReadonlySet<string>>(() => new Set())
   const [highlighted, setHighlighted] = useState<string | null>(null)
@@ -89,13 +99,10 @@ export function ChartShell<T>(props: ChartShellProps<T>): ReactElement {
     [compile, chartId, hidden, highlighted, coarse, width],
   )
 
-  // ── legend: micro has none, compact shows dots, regular and wide show chips ────────────────────
+  // ── legend: micro has none, compact shows dots, regular and wide show chips (CSS, § 9.6) ──────
   const config = legend === false ? null : (legend ?? {})
   const entryCount = legendEntries(series, false)[0]?.length ?? 0
-  // Micro has no legend, compact shows dots, regular and wide show chips (§ 9.6).
-  const cls = size.containerClass
-  const shown = config !== null && entryCount > 0 && cls !== 'micro'
-  const mode: LegendMode | null = shown ? (cls === 'compact' ? 'dots' : 'chips') : null
+  const shown = config !== null && entryCount > 0
   const toggle = config?.toggle ?? entryCount >= 2
   const onToggle = useCallback((key: string) => {
     setHidden((prev) => {
@@ -106,26 +113,23 @@ export function ChartShell<T>(props: ChartShellProps<T>): ReactElement {
   }, [])
   const legendNode: ReactNode = useMemo(
     () =>
-      mode === null ? null : (
+      shown ? (
         <ChartLegend
           series={series}
           hidden={hidden}
-          mode={mode}
+          mode="auto"
           groups={config?.groups === true}
           toggle={toggle}
           onToggle={onToggle}
           onHighlight={setHighlighted}
         />
-      ),
-    [mode, series, hidden, config?.groups, toggle, onToggle],
+      ) : null,
+    [shown, series, hidden, config?.groups, toggle, onToggle],
   )
-  const inHeader = config?.placement === 'header' && card !== null
-  useEffect(() => {
-    if (!inHeader || !card) return
-    card.setHeaderLegend(chartId, legendNode)
-    return () => card.setHeaderLegend(chartId, null)
-  }, [inHeader, card, chartId, legendNode])
-  const atTop = config?.placement === 'top' || (config?.placement === 'header' && !card)
+  // `header` is the enclosing card's header row (`top` outside a card); either way the legend is
+  // the first thing in the chart's own markup.
+  const atTop = config?.placement === 'top' || config?.placement === 'header'
+  const asHeaderRow = config?.placement === 'header' && inCard
 
   const resolved = resolveChartState(state)
   return (
@@ -135,19 +139,19 @@ export function ChartShell<T>(props: ChartShellProps<T>): ReactElement {
       {...(className !== undefined && { className })}
       style={style ? { ...rootStyle, ...style } : rootStyle}
     >
-      {atTop && legendNode}
+      {atTop && (asHeaderRow ? <div style={headerLegendStyle}>{legendNode}</div> : legendNode)}
       {resolved === null ? (
         <ChartEngine
           definition={definition}
           ariaLabel={ariaLabel}
-          height={size.height}
+          height={height}
           idPrefix={idPrefixOf(chartId)}
           coarse={coarse}
         />
       ) : (
-        <ChartPlaceholder state={state} height={size.height} />
+        <ChartPlaceholder state={state} height={height} />
       )}
-      {!atTop && !inHeader && legendNode}
+      {!atTop && legendNode}
     </div>
   )
 }

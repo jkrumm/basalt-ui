@@ -132,10 +132,13 @@ layout('Charts — 2.0 layout', () => {
       }
 
       const legend = await p.raw.evaluate(
-        (sel) =>
-          document
-            .querySelector(`${sel} [data-basalt-chart-legend]`)
-            ?.getAttribute('data-basalt-chart-legend') ?? 'none',
+        // The mode is CSS now (`chart-legend.module.css`): read what the container made visible.
+        (sel) => {
+          const row = document.querySelector(`${sel} [data-basalt-chart-legend]`)
+          if (!row || getComputedStyle(row).display === 'none') return 'none'
+          const dot = row.querySelector('span[aria-hidden]')
+          return dot && getComputedStyle(dot).display !== 'none' ? 'dots' : 'chips'
+        },
         FRAME,
       )
       expect(legend).toBe(c.legend)

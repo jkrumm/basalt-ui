@@ -44,8 +44,6 @@ const legendEntry = (el: HTMLElement, label: string): Element | undefined =>
 const color = (): string => 'var(--vx-line)'
 const slices = (n: number) =>
   Array.from({ length: n }, (_, i) => ({ key: `k${i}`, value: (i + 1) * 10 }))
-const flexDirection = (el: HTMLElement): string =>
-  el.firstElementChild instanceof HTMLElement ? el.firstElementChild.style.flexDirection : ''
 
 describe('Donut', () => {
   const base = { ariaLabel: 'Split', colorForKey: color, formatValue: String }
@@ -142,20 +140,12 @@ describe('Donut', () => {
         formatValue={(v) => `$${v}`}
       />,
     )
-    // 12 o'clock clockwise: 'a' covers the right half of the ring and more.
-    const tip = await hover(el, 400, 120)
+    // 12 o'clock clockwise: 'a' covers the right half of the ring and more. happy-dom has no
+    // layout, so the engine draws its 640 × 320 default and the ring is centred on (320, 160).
+    const tip = await hover(el, 450, 160)
     expect(tip).toContain('A')
     expect(tip).toContain('$30')
     expect(tip).toContain('75%')
-  })
-
-  test('the legend sits beside a wide ring and below a tall one', async () => {
-    expect(flexDirection(await mount(<Donut {...base} data={slices(3)} height={200} />))).toBe(
-      'row',
-    )
-    expect(flexDirection(await mount(<Donut {...base} data={slices(3)} height={480} />))).toBe(
-      'column',
-    )
   })
 
   test('data=[] without a state draws an empty ring, no slices and no legend', async () => {

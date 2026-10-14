@@ -5,6 +5,8 @@
 import type { CSSProperties, ReactElement, ReactNode } from 'react'
 import { toErrorMessage } from '../common/errors'
 import { VX } from '../tokens'
+import { ChartBox, stateClass } from './box'
+import type { ChartBoxHeight } from './box'
 import type { ChartState } from './types'
 
 export type ResolvedChartState = 'pending' | 'error' | 'empty' | null
@@ -23,7 +25,6 @@ const boxStyle: CSSProperties = {
   alignItems: 'center',
   justifyContent: 'center',
   gap: 6,
-  width: '100%',
   color: VX.axis,
   fontSize: VX.text.xs,
   textAlign: 'center',
@@ -38,16 +39,23 @@ const pendingStyle: CSSProperties = {
 const emptyLabel = (state: ChartState | undefined): string =>
   typeof state?.empty === 'string' ? state.empty : 'No data'
 
+/** Fills the same {@link ChartBox} the chart will, so a pending, failed or empty chart (and a
+ * `<Suspense>` fallback built from one) occupies the final chart's height. */
 export function ChartPlaceholder(props: {
   state: ChartState | undefined
-  height: number
+  height?: ChartBoxHeight
   action?: ReactNode
 }): ReactElement | null {
   const kind = resolveChartState(props.state)
   if (kind === null) return null
-  const style = { ...(kind === 'pending' ? pendingStyle : boxStyle), height: props.height }
+  const style = kind === 'pending' ? pendingStyle : boxStyle
+  const fit = (node: ReactElement): ReactElement => (
+    <ChartBox height={props.height}>{node}</ChartBox>
+  )
   if (kind === 'pending')
-    return <output aria-label="Loading chart" aria-busy="true" style={style} />
+    return fit(
+      <output aria-label="Loading chart" aria-busy="true" className={stateClass} style={style} />,
+    )
   const label =
     kind === 'error'
       ? toErrorMessage(props.state?.error, 'The chart failed to load.')
@@ -59,14 +67,14 @@ export function ChartPlaceholder(props: {
     </>
   )
   if (kind === 'error')
-    return (
-      <div role="alert" data-basalt-chart-state={kind} style={style}>
+    return fit(
+      <div role="alert" data-basalt-chart-state={kind} className={stateClass} style={style}>
         {body}
-      </div>
+      </div>,
     )
-  return (
-    <output data-basalt-chart-state={kind} style={style}>
+  return fit(
+    <output data-basalt-chart-state={kind} className={stateClass} style={style}>
       {body}
-    </output>
+    </output>,
   )
 }

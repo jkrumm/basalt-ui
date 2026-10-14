@@ -1,0 +1,29 @@
+/*
+ * Donut layout, by the donut's own inline size (docs/V2-SPEC.md § 9.6, W10 SSR contract): the legend
+ * stacks under the ring below 480px and sits beside it from 480px. In CSS, so the server HTML is the
+ * hydrated layout. The literal is CONTAINER_CLASSES.regular (`breakpoint-literals.test.ts`).
+ */
+
+.row {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.ring {
+  position: relative;
+  min-width: 0;
+}
+
+@container (min-width: 480px) {
+  .row {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  /* The ring is a square of the stated height, at most 55% of the row. */
+  .ring {
+    flex: 0 0 min(var(--bc-donut-h), 55cqw);
+  }
+}

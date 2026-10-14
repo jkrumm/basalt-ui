@@ -16,7 +16,8 @@ import { alpha, VX } from '../tokens'
 import type { CartesianDefinition } from './compile'
 import { ChartEngine, idPrefixOf } from './host'
 import { ChartLegend } from './legend'
-import { useChartSize } from './sizing'
+import { useCoarsePointer } from '../common/use-media-query'
+import classes from './donut.module.css'
 import { ChartPlaceholder, resolveChartState } from './state'
 import { CHART_THEME, DIMMED } from './theme'
 import type { ChartSeries, ChartState, ResponsiveChartHeight } from './types'
@@ -43,8 +44,6 @@ export type DonutProps<K extends string = string> = BasaltProps & {
 /** Slices kept before the rest fold into "Other". */
 const MAX_SLICES = 6
 /** W/H above which the legend sits beside the ring, and the ring's share of the width then. */
-const SIDE_ASPECT = 1.5
-const SIDE_RING_SHARE = 0.55
 const DEFAULT_HEIGHT = 240
 const INNER_RATIO = 0.62
 
@@ -103,7 +102,8 @@ const centerStyle: CSSProperties = {
   fontFamily: 'var(--basalt-font-mono)',
 }
 
-const rootStyle: CSSProperties = { display: 'flex', gap: 12, minWidth: 0 }
+// A size container: the row inside lays the legend beside or under the ring by this width (CSS).
+const rootStyle: CSSProperties = { containerType: 'inline-size', minWidth: 0 }
 
 export function Donut<K extends string = string>(props: DonutProps<K>): ReactElement {
   const {
@@ -120,7 +120,7 @@ export function Donut<K extends string = string>(props: DonutProps<K>): ReactEle
     style,
   } = props
   const chartId = useId()
-  const { ref, size, coarse } = useChartSize(height)
+  const coarse = useCoarsePointer()
   const [hidden, setHidden] = useState<ReadonlySet<string>>(() => new Set())
   const [highlighted, setHighlighted] = useState<string | null>(null)
   const onToggle = useCallback((key: string) => {
@@ -199,10 +199,6 @@ export function Donut<K extends string = string>(props: DonutProps<K>): ReactEle
     }
   }, [slices, hidden, highlighted, total, formatValue])
 
-  const side =
-    size.containerClass !== 'micro' &&
-    size.containerClass !== 'compact' &&
-    size.width / size.height > SIDE_ASPECT
   const legend = (
     <ChartLegend
       series={series}
@@ -215,51 +211,40 @@ export function Donut<K extends string = string>(props: DonutProps<K>): ReactEle
     />
   )
   const resolved = resolveChartState(state)
-  const ringWidth = side ? Math.min(size.height, size.width * SIDE_RING_SHARE) : undefined
   return (
     <div
-      ref={ref}
       data-basalt-chart=""
       {...(className !== undefined && { className })}
-      style={{
-        ...rootStyle,
-        flexDirection: side ? 'row' : 'column',
-        alignItems: side ? 'center' : 'stretch',
-        ...style,
-      }}
+      style={{ ...rootStyle, ...style }}
     >
-      <div
-        style={{
-          position: 'relative',
-          minWidth: 0,
-          ...(ringWidth !== undefined && { flex: `0 0 ${ringWidth}px` }),
-        }}
-      >
-        {resolved === null ? (
-          <ChartEngine
-            definition={definition}
-            ariaLabel={ariaLabel}
-            height={size.height}
-            idPrefix={idPrefixOf(chartId)}
-            coarse={coarse}
-          />
-        ) : (
-          <ChartPlaceholder state={state} height={size.height} />
-        )}
-        {resolved === null && (centerLabel !== undefined || centerSubLabel !== undefined) && (
-          <div style={centerStyle}>
-            {centerLabel !== undefined && (
-              <span style={{ color: VX.ink, fontSize: VX.text.lg, fontWeight: 600 }}>
-                {centerLabel}
-              </span>
-            )}
-            {centerSubLabel !== undefined && (
-              <span style={{ color: VX.axis, fontSize: VX.text.micro }}>{centerSubLabel}</span>
-            )}
-          </div>
-        )}
+      <div className={classes.row}>
+        <div className={classes.ring} style={{ '--bc-donut-h': `${height}px` } as CSSProperties}>
+          {resolved === null ? (
+            <ChartEngine
+              definition={definition}
+              ariaLabel={ariaLabel}
+              height={height}
+              idPrefix={idPrefixOf(chartId)}
+              coarse={coarse}
+            />
+          ) : (
+            <ChartPlaceholder state={state} height={height} />
+          )}
+          {resolved === null && (centerLabel !== undefined || centerSubLabel !== undefined) && (
+            <div style={centerStyle}>
+              {centerLabel !== undefined && (
+                <span style={{ color: VX.ink, fontSize: VX.text.lg, fontWeight: 600 }}>
+                  {centerLabel}
+                </span>
+              )}
+              {centerSubLabel !== undefined && (
+                <span style={{ color: VX.axis, fontSize: VX.text.micro }}>{centerSubLabel}</span>
+              )}
+            </div>
+          )}
+        </div>
+        {resolved === null && legend}
       </div>
-      {resolved === null && legend}
     </div>
   )
 }
