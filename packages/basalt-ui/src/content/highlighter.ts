@@ -64,6 +64,18 @@ const LANG_ALIASES: Record<string, string> = {
 }
 
 let highlighterPromise: Promise<HighlighterCore | null> | null = null
+let warnedMissingPeer = false
+
+/** Dev-only, once per process: the highlighter peers did not resolve, so code stays unhighlighted. */
+function warnMissingPeer(error: unknown): void {
+  if (warnedMissingPeer || process.env['NODE_ENV'] === 'production') return
+  warnedMissingPeer = true
+  console.warn(
+    '[basalt] CodeBlock: syntax highlighting is off — a peer of basalt-ui/content did not load ' +
+      `(${error instanceof Error ? error.message : String(error)}). Code renders unhighlighted. ` +
+      'Install them with: bun add shiki @shikijs/langs @shikijs/themes',
+  )
+}
 
 async function loadHighlighter(): Promise<HighlighterCore | null> {
   const [{ createHighlighterCore }, { createJavaScriptRegexEngine }] = await Promise.all([
@@ -79,7 +91,10 @@ async function loadHighlighter(): Promise<HighlighterCore | null> {
 
 /** Module-level singleton — resolves once; every caller shares the same highlighter instance. */
 function getHighlighter(): Promise<HighlighterCore | null> {
-  highlighterPromise ??= loadHighlighter().catch(() => null)
+  highlighterPromise ??= loadHighlighter().catch((error: unknown) => {
+    warnMissingPeer(error)
+    return null
+  })
   return highlighterPromise
 }
 
@@ -91,7 +106,8 @@ async function ensureLanguage(highlighter: HighlighterCore, lang: string): Promi
   try {
     await highlighter.loadLanguage(loadLang() as LanguageInput)
     return true
-  } catch {
+  } catch (error) {
+    warnMissingPeer(error)
     return false
   }
 }

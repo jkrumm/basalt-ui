@@ -502,3 +502,63 @@ export function exactPeersCheck(cwd: string, install: BasaltInstall): Check {
     }
   })
 }
+
+/**
+ * The peers a subpath needs installed, from `docs/V2-SPEC.md` § 1 "Peers, defined once": the
+ * subpath-required class, plus `./content`'s shiki trio, whose `import()`s a bundler cannot resolve
+ * without them (argo friction row 15: the build passed and the chunk threw at load). `package.json`
+ * and `surfaces.ts` encode "optional" and "per surface" but not "required for this subpath", so this
+ * table is the code-side copy of that prose; `doctor-upgrade.test.ts` pins it to both.
+ */
+export const SUBPATH_REQUIRED_PEERS: Readonly<Record<string, readonly string[]>> = {
+  agent: ['ai', '@ai-sdk/provider', 'motion'],
+  charts: ['@tanstack/charts', 'd3-scale'],
+  commands: ['@tanstack/react-hotkeys'],
+  content: ['react-markdown', 'shiki', '@shikijs/langs', '@shikijs/themes'],
+  'controls-dates': ['@mantine/dates', 'dayjs'],
+  forms: ['@mantine/form'],
+  table: ['@tanstack/react-table'],
+}
+
+/**
+ * `subpath-peers`: every `basalt-ui/<subpath>` the app imports has its required peers installed.
+ * A missing one still builds (the optional peer is marked so in `package.json`) and then throws
+ * "Could not resolve" when the chunk loads. Resolves from the app the way a bundler does.
+ */
+export function subpathPeersCheck(cwd: string, cfg: BasaltConfig, install: BasaltInstall): Check {
+  const id = 'subpath-peers'
+  if (install.dir === null)
+    return { skip: `${id}: basalt-ui does not resolve, so its peers cannot be read.` }
+  const dir = install.dir
+  return guarded(id, () => {
+    const raw = readIfExists(resolve(dir, 'package.json'))
+    const ranges =
+      (raw === null
+        ? {}
+        : (JSON.parse(raw) as { peerDependencies?: Record<string, string> }).peerDependencies) ?? {}
+    const used = new Map<string, string>()
+    for (const rel of scannableFiles(cwd, cfg).filter((f) =>
+      /\.(?:[cm]?[jt]sx?|vue|astro)$/.test(f),
+    )) {
+      for (const [sub] of basaltImports(readIfExists(resolve(cwd, rel)) ?? '')) {
+        if (!used.has(sub)) used.set(sub, rel)
+      }
+    }
+    const missing = new Map<string, string[]>()
+    for (const [sub, file] of used) {
+      for (const peer of SUBPATH_REQUIRED_PEERS[sub] ?? []) {
+        if (installedVersion(cwd, peer) !== null) continue
+        missing.set(peer, [...(missing.get(peer) ?? []), `basalt-ui/${sub} (${file})`])
+      }
+    }
+    if (missing.size === 0) return null
+    const named = [...missing].map(([peer, by]) => `${peer} for ${by.join(', ')}`)
+    const add = [...missing.keys()].map((peer) => {
+      const range = ranges[peer]
+      return range === undefined ? peer : `${peer}@${range}`
+    })
+    return {
+      fail: `${id}: peers a used basalt-ui subpath requires are not installed: ${named.join('; ')}. Fix: \`bun add ${add.join(' ')}\`.`,
+    }
+  })
+}

@@ -18,6 +18,7 @@ import { fileURLToPath } from 'node:url'
 
 import { BASALT_CONFIG_KEYS } from './config'
 import type { BasaltConfig } from './config'
+import { SURFACES } from '../surfaces'
 import { doctor } from './doctor'
 import {
   appWiringCheck,
@@ -25,6 +26,8 @@ import {
   exactPeersCheck,
   retiredLintRulesCheck,
   seedTsconfigExtends,
+  SUBPATH_REQUIRED_PEERS,
+  subpathPeersCheck,
   tsconfigBaseCheck,
   unknownConfigKeysCheck,
 } from './doctor-upgrade'
@@ -1056,4 +1059,59 @@ describe('seeded route files lint clean', () => {
       }
     },
   )
+})
+
+describe('doctor — subpath-peers', () => {
+  const install = (): { dir: string; version: null; how: 'cwd' } => ({
+    dir: join(dir, 'node_modules/basalt-ui'),
+    version: null,
+    how: 'cwd',
+  })
+  const run = (): Check => subpathPeersCheck(dir, { roots: ['src'] }, install())
+
+  it('fails with a bun add fix when an imported subpath lacks its peers', () => {
+    write(
+      'node_modules/basalt-ui/package.json',
+      JSON.stringify({ peerDependencies: { shiki: '^4.5.0', 'react-markdown': '^10.1.0' } }),
+    )
+    write('node_modules/react-markdown/package.json', '{"version":"10.1.0"}')
+    write('src/a.tsx', "import { Markdown } from 'basalt-ui/content'\n")
+    const problem = text(run())
+    expect(problem).toContain('shiki for basalt-ui/content (src/a.tsx)')
+    expect(problem).toContain('@shikijs/langs')
+    expect(problem).not.toContain('react-markdown for')
+    expect(problem).toContain('`bun add shiki@^4.5.0 @shikijs/langs @shikijs/themes`')
+  })
+
+  it('passes once the peers resolve, and ignores subpaths the app does not import', () => {
+    write('node_modules/basalt-ui/package.json', '{}')
+    write('src/a.tsx', "import { Markdown } from 'basalt-ui/content'\nimport 'basalt-ui/state'\n")
+    expect(text(run())).toContain('shiki')
+    for (const peer of SUBPATH_REQUIRED_PEERS['content'] ?? []) {
+      write(`node_modules/${peer}/package.json`, '{"version":"1.0.0"}')
+    }
+    expect(run()).toBeNull()
+  })
+
+  it('skips when basalt-ui does not resolve', () => {
+    const skipped = subpathPeersCheck(
+      dir,
+      { roots: ['src'] },
+      { dir: null, version: null, how: null },
+    )
+    expect(text(skipped)).toContain('subpath-peers')
+  })
+
+  it('names only peers that are optional in package.json and listed on the same surface', () => {
+    const pkg = JSON.parse(readFileSync(join(PKG_ROOT, 'package.json'), 'utf8')) as {
+      peerDependencies: Record<string, string>
+    }
+    const surfaces: Record<string, { optionalPeers?: readonly string[] }> = SURFACES
+    for (const [sub, peers] of Object.entries(SUBPATH_REQUIRED_PEERS)) {
+      for (const peer of peers) {
+        expect(pkg.peerDependencies[peer]).toBeDefined()
+        expect(surfaces[`./${sub}`]?.optionalPeers).toContain(peer)
+      }
+    }
+  })
 })
