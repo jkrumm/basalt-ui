@@ -91,6 +91,18 @@ hydration. `Donut` takes its ring width from the same per-class `--bc-*` heights
 `height` no longer prints `[object Object]px`). Geometry assertions run on the pre-hydration server
 paint as well as the hydrated page, and the probe asserts the rendered `[data-probe]` set.
 
+### Round 2
+
+`Donut`'s ring is now the one sized element (its box fills it): the stated height per container
+class when stacked, `aspect-ratio: 1` beside the legend, so a responsive `height` cannot make ring
+and box disagree; the probe has an unstated, a numeric and a responsive donut and checks ring = box =
+svg and ring squareness. The card header inset follows the card width (narrow 4 px, wide 11 px, on
+the server paint and after hydration). Chart roots are `width: 100%` size containers; a chart in a
+flex row keeps its width. A card measures itself only when its body holds no box that states a
+height, so a `fill` box and a non-chart body are still measured (unit-tested with a controllable
+`ResizeObserver`). A coarse pointer (390 × 360, touch) caps the law-default and a stated 300 px box at
+45 svh. A card with only a header legend has no header row.
+
 ### Short cards (`height={120}` in a card ≥ 480 px)
 
 Closed. The old fold measured the card (`ResizeObserver`, < 280 px) and flipped after hydration: a
