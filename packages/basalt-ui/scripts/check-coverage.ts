@@ -87,8 +87,8 @@ export const REPO_LOCAL_RULES: ReadonlySet<string> = new Set([
  * (D8 — see docs/CONTROLS-SPEC.md §6 "Honest coverage").
  */
 export function coverageBlock(rule: RuleName): string {
-  const { guardKinds, advisoryLaws } = coverageFor(rule)
-  const pluginRules = coverageFor(rule).pluginRules.filter((id) => !REPO_LOCAL_RULES.has(id))
+  const { guardKinds, advisoryLaws, ...coverage } = coverageFor(rule)
+  const pluginRules = coverage.pluginRules.filter((id) => !REPO_LOCAL_RULES.has(id))
   const backedBy = [
     guardKinds.length > 0 ? `guard kinds — ${guardKinds.join(', ')}` : 'guard kinds — none',
     pluginRules.length > 0
@@ -388,10 +388,14 @@ export function checkCoverage(flags: readonly string[] = [], pkgRoot: string = P
     const lines = readFileSync(abs, 'utf8').split('\n').length - 1
     if (lines > budget) failures.push(`${rel}: ${lines} lines exceeds its ${budget}-line budget`)
   }
+  // A missing rule or skill is already reported by assertions 2/3; the AGENTS block has no other
+  // assertion, so its absence is reported here.
+  const blockRel = 'agent/templates/AGENTS-block.md.tpl'
+  if (!existsSync(resolve(pkgRoot, blockRel))) failures.push(`${blockRel}: missing`)
   const layerFiles = [
     ...RULE_NAMES.map((rule) => `agent/rules/basalt-${rule}.md`),
     ...SKILL_NAMES.map((skill) => `agent/skills/${skill}/SKILL.md`),
-    'agent/templates/AGENTS-block.md.tpl',
+    blockRel,
   ]
   const layerTotal = layerFiles.reduce((sum, rel) => {
     const abs = resolve(pkgRoot, rel)

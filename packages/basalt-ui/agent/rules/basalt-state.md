@@ -31,7 +31,7 @@ State a control reads or writes is a field on a store; the URL wins over localSt
 
 ## Nav
 
-- Declare the whole navigation once with `defineNav` and `navGroup` in a leaf module that imports neither `routeTree.gen` nor `__root.tsx`. [type defineNav]
+- Declare the whole navigation once with `defineNav` and `navGroup`. [type defineNav]
 - Pass it as `<BasaltShell nav={NAV} />`; use `navTarget(NAV, id)` for a `<Link>`, `navigate()` or `redirect()`. [type navTarget]
 - Route options sit under `link: linkOptions({ ... })`, never flat on the item. [type defineNav]
 - Link a store-backed route with `search: store.linkSearch`, by reference; never call it or inline `{ range: '30d' }`. [basalt/search-literal-link]
