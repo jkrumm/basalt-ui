@@ -11,7 +11,9 @@
  * being driven, long before the `setRuns` it queues renders. That window is what the record
  * covers: it outlives the run only until a render shows the outcome (`sweepFlushed`).
  */
-import type { ThreadRunState } from './use-agent-thread-runs'
+
+/** The part of a rendered `runs` entry this module reads. */
+type RenderedRun<TPart> = { readonly status: string; readonly parts: TPart[] }
 
 export type RunEnd = 'settled' | 'failed' | 'stopped'
 
@@ -24,6 +26,8 @@ export type RunRecord<TPart> = {
   /** `consumeAndFinalize`'s own `resolveOutcome` is in flight. */
   resolving: boolean
   ended: RunEnd | undefined
+  /** A newer run began on the same thread (set by `beginRun` on the record it replaces). */
+  superseded: boolean
 }
 
 export type RunRecords<TPart> = Map<string, RunRecord<TPart>>
@@ -40,7 +44,10 @@ export function beginRun<TPart>(
     appended: false,
     resolving: false,
     ended: undefined,
+    superseded: false,
   }
+  const previous = records.get(threadId)
+  if (previous !== undefined) previous.superseded = true
   records.set(threadId, record)
   return record
 }
@@ -70,15 +77,24 @@ export type StopPlan<TPart> =
   | { readonly kind: 'stop'; readonly record: RunRecord<TPart>; readonly parts: TPart[] }
 
 /**
+ * True while `threadId` has a live (not yet ended) run.
+ */
+export function hasLiveRun<TPart>(records: RunRecords<TPart>, threadId: string): boolean {
+  const record = records.get(threadId)
+  return record !== undefined && record.ended === undefined
+}
+
+/**
  * Decides `stop()` from the record, falling back to the rendered `entry` only when no record
  * exists (an unmount re-run — StrictMode, `<Activity>` — clears records while `runs` state
  * survives). A live `entry` with no record is a phantom nothing drives; it is settled once: the
- * tombstone this writes makes a second `stop()` in the same tick a no-op.
+ * ended tombstone record this WRITES (the side effect in the name) makes a second `stop()` in the
+ * same tick a no-op.
  */
-export function planStop<TPart>(
+export function planStopWithTombstone<TPart>(
   records: RunRecords<TPart>,
   threadId: string,
-  entry: ThreadRunState<TPart> | undefined,
+  entry: RenderedRun<TPart> | undefined,
 ): StopPlan<TPart> {
   const record = records.get(threadId)
   if (record !== undefined) {
@@ -95,7 +111,7 @@ export function planStop<TPart>(
 /** Thread ids whose failed entry `stopAll()` must dismiss: the records AND what `runs` shows. */
 export function failedThreadIds<TPart>(
   records: RunRecords<TPart>,
-  runs: ReadonlyMap<string, ThreadRunState<TPart>>,
+  runs: ReadonlyMap<string, RenderedRun<TPart>>,
 ): string[] {
   const ids = new Set<string>()
   for (const [threadId, record] of records) if (record.ended === 'failed') ids.add(threadId)
@@ -103,13 +119,27 @@ export function failedThreadIds<TPart>(
   return [...ids]
 }
 
+/**
+ * A failed entry was dismissed: its record has nothing left to cover. (`sweepFlushed` cannot tell
+ * "dismissed" from "not rendered yet", so the dismissal itself drops it.)
+ */
+export function dismissRun<TPart>(records: RunRecords<TPart>, threadId: string): void {
+  if (records.get(threadId)?.ended === 'failed') records.delete(threadId)
+}
+
+/** True unless a newer run has taken the thread over since `record` began. */
+export function isLatestRun<TPart>(record: RunRecord<TPart>): boolean {
+  return !record.superseded
+}
+
 /** Drops the terminal records a render has already caught up with, so ids are not kept forever. */
 export function sweepFlushed<TPart>(
   records: RunRecords<TPart>,
-  runs: ReadonlyMap<string, ThreadRunState<TPart>>,
+  runs: ReadonlyMap<string, RenderedRun<TPart>>,
 ): void {
   for (const [threadId, record] of records) {
-    if (record.ended === undefined) continue
+    // A pending resolver still reports to its record (superseded-ness included): keep it.
+    if (record.ended === undefined || record.resolving) continue
     const shown = runs.get(threadId)
     const flushed = record.ended === 'failed' ? shown?.status === 'error' : shown === undefined
     if (flushed) records.delete(threadId)

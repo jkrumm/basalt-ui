@@ -147,6 +147,33 @@ describe('aiSdkTransport — { transport } form', () => {
     expect(parts.some((p) => p.type === 'text')).toBe(true)
   })
 
+  test('the caller AbortSignal reaches sendMessages and reconnectToStream as abortSignal', async () => {
+    const signals: Array<AbortSignal | undefined> = []
+    const pending = (): ReadableStream<UIMessageChunk> => new ReadableStream<UIMessageChunk>({})
+    const transport = aiSdkTransport({
+      transport: {
+        async sendMessages(options) {
+          signals.push(options.abortSignal)
+          return pending()
+        },
+        async reconnectToStream(options) {
+          signals.push(options.abortSignal)
+          return pending()
+        },
+      },
+    })
+    const controller = new AbortController()
+    const send = transport.stream('hi', controller.signal)
+    await send.next() // start part
+    void send.next().catch(() => {})
+    const resume = transport.resume('tok', controller.signal)
+    void resume.next().catch(() => {})
+    await new Promise((resolve) => setTimeout(resolve, 20))
+
+    expect(signals).toHaveLength(2)
+    expect(signals.every((signal) => signal === controller.signal)).toBe(true)
+  })
+
   test('`transport: undefined` falls back to the HTTP form', async () => {
     const transport = aiSdkTransport({
       api: '/api/chat',
