@@ -11,7 +11,7 @@
  * tab is active — same store (`dataStressFilters`), same band, same published
  * `--basalt-page-bar-h` the table below clears.
  */
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Stack, Text } from '@mantine/core'
 import { PageAside, Section } from 'basalt-ui'
 import type { QueryStateLike } from './query-state-like'
@@ -232,9 +232,7 @@ export function DataStressPage() {
 
   // …and a selection that fell out of the set is DROPPED, not merely hidden — otherwise undoing the
   // delete silently repopulates a panel the user already watched empty out.
-  useEffect(() => {
-    if (selectedId !== null && selected === null) setSelectedId(null)
-  }, [selectedId, selected])
+  if (selectedId !== null && selected === null) setSelectedId(null)
 
   return (
     <Stack gap="sm">

@@ -259,7 +259,7 @@ export function CbbiPanel({
   weights: Record<CbbiMetricKey, number>
 }) {
   const [enabled, setEnabled] = cbbiFilters.field.metrics.use()
-  const enabledSet = useMemo(() => new Set<CbbiMetricKey>(enabled), [enabled])
+  const enabledSet = new Set<CbbiMetricKey>(enabled)
   const health = useMemo(() => diagnoseAll(rows), [rows])
   const suggestions = useMemo(() => todaySuggestions(rows, health), [rows, health])
   const preset = activePreset(weights, enabledSet)
