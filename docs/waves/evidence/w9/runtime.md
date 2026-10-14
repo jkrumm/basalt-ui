@@ -14,7 +14,7 @@ quiet host, the first pass overlapped a merge train).
 | @1x, throttle 100 (default) | 125        | 126        | 116.7        | 133.3        |
 | @4x, throttle 100 (default) | 85         | 86         | 128.3        | 126.7        |
 
-Commit counts are unchanged; frame p95 moves by at most one rAF quantum (16.7 ms), inside the band W8 called
+Commit counts are within ±2 of W8; frame p95 moves by at most one rAF quantum (16.7 ms), inside the band W8 called
 noise. Stream duration @1x t=100 is 6 882 ms (W8 lane: ~6.4–6.9 s).
 
 ## table-perf, 10k rows (vs `w6/table-v9-10k.md`, master v9)
