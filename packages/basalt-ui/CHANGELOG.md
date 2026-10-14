@@ -1,3 +1,21 @@
+# [2.4.0](https://github.com/jkrumm/basalt-ui/compare/v2.3.0...v2.4.0) (2026-10-14)
+
+
+### Bug Fixes
+
+* guard band edge rules in one place and share the tooltip row builders ([75a386b](https://github.com/jkrumm/basalt-ui/commit/75a386b677518e24fc7b13ab7c49c3469c1aaa9d))
+* let the managed pre-commit pass when every staged file is lint-ignored ([dbaa6bc](https://github.com/jkrumm/basalt-ui/commit/dbaa6bce1ea0eefbecee0666ea94c656f81d5b18))
+
+
+### Features
+
+* connect a series across null rows ([3c14ed1](https://github.com/jkrumm/basalt-ui/commit/3c14ed18583710c9b742cd5fa0139c75c06beb4d))
+* cursor dots for marks-drawn series and edge rules on bands ([27bb5b2](https://github.com/jkrumm/basalt-ui/commit/27bb5b228e6212f9e86737aa7868ed375fd66cda))
+* dashed tooltip swatches for reference and dashed series ([5938eb8](https://github.com/jkrumm/basalt-ui/commit/5938eb859fb571a527394b157ab47614406b5444))
+* let a store field take a fallback derived at the call site ([3c12371](https://github.com/jkrumm/basalt-ui/commit/3c12371536a73b45418b1f75ff3479fa4012bd23))
+* reference lines name themselves in the legend ([b49ae5b](https://github.com/jkrumm/basalt-ui/commit/b49ae5bb0317aa99f02e33bcb72f5f493351ddd9))
+* tooltipFormat on the DualPanel bar and top specs ([bde88fe](https://github.com/jkrumm/basalt-ui/commit/bde88fe59de3cdc931a94ed52a696cec3987ab86))
+
 # [2.3.0](https://github.com/jkrumm/basalt-ui/compare/v2.2.0...v2.3.0) (2026-10-14)
 
 
