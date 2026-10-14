@@ -74,4 +74,14 @@ describe('styles.css route transitions', () => {
     const { ROUTE_TRANSITION_TYPES } = await import('./provider/route-transition')
     for (const type of Object.values(ROUTE_TRANSITION_TYPES)) expect(css).toContain(type)
   })
+
+  test('RTL flips the slide: forward and back swap sign, sibling stays 0', () => {
+    expect(css).toMatch(
+      /:root\[dir='rtl'\]:active-view-transition-type\(basalt-forward\)\s*\{\s*--basalt-route-shift: -8px;/,
+    )
+    expect(css).toMatch(
+      /:root\[dir='rtl'\]:active-view-transition-type\(basalt-back\)\s*\{\s*--basalt-route-shift: 8px;/,
+    )
+    expect(css).not.toMatch(/\[dir='rtl'\]:active-view-transition-type\(basalt-sibling\)/)
+  })
 })
