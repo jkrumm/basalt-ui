@@ -10,10 +10,12 @@ import { fileURLToPath } from 'node:url'
 
 import { doctor } from './doctor'
 import {
-  droppedSubpathsProblem,
-  retiredLintRulesProblem,
-  tsconfigBaseProblem,
+  droppedSubpathsCheck,
+  retiredLintRulesCheck,
+  seedTsconfigExtends,
+  tsconfigBaseCheck,
 } from './doctor-upgrade'
+import type { Check } from './doctor-upgrade'
 import { init, MANIFEST_PATH, normalizeForLedger, sha256, sync } from './index'
 
 const PKG_ROOT = fileURLToPath(new URL('../../', import.meta.url))
@@ -22,6 +24,10 @@ const PKG_VERSION = (
 ).version
 
 let dir: string
+
+/** The failure or skip text of a check, or null when it passed. */
+const text = (check: Check): string | null =>
+  check === null ? null : 'fail' in check ? check.fail : check.skip
 
 function write(rel: string, content: string): void {
   mkdirSync(dirname(join(dir, rel)), { recursive: true })
@@ -56,9 +62,9 @@ afterEach(() => {
 describe('doctor — tsconfig-base', () => {
   it('passes when tsconfig.json extends the react-app or base preset', () => {
     write('tsconfig.json', '{ "extends": "basalt-ui/configs/tsconfig.react-app.json" }')
-    expect(tsconfigBaseProblem(dir)).toBeNull()
+    expect(text(tsconfigBaseCheck(dir))).toBeNull()
     write('tsconfig.json', '{ "extends": ["./x.json", "basalt-ui/configs/tsconfig.base.json"] }')
-    expect(tsconfigBaseProblem(dir)).toBeNull()
+    expect(text(tsconfigBaseCheck(dir))).toBeNull()
   })
 
   it('follows a solution-style tsconfig into the app config it references', () => {
@@ -68,18 +74,18 @@ describe('doctor — tsconfig-base', () => {
       'tsconfig.local.json',
       '{ "extends": "./node_modules/basalt-ui/configs/tsconfig.base.json" }',
     )
-    expect(tsconfigBaseProblem(dir)).toBeNull()
+    expect(text(tsconfigBaseCheck(dir))).toBeNull()
   })
 
   it('fails with the exact extends value to set', () => {
     write('tsconfig.json', '{ "compilerOptions": { "strict": true } }')
-    const problem = tsconfigBaseProblem(dir)
+    const problem = text(tsconfigBaseCheck(dir))
     expect(problem).toContain('"extends": "basalt-ui/configs/tsconfig.react-app.json"')
     expect(problem).toContain('exactOptionalPropertyTypes')
   })
 
   it('fails on a missing tsconfig.json', () => {
-    expect(tsconfigBaseProblem(dir)).toContain('tsconfig.json missing')
+    expect(text(tsconfigBaseCheck(dir))).toContain('tsconfig.json missing')
   })
 })
 
@@ -92,6 +98,10 @@ describe('doctor — retired-lint-rules', () => {
 
   function plugin(): void {
     write(
+      'node_modules/basalt-ui/package.json',
+      JSON.stringify({ name: 'basalt-ui', type: 'module' }),
+    )
+    write(
       'node_modules/basalt-ui/configs/oxlint-plugin.js',
       [
         'export const RETIRED_RULE_IDS = new Set([',
@@ -100,7 +110,7 @@ describe('doctor — retired-lint-rules', () => {
         'export default {',
         "  meta: { name: 'basalt' },",
         '  rules: {',
-        "    'card-inset': cardInset,",
+        "    'card-inset': {},",
         '  },',
         '}',
       ].join('\n'),
@@ -116,7 +126,7 @@ describe('doctor — retired-lint-rules', () => {
         overrides: [{ files: ['*.tsx'], rules: { 'basalt/page-bar-budget': 'warn' } }],
       }),
     )
-    const problem = retiredLintRulesProblem(dir, install())
+    const problem = text(retiredLintRulesCheck(dir, install()))
     expect(problem).toContain('basalt/visx-boundary')
     expect(problem).toContain(
       'basalt/page-bar-budget (the PageBarActions/SectionActions tuple types',
@@ -129,9 +139,9 @@ describe('doctor — retired-lint-rules', () => {
     plugin()
     write('.oxlintrc.json', '{ "extends": ["./base.json"] }')
     write('base.json', '{ "rules": { "basalt/provider-above-router": "error" } }')
-    expect(retiredLintRulesProblem(dir, install())).toContain('basalt/provider-above-router')
+    expect(text(retiredLintRulesCheck(dir, install()))).toContain('basalt/provider-above-router')
     write('base.json', '{ "rules": { "basalt/card-inset": "error" } }')
-    expect(retiredLintRulesProblem(dir, install())).toBeNull()
+    expect(text(retiredLintRulesCheck(dir, install()))).toBeNull()
   })
 
   it('reads the real shipped plugin: a visx-era id is retired, a live id is not', () => {
@@ -139,18 +149,24 @@ describe('doctor — retired-lint-rules', () => {
       '.oxlintrc.json',
       '{ "rules": { "basalt/visx-boundary": "error", "basalt/card-inset": "error" } }',
     )
-    const problem = retiredLintRulesProblem(dir, {
-      dir: PKG_ROOT,
-      version: PKG_VERSION,
-      how: 'cwd',
-    })
+    const problem = text(
+      retiredLintRulesCheck(dir, { dir: PKG_ROOT, version: PKG_VERSION, how: 'cwd' }),
+    )
     expect(problem).toContain('basalt/visx-boundary')
     expect(problem).not.toContain('basalt/card-inset')
   })
 })
 
 describe('doctor — dropped-subpaths', () => {
-  it('fails with file:line for an import the installed exports map lacks', () => {
+  const installAt = { dir: '', version: null, how: 'cwd' as const }
+  const check = (): Check =>
+    droppedSubpathsCheck(
+      dir,
+      { roots: ['src'] },
+      { ...installAt, dir: join(dir, 'node_modules/basalt-ui') },
+    )
+
+  function exportsMap(): void {
     write(
       'node_modules/basalt-ui/package.json',
       JSON.stringify({
@@ -158,6 +174,10 @@ describe('doctor — dropped-subpaths', () => {
         exports: { '.': {}, './state': {}, './styles.css': '', './configs/*': '' },
       }),
     )
+  }
+
+  it('flags every import form with its line, ignores live subpaths', () => {
+    exportsMap()
     write(
       'src/app.tsx',
       [
@@ -165,18 +185,110 @@ describe('doctor — dropped-subpaths', () => {
         "import { q } from 'basalt-ui/query'",
         "import 'basalt-ui/styles.css'",
         "import { s } from 'basalt-ui/state'",
+        "import type { T } from 'basalt-ui/data'",
+        "export { x } from 'basalt-ui/notifications'",
         'const m = await import("basalt-ui/connectivity")',
+        "const r = require('basalt-ui/agent-chat')",
+        'import {',
+        '  A,',
+        "} from 'basalt-ui/forms'",
       ].join('\n'),
     )
-    const problem = droppedSubpathsProblem(
-      dir,
-      { roots: ['src'] },
-      { dir: join(dir, 'node_modules/basalt-ui'), version: null, how: 'cwd' },
-    )
-    expect(problem).toContain('src/app.tsx:2 imports basalt-ui/query')
-    expect(problem).toContain('src/app.tsx:5 imports basalt-ui/connectivity')
+    const problem = text(check())
+    for (const [line, sub] of [
+      [2, 'query'],
+      [5, 'data'],
+      [6, 'notifications'],
+      [7, 'connectivity'],
+      [8, 'agent-chat'],
+      [11, 'forms'],
+    ]) {
+      expect(problem).toContain(`src/app.tsx:${line} imports basalt-ui/${sub}`)
+    }
     expect(problem).not.toContain('basalt-ui/state')
+    expect(problem).not.toContain('basalt-ui/styles.css')
     expect(problem).toContain('MIGRATING.md § 2.0')
+  })
+
+  it('does not fire on a commented-out import or a string that merely contains one', () => {
+    exportsMap()
+    write(
+      'src/app.tsx',
+      [
+        "// import { q } from 'basalt-ui/query'",
+        "/* import { q } from 'basalt-ui/query' */",
+        '/*',
+        " * import { q } from 'basalt-ui/query'",
+        ' */',
+        'const doc = "import { q } from \'basalt-ui/query\'"',
+        'const tpl = `',
+        "  see basalt-ui/query for 'basalt-ui/query'",
+        '`',
+        "const url = 'http://x' // import 'basalt-ui/query'",
+      ].join('\n'),
+    )
+    expect(check()).toBeNull()
+  })
+
+  it('SKIPS (never passes) when the installed exports map cannot be read', () => {
+    write('src/app.tsx', "import { q } from 'basalt-ui/query'\n")
+    expect(text(check())).toContain('cannot read')
+    expect(check()).toHaveProperty('skip')
+    write('node_modules/basalt-ui/package.json', '{ not json')
+    expect(check()).toHaveProperty('skip')
+  })
+})
+
+describe('doctor — checks that cannot run are SKIPPED, not green', () => {
+  it('retired-lint-rules skips on a plugin that cannot be loaded or registers nothing', () => {
+    write('.oxlintrc.json', '{ "rules": { "basalt/card-inset": "error" } }')
+    const install = { dir: join(dir, 'node_modules/basalt-ui'), version: null, how: 'cwd' as const }
+    write('node_modules/basalt-ui/configs/oxlint-plugin.js', 'export default { rules: ')
+    expect(retiredLintRulesCheck(dir, install)).toHaveProperty('skip')
+    write('node_modules/basalt-ui/package.json', JSON.stringify({ type: 'module' }))
+    write('node_modules/basalt-ui/configs/oxlint-plugin.js', 'export default { rules: {} }')
+    expect(retiredLintRulesCheck(dir, install)).toHaveProperty('skip')
+  })
+
+  it('tsconfig-base skips on a bare extends that does not resolve', () => {
+    write('tsconfig.json', '{ "extends": "@org/tsconfig" }')
+    expect(tsconfigBaseCheck(dir)).toHaveProperty('skip')
+  })
+
+  it('tsconfig-base follows a bare extends that resolves through node_modules', () => {
+    write('tsconfig.json', '{ "extends": "@org/other" }')
+    write('node_modules/@org/other/package.json', JSON.stringify({ name: '@org/other' }))
+    write(
+      'node_modules/@org/other/tsconfig.json',
+      '{ "extends": "basalt-ui/configs/tsconfig.base.json" }',
+    )
+    expect(tsconfigBaseCheck(dir)).toBeNull()
+  })
+
+  it('tsconfig-base survives an extends cycle', () => {
+    write('tsconfig.json', '{ "extends": "./a.json" }')
+    write('a.json', '{ "extends": "./tsconfig.json" }')
+    expect(tsconfigBaseCheck(dir)).toHaveProperty('fail')
+  })
+
+  it('doctor prints SKIPPED and exits 1 when a check cannot run', () => {
+    write('package.json', JSON.stringify({ name: 'fixture', basalt: { roots: ['src'] } }))
+    write('src/app.tsx', 'export {}\n')
+    write('tsconfig.json', '{ "extends": "basalt-ui/configs/tsconfig.react-app.json" }')
+    write(
+      '.oxlintrc.json',
+      '{ "extends": ["./node_modules/basalt-ui/configs/oxlint.json"], "rules": { "basalt/card-inset": "error" } }',
+    )
+    write('node_modules/basalt-ui/configs/oxlint.json', '{}')
+    write(
+      'node_modules/basalt-ui/package.json',
+      JSON.stringify({ name: 'basalt-ui', version: PKG_VERSION }),
+    )
+    write(MANIFEST_PATH, JSON.stringify({ version: 1, files: {}, basaltVersion: PKG_VERSION }))
+    const { code, log } = capture(() => doctor(dir))
+    expect(code).toBe(1)
+    expect(log).toContain('SKIPPED retired-lint-rules')
+    expect(log).not.toContain('All checks passed')
   })
 })
 
@@ -197,12 +309,14 @@ describe('doctor — output', () => {
     for (const id of ['tsconfig-base', 'dropped-subpaths']) expect(log).toContain(`✖ ${id}:`)
     const failures = log.split('\n').filter((l) => l.includes('✖'))
     expect(failures.length).toBeGreaterThan(0)
-    for (const line of failures) expect(line).toMatch(/Fix:|[Rr]un `|Add "extends"|Repoint|set /)
+    for (const line of failures) expect(line).toMatch(/Fix:|[Rr]un `|Add "extends"|Repoint/)
   })
 })
 
 describe('sync — carries a 1.41 install to the installed release', () => {
-  const OLD = '1.41.0'
+  // Strictly below the installed release, so the version assertions cannot pass vacuously.
+  const [major = 0, minor = 0] = PKG_VERSION.split('.').map(Number)
+  const OLD = minor > 0 ? `${major}.${minor - 1}.0` : `${major - 1}.99.0`
   const old = (dest: string): string => `# ${dest} as shipped at ${OLD}\n`
 
   it('updates untouched files, reports the edited one, rewrites the block, moves basaltVersion', () => {
@@ -231,6 +345,7 @@ describe('sync — carries a 1.41 install to the installed release', () => {
 
     const check = capture(() => sync({ check: true }, dir))
     expect(check.code).toBe(1)
+    expect(OLD).not.toBe(PKG_VERSION)
 
     const { code, log } = capture(() => sync({}, dir))
     expect(code).toBe(0)
@@ -306,4 +421,75 @@ describe('init seeds compile against dist', () => {
       expect(run.exitCode).toBe(0)
     },
   )
+})
+
+describe('init — a stock Vite react-ts app ends up doctor-green on tsconfig-base', () => {
+  const STOCK_ROOT =
+    '{\n  "files": [],\n  "references": [{ "path": "./tsconfig.app.json" }, { "path": "./tsconfig.node.json" }]\n}\n'
+  const STOCK_APP =
+    '{\n  // Vite template\n  "compilerOptions": { "target": "ES2022", /* kept */ "jsx": "react-jsx" },\n  "include": ["src"]\n}\n'
+
+  it('inserts extends textually into the config that covers src, keeping its comments', () => {
+    write('package.json', JSON.stringify({ name: 'fixture' }))
+    write('tsconfig.json', STOCK_ROOT)
+    write('tsconfig.app.json', STOCK_APP)
+    write('tsconfig.node.json', '{ "include": ["vite.config.ts"] }')
+    expect(text(tsconfigBaseCheck(dir))).toContain('does not extend')
+    capture(() => init(dir))
+    expect(tsconfigBaseCheck(dir)).toBeNull()
+    expect(read('tsconfig.app.json')).toContain(
+      '"extends": "basalt-ui/configs/tsconfig.react-app.json",',
+    )
+    expect(read('tsconfig.app.json')).toContain('// Vite template')
+    expect(read('tsconfig.app.json')).toContain('/* kept */')
+    expect(read('tsconfig.json')).toBe(STOCK_ROOT)
+    expect(read('tsconfig.node.json')).not.toContain('extends')
+  })
+
+  it('edits a leading-comment tsconfig and creates one when absent', () => {
+    write('tsconfig.json', '// { not me\n{ "include": ["src"] }\n')
+    expect(seedTsconfigExtends(dir)).toContain('added')
+    expect(tsconfigBaseCheck(dir)).toBeNull()
+    rmSync(join(dir, 'tsconfig.json'))
+    expect(seedTsconfigExtends(dir)).toContain('created')
+    expect(tsconfigBaseCheck(dir)).toBeNull()
+  })
+
+  it('leaves a config that extends something else alone and prints the fix', () => {
+    const own = '{ "extends": "./base.json", "include": ["src"] }\n'
+    write('tsconfig.json', own)
+    write('base.json', '{}')
+    const line = seedTsconfigExtends(dir)
+    expect(line).toContain('already extends something else')
+    expect(line).toContain('"extends": "basalt-ui/configs/tsconfig.react-app.json"')
+    expect(read('tsconfig.json')).toBe(own)
+  })
+})
+
+describe('init — the src/main.tsx seed', () => {
+  const PEERS = { dependencies: { '@tanstack/react-router': '*', '@tanstack/react-query': '*' } }
+
+  it('is written with both router peers, mounts the provider and declares Register', () => {
+    write('package.json', JSON.stringify({ name: 'fixture', ...PEERS }))
+    capture(() => init(dir))
+    const main = read('src/main.tsx')
+    expect(main).toContain('<BasaltProvider router={router} />')
+    expect(main).toContain('interface Register')
+    expect(main).toContain("import 'basalt-ui/styles.css'")
+    expect(main).not.toContain('@mantine')
+  })
+
+  it('is kept when present, and the kept notice says what it must contain', () => {
+    write('package.json', JSON.stringify({ name: 'fixture', ...PEERS }))
+    write('src/main.tsx', '// mine\n')
+    const { log } = capture(() => init(dir))
+    expect(read('src/main.tsx')).toBe('// mine\n')
+    expect(log).toContain('src/main.tsx — it must mount `<BasaltProvider router={router}>`')
+  })
+
+  it('is skipped, with the others, without both peers', () => {
+    write('package.json', JSON.stringify({ name: 'fixture' }))
+    capture(() => init(dir))
+    expect(existsSync(join(dir, 'src/main.tsx'))).toBe(false)
+  })
 })

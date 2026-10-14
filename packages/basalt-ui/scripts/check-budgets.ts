@@ -371,7 +371,7 @@ async function budgets(providerOnlyDist: string): Promise<Budget[]> {
       value: playgroundRouteFiles(),
       ceiling: 15,
     },
-    // 4000 -> 4250: the AGENTS.md block move + CLAUDE.md migration/doctor checks (`migrateBlockToAgentsMd`).
+    // 4000 -> 4250: the AGENTS.md block move + the doctor checks (the CLAUDE.md migration was removed in 2.0).
     { label: 'CLI non-test lines (src/cli/**)', value: cliNonTestLines(), ceiling: 4250 },
     await providerOnlyRow(providerOnlyDist),
   ]
