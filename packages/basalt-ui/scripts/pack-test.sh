@@ -586,6 +586,11 @@ const css = readFileSync(require.resolve('basalt-ui/styles.css'), 'utf8')
 if (!css.includes("@import '@mantine/core/styles.layer.css'")) {
   throw new Error("the shipped styles.css does not `@import '@mantine/core/styles.layer.css'`")
 }
+for (const pkg of ['notifications', 'spotlight']) {
+  if (!css.includes(`@import '@mantine/${pkg}/styles.layer.css'`)) {
+    throw new Error(`the shipped styles.css does not \`@import '@mantine/${pkg}/styles.layer.css'\``)
+  }
+}
 mkdirSync('styles-proof', { recursive: true })
 writeFileSync('styles-proof/styles.css', css)
 writeFileSync('styles-proof/main.js', "import './styles.css'\n")
@@ -602,6 +607,9 @@ const basalt = out.indexOf('@layer basalt{')
 if (mantine === -1 || basalt === -1) throw new Error(`layers missing from the bundled CSS (mantine ${mantine}, basalt ${basalt})`)
 if (mantine > basalt) throw new Error('@layer basalt precedes @layer mantine: basalt would lose to Mantine')
 if (!out.includes('--mantine-color-scheme')) throw new Error('Mantine rules are missing from the bundled CSS')
+for (const cls of ['--notifications-z-index', '--spotlight-content-height']) {
+  if (!out.includes(cls)) throw new Error(`${cls} is missing from the bundled CSS`)
+}
 console.log('styles.css + Mantine layer CSS OK (shipped import)')
 JS
 node styles-proof.mjs
