@@ -23,14 +23,18 @@ import { useBasaltSpacing } from './use-basalt-spacing'
 
 function readBasaltSpacing(theme?: MantineProviderProps['theme']) {
   let captured: ReturnType<typeof useBasaltSpacing> | undefined
-  function Probe() {
-    captured = useBasaltSpacing()
+  function Probe({ onValue }: { onValue: (value: ReturnType<typeof useBasaltSpacing>) => void }) {
+    onValue(useBasaltSpacing())
     return null
   }
   renderToStaticMarkup(
     // exactOptionalPropertyTypes forbids an explicit theme={undefined} — spread only when set
     <MantineProvider {...(theme !== undefined ? { theme } : {})}>
-      <Probe />
+      <Probe
+        onValue={(value) => {
+          captured = value
+        }}
+      />
     </MantineProvider>,
   )
   return captured

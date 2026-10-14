@@ -430,7 +430,9 @@ function MessageBlockImpl({
   affordances,
   isLastAssistant = false,
 }: MessageBlockProps): JSX.Element {
-  messageBlockRenderCounter.count += 1
+  useLayoutEffect(() => {
+    messageBlockRenderCounter.count += 1
+  })
   const settled = !streaming
   const { hovered, ref: hoverRef } = useHover<HTMLDivElement>()
   // `focused` covers the sighted-keyboard-user gap hover alone leaves open (see
@@ -1035,7 +1037,9 @@ function useStableCallback<Args extends unknown[], R>(
   callback: ((...args: Args) => R) | undefined,
 ): ((...args: Args) => R) | undefined {
   const callbackRef = useRef(callback)
-  callbackRef.current = callback
+  useLayoutEffect(() => {
+    callbackRef.current = callback
+  })
   // Deliberately empty deps: this is what keeps `stable`'s identity constant across renders. It
   // reads `callbackRef.current` at CALL time (not at creation time), so it always invokes whatever
   // the consumer most recently passed — never a closure captured at first mount.

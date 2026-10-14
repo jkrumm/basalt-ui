@@ -145,9 +145,11 @@ export function DeriveControls({ resetIcon }: DeriveControlsProps) {
   // persisted/derived config once it matches a full hex; an invalid in-progress value keeps the
   // last valid accent applied.
   const [accentDraft, setAccentDraft] = useState(state.accent)
-  useEffect(() => {
+  const [draftSource, setDraftSource] = useState(state.accent)
+  if (draftSource !== state.accent) {
+    setDraftSource(state.accent)
     setAccentDraft(state.accent)
-  }, [state.accent])
+  }
 
   const handleAccentChange = (value: string) => {
     setAccentDraft(value)

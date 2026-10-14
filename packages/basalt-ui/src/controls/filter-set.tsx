@@ -173,14 +173,12 @@ export function FilterSet({
 function useOverflowFit(rowRef: RefObject<HTMLDivElement | null>, count: number): number {
   const [fit, setFit] = useState(count)
   const widths = useRef<number[]>([])
+  const canObserve = typeof ResizeObserver !== 'undefined'
 
   useEffect(() => {
     const row = rowRef.current
     if (row === null) return
-    if (typeof ResizeObserver === 'undefined') {
-      setFit(count)
-      return
-    }
+    if (!canObserve) return
 
     const measure = (): void => {
       const slots = [...row.querySelectorAll<HTMLElement>('[data-filter-slot]')]
@@ -213,9 +211,9 @@ function useOverflowFit(rowRef: RefObject<HTMLDivElement | null>, count: number)
     return () => {
       observer.disconnect()
     }
-  }, [rowRef, count])
+  }, [rowRef, count, canObserve])
 
-  return fit
+  return canObserve ? fit : count
 }
 
 function fitCount(

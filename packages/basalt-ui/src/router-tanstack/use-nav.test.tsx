@@ -92,16 +92,24 @@ function flattenItems(sections: SidebarSection[]): SidebarItem[] {
 async function mountNav(entry: string, opts?: NavProbeOpts): Promise<Sink> {
   const sink: Sink = { current: null }
 
-  function NavProbe(): ReactNode {
+  function NavProbe({
+    onNav,
+  }: {
+    onNav: (value: NonNullable<Sink['current']>) => void
+  }): ReactNode {
     const nav = useNav(NAV, opts)
-    sink.current = { sections: nav.sections }
+    onNav({ sections: nav.sections })
     return null
   }
 
   const rootRoute = createRootRoute({
     component: () => (
       <>
-        <NavProbe />
+        <NavProbe
+          onNav={(value) => {
+            sink.current = value
+          }}
+        />
         <Outlet />
       </>
     ),

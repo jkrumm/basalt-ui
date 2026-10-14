@@ -1039,14 +1039,12 @@ function useColumnFold(input: {
   const wrapperRef = useRef<HTMLDivElement>(null)
   const [folded, setFolded] = useState<ReadonlySet<string>>(EMPTY_FOLD_SET)
   const orderRef = useRef(order)
-  orderRef.current = order
   const fixedIdsRef = useRef(fixedIds)
-  fixedIdsRef.current = fixedIds
   useLayoutEffect(() => {
-    if (!active || order.length === 0) {
-      setFolded((current) => (current.size === 0 ? current : EMPTY_FOLD_SET))
-    }
-  }, [active, order.length])
+    orderRef.current = order
+    fixedIdsRef.current = fixedIds
+  })
+  if ((!active || order.length === 0) && folded.size > 0) setFolded(EMPTY_FOLD_SET)
 
   useMeasuredWidths({
     resolveRoot: () => wrapperRef.current,
@@ -1494,17 +1492,19 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
   }, [columns, columnPinning])
   // The card projection unmounts the table, so the fold and the containment wrapper go inactive with
   // it — their measuring effects re-attach to the remounted table when the width returns.
-  const projection = useCardProjection(renderCard !== undefined)
-  const columnFold = useColumnFold({
-    active: foldEligible && !projection.cards,
+  const { cards: showCards, rootRef: projectionRootRef } = useCardProjection(
+    renderCard !== undefined,
+  )
+  const { folded: foldedColumns, wrapperRef: foldWrapperRef } = useColumnFold({
+    active: foldEligible && !showCards,
     order: columnFoldOrder,
     fixedIds: columnFoldFixedIds,
   })
   const columnVisibility: ColumnVisibilityState = useMemo(
-    () => Object.fromEntries([...columnFold.folded].map((id) => [id, false])),
-    [columnFold.folded],
+    () => Object.fromEntries([...foldedColumns].map((id) => [id, false])),
+    [foldedColumns],
   )
-  const hasFolded = columnFold.folded.size > 0
+  const hasFolded = foldedColumns.size > 0
   const foldRows = useRowDisclosure({ data, getRowId })
 
   const table = useTable({
@@ -1563,7 +1563,7 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
   // the prepended checkbox column, one more again for the fold-disclosure toggle once anything has
   // folded — a stale count left the empty state and the error row short of the header.
   const columnCount =
-    columns.length + (enableRowSelection ? 1 : 0) + (hasFolded ? 1 : 0) - columnFold.folded.size
+    columns.length + (enableRowSelection ? 1 : 0) + (hasFolded ? 1 : 0) - foldedColumns.size
 
   // `getSelectedRowModel()` is TanStack's own memo, so its `rows` array keeps its identity until
   // the selection or the row model actually moves — which is what makes both memos below hold.
@@ -1605,7 +1605,9 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
   // `useMeasuredContainment` drives instead: bare while the table fits, `overflow-x: auto` once it
   // does not. Its docblock carries the full accounting.
   const pageStickyHeader = !scrolls && stickyHeader === true
-  const containment = useMeasuredContainment(pageStickyHeader && !projection.cards)
+  const { wrapperRef: containmentRef, contained } = useMeasuredContainment(
+    pageStickyHeader && !showCards,
+  )
   const resolvedStickyHeaderOffset = scrolls ? undefined : stickyHeaderOffset
 
   // The error branch the table did not have (components audit #3) carries the query's OWN `refetch`
@@ -1765,7 +1767,7 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
                 {rowExpanded && (
                   <Table.Tr id={`${row.id}-fold`} className={classes.foldDisclosureRowTr}>
                     <Table.Td colSpan={columnCount} className={classes.foldDisclosureCell}>
-                      <RowDisclosure row={row} folded={columnFold.folded} />
+                      <RowDisclosure row={row} folded={foldedColumns} />
                     </Table.Td>
                   </Table.Tr>
                 )}
@@ -1810,7 +1812,7 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
 
   return (
     <div
-      ref={projection.rootRef}
+      ref={projectionRootRef}
       className={cx(classNames?.root, className)}
       {...(style !== undefined && { style })}
     >
@@ -1890,7 +1892,7 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
       {bulkBarActions !== undefined && (
         <BulkActionBar count={selectedRows.length} actions={bulkBarActions} />
       )}
-      {projection.cards ? (
+      {showCards ? (
         maxHeight === undefined ? (
           renderCardList()
         ) : (
@@ -1910,16 +1912,16 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
         // `maxHeight`-only included: a vertical cap is orthogonal to column width, so a
         // `stickyHeader` + `maxHeight` table (the pairing this package's own docs recommend) still
         // folds instead of silently regressing to horizontal scroll. A plain block box, so it
-        // constrains nothing on its own; `columnFold.wrapperRef` only reads it.
-        <div ref={columnFold.wrapperRef} className={classes.foldWrapper}>
+        // constrains nothing on its own; `foldWrapperRef` only reads it.
+        <div ref={foldWrapperRef} className={classes.foldWrapper}>
           {pageStickyHeader ? (
             // Pinning takes this wrapper too — a pinned column's offsets are `position: sticky` on
             // the cells and need no overflow box of their own, so the `overflow-x: auto` Box that
             // used to sit here was the exact inert-sticky defect this shape exists to avoid.
             <div
-              ref={containment.wrapperRef}
+              ref={containmentRef}
               className={classes.containment}
-              data-contained={containment.contained ? 'true' : 'false'}
+              data-contained={contained ? 'true' : 'false'}
             >
               {tableNode}
             </div>

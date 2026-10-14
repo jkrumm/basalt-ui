@@ -38,7 +38,7 @@
  */
 import { ActionIcon, Box, Group, Kbd, Stack, Text, Textarea } from '@mantine/core'
 import type { ClipboardEvent, ComponentProps, JSX, KeyboardEvent, ReactNode, Ref } from 'react'
-import { useImperativeHandle, useLayoutEffect, useRef, useSyncExternalStore } from 'react'
+import { useImperativeHandle, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { cx } from '../../common/props'
 import type { BasaltProps, SlotStylesProps } from '../../common/props'
 import { readPersistedValue } from '../../state/persisted'
@@ -395,11 +395,9 @@ export function Composer({
   classNames,
 }: ComposerProps): JSX.Element {
   // Per-instance fallback for the un-keyed case, so two keyless Composers never share a draft.
-  // A lazily-initialised ref rather than `useState` — this is a create-once value React never
-  // needs to re-render on; the store's own subscription is what drives updates.
-  const memoryStore = useRef<DraftStore | null>(null)
-  memoryStore.current ??= createDraftStore(null)
-  const store = draftKey === undefined ? memoryStore.current : persistedDraftStore(draftKey)
+  // Create-once state React never re-renders on; the store's own subscription drives updates.
+  const [memoryStore] = useState<DraftStore>(() => createDraftStore(null))
+  const store = draftKey === undefined ? memoryStore : persistedDraftStore(draftKey)
   const value = useSyncExternalStore(
     isServer ? noopSubscribe : store.subscribe,
     isServer ? emptyDraft : store.get,
@@ -418,14 +416,15 @@ export function Composer({
   // An attachment with no caption is a legitimate send; text-only callers behave exactly as before.
   const hasPayload = trimmed.length > 0 || pending.length > 0
 
-  // "Latest ref" mirrors of two controlled inputs, kept live every render (plain overwrites, not
-  // derived — safe to do in the render body) so a submit's rejection handler — which fires long
+  // "Latest ref" mirrors of two controlled inputs, refreshed after every commit so a submit's rejection handler — which fires long
   // after the render that started it — can read what is CURRENTLY true rather than what was true
   // when it was created. Both feed the restoration guards in `submit()` below.
   const attachmentsRef = useRef(pending)
-  attachmentsRef.current = pending
   const draftKeyRef = useRef(draftKey)
-  draftKeyRef.current = draftKey
+  useLayoutEffect(() => {
+    attachmentsRef.current = pending
+    draftKeyRef.current = draftKey
+  })
 
   // ── Imperative handle (ComposerHandle) ────────────────────────────────────────
   //

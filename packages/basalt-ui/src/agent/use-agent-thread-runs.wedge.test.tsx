@@ -62,7 +62,7 @@
  */
 import { describe, expect, test } from 'bun:test'
 import type { JSX } from 'react'
-import { Activity, StrictMode, useState } from 'react'
+import { Activity, StrictMode, useEffect, useState } from 'react'
 import { act, render, renderHook, waitFor } from '@testing-library/react'
 import { useAgentThreadRuns } from './use-agent-thread-runs'
 import type { AgentThread, ThreadsStore } from './thread'
@@ -287,7 +287,9 @@ describe('useAgentThreadRuns — F3 mount-reconcile / unmount-cleanup wedge', ()
 
     function Harness(): JSX.Element {
       const [mode, setMode] = useState<'visible' | 'hidden'>('visible')
-      externalSetMode = setMode
+      useEffect(() => {
+        externalSetMode = setMode
+      }, [setMode])
       return (
         <Activity mode={mode}>
           <Probe />
@@ -334,13 +336,18 @@ describe('useAgentThreadRuns — F3 mount-reconcile / unmount-cleanup wedge', ()
     let hookResult: ReturnType<typeof useAgentThreadRuns<AgentPart>> | undefined
 
     function Probe(): null {
-      hookResult = useAgentThreadRuns({ transport, store, resolveOutcome })
+      const result = useAgentThreadRuns({ transport, store, resolveOutcome })
+      useEffect(() => {
+        hookResult = result
+      })
       return null
     }
 
     function Harness(): JSX.Element {
       const [mode, setMode] = useState<'visible' | 'hidden'>('visible')
-      externalSetMode = setMode
+      useEffect(() => {
+        externalSetMode = setMode
+      }, [setMode])
       return (
         <Activity mode={mode}>
           <Probe />
