@@ -30,7 +30,7 @@ pre-commit:
 
     oxlint:
       glob: '*.{js,jsx,ts,tsx,cjs,mjs}'
-      run: bunx oxlint {staged_files}
+      run: bunx oxlint --no-error-on-unmatched-pattern {staged_files}
 
     # Must cover every type `bun run fmt:check` reaches, or the hook passes and CI fails on the same
     # commit — oxfmt formats css/md/yaml too. The --ignore-path flags mirror the root scripts and are
