@@ -1109,6 +1109,8 @@ function propertyKeyName(node) {
   return undefined
 }
 
+const nameOf = (node) => (node.type === 'Identifier' ? node.name : node.value)
+
 // ── Rule 9 — agent-no-raw-usechat ───────────────────────────────────────────────────────────────
 
 const AGENT_NO_RAW_USECHAT_MESSAGE =
@@ -1132,7 +1134,6 @@ const agentNoRawUseChat = {
   },
   create(context) {
     const sourceCode = context.sourceCode ?? context.getSourceCode?.()
-    const nameOf = (node) => (node.type === 'Identifier' ? node.name : node.value)
     const report = (node) => {
       if (!hasAgentAllow(context, node)) {
         context.report({ node, message: AGENT_NO_RAW_USECHAT_MESSAGE })
@@ -3387,7 +3388,7 @@ const noImportMetaEnv = {
     schema: [],
   },
   create(context) {
-    if (isTestFile(context) || !getFilename(context).startsWith(`${PACKAGE_ROOT}/src/`)) return {}
+    if (isTestFile(context) || !isBasaltOwnSource(getFilename(context))) return {}
 
     return {
       MemberExpression(node) {
@@ -3873,6 +3874,23 @@ const VIEW_TRANSITION_TAGS = new Set(['Link', 'Navigate'])
 /** Router calls whose first-argument object may carry `viewTransition`. */
 const VIEW_TRANSITION_CALLS = new Set(['navigate', 'redirect', 'linkOptions'])
 
+/** How deep a router binding is chased through `const x = useNavigate()`-style initialisers. */
+const ROUTER_RESOLVE_DEPTH = 4
+
+/** What a router factory call returns: the kind a binding initialised from it stands for. */
+const ROUTER_CALL_KIND = {
+  useNavigate: 'navigate',
+  useRouter: 'router',
+  createRouter: 'router',
+  createFileRoute: 'route',
+  createLazyFileRoute: 'route',
+  createRoute: 'route',
+  createLazyRoute: 'route',
+  createRootRoute: 'route',
+  createRootRouteWithContext: 'route',
+  getRouteApi: 'route',
+}
+
 /** The router export a binding was imported as — `{ imported }` or `{ namespace }` — else undefined. */
 function routerImport(sourceCode, identifier) {
   const def = soleDefinition(sourceCode, identifier)
@@ -3887,41 +3905,68 @@ function routerImport(sourceCode, identifier) {
   return { imported: imported.type === 'Identifier' ? imported.name : imported.value }
 }
 
+/** What a router factory CALL yields (`useNavigate()` → 'navigate', `createFileRoute(p)(o)` → 'route'). */
+function routerCallKind(sourceCode, call, depth) {
+  let callee = call.callee
+  while (callee?.type === 'CallExpression') callee = callee.callee
+  const name = routerName(sourceCode, callee, depth + 1)
+  return name !== undefined && Object.hasOwn(ROUTER_CALL_KIND, name)
+    ? ROUTER_CALL_KIND[name]
+    : undefined
+}
+
+/** A plain identifier: an import from the router, or a binding initialised from a router factory. */
+function routerBindingName(sourceCode, node, depth) {
+  const bound = routerImport(sourceCode, node)
+  if (bound?.imported !== undefined) return bound.imported
+  const def = soleDefinition(sourceCode, node)
+  const init = def?.type === 'Variable' ? def.node?.init : undefined
+  return init?.type === 'CallExpression' ? routerCallKind(sourceCode, init, depth) : undefined
+}
+
+/** `ns.redirect`, `Route.useNavigate`, `router.navigate`, `getRouteApi(id).useNavigate` — router receivers only. */
+function routerMemberName(sourceCode, node, depth) {
+  const object = node.object
+  const property = node.property?.name
+  if (object?.type === 'Identifier' || object?.type === 'JSXIdentifier') {
+    if (routerImport(sourceCode, object)?.namespace === true) return property
+  }
+  let kind
+  if (object?.type === 'CallExpression') kind = routerCallKind(sourceCode, object, depth)
+  else if (object?.type === 'Identifier') kind = routerBindingName(sourceCode, object, depth)
+  if (kind === 'route' && property === 'useNavigate') return property
+  if (kind === 'router' && property === 'navigate') return property
+  return undefined
+}
+
 /**
  * Which router export `node` is — `Link`, `redirect`, `createRouter` — or `'navigate'` for the
- * binding `useNavigate()` returned (whatever it is called) and for `router.navigate`, `'router'`
- * for the result of `useRouter()` / `createRouter()`. `undefined` for anything not from the
- * router, so a local `Link` or `navigate` is clean.
+ * binding `useNavigate()` returned (whatever it is called) and for `router.navigate`, `'router'` /
+ * `'route'` for the result of the router and route factories. `undefined` for anything without
+ * router provenance, so a local `Link`, `navigate` or `api.useNavigate` is clean.
  */
 function routerName(sourceCode, node, depth = 0) {
-  if (node === null || node === undefined || depth > 4) return undefined
-  if (node.type === 'Identifier' || node.type === 'JSXIdentifier') {
-    const bound = routerImport(sourceCode, node)
-    if (bound?.imported !== undefined) return bound.imported
-    const def = soleDefinition(sourceCode, node)
-    const init = def?.type === 'Variable' ? def.node?.init : undefined
-    if (init?.type !== 'CallExpression') return undefined
-    const made = routerName(sourceCode, init.callee, depth + 1)
-    if (made === 'useNavigate') return 'navigate'
-    return made === 'useRouter' || made === 'createRouter' ? 'router' : undefined
+  if (node === null || node === undefined || depth > ROUTER_RESOLVE_DEPTH) return undefined
+  switch (node.type) {
+    case 'Identifier':
+    case 'JSXIdentifier':
+      return routerBindingName(sourceCode, node, depth)
+    case 'MemberExpression':
+      return node.computed ? undefined : routerMemberName(sourceCode, node, depth)
+    case 'JSXMemberExpression':
+      return routerMemberName(sourceCode, node, depth)
+    case 'CallExpression':
+      return routerCallKind(sourceCode, node, depth)
+    default:
+      return undefined
   }
-  if (node.type === 'MemberExpression' && !node.computed) {
-    const property = node.property?.name
-    // `Route.useNavigate()` / `getRouteApi(id).useNavigate()` — the route API, whatever the object.
-    if (property === 'useNavigate') return property
-    const object = node.object
-    if (object?.type !== 'Identifier') return undefined
-    if (routerImport(sourceCode, object)?.namespace === true) return property
-    return routerName(sourceCode, object, depth + 1) === 'router' && property === 'navigate'
-      ? 'navigate'
-      : undefined
-  }
-  if (node.type === 'JSXMemberExpression' && node.object?.type === 'JSXIdentifier') {
-    return routerImport(sourceCode, node.object)?.namespace === true
-      ? node.property?.name
-      : undefined
-  }
-  return undefined
+}
+
+/** `viewTransition={false}` / `{ viewTransition: false }` asks for no transition; anything else does. */
+function asksForTransition(value) {
+  if (value === null || value === undefined) return true
+  const expression = value.type === 'JSXExpressionContainer' ? value.expression : value
+  return !(expression?.type === 'Literal' && expression.value === false)
 }
 
 // Ships: error
@@ -3944,7 +3989,8 @@ const routerViewTransition = {
     return {
       JSXAttribute(node) {
         if (node.name?.type !== 'JSXIdentifier' || node.name.name !== 'viewTransition') return
-        if (VIEW_TRANSITION_TAGS.has(routerName(sourceCode, node.parent?.name) ?? '')) report(node)
+        if (!VIEW_TRANSITION_TAGS.has(routerName(sourceCode, node.parent?.name) ?? '')) return
+        if (asksForTransition(node.value)) report(node)
       },
       CallExpression(node) {
         const callee = node.callee
@@ -3965,7 +4011,8 @@ const routerViewTransition = {
         else if (VIEW_TRANSITION_CALLS.has(name ?? '')) banned = 'viewTransition'
         if (banned === undefined) return
         for (const prop of arg0.properties) {
-          if (prop.type === 'Property' && propertyKeyName(prop) === banned) report(prop)
+          if (prop.type !== 'Property' || propertyKeyName(prop) !== banned) continue
+          if (asksForTransition(prop.value)) report(prop)
         }
       },
     }
@@ -4003,9 +4050,30 @@ function isNodeEnvRead(node) {
   )
 }
 
-/** 'dev' when `test` is true in development, 'prod' when true in production, else undefined. */
-function nodeEnvPolarity(test) {
-  if (test?.type !== 'BinaryExpression') return undefined
+const flip = (env) => (env === 'dev' ? 'prod' : env === 'prod' ? 'dev' : undefined)
+
+/** The environment `test` pins when it is TRUTHY: 'dev', 'prod' or undefined. */
+function truthyEnv(test) {
+  if (test?.type === 'BinaryExpression') return comparisonEnv(test)
+  if (test?.type === 'UnaryExpression' && test.operator === '!') return falsyEnv(test.argument)
+  if (test?.type === 'LogicalExpression' && test.operator === '&&') {
+    return truthyEnv(test.left) ?? truthyEnv(test.right)
+  }
+  return undefined
+}
+
+/** The environment `test` pins when it is FALSY — `a && env` pins nothing, `a || env` pins both. */
+function falsyEnv(test) {
+  if (test?.type === 'BinaryExpression') return flip(comparisonEnv(test))
+  if (test?.type === 'UnaryExpression' && test.operator === '!') return truthyEnv(test.argument)
+  if (test?.type === 'LogicalExpression' && test.operator === '||') {
+    return falsyEnv(test.left) ?? falsyEnv(test.right)
+  }
+  return undefined
+}
+
+/** 'dev' when the literal NODE_ENV comparison is true in development, 'prod' when in production. */
+function comparisonEnv(test) {
   const [read, literal] = isNodeEnvRead(test.left)
     ? [test.left, test.right]
     : [test.right, test.left]
@@ -4018,25 +4086,17 @@ function nodeEnvPolarity(test) {
   return undefined
 }
 
-/** True when `node` sits in a branch of a literal NODE_ENV test that only runs in development. */
+/** True when `node` sits in a branch that only runs in development, by a literal NODE_ENV test. */
 function underDevGate(node) {
   let child = node
   for (let parent = node.parent; parent; child = parent, parent = parent.parent) {
-    const polarity = nodeEnvPolarity(parent.test)
-    if (
-      polarity !== undefined &&
-      (parent.type === 'IfStatement' || parent.type === 'ConditionalExpression')
-    ) {
-      if (parent.consequent === child && polarity === 'dev') return true
-      if (parent.alternate === child && polarity === 'prod') return true
+    if (parent.type === 'IfStatement' || parent.type === 'ConditionalExpression') {
+      if (parent.consequent === child && truthyEnv(parent.test) === 'dev') return true
+      if (parent.alternate === child && falsyEnv(parent.test) === 'dev') return true
     }
-    if (
-      parent.type === 'LogicalExpression' &&
-      parent.operator === '&&' &&
-      parent.right === child &&
-      nodeEnvPolarity(parent.left) === 'dev'
-    ) {
-      return true
+    if (parent.type === 'LogicalExpression' && parent.right === child) {
+      if (parent.operator === '&&' && truthyEnv(parent.left) === 'dev') return true
+      if (parent.operator === '||' && falsyEnv(parent.left) === 'dev') return true
     }
   }
   return false
@@ -4046,6 +4106,14 @@ const FUNCTION_TYPES = new Set([
   'ArrowFunctionExpression',
   'FunctionExpression',
   'FunctionDeclaration',
+])
+/** TS wrappers that still READ the value they wrap (`Dock as X`, `Dock!`, `Dock satisfies X`). */
+const TS_VALUE_WRAPPERS = new Set([
+  'TSAsExpression',
+  'TSNonNullExpression',
+  'TSSatisfiesExpression',
+  'TSInstantiationExpression',
+  'TSTypeAssertion',
 ])
 
 /**
@@ -4066,14 +4134,23 @@ function loaderBinding(node) {
     : undefined
 }
 
-/** True when an Identifier/JSXIdentifier is a REFERENCE (expression or JSX element position). */
-function isReferencePosition(node) {
+/**
+ * Is this identifier a USE of a loader binding? Stricter than {@link isValueReferencePosition}
+ * (which only has to tell an import from a render): a loader's uses are judged for gating, so
+ * property keys, class member names, JSX closers and declaration ids must not count, while TS
+ * value wrappers (`Dock!`, `Dock as X`) still do.
+ */
+function isLoaderUsePosition(node) {
   const parent = node.parent
   if (parent === null || parent === undefined) return false
   switch (parent.type) {
     case 'MemberExpression':
       return parent.object === node || parent.computed
     case 'Property':
+      return parent.value === node || (parent.computed && parent.key === node)
+    case 'MethodDefinition':
+    case 'PropertyDefinition':
+    case 'AccessorProperty':
       return parent.value === node || (parent.computed && parent.key === node)
     case 'VariableDeclarator':
       return parent.init === node
@@ -4089,7 +4166,7 @@ function isReferencePosition(node) {
     case 'JSXMemberExpression':
       return parent.object === node
     default:
-      return !parent.type.startsWith('TS')
+      return TS_VALUE_WRAPPERS.has(parent.type) || !parent.type.startsWith('TS')
   }
 }
 
@@ -4111,16 +4188,13 @@ const noDevHelper = {
     /** Every reference candidate, by name — judged against its binding at `Program:exit`. */
     const references = new Map()
     const addReference = (node) => {
-      if (!isReferencePosition(node)) return
+      if (!isLoaderUsePosition(node)) return
       const same = references.get(node.name)
       if (same === undefined) references.set(node.name, [node])
       else same.push(node)
     }
-    /** True when `reference` resolves to the declaration `id` (name match when scopes are unavailable). */
-    const resolvesTo = (reference, id) => {
-      const def = soleDefinition(sourceCode, reference)
-      return def === undefined ? true : def.name === id
-    }
+    /** True when `reference` provably resolves to the declaration `id`; unresolvable is NOT a use. */
+    const resolvesTo = (reference, id) => soleDefinition(sourceCode, reference)?.name === id
     return {
       Identifier: addReference,
       JSXIdentifier: addReference,
