@@ -989,20 +989,15 @@ optional, subpath-required peers.
 
 ## Unreleased — a call-site fallback a control can see
 
-Additive; `use({ fallback })` keeps working.
-
-- `createLocalStore` fields take `withFallback(value)`: a derived handle over the same field (same
-  key, setter and `clear()`) whose unset value is the call-site `value`. `use()` and every basalt
-  filter control bound to it (`<SelectFilter field={store.field.exercise.withFallback(leader)} />`)
-  resolve unset → `value`, so a prop-derived default no longer makes the hook and the dropdown
-  disagree. Never persisted; a reset unsets back to it; `fallback` and `isDefault` on the derived
-  handle report `value`, so a control at the default is not an active filter. Stable for a stable
-  primitive; memoise an object fallback (range, multi). argo `strength-composite-chart.tsx`: drop
-  the per-leader store and bind `store.field.exercise.withFallback(leader)`.
-- `use({ fallback })` (2.4.0) is `@deprecated` in favour of it: it reaches the hook only. It stays
-  until the next sanctioned break. `createSearchStore` fields do not take `withFallback`: the URL
-  lane canonicalises a value equal to the definition's fallback away, so a second, call-site
-  default would make the same URL mean two things.
+- `createLocalStore` fields take `withFallback(value)`: the same field (key, setter, `clear()`)
+  with a call-site unset value, for `use()` and any filter control as `field=`
+  (`<SelectFilter field={store.field.exercise.withFallback(leader)} />`). Never persisted; a reset
+  returns to it; `fallback` and `isDefault` on the derived handle report it. Rule: `basalt-state`.
+  `createSearchStore` fields do not take it: the URL lane drops a value equal to the definition's
+  fallback, so a second default would make one URL mean two things.
+- `use({ fallback })` is removed — replaced by `field.withFallback(value).use()`. It existed in
+  2.4.0 only and has no known consumers. argo `strength-composite-chart.tsx`: bind
+  `store.field.exercise.withFallback(leader)` instead of rebuilding the store per leader.
 
 ## 2.4.0 — chart gaps and legends, local-store fallbacks, the pre-commit hook
 
