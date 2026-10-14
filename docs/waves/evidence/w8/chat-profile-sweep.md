@@ -36,7 +36,7 @@ and [`chat-profile-before.md`](chat-profile-before.md). Lane `chat-profile`, `LA
 
 - **Frame rows are compared with the idle control row only** (W2 caveat): headless rAF idles at 50-83 ms
   per frame, so frame p50 = idle means "no worse than idle", never a 16.7 ms budget. The control row
-  itself moves between 50 and 67 ms across cells; frame differences of one rAF quantum (16.7 ms) or
+  itself moves between 50 and 83 ms across cells; frame differences of one rAF quantum (16.7 ms) or
   less are noise.
 - **Final text:** the rendered page text after the reply hashed identically in all 40 runs (1 distinct
   hash across every throttle and CPU cell).
@@ -44,8 +44,8 @@ and [`chat-profile-before.md`](chat-profile-before.md). Lane `chat-profile`, `LA
 
 ## Reading it
 
-- **Commits fall linearly with the window:** 235 → 189 → 125 → 83 @1x (-65% at 200 ms), 235 → 147 → 85 → 53
-  @4x (-77%). That is the only metric that moves a lot.
+- **Commits fall monotonically with the window:** 235 → 189 → 125 → 83 @1x (-65% at 200 ms), 235 → 147 → 85 → 53
+  @4x (-77%). That is the largest move; frame max @4x and long-task time (below) move too.
 - **Stream duration does not drop.** It is render-bound, not commit-bound (6.4 s @1x for ~2.9 s of
   timers), so batching commits saves React work but not wall time; @1x it is +7% at 100/200 ms (the
   trailing commit waits out the window).
@@ -57,12 +57,25 @@ and [`chat-profile-before.md`](chat-profile-before.md). Lane `chat-profile`, `LA
 - **Not measured:** perceived text cadence. At 200 ms the reply updates ~5x per second; the lane
   measures cost, not smoothness of the visible flow, and there is no per-update timestamp.
 
-## RECOMMENDED DEFAULT: `throttle = 200`
+## Selection rule and recommendation
 
-By the stated rule (lowest commit count with frame
-p95 not worse than throttle 0 and identical final text), 200 ms is the only value that passes at both
-CPU rates: p95 116.7 @1x and @4x (t=0: 116.7 / 125), final text identical, commits 83 / 53 against
-235 / 235 (-65% / -77%). 50 and 100 ms cut commits less and regress @4x p95 by one quantum. The caveat
-is the @4x frame max (400 ms vs 250 ms): if that hitch is visible in review, fall back to 50 ms (frame
-max 233 ms, commits -20% / -37%). The default stays 0 in the package until the owner picks; this wave
-ships no package change.
+Rule: pick the lowest commit count whose frame p95 is within the one-quantum noise band (16.7 ms) of
+throttle 0 at both CPU rates, with identical final text; commit count is the tie-break.
+
+| t   | p95 @1x (Δ vs t=0) | p95 @4x (Δ vs t=0) | in band   | commits @1x / @4x |
+| --- | ------------------ | ------------------ | --------- | ----------------- |
+| 0   | 116.7              | 125                | (control) | 235 / 235         |
+| 50  | 116.7 (0)          | 130.8 (+5.8)       | yes       | 189 / 147         |
+| 100 | 116.7 (0)          | 128.3 (+3.3)       | yes       | 125 / 85          |
+| 200 | 116.7 (0)          | 116.7 (-8.3)       | yes       | 83 / 53           |
+
+All three pass (final text: 1 distinct hash in 40 runs), and 200 ms has the fewest commits, so the
+mechanical rule gives **RECOMMENDED DEFAULT: `throttle = 200`**. Under the stricter reading (p95 not
+worse than t=0 at all), 200 is also the only survivor. This rule does not look at frame max, where
+200 is worst @4x (400 ms vs 250).
+
+## Decision
+
+The lead set the package default to **100 ms**, not 200. 200 has the worst @4x frame max (400 ms vs
+250), and about 5 updates per second reads as a choppy typewriter (cadence is unmeasured, so this is a
+judgement, not a number). 100 ms still removes -47% commits @1x (235 → 125) and -64% @4x (235 → 85).

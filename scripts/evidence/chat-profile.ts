@@ -1,6 +1,7 @@
 /**
  * Evidence lane: React commit counts + frame cost while the playground `/agent` route streams a
- * reply. The playground source is NOT touched:
+ * reply. The lane drives the demo through the URL params it reads (`?throttle=<ms>`; `?fail=1` is for
+ * `chat-turn-trace`), and otherwise reads the playground as it is:
  *
  *  - Stream: `/agent` → "Stream" tab (`AgentStreamDemo`) drives `useAgentThreadRuns` over
  *    `richTransport` — a deterministic in-memory mock (~1500 words over ~3 s: reasoning, markdown
@@ -37,11 +38,23 @@ const TYPING = '[aria-label="Assistant is typing"]'
 const COMPOSER = 'textarea[placeholder^="Send a message"]'
 const STREAM_TIMEOUT_MS = 90_000
 const IDLE_CONTROL_MS = 1000
-/** The runtime `throttle` values swept, in ms (0 = off, the runtime default). */
-export const SWEEP_MS: readonly number[] = (process.env['CHAT_THROTTLES'] ?? '0,50,100,200')
-  .split(',')
-  .map((v) => Number(v.trim()))
-  .filter((v) => Number.isFinite(v) && v >= 0)
+/**
+ * `CHAT_THROTTLES` / the default: comma-separated ms, empty / non-numeric / negative segments
+ * dropped, duplicates removed (first wins). Throws, naming the raw value, when nothing is left.
+ */
+export function parseSweep(raw: string): number[] {
+  const values = raw
+    .split(',')
+    .map((v) => v.trim())
+    .filter((v) => v !== '')
+    .map(Number)
+    .filter((v) => Number.isFinite(v) && v >= 0)
+  const unique = [...new Set(values)]
+  if (unique.length === 0)
+    throw new Error(`chat-profile: no valid throttle in CHAT_THROTTLES=${raw}`)
+  return unique
+}
+const DEFAULT_SWEEP = '0,50,100,200'
 
 /** FNV-1a over the rendered text: enough to tell "identical" from "different", not a digest. */
 export function hashText(text: string): string {
@@ -134,6 +147,7 @@ async function oneRun(
 }
 
 export const chatProfile: Lane = async (ctx): Promise<LaneResult> => {
+  const SWEEP_MS = parseSweep(process.env['CHAT_THROTTLES'] ?? DEFAULT_SWEEP)
   const browser = await ctx.openBrowser()
   const summary: LaneResult['summary'] = []
   const detail: Record<string, unknown> = {
