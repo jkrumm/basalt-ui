@@ -124,14 +124,8 @@ export const SERIES_MODULE_HINT_RE = /(series|palette)\.tsx?$/i
 const SEVERITY_VALUES: readonly string[] = ['warn', 'error']
 
 /**
- * Drop `basalt.severity` entries whose value is not `'warn'` / `'error'`, loudly.
- *
- * This is the one config field where a typo REMOVES enforcement rather than failing: package.json
- * is untyped at runtime, and `"warning"` would stamp findings with a value matching neither the
- * error bucket (which fails the build) nor the warn bucket (which prints them) — the kind would
- * vanish and `check-theme` would exit 0 as if the tree were clean. Dropping the entry falls the
- * kind back to its default, so the failure direction of a typo is "stricter than you meant, and
- * told about it" instead of "silently unguarded".
+ * Drop `basalt.severity` entries whose value is not `'warn'` / `'error'`, loudly: a typo there would
+ * silently REMOVE enforcement. The kind falls back to its default instead (stricter, and told about).
  */
 function sanitizeSeverity(cfg: BasaltConfig): BasaltConfig {
   const raw: unknown = cfg.severity
@@ -178,17 +172,10 @@ export function readBasaltConfig(cwd: string): BasaltConfig {
 }
 
 /**
- * Extensions the walker collects. `html?`/`webmanifest` close argo's finding that raw hex ships in
- * `index.html`'s `theme-color` and the webmanifest's `theme_color`/`background_color` — the two
- * places whose colors nothing re-derives on a scheme change, and which the scan never reached.
- *
- * `astro`/`jsx`/`vue` close the same gap one component layer up. rollhook's marketing site is
- * Astro: `apps/marketing/src` holds two `.astro` templates that are its ENTIRE markup layer, and
- * check-theme reported a clean 4-file scan without ever opening either. The colour and typography
- * kinds apply to them exactly as they do to `.html`, which was already scanned; `.jsx` and `.vue`
- * were missing from the same regex, so a plain-JS or Vue consumer was unguarded end to end.
+ * Extensions the walker collects: source (`.astro`/`.jsx`/`.vue` and the `.mjs`/`.cjs`/`.mts`/`.cts`
+ * module spellings) plus `html?`/`webmanifest`, where raw hex ships in `theme-color` and friends.
  */
-const SCANNABLE_EXT = /\.(?:tsx?|jsx|astro|vue|css|html?|webmanifest)$/
+const SCANNABLE_EXT = /\.(?:tsx?|jsx|[cm][jt]s|astro|vue|css|html?|webmanifest)$/
 
 /**
  * Recursively collect scannable files under a root, skipping dependency/build dirs. Node+Bun-safe.
@@ -302,14 +289,9 @@ export function shippedAssetPath(install: BasaltInstall, fromDir: string, asset:
 }
 
 /**
- * Which directory a project-scoped command (`check-theme`, `doctor`) should actually read.
- *
- * One resolver, nothing inferred: `BASALT_CWD` when set, else the invocation cwd. A monorepo
- * package whose install lives elsewhere sets `BASALT_CWD` explicitly (or the invoking script's
- * `root:`/`cwd` does) rather than relying on workspace-glob discovery or an ancestor/descendant
- * walk — both were deleted (see `resolveProjectDir`'s own doc below) as multi-repo speculation for
- * a single-owner fleet where every consumer already runs its own commands from its own directory.
- * The scan scope within that directory is `basalt.roots` in `package.json` (default `src`).
+ * Which directory a project-scoped command (`check-theme`, `doctor`) reads: `BASALT_CWD` when set,
+ * else the invocation cwd. Nothing is inferred (workspace discovery was deleted). The scan scope
+ * within it is `basalt.roots` in `package.json` (default `src`).
  */
 type ProjectResolution = {
   /** The directory to read. Equals the invocation cwd unless BASALT_CWD relocated it. */
@@ -523,8 +505,11 @@ export function sha256(text: string): string {
 }
 
 export function readIfExists(abs: string): string | null {
-  if (!existsSync(abs)) return null
-  return readFileSync(abs, 'utf8')
+  try {
+    return readFileSync(abs, 'utf8')
+  } catch {
+    return null // absent, a directory, unreadable or raced away: callers treat all four as "not there"
+  }
 }
 
 /** Read a shipped source asset from the package root; null if the sibling hasn't authored it yet. */

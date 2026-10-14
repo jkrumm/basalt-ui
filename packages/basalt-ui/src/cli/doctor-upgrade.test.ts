@@ -159,6 +159,10 @@ describe('doctor — retired-lint-rules', () => {
 
 describe('doctor — dropped-subpaths', () => {
   const installAt = { dir: '', version: null, how: 'cwd' as const }
+  const installIn = (): typeof installAt => ({
+    ...installAt,
+    dir: join(dir, 'node_modules/basalt-ui'),
+  })
   const check = (): Check =>
     droppedSubpathsCheck(
       dir,
@@ -251,6 +255,42 @@ describe('doctor — dropped-subpaths', () => {
     expect(problem).toContain('src/b.cts:1 imports basalt-ui/data')
   })
 
+  it('reuses the scan: skips test files, honours exempt and include, and a missing root is empty', () => {
+    exportsMap()
+    const bad = "import { q } from 'basalt-ui/query'\n"
+    write('src/app.test.ts', bad)
+    write('src/types.d.ts', bad)
+    write('src/exempt.ts', bad)
+    expect(
+      droppedSubpathsCheck(dir, { roots: ['src', 'nope'], exempt: ['src/exempt.ts'] }, installIn()),
+    ).toBeNull()
+    write('scripts/tool.ts', bad)
+    const problem = text(
+      droppedSubpathsCheck(
+        dir,
+        { roots: ['src'], exempt: ['src/exempt.ts'], include: ['scripts/tool.ts'] },
+        installIn(),
+      ),
+    )
+    expect(problem).toContain('scripts/tool.ts:1')
+    expect(problem).not.toContain('src/')
+  })
+
+  it('scans ${…} interpolations inside a template literal but not its text', () => {
+    exportsMap()
+    write(
+      'src/app.tsx',
+      [
+        'const t = `see ${require("basalt-ui/query")} and',
+        "import x from 'basalt-ui/data'",
+        '`',
+      ].join('\n'),
+    )
+    const problem = text(check())
+    expect(problem).toContain('src/app.tsx:1 imports basalt-ui/query')
+    expect(problem).not.toContain('basalt-ui/data')
+  })
+
   it('SKIPS both upgrade checks when basalt-ui does not resolve', () => {
     const none = { dir: null, version: null, how: null }
     expect(droppedSubpathsCheck(dir, { roots: ['src'] }, none)).toHaveProperty('skip')
@@ -299,9 +339,11 @@ describe('doctor — checks that cannot run are SKIPPED, not green', () => {
     expect(tsconfigBaseCheck(dir)).toHaveProperty('skip')
   })
 
-  it('tsconfig-base skips when tsconfig.json is a directory (EISDIR)', () => {
+  it('a tsconfig.json that is a directory reads as absent: doctor fails it, init does not throw', () => {
+    write('package.json', JSON.stringify({ name: 'fixture' }))
     mkdirSync(join(dir, 'tsconfig.json'))
-    expect(tsconfigBaseCheck(dir)).toHaveProperty('skip')
+    expect(tsconfigBaseCheck(dir)).toHaveProperty('fail')
+    expect(capture(() => init(dir)).code).toBe(0)
   })
 
   it('retired-lint-rules tolerates null overrides and does not judge node_modules extends', () => {
@@ -535,6 +577,24 @@ describe('init — a stock Vite react-ts app ends up doctor-green on tsconfig-ba
     seedTsconfigExtends(dir)
     expect(read('app.json')).toContain('"extends"')
     expect(read('tsconfig.json')).not.toContain('"extends"')
+  })
+
+  it('never writes extends into a solution-style root; it prints the fix when no reference covers src', () => {
+    const root = '{ "files": [], "references": [{ "path": "./tsconfig.node.json" }] }\n'
+    write('tsconfig.json', root)
+    write('tsconfig.node.json', '{ "include": ["vite.config.ts"] }')
+    const line = seedTsconfigExtends(dir)
+    expect(line).toContain('solution-style')
+    expect(line).toContain('"extends": "basalt-ui/configs/tsconfig.react-app.json"')
+    expect(read('tsconfig.json')).toBe(root)
+    expect(read('tsconfig.node.json')).not.toContain('extends')
+  })
+
+  it('treats a referenced config that covers src through `files` as covering', () => {
+    write('tsconfig.json', '{ "files": [], "references": [{ "path": "./app.json" }] }')
+    write('app.json', '{ "files": ["src/main.tsx"] }')
+    expect(seedTsconfigExtends(dir)).toContain('added')
+    expect(read('app.json')).toContain('"extends"')
   })
 
   it('leaves a tokens-only consumer alone', () => {
