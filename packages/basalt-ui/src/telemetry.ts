@@ -71,16 +71,24 @@ export type TraceHeaders = {
   readonly tracestate?: string | undefined
 }
 
-/** How a traced chat turn ended: its `chat.turn` event fired (`settled`/`failed`) or it was cut short. */
+/**
+ * How a traced chat turn ended: its `chat.turn` event fired (`settled`/`failed`), or `stopped` — a
+ * `stop()`, an unmount or a newer run taking the thread over — which emits no event. The one
+ * lifecycle vocabulary of the run records too.
+ */
 export type ChatTurnEnd = 'settled' | 'failed' | 'stopped'
+
+/** The turn a sink is asked to trace. */
+type ChatTurnInit = { readonly threadId: string; readonly messageId: string }
 
 /**
  * What a sink returns from `startChatTurn`. `settle` runs once, synchronously, right after the
- * turn's `chat.turn` event (`settled`/`failed`), or when a `stop()`/unmount cuts the turn short
- * (`stopped`, which emits no event) — the point to end a span opened in `startChatTurn`.
+ * turn's `chat.turn` event (`settled`/`failed`), or when the turn is cut short (`stopped`) — the
+ * point to end a span opened in `startChatTurn`. It runs even when `headers` is absent or
+ * malformed (dropped, the request goes out untraced), so the span never leaks.
  */
 export type ChatTurnTrace = {
-  readonly headers: TraceHeaders
+  readonly headers?: TraceHeaders | undefined
   readonly settle?: ((end: ChatTurnEnd) => void) | undefined
 }
 
@@ -94,20 +102,23 @@ export type ChatTurnTrace = {
  * @example
  * export const telemetry: Telemetry = Object.assign(onEvent, {
  *   startChatTurn({ threadId }) {
- *     const span = tracer.startSpan('chat.turn', { attributes: { 'basalt.chat.thread_id': threadId } })
+ *     const span = tracer.startSpan('chat.turn', {
+ *       attributes: { 'basalt.chat.thread_id': threadId },
+ *     })
  *     const carrier: Record<string, string> = {}
  *     propagation.inject(trace.setSpan(context.active(), span), carrier)
- *     return { headers: { traceparent: carrier.traceparent ?? '', tracestate: carrier.tracestate }, settle: () => span.end() }
+ *     return {
+ *       headers: { traceparent: carrier.traceparent ?? '', tracestate: carrier.tracestate },
+ *       settle(end) {
+ *         if (end === 'failed') span.setStatus({ code: SpanStatusCode.ERROR })
+ *         span.end()
+ *       },
+ *     }
  *   },
  * })
  */
 export type Telemetry = ((event: BasaltEvent) => void) & {
-  readonly startChatTurn?:
-    | ((turn: {
-        readonly threadId: string
-        readonly messageId: string
-      }) => ChatTurnTrace | undefined)
-    | undefined
+  readonly startChatTurn?: ((turn: ChatTurnInit) => ChatTurnTrace | undefined) | undefined
 }
 
 export const now = (): number => performance.timeOrigin + performance.now()
@@ -116,15 +127,10 @@ export const now = (): number => performance.timeOrigin + performance.now()
 export const errorName = (error: unknown): string => (error instanceof Error ? error.name : 'Error')
 
 /**
- * Wrap a sink so it is called synchronously and a throwing sink never breaks a render. No sink, no
- * events.
+ * The wrapped emitter over a sink read at call time (a ref), so a swapped sink is never stale. It is
+ * called synchronously and a throwing sink never breaks a render; no sink, no events. Its
+ * `startChatTurn` forwards the sink's hook; the hook's consumer validates the headers.
  */
-export function createEmitter(sink: Telemetry | undefined): Telemetry {
-  if (sink === undefined) return noop
-  return createLiveEmitter(() => sink)
-}
-
-/** `createEmitter` over a sink read at call time (a ref), so a swapped sink is never stale. */
 export function createLiveEmitter(read: () => Telemetry | undefined): Telemetry {
   const emit = (event: BasaltEvent): void => {
     try {
@@ -134,13 +140,9 @@ export function createLiveEmitter(read: () => Telemetry | undefined): Telemetry 
     }
   }
   return Object.assign(emit, {
-    startChatTurn(turn: { readonly threadId: string; readonly messageId: string }) {
+    startChatTurn(turn: ChatTurnInit): ChatTurnTrace | undefined {
       try {
-        const trace = read()?.startChatTurn?.(turn)
-        // A malformed carrier is dropped: no header is better than a corrupt one.
-        return typeof trace?.headers.traceparent === 'string' && trace.headers.traceparent !== ''
-          ? trace
-          : undefined
+        return read()?.startChatTurn?.(turn)
       } catch {
         return undefined
       }

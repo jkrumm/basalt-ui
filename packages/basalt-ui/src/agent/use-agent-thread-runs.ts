@@ -558,12 +558,22 @@ async function finalizeStop<TPart extends PartLike>(args: {
   }
 }
 
-/** The wire form of a turn's trace context: lowercase W3C names, `tracestate` only when set. */
-function traceRequestHeaders(headers: TraceHeaders): Record<string, string> {
-  return {
-    traceparent: headers.traceparent,
-    ...(headers.tracestate ? { tracestate: headers.tracestate } : {}),
-  }
+const TRACEPARENT = /^[\da-f]{2}-[\da-f]{32}-[\da-f]{16}-[\da-f]{2}$/
+const TRACESTATE_MEMBER = /^[\da-z][\w*/@-]{0,255}=[^\s,=]([^,=]{0,254}[^\s,=])?$/
+
+/**
+ * The wire form of a turn's trace context: a well-formed `traceparent` (else none — the request
+ * goes out untraced, the sink's `settle` still runs) and a `tracestate` only if valid.
+ */
+function traceRequestHeaders(headers: TraceHeaders): Record<string, string> | undefined {
+  const { traceparent, tracestate } = headers
+  if (typeof traceparent !== 'string' || !TRACEPARENT.test(traceparent)) return undefined
+  const members = typeof tracestate === 'string' ? tracestate.split(',') : []
+  const valid =
+    members.length > 0 &&
+    members.length <= 32 &&
+    members.every((member) => TRACESTATE_MEMBER.test(member.trim()))
+  return valid ? { traceparent, tracestate: tracestate as string } : { traceparent }
 }
 
 /** The `chat.turn` event for a turn that completed (`failure` absent) or failed. */
@@ -850,13 +860,12 @@ export function useAgentThreadRuns<TPart extends PartLike = AgentPart>({
       })
 
       const controller = new AbortController()
-      const record = beginRun(recordsRef.current, threadId, controller)
-      const resolvedTransport = resolveTransport(threadId)
       // Opened before the request so its context rides on it; closed by `settleTrace` (a resume is
       // the same turn's reconnect, not a new one, and carries none).
       const trace = emitTelemetry.startChatTurn?.({ threadId, messageId: userMessage.id })
-      record.settle = trace?.settle
-      const headers = trace === undefined ? undefined : traceRequestHeaders(trace.headers)
+      const record = beginRun(recordsRef.current, threadId, controller, trace?.settle)
+      const resolvedTransport = resolveTransport(threadId)
+      const headers = trace?.headers === undefined ? undefined : traceRequestHeaders(trace.headers)
 
       // Non-awaited: this consumer runs in the background so start() returns immediately and
       // multiple threads can stream at once.

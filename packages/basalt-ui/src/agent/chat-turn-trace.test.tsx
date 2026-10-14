@@ -12,7 +12,8 @@ import { useAgentThreadRuns } from './use-agent-thread-runs'
 import type { AgentOutcome, OutcomeResolver } from './outcome'
 import type { AgentPart } from './parts'
 import type { AgentThread, ThreadsStore } from './thread'
-import type { AgentTransport } from './transport'
+import { beginRun } from './run-records'
+import type { AgentStreamContext, AgentTransport } from './transport'
 import type { BasaltEvent, ChatTurnEnd, ChatTurnTrace, Telemetry } from '../telemetry'
 
 const TRACEPARENT = '00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01'
@@ -148,9 +149,7 @@ function tracingSink(log: string[], extra: Partial<ChatTurnTrace> = {}): Telemet
 
 /** A transport that records the ctx it was given and then runs `body`. */
 function spyTransport(
-  ctxs: Array<
-    { messageId: string; headers?: Readonly<Record<string, string>> | undefined } | undefined
-  >,
+  ctxs: Array<AgentStreamContext | undefined>,
   body: () => AsyncGenerator<AgentPart>,
 ): AgentTransport<AgentPart, string> {
   return {
@@ -287,27 +286,94 @@ describe('useAgentThreadRuns — chat turn trace', () => {
     expect(Object.keys(ctxs[0] ?? {})).toEqual(['messageId'])
   })
 
-  test('a throwing hook, or one without a traceparent, never breaks the turn or adds headers', async () => {
-    for (const startChatTurn of [
-      () => {
-        throw new Error('sink bug')
-      },
-      () => ({ headers: { traceparent: '' } }),
-    ]) {
+  test('a throwing hook never breaks the turn or adds headers', async () => {
+    const store = createStore()
+    const id = store.create()
+    const ctxs: Parameters<typeof spyTransport>[0] = []
+    const startChatTurn = (): never => {
+      throw new Error('sink bug')
+    }
+    const { result } = renderHook(() =>
+      useAgentThreadRuns({
+        transport: spyTransport(ctxs, okBody),
+        store,
+        resolveOutcome,
+        telemetry: Object.assign((): void => {}, { startChatTurn }),
+      }),
+    )
+    act(() => result.current.start(id, 'go'))
+    await waitFor(() => expect(store.threads[0]?.status).toBe('done'))
+    expect(ctxs[0]?.headers).toBeUndefined()
+  })
+
+  test('a malformed or empty traceparent sends no header but still settles', async () => {
+    for (const traceparent of ['', 'not-a-traceparent']) {
       const store = createStore()
       const id = store.create()
+      const log: string[] = []
       const ctxs: Parameters<typeof spyTransport>[0] = []
+      const sink = tracingSink(log, { headers: { traceparent } })
       const { result } = renderHook(() =>
         useAgentThreadRuns({
           transport: spyTransport(ctxs, okBody),
           store,
           resolveOutcome,
-          telemetry: Object.assign((): void => {}, { startChatTurn }),
+          telemetry: sink,
         }),
       )
       act(() => result.current.start(id, 'go'))
-      await waitFor(() => expect(store.threads[0]?.status).toBe('done'))
+      await waitFor(() => expect(log).toContain('settle:settled'))
       expect(ctxs[0]?.headers).toBeUndefined()
     }
+  })
+
+  test('a sink returning only settle (no headers) is untraced on the wire but still settles', async () => {
+    const store = createStore()
+    const id = store.create()
+    const log: string[] = []
+    const ctxs: Parameters<typeof spyTransport>[0] = []
+    const sink = tracingSink(log, { headers: undefined })
+    const { result } = renderHook(() =>
+      useAgentThreadRuns({
+        transport: spyTransport(ctxs, okBody),
+        store,
+        resolveOutcome,
+        telemetry: sink,
+      }),
+    )
+    act(() => result.current.start(id, 'go'))
+    await waitFor(() => expect(log).toContain('settle:settled'))
+    expect(ctxs[0]?.headers).toBeUndefined()
+  })
+
+  test('a malformed tracestate is dropped, the traceparent kept', async () => {
+    const store = createStore()
+    const id = store.create()
+    const ctxs: Parameters<typeof spyTransport>[0] = []
+    const sink = tracingSink([], { headers: { traceparent: TRACEPARENT, tracestate: 'no equals' } })
+    const { result } = renderHook(() =>
+      useAgentThreadRuns({
+        transport: spyTransport(ctxs, okBody),
+        store,
+        resolveOutcome,
+        telemetry: sink,
+      }),
+    )
+    act(() => result.current.start(id, 'go'))
+    await waitFor(() => expect(store.threads[0]?.status).toBe('done'))
+    expect(ctxs[0]?.headers).toEqual({ traceparent: TRACEPARENT })
+  })
+})
+
+describe('beginRun — takeover', () => {
+  test('a newer run settles the live previous run once as stopped; the new one settles later', () => {
+    const records = new Map()
+    const log: string[] = []
+    beginRun(records, 't', new AbortController(), (end) => log.push(`A:${end}`))
+    const b = beginRun(records, 't', new AbortController(), (end) => log.push(`B:${end}`))
+    expect(log).toEqual(['A:stopped'])
+    beginRun(records, 't', new AbortController())
+    expect(log).toEqual(['A:stopped', 'B:stopped'])
+    expect(b.superseded).toBe(true)
   })
 })

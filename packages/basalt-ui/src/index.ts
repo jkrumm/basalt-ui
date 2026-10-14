@@ -12,7 +12,7 @@ export {
   type BasaltRouter,
   type BasaltRouterContext,
 } from './provider/create-router'
-export type { BasaltEvent } from './telemetry'
+export type { BasaltEvent, ChatTurnEnd, ChatTurnTrace, Telemetry, TraceHeaders } from './telemetry'
 export {
   defineNav,
   navGroup,
