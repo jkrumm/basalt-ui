@@ -190,7 +190,11 @@ async function setLeadInset(p: LayoutPage, value: string): Promise<void> {
   await p.settle()
 }
 
-/** A counted row in the primary group and one in a non-primary group — the rail-dot shape. */
+/**
+ * A counted row in the primary group and one in a non-primary group — the rail-dot shape. The
+ * second group is argo's "Other": collapsible and folded by default, which is what stranded its
+ * rows in the rail (its header, the only way to unfold it, is hidden there).
+ */
 const BADGED_RAIL: FixtureSpec = {
   sections: [
     {
@@ -200,7 +204,12 @@ const BADGED_RAIL: FixtureSpec = {
         { key: 'cal', label: 'Calendar', count: 3 },
       ],
     },
-    { label: 'Other', items: [{ key: 'm365', label: 'M365', count: 2 }] },
+    {
+      label: 'Other',
+      collapsible: true,
+      defaultCollapsed: true,
+      items: [{ key: 'm365', label: 'M365', count: 2 }],
+    },
   ],
   sidebar: { account: true, settings: 2 },
 }

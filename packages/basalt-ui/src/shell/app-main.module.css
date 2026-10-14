@@ -103,9 +103,11 @@
    * Block is breathing room under the band's single `--vx-divider` line — nothing aligns to it.
    * `stack-md` (12) on a phone, one rung down (`stack-sm`, 8) from `sm` up where the inline gutter
    * is 16: the page then sits 16 from the seam and 8 under the header, rather than the 20/12 it
-   * used to.
+   * used to. The value rides `--basalt-main-pad-block`, which descendants inherit: the data
+   * table's page-sticky offset reads it instead of repeating this module's `sm` switch.
    */
-  padding: var(--vx-space-stack-md) var(--app-shell-padding);
+  --basalt-main-pad-block: var(--vx-space-stack-md);
+  padding: var(--basalt-main-pad-block) var(--app-shell-padding);
   /* Without this a wide flex/grid child (a bare table, a nowrap control row) sizes Main to ITSELF. */
   min-width: 0;
   overflow-y: auto;
@@ -124,7 +126,7 @@
 
 @media (min-width: 52.5em) {
   .main {
-    padding-block: var(--vx-space-stack-sm);
+    --basalt-main-pad-block: var(--vx-space-stack-sm);
   }
 }
 

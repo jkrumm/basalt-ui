@@ -802,6 +802,8 @@ export function ShellFixture({ spec }: { spec: FixtureSpec }): ReactElement {
     label: section.label,
     items: section.items.map((item) => toItem(item, icons)),
     ...(section.tab ? { mobile: { tab: true as const } } : {}),
+    ...(section.collapsible ? { collapsible: true } : {}),
+    ...(section.defaultCollapsed ? { defaultCollapsed: true } : {}),
   }))
   return (
     <ShellFrame

@@ -70,20 +70,14 @@
  * one rung down to `stack-sm` from `sm` up). A sticky `<thead>` resolves against the scrollport's
  * CONTENT edge, so at `top: 0` it parked that padding below the band and every body row scrolled
  * through the gap. A negative offset equal to the padding moves the stick line out to the band's
- * edge, flush. The two media/token pairs below mirror `.main` there — the layout suite
- * (`data-table.layout.test.ts`, invariant 8) fails on drift. A consumer `stickyHeaderOffset` is an
+ * edge, flush. The padding is read from `--basalt-main-pad-block`, which `.main` sets and owns
+ * (including its `sm` switch), so the two cannot drift; `data-table.layout.test.ts` invariant 8
+ * pins both steps. A consumer `stickyHeaderOffset` is an
  * inline `--table-sticky-header-offset` on the table and beats this class, so it still wins.
  * Outside a shell no `.mantine-AppShell-main` ancestor matches and the offset stays 0.
  */
 :global(.mantine-AppShell-main) .pageSticky {
-  --table-sticky-header-offset: calc(-1 * var(--vx-space-stack-md));
-}
-
-/* theme-allow raw-media-query — mirrors app-main.module.css's own `sm` switch for Main's block padding; invariant 8 in data-table.layout.test.ts fails on drift */
-@media (min-width: 52.5em) {
-  :global(.mantine-AppShell-main) .pageSticky {
-    --table-sticky-header-offset: calc(-1 * var(--vx-space-stack-sm));
-  }
+  --table-sticky-header-offset: calc(-1 * var(--basalt-main-pad-block, 0px));
 }
 
 /*
