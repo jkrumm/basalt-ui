@@ -51,6 +51,9 @@ function useShortCard(): { ref: (el: HTMLDivElement | null) => void; short: bool
   useIsomorphicLayoutEffect(() => {
     if (!node || typeof ResizeObserver === 'undefined') return
     const observer = new ResizeObserver((entries) => {
+      // A card holding a chart box is short by the box's own stated height, in CSS
+      // (`data-basalt-chart-short`); measuring it as well would flip it after hydration.
+      if (node.querySelector('[data-basalt-box]')) return
       const height = entries[0]?.borderBoxSize?.[0]?.blockSize ?? node.offsetHeight
       const limit = shortRef.current ? CARD_SHORT_HEIGHT + SHORT_EXIT_SLACK : CARD_SHORT_HEIGHT
       const next = height > 0 && height < limit
@@ -127,6 +130,7 @@ export function ChartCard({
     <ChartCardContext.Provider value>
       <div
         ref={ref}
+        data-basalt-chart-card=""
         className={cx(classNames?.root, className)}
         style={{ ...cardStyle, ...style }}
         {...(resolved === 'pending' && { 'aria-busy': 'true' })}

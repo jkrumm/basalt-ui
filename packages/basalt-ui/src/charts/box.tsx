@@ -16,6 +16,21 @@ export const HEIGHT_RATIO = { micro: 0.5, compact: 0.62, regular: 0.5, wide: 0.4
 export const HEIGHT_MIN = 160
 export const HEIGHT_MAX = 420
 
+/**
+ * A stated height at or under this makes the enclosing `ChartCard` render its short header (the
+ * subtitle folds, the KPI numeral drops to `lg`, the top inset trims): the card is then under
+ * ~280 px once the header's own ~100 px is added. Written onto the box as `data-basalt-chart-short`,
+ * from the prop, so the server HTML already says it and CSS (`:has`) applies it — no height
+ * measurement, nothing to flip after hydration.
+ */
+export const SHORT_CHART_HEIGHT = 180
+
+const statedMax = (height: ChartBoxHeight): number | undefined => {
+  if (typeof height === 'number') return height
+  if (typeof height !== 'object') return undefined
+  return Math.max(height.base, height.regular ?? 0, height.wide ?? 0)
+}
+
 const px = (n: number): string => `${n}px`
 const law = (ratio: number): string =>
   `clamp(${px(HEIGHT_MIN)}, ${ratio * 100}cqw, ${px(HEIGHT_MAX)})`
@@ -54,7 +69,13 @@ export function ChartBox(props: {
   const { height, className, children } = props
   const fill = height === 'fill'
   return (
-    <div className={classes.frame}>
+    <div
+      className={classes.frame}
+      data-basalt-box=""
+      {...((statedMax(height) ?? Infinity) <= SHORT_CHART_HEIGHT && {
+        'data-basalt-chart-short': '',
+      })}
+    >
       <div
         className={cx(classes.box, fill && classes.fill, className)}
         {...(!fill && { style: chartBoxVars(height) })}

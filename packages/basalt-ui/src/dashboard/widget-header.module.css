@@ -345,26 +345,32 @@
 /*
  * The same fold, triggered by the CARD'S OWN HEIGHT instead of its width (wave 8's header-economy
  * law) — a short-but-wide chart card (a KPI-style plot with little vertical room) still needs the
- * subtitle line back. Not a `@container basalt-card` SIZE query: `container-type: size` on an
- * auto-height card collapses it to 0 (see `ChartCard`'s `CARD_SHORT_HEIGHT` doc), so `ChartCard`
- * measures itself with a ResizeObserver instead and sets `data-basalt-card-short` under 280px.
+ * subtitle line back. A height cannot be a `@container` query: `container-type: size` on an
+ * auto-height card collapses it to 0. So the hook is a selector on markup that is already in the
+ * server HTML (W10 SSR contract): a chart that states a small `height` marks its box
+ * `data-basalt-chart-short`, and the card matches it with `:has`. A card whose body is not a chart
+ * is measured instead (`ChartCard`'s ResizeObserver, under 280px) and sets `data-basalt-card-short`.
  */
-[data-basalt-card-short] .subtitle {
+[data-basalt-card-short] .subtitle,
+[data-basalt-chart-card]:has([data-basalt-chart-short]) .subtitle {
   display: none;
 }
 
-[data-basalt-card-short] .foldGlyph {
+[data-basalt-card-short] .foldGlyph,
+[data-basalt-chart-card]:has([data-basalt-chart-short]) .foldGlyph {
   display: inline-flex;
 }
 
-[data-basalt-card-short] .foldNote {
+[data-basalt-card-short] .foldNote,
+[data-basalt-chart-card]:has([data-basalt-chart-short]) .foldNote {
   display: block;
 }
 
 /* A short card's KPI numeral is the header's own tallest line (the merged title row has no other
  * source of height once the subtitle folds) — the same floor the width `cqi` clamp already uses,
  * so a short card never introduces a THIRD value size. */
-[data-basalt-card-short] .value {
+[data-basalt-card-short] .value,
+[data-basalt-chart-card]:has([data-basalt-chart-short]) .value {
   font-size: var(--vx-text-lg);
 }
 

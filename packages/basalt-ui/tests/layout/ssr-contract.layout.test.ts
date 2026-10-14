@@ -125,6 +125,8 @@ type Facts = {
   legend: Record<string, { dot: string; chip: string; row: string }>
   donut: { ringRight: number; legendLeft: number; legendTop: number; ringBottom: number }
   headerLegend: { titleBottom: number; legendTop: number; chartTop: number }
+  /** The short card's subtitle is folded (not rendered) — in the server HTML, by CSS. */
+  shortSubtitleRendered: boolean
 }
 type Run = { server: Phase; hydrated: Phase; errors: string[]; facts: Facts; shifts: string[] }
 
@@ -140,6 +142,7 @@ const facts = (page: Page): Promise<Facts> =>
       legend: {},
       donut: { ringRight: 0, legendLeft: 0, legendTop: 0, ringBottom: 0 },
       headerLegend: { titleBottom: 0, legendTop: 0, chartTop: 0 },
+      shortSubtitleRendered: true,
     }
     for (const name of [
       'lines',
@@ -189,6 +192,10 @@ const facts = (page: Page): Promise<Facts> =>
       legendTop: card.querySelector('[data-basalt-chart-legend]')!.getBoundingClientRect().top,
       chartTop: card.querySelector('svg.ts-chart')!.getBoundingClientRect().top,
     }
+    const subtitle = [...probe('card-short-chart').querySelectorAll('*')].find(
+      (el) => el.children.length === 0 && el.textContent === 'Short card subtitle',
+    )
+    out.shortSubtitleRendered = subtitle !== undefined && subtitle.getClientRects().length > 0
     return out
   })
 
@@ -292,6 +299,13 @@ layout('SSR-first contract: hydration moves nothing', () => {
         const { facts: f } = await runAt(width)
         expect(f.headerLegend.legendTop).toBeGreaterThanOrEqual(f.headerLegend.titleBottom)
         expect(f.headerLegend.chartTop).toBeGreaterThan(f.headerLegend.legendTop)
+      }, 60_000)
+
+      test('a short card (stated chart height 120) folds its header in the server HTML', async () => {
+        const { facts: f, server, hydrated } = await runAt(width)
+        // At 1280 px the width fold is off, so only the height fold can hide the subtitle.
+        expect(f.shortSubtitleRendered).toBe(false)
+        expect(hydrated.boxes['card-short-chart']).toEqual(server.boxes['card-short-chart'])
       }, 60_000)
 
       test("the pending ChartCard reserves the loaded card's height", async () => {

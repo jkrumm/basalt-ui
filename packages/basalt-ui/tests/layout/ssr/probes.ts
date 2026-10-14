@@ -18,6 +18,7 @@ export const CHART_PROBES = [
   'lines-responsive-height',
   'card-header-legend',
   'card-kpi',
+  'card-short-chart',
   'card-loaded',
   'card-fallback',
   'lines-pending',
