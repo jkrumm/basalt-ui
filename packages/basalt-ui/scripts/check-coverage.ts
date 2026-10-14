@@ -163,21 +163,25 @@ export function reconcileCoverageBlocks(
  * spec argued, so they live beside the gate that reads them rather than in prose.
  */
 const AGENT_LINE_BUDGETS: Readonly<Record<string, number>> = {
-  'agent/rules/basalt-tokens.md': 140,
-  'agent/rules/basalt-mantine.md': 125,
-  'agent/rules/basalt-charts.md': 115,
-  'agent/rules/basalt-state.md': 125,
-  'agent/rules/basalt-controls.md': 155,
-  'agent/rules/basalt-batteries.md': 100,
-  'agent/skills/basalt-app/SKILL.md': 100,
-  'agent/skills/basalt-design/SKILL.md': 100,
-  'agent/skills/basalt-charts/SKILL.md': 100,
-  'agent/templates/AGENTS-block.md.tpl': 40,
+  'agent/rules/basalt-tokens.md': 55,
+  'agent/rules/basalt-mantine.md': 51,
+  'agent/rules/basalt-charts.md': 37,
+  'agent/rules/basalt-state.md': 39,
+  'agent/rules/basalt-controls.md': 45,
+  'agent/rules/basalt-batteries.md': 43,
+  'agent/skills/basalt-app/SKILL.md': 57,
+  'agent/skills/basalt-design/SKILL.md': 18,
+  'agent/skills/basalt-charts/SKILL.md': 40,
+  'agent/templates/AGENTS-block.md.tpl': 30,
   'agent/templates/DESIGN.md.tpl': 45,
 }
 
-/** The whole-layer bar — a per-file budget alone can be satisfied by adding a seventh rule file. */
-const AGENT_RULE_TOTAL_BUDGET = 750
+/**
+ * The whole-layer bar — rules + skills + the AGENTS block together, since a per-file budget alone
+ * can be satisfied by adding a seventh rule file or a fourth skill. The seeded `DESIGN.md.tpl` is
+ * the consumer's own file after `init`, so it is outside the sum.
+ */
+const AGENT_LAYER_TOTAL_BUDGET = 415
 
 /**
  * Assert the 11 invariants against the live SURFACES + GUARD_RULES + the shipped agent layer, and
@@ -202,8 +206,8 @@ const AGENT_RULE_TOTAL_BUDGET = 750
  *     `pluginRules` — so a new rule cannot ship homeless, and one rule cannot be counted twice as
  *     coverage. Like assertion 7 this reads SURFACES only: whether the plugin really registers
  *     those ids is asserted against the plugin itself in `configs/oxlint-plugin.test.ts`.
- * 10. Every shipped agent-layer file is inside its line budget, and the six rules are inside the
- *     whole-layer total (`AGENT_LINE_BUDGETS` / `AGENT_RULE_TOTAL_BUDGET`).
+ * 10. Every shipped agent-layer file is inside its line budget, and rules + skills + the AGENTS block are inside the
+ *     whole-layer total (`AGENT_LINE_BUDGETS` / `AGENT_LAYER_TOTAL_BUDGET`).
  * 11. Every `GUARD_RULES` kind appears on at least one doctrine surface — assertion 9's twin for
  *     the text lane. Without it a kind could ship, be documented as a law in the spec, and be
  *     omitted from every generated coverage header. Unlike 9 this is one-directional: a kind may
@@ -371,13 +375,19 @@ export function checkCoverage(flags: readonly string[] = [], pkgRoot: string = P
     const lines = readFileSync(abs, 'utf8').split('\n').length - 1
     if (lines > budget) failures.push(`${rel}: ${lines} lines exceeds its ${budget}-line budget`)
   }
-  const ruleTotal = RULE_NAMES.reduce((sum, rule) => {
-    const abs = resolve(pkgRoot, `agent/rules/basalt-${rule}.md`)
+  const layerFiles = [
+    ...RULE_NAMES.map((rule) => `agent/rules/basalt-${rule}.md`),
+    ...SKILL_NAMES.map((skill) => `agent/skills/${skill}/SKILL.md`),
+    'agent/templates/AGENTS-block.md.tpl',
+  ]
+  const layerTotal = layerFiles.reduce((sum, rel) => {
+    const abs = resolve(pkgRoot, rel)
     return existsSync(abs) ? sum + readFileSync(abs, 'utf8').split('\n').length - 1 : sum
   }, 0)
-  if (ruleTotal > AGENT_RULE_TOTAL_BUDGET) {
+  if (layerTotal > AGENT_LAYER_TOTAL_BUDGET) {
     failures.push(
-      `agent/rules/*.md: ${ruleTotal} lines total exceeds the ${AGENT_RULE_TOTAL_BUDGET}-line budget`,
+      `agent layer (rules + skills + AGENTS block): ${layerTotal} lines total exceeds the ` +
+        `${AGENT_LAYER_TOTAL_BUDGET}-line budget`,
     )
   }
 
