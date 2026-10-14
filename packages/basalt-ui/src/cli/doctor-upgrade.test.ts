@@ -1093,6 +1093,26 @@ describe('doctor — subpath-peers', () => {
     expect(run()).toBeNull()
   })
 
+  it('reads the app package in a monorepo: peers installed only for apps/web pass, a missing one fails', () => {
+    write('package.json', JSON.stringify({ name: 'root', workspaces: ['apps/*'] }))
+    write(
+      'apps/web/package.json',
+      JSON.stringify({ name: 'web', dependencies: { 'basalt-ui': '*' } }),
+    )
+    write('apps/web/src/main.tsx', "import { CartesianChart } from 'basalt-ui/charts'\n")
+    write('node_modules/basalt-ui/package.json', '{}')
+    for (const peer of SUBPATH_REQUIRED_PEERS['charts'] ?? []) {
+      write(`apps/web/node_modules/${peer}/package.json`, '{"version":"1.0.0"}')
+    }
+    const failed = (): string =>
+      capture(() => doctor(dir))
+        .log.split('\n')
+        .find((l) => l.includes('✖ subpath-peers')) ?? ''
+    expect(failed()).toBe('')
+    rmSync(join(dir, 'apps/web/node_modules/d3-scale'), { recursive: true })
+    expect(failed()).toContain('d3-scale for basalt-ui/charts (src/main.tsx)')
+  })
+
   it('skips when basalt-ui does not resolve', () => {
     const skipped = subpathPeersCheck(
       dir,
