@@ -1109,8 +1109,6 @@ function propertyKeyName(node) {
   return undefined
 }
 
-const nameOf = (node) => (node.type === 'Identifier' ? node.name : node.value)
-
 // ── Rule 9 — agent-no-raw-usechat ───────────────────────────────────────────────────────────────
 
 const AGENT_NO_RAW_USECHAT_MESSAGE =
@@ -1134,6 +1132,7 @@ const agentNoRawUseChat = {
   },
   create(context) {
     const sourceCode = context.sourceCode ?? context.getSourceCode?.()
+    const nameOf = (node) => (node.type === 'Identifier' ? node.name : node.value)
     const report = (node) => {
       if (!hasAgentAllow(context, node)) {
         context.report({ node, message: AGENT_NO_RAW_USECHAT_MESSAGE })
@@ -3874,6 +3873,22 @@ const VIEW_TRANSITION_TAGS = new Set(['Link', 'Navigate'])
 /** Router calls whose first-argument object may carry `viewTransition`. */
 const VIEW_TRANSITION_CALLS = new Set(['navigate', 'redirect', 'linkOptions'])
 
+/** TS wrappers that still READ the value they wrap (`Dock as X`, `Dock!`, `Dock satisfies X`). */
+const TS_VALUE_WRAPPERS = new Set([
+  'TSAsExpression',
+  'TSNonNullExpression',
+  'TSSatisfiesExpression',
+  'TSInstantiationExpression',
+  'TSTypeAssertion',
+])
+
+/** `x as T`, `x!`, `x satisfies T`, `f<T>`, `<T>x` → `x`. */
+function unwrapTs(node) {
+  let current = node
+  while (current && TS_VALUE_WRAPPERS.has(current.type)) current = current.expression
+  return current
+}
+
 /** How deep a router binding is chased through `const x = useNavigate()`-style initialisers. */
 const ROUTER_RESOLVE_DEPTH = 4
 
@@ -3907,8 +3922,8 @@ function routerImport(sourceCode, identifier) {
 
 /** What a router factory CALL yields (`useNavigate()` → 'navigate', `createFileRoute(p)(o)` → 'route'). */
 function routerCallKind(sourceCode, call, depth) {
-  let callee = call.callee
-  while (callee?.type === 'CallExpression') callee = callee.callee
+  let callee = unwrapTs(call.callee)
+  while (callee?.type === 'CallExpression') callee = unwrapTs(callee.callee)
   const name = routerName(sourceCode, callee, depth + 1)
   return name !== undefined && Object.hasOwn(ROUTER_CALL_KIND, name)
     ? ROUTER_CALL_KIND[name]
@@ -3920,23 +3935,50 @@ function routerBindingName(sourceCode, node, depth) {
   const bound = routerImport(sourceCode, node)
   if (bound?.imported !== undefined) return bound.imported
   const def = soleDefinition(sourceCode, node)
-  const init = def?.type === 'Variable' ? def.node?.init : undefined
+  const init = def?.type === 'Variable' ? unwrapTs(def.node?.init) : undefined
   return init?.type === 'CallExpression' ? routerCallKind(sourceCode, init, depth) : undefined
 }
 
-/** `ns.redirect`, `Route.useNavigate`, `router.navigate`, `getRouteApi(id).useNavigate` — router receivers only. */
-function routerMemberName(sourceCode, node, depth) {
+/** Initializers that make a receiver a plain data object — never a router or a route. */
+const NON_ROUTER_INITIALIZERS = new Set([
+  'ObjectExpression',
+  'ArrayExpression',
+  'Literal',
+  'TemplateLiteral',
+  'ClassExpression',
+])
+
+/** True only when `object` PROVABLY is not a router: a local plain object, array, literal or class instance. */
+function provablyNotRouter(sourceCode, object) {
+  if (object?.type === 'Identifier') {
+    const def = soleDefinition(sourceCode, object)
+    if (def?.type !== 'Variable') return false
+    return provablyData(sourceCode, unwrapTs(def.node?.init))
+  }
+  return provablyData(sourceCode, object)
+}
+
+function provablyData(sourceCode, node) {
+  if (node === null || node === undefined) return false
+  if (NON_ROUTER_INITIALIZERS.has(node.type)) return true
+  if (node.type !== 'NewExpression' || node.callee?.type !== 'Identifier') return false
+  return soleDefinition(sourceCode, node.callee)?.type === 'ClassName'
+}
+
+/**
+ * `ns.redirect` on a router namespace import, and `X.useNavigate` / `X.navigate` on anything that
+ * is not PROVABLY plain data. Fail closed: a route reached through `createRootRouteWithContext<C>()(…)`,
+ * a sibling-module import, a prop or a call result cannot be traced to its factory here, and the
+ * shipped rule must not go silent on them.
+ */
+function routerMemberName(sourceCode, node) {
   const object = node.object
   const property = node.property?.name
   if (object?.type === 'Identifier' || object?.type === 'JSXIdentifier') {
     if (routerImport(sourceCode, object)?.namespace === true) return property
   }
-  let kind
-  if (object?.type === 'CallExpression') kind = routerCallKind(sourceCode, object, depth)
-  else if (object?.type === 'Identifier') kind = routerBindingName(sourceCode, object, depth)
-  if (kind === 'route' && property === 'useNavigate') return property
-  if (kind === 'router' && property === 'navigate') return property
-  return undefined
+  if (property !== 'useNavigate' && property !== 'navigate') return undefined
+  return provablyNotRouter(sourceCode, object) ? undefined : property
 }
 
 /**
@@ -3948,13 +3990,18 @@ function routerMemberName(sourceCode, node, depth) {
 function routerName(sourceCode, node, depth = 0) {
   if (node === null || node === undefined || depth > ROUTER_RESOLVE_DEPTH) return undefined
   switch (node.type) {
+    case 'TSNonNullExpression':
+    case 'TSInstantiationExpression':
+    case 'TSAsExpression':
+    case 'TSSatisfiesExpression':
+      return routerName(sourceCode, unwrapTs(node), depth + 1)
     case 'Identifier':
     case 'JSXIdentifier':
       return routerBindingName(sourceCode, node, depth)
     case 'MemberExpression':
-      return node.computed ? undefined : routerMemberName(sourceCode, node, depth)
+      return node.computed ? undefined : routerMemberName(sourceCode, node)
     case 'JSXMemberExpression':
-      return routerMemberName(sourceCode, node, depth)
+      return routerMemberName(sourceCode, node)
     case 'CallExpression':
       return routerCallKind(sourceCode, node, depth)
     default:
@@ -4107,14 +4154,6 @@ const FUNCTION_TYPES = new Set([
   'FunctionExpression',
   'FunctionDeclaration',
 ])
-/** TS wrappers that still READ the value they wrap (`Dock as X`, `Dock!`, `Dock satisfies X`). */
-const TS_VALUE_WRAPPERS = new Set([
-  'TSAsExpression',
-  'TSNonNullExpression',
-  'TSSatisfiesExpression',
-  'TSInstantiationExpression',
-  'TSTypeAssertion',
-])
 
 /**
  * The identifier a LOADER function is bound to: `const Dock = lazy(() => import(dev))`,
@@ -4147,7 +4186,6 @@ function isLoaderUsePosition(node) {
     case 'MemberExpression':
       return parent.object === node || parent.computed
     case 'Property':
-      return parent.value === node || (parent.computed && parent.key === node)
     case 'MethodDefinition':
     case 'PropertyDefinition':
     case 'AccessorProperty':
