@@ -554,27 +554,53 @@ own site dropped it (2026-07-24); revisit on a 2.x minor if that changes.
 
 **Left behind:**
 
-## Wave 12 — argo, part 1: setup, shell, data, chat <!-- status: pending -->
+## Wave 12 — argo: the migration plan <!-- status: pending -->
 
-- [ ] argo branch on `basalt-ui@2.x`: `basalt-ui init`/`sync` (the agent-layer DX test again),
-      provider/shell/routing, tables, AI chat.
-- [ ] Feed back every basalt friction as a basalt fix shipped as a 2.x minor. Don't work around it in
-      argo.
+Owner direction 2026-10-14: argo's migration is its own fleet run, and argo and basalt-ui then loop on
+each other until they converge, before any other consumer moves.
+
+- [ ] Author `docs/waves/PLAN.md` in the argo repo: its own waves (setup and `init`/`sync`, shell and
+      routing, data and tables, AI chat, every chart on the 2.x kinds per `v2-chart-inventory.md`,
+      rendering per W10, cutover), each with its evidence against argo's baseline. argo auto-deploys
+      every push to master, and 1.x and 2.x cannot coexist in one app, so the migration runs on one
+      long-lived argo branch and lands on master only at cutover.
+- [ ] Create `docs/waves/argo-friction.md` in basalt-ui: the one ledger where argo's leads record every
+      basalt friction (what they hit, the workaround they did NOT take, severity). argo never works
+      around basalt; a friction item blocks its argo step until a basalt minor fixes it.
+- [ ] The orchestrator runs argo's plan as a second fleet (one active wave per repo; argo and
+      basalt-ui waves may run at the same time).
 
 **Left behind:**
 
-## Wave 13 — argo, part 2: every chart, production <!-- status: pending -->
+## Wave 13 — The basalt-ui ⇄ argo loop <!-- status: pending -->
 
-- [ ] All argo charts on the 2.x kinds; basalt fixes found here ship as 2.x minors. Evidence vs argo's
-      baseline (render, bundle, screenshots).
-- [ ] argo merged and deployed. Verify it is live: health, OTel traces/logs, Uptime Kuma.
+A repeating wave: each instance takes the open items in `argo-friction.md`, fixes them in basalt-ui,
+ships a 2.x minor through `make release`, and the waiting argo step bumps to it. It repeats until the
+exit criterion holds, then flips to `done`.
+
+- [ ] Fix the open friction batch; one PR per item, `MIGRATING.md` row where a consumer changes.
+- [ ] Release the minor and record which argo steps it unblocks.
+- [ ] Exit criterion (all four, recorded with evidence): a full argo wave closes with zero new friction
+      items that needed a workaround or a basalt change; argo carries zero `basalt/*` lint overrides or
+      suppressions; a fresh-agent DX trial on argo (a new dashboard route with a chart, a table and a
+      chat) has no wrong turn rooted in basalt; argo's evidence shows no unaccepted regression against
+      its baseline (bundle, render, hover, Lighthouse, screenshots reviewed by eye).
 
 **Left behind:**
 
-## Wave 14 — argo learnings and the fleet plan <!-- status: pending -->
+## Wave 14 — argo cutover and production <!-- status: pending -->
 
-- [ ] Fold the argo learnings in as 2.x minors and restate the no-majors doctrine.
-- [ ] Write the fleet plan for linewatch, weatherorb, rb, rollhook and basalt-ui-obsidian (each stays
-      exact-pinned on 1.41.x until then).
+- [ ] argo's migration branch lands on master after its own close-out is green; the deploy fires.
+- [ ] Verify it is live: health, OTel traces and logs (the `chat.turn` ⇄ `hermes.stream-lifecycle`
+      join), Uptime Kuma, screenshots of every dashboard route against the baseline.
+
+**Left behind:**
+
+## Wave 15 — Learnings and the fleet <!-- status: pending -->
+
+- [ ] Fold the loop's learnings into the shipped rules and skills and restate the no-majors doctrine.
+- [ ] Write one migration plan per remaining consumer, ordered by blast radius (weatherorb 4 chart
+      files, linewatch 22, rollhook, rb (visx used directly, not basalt charts), basalt-ui-obsidian).
+      Each stays exact-pinned on 1.41.x until its plan runs, and feeds the same friction ledger.
 
 **Left behind:**
