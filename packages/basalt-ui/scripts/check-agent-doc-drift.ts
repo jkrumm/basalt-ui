@@ -118,24 +118,35 @@ function collectTypeExports(): Set<string> {
 }
 
 /**
- * The PUBLISHED surface: value exports (`export-surface.json`) plus the type names exported by the
- * source entry of every `package.json` `exports` subpath — the same reading `check-budgets`'
- * `barrelTypeExports` uses. A type exported only from an internal barrel is not importable by a
- * consumer, so a `[type X]` tag may not cite it.
+ * The PUBLISHED surface per subpath (`basalt-ui`, `basalt-ui/charts`, …): value exports
+ * (`export-surface.json`) plus the type names exported by the source entry of that `package.json`
+ * `exports` subpath — the same reading `check-budgets`' `barrelTypeExports` uses. A type exported
+ * only from an internal barrel is not importable by a consumer, so a `[type X]` tag may not cite it.
  */
-export function collectPublishedNames(): Set<string> {
-  const names = collectValueExports()
+export function collectPublishedBySubpath(): Map<string, Set<string>> {
+  const values = JSON.parse(
+    readFileSync(join(pkgRoot, 'scripts/export-surface.json'), 'utf8'),
+  ) as Record<string, string[]>
   const manifest = JSON.parse(readFileSync(join(pkgRoot, 'package.json'), 'utf8')) as {
     exports: Record<string, { import?: string } | string>
   }
-  for (const target of Object.values(manifest.exports)) {
+  const bySubpath = new Map<string, Set<string>>()
+  for (const [subpath, target] of Object.entries(manifest.exports)) {
+    const names = new Set(values[subpath] ?? [])
     const js = typeof target === 'object' ? target.import : undefined
-    if (js === undefined) continue
-    const base = join(pkgRoot, 'src', js.replace(/^\.\/dist\//, '').replace(/\.js$/, ''))
-    const entry = [`${base}.ts`, `${base}.tsx`, join(base, 'index.ts')].find(existsSync)
-    if (entry !== undefined) addTypeNames(readFileSync(entry, 'utf8'), names)
+    if (js !== undefined) {
+      const base = join(pkgRoot, 'src', js.replace(/^\.\/dist\//, '').replace(/\.js$/, ''))
+      const entry = [`${base}.ts`, `${base}.tsx`, join(base, 'index.ts')].find(existsSync)
+      if (entry !== undefined) addTypeNames(readFileSync(entry, 'utf8'), names)
+    }
+    bySubpath.set(subpath === '.' ? 'basalt-ui' : `basalt-ui${subpath.slice(1)}`, names)
   }
-  return names
+  return bySubpath
+}
+
+/** The union of {@link collectPublishedBySubpath}. */
+export function collectPublishedNames(): Set<string> {
+  return new Set([...collectPublishedBySubpath().values()].flatMap((names) => [...names]))
 }
 
 export function collectValidNames(): Set<string> {
@@ -627,8 +638,6 @@ export function checkE(
 
 // ── Check F: every bullet in a rule file ends in resolvable enforcement tags ──────────────────────
 
-export { REPO_LOCAL_RULES }
-
 /** Rules 2.0 removed: the concern is a type (or unrepresentable) now, so citing one is drift. */
 export const REMOVED_RULES: Readonly<Record<string, string>> = {
   'provider-above-router': 'BasaltProvider mounts the router',
@@ -735,7 +744,10 @@ export function checkF(markdown: string, sources: TagSources): CheckFFailure[] {
       return
     }
     closeBullet()
-    if (introOpen) return
+    if (introOpen) {
+      introOpen = false // the allowance is ONE line: a second paragraph or a table row fails
+      return
+    }
     failures.push({
       line,
       message: 'prose outside a bullet (only the intro line under the H1 is allowed)',
@@ -833,16 +845,36 @@ export function checkG(files: readonly string[]): CheckGFailure[] {
 // ── Check H: the symbols llms.txt's header names are published ───────────────────────────────────
 
 const LLMS_ENTRY_RE = /^# (basalt-ui(?:\/[a-z-]+)?) {2,}(.+)$/
+/** Any header line that starts like an entry point but is not the title (`# basalt-ui v…`). */
+const LLMS_ENTRYISH_RE = /^# basalt-ui(?!\s+v\d)/
 
-export type CheckHFailure = { line: number; name: string }
+export type CheckHFailure = { line: number; message: string }
 
-export function checkLlmsNames(text: string, published: ReadonlySet<string>): CheckHFailure[] {
+/** Each header entry line is well-formed and names only exports of ITS OWN subpath. */
+export function checkLlmsNames(
+  text: string,
+  published: ReadonlyMap<string, ReadonlySet<string>>,
+): CheckHFailure[] {
   const failures: CheckHFailure[] = []
   text.split('\n').forEach((lineText, idx) => {
-    const names = LLMS_ENTRY_RE.exec(lineText)?.[2]
-    if (names === undefined) return
+    if (!LLMS_ENTRYISH_RE.test(lineText)) return
+    const line = idx + 1
+    const match = LLMS_ENTRY_RE.exec(lineText)
+    const spec = match?.[1]
+    const names = match?.[2]
+    if (spec === undefined || names === undefined) {
+      failures.push({ line, message: `header line is not an entry point: ${lineText}` })
+      return
+    }
+    const subpath = published.get(spec)
+    if (subpath === undefined) {
+      failures.push({ line, message: `'${spec}' is not a published subpath` })
+      return
+    }
     for (const name of names.split(',').map((n) => n.trim())) {
-      if (!published.has(name)) failures.push({ line: idx + 1, name })
+      if (!subpath.has(name)) {
+        failures.push({ line, message: `'${name}' is not a published export of ${spec}` })
+      }
     }
   })
   return failures
@@ -874,7 +906,7 @@ function main(): void {
   const gFailures = checkG(findAgentFiles())
   const hFailures = checkLlmsNames(
     readFileSync(join(pkgRoot, 'llms.txt'), 'utf8'),
-    tagSources.typeNames,
+    collectPublishedBySubpath(),
   )
   const selfFailures = [
     ...checkDenylistIsGenuinelyRemoved(validNames),
@@ -905,9 +937,7 @@ function main(): void {
         `${f.file}:${f.line}: imports '${f.specifier}', which package.json 'exports' does not resolve`,
     ),
     ...fFailures.map((f) => `${f.file}:${f.line}: ${f.message}`),
-    ...hFailures.map(
-      (f) => `llms.txt:${f.line}: header names '${f.name}', which is not a published export`,
-    ),
+    ...hFailures.map((f) => `llms.txt:${f.line}: ${f.message}`),
     ...gFailures.map((f) => `${f.file}:${f.line}: rule '${f.id}' ${f.why}`),
     ...selfFailures,
   ]

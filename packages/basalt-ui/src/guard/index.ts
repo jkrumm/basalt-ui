@@ -2110,7 +2110,7 @@ export const GUARD_RULES = {
     // The kebab dialect only exists in CSS text; the camelCase half is `raw-surface`.
     appliesTo: (relPath) => relPath.endsWith('.css'),
     message:
-      'Surface literal in CSS — use var(--vx-radius-card|--vx-radius-md) for a corner and var(--vx-shadow-card) for depth, the same tokens the TSX side is held to.',
+      'Surface literal in CSS — use var(--vx-radius-card|--vx-radius-ctrl) for a corner and var(--vx-shadow-card) for depth, the same tokens the TSX side is held to.',
   },
   'hidden-inline-style': {
     kind: 'hidden-inline-style',

@@ -85,6 +85,22 @@ for (const [key, spec] of Object.entries(SURFACES)) {
   })
 }
 
+// ── Entry points: the headline symbols per subpath ───────────────────────────────────────────────
+// Emitted in one fixed shape; `check-agent-doc-drift` (Check H) resolves every name against THAT
+// subpath's published exports, so a rename fails the gate.
+
+const ENTRY_POINTS: readonly (readonly [string, readonly string[]])[] = [
+  [
+    'basalt-ui',
+    ['BasaltProvider', 'createBasaltRouter', 'BasaltShell', 'defineNav', 'PageBar', 'Section'],
+  ],
+  ['basalt-ui/tokens', ['VX', 'defineSeries', 'groupTokens', 'buildPaletteCss']],
+  ['basalt-ui/charts', ['CartesianChart', 'Lines', 'Bars', 'ChartCard']],
+  ['basalt-ui/controls', ['FilterSet', 'ViewTabs', 'RangeFilter', 'SelectFilter']],
+  ['basalt-ui/state', ['createSearchStore', 'createPersistedState']],
+  ['basalt-ui/vite', ['basaltViteConfig', 'basaltAppPlugin']],
+]
+
 // ── Emit llms.txt ─────────────────────────────────────────────────────────────
 
 export function generateLlmsTxt(): string {
@@ -93,12 +109,7 @@ export function generateLlmsTxt(): string {
     `# ${pkg.description ?? 'Opinionated framework for Mantine-based React apps'}`,
     '#',
     '# Entry points: use the exact import specifier below; do not guess.',
-    '# basalt-ui            BasaltProvider, createBasaltRouter, BasaltShell, defineNav, PageBar, Section',
-    '# basalt-ui/tokens     VX, defineSeries, groupTokens, buildPaletteCss',
-    '# basalt-ui/charts     CartesianChart, Lines, Bars, ChartCard',
-    '# basalt-ui/controls   FilterSet, ViewTabs, RangeFilter, SelectFilter',
-    '# basalt-ui/state      createSearchStore, createPersistedState',
-    '# basalt-ui/vite       basaltViteConfig, basaltAppPlugin',
+    ...ENTRY_POINTS.map(([spec, names]) => `# ${spec.padEnd(20)} ${names.join(', ')}`),
     '# Required peers (install for `.`): react, react-dom, @mantine/{core,hooks,modals,notifications,spotlight},',
     '# @tanstack/react-router, @tanstack/react-query and the three @fontsource-variable faces.',
     '# Subpath-required peers are listed per subpath below; optional peers (remend, shiki, …) are import()-only.',

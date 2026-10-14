@@ -10,6 +10,7 @@ import {
   checkLlmsNames,
   checkRuleSets,
   collectExportKeys,
+  collectPublishedBySubpath,
   collectPublishedNames,
   findAgentFiles,
   findDeadSpecifiers,
@@ -17,6 +18,7 @@ import {
   loadTagSources,
   pluginRuleIds,
 } from './check-agent-doc-drift'
+import * as pluginModule from '../configs/oxlint-plugin.js'
 import { coverageBlock } from './check-coverage'
 import type { TagSources } from './check-agent-doc-drift'
 
@@ -128,6 +130,35 @@ describe('checkF', () => {
     ).toHaveLength(1)
   })
 
+  test('allows ONE intro line: a second paragraph or a table under the H1 fails', () => {
+    expect(checkF(doc('Intro.', 'Second line.'), sources).map((f) => f.line)).toEqual([8])
+    expect(checkF(doc('Intro.', '', 'Second paragraph.'), sources).map((f) => f.line)).toEqual([9])
+    expect(checkF(doc('| a | b |'), sources)).toEqual([])
+    expect(checkF(doc('Intro.', '| a | b |'), sources).map((f) => f.line)).toEqual([8])
+  })
+
+  test('judges `*` and numbered bullets like `-` bullets', () => {
+    const md = doc(
+      '* star [type PageBar]',
+      '* star untagged',
+      '1. numbered untagged',
+      '2. ok [type PageBar]',
+    )
+    expect(checkF(md, sources).map((f) => f.line)).toEqual([8, 9])
+  })
+
+  test('ignores a bullet-shaped line inside a multi-line HTML comment', () => {
+    const md = doc('<!--', '- not a bullet', '-->', '- real [type PageBar]')
+    expect(checkF(md, sources)).toEqual([])
+  })
+
+  test('handles a file with no frontmatter', () => {
+    const md = ['# T', '', 'Intro.', '', '- ok [type PageBar]', '- bad'].join('\n')
+    expect(checkF(md, sources)).toEqual([
+      { line: 6, message: 'bullet does not end in an enforcement tag' },
+    ])
+  })
+
   test('flags a removed rule id used as a tag', () => {
     expect(checkF(doc('- A [basalt/page-bar-budget]'), sources)[0]?.message).toBe(
       '[basalt/page-bar-budget] was removed in 2.0',
@@ -175,6 +206,12 @@ describe('checkRuleSets', () => {
   })
 })
 
+describe('the real plugin', () => {
+  test('REPO_LOCAL and REMOVED rule sets match the registry and RETIRED_RULE_IDS', () => {
+    expect(checkRuleSets(pluginRuleIds(pluginModule), pluginModule.RETIRED_RULE_IDS)).toEqual([])
+  })
+})
+
 describe('pluginRuleIds', () => {
   test('names the problem when the default export is not a plugin', () => {
     expect(() => pluginRuleIds({})).toThrow("has no 'rules' object")
@@ -182,13 +219,31 @@ describe('pluginRuleIds', () => {
 })
 
 describe('checkLlmsNames', () => {
-  const published = new Set(['BasaltProvider', 'VX'])
-  test('flags a hand-written header name that is not published', () => {
+  const published = new Map([
+    ['basalt-ui', new Set(['BasaltProvider'])],
+    ['basalt-ui/charts', new Set(['Lines'])],
+  ])
+  test('flags a name that is not an export of THAT subpath', () => {
     const text = [
-      '# basalt-ui            BasaltProvider, Gone',
-      '# prose line  not, an, entry',
+      '# basalt-ui            BasaltProvider, Lines',
+      '# basalt-ui/charts     Lines, Gone',
     ].join('\n')
-    expect(checkLlmsNames(text, published)).toEqual([{ line: 1, name: 'Gone' }])
+    expect(checkLlmsNames(text, published).map((f) => f.message)).toEqual([
+      "'Lines' is not a published export of basalt-ui",
+      "'Gone' is not a published export of basalt-ui/charts",
+    ])
+  })
+
+  test('flags a header line that is not in the entry shape or names an unknown subpath', () => {
+    const text = ['# basalt-ui is a thing', '# basalt-ui/nope     X', '# basalt-ui v1.0.0'].join(
+      '\n',
+    )
+    expect(checkLlmsNames(text, published)).toHaveLength(2)
+  })
+
+  test('accepts the real shipped llms.txt', () => {
+    const text = readFileSync(join(import.meta.dir, '..', 'llms.txt'), 'utf8')
+    expect(checkLlmsNames(text, collectPublishedBySubpath())).toEqual([])
   })
 })
 
