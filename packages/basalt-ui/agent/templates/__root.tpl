@@ -14,7 +14,8 @@ export const Route = createRootRouteWithContext<BasaltRouterContext>()({
   component: RootComponent,
 })
 
-function RootComponent() {
+// Exported: react/only-export-components flags a non-exported component in a file that exports `Route`.
+export function RootComponent() {
   return (
     <BasaltShell brand={{ name: '{{APP_NAME}}' }} nav={NAV}>
       <Outlet />
