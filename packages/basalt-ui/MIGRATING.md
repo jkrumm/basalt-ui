@@ -334,6 +334,15 @@ Subpath folds: `basalt-ui/agent-chat` → `basalt-ui/agent`, `basalt-ui/notifica
 - `meta.align` / `numeral` / `priority` are typed by the table's own `columnMeta` slot; the global `declare module '@tanstack/react-table'` augmentation is gone, so it no longer leaks into your own TanStack types.
 - The global search now filters 250 ms after the last keystroke; `onGlobalFilterChange` fires at the same moment.
 
+### Transitions (`w7/transitions`)
+
+Contract: `docs/V2-SPEC.md` § 5. React owns every view transition; React 19.3 is required (`ViewTransition`, `Activity`).
+
+- There is no route transition: the router commits state through `useSyncExternalStore`, which never activates `<ViewTransition>` (`docs/waves/evidence/w7/transitions.md`).
+- `PageAside` folds inside `startTransition` with a `<ViewTransition>` on the region, and the folded body is hidden under `<Activity>` instead of unmounted. Scroll, input values and `useState` survive a fold. A hidden `Activity` runs the body's effect cleanups and re-runs the effects on expand, so a subscribing or streaming child resumes from its own state; whatever an effect set up (timer, socket) is torn down while folded.
+- `ThemeToggle` animates with a CSS transition, not `motion`. `motion` is no longer reached from the package root; it is required only by `basalt-ui/agent`.
+- `styles.css` sets `animation: none` on `::view-transition-group(*)`, `-old(*)` and `-new(*)` under `prefers-reduced-motion: reduce`, and the base theme sets Mantine `respectReducedMotion: true`. A consumer theme that sets `respectReducedMotion: false` opts Mantine's own transitions back out.
+
 ### Root, shell, controls, dashboard, format, forms, tokens, theme (W3 delete-core)
 
 Source of the rows: `docs/waves/v2-surface.md`. A deleted export has no replacement unless the

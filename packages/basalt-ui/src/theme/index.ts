@@ -110,11 +110,10 @@ export { useBasaltSpacing } from './use-basalt-spacing'
 export { CTL_THEME, CtlSlot, type CtlSlotProps } from './ctl-theme'
 
 // `ThemeToggle` moved into this directory (C1 consolidation, merging the former `theme-toggle/`
-// dir) but is deliberately NOT re-exported from this barrel: it imports `motion/react` eagerly,
-// and this file resolves from `./controls` (via `CtlSlot`) among others — re-exporting it here
-// would make `motion` a hard transitive peer of every consumer of this barrel, not just of
-// `ThemeToggle` itself. The root barrel (`src/index.ts`) imports it straight from
-// `./theme/theme-toggle`, unchanged from before the merge.
+// dir) and is deliberately NOT re-exported from this barrel: the root barrel (`src/index.ts`) imports
+// it straight from `./theme/theme-toggle`, which keeps it out of the `./controls` graph (this file
+// resolves from `./controls` via `CtlSlot`). It no longer imports `motion/react` (V2-SPEC § 5), so
+// that is no longer a peer concern, only a graph-size one.
 
 // Typed `theme.other.basaltDerive` / `theme.other.basaltFonts` / `theme.other.basaltRadius` /
 // `theme.other.basaltDensity` reads (Mantine's `MantineThemeOther` ships an index signature, so
@@ -447,6 +446,8 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
     // Mantine's dark `--mantine-color-{c}-text`, which is hardcoded to shade 4 = `ACCENT.accent.dark`.
     primaryShade: 6,
     autoContrast: true,
+    // V2-SPEC § 5: Mantine's own transitions (modal, drawer, popover, menu) follow the OS setting.
+    respectReducedMotion: true,
     luminanceThreshold: 0.45,
     // Force the `light` variant to a faint, AA-legible tint in both schemes (see resolver above).
     variantColorResolver: basaltVariantColorResolver,

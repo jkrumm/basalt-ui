@@ -94,9 +94,7 @@ export const DEFERRED_PEER_GAPS: {
     './agent': ['ai', '@ai-sdk/provider'], // `aiSdkTransport` reaches `ai` only via import()
     './controls-dates': ['dayjs'], // named by `@mantine/dates`, not imported by basalt
   },
-  tolerated: {
-    '.': ['motion'], // `ThemeToggle` drops motion with § 5 (W7)
-  },
+  tolerated: {},
 }
 
 /** The bare package a specifier names: `@scope/pkg/deep` → `@scope/pkg`, `pkg/deep` → `pkg`. */

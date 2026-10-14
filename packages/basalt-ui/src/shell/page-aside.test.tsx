@@ -14,6 +14,7 @@
 import { MantineProvider } from '@mantine/core'
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
+import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { FilterSet, ToggleFilter } from '../controls'
 import { useFilterSurface } from '../controls/filter-context'
@@ -123,6 +124,9 @@ function asideCss(): string {
   )
 }
 
+/** What a hidden `<Activity>` does to its host nodes: the element stops being rendered. */
+const isHidden = (el: HTMLElement): boolean => !el.checkVisibility()
+
 describe('PageAside inside a BasaltShell', () => {
   // `expanded` with room to dock (1400 >= 256 navbar + 300 aside + 720 main) — the desktop the
   // region tests below describe. The harness's own 1024px is `medium`, covered at the end.
@@ -190,7 +194,58 @@ describe('PageAside inside a BasaltShell', () => {
     // 36px — the rail holds the one expand button and nothing else.
     expect(asideCss()).toContain('--app-shell-aside-width:calc(2.25rem * var(--mantine-scale))')
     expect(screen.getByLabelText('Expand panel')).toBeDefined()
-    expect(screen.queryByTestId('aside-child')).toBeNull()
+    expect(isHidden(screen.getByTestId('aside-child'))).toBe(true)
+  })
+
+  test('a folded aside keeps its body mounted, so an input keeps its value across a fold', () => {
+    renderInShell(
+      <PageAside title="Panel">
+        <input data-testid="aside-input" defaultValue="" />
+      </PageAside>,
+    )
+    const input = screen.getByTestId<HTMLInputElement>('aside-input')
+    fireEvent.change(input, { target: { value: 'kept' } })
+
+    fireEvent.click(screen.getByLabelText('Collapse panel'))
+    expect(isHidden(input)).toBe(true)
+    fireEvent.click(screen.getByLabelText('Expand panel'))
+
+    expect(isHidden(input)).toBe(false)
+    expect(screen.getByTestId<HTMLInputElement>('aside-input').value).toBe('kept')
+  })
+
+  test('a fold runs the body effects down and back up, and useState survives it', () => {
+    const log: string[] = []
+    function Probe() {
+      const [n, setN] = useState(0)
+      useEffect(() => {
+        log.push('mount')
+        return () => {
+          log.push('cleanup')
+        }
+      }, [])
+      return (
+        <button data-testid="probe" onClick={() => setN(n + 1)}>
+          {n}
+        </button>
+      )
+    }
+    renderInShell(
+      <PageAside title="Panel">
+        <Probe />
+      </PageAside>,
+    )
+    fireEvent.click(screen.getByTestId('probe'))
+    expect(screen.getByTestId('probe').textContent).toBe('1')
+    expect(log).toEqual(['mount'])
+
+    fireEvent.click(screen.getByLabelText('Collapse panel'))
+    expect(log).toEqual(['mount', 'cleanup'])
+    expect(isHidden(screen.getByTestId('probe'))).toBe(true)
+
+    fireEvent.click(screen.getByLabelText('Expand panel'))
+    expect(log).toEqual(['mount', 'cleanup', 'mount'])
+    expect(screen.getByTestId('probe').textContent).toBe('1')
   })
 
   test('a persisted fold outranks defaultFolded on the next visit', () => {
@@ -202,7 +257,7 @@ describe('PageAside inside a BasaltShell', () => {
     )
 
     expect(screen.getByLabelText('Expand panel')).toBeDefined()
-    expect(screen.queryByTestId('aside-child')).toBeNull()
+    expect(isHidden(screen.getByTestId('aside-child'))).toBe(true)
   })
 
   test('an unpersisted fold writes nothing to storage', () => {

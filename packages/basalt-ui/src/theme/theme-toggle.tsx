@@ -8,23 +8,20 @@
  *
  * The glyph is a single animated sun/moon (never a third "computer" icon) reflecting the
  * *resolved* appearance (`useComputedColorScheme`) — no extra chrome for system mode; the tooltip
- * ("System (dark)") and the popover's selected option carry that state instead. Animated via
- * `motion` (see `../motion` for the shared duration/spring tokens); collapses to an instant,
- * unanimated swap when `useReducedMotion` reports a preference for reduced motion.
+ * ("System (dark)") and the popover's selected option carry that state instead. Animated by a CSS
+ * transition (`theme-toggle.module.css`), which drops to an instant swap under
+ * `prefers-reduced-motion: reduce`.
  */
 import {
   ActionIcon,
-  Center,
   Popover,
   SegmentedControl,
   useComputedColorScheme,
   useMantineColorScheme,
 } from '@mantine/core'
-import { useReducedMotion } from '@mantine/hooks'
-import { AnimatePresence, motion } from 'motion/react'
 import { useRef, useState } from 'react'
-import { MOTION_SPRING } from '../common/motion'
 import type { BasaltProps } from '../common/props'
+import classes from './theme-toggle.module.css'
 
 type Scheme = 'light' | 'dark' | 'auto'
 
@@ -71,41 +68,17 @@ function MoonGlyph() {
   )
 }
 
-/** The animated sun/moon glyph — crossfades + rotates between the two on scheme change. */
-function SchemeGlyph({ dark, reduceMotion }: { dark: boolean; reduceMotion: boolean }) {
-  if (reduceMotion) {
-    return (
-      <Center component="span" inline>
-        {dark ? <MoonGlyph /> : <SunGlyph />}
-      </Center>
-    )
-  }
+/** The sun/moon glyph — both mounted, crossfaded and rotated by CSS on scheme change. */
+function SchemeGlyph({ dark }: { dark: boolean }) {
   return (
-    <AnimatePresence mode="wait" initial={false}>
-      {dark ? (
-        <motion.span
-          key="moon"
-          style={{ display: 'inline-flex' }} // theme-allow inline-display — a framer-motion glyph wrapper, not a Mantine layout node
-          initial={{ opacity: 0, scale: 0.6, rotate: 30 }}
-          animate={{ opacity: 1, scale: 1, rotate: 0 }}
-          exit={{ opacity: 0, scale: 0.6, rotate: -30 }}
-          transition={MOTION_SPRING}
-        >
-          <MoonGlyph />
-        </motion.span>
-      ) : (
-        <motion.span
-          key="sun"
-          style={{ display: 'inline-flex' }} // theme-allow inline-display — a framer-motion glyph wrapper, not a Mantine layout node
-          initial={{ opacity: 0, scale: 0.6, rotate: -30 }}
-          animate={{ opacity: 1, scale: 1, rotate: 0 }}
-          exit={{ opacity: 0, scale: 0.6, rotate: 30 }}
-          transition={MOTION_SPRING}
-        >
-          <SunGlyph />
-        </motion.span>
-      )}
-    </AnimatePresence>
+    <span className={classes.glyph} data-dark={dark}>
+      <span className={classes.sun}>
+        <SunGlyph />
+      </span>
+      <span className={classes.moon}>
+        <MoonGlyph />
+      </span>
+    </span>
   )
 }
 
@@ -129,7 +102,6 @@ export function ThemeToggle({
 }: ThemeToggleProps = {}) {
   const { colorScheme, setColorScheme } = useMantineColorScheme()
   const resolved = useComputedColorScheme('dark')
-  const reduceMotion = useReducedMotion()
   const [opened, setOpened] = useState(false)
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
@@ -166,7 +138,7 @@ export function ThemeToggle({
           onFocus={scheduleOpen}
           onBlur={scheduleClose}
         >
-          <SchemeGlyph dark={dark} reduceMotion={reduceMotion} />
+          <SchemeGlyph dark={dark} />
         </ActionIcon>
       </Popover.Target>
       <Popover.Dropdown
