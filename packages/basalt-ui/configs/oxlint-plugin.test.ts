@@ -15,12 +15,10 @@ import { dirname, resolve } from 'node:path'
 import basaltPlugin, {
   CTL_THEME_TAGS,
   WAIVER_ID_ALIASES,
-  DEPRECATED_EXPORTS,
   KNOWN_RULE_IDS,
   CHART_ENGINE_ALLOWED_PREFIXES,
   CHART_ENGINE_ALLOWED_SUBPATHS,
   isAllowedChartEngineSubpath,
-  PLUGIN_RULE_ADVISORY,
   PLUGIN_RULE_GRACE,
   RAW_BREAKPOINT_RECIPE,
   RETIRED_RULE_IDS,
@@ -48,9 +46,7 @@ beforeEach(() => {
       plugins: [],
       jsPlugins: [PLUGIN_PATH],
       rules: {
-        'basalt/provider-above-router': 'error',
         'basalt/query-fn-unwrap': 'error',
-        'basalt/deprecated-export': 'error',
         'basalt/forms-field-key': 'error',
         'basalt/no-raw-font-size': 'error',
         'basalt/raw-size-literal': 'error',
@@ -63,7 +59,6 @@ beforeEach(() => {
         'basalt/control-outside-home': 'error',
         'basalt/bound-control-outside-home': 'error',
         'basalt/control-size-literal': 'error',
-        'basalt/page-bar-budget': 'error',
         'basalt/in-body-page-title': 'error',
         'basalt/responsive-twin': 'error',
         'basalt/search-literal-link': 'error',
@@ -71,10 +66,11 @@ beforeEach(() => {
         'basalt/chart-engine-boundary': 'error',
         'basalt/chart-host-single': 'error',
         'basalt/token-layer-boundary': 'error',
-        'basalt/agent-resume-guard': 'error',
         'basalt/agent-no-raw-usechat': 'error',
         'basalt/ai-sdk-major': 'error',
         'basalt/raw-breakpoint': 'error',
+        'basalt/router-view-transition': 'error',
+        'basalt/no-dev-helper': 'error',
       },
     }),
   )
@@ -649,55 +645,6 @@ describe('rule independence', () => {
   })
 })
 
-// ── agent-resume-guard ───────────────────────────────────────────────────────
-// The two agent rules honour a SEPARATE escape token, `basalt-agent-allow`, not `theme-allow` — a
-// color exemption must never be able to switch off a streaming guard. The `theme-allow` fixture
-// below proves the wrong token does not suppress the finding.
-
-describe('basalt/agent-resume-guard', () => {
-  it('flags useChat({ resume: true })', () => {
-    const { code, rules } = run(`const c = useChat({ id, resume: true })\n`)
-    expect(code).toBe(1)
-    expect(rules).toContain('agent-resume-guard')
-  })
-
-  it('does NOT flag useChat({ resume: false })', () => {
-    const { code, rules } = run(`const c = useChat({ id, resume: false })\n`)
-    expect(code).toBe(0)
-    expect(rules).not.toContain('agent-resume-guard')
-  })
-
-  it('does NOT flag a bare useChat({ id }) with no resume key', () => {
-    const { code, rules } = run(`const c = useChat({ id })\n`)
-    expect(code).toBe(0)
-    expect(rules).not.toContain('agent-resume-guard')
-  })
-
-  it('flags chat.resumeStream() called from an effect', () => {
-    const { code, rules } = run(`useEffect(() => { chat.resumeStream() }, [])\n`)
-    expect(code).toBe(1)
-    expect(rules).toContain('agent-resume-guard')
-  })
-
-  it('does NOT flag chat.resumeStream() marked basalt-agent-allow', () => {
-    const { code, rules } = run(`// basalt-agent-allow\nchat.resumeStream()\n`)
-    expect(code).toBe(0)
-    expect(rules).not.toContain('agent-resume-guard')
-  })
-
-  it('STILL flags chat.resumeStream() marked only theme-allow (wrong escape token)', () => {
-    const { code, rules } = run(`// theme-allow\nchat.resumeStream()\n`)
-    expect(code).toBe(1)
-    expect(rules).toContain('agent-resume-guard')
-  })
-
-  it('does NOT flag an unrelated call like runs.start(id, text)', () => {
-    const { code, rules } = run(`runs.start(id, text)\n`)
-    expect(code).toBe(0)
-    expect(rules).not.toContain('agent-resume-guard')
-  })
-})
-
 // ── agent-no-raw-usechat ─────────────────────────────────────────────────────
 
 describe('basalt/agent-no-raw-usechat', () => {
@@ -939,14 +886,14 @@ describe('basalt/raw-scroll-container promotion', () => {
 })
 
 // ── agent rules — promotion (warn → error shipped) ──────────────────────────
-// The three agent-chat rules were promoted warn → error in the SHIPPED preset alongside
+// The two agent-chat rules were promoted warn → error in the SHIPPED preset alongside
 // raw-scroll-container above, but had no equivalent lock — `scripts/gen-oxlint.ts` only regenerates
 // the `overrides` array; this top-level `rules` block is hand-maintained and
 // `tests/oxlint-preset-sync.test.ts` only checks `overrides` against `projectBanList('shipped')`, so
-// a later accidental revert of one of these three back to "warn" would pass the suite silently.
+// a later accidental revert of one of these back to "warn" would pass the suite silently.
 
 describe('basalt agent rules promotion', () => {
-  it.each(['basalt/agent-resume-guard', 'basalt/agent-no-raw-usechat', 'basalt/ai-sdk-major'])(
+  it.each(['basalt/agent-no-raw-usechat', 'basalt/ai-sdk-major'])(
     '%s ships "error" (not "warn"/"off") in the consumer preset',
     (rule) => {
       const shipped = JSON.parse(
@@ -956,7 +903,7 @@ describe('basalt agent rules promotion', () => {
     },
   )
 
-  it.each(['basalt/agent-resume-guard', 'basalt/agent-no-raw-usechat', 'basalt/ai-sdk-major'])(
+  it.each(['basalt/agent-no-raw-usechat', 'basalt/ai-sdk-major'])(
     '%s stays at the shipped level ("error") repo-local',
     (rule) => {
       const repoLocal = JSON.parse(
@@ -1524,32 +1471,26 @@ describe('PLUGIN_RULE_GRACE', () => {
     }
   ).version
   const graceEntries = Object.entries(PLUGIN_RULE_GRACE) as [string, GraceEntry][]
-  const advisoryEntries = Object.entries(PLUGIN_RULE_ADVISORY) as [
-    string,
-    { since: string; why: string },
-  ][]
   const graceIds = graceEntries.map(([id]) => id)
-  const advisoryIds = advisoryEntries.map(([id]) => id)
   const shippedBasaltIds = Object.keys(shipped.rules).filter((id) => id.startsWith('basalt/'))
 
   // The mechanism whose ABSENCE let three rules sit at `warn` for up to twelve minors with nothing
   // tracking them. Deleting a ledger entry IS the promotion, and this test makes flipping the
   // shipped level part of the same commit.
-  it('every grace and advisory entry is warn in the shipped preset', () => {
-    for (const id of [...graceIds, ...advisoryIds])
-      expect(shipped.rules[`basalt/${id}`]).toBe('warn')
+  it('every grace entry is warn in the shipped preset', () => {
+    for (const id of graceIds) expect(shipped.rules[`basalt/${id}`]).toBe('warn')
   })
 
-  it('every shipped rule NOT in either ledger is error', () => {
+  it('every shipped rule NOT in the ledger is error', () => {
     for (const id of shippedBasaltIds) {
       const bareId = id.slice('basalt/'.length)
-      if (graceIds.includes(bareId) || advisoryIds.includes(bareId)) continue
+      if (graceIds.includes(bareId)) continue
       expect([id, shipped.rules[id]]).toEqual([id, 'error'])
     }
   })
 
   it('every entry carries a written why', () => {
-    for (const [id, entry] of [...graceEntries, ...advisoryEntries]) {
+    for (const [id, entry] of graceEntries) {
       if (entry.why.length <= 40)
         throw new Error(`${id}: \`why\` must be longer than 40 characters.`)
       expect(entry.why.length).toBeGreaterThan(40)
@@ -1557,8 +1498,8 @@ describe('PLUGIN_RULE_GRACE', () => {
   })
 
   // The C16 version gate, run against the REAL ledger and REAL package version — covers `since` <
-  // `promote` and "no entry has reached its promote version" in one call. ADVISORY entries are
-  // exempt by design (see `assertGraceLedger`'s synthetic coverage above for the gate itself).
+  // `promote` and "no entry has reached its promote version" in one call.
+  // (see `assertGraceLedger`'s synthetic coverage above for the gate itself).
   it('passes the C16 gate against the real ledger and package version', () => {
     expect(() => assertGraceLedger(Object.fromEntries(graceEntries), pkgVersion)).not.toThrow()
   })
@@ -2672,118 +2613,6 @@ describe('CTL_THEME_TAGS ↔ CTL_THEME', () => {
   })
 })
 
-describe('basalt/page-bar-budget', () => {
-  it('flags two PageBars in the SAME returned tree — the pair that mounts together', () => {
-    const { code, rules } = run(
-      `${BASALT_IMPORT}export const C = () => (\n  <>\n    <PageBar title="A" />\n    <PageBar title="B" />\n  </>\n)\n`,
-    )
-    expect(code).toBe(1)
-    expect(rules).toContain('page-bar-budget')
-  })
-
-  // The two false positives the per-FILE count produced. Neither renders two bars at once, so
-  // nothing races for the portal node — and the only escape was a theme-allow on correct code.
-  it('does NOT flag an early-return loading state and the loaded bar', () => {
-    const { code, rules } = run(
-      `${BASALT_IMPORT}export const C = ({ data }) => {\n  if (!data) return <PageBar title="Jobs" />\n  return <PageBar title="Jobs" actions={{ primary: { key: 'r', label: 'Run' } }} />\n}\n`,
-    )
-    expect(code).toBe(0)
-    expect(rules).not.toContain('page-bar-budget')
-  })
-
-  it('does NOT flag two page components exported from one file', () => {
-    const { code, rules } = run(
-      `${BASALT_IMPORT}export const ListPage = () => <PageBar title="Jobs" />\nexport const DetailPage = () => <PageBar title="Job" />\n`,
-    )
-    expect(code).toBe(0)
-    expect(rules).not.toContain('page-bar-budget')
-  })
-
-  it("does NOT flag a consumer's own PageBar-named component", () => {
-    const { code, rules } = run(
-      `import { PageBar } from './chrome/page-bar'\nexport const C = () => (\n  <>\n    <PageBar title="A" />\n    <PageBar title="B" />\n  </>\n)\n`,
-    )
-    expect(code).toBe(0)
-    expect(rules).not.toContain('page-bar-budget')
-  })
-
-  it('flags a 5-entry actions.secondary array', () => {
-    const five = [1, 2, 3, 4, 5].map((n) => `{ key: '${n}', label: '${n}' }`).join(', ')
-    const { code, rules } = run(
-      `${BASALT_IMPORT}export const C = () => <PageBar actions={{ secondary: [${five}] }} />\n`,
-    )
-    expect(code).toBe(1)
-    expect(rules).toContain('page-bar-budget')
-  })
-
-  it('does NOT flag a 4-entry actions.secondary array', () => {
-    const four = [1, 2, 3, 4].map((n) => `{ key: '${n}', label: '${n}' }`).join(', ')
-    const { code, rules } = run(
-      `${BASALT_IMPORT}export const C = () => <PageBar actions={{ secondary: [${four}] }} />\n`,
-    )
-    expect(code).toBe(0)
-    expect(rules).not.toContain('page-bar-budget')
-  })
-
-  it('flags a 4-entry Section actions array (budget 3)', () => {
-    const four = [1, 2, 3, 4].map((n) => `{ key: '${n}', label: '${n}' }`).join(', ')
-    const { rules } = run(
-      `${BASALT_IMPORT}export const C = () => <Section actions={[${four}]} />\n`,
-    )
-    expect(rules).toContain('page-bar-budget')
-  })
-
-  it('flags a second variant="filled" inside one slot', () => {
-    const { rules } = run(
-      `${BASALT_IMPORT}${MANTINE_IMPORT}export const C = () => (\n  <PageBar actions={<><Button variant="filled">A</Button><Button variant="filled">B</Button></>} />\n)\n`,
-    )
-    expect(rules).toContain('page-bar-budget')
-  })
-
-  it('does NOT flag one filled action beside a default one', () => {
-    const { code, rules } = run(
-      `${BASALT_IMPORT}${MANTINE_IMPORT}export const C = () => (\n  <PageBar actions={<><Button variant="filled">A</Button><Button variant="default">B</Button></>} />\n)\n`,
-    )
-    expect(code).toBe(0)
-    expect(rules).not.toContain('page-bar-budget')
-  })
-
-  // The `filled` count is a PRIMARY-ACTION count: a filled Badge is Mantine's default Badge
-  // variant and the ordinary way a header states a count (law C11 asks for one), and an overlay's
-  // submit button is not in the bar at all.
-  it('does NOT flag a filled Badge beside the one filled Button', () => {
-    const { code, rules } = run(
-      `${BASALT_IMPORT}import { Badge, Button } from '@mantine/core'\n` +
-        `export const C = () => (\n  <Section title="T" actions={<><Button variant="filled">Run</Button><Badge variant="filled">3</Badge></>} />\n)\n`,
-    )
-    expect(code).toBe(0)
-    expect(rules).not.toContain('page-bar-budget')
-  })
-
-  it('does NOT flag a filled ThemeIcon beside the one filled Button', () => {
-    const { rules } = run(
-      `${BASALT_IMPORT}import { Button, ThemeIcon } from '@mantine/core'\n` +
-        `export const C = () => (\n  <Section title="T" actions={<><Button variant="filled">Run</Button><ThemeIcon variant="filled" /></>} />\n)\n`,
-    )
-    expect(rules).not.toContain('page-bar-budget')
-  })
-
-  it("does NOT flag a Modal's own filled submit button colocated in the slot", () => {
-    const { rules } = run(
-      `${BASALT_IMPORT}import { Button, Modal } from '@mantine/core'\n` +
-        `export const C = () => (\n  <PageBar actions={<><Button variant="filled">New</Button><Modal opened><Button variant="filled">Save</Button></Modal></>} />\n)\n`,
-    )
-    expect(rules).not.toContain('page-bar-budget')
-  })
-
-  it('honors a scoped theme-allow', () => {
-    const { rules } = run(
-      `${BASALT_IMPORT}export const C = () => (\n  <>\n    <PageBar title="A" />\n    {/* theme-allow page-bar-budget — the print-only variant */}\n    <PageBar title="B" />\n  </>\n)\n`,
-    )
-    expect(rules).not.toContain('page-bar-budget')
-  })
-})
-
 describe('basalt/in-body-page-title', () => {
   it.each([1, 2])('flags <Title order={%i}> in the body', (order) => {
     const { code, rules } = run(`export const C = () => <Title order={${order}}>Page</Title>\n`)
@@ -3270,95 +3099,6 @@ describe('PLUGIN_RULE_ID_LIST ↔ the plugin', () => {
   })
 })
 
-// ── provider-above-router (F5) ───────────────────────────────────────────────
-
-describe('basalt/provider-above-router', () => {
-  const IMPORTS =
-    `import { BasaltProvider } from 'basalt-ui'\n` +
-    `import { RouterProvider } from '@tanstack/react-router'\n`
-
-  it('flags a BasaltProvider rendered inside a RouterProvider', () => {
-    const { code, rules } = run(
-      `${IMPORTS}export const App = () => (\n` +
-        `  <RouterProvider router={r}>\n    <BasaltProvider>{null}</BasaltProvider>\n` +
-        `  </RouterProvider>\n)\n`,
-    )
-    expect(code).toBe(1)
-    expect(rules).toContain('provider-above-router')
-  })
-
-  it('does NOT flag the correct order — provider above router', () => {
-    const { code, rules } = run(
-      `${IMPORTS}export const App = () => (\n` +
-        `  <BasaltProvider>\n    <RouterProvider router={r} />\n  </BasaltProvider>\n)\n`,
-    )
-    expect(code).toBe(0)
-    expect(rules).not.toContain('provider-above-router')
-  })
-
-  // Provenance both ways: the tag names alone are not the finding.
-  it("does NOT flag a consumer's own BasaltProvider (no basalt import)", () => {
-    const { code, rules } = run(
-      `import { RouterProvider } from '@tanstack/react-router'\n` +
-        `import { BasaltProvider } from './my-provider'\n` +
-        `export const App = () => (\n  <RouterProvider router={r}>\n` +
-        `    <BasaltProvider>{null}</BasaltProvider>\n  </RouterProvider>\n)\n`,
-    )
-    expect(code).toBe(0)
-    expect(rules).not.toContain('provider-above-router')
-  })
-
-  it('does NOT flag a RouterProvider that is not TanStack s', () => {
-    const { code, rules } = run(
-      `import { BasaltProvider } from 'basalt-ui'\n` +
-        `import { RouterProvider } from 'other-router'\n` +
-        `export const App = () => (\n  <RouterProvider router={r}>\n` +
-        `    <BasaltProvider>{null}</BasaltProvider>\n  </RouterProvider>\n)\n`,
-    )
-    expect(code).toBe(0)
-    expect(rules).not.toContain('provider-above-router')
-  })
-
-  // The alias is why the ancestry is read by BINDING and not by written tag name.
-  it('flags through an aliased RouterProvider import', () => {
-    const { code, rules } = run(
-      `import { BasaltProvider } from 'basalt-ui'\n` +
-        `import { RouterProvider as Router } from '@tanstack/react-router'\n` +
-        `export const App = () => (\n  <Router router={r}>\n` +
-        `    <BasaltProvider>{null}</BasaltProvider>\n  </Router>\n)\n`,
-    )
-    expect(code).toBe(1)
-    expect(rules).toContain('provider-above-router')
-  })
-
-  it('honours a theme-allow naming the rule', () => {
-    const { code, rules } = run(
-      `${IMPORTS}export const App = () => (\n  <RouterProvider router={r}>\n` +
-        `    {/* theme-allow provider-above-router — legacy bootstrap, ported next minor */}\n` +
-        `    <BasaltProvider>{null}</BasaltProvider>\n  </RouterProvider>\n)\n`,
-    )
-    expect(code).toBe(0)
-    expect(rules).not.toContain('provider-above-router')
-  })
-
-  // The documented limit of the heuristic — stated in the rule's own JSDoc, pinned here so a
-  // future widening has to move this test rather than discover the gap.
-  it('does NOT see a cross-file composition (static JSX ancestry only)', () => {
-    const { code, rules } = run(
-      `import { BasaltProvider } from 'basalt-ui'\n` +
-        `import { Routes } from './routes'\n` +
-        `export const App = () => (\n  <Routes>\n    <BasaltProvider>{null}</BasaltProvider>\n` +
-        `  </Routes>\n)\n`,
-    )
-    expect(code).toBe(0)
-    expect(rules).not.toContain('provider-above-router')
-  })
-})
-
-// `basalt/query-dual-import` is RETIRED (`RETIRED_RULE_IDS`) — its own describe block was removed
-// along with the rule; see `KNOWN_RULE_IDS` below for the coverage that remains: it is still a
-// valid (dead) `theme-allow` id, never a typo.
-
 // ── query-fn-unwrap (F5) ─────────────────────────────────────────────────────
 
 describe('basalt/query-fn-unwrap', () => {
@@ -3425,71 +3165,6 @@ describe('basalt/query-fn-unwrap', () => {
     )
     expect(code).toBe(0)
     expect(rules).not.toContain('query-fn-unwrap')
-  })
-})
-
-// ── deprecated-export (B4) ───────────────────────────────────────────────────
-
-describe('basalt/deprecated-export', () => {
-  it('reports a removed row as gone, never as "still resolves"', () => {
-    const { code, rules, output } = run(
-      `import { useBreakpoint } from 'basalt-ui'\nexport const x = useBreakpoint\n`,
-    )
-    expect(code).toBe(1)
-    expect(rules).toContain('deprecated-export')
-    expect(output).toContain('was removed in 1.34.0')
-    expect(output).not.toContain('still resolves')
-  })
-
-  // The row no longer says `fix: false`; `removed` alone must suppress the rewrite, because a
-  // removed row's replacement is prose (`useSizeClass() for shell chrome; …`), not a name.
-  it('never autofixes a removed row', () => {
-    const source = `import { useBreakpoint } from 'basalt-ui'\nexport const x = useBreakpoint\n`
-    writeFileSync(resolve(dir, 'removed-fix.tsx'), source)
-    Bun.spawnSync([OXLINT_BIN, '-c', '.oxlintrc.json', '--fix', 'removed-fix.tsx'], { cwd: dir })
-    expect(readFileSync(resolve(dir, 'removed-fix.tsx'), 'utf8')).toBe(source)
-  })
-})
-
-// 1.36.0: the form layout moved `basalt-ui/forms` → `basalt-ui/controls`. A move BETWEEN subpaths is
-// not a drop-in rename — the autofix only rewrites the specifier inside its own import statement —
-// so these rows carry `fix: false` and the message names the new home.
-describe('basalt/deprecated-export — the form layout move', () => {
-  it.each(['FormSection', 'FormRow', 'FormGroup', 'FormActions'])(
-    'reports %s from basalt-ui/forms and names basalt-ui/controls',
-    (name) => {
-      const { rules, output } = run(
-        `import { ${name} } from 'basalt-ui/forms'\nexport const x = ${name}\n`,
-      )
-      expect(rules).toContain('deprecated-export')
-      expect(output).toContain(`'basalt-ui/controls'`)
-      expect(output).toContain('was removed in 1.39.0')
-    },
-  )
-
-  it.each(['useForm', 'schemaResolver'])('reports %s from basalt-ui/forms', (name) => {
-    const { rules, output } = run(
-      `import { ${name} } from 'basalt-ui/forms'\nexport const x = ${name}\n`,
-    )
-    expect(rules).toContain('deprecated-export')
-    expect(output).toContain(`'@mantine/form'`)
-    expect(output).toContain('was removed in 1.39.0')
-  })
-
-  it('does NOT report FormRow imported from basalt-ui/controls', () => {
-    const { rules } = run(
-      `import { FormRow } from 'basalt-ui/controls'\nexport const x = FormRow\n`,
-    )
-    expect(rules).not.toContain('deprecated-export')
-  })
-
-  it('never autofixes a cross-subpath row', () => {
-    const source = `import { FormRow } from 'basalt-ui/forms'\nexport const x = FormRow\n`
-    writeFileSync(resolve(dir, 'form-layout-fix.tsx'), source)
-    Bun.spawnSync([OXLINT_BIN, '-c', '.oxlintrc.json', '--fix', 'form-layout-fix.tsx'], {
-      cwd: dir,
-    })
-    expect(readFileSync(resolve(dir, 'form-layout-fix.tsx'), 'utf8')).toBe(source)
   })
 })
 
@@ -4139,91 +3814,160 @@ describe('control homes — lane parity', () => {
   })
 })
 
-// ── the deprecation ledger (B4) ──────────────────────────────────────────────
+// ── agent-no-raw-usechat — the `Chat` class ──────────────────────────────────
 
-describe('DEPRECATED_EXPORTS', () => {
-  const pkgVersion = (
-    JSON.parse(readFileSync(resolve(import.meta.dirname, '..', 'package.json'), 'utf8')) as {
-      version: string
-    }
-  ).version
-
-  const [major, minor] = pkgVersion.split('.').map(Number)
-  const floor = `${major}.${(minor as number) + 1}.0`
-  const surface = JSON.parse(
-    readFileSync(resolve(import.meta.dirname, '..', 'scripts', 'export-surface.json'), 'utf8'),
-  ) as Record<string, string[]>
-  const shipped = (row: (typeof DEPRECATED_EXPORTS)[number]) =>
-    surface[row.subpath === 'basalt-ui' ? '.' : row.subpath.replace('basalt-ui', '.')]?.includes(
-      row.name,
-    ) === true
-
-  it('carries a replacement and a well-formed removeIn on every row', () => {
-    for (const row of DEPRECATED_EXPORTS) {
-      expect([row.name, row.replacement.length > 0]).toEqual([row.name, true])
-      expect([row.name, /^\d+\.\d+\.\d+$/.test(row.removeIn)]).toEqual([row.name, true])
-    }
+describe('basalt/agent-no-raw-usechat — Chat', () => {
+  it.each(['@ai-sdk/react', 'ai/react'])('flags `Chat` imported from %s', (source) => {
+    const { code, rules } = run(`import { Chat } from '${source}'\n`, 'lib.ts')
+    expect(code).toBe(1)
+    expect(rules).toContain('agent-no-raw-usechat')
   })
 
-  // A live row still ships, so its removal is still ahead: at least the next minor.
-  it('dates every live row at least one minor out', () => {
-    for (const row of DEPRECATED_EXPORTS.filter((r) => r.removed !== true)) {
-      expect([row.name, compareSemver(row.removeIn, floor) >= 0]).toEqual([row.name, true])
-    }
+  it('does NOT flag a type-only `Chat` import', () => {
+    const { code } = run(`import type { Chat } from '@ai-sdk/react'\n`, 'lib.ts')
+    expect(code).toBe(0)
+  })
+})
+
+// ── router-view-transition ───────────────────────────────────────────────────
+
+describe('basalt/router-view-transition', () => {
+  it.each([
+    ['viewTransition on <Link>', `export const C = () => <Link to="/a" viewTransition />\n`],
+    [
+      'viewTransition on <Navigate>',
+      `export const C = () => <Navigate to="/a" viewTransition />\n`,
+    ],
+    ['navigate({ viewTransition })', `navigate({ to: '/a', viewTransition: true })\n`],
+    [
+      'router.navigate({ viewTransition })',
+      `router.navigate({ to: '/a', viewTransition: true })\n`,
+    ],
+    ['redirect({ viewTransition })', `throw redirect({ to: '/a', viewTransition: true })\n`],
+    [
+      'createRouter({ defaultViewTransition })',
+      `createRouter({ routeTree, defaultViewTransition: true })\n`,
+    ],
+    ['document.startViewTransition()', `document.startViewTransition(() => update())\n`],
+  ])('flags %s', (_name, source) => {
+    const { code, rules, output } = run(source, 'lib.tsx')
+    expect(code).toBe(1)
+    expect(rules).toContain('router-view-transition')
+    expect(output).toContain('<ViewTransition>')
   })
 
-  // A removed row is kept past the removal only for its message: the export must really be gone,
-  // and the removing minor is the next one at the latest — never a date still ahead.
-  it('pins every removed row to an export that no longer ships', () => {
-    for (const row of DEPRECATED_EXPORTS.filter((r) => r.removed === true)) {
-      expect([row.name, compareSemver(row.removeIn, floor) <= 0]).toEqual([row.name, true])
-      if (row.prop === undefined) expect([row.name, shipped(row)]).toEqual([row.name, false])
-    }
+  it.each([
+    ['a plain <Link>', `export const C = () => <Link to="/a" />\n`],
+    ['viewTransition on an unrelated element', `export const C = () => <Foo viewTransition />\n`],
+    ['navigate without it', `navigate({ to: '/a' })\n`],
+    [
+      'React’s own <ViewTransition>',
+      `export const C = () => <ViewTransition>{x}</ViewTransition>\n`,
+    ],
+    [
+      'a waived call',
+      `// theme-allow router-view-transition — legacy embed\ndocument.startViewTransition(go)\n`,
+    ],
+  ])('does NOT flag %s', (_name, source) => {
+    const { code, rules } = run(source, 'lib.tsx')
+    expect(code).toBe(0)
+    expect(rules).not.toContain('router-view-transition')
+  })
+})
+
+// ── no-dev-helper ────────────────────────────────────────────────────────────
+
+describe('basalt/no-dev-helper', () => {
+  it.each([
+    ['an unguarded devtools import()', `const m = import('@tanstack/react-router-devtools')\n`],
+    ['an unguarded theme-lab import()', `export const load = () => import('./theme-lab')\n`],
+    ['an isDev() gate', `if (isDev()) import('./dev-dock')\n`],
+    [
+      'a lazy binding rendered without a gate',
+      `const Dock = lazy(() => import('../dev-dock'))\nexport const C = () => <Dock />\n`,
+    ],
+    [
+      'a lazy binding with one ungated use',
+      `const Dock = lazy(() => import('../dev-dock'))\nexport const C = () => (\n  <>\n    {process.env.NODE_ENV !== 'production' && <Dock />}\n    <Dock />\n  </>\n)\n`,
+    ],
+  ])('flags %s', (_name, source) => {
+    const { code, rules } = run(source, 'lib.tsx')
+    expect(code).toBe(1)
+    expect(rules).toContain('no-dev-helper')
   })
 
-  it('names a real published subpath on every row', () => {
-    const exports = Object.keys(
-      (
-        JSON.parse(readFileSync(resolve(import.meta.dirname, '..', 'package.json'), 'utf8')) as {
-          exports: Record<string, unknown>
-        }
-      ).exports,
-    )
-    for (const row of DEPRECATED_EXPORTS) {
-      const subpath = row.subpath === 'basalt-ui' ? '.' : row.subpath.replace('basalt-ui', '.')
-      expect([row.subpath, exports.includes(subpath)]).toEqual([row.subpath, true])
-    }
+  it.each([
+    [
+      'an if-gate',
+      `if (process.env.NODE_ENV !== 'production') {\n  void import('@tanstack/react-query-devtools')\n}\n`,
+    ],
+    [
+      '=== development',
+      `const m = process.env.NODE_ENV === 'development' ? import('./theme-lab') : null\n`,
+    ],
+    [
+      'the production alternate',
+      `const m = process.env.NODE_ENV === 'production' ? null : import('./dev-dock')\n`,
+    ],
+    [
+      'a lazy binding used only under the gate',
+      `const Dock = lazy(() => import('../dev-dock'))\nexport const C = () => process.env.NODE_ENV !== 'production' && <Dock />\n`,
+    ],
+    ['an unrelated import()', `const m = import('rehype-sanitize')\n`],
+  ])('does NOT flag %s', (_name, source) => {
+    const { code, rules } = run(source, 'lib.tsx')
+    expect(code).toBe(0)
+    expect(rules).not.toContain('no-dev-helper')
   })
 
-  /**
-   * The barrel half of the lifecycle: a JSDoc `@deprecated` on a published barrel with no ledger
-   * row is an export nothing nudges anyone off. Deliberately scoped to `src/**' + '/index.ts(x)` —
-   * the files a consumer's import resolves through. To add one: write the `@deprecated` JSDoc, add
-   * the `DEPRECATED_EXPORTS` row, add the `MIGRATING.md` row.
-   */
-  it('has a row for every @deprecated JSDoc tag on a published barrel', () => {
-    const barrels = [
-      ...new Bun.Glob('src/**/index.{ts,tsx}').scanSync({
-        cwd: resolve(import.meta.dirname, '..'),
-        absolute: true,
-      }),
-    ]
-    const names = new Set(DEPRECATED_EXPORTS.map((row) => row.prop ?? row.name))
-    for (const file of barrels) {
-      const lines = readFileSync(file, 'utf8').split('\n')
-      for (const [index, line] of lines.entries()) {
-        if (!/^\s*\*\s*@deprecated\b/.test(line)) continue
-        const declared = lines
-          .slice(index, index + 12)
-          .map((l) => /^\s*(?:readonly\s+)?([A-Za-z_$][\w$]*)\??\s*[:(]/.exec(l)?.[1])
-          .find((name) => name !== undefined)
-        expect([file, declared, declared !== undefined && names.has(declared)]).toEqual([
-          file,
-          declared,
-          true,
-        ])
-      }
+  it('exempts the dev modules themselves', () => {
+    const { code } = run(`const m = import('./theme-lab')\n`, 'src/dev-dock.tsx')
+    expect(code).toBe(0)
+  })
+})
+
+// ── no-import-meta-env — scopes itself to basalt's own source ────────────────
+
+describe('basalt/no-import-meta-env', () => {
+  const PKG_ROOT = resolve(import.meta.dirname, '..')
+  const visit = (filename: string): number => {
+    const reports: unknown[] = []
+    const visitor = basaltPlugin.rules['no-import-meta-env'].create({
+      filename,
+      sourceCode: { getAllComments: () => [] },
+      report: (r: unknown) => reports.push(r),
+    })
+    const node = {
+      type: 'MemberExpression',
+      computed: false,
+      property: { name: 'env' },
+      object: { type: 'MetaProperty', meta: { name: 'import' }, property: { name: 'meta' } },
+      loc: { start: { line: 1 } },
     }
+    visitor.MemberExpression?.(node)
+    return reports.length
+  }
+
+  it('reports inside packages/basalt-ui/src', () => {
+    expect(visit(`${PKG_ROOT}/src/x.ts`)).toBe(1)
+  })
+
+  it('is silent elsewhere (the playground is a consumer) and in tests', () => {
+    expect(visit(`${PKG_ROOT}/../../apps/playground/src/main.tsx`)).toBe(0)
+    expect(visit(`${PKG_ROOT}/src/x.test.ts`)).toBe(0)
+  })
+})
+
+// ── dogfood — /.oxlintrc.json ⊇ the shipped basalt/* levels ──────────────────
+
+describe('/.oxlintrc.json dogfoods oxlint-basalt.json', () => {
+  const rulesOf = (path: string) =>
+    (JSON.parse(readFileSync(path, 'utf8')) as { rules: Record<string, unknown> }).rules
+  const shipped = rulesOf(resolve(import.meta.dirname, 'oxlint-basalt.json'))
+  const repo = rulesOf(resolve(import.meta.dirname, '..', '..', '..', '.oxlintrc.json'))
+
+  it.each(Object.entries(shipped))('%s is %s repo-locally too', (id, level) => {
+    expect([id, repo[id]]).toEqual([id, level])
   })
 })
 
@@ -4265,11 +4009,6 @@ describe('the `Ships:` line above each rule', () => {
       if (Object.hasOwn(PLUGIN_RULE_GRACE, id)) {
         const { promote } = PLUGIN_RULE_GRACE[id] as GraceEntry
         expect([id, claim]).toEqual([id, `warn (grace → ${promote})`])
-        expect([id, level]).toEqual([id, 'warn'])
-        return
-      }
-      if (Object.hasOwn(PLUGIN_RULE_ADVISORY, id)) {
-        expect([id, claim]).toEqual([id, 'warn (advisory)'])
         expect([id, level]).toEqual([id, 'warn'])
         return
       }

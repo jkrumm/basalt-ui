@@ -48,23 +48,21 @@ export const PLUGIN_RULE_ID_LIST = [
   'control-outside-home',
   'bound-control-outside-home',
   'control-size-literal',
-  'page-bar-budget',
   'in-body-page-title',
   'responsive-twin',
   'search-literal-link',
   'use-search-from-literal',
-  'provider-above-router',
   'query-fn-unwrap',
-  'deprecated-export',
   'forms-field-key',
   'chart-engine-boundary',
   'chart-host-single',
   'token-layer-boundary',
-  'agent-resume-guard',
   'agent-no-raw-usechat',
   'ai-sdk-major',
   'no-import-meta-env',
   'raw-breakpoint',
+  'router-view-transition',
+  'no-dev-helper',
 ] as const
 
 /** One registered oxlint plugin rule id — the literal union of {@link PLUGIN_RULE_ID_LIST}. */
@@ -277,19 +275,17 @@ export const SURFACES = {
       'card-inset',
       'in-body-page-title',
       'raw-scroll-container',
-      'page-bar-budget',
       'shadow-basalt-export',
-      // The mount-order law, guarded as of 1.28.0 (F5) — same-file static ancestry, so `warn`.
-      // `deprecated-export` sits here too: the ledger it reads spans subpaths.
-      'provider-above-router',
-      'deprecated-export',
+      // V2-SPEC § 5: React owns every view transition; the router path is banned.
+      'router-view-transition',
+      // Dev-only `import()`s need a literal NODE_ENV gate to fold out of production (repo-local).
+      'no-dev-helper',
       // `import.meta.env` is a Vite-ism that fails outside a Vite build (SSR/server code, Node
       // scripts, tests) — process.env.NODE_ENV works everywhere basalt code runs. Repo-local,
       // scoped to all of src/**, one surface required by coverage (C2 consolidation).
       'no-import-meta-env',
     ],
-    // agent/rules/basalt-mantine.md — stated, not guarded. The other law that stood here gained
-    // `provider-above-router` at 1.28.0; this one has no AST form left to catch, because
+    // agent/rules/basalt-mantine.md — stated, not guarded. This law has no AST form to catch, because
     // `cssVariablesResolver` is now `Omit`ted from the accepted prop type and a hand-built
     // `createTheme` is a consumer's own call to make. (`duplicate-notifications-mount`, the
     // other 1.28.0 mount-order rule, retired — `BasaltNotifications` no longer exists.)
@@ -434,8 +430,8 @@ export const SURFACES = {
     rule: 'batteries',
     skill: ['basalt-app'],
     guardKinds: [],
-    // The three agent-chat correctness rules — they honour `basalt-agent-allow`, not `theme-allow`.
-    pluginRules: ['agent-resume-guard', 'agent-no-raw-usechat', 'ai-sdk-major'],
+    // The agent-chat correctness rules — they honour `basalt-agent-allow`, not `theme-allow`.
+    pluginRules: ['agent-no-raw-usechat', 'ai-sdk-major'],
     description:
       'Streaming-chat surface: aiSdkTransport, useAgentThreadRuns, parseAgentPart, the open part-registry types, the consumer-owned thread contracts (AgentThread/ThreadsStore/ChatMessage), and the Mantine chat UI folded in from ./agent-chat (ThreadFeed, ThreadFeedRow, Composer, ToolChip). motion is subpath-required: the chat UI imports it eagerly',
     optionalPeers: [

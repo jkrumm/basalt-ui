@@ -13,7 +13,7 @@
     "react/rules-of-hooks": "error",
     "react/jsx-key": "error",
     "react/react-in-jsx-scope": "off",
-    "typescript/no-explicit-any": "warn",
+    "typescript/no-explicit-any": "error",
     "import/no-duplicates": "error",
     "import/no-unassigned-import": "off",
     "jsx-a11y/prefer-tag-over-role": "off",
@@ -22,7 +22,14 @@
       {
         "allow": ["__APP_VERSION__"]
       }
-    ]
+    ],
+    "react/globals": "error",
+    "react/immutability": "error",
+    "react/incompatible-library": "error",
+    "react/preserve-manual-memoization": "error",
+    "react/refs": "error",
+    "react/set-state-in-effect": "error",
+    "no-constant-binary-expression": "error"
   },
   "overrides": [
     {

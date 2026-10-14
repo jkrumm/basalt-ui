@@ -17,7 +17,7 @@
  * scope has to be spelled. The three boundary rules deliberately honour neither — see their own
  * comment for why.
  *
- * ── The two agent-chat guard rules (`agent-resume-guard` / `agent-no-raw-usechat`) + `ai-sdk-major` ──
+ * ── The two agent-chat guard rules (`agent-no-raw-usechat`) + `ai-sdk-major` ──
  * These are also correctness/architecture boundaries, not design guidance, so they do NOT honour
  * `theme-allow`. All three instead honour their own line-comment escape, `basalt-agent-allow`
  * (`hasAgentAllow`, a copy of `hasThemeAllow` with a different needle) — deliberately a separate
@@ -106,6 +106,11 @@ export const RETIRED_RULE_IDS = new Set([
   'chart-missing-aria-label',
   'duplicate-notifications-mount',
   'query-dual-import',
+  // 2.0 (V2-SPEC § 3): the concern is unrepresentable.
+  'provider-above-router', // BasaltProvider mounts RouterProvider
+  'page-bar-budget', // PageBarActions / SectionActions tuple types
+  'agent-resume-guard', // resumeStream only exists on useChat/Chat, banned by agent-no-raw-usechat
+  'deprecated-export', // 2.0.0 ships no deprecations; returns with the first 2.x one
 ])
 
 /**
@@ -132,14 +137,11 @@ export const KNOWN_RULE_IDS = new Set([
   'control-outside-home',
   'bound-control-outside-home',
   'control-size-literal',
-  'page-bar-budget',
   'responsive-twin',
   'search-literal-link',
   'use-search-from-literal',
-  'provider-above-router',
   'query-dual-import',
   'query-fn-unwrap',
-  'deprecated-export',
   'forms-field-key',
   // `in-body-page-title` is BOTH a plugin rule and a guard kind — one id, two lanes, so one
   // annotation waives both. It is listed once, below, with the guard kinds.
@@ -148,9 +150,10 @@ export const KNOWN_RULE_IDS = new Set([
   'token-layer-boundary',
   'no-import-meta-env',
   'raw-breakpoint',
+  'router-view-transition',
+  'no-dev-helper',
   // These three honour `basalt-agent-allow`, never `theme-allow` — but they are real ids, so an
   // annotation naming one must parse as a (useless) scoped annotation rather than as prose.
-  'agent-resume-guard',
   'agent-no-raw-usechat',
   'ai-sdk-major',
   // src/guard kinds
@@ -1098,23 +1101,6 @@ const tokenLayerBoundary = {
   },
 }
 
-// ── Rule 8 — agent-resume-guard ─────────────────────────────────────────────────────────────────
-
-const AGENT_RESUME_GUARD_MESSAGE =
-  'Unguarded stream resume — useAgentThreadRuns owns single-consumer discipline and ' +
-  'StrictMode-safe reconnection; a raw resume re-fires on every effect re-run (vercel/ai#7891, no ' +
-  "merged fix). Mark the line 'basalt-agent-allow' if you own the guard. (basalt/agent-resume-guard)"
-
-/** True for `resumeStream()` and `<anything>.resumeStream()` call expressions. */
-function isResumeStreamCall(callee) {
-  if (callee.type === 'Identifier') return callee.name === 'resumeStream'
-  return (
-    callee.type === 'MemberExpression' &&
-    callee.property.type === 'Identifier' &&
-    callee.property.name === 'resumeStream'
-  )
-}
-
 /** The `key` of an object Property as a string, covering both Identifier and Literal keys. */
 function propertyKeyName(node) {
   const key = node.key
@@ -1123,53 +1109,15 @@ function propertyKeyName(node) {
   return undefined
 }
 
-// Deliberately NO `hasThemeAllow` escape — see the chart-engine-boundary comment above for why these
-// guards use their own token (`basalt-agent-allow`, see the file-header comment) instead.
-// Ships: error
-const agentResumeGuard = {
-  meta: {
-    type: 'problem',
-    docs: {
-      description:
-        'Disallow unguarded useChat({ resume: true }) / resumeStream() calls outside useAgentThreadRuns.',
-    },
-    schema: [],
-  },
-  create(context) {
-    return {
-      CallExpression(node) {
-        const callee = node.callee
-
-        if (callee.type === 'Identifier' && callee.name === 'useChat') {
-          const arg0 = node.arguments[0]
-          if (arg0 === undefined || arg0.type !== 'ObjectExpression') return
-          for (const prop of arg0.properties) {
-            if (prop.type !== 'Property') continue
-            if (propertyKeyName(prop) !== 'resume') continue
-            if (prop.value.type !== 'Literal' || prop.value.value !== true) continue
-            if (hasAgentAllow(context, prop)) continue
-            context.report({ node: prop, message: AGENT_RESUME_GUARD_MESSAGE })
-          }
-          return
-        }
-
-        if (!isResumeStreamCall(callee)) return
-        if (hasAgentAllow(context, node)) return
-        context.report({ node, message: AGENT_RESUME_GUARD_MESSAGE })
-      },
-    }
-  },
-}
-
 // ── Rule 9 — agent-no-raw-usechat ───────────────────────────────────────────────────────────────
 
 const AGENT_NO_RAW_USECHAT_MESSAGE =
-  'Raw @ai-sdk/react useChat — use useAgentStream / useAgentThreadRuns over aiSdkTransport ' +
+  'Raw @ai-sdk/react useChat / useCompletion / Chat — use useAgentStream / useAgentThreadRuns over aiSdkTransport ' +
   "(unmount abort, supersede guards, single-consumer resume). Mark the line 'basalt-agent-allow' to " +
   'opt out. (basalt/agent-no-raw-usechat)'
 
 const RAW_USE_CHAT_SOURCES = new Set(['@ai-sdk/react', 'ai/react'])
-const RAW_USE_CHAT_NAMES = new Set(['useChat', 'useCompletion'])
+const RAW_USE_CHAT_NAMES = new Set(['useChat', 'useCompletion', 'Chat'])
 
 // Deliberately NO `hasThemeAllow` escape — see the file-header comment.
 // Ships: error
@@ -1178,7 +1126,7 @@ const agentNoRawUseChat = {
     type: 'problem',
     docs: {
       description:
-        'Disallow importing useChat/useCompletion directly from @ai-sdk/react or ai/react.',
+        'Disallow importing useChat/useCompletion/Chat directly from @ai-sdk/react or ai/react.',
     },
     schema: [],
   },
@@ -1505,7 +1453,7 @@ const BASALT_EXPORTS = (() => {
  * barrel read, this table is hand-maintained by construction: there is no artifact to derive
  * "someone else's word for `Section`" from. Keep it in step with `docs/CONTROLS-SPEC.md` §6.
  *
- * Advisory, permanently (see {@link PLUGIN_RULE_ADVISORY}): a name is evidence, never proof.
+ * A name is evidence, never proof — which is why the table is exact, not fuzzy.
  */
 const SHADOW_ALIASES = {
   PageSection: 'Section',
@@ -1615,14 +1563,16 @@ function shadowBasaltExportMessage(name) {
  * The cheapest possible detector for the whole absorption class: argo shipped its own `EmptyState`
  * (a full duplicate of the shipped one) and rb a local `StatCard`, and both passed `check-theme`,
  * `oxlint` and `doctor` clean — off-palette code fails, a forked component that uses the correct
- * tokens does not. `warn`, not `error`: a name collision is evidence, not proof, and a consumer
- * with a genuinely different `Composer` should be told once, not blocked.
+ * tokens does not. `error` since 2.0 (the major is the channel); a genuinely different `Composer`
+ * takes a `theme-allow shadow-basalt-export — <why>`.
  */
-// Ships: warn (advisory)
+// Ships: error
 const shadowBasaltExport = {
   meta: {
     type: 'suggestion',
-    docs: { description: 'Warn on a local component whose name collides with a basalt-ui export.' },
+    docs: {
+      description: 'Disallow a local component whose name collides with a basalt-ui export.',
+    },
     schema: [],
   },
   create(context) {
@@ -2767,166 +2717,6 @@ const controlSizeLiteral = {
   },
 }
 
-// ── Rule 19 — page-bar-budget ───────────────────────────────────────────────────────────────────
-
-/** `PageBar.actions.secondary` — 4, because the one `primary` makes 5 (law C6). */
-const PAGE_BAR_SECONDARY_BUDGET = 4
-/** A `Section`'s `actions` — 3 (law C6). */
-const SECTION_ACTION_BUDGET = 3
-
-const PAGE_BAR_BUDGET_MESSAGES = {
-  duplicate:
-    'Second PageBar in the same returned tree — a page has exactly one page bar, and row 1 portals ' +
-    'into the app shell header, so two bars mounted TOGETHER race for the same node (law C6). An ' +
-    'early-return loading state and two page components in one file each get their own tree and ' +
-    'never report. (basalt/page-bar-budget)',
-  secondary:
-    `More than ${PAGE_BAR_SECONDARY_BUDGET} secondary PageBar actions — the bar holds ≤5 entries ` +
-    'including the one `primary`, and everything past that folds into the `More` menu basalt ' +
-    'computes from the typed BarAction[] (laws C6/C7). Move the rest into a `kind: "menu"` entry. ' +
-    '(basalt/page-bar-budget)',
-  section:
-    `More than ${SECTION_ACTION_BUDGET} Section actions — a section header holds ≤3 (law C6). ` +
-    '(basalt/page-bar-budget)',
-  filled:
-    'Second filled Button/ActionIcon inside one slot — a home has exactly one primary action, and ' +
-    'two filled buttons side by side name neither (law C6). A filled Badge/ThemeIcon (a count) and ' +
-    "an overlay's own submit button are not actions in the bar and never report. " +
-    '(basalt/page-bar-budget)',
-}
-
-/** The two tags a `variant="filled"` makes a PRIMARY ACTION — a Badge is a count, not an action. */
-const PRIMARY_ACTION_TAGS = new Set(['Button', 'ActionIcon'])
-
-/**
- * The JSX TREE `node` is returned in — the nearest `ReturnStatement`, concise arrow body, or
- * `const` binding, whichever the walk reaches first.
- *
- * This is what "two PageBars race for the same node" actually requires: they must MOUNT together.
- * Counting per FILE made an `if (!data) return <PageBar title="Jobs"/>` loading state, and two page
- * components exported from one file, an `error` on code that never renders two bars — with a
- * `theme-allow` on correct code as the only escape.
- */
-function enclosingReturnedTree(node) {
-  let current = node.parent
-  for (let depth = 0; current !== null && current !== undefined; depth++) {
-    if (depth > ANCESTRY_MAX_DEPTH || current.type === 'Program') return undefined
-    if (current.type === 'ReturnStatement' || current.type === 'VariableDeclarator') return current
-    if (current.type === 'ArrowFunctionExpression' && current.body?.type !== 'BlockStatement') {
-      return current
-    }
-    current = current.parent
-  }
-  return undefined
-}
-
-/** The `actions` attribute of a JSXOpeningElement, unwrapped, or undefined. */
-function actionsAttributeValue(node) {
-  for (const attr of node.attributes ?? []) {
-    if (attr.type !== 'JSXAttribute' || attr.name?.name !== 'actions') continue
-    return { attr, value: unwrapExpressionContainer(attr.value) }
-  }
-  return undefined
-}
-
-/**
- * The four countable halves of C6. `error` from the start: every one of them is arithmetic over a
- * literal the file wrote down, with no heuristic and no layout intent to guess at.
- */
-// Ships: error
-const pageBarBudget = {
-  meta: {
-    type: 'problem',
-    docs: { description: 'Enforce the PageBar / Section action budgets and the single primary.' },
-    schema: [],
-  },
-  create(context) {
-    if (isTestFile(context)) return {}
-    const slots = createSlotContext(context)
-    const mantineImports = new Map()
-    const pageBars = []
-    const findings = []
-    /** Slot attribute node → its owner binding + the `variant="filled"` attributes inside it. */
-    const filledPerSlot = new Map()
-
-    return {
-      ImportDeclaration(node) {
-        collectMantineImports(node, mantineImports)
-        slots.noteImport(node)
-      },
-      JSXOpeningElement(node) {
-        const tag = jsxTagName(node.name)
-        const owner = jsxRootName(node.name)
-        if (tag === 'PageBar') {
-          pageBars.push({ node, owner, tree: enclosingReturnedTree(node) })
-          const actions = actionsAttributeValue(node)
-          if (actions?.value?.type === 'ObjectExpression') {
-            for (const prop of actions.value.properties) {
-              if (prop.type !== 'Property' || propertyKeyName(prop) !== 'secondary') continue
-              if (prop.value?.type !== 'ArrayExpression') continue
-              if (prop.value.elements.length <= PAGE_BAR_SECONDARY_BUDGET) continue
-              findings.push({ node: prop, owner, message: PAGE_BAR_BUDGET_MESSAGES.secondary })
-            }
-          }
-          return
-        }
-        if (tag !== 'Section') return
-        const actions = actionsAttributeValue(node)
-        if (actions?.value?.type !== 'ArrayExpression') return
-        if (actions.value.elements.length <= SECTION_ACTION_BUDGET) return
-        findings.push({ node: actions.attr, owner, message: PAGE_BAR_BUDGET_MESSAGES.section })
-      },
-      // The object-spread spelling of a slot — see {@link spreadSlotOwnerBinding}. `slots.note`
-      // accepts either node shape; feeding both is what keeps ONE home model across the lanes.
-      Property(node) {
-        slots.note(node)
-      },
-      JSXAttribute(node) {
-        slots.note(node)
-        if (node.name?.name !== 'variant') return
-        const value = unwrapExpressionContainer(node.value)
-        if (!isStringLiteral(value) || value.value !== 'filled') return
-        // An overlay's own submit button is not an action in the bar — see hostedInsideSlot.
-        if (hostedInsideSlot(node)) return
-        const element = node.parent
-        if (element === null || element === undefined || element.type !== 'JSXOpeningElement')
-          return
-        const slot = enclosingSlotAttribute(node)
-        if (slot === undefined) return
-        const entry = filledPerSlot.get(slot) ?? { owner: slotOwnerBinding(slot), written: [] }
-        entry.written.push({ node, name: element.name })
-        filledPerSlot.set(slot, entry)
-      },
-      'Program:exit'() {
-        /** Returned tree → the PageBars mounted in it. Two in one tree mount together; see C6. */
-        const barsPerTree = new Map()
-        for (const bar of pageBars) {
-          if (!slots.isHome(bar.owner)) continue
-          barsPerTree.set(bar.tree, [...(barsPerTree.get(bar.tree) ?? []), bar])
-        }
-        for (const bars of barsPerTree.values()) {
-          for (const { node, owner } of bars.slice(1)) {
-            findings.push({ node, owner, message: PAGE_BAR_BUDGET_MESSAGES.duplicate })
-          }
-        }
-        for (const { owner, written } of filledPerSlot.values()) {
-          const actions = written.filter(({ name }) =>
-            PRIMARY_ACTION_TAGS.has(resolveMantineTag(name, mantineImports) ?? ''),
-          )
-          for (const { node } of actions.slice(1)) {
-            findings.push({ node, owner, message: PAGE_BAR_BUDGET_MESSAGES.filled })
-          }
-        }
-        for (const { node, owner, message } of findings) {
-          if (!slots.isHome(owner)) continue
-          if (hasThemeAllow(context, node, 'page-bar-budget')) continue
-          context.report({ node, message })
-        }
-      },
-    }
-  },
-}
-
 // ── Rule 20 — in-body-page-title ────────────────────────────────────────────────────────────────
 
 /** Where an `order={1|2}` Title is a DOCUMENT heading rather than a page title. */
@@ -3318,78 +3108,6 @@ const boundControlOutsideHome = {
   },
 }
 
-// ── Rule 25 — provider-above-router ─────────────────────────────────────────────────────────────
-
-/** `@tanstack/react-router` and its subpaths — never `@tanstack/react-router-devtools`. */
-const TANSTACK_ROUTER_SOURCE = /^@tanstack\/react-router(?:\/|$)/
-
-const PROVIDER_ABOVE_ROUTER_MESSAGE =
-  '<BasaltProvider> is rendered INSIDE <RouterProvider> — invert them. Mantine context has to ' +
-  'exist before any route renders, so the mount order is BasaltProvider → the data layer → ' +
-  'RouterProvider (agent/rules/basalt-mantine.md). A route that renders a themed component ' +
-  'before the provider mounts reads Mantine defaults, not the basalt theme. ' +
-  '(basalt/provider-above-router)'
-
-/**
- * `BasaltProvider` mounted BELOW a TanStack `RouterProvider` — F5, the first of the three
- * `basalt-mantine.md` laws that shipped under a `not guarded: —` banner.
- *
- * Both tags are provenance-gated: `BasaltProvider` through {@link collectBasaltImportMap} (so a
- * consumer's own component of that name is not this one) and `RouterProvider` through an
- * `@tanstack/react-router` import, by its LOCAL binding rather than its written name. The inverse
- * nesting — the correct one — is not a finding, and neither is either tag alone.
- *
- * **STATIC JSX ancestry only, and that is the whole heuristic.** The two providers have to be
- * written in one JSX tree in one file for this to see anything. The common real shape (`main.tsx`
- * renders `<BasaltProvider><App/></BasaltProvider>` and `App` renders `<RouterProvider/>`) is
- * INVERTED cross-file and correct; the inverted-and-wrong cross-file shape is equally invisible.
- * A rule that followed the composition would need the module graph, which an oxlint rule does not
- * have — so this catches the one-file case and the law stays advisory for the rest. That is why it
- * lands at `warn`.
- */
-// Ships: error
-const providerAboveRouter = {
-  meta: {
-    type: 'suggestion',
-    docs: { description: 'Warn on a BasaltProvider rendered inside a TanStack RouterProvider.' },
-    schema: [],
-  },
-  create(context) {
-    if (isTestFile(context)) return {}
-    const ownTree = isBasaltOwnSource(getFilename(context))
-    const basalt = new Map()
-    const routers = new Set()
-    const candidates = []
-
-    return {
-      ImportDeclaration(node) {
-        collectBasaltImportMap(node, basalt, ownTree)
-        const source = node.source?.value
-        if (typeof source !== 'string' || !TANSTACK_ROUTER_SOURCE.test(source)) return
-        for (const spec of node.specifiers ?? []) {
-          const imported = spec.imported?.name ?? spec.imported?.value
-          if (imported === 'RouterProvider' && typeof spec.local?.name === 'string') {
-            routers.add(spec.local.name)
-          }
-        }
-      },
-      JSXOpeningElement(node) {
-        const root = jsxRootName(node.name)
-        if (root === undefined || !basalt.has(root)) return
-        candidates.push({ node, root, ancestors: ancestorTagBindings(node) })
-      },
-      'Program:exit'() {
-        for (const { node, root, ancestors } of candidates) {
-          if (basalt.get(root) !== 'BasaltProvider') continue
-          if (!ancestors.some((name) => routers.has(name))) continue
-          if (hasThemeAllow(context, node, 'provider-above-router')) continue
-          context.report({ node, message: PROVIDER_ABOVE_ROUTER_MESSAGE })
-        }
-      },
-    }
-  },
-}
-
 // Rule 27 — query-dual-import — RETIRED. 1.29.0 dropped every raw TanStack re-export from
 // `basalt-ui/query` (the subpath itself is gone), so "dual-importing `@tanstack/react-query`
 // beside `basalt-ui/query`" is no longer a thing a consumer can even do — a consumer MUST import
@@ -3465,210 +3183,6 @@ const queryFnUnwrap = {
           if (!FETCH_CALL.test(body) || UNWRAP_CALL.test(body)) continue
           if (hasThemeAllow(context, node, 'query-fn-unwrap')) continue
           context.report({ node, message: QUERY_FN_UNWRAP_MESSAGE })
-        }
-      },
-    }
-  },
-}
-
-// ── Rule 29 — deprecated-export ─────────────────────────────────────────────────────────────────
-
-/**
- * @typedef {{
- *   subpath: string
- *   name: string
- *   prop?: string
- *   replacement: string
- *   removeIn: string
- *   removed?: true
- *   fix?: false
- * }} DeprecatedExport
- */
-
-/**
- * The deprecation ledger — every export that is `@deprecated` but still SHIPPED, with what to
- * write instead and the minor it goes away in. B4: majors are banned here, so a rename cannot be
- * signalled by a version number; the lifecycle is instead "ship the alias, lint the old name, write
- * the MIGRATING row, remove it a minor later" (`../MAINTAINING.md`, "Deprecation lifecycle").
- *
- * A row without `prop` is a NAMED IMPORT from `subpath` — reported on the specifier, with an
- * autofix that rewrites it to `{ <replacement> as <local> }` so no call site has to move in the
- * same edit. **That autofix is the row's contract**: only a DROP-IN rename belongs here. A
- * deprecation whose replacement takes a different shape (`createSearchParamStore` →
- * `createSearchStore` + a `fields` object) would need the fix suppressed before it could be a row,
- * and until then it lives in `MIGRATING.md` alone. A MOVE between subpaths (`FormRow` from
- * `basalt-ui/forms` → `basalt-ui/controls`) is the same case: the fix only rewrites the specifier
- * inside its own import statement and cannot change its module, so such a row says `fix: false` and
- * reports without rewriting. A row WITH `prop` is a JSX ATTRIBUTE on the component `name`, imported from `subpath`
- * — no autofix, because the three connectivity props collapse into ONE object prop and a
- * per-attribute rewrite would produce three `connectivity=` attributes on one tag.
- *
- * **Adding a row is the whole job.** Deprecate the export in its JSDoc, add the row here with a
- * `removeIn` at least one minor out, add the `MIGRATING.md` row, and this rule starts nudging.
- * `oxlint-plugin.test.ts` scans every `src/**\/index.ts(x)` barrel for a JSDoc `@deprecated` and
- * fails when one has no row here, so the barrel half cannot be forgotten. Removing the export is a
- * separate commit that either deletes the row (the fix is manual from then on — say so in the
- * removal's MIGRATING row) or keeps it one minor past the removal with `removed: true` and
- * `removeIn` set to the removing minor, so the message reads "was removed in X" instead of "still
- * resolves" — and never autofixes, whatever `fix` says. `scripts/check-grace.ts` refuses a release
- * at or past a `removeIn` whose export still ships — the gap that let `useBreakpoint` outlive its
- * date twice.
- *
- * @type {readonly DeprecatedExport[]}
- */
-export const DEPRECATED_EXPORTS = [
-  // The chart phone-tier API (`resolveChartTier`/`chartTierMetrics`/`useChartTier`/
-  // `useChartTierMetrics`/`ChartTierMetrics`/`phoneChartWidth`) is NOT here: MIGRATING.md's own
-  // Unreleased section states it a hard removal with no grace window (zero consumers), and these
-  // exports are no longer reachable from any public barrel in `src/charts`/`src/tokens` — a row
-  // here would nudge a rewrite to an import that no longer resolves, i.e. "it still resolves today"
-  // would be false.
-  {
-    subpath: 'basalt-ui/forms',
-    name: 'FormSection',
-    replacement: "FormSection from 'basalt-ui/controls'",
-    removeIn: '1.39.0',
-    removed: true,
-    fix: false,
-  },
-  {
-    subpath: 'basalt-ui/forms',
-    name: 'FormRow',
-    replacement: "FormRow from 'basalt-ui/controls'",
-    removeIn: '1.39.0',
-    removed: true,
-    fix: false,
-  },
-  {
-    subpath: 'basalt-ui/forms',
-    name: 'FormGroup',
-    replacement: "FormGroup from 'basalt-ui/controls'",
-    removeIn: '1.39.0',
-    removed: true,
-    fix: false,
-  },
-  {
-    subpath: 'basalt-ui/forms',
-    name: 'FormActions',
-    replacement: "FormActions from 'basalt-ui/controls'",
-    removeIn: '1.39.0',
-    removed: true,
-    fix: false,
-  },
-  {
-    subpath: 'basalt-ui/forms',
-    name: 'useForm',
-    replacement: "useForm from '@mantine/form'",
-    removeIn: '1.39.0',
-    removed: true,
-    fix: false,
-  },
-  {
-    subpath: 'basalt-ui/forms',
-    name: 'schemaResolver',
-    replacement: "schemaResolver from '@mantine/form'",
-    removeIn: '1.39.0',
-    removed: true,
-    fix: false,
-  },
-  {
-    subpath: 'basalt-ui',
-    name: 'useBreakpoint',
-    replacement:
-      'useSizeClass() for shell chrome; a page’s own layout swap is a container decision — a type="container" SimpleGrid/Grid or an @container rule',
-    removeIn: '1.34.0',
-    removed: true,
-  },
-]
-
-function deprecatedExportMessage(row) {
-  const what =
-    row.prop === undefined
-      ? `\`${row.name}\` from ${row.subpath}`
-      : `\`${row.prop}\` on <${row.name}>`
-  if (row.removed === true) {
-    return (
-      `Removed basalt export — ${what} was removed in ${row.removeIn} and no longer resolves; use ` +
-      `\`${row.replacement}\` instead (packages/basalt-ui/MIGRATING.md carries the row). ` +
-      '(basalt/deprecated-export)'
-    )
-  }
-  return (
-    `Deprecated basalt export — ${what} is superseded by \`${row.replacement}\` and is removed in ` +
-    `${row.removeIn}. It still resolves today, so nothing is broken yet; migrate before that minor ` +
-    '(packages/basalt-ui/MIGRATING.md carries the row). ' +
-    '(basalt/deprecated-export)'
-  )
-}
-
-/**
- * A shipped-but-`@deprecated` export still being imported or written — B4, the sunset half of the
- * lifecycle whose absence the blueprint audit found (§8): the grace mechanism covers a rule getting
- * STRICTER, and nothing covered an export going away.
- *
- * Permanently `warn` ({@link PLUGIN_RULE_ADVISORY}), for the same reason `shadow-basalt-export` is:
- * a deprecation is a schedule, not a defect. The code compiles and runs; promoting this to `error`
- * would break a consumer's build for something that still works, which is the one thing the
- * no-majors doctrine exists to avoid. The `removeIn` minor is where it becomes an error — by the
- * export ceasing to exist.
- */
-// Ships: warn (advisory)
-const deprecatedExport = {
-  meta: {
-    type: 'suggestion',
-    docs: { description: 'Warn on an import or prop that basalt has deprecated but still ships.' },
-    schema: [],
-    fixable: 'code',
-  },
-  create(context) {
-    if (isTestFile(context)) return {}
-    if (isBasaltOwnSource(getFilename(context))) return {}
-    const importRows = DEPRECATED_EXPORTS.filter((row) => row.prop === undefined)
-    const propRows = DEPRECATED_EXPORTS.filter((row) => row.prop !== undefined)
-    const components = new Map()
-    const candidates = []
-
-    return {
-      ImportDeclaration(node) {
-        const source = node.source?.value
-        if (typeof source !== 'string') return
-        for (const spec of node.specifiers ?? []) {
-          const imported = spec.imported?.name ?? spec.imported?.value
-          const local = spec.local?.name
-          if (typeof imported !== 'string' || typeof local !== 'string') continue
-          for (const row of propRows) {
-            if (source === row.subpath && imported === row.name) components.set(local, row.name)
-          }
-          const row = importRows.find((r) => r.subpath === source && r.name === imported)
-          if (row === undefined) continue
-          if (hasThemeAllow(context, spec, 'deprecated-export')) continue
-          context.report({
-            node: spec,
-            message: deprecatedExportMessage(row),
-            // A removed row's replacement is prose for a gone import, never a drop-in name.
-            ...(row.fix === false || row.removed === true
-              ? {}
-              : { fix: (fixer) => fixer.replaceText(spec, `${row.replacement} as ${local}`) }),
-          })
-        }
-      },
-      JSXAttribute(node) {
-        const name = node.name?.name
-        if (typeof name !== 'string') return
-        const owner = node.parent
-        if (owner === null || owner === undefined || owner.type !== 'JSXOpeningElement') return
-        const root = jsxRootName(owner.name)
-        if (root === undefined) return
-        candidates.push({ node, root, name })
-      },
-      'Program:exit'() {
-        for (const { node, root, name } of candidates) {
-          const component = components.get(root)
-          if (component === undefined) continue
-          const row = propRows.find((r) => r.name === component && r.prop === name)
-          if (row === undefined) continue
-          if (hasThemeAllow(context, node, 'deprecated-export')) continue
-          context.report({ node, message: deprecatedExportMessage(row) })
         }
       },
     }
@@ -3841,10 +3355,9 @@ const NO_IMPORT_META_ENV_MESSAGE =
 /**
  * `import.meta.env` — a MemberExpression whose object is the `import.meta` MetaProperty and whose
  * property is `env`. Repo-local only: a CONSUMER's own app code legitimately uses
- * `import.meta.env.VITE_*` for its own config, so this must never reach the shipped preset — only
- * `/.oxlintrc.json` wires it, scoped to `packages/basalt-ui/src/**` the same way the Mantine-free
- * boundaries above are scoped, rather than through path logic in the rule itself (unlike
- * `token-layer-boundary`, which every package resolves the plugin from and so has to self-scope).
+ * `import.meta.env.VITE_*`, so it is wired in `/.oxlintrc.json` alone and SELF-SCOPES to
+ * `packages/basalt-ui/src/**` by path (like `token-layer-boundary`): the playground, which is
+ * a consumer, keeps its own `import.meta.env`.
  */
 // Ships: repo-local only
 const noImportMetaEnv = {
@@ -3856,7 +3369,7 @@ const noImportMetaEnv = {
     schema: [],
   },
   create(context) {
-    if (isTestFile(context)) return {}
+    if (isTestFile(context) || !getFilename(context).startsWith(`${PACKAGE_ROOT}/src/`)) return {}
 
     return {
       MemberExpression(node) {
@@ -4326,11 +3839,196 @@ const rawBreakpoint = {
   },
 }
 
+// ── Rule 33 — router-view-transition ────────────────────────────────────────────────────────────
+
+const ROUTER_VIEW_TRANSITION_MESSAGE =
+  "Router-driven view transition — `document.startViewTransition` interrupts React's own " +
+  '`<ViewTransition>`, and a route change commits through `useSyncExternalStore`, so it never ' +
+  'activates one anyway (V2-SPEC § 5). Drop `viewTransition` / `defaultViewTransition` and the ' +
+  "direct call; animate with React's `<ViewTransition>` inside a `startTransition` via " +
+  'basalt-ui instead. (basalt/router-view-transition)'
+
+/** Components whose `viewTransition` prop asks the router for a document view transition. */
+const VIEW_TRANSITION_TAGS = new Set(['Link', 'Navigate'])
+/** Calls whose first-argument object may carry `viewTransition`. */
+const VIEW_TRANSITION_CALLS = new Set(['navigate', 'redirect', 'linkOptions'])
+
+/** The last name of a callee: `navigate`, `router.navigate` → `navigate`. */
+function calleeName(callee) {
+  if (callee?.type === 'Identifier') return callee.name
+  if (callee?.type === 'MemberExpression' && !callee.computed) return callee.property?.name
+  return undefined
+}
+
+// Ships: error
+const routerViewTransition = {
+  meta: {
+    type: 'problem',
+    docs: {
+      description:
+        'Disallow router-driven view transitions: viewTransition on Link/navigate/redirect and document.startViewTransition.',
+    },
+    schema: [],
+  },
+  create(context) {
+    if (isTestFile(context)) return {}
+    const report = (node) => {
+      if (hasThemeAllow(context, node, 'router-view-transition')) return
+      context.report({ node, message: ROUTER_VIEW_TRANSITION_MESSAGE })
+    }
+    return {
+      JSXAttribute(node) {
+        if (node.name?.type !== 'JSXIdentifier' || node.name.name !== 'viewTransition') return
+        const tag = node.parent?.name
+        if (tag?.type === 'JSXIdentifier' && VIEW_TRANSITION_TAGS.has(tag.name)) report(node)
+      },
+      CallExpression(node) {
+        const callee = node.callee
+        if (
+          callee?.type === 'MemberExpression' &&
+          callee.object?.type === 'Identifier' &&
+          callee.object.name === 'document' &&
+          callee.property?.name === 'startViewTransition'
+        ) {
+          report(node)
+          return
+        }
+        const name = calleeName(callee)
+        const arg0 = node.arguments?.[0]
+        if (arg0?.type !== 'ObjectExpression') return
+        let banned
+        if (name === 'createRouter') banned = 'defaultViewTransition'
+        else if (VIEW_TRANSITION_CALLS.has(name ?? '')) banned = 'viewTransition'
+        if (banned === undefined) return
+        for (const prop of arg0.properties) {
+          if (prop.type === 'Property' && propertyKeyName(prop) === banned) report(prop)
+        }
+      },
+    }
+  },
+}
+
+// ── Rule 34 — no-dev-helper ─────────────────────────────────────────────────────────────────────
+
+const NO_DEV_HELPER_MESSAGE =
+  'Dev-only import() outside a literal `process.env.NODE_ENV` gate — bundlers fold the dev branch ' +
+  "away only for a literal `process.env.NODE_ENV !== 'production'` (or `=== 'development'`) read " +
+  'at the use site; `isDev()` or any helper/const leaks the whole dev module into the production ' +
+  'first-paint chunk (the check-budgets provider-only budget pins it). (basalt/no-dev-helper)'
+
+/** Specifiers of dev-only modules: the dev dock, the theme lab, any `*-devtools` package. */
+const DEV_MODULE_SPECIFIER = /(?:^|[/.-])(?:dev-dock|theme-lab|devtools)(?:$|[/.-])/
+/** The dev modules themselves — reachable only through a gated import, so their own imports are exempt. */
+const DEV_MODULE_FILE = /(?:^|[\\/])(?:dev-dock\.[cm]?[jt]sx?|theme-lab[\\/])/
+
+/** `process.env.NODE_ENV` as a literal dotted read. */
+function isNodeEnvRead(node) {
+  return (
+    node?.type === 'MemberExpression' &&
+    !node.computed &&
+    node.property?.name === 'NODE_ENV' &&
+    node.object?.type === 'MemberExpression' &&
+    !node.object.computed &&
+    node.object.property?.name === 'env' &&
+    node.object.object?.type === 'Identifier' &&
+    node.object.object.name === 'process'
+  )
+}
+
+/** 'dev' when `test` is true in development, 'prod' when true in production, else undefined. */
+function nodeEnvPolarity(test) {
+  if (test?.type !== 'BinaryExpression') return undefined
+  const [read, literal] = isNodeEnvRead(test.left)
+    ? [test.left, test.right]
+    : [test.right, test.left]
+  if (!isNodeEnvRead(read) || !isStringLiteral(literal)) return undefined
+  const equal = test.operator === '===' || test.operator === '=='
+  const unequal = test.operator === '!==' || test.operator === '!='
+  if (!equal && !unequal) return undefined
+  if (literal.value === 'production') return equal ? 'prod' : 'dev'
+  if (literal.value === 'development') return equal ? 'dev' : 'prod'
+  return undefined
+}
+
+/** True when `node` sits in a branch of a literal NODE_ENV test that only runs in development. */
+function underDevGate(node) {
+  let child = node
+  for (let parent = node.parent; parent; child = parent, parent = parent.parent) {
+    const polarity = nodeEnvPolarity(parent.test)
+    if (
+      polarity !== undefined &&
+      (parent.type === 'IfStatement' || parent.type === 'ConditionalExpression')
+    ) {
+      if (parent.consequent === child && polarity === 'dev') return true
+      if (parent.alternate === child && polarity === 'prod') return true
+    }
+    if (
+      parent.type === 'LogicalExpression' &&
+      parent.operator === '&&' &&
+      parent.right === child &&
+      nodeEnvPolarity(parent.left) === 'dev'
+    ) {
+      return true
+    }
+  }
+  return false
+}
+
+// Ships: repo-local only
+const noDevHelper = {
+  meta: {
+    type: 'problem',
+    docs: {
+      description:
+        'Require a literal process.env.NODE_ENV gate on dynamic import() of dev-only modules.',
+    },
+    schema: [],
+  },
+  create(context) {
+    if (isTestFile(context) || DEV_MODULE_FILE.test(getFilename(context))) return {}
+    /** A `const X = lazy(() => import(dev))` is gated by its REFERENCES, not by the import site. */
+    const lazyBindings = []
+    const references = new Map()
+    const addReference = (node) => {
+      if (node.parent?.type === 'VariableDeclarator' && node.parent.id === node) return
+      references.set(node.name, [...(references.get(node.name) ?? []), node])
+    }
+    return {
+      Identifier: addReference,
+      JSXIdentifier: addReference,
+      ImportExpression(node) {
+        const source = node.source
+        let specifier
+        if (isStringLiteral(source)) specifier = source.value
+        else if (source?.quasis?.length === 1) specifier = source.quasis[0].value.cooked
+        if (typeof specifier !== 'string' || !DEV_MODULE_SPECIFIER.test(specifier)) return
+        if (underDevGate(node)) return
+        for (let parent = node.parent; parent; parent = parent.parent) {
+          if (parent.type === 'VariableDeclarator' && parent.id?.type === 'Identifier') {
+            lazyBindings.push({ node, name: parent.id.name })
+            return
+          }
+        }
+        if (!hasThemeAllow(context, node, 'no-dev-helper')) {
+          context.report({ node, message: NO_DEV_HELPER_MESSAGE })
+        }
+      },
+      'Program:exit'() {
+        for (const { node, name } of lazyBindings) {
+          const uses = references.get(name) ?? []
+          if (uses.length > 0 && uses.every(underDevGate)) continue
+          if (hasThemeAllow(context, node, 'no-dev-helper')) continue
+          context.report({ node, message: NO_DEV_HELPER_MESSAGE })
+        }
+      },
+    }
+  },
+}
+
 // ── Grace ledger ────────────────────────────────────────────────────────────────────────────────
 
 /**
  * @typedef {{ since: string; promote: string; why: string }} GraceEntry
- * @typedef {{ since: string; why: string }} AdvisoryEntry
  */
 
 /**
@@ -4340,9 +4038,8 @@ const rawBreakpoint = {
  * nothing tracking them: `configs/oxlint.json` is generated and its top-level keys are fixed by
  * oxlint's own parser, so the ledger cannot live there.
  *
- * `oxlint-plugin.test.ts` asserts the two agree in both directions — a rule listed here or in
- * {@link PLUGIN_RULE_ADVISORY} must be `warn` in the shipped preset, and one absent from both must
- * be `error`. Deleting a `PLUGIN_RULE_GRACE` entry IS the promotion, and the test makes the config
+ * `oxlint-plugin.test.ts` asserts the two agree in both directions — a rule listed here must be
+ * `warn` in the shipped preset, and one absent must be `error`. Deleting a `PLUGIN_RULE_GRACE` entry IS the promotion, and the test makes the config
  * change mandatory in the same commit.
  *
  * Each entry is `{ since, promote, why }` (semver strings, C16 — `docs/CONTROLS-SPEC.md` §1): a
@@ -4357,39 +4054,6 @@ const rawBreakpoint = {
  * @type {Record<string, GraceEntry>}
  */
 export const PLUGIN_RULE_GRACE = {}
-
-/**
- * Plugin rules that stay `warn` in the shipped preset PERMANENTLY — outside the C16 version gate,
- * and not expected to ever promote. `oxlint-plugin.test.ts` still requires `warn` in the shipped
- * preset and a `why` long enough to justify it, but skips these when checking `promote`.
- *
- * `shadow-basalt-export` is the one entry: a name collision is strong evidence a component was
- * forked rather than imported, but not proof, and renaming the fork defeats the check outright — so
- * there is no version at which flipping it to `error` is safe to promise in advance.
- *
- * @type {Record<string, AdvisoryEntry>}
- */
-export const PLUGIN_RULE_ADVISORY = {
-  'shadow-basalt-export': {
-    since: '1.20.0',
-    why:
-      'new in the round-4 guard minor (1.20.0), widened in round-5 (1.21.0 — reads every ' +
-      'published barrel, not just the root one, so a chart-layer fork is visible), narrowed at ' +
-      '1.22.0 (`isBasaltScopedFile` plus a component-shaped declaration). A name collision is ' +
-      'strong evidence and not proof, and renaming defeats it outright, so this stays a permanent ' +
-      'warn rather than a grace entry with no honest promote date.',
-  },
-  'deprecated-export': {
-    since: '1.28.0',
-    why:
-      'B4, the sunset half of the deprecation lifecycle (`../MAINTAINING.md`). A deprecation is a ' +
-      'SCHEDULE, not a defect: the code compiles, runs and is correct until the `removeIn` minor, ' +
-      'so promoting this to `error` would fail a consumer build over something that still works — ' +
-      'the one outcome the no-majors doctrine exists to avoid. There is no version at which that ' +
-      'stops being true, which is what makes it advisory rather than a grace entry: enforcement ' +
-      'arrives by the export ceasing to exist, not by this rule changing level.',
-  },
-}
 
 // ── Plugin export ───────────────────────────────────────────────────────────────────────────────
 
@@ -4407,22 +4071,20 @@ export default {
     'control-outside-home': controlOutsideHome,
     'bound-control-outside-home': boundControlOutsideHome,
     'control-size-literal': controlSizeLiteral,
-    'page-bar-budget': pageBarBudget,
     'in-body-page-title': inBodyPageTitle,
     'responsive-twin': responsiveTwin,
     'search-literal-link': searchLiteralLink,
     'use-search-from-literal': useSearchFromLiteral,
-    'provider-above-router': providerAboveRouter,
     'query-fn-unwrap': queryFnUnwrap,
-    'deprecated-export': deprecatedExport,
     'forms-field-key': formsFieldKey,
     'chart-engine-boundary': chartEngineBoundary,
     'chart-host-single': chartHostSingle,
     'token-layer-boundary': tokenLayerBoundary,
-    'agent-resume-guard': agentResumeGuard,
     'agent-no-raw-usechat': agentNoRawUseChat,
     'ai-sdk-major': aiSdkMajor,
     'no-import-meta-env': noImportMetaEnv,
     'raw-breakpoint': rawBreakpoint,
+    'router-view-transition': routerViewTransition,
+    'no-dev-helper': noDevHelper,
   },
 }

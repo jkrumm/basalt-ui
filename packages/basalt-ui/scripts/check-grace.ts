@@ -30,7 +30,7 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 // oxlint-disable-next-line -- the plugin is plain JS; the ledgers are named exports beside it
-import { DEPRECATED_EXPORTS, PLUGIN_RULE_GRACE } from '../configs/oxlint-plugin.js'
+import { PLUGIN_RULE_GRACE } from '../configs/oxlint-plugin.js'
 import { GRACE_PERIOD_KINDS } from '../src/guard/index'
 
 type GraceEntry = { since: string; promote: string; why: string }
@@ -110,7 +110,8 @@ function main(): void {
     ),
     ...GRACE_PERIOD_KINDS,
   }
-  const deprecations = DEPRECATED_EXPORTS as readonly DeprecationRow[]
+  // 2.0.0 ships no deprecations (V2-SPEC § 3): the ledger is gone, the check stays for the first 2.x one.
+  const deprecations: readonly DeprecationRow[] = []
   const surface = JSON.parse(
     readFileSync(resolve(import.meta.dirname, 'export-surface.json'), 'utf8'),
   ) as ExportSurface
