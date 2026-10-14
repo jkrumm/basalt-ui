@@ -12,7 +12,9 @@ Procedure only; the law is `.claude/rules/basalt-*.md`.
 2. Check the seeded `src/main.tsx` (`init` writes it when absent); `basalt-ui/styles.css` is the only stylesheet import:
 
 ```tsx
+// @check
 import 'basalt-ui/styles.css'
+import { createRoot } from 'react-dom/client'
 import { BasaltProvider, createBasaltRouter } from 'basalt-ui'
 import { routeTree } from './routeTree.gen'
 
@@ -22,24 +24,35 @@ declare module '@tanstack/react-router' {
     router: typeof router
   }
 }
-// createRoot(root).render(<BasaltProvider router={router} />)
+createRoot(document.getElementById('root')!).render(<BasaltProvider router={router} />)
 ```
 
 3. If you use `basalt-ui/controls-dates`, import `@mantine/dates/styles.layer.css` after `basalt-ui/styles.css` (core must precede dates in `@layer mantine`).
-4. Install the peers of each subpath you import: read its `Install: bun add …` line in `node_modules/basalt-ui/llms.txt`.
+4. Install the peers of each subpath you import: read its `Install: bun add …` line in `node_modules/basalt-ui/llms.txt`; a subpath with no `Install:` line needs only the required peers listed at the top of that file.
 5. In `vite.config.ts` spread `...basaltViteConfig({ port, apiTarget })` and register, in this order, `plugins: [tanstackRouter({ target: 'react', autoCodeSplitting: true }), react(), ...basaltAppPlugin({ name, description })]`. Run `bun add -d @tanstack/router-plugin` and import `tanstackRouter` from `@tanstack/router-plugin/vite`.
 6. Run `vite build` once so the plugin writes `src/routeTree.gen.ts`; commit it (`tsc -b` fails without it).
 7. In `src/routes/__root.tsx`: `<BasaltShell brand={{ name }} nav={NAV}><Outlet /></BasaltShell>`; build `NAV` with `defineNav` in `src/lib/nav.tsx`.
 8. Add a page as a file route, and link to it with `navTarget`:
 
 ```tsx
-// src/routes/dashboard.tsx
-export const Route = createFileRoute('/dashboard')({
-  staticData: { title: 'Dashboard' }, // the breadcrumb and page title
-  component: Dashboard,
+// @check
+import { Link, createFileRoute, linkOptions } from '@tanstack/react-router'
+import { defineNav, navGroup, navTarget } from 'basalt-ui'
+
+// src/routes/dashboard.tsx — the breadcrumb and page title come from the nav item's `label`
+export const Route = createFileRoute('/dashboard')({ component: () => <h2>Dashboard</h2> })
+
+// src/lib/nav.tsx
+export const NAV = defineNav({
+  groups: [
+    navGroup({ id: 'main', label: 'Main' }, [
+      { id: 'dashboard', label: 'Dashboard', link: linkOptions({ to: '/dashboard' }) },
+    ]),
+  ],
 })
-// src/lib/nav.tsx item: { id: 'dashboard', label: 'Dashboard', link: linkOptions({ to: '/dashboard' }) }
-// anywhere: <Link {...navTarget(NAV, 'dashboard')}>Dashboard</Link>
+
+// anywhere
+export const ToDashboard = () => <Link {...navTarget(NAV, 'dashboard')}>Dashboard</Link>
 ```
 
 9. Fill in `DESIGN.md` (identity, series dictionary, deviations).
@@ -47,25 +60,22 @@ export const Route = createFileRoute('/dashboard')({
 ## Add a chat
 
 1. Install the `basalt-ui/agent` peers from its `Install:` line in `llms.txt`.
-2. Implement `ThreadsStore` (in memory here), pick a transport, compose the feed:
+2. Implement `ThreadsStore` (in memory here), bind one transport per thread, compose the feed:
 
 ```tsx
+// @check
+import { Button } from '@mantine/core'
+import { useState } from 'react'
+import { ThreadFeed, ThreadFeedRow, aiSdkTransport, useAgentThreadRuns } from 'basalt-ui/agent'
+import type { AgentPart, AgentThread, ThreadsStore } from 'basalt-ui/agent'
+
 type Thread = AgentThread<AgentPart>
-const blank = (id: string): Thread => ({
-  id,
-  messages: [],
-  outcome: null,
-  status: 'pending',
-  read: true,
-  createdAt: 0,
-  updatedAt: 0,
-})
 
 function useMemoryStore(): ThreadsStore<AgentPart> {
   const [threads, setThreads] = useState<Thread[]>([])
   const [activeId, select] = useState<string | null>(null)
-  const patch = (id: string, f: (t: Thread) => Partial<Thread>) =>
-    setThreads((all) => all.map((t) => (t.id === id ? { ...t, ...f(t) } : t)))
+  const patch = (id: string, change: (t: Thread) => Thread) =>
+    setThreads((all) => all.map((t) => (t.id === id ? { ...change(t), updatedAt: Date.now() } : t)))
   return {
     threads,
     activeId,
@@ -74,26 +84,45 @@ function useMemoryStore(): ThreadsStore<AgentPart> {
     error: undefined,
     create: () => {
       const id = crypto.randomUUID()
-      setThreads((all) => [...all, blank(id)])
+      const now = Date.now()
+      const blank: Thread = {
+        id,
+        messages: [],
+        outcome: null,
+        status: 'pending',
+        read: true,
+        createdAt: now,
+        updatedAt: now,
+      }
+      setThreads((all) => [blank, ...all])
       return id
     },
-    appendMessage: (id, m) => patch(id, (t) => ({ messages: [...t.messages, m] })),
-    setOutcome: (id, outcome) => patch(id, () => ({ outcome })),
-    setStatus: (id, status) => patch(id, () => ({ status })),
-    markRead: (id) => patch(id, () => ({ read: true })),
-    setResumeToken: () => {},
-    remove: (id) => setThreads((all) => all.filter((t) => t.id !== id)),
-    clear: () => setThreads([]),
+    appendMessage: (id, m) => patch(id, (t) => ({ ...t, messages: [...t.messages, m] })),
+    setOutcome: (id, outcome) => patch(id, (t) => ({ ...t, outcome })),
+    setStatus: (id, status) => patch(id, (t) => ({ ...t, status })),
+    setResumeToken: (id, token) =>
+      patch(id, ({ resumeToken: _old, ...t }) =>
+        token === undefined ? t : { ...t, resumeToken: token },
+      ),
+    markRead: (id) => patch(id, (t) => ({ ...t, read: true })),
+    remove: (id) => {
+      setThreads((all) => all.filter((t) => t.id !== id))
+      select((current) => (current === id ? null : current))
+    },
+    clear: () => {
+      setThreads([])
+      select(null)
+    },
   }
 }
 
-const transport = aiSdkTransport<AgentPart>({ api: '/api/chat' })
-// a mock: { async *stream(input: string) { yield { id: crypto.randomUUID(), type: 'text' as const, text: input } } }
+const base = aiSdkTransport<AgentPart>({ api: '/api/chat' })
+// a mock transport: { async *stream(input: string) { yield { id: crypto.randomUUID(), type: 'text' as const, text: input } } }
 
 export function Chat() {
   const store = useMemoryStore()
   const { runs, start, stop } = useAgentThreadRuns({
-    transport,
+    transport: (threadId) => base.forThread(threadId),
     store,
     resolveOutcome: (t) => ({
       title: 'Chat',
@@ -102,26 +131,29 @@ export function Chat() {
     }),
   })
   return (
-    <ThreadFeed
-      threads={store.threads}
-      activeId={store.activeId}
-      onSelect={store.select}
-      renderRow={(t) => {
-        const run = runs.get(t.id)
-        const live = run === undefined ? {} : { liveParts: run.parts, liveStatus: run.status }
-        return (
-          <ThreadFeedRow
-            key={t.id}
-            thread={t}
-            expanded
-            onToggle={() => {}}
-            {...live}
-            onSend={({ text }) => start(t.id, text)}
-            onStop={() => stop(t.id)}
-          />
-        )
-      }}
-    />
+    <>
+      <Button onClick={() => store.select(store.create())}>New chat</Button>
+      <ThreadFeed
+        threads={store.threads}
+        activeId={store.activeId}
+        onSelect={store.select}
+        renderRow={(t) => {
+          const run = runs.get(t.id)
+          const live = run === undefined ? {} : { liveParts: run.parts, liveStatus: run.status }
+          return (
+            <ThreadFeedRow
+              key={t.id}
+              thread={t}
+              expanded={t.id === store.activeId}
+              onToggle={() => store.select(t.id === store.activeId ? null : t.id)}
+              {...live}
+              onSend={({ text }) => start(t.id, text)}
+              onStop={() => stop(t.id)}
+            />
+          )
+        }}
+      />
+    </>
   )
 }
 ```
