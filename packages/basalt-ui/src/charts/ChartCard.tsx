@@ -17,10 +17,9 @@ import type { DeltaPolarity } from '../dashboard/delta-badge'
 import { WidgetHeader } from '../dashboard/widget-header'
 import { VX } from '../tokens'
 import { ChartCardContext } from './card-context'
-import type { ChartBoxHeight } from './box'
 import classes from './chart-card.module.css'
 import { ChartPlaceholder, resolveChartState } from './state'
-import type { ChartState } from './types'
+import type { ChartState, ResponsiveChartHeight } from './types'
 
 // Depth is `shadow-card` (a whisper shadow with the 1px ring baked in), never a border, so a
 // ChartCard reads exactly like a Mantine Card. Only the body clips; the header must let
@@ -44,18 +43,27 @@ const cardStyle: CSSProperties = {
 const CARD_SHORT_HEIGHT = 280
 const SHORT_EXIT_SLACK = 24
 
+/** A `ChartBox` that states a height (any but `fill`): `box.tsx` writes `data-basalt-box`. */
+const STATED_BOX = '[data-basalt-box]:not([data-basalt-box="fill"])'
+
 /** The card's measured height through the hysteresis band above. */
 function useShortCard(): { ref: (el: HTMLDivElement | null) => void; short: boolean } {
   const [node, setNode] = useState<HTMLDivElement | null>(null)
   const [short, setShort] = useState(false)
   const shortRef = useRef(false)
   useIsomorphicLayoutEffect(() => {
-    if (!node || typeof ResizeObserver === 'undefined') return
+    if (!node) return
+    // A card holding a chart box that states its own height (the law default included) is short, or
+    // not, by that box in CSS (`data-basalt-chart-short`, written by `ChartBox`, `box.tsx`);
+    // measuring it as well would flip it after hydration. A `fill` box states nothing, so it is
+    // measured like any other body. The answer cannot change while the box is mounted.
+    if (node.querySelector(STATED_BOX)) {
+      shortRef.current = false
+      setShort(false)
+      return
+    }
+    if (typeof ResizeObserver === 'undefined') return
     const observer = new ResizeObserver((entries) => {
-      // A card holding a chart box is short by the box's own stated height, in CSS
-      // (`data-basalt-chart-short`); measuring it as well would flip it after hydration.
-      // (`data-basalt-box` is written by `ChartBox`, `box.tsx`, which also writes the marker.)
-      if (node.querySelector('[data-basalt-box]')) return
       const height = entries[0]?.borderBoxSize?.[0]?.blockSize ?? node.offsetHeight
       const limit = shortRef.current ? CARD_SHORT_HEIGHT + SHORT_EXIT_SLACK : CARD_SHORT_HEIGHT
       const next = height > 0 && height < limit
@@ -104,7 +112,7 @@ export type ChartCardProps = BasaltProps &
     /** Body height while a placeholder shows. Default: the chart height law, i.e. exactly the box an
      * unsized chart takes — pass the chart's own `height` when it states one, so a `<Suspense
      * fallback={<ChartCard state={{ pending: true }} …/>}>` reserves the final size. */
-    placeholderHeight?: ChartBoxHeight
+    placeholderHeight?: number | ResponsiveChartHeight
     /** A retry button or a "clear filters" link under the placeholder. */
     stateAction?: ReactNode
     children?: ReactNode

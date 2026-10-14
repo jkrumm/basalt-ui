@@ -90,6 +90,18 @@ function Probe({ name, children }: { name: string; children: ReactElement }): Re
   return <div data-probe={name}>{children}</div>
 }
 
+const DONUT = {
+  ariaLabel: 'Split',
+  data: [
+    { key: 'a', value: 30 },
+    { key: 'b', value: 20 },
+    { key: 'c', value: 10 },
+  ],
+  colorForKey: (k: string) => (k === 'a' ? 'var(--vx-line)' : 'var(--vx-accent)'),
+  formatValue: String,
+  centerLabel: '60',
+}
+
 const theme = createBasaltTheme()
 
 export function App(): ReactElement {
@@ -133,17 +145,13 @@ export function App(): ReactElement {
           />
         </Probe>
         <Probe name="donut">
-          <Donut
-            ariaLabel="Split"
-            data={[
-              { key: 'a', value: 30 },
-              { key: 'b', value: 20 },
-              { key: 'c', value: 10 },
-            ]}
-            colorForKey={(k) => (k === 'a' ? 'var(--vx-line)' : 'var(--vx-accent)')}
-            formatValue={String}
-            centerLabel="60"
-          />
+          <Donut {...DONUT} />
+        </Probe>
+        <Probe name="donut-fixed">
+          <Donut {...DONUT} height={200} />
+        </Probe>
+        <Probe name="donut-responsive">
+          <Donut {...DONUT} height={{ base: 150, wide: 260 }} />
         </Probe>
         <Probe name="heatmap">
           <Heatmap
@@ -213,6 +221,25 @@ export function App(): ReactElement {
           <ChartCard title="Header legend" info="Two series">
             <Lines
               ariaLabel="Card"
+              data={DATA}
+              x={x}
+              series={[A, B]}
+              legend={{ placement: 'header' }}
+            />
+          </ChartCard>
+        </Probe>
+        <Probe name="lines-tall">
+          <Lines ariaLabel="Tall" data={DATA} x={x} series={[A]} legend={false} height={300} />
+        </Probe>
+        <Probe name="lines-in-flex-row">
+          <div style={{ display: 'flex' }}>
+            <Lines ariaLabel="Row" data={DATA} x={x} series={[A]} legend={false} />
+          </div>
+        </Probe>
+        <Probe name="card-legend-only">
+          <ChartCard>
+            <Lines
+              ariaLabel="Legend only"
               data={DATA}
               x={x}
               series={[A, B]}

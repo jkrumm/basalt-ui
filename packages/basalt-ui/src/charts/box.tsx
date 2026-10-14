@@ -11,7 +11,7 @@ import type { ResponsiveChartHeight } from './types'
 /** `undefined` is the height law; a number is fixed; `'fill'` is the parent's height. */
 export type ChartBoxHeight = number | ResponsiveChartHeight | 'fill' | undefined
 
-/** Height = width × ratio, per container class, clamped (`resolveChartSize` mirrors this in px). */
+/** Height = width × ratio, per container class, clamped to {@link HEIGHT_MIN}–{@link HEIGHT_MAX}. */
 export const HEIGHT_RATIO = { micro: 0.5, compact: 0.62, regular: 0.5, wide: 0.4 } as const
 export const HEIGHT_MIN = 160
 export const HEIGHT_MAX = 420
@@ -76,10 +76,11 @@ export function ChartBox(props: {
   const { height, className, children } = props
   const fill = height === 'fill'
   return (
-    // `data-basalt-box` is the hook `ChartCard` uses to tell a chart body from a measured one.
+    // `data-basalt-box` is the hook `ChartCard` uses to tell a chart body from a measured one; a
+    // fill box states no height of its own, so it reads `fill` and the card still measures.
     <div
       className={cx(classes.frame, fill && classes.fillFrame)}
-      data-basalt-box=""
+      data-basalt-box={fill ? 'fill' : ''}
       {...(isShortChart(height) && { 'data-basalt-chart-short': '' })}
     >
       <div

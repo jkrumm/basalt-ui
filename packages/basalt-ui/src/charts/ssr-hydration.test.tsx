@@ -331,6 +331,24 @@ describe('the CSS height law', () => {
       '--bc-regular': '200px',
       '--bc-wide': '200px',
     })
+    expect(chartBoxVars({ base: 150 })).toEqual({
+      '--bc-micro': '150px',
+      '--bc-compact': '150px',
+      '--bc-regular': '150px',
+      '--bc-wide': '150px',
+    })
+    expect(chartBoxVars({ base: 150, regular: 220 })).toEqual({
+      '--bc-micro': '150px',
+      '--bc-compact': '150px',
+      '--bc-regular': '220px',
+      '--bc-wide': '220px',
+    })
+    expect(chartBoxVars({ base: 150, regular: 220, wide: 300 })).toEqual({
+      '--bc-micro': '150px',
+      '--bc-compact': '150px',
+      '--bc-regular': '220px',
+      '--bc-wide': '300px',
+    })
     expect(chartBoxVars({ base: 150, wide: 260 })).toEqual({
       '--bc-micro': '150px',
       '--bc-compact': '150px',

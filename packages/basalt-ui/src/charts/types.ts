@@ -147,8 +147,9 @@ export type ChartTooltipConfig<T, X extends ChartX = ChartX> = {
 }
 
 export type ChartLegendConfig = {
-  /** Default `'bottom'`. `'header'` renders it in the enclosing `ChartCard`'s header row (and
-   * falls back to `'top'` outside one). */
+  /** Default `'bottom'`. `'header'` draws the legend at the top of the chart body, spaced as the
+   * enclosing `ChartCard`'s header legend row (in the chart's own markup, so it is in the server
+   * HTML and the header never grows); outside a card it is `'top'`. */
   placement?: 'top' | 'bottom' | 'header'
   /** Visually separate roles: series | overlay | reference. */
   groups?: boolean

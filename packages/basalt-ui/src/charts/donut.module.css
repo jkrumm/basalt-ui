@@ -11,9 +11,25 @@
   min-width: 0;
 }
 
+/* The ring is the sized element (its chart box fills it): the stated height per container class
+ * when stacked, a square when beside the legend. One resolution, so a responsive `height` cannot
+ * make the ring and its box disagree. */
 .ring {
   position: relative;
   min-width: 0;
+  height: var(--bc-micro);
+}
+
+@container (min-width: 240px) {
+  .ring {
+    height: var(--bc-compact);
+  }
+}
+
+@media (pointer: coarse) {
+  .ring {
+    max-height: 45svh;
+  }
 }
 
 @container (min-width: 480px) {
@@ -22,10 +38,12 @@
     align-items: center;
   }
 
-  /* The ring is a square of the stated height (the ring's own `--bc-*`, per class), at most 55% of
-   * the row. */
+  /* At most 55% of the row wide, and square. */
   .ring {
     flex: 0 0 min(var(--bc-regular), 55cqw);
+    height: auto;
+    max-height: none;
+    aspect-ratio: 1;
   }
 }
 

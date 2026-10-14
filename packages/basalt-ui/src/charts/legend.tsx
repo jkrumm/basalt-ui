@@ -46,6 +46,13 @@ const rowBaseStyle: CSSProperties = {
   lineHeight: 1.35,
 }
 const rowStyle: CSSProperties = { ...rowBaseStyle, display: 'flex' }
+/** The gaps `chart-legend.module.css` reads, as custom properties. */
+type LegendVars = CSSProperties & Record<'--bc-legend-gap' | '--bc-dots-gap', string>
+const autoRowStyle: LegendVars = {
+  ...rowBaseStyle,
+  '--bc-legend-gap': `${VX.legendGap}px`,
+  '--bc-dots-gap': `${DOTS_GAP}px`,
+}
 const dividerStyle: CSSProperties = { width: 1, alignSelf: 'stretch', background: VX.divider }
 const buttonStyle: CSSProperties = {
   all: 'unset',
@@ -140,11 +147,7 @@ export function ChartLegend<T>(props: ChartLegendProps<T>): ReactElement | null 
       style={
         auto
           ? // `display` and the gaps are the stylesheet's: the container picks them by width.
-            ({
-              ...rowBaseStyle,
-              '--bc-legend-gap': `${VX.legendGap}px`,
-              '--bc-dots-gap': `${DOTS_GAP}px`,
-            } as CSSProperties)
+            autoRowStyle
           : {
               ...rowStyle,
               columnGap: gap,
