@@ -503,6 +503,78 @@ describe('stop() between a settle and its render', () => {
     expect(sent?.aborted).toBe(true)
   })
 
+  test('stop() of a streaming turn: its own slow resolver is superseded by a later start() after a render', async () => {
+    const store = createStore()
+    const id = store.create()
+    const staleGate = gate()
+    let calls = 0
+    const resolver: OutcomeResolver<AgentPart> = async () => {
+      calls += 1
+      if (calls === 1) {
+        await staleGate.promise
+        return { title: 'stale', summary: 's', status: 'done' }
+      }
+      return { title: 'fresh', summary: 'f', status: 'done' }
+    }
+    let streams = 0
+    const transport: AgentTransport<AgentPart, string> = {
+      async *stream() {
+        streams += 1
+        yield text('t', 'answer')
+        if (streams === 1) await new Promise(() => {})
+      },
+    }
+    const { result } = renderHook(() =>
+      useAgentThreadRuns({ transport, store, resolveOutcome: resolver }),
+    )
+    act(() => result.current.start(id, 'first'))
+    await waitFor(() => expect(result.current.runs.get(id)?.status).toBe('streaming'))
+    act(() => result.current.stop(id))
+    await waitFor(() => expect(calls).toBe(1))
+    // A render after the stop: the sweep must not drop the record while the resolver is pending.
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 20))
+    })
+    act(() => result.current.start(id, 'second'))
+    await waitFor(() => expect(store.threads[0]?.outcome?.title).toBe('fresh'))
+
+    await act(async () => {
+      staleGate.open()
+      await new Promise((resolve) => setTimeout(resolve, 20))
+    })
+    expect(store.threads[0]?.outcome?.title).toBe('fresh')
+  })
+
+  test('stop() of a streaming turn: a rejecting resolver reaches onError and the turn stays done', async () => {
+    const store = createStore()
+    const id = store.create()
+    const boom = new Error('resolver down')
+    const transport: AgentTransport<AgentPart, string> = {
+      async *stream() {
+        yield text('t', 'answer')
+        await new Promise(() => {})
+      },
+    }
+    const raw: unknown[] = []
+    const { result } = renderHook(() =>
+      useAgentThreadRuns({
+        transport,
+        store,
+        resolveOutcome: async () => {
+          throw boom
+        },
+        onError: ({ error }) => raw.push(error),
+      }),
+    )
+    act(() => result.current.start(id, 'go'))
+    await waitFor(() => expect(result.current.runs.get(id)?.status).toBe('streaming'))
+    act(() => result.current.stop(id))
+    await waitFor(() => expect(raw).toEqual([boom]))
+
+    expect(store.threads[0]?.status).toBe('done')
+    expect(result.current.runs.has(id)).toBe(false)
+  })
+
   test('an AbortError the hook did not issue is a failure: status error, kind aborted, onError once', async () => {
     const store = createStore()
     const id = store.create()

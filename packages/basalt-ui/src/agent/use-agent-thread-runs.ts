@@ -473,18 +473,20 @@ async function finalizeStop<TPart extends PartLike>(args: {
   alreadyAppended: boolean
   /** `consumeAndFinalize`'s own `resolveOutcome` is pending and will record the outcome. */
   outcomeInFlight: boolean
-  /** True while this stop's run is still the thread's latest (no newer run has started). */
-  owns: () => boolean
+  /** The stopped run's record: held `resolving` while this function's own resolver is pending. */
+  record: RunRecord<TPart>
   storeRef: MutableRefObject<ThreadsStore<TPart>>
   resolveOutcome: OutcomeResolver<TPart>
   setRuns: Dispatch<SetStateAction<Map<string, ThreadRunState<TPart>>>>
+  onError?: (info: { readonly threadId: string; readonly error: unknown }) => void
 }): Promise<void> {
   const {
     threadId,
     parts,
     alreadyAppended,
     outcomeInFlight,
-    owns,
+    record,
+    onError,
     storeRef,
     resolveOutcome,
     setRuns,
@@ -536,8 +538,19 @@ async function finalizeStop<TPart extends PartLike>(args: {
 
   const snapshot = storeRef.current.threads.find((thread) => thread.id === threadId)
   if (snapshot === undefined) return
-  const outcome: AgentOutcome = await resolveOutcome(snapshot)
-  if (owns()) storeRef.current.setOutcome(threadId, outcome)
+  // Held `resolving` like consumeAndFinalize's own call: `sweepFlushed` keeps the record while the
+  // resolver is pending, so a later start() still supersedes it and a stale outcome is dropped.
+  record.resolving = true
+  try {
+    const outcome: AgentOutcome = await resolveOutcome(snapshot)
+    if (isLatestRun(record)) storeRef.current.setOutcome(threadId, outcome)
+  } catch (error) {
+    // `stop()` calls this with `void`: a rejection must reach the caller, not become unhandled.
+    // The stopped turn stays 'done'.
+    onError?.({ threadId, error })
+  } finally {
+    record.resolving = false
+  }
 }
 
 /** The `chat.turn` event for a turn that completed (`failure` absent) or failed. */
@@ -903,10 +916,11 @@ export function useAgentThreadRuns<TPart extends PartLike = AgentPart>({
         parts,
         alreadyAppended: appended,
         outcomeInFlight: resolving,
-        owns: () => isLatestRun(record),
+        record,
         storeRef,
         resolveOutcome,
         setRuns,
+        onError: (info) => onErrorRef.current?.(info),
       })
     },
     [dismiss, resolveOutcome],
