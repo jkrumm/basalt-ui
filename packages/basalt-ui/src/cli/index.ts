@@ -446,23 +446,14 @@ export function waiverHintFor(relPath: string, profile: DoctorProfile): string {
 // ──────────────────────────────────────────────────────────────────────────────
 
 /**
- * How a file the framework writes into a consumer repo is owned. Two modes, one question:
- * **does Claude read this file?**
+ * How a file the framework writes into a consumer repo is owned:
+ * - `managed`: basalt owns it (what Claude reads: .claude/rules/*, .claude/skills/*, the AGENTS.md
+ *   block). sync refreshes it; a local edit is skipped and reported (`--force` overwrites); `--check`
+ *   exits 1 on drift.
+ * - `seed`: written once if absent, then the consumer's. sync never overwrites it or reports drift.
  *
- * - `managed` : basalt owns it. sync refreshes it to the shipped version; a local edit is skipped
- *               and reported (`--force` overwrites); `--check` exits 1 on drift. Applies to exactly
- *               what Claude reads (.claude/rules/*, .claude/skills/*, the AGENTS.md block) —
- *               Claude Code cannot load rules or skills from node_modules, and that platform limit
- *               is the only reason anything is copied at all. The sync diff is the review gate.
- * - `seed`    : written once if absent, then owned entirely by the consumer. sync never overwrites
- *               it and never reports drift (a starting point, not a managed mirror). Everything a
- *               machine reads is a seed, and a good seed's content is a REFERENCE (`extends` into
- *               node_modules/basalt-ui/configs/*), not a copy, so the toolchain auto-updates with
- *               the package while the consumer still owns the file.
- *
- * A managed file with `markers: true` is spliced as a `<!-- basalt:begin -->…<!-- basalt:end -->`
- * region inside a host file the consumer otherwise owns (AGENTS.md) — not a third mode, just
- * managed ownership scoped to a region.
+ * `markers: true` splices a managed `<!-- basalt:begin -->…<!-- basalt:end -->` region into a host
+ * file the consumer otherwise owns (AGENTS.md).
  */
 type Mode = 'managed' | 'seed'
 
@@ -1226,21 +1217,12 @@ export function writeUnit(file: ManagedFile, cwd: string, desired: string): stri
 }
 
 /**
- * Classify a managed file against the manifest for a sync run.
- * - missing  : the managed unit is absent on disk → recreate.
+ * Classify a managed file against the manifest for a sync run:
+ * - missing  : absent on disk → recreate.
  * - current  : on disk == desired → nothing to do.
- * - unchanged: on disk matches a KNOWN-SHIPPED rendering of this template (any one is sufficient) —
- *              but != desired as-is → safe overwrite:
- *              1. `sha256(current) === manifestHash` — legacy raw-hash path (manifests written before
- *                 the ledger normalized hold the RAW hash; keep matching so an upgrade never
- *                 mass-classifies a pristine tree as drifted).
- *              2. `sha256(normalizeForLedger(current)) === manifestHash` — the ledger proper (see
- *                 `writeUnit`): survives a downstream formatter AND a version bump that changed the
- *                 template's own words since the manifest entry was written (the argo false positive).
- *              3. `normalizeForLedger(current) === normalizeForLedger(desired)` — same-version
- *                 fallback when no manifest entry exists at all.
- * - drifted  : on disk matches NONE of the above (a real, word-level local edit) → skip unless
- *              --force.
+ * - unchanged: on disk matches a KNOWN-SHIPPED rendering (raw manifest hash, normalized manifest
+ *              hash, or normalized == normalized desired when no entry exists) → safe overwrite.
+ * - drifted  : matches none of them (a real local edit) → skip unless --force.
  */
 export function classify(state: UnitState, manifestHash: string | undefined): Classification {
   if (state.current === null) return 'missing'
@@ -1339,19 +1321,9 @@ function rootCovers(root: string, detected: string): boolean {
 }
 
 /**
- * Read — and when absent and `write` is set, seed — `basalt.roots`.
- *
- * Shared by `init` and `sync` because the key going missing is the SAME false green in both: the
- * built-in `src` default happens to resolve from a package cwd, so `guard-scan` passes, `check-theme`
- * scans something, and the repo is silently guarding a subset of itself. `init` wrote it and `sync`
- * did not — which meant the fix reached new scaffolds only, while every existing consumer (the ones
- * who by definition upgrade rather than scaffold) stayed on the undeclared default.
- *
- * A DECLARED value is never overwritten, not even when the layout disagrees with it. `roots` is a
- * subset by construction in a monorepo — a React-free package deliberately left out is the normal
- * case, not drift — so a disagreement is reported as one line naming what is not covered, and the
- * consumer decides. Silently widening someone's deliberate scope would turn an upgrade into an
- * unplanned lint debt.
+ * Read — and when absent and `write` is set, seed — `basalt.roots`. Shared by `init` and `sync`: a
+ * missing key silently guards a subset of the repo. A DECLARED value is never overwritten (a subset
+ * is normal in a monorepo); a disagreement is reported as one line and the consumer decides.
  */
 export function reconcileRoots(cwd: string, opts: { write: boolean }): RootsState {
   const declared = readBasaltConfig(cwd).roots
@@ -1446,7 +1418,7 @@ function stripJsonc(text: string): string {
 /** Parse a JSONC document, or null when it does not parse at all. */
 export function parseJsonc(text: string): Record<string, unknown> | null {
   try {
-    return JSON.parse(stripJsonc(text)) as Record<string, unknown>
+    return JSON.parse(stripJsonc(text.replace(/^\uFEFF/, ''))) as Record<string, unknown>
   } catch {
     return null
   }

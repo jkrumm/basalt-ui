@@ -16,7 +16,7 @@ import {
   tsconfigBaseCheck,
 } from './doctor-upgrade'
 import type { Check } from './doctor-upgrade'
-import { init, MANIFEST_PATH, normalizeForLedger, sha256, sync } from './index'
+import { init, MANIFEST_PATH, normalizeForLedger, parseJsonc, sha256, sync } from './index'
 
 const PKG_ROOT = fileURLToPath(new URL('../../', import.meta.url))
 const PKG_VERSION = (
@@ -230,9 +230,36 @@ describe('doctor — dropped-subpaths', () => {
     expect(check()).toBeNull()
   })
 
+  it('ignores imports that only appear inside strings or as a method call, and scans .mjs/.cts', () => {
+    exportsMap()
+    write(
+      'src/app.tsx',
+      [
+        'const a = "require(\'basalt-ui/query\')"',
+        'const t = `',
+        "import { q } from 'basalt-ui/query'",
+        '`',
+        "obj.require('basalt-ui/data')",
+        "obj.import('basalt-ui/data')",
+      ].join('\n'),
+    )
+    expect(check()).toBeNull()
+    write('src/a.mjs', "import { q } from 'basalt-ui/query'\n")
+    write('src/b.cts', "const q = require('basalt-ui/data')\n")
+    const problem = text(check())
+    expect(problem).toContain('src/a.mjs:1 imports basalt-ui/query')
+    expect(problem).toContain('src/b.cts:1 imports basalt-ui/data')
+  })
+
+  it('SKIPS both upgrade checks when basalt-ui does not resolve', () => {
+    const none = { dir: null, version: null, how: null }
+    expect(droppedSubpathsCheck(dir, { roots: ['src'] }, none)).toHaveProperty('skip')
+    expect(retiredLintRulesCheck(dir, none)).toHaveProperty('skip')
+  })
+
   it('SKIPS (never passes) when the installed exports map cannot be read', () => {
     write('src/app.tsx', "import { q } from 'basalt-ui/query'\n")
-    expect(text(check())).toContain('cannot read')
+    expect(text(check())).toContain('cannot run')
     expect(check()).toHaveProperty('skip')
     write('node_modules/basalt-ui/package.json', '{ not json')
     expect(check()).toHaveProperty('skip')
@@ -263,6 +290,36 @@ describe('doctor — checks that cannot run are SKIPPED, not green', () => {
       '{ "extends": "basalt-ui/configs/tsconfig.base.json" }',
     )
     expect(tsconfigBaseCheck(dir)).toBeNull()
+  })
+
+  it('tsconfig-base skips, rather than failing with an extends fix, on a file it cannot parse', () => {
+    write('tsconfig.json', '{ "extends": "./broken.json" }')
+    write('broken.json', '{ nope')
+    expect(text(tsconfigBaseCheck(dir))).toContain('could not parse')
+    expect(tsconfigBaseCheck(dir)).toHaveProperty('skip')
+  })
+
+  it('tsconfig-base skips when tsconfig.json is a directory (EISDIR)', () => {
+    mkdirSync(join(dir, 'tsconfig.json'))
+    expect(tsconfigBaseCheck(dir)).toHaveProperty('skip')
+  })
+
+  it('retired-lint-rules tolerates null overrides and does not judge node_modules extends', () => {
+    write(
+      'node_modules/basalt-ui/package.json',
+      JSON.stringify({ name: 'basalt-ui', type: 'module' }),
+    )
+    write(
+      'node_modules/basalt-ui/configs/oxlint-plugin.js',
+      "export const RETIRED_RULE_IDS = new Set(['visx-boundary'])\nexport default { rules: { 'card-inset': {} } }\n",
+    )
+    write(
+      '.oxlintrc.json',
+      '{ "extends": ["./node_modules/pkg/old.json"], "overrides": [null], "rules": { "basalt/card-inset": "error" } }',
+    )
+    write('node_modules/pkg/old.json', '{ "rules": { "basalt/visx-boundary": "error" } }')
+    const install = { dir: join(dir, 'node_modules/basalt-ui'), version: null, how: 'cwd' as const }
+    expect(retiredLintRulesCheck(dir, install)).toBeNull()
   })
 
   it('tsconfig-base survives an extends cycle', () => {
@@ -446,13 +503,45 @@ describe('init — a stock Vite react-ts app ends up doctor-green on tsconfig-ba
     expect(read('tsconfig.node.json')).not.toContain('extends')
   })
 
-  it('edits a leading-comment tsconfig and creates one when absent', () => {
+  it('edits a leading-comment tsconfig, never creates one, and is idempotent', () => {
+    expect(seedTsconfigExtends(dir)).toBeNull()
+    expect(existsSync(join(dir, 'tsconfig.json'))).toBe(false)
     write('tsconfig.json', '// { not me\n{ "include": ["src"] }\n')
     expect(seedTsconfigExtends(dir)).toContain('added')
     expect(tsconfigBaseCheck(dir)).toBeNull()
-    rmSync(join(dir, 'tsconfig.json'))
-    expect(seedTsconfigExtends(dir)).toContain('created')
+    expect(seedTsconfigExtends(dir)).toBeNull()
+  })
+
+  it('handles a BOM: doctor reads it, and init twice leaves exactly one extends', () => {
+    write('package.json', JSON.stringify({ name: 'fixture' }))
+    write('tsconfig.json', '﻿{ "include": ["src"] }\n')
+    expect(text(tsconfigBaseCheck(dir))).toContain('does not extend')
+    capture(() => init(dir))
+    capture(() => init(dir))
+    const tsconfig = read('tsconfig.json')
+    expect(tsconfig.match(/"extends"/g)).toHaveLength(1)
+    expect(tsconfig.startsWith('﻿{')).toBe(true)
     expect(tsconfigBaseCheck(dir)).toBeNull()
+  })
+
+  it('adds no trailing comma to an empty object, and matches include spellings like ./src and src/**', () => {
+    write('tsconfig.json', '{}')
+    seedTsconfigExtends(dir)
+    expect(parseJsonc(read('tsconfig.json'))).toEqual({
+      extends: 'basalt-ui/configs/tsconfig.react-app.json',
+    })
+    write('tsconfig.json', '{ "references": [null, { "path": "./app.json" }] }')
+    write('app.json', '{ "include": ["./src/**/*"] }')
+    seedTsconfigExtends(dir)
+    expect(read('app.json')).toContain('"extends"')
+    expect(read('tsconfig.json')).not.toContain('"extends"')
+  })
+
+  it('leaves a tokens-only consumer alone', () => {
+    write('package.json', JSON.stringify({ name: 'fixture', basalt: { profile: 'tokens-only' } }))
+    write('tsconfig.json', '{ "include": ["src"] }')
+    capture(() => init(dir))
+    expect(read('tsconfig.json')).not.toContain('extends')
   })
 
   it('leaves a config that extends something else alone and prints the fix', () => {

@@ -218,9 +218,7 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
   }
 
   // ── Hard check 4: the consumer's oxlint config extends the shipped preset ──
-  // `init` KEEPS an existing `.oxlintrc.json`, so a repo can carry the whole scaffold with the
-  // framework's lint half switched off and nothing anywhere saying so. One repo ran five minors
-  // that way and surfaced six real `basalt/no-raw-font-size` errors the moment it was wired.
+  // `init` KEEPS an existing `.oxlintrc.json`, so the framework's lint half can be silently off.
   if (profile === 'tokens-only') {
     pass('oxlint-preset: n/a — the shipped preset is a Mantine/React preset')
   } else {
@@ -267,8 +265,7 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
   }
 
   // ── Warn check 5: the pre-commit hook actually runs the guard ──────────────
-  // Read via `lefthook dump --format json`, which resolves `extends`/`include`/remote configs/
-  // `root:` the way lefthook itself does — see {@link inspectLefthookGate}.
+  // Read via `lefthook dump --format json` (see {@link inspectLefthookGate}).
   const repoRoot = findRepoRoot(cwd)
   const lefthookGate =
     profile === 'tokens-only' ? { kind: 'n/a' as const } : inspectLefthookGate(repoRoot)
@@ -322,13 +319,9 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
   }
 
   // ── Hard check 7: ai package major version parity within THIS package.json ─
-  // basalt/ai-sdk-major (the lint rule) is per-file against the NEAREST package.json, so a lint
-  // run scoped to one workspace package only ever sees that package's own `ai` major and is
-  // perfectly happy. This check reads the SAME package.json across its dependencies/
-  // devDependencies/peerDependencies fields — the shape a lint run cannot see. Hard failure, not a
-  // warning: a skewed pair throws at runtime, it doesn't just look different.
-  // `basalt.aiMajorSkewReason` exempts an INTENTIONAL skew; a stale declaration (skew resolved,
-  // reason still present) warns instead of passing silently.
+  // basalt/ai-sdk-major is per-file against the NEAREST package.json; this reads one package.json
+  // across its dependency fields. Hard failure: a skewed pair throws at runtime. An intentional skew
+  // is exempt via `basalt.aiMajorSkewReason`; a stale reason warns.
   const aiMajors = aiMajorsAt(cwd)
   const aiEntries = AI_MAJOR_FIELDS.filter((field) => aiMajors[field] !== undefined).map(
     (field) => ({ field, major: aiMajors[field] as number }),
