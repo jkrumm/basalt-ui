@@ -691,3 +691,46 @@ describe('field.use({ fallback }) — a call-site default', () => {
     expect(result.current[0]).toBe('b')
   })
 })
+
+describe('field.withFallback — the derived handle', () => {
+  const store = createLocalStore({
+    key: 'l-derived',
+    fields: {
+      exercise: field.enum(['squat', 'bench', 'deadlift'], 'squat'),
+      picks: field.multi(['a', 'b', 'c'], []),
+    },
+  })
+
+  test('use() resolves unset → fallback, set → stored, clear → fallback; nothing persisted while unset', () => {
+    const handle = store.field.exercise.withFallback('bench')
+    const { result } = renderHook(() => handle.use())
+    expect(result.current[0]).toBe('bench')
+    expect(storedRecord('l-derived')).toBeNull()
+    act(() => result.current[1]('deadlift'))
+    expect(result.current[0]).toBe('deadlift')
+    act(() => handle.clear())
+    expect(result.current[0]).toBe('bench')
+    expect(storedRecord('l-derived')).toEqual({})
+  })
+
+  test('fallback and isDefault report the call-site value; the base handle keeps the definition', () => {
+    const handle = store.field.exercise.withFallback('bench')
+    expect(handle.fallback).toBe('bench')
+    expect(handle.isDefault('bench')).toBe(true)
+    expect(handle.isDefault('squat')).toBe(false)
+    expect(store.field.exercise.fallback).toBe('squat')
+    expect(handle.options).toEqual(store.field.exercise.options)
+  })
+
+  test('stable for a stable fallback: primitives by value, objects by identity', () => {
+    expect(store.field.exercise.withFallback('bench')).toBe(
+      store.field.exercise.withFallback('bench'),
+    )
+    expect(store.field.exercise.withFallback('bench')).not.toBe(
+      store.field.exercise.withFallback('squat'),
+    )
+    const picks = ['b'] as const
+    expect(store.field.picks.withFallback(picks)).toBe(store.field.picks.withFallback(picks))
+    expect(store.field.picks.withFallback(['b'])).not.toBe(store.field.picks.withFallback(['b']))
+  })
+})
