@@ -106,6 +106,27 @@ describe('createBasaltRouter view transition (V2-SPEC § 5)', () => {
     }
   })
 
+  test('two routers install the guard once: one catch per promise per start', () => {
+    withSupports(() => true)
+    const original = Object.getOwnPropertyDescriptor(document, 'startViewTransition')
+    const catches = { ready: 0, finished: 0 }
+    const promiseFor = (key: keyof typeof catches) => ({ catch: () => void catches[key]++ })
+    document.startViewTransition = (() => ({
+      ready: promiseFor('ready'),
+      finished: promiseFor('finished'),
+      updateCallbackDone: promiseFor('ready'),
+    })) as never
+    try {
+      createBasaltRouter({ routeTree })
+      createBasaltRouter({ routeTree })
+      document.startViewTransition(() => {})
+      expect(catches).toEqual({ ready: 1, finished: 1 })
+    } finally {
+      if (original) Object.defineProperty(document, 'startViewTransition', original)
+      else delete (document as { startViewTransition?: unknown }).startViewTransition
+    }
+  })
+
   test('the option is not a consumer knob', () => {
     // @ts-expect-error one way to do it: `defaultViewTransition` is not an option
     createBasaltRouter({ routeTree, defaultViewTransition: false })

@@ -7,9 +7,8 @@
  * `:active-view-transition-type()`, a bare callback otherwise, and returns only `updateCallbackDone`,
  * so `ready` and `finished` are dropped on the floor.
  */
-import type { ParsedLocation } from '@tanstack/react-router'
+import type { AnyRouter } from '@tanstack/react-router'
 import { flattenNav, getActiveNav } from '../router-tanstack/nav'
-import type { AnyNavGroup } from '../router-tanstack/nav'
 
 /** The three `:active-view-transition-type()` names `styles.css` animates. Namespaced: a consumer's own cannot collide. */
 export const ROUTE_TRANSITION_TYPES = {
@@ -18,35 +17,60 @@ export const ROUTE_TRANSITION_TYPES = {
   sibling: 'basalt-sibling',
 } as const
 
-type LocationChange = {
-  fromLocation?: Pick<ParsedLocation, 'pathname'>
-  toLocation: Pick<ParsedLocation, 'pathname'>
-  pathChanged: boolean
+/** The argument of the router's `types` callback, derived from its own option type. */
+type RouterLocationChange = Parameters<
+  Extract<
+    Extract<AnyRouter['options']['defaultViewTransition'], object>['types'],
+    (...args: never[]) => unknown
+  >
+>[0]
+
+/** The part of it the direction reads: two pathnames and whether the path changed. */
+type LocationChange = Pick<RouterLocationChange, 'pathChanged'> & {
+  fromLocation?: Pick<NonNullable<RouterLocationChange['fromLocation']>, 'pathname'>
+  toLocation: Pick<RouterLocationChange['toLocation'], 'pathname'>
 }
 
-type NavConfig = { groups: ReadonlyArray<AnyNavGroup> }
+type ActiveNav = NonNullable<ReturnType<typeof getActiveNav>>
+type NavItem = ReturnType<typeof flattenNav>[number]
 
 const trimTrailingSlash = (path: string): string =>
   path.length > 1 && path.endsWith('/') ? path.slice(0, -1) : path
 
+const segmentsOf = (path: string): string[] => path.split('/').filter(Boolean)
+
 /**
- * The flattened-nav index of the item that owns `pathname`: the longest matching `link.to`, where an
- * item matches itself and (unless `exact`, or `'/'`) everything beneath it — the same rule as the
- * sidebar's `isActive`. `-1` when nothing matches.
+ * Whether `pathname` is on `item`: the sidebar's rule (`use-nav.ts` `matchOf`: `matchRoute` with
+ * `fuzzy: exact !== true && to !== '/'`, case-insensitive) over a pure string match, because the
+ * router's own matcher only answers for its current location. `$param` matches one segment and a
+ * bare `$` the rest of the path.
  */
-function navIndexOf(
-  flat: ReadonlyArray<{ link: { to: string }; exact?: boolean }>,
-  pathname: string,
-): number {
-  const path = trimTrailingSlash(pathname)
+function onItem(item: NavItem, pathname: string): boolean {
+  const to = segmentsOf(item.link.to.toLowerCase())
+  const path = segmentsOf(pathname.toLowerCase())
+  const fuzzy = item.exact !== true && item.link.to !== '/'
+  for (const [i, segment] of to.entries()) {
+    if (segment === '$') return true
+    const actual = path[i]
+    if (actual === undefined) return false
+    if (!segment.startsWith('$') && segment !== actual) return false
+  }
+  return fuzzy || path.length === to.length
+}
+
+/**
+ * The flattened-nav index of the item that owns `pathname`, picked as the sidebar picks its active
+ * item: of the matches, the most specific (most non-empty segments in `link.to`) wins and the first
+ * in definition order takes a tie. `-1` when nothing matches.
+ */
+function navIndexOf(flat: ReadonlyArray<NavItem>, pathname: string): number {
   let best = -1
-  let bestLength = -1
-  flat.forEach(({ link, exact }, index) => {
-    const to = trimTrailingSlash(link.to)
-    const hit = path === to || (!exact && to !== '/' && path.startsWith(`${to}/`))
-    if (hit && to.length > bestLength) {
+  let bestSpecificity = -1
+  flat.forEach((item, index) => {
+    const specificity = segmentsOf(item.link.to).length
+    if (specificity > bestSpecificity && onItem(item, trimTrailingSlash(pathname))) {
       best = index
-      bestLength = to.length
+      bestSpecificity = specificity
     }
   })
   return best
@@ -63,7 +87,7 @@ function navIndexOf(
  */
 export function routeTransitionTypes(
   { fromLocation, toLocation, pathChanged }: LocationChange,
-  nav: NavConfig | undefined,
+  nav: ActiveNav | undefined,
 ): string[] | false {
   if (!fromLocation || !pathChanged) return false
   const flat = nav ? flattenNav(nav) : []
@@ -101,19 +125,28 @@ const ignoreSkip = (reason: unknown): void => {
   if (!isTransitionSkip(reason)) throw reason
 }
 
+/** `finished` repeats whatever `ready` or `updateCallbackDone` already reported; never report it twice. */
+const ignore = (): void => {}
+
 const guarded = new WeakSet<object>()
 
 /**
- * Attaches a skip-only catch to `ready`, `finished` and `updateCallbackDone` of every
- * `document.startViewTransition` call, once per installed function (idempotent across routers). Router-core drops the first two and a
- * superseded transition rejects them with `AbortError: Transition was skipped` (router discussion
- * #7733), which `window` `unhandledrejection` — and so basalt's telemetry sink — would report.
+ * Attaches a catch to `ready` and `finished` of every `document.startViewTransition` call, once per
+ * installed function (idempotent across routers). Router-core drops both (it returns only
+ * `updateCallbackDone`), and a superseded transition rejects them with `AbortError: Transition was
+ * skipped` (router discussion #7733), which `window` `unhandledrejection` — and so basalt's
+ * telemetry sink — would report.
  *
- * Chosen over an `unhandledrejection` filter because it removes the rejection at its source: the
- * rejection never becomes unhandled, so no listener (basalt's, a consumer's, devtools) sees it, and
+ * - `ready`: a skip is swallowed; any other reason is rethrown, so it surfaces once, there.
+ * - `finished`: always swallowed. A non-skip reason is the update callback's error, which `ready`
+ *   (and, for the router, its own `await updateCallbackDone`) already carries.
+ * - `updateCallbackDone` is left alone: the router awaits it, and a catch here would re-raise a
+ *   real error from a derived promise nobody owns.
+ *
+ * Chosen over an `unhandledrejection` filter because it removes the rejection at its source: it
+ * never becomes unhandled, so no listener (basalt's, a consumer's, devtools) sees it, and
  * `preventDefault()` on a shared event would hide real rejections from the others. The wrapper
- * changes no result: it returns the original `ViewTransition`, and `updateCallbackDone` is still
- * rejected for the router's own `await`. A no-op where the API is absent, and on the server.
+ * returns the original `ViewTransition`. A no-op where the API is absent, and on the server.
  */
 export function guardViewTransitionRejections(): void {
   if (typeof document === 'undefined' || typeof document.startViewTransition !== 'function') return
@@ -122,8 +155,7 @@ export function guardViewTransitionRejections(): void {
   const wrapped: Document['startViewTransition'] = (...args) => {
     const transition = original(...args)
     transition.ready.catch(ignoreSkip)
-    transition.finished.catch(ignoreSkip)
-    transition.updateCallbackDone.catch(ignoreSkip)
+    transition.finished.catch(ignore)
     return transition
   }
   guarded.add(wrapped)
