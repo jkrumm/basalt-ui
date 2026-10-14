@@ -23,7 +23,9 @@
  * here. Pass your own sparkline at the call site (basalt ships no `Sparkline` kind in 2.0.0).
  *
  * `query` hands the card's pending/error/empty branch to `QueryState` at the `'section'` tier,
- * rendered under the header rather than over it — the title row is chrome and must not flicker.
+ * rendered under the header rather than over it — the title row is chrome and must not flicker. The
+ * same query also reaches a render-prop `sparkline` as `size.state`, so `<Sparkline {...size} />`
+ * shows its sized pending / error placeholder with no hand-rolled `'—'`.
  *
  * `tone` marks the card as past a threshold with an accent rail down its leading edge. It exists
  * because `value` is typed `string`: without it, a card whose number has crossed a threshold reads
@@ -106,6 +108,7 @@ import { cx } from '../common/props'
 import type { BasaltProps, SlotStylesProps, Tone } from '../common/props'
 import { QueryState } from './query-state'
 import type { QueryStateLike } from './query-state'
+import { assertQueryStateLike } from '../common/query-state-like'
 import classes from './stat-card.module.css'
 
 /**
@@ -160,6 +163,13 @@ const SPARKLINE_RIGHT_HEIGHT = 26
 export type StatCardSparklineSize = {
   width: number
   height: number
+  /**
+   * The card's `query` as a chart state — present only while the sparkline has nothing to draw
+   * (pending, or failed with no data), so `<Sparkline {...size} />` forwards it and the tile shows a
+   * sized placeholder instead of a hand-rolled `'—'`. Structurally a `ChartState`: this module
+   * stays chart-free. Absent without a `query`, and once data has arrived.
+   */
+  state?: { pending?: boolean; error?: unknown; empty?: boolean }
 }
 
 /**
@@ -197,6 +207,18 @@ function useSlotWidth(active: boolean): {
     },
     width,
   }
+}
+
+/** The `query` as a sparkline state, by the same precedence as {@link QueryState}: an error with no
+ * data is an error, no data and not idle is pending, anything else draws. */
+function sparklineState(
+  query: QueryStateLike<unknown> | undefined,
+): StatCardSparklineSize['state'] {
+  if (query === undefined) return undefined
+  assertQueryStateLike('StatCard', query)
+  if (query.data !== undefined) return undefined
+  if (query.isError) return { error: query.error ?? true }
+  return query.fetchStatus === 'idle' ? undefined : { pending: true }
 }
 
 /** The rail's width, in px. Wide enough to read as a deliberate mark at a glance, narrow enough
@@ -270,8 +292,12 @@ export type StatCardProps = BasaltProps &
      * measured width is the card's own inner width including the bled inset; with `'right'` it is the
      * fixed 72×26 slot (see {@link SPARKLINE_RIGHT_WIDTH} for why that one is not measured).
      *
+     * A render prop is a sanctioned pattern here, so `react/no-unstable-nested-components` is
+     * configured with `allowAsProps` in the shipped preset. Spread the size (`{...size}`) to forward
+     * `state` along with the box.
+     *
      * @example
-     * sparkline={({ width, height }) => <MySparkline data={history} width={width} height={height} />}
+     * sparkline={(size) => <Sparkline ariaLabel="Active users" data={history} {...size} />}
      */
     sparkline?: ReactNode | ((size: StatCardSparklineSize) => ReactNode)
     /** Where `sparkline` sits. `'bleed'` (default) is today's full-width row bled to the card edges;
@@ -313,7 +339,12 @@ export function StatCard({
   const bleeds = sparklinePlacement === 'bleed'
   // Only a render prop needs a measurement; a plain node sizes itself.
   const { ref: slotRef, width: slotWidth } = useSlotWidth(isRender)
-  const measured: StatCardSparklineSize = { width: slotWidth, height: SPARKLINE_RIGHT_HEIGHT }
+  const state = sparklineState(query)
+  const measured: StatCardSparklineSize = {
+    width: slotWidth,
+    height: SPARKLINE_RIGHT_HEIGHT,
+    ...(state !== undefined && { state }),
+  }
 
   // A `<dl>`, not a table and not a stack of divs: each row IS a term and its value, which is the
   // one semantic that survives a reader meeting the card out of context.

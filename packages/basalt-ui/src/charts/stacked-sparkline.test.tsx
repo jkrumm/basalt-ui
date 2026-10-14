@@ -5,7 +5,7 @@ import { createRoot } from 'react-dom/client'
 import { renderToString } from 'react-dom/server'
 import { Sparkline } from './Sparkline'
 import { StackedArea } from './StackedArea'
-import type { ChartSeries } from './types'
+import type { ChartSeries, ChartState } from './types'
 
 type Row = { t: Date; a: number | null; b: number }
 const day = (d: number): Date => new Date(Date.UTC(2026, 8, d))
@@ -191,5 +191,31 @@ describe('Sparkline', () => {
   test('a single point renders finite geometry', () => {
     const one = render(<Sparkline ariaLabel="T" data={[5]} height={28} emphasizeLast />)
     expect(Number.isFinite(attr(one.querySelector('circle'), 'cy'))).toBe(true)
+  })
+
+  describe('state', () => {
+    const spark = (state: ChartState): HTMLElement =>
+      render(<Sparkline ariaLabel="T" data={values} height={28} width={80} state={state} />)
+
+    test('pending fills the sparkline box with a busy placeholder and draws no chart', () => {
+      const el = spark({ pending: true })
+      expect(el.querySelector('svg')).toBeNull()
+      expect(el.querySelector('output[aria-busy="true"]')).not.toBeNull()
+      expect(el.querySelector('[data-basalt-sparkline]')?.getAttribute('style')).toContain(
+        'height:28px',
+      )
+    })
+
+    test('error and empty show a dash named by the label, in that precedence', () => {
+      const failed = spark({ error: new Error('boom'), empty: true })
+      expect(failed.querySelector('[role="alert"]')?.getAttribute('aria-label')).toBe('boom')
+      const empty = spark({ empty: 'No runs' })
+      expect(empty.querySelector('output')?.getAttribute('title')).toBe('No runs')
+      expect(empty.querySelector('svg')).toBeNull()
+    })
+
+    test('an empty state object still draws the chart', () => {
+      expect(spark({}).querySelector('svg')).not.toBeNull()
+    })
   })
 })

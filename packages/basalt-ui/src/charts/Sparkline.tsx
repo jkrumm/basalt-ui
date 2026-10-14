@@ -18,7 +18,9 @@ import type { CartesianDefinition } from './compile'
 import { chartCurve } from './curves'
 import { barMark } from './marks'
 import { ChartEngine, idPrefixOf } from './host'
+import { ChartPlaceholder, resolveChartState } from './state'
 import { CHART_THEME } from './theme'
+import type { ChartState } from './types'
 
 export type SparklineProps = BasaltProps & {
   /** The accessible name. Required: a chart without one is an unlabeled image. */
@@ -36,6 +38,9 @@ export type SparklineProps = BasaltProps & {
   emphasizeLast?: boolean
   /** Default `VX.accent`. */
   emphasisColor?: string
+  /** Pending / error / empty, the same contract as every other kind. The placeholder fills the
+   * sparkline's own `width` × `height`, so a loading tile does not shift when the trend lands. */
+  state?: ChartState
 }
 
 type Point = { i: number; v: number | null }
@@ -145,6 +150,7 @@ export function Sparkline(props: SparklineProps): ReactElement {
     color = VX.faint,
     emphasizeLast = false,
     emphasisColor = VX.accent,
+    state,
     className,
     style,
   } = props
@@ -156,13 +162,15 @@ export function Sparkline(props: SparklineProps): ReactElement {
     if (range === null) return null
     return compileSparkline(rows, range, mark, color, emphasizeLast ? emphasisColor : null)
   }, [data, mark, color, emphasizeLast, emphasisColor])
+  const resolved = resolveChartState(state)
   return (
     <div
       data-basalt-sparkline=""
       {...(className !== undefined && { className })}
       style={{ width: width ?? '100%', height, minWidth: 0, ...style }}
     >
-      {definition !== null && (
+      {resolved !== null && <ChartPlaceholder state={state} height={height} compact />}
+      {resolved === null && definition !== null && (
         <ChartEngine
           definition={definition}
           ariaLabel={ariaLabel}
