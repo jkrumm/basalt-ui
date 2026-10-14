@@ -157,7 +157,7 @@ framework palette. Skip it if you have no app-specific series yet.
 > **SSR only:** Next.js / React Router (SSR) consumers must additionally render
 > `<ColorSchemeScript defaultColorScheme="dark" />` (matching `BasaltProvider`'s default) in the
 > document `<head>` to avoid a flash of the wrong theme during hydration. Plain Vite CSR apps don't
-> need it — there is no hydration to mismatch. See `docs/MANTINE-THEMING.md`.
+> need it — there is no hydration to mismatch. See [`MANTINE-THEMING.md`](https://github.com/jkrumm/basalt-ui/blob/master/docs/MANTINE-THEMING.md) (repo, not in the package).
 
 ```tsx
 // Shell — sidebar / mobile nav / breadcrumbs / PageBar; resolved against the router from `nav`
@@ -396,15 +396,12 @@ export const paletteGroups = { [`${GROUP}-`]: SERIES }
 
 ```tsx
 // main.tsx — wire paletteGroups into BasaltProvider
-import { BasaltProvider, createBasaltTheme } from 'basalt-ui'
+import { BasaltProvider } from 'basalt-ui'
 import { paletteGroups } from './theme/series'
+import { router } from './router'
 
 export function App() {
-  return (
-    <BasaltProvider theme={createBasaltTheme()} paletteOptions={{ groups: paletteGroups }}>
-      {/* app */}
-    </BasaltProvider>
-  )
+  return <BasaltProvider router={router} paletteOptions={{ groups: paletteGroups }} />
 }
 ```
 
