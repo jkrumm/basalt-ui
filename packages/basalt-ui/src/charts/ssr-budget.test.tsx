@@ -27,8 +27,11 @@ const LARGE = 10_000
 /** The cheap pre-flight sizes: a quadratic render is ~90 s at 10k but ~1 s at 1k, so it fails here. */
 const PROBE_SMALL = 250
 const PROBE_LARGE = 1_000
-/** Linear is ~4x for 4x points, quadratic ~16x; the margin covers fixed cost and timer noise. */
-const PROBE_MAX_GROWTH = 6
+/**
+ * Linear is ~4x for 4x points, quadratic ~16x. 10 sits midway: 6 flaked at 6.13 on a loaded host
+ * (a concurrent suite), and the N×N regression measured 14.8-16.6x, still well above it.
+ */
+const PROBE_MAX_GROWTH = 10
 /** Linear growth is ~4x for a 4x input, quadratic ~16x. */
 const MAX_GROWTH = 8
 /** Below this a timing is noise, so the ratio's denominator is floored here. */
