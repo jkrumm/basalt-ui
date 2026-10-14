@@ -775,7 +775,7 @@ describe('basalt/ai-sdk-major', () => {
   })
 
   // Unlike the other rules in this file, ai-sdk-major honours `basalt-agent-allow` — the SAME
-  // token as its two agent-chat siblings above — not `theme-allow`. A skewed producer/consumer
+  // token as its agent-chat sibling above — not `theme-allow`. A skewed producer/consumer
   // import that is genuinely intentional (see doctor's `aiMajorSkewReason`) can mark the line.
   it('does NOT flag an import marked basalt-agent-allow, even with a skewed nearest package.json', () => {
     writeFileSync(
@@ -3827,26 +3827,93 @@ describe('basalt/agent-no-raw-usechat — Chat', () => {
     const { code } = run(`import type { Chat } from '@ai-sdk/react'\n`, 'lib.ts')
     expect(code).toBe(0)
   })
+
+  it.each([
+    ['AI.useChat()', `const c = AI.useChat({ id })\n`],
+    ['AI.Chat as a value', `const C = AI.Chat\n`],
+    ['new AI.Chat()', `const c = new AI.Chat({ id })\n`],
+  ])('flags %s through a namespace import', (_name, use) => {
+    const { code, rules } = run(`import * as AI from '@ai-sdk/react'\n${use}`, 'lib.ts')
+    expect(code).toBe(1)
+    expect(rules).toContain('agent-no-raw-usechat')
+  })
+
+  it('flags a namespace import of ai/react', () => {
+    const { code } = run(`import * as AI from 'ai/react'\nAI.useChat()\n`, 'lib.ts')
+    expect(code).toBe(1)
+  })
+
+  it('does NOT flag a namespace member that is not a chat hook, a local namespace, or a type import', () => {
+    expect(run(`import * as AI from '@ai-sdk/react'\nAI.somethingElse()\n`, 'lib.ts').code).toBe(0)
+    expect(run(`import * as AI from './mine'\nAI.useChat()\n`, 'lib.ts').code).toBe(0)
+    expect(run(`import type * as AI from '@ai-sdk/react'\nAI.useChat()\n`, 'lib.ts').code).toBe(0)
+  })
+
+  it.each([
+    `export { Chat } from '@ai-sdk/react'\n`,
+    `export { useChat as chat } from 'ai/react'\n`,
+    `export * from '@ai-sdk/react'\n`,
+  ])('flags the re-export %s', (source) => {
+    const { code, rules } = run(source, 'lib.ts')
+    expect(code).toBe(1)
+    expect(rules).toContain('agent-no-raw-usechat')
+  })
+
+  it('does NOT flag a type re-export or an unrelated name', () => {
+    expect(run(`export type { UIMessage } from '@ai-sdk/react'\n`, 'lib.ts').code).toBe(0)
+    expect(run(`export { Other } from '@ai-sdk/react'\n`, 'lib.ts').code).toBe(0)
+  })
 })
 
 // ── router-view-transition ───────────────────────────────────────────────────
 
+const ROUTER = `@tanstack/react-router`
+
 describe('basalt/router-view-transition', () => {
   it.each([
-    ['viewTransition on <Link>', `export const C = () => <Link to="/a" viewTransition />\n`],
+    [
+      'viewTransition on <Link>',
+      `import { Link } from '${ROUTER}'\nexport const C = () => <Link to="/a" viewTransition />\n`,
+    ],
+    [
+      'viewTransition on an aliased Link',
+      `import { Link as Foo } from '${ROUTER}'\nexport const C = () => <Foo to="/a" viewTransition />\n`,
+    ],
+    [
+      'viewTransition on a namespace Router.Link',
+      `import * as Router from '${ROUTER}'\nexport const C = () => <Router.Link to="/a" viewTransition />\n`,
+    ],
     [
       'viewTransition on <Navigate>',
-      `export const C = () => <Navigate to="/a" viewTransition />\n`,
+      `import { Navigate } from '${ROUTER}'\nexport const C = () => <Navigate to="/a" viewTransition />\n`,
     ],
-    ['navigate({ viewTransition })', `navigate({ to: '/a', viewTransition: true })\n`],
     [
-      'router.navigate({ viewTransition })',
-      `router.navigate({ to: '/a', viewTransition: true })\n`,
+      'the binding useNavigate() returned, whatever its name',
+      `import { useNavigate } from '${ROUTER}'\nexport const useGo = () => {\n  const go = useNavigate()\n  go({ to: '/a', viewTransition: true })\n}\n`,
     ],
-    ['redirect({ viewTransition })', `throw redirect({ to: '/a', viewTransition: true })\n`],
+    [
+      'the route API useNavigate',
+      `const go = Route.useNavigate()\ngo({ to: '/a', viewTransition: true })\n`,
+    ],
+    [
+      'router.navigate',
+      `import { useRouter } from '${ROUTER}'\nexport const useGo = () => {\n  const router = useRouter()\n  router.navigate({ to: '/a', viewTransition: true })\n}\n`,
+    ],
+    [
+      'redirect',
+      `import { redirect } from '${ROUTER}'\nthrow redirect({ to: '/a', viewTransition: true })\n`,
+    ],
+    [
+      'a namespace redirect',
+      `import * as R from '${ROUTER}'\nthrow R.redirect({ to: '/a', viewTransition: true })\n`,
+    ],
+    [
+      'linkOptions',
+      `import { linkOptions } from '${ROUTER}'\nlinkOptions({ to: '/a', viewTransition: true })\n`,
+    ],
     [
       'createRouter({ defaultViewTransition })',
-      `createRouter({ routeTree, defaultViewTransition: true })\n`,
+      `import { createRouter } from '${ROUTER}'\ncreateRouter({ routeTree, defaultViewTransition: true })\n`,
     ],
     ['document.startViewTransition()', `document.startViewTransition(() => update())\n`],
   ])('flags %s', (_name, source) => {
@@ -3857,9 +3924,34 @@ describe('basalt/router-view-transition', () => {
   })
 
   it.each([
-    ['a plain <Link>', `export const C = () => <Link to="/a" />\n`],
-    ['viewTransition on an unrelated element', `export const C = () => <Foo viewTransition />\n`],
-    ['navigate without it', `navigate({ to: '/a' })\n`],
+    [
+      'a plain router <Link>',
+      `import { Link } from '${ROUTER}'\nexport const C = () => <Link to="/a" />\n`,
+    ],
+    [
+      'a local Link that is not the router’s',
+      `const Link = (p: object) => <a {...p} />\nexport const C = () => <Link viewTransition />\n`,
+    ],
+    [
+      'a Link from another package',
+      `import { Link } from './my-link'\nexport const C = () => <Link viewTransition />\n`,
+    ],
+    [
+      'a local navigate that is not from useNavigate',
+      `const navigate = (o: object) => o\nnavigate({ to: '/a', viewTransition: true })\n`,
+    ],
+    [
+      'a local redirect',
+      `function redirect(o: object) { return o }\nredirect({ viewTransition: true })\n`,
+    ],
+    [
+      'viewTransition on an unrelated element',
+      `import { Link } from '${ROUTER}'\nexport const C = () => <Foo viewTransition />\n`,
+    ],
+    [
+      'navigate without it',
+      `import { useNavigate } from '${ROUTER}'\nconst n = useNavigate()\nn({ to: '/a' })\n`,
+    ],
     [
       'React’s own <ViewTransition>',
       `export const C = () => <ViewTransition>{x}</ViewTransition>\n`,
@@ -3878,17 +3970,28 @@ describe('basalt/router-view-transition', () => {
 // ── no-dev-helper ────────────────────────────────────────────────────────────
 
 describe('basalt/no-dev-helper', () => {
+  const LAZY = `const Dock = lazy(() => import('../dev-dock'))\n`
   it.each([
     ['an unguarded devtools import()', `const m = import('@tanstack/react-router-devtools')\n`],
     ['an unguarded theme-lab import()', `export const load = () => import('./theme-lab')\n`],
     ['an isDev() gate', `if (isDev()) import('./dev-dock')\n`],
+    ['an eager const import() with no gate', `const m = import('./theme-lab')\n`],
     [
-      'a lazy binding rendered without a gate',
-      `const Dock = lazy(() => import('../dev-dock'))\nexport const C = () => <Dock />\n`,
+      'an eager const import() even when a later use is gated',
+      `const m = import('./theme-lab')\nif (process.env.NODE_ENV !== 'production') use(m)\n`,
     ],
     [
+      'an import() inside an anonymous callback',
+      `useEffect(() => { void import('./dev-dock') }, [])\n`,
+    ],
+    ['a lazy binding rendered without a gate', `${LAZY}export const C = () => <Dock />\n`],
+    [
       'a lazy binding with one ungated use',
-      `const Dock = lazy(() => import('../dev-dock'))\nexport const C = () => (\n  <>\n    {process.env.NODE_ENV !== 'production' && <Dock />}\n    <Dock />\n  </>\n)\n`,
+      `${LAZY}export const C = () => (\n  <>\n    {process.env.NODE_ENV !== 'production' && <Dock />}\n    <Dock />\n  </>\n)\n`,
+    ],
+    [
+      'a component that merely contains the import (its uses are not the dev uses)',
+      `const App = () => { useEffect(() => { void import('./dev-dock') }, []); return null }\nexport const C = () => <App />\n`,
     ],
   ])('flags %s', (_name, source) => {
     const { code, rules } = run(source, 'lib.tsx')
@@ -3902,6 +4005,10 @@ describe('basalt/no-dev-helper', () => {
       `if (process.env.NODE_ENV !== 'production') {\n  void import('@tanstack/react-query-devtools')\n}\n`,
     ],
     [
+      'the bracketed spelling',
+      `if (process.env['NODE_ENV'] !== 'production') {\n  void import('./dev-dock')\n}\n`,
+    ],
+    [
       '=== development',
       `const m = process.env.NODE_ENV === 'development' ? import('./theme-lab') : null\n`,
     ],
@@ -3911,7 +4018,15 @@ describe('basalt/no-dev-helper', () => {
     ],
     [
       'a lazy binding used only under the gate',
-      `const Dock = lazy(() => import('../dev-dock'))\nexport const C = () => process.env.NODE_ENV !== 'production' && <Dock />\n`,
+      `${LAZY}export const C = () => process.env.NODE_ENV !== 'production' && <Dock />\n`,
+    ],
+    [
+      'a lazy binding whose name also appears as a property key, attribute and type',
+      `${LAZY}type T = typeof Dock\nconst o = { Dock: 1 }\nexport const C = () => <X Dock="a" y={o.Dock}>{process.env.NODE_ENV !== 'production' && <Dock />}</X>\n`,
+    ],
+    [
+      'another binding that shadows the lazy name',
+      `${LAZY}export const A = () => process.env.NODE_ENV !== 'production' && <Dock />\nexport const B = (Dock: unknown) => String(Dock)\n`,
     ],
     ['an unrelated import()', `const m = import('rehype-sanitize')\n`],
   ])('does NOT flag %s', (_name, source) => {
@@ -3966,8 +4081,13 @@ describe('/.oxlintrc.json dogfoods oxlint-basalt.json', () => {
   const shipped = rulesOf(resolve(import.meta.dirname, 'oxlint-basalt.json'))
   const repo = rulesOf(resolve(import.meta.dirname, '..', '..', '..', '.oxlintrc.json'))
 
-  it.each(Object.entries(shipped))('%s is %s repo-locally too', (id, level) => {
-    expect([id, repo[id]]).toEqual([id, level])
+  // Repo-local is the strict side: `error` for every shipped id, grace entries included (those
+  // ship `warn`); every other id ships the very level the repo runs.
+  it.each(Object.entries(shipped))('%s is error repo-locally', (id, level) => {
+    expect([id, repo[id]]).toEqual([id, 'error'])
+    if (!Object.hasOwn(PLUGIN_RULE_GRACE, id.slice('basalt/'.length))) {
+      expect([id, level]).toEqual([id, repo[id]])
+    }
   })
 })
 

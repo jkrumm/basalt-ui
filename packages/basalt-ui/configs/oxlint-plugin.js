@@ -17,9 +17,9 @@
  * scope has to be spelled. The three boundary rules deliberately honour neither — see their own
  * comment for why.
  *
- * ── The two agent-chat guard rules (`agent-no-raw-usechat`) + `ai-sdk-major` ──
+ * ── The agent-chat guard rule (`agent-no-raw-usechat`) + `ai-sdk-major` ──
  * These are also correctness/architecture boundaries, not design guidance, so they do NOT honour
- * `theme-allow`. All three instead honour their own line-comment escape, `basalt-agent-allow`
+ * `theme-allow`. Both instead honour their own line-comment escape, `basalt-agent-allow`
  * (`hasAgentAllow`, a copy of `hasThemeAllow` with a different needle) — deliberately a separate
  * token, so a color exemption can never double as a license to switch off a streaming guard or an
  * intentional `ai` major skew. `ai-sdk-major`'s escape is line-level and per-import, distinct from
@@ -152,7 +152,7 @@ export const KNOWN_RULE_IDS = new Set([
   'raw-breakpoint',
   'router-view-transition',
   'no-dev-helper',
-  // These three honour `basalt-agent-allow`, never `theme-allow` — but they are real ids, so an
+  // These two honour `basalt-agent-allow`, never `theme-allow` — but they are real ids, so an
   // annotation naming one must parse as a (useless) scoped annotation rather than as prose.
   'agent-no-raw-usechat',
   'ai-sdk-major',
@@ -1131,6 +1131,13 @@ const agentNoRawUseChat = {
     schema: [],
   },
   create(context) {
+    const sourceCode = context.sourceCode ?? context.getSourceCode?.()
+    const nameOf = (node) => (node.type === 'Identifier' ? node.name : node.value)
+    const report = (node) => {
+      if (!hasAgentAllow(context, node)) {
+        context.report({ node, message: AGENT_NO_RAW_USECHAT_MESSAGE })
+      }
+    }
     return {
       ImportDeclaration(node) {
         const source = node.source?.value
@@ -1142,12 +1149,31 @@ const agentNoRawUseChat = {
           if (specifier.type !== 'ImportSpecifier') continue
           // `import { type useChat } from '…'` — the individual specifier is type-only.
           if (specifier.importKind === 'type') continue
-          const imported = specifier.imported
-          const importedName = imported.type === 'Identifier' ? imported.name : imported.value
+          const importedName = nameOf(specifier.imported)
           if (typeof importedName !== 'string' || !RAW_USE_CHAT_NAMES.has(importedName)) continue
-          if (hasAgentAllow(context, specifier)) continue
-          context.report({ node: specifier, message: AGENT_NO_RAW_USECHAT_MESSAGE })
+          report(specifier)
         }
+      },
+      // `import * as AI from '@ai-sdk/react'` then `AI.useChat` / `new AI.Chat`.
+      MemberExpression(node) {
+        if (node.computed || node.object?.type !== 'Identifier') return
+        if (!RAW_USE_CHAT_NAMES.has(node.property?.name)) return
+        const def = soleDefinition(sourceCode, node.object)
+        if (def?.type !== 'ImportBinding' || def.node.type !== 'ImportNamespaceSpecifier') return
+        if (def.parent?.importKind === 'type') return
+        if (!RAW_USE_CHAT_SOURCES.has(def.parent?.source?.value)) return
+        report(node)
+      },
+      // `export { Chat } from '@ai-sdk/react'` and `export * from '@ai-sdk/react'`.
+      ExportNamedDeclaration(node) {
+        if (!RAW_USE_CHAT_SOURCES.has(node.source?.value) || node.exportKind === 'type') return
+        for (const specifier of node.specifiers ?? []) {
+          if (specifier.exportKind === 'type') continue
+          if (RAW_USE_CHAT_NAMES.has(nameOf(specifier.local))) report(specifier)
+        }
+      },
+      ExportAllDeclaration(node) {
+        if (RAW_USE_CHAT_SOURCES.has(node.source?.value) && node.exportKind !== 'type') report(node)
       },
     }
   },
@@ -1312,7 +1338,7 @@ function aiSdkMajorMessage(consumerMajor) {
   )
 }
 
-// Honours `basalt-agent-allow` (NOT `theme-allow`) like its two agent-chat siblings above — a
+// Honours `basalt-agent-allow` (NOT `theme-allow`) like `agent-no-raw-usechat` above — a
 // version skew is still a fact about two package.json files, but a written, intentional
 // producer/consumer pair (see `doctor`'s `aiMajorSkewReason`) needs a way to say so at the import
 // site too, not just be permanently blocked.
@@ -2205,20 +2231,13 @@ function hasAncestorTag(node, tags) {
  * {@link slotOwnerBinding} does: whether that `PanelRow` is basalt's is answered by the import list,
  * which is only complete at `Program:exit`, while the ancestry is only walkable during the visit.
  *
- * `tags` is OPTIONAL, and omitting it is the second real use rather than a convenience: a rule
- * whose ancestor set is not known until the import list is complete cannot filter by tag NAME at
- * all (`RouterProvider as Router` is an ordinary thing to write), so it takes every binding and
- * resolves them at exit. `provider-above-router` is that caller.
  */
 function ancestorTagBindings(node, tags) {
   const found = []
   let current = node.parent
   for (let depth = 0; current !== null && current !== undefined; depth++) {
     if (depth > ANCESTRY_MAX_DEPTH || current.type === 'Program') break
-    if (
-      current.type === 'JSXElement' &&
-      (tags === undefined || tags.has(jsxTagName(current.openingElement?.name) ?? ''))
-    ) {
+    if (current.type === 'JSXElement' && tags.has(jsxTagName(current.openingElement?.name) ?? '')) {
       const root = jsxRootName(current.openingElement?.name)
       if (root !== undefined) found.push(root)
     }
@@ -3242,8 +3261,7 @@ function hasKeyAttribute(opening) {
  * - `{...field(…)}` — the pre-migration call site. Reported ALWAYS, key or no key, and deliberately
  *   NOT autofixed: the honest edit rewrites the IMPORT as well as the call site, and a fixer that
  *   only touched the spread would leave an unresolved `field` behind. This arm is the whole reason
- *   the rule still knows the name — 1.29.0 deleted `field`, and `basalt/deprecated-export`'s table
- *   went empty with it, so a consumer skipping 1.28.x reaches 1.29.x with a hard compile error and
+ *   the rule still knows the name — 1.29.0 deleted `field` with no autofix left, so a consumer skipping 1.28.x reaches 1.29.x with a hard compile error and
  *   nothing but tsc to explain it. The message says that in so many words; it used to describe the
  *   alias as still shipping and still bundling `key`, which read as "nothing is broken yet".
  *
@@ -3848,15 +3866,61 @@ const ROUTER_VIEW_TRANSITION_MESSAGE =
   "direct call; animate with React's `<ViewTransition>` inside a `startTransition` via " +
   'basalt-ui instead. (basalt/router-view-transition)'
 
-/** Components whose `viewTransition` prop asks the router for a document view transition. */
+/** `@tanstack/react-router` and its subpaths — never `@tanstack/react-router-devtools`. */
+const TANSTACK_ROUTER_SOURCE = /^@tanstack\/react-router(?:\/|$)/
+/** Router components whose `viewTransition` prop asks for a document view transition. */
 const VIEW_TRANSITION_TAGS = new Set(['Link', 'Navigate'])
-/** Calls whose first-argument object may carry `viewTransition`. */
+/** Router calls whose first-argument object may carry `viewTransition`. */
 const VIEW_TRANSITION_CALLS = new Set(['navigate', 'redirect', 'linkOptions'])
 
-/** The last name of a callee: `navigate`, `router.navigate` → `navigate`. */
-function calleeName(callee) {
-  if (callee?.type === 'Identifier') return callee.name
-  if (callee?.type === 'MemberExpression' && !callee.computed) return callee.property?.name
+/** The router export a binding was imported as — `{ imported }` or `{ namespace }` — else undefined. */
+function routerImport(sourceCode, identifier) {
+  const def = soleDefinition(sourceCode, identifier)
+  if (def?.type !== 'ImportBinding') return undefined
+  const decl = def.parent
+  const source = decl?.source?.value
+  if (decl?.importKind === 'type' || typeof source !== 'string') return undefined
+  if (!TANSTACK_ROUTER_SOURCE.test(source)) return undefined
+  if (def.node.type === 'ImportNamespaceSpecifier') return { namespace: true }
+  if (def.node.type !== 'ImportSpecifier') return undefined
+  const imported = def.node.imported
+  return { imported: imported.type === 'Identifier' ? imported.name : imported.value }
+}
+
+/**
+ * Which router export `node` is — `Link`, `redirect`, `createRouter` — or `'navigate'` for the
+ * binding `useNavigate()` returned (whatever it is called) and for `router.navigate`, `'router'`
+ * for the result of `useRouter()` / `createRouter()`. `undefined` for anything not from the
+ * router, so a local `Link` or `navigate` is clean.
+ */
+function routerName(sourceCode, node, depth = 0) {
+  if (node === null || node === undefined || depth > 4) return undefined
+  if (node.type === 'Identifier' || node.type === 'JSXIdentifier') {
+    const bound = routerImport(sourceCode, node)
+    if (bound?.imported !== undefined) return bound.imported
+    const def = soleDefinition(sourceCode, node)
+    const init = def?.type === 'Variable' ? def.node?.init : undefined
+    if (init?.type !== 'CallExpression') return undefined
+    const made = routerName(sourceCode, init.callee, depth + 1)
+    if (made === 'useNavigate') return 'navigate'
+    return made === 'useRouter' || made === 'createRouter' ? 'router' : undefined
+  }
+  if (node.type === 'MemberExpression' && !node.computed) {
+    const property = node.property?.name
+    // `Route.useNavigate()` / `getRouteApi(id).useNavigate()` — the route API, whatever the object.
+    if (property === 'useNavigate') return property
+    const object = node.object
+    if (object?.type !== 'Identifier') return undefined
+    if (routerImport(sourceCode, object)?.namespace === true) return property
+    return routerName(sourceCode, object, depth + 1) === 'router' && property === 'navigate'
+      ? 'navigate'
+      : undefined
+  }
+  if (node.type === 'JSXMemberExpression' && node.object?.type === 'JSXIdentifier') {
+    return routerImport(sourceCode, node.object)?.namespace === true
+      ? node.property?.name
+      : undefined
+  }
   return undefined
 }
 
@@ -3872,6 +3936,7 @@ const routerViewTransition = {
   },
   create(context) {
     if (isTestFile(context)) return {}
+    const sourceCode = context.sourceCode ?? context.getSourceCode?.()
     const report = (node) => {
       if (hasThemeAllow(context, node, 'router-view-transition')) return
       context.report({ node, message: ROUTER_VIEW_TRANSITION_MESSAGE })
@@ -3879,8 +3944,7 @@ const routerViewTransition = {
     return {
       JSXAttribute(node) {
         if (node.name?.type !== 'JSXIdentifier' || node.name.name !== 'viewTransition') return
-        const tag = node.parent?.name
-        if (tag?.type === 'JSXIdentifier' && VIEW_TRANSITION_TAGS.has(tag.name)) report(node)
+        if (VIEW_TRANSITION_TAGS.has(routerName(sourceCode, node.parent?.name) ?? '')) report(node)
       },
       CallExpression(node) {
         const callee = node.callee
@@ -3893,9 +3957,9 @@ const routerViewTransition = {
           report(node)
           return
         }
-        const name = calleeName(callee)
         const arg0 = node.arguments?.[0]
         if (arg0?.type !== 'ObjectExpression') return
+        const name = routerName(sourceCode, callee)
         let banned
         if (name === 'createRouter') banned = 'defaultViewTransition'
         else if (VIEW_TRANSITION_CALLS.has(name ?? '')) banned = 'viewTransition'
@@ -3921,17 +3985,21 @@ const DEV_MODULE_SPECIFIER = /(?:^|[/.-])(?:dev-dock|theme-lab|devtools)(?:$|[/.
 /** The dev modules themselves — reachable only through a gated import, so their own imports are exempt. */
 const DEV_MODULE_FILE = /(?:^|[\\/])(?:dev-dock\.[cm]?[jt]sx?|theme-lab[\\/])/
 
-/** `process.env.NODE_ENV` as a literal dotted read. */
+/** `process.env.NODE_ENV` / `process.env['NODE_ENV']` as a literal read. */
 function isNodeEnvRead(node) {
+  if (node?.type !== 'MemberExpression') return false
+  const property = node.property
+  const named = node.computed
+    ? isStringLiteral(property) && property.value === 'NODE_ENV'
+    : property?.name === 'NODE_ENV'
+  const env = node.object
   return (
-    node?.type === 'MemberExpression' &&
-    !node.computed &&
-    node.property?.name === 'NODE_ENV' &&
-    node.object?.type === 'MemberExpression' &&
-    !node.object.computed &&
-    node.object.property?.name === 'env' &&
-    node.object.object?.type === 'Identifier' &&
-    node.object.object.name === 'process'
+    named &&
+    env?.type === 'MemberExpression' &&
+    !env.computed &&
+    env.property?.name === 'env' &&
+    env.object?.type === 'Identifier' &&
+    env.object.name === 'process'
   )
 }
 
@@ -3974,6 +4042,57 @@ function underDevGate(node) {
   return false
 }
 
+const FUNCTION_TYPES = new Set([
+  'ArrowFunctionExpression',
+  'FunctionExpression',
+  'FunctionDeclaration',
+])
+
+/**
+ * The identifier a LOADER function is bound to: `const Dock = lazy(() => import(dev))`,
+ * `const load = () => import(dev)`, `function load() { return import(dev) }`. An import with no
+ * function boundary (`const m = import(dev)`) or one inside an anonymous callback is not bound to
+ * anything, so only its own site can gate it.
+ */
+function loaderBinding(node) {
+  let fn = node.parent
+  while (fn && !FUNCTION_TYPES.has(fn.type)) fn = fn.parent
+  if (!fn) return undefined
+  if (fn.type === 'FunctionDeclaration') return fn.id ?? undefined
+  let holder = fn.parent
+  if (holder?.type === 'CallExpression') holder = holder.parent
+  return holder?.type === 'VariableDeclarator' && holder.id?.type === 'Identifier'
+    ? holder.id
+    : undefined
+}
+
+/** True when an Identifier/JSXIdentifier is a REFERENCE (expression or JSX element position). */
+function isReferencePosition(node) {
+  const parent = node.parent
+  if (parent === null || parent === undefined) return false
+  switch (parent.type) {
+    case 'MemberExpression':
+      return parent.object === node || parent.computed
+    case 'Property':
+      return parent.value === node || (parent.computed && parent.key === node)
+    case 'VariableDeclarator':
+      return parent.init === node
+    case 'FunctionDeclaration':
+    case 'ImportSpecifier':
+    case 'ImportDefaultSpecifier':
+    case 'ImportNamespaceSpecifier':
+    case 'JSXAttribute':
+    case 'JSXClosingElement':
+    case 'JSXNamespacedName':
+    case 'LabeledStatement':
+      return false
+    case 'JSXMemberExpression':
+      return parent.object === node
+    default:
+      return !parent.type.startsWith('TS')
+  }
+}
+
 // Ships: repo-local only
 const noDevHelper = {
   meta: {
@@ -3986,12 +4105,21 @@ const noDevHelper = {
   },
   create(context) {
     if (isTestFile(context) || DEV_MODULE_FILE.test(getFilename(context))) return {}
-    /** A `const X = lazy(() => import(dev))` is gated by its REFERENCES, not by the import site. */
-    const lazyBindings = []
+    const sourceCode = context.sourceCode ?? context.getSourceCode?.()
+    /** Loader bindings whose own references must all sit under the gate. */
+    const loaders = []
+    /** Every reference candidate, by name — judged against its binding at `Program:exit`. */
     const references = new Map()
     const addReference = (node) => {
-      if (node.parent?.type === 'VariableDeclarator' && node.parent.id === node) return
-      references.set(node.name, [...(references.get(node.name) ?? []), node])
+      if (!isReferencePosition(node)) return
+      const same = references.get(node.name)
+      if (same === undefined) references.set(node.name, [node])
+      else same.push(node)
+    }
+    /** True when `reference` resolves to the declaration `id` (name match when scopes are unavailable). */
+    const resolvesTo = (reference, id) => {
+      const def = soleDefinition(sourceCode, reference)
+      return def === undefined ? true : def.name === id
     }
     return {
       Identifier: addReference,
@@ -4003,19 +4131,18 @@ const noDevHelper = {
         else if (source?.quasis?.length === 1) specifier = source.quasis[0].value.cooked
         if (typeof specifier !== 'string' || !DEV_MODULE_SPECIFIER.test(specifier)) return
         if (underDevGate(node)) return
-        for (let parent = node.parent; parent; parent = parent.parent) {
-          if (parent.type === 'VariableDeclarator' && parent.id?.type === 'Identifier') {
-            lazyBindings.push({ node, name: parent.id.name })
-            return
-          }
+        const id = loaderBinding(node)
+        if (id !== undefined) {
+          loaders.push({ node, id })
+          return
         }
         if (!hasThemeAllow(context, node, 'no-dev-helper')) {
           context.report({ node, message: NO_DEV_HELPER_MESSAGE })
         }
       },
       'Program:exit'() {
-        for (const { node, name } of lazyBindings) {
-          const uses = references.get(name) ?? []
+        for (const { node, id } of loaders) {
+          const uses = (references.get(id.name) ?? []).filter((use) => resolvesTo(use, id))
           if (uses.length > 0 && uses.every(underDevGate)) continue
           if (hasThemeAllow(context, node, 'no-dev-helper')) continue
           context.report({ node, message: NO_DEV_HELPER_MESSAGE })

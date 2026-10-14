@@ -25,6 +25,8 @@
  * dist — for an import row. A prop row has no snapshot to read, so it counts as shipped until the
  * row says `removed: true`; a `removed` import row that is still in the snapshot is refused too.
  *
+ * The deprecation half is dormant until the first 2.x deprecation (2.0.0 ships none).
+ *
  * Usage: bun packages/basalt-ui/scripts/check-grace.ts <version>
  */
 import { readFileSync } from 'node:fs'
