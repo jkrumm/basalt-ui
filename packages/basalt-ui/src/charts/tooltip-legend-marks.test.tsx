@@ -11,6 +11,9 @@ import { renderToString } from 'react-dom/server'
 import { CartesianChart } from './CartesianChart'
 import { compileCartesian, dashedSwatch, engineRow, refLegendSeries } from './compile'
 import type { CartesianDefinition } from './compile'
+import { VX } from '../tokens'
+import { contrastRatio } from '../tokens/hct'
+import { STATUS, SURFACE } from '../tokens/palette'
 import { chartCursor } from './cursor'
 import { Lines } from './Lines'
 import type { ChartSeries, RefLine } from './types'
@@ -144,6 +147,23 @@ describe('reference-line legend entries', () => {
     expect(refLegendSeries(undefined)).toEqual([])
   })
 
+  test('a translucent status line keeps a solid swatch that reads on the dark panel', () => {
+    const entries = refLegendSeries<Row>([
+      { value: 1, color: VX.goodRef, legend: { label: 'G' } },
+      { value: 2, color: VX.warnRef, dashed: true, legend: { label: 'W' } },
+      { value: 3, color: VX.badRef, legend: { label: 'B' } },
+      { value: 4, color: 'var(--vx-axis)', legend: { label: 'A' } },
+    ])
+    expect(entries.map((e) => e.color)).toEqual([
+      VX.goodSolid,
+      VX.warnSolid,
+      VX.badSolid,
+      'var(--vx-axis)',
+    ])
+    for (const tone of ['good', 'warn', 'bad'] as const)
+      expect(contrastRatio(STATUS[tone].dark, SURFACE.panel.dark)).toBeGreaterThanOrEqual(3)
+  })
+
   test('the legend lists them after the series; a line without `legend` adds none', () => {
     const el = ssr(<Lines ariaLabel="L" data={data} x={x} series={[a]} refLines={refs} />)
     const keys = [...el.querySelectorAll('[data-legend-key]')].map((n) =>
@@ -161,7 +181,7 @@ describe('reference-line legend entries', () => {
     const bar = el.querySelector('[data-legend-key="__ref-2"]')
     expect(bar?.querySelector('svg')).toBeNull()
     const chip = [...(bar?.querySelectorAll('span') ?? [])].find((n) => n.style.width === '10px')
-    expect(chip?.style.background).toBe('var(--vx-warn)')
+    expect(chip?.style.background).toBe('var(--vx-warn-solid)')
   })
 
   test('no `legend` on any line adds no reference entry', () => {
