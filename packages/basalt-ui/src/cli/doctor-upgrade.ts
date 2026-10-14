@@ -2,13 +2,13 @@
  * `doctor`'s 2.0 strictness and upgrade checks. Each returns null (pass), `{ fail }` (the problem
  * plus its fix) or `{ skip }` (the check could not run: a check that cannot run is not a pass).
  */
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { dirname, relative, resolve } from 'node:path'
 
 import { BASALT_CONFIG_KEYS, RETIRED_CONFIG_KEYS } from './config'
 import type { BasaltConfig } from './config'
-import { parseJsonc, readIfExists, scannableFiles } from './index'
+import { parseJsonc, readIfExists, readPackageJson, scannableFiles } from './index'
 import type { BasaltInstall } from './index'
 
 export type Check = { fail: string } | { skip: string } | null
@@ -20,6 +20,19 @@ const guarded = (id: string, run: () => Check): Check => {
   } catch (error) {
     return { skip: `${id}: cannot run (${(error as Error).message}).` }
   }
+}
+
+/** A check that reads the resolved install: skips when basalt-ui does not resolve. */
+const withInstall = (
+  id: string,
+  install: BasaltInstall,
+  reads: string,
+  run: (dir: string) => Check,
+): Check => {
+  const { dir } = install
+  return dir === null
+    ? { skip: `${id}: basalt-ui does not resolve, so its ${reads} cannot be read.` }
+    : guarded(id, () => run(dir))
 }
 
 const TSCONFIG_PRESET = /(?:^|\/)basalt-ui\/configs\/tsconfig\.(?:base|react-app)\.json$/
@@ -148,10 +161,7 @@ function basaltRuleIds(file: string, seen = new Set<string>()): string[] {
 /** `retired-lint-rules`: `basalt/<id>` entries the installed plugin no longer registers. */
 export function retiredLintRulesCheck(cwd: string, install: BasaltInstall): Check {
   const id = 'retired-lint-rules'
-  const dir = install.dir
-  if (dir === null)
-    return { skip: `${id}: basalt-ui does not resolve, so its plugin cannot be read.` }
-  return guarded(id, () => {
+  return withInstall(id, install, 'plugin', (dir) => {
     const ids = [...new Set(basaltRuleIds(resolve(cwd, '.oxlintrc.json')))]
     if (ids.length === 0) return null
     const pluginPath = resolve(dir, 'configs/oxlint-plugin.js')
@@ -215,6 +225,16 @@ function basaltImports(src: string): [string, number][] {
     .map((m) => [m[2] as string, code.slice(0, m.index + m[0].length).split('\n').length])
 }
 
+/** `[subpath, file, line]` per `basalt-ui/<subpath>` import in the app's source files. */
+const appImports = (cwd: string, cfg: BasaltConfig): [string, string, number][] =>
+  scannableFiles(cwd, cfg)
+    .filter((f) => /\.(?:[cm]?[jt]sx?|vue|astro)$/.test(f))
+    .flatMap((rel) =>
+      basaltImports(readIfExists(resolve(cwd, rel)) ?? '').map(
+        ([sub, line]): [string, string, number] => [sub, rel, line],
+      ),
+    )
+
 /** `dropped-subpaths`: `basalt-ui/<subpath>` imports the installed `exports` map does not have. */
 export function droppedSubpathsCheck(
   cwd: string,
@@ -222,28 +242,20 @@ export function droppedSubpathsCheck(
   install: BasaltInstall,
 ): Check {
   const id = 'dropped-subpaths'
-  const dir = install.dir
-  if (dir === null)
-    return { skip: `${id}: basalt-ui does not resolve, so its exports cannot be read.` }
-  return guarded(id, () => {
-    const pkg = JSON.parse(readFileSync(resolve(dir, 'package.json'), 'utf8')) as {
-      exports?: Record<string, unknown>
-    }
+  return withInstall(id, install, 'exports', (dir) => {
+    const pkg = readPackageJson<{ exports?: Record<string, unknown> }>(dir)
+    if (pkg === null) throw new Error(`${dir}/package.json is unreadable`)
+    const exportsMap = pkg.exports
     // No `exports` field means nothing restricts the deep imports.
-    if (pkg.exports === undefined) return null
-    const keys = Object.keys(pkg.exports)
+    if (exportsMap === undefined) return null
+    const keys = Object.keys(exportsMap)
     const has = (sub: string): boolean =>
       keys.some(
         (k) => k === `./${sub}` || (k.endsWith('*') && `./${sub}`.startsWith(k.slice(0, -1))),
       )
-    const hits: string[] = []
-    for (const rel of scannableFiles(cwd, cfg).filter((f) =>
-      /\.(?:[cm]?[jt]sx?|vue|astro)$/.test(f),
-    )) {
-      for (const [sub, line] of basaltImports(readIfExists(resolve(cwd, rel)) ?? '')) {
-        if (!has(sub)) hits.push(`${rel}:${line} imports basalt-ui/${sub}`)
-      }
-    }
+    const hits = appImports(cwd, cfg)
+      .filter(([sub]) => !has(sub))
+      .map(([sub, rel, line]) => `${rel}:${line} imports basalt-ui/${sub}`)
     if (hits.length === 0) return null
     const more = hits.length > 10 ? ` (+${hits.length - 10} more)` : ''
     return {
@@ -446,8 +458,7 @@ export function appWiringCheck(cwd: string): Check {
  */
 export function unknownConfigKeysCheck(cwd: string): Check {
   return guarded('config-keys', () => {
-    const raw = readIfExists(resolve(cwd, 'package.json'))
-    const block = raw === null ? null : (JSON.parse(raw) as { basalt?: unknown }).basalt
+    const block = readPackageJson<{ basalt?: unknown }>(cwd)?.basalt
     if (typeof block !== 'object' || block === null || Array.isArray(block)) return null
     const known = new Set<string>(BASALT_CONFIG_KEYS)
     const unknown = Object.keys(block).filter((k) => !known.has(k))
@@ -461,13 +472,18 @@ export function unknownConfigKeysCheck(cwd: string): Check {
   })
 }
 
+/** The `peerDependencies` ranges declared by the package installed at `dir`. */
+function peerRanges(dir: string): Record<string, string> {
+  return readPackageJson<{ peerDependencies?: Record<string, string> }>(dir)?.peerDependencies ?? {}
+}
+
 const EXACT_VERSION = /^\d+\.\d+\.\d+$/
 
 /** `node_modules/<pkg>/package.json`'s version, searching `cwd` then every ancestor. */
 function installedVersion(cwd: string, pkg: string): string | null {
   for (let dir = cwd; ; dir = dirname(dir)) {
-    const raw = readIfExists(resolve(dir, 'node_modules', pkg, 'package.json'))
-    if (raw !== null) return (JSON.parse(raw) as { version?: string }).version ?? null
+    const manifest = readPackageJson<{ version?: string }>(resolve(dir, 'node_modules', pkg))
+    if (manifest !== null) return manifest.version ?? null
     if (dirname(dir) === dir) return null
   }
 }
@@ -479,16 +495,8 @@ function installedVersion(cwd: string, pkg: string): string | null {
  */
 export function exactPeersCheck(cwd: string, install: BasaltInstall): Check {
   const id = 'exact-peers'
-  if (install.dir === null)
-    return { skip: `${id}: basalt-ui does not resolve, so its peers cannot be read.` }
-  const dir = install.dir
-  return guarded(id, () => {
-    const raw = readIfExists(resolve(dir, 'package.json'))
-    const peers =
-      (raw === null
-        ? {}
-        : (JSON.parse(raw) as { peerDependencies?: Record<string, string> }).peerDependencies) ?? {}
-    const off = Object.entries(peers)
+  return withInstall(id, install, 'peers', (dir) => {
+    const off = Object.entries(peerRanges(dir))
       .filter(([, range]) => EXACT_VERSION.test(range))
       .flatMap(([pkg, pin]) => {
         const have = installedVersion(cwd, pkg)
@@ -504,11 +512,9 @@ export function exactPeersCheck(cwd: string, install: BasaltInstall): Check {
 }
 
 /**
- * The peers a subpath needs installed, from `docs/V2-SPEC.md` § 1 "Peers, defined once": the
- * subpath-required class, plus `./content`'s shiki trio, whose `import()`s a bundler cannot resolve
- * without them (argo friction row 15: the build passed and the chunk threw at load). `package.json`
- * and `surfaces.ts` encode "optional" and "per surface" but not "required for this subpath", so this
- * table is the code-side copy of that prose; `doctor-upgrade.test.ts` pins it to both.
+ * The peers a subpath needs installed: V2-SPEC § 1's subpath-required class plus `./content`'s
+ * shiki trio, which a bundler cannot resolve without them (argo friction row 15). The test pins it
+ * to `package.json` and `surfaces.ts`.
  */
 export const SUBPATH_REQUIRED_PEERS: Readonly<Record<string, readonly string[]>> = {
   agent: ['ai', '@ai-sdk/provider', 'motion'],
@@ -521,42 +527,27 @@ export const SUBPATH_REQUIRED_PEERS: Readonly<Record<string, readonly string[]>>
 }
 
 /**
- * `subpath-peers`: every `basalt-ui/<subpath>` the app imports has its required peers installed.
- * A missing one still builds (the optional peer is marked so in `package.json`) and then throws
- * "Could not resolve" when the chunk loads. Resolves from the app the way a bundler does.
+ * `subpath-peers`: every `basalt-ui/<subpath>` the app imports has its required peers installed. A
+ * missing one still builds, then throws "Could not resolve" when the chunk loads.
  */
 export function subpathPeersCheck(cwd: string, cfg: BasaltConfig, install: BasaltInstall): Check {
   const id = 'subpath-peers'
-  if (install.dir === null)
-    return { skip: `${id}: basalt-ui does not resolve, so its peers cannot be read.` }
-  const dir = install.dir
-  return guarded(id, () => {
-    const raw = readIfExists(resolve(dir, 'package.json'))
-    const ranges =
-      (raw === null
-        ? {}
-        : (JSON.parse(raw) as { peerDependencies?: Record<string, string> }).peerDependencies) ?? {}
-    const used = new Map<string, string>()
-    for (const rel of scannableFiles(cwd, cfg).filter((f) =>
-      /\.(?:[cm]?[jt]sx?|vue|astro)$/.test(f),
-    )) {
-      for (const [sub] of basaltImports(readIfExists(resolve(cwd, rel)) ?? '')) {
-        if (!used.has(sub)) used.set(sub, rel)
-      }
-    }
+  return withInstall(id, install, 'peers', (dir) => {
     const missing = new Map<string, string[]>()
-    for (const [sub, file] of used) {
+    for (const [sub, file] of new Map(
+      appImports(cwd, cfg)
+        .toReversed()
+        .map(([s, f]) => [s, f]),
+    )) {
       for (const peer of SUBPATH_REQUIRED_PEERS[sub] ?? []) {
         if (installedVersion(cwd, peer) !== null) continue
         missing.set(peer, [...(missing.get(peer) ?? []), `basalt-ui/${sub} (${file})`])
       }
     }
     if (missing.size === 0) return null
+    const ranges = peerRanges(dir)
     const named = [...missing].map(([peer, by]) => `${peer} for ${by.join(', ')}`)
-    const add = [...missing.keys()].map((peer) => {
-      const range = ranges[peer]
-      return range === undefined ? peer : `${peer}@${range}`
-    })
+    const add = [...missing.keys()].map((peer) => (ranges[peer] ? `${peer}@${ranges[peer]}` : peer))
     return {
       fail: `${id}: peers a used basalt-ui subpath requires are not installed: ${named.join('; ')}. Fix: \`bun add ${add.join(' ')}\`.`,
     }
