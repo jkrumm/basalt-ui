@@ -57,7 +57,7 @@ export type BarsProps<T, X extends ChartX = ChartX> = Omit<
   lines?: readonly BarsLine<T>[] | undefined
   /** Default `'stacked'`. `'normalized'` stacks each x to its share of the total. */
   layout?: 'stacked' | 'grouped' | 'normalized' | undefined
-  /** Per-bar opacity (a partial week, an estimate). Overrides the series' `fillOpacity`. */
+  /** Per-bar opacity (a partial week, an estimate, a shade per series). Overrides the series' `fillOpacity`; the legend swatch samples it on the first row. */
   barOpacity?: ((d: T, key: string) => number) | undefined
 }
 
@@ -82,12 +82,22 @@ function guardLogStack(layout: string, onLog: boolean): void {
 export function Bars<T, X extends ChartX = ChartX>(props: BarsProps<T, X>): ReactElement {
   const { bars, lines, layout = 'stacked', barOpacity, ...rest } = props
   guardLogStack(layout, bars.length > 0 && rest.y?.scale === 'log')
+  const sample = rest.data[0]
   const series = useMemo<ChartSeries<T>[]>(
     () => [
-      ...bars.map((b) => ({ ...b, mark: 'bar' as const })),
+      // The legend has no datum: its swatch wears the shade the bars draw on the first row, so
+      // per-bar shades (`barOpacity`) read the same in the legend as on the plot.
+      ...bars.map((b) => ({
+        ...b,
+        mark: 'bar' as const,
+        fillOpacity:
+          (sample !== undefined ? barOpacity?.(sample, b.key) : undefined) ??
+          b.fillOpacity ??
+          DEFAULT_BAR_OPACITY,
+      })),
       ...(lines ?? []).map((l) => ({ ...l, mark: 'line' as const })),
     ],
-    [bars, lines],
+    [bars, lines, barOpacity, sample],
   )
 
   const marks = useCallback(

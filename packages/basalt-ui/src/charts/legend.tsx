@@ -87,8 +87,15 @@ function Swatch({ s, mode }: { s: SwatchStyle; mode: LegendMode }): ReactElement
       <span
         aria-hidden
         className={classes.dot}
-        // theme-allow raw-surface — a legend dot is a circle, not a surface corner
-        style={{ width: 8, height: 8, borderRadius: '50%', background: s.color, flex: 'none' }}
+        style={{
+          width: 8,
+          height: 8,
+          // theme-allow raw-surface — a legend dot is a circle, not a surface corner
+          borderRadius: '50%',
+          background: s.color,
+          opacity: s.fillOpacity ?? 1,
+          flex: 'none',
+        }}
       />
     )
   if ((s.mark ?? 'line') === 'line')

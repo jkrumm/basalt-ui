@@ -987,10 +987,17 @@ optional, subpath-required peers.
 | `NavItemMeta`, `NavGroupMeta`, `AnyNavItem`, `AnyNavGroup`, `AnyNavLink`, `FlatNavItem`, `NavConfig`, `NavGroupId`, `NavTabId`, `NavIndex`, `UseNavOptions`, `NavBinding`, `NavAnchor`, `NavAnchorProps`, `NavMobilePlacement` | deleted                                                                                                                                                                                                                                                                                                                                                                                                                                                    | no consumer names them; derive with `ComponentProps` / `Parameters` |
 | `useNav`, and `BasaltShell`'s `sections` / `mobileNav` props                                                                                                                                                                   | deleted: pass `nav={NAV}` (plus `badges`, `isActive`, `getScrollElement` — the old `useNav` options) to `BasaltShell`; it resolves the sidebar, the mobile bar and the breadcrumb itself. `mobileNav` tuning moves to `defineNav`'s `mobile`. argo `apps/dashboard/src/routes/__root.tsx`: replace `const nav = useNav(NAV, { badges })` + `{...nav}` with `nav={NAV} badges={…}` (migrates in W12; 1.x consumers stay on their pinned version until then) |
 
-## Unreleased
+## Unreleased — per-bar legend shades
 
-_Nothing yet. Author the next section under this heading as `## Unreleased — <title>`; the
-release renames it and opens a new one here._
+- `Bars`: a legend swatch now wears the shade its bars draw. It samples `barOpacity(firstRow, key)`,
+  else the bar's `fillOpacity`, else the 0.85 default, so a per-series shade ladder (Warm-up / Work /
+  Drop in one colour) no longer collapses to one flat swatch. The `dots` legend mode honours the
+  opacity too. Visible change: default-opacity bars now show a 0.85 swatch instead of a solid one.
+- `EnumFilter` stays internal to `basalt-ui/controls` (no export added): `SelectFilter` is the public
+  single-choice filter and `DataTable` facets render `EnumFilter` themselves. No consumer needs the
+  bare body (argo's DX trial reached for it from a task prompt, not from an app), so per the
+  adopt-or-delete doctrine it is not exported. Its `.d.ts` still ships because `DataTable`'s
+  declarations import it.
 
 ## 2.6.0 — external-store fields, a live query-fn-unwrap, page shape
 
