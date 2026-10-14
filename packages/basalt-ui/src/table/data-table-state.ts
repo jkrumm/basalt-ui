@@ -104,7 +104,7 @@ export type DataTableStateProps = {
   onColumnFiltersChange?: ((filters: ColumnFiltersState) => void) | undefined
   initialPagination?: PaginationState | undefined
   onPaginationChange?: ((pagination: PaginationState) => void) | undefined
-  initialColumnPinning?: ColumnPinningState | undefined
+  initialColumnPinning?: Partial<ColumnPinningState> | undefined
   rowSelection?: RowSelectionState | undefined
   onRowSelectionChange?: ((selection: RowSelectionState) => void) | undefined
 }
@@ -130,9 +130,10 @@ export function useDataTableState(props: DataTableStateProps, defaultPageSize: n
     props.initialPagination ?? { pageIndex: 0, pageSize: defaultPageSize },
     props.onPaginationChange,
   )
-  const [columnPinning, setColumnPinning] = useState<ColumnPinningState>(
-    props.initialColumnPinning ?? {},
-  )
+  const [columnPinning, setColumnPinning] = useState<ColumnPinningState>({
+    start: props.initialColumnPinning?.start ?? [],
+    end: props.initialColumnPinning?.end ?? [],
+  })
   // Uncontrolled by default; `rowSelection`, when passed, is the truth and this only mirrors it so
   // the updater below has a base to apply against.
   const [internalRowSelection, setInternalRowSelection] = useState<RowSelectionState>({})

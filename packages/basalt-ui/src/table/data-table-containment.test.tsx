@@ -152,7 +152,7 @@ describe('pinning takes the same wrapper — there is no third overflow box', ()
     stubLayout()
     const { container } = mount({
       enablePinning: true,
-      initialColumnPinning: { left: ['project'] },
+      initialColumnPinning: { start: ['project'] },
     })
     // The defect this replaces: an `overflow-x: auto` Box around a page-sticky table is the exact
     // inert-sticky shape the measurement exists to avoid. A pinned column's offsets are
@@ -167,7 +167,7 @@ describe('pinning takes the same wrapper — there is no third overflow box', ()
     stubLayout()
     const { container } = mount({
       enablePinning: true,
-      initialColumnPinning: { left: ['project'] },
+      initialColumnPinning: { start: ['project'] },
     })
     await resizeTo(container, 390, 448)
     expect(wrapperOf(container).getAttribute('data-contained')).toBe('true')
@@ -468,7 +468,7 @@ describe('column fold — meta.priority (docs/CONTROLS-SPEC.md §2)', () => {
           data={EXCLUSION_ROWS}
           columns={exclusionColumns}
           enablePinning
-          initialColumnPinning={{ left: ['c'] }}
+          initialColumnPinning={{ start: ['c'] }}
         />
       </MantineProvider>,
     )

@@ -1,0 +1,147 @@
+/**
+ * What the Table v8 → v9 move must not change, asserted through `BasaltDataTable` (the public
+ * boundary) rather than through TanStack: the spike's parity, sort-function and pinning findings
+ * (`docs/waves/evidence/w1/ledger.md`), pinned so a `9.3.x` bump has a gate.
+ */
+import { MantineProvider } from '@mantine/core'
+import { render } from '@testing-library/react'
+import { describe, expect, test } from 'bun:test'
+import { BasaltDataTable, createColumnHelper } from './index'
+import type { BasaltDataTableProps } from './data-table'
+
+type Project = { id: string; name: string; team: string; revenue: number; updated: Date }
+
+const TEAMS = ['core', 'data', 'infra']
+const ROWS: Project[] = Array.from({ length: 200 }, (_, i) => ({
+  id: `r${i}`,
+  name: `Project ${(i * 7919) % 200}`,
+  team: TEAMS[i % 3] ?? 'core',
+  revenue: (i * 104729) % 10_000,
+  updated: new Date(Date.UTC(2026, 0, 1 + (i % 300))),
+}))
+
+const col = createColumnHelper<Project>()
+const COLUMNS = [
+  col.accessor('name', { header: 'Name' }),
+  col.accessor('team', { header: 'Team' }),
+  col.accessor('revenue', { header: 'Revenue', meta: { align: 'right' } }),
+  col.accessor('updated', {
+    header: 'Updated',
+    cell: (cell) => cell.getValue().toISOString().slice(0, 10),
+  }),
+]
+
+function renderRows(props: Partial<BasaltDataTableProps<Project>> = {}): string[][] {
+  const { container } = render(
+    <MantineProvider>
+      <BasaltDataTable data={ROWS} columns={COLUMNS} getRowId={(row) => row.id} {...props} />
+    </MantineProvider>,
+  )
+  return [...container.querySelectorAll('tbody tr')].map((tr) =>
+    [...tr.querySelectorAll('td')].map((td) => td.textContent ?? ''),
+  )
+}
+
+const PAGE_OF_25 = { enablePagination: true, initialPagination: { pageIndex: 0, pageSize: 25 } }
+const asCells = (row: Project): string[] => [
+  row.name,
+  row.team,
+  String(row.revenue),
+  row.updated.toISOString().slice(0, 10),
+]
+
+const names = (rows: string[][]): string[] => rows.map((cells) => cells[0] ?? '')
+const updated = (rows: string[][]): string[] => rows.map((cells) => cells[3] ?? '')
+
+describe('v8 → v9 parity (sorted by revenue desc, page 1 of 25)', () => {
+  test('renders the expected page', () => {
+    const expected = ROWS.toSorted((a, b) => b.revenue - a.revenue).slice(0, 25)
+    const rows = renderRows({ ...PAGE_OF_25, initialSorting: [{ id: 'revenue', desc: true }] })
+    expect(rows).toEqual(expected.map(asCells))
+  })
+
+  test('without enablePagination every row renders (the paginated model is bypassed)', () => {
+    expect(renderRows()).toHaveLength(ROWS.length)
+  })
+})
+
+describe('sort functions (registered on the feature set; v9 degrades to `basic` otherwise)', () => {
+  test('name asc is alphanumeric: "Project 2" before "Project 10"', () => {
+    const sorted = names(renderRows({ initialSorting: [{ id: 'name', desc: false }] }))
+    expect(sorted.slice(0, 3)).toEqual(['Project 0', 'Project 1', 'Project 2'])
+    expect(sorted.indexOf('Project 2')).toBeLessThan(sorted.indexOf('Project 10'))
+  })
+
+  test('the spike negative control, inverted: 1, 2, 10 — not 1, 10, 2', () => {
+    const data = ['Project 10', 'Project 2', 'Project 1'].map((name, i) => ({
+      ...ROWS[i]!,
+      name,
+    }))
+    expect(names(renderRows({ data, initialSorting: [{ id: 'name', desc: false }] }))).toEqual([
+      'Project 1',
+      'Project 2',
+      'Project 10',
+    ])
+  })
+
+  test('a Date column sorts chronologically (datetime), not by its string form', () => {
+    // `toString()` order would be Fri Jan 2 · Sun Feb 1 · Thu Dec 10 — and desc reverses chronology.
+    const dates = ['2026-12-10', '2026-01-02', '2026-02-01']
+    const data = dates.map((day, i) => ({ ...ROWS[i]!, updated: new Date(`${day}T00:00:00Z`) }))
+    expect(updated(renderRows({ data, initialSorting: [{ id: 'updated', desc: false }] }))).toEqual(
+      ['2026-01-02', '2026-02-01', '2026-12-10'],
+    )
+    expect(updated(renderRows({ data, initialSorting: [{ id: 'updated', desc: true }] }))).toEqual([
+      '2026-12-10',
+      '2026-02-01',
+      '2026-01-02',
+    ])
+  })
+})
+
+describe('pinned-column offsets (logical start/end, computed from getStart/getAfter)', () => {
+  const sized = createColumnHelper<{ a: string; b: string; c: string; d: string; e: string }>()
+  const columns = [
+    sized.accessor('a', { header: 'A', size: 100 }),
+    sized.accessor('b', { header: 'B', size: 120 }),
+    sized.accessor('c', { header: 'C', size: 150 }),
+    sized.accessor('d', { header: 'D', size: 80 }),
+    sized.accessor('e', { header: 'E', size: 60 }),
+  ]
+  const data = [{ a: 'a', b: 'b', c: 'c', d: 'd', e: 'e' }]
+
+  function headerStyles(): Record<string, CSSStyleDeclaration> {
+    const { container } = render(
+      <MantineProvider>
+        <BasaltDataTable
+          data={data}
+          columns={columns}
+          enablePinning
+          initialColumnPinning={{ start: ['a', 'b'], end: ['d', 'e'] }}
+        />
+      </MantineProvider>,
+    )
+    return Object.fromEntries(
+      [...container.querySelectorAll('th')].map((th) => [th.textContent ?? '', th.style]),
+    )
+  }
+
+  test('start-pinned columns stick at the sum of the start columns before them', () => {
+    const styles = headerStyles()
+    expect(styles['A']?.left).toBe('0px')
+    expect(styles['B']?.left).toBe('100px')
+  })
+
+  test('end-pinned columns stick at the sum of the end columns after them', () => {
+    const styles = headerStyles()
+    expect(styles['E']?.right).toBe('0px')
+    expect(styles['D']?.right).toBe('60px')
+  })
+
+  test('the unpinned column is not sticky', () => {
+    const styles = headerStyles()
+    expect(styles['C']?.position).not.toBe('sticky')
+    expect(styles['A']?.position).toBe('sticky')
+    expect(styles['E']?.position).toBe('sticky')
+  })
+})

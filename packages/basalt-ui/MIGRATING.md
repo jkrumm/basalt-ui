@@ -322,6 +322,16 @@ Subpath folds: `basalt-ui/agent-chat` → `basalt-ui/agent`, `basalt-ui/notifica
 | `basalt-ui/state`: `SearchValues`                         | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
 | `basalt-ui/state`: `StoredValues`                         | deleted              | type removed; derive with `ComponentProps`/`Parameters`                             |
 
+### Table v9 (`w6/table-v9`)
+
+`BasaltDataTable` runs on `@tanstack/react-table` **9.2.8, exact** (peer and dev pin; 9.3.x waits on the `table-parity` / `table-v9.test` gate).
+
+- Move your own `@tanstack/react-table` to `9.2.8` exact. Raw v8 helpers and `ColumnDef` no longer type-check against `columns`.
+- `createColumnHelper` stays `import { createColumnHelper } from 'basalt-ui/table'` with the same one-generic call, `createColumnHelper<Row>()`. Do not import the helper from `@tanstack/react-table`: its v9 form needs `<TFeatures, TData>`.
+- `initialColumnPinning` is logical: `{ left, right }` → `{ start, end }`.
+- `meta.align` / `numeral` / `priority` are typed by the table's own `columnMeta` slot; the global `declare module '@tanstack/react-table'` augmentation is gone, so it no longer leaks into your own TanStack types.
+- The global search now filters 250 ms after the last keystroke; `onGlobalFilterChange` fires at the same moment.
+
 ### Root, shell, controls, dashboard, format, forms, tokens, theme (W3 delete-core)
 
 Source of the rows: `docs/waves/v2-surface.md`. A deleted export has no replacement unless the

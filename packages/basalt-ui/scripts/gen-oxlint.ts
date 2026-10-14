@@ -141,11 +141,6 @@ export const REPO_COMPILER_RULE_EXEMPTIONS: readonly CompilerRuleExemption[] = [
     ],
   },
   {
-    rule: 'react/incompatible-library',
-    reason: 'TanStack Table useReactTable returns unmemoizable functions; the table is the host',
-    files: [`${PKG_ROOT}src/table/data-table.tsx`],
-  },
-  {
     rule: 'react/refs',
     reason: 'latest-value / measured-width refs read during render by design (pre-compiler code)',
     files: [

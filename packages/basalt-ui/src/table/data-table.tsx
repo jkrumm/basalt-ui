@@ -1,6 +1,6 @@
 /**
- * ./data — BasaltDataTable: a sortable data table over @tanstack/react-table, rendered with Mantine.
- * Optional peer: @tanstack/react-table >=8 <9.
+ * ./table — BasaltDataTable: a sortable data table over @tanstack/react-table v9, rendered with
+ * Mantine. Optional peer: @tanstack/react-table 9.2.8 (exact).
  *
  * Ships with opt-in chrome layered on top of the base sortable table: a filter/search toolbar
  * (global search + faceted column Selects + an actions slot), a pagination bar ("Showing X–Y of N"
@@ -9,8 +9,7 @@
  * exactly as before.
  *
  * @example
- * import { BasaltDataTable } from 'basalt-ui/table'
- * import { createColumnHelper } from '@tanstack/react-table'
+ * import { BasaltDataTable, createColumnHelper } from 'basalt-ui/table'
  *
  * type Row = { name: string; age: number }
  * const col = createColumnHelper<Row>()
@@ -50,6 +49,7 @@ import type {
   Column,
   ColumnDef,
   ColumnFiltersState,
+  ColumnVisibilityState,
   FilterFn,
   PaginationState,
   Row,
@@ -57,18 +57,11 @@ import type {
   RowSelectionState,
   SortingState,
   Table as TanstackTable,
-  VisibilityState,
 } from '@tanstack/react-table'
-import {
-  flexRender,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
-} from '@tanstack/react-table'
+import { FlexRender, useTable } from '@tanstack/react-table'
 import type { CSSProperties, MouseEvent as ReactMouseEvent, ReactNode, RefObject } from 'react'
 import { Fragment, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useDebouncedCallback } from '@mantine/hooks'
 import { cx } from '../common/props'
 import type { BasaltProps, SlotStylesProps } from '../common/props'
 import { BASALT_PREFIX } from '../common/errors'
@@ -98,49 +91,36 @@ import {
   useRowDisclosure,
 } from './data-table-state'
 import { dataQueryBranch } from './query-branch'
+import { basaltTableFeatures } from './table-features'
+import type { BasaltColumnDef, BasaltTableFeatures, DataTableAlign } from './table-features'
 import classes from './data-table.module.css'
 
 // ── Column alignment ──────────────────────────────────────────────────────────
 
-/** Horizontal alignment of a column's header AND its cells. */
-export type DataTableAlign = 'left' | 'center' | 'right'
+export type { DataTableAlign }
 
 /**
- * Alignment lives on the column def's `meta`, not on a parallel prop array, so it travels with the
- * column it describes and survives reordering.
- *
- * Declared as a module augmentation of TanStack's own `ColumnMeta` so `meta: { aling: 'right' }` is
- * a TYPE error (excess-property check on the object literal) rather than a silently ignored key —
- * and a wrong VALUE (`'end'`, `'centre'`) throws at render. A misspelled alignment that quietly
+ * `meta.align` / `numeral` / `priority` are typed by the feature set's `columnMeta` slot
+ * (`BasaltColumnMeta`), so `meta: { aling: 'right' }` is a TYPE error rather than a silently ignored
+ * key — and a wrong VALUE (`'end'`, `'centre'`) throws at render. A misspelled alignment that quietly
  * left-aligns a money column is the class of defect that looks correct in review.
  */
-declare module '@tanstack/react-table' {
-  // TData/TValue are TanStack's own parameters — required to match its declaration, unused here.
-  // oxlint-disable-next-line no-unused-vars
-  interface ColumnMeta<TData extends RowData, TValue> {
-    align?: DataTableAlign
-    /**
-     * Opt OUT of the automatic mono-numeral cell style. The table applies it whenever the cell's
-     * raw value is a number — which is right for a plain figure and wrong for a numeric accessor
-     * whose `cell` renders its own chrome (a coloured `Text`, a `Badge`, a sparkline), because the
-     * `<td>`'s mono font then overrides what the cell asked for.
-     */
-    numeral?: boolean
-    /**
-     * Fold priority for the measured column fold (`docs/CONTROLS-SPEC.md` §2): once the
-     * table no longer fits its wrapper, the HIGHEST-numbered priority column folds first, moving
-     * into a per-row disclosure instead of forcing the table into horizontal scroll. Unset columns
-     * fall back to their declared position, so a bare `<BasaltDataTable data columns />` folds its
-     * LAST column first — nothing regresses with no `meta.priority` set anywhere. See `foldOrder`.
-     */
-    priority?: number
-  }
-}
+/** A facet filter with nothing selected is dropped from `columnFilters` rather than kept as a no-op. */
+const facetAutoRemove = (value: unknown): boolean =>
+  value === null ||
+  value === undefined ||
+  value === '' ||
+  (Array.isArray(value) && value.length === 0)
+
+/** How long the global search waits after the last keystroke before filtering. */
+const SEARCH_DEBOUNCE_MS = 250
 
 const ALIGNMENTS: ReadonlySet<string> = new Set<DataTableAlign>(['left', 'center', 'right'])
 
 /** Reads `meta.align` off a column, throwing on a value that is not one of the three. */
-function resolveAlign<T>(column: Column<T, unknown>): DataTableAlign | undefined {
+function resolveAlign<T extends RowData>(
+  column: Column<BasaltTableFeatures, T, unknown>,
+): DataTableAlign | undefined {
   const align = column.columnDef.meta?.align
   if (align === undefined) return undefined
   if (!ALIGNMENTS.has(align)) {
@@ -168,7 +148,7 @@ export type DataTableFacetOption = {
  * synthetic/derived column id (no matching key on `T`) still type-checks. Defaults to `unknown` so
  * a bare `DataTableFacet[]` / `DataTableColumnPinning` (no type argument) keeps working exactly as
  * before. Shared by {@link DataTableFacet}'s `columnId` and {@link DataTableColumnPinning}'s
- * `left`/`right`.
+ * `start`/`end`.
  */
 export type DataTableColumnId<T = unknown> = Extract<keyof T, string> | (string & {})
 
@@ -196,13 +176,13 @@ export type DataTableFacet<T = unknown> = {
 
 /**
  * Column ids pinned to each edge — the same `T`-derived id union as {@link DataTableFacet}'s
- * `columnId`, applied to TanStack's own `ColumnPinningState` shape (`{ left, right }`, each a bare
+ * `columnId`, applied to TanStack's own `ColumnPinningState` shape (`{ start, end }`, each a bare
  * `string[]` unrelated to any row type). Structurally assignable to `ColumnPinningState`, so no
  * cast is needed where this flows into `useState<ColumnPinningState>`.
  */
 export type DataTableColumnPinning<T = unknown> = {
-  left?: DataTableColumnId<T>[]
-  right?: DataTableColumnId<T>[]
+  start?: DataTableColumnId<T>[]
+  end?: DataTableColumnId<T>[]
 }
 
 /**
@@ -233,8 +213,8 @@ function facetAllLabel<T>(facet: DataTableFacet<T>): string {
  * subscription needed, since the enclosing `BasaltDataTable` already re-renders on every
  * `columnFilters` change and this handle is rebuilt fresh each render alongside its column.
  */
-function facetEnumHandle<T>(
-  column: Column<T, unknown>,
+function facetEnumHandle<T extends RowData>(
+  column: Column<BasaltTableFeatures, T, unknown>,
   facet: DataTableFacet<T>,
 ): FieldHandle<EnumField<string>> {
   return {
@@ -263,8 +243,8 @@ function facetEnumHandle<T>(
  * single-select case, `MultiField`'s own fallback — an empty selection — already means "no
  * constraint", so no synthetic option is needed here.
  */
-function facetMultiHandle<T>(
-  column: Column<T, unknown>,
+function facetMultiHandle<T extends RowData>(
+  column: Column<BasaltTableFeatures, T, unknown>,
   facet: DataTableFacet<T>,
 ): FieldHandle<MultiField<string>> {
   return {
@@ -296,10 +276,10 @@ function facetMultiHandle<T>(
  * (`basaltViteConfig` defines `process.env.NODE_ENV`, so a production bundle constant-folds this
  * away), degrade to "no pill for this facet" in production.
  */
-function resolveFacetColumn<T>(
-  table: TanstackTable<T>,
+function resolveFacetColumn<T extends RowData>(
+  table: TanstackTable<BasaltTableFeatures, T>,
   facet: DataTableFacet<T>,
-): Column<T, unknown> | undefined {
+): Column<BasaltTableFeatures, T, unknown> | undefined {
   const column = table.getColumn(facet.columnId)
   if (column) return column
   if (process.env.NODE_ENV !== 'production') {
@@ -332,7 +312,7 @@ const SELECT_COLUMN_ID = '__basalt_select__'
  * lives inside the row, and a row carrying `onRowActivate` opens a detail from a click — so without
  * it, ticking the box also navigated away from the table the tick was meant to act on.
  */
-function selectionColumn<T>(): ColumnDef<T, unknown> {
+function selectionColumn<T extends RowData>(): ColumnDef<BasaltTableFeatures, T, unknown> {
   return {
     id: SELECT_COLUMN_ID,
     enableSorting: false,
@@ -407,7 +387,7 @@ export type BasaltDataTableSlot = 'root' | 'toolbar' | 'table' | 'footer'
  *   emptyState: <Text c="dimmed">No results found.</Text>,
  * }
  */
-export type BasaltDataTableProps<T> = BasaltProps &
+export type BasaltDataTableProps<T extends RowData> = BasaltProps &
   SlotStylesProps<BasaltDataTableSlot> & {
     // ── Header (WidgetHeader, docs/CONTROLS-SPEC.md §2.2) ──────────────────────────
 
@@ -425,14 +405,12 @@ export type BasaltDataTableProps<T> = BasaltProps &
     /** Row data array. */
     data: T[]
     /**
-     * Column definitions. Use `createColumnHelper<T>()` from `@tanstack/react-table`
+     * Column definitions. Use `createColumnHelper<T>()` from `basalt-ui/table`
      * for a typed accessor builder — `col.accessor('field', …)` columns sort by value.
      */
-    // The cell-value type varies per column, so the array is heterogeneous in TValue. `any` here
-    // is the TanStack-idiomatic escape (accessor columns infer their own TValue); row typing stays
-    // exact via the `T` data generic.
-    // oxlint-disable-next-line typescript/no-explicit-any -- TanStack-idiomatic heterogeneous column array
-    columns: ColumnDef<T, any>[]
+    // The cell-value type varies per column, so the array is heterogeneous in TValue
+    // (`BasaltColumnDef` carries the `any`); row typing stays exact via the `T` data generic.
+    columns: BasaltColumnDef<T>[]
     /**
      * Enable column sorting via clickable headers. Client-side — the rows in `data` are what get
      * reordered.
@@ -728,15 +706,15 @@ export type BasaltDataTableProps<T> = BasaltProps &
     // ── Column pinning ────────────────────────────────────────────────────────────
 
     /**
-     * Enables sticky left/right column pinning — pinned columns stick to the edge with a panel
+     * Enables sticky start/end column pinning — pinned columns stick to the edge with a panel
      * background and a hairline shadow separator while the table scrolls horizontally. Pin columns
-     * via `initialColumnPinning` (`{ left: string[], right: string[] }`).
+     * via `initialColumnPinning` (`{ start: string[], end: string[] }`).
      * @default false
      * @example
-     * <BasaltDataTable data={rows} columns={columns} enablePinning initialColumnPinning={{ left: ['name'] }} />
+     * <BasaltDataTable data={rows} columns={columns} enablePinning initialColumnPinning={{ start: ['name'] }} />
      */
     enablePinning?: boolean
-    /** Initial column-pinning state — which column ids stick to the left/right edge. */
+    /** Initial column-pinning state — which column ids stick to the start/end edge. */
     initialColumnPinning?: DataTableColumnPinning<T>
 
     // ── Body chrome ─────────────────────────────────────────────────────────────
@@ -895,26 +873,26 @@ const PAGE_SIZE_WIDTH = 116
 
 // ── Column pinning helpers ────────────────────────────────────────────────────
 
-// Merges the left/center/right header-group triad TanStack exposes for pinning into the single
-// render order (left → center → right) the header row needs — depth-indexed so grouped headers
+// Merges the start/center/end header-group triad TanStack exposes for pinning into the single
+// render order (start → center → end) the header row needs — depth-indexed so grouped headers
 // (multi-row) still line up.
-function getOrderedHeaderGroups<T>(table: TanstackTable<T>) {
-  const left = table.getLeftHeaderGroups()
+function getOrderedHeaderGroups<T extends RowData>(table: TanstackTable<BasaltTableFeatures, T>) {
+  const start = table.getStartHeaderGroups()
   const center = table.getCenterHeaderGroups()
-  const right = table.getRightHeaderGroups()
+  const end = table.getEndHeaderGroups()
   return center.map((group, index) => ({
     ...group,
-    headers: [...(left[index]?.headers ?? []), ...group.headers, ...(right[index]?.headers ?? [])],
+    headers: [...(start[index]?.headers ?? []), ...group.headers, ...(end[index]?.headers ?? [])],
   }))
 }
 
-// Sticky offset math (column.getStart('left') / getAfter('right')) is computed purely from the
+// Sticky offset math (column.getStart('start') / getAfter('end')) is computed purely from the
 // pinned columns' own `getSize()`, so only pinned cells need an explicit width to keep the offsets
 // accurate — center columns stay naturally sized. The hairline shadow marks the edge column
 // touching the unpinned center (first right-pinned index 0 / last left-pinned index).
-function getPinnedCellStyle<T>(
-  table: TanstackTable<T>,
-  column: Column<T, unknown>,
+function getPinnedCellStyle<T extends RowData>(
+  table: TanstackTable<BasaltTableFeatures, T>,
+  column: Column<BasaltTableFeatures, T, unknown>,
 ): CSSProperties | undefined {
   const pinned = column.getIsPinned()
   if (!pinned) return undefined
@@ -927,18 +905,18 @@ function getPinnedCellStyle<T>(
     maxWidth: size,
     backgroundColor: VX.surface.panel,
   }
-  if (pinned === 'left') {
-    const isEdge = column.getPinnedIndex() === table.getLeftLeafColumns().length - 1
+  if (pinned === 'start') {
+    const isEdge = column.getPinnedIndex() === table.getStartLeafColumns().length - 1
     return {
       ...shared,
-      left: column.getStart('left'),
+      left: column.getStart('start'),
       boxShadow: isEdge ? `4px 0 6px -4px ${alpha(VX.ink, 0.18)}` : undefined,
     }
   }
   const isEdge = column.getPinnedIndex() === 0
   return {
     ...shared,
-    right: column.getAfter('right'),
+    right: column.getAfter('end'),
     boxShadow: isEdge ? `-4px 0 6px -4px ${alpha(VX.ink, 0.18)}` : undefined,
   }
 }
@@ -947,7 +925,9 @@ function getPinnedCellStyle<T>(
 
 /** The column id TanStack will resolve internally for this raw def — explicit `id`, else the
  * accessor key string. Mirrors the resolution `facetColumns` already relies on above. */
-function columnDefId<T>(column: ColumnDef<T, unknown>): string | undefined {
+function columnDefId<T extends RowData>(
+  column: ColumnDef<BasaltTableFeatures, T, unknown>,
+): string | undefined {
   if (column.id !== undefined) return column.id
   return 'accessorKey' in column && typeof column.accessorKey === 'string'
     ? column.accessorKey
@@ -963,7 +943,9 @@ function columnDefId<T>(column: ColumnDef<T, unknown>): string | undefined {
  * `accessorFn` with no explicit `id`) is never a fold candidate — nothing downstream could
  * reliably re-identify it once hidden.
  */
-function foldOrder<T>(columns: readonly ColumnDef<T, unknown>[]): string[] {
+function foldOrder<T extends RowData>(
+  columns: readonly ColumnDef<BasaltTableFeatures, T, unknown>[],
+): string[] {
   return columns
     .map((column, index) => ({
       id: columnDefId(column),
@@ -1089,7 +1071,7 @@ function useColumnFold(input: {
 /** The label half of a folded column's disclosure row — its own header when it is a plain string
  * (the common case), else the column id, since a function/`ReactNode` header has no header
  * CONTEXT to render with here (this is a body row, not the `<thead>`). */
-function columnLabel<T>(column: Column<T, unknown>): string {
+function columnLabel<T extends RowData>(column: Column<BasaltTableFeatures, T, unknown>): string {
   const header = column.columnDef.header
   return typeof header === 'string' ? header : column.id
 }
@@ -1097,11 +1079,11 @@ function columnLabel<T>(column: Column<T, unknown>): string {
 /** One row's folded columns as label/value pairs, directly under it. `row.getAllCells()` returns
  * every leaf cell regardless of visibility (unlike `getVisibleCells()`), so a folded column's own
  * `cell` renderer still draws here exactly as it would in the `<td>` it no longer occupies. */
-function RowDisclosure<T>({
+function RowDisclosure<T extends RowData>({
   row,
   folded,
 }: {
-  row: Row<T>
+  row: Row<BasaltTableFeatures, T>
   folded: ReadonlySet<string>
 }): ReactNode {
   const cells = row.getAllCells().filter((cell) => folded.has(cell.column.id))
@@ -1111,7 +1093,7 @@ function RowDisclosure<T>({
         <div key={cell.id} className={classes.foldDisclosureRow}>
           <Text className={classes.foldDisclosureLabel}>{columnLabel(cell.column)}</Text>
           <div className={classes.foldDisclosureValue}>
-            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+            <FlexRender cell={cell} />
           </div>
         </div>
       ))}
@@ -1314,7 +1296,7 @@ function useMeasuredContainment(active: boolean): {
  *   emptyState={<Text c="dimmed">No users found.</Text>}
  * />
  */
-export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
+export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T>) {
   // F-ERR-1: without this, a table missing `data`/`columns` fails deep inside `useReactTable` as a
   // raw `TypeError` caught by `RootBoundary` — a blank subtree with no message naming either
   // prop.
@@ -1364,6 +1346,10 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
   } = props
   const tableState = useDataTableState(props, pageSizeOptions[0] ?? 10)
   const { globalFilter, columnPinning, onGlobalFilterChange: handleGlobalFilterChange } = tableState
+  // The input binds to a local draft so typing stays instant; the table (and `onGlobalFilterChange`)
+  // only see the value once typing pauses.
+  const [searchDraft, setSearchDraft] = useState(globalFilter)
+  const commitSearch = useDebouncedCallback(handleGlobalFilterChange, SEARCH_DEBOUNCE_MS)
 
   // `stickyHeaderOffset` is DROPPED whenever the table owns a scroll container — see
   // `resolvedStickyHeaderOffset` below for why it is always wrong there. Dropping it silently is
@@ -1416,7 +1402,7 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
       const id = columnDefId(column)
       const facet = id === undefined ? undefined : facetById.get(id)
       if (!facet) return column
-      const filterFn: FilterFn<T> = facet.multiple
+      const match: FilterFn<BasaltTableFeatures, T> = facet.multiple
         ? (row, columnId, filterValue: string[]) =>
             !Array.isArray(filterValue) || filterValue.length === 0
               ? true
@@ -1425,11 +1411,7 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
             filterValue === null || filterValue === undefined || filterValue === ''
               ? true
               : String(row.getValue(columnId)) === filterValue
-      filterFn.autoRemove = (value) =>
-        value === null ||
-        value === undefined ||
-        value === '' ||
-        (Array.isArray(value) && value.length === 0)
+      const filterFn = Object.assign(match, { autoRemove: facetAutoRemove })
       return { ...column, filterFn }
     })
   }, [columns, facets])
@@ -1483,7 +1465,7 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
   // column are excluded outright, not merely de-prioritized — both are the caller stating this
   // column must stay visible, the same declaration a fold candidate has no way to override.
   const { columnFoldOrder, columnFoldFixedIds } = useMemo(() => {
-    const pinnedIds = new Set([...(columnPinning.left ?? []), ...(columnPinning.right ?? [])])
+    const pinnedIds = new Set([...columnPinning.start, ...columnPinning.end])
     const excluded = new Set(
       columns.flatMap((column) => {
         const id = columnDefId(column)
@@ -1504,14 +1486,15 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
     order: columnFoldOrder,
     fixedIds: columnFoldFixedIds,
   })
-  const columnVisibility: VisibilityState = useMemo(
+  const columnVisibility: ColumnVisibilityState = useMemo(
     () => Object.fromEntries([...columnFold.folded].map((id) => [id, false])),
     [columnFold.folded],
   )
   const hasFolded = columnFold.folded.size > 0
   const foldRows = useRowDisclosure({ data, getRowId })
 
-  const table = useReactTable<T>({
+  const table = useTable({
+    features: basaltTableFeatures,
     data,
     columns: tableColumns,
     state: {
@@ -1533,19 +1516,16 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
       onRowSelectionChange: tableState.onRowSelectionChange,
     }),
     ...(getRowId !== undefined && { getRowId }),
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    // Both row models stay installed and are BYPASSED by these flags, which is TanStack's own
-    // seam — so a degraded table renders `data` in the order and completeness the server sent it.
-    // Forced only by a BREACH, never by `enableSorting={false}` on its own: that pair still applies
-    // an `initialSorting` today (it disables the header control, not the row model) and a table
-    // that is not misreporting has no business losing it.
+    // Every row model is registered on the feature set (v9 has no per-render switch) and BYPASSED by
+    // these flags, which is TanStack's own seam — so a degraded table renders `data` in the order
+    // and completeness the server sent it. Sorting/filtering are forced only by a BREACH, never by
+    // `enableSorting={false}` on its own: that pair still applies an `initialSorting` today (it
+    // disables the header control, not the row model) and a table that is not misreporting has no
+    // business losing it. Pagination is bypassed whenever it is not enabled, or is server-driven.
     manualSorting: manualSorting || breaches.includes('sorting'),
     manualFiltering: manualFiltering || breaches.includes('filtering'),
+    manualPagination: !enablePagination || manualPagination,
     ...(enablePagination && {
-      getPaginationRowModel: getPaginationRowModel(),
-      manualPagination,
       ...(manualPagination && rowCount !== undefined && { rowCount }),
       ...(manualPagination && pageCount !== undefined && { pageCount }),
     }),
@@ -1686,9 +1666,7 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
                     ...pinnedStyle,
                   }}
                 >
-                  {header.isPlaceholder
-                    ? null
-                    : flexRender(header.column.columnDef.header, header.getContext())}
+                  {header.isPlaceholder ? null : <FlexRender header={header} />}
                   {canSort && <SortIndicator direction={sorted} />}
                 </Table.Th>
               )
@@ -1719,9 +1697,9 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
           rows.map((row) => {
             const cells = enablePinning
               ? [
-                  ...row.getLeftVisibleCells(),
+                  ...row.getStartVisibleCells(),
                   ...row.getCenterVisibleCells(),
-                  ...row.getRightVisibleCells(),
+                  ...row.getEndVisibleCells(),
                 ]
               : row.getVisibleCells()
             const rowExpanded = hasFolded && foldRows.expanded.has(row.id)
@@ -1765,7 +1743,7 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
                           ...pinnedStyle,
                         }}
                       >
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        <FlexRender cell={cell} />
                       </Table.Td>
                     )
                   })}
@@ -1804,7 +1782,7 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
     </Stack>
   )
 
-  const paginationState = table.getState().pagination
+  const paginationState = table.state.pagination
   // The CURRENT page size is always an option, even when it is not in `pageSizeOptions`. Mantine's
   // Select renders EMPTY when its `value` matches no row, so a table opened at
   // `initialPagination.pageSize: 5` against the default `[10, 25, 50, 100]` showed a blank
@@ -1861,8 +1839,11 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
                     style={TABLE_SEARCH_STYLE}
                     placeholder={globalFilterPlaceholder}
                     leftSection={searchIcon}
-                    value={globalFilter}
-                    onChange={(event) => handleGlobalFilterChange(event.currentTarget.value)}
+                    value={searchDraft}
+                    onChange={(event) => {
+                      setSearchDraft(event.currentTarget.value)
+                      commitSearch(event.currentTarget.value)
+                    }}
                   />
                 )}
                 {showFacets && (
