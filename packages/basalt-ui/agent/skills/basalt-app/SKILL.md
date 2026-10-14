@@ -25,7 +25,7 @@ declare module '@tanstack/react-router' {
 // createRoot(root).render(<BasaltProvider router={router} />)
 ```
 
-3. If you use `basalt-ui/controls-dates`, import `@mantine/dates/styles.layer.css` before `basalt-ui/styles.css`.
+3. If you use `basalt-ui/controls-dates`, import `@mantine/dates/styles.layer.css` after `basalt-ui/styles.css` (core must precede dates in `@layer mantine`).
 4. In `vite.config.ts`: `...basaltViteConfig({ port, apiTarget })` and `plugins: [react(), ...basaltAppPlugin({ name, description })]`.
 5. In `src/routes/__root.tsx`: `<BasaltShell brand={{ name }} nav={NAV}><Outlet /></BasaltShell>`; build `NAV` with `defineNav` in `src/lib/nav.tsx`.
 6. Fill in `DESIGN.md` (identity, series dictionary, deviations).
