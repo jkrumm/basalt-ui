@@ -452,20 +452,57 @@ Charts), `docs/archive/CHARTS-SPEC-1x.md`, `docs/DESIGN-CORE.md`, `packages/basa
   workers appending rows) goes back to the worker, then the train.
 - **W9 inherits:** shipped rule lines 710 (target 450), the React-compiler override list, the Eden leftover above.
 
-## Wave 9 — Lint and agent layer <!-- status: active -->
+## Wave 9 — Lint and agent layer <!-- status: done -->
 
-- [ ] oxlint plugin rewritten to the 2.0 strictness rules, all at `error`, with dogfood levels
+- [x] oxlint plugin rewritten to the 2.0 strictness rules, all at `error`, with dogfood levels
       matching. Delete rules whose concern 2.0 makes unrepresentable.
-- [ ] Shipped rules and skills rewritten. Target: fewer lines than 1.41's 1,136, with every
+- [x] Shipped rules and skills rewritten. Target: fewer lines than 1.41's 1,136, with every
       instruction backed by a rule or a type. Also the AGENTS block, `llms.txt`, and
       `init`/`sync`/`doctor` (an upgrade path from 1.x included).
-- [ ] DX trial: a scratch app scaffolded with `basalt-ui init`. A fresh agent with only the shipped
+- [x] DX trial: a scratch app scaffolded with `basalt-ui init`. A fresh agent with only the shipped
       layer builds a dashboard route with a chart, a table and a chat. Record every wrong turn and fix it
       at the source.
 
 **Left behind:**
 
-## Wave 10 — Release candidate <!-- status: pending -->
+- **Landed** (14 PRs, all via `rd merge`, `make check` green on each rebased SHA, every diff agent-gateway
+  reviewed; the small fix-ups #170–#173 lead-reviewed): #160 `StreamStatus` export deleted (W8 leftover), #161
+  React-compiler exemptions 26 → 5, #162 rules/skills/AGENTS block rewrite with the tag law, #163 plugin at 2.0
+  strictness, #164 `doctor`/`sync` upgrade path, #165 `styles.css` carries the notifications + spotlight layers,
+  #166 `router-view-transition` deleted, #167–#173 DX-trial fixes. Index: `docs/waves/evidence/w9.md`.
+- **Agent layer:** rules 704 → 271 lines, layer 995 → 576 (1.41: 1,136); every rule bullet ends in a tag
+  (`[basalt/…]`, `[check-theme …]`, `[type …]`) that `check-agent-doc-drift` resolves, unenforced bullets
+  deleted (Eden Treaty section included, W8 leftover). Skill snippets marked `// @check` are type-checked in
+  `bun test`. Budgets gated at the landed values (`ruleLines` 277, per-file and layer totals in `check-coverage`).
+- **Lint:** 21 shipped `basalt/*` rules, all `error` (were 25, two `warn`); retired `provider-above-router`,
+  `page-bar-budget` (its "one `PageBar` per page" and "two filled buttons" halves had no type and died with it),
+  `agent-resume-guard`, `deprecated-export`; `agent-no-raw-usechat` covers `Chat`, namespace imports and
+  re-exports; repo-local `no-dev-helper` new, `no-import-meta-env` enabled. **Lead call (flag if you disagree):**
+  the shipped `configs/oxlint.json` runs the React-compiler rules and `no-explicit-any` at `error` (V2-SPEC § 3,
+  "the major is the channel"); `MIGRATING.md` shows the per-file override.
+- **`router-view-transition` moved to the rendering wave** (owner, 2026-10-14): built and merged in #163, deleted
+  in #166, never released. `createBasaltRouter`'s `defaultViewTransition?: never` is untouched; the rendering wave
+  lifts the ban and writes the replacement rule.
+- **DX trial** (`evidence/w9/dx-trial.md`): three runs on a fresh create-vite app, each fixed at the source
+  before the next. Run 1: 40 tool calls, ~25 reads of `dist`, 6 tsc errors. Run 3: 13 calls, 3 `dist` reads, no
+  build error, one lint error the rule message fixed. 14 findings, 14 fixes (`init` seeds the router files,
+  merges the lint preset, reorders create-vite's build; `doctor` `app-wiring`; `AgentTransport` exported; every
+  public optional in `./agent` takes `undefined`; chat/table/route/router-plugin snippets; per-subpath `Install:`
+  lines in `llms.txt`).
+- **Runtime** (`evidence/w9/runtime.md`): chat commits per reply unchanged vs W8 (126/86 at the 100 ms default),
+  table 10k rows no regression vs W6, frame p95 within one rAF quantum; `styles.css` +257 B gzip.
+- **Deferred, accepted:** `ThreadsStore` has 13 required members, so the skill's in-memory store is ~45 lines; a
+  shipped `createMemoryThreadsStore` has no named consumer outside the playground yet (W11 decides with argo).
+  The `basalt-app` skill is 217 lines (the snippets the trial asked for). `doctor()`/`sync()` and
+  `checkCoverage()` are flagged CRITICAL complexity by fallow; untouched. `init` does not seed `vite.config.ts`
+  (`basaltViteConfig` does not register the TanStack router plugin; `doctor` names the line to add).
+- **Ops notes:** `rd say` with a long brief to an agent in `done` state sometimes leaves it pasted but unsent —
+  check the agent went `working`; headless `claude -p` cannot refresh OAuth from a tool shell on the mini, so the DX
+  trial ran as an `rd wave` agent (a new folder needs the `~/.claude.json` trust entry `rd fan` writes).
+- **Next:** the orchestrator inserts the rendering wave (SSR, streaming, route transitions) before the release
+  candidate; Wave 10 below is flipped to `active` only as the plan's next step.
+
+## Wave 10 — Release candidate <!-- status: active -->
 
 - [ ] Full playground validation: every route through `make evidence` plus `@verifier`. Fix the
       regressions found.
