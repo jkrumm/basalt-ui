@@ -987,9 +987,16 @@ optional, subpath-required peers.
 | `NavItemMeta`, `NavGroupMeta`, `AnyNavItem`, `AnyNavGroup`, `AnyNavLink`, `FlatNavItem`, `NavConfig`, `NavGroupId`, `NavTabId`, `NavIndex`, `UseNavOptions`, `NavBinding`, `NavAnchor`, `NavAnchorProps`, `NavMobilePlacement` | deleted                                                                                                                                                                                                                                                                                                                                                                                                                                                    | no consumer names them; derive with `ComponentProps` / `Parameters` |
 | `useNav`, and `BasaltShell`'s `sections` / `mobileNav` props                                                                                                                                                                   | deleted: pass `nav={NAV}` (plus `badges`, `isActive`, `getScrollElement` — the old `useNav` options) to `BasaltShell`; it resolves the sidebar, the mobile bar and the breadcrumb itself. `mobileNav` tuning moves to `defineNav`'s `mobile`. argo `apps/dashboard/src/routes/__root.tsx`: replace `const nav = useNav(NAV, { badges })` + `{...nav}` with `nav={NAV} badges={…}` (migrates in W12; 1.x consumers stay on their pinned version until then) |
 
-## Unreleased — tooltip swatches, reference legends, `tooltipFormat`, band edges, series gaps
+## Unreleased — chart gaps and legends, local-store fallbacks, the pre-commit hook
 
 All additive; no call site changes. Named consumers are argo `apps/dashboard/src/features/…`.
+
+- `createLocalStore` fields take `use({ fallback })`: a call-site default (e.g. a prop-derived
+  leader) that applies only while the field is unset and is never persisted, so a reset returns to
+  it. Replace a store rebuilt per prop with it. `createSearchStore` fields do not take it yet.
+- The managed lefthook oxlint step passes `--no-error-on-unmatched-pattern`, so a commit whose
+  staged files are all in `ignorePatterns` no longer fails; a real lint error still does. Picked up
+  through the extended preset.
 
 - `ChartTooltipRow` takes `swatch: 'solid' | 'dashed'`. A series with `dash: 'dashed'` now lists a
   dashed swatch in its own tooltip row on `CartesianChart`, `Lines`, `Bars` and `DualPanel` (it was
