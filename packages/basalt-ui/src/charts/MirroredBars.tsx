@@ -35,11 +35,11 @@ export type MirroredBarPane = {
    * entry throws: the pane would vanish, which reads as a measured zero. */
   key: string
   /** The pane's upper bound. `'auto'` (default) is its own visible maximum; a number pins it. */
-  max?: number | 'auto'
+  max?: number | 'auto' | undefined
   /** When `'auto'`: floors the upper bound, so a quiet window does not amplify noise to full height. */
-  autoMaxFloor?: number
+  autoMaxFloor?: number | undefined
   /** Tick count for this pane's own axis. Default 3. */
-  ticks?: number
+  ticks?: number | undefined
   /** Tick and tooltip formatter, in the pane's OWN units. */
   format: (v: number) => string
 }
@@ -71,18 +71,18 @@ export type MirroredBarsProps<T, X extends ChartX = ChartX> = Pick<
   /** Drawn below the baseline. */
   down: MirroredBarPane
   /** The up pane's share of the height. Default 0.35: the pair is usually asymmetric. */
-  upFraction?: number
+  upFraction?: number | undefined
   /** 0..1 of a bar's width that no source sample covers, drawn neutral across both panes. */
-  getAbsentFraction?: (d: T) => number
+  getAbsentFraction?: ((d: T) => number) | undefined
   /** Per-datum bar opacity: a real but qualified measurement (a short bucket) drawn dimmer. */
-  getBarOpacity?: (d: T) => number
+  getBarOpacity?: ((d: T) => number) | undefined
   /**
    * Collapse adjacent data where one band per datum would be sub-pixel. `merge` is the consumer's
    * (max, sum, or a rate from summed parts) and must keep `group[0]`'s x, the slot start.
    */
-  fold?: { minBandPx?: number; merge: (group: T[]) => T }
+  fold?: { minBandPx?: number; merge: (group: T[]) => T } | undefined
   /** Default `'leading'`: x is a slot's start. */
-  cursorResolution?: CartesianChartProps<T, X>['cursorResolution']
+  cursorResolution?: CartesianChartProps<T, X>['cursorResolution'] | undefined
 }
 
 const DEFAULT_UP_FRACTION = 0.35

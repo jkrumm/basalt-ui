@@ -39,7 +39,7 @@ export type BandStripSeries<T> = Pick<
    * The tooltip row's value for a band in this state. `null` is an ABSENT reading and renders an
    * em dash; omit the function when the state's name is the whole reading ("Not measured").
    */
-  formatValue?: (d: T) => string | null
+  formatValue?: ((d: T) => string | null) | undefined
 }
 
 /** One band: its state, and the two ways to qualify it. */
@@ -47,23 +47,25 @@ export type BandSpan = {
   /** A `states` key: the band's legend entry, fill and tooltip row. */
   state: string
   /** Overrides the state's fill — an intensity ramp WITHIN a state. `alpha(VX.*, …)`, never a hex. */
-  fill?: string
+  fill?: string | undefined
   /**
    * A shorter, inset bar over the band, for a fact that must not be read off the fill ramp (a
    * renegotiation, a restart). Its color is a `states` entry, so the legend names it.
    */
-  marker?: {
-    /** Defaults to the band's own `state`. */
-    state?: string
-    /** Vertical inset from the band's top and bottom, in px. Default 6. */
-    inset?: number
-  }
+  marker?:
+    | {
+        /** Defaults to the band's own `state`. */
+        state?: string | undefined
+        /** Vertical inset from the band's top and bottom, in px. Default 6. */
+        inset?: number | undefined
+      }
+    | undefined
 }
 
 /** Collapse adjacent data where one band per datum would be thinner than `minBandPx`. */
 export type BandFold<T> = {
   /** Floor on a drawn band's px width. Default 3. */
-  minBandPx?: number
+  minBandPx?: number | undefined
   /**
    * The consumer's merge of a group of adjacent data into the datum drawn in its place — whether
    * that is a max, a sum or a recomputed rate is a question about the measurement. Keep the first
@@ -79,7 +81,7 @@ export type BandStripProps<T, X extends ChartX = ChartX> = Omit<
   states: readonly BandStripSeries<T>[]
   /** Which state, fill and marker each datum has. Memoize it: a new function recompiles the chart. */
   getBand: (d: T) => BandSpan
-  fold?: BandFold<T>
+  fold?: BandFold<T> | undefined
 }
 
 const DEFAULT_MIN_BAND_PX = 3

@@ -34,13 +34,13 @@ export type DonutProps<K extends string = string> = BasaltProps & {
   colorForKey: (key: K) => string
   formatValue: (v: number) => string
   /** Legend and tooltip label for a key. Default: the key. */
-  seriesLabel?: (key: K) => string
+  seriesLabel?: ((key: K) => string) | undefined
   /** The ring's centre text, and the smaller line under it. */
-  centerLabel?: string
-  centerSubLabel?: string
+  centerLabel?: string | undefined
+  centerSubLabel?: string | undefined
   /** Default 240. */
-  height?: number | ResponsiveChartHeight
-  state?: ChartState
+  height?: number | ResponsiveChartHeight | undefined
+  state?: ChartState | undefined
 }
 
 /** Slices kept before the rest fold into "Other". */

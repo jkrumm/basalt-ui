@@ -24,35 +24,37 @@ export type ChartSeries<T> = {
    * series whose `getValue` is always `null` is a legend-only entry (a zone or reference key). */
   getValue: (d: T) => number | null
   /** The legend swatch shape. Default: the kind's own mark (`line` in `Lines`, `bar` in `Bars`). */
-  mark?: 'line' | 'bar' | 'area'
+  mark?: 'line' | 'bar' | 'area' | undefined
   /** Default `'solid'`; `'dashed'` is `VX.dashArray` on the line, the legend and the tooltip. */
-  dash?: 'solid' | 'dashed'
+  dash?: 'solid' | 'dashed' | undefined
   /** Interpolation between points. Default `'monotone'`. A piecewise-constant quantity (a price
    * tier, a config value) is a step: a smoothed curve draws values that never existed. */
-  curve?: CurveName
-  strokeWidth?: number
+  curve?: CurveName | undefined
+  strokeWidth?: number | undefined
   /** Dims the plotted stroke (a faint companion line). Strokes only. */
-  strokeOpacity?: number
+  strokeOpacity?: number | undefined
   /** Bars and areas. */
-  fillOpacity?: number
+  fillOpacity?: number | undefined
   /** `Lines`: a soft gradient fill under the line — `true` in the series color, or a color ref. */
-  area?: boolean | string
+  area?: boolean | string | undefined
   /** Which y axis the series is measured against. `'right'` needs the chart's `y2`. */
-  axis?: 'left' | 'right'
+  axis?: 'left' | 'right' | undefined
   /** Legend grouping: series → overlay → reference. Default `'series'`. */
-  role?: 'series' | 'overlay' | 'reference'
+  role?: 'series' | 'overlay' | 'reference' | undefined
   /** `false` keeps it out of the legend (a companion line folded under `parent`). Default `true`. */
-  legend?: boolean
+  legend?: boolean | undefined
   /** `false` draws and legends it but never lists it as a tooltip row. Default `true`. */
-  tooltip?: boolean
+  tooltip?: boolean | undefined
   /** A companion (an MA line) names its parent, so a legend toggle and hover keep the pair. */
-  parent?: string
+  parent?: string | undefined
   /** A short qualifier after the label in the legend and the tooltip row, in muted text. */
-  note?: string
+  note?: string | undefined
   /** Per-series tooltip value format; receives the datum so a row can read more than the value. */
-  formatValue?: (v: number, d: T) => string
+  formatValue?: ((v: number, d: T) => string) | undefined
   /** A marker at a point (a PR star, a status dot); `null` for none. */
-  getMarker?: (d: T) => { color?: string; r?: number; fillOpacity?: number; ring?: boolean } | null
+  getMarker?:
+    | ((d: T) => { color?: string; r?: number; fillOpacity?: number; ring?: boolean } | null)
+    | undefined
 }
 
 /** One y axis. */
@@ -66,23 +68,24 @@ export type AxisConfig<T> = {
     | readonly [number, number]
     | 'auto'
     | ((data: readonly T[], visible: readonly ChartSeries<T>[]) => readonly [number, number])
+    | undefined
   /** When `'auto'`: the raw upper bound is at least this; padding applies after. */
-  autoMaxFloor?: number
+  autoMaxFloor?: number | undefined
   /** When `'auto'`: the lower bound is at most this. Default `0` (a zero baseline); `Infinity` pads
    * down from the data minimum instead. Ignored on a log axis. */
-  autoMinCeil?: number
+  autoMinCeil?: number | undefined
   /** When `'auto'`: padding multiplier away from the data. Default `1.1`. */
-  autoPad?: number
+  autoPad?: number | undefined
   /** A tick count, or the exact tick values. Default: one per ~48px of plot height, ≤ 5. */
-  ticks?: number | readonly number[]
+  ticks?: number | readonly number[] | undefined
   /** Tick and tooltip formatter. Default: compact numbers (`12.5k`). */
-  format?: (v: number) => string
+  format?: ((v: number) => string) | undefined
   /** Horizontal grid rules. Default: on for `y`, off for `y2`. */
-  grid?: boolean
+  grid?: boolean | undefined
   /** Round the domain outward to nice ticks. Default `false` (a fixed domain stays fixed). */
-  nice?: boolean
+  nice?: boolean | undefined
   /** Default `'linear'`. A log axis floors at the smallest positive visible value. */
-  scale?: 'linear' | 'log'
+  scale?: 'linear' | 'log' | undefined
 }
 
 /** A horizontal band on one y axis. `±Infinity` reaches the plot edge. */
@@ -90,7 +93,7 @@ export type ZoneSpec = {
   from: number
   to: number
   fill: string
-  axisSide?: 'left' | 'right'
+  axisSide?: 'left' | 'right' | undefined
 }
 
 /**
@@ -99,18 +102,18 @@ export type ZoneSpec = {
  * from one hour to another, both hours included).
  */
 export type XZoneSpec<X extends ChartX = ChartX> = {
-  from?: X
-  to?: X
+  from?: X | undefined
+  to?: X | undefined
   fill: string
-  align?: 'center' | 'edge'
+  align?: 'center' | 'edge' | undefined
 }
 
 /** A horizontal reference line — annotation only, no domain role beyond staying inside the plot. */
 export type RefLine = {
   value: number
   color: string
-  dashed?: boolean
-  axis?: 'left' | 'right'
+  dashed?: boolean | undefined
+  axis?: 'left' | 'right' | undefined
 }
 
 /** A fill between the line and a value, on one side of it, tracking the line. */
@@ -134,44 +137,46 @@ export type ChartTooltipRow = {
 export type ChartTooltipConfig<T, X extends ChartX = ChartX> = {
   /** The tooltip title. Default: the x value through `formatX`'s long form (a date reads
    * `Mon Sep 1 2026`). */
-  formatHeader?: (x: X, d: T) => string
+  formatHeader?: ((x: X, d: T) => string) | undefined
   /** Rows after the per-series rows (a total, a zone badge, a context line). `visible`/`hidden` are
    * the legend's split, so a row never names a series the plot no longer draws. */
-  rows?: (
-    d: T,
-    ctx: { visible: readonly ChartSeries<T>[]; hidden: readonly ChartSeries<T>[] },
-  ) => readonly ChartTooltipRow[]
+  rows?:
+    | ((
+        d: T,
+        ctx: { visible: readonly ChartSeries<T>[]; hidden: readonly ChartSeries<T>[] },
+      ) => readonly ChartTooltipRow[])
+    | undefined
   /** Show this chart's tooltip while it FOLLOWS a sibling's cursor. Default `false`: only the chart
    * under the pointer or keyboard focus shows a tooltip and a live region. */
-  onFollow?: boolean
+  onFollow?: boolean | undefined
 }
 
 export type ChartLegendConfig = {
   /** Default `'bottom'`. `'header'` draws the legend at the top of the chart body, spaced as the
    * enclosing `ChartCard`'s header legend row (in the chart's own markup, so it is in the server
    * HTML and the header never grows); outside a card it is `'top'`. */
-  placement?: 'top' | 'bottom' | 'header'
+  placement?: 'top' | 'bottom' | 'header' | undefined
   /** Visually separate roles: series | overlay | reference. */
-  groups?: boolean
+  groups?: boolean | undefined
   /** Clicking an entry hides that series. Default: on whenever there are two or more entries. */
-  toggle?: boolean
+  toggle?: boolean | undefined
 }
 
 /** A height per container class, `base` below `regular`. A plain number is fixed. */
 export type ResponsiveChartHeight = {
   base: number
-  regular?: number
-  wide?: number
+  regular?: number | undefined
+  wide?: number | undefined
 }
 
 /** The three "nothing to draw" states, pending → error → empty. */
 export type ChartState = {
-  pending?: boolean
+  pending?: boolean | undefined
   /** Truthy = the query failed; an `Error`'s message is the label. */
-  error?: unknown
+  error?: unknown | undefined
   /** `true`, or the empty label itself. The label is the one way to say WHY (`'No runs match the
    * filter'` vs `'No runs yet'`): § 9 fixes the state shape, so there is no reason field. */
-  empty?: boolean | string
+  empty?: boolean | string | undefined
 }
 
 /** A row of `plot.rows(key)`: one per datum, `y: null` kept as a gap. */
@@ -215,27 +220,27 @@ export type CartesianChartProps<T, X extends ChartX = ChartX> = BasaltProps & {
   series: readonly ChartSeries<T>[]
   /** The plot's marks. Draw `plot.rows(key)` / `plot.visible`, never `series` directly. */
   marks: (plot: PlotContext<T, X>) => ChartMarks
-  y?: AxisConfig<T>
+  y?: AxisConfig<T> | undefined
   /** A right axis; series with `axis: 'right'` and marks bound to `plot.y2` read it. */
-  y2?: AxisConfig<T>
+  y2?: AxisConfig<T> | undefined
   /** A tick count, or the exact x tick values. Default: by container class. */
-  xTicks?: number | readonly X[]
+  xTicks?: number | readonly X[] | undefined
   /** Tick label for an x value. Default: `DD.MM` for dates, compact numbers, strings verbatim. */
-  formatX?: (x: X) => string
-  zones?: readonly ZoneSpec[]
-  xZones?: readonly XZoneSpec<X>[]
-  refLines?: readonly RefLine[]
+  formatX?: ((x: X) => string) | undefined
+  zones?: readonly ZoneSpec[] | undefined
+  xZones?: readonly XZoneSpec<X>[] | undefined
+  refLines?: readonly RefLine[] | undefined
   /** `false` hides the legend. */
-  legend?: ChartLegendConfig | false
+  legend?: ChartLegendConfig | false | undefined
   /** Default: the height law (measured width × class ratio, 160–420px, ≤ 45vh on touch). */
-  height?: number | ResponsiveChartHeight
-  state?: ChartState
+  height?: number | ResponsiveChartHeight | undefined
+  state?: ChartState | undefined
   /** Joins a named cursor group instead of the page-shared default. */
-  cursorGroup?: string
+  cursorGroup?: string | undefined
   /** Default `'nearest'`. `'leading'` for a series keyed by a bucket's leading edge (a weekly
    * value keyed by its Monday). */
-  cursorResolution?: CursorResolution
-  tooltip?: ChartTooltipConfig<T, X> | false
+  cursorResolution?: CursorResolution | undefined
+  tooltip?: ChartTooltipConfig<T, X> | false | undefined
 }
 
 /** The x channel of a `plot.rows()` row, as an accessor (a field name does not type-check against a
