@@ -32,7 +32,7 @@ import type { AgentThread } from './thread'
  * turn has settled, so those never apply here.
  *
  * Note there are THREE overlapping status-shaped unions in this module family, one per layer:
- * `StreamStatus` (single-turn stream lifecycle, `./thread`), `ThreadStatus` (persisted
+ * the internal `StreamStatus` (single-turn stream lifecycle, `./thread`), `ThreadStatus` (persisted
  * thread lifecycle, `./thread`), and this `AgentOutcome['status']` (feed-facing terminal
  * projection). They are related but not identical — `StreamStatus`'s `'idle'` (no turn in
  * flight) corresponds to `ThreadStatus`'s `'pending'` (thread created, no turn started yet); the
