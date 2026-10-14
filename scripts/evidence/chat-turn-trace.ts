@@ -29,8 +29,17 @@ export function chatTurns(spans: readonly CollectedSpan[]): {
   return { ok: turns.filter((s) => !s.failed), failed: turns.filter((s) => s.failed) }
 }
 
+export type RelativeSpan = {
+  name: string
+  startMs: number
+  durationMs: number
+  failed: boolean
+  attributes: CollectedSpan['attributes']
+}
+
 /** Spans as the detail JSON records them: start relative to the first span, no absolute clock. */
-export function relative(spans: readonly CollectedSpan[]) {
+export function relative(spans: readonly CollectedSpan[]): RelativeSpan[] {
+  if (spans.length === 0) return []
   const t0 = Math.min(...spans.map((s) => s.start))
   return spans.map((s) => ({
     name: s.name,
@@ -39,6 +48,27 @@ export function relative(spans: readonly CollectedSpan[]) {
     failed: s.failed,
     attributes: s.attributes,
   }))
+}
+
+const ATTR_TYPES = {
+  'basalt.chat.thread_id': 'string',
+  'basalt.chat.ttft_ms': 'number',
+  'basalt.chat.parts': 'number',
+  'basalt.chat.status': 'string',
+} as const
+
+/** A `chat.turn` span must carry the four `ChatAttrs` with the right types; throws like `assertSpansObserved`. */
+export function assertChatAttrs(span: CollectedSpan, extra: readonly string[] = []): void {
+  const expected: Record<string, string> = { ...ATTR_TYPES }
+  for (const key of extra) expected[key] = 'string'
+  for (const [key, type] of Object.entries(expected)) {
+    const value = span.attributes[key]
+    if (typeof value !== type) {
+      throw new Error(
+        `chat-turn-trace: chat.turn attribute ${key} is ${typeof value}, want ${type}`,
+      )
+    }
+  }
 }
 
 async function waitFor(what: string, until: () => boolean): Promise<void> {
@@ -90,6 +120,8 @@ export const chatTurnTrace: Lane = async (ctx) => {
     const failed = chatTurns(failSpans).failed[0]
     if (!ok) throw new Error('chat-turn-trace: no ok chat.turn span')
     if (!failed) throw new Error('chat-turn-trace: no failed chat.turn span')
+    assertChatAttrs(ok)
+    assertChatAttrs(failed, ['exception.type', 'basalt.error.kind'])
     return {
       lane: 'chat-turn-trace',
       summary: [

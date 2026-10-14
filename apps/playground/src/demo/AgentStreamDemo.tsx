@@ -65,15 +65,17 @@ function useMemoryThreadsStore(): ThreadsStore<AgentPart> {
 }
 
 /** Parts delivered before the forced failure, so the error entry keeps a partial reply. */
-const FAIL_AFTER_PARTS = 3
+export const FAIL_AFTER_PARTS = 3
 
 /** `?fail=1`: streams a few parts, then throws what AI SDK's `APICallError` looks like (a 500). */
-const failingTransport = {
-  async *stream(): AsyncGenerator<AgentPart> {
+export const failingTransport = {
+  async *stream(_input: string, signal?: AbortSignal): AsyncGenerator<AgentPart> {
     for (const part of richParts().slice(0, FAIL_AFTER_PARTS)) {
       await new Promise((resolve) => setTimeout(resolve, DELTA_MS))
+      if (signal?.aborted) return
       yield part
     }
+    if (signal?.aborted) return
     throw Object.assign(new Error('Internal Server Error'), { statusCode: 500 })
   },
 }

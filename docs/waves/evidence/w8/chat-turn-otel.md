@@ -34,8 +34,9 @@ Span status is unset. `exception.type` / `basalt.error.kind` are absent, as the 
 ## Forced failure (`/agent?fail=1`)
 
 The demo's `failingTransport` streams three deltas, then throws an error carrying `statusCode: 500`
-(AI SDK `APICallError` shape). One span, no `route.navigate` before it in this run (direct load of
-`/agent?fail=1` so the param survives; the route span is covered by the ok run above).
+(AI SDK `APICallError` shape). The run recorded 1 span in total (`chat.turn` only; lane row `spans in the failed run`, raw `failRun` in
+the detail JSON). The page is a direct load of `/agent?fail=1` so the param survives, and the
+initial-load `route.navigate` did not fire for it; the route span is covered by the ok run above.
 
 | Attribute               | Value                                 |
 | ----------------------- | ------------------------------------- |
