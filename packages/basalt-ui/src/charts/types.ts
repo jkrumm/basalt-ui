@@ -116,7 +116,8 @@ export type ZoneSpec = {
   to: number
   fill: string
   axisSide?: 'left' | 'right' | undefined
-  /** A rule on the band's `top` (`to`) and/or `bottom` (`from`) boundary. */
+  /** A rule on the band's visual `top` (the larger bound) and/or `bottom` (the smaller), whichever
+   * of `from`/`to` that is. */
   edge?: ZoneEdge<'top' | 'bottom'> | undefined
 }
 
@@ -142,7 +143,9 @@ export type RefLine = {
   axis?: 'left' | 'right' | undefined
   /**
    * Names the line in the legend (its color, dashed as `dashed`; a toggle hides the line), so a
-   * threshold needs no always-`null` series. `mark` is the swatch shape. Default `'line'`.
+   * threshold needs no always-`null` series. `mark` is the swatch shape. Default `'line'`. The
+   * toggle state is keyed by the line's index in `refLines`: reordering the array while a line is
+   * toggled off moves the "off" to whichever line now sits at that index.
    */
   legend?: { label: string; mark?: 'line' | 'bar' | undefined } | undefined
 }

@@ -21,7 +21,7 @@ import { useCallback, useMemo } from 'react'
 import type { ReactElement } from 'react'
 import { VX, alpha } from '../tokens'
 import { resolveContainerClass } from '../tokens/size-classes'
-import { defaultFormatX, defaultNumberFormat, visibleSeries } from './compile'
+import { defaultFormatX, defaultNumberFormat, seriesRow, visibleSeries } from './compile'
 import { barMark, emphasis } from './marks'
 import { PanelRung, paneX, paneY, rowsOf } from './panel'
 import type { PaneBuilder, PanelInput, PanelPlan } from './panel'
@@ -277,12 +277,13 @@ export function MirroredBars<T, X extends ChartX = ChartX>(
             // Each pane's row falls back to ITS OWN formatter: the panes are in different units.
             const fallback =
               s.key === up.key ? up.format : s.key === down.key ? down.format : defaultNumberFormat
-            out.push({
-              label: s.note === undefined ? s.label : `${s.label} · ${s.note}`,
-              value: s.formatValue ? s.formatValue(v, d) : fallback(v),
-              color: s.color,
-              ...(highlighted === s.key && { active: true }),
-            })
+            out.push(
+              seriesRow(
+                s,
+                s.formatValue ? s.formatValue(v, d) : fallback(v),
+                highlighted === s.key,
+              ),
+            )
           }
           return out
         },

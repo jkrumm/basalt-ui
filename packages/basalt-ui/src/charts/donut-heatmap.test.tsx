@@ -313,6 +313,31 @@ describe('Heatmap', () => {
     expect(tip).toContain('Samples')
   })
 
+  test('a caller row with swatch dashed paints a dashed swatch, a plain one the color', async () => {
+    const el = await mount(
+      <Heatmap
+        ariaLabel="H"
+        data={cells}
+        {...grid}
+        rows={['Mon', 'Tue']}
+        cols={['0', '1']}
+        formatValue={(v) => `${v} km`}
+        tooltip={{
+          rows: () => [
+            { label: 'Target', value: '5', color: 'var(--vx-good)', swatch: 'dashed' },
+            { label: 'Plain', value: '6', color: 'var(--vx-bad)' },
+          ],
+        }}
+      />,
+    )
+    await hover(el, 100, 28)
+    const swatches = [...document.querySelectorAll('.ts-chart-tooltip__swatch')].map(
+      (n) => (n as HTMLElement).style.background,
+    )
+    expect(swatches.some((b) => b.includes('repeating-linear-gradient'))).toBe(true)
+    expect(swatches.some((b) => b.includes('var(--vx-bad)'))).toBe(true)
+  })
+
   test('an absent cell with a datum still opens a tooltip that says so', async () => {
     const el = await mount(
       <Heatmap ariaLabel="H" data={cells} {...grid} rows={['Mon', 'Tue']} cols={['0', '1']} />,

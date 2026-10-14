@@ -998,7 +998,7 @@ All additive; no call site changes. Named consumers are argo `apps/dashboard/src
   `color` can be a function of it (garmin-health `recovery-trend-chart.tsx`, its `Zone` row). argo:
   `garmin-health/charts/stress-chart.tsx` (the dashed `Overnight` line).
 - `RefLine.legend: { label, mark? }` gives a reference line its own legend entry (the line's color,
-  dashed as `dashed`, role `reference`; a toggle hides the line), so a threshold needs no always-`null`
+  dashed as `dashed`, role `reference`; a toggle hides the line, keyed by its index in `refLines`; series keys starting `__ref-` are reserved and throw in dev), so a threshold needs no always-`null`
   series. argo `strength-tracker/charts/weekly-volume-chart.tsx`: delete `LANDMARK_LEGEND` and put
   `legend: { label: 'MEV' }` on the three `refLines`.
 - `DualPanelBar.tooltipFormat` and `DualPanelProps.top.tooltipFormat` format the tooltip rows while

@@ -1,7 +1,7 @@
 /**
- * Argo friction rows 30-33: tooltip swatch shapes, reference-line legend entries, a cursor dot for a
- * marks-drawn series, and the band edge rules. Compile-level where the definition says it, rendered
- * where the engine does (keys such as `zone-0-top` are the engine's `data-ts-key`).
+ * Tooltip swatch shapes, reference-line legend entries, cursor dots for marks-drawn series and the
+ * band edge rules. Compile-level where the definition says it, rendered where the engine does
+ * (keys such as `zone-0-top` are the engine's `data-ts-key`).
  */
 import { afterEach, describe, expect, test } from 'bun:test'
 import type { ChartPoint } from '@tanstack/charts/types/core'
@@ -10,13 +10,19 @@ import { createRoot } from 'react-dom/client'
 import { renderToString } from 'react-dom/server'
 import { CartesianChart } from './CartesianChart'
 import { compileCartesian, dashedSwatch, engineRow, refLegendSeries } from './compile'
+import type { CartesianDefinition } from './compile'
 import { chartCursor } from './cursor'
 import { Lines } from './Lines'
-import type { ChartSeries } from './types'
+import type { ChartSeries, RefLine } from './types'
 
-type Row = { t: Date; a: number | null; track: number | null }
+type Row = { t: Date; a: number | null; track: number | null; n: number }
 const day = (d: number): Date => new Date(Date.UTC(2026, 8, d))
-const data: Row[] = [1, 2, 3, 4].map((d) => ({ t: day(d), a: d * 10, track: d === 3 ? null : d }))
+const data: Row[] = [1, 2, 3, 4].map((d) => ({
+  t: day(d),
+  a: d * 10,
+  track: d === 3 ? null : d,
+  n: d,
+}))
 const x = (d: Row): Date => d.t
 const a: ChartSeries<Row> = {
   key: 'a',
@@ -53,14 +59,32 @@ const keyed = (el: Element, key: string): Element[] => [
   ...el.querySelectorAll(`g[data-ts-key="${key}"]`),
 ]
 
-function rowsOf(def: ReturnType<typeof compileCartesian>, i: number) {
-  const tooltip = def.tooltip
-  if (!tooltip || !('content' in tooltip) || !tooltip.content) throw new Error('no tooltip')
-  const datum = { x: day(i), y: 0, series: 'a', datum: data[i - 1] }
-  return tooltip.content([{ datum, xValue: day(i) } as ChartPoint], {} as never).rows
+/** The one engine group with this key; a missing or duplicated one fails the test. */
+function only(el: Element, key: string): Element {
+  const found = keyed(el, key)
+  const [group] = found
+  if (found.length !== 1 || !group)
+    throw new Error(`expected one "${key}" group, got ${found.length}`)
+  return group
 }
 
-describe('row 30: tooltip swatch', () => {
+type TooltipContent = {
+  title?: string | undefined
+  rows: readonly { color?: string | undefined }[]
+}
+
+/** The definition's tooltip content for a hovered plot row of `series` at datum index `i`. */
+function tooltipFor(def: CartesianDefinition, series: string, i: number): TooltipContent {
+  const tooltip = def.tooltip
+  if (!tooltip || !('content' in tooltip) || !tooltip.content) throw new Error('no tooltip')
+  const datum = { x: day(i + 1), y: 0, series, datum: data[i] }
+  // The engine builds a full point; the content function reads only these two fields.
+  const point = { datum, xValue: day(i + 1) } as ChartPoint
+  const context = {} as Parameters<typeof tooltip.content>[1]
+  return tooltip.content([point], context)
+}
+
+describe('tooltip swatch', () => {
   test('a row swatch is solid unless it says dashed', () => {
     expect(engineRow({ label: 'L', value: 'V', color: 'red' })).toEqual({
       label: 'L',
@@ -93,8 +117,7 @@ describe('row 30: tooltip swatch', () => {
         rows: () => [{ label: 'Target', value: '50', color: 'var(--vx-good)', swatch: 'dashed' }],
       },
     })
-    const colors = rowsOf(def, 2).map((r) => r.color)
-    expect(colors).toEqual([
+    expect(tooltipFor(def, 'a', 1).rows.map((r) => r.color)).toEqual([
       'var(--vx-line)',
       dashedSwatch('var(--vx-line)'),
       dashedSwatch('var(--vx-good)'),
@@ -102,11 +125,11 @@ describe('row 30: tooltip swatch', () => {
   })
 })
 
-describe('row 31: reference-line legend entries', () => {
-  const refs = [
+describe('reference-line legend entries', () => {
+  const refs: RefLine[] = [
     { value: 20, color: 'var(--vx-good)', dashed: true, legend: { label: 'MEV' } },
     { value: 30, color: 'var(--vx-bad)' },
-    { value: 40, color: 'var(--vx-warn)', legend: { label: 'MAV', mark: 'bar' as const } },
+    { value: 40, color: 'var(--vx-warn)', legend: { label: 'MAV', mark: 'bar' } },
   ]
 
   test('only the lines that name themselves become legend entries, role reference', () => {
@@ -115,23 +138,34 @@ describe('row 31: reference-line legend entries', () => {
       ['__ref-0', 'MEV', 'reference', undefined, 'dashed'],
       ['__ref-2', 'MAV', 'reference', 'bar', undefined],
     ])
-    expect(entries.every((e) => e.tooltip === false && e.getValue(data[0] as Row) === null)).toBe(
-      true,
-    )
+    const [first] = data
+    if (!first) throw new Error('no data')
+    expect(entries.every((e) => e.tooltip === false && e.getValue(first) === null)).toBe(true)
     expect(refLegendSeries(undefined)).toEqual([])
   })
 
-  test('the legend lists them after the series, with no tooltip row', () => {
+  test('the legend lists them after the series; a line without `legend` adds none', () => {
     const el = ssr(<Lines ariaLabel="L" data={data} x={x} series={[a]} refLines={refs} />)
     const keys = [...el.querySelectorAll('[data-legend-key]')].map((n) =>
       n.getAttribute('data-legend-key'),
     )
     expect(keys).toEqual(['a', '__ref-0', '__ref-2'])
     expect(el.querySelector('[data-legend-key="__ref-0"]')?.textContent).toContain('MEV')
-    const dashed = el.querySelector('[data-legend-key="__ref-0"] line')
-    expect(dashed?.getAttribute('stroke-dasharray')).not.toBeNull()
-    // Without `legend` a line adds no entry.
-    const plain = ssr(
+    expect(
+      el.querySelector('[data-legend-key="__ref-0"] line')?.getAttribute('stroke-dasharray'),
+    ).not.toBeNull()
+  })
+
+  test('mark "bar" draws a filled chip, not a line swatch', () => {
+    const el = ssr(<Lines ariaLabel="L" data={data} x={x} series={[a]} refLines={refs} />)
+    const bar = el.querySelector('[data-legend-key="__ref-2"]')
+    expect(bar?.querySelector('svg')).toBeNull()
+    const chip = [...(bar?.querySelectorAll('span') ?? [])].find((n) => n.style.width === '10px')
+    expect(chip?.style.background).toBe('var(--vx-warn)')
+  })
+
+  test('no `legend` on any line adds no reference entry', () => {
+    const el = ssr(
       <Lines
         ariaLabel="L"
         data={data}
@@ -140,7 +174,7 @@ describe('row 31: reference-line legend entries', () => {
         refLines={[{ value: 20, color: 'red' }]}
       />,
     )
-    expect(plain.querySelector('[data-legend-key^="__ref"]')).toBeNull()
+    expect(el.querySelector('[data-legend-key^="__ref"]')).toBeNull()
   })
 
   test('toggling the entry hides the line', async () => {
@@ -154,9 +188,42 @@ describe('row 31: reference-line legend entries', () => {
     expect(keyed(el, 'ref-0').length).toBe(0)
     expect(keyed(el, 'ref-1').length).toBe(1)
   })
+
+  test('the toggle state is keyed by the line index, not its identity', async () => {
+    const first: RefLine = { value: 20, color: 'var(--vx-good)', legend: { label: 'One' } }
+    const second: RefLine = { value: 30, color: 'var(--vx-bad)', legend: { label: 'Two' } }
+    const chart = (refLines: RefLine[]) => (
+      <Lines ariaLabel="L" data={data} x={x} series={[a]} refLines={refLines} />
+    )
+    const el = await mount(chart([first, second]))
+    const toggle = el.querySelector('button[data-legend-key="__ref-0"]')
+    if (!(toggle instanceof HTMLButtonElement)) throw new Error('no toggle')
+    await act(async () => {
+      toggle.click()
+    })
+    expect(keyed(el, 'ref-0').length).toBe(0)
+    await act(async () => {
+      root?.render(chart([second, first]))
+    })
+    // `second` now sits at index 0, so it is the one that is off.
+    expect(keyed(el, 'ref-0').length).toBe(0)
+    expect(keyed(el, 'ref-1').length).toBe(1)
+  })
+
+  test('a series key in the reserved `__ref-` namespace throws', () => {
+    expect(() =>
+      compileCartesian({
+        chartId: 'reserved',
+        data,
+        x,
+        series: [{ ...a, key: '__ref-0' }],
+        marks: () => [],
+      }),
+    ).toThrow(/reserved/)
+  })
 })
 
-describe('row 33a: cursorValue', () => {
+describe('cursorValue dots', () => {
   const track: ChartSeries<Row> = {
     key: 'track',
     label: 'Track',
@@ -164,16 +231,26 @@ describe('row 33a: cursorValue', () => {
     getValue: () => null,
     cursorValue: (d) => d.track,
   }
-  const chart = (series: ChartSeries<Row>[]) => (
-    <CartesianChart ariaLabel="C" data={data} x={x} series={series} marks={() => []} />
+  const chart = (series: ChartSeries<Row>[], extra: object = {}) => (
+    <CartesianChart ariaLabel="C" data={data} x={x} series={series} marks={() => []} {...extra} />
   )
+  const dotsOf = (el: Element, key: string): Element[] => [
+    ...only(el, `${key}-cursor`).querySelectorAll('circle'),
+  ]
 
   test('a dot per datum with a finite value, in the series color, hidden until the cursor', () => {
-    const el = ssr(chart([a, track]))
-    const dots = [...keyed(el, 'track-cursor')[0]!.querySelectorAll('circle')]
+    const dots = dotsOf(ssr(chart([a, track])), 'track')
     expect(dots.length).toBe(3)
     expect(dots.every((c) => c.getAttribute('fill') === 'var(--vx-accent)')).toBe(true)
     expect(dots.every((c) => c.getAttribute('fill-opacity') === '0')).toBe(true)
+  })
+
+  test('NaN, Infinity and null values draw no dot', () => {
+    const odd: ChartSeries<Row> = {
+      ...track,
+      cursorValue: (d) => [Number.NaN, Number.POSITIVE_INFINITY, null, 4][d.n - 1] ?? null,
+    }
+    expect(dotsOf(ssr(chart([a, odd])), 'track').length).toBe(1)
   })
 
   test('a series without cursorValue draws none, and a legend toggle drops the dots', async () => {
@@ -188,6 +265,22 @@ describe('row 33a: cursorValue', () => {
     expect(keyed(el, 'track-cursor').length).toBe(0)
   })
 
+  test('a right-axis series places its dots on the right scale', () => {
+    const left: ChartSeries<Row> = { ...track, key: 'left', cursorValue: () => 5 }
+    const right: ChartSeries<Row> = { ...track, key: 'right', axis: 'right', cursorValue: () => 5 }
+    const el = ssr(chart([a, left, right], { y: { domain: [0, 1000] }, y2: { domain: [0, 10] } }))
+    const cy = (key: string): number => Number(dotsOf(el, key)[0]?.getAttribute('cy'))
+    // 5 of 10 sits mid-plot; 5 of 1000 sits at the bottom.
+    expect(cy('right')).toBeLessThan(cy('left'))
+  })
+
+  test('a series with both getValue and cursorValue gets one cursor dot per datum', () => {
+    const both: ChartSeries<Row> = { ...a, cursorValue: (d) => d.a }
+    const el = ssr(chart([both]))
+    expect(dotsOf(el, 'a').length).toBe(data.length)
+    expect(keyed(el, 'a-cursor').length).toBe(1)
+  })
+
   test('hovering a datum shows exactly its dot', async () => {
     const el = await mount(chart([a, track]))
     const svg = el.querySelector('svg')
@@ -198,31 +291,18 @@ describe('row 33a: cursorValue', () => {
       )
       await new Promise((r) => setTimeout(r, 30))
     })
-    const shown = [...keyed(el, 'track-cursor')[0]!.querySelectorAll('circle')].filter(
-      (c) => c.getAttribute('fill-opacity') === '1',
-    )
+    const shown = dotsOf(el, 'track').filter((c) => c.getAttribute('fill-opacity') === '1')
     expect(shown.length).toBe(1)
   })
 
   test('the dots are focus points: the tooltip reaches the datum through them', () => {
-    const def = compileCartesian({
-      chartId: 'cv',
-      data,
-      x,
-      series: [a, track],
-      marks: () => [],
-    })
+    const def = compileCartesian({ chartId: 'cv', data, x, series: [a, track], marks: () => [] })
     // A dot's datum is a plot row of the series; its source datum feeds the other series' rows.
-    const tooltip = def.tooltip
-    if (!tooltip || !('content' in tooltip) || !tooltip.content) throw new Error('no tooltip')
-    const datum = { x: day(2), y: 2, series: 'track', datum: data[1] }
-    const content = tooltip.content([{ datum, xValue: day(2) } as ChartPoint], {} as never)
-    expect(content.rows.map((r) => r.label)).toEqual(['Alpha'])
+    expect(tooltipFor(def, 'track', 1).rows.length).toBe(1)
   })
 })
 
-describe('row 33c: band edge rules', () => {
-  const zone = { from: 15, to: 35, fill: 'var(--vx-good)' }
+describe('band edge rules', () => {
   const edge = { color: 'var(--vx-accent)' }
   const zoned = (z: object) =>
     ssr(
@@ -232,7 +312,7 @@ describe('row 33c: band edge rules', () => {
         x={x}
         series={[a]}
         y={{ domain: [0, 50] }}
-        zones={[{ ...zone, ...z }]}
+        zones={[{ from: 15, to: 35, fill: 'var(--vx-good)', ...z }]}
       />,
     )
   const edges = (el: Element): string[] =>
@@ -248,14 +328,26 @@ describe('row 33c: band edge rules', () => {
     ])
   })
 
-  test('a bound at the plot edge (infinite, or outside the domain) draws no rule', () => {
-    const el = zoned({ to: Infinity, edge: { ...edge, side: 'both' } })
-    expect(edges(el)).toEqual(['zone-0-bottom'])
+  test('reversed bounds: top is the visually higher one', () => {
+    const el = zoned({ from: 35, to: 15, edge: { ...edge, side: 'both' } })
+    expect(edges(el)).toEqual(['zone-0-top', 'zone-0-bottom'])
+    const y = (key: string): number =>
+      Number(only(el, key).querySelector('line')?.getAttribute('y1'))
+    expect(y('zone-0-top')).toBeLessThan(y('zone-0-bottom'))
+  })
+
+  test('a bound at the plot edge draws no rule: infinite, past the domain, or exactly on it', () => {
+    const both = { ...edge, side: 'both' as const }
+    expect(edges(zoned({ to: Infinity, edge: both }))).toEqual(['zone-0-bottom'])
+    expect(edges(zoned({ to: 80, edge: both }))).toEqual(['zone-0-bottom'])
+    expect(edges(zoned({ from: -20, edge: both }))).toEqual(['zone-0-top'])
+    expect(edges(zoned({ from: 0, edge: both }))).toEqual(['zone-0-top'])
+    expect(edges(zoned({ to: 50, edge: both }))).toEqual(['zone-0-bottom'])
   })
 
   test('paint: color, width and dash', () => {
     const el = zoned({ edge: { ...edge, side: 'top', width: 2, dashed: true } })
-    const line = keyed(el, 'zone-0-top')[0]!.querySelector('line')
+    const line = only(el, 'zone-0-top').querySelector('line')
     expect(line?.getAttribute('stroke')).toBe('var(--vx-accent)')
     expect(line?.getAttribute('stroke-width')).toBe('2')
     expect(line?.getAttribute('stroke-dasharray')).not.toBeNull()
@@ -273,17 +365,36 @@ describe('row 33c: band edge rules', () => {
     )
   const xEdges = (el: Element): string[] =>
     ['xzone-0-start', 'xzone-0-end'].filter((k) => keyed(el, k).length === 1)
+  const both = { ...edge, side: 'both' as const }
 
   test('x-zone: start, end or both, and none for an omitted bound', () => {
     expect(xEdges(xzoned({}))).toEqual([])
     expect(xEdges(xzoned({ edge: { ...edge, side: 'start' } }))).toEqual(['xzone-0-start'])
     expect(xEdges(xzoned({ edge: { ...edge, side: 'end' } }))).toEqual(['xzone-0-end'])
-    expect(xEdges(xzoned({ edge: { ...edge, side: 'both' } }))).toEqual([
-      'xzone-0-start',
-      'xzone-0-end',
-    ])
-    expect(xEdges(xzoned({ to: undefined, edge: { ...edge, side: 'both' } }))).toEqual([
-      'xzone-0-start',
-    ])
+    expect(xEdges(xzoned({ edge: both }))).toEqual(['xzone-0-start', 'xzone-0-end'])
+    expect(xEdges(xzoned({ to: undefined, edge: both }))).toEqual(['xzone-0-start'])
+  })
+
+  test('x-zone: a bound outside the displayed x domain or exactly on its edge draws no rule', () => {
+    expect(xEdges(xzoned({ from: day(-5), edge: both }))).toEqual(['xzone-0-end'])
+    expect(xEdges(xzoned({ to: day(20), edge: both }))).toEqual(['xzone-0-start'])
+    // The first and last samples are the domain's edges.
+    expect(xEdges(xzoned({ from: day(1), edge: both }))).toEqual(['xzone-0-end'])
+    expect(xEdges(xzoned({ to: day(4), edge: both }))).toEqual(['xzone-0-start'])
+    // `align: 'edge'` widens a bound by half a step, which pushes an end-sample bound past the edge.
+    expect(xEdges(xzoned({ to: day(4), align: 'edge', edge: both }))).toEqual(['xzone-0-start'])
+  })
+
+  test('x-zone: an infinite bound on a numeric x draws no rule', () => {
+    const el = ssr(
+      <Lines
+        ariaLabel="L"
+        data={data}
+        x={(d) => d.n}
+        series={[a]}
+        xZones={[{ from: 2, to: Infinity, fill: 'var(--vx-good)', edge: both }]}
+      />,
+    )
+    expect(xEdges(el)).toEqual(['xzone-0-start'])
   })
 })

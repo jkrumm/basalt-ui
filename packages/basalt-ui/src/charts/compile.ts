@@ -159,8 +159,26 @@ export function engineRow(
   }
 }
 
+/** A series row of a tooltip: the label with its note, the swatch following the series' dash. */
+export function seriesRow(
+  s: Pick<ChartSeries<never>, 'label' | 'note' | 'color' | 'dash'>,
+  value: string,
+  active: boolean,
+): EngineTooltipRow {
+  return engineRow({
+    label: s.note === undefined ? s.label : `${s.label} · ${s.note}`,
+    value,
+    color: s.color,
+    swatch: s.dash === 'dashed' ? 'dashed' : 'solid',
+    active,
+  })
+}
+
+/** Keys the compiler reserves for the legend entries it derives from `refLines`. */
+const REF_KEY_PREFIX = '__ref-'
+
 /** The legend key of a reference line that names itself (`RefLine.legend`). */
-export const refLegendKey = (index: number): string => `__ref-${index}`
+const refLegendKey = (index: number): string => `${REF_KEY_PREFIX}${index}`
 
 /** Legend-only entries for the reference lines that name themselves, in line order. */
 export function refLegendSeries<T>(refLines: readonly RefLine[] | undefined): ChartSeries<T>[] {
@@ -498,6 +516,16 @@ const edgePaint = (edge: ZoneEdge<string>) => ({
   ...(edge.dashed && { strokeDasharray: DASH }),
 })
 
+/**
+ * An edge rule at `position` when it lies strictly inside `(lo, hi)`: a bound at or past the plot
+ * edge (infinite, outside the domain, exactly on it) has no rule, for y- and x-zones alike.
+ */
+const edgeRule = (
+  position: number | null,
+  [lo, hi]: readonly [number, number],
+  make: (at: number) => ChartMarks[number],
+): ChartMarks => (position !== null && position > lo && position < hi ? [make(position)] : [])
+
 /** Fixed paint under the kind's marks: zones, then x-zones, each with its edge rules. */
 function underlayMarks<T, X extends ChartX>(
   input: CartesianInput<T, X>,
@@ -509,18 +537,15 @@ function underlayMarks<T, X extends ChartX>(
     const domain = axes.axisOf(z.axisSide).domain
     const [lo, hi] = [Math.min(...domain), Math.max(...domain)]
     const rule = (value: number, name: string) =>
-      // A bound outside the domain (or infinite) is not on the plot: no rule.
-      value > lo && value < hi
-        ? [
-            decorative(
-              ruleY([value], {
-                id: `zone-${i}-${name}`,
-                yScale: axes.scaleId(z.axisSide),
-                ...(z.edge && edgePaint(z.edge)),
-              }),
-            ),
-          ]
-        : []
+      edgeRule(value, [lo, hi], (at) =>
+        decorative(
+          ruleY([at], {
+            id: `zone-${i}-${name}`,
+            yScale: axes.scaleId(z.axisSide),
+            ...(z.edge && edgePaint(z.edge)),
+          }),
+        ),
+      )
     const sides = edgeSides(z.edge, 'bottom', 'top')
     return [
       decorative(
@@ -544,16 +569,23 @@ function underlayMarks<T, X extends ChartX>(
     const f = xZoneFractions(z, model)
     if (!f) return []
     const sides = edgeSides(z.edge, 'start', 'end')
-    const rule = (at: number, name: string) => [
-      decorative(
-        ruleX([at], {
-          id: `xzone-${i}-${name}`,
-          x: (v: number) => v,
-          xScale: 'zx',
-          ...(z.edge && edgePaint(z.edge)),
-        }),
-      ),
-    ]
+    // The bound's own plot fraction (widened like the band), unclamped: `f` is clamped to the plot.
+    const widen = z.align === 'edge' ? model.halfStep : 0
+    const bound = (value: X | undefined, sign: 1 | -1): number | null => {
+      const fraction = value === undefined ? null : model.fraction(value)
+      return fraction === null ? null : fraction + sign * widen
+    }
+    const rule = (value: X | undefined, sign: 1 | -1, name: string) =>
+      edgeRule(bound(value, sign), [0, 1], (at) =>
+        decorative(
+          ruleX([at], {
+            id: `xzone-${i}-${name}`,
+            x: (v: number) => v,
+            xScale: 'zx',
+            ...(z.edge && edgePaint(z.edge)),
+          }),
+        ),
+      )
     return [
       decorative(
         rect([{ f0: f[0], f1: f[1] }], {
@@ -568,8 +600,8 @@ function underlayMarks<T, X extends ChartX>(
         }),
       ),
       // An omitted bound is the plot edge: nothing to draw a rule on.
-      ...(sides.lower && z.from !== undefined ? rule(f[0], 'start') : []),
-      ...(sides.upper && z.to !== undefined ? rule(f[1], 'end') : []),
+      ...(sides.lower ? rule(z.from, -1, 'start') : []),
+      ...(sides.upper ? rule(z.to, 1, 'end') : []),
     ]
   })
   return [...zones, ...xZones]
@@ -720,15 +752,13 @@ function tooltipSpec<T, X extends ChartX>(opts: {
         const v = s.getValue(d)
         if (v === null || !Number.isFinite(v)) continue
         rows.push(
-          engineRow({
-            label: s.note === undefined ? s.label : `${s.label} · ${s.note}`,
-            value: s.formatValue
+          seriesRow(
+            s,
+            s.formatValue
               ? s.formatValue(v, d)
               : axes.axisOf(axes.onRight(s) ? 'right' : 'left').format(v),
-            color: s.color,
-            swatch: s.dash === 'dashed' ? 'dashed' : 'solid',
-            active: input.highlighted === s.key,
-          }),
+            input.highlighted === s.key,
+          ),
         )
       }
       const extra: readonly ChartTooltipRow[] =
@@ -741,9 +771,20 @@ function tooltipSpec<T, X extends ChartX>(opts: {
   }
 }
 
+/** A consumer key in the legend's reserved `__ref-` namespace would collide with a reference line. */
+function guardReservedKeys<T>(series: readonly ChartSeries<T>[]): void {
+  if (process.env.NODE_ENV === 'production') return
+  const clash = series.find((s) => s.key.startsWith(REF_KEY_PREFIX))
+  if (clash)
+    throw new Error(
+      `[basalt] CartesianChart: the series key "${clash.key}" is reserved (\`${REF_KEY_PREFIX}\` prefix names reference-line legend entries)`,
+    )
+}
+
 export function compileCartesian<T, X extends ChartX>(
   input: CartesianInput<T, X>,
 ): CartesianDefinition {
+  guardReservedKeys(input.series)
   const visible = visibleSeries(input.series, input.hidden ?? new Set<string>())
   const visibleKeys = new Set(visible.map((s) => s.key))
   const keys = new Set(input.series.map((s) => s.key))
@@ -751,6 +792,7 @@ export function compileCartesian<T, X extends ChartX>(
   const axes = resolveAxes(input, visible)
   const under = underlayMarks(input, model, axes)
   const over = refLineMarks(input, axes)
+  const dots = cursorDotMarks(input, visible, axes)
   const rows = rowsOf(input, visibleKeys)
   const formatX = (v: ChartValue): string =>
     input.formatX ? input.formatX(v as X) : defaultFormatX(v)
@@ -773,13 +815,7 @@ export function compileCartesian<T, X extends ChartX>(
         y2Domain: axes.right?.domain,
       })
       return {
-        marks: [
-          ...under,
-          ...kindMarks,
-          ...cursorDotMarks(input, visible, axes),
-          ...over,
-          crosshair({ x: CROSSHAIR, y: false }),
-        ],
+        marks: [...under, ...kindMarks, ...dots, ...over, crosshair({ x: CROSSHAIR, y: false })],
         scales: buildScales({ input, model, axes, formatX, cls, zoneScale: under.length > 0 }),
         theme: CHART_THEME,
         ...(gradients.length > 0 && { gradients }),
