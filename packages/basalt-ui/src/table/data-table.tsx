@@ -989,6 +989,11 @@ const FOLD_ID_ATTR = 'data-basalt-fold-id'
  * width, once anything is folded — fit `room`. A candidate with no measured width yet (never
  * rendered) is skipped rather than folded blind, since folding it would remove the one place its
  * width could ever be read from.
+ *
+ * Every width is a rounded integer (`offsetWidth`, `clientWidth`), and a table that fills its
+ * wrapper stretches its columns to sum to `room` exactly — so the rounded sum lands up to half a
+ * pixel per column over it, and a table that fits folded a column on hydration (a server-painted
+ * table whose cells then moved). The fit check forgives that rounding and nothing more.
  */
 export function planColumnFold(input: {
   room: number
@@ -999,6 +1004,7 @@ export function planColumnFold(input: {
 }): ReadonlySet<string> {
   const { room, toggleWidth, overhead, order, widths } = input
   const known = order.filter((id) => widths.has(id))
+  const roundingSlack = (known.length + 1) / 2
   let unfolded = overhead + known.reduce((sum, id) => sum + (widths.get(id) ?? 0), 0)
   const folded = new Set<string>()
   for (const id of known) {
@@ -1008,7 +1014,7 @@ export function planColumnFold(input: {
     // doc pins as the FIRST declared column (the last-declared one folds first).
     if (folded.size >= known.length - 1) break
     const withToggle = unfolded + (folded.size > 0 ? toggleWidth : 0)
-    if (withToggle <= room) break
+    if (withToggle <= room + roundingSlack) break
     folded.add(id)
     unfolded -= widths.get(id) ?? 0
   }
