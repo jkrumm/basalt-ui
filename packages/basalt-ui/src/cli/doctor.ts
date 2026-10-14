@@ -404,7 +404,7 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
       ['exact-peers: installed exact-pinned peers match basalt-ui', exactPeersCheck(cwd, install)],
       [
         'subpath-peers: every imported basalt-ui subpath has its required peers installed',
-        subpathPeersCheck(cwd, cfg, install),
+        subpathPeersCheck(appDir, cfg, install),
       ],
       [
         'config-keys: the basalt config block sets only keys basalt-ui reads',
