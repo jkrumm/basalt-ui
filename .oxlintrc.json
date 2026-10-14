@@ -50,7 +50,6 @@
     "basalt/agent-no-raw-usechat": "error",
     "basalt/ai-sdk-major": "error",
     "basalt/raw-breakpoint": "error",
-    "basalt/router-view-transition": "error",
     "basalt/no-dev-helper": "error",
     "basalt/no-import-meta-env": "error"
   },
