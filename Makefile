@@ -52,7 +52,8 @@ build: ## Build the published package (dist-first tsup + declarations)
 
 # Measurement harness (scripts/evidence): builds the package + playground unless DIST is given, serves
 # the dist on an ephemeral port, runs every lane, writes .evidence/<LABEL>/ (gitignored) and the
-# committed docs/waves/evidence/w2/<LABEL>.md. ROUTES = file with one path per line (external dists).
+# committed docs/waves/evidence/w2/<LABEL>.md. ROUTES = file with one path per line (external dists). LANES = comma list: a subset run writes
+# <LABEL>.<lanes>.md beside the full summary instead of replacing it.
 evidence: ## Measure bundle/screens/lighthouse/...: make evidence LABEL=<label> [DIST=<dir>] [ROUTES=<file>] [LANES=a,b]
 	@test -n "$(LABEL)" || { echo "usage: make evidence LABEL=<label> [DIST=<dir>] [ROUTES=<file>] [LANES=a,b]"; exit 2; }
 	@bun scripts/evidence/index.ts --label "$(LABEL)" $(if $(DIST),--dist "$(DIST)") $(if $(ROUTES),--routes "$(ROUTES)") $(if $(LANES),--lanes "$(LANES)")

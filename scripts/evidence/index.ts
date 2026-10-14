@@ -51,8 +51,13 @@ const cell = (text: string | number): string =>
     .replace(/\n/g, ' ')
 
 /** The committed summary: no timestamps, no paths, lane order fixed by `LANES`. */
-export function renderSummary(label: string, outcomes: Map<string, LaneOutcome>): string {
+export function renderSummary(
+  label: string,
+  outcomes: Map<string, LaneOutcome>,
+  subset?: readonly string[],
+): string {
   const out = [`# Evidence — ${label}`, '']
+  if (subset) out.push(`Partial run — lanes: ${subset.join(', ')}.`, '')
   for (const [lane, outcome] of outcomes) {
     out.push(`## ${lane}`, '')
     if (outcome.status === 'absent') {
@@ -70,10 +75,15 @@ export function renderSummary(label: string, outcomes: Map<string, LaneOutcome>)
   return out.join('\n')
 }
 
-/** `--lanes a,b` runs those only (fixed `LANES` order); unset runs all. Unknown names throw. */
+/** `--lanes a,b` runs those only (fixed `LANES` order); unset, empty or only commas runs all. Unknown names throw. */
 export function selectLanes(arg: string | undefined): readonly string[] {
-  if (!arg) return LANES
-  const wanted = new Set(arg.split(',').map((l) => l.trim()))
+  const wanted = new Set(
+    (arg ?? '')
+      .split(',')
+      .map((l) => l.trim())
+      .filter(Boolean),
+  )
+  if (wanted.size === 0) return LANES
   const unknown = [...wanted].filter((l) => !(LANES as readonly string[]).includes(l))
   if (unknown.length > 0) throw new Error(`unknown lane(s): ${unknown.join(', ')}`)
   return LANES.filter((l) => wanted.has(l))
@@ -131,7 +141,7 @@ async function main(): Promise<number> {
   const label = values.label
   if (!label || !/^[\w.-]+$/.test(label)) {
     console.error(
-      'usage: bun scripts/evidence/index.ts --label <label> [--dist <dir>] [--routes <file>]',
+      'usage: bun scripts/evidence/index.ts --label <label> [--dist <dir>] [--routes <file>] [--lanes a,b]',
     )
     return 2
   }
@@ -193,8 +203,10 @@ async function main(): Promise<number> {
 
   const summaryDir = join(ROOT, 'docs/waves/evidence/w2')
   await mkdir(summaryDir, { recursive: true })
-  const summaryFile = join(summaryDir, `${label}.md`)
-  await writeFile(summaryFile, renderSummary(label, outcomes))
+  // A subset run must never overwrite the full `<label>.md`: it lands beside it as `<label>.<a+b>.md`.
+  const partial = lanes.length < LANES.length
+  const summaryFile = join(summaryDir, `${label}${partial ? `.${lanes.join('+')}` : ''}.md`)
+  await writeFile(summaryFile, renderSummary(label, outcomes, partial ? lanes : undefined))
   console.log(`[evidence] wrote ${summaryFile}`)
   return [...outcomes.values()].some((o) => o.status === 'failed') ? 1 : 0
 }

@@ -283,6 +283,18 @@ describe('selectLanes', () => {
     expect(selectLanes('table-perf,bundle')).toEqual(['bundle', 'table-perf'])
   })
 
+  it('treats an empty or comma-only value as all lanes and ignores blank tokens', () => {
+    expect(selectLanes('')).toEqual(selectLanes(undefined))
+    expect(selectLanes(',')).toEqual(selectLanes(undefined))
+    expect(selectLanes('bundle,,')).toEqual(['bundle'])
+  })
+
+  it('marks a subset summary as partial', () => {
+    const outcomes = new Map<string, LaneOutcome>([['bundle', { status: 'absent' }]])
+    expect(renderSummary('x', outcomes, ['bundle'])).toContain('Partial run — lanes: bundle.')
+    expect(renderSummary('x', outcomes)).not.toContain('Partial run')
+  })
+
   it('rejects an unknown lane', () => {
     expect(() => selectLanes('bundle,nope')).toThrow('nope')
   })
