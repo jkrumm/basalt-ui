@@ -143,21 +143,47 @@ describe('container-class ladder', () => {
     series: [v],
     marks: () => [],
   })
-  const at = (width: number): StoredChartSpec =>
-    def.chart({ width, height: 240, defaultTheme: {} as never })
+  const at = (width: number, height = 240): StoredChartSpec =>
+    def.chart({ width, height, defaultTheme: {} as never })
+  const labelTick = (spec: StoredChartSpec, scale: 'x' | 'y') => {
+    const axis = spec.scales[scale]?.axis
+    if (!axis || typeof axis !== 'object' || typeof axis.tickLabels !== 'object')
+      throw new Error(`no ${scale} axis`)
+    return axis.tickLabels
+  }
   test('micro (< 240): no y axis, nano labels', () => {
     expect(yAxis(at(200))).toBe(false)
     expect(tickFont(at(200), 'x')).toBe(10)
   })
-  test('compact (< 480): y labels inside the plot, the left margin locked to zero', () => {
-    const spec = at(360)
-    const axis = yAxis(spec)
-    if (!axis || typeof axis !== 'object' || typeof axis.tickLabels !== 'object')
-      throw new Error('no y axis')
-    expect(axis.tickLabels.anchor).toBe('start')
-    expect(axis.tickLabels.dx).toBeGreaterThan(0)
+  test('compact (< 480) and short: y labels inside the plot, the left margin locked to zero', () => {
+    const spec = at(360, 179)
+    const tick = labelTick(spec, 'y')
+    expect(tick.anchor).toBe('start')
+    expect(tick.dx).toBeGreaterThan(0)
+    expect(labelTick(spec, 'x').anchor).toBeFunction()
     expect(spec.margin).toEqual({ left: 0 })
     expect(tickFont(spec, 'x')).toBe(10)
+  })
+  test('compact at SHORT_CHART_HEIGHT (180) and above: a left gutter, margin and x anchor untouched', () => {
+    for (const height of [180, 280]) {
+      const spec = at(360, height)
+      expect(labelTick(spec, 'y').anchor).toBeUndefined()
+      expect(labelTick(spec, 'x').anchor).toBeUndefined()
+      expect(spec.margin).toBeUndefined()
+      expect(tickFont(spec, 'y')).toBe(10)
+    }
+  })
+  test('an unmeasured height (0) never flips a compact chart inside', () => {
+    const spec = at(360, 0)
+    expect(labelTick(spec, 'y').anchor).toBeUndefined()
+    expect(spec.margin).toBeUndefined()
+  })
+  test('regular and wide never put labels inside, however short', () => {
+    for (const width of [640, 1000]) {
+      const spec = at(width, 100)
+      expect(labelTick(spec, 'y').anchor).toBeUndefined()
+      expect(spec.margin).toBeUndefined()
+    }
   })
   test('regular (< 800): labels outside, micro font', () => {
     const spec = at(640)

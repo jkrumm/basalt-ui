@@ -147,21 +147,31 @@ describe('reference-line legend entries', () => {
     expect(refLegendSeries(undefined)).toEqual([])
   })
 
-  test('a translucent status line keeps a solid swatch that reads on the dark panel', () => {
-    const entries = refLegendSeries<Row>([
-      { value: 1, color: VX.goodRef, legend: { label: 'G' } },
-      { value: 2, color: VX.warnRef, dashed: true, legend: { label: 'W' } },
-      { value: 3, color: VX.badRef, legend: { label: 'B' } },
-      { value: 4, color: 'var(--vx-axis)', legend: { label: 'A' } },
-    ])
-    expect(entries.map((e) => e.color)).toEqual([
-      VX.goodSolid,
-      VX.warnSolid,
-      VX.badSolid,
-      'var(--vx-axis)',
-    ])
-    for (const tone of ['good', 'warn', 'bad'] as const)
-      expect(contrastRatio(STATUS[tone].dark, SURFACE.panel.dark)).toBeGreaterThanOrEqual(3)
+  test('a translucent status line keeps a solid swatch that reads in both schemes', () => {
+    const tone = {
+      [VX.goodRef]: 'good',
+      [VX.goodSoft]: 'good',
+      [VX.good]: 'good',
+      [VX.warnRef]: 'warn',
+      [VX.warn]: 'warn',
+      [VX.badRef]: 'bad',
+      [VX.bad]: 'bad',
+    } as const
+    const solid = { good: VX.goodSolid, warn: VX.warnSolid, bad: VX.badSolid } as const
+    for (const [color, t] of Object.entries(tone)) {
+      const [entry] = refLegendSeries<Row>([{ value: 1, color, legend: { label: t } }])
+      expect(entry?.color).toBe(solid[t])
+      for (const scheme of ['light', 'dark'] as const)
+        expect(contrastRatio(STATUS[t][scheme], SURFACE.panel[scheme])).toBeGreaterThanOrEqual(3)
+    }
+  })
+
+  test('any other color, including an Object.prototype key, passes through', () => {
+    const colors = ['var(--vx-axis)', 'constructor', 'toString']
+    const entries = refLegendSeries<Row>(
+      colors.map((color) => ({ value: 1, color, legend: { label: color } })),
+    )
+    expect(entries.map((e) => e.color)).toEqual(colors)
   })
 
   test('the legend lists them after the series; a line without `legend` adds none', () => {
