@@ -69,9 +69,9 @@ const publishedFormat = new Set(
 for (const [name] of FORMAT_SIGNATURES) {
   if (!publishedFormat.has(name)) throw new Error(`gen-llms: './format' no longer exports ${name}`)
 }
-const FORMAT_SIGNATURES_BY_KEY: Record<string, readonly string[]> = {
-  './format': FORMAT_SIGNATURES.map(([, line]) => line),
-}
+
+/** Peer ranges like `^7 || ^8` contain spaces and pipes; quote any spec the shell would split. */
+const SHELL_SAFE_RE = /^[\w@/.^~-]+$/
 
 // ── Build rows from SURFACES ──────────────────────────────────────────────────
 
@@ -103,8 +103,9 @@ for (const [key, spec] of Object.entries(SURFACES)) {
   // Resolve optional peers: names come from spec.optionalPeers (single source), versions from package.json
   const specPeers: readonly string[] =
     'optionalPeers' in spec && Array.isArray(spec.optionalPeers) ? spec.optionalPeers : []
+  const subpathRequired = SUBPATH_REQUIRED_PEERS[key] ?? []
   const resolvedPeers = specPeers
-    .filter((p) => optionalPeerSet.has(p) && p in peerDeps)
+    .filter((p) => optionalPeerSet.has(p) && p in peerDeps && !subpathRequired.includes(p))
     .map((p) => `${p}@${peerDeps[p]}`)
 
   // `SURFACES` is a `satisfies` literal, so a surface that simply omits `description` has no such
@@ -114,20 +115,21 @@ for (const [key, spec] of Object.entries(SURFACES)) {
     ('description' in spec ? spec.description : undefined) ??
     `basalt-ui${key === '.' ? '' : key} subpath`
 
-  const required = SUBPATH_REQUIRED_PEERS[key] ?? []
   const install =
-    required.length === 0
+    subpathRequired.length === 0
       ? undefined
-      : `bun add ${required
+      : `bun add ${subpathRequired
           .map((name) => {
             const range = peerDeps[name]
             if (range === undefined)
-              throw new Error(`${key}: subpath-required peer ${name} is not a peerDependency`)
-            const spec = `${name}@${range}`
-            return /^[\w@/.^~-]+$/.test(spec) ? spec : `'${spec}'`
+              throw new Error(
+                `gen-llms: ${key}: subpath-required peer ${name} is not a peerDependency`,
+              )
+            const installSpec = `${name}@${range}`
+            return SHELL_SAFE_RE.test(installSpec) ? installSpec : `'${installSpec}'`
           })
           .join(' ')}`
-  const signatures = FORMAT_SIGNATURES_BY_KEY[key]
+  const signatures = key === './format' ? FORMAT_SIGNATURES.map(([, line]) => line) : undefined
 
   rows.push({
     importSpec,
@@ -168,7 +170,7 @@ export function generateLlmsTxt(): string {
     ...ENTRY_POINTS.map(([spec, names]) => `# ${spec.padEnd(20)} ${names.join(', ')}`),
     '# Required peers (install for `.`): react, react-dom, @mantine/{core,hooks,modals,notifications,spotlight},',
     '# @tanstack/react-router, @tanstack/react-query and the three @fontsource-variable faces.',
-    '# Subpath-required peers are listed per subpath below; optional peers (remend, shiki, …) are import()-only.',
+    "# A subpath's `Install:` line is its required peers; `OptionalPeers:` are import()-only, install on use.",
     '',
     `Package: ${pkg.name}`,
     `Version: ${pkg.version}`,

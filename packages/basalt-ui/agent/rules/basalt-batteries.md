@@ -28,7 +28,7 @@ paths:
 
 ## Table
 
-- Columns come from `createColumnHelper` in `basalt-ui/table` (TanStack Table v9: `sortFn`, not v8's `sortingFn`); column `meta` is `{ align, numeral }`. [type createColumnHelper]
+- Tables are `BasaltDataTable` with columns from `createColumnHelper` (`basalt-ui/table`, TanStack Table v9: `sortFn`, not v8's `sortingFn`); column `meta` is `{ align, numeral }`. [type createColumnHelper] [type BasaltDataTable]
 
 ## Content
 

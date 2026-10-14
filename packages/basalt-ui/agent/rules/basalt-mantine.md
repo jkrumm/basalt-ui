@@ -27,7 +27,7 @@ paths:
 - One `BasaltShell nav={NAV}` in `__root.tsx` wraps `<Outlet />`; never build `AppShell.*` parts or a `Burger`. [basalt/hand-rolled-shell]
 - Shell extensions are typed data props (`globalActions`, `sidebarBlocks`, `brand`, `search`, `settingsMenuItems`, `account`), never `ReactNode` slots. [type BasaltShell]
 - Pass no `renderNavLink`, `renderBreadcrumbLink` or `withBorder`; the shell resolves links against the router and draws region edges. [type BasaltShell]
-- A page is named once, by `staticData.title`, `PageBar.title` (no shell) or `PageTitle` (shell-less screen); no in-body `<Title order={1|2}>`. [basalt/in-body-page-title] [check-theme in-body-page-title]
+- A page is named once, by its nav item's `label` (the breadcrumb), `PageBar.title` (no shell) or `PageTitle` (shell-less screen); no in-body `<Title order={1|2}>`. [basalt/in-body-page-title] [check-theme in-body-page-title]
 - A nav item's mobile placement is its `mobile` field: `'tab'`, `'more'` or `'hidden'`. [type defineNav]
 
 ## Surfaces

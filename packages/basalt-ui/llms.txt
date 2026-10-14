@@ -10,7 +10,7 @@
 # basalt-ui/vite       basaltViteConfig, basaltAppPlugin
 # Required peers (install for `.`): react, react-dom, @mantine/{core,hooks,modals,notifications,spotlight},
 # @tanstack/react-router, @tanstack/react-query and the three @fontsource-variable faces.
-# Subpath-required peers are listed per subpath below; optional peers (remend, shiki, …) are import()-only.
+# A subpath's `Install:` line is its required peers; `OptionalPeers:` are import()-only, install on use.
 
 Package: basalt-ui
 Version: 1.41.0
@@ -28,7 +28,6 @@ Description: CartesianChart (the TanStack Charts rung), the Lines and Bars kinds
 Layer: headless
 Rule: basalt-charts
 Install: bun add @tanstack/charts@1.1.0 d3-scale@4.0.2
-OptionalPeers: @tanstack/charts@1.1.0, d3-scale@4.0.2
 
 ## basalt-ui/tokens
 Import: import { ... } from 'basalt-ui/tokens'
@@ -62,7 +61,6 @@ Description: Mantine form layer: useBasaltForm + inputProps/fieldKey (two calls 
 Layer: mantine-coupled
 Rule: basalt-batteries
 Install: bun add @mantine/form@^9.7.0
-OptionalPeers: @mantine/form@^9.7.0
 
 ## basalt-ui/commands
 Import: import { ... } from 'basalt-ui/commands'
@@ -70,7 +68,6 @@ Description: defineCommands (typed command bus), defineOverlays/overlays, setCol
 Layer: mantine-coupled
 Rule: basalt-batteries
 Install: bun add @tanstack/react-hotkeys@0.13.0
-OptionalPeers: @tanstack/react-hotkeys@0.13.0
 
 ## basalt-ui/table
 Import: import { ... } from 'basalt-ui/table'
@@ -78,7 +75,6 @@ Description: BasaltDataTable and createColumnHelper: a data table over TanStack 
 Layer: mantine-coupled
 Rule: basalt-batteries
 Install: bun add @tanstack/react-table@9.2.8
-OptionalPeers: @tanstack/react-table@9.2.8
 
 ## basalt-ui/agent
 Import: import { ... } from 'basalt-ui/agent'
@@ -86,7 +82,7 @@ Description: Streaming-chat surface: aiSdkTransport, useAgentThreadRuns, parseAg
 Layer: mantine-coupled
 Rule: basalt-batteries
 Install: bun add ai@^7.0.137 @ai-sdk/provider@^4.0.26 motion@14.1.0
-OptionalPeers: ai@^7.0.137, @ai-sdk/provider@^4.0.26, motion@14.1.0, use-stick-to-bottom@^1.1.6, @tanstack/react-virtual@>=3.14.0 <4
+OptionalPeers: use-stick-to-bottom@^1.1.6, @tanstack/react-virtual@>=3.14.0 <4
 
 ## basalt-ui/content
 Import: import { ... } from 'basalt-ui/content'
@@ -94,7 +90,7 @@ Description: Prose (article/chat typography), Callout, TableOfContents, Markdown
 Layer: mantine-coupled
 Rule: basalt-batteries
 Install: bun add react-markdown@^10.1.0
-OptionalPeers: shiki@^4.5.0, @shikijs/langs@^4.5.0, @shikijs/themes@^4.5.0, beautiful-mermaid@^1.1.0, react-markdown@^10.1.0, remark-gfm@^4.0.1, rehype-sanitize@^6.0.0, remend@1.4.0
+OptionalPeers: shiki@^4.5.0, @shikijs/langs@^4.5.0, @shikijs/themes@^4.5.0, beautiful-mermaid@^1.1.0, remark-gfm@^4.0.1, rehype-sanitize@^6.0.0, remend@1.4.0
 
 ## basalt-ui/controls
 Import: import { ... } from 'basalt-ui/controls'
@@ -108,7 +104,6 @@ Description: DateRangePicker — the @mantine/dates implementation of RangeFilte
 Layer: mantine-coupled
 Rule: basalt-controls
 Install: bun add @mantine/dates@^9.7.0 dayjs@^1.11.0
-OptionalPeers: @mantine/dates@^9.7.0, dayjs@^1.11.0
 
 ## basalt-ui/state
 Import: import { ... } from 'basalt-ui/state'
