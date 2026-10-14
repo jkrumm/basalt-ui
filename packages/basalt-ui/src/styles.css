@@ -8,11 +8,12 @@
 /* Layer order — LOW to HIGH priority. Declared up front (a `@layer` statement is allowed before
  * `@import`) so it holds no matter which order the consumer's bundler emits the stylesheets in.
  *
- * This is load-bearing, not decorative: the consumer MUST import `@mantine/core/styles.layer.css`,
- * never the plain `@mantine/core/styles.css`. Mantine's default bundle is entirely UNLAYERED, and
- * unlayered author styles outrank EVERY layered rule regardless of specificity — so with the plain
+ * This is load-bearing, not decorative: any Mantine CSS a consumer adds must be the `.layer.css`
+ * variant, never the plain `styles.css`. Mantine's default bundles are entirely UNLAYERED, and
+ * unlayered author styles outrank EVERY layered rule regardless of specificity — so with a plain
  * bundle this whole `@layer basalt` block silently loses to Mantine, including the iOS input floor
- * below. `basalt doctor` flags the wrong import. */
+ * below. This file already imports core, notifications and spotlight; `basalt doctor` flags the
+ * plain variant. */
 @layer mantine, basalt;
 
 /* Every Mantine layer bundle the provider mounts (core, Notifications, Spotlight; `@mantine/modals`

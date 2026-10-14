@@ -86,8 +86,6 @@ error boundary, command hotkeys, and in dev the dev dock. Canonical reference:
 
 ```tsx
 // src/main.tsx
-import '@mantine/notifications/styles.layer.css'
-import '@mantine/spotlight/styles.layer.css'
 import 'basalt-ui/styles.css'
 import { createRoot } from 'react-dom/client'
 import { BasaltProvider, createBasaltRouter } from 'basalt-ui'
