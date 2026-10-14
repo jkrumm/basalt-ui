@@ -1,21 +1,16 @@
 # basalt-ui v1.41.0
 # Opinionated framework for Mantine-based React apps — theme, app shell, TanStack Charts, toolchain presets
 #
-# basalt-ui is an opinionated framework for Mantine-based React apps.
-# It provides a theme + cssVariablesResolver, a BasaltProvider, an app shell
-# (BasaltShell + sidebar/mobile-nav/breadcrumbs), a visx chart system with a
-# three-tier --vx-* CSS-variable token system, adapter batteries for TanStack
-# Query/Router, Mantine forms/notifications/commands, a streaming-chat agent
-# layer, and toolchain presets (oxlint, oxfmt, tsconfig, lefthook, CI).
-# BasaltRegister is the unifying type-augmentation interface for consumer-side
-# extension (series tokens, command registry, notification registry).
-#
-# Subpaths: use the exact import specifier below — do not guess.
-# Charts and tokens are Mantine-free; the root (.) is Mantine-coupled.
-# Optional peers are listed per subpath; install only what you use.
-# Every peer is optional: ./tokens, ./charts and ./state resolve with no Mantine
-# installed. A consumer with no React at all can take the token system alone —
-# `bunx basalt-ui tokens:css --out tokens.css`. Guide: docs/FRAMEWORK-FREE.md in the repo.
+# Entry points: use the exact import specifier below; do not guess.
+# basalt-ui            BasaltProvider, createBasaltRouter, BasaltShell, defineNav, PageBar, Section
+# basalt-ui/tokens     VX.*, defineSeries, groupTokens, buildPaletteCss (Mantine-free)
+# basalt-ui/charts     CartesianChart, Lines, Bars, ChartCard (Mantine-free)
+# basalt-ui/controls   FilterSet, ViewTabs and the store-bound filters
+# basalt-ui/state      createSearchStore, createPersistedState
+# basalt-ui/vite       basaltViteConfig, basaltAppPlugin
+# Batteries (forms, table, commands, content, agent, format) are subpaths too.
+# Every peer is optional: install it before importing its subpath.
+# No React: `bunx basalt-ui tokens:css --out tokens.css` emits the token layer alone.
 
 Package: basalt-ui
 Version: 1.41.0

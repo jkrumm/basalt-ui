@@ -1,100 +1,57 @@
 ---
 name: basalt-app
-description: Scaffold or refresh a basalt-ui app — the procedure around `basalt-ui init` (first-time scaffold) and `basalt-ui sync` (drift-managed refresh), plus the runtime wiring neither of them does for you (provider, shell, vite, CSS order). Use when setting up basalt-ui in a new or existing app, after upgrading it, or when the shipped doctrine seems missing.
-when_to_use: User is adding basalt-ui to a new or existing app, asks how to set it up or scaffold it, wants to wire BasaltProvider / BasaltShell / the vite preset, refresh the shipped rules after an upgrade, or wire a freshness check in CI. Also when /basalt-design reports no consumer DESIGN.md.
+description: Scaffold, wire, verify or upgrade a basalt-ui app — `basalt-ui init`, `doctor`, `sync`, and the 1.x to 2.0 upgrade path.
+when_to_use: User is adding basalt-ui to an app, wiring BasaltProvider / BasaltShell / the vite preset, upgrading basalt-ui, refreshing the shipped rules, or wiring a freshness check in CI. Also when /basalt-design reports no DESIGN.md.
 ---
 
-`/basalt-app` gets a consumer scaffolded and keeps its shipped doctrine fresh. Everything — the
-components, the toolchain presets, the rules, the skills, the templates — ships in the one npm
-package; `init` places it and `sync` refreshes it.
+Procedure only; the law is `.claude/rules/basalt-*.md`.
 
-## 1. Install and scaffold
+## Scaffold
 
-```bash
-bun add basalt-ui
-bunx basalt-ui init                        # the ONE command that legitimately predates the install
-./node_modules/.bin/basalt-ui --version    # every command after it: the LOCAL bin
-```
-
-`init` writes the managed doctrine (`.claude/rules/basalt-*.md`, `.claude/skills/basalt-*/SKILL.md`,
-the `AGENTS.md` block), the seeds you then own (`DESIGN.md`, `.oxlintrc.json`, `.oxfmtrc.json`,
-`lefthook.yml`, CI, optional scaffolds), and `.basalt/manifest.json` — a sha256 per managed unit so
-`sync` can three-way diff. It also patches `basalt.roots` and a `lint:basalt` script.
-
-Two modes, decided by one question — **does Claude read this file?** Managed files are
-framework-owned and meant to be overwritten (the sync diff is the review gate); seeds are written
-once and yours forever. Claude Code cannot load rules or skills out of `node_modules`, which is the
-only reason anything is copied at all; everything a MACHINE reads is an `extends` reference into
-`node_modules/basalt-ui/configs/`, so the toolchain auto-updates with the package.
-
-**`init` on an existing app is a lint-debt event, not a no-op** — `.claude/rules/basalt-batteries.md`
-§ "App bootstrapping" says what it turns on. Too much at once? Extend `configs/oxlint-basalt.json`
-(the basalt/\* guards alone, no generic jsx-a11y/unicorn set) first, `configs/oxlint.json` later —
-the full one pairs with the shipped `tsconfig.react-app.json` (ES2023 lib: `unicorn/no-array-sort`
-steers to `toSorted()`).
-
-## 2. Wire the runtime (the CLI scaffolds files, not your app's composition)
+1. `bun add basalt-ui && bunx basalt-ui init` (the only `bunx` call; use `./node_modules/.bin/basalt-ui` after).
+2. Replace `src/main.tsx` (CSS order is load-bearing):
 
 ```tsx
-// main.tsx — CSS order is load-bearing: every @mantine/*/styles.layer.css, THEN basalt's
 import '@mantine/core/styles.layer.css'
-import '@mantine/notifications/styles.layer.css' // one per MOUNTED battery: notifications, spotlight…
-import '@mantine/spotlight/styles.layer.css'
 import 'basalt-ui/styles.css'
 import { createRoot } from 'react-dom/client'
 import { BasaltProvider, createBasaltRouter } from 'basalt-ui'
 import { routeTree } from './routeTree.gen'
+
 const router = createBasaltRouter({ routeTree })
+declare module '@tanstack/react-router' {
+  interface Register {
+    router: typeof router
+  }
+}
 createRoot(document.getElementById('root')!).render(<BasaltProvider router={router} />)
 ```
 
-```ts
-// vite.config.ts — the preset is config-only; the plugin half is spread into your own plugins
-export default defineConfig({
-  ...basaltViteConfig({ port: 5173, apiTarget: 'http://localhost:3000' }),
-  plugins: [react(), ...basaltAppPlugin({ name: 'MyApp', description: '…' })],
-})
-```
+3. Add one `@mantine/<battery>/styles.layer.css` import before `basalt-ui/styles.css` for each Mantine battery you mount.
+4. In `vite.config.ts`: `...basaltViteConfig({ port, apiTarget })` and `plugins: [react(), ...basaltAppPlugin({ name, description })]`.
+5. In `src/routes/__root.tsx`: `<BasaltShell brand={{ name }} nav={NAV}><Outlet /></BasaltShell>`; build `NAV` with `defineNav` in `src/lib/nav.tsx`.
+6. Fill in `DESIGN.md` (identity, series dictionary, deviations).
 
-Then `BasaltShell` with `nav={NAV}` (basalt-state.md), `PageBar` per page
-(basalt-controls.md), `PageAside` on any page that needs a right-hand inspector — a region a ROUTE
-claims rather than a shell prop, so it never appears in `BasaltShell`'s props — and
-`<first basalt.root>/lib/series.ts` as the app's one guard-exempt series source (`/basalt-charts`).
-There is no Tailwind.
+## Verify
 
-## 3. Verify the wiring took
+1. `./node_modules/.bin/basalt-ui doctor`; read to the last line. `SKIPPED` exits non-zero.
+2. Fix every finding doctor prints, then rerun until it is clean.
+3. `bun run lint:basalt` (`oxlint . && basalt-ui check-theme`); fix every finding at its source.
+4. `bunx tsc --noEmit`; fix every error without `as never` or `any`.
 
-```bash
-./node_modules/.bin/basalt-ui doctor      # read it to the LAST line
-bun run lint:basalt                       # oxlint . && basalt-ui check-theme
-```
+## Refresh after any upgrade
 
-`SKIPPED` is a third outcome beside pass/warn/fail and **exits non-zero on its own** — a check that
-could not run is not a check that passed. Expect doctor to go red where an older basalt was green;
-that is the point. Then triage `oxlint .` before the next commit.
+1. `./node_modules/.bin/basalt-ui sync` (`--check` in CI, `--force` overwrites local edits).
+2. Read its output: edited files are skipped, retired files are deleted, the AGENTS.md block is rewritten.
 
-## 4. Refresh after every upgrade
+## Upgrade 1.x to 2.0
 
-```bash
-./node_modules/.bin/basalt-ui sync        # --check in CI, --force to overwrite local edits
-```
+1. `bun add basalt-ui@latest`, then `./node_modules/.bin/basalt-ui sync`; it prunes retired managed files and rewrites the AGENTS.md block.
+2. `./node_modules/.bin/basalt-ui doctor`; fix each of doctor's checks: a tsconfig that does not extend the shipped base, `basalt/*` rule ids the plugin no longer has, and imports of subpaths 2.0 dropped.
+3. Work through `MIGRATING.md` § 2.0 (in the installed package): one row per removal or move; apply each that your code touches.
+4. Run the Verify steps above.
 
-- Unchanged since basalt wrote it → overwritten. Locally edited → diffed and SKIPPED. Missing →
-  recreated. **Retired upstream → deleted**, and named in the output; a rule file basalt stopped
-  shipping is doctrine your agent would otherwise keep reading.
-- `sync --check` makes no writes and exits non-zero on any of that — wire it as the freshness gate.
-- Run it anywhere in the repo: it resolves the project the way `check-theme` and `doctor` do,
-  announces a relocation, refreshes a PARENT install from a sub-package, and still refuses to
-  scaffold a second consumer (that stays `init`'s decision).
-- Seeds are never reconciled or reported. They are yours.
+## Not a React app
 
-## 5. Not a React app?
-
-```bash
-bunx basalt-ui tokens:css --out src/tokens.css   # no install to resolve, so bunx is right here
-bunx basalt-ui fonts:css --out src/fonts.css
-```
-
-Both carry the two-line `@generated basalt-ui` header the guard skips, and both take `--check` as a
-CI drift gate that ignores the provenance version — so a basalt bump alone never forces a no-op
-commit. Declare `"basalt": { "profile": "tokens-only" }` by hand; `check-theme` never infers it.
+1. `bunx basalt-ui tokens:css --out src/tokens.css` and `bunx basalt-ui fonts:css --out src/fonts.css`.
+2. Set `"basalt": { "profile": "tokens-only" }` in `package.json` by hand.

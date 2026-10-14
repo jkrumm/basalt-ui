@@ -34,6 +34,16 @@
  * `./x`, `./configs/*` is a glob). A folded or dropped subpath (`basalt-ui/notifications`) keeps
  * compiling in prose and fails only in the consumer's editor, which is how it shipped before.
  *
+ * Check F — enforcement tags. Every bullet in `agent/rules/*.md` (outside fenced code) ends in at
+ * least one tag naming what enforces it — `[basalt/<rule>]` (a shipped oxlint plugin rule),
+ * `[check-theme <kind>]` (a guard kind) or `[type <Name>]` (an exported name whose signature makes
+ * the mistake a tsc error) — and every tag must resolve. A rule file holds headings, bullets,
+ * fenced examples and at most ONE intro line under the H1; a table or a paragraph is an
+ * instruction nothing enforces, so it fails.
+ *
+ * Check G — rule citations. No `agent/**` file may name a repo-local plugin rule (it is not in a
+ * consumer's `configs/`) or a rule that 2.0 removed (its concern is a type now).
+ *
  * Repo-local only: `scripts/` is absent from package.json's `files`, so this reads
  * non-shipped state (`scripts/export-surface.json`) and must not be reachable from a consumer's
  * `node_modules/basalt-ui` — unlike `check-coverage`, it does not belong behind the shipped CLI.
@@ -68,6 +78,8 @@ function findBarrelFiles(): string[] {
 }
 
 const TYPE_BLOCK_RE = /export\s+type\s*\{([^}]*)\}/g
+/** `export { type A, B }` — inline `type` modifiers inside a value export list. */
+const VALUE_BLOCK_RE = /^export\s*\{([^}]*)\}/gm
 const DIRECT_TYPE_RE = /^export\s+(?:type|interface)\s+([A-Za-z_$][\w$]*)/gm
 
 /** Every type name a `src/**\/index.ts(x)` barrel exports — direct declarations and re-export lists. */
@@ -83,6 +95,13 @@ function collectTypeExports(): Set<string> {
         const asMatch = trimmed.match(/\bas\s+([A-Za-z_$][\w$]*)\s*$/)
         const asName = asMatch?.[1]
         names.add(asName ?? trimmed.replace(/^type\s+/, ''))
+      }
+    }
+
+    for (const match of src.matchAll(VALUE_BLOCK_RE)) {
+      for (const item of (match[1] ?? '').split(',')) {
+        const inline = item.trim().match(/^type\s+(?:[\w$]+\s+as\s+)?([A-Za-z_$][\w$]*)$/)
+        if (inline?.[1] !== undefined) names.add(inline[1])
       }
     }
 
@@ -581,9 +600,190 @@ export function checkE(
   )
 }
 
+// ── Check F: every bullet in a rule file carries a resolvable enforcement tag ─────────────────────
+
+/** Plugin rules that exist for this repo's own source and never reach a consumer's `configs/`. */
+export const REPO_LOCAL_RULES: ReadonlySet<string> = new Set([
+  'chart-host-single',
+  'token-layer-boundary',
+  'no-dev-helper',
+  'no-import-meta-env',
+])
+
+/** Rules 2.0 removed: the concern is a type (or unrepresentable) now, so citing one is drift. */
+export const REMOVED_RULES: Readonly<Record<string, string>> = {
+  'provider-above-router': 'BasaltProvider mounts the router',
+  'page-bar-budget': 'the PageBar actions tuple type',
+  'agent-resume-guard': 'basalt/agent-no-raw-usechat',
+  'deprecated-export': 'nothing: 2.0 ships no deprecations',
+}
+
+export type TagSources = {
+  /** Shipped plugin rule ids: the registry minus {@link REPO_LOCAL_RULES}. */
+  readonly pluginRules: ReadonlySet<string>
+  /** `GUARD_RULES` keys. */
+  readonly guardKinds: ReadonlySet<string>
+  /** Value ∪ type exports. */
+  readonly typeNames: ReadonlySet<string>
+}
+
+const TAG_RE = /\[(basalt\/[a-z0-9-]+|check-theme [a-z0-9-]+|type [A-Za-z_$][\w$]*)\]/g
+const BULLET_RE = /^(?:[-*]|\d+\.)\s+/
+
+export type CheckFFailure = { line: number; message: string }
+
+function tagFailure(tag: string, sources: TagSources): string | undefined {
+  if (tag.startsWith('basalt/')) {
+    const id = tag.slice('basalt/'.length)
+    if (REPO_LOCAL_RULES.has(id)) return `[${tag}] is repo-local and never ships`
+    return sources.pluginRules.has(id) ? undefined : `[${tag}] is not a shipped plugin rule`
+  }
+  if (tag.startsWith('check-theme ')) {
+    const kind = tag.slice('check-theme '.length)
+    return sources.guardKinds.has(kind) ? undefined : `[${tag}] is not a guard kind`
+  }
+  const name = tag.slice('type '.length)
+  return sources.typeNames.has(name) ? undefined : `[${tag}] is not an exported name`
+}
+
+/** Tag failures of one rule document: untagged bullets, unresolved tags, non-bullet prose. */
+export function checkF(markdown: string, sources: TagSources): CheckFFailure[] {
+  const failures: CheckFFailure[] = []
+  let inFrontmatter = false
+  let inFence = false
+  let inComment = false
+  let seenH1 = false
+  let introSpent = false
+  let bullet: { line: number; text: string } | undefined
+
+  const closeBullet = (): void => {
+    if (bullet === undefined) return
+    const tags = [...bullet.text.matchAll(TAG_RE)].map((m) => m[1] ?? '')
+    if (tags.length === 0) {
+      failures.push({ line: bullet.line, message: 'bullet carries no enforcement tag' })
+    }
+    for (const tag of tags) {
+      const message = tagFailure(tag, sources)
+      if (message !== undefined) failures.push({ line: bullet.line, message })
+    }
+    bullet = undefined
+  }
+
+  markdown.split('\n').forEach((raw, idx) => {
+    const line = idx + 1
+    if (idx === 0 && raw.trim() === '---') {
+      inFrontmatter = true
+      return
+    }
+    if (inFrontmatter) {
+      if (raw.trim() === '---') inFrontmatter = false
+      return
+    }
+    if (FENCE_RE.test(raw)) {
+      closeBullet()
+      inFence = !inFence
+      return
+    }
+    if (inFence) return
+    if (inComment || raw.trimStart().startsWith('<!--')) {
+      inComment = !raw.includes('-->')
+      return
+    }
+    if (raw.trim() === '') {
+      closeBullet()
+      return
+    }
+    if (raw.startsWith('#')) {
+      closeBullet()
+      if (/^#\s/.test(raw)) seenH1 = true
+      return
+    }
+    if (BULLET_RE.test(raw)) {
+      closeBullet()
+      bullet = { line, text: raw }
+      return
+    }
+    if (bullet !== undefined && /^\s/.test(raw)) {
+      bullet.text += `\n${raw}`
+      return
+    }
+    closeBullet()
+    if (seenH1 && !introSpent) {
+      introSpent = true
+      return
+    }
+    failures.push({
+      line,
+      message: 'prose outside a bullet (one intro line under the H1 is allowed)',
+    })
+  })
+  closeBullet()
+  return failures
+}
+
+/** `agent/rules/*.md` — the only files the tag law covers; skills are procedure, not law. */
+export function findRuleFiles(): string[] {
+  return findAgentMdFiles().filter((f) => relative(join(pkgRoot, 'agent'), f).startsWith('rules/'))
+}
+
+export async function loadTagSources(): Promise<TagSources> {
+  const { GUARD_RULES } = await import('../src/guard/index')
+  const plugin = (await import('../configs/oxlint-plugin.js')) as {
+    default: { rules: Record<string, unknown> }
+  }
+  return {
+    pluginRules: new Set(
+      Object.keys(plugin.default.rules).filter((id) => !REPO_LOCAL_RULES.has(id)),
+    ),
+    guardKinds: new Set(Object.keys(GUARD_RULES)),
+    typeNames: collectValidNames(),
+  }
+}
+
+// ── Check G: no agent file names a repo-local or removed plugin rule ──────────────────────────────
+
+/** Every file under `agent/` that ships into a consumer repo (`.md` docs and `.tpl` templates). */
+export function findAgentFiles(): string[] {
+  const agentRoot = join(pkgRoot, 'agent')
+  const entries = readdirSync(agentRoot, { recursive: true }) as string[]
+  return entries.filter((rel) => /\.(md|tpl)$/.test(rel)).map((rel) => join(agentRoot, rel))
+}
+
+export type CheckGFailure = { file: string; line: number; id: string; why: string }
+
+export function checkG(files: readonly string[]): CheckGFailure[] {
+  const ids: [string, string][] = [
+    ...[...REPO_LOCAL_RULES].map((id): [string, string] => [id, 'is repo-local and never ships']),
+    ...Object.entries(REMOVED_RULES).map(([id, instead]): [string, string] => [
+      id,
+      `was removed in 2.0 — use ${instead}`,
+    ]),
+  ]
+  const failures: CheckGFailure[] = []
+  for (const file of files) {
+    // The generated `<!-- basalt:coverage -->` header is `check-coverage --write` output from
+    // `src/surfaces.ts`, which legitimately lists repo-local ids; only hand-written prose is judged.
+    let inCoverage = false
+    readFileSync(file, 'utf8')
+      .split('\n')
+      .forEach((lineText, idx) => {
+        if (lineText.includes('<!-- basalt:coverage -->')) inCoverage = true
+        if (!inCoverage) {
+          for (const [id, why] of ids) {
+            if (new RegExp(`(?<![\\w-])${id}(?![\\w-])`).test(lineText)) {
+              failures.push({ file: relative(pkgRoot, file), line: idx + 1, id, why })
+            }
+          }
+        }
+        if (lineText.includes('<!-- /basalt:coverage -->')) inCoverage = false
+      })
+  }
+  return failures
+}
+
 // ── main ──────────────────────────────────────────────────────────────────────
 
-function main(): void {
+async function main(): Promise<void> {
   const validNames = collectValidNames()
   const mdFiles = findAgentMdFiles()
   const srcTsFiles = findSrcTsFiles()
@@ -597,6 +797,14 @@ function main(): void {
   // consumer-visible), only `src/**` goes through the comment mask.
   const dFailures = checkD([...repoMdFiles, ...configsJsFiles], srcTsFiles)
   const eFailures = checkE(mdFiles, collectExportKeys())
+  const tagSources = await loadTagSources()
+  const fFailures = findRuleFiles().flatMap((file) =>
+    checkF(readFileSync(file, 'utf8'), tagSources).map((f) => ({
+      ...f,
+      file: relative(pkgRoot, file),
+    })),
+  )
+  const gFailures = checkG(findAgentFiles())
   const selfFailures = [
     ...checkDenylistIsGenuinelyRemoved(validNames),
     ...checkMasksUrlSlashesCorrectly(),
@@ -624,6 +832,8 @@ function main(): void {
       (f) =>
         `${f.file}:${f.line}: imports '${f.specifier}', which package.json 'exports' does not resolve`,
     ),
+    ...fFailures.map((f) => `${f.file}:${f.line}: ${f.message}`),
+    ...gFailures.map((f) => `${f.file}:${f.line}: rule '${f.id}' ${f.why}`),
     ...selfFailures,
   ]
 
@@ -642,5 +852,5 @@ function main(): void {
 
 // Only run when executed directly (not when imported by the test suite)
 if (import.meta.path === Bun.main) {
-  main()
+  await main()
 }
