@@ -550,3 +550,86 @@ describe('createLocalStore — a number handle republishes its bounds', () => {
     expect([result.current[0], store.field.nights.max]).toEqual([14, 14])
   })
 })
+
+describe('field.use({ fallback }) — a call-site default', () => {
+  // argo's strength-composite: the selected exercise defaults to the leader, a prop.
+  const store = createLocalStore({
+    key: 'l-leader',
+    fields: { exercise: field.enum(['squat', 'bench', 'deadlift'], 'squat') },
+  })
+  const useExercise = (leader: 'squat' | 'bench' | 'deadlift') =>
+    store.field.exercise.use({ fallback: leader })
+
+  test('unset → leader; leader change while unset → new leader', () => {
+    const { result, rerender } = renderHook(({ leader }) => useExercise(leader), {
+      initialProps: { leader: 'bench' as const } as { leader: 'squat' | 'bench' | 'deadlift' },
+    })
+    expect(result.current[0]).toBe('bench')
+    rerender({ leader: 'deadlift' })
+    expect(result.current[0]).toBe('deadlift')
+    expect(storedRecord('l-leader')).toBeNull()
+  })
+
+  test('set → stored value wins; leader change keeps it; reset unsets back to the leader', () => {
+    const { result, rerender } = renderHook(({ leader }) => useExercise(leader), {
+      initialProps: { leader: 'bench' as const } as { leader: 'squat' | 'bench' | 'deadlift' },
+    })
+    act(() => {
+      result.current[1]('squat')
+    })
+    expect(result.current[0]).toBe('squat')
+    rerender({ leader: 'deadlift' })
+    expect(result.current[0]).toBe('squat')
+
+    act(() => {
+      store.field.exercise.clear()
+    })
+    expect(result.current[0]).toBe('deadlift')
+    expect(storedRecord('l-leader')).toEqual({})
+  })
+
+  test('the override is scoped to the one read: the definition fallback is untouched', () => {
+    const { result } = renderHook(() => {
+      const withLeader = useExercise('bench')
+      const plain = store.field.exercise.use()
+      return [withLeader[0], plain[0]] as const
+    })
+    expect(result.current).toEqual(['bench', 'squat'])
+    expect(store.field.exercise.fallback).toBe('squat')
+  })
+
+  test('a store change for ANOTHER field keeps the call-site fallback (no tear to the definition)', () => {
+    const two = createLocalStore({
+      key: 'l-leader-two',
+      fields: {
+        exercise: field.enum(['squat', 'bench'], 'squat'),
+        view: field.enum(['chart', 'table'], 'chart'),
+        zoom: field.boolean(false, { persist: false }),
+      },
+    })
+    const { result } = renderHook(() => ({
+      exercise: two.field.exercise.use({ fallback: 'bench' }),
+      view: two.field.view.use(),
+      zoom: two.field.zoom.use(),
+    }))
+    expect(result.current.exercise[0]).toBe('bench')
+    act(() => result.current.view[1]('table'))
+    expect(result.current.exercise[0]).toBe('bench')
+    act(() => result.current.zoom[1](true))
+    expect(result.current.exercise[0]).toBe('bench')
+    expect(storedRecord('l-leader-two')).toEqual({ view: 'table' })
+  })
+
+  test('applies to the in-memory lane too', () => {
+    const mem = createLocalStore({
+      key: 'l-leader-mem',
+      fields: { pick: field.enum(['a', 'b'], 'a', { persist: false }) },
+    })
+    const { result } = renderHook(() => mem.field.pick.use({ fallback: 'b' }))
+    expect(result.current[0]).toBe('b')
+    act(() => result.current[1]('a'))
+    expect(result.current[0]).toBe('a')
+    act(() => mem.field.pick.clear())
+    expect(result.current[0]).toBe('b')
+  })
+})

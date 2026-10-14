@@ -280,6 +280,21 @@ type NumberHandleExtras<F> = F extends { kind: 'number' }
     }
 
 /**
+ * `createLocalStore`'s `use()` read options. `fallback` is a CALL-SITE default for a value that
+ * arrives as a prop (a leader, a latest date): it applies only while the field is unset (nothing
+ * stored), is applied in render AFTER the store read, and is never persisted — `clear()` unsets
+ * back to it. `handle.fallback` and `isDefault` still report the definition's.
+ */
+export type FieldReadOptions<F extends AnyField> = { fallback?: FieldValue<F> }
+
+/** A `createLocalStore` field: the shared handle, plus `use({ fallback })`. */
+export type LocalFieldHandle<F extends AnyField> = FieldHandle<F> & {
+  use(
+    read?: FieldReadOptions<F>,
+  ): readonly [FieldValue<F>, (next: FieldValue<F>, opts?: FieldSetOptions) => void]
+}
+
+/**
  * The binding every basalt control takes instead of `value`/`onChange` (C2). One field, both lanes,
  * one resolution law. Handed out by `createSearchStore().field.<name>` /
  * `createLocalStore().field.<name>`; never constructed by hand.
@@ -771,7 +786,7 @@ type StoreRecord = Record<string, unknown>
 export type FieldWrite = (next: unknown, opts?: FieldSetOptions) => void
 
 /** One field's `use()`, untyped. @internal — see `FieldCodec`. */
-export type FieldUse = () => readonly [unknown, FieldWrite]
+export type FieldUse = (read?: { fallback?: unknown }) => readonly [unknown, FieldWrite]
 
 /** One named field plus its codec, in declaration order. @internal — see `FieldCodec`. */
 export type StoreEntry = { readonly name: string; readonly codec: FieldCodec }
@@ -798,7 +813,12 @@ export type StoreCore = {
   setLabels(map: Record<string, Record<string, string> | undefined>): void
   optionsFor(entry: StoreEntry): readonly FieldOption[]
   /** The resolution law, once: URL ⊳ localStorage ⊳ fallback. `search: null` skips the URL lane. */
-  resolve(entry: StoreEntry, search: StoreRecord | null, record: StoreRecord): unknown
+  resolve(
+    entry: StoreEntry,
+    search: StoreRecord | null,
+    record: StoreRecord,
+    fallback?: () => unknown,
+  ): unknown
   writeField(setRecord: (next: StoreRecord) => void, name: string, value: unknown): void
   /**
    * The IN-MEMORY lane's `use()` for one field — a field with neither the URL nor the mirror.
@@ -841,14 +861,19 @@ function assignDefined(into: StoreRecord, from: StoreRecord): void {
  * The resolution law, in one place: URL ⊳ localStorage ⊳ fallback (C4). `search: null` skips the
  * URL lane — what the local lane and `linkSearch` pass.
  */
-function resolveField(entry: StoreEntry, search: StoreRecord | null, record: StoreRecord): unknown {
+function resolveField(
+  entry: StoreEntry,
+  search: StoreRecord | null,
+  record: StoreRecord,
+  fallback: () => unknown = () => entry.codec.fallback,
+): unknown {
   const fromUrl = search === null ? null : entry.codec.fromSearch(search)
   if (fromUrl !== null) return fromUrl
   if (entry.codec.lane.persist) {
     const stored = entry.codec.decode(record[entry.name])
     if (stored !== null) return stored
   }
-  return entry.codec.fallback
+  return fallback()
 }
 
 /**
@@ -866,6 +891,7 @@ function createMemoryLane(): {
   subscribe: (cb: () => void) => () => void
   getVersion: () => number
   resolve: (entry: StoreEntry) => unknown
+  peek: (entry: StoreEntry) => unknown
   write: (name: string, value: unknown) => void
   remove: (name: string) => void
   clear: () => void
@@ -893,6 +919,7 @@ function createMemoryLane(): {
       const stored = values.get(entry.name)
       return stored === undefined ? entry.codec.fallback : stored
     },
+    peek: (entry) => values.get(entry.name),
     write: (name, value) => {
       values.set(name, value)
       bump()
@@ -1036,11 +1063,15 @@ export function createStoreCore(o: StoreCoreOptions): StoreCore {
     },
     readRecord,
     memoryUse(entry) {
-      return () => {
+      return (read) => {
         // Subscribing to the VERSION (never to the value) is what re-renders every other mount of
         // this field when one of them writes, with no snapshot-stability trap.
         useSyncExternalStore(memory.subscribe, memory.getVersion, memory.getVersion)
-        return [memory.resolve(entry), (next: unknown) => memory.write(entry.name, next)] as const
+        const stored = memory.peek(entry)
+        return [
+          stored !== undefined ? stored : (read?.fallback ?? entry.codec.fallback),
+          (next: unknown) => memory.write(entry.name, next),
+        ] as const
       }
     },
     readMemoryValue: (entry) => memory.resolve(entry),
@@ -1074,7 +1105,7 @@ export function createStoreCore(o: StoreCoreOptions): StoreCore {
 
 /** `Pick<SearchStore<S>, 'field' | 'readStored' | 'labels'>` — the same handles, no router. */
 export type LocalStore<S extends Record<string, AnyField>> = {
-  readonly field: { [K in keyof S]: FieldHandle<S[K]> }
+  readonly field: { [K in keyof S]: LocalFieldHandle<S[K]> }
   readStored: () => Partial<StoredValues<S>>
   /**
    * Option labels for enum / multi / range fields — the same chainable contract
@@ -1116,20 +1147,29 @@ export function createLocalStore<const S extends Record<string, AnyField>>(o: {
 }): LocalStore<S> {
   const core = createStoreCore({ key: o.key, fields: o.fields, version: o.version })
 
-  const persistedUse = (entry: StoreEntry) => (): readonly [unknown, (next: unknown) => void] => {
-    const [record, setRecord] = core.usePersistedRecord()
-    return [
-      core.resolve(entry, null, record),
-      (next: unknown) => core.writeField(setRecord, entry.name, next),
-    ] as const
-  }
+  const persistedUse =
+    (entry: StoreEntry): FieldUse =>
+    (read) => {
+      const [record, setRecord] = core.usePersistedRecord()
+      return [
+        // The call-site fallback is applied here, in render, after the store read — never inside
+        // the snapshot — so React's out-of-render snapshot reads cannot disagree with it.
+        core.resolve(
+          entry,
+          null,
+          record,
+          read?.fallback === undefined ? undefined : () => read.fallback,
+        ),
+        (next: unknown) => core.writeField(setRecord, entry.name, next),
+      ] as const
+    }
 
-  const field = {} as { [K in keyof S]: FieldHandle<S[K]> }
+  const field = {} as { [K in keyof S]: LocalFieldHandle<S[K]> }
   for (const entry of core.entries) {
     const persisted = entry.codec.lane.persist
     const use = persisted ? persistedUse(entry) : core.memoryUse(entry)
     const clear = persisted ? () => core.clearField(entry.name) : () => core.clearMemory(entry.name)
-    field[entry.name as keyof S] = core.handle(entry, use, clear) as unknown as FieldHandle<
+    field[entry.name as keyof S] = core.handle(entry, use, clear) as unknown as LocalFieldHandle<
       S[keyof S]
     >
   }
