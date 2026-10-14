@@ -4,7 +4,7 @@
  * test: the shell holds no promise; each slow section gets an UNAWAITED loader promise, rendered
  * through `<Await>` inside `<Suspense>` with a fallback that reserves the section's final box.
  *
- * Shared by the server (`server.tsx`) and the hydrating client (`client.tsx`).
+ * Shared by the server (`server-entry.tsx`) and the hydrating client (`client.tsx`).
  */
 import { Title } from '@mantine/core'
 import { Await, Outlet, createRootRouteWithContext, createRoute } from '@tanstack/react-router'
@@ -16,6 +16,8 @@ import { VX } from 'basalt-ui/tokens'
 import { Suspense, useEffect } from 'react'
 import type { ReactNode } from 'react'
 import {
+  CLIENT_CSS,
+  CLIENT_JS,
   FALLBACK_ATTR,
   MARK_HYDRATE_END,
   READY_ATTR,
@@ -69,7 +71,15 @@ function Section({
   children: ReactNode
 }) {
   return (
-    <Suspense fallback={<div {...{ [FALLBACK_ATTR]: name }} style={{ height }} />}>
+    <Suspense
+      fallback={
+        <output
+          {...{ [FALLBACK_ATTR]: name }}
+          aria-busy="true"
+          style={{ display: 'block', height }}
+        />
+      }
+    >
       <Await promise={promise}>
         {() => (
           <div {...{ [READY_ATTR]: name }} style={{ minHeight: height }}>
@@ -170,12 +180,12 @@ function Document({ children }: { children: ReactNode }) {
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>basalt-ui ssr fixture</title>
-        <link rel="stylesheet" href="/client.css" />
+        <link rel="stylesheet" href={`/${CLIENT_CSS}`} />
       </head>
       <body>
         <HydrationMark />
         {children}
-        <script type="module" src="/client.js" />
+        <script type="module" src={`/${CLIENT_JS}`} />
       </body>
     </html>
   )

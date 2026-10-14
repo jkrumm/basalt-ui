@@ -15,3 +15,7 @@ export const FALLBACK_ATTR = 'data-ssr-fallback'
 /** Performance marks the client entry and the app emit. */
 export const MARK_HYDRATE_START = 'ssr-hydrate-start'
 export const MARK_HYDRATE_END = 'ssr-hydrate-end'
+
+/** The hydration bundle's served names. */
+export const CLIENT_JS = 'client.js'
+export const CLIENT_CSS = 'client.css'

@@ -34,9 +34,9 @@ import {
 } from './ssr-fixture/contract'
 import type { SectionKey } from './ssr-fixture/contract'
 import { startFixtureServer } from './ssr-fixture/serve'
-import { RUNS, THROTTLES, freshPage, median, round, sortKeys } from './perf-util'
-import type { Throttle } from './perf-util'
-import type { Lane, LaneResult } from './types'
+import { RUNS, THROTTLES, freshPage, medianOrNull, round, sortKeys } from './perf-util'
+import type { SummaryRow, Throttle } from './perf-util'
+import type { Lane } from './types'
 
 const DIST_ENTRY = resolve(import.meta.dirname, '../../packages/basalt-ui/dist/index.js')
 /** Not a bot: `renderRouterToStream` buffers the whole document for crawlers (`isbot`) — curl, Bun's fetch and headless Chrome's own `HeadlessChrome` UA included. */
@@ -45,6 +45,9 @@ const CHROME_UA =
 /** Quiet time after the last section is in and hydration has committed, so late layout shifts count. */
 const SETTLE_MS = 500
 const RUN_TIMEOUT_MS = 20_000
+/** Errors kept per run in the detail JSON, and how much of each. */
+const ERROR_SAMPLES = 3
+const ERROR_SAMPLE_CHARS = 200
 
 // ── Pure helpers (unit-tested; no browser, no server) ─────────────────────────────────────────
 
@@ -54,35 +57,39 @@ export type StreamStats = {
   chunks: number
   bytes: number
   firstChunkMs: number
-  /** Ms to the first chunk that carries the shell element; `null` if none did. */
+  /** Ms to the chunk that completes the shell marker; `null` if none did. */
   shellMs: number | null
-  /** Ms to the first chunk that carries each section's content; `null` when it never arrived. */
+  /** Ms to the chunk that completes each section's marker; `null` when it never arrived. */
   sectionMs: Record<SectionKey, number | null>
   totalMs: number
 }
 
-/** Sections whose content marker appears in `text`. */
-export function sectionsIn(text: string): SectionKey[] {
-  return SECTION_KEYS.filter((key) => text.includes(`${READY_ATTR}="${key}"`))
-}
+const readyMarker = (key: SectionKey): string => `${READY_ATTR}="${key}"`
 
-/** Chunk list (time-ordered) → the stream's shape. An empty stream reports `NaN` times, never a guess. */
+/**
+ * Chunk list (time-ordered) → the stream's shape. Markers are searched in the CONCATENATED text, so
+ * one split across two reads still counts, at the time of the chunk that completes it; the first
+ * occurrence wins. An empty stream reports `NaN` times, never a guess.
+ */
 export function analyzeStream(chunks: readonly Chunk[]): StreamStats {
-  const sectionMs = Object.fromEntries(SECTION_KEYS.map((k) => [k, null])) as Record<
-    SectionKey,
-    number | null
-  >
-  let shellMs: number | null = null
-  for (const chunk of chunks) {
-    if (shellMs === null && chunk.text.includes(SHELL_ATTR)) shellMs = chunk.ms
-    for (const key of sectionsIn(chunk.text)) sectionMs[key] ??= chunk.ms
+  const full = chunks.map((c) => c.text).join('')
+  const ends: number[] = []
+  let total = 0
+  for (const chunk of chunks) ends.push((total += chunk.text.length))
+  const completedAt = (marker: string): number | null => {
+    const at = full.indexOf(marker)
+    if (at < 0) return null
+    const end = at + marker.length
+    return chunks[ends.findIndex((e) => e >= end)]?.ms ?? null
   }
   return {
     chunks: chunks.length,
     bytes: chunks.reduce((sum, c) => sum + c.bytes, 0),
     firstChunkMs: chunks[0]?.ms ?? Number.NaN,
-    shellMs,
-    sectionMs,
+    shellMs: completedAt(SHELL_ATTR),
+    sectionMs: Object.fromEntries(
+      SECTION_KEYS.map((k) => [k, completedAt(readyMarker(k))]),
+    ) as Record<SectionKey, number | null>,
     totalMs: chunks.at(-1)?.ms ?? Number.NaN,
   }
 }
@@ -95,7 +102,7 @@ export const clsOf = (shifts: readonly LayoutShift[]): number =>
 
 /** What the in-page probe hands back. Times are `performance.now()` stamps (ms since navigation start). */
 export type BrowserRaw = {
-  ttfb: number
+  ttfb: number | null
   fcp: number | null
   shellMs: number | null
   arrived: Record<SectionKey, number | null>
@@ -107,7 +114,7 @@ export type BrowserRaw = {
 }
 
 export type BrowserRun = {
-  ttfbMs: number
+  ttfbMs: number | null
   fcpMs: number | null
   shellMs: number | null
   arrivedMs: Record<SectionKey, number | null>
@@ -120,33 +127,44 @@ export type BrowserRun = {
   errorSamples: string[]
 }
 
+/** A finite number, rounded; anything else (`undefined`, `NaN`, a non-number) reads as `null`. */
+const roundOrNull = (v: unknown, digits = 1): number | null =>
+  typeof v === 'number' && Number.isFinite(v) ? round(v, digits) : null
+
 const roundTimes = (times: Record<SectionKey, number | null>): Record<SectionKey, number | null> =>
-  Object.fromEntries(
-    SECTION_KEYS.map((k) => [k, times[k] === null ? null : round(times[k])]),
-  ) as Record<SectionKey, number | null>
+  Object.fromEntries(SECTION_KEYS.map((k) => [k, roundOrNull(times[k])])) as Record<
+    SectionKey,
+    number | null
+  >
 
 export function foldBrowserRun(raw: BrowserRaw): BrowserRun {
-  const { hydrateStart, hydrateEnd } = raw
+  const hydrateStart = roundOrNull(raw.hydrateStart)
+  const hydrateEnd = roundOrNull(raw.hydrateEnd)
   return {
-    ttfbMs: round(raw.ttfb),
-    fcpMs: raw.fcp === null ? null : round(raw.fcp),
-    shellMs: raw.shellMs === null ? null : round(raw.shellMs),
+    ttfbMs: roundOrNull(raw.ttfb),
+    fcpMs: roundOrNull(raw.fcp),
+    shellMs: roundOrNull(raw.shellMs),
     arrivedMs: roundTimes(raw.arrived),
     revealedMs: roundTimes(raw.revealed),
     cls: round(clsOf(raw.shifts), 4),
-    hydrateStartMs: hydrateStart === null ? null : round(hydrateStart),
+    hydrateStartMs: hydrateStart,
     hydrationMs:
       hydrateStart === null || hydrateEnd === null ? null : round(hydrateEnd - hydrateStart),
     errors: raw.errors.length,
-    errorSamples: raw.errors.slice(0, 3).map((e) => e.split('\n')[0]!.slice(0, 200)),
+    errorSamples: raw.errors
+      .slice(0, ERROR_SAMPLES)
+      .map((e) => e.split('\n')[0]!.slice(0, ERROR_SAMPLE_CHARS)),
   }
 }
 
-/** Median of the present values; `null` when every run lacked one (never `NaN`). */
-export function medianOrNull(values: readonly (number | null)[], digits = 1): number | null {
-  const present = values.filter((v): v is number => v !== null)
-  return present.length === 0 ? null : round(median(present), digits)
-}
+/** Per-section median over runs. */
+const medianBySection = <T>(
+  runs: readonly T[],
+  pick: (run: T) => Record<SectionKey, number | null>,
+): Record<SectionKey, number | null> =>
+  Object.fromEntries(
+    SECTION_KEYS.map((k) => [k, medianOrNull(runs.map((r) => pick(r)[k]))]),
+  ) as Record<SectionKey, number | null>
 
 export type ServerAgg = {
   firstChunkMs: number | null
@@ -163,9 +181,7 @@ export function aggregateServer(runs: readonly StreamStats[]): ServerAgg {
   return {
     firstChunkMs: medianOrNull(runs.map((r) => finite(r.firstChunkMs))),
     shellMs: medianOrNull(runs.map((r) => r.shellMs)),
-    sectionMs: Object.fromEntries(
-      SECTION_KEYS.map((k) => [k, medianOrNull(runs.map((r) => r.sectionMs[k]))]),
-    ) as Record<SectionKey, number | null>,
+    sectionMs: medianBySection(runs, (r) => r.sectionMs),
     totalMs: medianOrNull(runs.map((r) => finite(r.totalMs))),
     chunks: medianOrNull(
       runs.map((r) => r.chunks),
@@ -198,12 +214,8 @@ export function aggregateBrowser(runs: readonly BrowserRun[]): BrowserAgg {
     ttfbMs: medianOrNull(runs.map((r) => r.ttfbMs)),
     fcpMs: medianOrNull(runs.map((r) => r.fcpMs)),
     shellMs: medianOrNull(runs.map((r) => r.shellMs)),
-    arrivedMs: Object.fromEntries(
-      SECTION_KEYS.map((k) => [k, medianOrNull(runs.map((r) => r.arrivedMs[k]))]),
-    ) as Record<SectionKey, number | null>,
-    revealedMs: Object.fromEntries(
-      SECTION_KEYS.map((k) => [k, medianOrNull(runs.map((r) => r.revealedMs[k]))]),
-    ) as Record<SectionKey, number | null>,
+    arrivedMs: medianBySection(runs, (r) => r.arrivedMs),
+    revealedMs: medianBySection(runs, (r) => r.revealedMs),
     cls: medianOrNull(
       runs.map((r) => r.cls),
       4,
@@ -218,13 +230,14 @@ export function aggregateBrowser(runs: readonly BrowserRun[]): BrowserAgg {
   }
 }
 
-type Row = LaneResult['summary'][number]
-
 /** `n/a` for a metric no run produced; the md renderer prints non-finite as `n/a`, so `NaN` carries that. */
 const val = (v: number | null): number => v ?? Number.NaN
 
-export function summaryRows(server: ServerAgg, browser: ReadonlyMap<Throttle, BrowserAgg>): Row[] {
-  const rows: Row[] = SECTION_KEYS.map((k) => ({
+export function summaryRows(
+  server: ServerAgg,
+  browser: ReadonlyMap<Throttle, BrowserAgg>,
+): SummaryRow[] {
+  const rows: SummaryRow[] = SECTION_KEYS.map((k) => ({
     metric: `floor: ${k} loader delay`,
     value: SECTION_DELAYS_MS[k],
     unit: 'ms',
@@ -271,7 +284,10 @@ export function summaryRows(server: ServerAgg, browser: ReadonlyMap<Throttle, Br
 
 async function measureStream(origin: string): Promise<StreamStats> {
   const t0 = performance.now()
-  const response = await fetch(`${origin}/`, { headers: { 'user-agent': CHROME_UA } })
+  const response = await fetch(`${origin}/`, {
+    headers: { 'user-agent': CHROME_UA },
+    signal: AbortSignal.timeout(RUN_TIMEOUT_MS),
+  })
   if (!response.ok || !response.body) throw new Error(`ssr: GET / answered ${response.status}`)
   const decoder = new TextDecoder()
   const chunks: Chunk[] = []
@@ -329,17 +345,24 @@ async function measureBrowserRun(
   page.on('pageerror', (e) => errors.push(e.message))
   try {
     await page.goto(`${origin}/`, { waitUntil: 'commit' })
-    await page.waitForFunction(
-      ([end, keys]) => {
-        const s = (window as unknown as { ssrProbe: { revealed: Record<string, number | null> } })
-          .ssrProbe
-        return (
-          performance.getEntriesByName(end).length > 0 && keys.every((k) => s.revealed[k] !== null)
-        )
-      },
-      [MARK_HYDRATE_END, [...SECTION_KEYS]] as [string, string[]],
-      { timeout: RUN_TIMEOUT_MS },
-    )
+    // A run whose sections or hydration never finish is kept, as an incomplete run: the missing
+    // times read `null` and the `complete runs` row counts it out.
+    await page
+      .waitForFunction(
+        ([end, keys]) => {
+          const s = (window as unknown as { ssrProbe: { revealed: Record<string, number | null> } })
+            .ssrProbe
+          return (
+            performance.getEntriesByName(end).length > 0 &&
+            keys.every((k) => s.revealed[k] !== null)
+          )
+        },
+        [MARK_HYDRATE_END, [...SECTION_KEYS]] as [string, string[]],
+        { timeout: RUN_TIMEOUT_MS },
+      )
+      .catch((error: unknown) => {
+        errors.push(`run incomplete: ${error instanceof Error ? error.message : String(error)}`)
+      })
     await page.waitForTimeout(SETTLE_MS)
     return foldBrowserRun(await readRaw(page, errors))
   } finally {
@@ -355,12 +378,14 @@ async function readRaw(page: Page, errors: string[]): Promise<BrowserRaw> {
           ssrProbe: Pick<BrowserRaw, 'shellMs' | 'arrived' | 'revealed' | 'shifts'>
         }
       ).ssrProbe
-      const nav = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming
+      const nav = performance.getEntriesByType('navigation')[0] as
+        | PerformanceNavigationTiming
+        | undefined
       const fcp = performance.getEntriesByName('first-contentful-paint')[0]
       const mark = (name: string): number | null =>
         performance.getEntriesByName(name)[0]?.startTime ?? null
       return {
-        ttfb: nav.responseStart,
+        ttfb: nav?.responseStart ?? null,
         fcp: fcp?.startTime ?? null,
         shellMs: s.shellMs,
         arrived: s.arrived,

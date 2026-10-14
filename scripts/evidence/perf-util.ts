@@ -34,6 +34,15 @@ export function percentile(values: readonly number[], p: number): number {
 
 export const median = (values: readonly number[]): number => percentile(values, 50)
 
+/** Median of the non-null values; `null` when every run lacked one (never `NaN`). */
+export function medianOrNull(values: readonly (number | null)[], digits = 1): number | null {
+  const present = values.filter((v): v is number => v !== null)
+  return present.length === 0 ? null : round(median(present), digits)
+}
+
+/** One row of a lane's summary table. */
+export type SummaryRow = { metric: string; value: number | string; unit?: string }
+
 /** Rejects with `<what> timed out after <ms> ms` if `work` has not settled in time. */
 export function withTimeout<T>(work: Promise<T>, ms: number, what: string): Promise<T> {
   let timer: ReturnType<typeof setTimeout>
