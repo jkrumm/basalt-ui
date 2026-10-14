@@ -83,13 +83,25 @@ takes the height-law box. A chart that states `height` needs the same `placehold
 row, or a chart with a header legend, adds its own row to the loaded side that a fallback cannot
 know.
 
+### Short cards (`height={120}` in a card ≥ 480 px)
+
+Closed. The old fold measured the card (`ResizeObserver`, < 280 px) and flipped after hydration: a
+KPI card around `height={120}` shifted at 1280 px. A card height cannot be a `@container` query
+(`container-type: size` collapses an auto-height card), so the decision moved into the server HTML
+instead: a `ChartBox` whose stated height (the largest of a responsive one) is ≤ 180 px writes
+`data-basalt-chart-short`, and `widget-header.module.css` / `chart-card.module.css` match
+`[data-basalt-chart-card]:has([data-basalt-chart-short])` for the subtitle fold, the `lg` KPI
+numeral and the trimmed header inset. `ChartCard` measures only a body that holds no chart box.
+Probe `card-short-chart` (title, subtitle, KPI, delta, `height={120}`): the subtitle is not rendered
+in the server paint at 1280 px, the box is identical after hydration, CLS 0 at both widths.
+
 ### Left open
 
-- `ChartCard` still measures itself (`data-basalt-card-short`, under 280 px). With the default height
-  law it never flips after hydration (the inset it trimmed is now a container query); a chart that
-  states a small `height` inside a card ≥ 480 px wide still folds the header subtitle / KPI numeral
-  after hydration. Measured: a KPI card around `height={120}` shifts. It would take
-  `widget-header.module.css` (not owned here) to move that fold off the attribute.
+- A card whose body is not a chart (a raw `div`) is still measured after mount; that body has no
+  server-sized box to match.
+- A chart whose height lands between 180 px and the measured 280 px card line (law-default compact
+  charts at < 480 px) is no longer "short": the subtitle is already folded by width there, and the
+  KPI numeral follows the card's `cqi` clamp.
 - `Donut`'s side layout is "container ≥ 480 px"; the old extra `width > 1.5 × height` aspect rule is
   dropped (it changed the layout for a stated height above 320 px).
 - `useChartSize`'s height is the CSS law's pixel mirror, used only by the unit tests; the coarse
