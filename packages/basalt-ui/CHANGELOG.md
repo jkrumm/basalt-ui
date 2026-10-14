@@ -1,3 +1,12 @@
+## [2.0.2](https://github.com/jkrumm/basalt-ui/compare/v2.0.1...v2.0.2) (2026-10-14)
+
+
+### Bug Fixes
+
+* keep the brand symbol out of keyof a groupTokens result ([27f44d3](https://github.com/jkrumm/basalt-ui/commit/27f44d3da50f07f9adb5b850edc86e8e388d0550))
+* make doctor and sync monorepo-aware ([eafb701](https://github.com/jkrumm/basalt-ui/commit/eafb7013d07a7935b393c70553e11d2a57f01c71))
+* throw a clear error for a group not built by groupTokens ([7c0dc44](https://github.com/jkrumm/basalt-ui/commit/7c0dc447e2faff22561166f66d6e449be511981c))
+
 ## [2.0.1](https://github.com/jkrumm/basalt-ui/compare/v2.0.0...v2.0.1) (2026-10-14)
 
 
