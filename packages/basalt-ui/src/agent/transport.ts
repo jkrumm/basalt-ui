@@ -17,6 +17,16 @@ import type { AgentPartDraft } from './parts'
 // ── AgentTransport ────────────────────────────────────────────────────────────
 
 /**
+ * The third `stream` argument. `headers` are extra request headers for THIS turn's request to the
+ * transport's own endpoint — today the W3C trace context a telemetry sink's `startChatTurn`
+ * returned. Absent unless a sink contributed; a transport that ignores them keeps working.
+ */
+export type AgentStreamContext = {
+  readonly messageId: string
+  readonly headers?: Readonly<Record<string, string>> | undefined
+}
+
+/**
  * The injected transport seam. `stream(input, signal, ctx)` returns an async generator of parts.
  * Implement this interface for any backend — fetch-based SSE, AI SDK, or a mock.
  *
@@ -43,11 +53,7 @@ import type { AgentPartDraft } from './parts'
  * }
  */
 export type AgentTransport<TPart = AgentPartDraft, TInput = string> = {
-  stream: (
-    input: TInput,
-    signal?: AbortSignal,
-    ctx?: { readonly messageId: string },
-  ) => AsyncGenerator<TPart>
+  stream: (input: TInput, signal?: AbortSignal, ctx?: AgentStreamContext) => AsyncGenerator<TPart>
   /** Optional: resume a previously-started run from its resumeToken (see StartPart). Transports that don't support resumption simply omit this. */
   resume?: ((resumeToken: string, signal?: AbortSignal) => AsyncGenerator<TPart>) | undefined
 }

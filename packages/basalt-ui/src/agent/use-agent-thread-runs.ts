@@ -50,6 +50,7 @@ import { createRunCommitter, isContentPart } from './run-committer'
 import {
   beginRun,
   endRun,
+  settleTrace,
   failedThreadIds,
   dismissRun,
   hasLiveRun,
@@ -62,8 +63,8 @@ import type { RunRecord, RunRecords } from './run-records'
 import type { AgentThread, LiveRunStatus, ThreadStatus, ThreadsStore } from './thread'
 import { isResumable } from './transport'
 import type { AgentTransport } from './transport'
-import { TelemetryContext, createEmitter, errorName, now } from '../telemetry'
-import type { BasaltEvent, Telemetry } from '../telemetry'
+import { TelemetryContext, createLiveEmitter, errorName, now } from '../telemetry'
+import type { BasaltEvent, Telemetry, TraceHeaders } from '../telemetry'
 
 // ── ThreadRunState ────────────────────────────────────────────────────────────
 
@@ -388,6 +389,7 @@ async function consumeAndFinalize<TPart extends PartLike>(args: {
         status: outcome.status,
       }),
     )
+    settleTrace(record, 'settled')
   } catch (err) {
     // Guard: the run ended (stop(), unmount — which abort the controller, so their AbortError lands
     // here) or a newer stream took the thread over. Only an abort from somewhere else gets past.
@@ -421,6 +423,7 @@ async function consumeAndFinalize<TPart extends PartLike>(args: {
         failure: { error: err, agentError },
       }),
     )
+    settleTrace(record, 'failed')
     onError?.({ threadId, error: err })
   } finally {
     committer.cancel()
@@ -555,6 +558,14 @@ async function finalizeStop<TPart extends PartLike>(args: {
   }
 }
 
+/** The wire form of a turn's trace context: lowercase W3C names, `tracestate` only when set. */
+function traceRequestHeaders(headers: TraceHeaders): Record<string, string> {
+  return {
+    traceparent: headers.traceparent,
+    ...(headers.tracestate ? { tracestate: headers.tracestate } : {}),
+  }
+}
+
 /** The `chat.turn` event for a turn that completed (`failure` absent) or failed. */
 function buildTurnEvent(args: {
   threadId: string
@@ -654,10 +665,7 @@ export function useAgentThreadRuns<TPart extends PartLike = AgentPart>({
   toUserPartsRef.current = resolvedToUserParts
 
   // Stable over the sink ref, so an inline `telemetry` function never changes what `start` closes over.
-  const emitTelemetry = useMemo<Telemetry>(
-    () => createEmitter((event) => telemetryRef.current?.(event)),
-    [],
-  )
+  const emitTelemetry = useMemo<Telemetry>(() => createLiveEmitter(() => telemetryRef.current), [])
 
   // Resolves the transport for `threadId`: the shared object as-is for the plain-object form
   // (unchanged behavior), or the factory's result — resolved once per thread id and cached in
@@ -707,6 +715,7 @@ export function useAgentThreadRuns<TPart extends PartLike = AgentPart>({
         if (record.ended !== undefined) continue
         abortedThreadIds.push(threadId)
         record.controller.abort()
+        settleTrace(record, 'stopped')
       }
       recordsRef.current.clear()
       if (abortedThreadIds.length === 0) return
@@ -843,6 +852,11 @@ export function useAgentThreadRuns<TPart extends PartLike = AgentPart>({
       const controller = new AbortController()
       const record = beginRun(recordsRef.current, threadId, controller)
       const resolvedTransport = resolveTransport(threadId)
+      // Opened before the request so its context rides on it; closed by `settleTrace` (a resume is
+      // the same turn's reconnect, not a new one, and carries none).
+      const trace = emitTelemetry.startChatTurn?.({ threadId, messageId: userMessage.id })
+      record.settle = trace?.settle
+      const headers = trace === undefined ? undefined : traceRequestHeaders(trace.headers)
 
       // Non-awaited: this consumer runs in the background so start() returns immediately and
       // multiple threads can stream at once.
@@ -855,7 +869,10 @@ export function useAgentThreadRuns<TPart extends PartLike = AgentPart>({
         // id instead of a second, unrelated one (R1 — see AgentTransport.stream's doc).
         generator: withPartIds(
           threadId,
-          resolvedTransport.stream(input, controller.signal, { messageId: userMessage.id }),
+          resolvedTransport.stream(input, controller.signal, {
+            messageId: userMessage.id,
+            ...(headers !== undefined ? { headers } : {}),
+          }),
         ),
         userMessage,
         recordsRef,
@@ -913,6 +930,7 @@ export function useAgentThreadRuns<TPart extends PartLike = AgentPart>({
       const { appended, resolving } = record
       endRun(record, 'stopped')
       record.controller.abort()
+      settleTrace(record, 'stopped')
       void finalizeStop({
         threadId,
         parts,

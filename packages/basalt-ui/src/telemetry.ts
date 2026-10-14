@@ -65,7 +65,50 @@ export type BasaltEvent =
   | Ok<'chat.turn', ChatAttrs>
   | Err<'chat.turn', ChatAttrs, Span>
 
-export type Telemetry = (event: BasaltEvent) => void
+/** W3C trace-context request headers a sink contributes to one chat turn's request. */
+export type TraceHeaders = {
+  readonly traceparent: string
+  readonly tracestate?: string | undefined
+}
+
+/** How a traced chat turn ended: its `chat.turn` event fired (`settled`/`failed`) or it was cut short. */
+export type ChatTurnEnd = 'settled' | 'failed' | 'stopped'
+
+/**
+ * What a sink returns from `startChatTurn`. `settle` runs once, synchronously, right after the
+ * turn's `chat.turn` event (`settled`/`failed`), or when a `stop()`/unmount cuts the turn short
+ * (`stopped`, which emits no event) — the point to end a span opened in `startChatTurn`.
+ */
+export type ChatTurnTrace = {
+  readonly headers: TraceHeaders
+  readonly settle?: ((end: ChatTurnEnd) => void) | undefined
+}
+
+/**
+ * The event sink. It may carry one optional hook, `startChatTurn`, called when a new chat turn
+ * begins (not on a resume): open your span there and return its `traceparent` (and `tracestate`)
+ * and `aiSdkTransport` sends them with that turn's request to the chat endpoint — never anywhere
+ * else. A sink without the hook, or no sink, changes nothing on the wire. basalt has no OTel
+ * dependency; the hook is where the consumer's SDK does the work.
+ *
+ * @example
+ * export const telemetry: Telemetry = Object.assign(onEvent, {
+ *   startChatTurn({ threadId }) {
+ *     const span = tracer.startSpan('chat.turn', { attributes: { 'basalt.chat.thread_id': threadId } })
+ *     const carrier: Record<string, string> = {}
+ *     propagation.inject(trace.setSpan(context.active(), span), carrier)
+ *     return { headers: { traceparent: carrier.traceparent ?? '', tracestate: carrier.tracestate }, settle: () => span.end() }
+ *   },
+ * })
+ */
+export type Telemetry = ((event: BasaltEvent) => void) & {
+  readonly startChatTurn?:
+    | ((turn: {
+        readonly threadId: string
+        readonly messageId: string
+      }) => ChatTurnTrace | undefined)
+    | undefined
+}
 
 export const now = (): number => performance.timeOrigin + performance.now()
 
@@ -78,13 +121,31 @@ export const errorName = (error: unknown): string => (error instanceof Error ? e
  */
 export function createEmitter(sink: Telemetry | undefined): Telemetry {
   if (sink === undefined) return noop
-  return (event) => {
+  return createLiveEmitter(() => sink)
+}
+
+/** `createEmitter` over a sink read at call time (a ref), so a swapped sink is never stale. */
+export function createLiveEmitter(read: () => Telemetry | undefined): Telemetry {
+  const emit = (event: BasaltEvent): void => {
     try {
-      sink(event)
+      read()?.(event)
     } catch {
       // a throwing sink must never break the app (§ 7 delivery rules)
     }
   }
+  return Object.assign(emit, {
+    startChatTurn(turn: { readonly threadId: string; readonly messageId: string }) {
+      try {
+        const trace = read()?.startChatTurn?.(turn)
+        // A malformed carrier is dropped: no header is better than a corrupt one.
+        return typeof trace?.headers.traceparent === 'string' && trace.headers.traceparent !== ''
+          ? trace
+          : undefined
+      } catch {
+        return undefined
+      }
+    },
+  })
 }
 
 function noop(): void {}
