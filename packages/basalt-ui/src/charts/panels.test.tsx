@@ -3,9 +3,9 @@
  * (one host, two composed panes). Everything that knows how the engine names a composed view's
  * nodes lives in the helper block below; the tests read through it.
  */
-import { afterEach, describe, expect, test } from 'bun:test'
+import { afterEach, describe, expect, spyOn, test } from 'bun:test'
 import { act } from 'react'
-import { createRoot } from 'react-dom/client'
+import { createRoot, hydrateRoot } from 'react-dom/client'
 import { renderToString } from 'react-dom/server'
 import { chartCursor } from './cursor'
 import { DualPanel } from './DualPanel'
@@ -34,9 +34,12 @@ const data: Row[] = [1, 2, 3, 4].map((d) => ({
 }))
 
 let root: ReturnType<typeof createRoot> | undefined
+let hydrated: ReturnType<typeof hydrateRoot> | undefined
 afterEach(() => {
   act(() => root?.unmount())
+  act(() => hydrated?.unmount())
   root = undefined
+  hydrated = undefined
   chartCursor().setState(null)
   document.body.innerHTML = ''
 })
@@ -214,15 +217,25 @@ describe('DualPanel', () => {
     test('the lines and bars keep every row; only the decorative fill is thinned', () => {
       const el = ssr(<DualPanel {...denseProps} />)
       expect(markRects(el, 'bottom', 'bars').length).toBe(8000)
+      // An unthinned fill is two edges of 8000 vertices; thinned it is at most 8 rows per pixel
+      // column (first, last, six extremes), two edges each, plus a point per crossing.
       expect(fillPoints(el)).toBeGreaterThan(0)
-      // An unthinned fill is two edges of 8000 vertices.
-      expect(fillPoints(el)).toBeLessThan(8000)
+      expect(fillPoints(el)).toBeLessThan(2 * 8 * 640)
     })
 
-    test('the same input renders the same markup, so hydration adopts the server output', () => {
-      expect(ssr(<DualPanel {...denseProps} />).innerHTML).toBe(
-        ssr(<DualPanel {...denseProps} />).innerHTML,
-      )
+    test('hydration adopts the server markup with no mismatch', async () => {
+      const errors: unknown[] = []
+      const el = document.createElement('div')
+      document.body.append(el)
+      el.innerHTML = renderToString(<DualPanel {...denseProps} />)
+      const spy = spyOn(console, 'error').mockImplementation((...args) => void errors.push(args))
+      await act(async () => {
+        hydrated = hydrateRoot(el, <DualPanel {...denseProps} />, {
+          onRecoverableError: (e) => void errors.push(e),
+        })
+      })
+      spy.mockRestore()
+      expect(errors).toEqual([])
     })
 
     test('the cursor still resolves a real datum of the full series', async () => {

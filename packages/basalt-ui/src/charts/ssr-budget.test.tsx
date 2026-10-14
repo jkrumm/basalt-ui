@@ -2,7 +2,7 @@
  * The server render cost of a dense chart (`docs/V2-SPEC.md` § 9.6). Every kind renders 2.5k and 10k
  * points through `renderToString`, and two things are asserted: growth is not super-linear
  * (`t(10k) / t(2.5k) < 8`; linear is ~4, quadratic ~16, which is what a 5k-row `DualPanel` taking
- * 12 s was) and 10k stays under an absolute cap (>= 3x the local median, for runners 2-3x slower).
+ * 12 s was) and 10k stays under an absolute cap (>= 4x the local median, for runners 2-3x slower).
  * The ratio catches the bug class on any machine; the cap catches a constant-factor blow-up. Each
  * time is the median of three renders after one warm-up, so the JIT and a GC pause are not billed.
  */
@@ -46,30 +46,35 @@ const b = series('b', (d) => d.b)
 const bandOf = (d: Row): { state: string } => ({ state: d.t % 180_000 ? 'up' : 'down' })
 const pane = { format: String }
 
-/** `cap` in ms, >= 3x the local median at 10k (given in each comment), at most 500. */
+/**
+ * `cap` in ms, >= 4x the local median at 10k, which each comment records (median of three runs,
+ * 2.5k then 10k). The growth ratio is the real gate; the cap only catches a constant-factor blow-up
+ * and is generous because hosted runners are 2-3x slower. `docs/waves/evidence/w10/ssr-cost.md`
+ * copies these numbers.
+ */
 const KINDS: readonly { name: string; cap: number; node: (n: number) => ReactElement }[] = [
-  // median 30
+  // 13 ms at 2.5k, 34 ms at 10k
   {
     name: 'Lines',
     cap: 150,
     node: (n) => <Lines ariaLabel="L" data={rowsOf(n)} x={x} series={[a, b]} />,
   },
-  // median 114
+  // 26 ms at 2.5k, 111 ms at 10k
   {
     name: 'Bars',
-    cap: 400,
+    cap: 500,
     node: (n) => <Bars ariaLabel="B" data={rowsOf(n)} x={x} bars={[a, b]} />,
   },
-  // median 59
+  // 22 ms at 2.5k, 83 ms at 10k
   {
     name: 'StackedArea',
-    cap: 250,
+    cap: 350,
     node: (n) => <StackedArea ariaLabel="S" data={rowsOf(n)} x={x} series={[a, b]} />,
   },
-  // median 148
+  // 80 ms at 2.5k, 169 ms at 10k
   {
     name: 'DualPanel',
-    cap: 500,
+    cap: 1000,
     node: (n) => (
       <DualPanel
         ariaLabel="D"
@@ -87,10 +92,10 @@ const KINDS: readonly { name: string; cap: number; node: (n: number) => ReactEle
       />
     ),
   },
-  // median 170 (the 500 cap is the ceiling, ~2.9x)
+  // 54 ms at 2.5k, 205 ms at 10k
   {
     name: 'MirroredBars',
-    cap: 500,
+    cap: 1000,
     node: (n) => (
       <MirroredBars
         ariaLabel="M"
@@ -102,10 +107,10 @@ const KINDS: readonly { name: string; cap: number; node: (n: number) => ReactEle
       />
     ),
   },
-  // median 67
+  // 19 ms at 2.5k, 78 ms at 10k
   {
     name: 'BandStrip',
-    cap: 300,
+    cap: 350,
     node: (n) => (
       <BandStrip
         ariaLabel="BS"
@@ -119,10 +124,10 @@ const KINDS: readonly { name: string; cap: number; node: (n: number) => ReactEle
       />
     ),
   },
-  // median 23: n cells on a square grid
+  // 6 ms at 2.5k, 22 ms at 10k
   {
     name: 'Heatmap',
-    cap: 150,
+    cap: 100,
     node: (n) => {
       const side = Math.ceil(Math.sqrt(n))
       const cells = Array.from({ length: n }, (_, i) => ({
@@ -141,10 +146,10 @@ const KINDS: readonly { name: string; cap: number; node: (n: number) => ReactEle
       )
     },
   },
-  // median 2: n slices
+  // 1 ms at 2.5k, 2 ms at 10k
   {
     name: 'Donut',
-    cap: 50,
+    cap: 30,
     node: (n) => (
       <Donut
         ariaLabel="DN"
@@ -154,18 +159,18 @@ const KINDS: readonly { name: string; cap: number; node: (n: number) => ReactEle
       />
     ),
   },
-  // median 12
+  // 3 ms at 2.5k, 15 ms at 10k
   {
     name: 'Sparkline (line)',
-    cap: 60,
+    cap: 80,
     node: (n) => (
       <Sparkline ariaLabel="SP" data={rowsOf(n).map((r) => r.a)} height={40} width={640} />
     ),
   },
-  // median 19
+  // 5 ms at 2.5k, 26 ms at 10k
   {
     name: 'Sparkline (bar)',
-    cap: 80,
+    cap: 120,
     node: (n) => (
       <Sparkline
         ariaLabel="SP"
@@ -178,7 +183,8 @@ const KINDS: readonly { name: string; cap: number; node: (n: number) => ReactEle
   },
 ]
 
-const median = (xs: number[]): number => xs.toSorted((p, q) => p - q)[xs.length >> 1] as number
+const median = (xs: number[]): number =>
+  xs.length === 0 ? Number.NaN : (xs.toSorted((p, q) => p - q)[xs.length >> 1] ?? Number.NaN)
 
 function timeRender(node: () => ReactElement): number {
   renderToString(node())
