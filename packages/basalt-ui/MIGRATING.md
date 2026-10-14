@@ -998,6 +998,13 @@ optional, subpath-required peers.
   engine mark: `lineY(rows, { x: 'x', y: 'y', curve: chartCurve('monotone') })`. `Lines` already took
   `ChartSeries.curve` (default `'monotone'`); a hand-written `lineY` without `curve` still draws the
   engine's default, so argo's fitness-trends RHR/HRV lines add the option there.
+- `ChartSeries.area` takes `'zones'` (`Lines`): the fill is a vertical gradient coloured by the
+  chart's `zones` on the series' axis, with hard stops at the zone boundaries and the usual area
+  fade strength, light and dark through the zone tokens. Offsets are fractions of the area's own box
+  (the engine's gradients use `objectBoundingBox` units, not `userSpaceOnUse`), computed from the
+  series' values, so the boundaries land at the zone values on a linear axis. With no zone in reach
+  the series-colour fade is kept. argo's stress chart: `area: 'zones'` plus its four zones replaces
+  the plain series area and the `thresholds` fill above 75.
 
 ## 2.2.0 — `doctor` in a monorepo, sparkline state, heatmap ticks
 
