@@ -217,9 +217,9 @@ density })`. 2.0 changes only the surface around it:
 
 One mechanism per surface. **Route changes are the router's** (owner, 2026-10-14; a React `<ViewTransition>`
 never fires on its SyncLane commit, W7 0/12): `defaultViewTransition: { types }` from nav order, `false` on
-first load and search-only changes, set only where `:active-view-transition-type()` works (Chrome 125 / Safari
+first load and search/hash-only, set only where `:active-view-transition-type()` works (Chrome 125 / Safari
 18.2 / Firefox 147); only `basalt-main` moves; skip rejections (#7733) are swallowed. `<ViewTransition>` stays
-for in-page changes (`setState` never activates it). Evidence: `waves/evidence/w10/transitions.md`.
+for in-page changes (plain `setState` never fires it). Evidence: `waves/evidence/w10/transitions.md`.
 
 | Surface                                    | Mechanism                                                                                                                                                              | Why this one                                                                                              |
 | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
@@ -623,7 +623,7 @@ three-axis law's only chart axis). The compiled `chart: ({ width }) => spec` rea
 - SSR: `renderToString` emits the full accessible SVG at `initialWidth` (spike). Hydration adopts
   it; `idPrefix` comes from `useId`. The engine's React-free `renderChartSvg` stays unexposed until
   a consumer names it.
-- W10: pending state is the streamed fallback; a `barY` needs `z` or `y1`/`y2` (else N×N, `barMark`).
+- W10: pending state is the streamed fallback; a `barY` needs `z`/`color`/`layout` or `y1` (else N×N; `barMark`).
 
 ### 9.8 Boundary and lint (every rule at `error`)
 
@@ -703,7 +703,7 @@ A kind is proven by porting a real consumer's call sites, not by a demo page.
 - `height` is a number (fixed) or `{ base, regular, wide }` (`base` below regular). Unstated, it is
   width × class ratio (§ 9.6). On a coarse pointer every height, a literal included, is capped at 45 %
   of the viewport.
-- `ChartCard` (`classNames`: `root | header | body`) folds its header when the chart states ≤ 180 px
+- `ChartCard` (`BasaltProps`, `classNames` `root|header|body`) folds its header when the chart states ≤ 180 px
   (CSS, W10); a non-chart body is still measured (< 280 px, hysteresis 24 px).
 
 **Legend**
