@@ -21,7 +21,7 @@ import { useCallback } from 'react'
 import type { ReactElement } from 'react'
 import { ChartShell } from './CartesianChart'
 import type { ChartShellProps, ShellContext } from './CartesianChart'
-import { defaultFormatX, utcHeaderDate, visibleSeries, xGuide, yGuide } from './compile'
+import { defaultFormatX, engineRow, utcHeaderDate, visibleSeries, xGuide, yGuide } from './compile'
 import type { CartesianDefinition } from './compile'
 import { cursorBinding, sourceOnlyFocus } from './cursor'
 import type { XScaleModel } from './scales'
@@ -205,7 +205,7 @@ function panelDefinition<T, X extends ChartX>(
               const { x, d } = sourceOf<T>(primary, owned)
               const extra: readonly ChartTooltipRow[] =
                 tooltip?.rows?.(d, { visible, hidden: hiddenSeries }) ?? []
-              return { title: header(x, d), rows: [...plan.rows(d), ...extra] }
+              return { title: header(x, d), rows: [...plan.rows(d), ...extra.map(engineRow)] }
             },
           },
   }

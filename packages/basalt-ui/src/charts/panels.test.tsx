@@ -388,6 +388,16 @@ describe('DualPanel', () => {
     expect(tooltips()[0]?.textContent).toMatch(/-?\d+ on \d/)
   })
 
+  test('a dashed line gets a dashed tooltip swatch, a solid one the plain color', async () => {
+    const el = await mount(<DualPanel {...dualProps} legend={false} />)
+    await hover(el)
+    const swatches = [...document.querySelectorAll('.ts-chart-tooltip__swatch')].map(
+      (n) => (n as HTMLElement).style.background,
+    )
+    expect(swatches[0]).not.toContain('gradient')
+    expect(swatches[1]).toContain('repeating-linear-gradient')
+  })
+
   test('tooltip={false} paints no tooltip', async () => {
     const el = await mount(<DualPanel {...dualProps} tooltip={false} legend={false} />)
     await hover(el)

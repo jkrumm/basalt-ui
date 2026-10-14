@@ -14,7 +14,7 @@ import { useCallback, useMemo } from 'react'
 import type { ReactElement } from 'react'
 import { VX, alpha } from '../tokens'
 import { resolveContainerClass } from '../tokens/size-classes'
-import { defaultFormatX, defaultNumberFormat, visibleSeries } from './compile'
+import { dashedSwatch, defaultFormatX, defaultNumberFormat, visibleSeries } from './compile'
 import { barMark, emphasis, lineMark, markersOf, thinFill } from './marks'
 import { PanelRung, paneX, paneY, rowsOf } from './panel'
 import type { PaneBuilder, PanelInput, PanelPlan } from './panel'
@@ -310,7 +310,7 @@ export function DualPanel<T, X extends Date | number = Date | number>(
             out.push({
               label: s.note === undefined ? s.label : `${s.label} · ${s.note}`,
               value: s.formatValue ? s.formatValue(v, d) : topFormat(v),
-              color: s.color,
+              color: s.dash === 'dashed' ? dashedSwatch(s.color) : s.color,
               ...(highlighted === s.key && { active: true }),
             })
           }

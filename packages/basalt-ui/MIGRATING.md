@@ -987,10 +987,16 @@ optional, subpath-required peers.
 | `NavItemMeta`, `NavGroupMeta`, `AnyNavItem`, `AnyNavGroup`, `AnyNavLink`, `FlatNavItem`, `NavConfig`, `NavGroupId`, `NavTabId`, `NavIndex`, `UseNavOptions`, `NavBinding`, `NavAnchor`, `NavAnchorProps`, `NavMobilePlacement` | deleted                                                                                                                                                                                                                                                                                                                                                                                                                                                    | no consumer names them; derive with `ComponentProps` / `Parameters` |
 | `useNav`, and `BasaltShell`'s `sections` / `mobileNav` props                                                                                                                                                                   | deleted: pass `nav={NAV}` (plus `badges`, `isActive`, `getScrollElement` — the old `useNav` options) to `BasaltShell`; it resolves the sidebar, the mobile bar and the breadcrumb itself. `mobileNav` tuning moves to `defineNav`'s `mobile`. argo `apps/dashboard/src/routes/__root.tsx`: replace `const nav = useNav(NAV, { badges })` + `{...nav}` with `nav={NAV} badges={…}` (migrates in W12; 1.x consumers stay on their pinned version until then) |
 
-## Unreleased
+## Unreleased — tooltip swatches
 
-_Nothing yet. Author the next section under this heading as `## Unreleased — <title>`; the
-release renames it and opens a new one here._
+All additive; no call site changes. Named consumers are argo `apps/dashboard/src/features/…`.
+
+- `ChartTooltipRow` takes `swatch: 'solid' | 'dashed'`. A series with `dash: 'dashed'` now lists a
+  dashed swatch in its own tooltip row on `CartesianChart`, `Lines`, `Bars` and `DualPanel` (it was
+  solid while the legend and the line were dashed), and a `tooltip.rows` entry sets it itself. A
+  `color` per point needs no new option: `tooltip.rows(d)` already receives the datum, so the row's
+  `color` can be a function of it (garmin-health `recovery-trend-chart.tsx`, its `Zone` row). argo:
+  `garmin-health/charts/stress-chart.tsx` (the dashed `Overnight` line).
 
 ## 2.3.0 — optional-safe chart props, `chartCurve`, zone-coloured area
 

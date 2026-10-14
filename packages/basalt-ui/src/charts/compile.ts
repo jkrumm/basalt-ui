@@ -136,6 +136,26 @@ export function defaultFormatX(v: ChartValue): string {
 const clampTo = (v: number, [lo, hi]: readonly [number, number]): number =>
   Math.min(Math.max(v, Math.min(lo, hi)), Math.max(lo, hi))
 
+/**
+ * A tooltip swatch is the engine's `background` shorthand, so a dashed one is a gradient: a 2px
+ * dashed line across the swatch's middle, in the row color.
+ */
+export const dashedSwatch = (color: string): string =>
+  `repeating-linear-gradient(90deg, ${color} 0 2px, transparent 2px 4px) center / 100% 2px no-repeat`
+
+/** A basalt tooltip row as the engine's: the swatch shape folded into the row color. */
+export function engineRow(
+  row: ChartTooltipRow & { active?: boolean | undefined },
+): EngineTooltipRow {
+  const { label, value, color, swatch, active } = row
+  return {
+    label,
+    value,
+    ...(color !== undefined && { color: swatch === 'dashed' ? dashedSwatch(color) : color }),
+    ...(active && { active }),
+  }
+}
+
 /** The visible series: not toggled off, and not a companion whose parent is. */
 export function visibleSeries<T>(
   series: readonly ChartSeries<T>[],
@@ -599,18 +619,24 @@ function tooltipSpec<T, X extends ChartX>(opts: {
       for (const s of rowSeries) {
         const v = s.getValue(d)
         if (v === null || !Number.isFinite(v)) continue
-        rows.push({
-          label: s.note === undefined ? s.label : `${s.label} · ${s.note}`,
-          value: s.formatValue
-            ? s.formatValue(v, d)
-            : axes.axisOf(axes.onRight(s) ? 'right' : 'left').format(v),
-          color: s.color,
-          ...(input.highlighted === s.key && { active: true }),
-        })
+        rows.push(
+          engineRow({
+            label: s.note === undefined ? s.label : `${s.label} · ${s.note}`,
+            value: s.formatValue
+              ? s.formatValue(v, d)
+              : axes.axisOf(axes.onRight(s) ? 'right' : 'left').format(v),
+            color: s.color,
+            swatch: s.dash === 'dashed' ? 'dashed' : 'solid',
+            active: input.highlighted === s.key,
+          }),
+        )
       }
       const extra: readonly ChartTooltipRow[] =
         (input.tooltip || undefined)?.rows?.(d, { visible, hidden }) ?? []
-      return { title: tooltipHeader(input, formatX, x, d), rows: [...rows, ...extra] }
+      return {
+        title: tooltipHeader(input, formatX, x, d),
+        rows: [...rows, ...extra.map(engineRow)],
+      }
     },
   }
 }
