@@ -1033,8 +1033,13 @@ export function buildPaletteCss(
   const side = (s: Side): string => {
     const extra = groups
       .map((group) => {
-        const { prefix, map } = (group as unknown as GroupPayload)[SERIES_GROUP]
-        return groupSide(prefix, map, s)
+        const payload = (group as unknown as Partial<GroupPayload>)[SERIES_GROUP]
+        if (!payload) {
+          throw new Error(
+            'BuildPaletteOpts.groups: every group must come from groupTokens(name, map)',
+          )
+        }
+        return groupSide(payload.prefix, payload.map, s)
       })
       .join('\n')
     const framework = frameworkPrimitives(s, data, legacyAliases)
