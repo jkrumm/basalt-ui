@@ -75,6 +75,7 @@
   "defineSeries": "argo:apps/dashboard/src/lib/series.ts",
   "durationClock": "argo:apps/dashboard/src/features/walking-pad/live-card.tsx",
   "emit": "argo:apps/dashboard/src/routes/reading.tsx",
+  "externalField": "argo:apps/dashboard/src/features/strength-tracker/components/timer-card.tsx",
   "field": "argo:apps/dashboard/src/lib/window-stores.ts",
   "fieldKey": "argo:apps/dashboard/src/lib/auth-gate.tsx",
   "flattenNav": "argo:apps/dashboard/src/lib/commands.tsx",

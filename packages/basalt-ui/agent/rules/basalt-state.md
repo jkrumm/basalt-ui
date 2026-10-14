@@ -19,7 +19,7 @@ State a control reads or writes is a field on a store; the URL wins over localSt
 ## Stores
 
 - Define filters, tabs, ranges and pagination as fields of `createSearchStore` (URL) or `createLocalStore` (no router), with `field.range|multi|enum|boolean`. [type createSearchStore]
-- Never `useState` for a filter, tab, range or view; a basalt control takes a `field` and has no `value` or `onChange`. [check-theme raw-selection-control]
+- Never `useState` for a filter, tab, range or view; a basalt control takes a `field` and has no `value` or `onChange`. A value another store owns (a zustand slice) binds as `externalField({ values, fallback, labels, use })`, no lane, `clear()` writes the fallback. [check-theme raw-selection-control]
 - Declare lanes once at definition: `{ url, persist, history }`; `url: false` is local-only, `persist: false` is URL-only. [type field]
 - Option labels come from `.labels()` at definition, never a control prop. [type createSearchStore]
 - Route `validateSearch` is `store.validateSearch`; a wider search shape spreads `...store.validateSearch(raw)`. [type createSearchStore]

@@ -70,7 +70,13 @@
   ],
   "./controls-dates": ["DateRangePicker"],
   "./forms": ["fieldKey", "inputProps", "useBasaltForm"],
-  "./state": ["createLocalStore", "createPersistedState", "createSearchStore", "field"],
+  "./state": [
+    "createLocalStore",
+    "createPersistedState",
+    "createSearchStore",
+    "externalField",
+    "field"
+  ],
   "./table": ["BasaltDataTable", "createColumnHelper"],
   "./format": [
     "durationClock",
