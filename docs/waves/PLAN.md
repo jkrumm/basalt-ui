@@ -12,6 +12,9 @@ written under `docs/waves/evidence/w<n>.md`. That file is an index; per-lane fil
 diffed against the baseline, and a regression has to be fixed or explicitly accepted in the wave's
 **Left behind**.
 
+**Renumbered 2026-10-14:** the rendering wave was inserted as W10, so the old W10–W13 are now W11–W14.
+Evidence files written before that date use the old numbers.
+
 **Mode:** fleet, orchestrated. The orchestrator tab is the mother: it holds this file, spawns one lead
 per wave, and reviews close-outs. It never reads code. Each lead follows `/wave` `roles/lead.md`,
 writes worker briefs from `roles/worker.md`, fans out with `rd fan` on disjoint file groups, and
@@ -154,7 +157,7 @@ Charts), `docs/archive/CHARTS-SPEC-1x.md`, `docs/DESIGN-CORE.md`, `packages/basa
   **1.36.0** (`evidence/w2/argo-baseline-1.36.md`; argo never moved to 1.41). The argo run covers only
   the bundle, screens and lighthouse lanes: charts-perf, chat-profile and otel are playground-specific
   and fail on argo's DOM, recorded as such. Argo has no API behind a static build, so its screenshots
-  show empty/error states; chart-render and streaming comparison for argo happens in W12 on a real stack.
+  show empty/error states; chart-render and streaming comparison for argo happens in W13 on a real stack.
 - **Observability:** V2-SPEC § 7 adopted unchanged (`evidence/w2/observability.md`). The playground emits
   the § 7 events by hand through `telemetry.ts` (build flag `VITE_TELEMETRY=1`, runtime sink
   `window.__BASALT_OTLP__`); W3 swaps the sources for the real `telemetry` seam. `route.error`,
@@ -392,7 +395,7 @@ Charts), `docs/archive/CHARTS-SPEC-1x.md`, `docs/DESIGN-CORE.md`, `packages/basa
 - **Not net-negative:** the nav PR is a feature (src +217/-110 before review fixes); the doctrine's
   net-negative rule is for consolidation PRs. Public non-chart symbols went 93 to 92.
 - **Breaks argo (by design):** argo's `apps/dashboard/src/routes/__root.tsx` spreads `useNav`; it stays on its
-  exact 1.x pin until W11, and `MIGRATING.md` names the change.
+  exact 1.x pin until W12, and `MIGRATING.md` names the change.
 - **Deferred, accepted:** splitting `ShellBody` (~245 lines) and `useNav`; `PageAside` complexity (20/32);
   a hidden `<Activity>` re-runs effects on re-show, so a streaming child in an aside body resumes (documented
   in `MIGRATING.md`); the spec-prose budget sits at its 2650 ceiling, so verdict rows are sentences; the
@@ -424,7 +427,7 @@ Charts), `docs/archive/CHARTS-SPEC-1x.md`, `docs/DESIGN-CORE.md`, `packages/basa
 - **Done in W8** (V2-SPEC § 6/§ 7): `ThreadRunState.status` `'submitted' | 'streaming'` (TTFT is measured at
   that edge); `ThreadRunState.error: AgentError` (`http`/`stream`/`server`/`aborted`), kept until the next send or
   `stop()`, so **`runs.has(id)` no longer means live** (argo's `hermes-row.tsx` and `use-hermes-thread-voice.ts`
-  read it that way; W11 switches them, `MIGRATING.md` says so); `aiSdkTransport` now rejects on a non-2xx, an
+  read it that way; W12 switches them, `MIGRATING.md` says so); `aiSdkTransport` now rejects on a non-2xx, an
   `error` chunk and a malformed chunk (it used to end the turn as if complete) and forwards the abort signal to
   the `ChatTransport`; `aiSdkTransport({ transport })` takes any `ChatTransport<UIMessage>`
   (`WebSocketChatTransport` plugs in unwrapped); `chat.turn` is emitted on settle through the `BasaltProvider`
@@ -440,7 +443,7 @@ Charts), `docs/archive/CHARTS-SPEC-1x.md`, `docs/DESIGN-CORE.md`, `packages/basa
   exported (no consumer, the replacement predicate is spelled out in `MIGRATING.md`).
 - **OTel** (`evidence/w8/chat-turn-otel.md`): one `chat.turn` span per turn with `thread_id`, `ttft_ms`, `parts`,
   `status`; a forced 500 gives the `Err` shape with `basalt.error.kind=http`. The join key to argo's
-  `hermes.stream-lifecycle` span is `basalt.chat.thread_id` (V2-SPEC § 7 Open, W11 verifies the other half).
+  `hermes.stream-lifecycle` span is `basalt.chat.thread_id` (V2-SPEC § 7 Open, W12 verifies the other half).
 - **Deferred, accepted:** `WebSocketChatTransport` is tested against a fake `ChatTransport`, not a real socket;
   `consumeAndFinalize` is still ~165 lines; the `chat-profile` and `chat-turn-trace` lanes duplicate the
   send-flow selectors; the sweep measures cost, not perceived cadence; `agent/rules/basalt-batteries.md` still
@@ -492,7 +495,7 @@ Charts), `docs/archive/CHARTS-SPEC-1x.md`, `docs/DESIGN-CORE.md`, `packages/basa
 - **Runtime** (`evidence/w9/runtime.md`): chat commits per reply within ±2 of W8 (126/86 at the 100 ms default),
   table 10k rows no regression vs W6, frame p95 within one rAF quantum; `styles.css` +257 B gzip.
 - **Deferred, accepted:** `ThreadsStore` has 13 required members, so the skill's in-memory store is ~45 lines; a
-  shipped `createMemoryThreadsStore` has no named consumer outside the playground yet (W11 decides with argo).
+  shipped `createMemoryThreadsStore` has no named consumer outside the playground yet (W12 decides with argo).
   The `basalt-app` skill is 217 lines (the snippets the trial asked for). `doctor()`/`sync()` and
   `checkCoverage()` are flagged CRITICAL complexity by fallow; untouched. `init` does not seed `vite.config.ts`
   (`basaltViteConfig` does not register the TanStack router plugin; `doctor` names the line to add).
@@ -506,7 +509,42 @@ Charts), `docs/archive/CHARTS-SPEC-1x.md`, `docs/DESIGN-CORE.md`, `packages/basa
 - **Next:** no wave is `active` — the orchestrator inserts the rendering wave (SSR, streaming, route
   transitions) ahead of the release candidate and activates it.
 
-## Wave 10 — Release candidate <!-- status: pending -->
+## Wave 10 — Rendering: SSR, streaming, route transitions <!-- status: active -->
+
+Owner decision 2026-10-14: route transitions come back through the router, the page is SSR-first with
+the heavy parts streamed, and server rendering is fast. Research: `docs/waves/audit-i-rendering-2026-10.md`
+(router 1.170.44 / Start 1.169.1 / React 19.3). RSC is out of 2.0: experimental in Start, and TanStack's
+own site dropped it (2026-07-24); revisit on a 2.x minor if that changes.
+
+- [ ] Route transitions through the router. Lift the V2-SPEC § 3 ban: `createBasaltRouter` sets
+      `defaultViewTransition` with a `types` callback derived from `BasaltShell nav` order (forward /
+      back / sibling, `false` for search-only changes). CSS for `:active-view-transition-type()` in
+      `styles.css`, reduced motion honoured. Catch the discarded `ViewTransition` promise rejections
+      (router discussion #7733, `AbortError: Transition was skipped`) so they never reach the console
+      or the telemetry sink. React `<ViewTransition>` stays for in-page changes only. Replace the
+      dropped W9 `router-view-transition` idea with a rule that bans the inert `<ViewTransition>`
+      around `<Outlet>`. Evidence: the transitions lane counts `startViewTransition` per navigation
+      (target 12/12, W7 measured 0/12); browser floor recorded (Chrome 111 / Safari 18.0 / Firefox 144,
+      `types` Chrome 125 / Safari 18.2 / Firefox 147).
+- [ ] SSR-first contract for charts and tables. Every chart kind and `DataTable` renders complete on
+      the server with a deterministic size, so hydration shifts nothing (CLS 0). Sized fallbacks for
+      `<Suspense>`/`<Await>` boundaries, so a streamed section reserves its final box. The documented
+      pattern: the shell holds no promise; each slow section gets an unawaited loader promise and
+      `<Await>` inside `<Suspense>`; `ssr: 'data-only'` or `<ClientOnly>` only for browser-only widgets;
+      live data updates client-side after hydration. Watch router issue #7094 (an unawaited loader
+      promise can block the shell flush). No Start dependency in the package; a new export needs a
+      named consumer (argo).
+- [ ] Server render cost. DualPanel with 5k distinct x takes ~12 s to SSR (W7 measured): profile it and fix the
+      cause (fold or downsample before marks, or the scale path). Then set a per-kind SSR budget, for
+      example 10k points under 100 ms, gated by a test that runs well under CI's 5 s timeout.
+- [ ] Evidence: a new `ssr` lane in `make evidence` over a streaming SSR fixture (`react-dom/server`
+      `renderToReadableStream`, the playground's dashboard shapes): TTFB, shell flush, per-section
+      completion, CLS, hydration time, against current master. The shipped rules and skills get the
+      rendering pattern in a few lines, each backed by a rule or a type.
+
+**Left behind:**
+
+## Wave 11 — Release candidate <!-- status: pending -->
 
 - [ ] Full playground validation: every route through `make evidence` plus `@verifier`. Fix the
       regressions found.
@@ -516,7 +554,7 @@ Charts), `docs/archive/CHARTS-SPEC-1x.md`, `docs/DESIGN-CORE.md`, `packages/basa
 
 **Left behind:**
 
-## Wave 11 — argo, part 1: setup, shell, data, chat <!-- status: pending -->
+## Wave 12 — argo, part 1: setup, shell, data, chat <!-- status: pending -->
 
 - [ ] argo branch on `basalt-ui@2.x`: `basalt-ui init`/`sync` (the agent-layer DX test again),
       provider/shell/routing, tables, AI chat.
@@ -525,7 +563,7 @@ Charts), `docs/archive/CHARTS-SPEC-1x.md`, `docs/DESIGN-CORE.md`, `packages/basa
 
 **Left behind:**
 
-## Wave 12 — argo, part 2: every chart, production <!-- status: pending -->
+## Wave 13 — argo, part 2: every chart, production <!-- status: pending -->
 
 - [ ] All argo charts on the 2.x kinds; basalt fixes found here ship as 2.x minors. Evidence vs argo's
       baseline (render, bundle, screenshots).
@@ -533,7 +571,7 @@ Charts), `docs/archive/CHARTS-SPEC-1x.md`, `docs/DESIGN-CORE.md`, `packages/basa
 
 **Left behind:**
 
-## Wave 13 — argo learnings and the fleet plan <!-- status: pending -->
+## Wave 14 — argo learnings and the fleet plan <!-- status: pending -->
 
 - [ ] Fold the argo learnings in as 2.x minors and restate the no-majors doctrine.
 - [ ] Write the fleet plan for linewatch, weatherorb, rb, rollhook and basalt-ui-obsidian (each stays

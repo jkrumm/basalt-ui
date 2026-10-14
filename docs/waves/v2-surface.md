@@ -20,7 +20,7 @@ and barrel type), per subpath: a name re-exported from two subpaths has two rows
 | ----------- | --------------------- | ----- | ------------------------------------------------ | --------------------------------------------------------------------- |
 | `.`         | `createBasaltRouter`  | value | argo `apps/dashboard/src/lib/router.ts`          | router + QueryClient wiring (§ 2), replaces `createBasaltQueryClient` |
 | `.`         | `BasaltRouterContext` | type  | argo `apps/dashboard/src/routes/__root.tsx`      | `createRootRouteWithContext<BasaltRouterContext>()` (§ 2)             |
-| `.`         | `BasaltEvent`         | type  | argo `apps/dashboard/src/lib/telemetry.ts` (W11) | the telemetry seam (§ 7), replaces `BasaltErrorContext`               |
+| `.`         | `BasaltEvent`         | type  | argo `apps/dashboard/src/lib/telemetry.ts` (W12) | the telemetry seam (§ 7), replaces `BasaltErrorContext`               |
 
 ## 1.41 exports
 
