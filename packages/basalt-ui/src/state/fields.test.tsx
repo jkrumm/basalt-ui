@@ -557,12 +557,12 @@ describe('field.use({ fallback }) — a call-site default', () => {
     key: 'l-leader',
     fields: { exercise: field.enum(['squat', 'bench', 'deadlift'], 'squat') },
   })
-  const useExercise = (leader: 'squat' | 'bench' | 'deadlift') =>
-    store.field.exercise.use({ fallback: leader })
+  type Leader = 'squat' | 'bench' | 'deadlift'
+  const useExercise = (leader: Leader) => store.field.exercise.use({ fallback: leader })
 
   test('unset → leader; leader change while unset → new leader', () => {
     const { result, rerender } = renderHook(({ leader }) => useExercise(leader), {
-      initialProps: { leader: 'bench' as const } as { leader: 'squat' | 'bench' | 'deadlift' },
+      initialProps: { leader: 'bench' } as { leader: Leader },
     })
     expect(result.current[0]).toBe('bench')
     rerender({ leader: 'deadlift' })
@@ -572,7 +572,7 @@ describe('field.use({ fallback }) — a call-site default', () => {
 
   test('set → stored value wins; leader change keeps it; reset unsets back to the leader', () => {
     const { result, rerender } = renderHook(({ leader }) => useExercise(leader), {
-      initialProps: { leader: 'bench' as const } as { leader: 'squat' | 'bench' | 'deadlift' },
+      initialProps: { leader: 'bench' } as { leader: Leader },
     })
     act(() => {
       result.current[1]('squat')
@@ -618,6 +618,64 @@ describe('field.use({ fallback }) — a call-site default', () => {
     act(() => result.current.zoom[1](true))
     expect(result.current.exercise[0]).toBe('bench')
     expect(storedRecord('l-leader-two')).toEqual({ view: 'table' })
+  })
+
+  test('the call-site value never reaches readStored; handle.fallback / isDefault keep the definition', () => {
+    const { result } = renderHook(() => useExercise('bench'))
+    expect(result.current[0]).toBe('bench')
+    expect(store.readStored()).toEqual({})
+    expect(store.field.exercise.fallback).toBe('squat')
+    expect(store.field.exercise.isDefault('squat')).toBe(true)
+    expect(store.field.exercise.isDefault('bench')).toBe(false)
+  })
+
+  test('an undecodable persisted value resolves to the call-site fallback', () => {
+    persist('l-leader', { exercise: 'curl' })
+    const { result } = renderHook(() => useExercise('bench'))
+    expect(result.current[0]).toBe('bench')
+  })
+
+  test('falsy call-site fallbacks (0, false, empty string) win over the definition default', () => {
+    const falsy = createLocalStore({
+      key: 'l-falsy',
+      fields: {
+        n: field.number({ fallback: 5 }),
+        b: field.boolean(true),
+        t: field.string({ fallback: 'x' }),
+      },
+    })
+    const { result } = renderHook(() => ({
+      n: falsy.field.n.use({ fallback: 0 })[0],
+      b: falsy.field.b.use({ fallback: false })[0],
+      t: falsy.field.t.use({ fallback: '' })[0],
+    }))
+    expect(result.current).toEqual({ n: 0, b: false, t: '' })
+  })
+
+  test('two mounts of one field, with and without a fallback, each show their own value', () => {
+    const { result } = renderHook(() => ({
+      withLeader: useExercise('bench'),
+      plain: store.field.exercise.use(),
+    }))
+    expect(result.current.withLeader[0]).toBe('bench')
+    expect(result.current.plain[0]).toBe('squat')
+    act(() => result.current.plain[1]('deadlift'))
+    expect(result.current.withLeader[0]).toBe('deadlift')
+    expect(result.current.plain[0]).toBe('deadlift')
+  })
+
+  test('the memory lane keeps the identity of an object fallback while unset', () => {
+    const mem = createLocalStore({
+      key: 'l-leader-ref',
+      fields: { picks: field.multi(['a', 'b', 'c'], [], { persist: false }) },
+    })
+    const fallback = ['b'] as const
+    const { result, rerender } = renderHook(() => mem.field.picks.use({ fallback }))
+    const first = result.current[0]
+    expect(first).toBe(fallback)
+    rerender()
+    expect(result.current[0]).toBe(first)
+    expect(mem.readStored()).toEqual({})
   })
 
   test('applies to the in-memory lane too', () => {
