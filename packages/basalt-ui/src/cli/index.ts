@@ -706,28 +706,6 @@ export const ROUTER_SEED_DESTS = {
   main: 'src/main.tsx',
 } as const
 
-/**
- * The 2.0 entry (V2-SPEC § 2). `defineNav` rejects every call until the `Register` augmentation below
- * exists, so a seeded `nav.tsx` without this file fails `tsc` on the first run.
- */
-// Interpolated: a literal relative specifier here would be rewritten by the dist ESM fixer.
-const ROUTE_TREE = './routeTree.gen'
-const MAIN_SEED = `import 'basalt-ui/styles.css'
-import { createRoot } from 'react-dom/client'
-import { BasaltProvider, createBasaltRouter } from 'basalt-ui'
-import { routeTree } from '${ROUTE_TREE}'
-
-const router = createBasaltRouter({ routeTree })
-
-declare module '@tanstack/react-router' {
-  interface Register {
-    router: typeof router
-  }
-}
-
-createRoot(document.getElementById('root')!).render(<BasaltProvider router={router} />)
-`
-
 /** Router/query peer presence, resolved from detection + explicit flags. */
 export type PeerFlags = { hasRouter: boolean; hasQuery: boolean }
 
@@ -970,8 +948,8 @@ export function managedFiles(
   const mainEntry: ManagedFile = {
     dest: ROUTER_SEED_DESTS.main,
     mode: 'seed',
-    source: 'src/cli/index.ts',
-    render: () => MAIN_SEED,
+    source: 'agent/templates/main.tpl',
+    render: (ctx) => readSource(ctx.pkgRoot, 'agent/templates/main.tpl'),
   }
   const scaffolds: ManagedFile[] = []
   if (peers.hasRouter && peers.hasQuery) scaffolds.push(navModule, rootRoute, mainEntry)
