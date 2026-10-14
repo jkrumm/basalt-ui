@@ -1,85 +1,106 @@
 /**
- * `externalField` — a handle over a value another store owns. The external store is a bare
- * `useSyncExternalStore` cell (what a zustand selector is underneath); rendered with NO router.
+ * `externalField` — a handle over a value another store owns, rendered with NO router.
  */
 import { act, renderHook } from '@testing-library/react'
 import { beforeEach, describe, expect, test } from 'bun:test'
-import { useSyncExternalStore } from 'react'
+import { StrictMode } from 'react'
+import { createExternalStore } from '../../tests/support/external-store'
 import { externalField } from './fields'
 
-type Mode = 'rest' | 'interval'
-
-let mode: Mode = 'rest'
-const sets: Mode[] = []
-const listeners = new Set<() => void>()
-const setMode = (next: Mode): void => {
-  sets.push(next)
-  mode = next
-  for (const l of listeners) l()
-}
-const useMode = (): Mode =>
-  useSyncExternalStore(
-    (cb) => {
-      listeners.add(cb)
-      return () => listeners.delete(cb)
-    },
-    () => mode,
-  )
-
-const timerMode = externalField({
-  values: ['rest', 'interval'],
-  fallback: 'rest',
-  labels: { rest: 'Rest Timer', interval: 'Interval Timer' },
-  use: () => [useMode(), setMode],
-})
+let store = createExternalStore<'rest' | 'interval'>('rest')
+const define = () =>
+  externalField({
+    values: ['rest', 'interval'],
+    fallback: 'rest',
+    labels: { rest: 'Rest Timer', interval: 'Interval Timer' },
+    store,
+  })
 
 beforeEach(() => {
   localStorage.clear()
-  mode = 'rest'
-  sets.length = 0
+  store = createExternalStore<'rest' | 'interval'>('rest')
 })
 
 describe('externalField', () => {
   test('declares kind, fallback and labelled options at definition', () => {
-    expect(timerMode.kind).toBe('enum')
-    expect(timerMode.fallback).toBe('rest')
-    expect(timerMode.options).toEqual([
+    const handle = define()
+    expect(handle.kind).toBe('enum')
+    expect(handle.fallback).toBe('rest')
+    expect(handle.options).toEqual([
       { value: 'rest', label: 'Rest Timer' },
       { value: 'interval', label: 'Interval Timer' },
     ])
-    expect(timerMode.isDefault('rest')).toBe(true)
-    expect(timerMode.isDefault('interval')).toBe(false)
+    expect(handle.isDefault('rest')).toBe(true)
+    expect(handle.isDefault('interval')).toBe(false)
+  })
+
+  test('an unlabelled value shows as itself', () => {
+    const handle = externalField({
+      values: ['a', 'b'],
+      fallback: 'a',
+      store: createExternalStore<'a' | 'b'>('a'),
+    })
+    expect(handle.options.map((o) => o.label)).toEqual(['a', 'b'])
   })
 
   test('use() reads the external value and re-renders on an external change', () => {
-    const { result } = renderHook(() => timerMode.use())
+    const handle = define()
+    const { result } = renderHook(() => handle.use())
     expect(result.current[0]).toBe('rest')
-    act(() => setMode('interval'))
+    act(() => store.set('interval'))
     expect(result.current[0]).toBe('interval')
   })
 
-  test('the setter calls the external setter; clear() writes the fallback', () => {
-    const { result } = renderHook(() => timerMode.use())
+  test('the setter calls the external setter', () => {
+    const handle = define()
+    const { result } = renderHook(() => handle.use())
     act(() => result.current[1]('interval'))
-    expect(sets).toEqual(['interval'])
-    act(() => timerMode.clear())
-    expect(mode).toBe('rest')
+    expect(store.sets).toEqual(['interval'])
   })
 
-  test('clear() before any render is a no-op', () => {
-    const fresh = externalField({
-      values: ['a', 'b'],
-      fallback: 'a',
-      use: () => ['a', setMode as never],
-    })
-    expect(() => fresh.clear()).not.toThrow()
+  test('clear() writes the fallback before any mount', () => {
+    store.set('interval')
+    define().clear()
+    expect(store.get()).toBe('rest')
+  })
+
+  test('two controls on one handle stay consistent and clear() reaches both', () => {
+    const handle = define()
+    const a = renderHook(() => handle.use())
+    const b = renderHook(() => handle.use())
+    act(() => a.result.current[1]('interval'))
+    expect(b.result.current[0]).toBe('interval')
+    act(() => handle.clear())
+    expect([a.result.current[0], b.result.current[0]]).toEqual(['rest', 'rest'])
+  })
+
+  test('a Strict Mode double render changes nothing', () => {
+    const handle = define()
+    const { result } = renderHook(() => handle.use(), { wrapper: StrictMode })
+    act(() => result.current[1]('interval'))
+    expect(result.current[0]).toBe('interval')
+    expect(store.sets).toEqual(['interval'])
+    act(() => handle.clear())
+    expect(result.current[0]).toBe('rest')
+  })
+
+  test('a fallback outside values is refused at definition and at the type level', () => {
+    expect(() =>
+      externalField({
+        values: ['rest', 'interval'],
+        // @ts-expect-error 'resr' is not one of the declared values
+        fallback: 'resr',
+        store,
+      }),
+    ).toThrow(/fallback 'resr'/)
   })
 
   test('writes nothing to localStorage or the URL', () => {
     const before = window.location.href
-    const { result } = renderHook(() => timerMode.use())
+    const handle = define()
+    const { result } = renderHook(() => handle.use())
     act(() => result.current[1]('interval'))
-    act(() => timerMode.clear())
+    act(() => handle.clear())
     expect(localStorage.length).toBe(0)
     expect(window.location.href).toBe(before)
   })

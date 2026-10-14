@@ -989,10 +989,11 @@ optional, subpath-required peers.
 
 ## Unreleased — a field over an external store
 
-- `externalField({ values, fallback, labels, use })` (`basalt-ui/state`) returns a `FieldHandle`
+- `externalField({ values, fallback, labels, store })` (`basalt-ui/state`) returns a `FieldHandle`
   over a value a foreign store owns (a zustand slice): `ViewTabs`, `SelectFilter` and `EnumFilter`
-  take it as `field=` like any store field. No URL, localStorage or memory lane; `use` is your hook
-  returning `[value, set]`; `clear()` calls `set(fallback)`. Replaces a raw `SegmentedControl` behind
+  take it as `field=` like any store field. No URL, localStorage or memory lane; `store` is the
+  non-hook API (`{ get, set, subscribe }` — zustand's `getState`/`setState`/`subscribe`), read at
+  definition so `clear()` writes `set(fallback)` mounted or not; `fallback` must be one of `values`. Replaces a raw `SegmentedControl` behind
   `theme-allow control-outside-home, raw-selection-control` (argo `timer-card.tsx`). Rule: `basalt-state`.
 - A card BODY is still not a control home. Mount the bound control in the card's header slot
   (`<WidgetHeader actions={<ViewTabs field={timerMode} label="Timer mode" />} />`); no lint change.
