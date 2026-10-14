@@ -175,7 +175,7 @@ export function reconcileCoverageBlocks(
  * before the merge, and 55% of that text was doctrine nothing enforced. The numbers are the bar the
  * spec argued, so they live beside the gate that reads them rather than in prose.
  */
-const AGENT_LINE_BUDGETS: Readonly<Record<string, number>> = {
+export const AGENT_LINE_BUDGETS: Readonly<Record<string, number>> = {
   'agent/rules/basalt-tokens.md': 58,
   'agent/rules/basalt-mantine.md': 50,
   'agent/rules/basalt-charts.md': 37,
@@ -194,7 +194,7 @@ const AGENT_LINE_BUDGETS: Readonly<Record<string, number>> = {
  * can be satisfied by adding a seventh rule file or a fourth skill. The seeded `DESIGN.md.tpl` is
  * the consumer's own file after `init`, so it is outside the sum.
  */
-const AGENT_LAYER_TOTAL_BUDGET = 415
+export const AGENT_LAYER_TOTAL_BUDGET = 415
 
 /**
  * Assert the 11 invariants against the live SURFACES + GUARD_RULES + the shipped agent layer, and
