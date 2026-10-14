@@ -47,4 +47,3 @@ paths:
 ## Motion
 
 - Animation timing comes from basalt's motion tokens, never a literal duration, spring or easing. [check-theme raw-motion-value]
-- Never set `viewTransition` on `Link` or `navigate`, and never call `document.startViewTransition`; React owns view transitions. [basalt/router-view-transition]
