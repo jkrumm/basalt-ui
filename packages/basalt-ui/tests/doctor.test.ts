@@ -32,6 +32,7 @@ function setupPassingLayout(): void {
   //    each of these was a false-green a consumer shipped for weeks.
   writeFixture('package.json', JSON.stringify({ name: 'fixture', basalt: { roots: ['src'] } }))
   writeFixture('src/app.tsx', 'export const App = () => null\n')
+  writeFixture('tsconfig.json', '{ "extends": "basalt-ui/configs/tsconfig.react-app.json" }')
   writeFixture('.oxlintrc.json', '{ "extends": ["./node_modules/basalt-ui/configs/oxlint.json"] }')
   writeFixture(
     'node_modules/basalt-ui/package.json',
