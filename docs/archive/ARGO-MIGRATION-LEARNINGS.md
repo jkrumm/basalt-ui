@@ -1,3 +1,5 @@
+> **Historical (1.x, frozen at v1.41.0).** Superseded by `docs/V2-SPEC.md`; the argo 2.0 migration records its friction in `docs/waves/argo-friction.md` (W12). Not a contract.
+
 # Argo migration — consumer learnings (2026-07-11 overnight run)
 
 Argo (`~/SourceRoot/argo`) was migrated end-to-end onto basalt-ui 1.0 (file:-linked, unpublished):

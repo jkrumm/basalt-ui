@@ -1,8 +1,9 @@
 # basalt-ui 2.0 — the contract
 
 Ground truth for the 2.0 rewrite (`docs/waves/PLAN.md`). `master` is the only line: 1.x is frozen
-at `v1.41.0`, and the 1.x specs (`docs/*-SPEC.md`, `DESIGN-CORE.md`) describe that frozen line until
-each is archived as its surface is ported here. For 2.0 work this file wins over every 1.x spec.
+at `v1.41.0`. `DESIGN-CORE.md`, `MANTINE-THEMING.md`, `CONTROLS-SPEC.md` and `ASIDE-SPEC.md` stay live
+for what this file does not restate (law, method, homes, stores, guards); their 1.x names and import
+paths read through `MIGRATING.md` § 2.0.0. For 2.0 work this file wins over every one of them.
 Release doctrine (the one sanctioned major): `packages/basalt-ui/MAINTAINING.md` § The one sanctioned
 major.
 
