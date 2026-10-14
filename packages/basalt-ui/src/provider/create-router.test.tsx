@@ -1,6 +1,7 @@
 import { describe, expect, spyOn, test } from 'bun:test'
 import { createRootRoute } from '@tanstack/react-router'
 import { createBasaltRouter } from './create-router'
+import { routeViewTransition } from './route-transition'
 import { queryClientOf } from './test-router'
 import { bindRouterTelemetry } from '../telemetry'
 import type { BasaltEvent } from '../telemetry'
@@ -69,9 +70,11 @@ describe('createBasaltRouter defaults (V2-SPEC § 2)', () => {
   })
 })
 
-describe('createBasaltRouter options (type-level)', () => {
-  test('defaultViewTransition is refused — React owns view transitions (V2-SPEC § 5)', () => {
-    // @ts-expect-error `defaultViewTransition?: never`
-    createBasaltRouter({ routeTree, defaultViewTransition: true })
+describe('createBasaltRouter view transition (V2-SPEC § 5)', () => {
+  test('the router carries the route transition and the option is not a consumer knob', () => {
+    const router = createBasaltRouter({ routeTree })
+    expect(router.options.defaultViewTransition).toBe(routeViewTransition)
+    // @ts-expect-error one way to do it: `defaultViewTransition` is not an option
+    createBasaltRouter({ routeTree, defaultViewTransition: false })
   })
 })

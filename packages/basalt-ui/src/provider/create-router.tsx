@@ -1,8 +1,9 @@
 /**
  * `createBasaltRouter` — the router + QueryClient wiring (V2-SPEC § 2). One `QueryClient` per call
  * (so an SSR entry gets one per request), carried on `context.queryClient`, plus the router
- * defaults basalt owns: intent preloading with Query-owned freshness, scroll restoration, and the
- * pending / error / not-found components.
+ * defaults basalt owns: intent preloading with Query-owned freshness, scroll restoration, the
+ * pending / error / not-found components, and the route view transition (direction from the
+ * `BasaltShell` nav order, V2-SPEC § 5).
  */
 import { Button, Center, Loader, Stack, Text } from '@mantine/core'
 import type { QueryClient, QueryClientConfig } from '@tanstack/react-query'
@@ -11,6 +12,7 @@ import type { AnyRoute, ErrorComponentProps, RouterHistory } from '@tanstack/rea
 import { toErrorMessage } from '../common/errors'
 import { makeQueryClient } from '../query-client'
 import { errorName, now, routerTelemetry } from '../telemetry'
+import { guardViewTransitionRejections, routeViewTransition } from './route-transition'
 
 /** The root route's context: `createRootRouteWithContext<BasaltRouterContext>()`. */
 export type BasaltRouterContext = {
@@ -92,9 +94,8 @@ export function createBasaltRouter<
   context?: TContext
   /** Merged over basalt's QueryClient defaults (`staleTime` 30 s, `gcTime` 5 min, `retry` 2, no refetch on focus). */
   query?: QueryClientConfig
-  /** React owns every view transition (V2-SPEC § 5); the router's would interrupt it. */
-  defaultViewTransition?: never
 }): BasaltRouter<TRouteTree> {
+  guardViewTransitionRejections()
   const queryClient = makeQueryClient(options.query)
   const router: BasaltRouterBase<TRouteTree> = createRouter({
     routeTree: options.routeTree,
@@ -103,6 +104,8 @@ export function createBasaltRouter<
     // Query owns freshness: a preload must not be cached a second time by the router.
     defaultPreloadStaleTime: 0,
     scrollRestoration: true,
+    // Route changes only; React's `<ViewTransition>` stays for in-page changes (the aside fold).
+    defaultViewTransition: routeViewTransition,
     defaultPendingComponent: PendingComponent,
     defaultErrorComponent: ErrorComponent,
     defaultNotFoundComponent: NotFoundComponent,
