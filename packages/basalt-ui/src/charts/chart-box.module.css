@@ -47,7 +47,12 @@
   }
 }
 
-/* Fills its parent (a Heatmap that matches a sibling's height). */
+/* Fills its parent (a Heatmap that matches a sibling's height): the frame and the box both take the
+ * parent's definite height, or a percentage on the auto-height frame would resolve to nothing. */
+.fillFrame {
+  height: 100%;
+}
+
 .fill {
   height: 100%;
   max-height: none;

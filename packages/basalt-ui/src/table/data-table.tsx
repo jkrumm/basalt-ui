@@ -993,18 +993,22 @@ const FOLD_ID_ATTR = 'data-basalt-fold-id'
  * Every width is a rounded integer (`offsetWidth`, `clientWidth`), and a table that fills its
  * wrapper stretches its columns to sum to `room` exactly — so the rounded sum lands up to half a
  * pixel per column over it, and a table that fits folded a column on hydration (a server-painted
- * table whose cells then moved). The fit check forgives that rounding and nothing more.
+ * table whose cells then moved). The fit check forgives that rounding and nothing more: half a
+ * pixel for each measured width (the foldable columns AND `fixedCount`, the pinned / non-hiding
+ * ones `overhead` sums), plus half a pixel for `room`'s own rounding (the `+ 1` in the slack).
  */
 export function planColumnFold(input: {
   room: number
   toggleWidth: number
   overhead: number
+  /** How many columns `overhead` sums, for the rounding slack. */
+  fixedCount?: number
   order: readonly string[]
   widths: ReadonlyMap<string, number>
 }): ReadonlySet<string> {
-  const { room, toggleWidth, overhead, order, widths } = input
+  const { room, toggleWidth, overhead, fixedCount = 0, order, widths } = input
   const known = order.filter((id) => widths.has(id))
-  const roundingSlack = (known.length + 1) / 2
+  const roundingSlack = (known.length + fixedCount + 1) / 2
   let unfolded = overhead + known.reduce((sum, id) => sum + (widths.get(id) ?? 0), 0)
   const folded = new Set<string>()
   for (const id of known) {
@@ -1079,6 +1083,7 @@ function useColumnFold(input: {
         // reads as one more `--vx-hit` control rather than a narrower afterthought.
         toggleWidth: HIT_COARSE,
         overhead,
+        fixedCount: fixedIdsRef.current.length,
         order: orderRef.current,
         widths,
       })

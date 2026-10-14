@@ -47,12 +47,17 @@ const TABLE_COLUMNS = [
 // ── charts ────────────────────────────────────────────────────────────────────────────────────
 
 type Row = { t: Date; a: number; b: number; v: number | null; up: number; down: number }
+/** Alternating sign, a gap every fifth row. */
+function signedOrGap(i: number): number | null {
+  if (i % 5 === 4) return null
+  return (i % 2 === 0 ? -1 : 1) * (i + 1)
+}
 const day = (d: number): Date => new Date(Date.UTC(2026, 8, d))
 const DATA: Row[] = Array.from({ length: 14 }, (_, i) => ({
   t: day(i + 1),
   a: 20 + i * 3,
   b: 60 - i * 2,
-  v: i % 5 === 4 ? null : (i % 2 ? 1 : -1) * (i + 1),
+  v: signedOrGap(i),
   up: 5 + i,
   down: 2 + (i % 4),
 }))

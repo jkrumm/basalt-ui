@@ -21,6 +21,7 @@ import { resolveContainerClass } from '../tokens/size-classes'
 import type { CartesianDefinition } from './compile'
 import { ChartEngine, idPrefixOf } from './host'
 import { useCoarsePointer } from '../common/use-media-query'
+import { HEIGHT_MAX, HEIGHT_MIN } from './box'
 import { ChartPlaceholder, resolveChartState } from './state'
 import { AXIS_LINE, CHART_THEME } from './theme'
 import type { ChartState, ChartTooltipRow, ResponsiveChartHeight } from './types'
@@ -63,9 +64,6 @@ const LEVELS = 8
 const MIN_LEVEL = 0.14
 const ROW_PITCH = 26
 const CHROME = 64
-// The default height law's bounds, mirrored from `sizing.ts` (which does not export them).
-const HEIGHT_MIN = 160
-const HEIGHT_MAX = 420
 const CELL_INSET = 1
 
 /** One grid position. `id` is its row-major index: the mark key, so no row/col pair can collide. */
@@ -110,10 +108,10 @@ export function Heatmap<T>(props: HeatmapProps<T>): ReactElement {
   const tooltipRows = tooltip === false ? undefined : tooltip?.rows
   const rows = useMemo(() => props.rows ?? firstSeen(data.map(getRow)), [props.rows, data, getRow])
   const cols = useMemo(() => props.cols ?? firstSeen(data.map(getCol)), [props.cols, data, getCol])
-  const fixedHeight =
+  const statedHeight =
     height ?? Math.min(Math.max(rows.length * ROW_PITCH + CHROME, HEIGHT_MIN), HEIGHT_MAX)
   const coarse = useCoarsePointer()
-  const boxHeight = matchHeight ? 'fill' : fixedHeight
+  const boxHeight = matchHeight ? 'fill' : statedHeight
 
   const definition = useMemo<CartesianDefinition>(() => {
     const byBand = new Map<string, Map<string, T>>()

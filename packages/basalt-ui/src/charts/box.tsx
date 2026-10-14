@@ -35,31 +35,38 @@ const px = (n: number): string => `${n}px`
 const law = (ratio: number): string =>
   `clamp(${px(HEIGHT_MIN)}, ${ratio * 100}cqw, ${px(HEIGHT_MAX)})`
 
-/** The four per-class heights, as the custom properties the stylesheet selects between. */
-export function chartBoxVars(height: Exclude<ChartBoxHeight, 'fill'>): CSSProperties {
-  const [micro, compact, regular, wide] =
-    height === undefined
-      ? [
-          law(HEIGHT_RATIO.micro),
-          law(HEIGHT_RATIO.compact),
-          law(HEIGHT_RATIO.regular),
-          law(HEIGHT_RATIO.wide),
-        ]
-      : typeof height === 'number'
-        ? [px(height), px(height), px(height), px(height)]
-        : [
-            px(height.base),
-            px(height.base),
-            px(height.regular ?? height.base),
-            px(height.wide ?? height.regular ?? height.base),
-          ]
+/** The four custom properties the stylesheet selects between by the frame's container class. */
+export type ChartBoxVars = CSSProperties &
+  Record<'--bc-micro' | '--bc-compact' | '--bc-regular' | '--bc-wide', string>
+
+/** The four per-class heights (micro, compact, regular, wide) a height prop resolves to. */
+function classHeights(height: Exclude<ChartBoxHeight, 'fill'>): [string, string, string, string] {
+  if (height === undefined) {
+    return [
+      law(HEIGHT_RATIO.micro),
+      law(HEIGHT_RATIO.compact),
+      law(HEIGHT_RATIO.regular),
+      law(HEIGHT_RATIO.wide),
+    ]
+  }
+  if (typeof height === 'number') return [px(height), px(height), px(height), px(height)]
+  const regular = height.regular ?? height.base
+  return [px(height.base), px(height.base), px(regular), px(height.wide ?? regular)]
+}
+
+export function chartBoxVars(height: Exclude<ChartBoxHeight, 'fill'>): ChartBoxVars {
+  const [micro, compact, regular, wide] = classHeights(height)
   return {
     '--bc-micro': micro,
     '--bc-compact': compact,
     '--bc-regular': regular,
     '--bc-wide': wide,
-  } as CSSProperties
+  }
 }
+
+/** `data-basalt-chart-short`: a stated height at or under {@link SHORT_CHART_HEIGHT}. */
+export const isShortChart = (height: ChartBoxHeight): boolean =>
+  (statedMax(height) ?? Number.POSITIVE_INFINITY) <= SHORT_CHART_HEIGHT
 
 export function ChartBox(props: {
   height?: ChartBoxHeight
@@ -69,12 +76,11 @@ export function ChartBox(props: {
   const { height, className, children } = props
   const fill = height === 'fill'
   return (
+    // `data-basalt-box` is the hook `ChartCard` uses to tell a chart body from a measured one.
     <div
-      className={classes.frame}
+      className={cx(classes.frame, fill && classes.fillFrame)}
       data-basalt-box=""
-      {...((statedMax(height) ?? Infinity) <= SHORT_CHART_HEIGHT && {
-        'data-basalt-chart-short': '',
-      })}
+      {...(isShortChart(height) && { 'data-basalt-chart-short': '' })}
     >
       <div
         className={cx(classes.box, fill && classes.fill, className)}

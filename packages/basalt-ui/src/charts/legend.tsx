@@ -32,12 +32,12 @@ export function legendEntries<T>(
   )
 }
 
-const rowStyle: CSSProperties = {
+// Everything but `display` and the gaps, which are the stylesheet's in `auto` mode.
+const rowBaseStyle: CSSProperties = {
   border: 0,
   margin: 0,
   padding: 0,
   minWidth: 0,
-  display: 'flex',
   flexWrap: 'wrap',
   alignItems: 'center',
   rowGap: 4,
@@ -45,6 +45,7 @@ const rowStyle: CSSProperties = {
   color: VX.ink2,
   lineHeight: 1.35,
 }
+const rowStyle: CSSProperties = { ...rowBaseStyle, display: 'flex' }
 const dividerStyle: CSSProperties = { width: 1, alignSelf: 'stretch', background: VX.divider }
 const buttonStyle: CSSProperties = {
   all: 'unset',
@@ -140,9 +141,9 @@ export function ChartLegend<T>(props: ChartLegendProps<T>): ReactElement | null 
         auto
           ? // `display` and the gaps are the stylesheet's: the container picks them by width.
             ({
-              ...rowStyle,
-              display: undefined,
+              ...rowBaseStyle,
               '--bc-legend-gap': `${VX.legendGap}px`,
+              '--bc-dots-gap': `${DOTS_GAP}px`,
             } as CSSProperties)
           : {
               ...rowStyle,

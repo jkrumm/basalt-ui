@@ -52,10 +52,12 @@ const OWN_CONTAINER_LITERALS = new Set([
 function containerConditions(css: string): { name: string; literals: string[] }[] {
   const out: { name: string; literals: string[] }[] = []
   for (const line of css.replace(/\/\*[\s\S]*?\*\//g, '').split('\n')) {
-    const m = line.match(/@container\s+([\w-]+)/)
+    // `@container basalt-card (…)` is named; `@container (…)` is not, and answers to the nearest
+    // container, so it is held to the class table (name '').
+    const m = line.match(/@container\s+(?:([\w-]+)\s*)?\(/)
     if (!m) continue
     const literals = [...line.matchAll(/\((?:min|max)-width:\s*([\d.]+px)\)/g)].map((l) => l[1]!)
-    out.push({ name: m[1]!, literals })
+    out.push({ name: m[1] ?? '', literals })
   }
   return out
 }
@@ -88,7 +90,10 @@ describe('breakpoint literals', () => {
     const stray = containerConditions(readFileSync(join(SRC, file), 'utf8')).flatMap(
       ({ name, literals }) =>
         literals.filter(
-          (lit) => !(name === 'basalt-card' ? containerLiterals : OWN_CONTAINER_LITERALS).has(lit),
+          (lit) =>
+            !(
+              name === 'basalt-card' || name === '' ? containerLiterals : OWN_CONTAINER_LITERALS
+            ).has(lit),
         ),
     )
     expect(stray).toEqual([])

@@ -23,5 +23,5 @@ export const CHART_PROBES = [
   'card-fallback',
   'lines-pending',
 ] as const
-export const TABLE_PROBES = ['table-loaded', 'table-fallback'] as const
+const TABLE_PROBES = ['table-loaded', 'table-fallback'] as const
 export const PROBES = [...CHART_PROBES, ...TABLE_PROBES] as const

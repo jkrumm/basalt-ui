@@ -8,7 +8,6 @@ import { compileCartesian, dateTicks, utcAxisDate, utcHeaderDate } from './compi
 import { chartCursor, chartCursorView, hasCursorGroup, hasCursorView } from './cursor'
 import { chartCurve } from './curves'
 import { resolveYDomain, xScaleFor, xZoneFractions } from './scales'
-import { resolveChartSize } from './sizing'
 import { resolveChartState } from './state'
 import { Lines } from './Lines'
 import { createElement } from 'react'
@@ -175,32 +174,6 @@ describe('container-class ladder', () => {
     })
     const build = (width: number) => long.chart({ width, height: 240, defaultTheme: {} as never })
     expect(count(build(1000))).toBeGreaterThanOrEqual(count(build(640)))
-  })
-})
-
-describe('height law', () => {
-  test('width × class ratio, clamped 160–420', () => {
-    expect(resolveChartSize({ width: 640, coarse: false, viewportH: 0 }).height).toBe(320)
-    expect(resolveChartSize({ width: 200, coarse: false, viewportH: 0 }).height).toBe(160)
-    expect(resolveChartSize({ width: 2000, coarse: false, viewportH: 0 }).height).toBe(420)
-  })
-  test('unmeasured (SSR) renders the regular class at 640', () => {
-    const size = resolveChartSize({ width: 0, coarse: false, viewportH: 0 })
-    expect(size).toEqual({ width: 640, containerClass: 'regular', height: 320 })
-  })
-  test('≤ 45vh on a coarse pointer, a literal height included', () => {
-    expect(resolveChartSize({ width: 640, height: 400, coarse: true, viewportH: 400 }).height).toBe(
-      180,
-    )
-    expect(
-      resolveChartSize({ width: 640, height: 400, coarse: false, viewportH: 400 }).height,
-    ).toBe(400)
-  })
-  test('a responsive height resolves per container class', () => {
-    const height = { base: 150, wide: 260 }
-    expect(resolveChartSize({ width: 300, height, coarse: false, viewportH: 0 }).height).toBe(150)
-    expect(resolveChartSize({ width: 600, height, coarse: false, viewportH: 0 }).height).toBe(150)
-    expect(resolveChartSize({ width: 900, height, coarse: false, viewportH: 0 }).height).toBe(260)
   })
 })
 

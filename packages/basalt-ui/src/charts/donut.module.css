@@ -22,8 +22,15 @@
     align-items: center;
   }
 
-  /* The ring is a square of the stated height, at most 55% of the row. */
+  /* The ring is a square of the stated height (the ring's own `--bc-*`, per class), at most 55% of
+   * the row. */
   .ring {
-    flex: 0 0 min(var(--bc-donut-h), 55cqw);
+    flex: 0 0 min(var(--bc-regular), 55cqw);
+  }
+}
+
+@container (min-width: 800px) {
+  .ring {
+    flex-basis: min(var(--bc-wide), 55cqw);
   }
 }
