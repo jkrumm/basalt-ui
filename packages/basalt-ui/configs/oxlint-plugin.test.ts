@@ -3896,6 +3896,26 @@ describe('basalt/router-view-transition', () => {
       `import { createFileRoute } from '${ROUTER}'\nconst Route = createFileRoute('/a')({})\nconst go = Route.useNavigate()\ngo({ to: '/a', viewTransition: true })\n`,
     ],
     [
+      'createRootRouteWithContext<Ctx>()({})',
+      `import { createRootRouteWithContext } from '${ROUTER}'\nconst Route = createRootRouteWithContext<Ctx>()({})\nRoute.useNavigate()({ viewTransition: true })\n`,
+    ],
+    [
+      'an as-asserted route initializer',
+      `import { createFileRoute } from '${ROUTER}'\nconst Route = createFileRoute('/a')({}) as AnyRoute\nRoute.useNavigate()({ viewTransition: true })\n`,
+    ],
+    [
+      'a Route imported from a sibling module',
+      `import { Route } from './route'\nRoute.useNavigate()({ viewTransition: true })\n`,
+    ],
+    [
+      'a route passed as a prop',
+      `export const C = ({ route }: { route: AnyRoute }) => {\n  route.useNavigate()({ viewTransition: true })\n  return null\n}\n`,
+    ],
+    [
+      'a call-result receiver',
+      `const Route = makeRoute()\nRoute.useNavigate()({ viewTransition: true })\n`,
+    ],
+    [
       'getRouteApi(id).useNavigate',
       `import { getRouteApi } from '${ROUTER}'\ngetRouteApi('/a').useNavigate()({ viewTransition: true })\n`,
     ],
@@ -3965,8 +3985,12 @@ describe('basalt/router-view-transition', () => {
       `const api = { useNavigate: () => (o: object) => o }\napi.useNavigate()({ to: '/a', viewTransition: true })\n`,
     ],
     [
-      'a Route that is not from the router',
-      `const Route = makeRoute()\nRoute.useNavigate()({ viewTransition: true })\n`,
+      'a useNavigate property on an array, a literal, a class instance',
+      `const a = [1]\nconst l = 'x'\nclass K { useNavigate() { return (o: object) => o } }\nconst k = new K()\na.useNavigate?.()({ viewTransition: true })\nl.useNavigate()({ viewTransition: true })\nk.useNavigate()({ viewTransition: true })\n`,
+    ],
+    [
+      'a shorthand local object, even as-asserted',
+      `const useNavigate = () => (o: object) => o\nconst api = { useNavigate } as const\napi.useNavigate()({ viewTransition: true })\n`,
     ],
     [
       'viewTransition={false}',
