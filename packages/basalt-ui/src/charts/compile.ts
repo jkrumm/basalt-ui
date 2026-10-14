@@ -256,9 +256,10 @@ const areaTint = (color: string): string =>
 /**
  * A series area filled by value zone: a vertical gradient whose stops sit at the zone boundaries.
  * The engine writes `<linearGradient>` in the default `objectBoundingBox` units, so offsets are
- * fractions of the AREA's own box (from the larger of the series' maximum and 0 down to the smaller
- * of its minimum and 0, the area's baseline), not of the plot; a boundary at value `v` sits at
- * `(hi - v) / (hi - lo)`. Hard edges: neighbouring zones meet at one offset. `null` when no zone
+ * fractions of the AREA's own box, not of the plot: from the larger of the series' maximum and 0 down
+ * to the smaller of its minimum and 0, the baseline the area closes to even when the y domain
+ * excludes 0. A boundary at value `v` sits at `(ceiling - v) / (ceiling - floor)`. Hard edges:
+ * neighbouring zones meet at one offset; overlapping zones never run backwards. `null` when no zone
  * reaches the area (the caller keeps the plain series-colour fade). Linear axes only.
  */
 export function zoneAreaGradient(
@@ -266,25 +267,67 @@ export function zoneAreaGradient(
   zones: readonly ZoneSpec[],
   values: readonly (number | null)[],
 ): ChartGradient | null {
-  let lo = 0
-  let hi = 0
+  let floor = 0
+  let ceiling = 0
   for (const v of values) {
     if (v === null || !Number.isFinite(v)) continue
-    if (v < lo) lo = v
-    if (v > hi) hi = v
+    if (v < floor) floor = v
+    if (v > ceiling) ceiling = v
   }
-  const span = hi - lo
-  if (!(span > 0)) return null
-  const at = (v: number): number => (hi - Math.min(hi, Math.max(lo, v))) / span
-  const stops = zones
-    .filter((z) => z.to > lo && z.from < hi)
+  const span = ceiling - floor
+  if (span <= 0) return null
+  const offsetOf = (v: number): number => (ceiling - Math.min(ceiling, Math.max(floor, v))) / span
+  const reaching = zones
+    .filter((z) => !Number.isNaN(z.from) && !Number.isNaN(z.to) && z.to > floor && z.from < ceiling)
     .toSorted((p, q) => q.to - p.to)
-    .flatMap((z) => [
-      { offset: at(z.to), color: areaTint(z.fill) },
-      { offset: at(z.from), color: areaTint(z.fill) },
-    ])
+  let previous = 0
+  const stops = reaching.flatMap((z) =>
+    [offsetOf(z.to), offsetOf(z.from)].map((raw) => {
+      previous = Math.max(previous, raw)
+      return { offset: previous, color: areaTint(z.fill) }
+    }),
+  )
   if (stops.length === 0) return null
   return { id: areaGradientId(index), x1: 0, y1: 0, x2: 0, y2: 1, stops }
+}
+
+let warnedLogZones = false
+
+/** Zone stops are placed linearly in value; a log axis would put them in the wrong place (V2-SPEC
+ * § 9.9 precedent): dev throws, production logs once and keeps the series-colour fade. */
+function guardLogZones(onLog: boolean): boolean {
+  if (!onLog) return false
+  const message = "area: 'zones' cannot use a log axis; use area: true"
+  if (process.env.NODE_ENV !== 'production') throw new Error(message)
+  // oxlint-disable-next-line no-console -- the production leg of a dev-only throw
+  if (!warnedLogZones) console.error(message)
+  warnedLogZones = true
+  return true
+}
+
+/** The gradient resource for a series' `area` fill: zones, a colour ref, or the series colour. */
+function seriesAreaGradient<T, X extends ChartX>(
+  s: ChartSeries<T>,
+  index: number,
+  input: CartesianInput<T, X>,
+  axes: Axes<T>,
+): ChartGradient {
+  const plain = areaGradient(
+    index,
+    typeof s.area === 'string' && s.area !== 'zones' ? s.area : s.color,
+  )
+  if (s.area !== 'zones') return plain
+  const side = axes.onRight(s) ? 'right' : 'left'
+  const axisConfig = side === 'right' ? input.y2 : input.y
+  if (guardLogZones(axisConfig?.scale === 'log')) return plain
+  const zones = (input.zones ?? []).filter((z) => axes.scaleId(z.axisSide) === axes.scaleId(side))
+  return (
+    zoneAreaGradient(
+      index,
+      zones,
+      input.data.map((d) => s.getValue(d)),
+    ) ?? plain
+  )
 }
 
 const isBar = <T>(s: ChartSeries<T>): boolean => s.mark === 'bar'
@@ -585,21 +628,9 @@ export function compileCartesian<T, X extends ChartX>(
   const rows = rowsOf(input, visibleKeys)
   const formatX = (v: ChartValue): string =>
     input.formatX ? input.formatX(v as X) : defaultFormatX(v)
-  const gradients = input.series.flatMap((s, i) => {
-    if (!s.area) return []
-    const side = s.axis === 'right' ? 'right' : 'left'
-    const zoned =
-      s.area === 'zones'
-        ? zoneAreaGradient(
-            i,
-            (input.zones ?? []).filter((z) => (z.axisSide ?? 'left') === side),
-            input.data.map(s.getValue),
-          )
-        : null
-    return [
-      zoned ?? areaGradient(i, typeof s.area === 'string' && s.area !== 'zones' ? s.area : s.color),
-    ]
-  })
+  const gradients = input.series.flatMap((s, i) =>
+    s.area ? [seriesAreaGradient(s, i, input, axes)] : [],
+  )
 
   return {
     chart: ({ width, height }: ChartBuildContext): StoredChartSpec => {

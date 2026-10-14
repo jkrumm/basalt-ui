@@ -1002,8 +1002,10 @@ optional, subpath-required peers.
   chart's `zones` on the series' axis, with hard stops at the zone boundaries and the usual area
   fade strength, light and dark through the zone tokens. Offsets are fractions of the area's own box
   (the engine's gradients use `objectBoundingBox` units, not `userSpaceOnUse`), computed from the
-  series' values, so the boundaries land at the zone values on a linear axis. With no zone in reach
-  the series-colour fade is kept. argo's stress chart: `area: 'zones'` plus its four zones replaces
+  series' values (the area closes to 0 even when the y domain excludes it), so the boundaries land at
+  the zone values on a linear axis. A right-axis series takes the zones with `axisSide: 'right'`
+  (and the left ones when the chart has no `y2`, as the zone underlay does). With no zone in reach the
+  series-colour fade is kept. On a log axis it throws in dev and keeps the fade in production. argo's stress chart: `area: 'zones'` plus its four zones replaces
   the plain series area and the `thresholds` fill above 75.
 
 ## 2.2.0 — `doctor` in a monorepo, sparkline state, heatmap ticks

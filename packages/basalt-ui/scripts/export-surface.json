@@ -39,8 +39,8 @@
     "MirroredBars",
     "Sparkline",
     "StackedArea",
-    "chartCurve",
-    "chartCursor"
+    "chartCursor",
+    "chartCurve"
   ],
   "./tokens": [
     "BP",

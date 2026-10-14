@@ -65,3 +65,21 @@ describe('public barrel', () => {
     expect(barrel.chartCurve('monotone')).not.toBe(barrel.chartCurve('linear'))
   })
 })
+
+describe('CurveName', () => {
+  test('covers exactly the shipped curves, at compile time', () => {
+    const all = [
+      'monotone',
+      'linear',
+      'step',
+      'stepAfter',
+      'stepBefore',
+    ] as const satisfies readonly CurveName[]
+    type Missing = Exclude<CurveName, (typeof all)[number]>
+    const none: Missing[] = []
+    expect(none).toEqual([])
+    for (const name of all) expect(chartCurve(name).line([])).toBe('')
+    // @ts-expect-error an unknown curve name is not a CurveName
+    chartCurve('basis')
+  })
+})
