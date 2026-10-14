@@ -37,9 +37,12 @@
 pre-commit:
   parallel: true
   commands:
+    # `--no-error-on-unmatched-pattern`: oxlint exits 1 ("No files found to lint") when EVERY staged
+    # file is excluded by `ignorePatterns` (a consumer's `scripts/`), failing a commit that touches
+    # only ignored files. A real error in a non-ignored staged file still fails.
     oxlint:
       glob: '*.{ts,tsx,js,jsx}'
-      run: bunx oxlint {staged_files}
+      run: bunx oxlint --no-error-on-unmatched-pattern {staged_files}
     # `css` is load-bearing, not tidiness: oxfmt formats stylesheets, so without it a CSS-only
     # commit passes the hook and then fails the same check in CI. `oxlint` above deliberately
     # stops at JS — it has nothing to say about CSS.
