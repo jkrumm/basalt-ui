@@ -12,7 +12,11 @@ import type { AnyRoute, ErrorComponentProps, RouterHistory } from '@tanstack/rea
 import { toErrorMessage } from '../common/errors'
 import { makeQueryClient } from '../query-client'
 import { errorName, now, routerTelemetry } from '../telemetry'
-import { guardViewTransitionRejections, routeViewTransition } from './route-transition'
+import {
+  guardViewTransitionRejections,
+  routeViewTransition,
+  supportsViewTransitionTypes,
+} from './route-transition'
 
 /** The root route's context: `createRootRouteWithContext<BasaltRouterContext>()`. */
 export type BasaltRouterContext = {
@@ -105,7 +109,8 @@ export function createBasaltRouter<
     defaultPreloadStaleTime: 0,
     scrollRestoration: true,
     // Route changes only; React's `<ViewTransition>` stays for in-page changes (the aside fold).
-    defaultViewTransition: routeViewTransition,
+    // Types-gated: without `:active-view-transition-type()` the router would crossfade the whole page.
+    defaultViewTransition: supportsViewTransitionTypes() ? routeViewTransition : false,
     defaultPendingComponent: PendingComponent,
     defaultErrorComponent: ErrorComponent,
     defaultNotFoundComponent: NotFoundComponent,

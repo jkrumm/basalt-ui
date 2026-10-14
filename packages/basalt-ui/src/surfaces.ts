@@ -62,6 +62,7 @@ export const PLUGIN_RULE_ID_LIST = [
   'no-import-meta-env',
   'raw-breakpoint',
   'no-dev-helper',
+  'route-view-transition',
 ] as const
 
 /** One registered oxlint plugin rule id — the literal union of {@link PLUGIN_RULE_ID_LIST}. */
@@ -275,6 +276,9 @@ export const SURFACES = {
       'in-body-page-title',
       'raw-scroll-container',
       'shadow-basalt-export',
+      // Route transitions are `createBasaltRouter`'s `defaultViewTransition`; a React
+      // `<ViewTransition>` around `<Outlet>` is inert and fights it.
+      'route-view-transition',
       // Dev-only `import()`s need a literal NODE_ENV gate to fold out of production (repo-local).
       'no-dev-helper',
       // `import.meta.env` is a Vite-ism that fails outside a Vite build (SSR/server code, Node
