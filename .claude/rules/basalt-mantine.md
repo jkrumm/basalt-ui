@@ -41,19 +41,20 @@ shell, which already wires collapse persistence, the mobile breakpoint and the b
 
 Extension points are **declared data, not `ReactNode` slots**, so basalt owns the mobile projection:
 
-| Prop                | Shape                                | What basalt then owns                                                                  |
-| ------------------- | ------------------------------------ | -------------------------------------------------------------------------------------- |
-| `sections`          | `SidebarSection[]`                   | the desktop sidebar AND the mobile bar (`projectMobileNav`) — one definition           |
-| `globalActions`     | `GlobalAction[]`                     | header placement; the first two ride the mobile bar, the rest fold into ONE kebab      |
-| `sidebarBlocks`     | `SidebarBlock[]`                     | rail projection (dot / ring), fold persistence, one More-sheet row per block (law C13) |
-| `brand`             | `BrandConfig & { menu? }`            | a `Name ▾` workspace switcher when `menu` is present                                   |
-| `search`            | `SidebarSearchConfig & { actions? }` | the ⌘K row plus one or two icon buttons (a tuple by type)                              |
-| `settingsMenuItems` | `SettingsMenuItem[]`                 | flat footer rows at three or fewer, one gear menu above that                           |
-| `account`           | `BasaltAccountProps`                 | the footer row, below the settings menu                                                |
+| Prop                | Shape                                                           | What basalt then owns                                                                                |
+| ------------------- | --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `nav`               | `defineNav` result (+ `badges`, `isActive`, `getScrollElement`) | the desktop sidebar, the mobile bar and the breadcrumb, resolved against the router — one definition |
+| `globalActions`     | `GlobalAction[]`                                                | header placement; the first two ride the mobile bar, the rest fold into ONE kebab                    |
+| `sidebarBlocks`     | `SidebarBlock[]`                                                | rail projection (dot / ring), fold persistence, one More-sheet row per block (law C13)               |
+| `brand`             | `BrandConfig & { menu? }`                                       | a `Name ▾` workspace switcher when `menu` is present                                                 |
+| `search`            | `SidebarSearchConfig & { actions? }`                            | the ⌘K row plus one or two icon buttons (a tuple by type)                                            |
+| `settingsMenuItems` | `SettingsMenuItem[]`                                            | flat footer rows at three or fewer, one gear menu above that                                         |
+| `account`           | `BasaltAccountProps`                                            | the footer row, below the settings menu                                                              |
 
-- **The router seam is ONE component, not a render callback.** `SidebarItem.Anchor` (a `NavAnchor`)
-  is the consumer's `<Link>`; absent, the row falls back to `<a href>` + `onClick`. The
-  breadcrumb's equivalent is `parentAnchor`. No `renderNavLink`/`renderBreadcrumbLink` surface.
+- **Router coupling lives inside the shell.** `nav` is resolved against TanStack Router there: active
+  detection, each destination's `<Link>` as its `SidebarItem.Anchor`, the breadcrumb's `parentAnchor`.
+  The consumer wires no `renderNavLink`/`renderBreadcrumbLink` and no `useMatchRoute`. Only the
+  sub-components (`AppSidebar`, `MobileNav`) stay router-agnostic and take resolved `sections`.
 - **`AppBreadcrumbs` is prop-driven** (`section`/`parent`/`parentAnchor`/`parentHref`/`page`),
   renders `null` without `page`; the shell breadcrumbs (basalt-state.md) sources a custom trail.
 - **Collapse persists through `createPersistedState`**, keyed `basalt:<storageKey>` — read with

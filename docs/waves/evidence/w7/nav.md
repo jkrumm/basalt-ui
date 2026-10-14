@@ -27,3 +27,13 @@ not this change, and stays out of this PR.
 
 `init` now seeds a leaf `src/lib/nav.tsx` next to `__root.tsx` (`agent/templates/nav.tpl`) so the
 scaffold respects the no-cycle rule (`NAV` never imports `__root.tsx`).
+
+Also deferred: splitting `useNav` (one long resolver, unchanged by this PR) and a test of the `init`
+`src/lib/nav.tsx` seed.
+
+## `isActive` and the router's own `aria-current`
+
+A TanStack `Link` spreads `aria-current`/`data-status` from its own match as its last props, so under
+an `isActive` override a router-matched loser still claimed the page. With an override supplied the
+anchor renders through `_asChild` (`OverriddenAnchor` in `use-nav.ts`), which drops the router's two
+attributes and re-applies only basalt's verdict.
