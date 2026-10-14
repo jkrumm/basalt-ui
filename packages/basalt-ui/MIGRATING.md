@@ -987,10 +987,22 @@ optional, subpath-required peers.
 | `NavItemMeta`, `NavGroupMeta`, `AnyNavItem`, `AnyNavGroup`, `AnyNavLink`, `FlatNavItem`, `NavConfig`, `NavGroupId`, `NavTabId`, `NavIndex`, `UseNavOptions`, `NavBinding`, `NavAnchor`, `NavAnchorProps`, `NavMobilePlacement` | deleted                                                                                                                                                                                                                                                                                                                                                                                                                                                    | no consumer names them; derive with `ComponentProps` / `Parameters` |
 | `useNav`, and `BasaltShell`'s `sections` / `mobileNav` props                                                                                                                                                                   | deleted: pass `nav={NAV}` (plus `badges`, `isActive`, `getScrollElement` — the old `useNav` options) to `BasaltShell`; it resolves the sidebar, the mobile bar and the breadcrumb itself. `mobileNav` tuning moves to `defineNav`'s `mobile`. argo `apps/dashboard/src/routes/__root.tsx`: replace `const nav = useNav(NAV, { badges })` + `{...nav}` with `nav={NAV} badges={…}` (migrates in W12; 1.x consumers stay on their pinned version until then) |
 
-## Unreleased
+## Unreleased — a call-site fallback a control can see
 
-_Nothing yet. Author the next section under this heading as `## Unreleased — <title>`; the
-release renames it and opens a new one here._
+Additive; `use({ fallback })` keeps working.
+
+- `createLocalStore` fields take `withFallback(value)`: a derived handle over the same field (same
+  key, setter and `clear()`) whose unset value is the call-site `value`. `use()` and every basalt
+  filter control bound to it (`<SelectFilter field={store.field.exercise.withFallback(leader)} />`)
+  resolve unset → `value`, so a prop-derived default no longer makes the hook and the dropdown
+  disagree. Never persisted; a reset unsets back to it; `fallback` and `isDefault` on the derived
+  handle report `value`, so a control at the default is not an active filter. Stable for a stable
+  primitive; memoise an object fallback (range, multi). argo `strength-composite-chart.tsx`: drop
+  the per-leader store and bind `store.field.exercise.withFallback(leader)`.
+- `use({ fallback })` (2.4.0) is `@deprecated` in favour of it: it reaches the hook only. It stays
+  until the next sanctioned break. `createSearchStore` fields do not take `withFallback`: the URL
+  lane canonicalises a value equal to the definition's fallback away, so a second, call-site
+  default would make the same URL mean two things.
 
 ## 2.4.0 — chart gaps and legends, local-store fallbacks, the pre-commit hook
 

@@ -280,18 +280,35 @@ type NumberHandleExtras<F> = F extends { kind: 'number' }
     }
 
 /**
- * `createLocalStore`'s `use()` read options. `fallback` is a CALL-SITE default for a value that
- * arrives as a prop (a leader, a latest date): it applies only while the field is unset (nothing
- * stored), is applied in render AFTER the store read, and is never persisted — `clear()` unsets
- * back to it. `handle.fallback` and `isDefault` still report the definition's.
+ * `use({ fallback })`'s read options. `fallback` is a CALL-SITE default for a value that arrives as
+ * a prop (a leader, a latest date): it applies only while the field is unset (nothing stored), is
+ * applied in render AFTER the store read, and is never persisted — `clear()` unsets back to it.
  *
- * An object fallback (range, multi) must be memoised by the caller: the value returned while unset
- * IS that object, so a fresh literal per render changes identity every render.
+ * Only the HOOK sees it. A control bound to the same field does not, so a prop-derived default that
+ * a control also shows goes through `withFallback` instead.
+ *
+ * @deprecated Use `field.withFallback(fallback)`: the same behaviour, but the one handle the hook
+ * AND every basalt control resolve through.
  */
 export type FieldReadOptions<F extends AnyField> = { fallback?: FieldValue<F> }
 
-/** A `createLocalStore` field: the shared handle, plus `use({ fallback })`. */
+/** A `createLocalStore` field: the shared handle, plus `withFallback` and the older `use({ fallback })`. */
 export type LocalFieldHandle<F extends AnyField> = FieldHandle<F> & {
+  /**
+   * A derived handle over the SAME field (same key, same setter, same `clear()`) whose unset value
+   * is `fallback`, a call-site default such as a prop-derived leader. `use()` and every basalt
+   * control bound to the derived handle — `<SelectFilter field={store.field.exercise.withFallback(leader)} />`
+   * — resolve unset → `fallback`, so they cannot disagree. The fallback is never persisted, and a
+   * reset UNSETS (back to `fallback`) rather than writing it. On the derived handle `fallback` and
+   * `isDefault` report the call-site value, so a control at the leader is not an active filter.
+   *
+   * Referentially stable for a stable fallback: primitives are memoised by value, object
+   * fallbacks (range, multi) by identity — memoise those at the caller, a fresh literal per render
+   * is a fresh handle per render. Derive from the store's handle, not from a derived one:
+   * `withFallback` replaces, it does not stack.
+   */
+  withFallback(fallback: FieldValue<F>): FieldHandle<F>
+  /** @deprecated Use `withFallback(fallback)`. See `FieldReadOptions`. */
   use(
     read?: FieldReadOptions<F>,
   ): readonly [FieldValue<F>, (next: FieldValue<F>, opts?: FieldSetOptions) => void]
@@ -1165,9 +1182,31 @@ export function createLocalStore<const S extends Record<string, AnyField>>(o: {
     const persisted = entry.codec.lane.persist
     const use = persisted ? persistedUse(entry) : core.memoryUse(entry)
     const clear = persisted ? () => core.clearField(entry.name) : () => core.clearMemory(entry.name)
-    field[entry.name as keyof S] = core.handle(entry, use, clear) as unknown as LocalFieldHandle<
-      S[keyof S]
-    >
+    const base = core.handle(entry, use, clear)
+    const byValue = new Map<unknown, FieldHandle<AnyField>>()
+    const byIdentity = new WeakMap<object, FieldHandle<AnyField>>()
+    // Object.create, never a spread: `options` and `fallback` on `base` are live getters, and a
+    // spread would freeze them at derivation. Only what the call-site fallback changes is shadowed.
+    const derive = (fallback: unknown): FieldHandle<AnyField> => {
+      const useDerived = () => use({ fallback } as FieldReadOptions<AnyField>)
+      return Object.create(base as object, {
+        use: { value: useDerived, enumerable: true },
+        fallback: { get: () => fallback, enumerable: true },
+        isDefault: { value: (v: unknown) => entry.codec.equals(v, fallback), enumerable: true },
+      }) as FieldHandle<AnyField>
+    }
+    const withFallback = (fallback: unknown): FieldHandle<AnyField> => {
+      const isObject = typeof fallback === 'object' && fallback !== null
+      const cached = isObject ? byIdentity.get(fallback) : byValue.get(fallback)
+      if (cached !== undefined) return cached
+      const derived = derive(fallback)
+      if (isObject) byIdentity.set(fallback, derived)
+      else byValue.set(fallback, derived)
+      return derived
+    }
+    field[entry.name as keyof S] = Object.assign(base, {
+      withFallback,
+    }) as unknown as LocalFieldHandle<S[keyof S]>
   }
 
   const store: LocalStore<S> = {

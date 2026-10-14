@@ -8,7 +8,7 @@
  * identical and the local store needs no router.
  */
 import { MantineProvider } from '@mantine/core'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, test } from 'bun:test'
 import type { ReactNode } from 'react'
 import { createLocalStore, field } from '../state'
@@ -84,5 +84,67 @@ describe('the popover row gap clears the 44px coarse hit floor (code-foundations
     // Was `gap={2}` → `--stack-gap: 0.125rem`, capping the coarse-pointer overlay at ~4px of the 44.
     expect(stack.style.getPropertyValue('--stack-gap')).not.toBe('0.125rem')
     expect(stack.style.getPropertyValue('--vx-hit-gap')).toBe('var(--stack-gap)')
+  })
+})
+
+describe('a call-site fallback (`withFallback`) reaches the control, not just the hook', () => {
+  type Lift = 'squat' | 'bench' | 'deadlift'
+  const lifts = createLocalStore({
+    key: 'select-filter-leader',
+    fields: { exercise: field.enum(['squat', 'bench', 'deadlift'], 'squat') },
+  })
+
+  function Probe({ leader }: { leader: Lift }): ReactNode {
+    const handle = lifts.field.exercise.withFallback(leader)
+    const [value] = handle.use()
+    return (
+      <>
+        <output data-testid="hook">{value}</output>
+        <SelectFilter field={handle} label="Lift" />
+      </>
+    )
+  }
+
+  const pill = (name: string) => screen.getByRole('button', { name })
+  const hook = () => screen.getByTestId('hook').textContent
+
+  test('unset: hook and control agree on the leader, and nothing is persisted', () => {
+    localStorage.clear()
+    mount(<Probe leader="bench" />)
+    expect(hook()).toBe('bench')
+    expect(pill('bench')).toBeDefined()
+    expect(localStorage.getItem('basalt:select-filter-leader')).toBeNull()
+  })
+
+  test('a leader change while unset moves both', () => {
+    localStorage.clear()
+    const { rerender } = render(
+      <MantineProvider>
+        <Probe leader="bench" />
+      </MantineProvider>,
+    )
+    rerender(
+      <MantineProvider>
+        <Probe leader="deadlift" />
+      </MantineProvider>,
+    )
+    expect(hook()).toBe('deadlift')
+    expect(pill('deadlift')).toBeDefined()
+  })
+
+  test('set → both show the stored value; reset → both return to the call-site fallback', async () => {
+    localStorage.clear()
+    mount(<Probe leader="bench" />)
+    fireEvent.click(pill('bench'))
+    fireEvent.click(await screen.findByLabelText('squat'))
+    await waitFor(() => expect(hook()).toBe('squat'))
+    expect(pill('squat')).toBeDefined()
+    expect(localStorage.getItem('basalt:select-filter-leader')).not.toBeNull()
+
+    act(() => {
+      lifts.field.exercise.clear()
+    })
+    await waitFor(() => expect(hook()).toBe('bench'))
+    expect(pill('bench')).toBeDefined()
   })
 })
