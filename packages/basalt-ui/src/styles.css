@@ -325,6 +325,13 @@
     :root:active-view-transition-type(basalt-sibling) {
       --basalt-route-shift: 0px;
     }
+    /* Forward is toward the inline end, which is left in RTL. */
+    :root[dir='rtl']:active-view-transition-type(basalt-forward) {
+      --basalt-route-shift: -8px;
+    }
+    :root[dir='rtl']:active-view-transition-type(basalt-back) {
+      --basalt-route-shift: 8px;
+    }
   }
 
   @keyframes basalt-route-out {

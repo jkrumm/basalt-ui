@@ -98,6 +98,8 @@ export function createBasaltRouter<
   context?: TContext
   /** Merged over basalt's QueryClient defaults (`staleTime` 30 s, `gcTime` 5 min, `retry` 2, no refetch on focus). */
   query?: QueryClientConfig
+  /** Route transitions are basalt's (V2-SPEC § 5): the router's would double them. */
+  defaultViewTransition?: never
 }): BasaltRouter<TRouteTree> {
   guardViewTransitionRejections()
   const queryClient = makeQueryClient(options.query)

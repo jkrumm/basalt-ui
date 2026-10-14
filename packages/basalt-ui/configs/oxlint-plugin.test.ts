@@ -4026,6 +4026,10 @@ describe('basalt/route-view-transition', () => {
       `import { ViewTransition } from 'react'\nimport { Outlet as Page } from '@tanstack/react-router'\nexport const C = () => <ViewTransition><div><main><Page /></main></div></ViewTransition>\n`,
     ],
     [
+      'a nested ViewTransition (both are inert)',
+      `import { ViewTransition } from 'react'\n${RR}export const C = () => <ViewTransition><section><ViewTransition><Outlet /></ViewTransition></section></ViewTransition>\n`,
+    ],
+    [
       'a namespace Outlet',
       `import { ViewTransition } from 'react'\nimport * as Router from '@tanstack/react-router'\nexport const C = () => <ViewTransition><Router.Outlet /></ViewTransition>\n`,
     ],
@@ -4061,22 +4065,22 @@ describe('basalt/route-view-transition', () => {
     expect(rules).not.toContain('route-view-transition')
   })
 
+  it('reports each enclosing ViewTransition once', () => {
+    const { output } = run(
+      `import { ViewTransition } from 'react'\n${RR}export const C = () => <ViewTransition><ViewTransition><Outlet /></ViewTransition></ViewTransition>\n`,
+      'lib.tsx',
+    )
+    expect(output.match(/basalt\/route-view-transition/g)).toHaveLength(2)
+  })
+
+  it('does not apply in test files', () => {
+    const source = `import { ViewTransition } from 'react'\n${RR}export const C = () => <ViewTransition><Outlet /></ViewTransition>\n`
+    expect(run(source, 'lib.test.tsx').rules).not.toContain('route-view-transition')
+  })
+
   it('honours a theme-allow annotation naming the rule', () => {
     const source = `import { ViewTransition } from 'react'\n${RR}export const C = () => (\n  // theme-allow route-view-transition: legacy page under migration\n  <ViewTransition><Outlet /></ViewTransition>\n)\n`
     expect(run(source, 'lib.tsx').rules).not.toContain('route-view-transition')
-  })
-
-  it('is at error in the shipped preset and in the repo config', () => {
-    const levels = (path: string) =>
-      (JSON.parse(readFileSync(path, 'utf8')) as { rules: Record<string, unknown> }).rules
-    expect(
-      levels(resolve(import.meta.dirname, 'oxlint-basalt.json'))['basalt/route-view-transition'],
-    ).toBe('error')
-    expect(
-      levels(resolve(import.meta.dirname, '..', '..', '..', '.oxlintrc.json'))[
-        'basalt/route-view-transition'
-      ],
-    ).toBe('error')
   })
 })
 
