@@ -43,7 +43,7 @@ type PartBase = { readonly id: string }
 export type StartPart = PartBase & {
   readonly type: 'start'
   readonly runId: string
-  readonly resumeToken?: string
+  readonly resumeToken?: string | undefined
 }
 
 /**
@@ -54,14 +54,14 @@ export type StartPart = PartBase & {
 export type TextPart = PartBase & {
   readonly type: 'text'
   readonly text: string
-  readonly offset?: number
+  readonly offset?: number | undefined
 }
 
 /** An internal reasoning/thinking fragment (may be hidden in the UI). Same `offset` mechanism as TextPart. */
 export type ReasoningPart = PartBase & {
   readonly type: 'reasoning'
   readonly text: string
-  readonly offset?: number
+  readonly offset?: number | undefined
 }
 
 // ── ToolCallPart — mirrors AI SDK v7's UIToolInvocation ─────────────────────
@@ -85,18 +85,18 @@ export type ReasoningPart = PartBase & {
 /** The nested approval envelope — mirrors the SDK's shape verbatim, never flattened. */
 type ToolApproval = {
   readonly id: string
-  readonly approved?: boolean
-  readonly reason?: string
-  readonly isAutomatic?: boolean
-  readonly signature?: string
+  readonly approved?: boolean | undefined
+  readonly reason?: string | undefined
+  readonly isAutomatic?: boolean | undefined
+  readonly signature?: string | undefined
 }
 
 type ToolCallBase = PartBase & {
   readonly type: 'tool'
   readonly toolName: string
   /** Wall-clock time from first sighting of this toolCallId to its terminal state. */
-  readonly durationMs?: number
-  readonly providerExecuted?: boolean
+  readonly durationMs?: number | undefined
+  readonly providerExecuted?: boolean | undefined
 }
 
 /**
@@ -149,8 +149,8 @@ export type ToolCallPart =
       readonly state: 'output-available'
       readonly input: unknown
       readonly output: unknown
-      readonly preliminary?: boolean
-      readonly approval?: ToolApproval & { readonly approved?: true }
+      readonly preliminary?: boolean | undefined
+      readonly approval?: (ToolApproval & { readonly approved?: true }) | undefined
     })
   | (MaybeIdentified & {
       readonly state: 'output-error'
@@ -159,7 +159,7 @@ export type ToolCallPart =
       readonly errorText: string
       /** The only place the raw, un-parsed input survives — what lets a UI render a call whose input never validated. */
       readonly rawInput?: unknown
-      readonly approval?: ToolApproval & { readonly approved?: true }
+      readonly approval?: (ToolApproval & { readonly approved?: true }) | undefined
     })
   | (MaybeIdentified & {
       readonly state: 'output-denied'
@@ -181,7 +181,7 @@ export function isToolCallSettled(part: ToolCallPart): boolean {
 export type SourcePart = PartBase & {
   readonly type: 'source'
   readonly url: string
-  readonly title?: string
+  readonly title?: string | undefined
 }
 
 /** A fatal or recoverable error emitted in-stream by the agent. */
@@ -204,7 +204,9 @@ export type AgentPart = StartPart | TextPart | ReasoningPart | ToolCallPart | So
  * `Drafted<AgentPart>` is `Drafted<StartPart> | Drafted<TextPart> | ...` rather than one flattened
  * (and wrong) shape.
  */
-export type Drafted<T> = T extends unknown ? Omit<T, 'id'> & { readonly id?: string } : never
+export type Drafted<T> = T extends unknown
+  ? Omit<T, 'id'> & { readonly id?: string | undefined }
+  : never
 export type AgentPartDraft = Drafted<AgentPart>
 
 // ── parseAgentPart ───────────────────────────────────────────────────────────

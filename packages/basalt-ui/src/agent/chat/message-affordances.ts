@@ -18,7 +18,7 @@ export type MessageAffordances = {
    * How the per-message timestamp renders.
    * @default 'relative'
    */
-  readonly timestamp?: 'relative' | 'absolute' | 'none'
+  readonly timestamp?: 'relative' | 'absolute' | 'none' | undefined
   /**
    * Whether a copy action is offered on the hover row. Copies the message's COALESCED text (the
    * same merged/de-duplicated text `coalesceParts` produces for display), not the raw `parts`
@@ -27,7 +27,7 @@ export type MessageAffordances = {
    * assembled.
    * @default true
    */
-  readonly copy?: boolean
+  readonly copy?: boolean | undefined
   /**
    * Regenerate action, shown on the LAST ASSISTANT message only (never on earlier turns, never on
    * user messages). Receives that message's `id`. `useAgentThreadRuns`'s `retry` is
@@ -35,7 +35,7 @@ export type MessageAffordances = {
    * whole thread — the consumer bridges this messageId-keyed callback to that thread-keyed retry;
    * the framework only ever hands back the messageId, it does not know about threads.
    */
-  readonly onRegenerate?: (messageId: string) => void
+  readonly onRegenerate?: ((messageId: string) => void) | undefined
   /**
    * Extra actions appended to the hover row, after the built-in copy/regenerate actions.
    *
@@ -49,7 +49,9 @@ export type MessageAffordances = {
    * a long thread it is worth avoiding: wrap `actions` in the consumer's own `useCallback`, keyed
    * on whatever state it actually reads.
    */
-  readonly actions?: (ctx: { readonly message: ChatMessage<TranscriptPart> }) => ReactNode
+  readonly actions?:
+    | ((ctx: { readonly message: ChatMessage<TranscriptPart> }) => ReactNode)
+    | undefined
 }
 
 /**

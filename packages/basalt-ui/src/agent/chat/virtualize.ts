@@ -88,13 +88,13 @@
 /** Tuning knobs passed through to `@tanstack/react-virtual`'s `useVirtualizer`. */
 export type VirtualizeOptions = {
   /** Extra rows rendered beyond the visible viewport, each side. Library default: 1. */
-  readonly overscan?: number
+  readonly overscan?: number | undefined
   /** Estimated row height in px, used before a row has been measured. */
-  readonly estimateSize?: number
+  readonly estimateSize?: number | undefined
   /** Where the transcript sits on first mount. Default 'end' — a chat transcript opens at the
       newest message. 'start' opens at the oldest. See this module's fourth composition rule
       above for the mechanism and why a consumer restoring its own scroll position wants 'start'. */
-  readonly initialScroll?: 'end' | 'start'
+  readonly initialScroll?: 'end' | 'start' | undefined
 }
 
 /**
@@ -103,7 +103,7 @@ export type VirtualizeOptions = {
  * scroll container, so there is no valid virtualized layout without one.
  */
 export type VirtualizeProps =
-  | { readonly virtualize?: false; readonly height?: never }
+  | { readonly virtualize?: false | undefined; readonly height?: never }
   | { readonly virtualize: true | VirtualizeOptions; readonly height: number | string }
 
 /** The enabled branch of {@link VirtualizeProps}, with `height` no longer optional. */
@@ -126,7 +126,7 @@ export type ResolvedVirtualize = {
  * transcript body with inner scroll, no `@tanstack/react-virtual` peer installed).
  */
 export type RowHeightProps =
-  | { readonly virtualize?: false; readonly height?: number | string }
+  | { readonly virtualize?: false | undefined; readonly height?: number | string | undefined }
   | { readonly virtualize: true | VirtualizeOptions; readonly height: number | string }
 
 /** The resolved shape of {@link RowHeightProps} — exactly one of the three row body layouts. */

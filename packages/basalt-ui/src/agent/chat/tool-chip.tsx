@@ -101,10 +101,10 @@ function formatDuration(ms: number): string {
 
 export type ToolChipProps = BasaltProps & {
   readonly part: ToolCallPart
-  readonly defaultExpanded?: boolean
+  readonly defaultExpanded?: boolean | undefined
   /** Rendered only in 'approval-requested'. Omit both to render a read-only chip. */
-  readonly onApprove?: (approvalId: string) => void
-  readonly onDeny?: (approvalId: string, reason?: string) => void
+  readonly onApprove?: ((approvalId: string) => void) | undefined
+  readonly onDeny?: ((approvalId: string, reason?: string) => void) | undefined
 }
 
 /**
