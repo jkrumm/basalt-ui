@@ -589,13 +589,37 @@ own site dropped it (2026-07-24); revisit on a 2.x minor if that changes.
 
 ## Wave 11 — Release candidate <!-- status: active -->
 
-- [ ] Full playground validation: every route through `make evidence` plus `@verifier`. Fix the
+- [x] Full playground validation: every route through `make evidence` plus `@verifier`. Fix the
       regressions found.
-- [ ] Docs: README, `MIGRATING.md` § 2.0 complete, the ledger closed, the 1.x specs archived.
+- [x] Docs: README, `MIGRATING.md` § 2.0 complete, the ledger closed, the 1.x specs archived.
 - [ ] Publish `2.0.0` through `make release` (the one sanctioned major). The mother triggers the
       publish after reviewing the close-out.
 
-**Left behind:**
+**Left behind:** the RC is ready; nothing is published (the box above stays unticked for the orchestrator).
+PRs #183 (astro), #184 (docs), #185 (fold 404s) and this close-out are merged; no direct pushes.
+
+- **Validation:** `make evidence LABEL=w11` (all 11 lanes, `docs/waves/evidence/w2/w11.md`) and a quiet re-run
+  of `otel,charts-perf,lighthouse` (`w11-quiet.*.md`). All lanes ran, no failures, keyboard 0 failing, ssr and
+  transitions at the W10 numbers, CLS 0. `@verifier` read all 12 routes light/dark/mobile: nothing broken.
+- **`route.navigate` p50 (92.6 ms vs 56.7 at W5) is host noise, not a regression.** A nine-commit bisect
+  (W5 close to HEAD, 3 runs each) gave medians 42–108 ms with no step; the W5 commit re-measured today gives
+  107.7 ms. The lane is fragile (3 runs, median of 11 routes, load-sensitive). Lighthouse `/` mobile 56, `/charts`
+  59, `/data` 59, as at W5. Candidate harness change, not built: 7–9 runs, report min/IQR, refuse above load ~2.
+  `charts-perf` first-paint reads 228 ms at 1x (W5 199), within the same noise band; no commit is implicated.
+- **Fold 404s named:** both were `GET /favicon.ico` (Chrome's implicit icon request; the playground declared none).
+  Fixed with `<link rel="icon" href="data:,">`, and the transitions lane now fails on any console error in a
+  counted run.
+- **Dependabot:** 10 -> 0 open. astro 6.0.3 -> 7.3.8 (the critical alert is patched only on 7.x), with
+  `@astrojs/starlight` 0.42.6, `@astrojs/react` 7.0.1 and `oxc-transform-react` 0.145.0; marketing build 13 pages,
+  deployed, `make verify` OK.
+- **Docs:** spec prose 2650 -> 2432 (ceiling lowered to the landed value). `ARGO-MIGRATION-LEARNINGS.md`
+  archived. **Lead call, flag if you disagree:** `CONTROLS-SPEC`, `ASIDE-SPEC` and `MANTINE-THEMING` stay live:
+  V2-SPEC lists their surface but not their law (homes, stores, guards, aside region), and `src/**`,
+  `.oxlintrc.json` and the gate scripts cite them; archiving needs the law ported into V2-SPEC first. The
+  ledger carries a closing banner, `STATUS.md` is rewritten to the 2.0 state, `MIGRATING.md` § 2.0 has the
+  "Upgrading from 1.x" lead (a diff of 1.41.0 exports against HEAD found no missing row).
+- **Found, not fixed (pre-existing since W5, 1.x design):** on mobile the sticky "On this page" trigger sits over
+  the right end of a long first content heading (`content--*--mobile.png`). Cosmetic; belongs to the loop.
 
 ## Wave 12 — argo: the migration plan <!-- status: pending -->
 
