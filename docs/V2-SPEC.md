@@ -338,7 +338,7 @@ Resource and SDK:
 **Open:**
 
 - Does `@hyperdx/browser` register the global `@opentelemetry/api` tracer provider, so argo can use
-  the adapter unchanged? W11 verifies; otherwise argo maps to `HyperDX.addAction`.
+  the adapter unchanged? W12 verifies; otherwise argo maps to `HyperDX.addAction`.
 - `chat.turn` fires after the turn, so it cannot parent the chat `fetch` span. W8 joins on
   `basalt.chat.thread_id`, which argo's `hermes.stream-lifecycle` span must carry too.
 
@@ -737,7 +737,7 @@ that settles each engineering question.
 | 3   | `./styles.css` importing Mantine's layer CSS resolves in a scratch install       | § 1 Open | W3 pack-test           |
 | 4   | `ModalsProvider` wrapping the tree: `modals.*` re-render cost                    | § 2 Open | W3                     |
 | 5   | `<ViewTransition>` fallback without `document.startViewTransition`               | § 5 Open | W7 evidence            |
-| 6   | `@hyperdx/browser` registers the global OTel tracer provider?                    | § 7 Open | W11                    |
+| 6   | `@hyperdx/browser` registers the global OTel tracer provider?                    | § 7 Open | W12                    |
 | 7   | `chat.turn` cannot parent the chat `fetch` span; join on `basalt.chat.thread_id` | § 7 Open | W8                     |
 | 8   | Absent-state hatch: custom mark or flat `--vx-neutral` fill                      | § 9.9    | settled W5: flat fill  |
 | 9   | Legend hover emphasis: rebuild per hover or mark `states`                        | § 9.9    | settled W4: rebuild    |
