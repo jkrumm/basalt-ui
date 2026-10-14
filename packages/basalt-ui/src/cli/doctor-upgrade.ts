@@ -2,13 +2,12 @@
  * `doctor`'s 2.0 strictness and upgrade checks. Each returns null (pass), `{ fail }` (the problem
  * plus its fix) or `{ skip }` (the check could not run: a check that cannot run is not a pass).
  */
-import { readFileSync, readdirSync, writeFileSync } from 'node:fs'
+import { readFileSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { dirname, relative, resolve } from 'node:path'
 
-import { resolveRoots } from './config'
 import type { BasaltConfig } from './config'
-import { parseJsonc, readIfExists } from './index'
+import { parseJsonc, readIfExists, scannableFiles } from './index'
 import type { BasaltInstall } from './index'
 
 export type Check = { fail: string } | { skip: string } | null
@@ -173,7 +172,11 @@ export function retiredLintRulesCheck(cwd: string, install: BasaltInstall): Chec
   })
 }
 
-/** Strings and template literals (captured, so code can be told from their contents) and comments. */
+/**
+ * Strings and template literals (captured) and comments. Known, accepted gap: a regex literal that
+ * contains a quote (`/'/`) opens a string this tokenizer never closes, which can blank or hide code
+ * after it on that line; a template literal nested inside a `${…}` is not tracked either.
+ */
 const TOKEN =
   /("(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*'|`(?:\\.|[^`\\])*`)|\/\/[^\n]*|\/\*[\s\S]*?\*\//g
 
@@ -190,8 +193,15 @@ function basaltImports(src: string): [string, number][] {
   const literals: [number, number][] = []
   const code = src.replace(TOKEN, (m, literal: string | undefined, at: number) => {
     if (literal === undefined) return m.replace(/[^\n]/g, ' ')
-    literals.push([at, at + m.length])
-    return m
+    if (!literal.startsWith('`')) {
+      literals.push([at, at + m.length])
+      return m
+    }
+    // Template literal: blank the text, keep the delimiters and the `${…}` code scannable.
+    return m.replace(
+      /(\$\{[^}]*\})|[^\n`]/g,
+      (c, interpolation: string | undefined) => interpolation ?? ' ',
+    )
   })
   return [...code.matchAll(SUBPATH_IMPORT)]
     .filter((m) => !literals.some(([from, to]) => m.index >= from && m.index < to))
@@ -220,14 +230,11 @@ export function droppedSubpathsCheck(
         (k) => k === `./${sub}` || (k.endsWith('*') && `./${sub}`.startsWith(k.slice(0, -1))),
       )
     const hits: string[] = []
-    for (const root of resolveRoots(cfg)) {
-      const files = readdirSync(resolve(cwd, root), { recursive: true, encoding: 'utf8' })
-      for (const file of files.filter((f) => /\.(?:[cm]?[jt]sx?|vue|astro)$/.test(f))) {
-        if (/(?:^|[\\/])(?:node_modules|dist|\.git)[\\/]/.test(file)) continue
-        const rel = relative(cwd, resolve(cwd, root, file)).replace(/\\/g, '/')
-        for (const [sub, line] of basaltImports(readIfExists(resolve(cwd, rel)) ?? '')) {
-          if (!has(sub)) hits.push(`${rel}:${line} imports basalt-ui/${sub}`)
-        }
+    for (const rel of scannableFiles(cwd, cfg).filter((f) =>
+      /\.(?:[cm]?[jt]sx?|vue|astro)$/.test(f),
+    )) {
+      for (const [sub, line] of basaltImports(readIfExists(resolve(cwd, rel)) ?? '')) {
+        if (!has(sub)) hits.push(`${rel}:${line} imports basalt-ui/${sub}`)
       }
     }
     if (hits.length === 0) return null
@@ -238,10 +245,13 @@ export function droppedSubpathsCheck(
   })
 }
 
-/** True when a tsconfig's `include` names the `src` tree (`src`, `./src`, `src/**`, …). */
+/** True when a tsconfig's `include` or `files` names the `src` tree (`src`, `./src`, `src/**`, …). */
 const includesSrc = (config: Record<string, unknown> | null): boolean =>
-  Array.isArray(config?.['include']) &&
-  config['include'].some((e) => typeof e === 'string' && /^(?:\.\/)?src(?:\/|$)/.test(e))
+  [config?.['include'], config?.['files']].some(
+    (list) =>
+      Array.isArray(list) &&
+      list.some((e) => typeof e === 'string' && /^(?:\.\/)?src(?:\/|$)/.test(e)),
+  )
 
 /**
  * `init`'s tsconfig step: make the tsconfig that covers `src` (`tsconfig.json`, or the reference that
@@ -258,6 +268,16 @@ export function seedTsconfigExtends(cwd: string): string | null {
     .map((r) => (r as { path?: unknown } | null)?.path)
     .flatMap((path) => (typeof path === 'string' ? [tsconfigFile(resolve(cwd, path))] : []))
     .find((f) => includesSrc(parseJsonc(readIfExists(f) ?? 'null')))
+  const files = parseJsonc(rootText)?.['files']
+  if (
+    covering === undefined &&
+    Array.isArray(refs) &&
+    refs.length > 0 &&
+    Array.isArray(files) &&
+    files.length === 0
+  ) {
+    return `tsconfig.json is a solution-style config and no referenced config includes src — set ${TSCONFIG_FIX} in the one that covers src.`
+  }
   const target = covering ?? root
   const text = readIfExists(target) ?? ''
   const name = relative(cwd, target)
@@ -266,7 +286,7 @@ export function seedTsconfigExtends(cwd: string): string | null {
   if (parsed['extends'] !== undefined) {
     return `${name} already extends something else — make it also extend ${TSCONFIG_FIX}.`
   }
-  const open = /^﻿?(?:\s|\/\/[^\n]*\n|\/\*[\s\S]*?\*\/)*\{/.exec(text)
+  const open = /^(?:\s|\/\/[^\n]*\n|\/\*[\s\S]*?\*\/)*\{/.exec(text)
   if (open === null) return `${name} is not a JSON object — set ${TSCONFIG_FIX} by hand.`
   const comma = Object.keys(parsed).length > 0 ? ',' : ''
   const at = open[0].length
