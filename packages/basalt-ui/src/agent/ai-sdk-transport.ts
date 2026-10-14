@@ -71,6 +71,7 @@ type AiPart = UIMessage['parts'][number]
 export type AiSdkHttpOptions = {
   /** The API URL AI SDK's transport POSTs new turns to and GETs reconnects from. */
   readonly api: string
+  readonly transport?: undefined
   /** HTTP headers to send with every request. */
   readonly headers?: Record<string, string> | Headers
   /** The fetch credentials mode. Defaults to 'same-origin' (AI SDK's own default). */
@@ -88,6 +89,7 @@ export type AiSdkHttpOptions = {
  * transport returns.
  */
 export type AiSdkCustomOptions = {
+  readonly api?: undefined
   readonly transport: ChatTransport<UIMessage>
 }
 
@@ -123,7 +125,7 @@ function createAiSdkResolver(options: AiSdkTransportOptions): () => Promise<Reso
     resolved ??= import('ai').then(
       ({ DefaultChatTransport: DefaultChatTransportCtor, readUIMessageStream: read }) => ({
         chatTransport:
-          'transport' in options
+          options.transport !== undefined
             ? options.transport
             : new DefaultChatTransportCtor<UIMessage>({
                 api: options.api,

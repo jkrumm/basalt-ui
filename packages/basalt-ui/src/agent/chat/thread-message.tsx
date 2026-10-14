@@ -14,8 +14,8 @@
  *
  * <ThreadTranscript
  *   messages={thread.messages}
- *   liveParts={liveParts}
- *   liveStatus={runStatus}
+ *   liveParts={run?.parts}
+ *   liveStatus={run?.status}
  * />
  */
 import {
@@ -43,6 +43,7 @@ import type {
 import type { AgentPartRenderers } from '../part-list'
 import type { ChatMessage } from '../history'
 import type { ForeignPart, PartRenderer, PartRenderers, TranscriptPart } from '../foreign'
+import { isLiveStatus } from '../thread'
 import type { StreamStatus } from '../thread'
 import { coalesceParts } from '../coalesce'
 import { narrowAgentPart } from '../foreign'
@@ -1063,7 +1064,7 @@ function useStableCallback<Args extends unknown[], R>(
  *
  * @example
  * import { ThreadTranscript } from 'basalt-ui'
- * <ThreadTranscript messages={thread.messages} liveParts={liveParts} liveStatus={runStatus} />
+ * <ThreadTranscript messages={thread.messages} liveParts={run?.parts} liveStatus={run?.status} />
  *
  * @example
  * // Windowed, for a long thread:
@@ -1175,7 +1176,7 @@ export function ThreadTranscript(props: ThreadTranscriptProps): JSX.Element {
         <div aria-live="polite" aria-atomic="false" aria-relevant="additions">
           <MessageBlock
             message={liveMessage}
-            streaming={liveStatus === 'submitted' || liveStatus === 'streaming'}
+            streaming={isLiveStatus(liveStatus)}
             renderers={renderers}
             fallbackRenderer={fallbackRenderer}
           />

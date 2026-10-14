@@ -35,6 +35,7 @@
 import { Box, Group, Stack, Text, UnstyledButton } from '@mantine/core'
 import type { JSX, ReactNode } from 'react'
 import { useState } from 'react'
+import { isLiveStatus } from '../thread'
 import type { AgentThread, StreamStatus } from '../thread'
 import type { ChatMessage } from '../history'
 import type { ForeignPart, PartRenderer, PartRenderers, TranscriptPart } from '../foreign'
@@ -248,7 +249,7 @@ export function ThreadFeedRow(props: ThreadFeedRowProps): JSX.Element {
   // textarea when it is TOLD a run is streaming (`composer.tsx`'s `showStop`/`inputDisabled`) — it
   // has no way to infer that from `onStop` alone. Forwarding `onStop` without this was the defect:
   // Stop never rendered and a second turn could still be typed into a live thread.
-  const streaming = liveStatus === 'submitted' || liveStatus === 'streaming'
+  const streaming = isLiveStatus(liveStatus)
 
   const transcript = (
     <ThreadTranscript

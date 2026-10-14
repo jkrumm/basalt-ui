@@ -25,15 +25,17 @@
  *     resolveOutcome, // your OutcomeResolver
  *   })
  *   const id = store.create()
+ *   const status = runs.get(id)?.status // 'submitted' | 'streaming' | 'error' | undefined
+ *   const isLive = status === 'submitted' || status === 'streaming'
  *   return (
  *     <div>
  *       <button onClick={() => start(id, 'Hello')}>Send</button>
- *       {runs.get(id)?.status === 'streaming' && <button onClick={() => stop(id)}>Stop</button>}
+ *       {isLive && <button onClick={() => stop(id)}>Stop</button>}
  *     </div>
  *   )
  * }
  */
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useContext, useEffect, useRef, useState } from 'react'
 import type { Dispatch, MutableRefObject, SetStateAction } from 'react'
 import type { ChatMessage } from './history'
 import { toAgentError } from './error'
@@ -47,7 +49,7 @@ import type { AgentPart } from './parts'
 import type { AgentThread, ThreadStatus, ThreadsStore } from './thread'
 import { isResumable } from './transport'
 import type { AgentTransport } from './transport'
-import { createEmitter, errorName, now } from '../telemetry'
+import { TelemetryContext, createEmitter, errorName, now } from '../telemetry'
 import type { Telemetry } from '../telemetry'
 
 // ── ThreadRunState ────────────────────────────────────────────────────────────
@@ -55,25 +57,25 @@ import type { Telemetry } from '../telemetry'
 /**
  * The stream state of a single thread's most recent turn, while it is in flight or has failed.
  *
- * `status` mirrors AI SDK's `ChatStatus` for the two states a turn can be observed in here:
- * `'submitted'` from send until the first content part (text, reasoning or tool) arrives, then
- * `'streaming'`. A turn that settles successfully (or is stopped) has its entry deleted from the
- * `runs` map — the outcome lives on the persisted `AgentThread` instead.
+ * `status` mirrors AI SDK's `ChatStatus`: `'submitted'` from send until the first content part
+ * (text, reasoning or tool) arrives, then `'streaming'`, or `'error'` once the turn failed. A turn
+ * that settles successfully (or is stopped) has its entry deleted from the `runs` map — the
+ * outcome lives on the persisted `AgentThread` instead.
  *
- * A turn that FAILS keeps its entry, with `error` set and the parts received so far, until the next
- * `start()`/`retry()` on that thread replaces it or `stop()` dismisses it. So `runs.has(id)` means
- * "in flight or failed"; test `run.error === undefined` for "still live". The persisted thread's
- * status is already `'error'`/`'interrupted'` by then.
+ * A turn that FAILS keeps its entry — `status: 'error'`, `error` set, the parts received so far —
+ * until the next `start()`/`retry()` on that thread replaces it or `stop()` dismisses it. So
+ * `runs.has(id)` means "in flight or failed"; `run.status` alone says which, and
+ * `liveStatus={runs.get(id)?.status}` is correct for the chat rows (`'error'` is not live).
  *
  * @example
  * const state: ThreadRunState = { status: 'streaming', parts: [{ type: 'text', text: 'Hi' }] }
  */
 export type ThreadRunState<TPart = AgentPart> = {
-  /** `'submitted'` until the first content part arrives, `'streaming'` after. */
-  readonly status: 'submitted' | 'streaming'
+  /** `'submitted'` until the first content part arrives, `'streaming'` after, `'error'` on failure. */
+  readonly status: 'submitted' | 'streaming' | 'error'
   /** Accumulated parts from the current stream for this thread. */
   readonly parts: TPart[]
-  /** Set when the turn failed; absent while it is live. */
+  /** Set exactly when `status === 'error'`. */
   readonly error?: AgentError
 }
 
@@ -104,9 +106,10 @@ export type UseAgentThreadRunsArgs<TPart = AgentPart> = {
    */
   readonly toUserParts?: (input: string) => TPart[]
   /**
-   * Called when a turn's stream throws — never for an `AbortError` (an intentional stop()/
-   * supersede, not a failure worth surfacing). Fires from the SAME catch branch that sets
-   * `onFailureStatus` on the thread, so a caller wanting a toast/notification for a genuine
+   * Called with the RAW thrown value when a turn's stream throws — never for the aborts this hook
+   * issues itself (`stop()`, supersede, unmount). An abort that comes from elsewhere (the
+   * transport, the network layer) is a failure and fires, as `kind: 'aborted'` on the run. Fires
+   * from the SAME catch branch that sets `onFailureStatus` on the thread, so a caller wanting a toast/notification for a genuine
    * transport error (a 409/503/401, argo's hermes-chat S19) no longer has to wrap every transport
    * call in its own generator to intercept the throw — see `consumeAndFinalize`'s catch block.
    */
@@ -120,8 +123,9 @@ export type UseAgentThreadRunsArgs<TPart = AgentPart> = {
    */
   readonly throttle?: number
   /**
-   * Receives one `chat.turn` event per settled turn (V2-SPEC § 7). Pass the same sink as
-   * `BasaltProvider telemetry`; omitted, no event is built. A throwing sink never breaks the turn.
+   * Receives one `chat.turn` event when a turn completes or fails (V2-SPEC § 7); a `stop()`ped
+   * turn emits nothing. Omitted, it defaults to the enclosing `BasaltProvider`'s `telemetry` sink,
+   * and outside a provider nothing is delivered. A throwing sink never breaks the turn.
    */
   readonly telemetry?: Telemetry
 }
@@ -158,7 +162,10 @@ export type UseAgentThreadRunsReturn<TPart = AgentPart> = {
    * ChatMessage with `finish: 'stopped'` (unless that message already landed — see finalizeStop),
    * then distilled into an outcome and the thread is settled to 'done'.
    *
-   * Defense-in-depth: if `runs` reports `threadId` as `'streaming'` but no controller is
+   * A FAILED turn's entry (`status: 'error'`) has no controller: `stop()` just dismisses it and
+   * leaves the thread's `'error'` status alone. A turn that has already settled is a no-op.
+   *
+   * Defense-in-depth: if `runs` reports `threadId` as live but no controller is
    * registered for it (a phantom entry — not reachable via any path in this hook today, since the
    * unmount-cleanup effect and `finalizeStop` both tear down `controllersRef` and `runs` together,
    * but guarded against here so nothing in this file can EVER wedge a thread the UI shows as live
@@ -166,7 +173,10 @@ export type UseAgentThreadRunsReturn<TPart = AgentPart> = {
    * no-opping forever.
    */
   readonly stop: (threadId: string) => void
-  /** Abort every in-flight stream across all threads, settling each the same way stop() would. */
+  /**
+   * Abort every in-flight stream across all threads, settling each the same way stop() would, and
+   * dismiss every failed entry.
+   */
   readonly stopAll: () => void
 }
 
@@ -294,6 +304,7 @@ async function consumeAndFinalize<TPart extends PartLike>(args: {
   storeRef: MutableRefObject<ThreadsStore<TPart>>
   resolveOutcome: OutcomeResolver<TPart>
   livePartsRef: MutableRefObject<Map<string, TPart[]>>
+  endedRef: MutableRefObject<Map<string, 'settled' | 'failed'>>
   setRuns: Dispatch<SetStateAction<Map<string, ThreadRunState<TPart>>>>
   onFailureStatus: ThreadStatus
   throttle: number
@@ -310,6 +321,7 @@ async function consumeAndFinalize<TPart extends PartLike>(args: {
     storeRef,
     resolveOutcome,
     livePartsRef,
+    endedRef,
     setRuns,
     onFailureStatus,
     throttle,
@@ -402,6 +414,7 @@ async function consumeAndFinalize<TPart extends PartLike>(args: {
     storeRef.current.setStatus(threadId, outcome.status)
     storeRef.current.setResumeToken(threadId, undefined)
     controllersRef.current.delete(threadId)
+    endedRef.current.set(threadId, 'settled')
     appendedRef.current.delete(threadId)
     livePartsRef.current.delete(threadId)
     setRuns((prev) => {
@@ -432,16 +445,15 @@ async function consumeAndFinalize<TPart extends PartLike>(args: {
     const agentError = toAgentError(err)
     storeRef.current.setStatus(threadId, onFailureStatus)
     controllersRef.current.delete(threadId)
+    endedRef.current.set(threadId, 'failed')
     appendedRef.current.delete(threadId)
     livePartsRef.current.delete(threadId)
-    committer.cancel()
     // The failed entry stays visible, with the error and the parts received so far, until the next
     // start()/retry() on this thread replaces it or stop() dismisses it.
-    const failedStatus = firstContentAt === undefined ? 'submitted' : 'streaming'
     const failedParts = parts
     setRuns((prev) => {
       const next = new Map(prev)
-      next.set(threadId, { status: failedStatus, parts: failedParts, error: agentError })
+      next.set(threadId, { status: 'error', parts: failedParts, error: agentError })
       return next
     })
     const failedAt = now()
@@ -598,13 +610,19 @@ export function useAgentThreadRuns<TPart extends PartLike = AgentPart>({
   const onErrorRef = useRef(onError)
   onErrorRef.current = onError
   // Same for the telemetry sink, read at emit time so an inline function never re-subscribes.
-  const telemetryRef = useRef(telemetry)
-  telemetryRef.current = telemetry
+  const providerSink = useContext(TelemetryContext)
+  const telemetryRef = useRef(telemetry ?? providerSink)
+  telemetryRef.current = telemetry ?? providerSink
   const throttleRef = useRef(throttle)
   throttleRef.current = throttle
   // The unthrottled accumulator per live thread. `runs` may lag it by one throttle window, and
   // stop() must persist everything that arrived, not what was last committed.
   const livePartsRef = useRef<Map<string, TPart[]>>(new Map())
+  // How each thread's LAST run ended, written synchronously where `controllersRef` is cleared.
+  // `runsRef` only mirrors the last flushed render, so between a settle's `setRuns` and the render
+  // that applies it, stop() cannot tell a phantom entry from a run that just ended; this can.
+  // Cleared when a new run registers a controller for the thread, and on unmount.
+  const endedRef = useRef<Map<string, 'settled' | 'failed'>>(new Map())
 
   // Refs: mutable per-render state that must not trigger re-renders.
   const controllersRef = useRef<Map<string, AbortController>>(new Map())
@@ -702,6 +720,7 @@ export function useAgentThreadRuns<TPart extends PartLike = AgentPart>({
       controllersRef.current.clear()
       appendedRef.current.clear()
       livePartsRef.current.clear()
+      endedRef.current.clear()
       if (abortedThreadIds.length === 0) return
       setRuns((prev) => {
         let next: Map<string, ThreadRunState<TPart>> | undefined
@@ -772,6 +791,7 @@ export function useAgentThreadRuns<TPart extends PartLike = AgentPart>({
       const controller = new AbortController()
       controllersRef.current.set(thread.id, controller)
       livePartsRef.current.set(thread.id, [])
+      endedRef.current.delete(thread.id)
       setRuns((prev) => {
         const next = new Map(prev)
         next.set(thread.id, { status: 'submitted', parts: [] })
@@ -795,6 +815,7 @@ export function useAgentThreadRuns<TPart extends PartLike = AgentPart>({
         storeRef,
         resolveOutcome,
         livePartsRef,
+        endedRef,
         setRuns,
         onFailureStatus: 'interrupted',
         throttle: throttleRef.current,
@@ -833,6 +854,7 @@ export function useAgentThreadRuns<TPart extends PartLike = AgentPart>({
       const controller = new AbortController()
       controllersRef.current.set(threadId, controller)
       livePartsRef.current.set(threadId, [])
+      endedRef.current.delete(threadId)
       const resolvedTransport = resolveTransport(threadId)
 
       // Non-awaited: this consumer runs in the background so start() returns immediately and
@@ -854,6 +876,7 @@ export function useAgentThreadRuns<TPart extends PartLike = AgentPart>({
         storeRef,
         resolveOutcome,
         livePartsRef,
+        endedRef,
         setRuns,
         onFailureStatus: 'error',
         throttle: throttleRef.current,
@@ -895,16 +918,30 @@ export function useAgentThreadRuns<TPart extends PartLike = AgentPart>({
         // clear it" the instant that invariant is ever broken by a future change. Settle it via the
         // same finalizeStop() the normal path uses, so there is still exactly one teardown routine
         // for "a run is ending" regardless of how it got here.
-        const failedRun = runsRef.current.get(threadId)
-        if (failedRun === undefined) return
-        // A failed run already settled its thread; stop() only dismisses the error entry.
-        if (failedRun.error !== undefined) {
+        // How the last run ended is decided from `endedRef` (written synchronously at the settle),
+        // never from `runsRef`, which can still hold the live entry in the microtask window between
+        // a settle's `setRuns` and the render that applies it.
+        const ended = endedRef.current.get(threadId)
+        // Already settled (its terminal message and status are in the store): nothing to stop.
+        if (ended === 'settled') return
+        const dismiss = (): void => {
+          livePartsRef.current.delete(threadId)
           setRuns((prev) => {
             if (!prev.has(threadId)) return prev
             const next = new Map(prev)
             next.delete(threadId)
             return next
           })
+        }
+        // A failed run already settled its thread; stop() only dismisses the error entry.
+        if (ended === 'failed') {
+          dismiss()
+          return
+        }
+        const failedRun = runsRef.current.get(threadId)
+        if (failedRun === undefined) return
+        if (failedRun.status === 'error') {
+          dismiss()
           return
         }
         const parts = livePartsRef.current.get(threadId) ?? failedRun.parts
@@ -939,6 +976,9 @@ export function useAgentThreadRuns<TPart extends PartLike = AgentPart>({
   const stopAll = useCallback((): void => {
     for (const threadId of Array.from(controllersRef.current.keys())) {
       stop(threadId)
+    }
+    for (const [threadId, run] of Array.from(runsRef.current)) {
+      if (run.status === 'error') stop(threadId)
     }
   }, [stop])
 

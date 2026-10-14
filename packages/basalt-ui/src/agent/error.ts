@@ -28,7 +28,8 @@ function stringField(value: unknown, key: string): string | undefined {
 
 /** Maps whatever a transport threw onto the closed `AgentError` union. */
 export function toAgentError(error: unknown): AgentError {
-  if (error instanceof Error && error.name === 'AbortError') return { kind: 'aborted' }
+  // By name, not `instanceof Error`: a `fetch` abort is a DOMException, which is not an Error.
+  if (stringField(error, 'name') === 'AbortError') return { kind: 'aborted' }
   const status =
     typeof error === 'object' && error !== null
       ? (error as Record<string, unknown>)['statusCode']
@@ -38,5 +39,5 @@ export function toAgentError(error: unknown): AgentError {
   const chunkId = stringField(error, 'chunkId')
   if (chunkType !== undefined && chunkId !== undefined)
     return { kind: 'stream', chunkType, chunkId }
-  return { kind: 'server', message: error instanceof Error ? error.message : String(error) }
+  return { kind: 'server', message: stringField(error, 'message') ?? String(error) }
 }
