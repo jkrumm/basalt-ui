@@ -112,7 +112,7 @@ describe('BasaltProvider telemetry', () => {
     const client = queryClientOf(router)
 
     await client
-      .fetchQuery({
+      .query({
         queryKey: ['q', 1],
         retry: 0,
         queryFn: () => {

@@ -17,6 +17,7 @@
  *   interface BasaltRegister { commands: typeof COMMANDS }
  * }
  */
+import type { Hotkey } from '@tanstack/react-hotkeys'
 import type { ReactNode } from 'react'
 import type { Slot } from '../register'
 
@@ -57,11 +58,12 @@ export type Command = {
   /** Optional icon (ReactNode — no @tabler/icons dependency per house rules). */
   icon?: ReactNode
   /**
-   * Optional keyboard shortcut string. Drives BOTH the ShortcutsHelp display AND live key
+   * Optional keyboard shortcut, typed as the peer's `Hotkey` so a typo (`'Cmd+B'`) is a compile
+   * error. Drives BOTH the ShortcutsHelp display AND live key
    * binding by `BasaltProvider` (through the @tanstack/react-hotkeys optional peer).
    * Convention: 'Mod+S' (Mod = Cmd on mac, Ctrl elsewhere), 'Shift+Mod+P', etc.
    */
-  shortcut?: string
+  shortcut?: Hotkey
   /**
    * Optional predicate — when() returning false hides the command from the palette.
    * Useful for context-sensitive commands (e.g. "save" only when a form is dirty).
