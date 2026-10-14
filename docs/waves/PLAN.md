@@ -623,37 +623,49 @@ PRs #183 (astro), #184 (docs), #185 (fold 404s) and this close-out are merged; n
 - **Published 2026-10-14 by the orchestrator:** `make release` computed v1.41.0 → v2.0.0, the registry serves
   `2.0.0` as `latest`.
 
-## Wave 12 — argo: the migration plan <!-- status: active -->
+## Wave 12 — argo: the migration plan <!-- status: done -->
 
 Owner direction 2026-10-14: argo's migration is its own fleet run, and argo and basalt-ui then loop on
 each other until they converge, before any other consumer moves.
 
-- [ ] Author `docs/waves/PLAN.md` in the argo repo: its own waves (setup and `init`/`sync`, shell and
+- [x] Author `docs/waves/PLAN.md` in the argo repo: its own waves (setup and `init`/`sync`, shell and
       routing, data and tables, AI chat, every chart on the 2.x kinds per `v2-chart-inventory.md`,
       rendering per W10, cutover), each with its evidence against argo's baseline. argo auto-deploys
       every push to master and 1.x and 2.x cannot coexist in one app, so the migration lands on argo
       master with `deploy.yml` disabled until cutover (W13); `rd fan`/`rd merge` only base on and land
       to master, which rules out a long-lived branch. Production keeps the last 1.x build meanwhile.
-- [ ] Create `docs/waves/argo-friction.md` in basalt-ui: the one ledger where argo's leads record every
+- [x] Create `docs/waves/argo-friction.md` in basalt-ui: the one ledger where argo's leads record every
       basalt friction (what they hit, the workaround they did NOT take, severity). argo never works
       around basalt; a friction item blocks its argo step until a basalt minor fixes it.
-- [ ] The orchestrator runs argo's plan as a second fleet (one active wave per repo; argo and
+- [x] The orchestrator runs argo's plan as a second fleet (one active wave per repo; argo and
       basalt-ui waves may run at the same time).
 
 **Left behind:**
 
-## Wave 13 — argo cutover and production <!-- status: pending -->
+- argo ran its own 10-wave plan (`argo docs/waves/PLAN.md`, evidence `w1`–`w10`): setup, the atomic 2.0
+  bump, shell, tables, chat, three chart waves (40 charts, no stub left), the cutover. The migration landed
+  on argo master with `deploy.yml` disabled until the cutover. The friction ledger reached 35 rows; basalt-ui
+  shipped 2.0.1 to 2.4.0 from it.
 
-- [ ] argo's deploys are re-enabled once its plan is fully implemented and its own close-out
+## Wave 13 — argo cutover and production <!-- status: done -->
+
+- [x] argo's deploys are re-enabled once its plan is fully implemented and its own close-out
       is green (functional parity, not polish); the deploy fires. Owner call 2026-10-14: argo is not
       critical, so polish happens live afterwards (W14). Warden watches argo in
       production: expect it to react to cutover errors, and say so in the cutover brief.
-- [ ] Verify it is live: health, OTel traces and logs (the `chat.turn` ⇄ `hermes.stream-lifecycle`
+- [x] Verify it is live: health, OTel traces and logs (the `chat.turn` ⇄ `hermes.stream-lifecycle`
       join), Uptime Kuma, screenshots of every dashboard route against the baseline.
 
 **Left behind:**
 
-## Wave 14 — The basalt-ui ⇄ argo loop <!-- status: pending -->
+- **Live 2026-10-14 21:22 UTC** on basalt-ui 2.4.0 (argo `90e1c96`, static nginx build). The first full-page
+  visual check held the cutover on a misleading chart (row 34), fixed in 2.4.0 the same evening. Verified:
+  `make verify`, Uptime Kuma, logs, 16 `route.navigate` spans over 11 routes, the `chat.turn` ⇄
+  `hermes.stream-lifecycle` join on `basalt.chat.thread_id`, a live pass of all 13 routes, Warden quiet for
+  13 minutes. Rollback to 1.x `ff81fc1` is in `argo docs/waves/evidence/w10.md`. SSR is argo Wave 11,
+  blocked on owner call D4 (session cookie vs shell-only SSR).
+
+## Wave 14 — The basalt-ui ⇄ argo loop <!-- status: active -->
 
 Runs on argo master after the cutover. A repeating wave: each instance takes the open items in `argo-friction.md`, fixes them in basalt-ui,
 ships a 2.x minor through `make release`, and the waiting argo step bumps to it. It repeats until the
