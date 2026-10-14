@@ -73,14 +73,14 @@ export type AiSdkHttpOptions = {
   readonly api: string
   readonly transport?: undefined
   /** HTTP headers to send with every request. */
-  readonly headers?: Record<string, string> | Headers
+  readonly headers?: Record<string, string> | Headers | undefined
   /** The fetch credentials mode. Defaults to 'same-origin' (AI SDK's own default). */
-  readonly credentials?: RequestCredentials
+  readonly credentials?: RequestCredentials | undefined
   /**
    * Custom fetch implementation — e.g. to scope requests to a mock backend in tests/playground,
    * or to add middleware. Defaults to the ambient `fetch` when omitted.
    */
-  readonly fetch?: typeof globalThis.fetch
+  readonly fetch?: typeof globalThis.fetch | undefined
 }
 
 /**

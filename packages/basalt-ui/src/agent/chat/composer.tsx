@@ -275,7 +275,7 @@ export type ComposerSlot = 'root' | 'input' | 'actions'
 export type ComposerProps = BasaltProps &
   SlotStylesProps<ComposerSlot> & {
     /** Imperative write/focus handle — see `ComposerHandle`. */
-    readonly ref?: Ref<ComposerHandle>
+    readonly ref?: Ref<ComposerHandle> | undefined
     /**
      * Called with the trimmed text plus the pending attachments. May return `void` (fire-and-forget,
      * validated only synchronously) or a `Promise<void>` (its outcome is awaited, its timing is not).
@@ -298,41 +298,41 @@ export type ComposerProps = BasaltProps &
      * A resolved promise clears and stays cleared, same as a `void` return.
      */
     readonly onSubmit: (payload: ComposerSubmit) => void | Promise<void>
-    readonly placeholder?: string
+    readonly placeholder?: string | undefined
     /** Autofocuses the textarea on mount. */
-    readonly autoFocus?: boolean
+    readonly autoFocus?: boolean | undefined
     /** Autosize ceiling for the textarea. Default 6. */
-    readonly maxRows?: number
+    readonly maxRows?: number | undefined
     /** Hard-disable, independent of streaming (e.g. offline). */
-    readonly disabled?: boolean
+    readonly disabled?: boolean | undefined
     /** A run is in flight on this thread. */
-    readonly streaming?: boolean
+    readonly streaming?: boolean | undefined
     /** Default false — preserves the historical `disabled={streaming}` behaviour. */
-    readonly allowSubmitWhileStreaming?: boolean
+    readonly allowSubmitWhileStreaming?: boolean | undefined
     /** When given, the send action becomes a Stop action while `streaming`. */
-    readonly onStop?: () => void
+    readonly onStop?: (() => void) | undefined
     /**
      * Opaque slot rendered before the textarea (a voice recorder, a mode switch, …). Slot content
      * that needs to WRITE into the composer — append a transcript, insert a suggestion — does so
      * through the `ref` handle (`ComposerHandle`), not a callback prop here; see the file's
      * `@example`.
      */
-    readonly leftSection?: ReactNode
+    readonly leftSection?: ReactNode | undefined
     /** Opaque slot rendered between the textarea and the send action (an attach button, …). */
-    readonly rightSection?: ReactNode
+    readonly rightSection?: ReactNode | undefined
     /**
      * Pending attachments, owned by the caller. Composer only forwards them on submit and asks for a
      * reset afterwards — rendering previews is the caller's job, via `leftSection`/`rightSection`.
      */
-    readonly attachments?: readonly ComposerAttachment[]
+    readonly attachments?: readonly ComposerAttachment[] | undefined
     /**
      * Called with `[]` optimistically the instant a submit goes out WITH pending attachments — a
      * submit that had none to begin with skips the call rather than reporting a no-op change — and,
      * subject to the restoration guards documented on `onSubmit`, with the original attachments
      * again if that submit later rejects.
      */
-    readonly onAttachmentsChange?: (next: readonly ComposerAttachment[]) => void
-    readonly onPaste?: (event: ClipboardEvent<HTMLTextAreaElement>) => void
+    readonly onAttachmentsChange?: ((next: readonly ComposerAttachment[]) => void) | undefined
+    readonly onPaste?: ((event: ClipboardEvent<HTMLTextAreaElement>) => void) | undefined
     /**
      * Persists the unsent draft under `basalt:composer-draft:<key>`; switching keys swaps drafts, and
      * the entry is removed (not blanked) on a successful submit.
@@ -341,9 +341,9 @@ export type ComposerProps = BasaltProps &
      * that fails, synchronously or later over the network, restores this persisted draft instead of
      * leaving it erased (subject to the restoration guards documented on `onSubmit`).
      */
-    readonly draftKey?: string
+    readonly draftKey?: string | undefined
     /** Replaces the whole Enter/Shift+Enter hint row. Pass `null` to drop it entirely. */
-    readonly hint?: ReactNode
+    readonly hint?: ReactNode | undefined
   }
 
 /** The default footer: the Enter / Shift+Enter keyboard contract, in the mono micro-label voice. */

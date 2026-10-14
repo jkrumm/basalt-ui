@@ -21,5 +21,5 @@ export type ChatMessage<TPart = AgentPart> = {
   readonly parts: TPart[]
   readonly createdAt: number
   /** How the turn ended. Absent on user messages and on pre-1.11 persisted assistant messages. */
-  readonly finish?: 'complete' | 'stopped' | 'error'
+  readonly finish?: 'complete' | 'stopped' | 'error' | undefined
 }

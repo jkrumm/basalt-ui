@@ -110,48 +110,48 @@ type ThreadFeedRowBase = {
    * and never guessed client-side), pass it directly instead of forcing an outcome shape onto data
    * that never had one.
    */
-  readonly title?: string
+  readonly title?: string | undefined
   /** Header summary override, same fallback rule as `title` (`thread.outcome?.summary ?? ''`). */
-  readonly summary?: string
+  readonly summary?: string | undefined
   /** Rendered at the START of the header row, before the title/summary stack — a pin icon, a type
    * badge (argo's hermes-chat S5). Absent by default; renders nothing extra when omitted. */
-  readonly headerLeft?: ReactNode
+  readonly headerLeft?: ReactNode | undefined
   /** Rendered at the END of the header row, before the timestamp and chevron — a collapsed-only
    * streaming indicator (argo's hermes-chat S5). Absent by default; renders nothing extra when
    * omitted. */
-  readonly headerRight?: ReactNode
+  readonly headerRight?: ReactNode | undefined
   /**
    * Overrides the transcript source: when provided, the row renders THESE messages instead of
    * reading `thread.messages` directly (argo's hermes-chat S6 — the confirmed transcript is an
    * optimistic-overlay MERGE over the store's messages, not the store's messages verbatim).
    * Defaults to `thread.messages`.
    */
-  readonly messages?: readonly ChatMessage<TranscriptPart>[]
+  readonly messages?: readonly ChatMessage<TranscriptPart>[] | undefined
   /** The live (in-flight) assistant turn's parts, when a run is streaming for this thread. */
-  readonly liveParts?: readonly TranscriptPart[]
+  readonly liveParts?: readonly TranscriptPart[] | undefined
   /** The live run's status — drives the in-progress indicator on the live block. */
-  readonly liveStatus?: StreamStatus
+  readonly liveStatus?: StreamStatus | undefined
   /** Consumer renderers keyed by part.type, forwarded to `ThreadTranscript`. */
-  readonly renderers?: PartRenderers
+  readonly renderers?: PartRenderers | undefined
   /** Forwarded to `ThreadTranscript` — see its own prop doc. */
-  readonly fallbackRenderer?: PartRenderer<ForeignPart>
+  readonly fallbackRenderer?: PartRenderer<ForeignPart> | undefined
   /**
    * Per-message hover-row contract (timestamp/copy/regenerate/actions), forwarded verbatim to the
    * row's `ThreadTranscript`. Shared with it via `message-affordances.ts` so the two cannot drift
    * on what an unset field means.
    */
-  readonly affordances?: MessageAffordances
+  readonly affordances?: MessageAffordances | undefined
   /** Forwarded to `ThreadTranscript` — suppresses role label + chrome on same-speaker runs.
    * @default true */
-  readonly groupConsecutive?: boolean
+  readonly groupConsecutive?: boolean | undefined
   /** Called with the composer's submit payload. */
   readonly onSend: (payload: ComposerSubmit) => void
   /** Shown as the composer's Stop action while `liveStatus` is `'submitted'` or `'streaming'`. */
-  readonly onStop?: () => void
+  readonly onStop?: (() => void) | undefined
   /** Forwarded to the row's `Composer`, minus the three props this component always wires itself
    * (`onSubmit`, `onStop`, and `streaming` — the last derived from `liveStatus` so a consumer can't
    * pass one that disagrees with the row's own live status). */
-  readonly composerProps?: Omit<ComposerProps, 'onSubmit' | 'onStop' | 'streaming'>
+  readonly composerProps?: Omit<ComposerProps, 'onSubmit' | 'onStop' | 'streaming'> | undefined
 }
 
 /**

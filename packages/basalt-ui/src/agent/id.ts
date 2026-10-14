@@ -144,7 +144,7 @@ export function mintMessageId(): string {
  *   // part.id is always defined here
  * }
  */
-export async function* withPartIds<TPart extends { id?: string }>(
+export async function* withPartIds<TPart extends { id?: string | undefined }>(
   runId: string,
   source: AsyncGenerator<TPart>,
 ): AsyncGenerator<TPart & { id: string }> {

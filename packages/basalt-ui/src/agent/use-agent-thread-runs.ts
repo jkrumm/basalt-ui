@@ -127,7 +127,7 @@ export type UseAgentThreadRunsArgs<TPart = AgentPart> = {
    * Converts raw user input into the thread's part shape. Defaults to a single text part.
    * Required when TPart is not the default AgentPart union.
    */
-  readonly toUserParts?: (input: string) => TPart[]
+  readonly toUserParts?: ((input: string) => TPart[]) | undefined
   /**
    * Called with the RAW thrown value when a turn's stream throws — never for the aborts this hook
    * issues itself (`stop()`, supersede, unmount). An abort that comes from elsewhere (the
@@ -137,7 +137,9 @@ export type UseAgentThreadRunsArgs<TPart = AgentPart> = {
    * longer has to wrap every transport call in its own generator to intercept the throw — see
    * `consumeAndFinalize`'s catch block.
    */
-  readonly onError?: (info: { readonly threadId: string; readonly error: unknown }) => void
+  readonly onError?:
+    | ((info: { readonly threadId: string; readonly error: unknown }) => void)
+    | undefined
   /**
    * Minimum ms between `runs` commits while a part stream is flowing — `useChat`'s stable
    * `throttle` semantics: the first part commits immediately, later parts within the window are
@@ -145,13 +147,13 @@ export type UseAgentThreadRunsArgs<TPart = AgentPart> = {
    * stream and `stop()` never wait on it, so no final part is lost. Default `100`; `0` commits
    * every part.
    */
-  readonly throttle?: number
+  readonly throttle?: number | undefined
   /**
    * Receives one `chat.turn` event when a turn completes or fails (V2-SPEC § 7); a `stop()`ped
    * turn emits nothing. Omitted, it defaults to the enclosing `BasaltProvider`'s `telemetry` sink,
    * and outside a provider nothing is delivered. A throwing sink never breaks the turn.
    */
-  readonly telemetry?: Telemetry
+  readonly telemetry?: Telemetry | undefined
 }
 
 // ── useAgentThreadRuns return type ────────────────────────────────────────────

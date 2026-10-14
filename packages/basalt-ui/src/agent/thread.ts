@@ -51,7 +51,7 @@ export type AgentThread<TPart = AgentPart> = {
    * useAgentThreadRuns to attempt resumption after a disconnected reload. Cleared once the run
    * finalizes.
    */
-  readonly resumeToken?: string
+  readonly resumeToken?: string | undefined
   /**
    * Freeform consumer metadata (e.g. `{ source: 'sidebar' }`, `{ model: 'gpt-5' }`) — set once at
    * `create()` time and otherwise opaque to this store. Intentionally untyped: the framework has
@@ -66,7 +66,7 @@ export type AgentThread<TPart = AgentPart> = {
    * Revisit trigger: promote this to a `TMeta` generic only once a real consumer needs typed,
    * validated meta (not just a documented convention) — don't add the generic speculatively.
    */
-  readonly meta?: Record<string, unknown>
+  readonly meta?: Record<string, unknown> | undefined
 }
 
 // ── Return type of the factory hook ──────────────────────────────────────────
@@ -79,7 +79,7 @@ export type ThreadsStore<TPart = AgentPart> = {
   /** Select a thread as active (or clear the selection with null). */
   readonly select: (id: string | null) => void
   /** Create a new thread, prepend it, and return its id. Does not change activeId. */
-  readonly create: (opts?: { readonly meta?: Record<string, unknown> }) => string
+  readonly create: (opts?: { readonly meta?: Record<string, unknown> | undefined }) => string
   /** Append a message to a thread. Trims to maxMessagesPerThread (ring-buffer: drops oldest). */
   readonly appendMessage: (id: string, message: ChatMessage<TPart>) => void
   /** Set a thread's distilled outcome. Bumps updatedAt. */

@@ -57,19 +57,19 @@ export type ThreadFeedProps = BasaltProps & {
    * this reset compares `activeId` against the last one seen, re-driving it to the SAME id from outside
    * this component is a no-op comparison, so it does not clear the override.
    */
-  readonly variant?: 'outcome' | 'inline'
+  readonly variant?: 'outcome' | 'inline' | undefined
   /**
    * Wires the built-in `'inline'` row's composer to a real send channel — called with the thread
    * and the composer's submit payload. Omit it and the row's composer renders disabled (visibly
    * inert) instead of a live control that silently discards whatever is typed into it; a consumer
    * that needs the composer live must supply this (or `renderRow`, for full control over the row).
    */
-  readonly onSend?: (thread: AgentThread, payload: ComposerSubmit) => void
+  readonly onSend?: ((thread: AgentThread, payload: ComposerSubmit) => void) | undefined
   /** Overrides row rendering entirely, for BOTH variants — when supplied, this is called for every
    * thread instead of either built-in row. Gives full control over live-run wiring
    * (`onStop`/`liveParts`/`liveStatus`) the built-in `'inline'` row doesn't expose; see `variant`
    * and `onSend`. */
-  readonly renderRow?: (thread: AgentThread) => ReactNode
+  readonly renderRow?: ((thread: AgentThread) => ReactNode) | undefined
   /**
    * Scroll anchor. `'start'` (default) is today's top-anchored `ScrollArea` feed, unchanged.
    * `'end'` anchors the feed's growth to the BOTTOM instead — a `BasaltStickToBottom` scroll node
@@ -79,7 +79,7 @@ export type ThreadFeedProps = BasaltProps & {
    * (argo's hermes-chat S15 — oldest→newest top→bottom, pinned last, `renderRow`-driven) needs
    * instead of hand-rolling its own scroll shell around `renderRow`.
    */
-  readonly anchor?: 'start' | 'end'
+  readonly anchor?: 'start' | 'end' | undefined
 }
 
 function defaultRow(
