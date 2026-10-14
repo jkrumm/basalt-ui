@@ -631,8 +631,9 @@ each other until they converge, before any other consumer moves.
 - [ ] Author `docs/waves/PLAN.md` in the argo repo: its own waves (setup and `init`/`sync`, shell and
       routing, data and tables, AI chat, every chart on the 2.x kinds per `v2-chart-inventory.md`,
       rendering per W10, cutover), each with its evidence against argo's baseline. argo auto-deploys
-      every push to master, and 1.x and 2.x cannot coexist in one app, so the migration runs on one
-      long-lived argo branch and lands on master at cutover (W13); the loop runs live after it.
+      every push to master and 1.x and 2.x cannot coexist in one app, so the migration lands on argo
+      master with `deploy.yml` disabled until cutover (W13); `rd fan`/`rd merge` only base on and land
+      to master, which rules out a long-lived branch. Production keeps the last 1.x build meanwhile.
 - [ ] Create `docs/waves/argo-friction.md` in basalt-ui: the one ledger where argo's leads record every
       basalt friction (what they hit, the workaround they did NOT take, severity). argo never works
       around basalt; a friction item blocks its argo step until a basalt minor fixes it.
@@ -643,9 +644,9 @@ each other until they converge, before any other consumer moves.
 
 ## Wave 13 — argo cutover and production <!-- status: pending -->
 
-- [ ] argo's migration branch lands on master once its plan is fully implemented and its own close-out
+- [ ] argo's deploys are re-enabled once its plan is fully implemented and its own close-out
       is green (functional parity, not polish); the deploy fires. Owner call 2026-10-14: argo is not
-      critical, so polish happens live on master afterwards, not on the branch. Warden watches argo in
+      critical, so polish happens live afterwards (W14). Warden watches argo in
       production: expect it to react to cutover errors, and say so in the cutover brief.
 - [ ] Verify it is live: health, OTel traces and logs (the `chat.turn` ⇄ `hermes.stream-lifecycle`
       join), Uptime Kuma, screenshots of every dashboard route against the baseline.
