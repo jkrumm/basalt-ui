@@ -26,7 +26,7 @@ declare module '@tanstack/react-router' {
 createRoot(document.getElementById('root')!).render(<BasaltProvider router={router} />)
 ```
 
-3. If you use `basalt-ui/controls-dates`, import `@mantine/dates/styles.layer.css` after `basalt-ui/styles.css` (core must precede dates in `@layer mantine`).
+3. Import extension layer CSS (`@mantine/dates` for `basalt-ui/controls-dates`, `@mantine/schedule`) after `basalt-ui/styles.css` (core must precede them in `@layer mantine`).
 4. Install the peers of each subpath you import: read its `Install: bun add …` line in `node_modules/basalt-ui/llms.txt`; a subpath with no `Install:` line needs only the required peers listed at the top of that file.
 5. In `vite.config.ts` spread `...basaltViteConfig({ port, apiTarget })` and register, in this order, `plugins: [tanstackRouter({ target: 'react', autoCodeSplitting: true }), react(), ...basaltAppPlugin({ name, description })]`. Run `bun add -d @tanstack/router-plugin` and import `tanstackRouter` from `@tanstack/router-plugin/vite`.
 6. Run `vite build` once so the plugin writes `src/routeTree.gen.ts`; commit it (`tsc -b` fails without it).
@@ -36,11 +36,12 @@ createRoot(document.getElementById('root')!).render(<BasaltProvider router={rout
 ```tsx
 // @check
 import { Link, createFileRoute, linkOptions } from '@tanstack/react-router'
-import { defineNav, navGroup, navTarget } from 'basalt-ui'
-// src/routes/dashboard.tsx — the breadcrumb and page title come from the nav item's `label`; export the component too (react/only-export-components)
+import { PageBar, defineNav, navGroup, navTarget } from 'basalt-ui'
+// src/routes/dashboard.tsx — the nav item's `label` is the page name (breadcrumb); export the component too (react/only-export-components)
 export const Route = createFileRoute('/dashboard')({ component: Dashboard })
 export function Dashboard() {
-  return <h2>Dashboard</h2>
+  // a PageBar only fills slots (actions, sync, tabs, filters); the body has no title
+  return <PageBar actions={[{ key: 'export', label: 'Export', primary: true }]} />
 }
 // src/lib/nav.tsx
 export const NAV = defineNav({
@@ -241,8 +242,7 @@ export function Chat() {
 
 ## Refresh after any upgrade
 
-1. `./node_modules/.bin/basalt-ui sync` (`--check` in CI, `--force` overwrites local edits).
-2. Read its output: edited files are skipped, retired files are deleted, the AGENTS.md block is rewritten.
+1. `./node_modules/.bin/basalt-ui sync` (`--check` in CI, `--force` overwrites local edits); read its output: edited files are skipped, retired files are deleted, the AGENTS.md block is rewritten.
 
 ## Upgrade 1.x to 2.0
 
