@@ -340,8 +340,8 @@ Resource and SDK:
 
 - Does `@hyperdx/browser` register the global `@opentelemetry/api` tracer provider, so argo can use
   the adapter unchanged? W12 verifies; otherwise argo maps to `HyperDX.addAction`.
-- `chat.turn` fires after the turn, so it cannot parent the chat `fetch` span. W8 joins on
-  `basalt.chat.thread_id`, which argo's `hermes.stream-lifecycle` span must carry too.
+- A sink's `startChatTurn` opens the turn before the request and its `traceparent` rides the chat
+  request (2.5.0), so the API span parents under it; `basalt.chat.thread_id` stays the join key.
 
 ## 8. Library adoption ledger
 
@@ -732,18 +732,18 @@ No kind is exempt from the rung's host: `basalt/hand-rolled-plot` is deleted (§
 Index of every section's **Open** list; the section holds the detail. Owner calls first, then the wave
 that settles each engineering question.
 
-| #   | Question                                                                         | Section  | Settled by             |
-| --- | -------------------------------------------------------------------------------- | -------- | ---------------------- |
-| 1   | Accept the engine's +14.5 KB gzip on the first chart for SSR, a11y, marks?       | § 9.9    | accepted; W5: +31.5 KB |
-| 2   | Accept Table v9's +4 070 B (+6 969 B without Store dedupe), or offset in W6?     | § 8 Open | accepted: shared Store |
-| 3   | `./styles.css` importing Mantine's layer CSS resolves in a scratch install       | § 1 Open | W3 pack-test           |
-| 4   | `ModalsProvider` wrapping the tree: `modals.*` re-render cost                    | § 2 Open | W3                     |
-| 5   | `<ViewTransition>` fallback without `document.startViewTransition`               | § 5 Open | W7 evidence            |
-| 6   | `@hyperdx/browser` registers the global OTel tracer provider?                    | § 7 Open | W12                    |
-| 7   | `chat.turn` cannot parent the chat `fetch` span; join on `basalt.chat.thread_id` | § 7 Open | W8                     |
-| 8   | Absent-state hatch: custom mark or flat `--vx-neutral` fill                      | § 9.9    | settled W5: flat fill  |
-| 9   | Legend hover emphasis: rebuild per hover or mark `states`                        | § 9.9    | settled W4: rebuild    |
-| 10  | Stacked `Bars` on a log axis: throw in dev, or document the gap                  | § 9.9    | settled W5: throw      |
+| #   | Question                                                                        | Section  | Settled by             |
+| --- | ------------------------------------------------------------------------------- | -------- | ---------------------- |
+| 1   | Accept the engine's +14.5 KB gzip on the first chart for SSR, a11y, marks?      | § 9.9    | accepted; W5: +31.5 KB |
+| 2   | Accept Table v9's +4 070 B (+6 969 B without Store dedupe), or offset in W6?    | § 8 Open | accepted: shared Store |
+| 3   | `./styles.css` importing Mantine's layer CSS resolves in a scratch install      | § 1 Open | W3 pack-test           |
+| 4   | `ModalsProvider` wrapping the tree: `modals.*` re-render cost                   | § 2 Open | W3                     |
+| 5   | `<ViewTransition>` fallback without `document.startViewTransition`              | § 5 Open | W7 evidence            |
+| 6   | `@hyperdx/browser` registers the global OTel tracer provider?                   | § 7 Open | W12                    |
+| 7   | resolved in 2.5.0: `startChatTurn` propagates `traceparent`; join key unchanged | § 7 Open | W14                    |
+| 8   | Absent-state hatch: custom mark or flat `--vx-neutral` fill                     | § 9.9    | settled W5: flat fill  |
+| 9   | Legend hover emphasis: rebuild per hover or mark `states`                       | § 9.9    | settled W4: rebuild    |
+| 10  | Stacked `Bars` on a log axis: throw in dev, or document the gap                 | § 9.9    | settled W5: throw      |
 
 Resolved by the lead in W1: § 9 keeps 8 1.x value names and adds a handful (`Lines`, `Sparkline`,
 `chartCursor`, …), well inside § 1's 48 allowance, so the ≤ 140 value ceiling stands; W3 sets the
