@@ -404,18 +404,55 @@ Charts), `docs/archive/CHARTS-SPEC-1x.md`, `docs/DESIGN-CORE.md`, `packages/basa
 - **W8 inherits:** `motion` is subpath-required for `./agent` only (`MotionConfig` now in `ThreadFeed`);
   chat-profile is still blind (`make evidence` exits 2 on that lane alone) until W8 wires it.
 
-## Wave 8 — AI chat and content <!-- status: active -->
+## Wave 8 — AI chat and content <!-- status: done -->
 
-- [ ] `./agent` + `./agent-chat` on AI SDK 7 latest. Covers: `throttle`, status semantics,
+- [x] `./agent` + `./agent-chat` on AI SDK 7 latest. Covers: `throttle`, status semantics,
       `ReasoningLevel` `max`, typed errors, `WebSocketChatTransport` via the transport seam, and TanStack
       AI per the ledger.
-- [ ] `./content` streaming markdown hardened (remend 1.4 sentinels, shiki 4.5, mermaid).
-- [ ] Evidence: commit counts and frame timings for a long streamed reply vs baseline. OTel trace of
+- [x] `./content` streaming markdown hardened (remend 1.4 sentinels, shiki 4.5, mermaid).
+- [x] Evidence: commit counts and frame timings for a long streamed reply vs baseline. OTel trace of
       one chat turn end to end.
 
 **Left behind:**
 
-## Wave 9 — Lint and agent layer <!-- status: pending -->
+- **Landed** (all via `rd merge`, `make check` green on each rebased SHA, every diff agent-gateway reviewed):
+  #154 the `/agent` Stream demo and the unblinded `chat-profile` lane, #156 streaming-markdown hardening, #155
+  the `./agent` runtime contract, #157 the throttle sweep and the chat-turn trace, #158 the throttle default. #155
+  took five review rounds, every one a real race in `stop()`/`stopAll()`/outcome resolution; the fix that ended it
+  was one `RunRecord` per thread (`run-records.ts`, `run-committer.ts`) instead of five refs that had to agree.
+  Index: `docs/waves/evidence/w8.md`.
+- **Done in W8** (V2-SPEC § 6/§ 7): `ThreadRunState.status` `'submitted' | 'streaming'` (TTFT is measured at
+  that edge); `ThreadRunState.error: AgentError` (`http`/`stream`/`server`/`aborted`), kept until the next send or
+  `stop()`, so **`runs.has(id)` no longer means live** (argo's `hermes-row.tsx` and `use-hermes-thread-voice.ts`
+  read it that way; W11 switches them, `MIGRATING.md` says so); `aiSdkTransport` now rejects on a non-2xx, an
+  `error` chunk and a malformed chunk (it used to end the turn as if complete) and forwards the abort signal to
+  the `ChatTransport`; `aiSdkTransport({ transport })` takes any `ChatTransport<UIMessage>`
+  (`WebSocketChatTransport` plugs in unwrapped); `chat.turn` is emitted on settle through the `BasaltProvider`
+  sink (explicit `telemetry` arg wins, no provider is a no-op, a stopped turn emits none).
+- **OWNER CALL, taken by the lead (flag if you disagree): `throttle` defaults to 100 ms, not the sweep's 200.**
+  Commits per reply 235 to 125 at 1x and 85 at 4x, frame p95 within one rAF quantum of throttle 0, final text
+  identical across all 40 runs. 200 ms removes more (83/53) but has the worst 4x frame max (400 vs 250 ms) and
+  ~5 updates/s; perceived cadence is not measured by the lane, so the conservative value won.
+  Stream duration does not improve (render-bound, ~6.4 s for ~2.9 s of timers).
+- **Rejected / not done, on evidence:** TanStack AI (ledger, D3: AG-UI producer vs argo's UI-message stream);
+  `ReasoningLevel` has no export (nothing in argo's dashboard uses a reasoning level, so no consumer; add it with
+  the first one); `ai` stays `^7.0.137` (7.0.138/139 are inside `minimumReleaseAge`); `isLiveStatus` is not
+  exported (no consumer, the replacement predicate is spelled out in `MIGRATING.md`).
+- **OTel** (`evidence/w8/chat-turn-otel.md`): one `chat.turn` span per turn with `thread_id`, `ttft_ms`, `parts`,
+  `status`; a forced 500 gives the `Err` shape with `basalt.error.kind=http`. The join key to argo's
+  `hermes.stream-lifecycle` span is `basalt.chat.thread_id` (V2-SPEC § 7 Open, W11 verifies the other half).
+- **Deferred, accepted:** `WebSocketChatTransport` is tested against a fake `ChatTransport`, not a real socket;
+  `consumeAndFinalize` is still ~165 lines; the `chat-profile` and `chat-turn-trace` lanes duplicate the
+  send-flow selectors; the sweep measures cost, not perceived cadence; `agent/rules/basalt-batteries.md` still
+  has the Eden Treaty section (W9 rewrites the rules); `StreamStatus` is listed as deleted in `MIGRATING.md` yet
+  still exported (predates W8); the playground Stream demo's scenario is ~1 500 words, so `chat-profile` numbers
+  compare shape with the 1.41 baseline, not absolutes (`evidence/w8/chat-profile-before.md`).
+- **Ops notes:** a draft PR cannot be merged by the train (`gh pr ready` first); the train does not survive the
+  Bash tool's 10-minute foreground limit, run it in the background; a rebase conflict in `MIGRATING.md` (two
+  workers appending rows) goes back to the worker, then the train.
+- **W9 inherits:** shipped rule lines 710 (target 450), the React-compiler override list, the Eden leftover above.
+
+## Wave 9 — Lint and agent layer <!-- status: active -->
 
 - [ ] oxlint plugin rewritten to the 2.0 strictness rules, all at `error`, with dogfood levels
       matching. Delete rules whose concern 2.0 makes unrepresentable.
