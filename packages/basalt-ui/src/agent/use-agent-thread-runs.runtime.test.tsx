@@ -290,6 +290,82 @@ describe('stop() between a settle and its render', () => {
     expect(result.current.runs.has(id)).toBe(false)
   })
 
+  test('two stop() calls in one tick persist a single "stopped" message', async () => {
+    const store = createStore()
+    const id = store.create()
+    const transport: AgentTransport<AgentPart, string> = {
+      async *stream() {
+        yield text('t', 'partial')
+        await new Promise(() => {})
+      },
+    }
+    const { result } = renderHook(() => useAgentThreadRuns({ transport, store, resolveOutcome }))
+    act(() => result.current.start(id, 'go'))
+    await waitFor(() => expect(result.current.runs.get(id)?.status).toBe('streaming'))
+
+    act(() => {
+      result.current.stop(id)
+      result.current.stop(id)
+    })
+    await waitFor(() => expect(store.threads[0]?.status).toBe('done'))
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 20))
+    })
+    expect(store.threads[0]?.messages.map((m) => `${m.role}:${m.finish ?? ''}`)).toEqual([
+      'user:',
+      'assistant:stopped',
+    ])
+  })
+
+  test('stopAll() called from onError, before the failure renders, dismisses that entry', async () => {
+    const store = createStore()
+    const id = store.create()
+    const transport: AgentTransport<AgentPart, string> = {
+      // oxlint-disable-next-line require-yield
+      async *stream() {
+        throw new Error('boom')
+      },
+    }
+    let stopAllOnError = (): void => {}
+    const { result } = renderHook(() =>
+      useAgentThreadRuns({ transport, store, resolveOutcome, onError: () => stopAllOnError() }),
+    )
+    stopAllOnError = () => result.current.stopAll()
+    act(() => result.current.start(id, 'go'))
+    await waitFor(() => expect(store.threads[0]?.status).toBe('error'))
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 20))
+    })
+    expect(result.current.runs.has(id)).toBe(false)
+    expect(store.threads[0]?.status).toBe('error')
+  })
+
+  test('a failure after the final message landed keeps no parts, so nothing renders twice', async () => {
+    const store = createStore()
+    const id = store.create()
+    const transport: AgentTransport<AgentPart, string> = {
+      async *stream() {
+        yield text('t', 'answer')
+      },
+    }
+    const { result } = renderHook(() =>
+      useAgentThreadRuns({
+        transport,
+        store,
+        resolveOutcome: async () => {
+          throw new Error('resolver down')
+        },
+      }),
+    )
+    act(() => result.current.start(id, 'go'))
+    await waitFor(() => expect(result.current.runs.get(id)?.status).toBe('error'))
+
+    // The message is in the thread; the error entry must not repeat it as live parts.
+    expect(store.threads[0]?.messages.map((m) => m.role)).toEqual(['user', 'assistant'])
+    expect(result.current.runs.get(id)?.parts).toEqual([])
+    expect(result.current.runs.get(id)?.error).toEqual({ kind: 'server', message: 'resolver down' })
+  })
+
   test('stopAll() dismisses failed entries too', async () => {
     const store = createStore()
     const id = store.create()
