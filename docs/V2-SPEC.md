@@ -71,7 +71,7 @@ telemetry seam, § 7). Each names argo as its first consumer in `v2-surface.md` 
 | public value symbols                     | 395                        | ≤ 140 (non-chart 92 + § 9's chart allowance 48); gated at 92 + charts' landed 97 until W4 |
 | barrel type exports, non-chart (W3 adds) | 517 (447 = 517 − 70 → § 9) | ≤ 60 (40 kept); chart types count against § 9's allowance                                 |
 | published subpaths                       | 24                         | 15                                                                                        |
-| shipped rule lines (`agent/rules/*.md`)  | 750                        | ≤ 450 (gated at the landed 750 until W9 rewrites them)                                    |
+| shipped rule lines (`agent/rules/*.md`)  | 750                        | ≤ 450; landed 277 in W9 and gated there                                                   |
 
 **Open:**
 
@@ -172,9 +172,9 @@ match them). These carry over unchanged: `no-raw-font-size`, `raw-size-literal`,
 `responsive-twin`, `search-literal-link`, `use-search-from-literal`, `query-fn-unwrap`,
 `ai-sdk-major`, `raw-breakpoint`, `forms-field-key` (`@mantine/form`, § 8). `shadow-basalt-export`
 moves from warn to error; `agent-no-raw-usechat` widens to the `Chat` class (`@ai-sdk/react`
-`dist/index.d.ts:90`). New: `router-view-transition` bans `viewTransition` on `Link`/`navigate` and
-`document.startViewTransition` in app code; `no-dev-helper` (repo-local) requires a literal
-`process.env.NODE_ENV` gate on dev-only `import()`s.
+`dist/index.d.ts:90`). New: `no-dev-helper` (repo-local) requires a literal `process.env.NODE_ENV`
+gate on dev-only `import()`s. The `router-view-transition` ban moved to the rendering wave (owner,
+2026-10-14: route transitions come back through the router).
 
 All 28 `check-theme` guard kinds are already `error` (`src/guard/index.ts:937`, empty
 `GRACE_PERIOD_KINDS`) and carry over, except `raw-visx-axis` and `chart-missing-aria-label`, which
