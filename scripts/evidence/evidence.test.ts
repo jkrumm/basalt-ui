@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { gzipBytes, routeChunks, routeOfKey, subpathEntries } from './bundle'
 import type { Manifest } from './bundle'
-import { renderSummary, stableStringify } from './index'
+import { renderSummary, selectLanes, stableStringify } from './index'
 import type { LaneOutcome } from './index'
 import {
   chartSlug,
@@ -270,5 +270,20 @@ describe('keyboard lane (pure parts)', () => {
       { metric: 'charts failing', value: 1 },
       { metric: 'charts N/A (non-interactive)', value: 2 },
     ])
+  })
+})
+
+describe('selectLanes', () => {
+  it('runs every lane when unset', () => {
+    expect(selectLanes(undefined)).toContain('table-perf')
+    expect(selectLanes(undefined).length).toBeGreaterThan(5)
+  })
+
+  it('keeps the fixed lane order whatever order was asked for', () => {
+    expect(selectLanes('table-perf,bundle')).toEqual(['bundle', 'table-perf'])
+  })
+
+  it('rejects an unknown lane', () => {
+    expect(() => selectLanes('bundle,nope')).toThrow('nope')
   })
 })
