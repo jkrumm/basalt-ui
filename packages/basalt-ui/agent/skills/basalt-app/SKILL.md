@@ -57,6 +57,31 @@ export const ToDashboard = () => <Link {...navTarget(NAV, 'dashboard')}>Dashboar
 
 9. Fill in `DESIGN.md` (identity, series dictionary, deviations).
 
+## Add a table
+
+A table is `BasaltDataTable` with columns from `createColumnHelper`; it has no `count` prop (with `title`, the header counts the rows itself):
+
+```tsx
+// @check
+import { money } from 'basalt-ui/format'
+import { BasaltDataTable, createColumnHelper } from 'basalt-ui/table'
+
+type Row = { id: string; name: string; revenue: number }
+const col = createColumnHelper<Row>()
+const columns = [
+  col.accessor('name', { header: 'Name' }),
+  col.accessor('revenue', {
+    header: 'Revenue',
+    sortFn: 'basic', // v9 `sortFn`, not v8 `sortingFn`
+    meta: { align: 'right' }, // numbers are mono-numeral by default; `numeral: false` opts out
+    cell: (c) => money(c.getValue(), { currency: 'USD' }),
+  }),
+]
+export const Revenue = ({ rows }: { rows: Row[] }) => (
+  <BasaltDataTable data={rows} columns={columns} getRowId={(r) => r.id} />
+)
+```
+
 ## Add a chat
 
 1. Install the `basalt-ui/agent` peers from its `Install:` line in `llms.txt`.
@@ -67,7 +92,7 @@ export const ToDashboard = () => <Link {...navTarget(NAV, 'dashboard')}>Dashboar
 import { Button } from '@mantine/core'
 import { useState } from 'react'
 import { ThreadFeed, ThreadFeedRow, aiSdkTransport, useAgentThreadRuns } from 'basalt-ui/agent'
-import type { AgentPart, AgentThread, ThreadsStore } from 'basalt-ui/agent'
+import type { AgentPart, AgentThread, AgentTransport, ThreadsStore } from 'basalt-ui/agent'
 
 type Thread = AgentThread<AgentPart>
 
@@ -117,7 +142,14 @@ function useMemoryStore(): ThreadsStore<AgentPart> {
 }
 
 const base = aiSdkTransport<AgentPart>({ api: '/api/chat' })
-// a mock transport: { async *stream(input: string) { yield { id: crypto.randomUUID(), type: 'text' as const, text: input } } }
+// A mock (swap it in for `base.forThread(threadId)`). A text part is a DELTA: parts with the same
+// `id` are appended in order.
+export const mock: AgentTransport<AgentPart> = {
+  async *stream(input) {
+    const id = crypto.randomUUID()
+    for (const word of `Echo: ${input}`.split(' ')) yield { id, type: 'text', text: `${word} ` }
+  },
+}
 
 export function Chat() {
   const store = useMemoryStore()
