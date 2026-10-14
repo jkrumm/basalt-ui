@@ -1,5 +1,9 @@
 /**
- * AgentComposerDemoPage — basalt-ui 1.12.0 playground gate demo 3: the full `Composer` prop set.
+ * AgentComposerDemoPage — the `/agent` route, two tabs: "Composer" (basalt-ui 1.12.0 playground gate
+ * demo 3: the full `Composer` prop set) and "Stream" (`AgentStreamDemo`: a deterministic replayed
+ * chat reply, also the surface the `chat-profile` evidence lane measures).
+ *
+ * The Composer tab:
  *
  * Exercises, all on one composer instance:
  *  - `leftSection` — an opaque slot Composer never learns the meaning of, standing in for a real

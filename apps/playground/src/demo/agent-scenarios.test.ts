@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { DELTA_MS, richParts } from './agent-scenarios'
+import { DELTA_MS, richParts, richTransport } from './agent-scenarios'
 
 describe('richParts', () => {
   const parts = richParts()
@@ -25,5 +25,31 @@ describe('richParts', () => {
 
   test('is deterministic', () => {
     expect(richParts()).toEqual(parts)
+  })
+})
+
+describe('richTransport.stream', () => {
+  const drain = async (gen: AsyncGenerator<unknown>): Promise<unknown[]> => {
+    const out: unknown[] = []
+    for await (const part of gen) out.push(part)
+    return out
+  }
+
+  test('yields exactly richParts()', async () => {
+    expect(await drain(richTransport.stream('hi'))).toEqual(richParts())
+  })
+
+  test('yields nothing on a pre-aborted signal', async () => {
+    expect(await drain(richTransport.stream('hi', AbortSignal.abort()))).toEqual([])
+  })
+
+  test('stops after a mid-stream abort', async () => {
+    const controller = new AbortController()
+    const out: unknown[] = []
+    for await (const part of richTransport.stream('hi', controller.signal)) {
+      out.push(part)
+      if (out.length === 3) controller.abort()
+    }
+    expect(out).toHaveLength(3)
   })
 })

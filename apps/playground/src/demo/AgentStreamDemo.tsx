@@ -4,13 +4,14 @@
  * `Composer`. Also the surface the `chat-profile` evidence lane measures: a fixed ~3 s, ~1500-word
  * reply with no network and no model. Threads live in a throwaway in-memory store.
  */
-import { Badge, Group, Stack, Text } from '@mantine/core'
+import { Badge, Box, Group, Stack, Text } from '@mantine/core'
 import { ThreadFeed, ThreadFeedRow, useAgentThreadRuns } from 'basalt-ui/agent'
 import type { AgentPart, AgentThread, OutcomeResolver, ThreadsStore } from 'basalt-ui/agent'
 import { useMemo, useState } from 'react'
 import { richTransport } from './agent-scenarios'
 
 const THREAD_ID = 'stream-demo'
+const THREAD_TITLE = 'Deep modules and coupling'
 
 const seedThread = (): AgentThread<AgentPart> => {
   const now = Date.now()
@@ -18,11 +19,11 @@ const seedThread = (): AgentThread<AgentPart> => {
     id: THREAD_ID,
     messages: [],
     outcome: {
-      title: 'Deep modules and coupling',
+      title: THREAD_TITLE,
       summary: 'A replayed demo stream.',
       status: 'done',
     },
-    status: 'pending',
+    status: 'done',
     read: true,
     createdAt: now,
     updatedAt: now,
@@ -64,7 +65,7 @@ function useMemoryThreadsStore(): ThreadsStore<AgentPart> {
 }
 
 const resolveOutcome: OutcomeResolver<AgentPart> = (thread) => ({
-  title: thread.outcome?.title ?? 'Deep modules and coupling',
+  title: THREAD_TITLE,
   summary: `${thread.messages.length} messages`,
   status: 'done',
 })
@@ -86,21 +87,23 @@ export function AgentStreamDemo() {
           mermaid diagram, an alert and a tool call. No network, no model.
         </Text>
         {run !== undefined && (
-          <Badge variant="light" aria-label="Assistant is typing">
-            Assistant is typing…
-          </Badge>
+          <Box role="status" aria-live="polite">
+            <Badge variant="light" aria-label="Assistant is typing">
+              Assistant is typing…
+            </Badge>
+          </Box>
         )}
       </Group>
       <ThreadFeed
         threads={store.threads}
         activeId={store.activeId}
         onSelect={store.select}
-        variant="inline"
         renderRow={(thread) => (
           <ThreadFeedRow
             key={thread.id}
             thread={thread}
             expanded
+            // Pinned open: the Stream tab has one thread and nothing to collapse.
             onToggle={() => {}}
             {...(run !== undefined ? { liveParts: run.parts, liveStatus: run.status } : {})}
             onSend={({ text }) => start(thread.id, text)}
