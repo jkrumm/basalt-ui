@@ -1207,3 +1207,12 @@ describe('DESIGN.md carries no version', () => {
     expect(read('DESIGN.md')).toContain('run `basalt-ui doctor` for the version')
   })
 })
+
+describe('shipped lefthook preset — staged files that are all ignored', () => {
+  const preset = readFileSync(resolve(PKG_ROOT, 'configs/lefthook.yml'), 'utf8')
+
+  it.each(['oxlint', 'oxfmt'])('%s passes when every staged file is ignore-listed', (tool) => {
+    const run = new RegExp(`^ {6}run: (bunx ${tool} .*\\{staged_files\\})$`, 'm').exec(preset)?.[1]
+    expect(run).toContain('--no-error-on-unmatched-pattern')
+  })
+})
