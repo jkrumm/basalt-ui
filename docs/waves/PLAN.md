@@ -606,7 +606,7 @@ each other until they converge, before any other consumer moves.
       routing, data and tables, AI chat, every chart on the 2.x kinds per `v2-chart-inventory.md`,
       rendering per W10, cutover), each with its evidence against argo's baseline. argo auto-deploys
       every push to master, and 1.x and 2.x cannot coexist in one app, so the migration runs on one
-      long-lived argo branch and lands on master only at cutover.
+      long-lived argo branch and lands on master at cutover (W13); the loop runs live after it.
 - [ ] Create `docs/waves/argo-friction.md` in basalt-ui: the one ledger where argo's leads record every
       basalt friction (what they hit, the workaround they did NOT take, severity). argo never works
       around basalt; a friction item blocks its argo step until a basalt minor fixes it.
@@ -615,9 +615,20 @@ each other until they converge, before any other consumer moves.
 
 **Left behind:**
 
-## Wave 13 — The basalt-ui ⇄ argo loop <!-- status: pending -->
+## Wave 13 — argo cutover and production <!-- status: pending -->
 
-A repeating wave: each instance takes the open items in `argo-friction.md`, fixes them in basalt-ui,
+- [ ] argo's migration branch lands on master once its plan is fully implemented and its own close-out
+      is green (functional parity, not polish); the deploy fires. Owner call 2026-10-14: argo is not
+      critical, so polish happens live on master afterwards, not on the branch. Warden watches argo in
+      production: expect it to react to cutover errors, and say so in the cutover brief.
+- [ ] Verify it is live: health, OTel traces and logs (the `chat.turn` ⇄ `hermes.stream-lifecycle`
+      join), Uptime Kuma, screenshots of every dashboard route against the baseline.
+
+**Left behind:**
+
+## Wave 14 — The basalt-ui ⇄ argo loop <!-- status: pending -->
+
+Runs on argo master after the cutover. A repeating wave: each instance takes the open items in `argo-friction.md`, fixes them in basalt-ui,
 ships a 2.x minor through `make release`, and the waiting argo step bumps to it. It repeats until the
 exit criterion holds, then flips to `done`.
 
@@ -628,14 +639,6 @@ exit criterion holds, then flips to `done`.
       suppressions; a fresh-agent DX trial on argo (a new dashboard route with a chart, a table and a
       chat) has no wrong turn rooted in basalt; argo's evidence shows no unaccepted regression against
       its baseline (bundle, render, hover, Lighthouse, screenshots reviewed by eye).
-
-**Left behind:**
-
-## Wave 14 — argo cutover and production <!-- status: pending -->
-
-- [ ] argo's migration branch lands on master after its own close-out is green; the deploy fires.
-- [ ] Verify it is live: health, OTel traces and logs (the `chat.turn` ⇄ `hermes.stream-lifecycle`
-      join), Uptime Kuma, screenshots of every dashboard route against the baseline.
 
 **Left behind:**
 
