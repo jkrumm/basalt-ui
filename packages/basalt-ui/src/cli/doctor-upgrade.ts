@@ -188,8 +188,8 @@ const TOKEN =
 const SUBPATH_IMPORT =
   /(?:(?:^|;)[ \t]*(?:(?:import|export)\b[^'"`;]*?\bfrom|import)\s*|(?<![.\w$])(?:import|require)\s*\(\s*)(['"])basalt-ui\/([^'"]+)\1/gm
 
-/** `[subpath, line]` per `basalt-ui/<subpath>` import that sits in code, not in a comment or literal. */
-function basaltImports(src: string): [string, number][] {
+/** Source with comments blanked (and template text), plus a test for "offset sits inside a string". */
+function tokenize(src: string): { code: string; inLiteral: (at: number) => boolean } {
   const literals: [number, number][] = []
   const code = src.replace(TOKEN, (m, literal: string | undefined, at: number) => {
     if (literal === undefined) return m.replace(/[^\n]/g, ' ')
@@ -203,8 +203,14 @@ function basaltImports(src: string): [string, number][] {
       (c, interpolation: string | undefined) => interpolation ?? ' ',
     )
   })
+  return { code, inLiteral: (at) => literals.some(([from, to]) => at >= from && at < to) }
+}
+
+/** `[subpath, line]` per `basalt-ui/<subpath>` import that sits in code, not in a comment or literal. */
+function basaltImports(src: string): [string, number][] {
+  const { code, inLiteral } = tokenize(src)
   return [...code.matchAll(SUBPATH_IMPORT)]
-    .filter((m) => !literals.some(([from, to]) => m.index >= from && m.index < to))
+    .filter((m) => !inLiteral(m.index))
     .map((m) => [m[2] as string, code.slice(0, m.index + m[0].length).split('\n').length])
 }
 
@@ -296,37 +302,91 @@ export function seedTsconfigExtends(cwd: string): string | null {
 }
 
 const VITE_CONFIGS = ['ts', 'mts', 'cts', 'js', 'mjs', 'cjs'].map((e) => `vite.config.${e}`)
+const SEED_HINT = 'node_modules/basalt-ui/agent/templates/main.tpl'
 const ROUTER_PLUGIN_FIX =
   "Fix: `bun add -D @tanstack/router-plugin`, add `tanstackRouter({ target: 'react', autoCodeSplitting: true })` " +
   "from '@tanstack/router-plugin/vite' to `plugins` in vite.config.ts (before react()), then run vite once " +
   'to generate src/routeTree.gen.ts.'
 
-/**
- * `app-wiring`: the entry module `index.html` loads (default src/main.tsx) mounts `BasaltProvider`
- * on a `createBasaltRouter` router, and the router tree is generated: the TanStack router plugin is
- * in the vite config, or a `routeTree.gen.*` already exists. (`basaltViteConfig` does not register
- * that plugin, so naming it alone proves nothing.)
- */
-export function appWiringCheck(cwd: string): Check {
-  const src = /<script[^>]*type=["']module["'][^>]*src=["']([^"']+)["']/i.exec(
-    readIfExists(resolve(cwd, 'index.html')) ?? '',
-  )?.[1]
-  const entry = (src ?? 'src/main.tsx').replace(/^\//, '')
-  const text = readIfExists(resolve(cwd, entry))
-  const seed = 'node_modules/basalt-ui/agent/templates/main.tpl'
-  if (text === null || !(text.includes('BasaltProvider') && text.includes('createBasaltRouter'))) {
-    return {
-      fail:
-        `app-wiring: ${entry} ${text === null ? 'does not exist' : 'does not mount BasaltProvider on a createBasaltRouter router'}. ` +
-        `Fix: make it match ${seed} (\`init\` seeds it only when the file is absent).`,
+/** The first local `<script type="module" src>` in index.html (comments and remote src skipped). */
+function htmlEntry(html: string): string | undefined {
+  for (const [, attrs = ''] of html
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .matchAll(/<script\b([^>]*)>/gi)) {
+    const src = /\bsrc\s*=\s*["']?([^"'\s>]+)/i.exec(attrs)?.[1]
+    if (
+      /\btype\s*=\s*["']?module\b/i.test(attrs) &&
+      src !== undefined &&
+      !/^(?:[a-z][a-z0-9+.-]*:)?\/\//i.test(src)
+    ) {
+      return src
     }
   }
-  const vite = VITE_CONFIGS.map((f) => readIfExists(resolve(cwd, f))).find((t) => t !== null) ?? ''
-  const generated = ['ts', 'tsx', 'js'].some((e) =>
-    existsSync(resolve(cwd, `src/routeTree.gen.${e}`)),
+  return undefined
+}
+
+/** True when `code` calls a binding imported from `@tanstack/router-plugin` inside `plugins`. */
+function registersRouterPlugin(src: string): boolean {
+  const { code, inLiteral } = tokenize(src)
+  const pluginsAt = [...code.matchAll(/\bplugins\b/g)].find((m) => !inLiteral(m.index))?.index
+  if (pluginsAt === undefined) return false
+  const imports = code.matchAll(
+    /(?:^|;)[ \t]*import\s+(?:type\s+)?([^'"`;]*?)\s*from\s*(['"])@tanstack\/router-plugin(?:\/[^'"]*)?\2/gm,
   )
-  if (generated || /router-plugin|tanstackRouter|TanStackRouter/.test(vite)) return null
-  return {
-    fail: `app-wiring: no vite.config registers the TanStack router plugin and src/routeTree.gen.ts does not exist. ${ROUTER_PLUGIN_FIX}`,
-  }
+  return [...imports].some((m) => {
+    if (inLiteral(m.index)) return false
+    const names = (m[1] ?? '')
+      .replace(/[{}]/g, '')
+      .split(',')
+      .map((part) => part.trim())
+      .filter((part) => part !== '' && !/^type\s/.test(part))
+      .map((part) => part.split(/\s+as\s+/).pop() as string)
+    return names.some((name) =>
+      [
+        ...code.matchAll(
+          new RegExp(`(?<![.\\w$])${name.replace(/\$/g, '\\$')}(?:\\.\\w+)?\\s*\\(`, 'g'),
+        ),
+      ].some((call) => call.index > pluginsAt && !inLiteral(call.index)),
+    )
+  })
+}
+
+/**
+ * `app-wiring`: the entry module `index.html` loads (default src/main.tsx) mounts `BasaltProvider`
+ * on a `createBasaltRouter` router, and the router tree is generated: the vite config calls a
+ * binding imported from `@tanstack/router-plugin` in `plugins`, or a `routeTree.gen.*` already sits
+ * beside the entry (or in src/). `basaltViteConfig` does not register that plugin, so naming it
+ * proves nothing.
+ */
+export function appWiringCheck(cwd: string): Check {
+  return guarded('app-wiring', () => {
+    const entry = (
+      htmlEntry(readIfExists(resolve(cwd, 'index.html')) ?? '') ?? 'src/main.tsx'
+    ).replace(/^\//, '')
+    const text = readIfExists(resolve(cwd, entry))
+    if (text === null) {
+      return { fail: `app-wiring: ${entry} does not exist. Fix: make it match ${SEED_HINT}.` }
+    }
+    const { code, inLiteral } = tokenize(text)
+    const used = (name: string): boolean =>
+      [...code.matchAll(new RegExp(`\\b${name}\\b`, 'g'))].some((m) => !inLiteral(m.index))
+    const missing = ['BasaltProvider', 'createBasaltRouter'].filter((name) => !used(name))
+    if (missing.length > 0) {
+      return {
+        fail:
+          `app-wiring: ${entry} does not use ${missing.join(' or ')}. ` +
+          `Fix: make it match ${SEED_HINT} (\`init\` seeds it only when the file is absent).`,
+      }
+    }
+    const vite =
+      VITE_CONFIGS.map((f) => readIfExists(resolve(cwd, f))).find((t) => t !== null) ?? ''
+    const dirs = [...new Set([dirname(entry), 'src'])]
+    const generated = dirs.some((d) =>
+      ['ts', 'tsx', 'js'].some((e) => existsSync(resolve(cwd, d, `routeTree.gen.${e}`))),
+    )
+    if (generated || registersRouterPlugin(vite)) return null
+    return {
+      fail: `app-wiring: no vite.config calls the TanStack router plugin and ${dirs.join(' or ')}/routeTree.gen.ts does not exist. ${ROUTER_PLUGIN_FIX}`,
+    }
+  })
 }

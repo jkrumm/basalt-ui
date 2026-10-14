@@ -947,16 +947,9 @@ export type Manifest = {
   /** dest path → sha256 of the managed unit (file bytes, block body, or stanza) at last write. */
   files: Record<string, string>
   /**
-   * The resolved level-0 spacing scale (`xs`..`xl`, px) at last write — `doctor`'s second
-   * reconciliation axis, and the only one that reports a change in RENDERED OUTPUT rather than in
-   * placed files.
-   *
-   * A retune of the spacing bases moves every surface in every consumer calling
-   * `createBasaltTheme()` bare. basalt-ui bans majors by design, so the changelog is the only
-   * channel that carries that, and a one-line `feat:` subject cannot convey blast radius: the
-   * 1.2.0 retune shipped as "tighten the sidebar, open up components" and went unverified in
-   * production for a day because nothing said "every padding moved". Recording the scale makes the
-   * move mechanically visible on the next `doctor` run instead of depending on a subject line.
+   * The resolved level-0 spacing scale (`xs`..`xl`, px) at last write: `doctor`'s second axis, and
+   * the only one that reports a change in RENDERED OUTPUT. A retune of the spacing bases moves every
+   * surface in every consumer, which a one-line `feat:` subject cannot convey.
    */
   spacingScale?: Record<string, number>
 }
@@ -1040,17 +1033,9 @@ export function reportPrune(pruned: PruneResult): void {
 
 /**
  * Delete the managed rule/skill files this basalt version retired, and drop their manifest entries.
- *
- * The 13→6 rule merge (`docs/CONTROLS-SPEC.md` §7) is the case this exists for: nine
- * `.claude/rules/basalt-*.md` files stopped shipping in one minor, and without this a consumer's
- * agent would go on reading `basalt-router.md`'s superseded placement doctrine forever, with
- * `sync --check` reporting green because nothing in the ledger asks about a dest the run no longer
- * places.
- *
- * Same three-way discipline as every other managed unit, so a consumer edit is never discarded
- * silently: an untouched file (matching its recorded hash, raw or normalized) is deleted and its
- * entry dropped; a locally-edited one is LEFT in place, reported, and keeps its entry so
- * `sync --check` stays red and `--force` can still finish the job. `dryRun` is `--check`.
+ * Same three-way discipline as every managed unit: an untouched file is deleted; a locally-edited
+ * one is LEFT in place, reported, and keeps its entry so `sync --check` stays red and `--force` can
+ * finish. `dryRun` is `--check`.
  */
 export function pruneRetiredManagedFiles(
   cwd: string,
@@ -1472,7 +1457,8 @@ export function inspectLefthookGate(repoRoot: string): LefthookGate {
 /**
  * Splice the shipped preset into an EXISTING `.oxlintrc.json` (`init` does this unless
  * `--no-merge-lint`; the lint-debt notice says what it switches on). Prepends the preset so the
- * consumer's own `extends` entries still win. A child `plugins` list unions with the preset's.
+ * consumer's own `extends` entries still win. Only `extends` is rewritten; the config's own `plugins`
+ * are untouched, and oxlint (1.87, checked with `--print-config`) unions them with the preset's.
  */
 export function mergeOxlintExtends(cwd: string, presetPath: string): MergeLintResult {
   const abs = resolve(cwd, '.oxlintrc.json')

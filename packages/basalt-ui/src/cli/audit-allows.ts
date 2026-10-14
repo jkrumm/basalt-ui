@@ -75,19 +75,10 @@ function diagnosticCounts(
 }
 
 /**
- * The oxlint half of the audit: what each plugin-rule annotation still suppresses.
- *
- * The `check-theme` half proves a verdict by re-running `checkSource` with one occurrence
- * neutralized. The `error`-severity design rules do not live there — they live in the oxlint
- * plugin — so the audit declined to judge them and printed "not a check-theme kind". In a
- * chart-heavy consumer that was 8 of 8 and 11 of 14: a CI gate that exited 0 having inspected
- * nothing. The method generalizes exactly, one level over: neutralize the annotation, re-run
- * oxlint over that file, and the findings that appear are what it covers.
- *
- * oxlint has no stdin mode, so a probe has to be a real file. It is written BESIDE the original —
- * same directory, so the same `.oxlintrc.json`, the same `charts/` path segment, the same nearest
- * `package.json` — and removed in a `finally`. Returns null when oxlint cannot be run at all, which
- * is a "cannot judge", never a "dead".
+ * The oxlint half of the audit: what each plugin-rule annotation still suppresses. The annotation is
+ * neutralized and oxlint re-run over that file. oxlint has no stdin mode, so the probe is a real file
+ * written BESIDE the original (same `.oxlintrc.json`, path segments and nearest `package.json`) and
+ * removed in a `finally`. Returns null when oxlint cannot run: "cannot judge", never "dead".
  */
 function probePluginRules(
   cwd: string,
@@ -164,23 +155,10 @@ function probePluginRules(
 
 /**
  * `check-theme --audit-allows` — list every active waiver and prove, per waiver, whether it still
- * suppresses anything.
- *
- * The accountability release shipped `theme-allow-unscoped`, which reports a waiver that names no
- * rule — but a waiver that is perfectly well written and covers a finding that no longer exists is
- * invisible to it, and to everything else. Two consumers found five of those by hand, by editing
- * the token out and re-running the guard. This is that method, automated: for each annotation the
- * file is re-checked with THAT occurrence neutralized, and the findings that appear are exactly
- * what it suppresses. Nothing is inferred from the annotation's text, so the audit cannot disagree
- * with the scan — it IS the scan, run twice.
- *
- * `basalt.exemptRules` entries are audited the same way, one pattern at a time. That also answers
- * the question the key could never answer for itself: a pattern that matches no scanned file (a
- * real relative path, say, where the matcher takes whole path SEGMENTS) suppresses nothing and is
- * reported as dead rather than passing silently.
- *
- * Exit 1 when anything is dead, so it can be wired into CI as a gate. A waiver nobody re-checks is
- * how a rule quietly stops applying to the file that needed the exception most.
+ * suppresses anything: the file is re-checked with THAT occurrence neutralized and the findings that
+ * appear are exactly what it suppresses, so the audit cannot disagree with the scan. `exemptRules`
+ * entries are audited one pattern at a time; a pattern matching no scanned file is reported dead.
+ * Exits 1 when anything is dead, so it can gate CI.
  */
 export function auditAllows(
   cwd: string,

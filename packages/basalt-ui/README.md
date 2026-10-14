@@ -67,7 +67,7 @@ That's the whole install — there is no plugin, no marketplace, and no second v
 whole oxlint plugins the repo was never linted against, so previously-clean code lands with real
 findings on the first run. `init` names those plugins, and names every file it kept along with what
 keeping it costs — an `.oxlintrc.json` that does not extend the preset means the entire basalt lint
-half is inert and nothing else says so (`--merge-lint` splices the `extends` in; it refuses on a
+half is inert and nothing else says so (`init` now splices the `extends` in by default, `--no-merge-lint` opts out; it refuses on a
 commented config rather than deleting the comments). Run `oxlint .` and triage before your next
 commit.
 

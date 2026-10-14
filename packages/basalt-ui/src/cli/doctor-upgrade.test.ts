@@ -25,7 +25,15 @@ import {
   tsconfigBaseCheck,
 } from './doctor-upgrade'
 import type { Check } from './doctor-upgrade'
-import { init, MANIFEST_PATH, normalizeForLedger, parseJsonc, sha256, sync } from './index'
+import {
+  init,
+  MANIFEST_PATH,
+  mergeOxlintExtends,
+  normalizeForLedger,
+  parseJsonc,
+  sha256,
+  sync,
+} from './index'
 
 const PKG_ROOT = fileURLToPath(new URL('../../', import.meta.url))
 const PKG_VERSION = (
@@ -668,15 +676,18 @@ describe('doctor — app-wiring', () => {
     capture(() => init(dir))
     const red = capture(() => doctor(dir))
     expect(red.code).toBe(1)
-    expect(red.log).toContain('✖ app-wiring: src/main.tsx does not mount BasaltProvider')
-    expect(red.log).toContain('agent/templates/main.tpl')
-    expect(text(appWiringCheck(dir))).toContain('does not mount BasaltProvider')
-    write('src/main.tsx', readFileSync(join(PKG_ROOT, 'agent/templates/main.tpl'), 'utf8'))
-    expect(text(appWiringCheck(dir))).toContain(
-      'no vite.config registers the TanStack router plugin',
+    expect(red.log).toContain(
+      '✖ app-wiring: src/main.tsx does not use BasaltProvider or createBasaltRouter',
     )
+    expect(red.log).toContain('agent/templates/main.tpl')
+    expect(text(appWiringCheck(dir))).toContain('does not use BasaltProvider or createBasaltRouter')
+    write('src/main.tsx', readFileSync(join(PKG_ROOT, 'agent/templates/main.tpl'), 'utf8'))
+    expect(text(appWiringCheck(dir))).toContain('no vite.config calls the TanStack router plugin')
     expect(text(appWiringCheck(dir))).toContain('@tanstack/router-plugin/vite')
-    write('vite.config.ts', "import { tanstackRouter } from '@tanstack/router-plugin/vite'\n")
+    write(
+      'vite.config.ts',
+      "import { tanstackRouter } from '@tanstack/router-plugin/vite'\nexport default { plugins: [tanstackRouter()] }\n",
+    )
     expect(appWiringCheck(dir)).toBeNull()
   })
 
@@ -687,6 +698,80 @@ describe('doctor — app-wiring', () => {
     expect(appWiringCheck(dir)).toBeNull()
     rmSync(join(dir, 'app/boot.tsx'))
     expect(text(appWiringCheck(dir))).toContain('app/boot.tsx does not exist')
+  })
+
+  const ENTRY = 'createBasaltRouter(); <BasaltProvider router={router} />\n'
+
+  describe('router plugin detection', () => {
+    const vite = (body: string): void => write('vite.config.ts', body)
+    beforeEach(() => write('src/main.tsx', ENTRY))
+
+    it('is red for a comment-only or string-only mention and for an import nothing calls', () => {
+      vite(
+        "// import { tanstackRouter } from '@tanstack/router-plugin/vite'\n// plugins: [tanstackRouter()]\nexport default { plugins: [] }\n",
+      )
+      expect(text(appWiringCheck(dir))).toContain('no vite.config calls the TanStack router plugin')
+      vite("export default { note: 'router-plugin tanstackRouter(', plugins: [] }\n")
+      expect(appWiringCheck(dir)).toHaveProperty('fail')
+      vite(
+        "import { tanstackRouter } from '@tanstack/router-plugin/vite'\nexport default { plugins: [] }\n",
+      )
+      expect(appWiringCheck(dir)).toHaveProperty('fail')
+      vite('export default { plugins: [tanstackRouter()] }\n') // called but never imported
+      expect(appWiringCheck(dir)).toHaveProperty('fail')
+    })
+
+    it.each([
+      [
+        "import { tanstackRouter } from '@tanstack/router-plugin/vite'\nexport default { plugins: [tanstackRouter({ target: 'react' })] }",
+      ],
+      [
+        "import { tanstackRouter as tsr } from '@tanstack/router-plugin/vite'\nexport default { plugins: [tsr()] }",
+      ],
+      [
+        "import TanStackRouterVite from '@tanstack/router-plugin/vite'\nexport default { plugins: [TanStackRouterVite()] }",
+      ],
+      [
+        "import * as router from '@tanstack/router-plugin/vite'\nexport default { plugins: [router.tanstackRouter()] }",
+      ],
+    ])('is green when the imported binding is called in plugins: %#', (config) => {
+      vite(`${config}\n`)
+      expect(appWiringCheck(dir)).toBeNull()
+    })
+  })
+
+  it('looks for routeTree.gen beside the entry, not only in src/', () => {
+    write('index.html', '<script type="module" src="/app/main.tsx"></script>')
+    write('app/main.tsx', ENTRY)
+    expect(appWiringCheck(dir)).toHaveProperty('fail')
+    write('app/routeTree.gen.ts', 'export {}\n')
+    expect(appWiringCheck(dir)).toBeNull()
+  })
+
+  it('reads the entry from the right <script>: either attribute order, no remote or commented ones', () => {
+    write(
+      'index.html',
+      [
+        '<!-- <script type="module" src="/old.tsx"></script> -->',
+        '<script type="module" src="https://cdn.example.com/x.js"></script>',
+        '<script src="//cdn.example.com/y.js" type="module"></script>',
+        '<script defer src="/legacy.js"></script>',
+        '<script src="/app/boot.tsx" type="module"></script>',
+      ].join('\n'),
+    )
+    write('app/boot.tsx', ENTRY)
+    write('src/routeTree.gen.ts', 'export {}\n')
+    expect(appWiringCheck(dir)).toBeNull()
+  })
+
+  it('names which piece is missing and ignores mentions in comments and strings', () => {
+    write(
+      'src/main.tsx',
+      "// BasaltProvider createBasaltRouter\nconst s = 'BasaltProvider'\ncreateBasaltRouter()\n",
+    )
+    const problem = text(appWiringCheck(dir))
+    expect(problem).toContain('does not use BasaltProvider.')
+    expect(problem).not.toContain('createBasaltRouter.')
   })
 
   it('is n/a for a tokens-only consumer', () => {
@@ -715,5 +800,42 @@ describe('init — merging a create-vite .oxlintrc.json', () => {
     // A child `plugins` list unions with the preset's: it must not switch the preset's plugins off.
     const run = Bun.spawnSync([OXLINT, '-c', '.oxlintrc.json', 'src/t.jsx'], { cwd: dir })
     expect(run.stdout.toString()).toContain('jsx-a11y')
+  })
+})
+
+describe('init — tokens-only and the kept .oxlintrc.json', () => {
+  it('writes no router seeds for a tokens-only consumer', () => {
+    write('package.json', JSON.stringify({ name: 'site', basalt: { profile: 'tokens-only' } }))
+    capture(() => init(dir))
+    for (const dest of ['src/main.tsx', 'src/routes/__root.tsx', 'src/lib/nav.tsx']) {
+      expect(existsSync(join(dir, dest))).toBe(false)
+    }
+  })
+
+  it('states the kept-config cost from the merge result', () => {
+    write('package.json', JSON.stringify({ name: 'app' }))
+    write('.oxlintrc.json', JSON.stringify({ rules: {} }))
+    expect(capture(() => init(dir)).log).toContain(
+      '.oxlintrc.json — now extends the shipped preset',
+    )
+    rmSync(join(dir, '.oxlintrc.json'))
+    write('.oxlintrc.json', '// why\n{ "rules": {} }\n')
+    const commented = capture(() => init(dir)).log
+    expect(commented).toContain('is NOT active: init could not splice the extends in')
+    expect(commented).not.toContain('see the oxlint line below')
+    expect(capture(() => init(dir, { noMergeLint: true })).log).toContain(
+      'init ran with --no-merge-lint',
+    )
+  })
+
+  it("keeps the config's own plugins through the rewrite", () => {
+    write(
+      '.oxlintrc.json',
+      JSON.stringify({ plugins: ['react', 'typescript', 'oxc'], rules: { a: 'off' } }),
+    )
+    expect(mergeOxlintExtends(dir, './node_modules/basalt-ui/configs/oxlint.json')).toBe('added')
+    const cfg = JSON.parse(read('.oxlintrc.json')) as Record<string, unknown>
+    expect(cfg['plugins']).toEqual(['react', 'typescript', 'oxc'])
+    expect(cfg['rules']).toEqual({ a: 'off' })
   })
 })

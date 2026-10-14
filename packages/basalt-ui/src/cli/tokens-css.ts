@@ -34,21 +34,9 @@ function generatedHeader(version: string, command: string, flags: string[]): str
 
 /**
  * Space- and number-normalize the argument list of a legacy color function so the emitted file
- * survives a normal repo's formatter.
- *
- * This is FORMATTING ONLY and deliberately the CLI's single deviation from "print exactly what
- * `buildPaletteCss` returned": `rgba(255,255,255,0.6)` and `rgba(255, 255, 255, 0.6)` are the same
- * colour, the shipped palette emits the first form on the dark side and the second on the light
- * side, and a consumer committing the output ate a lint-ignore entry for the difference. The token
- * VALUES are untouched — nothing here can change what basalt's tokens are.
- *
- * Trailing zeros go the same way and for the same reason: prettier rewrites `0.10` → `0.1`, so the
- * two `rgba(28, 25, 23, 0.10)` alphas in the light shadow tokens were the whole reason the one
- * framework-free consumer still could not lint its committed sheet — `--fix` and `tokens:css
- * --check` disagreed forever, and the lint-ignore entry survived two releases. Only a bare decimal
- * literal is touched (never a `%`, a `var()` or a unit), and `0.10`/`0.1` are the same number.
- *
- * Exported for tests, so the expectation can be computed rather than restated.
+ * survives a repo's formatter (`rgba(255,255,255,0.6)` and `rgba(255, 255, 255, 0.6)` are the same
+ * colour; `0.10` becomes `0.1`). FORMATTING ONLY: token values are untouched, and only a bare decimal
+ * literal is touched (never a `%`, a `var()` or a unit). Exported for tests.
  */
 export function normalizeColorFunctions(css: string): string {
   return css.replace(/\b(rgba?|hsla?)\(([^()]*)\)/g, (_match, fn: string, args: string) => {
@@ -116,19 +104,10 @@ function emitGeneratedCss(content: string, flags: string[], cwd: string, command
 }
 
 /**
- * tokens:css — emit the `--vx-*` stylesheet, optionally retargeted.
- *
- * The escape hatch from installing anything: a static site runs this once (`bunx basalt-ui
- * tokens:css --selector-attribute data-theme --out src/tokens.css`) and consumes basalt's token
- * system as plain CSS, with no package in its dependency tree at all. `basalt-ui/tokens.css` is the
- * same artifact for a consumer that does install; this command exists for the ones that shouldn't
- * have to just to change a selector.
- *
- * It parses flags and calls `buildPaletteCss` for the token VALUES — the CLI and the API must not
- * be able to disagree about what basalt's tokens are. What it adds is strictly file framing for an
- * artifact a consumer COMMITS: the `@generated` header (the guard's skip marker), a trailing
- * newline, and `rgba()` argument spacing. All three were reported by the one framework-free
- * consumer as the reasons the output could not simply be committed.
+ * tokens:css — emit the `--vx-*` stylesheet, optionally retargeted, for a static site that installs
+ * nothing (`bunx basalt-ui tokens:css --selector-attribute data-theme --out src/tokens.css`). Token
+ * VALUES come from `buildPaletteCss`, so the CLI and the API cannot disagree; the CLI adds only file
+ * framing for a committed artifact: the `@generated` header, a trailing newline, `rgba()` spacing.
  */
 export function tokensCss(flags: string[], cwd: string = process.cwd()): number {
   const attribute = flagValue(flags, '--selector-attribute')
