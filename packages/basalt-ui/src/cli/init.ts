@@ -11,11 +11,9 @@ import type { MergeLintResult, ScaffoldFlags } from './index'
 import {
   MANIFEST_PATH,
   ROUTER_SEED_DESTS,
-  blockMigrationProblem,
   findBasaltInstall,
   managedFiles,
   mergeOxlintExtends,
-  migrateBlockToAgentsMd,
   normalizeForLedger,
   patchPackageJson,
   placementNotices,
@@ -23,7 +21,6 @@ import {
   readManifest,
   reconcileRoots,
   renderContext,
-  reportBlockMigration,
   reportPrune,
   resolvePeerFlags,
   resolvePlacement,
@@ -56,13 +53,6 @@ const KEPT_FILE_COST: Record<string, string> = {
 
 /** Scaffold all managed files into the consumer repo, then write the manifest. Idempotent. Returns 0. */
 export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags = {}): number {
-  // First, before anything is written: a block that cannot be moved safely refuses the whole run.
-  const blockProblem = blockMigrationProblem(cwd)
-  if (blockProblem !== null) {
-    console.error(`✖ basalt-ui init: ${blockProblem}`)
-    return 1
-  }
-
   // ── Describe the repo BEFORE rendering anything ───────────────────────────
   // Every roots-derived seed (the CI oxfmt globs, DESIGN.md's series path, the default scan
   // exemption) renders from `basalt.roots`, so the key has to exist first. Writing it is what
@@ -96,9 +86,6 @@ export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags =
   const peers = resolvePeerFlags(cwd, scaffoldFlags)
   const placement = resolvePlacement(cwd)
   const files = managedFiles(peers, placement)
-
-  // Before the loop: an install from before the move carries the block in CLAUDE.md.
-  const migration = migrateBlockToAgentsMd(cwd, manifest)
 
   const writtenFiles: string[] = []
   const keptFiles: string[] = []
@@ -145,7 +132,6 @@ export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags =
     `basalt-ui init: ${writtenFiles.length} written, ${keptFiles.length} kept, manifest at ${MANIFEST_PATH}`,
   )
   reportPrune(pruned)
-  reportBlockMigration(migration, 'init')
   if (missingSources.length > 0) {
     console.log(
       `basalt-ui init: ${missingSources.length} shipped asset(s) not present, skipped: ${missingSources.join(', ')}`,
@@ -189,7 +175,7 @@ export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags =
   // unresolved import.
   if (!peers.hasRouter || !peers.hasQuery) {
     console.log(
-      `basalt-ui init: skipped ${ROUTER_SEED_DESTS.nav} and ${ROUTER_SEED_DESTS.root} (need both ` +
+      `basalt-ui init: skipped ${ROUTER_SEED_DESTS.nav}, ${ROUTER_SEED_DESTS.root} and ${ROUTER_SEED_DESTS.main} (need both ` +
         '@tanstack/react-router and @tanstack/react-query) — install both, or re-run with ' +
         '--with-router --with-query, to scaffold them.',
     )

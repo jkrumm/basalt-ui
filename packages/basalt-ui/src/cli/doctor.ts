@@ -33,6 +33,11 @@ import {
   shippedAssetPath,
 } from './index'
 import { resolveRoots } from './config'
+import {
+  droppedSubpathsProblem,
+  retiredLintRulesProblem,
+  tsconfigBaseProblem,
+} from './doctor-upgrade'
 import { findManifestAbove, parentInstallAdvice } from './sync'
 
 /** `sameFile`, but doctor never crashes: a path that cannot be inspected is "not provably the same". */
@@ -122,7 +127,7 @@ function resolveAiMajorSkewReason(cfg: BasaltConfig): {
  * Check a consumer repo's basalt integration and print a pass/warn report.
  *
  * Narrowed to what a single-directory-scoped run can actually verify — no workspace-glob walking,
- * no ascend/descend project discovery (see {@link resolveProjectDir}). Seven checks, numbered in
+ * no ascend/descend project discovery (see {@link resolveProjectDir}). Ten checks, numbered in
  * the order they run and print:
  *
  * Hard failures (exit non-zero):
@@ -140,6 +145,8 @@ function resolveAiMajorSkewReason(cfg: BasaltConfig): {
  *      `peerDependencies` agree on the `ai` package's major — the shape `basalt/ai-sdk-major` (per
  *      linted FILE) cannot see. A skew is exempt-able via `basalt.aiMajorSkewReason` (a non-empty
  *      reason, not a bare `true`); a declared reason when the majors agree warns it is stale.
+ *
+ *   8-10. `tsconfig-base`, `retired-lint-rules`, `dropped-subpaths` — see ./doctor-upgrade.
  *
  * Warning (non-fatal):
  *   5. `lefthook-preset` ("lefthook wired"): a pre-commit command runs `check-theme`, read from
@@ -215,7 +222,8 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
   const at = install.dir === null ? '' : `${relative(cwd, install.dir)} (${install.version})`
   if (install.dir === null) {
     fail(
-      'install-parity: basalt-ui does not resolve here, above, or in a sibling workspace package.',
+      'install-parity: basalt-ui does not resolve here, above, or in a sibling workspace package. ' +
+        'Fix: `bun add basalt-ui`.',
     )
   } else if (manifestVersion === undefined || install.version === manifestVersion) {
     const matches = manifestVersion === undefined ? '' : " and matches the manifest's basaltVersion"
@@ -236,7 +244,7 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
     fail(
       'guard-scan: `check-theme` would scan ZERO files here — either `basalt.roots` points at ' +
         'paths that do not exist, or this is not the package the config lives in (BASALT_CWD, ' +
-        'else the cwd; nothing is inferred).',
+        'else the cwd; nothing is inferred). Fix: set `"basalt": { "roots": ["src"] }` in package.json.',
     )
   } else {
     pass(`guard-scan: check-theme covers ${scanned} file(s) under ${resolveRoots(cfg).join(', ')}`)
@@ -264,7 +272,8 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
       const parsed = parseJsonc(oxlintrcRaw)
       if (parsed === null) {
         fail(
-          '.oxlintrc.json does not parse as JSON/JSONC — cannot tell whether it extends the preset',
+          '.oxlintrc.json does not parse as JSON/JSONC — cannot tell whether it extends the preset. ' +
+            'Fix the syntax error, then re-run `basalt-ui doctor`.',
         )
       } else {
         const entry = basaltPresetEntry(parsed['extends'])
@@ -331,7 +340,9 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
     if (scan.problem !== null) {
       issues.push(`has a malformed basalt block (${scan.problem}) — fix it by hand, then \`sync\``)
     } else if (scan.region !== null) {
-      issues.push(`still carries a stale basalt block — run \`basalt-ui sync\` to move it`)
+      issues.push(
+        `still carries a stale basalt block — delete it by hand; \`sync\` keeps ${AGENTS_MD} current`,
+      )
     }
     if (!importsAgentsMd(legacy)) {
       issues.push(
@@ -370,10 +381,13 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
         fail(
           `ai package major version mismatch within this package.json: ${summary} — ` +
             'basalt.aiMajorSkewReason is present but is not a non-empty string (a bare `true` is ' +
-            'not accepted); the exemption must carry a written reason.',
+            'not accepted). Fix: set it to a non-empty reason string, or align the majors.',
         )
       } else {
-        fail(`ai package major version mismatch within this package.json: ${summary}`)
+        fail(
+          `ai package major version mismatch within this package.json: ${summary}. Fix: align ` +
+            'every field of this package.json on one `ai` major.',
+        )
       }
     } else {
       const [major] = distinctMajors
@@ -389,6 +403,27 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
     }
   } else {
     pass('ai-major-parity: this package.json declares no ai dependency — nothing to compare')
+  }
+
+  // ── Hard checks 8-10: strictness and the 1.x → 2.0 upgrade path (./doctor-upgrade) ──────────
+  if (profile === 'tokens-only') {
+    pass('tsconfig-base / retired-lint-rules / dropped-subpaths: n/a — a tokens-only consumer')
+  } else {
+    const upgrade: [string, string | null][] = [
+      ['tsconfig-base: tsconfig.json extends the shipped preset', tsconfigBaseProblem(cwd)],
+      [
+        'retired-lint-rules: .oxlintrc.json sets no retired basalt/* rule',
+        retiredLintRulesProblem(cwd, install),
+      ],
+      [
+        'dropped-subpaths: no import of a basalt-ui subpath the install lacks',
+        droppedSubpathsProblem(cwd, cfg, install),
+      ],
+    ]
+    for (const [ok, problem] of upgrade) {
+      if (problem === null) pass(ok)
+      else fail(problem)
+    }
   }
 
   // ── Report ──────────────────────────────────────────────────────────────────

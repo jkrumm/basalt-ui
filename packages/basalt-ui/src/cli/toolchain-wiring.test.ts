@@ -97,6 +97,7 @@ function installBasalt(at = ''): void {
 function healthyFixture(): void {
   write('package.json', JSON.stringify({ name: 'fixture', basalt: { roots: ['src'] } }))
   write('src/app.tsx', 'export const App = () => null\n')
+  write('tsconfig.json', '{ "extends": "basalt-ui/configs/tsconfig.react-app.json" }')
   write('.oxlintrc.json', '{ "extends": ["./node_modules/basalt-ui/configs/oxlint.json"] }')
   write(MANIFEST_PATH, JSON.stringify({ version: 1, files: {}, basaltVersion: CLI_VERSION }))
   installBasalt()

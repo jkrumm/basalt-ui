@@ -731,6 +731,18 @@ Removed or moved exports (old import → new):
 
 Still exported from `basalt-ui` in this wave, because the provider, query and dev-dock lanes replace them (V2-SPEC §§ 2, 7): `BasaltProviderProps`, `BasaltErrorBoundary`(`Props`), `BasaltErrorContext`, the `Connectivity*` family, `createBasaltQueryClient`, `BasaltQueryDevtools`, `toErrorMessage`, `errorStatus`, `BasaltDevDock`(`Props`/`Tool`). `BasaltRegister` is also kept: `declare module` augmentation only merges when the entry exports it.
 
+### CLI (`w9/cli`)
+
+`basalt-ui sync` carries a 1.x install forward: untouched rules, skills and the `AGENTS.md` block are rewritten, a locally edited file is reported and left alone (`--force` overwrites it), and the manifest's `basaltVersion` moves. `sync --check` goes green once nothing is stale.
+
+`basalt-ui doctor` gains three hard checks, each failure printing a `Fix:` line:
+
+- `tsconfig-base`: `tsconfig.json` (or a config it references) must extend `basalt-ui/configs/tsconfig.react-app.json` or `tsconfig.base.json`; the 2.0 types assume `strict`, `exactOptionalPropertyTypes` and `noUncheckedIndexedAccess`.
+- `retired-lint-rules`: `.oxlintrc.json` (and local `extends`) sets a `basalt/<id>` the installed plugin no longer registers; delete the entry.
+- `dropped-subpaths`: a source file under `basalt.roots` imports a `basalt-ui/<subpath>` the install's `exports` lacks; reported as `file:line`.
+
+`init` also seeds `src/main.tsx` (when absent, with both TanStack peers): `defineNav` rejects every call until its `Register` augmentation exists. Removed: the pre-1.41 `CLAUDE.md` → `AGENTS.md` block migration. A leftover `CLAUDE.md` block is still warned about by `doctor`; delete it by hand.
+
 ### Charts
 
 Contract: `docs/V2-SPEC.md` § 9. `basalt-ui/charts` moved from visx to TanStack Charts. `@tanstack/charts` `1.1.0` and `d3-scale` `4.0.2` are exact, optional peers of `./charts`; visx is no dependency, peer or re-export. The public surface is `CartesianChart`, `ChartCard`, `chartCursor` and nine kinds (`Lines`, `Bars`, `StackedArea`, `Sparkline`, `BandStrip`, `Donut`, `Heatmap`, `DualPanel`, `MirroredBars`), plus their prop types. `ariaLabel` is required on every chart. The x scale follows the value `x` returns (`Date` → proportional time, which closes 1.x issue #52; `number` → linear; `string` → point or band). Engine marks for `marks` come from the allowed `@tanstack/charts/*` subpaths (`basalt/chart-engine-boundary`); basalt re-exports none.

@@ -323,7 +323,7 @@ describe('router seeds — the nav module and the root route', () => {
   it('without both peers the skip notice names both seeds', () => {
     writeFixture('package.json', JSON.stringify({ name: 'fixture' }))
     const { log } = capture(() => init(dir))
-    expect(log).toContain('skipped src/lib/nav.tsx and src/routes/__root.tsx')
+    expect(log).toContain('skipped src/lib/nav.tsx, src/routes/__root.tsx and src/main.tsx')
     expect(existsSync(resolve(dir, 'src/lib/nav.tsx'))).toBe(false)
   })
 })
