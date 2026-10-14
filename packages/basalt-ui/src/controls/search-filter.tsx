@@ -13,6 +13,7 @@
  * <SearchFilter field={table.field.q} placeholder="Search pages" />
  */
 import { TextInput } from '@mantine/core'
+import { useDebouncedCallback } from '@mantine/hooks'
 import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { assertRequiredProps } from '../common/validate'
@@ -99,27 +100,25 @@ function useDebouncedField(
 ): { value: string; set: (next: string) => void } {
   const [draft, setDraft] = useState(value)
   const seen = useRef(value)
-  const commit = useRef(setValue)
-  commit.current = setValue
+  const commit = useDebouncedCallback((next: string) => {
+    seen.current = next
+    setValue(next)
+  }, DEBOUNCE_MS)
 
   useEffect(() => {
     if (seen.current === value) return
     seen.current = value
     setDraft(value)
-  }, [value])
+    commit.cancel()
+  }, [value, commit])
 
-  useEffect(() => {
-    if (draft === value) return
-    const timer = setTimeout(() => {
-      seen.current = draft
-      commit.current(draft)
-    }, DEBOUNCE_MS)
-    return () => {
-      clearTimeout(timer)
-    }
-  }, [draft, value])
-
-  return { value: draft, set: setDraft }
+  return {
+    value: draft,
+    set: (next) => {
+      setDraft(next)
+      commit(next)
+    },
+  }
 }
 
 function SearchIcon(): ReactNode {
