@@ -248,14 +248,14 @@ export type PartListProps<TPart extends AgentPart = AgentPart> = {
    * Pass `{ text: ({ part, settled }) => <Markdown streaming={!settled} contentTrust="untrusted" density="chat">{part.text}</Markdown> }`
    * to enable rich markdown rendering.
    */
-  readonly components?: Partial<AgentPartRenderers<TPart>>
+  readonly components?: Partial<AgentPartRenderers<TPart>> | undefined
   /**
    * `false` while the message these parts belong to is still streaming — forwarded to every
    * renderer so a text renderer can drop out of streaming mode (and a fenced mermaid/diagram can
    * upgrade) once the turn finishes. Defaults to `true`: a caller that knows nothing about a run
    * is rendering a finished list, and un-settled must be opted into by the thing that does know.
    */
-  readonly settled?: boolean
+  readonly settled?: boolean | undefined
 }
 
 /**

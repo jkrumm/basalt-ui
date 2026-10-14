@@ -103,7 +103,7 @@ export type VirtualizeOptions = {
  * scroll container, so there is no valid virtualized layout without one.
  */
 export type VirtualizeProps =
-  | { readonly virtualize?: false | undefined; readonly height?: never }
+  | { readonly virtualize?: false | undefined; readonly height?: undefined }
   | { readonly virtualize: true | VirtualizeOptions; readonly height: number | string }
 
 /** The enabled branch of {@link VirtualizeProps}, with `height` no longer optional. */

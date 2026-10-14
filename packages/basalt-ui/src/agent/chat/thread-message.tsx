@@ -394,23 +394,23 @@ const FINISH_INDICATOR: Partial<
 
 type MessageBlockProps = {
   readonly message: ChatMessage<TranscriptPart>
-  readonly streaming?: boolean
+  readonly streaming?: boolean | undefined
   readonly renderers: PartRenderers
   readonly fallbackRenderer: PartRenderer<ForeignPart>
   /** Suppresses the role label and surface chrome — this message continues the same speaker's
    * immediately-preceding turn within the grouping window (the Slack rhythm, AGENT-CHAT-SPEC.md
    * §_). Computed by `ThreadTranscript` (a property of the SEQUENCE, not of one message in
    * isolation) and passed down. @default false */
-  readonly grouped?: boolean
+  readonly grouped?: boolean | undefined
   /** Per-message hover-row affordances. `undefined` renders NO affordance row at all — this is how
    * `ThreadTranscript` opts the live/streaming message out (an epoch-0 `createdAt` and a
    * half-streamed coalesced text would otherwise render a nonsensical "56 years ago" timestamp and
    * a copy button that copies a fragment). Every settled message gets a resolved (defaults-merged)
    * object instead. */
-  readonly affordances?: MessageAffordances
+  readonly affordances?: MessageAffordances | undefined
   /** True only for the single most-recent SETTLED assistant message — the sole message
    * `affordances.onRegenerate` renders a control for. @default false */
-  readonly isLastAssistant?: boolean
+  readonly isLastAssistant?: boolean | undefined
 }
 
 /**
@@ -987,22 +987,22 @@ type ThreadTranscriptBase = BasaltProps & {
   /** Settled messages for the thread, oldest first. */
   readonly messages: readonly ChatMessage<TranscriptPart>[]
   /** The live (in-flight) assistant turn's parts, when a run is streaming for this thread. */
-  readonly liveParts?: readonly TranscriptPart[]
+  readonly liveParts?: readonly TranscriptPart[] | undefined
   /** The live run's status — drives the in-progress indicator on the live block. */
-  readonly liveStatus?: StreamStatus
+  readonly liveStatus?: StreamStatus | undefined
   /** Consumer renderers keyed by part.type. Consulted BEFORE the built-in union. */
-  readonly renderers?: PartRenderers
+  readonly renderers?: PartRenderers | undefined
   /** Called for a part whose type is neither an AgentPart variant nor a registered key. Defaults
    * to a visible `UnknownPartChip` outside production, `null` in production — never throws. */
-  readonly fallbackRenderer?: PartRenderer<ForeignPart>
+  readonly fallbackRenderer?: PartRenderer<ForeignPart> | undefined
   /** Per-message hover-row affordances (timestamp/copy/regenerate/custom actions). Unset fields
    * fall back to `DEFAULT_AFFORDANCES`. Never shown on the live/streaming message — see
    * `MessageBlockProps.affordances`. */
-  readonly affordances?: MessageAffordances
+  readonly affordances?: MessageAffordances | undefined
   /** Suppresses the role label and surface chrome on a message whose predecessor shares its role
    * and landed within 5 minutes — the Slack rhythm.
    * @default true */
-  readonly groupConsecutive?: boolean
+  readonly groupConsecutive?: boolean | undefined
 }
 
 export type ThreadTranscriptProps = ThreadTranscriptBase & VirtualizeProps
@@ -1128,11 +1128,8 @@ export function ThreadTranscript(props: ThreadTranscriptProps): JSX.Element {
     () => ({
       timestamp: affordancesProp?.timestamp ?? DEFAULT_AFFORDANCES.timestamp,
       copy: affordancesProp?.copy ?? DEFAULT_AFFORDANCES.copy,
-      // `exactOptionalPropertyTypes` forbids assigning a possibly-`undefined` value to an optional
-      // property directly — spread each field in only when it is actually present, rather than
-      // widening `MessageAffordances` itself to accept an explicit `undefined`.
-      ...(stableOnRegenerate !== undefined && { onRegenerate: stableOnRegenerate }),
-      ...(actions !== undefined && { actions }),
+      onRegenerate: stableOnRegenerate,
+      actions,
     }),
     [affordancesProp?.timestamp, affordancesProp?.copy, stableOnRegenerate, actions],
   )
