@@ -39,6 +39,7 @@ import type {
   ChartTooltipRow,
   ChartX,
   PlotRow,
+  ZoneSpec,
 } from './types'
 
 /**
@@ -247,6 +248,43 @@ export function areaGradient(index: number, color: string): ChartGradient {
       { offset: 1, color: `color-mix(in srgb, ${color} var(--vx-area-bottom), transparent)` },
     ],
   }
+}
+
+const areaTint = (color: string): string =>
+  `color-mix(in srgb, ${color} var(--vx-area-top), transparent)`
+
+/**
+ * A series area filled by value zone: a vertical gradient whose stops sit at the zone boundaries.
+ * The engine writes `<linearGradient>` in the default `objectBoundingBox` units, so offsets are
+ * fractions of the AREA's own box (from the larger of the series' maximum and 0 down to the smaller
+ * of its minimum and 0, the area's baseline), not of the plot; a boundary at value `v` sits at
+ * `(hi - v) / (hi - lo)`. Hard edges: neighbouring zones meet at one offset. `null` when no zone
+ * reaches the area (the caller keeps the plain series-colour fade). Linear axes only.
+ */
+export function zoneAreaGradient(
+  index: number,
+  zones: readonly ZoneSpec[],
+  values: readonly (number | null)[],
+): ChartGradient | null {
+  let lo = 0
+  let hi = 0
+  for (const v of values) {
+    if (v === null || !Number.isFinite(v)) continue
+    if (v < lo) lo = v
+    if (v > hi) hi = v
+  }
+  const span = hi - lo
+  if (!(span > 0)) return null
+  const at = (v: number): number => (hi - Math.min(hi, Math.max(lo, v))) / span
+  const stops = zones
+    .filter((z) => z.to > lo && z.from < hi)
+    .toSorted((p, q) => q.to - p.to)
+    .flatMap((z) => [
+      { offset: at(z.to), color: areaTint(z.fill) },
+      { offset: at(z.from), color: areaTint(z.fill) },
+    ])
+  if (stops.length === 0) return null
+  return { id: areaGradientId(index), x1: 0, y1: 0, x2: 0, y2: 1, stops }
 }
 
 const isBar = <T>(s: ChartSeries<T>): boolean => s.mark === 'bar'
@@ -547,9 +585,21 @@ export function compileCartesian<T, X extends ChartX>(
   const rows = rowsOf(input, visibleKeys)
   const formatX = (v: ChartValue): string =>
     input.formatX ? input.formatX(v as X) : defaultFormatX(v)
-  const gradients = input.series.flatMap((s, i) =>
-    s.area ? [areaGradient(i, typeof s.area === 'string' ? s.area : s.color)] : [],
-  )
+  const gradients = input.series.flatMap((s, i) => {
+    if (!s.area) return []
+    const side = s.axis === 'right' ? 'right' : 'left'
+    const zoned =
+      s.area === 'zones'
+        ? zoneAreaGradient(
+            i,
+            (input.zones ?? []).filter((z) => (z.axisSide ?? 'left') === side),
+            input.data.map(s.getValue),
+          )
+        : null
+    return [
+      zoned ?? areaGradient(i, typeof s.area === 'string' && s.area !== 'zones' ? s.area : s.color),
+    ]
+  })
 
   return {
     chart: ({ width, height }: ChartBuildContext): StoredChartSpec => {

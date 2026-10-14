@@ -35,8 +35,10 @@ export type ChartSeries<T> = {
   strokeOpacity?: number | undefined
   /** Bars and areas. */
   fillOpacity?: number | undefined
-  /** `Lines`: a soft gradient fill under the line — `true` in the series color, or a color ref. */
-  area?: boolean | string | undefined
+  /** `Lines`: a soft gradient fill under the line — `true` in the series color, a color ref, or
+   * `'zones'`: a vertical gradient coloured by the chart's `zones` on this series' axis, hard stops
+   * at the zone boundaries (no zone in reach: the series color). Linear axes only. */
+  area?: boolean | 'zones' | (string & {}) | undefined
   /** Which y axis the series is measured against. `'right'` needs the chart's `y2`. */
   axis?: 'left' | 'right' | undefined
   /** Legend grouping: series → overlay → reference. Default `'series'`. */

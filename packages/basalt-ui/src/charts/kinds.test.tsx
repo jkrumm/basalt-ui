@@ -14,6 +14,7 @@ import { compileCartesian } from './compile'
 import { Lines } from './Lines'
 import type { ChartSeries } from './types'
 
+const tint = 'var(--vx-area-top)'
 type Row = { t: Date; a: number | null; b: number; c: number }
 const day = (d: number): Date => new Date(Date.UTC(2026, 8, d))
 const data: Row[] = [1, 2, 3, 4].map((d) => ({ t: day(d), a: d * 10, b: d, c: -d }))
@@ -115,6 +116,42 @@ describe('Lines', () => {
     const toggle = el.querySelector('button[data-legend-key="a"]') as HTMLButtonElement
     await act(async () => toggle.click())
     expect(el.querySelector('[data-ts-key^="ma:"]')).toBeNull()
+  })
+
+  test("area: 'zones' fills with hard gradient stops at the zone boundaries", () => {
+    const zoneData = [10, 30, 60, 80].map((v, i) => ({ t: day(i + 1), a: v, b: 0, c: 0 }))
+    const zones = [
+      { from: 0, to: 25, fill: 'var(--vx-good)' },
+      { from: 25, to: 50, fill: 'var(--vx-warn)' },
+      { from: 50, to: Number.POSITIVE_INFINITY, fill: 'var(--vx-bad)' },
+    ]
+    const html = renderToString(
+      <Lines
+        ariaLabel="L"
+        data={zoneData}
+        x={x}
+        series={[{ ...a, area: 'zones' }]}
+        zones={zones}
+        y={{ domain: [0, 100] }}
+      />,
+    )
+    const gradient = html.match(/<linearGradient[^>]*basalt-area-0[^>]*>(.*?)<\/linearGradient>/)
+    expect(gradient).not.toBeNull()
+    const stops = [...(gradient?.[1] ?? '').matchAll(/offset="([\d.]+)%" stop-color="([^"]+)"/g)]
+    // The area spans 0..80, so a boundary at v sits at (80 - v) / 80 of its box.
+    expect(stops.map((m) => Number(m[1]))).toEqual([0, 37.5, 37.5, 68.75, 68.75, 100])
+    expect(stops.map((m) => m[2]?.includes(tint))).toEqual([true, true, true, true, true, true])
+    expect(stops[0]?.[2]).toContain('var(--vx-bad)')
+    expect(stops[2]?.[2]).toContain('var(--vx-warn)')
+    expect(stops[4]?.[2]).toContain('var(--vx-good)')
+    expect(html).toMatch(/fill="url\(#[^"]*basalt-area-0[^"]*\)"/)
+  })
+
+  test("area: 'zones' without a zone on its axis keeps the series-colour fade", () => {
+    const html = renderToString(
+      <Lines ariaLabel="L" data={data} x={x} series={[{ ...a, area: 'zones' }]} />,
+    )
+    expect(html).toContain('color-mix(in srgb, var(--vx-line) var(--vx-area-top)')
   })
 
   test('area, dash, markers and thresholds compile to their marks', () => {
