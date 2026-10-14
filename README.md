@@ -13,7 +13,9 @@ Building a dashboard app means wiring a Mantine theme, a chart system, a typed t
 
 ```bash
 bun add basalt-ui
-bun add react react-dom @mantine/core @mantine/hooks
+bun add react react-dom @mantine/core @mantine/hooks @mantine/modals @mantine/notifications @mantine/spotlight \
+  @tanstack/react-router @tanstack/react-query \
+  @fontsource-variable/hubot-sans @fontsource-variable/jetbrains-mono @fontsource-variable/nunito-sans
 ```
 
 Scaffold the repo doctrine (Claude Code rules + skills, `AGENTS.md` block, `DESIGN.md` seed, toolchain seeds):
@@ -22,7 +24,7 @@ Scaffold the repo doctrine (Claude Code rules + skills, `AGENTS.md` block, `DESI
 bunx basalt-ui init
 ```
 
-**Full docs, subpath export table, token system, and adapter batteries:** see the
+**Quick start, the 15-subpath export table, token system, and adapter batteries (upgrading from 1.x: `MIGRATING.md` § 2.0.0):** see the
 [package README](./packages/basalt-ui/README.md).
 
 Not a React app? The token system works without one — no React, no Mantine, no bundler:
