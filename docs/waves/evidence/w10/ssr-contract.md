@@ -35,26 +35,62 @@ rows do not wrap. A table whose cells wrap on a narrow container (no `minWidth`)
 by a fallback that does not know the content: a streamed table on mobile needs `minWidth` (rows
 stay one line, the wrapper scrolls) or single-line cells. No new prop or export.
 
-## Charts — the contract does NOT hold today (not fixed in this PR)
+## Charts — the contract holds for every kind
 
-Measured with throwaway probes (not committed) on `Lines` (two series, default height):
+Before (`Lines`, two series, throwaway probe): 1248 × 346 → 1248 × 446, CLS 0.090 at 1280 px; 358 × 346
+→ 358 × 248, CLS 0.141 at 390 px. Cause: `useChartSize` started at width 0, so the server painted the
+640 px regular class (height 320, chips legend) and the real class arrived from a layout effect.
 
-| Viewport | Server box   | Hydrated box | CLS   | Hydration warnings |
-| -------- | ------------ | ------------ | ----- | ------------------ |
-| 1280 px  | 1248 × 346.2 | 1248 × 446.2 | 0.090 | none               |
-| 390 px   | 358 × 346.2  | 358 × 248.2  | 0.141 | none               |
+Now the box is CSS-owned (`box.tsx` + `chart-box.module.css`): four per-class heights as custom
+properties, picked by unnamed `@container` queries on the chart's own inline size; a coarse pointer
+caps it at 45 svh. `ChartEngine` is never handed a height, so `@tanstack/charts` measures the box
+(`renderer.js:184`, `observesContainerHeight`). The legend picks none / dots / chips in CSS
+(`chart-legend.module.css`); a `placement: 'header'` legend is rendered by the chart under the card
+header, in the server HTML; `ChartCard`'s header inset and `Donut`'s legend position are container
+queries; `ChartPlaceholder` and the pending `ChartCard` fill the same box.
 
-Cause (source): `useChartSize` starts at width 0 and resolves the 640 px regular class
-(`sizing.ts:11,37`: height 320, chips legend). The real class and height arrive from a layout
-effect after hydration, so the server-painted box (320 + legend) changes to `width × ratio`
-(clamped 160–420) and the legend mode changes (`CartesianChart.tsx`, none/dots/chips by class).
-The SVG itself scales (`viewBox 0 0 640 320`, `width/height 100%`), so only the box moves.
+`tests/layout/ssr-contract.layout.test.ts`, server box → hydrated box (height, px), width = the
+container's; every row is identical before and after, CLS 0, no hydration warning, no layout-shift
+source, at both widths:
 
-The fix needs the box to be fixed by CSS before JS (container-query height law on a Mantine-free
-CSS module, the engine measuring the box instead of being handed `height`, the legend picked by
-CSS). That touches files outside this PR's owned list: `CartesianChart.tsx` (`ChartShell`),
-`state.tsx` (`ChartPlaceholder`), `Donut.tsx`, `Heatmap.tsx`. Left for the lead's call.
+| Probe                                                                                  | 1280 px       | 390 px        |
+| -------------------------------------------------------------------------------------- | ------------- | ------------- |
+| `Lines` (2 series, legend)                                                             | 446.2         | 248.2         |
+| `Lines`, no legend                                                                     | 420           | 222           |
+| `Bars` / `StackedArea` / `BandStrip` / `DualPanel` / `MirroredBars` / `CartesianChart` | 446.2         | 248.2         |
+| `Sparkline` (height 32)                                                                | 32            | 32            |
+| `Donut` (legend beside / under the ring)                                               | 240           | 272.2         |
+| `Heatmap` / `Heatmap matchHeight` in a 300 px parent                                   | 168 / 300     | 168 / 300     |
+| `Lines` height 200 / `{ base: 180, regular: 240, wide: 300 }`                          | 226.2 / 326.2 | 226.2 / 206.2 |
+| `ChartCard` with a header legend                                                       | 510.2         | 289           |
+| `ChartCard` with title, subtitle, KPI value and delta                                  | 528.5         | 307.3         |
+| CLS (sum of `layout-shift`)                                                            | 0             | 0             |
 
-`legend.placement: 'header'` is a separate gap: the legend reaches the `ChartCard` header from an
-effect (`CartesianChart.tsx`, `card-context.ts`), so it is absent from the server HTML and grows the
-header after hydration.
+Also asserted: the painted svg's height equals its box (±1 px) for every cartesian kind, a stated
+height is exact, the legend mode follows the width, the header legend sits between the title and
+the plot, the donut legend moves beside / under the ring.
+
+### Sized fallback
+
+| Pair                                                | 1280 px   | 390 px        |
+| --------------------------------------------------- | --------- | ------------- |
+| `Lines` loaded / `state={{ pending: true }}`        | 420 / 420 | 222 / 222     |
+| `ChartCard` loaded / `state={{ pending: true }}`    | 476 / 476 | 254.8 / 254.8 |
+| `BasaltDataTable` loaded / `isLoading skeletonRows` | 356 / 356 | 356 / 356     |
+
+`<ChartCard state={{ pending: true }}>` (no `placeholderHeight`) is the `<Suspense>` fallback: it
+takes the height-law box. A chart that states `height` needs the same `placeholderHeight`. A legend
+row, or a chart with a header legend, adds its own row to the loaded side that a fallback cannot
+know.
+
+### Left open
+
+- `ChartCard` still measures itself (`data-basalt-card-short`, under 280 px). With the default height
+  law it never flips after hydration (the inset it trimmed is now a container query); a chart that
+  states a small `height` inside a card ≥ 480 px wide still folds the header subtitle / KPI numeral
+  after hydration. Measured: a KPI card around `height={120}` shifts. It would take
+  `widget-header.module.css` (not owned here) to move that fold off the attribute.
+- `Donut`'s side layout is "container ≥ 480 px"; the old extra `width > 1.5 × height` aspect rule is
+  dropped (it changed the layout for a stated height above 320 px).
+- `useChartSize`'s height is the CSS law's pixel mirror, used only by the unit tests; the coarse
+  viewport cap is `45svh` in CSS, not the old quantised `innerHeight`.
