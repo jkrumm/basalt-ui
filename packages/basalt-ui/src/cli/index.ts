@@ -83,13 +83,9 @@ export function resolveGuardConfig(cfg: BasaltConfig, profile: DoctorProfile): G
 }
 
 /**
- * The one consumer series path — the DESIGN.md template's `{{SERIES_MODULE_PATH}}`, the default
- * scan exemption, and the skills' prose all resolve through this single function.
- *
- * Derived from the FIRST configured root (argo's convention: `<root>/lib/series.ts`), not a fixed
- * `src/lib/series.ts` — a monorepo that correctly sets `roots: ['apps/web/src']` has no top-level
- * `src/`, so a hardcoded default would seed a DESIGN.md pointing at a path that cannot exist and
- * silently exempt nothing. `seriesModulePath` still overrides for a layout that isn't `<root>/lib/`.
+ * The one consumer series path (DESIGN.md's `{{SERIES_MODULE_PATH}}`, the default scan exemption,
+ * the skills' prose). Derived from the FIRST configured root (`<root>/lib/series.ts`), since a
+ * monorepo with `roots: ['apps/web/src']` has no top-level `src/`. `seriesModulePath` overrides.
  */
 function resolveSeriesModulePath(cfg: BasaltConfig): string {
   if (cfg.seriesModulePath !== undefined) return cfg.seriesModulePath
@@ -222,14 +218,10 @@ export function relativePosix(fromDir: string, toPath: string): string {
 }
 
 /**
- * Where `basalt-ui` actually resolves from, seen from a consumer directory.
- *
- * Every seam basalt seeds (oxlint/lefthook `extends`, the CI `run:` steps) used to hardcode
- * `./node_modules/basalt-ui` at the repo ROOT; under bun's isolated linker a package that declares
- * basalt a peer + devDependency gets it at `<pkg>/node_modules` and NOTHING at the root, so all three
- * silently failed to resolve and `bunx` fetched a second, different copy. Resolution therefore walks
- * OUTWARD from the consumer dir, then across the workspace packages — and every caller renders its
- * paths from the answer rather than assuming the root.
+ * Where `basalt-ui` actually resolves from, seen from a consumer directory. Under bun's isolated
+ * linker a package that declares basalt gets it at `<pkg>/node_modules` and nothing at the root, so
+ * resolution walks OUTWARD from the consumer dir, then across workspace packages, and every caller
+ * renders its paths from the answer rather than assuming the root.
  */
 export type BasaltInstall = {
   /** Absolute path of the resolved `node_modules/basalt-ui` directory, or null when unresolvable. */
@@ -379,15 +371,9 @@ export function scannableFiles(cwd: string, cfg: BasaltConfig): string[] {
 }
 
 /**
- * The app-shell files that sit BESIDE a source root rather than inside it — `index.html` and
- * anything under `public/`.
- *
- * Widening the walker's extension filter alone would still have missed every one of them: argo
- * configures `roots: ['apps/dashboard/src']`, while the raw hex lives in `apps/dashboard/index.html`
- * and `apps/dashboard/public/site.webmanifest`. Both locations are the Vite convention basalt's own
- * `basaltViteConfig`/`basaltAppPlugin` assume, so deriving them from each root's parent needs no
- * config and holds for a monorepo package the same way it holds at a repo root. Nothing else in the
- * parent is walked — a sibling `docs/` full of throwaway HTML stays unscanned.
+ * The app-shell files that sit BESIDE a source root rather than inside it: `index.html` and anything
+ * under `public/` (argo's raw hex lives in `apps/dashboard/index.html`, with `roots` on `…/src`).
+ * Nothing else in the parent is walked.
  */
 function appShellFiles(rootAbs: string): string[] {
   const appDir = dirname(rootAbs)
@@ -540,14 +526,9 @@ export function readFrameworkVersion(pkgRoot: string): string {
 }
 
 /**
- * How a seeded script, a seeded CI step, or a piece of doctor advice should invoke the CLI.
- *
- * The LOCAL bin wherever basalt actually resolved; `bunx basalt-ui` only as the pre-install
- * fallback. `bunx` does not re-resolve a package it has cached, so a seeded `bunx basalt-ui` lets a
- * consumer pin one version and be gated by another — which is exactly what happened across three
- * consumer repos, in CI, in package.json scripts and in a `.claude` PreToolUse hook, all of them
- * placed here. Every emitted invocation goes through this function so there is one place for it to
- * be right.
+ * How a seeded script, CI step or piece of doctor advice invokes the CLI: the LOCAL bin wherever
+ * basalt resolved, `bunx basalt-ui` only as the pre-install fallback (`bunx` does not re-resolve a
+ * cached package, so it lets a consumer pin one version and be gated by another).
  */
 export function basaltBinCommand(install: BasaltInstall, cwd: string): string {
   if (install.dir === null) return 'bunx basalt-ui'
@@ -1454,6 +1435,8 @@ export function inspectLefthookGate(repoRoot: string): LefthookGate {
   return wired ? { kind: 'wired', file } : { kind: 'absent', file }
 }
 
+const ONLY_EXPORT_COMPONENTS = 'react/only-export-components'
+
 /**
  * Splice the shipped preset into an EXISTING `.oxlintrc.json` (`init` does this unless
  * `--no-merge-lint`; the lint-debt notice says what it switches on). Prepends the preset so the
@@ -1479,6 +1462,16 @@ export function mergeOxlintExtends(cwd: string, presetPath: string): MergeLintRe
   const merged: Record<string, unknown> = 'extends' in cfg ? {} : { extends: [presetPath] }
   for (const [key, value] of Object.entries(cfg)) {
     merged[key] = key === 'extends' ? [presetPath, ...existing] : value
+  }
+  // A consumer-set only-export-components (create-vite) replaces the preset's options: re-add `Route`.
+  const rules = merged['rules'] as Record<string, unknown> | undefined
+  if (rules !== undefined && ONLY_EXPORT_COMPONENTS in rules) {
+    const [level, options] = [rules[ONLY_EXPORT_COMPONENTS]].flat()
+    const opts = (typeof options === 'object' && options !== null ? options : {}) as {
+      allowExportNames?: string[]
+    }
+    const allowExportNames = [...new Set([...(opts.allowExportNames ?? []), 'Route'])]
+    rules[ONLY_EXPORT_COMPONENTS] = [level, { ...opts, allowExportNames }]
   }
   const indent = /\n([ \t]+)"/.exec(raw)?.[1] ?? '  '
   writeFileSync(abs, JSON.stringify(merged, null, indent) + (raw.endsWith('\n') ? '\n' : ''))
@@ -1669,10 +1662,7 @@ export function run(argv: string[], cwd: string = process.cwd()): number | Promi
     console.log(USAGE)
     return 0
   }
-  // Before dispatch, for the same reason --help is: this answers "which basalt-ui is running" and
-  // must never run a command to do it. `bunx` does not re-resolve a cached package, so a consumer
-  // can pin 1.23.0, invoke `bunx basalt-ui`, and be gated by a months-old copy — the version is the
-  // only thing that catches it, and it has to be one bare line an agent can compare.
+  // Before dispatch, like --help: it answers "which basalt-ui is running" as one bare line.
   if (cmd === '--version' || cmd === '-v' || cmd === 'version') {
     console.log(readFrameworkVersion(packageRoot()))
     return 0

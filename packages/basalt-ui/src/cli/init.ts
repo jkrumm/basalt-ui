@@ -98,6 +98,24 @@ export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags =
     return true
   })
 
+  // create-vite's `tsc -b && vite build` fails on a fresh app: vite generates routeTree.gen.ts.
+  // The stock script is reordered; any other script that runs tsc gets one line of advice.
+  let buildNote: string | null = null
+  patchPackageJson(cwd, (pkg) => {
+    const scripts = (pkg['scripts'] ?? {}) as Record<string, unknown>
+    const build = scripts['build']
+    if (typeof build !== 'string' || !/\btsc\b/.test(build) || build.startsWith('vite build')) {
+      return false
+    }
+    if (build !== 'tsc -b && vite build') {
+      buildNote = `"build" (${build}) left as is: run \`vite build\` before \`tsc\` (vite generates routeTree.gen.ts).`
+      return false
+    }
+    pkg['scripts'] = { ...scripts, build: 'vite build && tsc -b' }
+    buildNote = 'rewrote "build" to `vite build && tsc -b` (vite generates routeTree.gen.ts).'
+    return true
+  })
+
   const manifest = readManifest(cwd)
   const placement = resolvePlacement(cwd)
   // A tokens-only consumer has no use for the Mantine/React scaffolds (doctor skips them there too).
@@ -177,6 +195,7 @@ export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags =
   if (mergeLine !== undefined) console.log(`basalt-ui init: oxlint — ${mergeLine}`)
   const tsconfigLine = tokensOnly ? null : seedTsconfigExtends(cwd)
   if (tsconfigLine !== null) console.log(`basalt-ui init: ${tsconfigLine}`)
+  if (buildNote !== null) console.log(`basalt-ui init: ${buildNote}`)
   const rootsMessages = rootsNotices(rootsState)
   for (const line of rootsMessages.log) console.log(`basalt-ui init: ${line}`)
   for (const line of rootsMessages.error) console.error(`⚠ basalt-ui init: ${line}`)

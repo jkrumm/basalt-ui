@@ -839,3 +839,98 @@ describe('init — tokens-only and the kept .oxlintrc.json', () => {
     expect(cfg['rules']).toEqual({ a: 'off' })
   })
 })
+
+describe('init — build order', () => {
+  const build = (script?: string): string | undefined => {
+    write(
+      'package.json',
+      JSON.stringify({ name: 'fixture', scripts: script ? { build: script } : {} }),
+    )
+    const { log } = capture(() => init(dir))
+    lastLog = log
+    return (JSON.parse(read('package.json')) as { scripts: { build?: string } }).scripts.build
+  }
+  let lastLog = ''
+
+  it('reorders the stock create-vite build so vite generates routeTree.gen.ts before tsc', () => {
+    expect(build('tsc -b && vite build')).toBe('vite build && tsc -b')
+    expect(lastLog).toContain('rewrote "build" to `vite build && tsc -b`')
+  })
+
+  it('leaves any other tsc-running build alone and prints one line of advice', () => {
+    expect(build('tsc -p tsconfig.app.json && vite build --mode x')).toBe(
+      'tsc -p tsconfig.app.json && vite build --mode x',
+    )
+    expect(lastLog).toContain('left as is: run `vite build` before `tsc`')
+  })
+
+  it('says nothing for a build that already starts with vite, has no tsc, or is absent', () => {
+    for (const script of ['vite build && tsc -b', 'vite build', undefined]) {
+      expect(build(script)).toBe(script)
+      expect(lastLog).not.toContain('"build"')
+    }
+  })
+})
+
+describe('only-export-components and the TanStack Route export', () => {
+  const RULE = 'react/only-export-components'
+  const PRESET = './node_modules/basalt-ui/configs/oxlint.json'
+  const rulesAfterMerge = (rules: unknown): Record<string, unknown> => {
+    write('.oxlintrc.json', JSON.stringify({ plugins: ['react'], rules }))
+    expect(mergeOxlintExtends(dir, PRESET)).toBe('added')
+    return (JSON.parse(read('.oxlintrc.json')) as { rules: Record<string, unknown> }).rules
+  }
+
+  it('ships the rule with allowExportNames: ["Route"]', () => {
+    const preset = parseJsonc(readFileSync(join(PKG_ROOT, 'configs/oxlint.json'), 'utf8')) ?? {}
+    expect((preset['rules'] as Record<string, unknown>)[RULE]).toEqual([
+      'warn',
+      { allowExportNames: ['Route'] },
+    ])
+  })
+
+  it("adds Route to a consumer's own rule without changing its level or options", () => {
+    expect(rulesAfterMerge({ [RULE]: 'error' })[RULE]).toEqual([
+      'error',
+      { allowExportNames: ['Route'] },
+    ])
+    expect(
+      rulesAfterMerge({
+        [RULE]: ['warn', { allowConstantExport: true, allowExportNames: ['meta'] }],
+      })[RULE],
+    ).toEqual(['warn', { allowConstantExport: true, allowExportNames: ['meta', 'Route'] }])
+    expect(rulesAfterMerge({ [RULE]: ['off'] })[RULE]).toEqual([
+      'off',
+      { allowExportNames: ['Route'] },
+    ])
+  })
+
+  it('does not introduce the rule into a config that never set it', () => {
+    expect(RULE in rulesAfterMerge({ 'no-debugger': 'error' })).toBe(false)
+  })
+
+  const OXLINT = join(PKG_ROOT, '../../node_modules/.bin/oxlint')
+  it.skipIf(!existsSync(OXLINT))(
+    'really lets a route file export Route (shipped and merged)',
+    () => {
+      mkdirSync(join(dir, 'node_modules'), { recursive: true })
+      symlinkSync(PKG_ROOT, join(dir, 'node_modules/basalt-ui'))
+      write('src/routes/index.jsx', 'export const Route = {}\nexport const Page = () => <div />\n')
+      write('src/other.jsx', 'export const helper = 1\nexport const Page = () => <div />\n')
+      write(
+        '.oxlintrc.json',
+        JSON.stringify({
+          plugins: ['react'],
+          rules: { [RULE]: ['warn', { allowConstantExport: true }] },
+        }),
+      )
+      capture(() => init(dir))
+      const run = (file: string): string =>
+        Bun.spawnSync([OXLINT, '-c', '.oxlintrc.json', file], { cwd: dir }).stdout.toString()
+      expect(run('src/routes/index.jsx')).not.toContain('only-export-components')
+      expect(run('src/other.jsx')).not.toContain('only-export-components') // allowConstantExport: helper = 1
+      write('src/fn.jsx', 'export function helper() {}\nexport const Page = () => <div />\n')
+      expect(run('src/fn.jsx')).toContain('only-export-components')
+    },
+  )
+})
