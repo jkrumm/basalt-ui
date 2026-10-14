@@ -83,12 +83,15 @@ export const paneY = (opts: {
   format: (v: number) => string
   ticks: number
   cls: ContainerClass
+  /** The whole chart's height ({@link chartHeightOf}). */
+  height: number
 }): StoredChartSpec['scales'][string] => ({
   scale: opts.scale,
   ...yGuide({
     cfg: { ticks: opts.ticks },
     axis: { domain: opts.domain, format: opts.format },
     cls: opts.cls,
+    height: opts.height,
     side: 'left',
     grid: true,
   }),
@@ -102,10 +105,22 @@ export const paneX = <X extends ChartX>(opts: {
   model: XScaleModel<X>
   format: (v: ChartValue) => string
   cls: ContainerClass
+  /** The whole chart's height ({@link chartHeightOf}). */
+  height: number
 }): StoredChartSpec['scales'][string] => ({
   scale: opts.scale,
-  ...xGuide({ model: opts.model, xTicks: undefined, format: opts.format, cls: opts.cls }),
+  ...xGuide({
+    model: opts.model,
+    xTicks: undefined,
+    format: opts.format,
+    cls: opts.cls,
+    height: opts.height,
+  }),
 })
+
+/** The whole chart's height from one pane's: a pane gets `share` of the height less the gap. */
+export const chartHeightOf = (paneHeight: number, share: number, gap: number): number =>
+  paneHeight > 0 && share > 0 ? paneHeight / share + gap : 0
 
 /** One row per datum for a series: a `null` or non-finite value is kept as a gap. */
 export function rowsOf<T, X extends ChartX>(

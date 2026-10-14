@@ -98,7 +98,7 @@ layout('Charts — 2.0 layout', () => {
   const CLASSES: readonly ClassCase[] = [
     // The height law: width × class ratio, clamped 160–420 (≤ 45vh = 405 at 900 tall).
     { cls: 'micro', width: 200, height: 160, yLabels: 'none', legend: 'none' },
-    { cls: 'compact', width: 360, height: 223, yLabels: 'inside', legend: 'dots' },
+    { cls: 'compact', width: 360, height: 223, yLabels: 'outside', legend: 'dots' },
     { cls: 'regular', width: 640, height: 320, yLabels: 'outside', legend: 'chips' },
     { cls: 'wide', width: 960, height: 384, yLabels: 'outside', legend: 'chips' },
   ]
@@ -160,35 +160,98 @@ layout('Charts — 2.0 layout', () => {
         : 'inside'
     }, SVG)
 
-  test('1280: a compact-width card of regular height (280) keeps y labels outside', async () => {
+  // Inside labels need the compact class AND a chart under SHORT_CHART_HEIGHT (180).
+  const cases: readonly {
+    readonly name: string
+    readonly vp: Viewport
+    readonly spec: ChartsSpec
+    readonly sides: 'inside' | 'outside'
+  }[] = [
+    {
+      name: '1280 compact-width, 280 tall',
+      vp: DESKTOP_1280,
+      spec: { kind: 'lines', width: 360, height: 280 },
+      sides: 'outside',
+    },
+    {
+      name: '1280 compact-width, law height (223)',
+      vp: DESKTOP_1280,
+      spec: { kind: 'lines', width: 360 },
+      sides: 'outside',
+    },
+    {
+      name: '1280 compact-width, 179 tall',
+      vp: DESKTOP_1280,
+      spec: { kind: 'lines', width: 360, height: 179 },
+      sides: 'inside',
+    },
+    {
+      name: '1280 compact-width, 180 tall',
+      vp: DESKTOP_1280,
+      spec: { kind: 'lines', width: 360, height: 180 },
+      sides: 'outside',
+    },
+    {
+      name: '390 phone, 280 tall',
+      vp: PHONE,
+      spec: { kind: 'lines', height: 280 },
+      sides: 'outside',
+    },
+    {
+      name: '390 phone, 160 tall',
+      vp: PHONE,
+      spec: { kind: 'lines', height: 160 },
+      sides: 'inside',
+    },
+    {
+      name: '1280 dual panel, compact-width, 280 tall',
+      vp: DESKTOP_1280,
+      spec: { kind: 'dual', width: 360, height: 280 },
+      sides: 'outside',
+    },
+    {
+      name: '390 dual panel, 280 tall',
+      vp: PHONE,
+      spec: { kind: 'dual', height: 280 },
+      sides: 'outside',
+    },
+    {
+      name: '390 dual panel, 160 tall',
+      vp: PHONE,
+      spec: { kind: 'dual', height: 160 },
+      sides: 'inside',
+    },
+  ]
+  for (const c of cases) {
+    test(`y labels ${c.sides}: ${c.name}`, async () => {
+      const p = await openFixture(chartFixture(c.spec), c.vp)
+      await p.settle()
+      expect(await yLabelSides(p)).toBe(c.sides)
+    })
+  }
+
+  test('compact width above the threshold keeps the gutter margin and a centered first x label', async () => {
     const p = await openFixture(
       chartFixture({ kind: 'lines', width: 360, height: 280 }),
       DESKTOP_1280,
     )
     await p.settle()
-    expect(await yLabelSides(p)).toBe('outside')
+    const { svgLeft, plotLeft, anchor } = await p.raw.evaluate((sel) => {
+      const svgEl = document.querySelector(sel)
+      const label = svgEl?.querySelector('[data-ts-key^="x-tick-label:"]')
+      return {
+        svgLeft: svgEl?.getBoundingClientRect().left ?? 0,
+        plotLeft:
+          svgEl?.querySelector('[data-ts-key^="y-grid:"]')?.getBoundingClientRect().left ?? 0,
+        anchor: label ? getComputedStyle(label).textAnchor : null,
+      }
+    }, SVG)
+    expect(plotLeft - svgLeft).toBeGreaterThan(8) // a gutter, not the locked-zero margin
+    expect(anchor).toBe('middle') // the first label is not start-anchored
   })
 
-  test('1280: a compact-width short card (height law) keeps y labels inside', async () => {
-    const p = await openFixture(chartFixture({ kind: 'lines', width: 360 }), DESKTOP_1280)
-    await p.settle()
-    expect(await yLabelSides(p)).toBe('inside')
-  })
-
-  test('390: a phone-width chart of regular height (280) keeps y labels outside', async () => {
-    const p = await openFixture(chartFixture({ kind: 'lines', height: 280 }), PHONE)
-    await p.settle()
-    expect(await yLabelSides(p)).toBe('outside')
-  })
-
-  test('390: a phone-width chart on the height law keeps y labels inside', async () => {
-    const p = await openFixture(chartFixture({ kind: 'lines' }), PHONE)
-    await p.settle()
-    expect(await yLabelSides(p)).toBe('inside')
-  })
-
-  test('compact: the first x label is not clipped by the locked-zero left margin', async () => {
-    const p = await openFixture(chartFixture({ kind: 'lines', width: 360 }), DESKTOP)
+  test('compact and short: the first x label is not clipped by the locked-zero left margin', async () => {
+    const p = await openFixture(chartFixture({ kind: 'lines', width: 360, height: 160 }), DESKTOP)
     await p.settle()
     const { svgLeft, firstLabel } = await p.raw.evaluate((sel) => {
       const svgEl = document.querySelector(sel)

@@ -3,7 +3,7 @@ import type { ComponentProps, ReactElement } from 'react'
 import { ThreadFeedRow } from '../../../src/agent'
 import type { AgentThread, ChatMessage, TranscriptPart } from '../../../src/agent'
 import { ThreadTranscript } from '../../../src/agent/chat/thread-message'
-import { Bars, ChartCard, Lines } from '../../../src/charts'
+import { Bars, ChartCard, DualPanel, Lines } from '../../../src/charts'
 import type { BarsBar, ChartSeries } from '../../../src/charts'
 import { overlays } from '../../../src/commands'
 import { FilterSet, FormRow, SelectFilter, ViewTabs } from '../../../src/controls'
@@ -592,7 +592,22 @@ function ChartsFixture({ spec }: { spec: ChartsSpec }): ReactElement {
   const data = useMemo(() => buildChartData(seriesCount), [seriesCount])
   const height = spec.height === undefined ? {} : { height: spec.height }
   const chart =
-    spec.kind === 'bars' ? (
+    spec.kind === 'dual' ? (
+      <DualPanel
+        ariaLabel="Fixture dual"
+        data={data}
+        x={chartX}
+        series={buildLineSeries(1)}
+        bar={{
+          label: 'Delta',
+          getValue: (d) => (d.values[0] ?? 0) - 25,
+          positive: CHART_COLORS[0] as string,
+          negative: CHART_COLORS[1] as string,
+          format: String,
+        }}
+        {...height}
+      />
+    ) : spec.kind === 'bars' ? (
       <Bars
         ariaLabel="Fixture bars"
         data={data}

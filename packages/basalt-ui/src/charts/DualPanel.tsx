@@ -16,7 +16,7 @@ import { VX, alpha } from '../tokens'
 import { resolveContainerClass } from '../tokens/size-classes'
 import { defaultFormatX, defaultNumberFormat, engineRow, seriesRow, visibleSeries } from './compile'
 import { barMark, emphasis, lineMark, markersOf, thinFill } from './marks'
-import { PanelRung, paneX, paneY, rowsOf } from './panel'
+import { PanelRung, chartHeightOf, paneX, paneY, rowsOf } from './panel'
 import type { PaneBuilder, PanelInput, PanelPlan } from './panel'
 import { xScaleFor } from './scales'
 import { rowX } from './types'
@@ -269,13 +269,21 @@ export function DualPanel<T, X extends Date | number = Date | number>(
           ],
           scales: {
             x: { scale: xScale(), axis: false },
-            y: paneY({ scale: topY, domain: topDomain, format: topFormat, ticks: TOP_TICKS, cls }),
+            y: paneY({
+              scale: topY,
+              domain: topDomain,
+              format: topFormat,
+              ticks: TOP_TICKS,
+              cls,
+              height: chartHeightOf(h, topFraction, PANE_GAP),
+            }),
           },
         }
       }
 
-      const barPane: PaneBuilder = ({ width }) => {
+      const barPane: PaneBuilder = ({ width, height: h }) => {
         const cls = resolveContainerClass(width)
+        const whole = chartHeightOf(h, 1 - topFraction, PANE_GAP)
         const barRows = barOn ? rowsOf(data, x, barSeries) : []
         const dim = emphasis(highlighted, { key: BAR_KEY })
         return {
@@ -290,13 +298,14 @@ export function DualPanel<T, X extends Date | number = Date | number>(
             }),
           ],
           scales: {
-            x: paneX({ scale: xScale(), model, format, cls }),
+            x: paneX({ scale: xScale(), model, format, cls, height: whole }),
             y: paneY({
               scale: barScale,
               domain: barDomain,
               format: bar.format,
               ticks: BAR_TICKS,
               cls,
+              height: whole,
             }),
           },
         }

@@ -23,6 +23,7 @@ import type {
   ResponsiveChartDefinition,
   StoredChartSpec,
 } from '@tanstack/charts/types/core'
+import { SHORT_CHART_HEIGHT } from './box'
 import { fmtCompact } from '../format/number'
 import { VX } from '../tokens'
 import type { ContainerClass } from '../tokens/size-classes'
@@ -97,13 +98,13 @@ const LADDER = {
 const INSIDE_LABEL_DX = 4
 const INSIDE_LABEL_DY = -6
 
-/** A compact chart at or above this height is a regular card (`ChartCard`'s short threshold): it
- * keeps its y labels outside, and only a short one trades the gutter for plot width. */
-const INSIDE_LABEL_MAX_HEIGHT = 280
-
-/** Y labels sit inside the plot: the compact class, and only where the card is short. */
-export const labelsInside = (cls: ContainerClass, height: number): boolean =>
-  cls === 'compact' && height < INSIDE_LABEL_MAX_HEIGHT
+/**
+ * Y labels go inside the plot only for the compact class under `SHORT_CHART_HEIGHT` (the box's own
+ * short signal); otherwise they sit in a left gutter. `height` is the whole chart's, `0` before it
+ * is measured, which keeps the gutter rather than flipping a first paint inside.
+ */
+const labelsInside = (cls: ContainerClass, height: number): boolean =>
+  cls === 'compact' && height > 0 && height < SHORT_CHART_HEIGHT
 
 export function defaultNumberFormat(v: number): string {
   return fmtCompact(v, { digits: Math.abs(v) >= 1000 ? 1 : 2 })
@@ -193,15 +194,16 @@ const refLegendKey = (index: number): string => `${REF_KEY_PREFIX}${index}`
  * a 16x8 swatch at that alpha vanishes on the dark surface. The legend takes the status solid,
  * which the color gate holds to 3:1 on the panel in both schemes, like a series swatch.
  */
-const SWATCH_SOLID: Readonly<Record<string, string>> = {
-  [VX.goodRef]: VX.goodSolid,
-  [VX.badRef]: VX.badSolid,
-  [VX.warnRef]: VX.warnSolid,
-  [VX.good]: VX.goodSolid,
-  [VX.goodSoft]: VX.goodSolid,
-  [VX.bad]: VX.badSolid,
-  [VX.warn]: VX.warnSolid,
-}
+const SWATCH_SOLID: ReadonlyMap<string, string> = new Map([
+  [VX.goodRef, VX.goodSolid],
+  [VX.badRef, VX.badSolid],
+  [VX.warnRef, VX.warnSolid],
+  // The tinted status fills are as translucent, and a consumer may pass either as a line color.
+  [VX.good, VX.goodSolid],
+  [VX.goodSoft, VX.goodSolid],
+  [VX.bad, VX.badSolid],
+  [VX.warn, VX.warnSolid],
+])
 
 /** Legend-only entries for the reference lines that name themselves, in line order. */
 export function refLegendSeries<T>(refLines: readonly RefLine[] | undefined): ChartSeries<T>[] {
@@ -212,7 +214,7 @@ export function refLegendSeries<T>(refLines: readonly RefLine[] | undefined): Ch
           {
             key: refLegendKey(i),
             label: r.legend.label,
-            color: SWATCH_SOLID[r.color] ?? r.color,
+            color: SWATCH_SOLID.get(r.color) ?? r.color,
             role: 'reference' as const,
             tooltip: false,
             getValue: () => null,
@@ -241,10 +243,10 @@ export function yGuide<T>(opts: {
   cls: ContainerClass
   side: 'left' | 'right'
   grid: boolean
-  /** Default: the compact class. */
-  inside?: boolean
+  /** The whole chart's height: decides inside or gutter labels. */
+  height: number
 }): Omit<ChartPositionScaleOptions<number>, 'scale'> {
-  const { cfg, axis, cls, side, grid } = opts
+  const { cfg, axis, cls, side, grid, height } = opts
   const ladder = LADDER[cls]
   const ticks =
     typeof cfg?.ticks === 'object'
@@ -253,7 +255,7 @@ export function yGuide<T>(opts: {
   const gridLine = grid ? { grid: GRID_LINE } : {}
   if (cls === 'micro') return { ...gridLine, axis: false }
   // Labels sit INSIDE the plot, above their grid line, so the plot keeps the full width.
-  const inside = opts.inside ?? cls === 'compact'
+  const inside = labelsInside(cls, height)
   return {
     ...gridLine,
     ...(side === 'right' && { side: 'right' as const }),
@@ -301,11 +303,12 @@ export function xGuide<X extends ChartX>(opts: {
   xTicks: number | readonly X[] | undefined
   format: (v: ChartValue) => string
   cls: ContainerClass
-  /** Default: the compact class. */
-  inside?: boolean
+  /** The whole chart's height: decides whether the left margin is locked to zero. */
+  height: number
 }): Omit<ChartPositionScaleOptions<ChartValue>, 'scale'> {
-  const { model, xTicks, format, cls } = opts
+  const { model, xTicks, format, cls, height } = opts
   const ladder = LADDER[cls]
+  const inside = labelsInside(cls, height)
   const ticks = xTickPolicy(model, xTicks ?? ladder.xTicks)
   return {
     axis: {
@@ -315,8 +318,8 @@ export function xGuide<X extends ChartX>(opts: {
         fontSize: ladder.font,
         opacity: 1,
         thin: true,
-        // A locked-zero left margin (compact) must not clip the first label.
-        ...((opts.inside ?? cls === 'compact') && {
+        // A locked-zero left margin (inside labels) must not clip the first label.
+        ...(inside && {
           anchor: ({ index }: { index: number }) => (index === 0 ? ('start' as const) : undefined),
         }),
       },
@@ -661,15 +664,15 @@ function buildScales<T, X extends ChartX>(opts: {
   axes: Axes<T>
   formatX: (v: ChartValue) => string
   cls: ContainerClass
-  inside: boolean
+  height: number
   zoneScale: boolean
 }): StoredChartSpec['scales'] {
-  const { input, model, axes, formatX, cls, inside, zoneScale } = opts
+  const { input, model, axes, formatX, cls, height, zoneScale } = opts
   const { left, right } = axes
   return {
     x: {
       scale: model.scale,
-      ...xGuide({ model, xTicks: input.xTicks, format: formatX, cls, inside }),
+      ...xGuide({ model, xTicks: input.xTicks, format: formatX, cls, height }),
     },
     y: {
       scale: yScaleFor(input.y, left.domain),
@@ -677,7 +680,7 @@ function buildScales<T, X extends ChartX>(opts: {
         cfg: input.y,
         axis: left,
         cls,
-        inside,
+        height,
         side: 'left',
         grid: input.y?.grid ?? true,
       }),
@@ -690,7 +693,7 @@ function buildScales<T, X extends ChartX>(opts: {
           cfg: input.y2,
           axis: right,
           cls,
-          inside,
+          height,
           side: 'right',
           grid: input.y2?.grid ?? false,
         }),
@@ -839,7 +842,6 @@ export function compileCartesian<T, X extends ChartX>(
   return {
     chart: ({ width, height }: ChartBuildContext): StoredChartSpec => {
       const cls = resolveContainerClass(width)
-      const inside = labelsInside(cls, height)
       const kindMarks = input.marks({
         rows,
         visible,
@@ -859,13 +861,13 @@ export function compileCartesian<T, X extends ChartX>(
           axes,
           formatX,
           cls,
-          inside,
+          height,
           zoneScale: under.length > 0,
         }),
         theme: CHART_THEME,
         ...(gradients.length > 0 && { gradients }),
         clip: true,
-        ...(inside && { margin: { left: 0, ...(axes.right && { right: 0 }) } }),
+        ...(labelsInside(cls, height) && { margin: { left: 0, ...(axes.right && { right: 0 }) } }),
       }
     },
     // Followers paint the crosshair only, unless the chart opts into following tooltips.

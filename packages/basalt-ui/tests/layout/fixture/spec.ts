@@ -165,7 +165,7 @@ export type AsideSpec = {
  */
 export type ChartsSpec = {
   /** A real kind from `basalt-ui/charts` — never a hand-rolled stand-in. */
-  kind: 'lines' | 'bars'
+  kind: 'lines' | 'bars' | 'dual'
   /** Number of series (legend entries). Default 3. */
   legendEntries?: number
   /** Fixed height in px, forwarded to the kind. Omitted ⇒ the height law. */
