@@ -820,14 +820,22 @@ export function defineSeries<const T extends SeriesMap>(map: T): T {
 /** Runtime key of the {@link SeriesGroup} brand. */
 const SERIES_GROUP: unique symbol = Symbol('basalt.series-group')
 
-/**
- * The brand `groupTokens` puts on its return value. `BuildPaletteOpts.groups` takes these, so the
- * `${name}-` key that emits the variables and the one that references them come from one call and
- * cannot be spelled two ways.
- */
-export type SeriesGroup = {
+type GroupPayload = {
   readonly [SERIES_GROUP]: { readonly prefix: string; readonly map: SeriesMap }
 }
+
+declare const GROUP_REF: unique symbol
+
+/** A `var(--vx-<name>-<key>)` ref minted by `groupTokens`. The brand lives on the VALUES, so it never shows up in `keyof` the group. */
+export type GroupRef = string & { readonly [GROUP_REF]: true }
+
+/**
+ * What `groupTokens` returns. `BuildPaletteOpts.groups` takes these, so the `${name}-` key that
+ * emits the variables and the one that references them come from one call and cannot be spelled
+ * two ways. A bare series map (object values) and a plain string record (unbranded values) are
+ * both rejected; the runtime payload sits under the non-enumerable {@link SERIES_GROUP} symbol.
+ */
+export type SeriesGroup = { readonly [key: string]: GroupRef }
 
 /**
  * Build a single namespaced group's token refs (`var(--vx-<name>-<key>)`).
@@ -838,12 +846,12 @@ export type SeriesGroup = {
 export function groupTokens<const T extends SeriesMap>(
   name: string,
   map: T,
-): { [K in keyof T]: string } & SeriesGroup {
+): { readonly [K in keyof T]: GroupRef } {
   const refs = seriesTokens(map, `${name}-`)
   // Non-enumerable, symbol-keyed: a series key can never collide with the brand, and
   // `Object.keys(refs)` still lists exactly the series.
   Object.defineProperty(refs, SERIES_GROUP, { value: { prefix: `${name}-`, map } })
-  return refs as { [K in keyof T]: string } & SeriesGroup
+  return refs as { readonly [K in keyof T]: GroupRef }
 }
 
 /**
@@ -1024,7 +1032,10 @@ export function buildPaletteCss(
   const derived = extraDerived ? `${derivedBlock}\n${extraDerived}` : derivedBlock
   const side = (s: Side): string => {
     const extra = groups
-      .map((group) => groupSide(group[SERIES_GROUP].prefix, group[SERIES_GROUP].map, s))
+      .map((group) => {
+        const { prefix, map } = (group as unknown as GroupPayload)[SERIES_GROUP]
+        return groupSide(prefix, map, s)
+      })
       .join('\n')
     const framework = frameworkPrimitives(s, data, legacyAliases)
     return extra ? `${framework}\n${extra}` : framework

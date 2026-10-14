@@ -18,8 +18,16 @@ export function rejected(): void {
   buildPaletteCss({ groups: [MAP] })
 }
 
+// `keyof` a group is exactly the series names — no brand symbol, no `Extract<…, string>`.
+type Equal<A, B> =
+  (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false
+const keysAreExact: Equal<keyof typeof ACTIVITY, 'a'> = true
+const wide = groupTokens('wide', defineSeries({ a: MAP.a, b: MAP.a }))
+const wideKeysAreExact: Equal<keyof typeof wide, 'a' | 'b'> = true
+void [keysAreExact, wideKeysAreExact]
+
 test('the group emits under the prefix it was named with, and its refs point at it', () => {
   expect(buildPaletteCss({ groups: [ACTIVITY] })).toContain('--vx-activity-a')
-  expect(ACTIVITY.a).toBe('var(--vx-activity-a)')
+  expect(String(ACTIVITY.a)).toBe('var(--vx-activity-a)')
   expect(Object.keys(ACTIVITY)).toEqual(['a'])
 })
