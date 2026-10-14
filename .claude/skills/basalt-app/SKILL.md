@@ -17,7 +17,6 @@ import 'basalt-ui/styles.css'
 import { createRoot } from 'react-dom/client'
 import { BasaltProvider, createBasaltRouter } from 'basalt-ui'
 import { routeTree } from './routeTree.gen'
-
 const router = createBasaltRouter({ routeTree })
 declare module '@tanstack/react-router' {
   interface Register {
@@ -38,10 +37,11 @@ createRoot(document.getElementById('root')!).render(<BasaltProvider router={rout
 // @check
 import { Link, createFileRoute, linkOptions } from '@tanstack/react-router'
 import { defineNav, navGroup, navTarget } from 'basalt-ui'
-
-// src/routes/dashboard.tsx — the breadcrumb and page title come from the nav item's `label`
-export const Route = createFileRoute('/dashboard')({ component: () => <h2>Dashboard</h2> })
-
+// src/routes/dashboard.tsx — the breadcrumb and page title come from the nav item's `label`; export the component too (react/only-export-components)
+export const Route = createFileRoute('/dashboard')({ component: Dashboard })
+export function Dashboard() {
+  return <h2>Dashboard</h2>
+}
 // src/lib/nav.tsx
 export const NAV = defineNav({
   groups: [
