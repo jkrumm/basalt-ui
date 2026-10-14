@@ -1,5 +1,5 @@
 /**
- * `useNav` — resolve a `defineNav` definition into the two props `BasaltShell` renders from.
+ * Resolve a `defineNav` definition into the two props `BasaltShell` renders from.
  *
  * One `defineNav([...])` in a leaf module produces the desktop sidebar AND the mobile bar: this
  * hook resolves active state through the router and builds each destination's anchor, which is
@@ -9,7 +9,7 @@
  * No JSX — anchors are built with `createElement`, so `./router-tanstack` stays a headless,
  * no-JSX `.ts` module per its own barrel contract.
  */
-import { createElement, useMemo } from 'react'
+import { createElement, forwardRef, useMemo } from 'react'
 import type { ElementType, ReactNode } from 'react'
 import { Link, useMatchRoute, useRouterState } from '@tanstack/react-router'
 import type { MobileNavConfig, NavAnchor, SidebarItem, SidebarSection } from '../shell/nav-types'
@@ -27,6 +27,26 @@ export type UseNavOptions<G extends ReadonlyArray<AnyNavGroup>> = {
   isActive?: (item: AnyNavItem) => boolean
   getScrollElement?: () => HTMLElement | null
 }
+
+/**
+ * The host `Link` renders as when `isActive` overrides the router. A `Link` stamps
+ * `aria-current="page"` / `data-status` from ITS OWN match as the last props it spreads, so under an
+ * override a router-matched loser would still claim the page. This host drops those two and
+ * re-applies only basalt's own verdict, which the anchor smuggles through `data-basalt-current`.
+ */
+const OverriddenAnchor = forwardRef<HTMLAnchorElement, Record<string, unknown>>((props, ref) => {
+  const {
+    'aria-current': _routerCurrent,
+    'data-status': _routerStatus,
+    'data-basalt-current': current,
+    ...rest
+  } = props
+  return createElement('a', {
+    ...rest,
+    ...(current !== undefined && { 'aria-current': current }),
+    ref,
+  })
+})
 
 /**
  * Resolve a nav definition against the live router into `BasaltShell`'s internal `ShellFrame`
@@ -138,6 +158,10 @@ export function useNav<
         createElement(Link as ElementType, {
           ...item.link,
           activeOptions: { exact: true, includeSearch: true },
+          ...(isActiveOverride !== undefined && {
+            _asChild: OverriddenAnchor,
+            'data-basalt-current': props['aria-current'],
+          }),
           ...props,
         })
 

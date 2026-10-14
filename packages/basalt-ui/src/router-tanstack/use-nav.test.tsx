@@ -1,5 +1,5 @@
 /**
- * `useNav`'s active-resolution pass, under a REAL TanStack memory router — the half that cannot be
+ * `use-nav.ts`'s active-resolution pass, under a REAL TanStack memory router — the half that cannot be
  * tested headlessly (`matchRoute`/`useRouterState` both need a live router). The fixture below
  * mirrors every collision shape the playground's own `demo/nav-model.tsx` actually has: a root `/`
  * item, a `/dashboard` parent with three children, flat siblings, a same-path duplicate
@@ -7,7 +7,7 @@
  * search-bearing link (mirroring `dashboardFilters.linkSearch`-style destinations).
  *
  * The harness is modeled on `controls/controls.router.test.tsx`'s `mountPage`, narrowed to a
- * headless probe: `useNav` renders no JSX itself (`./router-tanstack` is a no-JSX barrel), so the
+ * headless probe: the hook renders no JSX itself (`./router-tanstack` is a no-JSX barrel), so the
  * probe component only reads its return value into a sink — no `MantineProvider` needed.
  */
 import { cleanup, render, waitFor } from '@testing-library/react'

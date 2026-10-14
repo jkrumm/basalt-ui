@@ -454,7 +454,7 @@ describe('projectMobileNav', () => {
 
   /**
    * The invariant, stated once over every shape this model produces: AT MOST ONE slot is active.
-   * `useNav` already guarantees exactly one active DESTINATION (`use-nav.test.tsx`); this is the
+   * `use-nav.ts` already guarantees exactly one active DESTINATION (`use-nav.test.tsx`); this is the
    * projection's half of the same law, and it is what a rendered bar actually shows.
    */
   test('12. at most ONE slot is active, for every destination in a mixed definition', () => {

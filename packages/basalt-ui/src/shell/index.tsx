@@ -50,13 +50,8 @@ import type {
 import { CtlSlot, useBasaltSpacing } from '../theme'
 import { createPersistedStore } from '../state/persisted'
 import { useNav } from '../router-tanstack/use-nav'
-import type {
-  AnyNavGroup,
-  AnyNavItem,
-  NavConfig,
-  NavItemId,
-  NavTabId,
-} from '../router-tanstack/nav'
+import type { UseNavOptions } from '../router-tanstack/use-nav'
+import type { AnyNavGroup, NavConfig, NavTabId } from '../router-tanstack/nav'
 import { SizeClassHintContext, useSizeClass } from './use-size-class'
 import brandClasses from './app-brand.module.css'
 import headerClasses from './app-header.module.css'
@@ -251,25 +246,19 @@ type ShellBaseProps = BasaltProps & {
 }
 
 export type BasaltShellProps<
-  G extends ReadonlyArray<AnyNavGroup> = ReadonlyArray<AnyNavGroup>,
-  T extends ReadonlyArray<NavTabId<G>> = ReadonlyArray<NavTabId<G>>,
-> = ShellBaseProps & {
-  /**
-   * The `defineNav` definition — the ONE nav, resolved against the router here: the sidebar, the
-   * mobile bar (its tuning rides `defineNav`'s `mobile`) and the breadcrumb all derive from it.
-   */
-  nav: NavConfig<G, T>
-  /**
-   * Live per-destination badges, keys typed to the definition's id union. A `number` becomes
-   * `item.count` (desktop `NavCountBadge` + mobile dot); anything else becomes `item.badge`
-   * (desktop only). Hoist or memoize the object — it is a memo dependency.
-   */
-  badges?: Partial<Record<NavItemId<G>, number | ReactNode>>
-  /** Override active detection entirely. */
-  isActive?: (item: AnyNavItem) => boolean
-  /** The mobile bar's scroll container, for its hide-on-scroll. */
-  getScrollElement?: () => HTMLElement | null
-}
+  G extends ReadonlyArray<AnyNavGroup>,
+  T extends ReadonlyArray<NavTabId<G>>,
+> = ShellBaseProps &
+  UseNavOptions<G> & {
+    /**
+     * The `defineNav` definition — the ONE nav, resolved against the router here: the sidebar, the
+     * mobile bar (its tuning rides `defineNav`'s `mobile`) and the breadcrumb all derive from it.
+     * Alongside it: `badges` (a `number` becomes `item.count`, anything else `item.badge`; hoist or
+     * memoize the object), `isActive` (override active detection) and `getScrollElement` (the
+     * mobile bar's scroll container).
+     */
+    nav: NavConfig<G, T>
+  }
 
 /** Active nav item across all sections → the breadcrumb's `{ section, parent?, …, page }`. */
 function findActiveCrumb(sections: SidebarSection[]): ActiveCrumb | undefined {
@@ -375,7 +364,11 @@ export function BasaltShell<
   return <ShellFrame {...rest} sections={sections} mobileNav={mobileNav} />
 }
 
-/** The resolved-nav shell: what `BasaltShell` renders once `nav` is a router-resolved `sections`. */
+/**
+ * The resolved-nav shell: what `BasaltShell` renders once `nav` is a router-resolved `sections`.
+ *
+ * @internal
+ */
 export type ShellFrameProps = ShellBaseProps & {
   /** Grouped nav sections — rendered as the sidebar and projected onto the mobile bar. */
   sections: SidebarSection[]
@@ -383,6 +376,7 @@ export type ShellFrameProps = ShellBaseProps & {
   mobileNav?: MobileNavConfig
 }
 
+/** @internal Renders resolved `sections`; consumers use `BasaltShell nav` instead. */
 export function ShellFrame(props: ShellFrameProps) {
   return (
     <PageBarProvider globalActions={props.globalActions ?? []}>
