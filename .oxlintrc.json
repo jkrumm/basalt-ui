@@ -51,6 +51,7 @@
     "basalt/ai-sdk-major": "error",
     "basalt/raw-breakpoint": "error",
     "basalt/no-dev-helper": "error",
+    "basalt/route-view-transition": "error",
     "basalt/no-import-meta-env": "error"
   },
   "ignorePatterns": [
