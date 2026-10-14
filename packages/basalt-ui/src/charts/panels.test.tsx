@@ -169,6 +169,13 @@ const heightRatio = (fraction: number): number => {
 const fillOf = (el: Element, side: 'positive' | 'negative'): string | null | undefined =>
   markGroup(el, 'top', `fill-between:${side}`)?.querySelector('path')?.getAttribute('fill')
 
+/** Vertices across a DualPanel's fill paths. */
+const fillPoints = (el: Element): number =>
+  [...el.querySelectorAll('[data-ts-key*="fill-between:"] path')].reduce(
+    (n, p) => n + (p.getAttribute('d')?.split(/[ML]/).length ?? 0),
+    0,
+  )
+
 describe('DualPanel', () => {
   test('one host, one label, two composed panes', async () => {
     const el = await mount(<DualPanel {...dualProps} />)
@@ -190,6 +197,52 @@ describe('DualPanel', () => {
       'color-mix(in srgb, var(--vx-bad) 70%, transparent)',
       'color-mix(in srgb, var(--vx-bad) 70%, transparent)',
     ])
+  })
+
+  describe('a dense series (8000 rows, past the fill thinning threshold)', () => {
+    const dense: Row[] = Array.from({ length: 8000 }, (_, i) => ({
+      t: new Date(Date.UTC(2026, 0, 1) + i * 3_600_000),
+      a: 50 + Math.sin(i / 250) * 30,
+      b: 50 + Math.cos(i / 400) * 30,
+      v: Math.sin(i / 9) * 10,
+      up: 0,
+      down: 0,
+      gap: 0,
+    }))
+    const denseProps = { ...dualProps, data: dense }
+
+    test('the lines and bars keep every row; only the decorative fill is thinned', () => {
+      const el = ssr(<DualPanel {...denseProps} />)
+      expect(markRects(el, 'bottom', 'bars').length).toBe(8000)
+      expect(fillPoints(el)).toBeGreaterThan(0)
+      // An unthinned fill is two edges of 8000 vertices.
+      expect(fillPoints(el)).toBeLessThan(8000)
+    })
+
+    test('the same input renders the same markup, so hydration adopts the server output', () => {
+      expect(ssr(<DualPanel {...denseProps} />).innerHTML).toBe(
+        ssr(<DualPanel {...denseProps} />).innerHTML,
+      )
+    })
+
+    test('the cursor still resolves a real datum of the full series', async () => {
+      const seen: Row[] = []
+      const el = await mount(
+        <DualPanel
+          {...denseProps}
+          legend={false}
+          tooltip={{
+            rows: (d) => {
+              seen.push(d)
+              return [{ label: 'Day', value: String(d.t.getTime()) }]
+            },
+          }}
+        />,
+      )
+      await hover(el)
+      expect(seen.length).toBeGreaterThan(0)
+      expect(seen.every((d) => dense.includes(d))).toBe(true)
+    })
   })
 
   test('without aboveFill both sides take fill', () => {
