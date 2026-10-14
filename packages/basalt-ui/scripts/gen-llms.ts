@@ -9,6 +9,7 @@
 import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { SURFACES } from '../src/surfaces'
+import { SUBPATH_REQUIRED_PEERS } from './surface-gates'
 
 const root = join(import.meta.dirname, '..', '..', '..')
 const pkgPath = join(root, 'packages/basalt-ui/package.json')
@@ -38,6 +39,40 @@ const optionalPeerSet = new Set(
 
 const publishedExportKeys = new Set(Object.keys(pkgExports))
 
+// ── ./format signatures ──────────────────────────────────────────────────────────────────────────
+// One line per formatter, hand-kept; every name must be a published `./format` export, so a rename
+// fails the generator rather than shipping a stale signature.
+
+const FORMAT_SIGNATURES: readonly (readonly [string, string])[] = [
+  ['integer', 'integer(value: number, { locale? }) => string'],
+  ['money', 'money(value: number, { currency: string, compact?, digits?, locale? }) => string'],
+  [
+    'percent',
+    "percent(value: number, { input?: 'ratio' | 'percent', digits?, locale? }) => string",
+  ],
+  ['km', 'km(meters: number, { digits? }) => string'],
+  ['kcal', 'kcal(value: number, { digits? }) => string'],
+  ['durationClock', 'durationClock(seconds: number) => string'],
+  ['relativeTime', 'relativeTime(value: number | Date | string, { now?, locale? }) => string'],
+  [
+    'weekday',
+    "weekday(value: Date | number | string, { format?: 'short' | 'long' | 'narrow', locale? }) => string",
+  ],
+]
+const publishedFormat = new Set(
+  (
+    JSON.parse(
+      readFileSync(join(root, 'packages/basalt-ui/scripts/export-surface.json'), 'utf8'),
+    ) as Record<string, string[]>
+  )['./format'],
+)
+for (const [name] of FORMAT_SIGNATURES) {
+  if (!publishedFormat.has(name)) throw new Error(`gen-llms: './format' no longer exports ${name}`)
+}
+const FORMAT_SIGNATURES_BY_KEY: Record<string, readonly string[]> = {
+  './format': FORMAT_SIGNATURES.map(([, line]) => line),
+}
+
 // ── Build rows from SURFACES ──────────────────────────────────────────────────
 
 type Row = {
@@ -47,6 +82,10 @@ type Row = {
   optionalPeers: string[]
   /** true for non-JS assets (styles.css, configs/*, llms.txt) — no import line emitted */
   isAsset?: boolean
+  /** The one `bun add` line for this subpath's subpath-required peers (V2-SPEC § 1 "Peers"). */
+  install?: string
+  /** Hand-kept one-line signatures, guarded against the export surface. */
+  signatures?: readonly string[]
   /** Doctrine rule name — present only for doctrine surfaces */
   rule?: string
 }
@@ -75,8 +114,25 @@ for (const [key, spec] of Object.entries(SURFACES)) {
     ('description' in spec ? spec.description : undefined) ??
     `basalt-ui${key === '.' ? '' : key} subpath`
 
+  const required = SUBPATH_REQUIRED_PEERS[key] ?? []
+  const install =
+    required.length === 0
+      ? undefined
+      : `bun add ${required
+          .map((name) => {
+            const range = peerDeps[name]
+            if (range === undefined)
+              throw new Error(`${key}: subpath-required peer ${name} is not a peerDependency`)
+            const spec = `${name}@${range}`
+            return /^[\w@/.^~-]+$/.test(spec) ? spec : `'${spec}'`
+          })
+          .join(' ')}`
+  const signatures = FORMAT_SIGNATURES_BY_KEY[key]
+
   rows.push({
     importSpec,
+    ...(install === undefined ? {} : { install }),
+    ...(signatures === undefined ? {} : { signatures }),
     description,
     layer: spec.layer,
     optionalPeers: resolvedPeers,
@@ -131,6 +187,8 @@ export function generateLlmsTxt(): string {
     if (row.rule !== undefined) {
       lines.push(`Rule: basalt-${row.rule}`)
     }
+    for (const signature of row.signatures ?? []) lines.push(`Signature: ${signature}`)
+    if (row.install !== undefined) lines.push(`Install: ${row.install}`)
     if (row.optionalPeers.length > 0) {
       lines.push(`OptionalPeers: ${row.optionalPeers.join(', ')}`)
     }
