@@ -21,6 +21,7 @@
     "basalt/chart-engine-boundary": "error",
     "basalt/agent-no-raw-usechat": "error",
     "basalt/ai-sdk-major": "error",
-    "basalt/raw-breakpoint": "error"
+    "basalt/raw-breakpoint": "error",
+    "basalt/route-view-transition": "error"
   }
 }

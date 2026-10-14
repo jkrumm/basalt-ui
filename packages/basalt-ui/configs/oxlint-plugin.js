@@ -151,6 +151,7 @@ export const KNOWN_RULE_IDS = new Set([
   'no-import-meta-env',
   'raw-breakpoint',
   'no-dev-helper',
+  'route-view-transition',
   // These two honour `basalt-agent-allow`, never `theme-allow` — but they are real ids, so an
   // annotation naming one must parse as a (useless) scoped annotation rather than as prose.
   'agent-no-raw-usechat',
@@ -4063,6 +4064,72 @@ const noDevHelper = {
   },
 }
 
+// ── Rule 35 — route-view-transition ─────────────────────────────────────────────────────────────
+
+const ROUTE_VIEW_TRANSITION_MESSAGE =
+  'A React <ViewTransition> around <Outlet> never fires — the router commits through ' +
+  "useSyncExternalStore, which is not a transition — and it competes with the router's own. Route " +
+  "transitions are the router's: createBasaltRouter sets defaultViewTransition. Remove the wrapper. " +
+  '(basalt/route-view-transition)'
+
+/**
+ * True when the JSX name `nameNode` is `imported` from `source`: a named import (aliased or not),
+ * or `ns.imported` / `Default.imported` off a namespace or default import. Type-only imports never
+ * count. Unresolved or shadowed names do not match.
+ */
+function isImportedJsxName(sourceCode, nameNode, source, imported) {
+  const fromSource = (def) =>
+    def?.type === 'ImportBinding' &&
+    def.parent?.importKind !== 'type' &&
+    def.parent?.source?.value === source
+  if (nameNode?.type === 'JSXIdentifier') {
+    const def = soleDefinition(sourceCode, nameNode)
+    if (!fromSource(def) || def.node.type !== 'ImportSpecifier' || def.node.importKind === 'type')
+      return false
+    const name = def.node.imported
+    return (name?.type === 'Identifier' ? name.name : name?.value) === imported
+  }
+  if (nameNode?.type === 'JSXMemberExpression' && nameNode.object?.type === 'JSXIdentifier') {
+    if (nameNode.property?.name !== imported) return false
+    const def = soleDefinition(sourceCode, nameNode.object)
+    return (
+      fromSource(def) &&
+      (def.node.type === 'ImportNamespaceSpecifier' || def.node.type === 'ImportDefaultSpecifier')
+    )
+  }
+  return false
+}
+
+// Ships: error
+const routeViewTransition = {
+  meta: {
+    type: 'problem',
+    docs: {
+      description: "Disallow a React <ViewTransition> around the router's <Outlet>.",
+    },
+    schema: [],
+  },
+  create(context) {
+    if (isTestFile(context)) return {}
+    const sourceCode = context.sourceCode ?? context.getSourceCode?.()
+    const reported = new Set()
+    return {
+      JSXOpeningElement(node) {
+        if (!isImportedJsxName(sourceCode, node.name, '@tanstack/react-router', 'Outlet')) return
+        // Walk up: every enclosing <ViewTransition> has this <Outlet> in its subtree.
+        for (let up = node.parent?.parent; up; up = up.parent) {
+          if (up.type !== 'JSXElement' || reported.has(up)) continue
+          const opening = up.openingElement
+          if (!isImportedJsxName(sourceCode, opening?.name, 'react', 'ViewTransition')) continue
+          reported.add(up)
+          if (hasThemeAllow(context, opening, 'route-view-transition')) continue
+          context.report({ node: opening, message: ROUTE_VIEW_TRANSITION_MESSAGE })
+        }
+      },
+    }
+  },
+}
+
 // ── Grace ledger ────────────────────────────────────────────────────────────────────────────────
 
 /**
@@ -4123,5 +4190,6 @@ export default {
     'no-import-meta-env': noImportMetaEnv,
     'raw-breakpoint': rawBreakpoint,
     'no-dev-helper': noDevHelper,
+    'route-view-transition': routeViewTransition,
   },
 }

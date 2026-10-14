@@ -70,6 +70,7 @@ beforeEach(() => {
         'basalt/ai-sdk-major': 'error',
         'basalt/raw-breakpoint': 'error',
         'basalt/no-dev-helper': 'error',
+        'basalt/route-view-transition': 'error',
       },
     }),
   )
@@ -3996,6 +3997,86 @@ describe('basalt/no-import-meta-env', () => {
   it('is silent elsewhere (the playground is a consumer) and in tests', () => {
     expect(visit(`${PKG_ROOT}/../../apps/playground/src/main.tsx`)).toBe(0)
     expect(visit(`${PKG_ROOT}/src/x.test.ts`)).toBe(0)
+  })
+})
+
+// ── route-view-transition ────────────────────────────────────────────────────
+
+describe('basalt/route-view-transition', () => {
+  const RR = `import { Outlet } from '@tanstack/react-router'\n`
+  it.each([
+    [
+      'a named import',
+      `import { ViewTransition } from 'react'\n${RR}export const C = () => <ViewTransition><Outlet /></ViewTransition>\n`,
+    ],
+    [
+      'an aliased import',
+      `import { ViewTransition as VT } from 'react'\n${RR}export const C = () => <VT><Outlet /></VT>\n`,
+    ],
+    [
+      'React.ViewTransition',
+      `import React from 'react'\n${RR}export const C = () => <React.ViewTransition><Outlet /></React.ViewTransition>\n`,
+    ],
+    [
+      'a namespace import',
+      `import * as R from 'react'\n${RR}export const C = () => <R.ViewTransition><Outlet /></R.ViewTransition>\n`,
+    ],
+    [
+      'an aliased Outlet, nested deep',
+      `import { ViewTransition } from 'react'\nimport { Outlet as Page } from '@tanstack/react-router'\nexport const C = () => <ViewTransition><div><main><Page /></main></div></ViewTransition>\n`,
+    ],
+    [
+      'a namespace Outlet',
+      `import { ViewTransition } from 'react'\nimport * as Router from '@tanstack/react-router'\nexport const C = () => <ViewTransition><Router.Outlet /></ViewTransition>\n`,
+    ],
+  ])('flags %s', (_name, source) => {
+    const { code, rules } = run(source, 'lib.tsx')
+    expect(code).toBe(1)
+    expect(rules).toContain('route-view-transition')
+  })
+
+  it.each([
+    [
+      'a ViewTransition with no Outlet',
+      `import { ViewTransition } from 'react'\nexport const C = () => <ViewTransition><p /></ViewTransition>\n`,
+    ],
+    [
+      'an Outlet beside, not inside, a ViewTransition',
+      `import { ViewTransition } from 'react'\n${RR}export const C = () => <><ViewTransition><p /></ViewTransition><Outlet /></>\n`,
+    ],
+    [
+      'a ViewTransition not from react',
+      `import { ViewTransition } from './mine'\n${RR}export const C = () => <ViewTransition><Outlet /></ViewTransition>\n`,
+    ],
+    [
+      'an Outlet not from the router',
+      `import { ViewTransition } from 'react'\nimport { Outlet } from './mine'\nexport const C = () => <ViewTransition><Outlet /></ViewTransition>\n`,
+    ],
+    [
+      'a type-only Outlet import',
+      `import { ViewTransition } from 'react'\nimport type { Outlet } from '@tanstack/react-router'\nexport const C = () => <ViewTransition><Outlet /></ViewTransition>\n`,
+    ],
+  ])('does NOT flag %s', (_name, source) => {
+    const { rules } = run(source, 'lib.tsx')
+    expect(rules).not.toContain('route-view-transition')
+  })
+
+  it('honours a theme-allow annotation naming the rule', () => {
+    const source = `import { ViewTransition } from 'react'\n${RR}export const C = () => (\n  // theme-allow route-view-transition: legacy page under migration\n  <ViewTransition><Outlet /></ViewTransition>\n)\n`
+    expect(run(source, 'lib.tsx').rules).not.toContain('route-view-transition')
+  })
+
+  it('is at error in the shipped preset and in the repo config', () => {
+    const levels = (path: string) =>
+      (JSON.parse(readFileSync(path, 'utf8')) as { rules: Record<string, unknown> }).rules
+    expect(
+      levels(resolve(import.meta.dirname, 'oxlint-basalt.json'))['basalt/route-view-transition'],
+    ).toBe('error')
+    expect(
+      levels(resolve(import.meta.dirname, '..', '..', '..', '.oxlintrc.json'))[
+        'basalt/route-view-transition'
+      ],
+    ).toBe('error')
   })
 })
 

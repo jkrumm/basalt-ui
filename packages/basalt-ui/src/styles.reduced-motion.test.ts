@@ -41,3 +41,37 @@ describe('styles.css reduced-motion view transitions', () => {
     expect(media).toMatch(/animation:\s*none/)
   })
 })
+
+describe('styles.css route transitions', () => {
+  const block = layerBlockContaining('basalt-route-out 120ms')
+  const motion = block.slice(block.indexOf('@media (prefers-reduced-motion: no-preference)'))
+  /** The `@media` body: from its opening brace to the matching close. */
+  const mediaBody = (() => {
+    let depth = 0
+    const open = motion.indexOf('{')
+    for (let i = open; i < motion.length; i++) {
+      if (motion[i] === '{') depth++
+      if (motion[i] === '}' && --depth === 0) return motion.slice(open, i + 1)
+    }
+    return ''
+  })()
+
+  test('every route animation sits inside the no-preference query, so reduce keeps `animation: none`', () => {
+    expect(mediaBody).toContain('basalt-route-out')
+    expect(mediaBody).toContain('basalt-route-in')
+    const outside = block.replace(mediaBody, '')
+    expect(outside).not.toMatch(/animation:\s*basalt-route/)
+  })
+
+  test('the content region is named only while a basalt route type is active', () => {
+    expect(block).toMatch(
+      /:root:active-view-transition-type\(basalt-forward, basalt-back, basalt-sibling\)\s*\[data-basalt-scrollport\]\s*\{\s*view-transition-name: basalt-main;/,
+    )
+    expect(css.match(/view-transition-name:/g)).toHaveLength(1)
+  })
+
+  test('the type names match the ones the router callback emits', async () => {
+    const { ROUTE_TRANSITION_TYPES } = await import('./provider/route-transition')
+    for (const type of Object.values(ROUTE_TRANSITION_TYPES)) expect(css).toContain(type)
+  })
+})
