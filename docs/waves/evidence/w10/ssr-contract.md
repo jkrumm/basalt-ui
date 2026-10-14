@@ -83,6 +83,14 @@ takes the height-law box. A chart that states `height` needs the same `placehold
 row, or a chart with a header legend, adds its own row to the loaded side that a fallback cannot
 know.
 
+### Review follow-ups
+
+`Heatmap matchHeight` now gives the frame a definite height (`fillFrame`); the probe measures the
+fill case against its 300 px parent (parent = frame = box = 300) on the server paint and after
+hydration. `Donut` takes its ring width from the same per-class `--bc-*` heights (a responsive
+`height` no longer prints `[object Object]px`). Geometry assertions run on the pre-hydration server
+paint as well as the hydrated page, and the probe asserts the rendered `[data-probe]` set.
+
 ### Short cards (`height={120}` in a card ≥ 480 px)
 
 Closed. The old fold measured the card (`ResizeObserver`, < 280 px) and flipped after hydration: a
@@ -104,5 +112,6 @@ in the server paint at 1280 px, the box is identical after hydration, CLS 0 at b
   KPI numeral follows the card's `cqi` clamp.
 - `Donut`'s side layout is "container ≥ 480 px"; the old extra `width > 1.5 × height` aspect rule is
   dropped (it changed the layout for a stated height above 320 px).
-- `useChartSize`'s height is the CSS law's pixel mirror, used only by the unit tests; the coarse
-  viewport cap is `45svh` in CSS, not the old quantised `innerHeight`.
+- `sizing.ts` keeps only `INITIAL_WIDTH` and the width-measuring `useChartSize`; the pixel height law
+  and the quantised viewport cap are gone (the CSS law is held to an independent pixel law in
+  `ssr-hydration.test.tsx`; the coarse cap is `45svh` in CSS).
