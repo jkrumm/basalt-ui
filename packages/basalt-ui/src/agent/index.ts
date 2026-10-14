@@ -23,6 +23,7 @@ export type { AgentError } from './error'
 export type { ChatMessage } from './history'
 export type { AgentThread, ThreadStatus, ThreadsStore } from './thread'
 export type { AgentOutcome, OutcomeResolver } from './outcome'
+export type { AgentTransport, ResumableAgentTransport } from './transport'
 
 // ── Chat UI ───────────────────────────────────────────────────────────────────
 export { ThreadFeed } from './chat/thread-feed'
