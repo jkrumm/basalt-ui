@@ -4,7 +4,6 @@ description: The adapter batteries — query, forms, commands, table, content, a
 paths:
   - 'src/**'
   - 'apps/**/src/**'
-  - '**/vite.config.ts'
 ---
 
 <!-- basalt:coverage -->
@@ -15,7 +14,7 @@ paths:
 
 # Basalt Batteries
 
-Every peer is optional; install it before importing its subpath.
+`.` requires react, Mantine and TanStack Router/Query; install a battery's own peer before importing its subpath.
 
 ## Query
 

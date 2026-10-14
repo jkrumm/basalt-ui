@@ -8,7 +8,7 @@ paths:
 
 <!-- basalt:coverage -->
 <!-- GENERATED from src/surfaces.ts — `bun scripts/check-coverage.ts --write`. Do not hand-edit. -->
-<!-- backed by: guard kinds — card-with-border, hidden-inline-style, in-body-page-title, inline-display, inline-spacing, mantine-shade-index, raw-form-control, raw-html-layout, raw-media-query, raw-motion-value, raw-spacing, sub-16-input-font · oxlint rules — basalt/card-inset, basalt/hand-rolled-shell, basalt/in-body-page-title, basalt/no-dev-helper, basalt/no-import-meta-env, basalt/raw-breakpoint, basalt/raw-scroll-container, basalt/shadow-basalt-export -->
+<!-- backed by: guard kinds — card-with-border, hidden-inline-style, in-body-page-title, inline-display, inline-spacing, mantine-shade-index, raw-form-control, raw-html-layout, raw-media-query, raw-motion-value, raw-spacing, sub-16-input-font · oxlint rules — basalt/card-inset, basalt/deprecated-export, basalt/hand-rolled-shell, basalt/in-body-page-title, basalt/page-bar-budget, basalt/provider-above-router, basalt/raw-breakpoint, basalt/raw-scroll-container, basalt/shadow-basalt-export -->
 <!-- not guarded: no second cssVariablesResolver — don't hand-build createTheme or re-add the resolver basalt already installs -->
 <!-- /basalt:coverage -->
 
@@ -19,17 +19,16 @@ paths:
 ## Provider
 
 - Mount once: `createBasaltRouter({ routeTree })`, then `<BasaltProvider router={router} />`. It owns Mantine, Query, modals, notifications, Spotlight and the router. [type BasaltProvider]
-- Never mount `RouterProvider`, `QueryClientProvider`, `ModalsProvider`, `Notifications` or a second `MantineProvider` yourself. [type BasaltProviderProps]
-- Never pass `cssVariablesResolver` or a hand-built `createTheme`; pass `theme={createBasaltTheme(...)}` if you retune. [type BasaltProviderProps]
+- Never pass `cssVariablesResolver` or a hand-built `createTheme`; pass `theme={createBasaltTheme(...)}` if you retune. [type BasaltProvider]
 - Read and write the color scheme with `useMantineColorScheme()` only. [check-theme localstorage-theme]
 
 ## Shell
 
 - One `BasaltShell nav={NAV}` in `__root.tsx` wraps `<Outlet />`; never build `AppShell.*` parts or a `Burger`. [basalt/hand-rolled-shell]
-- Shell extensions are typed data props (`globalActions`, `sidebarBlocks`, `brand`, `search`, `settingsMenuItems`, `account`), never `ReactNode` slots. [type BasaltShellProps]
-- Pass no `renderNavLink`, `renderBreadcrumbLink` or `withBorder`; the shell resolves links against the router and draws region edges. [type BasaltShellProps]
+- Shell extensions are typed data props (`globalActions`, `sidebarBlocks`, `brand`, `search`, `settingsMenuItems`, `account`), never `ReactNode` slots. [type BasaltShell]
+- Pass no `renderNavLink`, `renderBreadcrumbLink` or `withBorder`; the shell resolves links against the router and draws region edges. [type BasaltShell]
 - A page is named once, by `staticData.title`, `PageBar.title` (no shell) or `PageTitle` (shell-less screen); no in-body `<Title order={1|2}>`. [basalt/in-body-page-title] [check-theme in-body-page-title]
-- A nav item's mobile placement is its `mobile` field: `'tab'`, `'more'` or `'hidden'`. [type SidebarItem]
+- A nav item's mobile placement is its `mobile` field: `'tab'`, `'more'` or `'hidden'`. [type defineNav]
 
 ## Surfaces
 
