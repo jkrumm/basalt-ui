@@ -987,7 +987,7 @@ optional, subpath-required peers.
 | `NavItemMeta`, `NavGroupMeta`, `AnyNavItem`, `AnyNavGroup`, `AnyNavLink`, `FlatNavItem`, `NavConfig`, `NavGroupId`, `NavTabId`, `NavIndex`, `UseNavOptions`, `NavBinding`, `NavAnchor`, `NavAnchorProps`, `NavMobilePlacement` | deleted                                                                                                                                                                                                                                                                                                                                                                                                                                                    | no consumer names them; derive with `ComponentProps` / `Parameters` |
 | `useNav`, and `BasaltShell`'s `sections` / `mobileNav` props                                                                                                                                                                   | deleted: pass `nav={NAV}` (plus `badges`, `isActive`, `getScrollElement` — the old `useNav` options) to `BasaltShell`; it resolves the sidebar, the mobile bar and the breadcrumb itself. `mobileNav` tuning moves to `defineNav`'s `mobile`. argo `apps/dashboard/src/routes/__root.tsx`: replace `const nav = useNav(NAV, { badges })` + `{...nav}` with `nav={NAV} badges={…}` (migrates in W12; 1.x consumers stay on their pinned version until then) |
 
-## Unreleased — a call-site fallback a control can see
+## Unreleased — call-site fallbacks for controls, chat trace headers, axis labels
 
 - `createLocalStore` fields take `withFallback(value)`: the same field (key, setter, `clear()`)
   with a call-site unset value, for `use()` and any filter control as `field=`
@@ -998,6 +998,16 @@ optional, subpath-required peers.
 - `use({ fallback })` is removed — replaced by `field.withFallback(value).use()`. It existed in
   2.4.0 only and has no known consumers. argo `strength-composite-chart.tsx`: bind
   `store.field.exercise.withFallback(leader)` instead of rebuilding the store per leader.
+- A `telemetry` sink may define `startChatTurn(turn)` returning `{ headers?: { traceparent,
+  tracestate? }, settle?(end) }`: `aiSdkTransport` sends those headers with that turn's chat
+  request (so the API span joins the dashboard trace) and `settle` runs once when the turn ends
+  (also on a superseded or failed turn). `Telemetry`, `ChatTurnTrace`, `ChatTurnEnd`,
+  `TraceHeaders` are exported. Optional: without the hook nothing changes. A cross-origin chat API
+  must allow `traceparent` in CORS.
+- Y-axis tick labels sit inside the plot only for a compact chart under the box's short height
+  (180 px), across every kind including `DualPanel` and `MirroredBars`; a regular-height chart
+  keeps them in the left gutter. Reference-line legend swatches meet the series-swatch contrast in
+  light and dark.
 
 ## 2.4.0 — chart gaps and legends, local-store fallbacks, the pre-commit hook
 
