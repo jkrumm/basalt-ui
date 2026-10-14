@@ -350,17 +350,61 @@ Charts), `docs/archive/CHARTS-SPEC-1x.md`, `docs/DESIGN-CORE.md`, `packages/basa
 - **W7 inherits:** `useNav` on the root barrel (`BasaltShell` has no `nav` prop yet), `ThemeToggle`'s `motion`
   import, and the shell items in the Wave 7 list. chat-profile stays blind until W8.
 
-## Wave 7 — Shell, routing, transitions <!-- status: active -->
+## Wave 7 — Shell, routing, transitions <!-- status: done -->
 
-- [ ] Shell, aside, nav and breadcrumbs per the spec. Mantine 9.7 adopt-or-delete (`useAppShellResize`
+- [x] Shell, aside, nav and breadcrumbs per the spec. Mantine 9.7 adopt-or-delete (`useAppShellResize`
       vs `aside-docking`, `EmptyState`/`DataList`/`Toolbar`/`ActionBar`), adopting only where it deletes
       basalt code.
-- [ ] The transitions story implemented (route + in-page), with reduced-motion honoured. Screenshots
-      plus timing evidence.
+- [x] The transitions story implemented (route + in-page), with reduced-motion honoured. Screenshots
+      plus timing evidence. **Route half dropped on evidence, see Left behind.**
 
 **Left behind:**
 
-## Wave 8 — AI chat and content <!-- status: pending -->
+- **Landed** (all via `rd merge`, `make check` green on each rebased SHA, every diff agent-gateway
+  reviewed; #151 took three rounds, #152 two): #150 Mantine 9.7 verdicts, #152 in-page transitions,
+  #151 `BasaltShell nav`, then this close-out. Index: `docs/waves/evidence/w7.md`.
+- **Master CI was red before the wave started** (5 of 8 pushes since W5): the DualPanel 150k-row SSR test
+  took 6 s on runners and hit bun's 5 s timeout. Fixed first, by its own PR #149: the test now asserts on
+  `xScaleFor` directly with 1M distinct values (well under a second). That test never exercised the spread
+  it named (all rows shared one x, so `distinctX` collapsed them); `xScaleFor` really did overflow the stack
+  at 1M distinct values and is now a loop (NaN keeps the `[0, 1]` fallback, pinned). Master CI confirmed green
+  after the merge. An SSR render of 5k distinct-x DualPanel rows takes ~12 s; that is a render-cost finding,
+  not fixed here.
+- **OWNER CALL, taken in-wave, please confirm: the route transition is dropped** (V2-SPEC § 5). Measured in
+  Chrome 155: 0 `startViewTransition` calls in 12 route navigations. The router calls `React.startTransition`
+  but publishes state through `@tanstack/react-store` `useSyncExternalStore`, which React commits
+  synchronously, so `<ViewTransition>` never activates; keying it by `useDeferredValue` fires but animates the
+  already-swapped page. Shipping an inert wrapper was rejected, and `defaultViewTransition` stays banned (§ 3).
+  Revisit only if TanStack Router publishes match state through a transition-capable read
+  (`evidence/w7/transitions.md` § Why there is no route transition). The charter's "route + in-page" is
+  therefore in-page only.
+- **Done in W7:** `BasaltShell nav={NAV}` with `badges`/`isActive`/`getScrollElement`; sidebar, mobile bar and
+  breadcrumb derive from it; `useNav` left the barrel and `sections`/`mobileNav` left the public props
+  (`ShellFrame` keeps them as a non-barrel seam for router-free tests); `init` seeds a leaf `src/lib/nav.tsx`.
+  `isActive` now suppresses the router's own `aria-current`. Aside fold = `startTransition` +
+  `<ViewTransition>` + `<Activity>` (via `useDeferredValue`, since the persisted fold is also a
+  `useSyncExternalStore` read); ThemeToggle is CSS-only, so the root no longer reaches `motion`;
+  `respectReducedMotion: true` on the base theme; reduced-motion pseudo-element block in `styles.css`;
+  `<MotionConfig reducedMotion="user">` lives in `ThreadFeed`, not the provider (a provider mount would make
+  `motion` a hard root dependency). Mantine 9.7.1: all five overlaps REJECTED with source references, package
+  diff +0/-0 (`evidence/w7/adopt-or-delete.md`). `missing document.startViewTransition` (§ 5 Open item):
+  falls back to a plain commit in Chrome 155; Safari and Firefox not observed.
+- **Not net-negative:** the nav PR is a feature (src +217/-110 before review fixes); the doctrine's
+  net-negative rule is for consolidation PRs. Public non-chart symbols went 93 to 92.
+- **Breaks argo (by design):** argo's `apps/dashboard/src/routes/__root.tsx` spreads `useNav`; it stays on its
+  exact 1.x pin until W11, and `MIGRATING.md` names the change.
+- **Deferred, accepted:** splitting `ShellBody` (~245 lines) and `useNav`; `PageAside` complexity (20/32);
+  a hidden `<Activity>` re-runs effects on re-show, so a streaming child in an aside body resumes (documented
+  in `MIGRATING.md`); the spec-prose budget sits at its 2650 ceiling, so verdict rows are sentences; the
+  transitions lane covers the aside fold only and asserts reduced motion at zero timed animations; an
+  `init`-seeded `nav.tpl` is typed by the consumer's `Register` augmentation only.
+- **Flake:** the first merge-train attempt failed 6 layout tests on a docs-only branch while two workers ran
+  `make check` concurrently; the suite passes alone (131/131) and on the retry. Do not run workers' full
+  `make check` while the train runs.
+- **W8 inherits:** `motion` is subpath-required for `./agent` only (`MotionConfig` now in `ThreadFeed`);
+  chat-profile is still blind (`make evidence` exits 2 on that lane alone) until W8 wires it.
+
+## Wave 8 — AI chat and content <!-- status: active -->
 
 - [ ] `./agent` + `./agent-chat` on AI SDK 7 latest. Covers: `throttle`, status semantics,
       `ReasoningLevel` `max`, typed errors, `WebSocketChatTransport` via the transport seam, and TanStack
