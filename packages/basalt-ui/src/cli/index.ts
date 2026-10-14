@@ -654,6 +654,56 @@ export const ROUTER_SEED_DESTS = {
   main: 'src/main.tsx',
 } as const
 
+/** A router seed's dest, relative to the install root: under the app dir when it is not the root. */
+export function routerSeedDest(appRel: string, seed: keyof typeof ROUTER_SEED_DESTS): string {
+  return appRel === '' ? ROUTER_SEED_DESTS[seed] : `${appRel}/${ROUTER_SEED_DESTS[seed]}`
+}
+
+/** The app directory a command's app-scoped half targets: `rel` is '' when it is the install root. */
+export type AppResolution = { dir: string; rel: string } | { error: string }
+
+/** `dir` relative to `root` without relativePosix's leading `./` ('' for the root itself). */
+const appRelative = (root: string, dir: string): string =>
+  relativePosix(root, dir).replace(/^\.\/?/, '')
+
+const hasViteEntry = (dir: string): boolean =>
+  existsSync(resolve(dir, 'src/main.tsx')) || existsSync(resolve(dir, 'index.html'))
+
+/**
+ * Where the Vite app lives relative to the install root `root` (manifest, `.claude/`, AGENTS block).
+ * ONE resolution for `doctor`, `sync` and `init`, in order: `basalt.app` in the root package.json;
+ * else the single workspace package that depends on basalt-ui AND has a Vite entry; else `root`
+ * itself (a single-package app). Two such packages is an error — the choice is not inferable.
+ */
+export function resolveAppDir(root: string): AppResolution {
+  const self = { dir: root, rel: '' }
+  const explicit = readBasaltConfig(root).app
+  if (explicit !== undefined) {
+    const dir = resolve(root, explicit)
+    const rel = appRelative(root, dir)
+    if (rel.startsWith('..') || !existsSync(resolve(dir, 'package.json'))) {
+      return {
+        error: `basalt.app "${explicit}" must be a directory with a package.json inside ${root}.`,
+      }
+    }
+    return dir === root ? self : { dir, rel }
+  }
+  const candidates = collectWorkspacePackages(root).packages.filter(
+    (pkg) => pkg.dir !== root && hasDependency(pkg.dir, 'basalt-ui') && hasViteEntry(pkg.dir),
+  )
+  if (candidates.length === 0) return self
+  const [only] = candidates
+  if (candidates.length === 1 && only !== undefined) {
+    return { dir: only.dir, rel: appRelative(root, only.dir) }
+  }
+  const names = candidates.map((pkg) => appRelative(root, pkg.dir)).join(', ')
+  return {
+    error:
+      `${candidates.length} workspace packages depend on basalt-ui and have a Vite entry (${names}) — ` +
+      'cannot tell which is the app. Set `basalt.app` (e.g. `"basalt": { "app": "apps/web" }`) in the root package.json.',
+  }
+}
+
 /** True when `pkgName` appears in the consumer's dependencies, devDependencies, or peerDependencies. */
 function hasDependency(cwd: string, pkgName: string): boolean {
   try {
@@ -687,12 +737,18 @@ export type PlacementFlags = {
   /** Absolute path of the detected repo root. Meaningful only when `isPackageRepoRoot` is false —
    *  otherwise it equals the package dir and is never read. */
   repoRoot: string
+  /** The app directory relative to the install root ('' = the root itself); see {@link resolveAppDir}. */
+  appRel: string
+  /** Non-null when the app directory is ambiguous or invalid: commands refuse rather than guess. */
+  appError: string | null
 }
 
 /** The default placement — today's single-package-at-repo-root behaviour, unconditionally. */
 export const ROOT_PLACEMENT: PlacementFlags = {
   isPackageRepoRoot: true,
   repoRoot: '',
+  appRel: '',
+  appError: null,
 }
 
 /**
@@ -725,9 +781,12 @@ export function oxlintBinResolves(dir: string): boolean {
 /** Resolve a run's placement flags once, from the consumer cwd. */
 export function resolvePlacement(cwd: string): PlacementFlags {
   const repoRoot = findRepoRoot(cwd)
+  const app = resolveAppDir(cwd)
   return {
     isPackageRepoRoot: repoRoot === cwd,
     repoRoot,
+    appRel: 'error' in app ? '' : app.rel,
+    appError: 'error' in app ? app.error : null,
   }
 }
 
@@ -854,7 +913,7 @@ export function managedFiles(placement: PlacementFlags = ROOT_PLACEMENT): Manage
 
   /** TanStack Router root route with QueryClient context wiring (seed — consumer-owned after init). */
   const rootRoute: ManagedFile = {
-    dest: ROUTER_SEED_DESTS.root,
+    dest: routerSeedDest(placement.appRel, 'root'),
     mode: 'seed',
     source: 'agent/templates/__root.tpl',
     render: (ctx) => {
@@ -866,7 +925,7 @@ export function managedFiles(placement: PlacementFlags = ROOT_PLACEMENT): Manage
 
   /** The leaf `NAV` module `__root.tsx` imports (seed — consumer-owned after init). */
   const navModule: ManagedFile = {
-    dest: ROUTER_SEED_DESTS.nav,
+    dest: routerSeedDest(placement.appRel, 'nav'),
     mode: 'seed',
     source: 'agent/templates/nav.tpl',
     render: (ctx) => readSource(ctx.pkgRoot, 'agent/templates/nav.tpl'),
@@ -874,7 +933,7 @@ export function managedFiles(placement: PlacementFlags = ROOT_PLACEMENT): Manage
 
   /** The 2.0 entry: mounts the router and declares the `Register` augmentation `defineNav` needs. */
   const mainEntry: ManagedFile = {
-    dest: ROUTER_SEED_DESTS.main,
+    dest: routerSeedDest(placement.appRel, 'main'),
     mode: 'seed',
     source: 'agent/templates/main.tpl',
     render: (ctx) => readSource(ctx.pkgRoot, 'agent/templates/main.tpl'),

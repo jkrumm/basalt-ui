@@ -101,6 +101,12 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
     return 0
   }
 
+  const appError = resolvePlacement(cwd).appError
+  if (appError !== null) {
+    console.error(`✖ basalt-ui sync: ${appError}`)
+    return 1
+  }
+
   // Refuse BEFORE reconcileRoots, which writes `basalt.roots` into package.json.
   if (!existsSync(resolve(cwd, MANIFEST_PATH))) {
     const elsewhere = findManifestAbove(cwd)
