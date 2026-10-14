@@ -366,6 +366,89 @@ describe('stop() between a settle and its render', () => {
     expect(result.current.runs.get(id)?.error).toEqual({ kind: 'server', message: 'resolver down' })
   })
 
+  test('stop() while resolveOutcome is in flight resolves once, and that outcome is recorded', async () => {
+    const store = createStore()
+    const id = store.create()
+    const release = gate()
+    let resolveCalls = 0
+    const slowOutcome: OutcomeResolver<AgentPart> = async () => {
+      resolveCalls += 1
+      await release.promise
+      return { title: 'late', summary: 'late', status: 'done' }
+    }
+    const transport: AgentTransport<AgentPart, string> = {
+      async *stream() {
+        yield text('t', 'answer')
+      },
+    }
+    const { result } = renderHook(() =>
+      useAgentThreadRuns({ transport, store, resolveOutcome: slowOutcome }),
+    )
+    act(() => result.current.start(id, 'go'))
+    await waitFor(() => expect(resolveCalls).toBe(1))
+
+    act(() => result.current.stop(id))
+    await act(async () => {
+      release.open()
+      await new Promise((resolve) => setTimeout(resolve, 20))
+    })
+
+    expect(resolveCalls).toBe(1)
+    expect(store.threads[0]?.status).toBe('done')
+    expect(store.threads[0]?.outcome?.title).toBe('late')
+    expect(store.threads[0]?.messages.map((m) => `${m.role}:${m.finish ?? ''}`)).toEqual([
+      'user:',
+      'assistant:complete',
+    ])
+  })
+
+  test('an AbortError the hook did not issue is a failure: status error, kind aborted, onError once', async () => {
+    const store = createStore()
+    const id = store.create()
+    const abort = Object.assign(new Error('The operation was aborted.'), { name: 'AbortError' })
+    const transport: AgentTransport<AgentPart, string> = {
+      // oxlint-disable-next-line require-yield
+      async *stream() {
+        throw abort
+      },
+    }
+    const raw: unknown[] = []
+    const { result } = renderHook(() =>
+      useAgentThreadRuns({
+        transport,
+        store,
+        resolveOutcome,
+        onError: ({ error }) => raw.push(error),
+      }),
+    )
+    act(() => result.current.start(id, 'go'))
+    await waitFor(() => expect(result.current.runs.get(id)?.status).toBe('error'))
+    expect(result.current.runs.get(id)?.error).toEqual({ kind: 'aborted' })
+    expect(store.threads[0]?.status).toBe('error')
+    expect(raw).toEqual([abort])
+  })
+
+  test('stopAll() dismisses a failed entry that is only visible in runs', async () => {
+    const store = createStore()
+    const id = store.create()
+    const transport: AgentTransport<AgentPart, string> = {
+      // oxlint-disable-next-line require-yield
+      async *stream() {
+        throw new Error('boom')
+      },
+    }
+    const { result } = renderHook(() => useAgentThreadRuns({ transport, store, resolveOutcome }))
+    act(() => result.current.start(id, 'go'))
+    await waitFor(() => expect(result.current.runs.get(id)?.status).toBe('error'))
+    // Rendered by now, so the terminal record has been swept: only `runs` knows about the entry.
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 10))
+    })
+    act(() => result.current.stopAll())
+    expect(result.current.runs.has(id)).toBe(false)
+    expect(store.threads[0]?.status).toBe('error')
+  })
+
   test('stopAll() dismisses failed entries too', async () => {
     const store = createStore()
     const id = store.create()

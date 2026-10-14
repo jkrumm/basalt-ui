@@ -119,7 +119,10 @@ export type ThreadsStore<TPart = AgentPart> = {
  */
 export type StreamStatus = 'idle' | 'submitted' | 'streaming' | 'done' | 'error'
 
+/** The two states a turn is in flight in. */
+export type LiveRunStatus = Extract<StreamStatus, 'submitted' | 'streaming'>
+
 /** True while a turn is in flight (`'submitted'` or `'streaming'`); `'error'` and the rest are not. */
-export function isLiveStatus(status: StreamStatus | undefined): boolean {
+export function isLiveStatus(status: StreamStatus | undefined): status is LiveRunStatus {
   return status === 'submitted' || status === 'streaming'
 }

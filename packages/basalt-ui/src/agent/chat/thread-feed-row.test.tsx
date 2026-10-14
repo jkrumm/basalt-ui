@@ -389,6 +389,51 @@ describe('ThreadFeedRow forwards the transcript contract it declares', () => {
     expect(screen.getByText('partial reply')).toBeDefined()
   })
 
+  test('a failed run (liveStatus="error") shows its partial liveParts once, not as streaming', () => {
+    render(
+      <MantineProvider>
+        <ThreadFeedRow
+          thread={threadWith([textMessage('fm1', 'user', T0)])}
+          expanded
+          onToggle={() => {}}
+          liveParts={[{ id: 'live-p1', type: 'text', text: 'partial reply' }]}
+          liveStatus="error"
+          onStop={() => {}}
+          onSend={() => {}}
+        />
+      </MantineProvider>,
+    )
+
+    expect(screen.getAllByText('partial reply')).toHaveLength(1)
+    expect(screen.queryByLabelText('Stop generating')).toBeNull()
+  })
+
+  test('a failed run whose message already landed has empty liveParts: the content renders once', () => {
+    const landed: ChatMessage<TranscriptPart> = {
+      id: 'fm2',
+      role: 'assistant',
+      parts: [{ id: 'p1', type: 'text', text: 'landed reply' }],
+      createdAt: T0 + 1,
+      finish: 'complete',
+    }
+    render(
+      <MantineProvider>
+        <ThreadFeedRow
+          thread={threadWith([textMessage('fm1', 'user', T0), landed])}
+          expanded
+          onToggle={() => {}}
+          liveParts={[]}
+          liveStatus="error"
+          onStop={() => {}}
+          onSend={() => {}}
+        />
+      </MantineProvider>,
+    )
+
+    expect(screen.getAllByText('landed reply')).toHaveLength(1)
+    expect(screen.queryByTestId('agent-message-__live__')).toBeNull()
+  })
+
   test('renderers reaches the transcript — a registered part type renders the consumer renderer', () => {
     const rowRenderers: PartRenderers = definePartRenderers({
       'row-custom': () => <span data-testid="row-custom-part">custom</span>,
