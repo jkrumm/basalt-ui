@@ -1,7 +1,7 @@
-import { describe, expect, spyOn, test } from 'bun:test'
+import { afterEach, describe, expect, spyOn, test } from 'bun:test'
 import { createRootRoute } from '@tanstack/react-router'
 import { createBasaltRouter } from './create-router'
-import { routeViewTransition } from './route-transition'
+import { routeViewTransition, supportsViewTransitionTypes } from './route-transition'
 import { queryClientOf } from './test-router'
 import { bindRouterTelemetry } from '../telemetry'
 import type { BasaltEvent } from '../telemetry'
@@ -71,9 +71,42 @@ describe('createBasaltRouter defaults (V2-SPEC § 2)', () => {
 })
 
 describe('createBasaltRouter view transition (V2-SPEC § 5)', () => {
-  test('the router carries the route transition and the option is not a consumer knob', () => {
-    const router = createBasaltRouter({ routeTree })
-    expect(router.options.defaultViewTransition).toBe(routeViewTransition)
+  const realCss = Object.getOwnPropertyDescriptor(window, 'CSS')
+  const withSupports = (supports: ((q: string) => boolean) | undefined) =>
+    Object.defineProperty(window, 'CSS', { value: supports && { supports }, configurable: true })
+  afterEach(() => {
+    if (realCss) Object.defineProperty(window, 'CSS', realCss)
+    else delete (window as { CSS?: unknown }).CSS
+  })
+
+  test('with :active-view-transition-type() support the router carries the route transition', () => {
+    const asked: string[] = []
+    withSupports((q) => (asked.push(q), true))
+    expect(createBasaltRouter({ routeTree }).options.defaultViewTransition).toBe(
+      routeViewTransition,
+    )
+    expect(asked).toEqual(['selector(:active-view-transition-type(a))'])
+  })
+
+  test('without support, or without CSS.supports, there is no route transition', () => {
+    withSupports(() => false)
+    expect(createBasaltRouter({ routeTree }).options.defaultViewTransition).toBe(false)
+    withSupports(undefined)
+    expect(createBasaltRouter({ routeTree }).options.defaultViewTransition).toBe(false)
+  })
+
+  test('on the server (no window) there is no route transition', () => {
+    const win = globalThis.window
+    // @ts-expect-error simulating a server
+    delete globalThis.window
+    try {
+      expect(supportsViewTransitionTypes()).toBe(false)
+    } finally {
+      globalThis.window = win
+    }
+  })
+
+  test('the option is not a consumer knob', () => {
     // @ts-expect-error one way to do it: `defaultViewTransition` is not an option
     createBasaltRouter({ routeTree, defaultViewTransition: false })
   })

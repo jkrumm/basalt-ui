@@ -73,6 +73,16 @@ export function routeTransitionTypes(
   return [to > from ? ROUTE_TRANSITION_TYPES.forward : ROUTE_TRANSITION_TYPES.back]
 }
 
+/**
+ * The router's own gate for passing `types` (router.js:495): without it the callback is never
+ * called and every navigation, first load and filter changes included, gets the UA's full-page
+ * crossfade. So below this support line there is no route transition at all. Server: none.
+ */
+export function supportsViewTransitionTypes(): boolean {
+  if (typeof window === 'undefined') return false
+  return window.CSS?.supports?.('selector(:active-view-transition-type(a))') === true
+}
+
 /** What `createBasaltRouter` hands the router as `defaultViewTransition`. */
 export const routeViewTransition = {
   types: (change: LocationChange) => routeTransitionTypes(change, getActiveNav()),

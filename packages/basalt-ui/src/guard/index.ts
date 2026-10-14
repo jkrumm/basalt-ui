@@ -1028,6 +1028,8 @@ export const PLUGIN_RULE_IDS: ReadonlySet<string> = new Set([
   // 12-line text window has. `raw-media-query` is its CSS-text twin and lives in `GUARD_RULES`.
   'raw-breakpoint',
   'no-dev-helper',
+  // AST-only: a `<ViewTransition>` ancestor of `<Outlet>` is a JSX-ancestry claim over two import-resolved names.
+  'route-view-transition',
   // These two honour `basalt-agent-allow`, never `theme-allow` — but they are still REAL ids, so
   // a `theme-allow ai-sdk-major` must parse as a (useless) scoped annotation rather than as prose.
   'agent-no-raw-usechat',
