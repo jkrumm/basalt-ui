@@ -987,8 +987,11 @@ optional, subpath-required peers.
 | `NavItemMeta`, `NavGroupMeta`, `AnyNavItem`, `AnyNavGroup`, `AnyNavLink`, `FlatNavItem`, `NavConfig`, `NavGroupId`, `NavTabId`, `NavIndex`, `UseNavOptions`, `NavBinding`, `NavAnchor`, `NavAnchorProps`, `NavMobilePlacement` | deleted                                                                                                                                                                                                                                                                                                                                                                                                                                                    | no consumer names them; derive with `ComponentProps` / `Parameters` |
 | `useNav`, and `BasaltShell`'s `sections` / `mobileNav` props                                                                                                                                                                   | deleted: pass `nav={NAV}` (plus `badges`, `isActive`, `getScrollElement` — the old `useNav` options) to `BasaltShell`; it resolves the sidebar, the mobile bar and the breadcrumb itself. `mobileNav` tuning moves to `defineNav`'s `mobile`. argo `apps/dashboard/src/routes/__root.tsx`: replace `const nav = useNav(NAV, { badges })` + `{...nav}` with `nav={NAV} badges={…}` (migrates in W12; 1.x consumers stay on their pinned version until then) |
 
-## Unreleased — collapsed rail reaches folded groups
+## Unreleased — the rail reaches folded groups, `toAgentError`
 
+- `basalt-ui/agent` exports `toAgentError(error: unknown): AgentError`, the classifier
+  `useAgentThreadRuns` uses for `ThreadRunState.error`. A custom transport calls it instead of a
+  hand-rolled mapping; for a `Response`, pass `{ statusCode: response.status }`.
 - The collapsed rail now shows every row of a `collapsible` section, including one folded by
   `defaultCollapsed` or by the user. Its header is hidden in the rail, so a folded group (argo's
   "Other") used to strand its destinations and their count dots. Expanding the sidebar restores the
