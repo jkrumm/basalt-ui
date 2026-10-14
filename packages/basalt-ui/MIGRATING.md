@@ -987,8 +987,16 @@ optional, subpath-required peers.
 | `NavItemMeta`, `NavGroupMeta`, `AnyNavItem`, `AnyNavGroup`, `AnyNavLink`, `FlatNavItem`, `NavConfig`, `NavGroupId`, `NavTabId`, `NavIndex`, `UseNavOptions`, `NavBinding`, `NavAnchor`, `NavAnchorProps`, `NavMobilePlacement` | deleted                                                                                                                                                                                                                                                                                                                                                                                                                                                    | no consumer names them; derive with `ComponentProps` / `Parameters` |
 | `useNav`, and `BasaltShell`'s `sections` / `mobileNav` props                                                                                                                                                                   | deleted: pass `nav={NAV}` (plus `badges`, `isActive`, `getScrollElement` — the old `useNav` options) to `BasaltShell`; it resolves the sidebar, the mobile bar and the breadcrumb itself. `mobileNav` tuning moves to `defineNav`'s `mobile`. argo `apps/dashboard/src/routes/__root.tsx`: replace `const nav = useNav(NAV, { badges })` + `{...nav}` with `nav={NAV} badges={…}` (migrates in W12; 1.x consumers stay on their pinned version until then) |
 
-## Unreleased — `doctor` reads the app package in a monorepo
+## Unreleased — `doctor` in a monorepo, sparkline state, heatmap ticks
 
+- `Sparkline` takes the same `state` as the other chart kinds (pending fills its box, error and
+  empty show a dash with the label as its name). `StatCard` derives it from `query` and passes it to
+  the `sparkline` render prop as `size.state`, so `<Sparkline {...size} />` is the whole call site.
+- `StatCardSparklineSize` is exported from `basalt-ui`. The shipped oxlint preset sets
+  `react/no-unstable-nested-components` `allowAsProps: true`, so the documented `sparkline` render
+  prop no longer warns.
+- `Heatmap` strides its x labels to the container class's tick count (6 at `wide`), where it drew
+  every column.
 - `doctor`'s `subpath-peers` check scans the app package's source and resolves each peer from the app directory (`basalt.app`, or the single workspace package that depends on basalt-ui), so a monorepo with the peers declared in `apps/<app>` no longer reports every peer missing. No action needed.
 - `doctor`'s `dropped-subpaths` check likewise scans the app package's source rather than the install root, so a monorepo app's dropped `basalt-ui/<subpath>` imports are found. No action needed.
 
