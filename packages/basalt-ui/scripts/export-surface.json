@@ -99,6 +99,7 @@
     "ToolChip",
     "aiSdkTransport",
     "parseAgentPart",
+    "toAgentError",
     "useAgentThreadRuns"
   ],
   "./content": [

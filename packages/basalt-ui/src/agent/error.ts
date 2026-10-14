@@ -26,7 +26,22 @@ function stringField(value: unknown, key: string): string | undefined {
   return typeof field === 'string' ? field : undefined
 }
 
-/** Maps whatever a transport threw onto the closed `AgentError` union. */
+/**
+ * Classifies whatever a chat transport threw or received into the closed `AgentError` union — the
+ * same mapping `useAgentThreadRuns` applies to `ThreadRunState.error`, so a custom transport can
+ * report failures identically.
+ *
+ * Input is any thrown value, matched by shape (never `instanceof`, so the optional `ai` peer is not
+ * loaded). First match wins:
+ * - `name === 'AbortError'` (an `Error` or a `DOMException`) → `{ kind: 'aborted' }`
+ * - numeric `statusCode` (AI SDK `APICallError`) → `{ kind: 'http', status }`
+ * - string `chunkType` and `chunkId` (AI SDK `UIMessageStreamError`) → `{ kind: 'stream', ... }`
+ * - anything else, including an `error` chunk's text, a plain object or a primitive →
+ *   `{ kind: 'server', message }` with the value's `message` string, else `String(value)`.
+ *
+ * A `Response` is not classified: read its `status` and pass `{ statusCode: response.status }`.
+ * Never throws.
+ */
 export function toAgentError(error: unknown): AgentError {
   // By name, not `instanceof Error`: a `fetch` abort is a DOMException, which is not an Error.
   if (stringField(error, 'name') === 'AbortError') return { kind: 'aborted' }

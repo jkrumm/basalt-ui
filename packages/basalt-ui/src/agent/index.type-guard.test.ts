@@ -26,9 +26,11 @@ import type {
   ToolChip,
   ToolCallPart,
   ThreadsStore,
+  AgentError,
   aiSdkTransport,
   useAgentThreadRuns,
 } from './index'
+import { toAgentError } from './index'
 // @ts-expect-error `StreamStatus` is internal to './thread', no longer exported from the './index' barrel
 import type { StreamStatus } from './index'
 import type { RowHeightProps, VirtualizeProps } from './chat/virtualize'
@@ -91,6 +93,25 @@ const props: {
   createOpts: true,
 }
 
+// `toAgentError` is public: it takes any thrown value and returns exactly the closed union, and a
+// switch over `kind` is exhaustive with no `default`.
+const classified: Equal<ReturnType<typeof toAgentError>, AgentError> = true
+const unknownIn: Parameters<typeof toAgentError>[0] = undefined as unknown
+function describeKind(error: AgentError): string {
+  switch (error.kind) {
+    case 'http':
+      return String(error.status)
+    case 'stream':
+      return error.chunkType + error.chunkId
+    case 'server':
+      return error.message
+    case 'aborted':
+      return 'aborted'
+    default:
+      return error satisfies never
+  }
+}
+
 // The two reported call sites, written the way a consumer writes them.
 const rowSummary: Pick<ComponentProps<typeof ThreadFeedRow>, 'summary'> = {
   summary: undefined as Maybe,
@@ -105,6 +126,17 @@ describe('basalt-ui/agent barrel types', () => {
     const guard: Guard | undefined = undefined
     expect(derivedIsTheUnion).toBe(true)
     expect(guard).toBeUndefined()
+  })
+
+  test('toAgentError is exported from the barrel and classifies one value per kind', () => {
+    expect(classified).toBe(true)
+    void unknownIn
+    expect(describeKind(toAgentError({ statusCode: 503 }))).toBe('503')
+    expect(describeKind(toAgentError({ chunkType: 'text-delta', chunkId: 'c1' }))).toBe(
+      'text-deltac1',
+    )
+    expect(describeKind(toAgentError(new Error('boom')))).toBe('boom')
+    expect(describeKind(toAgentError({ name: 'AbortError' }))).toBe('aborted')
   })
 
   test('every optional prop of the public types accepts an explicit undefined', () => {

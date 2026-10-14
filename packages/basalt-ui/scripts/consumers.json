@@ -95,6 +95,7 @@
   "seriesTokens": "argo:apps/dashboard/src/lib/series.ts",
   "setColorScheme": "argo:apps/dashboard/src/lib/commands.tsx",
   "settledOnly": "argo:apps/dashboard/src/features/hermes-chat/smart-card.tsx",
+  "toAgentError": "argo:apps/dashboard/src/features/hermes-chat/hermes-transport.ts",
   "toggleSidebar": "argo:apps/dashboard/src/lib/commands.tsx",
   "unwrap": "argo:apps/dashboard/src/routes/reading.tsx",
   "useAgentThreadRuns": "argo:apps/dashboard/src/features/hermes-chat/chat-page.tsx",
