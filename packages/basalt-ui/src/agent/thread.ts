@@ -113,8 +113,8 @@ export type ThreadsStore<TPart = AgentPart> = {
 }
 
 /**
- * The live status of one in-flight stream, as the chat rows render it. Internal: not exported;
- * consumers derive it from `ThreadFeedRow`'s `liveStatus` prop. `'submitted'` is a turn
+ * The live status of one in-flight stream, as the chat rows render it. Not exported from the `./agent`
+ * barrel (the chat UI imports it from this module); consumers derive it from `ThreadFeedRow`'s `liveStatus` prop. `'submitted'` is a turn
  * sent but not yet producing content: the chat rows treat it as live (Stop shows, the composer is
  * gated) exactly like `'streaming'`.
  */
