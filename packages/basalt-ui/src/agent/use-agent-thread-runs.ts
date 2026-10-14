@@ -47,13 +47,23 @@ import type { AgentOutcome, OutcomeResolver } from './outcome'
 import { isStartPart } from './parts'
 import type { AgentPart } from './parts'
 import { createRunCommitter, isContentPart } from './run-committer'
-import { beginRun, endRun, failedThreadIds, isLive, planStop, sweepFlushed } from './run-records'
+import {
+  beginRun,
+  endRun,
+  failedThreadIds,
+  dismissRun,
+  hasLiveRun,
+  isLatestRun,
+  isLive,
+  planStopWithTombstone,
+  sweepFlushed,
+} from './run-records'
 import type { RunRecord, RunRecords } from './run-records'
 import type { AgentThread, LiveRunStatus, ThreadStatus, ThreadsStore } from './thread'
 import { isResumable } from './transport'
 import type { AgentTransport } from './transport'
 import { TelemetryContext, createEmitter, errorName, now } from '../telemetry'
-import type { Telemetry } from '../telemetry'
+import type { BasaltEvent, Telemetry } from '../telemetry'
 
 // ── ThreadRunState ────────────────────────────────────────────────────────────
 
@@ -277,6 +287,7 @@ async function consumeAndFinalize<TPart extends PartLike>(args: {
   } = args
   const { controller } = record
   const live = (): boolean => isLive(recordsRef.current, threadId, controller)
+  const owns = (): boolean => isLatestRun(record)
   let parts: TPart[] = []
   const startedAt = now()
   let firstContentAt: number | undefined
@@ -335,8 +346,13 @@ async function consumeAndFinalize<TPart extends PartLike>(args: {
     const priorThread = storeRef.current.threads.find((thread) => thread.id === threadId)
     const snapshot = buildDoneSnapshot(priorThread, threadId, userMessage, assistantMessage)
     record.resolving = true
-    const outcome: AgentOutcome = await resolveOutcome(snapshot)
-    record.resolving = false
+    let outcome: AgentOutcome
+    try {
+      outcome = await resolveOutcome(snapshot)
+    } finally {
+      // Settled either way: the record may now be swept once a render shows its outcome.
+      record.resolving = false
+    }
 
     // Re-check: resolveOutcome above is the only await in this success path. If stop() ran while
     // it was pending, stop() already settled the thread to 'done' (appending nothing: the message
@@ -344,7 +360,8 @@ async function consumeAndFinalize<TPart extends PartLike>(args: {
     // one outcome of the turn, so it is recorded here. Any other end (unmount, a newer run)
     // leaves the thread to whoever ended it.
     if (!live()) {
-      if (record.ended === 'stopped' && record.appended) {
+      // Only while no newer run has taken the thread: a stale resolver must not overwrite it.
+      if (record.ended === 'stopped' && record.appended && owns()) {
         storeRef.current.setOutcome(threadId, outcome)
       }
       return
@@ -360,23 +377,24 @@ async function consumeAndFinalize<TPart extends PartLike>(args: {
       next.delete(threadId)
       return next
     })
-    const settledAt = now()
-    emit({
-      type: 'chat.turn',
-      failed: false,
-      start: startedAt,
-      duration: settledAt - startedAt,
-      attributes: {
-        'basalt.chat.thread_id': threadId,
-        'basalt.chat.ttft_ms': (firstContentAt ?? settledAt) - startedAt,
-        'basalt.chat.parts': parts.length,
-        'basalt.chat.status': outcome.status,
-      },
-    })
+    emit(
+      buildTurnEvent({
+        threadId,
+        startedAt,
+        firstContentAt,
+        partCount: parts.length,
+        status: outcome.status,
+      }),
+    )
   } catch (err) {
     // Guard: the run ended (stop(), unmount — which abort the controller, so their AbortError lands
     // here) or a newer stream took the thread over. Only an abort from somewhere else gets past.
-    if (!live()) return
+    if (!live()) {
+      // A resolveOutcome that stop() handed the outcome to and that then REJECTED: the stopped turn
+      // stays 'done', but the failure still reaches the caller (raw, like any other).
+      if (record.ended === 'stopped' && record.appended) onError?.({ threadId, error: err })
+      return
+    }
     const agentError = toAgentError(err)
     // The turn's final message already landed in the thread (resolveOutcome or a store call failed
     // AFTER appendMessage): the feed renders it from the thread, so the error entry keeps no parts.
@@ -391,21 +409,16 @@ async function consumeAndFinalize<TPart extends PartLike>(args: {
       next.set(threadId, { status: 'error', parts: failedParts, error: agentError })
       return next
     })
-    const failedAt = now()
-    emit({
-      type: 'chat.turn',
-      failed: true,
-      start: startedAt,
-      duration: failedAt - startedAt,
-      attributes: {
-        'basalt.chat.thread_id': threadId,
-        'basalt.chat.ttft_ms': (firstContentAt ?? failedAt) - startedAt,
-        'basalt.chat.parts': parts.length,
-        'basalt.chat.status': onFailureStatus,
-        'exception.type': errorName(err),
-        'basalt.error.kind': agentError.kind,
-      },
-    })
+    emit(
+      buildTurnEvent({
+        threadId,
+        startedAt,
+        firstContentAt,
+        partCount: parts.length,
+        status: onFailureStatus,
+        failure: { error: err, agentError },
+      }),
+    )
     onError?.({ threadId, error: err })
   } finally {
     committer.cancel()
@@ -448,7 +461,7 @@ async function consumeAndFinalize<TPart extends PartLike>(args: {
  * remote backend, a store that rejects a threadId removed mid-stream), and guarding only the
  * append leaves the identical wedge one line further down. The single thing that must ALWAYS run
  * is the `setRuns` teardown — that entry is the HOOK'S OWN state, it is what `runs.get(threadId)`
- * reports to the UI as "a turn is in flight", and by this point `stop()` has already deleted the
+ * reports to the UI as "a turn is in flight", and by this point `stop()` has already ENDED the
  * run's record, so no later `stop()` can ever reach here again to clean it up. A
  * throw above it therefore strands a phantom run for the lifetime of the hook. Each store call
  * gets its OWN try so a failing `setStatus` cannot also skip clearing the resume token — a
@@ -460,12 +473,22 @@ async function finalizeStop<TPart extends PartLike>(args: {
   alreadyAppended: boolean
   /** `consumeAndFinalize`'s own `resolveOutcome` is pending and will record the outcome. */
   outcomeInFlight: boolean
+  /** True while this stop's run is still the thread's latest (no newer run has started). */
+  owns: () => boolean
   storeRef: MutableRefObject<ThreadsStore<TPart>>
   resolveOutcome: OutcomeResolver<TPart>
   setRuns: Dispatch<SetStateAction<Map<string, ThreadRunState<TPart>>>>
 }): Promise<void> {
-  const { threadId, parts, alreadyAppended, outcomeInFlight, storeRef, resolveOutcome, setRuns } =
-    args
+  const {
+    threadId,
+    parts,
+    alreadyAppended,
+    outcomeInFlight,
+    owns,
+    storeRef,
+    resolveOutcome,
+    setRuns,
+  } = args
 
   let appendFailed = false
   if (!alreadyAppended && parts.length > 0) {
@@ -514,7 +537,41 @@ async function finalizeStop<TPart extends PartLike>(args: {
   const snapshot = storeRef.current.threads.find((thread) => thread.id === threadId)
   if (snapshot === undefined) return
   const outcome: AgentOutcome = await resolveOutcome(snapshot)
-  storeRef.current.setOutcome(threadId, outcome)
+  if (owns()) storeRef.current.setOutcome(threadId, outcome)
+}
+
+/** The `chat.turn` event for a turn that completed (`failure` absent) or failed. */
+function buildTurnEvent(args: {
+  threadId: string
+  startedAt: number
+  firstContentAt: number | undefined
+  partCount: number
+  status: ThreadStatus
+  failure?: { readonly error: unknown; readonly agentError: AgentError }
+}): BasaltEvent {
+  const { threadId, startedAt, firstContentAt, partCount, status, failure } = args
+  const endedAt = now()
+  const base = {
+    start: startedAt,
+    duration: endedAt - startedAt,
+  }
+  const attributes = {
+    'basalt.chat.thread_id': threadId,
+    'basalt.chat.ttft_ms': (firstContentAt ?? endedAt) - startedAt,
+    'basalt.chat.parts': partCount,
+    'basalt.chat.status': status,
+  }
+  if (failure === undefined) return { ...base, type: 'chat.turn', failed: false, attributes }
+  return {
+    ...base,
+    type: 'chat.turn',
+    failed: true,
+    attributes: {
+      ...attributes,
+      'exception.type': errorName(failure.error),
+      'basalt.error.kind': failure.agentError.kind,
+    },
+  }
 }
 
 // ── useAgentThreadRuns ────────────────────────────────────────────────────────
@@ -559,8 +616,6 @@ export function useAgentThreadRuns<TPart extends PartLike = AgentPart>({
   // terminal message landed, how it ended — written together through `./run-records` (see there for
   // why these are not separate maps). A run is live while its record's `ended` is undefined.
   const recordsRef = useRef<RunRecords<TPart>>(new Map())
-  const hasLiveRun = (threadId: string): boolean =>
-    recordsRef.current.get(threadId)?.ended === undefined && recordsRef.current.has(threadId)
   // Caches the last user input per thread so retry() can replay a failed turn without the
   // caller having to hold onto (or re-collect) what was typed.
   const lastInputRef = useRef<Map<string, string>>(new Map())
@@ -692,7 +747,8 @@ export function useAgentThreadRuns<TPart extends PartLike = AgentPart>({
     if (!store.hydrated) return
     for (const thread of storeRef.current.threads) {
       const orphaned =
-        (thread.status === 'pending' || thread.status === 'streaming') && !hasLiveRun(thread.id)
+        (thread.status === 'pending' || thread.status === 'streaming') &&
+        !hasLiveRun(recordsRef.current, thread.id)
       if (!orphaned) continue
 
       const resumeToken = thread.resumeToken
@@ -750,7 +806,7 @@ export function useAgentThreadRuns<TPart extends PartLike = AgentPart>({
   const start = useCallback(
     (threadId: string, input: string): void => {
       // Ignore a second concurrent turn on the SAME thread; different threads run concurrently.
-      if (hasLiveRun(threadId)) return
+      if (hasLiveRun(recordsRef.current, threadId)) return
 
       lastInputRef.current.set(threadId, input)
 
@@ -810,6 +866,7 @@ export function useAgentThreadRuns<TPart extends PartLike = AgentPart>({
   )
 
   const dismiss = useCallback((threadId: string): void => {
+    dismissRun(recordsRef.current, threadId)
     setRuns((prev) => {
       if (!prev.has(threadId)) return prev
       const next = new Map(prev)
@@ -826,7 +883,11 @@ export function useAgentThreadRuns<TPart extends PartLike = AgentPart>({
       // visible to `runsRef` until the next render; reading `runs` here stranded the first and
       // double-appended the second. `planStop` falls back to the rendered entry only when no
       // record exists.
-      const plan = planStop(recordsRef.current, threadId, runsRef.current.get(threadId))
+      const plan = planStopWithTombstone(
+        recordsRef.current,
+        threadId,
+        runsRef.current.get(threadId),
+      )
       if (plan.kind === 'noop') return
       if (plan.kind === 'dismiss') {
         dismiss(threadId)
@@ -842,6 +903,7 @@ export function useAgentThreadRuns<TPart extends PartLike = AgentPart>({
         parts,
         alreadyAppended: appended,
         outcomeInFlight: resolving,
+        owns: () => isLatestRun(record),
         storeRef,
         resolveOutcome,
         setRuns,

@@ -1,15 +1,24 @@
 import { describe, expect, test } from 'bun:test'
-import { beginRun, endRun, failedThreadIds, isLive, planStop, sweepFlushed } from './run-records'
+import {
+  beginRun,
+  dismissRun,
+  endRun,
+  failedThreadIds,
+  hasLiveRun,
+  isLatestRun,
+  isLive,
+  planStopWithTombstone,
+  sweepFlushed,
+} from './run-records'
 import type { RunRecords } from './run-records'
-import type { ThreadRunState } from './use-agent-thread-runs'
 
 type Part = { id: string; type: string }
+type Run = { status: string; parts: Part[] }
 const part: Part = { id: 'p', type: 'text' }
-const live = (parts: Part[] = [part]): ThreadRunState<Part> => ({ status: 'streaming', parts })
-const failed: ThreadRunState<Part> = {
+const live = (parts: Part[] = [part]): Run => ({ status: 'streaming', parts })
+const failed: Run = {
   status: 'error',
   parts: [],
-  error: { kind: 'server', message: 'x' },
 }
 
 describe('run records', () => {
@@ -33,12 +42,12 @@ describe('run records', () => {
   })
 })
 
-describe('planStop', () => {
+describe('planStopWithTombstone', () => {
   test('a live record is stopped with its own parts, not the rendered entry', () => {
     const records: RunRecords<Part> = new Map()
     const record = beginRun(records, 't', new AbortController())
     record.parts = [part, { id: 'q', type: 'text' }]
-    const plan = planStop(records, 't', live([part]))
+    const plan = planStopWithTombstone(records, 't', live([part]))
     expect(plan).toMatchObject({ kind: 'stop' })
     expect(plan.kind === 'stop' && plan.parts).toHaveLength(2)
   })
@@ -51,22 +60,22 @@ describe('planStop', () => {
       ['failed', 'dismiss'],
     ] as const) {
       endRun(beginRun(records, 't', new AbortController()), end)
-      expect(planStop(records, 't', live()).kind).toBe(kind)
+      expect(planStopWithTombstone(records, 't', live()).kind).toBe(kind)
     }
   })
 
   test('no record and no entry is a no-op; a failed entry is dismissed', () => {
     const records: RunRecords<Part> = new Map()
-    expect(planStop(records, 't', undefined).kind).toBe('noop')
-    expect(planStop(records, 't', failed).kind).toBe('dismiss')
+    expect(planStopWithTombstone(records, 't', undefined).kind).toBe('noop')
+    expect(planStopWithTombstone(records, 't', failed).kind).toBe('dismiss')
   })
 
   test('a phantom live entry is settled once: the second stop in the same tick is a no-op', () => {
     const records: RunRecords<Part> = new Map()
     const entry = live([part])
-    const first = planStop(records, 't', entry)
+    const first = planStopWithTombstone(records, 't', entry)
     expect(first.kind === 'stop' && first.parts).toEqual([part])
-    expect(planStop(records, 't', entry).kind).toBe('noop')
+    expect(planStopWithTombstone(records, 't', entry).kind).toBe('noop')
   })
 })
 
@@ -76,7 +85,7 @@ describe('failedThreadIds / sweepFlushed', () => {
     endRun(beginRun(records, 'a', new AbortController()), 'failed')
     endRun(beginRun(records, 'b', new AbortController()), 'settled')
     beginRun(records, 'c', new AbortController())
-    const runs = new Map<string, ThreadRunState<Part>>([
+    const runs = new Map<string, Run>([
       ['d', failed],
       ['e', live()],
     ])
@@ -102,5 +111,49 @@ describe('failedThreadIds / sweepFlushed', () => {
 
     sweepFlushed(records, new Map([['failed', failed]]))
     expect([...records.keys()]).toEqual(['live'])
+  })
+})
+
+describe('terminal records are not kept forever', () => {
+  test('dismissing a failed entry drops its record; other records are untouched', () => {
+    const records: RunRecords<Part> = new Map()
+    endRun(beginRun(records, 'failed', new AbortController()), 'failed')
+    endRun(beginRun(records, 'settled', new AbortController()), 'settled')
+    beginRun(records, 'live', new AbortController())
+    dismissRun(records, 'failed')
+    dismissRun(records, 'settled')
+    dismissRun(records, 'live')
+    expect([...records.keys()].toSorted()).toEqual(['live', 'settled'])
+  })
+
+  test('isLatestRun is false once a newer run begins on the thread', () => {
+    const records: RunRecords<Part> = new Map()
+    const first = beginRun(records, 't', new AbortController())
+    expect(isLatestRun(first)).toBe(true)
+    endRun(first, 'stopped')
+    const second = beginRun(records, 't', new AbortController())
+    expect(isLatestRun(first)).toBe(false)
+    expect(isLatestRun(second)).toBe(true)
+  })
+
+  test('sweepFlushed keeps an ended record whose resolver is still pending', () => {
+    const records: RunRecords<Part> = new Map()
+    const record = beginRun(records, 't', new AbortController())
+    record.resolving = true
+    endRun(record, 'stopped')
+    sweepFlushed(records, new Map())
+    expect(records.has('t')).toBe(true)
+    record.resolving = false
+    sweepFlushed(records, new Map())
+    expect(records.has('t')).toBe(false)
+  })
+
+  test('hasLiveRun is true only for a record that has not ended', () => {
+    const records: RunRecords<Part> = new Map()
+    expect(hasLiveRun(records, 't')).toBe(false)
+    const record = beginRun(records, 't', new AbortController())
+    expect(hasLiveRun(records, 't')).toBe(true)
+    endRun(record, 'stopped')
+    expect(hasLiveRun(records, 't')).toBe(false)
   })
 })

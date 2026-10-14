@@ -8,6 +8,8 @@ import { useEffect } from 'react'
 import type { ReactElement } from 'react'
 import { createRootRoute } from '@tanstack/react-router'
 import { act, render, renderHook, screen, waitFor } from '@testing-library/react'
+import type { UIMessageChunk } from 'ai'
+import { aiSdkTransport } from './ai-sdk-transport'
 import { BasaltProvider } from '../provider'
 import { createBasaltRouter } from '../provider/create-router'
 import type { BasaltEvent } from '../telemetry'
@@ -400,6 +402,105 @@ describe('stop() between a settle and its render', () => {
       'user:',
       'assistant:complete',
     ])
+  })
+
+  test('a stale resolveOutcome from a stopped turn cannot overwrite a newer run', async () => {
+    const store = createStore()
+    const id = store.create()
+    const staleGate = gate()
+    let calls = 0
+    const resolver: OutcomeResolver<AgentPart> = async () => {
+      calls += 1
+      if (calls === 1) {
+        await staleGate.promise
+        return { title: 'stale', summary: 's', status: 'done' }
+      }
+      return { title: 'fresh', summary: 'f', status: 'done' }
+    }
+    const transport: AgentTransport<AgentPart, string> = {
+      async *stream() {
+        yield text('t', 'answer')
+      },
+    }
+    const { result } = renderHook(() =>
+      useAgentThreadRuns({ transport, store, resolveOutcome: resolver }),
+    )
+    act(() => result.current.start(id, 'first'))
+    await waitFor(() => expect(calls).toBe(1))
+    act(() => result.current.stop(id))
+    act(() => result.current.start(id, 'second'))
+    await waitFor(() => expect(store.threads[0]?.outcome?.title).toBe('fresh'))
+
+    await act(async () => {
+      staleGate.open()
+      await new Promise((resolve) => setTimeout(resolve, 20))
+    })
+    expect(store.threads[0]?.outcome?.title).toBe('fresh')
+  })
+
+  test('a resolveOutcome that rejects after stop() reaches onError without flipping the turn to error', async () => {
+    const store = createStore()
+    const id = store.create()
+    const rejectGate = gate()
+    const boom = new Error('resolver down')
+    const resolver: OutcomeResolver<AgentPart> = async () => {
+      await rejectGate.promise
+      throw boom
+    }
+    const transport: AgentTransport<AgentPart, string> = {
+      async *stream() {
+        yield text('t', 'answer')
+      },
+    }
+    const raw: unknown[] = []
+    const { result } = renderHook(() =>
+      useAgentThreadRuns({
+        transport,
+        store,
+        resolveOutcome: resolver,
+        onError: ({ error }) => raw.push(error),
+      }),
+    )
+    act(() => result.current.start(id, 'go'))
+    await waitFor(() => expect(store.threads[0]?.messages).toHaveLength(2))
+    act(() => result.current.stop(id))
+    await act(async () => {
+      rejectGate.open()
+      await new Promise((resolve) => setTimeout(resolve, 20))
+    })
+
+    expect(raw).toEqual([boom])
+    expect(store.threads[0]?.status).toBe('done')
+    expect(result.current.runs.has(id)).toBe(false)
+  })
+
+  test('stop() aborts the transport call: aiSdkTransport forwards the run signal', async () => {
+    const store = createStore()
+    const id = store.create()
+    let sent: AbortSignal | undefined
+    const transport = aiSdkTransport({
+      transport: {
+        async sendMessages(options) {
+          sent = options.abortSignal
+          return new ReadableStream<UIMessageChunk>({})
+        },
+        async reconnectToStream() {
+          return null
+        },
+      },
+    })
+    const { result } = renderHook(() =>
+      useAgentThreadRuns({
+        transport: (threadId) => transport.forThread(threadId),
+        store,
+        resolveOutcome,
+      }),
+    )
+    act(() => result.current.start(id, 'go'))
+    await waitFor(() => expect(sent).toBeDefined())
+    expect(sent?.aborted).toBe(false)
+    act(() => result.current.stop(id))
+    expect(sent?.aborted).toBe(true)
   })
 
   test('an AbortError the hook did not issue is a failure: status error, kind aborted, onError once', async () => {

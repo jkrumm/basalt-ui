@@ -364,9 +364,9 @@ function diffMessage(
  * A fresh `toolStartTimes` map is scoped to ONE diffChunkStream call (one stream()/resume()
  * invocation), never shared across calls or threads.
  *
- * `resume()`'s underlying reconnectToStream call has no AbortSignal parameter in the current AI
- * SDK API (unlike sendMessages), so we can't cancel the in-flight fetch directly — checking
- * `signal.aborted` here at least stops yielding further deltas to an aborted caller promptly.
+ * Both `sendMessages` and `reconnectToStream` receive the caller's AbortSignal as `abortSignal`,
+ * so an abort cancels the in-flight request; checking `signal.aborted` here also stops yielding
+ * deltas from a stream that was already handed back.
  */
 async function* diffChunkStream<TPart>(
   chatId: string,
@@ -444,7 +444,10 @@ export function aiSdkTransport<TPart = AgentPart>(
       },
       async *resume(resumeToken: string, signal?: AbortSignal): AsyncGenerator<TPart> {
         const { chatTransport, readUIMessageStream: readStream } = await resolveAiSdk()
-        const chunkStream = await chatTransport.reconnectToStream({ chatId: resumeToken })
+        const chunkStream = await chatTransport.reconnectToStream({
+          chatId: resumeToken,
+          ...(signal !== undefined ? { abortSignal: signal } : {}),
+        })
         if (chunkStream === null) return
         // resumeToken IS the chat id (see CHAT ID BINDING above) — reusing it as the id-namespace
         // here keeps replayed index-addressed ids identical to the ones the original run minted.
