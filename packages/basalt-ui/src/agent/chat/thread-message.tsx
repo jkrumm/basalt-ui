@@ -430,9 +430,7 @@ function MessageBlockImpl({
   affordances,
   isLastAssistant = false,
 }: MessageBlockProps): JSX.Element {
-  useLayoutEffect(() => {
-    messageBlockRenderCounter.count += 1
-  })
+  messageBlockRenderCounter.count += 1
   const settled = !streaming
   const { hovered, ref: hoverRef } = useHover<HTMLDivElement>()
   // `focused` covers the sighted-keyboard-user gap hover alone leaves open (see
@@ -1021,6 +1019,9 @@ export type ThreadTranscriptProps = ThreadTranscriptBase & VirtualizeProps
  * `resolvedAffordances`'s memo, and transitively `MessageBlock`'s `affordances`-by-reference
  * bail-out. Only a genuine defined-to-undefined (or back) transition changes the returned wrapper's
  * presence.
+ *
+ * The ref is refreshed in a layout effect, so the guarantee covers invocations AFTER commit (a click,
+ * a timer) — never one made during render.
  *
  * ONLY EVER APPLY THIS TO AN EVENT HANDLER — never to a render prop. The trick works precisely
  * because the wrapper is invoked AFTER render (from a click), so freezing its identity costs

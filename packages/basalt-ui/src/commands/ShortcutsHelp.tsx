@@ -23,9 +23,9 @@ import type { BasaltProps } from '../common/props'
 import { cx } from '../common/props'
 import { toShortcutList } from './projectors'
 import { detectMac, parseShortcut } from './shortcut-format'
+import { VX } from '../tokens'
 
 const subscribeNever = (): (() => void) => () => {}
-import { VX } from '../tokens'
 
 // ── ShortcutsHelpProps ────────────────────────────────────────────────────────
 
@@ -80,7 +80,7 @@ export function ShortcutsHelp({
   style,
 }: ShortcutsHelpProps) {
   // Default false — SSR and first client render produce non-mac glyphs (no hydration mismatch).
-  // Post-mount effect flips to true on macOS, triggering a single client-only re-render.
+  // The client snapshot (`detectMac`) takes over right after hydration, in a single re-render.
   const isMac = useSyncExternalStore(subscribeNever, detectMac, () => false)
 
   const shortcuts = toShortcutList()

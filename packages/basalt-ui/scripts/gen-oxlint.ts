@@ -125,6 +125,11 @@ type CompilerRuleExemption = { rule: string; reason: string; files: OverrideBloc
 
 export const REPO_COMPILER_RULE_EXEMPTIONS: readonly CompilerRuleExemption[] = [
   {
+    rule: 'react/immutability',
+    reason: 'test-only render probe',
+    files: [`${PKG_ROOT}src/agent/chat/thread-message.tsx`],
+  },
+  {
     rule: 'react/refs',
     reason:
       'page-bar: the ref callback runs at commit, before any effect, so the first publish reads `active` from a ref written in render; provider: the telemetry sink is read through a ref by an emitter built once (an effect event cannot reach router/window callbacks, and a dep on it rebuilds the emitter every render)',

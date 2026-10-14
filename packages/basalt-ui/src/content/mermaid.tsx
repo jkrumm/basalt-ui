@@ -82,6 +82,8 @@ export function MermaidDiagram({ code, className, style, fallback }: MermaidDiag
 
   // Pure and synchronous once `mod` is resolved — parse errors keep the last successfully
   // rendered SVG (docs/CONTENT-SPEC.md §2 decision 4) instead of blanking a settled diagram.
+  // Three states: `null` = module not resolved yet, `undefined` = this `code` failed to parse (show
+  // the last good SVG), `string` = fresh SVG.
   const rendered = useMemo(() => {
     if (!mod) return null
     try {

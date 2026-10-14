@@ -73,20 +73,24 @@ function toMillis(at: number | Date | null | undefined): number | undefined {
  * The age string, refreshed on an interval that exists ONLY while the component is mounted and
  * only while there is an age to show — a sync control on a background route costs no timer.
  *
- * The clock is read through `useSyncExternalStore`, whose server snapshot omits the age. A global `SyncButton` in `globalActions`
- * renders inline in the shell header (no portal), so under SSR the server would emit `just now` and
- * a client hydrating a minute later would emit `1m ago` — a React text mismatch that discards the
- * subtree. Server and first client paint both omit the age; the effect fills it in after mount.
- * That also makes the interval the only thing that re-renders, so the old `setTick` counter is gone.
+ * The clock is read through `useSyncExternalStore`, whose server snapshot omits the age. A global
+ * `SyncButton` in `globalActions` renders inline in the shell header (no portal), so under SSR the
+ * server would emit `just now` and a client hydrating a minute later would emit `1m ago` — a React
+ * text mismatch that discards the subtree. Server and hydrating paint both omit the age; React
+ * re-renders with the client snapshot right after. The snapshot is the formatted label, a bucketed
+ * string (`just now`, `1m ago`, …), so it is stable across calls within a bucket and a tick only
+ * re-renders when the label changes. With no timestamp there is no subscription and no timer.
  */
 function useRelativeAge(at: number | Date | null | undefined): string | undefined {
   const timestamp = toMillis(at)
   return useSyncExternalStore(
-    subscribeAgeTick,
+    timestamp === undefined ? subscribeNever : subscribeAgeTick,
     () => (timestamp === undefined ? undefined : formatAge(Date.now() - timestamp)),
     () => undefined,
   )
 }
+
+const subscribeNever = (): (() => void) => () => {}
 
 function subscribeAgeTick(onTick: () => void): () => void {
   const id = setInterval(onTick, AGE_REFRESH_MS)
