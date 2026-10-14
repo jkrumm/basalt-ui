@@ -27,6 +27,7 @@ Import: import { ... } from 'basalt-ui/charts'
 Description: CartesianChart (the TanStack Charts rung), the Lines and Bars kinds, ChartCard and the shared chartCursor (Mantine-free; @tanstack/charts + d3-scale peers)
 Layer: headless
 Rule: basalt-charts
+Install: bun add @tanstack/charts@1.1.0 d3-scale@4.0.2
 OptionalPeers: @tanstack/charts@1.1.0, d3-scale@4.0.2
 
 ## basalt-ui/tokens
@@ -39,18 +40,28 @@ Rule: basalt-tokens
 Import: import { ... } from 'basalt-ui/vite'
 Description: basaltViteConfig(opts) — Vite preset for basalt-ui consumer apps; basaltAppPlugin(opts) — PWA head, manifest, and icon metadata derived from the token palette
 Layer: build-tooling
+Install: bun add 'vite@^7 || ^8'
 OptionalPeers: vite-plugin-pwa@^1.3.0
 
 ## basalt-ui/format
 Import: import { ... } from 'basalt-ui/format'
 Description: integer/money/percent/durationClock/relativeTime/weekday/km/kcal — Intl-backed, Mantine-free, React-free formatting; the chart layer formats through the same implementation
 Layer: headless
+Signature: integer(value: number, { locale? }) => string
+Signature: money(value: number, { currency: string, compact?, digits?, locale? }) => string
+Signature: percent(value: number, { input?: 'ratio' | 'percent', digits?, locale? }) => string
+Signature: km(meters: number, { digits? }) => string
+Signature: kcal(value: number, { digits? }) => string
+Signature: durationClock(seconds: number) => string
+Signature: relativeTime(value: number | Date | string, { now?, locale? }) => string
+Signature: weekday(value: Date | number | string, { format?: 'short' | 'long' | 'narrow', locale? }) => string
 
 ## basalt-ui/forms
 Import: import { ... } from 'basalt-ui/forms'
 Description: Mantine form layer: useBasaltForm + inputProps/fieldKey (two calls — a spread `key` is a React 19 warning), on @mantine/form
 Layer: mantine-coupled
 Rule: basalt-batteries
+Install: bun add @mantine/form@^9.7.0
 OptionalPeers: @mantine/form@^9.7.0
 
 ## basalt-ui/commands
@@ -58,6 +69,7 @@ Import: import { ... } from 'basalt-ui/commands'
 Description: defineCommands (typed command bus), defineOverlays/overlays, setColorScheme, toggleSidebar, ShortcutsHelp, defineNotifications/emit/NotificationBell (folded in from ./notifications); BasaltProvider mounts Spotlight, Modals and Notifications
 Layer: mantine-coupled
 Rule: basalt-batteries
+Install: bun add @tanstack/react-hotkeys@0.13.0
 OptionalPeers: @tanstack/react-hotkeys@0.13.0
 
 ## basalt-ui/table
@@ -65,6 +77,7 @@ Import: import { ... } from 'basalt-ui/table'
 Description: BasaltDataTable and createColumnHelper: a data table over TanStack Table v9, rendered with Mantine (renamed from ./data/table)
 Layer: mantine-coupled
 Rule: basalt-batteries
+Install: bun add @tanstack/react-table@9.2.8
 OptionalPeers: @tanstack/react-table@9.2.8
 
 ## basalt-ui/agent
@@ -72,6 +85,7 @@ Import: import { ... } from 'basalt-ui/agent'
 Description: Streaming-chat surface: aiSdkTransport, useAgentThreadRuns, parseAgentPart, the open part-registry types, the consumer-owned thread contracts (AgentThread/ThreadsStore/ChatMessage), and the Mantine chat UI folded in from ./agent-chat (ThreadFeed, ThreadFeedRow, Composer, ToolChip). motion is subpath-required: the chat UI imports it eagerly
 Layer: mantine-coupled
 Rule: basalt-batteries
+Install: bun add ai@^7.0.137 @ai-sdk/provider@^4.0.26 motion@14.1.0
 OptionalPeers: ai@^7.0.137, @ai-sdk/provider@^4.0.26, motion@14.1.0, use-stick-to-bottom@^1.1.6, @tanstack/react-virtual@>=3.14.0 <4
 
 ## basalt-ui/content
@@ -79,6 +93,7 @@ Import: import { ... } from 'basalt-ui/content'
 Description: Prose (article/chat typography), Callout, TableOfContents, Markdown (react-markdown + remark-gfm, optional peers; `streaming` is a rendering mode ONLY — `contentTrust` is the independent security input, and any surface rendering agent/model output must pin `contentTrust="untrusted"`, the sole input to the image-origin allowlist; `fenceRenderers` extends fenced-block rendering — settledOnly/FenceRenderer/FenceRenderers; `sanitizeSchema` is an additions-only SanitizeSchemaExtension merged over the default via mergeSanitizeSchema; shiki code blocks, beautiful-mermaid diagrams and the remend streaming repair load lazily from optional peers), ArticleLayout (docs-page frame), GuideLink (contextual-help link) — the content/prose surface
 Layer: mantine-coupled
 Rule: basalt-batteries
+Install: bun add react-markdown@^10.1.0
 OptionalPeers: shiki@^4.5.0, @shikijs/langs@^4.5.0, @shikijs/themes@^4.5.0, beautiful-mermaid@^1.1.0, react-markdown@^10.1.0, remark-gfm@^4.0.1, rehype-sanitize@^6.0.0, remend@1.4.0
 
 ## basalt-ui/controls
@@ -92,6 +107,7 @@ Import: import { ... } from 'basalt-ui/controls-dates'
 Description: DateRangePicker — the @mantine/dates implementation of RangeFilter's customPicker seam. Its own subpath because @mantine/dates is an optional peer and basaltViteConfig pre-bundles the whole @mantine scope, so a consumer without the peer (linewatch) must never resolve it: nothing under src/controls may import it, statically or lazily (docs/CONTROLS-SPEC.md §3).
 Layer: mantine-coupled
 Rule: basalt-controls
+Install: bun add @mantine/dates@^9.7.0 dayjs@^1.11.0
 OptionalPeers: @mantine/dates@^9.7.0, dayjs@^1.11.0
 
 ## basalt-ui/state

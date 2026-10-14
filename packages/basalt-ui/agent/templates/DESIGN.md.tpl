@@ -32,7 +32,7 @@ const SERIES_MAP = defineSeries({
   // requests: { light: '…', dark: '…' },   // deeper on light, lighter on dark — never one value
 })
 export const series = groupTokens('app', SERIES_MAP) // { requests: 'var(--vx-app-requests)', … }
-export const paletteGroups = { 'app-': SERIES_MAP } // the trailing dash is a CSS-var prefix
+export const paletteGroups = [series] // the groupTokens result, never a retyped key
 // <BasaltProvider paletteOptions={{ groups: paletteGroups }} …/> — then charts read `series.requests`
 ```
 
