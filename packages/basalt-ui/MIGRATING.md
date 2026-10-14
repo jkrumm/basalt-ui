@@ -353,9 +353,9 @@ accordingly; an unknown `basalt/<id>` is a hard oxlint config error.
 
 ### Transitions (`w7/transitions`)
 
-Contract: `docs/V2-SPEC.md` § 5. React owns every view transition; React 19.3 is required (`ViewTransition`, `Activity`).
+Contract: `docs/V2-SPEC.md` § 5. React 19.3 is required (`ViewTransition`, `Activity`).
 
-- There is no route transition: the router commits state through `useSyncExternalStore`, which never activates `<ViewTransition>` (`docs/waves/evidence/w7/transitions.md`).
+- Route changes animate through the router: `createBasaltRouter` sets `defaultViewTransition` with a direction from your `defineNav` order, only where `:active-view-transition-type()` is supported (Chrome 125 / Safari 18.2 / Firefox 147); elsewhere navigation does not animate. A `<ViewTransition>` around `<Outlet>` never fired (the router commits through `useSyncExternalStore`) and is now an error, `basalt/route-view-transition`: delete it. `<ViewTransition>` stays for in-page changes (`docs/waves/evidence/w10/transitions.md`).
 - `PageAside` folds inside `startTransition` with a `<ViewTransition>` on the region, and the folded body is hidden under `<Activity>` instead of unmounted. Scroll, input values and `useState` survive a fold. A hidden `Activity` runs the body's effect cleanups and re-runs the effects on expand, so a subscribing or streaming child resumes from its own state; whatever an effect set up (timer, socket) is torn down while folded.
 - `ThemeToggle` animates with a CSS transition, not `motion`. `motion` is no longer reached from the package root; it is required only by `basalt-ui/agent`.
 - `styles.css` sets `animation: none` on `::view-transition-group(*)`, `-old(*)` and `-new(*)` under `prefers-reduced-motion: reduce`, and the base theme sets Mantine `respectReducedMotion: true`. A consumer theme that sets `respectReducedMotion: false` opts Mantine's own transitions back out.

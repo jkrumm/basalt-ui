@@ -34,7 +34,9 @@ const dashboardRoute = createRoute({ getParentRoute: () => rootRoute, path: '/da
 const liveRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/live',
-  loader: () => ({ points: Promise.resolve<{ t: number; v: number }[]>([]) }),
+  loader: () => ({
+    points: Promise.resolve<{ data: { t: number; v: number }[]; error?: unknown }>({ data: [] }),
+  }),
 })
 export const routeTree = rootRoute.addChildren([dashboardRoute, liveRoute])
 
@@ -78,7 +80,8 @@ describe('skill snippets', () => {
   const snippets = extractSnippets()
 
   test('the chat, route and main snippets are marked', () => {
-    expect(snippets.length).toBeGreaterThanOrEqual(3)
+    expect(snippets.map((s) => s.name)).toContain('basalt-app-3')
+    expect(snippets.length).toBeGreaterThanOrEqual(4)
   })
 
   test('every // @check snippet type-checks against src', async () => {
