@@ -49,17 +49,20 @@ what is a single series. `Bars` was never affected: it passes `z: 'series'`. `Du
 
 ## Fix
 
-1. `DualPanel.tsx`, `MirroredBars.tsx`, `Sparkline.tsx`: the `barY` gets `y1: 0`. An explicit extent skips the stack. The 300-row
+1. `marks.ts` `barMark` (used by `DualPanel`, `MirroredBars`, `Sparkline`): a single-series `barY` with `y1: 0` unless the caller asks for a series (`z`, `color`) or a `layout`, so the quadratic path cannot come back by omission. An explicit extent skips the stack. The 300-row
    SSR output is byte-identical before and after (`cmp`), negative values and null gaps included.
-2. `DualPanel.tsx`: with `fillBetween`, `differenceY` builds two child line marks and per-segment areas
+2. `marks.ts` `thinFill`, used by `DualPanel`: with `fillBetween`, `differenceY` builds two child line marks and per-segment areas
    (`difference.js:136-250`), about 160 ms of scene work at 10k rows. The fill is decorative (no focus,
-   `mark-decorative-internal.js:23`), so `thinFill` buckets its rows per plot pixel and keeps each
-   bucket's first, last and the extremes of `from`, `to` and `to - from`, once a series has more than
-   4 rows per pixel. At 10k rows the fill's shaded area differs by 0.03% (15,640.7 vs 15,635.5 px²
-   positive, 13,192.6 vs 13,190.8 negative) with an identical bounding box; sub-pixel sign crossings
-   merge (32 → 55 fill segments, noise-driven). Lines and bars keep every row, so the cursor, the
-   tooltip and keyboard focus index the full series (`panels.test.tsx`, "a dense series"). The thinning is
-   a pure function of `(rows, width)`, so the server render and the first client render agree.
+   `mark-decorative-internal.js:23`), so once a series has more than 4 rows per pixel each plot pixel
+   column keeps its first and last row and the extremes of `from`, `to` and `to - from`, plus the
+   series' own first and last row. Columns are by drawn x position (the x domain `DualPanel` already
+   computes), not array index: for 4,000 burst rows then 100 sparse zigzag rows, index buckets keep 10
+   of the 100 sparse rows and position buckets keep all 100 (`marks.test.ts`). At 10k rows the shaded area
+   differs by 0.03% (15,640.7 vs 15,635.5 px² positive, 13,192.6 vs 13,190.8 negative) with an identical
+   bounding box; sub-pixel sign crossings merge (55 → 32 fill segments, noise-driven). Lines and bars keep
+   every row, so the cursor, tooltip and keyboard focus index the full series (`panels.test.tsx`, "a dense
+   series", including a `hydrateRoot` with no mismatch). Pure in `(rows, width, position)`, so the server
+   render and the first client render agree.
 
 Not done: thinning the lines or bars. They are not the cost any more (Lines 10k: 26 ms; DualPanel
 without the fill: ~100 ms) and they are the cursor's targets.
@@ -67,20 +70,22 @@ without the fill: ~100 ms) and they are the cursor's targets.
 ## Gate (`ssr-budget.test.tsx`)
 
 Per kind, medians of three warm renders: `t(10k) / t(2.5k) < 8` (linear ~4, quadratic ~16; the denominator
-is floored at 5 ms) AND `t(10k)` under a cap of at least 3x the local median (ceiling 500 ms). The ratio
-catches the bug class on any runner; the cap catches a constant-factor blow-up.
+is floored at 5 ms) AND `t(10k)` under a cap of at least 4x the local median. The ratio is the real gate
+and catches the bug class on any runner; the cap catches a constant-factor blow-up and is generous
+because hosted runners are 2-3x slower. The medians below are copied from the comments in the test
+(one source); a loaded laptop moves them by up to 1.5x between runs.
 
-| Kind             | 2.5k ms | 10k ms | Cap |
-| ---------------- | ------- | ------ | --- |
-| Lines            | 9       | 29     | 150 |
-| Bars             | 23      | 90     | 400 |
-| StackedArea      | 14      | 55     | 250 |
-| DualPanel        | 70      | 140    | 500 |
-| MirroredBars     | 38      | 170    | 500 |
-| BandStrip        | 16      | 71     | 300 |
-| Heatmap          | 5       | 17     | 150 |
-| Donut            | 1       | 2      | 50  |
-| Sparkline (line) | 3       | 11     | 60  |
-| Sparkline (bar)  | 4       | 19     | 80  |
+| Kind             | 2.5k ms | 10k ms | Cap  |
+| ---------------- | ------- | ------ | ---- |
+| Lines            | 13      | 34     | 150  |
+| Bars             | 26      | 111    | 500  |
+| StackedArea      | 22      | 83     | 350  |
+| DualPanel        | 80      | 169    | 1000 |
+| MirroredBars     | 54      | 205    | 1000 |
+| BandStrip        | 19      | 78     | 350  |
+| Heatmap          | 6       | 22     | 100  |
+| Donut            | 1       | 2      | 30   |
+| Sparkline (line) | 3       | 15     | 80   |
+| Sparkline (bar)  | 5       | 26     | 120  |
 
-`MirroredBars` sits at 2.9x because the ceiling is 500. The file runs in about 2.5 s locally.
+The file runs in about 3 s locally.
