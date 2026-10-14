@@ -16,7 +16,10 @@ declare const classes: {
   readonly foldToggle: string
   readonly foldToggleCell: string
   readonly foldWrapper: string
+  readonly pageSticky: string
   readonly selectCell: string
   readonly selectHit: string
+  readonly srOnly: string
+  readonly table: string
 }
 export default classes

@@ -64,6 +64,49 @@
 }
 
 /*
+ * A page-scrolled sticky header INSIDE the shell seals the strip above it.
+ *
+ * `AppShell.Main` is the scrollport and carries block padding (`app-main.module.css`: `stack-md`,
+ * one rung down to `stack-sm` from `sm` up). A sticky `<thead>` resolves against the scrollport's
+ * CONTENT edge, so at `top: 0` it parked that padding below the band and every body row scrolled
+ * through the gap. A negative offset equal to the padding moves the stick line out to the band's
+ * edge, flush. The two media/token pairs below mirror `.main` there — the layout suite
+ * (`data-table.layout.test.ts`, invariant 8) fails on drift. A consumer `stickyHeaderOffset` is an
+ * inline `--table-sticky-header-offset` on the table and beats this class, so it still wins.
+ * Outside a shell no `.mantine-AppShell-main` ancestor matches and the offset stays 0.
+ */
+:global(.mantine-AppShell-main) .pageSticky {
+  --table-sticky-header-offset: calc(-1 * var(--vx-space-stack-md));
+}
+
+/* theme-allow raw-media-query — mirrors app-main.module.css's own `sm` switch for Main's block padding; invariant 8 in data-table.layout.test.ts fails on drift */
+@media (min-width: 52.5em) {
+  :global(.mantine-AppShell-main) .pageSticky {
+    --table-sticky-header-offset: calc(-1 * var(--vx-space-stack-sm));
+  }
+}
+
+/*
+ * A Badge cell keeps its label. Mantine's Badge label is `overflow: hidden; text-overflow:
+ * ellipsis`, which gives the badge a min-content of ~0, so an auto-layout column holding only
+ * badges was free to shrink under its neighbours (`WORKING` → `WOR…` at 1280px). `max-content`
+ * as the floor makes the status column the widest thing a short enum ever needs.
+ */
+.table :global(.mantine-Badge-root) {
+  min-width: max-content;
+}
+
+/* Visually hidden, still announced — the fold toggle column's header has no visible label. */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/*
  * The selection column's hit area is the WHOLE cell (`docs/CONTROLS-SPEC.md` §2): the
  * cell is the positioning box and the wrapping <label>'s ::after stretches over it, so a tap
  * anywhere in the cell toggles the checkbox. Not `data-basalt-hit` — that primitive centres a

@@ -10,7 +10,7 @@ import { FilterSet, FormRow, SelectFilter, ViewTabs } from '../../../src/control
 import { BasaltDataTable } from '../../../src/table'
 import type { DataTableFacet } from '../../../src/table/data-table'
 import type { BasaltColumnDef } from '../../../src/table/table-features'
-import { ActionIcon, Button } from '@mantine/core'
+import { ActionIcon, Badge, Button } from '@mantine/core'
 import { PageAside, PageBar, StatCard, StatGroup } from '../../../src/index'
 import { ShellFrame } from '../../../src/shell'
 import type { SettingsMenuItem } from '../../../src/index'
@@ -106,11 +106,21 @@ type TableRow = { id: number; name: string; value: number }
  * (`Row 1 · segment 3` has no wrap opportunity a narrow column could take), because a table that
  * CAN reflow proves nothing about containment.
  */
-function tableColumns(count: number): BasaltColumnDef<TableRow>[] {
-  const base: BasaltColumnDef<TableRow>[] = [
-    { accessorKey: 'name', header: 'Name' },
-    { accessorKey: 'value', header: 'Value' },
-  ]
+function tableColumns(count: number, badges: boolean): BasaltColumnDef<TableRow>[] {
+  const base: BasaltColumnDef<TableRow>[] = badges
+    ? [
+        {
+          id: 'summary',
+          header: 'Summary',
+          accessorFn: (row: TableRow) =>
+            `Row ${row.id + 1} is a long breakable description that wants every pixel it can get`,
+        },
+        { id: 'state', header: 'State', cell: () => <Badge>WORKING</Badge> },
+      ]
+    : [
+        { accessorKey: 'name', header: 'Name' },
+        { accessorKey: 'value', header: 'Value' },
+      ]
   for (let i = base.length; i < count; i++) {
     base.push({
       id: `col${i}`,
@@ -165,7 +175,7 @@ function TableFixture({ spec }: { spec: TableSpec }): ReactElement {
   return (
     <BasaltDataTable
       data={tableRows(spec.rows)}
-      columns={tableColumns(spec.columns ?? 2)}
+      columns={tableColumns(spec.columns ?? 2, spec.badges === true)}
       stickyHeader={spec.stickyHeader ?? true}
       {...(spec.maxHeight !== undefined && { maxHeight: spec.maxHeight })}
       {...(spec.minWidth !== undefined && { minWidth: spec.minWidth })}

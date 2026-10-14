@@ -987,10 +987,17 @@ optional, subpath-required peers.
 | `NavItemMeta`, `NavGroupMeta`, `AnyNavItem`, `AnyNavGroup`, `AnyNavLink`, `FlatNavItem`, `NavConfig`, `NavGroupId`, `NavTabId`, `NavIndex`, `UseNavOptions`, `NavBinding`, `NavAnchor`, `NavAnchorProps`, `NavMobilePlacement` | deleted                                                                                                                                                                                                                                                                                                                                                                                                                                                    | no consumer names them; derive with `ComponentProps` / `Parameters` |
 | `useNav`, and `BasaltShell`'s `sections` / `mobileNav` props                                                                                                                                                                   | deleted: pass `nav={NAV}` (plus `badges`, `isActive`, `getScrollElement` — the old `useNav` options) to `BasaltShell`; it resolves the sidebar, the mobile bar and the breadcrumb itself. `mobileNav` tuning moves to `defineNav`'s `mobile`. argo `apps/dashboard/src/routes/__root.tsx`: replace `const nav = useNav(NAV, { badges })` + `{...nav}` with `nav={NAV} badges={…}` (migrates in W12; 1.x consumers stay on their pinned version until then) |
 
-## Unreleased
+## Unreleased — argo table friction
 
-_Nothing yet. Author the next section under this heading as `## Unreleased — <title>`; the
-release renames it and opens a new one here._
+- `BasaltDataTable` `stickyHeader` inside `BasaltShell` now pins flush under the app chrome. The
+  header used to stick at `AppShell.Main`'s content edge, one block-padding below the band, so body
+  rows scrolled through that strip. The default offset cancels the padding; a `stickyHeaderOffset`
+  you pass still wins, so delete a hand-tuned offset that was compensating for the gap.
+- A `Badge` in a table cell keeps its whole label (`WORKING` no longer shrinks to `WOR…` beside
+  wrapping prose). Narrow numeric headers (`Peak`) clip only if the column is given a `size`
+  smaller than its label — that is a column width, not a table default.
+- The column-fold toggle column's header cell carries a visually hidden `Details` label instead of
+  an empty `aria-hidden` cell.
 
 ## 2.0.3 — argo shell and CI friction
 
