@@ -99,6 +99,11 @@ export type ChatTurnTrace = {
  * else. A sink without the hook, or no sink, changes nothing on the wire. basalt has no OTel
  * dependency; the hook is where the consumer's SDK does the work.
  *
+ * A fetch instrumentation (OTel web, HyperDX) overwrites the returned `traceparent` on same-origin
+ * requests with its own fetch span, so the API span lands in a separate trace. Either exclude the
+ * chat URL from the instrumentation (`ignoreUrls` in HyperDX and in OTel's fetch instrumentation),
+ * or make the turn span the active context around the request.
+ *
  * @example
  * export const telemetry: Telemetry = Object.assign(onEvent, {
  *   startChatTurn({ threadId }) {
