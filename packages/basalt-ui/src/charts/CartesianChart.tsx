@@ -172,8 +172,8 @@ export function CartesianRung<T, X extends ChartX>(
   )
   // Reference lines that name themselves join the legend after the series (role `reference`).
   const legendSeries = useMemo(
-    () => [...series, ...refLegendSeries<T>(props.refLines)],
-    [series, props.refLines],
+    () => [...stable.series, ...refLegendSeries<T>(stable.refLines)],
+    [stable.series, stable.refLines],
   )
   return (
     <ChartShell

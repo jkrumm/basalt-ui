@@ -14,7 +14,7 @@ import { useCallback, useMemo } from 'react'
 import type { ReactElement } from 'react'
 import { VX, alpha } from '../tokens'
 import { resolveContainerClass } from '../tokens/size-classes'
-import { dashedSwatch, defaultFormatX, defaultNumberFormat, visibleSeries } from './compile'
+import { defaultFormatX, defaultNumberFormat, engineRow, seriesRow, visibleSeries } from './compile'
 import { barMark, emphasis, lineMark, markersOf, thinFill } from './marks'
 import { PanelRung, paneX, paneY, rowsOf } from './panel'
 import type { PaneBuilder, PanelInput, PanelPlan } from './panel'
@@ -162,6 +162,7 @@ export function DualPanel<T, X extends Date | number = Date | number>(
   const all = useMemo(() => [...lines, barSeries], [lines, barSeries])
   const topFormat = top?.format ?? defaultNumberFormat
   const topTooltipFormat = top?.tooltipFormat ?? topFormat
+  const barTooltipFormat = bar.tooltipFormat ?? bar.format
 
   const plan = useCallback(
     ({ hidden, highlighted }: PanelInput): PanelPlan<T> => {
@@ -312,21 +313,24 @@ export function DualPanel<T, X extends Date | number = Date | number>(
           for (const s of visible) {
             const v = s.getValue(d)
             if (s.tooltip === false || v === null || !Number.isFinite(v)) continue
-            out.push({
-              label: s.note === undefined ? s.label : `${s.label} · ${s.note}`,
-              value: s.formatValue ? s.formatValue(v, d) : topTooltipFormat(v),
-              color: s.dash === 'dashed' ? dashedSwatch(s.color) : s.color,
-              ...(highlighted === s.key && { active: true }),
-            })
+            out.push(
+              seriesRow(
+                s,
+                s.formatValue ? s.formatValue(v, d) : topTooltipFormat(v),
+                highlighted === s.key,
+              ),
+            )
           }
           const v = barOn ? bar.getValue(d) : null
           if (v !== null && Number.isFinite(v))
-            out.push({
-              label: bar.label,
-              value: bar.formatValue ? bar.formatValue(v, d) : (bar.tooltipFormat ?? bar.format)(v),
-              color: v >= 0 ? bar.positive : bar.negative,
-              ...(highlighted === BAR_KEY && { active: true }),
-            })
+            out.push(
+              engineRow({
+                label: bar.label,
+                value: bar.formatValue ? bar.formatValue(v, d) : barTooltipFormat(v),
+                color: v >= 0 ? bar.positive : bar.negative,
+                active: highlighted === BAR_KEY,
+              }),
+            )
           return out
         },
       }
@@ -342,6 +346,7 @@ export function DualPanel<T, X extends Date | number = Date | number>(
       topFraction,
       topFormat,
       topTooltipFormat,
+      barTooltipFormat,
       formatX,
     ],
   )
