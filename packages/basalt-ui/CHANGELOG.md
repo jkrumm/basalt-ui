@@ -1,3 +1,15 @@
+# [2.1.0](https://github.com/jkrumm/basalt-ui/compare/v2.0.5...v2.1.0) (2026-10-14)
+
+
+### Bug Fixes
+
+* reach folded nav groups from the collapsed rail ([9dc75b7](https://github.com/jkrumm/basalt-ui/commit/9dc75b70350aab4c58ebb2264710d8b71a03e707))
+
+
+### Features
+
+* export toAgentError from basalt-ui/agent ([8f23111](https://github.com/jkrumm/basalt-ui/commit/8f23111b7f4f9eb13c44df135138ff879da89f93))
+
 ## [2.0.5](https://github.com/jkrumm/basalt-ui/compare/v2.0.4...v2.0.5) (2026-10-14)
 
 
