@@ -36,9 +36,9 @@ no Mantine and renders from it, and a separate scratch-install asserts a
 tokens-only `bun add basalt-ui` never pulls in `d3-scale`).
 
 `basalt-ui/styles.css` is a different thing and you almost certainly do not want
-it — it is the framework's base layer, it `@import`s three `@fontsource-variable`
-packages, and its `@layer basalt` block assumes Mantine's own layered bundle
-underneath. It is not the only route to the default `--basalt-font-*` stacks any
+it — it is the framework's base layer, it `@import`s Mantine's core, notifications and
+spotlight layer bundles and three `@fontsource-variable` packages, and its
+`@layer basalt` block sits above them. It is not the only route to the default `--basalt-font-*` stacks any
 more — `basalt-ui fonts:css` reads them out of it and emits them as plain CSS (see
 "What you don't get").
 

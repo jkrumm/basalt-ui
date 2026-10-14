@@ -1,7 +1,8 @@
-// `@mantine/dates` is basalt's one OPTIONAL peer: only `basalt-ui/controls-dates` needs it, and its
-// layer bundle has to land with the other Mantine ones, before `basalt-ui/styles.css`.
-import '@mantine/dates/styles.layer.css'
 import 'basalt-ui/styles.css'
+// `@mantine/dates` is basalt's one OPTIONAL peer (only `basalt-ui/controls-dates` needs it), so
+// `basalt-ui/styles.css` does not carry it. Import it AFTER, so core precedes dates inside
+// `@layer mantine`.
+import '@mantine/dates/styles.layer.css'
 import { BasaltProvider, createBasaltRouter } from 'basalt-ui'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
