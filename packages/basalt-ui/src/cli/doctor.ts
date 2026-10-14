@@ -395,7 +395,7 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
       ],
       [
         'dropped-subpaths: no import of a basalt-ui subpath the install lacks',
-        droppedSubpathsCheck(cwd, cfg, install),
+        droppedSubpathsCheck(appDir, cfg, install),
       ],
       [
         'app-wiring: the entry mounts BasaltProvider and the router tree is generated',

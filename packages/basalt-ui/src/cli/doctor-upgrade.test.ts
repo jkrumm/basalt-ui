@@ -1113,6 +1113,26 @@ describe('doctor — subpath-peers', () => {
     expect(failed()).toContain('d3-scale for basalt-ui/charts (src/main.tsx)')
   })
 
+  it('dropped-subpaths scans the app package in a monorepo', () => {
+    write('package.json', JSON.stringify({ name: 'root', workspaces: ['apps/*'] }))
+    write(
+      'apps/web/package.json',
+      JSON.stringify({ name: 'web', dependencies: { 'basalt-ui': '*' } }),
+    )
+    write('apps/web/src/main.tsx', "import { q } from 'basalt-ui/query'\n")
+    write(
+      'node_modules/basalt-ui/package.json',
+      JSON.stringify({ name: 'basalt-ui', version: PKG_VERSION, exports: { '.': {} } }),
+    )
+    const dropped = (): string =>
+      capture(() => doctor(dir))
+        .log.split('\n')
+        .find((l) => l.includes('✖ dropped-subpaths')) ?? ''
+    expect(dropped()).toContain('src/main.tsx:1 imports basalt-ui/query')
+    write('apps/web/src/main.tsx', "import 'basalt-ui'\n")
+    expect(dropped()).toBe('')
+  })
+
   it('skips when basalt-ui does not resolve', () => {
     const skipped = subpathPeersCheck(
       dir,
