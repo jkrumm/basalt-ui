@@ -523,19 +523,19 @@ BasaltDataTable | SettingsSection | FilterSet`) and `RAW_FILTER_TAGS`/`BOUND_TAG
 from that file, never copied here. `SettingsRow.control` is the one form-row home exempt from the
 filter/size rules.
 
-| Rule id                             | Law     | Severity                                     |
-| ----------------------------------- | ------- | -------------------------------------------- |
-| `basalt/hand-rolled-filter`         | C1, C3  | error 1.26.0                                 |
-| `basalt/control-outside-home`       | C1      | warn, `promote: '1.30.0'`                    |
-| `basalt/bound-control-outside-home` | C1      | warn, `since: '1.28.0'`, `promote: '1.30.0'` |
-| `basalt/control-size-literal`       | C5      | error 1.27.0                                 |
-| `basalt/page-bar-budget`            | C6      | error 1.26.0                                 |
-| `basalt/in-body-page-title`         | C8      | error 1.27.0 (both AST + text lanes)         |
-| `basalt/responsive-twin`            | C9      | error 1.27.0                                 |
-| `basalt/search-literal-link`        | C10     | error 1.27.0                                 |
-| `basalt/use-search-from-literal`    | C10     | error 1.27.0                                 |
-| `raw-scroll-container` (widened)    | C7      | error, no grace                              |
-| `shadow-basalt-export` (extended)   | C8, C12 | permanent advisory                           |
+| Rule id                             | Law     | Severity                                                      |
+| ----------------------------------- | ------- | ------------------------------------------------------------- |
+| `basalt/hand-rolled-filter`         | C1, C3  | error 1.26.0                                                  |
+| `basalt/control-outside-home`       | C1      | warn, `promote: '1.30.0'`                                     |
+| `basalt/bound-control-outside-home` | C1      | warn, `since: '1.28.0'`, `promote: '1.30.0'`                  |
+| `basalt/control-size-literal`       | C5      | error 1.27.0                                                  |
+| `basalt/page-bar-budget`            | C6      | retired 2.0 (`PageBarActions` / `SectionActions` tuple types) |
+| `basalt/in-body-page-title`         | C8      | error 1.27.0 (both AST + text lanes)                          |
+| `basalt/responsive-twin`            | C9      | error 1.27.0                                                  |
+| `basalt/search-literal-link`        | C10     | error 1.27.0                                                  |
+| `basalt/use-search-from-literal`    | C10     | error 1.27.0                                                  |
+| `raw-scroll-container` (widened)    | C7      | error, no grace                                               |
+| `shadow-basalt-export` (extended)   | C8, C12 | error 2.0                                                     |
 
 Text-level twin (`src/guard`, PreToolUse hook lane): `in-body-page-title` promoted alongside its
 plugin twin; `raw-selection-control` stays `warn`, `promote: '1.30.0'`. `bound-control-outside-home`
