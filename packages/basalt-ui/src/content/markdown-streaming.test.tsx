@@ -36,8 +36,9 @@ function rng(seed: number): () => number {
 
 function prefixes(text: string, chunk: () => number): string[] {
   const out: string[] = []
-  for (let end = 0; end < text.length;) {
-    end = Math.min(text.length, end + chunk())
+  let end = 0
+  while (end < text.length) {
+    end = Math.min(text.length, end + Math.max(1, chunk()))
     out.push(text.slice(0, end))
   }
   return out
@@ -135,16 +136,14 @@ async function tail(text: string): Promise<HTMLElement> {
   const { container } = render(ui(text))
   // The Suspense fallback is a bare span; the real pipeline renders a <p>/<pre>/<ul>/<table>.
   await waitFor(() => expect(container.querySelector('p, pre, ul, ol, table')).not.toBeNull())
-  // …and remend resolves a tick later than react-markdown on a cold singleton.
-  await act(async () => {
-    await Promise.resolve()
-  })
   return container
 }
 
 describe('streaming matrix — the tail constructs remend repairs', () => {
   test('unterminated link keeps its text, never an href', async () => {
     const c = await tail('see [the docs](https://example.com/a')
+    // remend loads lazily: wait until the half-typed URL is gone, i.e. the repair has run.
+    await waitFor(() => expect(c.textContent).not.toContain('example.com/a'))
     expect(c.textContent).toContain('the docs')
     expect(c.querySelector('a[href]')).toBeNull()
     assertSafe(c, 'link')
@@ -152,6 +151,7 @@ describe('streaming matrix — the tail constructs remend repairs', () => {
 
   test('unterminated image renders its alt text, never an <img>', async () => {
     const c = await tail('look: ![a diagram of the flow](/assets/flo')
+    await waitFor(() => expect(c.textContent).not.toContain('/assets/flo'))
     expect(c.querySelector('img')).toBeNull()
     expect(c.textContent).toContain('a diagram of the flow')
     assertSafe(c, 'image')
@@ -250,8 +250,27 @@ describe('streaming matrix — settled blocks stay memoized', () => {
         rerender(view(`${head}${tailText.slice(0, i)}`))
       })
     }
-    expect(screen.getByText(tailText)).not.toBeNull()
+    await screen.findByText(tailText)
     // The settled heading's component never re-ran for any of the tail updates.
     expect(settledRenders).toBe(afterFirstPaint)
+  })
+})
+
+describe('dropped images keep their alt text (settled, untrusted)', () => {
+  test('a refused remote image renders its alt as text; an empty alt renders nothing', async () => {
+    const { container } = render(
+      <MantineProvider>
+        <Markdown contentTrust="untrusted">
+          {'![probe alt](https://cdn.example/p.png) ![](https://cdn.example/q.png)'}
+        </Markdown>
+      </MantineProvider>,
+    )
+    const alt = await screen.findByText('probe alt')
+    expect(alt.tagName).toBe('SPAN')
+    expect(container.querySelector('img')).toBeNull()
+    expect(container.querySelector('span[aria-label]')).toBeNull()
+    expect(container.innerHTML).not.toContain('cdn.example')
+    // Only the first image produced an element; the empty-alt one produced none.
+    expect(container.querySelector('p')?.querySelectorAll('span')).toHaveLength(1)
   })
 })

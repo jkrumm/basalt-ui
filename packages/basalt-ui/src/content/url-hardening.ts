@@ -40,7 +40,7 @@ export type CreateUrlTransformOptions = {
  * Builds the `urlTransform` passed to `<ReactMarkdown>`. Disallowed URLs (including remend's
  * `streamdown:incomplete-link` / `streamdown:incomplete-image` sentinels, which no allowlist can admit) resolve to
  * `null`, which react-markdown renders as an `href`/`src`-less element; the `a`/`img` component
- * overrides in `./markdown` turn that into an unlinked span / dropped image.
+ * overrides in `./markdown` turn that into an unlinked span / the image's alt text in a plain span.
  */
 export function createUrlTransform(opts: CreateUrlTransformOptions): UrlTransform {
   return (url, key) => {
