@@ -88,8 +88,10 @@ Contract: `docs/V2-SPEC.md`. Every removal and move is one row, grouped by area.
 ### Upgrading from 1.x
 
 1. Go to `1.41.0` first and clear its deprecations: 2.0 retires the lifecycle, so nothing deprecated survives.
-2. Install `basalt-ui@2` and the now-required peers (§ Subpaths, peers and gates); delete your
-   `@mantine/*/styles.layer.css` imports, because `basalt-ui/styles.css` carries them.
+2. Install `basalt-ui@2` and the now-required peers (§ Subpaths, peers and gates); delete only the
+   `@mantine/{core,notifications,spotlight}/styles.layer.css` imports, because `basalt-ui/styles.css`
+   `@import`s exactly those three. Keep every extension package's layer CSS (`@mantine/dates`,
+   `@mantine/schedule`, …) imported AFTER `basalt-ui/styles.css`.
 3. Replace the hand-built root (providers, `QueryClient`, router) with `BasaltProvider` +
    `createBasaltRouter` (§ Provider and wiring).
 4. Rewrite imports by area, using the tables below. A `move` changes only the specifier.
@@ -989,6 +991,19 @@ optional, subpath-required peers.
 
 _Nothing yet. Author the next section under this heading as `## Unreleased — <title>`; the
 release renames it and opens a new one here._
+
+## Next patch — doctor reads the peers and the config
+
+- `doctor` gains `exact-peers`: for each exact-pinned peer of the installed basalt-ui (the three
+  `@fontsource-variable/*`, `motion`, `remend`, …) it compares your installed version and prints a
+  one-line `bun add <pkg>@<version>` fix on a mismatch. `bun add` accepts the mismatch silently.
+  The three font peers now pin `5.3.0`.
+- `doctor` gains `config-keys`: a key in the package.json `basalt` object that the config does not
+  read fails with its fix. `basalt.chartMissingAriaLabel` is gone with its guard kind; `ariaLabel`
+  is required on a chart now, so delete the key.
+- Corrected the § 2.0 "Upgrading from 1.x" step 2: delete only the core, notifications and
+  spotlight layer imports; extension packages (`@mantine/dates`, `@mantine/schedule`) stay, after
+  `basalt-ui/styles.css`.
 
 ## 2.0.0
 

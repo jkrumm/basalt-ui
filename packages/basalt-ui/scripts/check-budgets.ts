@@ -372,7 +372,8 @@ async function budgets(providerOnlyDist: string): Promise<Budget[]> {
       ceiling: 15,
     },
     // 4000 -> 4250: the AGENTS.md block move + the doctor checks (the CLAUDE.md migration was removed in 2.0).
-    { label: 'CLI non-test lines (src/cli/**)', value: cliNonTestLines(), ceiling: 4250 },
+    // 4250 -> 4350: doctor's `exact-peers` and `config-keys` (argo friction rows 1-3).
+    { label: 'CLI non-test lines (src/cli/**)', value: cliNonTestLines(), ceiling: 4350 },
     await providerOnlyRow(providerOnlyDist),
   ]
 }

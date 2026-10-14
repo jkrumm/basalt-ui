@@ -6,6 +6,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { dirname, relative, resolve } from 'node:path'
 
+import { BASALT_CONFIG_KEYS, RETIRED_CONFIG_KEYS } from './config'
 import type { BasaltConfig } from './config'
 import { parseJsonc, readIfExists, scannableFiles } from './index'
 import type { BasaltInstall } from './index'
@@ -387,6 +388,70 @@ export function appWiringCheck(cwd: string): Check {
     if (generated || registersRouterPlugin(vite)) return null
     return {
       fail: `app-wiring: no vite.config calls the TanStack router plugin and ${dirs.join(' or ')}/routeTree.gen.ts does not exist. ${ROUTER_PLUGIN_FIX}`,
+    }
+  })
+}
+
+/**
+ * `config-keys`: a key in package.json's `basalt` object that `BasaltConfig` does not declare is
+ * silently ignored, so a key retired in 2.0 keeps looking configured. Reads the raw file, not
+ * `readBasaltConfig`, which is typed and would hide the very keys this looks for.
+ */
+export function unknownConfigKeysCheck(cwd: string): Check {
+  return guarded('config-keys', () => {
+    const raw = readIfExists(resolve(cwd, 'package.json'))
+    const block = raw === null ? null : (JSON.parse(raw) as { basalt?: unknown }).basalt
+    if (typeof block !== 'object' || block === null || Array.isArray(block)) return null
+    const known = new Set<string>(BASALT_CONFIG_KEYS)
+    const unknown = Object.keys(block).filter((k) => !known.has(k))
+    if (unknown.length === 0) return null
+    const named = unknown.map(
+      (k) => `basalt.${k} (${RETIRED_CONFIG_KEYS[k] ?? 'not a basalt key'})`,
+    )
+    return {
+      fail: `config-keys: package.json sets keys basalt-ui does not read: ${named.join('; ')}. Fix: delete each key.`,
+    }
+  })
+}
+
+const EXACT_VERSION = /^\d+\.\d+\.\d+$/
+
+/** `node_modules/<pkg>/package.json`'s version, searching `cwd` then every ancestor. */
+function installedVersion(cwd: string, pkg: string): string | null {
+  for (let dir = cwd; ; dir = dirname(dir)) {
+    const raw = readIfExists(resolve(dir, 'node_modules', pkg, 'package.json'))
+    if (raw !== null) return (JSON.parse(raw) as { version?: string }).version ?? null
+    if (dirname(dir) === dir) return null
+  }
+}
+
+/**
+ * `exact-peers`: basalt-ui pins some peers to one exact version, and `bun add` accepts any other
+ * version without a word. Compares each installed one against the install's declared pin; a peer
+ * that is not installed is not this check's business (optional peers are legitimately absent).
+ */
+export function exactPeersCheck(cwd: string, install: BasaltInstall): Check {
+  const id = 'exact-peers'
+  if (install.dir === null)
+    return { skip: `${id}: basalt-ui does not resolve, so its peers cannot be read.` }
+  const dir = install.dir
+  return guarded(id, () => {
+    const raw = readIfExists(resolve(dir, 'package.json'))
+    const peers =
+      (raw === null
+        ? {}
+        : (JSON.parse(raw) as { peerDependencies?: Record<string, string> }).peerDependencies) ?? {}
+    const off = Object.entries(peers)
+      .filter(([, range]) => EXACT_VERSION.test(range))
+      .flatMap(([pkg, pin]) => {
+        const have = installedVersion(cwd, pkg)
+        return have === null || have === pin
+          ? []
+          : [`${pkg}@${have} (basalt-ui pins ${pin}): \`bun add ${pkg}@${pin}\``]
+      })
+    if (off.length === 0) return null
+    return {
+      fail: `${id}: installed peers differ from basalt-ui's exact pins. Fix: ${off.join('; ')}.`,
     }
   })
 }
