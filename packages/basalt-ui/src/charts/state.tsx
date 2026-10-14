@@ -45,6 +45,9 @@ export function ChartPlaceholder(props: {
   state: ChartState | undefined
   height?: ChartBoxHeight
   action?: ReactNode
+  /** For a box too small to hold a sentence (a sparkline): error and empty show a `—` and carry the
+   * label as the accessible name and the hover title. */
+  compact?: boolean
 }): ReactElement | null {
   const kind = resolveChartState(props.state)
   if (kind === null) return null
@@ -60,20 +63,29 @@ export function ChartPlaceholder(props: {
     kind === 'error'
       ? toErrorMessage(props.state?.error, 'The chart failed to load.')
       : emptyLabel(props.state)
-  const body = (
+  const body = props.compact ? (
+    <span aria-hidden="true">—</span>
+  ) : (
     <>
       <span>{label}</span>
       {props.action}
     </>
   )
+  const name = props.compact ? { 'aria-label': label, title: label } : {}
   if (kind === 'error')
     return fit(
-      <div role="alert" data-basalt-chart-state={kind} className={stateClass} style={style}>
+      <div
+        role="alert"
+        data-basalt-chart-state={kind}
+        className={stateClass}
+        style={style}
+        {...name}
+      >
         {body}
       </div>,
     )
   return fit(
-    <output data-basalt-chart-state={kind} className={stateClass} style={style}>
+    <output data-basalt-chart-state={kind} className={stateClass} style={style} {...name}>
       {body}
     </output>,
   )
