@@ -987,7 +987,7 @@ optional, subpath-required peers.
 | `NavItemMeta`, `NavGroupMeta`, `AnyNavItem`, `AnyNavGroup`, `AnyNavLink`, `FlatNavItem`, `NavConfig`, `NavGroupId`, `NavTabId`, `NavIndex`, `UseNavOptions`, `NavBinding`, `NavAnchor`, `NavAnchorProps`, `NavMobilePlacement` | deleted                                                                                                                                                                                                                                                                                                                                                                                                                                                    | no consumer names them; derive with `ComponentProps` / `Parameters` |
 | `useNav`, and `BasaltShell`'s `sections` / `mobileNav` props                                                                                                                                                                   | deleted: pass `nav={NAV}` (plus `badges`, `isActive`, `getScrollElement` — the old `useNav` options) to `BasaltShell`; it resolves the sidebar, the mobile bar and the breadcrumb itself. `mobileNav` tuning moves to `defineNav`'s `mobile`. argo `apps/dashboard/src/routes/__root.tsx`: replace `const nav = useNav(NAV, { badges })` + `{...nav}` with `nav={NAV} badges={…}` (migrates in W12; 1.x consumers stay on their pinned version until then) |
 
-## Unreleased — a field over an external store
+## Unreleased — external-store fields, a live query-fn-unwrap, page shape
 
 - `externalField({ values, fallback, labels, store })` (`basalt-ui/state`) returns a `FieldHandle`
   over a value a foreign store owns (a zustand slice): `ViewTabs`, `SelectFilter` and `EnumFilter`
@@ -997,6 +997,12 @@ optional, subpath-required peers.
   `theme-allow control-outside-home, raw-selection-control` (argo `timer-card.tsx`). Rule: `basalt-state`.
 - A card BODY is still not a control home. Mount the bound control in the card's header slot
   (`<WidgetHeader actions={<ViewTabs field={timerMode} label="Timer mode" />} />`); no lint change.
+- **Lint, may surface new errors:** `basalt/query-fn-unwrap` was dead since 1.29.0 (it only saw the
+  removed `basalt-ui/query` import). It now also fires in files importing `basalt-ui`: an inline
+  `queryFn` calling `fetch(` must wrap the response in `unwrap()`. A mock `queryFn` returning plain
+  data is exempt.
+- The `basalt-app` skill's page example is the canonical shell page (`PageBar` only to fill a slot);
+  inside a `ChartCard` the card owns `state`, a bare chart kind owns its own.
 
 ## 2.5.0 — call-site fallbacks for controls, chat trace headers, axis labels
 
