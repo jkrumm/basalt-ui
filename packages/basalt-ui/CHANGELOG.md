@@ -1,3 +1,10 @@
+## [2.0.5](https://github.com/jkrumm/basalt-ui/compare/v2.0.4...v2.0.5) (2026-10-14)
+
+
+### Bug Fixes
+
+* fail loudly on a missing subpath peer ([74593b1](https://github.com/jkrumm/basalt-ui/commit/74593b10672e9f294032126598765029600ad937))
+
 ## [2.0.4](https://github.com/jkrumm/basalt-ui/compare/v2.0.3...v2.0.4) (2026-10-14)
 
 
