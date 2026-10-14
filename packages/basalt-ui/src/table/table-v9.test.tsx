@@ -51,7 +51,6 @@ const asCells = (row: Project): string[] => [
 ]
 
 const names = (rows: string[][]): string[] => rows.map((cells) => cells[0] ?? '')
-const updated = (rows: string[][]): string[] => rows.map((cells) => cells[3] ?? '')
 
 describe('v8 → v9 parity (sorted by revenue desc, page 1 of 25)', () => {
   test('renders the expected page', () => {
@@ -84,18 +83,37 @@ describe('sort functions (registered on the feature set; v9 degrades to `basic` 
     ])
   })
 
-  test('a Date column sorts chronologically (datetime), not by its string form', () => {
-    // `toString()` order would be Fri Jan 2 · Sun Feb 1 · Thu Dec 10 — and desc reverses chronology.
-    const dates = ['2026-12-10', '2026-01-02', '2026-02-01']
-    const data = dates.map((day, i) => ({ ...ROWS[i]!, updated: new Date(`${day}T00:00:00Z`) }))
-    expect(updated(renderRows({ data, initialSorting: [{ id: 'updated', desc: false }] }))).toEqual(
-      ['2026-01-02', '2026-02-01', '2026-12-10'],
-    )
-    expect(updated(renderRows({ data, initialSorting: [{ id: 'updated', desc: true }] }))).toEqual([
-      '2026-12-10',
-      '2026-02-01',
-      '2026-01-02',
-    ])
+  /**
+   * `sortFn: 'datetime'` compares `getTime()`; `basic` compares the Date OBJECTS, so two distinct
+   * Dates for the same instant are never "equal" to it (`a === b` is false) and tied rows lose their
+   * stable order. Removing the `datetime` registration makes this fail.
+   */
+  test('the registered datetime sortFn orders Dates by instant and keeps tied rows stable', () => {
+    const instant = (day: string): Date => new Date(`${day}T00:00:00Z`)
+    const stamps = ['2026-12-10', '2026-01-02', '2026-12-10', '2026-01-02', '2026-06-01']
+    const data = stamps.map((day, i) => ({
+      ...ROWS[i]!,
+      name: `row-${i}`,
+      updated: instant(day),
+    }))
+    const byInstant = [
+      col.accessor('name', { header: 'Name' }),
+      col.accessor('updated', {
+        header: 'Updated',
+        sortFn: 'datetime',
+        cell: (cell) => cell.getValue().toISOString().slice(0, 10),
+      }),
+    ]
+    const sortedNames = (desc: boolean): string[] =>
+      names(
+        renderRows({
+          data,
+          columns: byInstant,
+          initialSorting: [{ id: 'updated', desc }],
+        }),
+      )
+    expect(sortedNames(false)).toEqual(['row-1', 'row-3', 'row-4', 'row-0', 'row-2'])
+    expect(sortedNames(true)).toEqual(['row-0', 'row-2', 'row-4', 'row-1', 'row-3'])
   })
 })
 

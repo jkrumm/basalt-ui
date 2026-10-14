@@ -563,6 +563,19 @@ for name in "${SUBPATH_PEER_NAMES[@]}"; do [ "$name" = vite ] || INSTALL_PEER_NA
 peer_array SUBPATH_PEERS "${INSTALL_PEER_NAMES[@]}"
 scratch_install "$ABS_TGZ" "${SUBPATH_PEERS[@]}" "use-stick-to-bottom@^1.1.6" "@tanstack/react-virtual@>=3.14.0 <4" "vite@8.0.16"
 node --import "$PKGDIR/scripts/css-noop-register.mjs" peers.mjs present
+
+# V2-SPEC § 8 Store row: Router, Table and Hotkeys all depend on @tanstack/react-store (and it on
+# @tanstack/store); the cost of Table v9 is only the one-off +4 kB if the tree dedupes them. A nested
+# second copy means a consumer pays twice and holds two stores, so fail loudly on any.
+for store_pkg in react-store store; do
+  store_versions=$(bun pm ls --all | grep -oE "@tanstack/$store_pkg@[0-9][^ ]*" | sort -u)
+  if [ "$(printf '%s\n' "$store_versions" | grep -c .)" -ne 1 ]; then
+    echo "pack-test: expected exactly ONE @tanstack/$store_pkg version in the scratch tree, found:"
+    printf '%s\n' "$store_versions"
+    exit 1
+  fi
+done
+echo "@tanstack/react-store + @tanstack/store dedupe to one version each"
 echo "subpath-required peers OK (absent: own-peer failures only; present: every subpath loads)"
 
 echo "==> ./styles.css @importing Mantine's layer CSS (V2-SPEC.md § 1 Open)"
