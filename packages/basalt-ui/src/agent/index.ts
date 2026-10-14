@@ -21,7 +21,7 @@ export type { AgentError } from './error'
 
 // ── Thread contracts (the store is consumer-owned) ────────────────────────────
 export type { ChatMessage } from './history'
-export type { AgentThread, StreamStatus, ThreadStatus, ThreadsStore } from './thread'
+export type { AgentThread, ThreadStatus, ThreadsStore } from './thread'
 export type { AgentOutcome, OutcomeResolver } from './outcome'
 
 // ── Chat UI ───────────────────────────────────────────────────────────────────

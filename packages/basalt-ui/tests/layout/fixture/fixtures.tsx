@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import type { ReactElement } from 'react'
+import type { ComponentProps, ReactElement } from 'react'
 import { ThreadFeedRow } from '../../../src/agent'
-import type { AgentThread, ChatMessage, StreamStatus, TranscriptPart } from '../../../src/agent'
+import type { AgentThread, ChatMessage, TranscriptPart } from '../../../src/agent'
 import { ThreadTranscript } from '../../../src/agent/chat/thread-message'
 import { Bars, ChartCard, Lines } from '../../../src/charts'
 import type { BarsBar, ChartSeries } from '../../../src/charts'
@@ -709,7 +709,8 @@ function AnchorToEndFixture({ spec }: { spec: AgentSpec }): ReactElement {
     buildAgentMessages(spec.messages),
   )
   const [liveParts, setLiveParts] = useState<TranscriptPart[] | undefined>(undefined)
-  const [liveStatus, setLiveStatus] = useState<StreamStatus | undefined>(undefined)
+  const [liveStatus, setLiveStatus] =
+    useState<ComponentProps<typeof ThreadFeedRow>['liveStatus']>(undefined)
 
   const start = useCallback(() => {
     let i = 0

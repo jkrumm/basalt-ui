@@ -12,8 +12,8 @@ import type { AgentPart } from './parts'
  * `'pending'`/`'streaming'` when `useAgentThreadRuns` mounts with no live run for it (e.g. after a
  * reload mid-stream) — see `useAgentThreadRuns`'s mount-reconciliation effect.
  *
- * This is one of THREE overlapping status-shaped unions in the agent layer: `StreamStatus`
- * (single-turn stream lifecycle, below), this `ThreadStatus`
+ * This is one of THREE overlapping status-shaped unions in the agent layer: the internal
+ * `StreamStatus` (single-turn stream lifecycle, below), this `ThreadStatus`
  * (persisted thread lifecycle), and `AgentOutcome['status']` (`./outcome` — the terminal `'done' | 'attention' |
  * 'error'` subset of this union, once a turn has settled). Vocabulary note: `StreamStatus`'s
  * `'idle'` (no turn in flight) corresponds to this union's `'pending'` (thread created, no turn
@@ -113,7 +113,8 @@ export type ThreadsStore<TPart = AgentPart> = {
 }
 
 /**
- * The live status of one in-flight stream, as the chat rows render it. `'submitted'` is a turn
+ * The live status of one in-flight stream, as the chat rows render it. Internal: not exported;
+ * consumers derive it from `ThreadFeedRow`'s `liveStatus` prop. `'submitted'` is a turn
  * sent but not yet producing content: the chat rows treat it as live (Stop shows, the composer is
  * gated) exactly like `'streaming'`.
  */
