@@ -328,6 +328,8 @@ Subpath folds: `basalt-ui/agent-chat` → `basalt-ui/agent`, `basalt-ui/notifica
 
 - Move your own `@tanstack/react-table` to `9.2.8` exact. Raw v8 helpers and `ColumnDef` no longer type-check against `columns`.
 - `createColumnHelper` stays `import { createColumnHelper } from 'basalt-ui/table'` with the same one-generic call, `createColumnHelper<Row>()`. Do not import the helper from `@tanstack/react-table`: its v9 form needs `<TFeatures, TData>`.
+- The table's registry is closed: sort functions `alphanumeric`, `text`, `datetime`, `basic`; filter function `includesString` (global search and facets). A column naming another built-in `sortFn` / `filterFn` falls back to the default with a dev-only warning.
+- The `@tanstack/react-virtual` peer floor moves to `>=3.14.0 <4`.
 - `initialColumnPinning` is logical: `{ left, right }` → `{ start, end }`.
 - `meta.align` / `numeral` / `priority` are typed by the table's own `columnMeta` slot; the global `declare module '@tanstack/react-table'` augmentation is gone, so it no longer leaks into your own TanStack types.
 - The global search now filters 250 ms after the last keystroke; `onGlobalFilterChange` fires at the same moment.

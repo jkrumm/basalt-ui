@@ -287,23 +287,6 @@ describe('the toolbar has no fixed-width literals and resolves controls to the c
     expect(searchStyle).not.toContain('width: 220px')
   })
 
-  test('typing is instant in the input but filters (and reports) only once typing pauses', async () => {
-    const reported: string[] = []
-    const { container } = renderTable({
-      enableGlobalFilter: true,
-      onGlobalFilterChange: (value) => reported.push(value),
-    })
-    const input = container.querySelector<HTMLInputElement>('input[placeholder="Search…"]')!
-    fireEvent.change(input, { target: { value: 'argo' } })
-    fireEvent.change(input, { target: { value: 'lin' } })
-    expect(input.value).toBe('lin')
-    expect(container.querySelectorAll('tbody tr')).toHaveLength(2)
-    expect(reported).toEqual([])
-    await waitFor(() => expect(container.querySelectorAll('tbody tr')).toHaveLength(1))
-    expect(reported).toEqual(['lin'])
-    expect(container.querySelector('tbody')?.textContent).toContain('linewatch')
-  })
-
   test('the toolbar renders inside a data-basalt-tier="ctl" slot', () => {
     const { container } = renderTable({
       enableGlobalFilter: true,
@@ -600,6 +583,42 @@ describe('onColumnFiltersChange — the seam server-side faceting needs', () => 
     await openPill('Project')
     fireEvent.click(screen.getByRole('checkbox', { name: 'argo', hidden: true }))
     await waitFor(() => expect(seen).toEqual([[{ id: 'project', value: ['argo'] }]]))
+  })
+})
+
+describe('global search debounce', () => {
+  const typeInto = (container: HTMLElement, text: string): HTMLInputElement => {
+    const input = container.querySelector<HTMLInputElement>('input[placeholder="Search…"]')!
+    fireEvent.change(input, { target: { value: text } })
+    return input
+  }
+
+  test('typing is instant in the input but filters (and reports) only once typing pauses', async () => {
+    const reported: string[] = []
+    const { container } = renderTable({
+      enableGlobalFilter: true,
+      onGlobalFilterChange: (value) => reported.push(value),
+    })
+    typeInto(container, 'argo')
+    const input = typeInto(container, 'lin')
+    expect(input.value).toBe('lin')
+    expect(container.querySelectorAll('tbody tr')).toHaveLength(2)
+    expect(reported).toEqual([])
+    await waitFor(() => expect(container.querySelectorAll('tbody tr')).toHaveLength(1))
+    expect(reported).toEqual(['lin'])
+    expect(container.querySelector('tbody')?.textContent).toContain('linewatch')
+  })
+
+  test('a pending keystroke is flushed to onGlobalFilterChange when the table unmounts', () => {
+    const reported: string[] = []
+    const { container, unmount } = renderTable({
+      enableGlobalFilter: true,
+      onGlobalFilterChange: (value) => reported.push(value),
+    })
+    typeInto(container, 'lin')
+    expect(reported).toEqual([])
+    unmount()
+    expect(reported).toEqual(['lin'])
   })
 })
 

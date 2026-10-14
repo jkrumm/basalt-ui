@@ -58,7 +58,7 @@ import type {
   SortingState,
   Table as TanstackTable,
 } from '@tanstack/react-table'
-import { FlexRender, useTable } from '@tanstack/react-table'
+import { constructFilterFn, FlexRender, useTable } from '@tanstack/react-table'
 import type { CSSProperties, MouseEvent as ReactMouseEvent, ReactNode, RefObject } from 'react'
 import { Fragment, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useDebouncedCallback } from '@mantine/hooks'
@@ -97,27 +97,15 @@ import classes from './data-table.module.css'
 
 // ── Column alignment ──────────────────────────────────────────────────────────
 
-export type { DataTableAlign }
-
-/**
- * `meta.align` / `numeral` / `priority` are typed by the feature set's `columnMeta` slot
- * (`BasaltColumnMeta`), so `meta: { aling: 'right' }` is a TYPE error rather than a silently ignored
- * key — and a wrong VALUE (`'end'`, `'centre'`) throws at render. A misspelled alignment that quietly
- * left-aligns a money column is the class of defect that looks correct in review.
- */
-/** A facet filter with nothing selected is dropped from `columnFilters` rather than kept as a no-op. */
-const facetAutoRemove = (value: unknown): boolean =>
-  value === null ||
-  value === undefined ||
-  value === '' ||
-  (Array.isArray(value) && value.length === 0)
-
-/** How long the global search waits after the last keystroke before filtering. */
-const SEARCH_DEBOUNCE_MS = 250
+// `meta.align` is typed by `BasaltColumnMeta` (`table-features.ts`); only the VALUE check lives here.
 
 const ALIGNMENTS: ReadonlySet<string> = new Set<DataTableAlign>(['left', 'center', 'right'])
 
-/** Reads `meta.align` off a column, throwing on a value that is not one of the three. */
+/**
+ * Reads `meta.align` off a column, throwing on a value that is not one of the three — the one
+ * check a type cannot make once a value arrives from an untyped caller. A misspelled alignment that
+ * quietly left-aligns a money column looks correct in review.
+ */
 function resolveAlign<T extends RowData>(
   column: Column<BasaltTableFeatures, T, unknown>,
 ): DataTableAlign | undefined {
@@ -176,9 +164,8 @@ export type DataTableFacet<T = unknown> = {
 
 /**
  * Column ids pinned to each edge — the same `T`-derived id union as {@link DataTableFacet}'s
- * `columnId`, applied to TanStack's own `ColumnPinningState` shape (`{ start, end }`, each a bare
- * `string[]` unrelated to any row type). Structurally assignable to `ColumnPinningState`, so no
- * cast is needed where this flows into `useState<ColumnPinningState>`.
+ * `columnId`, applied to the `{ start, end }` shape. Not itself a TanStack `ColumnPinningState`: both edges are
+ * optional here, and `useDataTableState` normalises a missing edge to `[]` before the table sees it.
  */
 export type DataTableColumnPinning<T = unknown> = {
   start?: DataTableColumnId<T>[]
@@ -294,6 +281,34 @@ function resolveFacetColumn<T extends RowData>(
   }
   return undefined
 }
+
+/**
+ * The facet filters, built with `constructFilterFn` so `autoRemove` is part of the typed definition:
+ * a facet with nothing selected is dropped from `columnFilters` rather than kept as a no-op. They
+ * match the column value's STRING form exactly (a Select's option values are strings), which is why
+ * the built-in `includesString` auto-filter (substring) is never allowed to run on a facet column.
+ */
+const facetAutoRemove = (value: unknown): boolean =>
+  value === null ||
+  value === undefined ||
+  value === '' ||
+  (Array.isArray(value) && value.length === 0)
+
+const facetExact = constructFilterFn({
+  filter: (dataValue, filterValue: string | null | undefined) =>
+    filterValue === null || filterValue === undefined || filterValue === ''
+      ? true
+      : String(dataValue) === filterValue,
+  autoRemove: facetAutoRemove,
+})
+
+const facetAnyOf = constructFilterFn({
+  filter: (dataValue, filterValue: string[]) =>
+    !Array.isArray(filterValue) || filterValue.length === 0
+      ? true
+      : filterValue.includes(String(dataValue)),
+  autoRemove: facetAutoRemove,
+})
 
 // ── Row selection ─────────────────────────────────────────────────────────────
 
@@ -863,6 +878,8 @@ const TABLE_TOOLBAR_STYLE: CSSProperties = { flex: '0 1 auto', minWidth: 0 }
  * `w={220}` in a 302px column was half of the overflow above.
  */
 const SEARCH_WIDTH = 220
+/** How long the global search waits after the last keystroke before filtering. */
+const SEARCH_DEBOUNCE_MS = 250
 const TABLE_SEARCH_STYLE: CSSProperties = {
   flex: `0 1 ${SEARCH_WIDTH}px`,
   minWidth: '12ch',
@@ -889,7 +906,8 @@ function getOrderedHeaderGroups<T extends RowData>(table: TanstackTable<BasaltTa
 // Sticky offset math (column.getStart('start') / getAfter('end')) is computed purely from the
 // pinned columns' own `getSize()`, so only pinned cells need an explicit width to keep the offsets
 // accurate — center columns stay naturally sized. The hairline shadow marks the edge column
-// touching the unpinned center (first right-pinned index 0 / last left-pinned index).
+// touching the unpinned center (first end-pinned index 0 / last start-pinned index). Offsets are
+// logical insets, so `dir=rtl` mirrors them; the hairline shadow is a physical offset and does not.
 function getPinnedCellStyle<T extends RowData>(
   table: TanstackTable<BasaltTableFeatures, T>,
   column: Column<BasaltTableFeatures, T, unknown>,
@@ -909,14 +927,14 @@ function getPinnedCellStyle<T extends RowData>(
     const isEdge = column.getPinnedIndex() === table.getStartLeafColumns().length - 1
     return {
       ...shared,
-      left: column.getStart('start'),
+      insetInlineStart: column.getStart('start'),
       boxShadow: isEdge ? `4px 0 6px -4px ${alpha(VX.ink, 0.18)}` : undefined,
     }
   }
   const isEdge = column.getPinnedIndex() === 0
   return {
     ...shared,
-    right: column.getAfter('end'),
+    insetInlineEnd: column.getAfter('end'),
     boxShadow: isEdge ? `-4px 0 6px -4px ${alpha(VX.ink, 0.18)}` : undefined,
   }
 }
@@ -1297,7 +1315,7 @@ function useMeasuredContainment(active: boolean): {
  * />
  */
 export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T>) {
-  // F-ERR-1: without this, a table missing `data`/`columns` fails deep inside `useReactTable` as a
+  // F-ERR-1: without this, a table missing `data`/`columns` fails deep inside `useTable` as a
   // raw `TypeError` caught by `RootBoundary` — a blank subtree with no message naming either
   // prop.
   assertRequiredProps('BasaltDataTable', props, ['data', 'columns'])
@@ -1347,9 +1365,14 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
   const tableState = useDataTableState(props, pageSizeOptions[0] ?? 10)
   const { globalFilter, columnPinning, onGlobalFilterChange: handleGlobalFilterChange } = tableState
   // The input binds to a local draft so typing stays instant; the table (and `onGlobalFilterChange`)
-  // only see the value once typing pauses.
+  // only see the value once typing pauses. Invariant: the debounced commit is the ONLY writer of
+  // `globalFilter`, so the draft never needs syncing back from it. `flushOnUnmount` delivers a
+  // pending keystroke to `onGlobalFilterChange` rather than dropping it with the table.
   const [searchDraft, setSearchDraft] = useState(globalFilter)
-  const commitSearch = useDebouncedCallback(handleGlobalFilterChange, SEARCH_DEBOUNCE_MS)
+  const commitSearch = useDebouncedCallback(handleGlobalFilterChange, {
+    delay: SEARCH_DEBOUNCE_MS,
+    flushOnUnmount: true,
+  })
 
   // `stickyHeaderOffset` is DROPPED whenever the table owns a scroll container — see
   // `resolvedStickyHeaderOffset` below for why it is always wrong there. Dropping it silently is
@@ -1402,16 +1425,7 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
       const id = columnDefId(column)
       const facet = id === undefined ? undefined : facetById.get(id)
       if (!facet) return column
-      const match: FilterFn<BasaltTableFeatures, T> = facet.multiple
-        ? (row, columnId, filterValue: string[]) =>
-            !Array.isArray(filterValue) || filterValue.length === 0
-              ? true
-              : filterValue.includes(String(row.getValue(columnId)))
-        : (row, columnId, filterValue: string) =>
-            filterValue === null || filterValue === undefined || filterValue === ''
-              ? true
-              : String(row.getValue(columnId)) === filterValue
-      const filterFn = Object.assign(match, { autoRemove: facetAutoRemove })
+      const filterFn: FilterFn<BasaltTableFeatures, T> = facet.multiple ? facetAnyOf : facetExact
       return { ...column, filterFn }
     })
   }, [columns, facets])

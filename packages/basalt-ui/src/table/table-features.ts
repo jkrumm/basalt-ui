@@ -86,7 +86,10 @@ export const basaltTableFeatures = tableFeatures({
 
 export type BasaltTableFeatures = typeof basaltTableFeatures
 
-/** A column def of `BasaltDataTable`'s feature set; the cell value varies per column. */
+/**
+ * A column def of `BasaltDataTable`'s feature set; the cell value varies per column, hence the `any`.
+ * Build columns with `createColumnHelper` below — hand-typing this is not the supported path.
+ */
 // oxlint-disable-next-line typescript/no-explicit-any -- TanStack-idiomatic heterogeneous column array
 export type BasaltColumnDef<T extends RowData> = ColumnDef<BasaltTableFeatures, T, any>
 

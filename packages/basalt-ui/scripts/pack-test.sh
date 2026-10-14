@@ -568,7 +568,7 @@ node --import "$PKGDIR/scripts/css-noop-register.mjs" peers.mjs present
 # @tanstack/store); the cost of Table v9 is only the one-off +4 kB if the tree dedupes them. A nested
 # second copy means a consumer pays twice and holds two stores, so fail loudly on any.
 for store_pkg in react-store store; do
-  store_versions=$(bun pm ls --all | grep -oE "@tanstack/$store_pkg@[0-9][^ ]*" | sort -u)
+  store_versions=$(bun pm ls --all | grep -oE "@tanstack/$store_pkg@[0-9][^ ]*" | sort -u || true)
   if [ "$(printf '%s\n' "$store_versions" | grep -c .)" -ne 1 ]; then
     echo "pack-test: expected exactly ONE @tanstack/$store_pkg version in the scratch tree, found:"
     printf '%s\n' "$store_versions"
