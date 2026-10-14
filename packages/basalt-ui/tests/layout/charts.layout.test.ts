@@ -145,6 +145,48 @@ layout('Charts — 2.0 layout', () => {
     })
   }
 
+  // Argo friction 38: a compact-width card with a stated regular height (280) is a normal card.
+  const DESKTOP_1280: Viewport = { name: 'desktop 1280', width: 1280, height: 800 }
+  const yLabelSides = (p: LayoutPage): Promise<'inside' | 'outside' | 'none'> =>
+    p.raw.evaluate((sel) => {
+      const svgEl = document.querySelector(sel)
+      const plotLeft = svgEl
+        ?.querySelector('[data-ts-key^="y-grid:"]')
+        ?.getBoundingClientRect().left
+      const labels = [...(svgEl?.querySelectorAll('[data-ts-key^="y-tick-label:"]') ?? [])]
+      if (labels.length === 0 || plotLeft === undefined) return 'none'
+      return labels.every((l) => l.getBoundingClientRect().right <= plotLeft + 0.5)
+        ? 'outside'
+        : 'inside'
+    }, SVG)
+
+  test('1280: a compact-width card of regular height (280) keeps y labels outside', async () => {
+    const p = await openFixture(
+      chartFixture({ kind: 'lines', width: 360, height: 280 }),
+      DESKTOP_1280,
+    )
+    await p.settle()
+    expect(await yLabelSides(p)).toBe('outside')
+  })
+
+  test('1280: a compact-width short card (height law) keeps y labels inside', async () => {
+    const p = await openFixture(chartFixture({ kind: 'lines', width: 360 }), DESKTOP_1280)
+    await p.settle()
+    expect(await yLabelSides(p)).toBe('inside')
+  })
+
+  test('390: a phone-width chart of regular height (280) keeps y labels outside', async () => {
+    const p = await openFixture(chartFixture({ kind: 'lines', height: 280 }), PHONE)
+    await p.settle()
+    expect(await yLabelSides(p)).toBe('outside')
+  })
+
+  test('390: a phone-width chart on the height law keeps y labels inside', async () => {
+    const p = await openFixture(chartFixture({ kind: 'lines' }), PHONE)
+    await p.settle()
+    expect(await yLabelSides(p)).toBe('inside')
+  })
+
   test('compact: the first x label is not clipped by the locked-zero left margin', async () => {
     const p = await openFixture(chartFixture({ kind: 'lines', width: 360 }), DESKTOP)
     await p.settle()

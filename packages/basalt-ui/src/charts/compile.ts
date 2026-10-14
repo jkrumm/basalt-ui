@@ -97,6 +97,14 @@ const LADDER = {
 const INSIDE_LABEL_DX = 4
 const INSIDE_LABEL_DY = -6
 
+/** A compact chart at or above this height is a regular card (`ChartCard`'s short threshold): it
+ * keeps its y labels outside, and only a short one trades the gutter for plot width. */
+const INSIDE_LABEL_MAX_HEIGHT = 280
+
+/** Y labels sit inside the plot: the compact class, and only where the card is short. */
+export const labelsInside = (cls: ContainerClass, height: number): boolean =>
+  cls === 'compact' && height < INSIDE_LABEL_MAX_HEIGHT
+
 export function defaultNumberFormat(v: number): string {
   return fmtCompact(v, { digits: Math.abs(v) >= 1000 ? 1 : 2 })
 }
@@ -180,6 +188,21 @@ const REF_KEY_PREFIX = '__ref-'
 /** The legend key of a reference line that names itself (`RefLine.legend`). */
 const refLegendKey = (index: number): string => `${REF_KEY_PREFIX}${index}`
 
+/**
+ * A reference line is drawn translucent (`*-ref`, 20-30% alpha) so it recedes behind the data, but
+ * a 16x8 swatch at that alpha vanishes on the dark surface. The legend takes the status solid,
+ * which the color gate holds to 3:1 on the panel in both schemes, like a series swatch.
+ */
+const SWATCH_SOLID: Readonly<Record<string, string>> = {
+  [VX.goodRef]: VX.goodSolid,
+  [VX.badRef]: VX.badSolid,
+  [VX.warnRef]: VX.warnSolid,
+  [VX.good]: VX.goodSolid,
+  [VX.goodSoft]: VX.goodSolid,
+  [VX.bad]: VX.badSolid,
+  [VX.warn]: VX.warnSolid,
+}
+
 /** Legend-only entries for the reference lines that name themselves, in line order. */
 export function refLegendSeries<T>(refLines: readonly RefLine[] | undefined): ChartSeries<T>[] {
   return (refLines ?? []).flatMap((r, i) =>
@@ -189,7 +212,7 @@ export function refLegendSeries<T>(refLines: readonly RefLine[] | undefined): Ch
           {
             key: refLegendKey(i),
             label: r.legend.label,
-            color: r.color,
+            color: SWATCH_SOLID[r.color] ?? r.color,
             role: 'reference' as const,
             tooltip: false,
             getValue: () => null,
@@ -218,6 +241,8 @@ export function yGuide<T>(opts: {
   cls: ContainerClass
   side: 'left' | 'right'
   grid: boolean
+  /** Default: the compact class. */
+  inside?: boolean
 }): Omit<ChartPositionScaleOptions<number>, 'scale'> {
   const { cfg, axis, cls, side, grid } = opts
   const ladder = LADDER[cls]
@@ -227,8 +252,8 @@ export function yGuide<T>(opts: {
       : { count: typeof cfg?.ticks === 'number' ? cfg.ticks : ladder.yTicks }
   const gridLine = grid ? { grid: GRID_LINE } : {}
   if (cls === 'micro') return { ...gridLine, axis: false }
-  // Compact: labels sit INSIDE the plot, above their grid line, so the plot keeps the full width.
-  const inside = cls === 'compact'
+  // Labels sit INSIDE the plot, above their grid line, so the plot keeps the full width.
+  const inside = opts.inside ?? cls === 'compact'
   return {
     ...gridLine,
     ...(side === 'right' && { side: 'right' as const }),
@@ -276,6 +301,8 @@ export function xGuide<X extends ChartX>(opts: {
   xTicks: number | readonly X[] | undefined
   format: (v: ChartValue) => string
   cls: ContainerClass
+  /** Default: the compact class. */
+  inside?: boolean
 }): Omit<ChartPositionScaleOptions<ChartValue>, 'scale'> {
   const { model, xTicks, format, cls } = opts
   const ladder = LADDER[cls]
@@ -289,7 +316,7 @@ export function xGuide<X extends ChartX>(opts: {
         opacity: 1,
         thin: true,
         // A locked-zero left margin (compact) must not clip the first label.
-        ...(cls === 'compact' && {
+        ...((opts.inside ?? cls === 'compact') && {
           anchor: ({ index }: { index: number }) => (index === 0 ? ('start' as const) : undefined),
         }),
       },
@@ -634,18 +661,26 @@ function buildScales<T, X extends ChartX>(opts: {
   axes: Axes<T>
   formatX: (v: ChartValue) => string
   cls: ContainerClass
+  inside: boolean
   zoneScale: boolean
 }): StoredChartSpec['scales'] {
-  const { input, model, axes, formatX, cls, zoneScale } = opts
+  const { input, model, axes, formatX, cls, inside, zoneScale } = opts
   const { left, right } = axes
   return {
     x: {
       scale: model.scale,
-      ...xGuide({ model, xTicks: input.xTicks, format: formatX, cls }),
+      ...xGuide({ model, xTicks: input.xTicks, format: formatX, cls, inside }),
     },
     y: {
       scale: yScaleFor(input.y, left.domain),
-      ...yGuide({ cfg: input.y, axis: left, cls, side: 'left', grid: input.y?.grid ?? true }),
+      ...yGuide({
+        cfg: input.y,
+        axis: left,
+        cls,
+        inside,
+        side: 'left',
+        grid: input.y?.grid ?? true,
+      }),
     },
     ...(right && {
       y2: {
@@ -655,6 +690,7 @@ function buildScales<T, X extends ChartX>(opts: {
           cfg: input.y2,
           axis: right,
           cls,
+          inside,
           side: 'right',
           grid: input.y2?.grid ?? false,
         }),
@@ -803,6 +839,7 @@ export function compileCartesian<T, X extends ChartX>(
   return {
     chart: ({ width, height }: ChartBuildContext): StoredChartSpec => {
       const cls = resolveContainerClass(width)
+      const inside = labelsInside(cls, height)
       const kindMarks = input.marks({
         rows,
         visible,
@@ -816,11 +853,19 @@ export function compileCartesian<T, X extends ChartX>(
       })
       return {
         marks: [...under, ...kindMarks, ...dots, ...over, crosshair({ x: CROSSHAIR, y: false })],
-        scales: buildScales({ input, model, axes, formatX, cls, zoneScale: under.length > 0 }),
+        scales: buildScales({
+          input,
+          model,
+          axes,
+          formatX,
+          cls,
+          inside,
+          zoneScale: under.length > 0,
+        }),
         theme: CHART_THEME,
         ...(gradients.length > 0 && { gradients }),
         clip: true,
-        ...(cls === 'compact' && { margin: { left: 0, ...(axes.right && { right: 0 }) } }),
+        ...(inside && { margin: { left: 0, ...(axes.right && { right: 0 }) } }),
       }
     },
     // Followers paint the crosshair only, unless the chart opts into following tooltips.
