@@ -114,7 +114,9 @@ export function Live() {
   const { points } = Route.useLoaderData()
   return (
     <Suspense fallback={chart([], { pending: true })}>
-      <Await promise={points}>{(r) => chart(r.data, { error: r.error })}</Await>
+      <Await promise={points}>
+        {(r) => chart(r.data, { error: r.error, empty: r.data.length === 0 })}
+      </Await>
     </Suspense>
   )
 }
