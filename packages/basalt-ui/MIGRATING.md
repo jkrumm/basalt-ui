@@ -994,11 +994,6 @@ optional, subpath-required peers.
   fails with the `bun add` line to run. Without them the build succeeded and the chunk threw
   "Could not resolve" at load. `CodeBlock` also warns once in dev when the highlighter cannot load.
 
-## Unreleased
-
-_Nothing yet. Author the next section under this heading as `## Unreleased — <title>`; the
-release renames it and opens a new one here._
-
 ## 2.0.4 — argo table and peer friction
 
 - `BasaltDataTable` `stickyHeader` inside `BasaltShell` now pins flush under the app chrome. The
