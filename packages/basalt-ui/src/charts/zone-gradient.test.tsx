@@ -118,7 +118,8 @@ describe('Lines area: zones', () => {
       const stops = stopsOf(render({ y: { scale: 'log' }, zones: [left] }))
       expect(stops[0]?.color).toContain('var(--vx-line)')
     } finally {
-      process.env.NODE_ENV = env
+      if (env === undefined) delete process.env.NODE_ENV
+      else process.env.NODE_ENV = env
     }
   })
 })
