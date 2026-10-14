@@ -490,7 +490,7 @@ Code cannot load rules or skills from `node_modules`, which is the only reason a
   precedence in `AGENTS-block.md.tpl`, the overlay mount in `basalt-mantine.md`, the Eden footguns in
   `basalt-batteries.md`. The guard-kind list lives nowhere — the generated headers carry it.
 - **No API reference, no version history, no incident narrative in a rule.** Those belong in JSDoc /
-  `llms.txt`, `CHANGELOG.md` / `MIGRATING.md`, and `../../docs/ARGO-MIGRATION-LEARNINGS.md`.
+  `llms.txt`, and `CHANGELOG.md` / `MIGRATING.md`.
 - **No hex and no pixel constant in a rule.** The palette and the spacing scales are derived from a
   config a consumer may move, so a literal in prose is a value that can go stale silently.
 - `scripts/check-agent-doc-drift.ts` runs in CI: a bolded-backtick name must be a real export, a

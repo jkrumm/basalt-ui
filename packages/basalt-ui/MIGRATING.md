@@ -85,6 +85,16 @@ consumer read this index, found nothing, and diffed a KPI row that had silently 
 
 Contract: `docs/V2-SPEC.md`. Every removal and move is one row, grouped by area. 1.x is frozen at v1.41.0; 2.0.0 is the only major.
 
+### Upgrading from 1.x
+
+1. Go to `1.41.0` first and clear its deprecations: 2.0 retires the lifecycle, so nothing deprecated survives.
+2. Install `basalt-ui@2` and the now-required peers (§ Subpaths, peers and gates); delete your
+   `@mantine/*/styles.layer.css` imports, because `basalt-ui/styles.css` carries them.
+3. Replace the hand-built root (providers, `QueryClient`, router) with `BasaltProvider` +
+   `createBasaltRouter` (§ Provider and wiring).
+4. Rewrite imports by area, using the tables below. A `move` changes only the specifier.
+5. Run `bunx basalt-ui sync`, then `bunx basalt-ui doctor`, and take the lint findings one at a time.
+
 ### AI, content, commands, state and table (`w3/delete-agent-data`)
 
 Subpath folds: `basalt-ui/agent-chat` → `basalt-ui/agent`, `basalt-ui/notifications` → `basalt-ui/commands`, `basalt-ui/data/table` → `basalt-ui/table`. `basalt-ui/data/virtual` is removed. A `move` changes only the import specifier; the name is unchanged.
@@ -928,11 +938,6 @@ Lint: `basalt/visx-boundary`, `basalt/visx-tooltip`, `basalt/hand-rolled-plot`, 
 | `basalt-ui/charts`: `useVxTheme`                        | deleted; every chart paint is a `var(--vx-*)` reference                                                                                                                                                                                                                                                   | no theme context                                                                                                                               |
 | `basalt-ui/charts`: `VxTheme`                           | deleted; every chart paint is a `var(--vx-*)` reference                                                                                                                                                                                                                                                   | no theme context                                                                                                                               |
 
-## Unreleased
-
-_Nothing yet. Author the next section under this heading as `## Unreleased — <title>`; the
-release renames it and opens a new one here._
-
 ### Subpaths, peers and gates (W3 gates)
 
 | 1.41 import                                    | 2.0                          | Reason                                                                              |
@@ -979,6 +984,13 @@ optional, subpath-required peers.
 | `useRouterBreadcrumbs`, `BasaltBreadcrumb`, `BasaltNav`                                                                                                                                                                        | deleted                                                                                                                                                                                                                                                                                                                                                                                                                                                    | shell-internal / unnamed                                            |
 | `NavItemMeta`, `NavGroupMeta`, `AnyNavItem`, `AnyNavGroup`, `AnyNavLink`, `FlatNavItem`, `NavConfig`, `NavGroupId`, `NavTabId`, `NavIndex`, `UseNavOptions`, `NavBinding`, `NavAnchor`, `NavAnchorProps`, `NavMobilePlacement` | deleted                                                                                                                                                                                                                                                                                                                                                                                                                                                    | no consumer names them; derive with `ComponentProps` / `Parameters` |
 | `useNav`, and `BasaltShell`'s `sections` / `mobileNav` props                                                                                                                                                                   | deleted: pass `nav={NAV}` (plus `badges`, `isActive`, `getScrollElement` — the old `useNav` options) to `BasaltShell`; it resolves the sidebar, the mobile bar and the breadcrumb itself. `mobileNav` tuning moves to `defineNav`'s `mobile`. argo `apps/dashboard/src/routes/__root.tsx`: replace `const nav = useNav(NAV, { badges })` + `{...nav}` with `nav={NAV} badges={…}` (migrates in W12; 1.x consumers stay on their pinned version until then) |
+
+## Unreleased
+
+_Nothing yet. Author the next section under this heading as `## Unreleased — <title>`; the
+release renames it and opens a new one here._
+
+---
 
 ## 1.41.0 — the managed block moves to AGENTS.md
 
@@ -2180,7 +2192,7 @@ annotation and rationale):
 
 **On notice for 1.30.0** — a public export with exactly one consumer (the playground) as of this
 audit. Adopt-or-delete: gains a real consumer by 1.30.0 or is removed. Not a promise either way;
-record your adoption in `docs/ARGO-MIGRATION-LEARNINGS.md` if you pick one up.
+say so in an issue if you pick one up.
 
 - **Threads/agent-chat composite tier**: `ThreadWorkspace`, `ThreadFeed`, `ThreadFeedRow`,
   `ThreadDetailPanel`, `ThreadOutcomeCard`, `ThreadsStoreAdapter`, `createThreadsStore`,
