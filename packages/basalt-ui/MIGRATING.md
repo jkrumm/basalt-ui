@@ -987,7 +987,7 @@ optional, subpath-required peers.
 | `NavItemMeta`, `NavGroupMeta`, `AnyNavItem`, `AnyNavGroup`, `AnyNavLink`, `FlatNavItem`, `NavConfig`, `NavGroupId`, `NavTabId`, `NavIndex`, `UseNavOptions`, `NavBinding`, `NavAnchor`, `NavAnchorProps`, `NavMobilePlacement` | deleted                                                                                                                                                                                                                                                                                                                                                                                                                                                    | no consumer names them; derive with `ComponentProps` / `Parameters` |
 | `useNav`, and `BasaltShell`'s `sections` / `mobileNav` props                                                                                                                                                                   | deleted: pass `nav={NAV}` (plus `badges`, `isActive`, `getScrollElement` — the old `useNav` options) to `BasaltShell`; it resolves the sidebar, the mobile bar and the breadcrumb itself. `mobileNav` tuning moves to `defineNav`'s `mobile`. argo `apps/dashboard/src/routes/__root.tsx`: replace `const nav = useNav(NAV, { badges })` + `{...nav}` with `nav={NAV} badges={…}` (migrates in W12; 1.x consumers stay on their pinned version until then) |
 
-## Unreleased — tooltip swatches, reference legends, `tooltipFormat`, band edges
+## Unreleased — tooltip swatches, reference legends, `tooltipFormat`, band edges, series gaps
 
 All additive; no call site changes. Named consumers are argo `apps/dashboard/src/features/…`.
 
@@ -1013,6 +1013,12 @@ All additive; no call site changes. Named consumers are argo `apps/dashboard/src
   (infinite, outside the domain, or an omitted x bound) draws none. argo
   `astro-window/charts/night-timeline-chart.tsx`: the shooting-window `rect` + two `ruleX` become one
   `xZones` entry with `edge: { side: 'both', color: VX.accent, width: 2 }`.
+- `ChartSeries.gaps: 'break' | 'connect'` (`Lines`; default `'break'`, today's behaviour). `'connect'`
+  draws the line, and its `area`, through the series' non-null points only, so a series that is null
+  on most shared x values is one continuous line instead of dots and stubs. Markers stay on real
+  points; the cursor and tooltip read the value at the hovered x (no value, no row). argo
+  `strength-tracker/charts/relative-progression-chart.tsx` and `one-rm-trend-chart.tsx`: set
+  `gaps: 'connect'` on each lift's series.
 - Not added: a per-datum `fill` for the engine's `rect`. `@tanstack/charts` 1.1.0 types `RectOptions.fill`
   as a `string`; its `color` channel resolves through the chart's own color scale, which `marks` cannot
   reach. Keep one `rect` per fill bucket (argo `astro-window/charts/sky-panorama.tsx`, skyglow).

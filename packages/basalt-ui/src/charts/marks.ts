@@ -30,12 +30,21 @@ export function emphasis<T>(
   return highlighted === null || highlighted === s.key || highlighted === s.parent ? 1 : DIMMED
 }
 
+/** The rows a series' line and area are drawn through: all of them, or only the non-null ones. */
+export function drawnRows<T, X extends ChartX>(
+  plot: PlotContext<T, X>,
+  s: Pick<ChartSeries<T>, 'key' | 'gaps'>,
+): PlotRow<T, X>[] {
+  const rows = plot.rows(s.key)
+  return s.gaps === 'connect' ? rows.filter((r) => r.y !== null) : rows
+}
+
 export function lineMark<T, X extends ChartX>(
   plot: PlotContext<T, X>,
   s: ChartSeries<T>,
 ): ChartMarks[number] {
   const yScale = yScaleOf(plot, s)
-  return lineY(plot.rows(s.key), {
+  return lineY(drawnRows(plot, s), {
     id: s.key,
     x: rowX,
     y: 'y',

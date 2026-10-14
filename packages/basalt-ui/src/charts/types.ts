@@ -31,6 +31,13 @@ export type ChartSeries<T> = {
    * tier, a config value) is a step: a smoothed curve draws values that never existed. */
   curve?: CurveName | undefined
   strokeWidth?: number | undefined
+  /**
+   * What a `null` value does to the line (and its `area`). `'break'` (default) leaves a gap;
+   * `'connect'` draws through the series' non-null points only, skipping the null rows, so a series
+   * that is null on most shared x values (one lift in a wide table) is one continuous line. Points,
+   * markers, the cursor and the tooltip still read real values: a null row has no tooltip row.
+   */
+  gaps?: 'break' | 'connect' | undefined
   /** Dims the plotted stroke (a faint companion line). Strokes only. */
   strokeOpacity?: number | undefined
   /** Bars and areas. */

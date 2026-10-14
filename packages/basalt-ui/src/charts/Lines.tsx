@@ -17,7 +17,7 @@ import { VX } from '../tokens'
 import { CartesianRung } from './CartesianChart'
 import { areaGradientId } from './compile'
 import { chartCurve } from './curves'
-import { lineMark, markersOf, yScaleOf } from './marks'
+import { drawnRows, lineMark, markersOf, yScaleOf } from './marks'
 import { rowX } from './types'
 import type {
   CartesianChartProps,
@@ -120,7 +120,7 @@ export function Lines<T, X extends ChartX = ChartX>(props: LinesProps<T, X>): Re
         if (!s.area) continue
         out.push(
           decorative(
-            areaY(plot.rows(s.key), {
+            areaY(drawnRows(plot, s), {
               id: `${s.key}-area`,
               x: rowX,
               y2: 'y',
