@@ -934,3 +934,37 @@ describe('only-export-components and the TanStack Route export', () => {
     },
   )
 })
+
+describe('seeded route files lint clean', () => {
+  const OXLINT = join(PKG_ROOT, '../../node_modules/.bin/oxlint')
+
+  it.skipIf(!existsSync(OXLINT))(
+    'src/routes/__root.tsx and a skill-style route have 0 warnings',
+    () => {
+      write('package.json', JSON.stringify({ name: 'fixture' }))
+      mkdirSync(join(dir, 'node_modules'), { recursive: true })
+      symlinkSync(PKG_ROOT, join(dir, 'node_modules/basalt-ui'))
+      write(
+        '.oxlintrc.json',
+        JSON.stringify({ plugins: ['react'], rules: { 'react/only-export-components': 'warn' } }),
+      )
+      capture(() => init(dir))
+      const skill = readFileSync(join(PKG_ROOT, 'agent/skills/basalt-app/SKILL.md'), 'utf8')
+      const route =
+        /\/\/ src\/routes\/dashboard\.tsx[^\n]*\n([\s\S]*?)\n\/\/ src\/lib\/nav\.tsx/.exec(
+          skill,
+        )?.[1] ?? ''
+      expect(route).toContain('export function Dashboard')
+      write(
+        'src/routes/dashboard.tsx',
+        `import { createFileRoute } from '@tanstack/react-router'\n${route}\n`,
+      )
+      for (const file of ['src/routes/__root.tsx', 'src/routes/dashboard.tsx']) {
+        const out = Bun.spawnSync([OXLINT, '-c', '.oxlintrc.json', file], {
+          cwd: dir,
+        }).stdout.toString()
+        expect(out).not.toContain('only-export-components')
+      }
+    },
+  )
+})
