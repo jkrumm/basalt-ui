@@ -388,6 +388,22 @@ describe('DualPanel', () => {
     expect(tooltips()[0]?.textContent).toMatch(/-?\d+ on \d/)
   })
 
+  test('tooltipFormat formats the tooltip rows while format keeps the axis', async () => {
+    const el = await mount(
+      <DualPanel
+        {...withBar({ tooltipFormat: (v) => `${v} pts` })}
+        top={{ format: (v) => `${v}u`, tooltipFormat: (v) => `${v} top` }}
+        legend={false}
+      />,
+    )
+    await hover(el)
+    const text = tooltips()[0]?.textContent ?? ''
+    expect(text).toMatch(/-?\d+ pts/)
+    expect(text).toMatch(/\d+ top/)
+    expect(text).not.toMatch(/-?\d+%/)
+    expect(yTicks(el, 'bottom').every((t) => t.endsWith('%'))).toBe(true)
+  })
+
   test('a dashed line gets a dashed tooltip swatch, a solid one the plain color', async () => {
     const el = await mount(<DualPanel {...dualProps} legend={false} />)
     await hover(el)

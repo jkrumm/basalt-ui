@@ -987,7 +987,7 @@ optional, subpath-required peers.
 | `NavItemMeta`, `NavGroupMeta`, `AnyNavItem`, `AnyNavGroup`, `AnyNavLink`, `FlatNavItem`, `NavConfig`, `NavGroupId`, `NavTabId`, `NavIndex`, `UseNavOptions`, `NavBinding`, `NavAnchor`, `NavAnchorProps`, `NavMobilePlacement` | deleted                                                                                                                                                                                                                                                                                                                                                                                                                                                    | no consumer names them; derive with `ComponentProps` / `Parameters` |
 | `useNav`, and `BasaltShell`'s `sections` / `mobileNav` props                                                                                                                                                                   | deleted: pass `nav={NAV}` (plus `badges`, `isActive`, `getScrollElement` — the old `useNav` options) to `BasaltShell`; it resolves the sidebar, the mobile bar and the breadcrumb itself. `mobileNav` tuning moves to `defineNav`'s `mobile`. argo `apps/dashboard/src/routes/__root.tsx`: replace `const nav = useNav(NAV, { badges })` + `{...nav}` with `nav={NAV} badges={…}` (migrates in W12; 1.x consumers stay on their pinned version until then) |
 
-## Unreleased — tooltip swatches, reference legends
+## Unreleased — tooltip swatches, reference legends, `tooltipFormat`
 
 All additive; no call site changes. Named consumers are argo `apps/dashboard/src/features/…`.
 
@@ -1001,6 +1001,9 @@ All additive; no call site changes. Named consumers are argo `apps/dashboard/src
   dashed as `dashed`, role `reference`; a toggle hides the line), so a threshold needs no always-`null`
   series. argo `strength-tracker/charts/weekly-volume-chart.tsx`: delete `LANDMARK_LEGEND` and put
   `legend: { label: 'MEV' }` on the three `refLines`.
+- `DualPanelBar.tooltipFormat` and `DualPanelProps.top.tooltipFormat` format the tooltip rows while
+  `format` keeps the axis ticks (default: `format`; `formatValue` still wins per row). argo
+  `strength-tracker/charts/momentum-chart.tsx`: drop the separate `formatValue` copy of the axis format.
 
 ## 2.3.0 — optional-safe chart props, `chartCurve`, zone-coloured area
 

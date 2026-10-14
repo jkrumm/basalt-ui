@@ -61,8 +61,10 @@ export type DualPanelBar<T> = {
   positive: string
   /** The fill below zero. */
   negative: string
-  /** Tick and tooltip formatter. */
+  /** Tick formatter, and the tooltip's too unless `tooltipFormat` is given. */
   format: (v: number) => string
+  /** The tooltip row's formatter. Default: `format`. */
+  tooltipFormat?: ((v: number) => string) | undefined
   /** The tooltip row's value, for a unit or a decimal `format` cannot carry. */
   formatValue?: ((v: number, d: T) => string) | undefined
   /** Default `'auto'`: a symmetric `[-maxAbs, maxAbs]` from the data, rounded to nice ticks. A tuple
@@ -95,6 +97,8 @@ export type DualPanelProps<T, X extends Date | number = Date | number> = Pick<
     | {
         domain?: readonly [number, number] | 'auto' | undefined
         format?: ((v: number) => string) | undefined
+        /** The lines' tooltip formatter. Default: `format`. */
+        tooltipFormat?: ((v: number) => string) | undefined
       }
     | undefined
   /**
@@ -157,6 +161,7 @@ export function DualPanel<T, X extends Date | number = Date | number>(
   )
   const all = useMemo(() => [...lines, barSeries], [lines, barSeries])
   const topFormat = top?.format ?? defaultNumberFormat
+  const topTooltipFormat = top?.tooltipFormat ?? topFormat
 
   const plan = useCallback(
     ({ hidden, highlighted }: PanelInput): PanelPlan<T> => {
@@ -309,7 +314,7 @@ export function DualPanel<T, X extends Date | number = Date | number>(
             if (s.tooltip === false || v === null || !Number.isFinite(v)) continue
             out.push({
               label: s.note === undefined ? s.label : `${s.label} · ${s.note}`,
-              value: s.formatValue ? s.formatValue(v, d) : topFormat(v),
+              value: s.formatValue ? s.formatValue(v, d) : topTooltipFormat(v),
               color: s.dash === 'dashed' ? dashedSwatch(s.color) : s.color,
               ...(highlighted === s.key && { active: true }),
             })
@@ -318,7 +323,7 @@ export function DualPanel<T, X extends Date | number = Date | number>(
           if (v !== null && Number.isFinite(v))
             out.push({
               label: bar.label,
-              value: bar.formatValue ? bar.formatValue(v, d) : bar.format(v),
+              value: bar.formatValue ? bar.formatValue(v, d) : (bar.tooltipFormat ?? bar.format)(v),
               color: v >= 0 ? bar.positive : bar.negative,
               ...(highlighted === BAR_KEY && { active: true }),
             })
@@ -326,7 +331,19 @@ export function DualPanel<T, X extends Date | number = Date | number>(
         },
       }
     },
-    [data, x, lines, barSeries, top, fillBetween, bar, topFraction, topFormat, formatX],
+    [
+      data,
+      x,
+      lines,
+      barSeries,
+      top,
+      fillBetween,
+      bar,
+      topFraction,
+      topFormat,
+      topTooltipFormat,
+      formatX,
+    ],
   )
 
   return <PanelRung {...rung} series={all} plan={plan} />
