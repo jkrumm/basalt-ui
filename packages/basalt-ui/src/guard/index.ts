@@ -2126,7 +2126,7 @@ export const GUARD_RULES = {
     // JSX-tag-shaped (`<Title order={1}>`) — never appears in CSS text.
     appliesTo: (relPath) => !relPath.endsWith('.css'),
     message:
-      'In-body page title — a page is named ONCE: by the breadcrumb (staticData.title), by PageBar.title, or by <PageTitle> on a shell-less surface (a route error, an auth gate, a standalone screen). Every section/card/table title is a WidgetHeader (docs/CONTROLS-SPEC.md law C8). An <Title order={1|2}> spelling a name out in the body is a second name for the same page, and it drifts. A Title rendering a VALUE — {doc.title}, {RANK_LABEL[rank]} — never reports: that is data, not a name. Prose / ArticleLayout / an overlay and anything under a content/ path never report either. Same law the oxlint plugin enforces as basalt/in-body-page-title — one id, two lanes, so one theme-allow covers both.',
+      'In-body page title — a page is named ONCE: by the breadcrumb (the nav item label), by PageBar.title, or by <PageTitle> on a shell-less surface (a route error, an auth gate, a standalone screen). Every section/card/table title is a WidgetHeader (docs/CONTROLS-SPEC.md law C8). An <Title order={1|2}> spelling a name out in the body is a second name for the same page, and it drifts. A Title rendering a VALUE — {doc.title}, {RANK_LABEL[rank]} — never reports: that is data, not a name. Prose / ArticleLayout / an overlay and anything under a content/ path never report either. Same law the oxlint plugin enforces as basalt/in-body-page-title — one id, two lanes, so one theme-allow covers both.',
   },
   'raw-selection-control': {
     kind: 'raw-selection-control',
