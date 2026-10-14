@@ -1,22 +1,16 @@
 /**
  * Root route — the persistent app shell for the playground.
  *
- * The whole navigation is ONE typed definition (`demo/nav-model.tsx`), resolved here by
- * `useNav(NAV)`. That hook does everything this file used to do by hand: it matches every
- * destination against the live router for `active`, builds each one's TanStack `<Link>` anchor
- * (so intent-preloading, middle-click and back/forward all keep working), and returns the two
- * props `BasaltShell` needs — `sections` for the desktop sidebar and `mobileNav` for the bottom
- * bar. The shell stays exactly as router-agnostic as it ships; the router coupling lives in that
- * one hook rather than in a pair of render callbacks.
- *
- * The shell's breadcrumb follows `active` across `sections`, and its parent crumb navigates
- * through the same anchor every nav row uses — so it tracks the route for free, with no second
- * seam to wire.
+ * The whole navigation is ONE typed definition (`demo/nav-model.tsx`), handed to
+ * `BasaltShell nav={NAV}`. The shell matches every destination against the live router for
+ * `active`, builds each one's TanStack `<Link>` anchor (so intent-preloading, middle-click and
+ * back/forward all keep working), and derives the desktop sidebar, the bottom bar and the
+ * breadcrumb from it — no hook, spread or second seam here.
  *
  * Page content renders through `<Outlet />`; each destination is a file route under `routes/`.
  */
 import { Outlet, createRootRouteWithContext, useNavigate } from '@tanstack/react-router'
-import { BasaltShell, ThemeToggle, useNav } from 'basalt-ui'
+import { BasaltShell, ThemeToggle } from 'basalt-ui'
 import type { BasaltRouterContext } from 'basalt-ui'
 import type { GlobalAction } from 'basalt-ui/controls'
 import { NotificationBell } from 'basalt-ui/commands'
@@ -36,7 +30,7 @@ type AccountActions = NonNullable<ShellProps['account']>['actions']
 declare const __APP_VERSION__: string
 
 /**
- * Live per-destination badges. Static here, so it is hoisted: `useNav`'s memo deps include this
+ * Live per-destination badges. Static here, so it is hoisted: the shell's nav memo deps include this
  * object, and a fresh literal per render would defeat it. A real app memoizes its query result.
  */
 const navBadges = { dashboard: 4 }
@@ -76,17 +70,16 @@ function RootLayout() {
     onManageBilling: () => navigate({ to: '/settings', hash: 'billing' }),
   }
 
-  // `badges` keys autocomplete from the definition's id union — a typo is a compile error, not a
-  // silently missing badge. A `number` becomes `item.count`: a NavCountBadge on the desktop row
-  // and an accent dot on the mobile slot icon (a count glyph is unreadable in a 56px slot).
-  const nav = useNav(NAV, { badges: navBadges })
-
   return (
     <BasaltShell
       // `menu` makes the brand row a `Name ▾` workspace switcher — the rows are account-menu items,
       // the same shape the account menu takes, so there is no second vocabulary for one dropdown.
       brand={{ name: 'Basalt', version: __APP_VERSION__, menu: WORKSPACE_MENU }}
-      {...nav}
+      // `badges` keys autocomplete from the definition's id union — a typo is a compile error, not a
+      // silently missing badge. A `number` becomes `item.count`: a NavCountBadge on the desktop row
+      // and an accent dot on the mobile slot icon (a count glyph is unreadable in a 56px slot).
+      nav={NAV}
+      badges={navBadges}
       // `actions` is a TUPLE of one or two — a third icon would squeeze the ⌘K trigger under the
       // width where its placeholder still reads, so the type refuses it rather than the layout.
       search={{
