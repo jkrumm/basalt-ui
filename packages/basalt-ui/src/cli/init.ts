@@ -10,6 +10,7 @@ import { deriveSpacing } from '../tokens/core'
 import type { MergeLintResult, ScaffoldFlags } from './index'
 import {
   MANIFEST_PATH,
+  ROUTER_SEED_DESTS,
   blockMigrationProblem,
   findBasaltInstall,
   managedFiles,
@@ -184,11 +185,13 @@ export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags =
   for (const line of placementNotices(cwd, placement)) {
     console.log(`basalt-ui init: ${line}`)
   }
-  // __root.tsx needs both TanStack peers — seeding it without them would ship an unresolved import.
+  // The nav + root-route seeds import both TanStack peers — seeding without them ships an
+  // unresolved import.
   if (!peers.hasRouter || !peers.hasQuery) {
     console.log(
-      'basalt-ui init: skipped src/routes/__root.tsx (needs both @tanstack/react-router and ' +
-        '@tanstack/react-query) — install both, or re-run with --with-router --with-query, to scaffold it.',
+      `basalt-ui init: skipped ${ROUTER_SEED_DESTS.nav} and ${ROUTER_SEED_DESTS.root} (need both ` +
+        '@tanstack/react-router and @tanstack/react-query) — install both, or re-run with ' +
+        '--with-router --with-query, to scaffold them.',
     )
   }
   // The guard-hook PreToolUse registration is NOT written automatically — add it manually to

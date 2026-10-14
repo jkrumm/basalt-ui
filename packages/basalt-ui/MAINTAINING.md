@@ -230,13 +230,17 @@ Three tiers: **palette data** (pure data, zero React/Mantine/DOM) → **`--vx-*`
 ## Shell, homes and the control tier
 
 - **`BasaltShell` is the single mount.** Every extension point is DECLARED DATA, not a `ReactNode`
-  slot — `sections`, `globalActions: GlobalAction[]`, `sidebarBlocks: SidebarBlock[]`, `brand.menu`,
+  slot — `nav`, `globalActions: GlobalAction[]`, `sidebarBlocks: SidebarBlock[]`, `brand.menu`,
   `search.actions`, `settingsMenuItems`, `account` — because that is what lets basalt own the mobile
   projection (rail dot/ring, one kebab, one More-sheet row per block) instead of asking every
   consumer to re-derive it. Law C13, `../../docs/CONTROLS-SPEC.md` §2.3.
 - **The router seam is ONE component**, `SidebarItem.Anchor` (a `NavAnchor`): basalt renders every
   pixel of chrome — desktop row, mobile slot, sheet row — and only hosts that component. No render
-  callbacks anywhere; the breadcrumb's equivalent is `parentAnchor`.
+  callbacks anywhere; the breadcrumb's equivalent is `parentAnchor`. `BasaltShell nav` builds those
+  anchors from TanStack's `Link`; under an `isActive` override it leans on `Link`'s private
+  `_asChild` host prop (`router-tanstack/use-nav.ts`, verified against `@tanstack/react-router`
+  1.170.x `link.js`) — re-verify it on every router bump (`use-nav.test.tsx`/`nav-prop.router.test.tsx`
+  pin the behaviour).
 - **The aside is a REGION a route claims, not a shell prop.** `BasaltShell` always renders an
   `AppShell.Aside`, zero-wide and `collapsed.desktop` until a page mounts `PageAside`, which claims
   it and publishes its fold back so the shell can size it (`docs/ASIDE-SPEC.md` §0, wave 1). Below

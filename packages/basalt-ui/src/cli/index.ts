@@ -797,6 +797,9 @@ export type ScaffoldFlags = {
   mergeLint?: boolean
 }
 
+/** The seeds that need both TanStack peers — one list for the scaffold entries and the skip notice. */
+export const ROUTER_SEED_DESTS = { nav: 'src/lib/nav.tsx', root: 'src/routes/__root.tsx' } as const
+
 /** Router/query peer presence, resolved from detection + explicit flags. */
 export type PeerFlags = { hasRouter: boolean; hasQuery: boolean }
 
@@ -1016,7 +1019,7 @@ export function managedFiles(
 
   /** TanStack Router root route with QueryClient context wiring (seed — consumer-owned after init). */
   const rootRoute: ManagedFile = {
-    dest: 'src/routes/__root.tsx',
+    dest: ROUTER_SEED_DESTS.root,
     mode: 'seed',
     source: 'agent/templates/__root.tpl',
     render: (ctx) => {
@@ -1028,7 +1031,7 @@ export function managedFiles(
 
   /** The leaf `NAV` module `__root.tsx` imports (seed — consumer-owned after init). */
   const navModule: ManagedFile = {
-    dest: 'src/lib/nav.tsx',
+    dest: ROUTER_SEED_DESTS.nav,
     mode: 'seed',
     source: 'agent/templates/nav.tpl',
     render: (ctx) => readSource(ctx.pkgRoot, 'agent/templates/nav.tpl'),
