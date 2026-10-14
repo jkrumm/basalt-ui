@@ -66,6 +66,18 @@ export function coverageFor(rule: RuleName): {
 }
 
 /**
+ * Plugin rules that exist for this repo's own source and never reach a consumer's `configs/`. The
+ * coverage block lands in a consumer's `.claude/rules`, so it must not name them; the surface
+ * assertions still count them, so none ships homeless.
+ */
+export const REPO_LOCAL_RULES: ReadonlySet<string> = new Set([
+  'chart-host-single',
+  'token-layer-boundary',
+  'no-dev-helper',
+  'no-import-meta-env',
+])
+
+/**
  * The generated block for one rule, verbatim — HTML comments only, one claim per line so a diff
  * points at the claim that changed rather than at a reflowed paragraph.
  *
@@ -75,7 +87,8 @@ export function coverageFor(rule: RuleName): {
  * (D8 — see docs/CONTROLS-SPEC.md §6 "Honest coverage").
  */
 export function coverageBlock(rule: RuleName): string {
-  const { guardKinds, pluginRules, advisoryLaws } = coverageFor(rule)
+  const { guardKinds, advisoryLaws } = coverageFor(rule)
+  const pluginRules = coverageFor(rule).pluginRules.filter((id) => !REPO_LOCAL_RULES.has(id))
   const backedBy = [
     guardKinds.length > 0 ? `guard kinds — ${guardKinds.join(', ')}` : 'guard kinds — none',
     pluginRules.length > 0
@@ -163,13 +176,13 @@ export function reconcileCoverageBlocks(
  * spec argued, so they live beside the gate that reads them rather than in prose.
  */
 const AGENT_LINE_BUDGETS: Readonly<Record<string, number>> = {
-  'agent/rules/basalt-tokens.md': 55,
-  'agent/rules/basalt-mantine.md': 51,
+  'agent/rules/basalt-tokens.md': 58,
+  'agent/rules/basalt-mantine.md': 50,
   'agent/rules/basalt-charts.md': 37,
   'agent/rules/basalt-state.md': 39,
-  'agent/rules/basalt-controls.md': 45,
-  'agent/rules/basalt-batteries.md': 43,
-  'agent/skills/basalt-app/SKILL.md': 57,
+  'agent/rules/basalt-controls.md': 46,
+  'agent/rules/basalt-batteries.md': 42,
+  'agent/skills/basalt-app/SKILL.md': 55,
   'agent/skills/basalt-design/SKILL.md': 18,
   'agent/skills/basalt-charts/SKILL.md': 40,
   'agent/templates/AGENTS-block.md.tpl': 30,

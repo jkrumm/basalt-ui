@@ -44,6 +44,9 @@
  * Check G — rule citations. No `agent/**` file may name a repo-local plugin rule (it is not in a
  * consumer's `configs/`) or a rule that 2.0 removed (its concern is a type now).
  *
+ * Check H — `llms.txt` header. The entry-point lines (`# basalt-ui/x   NameA, NameB`) name symbols by
+ * hand; each must be a published export, so a rename fails the gate instead of shipping stale.
+ *
  * Repo-local only: `scripts/` is absent from package.json's `files`, so this reads
  * non-shipped state (`scripts/export-surface.json`) and must not be reachable from a consumer's
  * `node_modules/basalt-ui` — unlike `check-coverage`, it does not belong behind the shipped CLI.
@@ -54,7 +57,9 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join, relative } from 'node:path'
 
-import { TOKENS_ONLY_DISABLED_KINDS } from '../src/guard/index'
+import { REPO_LOCAL_RULES } from './check-coverage'
+import * as pluginModule from '../configs/oxlint-plugin.js'
+import { GUARD_RULES, TOKENS_ONLY_DISABLED_KINDS } from '../src/guard/index'
 
 const pkgRoot = join(import.meta.dirname, '..')
 
@@ -82,33 +87,53 @@ const TYPE_BLOCK_RE = /export\s+type\s*\{([^}]*)\}/g
 const VALUE_BLOCK_RE = /^export\s*\{([^}]*)\}/gm
 const DIRECT_TYPE_RE = /^export\s+(?:type|interface)\s+([A-Za-z_$][\w$]*)/gm
 
-/** Every type name a `src/**\/index.ts(x)` barrel exports — direct declarations and re-export lists. */
+/** Type names one barrel/entry source exports — direct declarations and re-export lists. */
+function addTypeNames(src: string, names: Set<string>): void {
+  for (const match of src.matchAll(TYPE_BLOCK_RE)) {
+    for (const item of (match[1] ?? '').split(',')) {
+      const trimmed = item.trim()
+      if (trimmed.length === 0) continue
+      const asMatch = trimmed.match(/\bas\s+([A-Za-z_$][\w$]*)\s*$/)
+      const asName = asMatch?.[1]
+      names.add(asName ?? trimmed.replace(/^type\s+/, ''))
+    }
+  }
+  for (const match of src.matchAll(VALUE_BLOCK_RE)) {
+    for (const item of (match[1] ?? '').split(',')) {
+      const inline = item.trim().match(/^type\s+(?:[\w$]+\s+as\s+)?([A-Za-z_$][\w$]*)$/)
+      if (inline?.[1] !== undefined) names.add(inline[1])
+    }
+  }
+  for (const match of src.matchAll(DIRECT_TYPE_RE)) {
+    const name = match[1]
+    if (name !== undefined) names.add(name)
+  }
+}
+
+/** Every type name a `src/**\/index.ts(x)` barrel exports. */
 function collectTypeExports(): Set<string> {
   const names = new Set<string>()
-  for (const file of findBarrelFiles()) {
-    const src = readFileSync(file, 'utf8')
+  for (const file of findBarrelFiles()) addTypeNames(readFileSync(file, 'utf8'), names)
+  return names
+}
 
-    for (const match of src.matchAll(TYPE_BLOCK_RE)) {
-      for (const item of (match[1] ?? '').split(',')) {
-        const trimmed = item.trim()
-        if (trimmed.length === 0) continue
-        const asMatch = trimmed.match(/\bas\s+([A-Za-z_$][\w$]*)\s*$/)
-        const asName = asMatch?.[1]
-        names.add(asName ?? trimmed.replace(/^type\s+/, ''))
-      }
-    }
-
-    for (const match of src.matchAll(VALUE_BLOCK_RE)) {
-      for (const item of (match[1] ?? '').split(',')) {
-        const inline = item.trim().match(/^type\s+(?:[\w$]+\s+as\s+)?([A-Za-z_$][\w$]*)$/)
-        if (inline?.[1] !== undefined) names.add(inline[1])
-      }
-    }
-
-    for (const match of src.matchAll(DIRECT_TYPE_RE)) {
-      const name = match[1]
-      if (name !== undefined) names.add(name)
-    }
+/**
+ * The PUBLISHED surface: value exports (`export-surface.json`) plus the type names exported by the
+ * source entry of every `package.json` `exports` subpath — the same reading `check-budgets`'
+ * `barrelTypeExports` uses. A type exported only from an internal barrel is not importable by a
+ * consumer, so a `[type X]` tag may not cite it.
+ */
+export function collectPublishedNames(): Set<string> {
+  const names = collectValueExports()
+  const manifest = JSON.parse(readFileSync(join(pkgRoot, 'package.json'), 'utf8')) as {
+    exports: Record<string, { import?: string } | string>
+  }
+  for (const target of Object.values(manifest.exports)) {
+    const js = typeof target === 'object' ? target.import : undefined
+    if (js === undefined) continue
+    const base = join(pkgRoot, 'src', js.replace(/^\.\/dist\//, '').replace(/\.js$/, ''))
+    const entry = [`${base}.ts`, `${base}.tsx`, join(base, 'index.ts')].find(existsSync)
+    if (entry !== undefined) addTypeNames(readFileSync(entry, 'utf8'), names)
   }
   return names
 }
@@ -600,15 +625,9 @@ export function checkE(
   )
 }
 
-// ── Check F: every bullet in a rule file carries a resolvable enforcement tag ─────────────────────
+// ── Check F: every bullet in a rule file ends in resolvable enforcement tags ──────────────────────
 
-/** Plugin rules that exist for this repo's own source and never reach a consumer's `configs/`. */
-export const REPO_LOCAL_RULES: ReadonlySet<string> = new Set([
-  'chart-host-single',
-  'token-layer-boundary',
-  'no-dev-helper',
-  'no-import-meta-env',
-])
+export { REPO_LOCAL_RULES }
 
 /** Rules 2.0 removed: the concern is a type (or unrepresentable) now, so citing one is drift. */
 export const REMOVED_RULES: Readonly<Record<string, string>> = {
@@ -619,16 +638,19 @@ export const REMOVED_RULES: Readonly<Record<string, string>> = {
 }
 
 export type TagSources = {
-  /** Shipped plugin rule ids: the registry minus {@link REPO_LOCAL_RULES}. */
+  /** Shipped plugin rule ids: the registry minus {@link REPO_LOCAL_RULES} and {@link REMOVED_RULES}. */
   readonly pluginRules: ReadonlySet<string>
   /** `GUARD_RULES` keys. */
   readonly guardKinds: ReadonlySet<string>
-  /** Value ∪ type exports. */
+  /** The published surface (see {@link collectPublishedNames}). */
   readonly typeNames: ReadonlySet<string>
 }
 
-const TAG_RE = /\[(basalt\/[a-z0-9-]+|check-theme [a-z0-9-]+|type [A-Za-z_$][\w$]*)\]/g
-const BULLET_RE = /^(?:[-*]|\d+\.)\s+/
+const TAG = String.raw`\[(?:basalt\/[a-z0-9-]+|check-theme [a-z0-9-]+|type [A-Za-z_$][\w$]*)\]`
+const TAG_RE = new RegExp(TAG, 'g')
+/** A bullet ENDS in its tags: one or more tags, then nothing. */
+const TRAILING_TAGS_RE = new RegExp(`(?:\\s*${TAG})+\\s*$`)
+const BULLET_RE = /^\s*(?:[-*]|\d+\.)\s+/
 
 export type CheckFFailure = { line: number; message: string }
 
@@ -636,6 +658,7 @@ function tagFailure(tag: string, sources: TagSources): string | undefined {
   if (tag.startsWith('basalt/')) {
     const id = tag.slice('basalt/'.length)
     if (REPO_LOCAL_RULES.has(id)) return `[${tag}] is repo-local and never ships`
+    if (id in REMOVED_RULES) return `[${tag}] was removed in 2.0`
     return sources.pluginRules.has(id) ? undefined : `[${tag}] is not a shipped plugin rule`
   }
   if (tag.startsWith('check-theme ')) {
@@ -652,19 +675,21 @@ export function checkF(markdown: string, sources: TagSources): CheckFFailure[] {
   let inFrontmatter = false
   let inFence = false
   let inComment = false
-  let seenH1 = false
-  let introSpent = false
+  // The intro paragraph is the prose directly under the H1, before any bullet or heading.
+  let introOpen = false
   let bullet: { line: number; text: string } | undefined
 
   const closeBullet = (): void => {
     if (bullet === undefined) return
-    const tags = [...bullet.text.matchAll(TAG_RE)].map((m) => m[1] ?? '')
-    if (tags.length === 0) {
-      failures.push({ line: bullet.line, message: 'bullet carries no enforcement tag' })
-    }
-    for (const tag of tags) {
-      const message = tagFailure(tag, sources)
-      if (message !== undefined) failures.push({ line: bullet.line, message })
+    const text = bullet.text.replace(/\s+/g, ' ').trim()
+    const trailing = text.match(TRAILING_TAGS_RE)
+    if (trailing === null) {
+      failures.push({ line: bullet.line, message: 'bullet does not end in an enforcement tag' })
+    } else {
+      for (const tag of trailing[0].matchAll(TAG_RE)) {
+        const message = tagFailure(tag[0].slice(1, -1), sources)
+        if (message !== undefined) failures.push({ line: bullet.line, message })
+      }
     }
     bullet = undefined
   }
@@ -681,6 +706,7 @@ export function checkF(markdown: string, sources: TagSources): CheckFFailure[] {
     }
     if (FENCE_RE.test(raw)) {
       closeBullet()
+      introOpen = false
       inFence = !inFence
       return
     }
@@ -695,11 +721,12 @@ export function checkF(markdown: string, sources: TagSources): CheckFFailure[] {
     }
     if (raw.startsWith('#')) {
       closeBullet()
-      if (/^#\s/.test(raw)) seenH1 = true
+      introOpen = /^#\s/.test(raw)
       return
     }
     if (BULLET_RE.test(raw)) {
       closeBullet()
+      introOpen = false
       bullet = { line, text: raw }
       return
     }
@@ -708,13 +735,10 @@ export function checkF(markdown: string, sources: TagSources): CheckFFailure[] {
       return
     }
     closeBullet()
-    if (seenH1 && !introSpent) {
-      introSpent = true
-      return
-    }
+    if (introOpen) return
     failures.push({
       line,
-      message: 'prose outside a bullet (one intro line under the H1 is allowed)',
+      message: 'prose outside a bullet (only the intro line under the H1 is allowed)',
     })
   })
   closeBullet()
@@ -726,18 +750,50 @@ export function findRuleFiles(): string[] {
   return findAgentMdFiles().filter((f) => relative(join(pkgRoot, 'agent'), f).startsWith('rules/'))
 }
 
-export async function loadTagSources(): Promise<TagSources> {
-  const { GUARD_RULES } = await import('../src/guard/index')
-  const plugin = (await import('../configs/oxlint-plugin.js')) as {
-    default: { rules: Record<string, unknown> }
+export type PluginShape = {
+  readonly default?: { readonly rules?: Readonly<Record<string, unknown>> }
+}
+
+/** The registry's rule ids; throws a named error when the plugin's default export is not a plugin. */
+export function pluginRuleIds(plugin: PluginShape): string[] {
+  const rules = plugin.default?.rules
+  if (rules === undefined || typeof rules !== 'object') {
+    throw new Error(
+      "configs/oxlint-plugin.js: the default export has no 'rules' object — the tag check cannot " +
+        'read the plugin registry',
+    )
   }
+  return Object.keys(rules)
+}
+
+export function loadTagSources(): TagSources {
   return {
     pluginRules: new Set(
-      Object.keys(plugin.default.rules).filter((id) => !REPO_LOCAL_RULES.has(id)),
+      pluginRuleIds(pluginModule).filter(
+        (id) => !REPO_LOCAL_RULES.has(id) && !(id in REMOVED_RULES),
+      ),
     ),
     guardKinds: new Set(Object.keys(GUARD_RULES)),
-    typeNames: collectValidNames(),
+    typeNames: collectPublishedNames(),
   }
+}
+
+/**
+ * The two hand-kept sets must not rot: every repo-local id is still registered (else the entry
+ * guards nothing) and every removed id is retired in the plugin (else it was never removed).
+ */
+export function checkRuleSets(
+  registered: readonly string[],
+  retired: ReadonlySet<string>,
+): string[] {
+  return [
+    ...[...REPO_LOCAL_RULES]
+      .filter((id) => !registered.includes(id))
+      .map((id) => `REPO_LOCAL_RULES['${id}'] is not registered in configs/oxlint-plugin.js`),
+    ...Object.keys(REMOVED_RULES)
+      .filter((id) => !retired.has(id))
+      .map((id) => `REMOVED_RULES['${id}'] is not in RETIRED_RULE_IDS (configs/oxlint-plugin.js)`),
+  ]
 }
 
 // ── Check G: no agent file names a repo-local or removed plugin rule ──────────────────────────────
@@ -761,29 +817,40 @@ export function checkG(files: readonly string[]): CheckGFailure[] {
   ]
   const failures: CheckGFailure[] = []
   for (const file of files) {
-    // The generated `<!-- basalt:coverage -->` header is `check-coverage --write` output from
-    // `src/surfaces.ts`, which legitimately lists repo-local ids; only hand-written prose is judged.
-    let inCoverage = false
     readFileSync(file, 'utf8')
       .split('\n')
       .forEach((lineText, idx) => {
-        if (lineText.includes('<!-- basalt:coverage -->')) inCoverage = true
-        if (!inCoverage) {
-          for (const [id, why] of ids) {
-            if (new RegExp(`(?<![\\w-])${id}(?![\\w-])`).test(lineText)) {
-              failures.push({ file: relative(pkgRoot, file), line: idx + 1, id, why })
-            }
+        for (const [id, why] of ids) {
+          if (new RegExp(`(?<![\\w-])${id}(?![\\w-])`).test(lineText)) {
+            failures.push({ file: relative(pkgRoot, file), line: idx + 1, id, why })
           }
         }
-        if (lineText.includes('<!-- /basalt:coverage -->')) inCoverage = false
       })
   }
   return failures
 }
 
+// ── Check H: the symbols llms.txt's header names are published ───────────────────────────────────
+
+const LLMS_ENTRY_RE = /^# (basalt-ui(?:\/[a-z-]+)?) {2,}(.+)$/
+
+export type CheckHFailure = { line: number; name: string }
+
+export function checkLlmsNames(text: string, published: ReadonlySet<string>): CheckHFailure[] {
+  const failures: CheckHFailure[] = []
+  text.split('\n').forEach((lineText, idx) => {
+    const names = LLMS_ENTRY_RE.exec(lineText)?.[2]
+    if (names === undefined) return
+    for (const name of names.split(',').map((n) => n.trim())) {
+      if (!published.has(name)) failures.push({ line: idx + 1, name })
+    }
+  })
+  return failures
+}
+
 // ── main ──────────────────────────────────────────────────────────────────────
 
-async function main(): Promise<void> {
+function main(): void {
   const validNames = collectValidNames()
   const mdFiles = findAgentMdFiles()
   const srcTsFiles = findSrcTsFiles()
@@ -797,7 +864,7 @@ async function main(): Promise<void> {
   // consumer-visible), only `src/**` goes through the comment mask.
   const dFailures = checkD([...repoMdFiles, ...configsJsFiles], srcTsFiles)
   const eFailures = checkE(mdFiles, collectExportKeys())
-  const tagSources = await loadTagSources()
+  const tagSources = loadTagSources()
   const fFailures = findRuleFiles().flatMap((file) =>
     checkF(readFileSync(file, 'utf8'), tagSources).map((f) => ({
       ...f,
@@ -805,9 +872,14 @@ async function main(): Promise<void> {
     })),
   )
   const gFailures = checkG(findAgentFiles())
+  const hFailures = checkLlmsNames(
+    readFileSync(join(pkgRoot, 'llms.txt'), 'utf8'),
+    tagSources.typeNames,
+  )
   const selfFailures = [
     ...checkDenylistIsGenuinelyRemoved(validNames),
     ...checkMasksUrlSlashesCorrectly(),
+    ...checkRuleSets(pluginRuleIds(pluginModule), pluginModule.RETIRED_RULE_IDS),
   ]
 
   const messages: string[] = [
@@ -833,6 +905,9 @@ async function main(): Promise<void> {
         `${f.file}:${f.line}: imports '${f.specifier}', which package.json 'exports' does not resolve`,
     ),
     ...fFailures.map((f) => `${f.file}:${f.line}: ${f.message}`),
+    ...hFailures.map(
+      (f) => `llms.txt:${f.line}: header names '${f.name}', which is not a published export`,
+    ),
     ...gFailures.map((f) => `${f.file}:${f.line}: rule '${f.id}' ${f.why}`),
     ...selfFailures,
   ]
@@ -852,5 +927,5 @@ async function main(): Promise<void> {
 
 // Only run when executed directly (not when imported by the test suite)
 if (import.meta.path === Bun.main) {
-  await main()
+  main()
 }

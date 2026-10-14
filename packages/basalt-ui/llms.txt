@@ -3,14 +3,14 @@
 #
 # Entry points: use the exact import specifier below; do not guess.
 # basalt-ui            BasaltProvider, createBasaltRouter, BasaltShell, defineNav, PageBar, Section
-# basalt-ui/tokens     VX.*, defineSeries, groupTokens, buildPaletteCss (Mantine-free)
-# basalt-ui/charts     CartesianChart, Lines, Bars, ChartCard (Mantine-free)
-# basalt-ui/controls   FilterSet, ViewTabs and the store-bound filters
+# basalt-ui/tokens     VX, defineSeries, groupTokens, buildPaletteCss
+# basalt-ui/charts     CartesianChart, Lines, Bars, ChartCard
+# basalt-ui/controls   FilterSet, ViewTabs, RangeFilter, SelectFilter
 # basalt-ui/state      createSearchStore, createPersistedState
 # basalt-ui/vite       basaltViteConfig, basaltAppPlugin
-# Batteries (forms, table, commands, content, agent, format) are subpaths too.
-# Every peer is optional: install it before importing its subpath.
-# No React: `bunx basalt-ui tokens:css --out tokens.css` emits the token layer alone.
+# Required peers (install for `.`): react, react-dom, @mantine/{core,hooks,modals,notifications,spotlight},
+# @tanstack/react-router, @tanstack/react-query and the three @fontsource-variable faces.
+# Subpath-required peers are listed per subpath below; optional peers (remend, shiki, …) are import()-only.
 
 Package: basalt-ui
 Version: 1.41.0
