@@ -141,6 +141,9 @@ export const Route = createRootRouteWithContext<BasaltRouterContext>()({
 Extra context (argo's auth) extends `BasaltRouterContext` and goes in `createBasaltRouter({ context
 })`. argo's 401 handling stays its own `query: { queryCache }`; basalt subscribes to it (§ 7).
 
+**Server rendering (W10)**: router streaming, no Start, no RSC; the shell holds no promise, a slow section is
+an unawaited loader promise in `<Await>` + `<Suspense>` (fallback § 9.7). See `waves/evidence/w10/ssr.md`.
+
 **Open:**
 
 - `ModalsProvider` wrapping (not beside) the tree: W3 measures `modals.*` re-renders first.
@@ -153,17 +156,17 @@ assume the `configs/tsconfig.base.json` preset (`strict`, `exactOptionalProperty
 
 **Type errors**
 
-| Mistake                                              | 1.41 enforcement                                                   | 2.0 type                                                                                                                                               |
-| ---------------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| a filter/tab given `value`, `onChange` or `size`     | props absent (excess-property check)                               | kept, plus named slots `value?: never; onChange?: never; size?: never`, so the error names the mistake                                                 |
-| `PageBar` > 5 actions or ≠ 1 primary; `Section` > 3  | `basalt/page-bar-budget` lint                                      | `actions: [P] \| [P, M] \| [P, M, M] \| [P, M, M, M] \| [P, M, M, M, M]` (`P` = `{ primary: true }`, `M` = `{ primary?: false }`); `Section` caps at 3 |
-| theme knob out of range                              | `radius?: number`, `density?: number` (`theme/index.ts:1578,1601`) | `radius?: -5 \| … \| 5`, `density?: -3 \| … \| 3`                                                                                                      |
-| series group key retyped wrong (`'x'` vs `'x-'`)     | silent: refs to undeclared vars (`basalt-tokens.md`)               | `groupTokens` returns a branded `SeriesGroup`; `paletteOptions.groups` takes `SeriesGroup[]`, so no key is written twice                               |
-| nav defined without the `Register` augmentation      | prose ("validates NOTHING")                                        | `defineNav`'s parameter becomes the string literal `'basalt: declare Register { router }'` while `RegisteredRouter` is `AnyRouter`                     |
-| router-driven view transitions next to React's (§ 5) | —                                                                  | `createBasaltRouter` options carry `defaultViewTransition?: never`                                                                                     |
-| a closed union switched non-exhaustively             | `assertNever` export + rule text                                   | `AgentPart`, `ThreadStatus`, `AgentError`, `BasaltEvent` are closed; a switch ends `default: return x satisfies never`                                 |
-| hand-built theme, second resolver, sub-shell mounts  | exports + `hand-rolled-shell`                                      | unrepresentable: `cssVariablesResolver`, `baseTheme`, `AppSidebar`, `MobileNav`, `AppBreadcrumbs` are not exported                                     |
-| provider below the router, overlays mounted twice    | `basalt/provider-above-router`, `BasaltOverlays`                   | unrepresentable: `BasaltProvider` mounts `RouterProvider` and every overlay (§ 2)                                                                      |
+| Mistake                                             | 1.41 enforcement                                                   | 2.0 type                                                                                                                                               |
+| --------------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| a filter/tab given `value`, `onChange` or `size`    | props absent (excess-property check)                               | kept, plus named slots `value?: never; onChange?: never; size?: never`, so the error names the mistake                                                 |
+| `PageBar` > 5 actions or ≠ 1 primary; `Section` > 3 | `basalt/page-bar-budget` lint                                      | `actions: [P] \| [P, M] \| [P, M, M] \| [P, M, M, M] \| [P, M, M, M, M]` (`P` = `{ primary: true }`, `M` = `{ primary?: false }`); `Section` caps at 3 |
+| theme knob out of range                             | `radius?: number`, `density?: number` (`theme/index.ts:1578,1601`) | `radius?: -5 \| … \| 5`, `density?: -3 \| … \| 3`                                                                                                      |
+| series group key retyped wrong (`'x'` vs `'x-'`)    | silent: refs to undeclared vars (`basalt-tokens.md`)               | `groupTokens` returns a branded `SeriesGroup`; `paletteOptions.groups` takes `SeriesGroup[]`, so no key is written twice                               |
+| nav defined without the `Register` augmentation     | prose ("validates NOTHING")                                        | `defineNav`'s parameter becomes the string literal `'basalt: declare Register { router }'` while `RegisteredRouter` is `AnyRouter`                     |
+| a consumer-set router view transition (§ 5)         | —                                                                  | `createBasaltRouter` sets `defaultViewTransition` itself; its options carry `defaultViewTransition?: never`                                            |
+| a closed union switched non-exhaustively            | `assertNever` export + rule text                                   | `AgentPart`, `ThreadStatus`, `AgentError`, `BasaltEvent` are closed; a switch ends `default: return x satisfies never`                                 |
+| hand-built theme, second resolver, sub-shell mounts | exports + `hand-rolled-shell`                                      | unrepresentable: `cssVariablesResolver`, `baseTheme`, `AppSidebar`, `MobileNav`, `AppBreadcrumbs` are not exported                                     |
+| provider below the router, overlays mounted twice   | `basalt/provider-above-router`, `BasaltOverlays`                   | unrepresentable: `BasaltProvider` mounts `RouterProvider` and every overlay (§ 2)                                                                      |
 
 **Lint at `error` in 2.0** (`configs/oxlint-basalt.json`, the dogfood levels in `/.oxlintrc.json`
 match them). These carry over unchanged: `no-raw-font-size`, `raw-size-literal`, `card-inset`,
@@ -173,8 +176,7 @@ match them). These carry over unchanged: `no-raw-font-size`, `raw-size-literal`,
 `ai-sdk-major`, `raw-breakpoint`, `forms-field-key` (`@mantine/form`, § 8). `shadow-basalt-export`
 moves from warn to error; `agent-no-raw-usechat` widens to the `Chat` class (`@ai-sdk/react`
 `dist/index.d.ts:90`). New: `no-dev-helper` (repo-local) requires a literal `process.env.NODE_ENV`
-gate on dev-only `import()`s. The `router-view-transition` ban moved to the rendering wave (owner,
-2026-10-14: route transitions come back through the router).
+gate on dev-only `import()`s. W10: `route-view-transition` bans `<ViewTransition>` around `<Outlet>` (§ 5).
 
 All 28 `check-theme` guard kinds are already `error` (`src/guard/index.ts:937`, empty
 `GRACE_PERIOD_KINDS`) and carry over, except `raw-visx-axis` and `chart-missing-aria-label`, which
@@ -213,23 +215,21 @@ density })`. 2.0 changes only the surface around it:
 
 ## 5. Transitions
 
-One mechanism per surface; React owns every view transition. A router navigation runs in
-`React.startTransition` (`@tanstack/react-router` 1.170.38 `Transitioner.js:20`), but its state is a
-`useSyncExternalStore` read, which commits synchronously, so `<ViewTransition>` never fires on it.
-`defaultViewTransition` calls `document.startViewTransition` itself (`router-core` 1.171.32
-`router.js:490-505`), and React interrupts a non-React transition, so the
-router path is banned (§ 3). `<ViewTransition>` is stable in 19.3 and `<Activity>` since 19.2
-(`@types/react` 19.3.0 `index.d.ts:2002-2101`); plain `setState` never activates it (react.dev).
+One mechanism per surface. **Route changes are the router's** (owner, 2026-10-14; a React `<ViewTransition>`
+never fires on its SyncLane commit, W7 0/12): `defaultViewTransition: { types }` from nav order, `false` on
+first load and search-only changes, set only where `:active-view-transition-type()` works (Chrome 125 / Safari
+18.2 / Firefox 147); only `basalt-main` moves; skip rejections (#7733) are swallowed. `<ViewTransition>` stays
+for in-page changes (`setState` never activates it). Evidence: `waves/evidence/w10/transitions.md`.
 
-| Surface                                    | Mechanism                                                                                                                                                                                                         | Why this one                                                                                              |
-| ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| route change                               | none: the router commits through `useSyncExternalStore`, so `<ViewTransition>` never activates (evidence `w7/transitions.md`); revisit if TanStack Router publishes match state through a transition-capable read | a route `<ViewTransition>` would be inert code                                                            |
-| aside open/close                           | fold setter inside `startTransition` + `<ViewTransition>` on the aside region; body under `<Activity mode={folded ? 'hidden' : 'visible'}>`                                                                       | `Activity` keeps scroll and inputs across folds without a remount                                         |
-| tab swap (`ViewTabs`)                      | none: instant swap                                                                                                                                                                                                | a same-route navigation; motion delays reading a data view (DESIGN-CORE restraint)                        |
-| chat thread swap (`ThreadFeedRow` expand)  | none: lazy first mount, then kept mounted with plain-CSS `display: none`; no `Activity` (hidden `Activity` re-fires every transcript effect) and no `<ViewTransition>`                                            | `thread-feed-row.tsx` owns show/hide so a Mantine `keepMountedMode` default change cannot replay a stream |
-| modal, drawer, popover, menu               | Mantine `transitionProps` (theme default, Mantine `respectReducedMotion`)                                                                                                                                         | Mantine owns portal mount/unmount; a view transition would snapshot the page                              |
-| list insert / reorder (feed rows, history) | `motion/react` `layout` + `AnimatePresence`                                                                                                                                                                       | streamed inserts are urgent `setState`, which never activates `<ViewTransition>`                          |
-| theme toggle icon                          | CSS transition                                                                                                                                                                                                    | motion was overkill (`theme/theme-toggle.tsx`)                                                            |
+| Surface                                    | Mechanism                                                                                                                                                              | Why this one                                                                                              |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| route change                               | router `defaultViewTransition` with nav-order `types` (above); `basalt/route-view-transition` bans `<ViewTransition>` around `<Outlet>`                                | the router owns the commit, so only its own transition fires (W10: 12/12)                                 |
+| aside open/close                           | fold setter inside `startTransition` + `<ViewTransition>` on the aside region; body under `<Activity mode={folded ? 'hidden' : 'visible'}>`                            | `Activity` keeps scroll and inputs across folds without a remount                                         |
+| tab swap (`ViewTabs`)                      | none: instant swap                                                                                                                                                     | a same-route navigation; motion delays reading a data view (DESIGN-CORE restraint)                        |
+| chat thread swap (`ThreadFeedRow` expand)  | none: lazy first mount, then kept mounted with plain-CSS `display: none`; no `Activity` (hidden `Activity` re-fires every transcript effect) and no `<ViewTransition>` | `thread-feed-row.tsx` owns show/hide so a Mantine `keepMountedMode` default change cannot replay a stream |
+| modal, drawer, popover, menu               | Mantine `transitionProps` (theme default, Mantine `respectReducedMotion`)                                                                                              | Mantine owns portal mount/unmount; a view transition would snapshot the page                              |
+| list insert / reorder (feed rows, history) | `motion/react` `layout` + `AnimatePresence`                                                                                                                            | streamed inserts are urgent `setState`, which never activates `<ViewTransition>`                          |
+| theme toggle icon                          | CSS transition                                                                                                                                                         | motion was overkill (`theme/theme-toggle.tsx`)                                                            |
 
 **`motion` survives only for list insert/reorder.** Of its three 1.41 import sites, `theme-toggle.tsx`
 drops it, `thread-detail-panel.tsx` is deleted, and `thread-feed.tsx` keeps it. That makes `motion` subpath-required for `./agent` (§ 1), bumped to 14 (W3).
@@ -242,7 +242,7 @@ drops it, `thread-detail-panel.tsx` is deleted, and `thread-feed.tsx` keeps it. 
   `'always' | 'never' | 'user'`); the provider does not, so the root never reaches `motion`.
 - The base theme sets Mantine's `respectReducedMotion: true`.
 
-**Accepted:** Back/Forward through `popstate` does not animate, because React skips it (react.dev).
+**Accepted:** Back/Forward through `popstate` is unmeasured (router #2983 says it does not animate).
 
 **Open:**
 
@@ -611,8 +611,8 @@ three-axis law's only chart axis). The compiled `chart: ({ width }) => spec` rea
 | regular < 800 | outside                                                | 5 / 5       | `TEXT.micro` | chips               |
 | wide          | outside; `Lines` end labels when ≤ 3 lines and no `y2` | 6 / 5       | `TEXT.micro` | chips or end labels |
 
-- The height law is unchanged (width × class ratio, clamped 160–420, ≤ 45 vh on a coarse pointer);
-  the rung passes it as `height`. SSR renders the regular class (`initialWidth: 640`).
+- The height law (width × class ratio, 160–420, ≤ 45 svh on a coarse pointer) is CSS since W10:
+  `ChartBox` container queries fix the box before JS, so hydration moves nothing (CLS 0).
 - Tick labels never rotate; collision is `tickLabels.thin`. Touch: `pin` is on for coarse pointers only (tap pins and
   unpins) and the host sets `touch-action: pan-y`. W4 proves both, and y labels inside the plot.
 
@@ -623,6 +623,7 @@ three-axis law's only chart axis). The compiled `chart: ({ width }) => spec` rea
 - SSR: `renderToString` emits the full accessible SVG at `initialWidth` (spike). Hydration adopts
   it; `idPrefix` comes from `useId`. The engine's React-free `renderChartSvg` stays unexposed until
   a consumer names it.
+- W10: pending state is the streamed fallback; a `barY` needs `z` or `y1`/`y2` (else N×N, `barMark`).
 
 ### 9.8 Boundary and lint (every rule at `error`)
 
@@ -702,15 +703,15 @@ A kind is proven by porting a real consumer's call sites, not by a demo page.
 - `height` is a number (fixed) or `{ base, regular, wide }` (`base` below regular). Unstated, it is
   width × class ratio (§ 9.6). On a coarse pointer every height, a literal included, is capped at 45 %
   of the viewport.
-- `ChartCard` takes `BasaltProps` and `classNames` for `root | header | body`. Under 280 px it
-  renders short: the header folds its subtitle and trims its top inset (hysteresis of 24 px).
+- `ChartCard` (`classNames`: `root | header | body`) folds its header when the chart states ≤ 180 px
+  (CSS, W10); a non-chart body is still measured (< 280 px, hysteresis 24 px).
 
 **Legend**
 
 - Derived from `series`. Toggle is on at ≥ 2 entries (`legend.toggle` overrides); a click hides the
   series from the plot, the tooltip and the auto domain together. `legend={false}` removes it.
-- `placement`: `bottom` (default), `top`, or `header` (the enclosing `ChartCard`'s header row; `top`
-  outside a card). `groups` separates series | overlay | reference.
+- `placement`: `bottom` (default), `top`, or `header` (drawn by the chart at the top of the card body,
+  so it is in the server HTML; W10). `groups` separates series | overlay | reference.
 - Hovering an entry emphasises its series (§ 9.9, resolved).
 
 **State**

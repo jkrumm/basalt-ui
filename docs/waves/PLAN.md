@@ -509,14 +509,14 @@ Charts), `docs/archive/CHARTS-SPEC-1x.md`, `docs/DESIGN-CORE.md`, `packages/basa
 - **Next:** no wave is `active` — the orchestrator inserts the rendering wave (SSR, streaming, route
   transitions) ahead of the release candidate and activates it.
 
-## Wave 10 — Rendering: SSR, streaming, route transitions <!-- status: active -->
+## Wave 10 — Rendering: SSR, streaming, route transitions <!-- status: done -->
 
 Owner decision 2026-10-14: route transitions come back through the router, the page is SSR-first with
 the heavy parts streamed, and server rendering is fast. Research: `docs/waves/audit-i-rendering-2026-10.md`
 (router 1.170.44 / Start 1.169.1 / React 19.3). RSC is out of 2.0: experimental in Start, and TanStack's
 own site dropped it (2026-07-24); revisit on a 2.x minor if that changes.
 
-- [ ] Route transitions through the router. Lift the V2-SPEC § 3 ban: `createBasaltRouter` sets
+- [x] Route transitions through the router. Lift the V2-SPEC § 3 ban: `createBasaltRouter` sets
       `defaultViewTransition` with a `types` callback derived from `BasaltShell nav` order (forward /
       back / sibling, `false` for search-only changes). CSS for `:active-view-transition-type()` in
       `styles.css`, reduced motion honoured. Catch the discarded `ViewTransition` promise rejections
@@ -526,7 +526,7 @@ own site dropped it (2026-07-24); revisit on a 2.x minor if that changes.
       around `<Outlet>`. Evidence: the transitions lane counts `startViewTransition` per navigation
       (target 12/12, W7 measured 0/12); browser floor recorded (Chrome 111 / Safari 18.0 / Firefox 144,
       `types` Chrome 125 / Safari 18.2 / Firefox 147).
-- [ ] SSR-first contract for charts and tables. Every chart kind and `DataTable` renders complete on
+- [x] SSR-first contract for charts and tables. Every chart kind and `DataTable` renders complete on
       the server with a deterministic size, so hydration shifts nothing (CLS 0). Sized fallbacks for
       `<Suspense>`/`<Await>` boundaries, so a streamed section reserves its final box. The documented
       pattern: the shell holds no promise; each slow section gets an unawaited loader promise and
@@ -534,17 +534,60 @@ own site dropped it (2026-07-24); revisit on a 2.x minor if that changes.
       live data updates client-side after hydration. Watch router issue #7094 (an unawaited loader
       promise can block the shell flush). No Start dependency in the package; a new export needs a
       named consumer (argo).
-- [ ] Server render cost. DualPanel with 5k distinct x takes ~12 s to SSR (W7 measured): profile it and fix the
+- [x] Server render cost. DualPanel with 5k distinct x takes ~12 s to SSR (W7 measured): profile it and fix the
       cause (fold or downsample before marks, or the scale path). Then set a per-kind SSR budget, for
       example 10k points under 100 ms, gated by a test that runs well under CI's 5 s timeout.
-- [ ] Evidence: a new `ssr` lane in `make evidence` over a streaming SSR fixture (`react-dom/server`
+- [x] Evidence: a new `ssr` lane in `make evidence` over a streaming SSR fixture (`react-dom/server`
       `renderToReadableStream`, the playground's dashboard shapes): TTFB, shell flush, per-section
       completion, CLS, hydration time, against current master. The shipped rules and skills get the
       rendering pattern in a few lines, each backed by a rule or a type.
 
 **Left behind:**
 
-## Wave 11 — Release candidate <!-- status: pending -->
+- **Landed** (5 PRs via `rd merge`, `make check` green on each rebased SHA; every worker diff agent-gateway
+  reviewed until no blocking finding was left: #176 two rounds, #178 three, #177 three, #179 three):
+  #176 `ssr` evidence lane, #178 server render cost, #179 route transitions, #177 SSR-first contract, then
+  this close-out (V2-SPEC § 2/3/5/9, shipped rules + `basalt-app` skill, evidence index). Index:
+  `docs/waves/evidence/w10.md`.
+- **Route transitions** (V2-SPEC § 5 rewritten): `createBasaltRouter` sets `defaultViewTransition: { types }`
+  with direction from nav order (`basalt-forward|back|sibling`, `false` on first load and search/hash-only),
+  **gated on `:active-view-transition-type()` support** (Chrome 125 / Safari 18.2 / Firefox 147; below that and
+  on the server, no animation — ungated, the router would crossfade the whole page on every filter change).
+  Only `[data-basalt-scrollport]` moves (`basalt-main`). A once-per-document `startViewTransition` patch swallows
+  skip rejections on `ready`/`finished` and `reportError`s anything else once. New shipped rule
+  `basalt/route-view-transition` (error). `defaultViewTransition?: never` stays on the options type (basalt sets
+  it, the consumer cannot). Chrome 155: 12/12 (W7 0/12). Safari/Firefox not observed.
+- **SSR cost:** the 12 s was `@tanstack/charts` `barY` stacking one series per row (N×N) when given neither `z` nor
+  an extent — DualPanel, MirroredBars (19 s at 5k) and bar Sparkline. `barMark` (`marks.ts`) sets `y1: 0`; the
+  decorative `fillBetween` thins by x position past 4 rows/px. DualPanel 5k 10.5 s → 107 ms. Gate:
+  `ssr-budget.test.tsx`, growth ratio `t(10k)/t(2.5k) < 8` plus a cap ≥ 4x local median (caps up to 1000 ms so
+  hosted runners cannot flake it).
+- **SSR contract:** the chart box is CSS-owned (`ChartBox`, container queries; the engine measures it); legend mode,
+  Donut side legend (480 px) and the short-card fold are container queries; header legend drawn by the chart.
+  Layout probe: every kind + `DataTable`, server box = hydrated box, CLS 0 at 1280 and 390. DataTable column fold
+  had CLS 0.070 from pixel rounding (fixed). Pending states fill the final box, so they are the `<Suspense>`
+  fallbacks; no new export. `MIGRATING.md` § 2.0 has five rows for the behaviour changes.
+- **Streaming:** works on router 1.170.38 without Start (`createRequestHandler` + `renderRouterToStream`); #7094 did
+  not reproduce (shell flush 2 ms). Bots and headless-Chrome UAs get a buffered document. React 19.3 batches
+  Suspense reveals (in DOM at the delay, revealed ~400 ms / ~1 s later); budgets belong on in-DOM and CLS.
+- **Agent layer:** three tagged bullets (route transition, chart fallback, table fallback) and a `// @check`
+  "Stream a slow section" snippet in `basalt-app` (the snippet harness's route stub gains a `/live` route with a
+  loader). **Lead call, flag if you disagree:** the agent-layer budget rises 576 → 606 lines (`basalt-app` 217 → 247) for
+  that snippet; the shipped rule lines stay 277 (the route rule folded into the shell bullet), spec prose stays 2650. Version drift: the audit names router 1.170.44; installed
+  is 1.170.38 (no bump in this wave).
+- **Deferred, accepted:** a consumer `barY` inside `CartesianChart` `marks` can still hit the N×N path — candidate
+  lint rule ("a `barY` sets `z` or `y1`"), not built (no named consumer yet; argo's charts in W13 decide). A
+  `ChartCard` whose body is not a chart is still measured after mount; the short-card marker is class-blind for a
+  responsive height (`{ base: 120, wide: 320 }`); the short-selector pair is duplicated across two CSS modules and
+  the 240/480/800 literals across four (pinned by `breakpoint-literals.test.ts`). `routeSection` in
+  `scripts/evidence/transitions.ts` and DualPanel's `plan()` are flagged complex by fallow; untouched.
+- **Observed, not W10's:** the fold lane's cold first variant logs two `404` resource errors (route run: none) —
+  W11's playground validation should name the asset. GitHub reports 10 Dependabot alerts on master (1 critical).
+- **Ops notes:** a shared `/tmp/pr-body.md` let one worker overwrite another's PR body — briefs should say
+  `mktemp`. A `rd say` body with backticks inside double quotes is eaten by the shell; send from a file.
+- **Next:** W11 (release candidate) is `active`.
+
+## Wave 11 — Release candidate <!-- status: active -->
 
 - [ ] Full playground validation: every route through `make evidence` plus `@verifier`. Fix the
       regressions found.
