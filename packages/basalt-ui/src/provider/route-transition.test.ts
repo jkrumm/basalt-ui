@@ -1,8 +1,16 @@
-import { afterEach, describe, expect, test } from 'bun:test'
-import { defineNav } from '../router-tanstack/nav'
+import { afterAll, afterEach, describe, expect, test } from 'bun:test'
+import {
+  createMemoryHistory,
+  createRootRoute,
+  createRoute,
+  createRouter,
+} from '@tanstack/react-router'
+import { flattenNav } from '../router-tanstack/nav'
 import type { AnyNavGroup } from '../router-tanstack/nav'
+import { defineNav, restoreActiveNav, savedActiveNav } from '../../tests/support/nav-test-utils'
 import {
   guardViewTransitionRejections,
+  navIndexOf,
   routeTransitionTypes,
   routeViewTransition,
 } from './route-transition'
@@ -31,6 +39,11 @@ const nav: { groups: ReadonlyArray<AnyNavGroup> } = {
 }
 
 type Nav = Parameters<typeof routeTransitionTypes>[1]
+const change = (from: string, to: string, pathChanged = from !== to) => ({
+  fromLocation: { pathname: from },
+  toLocation: { pathname: to },
+  pathChanged,
+})
 const go = (from: string | undefined, to: string, pathChanged = from !== to, using: Nav = nav) =>
   routeTransitionTypes(
     {
@@ -127,18 +140,110 @@ describe('routeTransitionTypes', () => {
 })
 
 describe('routeViewTransition.types reads the nav defineNav registered', () => {
-  const change = (from: string, to: string) => ({
-    fromLocation: { pathname: from },
-    toLocation: { pathname: to },
-    pathChanged: from !== to,
-  })
+  const before = savedActiveNav()
+  afterAll(() => restoreActiveNav(before))
+
   test('live, at navigation time', () => {
-    // Before any defineNav in this process the stash may be empty or another test's: set our own.
-    defineNav({ groups: nav.groups } as never)
-    expect(routeViewTransition.types(change('/', '/tables') as never)).toEqual(['basalt-forward'])
-    expect(routeViewTransition.types(change('/tables', '/') as never)).toEqual(['basalt-back'])
-    defineNav({ groups: [] } as never)
-    expect(routeViewTransition.types(change('/', '/tables') as never)).toEqual(['basalt-sibling'])
+    defineNav({ groups: nav.groups })
+    expect(routeViewTransition.types(change('/', '/tables'))).toEqual(['basalt-forward'])
+    expect(routeViewTransition.types(change('/tables', '/'))).toEqual(['basalt-back'])
+    defineNav({ groups: [] })
+    expect(routeViewTransition.types(change('/', '/tables'))).toEqual(['basalt-sibling'])
+  })
+})
+
+describe('the matcher agrees with the router (the sidebar uses router.matchRoute)', () => {
+  const corpusNav: { groups: ReadonlyArray<AnyNavGroup> } = {
+    groups: [
+      {
+        id: 'g',
+        label: 'G',
+        items: [
+          item('home', '/', { exact: true }),
+          item('dash', '/dashboard', { children: [item('rev', '/dashboard/revenue')] }),
+          item('ex', '/exact', { exact: true }),
+          item('ann', '/users/$userId', {
+            link: { to: '/users/$userId', params: { userId: 'ann' } },
+          }),
+          item('users', '/users/$userId'),
+          item('files', '/files/$'),
+          item('xs', '/xs/$', { exact: true }),
+          item('opt', '/opt/{-$lang}/about'),
+          item('dup1', '/dup'),
+          item('dup2', '/dup'),
+          item('sp', '/Case/Sensitive'),
+        ],
+      },
+    ],
+  }
+  const paths = [
+    '/',
+    '/dashboard',
+    '/dashboard/',
+    '/dashboard/revenue',
+    '/dashboard/revenue/x',
+    '/exact',
+    '/exact/x',
+    '/users',
+    '/users/bob',
+    '/users/ann',
+    '/users/ann/posts',
+    '/users/ANN',
+    '/files',
+    '/files/a',
+    '/files/a/b/c',
+    '/opt/about',
+    '/opt/en/about',
+    '/opt/en/about/more',
+    '/dup',
+    '/dup/x',
+    '/case/sensitive',
+    '/Case/Sensitive',
+    '/nowhere',
+  ]
+  const flat = flattenNav(corpusNav)
+
+  /** The sidebar's own resolution (`use-nav.ts`): router.matchRoute per item, most specific wins, first on a tie. */
+  async function sidebarWinner(pathname: string): Promise<number> {
+    const root = createRootRoute()
+    const leaf = (path: string) =>
+      createRoute({ getParentRoute: () => root, path, component: () => null })
+    const router = createRouter({
+      routeTree: root.addChildren([
+        leaf('/'),
+        leaf('/dashboard'),
+        leaf('/dashboard/revenue'),
+        leaf('/exact'),
+        leaf('/users/$userId'),
+        leaf('/users/$userId/posts'),
+        leaf('/files/$'),
+        leaf('/xs/$'),
+        leaf('/opt/{-$lang}/about'),
+        leaf('/dup'),
+        leaf('/Case/Sensitive'),
+      ]),
+      history: createMemoryHistory({ initialEntries: [pathname] }),
+    })
+    await router.load()
+    let winner = -1
+    let specificity = -1
+    for (const [index, it] of flat.entries()) {
+      const params = it.link.params as Record<string, string> | undefined
+      const matched = router.matchRoute(
+        { to: it.link.to, ...(params !== undefined && { params }) } as never,
+        { fuzzy: it.exact !== true && it.link.to !== '/' },
+      )
+      const count = it.link.to.split('/').filter(Boolean).length
+      if (matched && count > specificity) {
+        winner = index
+        specificity = count
+      }
+    }
+    return winner
+  }
+
+  test.each(paths)('%s picks the same item as the router', async (pathname) => {
+    expect(navIndexOf(flat, pathname)).toBe(await sidebarWinner(pathname))
   })
 })
 
@@ -207,18 +312,27 @@ describe('guardViewTransitionRejections', () => {
     }
   })
 
-  test('ready swallows exactly the three skip DOMExceptions and rethrows everything else', () => {
-    const { handlers, transition } = recording()
-    install(transition)
-    const [ready] = handlers.ready
-    for (const name of ['AbortError', 'InvalidStateError', 'TimeoutError'])
-      expect(() => ready?.(new DOMException('skipped', name))).not.toThrow()
-    expect(() => ready?.(new DOMException('x', 'SyntaxError'))).toThrow()
-    expect(() => ready?.(new Error('real bug'))).toThrow('real bug')
-    // A look-alike is not a skip: same name, wrong type.
-    const lookAlike = Object.assign(new Error('x'), { name: 'AbortError' })
-    expect(() => ready?.(lookAlike)).toThrow()
-    expect(() => ready?.('AbortError')).toThrow()
+  test('ready swallows exactly the three skip DOMExceptions and reports everything else once', () => {
+    const reports: unknown[] = []
+    const realReportError = globalThis.reportError
+    globalThis.reportError = (reason: unknown) => void reports.push(reason)
+    try {
+      const { handlers, transition } = recording()
+      install(transition)
+      const [ready] = handlers.ready
+      for (const name of ['AbortError', 'InvalidStateError', 'TimeoutError'])
+        expect(() => ready?.(new DOMException('skipped', name))).not.toThrow()
+      expect(reports).toEqual([])
+      const syntax = new DOMException('x', 'SyntaxError')
+      const bug = new Error('real bug')
+      // A look-alike is not a skip: same name, wrong type.
+      const lookAlike = Object.assign(new Error('x'), { name: 'AbortError' })
+      for (const reason of [syntax, bug, lookAlike, 'AbortError'])
+        expect(() => ready?.(reason)).not.toThrow()
+      expect(reports).toEqual([syntax, bug, lookAlike, 'AbortError'])
+    } finally {
+      globalThis.reportError = realReportError
+    }
   })
 
   test('finished never re-raises, and updateCallbackDone is left to the router', () => {
@@ -235,30 +349,54 @@ describe('guardViewTransitionRejections', () => {
   const SCRIPT = `
     import { guardViewTransitionRejections } from ${JSON.stringify(import.meta.dir + '/route-transition.ts')}
     const seen = []
+    const reported = []
+    globalThis.reportError = (r) => reported.push(r.message)
     process.on('unhandledRejection', (r) => seen.push(r instanceof Error ? r.message : r?.name ?? String(r)))
     const skip = () => new DOMException('Transition was skipped', 'AbortError')
     globalThis.document = {
       startViewTransition() {
+        if (process.argv.at(-2) === 'real') {
+          const bug = () => new Error('callback threw')
+          return { ready: Promise.reject(bug()), finished: Promise.reject(bug()), updateCallbackDone: Promise.reject(bug()) }
+        }
         return { ready: Promise.reject(skip()), finished: Promise.reject(skip()), updateCallbackDone: Promise.resolve() }
       },
     }
     if (process.argv.at(-1) === 'guard') guardViewTransitionRejections()
-    document.startViewTransition()
+    const transition = document.startViewTransition()
+    // The router awaits updateCallbackDone itself; it must still see the real error.
+    let routerSaw = null
+    try { await transition.updateCallbackDone } catch (e) { routerSaw = e.message }
     await new Promise((r) => setTimeout(r, 30))
-    console.log(JSON.stringify(seen))
+    console.log(JSON.stringify({ seen, reported, routerSaw }))
   `
-  const observe = async (mode: 'guard' | 'bare') => {
-    const proc = Bun.spawn([process.execPath, '-e', SCRIPT, mode], {
+  const observe = async (scenario: 'skip' | 'real', mode: 'guard' | 'bare') => {
+    const proc = Bun.spawn([process.execPath, '-e', SCRIPT, scenario, mode], {
       stdout: 'pipe',
       stderr: 'pipe',
     })
     const out = await new Response(proc.stdout).text()
     await proc.exited
-    return JSON.parse(out.trim().split('\n').at(-1) ?? '[]') as unknown[]
+    return JSON.parse(out.trim().split('\n').at(-1) ?? '{}') as {
+      seen: unknown[]
+      reported: unknown[]
+      routerSaw: string | null
+    }
   }
 
   test('a skipped transition is two unhandled rejections without the guard and none with it', async () => {
-    expect(await observe('bare')).toEqual(['Transition was skipped', 'Transition was skipped'])
-    expect(await observe('guard')).toEqual([])
+    const skipped = ['Transition was skipped', 'Transition was skipped']
+    expect((await observe('skip', 'bare')).seen).toEqual(skipped)
+    const guarded = await observe('skip', 'guard')
+    expect(guarded.seen).toEqual([])
+    expect(guarded.reported).toEqual([])
+  })
+
+  test('a real error is reported exactly once, and the router still sees it on updateCallbackDone', async () => {
+    const guarded = await observe('real', 'guard')
+    expect(guarded.reported).toEqual(['callback threw'])
+    expect(guarded.routerSaw).toBe('callback threw')
+    // Nothing is left unhandled: ready and finished are handled, updateCallbackDone was awaited.
+    expect(guarded.seen).toEqual([])
   })
 })

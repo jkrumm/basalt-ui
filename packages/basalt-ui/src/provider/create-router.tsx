@@ -81,6 +81,10 @@ function NotFoundComponent() {
 }
 
 /**
+ * Side effect, once per document: wraps `document.startViewTransition` so a skipped route
+ * transition (`AbortError`) never becomes an unhandled rejection (`guardViewTransitionRejections`).
+ * Nothing else global is touched.
+ *
  * @example
  * const router = createBasaltRouter({ routeTree })
  * declare module '@tanstack/react-router' {
