@@ -11,8 +11,8 @@ Gate: `packages/basalt-ui/src/charts/ssr-budget.test.tsx`.
 | Lines            | 47        | 18       | 45         | 26        |
 | Bars             | 73        | 56       | 101        | 69        |
 | StackedArea      | 59        | 41       | 64         | 52        |
-| DualPanel        | 10,458    | 129      | > 100,000  | 131       |
-| MirroredBars     | 19,393    | 19,501   | not run    | not run   |
+| DualPanel        | 10,458    | 107      | > 100,000  | 149       |
+| MirroredBars     | 19,393    | 139      | not run    | 250       |
 | BandStrip        | 69        | 34       | 80         | 99        |
 | Sparkline (line) | 22        | 7        | 17         | 21        |
 | Heatmap          | 30        | 12       | 27         | 28        |
@@ -21,7 +21,9 @@ Gate: `packages/basalt-ui/src/charts/ssr-budget.test.tsx`.
 "Before" is `af79408e`; the cold first render is in the before column, so the small kinds improve only by
 JIT warm-up (not by the change). `MirroredBars` (both panes) and `Sparkline` `mark="bar"` had the same
 unkeyed `barY` and got the same `y1: 0`; the 300-row SSR output of both is byte-identical before and
-after (`cmp`, with absent fractions, bar opacity, negative values, `emphasizeLast`).
+after (`cmp`, with absent fractions, bar opacity, negative values, `emphasizeLast`). The `MirroredBars`
+cells are the plain config (two series, one per pane); with `getAbsentFraction` and `getBarOpacity` set it
+measures 129 ms at 5k and 256 ms at 10k.
 
 ## Profile
 
@@ -72,20 +74,25 @@ without the fill: ~100 ms) and they are the cursor's targets.
 Per kind, medians of three warm renders: `t(10k) / t(2.5k) < 8` (linear ~4, quadratic ~16; the denominator
 is floored at 5 ms) AND `t(10k)` under a cap of at least 4x the local median. The ratio is the real gate
 and catches the bug class on any runner; the cap catches a constant-factor blow-up and is generous
-because hosted runners are 2-3x slower. The medians below are copied from the comments in the test
-(one source); a loaded laptop moves them by up to 1.5x between runs.
+because hosted runners are 2-3x slower. Heatmap and Donut have no ratio (their timings sit at the
+noise floor) and only the cap. The medians below are copied from the comments in the test (one
+source); a loaded laptop moves them by up to 1.5x between runs.
+
+`MirroredBars` is gated with `getAbsentFraction` and `getBarOpacity` set (the measured and gap rect
+paths). That configuration at 2.5k / 5k / 10k: 67 / 129 / 256 ms, so linear (each doubling is 2x):
+the measured and gap rect paths share no quadratic cause.
 
 | Kind             | 2.5k ms | 10k ms | Cap  |
 | ---------------- | ------- | ------ | ---- |
-| Lines            | 13      | 34     | 150  |
-| Bars             | 26      | 111    | 500  |
-| StackedArea      | 22      | 83     | 350  |
-| DualPanel        | 80      | 169    | 1000 |
-| MirroredBars     | 54      | 205    | 1000 |
-| BandStrip        | 19      | 78     | 350  |
-| Heatmap          | 6       | 22     | 100  |
-| Donut            | 1       | 2      | 30   |
-| Sparkline (line) | 3       | 15     | 80   |
-| Sparkline (bar)  | 5       | 26     | 120  |
+| Lines            | 8       | 34     | 150  |
+| Bars             | 26      | 101    | 500  |
+| StackedArea      | 16      | 61     | 350  |
+| DualPanel        | 72      | 155    | 1000 |
+| MirroredBars     | 63      | 254    | 1000 |
+| BandStrip        | 20      | 79     | 350  |
+| Heatmap          | -       | 25     | 100  |
+| Donut            | -       | 3      | 100  |
+| Sparkline (line) | 3       | 14     | 80   |
+| Sparkline (bar)  | 5       | 23     | 120  |
 
 The file runs in about 3 s locally.
