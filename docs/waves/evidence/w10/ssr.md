@@ -10,7 +10,8 @@ A fixture app (`scripts/evidence/ssr-fixture/`) on `Bun.serve`, built from `pack
 `BasaltProvider` + a TanStack Router instance, the dashboard's shapes (KPI row of `StatCard`s, a `Lines`
 chart, a `Bars` chart, a `BasaltDataTable`). The shell holds no promise; each section has an unawaited
 loader promise (150 / 300 / 450 / 600 ms) read through `<Await>` inside `<Suspense>`, whose fallback is a
-fixed-height box. Two measurements, median of 5 runs after a warm-up:
+fixed-height box. Two measurements, median of 5 runs after a warm-up (a browser run that never finishes is kept as an
+incomplete run and counted in `complete runs`):
 
 - **server** — `fetch` + per-chunk timing, no browser: shell flush, per-section completion, chunk count.
 - **browser** — real Chrome, fresh context per run, 1x and 4x CPU: TTFB, FCP, shell visible, per-section
@@ -21,22 +22,22 @@ fixed-height box. Two measurements, median of 5 runs after a warm-up:
 
 | Metric                                          | Value                           | Unit   |
 | ----------------------------------------------- | ------------------------------- | ------ |
-| server: shell flush                             | 7.6                             | ms     |
-| server: kpis / trend / mix / table complete     | 155.4 / 308 / 457.3 / 612.9     | ms     |
+| server: shell flush                             | 3.2                             | ms     |
+| server: kpis / trend / mix / table complete     | 154.6 / 306.7 / 456 / 609.2     | ms     |
 | server: stream chunks                           | 5                               | chunks |
-| server: document size                           | 70882                           | bytes  |
-| browser 1x: TTFB                                | 4                               | ms     |
-| browser 1x: FCP                                 | 80                              | ms     |
-| browser 1x: shell visible                       | 11.6                            | ms     |
-| browser 1x: kpis / trend / mix / table in DOM   | 156 / 306.2 / 457 / 610.7       | ms     |
-| browser 1x: kpis / trend / mix / table revealed | 375.7 / 375.7 / 1041.2 / 1041.2 | ms     |
-| browser 1x: hydration start / duration          | 656.4 / 13.3                    | ms     |
+| server: document size                           | 71030                           | bytes  |
+| browser 1x: TTFB                                | 7.2                             | ms     |
+| browser 1x: FCP                                 | 116                             | ms     |
+| browser 1x: shell visible                       | 16.5                            | ms     |
+| browser 1x: kpis / trend / mix / table in DOM   | 157.2 / 310.6 / 458.4 / 612.2   | ms     |
+| browser 1x: kpis / trend / mix / table revealed | 401.7 / 401.7 / 1061.2 / 1061.2 | ms     |
+| browser 1x: hydration start / duration          | 651 / 14.7                      | ms     |
 | browser 1x: CLS                                 | 0                               | score  |
-| browser 4x: TTFB                                | 6.1                             | ms     |
-| browser 4x: FCP                                 | 256                             | ms     |
-| browser 4x: shell visible                       | 122.4                           | ms     |
-| browser 4x: kpis / trend / mix / table revealed | 252.1 / 534.8 / 553.6 / 1579.4  | ms     |
-| browser 4x: hydration start / duration          | 847.5 / 127.4                   | ms     |
+| browser 4x: TTFB                                | 7.3                             | ms     |
+| browser 4x: FCP                                 | 232                             | ms     |
+| browser 4x: shell visible                       | 68.3                            | ms     |
+| browser 4x: kpis / trend / mix / table revealed | 270.5 / 516.2 / 537 / 1337      | ms     |
+| browser 4x: hydration start / duration          | 795.6 / 58.6                    | ms     |
 | browser 4x: CLS                                 | 0                               | score  |
 | console errors, all runs                        | 0                               |        |
 
@@ -47,7 +48,7 @@ Full table (every metric, both throttles): the `ssr` section of the evidence sum
 1. **Router SSR streaming works without TanStack Start** (`@tanstack/react-router` 1.170.38,
    `@tanstack/router-core` 1.171.32, `react-dom` 19.3.0). The pair `createRequestHandler` + `renderRouterToStream`
    (both from `@tanstack/react-router/ssr/server`) is what `defaultStreamHandler` composes; the fixture passes
-   its own `children` instead of `RouterServer`. Shell flush is 7.6 ms with four unawaited loader promises,
+   its own `children` instead of `RouterServer`. Shell flush is 3.2 ms with four unawaited loader promises,
    so **router issue #7094 does not reproduce here** (see finding 3 for the only buffering that did).
 2. **Bots get a buffered document.** `renderRouterToStream` runs `isbot()` on the User-Agent and, for a bot,
    awaits `stream.allReady` before responding (`react-router/dist/esm/ssr/renderRouterToStream.js:13,34`).
@@ -56,12 +57,12 @@ Full table (every metric, both throttles): the `ssr` section of the evidence sum
    measurements. Any lab tool that does not (Lighthouse CI, headless screenshots) measures a non-streamed page.
 3. **React batches Suspense reveals** (React 19.3): `$RC` queues the boundary and `$RV` applies the queue at
    `$RT + 300 − now` ms (`react-dom/cjs/react-dom-server.bun.development.js:4008`, `$RT` stamped by an rAF
-   at `:3875`). Content is in the DOM at server-delay + ~5 ms; it is _visible_ ~220 ms later for the first
-   batch and later still after that (1x: second batch 1041 ms; 4x spread 252–1579 ms, run-to-run jitter
+   at `:3875`). Content is in the DOM at server-delay + ~5 ms; it is _visible_ ~245 ms later for the first
+   batch and later still after that (1x: second batch ~1060 ms; 4x spread 270–1337 ms, run-to-run jitter
    large). The batching is React's, not the app's; the second-batch delay beyond `$RT + 300` was not
    root-caused. A section's perceived time is the `revealed` row, not the loader delay.
 4. **Hydration starts after the stream ends** (the fixture's `<script type="module">` is deferred until the
-   document finishes parsing, 656 ms at 1x), then costs 13 ms (1x) / 127 ms (4x) for this page.
+   document finishes parsing, 651 ms at 1x), then costs 15 ms (1x) / 59 ms (4x) for this page.
    `hydrate(router)` from `@tanstack/react-router/ssr/client` must be awaited before `hydrateRoot`
    (`react-router/dist/esm/ssr/RouterClient.js:7-13` does the same inside `<Await>`).
 5. **CLS 0 with fixed-height fallbacks** (hand-measured boxes in `ssr-fixture/app.tsx`). The charts and the
