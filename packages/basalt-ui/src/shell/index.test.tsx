@@ -14,7 +14,7 @@ import { baseTheme } from '../theme'
 import { pxRem } from '../tokens/core'
 import { SPACE_STEP } from '../tokens/palette'
 import { PageAside } from './page-aside'
-import { BasaltShell, PageBar } from './index'
+import { ShellFrame, PageBar } from './index'
 import { toggleSidebar } from '../commands/shell-bridge'
 import type { BasaltAccountProps, SidebarBlock, SidebarSection } from './index'
 
@@ -48,7 +48,7 @@ describe('BasaltShell sidebarBlocks', () => {
   test("a 'custom' block reaches the sidebar's nav scroll region through the hand-off", () => {
     const { container } = render(
       <MantineProvider>
-        <BasaltShell
+        <ShellFrame
           brand={BRAND}
           sections={ONE_SECTION}
           sidebarBlocks={[
@@ -70,7 +70,7 @@ describe('BasaltShell sidebarBlocks', () => {
   test('the same block projects to ONE More row that opens a nested sheet of its items', async () => {
     render(
       <MantineProvider>
-        <BasaltShell brand={BRAND} sections={ONE_SECTION} sidebarBlocks={[AWAITING]} />
+        <ShellFrame brand={BRAND} sections={ONE_SECTION} sidebarBlocks={[AWAITING]} />
       </MantineProvider>,
     )
 
@@ -93,7 +93,7 @@ describe('BasaltShell sidebarBlocks', () => {
   test("a custom block with mobile:'more' and a label opens its node in a sheet", async () => {
     render(
       <MantineProvider>
-        <BasaltShell
+        <ShellFrame
           brand={BRAND}
           sections={ONE_SECTION}
           sidebarBlocks={[
@@ -119,7 +119,7 @@ describe('BasaltShell sidebarBlocks', () => {
   test("mobile:'hidden' keeps the block off the More surface entirely", () => {
     render(
       <MantineProvider>
-        <BasaltShell
+        <ShellFrame
           brand={BRAND}
           sections={[
             { label: 'Main', items: [{ key: 'home', label: 'Home', icon: null, mobile: 'tab' }] },
@@ -141,7 +141,7 @@ describe('BasaltShell sidebarBlocks', () => {
 describe('BasaltShell — the removed ReactNode slots', () => {
   test('sidebarNavExtra and mobileNav.moreExtra no longer type-check', () => {
     const removedNavExtra = (
-      <BasaltShell
+      <ShellFrame
         brand={BRAND}
         sections={ONE_SECTION}
         // @ts-expect-error sidebarNavExtra was replaced by `sidebarBlocks` kind 'custom' (C13)
@@ -149,7 +149,7 @@ describe('BasaltShell — the removed ReactNode slots', () => {
       />
     )
     const removedMoreExtra = (
-      <BasaltShell
+      <ShellFrame
         brand={BRAND}
         sections={ONE_SECTION}
         // @ts-expect-error mobileNav.moreExtra was replaced by `sidebarBlocks` kind 'list' (C13)
@@ -200,12 +200,7 @@ describe('BasaltShell extraMoreRows', () => {
   test('an account expanding past menuMax raises the SHEET, not an overflowing menu', async () => {
     render(
       <MantineProvider>
-        <BasaltShell
-          brand={BRAND}
-          sections={NAV}
-          account={FAT_ACCOUNT}
-          mobileNav={{ menuMax: 6 }}
-        />
+        <ShellFrame brand={BRAND} sections={NAV} account={FAT_ACCOUNT} mobileNav={{ menuMax: 6 }} />
       </MantineProvider>,
     )
 
@@ -218,7 +213,7 @@ describe('BasaltShell extraMoreRows', () => {
   test('the same account stays a MENU at the default menuMax of 12', async () => {
     render(
       <MantineProvider>
-        <BasaltShell brand={BRAND} sections={NAV} account={FAT_ACCOUNT} />
+        <ShellFrame brand={BRAND} sections={NAV} account={FAT_ACCOUNT} />
       </MantineProvider>,
     )
 
@@ -231,7 +226,7 @@ describe('BasaltShell extraMoreRows', () => {
   test('a loading account produces no More slot at all', () => {
     render(
       <MantineProvider>
-        <BasaltShell brand={BRAND} sections={NAV} account={{ state: { status: 'loading' } }} />
+        <ShellFrame brand={BRAND} sections={NAV} account={{ state: { status: 'loading' } }} />
       </MantineProvider>,
     )
 
@@ -331,7 +326,7 @@ describe('BasaltShell collapse persistence', () => {
   const renderShell = (storageKey: string) =>
     render(
       <MantineProvider>
-        <BasaltShell brand={BRAND} sections={ONE_SECTION} storageKey={storageKey} />
+        <ShellFrame brand={BRAND} sections={ONE_SECTION} storageKey={storageKey} />
       </MantineProvider>,
     )
 
@@ -392,7 +387,7 @@ describe('BasaltShell collapse persistence', () => {
     installViewport(1024)
     const controlled = render(
       <MantineProvider>
-        <BasaltShell brand={BRAND} sections={ONE_SECTION} collapsed={false} />
+        <ShellFrame brand={BRAND} sections={ONE_SECTION} collapsed={false} />
       </MantineProvider>,
     )
     expect(
@@ -412,7 +407,7 @@ describe('BasaltShell header height (law C14)', () => {
   test('the AppShell header is ONE row — a single unconditional height declaration, no media override', () => {
     render(
       <MantineProvider>
-        <BasaltShell brand={BRAND} sections={ONE_SECTION} />
+        <ShellFrame brand={BRAND} sections={ONE_SECTION} />
       </MantineProvider>,
     )
     // Mantine emits the AppShell dimensions as a `<style>` block: one `:root` rule plus one
@@ -439,7 +434,7 @@ describe('BasaltShell header height (law C14)', () => {
   test('headerHeight replaces the token, still as one unconditional declaration', () => {
     render(
       <MantineProvider>
-        <BasaltShell brand={BRAND} sections={ONE_SECTION} headerHeight={52} />
+        <ShellFrame brand={BRAND} sections={ONE_SECTION} headerHeight={52} />
       </MantineProvider>,
     )
     const css = [...document.querySelectorAll('style')]
@@ -455,7 +450,7 @@ describe('BasaltShell header height (law C14)', () => {
   test('a route with no PageAside pays for no aside column — zero width, collapsed', () => {
     render(
       <MantineProvider>
-        <BasaltShell brand={BRAND} sections={ONE_SECTION} />
+        <ShellFrame brand={BRAND} sections={ONE_SECTION} />
       </MantineProvider>,
     )
     const css = [...document.querySelectorAll('style')]
@@ -485,7 +480,7 @@ describe('BasaltShell header height (law C14)', () => {
   test('the page gutter is a responsive PAIR — the phone token below `sm`, the desktop token above', () => {
     render(
       <MantineProvider>
-        <BasaltShell brand={BRAND} sections={ONE_SECTION} />
+        <ShellFrame brand={BRAND} sections={ONE_SECTION} />
       </MantineProvider>,
     )
     const styles = [...document.querySelectorAll('style')].map((tag) => tag.textContent ?? '')
@@ -521,9 +516,9 @@ describe('BasaltShell header height (law C14)', () => {
   test('an empty PageBar contributes no node — not in the header, not in the page flow', () => {
     render(
       <MantineProvider>
-        <BasaltShell brand={BRAND} sections={ONE_SECTION}>
+        <ShellFrame brand={BRAND} sections={ONE_SECTION}>
           <PageBar />
-        </BasaltShell>
+        </ShellFrame>
       </MantineProvider>,
     )
     expect(document.querySelector('[data-basalt-page-bar]')).toBeNull()
@@ -547,7 +542,7 @@ describe('BasaltShell globalActions mobile policy', () => {
   const renderWithGlobals = () =>
     render(
       <MantineProvider>
-        <BasaltShell brand={BRAND} sections={ONE_SECTION} globalActions={ACTIONS} />
+        <ShellFrame brand={BRAND} sections={ONE_SECTION} globalActions={ACTIONS} />
       </MantineProvider>,
     )
 
@@ -576,9 +571,9 @@ describe('BasaltShell globalActions mobile policy', () => {
   test('a page ActionGroup takes over the kebab, so the header never shows two', () => {
     render(
       <MantineProvider>
-        <BasaltShell brand={BRAND} sections={ONE_SECTION} globalActions={ACTIONS}>
+        <ShellFrame brand={BRAND} sections={ONE_SECTION} globalActions={ACTIONS}>
           <PageBar actions={[{ key: 'export', label: 'Export', primary: true }]} />
-        </BasaltShell>
+        </ShellFrame>
       </MantineProvider>,
     )
     expect(document.querySelectorAll('[aria-label="More actions"]')).toHaveLength(1)
@@ -590,12 +585,12 @@ describe('BasaltShell globalActions mobile policy', () => {
     // SECOND kebab that re-mounted the global node. Now only row 1 is `host: 'page'`.
     render(
       <MantineProvider>
-        <BasaltShell brand={BRAND} sections={ONE_SECTION} globalActions={ACTIONS}>
+        <ShellFrame brand={BRAND} sections={ONE_SECTION} globalActions={ACTIONS}>
           <PageBar
             actions={[{ key: 'export', label: 'Export CSV', primary: true }]}
             filtersEnd={[{ key: 'metrics', label: 'Manage metrics' }]}
           />
-        </BasaltShell>
+        </ShellFrame>
       </MantineProvider>,
     )
 
@@ -611,12 +606,12 @@ describe('BasaltShell globalActions mobile policy', () => {
   test('the global node reaches ONE dropdown, not two', async () => {
     render(
       <MantineProvider>
-        <BasaltShell brand={BRAND} sections={ONE_SECTION} globalActions={ACTIONS}>
+        <ShellFrame brand={BRAND} sections={ONE_SECTION} globalActions={ACTIONS}>
           <PageBar
             actions={[{ key: 'export', label: 'Export CSV', primary: true }]}
             filtersEnd={[{ key: 'metrics', label: 'Manage metrics' }]}
           />
-        </BasaltShell>
+        </ShellFrame>
       </MantineProvider>,
     )
 
@@ -632,9 +627,9 @@ describe('BasaltShell globalActions mobile policy', () => {
   test("filtersEnd alone still yields exactly one kebab, and it is the header's", () => {
     render(
       <MantineProvider>
-        <BasaltShell brand={BRAND} sections={ONE_SECTION} globalActions={ACTIONS}>
+        <ShellFrame brand={BRAND} sections={ONE_SECTION} globalActions={ACTIONS}>
           <PageBar filtersEnd={[{ key: 'metrics', label: 'Manage metrics' }]} />
-        </BasaltShell>
+        </ShellFrame>
       </MantineProvider>,
     )
     const kebabs = document.querySelectorAll('[aria-label="More actions"]')
@@ -647,9 +642,9 @@ describe('BasaltShell globalActions mobile policy', () => {
   test('a PageBar with no row-1 actions and no filtersEnd hands the kebab BACK to the shell', () => {
     render(
       <MantineProvider>
-        <BasaltShell brand={BRAND} sections={ONE_SECTION} globalActions={ACTIONS}>
+        <ShellFrame brand={BRAND} sections={ONE_SECTION} globalActions={ACTIONS}>
           <PageBar tabs={<span data-testid="tabs" />} />
-        </BasaltShell>
+        </ShellFrame>
       </MantineProvider>,
     )
     const kebabs = document.querySelectorAll('[aria-label="More actions"]')
@@ -662,9 +657,9 @@ describe('BasaltShell globalActions mobile policy', () => {
     // globals — nor steal the claim, which would leave the shell's own kebab unrendered.
     render(
       <MantineProvider>
-        <BasaltShell brand={BRAND} sections={ONE_SECTION} globalActions={ACTIONS}>
+        <ShellFrame brand={BRAND} sections={ONE_SECTION} globalActions={ACTIONS}>
           <ActionGroup secondary={[{ key: 'a', label: 'Section action' }]} />
-        </BasaltShell>
+        </ShellFrame>
       </MantineProvider>,
     )
     // Two kebabs is CORRECT here: the shell's (globals) and the section's (its own rows). What must
@@ -679,7 +674,7 @@ describe('BasaltShell globalActions mobile policy', () => {
   test('no globalActions at all renders no kebab', () => {
     render(
       <MantineProvider>
-        <BasaltShell brand={BRAND} sections={ONE_SECTION} />
+        <ShellFrame brand={BRAND} sections={ONE_SECTION} />
       </MantineProvider>,
     )
     expect(document.querySelector('[aria-label="More actions"]')).toBeNull()
@@ -690,7 +685,7 @@ describe('BasaltShell region seams', () => {
   test('header, navbar and footer carry data-with-border, coloured through the theme', () => {
     const { container } = render(
       <MantineProvider theme={baseTheme}>
-        <BasaltShell brand={BRAND} sections={ONE_SECTION} />
+        <ShellFrame brand={BRAND} sections={ONE_SECTION} />
       </MantineProvider>,
     )
     for (const cls of ['header', 'navbar', 'footer']) {
@@ -707,7 +702,7 @@ describe('BasaltShell region seams', () => {
   test('the aside seam exists only while a PageAside claims the region', () => {
     const unclaimed = render(
       <MantineProvider theme={baseTheme}>
-        <BasaltShell brand={BRAND} sections={ONE_SECTION} />
+        <ShellFrame brand={BRAND} sections={ONE_SECTION} />
       </MantineProvider>,
     )
     expect(
@@ -719,11 +714,11 @@ describe('BasaltShell region seams', () => {
 
     const claimed = render(
       <MantineProvider theme={baseTheme}>
-        <BasaltShell brand={BRAND} sections={ONE_SECTION}>
+        <ShellFrame brand={BRAND} sections={ONE_SECTION}>
           <PageAside title="Panel">
             <div />
           </PageAside>
-        </BasaltShell>
+        </ShellFrame>
       </MantineProvider>,
     )
     expect(
@@ -757,11 +752,11 @@ describe('BasaltShell aside overlay — Escape hatch', () => {
     try {
       render(
         <MantineProvider>
-          <BasaltShell brand={BRAND} sections={ONE_SECTION}>
+          <ShellFrame brand={BRAND} sections={ONE_SECTION}>
             <PageAside title="Panel" defaultFolded={false}>
               <div />
             </PageAside>
-          </BasaltShell>
+          </ShellFrame>
         </MantineProvider>,
       )
       expect(screen.getByLabelText('Collapse panel')).not.toBeNull()
@@ -789,11 +784,11 @@ describe('BasaltShell aside overlay — Escape hatch', () => {
     try {
       const { rerender } = render(
         <MantineProvider>
-          <BasaltShell brand={BRAND} sections={ONE_SECTION}>
+          <ShellFrame brand={BRAND} sections={ONE_SECTION}>
             <PageAside key="first" title="Panel" defaultFolded={false}>
               <div />
             </PageAside>
-          </BasaltShell>
+          </ShellFrame>
         </MantineProvider>,
       )
       expect(screen.getByLabelText('Collapse panel')).not.toBeNull()
@@ -806,11 +801,11 @@ describe('BasaltShell aside overlay — Escape hatch', () => {
       // shell's `closeSignal` stays bumped from the Escape above.
       rerender(
         <MantineProvider>
-          <BasaltShell brand={BRAND} sections={ONE_SECTION}>
+          <ShellFrame brand={BRAND} sections={ONE_SECTION}>
             <PageAside key="second" title="Other panel" defaultFolded={false}>
               <div />
             </PageAside>
-          </BasaltShell>
+          </ShellFrame>
         </MantineProvider>,
       )
 
@@ -827,11 +822,11 @@ describe('BasaltShell aside overlay — Escape hatch', () => {
     try {
       const { container } = render(
         <MantineProvider>
-          <BasaltShell brand={BRAND} sections={ONE_SECTION}>
+          <ShellFrame brand={BRAND} sections={ONE_SECTION}>
             <PageAside title="Panel" defaultFolded={false}>
               <div />
             </PageAside>
-          </BasaltShell>
+          </ShellFrame>
         </MantineProvider>,
       )
       expect(asideOverlayVar(container)).toBeNull()
@@ -860,11 +855,11 @@ describe('BasaltShell aside overlay — Escape hatch', () => {
     try {
       render(
         <MantineProvider>
-          <BasaltShell brand={BRAND} sections={ONE_SECTION}>
+          <ShellFrame brand={BRAND} sections={ONE_SECTION}>
             <PageAside title="Panel" defaultFolded={false}>
               <div />
             </PageAside>
-          </BasaltShell>
+          </ShellFrame>
         </MantineProvider>,
       )
       expect(screen.getByLabelText('Collapse panel')).not.toBeNull()
@@ -900,7 +895,7 @@ describe('common props (`common/props.ts`)', () => {
   test('className reaches the AppShell root', () => {
     const { container } = render(
       <MantineProvider>
-        <BasaltShell brand={BRAND} sections={ONE_SECTION} className="my-shell" />
+        <ShellFrame brand={BRAND} sections={ONE_SECTION} className="my-shell" />
       </MantineProvider>,
     )
     expect(container.querySelector('.mantine-AppShell-root.my-shell')).not.toBeNull()

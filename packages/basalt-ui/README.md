@@ -110,12 +110,12 @@ createRoot(document.getElementById('root')!).render(
 ```tsx
 // src/routes/__root.tsx
 import { Outlet, createRootRouteWithContext } from '@tanstack/react-router'
-import { BasaltShell, useNav, type BasaltRouterContext } from 'basalt-ui'
+import { BasaltShell, type BasaltRouterContext } from 'basalt-ui'
 import { NAV } from '../lib/nav'
 
 export const Route = createRootRouteWithContext<BasaltRouterContext>()({
   component: () => (
-    <BasaltShell brand={{ name: 'Argo' }} {...useNav(NAV)}>
+    <BasaltShell brand={{ name: 'Argo' }} nav={NAV}>
       <Outlet />
     </BasaltShell>
   ),
@@ -126,7 +126,7 @@ export const Route = createRootRouteWithContext<BasaltRouterContext>()({
 defaults, `query` merges over them) and carries it on `context.queryClient`; extra context extends
 `BasaltRouterContext`. `BasaltProvider` takes `router` (required), `theme` (defaults to
 `createBasaltTheme()`), `telemetry` (typed `BasaltEvent`s, no sink → no events) and `fallback` (the
-root error boundary's UI). `useNav` is transitional until `BasaltShell` takes a `nav` prop.
+root error boundary's UI).
 
 > Use the **layered** `*.layer.css` bundles, never the plain ones — Mantine's unlayered bundle
 > outranks basalt's `@layer basalt` styles (including the iOS 16px input floor) regardless of
@@ -485,7 +485,7 @@ Spotlight (`dev.router`, `dev.query`, `dev.theme`). Install the optional
 ### Nav and stores — `.` and `./state`
 
 ```tsx
-import { defineNav, navGroup, useNav } from 'basalt-ui'
+import { defineNav, navGroup } from 'basalt-ui'
 import { createSearchStore, field } from 'basalt-ui/state'
 
 export const NAV = defineNav({
@@ -496,7 +496,7 @@ export const analytics = createSearchStore({
   fields: { range: field.range({ presets: ['7d', '30d'], fallback: '30d' }) },
 })
 
-const nav = useNav(NAV) // spread onto <BasaltShell {...nav} />
+// <BasaltShell nav={NAV} /> resolves the sidebar, mobile bar and breadcrumb
 // route: validateSearch: analytics.validateSearch — nav link: search: analytics.linkSearch
 ```
 

@@ -11,7 +11,8 @@ import { BasaltDataTable } from '../../../src/table'
 import type { DataTableFacet } from '../../../src/table/data-table'
 import type { BasaltColumnDef } from '../../../src/table/table-features'
 import { ActionIcon, Button } from '@mantine/core'
-import { BasaltShell, PageAside, PageBar, StatCard, StatGroup } from '../../../src/index'
+import { PageAside, PageBar, StatCard, StatGroup } from '../../../src/index'
+import { ShellFrame } from '../../../src/shell'
 import type { SettingsMenuItem } from '../../../src/index'
 import type { GlobalAction } from '../../../src/controls'
 import type { PageBarActions } from '../../../src/controls/actions'
@@ -792,7 +793,7 @@ export function ShellFixture({ spec }: { spec: FixtureSpec }): ReactElement {
     ...(section.tab ? { mobile: { tab: true as const } } : {}),
   }))
   return (
-    <BasaltShell
+    <ShellFrame
       brand={{ name: 'Fixture' }}
       sections={sections}
       {...(spec.headerHeight !== undefined && { headerHeight: spec.headerHeight })}
@@ -820,6 +821,6 @@ export function ShellFixture({ spec }: { spec: FixtureSpec }): ReactElement {
       {/* Written AFTER the main column on purpose — that is the order the in-flow mobile form
           inherits, and the order a consumer page uses. */}
       {spec.aside && <AsideFixture spec={spec.aside} />}
-    </BasaltShell>
+    </ShellFrame>
   )
 }

@@ -48,6 +48,9 @@ import type {
 } from './nav-types'
 import { CtlSlot, useBasaltSpacing } from '../theme'
 import { createPersistedStore } from '../state/persisted'
+import { useNav } from '../router-tanstack/use-nav'
+import type { UseNavOptions } from '../router-tanstack/use-nav'
+import type { AnyNavGroup, NavConfig, NavTabId } from '../router-tanstack/nav'
 import { SizeClassHintContext, useSizeClass } from './use-size-class'
 import brandClasses from './app-brand.module.css'
 import headerClasses from './app-header.module.css'
@@ -148,19 +151,26 @@ export type SettingsMenuItem = {
   current?: 'selection' | 'page'
 }
 
-export type BasaltShellProps = BasaltProps & {
+export type BasaltShellProps<
+  G extends ReadonlyArray<AnyNavGroup> = ReadonlyArray<AnyNavGroup>,
+  T extends ReadonlyArray<NavTabId<G>> = ReadonlyArray<NavTabId<G>>,
+> = BasaltProps & {
   /**
    * Brand identity for the sidebar header. Supplying `menu` turns the brand row into a `Name ▾`
    * workspace switcher — the rows are `AccountMenuItem`s, the shape the account menu already uses.
    */
   brand: BrandConfig & { menu?: AccountMenuItem[] }
-  /** Grouped nav sections — the ONE definition, rendered as the sidebar and projected to the bar. */
-  sections: SidebarSection[]
   /**
-   * Mobile bar tuning. Every field optional — the defaults ARE the design, and a nav with nothing
-   * configured still produces a working bar (see `projectMobileNav`'s zero-config fallback).
+   * The `defineNav` definition — the ONE nav, resolved against the router here: the sidebar, the
+   * mobile bar (its tuning rides `defineNav`'s `mobile`) and the breadcrumb all derive from it.
    */
-  mobileNav?: MobileNavConfig
+  nav: NavConfig<G, T>
+  /** Live per-destination badges, keys typed to the definition's id union. See `UseNavOptions`. */
+  badges?: UseNavOptions<G>['badges']
+  /** Override active detection entirely. */
+  isActive?: UseNavOptions<G>['isActive']
+  /** The mobile bar's scroll container, for its hide-on-scroll. */
+  getScrollElement?: UseNavOptions<G>['getScrollElement']
   /**
    * Persistent, shell-owned header actions (timer, notifications, a global `SyncButton`) — DECLARED
    * DATA, not a `ReactNode` slot, so basalt owns the mobile projection: the first two ride the bar,
@@ -338,18 +348,36 @@ function collapseStore(key: string): CollapseStore {
  * the inset plus the collapse toggle, so the 48px rail pushes the toggle to the right of the lights
  * instead of clipping it. The breadcrumb after a widened rail zone shifts right by the same amount.
  */
-export function BasaltShell(props: BasaltShellProps) {
-  assertRequiredProps('BasaltShell', props, ['brand', 'sections'])
+export function BasaltShell<
+  const G extends ReadonlyArray<AnyNavGroup>,
+  const T extends ReadonlyArray<NavTabId<G>>,
+>({ nav, badges, isActive, getScrollElement, ...rest }: BasaltShellProps<G, T>) {
+  assertRequiredProps('BasaltShell', { nav, ...rest }, ['brand', 'nav'])
+  const { sections, mobileNav } = useNav(nav, {
+    ...(badges !== undefined && { badges }),
+    ...(isActive !== undefined && { isActive }),
+    ...(getScrollElement !== undefined && { getScrollElement }),
+  })
+  return <ShellFrame {...rest} sections={sections} mobileNav={mobileNav} />
+}
+
+/** The resolved-nav shell: what `BasaltShell` renders once `nav` is a router-resolved `sections`. */
+export type ShellFrameProps = Omit<
+  BasaltShellProps,
+  'nav' | 'badges' | 'isActive' | 'getScrollElement'
+> & { sections: SidebarSection[]; mobileNav?: MobileNavConfig }
+
+export function ShellFrame(props: ShellFrameProps) {
   return (
     <PageBarProvider globalActions={props.globalActions ?? []}>
       <AsideProvider>
-        <ShellFrame {...props} />
+        <ShellBody {...props} />
       </AsideProvider>
     </PageBarProvider>
   )
 }
 
-function ShellFrame({
+function ShellBody({
   brand,
   sections,
   mobileNav,
@@ -366,7 +394,7 @@ function ShellFrame({
   children,
   className,
   style,
-}: BasaltShellProps) {
+}: ShellFrameProps) {
   // The active density level's resolved spacing — the AppShell dimensions below must track it
   // (see `SPACE_STEP_BASE`'s "shell/index.tsx" group doc in `tokens/palette.ts`): their contents
   // (controls, the search trigger/avatar, nav labels) already track density, so a fixed literal

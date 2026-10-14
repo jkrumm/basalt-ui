@@ -20,7 +20,7 @@ import { FilterSet, ToggleFilter } from '../controls'
 import { useFilterSurface } from '../controls/filter-context'
 import { Section } from '../dashboard'
 import { createLocalStore, field } from '../state'
-import { BasaltShell, PageAside, PageBar } from './index'
+import { ShellFrame, PageAside, PageBar } from './index'
 import type { PageAsideProps, SidebarSection } from './index'
 
 const BRAND = { name: 'Argo' }
@@ -143,10 +143,10 @@ describe('PageAside inside a BasaltShell', () => {
   const renderInShell = (aside: ReactNode) =>
     render(
       <MantineProvider>
-        <BasaltShell brand={BRAND} sections={ONE_SECTION}>
+        <ShellFrame brand={BRAND} sections={ONE_SECTION}>
           <div data-testid="main">Main column</div>
           {aside}
-        </BasaltShell>
+        </ShellFrame>
       </MantineProvider>,
     )
 
@@ -308,9 +308,9 @@ describe('PageAside docking', () => {
   const renderPage = (aside: ReactNode) => {
     render(
       <MantineProvider>
-        <BasaltShell brand={BRAND} sections={ONE_SECTION}>
+        <ShellFrame brand={BRAND} sections={ONE_SECTION}>
           {aside}
-        </BasaltShell>
+        </ShellFrame>
       </MantineProvider>,
     )
   }
@@ -461,12 +461,12 @@ describe('PageAside in flow', () => {
     installMobileMatchMedia()
     render(
       <MantineProvider>
-        <BasaltShell brand={BRAND} sections={ONE_SECTION}>
+        <ShellFrame brand={BRAND} sections={ONE_SECTION}>
           <div data-testid="main">Main column</div>
           <PageAside title="Panel">
             <div data-testid="aside-child">Composition</div>
           </PageAside>
-        </BasaltShell>
+        </ShellFrame>
       </MantineProvider>,
     )
 
@@ -509,12 +509,12 @@ describe('PageAside — the panel surface and the mobile projection', () => {
     installViewport(1400)
     render(
       <MantineProvider>
-        <BasaltShell brand={BRAND} sections={ONE_SECTION}>
+        <ShellFrame brand={BRAND} sections={ONE_SECTION}>
           <div data-testid="main">Main column</div>
           <PageAside title="Panel">
             <SurfaceProbe />
           </PageAside>
-        </BasaltShell>
+        </ShellFrame>
       </MantineProvider>,
     )
 
@@ -525,7 +525,7 @@ describe('PageAside — the panel surface and the mobile projection', () => {
     installMobileMatchMedia()
     render(
       <MantineProvider>
-        <BasaltShell brand={BRAND} sections={ONE_SECTION}>
+        <ShellFrame brand={BRAND} sections={ONE_SECTION}>
           <PageBar
             filters={
               <FilterSet>
@@ -536,7 +536,7 @@ describe('PageAside — the panel surface and the mobile projection', () => {
           <PageAside title="Weights">
             <div data-testid="aside-child">Composition</div>
           </PageAside>
-        </BasaltShell>
+        </ShellFrame>
       </MantineProvider>,
     )
 
@@ -567,7 +567,7 @@ describe('PageAside — the panel surface and the mobile projection', () => {
     installMobileMatchMedia()
     render(
       <MantineProvider>
-        <BasaltShell brand={BRAND} sections={ONE_SECTION}>
+        <ShellFrame brand={BRAND} sections={ONE_SECTION}>
           <PageBar
             filters={
               <FilterSet>
@@ -580,7 +580,7 @@ describe('PageAside — the panel surface and the mobile projection', () => {
               <div>body</div>
             </Section>
           </PageAside>
-        </BasaltShell>
+        </ShellFrame>
       </MantineProvider>,
     )
 
@@ -603,7 +603,7 @@ describe('PageAside — the panel surface and the mobile projection', () => {
     installMobileMatchMedia()
     const Page = ({ aside }: { aside: 'weights' | 'origins' | null }) => (
       <MantineProvider>
-        <BasaltShell brand={BRAND} sections={ONE_SECTION}>
+        <ShellFrame brand={BRAND} sections={ONE_SECTION}>
           <PageBar
             filters={
               <FilterSet>
@@ -616,7 +616,7 @@ describe('PageAside — the panel surface and the mobile projection', () => {
               <div data-testid={`child-${aside}`}>body</div>
             </PageAside>
           )}
-        </BasaltShell>
+        </ShellFrame>
       </MantineProvider>
     )
 
@@ -644,12 +644,12 @@ describe('PageAside — the panel surface and the mobile projection', () => {
     const setDesktop = installMovableMatchMedia(true)
     render(
       <MantineProvider>
-        <BasaltShell brand={BRAND} sections={ONE_SECTION}>
+        <ShellFrame brand={BRAND} sections={ONE_SECTION}>
           <div data-testid="main">Main column</div>
           <PageAside title="Weights">
             <div data-testid="aside-child">Composition</div>
           </PageAside>
-        </BasaltShell>
+        </ShellFrame>
       </MantineProvider>,
     )
 
@@ -682,12 +682,12 @@ describe('PageAside — the panel surface and the mobile projection', () => {
     const setDesktop = installMovableMatchMedia(true)
     render(
       <MantineProvider>
-        <BasaltShell brand={BRAND} sections={ONE_SECTION}>
+        <ShellFrame brand={BRAND} sections={ONE_SECTION}>
           <div data-testid="main">Main column</div>
           <PageAside title="Weights">
             <div data-testid="aside-child">Composition</div>
           </PageAside>
-        </BasaltShell>
+        </ShellFrame>
       </MantineProvider>,
     )
     const afterMount = minWidthQueryCalls
@@ -709,12 +709,12 @@ describe('PageAside — the panel surface and the mobile projection', () => {
     installMobileMatchMedia()
     render(
       <MantineProvider>
-        <BasaltShell brand={BRAND} sections={ONE_SECTION}>
+        <ShellFrame brand={BRAND} sections={ONE_SECTION}>
           <div data-testid="main">Main column</div>
           <PageAside title="Weights">
             <div data-testid="aside-child">Composition</div>
           </PageAside>
-        </BasaltShell>
+        </ShellFrame>
       </MantineProvider>,
     )
 

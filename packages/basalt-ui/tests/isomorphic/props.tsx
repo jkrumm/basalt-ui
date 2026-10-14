@@ -205,7 +205,7 @@ export const MINIMAL_PROPS: Record<string, Record<string, unknown>> = {
   PageBar: { title: 'Page' },
   PageAside: { title: 'Aside', children: TEXT },
   PageTitle: { title: 'Title' },
-  BasaltShell: { brand: { name: 'Iso' }, sections: [], children: TEXT },
+  BasaltShell: { brand: { name: 'Iso' }, nav: { groups: [] }, children: TEXT },
   AppSidebar: {
     brand: { name: 'Iso' },
     sections: [],
