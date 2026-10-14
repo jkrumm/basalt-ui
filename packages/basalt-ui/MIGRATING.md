@@ -1008,6 +1008,13 @@ _Nothing to migrate in this release._
 - Corrected the § 2.0 "Upgrading from 1.x" step 2: delete only the core, notifications and
   spotlight layer imports; extension packages (`@mantine/dates`, `@mantine/schedule`) stay, after
   `basalt-ui/styles.css`.
+- `doctor` and `sync` are monorepo-aware. The manifest, `.claude/` and the AGENTS block stay at the
+  install root; the app-scoped half (`tsconfig-base`, `app-wiring`, the `src/main.tsx`,
+  `src/lib/nav.tsx` and `src/routes/__root.tsx` seeds) targets the app package: `basalt.app`
+  (relative path, e.g. `"apps/dashboard"`) in the root package.json, else the one workspace package
+  that depends on basalt-ui and has `src/main.tsx` or `index.html`, else the cwd. Two candidates
+  fail with a message naming `basalt.app`. `doctor` run inside the app package finds the root
+  manifest, and warns about a router seed an earlier `sync` left at the root — delete it.
 
 ## 2.0.0
 

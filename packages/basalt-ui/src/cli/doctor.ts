@@ -26,7 +26,9 @@ import {
   readBasaltConfig,
   readIfExists,
   readManifest,
+  resolveAppDir,
   resolveProjectDir,
+  ROUTER_SEED_DESTS,
   sameFile,
   scannableFiles,
   scanBlock,
@@ -135,7 +137,18 @@ function resolveAiMajorSkewReason(cfg: BasaltConfig): {
 export function doctor(invocationCwd: string = process.cwd(), flags: string[] = []): number {
   if (conflictingProfileFlags('doctor', flags)) return 1
   const project = resolveProjectDir(invocationCwd)
-  const cwd = project.dir
+  // Inside the app package of a monorepo the manifest is above: read the install root instead.
+  const aboveRoot =
+    project.relocatedFrom === null && !existsSync(resolve(project.dir, MANIFEST_PATH))
+      ? findManifestAbove(project.dir)
+      : null
+  const insideApp =
+    aboveRoot !== null &&
+    (() => {
+      const app = resolveAppDir(aboveRoot)
+      return !('error' in app) && app.dir === project.dir
+    })()
+  const cwd = insideApp && aboveRoot !== null ? aboveRoot : project.dir
   const cfg = readBasaltConfig(cwd)
   const result: DoctorResult = { hardFailures: 0, warnings: 0, skipped: 0 }
   const lines: string[] = [`\nbasalt-ui doctor — ${cwd}\n`]
@@ -160,6 +173,11 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
     lines.push(`  → BASALT_CWD relocated from ${project.relocatedFrom} to ${cwd}.\n`)
   }
 
+  if (insideApp)
+    lines.push(`  → ${project.dir} is the app package; checking the install root ${cwd}.\n`)
+
+  const app = resolveAppDir(cwd)
+  const appDir = 'error' in app ? cwd : app.dir
   const profile = declaredProfile(cfg, flags)
   if (profile === 'tokens-only') {
     lines.push(
@@ -191,6 +209,22 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
   }
 
   const install = findBasaltInstall(cwd)
+
+  // ── App placement: the agent layer is at the root, the app is where `resolveAppDir` says ────
+  if ('error' in app) {
+    fail(`app-dir: ${app.error}`)
+  } else if (app.rel !== '') {
+    pass(`app-dir: the app is ${app.rel} (agent layer and manifest stay at the install root)`)
+    const ledger = readManifest(cwd).files
+    for (const seed of Object.values(ROUTER_SEED_DESTS)) {
+      if (ledger[seed] !== undefined && existsSync(resolve(cwd, seed))) {
+        warn(
+          `app-dir: ${seed} was seeded at the install root by an earlier \`sync\`, but the app is ` +
+            `${app.rel} — it is dead code there. Delete it (\`sync\` seeds ${app.rel}/${seed} instead).`,
+        )
+      }
+    }
+  }
 
   // ── Hard check 2: install matches the manifest, and doctor says WHERE (the AGENTS-block's claim)
   const manifestVersion = profile === 'tokens-only' ? undefined : readManifest(cwd).basaltVersion
@@ -380,7 +414,7 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
     )
   } else {
     const upgrade: [string, Check][] = [
-      ['tsconfig-base: tsconfig.json extends the shipped preset', tsconfigBaseCheck(cwd)],
+      ['tsconfig-base: tsconfig.json extends the shipped preset', tsconfigBaseCheck(appDir)],
       [
         'retired-lint-rules: .oxlintrc.json sets no retired basalt/* rule',
         retiredLintRulesCheck(cwd, install),
@@ -391,7 +425,7 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
       ],
       [
         'app-wiring: the entry mounts BasaltProvider and the router tree is generated',
-        appWiringCheck(cwd),
+        appWiringCheck(appDir),
       ],
       ['exact-peers: installed exact-pinned peers match basalt-ui', exactPeersCheck(cwd, install)],
       [

@@ -13,6 +13,7 @@ import {
   declaredProfile,
   readBasaltConfig,
   ROUTER_SEED_DESTS,
+  routerSeedDest,
   findBasaltInstall,
   managedFiles,
   mergeOxlintExtends,
@@ -82,6 +83,12 @@ export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags =
     )
   }
 
+  const appError = resolvePlacement(cwd).appError
+  if (appError !== null) {
+    console.error(`✖ basalt-ui init: ${appError}`)
+    return 1
+  }
+
   const rootsState = reconcileRoots(cwd, { write: true })
 
   // Built AFTER the roots patch — every roots-derived template variable reads the key just written.
@@ -120,7 +127,9 @@ export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags =
   const placement = resolvePlacement(cwd)
   // A tokens-only consumer has no use for the Mantine/React scaffolds (doctor skips them there too).
   const tokensOnly = declaredProfile(readBasaltConfig(cwd), []) === 'tokens-only'
-  const routerSeeds: string[] = Object.values(ROUTER_SEED_DESTS)
+  const routerSeeds: string[] = (
+    Object.keys(ROUTER_SEED_DESTS) as (keyof typeof ROUTER_SEED_DESTS)[]
+  ).map((seed) => routerSeedDest(placement.appRel, seed))
   const files = managedFiles(placement).filter((f) => !(tokensOnly && routerSeeds.includes(f.dest)))
 
   const writtenFiles: string[] = []

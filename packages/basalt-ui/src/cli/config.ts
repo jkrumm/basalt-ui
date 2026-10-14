@@ -4,6 +4,16 @@ import type { GuardKind, GuardSeverity } from '../guard'
 
 /** Shape of the optional `"basalt"` key in a consumer's package.json. */
 export type BasaltConfig = {
+  /**
+   * The Vite app's directory relative to the install root, for a workspace monorepo whose manifest,
+   * `.claude/` and AGENTS block live at the root. App-scoped checks (`tsconfig-base`, `app-wiring`)
+   * and the router seeds target it. Default: the single workspace package that depends on basalt-ui
+   * and has a Vite entry, else the root itself.
+   *
+   * @example
+   * { app: 'apps/dashboard' }
+   */
+  app?: string
   /** Source roots to scan. Default: `['src']`. Set explicitly for a monorepo layout. */
   roots?: string[]
   /** Files exempt from the scan (they ARE the palette source). Default: argo's exempt set. */
@@ -181,7 +191,7 @@ export function resolveRoots(cfg: BasaltConfig): string[] {
 
 /** Every `BasaltConfig` key, as data for `doctor`'s `config-keys` (a test pins it to the type). */
 export const BASALT_CONFIG_KEYS = (
-  'roots exempt profile include spacingSteps severity forbiddenAccents accentHue rawRadius rawSurface ' +
+  'app roots exempt profile include spacingSteps severity forbiddenAccents accentHue rawRadius rawSurface ' +
   'cardWithBorder offSystemSurfaceVar mantineShadeIndex rawHtmlLayout inlineSpacing inlineDisplay ' +
   'rawMotionValue rawFormControl sub16InputFont seriesModulePath exemptRules aiMajorSkewReason'
 ).split(' ') as (keyof BasaltConfig)[]
