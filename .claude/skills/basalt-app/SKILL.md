@@ -82,6 +82,36 @@ export const Revenue = ({ rows }: { rows: Row[] }) => (
 )
 ```
 
+## Stream a slow section
+
+The shell holds no promise; the loader returns the slow promise unawaited, and the fallback is the same chart pending (it fills the final box):
+
+```tsx
+// @check
+import { Await, createFileRoute } from '@tanstack/react-router'
+import { Suspense } from 'react'
+import { Lines } from 'basalt-ui/charts'
+import { VX } from 'basalt-ui/tokens'
+type P = { t: number; v: number }
+declare const fetchPoints: () => Promise<P[]>
+const series = [{ key: 'v', label: 'Value', color: VX.accent, getValue: (p: P) => p.v }]
+const chart = (data: P[], pending = false) => (
+  <Lines ariaLabel="Value" data={data} x={(p) => p.t} series={series} state={{ pending }} />
+)
+export const Route = createFileRoute('/live')({
+  loader: () => ({ points: fetchPoints() }),
+  component: Live,
+})
+export function Live() {
+  const { points } = Route.useLoaderData()
+  return (
+    <Suspense fallback={chart([], true)}>
+      <Await promise={points}>{(data) => chart(data)}</Await>
+    </Suspense>
+  )
+}
+```
+
 ## Add a chat
 
 1. Install the `basalt-ui/agent` peers from its `Install:` line in `llms.txt`.
