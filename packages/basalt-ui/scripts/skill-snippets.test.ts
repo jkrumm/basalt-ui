@@ -79,8 +79,8 @@ export function extractSnippets(): { name: string; code: string }[] {
 describe('skill snippets', () => {
   const snippets = extractSnippets()
 
-  test('the chat, route and main snippets are marked', () => {
-    expect(snippets.map((s) => s.name)).toContain('basalt-app-3')
+  test('the main, route, table, streaming and chat snippets are marked', () => {
+    expect(snippets.some((s) => s.code.includes('<Await promise='))).toBe(true)
     expect(snippets.length).toBeGreaterThanOrEqual(4)
   })
 
