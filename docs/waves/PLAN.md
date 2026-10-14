@@ -308,17 +308,49 @@ Charts), `docs/archive/CHARTS-SPEC-1x.md`, `docs/DESIGN-CORE.md`, `packages/basa
 - **W9 inherits** the shipped rule lines (710 by the budget script, which counts one more per file than the 704 recorded in W4; same set, target 450) and the
   `basalt-charts` skill now lists the nine kinds; the React-compiler overrides stay as in W4.
 
-## Wave 6 — Data and state <!-- status: active -->
+## Wave 6 — Data and state <!-- status: done -->
 
-- [ ] DataTable on Table v9 (`useTable` + one module-scope `tableFeatures` set; no `createTableHook`,
+- [x] DataTable on Table v9 (`useTable` + one module-scope `tableFeatures` set; no `createTableHook`,
       per spec § 8). Virtual 3.14.
       Query `queryClient.query` migration. Store/Pacer/DB per the adoption ledger.
-- [ ] Commands/hotkeys on 0.13. Forms per the spec verdict.
-- [ ] Evidence: 10k-row table scroll/sort timings vs baseline.
+- [x] Commands/hotkeys on 0.13. Forms per the spec verdict.
+- [x] Evidence: 10k-row table scroll/sort timings vs baseline.
 
 **Left behind:**
 
-## Wave 7 — Shell, routing, transitions <!-- status: pending -->
+- **Landed** (all via `rd merge`, `make check` green on each rebased SHA): #144 Hotkeys typing + Mantine
+  debounce, #145 Table v9, #146 the `table-perf` lane + 1.41 baseline, #147 the Store-dedupe proof, then this
+  close-out. Every worker diff got an agent-gateway `/review`; blocking findings were fixed before merge. Index:
+  `docs/waves/evidence/w6.md`.
+- **Owner call #2 accepted on the condition that the Store copy is shared, and it is proven**
+  (`evidence/w6/store-dedupe.md`, V2-SPEC § 8/§ 10): one `react-store` + one `store` (0.11.2) in the repo tree
+  and in a scratch install of the packed tarball; a negative control (nested 0.11.0 under Router) shows the
+  second engine and exits 1. `./table` + Router +3 429 B, playground +2 673 B, `./table` alone +5 723 B, all
+  against the accepted +4 070 B. Guards: the `pack-test.sh` one-copy assertion and `scripts/evidence/store-dedupe.ts`.
+  The pre-#145 lockfile really did hold two copies, which is why the condition mattered.
+- **Done in W6** (V2-SPEC § 8): `useTable` over one module-scope `tableFeatures` set, `createColumnHelper` basalt-owned,
+  no global `ColumnMeta` augmentation, `@tanstack/react-table` 9.2.8 exact, react-virtual floor 3.14, pinning
+  logical (`start`/`end`, public prop renamed, in `MIGRATING.md`), the closed sortFns/filterFns registry, global
+  search debounced 250 ms through `@mantine/hooks` (flush on unmount). `Command.shortcut` is the Hotkeys
+  peer's `Hotkey` (mirrored types deleted; `'Cmd+B'` is a compile error; the `./commands` surface-gate gap closed).
+  Query: `queryClient.query()` replaced the one `fetchQuery` use (a test); no other hit in src or templates.
+  Store/Pacer/DB/Devtools/Form/AI: all rejected per the ledger, nothing to build; Pacer's only caller class
+  (debounce) is Mantine's hook.
+- **10k-row evidence** (`evidence/w6/table-v9-10k.md`): sort −20 % / −23 %, first render +8.7 %, search +300 ms
+  (the new 250 ms debounce; the input itself stays instant), scroll flat. No virtualisation exists, so all
+  10 000 rows sit in the DOM; that is the table's cost model, not a W6 regression.
+- **Deferred, accepted:** the pinned-cell hairline shadow is still a physical offset (wrong direction under
+  `dir=rtl`; commented in code); the datetime sort test guards registration by tied-instant ordering, not by
+  string input; `Table 9.3.x` bump is still gated on re-running `table-v9.test.tsx`/`table-align.type-guard`
+  and the byte build (9.3.1 clears `minimumReleaseAge` on 2026-10-15); a `mock.module` rejecting-import hotkeys
+  test is skipped (it leaks across Bun test files); `data-table.tsx` is still one ~2k-line file with its
+  two remaining React-compiler overrides (W9 owns the override list).
+- **Train note:** a worktree rebased onto a master that changed the lockfile needs `bun install --frozen-lockfile`
+  before `rd merge`, or the check fails on stale `node_modules` (react-table 8 types against v9 code).
+- **W7 inherits:** `useNav` on the root barrel (`BasaltShell` has no `nav` prop yet), `ThemeToggle`'s `motion`
+  import, and the shell items in the Wave 7 list. chat-profile stays blind until W8.
+
+## Wave 7 — Shell, routing, transitions <!-- status: active -->
 
 - [ ] Shell, aside, nav and breadcrumbs per the spec. Mantine 9.7 adopt-or-delete (`useAppShellResize`
       vs `aside-docking`, `EmptyState`/`DataList`/`Toolbar`/`ActionBar`), adopting only where it deletes
