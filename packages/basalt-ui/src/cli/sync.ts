@@ -17,12 +17,8 @@ import {
   diffSummary,
   findBasaltInstall,
   inspectLefthookGate,
-  AGENTS_MD,
-  blockMigrationProblem,
   isStringArray,
-  LEGACY_BLOCK_HOST,
   managedFiles,
-  migrateBlockToAgentsMd,
   normalizeForLedger,
   noteRelocation,
   OXLINT_FILES,
@@ -36,7 +32,6 @@ import {
   reconcileRoots,
   relativePosix,
   renderContext,
-  reportBlockMigration,
   reportPrune,
   resolvePeerFlags,
   resolvePlacement,
@@ -154,13 +149,6 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
     return 1
   }
 
-  // A block that cannot be moved safely refuses the whole run BEFORE reconcileRoots writes anything.
-  const blockProblem = blockMigrationProblem(cwd)
-  if (blockProblem !== null) {
-    console.error(`✖ basalt-ui sync: ${blockProblem}`)
-    return 1
-  }
-
   // Before renderContext, which reads `basalt.roots` for the roots-derived template variables.
   const rootsState = reconcileRoots(cwd, { write: opts.check !== true })
   const ctx = renderContext(cwd)
@@ -168,10 +156,6 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
   const peers = resolvePeerFlags(cwd, {})
   const placement = resolvePlacement(cwd)
   const files = managedFiles(peers, placement)
-
-  // Before the loop: the block moved from CLAUDE.md to AGENTS.md, and the loop reads AGENTS.md.
-  // `--check` only reports it (and stays red until a real sync moves it).
-  const migration = migrateBlockToAgentsMd(cwd, manifest, { dryRun: opts.check === true })
 
   let updated = 0
   // `created` and `recreated` were one counter, and `0 updated, 20 recreated` is what a full
@@ -288,16 +272,10 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
           `${retired.join(', ')} — run \`basalt-ui sync\`.`,
       )
     }
-    if (migration.pending) {
-      console.error(
-        `basalt-ui sync --check: the basalt block is still in ${LEGACY_BLOCK_HOST} — it now ` +
-          `lives in ${AGENTS_MD}. Run \`basalt-ui sync\` to move it.`,
-      )
-    }
     if (staleForCheck > 0) {
       console.error(`basalt-ui sync --check: ${staleForCheck} managed file(s) out of date.`)
     }
-    if (staleForCheck > 0 || migration.pending) return 1
+    if (staleForCheck > 0) return 1
     const n = placementSkips.length
     const skips = n === 0 ? '' : ` (${n} permanent placement skip(s) — --verbose for detail)`
     console.log(`✓ basalt-ui sync --check: all managed files current.${skips}`)
@@ -313,7 +291,6 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
       `${skippedDrift} skipped (drift), ${pruned.removed.length} retired.`,
   )
   reportPrune(pruned)
-  reportBlockMigration(migration, 'sync')
   if (driftLines.length > 0) {
     console.log('Locally-edited files were skipped (run with --force to overwrite):')
     for (const l of driftLines) console.log(l)

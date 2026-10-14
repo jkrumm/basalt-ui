@@ -688,104 +688,6 @@ export function importsAgentsMd(text: string): boolean {
   return text.split(/\r?\n/).some(isAgentsImportLine)
 }
 
-export type BlockMigration = {
-  /** The legacy host (`CLAUDE.md`) carried a managed block that has to move. */
-  pending: boolean
-  /** The legacy host was left empty (or `@AGENTS.md` only) and removed. */
-  deletedHost: boolean
-  /** Why nothing was moved and the run must fail: malformed markers, or two differing blocks. */
-  problem: string | null
-}
-
-/**
- * Move the managed block out of `CLAUDE.md` into `AGENTS.md` (an install from before the move).
- * Idempotent: a second run finds nothing and returns `pending: false`.
- *  1. The ledger entry is re-keyed `CLAUDE.md` → `AGENTS.md` in memory (the caller persists it), so
- *     an unedited legacy block classifies `unchanged`, not untracked.
- *  2. The region is cut out of `CLAUDE.md` and — unless `AGENTS.md` already has one — spliced into
- *     `AGENTS.md` AS IT IS, not as the new rendering: the normal three-way classify then sees a
- *     hand-edit and skips it like any drifted unit. The rest of `CLAUDE.md` is consumer-owned and
- *     stays, except the file is deleted when nothing but whitespace or `@AGENTS.md` is left.
- *  3. Nothing is discarded silently: if `AGENTS.md` already has a block that differs (normalized,
- *     as the ledger compares) from the legacy one, or either file's markers are malformed, BOTH
- *     files are left byte-identical and `problem` says what to resolve by hand.
- * `dryRun` (`sync --check`) writes nothing but still reports `pending` and `problem`.
- */
-export function migrateBlockToAgentsMd(
-  cwd: string,
-  manifest: Manifest,
-  opts: { dryRun?: boolean } = {},
-): BlockMigration {
-  const legacyHash = manifest.files[LEGACY_BLOCK_HOST]
-  if (legacyHash !== undefined) {
-    manifest.files[AGENTS_MD] ??= legacyHash
-    delete manifest.files[LEGACY_BLOCK_HOST]
-  }
-  const none: BlockMigration = { pending: false, deletedHost: false, problem: null }
-  const legacyAbs = resolve(cwd, LEGACY_BLOCK_HOST)
-  const agentsAbs = resolve(cwd, AGENTS_MD)
-  const legacy = readIfExists(legacyAbs)
-  if (legacy === null) return none
-  // A symlinked pair is one file: cutting the block out of "CLAUDE.md" would cut AGENTS.md too.
-  // Fail closed when that cannot be proven (EACCES, ELOOP, …) — and say so, not a stack trace.
-  try {
-    if (sameFile(legacyAbs, agentsAbs)) return none
-  } catch (error) {
-    const why = (error as NodeJS.ErrnoException).code ?? (error as Error).message
-    return { ...none, problem: `cannot tell whether ${LEGACY_BLOCK_HOST} is ${AGENTS_MD} (${why})` }
-  }
-  const legacyScan = scanBlock(legacy)
-  const { region } = legacyScan
-  if (legacyScan.problem !== null) {
-    return { ...none, problem: `${LEGACY_BLOCK_HOST}: ${legacyScan.problem}` }
-  }
-  if (region === null) return none
-
-  const agents = readIfExists(agentsAbs) ?? ''
-  const agentsScan = scanBlock(agents)
-  if (agentsScan.problem !== null)
-    return { ...none, problem: `${AGENTS_MD}: ${agentsScan.problem}` }
-  const legacyBlock = legacy.slice(region.start, region.end)
-  if (
-    agentsScan.region !== null &&
-    normalizeForLedger(agents.slice(agentsScan.region.start, agentsScan.region.end)) !==
-      normalizeForLedger(legacyBlock)
-  ) {
-    return {
-      ...none,
-      problem:
-        `${LEGACY_BLOCK_HOST} and ${AGENTS_MD} each carry a basalt block and they differ — ` +
-        `delete the stale block from ${LEGACY_BLOCK_HOST} (or the one in ${AGENTS_MD}, if ` +
-        `${LEGACY_BLOCK_HOST}'s is the one you want kept), then re-run.`,
-    }
-  }
-
-  const before = legacy.slice(0, region.start).trimEnd()
-  const after = legacy.slice(region.end).trimStart()
-  const remainder = before === '' || after === '' ? `${before}${after}` : `${before}\n\n${after}`
-  const deletedHost = remainder
-    .split(/\r?\n/)
-    .every((l) => l.trim() === '' || isAgentsImportLine(l))
-  if (opts.dryRun === true) return { pending: true, deletedHost, problem: null }
-
-  if (agentsScan.region === null) writeFileEnsuringDir(agentsAbs, applyBlock(agents, legacyBlock))
-  if (deletedHost) unlinkSync(legacyAbs)
-  else writeFileSync(legacyAbs, `${remainder.trimEnd()}\n`)
-  return { pending: true, deletedHost, problem: null }
-}
-
-/**
- * The refusal `init` and `sync` run BEFORE any side effect (roots patch, package.json script,
- * manifest): a dry-run migration against a scratch manifest, so a block that cannot be moved
- * safely stops the command with nothing written. Null = safe to proceed.
- */
-export function blockMigrationProblem(cwd: string): string | null {
-  const { problem } = migrateBlockToAgentsMd(cwd, { version: 1, files: {} }, { dryRun: true })
-  return problem === null
-    ? null
-    : `${problem.replace(/\.$/, '')}. Nothing else was reconciled — resolve this by hand, then re-run.`
-}
-
 /**
  * Explicit `--with-router` / `--with-query` CLI flags force-include a router/query scaffold even
  * when the peer isn't detected in the consumer's package.json yet (e.g. it's about to be added).
@@ -798,7 +700,33 @@ export type ScaffoldFlags = {
 }
 
 /** The seeds that need both TanStack peers — one list for the scaffold entries and the skip notice. */
-export const ROUTER_SEED_DESTS = { nav: 'src/lib/nav.tsx', root: 'src/routes/__root.tsx' } as const
+export const ROUTER_SEED_DESTS = {
+  nav: 'src/lib/nav.tsx',
+  root: 'src/routes/__root.tsx',
+  main: 'src/main.tsx',
+} as const
+
+/**
+ * The 2.0 entry (V2-SPEC § 2). `defineNav` rejects every call until the `Register` augmentation below
+ * exists, so a seeded `nav.tsx` without this file fails `tsc` on the first run.
+ */
+// Interpolated: a literal relative specifier here would be rewritten by the dist ESM fixer.
+const ROUTE_TREE = './routeTree.gen'
+const MAIN_SEED = `import 'basalt-ui/styles.css'
+import { createRoot } from 'react-dom/client'
+import { BasaltProvider, createBasaltRouter } from 'basalt-ui'
+import { routeTree } from '${ROUTE_TREE}'
+
+const router = createBasaltRouter({ routeTree })
+
+declare module '@tanstack/react-router' {
+  interface Register {
+    router: typeof router
+  }
+}
+
+createRoot(document.getElementById('root')!).render(<BasaltProvider router={router} />)
+`
 
 /** Router/query peer presence, resolved from detection + explicit flags. */
 export type PeerFlags = { hasRouter: boolean; hasQuery: boolean }
@@ -1039,8 +967,14 @@ export function managedFiles(
 
   // `__root.tsx` imports @tanstack/react-router (createRootRouteWithContext) and basalt-ui's
   // `BasaltRouterContext`, which names the QueryClient type — so it needs both peers installed.
+  const mainEntry: ManagedFile = {
+    dest: ROUTER_SEED_DESTS.main,
+    mode: 'seed',
+    source: 'src/cli/index.ts',
+    render: () => MAIN_SEED,
+  }
   const scaffolds: ManagedFile[] = []
-  if (peers.hasRouter && peers.hasQuery) scaffolds.push(navModule, rootRoute)
+  if (peers.hasRouter && peers.hasQuery) scaffolds.push(navModule, rootRoute, mainEntry)
 
   // lefthook.yml / .github/workflows/check.yml are repo-root-shaped: lefthook and GitHub Actions
   // only ever read config at the repo root, so a package living in a subdirectory (a monorepo's
@@ -1178,18 +1112,6 @@ export function reportPrune(pruned: PruneResult): void {
     `\nRetired but locally edited, so left in place — your agent still loads them. Delete them, ` +
       'or run `basalt-ui sync --force`:\n' +
       pruned.drifted.map((dest) => `  · ${dest}`).join('\n'),
-  )
-}
-
-/** Name what {@link migrateBlockToAgentsMd} did — a file leaving a consumer's tree is never silent. */
-export function reportBlockMigration(migration: BlockMigration, command: 'init' | 'sync'): void {
-  if (!migration.pending) return
-  const tail = migration.deletedHost
-    ? `${LEGACY_BLOCK_HOST} held nothing else and was deleted.`
-    : `the rest of ${LEGACY_BLOCK_HOST} is yours; while it exists Claude Code loads it INSTEAD of ` +
-      `${AGENTS_MD} unless it imports @${AGENTS_MD} — move your content over and delete it.`
-  console.log(
-    `\nbasalt-ui ${command}: moved the basalt block from ${LEGACY_BLOCK_HOST} to ${AGENTS_MD} — ${tail}`,
   )
 }
 
