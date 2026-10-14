@@ -5,11 +5,6 @@
  * generic over the part type and input shape so consumers can extend AgentPart with domain-specific
  * variants while keeping the hook interface unchanged.
  *
- * Eden #231 doctrine (critical): applying a t.Object/t.Union response schema to an Elysia
- * `async function*` stream route collapses the streamed union to `any` in Eden Treaty. The
- * server handler MUST declare `: AsyncGenerator<AgentPart>` explicitly and carry NO response
- * schema. See agent/rules/basalt-agent.md for the full rationale and mitigation.
- *
  * Stream resumption is an OPTIONAL seam: a transport emits a StartPart at the top of a run
  * carrying an opaque `resumeToken`, and implements the optional `resume` method to reconnect a
  * run after a disconnect (reload, network drop). basalt-ui ships only the client-side interface —

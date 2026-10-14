@@ -145,7 +145,7 @@ type ThreadFeedRowBase = {
   readonly groupConsecutive?: boolean
   /** Called with the composer's submit payload. */
   readonly onSend: (payload: ComposerSubmit) => void
-  /** Shown as the composer's Stop action while `liveStatus === 'streaming'`. */
+  /** Shown as the composer's Stop action while `liveStatus` is `'submitted'` or `'streaming'`. */
   readonly onStop?: () => void
   /** Forwarded to the row's `Composer`, minus the three props this component always wires itself
    * (`onSubmit`, `onStop`, and `streaming` — the last derived from `liveStatus` so a consumer can't
@@ -248,7 +248,7 @@ export function ThreadFeedRow(props: ThreadFeedRowProps): JSX.Element {
   // textarea when it is TOLD a run is streaming (`composer.tsx`'s `showStop`/`inputDisabled`) — it
   // has no way to infer that from `onStop` alone. Forwarding `onStop` without this was the defect:
   // Stop never rendered and a second turn could still be typed into a live thread.
-  const streaming = liveStatus === 'streaming'
+  const streaming = liveStatus === 'submitted' || liveStatus === 'streaming'
 
   const transcript = (
     <ThreadTranscript

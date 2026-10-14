@@ -1175,7 +1175,7 @@ export function ThreadTranscript(props: ThreadTranscriptProps): JSX.Element {
         <div aria-live="polite" aria-atomic="false" aria-relevant="additions">
           <MessageBlock
             message={liveMessage}
-            streaming={liveStatus === 'streaming'}
+            streaming={liveStatus === 'submitted' || liveStatus === 'streaming'}
             renderers={renderers}
             fallbackRenderer={fallbackRenderer}
           />

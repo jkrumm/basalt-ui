@@ -25,7 +25,7 @@
  * <Composer
  *   ref={composerRef}
  *   draftKey={`thread:${thread.id}`}
- *   streaming={runStatus === 'streaming'}
+ *   streaming={run !== undefined && run.error === undefined}
  *   onStop={() => runs.stop(thread.id)}
  *   leftSection={
  *     <VoiceRecordButton

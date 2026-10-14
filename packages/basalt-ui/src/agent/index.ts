@@ -17,6 +17,7 @@ export type { ForeignPart, TranscriptPart, PartRenderers, PartRenderer } from '.
 export { aiSdkTransport } from './ai-sdk-transport'
 export { useAgentThreadRuns } from './use-agent-thread-runs'
 export type { ThreadRunState } from './use-agent-thread-runs'
+export type { AgentError } from './error'
 
 // ── Thread contracts (the store is consumer-owned) ────────────────────────────
 export type { ChatMessage } from './history'

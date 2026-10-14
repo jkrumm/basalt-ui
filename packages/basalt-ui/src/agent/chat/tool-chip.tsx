@@ -82,7 +82,7 @@ function stateMeta(part: ToolCallPart): { readonly label: string; readonly dotTo
       // so adding an eighth ToolCallPart state without a case above makes this assignment a tsc
       // error, the same gate `assertNever` provides. But `part` at RUNTIME can be a value this
       // build never declared: a consumer-owned thread store may persist to localStorage with no
-      // shape validation, and `edenTransport` trusts the wire with zero validation, so a 1.10.0-shaped
+      // shape validation, and a transport may carry wire data with zero validation, so a 1.10.0-shaped
       // flat tool part (`state` undefined) or a future/foreign `state` string both reach here.
       // That must never THROW during render — mirrors ThreadTranscript's fallbackRenderer
       // doctrine (unknown data renders inert, it doesn't blank the transcript) — so, unlike a
