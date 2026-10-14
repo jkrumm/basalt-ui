@@ -28,15 +28,15 @@ beforeEach(() => {
   rejections.length = 0
   events.on('unhandledRejection', onRejection)
 })
-afterEach(() => {
+afterEach(async () => {
+  // Lets pending dynamic imports and their `.catch` handlers run before asserting "no rejection".
+  await new Promise((resolve) => setTimeout(resolve, 50))
   events.off('unhandledRejection', onRejection)
+  expect(rejections).toEqual([])
 })
 
 /** A computed specifier: a `?query` gives a fresh module instance, which TypeScript cannot resolve. */
 const freshSpecifier = (path: string, tag: string): string => `${path}?${tag}`
-
-/** Lets pending dynamic imports and their `.catch` handlers run before asserting "no rejection". */
-const flush = () => new Promise((resolve) => setTimeout(resolve, 50))
 
 function renderMd(text: string, streaming = false) {
   return render(
@@ -65,8 +65,6 @@ describe('shiki degrade', () => {
       const { container } = renderMd(`\`\`\`${language}\nlet answer = 42\n\`\`\``)
       const pre = await plainPre(container, 'let answer = 42')
       expect(pre.querySelector('code')).not.toBeNull()
-      await flush()
-      expect(rejections).toEqual([])
     },
   )
 
@@ -92,8 +90,6 @@ describe('shiki degrade', () => {
     } finally {
       mock.module('shiki/core', () => real)
     }
-    await flush()
-    expect(rejections).toEqual([])
   })
 
   test('CodeBlock with an unhighlightable language keeps its text through re-renders', async () => {
@@ -123,17 +119,17 @@ describe('mermaid degrade', () => {
   })
 
   test('a settled diagram that does not parse stays a source block, no throw', async () => {
-    const { container } = renderMd('```mermaid\npie\n  "a": 1\n```\n\nafter\n', true)
-    const pre = await plainPre(container, '"a": 1')
+    const { container } = renderMd('```mermaid\nthis is {{ not a diagram\n```\n\nafter\n', true)
+    const pre = await plainPre(container, 'this is {{ not a diagram')
     expect(container.querySelector(DIAGRAM)).toBeNull()
     expect(pre.querySelector('code')).not.toBeNull()
-    await flush()
-    expect(rejections).toEqual([])
   })
 
   test('an empty mermaid fence degrades instead of throwing', async () => {
     const { container } = renderMd('```mermaid\n```\n\nafter\n', true)
-    await waitFor(() => expect(screen.getByText('after')).not.toBeNull())
+    await screen.findByText('after')
+    const pre = container.querySelector('pre')
+    expect(pre?.querySelector('code')).not.toBeNull()
     expect(container.querySelector(DIAGRAM)).toBeNull()
   })
 
@@ -150,9 +146,7 @@ describe('mermaid degrade', () => {
         </MantineProvider>,
       )
     }
-    await waitFor(() => expect(screen.getByText('end')).not.toBeNull())
-    await flush()
-    expect(rejections).toEqual([])
+    await screen.findByText('end')
   })
 
   test('a renderer that always throws leaves MermaidDiagram on the source block', async () => {
@@ -172,11 +166,9 @@ describe('mermaid degrade', () => {
         </MantineProvider>,
       )
       await plainPre(container, 'A --> B')
-      await flush()
       expect(container.querySelector(DIAGRAM)).toBeNull()
     } finally {
       mock.module('beautiful-mermaid', () => real)
     }
-    expect(rejections).toEqual([])
   })
 })
