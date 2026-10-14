@@ -572,21 +572,21 @@ echo "@tanstack/react-store + @tanstack/store dedupe to one version each"
 echo "subpath-required peers OK (absent: own-peer failures only; present: every subpath loads)"
 
 echo "==> ./styles.css @importing Mantine's layer CSS (V2-SPEC.md § 1 Open)"
-# The shipped stylesheet must itself `@import '@mantine/core/styles.layer.css'`, and bundling it with
-# the bundler consumers run (Vite, i.e. Rolldown) must land Mantine's `@layer mantine` block before
-# `@layer basalt`, so basalt wins by layer order exactly as the declared `@layer mantine, basalt;`
-# promises. The `@layer` statement itself is folded away by the bundler; declaration order is what
-# survives, so that is what is asserted.
+# The shipped stylesheet must itself `@import` the layered bundle of every Mantine package the
+# provider mounts (core, notifications, spotlight), and bundling it with the bundler consumers run
+# (Vite, i.e. Rolldown) must land ALL of them inside `@layer mantine{…}`, before `@layer basalt{`, so
+# basalt wins by layer order exactly as the declared `@layer mantine, basalt;` promises. The `@layer`
+# statement itself is folded away by the bundler; declaration order is what survives, so that is what
+# is asserted. A class hook (not a custom property) is probed: an UNLAYERED bundle still carries the
+# custom properties, but its class rules fall outside the `@layer mantine{…}` span.
 cat >styles-proof.mjs <<'JS'
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { build } from 'vite'
 const require = createRequire(import.meta.url)
 const css = readFileSync(require.resolve('basalt-ui/styles.css'), 'utf8')
-if (!css.includes("@import '@mantine/core/styles.layer.css'")) {
-  throw new Error("the shipped styles.css does not `@import '@mantine/core/styles.layer.css'`")
-}
-for (const pkg of ['notifications', 'spotlight']) {
+const PACKAGES = ['core', 'notifications', 'spotlight']
+for (const pkg of PACKAGES) {
   if (!css.includes(`@import '@mantine/${pkg}/styles.layer.css'`)) {
     throw new Error(`the shipped styles.css does not \`@import '@mantine/${pkg}/styles.layer.css'\``)
   }
@@ -606,9 +606,15 @@ const mantine = out.indexOf('@layer mantine{')
 const basalt = out.indexOf('@layer basalt{')
 if (mantine === -1 || basalt === -1) throw new Error(`layers missing from the bundled CSS (mantine ${mantine}, basalt ${basalt})`)
 if (mantine > basalt) throw new Error('@layer basalt precedes @layer mantine: basalt would lose to Mantine')
-if (!out.includes('--mantine-color-scheme')) throw new Error('Mantine rules are missing from the bundled CSS')
-for (const cls of ['--notifications-z-index', '--spotlight-content-height']) {
-  if (!out.includes(cls)) throw new Error(`${cls} is missing from the bundled CSS`)
+// The first hashed root class each package's own layer file declares; Mantine bumps rehash it, so it
+// is read from the installed file rather than pinned here.
+for (const pkg of PACKAGES) {
+  const file = readFileSync(require.resolve(`@mantine/${pkg}/styles.layer.css`), 'utf8')
+  const hook = file.match(/\.m_[a-z0-9]+/)?.[0]
+  if (!hook) throw new Error(`no class hook found in @mantine/${pkg}/styles.layer.css`)
+  const at = out.indexOf(hook)
+  if (at === -1) throw new Error(`${hook} (@mantine/${pkg}) is missing from the bundled CSS`)
+  if (at < mantine || at > basalt) throw new Error(`${hook} (@mantine/${pkg}) is outside @layer mantine{…}: its CSS is unlayered`)
 }
 console.log('styles.css + Mantine layer CSS OK (shipped import)')
 JS

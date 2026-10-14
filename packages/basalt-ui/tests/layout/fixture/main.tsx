@@ -1,7 +1,7 @@
 /**
  * The fixture host. Mounts the REAL `BasaltProvider` + `BasaltShell` from `src/` with the
- * documented consumer stylesheet order — `@mantine/core/styles.layer.css` first, then basalt's
- * `styles.css`, which declares `@layer mantine, basalt`.
+ * documented consumer stylesheet: basalt's `styles.css`, which declares `@layer mantine, basalt`
+ * and imports Mantine's layered core bundle.
  *
  * That order is not decoration. The mobile sheet's height law is an UNLAYERED CSS-module rule that
  * only wins because Mantine's own rules are layered; VERIFIED in the built CSS, where
@@ -9,7 +9,6 @@
  * hand-authored DOM approximation reproduces the class chain and loses exactly that — which is why
  * an ad-hoc probe page is not what we commit.
  */
-import '@mantine/core/styles.layer.css'
 import '../../../src/styles.css'
 import { createRootRoute } from '@tanstack/react-router'
 import { createRoot } from 'react-dom/client'

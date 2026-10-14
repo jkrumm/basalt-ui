@@ -64,3 +64,25 @@ describe('styles.css !important budget', () => {
     )
   })
 })
+
+describe('styles.css Mantine layer imports', () => {
+  const layerAt = declarations.indexOf('@layer mantine, basalt;')
+  const importsAt = ['core', 'notifications', 'spotlight'].map((pkg) =>
+    declarations.indexOf(`@import '@mantine/${pkg}/styles.layer.css';`),
+  )
+
+  it('declares the layer order before the imports', () => {
+    expect(layerAt).toBeGreaterThanOrEqual(0)
+    expect(importsAt.every((at) => at > layerAt)).toBe(true)
+  })
+
+  it('imports core, then notifications, then spotlight', () => {
+    expect(importsAt.every((at) => at >= 0)).toBe(true)
+    expect(importsAt).toEqual([...importsAt].toSorted((a, b) => a - b))
+  })
+
+  it('places every @import before any rule', () => {
+    const firstRule = declarations.search(/@layer\s+\w+\s*\{|[^@\s;{}][^;{}]*\{/)
+    expect(firstRule).toBeGreaterThan(declarations.lastIndexOf('@import'))
+  })
+})
