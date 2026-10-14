@@ -185,6 +185,11 @@ export function xScaleFor<X extends ChartX>(raw: readonly X[], band: boolean): X
   let lo = Infinity
   let hi = -Infinity
   for (const v of nums) {
+    // NaN poisons the extent, as Math.min/max did: the guard below falls back to [0, 1].
+    if (Number.isNaN(v)) {
+      lo = hi = NaN
+      break
+    }
     if (v < lo) lo = v
     if (v > hi) hi = v
   }

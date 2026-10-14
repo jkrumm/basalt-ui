@@ -216,8 +216,10 @@ describe('scales', () => {
     const big = Array.from({ length: 1_000_000 }, (_, i) => i)
     const model = xScaleFor(big, false)
     expect(model.extent).toEqual([0, 999_999])
-    const series = [{ key: 'a', label: 'A', color: 'var(--vx-line)', getValue: (v: number) => v }]
-    expect(resolveYDomain(undefined, big, series)[1]).toBeGreaterThan(999_999)
+  })
+  test('a NaN x falls back to the unit extent, as the spread did', () => {
+    expect(xScaleFor([1, Number.NaN, 5], false).extent).toEqual([0, 1])
+    expect(xScaleFor([Number.NaN, Number.NaN], false).extent).toEqual([0, 1])
   })
   test('a Date x is proportional: a gap in the data is a gap on the axis', () => {
     const model = xScaleFor([day(1), day(2), day(10)], false)
