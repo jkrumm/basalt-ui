@@ -41,6 +41,7 @@ import type { Telemetry } from '../telemetry'
 import type { BasaltDevDockTool } from '../dev-dock'
 import type { BasaltRouter, BasaltRouterContext } from './create-router'
 import { useRegistryHotkeys } from './hotkeys'
+import type { FlatNavItem } from '../router-tanstack/nav'
 import { buildSpotlightActions } from './spotlight-actions'
 
 export type BasaltProviderProps = {
@@ -79,6 +80,12 @@ export type BasaltProviderProps = {
    * can answer. Default `'compact'`. SSR only; an SSR desktop app SHOULD pass it.
    */
   sizeClassHint?: SizeClass
+  /**
+   * Label for the `nav.<id>` Spotlight entries generated from `defineNav`, e.g.
+   * `(item) => `Go to ${item.label}``. Default: the destination's own label. A `defineCommands`
+   * entry with id `nav.<id>` replaces the generated one outright.
+   */
+  navCommandLabel?: (item: FlatNavItem) => string
 } & Omit<MantineProviderProps, 'children' | 'theme' | 'defaultColorScheme' | 'cssVariablesResolver'>
 
 // ── Root error boundary ───────────────────────────────────────────────────────────────────────────
@@ -408,6 +415,7 @@ export function BasaltProvider({
   defaultColorScheme = 'dark',
   nonce,
   sizeClassHint = 'compact',
+  navCommandLabel,
   ...rest
 }: BasaltProviderProps) {
   useDuplicateProviderGuard()
@@ -432,8 +440,8 @@ export function BasaltProvider({
   // appears, not frozen at mount — and `detectMac` (inside the builder) never runs during render.
   const [actions, setActions] = useState<SpotlightActionData[]>([])
   const refreshActions = useCallback(
-    () => setActions(buildSpotlightActions(router, setDevTool)),
-    [router],
+    () => setActions(buildSpotlightActions(router, setDevTool, navCommandLabel)),
+    [router, navCommandLabel],
   )
   useEffect(refreshActions, [refreshActions])
 

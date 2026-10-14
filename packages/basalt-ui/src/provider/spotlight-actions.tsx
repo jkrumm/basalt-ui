@@ -1,6 +1,6 @@
 /**
  * The provider's Spotlight list: the `defineCommands` registry, then the `defineNav` destinations
- * (via `flattenNav`), then the three dev-dock commands in dev. A snapshot rebuilt each time Spotlight
+ * (via `flattenNav`, skipping any id a registered `nav.<id>` command already owns), then the three dev-dock commands in dev. A snapshot rebuilt each time Spotlight
  * opens, so a command's `when()` is current. Not for use during render (`detectMac` reads `navigator`).
  */
 import type { SpotlightActionData } from '@mantine/spotlight'
@@ -8,6 +8,7 @@ import type { AnyRouter } from '@tanstack/react-router'
 import { getActiveCommands } from '../commands/define-commands'
 import { detectMac, formatShortcutDisplay } from '../commands/shortcut-format'
 import { flattenNav, getActiveNav } from '../router-tanstack/nav'
+import type { FlatNavItem } from '../router-tanstack/nav'
 import type { BasaltDevDockTool } from '../dev-dock'
 import { runCommandSafely } from './hotkeys'
 
@@ -20,10 +21,12 @@ const DEV_TOOLS: ReadonlyArray<{ tool: BasaltDevDockTool; label: string }> = [
 export function buildSpotlightActions(
   router: AnyRouter,
   openDevTool: (tool: BasaltDevDockTool) => void,
+  navCommandLabel?: (item: FlatNavItem) => string,
 ): SpotlightActionData[] {
   const actions: SpotlightActionData[] = []
+  const commands = getActiveCommands()
 
-  for (const [id, cmd] of Object.entries(getActiveCommands())) {
+  for (const [id, cmd] of Object.entries(commands)) {
     if (cmd.when !== undefined && !cmd.when()) continue
     actions.push({
       id,
@@ -42,9 +45,11 @@ export function buildSpotlightActions(
   if (nav !== undefined) {
     for (const item of flattenNav(nav)) {
       if (item.disabled === true) continue
+      // A registered `nav.<id>` command owns that destination: the consumer wins, no duplicate.
+      if (`nav.${item.id}` in commands) continue
       actions.push({
         id: `nav.${item.id}`,
-        label: item.label,
+        label: navCommandLabel?.(item) ?? item.label,
         group: item.groupLabel,
         leftSection: item.icon,
         // `link` is the destination's own `linkOptions`, so a store-backed `search` thunk restores
