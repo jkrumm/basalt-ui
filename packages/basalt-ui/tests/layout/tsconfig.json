@@ -7,5 +7,5 @@
     "emitDeclarationOnly": false,
     "declarationMap": false
   },
-  "include": ["../../src", "fixture", "*.ts"]
+  "include": ["../../src", "fixture", "ssr", "*.ts"]
 }
