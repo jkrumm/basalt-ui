@@ -1006,16 +1006,13 @@ export const PLUGIN_RULE_IDS: ReadonlySet<string> = new Set([
   // and the ancestry, which a 12-line regex window has neither of. See the rule's own JSDoc.
   'bound-control-outside-home',
   'control-size-literal',
-  'page-bar-budget',
   'responsive-twin',
   'search-literal-link',
   'use-search-from-literal',
   // The three remaining F5 rules and the B4 deprecation rule — all AST-only, all outside
   // `checkSource`'s reach: provenance here is an import graph and a JSX ancestry, neither of which
   // a 12-line regex window has. Same reason `bound-control-outside-home` has no text-lane twin.
-  'provider-above-router',
   'query-fn-unwrap',
-  'deprecated-export',
   // Same lane: `{...inputProps(…)}` without a sibling `key` is a JSX-ancestry claim (does this
   // ELEMENT carry a `key` attribute?) over an import-resolved callee — neither is text.
   'forms-field-key',
@@ -1030,9 +1027,10 @@ export const PLUGIN_RULE_IDS: ReadonlySet<string> = new Set([
   // exemption and a hook import all need the import graph and JSX ancestry, neither of which a
   // 12-line text window has. `raw-media-query` is its CSS-text twin and lives in `GUARD_RULES`.
   'raw-breakpoint',
-  // These three honour `basalt-agent-allow`, never `theme-allow` — but they are still REAL ids, so
+  'router-view-transition',
+  'no-dev-helper',
+  // These two honour `basalt-agent-allow`, never `theme-allow` — but they are still REAL ids, so
   // a `theme-allow ai-sdk-major` must parse as a (useless) scoped annotation rather than as prose.
-  'agent-resume-guard',
   'agent-no-raw-usechat',
   'ai-sdk-major',
   // Retired guard kinds — `unframed-chart`'s only case (a hand-written legend array) died with
@@ -1056,6 +1054,12 @@ export const PLUGIN_RULE_IDS: ReadonlySet<string> = new Set([
   // `basalt-ui/query`) is unreachable now that C1 (1.29.0) dropped the `./query` subpath.
   // Mirrored by the plugin's own `RETIRED_RULE_IDS`.
   'query-dual-import',
+  // Retired in 2.0 (V2-SPEC § 3): the concern is unrepresentable. Mirrored by the plugin's
+  // `RETIRED_RULE_IDS`.
+  'provider-above-router',
+  'page-bar-budget',
+  'agent-resume-guard',
+  'deprecated-export',
 ])
 
 /**

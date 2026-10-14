@@ -389,9 +389,6 @@ hard-fail their build.
   dry run COMPUTED and refuses to cut it while an entry is due — without that half the gate can only
   go red on the first push AFTER the release that shipped the due entry (`release.yml` runs no tests
   and the `chore: release … [skip ci]` commit skips CI).
-- **A rule that may never promote belongs in `PLUGIN_RULE_ADVISORY`** (`{ since, why }`, no
-  `promote`, C16 skips it). `shadow-basalt-export` is the one entry: a name collision is evidence a
-  component was forked, not proof, and renaming the fork defeats the check.
 - **A rule the current minor WIDENS does not promote in that minor** — widening restarts the grace.
   Narrowing restarts nothing.
 - **Catching a new FORM means a new rule id.** A level is per-id, so widening an existing `error`
@@ -413,72 +410,9 @@ hard-fail their build.
   boundary protects. That change also deleted basalt's own self-exemption for both kinds — basalt
   passes `check-theme` for the same reason a consumer does, not because it silenced itself.
 
-## Deprecation lifecycle — maintainer mechanics (consumer-facing summary: `basalt-batteries.md`)
+## Deprecation lifecycle
 
-**Every removal and every retype of a public export gets one minor of grace. No exceptions by
-convenience.** A `@deprecated` alias that forwards, or a union overload plus a one-line dev warn,
-ships in minor N; the hard break ships in N+1. This is the doctrine's other half: "no majors, breaks
-ship as `feat:` on the 1.x line" is only affordable if a plain minor is safe to take, and a minor
-that hands a consumer a raw `tsc` error with no autofix is not. The window is what converts a break
-into a lint finding with a mechanical remedy.
-
-**The inconsistency is the actual cost, and it is measured.** In the 1.25.0 → 1.29.2 fleet
-migration, `field` → `inputProps` (1.28.0) and `variant` → `tier` (1.28.0) both got `@deprecated`
-aliases — while `sidebarNavExtra` (1.26.0), `PageActions` → `PageBar` (1.26.0) and the
-`globalActions: ReactNode → GlobalAction[]` retype all shipped with none, in the same and adjacent
-minors. Two consumers named that pairing as the single thing that makes a basalt minor unsafe to
-take. `sidebarNavExtra` is the sharpest case: its removal is pinned as a `@ts-expect-error` in
-`src/shell/index.test.tsx:120`, so the hard break was KNOWN at authoring time, and its remedy is
-total and mechanical (`x` → `[{ kind: 'custom', key, node: x }]`) — exactly the shape
-`basalt/deprecated-export`'s autofix exists for.
-
-**When a forwarding alias is genuinely impossible** (the replacement is a different shape, not a
-different name), the window is still owed and is spent differently: keep the old prop accepted as a
-union arm for one minor, warn once in dev through `common/errors.ts`' `deprecatedProp`, and write
-the ledger row anyway. "It cannot be aliased" is an argument about the MECHANISM, never about
-whether a consumer gets a minor's notice.
-
-**A removal with no window needs a written reason in `MIGRATING.md`, in the removal's own row.**
-1.29.0's `BasaltNotifications` row is the reference: it names the exception, says why (superseded in
-1.2x, its own JSDoc warned against the double-mount) and takes the cost explicitly. An unexplained
-zero-window removal is a defect in this file's terms, not a judgement call.
-
-A row whose replacement lives in a DIFFERENT subpath or package (`FormRow` → `basalt-ui/controls`,
-`useForm` → `@mantine/form`) says `fix: false`: the autofix rewrites an import specifier inside its
-own `from '…'` statement and cannot change the module, so the finding names the new home and the
-import moves by hand.
-
-The sunset itself runs through four artifacts, and all four land in the SAME commit: the export
-stays shipped (`@deprecated` JSDoc, delegating to the replacement), a row in `DEPRECATED_EXPORTS`
-(`configs/oxlint-plugin.js` — `{ subpath, name, replacement, removeIn }`, plus `prop` for a JSX
-attribute) that `basalt/deprecated-export` reads to nudge every import/prop with an autofix
-preserving the LOCAL binding (`{ inputProps as field }`), a `MIGRATING.md` row in the NEWEST
-section (`## Unreleased` until the release renames it to its number — see that file's own preamble),
-and a `removeIn` at least one minor out (pinned by `oxlint-plugin.test.ts` — deprecating in 1.28.0
-means removing in 1.29.0 at the earliest).
-
-`basalt/deprecated-export` is **permanently `warn`** (`PLUGIN_RULE_ADVISORY`), and that is the whole
-difference between this mechanism and the grace one above. A grace entry promotes because the code
-it reports is wrong; a deprecation reports code that is _correct until a date_. Failing a build over
-a schedule is exactly what the no-majors doctrine exists to avoid — enforcement arrives when the
-export stops existing, not when this rule changes level.
-
-**Removal is its own commit**, and it deletes the row, the export and the `@deprecated` JSDoc
-together while the `MIGRATING.md` row stays forever. **Deleting the `DEPRECATED_EXPORTS` row also
-deletes the autofix**, which is a consumer-visible loss the removal has to state: 1.29.0 took
-`field` out of the ledger in the same minor it deleted the export, and that silently invalidated
-MIGRATING's own two-pass `oxlint --fix` recipe for anyone arriving from 1.27.x. Either keep the row
-one minor past the removal as `removed: true` with `removeIn` = the removing minor (the message then
-reads "was removed in X"), or say plainly in the removal row that the fix is now manual.
-
-**The date is release-gated, like grace.** `scripts/check-grace.ts` refuses a computed version ≥ a
-row's `removeIn` while the export is still in `scripts/export-surface.json` (a prop row: until it is
-`removed`). Without it `useBreakpoint` was re-dated 1.31.0 → 1.33.0 and then shipped in 1.33.0
-anyway, turning master red on the floor test one release too late.
-
-`oxlint-plugin.test.ts` scans every `src/**/index.ts(x)` barrel for a JSDoc `@deprecated` with no
-ledger row, so the published half cannot be forgotten; a deprecation written deeper in the tree is
-on the author.
+Returns with the first 2.x deprecation (the `DEPRECATED_EXPORTS` ledger, `basalt/deprecated-export` and `check-grace.ts`'s removal gate); 2.0.0 ships none.
 
 The plugin itself (`configs/oxlint-plugin.js`, alpha `jsPlugins`) ships inside `configs/` and is
 wired by the shipped preset, so a consumer inherits it by extending. **Read the rule list and the

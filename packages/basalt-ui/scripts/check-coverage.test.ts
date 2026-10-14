@@ -118,7 +118,6 @@ describe('coverageFor', () => {
     expect(guardKinds).toEqual([])
     expect(pluginRules).toEqual([
       'agent-no-raw-usechat',
-      'agent-resume-guard',
       'ai-sdk-major',
       'forms-field-key',
       'query-fn-unwrap',
