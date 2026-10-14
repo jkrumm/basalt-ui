@@ -6,18 +6,10 @@
  * `defineCommands` has no loader-registration seam yet; when `./commands` grows one (it calls this
  * module's loader instead), this registry check is what goes away.
  */
+import type { HotkeyRegistrationHandle } from '@tanstack/react-hotkeys'
 import { useEffect } from 'react'
 import { getActiveCommands } from '../commands/define-commands'
 import type { Command } from '../commands/define-commands'
-
-type HotkeyHandle = { unregister: () => void }
-type HotkeyManager = {
-  register: (
-    hotkey: string,
-    callback: (event: KeyboardEvent) => void,
-    options?: { preventDefault?: boolean },
-  ) => HotkeyHandle
-}
 
 /**
  * Runs a command, swallowing a sync throw or async rejection so a failing command never becomes an
@@ -40,16 +32,14 @@ export function useRegistryHotkeys(): void {
     if (commands.length === 0) return
 
     let cancelled = false
-    const handles: HotkeyHandle[] = []
+    const handles: HotkeyRegistrationHandle[] = []
 
     // An absent peer is a silent no-op: shortcuts simply do not bind.
     void import('@tanstack/react-hotkeys')
       .catch(() => undefined)
       .then((peer) => {
         if (cancelled || peer === undefined) return
-        const getManager = (peer as { getHotkeyManager?: unknown }).getHotkeyManager
-        if (typeof getManager !== 'function') return
-        const manager = (getManager as () => HotkeyManager)()
+        const manager = peer.getHotkeyManager()
         for (const cmd of commands) {
           if (cmd.shortcut === undefined) continue
           handles.push(
