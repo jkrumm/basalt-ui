@@ -1,3 +1,16 @@
+# [2.6.0](https://github.com/jkrumm/basalt-ui/compare/v2.5.0...v2.6.0) (2026-10-14)
+
+
+### Bug Fixes
+
+* answer the DX trial's page-shape and queryFn questions in the shipped layer ([a84293a](https://github.com/jkrumm/basalt-ui/commit/a84293a2c7b2e0549f86cca4e4eb0ce38d56e3de))
+
+
+### Features
+
+* bind a basalt control to a field backed by an external store ([d5f0674](https://github.com/jkrumm/basalt-ui/commit/d5f06740aeec4841da83980b49f50c05e24dbca5))
+* write an externalField from its store, not a render ([5853413](https://github.com/jkrumm/basalt-ui/commit/5853413973d8e83c08567933d40a340e676d09d0))
+
 # [2.5.0](https://github.com/jkrumm/basalt-ui/compare/v2.4.0...v2.5.0) (2026-10-14)
 
 
