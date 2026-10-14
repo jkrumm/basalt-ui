@@ -13,6 +13,10 @@
 # from the working directory (bun's isolated linker puts it beside the package that depends
 # on it, not at the root) bunx silently downloads a DIFFERENT copy from npm and the gate
 # runs a version nobody pinned.
+# The gate is the consumer's when it has one: with a Makefile `check:` target the workflow runs
+# `make check` (after `doctor` and `sync --check`, which always run first so drift can never be
+# skipped by a custom gate); without one it runs the built-in lint + theme guard + format steps.
+# `init` decides once, when it seeds this file. Add gates to your `make check`, not to this file.
 name: check
 on:
   pull_request:
@@ -28,11 +32,7 @@ jobs:
         with:
           bun-version: latest
       - run: bun install --frozen-lockfile
-      - run: bunx oxlint .
-      - run: '{{BASALT_BIN}} doctor'
-      - run: '{{BASALT_BIN}} check-theme'
-      - run: '{{BASALT_BIN}} sync --check'
-      - run: bunx oxfmt {{ROOTS_GLOBS}} '!**/dist/**' --check
+      # {{GATE_STEPS}}
       # Enable once your app defines these package.json scripts:
       # - run: bun run typecheck
       # - run: bun run test

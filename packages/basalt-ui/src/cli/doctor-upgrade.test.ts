@@ -774,6 +774,21 @@ describe('doctor — app-wiring', () => {
     expect(text(appWiringCheck(dir))).toContain('app/boot.tsx does not exist')
   })
 
+  it('follows the entry imports to a router module, and stays red when none creates it', () => {
+    write('src/routeTree.gen.ts', 'export {}\n')
+    write(
+      'src/main.tsx',
+      "import { router } from './lib/router'\n<BasaltProvider router={router} />\n",
+    )
+    write('src/lib/router.ts', 'export const router = createBasaltRouter({ routeTree })\n')
+    expect(appWiringCheck(dir)).toBeNull()
+    rmSync(join(dir, 'src/lib/router.ts'))
+    write('src/lib/router/index.tsx', 'export const router = createBasaltRouter({ routeTree })\n')
+    expect(appWiringCheck(dir)).toBeNull()
+    write('src/lib/router/index.tsx', '// createBasaltRouter\nexport const router = {}\n')
+    expect(text(appWiringCheck(dir))).toContain('does not use createBasaltRouter')
+  })
+
   const ENTRY = 'createBasaltRouter(); <BasaltProvider router={router} />\n'
 
   describe('router plugin detection', () => {

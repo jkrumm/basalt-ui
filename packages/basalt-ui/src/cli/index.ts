@@ -474,6 +474,8 @@ type TemplateVars = {
    * `bunx basalt-ui` only as the pre-install fallback.
    */
   BASALT_BIN: string
+  /** The CI gate steps after install: `make check` when the repo owns one, else the built-in set. */
+  GATE_STEPS: string
 }
 
 // The block markers the AGENTS.md template emits. The begin marker carries the framework version
@@ -536,6 +538,26 @@ export function basaltBinCommand(install: BasaltInstall, cwd: string): string {
   return `${relativePosix(cwd, binDir).replace(/^\.\//, '')}/basalt-ui`
 }
 
+/**
+ * The consumer owns the CI gate when its Makefile has a `check:` target: `doctor` and `sync --check`
+ * stay as steps of their own (drift is never skippable), then `make check` replaces the built-in
+ * lint/theme/format steps. Without one, the built-in steps run. Rendered at `{{GATE_STEPS}}`.
+ */
+export function ciGateSteps(cwd: string): string {
+  const owned = /^check\s*:/m.test(readIfExists(resolve(cwd, 'Makefile')) ?? '')
+  const drift = ["- run: '{{BASALT_BIN}} doctor'", "- run: '{{BASALT_BIN}} sync --check'"]
+  const steps = owned
+    ? [...drift, '- run: make check']
+    : [
+        '- run: bunx oxlint .',
+        drift[0],
+        "- run: '{{BASALT_BIN}} check-theme'",
+        drift[1],
+        "- run: bunx oxfmt {{ROOTS_GLOBS}} '!**/dist/**' --check",
+      ]
+  return steps.join('\n      ')
+}
+
 /** Build the template-variable map from the framework root + consumer cwd/config. */
 function buildTemplateVars(pkgRoot: string, cwd: string, cfg: BasaltConfig): TemplateVars {
   const install = findBasaltInstall(cwd)
@@ -548,15 +570,20 @@ function buildTemplateVars(pkgRoot: string, cwd: string, cfg: BasaltConfig): Tem
     OXLINT_PRESET_PATH: shippedAssetPath(install, cwd, OXLINT_FILES.preset),
     LEFTHOOK_PRESET_PATH: shippedAssetPath(install, cwd, 'configs/lefthook.yml'),
     BASALT_BIN: basaltBinCommand(install, cwd),
+    GATE_STEPS: ciGateSteps(cwd),
   }
 }
 
 /** Substitute every `{{KEY}}` placeholder from the variable map; unknown keys are left verbatim. */
 function fillTemplate(tpl: string, vars: TemplateVars): string {
-  return tpl.replace(/\{\{(\w+)\}\}/g, (m, key: string) => {
-    const v = (vars as Record<string, string>)[key]
-    return v ?? m
-  })
+  const fill = (text: string): string =>
+    text.replace(/\{\{(\w+)\}\}/g, (m, key: string) => {
+      const v = (vars as Record<string, string>)[key]
+      return v ?? m
+    })
+  // The marker is a YAML comment so the template stays valid YAML; GATE_STEPS itself carries
+  // placeholders, so it expands before the generic pass.
+  return fill(tpl.replace('# {{GATE_STEPS}}', vars.GATE_STEPS))
 }
 
 /**
