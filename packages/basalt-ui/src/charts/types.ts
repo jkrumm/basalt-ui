@@ -169,7 +169,8 @@ export type ChartState = {
   pending?: boolean
   /** Truthy = the query failed; an `Error`'s message is the label. */
   error?: unknown
-  /** `true`, or the empty label itself. */
+  /** `true`, or the empty label itself. The label is the one way to say WHY (`'No runs match the
+   * filter'` vs `'No runs yet'`): § 9 fixes the state shape, so there is no reason field. */
   empty?: boolean | string
 }
 
