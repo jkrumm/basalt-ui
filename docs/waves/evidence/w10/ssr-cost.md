@@ -19,9 +19,9 @@ Gate: `packages/basalt-ui/src/charts/ssr-budget.test.tsx`.
 | Donut            | 12        | 2        | 3          | 5         |
 
 "Before" is `af79408e`; the cold first render is in the before column, so the small kinds improve only by
-JIT warm-up (not by the change). `MirroredBars` is unchanged: its `barY` is in `MirroredBars.tsx`, which
-this PR does not own. With the same one-line change DualPanel took (`y1: 0`) it measures 102 ms at 5k and
-182 ms at 10k (tried locally, not committed). `Sparkline` `mark="bar"` has the same shape (untimed).
+JIT warm-up (not by the change). `MirroredBars` (both panes) and `Sparkline` `mark="bar"` had the same
+unkeyed `barY` and got the same `y1: 0`; the 300-row SSR output of both is byte-identical before and
+after (`cmp`, with absent fractions, bar opacity, negative values, `emphasizeLast`).
 
 ## Profile
 
@@ -42,12 +42,14 @@ Time is quadratic in rows (500 → 124 ms, 1,000 → 293, 2,000 → 1,238).
 `barY` stacks unless it is given an explicit extent (`y1`/`y2`, `bar.js:44-55`). With no `z`/`color`
 channel, `stackValues(..., "index")` gives every row its own series (`stack-internal.js:28`), so the
 engine builds an N-series by N-position matrix (`stack-internal.js:25-60`, `d3Stack().keys(...)`) for
-what is a single series. `Bars` was never affected: it passes `z: 'series'`. `DualPanel`'s bar pane and
-`MirroredBars`' two panes pass neither.
+what is a single series. `Bars` was never affected: it passes `z: 'series'`. `DualPanel`'s bar pane,
+`MirroredBars`' two panes and `Sparkline` bars passed neither. Audit of every other stack-prone mark in
+`src/charts`: `BandStrip.tsx:257` `barY` has `y1`/`y2`; `Lines.tsx:123` `areaY` has `y1`; `StackedArea.tsx:61`
+`areaY` has `z: 'series'` and a real `stack()` layout. No other site.
 
 ## Fix
 
-1. `DualPanel.tsx`: the bar pane's `barY` gets `y1: 0`. An explicit extent skips the stack. The 300-row
+1. `DualPanel.tsx`, `MirroredBars.tsx`, `Sparkline.tsx`: the `barY` gets `y1: 0`. An explicit extent skips the stack. The 300-row
    SSR output is byte-identical before and after (`cmp`), negative values and null gaps included.
 2. `DualPanel.tsx`: with `fillBetween`, `differenceY` builds two child line marks and per-segment areas
    (`difference.js:136-250`), about 160 ms of scene work at 10k rows. The fill is decorative (no focus,
@@ -62,18 +64,23 @@ what is a single series. `Bars` was never affected: it passes `z: 'series'`. `Du
 Not done: thinning the lines or bars. They are not the cost any more (Lines 10k: 26 ms; DualPanel
 without the fill: ~100 ms) and they are the cursor's targets.
 
-## Budgets (`ssr-budget.test.tsx`, 10k points, median of three warm renders)
+## Gate (`ssr-budget.test.tsx`)
 
-| Kind             | Local median | Budget |
-| ---------------- | ------------ | ------ |
-| Lines            | 30           | 100    |
-| Bars             | 114          | 250    |
-| StackedArea      | 59           | 180    |
-| DualPanel        | 148          | 250    |
-| BandStrip        | 67           | 200    |
-| Heatmap          | 23           | 100    |
-| Donut            | 2            | 30     |
-| Sparkline (line) | 12           | 40     |
+Per kind, medians of three warm renders: `t(10k) / t(2.5k) < 8` (linear ~4, quadratic ~16; the denominator
+is floored at 5 ms) AND `t(10k)` under a cap of at least 3x the local median (ceiling 500 ms). The ratio
+catches the bug class on any runner; the cap catches a constant-factor blow-up.
 
-`Bars` and `DualPanel` sit at the 250 ms cap, which is 2.2x and 1.7x their median, below the 3x asked for.
-The whole file runs in about 2 s locally. `MirroredBars` and `Sparkline` `mark="bar"` are `test.todo`.
+| Kind             | 2.5k ms | 10k ms | Cap |
+| ---------------- | ------- | ------ | --- |
+| Lines            | 9       | 29     | 150 |
+| Bars             | 23      | 90     | 400 |
+| StackedArea      | 14      | 55     | 250 |
+| DualPanel        | 70      | 140    | 500 |
+| MirroredBars     | 38      | 170    | 500 |
+| BandStrip        | 16      | 71     | 300 |
+| Heatmap          | 5       | 17     | 150 |
+| Donut            | 1       | 2      | 50  |
+| Sparkline (line) | 3       | 11     | 60  |
+| Sparkline (bar)  | 4       | 19     | 80  |
+
+`MirroredBars` sits at 2.9x because the ceiling is 500. The file runs in about 2.5 s locally.
