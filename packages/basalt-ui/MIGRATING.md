@@ -741,7 +741,7 @@ Still exported from `basalt-ui` in this wave, because the provider, query and de
 - `retired-lint-rules`: `.oxlintrc.json` (and local `extends`) sets a `basalt/<id>` the installed plugin no longer registers; delete the entry.
 - `dropped-subpaths`: a source file under `basalt.roots` imports a `basalt-ui/<subpath>` the install's `exports` lacks; reported as `file:line`.
 
-A check that cannot run (an unloadable plugin, an unresolvable `extends`) prints `SKIPPED` and exits non-zero. `init` seeds `src/main.tsx` (when absent, with both TanStack peers: `defineNav` rejects every call until its `Register` augmentation exists) and inserts `extends` into the tsconfig that covers `src`. Removed: the pre-1.41 `CLAUDE.md` → `AGENTS.md` block migration; `doctor` still warns about a leftover `CLAUDE.md`, delete its block by hand.
+A check that cannot run (an unloadable plugin, an unresolvable `extends`) prints `SKIPPED` and exits non-zero. `doctor` loads the ESM lint plugin with `require`: the bin runs under Bun, and under Node that needs ≥ 20.19 / 22.12. `init` seeds `src/main.tsx` (when absent, with both TanStack peers: `defineNav` rejects every call until its `Register` augmentation exists) and inserts `extends` into the tsconfig that covers `src`. Removed: the pre-1.41 `CLAUDE.md` → `AGENTS.md` block migration; `doctor` still warns about a leftover `CLAUDE.md`, delete its block by hand.
 
 ### Charts
 

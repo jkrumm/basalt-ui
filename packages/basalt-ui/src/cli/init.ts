@@ -10,6 +10,8 @@ import { deriveSpacing } from '../tokens/core'
 import type { MergeLintResult, ScaffoldFlags } from './index'
 import {
   MANIFEST_PATH,
+  declaredProfile,
+  readBasaltConfig,
   ROUTER_SEED_DESTS,
   findBasaltInstall,
   managedFiles,
@@ -164,7 +166,9 @@ export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags =
     }
     console.log(`basalt-ui init: --merge-lint — ${mergeMessage[mergeLint]}`)
   }
-  const tsconfigLine = seedTsconfigExtends(cwd)
+  // A tokens-only consumer has no use for the Mantine/React preset (doctor skips it there too).
+  const tsconfigLine =
+    declaredProfile(readBasaltConfig(cwd), []) === 'tokens-only' ? null : seedTsconfigExtends(cwd)
   if (tsconfigLine !== null) console.log(`basalt-ui init: ${tsconfigLine}`)
   const rootsMessages = rootsNotices(rootsState)
   for (const line of rootsMessages.log) console.log(`basalt-ui init: ${line}`)
