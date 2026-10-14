@@ -37,3 +37,10 @@ A TanStack `Link` spreads `aria-current`/`data-status` from its own match as its
 an `isActive` override a router-matched loser still claimed the page. With an override supplied the
 anchor renders through `_asChild` (`OverriddenAnchor` in `use-nav.ts`), which drops the router's two
 attributes and re-applies only basalt's verdict.
+
+`data-status`: the default path gets it from `Link`'s own match, the override path from
+`OverriddenAnchor`, which re-stamps `data-status="active"` on the basalt winner only — pinned in
+`nav-prop.router.test.tsx`. The `init` seed is now tested (`init-sync.test.ts`), so the earlier
+"deferred" note for it no longer applies; the `useNav` split stays deferred.
+`ShellBaseProps` is exported (type) for consumers that need `brand`/`account` shapes without the
+nav generics; the playground is its named consumer.

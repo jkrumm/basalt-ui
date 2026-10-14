@@ -7,12 +7,11 @@
  * `scenarioToAccountState` is the pure mapper a real consumer would write against its own auth
  * client (see `BasaltAccountProps`' Better-Auth recipe) — here it maps the scenario knobs instead.
  */
-import type { BasaltShell } from 'basalt-ui'
+import type { ShellBaseProps } from 'basalt-ui'
 import { createPersistedState } from 'basalt-ui/state'
-import type { ComponentProps } from 'react'
 
 // The account contract is no longer a named export; derive its pieces from the shell prop.
-type Account = NonNullable<ComponentProps<typeof BasaltShell>['account']>
+type Account = NonNullable<ShellBaseProps['account']>
 export type BasaltAccountState = Account['state']
 type Authenticated = Extract<BasaltAccountState, { status: 'authenticated' }>
 type BasaltPlan = NonNullable<Authenticated['plan']>

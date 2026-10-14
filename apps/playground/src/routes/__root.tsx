@@ -11,18 +11,16 @@
  */
 import { Outlet, createRootRouteWithContext, useNavigate } from '@tanstack/react-router'
 import { BasaltShell, ThemeToggle } from 'basalt-ui'
-import type { BasaltRouterContext } from 'basalt-ui'
+import type { BasaltRouterContext, ShellBaseProps } from 'basalt-ui'
 import type { GlobalAction } from 'basalt-ui/controls'
 import { NotificationBell } from 'basalt-ui/commands'
 import { spotlight } from '@mantine/spotlight'
-import type { ComponentProps } from 'react'
 import { IconPalette, IconSparkle } from '../demo/icons'
 import { NAV, SIDEBAR_BLOCKS } from '../demo/nav-model'
 import { scenarioToAccountState, useUserScenario } from '../demo/user-scenario-store'
 
-type ShellProps = ComponentProps<typeof BasaltShell>
-type BrandConfig = ShellProps['brand']
-type AccountActions = NonNullable<ShellProps['account']>['actions']
+type BrandConfig = ShellBaseProps['brand']
+type AccountActions = NonNullable<ShellBaseProps['account']>['actions']
 
 // Build-time constant injected by `basaltViteConfig`'s `define`. The `__name__` form is the
 // preset's own convention, so the dangle is expected here.
