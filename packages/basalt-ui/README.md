@@ -539,7 +539,7 @@ await overlays.confirm({ title: 'Discard draft?', onConfirm: () => reset() })
 ### `./table` — TanStack Table
 
 ```bash
-bun add @tanstack/react-table
+bun add -E @tanstack/react-table@9.2.8
 ```
 
 ```tsx
