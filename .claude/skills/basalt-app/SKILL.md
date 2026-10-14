@@ -26,9 +26,107 @@ declare module '@tanstack/react-router' {
 ```
 
 3. If you use `basalt-ui/controls-dates`, import `@mantine/dates/styles.layer.css` after `basalt-ui/styles.css` (core must precede dates in `@layer mantine`).
-4. In `vite.config.ts`: `...basaltViteConfig({ port, apiTarget })` and `plugins: [react(), ...basaltAppPlugin({ name, description })]`.
-5. In `src/routes/__root.tsx`: `<BasaltShell brand={{ name }} nav={NAV}><Outlet /></BasaltShell>`; build `NAV` with `defineNav` in `src/lib/nav.tsx`.
-6. Fill in `DESIGN.md` (identity, series dictionary, deviations).
+4. Install the peers of each subpath you import: read its `Install: bun add …` line in `node_modules/basalt-ui/llms.txt`.
+5. In `vite.config.ts` spread `...basaltViteConfig({ port, apiTarget })` and register, in this order, `plugins: [tanstackRouter({ target: 'react', autoCodeSplitting: true }), react(), ...basaltAppPlugin({ name, description })]`. Run `bun add -d @tanstack/router-plugin` and import `tanstackRouter` from `@tanstack/router-plugin/vite`.
+6. Run `vite build` once so the plugin writes `src/routeTree.gen.ts`; commit it (`tsc -b` fails without it).
+7. In `src/routes/__root.tsx`: `<BasaltShell brand={{ name }} nav={NAV}><Outlet /></BasaltShell>`; build `NAV` with `defineNav` in `src/lib/nav.tsx`.
+8. Add a page as a file route, and link to it with `navTarget`:
+
+```tsx
+// src/routes/dashboard.tsx
+export const Route = createFileRoute('/dashboard')({
+  staticData: { title: 'Dashboard' }, // the breadcrumb and page title
+  component: Dashboard,
+})
+// src/lib/nav.tsx item: { id: 'dashboard', label: 'Dashboard', link: linkOptions({ to: '/dashboard' }) }
+// anywhere: <Link {...navTarget(NAV, 'dashboard')}>Dashboard</Link>
+```
+
+9. Fill in `DESIGN.md` (identity, series dictionary, deviations).
+
+## Add a chat
+
+1. Install the `basalt-ui/agent` peers from its `Install:` line in `llms.txt`.
+2. Implement `ThreadsStore` (in memory here), pick a transport, compose the feed:
+
+```tsx
+type Thread = AgentThread<AgentPart>
+const blank = (id: string): Thread => ({
+  id,
+  messages: [],
+  outcome: null,
+  status: 'pending',
+  read: true,
+  createdAt: 0,
+  updatedAt: 0,
+})
+
+function useMemoryStore(): ThreadsStore<AgentPart> {
+  const [threads, setThreads] = useState<Thread[]>([])
+  const [activeId, select] = useState<string | null>(null)
+  const patch = (id: string, f: (t: Thread) => Partial<Thread>) =>
+    setThreads((all) => all.map((t) => (t.id === id ? { ...t, ...f(t) } : t)))
+  return {
+    threads,
+    activeId,
+    select,
+    hydrated: true,
+    error: undefined,
+    create: () => {
+      const id = crypto.randomUUID()
+      setThreads((all) => [...all, blank(id)])
+      return id
+    },
+    appendMessage: (id, m) => patch(id, (t) => ({ messages: [...t.messages, m] })),
+    setOutcome: (id, outcome) => patch(id, () => ({ outcome })),
+    setStatus: (id, status) => patch(id, () => ({ status })),
+    markRead: (id) => patch(id, () => ({ read: true })),
+    setResumeToken: () => {},
+    remove: (id) => setThreads((all) => all.filter((t) => t.id !== id)),
+    clear: () => setThreads([]),
+  }
+}
+
+const transport = aiSdkTransport<AgentPart>({ api: '/api/chat' })
+// a mock: { async *stream(input: string) { yield { id: crypto.randomUUID(), type: 'text' as const, text: input } } }
+
+export function Chat() {
+  const store = useMemoryStore()
+  const { runs, start, stop } = useAgentThreadRuns({
+    transport,
+    store,
+    resolveOutcome: (t) => ({
+      title: 'Chat',
+      summary: `${t.messages.length} turns`,
+      status: 'done',
+    }),
+  })
+  return (
+    <ThreadFeed
+      threads={store.threads}
+      activeId={store.activeId}
+      onSelect={store.select}
+      renderRow={(t) => {
+        const run = runs.get(t.id)
+        const live = run === undefined ? {} : { liveParts: run.parts, liveStatus: run.status }
+        return (
+          <ThreadFeedRow
+            key={t.id}
+            thread={t}
+            expanded
+            onToggle={() => {}}
+            {...live}
+            onSend={({ text }) => start(t.id, text)}
+            onStop={() => stop(t.id)}
+          />
+        )
+      }}
+    />
+  )
+}
+```
+
+3. `ThreadFeedRow` carries the `Composer`; tune it with `composerProps`.
 
 ## Verify
 
