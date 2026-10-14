@@ -1,9 +1,4 @@
-/**
- * `sync` — split out of `src/cli/index.ts` (C2) so the dispatcher file holds routing only. Imports
- * the managed-file manifest engine (`managedFiles`, `readManifest`, `writeUnit`, `reconcileRoots`,
- * …), the toolchain-seam inspectors (`inspectLefthookGate`, `basaltPresetEntry`), and project
- * resolution back from `./index`, this package's shared CLI helpers.
- */
+/** `sync` — split out of `src/cli/index.ts` (C2); shared plumbing is imported back from `./index`. */
 import { existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 

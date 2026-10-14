@@ -747,6 +747,8 @@ A check that cannot run (an unloadable plugin, an unresolvable `extends`) prints
 - `init` always seeds `src/main.tsx`, `src/routes/__root.tsx` and `src/lib/nav.tsx`: `@tanstack/react-router` and `@tanstack/react-query` are required peers of `.`, so `--with-router` and `--with-query` are deleted (passing either exits 1).
 - `init` splices the shipped preset into an existing `.oxlintrc.json` by default (a stock create-vite one); `--merge-lint` is deleted and `--no-merge-lint` opts out. A child `plugins` list unions with the preset's, so `jsx-a11y` stays on. A config with comments is left as is and the line names the `extends` to add.
 - `doctor` gains the hard check `app-wiring`: the entry `index.html` loads (default `src/main.tsx`) must mount `BasaltProvider` on a `createBasaltRouter` router, and the TanStack router plugin must be in the vite config (or `src/routeTree.gen.*` exist). A stock create-vite `main.tsx` is kept by `init`, so this is the check that turns red until it matches `agent/templates/main.tpl`.
+- `init` rewrites create-vite's stock `"build": "tsc -b && vite build"` to `vite build && tsc -b` (vite's router plugin generates `routeTree.gen.ts`, which `tsc` needs); any other build script that runs `tsc` is left as is with a one-line advice.
+- The shipped preset sets `react/only-export-components` to `["warn", { "allowExportNames": ["Route"] }]` so TanStack route files stop warning, and `init`'s lint merge adds `"Route"` to your own setting of that rule (its level and other options are kept).
 
 ### Charts
 

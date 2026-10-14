@@ -120,8 +120,8 @@ function resolveAiMajorSkewReason(cfg: BasaltConfig): {
  *   4. `oxlint-preset`: `.oxlintrc.json` extends the shipped preset AND that path resolves.
  *   7. `ai-major-parity`: the `ai` major agrees across this package.json's dependency fields
  *      (exempt via `basalt.aiMajorSkewReason`; a stale reason warns).
- *   8-11. `tsconfig-base`, `retired-lint-rules`, `dropped-subpaths`, `app-wiring` — see ./doctor-upgrade. A
- *      check that cannot run is reported SKIPPED and exits non-zero on its own.
+ *   8-11. `tsconfig-base`, `retired-lint-rules`, `dropped-subpaths`, `app-wiring` (./doctor-upgrade);
+ *      a check that cannot run is SKIPPED and exits non-zero.
  *
  * Warning (non-fatal):
  *   5. `lefthook-preset`: a pre-commit command runs `check-theme` (read via `lefthook dump`).
