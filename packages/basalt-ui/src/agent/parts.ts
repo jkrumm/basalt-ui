@@ -8,10 +8,6 @@
  * but do NOT let the runtime throw, or one malformed chunk kills the whole transcript. See
  * `mergeToolPart`'s default branch for that shape.
  *
- * Eden #231 doctrine: the server-side Elysia route MUST declare `: AsyncGenerator<AgentPart>`
- * explicitly and carry NO t.Object/t.Union response schema. Validate at yield-time. See
- * agent/rules/basalt-agent.md for the full doctrine.
- *
  * Part identity: every variant carries a stable `id` (see `PartBase`). Transports are permitted to
  * yield a DRAFT — `id` omitted — via `AgentPartDraft`; the consuming hooks (or `withPartIds`)
  * normalize a draft into a fully-identified part before it is ever accumulated. `parseAgentPart`

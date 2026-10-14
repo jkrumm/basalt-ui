@@ -356,7 +356,7 @@ describe('useAgentThreadRuns — F3 mount-reconcile / unmount-cleanup wedge', ()
     act(() => {
       hookResult?.start(threadId, 'hello')
     })
-    expect(hookResult?.runs.get(threadId)?.status).toBe('streaming')
+    expect(hookResult?.runs.get(threadId)?.status).toBe('submitted')
 
     // Hide then show — the cleanup-without-unmount path. The fiber (and its refs/state) survive;
     // only its effects are destroyed and recreated, exactly as React 19.2's <Activity> does in

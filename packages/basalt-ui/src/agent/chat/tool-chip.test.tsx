@@ -122,7 +122,7 @@ describe('approve/deny affordances', () => {
 })
 
 // F3: a runtime value the type system believes is exhaustively handled — but isn't, once
-// persisted (localStorage, zero shape validation) or wire (edenTransport, zero validation) data
+// persisted (localStorage, zero shape validation) or wire (a transport, zero validation) data
 // is involved — must render an inert 'unknown' chip, never throw via assertNever and blank the
 // transcript.
 describe('a malformed/unrecognized state never throws (F3)', () => {

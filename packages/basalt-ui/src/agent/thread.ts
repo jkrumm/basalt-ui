@@ -112,5 +112,9 @@ export type ThreadsStore<TPart = AgentPart> = {
   readonly error: unknown
 }
 
-/** The live status of one in-flight stream, as the chat rows render it. */
-export type StreamStatus = 'idle' | 'streaming' | 'done' | 'error'
+/**
+ * The live status of one in-flight stream, as the chat rows render it. `'submitted'` is a turn
+ * sent but not yet producing content: the chat rows treat it as live (Stop shows, the composer is
+ * gated) exactly like `'streaming'`.
+ */
+export type StreamStatus = 'idle' | 'submitted' | 'streaming' | 'done' | 'error'

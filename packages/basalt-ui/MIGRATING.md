@@ -347,6 +347,18 @@ Contract: `docs/V2-SPEC.md` § 5. React owns every view transition; React 19.3 i
 
 `Markdown` no longer drops a blocked or unfinished image silently: when the `src` is refused (an off-origin image under `contentTrust="untrusted"`, or remend's `streamdown:incomplete-image` placeholder mid-stream) it renders the `alt` text as a plain `<span>` instead of an empty `<span aria-label>`. No `<img>` and no URL reaches the DOM either way. No action needed; a test that asserted the empty span must assert the alt text.
 
+### Agent runtime (`w8/agent-runtime`)
+
+Behavior changes to symbols that stay; no import changes. Contract: V2-SPEC § 6, § 7.
+
+| Symbol                                           | Change                                                                                                                                                                                                                                         |
+| ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ThreadRunState.status`                          | `'submitted' \| 'streaming'`. A fresh turn is `'submitted'` until its first text, reasoning or tool part, so `status === 'streaming'` no longer holds from the send. Treat both as live, as `StreamStatus` and the chat rows now do.           |
+| `ThreadRunState.error` (new), `AgentError` (new) | A failed turn KEEPS its `runs` entry (the parts so far plus `error`) until the next `start()`/`retry()` replaces it or `stop()` dismisses it. `runs.has(id)` no longer means live: test `run.error === undefined`. Raw `onError` is unchanged. |
+| `aiSdkTransport` failures                        | A non-2xx response, an `error` chunk and a malformed chunk now reject the stream. They used to end it as if the turn had completed. `toAgentError` maps them to `http` / `server` / `stream`.                                                  |
+| `aiSdkTransport({ transport })` (new form)       | Any AI SDK `ChatTransport<UIMessage>` is used as-is, e.g. a `WebSocketChatTransport`. `{ api, headers?, credentials?, fetch? }` is unchanged.                                                                                                  |
+| `useAgentThreadRuns({ throttle, telemetry })`    | `throttle` (ms, default `0` = off) batches part commits like `useChat`. `telemetry` receives one `chat.turn` event per settled turn.                                                                                                           |
+
 ### Root, shell, controls, dashboard, format, forms, tokens, theme (W3 delete-core)
 
 Source of the rows: `docs/waves/v2-surface.md`. A deleted export has no replacement unless the

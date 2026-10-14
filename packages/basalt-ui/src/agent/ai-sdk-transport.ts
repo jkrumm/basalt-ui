@@ -30,6 +30,11 @@
  * useAgentThreadRuns's per-thread transport-factory form, so a thread's turns (and its mount-time
  * resume) share one continuous AI SDK chat session:
  *
+ * TRANSPORT SEAM: pass `{ api, headers?, credentials?, fetch? }` for AI SDK's HTTP transport, or
+ * `{ transport }` with any `ChatTransport<UIMessage>` — a `WebSocketChatTransport` plugs in
+ * unwrapped (`aiSdkTransport({ transport: new WebSocketChatTransport({ ... }) })`). basalt never
+ * wraps a transport; it reads the chunk stream the transport returns.
+ *
  * @example
  * import { useAgentThreadRuns, aiSdkTransport } from 'basalt-ui/agent'
  *
@@ -50,7 +55,7 @@ import type { ResumableAgentTransport } from './transport'
 // verbatimModuleSyntax-safe: these never trigger a runtime resolution of 'ai'. The actual runtime
 // access goes through the memoized `import('ai')` inside resolveAiSdk() below.
 import type {
-  DefaultChatTransport,
+  ChatTransport,
   DynamicToolUIPart,
   ToolUIPart,
   UIMessage,
@@ -63,7 +68,7 @@ type AiPart = UIMessage['parts'][number]
 
 // ── AiSdkTransportOptions ─────────────────────────────────────────────────────
 
-export type AiSdkTransportOptions = {
+export type AiSdkHttpOptions = {
   /** The API URL AI SDK's transport POSTs new turns to and GETs reconnects from. */
   readonly api: string
   /** HTTP headers to send with every request. */
@@ -76,6 +81,17 @@ export type AiSdkTransportOptions = {
    */
   readonly fetch?: typeof globalThis.fetch
 }
+
+/**
+ * Any AI SDK `ChatTransport<UIMessage>`, used as-is: a `WebSocketChatTransport` plugs in here
+ * unwrapped. basalt never wraps or re-implements a transport; it only reads the chunk stream the
+ * transport returns.
+ */
+export type AiSdkCustomOptions = {
+  readonly transport: ChatTransport<UIMessage>
+}
+
+export type AiSdkTransportOptions = AiSdkHttpOptions | AiSdkCustomOptions
 
 // ── AiSdkTransport ─────────────────────────────────────────────────────────────
 
@@ -92,7 +108,7 @@ export type AiSdkTransport<TPart = AgentPart> = ResumableAgentTransport<TPart, s
 
 /** Everything resolved from the dynamically-imported 'ai' module, memoized per aiSdkTransport() call. */
 type ResolvedAiSdk = {
-  readonly httpTransport: DefaultChatTransport<UIMessage>
+  readonly chatTransport: ChatTransport<UIMessage>
   readonly readUIMessageStream: typeof readUIMessageStream
 }
 
@@ -106,12 +122,15 @@ function createAiSdkResolver(options: AiSdkTransportOptions): () => Promise<Reso
   return function resolveAiSdk(): Promise<ResolvedAiSdk> {
     resolved ??= import('ai').then(
       ({ DefaultChatTransport: DefaultChatTransportCtor, readUIMessageStream: read }) => ({
-        httpTransport: new DefaultChatTransportCtor<UIMessage>({
-          api: options.api,
-          ...(options.headers !== undefined ? { headers: options.headers } : {}),
-          ...(options.credentials !== undefined ? { credentials: options.credentials } : {}),
-          ...(options.fetch !== undefined ? { fetch: options.fetch } : {}),
-        }),
+        chatTransport:
+          'transport' in options
+            ? options.transport
+            : new DefaultChatTransportCtor<UIMessage>({
+                api: options.api,
+                ...(options.headers !== undefined ? { headers: options.headers } : {}),
+                ...(options.credentials !== undefined ? { credentials: options.credentials } : {}),
+                ...(options.fetch !== undefined ? { fetch: options.fetch } : {}),
+              }),
         readUIMessageStream: read,
       }),
     )
@@ -355,7 +374,10 @@ async function* diffChunkStream<TPart>(
 ): AsyncGenerator<TPart> {
   let prev: UIMessage | undefined
   const toolStartTimes = new Map<string, number>()
-  for await (const curr of readStream<UIMessage>({ stream: chunkStream })) {
+  // terminateOnError: a mid-stream `error` chunk or a malformed chunk rejects the iteration, so
+  // the failure reaches useAgentThreadRuns (and its AgentError) instead of ending the turn as if
+  // it had completed.
+  for await (const curr of readStream<UIMessage>({ stream: chunkStream, terminateOnError: true })) {
     if (signal?.aborted) return
     for (const part of diffMessage(chatId, prev, curr, toolStartTimes)) {
       yield part as TPart
@@ -367,7 +389,8 @@ async function* diffChunkStream<TPart>(
 // ── aiSdkTransport ─────────────────────────────────────────────────────────────
 
 /**
- * Wraps AI SDK's `DefaultChatTransport` + `readUIMessageStream` into an AgentTransport.
+ * Wraps an AI SDK `ChatTransport` (`DefaultChatTransport` for `{ api }`, or your own via
+ * `{ transport }`) + `readUIMessageStream` into an AgentTransport.
  *
  * The returned object is immediately usable as-is (one fixed, stable chat id for
  * the whole conversation). Call `.forThread(threadId)` to get a transport bound to a different
@@ -396,7 +419,7 @@ export function aiSdkTransport<TPart = AgentPart>(
         // need to wait on the server to hand us a run id (unlike a river-style protocol).
         yield { id: `${chatId}#start`, type: 'start', runId: chatId, resumeToken: chatId } as TPart
 
-        const { httpTransport, readUIMessageStream: readStream } = await resolveAiSdk()
+        const { chatTransport, readUIMessageStream: readStream } = await resolveAiSdk()
         const userMessage: UIMessage = {
           // This id is what AI SDK's own backend persistence/dedup keys turns hang off — the same
           // idempotency-key cost as basalt's own ChatMessage.id (see mintMessageId's doc). Prefer
@@ -408,7 +431,7 @@ export function aiSdkTransport<TPart = AgentPart>(
           role: 'user',
           parts: [{ type: 'text', text: input }],
         }
-        const chunkStream = await httpTransport.sendMessages({
+        const chunkStream = await chatTransport.sendMessages({
           chatId,
           messages: [userMessage],
           trigger: 'submit-message',
@@ -418,8 +441,8 @@ export function aiSdkTransport<TPart = AgentPart>(
         yield* diffChunkStream<TPart>(chatId, chunkStream, readStream, signal)
       },
       async *resume(resumeToken: string, signal?: AbortSignal): AsyncGenerator<TPart> {
-        const { httpTransport, readUIMessageStream: readStream } = await resolveAiSdk()
-        const chunkStream = await httpTransport.reconnectToStream({ chatId: resumeToken })
+        const { chatTransport, readUIMessageStream: readStream } = await resolveAiSdk()
+        const chunkStream = await chatTransport.reconnectToStream({ chatId: resumeToken })
         if (chunkStream === null) return
         // resumeToken IS the chat id (see CHAT ID BINDING above) — reusing it as the id-namespace
         // here keeps replayed index-addressed ids identical to the ones the original run minted.

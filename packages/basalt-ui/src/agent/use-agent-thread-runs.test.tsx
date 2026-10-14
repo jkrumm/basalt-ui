@@ -146,8 +146,8 @@ describe('useAgentThreadRuns — concurrency, no-op guard, finalize order, failu
       result.current.start(threadB, 'input-b')
     })
 
-    expect(result.current.runs.get(threadA)?.status).toBe('streaming')
-    expect(result.current.runs.get(threadB)?.status).toBe('streaming')
+    expect(result.current.runs.get(threadA)?.status).toBe('submitted')
+    expect(result.current.runs.get(threadB)?.status).toBe('submitted')
 
     // Resolve A only — B must stay untouched. Resolving a promise is not itself a React update,
     // so this stays outside act(); waitFor (imported from @testing-library/react) is act-wrapped
@@ -283,7 +283,8 @@ describe('useAgentThreadRuns — concurrency, no-op guard, finalize order, failu
     await waitFor(() => {
       expect(store.threads.find((t) => t.id === threadId)?.status).toBe('error')
     })
-    expect(result.current.runs.has(threadId)).toBe(false)
+    // The failed entry stays visible, carrying the AgentError, until the next send.
+    expect(result.current.runs.get(threadId)?.error).toEqual({ kind: 'server', message: 'boom' })
   })
 
   // R2 — onError: a caller (argo's hermes-chat S19) can surface a genuine transport failure
@@ -441,8 +442,8 @@ describe('useAgentThreadRuns — concurrency, no-op guard, finalize order, failu
     // The positive path this test exists to pin: retry() actually calls start() again with the
     // SAME cached input — not a no-op, and not a clobbered/different input.
     expect(calls).toEqual(['original input', 'original input'])
-    // A genuine second run is now live — the run entry is back and streaming.
-    expect(result.current.runs.get(threadId)?.status).toBe('streaming')
+    // A genuine second run is now live — the run entry is back, submitted until its first part.
+    expect(result.current.runs.get(threadId)?.status).toBe('submitted')
 
     await waitFor(() => {
       expect(result.current.runs.has(threadId)).toBe(false)
