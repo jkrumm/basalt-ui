@@ -1,6 +1,6 @@
 /**
  * `BasaltShell nav={NAV}` under a REAL TanStack memory router: the prop resolves active state
- * (one winner), feeds the breadcrumb, the mobile bar and typed badges, with no `useNav` spread in
+ * (one winner), feeds the breadcrumb, the mobile bar and typed badges, with no hook or spread in
  * the caller. `use-nav.test.tsx` owns the resolver's exclusivity matrix; this pins that the SHELL
  * wires it.
  */
@@ -15,7 +15,9 @@ import {
   createRouter,
 } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
-import type { AnyNavItem } from '../router-tanstack/nav'
+import type { AnyNavItem, NavItemId } from '../router-tanstack/nav'
+import type { GlobalAction } from '../controls/actions'
+import type { SidebarBlock } from './nav-types'
 import { navGroup } from '../router-tanstack/nav'
 import { defineNav } from '../../tests/support/nav-test-utils'
 import { BasaltShell } from './index'
@@ -36,8 +38,10 @@ const NAV = defineNav({
 })
 
 type ShellProps = {
-  badges?: Partial<Record<'home' | 'dashboard' | 'sessions', number | ReactNode>>
+  badges?: Partial<Record<NavItemId<typeof NAV.groups>, number | ReactNode>>
   isActive?: (item: AnyNavItem) => boolean
+  globalActions?: GlobalAction[]
+  sidebarBlocks?: SidebarBlock[]
 }
 
 async function mountShell(entry: string, props: ShellProps = {}) {
@@ -114,14 +118,30 @@ describe('BasaltShell nav prop', () => {
     expect(bar.querySelector('[aria-label="Dashboard"]')?.getAttribute('aria-current')).toBeNull()
   })
 
-  test('isActive overrides the router match: the override picks the row and the breadcrumb', async () => {
-    // At `/` the router would light Home; the override names Dashboard instead. (A router `<Link>`
-    // also stamps its own `aria-current` on the anchor it exactly matches, so Home may carry one
-    // too — the shell's winner is what the breadcrumb follows.)
+  test('isActive overrides the router match: exactly one current page, even at the router match', async () => {
+    // At `/` the router would light Home; the override names Dashboard. A router `<Link>` stamps
+    // its own `aria-current` on the anchor it matches, so the loser must not emit one.
     await mountShell('/', { isActive: (item) => item.id === 'dashboard' })
-    expect(currentPages().some((a) => a.textContent?.includes('Dashboard'))).toBe(true)
+    const current = [...document.querySelectorAll('[aria-current="page"]')]
+    expect(currentPages()).toHaveLength(1)
+    expect(currentPages()[0]?.textContent).toContain('Dashboard')
+    expect(current.some((el) => el.textContent?.includes('Home'))).toBe(false)
     expect(header()).toContain('Dashboard')
     expect(header()).not.toContain('Home')
+  })
+
+  test('a zero-count badge renders no badge', async () => {
+    await mountShell('/', { badges: { dashboard: 0 } })
+    expect(screen.queryByText('0')).toBeNull()
+  })
+
+  test('globalActions and sidebarBlocks still reach the frame through the rest spread', async () => {
+    await mountShell('/', {
+      globalActions: [{ key: 'bell', node: <span data-testid="global">bell</span>, mobile: 'bar' }],
+      sidebarBlocks: [{ kind: 'custom', key: 'extra', node: <div data-testid="block">block</div> }],
+    })
+    expect(screen.getAllByTestId('global').length).toBeGreaterThan(0)
+    expect(screen.getAllByTestId('block').length).toBeGreaterThan(0)
   })
 
   test('a missing nav or brand throws the written required-prop message', () => {

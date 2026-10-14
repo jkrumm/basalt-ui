@@ -2,7 +2,7 @@
  * ./router-tanstack — headless TanStack Router bridge. The nav half (`defineNav`, `navGroup`,
  * `navTarget`, `flattenNav`, `useBasaltNav`, `NavItemId`) moves to the root barrel in 2.0 and the
  * store half (`createSearchStore`) to `./state`, which re-exports it from `./search-store` directly.
- * `useNav` is `BasaltShell`'s internal resolver (`use-nav.ts`), not a public export.
+ * The shell's active-state resolver lives in `use-nav.ts` and is not a public export.
  * Optional peer: @tanstack/react-router. No Mantine, no JSX.
  */
 import type { ReactNode } from 'react'
