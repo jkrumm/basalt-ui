@@ -18,6 +18,7 @@ import type { CSSProperties, ReactElement } from 'react'
 import type { BasaltProps } from '../common/props'
 import { alpha, VX } from '../tokens'
 import { resolveContainerClass } from '../tokens/size-classes'
+import { strideTicks } from './compile'
 import type { CartesianDefinition } from './compile'
 import { ChartEngine, idPrefixOf } from './host'
 import { useCoarsePointer } from '../common/use-media-query'
@@ -54,7 +55,9 @@ export type HeatmapProps<T> = BasaltProps & {
   tooltip?: false | { rows?: (d: T) => readonly ChartTooltipRow[] }
   /** A fixed height, or one per container class. Default: by row count (160–420px). */
   height?: number | ResponsiveChartHeight
-  /** Fill the parent's height instead (the parent needs a definite height). Overrides `height`. */
+  /** Fill the parent's height instead. Overrides `height`. CSS-owned like every other kind's box
+   * (`ChartBox`, no measuring, SSR-stable), so the parent needs a definite CSS height — a grid or
+   * flex stretch, `h-full`, an explicit height — which no kind can read off an auto-height parent. */
   matchHeight?: boolean
   state?: ChartState
 }
@@ -149,8 +152,9 @@ export function Heatmap<T>(props: HeatmapProps<T>): ReactElement {
     return {
       chart: ({ width }: ChartBuildContext): StoredChartSpec => {
         const ticks = { line: false as const, size: 0 }
+        const cls = resolveContainerClass(width)
         const tickLabels = {
-          fontSize: resolveContainerClass(width) === 'wide' ? VX.text.micro : VX.text.nano,
+          fontSize: cls === 'wide' ? VX.text.micro : VX.text.nano,
           opacity: 1,
           thin: true,
         }
@@ -190,7 +194,11 @@ export function Heatmap<T>(props: HeatmapProps<T>): ReactElement {
               scale: scaleBand<string>().domain(cols).paddingInner(0).paddingOuter(0),
               axis: {
                 line: AXIS_LINE,
-                ticks: { values: cols, format: (v) => formatCol(String(v)), ...ticks },
+                ticks: {
+                  values: strideTicks(cols, cls),
+                  format: (v) => formatCol(String(v)),
+                  ...ticks,
+                },
                 tickLabels,
               },
             },

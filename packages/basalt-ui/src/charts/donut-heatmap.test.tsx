@@ -194,6 +194,22 @@ async function inkOf(data: Cell[], domain?: readonly [number, number]): Promise<
 }
 
 describe('Heatmap', () => {
+  test('x labels are strided to the class tick count, not one per column', async () => {
+    const hours = Array.from({ length: 18 }, (_, h) => String(h).padStart(2, '0'))
+    const el = await mount(
+      <Heatmap
+        ariaLabel="H"
+        data={hours.map((col) => ({ row: 'Mon', col, v: 1 }))}
+        {...grid}
+        cols={hours}
+      />,
+    )
+    const shown = hours.filter((h) => bandX(el, h) > 0)
+    expect(shown.length).toBeGreaterThan(0)
+    expect(shown.length).toBeLessThanOrEqual(6)
+    expect(shown).toContain('00')
+  })
+
   test('a cell per datum; absent cells are flat neutral with no hatch', async () => {
     const el = await mount(
       <Heatmap ariaLabel="H" data={cells} {...grid} rows={['Mon', 'Tue']} cols={['0', '1', '2']} />,

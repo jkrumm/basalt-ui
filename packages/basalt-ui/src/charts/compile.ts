@@ -196,6 +196,16 @@ function xTickPolicy<X extends ChartX>(
   return { count: xTicks }
 }
 
+/**
+ * Every n-th value, n the smallest stride that leaves at most the class's x tick count (the same
+ * ladder a continuous x axis counts to). A band axis labels every value it is given and only drops
+ * the ones that collide, so a short-label grid (18 hour columns) would otherwise draw all of them.
+ */
+export function strideTicks<V>(values: readonly V[], cls: ContainerClass): V[] {
+  const stride = Math.max(1, Math.ceil(values.length / LADDER[cls].xTicks))
+  return values.filter((_, i) => i % stride === 0)
+}
+
 export function xGuide<X extends ChartX>(opts: {
   model: XScaleModel<X>
   xTicks: number | readonly X[] | undefined
