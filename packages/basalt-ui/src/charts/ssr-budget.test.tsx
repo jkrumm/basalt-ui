@@ -4,7 +4,10 @@
  * (`t(10k) / t(2.5k) < 8`; linear is ~4, quadratic ~16, which is what a 5k-row `DualPanel` taking
  * 12 s was) and 10k stays under an absolute cap (>= 4x the local median, for runners 2-3x slower).
  * The ratio catches the bug class on any machine; the cap catches a constant-factor blow-up. Each
- * time is the median of three renders after one warm-up, so the JIT and a GC pause are not billed.
+ * time is the fastest of five renders after one warm-up, so the JIT, a GC pause and a burst of
+ * contention from parallel suites are not billed. The cap is also scaled by how much slower this
+ * process runs a fixed CPU loop than an idle host does (`loadFactor`), so a host that is slow for
+ * the whole test (3750 ms against a 1000 ms cap, seen with other suites running) does not fail it.
  */
 import { describe, expect, test } from 'bun:test'
 import type { ReactElement } from 'react'
@@ -193,28 +196,43 @@ const KINDS: readonly {
   },
 ]
 
-const median = (xs: number[]): number =>
-  xs.length === 0 ? Number.NaN : (xs.toSorted((p, q) => p - q)[xs.length >> 1] ?? Number.NaN)
-
-function timeRender(node: () => ReactElement): number {
-  renderToString(node())
-  const runs = [0, 1, 2].map(() => {
+/** Fastest of `runs` timed calls after one untimed warm-up. */
+function bestOf(runs: number, fn: () => unknown): number {
+  fn()
+  let best = Number.POSITIVE_INFINITY
+  for (let i = 0; i < runs; i++) {
     const t0 = performance.now()
-    renderToString(node())
-    return performance.now() - t0
-  })
-  return median(runs)
+    fn()
+    best = Math.min(best, performance.now() - t0)
+  }
+  return best
 }
+
+const timeRender = (node: () => ReactElement): number => bestOf(5, () => renderToString(node()))
+
+/** `calibration()` on an idle dev machine, in ms (best of five, 4.6 on the reference host). */
+const CALIBRATION_IDLE_MS = 5
+/** A fixed CPU loop, so how slow this process is right now can be read off a known quantity. */
+const calibration = (): number =>
+  bestOf(5, () => {
+    let sum = 0
+    for (let i = 0; i < 1_000_000; i++) sum += Math.sin(i)
+    return sum
+  })
+
+/** >= 1: how much slower than idle this process runs right now. Never shrinks a cap. */
+const loadFactor = (): number => Math.max(1, calibration() / CALIBRATION_IDLE_MS)
 
 describe(`server render at ${LARGE} points`, () => {
   for (const { name, cap, growth, node } of KINDS) {
     test(`${name}: ${growth === false ? '' : `growth under ${MAX_GROWTH}x from ${SMALL} to ${LARGE}, and `}under ${cap} ms`, () => {
+      const factor = loadFactor()
       const large = timeRender(() => node(LARGE))
       if (growth !== false) {
         const small = timeRender(() => node(SMALL))
         expect(large / Math.max(small, NOISE_FLOOR_MS)).toBeLessThan(MAX_GROWTH)
       }
-      expect(large).toBeLessThan(cap)
+      expect(large).toBeLessThan(cap * factor)
     })
   }
 })
