@@ -18,7 +18,7 @@ import type { CSSProperties, ReactElement } from 'react'
 import type { BasaltProps } from '../common/props'
 import { alpha, VX } from '../tokens'
 import { resolveContainerClass } from '../tokens/size-classes'
-import { strideTicks } from './compile'
+import { engineRow, strideTicks } from './compile'
 import type { CartesianDefinition } from './compile'
 import { ChartEngine, idPrefixOf } from './host'
 import { useCoarsePointer } from '../common/use-media-query'
@@ -244,7 +244,7 @@ export function Heatmap<T>(props: HeatmapProps<T>): ReactElement {
                         ...(point.color && { color: point.color }),
                       },
                     ]
-              return { title: header(c), rows: [...value, ...extra] }
+              return { title: header(c), rows: [...value, ...extra].map(engineRow) }
             },
           }
         : false,

@@ -138,7 +138,9 @@ export type ChartTooltipRow = {
   label: string
   value: string
   /** The row swatch; omitted, the row has none. */
-  color?: string
+  color?: string | undefined
+  /** The swatch shape; `'dashed'` for a reference or dashed series. Default `'solid'`. */
+  swatch?: 'solid' | 'dashed' | undefined
 }
 
 export type ChartTooltipConfig<T, X extends ChartX = ChartX> = {
