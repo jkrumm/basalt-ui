@@ -27,7 +27,7 @@ export type BarsBar<T> = Pick<
   'key' | 'label' | 'color' | 'getValue' | 'formatValue' | 'tooltip' | 'legend' | 'role' | 'note'
 > & {
   /** Default 0.85. */
-  fillOpacity?: number
+  fillOpacity?: number | undefined
 }
 
 /** A line overlay; `axis: 'right'` reads the chart's `y2`. */
@@ -54,11 +54,11 @@ export type BarsProps<T, X extends ChartX = ChartX> = Omit<
   'marks' | 'series'
 > & {
   bars: readonly BarsBar<T>[]
-  lines?: readonly BarsLine<T>[]
+  lines?: readonly BarsLine<T>[] | undefined
   /** Default `'stacked'`. `'normalized'` stacks each x to its share of the total. */
-  layout?: 'stacked' | 'grouped' | 'normalized'
+  layout?: 'stacked' | 'grouped' | 'normalized' | undefined
   /** Per-bar opacity (a partial week, an estimate). Overrides the series' `fillOpacity`. */
-  barOpacity?: (d: T, key: string) => number
+  barOpacity?: ((d: T, key: string) => number) | undefined
 }
 
 const DEFAULT_BAR_OPACITY = 0.85

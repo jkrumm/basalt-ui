@@ -38,28 +38,28 @@ export type HeatmapProps<T> = BasaltProps & {
   /** The intensity; `null` is an absent cell (flat neutral), never a zero. */
   getValue: (d: T) => number | null
   /** Explicit band order. Default: first seen in `data`. */
-  rows?: readonly string[]
-  cols?: readonly string[]
+  rows?: readonly string[] | undefined
+  cols?: readonly string[] | undefined
   /** The ink at full intensity, a `VX.*` ref or a series token. Default `VX.line`. */
-  color?: string
+  color?: string | undefined
   /** The value range the color scale spans. Default `[0, max]` of the data. */
-  domain?: readonly [number, number]
+  domain?: readonly [number, number] | undefined
   /** Tooltip, legend-end and `aria` value format. Default: the number as-is. */
-  formatValue?: (v: number) => string
+  formatValue?: ((v: number) => string) | undefined
   /** Band tick and tooltip header labels. Default: the band key. */
-  formatRow?: (row: string) => string
-  formatCol?: (col: string) => string
+  formatRow?: ((row: string) => string) | undefined
+  formatCol?: ((col: string) => string) | undefined
   /** `false` hides the gradient legend; `label` titles it. */
-  legend?: false | { label?: string }
+  legend?: false | { label?: string } | undefined
   /** Rows after the value row, per cell (a sample count, a failure reason). Called with the datum. */
-  tooltip?: false | { rows?: (d: T) => readonly ChartTooltipRow[] }
+  tooltip?: (false | { rows?: (d: T) => readonly ChartTooltipRow[] }) | undefined
   /** A fixed height, or one per container class. Default: by row count (160–420px). */
-  height?: number | ResponsiveChartHeight
+  height?: number | ResponsiveChartHeight | undefined
   /** Fill the parent's height instead. Overrides `height`. CSS-owned like every other kind's box
    * (`ChartBox`, no measuring, SSR-stable), so the parent needs a definite CSS height — a grid or
    * flex stretch, `h-full`, an explicit height — which no kind can read off an auto-height parent. */
-  matchHeight?: boolean
-  state?: ChartState
+  matchHeight?: boolean | undefined
+  state?: ChartState | undefined
 }
 
 /** Intensity steps: quantized, so the gradient legend and the cells are the same ramp. */

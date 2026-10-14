@@ -29,18 +29,18 @@ export type SparklineProps = BasaltProps & {
   /** Height in px. */
   height: number
   /** Width in px. Default: the container's, measured by the host. */
-  width?: number
+  width?: number | undefined
   /** Default `'line'`. */
-  mark?: 'line' | 'bar'
+  mark?: 'line' | 'bar' | undefined
   /** A `VX.*` ref or a series token. Default `VX.faint`. */
-  color?: string
+  color?: string | undefined
   /** Paints the last point in `emphasisColor` — the one reading a trend beside a KPI is for. */
-  emphasizeLast?: boolean
+  emphasizeLast?: boolean | undefined
   /** Default `VX.accent`. */
-  emphasisColor?: string
+  emphasisColor?: string | undefined
   /** Pending / error / empty, the same contract as every other kind. The placeholder fills the
    * sparkline's own `width` × `height`, so a loading tile does not shift when the trend lands. */
-  state?: ChartState
+  state?: ChartState | undefined
 }
 
 type Point = { i: number; v: number | null }

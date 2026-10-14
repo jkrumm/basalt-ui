@@ -64,12 +64,12 @@ export type DualPanelBar<T> = {
   /** Tick and tooltip formatter. */
   format: (v: number) => string
   /** The tooltip row's value, for a unit or a decimal `format` cannot carry. */
-  formatValue?: (v: number, d: T) => string
+  formatValue?: ((v: number, d: T) => string) | undefined
   /** Default `'auto'`: a symmetric `[-maxAbs, maxAbs]` from the data, rounded to nice ticks. A tuple
    * is used verbatim. */
-  domain?: readonly [number, number] | 'auto'
+  domain?: readonly [number, number] | 'auto' | undefined
   /** When `'auto'`: floors `maxAbs`, so a plateau does not amplify to fill the pane. */
-  maxAbsFloor?: number
+  maxAbsFloor?: number | undefined
 }
 
 export type DualPanelProps<T, X extends Date | number = Date | number> = Pick<
@@ -91,15 +91,15 @@ export type DualPanelProps<T, X extends Date | number = Date | number> = Pick<
   series: readonly DualPanelLine<T>[]
   /** Top pane y axis. Default domain `'auto'`: the visible lines' span plus 8%, rounded to nice
    * ticks (not zero-based: the interesting range is often a narrow band far from zero). */
-  top?: { domain?: readonly [number, number] | 'auto'; format?: (v: number) => string }
+  top?: { domain?: readonly [number, number] | 'auto'; format?: (v: number) => string } | undefined
   /**
    * Shades the band between two top lines (by key), where both are visible. `aboveFill` colours the
    * side where `to` runs above `from`; omitted, both sides take `fill`.
    */
-  fillBetween?: { from: string; to: string; fill: string; aboveFill?: string }
+  fillBetween?: { from: string; to: string; fill: string; aboveFill?: string } | undefined
   bar: DualPanelBar<T>
   /** The top pane's share of the chart height. Default 0.62. */
-  topFraction?: number
+  topFraction?: number | undefined
 }
 
 type FillRow<T, X> = { x: X; from: number; to: number; series: string; datum: T }

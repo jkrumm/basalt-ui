@@ -25,7 +25,7 @@ export type StackedAreaBand<T> = Pick<
   'key' | 'label' | 'color' | 'getValue' | 'formatValue' | 'tooltip' | 'legend' | 'role' | 'note'
 > & {
   /** Default 0.85. */
-  fillOpacity?: number
+  fillOpacity?: number | undefined
 }
 
 export type StackedAreaProps<T, X extends ChartX = ChartX> = Omit<
@@ -35,7 +35,7 @@ export type StackedAreaProps<T, X extends ChartX = ChartX> = Omit<
   /** The bands, bottom to top. */
   series: readonly StackedAreaBand<T>[]
   /** No `scale`: a log axis has no additive zero to stack from. */
-  y?: Omit<NonNullable<CartesianChartProps<T, X>['y']>, 'scale'>
+  y?: Omit<NonNullable<CartesianChartProps<T, X>['y']>, 'scale'> | undefined
 }
 
 export function StackedArea<T, X extends ChartX = ChartX>(
