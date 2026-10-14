@@ -1,5 +1,6 @@
 /** `thinFill` and `barMark`: the pure helpers behind the server render cost fix. */
 import { describe, expect, test } from 'bun:test'
+import { stack } from '@tanstack/charts/stack'
 import { barMark, thinFill } from './marks'
 
 type R = { x: number; from: number; to: number }
@@ -54,6 +55,35 @@ describe('thinFill', () => {
     expect(out.filter((r) => r.x < 0.01).length).toBeLessThan(10)
   })
 
+  test('an interior from-peak and an interior to-from extremum survive', () => {
+    const rows = even(5_000, (i) => {
+      if (i === 2_503) return { from: 500 }
+      if (i === 2_504) return { from: 10, to: -400 }
+      return {}
+    })
+    const out = thinFill(rows, 100, at)
+    expect(out.some((r) => r.from === 500)).toBe(true)
+    expect(out.some((r) => r.to === -400)).toBe(true)
+  })
+
+  test('a gap (non-finite from or to) is kept and never blocks a later extremum', () => {
+    // The first row of the column is a gap; a seed of NaN would make every comparison false.
+    const rows = even(5_000, (i) => {
+      if (i === 2_500) return { from: Number.NaN }
+      if (i === 2_501) return { to: 999 }
+      if (i === 3_000) return { to: null as unknown as number }
+      return {}
+    })
+    const out = thinFill(rows, 100, at)
+    expect(out).toContain(rows[2_500] as R)
+    expect(out).toContain(rows[3_000] as R)
+    expect(out.some((r) => r.to === 999)).toBe(true)
+    // Order is kept, so the gap still sits between its neighbours.
+    const at2500 = out.indexOf(rows[2_500] as R)
+    expect((out[at2500 - 1] as R).x).toBeLessThan((out[at2500] as R).x)
+    expect((out[at2500 + 1] as R).x).toBeGreaterThan((out[at2500] as R).x)
+  })
+
   test('a row with no position is kept', () => {
     const rows = even(5_000)
     const odd = row(Number.NaN)
@@ -62,10 +92,41 @@ describe('thinFill', () => {
   })
 })
 
+/** The y channel of a mark: every row's end, then every row's start. */
+function yChannel(mark: unknown): readonly number[] {
+  const { initialize } = mark as {
+    initialize: (c: { markIndex: number }) => { channels: { y: { values: number[] } } }
+  }
+  return initialize({ markIndex: 0 }).channels.y.values
+}
+
 describe('barMark', () => {
-  test('a single-series bar gets an explicit extent, and a series or layout is left alone', () => {
-    const rows = [{ x: 1, y: 2 }]
-    expect(() => barMark(rows, { x: 'x', y: 'y' })).not.toThrow()
-    expect(() => barMark(rows, { x: 'x', y: 'y', z: 'x' })).not.toThrow()
+  // Two rows at ONE x: unstacked they both start at 0; stacked, the second starts where the first
+  // ends. That is the observable difference between an explicit extent and the engine's stack.
+  const rows = [
+    { x: 1, y: 2, s: 'a', k: 0 },
+    { x: 1, y: 3, s: 'b', k: 1 },
+  ]
+  const unstacked = [2, 3, 0, 0]
+  const stacked = [2, 5, 0, 2]
+
+  test('a single-series bar gets an explicit extent: nothing stacks', () => {
+    expect(yChannel(barMark(rows, { x: 'x', key: 'k', y: 'y' }))).toEqual(unstacked)
+  })
+
+  test('an undefined z, color or layout (a conditional spread) still asks for no series', () => {
+    // What an untyped caller's conditional spread produces: the keys are present, the values are not.
+    const none = { z: undefined, color: undefined, layout: undefined } as unknown as object
+    expect(yChannel(barMark(rows, { x: 'x', key: 'k', y: 'y', ...none }))).toEqual(unstacked)
+  })
+
+  test('a series or a layout passes through verbatim and stacks', () => {
+    expect(yChannel(barMark(rows, { x: 'x', key: 'k', y: 'y', z: 's' }))).toEqual(stacked)
+    expect(yChannel(barMark(rows, { x: 'x', key: 'k', y: 'y', color: 's' }))).toEqual(stacked)
+    expect(yChannel(barMark(rows, { x: 'x', key: 'k', y: 'y', layout: stack() }))).toEqual(stacked)
+  })
+
+  test('a caller-given extent is left alone', () => {
+    expect(yChannel(barMark(rows, { x: 'x', key: 'k', y: 'y', y1: 5 }))).toEqual([2, 3, 5, 5])
   })
 })

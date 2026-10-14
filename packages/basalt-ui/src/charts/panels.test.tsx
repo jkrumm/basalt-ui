@@ -219,7 +219,8 @@ describe('DualPanel', () => {
       expect(markRects(el, 'bottom', 'bars').length).toBe(8000)
       // An unthinned fill is two edges of 8000 vertices; thinned it is at most 8 rows per pixel
       // column (first, last, six extremes), two edges each, plus a point per crossing.
-      expect(fillPoints(el)).toBeGreaterThan(0)
+      // Floor: every pixel column keeps a first and last row, so the silhouette is not lost.
+      expect(fillPoints(el)).toBeGreaterThan(2 * 640)
       expect(fillPoints(el)).toBeLessThan(2 * 8 * 640)
     })
 

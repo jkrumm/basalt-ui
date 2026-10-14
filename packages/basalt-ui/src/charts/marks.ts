@@ -4,6 +4,7 @@
  * companion keeps full strength while its `parent` is the highlighted entry).
  */
 import { barY } from '@tanstack/charts/bar'
+import type { BarYOptions } from '@tanstack/charts/bar'
 import { dot } from '@tanstack/charts/dot'
 import { lineY } from '@tanstack/charts/line'
 import { decorative } from '@tanstack/charts/mark/decorative'
@@ -99,12 +100,19 @@ export function markersOf<T, X extends ChartX>(
  * A single-series `barY`. The engine stacks every `barY` that has no explicit extent, and a row with
  * no `z`/`color` channel is its own series: an N-by-N matrix (a 5k-row `DualPanel` took 10 s). So
  * the extent is explicit (`y1: 0`) unless the caller asks for a series (`z`, `color`) or a `layout`.
- * Every bar that is not `Bars`' stacked/grouped one is drawn through this.
+ * Every bar that is not `Bars'` stacked/grouped one is drawn through this.
  */
-export const barMark = ((rows: Iterable<unknown>, options: Record<string, unknown> = {}) => {
-  const seriesAsked = 'z' in options || 'color' in options || 'layout' in options
-  return barY(rows, (seriesAsked ? options : { y1: 0, ...options }) as never)
-}) as unknown as typeof barY
+const given = (v: unknown): boolean => v !== undefined && v !== null
+
+export function barMark<TDatum>(
+  rows: Iterable<TDatum>,
+  options: BarYOptions<TDatum> = {},
+): ChartMarks[number] {
+  // On values, not keys: `z: undefined` from a conditional spread asks for no series.
+  const seriesAsked = [options.z, options.color, options.layout].some(given)
+  const extentGiven = [options.y1, options.y2].some(given)
+  return barY(rows, seriesAsked || extentGiven ? options : { ...options, y1: 0 })
+}
 
 /** Rows per plot pixel beyond which {@link thinFill} thins. */
 const FILL_ROWS_PER_PX = 4
@@ -150,8 +158,9 @@ export function thinFill<R extends { from: number; to: number }>(
   const columns = new Map<number, Bucket>()
   for (const [i, r] of rows.entries()) {
     const position = at(r)
-    // A row with no position cannot be placed in a column: keep it.
-    if (!Number.isFinite(position)) {
+    // A gap (a non-finite value) breaks the fill and must stay where it is; it never seeds or wins an
+    // extremum. A row with no position cannot be placed in a column: keep it too.
+    if (!Number.isFinite(r.from) || !Number.isFinite(r.to) || !Number.isFinite(position)) {
       kept.add(i)
       continue
     }
@@ -183,5 +192,10 @@ export function thinFill<R extends { from: number; to: number }>(
     for (const i of [b.first, b.last]) kept.add(i)
     for (const e of [b.minFrom, b.maxFrom, b.minTo, b.maxTo, b.minGap, b.maxGap]) kept.add(e.index)
   }
-  return [...kept].toSorted((p, q) => p - q).flatMap((i) => (rows[i] ? [rows[i]] : []))
+  return [...kept]
+    .toSorted((p, q) => p - q)
+    .flatMap((i) => {
+      const row = rows[i]
+      return row === undefined ? [] : [row]
+    })
 }
