@@ -53,6 +53,7 @@ const CHART_VALUES = [
   'Sparkline',
   'StackedArea',
   'chartCursor',
+  'chartCurve',
 ] as const
 
 describe('barrel surface', () => {
