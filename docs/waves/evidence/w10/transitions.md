@@ -7,15 +7,17 @@ it received, not an inference. Chrome only: Safari and Firefox were not run.
 
 ## Route navigations
 
-| Case                                                           | Result                                                                                                    |
-| -------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| 12 sidebar-link navigations, `startViewTransition` per click   | 12/12 (W7: 0/12)                                                                                          |
-| `types` received                                               | `basalt-forward` x10, `basalt-back` x1 (`/settings` to `/dashboard`); the twelfth is forward again        |
-| 1 search-only navigation (`/cbbi` view tab)                    | 0 calls                                                                                                   |
-| Runtime errors, unhandled rejections, console errors           | 0, 0, 0                                                                                                   |
-| 8 clicks 40 ms apart, `ready` watched by the probe             | 7 transitions started, 1 skipped (`ready` rejected)                                                       |
-| Same 8 clicks, `ready` left alone, guard on                    | 0 unhandled rejections, 0 console errors                                                                  |
-| Same 8 clicks, `ready` left alone, **guard removed** (control) | `unhandledrejection: AbortError: Transition was skipped. New ViewTransition started`, 3 and 1 in two runs |
+| Case                                                                                                                        | Result                                                                                                    |
+| --------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| 12 sidebar-link navigations, `startViewTransition` per click                                                                | 12/12 (W7: 0/12)                                                                                          |
+| `types` received                                                                                                            | `basalt-forward` x10, `basalt-back` x1 (`/settings` to `/dashboard`); the twelfth is forward again        |
+| 1 search-only navigation (`/cbbi` view tab)                                                                                 | 0 calls                                                                                                   |
+| Runtime errors, unhandled rejections, console errors                                                                        | 0, 0, 0                                                                                                   |
+| `CSS.supports('selector(:active-view-transition-type(a, b))')` (the comma list the stylesheet uses), and `(a)`              | true, true                                                                                                |
+| Timed animations at `ready`, one navigation: `::view-transition-old(basalt-main)` / `-new(basalt-main)` / `old`+`new(root)` | 1 / 1 / 0 (content region animates, root stays static)                                                    |
+| 8 clicks 40 ms apart, `ready` watched by the probe                                                                          | 7 transitions started, 1 skipped (`ready` rejected)                                                       |
+| Same 8 clicks, `ready` left alone, guard on                                                                                 | 0 unhandled rejections, 0 console errors                                                                  |
+| Same 8 clicks, `ready` left alone, **guard removed** (control)                                                              | `unhandledrejection: AbortError: Transition was skipped. New ViewTransition started`, 3 and 1 in two runs |
 
 The control is a one-off with `guardViewTransitionRejections()` disabled in `create-router.tsx`, not committed.
 `window` `unhandledrejection` is what `BasaltProvider` forwards to the telemetry sink as `window.error`

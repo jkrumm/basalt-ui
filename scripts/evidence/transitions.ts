@@ -107,6 +107,8 @@ type RouteProbe = {
   /** Attach a handler to `ready` (masks unhandled rejections) — only to prove that skips happen. */
   observe: boolean
   skipped: number
+  /** Most timed view-transition animations seen at any `ready`, by pseudo-element (observe only). */
+  animations: { mainOld: number; mainNew: number; rootOldNew: number }
 }
 
 declare global {
@@ -117,7 +119,13 @@ declare global {
 
 const ROUTE_INIT = ({ observe }: { observe: boolean }) => {
   localStorage.setItem('mantine-color-scheme-value', 'light')
-  const probe: RouteProbe = { calls: [], errors: [], observe, skipped: 0 }
+  const probe: RouteProbe = {
+    calls: [],
+    errors: [],
+    observe,
+    skipped: 0,
+    animations: { mainOld: 0, mainNew: 0, rootOldNew: 0 },
+  }
   window.__route = probe
   window.addEventListener('error', (e) => probe.errors.push(`error: ${e.message}`))
   window.addEventListener('unhandledrejection', (e) =>
@@ -131,7 +139,27 @@ const ROUTE_INIT = ({ observe }: { observe: boolean }) => {
       types: typeof arg === 'object' && arg !== null ? [...(arg.types ?? [])] : null,
     })
     const t = original(...args)
-    if (probe.observe) t.ready.then(undefined, () => probe.skipped++)
+    if (probe.observe)
+      t.ready.then(
+        () => {
+          const timed = (pseudo: string): number =>
+            document.getAnimations().filter((a) => {
+              const effect = a.effect
+              if (!(effect instanceof KeyframeEffect) || effect.pseudoElement !== pseudo)
+                return false
+              const { duration } = effect.getTiming()
+              return typeof duration === 'number' && duration > 0
+            }).length
+          const seen = probe.animations
+          seen.mainOld = Math.max(seen.mainOld, timed('::view-transition-old(basalt-main)'))
+          seen.mainNew = Math.max(seen.mainNew, timed('::view-transition-new(basalt-main)'))
+          seen.rootOldNew = Math.max(
+            seen.rootOldNew,
+            timed('::view-transition-old(root)') + timed('::view-transition-new(root)'),
+          )
+        },
+        () => probe.skipped++,
+      )
     return t
   }
 }
@@ -261,40 +289,95 @@ async function routeSection(
   if (end.errors.length > 0) problems.push(`route: ${end.errors.join('; ')}`)
   await main.context.close()
 
+  // The CSS actually applies: the list form of `:active-view-transition-type()` parses, the content
+  // region animates (old and new), and `root` stays static.
+  const anim = await session(true)
+  const grammar = await anim.page.evaluate(() => ({
+    single: CSS.supports('selector(:active-view-transition-type(a))'),
+    list: CSS.supports('selector(:active-view-transition-type(a, b))'),
+  }))
+  await anim.click('/cbbi')
+  await anim.page.waitForURL((u) => u.pathname === '/cbbi')
+  await anim.page.waitForTimeout(500)
+  const { animations } = await anim.probe()
+  summary.push(
+    {
+      metric: 'route: CSS.supports :active-view-transition-type(a) / (a, b)',
+      value: `${grammar.single} / ${grammar.list}`,
+    },
+    {
+      metric: 'route: timed animations on ::view-transition-old(basalt-main)',
+      value: animations.mainOld,
+    },
+    {
+      metric: 'route: timed animations on ::view-transition-new(basalt-main)',
+      value: animations.mainNew,
+    },
+    {
+      metric: 'route: timed animations on ::view-transition-old/new(root)',
+      value: animations.rootOldNew,
+    },
+  )
+  if (!grammar.single || !grammar.list)
+    problems.push(
+      'route: the :active-view-transition-type() selector (single or list) is unsupported',
+    )
+  if (animations.mainOld < 1 || animations.mainNew < 1)
+    problems.push(
+      `route: content region did not animate (old ${animations.mainOld}, new ${animations.mainNew})`,
+    )
+  if (animations.rootOldNew !== 0) problems.push(`route: root animated (${animations.rootOldNew})`)
+  await anim.context.close()
+
   // Rapid clicks: every click supersedes the transition before it. Two runs over the same clicks —
   // one that watches `ready` (proves skips are happening), one that leaves it alone (judges the guard).
   const rapid: Record<string, unknown> = {}
   for (const observe of [true, false]) {
-    const r = await session(observe)
-    await r.page.evaluate(
-      async ({ paths, selectorFor }) => {
-        for (const path of paths) {
-          document.querySelector<HTMLAnchorElement>(selectorFor.replace('{path}', path))?.click()
-          await new Promise((resolve) => setTimeout(resolve, 40))
-        }
-      },
-      { paths: r.links.slice(0, 8), selectorFor: sidebarLink('{path}') },
-    )
-    await r.page.waitForTimeout(1500)
-    const probe = await r.probe()
     const name = observe ? 'rapid, ready observed' : 'rapid, ready unobserved'
-    summary.push(
-      { metric: `route: ${name}: transitions started`, value: probe.calls.length },
-      ...(observe
-        ? [{ metric: `route: ${name}: skipped (ready rejected)`, value: probe.skipped }]
-        : []),
-      { metric: `route: ${name}: unhandled rejections / errors`, value: probe.errors.length },
-      { metric: `route: ${name}: console errors`, value: r.consoleErrors.length },
-    )
-    rapid[name] = {
-      calls: probe.calls.length,
-      skipped: probe.skipped,
-      errors: probe.errors,
-      consoleErrors: r.consoleErrors,
+    // The observed run proves skips happen; whether a click lands inside a running transition is
+    // timing, so it gets three tries before "no skip" counts as a problem.
+    for (let attempt = 1; attempt <= (observe ? 3 : 1); attempt++) {
+      const r = await session(observe)
+      await r.page.evaluate(
+        async ({ paths, selectorFor }) => {
+          for (const path of paths) {
+            document.querySelector<HTMLAnchorElement>(selectorFor.replace('{path}', path))?.click()
+            await new Promise((resolve) => setTimeout(resolve, 40))
+          }
+        },
+        { paths: r.links.slice(0, 8), selectorFor: sidebarLink('{path}') },
+      )
+      await r.page.waitForTimeout(1500)
+      const probe = await r.probe()
+      await r.context.close()
+      if (observe && probe.skipped === 0 && attempt < 3) continue
+      summary.push(
+        { metric: `route: ${name}: transitions started`, value: probe.calls.length },
+        ...(observe
+          ? [{ metric: `route: ${name}: skipped (ready rejected)`, value: probe.skipped }]
+          : [
+              {
+                metric: `route: ${name}: unhandled rejections / errors`,
+                value: probe.errors.length,
+              },
+              { metric: `route: ${name}: console errors`, value: r.consoleErrors.length },
+            ]),
+      )
+      rapid[name] = {
+        attempt,
+        calls: probe.calls.length,
+        skipped: probe.skipped,
+        errors: probe.errors,
+        consoleErrors: r.consoleErrors,
+      }
+      if (observe && probe.skipped === 0)
+        problems.push(
+          `route (${name}): no transition was skipped, so the guard check proves nothing`,
+        )
+      if (!observe && probe.errors.length > 0)
+        problems.push(`route (${name}): ${probe.errors.join('; ')}`)
+      break
     }
-    if (!observe && probe.errors.length > 0)
-      problems.push(`route (${name}): ${probe.errors.join('; ')}`)
-    await r.context.close()
   }
 
   return {
