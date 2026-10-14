@@ -33,11 +33,8 @@ import {
   shippedAssetPath,
 } from './index'
 import { resolveRoots } from './config'
-import {
-  droppedSubpathsProblem,
-  retiredLintRulesProblem,
-  tsconfigBaseProblem,
-} from './doctor-upgrade'
+import { droppedSubpathsCheck, retiredLintRulesCheck, tsconfigBaseCheck } from './doctor-upgrade'
+import type { Check } from './doctor-upgrade'
 import { findManifestAbove, parentInstallAdvice } from './sync'
 
 /** `sameFile`, but doctor never crashes: a path that cannot be inspected is "not provably the same". */
@@ -64,12 +61,8 @@ export type DoctorResult = {
 }
 
 /**
- * First run of digits in a semver range string (`^7.0.15` → `7`), or null if there is none.
- *
- * Duplicated verbatim in `configs/oxlint-plugin.js` — that file must stay import-free from this
- * package (it loads via `jsPlugins` out of a consumer's node_modules, before this package's own
- * code is necessarily resolvable), so the duplication is structural, not an oversight. Keep both
- * copies in sync by hand; a future parsing fix (pre-release suffixes, say) must land in both.
+ * First run of digits in a semver range (`^7.0.15` → `7`), or null. Duplicated in
+ * `configs/oxlint-plugin.js`, which must stay import-free; keep both copies in sync.
  */
 function majorOf(range: string | undefined): number | null {
   if (typeof range !== 'string') return null
@@ -81,12 +74,7 @@ function majorOf(range: string | undefined): number | null {
 const AI_MAJOR_FIELDS = ['dependencies', 'devDependencies', 'peerDependencies'] as const
 type AiMajorField = (typeof AI_MAJOR_FIELDS)[number]
 
-/**
- * The `ai` package's major per dependency field, all within THIS package.json — not walked across
- * workspace packages (that discovery was deleted with the rest of the multi-repo machinery). A
- * skew here is still real: a package declaring `dependencies.ai: 5` alongside
- * `peerDependencies.ai: 7` asks its own consumers for a different major than it itself runs.
- */
+/** The `ai` major per dependency field of THIS package.json (not walked across workspaces). */
 function aiMajorsAt(dir: string): Partial<Record<AiMajorField, number>> {
   const raw = readIfExists(resolve(dir, 'package.json'))
   if (raw === null) return {}
@@ -103,14 +91,7 @@ function aiMajorsAt(dir: string): Partial<Record<AiMajorField, number>> {
   }
 }
 
-/**
- * Splits `basalt.aiMajorSkewReason` into a validated reason (or null) plus whether the key was
- * present at all but failed validation. A present-but-invalid value (anything other than a
- * non-empty string — including a bare `true`) is treated as absent for the pass/fail decision, same
- * as a missing key, but doctor's failure message still calls out that the key exists and is
- * malformed rather than silently falling back to the plain "no exemption" message — a forgotten key
- * and a broken one are different mistakes and deserve different guidance.
- */
+/** `basalt.aiMajorSkewReason` as a validated reason, plus whether the key was present but invalid. */
 function resolveAiMajorSkewReason(cfg: BasaltConfig): {
   reason: string | null
   presentButInvalid: boolean
@@ -124,42 +105,24 @@ function resolveAiMajorSkewReason(cfg: BasaltConfig): {
 }
 
 /**
- * Check a consumer repo's basalt integration and print a pass/warn report.
- *
- * Narrowed to what a single-directory-scoped run can actually verify — no workspace-glob walking,
- * no ascend/descend project discovery (see {@link resolveProjectDir}). Ten checks, numbered in
- * the order they run and print:
+ * Check a consumer repo's basalt integration and print a pass/warn report. One directory, no
+ * workspace walking (see {@link resolveProjectDir}). Checks, in print order:
  *
  * Hard failures (exit non-zero):
- *   1. `.basalt/manifest.json` exists (`basalt-ui init` was run).
- *   2. `install-parity`: basalt-ui resolves, doctor prints WHERE and at what version, and that
- *      version agrees with the manifest's `basaltVersion`.
- *   3. `guard-scan`: `check-theme` would scan more than zero files, sharing `scannableFiles` so the
- *      two cannot disagree. Both RESTORED in 1.30.0 after four minors gone with no MIGRATING row —
- *      README § `doctor` carries what their absence cost.
- *   4. `oxlint-preset` ("rules in sync"): the consumer's `.oxlintrc.json` extends the shipped
- *      preset AND that path resolves (warns when no `oxlint` bin does). `init` keeps an existing config, so the framework's whole
- *      lint half can be silently off — one repo carried six real violations invisibly across five
- *      minors this way.
- *   7. `ai-major-parity`: within THIS package.json, `dependencies`/`devDependencies`/
- *      `peerDependencies` agree on the `ai` package's major — the shape `basalt/ai-sdk-major` (per
- *      linted FILE) cannot see. A skew is exempt-able via `basalt.aiMajorSkewReason` (a non-empty
- *      reason, not a bare `true`); a declared reason when the majors agree warns it is stale.
- *
- *   8-10. `tsconfig-base`, `retired-lint-rules`, `dropped-subpaths` — see ./doctor-upgrade.
+ *   1. `.basalt/manifest.json` exists.
+ *   2. `install-parity`: basalt-ui resolves, and its version matches the manifest's `basaltVersion`.
+ *   3. `guard-scan`: `check-theme` would scan more than zero files (shares `scannableFiles`).
+ *   4. `oxlint-preset`: `.oxlintrc.json` extends the shipped preset AND that path resolves.
+ *   7. `ai-major-parity`: the `ai` major agrees across this package.json's dependency fields
+ *      (exempt via `basalt.aiMajorSkewReason`; a stale reason warns).
+ *   8-10. `tsconfig-base`, `retired-lint-rules`, `dropped-subpaths` — see ./doctor-upgrade. A
+ *      check that cannot run is reported SKIPPED and exits non-zero on its own.
  *
  * Warning (non-fatal):
- *   5. `lefthook-preset` ("lefthook wired"): a pre-commit command runs `check-theme`, read from
- *      `lefthook dump --format json` (resolves `extends`/`include`/`root:` the way lefthook itself
- *      does — see {@link inspectLefthookGate}). No lefthook config at all is a pass (a consumer may
- *      gate elsewhere); a config that resolves but wires no guard command warns; a config lefthook
- *      dump could not read at all (binary missing, or the dump failed) warns and says so, rather
- *      than inventing a verdict.
- *   6. `claude-md`: a project-root `CLAUDE.md` that does not import `@AGENTS.md` suppresses
- *      `AGENTS.md` (and with it the managed block); one that still carries a basalt block — or a
- *      malformed one — says so. A `CLAUDE.md` symlinked to `AGENTS.md` is one file and passes.
+ *   5. `lefthook-preset`: a pre-commit command runs `check-theme` (read via `lefthook dump`).
+ *   6. `claude-md`: a project-root `CLAUDE.md` that does not import `@AGENTS.md` suppresses it.
  *
- * Returns the exit code: 0 = all good, 1 = one or more hard failures.
+ * Returns the exit code: 0 = all good, 1 = one or more hard failures or skipped checks.
  */
 export function doctor(invocationCwd: string = process.cwd(), flags: string[] = []): number {
   if (conflictingProfileFlags('doctor', flags)) return 1
@@ -179,6 +142,10 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
   function fail(msg: string): void {
     lines.push(`  ✖ ${msg}`)
     result.hardFailures++
+  }
+  function skip(msg: string): void {
+    lines.push(`  ? SKIPPED ${msg}`)
+    result.skipped++
   }
 
   if (project.relocatedFrom !== null) {
@@ -330,8 +297,8 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
   // The managed block lives in AGENTS.md. Claude Code loads a repo-root AGENTS.md directly, but ANY
   // CLAUDE.md in or above the cwd suppresses it unless that file imports `@AGENTS.md` — so a
   // leftover CLAUDE.md means the block (and the rest of AGENTS.md) is not loaded, whether or not it
-  // still carries a block. A symlink to AGENTS.md is one file and is fine. Warn only: `sync`
-  // migrates the block, `sync --check` is the gate, and what else CLAUDE.md holds is the consumer's.
+  // still carries a block. A symlink to AGENTS.md is one file and is fine. Warn only: what else
+  // CLAUDE.md holds is the consumer's.
   const legacyHost = resolve(cwd, LEGACY_BLOCK_HOST)
   const legacy = profile === 'tokens-only' ? null : readIfExists(legacyHost)
   if (legacy !== null && !isSameFile(legacyHost, resolve(cwd, AGENTS_MD))) {
@@ -409,36 +376,39 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
   if (profile === 'tokens-only') {
     pass('tsconfig-base / retired-lint-rules / dropped-subpaths: n/a — a tokens-only consumer')
   } else {
-    const upgrade: [string, string | null][] = [
-      ['tsconfig-base: tsconfig.json extends the shipped preset', tsconfigBaseProblem(cwd)],
+    const upgrade: [string, Check][] = [
+      ['tsconfig-base: tsconfig.json extends the shipped preset', tsconfigBaseCheck(cwd)],
       [
         'retired-lint-rules: .oxlintrc.json sets no retired basalt/* rule',
-        retiredLintRulesProblem(cwd, install),
+        retiredLintRulesCheck(cwd, install),
       ],
       [
         'dropped-subpaths: no import of a basalt-ui subpath the install lacks',
-        droppedSubpathsProblem(cwd, cfg, install),
+        droppedSubpathsCheck(cwd, cfg, install),
       ],
     ]
-    for (const [ok, problem] of upgrade) {
-      if (problem === null) pass(ok)
-      else fail(problem)
+    for (const [ok, check] of upgrade) {
+      if (check === null) pass(ok)
+      else if ('fail' in check) fail(check.fail)
+      else skip(check.skip)
     }
   }
 
   // ── Report ──────────────────────────────────────────────────────────────────
   lines.push('')
-  if (result.hardFailures === 0 && result.warnings === 0) {
+  if (result.hardFailures === 0 && result.warnings === 0 && result.skipped === 0) {
     lines.push('All checks passed.')
   } else {
     const parts: string[] = []
     if (result.hardFailures > 0) parts.push(`${result.hardFailures} hard failure(s)`)
+    if (result.skipped > 0)
+      parts.push(`${result.skipped} SKIPPED (a check that cannot run is not a pass)`)
     parts.push(`${result.warnings} warning(s)`)
     lines.push(`${parts.join(', ')}.`)
   }
   lines.push('')
 
-  if (result.hardFailures > 0) {
+  if (result.hardFailures > 0 || result.skipped > 0) {
     console.error(lines.join('\n'))
     return 1
   }

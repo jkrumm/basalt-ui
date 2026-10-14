@@ -524,7 +524,7 @@ const BLOCK_END = '<!-- basalt:end -->'
 export const MANIFEST_PATH = '.basalt/manifest.json'
 /** The host file the managed block is spliced into (and its manifest key). */
 export const AGENTS_MD = 'AGENTS.md'
-/** Where the block lived before it moved to {@link AGENTS_MD} — read only to migrate out of it. */
+/** A `CLAUDE.md` shadows {@link AGENTS_MD} unless it imports it — `doctor` warns on one. */
 export const LEGACY_BLOCK_HOST = 'CLAUDE.md'
 
 export function sha256(text: string): string {
@@ -653,8 +653,7 @@ export function hasManagedBlock(host: string | null): boolean {
 
 /**
  * The block region of a host, or why it cannot be read: duplicate begin markers, or a begin marker
- * with no end. The ONE detector `migrateBlockToAgentsMd` and `doctor` share, so they cannot disagree
- * about whether a `CLAUDE.md` is well-formed.
+ * with no end. Read by `doctor` to say whether a leftover `CLAUDE.md` is well-formed.
  */
 export function scanBlock(host: string): {
   region: { start: number; end: number } | null
@@ -943,14 +942,15 @@ export function managedFiles(
     render: (ctx) => readSource(ctx.pkgRoot, 'agent/templates/nav.tpl'),
   }
 
-  // `__root.tsx` imports @tanstack/react-router (createRootRouteWithContext) and basalt-ui's
-  // `BasaltRouterContext`, which names the QueryClient type — so it needs both peers installed.
+  /** The 2.0 entry: mounts the router and declares the `Register` augmentation `defineNav` needs. */
   const mainEntry: ManagedFile = {
     dest: ROUTER_SEED_DESTS.main,
     mode: 'seed',
     source: 'agent/templates/main.tpl',
     render: (ctx) => readSource(ctx.pkgRoot, 'agent/templates/main.tpl'),
   }
+  // `__root.tsx` imports @tanstack/react-router (createRootRouteWithContext) and basalt-ui's
+  // `BasaltRouterContext`, which names the QueryClient type — so all three seeds need both peers.
   const scaffolds: ManagedFile[] = []
   if (peers.hasRouter && peers.hasQuery) scaffolds.push(navModule, rootRoute, mainEntry)
 
@@ -1194,25 +1194,9 @@ export function unitState(file: ManagedFile, cwd: string, ctx: RenderContext): U
 type Classification = 'unchanged' | 'drifted' | 'missing' | 'current'
 
 /**
- * Normalize a managed unit's rendered bytes for the ledger comparison below — makes a delta that is
- * PURELY formatting or a version bump invisible to drift detection, while a real prose/content edit
- * stays fully visible:
- *
- *  - Blank out the per-release `BASALT_VERSION` token in a marker's begin line
- *    (`<!-- basalt:begin 1.0.1 -->` → `<!-- basalt:begin -->`). It changes on every release and is
- *    the only per-release variable that lands INSIDE the hashed region (the rest of
- *    `AGENTS-block.md.tpl` has no other `{{…}}` placeholders today), so stripping it is what lets
- *    one normalized rendering stand in for every version of a given template body instead of
- *    needing one ledger entry per release. If a future marker template interpolates another
- *    per-release var inside its region, extend this normalization the same way.
- *  - Trim trailing whitespace per line and collapse every run of blank lines to none. This is the
- *    fix for the actual argo repro: lefthook's oxfmt reformats a spliced block (or a whole managed
- *    file) AFTER `writeUnit` has already exited and the manifest hash was recorded, so the manifest
- *    can never account for the reformat up front — normalizing it away here is the only place that
- *    can.
- *
- * Deliberately whitespace-only — word content is untouched, so a genuine hand-edit inside the block
- * still changes the normalized text and still classifies `drifted`.
+ * Normalize a managed unit's rendered bytes for the ledger comparison: blank the per-release version
+ * in a marker's begin line, trim trailing whitespace per line and collapse blank-line runs. A
+ * formatter run or a version bump is invisible to drift detection; a real content edit is not.
  */
 export function normalizeForLedger(text: string): string {
   return text
@@ -1430,13 +1414,8 @@ export function rootsNotices(state: RootsState): { log: string[]; error: string[
 }
 
 /**
- * Strip JSONC comments (and trailing commas) so `.oxlintrc.json` can be READ. oxlint accepts JSONC
- * and real consumer configs use it — a plain `JSON.parse` there reported "not valid JSON" on a
- * perfectly good config. String-aware, so a `//` inside a value survives.
- *
- * Only ever used for reading. The trailing-comma pass is a plain regex and could in principle mangle
- * a `, }` sequence inside a string; the failure direction is a parse error, which the caller already
- * treats as "cannot tell", never as "passes".
+ * Strip JSONC comments and trailing commas so oxlint/tsconfig files can be READ (string-aware). A
+ * mangled string fails as a parse error, which callers treat as "cannot tell", never as a pass.
  */
 function stripJsonc(text: string): string {
   let out = ''

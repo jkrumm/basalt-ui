@@ -30,6 +30,7 @@ import {
   writeFileEnsuringDir,
   writeUnit,
 } from './index'
+import { seedTsconfigExtends } from './doctor-upgrade'
 import { readOxlintPresetPlugins } from './sync'
 
 /**
@@ -47,6 +48,9 @@ const KEPT_FILE_COST: Record<string, string> = {
     '[<preset>]` to your own file.',
   '.github/workflows/check.yml':
     'CI does not run check-theme or the sync drift gate — copy those steps into your own workflow.',
+  'src/main.tsx':
+    'it must mount `<BasaltProvider router={router}>` and declare the `Register` augmentation ' +
+    '(`interface Register { router: typeof router }`), or the seeded src/lib/nav.tsx fails tsc.',
   '.oxfmtrc.json': 'your existing formatter config stands; basalt formats nothing on its own.',
   'DESIGN.md': 'the design brief Claude reads is yours, not the seeded one.',
 }
@@ -160,6 +164,8 @@ export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags =
     }
     console.log(`basalt-ui init: --merge-lint — ${mergeMessage[mergeLint]}`)
   }
+  const tsconfigLine = seedTsconfigExtends(cwd)
+  if (tsconfigLine !== null) console.log(`basalt-ui init: ${tsconfigLine}`)
   const rootsMessages = rootsNotices(rootsState)
   for (const line of rootsMessages.log) console.log(`basalt-ui init: ${line}`)
   for (const line of rootsMessages.error) console.error(`⚠ basalt-ui init: ${line}`)

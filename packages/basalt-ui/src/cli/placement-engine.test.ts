@@ -9,8 +9,7 @@
  *  - a seed is recreated only when missing
  *  - block-splicing preserves surrounding host content, appends when markers are absent, and
  *    errors loudly on duplicate markers instead of silently picking one
- *  - the managed block lives in AGENTS.md and is migrated out of a legacy CLAUDE.md (block-only
- *    file deleted, consumer prose kept, hand-edits preserved, idempotent)
+ *  - the managed block lives in AGENTS.md; a legacy CLAUDE.md is left alone (no migration)
  *  - --check performs zero writes (filesystem is byte-identical afterwards)
  *  - exit codes: 0 clean / 1 drift
  */
