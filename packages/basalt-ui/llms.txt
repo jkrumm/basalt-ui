@@ -311,7 +311,7 @@ Install: bun add @mantine/form@^9.7.0
 
 ## basalt-ui/commands
 Import: import { ... } from 'basalt-ui/commands'
-Description: defineCommands (typed command bus), defineOverlays/overlays, setColorScheme, toggleSidebar, ShortcutsHelp, defineNotifications/emit/NotificationBell (folded in from ./notifications); BasaltProvider mounts Spotlight, Modals and Notifications
+Description: defineCommands (typed command bus), defineOverlays/overlays (a form dialog is a registered overlay opened with overlays.open), setColorScheme, toggleSidebar, ShortcutsHelp, defineNotifications/emit/NotificationBell (emit only accepts kinds registered in defineNotifications; folded in from ./notifications); BasaltProvider mounts Spotlight, Modals and Notifications
 Layer: mantine-coupled
 Rule: basalt-batteries
 Signature: NotificationBell(props: NotificationBellProps): JSX.Element
