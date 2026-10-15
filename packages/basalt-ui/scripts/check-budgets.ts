@@ -256,7 +256,10 @@ const PROVIDER_ONLY_LABEL = 'provider-only first paint (gzip B, dist)'
 // 18900 → 19000: the AA anchor/error vars and the badge/outline ink mix in the resolver (18904 locally).
 // 19000 → 20800: `BasaltProvider` now wires the whole tree (router, query, modals, telemetry, hotkeys,
 // Spotlight actions, § 2); 20655 landed. Peers stay external, so these are basalt's own bytes.
-const PROVIDER_ONLY_CEILING = 20800
+// 20800 → 20880: #255 (embedded-children provider mode, `spotlight={false}`, `useRouter` import) added
+// ~140 B (20796 locally, 20830 in CI). No honest saving: the new error strings must name both modes
+// (tested) and Spotlight is statically mounted by default, so lazying it would change first paint.
+const PROVIDER_ONLY_CEILING = 20880
 
 /** An ANSI color sequence. Built from a char code: a control char in a regex literal is banned. */
 const ANSI_SGR = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, 'g')
