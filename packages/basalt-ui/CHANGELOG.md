@@ -1,3 +1,12 @@
+## [2.9.1](https://github.com/jkrumm/basalt-ui/compare/v2.9.0...v2.9.1) (2026-10-15)
+
+
+### Bug Fixes
+
+* declare shell-less apps with basalt.shell, scope the route override ([0ea148d](https://github.com/jkrumm/basalt-ui/commit/0ea148d8949a37a65e91b5d0cf9ffaa04c6f98c7))
+* route files lint clean under the shipped preset ([a51c1ee](https://github.com/jkrumm/basalt-ui/commit/a51c1ee4e9f6c1b9d81902e74d87340be73caaaa))
+* shell-less apps get no nav seed ([9944893](https://github.com/jkrumm/basalt-ui/commit/994489391b46ee944acb57032de99746aae35019))
+
 # [2.9.0](https://github.com/jkrumm/basalt-ui/compare/v2.8.1...v2.9.0) (2026-10-15)
 
 
