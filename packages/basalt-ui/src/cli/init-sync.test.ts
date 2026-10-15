@@ -10,7 +10,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 
-import { init, MANIFEST_PATH, run, sync } from './index.ts'
+import { doctor, init, MANIFEST_PATH, run, sync } from './index.ts'
 
 let dir: string
 
@@ -424,6 +424,20 @@ describe('router seeds — the nav module and the root route', () => {
     expect(out.code).toBe(0)
     expect(out.log).not.toContain('dropped')
     expect(manifestKeys()).toEqual(before)
+  })
+
+  it('init, sync and doctor classify the same lazy-router fixture identically', () => {
+    writeFixture('package.json', JSON.stringify({ name: 'fixture' }))
+    writeFixture('index.html', '<script type="module" src="/src/main.tsx"></script>')
+    writeFixture(
+      'src/main.tsx',
+      "import { BasaltProvider } from 'basalt-ui'\nconst Router = lazy(() => import('./router'))\n<BasaltProvider />\n",
+    )
+    writeFixture('src/router.ts', 'export const router = createBasaltRouter({ routeTree })\n')
+    expect(capture(() => init(dir)).log).toContain('code-routed app')
+    expect(existsSync(resolve(dir, 'src/routes/__root.tsx'))).toBe(false)
+    expect(capture(() => sync({}, dir)).log).not.toContain('dropped')
+    expect(capture(() => doctor(dir)).log).toContain('✓ app-wiring')
   })
 
   it('sync still recreates a deleted non-router seed (self-healing)', () => {

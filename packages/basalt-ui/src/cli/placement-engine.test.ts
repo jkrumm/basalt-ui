@@ -29,7 +29,7 @@ import { tmpdir } from 'node:os'
 import { join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { init, MANIFEST_PATH, normalizeForLedger, sha256, sync } from './index.ts'
+import { classify, init, MANIFEST_PATH, normalizeForLedger, sha256, sync } from './index.ts'
 
 const PKG_ROOT = fileURLToPath(new URL('../../', import.meta.url))
 const SHIPPED_RULE = readFileSync(resolve(PKG_ROOT, 'agent/rules/basalt-tokens.md'), 'utf8')
@@ -338,5 +338,22 @@ describe('repo-root-shaped seeds (lefthook.yml / check.yml)', () => {
     expect(existsSync(join(webDir, 'lefthook.yml'))).toBe(false)
     expect(existsSync(join(webDir, '.github/workflows/check.yml'))).toBe(false)
     expect(log).toContain('lefthook.yml')
+  })
+})
+
+describe('classify — the format-only branch', () => {
+  const desired = '# rule\nbody\n'
+  const formatted = '# rule  \n\n\nbody\n'
+
+  it('treats a formatter-only difference as unchanged with no manifest entry', () => {
+    expect(classify({ current: formatted, desired }, undefined)).toBe('unchanged')
+  })
+
+  it('treats it as unchanged even when the manifest entry is some other hash', () => {
+    expect(classify({ current: formatted, desired }, sha256('older rendering'))).toBe('unchanged')
+  })
+
+  it('still reports a real content edit as drifted', () => {
+    expect(classify({ current: '# rule\nedited\n', desired }, undefined)).toBe('drifted')
   })
 })

@@ -434,7 +434,8 @@ async function budgets(providerOnlyDist: string): Promise<Budget[]> {
     // 4628 -> 4674: Start `app-wiring` rejects a `router=` provider, plus the `queryClient` heuristic warning (rows 62, 67).
     // 4674 -> 4710: any-tag `router=` + spread detection in Start `app-wiring`, and `sync`'s stale-seed warning (rows 62, 67).
     // 4710 -> 4726: literal-aware provider tags, sticky spread match, and the split stale-seed warning (rows 62, 67).
-    { label: 'CLI non-test lines (src/cli/**)', value: cliNonTestLines(), ceiling: 4726 },
+    // 4726 -> 4836: #261's `router-wiring` module and `source-text` helper (rows 71, 72, 74) — comments restored rather than condensed.
+    { label: 'CLI non-test lines (src/cli/**)', value: cliNonTestLines(), ceiling: 4836 },
     ...(await providerOnlyRows(providerOnlyDist)),
   ]
 }

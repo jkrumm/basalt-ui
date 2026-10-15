@@ -63,6 +63,18 @@ describe('isCodeRoutedApp', () => {
     expect(isCodeRoutedApp(dir, '')).toBe(false)
   })
 
+  it('follows a dynamic import, including inside lazy()', () => {
+    write('src/main.tsx', "const Router = lazy(() => import('./router'))\n")
+    write('src/router.ts', CREATE)
+    expect(isCodeRoutedApp(dir, '')).toBe(true)
+  })
+
+  it('does not follow an import that is commented out', () => {
+    write('src/main.tsx', "// import './router'\n/* import('./router') */\n")
+    write('src/router.ts', CREATE)
+    expect(isCodeRoutedApp(dir, '')).toBe(false)
+  })
+
   it('finds createBasaltRouter in a module the entry imports', () => {
     write('src/main.tsx', "import './router'\n")
     write('src/router.ts', CREATE)
@@ -108,14 +120,15 @@ describe('routeTreeDirs', () => {
 
 describe('routerSeedSkip', () => {
   it('is start whenever Start applies, even for an app that also looks code-routed', () => {
+    write('package.json', JSON.stringify({ dependencies: { '@tanstack/react-start': '*' } }))
     write('src/main.tsx', CREATE)
-    expect(routerSeedSkip(dir, '', true)).toBe('start')
+    expect(routerSeedSkip(dir, '')).toBe('start')
   })
 
   it('is code-routed for a code-routed app and null for a file-routed one', () => {
     write('src/main.tsx', CREATE)
-    expect(routerSeedSkip(dir, '', false)).toBe('code-routed')
+    expect(routerSeedSkip(dir, '')).toBe('code-routed')
     write('src/routeTree.gen.ts', 'export const routeTree = {}\n')
-    expect(routerSeedSkip(dir, '', false)).toBeNull()
+    expect(routerSeedSkip(dir, '')).toBeNull()
   })
 })

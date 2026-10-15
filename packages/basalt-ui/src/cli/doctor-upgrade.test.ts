@@ -853,42 +853,23 @@ describe('doctor — app-wiring', () => {
     expect(appWiringCheck(dir)).toBeNull()
   })
 
-  it('accepts a code-defined route tree, still fails an app with no router wiring', () => {
+  it('accepts a code-routed app (router in a lazily imported module); fails an entry importing an ungenerated tree', () => {
     write('package.json', JSON.stringify({ name: 'fixture' }))
     write('index.html', '<script type="module" src="/src/main.tsx"></script>')
     write('vite.config.ts', 'export default { plugins: [react()] }\n')
     write(
       'src/main.tsx',
-      "import { BasaltProvider } from 'basalt-ui'\nimport { router } from './router'\nrouter\n",
+      "import { BasaltProvider } from 'basalt-ui'\nconst R = lazy(() => import('./router'))\n<BasaltProvider />\n",
     )
     write('src/router.tsx', 'export const router = createBasaltRouter({ routeTree })\n')
-    expect(text(appWiringCheck(dir))).toContain('no vite.config calls the TanStack router plugin')
-    write(
-      'src/router.tsx',
-      "import { tree } from './tree'\nexport const router = createBasaltRouter({ routeTree: tree })\n",
-    )
-    write(
-      'src/tree.ts',
-      'const root = createRootRouteWithContext<Ctx>()({})\nexport const tree = root\n',
-    )
     expect(appWiringCheck(dir)).toBeNull()
-  })
-
-  it('a createRootRoute import or bare mention is not a code-defined tree; a (generic) call is', () => {
-    write('package.json', JSON.stringify({ name: 'fixture' }))
-    write('index.html', '<script type="module" src="/src/main.tsx"></script>')
-    write('vite.config.ts', 'export default { plugins: [react()] }\n')
     write(
       'src/main.tsx',
-      "import { BasaltProvider, createBasaltRouter } from 'basalt-ui'\nimport { tree } from './tree'\nconst router = createBasaltRouter({ routeTree: tree })\n<BasaltProvider router={router} />\n",
+      "import { BasaltProvider, createBasaltRouter } from 'basalt-ui'\nimport { routeTree } from './routeTree.gen'\ncreateBasaltRouter({ routeTree })\n<BasaltProvider />\n",
     )
-    write(
-      'src/tree.ts',
-      "import { createRootRouteWithContext } from '@tanstack/react-router'\nexport const tree = {}\n",
-    )
-    expect(text(appWiringCheck(dir))).toContain('no module the entry imports calls createRootRoute')
-    write('src/tree.ts', 'export const tree = createRootRouteWithContext<Ctx>()({})\n')
-    expect(appWiringCheck(dir)).toBeNull()
+    const problem = text(appWiringCheck(dir))
+    expect(problem).toContain('imports a generated route tree')
+    expect(problem).toContain('or define the tree in code')
   })
 
   it('an entry that only imports createBasaltRouter does not count as creating the router', () => {
@@ -999,7 +980,8 @@ describe('doctor — app-wiring', () => {
     expect(text(appWiringCheck(dir))).toContain('does not use createBasaltRouter')
   })
 
-  const ENTRY = 'createBasaltRouter(); <BasaltProvider router={router} />\n'
+  const ENTRY =
+    "import { routeTree } from './routeTree.gen'\ncreateBasaltRouter({ routeTree }); <BasaltProvider router={router} />\n"
 
   describe('router plugin detection', () => {
     const vite = (body: string): void => write('vite.config.ts', body)
@@ -1107,6 +1089,14 @@ describe('doctor — dropped-subpaths for a tokens-only consumer', () => {
     expect(log).toContain('/ app-wiring /')
     expect(existsSync(join(dir, 'src/main.tsx'))).toBe(false)
     expect(log).not.toMatch(/\.[jt]sx?:\d/)
+  })
+
+  it('fails on a JS import of a dropped subpath too, naming file and line', () => {
+    tokensOnly()
+    write('src/app.ts', "const x = 1\nimport { q } from 'basalt-ui/query'\n")
+    const { code, log } = capture(() => doctor(dir))
+    expect(code).toBe(1)
+    expect(log).toContain('dropped-subpaths: src/app.ts:2 imports basalt-ui/query')
   })
 
   it('still passes a clean tokens-only consumer', () => {

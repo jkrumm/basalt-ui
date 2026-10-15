@@ -12,7 +12,6 @@ import {
   diffSummary,
   findBasaltInstall,
   inspectLefthookGate,
-  isStartApp,
   isStringArray,
   managedFiles,
   normalizeForLedger,
@@ -31,7 +30,7 @@ import {
   reportPrune,
   resolvePlacement,
   resolveProjectDir,
-  routerSeedDests,
+  routerSeedPlan,
   rootsNotices,
   sha256,
   shippedAssetPath,
@@ -40,7 +39,6 @@ import {
   writeFileEnsuringDir,
   writeUnit,
 } from './index'
-import { routerSeedSkip } from './router-wiring'
 
 /** The oxlint plugins the shipped preset switches on — read from the preset, never restated. */
 export function readOxlintPresetPlugins(pkgRoot: string): string[] {
@@ -78,9 +76,14 @@ export function findManifestAbove(dir: string): string | null {
 }
 
 /**
- * Reconcile managed files with the shipped versions via a sha256 three-way compare. `--check` makes
- * NO writes and exits non-zero on drift (a CI freshness gate); `--force` overwrites drifted files.
- * REFUSES rather than scaffolding when the project has no manifest: `sync` refreshes, `init` scaffolds.
+ * Reconcile managed files with the shipped versions via a sha256 three-way compare.
+ *
+ * - `--check` makes NO writes; exits non-zero if any managed file is out-of-date or locally drifted
+ *   (a CI freshness gate), exit 0 when all current.
+ * - `--force` overwrites locally-drifted files instead of skipping them.
+ *
+ * Runs against `resolveProjectDir(cwd)` and REFUSES rather than scaffolding when that project has no
+ * manifest: `sync` refreshes, `init` scaffolds.
  */
 export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd()): number {
   const syncFlags = opts.flags ?? []
@@ -110,10 +113,8 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
   if (!existsSync(resolve(cwd, MANIFEST_PATH))) {
     const elsewhere = findManifestAbove(cwd)
     const refused = resolvePlacement(cwd)
-    const skippedSeeds = routerSeedSkip(cwd, refused.appRel, isStartApp(cwd, refused.appRel))
-      ? routerSeedDests(refused.appRel)
-      : []
-    const wouldWrite = managedFiles(refused).filter((f) => !skippedSeeds.includes(f.dest)).length
+    const { skipped: skippedSeeds } = routerSeedPlan(cwd, refused.appRel)
+    const wouldWrite = managedFiles(refused).filter((f) => !skippedSeeds.has(f.dest)).length
     console.error(
       `✖ basalt-ui sync: no ${MANIFEST_PATH} at ${cwd} — refusing to scaffold. ` +
         `\`sync\` refreshes an EXISTING basalt install; creating one is \`basalt-ui init\`'s ` +
@@ -132,8 +133,7 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
   const ctx = renderContext(cwd)
   const manifest = readManifest(cwd)
   const placement = resolvePlacement(cwd)
-  const seedSkip = routerSeedSkip(cwd, placement.appRel, isStartApp(cwd, placement.appRel))
-  const skipped = new Set(seedSkip ? routerSeedDests(placement.appRel) : [])
+  const { skip: seedSkip, skipped } = routerSeedPlan(cwd, placement.appRel)
   const files = managedFiles(placement).filter((f) => !skipped.has(f.dest))
 
   let updated = 0
@@ -203,20 +203,22 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
   })
   staleForCheck += pruned.removed.length + pruned.drifted.length
 
-  // Placement notices — informational, never affecting the exit code, and PERMANENT: `--check`
-  // hides them behind `--verbose` (it sits in consumers' CI chains, where three unchanging
-  // "skipped" paragraphs per run are noise indistinguishable from drift) but still prints the COUNT.
-  // Start added AFTER a pre-Start init: the old seeds are the consumer's now — left untouched, named.
-  const tracked = (d: string): boolean => manifest.files[d] !== undefined
-  const startSeeds = seedSkip === 'start' ? [...skipped] : []
-  const codeRoutedSeeds = seedSkip === 'code-routed' ? [...skipped].filter(tracked) : []
-  const stale = startSeeds.filter((d) => tracked(d) && existsSync(resolve(cwd, d)))
+  // A code-routed app takes no router seeds: their manifest entries go; any file stays the consumer's.
+  const isTracked = (d: string): boolean => manifest.files[d] !== undefined
+  const codeRoutedSeeds = seedSkip === 'code-routed' ? [...skipped].filter(isTracked) : []
   if (codeRoutedSeeds.length > 0 && !opts.check) {
     for (const d of codeRoutedSeeds) delete manifest.files[d]
     console.error(
       `⚠ basalt-ui sync: code-routed app — dropped ${codeRoutedSeeds.join(', ')} from the manifest (any file is yours).`,
     )
   }
+
+  // Placement notices — informational, never affecting the exit code, and PERMANENT: `--check`
+  // hides them behind `--verbose` (it sits in consumers' CI chains, where three unchanging
+  // "skipped" paragraphs per run are noise indistinguishable from drift) but still prints the COUNT.
+  // Start added AFTER a pre-Start init: the old seeds are the consumer's now — left untouched, named.
+  const startSkippedSeeds = seedSkip === 'start' ? [...skipped] : []
+  const stale = startSkippedSeeds.filter((d) => isTracked(d) && existsSync(resolve(cwd, d)))
   const mounting = stale.filter((d) => !d.endsWith('nav.tsx'))
   const inert = stale.filter((d) => d.endsWith('nav.tsx'))
   const embedded =

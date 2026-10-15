@@ -19,9 +19,12 @@ function flagValue(flags: string[], name: string): string | undefined {
 }
 
 /**
- * The generated-file header: the guard's canonical marker line, then the version + invocation that
- * produced the file. Both lines are load-bearing: `checkSource` only exempts a stylesheet whose
- * line 1 is the marker verbatim AND whose line 2 parses as this provenance line.
+ * The generated-file header: the canonical marker line (imported from the guard, which owns it),
+ * then the version + invocation that produced the file.
+ *
+ * Both lines are load-bearing, not decoration — `checkSource` only exempts a stylesheet whose line
+ * 1 is the marker verbatim AND whose line 2 parses as this provenance line. Reword either half and
+ * basalt starts reporting its own output again (116 findings in rollhook's token sheet).
  */
 function generatedHeader(version: string, command: string, flags: string[]): string {
   const shown = flags.filter((f) => f !== '--check')
@@ -199,11 +202,18 @@ function readShippedFontDecls(pkgRoot: string): { name: string; value: string }[
 }
 
 /**
- * fonts:css — emit the shipped `--basalt-font-*` stacks as plain CSS: the typeface half of the
- * framework-free route (`tokens.css` emits no font vars, and `styles.css` is not imported there).
- * The declarations are READ from the shipped stylesheet, never restated, so this command and
- * `basalt-ui/styles.css` cannot name different typefaces. Without the `@fontsource-variable/*`
- * packages the stacks fall through to their system fallbacks, the intended framework-free behaviour.
+ * fonts:css — emit the shipped `--basalt-font-*` stacks as plain CSS.
+ *
+ * The typeface half of the framework-free route, which had no supported path at all: `tokens.css`
+ * emits no font vars, `styles.css` is the one place the defaults live and a framework-free consumer
+ * is told not to import it, and `buildFontsCss` returns `''` unless the caller already knows the
+ * stacks. The one non-Mantine consumer lost its font identity entirely and hardcoded the stacks —
+ * which the theme guard then flagged as `raw-font-family`.
+ *
+ * The declarations are READ from the shipped stylesheet rather than restated here, so this command
+ * and `basalt-ui/styles.css` can never name different typefaces. Note the fonts themselves are
+ * `@fontsource-variable/*` packages: without them the stacks fall through to their own system
+ * fallbacks, which is the intended framework-free behaviour.
  */
 export function fontsCss(flags: string[], cwd: string = process.cwd()): number {
   const pkgRoot = packageRoot()
