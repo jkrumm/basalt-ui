@@ -1,3 +1,18 @@
+# [2.11.0](https://github.com/jkrumm/basalt-ui/compare/v2.10.0...v2.11.0) (2026-10-15)
+
+
+### Bug Fixes
+
+* keep stated heatmap cells out of the domain and the state legend stable ([4f95cc7](https://github.com/jkrumm/basalt-ui/commit/4f95cc74ed7695b256c82644708fc9cc32173778))
+* never close a sparkline gap when pooling, and harden the x domain ([c92e37b](https://github.com/jkrumm/basalt-ui/commit/c92e37b0b1372e8d7e8f615e84e54664fb8f82a9))
+
+
+### Features
+
+* align charts on a shared x domain ([b0e037a](https://github.com/jkrumm/basalt-ui/commit/b0e037a10b8d8c79dbb9f9fa86fe90c683e50daf))
+* give chart marks the plot area, the rows and per-datum cursor dots ([fb2b68b](https://github.com/jkrumm/basalt-ui/commit/fb2b68b2b68820f763546a2cb2f032f433079213))
+* report the measured plot area from one builder for every chart kind ([ca26afe](https://github.com/jkrumm/basalt-ui/commit/ca26afea1837ed650e790388793f08e0ffc544d3))
+
 # [2.10.0](https://github.com/jkrumm/basalt-ui/compare/v2.9.1...v2.10.0) (2026-10-15)
 
 
