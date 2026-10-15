@@ -53,6 +53,10 @@
  * <NumberFilter field={lines.field.minDuration} label="Min duration" step={30} />
  *
  * @example
+ * // Naming the unset state: labels are keyed by value, at definition, like every option label.
+ * // store = createSearchStore({ … }).labels({ minDuration: { 0: 'Any' } })  → the pill reads "Any"
+ *
+ * @example
  * // "No filter" is the fallback, not a row: `clearable` writes it back, and the pill reads the
  * // filter's name while no preset is picked.
  * // difficulty: field.number({ fallback: 0, min: 0, max: 5, int: true })
@@ -276,7 +280,8 @@ function NumberStepper({
 
   return (
     <FilterPill
-      label={String(value)}
+      // A value `.labels()` names (`{ 0: 'Any' }`) reads as that name — the unset state's wording.
+      label={field.options.find((option) => option.value === String(value))?.label ?? String(value)}
       numeric
       active={!isDefault}
       {...(icon !== undefined && { icon })}

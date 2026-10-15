@@ -929,6 +929,26 @@ describe('NumberFilter — the stepper form', () => {
     })
   })
 
+  test('a value named by .labels() prints its name; any other prints the number', async () => {
+    const named = createSearchStore({
+      key: 'c-number-named',
+      fields: { minDuration: field.number({ fallback: 0, min: 0, max: 600 }) },
+    }).labels({ minDuration: { '0': 'Any' } })
+    const router = await mountPage({
+      validateSearch: named.validateSearch,
+      entry: '/dashboard',
+      Page: () => <NumberFilter field={named.field.minDuration} label="Min duration" />,
+    })
+
+    await openPill('Any')
+    fireEvent.change(box(), { target: { value: '45' } })
+    fireEvent.blur(box())
+    await waitFor(() => {
+      expect(search(router)['minDuration']).toBe(45)
+    })
+    expect(screen.getByRole('button', { name: '45' })).toBeTruthy()
+  })
+
   test('Enter commits without leaving the field', async () => {
     const router = await mountPage({
       validateSearch: store.validateSearch,

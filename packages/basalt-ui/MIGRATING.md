@@ -1066,6 +1066,8 @@ The `basalt-ui/router-tanstack` subpath is **removed** in 2.x, not moved: an imp
 
 `llms.txt` gains a `## Types` glossary of the exported literal unions its signatures name (`CalloutKind`, …), lists the full `VX` token tree, and prints the values of literal-only constant maps (`CONTAINER_KEYS`). Docs output only; nothing to migrate.
 
+`NumberFilter`'s stepper pill prints a value `.labels()` names — `createSearchStore(…).labels({ minDuration: { 0: 'Any' } })` reads "Any" at the default (a number field's `options` now lists exactly the labelled values); unlabelled, it prints the number as before — nothing to migrate.
+
 ## 2.8.1 — boot paint follows the stored scheme
 
 `basaltAppPlugin` now injects a tiny inline head script that reads Mantine's stored color scheme
