@@ -4,7 +4,7 @@
  */
 import { describe, expect, spyOn, test } from 'bun:test'
 import type { StoredChartSpec } from '@tanstack/charts/types/core'
-import { compileCartesian, dateTicks, utcAxisDate, utcHeaderDate } from './compile'
+import { bucketTicks, compileCartesian, dateTicks, utcAxisDate, utcHeaderDate } from './compile'
 import { chartCursor, chartCursorView, hasCursorGroup, hasCursorView } from './cursor'
 import { chartCurve } from './curves'
 import { resolveYDomain, xScaleFor, xZoneFractions } from './scales'
@@ -145,6 +145,7 @@ describe('container-class ladder', () => {
   })
   const at = (width: number, height = 240): StoredChartSpec =>
     def.chart({ width, height, defaultTheme: {} as never })
+  const tick = (index: number, value: Date) => ({ index, value, position: 0, bandwidth: 0 })
   const labelTick = (spec: StoredChartSpec, scale: 'x' | 'y') => {
     const axis = spec.scales[scale]?.axis
     if (!axis || typeof axis !== 'object' || typeof axis.tickLabels !== 'object')
@@ -168,9 +169,21 @@ describe('container-class ladder', () => {
     for (const height of [180, 280]) {
       const spec = at(360, height)
       expect(labelTick(spec, 'y').anchor).toBeUndefined()
-      expect(labelTick(spec, 'x').anchor).toBeUndefined()
       expect(spec.margin).toBeUndefined()
       expect(tickFont(spec, 'y')).toBe(10)
+      // The x anchor only starts a label on the plot origin; every other tick keeps the default.
+      const anchor = labelTick(spec, 'x').anchor
+      if (typeof anchor !== 'function') throw new Error('x anchor is not a callback')
+      expect(anchor(tick(0, new Date(Date.UTC(2026, 0, 2))))).toBeUndefined()
+      expect(anchor(tick(1, new Date(Date.UTC(2026, 0, 3))))).toBeUndefined()
+    }
+  })
+  test('an x tick on the plot origin starts there at every class (ledger row 110)', () => {
+    const origin = rows[0]?.t
+    for (const width of [360, 640]) {
+      const anchor = labelTick(at(width), 'x').anchor
+      if (typeof anchor !== 'function' || origin === undefined) throw new Error('no x anchor')
+      expect(anchor(tick(0, origin))).toBe('start')
     }
   })
   test('an unmeasured height (0) never flips a compact chart inside', () => {
@@ -436,5 +449,31 @@ describe('string x follower', () => {
     expect(view.getState()).toBe(state)
     off()
     chartCursor('str').setState(null)
+  })
+})
+
+describe('bucketTicks (ledger row 109)', () => {
+  const minutes = (n: number, from = 13): Date[] =>
+    Array.from({ length: n }, (_, i) => new Date(Date.UTC(2026, 0, 1, 18, from + i)))
+  const gapsOf = (ticks: Date[]): number[] =>
+    ticks.slice(1).map((t, i) => t.getTime() - (ticks[i] as Date).getTime())
+
+  test('a 60-minute range labels round, evenly spaced buckets', () => {
+    const ticks = bucketTicks(minutes(60), 5)
+    expect(ticks.length).toBeGreaterThan(1)
+    expect(ticks.length).toBeLessThanOrEqual(7)
+    expect(new Set(gapsOf(ticks)).size).toBe(1)
+    expect(ticks.every((t) => t.getUTCMinutes() % 5 === 0)).toBe(true)
+  })
+
+  test('a bucket is used once and a round instant with no bucket near it is dropped', () => {
+    const sparse = [...minutes(10), ...minutes(10, 50)]
+    const ticks = bucketTicks(sparse, 6)
+    expect(new Set(ticks.map(Number)).size).toBe(ticks.length)
+    for (const t of ticks) expect(sparse.some((v) => +v === +t)).toBe(true)
+  })
+
+  test('a single bucket comes back as itself', () => {
+    expect(bucketTicks(minutes(1), 5)).toEqual(minutes(1))
   })
 })

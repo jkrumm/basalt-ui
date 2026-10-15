@@ -5,7 +5,8 @@
  * reference lines, `y2`, legend, cursor and tooltip are the rung's.
  *
  * At the wide class with ≤ 3 plotted lines and no `y2`, each line also carries an end label; the
- * legend still names every series (and still toggles them).
+ * legend still names every series (and still toggles them). A label that would not fit between its
+ * last point and the plot's right edge ends at the point instead, above it.
  */
 import { areaY } from '@tanstack/charts/area'
 import { differenceY } from '@tanstack/charts/difference'
@@ -17,7 +18,7 @@ import { VX } from '../tokens'
 import { CartesianRung } from './CartesianChart'
 import { areaGradientId } from './compile'
 import { chartCurve } from './curves'
-import { drawnRows, lineMark, markersOf, yScaleOf } from './marks'
+import { drawnRows, lineMark, loneDots, markersOf, yScaleOf } from './marks'
 import { rowX } from './types'
 import type {
   CartesianChartProps,
@@ -33,6 +34,10 @@ const MAX_END_LABELS = 3
 /** Below this vertical gap two end labels would collide; then none is drawn. */
 const END_LABEL_MIN_GAP = 13
 const END_LABEL_DX = 6
+/** An average glyph's advance as a share of the font size, for the room check. */
+const END_LABEL_GLYPH_EM = 0.62
+/** A label flipped inside the plot sits this far above its point. */
+const END_LABEL_FLIP_DY = -9
 
 export type LinesProps<T, X extends ChartX = ChartX> = Omit<CartesianChartProps<T, X>, 'marks'> & {
   /**
@@ -68,8 +73,16 @@ function endLabels<T, X extends ChartX>(
     )
   )
     return []
-  return last.map(({ s, row }) =>
-    decorative(
+  // The data's x extent, from every row (a null value still has its x): where the last point sits.
+  const xs = lines.flatMap((s) => plot.rows(s.key).map((r) => +r.x))
+  const [lo, hi] = [Math.min(...xs), Math.max(...xs)]
+  return last.map(({ s, row }) => {
+    // The room right of the point, against the label's estimated width. A string x (no extent) or a
+    // point on the edge leaves none: the label then ends at the point and sits above it, never clipped.
+    const fraction = hi > lo ? (+row.x - lo) / (hi - lo) : 1
+    const room = (Number.isFinite(fraction) ? 1 - fraction : 0) * plot.plotWidth
+    const fits = room >= s.label.length * VX.text.micro * END_LABEL_GLYPH_EM + END_LABEL_DX
+    return decorative(
       text([row], {
         id: `${s.key}-end-label`,
         x: rowX,
@@ -77,11 +90,12 @@ function endLabels<T, X extends ChartX>(
         text: () => s.label,
         fill: s.color,
         fontSize: VX.text.micro,
-        anchor: 'start',
-        dx: END_LABEL_DX,
+        anchor: fits ? 'start' : 'end',
+        dx: fits ? END_LABEL_DX : -END_LABEL_DX,
+        ...(!fits && { dy: END_LABEL_FLIP_DY }),
       }),
-    ),
-  )
+    )
+  })
 }
 
 export function Lines<T, X extends ChartX = ChartX>(props: LinesProps<T, X>): ReactElement {
@@ -135,6 +149,7 @@ export function Lines<T, X extends ChartX = ChartX>(props: LinesProps<T, X>): Re
       }
       for (const s of plot.visible) {
         out.push(lineMark(plot, s))
+        out.push(...loneDots(plot, s))
         out.push(...markersOf(s, plot.rows(s.key), yScaleOf(plot, s)))
       }
       out.push(

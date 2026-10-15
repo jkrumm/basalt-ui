@@ -67,9 +67,11 @@ export type ChartSeries<T> = {
    * dot follows the datum. A series drawn from `plot.rows` already has one.
    */
   cursorValue?: ((d: T) => number | null) | undefined
-  /** A marker at a point (a PR star, a status dot); `null` for none. On a `cursorValue` series
-   * only `color` applies, to the cursor dot, and each distinct color is one extra mark: keep colors
-   * a small categorical set (statuses, buckets), never a continuous scale. */
+  /** A marker at a point (a PR star, a status dot); `null` for none. Always-on markers are `Lines`'
+   * alone. On a `CartesianChart` with consumer `marks` nothing draws them: only the CURSOR dot of a
+   * `cursorValue` series reads `getMarker`, and only its `color` applies, so draw a persistent dot
+   * in `marks` yourself. Each distinct color is one extra mark: keep colors a small categorical
+   * set (statuses, buckets), never a continuous scale. */
   getMarker?:
     | ((d: T) => {
         color?: string | undefined

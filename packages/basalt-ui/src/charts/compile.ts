@@ -280,11 +280,39 @@ export function yGuide<T>(opts: {
   }
 }
 
+/**
+ * Ticks of a bucketed Date axis: the time scale's own round instants, each snapped to the bucket it
+ * falls in. Labelling every bucket and letting the engine thin the collisions leaves an uneven,
+ * near-touching subset ("18:13 18:17 18:21"); round instants are evenly spaced whenever the buckets
+ * are. A bucket is used once, and a round instant with no bucket within a step of it is dropped.
+ */
+export function bucketTicks(values: readonly Date[], count: number): Date[] {
+  const times = values.map((v) => v.getTime()).toSorted((a, b) => a - b)
+  const [first, last] = [times[0], times.at(-1)]
+  if (first === undefined || last === undefined || first === last) return [...values]
+  const gaps = times.slice(1).map((t, i) => t - (times[i] as number))
+  const step = gaps.toSorted((a, b) => a - b)[gaps.length >> 1] as number
+  const picked = new Set<number>()
+  for (const tick of scaleUtc()
+    .domain([new Date(first), new Date(last)])
+    .ticks(count)) {
+    const t = tick.getTime()
+    const near = times.reduce((best, c) => (Math.abs(c - t) < Math.abs(best - t) ? c : best))
+    if (Math.abs(near - t) < step) picked.add(near)
+  }
+  return picked.size >= 2 ? [...picked].map((t) => new Date(t)) : strideDates(values, count)
+}
+
+const strideDates = (values: readonly Date[], count: number): Date[] =>
+  values.filter((_, i) => i % Math.max(1, Math.ceil(values.length / count)) === 0)
+
 function xTickPolicy<X extends ChartX>(
   model: XScaleModel<X>,
   xTicks: number | readonly X[],
 ): { values: readonly ChartValue[] } | { count: number } {
   if (typeof xTicks === 'object') return { values: xTicks }
+  if (model.band && model.kind === 'date' && typeof xTicks === 'number')
+    return { values: bucketTicks(model.values as readonly Date[], xTicks) }
   if (model.band || model.kind === 'string') return { values: model.values }
   if (model.kind === 'date' && model.extent)
     return {
@@ -315,6 +343,8 @@ export function xGuide<X extends ChartX>(opts: {
   const ladder = LADDER[cls]
   const inside = labelsInside(cls, height)
   const ticks = xTickPolicy(model, xTicks ?? ladder.xTicks)
+  // A continuous scale's left edge; a band scale pads its first slot, so no tick sits on it.
+  const originX = model.band ? Number.NaN : (model.extent?.[0] ?? Number.NaN)
   return {
     axis: {
       line: AXIS_LINE,
@@ -323,10 +353,11 @@ export function xGuide<X extends ChartX>(opts: {
         fontSize: ladder.font,
         opacity: 1,
         thin: true,
-        // A locked-zero left margin (inside labels) must not clip the first label.
-        ...(inside && {
-          anchor: ({ index }: { index: number }) => (index === 0 ? ('start' as const) : undefined),
-        }),
+        // A locked-zero left margin (inside labels) must not clip the first label, and a label on
+        // the plot origin starts there: centred, half of it would sit under the gutter's bottom y
+        // label (outside labels) or off the plot's left edge.
+        anchor: ({ index, value }: { index: number; value: ChartValue }) =>
+          (inside && index === 0) || +value === originX ? ('start' as const) : undefined,
       },
     },
   }
