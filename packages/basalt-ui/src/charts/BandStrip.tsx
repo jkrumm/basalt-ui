@@ -2,7 +2,8 @@
  * `BandStrip` — a 1-D state strip: one gap-free band per slot over the shared x axis, no y
  * dimension (`docs/V2-SPEC.md` § 9.3). Each band is in one of the `states`, tinted by the state's
  * color (or an intensity `fill` of the datum's own), optionally carrying an inset `marker`.
- * Absence is a state like any other: color it `VX.neutral` for a flat, unhatched fill.
+ * Absence is a state like any other: color it `VX.neutral` for a flat, unhatched fill. Name it
+ * with `absentState` and a folded band can carry an `absentFraction` share of it.
  *
  * The rung supplies the legend, cursor, crosshair and tooltip. The visible bands are decorative
  * rects on the rung's `[0, 1]` zone scale (a band scale pads its slots, a strip must not), and an
@@ -49,6 +50,12 @@ export type BandSpan = {
   /** Overrides the state's fill — an intensity ramp WITHIN a state. `alpha(VX.*, …)`, never a hex. */
   fill?: string | undefined
   /**
+   * 0..1 of the band's width that no source sample covers, painted from its right edge in the
+   * `absentState` color. A fold owes the reader this: a band whose merge reports the one measured
+   * member of three would otherwise read as fully measured. Needs `absentState` on the strip.
+   */
+  absentFraction?: number | undefined
+  /**
    * A shorter, inset bar over the band, for a fact that must not be read off the fill ramp (a
    * renegotiation, a restart). Its color is a `states` entry, so the legend names it.
    */
@@ -82,6 +89,13 @@ export type BandStripProps<T, X extends ChartX = ChartX> = Omit<
   /** Which state, fill and marker each datum has. Memoize it: a new function recompiles the chart. */
   getBand: (d: T) => BandSpan
   fold?: BandFold<T> | undefined
+  /**
+   * The `states` key that means "not measured". A band in it is flat-filled like any state; a
+   * band in another state paints its `absentFraction` share in this state's color, and the
+   * tooltip adds this state's row. Absent stays a legended, flat `VX.neutral` state, never a
+   * hatch: it reads as "no data" by hue and by sitting at the band's right edge, not as zero.
+   */
+  absentState?: string | undefined
 }
 
 const DEFAULT_MIN_BAND_PX = 3
@@ -132,6 +146,7 @@ type LayoutInput<T> = {
   data: readonly T[]
   getBand: (d: T) => BandSpan
   fold: BandFold<T> | undefined
+  absentState: string | undefined
   states: ReadonlyMap<string, BandStripSeries<T>>
   /** State keys the legend has not toggled off. */
   visible: ReadonlySet<string>
@@ -140,6 +155,10 @@ type LayoutInput<T> = {
   /** Legend-hover dimming for a state key. */
   emphasis: (key: string) => number
 }
+
+/** NaN and out-of-range fractions (a 0/0 on an un-folded slot) must not reach an SVG attribute. */
+const clampFraction = (f: number | undefined): number =>
+  f === undefined || !Number.isFinite(f) ? 0 : Math.min(1, Math.max(0, f))
 
 const unknownState = (prop: string, got: string, known: Iterable<string>): Error =>
   new Error(oneOf('BandStrip', prop, [...known], got))
@@ -154,7 +173,10 @@ function layoutBands<T>(input: LayoutInput<T>): {
   markers: Layer[]
   hits: Hit<T>[]
 } {
-  const { data, getBand, fold, states, visible } = input
+  const { data, getBand, fold, states, visible, absentState } = input
+  const absentStyle = absentState === undefined ? undefined : states.get(absentState)
+  if (absentState !== undefined && !absentStyle && process.env.NODE_ENV !== 'production')
+    throw unknownState('BandStrip.absentState', absentState, states.keys())
   const cap = Math.floor(input.width / (fold?.minBandPx ?? DEFAULT_MIN_BAND_PX))
   const groups: Group<T>[] =
     fold && data.length > cap
@@ -174,14 +196,27 @@ function layoutBands<T>(input: LayoutInput<T>): {
     if (state && !visible.has(span.state)) continue
     const cell = { f0: g.start / data.length, f1: (g.start + g.items.length) / data.length }
     const opacity = input.emphasis(span.state)
-    paintInto(
-      base,
-      span.fill ?? (state ? alpha(state.color, state.fillOpacity ?? 1) : UNKNOWN_FILL),
-      opacity,
-      { ...cell, y0: 0, y1: 1 },
-    )
+    // A band already in the absent state is absent in whole; the fraction only qualifies others.
+    const absent =
+      absentStyle && span.state !== absentState ? clampFraction(span.absentFraction) : 0
+    const split = cell.f1 - (cell.f1 - cell.f0) * absent
+    if (absent < 1)
+      paintInto(
+        base,
+        span.fill ?? (state ? alpha(state.color, state.fillOpacity ?? 1) : UNKNOWN_FILL),
+        opacity,
+        { ...cell, f1: split, y0: 0, y1: 1 },
+      )
+    const absentShown = absent > 0 && absentStyle && visible.has(absentState as string)
+    if (absentShown)
+      paintInto(
+        base,
+        alpha(absentStyle.color, absentStyle.fillOpacity ?? 1),
+        input.emphasis(absentState as string),
+        { f0: split, f1: cell.f1, y0: 0, y1: 1 },
+      )
 
-    if (span.marker) {
+    if (span.marker && absent < 1) {
       const markerKey = span.marker.state ?? span.state
       const markerState = states.get(markerKey)
       if (!markerState && process.env.NODE_ENV !== 'production')
@@ -190,19 +225,33 @@ function layoutBands<T>(input: LayoutInput<T>): {
         const inset = (span.marker.inset ?? DEFAULT_MARKER_INSET) / Math.max(input.height, 1)
         paintInto(markers, markerState?.color ?? UNKNOWN_FILL, input.emphasis(markerKey), {
           ...cell,
+          f1: split,
           y0: inset,
           y1: 1 - inset,
         })
       }
     }
     // An unknown state (production only) answers no pointer: a tooltip row needs its series.
-    if (state) for (const source of g.items) hits.push({ source, state: span.state, datum })
+    if (state)
+      for (const source of g.items) {
+        hits.push({ source, state: span.state, datum })
+        if (absent > 0 && absentState !== undefined)
+          hits.push({ source, state: absentState, datum })
+      }
   }
   return { base: [...base.values()], markers: [...markers.values()], hits }
 }
 
 export function BandStrip<T, X extends ChartX = ChartX>(props: BandStripProps<T, X>): ReactElement {
-  const { states, getBand, fold, cursorResolution = 'leading', tooltip, ...rest } = props
+  const {
+    states,
+    getBand,
+    fold,
+    absentState,
+    cursorResolution = 'leading',
+    tooltip,
+    ...rest
+  } = props
   const { data, x } = rest
 
   const series = useMemo<ChartSeries<T>[]>(
@@ -215,10 +264,14 @@ export function BandStrip<T, X extends ChartX = ChartX>(props: BandStripProps<T,
         ...(s.tooltip !== undefined && { tooltip: s.tooltip }),
         ...(s.legend !== undefined && { legend: s.legend }),
         ...(s.note !== undefined && { note: s.note }),
-        getValue: (d) => (getBand(d).state === s.key ? 1 : null),
+        getValue: (d) => {
+          const span = getBand(d)
+          if (span.state === s.key) return 1
+          return s.key === absentState && clampFraction(span.absentFraction) > 0 ? 1 : null
+        },
         formatValue: (_v, d) => (s.formatValue ? (s.formatValue(d) ?? NON_FINITE) : ''),
       })),
-    [states, getBand],
+    [states, getBand, absentState],
   )
 
   const marks = useCallback(
@@ -227,6 +280,7 @@ export function BandStrip<T, X extends ChartX = ChartX>(props: BandStripProps<T,
         data,
         getBand,
         fold,
+        absentState,
         states: new Map(states.map((s) => [s.key, s])),
         visible: new Set(plot.visible.map((s) => s.key)),
         width: plot.width,
@@ -256,11 +310,20 @@ export function BandStrip<T, X extends ChartX = ChartX>(props: BandStripProps<T,
           ),
         ),
         ...(rows.length > 0
-          ? [barY(rows, { id: 'hit', x: rowX, y1: 0, y2: 1, fill: 'transparent' })]
+          ? [
+              barY(rows, {
+                id: 'hit',
+                key: (r) => `${String(r.x)}|${r.series}`,
+                x: rowX,
+                y1: 0,
+                y2: 1,
+                fill: 'transparent',
+              }),
+            ]
           : []),
       ]
     },
-    [states, getBand, fold, data, x],
+    [states, getBand, fold, absentState, data, x],
   )
 
   return (

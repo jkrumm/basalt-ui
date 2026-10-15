@@ -133,6 +133,68 @@ describe('BandStrip', () => {
     expect(doc.querySelector('pattern')).toBeNull()
   })
 
+  describe('absentFraction', () => {
+    const NEUTRAL = 'color-mix(in srgb, var(--vx-neutral) 100%, transparent)'
+    const partial = (fraction: number | undefined) =>
+      props({
+        states: [up, none],
+        absentState: 'none',
+        data: slots(4),
+        getBand: (): BandSpan => ({ state: 'up', absentFraction: fraction }),
+      })
+
+    test('paints the unmeasured share flat neutral from the right edge, no hatch', () => {
+      const doc = html(<BandStrip {...partial(0.25)} />)
+      const rects = bands(doc)
+      const measured = rects.filter((r) => r.getAttribute('fill')?.includes('--vx-good'))
+      const absent = rects.filter((r) => r.getAttribute('fill') === NEUTRAL)
+      expect(measured.length).toBe(4)
+      expect(absent.length).toBe(4)
+      const m = measured[0] as Element
+      const a = absent[0] as Element
+      const w = (r: Element) => Number(r.getAttribute('width'))
+      expect(w(a) / (w(a) + w(m))).toBeCloseTo(0.25, 2)
+      expect(Number(a.getAttribute('x'))).toBeCloseTo(Number(m.getAttribute('x')) + w(m), 1)
+      expect(doc.querySelector('pattern')).toBeNull()
+    })
+
+    test('0, undefined and NaN paint no absent share; 1 paints only the absent fill', () => {
+      for (const f of [0, undefined, Number.NaN]) {
+        const rects = bands(html(<BandStrip {...partial(f)} />))
+        expect(rects.some((r) => r.getAttribute('fill') === NEUTRAL)).toBe(false)
+      }
+      const full = bands(html(<BandStrip {...partial(1)} />))
+      expect(full.every((r) => r.getAttribute('fill') === NEUTRAL)).toBe(true)
+    })
+
+    test('a band in the absent state ignores the fraction', () => {
+      const doc = html(
+        <BandStrip
+          {...props({
+            states: [up, none],
+            absentState: 'none',
+            data: slots(2, () => 'none'),
+            getBand: (): BandSpan => ({ state: 'none', absentFraction: 0.5 }),
+          })}
+        />,
+      )
+      expect(fills(doc)).toEqual(new Set([NEUTRAL]))
+    })
+
+    test('an unknown absentState throws in dev', () => {
+      expect(() => renderToString(<BandStrip {...partial(0.5)} absentState="typo" />)).toThrow(
+        'BandStrip.absentState',
+      )
+    })
+
+    test('the tooltip names "Not measured" beside the band state', async () => {
+      const el = await mount(<BandStrip {...partial(0.5)} />)
+      const text = await hover(el)
+      expect(text).toContain('Up')
+      expect(text).toContain('Not measured')
+    })
+  })
+
   test('a marker draws an inset bar in its state color over the band', () => {
     const doc = html(
       <BandStrip
