@@ -480,54 +480,78 @@ function routerCreatedInImports(cwd: string, entry: string): boolean {
   return false
 }
 
-/** The attribute text at brace depth 0 of every `<BasaltProvider …>` opening tag in `code`. */
-function providerTagAttrs(code: string): string[] {
+type ProviderTag = { attrs: string; spread: boolean }
+
+/**
+ * Every `<BasaltProvider …>` opening tag in a root route: its attribute text at JSX brace depth 0,
+ * with string literals skipped (so `className="a > b"` cannot end the tag, nor `"router="` count),
+ * and whether a `{...spread}` could carry a `router`.
+ */
+function providerTags(src: string): ProviderTag[] {
+  const { code, inLiteral } = tokenize(src)
   return [...code.matchAll(/<BasaltProvider\b/g)].map((m) => {
+    const tag: ProviderTag = { attrs: '', spread: false }
     let depth = 0
-    let attrs = ''
-    for (const ch of code.slice(m.index + m[0].length)) {
-      if (ch === '{') depth++
-      else if (ch === '}') depth--
+    for (let i = m.index + m[0].length; i < code.length; i++) {
+      const ch = code[i]!
+      if (inLiteral(i)) continue
+      if (ch === '{') {
+        if (depth++ === 0 && /^\{\s*\.\.\./.test(code.slice(i, i + 8))) tag.spread = true
+      } else if (ch === '}') depth--
       else if (ch === '>' && depth === 0) break
-      else if (depth === 0) attrs += ch
+      else if (depth === 0) tag.attrs += ch
     }
-    return attrs
+    return tag
   })
 }
 
+const carriesRouter = (tag: ProviderTag): boolean => /(^|\s)router\s*=/.test(tag.attrs)
+
 /**
- * A Start app owns its router and entry: the wiring is an embedded `<BasaltProvider>` (children, no
- * `router=`) in its root route. A `router=` there would mount a second router inside Start's.
+ * A Start app owns its router and entry: the wiring is an embedded `<BasaltProvider>` (no `router=`)
+ * in its root route component, around `<Outlet />`. ANY tag with `router=` mounts a second router
+ * inside Start's, so it fails even beside an embedded one.
  */
 function startWiring(cwd: string): { fail: string } | null {
   const root = routerSeedDest('', 'root')
   const text = readIfExists(resolve(cwd, root))
-  const tags = providerTagAttrs(tokenize(text ?? '').code)
-  const embedded = tags.some((attrs) => !/(^|\s)router\s*=/.test(attrs))
-  if (embedded) return null
+  const tags = providerTags(text ?? '')
+  const mounting = tags.some(carriesRouter)
+  if (!mounting && tags.length > 0) return null
   const problem =
     text === null
       ? 'does not exist'
-      : tags.length === 0
-        ? 'does not render <BasaltProvider>'
-        : 'passes router= to BasaltProvider, which mounts a second router inside Start'
+      : mounting
+        ? 'passes router= to BasaltProvider, which mounts a second router inside Start'
+        : 'does not render <BasaltProvider>'
   return {
-    fail: `app-wiring: ${root} ${problem} (TanStack Start app). Fix: render <BasaltProvider>{children}</BasaltProvider> in the root route.`,
+    fail: `app-wiring: ${root} ${problem} (TanStack Start app). Fix: render <BasaltProvider><Outlet /></BasaltProvider> in the root route component.`,
   }
 }
 
 /**
- * Embedded mode reads `context.queryClient` off the Start router. A heuristic, not a proof: warn
- * when `src/router.tsx` never mentions `queryClient`. Null when there is nothing to judge.
+ * Warnings for a Start app's embedded provider; heuristics, not proofs. A `{...spread}` on the tag
+ * could carry a `router`; `src/router.tsx` never mentioning `queryClient` means the embedded
+ * provider will find no `context.queryClient`. Empty when there is nothing to judge.
  */
-export function startQueryClientWarning(cwd: string): string | null {
-  if (!isStartApp(cwd, '')) return null
+export function startWiringWarnings(cwd: string): string[] {
+  if (!isStartApp(cwd, '')) return []
+  const out: string[] = []
+  const root = readIfExists(resolve(cwd, routerSeedDest('', 'root')))
+  if (root !== null && providerTags(root).some((t) => t.spread)) {
+    out.push(
+      'app-wiring: <BasaltProvider {...spread}> in the root route could pass router=, which mounts ' +
+        'a second router inside Start (heuristic: the spread is not followed).',
+    )
+  }
   const router = readIfExists(resolve(cwd, 'src/router.tsx'))
-  if (router === null || /queryClient/.test(router)) return null
-  return (
-    'app-wiring: src/router.tsx never mentions queryClient — embedded BasaltProvider needs ' +
-    'context.queryClient on the Start router (heuristic text check; ignore if you build it elsewhere).'
-  )
+  if (router !== null && !/queryClient/.test(router)) {
+    out.push(
+      'app-wiring: src/router.tsx never mentions queryClient — embedded BasaltProvider needs ' +
+        'context.queryClient on the Start router (heuristic text check; ignore if you build it elsewhere).',
+    )
+  }
+  return out
 }
 
 /**

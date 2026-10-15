@@ -684,7 +684,7 @@ export function isStartApp(cwd: string, appRel: string): boolean {
 
 export const START_APP_NOTE =
   'TanStack Start app — no main.tsx/nav.tsx/__root.tsx seeded (Start owns the router); render ' +
-  '<BasaltProvider> with children inside your root route component.'
+  '<BasaltProvider><Outlet /></BasaltProvider> in your root route component.'
 
 /** The app directory a command's app-scoped half targets: `rel` is '' when it is the install root. */
 export type AppResolution = { dir: string; rel: string } | { error: string }
