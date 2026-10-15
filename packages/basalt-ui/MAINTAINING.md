@@ -500,23 +500,16 @@ Code cannot load rules or skills from `node_modules`, which is the only reason a
 
 ## The one sanctioned major
 
-Owner decision 2026-10-13: basalt-ui gets **exactly one major, 2.0.0**, developed on `master`.
-There is no `1.x` maintenance line and no prerelease channel — 1.x stays frozen at `v1.41.0`,
-consumers stay exact-pinned until they migrate, and 2.0.0 is published straight from `master` with
-`make release`. Fixes after it ship as 2.x minors; no-majors holds again and a 3.0 is never
-sanctioned. The doctrine's home is here; AGENTS.md links.
+2.0.0 shipped 2026-10-14 as the single sanctioned major (owner decision 2026-10-13). No-majors
+holds again with no exception, and a 3.0 is never sanctioned. The doctrine's home is here; AGENTS.md
+links.
 
-- **The trigger is one commit**: a `feat:` with a `BREAKING CHANGE:` footer pointing at
-  `MIGRATING.md` § 2.0, landed by the deletion wave. semantic-release computes `2.0.0` from it.
-- **What `scripts/release.sh` enforces** (`version_gate`, `scripts/release.test.ts`), reading the
-  registry on every release: the only releasable versions are exactly `2.0.0` while no stable 2.x
-  is published, and non-major 2.x once one is. Any 1.x is refused — 1.x is frozen, so a `fix:` or
-  `feat:` touching the package before 2.0.0 lands cannot publish `1.41.1` or `1.42.0`. A 3.0 or a
-  second 2.0.0 dies. **It judges the computed version, not the commit**: a stray `BREAKING CHANGE:`
-  footer landing before the designated one also computes `2.0.0`. Keeping it to one commit is
-  review's job.
-- **Nothing else changes**: `.releaserc.json` stays `["master"]`; every other `feat!:` /
-  `BREAKING CHANGE:` stays banned.
+- **`scripts/release.sh` enforces it** (`version_gate`, `scripts/release.test.ts`): a computed
+  version is releasable only if it is a stable 2.x and the bump is not `major`. Every major, any
+  1.x and any prerelease or build-metadata version dies. It judges the computed version, not the
+  commit.
+- **A nominal break ships as a plain `feat:`** with a `MIGRATING.md` entry; `feat!:` and
+  `BREAKING CHANGE:` stay banned. `.releaserc.json` stays `["master"]`.
 
 ## Development guidelines
 
