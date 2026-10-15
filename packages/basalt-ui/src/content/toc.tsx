@@ -17,10 +17,7 @@
  * a viewport-rooted observer measures the wrong band. `null` means the document scrolls, which is
  * the shell-less case and behaves exactly as before.
  *
- * The active rail item carries `aria-current="location"` (WAI-ARIA APG's own recommendation for a
- * link set that navigates within one page, rather than `"page"`/`"true"`) — both a genuine a11y fix
- * (previously `activeId` drove `classes.active` alone, so a screen reader had no signal at all) and
- * the one DOM-observable hook for `activeId` that does not depend on a CSS Modules class hash.
+ * The active item carries `aria-current="location"` (WAI-ARIA APG: a link set within one page).
  *
  * @example
  * import { TableOfContents, headingSlug } from 'basalt-ui/content'
@@ -32,10 +29,12 @@
  * <TableOfContents containerRef={articleRef} />
  */
 import type { MouseEvent, RefObject } from 'react'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
 import { useReducedMotion } from '@mantine/hooks'
 import { scrollParentOf } from '../common/scroll-parent'
 import classes from './toc.module.css'
+import { useClickPin } from './toc-click-pin'
+import { OBSERVER_ROOT_MARGIN, pickActive, scrollMetrics } from './toc-spy'
 
 export type TocItem = {
   readonly id: string
@@ -58,12 +57,6 @@ export type TableOfContentsProps = {
 
 const DEFAULT_LEVELS: readonly [number, number] = [2, 3]
 const DEFAULT_TITLE = 'On this page'
-
-/**
- * Ceiling on how long a clicked item holds the rail: released on `scrollend` where supported, so
- * this only covers browsers without it — and a smooth scroll that never settles.
- */
-const CLICK_PIN_MAX_MS = 1000
 
 /** Heading text without the hover-anchor `#` glyph the markdown/MDX heading renderers append. */
 function headingLabel(node: HTMLElement): string {
@@ -93,18 +86,17 @@ export function TableOfContents({
   const [collected, setCollected] = useState<TocItem[]>([])
   const [activeId, setActiveId] = useState<string | null>(null)
   const reduceMotion = useReducedMotion()
-  // Set while a clicked item owns the rail; `resolve` stands down until it's released.
-  const pinnedRef = useRef<string | null>(null)
-  const releasePinRef = useRef<(() => void) | null>(null)
   // The rail's own node — the probe `scrollParentOf` walks from when there is no `containerRef`.
   const navRef = useRef<HTMLElement | null>(null)
-  // The resolved scrollport (`null` = the document), published by the spy effect so the click-pin
-  // release below listens for `scrollend` on the same box the spy is watching.
-  const portRef = useRef<HTMLElement | null>(null)
-
-  useEffect(() => {
-    return () => releasePinRef.current?.()
-  }, [])
+  // Which headings the observer currently reports inside its band.
+  const intersectingRef = useRef<Set<string>>(new Set())
+  // Bumped when a click hands the rail back: the spy effect below re-subscribes, and re-resolves.
+  const [idleTick, bumpIdle] = useReducer((n: number) => n + 1, 0)
+  const pin = useClickPin(bumpIdle)
+  const scrollerOf = useCallback(
+    () => scrollParentOf(containerRef?.current ?? navRef.current),
+    [containerRef],
+  )
 
   // Auto-collection: re-scan on mount + on any childList mutation under the container.
   useEffect(() => {
@@ -122,51 +114,32 @@ export function TableOfContents({
 
   const resolvedItems = items ?? collected
 
+  // The spy's answer for the reader's current position — or the clicked entry, while the click owns it.
+  const resolve = useCallback(() => {
+    if (pin.activeId !== null) {
+      setActiveId(pin.activeId)
+      return
+    }
+    const elements = resolvedItems
+      .map((item) => document.getElementById(item.id))
+      .filter((el): el is HTMLElement => el !== null)
+    const id = pickActive(elements, intersectingRef.current, scrollMetrics(scrollerOf()))
+    if (id !== undefined) setActiveId(id)
+  }, [pin, resolvedItems, scrollerOf])
+
   // Scroll-spy: one IntersectionObserver over every collected heading.
   useEffect(() => {
+    pin.prune(resolvedItems.map((item) => item.id))
     if (resolvedItems.length === 0) return
     const elements = resolvedItems
       .map((item) => document.getElementById(item.id))
       .filter((el): el is HTMLElement => el !== null)
     if (elements.length === 0) return
 
-    const port = scrollParentOf(containerRef?.current ?? navRef.current)
-    portRef.current = port
+    const port = scrollerOf()
     const scroller: Window | HTMLElement = port ?? window
-
-    const intersecting = new Set<string>()
-
-    const resolve = () => {
-      // A clicked item is the reader SAYING where they are; everything below only infers it. Stand
-      // down until the scroll they asked for has settled.
-      if (pinnedRef.current !== null) return
-
-      // Bottom edge: the last sections are usually shorter than the observer's 70% dead zone, so
-      // their headings can NEVER reach the activation band — the rail would stall on whichever
-      // section last made it in. Once the page bottoms out, the final item is the honest answer.
-      const box = port ?? document.documentElement
-      const seen = port ? port.clientHeight + port.scrollTop : window.innerHeight + window.scrollY
-      if (seen >= box.scrollHeight - 2) {
-        const last = elements[elements.length - 1]
-        if (last) setActiveId(last.id)
-        return
-      }
-
-      if (intersecting.size > 0) {
-        const topmost = elements.find((el) => intersecting.has(el.id))
-        if (topmost) setActiveId(topmost.id)
-        return
-      }
-
-      // Nothing intersecting — the last heading already scrolled past, or (above the first one,
-      // i.e. at the very top of the article) the first heading, so the rail always marks where the
-      // reader actually is instead of showing nothing until the first heading reaches the band.
-      // "Past" is measured against the SCROLLER's top edge, which for the window case is 0.
-      const originTop = port ? port.getBoundingClientRect().top : 0
-      const passed = elements.filter((el) => el.getBoundingClientRect().top < originTop)
-      const current = passed[passed.length - 1] ?? elements[0]
-      if (current) setActiveId(current.id)
-    }
+    const intersecting = intersectingRef.current
+    intersecting.clear()
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -178,54 +151,27 @@ export function TableOfContents({
       },
       // `root: null` IS the viewport — the shell-less case, unchanged. Inside a shell the root has
       // to be the scrollport or the `-70%` dead zone is measured against a box nothing scrolls.
-      { root: port, rootMargin: '-80px 0px -70% 0px' },
+      { root: port, rootMargin: OBSERVER_ROOT_MARGIN },
     )
 
     for (const el of elements) observer.observe(el)
-    // The observer only fires when an intersection CHANGES; the bottom edge above resolves on
-    // scroll position alone, so it needs a scroll signal too. Re-setting the same id is a no-op
-    // for React, so this stays free on every frame that doesn't move the rail.
+    // The observer only fires when an intersection CHANGES; the bottom edge resolves on scroll
+    // position alone, so it needs a scroll signal too. Re-setting the same id is a no-op for React.
     scroller.addEventListener('scroll', resolve, { passive: true })
     return () => {
       observer.disconnect()
       scroller.removeEventListener('scroll', resolve)
-      portRef.current = null
     }
-  }, [resolvedItems, containerRef])
+  }, [resolvedItems, scrollerOf, pin, resolve, idleTick])
 
   if (resolvedItems.length === 0) return null
-
-  /**
-   * Hold the rail on the clicked item until its scroll settles. Without this the spy overwrites the
-   * choice mid-flight — most visibly for a section near the end, where the page bottoms out before
-   * the heading can reach the activation band, so the bottom pin would answer with the LAST item
-   * instead of the one that was asked for.
-   */
-  const pinActive = (id: string) => {
-    releasePinRef.current?.()
-    setActiveId(id)
-    pinnedRef.current = id
-
-    // The same box the spy watches — `scrollend` on `window` never fires for a scroll that happened
-    // inside `AppShell.Main`, which would leave the rail pinned for the full `CLICK_PIN_MAX_MS`.
-    const scroller: Window | HTMLElement = portRef.current ?? window
-    let timer: ReturnType<typeof setTimeout> | null = null
-    const release = () => {
-      pinnedRef.current = null
-      if (timer !== null) clearTimeout(timer)
-      scroller.removeEventListener('scrollend', release)
-      releasePinRef.current = null
-    }
-    timer = setTimeout(release, CLICK_PIN_MAX_MS)
-    scroller.addEventListener('scrollend', release, { once: true })
-    releasePinRef.current = release
-  }
 
   const handleClick = (id: string) => (event: MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault()
     const el = document.getElementById(id)
     if (el) {
-      pinActive(id)
+      setActiveId(id)
+      pin.click(id, event.currentTarget, scrollerOf())
       el.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth' })
       history.replaceState(null, '', `#${id}`)
     }
@@ -249,12 +195,6 @@ export function TableOfContents({
               ]
                 .filter(Boolean)
                 .join(' ')}
-              // `classes.active` alone used to be the ONLY signal of which item the spy picked —
-              // both a real a11y gap (nothing here told assistive tech which section is current)
-              // and, incidentally, the reason a consumer/test could not observe `activeId` without
-              // reading CSS. `location` (not `page`/`true`) is the value WAI-ARIA's Authoring
-              // Practices call out BY NAME for exactly this widget: a set of links navigating
-              // within a single page, as opposed to a set of links to different pages.
               aria-current={activeId === item.id ? 'location' : undefined}
               onClick={handleClick(item.id)}
             >

@@ -53,23 +53,6 @@ function stubGetter(target: object, prop: PropertyKey, value: unknown, log: stri
   })
 }
 
-/** Wraps `el`'s OWN `addEventListener` so calls are recorded before forwarding to the real one. */
-function recordAddEventListener(el: EventTarget, log: string[]): void {
-  const original = el.addEventListener.bind(el)
-  stubProp(
-    el,
-    'addEventListener',
-    (
-      type: string,
-      listener: EventListenerOrEventListenerObject,
-      options?: AddEventListenerOptions,
-    ) => {
-      log.push(type)
-      return original(type, listener, options)
-    },
-  )
-}
-
 /** A fabricated intersection entry — only the two fields `toc.tsx`'s callback reads. */
 type FakeEntry = { readonly target: Element; readonly isIntersecting: boolean }
 
@@ -159,6 +142,14 @@ function WindowHarness({ items }: { items: TocItem[] }): ReactElement {
       <TableOfContents items={items} containerRef={containerRef} />
     </>
   )
+}
+
+/** happy-dom lays nothing out (every rect is 0), so the "passed the activation line" fallback needs real tops. */
+function stubHeadingTops(tops: Record<string, number>): void {
+  for (const [id, top] of Object.entries(tops)) {
+    const el = document.getElementById(id)
+    if (el) stubProp(el, 'getBoundingClientRect', () => ({ top }))
+  }
 }
 
 function linkFor(label: string): HTMLElement {
@@ -270,6 +261,7 @@ describe('TableOfContents — the bottom-edge dead-zone reads the right box', ()
     stubGetter(window, 'innerHeight', 500, windowReads)
     stubGetter(window, 'scrollY', 500, windowReads)
     stubGetter(document.documentElement, 'scrollHeight', 1500, windowReads)
+    stubHeadingTops({ 'sec-a': 400, 'sec-b': 900 })
 
     act(() => {
       fireEvent.scroll(window)
@@ -287,34 +279,105 @@ describe('TableOfContents — the bottom-edge dead-zone reads the right box', ()
   })
 })
 
-// ── the click-pin release's scrollend target ────────────────────────────────────────────────────
+// ── bottom edge: guard, window path, cleanup ────────────────────────────────────────────────────
 
-describe('TableOfContents — the click-pin release listens on the right box', () => {
-  test('inside a scrollport: scrollend is registered on the port, not window', () => {
+describe('TableOfContents — the bottom edge needs a scroll range that exists', () => {
+  test('content that fits (nothing to scroll) never marks the last item current', () => {
     installFakeIntersectionObserver()
-    render(<PortHarness items={ONE_ITEM} />)
+    render(<PortHarness items={TWO_ITEMS} />)
     const port = screen.getByTestId('port')
+    stubProp(port, 'scrollTop', 0)
+    stubProp(port, 'clientHeight', 800)
+    stubProp(port, 'scrollHeight', 800)
+    stubHeadingTops({ 'sec-a': 400, 'sec-b': 900 })
 
-    const portEvents: string[] = []
-    const windowEvents: string[] = []
-    recordAddEventListener(port, portEvents)
-    recordAddEventListener(window, windowEvents)
+    fireEvent.scroll(port)
 
-    fireEvent.click(linkFor('Section A'))
-
-    expect(portEvents).toContain('scrollend')
-    expect(windowEvents).not.toContain('scrollend')
+    expect(linkFor('Section A').getAttribute('aria-current')).toBe('location')
+    expect(linkFor('Section B').hasAttribute('aria-current')).toBe(false)
   })
 
-  test('with no scrollport: scrollend is registered on window', () => {
+  test('with no scrollport: window scrolled to the end marks the LAST item current', () => {
     installFakeIntersectionObserver()
-    render(<WindowHarness items={ONE_ITEM} />)
+    render(<WindowHarness items={TWO_ITEMS} />)
+    stubProp(window, 'innerHeight', 500)
+    stubProp(window, 'scrollY', 1000)
+    stubProp(document.documentElement, 'scrollHeight', 1500)
 
-    const windowEvents: string[] = []
-    recordAddEventListener(window, windowEvents)
+    act(() => {
+      fireEvent.scroll(window)
+    })
 
-    fireEvent.click(linkFor('Section A'))
+    expect(linkFor('Section B').getAttribute('aria-current')).toBe('location')
+  })
+})
 
-    expect(windowEvents).toContain('scrollend')
+describe('TableOfContents — a clicked entry', () => {
+  /** Geometry under which the spy, left alone, would answer Section A (the first heading). */
+  function scrollable(port: HTMLElement): void {
+    stubProp(port, 'scrollTop', 100)
+    stubProp(port, 'clientHeight', 500)
+    stubProp(port, 'scrollHeight', 5000)
+    stubHeadingTops({ 'sec-a': 40, 'sec-b': 900 })
+  }
+
+  /** A real observer reports its initial intersections on `observe`; the fake does so by hand. */
+  const reobserve = (observers: CapturedObserver[]) =>
+    act(() => {
+      observers.at(-1)?.trigger([])
+    })
+
+  test('is current at once and stays current while the spy runs, until the reader scrolls', () => {
+    const observers = installFakeIntersectionObserver()
+    render(<PortHarness items={TWO_ITEMS} />)
+    const port = screen.getByTestId('port')
+    scrollable(port)
+
+    fireEvent.click(linkFor('Section B'))
+    expect(linkFor('Section B').getAttribute('aria-current')).toBe('location')
+
+    fireEvent.scroll(port) // the spy runs mid-flight: the click wins
+    expect(linkFor('Section B').getAttribute('aria-current')).toBe('location')
+
+    act(() => {
+      document.body.dispatchEvent(new Event('wheel', { bubbles: true }))
+    })
+    reobserve(observers)
+    expect(linkFor('Section A').getAttribute('aria-current')).toBe('location')
+  })
+
+  test('a removed item releases the click', () => {
+    const observers = installFakeIntersectionObserver()
+    const { rerender } = render(<PortHarness items={TWO_ITEMS} />)
+    scrollable(screen.getByTestId('port'))
+    fireEvent.click(linkFor('Section B'))
+
+    rerender(<PortHarness items={ONE_ITEM} />)
+    reobserve(observers)
+
+    expect(screen.queryByRole('link', { name: 'Section B' })).toBeNull()
+    expect(linkFor('Section A').getAttribute('aria-current')).toBe('location')
+  })
+
+  test('unmounting removes the document listeners', () => {
+    installFakeIntersectionObserver()
+    const { unmount } = render(<PortHarness items={TWO_ITEMS} />)
+    fireEvent.click(linkFor('Section B'))
+    const removed: string[] = []
+    const original = document.removeEventListener.bind(document)
+    stubProp(
+      document,
+      'removeEventListener',
+      (...args: Parameters<Document['removeEventListener']>) => {
+        removed.push(args[0])
+        return original(...args)
+      },
+    )
+
+    unmount()
+
+    expect(removed).toEqual(
+      expect.arrayContaining(['wheel', 'touchstart', 'keydown', 'pointerdown']),
+    )
   })
 })
