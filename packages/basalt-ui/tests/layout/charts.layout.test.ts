@@ -533,4 +533,38 @@ layout('Charts — 2.0 layout', () => {
       for (const x of xs) for (const y of ys) expect(overlap(x, y)).toBe(false)
     })
   }
+
+  // Row 112: the last band/bar ends on the plot's right edge, not a bucket-padding short of it.
+  const DAY_MS = 86_400_000
+  const edgeCases = [
+    ['390 px, 30 daily buckets', PHONE, 30, DAY_MS],
+    ['1440 px, 7 d of hourly buckets', DESKTOP, 168, 3_600_000],
+  ] as const
+  for (const kind of ['strip', 'mirrored'] as const) {
+    for (const [name, vp, buckets, bucketMs] of edgeCases) {
+      test(`${kind}: the last band reaches the plot's right edge (${name})`, async () => {
+        const p = await openFixture(chartFixture({ kind, stripBuckets: buckets, bucketMs }), vp)
+        await p.settle()
+        const edges = await p.raw.evaluate(
+          ([sel, k]) => {
+            const svg = document.querySelector(sel)
+            const right = (q: string): number[] =>
+              [...(svg?.querySelectorAll(q) ?? [])].map((e) => e.getBoundingClientRect().right)
+            const plot =
+              k === 'strip'
+                ? right('[data-ts-key^="xzone-0"]')
+                : right('[data-ts-key$=":baseline"]')
+            const drawn =
+              k === 'strip'
+                ? right('[data-ts-key^="band-"] rect')
+                : right('[data-ts-key$="up-bars"] rect')
+            return { plot: Math.max(...plot), last: Math.max(...drawn) }
+          },
+          [SVG, kind] as const,
+        )
+        expect(edges.plot).toBeGreaterThan(0)
+        expect(edges.plot - edges.last).toBeLessThanOrEqual(1)
+      })
+    }
+  }
 })

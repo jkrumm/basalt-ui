@@ -181,7 +181,7 @@ export function MirroredBars<T, X extends ChartX = ChartX, K extends string = st
             foldConfig.merge,
           )
         : data
-      const model = xScaleFor<X>(drawn.map(x), true)
+      const model = xScaleFor<X>(drawn.map(x), 'flush')
       const visible = visibleSeries(bars, hidden)
       // A legend-hidden absent entry gives its share back to the measured bar, as `BandStrip`
       // does; with no entry the share is always drawn, flat neutral.
@@ -196,7 +196,7 @@ export function MirroredBars<T, X extends ChartX = ChartX, K extends string = st
       const downMax = paneMax(down, downSeries, drawn, downOn)
       const bandWidth = 2 * model.halfStep * BAND_FILL
       // One instance per pane: the engine sets a scale's range, and the panes' plots differ in width.
-      const bandScale = () => xScaleFor<X>(drawn.map(x), true).scale
+      const bandScale = () => xScaleFor<X>(drawn.map(x), 'flush').scale
 
       const pane =
         (
