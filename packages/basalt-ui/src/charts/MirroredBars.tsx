@@ -9,7 +9,7 @@
  * configure — its zero IS the baseline.
  *
  * ABSENCE is a state a reader cannot decode from either axis, so it is drawn across the full height
- * of both panes in one flat `--vx-neutral` fill: a `getAbsentFraction` share of a bar's width that no
+ * of both panes in one flat fill (`--vx-neutral`, or the `absentState` entry's colour): a `getAbsentFraction` share of a bar's width that no
  * source sample covers. A bar that measured zero draws nothing; an absent one draws neutral.
  */
 import { decorative } from '@tanstack/charts/mark/decorative'
@@ -26,7 +26,7 @@ import { barMark, emphasis } from './marks'
 import { PanelRung, chartHeightOf, paneX, paneY, rowsOf } from './panel'
 import type { PaneBuilder, PanelInput, PanelPlan } from './panel'
 import { xScaleFor } from './scales'
-import { foldBands } from './band-fold'
+import { foldBands, resolveNamedState } from './band-fold'
 import { rowX } from './types'
 import type { CartesianChartProps, ChartSeries, ChartX, PlotRow } from './types'
 
@@ -46,12 +46,16 @@ export type MirroredBarPane = {
 }
 
 /** A bar series. Any entry that is neither pane is legend-only (give it `getValue: () => null`). */
-export type MirroredBarsSeries<T> = Pick<
+export type MirroredBarsSeries<T, K extends string = string> = Pick<
   ChartSeries<T>,
-  'key' | 'label' | 'color' | 'getValue' | 'formatValue' | 'tooltip' | 'legend' | 'role' | 'note'
->
+  'label' | 'color' | 'getValue' | 'formatValue' | 'tooltip' | 'legend' | 'role' | 'note'
+> & {
+  key: K
+  /** Read for the `absentState` entry only (its fill and swatch); the panes draw at full colour. */
+  fillOpacity?: number | undefined
+}
 
-export type MirroredBarsProps<T, X extends ChartX = ChartX> = Pick<
+export type MirroredBarsProps<T, X extends ChartX = ChartX, K extends string = string> = Pick<
   CartesianChartProps<T, X>,
   | 'ariaLabel'
   | 'data'
@@ -66,15 +70,22 @@ export type MirroredBarsProps<T, X extends ChartX = ChartX> = Pick<
   | 'style'
 > & {
   /** The single source of colours, legend entries and tooltip rows. */
-  series: readonly MirroredBarsSeries<T>[]
+  series: readonly MirroredBarsSeries<T, K>[]
   /** Drawn above the baseline. */
   up: MirroredBarPane
   /** Drawn below the baseline. */
   down: MirroredBarPane
   /** The up pane's share of the height. Default 0.35: the pair is usually asymmetric. */
   upFraction?: number | undefined
-  /** 0..1 of a bar's width that no source sample covers, drawn neutral across both panes. */
+  /** 0..1 of a bar's width that no source sample covers, drawn across both panes. */
   getAbsentFraction?: ((d: T) => number) | undefined
+  /**
+   * The `series` key that names the absent share: its colour fills it and its legend entry labels
+   * it (give it `getValue: () => null`, it is legend-only). `BandStrip.absentState`'s shape. Its
+   * colour must differ from every measured series', not only by alpha. Default: a flat
+   * `--vx-neutral` with no legend entry. A key naming no entry throws.
+   */
+  absentState?: K | undefined
   /** Per-datum bar opacity: a real but qualified measurement (a short bucket) drawn dimmer. */
   getBarOpacity?: ((d: T) => number) | undefined
   /**
@@ -122,18 +133,42 @@ function assertPaneKey<T>(
   )
 }
 
-export function MirroredBars<T, X extends ChartX = ChartX>(
-  props: MirroredBarsProps<T, X>,
+export function MirroredBars<T, X extends ChartX = ChartX, K extends string = string>(
+  props: MirroredBarsProps<T, X, K>,
 ): ReactElement {
-  const { data, x, series, up, down, upFraction = DEFAULT_UP_FRACTION, ...more } = props
-  const { getAbsentFraction, getBarOpacity, fold: foldConfig, cursorResolution = 'leading' } = more
-  const { getAbsentFraction: _a, getBarOpacity: _b, fold: _f, cursorResolution: _c, ...rung } = more
+  const {
+    data,
+    x,
+    series,
+    up,
+    down,
+    upFraction = DEFAULT_UP_FRACTION,
+    getAbsentFraction,
+    getBarOpacity,
+    fold: foldConfig,
+    cursorResolution = 'leading',
+    absentState,
+    ...rung
+  } = props
   const { formatX } = rung
 
-  const bars = useMemo<ChartSeries<T>[]>(
-    () => series.map((s) => ({ ...s, mark: 'bar' as const })),
-    [series],
+  const absentKey = resolveNamedState(
+    'MirroredBars',
+    'absentState',
+    absentState,
+    series.map((s) => s.key),
   )
+  const bars = useMemo<ChartSeries<T>[]>(
+    () =>
+      series.map((s) => ({
+        ...s,
+        mark: 'bar' as const,
+        // A pane draws at full colour, so its swatch must not claim an opacity the plot lacks.
+        ...(s.key !== absentKey && { fillOpacity: undefined }),
+      })),
+    [series, absentKey],
+  )
+  const absentEntry = bars.find((s) => s.key === absentKey)
 
   const plan = useCallback(
     ({ hidden, highlighted, width }: PanelInput): PanelPlan<T> => {
@@ -148,6 +183,12 @@ export function MirroredBars<T, X extends ChartX = ChartX>(
         : data
       const model = xScaleFor<X>(drawn.map(x), true)
       const visible = visibleSeries(bars, hidden)
+      // A legend-hidden absent entry gives its share back to the measured bar, as `BandStrip`
+      // does; with no entry the share is always drawn, flat neutral.
+      const absentOn = !absentEntry || visible.includes(absentEntry)
+      const absentFill = absentEntry
+        ? alpha(absentEntry.color, absentEntry.fillOpacity ?? 1)
+        : VX.neutral
       const upOn = visible.includes(upSeries)
       const downOn = visible.includes(downSeries)
       const format = (v: ChartValue): string => (formatX ? formatX(v as X) : defaultFormatX(v))
@@ -176,7 +217,7 @@ export function MirroredBars<T, X extends ChartX = ChartX>(
           // A partly-absent bar is painted by rects on the plot-fraction scale, so its measured share
           // is narrower than its band; the bar itself stays as the (transparent) focus target.
           const left = (row: PlotRow<T, X>): number => (model.fraction(row.x) ?? 0) - bandWidth / 2
-          const absent = (d: T): number => clamp01(getAbsentFraction?.(d))
+          const absent = (d: T): number => (absentOn ? clamp01(getAbsentFraction?.(d)) : 0)
           const measured = rows.filter(
             (r) => r.y !== null && absent(r.datum) > 0 && absent(r.datum) < 1,
           )
@@ -233,7 +274,7 @@ export function MirroredBars<T, X extends ChartX = ChartX>(
                   y1: () => 0,
                   y2: () => max,
                   xScale: 'zx',
-                  fill: VX.neutral,
+                  fill: absentFill,
                   inset: 0,
                 }),
               ),
@@ -282,7 +323,19 @@ export function MirroredBars<T, X extends ChartX = ChartX>(
         },
       }
     },
-    [data, x, bars, up, down, upFraction, getAbsentFraction, getBarOpacity, foldConfig, formatX],
+    [
+      data,
+      x,
+      bars,
+      up,
+      down,
+      upFraction,
+      getAbsentFraction,
+      getBarOpacity,
+      foldConfig,
+      formatX,
+      absentEntry,
+    ],
   )
 
   return (

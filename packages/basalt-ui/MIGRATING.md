@@ -1044,6 +1044,10 @@ The `basalt-ui/router-tanstack` subpath is **removed** in 2.x, not moved: an imp
 ## Unreleased — preset filters honour `.labels()`
 
 - `NumberFilter` with `options`: a value `.labels()` names (`{ 0: 'Any' }`) now reads as that name in the pill though it is not an option, as the stepper form already did; no `Any` row needed. **Opt-out: none — drop the literal row if you added one.**
+- **A `state` chart hides its legend (every kind).** `pending`, `error` and `empty` conceal the legend (`visibility: hidden`, plus `aria-hidden`) instead of listing series over a plot with no marks; its row is kept, so the chart does not shift when the data arrives (layout-probed: `Lines`, `BandStrip`, `MirroredBars`; error and empty on `BandStrip`). **Opt-out: none.**
+- **`MirroredBars` takes `absentState`** (a `series` key, as `BandStrip.absentState`): that entry's colour (and `fillOpacity`) fills the absent share and its legend entry labels it; hiding the entry in the legend widens the measured bars to the full cell. Unset, the share stays `--vx-neutral` with no legend entry. A key naming no entry throws in dev and falls back to unset in production.
+- **`BandStrip` legend swatches mirror a state's `fillOpacity`** (a state at 0.14 no longer draws a solid swatch over a pale plot).
+- **`height` is the frame in every kind** (documented, nothing changes): a `BandStrip` or `MirroredBars` frame is the plot plus the x axis, so a band of a given height is `height` less the axis (about 21 px at the default font and density: a 44 px band is `height: 65`). No `plotHeight` prop.
 
 ## 2.9.1
 

@@ -275,7 +275,13 @@ export type CartesianChartProps<T, X extends ChartX = ChartX> = BasaltProps & {
   refLines?: readonly RefLine[] | undefined
   /** `false` hides the legend. */
   legend?: ChartLegendConfig | false | undefined
-  /** Default: the height law (measured width × class ratio, 160–420px, ≤ 45vh on touch). */
+  /**
+   * Default: the height law (measured width × class ratio, 160–420px, ≤ 45vh on touch). Always the
+   * FRAME, in every kind: the plot plus the axis the engine measures. A `BandStrip` band is the
+   * frame less the x axis (about 21 px at the default font and density, so `height: 65` for a
+   * 44 px band). There is no separate plot height: the box is CSS-owned before any measurement
+   * exists, and a plot height would add a guess to it.
+   */
   height?: number | ResponsiveChartHeight | undefined
   state?: ChartState | undefined
   /** Joins a named cursor group instead of the page-shared default. */

@@ -90,6 +90,29 @@ function Probe({ name, children }: { name: string; children: ReactElement }): Re
   return <div data-probe={name}>{children}</div>
 }
 
+const BAND_STRIP_PROPS = {
+  ariaLabel: 'Availability',
+  data: SLOTS,
+  x: (d: (typeof SLOTS)[number]) => d.t,
+  states: [
+    { key: 'up', label: 'Up', color: 'var(--vx-good)' },
+    { key: 'down', label: 'Down', color: 'var(--vx-bad)' },
+  ],
+  getBand: (d: (typeof SLOTS)[number]) => ({ state: d.s }),
+}
+
+const MIRRORED_PROPS = {
+  ariaLabel: 'Throughput',
+  data: DATA,
+  x,
+  series: [
+    { key: 'down', label: 'Download', color: 'var(--vx-line)', getValue: (d: Row) => d.down },
+    { key: 'up', label: 'Upload', color: 'var(--vx-accent)', getValue: (d: Row) => d.up },
+  ],
+  up: { key: 'up', format: (v: number) => `${v} kB` },
+  down: { key: 'down', format: (v: number) => `${v} MB` },
+}
+
 const DONUT = {
   ariaLabel: 'Split',
   data: [
@@ -133,16 +156,32 @@ export function App(): ReactElement {
           <Sparkline ariaLabel="Spark" data={DATA.map((d) => d.a)} height={32} />
         </Probe>
         <Probe name="band-strip">
-          <BandStrip
-            ariaLabel="Availability"
-            data={SLOTS}
-            x={(d) => d.t}
-            states={[
-              { key: 'up', label: 'Up', color: 'var(--vx-good)' },
-              { key: 'down', label: 'Down', color: 'var(--vx-bad)' },
-            ]}
-            getBand={(d) => ({ state: d.s })}
-          />
+          <BandStrip {...BAND_STRIP_PROPS} />
+        </Probe>
+        {/* Each state beside its loaded twin: a state chart keeps the loaded chart's height. */}
+        <Probe name="band-strip-loaded">
+          <BandStrip {...BAND_STRIP_PROPS} />
+        </Probe>
+        <Probe name="band-strip-pending">
+          <BandStrip {...BAND_STRIP_PROPS} state={{ pending: true }} />
+        </Probe>
+        <Probe name="band-strip-error">
+          <BandStrip {...BAND_STRIP_PROPS} state={{ error: 'Failed' }} />
+        </Probe>
+        <Probe name="band-strip-empty">
+          <BandStrip {...BAND_STRIP_PROPS} state={{ empty: true }} />
+        </Probe>
+        <Probe name="mirrored-bars-loaded">
+          <MirroredBars {...MIRRORED_PROPS} />
+        </Probe>
+        <Probe name="mirrored-bars-pending">
+          <MirroredBars {...MIRRORED_PROPS} state={{ pending: true }} />
+        </Probe>
+        <Probe name="lines-legend-loaded">
+          <Lines ariaLabel="Legend" data={DATA} x={x} series={[A, B]} />
+        </Probe>
+        <Probe name="lines-legend-pending">
+          <Lines ariaLabel="Legend" data={DATA} x={x} series={[A, B]} state={{ pending: true }} />
         </Probe>
         <Probe name="donut">
           <Donut {...DONUT} />
@@ -190,17 +229,7 @@ export function App(): ReactElement {
           />
         </Probe>
         <Probe name="mirrored-bars">
-          <MirroredBars
-            ariaLabel="Throughput"
-            data={DATA}
-            x={x}
-            series={[
-              { key: 'down', label: 'Download', color: 'var(--vx-line)', getValue: (d) => d.down },
-              { key: 'up', label: 'Upload', color: 'var(--vx-accent)', getValue: (d) => d.up },
-            ]}
-            up={{ key: 'up', format: (v) => `${v} kB` }}
-            down={{ key: 'down', format: (v) => `${v} MB` }}
-          />
+          <MirroredBars {...MIRRORED_PROPS} />
         </Probe>
         <Probe name="cartesian-chart">
           <CartesianChart ariaLabel="Rung" data={DATA} x={x} series={[A]} marks={() => []} />

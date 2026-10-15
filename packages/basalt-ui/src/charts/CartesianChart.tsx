@@ -116,6 +116,7 @@ export function ChartShell<T>(props: ChartShellProps<T>): ReactElement {
       return next
     })
   }, [])
+  const resolved = resolveChartState(state)
   const legendNode: ReactNode = useMemo(
     () =>
       shown ? (
@@ -127,16 +128,16 @@ export function ChartShell<T>(props: ChartShellProps<T>): ReactElement {
           toggle={toggle}
           onToggle={onToggle}
           onHighlight={setHighlighted}
+          concealed={resolved !== null}
         />
       ) : null,
-    [shown, series, hidden, config?.groups, toggle, onToggle],
+    [shown, series, hidden, config?.groups, toggle, onToggle, resolved],
   )
   // `header` is the enclosing card's header row (`top` outside a card); either way the legend is
   // the first thing in the chart's own markup.
   const atTop = config?.placement === 'top' || config?.placement === 'header'
   const asHeaderRow = config?.placement === 'header' && inCard
 
-  const resolved = resolveChartState(state)
   return (
     <div
       ref={ref}

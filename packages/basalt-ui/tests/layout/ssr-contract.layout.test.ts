@@ -466,6 +466,21 @@ layout('SSR-first contract: hydration moves nothing', () => {
         expect(Math.abs(pending - loaded)).toBeLessThanOrEqual(1)
       }, 60_000)
 
+      // A state chart conceals its legend rather than removing it: nothing shifts on arrival.
+      for (const [state, loaded] of [
+        ['band-strip-pending', 'band-strip-loaded'],
+        ['band-strip-error', 'band-strip-loaded'],
+        ['band-strip-empty', 'band-strip-loaded'],
+        ['mirrored-bars-pending', 'mirrored-bars-loaded'],
+        ['lines-legend-pending', 'lines-legend-loaded'],
+      ] as const)
+        test(`${state} keeps ${loaded}'s height`, async () => {
+          const { server } = await runAt(width)
+          expect(
+            Math.abs(server.boxes[state]!.height - server.boxes[loaded]!.height),
+          ).toBeLessThanOrEqual(1)
+        }, 60_000)
+
       test("the loading table reserves the loaded table's height", async () => {
         const { server } = await runAt(width)
         const loaded = server.boxes['table-loaded']!.height

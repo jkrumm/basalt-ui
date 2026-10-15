@@ -58,6 +58,21 @@ const autoRowStyle: LegendVars = {
   '--bc-legend-gap': `${VX.legendGap}px`,
   '--bc-dots-gap': `${DOTS_GAP}px`,
 }
+/** The row's layout; a concealed legend keeps it (and so its height) but is not visible. */
+function rowLayout(mode: LegendMode, concealed: boolean): CSSProperties {
+  // Hidden, not removed: the data arriving must not shift the chart below it.
+  const hide: CSSProperties = concealed ? { visibility: 'hidden' } : {}
+  // `display` and the gaps are the stylesheet's in `auto`: the container picks them by width.
+  if (mode === 'auto') return { ...autoRowStyle, ...hide }
+  const gap = mode === 'dots' ? DOTS_GAP : VX.legendGap
+  return {
+    ...rowStyle,
+    columnGap: gap,
+    // Caps each entry's `[data-basalt-hit]` overlay at the real gap between entries.
+    ...({ '--vx-hit-gap': `${gap}px` } as CSSProperties),
+    ...hide,
+  }
+}
 const dividerStyle: CSSProperties = { width: 1, alignSelf: 'stretch', background: VX.divider }
 const buttonStyle: CSSProperties = {
   all: 'unset',
@@ -155,29 +170,23 @@ export type ChartLegendProps<T> = {
   toggle: boolean
   onToggle: (key: string) => void
   onHighlight: (key: string | null) => void
+  /** Keeps the legend's box but shows and offers nothing: a chart with no marks names no series. */
+  concealed?: boolean
 }
 
 export function ChartLegend<T>(props: ChartLegendProps<T>): ReactElement | null {
   const groups = legendEntries(props.series, props.groups)
   if (groups.length === 0) return null
   const auto = props.mode === 'auto'
-  const gap = props.mode === 'dots' ? DOTS_GAP : VX.legendGap
   return (
     <fieldset
       aria-label="Legend"
       data-basalt-chart-legend={props.mode}
+      // `visibility: hidden` is the real guard (nothing is announced, focused or clickable);
+      // `aria-hidden` is belt-and-braces for a tree that ignores computed visibility.
+      {...(props.concealed && { 'aria-hidden': true })}
       {...(auto && { className: classes.auto })}
-      style={
-        auto
-          ? // `display` and the gaps are the stylesheet's: the container picks them by width.
-            autoRowStyle
-          : {
-              ...rowStyle,
-              columnGap: gap,
-              // Caps each entry's `[data-basalt-hit]` overlay at the real gap between entries.
-              ...({ '--vx-hit-gap': `${gap}px` } as CSSProperties),
-            }
-      }
+      style={rowLayout(props.mode, props.concealed === true)}
     >
       {groups.map((group, gi) => [
         gi > 0 && <span key={`divider-${gi}`} aria-hidden style={dividerStyle} />,
