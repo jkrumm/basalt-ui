@@ -25,7 +25,7 @@ Every cartesian chart is `CartesianChart` or a kind built on it; props are in th
 - A second axis is `y2` with a series `axis: 'right'`; there is no margin prop. [type CartesianChartProps]
 - Size is `height` (a number or per container class); the host measures the width. [type ResponsiveChartHeight]
 - A pending, failed or empty query is `state={{ pending, error, empty }}`, never `data ?? []`; a streamed chart's `<Suspense>` fallback is the same chart with `state={{ pending: true }}`, which fills the final box; inside a `ChartCard` the card owns `state` (header kept, body swapped), the kind only when bare. [type ChartState] [type ChartCardProps]
-- Zones, thresholds and reference lines are `zones`, `xZones` and `refLines` data; charts that share a cursor over different data extents pass one `xDomain`. [type ZoneSpec]
+- Zones, thresholds and reference lines are `zones`, `xZones` and `refLines` data; charts sharing a cursor over different extents pass one `xDomain` (time/number x only; a band or string x ignores it). [type ZoneSpec]
 - Extra tooltip rows are `tooltip.rows` data, never markup. [type ChartTooltipConfig]
 - Charts share one cursor by default; `cursorGroup` isolates one, `chartCursor(group?)` reads it. [type chartCursor]
 

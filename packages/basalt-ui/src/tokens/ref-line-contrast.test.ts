@@ -5,7 +5,7 @@
  * left light-scheme `warn` at 1.25:1.
  */
 import { describe, expect, test } from 'bun:test'
-import { REF_LINE_ALPHA } from './core'
+import { REF_LINE_ALPHA, buildPaletteCss } from './core'
 import { DEFAULT_DERIVE_CONFIG } from './derive'
 import type { DeriveConfig } from './derive'
 import { contrastRatio } from './hct'
@@ -63,4 +63,32 @@ describe('reference lines stay visible in both schemes', () => {
       }
     }
   }
+})
+
+describe('reference lines are not louder than what they annotate', () => {
+  test('in the dark scheme a ref line is fainter than its solid and than the primary line', () => {
+    const data = buildPaletteData(DEFAULT_DERIVE_CONFIG)
+    const panel = data.SURFACE.panel.dark
+    const primary = contrastRatio(data.NEUTRAL.line.dark, panel)
+    for (const kind of ['good', 'bad', 'warn'] as const) {
+      const solid = data.SEMANTIC[kind].dark
+      const line = contrastRatio(composite(solid, panel, REF_LINE_ALPHA / 100), panel)
+      expect(line).toBeLessThan(contrastRatio(solid, panel))
+      expect(line).toBeLessThan(primary)
+    }
+  })
+})
+
+describe('the palette CSS', () => {
+  test('the ref tokens are the only declarations that carry the ref alpha', () => {
+    const css = buildPaletteCss()
+    const refs = css.split('\n').filter((line) => /--vx-[a-z]+-ref:/.test(line))
+    expect(refs.map((line) => line.trim())).toEqual(
+      (['good', 'bad', 'warn'] as const).map(
+        (k) =>
+          `--vx-${k}-ref: color-mix(in srgb, var(--vx-${k}-solid) ${REF_LINE_ALPHA}%, transparent);`,
+      ),
+    )
+    expect(css.split(`${REF_LINE_ALPHA}%, transparent`).length - 1).toBe(refs.length)
+  })
 })

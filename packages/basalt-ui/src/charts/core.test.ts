@@ -2,7 +2,7 @@
  * The pure core: cursor-group teardown, the container-class ladder, the height law, the x scale
  * models and the y domain law. No React, no DOM geometry.
  */
-import { describe, expect, test } from 'bun:test'
+import { describe, expect, spyOn, test } from 'bun:test'
 import type { StoredChartSpec } from '@tanstack/charts/types/core'
 import { compileCartesian, dateTicks, utcAxisDate, utcHeaderDate } from './compile'
 import { chartCursor, chartCursorView, hasCursorGroup, hasCursorView } from './cursor'
@@ -225,6 +225,50 @@ describe('scales', () => {
     expect(xScaleFor(['a', 'b'], false, ['a', 'b']).band).toBe(false)
     expect(xScaleFor([day(1), day(2)], true, [day(1), day(9)]).band).toBe(true)
     expect(xScaleFor([1, 3], false, [5, 5]).extent).toEqual([1, 3])
+  })
+  test('a reversed, flat or non-finite xDomain falls back to the data extent, with a dev warning', () => {
+    const warn = spyOn(console, 'warn').mockImplementation(() => {})
+    const extent: [number, number] = [day(3).getTime(), day(4).getTime()]
+    for (const bad of [
+      [day(9), day(1)],
+      [day(2), day(2)],
+      [new Date(Number.NaN), day(9)],
+      [day(1), new Date(Number.NaN)],
+    ] as const) {
+      expect(xScaleFor([day(3), day(4)], false, bad).extent).toEqual(extent)
+    }
+    expect(warn).toHaveBeenCalledTimes(4)
+    warn.mockRestore()
+  })
+  test('the kind comes from the data, not the domain', () => {
+    expect(xScaleFor<Date | number>([day(3), day(4)], false, [0, 10]).kind).toBe('date')
+  })
+  test('xZones and xTicks honour the explicit domain', () => {
+    const domain = [day(1), day(11)] as const
+    const model = xScaleFor([day(4), day(5)], false, domain)
+    // A zone running past the domain clamps to the plot; one inside lands by the domain.
+    expect(xZoneFractions({ from: day(6), to: day(30), fill: 'x' }, model)).toEqual([0.5, 1])
+    expect(xZoneFractions({ from: day(-5), to: day(3), fill: 'x' }, model)).toEqual([0, 0.2])
+    const spec = compileCartesian({
+      chartId: 'domain-ticks',
+      data: [4, 5].map((d) => ({ t: day(d), v: d })),
+      x: (d) => d.t,
+      series: [v],
+      marks: () => [],
+      xDomain: domain,
+    }).chart({ width: 640, height: 240, defaultTheme: {} as never })
+    const x = spec.scales['x'] as unknown as {
+      scale: { domain: () => Date[] }
+      axis: { ticks: { values: Date[] } }
+    }
+    expect(x.scale.domain().map(Number)).toEqual(domain.map(Number))
+    for (const t of x.axis.ticks.values) {
+      expect(t.getTime()).toBeGreaterThanOrEqual(domain[0].getTime())
+      expect(t.getTime()).toBeLessThanOrEqual(domain[1].getTime())
+    }
+    // Rows beyond the domain stay in the data and fall outside the range: the engine's clip cuts them.
+    expect(spec.clip).toBe(true)
+    expect(x.scale.domain().length).toBe(2)
   })
   test('a large series does not overflow the stack computing the domain', () => {
     // 1M distinct values exceed the call-argument limit, so a spread into Math.min/max throws.

@@ -7,7 +7,7 @@ import { rect } from '@tanstack/charts/rect'
 import { ruleY } from '@tanstack/charts/rule'
 import { scaleLinear } from '@tanstack/charts/scales/linear'
 import { scaleUtc } from 'd3-scale'
-import { Bars, CartesianChart, ChartCard, DualPanel, Lines } from '../../../src/charts'
+import { Bars, CartesianChart, ChartCard, DualPanel, Lines, Sparkline } from '../../../src/charts'
 import { PanelRung, chartHeightOf, paneX, paneY } from '../../../src/charts/panel'
 import type { PaneBuilder, PaneContext, PanelInput, PanelPlan } from '../../../src/charts/panel'
 import { plotContext } from '../../../src/charts/plot-context'
@@ -766,12 +766,11 @@ function ChartsFixture({ spec }: { spec: ChartsSpec }): ReactElement {
   const data = useMemo(() => buildChartData(seriesCount), [seriesCount])
   const height = spec.height === undefined ? {} : { height: spec.height }
   const domain = useMemo(() => {
-    if (!spec.xDomain) return {}
-    const [first, last, mid] = [data[0], data.at(-1), data[Math.floor(data.length / 2)]]
-    return {
-      xDomain: [(first as ChartPoint).at, (last as ChartPoint).at] as const,
-      xTicks: [(mid as ChartPoint).at],
-    }
+    const first = data[0]
+    const last = data.at(-1)
+    const mid = data[Math.floor(data.length / 2)]
+    if (!spec.xDomain || !first || !last || !mid) return {}
+    return { xDomain: [first.at, last.at] as const, xTicks: [mid.at] }
   }, [data, spec.xDomain])
   const followerData = useMemo(
     () =>
@@ -805,6 +804,16 @@ function ChartsFixture({ spec }: { spec: ChartsSpec }): ReactElement {
         y={{ domain: [0, RAIL_DOMAIN_MAX] }}
         marks={(plot) => [railMark(data, plot.plotHeight)]}
         {...height}
+      />
+    ) : spec.kind === 'spark' ? (
+      <Sparkline
+        ariaLabel="Fixture spark"
+        data={Array.from(
+          { length: spec.sparkRows ?? 3000 },
+          (_, i) => 20 + 12 * Math.sin(i / 9) + (i % 13),
+        )}
+        height={spec.height ?? 40}
+        emphasizeLast
       />
     ) : spec.kind === 'panel-rail' ? (
       <PanelRailChart data={data} height={spec.height} />
