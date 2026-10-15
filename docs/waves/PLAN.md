@@ -762,3 +762,8 @@ route (no raw-pixel route in 2.x; a consumer needing one files a new row), #255 
 renders union props. Every PR took 2-4 independent `/review` rounds; each round found real bugs. CLI line
 ceiling rose 4525 → 4726 (doctor + Start detection; a consolidation should pay it back). Next: the orchestrator runs `make release`, then
 step 2 in order (rollhook first).
+(step 2, in progress 2026-10-15) 2.8.0 released (rows 61–67), then 2.8.1 (rows 68–72, 74–76 from the
+fleet; #257–#264, each independently reviewed, failing-first tests). rollhook done and live (v1.20.1, its
+plans promoted to `docs/waves/PLAN.md` so `rd wave` gates on them); rb and basalt-ui-obsidian deploying on
+2.8.1; row 73 (TOC) pending as the next patch; weatherorb is coordinated only through its own orchestrator
+(its Wave 35); linewatch after. D4 decided: argo stays client-rendered (row 9 closed).
