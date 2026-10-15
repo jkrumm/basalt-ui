@@ -1,3 +1,27 @@
+## [2.8.1](https://github.com/jkrumm/basalt-ui/compare/v2.8.0...v2.8.1) (2026-10-15)
+
+
+### Bug Fixes
+
+* anchor code-routed detection to real imports and calls ([115f8b4](https://github.com/jkrumm/basalt-ui/commit/115f8b40b2013b5dc613c83c6ec112b4e8b7e111))
+* bound the mermaid import matcher and widen sanitizer tests ([4f6f39a](https://github.com/jkrumm/basalt-ui/commit/4f6f39a4469527277b5f0d3ec476d5f7c597858f))
+* classify code-routed apps by wiring, keep seeds self-healing ([e07d38b](https://github.com/jkrumm/basalt-ui/commit/e07d38b13436485d13f07ceb4e5f6029e77aa5b9))
+* keep dev-only chunks out of production builds ([fab9b09](https://github.com/jkrumm/basalt-ui/commit/fab9b0927aadbc0bbf93d88466ed15dd2dbadba4))
+* keep the code block copy button clear of the first line ([c02498a](https://github.com/jkrumm/basalt-ui/commit/c02498aab9c1c38f5fb1f195a2aa02d10cabd09c))
+* let sync and doctor accept a code-defined route tree ([9bb8571](https://github.com/jkrumm/basalt-ui/commit/9bb857153a2a441293dec3271fa3db45f11ed561))
+* move router detection into a leaf module and require calls ([fb147a7](https://github.com/jkrumm/basalt-ui/commit/fb147a7ff571afe9a47c6f4f237cd2a937c98d9c))
+* one code-routed predicate for init, sync and doctor ([9611d34](https://github.com/jkrumm/basalt-ui/commit/9611d34ecee1bcdf1c8e9c9260d52037403efd0c))
+* paint the stored color scheme before the app boots ([14dd4ff](https://github.com/jkrumm/basalt-ui/commit/14dd4ff1dac2fbd8feaf8258594c60e349afd0b1))
+* reset the fallback pre margin and pin the copy button reserve ([4955f4f](https://github.com/jkrumm/basalt-ui/commit/4955f4f1e30a88c7f64bb02c4b0259f4390c974d))
+* run dropped-subpaths for tokens-only consumers in doctor ([2da07a7](https://github.com/jkrumm/basalt-ui/commit/2da07a7497e1c1c2bcdb72f8c9cd8ad6858118d9))
+* scope the boot script, move the boot subsystem to vite-boot.ts ([b37a44e](https://github.com/jkrumm/basalt-ui/commit/b37a44e1dd9acdd6243ad1cdd592597cd40f4d12))
+* scope the mermaid font sanitizer to style blocks ([e0dacfe](https://github.com/jkrumm/basalt-ui/commit/e0dacfefc3e6afa40794d27b58494c20e9f9c1f2))
+* stop calling a code-defined route tree generated in doctor output ([838e3f3](https://github.com/jkrumm/basalt-ui/commit/838e3f3cee83ceaa3f5ad1b3b05fdd3ebf7d2e47))
+* strip the remote font import from mermaid diagrams ([5e5fc8f](https://github.com/jkrumm/basalt-ui/commit/5e5fc8f3c346c58aadc5640ad87e429379a92bc7))
+* tighten the boot subsystem types and share the plugin test fixtures ([d3f828a](https://github.com/jkrumm/basalt-ui/commit/d3f828a5598e9c0a98e9cff597ce5caf76ea2761))
+* tighten the dev-chunk gate and the provider ceiling ([0b280b0](https://github.com/jkrumm/basalt-ui/commit/0b280b0bf15034d7edfebab567a5877afdea99fb))
+* unquote the font-family var in mermaid diagrams ([9c2e485](https://github.com/jkrumm/basalt-ui/commit/9c2e485c415d6c3df4eefd4e3d5406e415c71d47))
+
 # [2.8.0](https://github.com/jkrumm/basalt-ui/compare/v2.7.3...v2.8.0) (2026-10-15)
 
 ### Bug Fixes
