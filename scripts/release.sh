@@ -12,8 +12,8 @@
 #     `release-migrating.ts --check`, because `prepareCmd`'s MIGRATING rename runs in the `prepare`
 #     step, which a dry run SKIPS, so nothing else in the pipeline can catch a shape it can't fix;
 #   • a dry run first, ALWAYS, with the computed version read back before the real one is offered;
-#   • the version gate (`version_gate`, tested in scripts/release.test.ts): only 2.0.0, then 2.x
-#     non-majors, are releasable — packages/basalt-ui/MAINTAINING.md § The one sanctioned major;
+#   • the version gate (`version_gate`, tested in scripts/release.test.ts): only stable, non-major 2.x
+#     is releasable — packages/basalt-ui/MAINTAINING.md § The one sanctioned major;
 #   • the C16 grace gate against the COMPUTED version (`packages/basalt-ui/scripts/check-grace.ts`),
 #     which is the only place it can fire before the release instead of one minor after it — grace
 #     entries and deprecation `removeIn` dates alike, behind a build + export-surface check so its
@@ -69,14 +69,15 @@ registry_versions() {
 }
 
 # version_gate <bump> <version> <registry-versions, one per line>
-# Fails closed on an unparsed bump or an empty version. The only releasable versions are exactly
-# 2.0.0 while no stable 2.x is published, and non-major 2.x once one is. Everything else — any 1.x, a
-# 3.x, a second 2.0.0 — returns 1 with the reason and remedy on stderr. It judges the computed
-# VERSION, not the commit.
+# Fails closed on an unparsed bump or an empty version. A computed version is releasable only if it
+# is a stable 2.x AND the bump is not `major`: every major (a second 2.0.0, any 3.x), any 1.x and any
+# prerelease/build-metadata version returns 1 with the reason and remedy on stderr. It judges the
+# computed VERSION and bump, not the commit. The registry argument is unused — the rule no longer
+# depends on what is published; the parameter stays so callers do not change.
 version_gate() {
-  local bump="${1:-}" version="${2:-}" registry="${3:-}"
-  local stable_2x='^2\.[0-9]+\.[0-9]+$' published=false
-  local remedy="Rewrite a stray feat!:/BREAKING CHANGE footer as a plain feat:."
+  local bump="${1:-}" version="${2:-}"
+  local stable_2x='^2\.[0-9]+\.[0-9]+$'
+  local remedy="Rewrite feat!:/BREAKING CHANGE as a plain feat: and add a MIGRATING.md row."
 
   case "$bump" in
     major | minor | patch) ;;
@@ -90,21 +91,14 @@ version_gate() {
     return 1
   fi
 
-  grep -qE "$stable_2x" <<<"$registry" && published=true
-
-  if [[ "$version" == 1.* ]]; then
-    echo "1.x is frozen at v1.41.0: computed v$version ($bump); nothing ships on 1.x — 2.0.0 must be released first." >&2
+  if [ "$bump" = major ]; then
+    echo "no majors: computed v$version is a major bump — 2.0.0 was the one exception and has shipped. $remedy" >&2
     return 1
   fi
-  if [ "$published" = false ]; then
-    [ "$version" = "2.0.0" ] && return 0
-    echo "only 2.0.0 is releasable before a 2.x is published (computed v$version, $bump). $remedy" >&2
-    return 1
-  fi
-  if [[ "$version" =~ $stable_2x && "$bump" != major ]]; then
+  if [[ "$version" =~ $stable_2x ]]; then
     return 0
   fi
-  echo "a 2.x is published: only non-major 2.x releases remain (computed v$version, $bump). $remedy" >&2
+  echo "only stable 2.x is releasable (computed v$version, $bump); 1.x is frozen and prereleases never ship. $remedy" >&2
   return 1
 }
 

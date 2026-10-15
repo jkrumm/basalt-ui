@@ -192,9 +192,8 @@ publishing is NOT a deploy — it is the release process (`make release`, below)
 - **The layout suite needs Chrome.** It runs in CI and `make check`, never in `pre`.
 - **`apps/marketing/AGENTS.md` describes the pre-Mantine (Tailwind/Biome) era** and is stale; the
   root + package conventions here are authoritative.
-- **No majors** — bar the one sanctioned 2.0.0 (owner decision 2026-10-13). `feat!:` /
-  `BREAKING CHANGE:` stay banned; a nominal breaking change ships as a plain `feat:` with a
-  `MIGRATING.md` entry. Doctrine: `packages/basalt-ui/MAINTAINING.md` § The one sanctioned major.
+- **No majors** — 2.0.0 was the one exception and has shipped:
+  `packages/basalt-ui/MAINTAINING.md` § The one sanctioned major.
 
 ## Git Workflow
 
@@ -224,10 +223,10 @@ fails a mixed staging set.
 - `ci:` — CI/CD, lefthook, workflow changes; never triggers a release.
 - `chore:` / `docs:` / `refactor:` — no release.
 
-**No majors, bar the one sanctioned 2.0.0** — the full statement is
-`packages/basalt-ui/MAINTAINING.md` § The one sanctioned major.
+**No majors — 2.0.0 was the one exception and has shipped**
+(`packages/basalt-ui/MAINTAINING.md` § The one sanctioned major).
 
-**`feat!:` and `BREAKING CHANGE:` footers are banned** (bar the one designated commit): a nominal
+**`feat!:` and `BREAKING CHANGE:` footers are banned**: a nominal
 breaking change ships as a plain `feat:` with a `packages/basalt-ui/MIGRATING.md` entry and its
 opt-out in the commit body, never in the version number. Don't raise, propose, or reach for a major.
 
@@ -254,8 +253,8 @@ the read was a single unretried `npm view` interpolated into the success message
 to anything. It now retries (`--prefer-online`, so a cached metadata document can't answer) and
 `die`s on a version that never arrives.
 
-`YES=1 make release` skips only the prompt. **The wrapper's version gate refuses any computed version
-outside the sanctioned set** (`MAINTAINING.md` § The one sanctioned major); rewrite a stray
+`YES=1 make release` skips only the prompt. **The wrapper's version gate refuses every computed major, any 1.x
+and any prerelease** (`MAINTAINING.md` § The one sanctioned major); rewrite a stray
 `feat!:`/`BREAKING CHANGE:` footer as a plain `feat:` and release again.
 
 **Releasing is allowed — through `make release`, and only there.** No per-release permission is
