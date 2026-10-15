@@ -64,6 +64,7 @@ export type CartesianInput<T, X extends ChartX> = Pick<
   | 'y'
   | 'y2'
   | 'xTicks'
+  | 'xDomain'
   | 'formatX'
   | 'zones'
   | 'xZones'
@@ -831,7 +832,7 @@ export function compileCartesian<T, X extends ChartX>(
   const visible = visibleSeries(input.series, input.hidden ?? new Set<string>())
   const visibleKeys = new Set(visible.map((s) => s.key))
   const keys = new Set(input.series.map((s) => s.key))
-  const model = xScaleFor(input.data.map(input.x), input.band === true)
+  const model = xScaleFor(input.data.map(input.x), input.band === true, input.xDomain)
   const axes = resolveAxes(input, visible)
   const under = underlayMarks(input, model, axes)
   const over = refLineMarks(input, axes)

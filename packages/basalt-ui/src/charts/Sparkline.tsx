@@ -63,16 +63,65 @@ function extent(rows: readonly Point[]): readonly [number, number] | null {
   return lo <= hi ? [lo, hi] : null
 }
 
-function compileSparkline(
+/** Finite rows of one bucket: the lowest, then the highest, in index order (a lone value once). */
+function bucketExtremes(bucket: readonly Point[]): Point[] {
+  let lo: Point | undefined
+  let hi: Point | undefined
+  for (const r of bucket) {
+    if (r.v === null) continue
+    if (lo === undefined || r.v < (lo.v as number)) lo = r
+    if (hi === undefined || r.v > (hi.v as number)) hi = r
+  }
+  if (lo === undefined || hi === undefined) return bucket.slice(0, 1)
+  if (lo === hi) return [lo]
+  return lo.i < hi.i ? [lo, hi] : [hi, lo]
+}
+
+/**
+ * Pools a series to what `width` px can show, so the caller never sizes it. A line keeps each
+ * bucket's min and max (peaks and dips survive; `1px` per point is the ceiling) and the final
+ * row; a bar keeps one bar per bucket, the value furthest from zero, at `2px` per bar. A series
+ * at or under its cap is returned as is, so a short series draws exactly as before. `width <= 0`
+ * (unmeasured) pools nothing.
+ */
+export function poolSparkline(
   rows: readonly Point[],
+  width: number,
+  mark: 'line' | 'bar',
+): readonly Point[] {
+  const cap = mark === 'bar' ? Math.floor(width / 2) : Math.floor(width)
+  if (width <= 0 || rows.length <= Math.max(cap, 2)) return rows
+  const head = rows.slice(0, -1)
+  const last = rows.at(-1) as Point
+  const buckets = Math.max(1, mark === 'bar' ? cap - 1 : Math.floor(cap / 2) - 1)
+  const size = head.length / buckets
+  const out: Point[] = []
+  for (let b = 0; b < buckets; b++) {
+    const bucket = head.slice(Math.round(b * size), Math.round((b + 1) * size))
+    if (bucket.length === 0) continue
+    if (mark === 'line') {
+      out.push(...bucketExtremes(bucket))
+      continue
+    }
+    const pick = bucketExtremes(bucket).reduce((a, r) =>
+      Math.abs(r.v ?? 0) > Math.abs(a.v ?? 0) ? r : a,
+    )
+    out.push({ i: out.length, v: pick.v })
+  }
+  return [...out, mark === 'bar' ? { i: out.length, v: last.v } : last]
+}
+
+function compileSparkline(
+  source: readonly Point[],
   [lo, hi]: readonly [number, number],
   mark: 'line' | 'bar',
   color: string,
   emphasisColor: string | null,
 ): CartesianDefinition {
-  const last = rows.at(-1)
   return {
-    chart: () => {
+    chart: ({ width }) => {
+      const rows = poolSparkline(source, width, mark)
+      const last = rows.at(-1)
       if (mark === 'bar') {
         return {
           marks: [
@@ -104,7 +153,7 @@ function compileSparkline(
       // A flat or single-point series needs an extent; 10% air keeps the stroke inside the box.
       const pad = (hi - lo) * 0.1 || 1
       // Half a dot of air at each end, in index units, so the last-point dot is not clipped.
-      const xPad = emphasisColor === null ? 0 : (rows.length - 1) * 0.04 || 0.5
+      const xPad = emphasisColor === null ? 0 : (source.length - 1) * 0.04 || 0.5
       return {
         marks: [
           lineY(rows, {
@@ -125,7 +174,7 @@ function compileSparkline(
         ],
         scales: {
           x: {
-            scale: scaleLinear().domain([-xPad, Math.max(rows.length - 1, 1) + xPad]),
+            scale: scaleLinear().domain([-xPad, Math.max(source.length - 1, 1) + xPad]),
             axis: false as const,
           },
           y: { scale: scaleLinear().domain([lo - pad, hi + pad]), axis: false as const },

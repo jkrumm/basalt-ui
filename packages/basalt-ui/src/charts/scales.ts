@@ -137,9 +137,14 @@ export type XScaleModel<X extends ChartX> = {
 
 const DAY_MS = 86_400_000
 
-export function xScaleFor<X extends ChartX>(raw: readonly X[], band: boolean): XScaleModel<X> {
+export function xScaleFor<X extends ChartX>(
+  raw: readonly X[],
+  band: boolean,
+  /** Continuous scales only: the explicit `[min, max]` that replaces the data's own extent. */
+  xDomain?: readonly [X, X],
+): XScaleModel<X> {
   const values = distinctX(raw)
-  const kind = xKindOf(values)
+  const kind = xKindOf(xDomain ? [xDomain[0]] : values)
   const n = values.length
 
   if (band || kind === 'string') {
@@ -194,7 +199,10 @@ export function xScaleFor<X extends ChartX>(raw: readonly X[], band: boolean): X
     if (v > hi) hi = v
   }
   if (!Number.isFinite(lo)) [lo, hi] = [0, 1]
-  if (lo === hi) {
+  const bound = (v: X): number => (v instanceof Date ? v.getTime() : (v as number))
+  const explicit = xDomain ? ([bound(xDomain[0]), bound(xDomain[1])] as const) : null
+  if (explicit !== null && explicit[0] < explicit[1]) [lo, hi] = explicit
+  else if (lo === hi) {
     // One sample: give the axis a day (or a unit) of width so the point sits in the middle.
     const half = kind === 'date' ? DAY_MS / 2 : 0.5
     lo -= half

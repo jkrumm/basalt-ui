@@ -210,6 +210,22 @@ describe('scales', () => {
     expect(xScaleFor(['a', 'b'], false).band).toBe(false)
     expect(xScaleFor([day(1), day(2)], true).band).toBe(true)
   })
+  test('xDomain replaces the data extent: the same instant is the same fraction whatever the data spans', () => {
+    const domain = [day(1), day(9)] as const
+    const narrow = xScaleFor([day(3), day(4)], false, domain)
+    const wide = xScaleFor([day(1), day(9)], false, domain)
+    expect(narrow.extent).toEqual([day(1).getTime(), day(9).getTime()])
+    expect(narrow.fraction(day(5))).toBe(0.5)
+    expect(narrow.fraction(day(5))).toBe(wide.fraction(day(5)))
+    // Numeric x, and a domain the data does not touch at all.
+    expect(xScaleFor<number>([2, 3], false, [0, 10]).fraction(5)).toBe(0.5)
+    expect(xScaleFor<number>([], false, [0, 10]).fraction(5)).toBe(0.5)
+  })
+  test('xDomain is ignored by a band or string x, and a degenerate domain falls back to the data', () => {
+    expect(xScaleFor(['a', 'b'], false, ['a', 'b']).band).toBe(false)
+    expect(xScaleFor([day(1), day(2)], true, [day(1), day(9)]).band).toBe(true)
+    expect(xScaleFor([1, 3], false, [5, 5]).extent).toEqual([1, 3])
+  })
   test('a large series does not overflow the stack computing the domain', () => {
     // 1M distinct values exceed the call-argument limit, so a spread into Math.min/max throws.
     const big = Array.from({ length: 1_000_000 }, (_, i) => i)

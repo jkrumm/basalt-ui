@@ -174,6 +174,12 @@ export type ChartsSpec = {
   width?: number
   /** Mounts a second `Lines` on the same Date x (`data-testid="chart-frame-2"`): the cursor pair. */
   pair?: true
+  /**
+   * With `pair`: both charts pin the same `xDomain` (the full data's extent) and one `xTicks`
+   * instant, but the follower draws only the middle third of the rows — so the same instant is
+   * only the same pixel column if the explicit domain, not the data, sets the scale.
+   */
+  xDomain?: true
 }
 
 /** The `rail` probe: a stated pixel thickness along the top of a plot whose y domain tops out at

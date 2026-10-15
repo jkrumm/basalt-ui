@@ -238,6 +238,7 @@ Signature: BandStrip(props: BandStripProps<T, X, K>): ReactElement<unknown, stri
   data: readonly T[]
   x: (d: T) => X
   xTicks?: number | readonly X[]
+  xDomain?: readonly [X, X]
   formatX?: ((x: X) => string)
   legend?: false | ChartLegendConfig
   height?: number | ResponsiveChartHeight
@@ -258,6 +259,7 @@ Signature: Bars(props: BarsProps<T, X>): ReactElement<unknown, string | JSXEleme
   y?: AxisConfig<T>
   y2?: AxisConfig<T>
   xTicks?: number | readonly X[]
+  xDomain?: readonly [X, X]
   formatX?: ((x: X) => string)
   zones?: readonly ZoneSpec[]
   xZones?: readonly XZoneSpec<X>[]
@@ -283,6 +285,7 @@ Signature: CartesianChart(props: CartesianChartProps<T, X>): ReactElement<unknow
   y?: AxisConfig<T>
   y2?: AxisConfig<T>
   xTicks?: number | readonly X[]
+  xDomain?: readonly [X, X]
   formatX?: ((x: X) => string)
   zones?: readonly ZoneSpec[]
   xZones?: readonly XZoneSpec<X>[]
@@ -374,6 +377,7 @@ Signature: Lines(props: LinesProps<T, X>): ReactElement<unknown, string | JSXEle
   y?: AxisConfig<T>
   y2?: AxisConfig<T>
   xTicks?: number | readonly X[]
+  xDomain?: readonly [X, X]
   formatX?: ((x: X) => string)
   zones?: readonly ZoneSpec[]
   xZones?: readonly XZoneSpec<X>[]
@@ -425,6 +429,7 @@ Signature: StackedArea(props: StackedAreaProps<T, X>): ReactElement<unknown, str
   data: readonly T[]
   x: (d: T) => X
   xTicks?: number | readonly X[]
+  xDomain?: readonly [X, X]
   formatX?: ((x: X) => string)
   zones?: readonly ZoneSpec[]
   xZones?: readonly XZoneSpec<X>[]

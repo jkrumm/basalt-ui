@@ -287,6 +287,12 @@ export type CartesianChartProps<T, X extends ChartX = ChartX> = BasaltProps & {
   y2?: AxisConfig<T> | undefined
   /** A tick count, or the exact x tick values. Default: by container class. */
   xTicks?: number | readonly X[] | undefined
+  /**
+   * `[min, max]` of the x scale, in `x`'s type (continuous x only; a string or bar x ignores it).
+   * Default: the data's own extent. Charts given the same domain put the same instant on the same
+   * pixel column, whatever their data spans; rows outside it are clipped.
+   */
+  xDomain?: readonly [X, X] | undefined
   /** Tick label for an x value. Default: `DD.MM` for dates, compact numbers, strings verbatim. */
   formatX?: ((x: X) => string) | undefined
   zones?: readonly ZoneSpec[] | undefined
