@@ -9,7 +9,7 @@ import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { renderToString } from 'react-dom/server'
 import { CartesianChart } from './CartesianChart'
-import { compileCartesian, dashedSwatch, engineRow, readsPlot, refLegendSeries } from './compile'
+import { compileCartesian, dashedSwatch, engineRow, refLegendSeries } from './compile'
 import type { CartesianDefinition } from './compile'
 import { VX } from '../tokens'
 import { contrastRatio } from '../tokens/hct'
@@ -430,74 +430,75 @@ describe('band edge rules', () => {
 })
 
 describe('cursor dot per-datum colour (getMarker on a cursorValue series)', () => {
-  const tracked: ChartSeries<Row> = {
+  const RED = 'var(--vx-fill-red)'
+  const tracked = (marker: ChartSeries<Row>['getMarker']): ChartSeries<Row> => ({
     key: 'track',
     label: 'Track',
     color: 'var(--vx-accent)',
     getValue: () => null,
     cursorValue: (d) => d.track,
-    getMarker: (d) => (d.n === 4 ? { color: 'var(--vx-fill-red)' } : null),
-  }
-  const render = () =>
-    ssr(<CartesianChart ariaLabel="C" data={data} x={x} series={[a, tracked]} marks={() => []} />)
+    ...(marker && { getMarker: marker }),
+  })
+  const render = (series: ChartSeries<Row>, rows: Row[] = data) =>
+    ssr(<CartesianChart ariaLabel="C" data={rows} x={x} series={[a, series]} marks={() => []} />)
+  const marksOf = (el: Element): Element[] => [
+    ...el.querySelectorAll('g[data-ts-key^="track-cursor"]'),
+  ]
   const fills = (el: Element): string[] =>
     [...el.querySelectorAll('g[data-ts-key^="track-cursor"] circle')].map(
       (c) => c.getAttribute('fill') ?? '',
     )
 
   test('a datum with a marker colour gets its own cursor dot; the rest keep the series colour', () => {
-    const all = fills(render())
-    expect(all.filter((f) => f === 'var(--vx-fill-red)').length).toBe(1)
+    const all = fills(render(tracked((d) => (d.n === 4 ? { color: RED } : null))))
+    expect(all.filter((f) => f === RED).length).toBe(1)
     expect(all.filter((f) => f === 'var(--vx-accent)').length).toBe(2)
   })
 
-  test('the first mark keeps the `<key>-cursor` id', () => {
-    expect(keyed(render(), 'track-cursor').length).toBe(1)
-  })
-})
-
-describe('PlotContext: data and plot size', () => {
-  const build = (hidden: string[], plot?: { width: number; height: number }) => {
-    const seen: { data?: readonly Row[]; rows?: number; plotW?: number; plotH?: number } = {}
-    compileCartesian({
-      chartId: 'pc',
-      data,
-      x,
-      series: [a, { ...a, key: 'b', label: 'B' }],
-      hidden: new Set(hidden),
-      ...(plot && { plot }),
-      marks: (p) => {
-        seen.data = p.data
-        seen.rows = p.rows('a').length
-        seen.plotW = p.plotWidth
-        seen.plotH = p.plotHeight
-        return []
-      },
-    }).chart({ width: 400, height: 200, defaultTheme: {} as never })
-    return seen
-  }
-
-  test('plot.data is every row even when every series is hidden; plot.rows(key) is []', () => {
-    const seen = build(['a', 'b'])
-    expect(seen.data).toBe(data)
-    expect(seen.rows).toBe(0)
+  test('marks are keyed by colour: the series colour keeps `<key>-cursor`, others the colour slug', () => {
+    const keys = marksOf(render(tracked((d) => (d.n === 4 ? { color: RED } : null)))).map((g) =>
+      g.getAttribute('data-ts-key'),
+    )
+    expect(keys).toEqual(['track-cursor', 'track-cursor-var_--vx-fill-red_'])
   })
 
-  test('the plot size is the frame until the engine has laid out, then the laid-out plot', () => {
-    expect([build([]).plotW, build([]).plotH]).toEqual([400, 200])
-    const laid = build([], { width: 360.5, height: 170 })
-    expect([laid.plotW, laid.plotH]).toEqual([360.5, 170])
+  test('a getMarker that returns null for every datum is the old single dot mark', () => {
+    const el = render(tracked(() => null))
+    expect(marksOf(el).length).toBe(1)
+    expect(keyed(el, 'track-cursor').length).toBe(1)
+    expect(fills(el).every((f) => f === 'var(--vx-accent)')).toBe(true)
   })
 
-  test('reading the plot size marks the definition, so only such a chart tracks the layout', () => {
-    const ctx = { width: 400, height: 200, defaultTheme: {} as never }
-    const base = { chartId: 'pr', data, x, series: [a] }
-    const quiet = compileCartesian({ ...base, marks: () => [] })
-    quiet.chart(ctx)
-    expect(readsPlot(quiet)).toBe(false)
-    const reader = compileCartesian({ ...base, marks: (p) => (p.plotHeight, []) })
-    expect(readsPlot(reader)).toBe(false)
-    reader.chart(ctx)
-    expect(readsPlot(reader)).toBe(true)
+  test('one mark per distinct colour, however many datums share it', () => {
+    const colors = ['var(--a)', 'var(--b)', 'var(--c)', 'var(--d)', 'var(--e)']
+    const many: Row[] = Array.from({ length: 40 }, (_, i) => ({
+      t: day(1 + i),
+      a: i,
+      track: i,
+      n: i,
+    }))
+    const el = render(
+      tracked((d) => ({ color: colors[d.n % colors.length] as string })),
+      many,
+    )
+    // five colours, none of them the series colour: the series-colour mark stays (empty)
+    expect(marksOf(el).length).toBe(colors.length + 1)
+  })
+
+  test('5,000 rows of one colour group in linear time into one mark', () => {
+    const big: Row[] = Array.from({ length: 5000 }, (_, i) => ({
+      t: new Date(Date.UTC(2020, 0, 1) + i * 3_600_000),
+      a: i,
+      track: i,
+      n: i,
+    }))
+    const start = performance.now()
+    const el = render(
+      tracked(() => ({ color: RED })),
+      big,
+    )
+    const ms = performance.now() - start
+    expect(marksOf(el).filter((g) => g.querySelectorAll('circle').length > 0).length).toBe(1)
+    expect(ms).toBeLessThan(3000)
   })
 })

@@ -68,7 +68,8 @@ export type ChartSeries<T> = {
    */
   cursorValue?: ((d: T) => number | null) | undefined
   /** A marker at a point (a PR star, a status dot); `null` for none. On a `cursorValue` series
-   * only `color` applies, to the cursor dot. */
+   * only `color` applies, to the cursor dot, and each distinct color is one extra mark: keep colors
+   * a small categorical set (statuses, buckets), never a continuous scale. */
   getMarker?:
     | ((d: T) => {
         color?: string | undefined
@@ -250,13 +251,14 @@ export type PlotContext<T, X extends ChartX = ChartX> = {
    * The plot area in px: the frame less the axis gutters. Pin a mark in pixels with it (a 3 px
    * rail along the top is `yMax - 3 * (yMax - yMin) / plot.plotHeight` down from `yMax`). The
    * engine measures its gutters after `marks` runs, so the first pass (the server HTML, the first
-   * client frame) reports the frame; the chart re-renders once with the measured area, and only a
-   * chart whose `marks` read these fields pays that render.
+   * client frame) reports the FRAME, one frame-sized draw; the chart then re-renders once with the
+   * measured area, and only a chart whose `marks` read these fields pays that render. Every kind,
+   * single or composed, reports it the same way.
    */
   plotWidth: number
   plotHeight: number
   /**
-   * Every row of `data`, whatever the legend hides. For bucket-level marks only (absent columns,
+   * Every row of `data`, whatever the legend hides: raw datums (`T`), NOT `PlotRow`s. For bucket-level marks only (absent columns,
    * rails: the slot grid must not vanish with its last visible series); a series' own marks still
    * draw `plot.rows(key)` and gate on `plot.visible`.
    */

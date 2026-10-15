@@ -4,7 +4,16 @@ import { ThreadFeedRow } from '../../../src/agent'
 import type { AgentThread, ChatMessage, TranscriptPart } from '../../../src/agent'
 import { ThreadTranscript } from '../../../src/agent/chat/thread-message'
 import { rect } from '@tanstack/charts/rect'
+import { ruleY } from '@tanstack/charts/rule'
+import { scaleLinear } from '@tanstack/charts/scales/linear'
+import { scaleUtc } from 'd3-scale'
 import { Bars, CartesianChart, ChartCard, DualPanel, Lines } from '../../../src/charts'
+import { PanelRung, chartHeightOf, paneX, paneY } from '../../../src/charts/panel'
+import type { PaneBuilder, PaneContext, PanelInput, PanelPlan } from '../../../src/charts/panel'
+import { plotContext } from '../../../src/charts/plot-context'
+import { xScaleFor } from '../../../src/charts/scales'
+import type { ChartMarks } from '../../../src/charts/types'
+import { resolveContainerClass } from '../../../src/tokens/size-classes'
 import type { BarsBar, ChartSeries } from '../../../src/charts'
 import { overlays } from '../../../src/commands'
 import { FilterSet, FormRow, SelectFilter, ViewTabs } from '../../../src/controls'
@@ -35,7 +44,7 @@ import type {
   ItemSpec,
   TableSpec,
 } from './spec'
-import { TOC_SCROLL_MARGIN_PX } from './spec'
+import { RAIL_DOMAIN_MAX, RAIL_PX, TOC_SCROLL_MARGIN_PX } from './spec'
 
 /** A consumer-sized (18px) glyph — the bar normalizes it to `--vx-space-mobile-nav-icon-size` in
  *  CSS, which is part of what the geometry assertions cover. */
@@ -625,8 +634,6 @@ const CHART_COLORS = [
 ]
 
 const CHART_DAYS = 30
-/** The rail's stated thickness: the `rail` probe asserts it measures this many px. */
-const RAIL_PX = 3
 
 /** UTC days, so the fixture is deterministic whatever the host's timezone. */
 function buildChartData(seriesCount: number, days: number = CHART_DAYS): ChartPoint[] {
@@ -653,6 +660,104 @@ function buildBars(seriesCount: number): BarsBar<ChartPoint>[] {
 }
 
 const chartX = (d: ChartPoint): Date => d.at
+
+/** The rail idiom: `px` along the top of a `[0, RAIL_DOMAIN_MAX]` plot, sized from the plot area. */
+function railMark(data: readonly ChartPoint[], plotHeight: number): ReturnType<typeof rect> {
+  return rect([0], {
+    id: 'rail',
+    x1: () => data[0]?.at,
+    x2: () => data.at(-1)?.at,
+    y1: () => RAIL_DOMAIN_MAX - (RAIL_PX * RAIL_DOMAIN_MAX) / plotHeight,
+    y2: () => RAIL_DOMAIN_MAX,
+    fill: CHART_COLORS[1] as string,
+    inset: 0,
+  })
+}
+
+/** A composed (two-pane) chart whose TOP pane draws the rail: the composed path's plot sizes. */
+function PanelRailChart({
+  data,
+  height,
+}: {
+  data: readonly ChartPoint[]
+  height: number | undefined
+}): ReactElement {
+  const series = useMemo(() => buildLineSeries(1), [])
+  const plan = useCallback(
+    (_input: PanelInput): PanelPlan<ChartPoint> => {
+      const model = xScaleFor<Date>(data.map(chartX), false)
+      const [lo, hi] = model.extent ?? [0, 1]
+      const xScale = () => scaleUtc().domain([new Date(lo), new Date(hi)])
+      const yScale = () => scaleLinear().domain([0, RAIL_DOMAIN_MAX])
+      const share = 0.6
+      const pane = (
+        ctx: PaneContext,
+        marks: ChartMarks,
+        shareOf: number,
+        withX: boolean,
+      ): ReturnType<PaneBuilder> => {
+        const cls = resolveContainerClass(ctx.width)
+        const whole = chartHeightOf(ctx.height, shareOf, 8)
+        return {
+          marks,
+          scales: {
+            x: withX
+              ? paneX({ scale: xScale(), model, format: String, cls, height: whole })
+              : { scale: xScale(), axis: false },
+            y: paneY({
+              scale: yScale(),
+              domain: [0, RAIL_DOMAIN_MAX],
+              format: String,
+              ticks: 3,
+              cls,
+              height: whole,
+            }),
+          },
+        }
+      }
+      return {
+        keys: model.values,
+        topFraction: share,
+        gap: 8,
+        rows: () => [],
+        top: (ctx) => {
+          const plot = plotContext<ChartPoint, Date>(
+            {
+              rows: () => [],
+              visible: series,
+              highlighted: null,
+              containerClass: resolveContainerClass(ctx.width),
+              width: ctx.width,
+              height: ctx.height,
+              data,
+              y2: undefined,
+              yDomain: [0, RAIL_DOMAIN_MAX],
+              y2Domain: undefined,
+            },
+            ctx.plot,
+          )
+          return pane(ctx, [railMark(data, plot.plotHeight)], share, false)
+        },
+        bottom: (ctx) =>
+          pane(
+            ctx,
+            [ruleY([0], { id: 'zero', stroke: CHART_COLORS[0] as string })],
+            1 - share,
+            true,
+          ),
+      }
+    },
+    [data, series],
+  )
+  return (
+    <PanelRung
+      ariaLabel="Fixture panel rail"
+      series={series}
+      plan={plan}
+      {...(height !== undefined && { height })}
+    />
+  )
+}
 
 /** One real `basalt-ui/charts` kind, picked by `spec.kind`, in a `data-testid` box so a test has one
  * stable selector for "the chart's own container" — fixed-width when `width` pins its class. */
@@ -682,20 +787,12 @@ function ChartsFixture({ spec }: { spec: ChartsSpec }): ReactElement {
         data={data}
         x={chartX}
         series={buildLineSeries(1)}
-        y={{ domain: [0, 100] }}
-        marks={(plot) => [
-          rect([0], {
-            id: 'rail',
-            x1: () => data[0]?.at,
-            x2: () => data.at(-1)?.at,
-            y1: () => 100 - RAIL_PX * (100 / plot.plotHeight),
-            y2: () => 100,
-            fill: CHART_COLORS[1] as string,
-            inset: 0,
-          }),
-        ]}
+        y={{ domain: [0, RAIL_DOMAIN_MAX] }}
+        marks={(plot) => [railMark(data, plot.plotHeight)]}
         {...height}
       />
+    ) : spec.kind === 'panel-rail' ? (
+      <PanelRailChart data={data} height={spec.height} />
     ) : spec.kind === 'bars' ? (
       <Bars
         ariaLabel="Fixture bars"

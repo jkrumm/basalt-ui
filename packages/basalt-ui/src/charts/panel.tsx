@@ -24,6 +24,8 @@ import type { ChartShellProps, ShellContext } from './CartesianChart'
 import { defaultFormatX, engineRow, utcHeaderDate, visibleSeries, xGuide, yGuide } from './compile'
 import type { CartesianDefinition } from './compile'
 import { cursorBinding, sourceOnlyFocus } from './cursor'
+import { plotAccess } from './plot-context'
+import type { PlotAccess } from './plot-context'
 import type { XScaleModel } from './scales'
 import { CHART_THEME, CROSSHAIR } from './theme'
 import type { ContainerClass } from '../tokens/size-classes'
@@ -36,8 +38,12 @@ import type {
   PlotRow,
 } from './types'
 
+/** What a pane builder is given: the engine's frame for the pane and its plot-size access, to build
+ * a `PlotContext` with `plotContext()` (`plot-context.ts`). */
+export type PaneContext = ChartBuildContext & { plot: PlotAccess }
+
 /** One pane, built per container class: its marks and its scales (x, y, and any helper scale). */
-export type PaneBuilder = (ctx: ChartBuildContext) => {
+export type PaneBuilder = (ctx: PaneContext) => {
   marks: ChartMarks
   scales: StoredChartSpec['scales']
 }
@@ -135,10 +141,13 @@ export function rowsOf<T, X extends ChartX>(
 }
 
 /** A pane as a composable view. The crosshair is per pane: together they span both. */
-function paneView(build: PaneBuilder): ComposableResponsiveChartDefinition {
+function paneView(
+  build: PaneBuilder,
+  access: () => PlotAccess,
+): ComposableResponsiveChartDefinition {
   return {
     chart: (ctx) => {
-      const { marks, scales } = build(ctx)
+      const { marks, scales } = build({ ...ctx, plot: access() })
       return {
         marks: [...marks, crosshair({ x: CROSSHAIR, y: false })],
         scales,
@@ -176,7 +185,10 @@ function panelDefinition<T, X extends ChartX>(
     ? Math.min(Math.max(plan.topFraction, MIN_PANE_SHARE), 1 - MIN_PANE_SHARE)
     : 0.5
   const composed = composeViews({
-    views: { top: paneView(plan.top), bottom: paneView(plan.bottom) },
+    views: {
+      top: paneView(plan.top, () => plotAccess(definition, ctx.plot, 'top')),
+      bottom: paneView(plan.bottom, () => plotAccess(definition, ctx.plot, 'bottom')),
+    },
     layout: grid({
       rows: [
         { id: 'top', grow: top },
@@ -196,7 +208,7 @@ function panelDefinition<T, X extends ChartX>(
     if (v instanceof Date && !formatX) return utcHeaderDate(v)
     return formatX ? formatX(v as X) : defaultFormatX(v)
   }
-  return {
+  const definition: CartesianDefinition = {
     chart: () => composed,
     focus: tooltip?.onFollow ? 'group-x' : sourceOnlyFocus(cursorGroup, chartId),
     maxFocusDistance: Number.POSITIVE_INFINITY,
@@ -224,6 +236,7 @@ function panelDefinition<T, X extends ChartX>(
             },
           },
   }
+  return definition
 }
 
 export function PanelRung<T, X extends ChartX>(props: PanelRungProps<T, X>): ReactElement {

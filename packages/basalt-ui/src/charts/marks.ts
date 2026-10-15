@@ -116,28 +116,36 @@ export function cursorDots<T, X extends ChartX>(
   yScale: 'y2' | undefined,
 ): ChartMarks {
   // `dot.fill` is constant, so a series with `getMarker` gets one mark per distinct datum colour.
-  const byColor = new Map<string, PlotRow<T, X>[]>()
+  const byColor = new Map<string, PlotRow<T, X>[]>([[s.color, []]])
   for (const row of rows) {
     const color = s.getMarker?.(row.datum)?.color ?? s.color
-    byColor.set(color, [...(byColor.get(color) ?? []), row])
+    const group = byColor.get(color)
+    if (group) group.push(row)
+    else byColor.set(color, [row])
   }
-  if (byColor.size === 0) byColor.set(s.color, [])
-  return [...byColor].map(([color, group], i) =>
-    dot(group, {
-      id: i === 0 ? `${s.key}-cursor` : `${s.key}-cursor-${i}`,
-      x: rowX,
-      y: 'y',
-      r: VX.dotR,
-      fill: color,
-      fillOpacity: 0,
-      stroke: VX.surface.panel,
-      strokeWidth: 1.5,
-      strokeOpacity: 0,
-      states: [{ when: { focus: 'x' }, style: { fillOpacity: 1, strokeOpacity: 1 } }],
-      ...(yScale !== undefined && { yScale }),
-    }),
+  return [...byColor].flatMap(([color, group]) =>
+    // The series colour keeps `<key>-cursor` even when no datum uses it; others are keyed by colour.
+    group.length === 0 && color !== s.color
+      ? []
+      : [
+          dot(group, {
+            id: color === s.color ? `${s.key}-cursor` : `${s.key}-cursor-${colorSlug(color)}`,
+            x: rowX,
+            y: 'y',
+            r: VX.dotR,
+            fill: color,
+            fillOpacity: 0,
+            stroke: VX.surface.panel,
+            strokeWidth: 1.5,
+            strokeOpacity: 0,
+            states: [{ when: { focus: 'x' }, style: { fillOpacity: 1, strokeOpacity: 1 } }],
+            ...(yScale !== undefined && { yScale }),
+          }),
+        ],
   )
 }
+
+const colorSlug = (color: string): string => color.replaceAll(/[^\w-]+/g, '_')
 
 /**
  * A single-series `barY`. The engine stacks every `barY` that has no explicit extent, and a row with

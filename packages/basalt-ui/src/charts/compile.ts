@@ -29,6 +29,8 @@ import { VX } from '../tokens'
 import type { ContainerClass } from '../tokens/size-classes'
 import { cursorBinding, sourceOnlyFocus } from './cursor'
 import { cursorDots } from './marks'
+import { MAIN_PANE, plotAccess, plotContext } from './plot-context'
+import type { PlotSizes } from './plot-context'
 import { resolveContainerClass } from '../tokens/size-classes'
 import { resolveYDomain, xScaleFor, xZoneFractions, yScaleFor } from './scales'
 import type { XScaleModel } from './scales'
@@ -85,16 +87,8 @@ export type CartesianInput<T, X extends ChartX> = Pick<
   /** Bar kinds: how the left-axis `mark: 'bar'` series combine for the auto domain. */
   stack?: 'stacked' | 'normalized'
   /** The plot area the engine last laid out; `null` before the first layout (the frame stands in). */
-  plot?: PlotSize | null
+  plot?: PlotSizes | null
 }
-
-/** The engine's laid-out plot area in px. */
-export type PlotSize = { width: number; height: number }
-
-const PLOT_READERS = new WeakSet<object>()
-/** Whether the definition's `marks` read `plotWidth`/`plotHeight`: only then does the shell track the
- * laid-out plot and recompile on it. Known after the first build. */
-export const readsPlot = (definition: object): boolean => PLOT_READERS.has(definition)
 
 /** Font size and tick counts per container class (§ 9.6). */
 const LADDER = {
@@ -852,26 +846,23 @@ export function compileCartesian<T, X extends ChartX>(
   const definition: CartesianDefinition = {
     chart: ({ width, height }: ChartBuildContext): StoredChartSpec => {
       const cls = resolveContainerClass(width)
-      const kindMarks = input.marks({
-        rows,
-        visible,
-        highlighted: input.highlighted ?? null,
-        containerClass: cls,
-        width,
-        height,
-        get plotWidth() {
-          PLOT_READERS.add(definition)
-          return input.plot?.width ?? width
-        },
-        get plotHeight() {
-          PLOT_READERS.add(definition)
-          return input.plot?.height ?? height
-        },
-        data: input.data,
-        y2: axes.right ? 'y2' : undefined,
-        yDomain: axes.left.domain,
-        y2Domain: axes.right?.domain,
-      })
+      const kindMarks = input.marks(
+        plotContext(
+          {
+            rows,
+            visible,
+            highlighted: input.highlighted ?? null,
+            containerClass: cls,
+            width,
+            height,
+            data: input.data,
+            y2: axes.right ? 'y2' : undefined,
+            yDomain: axes.left.domain,
+            y2Domain: axes.right?.domain,
+          },
+          plotAccess(definition, input.plot, MAIN_PANE),
+        ),
+      )
       return {
         marks: [...under, ...kindMarks, ...dots, ...over, crosshair({ x: CROSSHAIR, y: false })],
         scales: buildScales({

@@ -18,10 +18,11 @@ import { defaultFormatX, defaultNumberFormat, engineRow, seriesRow, visibleSerie
 import { barMark, emphasis, lineMark, markersOf, thinFill } from './marks'
 import { PanelRung, chartHeightOf, paneX, paneY, rowsOf } from './panel'
 import type { PaneBuilder, PanelInput, PanelPlan } from './panel'
+import { plotContext } from './plot-context'
 import type { SignedSeries } from './legend'
 import { xScaleFor } from './scales'
 import { rowX } from './types'
-import type { CartesianChartProps, ChartSeries, PlotContext, PlotRow } from './types'
+import type { CartesianChartProps, ChartSeries, PlotRow } from './types'
 
 // ── DualPanel ───────────────────────────────────────────────────────────────────────────────────
 
@@ -228,26 +229,27 @@ export function DualPanel<T, X extends Date | number = Date | number>(
         }
       }
 
-      const topPane: PaneBuilder = ({ width, height: h }) => {
+      const topPane: PaneBuilder = ({ width, height: h, plot: access }) => {
         const cls = resolveContainerClass(width)
-        const plot: PlotContext<T, Date | number> = {
-          rows: (key) => {
-            const s = lines.find((l) => l.key === key)
-            if (!s) throw new Error(`[basalt] DualPanel: no series "${key}"`)
-            return rows(s)
+        const plot = plotContext<T, Date | number>(
+          {
+            rows: (key) => {
+              const s = lines.find((l) => l.key === key)
+              if (!s) throw new Error(`[basalt] DualPanel: no series "${key}"`)
+              return rows(s)
+            },
+            visible,
+            highlighted,
+            containerClass: cls,
+            width,
+            height: h,
+            data,
+            y2: undefined,
+            yDomain: topDomain,
+            y2Domain: undefined,
           },
-          visible,
-          highlighted,
-          containerClass: cls,
-          width,
-          height: h,
-          plotWidth: width,
-          plotHeight: h,
-          data,
-          y2: undefined,
-          yDomain: topDomain,
-          y2Domain: undefined,
-        }
+          access,
+        )
         return {
           marks: [
             ...(fill
