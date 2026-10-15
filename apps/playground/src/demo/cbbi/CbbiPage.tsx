@@ -18,7 +18,7 @@
  */
 import { Alert, Loader, SimpleGrid, Stack, Text } from '@mantine/core'
 import { PageAside, PageBar, Section, StatCard, StatGroup } from 'basalt-ui'
-import type { StatCardTone } from 'basalt-ui'
+import type { Tone } from 'basalt-ui'
 import { ChartCard, Lines } from 'basalt-ui/charts'
 import type { AxisConfig, ChartSeries, ZoneSpec } from 'basalt-ui/charts'
 import { FilterSet, RangeFilter, ViewTabs } from 'basalt-ui/controls'
@@ -67,7 +67,7 @@ const COMBINED_CHART_HEIGHT = 520
  * way round from a KPI: a HIGH reading is the dangerous one. `peak` is therefore `bad` and
  * `bottom` is `good`; the mid band asserts nothing and carries no rail.
  */
-const ZONE_TONE: Partial<Record<CbbiZone, StatCardTone>> = {
+const ZONE_TONE: Partial<Record<CbbiZone, Tone>> = {
   peak: 'bad',
   bottom: 'good',
 }

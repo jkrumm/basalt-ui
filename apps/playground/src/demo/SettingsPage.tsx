@@ -66,7 +66,8 @@ const statusBadgeStyles = {
 const identityMetaStyle: CSSProperties = {
   fontFamily: 'var(--basalt-font-mono)',
   // Mono account-meta line kept at 12px (not bumped onto xs=12.5), matching the "12px stays a
-  // theme-allow: literal" convention (see DashboardPage meterValueStyle) — no matching VX.text step.
+  // literal" convention (see DashboardPage meterValueStyle).
+  // theme-allow no-raw-font-size — no matching VX.text step
   fontSize: 12,
   color: VX.faint,
 }
