@@ -1,6 +1,11 @@
 /**
  * TableOfContents — an IntersectionObserver scroll-spy rail (docs/CONTENT-SPEC.md §3/§6).
  *
+ * Contract with `Markdown`: `Markdown` slugs every heading it renders into an `id` (deduped within the
+ * one document; per streamed block in `streaming` mode); `containerRef` collects the h2/h3 (`levels`)
+ * that already carry an `id` under that single container, on mount and on every childList mutation
+ * beneath it — late or lazy-rendered headings are picked up. `Prose` sets no ids; `items` replaces collection.
+ *
  * Headings self-register: pass `items` explicitly, or pass `containerRef` and the component
  * collects `h2`/`h3` (configurable via `levels`) that already carry an `id` — pair with
  * `headingSlug`/`SlugTracker` when authoring the headings. Sticky positioning is the consumer's
