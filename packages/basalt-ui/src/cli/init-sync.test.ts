@@ -368,6 +368,26 @@ describe('router seeds — the nav module and the root route', () => {
     expect(existsSync(resolve(dir, MANIFEST_PATH))).toBe(true)
   })
 
+  it('a code-routed app gets no __root.tsx seed, and a deleted seed is not recreated', () => {
+    writeFixture('package.json', JSON.stringify({ name: 'fixture' }))
+    writeFixture('index.html', '<script type="module" src="/src/main.tsx"></script>')
+    writeFixture('src/main.tsx', "import { router } from './lib/router'\nrouter\n")
+    writeFixture(
+      'src/lib/router.tsx',
+      'const root = createRootRouteWithContext<Ctx>()({})\nexport const router = createBasaltRouter({ routeTree: root })\n',
+    )
+    capture(() => init(dir))
+    expect(existsSync(resolve(dir, 'src/routes/__root.tsx'))).toBe(false)
+    capture(() => sync({}, dir))
+    expect(existsSync(resolve(dir, 'src/routes/__root.tsx'))).toBe(false)
+    rmSync(resolve(dir, 'src/lib/nav.tsx'))
+    capture(() => sync({}, dir))
+    const second = capture(() => sync({}, dir))
+    expect(second.log).toContain('0 created, 0 recreated')
+    expect(existsSync(resolve(dir, 'src/lib/nav.tsx'))).toBe(false)
+    expect(capture(() => sync({ check: true }, dir)).code).toBe(0)
+  })
+
   it('sync after Start is added leaves the old seeds byte-identical and names them', () => {
     writeFixture('package.json', JSON.stringify({ name: 'fixture' }))
     capture(() => init(dir))

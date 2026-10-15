@@ -12,6 +12,7 @@ import {
   MANIFEST_PATH,
   declaredProfile,
   isStartApp,
+  routerSeedDest,
   routerSeedDests,
   START_APP_NOTE,
   readBasaltConfig,
@@ -33,7 +34,7 @@ import {
   writeFileEnsuringDir,
   writeUnit,
 } from './index'
-import { seedTsconfigExtends } from './doctor-upgrade'
+import { isCodeRoutedApp, seedTsconfigExtends } from './doctor-upgrade'
 import { readOxlintPresetPlugins } from './sync'
 
 /**
@@ -130,6 +131,8 @@ export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags =
   const tokensOnly = declaredProfile(readBasaltConfig(cwd), []) === 'tokens-only'
   const startApp = isStartApp(cwd, placement.appRel)
   const skippedSeeds = new Set(tokensOnly || startApp ? routerSeedDests(placement.appRel) : [])
+  if (isCodeRoutedApp(cwd, placement.appRel))
+    skippedSeeds.add(routerSeedDest(placement.appRel, 'root'))
   const files = managedFiles(placement).filter((f) => !skippedSeeds.has(f.dest))
 
   const writtenFiles: string[] = []

@@ -6,7 +6,7 @@
  *  - sync is idempotent (second run is a byte-level no-op, manifest stable)
  *  - a locally-edited managed file is never clobbered (skipped + reported; --check exits 1)
  *  - --force overwrites managed files but never touches seeds
- *  - a seed is recreated only when missing
+ *  - a seed the consumer deleted is never recreated by sync (init restores it)
  *  - block-splicing preserves surrounding host content, appends when markers are absent, and
  *    errors loudly on duplicate markers instead of silently picking one
  *  - the managed block lives in AGENTS.md; a legacy CLAUDE.md is left alone (no migration)
@@ -144,10 +144,15 @@ describe('managed vs seed placement', () => {
     expect(read('lefthook.yml')).toBe('pre-commit:\n  commands: {}\n')
   })
 
-  it('a seed is recreated only when missing; an edited seed never drifts --check', () => {
+  it('a seed the consumer deleted is a decision: sync does not recreate it, --check stays green, init restores it', () => {
     silenced(() => init(dir))
     rmSync(join(dir, 'DESIGN.md'))
     silenced(() => sync({}, dir))
+    silenced(() => sync({}, dir))
+    expect(existsSync(join(dir, 'DESIGN.md'))).toBe(false)
+    expect(JSON.parse(read(MANIFEST_PATH)).files['DESIGN.md']).toBeString()
+    expect(silenced(() => sync({ check: true }, dir))).toBe(0)
+    silenced(() => init(dir))
     expect(existsSync(join(dir, 'DESIGN.md'))).toBe(true)
     write('DESIGN.md', '# my design\n')
     silenced(() => sync({}, dir))
