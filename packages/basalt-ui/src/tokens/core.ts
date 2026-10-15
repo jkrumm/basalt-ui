@@ -192,9 +192,6 @@ export const VX = {
     sheetRowHeight: 'var(--vx-space-sheet-row-height)',
   },
 
-  // Secondary-line color (back-compat alias; now theme-aware via --vx-line2)
-  line2Dark: 'var(--vx-line2)',
-
   // Semantic fills — consistent opacity across all charts
   good: 'var(--vx-good)',
   goodSoft: 'var(--vx-good-soft)',
@@ -357,40 +354,11 @@ const groupSide = (prefix: string, map: SeriesMap, side: Side): string =>
     .join('\n')
 
 /**
- * The 16 deprecated camelCase aliases for `frameworkPrimitives`' per-scheme canonicals, each
- * defined as `var(--vx-<canonical-kebab-name>)` so it can never drift from the value above it.
- * Emitted as its own commented, trailing group (never interleaved with the canonicals) — gated by
- * {@link BuildPaletteOpts.legacyAliases}, default on. See that option's doc for the migration
- * rationale (1.4.0 kebab-case normalization).
- */
-function frameworkPrimitivesAliases(): string {
-  return [
-    '  /* Deprecated camelCase aliases — removed in a future minor; migrate to the kebab names above. */',
-    decl('goodSolid', 'var(--vx-good-solid)'),
-    decl('badSolid', 'var(--vx-bad-solid)'),
-    decl('warnSolid', 'var(--vx-warn-solid)'),
-    decl('axisStroke', 'var(--vx-axis-stroke)'),
-    decl('dotStroke', 'var(--vx-dot-stroke)'),
-    decl('tooltipBg', 'var(--vx-tooltip-bg)'),
-    decl('tooltipText', 'var(--vx-tooltip-text)'),
-    decl('tooltipMuted', 'var(--vx-tooltip-muted)'),
-    decl('tooltipBorder', 'var(--vx-tooltip-border)'),
-    decl('tooltipShadow', 'var(--vx-tooltip-shadow)'),
-    decl('legendText', 'var(--vx-legend-text)'),
-    decl('accentHover', 'var(--vx-accent-hover)'),
-    decl('accentFill', 'var(--vx-accent-fill)'),
-    decl('accentFillHover', 'var(--vx-accent-fill-hover)'),
-    decl('onAccent', 'var(--vx-on-accent)'),
-    decl('surface-panelHover', 'var(--vx-surface-panel-hover)'),
-  ].join('\n')
-}
-
-/**
  * Built-in framework primitives for a given scheme side — STATUS group, semantic solids,
  * neutral line/axis/grid/tooltip chrome, legend text, and the surface ramp. Domain series
  * (SERIES/ACTIVITY/USAGE) are NOT shipped — apps append them via `opts.groups`.
  */
-function frameworkPrimitives(side: Side, data: PaletteData, legacyAliases: boolean): string {
+function frameworkPrimitives(side: Side, data: PaletteData): string {
   const n = data.NEUTRAL
   const s = data.SEMANTIC
   const su = data.SURFACE
@@ -439,7 +407,7 @@ function frameworkPrimitives(side: Side, data: PaletteData, legacyAliases: boole
     decl('surface-border', su.border[side]),
     decl('surface-hairline', su.hairline[side]),
   ].join('\n')
-  return legacyAliases ? `${canonical}\n${frameworkPrimitivesAliases()}` : canonical
+  return canonical
 }
 
 /**
@@ -699,31 +667,12 @@ const DEFAULT_SPACE_VALUES: SpaceValues = {
 }
 
 /**
- * The 16 deprecated camelCase aliases for `frameworkDerived`'s theme-independent (`:root`)
- * canonicals — the 12 `fill-hover-<family>` fills plus `good-soft`/`good-ref`/`bad-ref`/`warn-ref`.
- * Each is a `var(--vx-<canonical-kebab-name>)` ref so it can never drift. Emitted as its own
- * commented, trailing group — gated by {@link BuildPaletteOpts.legacyAliases}, default on.
- */
-function frameworkDerivedAliases(data: PaletteData): string {
-  return [
-    '  /* Deprecated camelCase aliases — removed in a future minor; migrate to the kebab names above. */',
-    ...Object.keys(data.FILL).map((name) =>
-      decl(`fillHover-${name}`, `var(--vx-fill-hover-${name})`),
-    ),
-    decl('goodSoft', 'var(--vx-good-soft)'),
-    decl('goodRef', 'var(--vx-good-ref)'),
-    decl('badRef', 'var(--vx-bad-ref)'),
-    decl('warnRef', 'var(--vx-warn-ref)'),
-  ].join('\n')
-}
-
-/**
  * Theme-independent scalars + semantic fills, defined once on `:root`.
  *
  * Area-gradient strength is a global knob (the theme lab overrides these two on `:root`
  * to retune every line-area fill live). 0%/0% disables gradients app-wide.
  */
-function frameworkDerived(data: PaletteData, only: 'core' | 'all', legacyAliases: boolean): string {
+function frameworkDerived(data: PaletteData, only: 'core' | 'all'): string {
   const space = spaceDecls(DEFAULT_SPACE_VALUES)
   const canonical = [
     decl('radius-card', `${RADIUS.card}px`),
@@ -768,7 +717,7 @@ function frameworkDerived(data: PaletteData, only: 'core' | 'all', legacyAliases
     decl('bad-ref', 'color-mix(in srgb, var(--vx-bad-solid) 30%, transparent)'),
     decl('warn-ref', 'color-mix(in srgb, var(--vx-warn-solid) 20%, transparent)'),
   ].join('\n')
-  return legacyAliases ? `${canonical}\n${frameworkDerivedAliases(data)}` : canonical
+  return canonical
 }
 
 /**
@@ -925,15 +874,6 @@ export type BuildPaletteOpts = {
    * — see {@link CORE_SPACE_VARS}.
    */
   only?: 'core' | 'all'
-  /**
-   * Whether to also emit the 32 deprecated camelCase aliases (`--vx-accentFill`, `--vx-tooltipBg`,
-   * `--vx-fillHover-gray`, …) alongside the canonical kebab-case names the 1.4.0 normalization
-   * introduced. Default: `true`, so an existing consumer's hand-written CSS referencing a
-   * camelCase name keeps resolving. Each alias is defined as `var(--vx-<canonical>)` — it can
-   * never drift from the value it aliases. Pass `false` once every reference in your own code has
-   * migrated to the kebab names to drop the extra 32 lines.
-   */
-  legacyAliases?: boolean
 }
 
 /** Mantine's own color-scheme attribute — the default {@link ColorSchemeSelector.attribute}. */
@@ -1025,10 +965,9 @@ export function buildPaletteCss(
   data: PaletteData = buildPaletteData(),
 ): string {
   const groups = opts.groups ?? []
-  const legacyAliases = opts.legacyAliases ?? true
   const only = opts.only ?? 'all'
   const extraDerived = (opts.derived ?? []).map((d) => `  ${d}`).join('\n')
-  const derivedBlock = frameworkDerived(data, only, legacyAliases)
+  const derivedBlock = frameworkDerived(data, only)
   const derived = extraDerived ? `${derivedBlock}\n${extraDerived}` : derivedBlock
   const side = (s: Side): string => {
     const extra = groups
@@ -1042,7 +981,7 @@ export function buildPaletteCss(
         return groupSide(payload.prefix, payload.map, s)
       })
       .join('\n')
-    const framework = frameworkPrimitives(s, data, legacyAliases)
+    const framework = frameworkPrimitives(s, data)
     return extra ? `${framework}\n${extra}` : framework
   }
   // The scalars, then the ONE `@media` block that re-points two of them below `sm` (see

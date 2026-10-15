@@ -31,7 +31,6 @@ import {
   ROUTER_SEED_DESTS,
   sameFile,
   scannableFiles,
-  scanBlock,
   shippedAssetPath,
 } from './index'
 import { resolveRoots } from './config'
@@ -308,23 +307,13 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
   const legacyHost = resolve(cwd, LEGACY_BLOCK_HOST)
   const legacy = profile === 'tokens-only' ? null : readIfExists(legacyHost)
   if (legacy !== null && !isSameFile(legacyHost, resolve(cwd, AGENTS_MD))) {
-    const scan = scanBlock(legacy)
-    const issues: string[] = []
-    if (scan.problem !== null) {
-      issues.push(`has a malformed basalt block (${scan.problem}) — fix it by hand, then \`sync\``)
-    } else if (scan.region !== null) {
-      issues.push(
-        `still carries a stale basalt block — delete it by hand; \`sync\` keeps ${AGENTS_MD} current`,
-      )
-    }
     if (!importsAgentsMd(legacy)) {
-      issues.push(
-        `does not import \`@${AGENTS_MD}\`, so Claude Code loads it INSTEAD of ${AGENTS_MD} and the ` +
-          `basalt block never reaches the agent — move its content into ${AGENTS_MD} and delete it, ` +
-          `or add \`@${AGENTS_MD}\``,
+      warn(
+        `${LEGACY_BLOCK_HOST} does not import \`@${AGENTS_MD}\`, so Claude Code loads it INSTEAD of ` +
+          `${AGENTS_MD} and the basalt block never reaches the agent — move its content into ` +
+          `${AGENTS_MD} and delete it, or add \`@${AGENTS_MD}\`.`,
       )
     }
-    if (issues.length > 0) warn(`${LEGACY_BLOCK_HOST} ${issues.join('; and ')}.`)
   }
 
   // ── Hard check 7: ai package major version parity within THIS package.json ─

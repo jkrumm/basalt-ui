@@ -21,7 +21,7 @@ export {
   useBasaltNav,
   type NavItemId,
 } from './router-tanstack'
-export { scrollParentOf, useCoarsePointer } from './common'
+export { scrollParentOf, useCoarsePointer, type Tone } from './common'
 export { createBasaltTheme } from './theme'
 export { ThemeToggle } from './theme/theme-toggle'
 export {
@@ -41,7 +41,6 @@ export {
   StatCard,
   type StatCardBreakdownRow,
   type StatCardSparklineSize,
-  type StatCardTone,
   StatGroup,
   EmptyState,
   SettingsSection,

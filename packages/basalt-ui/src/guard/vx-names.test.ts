@@ -43,6 +43,65 @@ describe('BASALT_VX_NAMES', () => {
       expect(f.map((x) => x.kind)).toEqual(['unknown-vx-token'])
     }
   })
+
+  // The 1.4.0 camelCase aliases were deleted from 2.x. Each must still be a finding, and the
+  // remedy must name its kebab canonical so the fix is a rename, not a search.
+  const REMOVED_ALIASES = {
+    '--vx-goodSolid': '--vx-good-solid',
+    '--vx-badSolid': '--vx-bad-solid',
+    '--vx-warnSolid': '--vx-warn-solid',
+    '--vx-axisStroke': '--vx-axis-stroke',
+    '--vx-dotStroke': '--vx-dot-stroke',
+    '--vx-tooltipBg': '--vx-tooltip-bg',
+    '--vx-tooltipText': '--vx-tooltip-text',
+    '--vx-tooltipMuted': '--vx-tooltip-muted',
+    '--vx-tooltipBorder': '--vx-tooltip-border',
+    '--vx-tooltipShadow': '--vx-tooltip-shadow',
+    '--vx-legendText': '--vx-legend-text',
+    '--vx-accentHover': '--vx-accent-hover',
+    '--vx-accentFill': '--vx-accent-fill',
+    '--vx-accentFillHover': '--vx-accent-fill-hover',
+    '--vx-onAccent': '--vx-on-accent',
+    '--vx-surface-panelHover': '--vx-surface-panel-hover',
+    '--vx-goodSoft': '--vx-good-soft',
+    '--vx-goodRef': '--vx-good-ref',
+    '--vx-badRef': '--vx-bad-ref',
+    '--vx-warnRef': '--vx-warn-ref',
+    ...Object.fromEntries(
+      [
+        'gray',
+        'red',
+        'pink',
+        'grape',
+        'violet',
+        'indigo',
+        'cyan',
+        'teal',
+        'green',
+        'lime',
+        'yellow',
+        'orange',
+      ].map((c) => [`--vx-fillHover-${c}`, `--vx-fill-hover-${c}`]),
+    ),
+  } as const
+
+  it('has all 32 removed camelCase aliases, each mapped to a live kebab name', () => {
+    expect(Object.keys(REMOVED_ALIASES)).toHaveLength(32)
+    for (const [alias, kebab] of Object.entries(REMOVED_ALIASES)) {
+      expect(BASALT_VX_NAMES).not.toContain(alias)
+      expect(BASALT_VX_NAMES).toContain(kebab)
+    }
+  })
+
+  it.each(Object.entries(REMOVED_ALIASES))(
+    'flags %s as unknown-vx-token and names %s as the replacement',
+    (alias, kebab) => {
+      const f = checkSource(`.a { width: var(${alias}); }`, 'src/a.css', DEFAULT_GUARD_CONFIG)
+      expect(f.map((x) => x.kind)).toEqual(['unknown-vx-token'])
+      expect(f[0]?.token).toBe(alias)
+      expect(guardKindRemedy('unknown-vx-token')).toContain(`${alias} → ${kebab}`)
+    },
+  )
 })
 
 // The guard judges every name inside a basalt family; that is sound only while the ref factories

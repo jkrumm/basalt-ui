@@ -112,13 +112,6 @@ import { assertQueryStateLike } from '../common/query-state-like'
 import classes from './stat-card.module.css'
 
 /**
- * A threshold verdict on the card's value. `undefined` is never tinted — see the module docblock.
- * Alias of the common `Tone` vocabulary (audit A13) — byte-identical, kept as its own name so a
- * consumer's existing `StatCardTone` reference never breaks.
- */
-export type StatCardTone = Tone
-
-/**
  * The four boxes `StatCard` paints, and the whole styling seam it offers (`common/props.ts`).
  * `value` is not its own slot: the hero number is painted by `WidgetHeader`'s internal metrics row,
  * which does not yet accept a slot class of its own.
@@ -136,7 +129,7 @@ export type StatCardSlot = 'root' | 'header' | 'body' | 'sparkline'
 export type StatCardBreakdownRow = {
   readonly label: string
   readonly value: string
-  readonly tone?: StatCardTone
+  readonly tone?: Tone
 }
 
 /**
@@ -225,7 +218,7 @@ function sparklineState(
  * that it cannot be mistaken for the card's own edge. */
 const TONE_RAIL_WIDTH = 3
 
-const TONE_LABEL: Record<StatCardTone, string> = {
+const TONE_LABEL: Record<Tone, string> = {
   good: 'Within the good threshold',
   warn: 'Past the warning threshold',
   bad: 'Past the severe threshold',
@@ -310,7 +303,7 @@ export type StatCardProps = BasaltProps &
      * assistive tech. Omitting it is NOT `'good'`: omitted covers a reading that is fine AND one that
      * is absent, and stays untinted so a card with nothing measured can never render green. Pass
      * `'good'` only to assert a measured value that has earned the verdict. */
-    tone?: StatCardTone
+    tone?: Tone
   }
 
 export function StatCard({
@@ -449,7 +442,7 @@ export function StatCard({
               insetBlock: 0,
               insetInlineStart: 0,
               width: TONE_RAIL_WIDTH,
-              // `StatCardTone`'s members are `VX.status` keys by construction, so the rail reads the
+              // `Tone`'s members are `VX.status` keys by construction, so the rail reads the
               // per-scheme `--vx-status-*` solid directly — never a hex, so it re-resolves in both
               // schemes and under a consumer's `derive` retune. Contrast against
               // `--vx-surface-panel` is measured in `theme/contrast.test.ts`.

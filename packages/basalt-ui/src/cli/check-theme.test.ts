@@ -314,7 +314,9 @@ describe('check-theme inline-spacing', () => {
   })
 
   it('does NOT flag a line carrying a theme-allow comment', () => {
-    fixture(`export const C = () => <Box style={{ padding: 16 }} /> // theme-allow\n`)
+    fixture(
+      `export const C = () => <Box style={{ padding: 16 }} /> // theme-allow inline-spacing — bespoke\n`,
+    )
     const { err } = run()
     expect(err).not.toContain('inline-spacing')
   })
@@ -351,7 +353,9 @@ describe('check-theme inline-display', () => {
   })
 
   it('does NOT flag a line carrying a theme-allow comment', () => {
-    fixture(`export const C = () => <Box style={{ display: 'flex' }} /> // theme-allow\n`)
+    fixture(
+      `export const C = () => <Box style={{ display: 'flex' }} /> // theme-allow inline-display — bespoke\n`,
+    )
     const { err } = run()
     expect(err).not.toContain('inline-display')
   })

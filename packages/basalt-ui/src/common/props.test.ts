@@ -4,7 +4,7 @@
  * consumers will grep for `[basalt] <Component>:`.
  */
 import { describe, expect, test } from 'bun:test'
-import { BASALT_PREFIX, deprecatedProp, duplicateMount, oneOf, requiredProp } from './errors'
+import { BASALT_PREFIX, duplicateMount, oneOf, requiredProp } from './errors'
 import { cx } from './props'
 
 describe('cx', () => {
@@ -24,12 +24,7 @@ describe('cx', () => {
 
 describe('errors', () => {
   test('every message opens with the one prefix', () => {
-    const messages = [
-      requiredProp('C', 'p'),
-      oneOf('C', 'p', ['a'], 'z'),
-      deprecatedProp('C', 'old', 'new', '2.0'),
-      duplicateMount('C'),
-    ]
+    const messages = [requiredProp('C', 'p'), oneOf('C', 'p', ['a'], 'z'), duplicateMount('C')]
     for (const message of messages) expect(message.startsWith(`${BASALT_PREFIX} C: `)).toBe(true)
   })
 
@@ -54,12 +49,6 @@ describe('errors', () => {
     expect(duplicateMount('BasaltProvider')).toBe(
       '[basalt] BasaltProvider: more than one instance is mounted at once — mount exactly one, at ' +
         'the app root.',
-    )
-  })
-
-  test('deprecatedProp names the successor and the removal version', () => {
-    expect(deprecatedProp('BasaltProvider', 'sseUrl', 'connectivity', '2.0.0')).toContain(
-      'is removed in 2.0.0',
     )
   })
 })

@@ -6,8 +6,8 @@
  * The guard is dependency-free by contract, so it cannot import `src/tokens` at runtime; it reads a
  * checked-in literal instead. That literal is derived, never hand-edited, from two sources:
  *
- * 1. `buildPaletteCss()` with no options — the exact function `gen-tokens-css.mjs` writes
- *    `dist/tokens.css` from, so the palette half IS the published stylesheet's name set.
+ * 1. `buildPaletteCss()` with no options — the exact function `basalt-ui tokens:css`
+ *    writes the stylesheet from, so the palette half IS its name set.
  * 2. The component-scoped names basalt's own source declares (`--vx-hit-gap`,
  *    `--vx-space-icon-size`, `--vx-keyboard-inset`), from every non-test file outside `src/guard/`:
  *    a declaration (`--vx-x:` — in a `.css` file or in CSS text inside a `.ts`/`.tsx` template

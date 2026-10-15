@@ -167,10 +167,8 @@ describe('buildPaletteCss core-only spacing', () => {
     expect(buildPaletteCss({ only: 'all' })).toBe(buildPaletteCss())
   })
 
-  it('drops 108 of the 120 spacing variables, taking the set from 249 to 141', () => {
-    // 211 canonical (all kebab-case, since the 1.4.0 rename) + 32 legacy camelCase aliases
-    // (default `legacyAliases: true`) = 243; the alias set is spacing-free, so it rides along
-    // unchanged in both `all` and `core`. 211 = 202 at 1.20.0 plus the `nano`/`display` type rungs plus the ten control-tier
+  it('drops 108 of the 120 spacing variables, taking the set from 217 to 109', () => {
+    // 211 canonical (all kebab-case, since the 1.4.0 rename); 211 = 202 at 1.20.0 plus the `nano`/`display` type rungs plus the ten control-tier
     // spacing vars of 1.26.0 (docs/CONTROLS-SPEC.md §5; the four anchors among them are core), MINUS
     // the two 1.27.0 deletions (`--vx-space-app-header-mobile-actions-height` and
     // `--vx-space-sticky-header-clearance-mobile` — the two-row mobile header is gone, law C14),
@@ -178,7 +176,7 @@ describe('buildPaletteCss core-only spacing', () => {
     // of `--vx-space-touch-target` (C5 consolidation) — a `SPACE_FIXED` value, not a `SPACE`
     // anchor, but emitted unconditionally in BOTH `all` and `core` (see `SPACE_FIXED.
     // spaceTouchTarget`'s doc for why it's the one member of that never-emitted group that IS a
-    // var), so it rides along in both counts the same way the alias set does = 244, PLUS the two
+    // var), so it rides along in both counts = 212, PLUS the two
     // 2026-09 chrome-round additions (`--vx-space-app-shell-inset` and
     // `--vx-space-app-shell-inset-mobile` — the page gutter, the one number the `--vx-*` layer did
     // not expose, now responsive) = 246, PLUS the four of the same round's SECOND chrome pass
@@ -189,8 +187,8 @@ describe('buildPaletteCss core-only spacing', () => {
     // not a fifth and sixth name — `varNames` is a SET, so re-declaring a var at a breakpoint moves
     // none of these counts. The pointer-tier collapse then swaps `--vx-space-touch-target` and
     // `--vx-space-touch-control-height` for the one non-space `--vx-hit` = 249.
-    expect(all.size).toBe(249)
-    expect(core.size).toBe(141)
+    expect(all.size).toBe(217)
+    expect(core.size).toBe(109)
     expect([...all].filter((n) => n.startsWith('space-'))).toHaveLength(120)
     expect([...core].filter((n) => n.startsWith('space-'))).toHaveLength(12)
   })
@@ -214,11 +212,11 @@ describe('buildPaletteCss core-only spacing', () => {
 })
 
 /**
- * The 1.4.0 kebab-case rename: 20 stems (12 of them the `fillHover-<family>` family) that used to
- * be emitted camelCase are now canonical kebab, with the camelCase spelling kept as an alias —
- * `legacy name -> canonical kebab name`, exhaustive.
+ * The 1.4.0 kebab-case rename: 20 stems (12 of them the `fillHover-<family>` family) were emitted
+ * camelCase, then as aliases of the kebab names, and are gone from 2.x — `removed name ->
+ * canonical kebab name`, exhaustive.
  */
-const LEGACY_ALIASES: Record<string, string> = {
+const REMOVED_ALIASES: Record<string, string> = {
   accentFill: 'accent-fill',
   accentFillHover: 'accent-fill-hover',
   accentHover: 'accent-hover',
@@ -257,42 +255,22 @@ const LEGACY_ALIASES: Record<string, string> = {
   ),
 }
 
-describe('legacy camelCase aliases (1.4.0 kebab-case rename)', () => {
+describe('the removed camelCase aliases (1.4.0 rename, deleted from 2.x)', () => {
   it('is exactly 32 stems, per the naming map', () => {
-    expect(Object.keys(LEGACY_ALIASES)).toHaveLength(32)
+    expect(Object.keys(REMOVED_ALIASES)).toHaveLength(32)
   })
 
-  it('emits all 32 legacy aliases by default, each a pure var() passthrough to its canonical name', () => {
+  it('emits none of them, while every canonical kebab name still resolves', () => {
     const css = buildPaletteCss()
-    for (const [legacy, canonical] of Object.entries(LEGACY_ALIASES)) {
-      expect(css).toContain(`--vx-${legacy}: var(--vx-${canonical});`)
+    for (const [removed, canonical] of Object.entries(REMOVED_ALIASES)) {
+      expect(css).not.toContain(`--vx-${removed}:`)
+      expect(css).toContain(`--vx-${canonical}:`)
     }
-  })
-
-  it('never emits a camelCase name as a DEFINITION — only as an alias var() passthrough', () => {
-    const css = buildPaletteCss()
-    for (const [, name, value] of css.matchAll(/--vx-([\w-]+):\s*([^;]+);/g)) {
-      if (!name || !/[a-z][A-Z]/.test(name)) continue // kebab (or non-alphabetic) name — canonical
-      expect(value?.trim()).toMatch(/^var\(--vx-[\w-]+\)$/)
-    }
-  })
-
-  it('legacyAliases: false emits none of the 32 aliases — canonical names only', () => {
-    const css = buildPaletteCss({ legacyAliases: false })
-    for (const legacy of Object.keys(LEGACY_ALIASES)) expect(css).not.toContain(`--vx-${legacy}:`)
     expect(css).not.toContain('Deprecated camelCase aliases')
-    for (const [, name] of css.matchAll(/--vx-([\w-]+):/g)) expect(name).not.toMatch(/[a-z][A-Z]/)
   })
 
-  it('legacyAliases: false only removes the 32 alias lines — same canonical set either way', () => {
-    const withAliases = varNames(buildPaletteCss())
-    const withoutAliases = varNames(buildPaletteCss({ legacyAliases: false }))
-    // 211 + the 1.29.0 `--vx-space-touch-target` addition (C5 consolidation) = 212, + the two
-    // 2026-09 app-shell-inset vars = 214, + the four of that round's second chrome pass (the header
-    // lead floor and the three-var card/section inset ladder) = 218, then -1 for the pointer-tier
-    // collapse (two touch vars out, `--vx-hit` in) = 217.
-    expect(withoutAliases.size).toBe(217)
-    expect(withAliases.size).toBe(withoutAliases.size + 32)
-    for (const name of withoutAliases) expect(withAliases.has(name)).toBe(true)
+  it('emits no camelCase name at all', () => {
+    for (const [, name] of buildPaletteCss().matchAll(/--vx-([\w-]+):/g))
+      expect(name).not.toMatch(/[a-z][A-Z]/)
   })
 })

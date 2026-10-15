@@ -41,7 +41,6 @@ export const COMMAND_OPTIONS: Record<string, Record<string, { type: 'string' | '
     'default-scheme': { type: 'string' },
     'media-fallback': { type: 'boolean' },
     only: { type: 'string' },
-    'no-legacy-aliases': { type: 'boolean' },
   },
   'fonts:css': { out: { type: 'string' }, check: { type: 'boolean' } },
 }
@@ -75,12 +74,10 @@ export const USAGE =
   'tokens:css [--out <path>] [--check] [--selector-attribute <attr> | --selector-class <class>]\n' +
   '           [--light-class <class>] [--dark-value <v>] [--light-value <v>]\n' +
   '           [--default-scheme <dark|light|none>] [--media-fallback] [--only <core|all>]\n' +
-  '           [--no-legacy-aliases]\n' +
   '  Emit the --vx-* stylesheet (stdout unless --out). Defaults emit the stock identity; commit the output as your tokens file.\n' +
   '  --selector-class emits `:root.dark` instead of an attribute selector (the Tailwind convention).\n' +
   '  --check writes nothing and exits 1 when --out differs from what would be emitted (a CI gate).\n' +
-  '  --no-legacy-aliases drops the deprecated camelCase spellings (--vx-accentFill and friends),\n' +
-  '  which are emitted by default as aliases of the canonical kebab-case names.\n\n' +
+  '\n' +
   'fonts:css [--out <path>] [--check]\n' +
   '  Emit the shipped --basalt-font-* stacks as plain CSS — the typeface half of the token layer,\n' +
   '  otherwise reachable only by importing styles.css.\n\n' +

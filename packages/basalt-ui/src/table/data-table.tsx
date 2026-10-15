@@ -672,8 +672,7 @@ export type BasaltDataTableProps<T extends RowData> = BasaltProps &
     manualFiltering?: boolean
     /**
      * Right-aligned toolbar slot (e.g. an "Export" button). Renders the toolbar row even when no
-     * search input or facets are configured. Renamed from `toolbarActions` — the toolbar (search +
-     * facets + this slot) is wrapped in `CtlSlot` (C1/C5), so its controls resolve to the `ctl` tier.
+     * search input or facets are configured. The toolbar (search + facets + this slot) is wrapped in `CtlSlot` (C1/C5), so its controls resolve to the `ctl` tier.
      *
      * Two accepted forms (law C15): a typed `BarAction[]`, projected through the same row `PageBar`
      * and `ActionGroup` use — ≤3 inline, the rest folded into `More`, one kebab below `sm` — or an

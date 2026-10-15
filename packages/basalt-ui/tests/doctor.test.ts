@@ -125,13 +125,13 @@ describe('basalt doctor', () => {
       expect(out).not.toContain('CLAUDE.md')
     })
 
-    it('warns (exit 0) on a CLAUDE.md with a stale block and no @AGENTS.md import', () => {
+    it('warns (exit 0) on a CLAUDE.md with a leftover block and no @AGENTS.md import, about the import only', () => {
       setupPassingLayout()
       writeFixture('CLAUDE.md', '# mine\n\n<!-- basalt:begin 1.0.0 -->\nold\n<!-- basalt:end -->\n')
       const { code, out } = doctorOut()
       expect(code).toBe(0)
-      expect(out).toContain('CLAUDE.md still carries a stale basalt block')
       expect(out).toContain('does not import `@AGENTS.md`')
+      expect(out).not.toContain('stale basalt block')
     })
 
     it('warns on a leftover CLAUDE.md with no block at all, because it still suppresses AGENTS.md', () => {
@@ -149,11 +149,11 @@ describe('basalt doctor', () => {
       expect(doctorOut().out).not.toContain('CLAUDE.md')
     })
 
-    it('names a malformed block (no end marker)', () => {
+    it('does not inspect the block: an unterminated one beside an @AGENTS.md import is silent', () => {
       setupPassingLayout()
       writeFixture('CLAUDE.md', '@AGENTS.md\n\n<!-- basalt:begin 1.0.0 -->\nold\n')
       const { out } = doctorOut()
-      expect(out).toContain('malformed basalt block')
+      expect(out).not.toContain('malformed basalt block')
       expect(out).not.toContain('does not import')
     })
 
@@ -163,10 +163,12 @@ describe('basalt doctor', () => {
       expect(doctorOut().out).toContain('does not import `@AGENTS.md`')
     })
 
-    it('flags an orphan end marker as malformed', () => {
+    it('does not inspect the block: an orphan end marker beside an @AGENTS.md import is silent', () => {
       setupPassingLayout()
       writeFixture('CLAUDE.md', '@AGENTS.md\n<!-- basalt:end -->\n')
-      expect(doctorOut().out).toContain('malformed basalt block')
+      const { out } = doctorOut()
+      expect(out).not.toContain('malformed basalt block')
+      expect(out).not.toContain('CLAUDE.md')
     })
 
     it('never crashes when the pair cannot be inspected (ELOOP): it just warns', () => {

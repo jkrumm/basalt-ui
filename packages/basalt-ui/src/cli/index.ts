@@ -845,8 +845,7 @@ export function managedFiles(placement: PlacementFlags = ROOT_PLACEMENT): Manage
     },
   }
 
-  // Scaffold destination is `.oxfmtrc.json` — oxfmt auto-discovers that filename, not `oxfmt.json`
-  // (the pre-rename scaffold; see migrateLegacyOxfmt for the one-time cleanup of the old dest).
+  // Scaffold destination is `.oxfmtrc.json` — oxfmt auto-discovers that filename, not `oxfmt.json`.
   // Content is a starting copy, not a reference — oxfmt has no `extends` mechanism.
   const oxfmt: ManagedFile = {
     dest: '.oxfmtrc.json',
