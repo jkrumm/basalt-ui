@@ -18,6 +18,7 @@ import { defaultFormatX, defaultNumberFormat, engineRow, seriesRow, visibleSerie
 import { barMark, emphasis, lineMark, markersOf, thinFill } from './marks'
 import { PanelRung, chartHeightOf, paneX, paneY, rowsOf } from './panel'
 import type { PaneBuilder, PanelInput, PanelPlan } from './panel'
+import type { SignedSeries } from './legend'
 import { xScaleFor } from './scales'
 import { rowX } from './types'
 import type { CartesianChartProps, ChartSeries, PlotContext, PlotRow } from './types'
@@ -149,7 +150,7 @@ export function DualPanel<T, X extends Date | number = Date | number>(
     () => series.map((s) => ({ ...s, mark: 'line' as const })),
     [series],
   )
-  const barSeries = useMemo<ChartSeries<T>>(
+  const barSeries = useMemo<SignedSeries<T>>(
     () => ({
       key: BAR_KEY,
       label: bar.label,

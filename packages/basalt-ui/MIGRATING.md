@@ -990,8 +990,9 @@ optional, subpath-required peers.
 ## Unreleased — signed bar legend, DataTableRowAction export
 
 - `DualPanel`'s bar legend entry is a split swatch (`positive` | `negative`) instead of the positive
-  colour alone (argo friction row 52). Still one entry and one toggle: the sign halves hide
-  together, because a sign is a property of a datum, not a series. `ChartSeries` gains `colorNegative`.
+  colour alone (argo friction row 52) — a visual change on every `DualPanel`, since the bar is
+  always sign-coloured. Still one entry and one toggle: the sign halves hide together, because a
+  sign is a property of a datum, not a series. No prop changes; plain `Bars` is unaffected.
 - `DataTableRowAction<T>` is now actually exported from `basalt-ui/table` (argo friction row 53);
   § 2.7.0 said it was, and it was not (TS2305).
 
