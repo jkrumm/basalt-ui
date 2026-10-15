@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import ts from 'typescript'
 import { generateLlmsTxt, outPath } from './gen-llms'
-import { MAX_PROP_TYPE, MAX_PROPS, propShapeLines } from './llms-signatures'
+import { collectLiteralUnions, MAX_PROP_TYPE, MAX_PROPS, propShapeLines } from './llms-signatures'
 
 const text = generateLlmsTxt()
 const surface = JSON.parse(
@@ -64,6 +64,26 @@ describe('gen-llms signatures', () => {
     expect(block('FilterSet').length).toBeGreaterThan(0)
   })
 
+  test('string and numeric literal unions are spelled out, not named (row 78 a)', () => {
+    expect(text).toContain('  kind?: "info" | "good" | "warn" | "bad"')
+    expect(text).toContain('  cols?: 2 | 3 | 4 | 5')
+    expect(text).not.toMatch(/: (CalloutKind|StatGroupCols)\b/)
+  })
+
+  test('VX lists every token, untruncated (row 78 b)', () => {
+    const at = text.indexOf('Signature: VX:')
+    const block = text.slice(at, text.indexOf('\nSignature: ', at + 1))
+    expect(block).not.toContain('…')
+    for (const key of ['ink', 'ink2', 'muted', 'accent', 'surface: {', 'status: {'])
+      expect(block).toContain(key)
+  })
+
+  test('a literal-only constant map prints its values (row 78 c)', () => {
+    expect(text).toContain(
+      'Signature: CONTAINER_KEYS: { compact: "240px", regular: "480px", wide: "800px" }',
+    )
+  })
+
   test('the committed llms.txt is in sync', () => {
     expect(readFileSync(outPath, 'utf8')).toBe(text)
   })
@@ -94,14 +114,36 @@ describe('propShapeLines', () => {
       .find((e) => e.name === 'f')!
     const param = checker.getTypeOfSymbol(fn).getCallSignatures()[0]!.getParameters()[0]!
     const flags = ts.TypeFormatFlags.NoTruncation
+    const unions = collectLiteralUnions(checker, program.getSourceFiles(), flags)
     return {
-      lines: propShapeLines(checker, checker.getTypeOfSymbol(param), fn.valueDeclaration!, flags),
+      lines: propShapeLines(
+        checker,
+        checker.getTypeOfSymbol(param),
+        fn.valueDeclaration!,
+        flags,
+        unions,
+      ),
     }
   }
 
   test('lists name, optionality and type of each own member', () => {
     const { lines } = firstParam('export function f(p: { a: string; b?: number }) {}')
     expect(lines).toEqual(['  a: string', '  b?: number'])
+  })
+
+  test('an alias of string or numeric literals is expanded in declaration order', () => {
+    const { lines } = firstParam(
+      `type Kind = 'info' | 'good' | 'warn'
+      type Cols = 2 | 3 | 4 | 5
+      type Big = 'a' | 'b' | 'c' | 'd' | 'e' | 'f' | 'g' | 'h' | 'i' | 'j' | 'k' | 'l' | 'm'
+      export function f(p: { kind?: Kind; cols?: Cols; many?: Kind[]; big?: Big }) {}`,
+    )
+    expect(lines).toEqual([
+      '  kind?: "info" | "good" | "warn"',
+      '  cols?: 2 | 3 | 4 | 5',
+      '  many?: ("info" | "good" | "warn")[]',
+      '  big?: Big',
+    ])
   })
 
   test('an optional props parameter still gets its block', () => {
