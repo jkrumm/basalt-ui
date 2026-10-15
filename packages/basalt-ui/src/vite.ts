@@ -24,6 +24,7 @@ import { searchForWorkspaceRoot } from 'vite'
 import type { HtmlTagDescriptor, Plugin, PluginOption, UserConfig } from 'vite'
 import { SURFACE } from './tokens/palette'
 import { buildBootTags } from './vite-boot'
+import type { BootColorScheme } from './vite-boot'
 import { resolveColorMix } from './vite-color-mix'
 
 type BasaltViteOptions = {
@@ -244,9 +245,9 @@ type BasaltAppOptions = {
    *
    * Set this to whatever the app passes as `defaultColorScheme` — a mismatch is a visible flash of
    * the wrong surface, not a correctness bug: the boot rule stops applying the moment Mantine
-   * writes `data-mantine-color-scheme` on `<html>` (see `BOOT_SCOPE`).
+   * writes `data-mantine-color-scheme` on `<html>` (see `./vite-boot.ts`).
    */
-  colorScheme?: 'dark' | 'light' | 'auto' | false
+  colorScheme?: BootColorScheme
   /**
    * Default `true`. Injects a ~300-byte inline `<script>` that reads the scheme the user last chose
    * (Mantine's default `mantine-color-scheme-value` localStorage key — `light`, `dark` or `auto`,
@@ -255,7 +256,8 @@ type BasaltAppOptions = {
    * `colorScheme`. Storage unavailable or unset → the `colorScheme` paint stands. The script never
    * writes `data-mantine-color-scheme`, so the boot rule still expires when Mantine mounts.
    *
-   * A stored value wins over the build-time `colorScheme`: an app that removes its scheme toggle
+   * `colorScheme: false` still gets the stored-scheme background paint; only `color-scheme` is
+   * suppressed. A stored value wins over the build-time `colorScheme`: an app that removes its scheme toggle
    * should clear the stored key or set `bootScript: false`.
    *
    * CSP: Vite stamps `html.cspNonce` onto every `<script>`/`<style>` in the transformed HTML,

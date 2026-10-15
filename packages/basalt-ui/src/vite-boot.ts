@@ -35,11 +35,11 @@ const BOOT_STORAGE_KEY = 'mantine-color-scheme-value'
 /**
  * Stored value is Mantine's raw `light` | `dark` | `auto` string; `auto` resolves through
  * `prefers-color-scheme`. A throwing or empty store, or a missing `matchMedia`, leaves the
- * attribute off. IIFE: a classic inline script shares the page's global scope.
+ * attribute off. IIFE + `let`: a classic inline script shares the page's global scope.
  */
 const BOOT_SCRIPT =
   '(function(){try{' +
-  `var v=localStorage.getItem('${BOOT_STORAGE_KEY}');` +
+  `let v=localStorage.getItem('${BOOT_STORAGE_KEY}');` +
   "if(v==='auto')v=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';" +
   `if(v==='light'||v==='dark')document.documentElement.setAttribute('${BOOT_ATTRIBUTE}',v)` +
   '}catch(e){}})()'
@@ -47,13 +47,16 @@ const BOOT_SCRIPT =
 /** The `color-scheme` value each boot mode declares. `false` declares none. */
 const BOOT_COLOR_SCHEME = { dark: 'dark', light: 'light', auto: 'light dark' } as const
 
-type BootStyleInput = {
-  colorScheme: 'dark' | 'light' | 'auto' | false
+/** The `colorScheme` option: which scheme the boot paint assumes; `false` declares no `color-scheme`. */
+export type BootColorScheme = 'dark' | 'light' | 'auto' | false
+
+type BootInput = {
+  colorScheme: BootColorScheme
   themeColor: { light: string; dark: string }
   backgroundColor: string
   explicitBackground: boolean
-  /** Emit the stored-scheme variants (the script that drives them is `bootScript`). */
-  storedSchemes: boolean
+  /** Inject the stored-scheme script and the variant rules it drives. */
+  bootScript: boolean
 }
 
 /**
@@ -64,7 +67,7 @@ type BootStyleInput = {
  * paint follows the OS the same way `color-scheme: light dark` does; an explicit `backgroundColor`
  * is used verbatim for both, since the consumer has named one color on purpose.
  */
-function buildBaseBootStyle(input: Omit<BootStyleInput, 'storedSchemes'>): string {
+function buildBaseBootStyle(input: BootInput): string {
   const { colorScheme, themeColor, backgroundColor, explicitBackground } = input
 
   if (colorScheme === false) return `${BOOT_SCOPE}{background-color:${backgroundColor}}`
@@ -79,10 +82,10 @@ function buildBaseBootStyle(input: Omit<BootStyleInput, 'storedSchemes'>): strin
   )
 }
 
-function buildBootStyle(input: BootStyleInput): string {
-  const { colorScheme, themeColor, explicitBackground, storedSchemes } = input
+function buildBootStyle(input: BootInput): string {
+  const { colorScheme, themeColor, explicitBackground, bootScript } = input
   const base = buildBaseBootStyle(input)
-  if (!storedSchemes) return base
+  if (!bootScript) return base
 
   // Stored-scheme variants: keyed off the attribute BOOT_SCRIPT sets, still inside BOOT_SCOPE so
   // they expire with the rest. The extra attribute outranks the base rule and its `auto` media pair.
@@ -99,13 +102,8 @@ function buildBootStyle(input: BootStyleInput): string {
 }
 
 /** The boot `<style>`, then (unless `bootScript: false`) the script — adjacent, head-prepend. */
-export function buildBootTags(
-  input: Omit<BootStyleInput, 'storedSchemes'> & { bootScript: boolean },
-): HtmlTagDescriptor[] {
-  const { bootScript, ...style } = input
-  const tags: HtmlTagDescriptor[] = [
-    { tag: 'style', children: buildBootStyle({ ...style, storedSchemes: bootScript }) },
-  ]
-  if (bootScript) tags.push({ tag: 'script', children: BOOT_SCRIPT })
+export function buildBootTags(input: BootInput): HtmlTagDescriptor[] {
+  const tags: HtmlTagDescriptor[] = [{ tag: 'style', children: buildBootStyle(input) }]
+  if (input.bootScript) tags.push({ tag: 'script', children: BOOT_SCRIPT })
   return tags
 }

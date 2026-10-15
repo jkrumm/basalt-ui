@@ -1,13 +1,10 @@
 import { describe, expect, test } from 'bun:test'
+import vm from 'node:vm'
 import type { HtmlTagDescriptor } from 'vite'
+import { DARK_VARIANT, LIGHT_VARIANT, SCOPE, THEME_COLOR } from '../tests/support/vite-app'
 import { buildBootTags } from './vite-boot'
 
 type BootInput = Parameters<typeof buildBootTags>[0]
-
-const THEME_COLOR = { light: '#ffffff', dark: '#111111' } as const
-const SCOPE = 'html:not([data-mantine-color-scheme])'
-const LIGHT_VARIANT = `${SCOPE}[data-basalt-boot=light]{background-color:#ffffff;color-scheme:light}`
-const DARK_VARIANT = `${SCOPE}[data-basalt-boot=dark]{background-color:#111111;color-scheme:dark}`
 
 const input = (overrides: Partial<BootInput> = {}): BootInput => ({
   colorScheme: 'dark',
@@ -107,6 +104,13 @@ describe('boot style — stored-scheme variants', () => {
   })
 })
 
+const throwingGetItem = (): string => {
+  throw new Error('SecurityError')
+}
+const throwingMatchMedia = (): { matches: boolean } => {
+  throw new Error('boom')
+}
+
 describe('boot script', () => {
   const script = tagChildren(buildBootTags(input()), 'script')
 
@@ -156,11 +160,15 @@ describe('boot script', () => {
     return { attributes, keys }
   }
 
-  test('is an IIFE: no top-level declaration leaks into the page scope', () => {
-    expect(script.startsWith('(function(){')).toBe(true)
-    expect(script.endsWith('})()')).toBe(true)
-    expect(script.match(/\bvar\b/g)).toHaveLength(1)
-    expect(script).not.toMatch(/^(var|let|const)\b/)
+  test('is an IIFE: run in a fresh global scope it adds no global binding', () => {
+    // vm.runInContext is a real top-level script run: a top-level `var` would land on the sandbox.
+    const sandbox = vm.createContext({
+      document: { documentElement: { setAttribute: () => {} } },
+      localStorage: { getItem: () => 'light' },
+    })
+    const before = Object.keys(sandbox)
+    vm.runInContext(script, sandbox)
+    expect(Object.keys(sandbox)).toEqual(before)
   })
 
   test("reads exactly Mantine's storage key", () => {
@@ -187,10 +195,7 @@ describe('boot script', () => {
   })
 
   test('throwing getItem sets nothing', () => {
-    const getItem = (): string => {
-      throw new Error('SecurityError')
-    }
-    expect(run({ getItem }).attributes).toEqual({})
+    expect(run({ getItem: throwingGetItem }).attributes).toEqual({})
   })
 
   test('a throwing localStorage accessor (sandboxed iframe) sets nothing', () => {
@@ -199,10 +204,7 @@ describe('boot script', () => {
 
   test('stored auto with matchMedia undefined or throwing sets nothing', () => {
     expect(run({ getItem: () => 'auto', matchMedia: undefined }).attributes).toEqual({})
-    const matchMedia = (): { matches: boolean } => {
-      throw new Error('boom')
-    }
-    expect(run({ getItem: () => 'auto', matchMedia }).attributes).toEqual({})
+    expect(run({ getItem: () => 'auto', matchMedia: throwingMatchMedia }).attributes).toEqual({})
   })
 
   test('never writes data-mantine-color-scheme (it would expire the boot rule early)', () => {
