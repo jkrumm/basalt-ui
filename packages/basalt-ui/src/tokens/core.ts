@@ -347,6 +347,13 @@ export function pxRem(px: number): string {
   return `${px / 16}rem`
 }
 
+/**
+ * Reference-line strength: the status solid's share over the panel, in percent. One value for the
+ * three lines so they read as one family; 60 keeps the faintest (light-scheme `warn`) at a 2:1
+ * composite against the page, where the old 20–30% sat at 1.25–1.5 (`ref-line-contrast.test.ts`).
+ */
+export const REF_LINE_ALPHA = 60
+
 /** Emit one prefixed group of pairs for a given scheme side. */
 const groupSide = (prefix: string, map: SeriesMap, side: Side): string =>
   Object.entries(map)
@@ -713,9 +720,9 @@ function frameworkDerived(data: PaletteData, only: 'core' | 'all'): string {
     decl('good-soft', 'color-mix(in srgb, var(--vx-good-solid) 8%, transparent)'),
     decl('bad', 'color-mix(in srgb, var(--vx-bad-solid) 18%, transparent)'),
     decl('warn', 'color-mix(in srgb, var(--vx-warn-solid) 8%, transparent)'),
-    decl('good-ref', 'color-mix(in srgb, var(--vx-good-solid) 30%, transparent)'),
-    decl('bad-ref', 'color-mix(in srgb, var(--vx-bad-solid) 30%, transparent)'),
-    decl('warn-ref', 'color-mix(in srgb, var(--vx-warn-solid) 20%, transparent)'),
+    ...(['good', 'bad', 'warn'] as const).map((k) =>
+      decl(`${k}-ref`, `color-mix(in srgb, var(--vx-${k}-solid) ${REF_LINE_ALPHA}%, transparent)`),
+    ),
   ].join('\n')
   return canonical
 }

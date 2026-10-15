@@ -765,6 +765,21 @@ function ChartsFixture({ spec }: { spec: ChartsSpec }): ReactElement {
   const seriesCount = spec.legendEntries ?? 3
   const data = useMemo(() => buildChartData(seriesCount), [seriesCount])
   const height = spec.height === undefined ? {} : { height: spec.height }
+  const domain = useMemo(() => {
+    if (!spec.xDomain) return {}
+    const [first, last, mid] = [data[0], data.at(-1), data[Math.floor(data.length / 2)]]
+    return {
+      xDomain: [(first as ChartPoint).at, (last as ChartPoint).at] as const,
+      xTicks: [(mid as ChartPoint).at],
+    }
+  }, [data, spec.xDomain])
+  const followerData = useMemo(
+    () =>
+      spec.xDomain
+        ? data.slice(Math.floor(data.length / 3), Math.floor((data.length * 2) / 3))
+        : data,
+    [data, spec.xDomain],
+  )
   const chart =
     spec.kind === 'dual' ? (
       <DualPanel
@@ -807,6 +822,7 @@ function ChartsFixture({ spec }: { spec: ChartsSpec }): ReactElement {
         data={data}
         x={chartX}
         series={buildLineSeries(seriesCount)}
+        {...domain}
         {...height}
       />
     )
@@ -821,9 +837,10 @@ function ChartsFixture({ spec }: { spec: ChartsSpec }): ReactElement {
         <div data-testid="chart-frame-2" style={box}>
           <Lines
             ariaLabel="Fixture follower"
-            data={data}
+            data={followerData}
             x={chartX}
             series={buildLineSeries(1)}
+            {...domain}
             {...height}
           />
         </div>

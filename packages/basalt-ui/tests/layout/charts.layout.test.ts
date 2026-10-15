@@ -284,6 +284,31 @@ layout('Charts — 2.0 layout', () => {
     expect(await paintedRules(p, FRAME_2)).toHaveLength(0)
   })
 
+  // ── an explicit x domain puts the same instant on the same pixel column (ledger row 99) ─────
+  test('two charts with different data extents and the same xDomain put one instant on one column', async () => {
+    const p = await openFixture(
+      chartFixture({ kind: 'lines', width: 640, pair: true, xDomain: true }),
+      DESKTOP,
+    )
+    await p.settle()
+    const centre = (frame: string): Promise<number> =>
+      p.raw.evaluate((sel) => {
+        const label = document.querySelector(`${sel} svg.ts-chart [data-ts-key^="x-tick-label"]`)
+        if (!label) throw new Error(`LAYOUT: no x tick label under \`${sel}\``)
+        const r = label.getBoundingClientRect()
+        return r.left + r.width / 2
+      }, frame)
+    const [main, follower] = [await centre(FRAME), await centre(FRAME_2)]
+    expect(Math.abs(main - follower)).toBeLessThanOrEqual(1)
+
+    // The shared cursor: one instant, one rule column on both.
+    await hover(p, FRAME, 0.5)
+    const [a, b] = [await paintedRules(p, FRAME), await paintedRules(p, FRAME_2)]
+    expect(a).toHaveLength(1)
+    expect(b).toHaveLength(1)
+    expect(Math.abs((a[0] ?? 0) - (b[0] ?? 0))).toBeLessThanOrEqual(1)
+  })
+
   // ── the theme bridge reaches the portalled tooltip from :root (§ 9.5) ───────────────────────
   test('the tooltip inherits --ts-chart-* from :root and paints the --vx-* tooltip tokens', async () => {
     const p = await openFixture(chartFixture({ kind: 'lines', width: 640 }), DESKTOP)

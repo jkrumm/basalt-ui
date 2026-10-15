@@ -3,7 +3,7 @@ import { afterEach, describe, expect, test } from 'bun:test'
 import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { renderToString } from 'react-dom/server'
-import { Sparkline } from './Sparkline'
+import { Sparkline, poolSparkline } from './Sparkline'
 import { StackedArea } from './StackedArea'
 import type { ChartSeries, ChartState } from './types'
 
@@ -217,5 +217,49 @@ describe('Sparkline', () => {
     test('an empty state object still draws the chart', () => {
       expect(spark({}).querySelector('svg')).not.toBeNull()
     })
+  })
+})
+
+const rowsOf = (n: number, f: (i: number) => number | null = (i) => (i % 40 === 7 ? 90 : i % 40)) =>
+  Array.from({ length: n }, (_, i) => ({ i, v: f(i) }))
+
+describe('Sparkline pools itself to its measured width', () => {
+  test('a series within its cap is returned untouched (the same rows, the same drawing)', () => {
+    const rows = rowsOf(100)
+    expect(poolSparkline(rows, 100, 'line')).toBe(rows)
+    expect(poolSparkline(rows, 200, 'bar')).toBe(rows)
+    expect(poolSparkline(rows, 0, 'line')).toBe(rows)
+  })
+  test('a line keeps one point per px at most, every bucket peak and the final row', () => {
+    const rows = rowsOf(2000)
+    const pooled = poolSparkline(rows, 100, 'line')
+    expect(pooled.length).toBeLessThanOrEqual(100)
+    expect(pooled.at(-1)).toBe(rows.at(-1))
+    expect(pooled.map((r) => r.i)).toEqual(pooled.map((r) => r.i).toSorted((a, b) => a - b))
+    expect(Math.max(...pooled.map((r) => r.v ?? 0))).toBe(90)
+    expect(Math.min(...pooled.map((r) => r.v ?? 0))).toBe(0)
+  })
+  test('a bar series keeps one bar per 2 px, the value furthest from zero in each bucket', () => {
+    const pooled = poolSparkline(rowsOf(2000), 100, 'bar')
+    expect(pooled.length).toBeLessThanOrEqual(50)
+    expect(Math.max(...pooled.map((r) => r.v ?? 0))).toBe(90)
+  })
+  test('a null gap stays a gap', () => {
+    const pooled = poolSparkline(
+      rowsOf(500, (i) => (i >= 100 && i < 300 ? null : i)),
+      100,
+      'line',
+    )
+    expect(pooled.some((r) => r.v === null)).toBe(true)
+  })
+  test('rendered, a long series draws no more marks than the engine width allows', () => {
+    const long = Array.from({ length: 3000 }, (_, i) => i % 50)
+    const bars = render(<Sparkline ariaLabel="S" data={long} height={30} mark="bar" />)
+    // The server frame is 640 wide: at most one bar per 2 px.
+    expect(bars.querySelectorAll('rect[data-ts-key^="bars:"]').length).toBeLessThanOrEqual(320)
+    const short = render(
+      <Sparkline ariaLabel="S" data={long.slice(0, 40)} height={30} mark="bar" />,
+    )
+    expect(short.querySelectorAll('rect[data-ts-key^="bars:"]').length).toBe(40)
   })
 })
