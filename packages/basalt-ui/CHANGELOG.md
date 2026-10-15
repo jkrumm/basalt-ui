@@ -1,312 +1,284 @@
 # [2.8.0](https://github.com/jkrumm/basalt-ui/compare/v2.7.3...v2.8.0) (2026-10-15)
 
-
 ### Bug Fixes
 
-* close the BandStrip absent-state review gaps ([72ebf19](https://github.com/jkrumm/basalt-ui/commit/72ebf192f30df36c00525f8dd76b3a9b452a24f3))
-* close the doctor gaps from the fleet probes ([16fcf0c](https://github.com/jkrumm/basalt-ui/commit/16fcf0cbcb16d85fd6861e9f3be310d5e0c0ddb1))
-* fail any router= provider in a Start root route, warn on stale seeds ([9e27b35](https://github.com/jkrumm/basalt-ui/commit/9e27b35141dec4c3e395e295955a7c55147f9a51))
-* fold the argo loop's remaining learnings into the shipped rules and skills ([9d19009](https://github.com/jkrumm/basalt-ui/commit/9d19009e9cdb0e9d2e9c5832d7c92e2c637d710f))
-* harden the oxlint floor and the dropped-subpaths scan ([73ecbaf](https://github.com/jkrumm/basalt-ui/commit/73ecbaff2bb9a7caa144f0514228a6bbb1302569))
-* honor a state's tooltip opt-out on the re-added BandStrip row ([6091201](https://github.com/jkrumm/basalt-ui/commit/6091201f617a9fa19f771af57e244e3a846247d0))
-* ignore a literal provider, match any-width spreads, split stale seeds ([88e8e9e](https://github.com/jkrumm/basalt-ui/commit/88e8e9e7718dcfad7924c00f472e20966a551cb5))
-* reject a router= provider in a Start root route, name llms modes by literal ([d16db36](https://github.com/jkrumm/basalt-ui/commit/d16db36e76fd2928214abd67d9ea12a7e3ee2074))
-* render union-typed props in llms.txt signatures ([7b6d347](https://github.com/jkrumm/basalt-ui/commit/7b6d347d74b742b4a7170c11103f7a1770edabd1))
-* resolve BandStrip absent visibility per portion ([ffe853e](https://github.com/jkrumm/basalt-ui/commit/ffe853eaefe8e707ffeb9c5f7f5308570c08fbe5))
-* share the Start seed skip and resolve the router without a cast ([5f128d8](https://github.com/jkrumm/basalt-ui/commit/5f128d87df6c272944eef5bfcbb67461eddec373))
-* strip build metadata in the oxlint floor and blank CSS strings ([6915fb7](https://github.com/jkrumm/basalt-ui/commit/6915fb7b02dbbba333da3eee3a7ce1a529c46f73))
-* unify BandStrip absent resolution across paint, hits and tooltip ([311e0cf](https://github.com/jkrumm/basalt-ui/commit/311e0cfc1dcb88b02ed8817769575881871684d1))
-* wire doctor and the provider for Start apps, merge union props in llms ([102d213](https://github.com/jkrumm/basalt-ui/commit/102d213eb1c5bf8c74d26fa2e5fad77ca71d8e6c))
-
+- close the BandStrip absent-state review gaps ([72ebf19](https://github.com/jkrumm/basalt-ui/commit/72ebf192f30df36c00525f8dd76b3a9b452a24f3))
+- close the doctor gaps from the fleet probes ([16fcf0c](https://github.com/jkrumm/basalt-ui/commit/16fcf0cbcb16d85fd6861e9f3be310d5e0c0ddb1))
+- fail any router= provider in a Start root route, warn on stale seeds ([9e27b35](https://github.com/jkrumm/basalt-ui/commit/9e27b35141dec4c3e395e295955a7c55147f9a51))
+- fold the argo loop's remaining learnings into the shipped rules and skills ([9d19009](https://github.com/jkrumm/basalt-ui/commit/9d19009e9cdb0e9d2e9c5832d7c92e2c637d710f))
+- harden the oxlint floor and the dropped-subpaths scan ([73ecbaf](https://github.com/jkrumm/basalt-ui/commit/73ecbaff2bb9a7caa144f0514228a6bbb1302569))
+- honor a state's tooltip opt-out on the re-added BandStrip row ([6091201](https://github.com/jkrumm/basalt-ui/commit/6091201f617a9fa19f771af57e244e3a846247d0))
+- ignore a literal provider, match any-width spreads, split stale seeds ([88e8e9e](https://github.com/jkrumm/basalt-ui/commit/88e8e9e7718dcfad7924c00f472e20966a551cb5))
+- reject a router= provider in a Start root route, name llms modes by literal ([d16db36](https://github.com/jkrumm/basalt-ui/commit/d16db36e76fd2928214abd67d9ea12a7e3ee2074))
+- render union-typed props in llms.txt signatures ([7b6d347](https://github.com/jkrumm/basalt-ui/commit/7b6d347d74b742b4a7170c11103f7a1770edabd1))
+- resolve BandStrip absent visibility per portion ([ffe853e](https://github.com/jkrumm/basalt-ui/commit/ffe853eaefe8e707ffeb9c5f7f5308570c08fbe5))
+- share the Start seed skip and resolve the router without a cast ([5f128d8](https://github.com/jkrumm/basalt-ui/commit/5f128d87df6c272944eef5bfcbb67461eddec373))
+- strip build metadata in the oxlint floor and blank CSS strings ([6915fb7](https://github.com/jkrumm/basalt-ui/commit/6915fb7b02dbbba333da3eee3a7ce1a529c46f73))
+- unify BandStrip absent resolution across paint, hits and tooltip ([311e0cf](https://github.com/jkrumm/basalt-ui/commit/311e0cfc1dcb88b02ed8817769575881871684d1))
+- wire doctor and the provider for Start apps, merge union props in llms ([102d213](https://github.com/jkrumm/basalt-ui/commit/102d213eb1c5bf8c74d26fa2e5fad77ca71d8e6c))
 
 ### Features
 
-* give BandStrip an absent state ([6ed20bd](https://github.com/jkrumm/basalt-ui/commit/6ed20bdb01df2b4105bfb7936ae4296c6da674bc))
-* let BasaltProvider live inside a router it does not own ([d108547](https://github.com/jkrumm/basalt-ui/commit/d108547b2c4e57adf66f5abbbc79e07ef7da7b3e))
+- give BandStrip an absent state ([6ed20bd](https://github.com/jkrumm/basalt-ui/commit/6ed20bdb01df2b4105bfb7936ae4296c6da674bc))
+- let BasaltProvider live inside a router it does not own ([d108547](https://github.com/jkrumm/basalt-ui/commit/d108547b2c4e57adf66f5abbbc79e07ef7da7b3e))
 
 ## [2.7.3](https://github.com/jkrumm/basalt-ui/compare/v2.7.2...v2.7.3) (2026-10-15)
 
-
 ### Bug Fixes
 
-* state the TableOfContents ⇄ Markdown heading-id contract where agents read ([01ff90e](https://github.com/jkrumm/basalt-ui/commit/01ff90ea6999d5615aba9be73079a05bb8962c5f))
+- state the TableOfContents ⇄ Markdown heading-id contract where agents read ([01ff90e](https://github.com/jkrumm/basalt-ui/commit/01ff90ea6999d5615aba9be73079a05bb8962c5f))
 
 ## [2.7.2](https://github.com/jkrumm/basalt-ui/compare/v2.7.1...v2.7.2) (2026-10-15)
 
-
 ### Bug Fixes
 
-* llms.txt lists component props for every subpath, one legend swatch shape ([80b1e91](https://github.com/jkrumm/basalt-ui/commit/80b1e91d372fdc063290776807bb38964cea22ea))
+- llms.txt lists component props for every subpath, one legend swatch shape ([80b1e91](https://github.com/jkrumm/basalt-ui/commit/80b1e91d372fdc063290776807bb38964cea22ea))
 
 ## [2.7.1](https://github.com/jkrumm/basalt-ui/compare/v2.7.0...v2.7.1) (2026-10-15)
 
-
 ### Bug Fixes
 
-* document the form dialog and notification seams in the shipped layer ([5836d52](https://github.com/jkrumm/basalt-ui/commit/5836d52579f6d20781823fffd74e6d444084ff73))
-* name the form dialog and notification seams in the commands description ([8ec0ef0](https://github.com/jkrumm/basalt-ui/commit/8ec0ef043019271f8379e72edec47209e3bff0f1))
-* scope the signed swatch to the DualPanel bar and harden its tests ([c840048](https://github.com/jkrumm/basalt-ui/commit/c840048e2f6b2a125650b9bc49b8b35f40421041))
-* signed bar legends get a split swatch and DataTableRowAction is exported ([6602b3c](https://github.com/jkrumm/basalt-ui/commit/6602b3c86f4d5229f98c834ea4c68e42f8a70a5d))
+- document the form dialog and notification seams in the shipped layer ([5836d52](https://github.com/jkrumm/basalt-ui/commit/5836d52579f6d20781823fffd74e6d444084ff73))
+- name the form dialog and notification seams in the commands description ([8ec0ef0](https://github.com/jkrumm/basalt-ui/commit/8ec0ef043019271f8379e72edec47209e3bff0f1))
+- scope the signed swatch to the DualPanel bar and harden its tests ([c840048](https://github.com/jkrumm/basalt-ui/commit/c840048e2f6b2a125650b9bc49b8b35f40421041))
+- signed bar legends get a split swatch and DataTableRowAction is exported ([6602b3c](https://github.com/jkrumm/basalt-ui/commit/6602b3c86f4d5229f98c834ea4c68e42f8a70a5d))
 
 # [2.7.0](https://github.com/jkrumm/basalt-ui/compare/v2.6.1...v2.7.0) (2026-10-15)
 
-
 ### Bug Fixes
 
-* every export named in llms.txt and d.ts headers exists, with props ([7bc783f](https://github.com/jkrumm/basalt-ui/commit/7bc783f0c19330a3e2d22ae3eec5cbbfd8e75ec6))
-* make the doc-name check fail closed and test the props block ([44c0f00](https://github.com/jkrumm/basalt-ui/commit/44c0f00f08efce122bca079358ad396dc5bbc976))
-
+- every export named in llms.txt and d.ts headers exists, with props ([7bc783f](https://github.com/jkrumm/basalt-ui/commit/7bc783f0c19330a3e2d22ae3eec5cbbfd8e75ec6))
+- make the doc-name check fail closed and test the props block ([44c0f00](https://github.com/jkrumm/basalt-ui/commit/44c0f00f08efce122bca079358ad396dc5bbc976))
 
 ### Features
 
-* a typed per-row action seam on BasaltDataTable ([23cc77b](https://github.com/jkrumm/basalt-ui/commit/23cc77be8b2581a8142dd1325912be7568d0b89e))
-* checkbox and switch bindings and typed field errors in basalt-ui/forms ([0041e51](https://github.com/jkrumm/basalt-ui/commit/0041e511d8895fb6f14c856c772aad06240e8964))
-* rowActions loading, per-row names and a sharper row-action lint ([1e0fa59](https://github.com/jkrumm/basalt-ui/commit/1e0fa59f7779dd6b58185bf7cf4451c2704d47fe))
-* type the checkbox binding strictly and export InputProps ([a3538ab](https://github.com/jkrumm/basalt-ui/commit/a3538abeb028f8585c93c01c1d9aa50350a6eeaf))
+- a typed per-row action seam on BasaltDataTable ([23cc77b](https://github.com/jkrumm/basalt-ui/commit/23cc77be8b2581a8142dd1325912be7568d0b89e))
+- checkbox and switch bindings and typed field errors in basalt-ui/forms ([0041e51](https://github.com/jkrumm/basalt-ui/commit/0041e511d8895fb6f14c856c772aad06240e8964))
+- rowActions loading, per-row names and a sharper row-action lint ([1e0fa59](https://github.com/jkrumm/basalt-ui/commit/1e0fa59f7779dd6b58185bf7cf4451c2704d47fe))
+- type the checkbox binding strictly and export InputProps ([a3538ab](https://github.com/jkrumm/basalt-ui/commit/a3538abeb028f8585c93c01c1d9aa50350a6eeaf))
 
 ## [2.6.1](https://github.com/jkrumm/basalt-ui/compare/v2.6.0...v2.6.1) (2026-10-15)
 
-
 ### Bug Fixes
 
-* answer DX trial 2 in the shipped layer and the trace docs ([2f6bd57](https://github.com/jkrumm/basalt-ui/commit/2f6bd5791a4023b82453b3a6cbe51140de4d9601))
-* give per-bar shades their own legend swatches ([9840cd4](https://github.com/jkrumm/basalt-ui/commit/9840cd4d5ed48e9f5b11e06cbf2b34470093ffc9))
+- answer DX trial 2 in the shipped layer and the trace docs ([2f6bd57](https://github.com/jkrumm/basalt-ui/commit/2f6bd5791a4023b82453b3a6cbe51140de4d9601))
+- give per-bar shades their own legend swatches ([9840cd4](https://github.com/jkrumm/basalt-ui/commit/9840cd4d5ed48e9f5b11e06cbf2b34470093ffc9))
 
 # [2.6.0](https://github.com/jkrumm/basalt-ui/compare/v2.5.0...v2.6.0) (2026-10-14)
 
-
 ### Bug Fixes
 
-* answer the DX trial's page-shape and queryFn questions in the shipped layer ([a84293a](https://github.com/jkrumm/basalt-ui/commit/a84293a2c7b2e0549f86cca4e4eb0ce38d56e3de))
-
+- answer the DX trial's page-shape and queryFn questions in the shipped layer ([a84293a](https://github.com/jkrumm/basalt-ui/commit/a84293a2c7b2e0549f86cca4e4eb0ce38d56e3de))
 
 ### Features
 
-* bind a basalt control to a field backed by an external store ([d5f0674](https://github.com/jkrumm/basalt-ui/commit/d5f06740aeec4841da83980b49f50c05e24dbca5))
-* write an externalField from its store, not a render ([5853413](https://github.com/jkrumm/basalt-ui/commit/5853413973d8e83c08567933d40a340e676d09d0))
+- bind a basalt control to a field backed by an external store ([d5f0674](https://github.com/jkrumm/basalt-ui/commit/d5f06740aeec4841da83980b49f50c05e24dbca5))
+- write an externalField from its store, not a render ([5853413](https://github.com/jkrumm/basalt-ui/commit/5853413973d8e83c08567933d40a340e676d09d0))
 
 # [2.5.0](https://github.com/jkrumm/basalt-ui/compare/v2.4.0...v2.5.0) (2026-10-14)
 
-
 ### Bug Fixes
 
-* keep short-chart y labels inside only and lift ref swatch contrast ([480ca90](https://github.com/jkrumm/basalt-ui/commit/480ca90ae9ed3d7c4b9d057051bbf5308e7a871b))
-* thread the short-chart label rule through composed panes ([7d56a17](https://github.com/jkrumm/basalt-ui/commit/7d56a17e6de2942a4ad7ceb385d59e40d6a4b1ff))
-
+- keep short-chart y labels inside only and lift ref swatch contrast ([480ca90](https://github.com/jkrumm/basalt-ui/commit/480ca90ae9ed3d7c4b9d057051bbf5308e7a871b))
+- thread the short-chart label rule through composed panes ([7d56a17](https://github.com/jkrumm/basalt-ui/commit/7d56a17e6de2942a4ad7ceb385d59e40d6a4b1ff))
 
 ### Features
 
-* carry a call-site fallback from a store field into its control ([cb8819b](https://github.com/jkrumm/basalt-ui/commit/cb8819bd36a832258616915778ab84786291fcb7))
-* make withFallback the only call-site fallback ([f946e67](https://github.com/jkrumm/basalt-ui/commit/f946e6750b52543389aea55bbf44fc11b6f2368d))
-* propagate the chat turn's trace context to the chat endpoint ([c321b55](https://github.com/jkrumm/basalt-ui/commit/c321b555f4f443046ec00c1eec10d2cd124c8390))
-* settle a superseded turn's trace and export the trace-context types ([7aa3781](https://github.com/jkrumm/basalt-ui/commit/7aa3781e807b0c89fc0e5dd6853240596ab000ff))
+- carry a call-site fallback from a store field into its control ([cb8819b](https://github.com/jkrumm/basalt-ui/commit/cb8819bd36a832258616915778ab84786291fcb7))
+- make withFallback the only call-site fallback ([f946e67](https://github.com/jkrumm/basalt-ui/commit/f946e6750b52543389aea55bbf44fc11b6f2368d))
+- propagate the chat turn's trace context to the chat endpoint ([c321b55](https://github.com/jkrumm/basalt-ui/commit/c321b555f4f443046ec00c1eec10d2cd124c8390))
+- settle a superseded turn's trace and export the trace-context types ([7aa3781](https://github.com/jkrumm/basalt-ui/commit/7aa3781e807b0c89fc0e5dd6853240596ab000ff))
 
 # [2.4.0](https://github.com/jkrumm/basalt-ui/compare/v2.3.0...v2.4.0) (2026-10-14)
 
-
 ### Bug Fixes
 
-* guard band edge rules in one place and share the tooltip row builders ([75a386b](https://github.com/jkrumm/basalt-ui/commit/75a386b677518e24fc7b13ab7c49c3469c1aaa9d))
-* let the managed pre-commit pass when every staged file is lint-ignored ([dbaa6bc](https://github.com/jkrumm/basalt-ui/commit/dbaa6bce1ea0eefbecee0666ea94c656f81d5b18))
-
+- guard band edge rules in one place and share the tooltip row builders ([75a386b](https://github.com/jkrumm/basalt-ui/commit/75a386b677518e24fc7b13ab7c49c3469c1aaa9d))
+- let the managed pre-commit pass when every staged file is lint-ignored ([dbaa6bc](https://github.com/jkrumm/basalt-ui/commit/dbaa6bce1ea0eefbecee0666ea94c656f81d5b18))
 
 ### Features
 
-* connect a series across null rows ([3c14ed1](https://github.com/jkrumm/basalt-ui/commit/3c14ed18583710c9b742cd5fa0139c75c06beb4d))
-* cursor dots for marks-drawn series and edge rules on bands ([27bb5b2](https://github.com/jkrumm/basalt-ui/commit/27bb5b228e6212f9e86737aa7868ed375fd66cda))
-* dashed tooltip swatches for reference and dashed series ([5938eb8](https://github.com/jkrumm/basalt-ui/commit/5938eb859fb571a527394b157ab47614406b5444))
-* let a store field take a fallback derived at the call site ([3c12371](https://github.com/jkrumm/basalt-ui/commit/3c12371536a73b45418b1f75ff3479fa4012bd23))
-* reference lines name themselves in the legend ([b49ae5b](https://github.com/jkrumm/basalt-ui/commit/b49ae5bb0317aa99f02e33bcb72f5f493351ddd9))
-* tooltipFormat on the DualPanel bar and top specs ([bde88fe](https://github.com/jkrumm/basalt-ui/commit/bde88fe59de3cdc931a94ed52a696cec3987ab86))
+- connect a series across null rows ([3c14ed1](https://github.com/jkrumm/basalt-ui/commit/3c14ed18583710c9b742cd5fa0139c75c06beb4d))
+- cursor dots for marks-drawn series and edge rules on bands ([27bb5b2](https://github.com/jkrumm/basalt-ui/commit/27bb5b228e6212f9e86737aa7868ed375fd66cda))
+- dashed tooltip swatches for reference and dashed series ([5938eb8](https://github.com/jkrumm/basalt-ui/commit/5938eb859fb571a527394b157ab47614406b5444))
+- let a store field take a fallback derived at the call site ([3c12371](https://github.com/jkrumm/basalt-ui/commit/3c12371536a73b45418b1f75ff3479fa4012bd23))
+- reference lines name themselves in the legend ([b49ae5b](https://github.com/jkrumm/basalt-ui/commit/b49ae5bb0317aa99f02e33bcb72f5f493351ddd9))
+- tooltipFormat on the DualPanel bar and top specs ([bde88fe](https://github.com/jkrumm/basalt-ui/commit/bde88fe59de3cdc931a94ed52a696cec3987ab86))
 
 # [2.3.0](https://github.com/jkrumm/basalt-ui/compare/v2.2.0...v2.3.0) (2026-10-14)
 
-
 ### Bug Fixes
 
-* accept an explicit undefined on every optional chart prop ([e65ca44](https://github.com/jkrumm/basalt-ui/commit/e65ca447c40d9e38c162e35ca2a2fb98ece43ddf))
-* widen the remaining optional chart props and guard every kind ([fbdb293](https://github.com/jkrumm/basalt-ui/commit/fbdb29371ce7c355a732b8e7f03e5dfd78dcf0be))
-
+- accept an explicit undefined on every optional chart prop ([e65ca44](https://github.com/jkrumm/basalt-ui/commit/e65ca447c40d9e38c162e35ca2a2fb98ece43ddf))
+- widen the remaining optional chart props and guard every kind ([fbdb293](https://github.com/jkrumm/basalt-ui/commit/fbdb29371ce7c355a732b8e7f03e5dfd78dcf0be))
 
 ### Features
 
-* export chartCurve so CartesianChart marks can select a curve ([f4ed0b4](https://github.com/jkrumm/basalt-ui/commit/f4ed0b4aaa9e98f55f919ee5547842df7c57d0ae))
-* zone-coloured area fill via ChartSeries.area 'zones' ([14da3a0](https://github.com/jkrumm/basalt-ui/commit/14da3a08628a644e4fa0ef2f75af35f41aabad0e))
+- export chartCurve so CartesianChart marks can select a curve ([f4ed0b4](https://github.com/jkrumm/basalt-ui/commit/f4ed0b4aaa9e98f55f919ee5547842df7c57d0ae))
+- zone-coloured area fill via ChartSeries.area 'zones' ([14da3a0](https://github.com/jkrumm/basalt-ui/commit/14da3a08628a644e4fa0ef2f75af35f41aabad0e))
 
 # [2.2.0](https://github.com/jkrumm/basalt-ui/compare/v2.1.0...v2.2.0) (2026-10-14)
 
-
 ### Bug Fixes
 
-* read subpath peers from the app package in a monorepo ([ca1263d](https://github.com/jkrumm/basalt-ui/commit/ca1263d04ceb41e966c0e93ef3243db4f1359bd1))
-* scan the app package for dropped subpaths in a monorepo ([a4a076c](https://github.com/jkrumm/basalt-ui/commit/a4a076ceee33d70a4180c1f45eb1cbd8a43087aa))
-* stride Heatmap x labels to the container class tick count ([00c93b2](https://github.com/jkrumm/basalt-ui/commit/00c93b2aa34d99e1afd67f979e1e39a9f79f3630))
-* stub getBoundingClientRect on Element.prototype in the sparkline state test ([3ceeb9f](https://github.com/jkrumm/basalt-ui/commit/3ceeb9f5041978d85fbb1e696bc142bef8872402))
-
+- read subpath peers from the app package in a monorepo ([ca1263d](https://github.com/jkrumm/basalt-ui/commit/ca1263d04ceb41e966c0e93ef3243db4f1359bd1))
+- scan the app package for dropped subpaths in a monorepo ([a4a076c](https://github.com/jkrumm/basalt-ui/commit/a4a076ceee33d70a4180c1f45eb1cbd8a43087aa))
+- stride Heatmap x labels to the container class tick count ([00c93b2](https://github.com/jkrumm/basalt-ui/commit/00c93b2aa34d99e1afd67f979e1e39a9f79f3630))
+- stub getBoundingClientRect on Element.prototype in the sparkline state test ([3ceeb9f](https://github.com/jkrumm/basalt-ui/commit/3ceeb9f5041978d85fbb1e696bc142bef8872402))
 
 ### Features
 
-* export StatCardSparklineSize and allow render props in the preset ([29fcc01](https://github.com/jkrumm/basalt-ui/commit/29fcc01b6a9565aad34001a7ac2e281022cb8b1f))
-* give Sparkline a state and derive it from StatCard query ([4fb9b39](https://github.com/jkrumm/basalt-ui/commit/4fb9b394105f28cec4ca7753d755cb99b6154514))
-* re-export StatCardSparklineSize from the root ([2c9629d](https://github.com/jkrumm/basalt-ui/commit/2c9629d2cfe042b2ba18947f8ffdf56915ddedc8))
+- export StatCardSparklineSize and allow render props in the preset ([29fcc01](https://github.com/jkrumm/basalt-ui/commit/29fcc01b6a9565aad34001a7ac2e281022cb8b1f))
+- give Sparkline a state and derive it from StatCard query ([4fb9b39](https://github.com/jkrumm/basalt-ui/commit/4fb9b394105f28cec4ca7753d755cb99b6154514))
+- re-export StatCardSparklineSize from the root ([2c9629d](https://github.com/jkrumm/basalt-ui/commit/2c9629d2cfe042b2ba18947f8ffdf56915ddedc8))
 
 # [2.1.0](https://github.com/jkrumm/basalt-ui/compare/v2.0.5...v2.1.0) (2026-10-14)
 
-
 ### Bug Fixes
 
-* reach folded nav groups from the collapsed rail ([9dc75b7](https://github.com/jkrumm/basalt-ui/commit/9dc75b70350aab4c58ebb2264710d8b71a03e707))
-
+- reach folded nav groups from the collapsed rail ([9dc75b7](https://github.com/jkrumm/basalt-ui/commit/9dc75b70350aab4c58ebb2264710d8b71a03e707))
 
 ### Features
 
-* export toAgentError from basalt-ui/agent ([8f23111](https://github.com/jkrumm/basalt-ui/commit/8f23111b7f4f9eb13c44df135138ff879da89f93))
+- export toAgentError from basalt-ui/agent ([8f23111](https://github.com/jkrumm/basalt-ui/commit/8f23111b7f4f9eb13c44df135138ff879da89f93))
 
 ## [2.0.5](https://github.com/jkrumm/basalt-ui/compare/v2.0.4...v2.0.5) (2026-10-14)
 
-
 ### Bug Fixes
 
-* fail loudly on a missing subpath peer ([74593b1](https://github.com/jkrumm/basalt-ui/commit/74593b10672e9f294032126598765029600ad937))
+- fail loudly on a missing subpath peer ([74593b1](https://github.com/jkrumm/basalt-ui/commit/74593b10672e9f294032126598765029600ad937))
 
 ## [2.0.4](https://github.com/jkrumm/basalt-ui/compare/v2.0.3...v2.0.4) (2026-10-14)
 
-
 ### Bug Fixes
 
-* assert the visible strip above the sticky header, not raw row overlap ([13b5a7e](https://github.com/jkrumm/basalt-ui/commit/13b5a7e736cfdf4be2c212b9894ea0ab6b1fd41e))
-* seal the sticky table header under the app bar, keep narrow columns legible ([9046f21](https://github.com/jkrumm/basalt-ui/commit/9046f2174adaef3d9d71acacc216fe4663181ef5))
+- assert the visible strip above the sticky header, not raw row overlap ([13b5a7e](https://github.com/jkrumm/basalt-ui/commit/13b5a7e736cfdf4be2c212b9894ea0ab6b1fd41e))
+- seal the sticky table header under the app bar, keep narrow columns legible ([9046f21](https://github.com/jkrumm/basalt-ui/commit/9046f2174adaef3d9d71acacc216fe4663181ef5))
 
 ## [2.0.3](https://github.com/jkrumm/basalt-ui/compare/v2.0.2...v2.0.3) (2026-10-14)
 
-
 ### Bug Fixes
 
-* follow the router import in app-wiring and let CI run make check ([47b6152](https://github.com/jkrumm/basalt-ui/commit/47b61526ab3ae959c1d9e4595916782defb0454f))
-* label the provider's nav commands and drop duplicate nav entries ([08ec6ee](https://github.com/jkrumm/basalt-ui/commit/08ec6eef320f1ae8e072584c48a903f672222364))
-* show nav badges in the collapsed rail ([5e09ea0](https://github.com/jkrumm/basalt-ui/commit/5e09ea07f05822f853c118a19c2cf72fe593501a))
+- follow the router import in app-wiring and let CI run make check ([47b6152](https://github.com/jkrumm/basalt-ui/commit/47b61526ab3ae959c1d9e4595916782defb0454f))
+- label the provider's nav commands and drop duplicate nav entries ([08ec6ee](https://github.com/jkrumm/basalt-ui/commit/08ec6eef320f1ae8e072584c48a903f672222364))
+- show nav badges in the collapsed rail ([5e09ea0](https://github.com/jkrumm/basalt-ui/commit/5e09ea07f05822f853c118a19c2cf72fe593501a))
 
 ## [2.0.2](https://github.com/jkrumm/basalt-ui/compare/v2.0.1...v2.0.2) (2026-10-14)
 
-
 ### Bug Fixes
 
-* keep the brand symbol out of keyof a groupTokens result ([27f44d3](https://github.com/jkrumm/basalt-ui/commit/27f44d3da50f07f9adb5b850edc86e8e388d0550))
-* make doctor and sync monorepo-aware ([eafb701](https://github.com/jkrumm/basalt-ui/commit/eafb7013d07a7935b393c70553e11d2a57f01c71))
-* throw a clear error for a group not built by groupTokens ([7c0dc44](https://github.com/jkrumm/basalt-ui/commit/7c0dc447e2faff22561166f66d6e449be511981c))
+- keep the brand symbol out of keyof a groupTokens result ([27f44d3](https://github.com/jkrumm/basalt-ui/commit/27f44d3da50f07f9adb5b850edc86e8e388d0550))
+- make doctor and sync monorepo-aware ([eafb701](https://github.com/jkrumm/basalt-ui/commit/eafb7013d07a7935b393c70553e11d2a57f01c71))
+- throw a clear error for a group not built by groupTokens ([7c0dc44](https://github.com/jkrumm/basalt-ui/commit/7c0dc447e2faff22561166f66d6e449be511981c))
 
 ## [2.0.1](https://github.com/jkrumm/basalt-ui/compare/v2.0.0...v2.0.1) (2026-10-14)
 
-
 ### Bug Fixes
 
-* close argo friction rows 1-3 ([41627c3](https://github.com/jkrumm/basalt-ui/commit/41627c328ad278fc303ca9317cada2d2ab5f99a4))
+- close argo friction rows 1-3 ([41627c3](https://github.com/jkrumm/basalt-ui/commit/41627c328ad278fc303ca9317cada2d2ab5f99a4))
 
 # [2.0.0](https://github.com/jkrumm/basalt-ui/compare/v1.41.0...v2.0.0) (2026-10-14)
 
-
 ### Bug Fixes
 
-* address review of the shell nav prop ([e816a29](https://github.com/jkrumm/basalt-ui/commit/e816a29238d847eccd2a07eba5bc1cd60c98936d))
-* bucket the DualPanel fill by x and route single bars via barMark ([d66b78d](https://github.com/jkrumm/basalt-ui/commit/d66b78d1ff9c21efba12038844840d72c46c1d09))
-* close router and dev-helper false positives in the lint plugin ([3cc25fb](https://github.com/jkrumm/basalt-ui/commit/3cc25fbde8b0ff978ecf1d275cbf3148d22b42ef))
-* close the fourth review of the agent run records ([55b304c](https://github.com/jkrumm/basalt-ui/commit/55b304cf7315172f183c477f6604204878cddee6))
-* close the review of the agent runtime contract ([0f74e16](https://github.com/jkrumm/basalt-ui/commit/0f74e167bb40f116cf79350031875b62e4c12144))
-* close the review of the chat stream demo ([0bf1e88](https://github.com/jkrumm/basalt-ui/commit/0bf1e88712d1116470d6f647658e6d355aad4d9c))
-* close the second review of the agent run state ([526548f](https://github.com/jkrumm/basalt-ui/commit/526548f121f74a520de93ca5b96c344b140c6051))
-* close the second review of the shell nav prop ([fa0827c](https://github.com/jkrumm/basalt-ui/commit/fa0827c7f498330b1d128e5ffe8f07a2aa0811aa))
-* close the third review of the shell nav prop ([cde02fc](https://github.com/jkrumm/basalt-ui/commit/cde02fcd2cf7902ce42d4e79328599bd28012e12))
-* count sort misses and compare against the per-run control ([6906443](https://github.com/jkrumm/basalt-ui/commit/69064435f187388324a17033f3d53f55361e036c))
-* cut the server render cost of a dense DualPanel ([3b6db1f](https://github.com/jkrumm/basalt-ui/commit/3b6db1f930f512e4d56aff407b0dfb00d706d81c))
-* drop the router-view-transition bullet and lower the landed budgets ([f3d9ba9](https://github.com/jkrumm/basalt-ui/commit/f3d9ba9775a5f20ec68560e12eb92353f1e6bf55))
-* end every rule bullet in its tag ([608e94f](https://github.com/jkrumm/basalt-ui/commit/608e94f1421731b3f5c5099c5f8ae644ddbec889))
-* export the seeded route component so lint stays quiet ([42ddc93](https://github.com/jkrumm/basalt-ui/commit/42ddc93df29d4f8d713e4bbf0949d018c54f7893))
-* fail closed on router receivers, unwrap TS wrappers ([e80e101](https://github.com/jkrumm/basalt-ui/commit/e80e1012668f89920a4a4d0c9b3716173cdce5ac))
-* fill the parent in matchHeight, size the Donut ring from the box law ([3f9de0b](https://github.com/jkrumm/basalt-ui/commit/3f9de0b82bd99b5d66c30544c396f5156efbbdf9))
-* flush the pending table search on unmount and pin with logical insets ([0e33b78](https://github.com/jkrumm/basalt-ui/commit/0e33b78e25a533a0c73512ea9fa2ffd722854fca))
-* gate the layered Mantine imports and correct the migration guidance ([08b5aba](https://github.com/jkrumm/basalt-ui/commit/08b5abaf4692cd6c7afa148dbf5a3ced1d7ee5d2))
-* harden app-wiring and make the kept-lint notice follow the merge ([32412c5](https://github.com/jkrumm/basalt-ui/commit/32412c5fd88c6474508d54b69e1b6b47997278bd))
-* harden doctor's upgrade checks and make init leave a stock Vite app green ([f61d3ac](https://github.com/jkrumm/basalt-ui/commit/f61d3ac76a7564e5335bab0b569c44c05c7af8b3))
-* harden donut and heatmap review findings ([4f654cd](https://github.com/jkrumm/basalt-ui/commit/4f654cd331a92b7f0c288be26ee594ad616841b8))
-* harden Sparkline domains and StackedArea typing ([3d80dac](https://github.com/jkrumm/basalt-ui/commit/3d80dac2c12f16d2bfffeecf4110b5082b39e460))
-* harden streaming markdown against remend, shiki and mermaid failures ([1e51699](https://github.com/jkrumm/basalt-ui/commit/1e5169921cb4a1ab0ab05fd612bff526d9eb73f8))
-* harden the chart demo fixtures and charts search store ([877578b](https://github.com/jkrumm/basalt-ui/commit/877578b6456598e66320e3809b52a561523ed9d8))
-* harden the chart-engine boundary against traversal and require ([2404a3c](https://github.com/jkrumm/basalt-ui/commit/2404a3cdebecfa67cf9bafa48f7f4eb0f3785aa1))
-* harden the keyboard lane after review ([af8a7cb](https://github.com/jkrumm/basalt-ui/commit/af8a7cbcb147cf33b528f27afa613935e819aa0a))
-* harden the panel kinds after review ([580f77f](https://github.com/jkrumm/basalt-ui/commit/580f77fba11c0b29a0399a8efb7ea42cd0a80bc1))
-* hold the stopped run's record while its own resolver is pending ([ed55013](https://github.com/jkrumm/basalt-ui/commit/ed5501366e8a479f15a42d73b5a66eb00d86532b))
-* import the dates stylesheet after basalt's ([ea56e2a](https://github.com/jkrumm/basalt-ui/commit/ea56e2a5bc377d14793c90b1fd18b1b9b49f88de))
-* keep fill gaps when thinning and gate barMark on values ([3876c8a](https://github.com/jkrumm/basalt-ui/commit/3876c8a3d5c4c70e1228e74fcd6630ab59604730))
-* keep legend hit overlays off the plot ([7c6afee](https://github.com/jkrumm/basalt-ui/commit/7c6afeed18c5ec69b1d80507def708d620e72b85))
-* keep the cursor session across re-renders and bare-card legends ([5fea636](https://github.com/jkrumm/basalt-ui/commit/5fea636fc05276187ee439ada7662e372deb31aa))
-* keep the NaN-x fallback explicit in xScaleFor and test it ([4c639b9](https://github.com/jkrumm/basalt-ui/commit/4c639b987786866bb473db3e73f51e247e92dc01))
-* keep the short-card fold and the legend hit floor on the 2.0 chart layer ([7ab3d24](https://github.com/jkrumm/basalt-ui/commit/7ab3d24565d77ec6ebd414a2697b767406e9f71a))
-* make doctor's import scan literal-aware and init's tsconfig edit BOM-safe ([fad9f31](https://github.com/jkrumm/basalt-ui/commit/fad9f31949cebf8c69ba012b6a565608b78f6af0))
-* make the chat recipe production-correct and compile-checked ([1d66177](https://github.com/jkrumm/basalt-ui/commit/1d661773c28db62d94a49986b4b517138b64fdcb))
-* match nav items like the sidebar and stop re-raising transition rejections ([8bfceea](https://github.com/jkrumm/basalt-ui/commit/8bfceeaea5e3954ebad907cc86f8b16b90a03876))
-* match nav items with the router's rules and report transition errors once ([804275e](https://github.com/jkrumm/basalt-ui/commit/804275e9983228591d84a88c295f200d88eb7ec1))
-* name real radius tokens and tighten the agent-layer checks ([5065036](https://github.com/jkrumm/basalt-ui/commit/5065036e869bcc3ad0c1febe6b50e7e4aba0a908))
-* name the nav label, not staticData, in the page-title guard message ([a4add08](https://github.com/jkrumm/basalt-ui/commit/a4add0807e065420712d202e99b4aac20e437962))
-* never emit a curve name as path data; stack only the auto domain ([77225a0](https://github.com/jkrumm/basalt-ui/commit/77225a0d766074ef76a4969959789476c27b0245))
-* paint band strip markers after every base band ([7c9860a](https://github.com/jkrumm/basalt-ui/commit/7c9860a9189ffd3c3b2b755ab69af59cacea51ff))
-* pin the agent-layer budgets in tests and record the landed numbers ([fe29f4f](https://github.com/jkrumm/basalt-ui/commit/fe29f4f705a01225fae9c135d9bc47213900cdd1))
-* pin the StreamStatus removal with a type guard ([26703a0](https://github.com/jkrumm/basalt-ui/commit/26703a0823db6b1bcdbaab73f09ab23363bc791a))
-* report non-interactive charts as N/A in the keyboard lane ([02c7feb](https://github.com/jkrumm/basalt-ui/commit/02c7feb14dac1b521d2e1596136e4e3fcc85e0ba))
-* resolve router and ai-sdk bindings by import, tighten no-dev-helper ([dbabe5d](https://github.com/jkrumm/basalt-ui/commit/dbabe5d7166677329b27cb701ad89bf638d50981))
-* restore CHANGELOG.md, which is not part of this change ([65ef132](https://github.com/jkrumm/basalt-ui/commit/65ef132054df0210a9e22d5d387f521ddf11c310))
-* reuse the shared scan in dropped-subpaths, spare solution roots ([01276f7](https://github.com/jkrumm/basalt-ui/commit/01276f7dd1d96feaf43574f9aec5d53e7ab248be))
-* skip history in the deleted-doc drift check ([13a9933](https://github.com/jkrumm/basalt-ui/commit/13a99330829b6e1125f8539bc94c6e8399322d88))
-* square Donut ring, measure fill boxes, size chart roots against collapse ([5200293](https://github.com/jkrumm/basalt-ui/commit/5200293254eacb6b5c3b72298594057de9a76766))
-* stop folding a server-painted table column on hydration ([1588481](https://github.com/jkrumm/basalt-ui/commit/1588481c593887315a9505c994515a4b6cf41fc1))
-* stop MirroredBars and bar Sparkline stacking one series per row ([d354913](https://github.com/jkrumm/basalt-ui/commit/d3549134d005366078c77034c51088ca45c764ff))
-* stop the cold first fold variant logging two 404s ([a6f13ac](https://github.com/jkrumm/basalt-ui/commit/a6f13ac9c39475275ec0b795c9f735f3ee0b0b95))
-* stop xScaleFor overflowing the stack on very long series ([b3ee019](https://github.com/jkrumm/basalt-ui/commit/b3ee0190a3aee042b63444760eef7f787dc11bb6))
-* treat remend's incomplete-image sentinel like incomplete-link ([8f988d9](https://github.com/jkrumm/basalt-ui/commit/8f988d9c310822d0b48dc67626cc941ad2594b84))
-* wait for settled rail geometry in the layout suite ([7489033](https://github.com/jkrumm/basalt-ui/commit/7489033d3f09d73d71451bd3df1e7f21b114f308))
-
+- address review of the shell nav prop ([e816a29](https://github.com/jkrumm/basalt-ui/commit/e816a29238d847eccd2a07eba5bc1cd60c98936d))
+- bucket the DualPanel fill by x and route single bars via barMark ([d66b78d](https://github.com/jkrumm/basalt-ui/commit/d66b78d1ff9c21efba12038844840d72c46c1d09))
+- close router and dev-helper false positives in the lint plugin ([3cc25fb](https://github.com/jkrumm/basalt-ui/commit/3cc25fbde8b0ff978ecf1d275cbf3148d22b42ef))
+- close the fourth review of the agent run records ([55b304c](https://github.com/jkrumm/basalt-ui/commit/55b304cf7315172f183c477f6604204878cddee6))
+- close the review of the agent runtime contract ([0f74e16](https://github.com/jkrumm/basalt-ui/commit/0f74e167bb40f116cf79350031875b62e4c12144))
+- close the review of the chat stream demo ([0bf1e88](https://github.com/jkrumm/basalt-ui/commit/0bf1e88712d1116470d6f647658e6d355aad4d9c))
+- close the second review of the agent run state ([526548f](https://github.com/jkrumm/basalt-ui/commit/526548f121f74a520de93ca5b96c344b140c6051))
+- close the second review of the shell nav prop ([fa0827c](https://github.com/jkrumm/basalt-ui/commit/fa0827c7f498330b1d128e5ffe8f07a2aa0811aa))
+- close the third review of the shell nav prop ([cde02fc](https://github.com/jkrumm/basalt-ui/commit/cde02fcd2cf7902ce42d4e79328599bd28012e12))
+- count sort misses and compare against the per-run control ([6906443](https://github.com/jkrumm/basalt-ui/commit/69064435f187388324a17033f3d53f55361e036c))
+- cut the server render cost of a dense DualPanel ([3b6db1f](https://github.com/jkrumm/basalt-ui/commit/3b6db1f930f512e4d56aff407b0dfb00d706d81c))
+- drop the router-view-transition bullet and lower the landed budgets ([f3d9ba9](https://github.com/jkrumm/basalt-ui/commit/f3d9ba9775a5f20ec68560e12eb92353f1e6bf55))
+- end every rule bullet in its tag ([608e94f](https://github.com/jkrumm/basalt-ui/commit/608e94f1421731b3f5c5099c5f8ae644ddbec889))
+- export the seeded route component so lint stays quiet ([42ddc93](https://github.com/jkrumm/basalt-ui/commit/42ddc93df29d4f8d713e4bbf0949d018c54f7893))
+- fail closed on router receivers, unwrap TS wrappers ([e80e101](https://github.com/jkrumm/basalt-ui/commit/e80e1012668f89920a4a4d0c9b3716173cdce5ac))
+- fill the parent in matchHeight, size the Donut ring from the box law ([3f9de0b](https://github.com/jkrumm/basalt-ui/commit/3f9de0b82bd99b5d66c30544c396f5156efbbdf9))
+- flush the pending table search on unmount and pin with logical insets ([0e33b78](https://github.com/jkrumm/basalt-ui/commit/0e33b78e25a533a0c73512ea9fa2ffd722854fca))
+- gate the layered Mantine imports and correct the migration guidance ([08b5aba](https://github.com/jkrumm/basalt-ui/commit/08b5abaf4692cd6c7afa148dbf5a3ced1d7ee5d2))
+- harden app-wiring and make the kept-lint notice follow the merge ([32412c5](https://github.com/jkrumm/basalt-ui/commit/32412c5fd88c6474508d54b69e1b6b47997278bd))
+- harden doctor's upgrade checks and make init leave a stock Vite app green ([f61d3ac](https://github.com/jkrumm/basalt-ui/commit/f61d3ac76a7564e5335bab0b569c44c05c7af8b3))
+- harden donut and heatmap review findings ([4f654cd](https://github.com/jkrumm/basalt-ui/commit/4f654cd331a92b7f0c288be26ee594ad616841b8))
+- harden Sparkline domains and StackedArea typing ([3d80dac](https://github.com/jkrumm/basalt-ui/commit/3d80dac2c12f16d2bfffeecf4110b5082b39e460))
+- harden streaming markdown against remend, shiki and mermaid failures ([1e51699](https://github.com/jkrumm/basalt-ui/commit/1e5169921cb4a1ab0ab05fd612bff526d9eb73f8))
+- harden the chart demo fixtures and charts search store ([877578b](https://github.com/jkrumm/basalt-ui/commit/877578b6456598e66320e3809b52a561523ed9d8))
+- harden the chart-engine boundary against traversal and require ([2404a3c](https://github.com/jkrumm/basalt-ui/commit/2404a3cdebecfa67cf9bafa48f7f4eb0f3785aa1))
+- harden the keyboard lane after review ([af8a7cb](https://github.com/jkrumm/basalt-ui/commit/af8a7cbcb147cf33b528f27afa613935e819aa0a))
+- harden the panel kinds after review ([580f77f](https://github.com/jkrumm/basalt-ui/commit/580f77fba11c0b29a0399a8efb7ea42cd0a80bc1))
+- hold the stopped run's record while its own resolver is pending ([ed55013](https://github.com/jkrumm/basalt-ui/commit/ed5501366e8a479f15a42d73b5a66eb00d86532b))
+- import the dates stylesheet after basalt's ([ea56e2a](https://github.com/jkrumm/basalt-ui/commit/ea56e2a5bc377d14793c90b1fd18b1b9b49f88de))
+- keep fill gaps when thinning and gate barMark on values ([3876c8a](https://github.com/jkrumm/basalt-ui/commit/3876c8a3d5c4c70e1228e74fcd6630ab59604730))
+- keep legend hit overlays off the plot ([7c6afee](https://github.com/jkrumm/basalt-ui/commit/7c6afeed18c5ec69b1d80507def708d620e72b85))
+- keep the cursor session across re-renders and bare-card legends ([5fea636](https://github.com/jkrumm/basalt-ui/commit/5fea636fc05276187ee439ada7662e372deb31aa))
+- keep the NaN-x fallback explicit in xScaleFor and test it ([4c639b9](https://github.com/jkrumm/basalt-ui/commit/4c639b987786866bb473db3e73f51e247e92dc01))
+- keep the short-card fold and the legend hit floor on the 2.0 chart layer ([7ab3d24](https://github.com/jkrumm/basalt-ui/commit/7ab3d24565d77ec6ebd414a2697b767406e9f71a))
+- make doctor's import scan literal-aware and init's tsconfig edit BOM-safe ([fad9f31](https://github.com/jkrumm/basalt-ui/commit/fad9f31949cebf8c69ba012b6a565608b78f6af0))
+- make the chat recipe production-correct and compile-checked ([1d66177](https://github.com/jkrumm/basalt-ui/commit/1d661773c28db62d94a49986b4b517138b64fdcb))
+- match nav items like the sidebar and stop re-raising transition rejections ([8bfceea](https://github.com/jkrumm/basalt-ui/commit/8bfceeaea5e3954ebad907cc86f8b16b90a03876))
+- match nav items with the router's rules and report transition errors once ([804275e](https://github.com/jkrumm/basalt-ui/commit/804275e9983228591d84a88c295f200d88eb7ec1))
+- name real radius tokens and tighten the agent-layer checks ([5065036](https://github.com/jkrumm/basalt-ui/commit/5065036e869bcc3ad0c1febe6b50e7e4aba0a908))
+- name the nav label, not staticData, in the page-title guard message ([a4add08](https://github.com/jkrumm/basalt-ui/commit/a4add0807e065420712d202e99b4aac20e437962))
+- never emit a curve name as path data; stack only the auto domain ([77225a0](https://github.com/jkrumm/basalt-ui/commit/77225a0d766074ef76a4969959789476c27b0245))
+- paint band strip markers after every base band ([7c9860a](https://github.com/jkrumm/basalt-ui/commit/7c9860a9189ffd3c3b2b755ab69af59cacea51ff))
+- pin the agent-layer budgets in tests and record the landed numbers ([fe29f4f](https://github.com/jkrumm/basalt-ui/commit/fe29f4f705a01225fae9c135d9bc47213900cdd1))
+- pin the StreamStatus removal with a type guard ([26703a0](https://github.com/jkrumm/basalt-ui/commit/26703a0823db6b1bcdbaab73f09ab23363bc791a))
+- report non-interactive charts as N/A in the keyboard lane ([02c7feb](https://github.com/jkrumm/basalt-ui/commit/02c7feb14dac1b521d2e1596136e4e3fcc85e0ba))
+- resolve router and ai-sdk bindings by import, tighten no-dev-helper ([dbabe5d](https://github.com/jkrumm/basalt-ui/commit/dbabe5d7166677329b27cb701ad89bf638d50981))
+- restore CHANGELOG.md, which is not part of this change ([65ef132](https://github.com/jkrumm/basalt-ui/commit/65ef132054df0210a9e22d5d387f521ddf11c310))
+- reuse the shared scan in dropped-subpaths, spare solution roots ([01276f7](https://github.com/jkrumm/basalt-ui/commit/01276f7dd1d96feaf43574f9aec5d53e7ab248be))
+- skip history in the deleted-doc drift check ([13a9933](https://github.com/jkrumm/basalt-ui/commit/13a99330829b6e1125f8539bc94c6e8399322d88))
+- square Donut ring, measure fill boxes, size chart roots against collapse ([5200293](https://github.com/jkrumm/basalt-ui/commit/5200293254eacb6b5c3b72298594057de9a76766))
+- stop folding a server-painted table column on hydration ([1588481](https://github.com/jkrumm/basalt-ui/commit/1588481c593887315a9505c994515a4b6cf41fc1))
+- stop MirroredBars and bar Sparkline stacking one series per row ([d354913](https://github.com/jkrumm/basalt-ui/commit/d3549134d005366078c77034c51088ca45c764ff))
+- stop the cold first fold variant logging two 404s ([a6f13ac](https://github.com/jkrumm/basalt-ui/commit/a6f13ac9c39475275ec0b795c9f735f3ee0b0b95))
+- stop xScaleFor overflowing the stack on very long series ([b3ee019](https://github.com/jkrumm/basalt-ui/commit/b3ee0190a3aee042b63444760eef7f787dc11bb6))
+- treat remend's incomplete-image sentinel like incomplete-link ([8f988d9](https://github.com/jkrumm/basalt-ui/commit/8f988d9c310822d0b48dc67626cc941ad2594b84))
+- wait for settled rail geometry in the layout suite ([7489033](https://github.com/jkrumm/basalt-ui/commit/7489033d3f09d73d71451bd3df1e7f21b114f308))
 
 ### Features
 
-* 2.0 oxlint plugin — every rule at error, dead rules retired ([e6567da](https://github.com/jkrumm/basalt-ui/commit/e6567da0d008583e2764dfd1468af8dbd3df515e))
-* accept undefined on optional agent props ([18b7e1a](https://github.com/jkrumm/basalt-ui/commit/18b7e1a73cb11dffda8fc221729b443404d29db9))
-* add a checked table recipe, a typed mock transport and the grid keys ([dc0fcfa](https://github.com/jkrumm/basalt-ui/commit/dc0fcfaf241550ed94c23188343d6235a87d0629))
-* add donut and heatmap chart kinds ([2a07a12](https://github.com/jkrumm/basalt-ui/commit/2a07a127f672e15a6e7cc157c012ca33b6424d80))
-* add make evidence with its lanes and the 1.41 and argo baselines ([0be032c](https://github.com/jkrumm/basalt-ui/commit/0be032cae7634e5589d457b9c59078e699fb45d7))
-* add StackedArea and Sparkline chart kinds ([84009a7](https://github.com/jkrumm/basalt-ui/commit/84009a7f18b0ed86e6f2b04b04b32b8f15bec61e))
-* add submitted status, typed errors, throttle and transport seam to agent ([0be4da9](https://github.com/jkrumm/basalt-ui/commit/0be4da97632d80030558604ef0c5bcdac488cb03))
-* add the band strip chart kind ([e9a3f93](https://github.com/jkrumm/basalt-ui/commit/e9a3f932c8cf19f5a00c8ffdf03b033b26fa7213))
-* add the dual-panel and mirrored-bars chart kinds ([093f0df](https://github.com/jkrumm/basalt-ui/commit/093f0df04168a1ef7d1eeb13bbe06bb5e0d5fef8))
-* default useAgentThreadRuns throttle to 100 ms ([7f4a7b4](https://github.com/jkrumm/basalt-ui/commit/7f4a7b411d5a8dbe43623e2fdf331595a00eb985))
-* doctor and sync carry a 1.x app to 2.0 ([a06ce32](https://github.com/jkrumm/basalt-ui/commit/a06ce32f288883fe3575187d88d9f5f78120d331))
-* drop the StreamStatus export ([9346ba2](https://github.com/jkrumm/basalt-ui/commit/9346ba293863bb09aa7b65dfa87d84b93f3c5326))
-* export the agent transport types ([b8f69f4](https://github.com/jkrumm/basalt-ui/commit/b8f69f4494274479e46b2cd04fa25cfecbbebd3a))
-* export the nine chart kinds from basalt-ui/charts ([bf25f8a](https://github.com/jkrumm/basalt-ui/commit/bf25f8adb95880a10aa75265502368ed99ed9410))
-* finish widening optional agent props ([c7e58a5](https://github.com/jkrumm/basalt-ui/commit/c7e58a531a3781f71107afb710624f43815774b8))
-* fold a short chart card in CSS so its header never flips after hydration ([3ec6f1c](https://github.com/jkrumm/basalt-ui/commit/3ec6f1c36f0c32e79891b4978b01d9fe801e029c))
-* gate route transitions on view-transition types support ([0e9a086](https://github.com/jkrumm/basalt-ui/commit/0e9a086da5a912715ac1e7c8813fc08b8bca0f6c))
-* gate the 2.0 chart surface and drop its 1.x helpers ([a2a3274](https://github.com/jkrumm/basalt-ui/commit/a2a3274f1ec1ae481e7f409baab0b38e2fe70ed2))
-* init reorders create-vite's build and keeps Route exportable ([727687b](https://github.com/jkrumm/basalt-ui/commit/727687bf6265a7574b8027ce3114a519f0881fb5))
-* init seeds the router files and merges lint; doctor checks app wiring ([eb2dfad](https://github.com/jkrumm/basalt-ui/commit/eb2dfad4e43bbc1759d41b64ef0e5a0ead358a64))
-* keyboard-walk lane in the evidence harness ([a059d91](https://github.com/jkrumm/basalt-ui/commit/a059d91472e233d03d0a9eef216d1bc5bce4c23b))
-* let the shell take nav and derive sidebar, mobile bar and breadcrumbs ([ed7cb4a](https://github.com/jkrumm/basalt-ui/commit/ed7cb4a55fba4b98394dc6bc70c81697f5cd7781))
-* playground demos for every chart kind ([c6870ee](https://github.com/jkrumm/basalt-ui/commit/c6870eec1d0a7fed2eb4430e7204faf4400863a4))
-* port the playground and the evidence chart lane to TanStack Charts ([de3826d](https://github.com/jkrumm/basalt-ui/commit/de3826d6c1b83f486dcdfebad78f8af65bc4c629))
-* rebuild the chart layer on TanStack Charts ([35b074b](https://github.com/jkrumm/basalt-ui/commit/35b074b5bb639299f425e09328cb1084db3eb7c1))
-* replace the visx lint rules with the chart-engine boundary ([3b98b8a](https://github.com/jkrumm/basalt-ui/commit/3b98b8aa6804b2ad878230584db0f3d3cafc61b7))
-* rewrite the shipped agent layer so every instruction cites its enforcement ([ec19200](https://github.com/jkrumm/basalt-ui/commit/ec19200e2e997f5757f15ecc7fd078f786603acb))
-* route view transitions through the router ([157aed4](https://github.com/jkrumm/basalt-ui/commit/157aed47628ccd07a89404fe7e2bebc08236e9c5))
-* ship basalt-ui 2.0 as the one sanctioned major ([86f675f](https://github.com/jkrumm/basalt-ui/commit/86f675f321926ae48ad0e7a175393a1f11316485))
-* ship the main.tsx seed as an agent template ([cb25139](https://github.com/jkrumm/basalt-ui/commit/cb2513934ba7f42be60dc2ec1407e8b7882282dd))
-* size charts in CSS so hydration shifts nothing ([d944163](https://github.com/jkrumm/basalt-ui/commit/d944163c85a58728fbeb7af6b80c80fc25a39988))
-* styles.css carries every Mantine layer the provider mounts ([e47e6e1](https://github.com/jkrumm/basalt-ui/commit/e47e6e1c96ad1ca506ac2171d04ff8443f15818f))
-* view transition on aside fold, CSS theme-toggle, reduced motion ([9b9e06f](https://github.com/jkrumm/basalt-ui/commit/9b9e06f33a95e47ebdfd8a3fbb9d2da455e6c062))
-* wire chat, routes and subpath peers into the shipped agent layer ([f5c3b7d](https://github.com/jkrumm/basalt-ui/commit/f5c3b7dc87fa34a93273533ab577ea34106436a9))
-
+- 2.0 oxlint plugin — every rule at error, dead rules retired ([e6567da](https://github.com/jkrumm/basalt-ui/commit/e6567da0d008583e2764dfd1468af8dbd3df515e))
+- accept undefined on optional agent props ([18b7e1a](https://github.com/jkrumm/basalt-ui/commit/18b7e1a73cb11dffda8fc221729b443404d29db9))
+- add a checked table recipe, a typed mock transport and the grid keys ([dc0fcfa](https://github.com/jkrumm/basalt-ui/commit/dc0fcfaf241550ed94c23188343d6235a87d0629))
+- add donut and heatmap chart kinds ([2a07a12](https://github.com/jkrumm/basalt-ui/commit/2a07a127f672e15a6e7cc157c012ca33b6424d80))
+- add make evidence with its lanes and the 1.41 and argo baselines ([0be032c](https://github.com/jkrumm/basalt-ui/commit/0be032cae7634e5589d457b9c59078e699fb45d7))
+- add StackedArea and Sparkline chart kinds ([84009a7](https://github.com/jkrumm/basalt-ui/commit/84009a7f18b0ed86e6f2b04b04b32b8f15bec61e))
+- add submitted status, typed errors, throttle and transport seam to agent ([0be4da9](https://github.com/jkrumm/basalt-ui/commit/0be4da97632d80030558604ef0c5bcdac488cb03))
+- add the band strip chart kind ([e9a3f93](https://github.com/jkrumm/basalt-ui/commit/e9a3f932c8cf19f5a00c8ffdf03b033b26fa7213))
+- add the dual-panel and mirrored-bars chart kinds ([093f0df](https://github.com/jkrumm/basalt-ui/commit/093f0df04168a1ef7d1eeb13bbe06bb5e0d5fef8))
+- default useAgentThreadRuns throttle to 100 ms ([7f4a7b4](https://github.com/jkrumm/basalt-ui/commit/7f4a7b411d5a8dbe43623e2fdf331595a00eb985))
+- doctor and sync carry a 1.x app to 2.0 ([a06ce32](https://github.com/jkrumm/basalt-ui/commit/a06ce32f288883fe3575187d88d9f5f78120d331))
+- drop the StreamStatus export ([9346ba2](https://github.com/jkrumm/basalt-ui/commit/9346ba293863bb09aa7b65dfa87d84b93f3c5326))
+- export the agent transport types ([b8f69f4](https://github.com/jkrumm/basalt-ui/commit/b8f69f4494274479e46b2cd04fa25cfecbbebd3a))
+- export the nine chart kinds from basalt-ui/charts ([bf25f8a](https://github.com/jkrumm/basalt-ui/commit/bf25f8adb95880a10aa75265502368ed99ed9410))
+- finish widening optional agent props ([c7e58a5](https://github.com/jkrumm/basalt-ui/commit/c7e58a531a3781f71107afb710624f43815774b8))
+- fold a short chart card in CSS so its header never flips after hydration ([3ec6f1c](https://github.com/jkrumm/basalt-ui/commit/3ec6f1c36f0c32e79891b4978b01d9fe801e029c))
+- gate route transitions on view-transition types support ([0e9a086](https://github.com/jkrumm/basalt-ui/commit/0e9a086da5a912715ac1e7c8813fc08b8bca0f6c))
+- gate the 2.0 chart surface and drop its 1.x helpers ([a2a3274](https://github.com/jkrumm/basalt-ui/commit/a2a3274f1ec1ae481e7f409baab0b38e2fe70ed2))
+- init reorders create-vite's build and keeps Route exportable ([727687b](https://github.com/jkrumm/basalt-ui/commit/727687bf6265a7574b8027ce3114a519f0881fb5))
+- init seeds the router files and merges lint; doctor checks app wiring ([eb2dfad](https://github.com/jkrumm/basalt-ui/commit/eb2dfad4e43bbc1759d41b64ef0e5a0ead358a64))
+- keyboard-walk lane in the evidence harness ([a059d91](https://github.com/jkrumm/basalt-ui/commit/a059d91472e233d03d0a9eef216d1bc5bce4c23b))
+- let the shell take nav and derive sidebar, mobile bar and breadcrumbs ([ed7cb4a](https://github.com/jkrumm/basalt-ui/commit/ed7cb4a55fba4b98394dc6bc70c81697f5cd7781))
+- playground demos for every chart kind ([c6870ee](https://github.com/jkrumm/basalt-ui/commit/c6870eec1d0a7fed2eb4430e7204faf4400863a4))
+- port the playground and the evidence chart lane to TanStack Charts ([de3826d](https://github.com/jkrumm/basalt-ui/commit/de3826d6c1b83f486dcdfebad78f8af65bc4c629))
+- rebuild the chart layer on TanStack Charts ([35b074b](https://github.com/jkrumm/basalt-ui/commit/35b074b5bb639299f425e09328cb1084db3eb7c1))
+- replace the visx lint rules with the chart-engine boundary ([3b98b8a](https://github.com/jkrumm/basalt-ui/commit/3b98b8aa6804b2ad878230584db0f3d3cafc61b7))
+- rewrite the shipped agent layer so every instruction cites its enforcement ([ec19200](https://github.com/jkrumm/basalt-ui/commit/ec19200e2e997f5757f15ecc7fd078f786603acb))
+- route view transitions through the router ([157aed4](https://github.com/jkrumm/basalt-ui/commit/157aed47628ccd07a89404fe7e2bebc08236e9c5))
+- ship basalt-ui 2.0 as the one sanctioned major ([86f675f](https://github.com/jkrumm/basalt-ui/commit/86f675f321926ae48ad0e7a175393a1f11316485))
+- ship the main.tsx seed as an agent template ([cb25139](https://github.com/jkrumm/basalt-ui/commit/cb2513934ba7f42be60dc2ec1407e8b7882282dd))
+- size charts in CSS so hydration shifts nothing ([d944163](https://github.com/jkrumm/basalt-ui/commit/d944163c85a58728fbeb7af6b80c80fc25a39988))
+- styles.css carries every Mantine layer the provider mounts ([e47e6e1](https://github.com/jkrumm/basalt-ui/commit/e47e6e1c96ad1ca506ac2171d04ff8443f15818f))
+- view transition on aside fold, CSS theme-toggle, reduced motion ([9b9e06f](https://github.com/jkrumm/basalt-ui/commit/9b9e06f33a95e47ebdfd8a3fbb9d2da455e6c062))
+- wire chat, routes and subpath peers into the shipped agent layer ([f5c3b7d](https://github.com/jkrumm/basalt-ui/commit/f5c3b7dc87fa34a93273533ab577ea34106436a9))
 
 ### BREAKING CHANGES
 
-* the 1.x surface is removed or moved. See
-packages/basalt-ui/MIGRATING.md § 2.0.0 for every row.
+- the 1.x surface is removed or moved. See
+  packages/basalt-ui/MIGRATING.md § 2.0.0 for every row.
 
 # [1.41.0](https://github.com/jkrumm/basalt-ui/compare/v1.40.3...v1.41.0) (2026-10-10)
 

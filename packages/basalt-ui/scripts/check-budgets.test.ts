@@ -45,7 +45,8 @@ async function runQuiet({
   const lines: string[] = []
   const code = await runBudgets({ reportOnly, providerOnlyDist, log: (l) => lines.push(l) })
   const row = lines.find((l) => l.includes('provider-only first paint'))
-  return { code, row }
+  const devRow = lines.find((l) => l.includes('dev-only chunks'))
+  return { code, row, devRow }
 }
 
 describe('runBudgets with an unmeasurable provider-only row', () => {
@@ -61,6 +62,11 @@ describe('runBudgets with an unmeasurable provider-only row', () => {
     expect(row).toContain('skipped: dist/ missing')
   })
 
+  test('dist absent: the dev-only row is reported unmeasured too', async () => {
+    const { devRow } = await runQuiet({ reportOnly: true, providerOnlyDist: absent })
+    expect(devRow).toContain('skipped: dist/ missing')
+  })
+
   test('dist absent: the gate fails closed', async () => {
     expect((await runQuiet({ reportOnly: false, providerOnlyDist: absent })).code).toBe(1)
   })
@@ -74,29 +80,83 @@ describe('runBudgets with an unmeasurable provider-only row', () => {
     expect(report.row).toContain('failed: Build failed with 1 error: [PARSE_ERROR]')
     // ANSI stripped — the row is plain text.
     expect(report.row).not.toContain('\u001b[')
+    expect(report.devRow).toStartWith('✖ ')
+    expect(report.devRow).toContain('failed: Build failed')
     expect((await runQuiet({ reportOnly: false, providerOnlyDist: broken })).code).toBe(1)
   })
 })
 
 describe('devOnlyChunks', () => {
-  const chunk = (fileName: string, moduleIds: string[] = [], dynamicImports: string[] = []) => ({
-    fileName,
-    moduleIds,
-    imports: [],
-    dynamicImports,
-  })
+  const chunk = (
+    fileName: string,
+    moduleIds: string[] = [],
+    dynamicImports: string[] = [],
+    imports: string[] = [],
+  ) => ({ fileName, moduleIds, imports, dynamicImports })
 
   test('flags the dock, the theme lab and devtools peers; spares the rest', () => {
     const flagged = devOnlyChunks([
       chunk('basalt-ui.js', ['/dist/provider/index.js', '/dist/tokens/derive.js']),
-      chunk('dev-dock-x.js', ['/dist/dev-dock.js']),
-      chunk('lab-x.js', ['C:\\pkg\\dist\\theme-lab\\boot.js']),
-      chunk('entry.js', ['/dist/a.js'], ['@tanstack/react-router-devtools']),
+      chunk('a.js', ['/dist/dev-dock.js']),
+      chunk('b.js', ['C:\\pkg\\dist\\theme-lab\\boot.js']),
+      chunk('c.js', ['/dist/a.js'], ['@tanstack/react-router-devtools']),
     ])
-    expect(flagged).toEqual(['dev-dock-x.js', 'lab-x.js', 'entry.js'])
+    expect(flagged).toEqual(['a.js', 'b.js', 'c.js'])
+  })
+
+  test('a hashed fileName alone is enough', () => {
+    expect(devOnlyChunks([chunk('assets/dev-dock-AbC123.js', ['/x/y.js'])])).toEqual([
+      'assets/dev-dock-AbC123.js',
+    ])
+    expect(devOnlyChunks([chunk('theme-lab-D_4MCStT.js')])).toEqual(['theme-lab-D_4MCStT.js'])
+  })
+
+  test('near-misses do not match', () => {
+    expect(
+      devOnlyChunks([
+        chunk('devtools-utils.js', ['/dist/devtools-utils.js']),
+        chunk('x.js', ['/dist/xdevtools-helper.js', '/dist/my-dev-docker.js']),
+      ]),
+    ).toEqual([])
   })
 
   test('a clean production graph yields nothing', () => {
     expect(devOnlyChunks([chunk('basalt-ui.js', ['/dist/provider/index.js'])])).toEqual([])
+  })
+
+  // The two source shapes, as the bundler sees them: module-scope `lazy(import())` keeps the dock
+  // chunk (the regression); the NODE_ENV-gated ternary folds it away in production.
+  test('old module-scope lazy shape is caught; the gated shape is clean', async () => {
+    const { build } = await import('vite')
+    const emit = async (source: string) => {
+      const dir = mkdtempSync(join(tmpdir(), 'dev-shape-'))
+      try {
+        writeFileSync(join(dir, 'dev-dock.js'), 'export const BasaltDevDock = () => null\n')
+        writeFileSync(join(dir, 'entry.js'), source)
+        const out = await build({
+          configFile: false,
+          logLevel: 'silent',
+          root: dir,
+          define: { 'process.env.NODE_ENV': '"production"' },
+          build: {
+            write: false,
+            minify: true,
+            lib: { entry: join(dir, 'entry.js'), formats: ['es'] },
+            rolldownOptions: { external: ['react'] },
+          },
+        })
+        const bundle = Array.isArray(out) ? out[0] : out
+        if (bundle === undefined || !('output' in bundle)) throw new Error('no output')
+        return devOnlyChunks(bundle.output.flatMap((o) => (o.type === 'chunk' ? [o] : [])))
+      } finally {
+        rmSync(dir, { recursive: true, force: true })
+      }
+    }
+    const old =
+      "import { lazy } from 'react'\nexport const D = lazy(() => import('./dev-dock.js'))\nexport const on = process.env.NODE_ENV !== 'production' && D\n"
+    const gated =
+      "import { lazy } from 'react'\nexport const D = process.env.NODE_ENV !== 'production' ? lazy(() => import('./dev-dock.js')) : null\n"
+    expect((await emit(old)).length).toBeGreaterThan(0)
+    expect(await emit(gated)).toEqual([])
   })
 })
