@@ -177,9 +177,10 @@ export type GuardConfig = {
    * Each value is a list of relative-path or glob patterns matched against a finding's `relPath`:
    * `'src/agent'` matches everything under it, `'public/site.webmanifest'` one file, `'**\/agent/**'`
    * any `agent` directory. A bare segment (`'agent'`) matches only a root-level path. A trailing
-   * `/` is stripped before matching, so `'src/agent'` and `'src/agent/'` behave identically. Applied as a post-filter over the
-   * final findings, so it uniformly covers every kind — both the GUARD_RULES registry loop and the
-   * inline-handled kinds (raw-surface, raw-html-layout, sub-16-input-font, …).
+   * `/` is stripped before matching, so `'src/agent'` and `'src/agent/'` behave identically.
+   * Applied as a post-filter over the final findings, so it uniformly covers every kind — both the
+   * GUARD_RULES registry loop and the inline-handled kinds (raw-surface, raw-html-layout,
+   * sub-16-input-font, …).
    *
    * Required (like every other GuardConfig field, defaulted via DEFAULT_GUARD_CONFIG to `{}`) —
    * `exactOptionalPropertyTypes` rejects the `?? DEFAULT_GUARD_CONFIG.x` pattern used to build a

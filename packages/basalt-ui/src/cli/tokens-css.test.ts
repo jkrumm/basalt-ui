@@ -85,6 +85,21 @@ describe('tokens:css', () => {
     expect(existsSync(resolve(dir, 'out.css'))).toBe(false)
   })
 
+  it('rejects the removed --no-legacy-aliases flag, naming it', () => {
+    const originalError = console.error
+    let log = ''
+    console.error = (...args: unknown[]) => {
+      log += `${args.join(' ')}\n`
+    }
+    try {
+      expect(run(['tokens:css', '--no-legacy-aliases', '--out', 'out.css'], dir)).toBe(1)
+    } finally {
+      console.error = originalError
+    }
+    expect(log).toContain('--no-legacy-aliases')
+    expect(existsSync(resolve(dir, 'out.css'))).toBe(false)
+  })
+
   it('`--help` short-circuits before the command runs — no file written', () => {
     const originalLog = console.log
     let log = ''
@@ -150,7 +165,7 @@ describe('tokens:css --check', () => {
     const lines = emitted.split('\n')
     lines[1] = (lines[1] as string).replace(
       '`basalt-ui tokens:css --out out.css`',
-      '`basalt-ui tokens:css --only all --with-legacy-aliases --out out.css`',
+      '`basalt-ui tokens:css --only core --out out.css`',
     )
     writeFileSync(resolve(dir, 'out.css'), lines.join('\n'))
 

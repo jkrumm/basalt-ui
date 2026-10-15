@@ -210,9 +210,6 @@ export const WAIVER_ID_ALIASES = {
 }
 
 const ALLOW_RULE_TOKEN = /^(?:basalt\/)?([a-z][a-z0-9-]*)(?=$|[\s,:—–])/
-const ALLOW_REASON_SEPARATOR = /^(?:—|–|-{1,2}|:)\s*/
-/** Shortest string accepted as a written reason — enough to exclude a stray separator. */
-const MIN_ALLOW_REASON_LENGTH = 4
 
 /**
  * The annotation token, with its optional `-file` suffix.
@@ -236,26 +233,17 @@ const ALLOW_TOKEN = /theme-allow(-file)?(?![\w-])/
  */
 const ALLOW_LINE_PREFIX = /^\s*\*?\s*$/
 
-/** Parse the text following the token — ids, then the reason. See {@link parseThemeAllows}. */
+/** Parse the text following the token — the leading known ids; the rest is the reason. */
 function parseAllowBody(rest, scope) {
   let remainder = rest.replace(/^[\s,]+/, '')
   const rules = []
-  const unknownRules = []
-  let inIdSlot = true
   for (;;) {
     const token = ALLOW_RULE_TOKEN.exec(remainder)
-    if (token === null) break
-    if (!KNOWN_RULE_IDS.has(token[1])) {
-      if (inIdSlot) unknownRules.push(token[1])
-      break
-    }
+    if (token === null || !KNOWN_RULE_IDS.has(token[1])) break
     rules.push(token[1])
-    const after = remainder.slice(token[0].length)
-    remainder = after.replace(/^[\s,]+/, '')
-    inIdSlot = /^\s*,/.test(after)
+    remainder = remainder.slice(token[0].length).replace(/^[\s,]+/, '')
   }
-  const reason = remainder.replace(ALLOW_REASON_SEPARATOR, '').trim()
-  return { rules, unknownRules, hasReason: reason.length >= MIN_ALLOW_REASON_LENGTH, scope }
+  return { rules, scope }
 }
 
 /**
@@ -269,20 +257,10 @@ function parseAllowBody(rest, scope) {
  * theme-allow-file <id>[, <id>…] — <why>  → the WHOLE FILE, those rules
  * ```
  *
- * `{ rules: [], unknownRules: [] }` is the bare form and covers nothing; a non-empty `rules` scopes the exception to
- * exactly those ids. A word that occupies the id slot but names no known rule lands in
- * `unknownRules` and FAILS CLOSED — the annotation then waives only the ids it got right, never
- * everything. `theme-allow raw-hexx — reason` used to consume no id, fall through to the
- * empty-`rules` branch and be read as the blanket form, so one mistyped character escalated a
- * scoped waiver into a whole-line one, i.e. weaker than before the scoping existed.
- *
- * A prose reason is therefore introduced with a separator (`—`, `–`, `-`, `:`), which is how every
- * annotation in the wild already writes it.
- *
- * The id slot closes at the first space that no comma opened: the first word is always a claimed
- * id (that is where a typo lands), but after a resolved id only a `,` keeps the list open, so
- * `theme-allow raw-surface sub-scale legend corner` reads `sub-scale` as prose rather than as a
- * typo. See the guard's copy for the full reasoning.
+ * An empty `rules` is the bare form and covers nothing; a non-empty `rules` scopes the exception to
+ * exactly those ids. A word that names no known rule ends the id list, so `theme-allow raw-hexx —
+ * reason` waives nothing, and `theme-allow raw-surface sub-scale legend corner` reads `sub-scale`
+ * as prose. A prose reason is introduced with a separator (`—`, `–`, `-`, `:`).
  */
 function parseThemeAllows(commentValue) {
   const out = []
@@ -303,9 +281,10 @@ function parseThemeAllows(commentValue) {
  * node or file scope, covers nothing.
  */
 function allowCovers(allow, ruleId) {
-  if (allow.rules.includes(ruleId)) return true
-  if ((WAIVER_ID_ALIASES[ruleId] ?? []).some((alias) => allow.rules.includes(alias))) return true
-  return false
+  return (
+    allow.rules.includes(ruleId) ||
+    (WAIVER_ID_ALIASES[ruleId] ?? []).some((alias) => allow.rules.includes(alias))
+  )
 }
 
 function allComments(context) {
@@ -3261,7 +3240,7 @@ const queryFnUnwrap = {
 /** The subpath the forms idiom is imported from — the only provenance this rule accepts. */
 const FORMS_IMPORT_SOURCE = 'basalt-ui/forms'
 
-/** The three names this rule resolves through the local→imported map. */
+/** The spread name this rule resolves (with `fieldKey`) through the local→imported map. */
 const FORMS_SPREAD_NAMES = new Set(['inputProps'])
 
 const FORMS_FIELD_KEY_MESSAGES = {
@@ -3284,8 +3263,8 @@ function hasKeyAttribute(opening) {
 }
 
 /**
- * A field spread that lost its reconciler key — the guard for the one change in the 1.28.0 forms
- * minor that a consumer's compiler cannot see.
+ * A field spread that lost its reconciler key — the guard for the one forms change a consumer's
+ * compiler cannot see.
  *
  * `inputProps` used to return `getInputProps(path)` AND `key` in one object, so
  * `<TextInput {...inputProps(form, 'x')} />` covered both. It no longer returns `key` (a spread
@@ -3293,18 +3272,10 @@ function hasKeyAttribute(opening) {
  * validates — it just stops resetting. There is no compile error, no throw and no console line to
  * find it by, which is precisely the profile a lint rule exists for.
  *
- * TWO forms under this one id, because they are one law read from either end:
- *
- * - `{...inputProps(…)}` with no sibling `key` — the post-migration mistake. Autofixed: the `key`
- *   attribute is inserted with the SAME arguments, and `fieldKey` is added to the existing
- *   `basalt-ui/forms` import when it is not already there, so `--fix` produces working code rather
- *   than an unresolved identifier.
- * - `{...field(…)}` — the pre-migration call site. Reported ALWAYS, key or no key, and deliberately
- *   NOT autofixed: the honest edit rewrites the IMPORT as well as the call site, and a fixer that
- *   only touched the spread would leave an unresolved `field` behind. This arm is the whole reason
- *   the rule still knows the name — 1.29.0 deleted `field` with no autofix left, so a consumer skipping 1.28.x reaches 1.29.x with a hard compile error and
- *   nothing but tsc to explain it. The message says that in so many words; it used to describe the
- *   alias as still shipping and still bundling `key`, which read as "nothing is broken yet".
+ * `{...inputProps(…)}` with no sibling `key` is reported and autofixed: the `key` attribute is
+ * inserted with the SAME arguments, and `fieldKey` is added to the existing `basalt-ui/forms`
+ * import when it is not already there, so `--fix` produces working code rather than an unresolved
+ * identifier.
  *
  * Provenance is the `basalt-ui/forms` specifier (plus a relative import inside basalt's own `src/`,
  * or the dogfood surface goes silent — the same gate `collectBasaltImports` uses), read through the
@@ -3315,14 +3286,14 @@ function hasKeyAttribute(opening) {
 const formsFieldKey = {
   meta: {
     type: 'suggestion',
-    docs: { description: 'Warn on a spread field object that lost (or still bundles) its key.' },
+    docs: { description: 'Warn on an inputProps spread that lost its reconciler key.' },
     schema: [],
     fixable: 'code',
   },
   create(context) {
     if (isTestFile(context)) return {}
     const ownTree = isBasaltOwnSource(getFilename(context))
-    /** local name → the name it was imported as, for the three forms names. */
+    /** local name → the name it was imported as, for the forms names this rule reads. */
     const imported = new Map()
     /** The forms ImportDeclaration the `fieldKey` specifier is added to, if one exists. */
     let formsImport

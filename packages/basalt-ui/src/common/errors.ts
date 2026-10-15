@@ -43,7 +43,7 @@ export function oneOf(
  * A prop the component ACCEPTS, reads nothing from, and cannot report as wrong — because a SECOND
  * prop it was passed alongside decides the same thing and won.
  *
- * Distinct from {@link deprecatedProp} (still read, going away) and {@link oneOf} (read, and the
+ * Distinct from {@link oneOf} (read, and the
  * value is out of range): this one renders something the caller did not ask for and nothing in the
  * type system, the linter or the console says so. A 1.x chart's `height` under `fill` was the
  * reference case — weatherorb passed both for the life of the file and never learnt that eight height

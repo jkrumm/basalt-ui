@@ -1,6 +1,6 @@
 /**
  * Pins `BASALT_VX_NAMES` to what basalt actually emits. The list is a checked-in literal because
- * the guard is dependency-free; this test is what stops it drifting from `dist/tokens.css`.
+ * the guard is dependency-free; this test is what stops it drifting from what `buildPaletteCss` emits.
  */
 import { describe, expect, it } from 'bun:test'
 import { readFileSync } from 'node:fs'
@@ -12,7 +12,7 @@ import {
   VX_NAMES_PATH,
 } from '../../scripts/gen-vx-names'
 import { BP, groupTokens, p, seriesTokens } from '../tokens/index'
-import { checkSource, DEFAULT_GUARD_CONFIG, guardKindRemedy } from './index'
+import { checkSource, DEFAULT_GUARD_CONFIG, REMOVED_VX_NAMES } from './index'
 import { BASALT_VX_FAMILIES } from '../common/vx-families'
 import { BASALT_VX_NAMES } from './vx-names'
 
@@ -32,76 +32,45 @@ describe('BASALT_VX_NAMES', () => {
   })
 
   it('never lists a removed name, and every named replacement is live', () => {
-    const pairs = [
-      ...guardKindRemedy('unknown-vx-token').matchAll(/(--vx-[\w-]+) → (--vx-[\w-]+)?/g),
-    ]
-    expect(pairs.length).toBeGreaterThan(0)
-    for (const [, removed, replacement] of pairs) {
+    expect(Object.keys(REMOVED_VX_NAMES).length).toBeGreaterThan(0)
+    for (const [removed, replacement] of Object.entries(REMOVED_VX_NAMES)) {
       expect(BASALT_VX_NAMES).not.toContain(removed)
-      if (replacement !== undefined) expect(BASALT_VX_NAMES).toContain(replacement)
+      if (replacement !== null) expect(BASALT_VX_NAMES).toContain(replacement)
       const f = checkSource(`.a { width: var(${removed}); }`, 'src/a.css', DEFAULT_GUARD_CONFIG)
       expect(f.map((x) => x.kind)).toEqual(['unknown-vx-token'])
     }
   })
 
-  // The 1.4.0 camelCase aliases were deleted from 2.x. Each must still be a finding, and the
-  // remedy must name its kebab canonical so the fix is a rename, not a search.
-  const REMOVED_ALIASES = {
-    '--vx-goodSolid': '--vx-good-solid',
-    '--vx-badSolid': '--vx-bad-solid',
-    '--vx-warnSolid': '--vx-warn-solid',
-    '--vx-axisStroke': '--vx-axis-stroke',
-    '--vx-dotStroke': '--vx-dot-stroke',
-    '--vx-tooltipBg': '--vx-tooltip-bg',
-    '--vx-tooltipText': '--vx-tooltip-text',
-    '--vx-tooltipMuted': '--vx-tooltip-muted',
-    '--vx-tooltipBorder': '--vx-tooltip-border',
-    '--vx-tooltipShadow': '--vx-tooltip-shadow',
-    '--vx-legendText': '--vx-legend-text',
-    '--vx-accentHover': '--vx-accent-hover',
-    '--vx-accentFill': '--vx-accent-fill',
-    '--vx-accentFillHover': '--vx-accent-fill-hover',
-    '--vx-onAccent': '--vx-on-accent',
-    '--vx-surface-panelHover': '--vx-surface-panel-hover',
-    '--vx-goodSoft': '--vx-good-soft',
-    '--vx-goodRef': '--vx-good-ref',
-    '--vx-badRef': '--vx-bad-ref',
-    '--vx-warnRef': '--vx-warn-ref',
-    ...Object.fromEntries(
-      [
-        'gray',
-        'red',
-        'pink',
-        'grape',
-        'violet',
-        'indigo',
-        'cyan',
-        'teal',
-        'green',
-        'lime',
-        'yellow',
-        'orange',
-      ].map((c) => [`--vx-fillHover-${c}`, `--vx-fill-hover-${c}`]),
-    ),
-  } as const
+  // The 1.4.0 camelCase aliases were deleted from 2.x: 32 of the removed names, derived from the
+  // one REMOVED_VX_NAMES map. Each is judged in ANY family — `--vx-onAccent` sits in `on`, which
+  // consumers extend — and its replacement is a kebab name basalt emits.
+  const REMOVED_ALIASES = Object.entries(REMOVED_VX_NAMES).filter(([name]) =>
+    /[a-z][A-Z]/.test(name),
+  )
 
   it('has all 32 removed camelCase aliases, each mapped to a live kebab name', () => {
-    expect(Object.keys(REMOVED_ALIASES)).toHaveLength(32)
-    for (const [alias, kebab] of Object.entries(REMOVED_ALIASES)) {
-      expect(BASALT_VX_NAMES).not.toContain(alias)
-      expect(BASALT_VX_NAMES).toContain(kebab)
-    }
+    expect(REMOVED_ALIASES).toHaveLength(32)
+    for (const [, kebab] of REMOVED_ALIASES) expect(BASALT_VX_NAMES).toContain(kebab as string)
   })
 
-  it.each(Object.entries(REMOVED_ALIASES))(
-    'flags %s as unknown-vx-token and names %s as the replacement',
-    (alias, kebab) => {
-      const f = checkSource(`.a { width: var(${alias}); }`, 'src/a.css', DEFAULT_GUARD_CONFIG)
-      expect(f.map((x) => x.kind)).toEqual(['unknown-vx-token'])
-      expect(f[0]?.token).toBe(alias)
-      expect(guardKindRemedy('unknown-vx-token')).toContain(`${alias} → ${kebab}`)
-    },
-  )
+  it.each(REMOVED_ALIASES.map(([alias]) => alias))('flags %s as unknown-vx-token', (alias) => {
+    const f = checkSource(`.a { width: var(${alias}); }`, 'src/a.css', DEFAULT_GUARD_CONFIG)
+    expect(f.map((x) => ({ kind: x.kind, token: x.token }))).toEqual([
+      { kind: 'unknown-vx-token', token: alias },
+    ])
+  })
+
+  it('judges a removed name in a consumer-extensible family but not an unrelated one', () => {
+    expect(kinds('--vx-onAccent')).toEqual(['unknown-vx-token'])
+    expect(kinds('--vx-on-foo')).toEqual([])
+  })
+
+  it('skips a removed name the same file declares itself', () => {
+    const src = ':root { --vx-onAccent: #fff; }\n.a { color: var(--vx-onAccent); }'
+    expect(checkSource(src, 'src/a.css', DEFAULT_GUARD_CONFIG).map((f) => f.kind)).not.toContain(
+      'unknown-vx-token',
+    )
+  })
 })
 
 // The guard judges every name inside a basalt family; that is sound only while the ref factories

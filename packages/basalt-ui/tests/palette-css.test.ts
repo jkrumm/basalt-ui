@@ -13,6 +13,7 @@
  * Run: bun test packages/basalt-ui/tests/palette-css.test.ts
  */
 import { describe, expect, it } from 'bun:test'
+import { REMOVED_VX_NAMES } from '../src/guard'
 import { buildPaletteCss, groupTokens } from '../src/tokens'
 import { buildPaletteData, SPACE, SPACE_STEP } from '../src/tokens/palette'
 
@@ -168,25 +169,9 @@ describe('buildPaletteCss core-only spacing', () => {
   })
 
   it('drops 108 of the 120 spacing variables, taking the set from 217 to 109', () => {
-    // 211 canonical (all kebab-case, since the 1.4.0 rename); 211 = 202 at 1.20.0 plus the `nano`/`display` type rungs plus the ten control-tier
-    // spacing vars of 1.26.0 (docs/CONTROLS-SPEC.md §5; the four anchors among them are core), MINUS
-    // the two 1.27.0 deletions (`--vx-space-app-header-mobile-actions-height` and
-    // `--vx-space-sticky-header-clearance-mobile` — the two-row mobile header is gone, law C14),
-    // MINUS the 1.28.0 deletion of `--vx-space-sidebar-brand-inset-top`, PLUS the 1.29.0 addition
-    // of `--vx-space-touch-target` (C5 consolidation) — a `SPACE_FIXED` value, not a `SPACE`
-    // anchor, but emitted unconditionally in BOTH `all` and `core` (see `SPACE_FIXED.
-    // spaceTouchTarget`'s doc for why it's the one member of that never-emitted group that IS a
-    // var), so it rides along in both counts = 212, PLUS the two
-    // 2026-09 chrome-round additions (`--vx-space-app-shell-inset` and
-    // `--vx-space-app-shell-inset-mobile` — the page gutter, the one number the `--vx-*` layer did
-    // not expose, now responsive) = 246, PLUS the four of the same round's SECOND chrome pass
-    // (`--vx-space-app-shell-header-lead-min`, the header's breadcrumb floor, which shipped as a raw
-    // `96px` literal; and the card/section inset ladder `--vx-space-card-inset-y`/`-x` +
-    // `--vx-space-section-gap`, which NAME values the cards and `Section` already rendered so that
-    // the `< sm` override has a role token to re-point) = 250. That override is a `@media` block,
-    // not a fifth and sixth name — `varNames` is a SET, so re-declaring a var at a breakpoint moves
-    // none of these counts. The pointer-tier collapse then swaps `--vx-space-touch-target` and
-    // `--vx-space-touch-control-height` for the one non-space `--vx-hit` = 249.
+    // 217 variables: 97 non-spacing + 120 `space-*`. `core` keeps the 12 `SPACE` anchors and drops
+    // the 108 component-named one-offs: 97 + 12 = 109. A `@media` re-declaration of a var moves
+    // none of these counts (`varNames` is a SET).
     expect(all.size).toBe(217)
     expect(core.size).toBe(109)
     expect([...all].filter((n) => n.startsWith('space-'))).toHaveLength(120)
@@ -211,49 +196,12 @@ describe('buildPaletteCss core-only spacing', () => {
   })
 })
 
-/**
- * The 1.4.0 kebab-case rename: 20 stems (12 of them the `fillHover-<family>` family) were emitted
- * camelCase, then as aliases of the kebab names, and are gone from 2.x — `removed name ->
- * canonical kebab name`, exhaustive.
- */
-const REMOVED_ALIASES: Record<string, string> = {
-  accentFill: 'accent-fill',
-  accentFillHover: 'accent-fill-hover',
-  accentHover: 'accent-hover',
-  axisStroke: 'axis-stroke',
-  badRef: 'bad-ref',
-  badSolid: 'bad-solid',
-  dotStroke: 'dot-stroke',
-  goodRef: 'good-ref',
-  goodSoft: 'good-soft',
-  goodSolid: 'good-solid',
-  legendText: 'legend-text',
-  onAccent: 'on-accent',
-  'surface-panelHover': 'surface-panel-hover',
-  tooltipBg: 'tooltip-bg',
-  tooltipBorder: 'tooltip-border',
-  tooltipMuted: 'tooltip-muted',
-  tooltipShadow: 'tooltip-shadow',
-  tooltipText: 'tooltip-text',
-  warnRef: 'warn-ref',
-  warnSolid: 'warn-solid',
-  ...Object.fromEntries(
-    [
-      'gray',
-      'red',
-      'pink',
-      'grape',
-      'violet',
-      'indigo',
-      'cyan',
-      'teal',
-      'green',
-      'lime',
-      'yellow',
-      'orange',
-    ].map((name) => [`fillHover-${name}`, `fill-hover-${name}`]),
-  ),
-}
+/** The 1.4.0 camelCase aliases deleted from 2.x — `removed name -> canonical kebab name`, from the guard's one map. */
+const REMOVED_ALIASES: Record<string, string> = Object.fromEntries(
+  Object.entries(REMOVED_VX_NAMES)
+    .filter(([name]) => /[a-z][A-Z]/.test(name))
+    .map(([name, kebab]) => [name.replace(/^--vx-/, ''), (kebab ?? '').replace(/^--vx-/, '')]),
+)
 
 describe('the removed camelCase aliases (1.4.0 rename, deleted from 2.x)', () => {
   it('is exactly 32 stems, per the naming map', () => {

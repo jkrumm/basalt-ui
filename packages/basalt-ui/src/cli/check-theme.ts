@@ -9,6 +9,7 @@ import { dirname, resolve } from 'node:path'
 import {
   checkSource,
   guardKindRemedy,
+  REMOVED_VX_NAMES,
   TOKENS_ONLY_DISABLED_KINDS,
   unmatchedExemptPatterns,
 } from '../guard'
@@ -189,7 +190,12 @@ export function checkTheme(
     for (const [file, vs] of [...byFile].toSorted()) {
       console.error(file)
       for (const v of vs.toSorted((a, b) => a.line - b.line)) {
-        console.error(`  ${String(v.line).padStart(4)}  ${v.kind.padEnd(22)} ${v.text}`)
+        const replacement = v.kind === 'unknown-vx-token' ? REMOVED_VX_NAMES[v.token] : undefined
+        const hint =
+          replacement === undefined
+            ? ''
+            : `  [${v.token} → ${replacement ?? 'deleted, no replacement'}]`
+        console.error(`  ${String(v.line).padStart(4)}  ${v.kind.padEnd(22)} ${v.text}${hint}`)
       }
       console.error('')
     }
