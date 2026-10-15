@@ -8,7 +8,7 @@ import { dirname, relative, resolve } from 'node:path'
 
 import { BASALT_CONFIG_KEYS, RETIRED_CONFIG_KEYS } from './config'
 import type { BasaltConfig } from './config'
-import { parseJsonc, readIfExists, readPackageJson, scannableFiles } from './index'
+import { isStartApp, parseJsonc, readIfExists, readPackageJson, scannableFiles } from './index'
 import type { BasaltInstall } from './index'
 
 export type Check = { fail: string } | { skip: string } | null
@@ -473,6 +473,20 @@ function routerCreatedInImports(cwd: string, entry: string): boolean {
   return false
 }
 
+/** A Start app owns its router and entry: the wiring is `<BasaltProvider>` in its root route. */
+function startWiring(cwd: string): { fail: string } | null {
+  const root = 'src/routes/__root.tsx'
+  const text = readIfExists(resolve(cwd, root))
+  const { code, inLiteral } = tokenize(text ?? '')
+  const mounted = [...code.matchAll(/\bBasaltProvider\b/g)].some((m) => !inLiteral(m.index))
+  if (mounted) return null
+  return {
+    fail:
+      `app-wiring: ${root} ${text === null ? 'does not exist' : 'does not use BasaltProvider'} ` +
+      '(TanStack Start app). Fix: render <BasaltProvider>{children}</BasaltProvider> in the root route.',
+  }
+}
+
 /**
  * `app-wiring`: the entry module `index.html` loads (default src/main.tsx) mounts `BasaltProvider`
  * on a `createBasaltRouter` router (called in the entry or a module it imports), and the router tree is generated: the vite config calls a
@@ -482,6 +496,7 @@ function routerCreatedInImports(cwd: string, entry: string): boolean {
  */
 export function appWiringCheck(cwd: string): Check {
   return guarded('app-wiring', () => {
+    if (isStartApp(cwd, '')) return startWiring(cwd)
     const entry = (
       htmlEntry(readIfExists(resolve(cwd, 'index.html')) ?? '') ?? 'src/main.tsx'
     ).replace(/^\//, '')

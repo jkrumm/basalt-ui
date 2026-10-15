@@ -670,6 +670,22 @@ export function routerSeedDest(appRel: string, seed: keyof typeof ROUTER_SEED_DE
   return appRel === '' ? ROUTER_SEED_DESTS[seed] : `${appRel}/${ROUTER_SEED_DESTS[seed]}`
 }
 
+/** The router seeds' dests for an app dir (`main.tsx`, `nav.tsx`, `__root.tsx`). */
+export function routerSeedDests(appRel: string): string[] {
+  return (Object.keys(ROUTER_SEED_DESTS) as (keyof typeof ROUTER_SEED_DESTS)[]).map((seed) =>
+    routerSeedDest(appRel, seed),
+  )
+}
+
+/** A TanStack Start app owns its router, so its router seeds give way to an in-tree `<BasaltProvider>`. */
+export function isStartApp(cwd: string, appRel: string): boolean {
+  return hasDependency(resolve(cwd, appRel), '@tanstack/react-start')
+}
+
+export const START_APP_NOTE =
+  'TanStack Start app — no main.tsx/nav.tsx/__root.tsx seeded (Start owns the router); render ' +
+  '<BasaltProvider> with children inside your root route component.'
+
 /** The app directory a command's app-scoped half targets: `rel` is '' when it is the install root. */
 export type AppResolution = { dir: string; rel: string } | { error: string }
 
@@ -716,7 +732,7 @@ export function resolveAppDir(root: string): AppResolution {
 }
 
 /** True when `pkgName` appears in the consumer's dependencies, devDependencies, or peerDependencies. */
-export function hasDependency(cwd: string, pkgName: string): boolean {
+function hasDependency(cwd: string, pkgName: string): boolean {
   const pkg =
     readPackageJson<
       Record<

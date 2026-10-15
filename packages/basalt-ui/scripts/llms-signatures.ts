@@ -75,24 +75,30 @@ export function propShapeLines(
     return own.length > 0 ? own.join(' + ') : `mode ${i + 1}`
   }
 
-  const seen = new Set<string>()
-  const lines: string[] = []
-  for (const member of perMember) {
-    for (const { sym, has } of member) {
-      const owners = hasIn(sym.name)
-      if (seen.has(sym.name) || (!has && owners.length > 0)) continue
-      seen.add(sym.name)
-      const optional = (sym.flags & ts.SymbolFlags.Optional) !== 0
-      // `getNonNullableType` would expand an alias like ReactNode into its union; strip the text instead.
-      const text = checker
-        .typeToString(checker.getTypeOfSymbolAtLocation(sym, node), node, flags)
-        .replace(/ \| undefined$/, '')
-      const tag =
-        members.length > 1 && owners.length > 0 && owners.length < members.length
-          ? `  [with ${owners.map(modeName).join(' | ')}]`
-          : ''
-      lines.push(`  ${sym.name}${optional && !tag ? '?' : ''}: ${clip(text, MAX_PROP_TYPE)}${tag}`)
-    }
+  const lines: string[] =
+    members.length > 1 ? [`  one of: ${members.map((_, i) => modeName(i)).join(' | ')}`] : []
+  const names = [...new Set(perMember.flat().map((e) => e.sym.name))]
+  for (const name of names) {
+    // `?` = omittable in some mode. The members that really carry the prop; a prop only ever declared `?: never` falls back to all.
+    const carriers = hasIn(name)
+    const owners = carriers.length > 0 ? carriers : perMember.map((_, i) => i)
+    const entries = owners.flatMap((i) => perMember[i]!.filter((e) => e.sym.name === name))
+    const optional = entries.some((e) => (e.sym.flags & ts.SymbolFlags.Optional) !== 0)
+    // `getNonNullableType` would expand an alias like ReactNode into its union; strip the text instead.
+    const types = [
+      ...new Set(
+        entries.map((e) =>
+          checker
+            .typeToString(checker.getTypeOfSymbolAtLocation(e.sym, node), node, flags)
+            .replace(/ \| undefined$/, ''),
+        ),
+      ),
+    ]
+    // The discriminant prop names its own mode; tagging it `[with <itself>]` says nothing.
+    const modes = owners.map(modeName).filter((m) => !m.split(' + ').includes(name))
+    const tag =
+      owners.length < members.length && modes.length > 0 ? `  [with ${modes.join(' | ')}]` : ''
+    lines.push(`  ${name}${optional ? '?' : ''}: ${clip(types.join(' | '), MAX_PROP_TYPE)}${tag}`)
   }
   const shown = lines.slice(0, MAX_PROPS)
   if (lines.length > MAX_PROPS) shown.push(`  … +${lines.length - MAX_PROPS} more`)

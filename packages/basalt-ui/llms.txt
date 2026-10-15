@@ -21,6 +21,7 @@ Description: Wiring (`BasaltProvider`, `createBasaltTheme`, `createBasaltRouter`
 Layer: mantine-coupled
 Rule: basalt-mantine
 Signature: BasaltProvider(props: BasaltProviderProps): JSX.Element
+  one of: router | children
   theme?: PartialObjectDeep<MantineTheme, { recurseIntoArrays: false;…
   telemetry?: Telemetry
   fallback?: ReactNode | ((error: unknown) => ReactNode)
@@ -31,8 +32,8 @@ Signature: BasaltProvider(props: BasaltProviderProps): JSX.Element
   sizeClassHint?: "compact" | "medium" | "expanded"
   navCommandLabel?: (item: FlatNavItem) => string
   spotlight?: boolean
-  router: BasaltRouter  [with router]
-  children: ReactNode  [with children]
+  router: BasaltRouter
+  children: ReactNode
 Signature: BasaltShell(props: BasaltShellProps<G, T>): JSX.Element
   className?: string
   style?: CSSProperties
@@ -623,6 +624,7 @@ Signature: ThreadFeed(props: ThreadFeedProps): JSX.Element
   renderRow?: ((thread: AgentThread) => ReactNode)
   anchor?: "start" | "end"
 Signature: ThreadFeedRow(props: ThreadFeedRowProps): JSX.Element
+  one of: mode 1 | mode 2
   thread: AgentThread<TranscriptPart>
   expanded: boolean
   onToggle: (id: string) => void
@@ -640,7 +642,7 @@ Signature: ThreadFeedRow(props: ThreadFeedRowProps): JSX.Element
   onSend: (payload: ComposerSubmit) => void
   onStop?: (() => void)
   composerProps?: Omit<ComposerProps, "streaming" | "onSubmit" | "onStop">
-  virtualize?: false
+  virtualize?: false | true | VirtualizeOptions
   height?: string | number
   classNames?: Partial<Record<"root" | "header" | "body", string>>
   className?: string
@@ -653,11 +655,12 @@ Signature: ToolChip(props: ToolChipProps): JSX.Element
   onApprove?: ((approvalId: string) => void)
   onDeny?: ((approvalId: string, reason?: string) => void)
 Signature: aiSdkTransport(options: AiSdkTransportOptions): AiSdkTransport<TPart>
-  api: string  [with api]
-  headers: Record<string, string> | Headers  [with api]
-  credentials: RequestCredentials  [with api]
-  fetch: typeof fetch  [with api]
-  transport: ChatTransport<UIMessage<unknown, UIDataTypes, UITools>>  [with transport]
+  one of: api | transport
+  api: string
+  transport: ChatTransport<UIMessage<unknown, UIDataTypes, UITools>>
+  headers?: Record<string, string> | Headers  [with api]
+  credentials?: RequestCredentials  [with api]
+  fetch?: typeof fetch  [with api]
 Signature: parseAgentPart(raw: unknown): AgentPart | null
 Signature: toAgentError(error: unknown): AgentError
 Signature: useAgentThreadRuns(props: UseAgentThreadRunsArgs<TPart>): UseAgentThreadRunsReturn<TPart>

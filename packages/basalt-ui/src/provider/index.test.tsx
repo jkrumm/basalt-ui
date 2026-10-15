@@ -18,7 +18,7 @@
  * needed live DOM behavior (event handling, layout, effects) rather than the static markup string.
  */
 import { act, render, screen } from '@testing-library/react'
-import { RouterProvider, useRouter } from '@tanstack/react-router'
+import { RouterProvider, createRootRoute, createRouter, useRouter } from '@tanstack/react-router'
 import { spotlight } from '@mantine/spotlight'
 import { describe, expect, spyOn, test } from 'bun:test'
 import { useEffect } from 'react'
@@ -318,12 +318,24 @@ describe('BasaltProvider embedded in a router it does not own (children mode)', 
     expect(mounts).toEqual([router])
   })
 
-  test('server-renders children mode without touching window', async () => {
+  test('server-renders children mode into markup', async () => {
     const router = embeddedRouter(() => {})
     await router.load()
     const html = renderToStaticMarkup(<RouterProvider router={router} />)
     expect(html).toContain('host')
     expect(html).toContain('embedded')
+  })
+
+  test('children mode in a router without context.queryClient names both modes', async () => {
+    const root = createRootRoute({ component: () => <BasaltProvider>{null}</BasaltProvider> })
+    const bare = createRouter({ routeTree: root })
+    const quiet = spyOn(console, 'error').mockImplementation(() => {})
+    try {
+      render(<RouterProvider router={bare} />)
+      expect(await screen.findByText(/`router` from createBasaltRouter.*`children`/)).toBeDefined()
+    } finally {
+      quiet.mockRestore()
+    }
   })
 
   test('children mode outside any router is refused with a message naming both modes', () => {
@@ -344,8 +356,11 @@ describe('BasaltProvider embedded in a router it does not own (children mode)', 
 
 describe('BasaltProvider spotlight opt-out (ledger row 67)', () => {
   test('mounts the Spotlight by default and not at all with spotlight={false}', async () => {
+    const built = spyOn(actionsModule, 'buildSpotlightActions')
     const on = render(<BasaltProvider router={testRouter('a')} />)
     await screen.findByText('a')
+    expect(built).toHaveBeenCalled()
+    built.mockRestore()
     // Opening the store renders the search input only if a `<Spotlight>` is mounted to read it.
     const open = async () => {
       await act(async () => {

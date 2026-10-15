@@ -852,6 +852,21 @@ describe('doctor — app-wiring', () => {
     expect(appWiringCheck(dir)).toBeNull()
   })
 
+  it('a Start app is wired by <BasaltProvider> in its root route, not by src/main.tsx', () => {
+    write(
+      'package.json',
+      JSON.stringify({ name: 'fixture', dependencies: { '@tanstack/react-start': '*' } }),
+    )
+    expect(text(appWiringCheck(dir))).toContain('src/routes/__root.tsx does not exist')
+    write('src/routes/__root.tsx', 'export const Route = { component: () => <html /> }\n')
+    expect(text(appWiringCheck(dir))).toContain('does not use BasaltProvider')
+    write(
+      'src/routes/__root.tsx',
+      'export const Route = { component: () => <BasaltProvider><Outlet /></BasaltProvider> }\n',
+    )
+    expect(appWiringCheck(dir)).toBeNull()
+  })
+
   it('follows the entry named by index.html and accepts an existing routeTree.gen', () => {
     write('index.html', '<script type="module" src="/app/boot.tsx"></script>')
     write('app/boot.tsx', 'createBasaltRouter(); <BasaltProvider router={r} />')

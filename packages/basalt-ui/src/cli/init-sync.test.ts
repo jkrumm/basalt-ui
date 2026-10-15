@@ -368,6 +368,18 @@ describe('router seeds — the nav module and the root route', () => {
     expect(existsSync(resolve(dir, MANIFEST_PATH))).toBe(true)
   })
 
+  it('sync --check prints the Start note only under --verbose', () => {
+    writeFixture(
+      'package.json',
+      JSON.stringify({ name: 'fixture', dependencies: { '@tanstack/react-start': '*' } }),
+    )
+    capture(() => init(dir))
+    expect(capture(() => sync({ check: true }, dir)).log).not.toContain('TanStack Start app')
+    expect(capture(() => sync({ check: true, flags: ['--verbose'] }, dir)).log).toContain(
+      'TanStack Start app',
+    )
+  })
+
   it('detects a Start app from devDependencies, and a tokens-only one seeds nothing either way', () => {
     writeFixture(
       'package.json',
