@@ -9,18 +9,15 @@ import { dirname, relative, resolve } from 'node:path'
 import { BASALT_CONFIG_KEYS, RETIRED_CONFIG_KEYS } from './config'
 import type { BasaltConfig } from './config'
 import {
-  appEntry,
-  callsIn,
-  hasRouteTree,
   isStartApp,
   parseJsonc,
   readIfExists,
   readPackageJson,
   routerSeedDest,
   scannableFiles,
-  tokenize,
 } from './index'
 import type { BasaltInstall } from './index'
+import { appEntry, callOf, callsIn, hasRouteTree, routeTreeDirs, tokenize } from './router-wiring'
 
 export type Check = { fail: string } | { skip: string } | null
 
@@ -469,13 +466,11 @@ export function appWiringCheck(cwd: string): Check {
       return { fail: `app-wiring: ${entry} does not exist. Fix: make it match ${SEED_HINT}.` }
     }
     const { code, inLiteral } = tokenize(text)
-    const used = (name: string): boolean =>
-      [...code.matchAll(new RegExp(`\\b${name}\\b`, 'g'))].some((m) => !inLiteral(m.index))
-    const missing = ['BasaltProvider', 'createBasaltRouter'].filter(
-      (name) =>
-        !used(name) &&
-        !(name === 'createBasaltRouter' && callsIn(cwd, entry, /\bcreateBasaltRouter\b/g)),
-    )
+    const providerUsed = [...code.matchAll(/\bBasaltProvider\b/g)].some((m) => !inLiteral(m.index))
+    const missing = [
+      ...(providerUsed ? [] : ['BasaltProvider']),
+      ...(callsIn(cwd, entry, callOf('createBasaltRouter')) ? [] : ['createBasaltRouter']),
+    ]
     if (missing.length > 0) {
       return {
         fail:
@@ -483,11 +478,14 @@ export function appWiringCheck(cwd: string): Check {
           `Fix: make it match ${SEED_HINT} (\`init\` seeds it only when the file is absent).`,
       }
     }
-    if (hasRouteTree(cwd, entry) || callsIn(cwd, entry, /\bcreateRootRoute(?:WithContext)?\b/g)) {
+    if (
+      hasRouteTree(cwd, entry) ||
+      callsIn(cwd, entry, callOf('createRootRoute(?:WithContext)?'))
+    ) {
       return null
     }
     return {
-      fail: `app-wiring: no vite.config calls the TanStack router plugin, ${[...new Set([dirname(entry), 'src'])].join(' or ')}/routeTree.gen.ts does not exist, and no module the entry imports calls createRootRoute (a code-defined tree). ${ROUTER_PLUGIN_FIX}`,
+      fail: `app-wiring: no vite.config calls the TanStack router plugin, ${routeTreeDirs(entry).join(' or ')}/routeTree.gen.ts does not exist, and no module the entry imports calls createRootRoute (a code-defined tree). ${ROUTER_PLUGIN_FIX}`,
     }
   })
 }

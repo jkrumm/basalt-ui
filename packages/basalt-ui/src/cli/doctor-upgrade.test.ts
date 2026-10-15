@@ -874,6 +874,33 @@ describe('doctor — app-wiring', () => {
     expect(appWiringCheck(dir)).toBeNull()
   })
 
+  it('a createRootRoute import or bare mention is not a code-defined tree; a (generic) call is', () => {
+    write('package.json', JSON.stringify({ name: 'fixture' }))
+    write('index.html', '<script type="module" src="/src/main.tsx"></script>')
+    write('vite.config.ts', 'export default { plugins: [react()] }\n')
+    write(
+      'src/main.tsx',
+      "import { BasaltProvider, createBasaltRouter } from 'basalt-ui'\nimport { tree } from './tree'\nconst router = createBasaltRouter({ routeTree: tree })\n<BasaltProvider router={router} />\n",
+    )
+    write(
+      'src/tree.ts',
+      "import { createRootRouteWithContext } from '@tanstack/react-router'\nexport const tree = {}\n",
+    )
+    expect(text(appWiringCheck(dir))).toContain('no module the entry imports calls createRootRoute')
+    write('src/tree.ts', 'export const tree = createRootRouteWithContext<Ctx>()({})\n')
+    expect(appWiringCheck(dir)).toBeNull()
+  })
+
+  it('an entry that only imports createBasaltRouter does not count as creating the router', () => {
+    write('package.json', JSON.stringify({ name: 'fixture' }))
+    write('index.html', '<script type="module" src="/src/main.tsx"></script>')
+    write(
+      'src/main.tsx',
+      "import { BasaltProvider, createBasaltRouter } from 'basalt-ui'\n<BasaltProvider />\n",
+    )
+    expect(text(appWiringCheck(dir))).toContain('does not use createBasaltRouter')
+  })
+
   it('a Start app is wired by <BasaltProvider> in its root route, not by src/main.tsx', () => {
     write(
       'package.json',
@@ -1048,7 +1075,9 @@ describe('doctor — app-wiring', () => {
 
   it('is n/a for a tokens-only consumer', () => {
     write('package.json', JSON.stringify({ name: 'site', basalt: { profile: 'tokens-only' } }))
-    expect(capture(() => doctor(dir)).log).toContain('app-wiring: n/a')
+    expect(capture(() => doctor(dir)).log).toContain(
+      'tsconfig-base / retired-lint-rules / oxlint-floor / app-wiring / exact-peers / subpath-peers / config-keys: n/a',
+    )
   })
 })
 
@@ -1075,13 +1104,17 @@ describe('doctor — dropped-subpaths for a tokens-only consumer', () => {
     expect(code).toBe(1)
     expect(log).toContain('dropped-subpaths: src/styles/global.css:1 imports basalt-ui/tokens.css')
     expect(log).toContain('basalt-ui tokens:css')
-    expect(log).toContain('app-wiring: n/a')
+    expect(log).toContain('/ app-wiring /')
+    expect(existsSync(join(dir, 'src/main.tsx'))).toBe(false)
+    expect(log).not.toMatch(/\.[jt]sx?:\d/)
   })
 
   it('still passes a clean tokens-only consumer', () => {
     tokensOnly()
     write('src/styles/global.css', "@import './tokens.css';\n")
-    expect(capture(() => doctor(dir)).log).not.toContain('dropped-subpaths: src')
+    const { code, log } = capture(() => doctor(dir))
+    expect(code).toBe(0)
+    expect(log).toContain('✓ dropped-subpaths')
   })
 })
 

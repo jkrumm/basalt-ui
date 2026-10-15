@@ -12,6 +12,7 @@ import {
   diffSummary,
   findBasaltInstall,
   inspectLefthookGate,
+  isStartApp,
   isStringArray,
   managedFiles,
   normalizeForLedger,
@@ -31,7 +32,6 @@ import {
   resolvePlacement,
   resolveProjectDir,
   routerSeedDests,
-  routerSeedSkip,
   rootsNotices,
   sha256,
   shippedAssetPath,
@@ -40,6 +40,7 @@ import {
   writeFileEnsuringDir,
   writeUnit,
 } from './index'
+import { routerSeedSkip } from './router-wiring'
 
 /** The oxlint plugins the shipped preset switches on — read from the preset, never restated. */
 export function readOxlintPresetPlugins(pkgRoot: string): string[] {
@@ -109,8 +110,10 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
   if (!existsSync(resolve(cwd, MANIFEST_PATH))) {
     const elsewhere = findManifestAbove(cwd)
     const refused = resolvePlacement(cwd)
-    const startSeeds = routerSeedSkip(cwd, refused.appRel) ? routerSeedDests(refused.appRel) : []
-    const wouldWrite = managedFiles(refused).filter((f) => !startSeeds.includes(f.dest)).length
+    const skippedSeeds = routerSeedSkip(cwd, refused.appRel, isStartApp(cwd, refused.appRel))
+      ? routerSeedDests(refused.appRel)
+      : []
+    const wouldWrite = managedFiles(refused).filter((f) => !skippedSeeds.includes(f.dest)).length
     console.error(
       `✖ basalt-ui sync: no ${MANIFEST_PATH} at ${cwd} — refusing to scaffold. ` +
         `\`sync\` refreshes an EXISTING basalt install; creating one is \`basalt-ui init\`'s ` +
@@ -129,7 +132,7 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
   const ctx = renderContext(cwd)
   const manifest = readManifest(cwd)
   const placement = resolvePlacement(cwd)
-  const seedSkip = routerSeedSkip(cwd, placement.appRel)
+  const seedSkip = routerSeedSkip(cwd, placement.appRel, isStartApp(cwd, placement.appRel))
   const skipped = new Set(seedSkip ? routerSeedDests(placement.appRel) : [])
   const files = managedFiles(placement).filter((f) => !skipped.has(f.dest))
 
@@ -204,14 +207,14 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
   // hides them behind `--verbose` (it sits in consumers' CI chains, where three unchanging
   // "skipped" paragraphs per run are noise indistinguishable from drift) but still prints the COUNT.
   // Start added AFTER a pre-Start init: the old seeds are the consumer's now — left untouched, named.
-  const stale = (seedSkip === 'start' ? [...skipped] : []).filter(
-    (d) => manifest.files[d] !== undefined && existsSync(resolve(cwd, d)),
-  )
-  const dropped = seedSkip === 'code-routed' ? [...skipped].filter((d) => manifest.files[d]) : []
-  if (dropped.length > 0 && !opts.check) {
-    for (const d of dropped) delete manifest.files[d]
-    console.log(
-      `basalt-ui sync: code-routed app — dropped ${dropped.join(', ')} from the manifest (any file is yours).`,
+  const tracked = (d: string): boolean => manifest.files[d] !== undefined
+  const startSeeds = seedSkip === 'start' ? [...skipped] : []
+  const codeRoutedSeeds = seedSkip === 'code-routed' ? [...skipped].filter(tracked) : []
+  const stale = startSeeds.filter((d) => tracked(d) && existsSync(resolve(cwd, d)))
+  if (codeRoutedSeeds.length > 0 && !opts.check) {
+    for (const d of codeRoutedSeeds) delete manifest.files[d]
+    console.error(
+      `⚠ basalt-ui sync: code-routed app — dropped ${codeRoutedSeeds.join(', ')} from the manifest (any file is yours).`,
     )
   }
   const mounting = stale.filter((d) => !d.endsWith('nav.tsx'))
