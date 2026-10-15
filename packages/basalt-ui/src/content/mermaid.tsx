@@ -48,6 +48,19 @@ const MERMAID_THEME_OPTIONS: RenderOptions = {
   transparent: true,
 }
 
+/**
+ * beautiful-mermaid's `buildStyleBlock` unconditionally emits a Google Fonts `@import` (and a mono
+ * variant) into the SVG's inline `<style>` — with `font: 'var(--basalt-font-sans)'` it is a broken
+ * request (`family=var(--basalt-font-sans)`). basalt self-hosts its fonts, so no render may leave
+ * for a remote font host.
+ */
+const REMOTE_FONT_IMPORT =
+  /@import\s+url\(\s*(['"]?)https?:\/\/fonts\.googleapis\.com[\s\S]*?\1\s*\)\s*;/g
+
+function stripRemoteFontImports(svg: string): string {
+  return svg.replace(REMOTE_FONT_IMPORT, '')
+}
+
 let modulePromise: Promise<MermaidModule | null> | null = null
 
 /** Module-level singleton — resolves once; every caller shares the same load attempt. */
@@ -87,7 +100,7 @@ export function MermaidDiagram({ code, className, style, fallback }: MermaidDiag
   const rendered = useMemo(() => {
     if (!mod) return null
     try {
-      return mod.renderMermaidSVG(code, MERMAID_THEME_OPTIONS)
+      return stripRemoteFontImports(mod.renderMermaidSVG(code, MERMAID_THEME_OPTIONS))
     } catch {
       return undefined
     }
