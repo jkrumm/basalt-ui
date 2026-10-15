@@ -1,8 +1,4 @@
-/**
- * `doctor` — split out of `src/cli/index.ts` (C2) so the dispatcher file holds routing only.
- * Imports its shared plumbing (config/project resolution, the toolchain-seam inspectors, the
- * managed-file manifest path) back from `./index`, this package's shared CLI helpers.
- */
+/** `doctor` — split out of `src/cli/index.ts` (C2); shared plumbing comes back from `./index`. */
 import { existsSync } from 'node:fs'
 import { relative, resolve } from 'node:path'
 
@@ -109,7 +105,7 @@ function aiMajorsAt(dir: string): Partial<Record<AiMajorField, number>> {
  *   7. `ai-major-parity`: the `ai` major agrees across this package.json's dependency fields
  *      (exempt via `basalt.aiMajorSkewReason`; a stale reason warns).
  *   8-14. `tsconfig-base`, `retired-lint-rules`, `dropped-subpaths`, `app-wiring`, `exact-peers`,
- *      `subpath-peers`, `config-keys` (./doctor-upgrade);
+ *      `subpath-peers`, `config-keys` (./doctor-upgrade; tokens-only runs `dropped-subpaths` only);
  *      a check that cannot run is SKIPPED and exits non-zero.
  *
  * Warning (non-fatal):
@@ -384,43 +380,47 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
   }
 
   // ── Hard checks 8-13: strictness and the 1.x → 2.0 upgrade path (./doctor-upgrade) ──────────
-  if (profile === 'tokens-only') {
-    pass(
-      'tsconfig-base / retired-lint-rules / dropped-subpaths / app-wiring: n/a — a tokens-only consumer',
-    )
-  } else {
-    const upgrade: [string, Check][] = [
-      ['tsconfig-base: tsconfig.json extends the shipped preset', tsconfigBaseCheck(appDir)],
-      [
-        'retired-lint-rules: .oxlintrc.json sets no retired basalt/* rule',
-        retiredLintRulesCheck(cwd, install),
-      ],
-      [
-        'dropped-subpaths: no import of a basalt-ui subpath the install lacks',
-        droppedSubpathsCheck(appDir, cfg, install),
-      ],
-      ['oxlint-floor: the installed oxlint parses the shipped preset', oxlintFloorCheck(cwd)],
-      [
-        'app-wiring: the entry mounts BasaltProvider and the router tree exists',
-        appWiringCheck(appDir),
-      ],
-      ['exact-peers: installed exact-pinned peers match basalt-ui', exactPeersCheck(cwd, install)],
-      [
-        'subpath-peers: every imported basalt-ui subpath has its required peers installed',
-        subpathPeersCheck(appDir, cfg, install),
-      ],
-      [
-        'config-keys: the basalt config block sets only keys basalt-ui reads',
-        unknownConfigKeysCheck(cwd),
-      ],
-    ]
-    for (const [ok, check] of upgrade) {
-      if (check === null) pass(ok)
-      else if ('fail' in check) fail(check.fail)
-      else skip(check.skip)
-    }
-    for (const line of startWiringWarnings(appDir)) warn(line)
+  // tokens-only: no router or lint preset, but CSS subpath imports (where `tokens.css` was).
+  const tokensOnly = profile === 'tokens-only'
+  if (tokensOnly)
+    pass('tsconfig-base / retired-lint-rules / app-wiring: n/a — a tokens-only consumer')
+  const dropped: [string, Check] = [
+    'dropped-subpaths: no import of a basalt-ui subpath the install lacks',
+    droppedSubpathsCheck(appDir, cfg, install),
+  ]
+  const upgrade: [string, Check][] = tokensOnly
+    ? [dropped]
+    : [
+        ['tsconfig-base: tsconfig.json extends the shipped preset', tsconfigBaseCheck(appDir)],
+        [
+          'retired-lint-rules: .oxlintrc.json sets no retired basalt/* rule',
+          retiredLintRulesCheck(cwd, install),
+        ],
+        dropped,
+        ['oxlint-floor: the installed oxlint parses the shipped preset', oxlintFloorCheck(cwd)],
+        [
+          'app-wiring: the entry mounts BasaltProvider and the router tree exists',
+          appWiringCheck(appDir),
+        ],
+        [
+          'exact-peers: installed exact-pinned peers match basalt-ui',
+          exactPeersCheck(cwd, install),
+        ],
+        [
+          'subpath-peers: every imported basalt-ui subpath has its required peers installed',
+          subpathPeersCheck(appDir, cfg, install),
+        ],
+        [
+          'config-keys: the basalt config block sets only keys basalt-ui reads',
+          unknownConfigKeysCheck(cwd),
+        ],
+      ]
+  for (const [ok, check] of upgrade) {
+    if (check === null) pass(ok)
+    else if ('fail' in check) fail(check.fail)
+    else skip(check.skip)
   }
+  if (!tokensOnly) for (const line of startWiringWarnings(appDir)) warn(line)
 
   // ── Report ──────────────────────────────────────────────────────────────────
   lines.push('')

@@ -1052,6 +1052,39 @@ describe('doctor — app-wiring', () => {
   })
 })
 
+describe('doctor — dropped-subpaths for a tokens-only consumer', () => {
+  const tokensOnly = (): void => {
+    write(
+      'package.json',
+      JSON.stringify({
+        name: 'site',
+        dependencies: { 'basalt-ui': '*' },
+        basalt: { profile: 'tokens-only' },
+      }),
+    )
+    write(
+      'node_modules/basalt-ui/package.json',
+      JSON.stringify({ name: 'basalt-ui', version: PKG_VERSION, exports: { '.': {} } }),
+    )
+  }
+
+  it('fails on a removed tokens.css CSS import, naming the file and the replacement', () => {
+    tokensOnly()
+    write('src/styles/global.css', "@import 'basalt-ui/tokens.css';\n")
+    const { code, log } = capture(() => doctor(dir))
+    expect(code).toBe(1)
+    expect(log).toContain('dropped-subpaths: src/styles/global.css:1 imports basalt-ui/tokens.css')
+    expect(log).toContain('basalt-ui tokens:css')
+    expect(log).toContain('app-wiring: n/a')
+  })
+
+  it('still passes a clean tokens-only consumer', () => {
+    tokensOnly()
+    write('src/styles/global.css', "@import './tokens.css';\n")
+    expect(capture(() => doctor(dir)).log).not.toContain('dropped-subpaths: src')
+  })
+})
+
 describe('init — merging a create-vite .oxlintrc.json', () => {
   const OXLINT = join(PKG_ROOT, '../../node_modules/.bin/oxlint')
 
