@@ -31,7 +31,7 @@
 
 # version_gate <bump> <version>
 # Fails closed on an unparsed bump or an empty version. A computed version is releasable only if it
-# is a stable 2.x AND the bump is not `major`: every major (a second 2.0.0, any 3.x), any 1.x and any
+# is a stable 2.x above 2.0.0 AND the bump is not `major`: every major (a second 2.0.0, any 3.x), a recomputed 2.0.0 on any bump, any 1.x and any
 # prerelease/build-metadata version returns 1 with the reason on stderr. It judges the computed
 # VERSION and bump, not the commit, and reads nothing from the registry.
 version_gate() {
@@ -52,6 +52,10 @@ version_gate() {
 
   if [ "$bump" = major ]; then
     echo "no majors: computed v$version is a major bump — 2.0.0 was the one exception and has shipped. Rewrite feat!:/BREAKING CHANGE as a plain feat: and add a MIGRATING.md row." >&2
+    return 1
+  fi
+  if [ "$version" = "2.0.0" ]; then
+    echo "v2.0.0 has shipped; a recomputed 2.0.0 means the release tags are out of sync with the registry." >&2
     return 1
   fi
   if [[ "$version" =~ $stable_2x ]]; then
