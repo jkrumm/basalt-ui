@@ -1,6 +1,6 @@
 /**
  * `release.sh`'s pure rules, sourced (not run) so nothing is dispatched: the
- * version gate (1.x frozen, the one sanctioned 2.0.0, then 2.x non-majors) and the registry reads.
+ * version gate (stable non-major 2.x only) and the registry reads.
  */
 import { describe, expect, it } from 'bun:test'
 import { join } from 'node:path'
@@ -33,48 +33,29 @@ function runWith(env: Record<string, string>, body: string, ...args: string[]): 
 const gate = (bump: string, version: string, registry: string): Run =>
   run('version_gate "$@"', bump, version, registry)
 
-const BEFORE = '1.40.2\n1.41.0'
-const AFTER = '1.41.0\n2.0.0'
+const REGISTRY = '2.0.0\n2.7.3'
 
-describe('version_gate — before any 2.x is published', () => {
-  it.each<[string, string, string]>([
-    ['empty registry', '', '2.0.0'], // nothing published at all
-    ['2.0.0-rc.1 is not a 2.x final', '1.41.0\n2.0.0-rc.1', '2.0.0'],
-    ['build metadata is not a 2.x final', '1.41.0\n2.0.0+build.5', '2.0.0'],
-    ['plain registry', BEFORE, '2.0.0'],
-  ])('allows 2.0.0 — %s', (_name, registry, version) => {
-    expect(gate('major', version, registry).exitCode).toBe(0)
+describe('version_gate', () => {
+  it.each<[string, string]>([
+    ['minor', '2.8.0'],
+    ['patch', '2.7.4'],
+  ])('allows %s → %s', (bump, version) => {
+    expect(gate(bump, version, REGISTRY).exitCode).toBe(0)
   })
 
   it.each<[string, string, string, string]>([
-    ['patch', '1.41.1', 'frozen at v1.41.0', BEFORE],
-    ['minor', '1.42.0', 'frozen at v1.41.0', BEFORE],
-    ['major', '3.0.0', 'only 2.0.0 is releasable', BEFORE],
-    ['minor', '2.1.0', 'only 2.0.0 is releasable', BEFORE],
+    ['major', '3.0.0', 'no majors', REGISTRY],
+    ['major', '2.0.0', 'no majors', REGISTRY], // a second 2.0.0
+    ['major', '2.0.0', 'no majors', ''], // even with an empty registry
+    ['patch', '1.41.1', 'only stable 2.x', REGISTRY],
+    ['minor', '1.42.0', 'only stable 2.x', REGISTRY],
+    ['minor', '2.8.0-rc.1', 'only stable 2.x', REGISTRY],
+    ['patch', '2.7.4+build.5', 'only stable 2.x', REGISTRY],
   ])('refuses %s → %s', (bump, version, reason, registry) => {
     const result = gate(bump, version, registry)
     expect(result.exitCode).toBe(1)
     expect(result.stderr).toContain(reason)
-  })
-})
-
-describe('version_gate — once a 2.x is published', () => {
-  it.each<[string, string]>([
-    ['minor', '2.1.0'],
-    ['patch', '2.0.1'],
-  ])('allows %s → %s', (bump, version) => {
-    expect(gate(bump, version, AFTER).exitCode).toBe(0)
-  })
-
-  it.each<[string, string, string]>([
-    ['major', '2.0.0', 'a 2.x is published'], // a second 2.0.0
-    ['major', '3.0.0', 'a 2.x is published'],
-    ['patch', '1.41.1', 'frozen at v1.41.0'],
-    ['minor', '1.42.0', 'frozen at v1.41.0'],
-  ])('refuses %s → %s', (bump, version, reason) => {
-    const result = gate(bump, version, AFTER)
-    expect(result.exitCode).toBe(1)
-    expect(result.stderr).toContain(reason)
+    expect(result.stderr).toContain('MIGRATING.md')
   })
 })
 
@@ -97,7 +78,7 @@ describe('version_gate — fails closed', () => {
     ['unknown', '2.0.0', 'unparsed bump'],
     ['major', '', 'no computed version'],
   ])('refuses bump %p version %p', (bump, version, reason) => {
-    const result = gate(bump, version, BEFORE)
+    const result = gate(bump, version, REGISTRY)
     expect(result.exitCode).toBe(1)
     expect(result.stderr).toContain(reason)
   })
