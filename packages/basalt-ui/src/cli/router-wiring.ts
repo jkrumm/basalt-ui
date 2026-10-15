@@ -183,3 +183,23 @@ export function routerSeedSkip(cwd: string, appRel: string): RouterSeedSkip {
   if (isStartApp(cwd, appRel)) return 'start'
   return isCodeRoutedApp(cwd, appRel) ? 'code-routed' : null
 }
+
+const BASALT_SHELL = /\bBasaltShell\b/g
+const BASALT_PROVIDER_JSX = /<BasaltProvider\b/g
+
+export const SHELL_LESS_NOTE =
+  'shell-less app (BasaltProvider, no BasaltShell) — no nav.tsx seeded; `defineNav` feeds the shell only.'
+
+/**
+ * A shell-less app mounts `<BasaltProvider>` but never renders `BasaltShell` — not from the entry's
+ * reachable imports, not in the root route — so the seeded `defineNav` module would feed nothing.
+ * Conservative: an app whose entry does not render the provider (a fresh tree) is not shell-less.
+ */
+export function isShellLessApp(cwd: string, appRel: string): boolean {
+  const dir = resolve(cwd, appRel)
+  const entry = appEntry(dir)
+  if (!callsIn(dir, entry, BASALT_PROVIDER_JSX)) return false
+  if (callsIn(dir, entry, BASALT_SHELL)) return false
+  const roots = [...new Set(routeTreeDirs(entry).map((d) => `${d}/routes/__root.tsx`))]
+  return !roots.some((root) => callsIn(dir, root, BASALT_SHELL))
+}

@@ -29,7 +29,7 @@ import { guardHook } from './guard-hook'
 import { COMMAND_OPTIONS, USAGE, unknownFlag } from './help'
 import { init } from './init'
 import { sync } from './sync'
-import { CODE_ROUTED_NOTE, routerSeedSkip } from './router-wiring'
+import { CODE_ROUTED_NOTE, isShellLessApp, routerSeedSkip } from './router-wiring'
 import type { RouterSeedSkip } from './router-wiring'
 import { hasDependency, readIfExists, readPackageJson } from './source-text'
 import { fontsCss, normalizeColorFunctions, tokensCss } from './tokens-css'
@@ -667,15 +667,20 @@ export const START_APP_NOTE =
 
 /**
  * The router seeds an app does not get, for `init` and `sync`: why (`start` | `code-routed` | null)
- * and which dests. A tokens-only consumer gets none of them either.
+ * and which dests. A tokens-only consumer gets none of them either; a shell-less app (no
+ * `BasaltShell`) gets everything but the nav seed (`shellLess`).
  */
 export function routerSeedPlan(
   cwd: string,
   appRel: string,
   tokensOnly = false,
-): { skip: RouterSeedSkip; skipped: Set<string> } {
+): { skip: RouterSeedSkip; skipped: Set<string>; shellLess: boolean } {
   const skip = tokensOnly ? null : routerSeedSkip(cwd, appRel)
-  return { skip, skipped: new Set(tokensOnly || skip !== null ? routerSeedDests(appRel) : []) }
+  if (tokensOnly || skip !== null) {
+    return { skip, skipped: new Set(routerSeedDests(appRel)), shellLess: false }
+  }
+  const shellLess = isShellLessApp(cwd, appRel)
+  return { skip, skipped: new Set(shellLess ? [routerSeedDest(appRel, 'nav')] : []), shellLess }
 }
 
 /** The note `init` prints for a router-seed skip, or null when nothing was skipped. */
