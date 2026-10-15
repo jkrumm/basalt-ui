@@ -312,11 +312,17 @@ function StatsFixture({ count, wide }: { count: number; wide: boolean }): ReactE
 const LONG_FIRST_LINE = `const value = '${'x'.repeat(200)}'\nconst second = 2`
 
 /** A fence between two paragraphs — the outer rhythm and the first-line/copy-button clearance. */
-function CodeBlockFixture({ title }: { title: string | undefined }): ReactElement {
+function CodeBlockFixture({ spec }: { spec: NonNullable<FixtureSpec['codeBlock']> }): ReactElement {
+  const { title, language = 'ts', showCopy } = spec
   return (
     <Prose>
       <p data-testid="codeblock-before">Before the fence.</p>
-      <CodeBlock code={LONG_FIRST_LINE} language="ts" {...(title !== undefined && { title })} />
+      <CodeBlock
+        code={LONG_FIRST_LINE}
+        {...(language !== null && { language })}
+        {...(title !== undefined && { title })}
+        {...(showCopy === false && { showCopy })}
+      />
       <p data-testid="codeblock-after">After the fence.</p>
     </Prose>
   )
@@ -853,7 +859,7 @@ export function ShellFixture({ spec }: { spec: FixtureSpec }): ReactElement {
         <StatsFixture count={spec.stats} wide={spec.statsWide === true} />
       )}
       {spec.cards && <CardsFixture spec={spec.cards} />}
-      {spec.codeBlock && <CodeBlockFixture title={spec.codeBlock.title} />}
+      {spec.codeBlock && <CodeBlockFixture spec={spec.codeBlock} />}
       {spec.forms && <FormsFixture spec={spec.forms} />}
       {spec.table && <TableFixture spec={spec.table} />}
       {spec.charts && <ChartsFixture spec={spec.charts} />}

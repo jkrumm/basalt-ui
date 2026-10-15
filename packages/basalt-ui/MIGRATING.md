@@ -1066,9 +1066,7 @@ tree. `dropped-subpaths` now also runs for `tokens-only` consumers, so a removed
 `@import 'basalt-ui/tokens.css'` fails there too. Fix: `basalt-ui tokens:css --out src/tokens.css`
 and import that file.
 
-### Code block copy button clearance
-
-A `CodeBlock` without a `title` now reserves the floating copy button's box above its first line:
+**Code block copy button.** A `CodeBlock` without a `title` now reserves the floating copy button's box above its first line:
 `padding-top` goes 10 → 28px (title-less fences are +18px tall), so the button no longer covers line
 one on touch or hover. The reserve is `--vx-space-code-block-floating-copy-offset` + the 22px button;
 titled fences are unchanged. The inner `pre` margin reset also outranks Prose's block margin now, so
