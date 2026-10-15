@@ -119,7 +119,8 @@ describe('gen-llms --check drift gate', () => {
     expect(readFileSync(outPath, 'utf8')).toBe(original)
     const restoredCheck = Bun.spawnSync(['bun', SCRIPT_PATH, '--check'])
     expect(restoredCheck.exitCode).toBe(0)
-  })
+    // Two gen-llms runs (~2.3s each: each builds a TS program) overrun bun's 5s default under load.
+  }, 30_000)
 })
 
 // ── jsdoc-specifiers — every basalt-ui import specifier mentioned in a comment is real ────────────
