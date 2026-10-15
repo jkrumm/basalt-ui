@@ -1045,6 +1045,8 @@ The `basalt-ui/router-tanstack` subpath is **removed** in 2.x, not moved: an imp
 
 `llms.txt` gains a `## Types` glossary of the exported literal unions its signatures name (`CalloutKind`, …), lists the full `VX` token tree, and prints the values of literal-only constant maps (`CONTAINER_KEYS`). Docs output only; nothing to migrate.
 
+`basalt-ui sync` (and `--check`) now works from any workspace package that depends on basalt-ui — it syncs the install root above and says so — instead of refusing without `BASALT_CWD`; nothing to change.
+
 ## 2.8.1 — boot paint follows the stored scheme
 
 `basaltAppPlugin` now injects a tiny inline head script that reads Mantine's stored color scheme
