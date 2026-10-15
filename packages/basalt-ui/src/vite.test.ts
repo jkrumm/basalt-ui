@@ -6,6 +6,9 @@ type BasaltAppOptions = Parameters<typeof basaltAppPlugin>[0]
 
 /** Fixed, palette-independent theme colors so these tests never couple to `tokens/palette.ts`. */
 const THEME_COLOR = { light: '#ffffff', dark: '#111111' } as const
+const SCOPE = 'html:not([data-mantine-color-scheme])'
+const LIGHT_VARIANT = `${SCOPE}[data-basalt-boot=light]{background-color:#ffffff;color-scheme:light}`
+const DARK_VARIANT = `${SCOPE}[data-basalt-boot=dark]{background-color:#111111;color-scheme:dark}`
 
 function getPlugin(options: BasaltAppOptions): Plugin {
   // No `serviceWorker` option -> basaltAppPlugin returns a single, non-promise Plugin.
@@ -90,8 +93,11 @@ describe('basaltAppPlugin — base handling', () => {
       {
         tag: 'style',
         children:
-          'html:not([data-mantine-color-scheme]){background-color:#111111;color-scheme:dark}',
+          'html:not([data-mantine-color-scheme]){background-color:#111111;color-scheme:dark}' +
+          LIGHT_VARIANT +
+          DARK_VARIANT,
       },
+      { tag: 'script', children: expect.stringContaining('mantine-color-scheme-value') },
       { tag: 'link', attrs: { rel: 'shortcut icon', href: '/favicon.ico' } },
       { tag: 'link', attrs: { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' } },
       { tag: 'link', attrs: { rel: 'icon', sizes: '96x96', href: '/favicon-96x96.png' } },
@@ -335,36 +341,50 @@ describe('basaltAppPlugin — the anti-FOUC boot rule (V1)', () => {
     }
   })
 
-  test('default is dark — byte-identical to 1.20.0 apart from the scope', () => {
+  test('default is dark — the 1.20.0 base rule plus the stored-scheme variants', () => {
     expect(bootStyleOf({})).toBe(
-      'html:not([data-mantine-color-scheme]){background-color:#111111;color-scheme:dark}',
+      `${SCOPE}{background-color:#111111;color-scheme:dark}` + LIGHT_VARIANT + DARK_VARIANT,
     )
   })
 
   test('light paints the light surface and declares color-scheme: light', () => {
     expect(bootStyleOf({ colorScheme: 'light' })).toBe(
-      'html:not([data-mantine-color-scheme]){background-color:#ffffff;color-scheme:light}',
+      `${SCOPE}{background-color:#ffffff;color-scheme:light}` + LIGHT_VARIANT + DARK_VARIANT,
     )
   })
 
   test('auto declares `light dark` and follows prefers-color-scheme for the paint', () => {
     expect(bootStyleOf({ colorScheme: 'auto' })).toBe(
-      'html:not([data-mantine-color-scheme]){background-color:#ffffff;color-scheme:light dark}' +
-        '@media(prefers-color-scheme:dark){html:not([data-mantine-color-scheme])' +
-        '{background-color:#111111}}',
+      `${SCOPE}{background-color:#ffffff;color-scheme:light dark}` +
+        `@media(prefers-color-scheme:dark){${SCOPE}{background-color:#111111}}` +
+        LIGHT_VARIANT +
+        DARK_VARIANT,
     )
   })
 
-  test('an explicit backgroundColor wins over the auto media pair', () => {
+  test('an explicit backgroundColor wins over the auto media pair; only color-scheme follows storage', () => {
     expect(bootStyleOf({ colorScheme: 'auto', backgroundColor: '#abcdef' })).toBe(
-      'html:not([data-mantine-color-scheme]){background-color:#abcdef;color-scheme:light dark}',
+      `${SCOPE}{background-color:#abcdef;color-scheme:light dark}` +
+        `${SCOPE}[data-basalt-boot=light]{color-scheme:light}` +
+        `${SCOPE}[data-basalt-boot=dark]{color-scheme:dark}`,
     )
   })
 
   test('colorScheme: false is the full opt-out — paint, no color-scheme at all', () => {
     expect(bootStyleOf({ colorScheme: false })).toBe(
-      'html:not([data-mantine-color-scheme]){background-color:#111111}',
+      `${SCOPE}{background-color:#111111}` +
+        `${SCOPE}[data-basalt-boot=light]{background-color:#ffffff}` +
+        `${SCOPE}[data-basalt-boot=dark]{background-color:#111111}`,
     )
+  })
+
+  test('bootScript: false emits the 1.20.0 base rule only, and no script', () => {
+    expect(bootStyleOf({ bootScript: false })).toBe(
+      `${SCOPE}{background-color:#111111;color-scheme:dark}`,
+    )
+    const plugin = getPlugin({ name: 'Test App', themeColor: THEME_COLOR, bootScript: false })
+    resolveConfig(plugin, '/')
+    expect(transformHtml(plugin, HTML_NO_VIEWPORT).some((tag) => tag.tag === 'script')).toBe(false)
   })
 
   test('the manifest theme_color follows the boot scheme', () => {
@@ -420,5 +440,65 @@ describe('basaltAppPlugin — the encoding declaration (V2)', () => {
   test("the hook runs `pre` so no other plugin's tags can land ahead of the charset", () => {
     const plugin = getPlugin({ name: 'Test App', themeColor: THEME_COLOR })
     expect((plugin.transformIndexHtml as { order?: string }).order).toBe('pre')
+  })
+})
+
+describe('basaltAppPlugin — the boot script', () => {
+  const scriptOf = (): string => {
+    const plugin = getPlugin({ name: 'Test App', themeColor: THEME_COLOR })
+    resolveConfig(plugin, '/')
+    const tags = transformHtml(plugin, HTML_NO_VIEWPORT)
+    const script = tags.find((tag) => tag.tag === 'script')
+    // Same head-prepend slot as the style, after the hoisted charset.
+    expect(tags[0]?.tag).toBe('meta')
+    expect(script?.injectTo).toBeUndefined()
+    return String(script?.children ?? '')
+  }
+
+  /** Runs the emitted script against a fake document; returns what it set on <html>. */
+  const run = (storage: () => string | null, prefersDark = false): Record<string, string> => {
+    const attributes: Record<string, string> = {}
+    const fakeDocument = {
+      documentElement: { setAttribute: (k: string, v: string) => void (attributes[k] = v) },
+    }
+    const fakeStorage = {
+      getItem: (key: string) => {
+        expect(key).toBe('mantine-color-scheme-value')
+        return storage()
+      },
+    }
+    const matchMedia = (query: string) => ({
+      matches: query === '(prefers-color-scheme: dark)' && prefersDark,
+    })
+    new Function('document', 'localStorage', 'matchMedia', scriptOf())(
+      fakeDocument,
+      fakeStorage,
+      matchMedia,
+    )
+    return attributes
+  }
+
+  test('stored light / dark set the boot attribute', () => {
+    expect(run(() => 'light')).toEqual({ 'data-basalt-boot': 'light' })
+    expect(run(() => 'dark')).toEqual({ 'data-basalt-boot': 'dark' })
+  })
+
+  test('stored auto follows prefers-color-scheme', () => {
+    expect(run(() => 'auto', true)).toEqual({ 'data-basalt-boot': 'dark' })
+    expect(run(() => 'auto', false)).toEqual({ 'data-basalt-boot': 'light' })
+  })
+
+  test('nothing stored, garbage, or throwing storage sets nothing', () => {
+    expect(run(() => null)).toEqual({})
+    expect(run(() => 'sepia')).toEqual({})
+    expect(
+      run(() => {
+        throw new Error('SecurityError')
+      }),
+    ).toEqual({})
+  })
+
+  test('never writes data-mantine-color-scheme (it would expire the boot rule early)', () => {
+    expect(scriptOf()).not.toContain('data-mantine-color-scheme')
   })
 })

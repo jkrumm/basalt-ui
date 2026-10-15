@@ -247,6 +247,19 @@ type BasaltAppOptions = {
    */
   colorScheme?: 'dark' | 'light' | 'auto' | false
   /**
+   * Default `true`. Injects a ~250-byte inline `<script>` that reads the scheme the user last chose
+   * (Mantine's default `mantine-color-scheme-value` localStorage key — `light`, `dark` or `auto`,
+   * `auto` resolved through `prefers-color-scheme`) and sets a boot-only `data-basalt-boot`
+   * attribute on `<html>`, so the pre-boot paint matches the stored scheme instead of the build-time
+   * `colorScheme`. Storage unavailable or unset → the `colorScheme` paint stands. The script never
+   * writes `data-mantine-color-scheme`, so the boot rule still expires when Mantine mounts.
+   *
+   * Pass `false` under a strict CSP that forbids inline scripts (`script-src` without
+   * `'unsafe-inline'`/a hash), or when the app passes a custom `colorSchemeManager` /
+   * `colorSchemeStorageKey`-style override to `BasaltProvider` — the script only knows the default key.
+   */
+  bootScript?: boolean
+  /**
    * Manifest `background_color` + anti-FOUC paint color. Default: the theme color matching
    * `colorScheme` (the dark one for `'dark'` / `'auto'` / `false`, the light one for `'light'`).
    */
@@ -430,6 +443,19 @@ const VIEWPORT_TAG: HtmlTagDescriptor = {
  */
 const BOOT_SCOPE = 'html:not([data-mantine-color-scheme])'
 
+/** Boot-only attribute `BOOT_SCRIPT` sets; never `data-mantine-color-scheme`, which would expire the rule. */
+const BOOT_ATTRIBUTE = 'data-basalt-boot'
+
+/**
+ * Mirrors Mantine's default `localStorageColorSchemeManager` (`mantine-color-scheme-value`, a raw
+ * `light` | `dark` | `auto` string — BasaltProvider installs no manager of its own). `auto` resolves
+ * through `prefers-color-scheme`; a throwing or empty store leaves the attribute off.
+ */
+const BOOT_SCRIPT =
+  "try{var v=localStorage.getItem('mantine-color-scheme-value');" +
+  "if(v==='auto')v=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';" +
+  `if(v==='light'||v==='dark')document.documentElement.setAttribute('${BOOT_ATTRIBUTE}',v)}catch(e){}`
+
 /** The `color-scheme` value each boot mode declares. `false` declares none. */
 const BOOT_COLOR_SCHEME = { dark: 'dark', light: 'light', auto: 'light dark' } as const
 
@@ -442,6 +468,34 @@ const BOOT_COLOR_SCHEME = { dark: 'dark', light: 'light', auto: 'light dark' } a
  * is used verbatim for both, since the consumer has named one color on purpose.
  */
 function buildBootStyle(input: {
+  colorScheme: 'dark' | 'light' | 'auto' | false
+  themeColor: { light: string; dark: string }
+  backgroundColor: string
+  explicitBackground: boolean
+  storedSchemes: boolean
+}): string {
+  const { colorScheme, themeColor, backgroundColor, explicitBackground, storedSchemes } = input
+
+  const base = buildBaseBootStyle({ colorScheme, themeColor, backgroundColor, explicitBackground })
+  if (!storedSchemes) return base
+
+  // Stored-scheme variants: keyed off the attribute BOOT_SCRIPT sets, still inside BOOT_SCOPE so
+  // they expire with the rest. The extra attribute outranks the base rule and its `auto` media pair.
+  // An explicit backgroundColor is the consumer's one chosen color — only `color-scheme` follows.
+  const variants = (['light', 'dark'] as const)
+    .map((scheme) => {
+      const declarations = [
+        ...(explicitBackground ? [] : [`background-color:${themeColor[scheme]}`]),
+        ...(colorScheme === false ? [] : [`color-scheme:${scheme}`]),
+      ]
+      if (declarations.length === 0) return ''
+      return `${BOOT_SCOPE}[${BOOT_ATTRIBUTE}=${scheme}]{${declarations.join(';')}}`
+    })
+    .join('')
+  return base + variants
+}
+
+function buildBaseBootStyle(input: {
   colorScheme: 'dark' | 'light' | 'auto' | false
   themeColor: { light: string; dark: string }
   backgroundColor: string
@@ -550,6 +604,7 @@ function buildStaticTags(input: {
   shortName: string
   themeColor: { light: string; dark: string }
   bootStyle: string
+  bootScript: boolean
   icons: ResolvedIcons
   darkreader: 'lock' | false
   manifestEnabled: boolean
@@ -561,6 +616,7 @@ function buildStaticTags(input: {
     shortName,
     themeColor,
     bootStyle,
+    bootScript,
     icons,
     darkreader,
     manifestEnabled,
@@ -594,6 +650,7 @@ function buildStaticTags(input: {
   // <meta charset>, ahead of the consumer's own <link rel="stylesheet"> tags. Scoped to
   // BOOT_SCOPE so it expires the moment Mantine resolves the real scheme — see buildBootStyle.
   tags.push({ tag: 'style', children: bootStyle })
+  if (bootScript) tags.push({ tag: 'script', children: BOOT_SCRIPT })
 
   if (icons.mode === 'default') {
     tags.push(
@@ -763,8 +820,10 @@ function createMainPlugin(options: BasaltAppOptions): Plugin {
   const colorScheme = options.colorScheme ?? 'dark'
   const schemeColor = colorScheme === 'light' ? themeColor.light : themeColor.dark
   const backgroundColor = options.backgroundColor ?? schemeColor
+  const bootScript = options.bootScript !== false
   const bootStyle = buildBootStyle({
     colorScheme,
+    storedSchemes: bootScript,
     themeColor,
     backgroundColor,
     explicitBackground: options.backgroundColor !== undefined,
@@ -806,6 +865,7 @@ function createMainPlugin(options: BasaltAppOptions): Plugin {
         shortName,
         themeColor,
         bootStyle,
+        bootScript,
         icons,
         darkreader,
         manifestEnabled,
