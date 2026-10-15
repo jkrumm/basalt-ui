@@ -1,3 +1,27 @@
+# [2.9.0](https://github.com/jkrumm/basalt-ui/compare/v2.8.1...v2.9.0) (2026-10-15)
+
+
+### Bug Fixes
+
+* activate the last toc entry at the end of the scroll ([797f41d](https://github.com/jkrumm/basalt-ui/commit/797f41df602cd8835629f430ae26fc03a3c14909))
+* address review of the 1.x compat removal ([8c7918f](https://github.com/jkrumm/basalt-ui/commit/8c7918f08fa66ef1712111ab2ef15a47ea41014e))
+* clear a shell-less page bar from section anchors ([9df0585](https://github.com/jkrumm/basalt-ui/commit/9df0585ccd493fc65372fdc8d4a933db32ea5666)), closes [#anchor](https://github.com/jkrumm/basalt-ui/issues/anchor)
+* guide a settings-row selection to a bound filter ([e1136b7](https://github.com/jkrumm/basalt-ui/commit/e1136b7d4ab362bf094209d0f8752d8a5f9106f4))
+* home a settings-row control prop in the raw-selection-control scan ([d2b955c](https://github.com/jkrumm/basalt-ui/commit/d2b955ca7a38c9982705be285df6db91fac40dca))
+* let sync run from a workspace app and name its bin ([5cf854f](https://github.com/jkrumm/basalt-ui/commit/5cf854f2a0613b3b1a8503d33b94ec95487a7a10))
+* print unions in an llms.txt glossary instead of rewriting signatures ([6b8d917](https://github.com/jkrumm/basalt-ui/commit/6b8d91792781266581c11a4b7dddd39b9ca8e2ab))
+* re-aim a cold hash load once the page bar is measured ([a218a89](https://github.com/jkrumm/basalt-ui/commit/a218a8948a316933b360e98a3b5b39caf0e48a4b))
+* settle a toc click on a quiet scroller, not a fixed deadline ([e14cb8d](https://github.com/jkrumm/basalt-ui/commit/e14cb8d53726d9f18082b7bf28883e93344ee1ae))
+* share one install-root predicate between sync and doctor ([9d85846](https://github.com/jkrumm/basalt-ui/commit/9d858467bd4d71f55b62d0404b0607cc201d3f9f))
+* spell out unions, token maps and constants in llms.txt ([ec1a4e1](https://github.com/jkrumm/basalt-ui/commit/ec1a4e14e328a5caaa513485438e6fe23a2b8156))
+
+
+### Features
+
+* export foldBands for testing a band merge ([8343f19](https://github.com/jkrumm/basalt-ui/commit/8343f1985fffef07447ce202f512b17ebbf3ce7c))
+* name the unset state of a number filter ([02ed3ba](https://github.com/jkrumm/basalt-ui/commit/02ed3bacc5094fca61401795a6440513754150aa))
+* remove the 1.x compatibility layer from 2.x ([66f4517](https://github.com/jkrumm/basalt-ui/commit/66f4517df998f5a304a90d2cd9824654772de31d))
+
 ## [2.8.1](https://github.com/jkrumm/basalt-ui/compare/v2.8.0...v2.8.1) (2026-10-15)
 
 
