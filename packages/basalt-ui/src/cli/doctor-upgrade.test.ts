@@ -853,6 +853,27 @@ describe('doctor — app-wiring', () => {
     expect(appWiringCheck(dir)).toBeNull()
   })
 
+  it('accepts a code-defined route tree, still fails an app with no router wiring', () => {
+    write('package.json', JSON.stringify({ name: 'fixture' }))
+    write('index.html', '<script type="module" src="/src/main.tsx"></script>')
+    write('vite.config.ts', 'export default { plugins: [react()] }\n')
+    write(
+      'src/main.tsx',
+      "import { BasaltProvider } from 'basalt-ui'\nimport { router } from './router'\nrouter\n",
+    )
+    write('src/router.tsx', 'export const router = createBasaltRouter({ routeTree })\n')
+    expect(text(appWiringCheck(dir))).toContain('no vite.config calls the TanStack router plugin')
+    write(
+      'src/router.tsx',
+      "import { tree } from './tree'\nexport const router = createBasaltRouter({ routeTree: tree })\n",
+    )
+    write(
+      'src/tree.ts',
+      'const root = createRootRouteWithContext<Ctx>()({})\nexport const tree = root\n',
+    )
+    expect(appWiringCheck(dir)).toBeNull()
+  })
+
   it('a Start app is wired by <BasaltProvider> in its root route, not by src/main.tsx', () => {
     write(
       'package.json',

@@ -747,20 +747,12 @@ function hasDependency(cwd: string, pkgName: string): boolean {
   )
 }
 
-/**
- * Where the seed engine is running relative to the consumer's git repo — decides which
- * repo-root-shaped seeds are safe to write. `init`/`sync` compute it once per run via
- * `resolvePlacement` and print the matching skip notices themselves; `managedFiles` only reads it.
- */
+/** Where the seed engine runs relative to the consumer's git repo; `resolvePlacement` computes it. */
 export type PlacementFlags = {
-  /** True when the package directory IS the detected repo root, or no `.git` exists anywhere above
-   *  it (a consumer not using git keeps today's behaviour exactly). False means the package lives
-   *  in a subdirectory of the repo (a monorepo's `web/`, say) — lefthook and GitHub Actions both
-   *  only read config at the repo root, so seeding either one there is worse than not seeding at
-   *  all. */
+  /** True when the package dir IS the repo root (or no `.git` exists above it). False: a monorepo
+   *  subdirectory — lefthook and GitHub Actions only read the repo root, so they are not seeded. */
   isPackageRepoRoot: boolean
-  /** Absolute path of the detected repo root. Meaningful only when `isPackageRepoRoot` is false —
-   *  otherwise it equals the package dir and is never read. */
+  /** Absolute repo root; read only when `isPackageRepoRoot` is false. */
   repoRoot: string
   /** The app directory relative to the install root ('' = the root itself); see {@link resolveAppDir}. */
   appRel: string
@@ -777,10 +769,8 @@ export const ROOT_PLACEMENT: PlacementFlags = {
 }
 
 /**
- * Walks up from `dir` looking for a `.git` entry — ordinarily a directory, but a git worktree or
- * submodule points it at a FILE instead, and both still mean "this directory is the repo root".
- * Stops at the filesystem root. Returns `dir` itself when no `.git` is found anywhere, so a
- * consumer not using git falls back to today's behaviour exactly.
+ * Walks up from `dir` to a `.git` entry (a directory, or a FILE for a worktree/submodule). Returns
+ * `dir` itself when none is found, so a consumer not using git keeps today's behaviour.
  */
 export function findRepoRoot(dir: string): string {
   let current = dir

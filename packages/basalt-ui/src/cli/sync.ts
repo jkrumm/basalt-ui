@@ -31,6 +31,7 @@ import {
   reportPrune,
   resolvePlacement,
   resolveProjectDir,
+  routerSeedDest,
   routerSeedDests,
   rootsNotices,
   sha256,
@@ -40,6 +41,7 @@ import {
   writeFileEnsuringDir,
   writeUnit,
 } from './index'
+import { isCodeRoutedApp } from './doctor-upgrade'
 
 /** The oxlint plugins the shipped preset switches on — read from the preset, never restated. */
 export function readOxlintPresetPlugins(pkgRoot: string): string[] {
@@ -136,13 +138,13 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
   const placement = resolvePlacement(cwd)
   const startApp = isStartApp(cwd, placement.appRel)
   const skipped = new Set(startApp ? routerSeedDests(placement.appRel) : [])
+  // A code-defined route tree has no `routes/__root.tsx` to seed.
+  if (!startApp && isCodeRoutedApp(cwd, placement.appRel))
+    skipped.add(routerSeedDest(placement.appRel, 'root'))
   const files = managedFiles(placement).filter((f) => !skipped.has(f.dest))
 
   let updated = 0
-  // `created` and `recreated` were one counter, and `0 updated, 20 recreated` is what a full
-  // scaffold printed — a word that means "it was here, it went missing, I put it back" describing
-  // twenty files this directory never had. The ledger already knows which: an entry in
-  // `manifest.files` is basalt saying it placed the file once.
+  // `recreated` = a manifest entry exists (basalt placed it once) but the file went missing.
   let created = 0
   let recreated = 0
   let skippedDrift = 0
@@ -159,12 +161,12 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
 
     const tracked = manifest.files[file.dest] !== undefined
 
-    // `seed` is written once, then owned by the consumer — never reconciled, never reported.
+    // `seed`: written once, then the consumer's. A tracked seed missing on disk is their deletion —
+    // the manifest entry records it; only `init` restores it.
     if (file.mode === 'seed') {
-      if (state.current === null && !opts.check) {
+      if (state.current === null && !tracked && !opts.check) {
         manifest.files[file.dest] = writeUnit(file, cwd, state.desired)
-        if (tracked) recreated++
-        else created++
+        created++
       }
       continue
     }
@@ -209,7 +211,7 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
   // hides them behind `--verbose` (it sits in consumers' CI chains, where three unchanging
   // "skipped" paragraphs per run are noise indistinguishable from drift) but still prints the COUNT.
   // Start added AFTER a pre-Start init: the old seeds are the consumer's now — left untouched, named.
-  const stale = [...skipped].filter(
+  const stale = (startApp ? [...skipped] : []).filter(
     (d) => manifest.files[d] !== undefined && existsSync(resolve(cwd, d)),
   )
   const mounting = stale.filter((d) => !d.endsWith('nav.tsx'))
