@@ -16,6 +16,7 @@
 import { execSync } from 'node:child_process'
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import {
+  existsSync,
   mkdirSync,
   mkdtempSync,
   readdirSync,
@@ -1040,7 +1041,15 @@ function installAtRoot(): void {
     JSON.stringify({ name: 'dashboard', dependencies: { 'basalt-ui': '*' } }),
   )
   write('apps/dashboard/src/app.tsx', 'export const App = () => null\n')
+  write(
+    'apps/dashboard/src/main.tsx',
+    "import { createBasaltRouter } from 'basalt-ui'\nexport const router = createBasaltRouter({ routeTree })\n",
+  )
   write('apps/tools/package.json', JSON.stringify({ name: 'tools' }))
+  write(
+    'node_modules/basalt-ui/package.json',
+    JSON.stringify({ name: 'basalt-ui', version: CLI_VERSION }),
+  )
 }
 
 describe('sync — a scaffold is init’s decision, never a drift refresh’s', () => {
@@ -1054,7 +1063,28 @@ describe('sync — a scaffold is init’s decision, never a drift refresh’s', 
 
   it('syncs the install above from a dependent sub-package and writes nothing into it', () => {
     installAtRoot()
-    expect(capture(() => sync({}, join(dir, 'apps/dashboard'))).code).toBe(0)
+    const { code, log } = capture(() => sync({}, join(dir, 'apps/dashboard')))
+    expect(code).toBe(0)
+    expect(log).toContain('syncing there')
+    for (const f of [
+      '.basalt',
+      '.claude',
+      'AGENTS.md',
+      'DESIGN.md',
+      '.oxlintrc.json',
+      '.oxfmtrc.json',
+      'src/routes/__root.tsx',
+    ])
+      expect([f, existsSync(join(dir, 'apps/dashboard', f))]).toEqual([f, false])
+    for (const f of [
+      '.basalt',
+      '.claude',
+      'AGENTS.md',
+      'DESIGN.md',
+      '.oxlintrc.json',
+      '.oxfmtrc.json',
+    ])
+      expect(existsSync(join(dir, f))).toBe(true)
     // The `basalt.roots` backfill is half the damage: a second config site means check-theme
     // silently scans a different tree depending on which directory it was invoked from.
     expect(JSON.parse(read('apps/dashboard/package.json'))['basalt']).toBeUndefined()

@@ -47,7 +47,8 @@ import {
   unknownConfigKeysCheck,
 } from './doctor-upgrade'
 import type { Check } from './doctor-upgrade'
-import { findManifestAbove, parentInstallAdvice } from './sync'
+import { findManifestAbove, installRootAbove } from './install-root'
+import { parentInstallAdvice } from './sync'
 
 /** `sameFile`, but doctor never crashes: a path that cannot be inspected is "not provably the same". */
 function isSameFile(a: string, b: string): boolean {
@@ -123,17 +124,9 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
   if (conflictingProfileFlags('doctor', flags)) return 1
   const project = resolveProjectDir(invocationCwd)
   // Inside the app package of a monorepo the manifest is above: read the install root instead.
-  const aboveRoot =
-    project.relocatedFrom === null && !existsSync(resolve(project.dir, MANIFEST_PATH))
-      ? findManifestAbove(project.dir)
-      : null
-  const insideApp =
-    aboveRoot !== null &&
-    (() => {
-      const app = resolveAppDir(aboveRoot)
-      return !('error' in app) && app.dir === project.dir
-    })()
-  const cwd = insideApp && aboveRoot !== null ? aboveRoot : project.dir
+  const aboveRoot = project.relocatedFrom === null ? installRootAbove(project.dir) : null
+  const insideApp = aboveRoot !== null
+  const cwd = aboveRoot ?? project.dir
   const cfg = readBasaltConfig(cwd)
   const result: DoctorResult = { hardFailures: 0, warnings: 0, skipped: 0 }
   const lines: string[] = [`\nbasalt-ui doctor — ${cwd}\n`]

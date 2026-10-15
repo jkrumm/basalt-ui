@@ -39,7 +39,7 @@ import {
   writeFileEnsuringDir,
   writeUnit,
 } from './index'
-import { hasDependency } from './source-text'
+import { findManifestAbove, installRootAbove } from './install-root'
 
 /** The oxlint plugins the shipped preset switches on — read from the preset, never restated. */
 export function readOxlintPresetPlugins(pkgRoot: string): string[] {
@@ -65,17 +65,6 @@ export function parentInstallAdvice(cwd: string, parent: string, verb: string): 
   )
 }
 
-/** The nearest ANCESTOR of `dir` (exclusive) carrying a basalt manifest, or null. */
-export function findManifestAbove(dir: string): string | null {
-  let current = resolve(dir, '..')
-  for (;;) {
-    if (existsSync(resolve(current, MANIFEST_PATH))) return current
-    const parent = resolve(current, '..')
-    if (parent === current) return null
-    current = parent
-  }
-}
-
 /**
  * Reconcile managed files with the shipped versions via a sha256 three-way compare.
  *
@@ -91,14 +80,8 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
   if (conflictingProfileFlags('sync', syncFlags)) return 1
   const project = resolveProjectDir(invocationCwd)
   noteRelocation('sync', project)
-  // Inside a workspace package that depends on basalt-ui the manifest lives at the install root
-  // above (`doctor` reads it the same way): run there instead of refusing.
-  const installAbove =
-    project.relocatedFrom === null &&
-    !existsSync(resolve(project.dir, MANIFEST_PATH)) &&
-    hasDependency(project.dir, 'basalt-ui')
-      ? findManifestAbove(project.dir)
-      : null
+  // Inside the app package of a workspace the manifest is at the install root above: sync there.
+  const installAbove = project.relocatedFrom === null ? installRootAbove(project.dir) : null
   const cwd = installAbove ?? project.dir
   if (installAbove !== null) {
     console.log(
