@@ -1077,6 +1077,8 @@ one on touch or hover. The reserve is `--vx-space-code-block-floating-copy-offse
 titled fences are unchanged. The inner `pre` margin reset also outranks Prose's block margin now, so
 the unhighlighted fallback and the highlighted fence measure the same.
 
+**`TableOfContents` clicks and the end of the scroll.** A clicked entry stays active while its scroll runs and where it settles, until the scroll position moves again or the reader scrolls; the spy marks the first entry when nothing scrolls, and a heading within 80px of the scrollport's top counts as reached (it used to need to cross the top edge) — nothing to migrate.
+
 ## 2.8.0 — the fleet probe fixes
 
 Ledger rows 61-67 (`docs/waves/argo-friction.md`), found while the rest of the fleet probed 1.x → 2.x.

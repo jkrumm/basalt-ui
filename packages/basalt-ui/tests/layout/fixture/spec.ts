@@ -241,6 +241,22 @@ export type FormsSpec = {
   widths: number[]
 }
 
+/**
+ * A `TableOfContents` beside an article in the shell body — the scroll-spy's only real-geometry
+ * test. The article scrolls inside Main under a STICKY title bar and its headings carry a
+ * `scroll-margin-top`, so a clicked heading comes to rest ABOVE the spy's activation band.
+ */
+/** The `TocSpec` fixture's sticky title bar height, which is also each heading's `scroll-margin-top`. */
+export const TOC_SCROLL_MARGIN_PX = 48
+
+export type TocSpec = {
+  /** Section count; every section but the last is `sectionHeight` tall. */
+  sections: number
+  sectionHeight: number
+  /** The last section's height — short enough that the scrollport bottoms out first. */
+  lastHeight: number
+}
+
 export type FixtureSpec = {
   sections: SectionSpec[]
   nav?: { maxTabs?: number; menuMax?: number; moreLabel?: string }
@@ -283,6 +299,8 @@ export type FixtureSpec = {
   forms?: FormsSpec
   /** Renders a `PageAside` (and, by default, the `PageBar` row 2 it projects into below `sm`). */
   aside?: AsideSpec
+  /** A `TableOfContents` + article inside Main's scrollport (the scroll-spy invariants). */
+  toc?: TocSpec
   /** Renders one `basalt-ui/charts` kind above the filler. Omitted ⇒ no chart in the tree. */
   charts?: ChartsSpec
   /** Renders a `basalt-ui/agent-chat` transcript above the filler. Omitted ⇒ no transcript. */

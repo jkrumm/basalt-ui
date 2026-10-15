@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ComponentProps, ReactElement } from 'react'
 import { ThreadFeedRow } from '../../../src/agent'
 import type { AgentThread, ChatMessage, TranscriptPart } from '../../../src/agent'
@@ -20,10 +20,12 @@ import type { GlobalAction } from '../../../src/controls'
 import type { PageBarActions } from '../../../src/controls/actions'
 import type { BasaltAccountProps } from '../../../src/shell/account-types'
 import type { NavAnchor, SidebarItem, SidebarSection } from '../../../src/shell/nav-types'
+import { TableOfContents } from '../../../src/content/toc'
 import { createLocalStore, field } from '../../../src/state'
 import type {
   AgentSpec,
   AsideSpec,
+  TocSpec,
   BarSpec,
   CardsSpec,
   ChartsSpec,
@@ -32,6 +34,7 @@ import type {
   ItemSpec,
   TableSpec,
 } from './spec'
+import { TOC_SCROLL_MARGIN_PX } from './spec'
 
 /** A consumer-sized (18px) glyph — the bar normalizes it to `--vx-space-mobile-nav-icon-size` in
  *  CSS, which is part of what the geometry assertions cover. */
@@ -554,6 +557,48 @@ function AsideBar(): ReactElement {
   )
 }
 
+/** Section ids are `s1…sN`; the rail's labels are `Section 1…N`. */
+function TocFixture({ spec }: { spec: TocSpec }): ReactElement {
+  const articleRef = useRef<HTMLDivElement>(null)
+  const ids = Array.from({ length: spec.sections }, (_, i) => `s${i + 1}`)
+  return (
+    <div style={{ display: 'flex', gap: 16 }}>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div
+          data-testid="toc-bar"
+          style={{
+            position: 'sticky',
+            top: 0,
+            height: TOC_SCROLL_MARGIN_PX,
+            background: 'canvas',
+            zIndex: 1,
+          }}
+        >
+          Title
+        </div>
+        <div ref={articleRef}>
+          {ids.map((id, i) => (
+            <section
+              key={id}
+              style={{ height: i === ids.length - 1 ? spec.lastHeight : spec.sectionHeight }}
+            >
+              <h2
+                id={id}
+                style={{ scrollMarginTop: TOC_SCROLL_MARGIN_PX, margin: 0, lineHeight: '24px' }}
+              >
+                Section {i + 1}
+              </h2>
+            </section>
+          ))}
+        </div>
+      </div>
+      <div style={{ position: 'sticky', top: TOC_SCROLL_MARGIN_PX, alignSelf: 'flex-start' }}>
+        <TableOfContents containerRef={articleRef} />
+      </div>
+    </div>
+  )
+}
+
 function AsideFixture({ spec }: { spec: AsideSpec }): ReactElement {
   return (
     <PageAside title={spec.title}>
@@ -864,6 +909,7 @@ export function ShellFixture({ spec }: { spec: FixtureSpec }): ReactElement {
       {spec.table && <TableFixture spec={spec.table} />}
       {spec.charts && <ChartsFixture spec={spec.charts} />}
       {spec.agent && <AgentFixture spec={spec.agent} />}
+      {spec.toc && <TocFixture spec={spec.toc} />}
       {spec.confirm && <ConfirmFixture />}
       {/* theme-allow -- a measured filler height IS the fixture's payload, not a themed size */}
       <div style={{ height: spec.bodyHeight ?? 0 }} />

@@ -510,6 +510,7 @@ export async function openFixture(
   spec: FixtureSpec,
   viewport: Viewport = PHONE,
   documentPath = '/',
+  reducedMotion: 'reduce' | 'no-preference' = 'reduce',
 ): Promise<LayoutPage> {
   // Named here, once, rather than as N identical ERR_CONNECTION_REFUSED stack traces further down.
   // `server` is checked as well as `browser`: a torn-down or abandoned boot leaves nothing
@@ -527,12 +528,11 @@ export async function openFixture(
     deviceScaleFactor: 2,
     isMobile: true,
     hasTouch: true,
-    // Load-bearing, not cosmetic: MobileNav reads `useReducedMotion()` explicitly and drops the
-    // Drawer/Menu transition to duration 0, so a box is FINAL the moment the surface exists. It is
-    // also a media query happy-dom cannot express at all (matchMedia pinned to `matches: false`),
-    // which is part of the gap this suite closes. The cost: mid-transition geometry is not covered
-    // — correct, because layout invariants are about the settled frame.
-    reducedMotion: 'reduce',
+    // `reduce` by default, and load-bearing: MobileNav reads `useReducedMotion()` explicitly and drops
+    // the Drawer/Menu transition to duration 0, so a box is FINAL the moment the surface exists. It
+    // is also a media query happy-dom cannot express (matchMedia pinned to `matches: false`). A test
+    // that needs the real smooth scroll — the TOC click — passes `'no-preference'` and waits itself.
+    reducedMotion,
   })
   const page = await context.newPage()
   const pageErrors: Error[] = []
