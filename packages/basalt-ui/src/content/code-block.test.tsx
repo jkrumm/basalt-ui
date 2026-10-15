@@ -71,3 +71,20 @@ describe('CodeBlock — the overflow fade', () => {
     expect(body.hasAttribute('data-code-overflow')).toBe(false)
   })
 })
+
+describe('CodeBlock — the floating copy reserve', () => {
+  test.each([
+    ['no title, showCopy', { title: undefined, showCopy: true }, true],
+    ['a title', { title: 'a.ts', showCopy: true }, false],
+    ['no title, showCopy={false}', { title: undefined, showCopy: false }, false],
+  ])('data-floating-copy — %s: %p', (_name, props, expected) => {
+    const { container } = renderCodeBlock(
+      <CodeBlock
+        code="x"
+        {...(props.title !== undefined && { title: props.title })}
+        showCopy={props.showCopy}
+      />,
+    )
+    expect(container.querySelector('[data-floating-copy]') !== null).toBe(expected)
+  })
+})

@@ -273,8 +273,12 @@ export type FixtureSpec = {
   statsWide?: true
   /** Renders card-chrome probes: StatCards at fixed container widths, a stretched ChartCard. */
   cards?: CardsSpec
-  /** Renders a `CodeBlock` between two paragraphs (`data-testid="codeblock"`, long first line). */
-  codeBlock?: { title?: string }
+  /**
+   * Renders a `CodeBlock` in a `Prose` between `data-testid="codeblock-before"` and
+   * `"codeblock-after"` paragraphs, over a long first line. `language` defaults to `'ts'`; pass
+   * `null` for the plain-`<pre>` fallback state. `showCopy: false` drops the button.
+   */
+  codeBlock?: { title?: string; language?: string | null; showCopy?: false }
   /** Renders `FormRow` container-width probes (n2). */
   forms?: FormsSpec
   /** Renders a `PageAside` (and, by default, the `PageBar` row 2 it projects into below `sm`). */
