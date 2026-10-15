@@ -16,7 +16,7 @@
  *     and a silent fallback to left-aligned would look correct in review.
  */
 import { MantineProvider, Text } from '@mantine/core'
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, mock, spyOn, test } from 'bun:test'
 import type { ColumnFiltersState } from '@tanstack/react-table'
 import { resetValidatedProps } from '../common/validate'
@@ -1130,78 +1130,153 @@ describe('actions — the toolbar slot folds under measurement', () => {
 // ── rowActions (argo friction row 48) ─────────────────────────────────────────
 
 describe('rowActions', () => {
-  const edit = (onClick: (row: Row) => void) => ({
+  const edit = (onClick: (row: Row) => void, extra: Record<string, unknown> = {}) => ({
     key: 'edit',
     label: 'Edit',
     icon: <span data-testid="edit-icon" />,
     onClick,
+    ...extra,
   })
+  const other = (onClick: (row: Row) => void = () => undefined) => ({
+    key: 'x',
+    label: 'Other',
+    onClick,
+  })
+  const lastHeader = (container: HTMLElement) =>
+    [...container.querySelectorAll('thead th')].at(-1) as HTMLElement
 
   test('one action with an icon is an icon button in a trailing, pinned, header-less column', () => {
     const { container } = renderTable({ rowActions: [edit(() => undefined)] })
     expect(screen.getAllByRole('button', { name: 'Edit' })).toHaveLength(ROWS.length)
-    const headers = [...container.querySelectorAll('thead th')]
-    expect(headers).toHaveLength(COLUMNS.length + 1)
-    const last = headers.at(-1) as HTMLElement
-    expect(last.textContent).toBe('Actions')
-    expect(last.style.position).toBe('sticky')
+    expect([...container.querySelectorAll('thead th')]).toHaveLength(COLUMNS.length + 1)
+    expect(lastHeader(container).textContent).toBe('Actions')
+    // Pinned with NO `enablePinning`: the column owns its own end pin.
+    expect(lastHeader(container).style.position).toBe('sticky')
+    expect(lastHeader(container).style.insetInlineEnd).toBe('0')
     expect(container.querySelector('tbody tr:first-child td:last-child button')).not.toBeNull()
   })
 
-  test('the handler receives its own row', () => {
+  test('the handler receives its own row, also after a sort reorders them', () => {
     const onClick = mock((_row: Row) => undefined)
-    renderTable({ rowActions: [edit(onClick)] })
-    fireEvent.click(screen.getAllByRole('button', { name: 'Edit' })[1] as HTMLElement)
+    renderTable({ rowActions: [edit(onClick)], initialSorting: [{ id: 'cost', desc: false }] })
+    // Sorted ascending by cost: linewatch (3) renders first.
+    fireEvent.click(screen.getAllByRole('button', { name: 'Edit' })[0] as HTMLElement)
     expect(onClick).toHaveBeenCalledWith(ROWS[1])
   })
 
-  test('several actions fold into a keyboard-reachable menu; danger and disabled(row) apply', async () => {
+  test('an empty rowActions renders no column at all', () => {
+    const { container } = renderTable({ rowActions: [] })
+    expect([...container.querySelectorAll('thead th')]).toHaveLength(COLUMNS.length)
+  })
+
+  test('the empty state spans the actions column too', () => {
+    const { container } = renderTable({ data: [], rowActions: [edit(() => undefined)] })
+    expect(container.querySelector('tbody td')?.getAttribute('colspan')).toBe(
+      String(COLUMNS.length + 1),
+    )
+  })
+
+  test('several actions fold into a menu named per row, reachable by keyboard', async () => {
     const remove = mock((_row: Row) => undefined)
+    renderTable({
+      rowActions: [edit(() => undefined), { ...other(remove), label: 'Remove', danger: true }],
+    })
+    const triggers = screen.getAllByRole('button', { name: /^Row \d+ actions$/ })
+    expect(triggers.map((t) => t.getAttribute('aria-label'))).toEqual([
+      'Row 1 actions',
+      'Row 2 actions',
+    ])
+    ;(triggers[0] as HTMLElement).focus()
+    expect(document.activeElement).toBe(triggers[0] as HTMLElement)
+    fireEvent.click(triggers[0] as HTMLElement)
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Remove' }))
+    expect(remove).toHaveBeenCalledWith(ROWS[0])
+  })
+
+  test('rowLabel names the row in the trigger and in a lone icon button', () => {
+    renderTable({ rowLabel: (row) => row.project, rowActions: [edit(() => undefined)] })
+    expect(screen.getByRole('button', { name: 'Edit: argo' })).toBeDefined()
+    cleanup()
+    renderTable({
+      rowLabel: (row) => row.project,
+      rowActions: [edit(() => undefined), other()],
+    })
+    expect(screen.getByRole('button', { name: 'Actions for linewatch' })).toBeDefined()
+  })
+
+  test('an icon-less single action falls back to a one-item menu', async () => {
+    const onClick = mock((_row: Row) => undefined)
+    renderTable({ rowActions: [other(onClick)] })
+    expect(screen.queryByRole('button', { name: 'Other' })).toBeNull()
+    fireEvent.click(screen.getAllByRole('button', { name: 'Row 1 actions' })[0] as HTMLElement)
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Other' }))
+    expect(onClick).toHaveBeenCalledWith(ROWS[0])
+  })
+
+  test('disabled(row) and loading(row) are evaluated per row and never fire', () => {
+    const onClick = mock((_row: Row) => undefined)
+    renderTable({
+      rowActions: [
+        edit(onClick, {
+          disabled: (row: Row) => row.project === 'argo',
+          loading: (row: Row) => row.project === 'linewatch',
+        }),
+      ],
+    })
+    const [first, second] = screen.getAllByRole('button', { name: 'Edit' }) as HTMLElement[]
+    expect(first?.hasAttribute('disabled') || first?.hasAttribute('data-disabled')).toBe(true)
+    expect(second?.getAttribute('data-loading')).not.toBeNull()
+    fireEvent.click(first as HTMLElement)
+    fireEvent.click(second as HTMLElement)
+    expect(onClick).not.toHaveBeenCalled()
+  })
+
+  test('a disabled or loading menu item never fires', async () => {
+    const onClick = mock((_row: Row) => undefined)
     renderTable({
       rowActions: [
         edit(() => undefined),
-        {
-          key: 'rm',
-          label: 'Remove',
-          danger: true,
-          disabled: (row) => row.cost < 5,
-          onClick: remove,
-        },
+        { ...other(onClick), disabled: () => true },
+        { key: 'busy', label: 'Busy', onClick, loading: () => true },
       ],
     })
-    const triggers = screen.getAllByRole('button', { name: 'Row actions' })
-    expect(triggers).toHaveLength(ROWS.length)
-    ;(triggers[0] as HTMLElement).focus()
-    fireEvent.click(triggers[0] as HTMLElement)
-    const item = await screen.findByRole('menuitem', { name: 'Remove' })
-    expect(item.hasAttribute('disabled') || item.getAttribute('data-disabled') !== null).toBe(false)
-    fireEvent.click(item)
-    expect(remove).toHaveBeenCalledWith(ROWS[0])
-    fireEvent.click(screen.getAllByRole('button', { name: 'Row actions' })[1] as HTMLElement)
-    const disabled = await screen.findByRole('menuitem', { name: 'Remove' })
-    expect(
-      disabled.hasAttribute('disabled') || disabled.getAttribute('data-disabled') !== null,
-    ).toBe(true)
+    for (const name of ['Other', 'Busy']) {
+      cleanup()
+      renderTable({
+        rowActions: [
+          edit(() => undefined),
+          { ...other(onClick), disabled: () => true },
+          { key: 'busy', label: 'Busy', onClick, loading: () => true },
+        ],
+      })
+      fireEvent.click(screen.getAllByRole('button', { name: 'Row 1 actions' })[0] as HTMLElement)
+      const item = await screen.findByRole('menuitem', { name })
+      expect(item.hasAttribute('disabled') || item.getAttribute('data-disabled') !== null).toBe(
+        true,
+      )
+      fireEvent.click(item)
+    }
+    expect(onClick).not.toHaveBeenCalled()
   })
 
   test('an action click never activates the row, button or menu item', async () => {
     const onRowActivate = mock((_row: Row) => undefined)
-    renderTable({
-      onRowActivate,
-      rowActions: [edit(() => undefined), { key: 'x', label: 'Other', onClick: () => undefined }],
-    })
-    fireEvent.click(screen.getAllByRole('button', { name: 'Row actions' })[0] as HTMLElement)
+    const onClick = mock((_row: Row) => undefined)
+    renderTable({ onRowActivate, rowActions: [edit(() => undefined), other(onClick)] })
+    fireEvent.click(screen.getAllByRole('button', { name: 'Row 1 actions' })[0] as HTMLElement)
     fireEvent.click(await screen.findByRole('menuitem', { name: 'Other' }))
+    expect(onClick).toHaveBeenCalledTimes(1)
     expect(onRowActivate).not.toHaveBeenCalled()
   })
 
-  test('a lone icon action click never activates the row', () => {
+  test('a lone icon action fires its handler and never activates the row', () => {
     const onRowActivate = mock((_row: Row) => undefined)
-    renderTable({ onRowActivate, rowActions: [edit(() => undefined)] })
-    fireEvent.click(screen.getAllByRole('button', { name: 'Edit' })[0] as HTMLElement)
-    fireEvent.keyDown(screen.getAllByRole('button', { name: 'Edit' })[0] as HTMLElement, {
-      key: 'Enter',
-    })
+    const onClick = mock((_row: Row) => undefined)
+    renderTable({ onRowActivate, rowActions: [edit(onClick)] })
+    const button = screen.getAllByRole('button', { name: 'Edit' })[0] as HTMLElement
+    fireEvent.keyDown(button, { key: 'Enter' })
+    fireEvent.click(button)
+    expect(onClick).toHaveBeenCalledWith(ROWS[0])
     expect(onRowActivate).not.toHaveBeenCalled()
   })
 
@@ -1214,5 +1289,16 @@ describe('rowActions', () => {
     const headers = [...container.querySelectorAll('thead th')].map((th) => th.textContent)
     expect(headers.at(-1)).toBe('Actions')
     expect(headers.at(-2)).toContain('Cost')
+  })
+
+  test('with row selection: actions stay last, and a click does not tick the row', () => {
+    const { container } = renderTable({
+      enableRowSelection: true,
+      rowActions: [edit(() => undefined)],
+    })
+    expect([...container.querySelectorAll('thead th')]).toHaveLength(COLUMNS.length + 2)
+    expect(lastHeader(container).textContent).toBe('Actions')
+    fireEvent.click(screen.getAllByRole('button', { name: 'Edit' })[0] as HTMLElement)
+    expect(checkedRowText(container)).toBe('')
   })
 })

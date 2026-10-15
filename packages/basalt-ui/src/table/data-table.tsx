@@ -47,6 +47,7 @@ import {
 } from '@mantine/core'
 import type { MantineSpacing } from '@mantine/core'
 import type {
+  Cell,
   Column,
   ColumnDef,
   ColumnFiltersState,
@@ -363,14 +364,17 @@ function selectionColumn<T extends RowData>(): ColumnDef<BasaltTableFeatures, T,
 // ── Row actions ───────────────────────────────────────────────────────────────
 
 /** One per-row action: `BarActionItem`'s vocabulary with the row handed to the handler. */
-type DataTableRowAction<T> = {
+export type DataTableRowAction<T = unknown> = {
   key: string
   label: string
   /** A lone action with an icon renders as that icon button; anything else folds into the menu. */
   icon?: ReactNode
   onClick: (row: T) => void
   danger?: boolean
+  /** A disabled action renders inert and never fires. */
   disabled?: (row: T) => boolean
+  /** A loading action shows the busy state (icon button) or sits inert (menu) and never fires. */
+  loading?: (row: T) => boolean
 }
 
 /** The synthetic trailing column `rowActions` appends — namespaced like {@link SELECT_COLUMN_ID}. */
@@ -379,37 +383,64 @@ const ACTIONS_COLUMN_ID = '__basalt_actions__'
 /** Wide enough for one 30px control plus the cell's horizontal padding. */
 const ACTIONS_COLUMN_SIZE = 56
 
+/**
+ * The cells whose own controls must not read as "activate the row": a tickable selection cell (a
+ * disabled row's tap IS a row tap) and every actions cell.
+ */
+function stopsRowActivation<T extends RowData>(
+  cell: Cell<BasaltTableFeatures, T, unknown>,
+): boolean {
+  if (cell.column.id === ACTIONS_COLUMN_ID) return true
+  return cell.column.id === SELECT_COLUMN_ID && cell.row.getCanSelect()
+}
+
 function RowActionCell<T>({
   actions,
   row,
+  rowIndex,
+  rowLabel,
 }: {
   actions: readonly DataTableRowAction<T>[]
   row: T
+  rowIndex: number
+  rowLabel: ((row: T) => string) | undefined
 }): ReactNode {
-  const items: BarActionItem[] = actions.map((action) => ({
-    key: action.key,
-    label: action.label,
-    ...(action.icon !== undefined && { icon: action.icon }),
-    ...(action.danger === true && { danger: true }),
-    disabled: action.disabled?.(row) === true,
-    onClick: () => action.onClick(row),
-  }))
-  const [only] = items
-  if (items.length === 1 && only?.icon !== undefined) {
+  const named = rowLabel?.(row)
+  const [only] = actions
+  if (actions.length === 1 && only?.icon !== undefined) {
+    const inert = only.disabled?.(row) === true || only.loading?.(row) === true
     return (
       <ActionIcon
         variant="subtle"
         size="ctl"
-        aria-label={only.label}
-        disabled={only.disabled === true}
+        aria-label={named === undefined ? only.label : `${only.label}: ${named}`}
+        disabled={only.disabled?.(row) === true}
+        loading={only.loading?.(row) === true}
         {...(only.danger === true && { color: 'red' })}
-        onClick={only.onClick}
+        onClick={() => {
+          if (!inert) only.onClick(row)
+        }}
       >
         <IconSlot>{only.icon}</IconSlot>
       </ActionIcon>
     )
   }
-  return <OverflowMenu actions={items} trigger="kebab" label="Row actions" />
+  const items: BarActionItem[] = actions.map((action) => ({
+    key: action.key,
+    label: action.label,
+    ...(action.icon !== undefined && { icon: action.icon }),
+    ...(action.danger === true && { danger: true }),
+    // The menu has no busy state of its own, so loading reads as inert there.
+    disabled: action.disabled?.(row) === true || action.loading?.(row) === true,
+    onClick: () => action.onClick(row),
+  }))
+  return (
+    <OverflowMenu
+      actions={items}
+      trigger="kebab"
+      label={named === undefined ? `Row ${rowIndex + 1} actions` : `Actions for ${named}`}
+    />
+  )
 }
 
 /**
@@ -418,6 +449,7 @@ function RowActionCell<T>({
  */
 function rowActionsColumn<T extends RowData>(
   actions: readonly DataTableRowAction<T>[],
+  rowLabel: ((row: T) => string) | undefined,
 ): ColumnDef<BasaltTableFeatures, T, unknown> {
   return {
     id: ACTIONS_COLUMN_ID,
@@ -425,7 +457,14 @@ function rowActionsColumn<T extends RowData>(
     enableSorting: false,
     enableHiding: false,
     header: () => <span className={classes.srOnly}>Actions</span>,
-    cell: ({ row }) => <RowActionCell actions={actions} row={row.original} />,
+    cell: ({ row }) => (
+      <RowActionCell
+        actions={actions}
+        row={row.original}
+        rowIndex={row.index}
+        rowLabel={rowLabel}
+      />
+    ),
   }
 }
 
@@ -733,19 +772,25 @@ export type BasaltDataTableProps<T extends RowData> = BasaltProps &
     bulkActions?: (rows: T[]) => BarAction[]
 
     /**
-     * Per-row actions as typed data — the table renders them itself in a trailing, pinned,
+     * Per-row actions as typed data. The table renders them itself in a trailing, pinned,
      * header-less column: an icon button for one action that carries an `icon`, an overflow menu
-     * for anything else. Clicking either never fires `onRowActivate`. A `renderCard`
-     * projection owns its own card, so the column renders in the table body only. Never put a `Menu` or
+     * for anything else. Clicking either never fires `onRowActivate`. Never put a `Menu` or
      * `ActionIcon` in a `display` / `cell` renderer (`basalt/control-outside-home`).
      *
+     * Pass a STABLE reference — a module constant or a `useMemo` — because the column is rebuilt
+     * whenever the array identity changes. A `renderCard` projection owns its own card, so the
+     * column renders in the table body only.
+     *
      * @example
-     * rowActions={[
-     *   { key: 'edit', label: 'Edit', onClick: (row) => edit(row) },
+     * const ROW_ACTIONS: DataTableRowAction<Row>[] = [
+     *   { key: 'edit', label: 'Edit', icon: <IconEdit />, onClick: (row) => edit(row) },
      *   { key: 'delete', label: 'Delete', danger: true, onClick: (row) => remove(row) },
-     * ]}
+     * ]
+     * <BasaltDataTable rowActions={ROW_ACTIONS} rowLabel={(row) => row.name} … />
      */
     rowActions?: DataTableRowAction<T>[]
+    /** Names a row for assistive tech in its action controls; default `Row N actions`. */
+    rowLabel?: (row: T) => string
 
     // ── Pagination ────────────────────────────────────────────────────────────────
 
@@ -1441,6 +1486,7 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
     getRowId,
     bulkActions,
     rowActions,
+    rowLabel,
     enablePagination = false,
     pageSizeOptions = DEFAULT_PAGE_SIZE_OPTIONS,
     manualPagination = false,
@@ -1535,9 +1581,9 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
     () => [
       ...(enableRowSelection ? [selectionColumn<T>()] : []),
       ...facetColumns,
-      ...(hasRowActions ? [rowActionsColumn<T>(rowActions)] : []),
+      ...(hasRowActions ? [rowActionsColumn<T>(rowActions, rowLabel)] : []),
     ],
-    [facetColumns, enableRowSelection, hasRowActions, rowActions],
+    [facetColumns, enableRowSelection, hasRowActions, rowActions, rowLabel],
   )
 
   // Enforced before the table is built, so the degraded options below are the ones TanStack gets —
@@ -1784,14 +1830,14 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
                 : undefined
               const align = resolveAlign(header.column)
               const isSelectColumn = header.column.id === SELECT_COLUMN_ID
-              const isActionsColumn = header.column.id === ACTIONS_COLUMN_ID
+              const isFoldCandidate = !isSelectColumn && header.column.id !== ACTIONS_COLUMN_ID
               return (
                 <Table.Th
                   key={header.id}
                   {...(isSelectColumn && { className: classes.selectCell })}
                   // The measured fold's own read (`useColumnFold`) — never present on the
                   // selection column, which is never a fold candidate.
-                  {...(!isSelectColumn && !isActionsColumn && { [FOLD_ID_ATTR]: header.column.id })}
+                  {...(isFoldCandidate && { [FOLD_ID_ATTR]: header.column.id })}
                   onClick={canSort ? toggleSorting : undefined}
                   onKeyDown={
                     canSort
@@ -1872,15 +1918,10 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
                         key={cell.id}
                         {...(cell.column.id === SELECT_COLUMN_ID && {
                           className: classes.selectCell,
-                          // The label's ::after fills the cell, so a tap on it bubbles to the row —
-                          // stop it only where a tick is possible; a disabled row's tap is a row tap.
-                          ...(cell.row.getCanSelect() && {
-                            onClick: (event: ReactMouseEvent) => event.stopPropagation(),
-                          }),
                         })}
-                        {...(cell.column.id === ACTIONS_COLUMN_ID && {
-                          // The menu portals out of the cell but React bubbles through the portal,
-                          // so this one stop also keeps a menu-item click off `onRowActivate`.
+                        {...(stopsRowActivation(cell) && {
+                          // The label's ::after fills the select cell, so a tap on it bubbles to the
+                          // row; the actions menu portals out but React bubbles through the portal.
                           onClick: (event: ReactMouseEvent) => event.stopPropagation(),
                         })}
                         style={{

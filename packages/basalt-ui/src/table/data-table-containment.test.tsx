@@ -15,7 +15,7 @@
  */
 import { MantineProvider } from '@mantine/core'
 import { act, fireEvent, render } from '@testing-library/react'
-import { afterEach, describe, expect, spyOn, test } from 'bun:test'
+import { afterEach, describe, expect, mock, spyOn, test } from 'bun:test'
 import { resetValidatedProps } from '../common/validate'
 import { BasaltDataTable } from './data-table'
 import { createColumnHelper } from './index'
@@ -260,6 +260,20 @@ function headerIds(container: HTMLElement): string[] {
 }
 
 describe('column fold — meta.priority (docs/CONTROLS-SPEC.md §2)', () => {
+  test('rowActions stays rendered and never folds; the disclosure row spans it', async () => {
+    stubLayout()
+    const { container } = mountFold({
+      rowActions: [{ key: 'e', label: 'Edit', icon: <i />, onClick: () => undefined }],
+    })
+    await resizeFold(container, 100, { a: 50, b: 50, c: 50 })
+    expect(headerIds(container)).toEqual(['a'])
+    expect(container.querySelector('tbody button[aria-label="Edit"]')).not.toBeNull()
+    const toggle = container.querySelector('tbody button[aria-expanded]') as HTMLElement
+    fireEvent.click(toggle)
+    // toggle column + a + actions
+    expect(container.querySelector('tbody td[colspan]')?.getAttribute('colspan')).toBe('3')
+  })
+
   test('no priority anywhere: declared order folds LAST column first', async () => {
     stubLayout()
     const { container } = mountFold()
@@ -595,6 +609,21 @@ describe('renderCard swaps the body on the TABLE’s own container class, not th
     await rootTo(container, 480)
     expect(container.querySelector('table')).not.toBeNull()
     expect(cardTexts(container)).toEqual([])
+  })
+
+  test('rowActions renders no triggers in the card body, and the card still activates the row', async () => {
+    stubLayout()
+    const onRowActivate = mock((_row: Row) => undefined)
+    const { container } = mountCards({
+      onRowActivate,
+      rowActions: [{ key: 'e', label: 'Edit', icon: <i />, onClick: () => undefined }],
+    })
+    expect(container.querySelector('table button[aria-label="Edit"]')).not.toBeNull()
+    await rootTo(container, 479)
+    expect(container.querySelector('table')).toBeNull()
+    expect(container.querySelector('button[aria-label="Edit"]')).toBeNull()
+    fireEvent.click(container.querySelector('[data-card]') as HTMLElement)
+    expect(onRowActivate).toHaveBeenCalledTimes(1)
   })
 
   test('a zero width is unknown and moves nothing', async () => {

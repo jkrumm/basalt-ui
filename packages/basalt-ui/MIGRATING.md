@@ -990,19 +990,20 @@ optional, subpath-required peers.
 ## Unreleased — a per-row action seam on `BasaltDataTable`
 
 - `BasaltDataTable` takes `rowActions` (argo friction row 48): typed data in `BarActionItem`'s
-  vocabulary — `{ key, label, icon?, onClick(row), danger?, disabled?(row) }`. The table appends a
+  vocabulary — `{ key, label, icon?, onClick(row), danger?, disabled?(row), loading?(row) }`. The table appends a
   trailing, end-pinned, header-less column (sr-only "Actions") and renders an icon button for one
   action with an `icon`, an overflow menu (`Row actions`) otherwise. A click never reaches
   `onRowActivate`. The column renders in the table body only; a `renderCard` card owns its own.
-  No export is added (the prop is typed through `BasaltDataTableProps`).
+  A disabled or loading action never fires. Each trigger is named per row (`Row N actions`, or
+  `rowLabel(row)` when given). Pass a stable `rowActions` reference (module constant or `useMemo`).
+  `DataTableRowAction<T>` is exported beside `DataTableFacet` from the module; no value export is added.
 - `basalt/control-outside-home` now also flags a Mantine `Menu`/`ActionIcon` inside a column
   `cell`/`display` renderer, and the `basalt-controls` Homes rule names `rowActions`. Existing
   hand-rolled action cells will start to report: move them to `rowActions`, or waive with
   `theme-allow control-outside-home`.
 - On notice (adopt-or-delete): named consumers are argo's `strength-tracker/components/workouts-table.tsx`
   (Edit + Delete) and `body-composition/components/skinfold-history-table.tsx` (Delete); neither
-  has migrated yet. They also pass `loading` on the delete icon, which `rowActions` does not model —
-  a gap to settle when argo adopts it.
+  has migrated yet. Their delete icons pass `loading`, which `loading(row)` now models.
 
 ## 2.6.1 — per-bar legend shades
 
