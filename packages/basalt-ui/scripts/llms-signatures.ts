@@ -13,9 +13,6 @@ const MAX_PARAM_TYPE = 70
 export const MAX_PROP_TYPE = 60
 export const MAX_PROPS = 40
 
-/** Subpaths whose exports get an indented props block under the signature (friction row 50). */
-const PROP_SHAPE_SUBPATHS: ReadonlySet<string> = new Set(['./table', './charts', './forms'])
-
 /** `./dist/charts/index.d.ts` → `<pkg>/src/charts/index.ts(x)`; undefined when no source entry exists. */
 function sourceEntry(typesPath: string): string | undefined {
   const base = join(pkgRoot, typesPath.replace(/^\.\/dist\//, 'src/').replace(/\.d\.ts$/, ''))
@@ -63,7 +60,7 @@ export function propShapeLines(
 
 /**
  * Signatures keyed by subpath, each list sorted by export name. An entry may span several lines:
- * the signature, then (for {@link PROP_SHAPE_SUBPATHS}) one indented line per props member.
+ * the signature, then (for a component or hook taking an object) one indented line per props member.
  */
 export function readSignatures(
   subpaths: Readonly<Record<string, string>>,
@@ -123,7 +120,7 @@ export function readSignatures(
           MAX_LINE,
         )
         const first = call.getParameters()[0]
-        if (!PROP_SHAPE_SUBPATHS.has(key) || first === undefined) return head
+        if (first === undefined) return head
         const props = propShapeLines(
           checker,
           checker.getTypeOfSymbolAtLocation(first, node),
