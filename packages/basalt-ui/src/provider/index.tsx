@@ -418,11 +418,11 @@ function useDataTelemetry(router: AnyRouter, client: QueryClient, emit: Telemetr
 }
 
 // ── Dev dock (dev-only, behind a literal NODE_ENV read at the lazy site) ──────────────────────────
+// The gate wraps `lazy()` itself so the dock chunks never ship; the consumer bundler must define
+// `process.env.NODE_ENV` for the fold, as it already must for `lab-theme.ts`.
 
-const LazyDevDock =
-  process.env.NODE_ENV !== 'production'
-    ? lazy(() => import('../dev-dock').then((m) => ({ default: m.BasaltDevDock })))
-    : null
+const loadDevDock = () => import('../dev-dock').then((m) => ({ default: m.BasaltDevDock }))
+const LazyDevDock = process.env.NODE_ENV === 'production' ? null : lazy(loadDevDock)
 
 function readQueryClient(router: AnyRouter): QueryClient {
   const client = (router.options.context as Partial<BasaltRouterContext> | undefined)?.queryClient
@@ -526,7 +526,7 @@ export function BasaltProvider({
                   ) : (
                     <RouterProvider router={mountedRouter} />
                   )}
-                  {/* The literal read sits at the branch, so a production build drops the import. */}
+                  {/* `LazyDevDock` is `null` in production (module-scope gate above), so nothing mounts. */}
                   {LazyDevDock !== null && (
                     <Suspense fallback={null}>
                       <LazyDevDock

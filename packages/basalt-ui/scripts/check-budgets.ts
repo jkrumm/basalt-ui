@@ -208,22 +208,32 @@ export function isOwnGraphId(id: string): boolean {
   return /^(?:\.{1,2}\/|\/|[A-Za-z]:\/)/.test(normalized) || id.startsWith('\u0000')
 }
 
-/** Dev-only surface: the dock, the theme lab, and any `*-devtools` package (always a peer here). */
-const DEV_ONLY = /(?:^|\/)(?:dev-dock|theme-lab)(?:\/|\.|$)|devtools/
+/**
+ * Dev-only surface, matched on `/`-normalized path segments: the dock and the theme lab (a file or
+ * directory, optionally hashed — `dev-dock-AbC123.js`) and any `*-devtools` package. A bare
+ * `devtools-utils.js` or `xdevtools-helper.js` is not dev-only. Narrower than the oxlint plugin's
+ * specifier regex on purpose: that one reads import specifiers, this one also reads emitted names.
+ */
+const DEV_ONLY =
+  /(?:^|\/)(?:(?:dev-dock|theme-lab)(?:-[\w-]+)?(?:\.[cm]?[jt]sx?|\/)|[^/]*-devtools(?:\/|$))/
+
+type BundleChunk = {
+  fileName: string
+  code: string
+  isEntry: boolean
+  moduleIds: readonly string[]
+  imports: readonly string[]
+  dynamicImports: readonly string[]
+}
 
 /**
- * Every emitted chunk, loaded or not, whose module graph or imports reach dev-only code. A
+ * Every emitted chunk, loaded or not, whose name, modules or imports reach dev-only code. A
  * production build must emit none: a module-scope `lazy(() => import('../dev-dock'))` keeps the
  * chunk graph alive even when its JSX use is dev-gated, and the PWA service worker then precaches
  * it (obsidian: 34 KB, never requested). Exported for the unit test.
  */
 export function devOnlyChunks(
-  chunks: readonly {
-    fileName: string
-    moduleIds: readonly string[]
-    imports: readonly string[]
-    dynamicImports: readonly string[]
-  }[],
+  chunks: readonly Pick<BundleChunk, 'fileName' | 'moduleIds' | 'imports' | 'dynamicImports'>[],
 ): string[] {
   return chunks
     .filter((c) =>
@@ -234,9 +244,25 @@ export function devOnlyChunks(
     .map((c) => c.fileName)
 }
 
-async function providerOnlyGzip(
+/** Gzip bytes of the entry chunk plus every chunk it statically imports (the first-paint set). */
+function firstPaintGzip(chunks: ReadonlyMap<string, BundleChunk>, entry: BundleChunk): number {
+  const loaded = new Set<string>()
+  let bytes = 0
+  const visit = (name: string): void => {
+    const chunk = chunks.get(name)
+    if (chunk === undefined || loaded.has(name)) return
+    loaded.add(name)
+    bytes += gzipSync(chunk.code).length
+    chunk.imports.forEach(visit)
+  }
+  visit(entry.fileName)
+  return bytes
+}
+
+/** The production bundle of the provider-only fixture: every emitted chunk and its entry. */
+async function buildProviderOnlyBundle(
   distEntry: string,
-): Promise<{ bytes: number; devChunks: string[] }> {
+): Promise<{ chunks: Map<string, BundleChunk>; entry: BundleChunk }> {
   const result = await build({
     configFile: false,
     logLevel: 'silent',
@@ -257,23 +283,12 @@ async function providerOnlyGzip(
   if (bundle === undefined || !('output' in bundle)) {
     throw new Error('check-budgets: provider-only fixture build returned no output')
   }
-  const { output } = bundle
   const chunks = new Map(
-    output.flatMap((o) => (o.type === 'chunk' ? [[o.fileName, o] as const] : [])),
+    bundle.output.flatMap((o) => (o.type === 'chunk' ? [[o.fileName, o] as const] : [])),
   )
   const entry = [...chunks.values()].find((c) => c.isEntry)
   if (entry === undefined) throw new Error('check-budgets: provider-only fixture emitted no entry')
-  const loaded = new Set<string>()
-  let bytes = 0
-  const visit = (name: string): void => {
-    const chunk = chunks.get(name)
-    if (chunk === undefined || loaded.has(name)) return
-    loaded.add(name)
-    bytes += gzipSync(chunk.code).length
-    chunk.imports.forEach(visit)
-  }
-  visit(entry.fileName)
-  return { bytes, devChunks: devOnlyChunks([...chunks.values()]) }
+  return { chunks, entry }
 }
 
 const PROVIDER_ONLY_LABEL = 'provider-only first paint (gzip B, dist)'
@@ -287,7 +302,9 @@ const PROVIDER_ONLY_LABEL = 'provider-only first paint (gzip B, dist)'
 // 20800 → 20880: #255 (embedded-children provider mode, `spotlight={false}`, `useRouter` import) added
 // ~140 B (20796 locally, 20830 in CI). No honest saving: the new error strings must name both modes
 // (tested) and Spotlight is statically mounted by default, so lazying it would change first paint.
-const PROVIDER_ONLY_CEILING = 20880
+// 20880 → 20340: the dock's lazy import() is dead code in production (20136 locally, was 20796);
+// ~1% over local clears CI's measured +34 B with room.
+const PROVIDER_ONLY_CEILING = 20340
 const DEV_CHUNKS_LABEL =
   'dev-only chunks in a production consumer build (dock, theme lab, devtools)'
 
@@ -316,24 +333,21 @@ function summarizeError(error: unknown): string {
  * gate (an unmeasured number cannot vouch for the ceiling).
  */
 async function providerOnlyRows(distEntry: string): Promise<Budget[]> {
-  const row = { label: PROVIDER_ONLY_LABEL, ceiling: PROVIDER_ONLY_CEILING }
+  const sizeRow = { label: PROVIDER_ONLY_LABEL, ceiling: PROVIDER_ONLY_CEILING }
   const devRow = { label: DEV_CHUNKS_LABEL, ceiling: 0 }
-  if (!existsSync(distEntry)) {
-    const unmeasured = { kind: 'skipped', reason: 'dist/ missing, run `bun run build`' } as const
-    return [
-      { ...row, value: null, unmeasured },
-      { ...devRow, value: null, unmeasured },
-    ]
-  }
+  const unmeasured = (kind: 'skipped' | 'failed', reason: string): Budget[] => [
+    { ...sizeRow, value: null, unmeasured: { kind, reason } },
+    { ...devRow, value: null, unmeasured: { kind, reason } },
+  ]
+  if (!existsSync(distEntry)) return unmeasured('skipped', 'dist/ missing, run `bun run build`')
   try {
-    const { bytes, devChunks } = await providerOnlyGzip(distEntry)
-    return [{ ...row, value: bytes }, gateRow(DEV_CHUNKS_LABEL, devChunks)]
-  } catch (error) {
-    const unmeasured = { kind: 'failed', reason: summarizeError(error) } as const
+    const { chunks, entry } = await buildProviderOnlyBundle(distEntry)
     return [
-      { ...row, value: null, unmeasured },
-      { ...devRow, value: null, unmeasured },
+      { ...sizeRow, value: firstPaintGzip(chunks, entry) },
+      gateRow(DEV_CHUNKS_LABEL, devOnlyChunks([...chunks.values()])),
     ]
+  } catch (error) {
+    return unmeasured('failed', summarizeError(error))
   }
 }
 

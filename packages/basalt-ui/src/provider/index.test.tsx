@@ -17,7 +17,7 @@
  * Converting this to mount through the DOM harness would only be worth it if a future assertion here
  * needed live DOM behavior (event handling, layout, effects) rather than the static markup string.
  */
-import { act, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { RouterProvider, createRootRoute, createRouter, useRouter } from '@tanstack/react-router'
 import { spotlight } from '@mantine/spotlight'
 import { afterEach, describe, expect, spyOn, test } from 'bun:test'
@@ -385,5 +385,24 @@ describe('BasaltProvider spotlight opt-out (ledger row 67)', () => {
     expect(await open()).toBeNull()
     expect(build).not.toHaveBeenCalled()
     build.mockRestore()
+  })
+})
+
+describe('BasaltProvider dev dock (module-scope NODE_ENV gate)', () => {
+  afterEach(() => {
+    spotlight.close()
+  })
+
+  test('outside production the dock mounts: the Theme lab Spotlight command opens it', async () => {
+    expect(process.env['NODE_ENV']).not.toBe('production')
+    // A dock left mounted by another file in this process would satisfy the assertions below.
+    cleanup()
+    render(<BasaltProvider router={testRouter('dockhost')} />)
+    await screen.findByText('dockhost')
+    await act(async () => {
+      spotlight.open()
+    })
+    fireEvent.click(await screen.findByText('Theme lab'))
+    expect(await screen.findByLabelText('Close devtools')).toBeDefined()
   })
 })
