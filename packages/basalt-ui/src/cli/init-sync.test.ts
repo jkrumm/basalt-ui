@@ -426,6 +426,52 @@ describe('router seeds — the nav module and the root route', () => {
     expect(manifestKeys()).toEqual(before)
   })
 
+  const shellLess = (): void => {
+    writeFixture('index.html', '<script type="module" src="/src/main.tsx"></script>')
+    writeFixture(
+      'src/main.tsx',
+      "import { BasaltProvider } from 'basalt-ui'\nimport { App } from './app'\nrender(<BasaltProvider><App /></BasaltProvider>)\n",
+    )
+    writeFixture(
+      'src/app.tsx',
+      "import { PageBar } from 'basalt-ui'\nexport const App = () => <PageBar />\n",
+    )
+  }
+
+  it('a shell-less app (BasaltProvider, no BasaltShell) gets no nav seed on init', () => {
+    writeFixture('package.json', JSON.stringify({ name: 'fixture' }))
+    shellLess()
+    expect(capture(() => init(dir)).log).toContain('shell-less app')
+    expect(existsSync(resolve(dir, 'src/lib/nav.tsx'))).toBe(false)
+    expect(manifestKeys()).not.toContain('src/lib/nav.tsx')
+  })
+
+  it('sync retires a stale nav seed of a shell-less app and does not bring it back', () => {
+    writeFixture('package.json', JSON.stringify({ name: 'fixture' }))
+    capture(() => init(dir))
+    expect(manifestKeys()).toContain('src/lib/nav.tsx')
+    shellLess()
+    writeFixture('src/routes/__root.tsx', 'export const Route = {}\n') // the consumer dropped the seeded shell
+    rmSync(resolve(dir, 'src/lib/nav.tsx'))
+    const first = capture(() => sync({}, dir))
+    expect(first.log).toContain('shell-less app — dropped src/lib/nav.tsx')
+    expect(manifestKeys()).not.toContain('src/lib/nav.tsx')
+    expect(existsSync(resolve(dir, 'src/lib/nav.tsx'))).toBe(false)
+    capture(() => sync({}, dir))
+    expect(existsSync(resolve(dir, 'src/lib/nav.tsx'))).toBe(false)
+  })
+
+  it('an app that renders BasaltShell (entry-reachable or in the root route) keeps its nav seed', () => {
+    writeFixture('package.json', JSON.stringify({ name: 'fixture' }))
+    shellLess()
+    writeFixture(
+      'src/app.tsx',
+      "import { BasaltShell } from 'basalt-ui'\nexport const App = () => <BasaltShell />\n",
+    )
+    capture(() => init(dir))
+    expect(existsSync(resolve(dir, 'src/lib/nav.tsx'))).toBe(true)
+  })
+
   it('init, sync and doctor classify the same lazy-router fixture identically', () => {
     writeFixture('package.json', JSON.stringify({ name: 'fixture' }))
     writeFixture('index.html', '<script type="module" src="/src/main.tsx"></script>')

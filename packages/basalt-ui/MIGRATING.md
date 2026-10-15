@@ -1079,6 +1079,23 @@ release renames it and opens a new one here._
 
 `NumberFilter`'s stepper pill prints a value `.labels()` names — `createSearchStore(…).labels({ minDuration: { 0: 'Any' } })` reads "Any" at the default (a number field's `options` now lists exactly the labelled values); unlabelled, it prints the number as before — nothing to migrate.
 
+`basalt-ui sync` and `init` no longer seed `src/lib/nav.tsx` into a shell-less app (`BasaltProvider` rendered, `BasaltShell` never — checked through the entry's reachable imports and `routes/__root.tsx`); a stale nav manifest entry is dropped with a notice and the file stays yours. Render `BasaltShell` and run `sync` to get the seed back.
+
+tsconfig: the preset's `exactOptionalPropertyTypes` rejects `x | undefined` for Mantine props typed without `| undefined` (`c`, `td`, `pl`, `style`). Spread conditionally:
+
+```tsx
+<Text {...(color !== undefined && { c: color })} {...(style !== undefined && { style })} />
+```
+
+lint: the 2.x preset's `react/refs` errors on the render-time `ref.current = value` latest-value pattern. Write it in an effect, or read it through `useEffectEvent`:
+
+```tsx
+useEffect(() => {
+  latest.current = value
+}) // instead of `latest.current = value` in render
+const onTick = useEffectEvent(() => handler(value)) // or: no ref at all, call from effects
+```
+
 ## 2.8.1 — boot paint follows the stored scheme
 
 `basaltAppPlugin` now injects a tiny inline head script that reads Mantine's stored color scheme
