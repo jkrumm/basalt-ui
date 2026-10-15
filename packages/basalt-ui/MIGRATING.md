@@ -1045,9 +1045,10 @@ The `basalt-ui/router-tanstack` subpath is **removed** in 2.x, not moved: an imp
 
 `basaltAppPlugin` now injects a tiny inline head script that reads Mantine's stored color scheme
 (`mantine-color-scheme-value`; `auto` via `prefers-color-scheme`) and keys the anti-FOUC paint off
-it, so a user who chose light no longer sees a dark flash on cold load. Nothing to change; under a
-strict CSP without inline scripts, or with a custom `colorSchemeManager`, pass `bootScript: false`
-to keep the build-time `colorScheme` paint.
+it, so a user who chose light no longer sees a dark flash on cold load. Nothing to change. A stored
+value wins over the build-time `colorScheme` (an app that removes its scheme toggle should clear the
+key). Pass `bootScript: false` under a CSP that forbids inline scripts without a nonce
+(`html.cspNonce` covers both boot tags) or with a custom `colorSchemeManager` key.
 
 ## 2.8.0 — the fleet probe fixes
 

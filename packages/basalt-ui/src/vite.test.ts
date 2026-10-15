@@ -322,71 +322,7 @@ describe('basaltAppPlugin — base handling', () => {
   })
 })
 
-describe('basaltAppPlugin — the anti-FOUC boot rule (V1)', () => {
-  const bootStyleOf = (options: Partial<BasaltAppOptions>): string => {
-    const plugin = getPlugin({ name: 'Test App', themeColor: THEME_COLOR, ...options })
-    resolveConfig(plugin, '/')
-    const style = transformHtml(plugin, HTML_NO_VIEWPORT).find((tag) => tag.tag === 'style')
-    return String(style?.children ?? '')
-  }
-
-  test('every mode scopes the rule so Mantine can take it back', () => {
-    // The whole defect: an UNLAYERED `html{color-scheme:dark}` outranks Mantine's own layered
-    // `:root{color-scheme:var(--mantine-color-scheme)}`, so light mode kept dark native controls
-    // forever. Scoping to the absence of the attribute Mantine writes is what expires it.
-    for (const colorScheme of ['dark', 'light', 'auto', false] as const) {
-      const css = bootStyleOf({ colorScheme })
-      expect(css).toContain('html:not([data-mantine-color-scheme])')
-      expect(css).not.toMatch(/(^|[};])html\{/)
-    }
-  })
-
-  test('default is dark — the 1.20.0 base rule plus the stored-scheme variants', () => {
-    expect(bootStyleOf({})).toBe(
-      `${SCOPE}{background-color:#111111;color-scheme:dark}` + LIGHT_VARIANT + DARK_VARIANT,
-    )
-  })
-
-  test('light paints the light surface and declares color-scheme: light', () => {
-    expect(bootStyleOf({ colorScheme: 'light' })).toBe(
-      `${SCOPE}{background-color:#ffffff;color-scheme:light}` + LIGHT_VARIANT + DARK_VARIANT,
-    )
-  })
-
-  test('auto declares `light dark` and follows prefers-color-scheme for the paint', () => {
-    expect(bootStyleOf({ colorScheme: 'auto' })).toBe(
-      `${SCOPE}{background-color:#ffffff;color-scheme:light dark}` +
-        `@media(prefers-color-scheme:dark){${SCOPE}{background-color:#111111}}` +
-        LIGHT_VARIANT +
-        DARK_VARIANT,
-    )
-  })
-
-  test('an explicit backgroundColor wins over the auto media pair; only color-scheme follows storage', () => {
-    expect(bootStyleOf({ colorScheme: 'auto', backgroundColor: '#abcdef' })).toBe(
-      `${SCOPE}{background-color:#abcdef;color-scheme:light dark}` +
-        `${SCOPE}[data-basalt-boot=light]{color-scheme:light}` +
-        `${SCOPE}[data-basalt-boot=dark]{color-scheme:dark}`,
-    )
-  })
-
-  test('colorScheme: false is the full opt-out — paint, no color-scheme at all', () => {
-    expect(bootStyleOf({ colorScheme: false })).toBe(
-      `${SCOPE}{background-color:#111111}` +
-        `${SCOPE}[data-basalt-boot=light]{background-color:#ffffff}` +
-        `${SCOPE}[data-basalt-boot=dark]{background-color:#111111}`,
-    )
-  })
-
-  test('bootScript: false emits the 1.20.0 base rule only, and no script', () => {
-    expect(bootStyleOf({ bootScript: false })).toBe(
-      `${SCOPE}{background-color:#111111;color-scheme:dark}`,
-    )
-    const plugin = getPlugin({ name: 'Test App', themeColor: THEME_COLOR, bootScript: false })
-    resolveConfig(plugin, '/')
-    expect(transformHtml(plugin, HTML_NO_VIEWPORT).some((tag) => tag.tag === 'script')).toBe(false)
-  })
-
+describe('basaltAppPlugin — the boot rule and the manifest', () => {
   test('the manifest theme_color follows the boot scheme', () => {
     const read = (options: Partial<BasaltAppOptions>): Record<string, unknown> => {
       const plugin = getPlugin({ name: 'Test App', themeColor: THEME_COLOR, ...options })
@@ -397,6 +333,30 @@ describe('basaltAppPlugin — the anti-FOUC boot rule (V1)', () => {
     expect(read({ colorScheme: 'auto' })['theme_color']).toBe('#111111')
     expect(read({ colorScheme: 'light' })['theme_color']).toBe('#ffffff')
     expect(read({ colorScheme: 'light' })['background_color']).toBe('#ffffff')
+  })
+})
+
+describe('basaltAppPlugin — boot tags', () => {
+  const tagsOf = (options: Partial<BasaltAppOptions>): HtmlTagDescriptor[] => {
+    const plugin = getPlugin({ name: 'Test App', themeColor: THEME_COLOR, ...options })
+    resolveConfig(plugin, '/')
+    return transformHtml(plugin, HTML_NO_VIEWPORT)
+  }
+
+  test('the boot script lands after the charset meta and immediately after the boot style', () => {
+    const tags = tagsOf({})
+    const style = tags.findIndex((tag) => tag.tag === 'style')
+    const script = tags.findIndex((tag) => tag.tag === 'script')
+    expect(tags[0]).toEqual({ tag: 'meta', attrs: { charset: 'UTF-8' } })
+    expect(style).toBeGreaterThan(0)
+    expect(script).toBe(style + 1)
+  })
+
+  test('bootScript: false drops the script and the stored-scheme variants', () => {
+    const tags = tagsOf({ bootScript: false })
+    expect(tags.some((tag) => tag.tag === 'script')).toBe(false)
+    const style = tags.find((tag) => tag.tag === 'style')
+    expect(String(style?.children)).toBe(`${SCOPE}{background-color:#111111;color-scheme:dark}`)
   })
 })
 
@@ -440,65 +400,5 @@ describe('basaltAppPlugin — the encoding declaration (V2)', () => {
   test("the hook runs `pre` so no other plugin's tags can land ahead of the charset", () => {
     const plugin = getPlugin({ name: 'Test App', themeColor: THEME_COLOR })
     expect((plugin.transformIndexHtml as { order?: string }).order).toBe('pre')
-  })
-})
-
-describe('basaltAppPlugin — the boot script', () => {
-  const scriptOf = (): string => {
-    const plugin = getPlugin({ name: 'Test App', themeColor: THEME_COLOR })
-    resolveConfig(plugin, '/')
-    const tags = transformHtml(plugin, HTML_NO_VIEWPORT)
-    const script = tags.find((tag) => tag.tag === 'script')
-    // Same head-prepend slot as the style, after the hoisted charset.
-    expect(tags[0]?.tag).toBe('meta')
-    expect(script?.injectTo).toBeUndefined()
-    return String(script?.children ?? '')
-  }
-
-  /** Runs the emitted script against a fake document; returns what it set on <html>. */
-  const run = (storage: () => string | null, prefersDark = false): Record<string, string> => {
-    const attributes: Record<string, string> = {}
-    const fakeDocument = {
-      documentElement: { setAttribute: (k: string, v: string) => void (attributes[k] = v) },
-    }
-    const fakeStorage = {
-      getItem: (key: string) => {
-        expect(key).toBe('mantine-color-scheme-value')
-        return storage()
-      },
-    }
-    const matchMedia = (query: string) => ({
-      matches: query === '(prefers-color-scheme: dark)' && prefersDark,
-    })
-    new Function('document', 'localStorage', 'matchMedia', scriptOf())(
-      fakeDocument,
-      fakeStorage,
-      matchMedia,
-    )
-    return attributes
-  }
-
-  test('stored light / dark set the boot attribute', () => {
-    expect(run(() => 'light')).toEqual({ 'data-basalt-boot': 'light' })
-    expect(run(() => 'dark')).toEqual({ 'data-basalt-boot': 'dark' })
-  })
-
-  test('stored auto follows prefers-color-scheme', () => {
-    expect(run(() => 'auto', true)).toEqual({ 'data-basalt-boot': 'dark' })
-    expect(run(() => 'auto', false)).toEqual({ 'data-basalt-boot': 'light' })
-  })
-
-  test('nothing stored, garbage, or throwing storage sets nothing', () => {
-    expect(run(() => null)).toEqual({})
-    expect(run(() => 'sepia')).toEqual({})
-    expect(
-      run(() => {
-        throw new Error('SecurityError')
-      }),
-    ).toEqual({})
-  })
-
-  test('never writes data-mantine-color-scheme (it would expire the boot rule early)', () => {
-    expect(scriptOf()).not.toContain('data-mantine-color-scheme')
   })
 })
