@@ -15,3 +15,4 @@
 
 export { useBasaltForm } from './create-form'
 export { inputProps, fieldKey } from './field'
+export type { InputProps } from './field'

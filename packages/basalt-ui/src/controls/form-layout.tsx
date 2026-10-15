@@ -137,9 +137,10 @@ export type FormRowProps = BasaltProps &
     hint?: string
     /**
      * The field's error, rendered under the control. Falsy renders nothing. For a Mantine input
-     * wired through `inputProps(form, path)`, Mantine's own `Input.Wrapper` already renders
-     * the field error (`inputProps(form, path).error`) — passing it here too would render it twice. Reserve this prop for
-     * children that render no error of their own: a raw input, a custom control.
+     * wired through `inputProps(form, path)`, Mantine's own `Input.Wrapper` already renders the
+     * field error — passing it here too would render it twice. Reserve this prop for children that
+     * render no error of their own (a raw input, a custom control) and read it typed:
+     * `error={inputProps(form, path).error}`.
      */
     error?: ReactNode
     /** Marks the field required: an accent `*` for sighted readers, `(required)` for assistive tech. */
@@ -239,8 +240,16 @@ export type FormGroupProps = BasaltProps & {
  *
  * @example
  * <FormGroup label="Notify me about" direction="row">
- *   <Checkbox key={fieldKey(form, 'onDeploy')} {...inputProps(form, 'onDeploy')} label="Deploys" />
- *   <Checkbox key={fieldKey(form, 'onError')} {...inputProps(form, 'onError')} label="Errors" />
+ *   <Checkbox
+ *     key={fieldKey(form, 'onDeploy')}
+ *     {...inputProps(form, 'onDeploy', { type: 'checkbox' })}
+ *     label="Deploys"
+ *   />
+ *   <Switch
+ *     key={fieldKey(form, 'onError')}
+ *     {...inputProps(form, 'onError', { type: 'checkbox' })}
+ *     label="Errors"
+ *   />
  * </FormGroup>
  */
 export function FormGroup(props: FormGroupProps) {
