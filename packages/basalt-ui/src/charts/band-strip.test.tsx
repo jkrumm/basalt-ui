@@ -6,6 +6,7 @@ import { afterEach, describe, expect, test } from 'bun:test'
 import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { renderToString } from 'react-dom/server'
+import { alpha, VX } from '../tokens'
 import { BandStrip } from './BandStrip'
 import type { BandSpan, BandStripProps, BandStripSeries } from './BandStrip'
 
@@ -84,6 +85,36 @@ const layerFills = (root: ParentNode): (string | null | undefined)[] =>
     g.querySelector('rect')?.getAttribute('fill'),
   )
 
+const NEUTRAL = alpha(VX.neutral, 1)
+const GOOD = alpha(VX.good, 1)
+const width = (r: Element): number => Number(r.getAttribute('width'))
+const sumWidth = (rs: Element[]): number => rs.reduce((n, r) => n + width(r), 0)
+const isMeasured = (r: Element): boolean => r.getAttribute('fill') === GOOD
+const isMarker = (r: Element): boolean => r.getAttribute('fill') === 'var(--vx-good)'
+const partial = (fraction: number | undefined): BandStripProps<Slot, string> =>
+  props({
+    states: [up, none],
+    absentState: 'none',
+    data: slots(4),
+    getBand: (): BandSpan => ({ state: 'up', absentFraction: fraction }),
+  })
+const withMarker = (f: number): Document =>
+  html(
+    <BandStrip
+      {...props({
+        states: [up, none],
+        absentState: 'none',
+        data: slots(4),
+        getBand: (): BandSpan => ({ state: 'up', absentFraction: f, marker: {} }),
+      })}
+    />,
+  )
+async function toggleLegend(el: HTMLElement, key: string): Promise<void> {
+  const toggle = el.querySelector(`button[data-legend-key="${key}"]`)
+  if (!(toggle instanceof HTMLButtonElement)) throw new Error('no toggleable legend entry')
+  await act(async () => toggle.click())
+}
+
 describe('BandStrip', () => {
   test('draws one gap-free band per slot, each in its state color', () => {
     const doc = html(<BandStrip {...props()} />)
@@ -129,32 +160,22 @@ describe('BandStrip', () => {
     const doc = html(
       <BandStrip {...props({ states: [up, none], data: slots(4, () => 'none'), getBand })} />,
     )
-    expect(fills(doc)).toEqual(new Set(['color-mix(in srgb, var(--vx-neutral) 100%, transparent)']))
+    expect(fills(doc)).toEqual(new Set([NEUTRAL]))
     expect(doc.querySelector('pattern')).toBeNull()
   })
 
   describe('absentFraction', () => {
-    const NEUTRAL = 'color-mix(in srgb, var(--vx-neutral) 100%, transparent)'
-    const partial = (fraction: number | undefined) =>
-      props({
-        states: [up, none],
-        absentState: 'none',
-        data: slots(4),
-        getBand: (): BandSpan => ({ state: 'up', absentFraction: fraction }),
-      })
-
     test('paints the unmeasured share flat neutral from the right edge, no hatch', () => {
       const doc = html(<BandStrip {...partial(0.25)} />)
       const rects = bands(doc)
-      const measured = rects.filter((r) => r.getAttribute('fill')?.includes('--vx-good'))
+      const measured = rects.filter((r) => isMeasured(r))
       const absent = rects.filter((r) => r.getAttribute('fill') === NEUTRAL)
       expect(measured.length).toBe(4)
       expect(absent.length).toBe(4)
       const m = measured[0] as Element
       const a = absent[0] as Element
-      const w = (r: Element) => Number(r.getAttribute('width'))
-      expect(w(a) / (w(a) + w(m))).toBeCloseTo(0.25, 2)
-      expect(Number(a.getAttribute('x'))).toBeCloseTo(Number(m.getAttribute('x')) + w(m), 1)
+      expect(width(a) / (width(a) + width(m))).toBeCloseTo(0.25, 2)
+      expect(Number(a.getAttribute('x'))).toBeCloseTo(Number(m.getAttribute('x')) + width(m), 1)
       expect(doc.querySelector('pattern')).toBeNull()
     })
 
@@ -195,27 +216,14 @@ describe('BandStrip', () => {
       )
       const rects = bands(doc)
       const absent = rects.filter((r) => r.getAttribute('fill') === NEUTRAL)
-      const measured = rects.filter((r) => r.getAttribute('fill')?.includes('--vx-good'))
+      const measured = rects.filter((r) => isMeasured(r))
       expect(absent.length).toBe(measured.length)
-      const sum = (rs: Element[]) => rs.reduce((n, r) => n + Number(r.getAttribute('width')), 0)
-      expect(sum(absent) / (sum(absent) + sum(measured))).toBeCloseTo(2 / 3, 2)
+      expect(sumWidth(absent) / (sumWidth(absent) + sumWidth(measured))).toBeCloseTo(2 / 3, 2)
     })
 
     test('a marker covers only the measured width, and is suppressed at 1', () => {
-      const withMarker = (f: number) =>
-        html(
-          <BandStrip
-            {...props({
-              states: [up, none],
-              absentState: 'none',
-              data: slots(4),
-              getBand: (): BandSpan => ({ state: 'up', absentFraction: f, marker: {} }),
-            })}
-          />,
-        )
-      const isMarker = (r: Element) => r.getAttribute('fill') === 'var(--vx-good)'
       const half = bands(withMarker(0.5))
-      const band = half.find((r) => r.getAttribute('fill')?.includes('--vx-good) 100%')) as Element
+      const band = half.find(isMeasured) as Element
       const marker = half.find(isMarker) as Element
       expect(Number(marker.getAttribute('width'))).toBeCloseTo(
         Number(band.getAttribute('width')),
@@ -232,18 +240,47 @@ describe('BandStrip', () => {
 
     test('a hidden absent state leaves no hole and no row', async () => {
       const el = await mount(<BandStrip {...partial(0.5)} />)
-      const toggle = el.querySelector('button[data-legend-key="none"]')
-      if (!(toggle instanceof HTMLButtonElement)) throw new Error('no toggleable legend entry')
-      await act(async () => toggle.click())
+      await toggleLegend(el, 'none')
       const rects = bands(el)
       expect(rects.length).toBe(4)
-      expect(rects.every((r) => r.getAttribute('fill')?.includes('--vx-good'))).toBe(true)
+      expect(rects.every((r) => isMeasured(r))).toBe(true)
       const [first, second] = rects as [Element, Element]
-      const w = Number(first.getAttribute('width'))
-      expect(Number(second.getAttribute('x')) - Number(first.getAttribute('x'))).toBeCloseTo(w, 3)
+      expect(Number(second.getAttribute('x')) - Number(first.getAttribute('x'))).toBeCloseTo(
+        width(first),
+        3,
+      )
       const text = await hover(el)
       expect(text).toContain('Up')
       expect(text).not.toContain('Not measured')
+    })
+
+    test('hidden absent state + fraction 1: the primary fill and row take the slot back', async () => {
+      const el = await mount(<BandStrip {...partial(1)} />)
+      await toggleLegend(el, 'none')
+      expect(bands(el).length).toBe(4)
+      expect(bands(el).every(isMeasured)).toBe(true)
+      const text = await hover(el)
+      expect(text).toContain('Up')
+      expect(text).not.toContain('Not measured')
+    })
+
+    test('a hidden primary state leaves its part unpainted; the absent part stays, with its row', async () => {
+      const el = await mount(<BandStrip {...partial(0.5)} />)
+      await toggleLegend(el, 'up')
+      const rects = bands(el)
+      expect(rects.length).toBe(4)
+      expect(rects.every((r) => r.getAttribute('fill') === NEUTRAL)).toBe(true)
+      const text = await hover(el)
+      expect(text).toContain('Not measured')
+      expect(text).not.toContain('Up')
+    })
+
+    test('fractions clamp: 1.5 and Infinity paint all absent, -0.25 and NaN none', () => {
+      for (const f of [1.5, Number.POSITIVE_INFINITY]) {
+        const rects = bands(html(<BandStrip {...partial(f)} />))
+        expect(rects.every((r) => r.getAttribute('fill') === NEUTRAL)).toBe(true)
+      }
+      expect(bands(html(<BandStrip {...partial(-0.25)} />)).every(isMeasured)).toBe(true)
     })
 
     test('absentFraction without an absentState throws in dev', () => {
