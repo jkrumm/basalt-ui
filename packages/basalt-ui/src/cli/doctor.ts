@@ -401,7 +401,7 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
       ],
       ['oxlint-floor: the installed oxlint parses the shipped preset', oxlintFloorCheck(cwd)],
       [
-        'app-wiring: the entry mounts BasaltProvider and the router tree is generated',
+        'app-wiring: the entry mounts BasaltProvider and the router tree exists',
         appWiringCheck(appDir),
       ],
       ['exact-peers: installed exact-pinned peers match basalt-ui', exactPeersCheck(cwd, install)],
