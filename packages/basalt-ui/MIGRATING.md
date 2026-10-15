@@ -1081,6 +1081,8 @@ release renames it and opens a new one here._
 
 `basalt-ui sync` and `init` no longer seed `src/lib/nav.tsx` into a shell-less app (`BasaltProvider` rendered, `BasaltShell` never — checked through the entry's reachable imports and `routes/__root.tsx`); a stale nav manifest entry is dropped with a notice and the file stays yours. Render `BasaltShell` and run `sync` to get the seed back.
 
+The shipped oxlint preset turns `react(only-export-components)` off under `**/routes/**` and `__root.tsx`: the TanStack router plugin owns fast refresh for route files, and `allowExportNames: ['Route']` alone still warned on the file's local component. Other files keep the warning.
+
 tsconfig: the preset's `exactOptionalPropertyTypes` rejects `x | undefined` for Mantine props typed without `| undefined` (`c`, `td`, `pl`, `style`). Spread conditionally:
 
 ```tsx
