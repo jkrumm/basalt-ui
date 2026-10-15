@@ -41,11 +41,22 @@ describe('version_gate', () => {
     ['major', '3.0.0'],
     ['major', '2.0.0'], // a second 2.0.0
     ['major', '2.8.0'], // a major bump is refused whatever version it computes
+    ['major', '1.41.1'],
   ])('refuses %s → %s with the remedy', (bump, version) => {
     const result = gate(bump, version)
     expect(result.exitCode).toBe(1)
     expect(result.stderr).toContain('no majors')
     expect(result.stderr).toContain('MIGRATING.md')
+  })
+
+  it.each<[string, string]>([
+    ['patch', '2.0.0'],
+    ['minor', '2.0.0'],
+  ])('refuses %s → %s as a recomputed 2.0.0', (bump, version) => {
+    const result = gate(bump, version)
+    expect(result.exitCode).toBe(1)
+    expect(result.stderr).toContain('v2.0.0 has shipped')
+    expect(result.stderr).toContain('out of sync with the registry')
   })
 
   it.each<[string, string]>([
