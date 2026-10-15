@@ -1,3 +1,29 @@
+# [2.8.0](https://github.com/jkrumm/basalt-ui/compare/v2.7.3...v2.8.0) (2026-10-15)
+
+
+### Bug Fixes
+
+* close the BandStrip absent-state review gaps ([72ebf19](https://github.com/jkrumm/basalt-ui/commit/72ebf192f30df36c00525f8dd76b3a9b452a24f3))
+* close the doctor gaps from the fleet probes ([16fcf0c](https://github.com/jkrumm/basalt-ui/commit/16fcf0cbcb16d85fd6861e9f3be310d5e0c0ddb1))
+* fail any router= provider in a Start root route, warn on stale seeds ([9e27b35](https://github.com/jkrumm/basalt-ui/commit/9e27b35141dec4c3e395e295955a7c55147f9a51))
+* fold the argo loop's remaining learnings into the shipped rules and skills ([9d19009](https://github.com/jkrumm/basalt-ui/commit/9d19009e9cdb0e9d2e9c5832d7c92e2c637d710f))
+* harden the oxlint floor and the dropped-subpaths scan ([73ecbaf](https://github.com/jkrumm/basalt-ui/commit/73ecbaff2bb9a7caa144f0514228a6bbb1302569))
+* honor a state's tooltip opt-out on the re-added BandStrip row ([6091201](https://github.com/jkrumm/basalt-ui/commit/6091201f617a9fa19f771af57e244e3a846247d0))
+* ignore a literal provider, match any-width spreads, split stale seeds ([88e8e9e](https://github.com/jkrumm/basalt-ui/commit/88e8e9e7718dcfad7924c00f472e20966a551cb5))
+* reject a router= provider in a Start root route, name llms modes by literal ([d16db36](https://github.com/jkrumm/basalt-ui/commit/d16db36e76fd2928214abd67d9ea12a7e3ee2074))
+* render union-typed props in llms.txt signatures ([7b6d347](https://github.com/jkrumm/basalt-ui/commit/7b6d347d74b742b4a7170c11103f7a1770edabd1))
+* resolve BandStrip absent visibility per portion ([ffe853e](https://github.com/jkrumm/basalt-ui/commit/ffe853eaefe8e707ffeb9c5f7f5308570c08fbe5))
+* share the Start seed skip and resolve the router without a cast ([5f128d8](https://github.com/jkrumm/basalt-ui/commit/5f128d87df6c272944eef5bfcbb67461eddec373))
+* strip build metadata in the oxlint floor and blank CSS strings ([6915fb7](https://github.com/jkrumm/basalt-ui/commit/6915fb7b02dbbba333da3eee3a7ce1a529c46f73))
+* unify BandStrip absent resolution across paint, hits and tooltip ([311e0cf](https://github.com/jkrumm/basalt-ui/commit/311e0cfc1dcb88b02ed8817769575881871684d1))
+* wire doctor and the provider for Start apps, merge union props in llms ([102d213](https://github.com/jkrumm/basalt-ui/commit/102d213eb1c5bf8c74d26fa2e5fad77ca71d8e6c))
+
+
+### Features
+
+* give BandStrip an absent state ([6ed20bd](https://github.com/jkrumm/basalt-ui/commit/6ed20bdb01df2b4105bfb7936ae4296c6da674bc))
+* let BasaltProvider live inside a router it does not own ([d108547](https://github.com/jkrumm/basalt-ui/commit/d108547b2c4e57adf66f5abbbc79e07ef7da7b3e))
+
 ## [2.7.3](https://github.com/jkrumm/basalt-ui/compare/v2.7.2...v2.7.3) (2026-10-15)
 
 
