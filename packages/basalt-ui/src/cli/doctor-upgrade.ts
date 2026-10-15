@@ -230,7 +230,13 @@ const CSS_SUBPATH_IMPORT = /(?:^|[;{}])\s*@import\s+(?:url\(\s*)?(['"]?)basalt-u
 
 /** `[subpath, line]` per `basalt-ui/<subpath>` `@import` in a stylesheet (comments blanked). */
 function cssImports(src: string): [string, number][] {
-  const code = src.replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '))
+  const blank = (m: string): string => m.replace(/[^\n]/g, ' ')
+  const code = src
+    .replace(/\/\*[\s\S]*?\*\//g, blank)
+    // A quoted string that is not an @import/url() target is a value: `content: "a; @import …"`.
+    .replace(/(@import\s+|url\(\s*)?(["'])(?:\\.|(?!\2)[^\\\n])*\2/g, (m, target) =>
+      target === undefined ? blank(m) : m,
+    )
   return [...code.matchAll(CSS_SUBPATH_IMPORT)].map((m) => [
     m[2] as string,
     code.slice(0, m.index + m[0].length).split('\n').length,
@@ -274,12 +280,12 @@ export function droppedSubpathsCheck(
     // No `exports` field means nothing restricts the deep imports.
     if (exportsMap === undefined) return null
     const keys = Object.keys(exportsMap)
-    const has = (sub: string): boolean =>
+    const hasExport = (sub: string): boolean =>
       keys.some(
         (k) => k === `./${sub}` || (k.endsWith('*') && `./${sub}`.startsWith(k.slice(0, -1))),
       )
-    const dropped = (sub: string): boolean => DROPPED_FIXES.has(sub) || !has(sub)
-    const found = appImports(cwd, cfg).filter(([sub]) => dropped(sub))
+    const isDropped = (sub: string): boolean => DROPPED_FIXES.has(sub) || !hasExport(sub)
+    const found = appImports(cwd, cfg).filter(([sub]) => isDropped(sub))
     if (found.length === 0) return null
     const hits = found.map(([sub, rel, line]) => `${rel}:${line} imports basalt-ui/${sub}`)
     const more = hits.length > 10 ? ` (+${hits.length - 10} more)` : ''
@@ -293,11 +299,11 @@ export function droppedSubpathsCheck(
 }
 
 /** The oldest oxlint that parses the shipped preset (1.78 lacks `react/globals` and friends). */
-export const OXLINT_FLOOR = '1.79.0'
+const OXLINT_FLOOR = '1.79.0'
 
-const SEMVER = /^(\d+)\.(\d+)\.(\d+)(-.+)?$/
+const SEMVER = /^(\d+)\.(\d+)\.(\d+)(-[^+]+)?(?:\+.*)?$/
 
-/** True when `version` is below `floor`; a prerelease of the floor is below it. Unparseable: false. */
+/** True when `version` is below `floor`; a prerelease of the floor is below it, build metadata is ignored. */
 function isBelowFloor(version: string, floor: string): boolean {
   const [v, f] = [SEMVER.exec(version), SEMVER.exec(floor)]
   if (v === null || f === null) return false
@@ -308,15 +314,15 @@ function isBelowFloor(version: string, floor: string): boolean {
 }
 
 /**
- * `oxlint-floor`: the nearest installed oxlint is at least {@link OXLINT_FLOOR}, or the preset does
- * not parse. Reads `cwd`, like `oxlint-preset` reads `.oxlintrc.json`; no oxlint is that check's warning.
+ * `oxlint-floor`: fails when the nearest installed oxlint is older than {@link OXLINT_FLOOR}, which
+ * cannot parse the preset. Reads `cwd`, as `oxlint-preset` does; a missing oxlint is that check's job.
  */
 export function oxlintFloorCheck(cwd: string): Check {
   const id = 'oxlint-floor'
   return guarded(id, () => {
     if (readIfExists(resolve(cwd, '.oxlintrc.json')) === null) return null
     const version = installedVersion(cwd, 'oxlint')
-    if (typeof version !== 'string' || !isBelowFloor(version, OXLINT_FLOOR)) return null
+    if (version === null || !isBelowFloor(version, OXLINT_FLOOR)) return null
     return {
       fail: `${id}: oxlint ${version} is installed, but the shipped preset needs >= ${OXLINT_FLOOR} (older versions reject its react/* rules). Fix: \`bun add -D oxlint@^${OXLINT_FLOOR}\`.`,
     }
@@ -542,7 +548,7 @@ const EXACT_VERSION = /^\d+\.\d+\.\d+$/
 function installedVersion(cwd: string, pkg: string): string | null {
   for (let dir = cwd; ; dir = dirname(dir)) {
     const manifest = readPackageJson<{ version?: string }>(resolve(dir, 'node_modules', pkg))
-    if (manifest !== null) return manifest.version ?? null
+    if (manifest !== null) return typeof manifest.version === 'string' ? manifest.version : null
     if (dirname(dir) === dir) return null
   }
 }
