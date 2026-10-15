@@ -1,3 +1,13 @@
+## [2.7.1](https://github.com/jkrumm/basalt-ui/compare/v2.7.0...v2.7.1) (2026-10-15)
+
+
+### Bug Fixes
+
+* document the form dialog and notification seams in the shipped layer ([5836d52](https://github.com/jkrumm/basalt-ui/commit/5836d52579f6d20781823fffd74e6d444084ff73))
+* name the form dialog and notification seams in the commands description ([8ec0ef0](https://github.com/jkrumm/basalt-ui/commit/8ec0ef043019271f8379e72edec47209e3bff0f1))
+* scope the signed swatch to the DualPanel bar and harden its tests ([c840048](https://github.com/jkrumm/basalt-ui/commit/c840048e2f6b2a125650b9bc49b8b35f40421041))
+* signed bar legends get a split swatch and DataTableRowAction is exported ([6602b3c](https://github.com/jkrumm/basalt-ui/commit/6602b3c86f4d5229f98c834ea4c68e42f8a70a5d))
+
 # [2.7.0](https://github.com/jkrumm/basalt-ui/compare/v2.6.1...v2.7.0) (2026-10-15)
 
 
