@@ -114,7 +114,9 @@ export const PKG_ROOT = 'packages/basalt-ui/'
  * TanStack file routes export `Route` beside their component. The router plugin owns fast refresh
  * for route files (it splits the component out of the route chunk), so the generic fast-refresh
  * export check is noise there. The rule's `allowExportNames` does not help: oxlint 1.87 still warns
- * on the file's local component.
+ * on the file's local component. Colocated non-route folders under `routes/` (e.g. `-components`)
+ * are exempted too — accepted for simplicity. Shipped preset only: the repo-local config lints no
+ * file routes, so the block would be inert there.
  */
 export const ROUTE_FILE_OVERRIDE: OverrideBlock = {
   files: ['**/routes/**', '**/__root.tsx'],
@@ -261,7 +263,7 @@ export function projectBanList(target: Target): OverrideBlock[] {
     }
   }
 
-  blocks.push(ROUTE_FILE_OVERRIDE)
+  if (target === 'shipped') blocks.push(ROUTE_FILE_OVERRIDE)
 
   return blocks
 }

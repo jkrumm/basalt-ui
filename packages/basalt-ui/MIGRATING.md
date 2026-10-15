@@ -1079,7 +1079,7 @@ release renames it and opens a new one here._
 
 `NumberFilter`'s stepper pill prints a value `.labels()` names — `createSearchStore(…).labels({ minDuration: { 0: 'Any' } })` reads "Any" at the default (a number field's `options` now lists exactly the labelled values); unlabelled, it prints the number as before — nothing to migrate.
 
-`basalt-ui sync` and `init` no longer seed `src/lib/nav.tsx` into a shell-less app (`BasaltProvider` rendered, `BasaltShell` never — checked through the entry's reachable imports and `routes/__root.tsx`); a stale nav manifest entry is dropped with a notice and the file stays yours. Render `BasaltShell` and run `sync` to get the seed back.
+New config key `basalt.shell: false` (default `true`) for an app that never renders `BasaltShell`: `init`/`sync` then place neither `src/lib/nav.tsx` nor `src/routes/__root.tsx` (the root route imports the nav module) and retire a tracked entry with a notice, leaving the file yours; `doctor` warns if the app still renders `<BasaltShell`. Declared, not inferred.
 
 The shipped oxlint preset turns `react(only-export-components)` off under `**/routes/**` and `__root.tsx`: the TanStack router plugin owns fast refresh for route files, and `allowExportNames: ['Route']` alone still warned on the file's local component. Other files keep the warning.
 

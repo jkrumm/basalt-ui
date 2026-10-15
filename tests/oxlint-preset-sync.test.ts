@@ -137,6 +137,10 @@ describe('oxlint preset sync contract', () => {
     expect(paths.map((p) => p.name).toSorted()).toEqual(['antd', 'framer-motion'])
   })
 
+  it('the route-file override is shipped-only (inert in the repo-local config)', () => {
+    expect(findBlock(projectBanList('repo'), '**/__root.tsx')).toBeUndefined()
+  })
+
   // ── Playground dogfooding: it consumes the SHIPPED preset, not the repo-local config ──────────
   // apps/playground is the model consumer, so it must see exactly what argo sees. It gets there
   // via its own nested apps/playground/.oxlintrc.json (oxlint resolves the nearest config and it

@@ -28,18 +28,8 @@
     "react/incompatible-library": "error",
     "react/preserve-manual-memoization": "error",
     "react/refs": "error",
-    "react/no-unstable-nested-components": [
-      "warn",
-      {
-        "allowAsProps": true
-      }
-    ],
-    "react/only-export-components": [
-      "warn",
-      {
-        "allowExportNames": ["Route"]
-      }
-    ],
+    "react/no-unstable-nested-components": ["warn", { "allowAsProps": true }],
+    "react/only-export-components": ["warn", { "allowExportNames": ["Route"] }],
     "react/set-state-in-effect": "error",
     "no-constant-binary-expression": "error"
   },
@@ -66,9 +56,7 @@
     },
     {
       "files": ["**/routes/**", "**/__root.tsx"],
-      "rules": {
-        "react/only-export-components": "off"
-      }
+      "rules": { "react/only-export-components": "off" }
     }
   ]
 }

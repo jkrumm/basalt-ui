@@ -3,6 +3,7 @@ import { existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 import { deriveSpacing } from '../tokens/core'
+import { shellConfigError } from './config'
 import {
   MANIFEST_PATH,
   basaltPresetEntry,
@@ -100,6 +101,12 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
     return 0
   }
 
+  const shellError = shellConfigError(readBasaltConfig(cwd))
+  if (shellError !== null) {
+    console.error(`✖ basalt-ui sync: ${shellError}`)
+    return 1
+  }
+
   const appError = resolvePlacement(cwd).appError
   if (appError !== null) {
     console.error(`✖ basalt-ui sync: ${appError}`)
@@ -130,7 +137,7 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
   const ctx = renderContext(cwd)
   const manifest = readManifest(cwd)
   const placement = resolvePlacement(cwd)
-  const { skip: seedSkip, skipped, shellLess } = routerSeedPlan(cwd, placement.appRel)
+  const { skip: seedSkip, skipped } = routerSeedPlan(cwd, placement.appRel)
   const files = managedFiles(placement).filter((f) => !skipped.has(f.dest))
 
   let updated = 0
@@ -200,23 +207,20 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
   })
   staleForCheck += pruned.removed.length + pruned.drifted.length
 
-  // A code-routed app takes no router seeds: their manifest entries go; any file stays the consumer's.
+  // A code-routed or declared shell-less app takes no router seeds: their manifest entries go
+  // (so the next sync does not resurrect them); any file stays the consumer's.
   const isTracked = (d: string): boolean => manifest.files[d] !== undefined
-  const codeRoutedSeeds = seedSkip === 'code-routed' ? [...skipped].filter(isTracked) : []
-  if (codeRoutedSeeds.length > 0 && !opts.check) {
-    for (const d of codeRoutedSeeds) delete manifest.files[d]
+  const retiredBecause =
+    seedSkip === 'code-routed'
+      ? 'code-routed app'
+      : seedSkip === 'shell-less'
+        ? 'basalt.shell: false'
+        : null
+  const retiredSeeds = retiredBecause === null ? [] : [...skipped].filter(isTracked)
+  if (retiredSeeds.length > 0 && !opts.check) {
+    for (const d of retiredSeeds) delete manifest.files[d]
     console.error(
-      `⚠ basalt-ui sync: code-routed app — dropped ${codeRoutedSeeds.join(', ')} from the manifest (any file is yours).`,
-    )
-  }
-
-  // A shell-less app takes no nav seed: its manifest entry goes (so the next sync does not
-  // resurrect it); any file stays the consumer's.
-  const shellLessNav = shellLess ? [...skipped].filter(isTracked) : []
-  if (shellLessNav.length > 0 && !opts.check) {
-    for (const d of shellLessNav) delete manifest.files[d]
-    console.error(
-      `⚠ basalt-ui sync: shell-less app — dropped ${shellLessNav.join(', ')} from the manifest (any file is yours).`,
+      `⚠ basalt-ui sync: ${retiredBecause} — dropped ${retiredSeeds.join(', ')} from the manifest (any file is yours).`,
     )
   }
 

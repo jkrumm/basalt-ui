@@ -29,7 +29,7 @@ import { guardHook } from './guard-hook'
 import { COMMAND_OPTIONS, USAGE, unknownFlag } from './help'
 import { init } from './init'
 import { sync } from './sync'
-import { CODE_ROUTED_NOTE, isShellLessApp, routerSeedSkip } from './router-wiring'
+import { CODE_ROUTED_NOTE, SHELL_LESS_NOTE, routerSeedSkip } from './router-wiring'
 import type { RouterSeedSkip } from './router-wiring'
 import { hasDependency, readIfExists, readPackageJson } from './source-text'
 import { fontsCss, normalizeColorFunctions, tokensCss } from './tokens-css'
@@ -666,26 +666,25 @@ export const START_APP_NOTE =
   '<BasaltProvider><Outlet /></BasaltProvider> in your root route component.'
 
 /**
- * The router seeds an app does not get, for `init` and `sync`: why (`start` | `code-routed` | null)
- * and which dests. A tokens-only consumer gets none of them either; a shell-less app (no
- * `BasaltShell`) gets everything but the nav seed (`shellLess`).
+ * The router seeds an app does not get, for `init` and `sync`: why (`start` | `code-routed` |
+ * `shell-less` | null) and which dests. A tokens-only consumer gets none of them either; so does an
+ * app that declares `basalt.shell: false` — the nav and root seeds are a pair, so the whole set goes.
  */
 export function routerSeedPlan(
   cwd: string,
   appRel: string,
   tokensOnly = false,
-): { skip: RouterSeedSkip; skipped: Set<string>; shellLess: boolean } {
-  const skip = tokensOnly ? null : routerSeedSkip(cwd, appRel)
-  if (tokensOnly || skip !== null) {
-    return { skip, skipped: new Set(routerSeedDests(appRel)), shellLess: false }
-  }
-  const shellLess = isShellLessApp(cwd, appRel)
-  return { skip, skipped: new Set(shellLess ? [routerSeedDest(appRel, 'nav')] : []), shellLess }
+): { skip: RouterSeedSkip; skipped: Set<string> } {
+  const detected = tokensOnly ? null : routerSeedSkip(cwd, appRel)
+  const skip =
+    detected ?? (!tokensOnly && readBasaltConfig(cwd).shell === false ? 'shell-less' : null)
+  return { skip, skipped: new Set(tokensOnly || skip !== null ? routerSeedDests(appRel) : []) }
 }
 
 /** The note `init` prints for a router-seed skip, or null when nothing was skipped. */
 export function seedSkipNote(skip: RouterSeedSkip): string | null {
   if (skip === 'start') return START_APP_NOTE
+  if (skip === 'shell-less') return SHELL_LESS_NOTE
   return skip === 'code-routed' ? CODE_ROUTED_NOTE : null
 }
 
