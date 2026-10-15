@@ -493,6 +493,7 @@ import { lineY } from '@tanstack/charts/line'
 - `marks(plot)` returns TanStack marks imported from the allowed subpaths (§ 9.8; basalt
   re-exports none). `plot.rows(key)` is `{ x, y, series, datum }[]`, a `null` y kept as a gap.
   Hidden series emit no rows, so a legend toggle hides plot, tooltip and auto domain together.
+  `plot.plotWidth`/`plotHeight` are the laid-out plot in px (the frame until measured), `plot.data` all rows.
 - Paint order is fixed: zones, x-zones (`decorative`) → `marks` → ref lines → crosshair.
 - Exported types include `ChartMarks` and `ChartX`; `SeriesKey` lives on `.` only.
 - `DualPanel`/`MirroredBars`: `composeViews` + `grid` + `alignX` (one host, one tooltip). `Donut`:
