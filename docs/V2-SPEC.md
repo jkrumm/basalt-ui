@@ -80,8 +80,8 @@ telemetry seam, § 7). Each names argo as its first consumer in `v2-surface.md` 
 
 ## 2. Provider and wiring
 
-One `BasaltProvider` owns the whole provider tree, the router included, or embeds in a host router
-(`children`, below). The consumer writes the route tree, the nav, and the registries (commands, notifications). 1.x left argo 220 lines of wiring
+`BasaltProvider` has two peer modes. **Mount** (`router`): it owns the whole provider tree, the router included. **Embedded** (`children`): it owns everything but the router, inside a host router such as Start's.
+The consumer writes the route tree, the nav, and the registries (commands, notifications). 1.x left argo 220 lines of wiring
 (`main.tsx` 61 + `__root.tsx` 159); the target below is 25 lines of code.
 
 | Basalt wires                                                                                                                                                                                                                                                                                   | Where                                                                                                                | Replaces in 1.x                                                                  |
