@@ -734,4 +734,5 @@ exit criterion holds, then flips to `done`.
   fresh install.
 - **Next (not spawned):** a fleet-loop wave on the W14 model: fix rows 61-67, release a 2.x minor, then
   the orchestrator activates Wave 1 of each consumer plan in the order above. Not authored here — the
-  orchestrator decides its shape after reviewing this close-out.
+  orchestrator decides its shape after reviewing this close-out. Shipped rule lines sit at 277/277 and
+  `basalt-app/SKILL.md` at 300/300: a fix that adds a line must pay for it, or raise a ceiling on purpose.
