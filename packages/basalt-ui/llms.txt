@@ -41,7 +41,7 @@ Signature: BasaltShell(props: BasaltShellProps<G, T>): JSX.Element
   globalActions?: GlobalAction[]
   sidebarBlocks?: SidebarBlock[]
   settingsMenuItems?: SettingsMenuItem[]
-  settingsMenu?: "auto" | "menu" | "flat"
+  settingsMenu?: "auto" | "flat" | "menu"
   account?: BasaltAccountProps
   search?: SidebarSearchConfig & { actions?: SidebarSearchActions; }
   storageKey?: string
@@ -56,23 +56,23 @@ Signature: BasaltShell(props: BasaltShellProps<G, T>): JSX.Element
 Signature: DangerZone(props: SettingsSectionProps): JSX.Element
   className?: string
   style?: CSSProperties
-  classNames?: Partial<Record<"root" | "header" | "body", string>>
-  title: string
+  classNames?: Partial<Record<SettingsSectionSlot, string>>
   icon?: ReactNode
+  title: string
   subtitle?: string
   info?: string
   actions?: ReactNode
   children: ReactNode
 Signature: DeltaBadge(props: DeltaBadgeProps): JSX.Element
   value: number
-  polarity?: "up-good" | "up-bad" | "neutral"
+  polarity?: DeltaPolarity
   format?: (value: number) => string
   withGlyph?: boolean
   period?: string
 Signature: EmptyState(props: EmptyStateProps): JSX.Element
   className?: string
   style?: CSSProperties
-  classNames?: Partial<Record<"root" | "icon" | "title" | "description" | "action", string>>
+  classNames?: Partial<Record<EmptyStateSlot, string>>
   icon?: ReactNode
   title: string
   description?: string
@@ -81,7 +81,7 @@ Signature: EmptyState(props: EmptyStateProps): JSX.Element
 Signature: PageAside(props: PageAsideProps): ReactNode
   className?: string
   style?: CSSProperties
-  classNames?: Partial<Record<"root" | "header" | "body", string>>
+  classNames?: Partial<Record<PageAsideSlot, string>>
   title: string
   persistKey?: string
   defaultFolded?: boolean
@@ -89,7 +89,7 @@ Signature: PageAside(props: PageAsideProps): ReactNode
 Signature: PageBar(props: PageBarProps): ReactNode
   className?: string
   style?: CSSProperties
-  classNames?: Partial<Record<"root" | "row1" | "row2", string>>
+  classNames?: Partial<Record<PageBarSlot, string>>
   title?: string
   icon?: ReactNode
   actions?: PageBarActions
@@ -100,27 +100,27 @@ Signature: PageBar(props: PageBarProps): ReactNode
 Signature: PageTitle(props: PageTitleProps): ReactNode
   className?: string
   style?: CSSProperties
-  classNames?: Partial<Record<"root" | "title" | "subtitle", string>>
+  classNames?: Partial<Record<PageTitleSlot, string>>
   title: ReactNode
   subtitle?: ReactNode
   icon?: ReactNode
 Signature: Section(props: SectionProps): JSX.Element
-  title: string
   icon?: ReactNode
+  className?: string
+  style?: CSSProperties
+  title: string
   subtitle?: string
   info?: string
   value?: string
   unit?: string
   delta?: number
   deltaPeriod?: string
-  deltaPolarity?: "up-good" | "up-bad" | "neutral"
+  deltaPolarity?: DeltaPolarity
   deltaFormat?: (delta: number) => string
   deltaGlyph?: boolean
-  className?: string
-  style?: CSSProperties
   sparkline?: ReactNode
   count?: number
-  classNames?: Partial<Record<"root" | "header" | "body", string>>
+  classNames?: Partial<Record<SectionSlot, string>>
   actions?: SectionActions
   query?: QueryStateLike<unknown>
   empty?: QueryEmptyCopy
@@ -134,7 +134,7 @@ Signature: Section(props: SectionProps): JSX.Element
 Signature: SettingsRow(props: SettingsRowProps): JSX.Element
   className?: string
   style?: CSSProperties
-  classNames?: Partial<Record<"root" | "label" | "control", string>>
+  classNames?: Partial<Record<SettingsRowSlot, string>>
   label: string
   description?: string
   control?: ReactNode
@@ -142,9 +142,9 @@ Signature: SettingsRow(props: SettingsRowProps): JSX.Element
 Signature: SettingsSection(props: SettingsSectionProps): JSX.Element
   className?: string
   style?: CSSProperties
-  classNames?: Partial<Record<"root" | "header" | "body", string>>
-  title: string
+  classNames?: Partial<Record<SettingsSectionSlot, string>>
   icon?: ReactNode
+  title: string
   subtitle?: string
   info?: string
   actions?: ReactNode
@@ -152,28 +152,28 @@ Signature: SettingsSection(props: SettingsSectionProps): JSX.Element
 Signature: StatCard(props: StatCardProps): JSX.Element
   className?: string
   style?: CSSProperties
-  classNames?: Partial<Record<"root" | "header" | "body" | "sparkline", string>>
-  title: string
+  classNames?: Partial<Record<StatCardSlot, string>>
   icon?: ReactNode
+  title: string
   subtitle?: string
   info?: string
   unit?: string
   delta?: number
   deltaPeriod?: string
-  deltaPolarity?: "up-good" | "up-bad" | "neutral"
+  deltaPolarity?: DeltaPolarity
   deltaFormat?: (delta: number) => string
   deltaGlyph?: boolean
   value: string
   breakdown?: readonly StatCardBreakdownRow[]
   query?: QueryStateLike<unknown>
   sparkline?: ReactNode | ((size: StatCardSparklineSize) => ReactNode)
-  sparklinePlacement?: "right" | "bleed"
+  sparklinePlacement?: "bleed" | "right"
   actions?: ReactNode
-  tone?: "good" | "warn" | "bad"
+  tone?: Tone
 Signature: StatGroup(props: StatGroupProps): JSX.Element
   className?: string
   style?: CSSProperties
-  cols?: 2 | 3 | 4 | 5
+  cols?: StatGroupCols
   divided?: boolean
   children: ReactNode
 Signature: ThemeToggle(props: ThemeToggleProps): JSX.Element
@@ -184,8 +184,8 @@ Signature: ThemeToggle(props: ThemeToggleProps): JSX.Element
 Signature: WidgetHeader(props: WidgetHeaderProps): JSX.Element
   className?: string
   style?: CSSProperties
-  classNames?: Partial<Record<"root" | "title" | "metric" | "icon", string>>
-  tier: "section" | "widget" | "group"
+  classNames?: Partial<Record<WidgetHeaderSlot, string>>
+  tier: WidgetHeaderTier
   title: string
   icon?: ReactNode
   subtitle?: string
@@ -194,7 +194,7 @@ Signature: WidgetHeader(props: WidgetHeaderProps): JSX.Element
   unit?: string
   delta?: number
   deltaPeriod?: string
-  deltaPolarity?: "up-good" | "up-bad" | "neutral"
+  deltaPolarity?: DeltaPolarity
   deltaFormat?: (delta: number) => string
   deltaGlyph?: boolean
   sparkline?: ReactNode
@@ -230,27 +230,27 @@ Description: CartesianChart (the TanStack Charts rung), the Lines and Bars kinds
 Layer: headless
 Rule: basalt-charts
 Signature: BandStrip(props: BandStripProps<T, X>): ReactElement<unknown, string | JSXElementConstructor<any>>
-  state?: ChartState
   className?: string
   style?: CSSProperties
+  ariaLabel: string
   data: readonly T[]
   x: (d: T) => X
   xTicks?: number | readonly X[]
   formatX?: ((x: X) => string)
-  cursorGroup?: string
-  cursorResolution?: "exact" | "nearest" | "leading"
-  tooltip?: false | ChartTooltipConfig<T, X>
-  ariaLabel: string
   legend?: false | ChartLegendConfig
   height?: number | ResponsiveChartHeight
+  state?: ChartState
+  cursorGroup?: string
+  cursorResolution?: CursorResolution
+  tooltip?: false | ChartTooltipConfig<T, X>
   states: readonly BandStripSeries<T>[]
   getBand: (d: T) => BandSpan
   fold?: BandFold<T>
   absentState?: string
 Signature: Bars(props: BarsProps<T, X>): ReactElement<unknown, string | JSXElementConstructor<any>>
-  state?: ChartState
   className?: string
   style?: CSSProperties
+  ariaLabel: string
   data: readonly T[]
   x: (d: T) => X
   y?: AxisConfig<T>
@@ -260,12 +260,12 @@ Signature: Bars(props: BarsProps<T, X>): ReactElement<unknown, string | JSXEleme
   zones?: readonly ZoneSpec[]
   xZones?: readonly XZoneSpec<X>[]
   refLines?: readonly RefLine[]
-  cursorGroup?: string
-  cursorResolution?: "exact" | "nearest" | "leading"
-  tooltip?: false | ChartTooltipConfig<T, X>
-  ariaLabel: string
   legend?: false | ChartLegendConfig
   height?: number | ResponsiveChartHeight
+  state?: ChartState
+  cursorGroup?: string
+  cursorResolution?: CursorResolution
+  tooltip?: false | ChartTooltipConfig<T, X>
   bars: readonly BarsBar<T>[]
   lines?: readonly BarsLine<T>[]
   layout?: "stacked" | "grouped" | "normalized"
@@ -289,12 +289,12 @@ Signature: CartesianChart(props: CartesianChartProps<T, X>): ReactElement<unknow
   height?: number | ResponsiveChartHeight
   state?: ChartState
   cursorGroup?: string
-  cursorResolution?: "exact" | "nearest" | "leading"
+  cursorResolution?: CursorResolution
   tooltip?: false | ChartTooltipConfig<T, X>
 Signature: ChartCard(props: ChartCardProps): ReactElement<unknown, string | JSXElementConstructor<any>>
   className?: string
   style?: CSSProperties
-  classNames?: Partial<Record<"root" | "header" | "body", string>>
+  classNames?: Partial<Record<ChartCardSlot, string>>
   title?: string
   icon?: ReactNode
   subtitle?: string
@@ -302,7 +302,7 @@ Signature: ChartCard(props: ChartCardProps): ReactElement<unknown, string | JSXE
   value?: string
   delta?: number
   deltaPeriod?: string
-  deltaPolarity?: "up-good" | "up-bad" | "neutral"
+  deltaPolarity?: DeltaPolarity
   count?: number
   actions?: ReactNode
   state?: ChartState
@@ -322,18 +322,18 @@ Signature: Donut(props: DonutProps<K>): ReactElement<unknown, string | JSXElemen
   height?: number | ResponsiveChartHeight
   state?: ChartState
 Signature: DualPanel(props: DualPanelProps<T, X>): ReactElement<unknown, string | JSXElementConstructor<any>>
-  state?: ChartState
   className?: string
   style?: CSSProperties
+  ariaLabel: string
   data: readonly T[]
   x: (d: T) => X
   formatX?: ((x: X) => string)
-  cursorGroup?: string
-  cursorResolution?: "exact" | "nearest" | "leading"
-  tooltip?: false | ChartTooltipConfig<T, X>
-  ariaLabel: string
   legend?: false | ChartLegendConfig
   height?: number | ResponsiveChartHeight
+  state?: ChartState
+  cursorGroup?: string
+  cursorResolution?: CursorResolution
+  tooltip?: false | ChartTooltipConfig<T, X>
   series: readonly DualPanelLine<T>[]
   top?: { domain?: readonly [number, number] | "auto" | undefined; …
   fillBetween?: { from: string; to: string; fill: string; aboveFill?: strin…
@@ -360,12 +360,12 @@ Signature: Heatmap(props: HeatmapProps<T>): ReactElement<unknown, string | JSXEl
   matchHeight?: boolean
   state?: ChartState
 Signature: Lines(props: LinesProps<T, X>): ReactElement<unknown, string | JSXElementConstructor<any>>
-  series: readonly ChartSeries<T>[]
-  state?: ChartState
   className?: string
   style?: CSSProperties
+  ariaLabel: string
   data: readonly T[]
   x: (d: T) => X
+  series: readonly ChartSeries<T>[]
   y?: AxisConfig<T>
   y2?: AxisConfig<T>
   xTicks?: number | readonly X[]
@@ -373,25 +373,25 @@ Signature: Lines(props: LinesProps<T, X>): ReactElement<unknown, string | JSXEle
   zones?: readonly ZoneSpec[]
   xZones?: readonly XZoneSpec<X>[]
   refLines?: readonly RefLine[]
-  cursorGroup?: string
-  cursorResolution?: "exact" | "nearest" | "leading"
-  tooltip?: false | ChartTooltipConfig<T, X>
-  ariaLabel: string
   legend?: false | ChartLegendConfig
   height?: number | ResponsiveChartHeight
+  state?: ChartState
+  cursorGroup?: string
+  cursorResolution?: CursorResolution
+  tooltip?: false | ChartTooltipConfig<T, X>
   thresholds?: [X] extends [string] ? never : readonly Threshold[]
 Signature: MirroredBars(props: MirroredBarsProps<T, X>): ReactElement<unknown, string | JSXElementConstructor<any>>
-  state?: ChartState
   className?: string
   style?: CSSProperties
+  ariaLabel: string
   data: readonly T[]
   x: (d: T) => X
   formatX?: ((x: X) => string)
-  cursorGroup?: string
-  tooltip?: false | ChartTooltipConfig<T, X>
-  ariaLabel: string
   legend?: false | ChartLegendConfig
   height?: number | ResponsiveChartHeight
+  state?: ChartState
+  cursorGroup?: string
+  tooltip?: false | ChartTooltipConfig<T, X>
   series: readonly MirroredBarsSeries<T>[]
   up: MirroredBarPane
   down: MirroredBarPane
@@ -399,7 +399,7 @@ Signature: MirroredBars(props: MirroredBarsProps<T, X>): ReactElement<unknown, s
   getAbsentFraction?: ((d: T) => number)
   getBarOpacity?: ((d: T) => number)
   fold?: { minBandPx?: number | undefined; merge: (group: T[]) => T;…
-  cursorResolution?: "exact" | "nearest" | "leading"
+  cursorResolution?: CursorResolution
 Signature: Sparkline(props: SparklineProps): ReactElement<unknown, string | JSXElementConstructor<any>>
   className?: string
   style?: CSSProperties
@@ -413,9 +413,9 @@ Signature: Sparkline(props: SparklineProps): ReactElement<unknown, string | JSXE
   emphasisColor?: string
   state?: ChartState
 Signature: StackedArea(props: StackedAreaProps<T, X>): ReactElement<unknown, string | JSXElementConstructor<any>>
-  state?: ChartState
   className?: string
   style?: CSSProperties
+  ariaLabel: string
   data: readonly T[]
   x: (d: T) => X
   xTicks?: number | readonly X[]
@@ -423,16 +423,16 @@ Signature: StackedArea(props: StackedAreaProps<T, X>): ReactElement<unknown, str
   zones?: readonly ZoneSpec[]
   xZones?: readonly XZoneSpec<X>[]
   refLines?: readonly RefLine[]
-  cursorGroup?: string
-  cursorResolution?: "exact" | "nearest" | "leading"
-  tooltip?: false | ChartTooltipConfig<T, X>
-  ariaLabel: string
   legend?: false | ChartLegendConfig
   height?: number | ResponsiveChartHeight
+  state?: ChartState
+  cursorGroup?: string
+  cursorResolution?: CursorResolution
+  tooltip?: false | ChartTooltipConfig<T, X>
   series: readonly StackedAreaBand<T>[]
   y?: Omit<AxisConfig<T>, "scale">
 Signature: chartCursor(group: string): ChartCursorController<ChartValue, ChartValue>
-Signature: chartCurve(name: "monotone" | "linear" | "step" | "stepAfter" | "stepBefore"): ChartCurve
+Signature: chartCurve(name: CurveName): ChartCurve
 Install: bun add @tanstack/charts@1.1.0 d3-scale@4.0.2
 
 ## basalt-ui/tokens
@@ -458,7 +458,7 @@ Signature: buildPaletteCss(opts: BuildPaletteOpts, data: { ACCENT: { readonly ac
   scheme?: ColorSchemeSelector
   defaultScheme?: "light" | "dark" | "none"
   mediaFallback?: boolean
-  only?: "all" | "core"
+  only?: "core" | "all"
   legacyAliases?: boolean
 Signature: defineSeries(map: T): T
 Signature: groupTokens(name: string, map: T): { readonly [K in keyof T]: GroupRef; }
@@ -541,7 +541,7 @@ Signature: defineNotifications(spec: T): T
 Signature: defineOverlays(spec: T): T
 Signature: emit(kind: K, args: EmitArgs<K>): string
 Signature: overlays: { open, confirm, confirmDelete, close }
-Signature: setColorScheme(scheme: "light" | "dark" | "auto"): void
+Signature: setColorScheme(scheme: ColorScheme): void
 Signature: toggleSidebar(): void
 Install: bun add @tanstack/react-hotkeys@0.13.0
 
@@ -553,7 +553,7 @@ Rule: basalt-batteries
 Signature: BasaltDataTable(props: BasaltDataTableProps<T>): JSX.Element
   className?: string
   style?: CSSProperties
-  classNames?: Partial<Record<"root" | "toolbar" | "table" | "footer", string>>
+  classNames?: Partial<Record<BasaltDataTableSlot, string>>
   title?: string
   icon?: ReactNode
   subtitle?: string
@@ -603,7 +603,7 @@ Rule: basalt-batteries
 Signature: Composer(props: ComposerProps): JSX.Element
   className?: string
   style?: CSSProperties
-  classNames?: Partial<Record<"root" | "input" | "actions", string>>
+  classNames?: Partial<Record<ComposerSlot, string>>
   ref?: Ref<ComposerHandle>
   onSubmit: (payload: ComposerSubmit) => void | Promise<void>
   placeholder?: string
@@ -640,7 +640,7 @@ Signature: ThreadFeedRow(props: ThreadFeedRowProps): JSX.Element
   headerRight?: ReactNode
   messages?: readonly ChatMessage<TranscriptPart>[]
   liveParts?: readonly TranscriptPart[]
-  liveStatus?: "idle" | "submitted" | "streaming" | "done" | "error"
+  liveStatus?: StreamStatus
   renderers?: Readonly<Record<string, PartRenderer<ForeignPart>>>
   fallbackRenderer?: PartRenderer<ForeignPart>
   affordances?: MessageAffordances
@@ -693,14 +693,14 @@ Signature: ArticleLayout(props: ArticleLayoutProps): JSX.Element
   prev?: ArticleNavTarget
   next?: ArticleNavTarget
   renderLink?: (target: ArticleNavTarget, node: ReactNode) => ReactNode
-  density?: "article" | "chat"
+  density?: ProseDensity
   locale?: string
   className?: string
   style?: CSSProperties
 Signature: Callout(props: CalloutProps): JSX.Element
   className?: string
   style?: CSSProperties
-  kind?: "info" | "good" | "warn" | "bad"
+  kind?: CalloutKind
   title?: string
   icon?: ReactNode
   children: ReactNode
@@ -716,10 +716,10 @@ Signature: GuideLink(props: GuideLinkProps): JSX.Element
   iconOnly?: boolean
 Signature: Markdown(props: MarkdownProps): JSX.Element
   children: string
-  density?: "article" | "chat"
+  density?: ProseDensity
   measure?: boolean
   streaming?: boolean
-  contentTrust?: "trusted" | "untrusted"
+  contentTrust?: MarkdownContentTrust
   components?: Components
   fenceRenderers?: Readonly<Record<string, FenceRenderer>>
   sanitizeSchema?: SanitizeSchemaExtension
@@ -731,7 +731,7 @@ Signature: Markdown(props: MarkdownProps): JSX.Element
   className?: string
   style?: CSSProperties
 Signature: Prose(props: ProseProps): JSX.Element
-  density?: "article" | "chat"
+  density?: ProseDensity
   measure?: boolean
   children: ReactNode
   className?: string
@@ -781,7 +781,7 @@ Signature: FormGroup(props: FormGroupProps): JSX.Element
 Signature: FormRow(props: FormRowProps): JSX.Element
   className?: string
   style?: CSSProperties
-  classNames?: Partial<Record<"root" | "label" | "control", string>>
+  classNames?: Partial<Record<FormRowSlot, string>>
   label: string
   hint?: string
   error?: ReactNode
@@ -917,3 +917,10 @@ Layer: non-js-asset
 Asset: basalt-ui/configs/*
 Description: Raw toolchain presets for consumer extends: oxlint.json (or the guards-only oxlint-basalt.json), oxfmt.json, tsconfig.*.json, lefthook.yml, check.yml
 Layer: non-js-asset
+
+## Types
+Description: literal unions the signatures above name (members in declaration order)
+type CalloutKind = 'info' | 'good' | 'warn' | 'bad'
+type ChartCardSlot = 'root' | 'header' | 'body'
+type CursorResolution = 'exact' | 'nearest' | 'leading'
+type CurveName = 'monotone' | 'linear' | 'step' | 'stepAfter' | 'stepBefore'
