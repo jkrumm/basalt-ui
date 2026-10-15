@@ -2598,6 +2598,16 @@ describe('raw-selection-control', () => {
     expect(kinds(f)).toContain('raw-hex')
   })
 
+  // rb W8 trial: a raw Select in `SettingsRow control={…}` fired with the generic colour text.
+  it('tells a settings-row selection to bind a store field, naming SelectFilter', () => {
+    const f = find(`<SettingsRow label="Unit" control={<Select data={[]} />} />`)
+    expect(kinds(f)).toContain('raw-selection-control')
+    const fix = guardKindRemedy('raw-selection-control')
+    expect(fix).toContain('<SelectFilter field={store.field.x} />')
+    expect(fix).toContain('createLocalStore')
+    expect(fix).toContain('createSearchStore')
+  })
+
   it('names PageBar as the reachable home for a shell-less app', () => {
     const f = find(`<Select data={[]} />`)
     expect(guardKindRemedy('raw-selection-control')).toContain('PageBar needs no BasaltShell')
