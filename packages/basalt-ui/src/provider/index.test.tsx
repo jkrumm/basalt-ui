@@ -25,6 +25,7 @@ import { useEffect } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { BasaltProvider, RootBoundary, composeInjectedCss } from './index'
 import { setColorScheme } from '../commands/shell-bridge'
+import * as actionsModule from './spotlight-actions'
 import { testRouter } from './test-router'
 import type { BasaltRouter } from './create-router'
 import type { BasaltEvent } from '../telemetry'
@@ -288,26 +289,41 @@ describe("BasaltProvider registers commands/shell-bridge.ts's setColorScheme han
 })
 
 describe('BasaltProvider embedded in a router it does not own (children mode)', () => {
-  test('renders children inside the existing RouterProvider and mounts no second router', async () => {
-    const router = testRouter('host')
-    const seen: unknown[] = []
+  /** The host's root component wraps its subtree, exactly where Start renders `<Outlet />`. */
+  function embeddedRouter(onMount: (ambient: unknown) => void) {
     function Probe() {
       const ambient = useRouter()
-      useEffect(() => void seen.push(ambient), [ambient])
-      return <div>embedded</div>
+      useEffect(() => {
+        onMount(ambient)
+      }, [ambient])
+      return <div data-testid="embedded">embedded</div>
     }
-    // The host (TanStack Start) mounts the router; the app's root component wraps its subtree.
-    const Host = router.routesById['__root__'].options
-    Host.component = () => (
+    return testRouter('host', (body) => (
       <BasaltProvider>
+        {body}
         <Probe />
       </BasaltProvider>
-    )
+    ))
+  }
+
+  test('renders children inside the host RouterProvider, mounting exactly one router', async () => {
+    const mounts: unknown[] = []
+    const router = embeddedRouter((ambient) => {
+      mounts.push(ambient)
+    })
     render(<RouterProvider router={router} />)
-    expect(await screen.findByText('embedded')).toBeDefined()
-    // Mount mode would have rendered the route's own text a second time; the host's did not.
-    expect(screen.queryByText('host')).toBeNull()
-    expect(seen.at(-1)).toBe(router)
+    expect(await screen.findByText('host')).toBeDefined()
+    expect(screen.getAllByTestId('embedded')).toHaveLength(1)
+    expect(screen.getAllByText('host')).toHaveLength(1)
+    expect(mounts).toEqual([router])
+  })
+
+  test('server-renders children mode without touching window', async () => {
+    const router = embeddedRouter(() => {})
+    await router.load()
+    const html = renderToStaticMarkup(<RouterProvider router={router} />)
+    expect(html).toContain('host')
+    expect(html).toContain('embedded')
   })
 
   test('children mode outside any router is refused with a message naming both modes', () => {
@@ -319,7 +335,7 @@ describe('BasaltProvider embedded in a router it does not own (children mode)', 
             <div />
           </BasaltProvider>,
         ),
-      ).toThrow(/createBasaltRouter/)
+      ).toThrow(/`router`.*`children`/)
     } finally {
       quiet.mockRestore()
     }
@@ -344,8 +360,11 @@ describe('BasaltProvider spotlight opt-out (ledger row 67)', () => {
     expect(await open()).not.toBeNull()
     on.unmount()
 
+    const build = spyOn(actionsModule, 'buildSpotlightActions')
     render(<BasaltProvider router={testRouter('b')} spotlight={false} />)
     await screen.findByText('b')
     expect(await open()).toBeNull()
+    expect(build).not.toHaveBeenCalled()
+    build.mockRestore()
   })
 })

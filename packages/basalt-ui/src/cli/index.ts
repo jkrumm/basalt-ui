@@ -716,7 +716,7 @@ export function resolveAppDir(root: string): AppResolution {
 }
 
 /** True when `pkgName` appears in the consumer's dependencies, devDependencies, or peerDependencies. */
-function hasDependency(cwd: string, pkgName: string): boolean {
+export function hasDependency(cwd: string, pkgName: string): boolean {
   const pkg =
     readPackageJson<
       Record<

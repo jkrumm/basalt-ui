@@ -368,6 +368,28 @@ describe('router seeds — the nav module and the root route', () => {
     expect(existsSync(resolve(dir, MANIFEST_PATH))).toBe(true)
   })
 
+  it('detects a Start app from devDependencies, and a tokens-only one seeds nothing either way', () => {
+    writeFixture(
+      'package.json',
+      JSON.stringify({ name: 'fixture', devDependencies: { '@tanstack/react-start': '*' } }),
+    )
+    capture(() => init(dir))
+    expect(existsSync(resolve(dir, 'src/main.tsx'))).toBe(false)
+    rmSync(resolve(dir, MANIFEST_PATH), { force: true })
+
+    writeFixture(
+      'package.json',
+      JSON.stringify({
+        name: 'fixture',
+        basalt: { profile: 'tokens-only' },
+        dependencies: { '@tanstack/react-start': '*' },
+      }),
+    )
+    const { log } = capture(() => init(dir))
+    expect(log).not.toContain('TanStack Start app')
+    expect(existsSync(resolve(dir, 'src/main.tsx'))).toBe(false)
+  })
+
   it('rejects the retired peer flags', () => {
     expect(run(['init', '--with-router'], dir)).toBe(1)
     expect(run(['init', '--merge-lint'], dir)).toBe(1)
