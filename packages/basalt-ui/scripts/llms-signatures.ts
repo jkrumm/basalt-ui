@@ -10,11 +10,11 @@ import ts from 'typescript'
 const pkgRoot = join(import.meta.dirname, '..')
 const MAX_LINE = 170
 const MAX_PARAM_TYPE = 70
-const MAX_PROP_TYPE = 60
-const MAX_PROPS = 40
+export const MAX_PROP_TYPE = 60
+export const MAX_PROPS = 40
 
 /** Subpaths whose exports get an indented props block under the signature (friction row 50). */
-export const PROP_SHAPE_SUBPATHS: ReadonlySet<string> = new Set(['./table', './charts', './forms'])
+const PROP_SHAPE_SUBPATHS: ReadonlySet<string> = new Set(['./table', './charts', './forms'])
 
 /** `./dist/charts/index.d.ts` → `<pkg>/src/charts/index.ts(x)`; undefined when no source entry exists. */
 function sourceEntry(typesPath: string): string | undefined {
@@ -28,16 +28,22 @@ function clip(text: string, max: number): string {
 }
 
 /**
- * A props type's own top-level members as `name?: type` lines. Members inherited from
- * node_modules (Mantine's `BoxProps`, DOM attributes) are dropped: they are Mantine's to document
- * and would drown the few props basalt-ui adds.
+ * A first parameter's own top-level members as `name?: type` lines, empty unless it is a single
+ * object type (a union or a primitive has no one shape). Nullability is stripped first, so an
+ * optional `props?` still gets its block. Members inherited from node_modules (Mantine's
+ * `BoxProps`, DOM attributes) are dropped: they are Mantine's to document and would drown the few
+ * props basalt-ui adds.
  */
-function propLines(
+export function propShapeLines(
   checker: ts.TypeChecker,
-  type: ts.Type,
+  paramType: ts.Type,
   node: ts.Node,
   flags: ts.TypeFormatFlags,
-) {
+): string[] {
+  const type = checker.getNonNullableType(paramType)
+  if (type.isUnion() || (type.flags & (ts.TypeFlags.Object | ts.TypeFlags.Intersection)) === 0) {
+    return []
+  }
   const own = type
     .getProperties()
     .filter((p) =>
@@ -118,12 +124,12 @@ export function readSignatures(
         )
         const first = call.getParameters()[0]
         if (!PROP_SHAPE_SUBPATHS.has(key) || first === undefined) return head
-        const firstType = checker.getTypeOfSymbolAtLocation(first, node)
-        const props =
-          firstType.isUnion() ||
-          (firstType.flags & (ts.TypeFlags.Object | ts.TypeFlags.Intersection)) === 0
-            ? []
-            : propLines(checker, firstType, node, flags)
+        const props = propShapeLines(
+          checker,
+          checker.getTypeOfSymbolAtLocation(first, node),
+          node,
+          flags,
+        )
         return [head, ...props].join('\n')
       })
       .toSorted()
