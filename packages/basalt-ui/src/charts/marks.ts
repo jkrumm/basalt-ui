@@ -114,20 +114,29 @@ export function cursorDots<T, X extends ChartX>(
   s: ChartSeries<T>,
   rows: readonly PlotRow<T, X>[],
   yScale: 'y2' | undefined,
-): ChartMarks[number] {
-  return dot(rows, {
-    id: `${s.key}-cursor`,
-    x: rowX,
-    y: 'y',
-    r: VX.dotR,
-    fill: s.color,
-    fillOpacity: 0,
-    stroke: VX.surface.panel,
-    strokeWidth: 1.5,
-    strokeOpacity: 0,
-    states: [{ when: { focus: 'x' }, style: { fillOpacity: 1, strokeOpacity: 1 } }],
-    ...(yScale !== undefined && { yScale }),
-  })
+): ChartMarks {
+  // `dot.fill` is constant, so a series with `getMarker` gets one mark per distinct datum colour.
+  const byColor = new Map<string, PlotRow<T, X>[]>()
+  for (const row of rows) {
+    const color = s.getMarker?.(row.datum)?.color ?? s.color
+    byColor.set(color, [...(byColor.get(color) ?? []), row])
+  }
+  if (byColor.size === 0) byColor.set(s.color, [])
+  return [...byColor].map(([color, group], i) =>
+    dot(group, {
+      id: i === 0 ? `${s.key}-cursor` : `${s.key}-cursor-${i}`,
+      x: rowX,
+      y: 'y',
+      r: VX.dotR,
+      fill: color,
+      fillOpacity: 0,
+      stroke: VX.surface.panel,
+      strokeWidth: 1.5,
+      strokeOpacity: 0,
+      states: [{ when: { focus: 'x' }, style: { fillOpacity: 1, strokeOpacity: 1 } }],
+      ...(yScale !== undefined && { yScale }),
+    }),
+  )
 }
 
 /**

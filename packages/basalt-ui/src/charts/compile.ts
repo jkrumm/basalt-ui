@@ -84,7 +84,17 @@ export type CartesianInput<T, X extends ChartX> = Pick<
   reverseRows?: boolean
   /** Bar kinds: how the left-axis `mark: 'bar'` series combine for the auto domain. */
   stack?: 'stacked' | 'normalized'
+  /** The plot area the engine last laid out; `null` before the first layout (the frame stands in). */
+  plot?: PlotSize | null
 }
+
+/** The engine's laid-out plot area in px. */
+export type PlotSize = { width: number; height: number }
+
+const PLOT_READERS = new WeakSet<object>()
+/** Whether the definition's `marks` read `plotWidth`/`plotHeight`: only then does the shell track the
+ * laid-out plot and recompile on it. Known after the first build. */
+export const readsPlot = (definition: object): boolean => PLOT_READERS.has(definition)
 
 /** Font size and tick counts per container class (§ 9.6). */
 const LADDER = {
@@ -755,7 +765,7 @@ function cursorDotMarks<T, X extends ChartX>(
         ? []
         : [{ x: input.x(d), y, series: s.key, datum: d }]
     })
-    return [cursorDots(s, rows, axes.onRight(s) ? 'y2' : undefined)]
+    return cursorDots(s, rows, axes.onRight(s) ? 'y2' : undefined)
   })
 }
 
@@ -839,7 +849,7 @@ export function compileCartesian<T, X extends ChartX>(
     s.area ? [seriesAreaGradient(s, i, input, axes)] : [],
   )
 
-  return {
+  const definition: CartesianDefinition = {
     chart: ({ width, height }: ChartBuildContext): StoredChartSpec => {
       const cls = resolveContainerClass(width)
       const kindMarks = input.marks({
@@ -849,6 +859,15 @@ export function compileCartesian<T, X extends ChartX>(
         containerClass: cls,
         width,
         height,
+        get plotWidth() {
+          PLOT_READERS.add(definition)
+          return input.plot?.width ?? width
+        },
+        get plotHeight() {
+          PLOT_READERS.add(definition)
+          return input.plot?.height ?? height
+        },
+        data: input.data,
         y2: axes.right ? 'y2' : undefined,
         yDomain: axes.left.domain,
         y2Domain: axes.right?.domain,
@@ -888,4 +907,5 @@ export function compileCartesian<T, X extends ChartX>(
         ? false
         : tooltipSpec({ input, axes, visible, keys, visibleKeys, formatX }),
   }
+  return definition
 }

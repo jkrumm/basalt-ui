@@ -9,7 +9,7 @@ import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { renderToString } from 'react-dom/server'
 import { CartesianChart } from './CartesianChart'
-import { compileCartesian, dashedSwatch, engineRow, refLegendSeries } from './compile'
+import { compileCartesian, dashedSwatch, engineRow, readsPlot, refLegendSeries } from './compile'
 import type { CartesianDefinition } from './compile'
 import { VX } from '../tokens'
 import { contrastRatio } from '../tokens/hct'
@@ -426,5 +426,78 @@ describe('band edge rules', () => {
       />,
     )
     expect(xEdges(el)).toEqual(['xzone-0-start'])
+  })
+})
+
+describe('cursor dot per-datum colour (getMarker on a cursorValue series)', () => {
+  const tracked: ChartSeries<Row> = {
+    key: 'track',
+    label: 'Track',
+    color: 'var(--vx-accent)',
+    getValue: () => null,
+    cursorValue: (d) => d.track,
+    getMarker: (d) => (d.n === 4 ? { color: 'var(--vx-fill-red)' } : null),
+  }
+  const render = () =>
+    ssr(<CartesianChart ariaLabel="C" data={data} x={x} series={[a, tracked]} marks={() => []} />)
+  const fills = (el: Element): string[] =>
+    [...el.querySelectorAll('g[data-ts-key^="track-cursor"] circle')].map(
+      (c) => c.getAttribute('fill') ?? '',
+    )
+
+  test('a datum with a marker colour gets its own cursor dot; the rest keep the series colour', () => {
+    const all = fills(render())
+    expect(all.filter((f) => f === 'var(--vx-fill-red)').length).toBe(1)
+    expect(all.filter((f) => f === 'var(--vx-accent)').length).toBe(2)
+  })
+
+  test('the first mark keeps the `<key>-cursor` id', () => {
+    expect(keyed(render(), 'track-cursor').length).toBe(1)
+  })
+})
+
+describe('PlotContext: data and plot size', () => {
+  const build = (hidden: string[], plot?: { width: number; height: number }) => {
+    const seen: { data?: readonly Row[]; rows?: number; plotW?: number; plotH?: number } = {}
+    compileCartesian({
+      chartId: 'pc',
+      data,
+      x,
+      series: [a, { ...a, key: 'b', label: 'B' }],
+      hidden: new Set(hidden),
+      ...(plot && { plot }),
+      marks: (p) => {
+        seen.data = p.data
+        seen.rows = p.rows('a').length
+        seen.plotW = p.plotWidth
+        seen.plotH = p.plotHeight
+        return []
+      },
+    }).chart({ width: 400, height: 200, defaultTheme: {} as never })
+    return seen
+  }
+
+  test('plot.data is every row even when every series is hidden; plot.rows(key) is []', () => {
+    const seen = build(['a', 'b'])
+    expect(seen.data).toBe(data)
+    expect(seen.rows).toBe(0)
+  })
+
+  test('the plot size is the frame until the engine has laid out, then the laid-out plot', () => {
+    expect([build([]).plotW, build([]).plotH]).toEqual([400, 200])
+    const laid = build([], { width: 360.5, height: 170 })
+    expect([laid.plotW, laid.plotH]).toEqual([360.5, 170])
+  })
+
+  test('reading the plot size marks the definition, so only such a chart tracks the layout', () => {
+    const ctx = { width: 400, height: 200, defaultTheme: {} as never }
+    const base = { chartId: 'pr', data, x, series: [a] }
+    const quiet = compileCartesian({ ...base, marks: () => [] })
+    quiet.chart(ctx)
+    expect(readsPlot(quiet)).toBe(false)
+    const reader = compileCartesian({ ...base, marks: (p) => (p.plotHeight, []) })
+    expect(readsPlot(reader)).toBe(false)
+    reader.chart(ctx)
+    expect(readsPlot(reader)).toBe(true)
   })
 })

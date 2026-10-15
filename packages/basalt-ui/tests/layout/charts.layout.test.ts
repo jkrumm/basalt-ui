@@ -407,4 +407,22 @@ layout('Charts — 2.0 layout', () => {
       expect(e.right).toBeLessThanOrEqual(frame.box.right + 0.5)
     }
   })
+
+  // Ledger row 94: `plot.height` is the FRAME; a mark pinned in px reads `plot.plotHeight`.
+  const RAIL_PX = 3
+  for (const [name, spec] of [
+    ['regular, law height', { kind: 'rail', width: 640 }],
+    ['compact, law height', { kind: 'rail', width: 360 }],
+    ['wide, 300 tall', { kind: 'rail', width: 960, height: 300 }],
+  ] as const satisfies readonly (readonly [string, ChartsSpec])[]) {
+    test(`a ${RAIL_PX} px rail drawn from plot.plotHeight measures ${RAIL_PX} px (${name})`, async () => {
+      const p = await openFixture(chartFixture(spec), DESKTOP)
+      await p.settle()
+      const rail = await p.raw.evaluate((sel) => {
+        const el = document.querySelector(`${sel} svg.ts-chart g[data-ts-key="rail"]`)
+        return el ? el.getBoundingClientRect().height : Number.NaN
+      }, FRAME)
+      expect(rail).toBeCloseTo(RAIL_PX, 1)
+    })
+  }
 })
