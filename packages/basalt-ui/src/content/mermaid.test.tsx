@@ -1,43 +1,40 @@
 /**
- * MermaidDiagram never lets a remote font request leave a render: beautiful-mermaid's Google Fonts
- * `@import` is stripped from the SVG and the `font-family` var() is unquoted so it resolves.
- *
- * The assertions read the exact markup string handed to `innerHTML` — the test DOM does not keep
- * the text of an inline SVG `<style>`, so the serialized DOM cannot be asserted on.
+ * Wiring only: `MermaidDiagram` routes the real renderer's SVG through `sanitizeMermaidFonts`
+ * (the patterns themselves are covered in `mermaid-sanitize.test.ts`).
  */
 import { MantineProvider } from '@mantine/core'
 import { render, waitFor } from '@testing-library/react'
-import { afterEach, describe, expect, test } from 'bun:test'
-import { MermaidDiagram } from './mermaid'
+import { afterAll, afterEach, describe, expect, mock, test } from 'bun:test'
 
-const descriptor = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML')
-const assigned: string[] = []
+// Captured BEFORE the mock lands (the factory below must not re-enter the mocked module); the
+// mock is process-global, so `afterAll` puts the real function back for later test files.
+const { sanitizeMermaidFonts: actual } = await import('./mermaid-sanitize')
+const seen: string[] = []
+mock.module('./mermaid-sanitize', () => ({
+  sanitizeMermaidFonts: (svg: string): string => {
+    seen.push(svg)
+    return actual(svg)
+  },
+}))
+const { MermaidDiagram } = await import('./mermaid')
+
 afterEach(() => {
-  if (descriptor) Object.defineProperty(Element.prototype, 'innerHTML', descriptor)
-  assigned.length = 0
+  seen.length = 0
+})
+afterAll(() => {
+  mock.module('./mermaid-sanitize', () => ({ sanitizeMermaidFonts: actual }))
 })
 
 describe('MermaidDiagram fonts', () => {
-  test('a rendered flowchart has no remote font import and an unquoted font-family var()', async () => {
-    if (!descriptor?.set) throw new Error('Element.prototype.innerHTML has no setter')
-    const { set } = descriptor
-    Object.defineProperty(Element.prototype, 'innerHTML', {
-      ...descriptor,
-      set(this: Element, value: string) {
-        assigned.push(value)
-        set.call(this, value)
-      },
-    })
-    render(
+  test('sanitizes the renderer output before it reaches the DOM', async () => {
+    const { container } = render(
       <MantineProvider>
-        <MermaidDiagram code={'flowchart LR\n  A[Start] --> B{Ok?}\n  B -->|yes| C[Done]'} />
+        <MermaidDiagram code={'flowchart LR\n  A[Start] --> B[Done]'} />
       </MantineProvider>,
     )
-    await waitFor(() => expect(assigned.some((html) => html.includes('<svg'))).toBe(true))
-    const svg = assigned.find((html) => html.includes('<svg')) ?? ''
-    expect(svg).not.toContain('@import')
-    expect(svg).not.toContain('googleapis')
-    expect(svg).toContain('font-family: var(--basalt-font-sans)')
-    expect(svg).not.toMatch(/font-family\s*:\s*['"]var\(/)
+    await waitFor(() => expect(seen.length).toBeGreaterThan(0))
+    expect(seen[0]).toContain('@import')
+    await waitFor(() => expect(container.querySelector('svg style')).not.toBeNull())
+    expect(container.innerHTML).not.toContain('googleapis')
   })
 })

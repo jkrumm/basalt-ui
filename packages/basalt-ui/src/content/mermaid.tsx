@@ -23,6 +23,7 @@ import type { CSSProperties, ReactNode } from 'react'
 import { useEffect, useMemo, useState } from 'react'
 import { CodeBlock } from './code-block'
 import classes from './mermaid.module.css'
+import { sanitizeMermaidFonts } from './mermaid-sanitize'
 
 // Import the type only — erased at runtime (verbatimModuleSyntax safe). `beautiful-mermaid` is a
 // devDependency purely so this type resolves; the runtime import below is fully dynamic.
@@ -46,21 +47,6 @@ const MERMAID_THEME_OPTIONS: RenderOptions = {
   border: 'var(--vx-surface-border)',
   font: 'var(--basalt-font-sans)',
   transparent: true,
-}
-
-/**
- * beautiful-mermaid's `buildStyleBlock` takes the font as a family NAME: it emits a Google Fonts
- * `@import` (and a mono variant) and quotes the family in `font-family`. We feed it
- * `var(--basalt-font-sans)`, so the import is a broken request (`family=var(--basalt-font-sans)`)
- * and the quoted `'var(...)'` is an invalid family. basalt self-hosts its fonts: drop the import
- * and unquote a `font-family` value that is exactly a `var(...)`.
- */
-const REMOTE_FONT_IMPORT =
-  /@import\s+url\(\s*(['"]?)https?:\/\/fonts\.googleapis\.com[\s\S]*?\1\s*\)\s*;/g
-const QUOTED_VAR_FONT_FAMILY = /(font-family\s*:\s*)(['"])(var\([^'"]*?\))\2/g
-
-function sanitizeFontStyles(svg: string): string {
-  return svg.replace(REMOTE_FONT_IMPORT, '').replace(QUOTED_VAR_FONT_FAMILY, '$1$3')
 }
 
 let modulePromise: Promise<MermaidModule | null> | null = null
@@ -102,7 +88,7 @@ export function MermaidDiagram({ code, className, style, fallback }: MermaidDiag
   const rendered = useMemo(() => {
     if (!mod) return null
     try {
-      return sanitizeFontStyles(mod.renderMermaidSVG(code, MERMAID_THEME_OPTIONS))
+      return sanitizeMermaidFonts(mod.renderMermaidSVG(code, MERMAID_THEME_OPTIONS))
     } catch {
       return undefined
     }
