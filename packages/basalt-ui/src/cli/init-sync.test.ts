@@ -379,7 +379,8 @@ describe('router seeds — the nav module and the root route', () => {
       JSON.stringify({ name: 'fixture', dependencies: { '@tanstack/react-start': '*' } }),
     )
     const { log: warned } = capture(() => sync({}, dir))
-    expect(warned).toContain('src/main.tsx')
+    expect(warned).toMatch(/src\/routes\/__root\.tsx, src\/main\.tsx mount a second router/)
+    expect(warned).toMatch(/src\/lib\/nav\.tsx was seeded .* mounts nothing/)
     expect(warned).toContain('<BasaltProvider><Outlet /></BasaltProvider>')
     const after = ['src/lib/nav.tsx', 'src/routes/__root.tsx', 'src/main.tsx'].map((d) =>
       readFileSync(resolve(dir, d), 'utf8'),

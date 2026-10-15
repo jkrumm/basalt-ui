@@ -894,6 +894,15 @@ describe('doctor — app-wiring', () => {
       'const A = () => <BasaltProvider className="a > b router=x" nonce="router=y">{x}</BasaltProvider>\n',
     )
     expect(appWiringCheck(dir)).toBeNull()
+    // A provider that only appears inside a string is no provider.
+    write('src/routes/__root.tsx', 'const doc = "<BasaltProvider>{x}</BasaltProvider>"\n')
+    expect(text(appWiringCheck(dir))).toContain('does not render <BasaltProvider>')
+    // Wide whitespace before the spread is still a spread.
+    write(
+      'src/routes/__root.tsx',
+      'const A = () => <BasaltProvider {   \n\n   ...props}>{x}</BasaltProvider>\n',
+    )
+    expect(startWiringWarnings(dir).join()).toContain('spread')
     // A spread could carry router=: not a failure, a warning.
     write(
       'src/routes/__root.tsx',

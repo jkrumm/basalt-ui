@@ -212,11 +212,18 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
   const stale = [...skipped].filter(
     (d) => manifest.files[d] !== undefined && existsSync(resolve(cwd, d)),
   )
-  if (stale.length > 0) {
+  const mounting = stale.filter((d) => !d.endsWith('nav.tsx'))
+  const inert = stale.filter((d) => d.endsWith('nav.tsx'))
+  const embedded =
+    'Delete them and render <BasaltProvider><Outlet /></BasaltProvider> in the Start root route (embedded mode).'
+  if (mounting.length > 0) {
     console.error(
-      `⚠ basalt-ui sync: ${stale.join(', ')} were seeded before this became a TanStack Start app and ` +
-        'now mount a second router; left untouched. Delete them and render ' +
-        '<BasaltProvider><Outlet /></BasaltProvider> in the Start root route (embedded mode).',
+      `⚠ basalt-ui sync: ${mounting.join(', ')} mount a second router inside this TanStack Start app; left untouched. ${embedded}`,
+    )
+  }
+  if (inert.length > 0) {
+    console.error(
+      `⚠ basalt-ui sync: ${inert.join(', ')} was seeded before this became a Start app; it mounts nothing, so keep or delete it. Left untouched.`,
     )
   }
   if (startApp && (!opts.check || syncFlags.includes('--verbose')))
