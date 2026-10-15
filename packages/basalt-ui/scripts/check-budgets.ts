@@ -435,8 +435,8 @@ async function budgets(providerOnlyDist: string): Promise<Budget[]> {
     // 4674 -> 4710: any-tag `router=` + spread detection in Start `app-wiring`, and `sync`'s stale-seed warning (rows 62, 67).
     // 4710 -> 4726: literal-aware provider tags, sticky spread match, and the split stale-seed warning (rows 62, 67).
     // 4726 -> 4859: #261's `router-wiring` module and `source-text` helper (rows 71, 72, 74) — comments restored rather than condensed.
-    // 4859 -> 4873: `sync` resolves the install root from a workspace package that depends on basalt-ui (row 77) — 14 lines, no dead code to trade.
-    { label: 'CLI non-test lines (src/cli/**)', value: cliNonTestLines(), ceiling: 4873 },
+    // 4859 -> 4890: `installRootAbove` (cli/install-root.ts) — one predicate for doctor and sync, with the same-install check (row 77, review of #267).
+    { label: 'CLI non-test lines (src/cli/**)', value: cliNonTestLines(), ceiling: 4890 },
     ...(await providerOnlyRows(providerOnlyDist)),
   ]
 }

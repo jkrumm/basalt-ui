@@ -42,6 +42,10 @@ function monorepo(apps: string[], rootExtra: Record<string, unknown> = {}): void
     pkg(`apps/${app}/`, { name: app, dependencies: { 'basalt-ui': '*' } })
     write(`apps/${app}/src/main.tsx`, '// entry\n')
   }
+  write(
+    'node_modules/basalt-ui/package.json',
+    JSON.stringify({ name: 'basalt-ui', version: '1.0.0' }),
+  )
 }
 
 function quiet<T>(fn: () => T): T {
@@ -99,21 +103,97 @@ describe('sync / init in a monorepo', () => {
     expect(existsSync(join(dir, 'src'))).toBe(false)
   })
 
-  it('syncs from a workspace package that depends on basalt-ui, without BASALT_CWD', () => {
+  const MANAGED = [
+    '.basalt',
+    '.claude',
+    'AGENTS.md',
+    'DESIGN.md',
+    '.oxlintrc.json',
+    '.oxfmtrc.json',
+    'src/routes/__root.tsx',
+  ]
+
+  function installBasalt(rel: string, version: string): void {
+    write(
+      `${rel}node_modules/basalt-ui/package.json`,
+      JSON.stringify({ name: 'basalt-ui', version }),
+    )
+  }
+
+  function syncOut(
+    cwd: string,
+    opts: Parameters<typeof sync>[0] = {},
+  ): { code: number; log: string } {
+    const lines: string[] = []
+    const log = spyOn(console, 'log').mockImplementation((...a) => void lines.push(a.join(' ')))
+    const err = spyOn(console, 'error').mockImplementation((...a) => void lines.push(a.join(' ')))
+    try {
+      return { code: sync(opts, cwd), log: lines.join('\n') }
+    } finally {
+      log.mockRestore()
+      err.mockRestore()
+    }
+  }
+
+  function installed(): void {
     monorepo(['web'])
-    pkg('packages/lib/', { name: 'lib', dependencies: { 'basalt-ui': '*' } })
-    write('packages/lib/src/index.ts', '// lib\n')
     quiet(() => init(dir))
-    expect(quiet(() => sync({}, join(dir, 'apps/web')))).toBe(0)
-    expect(quiet(() => sync({ check: true }, join(dir, 'packages/lib')))).toBe(0)
-    expect(existsSync(join(dir, 'apps/web/.basalt'))).toBe(false)
+  }
+
+  it('syncs the root install from the app package, writing nothing into the app', () => {
+    installed()
+    const { code, log } = syncOut(join(dir, 'apps/web'))
+    expect(code).toBe(0)
+    expect(log).toContain('syncing there')
+    // The router seed is the one managed file that belongs in the app (see the first test).
+    for (const f of MANAGED.slice(0, 6)) expect(existsSync(join(dir, 'apps/web', f))).toBe(false)
+    for (const f of MANAGED.slice(0, 6)) expect(existsSync(join(dir, f))).toBe(true)
+    expect(existsSync(join(dir, 'src/routes/__root.tsx'))).toBe(false)
   })
 
-  it('still refuses from a package that does not depend on basalt-ui', () => {
-    monorepo(['web'])
+  it('refuses from a dependent package that is not the app (doctor would not accept it either)', () => {
+    installed()
+    pkg('packages/lib/', { name: 'lib', dependencies: { 'basalt-ui': '*' } })
+    expect(syncOut(join(dir, 'packages/lib'), { check: true }).code).toBe(1)
+  })
+
+  it('refuses from a package that does not depend on basalt-ui', () => {
+    installed()
     pkg('packages/other/', { name: 'other' })
-    quiet(() => init(dir))
-    expect(quiet(() => sync({}, join(dir, 'packages/other')))).toBe(1)
+    expect(syncOut(join(dir, 'packages/other')).code).toBe(1)
+  })
+
+  it('refuses when the package resolves a different basalt-ui than the root', () => {
+    installed()
+    installBasalt('apps/web/', '9.9.9')
+    expect(syncOut(join(dir, 'apps/web')).code).toBe(1)
+  })
+
+  it('refuses when no ancestor carries a manifest', () => {
+    monorepo(['web'])
+    expect(syncOut(join(dir, 'apps/web')).code).toBe(1)
+  })
+
+  it('refuses on a malformed package.json', () => {
+    installed()
+    write('apps/web/package.json', '{ not json')
+    expect(syncOut(join(dir, 'apps/web')).code).toBe(1)
+  })
+
+  it('a package with its own manifest syncs itself', () => {
+    installed()
+    write('apps/web/.basalt/manifest.json', JSON.stringify({ version: 1, files: {} }))
+    expect(syncOut(join(dir, 'apps/web')).log).not.toContain('syncing there')
+  })
+
+  it('BASALT_CWD relocation skips the redirect', () => {
+    installed()
+    process.env['BASALT_CWD'] = join(dir, 'apps/web')
+    try {
+      expect(syncOut(dir).log).not.toContain('syncing there')
+    } finally {
+      delete process.env['BASALT_CWD']
+    }
   })
 
   it('detects a Start app by the app package, not the root, and seeds nothing router-shaped', () => {
