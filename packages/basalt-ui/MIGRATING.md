@@ -944,36 +944,48 @@ Lint: `basalt/visx-boundary`, `basalt/visx-tooltip`, `basalt/hand-rolled-plot`, 
 
 `marks(plot)` replaces the 1.x `children(ctx)` render prop. The engine owns the scales, so no pixel scale reaches the callback; marks are declared in data space and the host positions them.
 
-| 1.x `ctx.`     | 2.x `plot.`                                | Note                                                           |
-| -------------- | ------------------------------------------ | -------------------------------------------------------------- |
-| `data`         | `rows(key)`                                | `PlotRow { x, y, series, datum }[]`; `[]` for a hidden series  |
-| `visible`      | `visible`                                  | unchanged: series minus what the legend toggled off            |
-| `hidden`       | none                                       | derive from `visible`; `rows(key)` is already `[]` when hidden |
-| `xScale`       | none                                       | pass `x: (r) => r.x` on `rows(key)`; the engine scales it      |
-| `yScale`       | none (`yDomain` is the resolved domain)    | a mark on the default axis takes no scale argument             |
-| `y2Scale`      | `y2` (`'y2' \| undefined`)                 | pass as the mark's `yScale: plot.y2`; `y2Domain` is the domain |
-| `xMax`, `yMax` | `width`, `height`                          | the chart box in px, not the plot rect                         |
-| `margin`       | none                                       | margins are the host's; there is no margin prop                |
-| `cursorPoint`  | `chartCursor(group?)` (`basalt-ui/charts`) | the shared cursor is read outside `marks`                      |
-| `highlighted`  | `highlighted`                              | unchanged                                                      |
-| new            | `containerClass`                           | the measured container class                                   |
+| 1.x `ctx.`     | 2.x `plot.`                                            | Note                                                                                                                                                               |
+| -------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `data`         | `rows(key)`                                            | `PlotRow { x, y, series, datum }[]`; `[]` for a hidden series                                                                                                      |
+| `visible`      | `visible`                                              | unchanged: series minus what the legend toggled off                                                                                                                |
+| `hidden`       | none                                                   | derive from `visible`; `rows(key)` is already `[]` when hidden                                                                                                     |
+| `xScale`       | none                                                   | pass `x: 'x'` on `rows(key)`; the engine scales it                                                                                                                 |
+| `yScale`       | none (`yDomain` is the resolved domain)                | a mark on the default axis takes no scale argument                                                                                                                 |
+| `y2Scale`      | `y2` (`'y2' \| undefined`)                             | a mark opts in with `yScale: plot.y2`, else it draws on the left; `y2Domain` is the domain                                                                         |
+| `xMax`, `yMax` | `width`, `height`                                      | the chart box in px, not the plot rect                                                                                                                             |
+| `margin`       | none                                                   | margins are the host's; there is no margin prop                                                                                                                    |
+| `cursorPoint`  | none (`chartCursor(group?).getState()` is the closest) | `getState()` is engine coordinates (`scene` / `normalized` / `value`), not a datum: there is no direct replacement; for a cursor dot use `ChartSeries.cursorValue` |
+| `highlighted`  | `highlighted`                                          | unchanged                                                                                                                                                          |
+| new            | `containerClass`                                       | the measured container class                                                                                                                                       |
 
 ### Overlays that were drawn from pixel scales
 
-A 1.x overlay that called `ctx.xScale(x)` / `ctx.yScale(y)` and returned `<line>` / `<rect>` / `<text>` has one 2.x route: declare it as a mark in data space from `@tanstack/charts/{rule,dot,text,rect,link,arrow}` (`ruleY`, `dot`, …) and return it from `marks`. The engine runs the scales, so the overlay tracks resize, the legend and `y2` for free.
+A 1.x overlay that called `ctx.xScale(x)` / `ctx.yScale(y)` and returned `<line>` / `<rect>` / `<text>` has one 2.x route: declare it as a mark in data space from `@tanstack/charts/{line,rule,dot,text,rect,link,arrow,…}` (the `basalt/chart-engine-boundary` allowlist) and return it from `marks`. The engine runs the scales, so the overlay tracks resize and the legend. It does **not** follow `y2` on its own: a mark draws on the left axis unless it carries `yScale: plot.y2` (`undefined` without a `y2` config, so the spread is safe).
 
 ```tsx
 import { lineY } from '@tanstack/charts/line'
 import { ruleY } from '@tanstack/charts/rule'
+import { CartesianChart } from 'basalt-ui/charts'
+import { VX } from 'basalt-ui/tokens'
 
 ;<CartesianChart
   data={data}
   x={(d) => d.at}
   series={series}
+  y2={{}}
   ariaLabel="Latency"
   marks={(plot) => [
-    ...plot.visible.map((s) => lineY(plot.rows(s.key), { x: (r) => r.x, y: 'y', stroke: s.color })),
-    ruleY([250], { stroke: 'var(--vx-status-warn)' }), // data-space threshold
+    ...plot.visible.map((s) =>
+      lineY(plot.rows(s.key), {
+        x: 'x',
+        y: 'y',
+        z: 'series',
+        stroke: s.color,
+        ...(s.axis === 'right' && plot.y2 !== undefined && { yScale: plot.y2 }),
+      }),
+    ),
+    ruleY([250], { stroke: VX.status.warn }), // left axis, data space
+    ruleY([5], { yScale: plot.y2, stroke: VX.status.warn }), // right axis
   ]}
 />
 ```
