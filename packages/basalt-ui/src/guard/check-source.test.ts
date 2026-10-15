@@ -2598,14 +2598,55 @@ describe('raw-selection-control', () => {
     expect(kinds(f)).toContain('raw-hex')
   })
 
-  // rb W8 trial: a raw Select in `SettingsRow control={…}` fired with the generic colour text.
-  it('tells a settings-row selection to bind a store field, naming SelectFilter', () => {
-    const f = find(`<SettingsRow label="Unit" control={<Select data={[]} />} />`)
-    expect(kinds(f)).toContain('raw-selection-control')
+  // rb W8 trial: `control={<Select />}` fired although the plugin exempts a form row's control prop.
+  // The host walk ended the row's opening tag at the Select's own `/>`; it must be brace-aware.
+  describe('a form row homes its control= prop and its children, as the plugin does', () => {
+    const homed = [
+      [
+        'a self-closing control= prop',
+        `<SettingsRow label="Unit" control={<Select data={[]} />} />`,
+      ],
+      [
+        'an explicit-closing control= prop',
+        `<SettingsRow label="Unit" control={<Select data={[]}></Select>} />`,
+      ],
+      [
+        'a control= prop with an arrow handler',
+        `<SettingsRow label="U" control={<Select data={[]} onChange={(v) => set(v)} />} />`,
+      ],
+      [
+        'nested children',
+        `<SettingsRow label="Unit">\n  <Box>\n    <Select data={[]} />\n  </Box>\n</SettingsRow>`,
+      ],
+      [
+        'children after a control= prop on the same row',
+        `<SettingsRow label="U" control={<Switch />}>\n  <Select data={[]} />\n</SettingsRow>`,
+      ],
+      ['a FormRow control', `<FormRow label="U" control={<SegmentedControl data={[]} />} />`],
+    ] as const
+
+    it.each(homed)('does not flag %s', (_name, source) => {
+      expect(kinds(find(source))).not.toContain('raw-selection-control')
+    })
+
+    it('still flags a raw Select after the row closed', () => {
+      const f = find(`<SettingsRow label="U" control={<Switch />} />\n<Select data={[]} />`)
+      expect(kinds(f)).toContain('raw-selection-control')
+    })
+
+    it('does not flag a bound SelectFilter in control=', () => {
+      const f = find(
+        `<SettingsRow label="U" control={<SelectFilter field={prefs.field.unit} />} />`,
+      )
+      expect(kinds(f)).not.toContain('raw-selection-control')
+    })
+  })
+
+  it('names the fix: a store field, the basalt filter in a slot, .use() in a SettingsRow', () => {
     const fix = guardKindRemedy('raw-selection-control')
-    expect(fix).toContain('<SelectFilter field={store.field.x} />')
+    expect(fix).toContain('field={store.field.x}')
+    expect(fix).toContain('SettingsRow control=')
     expect(fix).toContain('createLocalStore')
-    expect(fix).toContain('createSearchStore')
   })
 
   it('names PageBar as the reachable home for a shell-less app', () => {

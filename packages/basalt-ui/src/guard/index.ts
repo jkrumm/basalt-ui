@@ -654,29 +654,49 @@ const PROSE_CONTEXT_TAG = /<(?:Prose|ArticleLayout|Modal|Drawer)(?![\w])/
 const CONTROL_HOST_TAG =
   /<(?:SettingsRow|FormRow|FormGroup|Modal|Drawer|Popover\.Dropdown|Menu\.Dropdown|Composer|FilterSet|PageAside|PanelRow)(?![\w])/
 
-/**
- * Open and close tags of the same host names, for the ancestry walk in {@link insideHostTag}. The
- * opening alternative tolerates `=>` inside props (`onChange={(v) => …}`) like
- * {@link RAW_SELECTION_CONTROL_TAG} does, and a `/>` ending marks a self-closing host, which opens
- * nothing.
- */
-const CONTROL_HOST_TAG_SCAN = new RegExp(
-  `<(/?)(?:${/\(\?:([^)]*)\)/.exec(CONTROL_HOST_TAG.source)?.[1] ?? ''})(?![\\w])(?:=>|[^>])*?>`,
+/** An opening or closing host tag's name — the anchor of the walk in {@link insideHostTag}. */
+const CONTROL_HOST_TAG_NAME = new RegExp(
+  `<(/?)(?:${/\(\?:([^)]*)\)/.exec(CONTROL_HOST_TAG.source)?.[1] ?? ''})(?![\\w])`,
   'g',
 )
 
 /**
- * Whether `offset` sits inside a host tag — one opened before it and not yet closed. The text lane
- * has no AST, but the nesting of host tags in plain JSX is countable: +1 per opening tag, −1 per
- * closing one, self-closing tags neither. That is what the plugin's `control-outside-home` answers
- * by walking ancestors, so a control 40 lines under its `<SettingsRow>` is as homed here as there,
- * and one after the row closed is not — the cases a fixed line window got wrong in both directions.
+ * The index of the `>` that ends the opening tag whose attributes start at `from`, or -1 when the
+ * text stops first. A `>` inside `{…}` (`=>`, a nested `<Select />`) or a quoted attribute value
+ * does not end it, which is what a lazy `[^>]*?>` got wrong: `control={<Select />}` ended at the
+ * Select's own `/>`.
+ */
+function openingTagEnd(codeText: string, from: number): number {
+  let braces = 0
+  let quote = ''
+  for (let i = from; i < codeText.length; i++) {
+    const ch = codeText[i]
+    if (quote !== '') {
+      if (ch === quote) quote = ''
+    } else if (braces === 0 && (ch === '"' || ch === "'")) quote = ch
+    else if (ch === '{') braces += 1
+    else if (ch === '}') braces -= 1
+    else if (ch === '>' && braces === 0) return i
+  }
+  return -1
+}
+
+/**
+ * Whether `offset` sits inside a host tag — in its attributes (`control={<Select />}`) or between
+ * its open and close tags. The text lane has no AST, but the nesting of host tags in plain JSX is
+ * countable: +1 per opening tag, −1 per closing one, self-closing tags neither. That is what the
+ * plugin's `control-outside-home` answers by walking ancestors (a `control=` prop and the children
+ * are both descendants of the row), so a control 40 lines under its `<SettingsRow>` is as homed here
+ * as there, and one after the row closed is not.
  */
 function insideHostTag(codeText: string, offset: number): boolean {
   let depth = 0
-  for (const m of codeText.slice(0, offset).matchAll(CONTROL_HOST_TAG_SCAN)) {
+  for (const m of codeText.matchAll(CONTROL_HOST_TAG_NAME)) {
+    if (m.index >= offset) break
+    const end = openingTagEnd(codeText, m.index + m[0].length)
+    if (end === -1 || end >= offset) return m[1] !== '/'
     if (m[1] === '/') depth = Math.max(0, depth - 1)
-    else if (!m[0].endsWith('/>')) depth += 1
+    else if (codeText[end - 1] !== '/') depth += 1
   }
   return depth > 0
 }
@@ -2136,7 +2156,7 @@ export const GUARD_RULES = {
     // JSX-tag-shaped (`<Select …>`) — never appears in CSS text.
     appliesTo: (relPath) => !relPath.endsWith('.css'),
     message:
-      "Raw selection control with no field — bind it: `<SelectFilter field={store.field.x} />` (or `MultiSelectFilter` / `ViewTabs`), the field from `createSearchStore` (URL) or `createLocalStore` (a preference that persists but is not URL state, e.g. a SettingsRow `control`) — so the store owns the write instead of value/onChange (docs/CONTROLS-SPEC.md laws C1–C3). Homes: a PageBar / Section / WidgetHeader slot, or a form row (SettingsRow.control, FormRow, FormGroup); a raw control passed as a form row's `control=` prop reports too, only one nested as its children is exempt. An overlay and an @mantine/form file are the declared non-homes and never report. No shell? PageBar needs no BasaltShell: outside one it renders in flow, sticky, with its own title — so its slots are a reachable home for a provider-only app. This is the TEXT lane of basalt/control-outside-home, which answers the same question against the real AST — where the two disagree, the plugin is right.",
+      'Raw selection control with no store field — bind its state to one: in a page slot (PageBar / Section / WidgetHeader) use the basalt filter with `field={store.field.x}` (`createSearchStore` for URL state); in a `SettingsRow control=` keep the Mantine control and take `[value, setValue]` from a `createLocalStore` field .use(), never useState. Rule: basalt-controls.md. No shell? PageBar needs no BasaltShell: outside one it renders in flow, sticky, with its own title — so its slots are a reachable home for a provider-only app.',
   },
   'inline-font-size': {
     kind: 'inline-font-size',
