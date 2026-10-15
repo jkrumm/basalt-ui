@@ -37,7 +37,7 @@ type MermaidModule = {
  * Static theme mapping onto the `--vx-*` token layer — every value is a `var(--vx-*)` string, so
  * this object never changes across renders/schemes and can live at module scope.
  */
-const MERMAID_THEME_OPTIONS: RenderOptions = {
+export const MERMAID_THEME_OPTIONS: RenderOptions = {
   bg: 'var(--vx-surface-panel)',
   fg: 'var(--vx-ink)',
   line: 'var(--vx-line)',
