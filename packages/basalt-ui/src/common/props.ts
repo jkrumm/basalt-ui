@@ -45,8 +45,8 @@ export interface SlotStylesProps<S extends string> {
 }
 
 /**
- * The ONE status vocabulary (audit A13). Five forks exist today — `StatCardTone` and
- * `SidebarBlockTone` are byte-identical to this, `CalloutKind` / `AccountBadgeTone` /
+ * The ONE status vocabulary (audit A13). Forks exist today — `SidebarBlockTone` is
+ * byte-identical to this, `CalloutKind` / `AccountBadgeTone` /
  * `NotificationIntent` each differ — and they stay put for now: an adopter aliases its fork to this
  * type, it does not get renamed out from under a consumer.
  */

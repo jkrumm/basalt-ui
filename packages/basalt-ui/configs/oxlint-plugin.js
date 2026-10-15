@@ -264,12 +264,12 @@ function parseAllowBody(rest, scope) {
  * The grammar, and it is the same one `src/guard` parses:
  *
  * ```text
- * theme-allow                             → this node, EVERY rule (the legacy bare form)
+ * theme-allow                             → nothing (a bare annotation waives no rule)
  * theme-allow <id>[, <id>…] [— <why>]     → this node, those rules
  * theme-allow-file <id>[, <id>…] — <why>  → the WHOLE FILE, those rules
  * ```
  *
- * `{ rules: [], unknownRules: [] }` is the bare form; a non-empty `rules` scopes the exception to
+ * `{ rules: [], unknownRules: [] }` is the bare form and covers nothing; a non-empty `rules` scopes the exception to
  * exactly those ids. A word that occupies the id slot but names no known rule lands in
  * `unknownRules` and FAILS CLOSED — the annotation then waives only the ids it got right, never
  * everything. `theme-allow raw-hexx — reason` used to consume no id, fall through to the
@@ -299,16 +299,13 @@ function parseThemeAllows(commentValue) {
 /**
  * Does one annotation cover `ruleId`?
  *
- * Only a BARE **node** annotation covers every rule. A bare `theme-allow-file` covers nothing: the
- * blanket form is tolerable on one line, where a reader sees what it sits on; over a whole file it
- * is a config exemption without the config review, so the widest waiver in the contract is the one
- * that has to name what it waives.
+ * Only the ids the annotation names (or their {@link WAIVER_ID_ALIASES}). A bare annotation, at
+ * node or file scope, covers nothing.
  */
 function allowCovers(allow, ruleId) {
   if (allow.rules.includes(ruleId)) return true
   if ((WAIVER_ID_ALIASES[ruleId] ?? []).some((alias) => allow.rules.includes(alias))) return true
-  if (allow.scope === 'file') return false
-  return allow.rules.length === 0 && allow.unknownRules.length === 0
+  return false
 }
 
 function allComments(context) {
@@ -3265,7 +3262,7 @@ const queryFnUnwrap = {
 const FORMS_IMPORT_SOURCE = 'basalt-ui/forms'
 
 /** The three names this rule resolves through the local→imported map. */
-const FORMS_SPREAD_NAMES = new Set(['inputProps', 'field'])
+const FORMS_SPREAD_NAMES = new Set(['inputProps'])
 
 const FORMS_FIELD_KEY_MESSAGES = {
   missing:
@@ -3275,13 +3272,6 @@ const FORMS_FIELD_KEY_MESSAGES = {
     '`key={fieldKey(form, path)} {...inputProps(form, path)}`: `inputProps` stopped returning ' +
     '`key` because a spread `key` is a React 19 warning, and a call site that merely kept the ' +
     'spread compiles unchanged and silently stops resetting. ' +
-    '(basalt/forms-field-key)',
-  deprecatedAlias:
-    'A spread `field(…)`. `field` NO LONGER EXISTS — it was the @deprecated 1.27 alias and 1.29.0 ' +
-    'removed it, so this import does not resolve and this file does not compile. Rewrite it as ' +
-    '`key={fieldKey(form, path)} {...inputProps(form, path)}` (two calls, never one object: a ' +
-    'spread `key` is a React 19 warning). Not autofixed: the honest edit rewrites the import as ' +
-    'well as the call site. packages/basalt-ui/MIGRATING.md carries the row. ' +
     '(basalt/forms-field-key)',
 }
 
@@ -3373,10 +3363,6 @@ const formsFieldKey = {
           if (name === undefined) continue
           if (hasThemeAllow(context, node, 'forms-field-key')) continue
 
-          if (name === 'field') {
-            context.report({ node, message: FORMS_FIELD_KEY_MESSAGES.deprecatedAlias })
-            continue
-          }
           if (hasKeyAttribute(opening)) continue
 
           const args = call.arguments ?? []

@@ -59,7 +59,7 @@ describe('raw-hex', () => {
   })
 
   it('does NOT flag a line with a theme-allow comment', () => {
-    const f = find(`const c = '#ff0000' // theme-allow: legacy`)
+    const f = find(`const c = '#ff0000' // theme-allow raw-hex — legacy`)
     expect(kinds(f)).not.toContain('raw-hex')
   })
 
@@ -146,7 +146,7 @@ describe('raw-color-fn', () => {
   })
 
   it('does NOT flag a theme-allow line', () => {
-    const f = find(`const c = rgba(0,0,0,0.5) // theme-allow`)
+    const f = find(`const c = rgba(0,0,0,0.5) // theme-allow raw-color-fn — bespoke`)
     expect(kinds(f)).not.toContain('raw-color-fn')
   })
 
@@ -180,7 +180,7 @@ describe('localstorage-theme', () => {
   })
 
   it('does NOT flag a theme-allow line', () => {
-    const f = find(`localStorage.getItem('theme') // theme-allow: legacy`)
+    const f = find(`localStorage.getItem('theme') // theme-allow localstorage-theme — legacy`)
     expect(kinds(f)).not.toContain('localstorage-theme')
   })
 })
@@ -215,7 +215,7 @@ describe('off-identity-accent', () => {
   })
 
   it('does NOT flag a theme-allow line', () => {
-    const f = find(`<Badge color="teal" /> // theme-allow: design exception`)
+    const f = find(`<Badge color="teal" /> // theme-allow off-identity-accent — design exception`)
     expect(kinds(f)).not.toContain('off-identity-accent')
   })
 })
@@ -262,7 +262,7 @@ describe('mantine-shade-index', () => {
   })
 
   it('does NOT flag a theme-allow line', () => {
-    const f = find(`<Text c="yellow.7" /> // theme-allow: design exception`)
+    const f = find(`<Text c="yellow.7" /> // theme-allow mantine-shade-index — design exception`)
     expect(kinds(f)).not.toContain('mantine-shade-index')
   })
 
@@ -309,7 +309,7 @@ describe('raw-spacing', () => {
   })
 
   it('does NOT flag a theme-allow line', () => {
-    const f = find(`<Box p={${SPACE_SCALE.md}} /> // theme-allow`)
+    const f = find(`<Box p={${SPACE_SCALE.md}} /> // theme-allow raw-spacing — bespoke`)
     expect(kinds(f)).not.toContain('raw-spacing')
   })
 })
@@ -333,7 +333,7 @@ describe('raw-radius', () => {
   })
 
   it('does NOT flag a theme-allow line', () => {
-    const f = find(`<Card radius={8} /> // theme-allow`)
+    const f = find(`<Card radius={8} /> // theme-allow raw-radius — bespoke`)
     expect(kinds(f)).not.toContain('raw-radius')
   })
 })
@@ -401,7 +401,7 @@ describe('raw-surface', () => {
   })
 
   it('does NOT flag a theme-allow line', () => {
-    const f = find(`<div style={{ borderRadius: 8 }} /> // theme-allow`)
+    const f = find(`<div style={{ borderRadius: 8 }} /> // theme-allow raw-surface — bespoke`)
     expect(kinds(f)).not.toContain('raw-surface')
   })
 })
@@ -438,7 +438,9 @@ describe('off-system-surface-var', () => {
   })
 
   it('does NOT flag a theme-allow line', () => {
-    const f = find(`<Box bg="var(--mantine-color-gray-3)" /> // theme-allow`)
+    const f = find(
+      `<Box bg="var(--mantine-color-gray-3)" /> // theme-allow off-system-surface-var — bespoke`,
+    )
     expect(kinds(f)).not.toContain('off-system-surface-var')
   })
 })
@@ -476,7 +478,7 @@ describe('raw-html-layout', () => {
   })
 
   it('does NOT flag a theme-allow line', () => {
-    const f = find(`<div style={{ display: 'flex' }} /> // theme-allow`)
+    const f = find(`<div style={{ display: 'flex' }} /> // theme-allow raw-html-layout — bespoke`)
     expect(kinds(f)).not.toContain('raw-html-layout')
   })
 
@@ -523,7 +525,7 @@ describe('inline-spacing', () => {
   })
 
   it('does NOT flag a theme-allow line', () => {
-    const f = find(`<Box style={{ padding: 16 }} /> // theme-allow`)
+    const f = find(`<Box style={{ padding: 16 }} /> // theme-allow inline-spacing — bespoke`)
     expect(kinds(f)).not.toContain('inline-spacing')
   })
 })
@@ -604,7 +606,7 @@ describe('inline-display', () => {
   })
 
   it('does NOT flag a theme-allow line', () => {
-    const f = find(`<Box style={{ display: 'flex' }} /> // theme-allow`)
+    const f = find(`<Box style={{ display: 'flex' }} /> // theme-allow inline-display — bespoke`)
     expect(kinds(f)).not.toContain('inline-display')
   })
 
@@ -656,7 +658,9 @@ describe('raw-motion-value', () => {
   })
 
   it('does NOT flag a theme-allow line', () => {
-    const f = find(`<motion.div transition={{ duration: 0.3 }} /> // theme-allow: bespoke`)
+    const f = find(
+      `<motion.div transition={{ duration: 0.3 }} /> // theme-allow raw-motion-value — bespoke`,
+    )
     expect(kinds(f)).not.toContain('raw-motion-value')
   })
 })
@@ -754,7 +758,7 @@ describe('raw-form-control', () => {
   })
 
   it('does NOT flag a theme-allow line', () => {
-    const f = find(`<input type="text" /> // theme-allow: legacy widget`)
+    const f = find(`<input type="text" /> // theme-allow raw-form-control — legacy widget`)
     expect(kinds(f)).not.toContain('raw-form-control')
   })
 
@@ -826,7 +830,9 @@ describe('sub-16-input-font', () => {
   })
 
   it('does NOT flag a theme-allow line', () => {
-    const f = find(`<input style={{ fontSize: 12 }} /> // theme-allow: legacy widget`)
+    const f = find(
+      `<input style={{ fontSize: 12 }} /> // theme-allow sub-16-input-font — legacy widget`,
+    )
     expect(kinds(f)).not.toContain('sub-16-input-font')
   })
 
@@ -873,7 +879,9 @@ describe('raw-font-family', () => {
   })
 
   it('does NOT flag a theme-allow line', () => {
-    const f = find(`fontFamily: 'Inter, sans-serif', // theme-allow: legacy widget`)
+    const f = find(
+      `fontFamily: 'Inter, sans-serif', // theme-allow raw-font-family — legacy widget`,
+    )
     expect(kinds(f)).not.toContain('raw-font-family')
   })
 
@@ -928,7 +936,7 @@ describe('raw-font-family', () => {
 describe('theme-allow skip', () => {
   it('skips the entire line when it contains the allow comment', () => {
     const text = `
-const a = '#ff0000' // theme-allow
+const a = '#ff0000' // theme-allow raw-hex — bespoke
 const b = '#00ff00'
 `.trim()
     const f = find(text)
@@ -938,7 +946,7 @@ const b = '#00ff00'
   })
 
   it('supports a custom allowComment value', () => {
-    const f = checkSource(`const c = '#ff0000' // ok-to-use-raw`, PATH, {
+    const f = checkSource(`const c = '#ff0000' // ok-to-use-raw raw-hex — bespoke`, PATH, {
       ...DEFAULT_GUARD_CONFIG,
       allowComment: 'ok-to-use-raw',
     })
@@ -1020,7 +1028,7 @@ describe('stripComments pre-pass', () => {
   })
 
   it('still honors the theme-allow escape on a code line', () => {
-    const f = find(`const c = '#ff0000' // theme-allow: legacy`)
+    const f = find(`const c = '#ff0000' // theme-allow raw-hex — legacy`)
     expect(kinds(f)).not.toContain('raw-hex')
   })
 
@@ -1412,7 +1420,7 @@ describe('exemptRules', () => {
   it('drops a finding of an exempted kind at a matching path', () => {
     const f = checkSource(TEXT, 'src/agent/x.tsx', {
       ...DEFAULT_GUARD_CONFIG,
-      exemptRules: { 'inline-display': ['agent'] },
+      exemptRules: { 'inline-display': ['src/agent'] },
     })
     expect(kinds(f)).not.toContain('inline-display')
   })
@@ -1420,32 +1428,45 @@ describe('exemptRules', () => {
   it('still fires at a non-matching path (path-scoped, not global)', () => {
     const f = checkSource(TEXT, 'src/dashboard/x.tsx', {
       ...DEFAULT_GUARD_CONFIG,
-      exemptRules: { 'inline-display': ['agent'] },
+      exemptRules: { 'inline-display': ['src/agent'] },
     })
     expect(kinds(f)).toContain('inline-display')
   })
 
-  it('a trailing-slash pattern matches identically to the bare segment', () => {
+  it('a trailing-slash pattern matches identically to the same pattern without it', () => {
     const f = checkSource(TEXT, 'src/agent/x.tsx', {
       ...DEFAULT_GUARD_CONFIG,
-      exemptRules: { 'inline-display': ['agent/'] },
+      exemptRules: { 'inline-display': ['src/agent/'] },
     })
     expect(kinds(f)).not.toContain('inline-display')
   })
 
-  it('does NOT match a substring of a segment (not a whole-segment match)', () => {
+  it('does NOT match a substring of a directory name', () => {
     const f = checkSource(TEXT, 'src/agent/x.tsx', {
       ...DEFAULT_GUARD_CONFIG,
-      exemptRules: { 'inline-display': ['age'] },
+      exemptRules: { 'inline-display': ['src/age'] },
     })
     expect(kinds(f)).toContain('inline-display')
   })
 
+  it('a bare path segment matches only a root-level path, never a nested directory', () => {
+    const cfg = { ...DEFAULT_GUARD_CONFIG, exemptRules: { 'inline-display': ['agent'] } }
+    expect(kinds(checkSource(TEXT, 'src/agent/x.tsx', cfg))).toContain('inline-display')
+    expect(kinds(checkSource(TEXT, 'agent/x.tsx', cfg))).not.toContain('inline-display')
+  })
+
+  it('a `**` glob exempts any directory of that name, at any depth', () => {
+    const f = checkSource(TEXT, 'src/deep/agent/x.tsx', {
+      ...DEFAULT_GUARD_CONFIG,
+      exemptRules: { 'inline-display': ['**/agent/**'] },
+    })
+    expect(kinds(f)).not.toContain('inline-display')
+  })
+
   // ── Relative paths and globs ────────────────────────────────────────────────
   //
-  // Only the bare-segment shape existed, and it is the one nobody guesses. rollhook wrote the
-  // obvious, correct `"public/site.webmanifest"`, matched nothing, got no diagnostic, and kept
-  // reporting — while `exemptRules` had just become the ONLY waiver route for a whole file class.
+  // rollhook wrote the obvious, correct `"public/site.webmanifest"` and, when only a bare segment
+  // matched, got no diagnostic and kept reporting. Paths and globs are the only shapes now.
 
   const HEX_MANIFEST = '{ "theme_color": "#27272a" }'
   const exemptedAt = (relPath: string, patterns: string[]): GuardKind[] =>
@@ -1481,7 +1502,7 @@ describe('exemptRules', () => {
     expect(exemptedAt('src/a/b/theme.json', ['src/**/theme.json'])).not.toContain('raw-hex')
   })
 
-  it('matches a slash-free glob against the BASENAME, like a bare segment does', () => {
+  it('matches a slash-free glob against the BASENAME', () => {
     const f = checkSource(`.a { padding: 18px }`, 'src/features/Card.module.css', {
       ...DEFAULT_GUARD_CONFIG,
       exemptRules: { 'inline-spacing': ['*.module.css'] },
@@ -1523,10 +1544,12 @@ describe('exemptRules', () => {
       ])
     })
 
-    it('reports the exact shape rollhook wrote before the path matcher existed', () => {
+    it('reports a bare file name that only matches nested paths — the old segment shape', () => {
       const cfg = { ...DEFAULT_GUARD_CONFIG, exemptRules: { 'raw-hex': ['site.webmanifest'] } }
-      expect(unmatchedExemptPatterns(cfg, ['public/site.webmanifest'])).toEqual([])
-      expect(unmatchedExemptPatterns(cfg, ['src/App.tsx'])).toHaveLength(1)
+      expect(unmatchedExemptPatterns(cfg, ['site.webmanifest'])).toEqual([])
+      expect(unmatchedExemptPatterns(cfg, ['public/site.webmanifest'])).toEqual([
+        { kind: 'raw-hex', pattern: 'site.webmanifest', reason: 'no-match' },
+      ])
     })
 
     it('is silent on an empty config', () => {
@@ -1537,7 +1560,7 @@ describe('exemptRules', () => {
   it('does NOT suppress a different kind on the same line/path', () => {
     const f = checkSource(`const c = '#ff0000'; ${TEXT}`, 'src/agent/x.tsx', {
       ...DEFAULT_GUARD_CONFIG,
-      exemptRules: { 'inline-display': ['agent'] },
+      exemptRules: { 'inline-display': ['src/agent'] },
     })
     expect(kinds(f)).not.toContain('inline-display')
     expect(kinds(f)).toContain('raw-hex')
@@ -1546,7 +1569,7 @@ describe('exemptRules', () => {
   it('exempts raw-html-layout, an INLINE-handled kind — proves the post-filter covers those too', () => {
     const f = checkSource(TEXT, 'src/agent/x.tsx', {
       ...DEFAULT_GUARD_CONFIG,
-      exemptRules: { 'raw-html-layout': ['agent'] },
+      exemptRules: { 'raw-html-layout': ['src/agent'] },
     })
     expect(kinds(f)).not.toContain('raw-html-layout')
     // inline-display isn't exempted here, so it still fires from the same text.
@@ -1559,57 +1582,44 @@ describe('exemptRules', () => {
     expect(kinds(f)).toContain('raw-html-layout')
   })
 
-  // ── EXEMPT_RULE_ALIASES: a grace-minor WIDENING inherits its parent's exemption ───────────────
-  // A kind that exists only to widen an established one is the same rule to a consumer, so an
-  // exemption already written for the parent has to cover it — otherwise the widening arrives as
-  // noise in exactly the paths someone decided the rule does not apply to.
+  // ── No alias inheritance: each kind is exempted by its own entry only ───────────────────────
 
   const HIDDEN =
     "const s = { display: 'flex', padding: 18 }\nexport const D = () => <div style={s} />"
   const SHADOW = 'const s = { boxShadow: `0 0 0 2px ${VX.accent}` }'
   const CSS_SURFACE = '.card { border-radius: 12px; }'
 
-  it("hidden-inline-style inherits raw-html-layout's exemption", () => {
+  it("hidden-inline-style does NOT inherit raw-html-layout's exemption", () => {
     expect(kinds(find(HIDDEN, 'src/agent/x.tsx'))).toContain('hidden-inline-style')
     const f = checkSource(HIDDEN, 'src/agent/x.tsx', {
       ...DEFAULT_GUARD_CONFIG,
-      exemptRules: { 'raw-html-layout': ['agent'] },
+      exemptRules: { 'raw-html-layout': ['src/agent'] },
     })
-    expect(kinds(f)).not.toContain('hidden-inline-style')
+    expect(kinds(f)).toContain('hidden-inline-style')
   })
 
-  it("surface-shadow-override and css-raw-surface inherit raw-surface's exemption", () => {
+  it("surface-shadow-override and css-raw-surface do NOT inherit raw-surface's exemption", () => {
     expect(kinds(find(SHADOW, 'src/agent/x.tsx'))).toContain('surface-shadow-override')
     expect(kinds(find(CSS_SURFACE, 'src/agent/x.css'))).toContain('css-raw-surface')
-    const cfg = { ...DEFAULT_GUARD_CONFIG, exemptRules: { 'raw-surface': ['agent'] } }
-    expect(kinds(checkSource(SHADOW, 'src/agent/x.tsx', cfg))).not.toContain(
-      'surface-shadow-override',
-    )
-    expect(kinds(checkSource(CSS_SURFACE, 'src/agent/x.css', cfg))).not.toContain('css-raw-surface')
+    const cfg = { ...DEFAULT_GUARD_CONFIG, exemptRules: { 'raw-surface': ['src/agent'] } }
+    expect(kinds(checkSource(SHADOW, 'src/agent/x.tsx', cfg))).toContain('surface-shadow-override')
+    expect(kinds(checkSource(CSS_SURFACE, 'src/agent/x.css', cfg))).toContain('css-raw-surface')
   })
 
-  it('the inheritance is one-way — exempting the CHILD leaves the parent enforced', () => {
+  it('a kind is exempted by its own entry, and only the exempted kind drops', () => {
     const f = checkSource(HIDDEN, 'src/agent/x.tsx', {
       ...DEFAULT_GUARD_CONFIG,
-      exemptRules: { 'hidden-inline-style': ['agent'] },
+      exemptRules: { 'hidden-inline-style': ['src/agent'] },
     })
     expect(kinds(f)).not.toContain('hidden-inline-style')
     expect(
       kinds(
         checkSource(TEXT, 'src/agent/x.tsx', {
           ...DEFAULT_GUARD_CONFIG,
-          exemptRules: { 'hidden-inline-style': ['agent'] },
+          exemptRules: { 'hidden-inline-style': ['src/agent'] },
         }),
       ),
     ).toContain('raw-html-layout')
-  })
-
-  it('an alias does not exempt a path the parent exemption never named', () => {
-    const f = checkSource(SHADOW, 'src/charts/x.tsx', {
-      ...DEFAULT_GUARD_CONFIG,
-      exemptRules: { 'raw-surface': ['agent'] },
-    })
-    expect(kinds(f)).toContain('surface-shadow-override')
   })
 })
 
@@ -1742,10 +1752,10 @@ describe('theme-allow scoping', () => {
     expect(kinds(f)).toContain('raw-spacing')
   })
 
-  it('a bare annotation still waives everything (back-compat) but is reported', () => {
+  it('a bare annotation waives nothing and is reported', () => {
     const f = find(`<Box p={${SPACE_SCALE.md}} style={{ color: '#ff0000' }} /> // theme-allow`)
-    expect(kinds(f)).not.toContain('raw-hex')
-    expect(kinds(f)).not.toContain('raw-spacing')
+    expect(kinds(f)).toContain('raw-hex')
+    expect(kinds(f)).toContain('raw-spacing')
     expect(kinds(f)).toContain('theme-allow-unscoped')
   })
 
@@ -1766,13 +1776,25 @@ describe('theme-allow scoping', () => {
     expect(f).toHaveLength(0)
   })
 
-  // A prose reason is introduced with a separator — the shape every annotation in the wild
-  // already has (`theme-allow: …`, `theme-allow — …`). That is what keeps prose out of the rule-id
-  // slot without having to guess whether an unknown word is a reason or a typo.
-  it('reads a separated reason as a reason, not as rule ids', () => {
+  // A prose reason is introduced with a separator (`theme-allow: …`, `theme-allow — …`), which
+  // keeps prose out of the rule-id slot. With no id in front of it the annotation is still bare:
+  // a reason alone waives nothing.
+  it('a separated reason with no rule id waives nothing and is reported', () => {
     for (const annotation of ['theme-allow: legacy vendor asset', 'theme-allow — legacy vendor']) {
       const f = find(`<Box style={{ color: '#ff0000' }} /> // ${annotation}`)
+      expect(kinds(f)).toContain('raw-hex')
+      expect(kinds(f)).toContain('theme-allow-unscoped')
+    }
+  })
+
+  it('reads a separated reason after a rule id as a reason, not as more ids', () => {
+    for (const annotation of [
+      'theme-allow raw-hex: legacy vendor asset',
+      'theme-allow raw-hex — legacy vendor',
+    ]) {
+      const f = find(`<Box style={{ color: '#ff0000' }} /> // ${annotation}`)
       expect(kinds(f)).not.toContain('raw-hex')
+      expect(kinds(f)).not.toContain('theme-allow-unscoped')
     }
   })
 
@@ -1896,9 +1918,14 @@ describe('theme-allow — annotation vs prose (the prefix rule)', () => {
     '/* theme-allow raw-hex — a block comment */',
     '{/* theme-allow raw-hex — a JSX expression comment */}',
     '/**\n * theme-allow raw-hex — a docblock gutter line\n */',
-    '// theme-allow',
   ])('%s is an annotation and waives the line below', (comment) => {
     expect([comment, above(comment).includes('raw-hex')]).toEqual([comment, false])
+  })
+
+  it('a bare `// theme-allow` above the line waives nothing and is reported', () => {
+    const k = above('// theme-allow')
+    expect(k).toContain('raw-hex')
+    expect(k).toContain('theme-allow-unscoped')
   })
 
   it('a trailing annotation waives its own line', () => {
@@ -3481,10 +3508,18 @@ describe('findAllowAnnotations', () => {
     const sites = findAllowAnnotations(src, PATH, cfg)
 
     expect(sites.map((s) => s.line)).toEqual([1, 3, 5, 7])
-    expect(sites[0]).toMatchObject({ guardKinds: ['raw-hex'], pluginRules: [], bare: false })
+    expect(sites[0]).toMatchObject({ guardKinds: ['raw-hex'], pluginRules: [] })
     expect(sites[1]).toMatchObject({ guardKinds: [], pluginRules: ['chart-in-raw-surface'] })
-    expect(sites[2]).toMatchObject({ rules: [], unknownRules: ['raw-hexx'], bare: false })
-    expect(sites[3]).toMatchObject({ bare: true, hasReason: false })
+    expect(sites[2]).toMatchObject({ guardKinds: [], pluginRules: [], unknownRules: ['raw-hexx'] })
+    // A bare annotation names nothing in either lane, so it reaches no rule at all.
+    expect(sites[3]).toMatchObject({
+      guardKinds: [],
+      pluginRules: [],
+      oxlintRules: [],
+      unknownRules: [],
+      hasReason: false,
+    })
+    expect(sites[3]).not.toHaveProperty('bare')
   })
 
   it('records the file-declaration form once, at the line it is written on', () => {

@@ -168,11 +168,6 @@ export function tokensCss(flags: string[], cwd: string = process.cwd()): number 
       : { defaultScheme: defaultScheme as 'dark' | 'light' | 'none' }),
     ...(flags.includes('--media-fallback') ? { mediaFallback: true } : {}),
     ...(only === undefined ? {} : { only: only as 'core' | 'all' }),
-    // The tokens-only consumer is exactly the one who writes these names by hand, so they are also
-    // the one who wants the deprecated camelCase aliases gone — and this command is their only
-    // entry point. Without the flag the CLI and the API could disagree about what basalt's tokens
-    // are, which is the one thing this command is documented never to allow.
-    ...(flags.includes('--no-legacy-aliases') ? { legacyAliases: false } : {}),
   })
 
   if (schemeClass !== undefined) {

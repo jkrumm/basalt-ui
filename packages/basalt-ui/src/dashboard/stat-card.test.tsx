@@ -27,9 +27,9 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { StatCard } from './stat-card'
-import type { StatCardTone } from './stat-card'
+import type { Tone } from '../common/props'
 
-function render(tone?: StatCardTone) {
+function render(tone?: Tone) {
   return renderToStaticMarkup(
     <MantineProvider>
       {/* exactOptionalPropertyTypes forbids an explicit tone={undefined} — spread only when set */}
@@ -42,7 +42,7 @@ function render(tone?: StatCardTone) {
   )
 }
 
-const TONES: { tone: StatCardTone; token: string; verdict: string }[] = [
+const TONES: { tone: Tone; token: string; verdict: string }[] = [
   { tone: 'good', token: 'var(--vx-status-good)', verdict: 'Within the good threshold' },
   { tone: 'warn', token: 'var(--vx-status-warn)', verdict: 'Past the warning threshold' },
   { tone: 'bad', token: 'var(--vx-status-bad)', verdict: 'Past the severe threshold' },

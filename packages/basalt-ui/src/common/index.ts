@@ -9,14 +9,7 @@
 export { type BasaltProps, type SlotClassNames, type SlotStylesProps } from './props'
 export { type Tone, type ToneWithNeutral, type Tier, cx } from './props'
 export { assignRef, mergeRefs } from './refs'
-export {
-  BASALT_PREFIX,
-  requiredProp,
-  oneOf,
-  deprecatedProp,
-  duplicateMount,
-  missingLayer,
-} from './errors'
+export { BASALT_PREFIX, requiredProp, oneOf, duplicateMount, missingLayer } from './errors'
 export { useValidateProps, assertRequiredProps, resetValidatedProps } from './validate'
 export { scrollParentOf, SCROLLPORT_ATTRIBUTE } from './scroll-parent'
 export { useCoarsePointer } from './use-media-query'

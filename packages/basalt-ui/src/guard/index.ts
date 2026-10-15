@@ -324,6 +324,39 @@ const REMOVED_VX_NAMES: Readonly<Record<string, string | null>> = {
   '--vx-space-app-header-mobile-actions-height': '--vx-space-sticky-header-clearance',
   '--vx-space-sticky-header-clearance-mobile': '--vx-space-sticky-header-clearance',
   '--vx-space-sidebar-brand-inset-top': null,
+  // The 1.4.0 camelCase aliases, deleted from 2.x — each names its kebab canonical.
+  '--vx-goodSolid': '--vx-good-solid',
+  '--vx-badSolid': '--vx-bad-solid',
+  '--vx-warnSolid': '--vx-warn-solid',
+  '--vx-axisStroke': '--vx-axis-stroke',
+  '--vx-dotStroke': '--vx-dot-stroke',
+  '--vx-tooltipBg': '--vx-tooltip-bg',
+  '--vx-tooltipText': '--vx-tooltip-text',
+  '--vx-tooltipMuted': '--vx-tooltip-muted',
+  '--vx-tooltipBorder': '--vx-tooltip-border',
+  '--vx-tooltipShadow': '--vx-tooltip-shadow',
+  '--vx-legendText': '--vx-legend-text',
+  '--vx-accentHover': '--vx-accent-hover',
+  '--vx-accentFill': '--vx-accent-fill',
+  '--vx-accentFillHover': '--vx-accent-fill-hover',
+  '--vx-onAccent': '--vx-on-accent',
+  '--vx-surface-panelHover': '--vx-surface-panel-hover',
+  '--vx-goodSoft': '--vx-good-soft',
+  '--vx-goodRef': '--vx-good-ref',
+  '--vx-badRef': '--vx-bad-ref',
+  '--vx-warnRef': '--vx-warn-ref',
+  '--vx-fillHover-gray': '--vx-fill-hover-gray',
+  '--vx-fillHover-red': '--vx-fill-hover-red',
+  '--vx-fillHover-pink': '--vx-fill-hover-pink',
+  '--vx-fillHover-grape': '--vx-fill-hover-grape',
+  '--vx-fillHover-violet': '--vx-fill-hover-violet',
+  '--vx-fillHover-indigo': '--vx-fill-hover-indigo',
+  '--vx-fillHover-cyan': '--vx-fill-hover-cyan',
+  '--vx-fillHover-teal': '--vx-fill-hover-teal',
+  '--vx-fillHover-green': '--vx-fill-hover-green',
+  '--vx-fillHover-lime': '--vx-fill-hover-lime',
+  '--vx-fillHover-yellow': '--vx-fill-hover-yellow',
+  '--vx-fillHover-orange': '--vx-fill-hover-orange',
 }
 
 const KNOWN_VX_NAMES: ReadonlySet<string> = new Set(BASALT_VX_NAMES)
@@ -884,18 +917,6 @@ function isChartFile(relPath: string): boolean {
   return relPath.includes('/charts/')
 }
 
-/**
- * Kinds that inherit another kind's `exemptRules` entry. A grace-minor kind that exists only to
- * carry a WIDENING of an established kind is the same rule to a consumer, so an exemption written
- * for the parent must cover it — otherwise the widening arrives as noise in exactly the paths
- * someone already decided the rule does not apply to. The entry disappears with the merge.
- */
-const EXEMPT_RULE_ALIASES: Partial<Record<GuardKind, GuardKind>> = {
-  'hidden-inline-style': 'raw-html-layout',
-  'surface-shadow-override': 'raw-surface',
-  'css-raw-surface': 'raw-surface',
-}
-
 /** `./` and any trailing `/` are noise — `'agent'`, `'agent/'` and `'./agent'` are one pattern. */
 function normalizeExemptPattern(pattern: string): string {
   return pattern.trim().replace(/^\.\//, '').replace(/\/+$/, '')
@@ -919,18 +940,14 @@ function exemptGlobToRegExp(pattern: string): RegExp {
 /**
  * Does one `exemptRules` pattern match `relPath`?
  *
- * Three shapes, tried in the order a consumer reaches for them:
+ * Two shapes, tried in the order a consumer reaches for them:
  *
  * 1. **A relative path** — `public/site.webmanifest` for one file, `public` or `src/agent` for
  *    everything under a directory.
  * 2. **A glob** — `public/*.webmanifest`, `**\/*.module.css`; a glob with no `/` in it is also
  *    tried against the BASENAME, so `*.module.css` works the way `site.webmanifest` does.
- * 3. **A bare path segment** — the legacy shape, matching a whole segment anywhere in the path.
- *
- * Only (3) existed, and it was the one shape nobody guesses: rollhook wrote the obvious, correct
- * `"public/site.webmanifest"`, matched nothing, got no diagnostic, and kept reporting. That is a
- * silent no-op exemption, and it became load-bearing the minute `.webmanifest`/`.json` entered the
- * scan — see {@link unmatchedExemptPatterns} for the other half of the fix.
+ * A bare segment (`agent`) is not a shape: it matches only a root-level path. A pattern that
+ * matches nothing is reported by {@link unmatchedExemptPatterns}, never silently ignored.
  */
 function exemptPatternMatches(pattern: string, relPath: string): boolean {
   const p = normalizeExemptPattern(pattern)
@@ -942,7 +959,7 @@ function exemptPatternMatches(pattern: string, relPath: string): boolean {
     if (!p.includes('/') && re.test(relPath.split('/').pop() ?? '')) return true
     return false
   }
-  return !p.includes('/') && relPath.split('/').includes(p)
+  return false
 }
 
 /**
@@ -954,8 +971,6 @@ function isRuleExempt(
   relPath: string,
   exemptRules: GuardConfig['exemptRules'],
 ): boolean {
-  const alias = EXEMPT_RULE_ALIASES[kind]
-  if (alias !== undefined && isRuleExempt(alias, relPath, exemptRules)) return true
   const patterns = exemptRules?.[kind]
   if (patterns === undefined || patterns.length === 0) return false
   return patterns.some((pattern) => exemptPatternMatches(pattern, relPath))
@@ -1129,8 +1144,8 @@ type AllowScope = 'line' | 'file'
 /**
  * One parsed `theme-allow` annotation.
  *
- * `rules` empty AND `unknownRules` empty is the legacy bare form, and only that covers every kind —
- * and only at `line` scope, never `file` (see {@link annotationCovers}).
+ * `rules` empty AND `unknownRules` empty is the bare form: it covers nothing (see
+ * {@link annotationCovers}).
  * `unknownRules` holds words that occupied the rule-id slot but name no rule — a typo. Its presence
  * is what makes the parse FAIL CLOSED: `theme-allow raw-hexx — reason` used to consume no id, fall
  * through to `rules: []`, and be read as the blanket form, so one mistyped character escalated a
@@ -1508,18 +1523,15 @@ function collectAllowAnnotations(
 /**
  * Does one annotation cover `kind`?
  *
- * Only a BARE **line** annotation (no ids at all, known or unknown) covers every kind. One that
- * reached for a rule id and missed covers exactly the ids it got right — nothing widens on a typo.
- *
- * A bare `theme-allow-file` covers NOTHING. The blanket form is tolerable on one line, where a
- * reader sees what it sits on; over a whole file it is `exemptRules` without the config review, and
- * the widest waiver in the contract must be the one that has to name what it waives.
+ * Only the ids an annotation names (or their {@link WAIVER_ID_ALIASES}) are covered. A bare
+ * annotation, or one whose ids all missed, waives nothing and is reported as `theme-allow-unscoped`;
+ * one that reached for several ids and missed some covers exactly the ids it got right — nothing
+ * widens on a typo.
  */
 function annotationCovers(annotation: AllowAnnotation, kind: GuardKind): boolean {
   if (annotation.rules.includes(kind)) return true
   if ((WAIVER_ID_ALIASES[kind] ?? []).some((alias) => annotation.rules.includes(alias))) return true
-  if (annotation.scope === 'file') return false
-  return annotation.rules.length === 0 && annotation.unknownRules.length === 0
+  return false
 }
 
 /** Does any annotation on this line cover `kind`? */
@@ -1717,8 +1729,8 @@ export const TOKENS_ONLY_DISABLED_KINDS: ReadonlySet<GuardKind> = new Set([
   'off-system-surface-var',
   'raw-html-layout',
   // Same remedy as raw-html-layout, word for word ("use a Mantine layout primitive") — it is that
-  // kind's widening, so it has to share its gate here exactly as it shares it in
-  // EXEMPT_RULE_ALIASES. Splitting them told a Mantine-free consumer to import Box/Flex.
+  // kind's widening, so it has to share its gate here. Splitting them told a Mantine-free
+  // consumer to import Box/Flex.
   'hidden-inline-style',
   'inline-spacing',
   'inline-display',
@@ -2116,7 +2128,7 @@ export const GUARD_RULES = {
     kind: 'theme-allow-unscoped',
     pattern: /theme-allow/, // handled inline (annotation pass); entry keeps the registry complete
     message:
-      'theme-allow without a usable rule id and a reason. Write `theme-allow <rule-id> — <why>`: the id scopes the exception to that one kind (a bare comment waives EVERY kind on the line, including ones added later), and the reason is what makes it reviewable in a diff. An id that names no rule is a typo, not a blanket waiver — it suppresses nothing. `theme-allow-file <rule-id> — <why>` declares the whole file, and must name its ids: a bare one waives nothing.',
+      'theme-allow without a usable rule id and a reason. Write `theme-allow <rule-id> — <why>`: the id scopes the exception to that one kind (a bare comment waives nothing), and the reason is what makes it reviewable in a diff. An id that names no rule is a typo, not a blanket waiver — it suppresses nothing. `theme-allow-file <rule-id> — <why>` declares the whole file, and must name its ids: a bare one waives nothing.',
   },
   'surface-shadow-override': {
     kind: 'surface-shadow-override',
@@ -2175,7 +2187,7 @@ export const GUARD_RULES = {
   'unknown-vx-token': {
     kind: 'unknown-vx-token',
     pattern: VX_VAR_REF, // handled inline (basalt-owned families); entry keeps the registry complete
-    message: `var() names a --vx-* token basalt does not emit, so it resolves to its fallback (or to nothing) with no error anywhere. Judged: every name inside a basalt-owned family (${[...BASALT_VX_FAMILY_SET].join(', ')}) — pick the token from basalt-ui/tokens.css; your own series belong in a family of their own (groupTokens throws on one inside basalt's, in dev builds). Removed names and their replacements: ${Object.entries(
+    message: `var() names a --vx-* token basalt does not emit, so it resolves to its fallback (or to nothing) with no error anywhere. Judged: every name inside a basalt-owned family (${[...BASALT_VX_FAMILY_SET].join(', ')}) — pick the token from the stylesheet basalt-ui tokens:css emits; your own series belong in a family of their own (groupTokens throws on one inside basalt's, in dev builds). Removed names and their replacements: ${Object.entries(
       REMOVED_VX_NAMES,
     )
       .map(([from, to]) => `${from} → ${to ?? '(deleted, no replacement)'}`)
@@ -2368,7 +2380,11 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
   for (const m of codeText.matchAll(VX_VAR_REF)) {
     const name = m[1] ?? ''
     if (locallyDeclaredVx.has(name)) continue
-    if (KNOWN_VX_NAMES.has(name) || !BASALT_VX_FAMILY_SET.has(vxFamilyOf(name))) continue
+    // A removed name is judged even outside an owned family (`--vx-onAccent` sits in `on`, which
+    // consumers extend as `--vx-on-<color>`).
+    if (KNOWN_VX_NAMES.has(name)) continue
+    if (!BASALT_VX_FAMILY_SET.has(vxFamilyOf(name)) && !Object.hasOwn(REMOVED_VX_NAMES, name))
+      continue
     const at = (m.index ?? 0) + m[0].length - name.length
     push('unknown-vx-token', lineStarts.findLastIndex((start) => start <= at) + 1, name)
   }
@@ -2715,7 +2731,7 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
  *
  * `guardKinds` is what `checkSource` can judge by re-running itself with the annotation
  * neutralized. `pluginRules` is what only an `oxlint` run can judge. `unknownRules` names no rule
- * at all. All three empty with `bare: true` is the legacy blanket form.
+ * at all. All three empty is a bare annotation, which waives nothing.
  */
 export type AllowAnnotationSite = {
   /** 1-based line the annotation is written on. */
@@ -2732,17 +2748,14 @@ export type AllowAnnotationSite = {
    * Every id an `oxlint` run can prove live: `pluginRules`, plus a guard kind that is ALSO a plugin
    * rule (`in-body-page-title`) or aliases one ({@link WAIVER_ID_ALIASES}). A waiver is live if
    * EITHER lane still needs it — judging only `pluginRules` called rb's live `in-body-page-title`
-   * waivers dead, and deleting them made oxlint exit 1. A bare LINE-scope annotation covers every
-   * plugin rule (the plugin's `allowCovers`), so it lists all of them; a bare file-scope one waives
-   * nothing in either lane and lists none.
+   * waivers dead, and deleting them made oxlint exit 1. A bare annotation waives nothing in either
+   * lane and lists none.
    */
   readonly oxlintRules: readonly string[]
   /** Words that occupied the id slot but name no rule. Their presence makes the parse fail closed. */
   readonly unknownRules: readonly string[]
   /** A written reason follows the ids. */
   readonly hasReason: boolean
-  /** The legacy blanket form — no ids at all, known or unknown. Only covers anything at line scope. */
-  readonly bare: boolean
   /** The source line, verbatim. */
   readonly text: string
 }
@@ -2775,9 +2788,7 @@ export function findAllowAnnotations(
     cfg.allowComment,
     syntax,
   )
-  const everyOxlintRule = [...PLUGIN_RULE_IDS, ...DUAL_LANE_IDS]
   return declared.map(({ line, annotation }) => {
-    const bare = annotation.rules.length === 0 && annotation.unknownRules.length === 0
     return {
       line,
       scope: annotation.scope,
@@ -2786,19 +2797,15 @@ export function findAllowAnnotations(
       pluginRules: annotation.rules.filter(
         (id) => !Object.hasOwn(GUARD_RULES, id) && PLUGIN_RULE_IDS.has(id),
       ),
-      oxlintRules:
-        bare && annotation.scope === 'line'
-          ? everyOxlintRule
-          : [
-              ...new Set(
-                annotation.rules
-                  .flatMap((id) => [id, ...(WAIVER_ID_ALIASES[id] ?? [])])
-                  .filter((id) => PLUGIN_RULE_IDS.has(id) || DUAL_LANE_IDS.has(id)),
-              ),
-            ],
+      oxlintRules: [
+        ...new Set(
+          annotation.rules
+            .flatMap((id) => [id, ...(WAIVER_ID_ALIASES[id] ?? [])])
+            .filter((id) => PLUGIN_RULE_IDS.has(id) || DUAL_LANE_IDS.has(id)),
+        ),
+      ],
       unknownRules: [...annotation.unknownRules],
       hasReason: annotation.hasReason,
-      bare,
       text: lines[line - 1] ?? '',
     }
   })

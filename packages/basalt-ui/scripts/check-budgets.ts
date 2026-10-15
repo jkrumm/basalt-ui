@@ -304,7 +304,8 @@ const PROVIDER_ONLY_LABEL = 'provider-only first paint (gzip B, dist)'
 // (tested) and Spotlight is statically mounted by default, so lazying it would change first paint.
 // 20880 → 20340: the dock's lazy import() is dead code in production (20136 locally, was 20796);
 // ~1% over local clears CI's measured +34 B with room.
-const PROVIDER_ONLY_CEILING = 20340
+// 20340 → 19940: the 32 camelCase `--vx-*` aliases leave the injected CSS (19744 locally, was 20136).
+const PROVIDER_ONLY_CEILING = 19940
 const DEV_CHUNKS_LABEL =
   'dev-only chunks in a production consumer build (dock, theme lab, devtools)'
 

@@ -78,8 +78,8 @@ props extend and `src/surfaces.ts` stays the SSOT for real subpaths.
   `utils/`. That is what lets `./charts` and `./tokens` reach `cx`/`mergeRefs` without breaching the
   layer boundary. `Tier` is re-exported from `widget-header` **type-only**, so it emits no runtime
   edge into the Mantine-coupled half.
-- `Tone`/`ToneWithNeutral` is the ONE status vocabulary. Five forks exist (`StatCardTone` and
-  `SidebarBlockTone` byte-identical; `CalloutKind`, `AccountBadgeTone`, `NotificationIntent`
+- `Tone`/`ToneWithNeutral` is the ONE status vocabulary. Forks exist (`SidebarBlockTone`
+  byte-identical; `CalloutKind`, `AccountBadgeTone`, `NotificationIntent`
   differ) — an adopter ALIASES its fork to this type; nothing gets renamed out from under a
   consumer.
 

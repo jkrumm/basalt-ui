@@ -145,7 +145,7 @@ describe('basalt/no-raw-font-size', () => {
 
   it('does NOT flag a numeric fontSize with a same-line theme-allow comment', () => {
     const { code, rules } = run(
-      `export const C = () => <Text fz={10} /* theme-allow: legacy */>a</Text>\n`,
+      `export const C = () => <Text fz={10} /* theme-allow no-raw-font-size — legacy */>a</Text>\n`,
     )
     expect(code).toBe(0)
     expect(rules).not.toContain('no-raw-font-size')
@@ -189,7 +189,7 @@ describe('basalt/raw-size-literal', () => {
 
   it('does NOT flag with a same-line theme-allow comment', () => {
     const { code, rules } = run(
-      `export const C = () => <Text fz="0.8rem" /* theme-allow: legacy */>a</Text>\n`,
+      `export const C = () => <Text fz="0.8rem" /* theme-allow raw-size-literal — legacy */>a</Text>\n`,
     )
     expect(code).toBe(0)
     expect(rules).not.toContain('raw-size-literal')
@@ -1686,9 +1686,18 @@ describe('theme-allow with an unrecognized rule id', () => {
     expect(code).toBe(0)
   })
 
-  it('a bare theme-allow still waives everything', () => {
-    const { rules } = run(`export const C = () => <Text fz={10} /> // theme-allow\n`)
-    expect(rules).not.toContain('no-raw-font-size')
+  it('a bare theme-allow waives nothing', () => {
+    const { code, rules } = run(`export const C = () => <Text fz={10} /> // theme-allow\n`)
+    expect(code).toBe(1)
+    expect(rules).toContain('no-raw-font-size')
+  })
+
+  it('a prose-only annotation (no rule id) waives nothing', () => {
+    const { code, rules } = run(
+      `export const C = () => <Text fz={10} /> // theme-allow: legacy widget\n`,
+    )
+    expect(code).toBe(1)
+    expect(rules).toContain('no-raw-font-size')
   })
 
   it('does not resolve an Object.prototype key as a rule id', () => {
@@ -3301,31 +3310,14 @@ describe('basalt/forms-field-key', () => {
     expect(rules).toContain('forms-field-key')
   })
 
-  // The second message: reported whether or not the element carries a key — the remedy is the
-  // rename, never an added attribute.
-  it('flags a spread field() even when the element already has a key', () => {
-    const { code, rules } = run(
+  // `field` was the @deprecated 1.27 alias and is gone; this rule resolves `inputProps` alone, so a
+  // spread `field(…)` import is no longer its concern (the unresolved import fails the compile).
+  it('does NOT flag a spread field() — only inputProps is resolved', () => {
+    const { rules } = run(
       `import { field } from 'basalt-ui/forms'\n` +
         `export const C = () => <TextInput key="e" {...field(form, 'email')} />\n`,
     )
-    expect(code).toBe(1)
-    expect(rules).toContain('forms-field-key')
-  })
-
-  /**
-   * The message has to state the version it is RUNNING at, not the one the deprecation was
-   * scheduled in. It used to say the alias "still bundles `key` INTO the returned object" and "is
-   * removed in 1.29.0" while running AT 1.29.x, where `field` no longer exists at all — a consumer
-   * reading it concluded nothing was broken, on a call site that does not compile.
-   */
-  it('says `field` no longer exists, not that it is merely deprecated', () => {
-    const { output } = run(
-      `import { field } from 'basalt-ui/forms'\n` +
-        `export const C = () => <TextInput {...field(form, 'email')} />\n`,
-    )
-    expect(output).toContain('NO LONGER EXISTS')
-    expect(output).toContain('does not compile')
-    expect(output).not.toContain('still bundles')
+    expect(rules).not.toContain('forms-field-key')
   })
 
   it('honours a theme-allow naming the rule', () => {

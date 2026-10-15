@@ -40,23 +40,6 @@ export function oneOf(
 }
 
 /**
- * A prop still shipped and still working, with a named successor and the version it goes away in.
- * Majors are banned here, so the deprecation notice IS the migration channel.
- */
-export function deprecatedProp(
-  component: string,
-  oldProp: string,
-  newProp: string,
-  removeIn: string,
-  note?: string,
-): string {
-  return message(
-    component,
-    `prop "${oldProp}" is deprecated — use "${newProp}" instead. "${oldProp}" is removed in ${removeIn}.${note === undefined ? '' : ` ${note}`}`,
-  )
-}
-
-/**
  * A prop the component ACCEPTS, reads nothing from, and cannot report as wrong — because a SECOND
  * prop it was passed alongside decides the same thing and won.
  *

@@ -174,10 +174,10 @@ export type GuardConfig = {
    * raw-html-layout → non-chart files). This is the config-driven counterpart: a consumer can say
    * "kind K does not apply under path P" without exempting the whole file or forking the rule.
    *
-   * Each value is a list of path-segment patterns matched against a finding's `relPath`. A pattern
-   * matches when `relPath.split('/')` includes it as a WHOLE segment — `'agent'` matches
-   * `src/agent/part-list.tsx` but not `src/agenting.ts`. A trailing `/` is stripped before
-   * matching, so `'agent'` and `'agent/'` behave identically. Applied as a post-filter over the
+   * Each value is a list of relative-path or glob patterns matched against a finding's `relPath`:
+   * `'src/agent'` matches everything under it, `'public/site.webmanifest'` one file, `'**\/agent/**'`
+   * any `agent` directory. A bare segment (`'agent'`) matches only a root-level path. A trailing
+   * `/` is stripped before matching, so `'src/agent'` and `'src/agent/'` behave identically. Applied as a post-filter over the
    * final findings, so it uniformly covers every kind — both the GUARD_RULES registry loop and the
    * inline-handled kinds (raw-surface, raw-html-layout, sub-16-input-font, …).
    *
@@ -186,7 +186,7 @@ export type GuardConfig = {
    * GuardConfig from BasaltConfig (where the field IS optional) if this were optional too.
    *
    * @example
-   * { exemptRules: { 'inline-display': ['agent'] } } // inline-display never fires under src/agent/**
+   * { exemptRules: { 'inline-display': ['src/agent'] } } // inline-display never fires under src/agent/**
    */
   readonly exemptRules: Partial<Record<GuardKind, string[]>>
   /**

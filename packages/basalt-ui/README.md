@@ -233,9 +233,8 @@ Other keys (`exempt`, `severity`, `spacingSteps`, `forbiddenAccents`, …) are d
 
 **`exemptRules`** turns one kind off along a path. A pattern is a relative path
 (`public/site.webmanifest`, or `src/agent` for everything under it), a glob (`*` stops at `/`, `**`
-does not, and a slash-free glob is also tried against the basename, so `*.module.css` works), or a
-bare path segment — the legacy shape, and the one nobody guesses, since before 1.21.0 it was the
-ONLY shape and a real relative path matched nothing and said nothing. The object form records the
+does not, and a slash-free glob is also tried against the basename, so `*.module.css` works), A bare
+segment (`agent`) matches only a root-level path, never `src/agent`. The object form records the
 reason, which is what a `theme-allow` always carried and this key could not. A pattern that
 suppresses nothing is now reported by a normal run and fails `--audit-allows`.
 
@@ -255,19 +254,19 @@ reported on its own line.
 **The escape hatch is scoped, and since 1.21.0 the two scopes are spelled apart:**
 
 ```text
-theme-allow                                  → this node/line, EVERY rule   (reports theme-allow-unscoped)
+theme-allow                                  → nothing                      (reports theme-allow-unscoped)
 theme-allow <id>[, <id>…] [— <why>]          → this node/line, those rules
-theme-allow-file <id>[, <id>…] — <why>       → the WHOLE FILE, those rules; a bare one waives NOTHING
+theme-allow-file <id>[, <id>…] — <why>       → the WHOLE FILE, those rules
 "basalt:theme-allow[-file]": "<id>… — <why>" → the same two, for JSON / .webmanifest
 ```
 
 An annotation must **start** its comment (after `//`, `/*`, `<!--`, a block gutter `*`, or
-whitespace) — before 1.21.0 any comment merely mentioning the token parsed as the bare blanket form,
-so a file documenting its own waivers disarmed itself. Placements: the reported line, a comment-only
+whitespace) — before 1.21.0 any comment merely mentioning the token parsed as a blanket waiver, so a
+file documenting its own waivers disarmed itself; a bare annotation now waives nothing. Placements: the reported line, a comment-only
 line directly above it (the only form JSX can express, and it reaches the first CODE line below,
 walking through the rest of its comment block), or — in CSS — a trailing comment reaching back over
 the declaration it terminates. The id slot is read strictly: a word there that names no rule waives
-nothing, so a typo is never the blanket form.
+nothing, so a typo never widens a waiver.
 
 `basalt-ui check-theme --audit-allows` reports every annotation and every `exemptRules` entry with
 what it still suppresses, proved by re-running the scan with that one waiver neutralized. Exits 1 on

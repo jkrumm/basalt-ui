@@ -130,8 +130,8 @@ export type BasaltConfig = {
   seriesModulePath?: string
   /**
    * Per-rule, per-path exemptions, complementing whole-file `exempt`. A pattern is matched against a
-   * finding's relative path: a path segment (`'agent'` matches `src/agent/x.tsx`, not
-   * `src/agenting.ts`), a relative path, a directory prefix, or a glob (`*` stops at `/`, `**` does
+   * finding's relative path: a relative path (`'public/site.webmanifest'`), a
+   * directory prefix (`'src/agent'` matches `src/agent/x.tsx`, not `src/agenting.ts`), or a glob (`*` stops at `/`, `**` does
    * not; a slash-free glob also matches the basename). An entry that suppresses nothing is reported
    * and `check-theme --audit-allows` exits 1 on it. Default: `{}`.
    *
@@ -139,9 +139,9 @@ export type BasaltConfig = {
    * `.webmanifest` finding's only escape is this key), which `--audit-allows` prints.
    *
    * @example
-   * { exemptRules: { 'inline-display': ['agent'] } } // inline-display never fires under src/agent/**
+   * { exemptRules: { 'inline-display': ['src/agent'] } } // inline-display never fires under src/agent/**
    * @example
-   * { exemptRules: { 'raw-hex': { paths: ['site.webmanifest'],
+   * { exemptRules: { 'raw-hex': { paths: ['public/site.webmanifest'],
    *   reason: 'a PWA manifest theme_color MUST be a literal hex — JSON cannot reference a CSS var' } } }
    */
   exemptRules?: Partial<Record<GuardKind, ExemptRuleEntry>>

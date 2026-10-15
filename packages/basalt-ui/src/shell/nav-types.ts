@@ -76,7 +76,7 @@ export type SidebarSection = {
 
 /**
  * Status tone on a sidebar-block item — byte-identical to the common `Tone` vocabulary
- * (`common/props.ts`, audit A13) and to `StatCardTone`, whose members are `VX.status` keys by
+ * (`common/props.ts`, audit A13) and to `StatCard`'s `tone`, whose members are `VX.status` keys by
  * construction. Declared here rather than aliased to `common`'s `Tone`: this module is the one
  * `./router-tanstack` reads, and `common/props.ts` re-exports `Tier` (type-only) from
  * `../widget-header/widget-header`, a Mantine-coupled file — importing anything from `common/props`

@@ -201,17 +201,6 @@ function warnPatchDropped(input: { key: string; name: string; param: string }): 
 }
 
 /**
- * The public store plus the one member only the deprecated wrappers need: `markReaderWired`, so a
- * consumer whose only reader is the wrapper's own `useStore()` still counts as wired and never sees
- * the pinned-link warning it never used to see.
- *
- * @internal — absent from `SearchStore`, so it is invisible on `createSearchStore`'s return type.
- */
-export type InternalSearchStore<S extends Record<string, AnyField>> = SearchStore<S> & {
-  markReaderWired: () => void
-}
-
-/**
  * A thunk fallback belongs to the LOCAL and MEMORY lanes only. On the URL lane `validateSearch`
  * would evaluate it on every navigation and write the result into the URL, so a deep link would
  * carry a value nobody picked and two visits a second apart would disagree. Thrown at definition
@@ -264,7 +253,7 @@ function isMemoryLane(entry: StoreEntry): boolean {
  */
 export function buildSearchStore<const S extends Record<string, AnyField>>(
   o: CreateSearchStoreOptions<S>,
-): InternalSearchStore<S> {
+): SearchStore<S> {
   assertNoLazyUrlFallback(o.key, o.fields)
   const core = createStoreCore(o)
 
@@ -570,7 +559,7 @@ export function buildSearchStore<const S extends Record<string, AnyField>>(
     }
   }
 
-  const store: InternalSearchStore<S> = {
+  const store: SearchStore<S> = {
     validateSearch,
     linkSearch,
     readStored,
@@ -582,7 +571,6 @@ export function buildSearchStore<const S extends Record<string, AnyField>>(
     useValues,
     useActiveCount,
     useReset,
-    markReaderWired,
   }
 
   return store

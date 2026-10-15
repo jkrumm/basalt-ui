@@ -215,9 +215,7 @@ export function auditAllows(
           slot: waiverLines.length,
           rel,
           line: site.line,
-          reach: site.bare
-            ? 'a bare annotation, waiving every oxlint plugin rule on its line'
-            : `scoped to ${site.oxlintRules.join(', ')}, which oxlint judges`,
+          reach: `scoped to ${site.oxlintRules.join(', ')}, which oxlint judges`,
           site: label,
           suffix,
         })

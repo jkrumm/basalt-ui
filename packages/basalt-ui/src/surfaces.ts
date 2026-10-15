@@ -391,10 +391,8 @@ export const SURFACES = {
     rule: 'batteries',
     skill: ['basalt-design'],
     guardKinds: [],
-    // The one change in the 1.28.0 forms minor a compiler cannot see: `inputProps` stopped
-    // returning `key`, and the pre-1.28.0 spread still type-checks, renders and validates — it
-    // only stops resetting. `warn` through the 1.30.0 grace because it fires on what every
-    // consumer ships today (`PLUGIN_RULE_GRACE`).
+    // The one forms change a compiler cannot see: `inputProps` does not return `key`, and the old
+    // spread still type-checks, renders and validates — it only stops resetting.
     pluginRules: ['forms-field-key'],
     description:
       'Mantine form layer: useBasaltForm + inputProps/fieldKey (two calls — a spread `key` is a React 19 warning), on @mantine/form',
@@ -421,7 +419,7 @@ export const SURFACES = {
     guardKinds: [],
     pluginRules: [],
     description:
-      'BasaltDataTable and createColumnHelper: a data table over TanStack Table v9, rendered with Mantine (renamed from ./data/table)',
+      'BasaltDataTable and createColumnHelper: a data table over TanStack Table v9, rendered with Mantine',
     optionalPeers: ['@tanstack/react-table'],
     forbiddenImports: [],
   },
@@ -480,12 +478,8 @@ export const SURFACES = {
     // The text lane of law C1 — the plugin's `control-outside-home` seen through a host-tag nesting
     // count, since a regex scan has no AST. Same law, same wave, same promotion.
     guardKinds: ['raw-selection-control'],
-    // The control tier itself (laws C1/C3/C5/C9). `hand-rolled-filter`, `control-size-literal` and
-    // `responsive-twin` all ship `error`; the two C1 placement rules are the grace entries in
-    // `PLUGIN_RULE_GRACE`, both promoting at 1.30.0 — `control-outside-home` re-dated against the
-    // wave-7 measurement, `bound-control-outside-home` new since 1.28.0 (ASIDE-SPEC G5: the basalt
-    // half of C1, where a bound control in a section body rendered as a stray pill). The action
-    // budgets are types now (`PageBarActions` / `SectionActions`, `controls/actions.tsx`).
+    // The control tier itself (laws C1/C3/C5/C9), every rule at `error`. The action budgets are
+    // types (`PageBarActions` / `SectionActions`, `controls/actions.tsx`).
     pluginRules: [
       'hand-rolled-filter',
       'control-outside-home',

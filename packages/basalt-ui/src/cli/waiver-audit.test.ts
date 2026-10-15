@@ -115,20 +115,10 @@ describe('check-theme --audit-allows — theme-allow annotations', () => {
     expect(code).toBe(0)
   })
 
-  // A bare annotation names no rule, so the verdict must not read as if it were scoped to one.
-  it.each([
-    [
-      'a bare line-scope waiver',
-      '// theme-allow\nexport const c = 1\n',
-      'a bare annotation, waiving every oxlint plugin rule on its line',
-    ],
-    [
-      'an id-scoped waiver',
-      '// theme-allow chart-in-raw-surface — a bespoke surface\nexport const c = 1\n',
-      'scoped to chart-in-raw-surface, which oxlint judges',
-    ],
-  ])('words the cannot-judge verdict for %s by what it waives', (_, source, reach) => {
-    fixture(source)
+  // The verdict names the rule the waiver is scoped to, never a blanket reach.
+  it('words the cannot-judge verdict for an id-scoped waiver by what it waives', () => {
+    const reach = 'scoped to chart-in-raw-surface, which oxlint judges'
+    fixture('// theme-allow chart-in-raw-surface — a bespoke surface\nexport const c = 1\n')
     const originalPath = process.env['PATH']
     process.env['PATH'] = ''
     let log: string
@@ -153,12 +143,20 @@ describe('check-theme --audit-allows — theme-allow annotations', () => {
     expect(log).toContain('basalt.include')
   })
 
-  it('marks an unaccountable waiver while still reporting what it covers', () => {
-    fixture("export const c = '#ff0000' // theme-allow\n")
+  it('marks a reason-less scoped waiver unaccountable while still reporting what it covers', () => {
+    fixture("export const c = '#ff0000' // theme-allow raw-hex\n")
     const { log } = audit()
     expect(log).toContain('suppresses raw-hex@1')
-    expect(log).toContain('no rule id')
     expect(log).toContain('1 unaccountable')
+  })
+
+  it('a bare waiver waives nothing: it suppresses nothing and counts as unaccountable', () => {
+    fixture("export const c = '#ff0000' // theme-allow\n")
+    const { code, log } = audit()
+    expect(log).not.toContain('suppresses raw-hex@1')
+    expect(log).toContain('SUPPRESSES NOTHING')
+    expect(log).toContain('1 unaccountable')
+    expect(code).toBe(1)
   })
 })
 
@@ -277,25 +275,14 @@ describe.skipIf(!existsSync(OXLINT_BIN))('check-theme --audit-allows — oxlint 
     expect(code).toBe(0)
   })
 
-  // A bare line-scope `theme-allow` covers every plugin rule (the plugin's `allowCovers`), so a
-  // text-lane miss must still ask oxlint — reporting it dead and deleting it fails the lint.
-  it('proves a bare line-scope waiver LIVE when only a plugin rule still needs it', () => {
-    write('package.json', JSON.stringify({ name: 'fixture', basalt: { roots: ['src'] } }))
-    write(
-      'src/charts/plot.tsx',
-      "import { Lines } from 'basalt-ui/charts'\n\n" +
-        '// theme-allow\n' +
-        'export const Plot = () => <Card><Lines /></Card>\n',
-    )
-    withOxlint()
-    const { log } = audit()
-    expect(log).toContain('suppresses chart-in-raw-surface@4 (oxlint)')
-    expect(log).not.toContain('SUPPRESSES NOTHING')
-  })
-
-  it('never sends a bare FILE-scope annotation to oxlint — it waives nothing in either lane', () => {
-    const [site] = findAllowAnnotations('// theme-allow-file\n', 'src/a.tsx', DEFAULT_GUARD_CONFIG)
-    expect([site?.bare, site?.scope, site?.oxlintRules]).toEqual([true, 'file', []])
+  it('never sends a bare annotation, at either scope, to oxlint — it waives nothing in either lane', () => {
+    for (const [src, scope] of [
+      ['// theme-allow\n', 'line'],
+      ['// theme-allow-file\n', 'file'],
+    ] as const) {
+      const [site] = findAllowAnnotations(src, 'src/a.tsx', DEFAULT_GUARD_CONFIG)
+      expect([site?.scope, site?.guardKinds, site?.oxlintRules]).toEqual([scope, [], []])
+    }
   })
 
   it('leaves no probe file behind — the neutralized copy is a temp file basalt owns', () => {
