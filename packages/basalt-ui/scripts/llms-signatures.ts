@@ -24,12 +24,21 @@ function clip(text: string, max: number): string {
   return flat.length <= max ? flat : `${flat.slice(0, max - 1)}…`
 }
 
+type PropEntry = { sym: ts.Symbol; has: boolean }
+
+const isOwn = (p: ts.Symbol): boolean =>
+  p.declarations?.some((d) => !d.getSourceFile().fileName.includes('/node_modules/')) === true
+
 /**
- * A first parameter's own top-level members as `name?: type` lines, empty unless it is a single
- * object type (a union or a primitive has no one shape). Nullability is stripped first, so an
- * optional `props?` still gets its block. Members inherited from node_modules (Mantine's
- * `BoxProps`, DOM attributes) are dropped: they are Mantine's to document and would drown the few
- * props basalt-ui adds.
+ * A first parameter's own top-level members as `name?: type` lines, empty unless it is an object
+ * type or a union of them (a primitive has no shape). Nullability is stripped first, so an optional
+ * `props?` still gets its block. Members inherited from node_modules (Mantine's `BoxProps`, DOM
+ * attributes) are dropped: they are Mantine's to document and would drown the few props basalt-ui
+ * adds.
+ *
+ * A union is a props type with modes (`BasaltProvider`: `router` XOR `children`). Every member's
+ * props are merged into one list; a prop that carries a real type in only some members (the other
+ * members declare it `?: never`) is tagged `[with <the mode's own required props>]`.
  */
 export function propShapeLines(
   checker: ts.TypeChecker,
@@ -38,24 +47,56 @@ export function propShapeLines(
   flags: ts.TypeFormatFlags,
 ): string[] {
   const type = checker.getNonNullableType(paramType)
-  if (type.isUnion() || (type.flags & (ts.TypeFlags.Object | ts.TypeFlags.Intersection)) === 0) {
-    return []
+  const isShape = (t: ts.Type): boolean =>
+    (t.flags & (ts.TypeFlags.Object | ts.TypeFlags.Intersection)) !== 0
+  const members = type.isUnion() ? type.types : [type]
+  if (!members.every(isShape)) return []
+
+  // Per member: which own props carry a real type there (not `?: never` / `undefined`).
+  const perMember = members.map((m) =>
+    m
+      .getProperties()
+      .filter(isOwn)
+      .map<PropEntry>((sym) => ({
+        sym,
+        has:
+          (checker.getTypeOfSymbolAtLocation(sym, node).flags &
+            (ts.TypeFlags.Never | ts.TypeFlags.Undefined)) ===
+          0,
+      })),
+  )
+  const hasIn = (name: string): number[] =>
+    perMember.flatMap((m, i) => (m.some((e) => e.sym.name === name && e.has) ? [i] : []))
+  // A mode is named by its required props that no other mode carries.
+  const modeName = (i: number): string => {
+    const own = perMember[i]!.filter((e) => e.has && (e.sym.flags & ts.SymbolFlags.Optional) === 0)
+      .filter((e) => hasIn(e.sym.name).length === 1)
+      .map((e) => e.sym.name)
+    return own.length > 0 ? own.join(' + ') : `mode ${i + 1}`
   }
-  const own = type
-    .getProperties()
-    .filter((p) =>
-      p.declarations?.some((d) => !d.getSourceFile().fileName.includes('/node_modules/')),
-    )
-  const lines = own.slice(0, MAX_PROPS).map((p) => {
-    const optional = (p.flags & ts.SymbolFlags.Optional) !== 0
-    // `getNonNullableType` would expand an alias like ReactNode into its union; strip the text instead.
-    const text = checker
-      .typeToString(checker.getTypeOfSymbolAtLocation(p, node), node, flags)
-      .replace(/ \| undefined$/, '')
-    return `  ${p.name}${optional ? '?' : ''}: ${clip(text, MAX_PROP_TYPE)}`
-  })
-  if (own.length > MAX_PROPS) lines.push(`  … +${own.length - MAX_PROPS} more`)
-  return lines
+
+  const seen = new Set<string>()
+  const lines: string[] = []
+  for (const member of perMember) {
+    for (const { sym, has } of member) {
+      const owners = hasIn(sym.name)
+      if (seen.has(sym.name) || (!has && owners.length > 0)) continue
+      seen.add(sym.name)
+      const optional = (sym.flags & ts.SymbolFlags.Optional) !== 0
+      // `getNonNullableType` would expand an alias like ReactNode into its union; strip the text instead.
+      const text = checker
+        .typeToString(checker.getTypeOfSymbolAtLocation(sym, node), node, flags)
+        .replace(/ \| undefined$/, '')
+      const tag =
+        members.length > 1 && owners.length > 0 && owners.length < members.length
+          ? `  [with ${owners.map(modeName).join(' | ')}]`
+          : ''
+      lines.push(`  ${sym.name}${optional && !tag ? '?' : ''}: ${clip(text, MAX_PROP_TYPE)}${tag}`)
+    }
+  }
+  const shown = lines.slice(0, MAX_PROPS)
+  if (lines.length > MAX_PROPS) shown.push(`  … +${lines.length - MAX_PROPS} more`)
+  return shown
 }
 
 /**
