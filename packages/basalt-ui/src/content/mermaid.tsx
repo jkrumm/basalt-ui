@@ -49,16 +49,18 @@ const MERMAID_THEME_OPTIONS: RenderOptions = {
 }
 
 /**
- * beautiful-mermaid's `buildStyleBlock` unconditionally emits a Google Fonts `@import` (and a mono
- * variant) into the SVG's inline `<style>` — with `font: 'var(--basalt-font-sans)'` it is a broken
- * request (`family=var(--basalt-font-sans)`). basalt self-hosts its fonts, so no render may leave
- * for a remote font host.
+ * beautiful-mermaid's `buildStyleBlock` takes the font as a family NAME: it emits a Google Fonts
+ * `@import` (and a mono variant) and quotes the family in `font-family`. We feed it
+ * `var(--basalt-font-sans)`, so the import is a broken request (`family=var(--basalt-font-sans)`)
+ * and the quoted `'var(...)'` is an invalid family. basalt self-hosts its fonts: drop the import
+ * and unquote a `font-family` value that is exactly a `var(...)`.
  */
 const REMOTE_FONT_IMPORT =
   /@import\s+url\(\s*(['"]?)https?:\/\/fonts\.googleapis\.com[\s\S]*?\1\s*\)\s*;/g
+const QUOTED_VAR_FONT_FAMILY = /(font-family\s*:\s*)(['"])(var\([^'"]*?\))\2/g
 
-function stripRemoteFontImports(svg: string): string {
-  return svg.replace(REMOTE_FONT_IMPORT, '')
+function sanitizeFontStyles(svg: string): string {
+  return svg.replace(REMOTE_FONT_IMPORT, '').replace(QUOTED_VAR_FONT_FAMILY, '$1$3')
 }
 
 let modulePromise: Promise<MermaidModule | null> | null = null
@@ -100,7 +102,7 @@ export function MermaidDiagram({ code, className, style, fallback }: MermaidDiag
   const rendered = useMemo(() => {
     if (!mod) return null
     try {
-      return stripRemoteFontImports(mod.renderMermaidSVG(code, MERMAID_THEME_OPTIONS))
+      return sanitizeFontStyles(mod.renderMermaidSVG(code, MERMAID_THEME_OPTIONS))
     } catch {
       return undefined
     }
