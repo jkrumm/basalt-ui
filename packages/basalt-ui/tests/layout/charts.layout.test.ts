@@ -504,18 +504,59 @@ layout('Charts — 2.0 layout', () => {
     for (const l of labels) expect(l.right).toBeLessThanOrEqual(svg.box.right + 0.5)
   })
 
-  // Row 109: a bucketed (band) Date axis labels even, readable intervals.
-  test('a 60-bucket strip labels evenly spaced x ticks with room between them', async () => {
-    const p = await openFixture(chartFixture({ kind: 'strip', width: 640 }), DESKTOP)
-    await p.settle()
-    const ticks = (await rectsOf(p, '[data-ts-key^="x-tick-label:"]')).toSorted(
-      (a, b) => a.left - b.left,
+  const endLabelAnchors = (p: LayoutPage): Promise<string[]> =>
+    p.raw.evaluate(
+      (sel) =>
+        [...document.querySelectorAll(`${sel} [data-ts-key$="-end-label"] text`)].map(
+          (t) => t.getAttribute('text-anchor') ?? '',
+        ),
+      SVG,
     )
-    expect(ticks.length).toBeGreaterThan(1)
-    const steps = ticks.slice(1).map((t, i) => t.left - (ticks[i] as Rect).left)
-    for (const s of steps) expect(Math.abs(s - (steps[0] as number))).toBeLessThanOrEqual(1.5)
-    ticks.slice(1).forEach((t, i) => expect(t.left - (ticks[i] as Rect).right).toBeGreaterThan(8))
+
+  test('at least one wide end label flips inside when its point is on the edge', async () => {
+    const p = await openFixture(chartFixture({ kind: 'lines', width: 960 }), DESKTOP)
+    await p.settle()
+    expect(await endLabelAnchors(p)).toContain('end')
   })
+
+  test('a wide-glyph end label (WWWWWWWW) stays inside the chart', async () => {
+    const p = await openFixture(
+      chartFixture({ kind: 'lines', width: 960, legendEntries: 1, endLabel: 'WWWWWWWW' }),
+      DESKTOP,
+    )
+    await p.settle()
+    const svg = await p.box('chart svg', SVG)
+    const labels = await rectsOf(p, '[data-ts-key$="-end-label"] text')
+    expect(labels.length).toBe(1)
+    for (const l of labels) {
+      expect(l.right).toBeLessThanOrEqual(svg.box.right + 0.5)
+      expect(l.left).toBeGreaterThanOrEqual(svg.box.left)
+    }
+  })
+
+  // Row 109: a bucketed (band) Date axis labels even, readable intervals — strip and mirrored alike,
+  // at a one-hour range and at the 7 d / 1440 px linewatch saw touching.
+  const HOUR_MS = 3_600_000
+  for (const kind of ['strip', 'mirrored'] as const) {
+    for (const [name, vp, spec] of [
+      ['60 minute buckets, 640 px', DESKTOP, { width: 640 }],
+      ['168 hourly buckets, 1440 px', DESKTOP, { stripBuckets: 168, bucketMs: HOUR_MS }],
+    ] as const) {
+      test(`${kind}: x ticks are evenly spaced with room between them (${name})`, async () => {
+        const p = await openFixture(chartFixture({ kind, ...spec }), vp)
+        await p.settle()
+        const ticks = (await rectsOf(p, '[data-ts-key*="x-tick-label:"]')).toSorted(
+          (a, b) => a.left - b.left,
+        )
+        expect(ticks.length).toBeGreaterThan(1)
+        const steps = ticks.slice(1).map((t, i) => t.left - (ticks[i] as Rect).left)
+        for (const s of steps) expect(Math.abs(s - (steps[0] as number))).toBeLessThanOrEqual(1.5)
+        ticks
+          .slice(1)
+          .forEach((t, i) => expect(t.left - (ticks[i] as Rect).right).toBeGreaterThan(8))
+      })
+    }
+  }
 
   // Row 110: the first x tick label must not sit on a y tick label at the plot origin.
   for (const [name, spec, vp] of [

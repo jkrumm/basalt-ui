@@ -23,7 +23,7 @@ import { plotContext } from '../../../src/charts/plot-context'
 import { xScaleFor } from '../../../src/charts/scales'
 import type { ChartMarks } from '../../../src/charts/types'
 import { resolveContainerClass } from '../../../src/tokens/size-classes'
-import type { BarsBar, ChartSeries } from '../../../src/charts'
+import type { BandStripSeries, BarsBar, ChartSeries } from '../../../src/charts'
 import { overlays } from '../../../src/commands'
 import { FilterSet, FormRow, SelectFilter, ViewTabs } from '../../../src/controls'
 import { BasaltDataTable } from '../../../src/table'
@@ -655,10 +655,10 @@ function buildChartData(seriesCount: number, days: number = CHART_DAYS): ChartPo
   }))
 }
 
-function buildLineSeries(seriesCount: number): ChartSeries<ChartPoint>[] {
+function buildLineSeries(seriesCount: number, label?: string): ChartSeries<ChartPoint>[] {
   return Array.from({ length: seriesCount }, (_, i) => ({
     key: `s${i}`,
-    label: `Series ${i + 1}`,
+    label: label ?? `Series ${i + 1}`,
     color: CHART_COLORS[i % CHART_COLORS.length] as string,
     getValue: (d: ChartPoint) => d.values[i] ?? null,
   }))
@@ -674,7 +674,7 @@ type StripSlot = { at: Date; state: 'up' | 'down' }
 const STRIP_STATES = [
   { key: 'up', label: 'Up', color: CHART_COLORS[0] as string },
   { key: 'down', label: 'Down', color: CHART_COLORS[1] as string },
-]
+] as const satisfies readonly BandStripSeries<StripSlot>[]
 
 const MIRRORED_SERIES = [
   { key: 'rx', label: 'Down', color: CHART_COLORS[0] as string, getValue: () => 10 },
@@ -887,7 +887,7 @@ function ChartsFixture({ spec }: { spec: ChartsSpec }): ReactElement {
         ariaLabel="Fixture lines"
         data={data}
         x={chartX}
-        series={buildLineSeries(seriesCount)}
+        series={buildLineSeries(seriesCount, spec.endLabel)}
         {...(spec.origin && originAxes)}
         {...domain}
         {...height}

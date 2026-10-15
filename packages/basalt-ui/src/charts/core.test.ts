@@ -4,10 +4,11 @@
  */
 import { describe, expect, spyOn, test } from 'bun:test'
 import type { StoredChartSpec } from '@tanstack/charts/types/core'
-import { bucketTicks, compileCartesian, dateTicks, utcAxisDate, utcHeaderDate } from './compile'
+import { compileCartesian, dateTicks, utcAxisDate, utcHeaderDate } from './compile'
+import { bucketTicks } from './ticks'
 import { chartCursor, chartCursorView, hasCursorGroup, hasCursorView } from './cursor'
 import { chartCurve } from './curves'
-import { resolveYDomain, xScaleFor, xZoneFractions } from './scales'
+import { resolveYDomain, xFractionIn, xScaleFor, xZoneFractions } from './scales'
 import { resolveChartState } from './state'
 import { Lines } from './Lines'
 import { createElement } from 'react'
@@ -475,5 +476,131 @@ describe('bucketTicks (ledger row 109)', () => {
 
   test('a single bucket comes back as itself', () => {
     expect(bucketTicks(minutes(1), 5)).toEqual(minutes(1))
+  })
+})
+
+describe('xFractionIn', () => {
+  const data = [1, 2, 3, 4, 5].map((d) => ({ t: new Date(Date.UTC(2026, 8, d)) }))
+  const at = (d: number, domain?: [Date, Date]) =>
+    xFractionIn(data, (r) => r.t, domain, new Date(Date.UTC(2026, 8, d)))
+
+  test('matches the x scale the plot is built on (data extent, explicit domain)', () => {
+    const model = xScaleFor(
+      data.map((r) => r.t),
+      false,
+    )
+    for (const d of [1, 3, 5])
+      expect(at(d)).toBeCloseTo(model.fraction(new Date(Date.UTC(2026, 8, d))) ?? NaN)
+    const domain: [Date, Date] = [new Date(Date.UTC(2026, 8, 1)), new Date(Date.UTC(2026, 8, 9))]
+    const wide = xScaleFor(
+      data.map((r) => r.t),
+      false,
+      domain,
+    )
+    expect(at(5, domain)).toBeCloseTo(wide.fraction(new Date(Date.UTC(2026, 8, 5))) ?? NaN)
+    expect(at(5, domain)).toBe(0.5)
+  })
+
+  test('a lone datum sits mid-plot on the widened domain, not on an edge', () => {
+    expect(xFractionIn([data[0]], (r) => r?.t as Date, undefined, data[0]?.t as Date)).toBe(0.5)
+  })
+
+  test('a string x, no data, and an unplaceable x are null', () => {
+    expect(xFractionIn(['a', 'b'], (r) => r, undefined, 'a')).toBeNull()
+    expect(xFractionIn([], (r: Date) => r, undefined, new Date())).toBeNull()
+    expect(xFractionIn(data, (r) => r.t, undefined, new Date(Number.NaN))).toBeNull()
+  })
+
+  test('200k rows need no spread', () => {
+    const many = Array.from({ length: 200_000 }, (_, i) => i)
+    expect(xFractionIn(many, (n) => n, undefined, 100_000)).toBeCloseTo(0.5, 3)
+  })
+})
+
+describe('x tick policy by axis (ledger row 109)', () => {
+  const minutes = Array.from({ length: 60 }, (_, i) => ({
+    t: new Date(Date.UTC(2026, 0, 1, 18, 13 + i)),
+    v: i,
+  }))
+  const ser: ChartSeries<{ t: Date; v: number }> = {
+    key: 'v',
+    label: 'V',
+    color: 'red',
+    getValue: (d) => d.v,
+  }
+  const xTicksOf = (over: object, data: { t: Date | string; v: number }[] = minutes) => {
+    const def = compileCartesian({
+      chartId: 'policy',
+      data,
+      x: (d: { t: Date | string }) => d.t,
+      series: [ser as never],
+      marks: () => [],
+      ...over,
+    } as never)
+    const axis = def.chart({ width: 1000, height: 300, defaultTheme: {} as never }).scales['x']
+      ?.axis
+    if (!axis || typeof axis !== 'object' || !axis.ticks) throw new Error('no x axis')
+    return axis.ticks as { values?: readonly unknown[]; count?: number }
+  }
+
+  test('a band Date axis is bucket-snapped: round instants, not every bucket', () => {
+    const values = xTicksOf({ band: true }).values as Date[]
+    expect(values.length).toBeLessThan(minutes.length)
+    expect(values.every((t) => t.getUTCMinutes() % 5 === 0)).toBe(true)
+  })
+
+  test('an explicit xTicks array wins on a band axis', () => {
+    const pick = [minutes[3]?.t as Date, minutes[40]?.t as Date]
+    expect(xTicksOf({ band: true, xTicks: pick }).values).toEqual(pick)
+  })
+
+  test('a string band axis is unchanged: every value', () => {
+    const labelled = ['a', 'b', 'c', 'd'].map((t, v) => ({ t, v }))
+    expect(xTicksOf({ band: true }, labelled).values).toEqual(['a', 'b', 'c', 'd'])
+  })
+
+  test('a continuous Date axis is untouched by the bucket rule', () => {
+    const values = xTicksOf({}).values as Date[]
+    expect(values.every((t) => t.getUTCMinutes() % 5 === 0)).toBe(true)
+  })
+})
+
+describe('x tick labels near the left edge (ledger row 110)', () => {
+  // A domain that starts at 03:17, not a round instant: the first round tick is 04:00.
+  const start = Date.UTC(2026, 0, 1, 3, 17)
+  const data = Array.from({ length: 49 }, (_, i) => ({
+    t: new Date(start + i * 30 * 60_000),
+    v: i,
+  }))
+  const def = compileCartesian({
+    chartId: 'edge',
+    data,
+    x: (d) => d.t,
+    series: [{ key: 'v', label: 'V', color: 'red', getValue: (d) => d.v }],
+    marks: () => [],
+  })
+  const anchor = (() => {
+    const axis = def.chart({ width: 1000, height: 300, defaultTheme: {} as never }).scales['x']
+      ?.axis
+    if (!axis || typeof axis !== 'object' || typeof axis.tickLabels !== 'object')
+      throw new Error('no x axis')
+    return axis.tickLabels.anchor as (c: unknown) => string | undefined
+  })()
+  const span = 48 * 30 * 60_000
+  const at = (share: number) => ({
+    index: 1,
+    value: new Date(start + share * span),
+    position: 0,
+    bandwidth: 0,
+  })
+
+  test('a tick a few percent in from a non-round domain start is start-anchored', () => {
+    expect(anchor(at(0))).toBe('start')
+    expect(anchor(at(0.03))).toBe('start')
+  })
+
+  test('a tick well inside the plot stays centred', () => {
+    expect(anchor(at(0.3))).toBeUndefined()
+    expect(anchor(at(1))).toBeUndefined()
   })
 })
