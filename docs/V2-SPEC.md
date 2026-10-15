@@ -142,7 +142,7 @@ export const Route = createRootRouteWithContext<BasaltRouterContext>()({
 Extra context (argo's auth) extends `BasaltRouterContext` and goes in `createBasaltRouter({ context
 })`. argo's 401 handling stays its own `query: { queryCache }`; basalt subscribes to it (§ 7).
 
-**Server rendering (W10)**: router streaming, no RSC; basalt ships no Start integration. A Start app owns its router and embeds the provider in its root route as `<BasaltProvider>{children}</BasaltProvider>` (router via `useRouter()`, `context.queryClient` from its `getRouter()`); `router` and `children` are exclusive, and `sync`/`init` seed no router files there. The shell holds no promise, a slow section is
+**Server rendering (W10)**: router streaming, no RSC; basalt ships no Start integration. A Start app owns its router and embeds the provider in its root route component as `<BasaltProvider><Outlet /></BasaltProvider>` (router via `useRouter()`, `context.queryClient` from its `getRouter()`); `router` and `children` are exclusive, and `sync`/`init` seed no router files there. The shell holds no promise, a slow section is
 an unawaited loader promise in `<Await>` + `<Suspense>` (fallback § 9.7). See `waves/evidence/w10/ssr.md`.
 
 **Open:**
