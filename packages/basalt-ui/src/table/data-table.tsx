@@ -781,6 +781,10 @@ export type BasaltDataTableProps<T extends RowData> = BasaltProps &
      * whenever the array identity changes. A `renderCard` projection owns its own card, so the
      * column renders in the table body only.
      *
+     * State-dependent actions keep that array stable and read the state per row: put it in
+     * `disabled(row)` / `loading(row)` (state in a ref or the row itself), or `useMemo` the array
+     * keyed on exactly that state.
+     *
      * @example
      * const ROW_ACTIONS: DataTableRowAction<Row>[] = [
      *   { key: 'edit', label: 'Edit', icon: <IconEdit />, onClick: (row) => edit(row) },

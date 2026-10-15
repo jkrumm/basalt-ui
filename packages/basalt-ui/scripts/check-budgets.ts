@@ -49,7 +49,7 @@ const CEILINGS = {
   ...TARGETS,
   chartSymbols: 13, // landed (W5): the rung, nine kinds, `ChartCard`, `chartCursor`, `chartCurve` (argo friction row 27)
   nonChartSymbols: 94, // 2.6: `externalField` (argo timer-card.tsx, row 39); was 93 for `toAgentError` (row 18)
-  barrelTypes: 55, // 2.7: `InputProps` joined (`inputProps` return type, argo friction rows 49/51; consumer argo form code); 2.5: `Telemetry`/`ChatTurnTrace`/`ChatTurnEnd`/`TraceHeaders` + `AgentStreamContext` joined (argo lib/telemetry.ts + hermes-transport.ts, friction row 37); 2.2: `StatCardSparklineSize` joined (argo hero-stats.tsx, friction row 22); W9: `StreamStatus` left, `AgentTransport`/`ResumableAgentTransport` joined
+  barrelTypes: 56, // 2.7.1: `DataTableRowAction` joined (argo module-level `rowActions`, friction row 53); 2.7: `InputProps` joined (`inputProps` return type, argo friction rows 49/51; consumer argo form code); 2.5: `Telemetry`/`ChatTurnTrace`/`ChatTurnEnd`/`TraceHeaders` + `AgentStreamContext` joined (argo lib/telemetry.ts + hermes-transport.ts, friction row 37); 2.2: `StatCardSparklineSize` joined (argo hero-stats.tsx, friction row 22); W9: `StreamStatus` left, `AgentTransport`/`ResumableAgentTransport` joined
   ruleLines: 277, // landed (W9): the shipped rules, 450 is the spec target
 } as const
 

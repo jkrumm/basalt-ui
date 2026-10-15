@@ -57,7 +57,7 @@ export type DualPanelLine<T> = Pick<
 export type DualPanelBar<T> = {
   label: string
   getValue: (d: T) => number | null
-  /** The fill above zero, and the legend swatch. */
+  /** The fill above zero; the legend swatch splits positive | negative (one entry, one toggle). */
   positive: string
   /** The fill below zero. */
   negative: string
@@ -154,10 +154,11 @@ export function DualPanel<T, X extends Date | number = Date | number>(
       key: BAR_KEY,
       label: bar.label,
       color: bar.positive,
+      colorNegative: bar.negative,
       mark: 'bar',
       getValue: bar.getValue,
     }),
-    [bar.label, bar.positive, bar.getValue],
+    [bar.label, bar.positive, bar.negative, bar.getValue],
   )
   const all = useMemo(() => [...lines, barSeries], [lines, barSeries])
   const topFormat = top?.format ?? defaultNumberFormat

@@ -331,6 +331,20 @@ describe('DualPanel', () => {
     expect(legendButton(el, '__bar').textContent).toContain('Divergence')
   })
 
+  test('the bar legend entry shows both sign colours and toggles as one', async () => {
+    const el = await mount(<DualPanel {...dualProps} />)
+    const entry = legendButton(el, '__bar')
+    const fills = [...entry.querySelectorAll<HTMLElement>('span[aria-hidden]')].map(
+      (n) => n.style.background,
+    )
+    expect(fills.length).toBeGreaterThan(0)
+    for (const f of fills) {
+      expect(f).toContain(dualProps.bar.positive)
+      expect(f).toContain(dualProps.bar.negative)
+    }
+    expect(el.querySelectorAll('button[data-legend-key="__bar"]').length).toBe(1)
+  })
+
   test('hovering a legend entry dims the others, bars included', async () => {
     const el = await mount(<DualPanel {...dualProps} />)
     const strokeOf = (k: string): string | null | undefined =>

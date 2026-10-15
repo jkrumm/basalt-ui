@@ -71,8 +71,14 @@ const noteStyle: CSSProperties = { color: VX.axis }
 
 type SwatchStyle = Pick<
   ChartSeries<never>,
-  'color' | 'mark' | 'dash' | 'strokeOpacity' | 'fillOpacity'
+  'color' | 'colorNegative' | 'mark' | 'dash' | 'strokeOpacity' | 'fillOpacity'
 >
+
+/** A swatch fill: the series colour, or a hard-stop split for a sign-coloured bar. */
+const swatchFill = (s: SwatchStyle): string =>
+  s.colorNegative === undefined
+    ? s.color
+    : `linear-gradient(90deg, ${s.color} 50%, ${s.colorNegative} 50%)`
 
 function Swatch({ s, mode }: { s: SwatchStyle; mode: LegendMode }): ReactElement {
   if (mode === 'auto')
@@ -92,7 +98,7 @@ function Swatch({ s, mode }: { s: SwatchStyle; mode: LegendMode }): ReactElement
           height: 8,
           // theme-allow raw-surface — a legend dot is a circle, not a surface corner
           borderRadius: '50%',
-          background: s.color,
+          background: swatchFill(s),
           opacity: s.fillOpacity ?? 1,
           flex: 'none',
         }}
@@ -123,7 +129,7 @@ function Swatch({ s, mode }: { s: SwatchStyle; mode: LegendMode }): ReactElement
         height: 10,
         // theme-allow raw-surface — swatch geometry, not a surface corner
         borderRadius: 2,
-        background: s.color,
+        background: swatchFill(s),
         opacity: s.fillOpacity ?? 1,
         flex: 'none',
       }}
