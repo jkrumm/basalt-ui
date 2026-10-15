@@ -11,9 +11,8 @@ import type { MergeLintResult, ScaffoldFlags } from './index'
 import {
   MANIFEST_PATH,
   declaredProfile,
-  isStartApp,
-  routerSeedDests,
-  START_APP_NOTE,
+  routerSeedPlan,
+  seedSkipNote,
   readBasaltConfig,
   findBasaltInstall,
   managedFiles,
@@ -34,7 +33,6 @@ import {
   writeUnit,
 } from './index'
 import { seedTsconfigExtends } from './doctor-upgrade'
-import { CODE_ROUTED_NOTE, routerSeedSkip } from './router-wiring'
 import { readOxlintPresetPlugins } from './sync'
 
 /**
@@ -129,8 +127,11 @@ export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags =
   const placement = resolvePlacement(cwd)
   // A tokens-only consumer has no use for the Mantine/React scaffolds (doctor skips them there too).
   const tokensOnly = declaredProfile(readBasaltConfig(cwd), []) === 'tokens-only'
-  const seedSkip = routerSeedSkip(cwd, placement.appRel, isStartApp(cwd, placement.appRel))
-  const skippedSeeds = new Set(tokensOnly || seedSkip ? routerSeedDests(placement.appRel) : [])
+  const { skip: seedSkip, skipped: skippedSeeds } = routerSeedPlan(
+    cwd,
+    placement.appRel,
+    tokensOnly,
+  )
   const files = managedFiles(placement).filter((f) => !skippedSeeds.has(f.dest))
 
   const writtenFiles: string[] = []
@@ -206,8 +207,8 @@ export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags =
   const tsconfigLine = tokensOnly ? null : seedTsconfigExtends(cwd)
   if (tsconfigLine !== null) console.log(`basalt-ui init: ${tsconfigLine}`)
   if (buildNote !== null) console.log(`basalt-ui init: ${buildNote}`)
-  if (!tokensOnly && seedSkip === 'start') console.log(`basalt-ui init: ${START_APP_NOTE}`)
-  if (!tokensOnly && seedSkip === 'code-routed') console.log(`basalt-ui init: ${CODE_ROUTED_NOTE}`)
+  const skipNote = tokensOnly ? null : seedSkipNote(seedSkip)
+  if (skipNote !== null) console.log(`basalt-ui init: ${skipNote}`)
   const rootsMessages = rootsNotices(rootsState)
   for (const line of rootsMessages.log) console.log(`basalt-ui init: ${line}`)
   for (const line of rootsMessages.error) console.error(`⚠ basalt-ui init: ${line}`)

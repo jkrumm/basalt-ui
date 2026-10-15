@@ -11,7 +11,6 @@ import {
   existsSync,
   mkdirSync,
   readdirSync,
-  readFileSync,
   rmdirSync,
   statSync,
   realpathSync,
@@ -30,6 +29,8 @@ import { guardHook } from './guard-hook'
 import { COMMAND_OPTIONS, USAGE, unknownFlag } from './help'
 import { init } from './init'
 import { sync } from './sync'
+import { CODE_ROUTED_NOTE, routerSeedSkip } from './router-wiring'
+import { hasDependency, readIfExists, readPackageJson } from './source-text'
 import { fontsCss, normalizeColorFunctions, tokensCss } from './tokens-css'
 import { DEFAULT_ROOT, exemptRulePaths, resolveRoots } from './config'
 import type { BasaltConfig } from './config'
@@ -94,9 +95,11 @@ function resolveSeriesModulePath(cfg: BasaltConfig): string {
 }
 
 /**
- * A root as a single-quoted oxfmt glob for the seeded CI `run:` step. POSIX-escapes an embedded
- * quote (`'` → `'\''`): `roots` is consumer-authored, and an unescaped apostrophe would emit a
- * workflow with a syntax error the consumer can't trace back here.
+ * A root as a single-quoted oxfmt glob for the seeded CI `run:` step. POSIX-escapes any embedded
+ * quote (`'` → `'\''`) — `roots` is consumer-authored, and an unescaped apostrophe would break out
+ * of the quoting and emit a workflow that fails on a syntax error the consumer can't trace back
+ * here. Not a privilege boundary (it's their own config rendering into their own CI), just a file
+ * this CLI generates and therefore owes valid quoting.
  */
 function toRootGlob(root: string): string {
   return `'${root.replace(/'/g, `'\\''`)}/**'`
@@ -160,9 +163,15 @@ export function readBasaltConfig(cwd: string): BasaltConfig {
 const SCANNABLE_EXT = /\.(?:tsx?|jsx|[cm][jt]s|astro|vue|css|html?|webmanifest)$/
 
 /**
- * Recursively collect scannable files under a root, skipping dependency/build dirs. `.json` is
- * deliberately NOT scanned: configs, fixtures and lockfiles are false positives; a JSON that IS a
- * design surface is reachable by naming it in `basalt.include`.
+ * Recursively collect scannable files under a root, skipping dependency/build dirs. Node+Bun-safe.
+ * `checkSource` is already syntax-aware per extension (`guardSyntaxFor`); the walker was the only
+ * gap, twice over — `.css` (CSS modules / `styles.css`) and now `.html`/`.webmanifest`.
+ *
+ * `.json` is deliberately NOT here even though the guard resolves it as markup: a consumer repo is
+ * full of JSON that is configuration, fixtures and lockfiles, and blanket-scanning it produces
+ * exactly the class of false positive already reported against a `data.json` test fixture. A JSON
+ * that IS a design surface (a `manifest.json` rather than a `*.webmanifest`) is reachable by naming
+ * it in `basalt.include`.
  */
 function walkSourceFiles(dir: string, out: string[] = []): string[] {
   let entries: string[]
@@ -271,8 +280,10 @@ type ProjectResolution = {
 
 /**
  * Which directory a project-scoped command reads: `BASALT_CWD` when set, else the invocation cwd
- * — nothing inferred, nothing walked. A monorepo package that needs a different root sets
- * `BASALT_CWD` explicitly, or the invoking script's `root:`/`cwd` does.
+ * — nothing inferred, nothing walked. Workspace-glob discovery and ancestor/descendant fallbacks
+ * (multi-repo speculation for a single-owner fleet where every consumer runs its own commands from
+ * its own directory) were deleted; a monorepo package that needs a different root sets `BASALT_CWD`
+ * explicitly, or the invoking script's `root:`/`cwd` does.
  */
 export function resolveProjectDir(cwd: string): ProjectResolution {
   const override = process.env['BASALT_CWD']
@@ -295,8 +306,10 @@ export function declaredProfile(cfg: BasaltConfig, flags: readonly string[]): Do
 }
 
 /**
- * `--tokens-only` and `--framework` are alternatives: passing both is a contradiction, not a
- * precedence question (as with `tokens:css --selector-class` vs `--selector-attribute`).
+ * `--tokens-only` and `--framework` are alternatives, so passing both is a contradiction rather
+ * than a precedence question — the same reading `tokens:css` already applies to `--selector-class`
+ * vs `--selector-attribute`. Silently preferring one meant a CI step that accumulated both flags
+ * enforced whichever the code happened to test first.
  */
 export function conflictingProfileFlags(command: string, flags: readonly string[]): boolean {
   const both = flags.includes('--tokens-only') && flags.includes('--framework')
@@ -367,9 +380,10 @@ const PLAIN_JSON_HINT_PATH = 'manifest.json'
 
 /**
  * The waiver closer for a file, gated on the profile. `guardWaiverHint` leads a `.webmanifest` with
- * `basaltAppPlugin`, advice a `tokens-only` consumer cannot take (no `index.html` for the plugin);
- * there the manifest is plain JSON and the member is the whole answer. The remedy text still comes
- * from the guard's registry; only the class mapping is decided here.
+ * `basaltAppPlugin` — right for a Mantine app, advice a `profile: tokens-only` consumer cannot take
+ * (rollhook's Astro site has no `index.html` for the plugin and owns its maskable icons). There the
+ * manifest is plain JSON — the member is the whole answer, plus one sentence on the withheld remedy.
+ * The remedy text still comes from the guard's registry; only the class mapping is decided here.
  */
 export function waiverHintFor(relPath: string, profile: DoctorProfile): string {
   if (profile !== 'tokens-only' || !relPath.endsWith('.webmanifest')) {
@@ -391,6 +405,7 @@ export function waiverHintFor(relPath: string, profile: DoctorProfile): string {
  *   block). sync refreshes it; a local edit is skipped and reported (`--force` overwrites); `--check`
  *   exits 1 on drift.
  * - `seed`: written once if absent, then the consumer's. sync never overwrites it or reports drift.
+ *
  * `markers: true` splices a managed `<!-- basalt:begin -->…<!-- basalt:end -->` region into a host
  * file the consumer otherwise owns (AGENTS.md).
  */
@@ -461,24 +476,6 @@ export const LEGACY_BLOCK_HOST = 'CLAUDE.md'
 
 export function sha256(text: string): string {
   return createHash('sha256').update(text, 'utf8').digest('hex')
-}
-
-export function readIfExists(abs: string): string | null {
-  try {
-    return readFileSync(abs, 'utf8')
-  } catch {
-    return null // absent, a directory, unreadable or raced away: callers treat all four as "not there"
-  }
-}
-
-/** `<dir>/package.json` parsed as `T`; null when absent or not JSON. */
-export function readPackageJson<T>(dir: string): T | null {
-  const raw = readIfExists(resolve(dir, 'package.json'))
-  try {
-    return raw === null ? null : (JSON.parse(raw) as T)
-  } catch {
-    return null
-  }
 }
 
 /** Read a shipped source asset from the package root; null if the sibling hasn't authored it yet. */
@@ -663,14 +660,28 @@ export function routerSeedDests(appRel: string): string[] {
   )
 }
 
-/** A TanStack Start app owns its router, so its router seeds give way to an in-tree `<BasaltProvider>`. */
-export function isStartApp(cwd: string, appRel: string): boolean {
-  return hasDependency(resolve(cwd, appRel), '@tanstack/react-start')
-}
-
 export const START_APP_NOTE =
   'TanStack Start app — no main.tsx/nav.tsx/__root.tsx seeded (Start owns the router); render ' +
   '<BasaltProvider><Outlet /></BasaltProvider> in your root route component.'
+
+/**
+ * The router seeds an app does not get, for `init` and `sync`: why (`start` | `code-routed` | null)
+ * and which dests. A tokens-only consumer gets none of them either.
+ */
+export function routerSeedPlan(
+  cwd: string,
+  appRel: string,
+  tokensOnly = false,
+): { skip: ReturnType<typeof routerSeedSkip>; skipped: Set<string> } {
+  const skip = routerSeedSkip(cwd, appRel)
+  return { skip, skipped: new Set(tokensOnly || skip !== null ? routerSeedDests(appRel) : []) }
+}
+
+/** The note `init` prints for a router-seed skip, or null when nothing was skipped. */
+export function seedSkipNote(skip: ReturnType<typeof routerSeedSkip>): string | null {
+  if (skip === 'start') return START_APP_NOTE
+  return skip === 'code-routed' ? CODE_ROUTED_NOTE : null
+}
 
 /** The app directory a command's app-scoped half targets: `rel` is '' when it is the install root. */
 export type AppResolution = { dir: string; rel: string } | { error: string }
@@ -715,22 +726,6 @@ export function resolveAppDir(root: string): AppResolution {
       `${candidates.length} workspace packages depend on basalt-ui and have a Vite entry (${names}) — ` +
       'cannot tell which is the app. Set `basalt.app` (e.g. `"basalt": { "app": "apps/web" }`) in the root package.json.',
   }
-}
-
-/** True when `pkgName` appears in the consumer's dependencies, devDependencies, or peerDependencies. */
-function hasDependency(cwd: string, pkgName: string): boolean {
-  const pkg =
-    readPackageJson<
-      Record<
-        'dependencies' | 'devDependencies' | 'peerDependencies',
-        Record<string, string> | undefined
-      >
-    >(cwd)
-  return Boolean(
-    pkg?.dependencies?.[pkgName] ??
-    pkg?.devDependencies?.[pkgName] ??
-    pkg?.peerDependencies?.[pkgName],
-  )
 }
 
 /**
@@ -961,10 +956,12 @@ export function managedFiles(placement: PlacementFlags = ROOT_PLACEMENT): Manage
 }
 
 /**
- * The PERMANENT placement skips as sentences — one text for `init` and `sync`; `sync --check` hides
- * them behind `--verbose`. `extends` alone is NOT the hook recipe: lefthook runs every merged command
- * at the REPO ROOT, with no oxlint config or local binary. `root:` moves the cwd per command — see
- * the preset's MONOREPO RECIPE.
+ * The PERMANENT placement skips as sentences — one text for `init` and `sync`, which carried two
+ * near-copies that had already drifted apart. Correct and unchanging, which is why `sync --check`
+ * hides them behind `--verbose`. `extends` alone is NOT the recipe for the hook, and saying only
+ * that shipped a broken one: lefthook merges the preset's commands but runs every one at the REPO
+ * ROOT, with no oxlint config, no local binary and no basalt config. `root:` moves the invocation
+ * cwd per command and merges (the preset does not define it) — see the preset's MONOREPO RECIPE.
  */
 export function placementNotices(cwd: string, placement: PlacementFlags): string[] {
   const out: string[] = []
@@ -1035,9 +1032,10 @@ export function readManifest(cwd: string): Manifest {
  * decide which files `managedFiles()` places under them, so a rule or skill that is RETIRED
  * upstream leaves a file behind in every consumer that ever synced it — and Claude keeps loading it.
  *
- * Scoped to these two patterns, never the whole manifest: other entries are legitimately absent from
- * `managedFiles()` for a run (`lefthook.yml`, `check.yml` off the repo root), and pruning them would
- * delete a monorepo's CI workflow.
+ * Scoped to these two patterns on purpose, and never applied to the manifest wholesale: several
+ * managed/seed entries are legitimately absent from `managedFiles()` for a run (`lefthook.yml` and
+ * `check.yml` when the package is not the repo root). Deleting a dest just because this run did not place it would
+ * remove a consumer's CI workflow on a monorepo.
  */
 const RETIREABLE_DEST_PATTERNS: readonly RegExp[] = [
   /^\.claude\/rules\/basalt-[a-z0-9-]+\.md$/,
@@ -1207,7 +1205,9 @@ export function writeUnit(file: ManagedFile, cwd: string, desired: string): stri
  * Classify a managed file against the manifest for a sync run:
  * - missing  : absent on disk → recreate.
  * - current  : on disk == desired → nothing to do.
- * - unchanged: on disk matches a KNOWN-SHIPPED rendering (manifest hash, raw or normalized) → overwrite.
+ * - unchanged: on disk matches a KNOWN-SHIPPED rendering (raw manifest hash, normalized manifest
+ *              hash, or — with or without a manifest entry — normalized == normalized desired,
+ *              the format-only difference a formatter pass leaves) → safe overwrite.
  * - drifted  : matches none of them (a real local edit) → skip unless --force.
  */
 export function classify(state: UnitState, manifestHash: string | undefined): Classification {
@@ -1263,10 +1263,13 @@ export function patchPackageJson(
 }
 
 /**
- * The source roots for THIS repo, inferred from its layout — the fix for the most reported
- * false-green: without `basalt.roots` a workspace repo scaffolds a `check-theme` that scans zero
- * files while `doctor` reports green. A workspace repo resolves to the `src/` of every package
- * depending on basalt or Mantine, else every workspace `src/`; a single package to `src`. Empty when
+ * The source roots for THIS repo, inferred from its actual layout — the fix for the single most
+ * reported false-green: without `basalt.roots` a workspace repo scaffolds a `check-theme` that
+ * scans zero files and a CI `oxfmt 'src/**'` that matches nothing, while `doctor` reports green.
+ *
+ * A workspace repo resolves to the `src/` of every workspace package that depends on basalt or
+ * Mantine (a backend package's `src/` has nothing for a design guard to say); with no such package
+ * it falls back to every workspace `src/`, and a single-package repo to plain `src`. Empty when
  * nothing plausible exists — `init` says so rather than writing a root that matches nothing.
  */
 function detectRoots(cwd: string): string[] {
@@ -1427,9 +1430,13 @@ export function basaltPresetEntry(entries: unknown): string | null {
 }
 
 // ── The lefthook gate — checked via `lefthook dump`, not hand-rolled YAML parsing ────────────────
-// `lefthook dump` resolves `extends`/`include`/`root:` as lefthook does, so this reads the MERGED
-// config it actually runs. Best-effort: lefthook is a consumer tool basalt neither installs nor
-// requires, so an absent binary or a failed dump downgrades the verdict to a warning.
+//
+// `lefthook dump` resolves `extends`/`include`/remote configs/`root:` the same way lefthook itself
+// does, so this reads the MERGED config lefthook actually runs rather than pattern-matching the
+// YAML text for an `extends:` entry (which cannot tell a resolvable seam from a broken one, and
+// cannot see a gate spelled out directly instead of via `extends` at all). Best-effort: lefthook is
+// a consumer tool basalt neither installs nor requires, so an absent binary or a dump that fails
+// downgrades the verdict to a warning that says so, rather than inventing a pass or a fail.
 
 const LEFTHOOK_CONFIG_NAMES = ['lefthook.yml', 'lefthook.yaml', '.lefthook.yml', '.lefthook.yaml']
 
@@ -1541,9 +1548,10 @@ export function mergeOxlintExtends(cwd: string, presetPath: string): MergeLintRe
  * Which shape of consumer a project-scoped command is looking at.
  *
  * `framework` — the Mantine app the scaffold is for. `tokens-only` — a consumer that took the
- * `--vx-*` layer and nothing else (rollhook); "run `basalt-ui init`" is the wrong advice there.
- * DECLARED only (`--framework` / `--tokens-only` or `"basalt": { "profile": "tokens-only" }`),
- * never inferred; see {@link declaredProfile}.
+ * `--vx-*` layer and nothing else (rollhook: no Mantine, no manifest, `tokens:css` output). Telling
+ * the second to "run `basalt-ui init`" is the wrong instruction: init scaffolds Mantine rules,
+ * skills and a DESIGN.md it will never read. DECLARED only (`--framework` / `--tokens-only`, or
+ * `"basalt": { "profile": "tokens-only" }`) — never inferred; see {@link declaredProfile}.
  */
 export type DoctorProfile = 'framework' | 'tokens-only'
 
@@ -1610,10 +1618,14 @@ function expandPatternSegments(baseDir: string, segments: readonly string[]): st
 }
 
 /**
- * Expands a root `package.json`'s `workspaces` patterns into package directories: literal segments,
- * single- and double-wildcard segments (interior or trailing) and `!`-prefixed exclusions (included
- * and excluded patterns go through the same machinery, then the excluded set is subtracted). A
- * candidate with no `package.json` is skipped, not reported.
+ * Expands a root `package.json`'s `workspaces` patterns into concrete package directories.
+ * Supports literal segments, a single-wildcard segment, and a double-wildcard segment, both
+ * interior and trailing (e.g. `packages` followed by a double wildcard, or an interior single
+ * wildcard between two literal segments) — not just one trailing single-wildcard segment. A
+ * candidate directory that has no `package.json` of its own is skipped, not reported — an empty
+ * scaffold directory is not a workspace package. Also honours npm/bun/yarn `!`-prefixed exclusion
+ * entries (e.g. `["packages/*", "!packages/legacy"]`) — both the included and excluded patterns
+ * are expanded through the same machinery, then the excluded set is subtracted.
  */
 function expandWorkspaceGlobs(cwd: string, patterns: readonly string[]): string[] {
   const expand = (pattern: string): string[] =>
@@ -1640,11 +1652,15 @@ function expandWorkspaceGlobs(cwd: string, patterns: readonly string[]): string[
 }
 
 /**
- * Every workspace package declared by `cwd`'s root `package.json` (`workspaces` array or
- * `{ packages }` form), named + directory-resolved — PLUS the root manifest, labelled
- * `"{name} (root)"`: a hoisted `ai` dev dependency there can skew against a workspace package's
- * major. `hasWorkspacesField` is `false` (and `packages` empty) when there is no `package.json`, no
- * field, or an unrecognized shape — a repo-wide walk is a bonus check and never throws doctor.
+ * Every workspace package declared by `cwd`'s root `package.json` (npm/bun/yarn `workspaces`
+ * field, array or `{ packages: [...] }` object form), named + directory-resolved — PLUS the root
+ * manifest itself, labelled `"{name} (root)"`. The root is walked because it commonly carries a
+ * hoisted `ai` dev dependency that can itself skew against a workspace package's own major — that
+ * is the producer/consumer shape the whole check exists to catch, and it is invisible if only the
+ * expanded workspace dirs are inspected. `hasWorkspacesField` is `false` (and `packages` empty)
+ * when `cwd` has no `package.json`, no `workspaces` field, or the field is a shape this doesn't
+ * recognize — a repo-wide walk is a bonus check, not something that should ever throw doctor over
+ * an unrecognized `workspaces` shape.
  */
 function collectWorkspacePackages(cwd: string): WorkspaceWalk {
   const parsed = readPackageJson<{ workspaces?: unknown; name?: string }>(cwd)
@@ -1677,10 +1693,15 @@ export function isStringArray(value: unknown): value is string[] {
 }
 
 /**
- * CLI dispatcher — parses argv and returns the command's exit code. The bin entry is the ONLY caller
- * that translates it to process.exit, so init/sync/checkTheme are safe to call from tests.
- * `--help` / `-h` (any subcommand) and `help` short-circuit BEFORE dispatch, so a mutating command
- * never runs just because the caller asked to read about it. `guard-hook` is async; the rest are not.
+ * CLI dispatcher — parses argv (subcommand + flags) and returns the command's exit code. The bin
+ * entry is the ONLY caller that translates this to process.exit, so init/sync/checkTheme stay free
+ * of process side effects and are safe to import and call from tests.
+ *
+ * `--help` / `-h` (on ANY subcommand) and the bare `help` command short-circuit BEFORE dispatch —
+ * checked first, so a mutating command (`sync`, `init`) never runs just because the caller only
+ * asked to read about it.
+ *
+ * The `guard-hook` subcommand is async (reads stdin); all others are synchronous.
  */
 export function run(argv: string[], cwd: string = process.cwd()): number | Promise<number> {
   const [cmd, ...flags] = argv
@@ -1745,6 +1766,8 @@ export function run(argv: string[], cwd: string = process.cwd()): number | Promi
 }
 
 // `RULE_NAMES`/`SKILL_NAMES` re-exported for testing / introspection (no default export).
+export { isStartApp } from './router-wiring'
+export { readIfExists, readPackageJson } from './source-text'
 export { RULE_NAMES, SKILL_NAMES }
 export type { ManagedFile }
 

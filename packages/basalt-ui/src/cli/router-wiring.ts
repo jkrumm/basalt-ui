@@ -2,41 +2,13 @@
  * Router wiring: is an app TanStack Start, code-routed (route tree defined in code) or file-routed
  * (plugin or `routeTree.gen.*`)? Textual, no TS program. A leaf module shared by init/sync/doctor.
  */
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 
-function readText(abs: string): string {
-  try {
-    return readFileSync(abs, 'utf8')
-  } catch {
-    return ''
-  }
-}
+import { hasDependency, readIfExists, tokenize } from './source-text'
 
-/** Relative-import hops `callsIn` follows from the entry (a router often lives in a singleton module). */
+/** Relative-import hops (static or dynamic) `callsIn` follows from the entry; a router often lives in a singleton module. */
 const IMPORT_DEPTH = 3
-
-/** Strings, template literals (captured) and comments. Known gap: a regex literal containing a quote, or a template nested in `${…}`. */
-const TOKEN =
-  /("(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*'|`(?:\\.|[^`\\])*`)|\/\/[^\n]*|\/\*[\s\S]*?\*\//g
-
-/** Source with comments blanked (and template text), plus a test for "offset sits inside a string". */
-export function tokenize(src: string): { code: string; inLiteral: (at: number) => boolean } {
-  const literals: [number, number][] = []
-  const code = src.replace(TOKEN, (m, literal: string | undefined, at: number) => {
-    if (literal === undefined) return m.replace(/[^\n]/g, ' ')
-    if (!literal.startsWith('`')) {
-      literals.push([at, at + m.length])
-      return m
-    }
-    // Template literal: blank the text, keep the delimiters and the `${…}` code scannable.
-    return m.replace(
-      /(\$\{[^}]*\})|[^\n`]/g,
-      (c, interpolation: string | undefined) => interpolation ?? ' ',
-    )
-  })
-  return { code, inLiteral: (at) => literals.some(([from, to]) => at >= from && at < to) }
-}
 
 const VITE_CONFIGS = ['ts', 'mts', 'cts', 'js', 'mjs', 'cjs'].map((e) => `vite.config.${e}`)
 /** The first local `<script type="module" src>` in index.html (comments and remote src skipped). */
@@ -56,7 +28,7 @@ function htmlEntry(html: string): string | undefined {
   return undefined
 }
 
-/** True when `code` calls a binding imported from `@tanstack/router-plugin` inside `plugins`. */
+/** True when `src` calls a binding imported from `@tanstack/router-plugin` after its `plugins` key (a textual proxy for "inside the array"). */
 function registersRouterPlugin(src: string): boolean {
   const { code, inLiteral } = tokenize(src)
   const pluginsAt = [...code.matchAll(/\bplugins\b/g)].find((m) => !inLiteral(m.index))?.index
@@ -82,8 +54,9 @@ function registersRouterPlugin(src: string): boolean {
   })
 }
 
+/** A relative specifier: `import … from`, `export … from`, bare `import '…'` and dynamic `import('…')`. */
 const RELATIVE_IMPORT =
-  /(?:\b(?:import|export)\b[^'";]*?\bfrom|\bimport)\s*['"](\.{1,2}\/[^'"]+)['"]/g
+  /(?:\b(?:import|export)\b[^'";]*?\bfrom|\bimport\s*\(?)\s*['"](\.{1,2}\/[^'"]+)['"]/g
 
 /** The source file a relative specifier names: as written, `.ts`/`.tsx` appended, or a directory index. */
 function resolveRelative(from: string, spec: string): string | null {
@@ -101,13 +74,14 @@ function resolveRelative(from: string, spec: string): string | null {
 
 /** The module `index.html` loads for the app at `dir` (default src/main.tsx), relative to `dir`. */
 export function appEntry(dir: string): string {
-  const src = htmlEntry(readText(resolve(dir, 'index.html'))) ?? 'src/main.tsx'
+  const src = htmlEntry(readIfExists(resolve(dir, 'index.html')) ?? '') ?? 'src/main.tsx'
   return src.replace(/^\//, '')
 }
 
 /**
- * Whether the entry or a module it imports (relative imports, `IMPORT_DEPTH` hops) matches
- * `pattern` in code — a regex source, searched globally, ignoring comments and string literals.
+ * Whether the entry or a module it imports (relative imports, static or dynamic, `IMPORT_DEPTH`
+ * hops) matches `pattern` in code — a regex source, searched globally, ignoring comments and string
+ * literals. An import inside a comment is not followed.
  */
 export function callsIn(dir: string, entry: string, pattern: string): boolean {
   const seen = new Set<string>()
@@ -116,10 +90,9 @@ export function callsIn(dir: string, entry: string, pattern: string): boolean {
     const next: string[] = []
     for (const file of frontier) {
       seen.add(file)
-      const text = readText(file)
-      const { code, inLiteral } = tokenize(text)
+      const { code, inLiteral } = tokenize(readIfExists(file) ?? '')
       if ([...code.matchAll(new RegExp(pattern, 'g'))].some((c) => !inLiteral(c.index))) return true
-      for (const m of text.matchAll(RELATIVE_IMPORT)) {
+      for (const m of code.matchAll(RELATIVE_IMPORT)) {
         const dep = resolveRelative(file, m[1] ?? '')
         if (dep !== null && !seen.has(dep)) next.push(dep)
       }
@@ -129,9 +102,9 @@ export function callsIn(dir: string, entry: string, pattern: string): boolean {
   return false
 }
 
-/** `new Foo<T>(` / `Foo<T>(`: a CALL of `name`, not an import line or a bare mention. */
-export function callOf(name: string): string {
-  return `\\b${name}\\b\\s*(?:<[^()]*>)?\\s*\\(`
+/** A regex source matching a CALL of `name` (a regex source too), generic or not — not an import or bare mention. */
+export function callOf(pattern: string): string {
+  return `\\b${pattern}\\b\\s*(?:<[^()]*>)?\\s*\\(`
 }
 
 /** The directories a generated `routeTree.gen.*` is looked for in: beside the entry, then src/. */
@@ -141,7 +114,7 @@ export function routeTreeDirs(entry: string): string[] {
 
 /** A TanStack router plugin in the vite config, or a `routeTree.gen.*` in `routeTreeDirs`. */
 export function hasRouteTree(dir: string, entry: string): boolean {
-  const vite = VITE_CONFIGS.map((f) => readText(resolve(dir, f))).find((t) => t !== '') ?? ''
+  const vite = VITE_CONFIGS.map((f) => readIfExists(resolve(dir, f))).find((t) => t !== null) ?? ''
   return (
     registersRouterPlugin(vite) ||
     routeTreeDirs(entry).some((d) =>
@@ -150,16 +123,27 @@ export function hasRouteTree(dir: string, entry: string): boolean {
   )
 }
 
+/** Whether `createBasaltRouter` is called in a module reachable from the entry. */
+export function hasRouter(dir: string, entry: string): boolean {
+  return callsIn(dir, entry, callOf('createBasaltRouter'))
+}
+
 /**
- * Code-routed: the app calls `createBasaltRouter`, registers no route-tree plugin, has no
- * `routeTree.gen.*`, and its entry does not import one (a freshly seeded entry does, before the
- * first vite run). Comments do not count.
+ * THE classification, shared by `init`, `sync` and `doctor`: code-routed = `createBasaltRouter` is
+ * called in a module reachable from the entry, no router plugin is registered and no
+ * `routeTree.gen.*` exists, and the entry does not import a generated tree (a freshly seeded entry
+ * does, before the first vite run — that app is file-routed). Comments do not count.
  */
 export function isCodeRoutedApp(cwd: string, appRel: string): boolean {
   const dir = resolve(cwd, appRel)
   const entry = appEntry(dir)
-  if (!callsIn(dir, entry, callOf('createBasaltRouter')) || hasRouteTree(dir, entry)) return false
-  return !/routeTree\.gen/.test(tokenize(readText(resolve(dir, entry))).code)
+  if (!hasRouter(dir, entry) || hasRouteTree(dir, entry)) return false
+  return !/routeTree\.gen/.test(tokenize(readIfExists(resolve(dir, entry)) ?? '').code)
+}
+
+/** A TanStack Start app owns its router, so its router seeds give way to an in-tree `<BasaltProvider>`. */
+export function isStartApp(cwd: string, appRel: string): boolean {
+  return hasDependency(resolve(cwd, appRel), '@tanstack/react-start')
 }
 
 export const CODE_ROUTED_NOTE =
@@ -169,11 +153,7 @@ export const CODE_ROUTED_NOTE =
  * Why an app's router seeds (main/nav/__root) are not placed: `start` (Start owns the router, and
  * wins when both apply) or `code-routed` (no generated tree to assume); null when they are.
  */
-export function routerSeedSkip(
-  cwd: string,
-  appRel: string,
-  startApp: boolean,
-): 'start' | 'code-routed' | null {
-  if (startApp) return 'start'
+export function routerSeedSkip(cwd: string, appRel: string): 'start' | 'code-routed' | null {
+  if (isStartApp(cwd, appRel)) return 'start'
   return isCodeRoutedApp(cwd, appRel) ? 'code-routed' : null
 }

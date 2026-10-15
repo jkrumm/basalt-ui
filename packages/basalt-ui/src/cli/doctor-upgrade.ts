@@ -8,16 +8,17 @@ import { dirname, relative, resolve } from 'node:path'
 
 import { BASALT_CONFIG_KEYS, RETIRED_CONFIG_KEYS } from './config'
 import type { BasaltConfig } from './config'
-import {
-  isStartApp,
-  parseJsonc,
-  readIfExists,
-  readPackageJson,
-  routerSeedDest,
-  scannableFiles,
-} from './index'
+import { parseJsonc, readIfExists, readPackageJson, routerSeedDest, scannableFiles } from './index'
 import type { BasaltInstall } from './index'
-import { appEntry, callOf, callsIn, hasRouteTree, routeTreeDirs, tokenize } from './router-wiring'
+import {
+  appEntry,
+  hasRouteTree,
+  hasRouter,
+  isCodeRoutedApp,
+  isStartApp,
+  routeTreeDirs,
+} from './router-wiring'
+import { tokenize } from './source-text'
 
 export type Check = { fail: string } | { skip: string } | null
 
@@ -320,9 +321,10 @@ const includesSrc = (config: Record<string, unknown> | null): boolean =>
   )
 
 /**
- * `init`'s tsconfig step: make the tsconfig covering `src` (or the stock Vite reference that does)
- * extend the preset, inserting the key textually (JSONC, maybe a BOM). Never creates one. Returns
- * the line to print, or null.
+ * `init`'s tsconfig step: make the tsconfig that covers `src` (`tsconfig.json`, or the reference that
+ * includes `src` in a stock Vite app) extend the preset, by inserting the key textually (the file is
+ * JSONC, possibly with a BOM). Never creates one. Returns the line to print, or null when nothing
+ * needs saying.
  */
 export function seedTsconfigExtends(cwd: string): string | null {
   const root = resolve(cwd, 'tsconfig.json')
@@ -364,7 +366,7 @@ const SEED_HINT = 'node_modules/basalt-ui/agent/templates/main.tpl'
 const ROUTER_PLUGIN_FIX =
   "Fix: `bun add -D @tanstack/router-plugin`, add `tanstackRouter({ target: 'react', autoCodeSplitting: true })` " +
   "from '@tanstack/router-plugin/vite' to `plugins` in vite.config.ts (before react()), then run vite once " +
-  'to generate src/routeTree.gen.ts — or define the tree in code (`createRootRoute` + `createRoute`) and pass it to createBasaltRouter.'
+  'to generate src/routeTree.gen.ts — or define the tree in code (`createRootRoute` + `createRoute`), drop the routeTree.gen import and pass the tree to createBasaltRouter.'
 
 /** True when `{` at `i` opens a `{...spread}`: sticky, so any whitespace width is read. */
 function isSpreadAt(code: string, i: number): boolean {
@@ -452,10 +454,10 @@ export function startWiringWarnings(cwd: string): string[] {
 /**
  * `app-wiring`: the entry module `index.html` loads (default src/main.tsx) mounts `BasaltProvider`
  * on a `createBasaltRouter` router (called in the entry or a module it imports), and the router tree
- * exists: the vite config calls a binding imported from `@tanstack/router-plugin` in `plugins`, a
- * `routeTree.gen.*` sits beside the entry (or in src/), or a module the entry imports calls
- * `createRootRoute[WithContext]` (a code-defined tree). `basaltViteConfig` does not register the
- * plugin, so naming it proves nothing.
+ * exists: the vite config calls a binding imported from `@tanstack/router-plugin` (after its
+ * `plugins` key), a `routeTree.gen.*` sits beside the entry (or in src/), or the app is code-routed
+ * (`isCodeRoutedApp`, the same predicate `init` and `sync` use). `basaltViteConfig` does not
+ * register the plugin, so naming it proves nothing.
  */
 export function appWiringCheck(cwd: string): Check {
   return guarded('app-wiring', () => {
@@ -466,11 +468,14 @@ export function appWiringCheck(cwd: string): Check {
       return { fail: `app-wiring: ${entry} does not exist. Fix: make it match ${SEED_HINT}.` }
     }
     const { code, inLiteral } = tokenize(text)
-    const providerUsed = [...code.matchAll(/\bBasaltProvider\b/g)].some((m) => !inLiteral(m.index))
-    const missing = [
-      ...(providerUsed ? [] : ['BasaltProvider']),
-      ...(callsIn(cwd, entry, callOf('createBasaltRouter')) ? [] : ['createBasaltRouter']),
+    const wired: [string, boolean][] = [
+      [
+        'BasaltProvider',
+        [...code.matchAll(/\bBasaltProvider\b/g)].some((m) => !inLiteral(m.index)),
+      ],
+      ['createBasaltRouter', hasRouter(cwd, entry)],
     ]
+    const missing = wired.filter(([, present]) => !present).map(([name]) => name)
     if (missing.length > 0) {
       return {
         fail:
@@ -478,14 +483,9 @@ export function appWiringCheck(cwd: string): Check {
           `Fix: make it match ${SEED_HINT} (\`init\` seeds it only when the file is absent).`,
       }
     }
-    if (
-      hasRouteTree(cwd, entry) ||
-      callsIn(cwd, entry, callOf('createRootRoute(?:WithContext)?'))
-    ) {
-      return null
-    }
+    if (hasRouteTree(cwd, entry) || isCodeRoutedApp(cwd, '')) return null
     return {
-      fail: `app-wiring: no vite.config calls the TanStack router plugin, ${routeTreeDirs(entry).join(' or ')}/routeTree.gen.ts does not exist, and no module the entry imports calls createRootRoute (a code-defined tree). ${ROUTER_PLUGIN_FIX}`,
+      fail: `app-wiring: the entry imports a generated route tree but no vite.config calls the TanStack router plugin and ${routeTreeDirs(entry).join(' or ')}/routeTree.gen.ts does not exist. ${ROUTER_PLUGIN_FIX}`,
     }
   })
 }
