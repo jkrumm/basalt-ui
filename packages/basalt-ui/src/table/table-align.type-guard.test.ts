@@ -10,6 +10,7 @@
  */
 import { describe, expect, test } from 'bun:test'
 import { createColumnHelper } from './index'
+import type { DataTableRowAction } from './index'
 
 type Row = { name: string; cost: number }
 const col = createColumnHelper<Row>()
@@ -36,5 +37,22 @@ export const unknownKey = [
 describe('ColumnMeta.align (type-guard)', () => {
   test('is a compile-time-only fixture — see the @ts-expect-error directives above', () => {
     expect(true).toBe(true)
+  })
+})
+
+describe('DataTableRowAction (type-guard)', () => {
+  test('is importable from the barrel and types a stable rowActions constant', () => {
+    type Row = { id: string }
+    const ACTIONS: DataTableRowAction<Row>[] = [
+      { key: 'delete', label: 'Delete', danger: true, onClick: (row) => void row.id },
+    ]
+    expect(ACTIONS).toHaveLength(1)
+    const bad: DataTableRowAction<Row> = {
+      key: 'x',
+      label: 'X',
+      // @ts-expect-error — onClick receives the row type, not a number
+      onClick: (row: number) => void row,
+    }
+    expect(bad).toBeDefined()
   })
 })

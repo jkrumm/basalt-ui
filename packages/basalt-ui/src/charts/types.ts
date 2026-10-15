@@ -23,6 +23,9 @@ export type ChartSeries<T> = {
   /** `null` is an ABSENCE, never a zero: a gap in the line, no tooltip row, out of the domain. A
    * series whose `getValue` is always `null` is a legend-only entry (a zone or reference key). */
   getValue: (d: T) => number | null
+  /** A bar coloured by sign: the below-zero colour. The legend swatch splits `color` | this; the
+   * entry stays one toggle, so the sign halves hide together. */
+  colorNegative?: string | undefined
   /** The legend swatch shape. Default: the kind's own mark (`line` in `Lines`, `bar` in `Bars`). */
   mark?: 'line' | 'bar' | 'area' | undefined
   /** Default `'solid'`; `'dashed'` is `VX.dashArray` on the line, the legend and the tooltip. */
