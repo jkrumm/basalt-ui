@@ -5,7 +5,8 @@
 import { describe, expect, test } from 'bun:test'
 import { renderToString } from 'react-dom/server'
 import { Lines } from './Lines'
-import { endLabelAnchor, endLabelPlan } from './labels'
+import { endLabelAnchor, endLabelMarks, endLabelOffset, endLabelPlan } from './labels'
+import { xScaleFor } from './scales'
 import type { ChartSeries, PlotContext, PlotRow } from './types'
 
 type Row = { t: Date; a: number | null; b?: number | null }
@@ -24,7 +25,13 @@ function plotOf(
   data: Row[],
   series: ChartSeries<Row>[],
   over: Partial<PlotContext<Row, Date>> = {},
+  xDomain?: [Date, Date],
 ): PlotContext<Row, Date> {
+  const model = xScaleFor(
+    data.map((d) => d.t),
+    false,
+    xDomain,
+  )
   const rows = (s: ChartSeries<Row>): PlotRow<Row, Date>[] =>
     data.map((datum) => ({ x: datum.t, y: s.getValue(datum), series: s.key, datum }))
   return {
@@ -37,6 +44,7 @@ function plotOf(
     plotWidth: 1000,
     plotHeight: 300,
     data,
+    xFraction: model.fraction,
     y2: undefined,
     yDomain: [0, 100],
     y2Domain: undefined,
@@ -62,32 +70,49 @@ describe('endLabelAnchor', () => {
     expect(endLabelAnchor({ ...base, fraction: 1 - 80 / 1000 })).toBe('end')
     expect(endLabelAnchor({ ...base, fraction: 1 - 82 / 1000 })).toBe('start')
   })
-  test('an unknown position (a string x) keeps the default', () => {
-    expect(endLabelAnchor({ ...base, fraction: null })).toBe('start')
-    expect(endLabelAnchor({ ...base, fraction: Number.NaN })).toBe('start')
+})
+
+describe('endLabelOffset and endLabelMarks', () => {
+  test('start sits right of the point and level; end sits left of it and above', () => {
+    expect(endLabelOffset('start')).toEqual({ dx: 6, dy: 0 })
+    const end = endLabelOffset('end')
+    expect(end.dx).toBeLessThan(0)
+    expect(end.dy).toBeLessThan(0)
+  })
+
+  test('one mark per planned label', () => {
+    const plan = endLabelPlan(plotOf(rows(5), [A, B]), [A, B])
+    expect(endLabelMarks(plan)).toHaveLength(plan.length)
   })
 })
 
 describe('endLabelPlan', () => {
+  const plan = (
+    data: Row[],
+    lines: ChartSeries<Row>[],
+    over: Partial<PlotContext<Row, Date>> = {},
+    xDomain?: [Date, Date],
+  ) => endLabelPlan(plotOf(data, lines, over, xDomain), lines)
+
   test('the default domain: the last point is on the edge, so the label flips', () => {
-    expect(anchors(endLabelPlan(plotOf(rows(20), [A]), [A], x, undefined))).toEqual(['end'])
+    expect(anchors(plan(rows(20), [A]))).toEqual(['end'])
   })
 
   test('an xDomain wider than the data leaves room: start', () => {
-    const wide: [Date, Date] = [day(1), day(40)]
-    expect(anchors(endLabelPlan(plotOf(rows(20), [A]), [A], x, wide))).toEqual(['start'])
+    expect(anchors(plan(rows(20), [A], {}, [day(1), day(40)]))).toEqual(['start'])
   })
 
-  test('an xDomain narrower than the data puts the last row past the edge: end, not clipped', () => {
-    const narrow: [Date, Date] = [day(1), day(10)]
-    expect(anchors(endLabelPlan(plotOf(rows(20), [A]), [A], x, narrow))).toEqual(['end'])
+  test('a last row beyond a narrower xDomain is clipped: no label; inside it: a label', () => {
+    expect(plan(rows(20), [A], {}, [day(1), day(10)])).toEqual([])
+    // the last row is day 20: inside [1, 20] (on the edge, flipped), outside [1, 19.9]
+    expect(anchors(plan(rows(20), [A], {}, [day(1), day(20)]))).toEqual(['end'])
+    expect(plan(rows(20), [A], {}, [day(2), day(30)])).toHaveLength(1)
   })
 
   test('the extent is every datum, not the labelled series: a short series keeps its room', () => {
     // B stops 10 days early, A runs to the data's end: A's last point is on the edge, B's is not.
     const data = rows(20).map((r, i) => (i >= 10 ? { ...r, b: null } : r))
-    const plan = endLabelPlan(plotOf(data, [A, B]), [A, B], x, undefined)
-    expect(plan.map((p) => [p.series.key, p.anchor])).toEqual([
+    expect(plan(data, [A, B]).map((p) => [p.series.key, p.anchor])).toEqual([
       ['a', 'end'],
       ['b', 'start'],
     ])
@@ -95,48 +120,59 @@ describe('endLabelPlan', () => {
 
   test('a single-point series on the domain edge has room to the right: start', () => {
     const data = [{ t: day(3), a: 10 }]
-    expect(anchors(endLabelPlan(plotOf(data, [A]), [A], x, undefined))).toEqual(['start'])
-    expect(anchors(endLabelPlan(plotOf(data, [A]), [A], x, [day(3), day(20)]))).toEqual(['start'])
+    expect(anchors(plan(data, [A]))).toEqual(['start'])
+    expect(anchors(plan(data, [A], {}, [day(3), day(20)]))).toEqual(['start'])
   })
 
-  test('a string x is undetermined: the default start', () => {
+  test('a string x is placed by its point scale', () => {
     type S = { t: string; a: number }
     const data: S[] = [
       { t: 'a', a: 1 },
       { t: 'b', a: 2 },
     ]
     const s: ChartSeries<S> = { key: 'a', label: 'Download', color: 'red', getValue: (d) => d.a }
+    const model = xScaleFor(
+      data.map((d) => d.t),
+      false,
+    )
     const plot = {
       ...plotOf([], []),
       data,
       rows: () => data.map((datum) => ({ x: datum.t, y: datum.a, series: 'a', datum })),
       visible: [s],
+      xFraction: model.fraction,
     } as unknown as PlotContext<S, string>
-    expect(anchors(endLabelPlan(plot, [s], (d) => d.t, undefined))).toEqual(['start'])
+    expect(anchors(endLabelPlan(plot, [s]))).toEqual(['start'])
   })
 
   test('off the wide class, with a right axis, or with more than three lines: none', () => {
     const data = rows(5)
-    const regular = plotOf(data, [A], { containerClass: 'regular' })
-    expect(endLabelPlan(regular, [A], x, undefined)).toEqual([])
-    expect(endLabelPlan(plotOf(data, [A], { y2: 'y2' }), [A], x, undefined)).toEqual([])
-    const four = [A, B, { ...A, key: 'c' }, { ...A, key: 'd' }]
-    expect(endLabelPlan(plotOf(data, four), four, x, undefined)).toEqual([])
+    expect(plan(data, [A], { containerClass: 'regular' })).toEqual([])
+    expect(plan(data, [A], { y2: 'y2' })).toEqual([])
+    expect(plan(data, [A, B, { ...A, key: 'c' }, { ...A, key: 'd' }])).toEqual([])
   })
 
   test('two labels closer than the minimum gap are both dropped', () => {
     const data = rows(5).map((r) => ({ ...r, a: 50, b: 50.5 }))
-    expect(endLabelPlan(plotOf(data, [A, B]), [A, B], x, undefined)).toEqual([])
+    expect(plan(data, [A, B])).toEqual([])
   })
 
-  test('a 200k-point series plans without a spread over its rows', () => {
+  test('the collision gap is measured on the plot area, not the frame', () => {
+    // 4 units of a 0-100 domain: 12 px on a 300 px plot (collides), 24 px on a 600 px frame.
+    const data = rows(5).map((r) => ({ ...r, a: 50, b: 54 }))
+    expect(plan(data, [A, B], { height: 600, plotHeight: 300 })).toEqual([])
+    expect(plan(data, [A, B], { height: 600, plotHeight: 600 })).toHaveLength(2)
+  })
+
+  test('a 200k-point series plans without a spread over its rows, and emits its label', () => {
     const data = Array.from({ length: 200_000 }, (_, i) => ({
       t: new Date(Date.UTC(2026, 0, 1) + i * 60_000),
       a: i % 90,
     }))
-    const plan = endLabelPlan(plotOf(data, [A]), [A], x, undefined)
-    expect(plan).toHaveLength(1)
-    expect(plan[0]?.anchor).toBe('end')
+    const planned = plan(data, [A])
+    expect(planned).toHaveLength(1)
+    expect(planned[0]?.anchor).toBe('end')
+    expect(endLabelMarks(planned)).toHaveLength(1)
   })
 
   test('a 200k-point Lines chart renders (no argument-spread RangeError)', () => {

@@ -8,7 +8,7 @@ import { compileCartesian, dateTicks, utcAxisDate, utcHeaderDate } from './compi
 import { bucketTicks } from './ticks'
 import { chartCursor, chartCursorView, hasCursorGroup, hasCursorView } from './cursor'
 import { chartCurve } from './curves'
-import { resolveYDomain, xFractionIn, xScaleFor, xZoneFractions } from './scales'
+import { resolveYDomain, xScaleFor, xZoneFractions } from './scales'
 import { resolveChartState } from './state'
 import { Lines } from './Lines'
 import { createElement } from 'react'
@@ -479,41 +479,31 @@ describe('bucketTicks (ledger row 109)', () => {
   })
 })
 
-describe('xFractionIn', () => {
-  const data = [1, 2, 3, 4, 5].map((d) => ({ t: new Date(Date.UTC(2026, 8, d)) }))
-  const at = (d: number, domain?: [Date, Date]) =>
-    xFractionIn(data, (r) => r.t, domain, new Date(Date.UTC(2026, 8, d)))
-
-  test('matches the x scale the plot is built on (data extent, explicit domain)', () => {
-    const model = xScaleFor(
-      data.map((r) => r.t),
-      false,
-    )
-    for (const d of [1, 3, 5])
-      expect(at(d)).toBeCloseTo(model.fraction(new Date(Date.UTC(2026, 8, d))) ?? NaN)
-    const domain: [Date, Date] = [new Date(Date.UTC(2026, 8, 1)), new Date(Date.UTC(2026, 8, 9))]
-    const wide = xScaleFor(
-      data.map((r) => r.t),
-      false,
-      domain,
-    )
-    expect(at(5, domain)).toBeCloseTo(wide.fraction(new Date(Date.UTC(2026, 8, 5))) ?? NaN)
-    expect(at(5, domain)).toBe(0.5)
+describe("xScaleFor 'flush'", () => {
+  const keys = ['a', 'b', 'c', 'd']
+  test('the first band starts at 0 and the last ends at 1', () => {
+    const model = xScaleFor(keys, 'flush')
+    const scale = model.scale as unknown as {
+      range: (r: [number, number]) => unknown
+      (k: string): number
+      bandwidth: () => number
+    }
+    scale.range([0, 1])
+    expect(scale('a')).toBeCloseTo(0)
+    expect(scale('d') + scale.bandwidth()).toBeCloseTo(1)
+    // the fraction helper agrees: band centres, 0.4 of a step in
+    const step = 1 / (keys.length - 0.2)
+    expect(model.fraction('a')).toBeCloseTo(step * 0.4)
+    expect((model.fraction('d') ?? 0) + step * 0.4).toBeCloseTo(1)
   })
-
-  test('a lone datum sits mid-plot on the widened domain, not on an edge', () => {
-    expect(xFractionIn([data[0]], (r) => r?.t as Date, undefined, data[0]?.t as Date)).toBe(0.5)
+  test('a single value fills the plot without a divide-by-zero', () => {
+    const model = xScaleFor(['only'], 'flush')
+    expect(Number.isFinite(model.halfStep)).toBe(true)
+    expect(model.fraction('only')).toBeCloseTo(0.5)
   })
-
-  test('a string x, no data, and an unplaceable x are null', () => {
-    expect(xFractionIn(['a', 'b'], (r) => r, undefined, 'a')).toBeNull()
-    expect(xFractionIn([], (r: Date) => r, undefined, new Date())).toBeNull()
-    expect(xFractionIn(data, (r) => r.t, undefined, new Date(Number.NaN))).toBeNull()
-  })
-
-  test('200k rows need no spread', () => {
-    const many = Array.from({ length: 200_000 }, (_, i) => i)
-    expect(xFractionIn(many, (n) => n, undefined, 100_000)).toBeCloseTo(0.5, 3)
+  test('the padded scale (true) is unchanged: 0.1 of a step of outer padding', () => {
+    const step = 1 / keys.length
+    expect(xScaleFor(keys, true).fraction('a')).toBeCloseTo(step * 0.5)
   })
 })
 

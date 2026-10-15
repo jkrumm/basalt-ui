@@ -142,10 +142,7 @@ const DAY_MS = 86_400_000
 
 /** The explicit x domain as `[min, max]` numbers, or `null` (unset, reversed, flat or not finite:
  * the data's own extent stands, with a dev warning for a domain that was set but unusable). */
-function explicitDomain(
-  xDomain: readonly [ChartX, ChartX] | undefined,
-  quiet = false,
-): [number, number] | null {
+function explicitDomain(xDomain: readonly [ChartX, ChartX] | undefined): [number, number] | null {
   if (xDomain === undefined) {
     return null
   }
@@ -153,66 +150,10 @@ function explicitDomain(
   if (Number.isFinite(min) && Number.isFinite(max) && min < max) {
     return [min, max]
   }
-  if (!quiet && process.env.NODE_ENV !== 'production') {
+  if (process.env.NODE_ENV !== 'production') {
     console.warn('[basalt] CartesianChart: `xDomain` needs finite min < max; using the data extent')
   }
   return null
-}
-
-/**
- * A continuous x scale's domain: the explicit `xDomain`, else the extent of `nums` (a lone sample
- * gets a day, or a unit, of width so its point sits in the middle). A loop, not Math.min(...nums):
- * a spread of a long series overflows the call stack. `quiet` skips the dev warning for an unusable
- * `xDomain`, for a second reader of the same domain.
- */
-function continuousExtent(
-  nums: Iterable<number>,
-  kind: XKind,
-  xDomain: readonly [ChartX, ChartX] | undefined,
-  quiet = false,
-): [number, number] {
-  let lo = Infinity
-  let hi = -Infinity
-  for (const v of nums) {
-    // NaN poisons the extent, as Math.min/max did: the guard below falls back to [0, 1].
-    if (Number.isNaN(v)) {
-      lo = hi = NaN
-      break
-    }
-    if (v < lo) lo = v
-    if (v > hi) hi = v
-  }
-  if (!Number.isFinite(lo)) [lo, hi] = [0, 1]
-  const explicit = explicitDomain(xDomain, quiet)
-  if (explicit !== null) return explicit
-  if (lo === hi) {
-    const half = kind === 'date' ? DAY_MS / 2 : 0.5
-    return [lo - half, hi + half]
-  }
-  return [lo, hi]
-}
-
-/**
- * Where `at` sits in the plot (0 = left edge, 1 = right edge) on the x scale `xScaleFor` builds
- * over `data` with `xDomain`, without building it. `null` for a string x (a point scale: no
- * continuous position), an empty `data`, or an `at` that is not a finite number.
- */
-export function xFractionIn<T, X extends ChartX>(
-  data: readonly T[],
-  getX: (d: T) => X,
-  xDomain: readonly [X, X] | undefined,
-  at: X,
-): number | null {
-  const first = data[0]
-  const sample = first === undefined ? xDomain?.[0] : getX(first)
-  const kind = xKindOf(sample === undefined ? [] : [sample])
-  if (sample === undefined || kind === 'string') return null
-  const nums = (function* () {
-    for (const d of data) yield toNumber(getX(d))
-  })()
-  const [lo, hi] = continuousExtent(nums, kind, xDomain, true)
-  const v = toNumber(at)
-  return Number.isFinite(v) ? (v - lo) / (hi - lo) : null
 }
 
 export function xScaleFor<X extends ChartX>(
@@ -233,7 +174,9 @@ export function xScaleFor<X extends ChartX>(
     const index = new Map(keys.map((k, i) => [keyOf(k), i] as const))
     if (band) {
       const outer = band === 'flush' ? 0 : BAND_PADDING_OUTER
-      const step = 1 / Math.max(1, n - BAND_PADDING_INNER + 2 * outer)
+      // Total width in steps; no data has none, so a step of 1 (a lone flush band spans 0.8 of one).
+      const steps = n - BAND_PADDING_INNER + 2 * outer
+      const step = 1 / (steps > 0 ? steps : 1)
       const scale = scaleBand<X>().domain(keys).paddingInner(BAND_PADDING_INNER).paddingOuter(outer)
       return {
         kind,
@@ -265,7 +208,28 @@ export function xScaleFor<X extends ChartX>(
   }
 
   const nums = values.map(toNumber)
-  const [lo, hi] = continuousExtent(nums, kind, xDomain)
+  // A loop, not Math.min(...nums): a spread of a long series overflows the call stack.
+  let lo = Infinity
+  let hi = -Infinity
+  for (const v of nums) {
+    // NaN poisons the extent, as Math.min/max did: the guard below falls back to [0, 1].
+    if (Number.isNaN(v)) {
+      lo = hi = NaN
+      break
+    }
+    if (v < lo) lo = v
+    if (v > hi) hi = v
+  }
+  if (!Number.isFinite(lo)) [lo, hi] = [0, 1]
+  const explicit = explicitDomain(xDomain)
+  if (explicit !== null) {
+    ;[lo, hi] = explicit
+  } else if (lo === hi) {
+    // One sample: give the axis a day (or a unit) of width so the point sits in the middle.
+    const half = kind === 'date' ? DAY_MS / 2 : 0.5
+    lo -= half
+    hi += half
+  }
   const span = hi - lo
   const sorted = nums.toSorted((a, b) => a - b)
   const gaps = sorted.slice(1).map((v, i) => v - (sorted[i] as number))

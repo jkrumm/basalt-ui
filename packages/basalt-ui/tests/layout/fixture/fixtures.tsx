@@ -677,8 +677,8 @@ const STRIP_STATES = [
 ] as const satisfies readonly BandStripSeries<StripSlot>[]
 
 const MIRRORED_SERIES = [
-  { key: 'rx', label: 'Down', color: CHART_COLORS[0] as string, getValue: () => 10 },
-  { key: 'tx', label: 'Up', color: CHART_COLORS[1] as string, getValue: () => 5 },
+  { key: 'rx', label: 'Up', color: CHART_COLORS[0] as string, getValue: () => 10 },
+  { key: 'tx', label: 'Down', color: CHART_COLORS[1] as string, getValue: () => 5 },
 ]
 
 /** Fixed-width buckets, the first at 18:13 UTC — the odd start that exposed the uneven ticks. */
@@ -762,6 +762,7 @@ function PanelRailChart({
               y2: undefined,
               yDomain: [0, RAIL_DOMAIN_MAX],
               y2Domain: undefined,
+              xFraction: model.fraction,
             },
             ctx.plot,
           )
@@ -888,8 +889,8 @@ function ChartsFixture({ spec }: { spec: ChartsSpec }): ReactElement {
         data={data}
         x={chartX}
         series={buildLineSeries(seriesCount, spec.endLabel)}
-        {...(spec.origin && originAxes)}
         {...domain}
+        {...(spec.origin && originAxes)}
         {...height}
       />
     )

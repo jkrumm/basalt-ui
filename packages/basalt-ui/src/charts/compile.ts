@@ -300,7 +300,7 @@ function xTickPolicy<X extends ChartX>(
   xTicks: number | readonly X[],
 ): { values: readonly ChartValue[] } | { count: number } {
   if (typeof xTicks === 'object') return { values: xTicks }
-  const buckets = typeof xTicks === 'number' ? bucketDates(model) : null
+  const buckets = typeof xTicks === 'number' && Number.isFinite(xTicks) ? bucketDates(model) : null
   if (buckets !== null && typeof xTicks === 'number')
     return { values: bucketTicks(buckets, xTicks) }
   if (model.band || model.kind === 'string') return { values: model.values }
@@ -884,6 +884,7 @@ export function compileCartesian<T, X extends ChartX>(
             width,
             height,
             data: input.data,
+            xFraction: model.fraction,
             y2: axes.right ? 'y2' : undefined,
             yDomain: axes.left.domain,
             y2Domain: axes.right?.domain,

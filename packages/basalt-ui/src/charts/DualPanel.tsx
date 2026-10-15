@@ -244,6 +244,7 @@ export function DualPanel<T, X extends Date | number = Date | number>(
             width,
             height: h,
             data,
+            xFraction: model.fraction,
             y2: undefined,
             yDomain: topDomain,
             y2Domain: undefined,

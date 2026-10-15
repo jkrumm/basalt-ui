@@ -5,7 +5,6 @@
 import { decorative } from '@tanstack/charts/mark/decorative'
 import { text } from '@tanstack/charts/text'
 import { VX } from '../tokens'
-import { xFractionIn } from './scales'
 import { rowX } from './types'
 import type { ChartMarks, ChartSeries, ChartX, PlotContext, PlotRow } from './types'
 
@@ -26,20 +25,19 @@ const END_LABEL_FLIP_DY = -9
 export type EndLabelAnchor = 'start' | 'end'
 
 /**
- * The side of its point an end label takes. `start` (right of the point) unless the point is
- * KNOWN to leave less room than the label needs: `fraction` is the point's x as a share of the
- * plot width (`null`: unknown, as on a string x — keep the default), `plotWidth` the plot in px.
- * Before the engine has measured the plot, `plotWidth` is the frame's, which is wider than the plot
- * by the axis gutters: the first frame can keep `start` for a label the measured frame then flips.
+ * The side of its point an end label takes: `start` (right of the point) unless the point leaves
+ * less room than the label needs. `fraction` is the point's x as a share of the plot width,
+ * `plotWidth` the plot in px. Before the engine has measured the plot, `plotWidth` is the frame's,
+ * which is wider than the plot by the axis gutters: the first frame can keep `start` for a label
+ * the measured frame then flips.
  */
 export function endLabelAnchor(opts: {
-  fraction: number | null
+  fraction: number
   plotWidth: number
   label: string
   fontSize: number
 }): EndLabelAnchor {
   const { fraction, plotWidth, label, fontSize } = opts
-  if (fraction === null || !Number.isFinite(fraction)) return 'start'
   const room = (1 - fraction) * plotWidth
   return room >= label.length * fontSize * END_LABEL_GLYPH_EM + END_LABEL_DX ? 'start' : 'end'
 }
@@ -50,41 +48,44 @@ export type EndLabel<T, X extends ChartX> = {
   anchor: EndLabelAnchor
 }
 
+type LastPoint<T, X extends ChartX> = {
+  series: ChartSeries<T>
+  row: PlotRow<T, X>
+  y: number
+  fraction: number
+}
+
 /**
  * The end labels to draw: none off the wide class, with a right axis, with more than
- * {@link MAX_END_LABELS} lines, or when two would collide in pixels. The room is read through the
- * x mapping the plot uses (`xDomain`, else the extent of every datum), not the labelled rows'.
+ * {@link MAX_END_LABELS} lines, or when two would collide in pixels (against the plot's height).
+ * A series whose last point the plot's own x scale cannot place, or places outside the plot
+ * (`plot.xFraction` outside [0, 1]: clipped by a narrower `xDomain`), has no label.
  */
 export function endLabelPlan<T, X extends ChartX>(
   plot: PlotContext<T, X>,
   lines: readonly ChartSeries<T>[],
-  getX: (d: T) => X,
-  xDomain: readonly [X, X] | undefined,
 ): EndLabel<T, X>[] {
   if (plot.containerClass !== 'wide' || plot.y2 !== undefined) return []
   if (lines.length === 0 || lines.length > MAX_END_LABELS) return []
-  const last = lines.flatMap((series) => {
+  const last = lines.flatMap((series): LastPoint<T, X>[] => {
     const row = plot.rows(series.key).findLast((r) => r.y !== null)
-    return row ? [{ series, row }] : []
+    if (row === undefined || row.y === null) return []
+    const fraction = plot.xFraction(row.x)
+    if (fraction === null || fraction < 0 || fraction > 1) return []
+    return [{ series, row, y: row.y, fraction }]
   })
   // Collision check in pixels from the plot height: labels that would overlap are not drawn at all.
   // No `y2` here (returned above), so every label reads the left domain.
-  const domain = plot.yDomain
-  const ys = last.map(({ row }) =>
-    row.y === null
-      ? Number.NaN
-      : ((row.y - domain[0]) / (domain[1] - domain[0] || 1)) * plot.height,
-  )
-  const sorted = ys.toSorted((a, b) => a - b)
-  const collides = sorted.some(
-    (y, i) => Number.isNaN(y) || (i > 0 && y - (sorted[i - 1] as number) < END_LABEL_MIN_GAP),
-  )
-  if (collides) return []
-  return last.map(({ series, row }) => ({
+  const [lo, hi] = plot.yDomain
+  const ys = last
+    .map(({ y }) => ((y - lo) / (hi - lo || 1)) * plot.plotHeight)
+    .toSorted((a, b) => a - b)
+  if (ys.some((y, i) => i > 0 && y - (ys[i - 1] as number) < END_LABEL_MIN_GAP)) return []
+  return last.map(({ series, row, fraction }) => ({
     series,
     row,
     anchor: endLabelAnchor({
-      fraction: xFractionIn(plot.data, getX, xDomain, row.x),
+      fraction,
       plotWidth: plot.plotWidth,
       label: series.label,
       fontSize: VX.text.micro,
@@ -92,10 +93,16 @@ export function endLabelPlan<T, X extends ChartX>(
   }))
 }
 
+/** The offset of a label from its point: right of it, level; or left of it and above. */
+export function endLabelOffset(anchor: EndLabelAnchor): { dx: number; dy: number } {
+  return anchor === 'end'
+    ? { dx: -END_LABEL_DX, dy: END_LABEL_FLIP_DY }
+    : { dx: END_LABEL_DX, dy: 0 }
+}
+
 export function endLabelMarks<T, X extends ChartX>(plan: readonly EndLabel<T, X>[]): ChartMarks {
-  return plan.map(({ series, row, anchor }) => {
-    const flipped = anchor === 'end'
-    return decorative(
+  return plan.map(({ series, row, anchor }) =>
+    decorative(
       text([row], {
         id: `${series.key}-end-label`,
         x: rowX,
@@ -104,9 +111,8 @@ export function endLabelMarks<T, X extends ChartX>(plan: readonly EndLabel<T, X>
         fill: series.color,
         fontSize: VX.text.micro,
         anchor,
-        dx: flipped ? -END_LABEL_DX : END_LABEL_DX,
-        dy: flipped ? END_LABEL_FLIP_DY : 0,
+        ...endLabelOffset(anchor),
       }),
-    )
-  })
+    ),
+  )
 }

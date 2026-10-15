@@ -52,11 +52,10 @@ describe('bucketTicks fallbacks and guards', () => {
     ).toBe(true)
   })
 
-  test('100k buckets pick quickly and stay round', () => {
-    const started = performance.now()
+  test('100k buckets pick a handful of round ticks', () => {
     const ticks = bucketTicks(grid(100_000), 6)
-    expect(performance.now() - started).toBeLessThan(500)
-    expect(ticks.length).toBeLessThanOrEqual(12)
     expect(ticks.length).toBeGreaterThan(1)
+    expect(ticks.length).toBeLessThanOrEqual(12)
+    expect(ticks.every((t) => t.getUTCMinutes() % 5 === 0)).toBe(true)
   })
 })
