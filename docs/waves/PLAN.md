@@ -736,3 +736,22 @@ exit criterion holds, then flips to `done`.
   the orchestrator activates Wave 1 of each consumer plan in the order above. Not authored here — the
   orchestrator decides its shape after reviewing this close-out. Shipped rule lines sit at 277/277 and
   `basalt-app/SKILL.md` at 300/300: a fix that adds a line must pay for it, or raise a ceiling on purpose.
+
+## Wave 16 — The fleet loop <!-- status: active -->
+
+The W14 model applied to the rest of the fleet, in W15's blast-radius order (rollhook, basalt-ui-obsidian,
+rb, weatherorb, linewatch). Each consumer runs its own `docs/waves/basalt-2-migration.md` as its own fleet;
+its friction lands in `argo-friction.md` (the one ledger) and ships as 2.x minors.
+
+- [ ] Fix rows 61-67 in basalt-ui (one PR per row or per coherent group, each reviewed): the `tokens.css`
+      gap visible to `doctor`; a seam for a router owned by TanStack Start (`BasaltProvider` takes a router it
+      does not create or mount, `sync` seeds nothing router-shaped for a Start app); an oxlint floor in
+      `doctor`; the band-strip absent state (decide hatch vs the W5 flat fill against linewatch's "not
+      measured never looks like zero", with evidence); a `PlotContext` mapping in MIGRATING plus a documented
+      route for pixel-scale overlays; `router-tanstack` as a removal with `doctor` catching it in a worktree;
+      a Spotlight opt-out on `BasaltProvider`. Stop before release; the orchestrator publishes.
+- [ ] The orchestrator then runs each consumer's plan in order, filing friction as it comes; a consumer starts
+      only when its repo has no other active wave.
+- [ ] Close-out: every consumer on 2.x and live-verified, the ledger's open rows owned or accepted.
+
+**Left behind:**
