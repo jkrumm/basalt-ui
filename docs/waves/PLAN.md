@@ -743,7 +743,7 @@ The W14 model applied to the rest of the fleet, in W15's blast-radius order (rol
 rb, weatherorb, linewatch). Each consumer runs its own `docs/waves/basalt-2-migration.md` as its own fleet;
 its friction lands in `argo-friction.md` (the one ledger) and ships as 2.x minors.
 
-- [ ] Fix rows 61-67 in basalt-ui (one PR per row or per coherent group, each reviewed): the `tokens.css`
+- [x] Fix rows 61-67 in basalt-ui (one PR per row or per coherent group, each reviewed): the `tokens.css`
       gap visible to `doctor`; a seam for a router owned by TanStack Start (`BasaltProvider` takes a router it
       does not create or mount, `sync` seeds nothing router-shaped for a Start app); an oxlint floor in
       `doctor`; the band-strip absent state (decide hatch vs the W5 flat fill against linewatch's "not
@@ -754,4 +754,11 @@ its friction lands in `argo-friction.md` (the one ledger) and ships as 2.x minor
       only when its repo has no other active wave.
 - [ ] Close-out: every consumer on 2.x and live-verified, the ledger's open rows owned or accepted.
 
-**Left behind:**
+**Left behind:** (step 1) rows 61-67 fixed on master, unreleased, under MIGRATING
+`## Unreleased — the fleet probe fixes`: #252 doctor (CSS + forced dropped subpaths, `oxlint-floor` 1.79.0),
+#253 `BandStrip` absent share (flat fill kept, no hatch), #254 MIGRATING `PlotContext` map + data-space overlay
+route (no raw-pixel route in 2.x; a consumer needing one files a new row), #255 `BasaltProvider` embedded
+`children` mode for a Start-owned router + `spotlight={false}`, Start-aware `init`/`sync`/`doctor`, gen-llms
+renders union props. Every PR took 2-4 independent `/review` rounds; each round found real bugs. CLI line
+ceiling rose 4525 → 4726 (doctor + Start detection; a consolidation should pay it back). Next: the orchestrator runs `make release`, then
+step 2 in order (rollhook first).
