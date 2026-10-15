@@ -60,7 +60,9 @@ describe('preset react(only-export-components)', () => {
     (file) => {
       const clean = lint(file, ROUTE)
       expect(clean.code).toBe(0)
-      expect(clean.output).not.toContain('warning')
+      // oxlint prints a `Found 0 warnings and 0 errors.` summary in some environments (CI), so
+      // assert on the rule id rather than the word "warning".
+      expect(clean.output).not.toContain('only-export-components')
       expect(lint(file, ROUTE, WITHOUT).output).toContain('only-export-components')
     },
   )
