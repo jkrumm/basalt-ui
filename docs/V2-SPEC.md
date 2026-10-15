@@ -477,7 +477,7 @@ import { lineY } from '@tanstack/charts/line'
   x={(d) => d.at} // Date | number | string, § 9.4
   series={[{ key: 'load', label: 'Load', color: VX.line, getValue: (d) => d.load }]}
   y={{ domain: [0, 100], format: fmtCompact }}
-  zones={zones} // + xZones, refLines, y2, legend, height, state, cursorGroup
+  zones={zones} // + xZones, refLines, xDomain, y2, legend, height, state, cursorGroup
   marks={(plot) => [lineY(plot.rows('load'), { x: 'x', y: 'y' })]}
   tooltip={{ rows: (d, { visible, hidden }) => [{ label: 'Target', value: '70' }] }}
 />
@@ -512,7 +512,7 @@ import { lineY } from '@tanstack/charts/line'
 | `BandStrip`      | `BandStrip`                                           | 2      | state fills, `fold`, absent state, transition markers                                                             |
 | `Donut`          | `Donut`                                               | 1      | center labels, `colorForKey`, ≤ 6 slices + Other                                                                  |
 | `Heatmap`        | `Heatmap` (0 uses)                                    | 3      | `cell` band × band, absolute intensity, absent state, `colorGradientLegend`, per-cell rows, no cursor             |
-| `Sparkline`      | `LineSparkline` + `BarSparkline`                      | 9      | `mark: 'line' \| 'bar'`, emphasise last, width optional (host measures)                                           |
+| `Sparkline`      | `LineSparkline` + `BarSparkline`                      | 9      | `mark: 'line' \| 'bar'`, emphasise last, width optional, pools to its width                                       |
 
 - Merged: `ZonedLine` + `MultiLine` → `Lines` (zones, x-zones, ref lines and `y2` moved to the rung;
   only thresholds and area differed); the two sparklines → `Sparkline`. No new kinds: bands and
