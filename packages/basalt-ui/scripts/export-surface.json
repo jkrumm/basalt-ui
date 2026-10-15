@@ -40,7 +40,8 @@
     "Sparkline",
     "StackedArea",
     "chartCursor",
-    "chartCurve"
+    "chartCurve",
+    "foldBands"
   ],
   "./tokens": [
     "BP",

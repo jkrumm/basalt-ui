@@ -2,7 +2,7 @@
  * `BandStrip` — a 1-D state strip: one gap-free band per slot over the shared x axis, no y
  * dimension (`docs/V2-SPEC.md` § 9.3). Each band is in one of the `states`, tinted by the state's
  * color (or an intensity `fill` of the datum's own), optionally carrying an inset `marker`.
- * Absence is a state like any other: color it `VX.neutral` for a flat, unhatched fill. Name it
+ * Absence is a state like any other: a flat, unhatched fill whose color differs from every measured state's, not only by alpha. Name it
  * with `absentState` and a folded band can carry an `absentFraction` share of it.
  *
  * The rung supplies the legend, cursor, crosshair and tooltip. The visible bands are decorative
@@ -19,6 +19,8 @@ import { oneOf, requiredProp } from '../common/errors'
 import { NON_FINITE } from '../format/shared'
 import { VX, alpha } from '../tokens'
 import { CartesianRung } from './CartesianChart'
+import { groupsOf } from './band-fold'
+import type { Group } from './band-fold'
 import { emphasis } from './marks'
 import { rowX } from './types'
 import type {
@@ -92,7 +94,7 @@ export type BandStripProps<T, X extends ChartX = ChartX> = Omit<
   /**
    * The `states` key that means "not measured". A band in it is flat-filled like any state; a
    * band in another state paints its `absentFraction` share in this state's color, and the
-   * tooltip adds this state's row. Absent stays a legended, flat `VX.neutral` state, never a
+   * tooltip adds this state's row. Absent stays a legended, flat state, never a
    * hatch: it reads as "no data" by hue and by sitting at the band's right edge, not as zero.
    */
   absentState?: string | undefined
@@ -117,22 +119,8 @@ const UNKNOWN_FILL = alpha(VX.neutral, 0.2)
 type Cell = { f0: number; f1: number; y0: number; y1: number }
 /** Cells sharing one paint: a `rect` mark takes a constant fill and opacity. */
 type Layer = { fill: string; opacity: number; cells: Cell[] }
-/** A run of adjacent slots drawn as one band; `items` are the source data it stands for. */
-type Group<T> = { start: number; items: T[] }
 /** A slot that answers the pointer: its own source datum, and the (possibly merged) one it reads. */
 type Hit<T> = { slot: number; source: T; state: string; datum: T }
-
-/** Adjacent data in groups of equal size, the last possibly shorter, at most `cap` groups. */
-function groupsOf<T>(data: readonly T[], cap: number): Group<T>[] {
-  const size = Math.max(1, Math.ceil(data.length / Math.max(cap, 1)))
-  const out: Group<T>[] = []
-  data.forEach((d, i) => {
-    const last = out.at(-1)
-    if (last && last.items.length < size) last.items.push(d)
-    else out.push({ start: i, items: [d] })
-  })
-  return out
-}
 
 /** Appends a cell to the layer with this paint, creating it in first-use order. */
 function paintInto(layers: Map<string, Layer>, fill: string, opacity: number, cell: Cell): void {

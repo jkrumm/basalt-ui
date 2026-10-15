@@ -433,6 +433,7 @@ Signature: StackedArea(props: StackedAreaProps<T, X>): ReactElement<unknown, str
   y?: Omit<AxisConfig<T>, "scale">
 Signature: chartCursor(group: string): ChartCursorController<ChartValue, ChartValue>
 Signature: chartCurve(name: CurveName): ChartCurve
+Signature: foldBands(data: readonly T[], cap: number, merge: (group: T[]) => T): T[]
 Install: bun add @tanstack/charts@1.1.0 d3-scale@4.0.2
 
 ## basalt-ui/tokens

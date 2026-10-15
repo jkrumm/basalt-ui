@@ -79,6 +79,7 @@
   "field": "argo:apps/dashboard/src/lib/window-stores.ts",
   "fieldKey": "argo:apps/dashboard/src/lib/auth-gate.tsx",
   "flattenNav": "argo:apps/dashboard/src/lib/commands.tsx",
+  "foldBands": "linewatch:web/src/charts/availability-strip.test.ts",
   "groupTokens": "argo:apps/dashboard/src/lib/series.ts",
   "inputProps": "argo:apps/dashboard/src/lib/auth-gate.tsx",
   "integer": "argo:apps/dashboard/src/features/walking-pad/live-card.tsx",
