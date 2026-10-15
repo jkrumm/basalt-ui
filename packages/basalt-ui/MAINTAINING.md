@@ -477,7 +477,7 @@ Code cannot load rules or skills from `node_modules`, which is the only reason a
 
 - **Six rules, three skills, two templates**, budgeted by `scripts/check-coverage.ts`: per-file
   ceilings in `AGENT_LINE_BUDGETS` and a whole-layer ceiling (rules + skills + the AGENTS block) in
-  `AGENT_LAYER_TOTAL_BUDGET`, both set to the LANDED values (W9: rules 271, layer 576; W10: layer 616, `basalt-app` 257 for the streaming snippet) so the next
+  `AGENT_LAYER_TOTAL_BUDGET`, both set to the LANDED values (W9: rules 271, layer 576; W10: layer 616, `basalt-app` 257 for the streaming snippet; layer 659, `basalt-app` 300 for the form-dialog snippet) so the next
   edit fails CI on growth. `check-budgets.ts` `ruleLines` bounds the rules alone (spec target 450).
   A rule bullet ends in its enforcement tag (`[basalt/<rule>]`, `[check-theme <kind>]`,
   `[type <Name>]`); `check-agent-doc-drift.ts` (Checks F–H) resolves the tags, rejects prose
