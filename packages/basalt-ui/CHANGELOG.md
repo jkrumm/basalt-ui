@@ -1,3 +1,13 @@
+## [2.11.1](https://github.com/jkrumm/basalt-ui/compare/v2.11.0...v2.11.1) (2026-10-15)
+
+
+### Bug Fixes
+
+* end labels read the plot's own x model and plot height ([81780be](https://github.com/jkrumm/basalt-ui/commit/81780be14d37875c445f6f432439b8bb93302f03))
+* end-label room, bucket ticks and lone dots per review ([6011eb6](https://github.com/jkrumm/basalt-ui/commit/6011eb65f304e0de6e6893c5a68a30af69e513ca))
+* lone points, end labels and axis ticks render cleanly ([95f898f](https://github.com/jkrumm/basalt-ui/commit/95f898f16927e209daa11ee2e587267103031b27))
+* mirrored bars reach both plot edges ([d8d6d4a](https://github.com/jkrumm/basalt-ui/commit/d8d6d4a8ddd3a3689b50b8f2213fee9683cf56a4))
+
 # [2.11.0](https://github.com/jkrumm/basalt-ui/compare/v2.10.0...v2.11.0) (2026-10-15)
 
 
