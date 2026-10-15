@@ -59,6 +59,7 @@ import { join, relative } from 'node:path'
 
 import { REPO_LOCAL_RULES } from './check-coverage'
 import * as pluginModule from '../configs/oxlint-plugin.js'
+import { SURFACES } from '../src/surfaces'
 import { GUARD_RULES, TOKENS_ONLY_DISABLED_KINDS } from '../src/guard/index'
 
 const pkgRoot = join(import.meta.dirname, '..')
@@ -880,6 +881,93 @@ export function checkLlmsNames(
   return failures
 }
 
+// ── Check I: backticked names in barrel doc comments + SURFACES descriptions are real exports ────
+
+/** `<subpath>:<name>` — backticked terms that read as exports but are deliberately not (platform APIs, env vars, named-as-internal). */
+export const CHECK_I_NON_EXPORTS: ReadonlySet<string> = new Set([
+  'basalt-ui/commands:BasaltProvider', // the provider that mounts the bus lives on the root
+  'basalt-ui/content:CodeBlock', // named to say it is internal
+  'basalt-ui/content:MermaidDiagram', // named to say it is internal
+  'basalt-ui/format:Intl', // the platform API the formatters wrap
+  'basalt-ui/vite:BASALT_LOCAL', // an env var, not an export
+])
+
+/** Export-shaped: `PascalCase` or a `useX` hook. Plain camelCase words (props, options) are prose. */
+const EXPORT_SHAPED_RE = /^(?:[A-Z][a-z0-9]\w*|use[A-Z]\w*)$/
+
+const BACKTICK_IDENT_RE = /`([A-Za-z_$][\w$]*)(?:\(\))?`/g
+
+/** The leading `/** … *\/` block of a barrel source, or '' when it opens with something else. */
+export function leadingDocComment(source: string): string {
+  const match = /^\s*\/\*\*([\s\S]*?)\*\//.exec(source)
+  return match?.[1] ?? ''
+}
+
+export type CheckIFailure = { where: string; name: string }
+
+/**
+ * Every backticked export-shaped identifier in `text` must be in `published` (this subpath's
+ * exports) or allow-listed; a camelCase one only fails when it is an export of ANOTHER subpath
+ * (`elsewhere`) — a moved or misattributed name. Plain camelCase words are prose.
+ */
+export function checkDocNames(
+  where: string,
+  spec: string,
+  text: string,
+  published: ReadonlySet<string>,
+  elsewhere: ReadonlySet<string> = new Set(),
+  allow: ReadonlySet<string> = CHECK_I_NON_EXPORTS,
+): CheckIFailure[] {
+  const seen = new Set<string>()
+  for (const match of text.matchAll(BACKTICK_IDENT_RE)) {
+    const name = match[1]
+    if (name === undefined || published.has(name) || allow.has(`${spec}:${name}`)) continue
+    if (EXPORT_SHAPED_RE.test(name) || elsewhere.has(name)) seen.add(name)
+  }
+  return [...seen].map((name) => ({ where, name }))
+}
+
+/** Barrel doc comment + SURFACES description of every published JS subpath. */
+export function checkI(published: ReadonlyMap<string, ReadonlySet<string>>): CheckIFailure[] {
+  const manifest = JSON.parse(readFileSync(join(pkgRoot, 'package.json'), 'utf8')) as {
+    exports: Record<string, { import?: string } | string>
+  }
+  const failures: CheckIFailure[] = []
+  const all = new Set([...published.values()].flatMap((names) => [...names]))
+  for (const [key, target] of Object.entries(manifest.exports)) {
+    const spec = key === '.' ? 'basalt-ui' : `basalt-ui${key.slice(1)}`
+    const names = published.get(spec)
+    const js = typeof target === 'object' ? target.import : undefined
+    if (names === undefined || js === undefined) continue
+    const base = join(pkgRoot, 'src', js.replace(/^\.\/dist\//, '').replace(/\.js$/, ''))
+    const entry = [`${base}.ts`, `${base}.tsx`, join(base, 'index.ts')].find(existsSync)
+    if (entry !== undefined) {
+      failures.push(
+        ...checkDocNames(
+          `${relative(pkgRoot, entry)} (module doc comment)`,
+          spec,
+          leadingDocComment(readFileSync(entry, 'utf8')),
+          names,
+          all,
+        ),
+      )
+    }
+    const surface = (SURFACES as Record<string, { description?: string }>)[key]
+    if (surface?.description !== undefined) {
+      failures.push(
+        ...checkDocNames(
+          `src/surfaces.ts ${key} description`,
+          spec,
+          surface.description,
+          names,
+          all,
+        ),
+      )
+    }
+  }
+  return failures
+}
+
 // ── main ──────────────────────────────────────────────────────────────────────
 
 function main(): void {
@@ -908,6 +996,7 @@ function main(): void {
     readFileSync(join(pkgRoot, 'llms.txt'), 'utf8'),
     collectPublishedBySubpath(),
   )
+  const iFailures = checkI(collectPublishedBySubpath())
   const selfFailures = [
     ...checkDenylistIsGenuinelyRemoved(validNames),
     ...checkMasksUrlSlashesCorrectly(),
@@ -938,6 +1027,10 @@ function main(): void {
     ),
     ...fFailures.map((f) => `${f.file}:${f.line}: ${f.message}`),
     ...hFailures.map((f) => `llms.txt:${f.line}: ${f.message}`),
+    ...iFailures.map(
+      (f) =>
+        `${f.where}: names \`${f.name}\`, which is not an export of that subpath (fix the prose, or allow-list it in CHECK_I_NON_EXPORTS)`,
+    ),
     ...gFailures.map((f) => `${f.file}:${f.line}: rule '${f.id}' ${f.why}`),
     ...selfFailures,
   ]

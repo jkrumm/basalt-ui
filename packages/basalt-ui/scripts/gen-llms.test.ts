@@ -36,6 +36,25 @@ describe('gen-llms signatures', () => {
     expect(text).toContain('Signature: alpha(token: string, a: number): string')
   })
 
+  test('table, charts and forms signatures carry an indented props block', () => {
+    const block = (name: string): string[] => {
+      const lines = text.split('\n')
+      const at = lines.findIndex((l) => l.startsWith(`Signature: ${name}(`))
+      const rest = lines.slice(at + 1)
+      const end = rest.findIndex((l) => !l.startsWith('  '))
+      return rest.slice(0, end)
+    }
+    const table = block('BasaltDataTable')
+    expect(table).toContain('  data: T[]')
+    expect(table).toContain('  striped?: boolean | "odd" | "even"')
+    expect(table.at(-1)).toMatch(/^  … \+\d+ more$/)
+    expect(block('useBasaltForm')).toContain('  mode?: "controlled" | "uncontrolled"')
+    expect(block('Bars')).toContain('  ariaLabel: string')
+    // Inherited Mantine/DOM members are not listed; other subpaths stay one line.
+    expect(table.every((l) => !l.startsWith('  onClick'))).toBe(true)
+    expect(block('FilterSet')).toEqual([])
+  })
+
   test('the committed llms.txt is in sync', () => {
     expect(readFileSync(outPath, 'utf8')).toBe(text)
   })

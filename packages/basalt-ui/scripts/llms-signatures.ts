@@ -10,6 +10,11 @@ import ts from 'typescript'
 const pkgRoot = join(import.meta.dirname, '..')
 const MAX_LINE = 170
 const MAX_PARAM_TYPE = 70
+const MAX_PROP_TYPE = 60
+const MAX_PROPS = 40
+
+/** Subpaths whose exports get an indented props block under the signature (friction row 50). */
+export const PROP_SHAPE_SUBPATHS: ReadonlySet<string> = new Set(['./table', './charts', './forms'])
 
 /** `./dist/charts/index.d.ts` → `<pkg>/src/charts/index.ts(x)`; undefined when no source entry exists. */
 function sourceEntry(typesPath: string): string | undefined {
@@ -22,7 +27,38 @@ function clip(text: string, max: number): string {
   return flat.length <= max ? flat : `${flat.slice(0, max - 1)}…`
 }
 
-/** Signatures keyed by subpath, each list sorted by export name. */
+/**
+ * A props type's own top-level members as `name?: type` lines. Members inherited from
+ * node_modules (Mantine's `BoxProps`, DOM attributes) are dropped: they are Mantine's to document
+ * and would drown the few props basalt-ui adds.
+ */
+function propLines(
+  checker: ts.TypeChecker,
+  type: ts.Type,
+  node: ts.Node,
+  flags: ts.TypeFormatFlags,
+) {
+  const own = type
+    .getProperties()
+    .filter((p) =>
+      p.declarations?.some((d) => !d.getSourceFile().fileName.includes('/node_modules/')),
+    )
+  const lines = own.slice(0, MAX_PROPS).map((p) => {
+    const optional = (p.flags & ts.SymbolFlags.Optional) !== 0
+    // `getNonNullableType` would expand an alias like ReactNode into its union; strip the text instead.
+    const text = checker
+      .typeToString(checker.getTypeOfSymbolAtLocation(p, node), node, flags)
+      .replace(/ \| undefined$/, '')
+    return `  ${p.name}${optional ? '?' : ''}: ${clip(text, MAX_PROP_TYPE)}`
+  })
+  if (own.length > MAX_PROPS) lines.push(`  … +${own.length - MAX_PROPS} more`)
+  return lines
+}
+
+/**
+ * Signatures keyed by subpath, each list sorted by export name. An entry may span several lines:
+ * the signature, then (for {@link PROP_SHAPE_SUBPATHS}) one indented line per props member.
+ */
 export function readSignatures(
   subpaths: Readonly<Record<string, string>>,
 ): Record<string, string[]> {
@@ -76,7 +112,19 @@ export function readSignatures(
           return `${p.name === '__0' ? 'props' : p.name}${optional ? '?' : ''}: ${text}`
         })
         const returns = checker.typeToString(call.getReturnType(), node, flags)
-        return clip(`${name}(${params.join(', ')}): ${clip(returns, MAX_PARAM_TYPE)}`, MAX_LINE)
+        const head = clip(
+          `${name}(${params.join(', ')}): ${clip(returns, MAX_PARAM_TYPE)}`,
+          MAX_LINE,
+        )
+        const first = call.getParameters()[0]
+        if (!PROP_SHAPE_SUBPATHS.has(key) || first === undefined) return head
+        const firstType = checker.getTypeOfSymbolAtLocation(first, node)
+        const props =
+          firstType.isUnion() ||
+          (firstType.flags & (ts.TypeFlags.Object | ts.TypeFlags.Intersection)) === 0
+            ? []
+            : propLines(checker, firstType, node, flags)
+        return [head, ...props].join('\n')
       })
       .toSorted()
   }
