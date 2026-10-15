@@ -12,6 +12,15 @@ const MAX_LINE = 170
 const MAX_PARAM_TYPE = 70
 export const MAX_PROP_TYPE = 60
 export const MAX_PROPS = 40
+/** A literal-union alias wider than this stays out of the glossary: it would swamp the section. */
+export const MAX_UNION_MEMBERS = 12
+/** A constant map with more keys than this prints its key tree instead of its values. */
+export const MAX_LITERAL_MAP_KEYS = 8
+/** Deepest nesting the key tree follows: a self-referential object type must terminate. */
+const MAX_TREE_DEPTH = 4
+
+const SCALAR_LITERAL =
+  ts.TypeFlags.StringLiteral | ts.TypeFlags.NumberLiteral | ts.TypeFlags.BooleanLiteral
 
 /** `./dist/charts/index.d.ts` → `<pkg>/src/charts/index.ts(x)`; undefined when no source entry exists. */
 function sourceEntry(typesPath: string): string | undefined {
@@ -22,59 +31,6 @@ function sourceEntry(typesPath: string): string | undefined {
 function clip(text: string, max: number): string {
   const flat = text.replace(/\s+/g, ' ')
   return flat.length <= max ? flat : `${flat.slice(0, max - 1)}…`
-}
-
-/** Past this many members an alias stays a name: a 30-way union would swamp the line it sits on. */
-const MAX_UNION_MEMBERS = 12
-
-/**
- * Every own type alias whose declared type is a union of string or number literals, as
- * `name → "a" | "b"`. The alias NAME is all the checker prints for a prop typed with it, and the
- * members live only in `dist/*.d.ts` — an agent reading `llms.txt` alone had to grep for them.
- * A name declared twice with different members is dropped rather than guessed.
- */
-export function collectLiteralUnions(
-  checker: ts.TypeChecker,
-  files: readonly ts.SourceFile[],
-  flags: ts.TypeFormatFlags = ts.TypeFormatFlags.NoTruncation,
-): ReadonlyMap<string, string> {
-  const found = new Map<string, string | null>()
-  const literal = ts.TypeFlags.StringLiteral | ts.TypeFlags.NumberLiteral
-  const visit = (node: ts.Node): void => {
-    if (ts.isTypeAliasDeclaration(node)) {
-      const type = checker.getTypeAtLocation(node.name)
-      const ok =
-        type.isUnion() &&
-        type.types.length <= MAX_UNION_MEMBERS &&
-        type.types.every((t) => (t.flags & literal) !== 0)
-      if (ok) {
-        const declared =
-          ts.isUnionTypeNode(node.type) && node.type.types.every(ts.isLiteralTypeNode)
-            ? node.type.types.map((n) => checker.getTypeFromTypeNode(n))
-            : type.types
-        const text = declared.map((t) => checker.typeToString(t, node, flags)).join(' | ')
-        const name = node.name.text
-        found.set(name, found.has(name) && found.get(name) !== text ? null : text)
-      }
-    }
-    ts.forEachChild(node, visit)
-  }
-  for (const file of files) {
-    if (file.isDeclarationFile || file.fileName.includes('/node_modules/')) continue
-    visit(file)
-  }
-  return new Map([...found].flatMap(([k, v]) => (v === null ? [] : [[k, v] as const])))
-}
-
-/** Replaces each known union alias name in a printed type with its members (parenthesised before `[]`). */
-function expandUnions(text: string, unions: ReadonlyMap<string, string>): string {
-  if (unions.size === 0) return text
-  return text.replace(/(?<![\w"'.])[A-Za-z_$][\w$]*(?![\w"'])(\[\])?/g, (match, arr?: string) => {
-    const name = arr === undefined ? match : match.slice(0, -2)
-    const members = unions.get(name)
-    if (members === undefined) return match
-    return arr === undefined ? members : `(${members})[]`
-  })
 }
 
 type PropEntry = { sym: ts.Symbol; has: boolean }
@@ -98,7 +54,6 @@ export function propShapeLines(
   paramType: ts.Type,
   node: ts.Node,
   flags: ts.TypeFormatFlags,
-  unions: ReadonlyMap<string, string> = new Map(),
 ): string[] {
   const type = checker.getNonNullableType(paramType)
   const isShape = (t: ts.Type): boolean =>
@@ -167,9 +122,7 @@ export function propShapeLines(
       .filter((m) => !m.split(' + ').includes(name))
     const tag =
       owners.length < members.length && named.length > 0 ? `  [with ${named.join(' | ')}]` : ''
-    lines.push(
-      `  ${name}${optional ? '?' : ''}: ${expandUnions(clip(types.join(' | '), MAX_PROP_TYPE), unions)}${tag}`,
-    )
+    lines.push(`  ${name}${optional ? '?' : ''}: ${clip(types.join(' | '), MAX_PROP_TYPE)}${tag}`)
   }
   const shown = lines.slice(0, MAX_PROPS)
   if (lines.length > MAX_PROPS) shown.push(`  … +${lines.length - MAX_PROPS} more`)
@@ -181,10 +134,7 @@ export function propShapeLines(
   return [...header, ...shown]
 }
 
-const LITERAL =
-  ts.TypeFlags.StringLiteral | ts.TypeFlags.NumberLiteral | ts.TypeFlags.BooleanLiteral
-
-/** The members of a plain nested object; empty for primitives, arrays, functions and anything else. */
+/** The members of a plain nested object; empty for primitives, arrays, tuples and functions. */
 function membersOf(checker: ts.TypeChecker, t: ts.Type): ts.Symbol[] {
   const plain =
     (t.flags & ts.TypeFlags.Object) !== 0 &&
@@ -193,23 +143,23 @@ function membersOf(checker: ts.TypeChecker, t: ts.Type): ts.Symbol[] {
   return plain ? t.getProperties() : []
 }
 
-/** `{ a, b: { c, d } }` — every key at every depth, no values. */
-function keyTree(checker: ts.TypeChecker, type: ts.Type, node: ts.Node): string {
+/** `{ a, b: { c, d } }` — every key down to `MAX_TREE_DEPTH`, no values. */
+function keyTree(checker: ts.TypeChecker, type: ts.Type, node: ts.Node, depth = 0): string {
   const parts = type.getProperties().map((k) => {
     const t = checker.getTypeOfSymbolAtLocation(k, node)
-    const nested = membersOf(checker, t)
-    return nested.length > 0 ? `${k.name}: ${keyTree(checker, t, node)}` : k.name
+    const nested = depth + 1 < MAX_TREE_DEPTH && membersOf(checker, t).length > 0
+    return nested ? `${k.name}: ${keyTree(checker, t, node, depth + 1)}` : k.name
   })
   return `{ ${parts.join(', ')} }`
 }
 
 /**
- * A value object (not callable). A small `as const` map whose every member is a literal
+ * A non-callable value export. A small `as const` map whose every member is a scalar literal
  * (`CONTAINER_KEYS`) prints its values — the values ARE the API. Anything bigger prints its full key
- * tree (`VX`: the whole token vocabulary, never truncated), wrapped to one indented line per
- * top-level member when it will not fit on the signature line.
+ * tree (`VX`: the whole token vocabulary, never truncated), wrapped to one indented line per nested
+ * group when it will not fit on the signature line.
  */
-function valueSignature(
+export function valueSignature(
   checker: ts.TypeChecker,
   name: string,
   type: ts.Type,
@@ -219,34 +169,65 @@ function valueSignature(
   const props = type.getProperties()
   if (props.length === 0)
     return clip(`${name}: ${checker.typeToString(type, node, flags)}`, MAX_LINE)
-  const types = props.map((k) => checker.getTypeOfSymbolAtLocation(k, node))
-  if (props.length <= 8 && types.every((t) => (t.flags & LITERAL) !== 0)) {
-    const entries = props.map(
-      (k, i) => `${k.name}: ${checker.typeToString(types[i]!, node, flags)}`,
-    )
-    return clip(`${name}: { ${entries.join(', ')} }`, MAX_LINE)
+  const entries = props.map((k) => ({ key: k.name, t: checker.getTypeOfSymbolAtLocation(k, node) }))
+  if (
+    entries.length <= MAX_LITERAL_MAP_KEYS &&
+    entries.every(({ t }) => (t.flags & SCALAR_LITERAL) !== 0)
+  ) {
+    const values = entries.map(({ key, t }) => `${key}: ${checker.typeToString(t, node, flags)}`)
+    return clip(`${name}: { ${values.join(', ')} }`, MAX_LINE)
   }
   const flat = `${name}: ${keyTree(checker, type, node)}`
   if (flat.length <= MAX_LINE) return flat
-  const rows = props.map((k, i) => {
-    const nested = membersOf(checker, types[i]!)
-    return nested.length > 0 ? `  ${k.name}: ${keyTree(checker, types[i]!, node)}` : undefined
-  })
-  const leaves = props.filter((_, i) => rows[i] === undefined).map((k) => k.name)
+  const groups = entries.filter(({ t }) => membersOf(checker, t).length > 0)
+  const leaves = entries.filter((e) => !groups.includes(e)).map((e) => e.key)
   return [
     `${name}: { full key list below }`,
-    `  ${leaves.join(', ')}`,
-    ...rows.filter((r) => r !== undefined),
+    ...(leaves.length > 0 ? [`  ${leaves.join(', ')}`] : []),
+    ...groups.map(({ key, t }) => `  ${key}: ${keyTree(checker, t, node, 1)}`),
   ].join('\n')
 }
 
+/** `'a' | 'b'` from a declaration's own type node, in declaration order; undefined unless every member is a scalar literal. */
+export function literalUnionText(decl: ts.TypeAliasDeclaration): string | undefined {
+  const node = decl.type
+  if (!ts.isUnionTypeNode(node) || node.types.length > MAX_UNION_MEMBERS) return undefined
+  return node.types.every(ts.isLiteralTypeNode)
+    ? node.types.map((n) => n.getText()).join(' | ')
+    : undefined
+}
+
 /**
- * Signatures keyed by subpath, each list sorted by export name. An entry may span several lines:
- * the signature, then (for a component or hook taking an object) one indented line per props member.
+ * The exported literal-union type aliases of one entry module that a printed signature references by
+ * name, as `type X = 'a' | 'b'` lines sorted by name. Read from declaration source text, so it does
+ * not depend on (and must not run before) the checker printing the signatures.
  */
-export function readSignatures(
-  subpaths: Readonly<Record<string, string>>,
-): Record<string, string[]> {
+export function typeGlossary(
+  checker: ts.TypeChecker,
+  source: ts.SourceFile,
+  printed: string,
+): string[] {
+  const moduleSymbol = checker.getSymbolAtLocation(source)
+  if (moduleSymbol === undefined) return []
+  return checker
+    .getExportsOfModule(moduleSymbol)
+    .flatMap((exported) => {
+      const symbol =
+        exported.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(exported) : exported
+      const decl = symbol.declarations?.find(ts.isTypeAliasDeclaration)
+      const members = decl && literalUnionText(decl)
+      const referenced = new RegExp(
+        `(?<![\\w$"'])${exported.name.replace(/\$/g, '\\$')}(?![\\w$"'])`,
+      )
+      return members !== undefined && referenced.test(printed)
+        ? [`type ${exported.name} = ${members}`]
+        : []
+    })
+    .toSorted()
+}
+
+/** Program over the published source entries, shared by the signature and glossary readers. */
+function entryProgram(subpaths: Readonly<Record<string, string>>) {
   const entries = Object.entries(subpaths).flatMap(([key, typesPath]) => {
     const file = sourceEntry(typesPath)
     return file === undefined ? [] : [[key, file] as const]
@@ -261,10 +242,38 @@ export function readSignatures(
     entries.map(([, file]) => file),
     config.options,
   )
+  return { entries, program }
+}
+
+/**
+ * The glossary lines for every documented entry, in a program of their own: the signatures'
+ * checker is never asked anything new, so the order it interns (and prints) union members in is
+ * the order it always was.
+ */
+export function readTypeGlossary(
+  subpaths: Readonly<Record<string, string>>,
+  printed: string,
+): string[] {
+  const { entries, program } = entryProgram(subpaths)
+  const checker = program.getTypeChecker()
+  const lines = entries.flatMap(([, file]) => {
+    const source = program.getSourceFile(file)
+    return source === undefined ? [] : typeGlossary(checker, source, printed)
+  })
+  return [...new Set(lines)].toSorted()
+}
+
+/**
+ * Signatures keyed by subpath, each list sorted by export name. An entry may span several lines:
+ * the signature, then (for a component or hook taking an object) one indented line per props member.
+ */
+export function readSignatures(
+  subpaths: Readonly<Record<string, string>>,
+): Record<string, string[]> {
+  const { entries, program } = entryProgram(subpaths)
   const checker = program.getTypeChecker()
   const flags =
     ts.TypeFormatFlags.NoTruncation | ts.TypeFormatFlags.UseAliasDefinedOutsideCurrentScope
-  const unions = collectLiteralUnions(checker, program.getSourceFiles(), flags)
 
   const out: Record<string, string[]> = {}
   for (const [key, file] of entries) {
@@ -288,10 +297,7 @@ export function readSignatures(
         const params = call.getParameters().map((p) => {
           const optional = (p.flags & ts.SymbolFlags.Optional) !== 0
           const paramType = checker.getTypeOfSymbolAtLocation(p, node)
-          const text = expandUnions(
-            clip(checker.typeToString(paramType, node, flags), MAX_PARAM_TYPE),
-            unions,
-          )
+          const text = clip(checker.typeToString(paramType, node, flags), MAX_PARAM_TYPE)
           return `${p.name === '__0' ? 'props' : p.name}${optional ? '?' : ''}: ${text}`
         })
         const returns = checker.typeToString(call.getReturnType(), node, flags)
@@ -306,7 +312,6 @@ export function readSignatures(
           checker.getTypeOfSymbolAtLocation(first, node),
           node,
           flags,
-          unions,
         )
         return [head, ...props].join('\n')
       })

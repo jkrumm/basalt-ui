@@ -9,7 +9,7 @@
 import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { SURFACES } from '../src/surfaces'
-import { readSignatures } from './llms-signatures'
+import { readSignatures, readTypeGlossary } from './llms-signatures'
 import { SUBPATH_REQUIRED_PEERS } from './surface-gates'
 
 const root = join(import.meta.dirname, '..', '..', '..')
@@ -43,15 +43,18 @@ const publishedExportKeys = new Set(Object.keys(pkgExports))
 // ── Signatures ───────────────────────────────────────────────────────────────────────────────────
 // One line per public value export of every JS subpath, read from source by the TS checker.
 
-const SIGNATURES = readSignatures(
-  Object.fromEntries(
-    Object.entries(pkgExports).flatMap(([key, value]) =>
-      typeof value === 'object' && value !== null && 'types' in value
-        ? [[key, String((value as { types: string }).types)]]
-        : [],
-    ),
+const SUBPATH_TYPES: Record<string, string> = Object.fromEntries(
+  Object.entries(pkgExports).flatMap(([key, value]) =>
+    typeof value === 'object' && value !== null && 'types' in value
+      ? [[key, String((value as { types: string }).types)]]
+      : [],
   ),
 )
+const SIGNATURES = readSignatures(SUBPATH_TYPES)
+
+// Literal-union aliases a signature names but cannot show (`kind?: CalloutKind`). Read AFTER the
+// signatures, from a program of its own, so it cannot change how they print.
+const TYPE_GLOSSARY = readTypeGlossary(SUBPATH_TYPES, Object.values(SIGNATURES).flat().join('\n'))
 
 /** Peer ranges like `^7 || ^8` contain spaces and pipes; quote any spec the shell would split. */
 const SHELL_SAFE_RE = /^[\w@/.^~-]+$/
@@ -177,6 +180,15 @@ export function generateLlmsTxt(): string {
     if (row.optionalPeers.length > 0) {
       lines.push(`OptionalPeers: ${row.optionalPeers.join(', ')}`)
     }
+    lines.push('')
+  }
+
+  if (TYPE_GLOSSARY.length > 0) {
+    lines.push(
+      '## Types',
+      'Description: literal unions the signatures above name (members in declaration order)',
+    )
+    for (const line of TYPE_GLOSSARY) lines.push(line)
     lines.push('')
   }
 

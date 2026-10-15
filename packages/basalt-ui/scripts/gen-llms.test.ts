@@ -3,7 +3,15 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import ts from 'typescript'
 import { generateLlmsTxt, outPath } from './gen-llms'
-import { collectLiteralUnions, MAX_PROP_TYPE, MAX_PROPS, propShapeLines } from './llms-signatures'
+import {
+  MAX_LITERAL_MAP_KEYS,
+  MAX_PROP_TYPE,
+  MAX_PROPS,
+  MAX_UNION_MEMBERS,
+  propShapeLines,
+  typeGlossary,
+  valueSignature,
+} from './llms-signatures'
 
 const text = generateLlmsTxt()
 const surface = JSON.parse(
@@ -64,12 +72,6 @@ describe('gen-llms signatures', () => {
     expect(block('FilterSet').length).toBeGreaterThan(0)
   })
 
-  test('string and numeric literal unions are spelled out, not named (row 78 a)', () => {
-    expect(text).toContain('  kind?: "info" | "good" | "warn" | "bad"')
-    expect(text).toContain('  cols?: 2 | 3 | 4 | 5')
-    expect(text).not.toMatch(/: (CalloutKind|StatGroupCols)\b/)
-  })
-
   test('VX lists every token, untruncated (row 78 b)', () => {
     const at = text.indexOf('Signature: VX:')
     const block = text.slice(at, text.indexOf('\nSignature: ', at + 1))
@@ -84,66 +86,139 @@ describe('gen-llms signatures', () => {
     )
   })
 
+  test('the glossary spells out a named literal union, in declaration order (row 78 a)', () => {
+    const glossary = text.split('\n## Types\n')[1] ?? ''
+    expect(glossary).toContain("type CalloutKind = 'info' | 'good' | 'warn' | 'bad'")
+  })
+
+  test('inline unions print exactly as they always did (no checker-order drift)', () => {
+    expect(text).toContain('  settingsMenu?: "auto" | "flat" | "menu"')
+    expect(text).toContain('  sparklinePlacement?: "bleed" | "right"')
+  })
+
   test('the committed llms.txt is in sync', () => {
     expect(readFileSync(outPath, 'utf8')).toBe(text)
   })
 })
 
-describe('propShapeLines', () => {
-  /** Type-checks one in-memory module and returns the first parameter type of its `f` export. */
-  function firstParam(source: string) {
-    const file = '/virtual/fixture.ts'
-    const options: ts.CompilerOptions = { strict: true, noEmit: true, types: [] }
-    const host = ts.createCompilerHost(options)
-    const read = host.readFile.bind(host)
-    host.readFile = (name) => (name === file ? source : read(name))
-    host.fileExists = (
-      (exists) => (name: string) =>
-        name === file || exists(name)
-    )(host.fileExists.bind(host))
-    host.getSourceFile = (
-      (get) =>
-      (name, lang, ...rest) =>
-        name === file ? ts.createSourceFile(name, source, lang) : get(name, lang, ...rest)
-    )(host.getSourceFile.bind(host))
-    const program = ts.createProgram([file], options, host)
-    const checker = program.getTypeChecker()
-    const sf = program.getSourceFile(file)!
-    const fn = checker
-      .getExportsOfModule(checker.getSymbolAtLocation(sf)!)
-      .find((e) => e.name === 'f')!
-    const param = checker.getTypeOfSymbol(fn).getCallSignatures()[0]!.getParameters()[0]!
-    const flags = ts.TypeFormatFlags.NoTruncation
-    const unions = collectLiteralUnions(checker, program.getSourceFiles(), flags)
-    return {
-      lines: propShapeLines(
-        checker,
-        checker.getTypeOfSymbol(param),
-        fn.valueDeclaration!,
-        flags,
-        unions,
+/** Type-checks one in-memory module. */
+function compile(source: string) {
+  const file = '/virtual/fixture.ts'
+  const options: ts.CompilerOptions = { strict: true, noEmit: true, types: [] }
+  const host = ts.createCompilerHost(options)
+  const read = host.readFile.bind(host)
+  host.readFile = (name) => (name === file ? source : read(name))
+  host.fileExists = (
+    (exists) => (name: string) =>
+      name === file || exists(name)
+  )(host.fileExists.bind(host))
+  host.getSourceFile = (
+    (get) =>
+    (name, lang, ...rest) =>
+      name === file ? ts.createSourceFile(name, source, lang) : get(name, lang, ...rest)
+  )(host.getSourceFile.bind(host))
+  const program = ts.createProgram([file], options, host)
+  const checker = program.getTypeChecker()
+  const sf = program.getSourceFile(file)
+  if (sf === undefined) throw new Error('fixture did not load')
+  const exports = checker.getExportsOfModule(checker.getSymbolAtLocation(sf)!)
+  return { checker, sf, exports }
+}
+
+const FLAGS = ts.TypeFormatFlags.NoTruncation
+
+describe('valueSignature', () => {
+  /** The signature line(s) of the fixture's exported const `v`. */
+  function sig(source: string): string {
+    const { checker, exports } = compile(source)
+    const v = exports.find((e) => e.name === 'v')
+    if (v?.valueDeclaration === undefined) throw new Error('no v')
+    const type = checker.getTypeOfSymbolAtLocation(v, v.valueDeclaration)
+    return valueSignature(checker, 'v', type, v.valueDeclaration, FLAGS)
+  }
+  const keys = (n: number) => Array.from({ length: n }, (_, i) => `k${i}: 'x${i}'`).join(', ')
+
+  test('a literal map at the key cap prints values; one key over prints keys only', () => {
+    expect(sig(`export const v = { ${keys(MAX_LITERAL_MAP_KEYS)} } as const`)).toContain('k0: "x0"')
+    const over = sig(`export const v = { ${keys(MAX_LITERAL_MAP_KEYS + 1)} } as const`)
+    expect(over).not.toContain('"x0"')
+    expect(over).toContain('k8')
+  })
+
+  test('a self-referential object type terminates', () => {
+    const out = sig(
+      `type Node = { name: string; next: Node }
+      export const v: Node = null as unknown as Node`,
+    )
+    expect(out).toContain('name')
+  })
+
+  test('nested groups get their own line; no empty leaves line', () => {
+    const out = sig(
+      `export const v = { ${Array.from({ length: 40 }, (_, i) => `group${i}: { a: 1, b: 2 }`).join(', ')} } as const`,
+    )
+    expect(out.split('\n').every((l) => l.trim() !== '')).toBe(true)
+    expect(out).toContain('  group0: { a, b }')
+  })
+})
+
+describe('typeGlossary', () => {
+  const MEMBERS = (n: number) => Array.from({ length: n }, (_, i) => `'m${i}'`).join(' | ')
+  function glossary(source: string, printed: string): string[] {
+    const { checker, sf } = compile(source)
+    return typeGlossary(checker, sf, printed)
+  }
+
+  test('lists an exported literal union in declaration order, string and numeric', () => {
+    expect(
+      glossary(
+        `export type Kind = 'info' | 'good' | 'warn'
+        export type Cols = 2 | 3 | 4 | 5`,
+        'kind?: Kind  cols?: Cols',
       ),
+    ).toEqual(['type Cols = 2 | 3 | 4 | 5', "type Kind = 'info' | 'good' | 'warn'"])
+  })
+
+  test('a non-exported alias never appears, nor one no signature names', () => {
+    expect(
+      glossary(
+        `type Hidden = 'a' | 'b'
+        export type Unused = 'c' | 'd'
+        export type Used = 'e' | 'f'`,
+        'x?: Hidden  y?: Used',
+      ),
+    ).toEqual(["type Used = 'e' | 'f'"])
+  })
+
+  test('only a name, not a substring or a quoted word, counts as referenced', () => {
+    expect(glossary(`export type Kind = 'a' | 'b'`, 'x: MyKind  y: "Kind"')).toEqual([])
+  })
+
+  test('12 members are listed, 13 are not', () => {
+    expect(glossary(`export type T = ${MEMBERS(MAX_UNION_MEMBERS)}`, 'x: T')).toHaveLength(1)
+    expect(glossary(`export type T = ${MEMBERS(MAX_UNION_MEMBERS + 1)}`, 'x: T')).toEqual([])
+  })
+
+  test('a union with a non-literal member is not a literal union', () => {
+    expect(glossary(`export type T = 'a' | number`, 'x: T')).toEqual([])
+  })
+})
+
+describe('propShapeLines', () => {
+  /** The first parameter type of the fixture's `f` export. */
+  function firstParam(source: string) {
+    const { checker, exports } = compile(source)
+    const fn = exports.find((e) => e.name === 'f')!
+    const param = checker.getTypeOfSymbol(fn).getCallSignatures()[0]!.getParameters()[0]!
+    const flags = FLAGS
+    return {
+      lines: propShapeLines(checker, checker.getTypeOfSymbol(param), fn.valueDeclaration!, flags),
     }
   }
 
   test('lists name, optionality and type of each own member', () => {
     const { lines } = firstParam('export function f(p: { a: string; b?: number }) {}')
     expect(lines).toEqual(['  a: string', '  b?: number'])
-  })
-
-  test('an alias of string or numeric literals is expanded in declaration order', () => {
-    const { lines } = firstParam(
-      `type Kind = 'info' | 'good' | 'warn'
-      type Cols = 2 | 3 | 4 | 5
-      type Big = 'a' | 'b' | 'c' | 'd' | 'e' | 'f' | 'g' | 'h' | 'i' | 'j' | 'k' | 'l' | 'm'
-      export function f(p: { kind?: Kind; cols?: Cols; many?: Kind[]; big?: Big }) {}`,
-    )
-    expect(lines).toEqual([
-      '  kind?: "info" | "good" | "warn"',
-      '  cols?: 2 | 3 | 4 | 5',
-      '  many?: ("info" | "good" | "warn")[]',
-      '  big?: Big',
-    ])
   })
 
   test('an optional props parameter still gets its block', () => {
