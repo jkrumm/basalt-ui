@@ -231,7 +231,7 @@ Import: import { ... } from 'basalt-ui/charts'
 Description: CartesianChart (the TanStack Charts rung), the Lines and Bars kinds, ChartCard and the shared chartCursor (Mantine-free; @tanstack/charts + d3-scale peers)
 Layer: headless
 Rule: basalt-charts
-Signature: BandStrip(props: BandStripProps<T, X>): ReactElement<unknown, string | JSXElementConstructor<any>>
+Signature: BandStrip(props: BandStripProps<T, X, K>): ReactElement<unknown, string | JSXElementConstructor<any>>
   className?: string
   style?: CSSProperties
   ariaLabel: string
@@ -245,10 +245,10 @@ Signature: BandStrip(props: BandStripProps<T, X>): ReactElement<unknown, string 
   cursorGroup?: string
   cursorResolution?: CursorResolution
   tooltip?: false | ChartTooltipConfig<T, X>
-  states: readonly BandStripSeries<T>[]
+  states: readonly (Pick<ChartSeries<T>, "label" | "legend" | "toolti…
   getBand: (d: T) => BandSpan
   fold?: BandFold<T>
-  absentState?: string
+  absentState?: K
 Signature: Bars(props: BarsProps<T, X>): ReactElement<unknown, string | JSXElementConstructor<any>>
   className?: string
   style?: CSSProperties
@@ -382,7 +382,7 @@ Signature: Lines(props: LinesProps<T, X>): ReactElement<unknown, string | JSXEle
   cursorResolution?: CursorResolution
   tooltip?: false | ChartTooltipConfig<T, X>
   thresholds?: [X] extends [string] ? never : readonly Threshold[]
-Signature: MirroredBars(props: MirroredBarsProps<T, X>): ReactElement<unknown, string | JSXElementConstructor<any>>
+Signature: MirroredBars(props: MirroredBarsProps<T, X, K>): ReactElement<unknown, string | JSXElementConstructor<any>>
   className?: string
   style?: CSSProperties
   ariaLabel: string
@@ -394,11 +394,12 @@ Signature: MirroredBars(props: MirroredBarsProps<T, X>): ReactElement<unknown, s
   state?: ChartState
   cursorGroup?: string
   tooltip?: false | ChartTooltipConfig<T, X>
-  series: readonly MirroredBarsSeries<T>[]
+  series: readonly MirroredBarsSeries<T, K>[]
   up: MirroredBarPane
   down: MirroredBarPane
   upFraction?: number
   getAbsentFraction?: ((d: T) => number)
+  absentState?: K
   getBarOpacity?: ((d: T) => number)
   fold?: { minBandPx?: number | undefined; merge: (group: T[]) => T;…
   cursorResolution?: CursorResolution

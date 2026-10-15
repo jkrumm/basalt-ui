@@ -2,8 +2,9 @@
  * `BandStrip` — a 1-D state strip: one gap-free band per slot over the shared x axis, no y
  * dimension (`docs/V2-SPEC.md` § 9.3). Each band is in one of the `states`, tinted by the state's
  * color (or an intensity `fill` of the datum's own), optionally carrying an inset `marker`.
- * Absence is a state like any other: a flat, unhatched fill whose color differs from every measured state's, not only by alpha. Name it
- * with `absentState` and a folded band can carry an `absentFraction` share of it.
+ * Absence is a state like any other: a flat, unhatched fill whose color differs from every
+ * measured state's, not only by alpha. Name it with `absentState` and a folded band can carry an
+ * `absentFraction` share of it.
  *
  * The rung supplies the legend, cursor, crosshair and tooltip. The visible bands are decorative
  * rects on the rung's `[0, 1]` zone scale (a band scale pads its slots, a strip must not), and an
@@ -19,7 +20,7 @@ import { oneOf, requiredProp } from '../common/errors'
 import { NON_FINITE } from '../format/shared'
 import { VX, alpha } from '../tokens'
 import { CartesianRung } from './CartesianChart'
-import { groupsOf } from './band-fold'
+import { groupsOf, resolveNamedState } from './band-fold'
 import type { Group } from './band-fold'
 import { emphasis } from './marks'
 import { rowX } from './types'
@@ -83,11 +84,11 @@ export type BandFold<T> = {
   merge: (group: T[]) => T
 }
 
-export type BandStripProps<T, X extends ChartX = ChartX> = Omit<
+export type BandStripProps<T, X extends ChartX = ChartX, K extends string = string> = Omit<
   CartesianChartProps<T, X>,
   'marks' | 'series' | 'y' | 'y2' | 'zones' | 'xZones' | 'refLines'
 > & {
-  states: readonly BandStripSeries<T>[]
+  states: readonly (BandStripSeries<T> & { key: K })[]
   /** Which state, fill and marker each datum has. Memoize it: a new function recompiles the chart. */
   getBand: (d: T) => BandSpan
   fold?: BandFold<T> | undefined
@@ -97,7 +98,7 @@ export type BandStripProps<T, X extends ChartX = ChartX> = Omit<
    * tooltip adds this state's row. Absent stays a legended, flat state, never a
    * hatch: it reads as "no data" by hue and by sitting at the band's right edge, not as zero.
    */
-  absentState?: string | undefined
+  absentState?: K | undefined
 }
 
 const DEFAULT_MIN_BAND_PX = 3
@@ -294,7 +295,9 @@ function layoutBands<T>(input: LayoutInput<T>): {
   return { base: [...ctx.base.values()], markers: [...ctx.markers.values()], hits }
 }
 
-export function BandStrip<T, X extends ChartX = ChartX>(props: BandStripProps<T, X>): ReactElement {
+export function BandStrip<T, X extends ChartX = ChartX, K extends string = string>(
+  props: BandStripProps<T, X, K>,
+): ReactElement {
   const {
     states,
     getBand,
@@ -306,14 +309,12 @@ export function BandStrip<T, X extends ChartX = ChartX>(props: BandStripProps<T,
   } = props
   const { data, x } = rest
   // Resolved once: a misconfigured absent state degrades to primary-only paint, hits and rows.
-  const absentKey =
-    absentState !== undefined && states.some((s) => s.key === absentState) ? absentState : undefined
-  if (absentState !== undefined && absentKey === undefined && process.env.NODE_ENV !== 'production')
-    throw unknownState(
-      'BandStrip.absentState',
-      absentState,
-      states.map((s) => s.key),
-    )
+  const absentKey = resolveNamedState(
+    'BandStrip',
+    'BandStrip.absentState',
+    absentState,
+    states.map((s) => s.key),
+  )
 
   const series = useMemo<ChartSeries<T>[]>(
     () =>
@@ -322,6 +323,7 @@ export function BandStrip<T, X extends ChartX = ChartX>(props: BandStripProps<T,
         label: s.label,
         color: s.color,
         mark: 'bar' as const,
+        ...(s.fillOpacity !== undefined && { fillOpacity: s.fillOpacity }),
         ...(s.tooltip !== undefined && { tooltip: s.tooltip }),
         ...(s.legend !== undefined && { legend: s.legend }),
         ...(s.note !== undefined && { note: s.note }),

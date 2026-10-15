@@ -27,6 +27,14 @@ export const CHART_PROBES = [
   'card-loaded',
   'card-fallback',
   'lines-pending',
+  'band-strip-loaded',
+  'band-strip-pending',
+  'band-strip-error',
+  'band-strip-empty',
+  'mirrored-bars-loaded',
+  'mirrored-bars-pending',
+  'lines-legend-loaded',
+  'lines-legend-pending',
 ] as const
 const TABLE_PROBES = ['table-loaded', 'table-fallback'] as const
 export const PROBES = [...CHART_PROBES, ...TABLE_PROBES] as const
