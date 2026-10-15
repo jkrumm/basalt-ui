@@ -22,6 +22,7 @@ import { SURFACES } from '../surfaces'
 import { doctor } from './doctor'
 import {
   appWiringCheck,
+  startQueryClientWarning,
   droppedSubpathsCheck,
   exactPeersCheck,
   oxlintFloorCheck,
@@ -859,12 +860,43 @@ describe('doctor — app-wiring', () => {
     )
     expect(text(appWiringCheck(dir))).toContain('src/routes/__root.tsx does not exist')
     write('src/routes/__root.tsx', 'export const Route = { component: () => <html /> }\n')
-    expect(text(appWiringCheck(dir))).toContain('does not use BasaltProvider')
+    expect(text(appWiringCheck(dir))).toContain('does not render <BasaltProvider>')
     write(
       'src/routes/__root.tsx',
       'export const Route = { component: () => <BasaltProvider><Outlet /></BasaltProvider> }\n',
     )
     expect(appWiringCheck(dir)).toBeNull()
+  })
+
+  it('reaches the Start check from devDependencies alone, and wants an embedded provider', () => {
+    write(
+      'package.json',
+      JSON.stringify({ name: 'fixture', devDependencies: { '@tanstack/react-start': '*' } }),
+    )
+    write('src/routes/__root.tsx', '// <BasaltProvider>{children}</BasaltProvider>\nexport {}\n')
+    expect(text(appWiringCheck(dir))).toContain('does not render <BasaltProvider>')
+    write(
+      'src/routes/__root.tsx',
+      'export const R = () => <BasaltProvider router={router} telemetry={(e) => e}><X /></BasaltProvider>\n',
+    )
+    expect(text(appWiringCheck(dir))).toContain('mounts a second router')
+    write('src/routes/__root.tsx', 'export const R = () => <BasaltProvider>{x}</BasaltProvider>\n')
+    expect(appWiringCheck(dir)).toBeNull()
+  })
+
+  it('warns, heuristically, when a Start router file never mentions queryClient', () => {
+    write(
+      'package.json',
+      JSON.stringify({ name: 'fixture', dependencies: { '@tanstack/react-start': '*' } }),
+    )
+    expect(startQueryClientWarning(dir)).toBeNull()
+    write('src/router.tsx', 'export const getRouter = () => createRouter({})\n')
+    expect(startQueryClientWarning(dir)).toContain('heuristic')
+    write(
+      'src/router.tsx',
+      'export const getRouter = () => createRouter({ context: { queryClient } })\n',
+    )
+    expect(startQueryClientWarning(dir)).toBeNull()
   })
 
   it('follows the entry named by index.html and accepts an existing routeTree.gen', () => {

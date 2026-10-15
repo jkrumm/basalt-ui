@@ -67,16 +67,29 @@ export function propShapeLines(
   )
   const hasIn = (name: string): number[] =>
     perMember.flatMap((m, i) => (m.some((e) => e.sym.name === name && e.has) ? [i] : []))
-  // A mode is named by its required props that no other mode carries.
-  const modeName = (i: number): string => {
+  // A mode is named by a discriminant literal (`kind="a"`) when the members differ in one, else by the
+  // required props no other mode carries; a mode with neither stays unnamed.
+  const literalOf = (i: number, name: string): string | undefined => {
+    const e = perMember[i]!.find((x) => x.sym.name === name && x.has)
+    const t = e && checker.getTypeOfSymbolAtLocation(e.sym, node)
+    const literal =
+      ts.TypeFlags.StringLiteral | ts.TypeFlags.NumberLiteral | ts.TypeFlags.BooleanLiteral
+    return t && t.flags & literal ? checker.typeToString(t, node, flags) : undefined
+  }
+  const discriminant = [...new Set(perMember.flat().map((e) => e.sym.name))].find((name) => {
+    const values = perMember.map((_, i) => literalOf(i, name))
+    return values.every((v) => v !== undefined) && new Set(values).size === values.length
+  })
+  const modeName = (i: number): string | undefined => {
+    if (discriminant !== undefined) return `${discriminant}=${literalOf(i, discriminant)}`
     const own = perMember[i]!.filter((e) => e.has && (e.sym.flags & ts.SymbolFlags.Optional) === 0)
       .filter((e) => hasIn(e.sym.name).length === 1)
       .map((e) => e.sym.name)
-    return own.length > 0 ? own.join(' + ') : `mode ${i + 1}`
+    return own.length > 0 ? own.join(' + ') : undefined
   }
+  const modes = members.map((_, i) => modeName(i))
 
-  const lines: string[] =
-    members.length > 1 ? [`  one of: ${members.map((_, i) => modeName(i)).join(' | ')}`] : []
+  const lines: string[] = []
   const names = [...new Set(perMember.flat().map((e) => e.sym.name))]
   for (const name of names) {
     // `?` = omittable in some mode. The members that really carry the prop; a prop only ever declared `?: never` falls back to all.
@@ -95,14 +108,21 @@ export function propShapeLines(
       ),
     ]
     // The discriminant prop names its own mode; tagging it `[with <itself>]` says nothing.
-    const modes = owners.map(modeName).filter((m) => !m.split(' + ').includes(name))
+    const named = owners
+      .flatMap((i) => modes[i] ?? [])
+      .filter((m) => !m.split(' + ').includes(name))
     const tag =
-      owners.length < members.length && modes.length > 0 ? `  [with ${modes.join(' | ')}]` : ''
+      owners.length < members.length && named.length > 0 ? `  [with ${named.join(' | ')}]` : ''
     lines.push(`  ${name}${optional ? '?' : ''}: ${clip(types.join(' | '), MAX_PROP_TYPE)}${tag}`)
   }
   const shown = lines.slice(0, MAX_PROPS)
   if (lines.length > MAX_PROPS) shown.push(`  … +${lines.length - MAX_PROPS} more`)
-  return shown
+  // The mode header is not a prop: it sits outside the MAX_PROPS cut.
+  const header =
+    modes.length > 1 && modes.every((m) => m !== undefined)
+      ? [`  one of: ${modes.join(' | ')}`]
+      : []
+  return [...header, ...shown]
 }
 
 /**

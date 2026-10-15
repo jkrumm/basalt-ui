@@ -624,7 +624,6 @@ Signature: ThreadFeed(props: ThreadFeedProps): JSX.Element
   renderRow?: ((thread: AgentThread) => ReactNode)
   anchor?: "start" | "end"
 Signature: ThreadFeedRow(props: ThreadFeedRowProps): JSX.Element
-  one of: mode 1 | mode 2
   thread: AgentThread<TranscriptPart>
   expanded: boolean
   onToggle: (id: string) => void

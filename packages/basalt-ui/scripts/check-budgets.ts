@@ -378,7 +378,8 @@ async function budgets(providerOnlyDist: string): Promise<Budget[]> {
     // 4450 -> 4525: the import-graph `app-wiring` follow + the Makefile-aware CI gate (argo friction rows 11-12).
     // 4525 -> 4589: doctor's `oxlint-floor` and the CSS + dropped-list scan in `dropped-subpaths` (argo friction rows 61, 63, 66).
     // 4589 -> 4628: the Start-app seed skip in `init`/`sync` and doctor's Start `app-wiring` (argo friction rows 62, 67).
-    { label: 'CLI non-test lines (src/cli/**)', value: cliNonTestLines(), ceiling: 4628 },
+    // 4628 -> 4674: Start `app-wiring` rejects a `router=` provider, plus the `queryClient` heuristic warning (rows 62, 67).
+    { label: 'CLI non-test lines (src/cli/**)', value: cliNonTestLines(), ceiling: 4674 },
     await providerOnlyRow(providerOnlyDist),
   ]
 }

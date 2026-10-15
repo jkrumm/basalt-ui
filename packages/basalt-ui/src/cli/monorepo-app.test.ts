@@ -3,7 +3,7 @@
  * files there (never at the install root), and `doctor` checks the app from either directory.
  */
 import { afterEach, beforeEach, describe, expect, it, spyOn } from 'bun:test'
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 
@@ -106,11 +106,10 @@ describe('sync / init in a monorepo', () => {
       dependencies: { 'basalt-ui': '*', '@tanstack/react-start': '*' },
     })
     quiet(() => init(dir))
-    for (const seed of ['routes/__root.tsx', 'lib/nav.tsx', 'main.tsx']) {
-      expect(existsSync(join(dir, 'apps/web/src', seed))).toBe(seed === 'main.tsx')
-    }
-    // main.tsx pre-exists in the fixture; init must leave it alone and write no other router seed.
+    // main.tsx pre-exists in the fixture; init must leave it byte-identical and write no other seed.
+    expect(readFileSync(join(dir, 'apps/web/src/main.tsx'), 'utf8')).toBe('// entry\n')
     expect(existsSync(join(dir, 'apps/web/src/routes'))).toBe(false)
+    expect(existsSync(join(dir, 'apps/web/src/lib/nav.tsx'))).toBe(false)
   })
 
   it('refuses on an ambiguous app instead of guessing', () => {

@@ -139,6 +139,26 @@ describe('propShapeLines', () => {
     expect(lines).toContain('  url: string')
   })
 
+  test('modes are named from a discriminant literal; with none the header is omitted and not counted', () => {
+    const { lines } = firstParam(
+      `type Mode = { kind: 'a'; a: string } | { kind: 'b'; b: number }
+      export function f(p: Mode) {}`,
+    )
+    expect(lines[0]).toBe('  one of: kind="a" | kind="b"')
+    expect(lines).toContain('  a: string  [with kind="a"]')
+    const wide = Array.from({ length: MAX_PROPS }, (_, i) => `p${i}: 1`).join('; ')
+    const sized = firstParam(
+      `type Mode = { kind: 'a'; ${wide} } | { kind: 'b' }
+      export function f(p: Mode) {}`,
+    ).lines
+    expect(sized).toHaveLength(MAX_PROPS + 2)
+    const anon = firstParam(
+      `type Mode = { x?: 1; a?: 1 } | { x?: 2; b?: 1 }
+      export function f(p: Mode) {}`,
+    ).lines
+    expect(anon.some((l) => l.includes('one of'))).toBe(false)
+  })
+
   test('a prop shared by modes with different types merges them into one union', () => {
     const { lines } = firstParam(
       `type Mode =
@@ -147,7 +167,7 @@ describe('propShapeLines', () => {
       export function f(p: Mode) {}`,
     )
     expect(lines).toContain('  kind: "a" | "b"')
-    expect(lines).toContain('  a: string')
+    expect(lines).toContain('  a: string  [with kind="a"]')
   })
 
   test('a long member type is clipped to MAX_PROP_TYPE', () => {
