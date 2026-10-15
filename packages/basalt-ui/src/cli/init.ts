@@ -207,7 +207,7 @@ export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags =
   const tsconfigLine = tokensOnly ? null : seedTsconfigExtends(cwd)
   if (tsconfigLine !== null) console.log(`basalt-ui init: ${tsconfigLine}`)
   if (buildNote !== null) console.log(`basalt-ui init: ${buildNote}`)
-  const skipNote = tokensOnly ? null : seedSkipNote(seedSkip)
+  const skipNote = seedSkipNote(seedSkip)
   if (skipNote !== null) console.log(`basalt-ui init: ${skipNote}`)
   const rootsMessages = rootsNotices(rootsState)
   for (const line of rootsMessages.log) console.log(`basalt-ui init: ${line}`)

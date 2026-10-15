@@ -43,7 +43,7 @@ function registersRouterPlugin(src: string): boolean {
       .split(',')
       .map((part) => part.trim())
       .filter((part) => part !== '' && !/^type\s/.test(part))
-      .map((part) => part.split(/\s+as\s+/).pop() as string)
+      .map((part) => part.split(/\s+as\s+/).pop() ?? part)
     return names.some((name) =>
       [
         ...code.matchAll(
@@ -56,7 +56,11 @@ function registersRouterPlugin(src: string): boolean {
 
 /** A relative specifier: `import … from`, `export … from`, bare `import '…'` and dynamic `import('…')`. */
 const RELATIVE_IMPORT =
-  /(?:\b(?:import|export)\b[^'";]*?\bfrom|\bimport\s*\(?)\s*['"](\.{1,2}\/[^'"]+)['"]/g
+  /(?<![.\w$])(?:(?:import|export)\b[^'";]*?\bfrom|import\s*\(?)\s*['"](\.{1,2}\/[^'"]+)['"]/g
+
+/** An import/export specifier naming the generated route tree (`./routeTree.gen`). */
+const GENERATED_TREE_IMPORT =
+  /(?<![.\w$])(?:(?:import|export)\b[^'";]*?\bfrom|import\s*\(?)\s*['"][^'"]*routeTree\.gen[^'"]*['"]/g
 
 /** The source file a relative specifier names: as written, `.ts`/`.tsx` appended, or a directory index. */
 function resolveRelative(from: string, spec: string): string | null {
@@ -78,23 +82,34 @@ export function appEntry(dir: string): string {
   return src.replace(/^\//, '')
 }
 
+type Tokens = ReturnType<typeof tokenize>
+
 /**
  * Whether the entry or a module it imports (relative imports, static or dynamic, `IMPORT_DEPTH`
- * hops) matches `pattern` in code — a regex source, searched globally, ignoring comments and string
- * literals. An import inside a comment is not followed.
+ * hops) matches `pattern` in code — a global regex, ignoring comments and string literals; an
+ * import inside a comment or a string is not followed. `entryTokens` reuses an already-tokenized entry.
  */
-export function callsIn(dir: string, entry: string, pattern: string): boolean {
-  const seen = new Set<string>()
-  let frontier = [resolve(dir, entry)]
+export function callsIn(
+  dir: string,
+  entry: string,
+  pattern: RegExp,
+  entryTokens?: Tokens,
+): boolean {
+  const entryPath = resolve(dir, entry)
+  const seen = new Set([entryPath])
+  let frontier = [entryPath]
   for (let depth = 0; depth <= IMPORT_DEPTH && frontier.length > 0; depth++) {
     const next: string[] = []
     for (const file of frontier) {
-      seen.add(file)
-      const { code, inLiteral } = tokenize(readIfExists(file) ?? '')
-      if ([...code.matchAll(new RegExp(pattern, 'g'))].some((c) => !inLiteral(c.index))) return true
+      const { code, inLiteral } =
+        file === entryPath && entryTokens ? entryTokens : tokenize(readIfExists(file) ?? '')
+      if ([...code.matchAll(pattern)].some((c) => !inLiteral(c.index))) return true
       for (const m of code.matchAll(RELATIVE_IMPORT)) {
+        if (inLiteral(m.index)) continue
         const dep = resolveRelative(file, m[1] ?? '')
-        if (dep !== null && !seen.has(dep)) next.push(dep)
+        if (dep === null || seen.has(dep)) continue
+        seen.add(dep)
+        next.push(dep)
       }
     }
     frontier = next
@@ -102,10 +117,12 @@ export function callsIn(dir: string, entry: string, pattern: string): boolean {
   return false
 }
 
-/** A regex source matching a CALL of `name` (a regex source too), generic or not — not an import or bare mention. */
-export function callOf(pattern: string): string {
-  return `\\b${pattern}\\b\\s*(?:<[^()]*>)?\\s*\\(`
+/** A global regex matching a CALL of `name` (itself a regex source), generic or not — not an import or bare mention. */
+export function callOf(pattern: string): RegExp {
+  return new RegExp(`\\b${pattern}\\b\\s*(?:<[^()]*>)?\\s*\\(`, 'g')
 }
+
+const CREATE_BASALT_ROUTER = callOf('createBasaltRouter')
 
 /** The directories a generated `routeTree.gen.*` is looked for in: beside the entry, then src/. */
 export function routeTreeDirs(entry: string): string[] {
@@ -124,27 +141,36 @@ export function hasRouteTree(dir: string, entry: string): boolean {
 }
 
 /** Whether `createBasaltRouter` is called in a module reachable from the entry. */
-export function hasRouter(dir: string, entry: string): boolean {
-  return callsIn(dir, entry, callOf('createBasaltRouter'))
+export function hasRouter(dir: string, entry: string, entryTokens?: Tokens): boolean {
+  return callsIn(dir, entry, CREATE_BASALT_ROUTER, entryTokens)
+}
+
+/** Whether the (tokenized) entry imports the generated route tree — a freshly seeded entry does. */
+function importsGeneratedTree({ code, inLiteral }: Tokens): boolean {
+  return [...code.matchAll(GENERATED_TREE_IMPORT)].some((m) => !inLiteral(m.index))
 }
 
 /**
  * THE classification, shared by `init`, `sync` and `doctor`: code-routed = `createBasaltRouter` is
  * called in a module reachable from the entry, no router plugin is registered and no
  * `routeTree.gen.*` exists, and the entry does not import a generated tree (a freshly seeded entry
- * does, before the first vite run — that app is file-routed). Comments do not count.
+ * does, before the first vite run — that app is file-routed). Comments and strings do not count.
  */
 export function isCodeRoutedApp(cwd: string, appRel: string): boolean {
   const dir = resolve(cwd, appRel)
   const entry = appEntry(dir)
-  if (!hasRouter(dir, entry) || hasRouteTree(dir, entry)) return false
-  return !/routeTree\.gen/.test(tokenize(readIfExists(resolve(dir, entry)) ?? '').code)
+  const tokens = tokenize(readIfExists(resolve(dir, entry)) ?? '')
+  if (importsGeneratedTree(tokens)) return false
+  return hasRouter(dir, entry, tokens) && !hasRouteTree(dir, entry)
 }
 
 /** A TanStack Start app owns its router, so its router seeds give way to an in-tree `<BasaltProvider>`. */
 export function isStartApp(cwd: string, appRel: string): boolean {
   return hasDependency(resolve(cwd, appRel), '@tanstack/react-start')
 }
+
+/** Why an app's router seeds are not placed (see `routerSeedSkip`). */
+export type RouterSeedSkip = 'start' | 'code-routed' | null
 
 export const CODE_ROUTED_NOTE =
   'code-routed app (createBasaltRouter, no route-tree plugin or routeTree.gen) — no main.tsx/nav.tsx/__root.tsx seeded.'
@@ -153,7 +179,7 @@ export const CODE_ROUTED_NOTE =
  * Why an app's router seeds (main/nav/__root) are not placed: `start` (Start owns the router, and
  * wins when both apply) or `code-routed` (no generated tree to assume); null when they are.
  */
-export function routerSeedSkip(cwd: string, appRel: string): 'start' | 'code-routed' | null {
+export function routerSeedSkip(cwd: string, appRel: string): RouterSeedSkip {
   if (isStartApp(cwd, appRel)) return 'start'
   return isCodeRoutedApp(cwd, appRel) ? 'code-routed' : null
 }

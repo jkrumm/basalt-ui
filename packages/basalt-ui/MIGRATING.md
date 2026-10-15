@@ -1057,6 +1057,15 @@ family. Behaviour fix; nothing to migrate.
 
 **Dev chunks.** A production build no longer emits (or lets a PWA service worker precache) the dev-dock, theme-lab and devtools chunks: `BasaltProvider`'s dock `import()` is now dead code under a literal `process.env.NODE_ENV` read. Nothing to migrate; `check-budgets` gates it.
 
+**Code-routed apps and tokens-only `doctor` (CLI).** An app that calls `createBasaltRouter` (in the
+entry or a module it imports, statically or via `import()`) but has no TanStack router plugin, no
+`routeTree.gen.*` and an entry that does not import one is code-routed. `init`, `sync` and `doctor`
+share that one test: `init` places no `main.tsx`, `nav.tsx` or `__root.tsx` seed, `sync` drops their
+manifest entries (the files stay yours) with a one-line notice, and `doctor` `app-wiring` accepts the
+tree. `dropped-subpaths` now also runs for `tokens-only` consumers, so a removed
+`@import 'basalt-ui/tokens.css'` fails there too. Fix: `basalt-ui tokens:css --out src/tokens.css`
+and import that file.
+
 ## 2.8.0 — the fleet probe fixes
 
 Ledger rows 61-67 (`docs/waves/argo-friction.md`), found while the rest of the fleet probed 1.x → 2.x.

@@ -24,20 +24,15 @@ export function readPackageJson<T>(dir: string): T | null {
   }
 }
 
-/** True when `pkgName` appears in the consumer's dependencies, devDependencies, or peerDependencies. */
+const DEPENDENCY_FIELDS = ['dependencies', 'devDependencies', 'peerDependencies'] as const
+
+/** True when `pkgName` appears in any of the consumer's dependencies, devDependencies or peerDependencies. */
 export function hasDependency(cwd: string, pkgName: string): boolean {
   const pkg =
-    readPackageJson<
-      Record<
-        'dependencies' | 'devDependencies' | 'peerDependencies',
-        Record<string, string> | undefined
-      >
-    >(cwd)
-  return Boolean(
-    pkg?.dependencies?.[pkgName] ??
-    pkg?.devDependencies?.[pkgName] ??
-    pkg?.peerDependencies?.[pkgName],
-  )
+    readPackageJson<Partial<Record<(typeof DEPENDENCY_FIELDS)[number], Record<string, string>>>>(
+      cwd,
+    )
+  return DEPENDENCY_FIELDS.some((field) => pkg?.[field]?.[pkgName] !== undefined)
 }
 
 /**

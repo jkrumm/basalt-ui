@@ -8,7 +8,7 @@ import { dirname, relative, resolve } from 'node:path'
 
 import { BASALT_CONFIG_KEYS, RETIRED_CONFIG_KEYS } from './config'
 import type { BasaltConfig } from './config'
-import { parseJsonc, readIfExists, readPackageJson, routerSeedDest, scannableFiles } from './index'
+import { parseJsonc, routerSeedDest, scannableFiles } from './index'
 import type { BasaltInstall } from './index'
 import {
   appEntry,
@@ -18,7 +18,7 @@ import {
   isStartApp,
   routeTreeDirs,
 } from './router-wiring'
-import { tokenize } from './source-text'
+import { readIfExists, readPackageJson, tokenize } from './source-text'
 
 export type Check = { fail: string } | { skip: string } | null
 
@@ -467,13 +467,14 @@ export function appWiringCheck(cwd: string): Check {
     if (text === null) {
       return { fail: `app-wiring: ${entry} does not exist. Fix: make it match ${SEED_HINT}.` }
     }
-    const { code, inLiteral } = tokenize(text)
+    const tokens = tokenize(text)
+    const { code, inLiteral } = tokens
     const wired: [string, boolean][] = [
       [
         'BasaltProvider',
         [...code.matchAll(/\bBasaltProvider\b/g)].some((m) => !inLiteral(m.index)),
       ],
-      ['createBasaltRouter', hasRouter(cwd, entry)],
+      ['createBasaltRouter', hasRouter(cwd, entry, tokens)],
     ]
     const missing = wired.filter(([, present]) => !present).map(([name]) => name)
     if (missing.length > 0) {
