@@ -1,3 +1,15 @@
+# [2.10.0](https://github.com/jkrumm/basalt-ui/compare/v2.9.1...v2.10.0) (2026-10-15)
+
+
+### Bug Fixes
+
+* name the unset state of a preset number filter ([ed43eeb](https://github.com/jkrumm/basalt-ui/commit/ed43eeb0cde5a1ff1bc42ae118ab637d08007d64))
+
+
+### Features
+
+* band charts hide a pending legend and mirror their fills ([22a491e](https://github.com/jkrumm/basalt-ui/commit/22a491ef5cfdbcd9bfac1c5284c8566f453b50af))
+
 ## [2.9.1](https://github.com/jkrumm/basalt-ui/compare/v2.9.0...v2.9.1) (2026-10-15)
 
 ### Bug Fixes
