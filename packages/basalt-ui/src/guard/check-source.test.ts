@@ -17,6 +17,7 @@ import {
   findAllowAnnotations,
   GENERATED_HEADER_LINE,
   guardKindRemedy,
+  REMOVED_VX_NAMES,
   guardWaiverHint,
   GUARD_RULES,
   neutralizeAllowAnnotation,
@@ -3611,7 +3612,7 @@ describe('unknown-vx-token', () => {
   it('flags the removed touch floor obsidian lost silently, and ships error', () => {
     const f = vx('.hit { min-height: var(--vx-space-touch-target); }')
     expect(f.map((x) => [x.token, x.severity])).toEqual([['--vx-space-touch-target', 'error']])
-    expect(guardKindRemedy('unknown-vx-token')).toContain('--vx-space-touch-target → --vx-hit')
+    expect(REMOVED_VX_NAMES['--vx-space-touch-target']).toBe('--vx-hit')
   })
 
   it('flags a bare family root nothing emits, fallback or not', () => {

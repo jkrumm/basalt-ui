@@ -70,7 +70,7 @@ props extend and `src/surfaces.ts` stays the SSOT for real subpaths.
   `(component, message)`, and constant-folds away in production. A misuse that would crash anyway
   throws; one that merely renders the wrong thing warns. `SelectFilter` and `Section` are the two
   reference adoptions.
-- **Every message is built in `common/errors.ts`** — `requiredProp` / `oneOf` / `deprecatedProp` /
+- **Every message is built in `common/errors.ts`** — `requiredProp` / `oneOf` /
   `duplicateMount` over one `BASALT_PREFIX`, so consumers can grep `[basalt] <Component>:`.
 - **The module is Mantine-free and `@visx`-free** (the test keeps the `@visx` ban as a tripwire for a stray import), enforced twice: a `no-restricted-imports`
   override in `.oxlintrc.json` (repo-local, like `state`/`query`/`guard`) and

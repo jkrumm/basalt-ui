@@ -856,3 +856,26 @@ describe('resolveGuardConfig', () => {
     expect(resolveGuardConfig({}, 'tokens-only').profile).toBe('tokens-only')
   })
 })
+
+describe('check-theme exemptRules path shapes', () => {
+  it('a bare segment matches nothing under src/: the entry is reported unmatched and the finding stays', () => {
+    fixtureAt('agent/x.tsx', `export const C = () => <div style={{ color: '#ccc' }} />\n`, {
+      roots: ['src'],
+      exemptRules: { 'raw-hex': ['agent'] },
+    })
+    const { code, err } = run()
+    expect(code).toBe(1)
+    expect(err).toContain('raw-hex')
+    expect(err).toContain('"agent" matched none of the scanned files')
+  })
+
+  it('a relative path under the root exempts the same finding', () => {
+    fixtureAt('agent/x.tsx', `export const C = () => <div style={{ color: '#ccc' }} />\n`, {
+      roots: ['src'],
+      exemptRules: { 'raw-hex': ['src/agent'] },
+    })
+    const { err } = run()
+    expect(err).not.toContain('raw-hex')
+    expect(err).not.toContain('matched none')
+  })
+})

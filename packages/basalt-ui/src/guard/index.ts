@@ -313,12 +313,29 @@ const VX_VAR_REF = /var\(\s*(--vx-[A-Za-z0-9-]*[A-Za-z0-9])(?![A-Za-z0-9-]|\$\{)
 const VX_LOCAL_DECLARATION =
   /(?:^|[{;])\s*(--vx-[A-Za-z0-9-]*[A-Za-z0-9])\s*:|[{,]\s*(['"])(--vx-[A-Za-z0-9-]*[A-Za-z0-9])\2\s*:(?!\s*(?:string|number)\b)|\bsetProperty\(\s*['"](--vx-[A-Za-z0-9-]*[A-Za-z0-9])['"]/gm
 
+/** The twelve fill families `--vx-fill-<family>` / `--vx-fill-hover-<family>` are emitted for. */
+const VX_FILL_FAMILIES = [
+  'gray',
+  'red',
+  'pink',
+  'grape',
+  'violet',
+  'indigo',
+  'cyan',
+  'teal',
+  'green',
+  'lime',
+  'yellow',
+  'orange',
+] as const
+
 /**
  * `--vx-*` names basalt once emitted and no longer does, with the replacement MIGRATING names
  * (`null`: deleted with no replacement). Hand-kept on purpose: it is history, it only grows, and
- * `vx-names.test.ts` pins that none of these is live and every replacement is.
+ * `vx-names.test.ts` pins that none of these is live and every replacement is. Exported so tests
+ * derive their fixtures from it instead of keeping a second copy.
  */
-const REMOVED_VX_NAMES: Readonly<Record<string, string | null>> = {
+export const REMOVED_VX_NAMES: Readonly<Record<string, string | null>> = {
   '--vx-space-touch-target': '--vx-hit',
   '--vx-space-touch-control-height': '--vx-hit',
   '--vx-space-app-header-mobile-actions-height': '--vx-space-sticky-header-clearance',
@@ -345,18 +362,9 @@ const REMOVED_VX_NAMES: Readonly<Record<string, string | null>> = {
   '--vx-goodRef': '--vx-good-ref',
   '--vx-badRef': '--vx-bad-ref',
   '--vx-warnRef': '--vx-warn-ref',
-  '--vx-fillHover-gray': '--vx-fill-hover-gray',
-  '--vx-fillHover-red': '--vx-fill-hover-red',
-  '--vx-fillHover-pink': '--vx-fill-hover-pink',
-  '--vx-fillHover-grape': '--vx-fill-hover-grape',
-  '--vx-fillHover-violet': '--vx-fill-hover-violet',
-  '--vx-fillHover-indigo': '--vx-fill-hover-indigo',
-  '--vx-fillHover-cyan': '--vx-fill-hover-cyan',
-  '--vx-fillHover-teal': '--vx-fill-hover-teal',
-  '--vx-fillHover-green': '--vx-fill-hover-green',
-  '--vx-fillHover-lime': '--vx-fill-hover-lime',
-  '--vx-fillHover-yellow': '--vx-fill-hover-yellow',
-  '--vx-fillHover-orange': '--vx-fill-hover-orange',
+  ...Object.fromEntries(
+    VX_FILL_FAMILIES.map((family) => [`--vx-fillHover-${family}`, `--vx-fill-hover-${family}`]),
+  ),
 }
 
 const KNOWN_VX_NAMES: ReadonlySet<string> = new Set(BASALT_VX_NAMES)
@@ -953,13 +961,9 @@ function exemptPatternMatches(pattern: string, relPath: string): boolean {
   const p = normalizeExemptPattern(pattern)
   if (p === '') return false
   if (relPath === p || relPath.startsWith(`${p}/`)) return true
-  if (/[*?]/.test(p)) {
-    const re = exemptGlobToRegExp(p)
-    if (re.test(relPath)) return true
-    if (!p.includes('/') && re.test(relPath.split('/').pop() ?? '')) return true
-    return false
-  }
-  return false
+  if (!/[*?]/.test(p)) return false
+  const re = exemptGlobToRegExp(p)
+  return re.test(relPath) || (!p.includes('/') && re.test(relPath.split('/').pop() ?? ''))
 }
 
 /**
@@ -1529,9 +1533,10 @@ function collectAllowAnnotations(
  * widens on a typo.
  */
 function annotationCovers(annotation: AllowAnnotation, kind: GuardKind): boolean {
-  if (annotation.rules.includes(kind)) return true
-  if ((WAIVER_ID_ALIASES[kind] ?? []).some((alias) => annotation.rules.includes(alias))) return true
-  return false
+  return (
+    annotation.rules.includes(kind) ||
+    (WAIVER_ID_ALIASES[kind] ?? []).some((alias) => annotation.rules.includes(alias))
+  )
 }
 
 /** Does any annotation on this line cover `kind`? */
@@ -2187,13 +2192,7 @@ export const GUARD_RULES = {
   'unknown-vx-token': {
     kind: 'unknown-vx-token',
     pattern: VX_VAR_REF, // handled inline (basalt-owned families); entry keeps the registry complete
-    message: `var() names a --vx-* token basalt does not emit, so it resolves to its fallback (or to nothing) with no error anywhere. Judged: every name inside a basalt-owned family (${[...BASALT_VX_FAMILY_SET].join(', ')}) — pick the token from the stylesheet basalt-ui tokens:css emits; your own series belong in a family of their own (groupTokens throws on one inside basalt's, in dev builds). Removed names and their replacements: ${Object.entries(
-      REMOVED_VX_NAMES,
-    )
-      .map(([from, to]) => `${from} → ${to ?? '(deleted, no replacement)'}`)
-      .join(
-        '; ',
-      )}. A name in any other family is never judged, because groupTokens may declare it in a file this scan cannot see.`,
+    message: `var() names a --vx-* token basalt does not emit, so it resolves to its fallback (or to nothing) with no error anywhere. Judged: every name inside a basalt-owned family (${[...BASALT_VX_FAMILY_SET].join(', ')}), plus any name basalt used to emit in any family — pick the token from the stylesheet basalt-ui tokens:css emits; your own series belong in a family of their own (groupTokens throws on one inside basalt's, in dev builds). A removed name is reported with its replacement on the finding line (MIGRATING.md has the table). Any other name outside a basalt family is never judged, because groupTokens may declare it in a file this scan cannot see.`,
   },
 } as const satisfies Record<GuardKind, GuardRule>
 
@@ -2374,14 +2373,13 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
     [...codeText.matchAll(VX_LOCAL_DECLARATION)].map((m) => m[1] ?? m[3] ?? m[4] ?? ''),
   )
 
-  // unknown-vx-token: any unemitted name inside a basalt-owned family — see BASALT_VX_FAMILY_SET.
+  // unknown-vx-token: any unemitted name inside a basalt-owned family (BASALT_VX_FAMILY_SET), or any
+  // removed name in ANY family (REMOVED_VX_NAMES).
   // Scanned over the whole comment-stripped text rather than per line, so a formatter-wrapped
   // `var(\n  --vx-x\n)` is seen; the finding lands on the line the NAME is on.
   for (const m of codeText.matchAll(VX_VAR_REF)) {
     const name = m[1] ?? ''
     if (locallyDeclaredVx.has(name)) continue
-    // A removed name is judged even outside an owned family (`--vx-onAccent` sits in `on`, which
-    // consumers extend as `--vx-on-<color>`).
     if (KNOWN_VX_NAMES.has(name)) continue
     if (!BASALT_VX_FAMILY_SET.has(vxFamilyOf(name)) && !Object.hasOwn(REMOVED_VX_NAMES, name))
       continue

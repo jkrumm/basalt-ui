@@ -149,11 +149,11 @@ describe('basalt doctor', () => {
       expect(doctorOut().out).not.toContain('CLAUDE.md')
     })
 
-    it('does not inspect the block: an unterminated one beside an @AGENTS.md import is silent', () => {
+    it('names a malformed block (no end marker)', () => {
       setupPassingLayout()
       writeFixture('CLAUDE.md', '@AGENTS.md\n\n<!-- basalt:begin 1.0.0 -->\nold\n')
       const { out } = doctorOut()
-      expect(out).not.toContain('malformed basalt block')
+      expect(out).toContain('malformed basalt block')
       expect(out).not.toContain('does not import')
     })
 
@@ -163,12 +163,10 @@ describe('basalt doctor', () => {
       expect(doctorOut().out).toContain('does not import `@AGENTS.md`')
     })
 
-    it('does not inspect the block: an orphan end marker beside an @AGENTS.md import is silent', () => {
+    it('flags an orphan end marker as malformed', () => {
       setupPassingLayout()
       writeFixture('CLAUDE.md', '@AGENTS.md\n<!-- basalt:end -->\n')
-      const { out } = doctorOut()
-      expect(out).not.toContain('malformed basalt block')
-      expect(out).not.toContain('CLAUDE.md')
+      expect(doctorOut().out).toContain('malformed basalt block')
     })
 
     it('never crashes when the pair cannot be inspected (ELOOP): it just warns', () => {
