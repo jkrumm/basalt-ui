@@ -1,3 +1,11 @@
+## [2.6.1](https://github.com/jkrumm/basalt-ui/compare/v2.6.0...v2.6.1) (2026-10-15)
+
+
+### Bug Fixes
+
+* answer DX trial 2 in the shipped layer and the trace docs ([2f6bd57](https://github.com/jkrumm/basalt-ui/commit/2f6bd5791a4023b82453b3a6cbe51140de4d9601))
+* give per-bar shades their own legend swatches ([9840cd4](https://github.com/jkrumm/basalt-ui/commit/9840cd4d5ed48e9f5b11e06cbf2b34470093ffc9))
+
 # [2.6.0](https://github.com/jkrumm/basalt-ui/compare/v2.5.0...v2.6.0) (2026-10-14)
 
 
