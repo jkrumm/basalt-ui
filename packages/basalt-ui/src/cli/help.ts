@@ -1,14 +1,8 @@
 /**
- * `USAGE` + the per-command flag schema — split out of `src/cli/index.ts` (C2) so the dispatcher
- * file holds routing only.
- *
- * Every flag each subcommand accepts, as a `node:util` `parseArgs` options schema — one per
- * command, replacing a hand-rolled flag table + a value-flag lookahead set + a manual scan.
- *
- * An unrecognized flag used to be SILENTLY IGNORED and the command exited 0: `check-theme
- * --audit-allow` scanned normally and reported success, `doctor --json` printed the human report.
- * That is the same fail-open shape `--version` had, and it is worse on a CLI agents drive
- * programmatically, where a typo'd gate reads as a passing gate.
+ * `USAGE` + the per-command flag schema — split out of `src/cli/index.ts` (C2). Every flag each
+ * subcommand accepts is a `node:util` `parseArgs` options schema. An unrecognized flag used to be
+ * SILENTLY IGNORED (`doctor --json` printed the human report, exit 0) — on a CLI agents drive, a
+ * typo'd gate reads as a passing gate.
  */
 import { parseArgs } from 'node:util'
 

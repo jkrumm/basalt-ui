@@ -395,7 +395,7 @@ describe('router seeds — the nav module and the root route', () => {
   it('a code-routed app gets no router seeds on init', () => {
     writeFixture('package.json', JSON.stringify({ name: 'fixture' }))
     codeRouted()
-    capture(() => init(dir))
+    expect(capture(() => init(dir)).log).toContain('code-routed app')
     expect(existsSync(resolve(dir, 'src/routes/__root.tsx'))).toBe(false)
     expect(existsSync(resolve(dir, 'src/lib/nav.tsx'))).toBe(false)
     expect(manifestKeys().filter((k) => ROUTER_SEEDS.includes(k))).toEqual([])
@@ -413,6 +413,17 @@ describe('router seeds — the nav module and the root route', () => {
     expect(existsSync(resolve(dir, 'src/routes/__root.tsx'))).toBe(true)
     expect(capture(() => sync({}, dir)).log).not.toContain('code-routed app')
     expect(capture(() => sync({ check: true }, dir)).code).toBe(0)
+  })
+
+  it('sync --check on a code-routed app keeps the manifest keys and prints no drop notice', () => {
+    writeFixture('package.json', JSON.stringify({ name: 'fixture' }))
+    capture(() => init(dir))
+    codeRouted()
+    const before = manifestKeys()
+    const out = capture(() => sync({ check: true }, dir))
+    expect(out.code).toBe(0)
+    expect(out.log).not.toContain('dropped')
+    expect(manifestKeys()).toEqual(before)
   })
 
   it('sync still recreates a deleted non-router seed (self-healing)', () => {
