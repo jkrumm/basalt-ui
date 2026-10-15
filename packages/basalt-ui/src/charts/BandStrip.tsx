@@ -15,7 +15,7 @@ import { decorative } from '@tanstack/charts/mark/decorative'
 import { rect } from '@tanstack/charts/rect'
 import { useCallback, useMemo } from 'react'
 import type { ReactElement } from 'react'
-import { oneOf } from '../common/errors'
+import { oneOf, requiredProp } from '../common/errors'
 import { NON_FINITE } from '../format/shared'
 import { VX, alpha } from '../tokens'
 import { CartesianRung } from './CartesianChart'
@@ -158,7 +158,7 @@ type LayoutInput<T> = {
 
 /** NaN and out-of-range fractions (a 0/0 on an un-folded slot) must not reach an SVG attribute. */
 const clampFraction = (f: number | undefined): number =>
-  f === undefined || !Number.isFinite(f) ? 0 : Math.min(1, Math.max(0, f))
+  f === undefined || Number.isNaN(f) ? 0 : Math.min(1, Math.max(0, f))
 
 /**
  * The share of a band the strip's absent state owns. A band already in that state is absent in
@@ -170,20 +170,35 @@ function absentShareOf(span: BandSpan, absentKey: string | undefined): number {
     : clampFraction(span.absentFraction)
 }
 
+/**
+ * The one visibility-aware split paint, hits and the tooltip all read: the absent share that is
+ * drawn (a hidden absent state gives its share back to the primary part) and whether the primary
+ * part is drawn (a hidden primary state leaves its part unpainted, the absent part untouched).
+ */
+function resolveAbsent(
+  span: BandSpan,
+  absentKey: string | undefined,
+  visible: ReadonlySet<string>,
+): { share: number; primaryShown: boolean } {
+  const absentVisible = absentKey !== undefined && visible.has(absentKey)
+  const share = absentVisible ? absentShareOf(span, absentKey) : 0
+  return { share, primaryShown: share < 1 && visible.has(span.state) }
+}
+
 const unknownState = (prop: string, got: string, known: Iterable<string>): Error =>
   new Error(oneOf('BandStrip', prop, [...known], got))
 
-/** Paints a band as its measured part, then the absent share from the right edge. */
+/** Paints a band's primary part (when shown), then its absent share from the right edge. */
 function paintSplit(
   layers: Map<string, Layer>,
   cell: { f0: number; f1: number },
-  measured: { fill: string; opacity: number },
-  absent: { share: number; fill: string; opacity: number },
+  primary: { share: number; fill: string; opacity: number; shown: boolean },
+  absent: { fill: string; opacity: number } | undefined,
 ): number {
-  const split = cell.f1 - (cell.f1 - cell.f0) * absent.share
-  if (absent.share < 1)
-    paintInto(layers, measured.fill, measured.opacity, { ...cell, f1: split, y0: 0, y1: 1 })
-  if (absent.share > 0)
+  const split = cell.f1 - (cell.f1 - cell.f0) * primary.share
+  if (primary.shown)
+    paintInto(layers, primary.fill, primary.opacity, { ...cell, f1: split, y0: 0, y1: 1 })
+  if (primary.share > 0 && absent)
     paintInto(layers, absent.fill, absent.opacity, { f0: split, f1: cell.f1, y0: 0, y1: 1 })
   return split
 }
@@ -202,9 +217,6 @@ function layoutBands<T>(input: LayoutInput<T>): {
   const absentStyle = absentKey === undefined ? undefined : states.get(absentKey)
   if (absentKey !== undefined && !absentStyle && process.env.NODE_ENV !== 'production')
     throw unknownState('BandStrip.absentState', absentKey, states.keys())
-  // A hidden absent state paints nothing and answers no pointer: the measured fill spans the slot.
-  const absentVisible =
-    absentKey !== undefined && absentStyle !== undefined && visible.has(absentKey)
   const cap = Math.floor(input.width / (fold?.minBandPx ?? DEFAULT_MIN_BAND_PX))
   const groups: Group<T>[] =
     fold && data.length > cap
@@ -221,32 +233,37 @@ function layoutBands<T>(input: LayoutInput<T>): {
     const state = states.get(span.state)
     if (!state && process.env.NODE_ENV !== 'production')
       throw unknownState('BandSpan.state', span.state, states.keys())
-    if (state && !visible.has(span.state)) continue
-    const cell = { f0: g.start / data.length, f1: (g.start + g.items.length) / data.length }
-    const opacity = input.emphasis(span.state)
-    const declared = absentShareOf(span, absentKey)
     if (
       absentKey === undefined &&
       clampFraction(span.absentFraction) > 0 &&
       process.env.NODE_ENV !== 'production'
     )
-      throw new Error('BandStrip: BandSpan.absentFraction needs the strip to name an `absentState`')
-    const absent = absentVisible ? declared : 0
+      throw new Error(
+        requiredProp('BandStrip', 'absentState', 'a BandSpan carries an absentFraction'),
+      )
+    const { share, primaryShown } = resolveAbsent(span, absentKey, visible)
+    // An unknown state (production only) has no visibility to toggle: it always paints.
+    const shown = state ? primaryShown : share < 1
+    if (!shown && share === 0) continue
+    const cell = { f0: g.start / data.length, f1: (g.start + g.items.length) / data.length }
     const split = paintSplit(
       base,
       cell,
       {
+        share,
         fill: span.fill ?? (state ? alpha(state.color, state.fillOpacity ?? 1) : UNKNOWN_FILL),
-        opacity,
+        opacity: input.emphasis(span.state),
+        shown,
       },
-      {
-        share: absent,
-        fill: absentStyle ? alpha(absentStyle.color, absentStyle.fillOpacity ?? 1) : UNKNOWN_FILL,
-        opacity: absentKey === undefined ? 1 : input.emphasis(absentKey),
-      },
+      absentStyle && absentKey !== undefined
+        ? {
+            fill: alpha(absentStyle.color, absentStyle.fillOpacity ?? 1),
+            opacity: input.emphasis(absentKey),
+          }
+        : undefined,
     )
 
-    if (span.marker && absent < 1) {
+    if (span.marker && shown) {
       const markerKey = span.marker.state ?? span.state
       const markerState = states.get(markerKey)
       if (!markerState && process.env.NODE_ENV !== 'production')
@@ -264,8 +281,8 @@ function layoutBands<T>(input: LayoutInput<T>): {
     // An unknown state (production only) answers no pointer: a tooltip row needs its series.
     if (state)
       for (const source of g.items) {
-        if (absent < 1) hits.push({ source, state: span.state, datum })
-        if (absent > 0 && absentKey !== undefined) hits.push({ source, state: absentKey, datum })
+        if (shown) hits.push({ source, state: span.state, datum })
+        if (share > 0 && absentKey !== undefined) hits.push({ source, state: absentKey, datum })
       }
   }
   return { base: [...base.values()], markers: [...markers.values()], hits }
@@ -295,9 +312,8 @@ export function BandStrip<T, X extends ChartX = ChartX>(props: BandStripProps<T,
         ...(s.note !== undefined && { note: s.note }),
         getValue: (d) => {
           const span = getBand(d)
-          const share = absentShareOf(span, absentState)
-          if (span.state === s.key) return share < 1 ? 1 : null
-          return s.key === absentState && share > 0 ? 1 : null
+          if (span.state === s.key) return absentShareOf(span, absentState) < 1 ? 1 : null
+          return s.key === absentState && absentShareOf(span, absentState) > 0 ? 1 : null
         },
         formatValue: (_v, d) => (s.formatValue ? (s.formatValue(d) ?? NON_FINITE) : ''),
       })),
@@ -343,6 +359,7 @@ export function BandStrip<T, X extends ChartX = ChartX>(props: BandStripProps<T,
           ? [
               barY(rows, {
                 id: 'hit',
+                // One row per source slot and state; source x is unique even when a fold merges.
                 key: (r) => `${String(r.x)}|${r.series}`,
                 x: rowX,
                 y1: 0,
@@ -356,6 +373,31 @@ export function BandStrip<T, X extends ChartX = ChartX>(props: BandStripProps<T,
     [states, getBand, fold, absentState, data, x],
   )
 
+  // `getValue` cannot see the legend, so a fully absent band has no primary row; when the absent
+  // state is hidden the strip draws the primary fill instead, and its row is added back here.
+  const tooltipWithPrimary = useMemo<BandStripProps<T, X>['tooltip']>(() => {
+    if (tooltip === false || absentState === undefined) return tooltip
+    return {
+      ...tooltip,
+      rows: (d, ctx) => {
+        const span = getBand(d)
+        const primary = ctx.visible.find((s) => s.key === span.state)
+        const absentHidden = ctx.hidden.some((s) => s.key === absentState)
+        const extra =
+          primary && absentHidden && absentShareOf(span, absentState) === 1
+            ? [
+                {
+                  label: primary.label,
+                  value: states.find((s) => s.key === primary.key)?.formatValue?.(d) ?? '',
+                  color: primary.color,
+                },
+              ]
+            : []
+        return [...extra, ...(tooltip?.rows?.(d, ctx) ?? [])]
+      },
+    }
+  }, [tooltip, absentState, getBand, states])
+
   return (
     <CartesianRung
       {...rest}
@@ -365,7 +407,7 @@ export function BandStrip<T, X extends ChartX = ChartX>(props: BandStripProps<T,
       y={STRIP_AXIS}
       xZones={ZX_ANCHOR}
       cursorResolution={cursorResolution}
-      {...(tooltip !== undefined && { tooltip })}
+      {...(tooltipWithPrimary !== undefined && { tooltip: tooltipWithPrimary })}
     />
   )
 }
