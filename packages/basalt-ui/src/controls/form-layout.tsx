@@ -138,7 +138,7 @@ export type FormRowProps = BasaltProps &
     /**
      * The field's error, rendered under the control. Falsy renders nothing. For a Mantine input
      * wired through `inputProps(form, path)`, Mantine's own `Input.Wrapper` already renders
-     * `form.errors[path]` — passing it here too would render it twice. Reserve this prop for
+     * the field error (`inputProps(form, path).error`) — passing it here too would render it twice. Reserve this prop for
      * children that render no error of their own: a raw input, a custom control.
      */
     error?: ReactNode
@@ -172,7 +172,7 @@ export type FormRowProps = BasaltProps &
  *
  * @example
  * // A raw control renders no error of its own — pass it explicitly.
- * <FormRow label="Email" required error={form.errors['email']}>
+ * <FormRow label="Email" required error={inputProps(form, 'email').error}>
  *   <input value={form.values.email} onChange={(e) => form.setFieldValue('email', e.target.value)} />
  * </FormRow>
  */

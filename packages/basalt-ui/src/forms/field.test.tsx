@@ -8,9 +8,9 @@
  * than by inspecting the returned object, because the object shape is the mechanism and the silent
  * console is the contract.
  */
-import { MantineProvider, TextInput } from '@mantine/core'
+import { Checkbox, MantineProvider, Switch, TextInput } from '@mantine/core'
 import { useForm } from '@mantine/form'
-import { render, renderHook } from '@testing-library/react'
+import { fireEvent, render, renderHook } from '@testing-library/react'
 import { describe, expect, spyOn, test } from 'bun:test'
 import { fieldKey, inputProps } from './field'
 import { useBasaltForm } from './create-form'
@@ -80,5 +80,81 @@ describe('the documented idiom renders silently', () => {
       error.mockRestore()
       warn.mockRestore()
     }
+  })
+})
+
+describe('inputProps checkbox binding', () => {
+  type V = {
+    name: string
+    active: boolean
+    nested: { on: boolean; label: string }
+    flags: boolean[]
+  }
+
+  test('a boolean path accepts { type: "checkbox" }, a string path does not (type-level)', () => {
+    const { result } = renderHook(() =>
+      useBasaltForm<V>({
+        initialValues: { name: '', active: true, nested: { on: false, label: '' }, flags: [false] },
+      }),
+    )
+    const form = result.current
+    expect(inputProps(form, 'active', { type: 'checkbox' }).defaultChecked).toBe(true)
+    expect(inputProps(form, 'nested.on', { type: 'checkbox' }).defaultChecked).toBe(false)
+    expect(inputProps(form, 'flags.0', { type: 'checkbox' }).defaultChecked).toBe(false)
+    // @ts-expect-error — `name` is a string path
+    inputProps(form, 'name', { type: 'checkbox' })
+    // @ts-expect-error — `nested.label` is a string path
+    inputProps(form, 'nested.label', { type: 'checkbox' })
+    // @ts-expect-error — only the checkbox option exists
+    inputProps(form, 'active', { type: 'input' })
+    expect(inputProps(form, 'active')).not.toHaveProperty('key')
+  })
+
+  function Booleans() {
+    const form = useBasaltForm<{ agree: boolean; notify: boolean }>({
+      initialValues: { agree: false, notify: true },
+    })
+    return (
+      <form
+        onSubmit={(e) => {
+          e.preventDefault()
+          form.setFieldError('agree', 'Must agree')
+        }}
+      >
+        <Checkbox
+          key={fieldKey(form, 'agree')}
+          {...inputProps(form, 'agree', { type: 'checkbox' })}
+          label="Agree"
+        />
+        <Switch
+          key={fieldKey(form, 'notify')}
+          {...inputProps(form, 'notify', { type: 'checkbox' })}
+          label="Notify"
+        />
+        <button type="submit">go</button>
+        <output data-testid="err">{String(inputProps(form, 'agree').error ?? '')}</output>
+      </form>
+    )
+  }
+
+  test('binds a Mantine Checkbox and Switch, and surfaces the typed error', () => {
+    const { getByLabelText, getByText, getByTestId } = render(
+      <MantineProvider>
+        <Booleans />
+      </MantineProvider>,
+    )
+    const agree = getByLabelText('Agree') as HTMLInputElement
+    const notify = getByLabelText('Notify') as HTMLInputElement
+    expect(agree.checked).toBe(false)
+    expect(notify.checked).toBe(true)
+
+    fireEvent.click(notify)
+    expect(notify.checked).toBe(false)
+
+    fireEvent.submit(getByText('go').closest('form') as HTMLFormElement)
+    expect(getByTestId('err').textContent).toBe('Must agree')
+
+    fireEvent.click(agree)
+    expect(agree.checked).toBe(true)
   })
 })
