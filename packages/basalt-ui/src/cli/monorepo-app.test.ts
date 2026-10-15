@@ -99,6 +99,23 @@ describe('sync / init in a monorepo', () => {
     expect(existsSync(join(dir, 'src'))).toBe(false)
   })
 
+  it('syncs from a workspace package that depends on basalt-ui, without BASALT_CWD', () => {
+    monorepo(['web'])
+    pkg('packages/lib/', { name: 'lib', dependencies: { 'basalt-ui': '*' } })
+    write('packages/lib/src/index.ts', '// lib\n')
+    quiet(() => init(dir))
+    expect(quiet(() => sync({}, join(dir, 'apps/web')))).toBe(0)
+    expect(quiet(() => sync({ check: true }, join(dir, 'packages/lib')))).toBe(0)
+    expect(existsSync(join(dir, 'apps/web/.basalt'))).toBe(false)
+  })
+
+  it('still refuses from a package that does not depend on basalt-ui', () => {
+    monorepo(['web'])
+    pkg('packages/other/', { name: 'other' })
+    quiet(() => init(dir))
+    expect(quiet(() => sync({}, join(dir, 'packages/other')))).toBe(1)
+  })
+
   it('detects a Start app by the app package, not the root, and seeds nothing router-shaped', () => {
     monorepo(['web'])
     pkg('apps/web/', {

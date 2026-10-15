@@ -39,6 +39,7 @@ import {
   writeFileEnsuringDir,
   writeUnit,
 } from './index'
+import { hasDependency } from './source-text'
 
 /** The oxlint plugins the shipped preset switches on — read from the preset, never restated. */
 export function readOxlintPresetPlugins(pkgRoot: string): string[] {
@@ -89,8 +90,21 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
   const syncFlags = opts.flags ?? []
   if (conflictingProfileFlags('sync', syncFlags)) return 1
   const project = resolveProjectDir(invocationCwd)
-  const cwd = project.dir
   noteRelocation('sync', project)
+  // Inside a workspace package that depends on basalt-ui the manifest lives at the install root
+  // above (`doctor` reads it the same way): run there instead of refusing.
+  const installAbove =
+    project.relocatedFrom === null &&
+    !existsSync(resolve(project.dir, MANIFEST_PATH)) &&
+    hasDependency(project.dir, 'basalt-ui')
+      ? findManifestAbove(project.dir)
+      : null
+  const cwd = installAbove ?? project.dir
+  if (installAbove !== null) {
+    console.log(
+      `basalt-ui sync: ${project.dir} is a package of the install at ${installAbove}; syncing there.`,
+    )
+  }
 
   // Profile before the refusal: init is NOT the fix for a tokens-only consumer. Declared, never
   // inferred (the answer silences the whole reconciliation); exits 0 so `sync --check` is wirable.

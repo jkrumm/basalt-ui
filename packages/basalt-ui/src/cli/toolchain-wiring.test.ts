@@ -1040,20 +1040,21 @@ function installAtRoot(): void {
     JSON.stringify({ name: 'dashboard', dependencies: { 'basalt-ui': '*' } }),
   )
   write('apps/dashboard/src/app.tsx', 'export const App = () => null\n')
+  write('apps/tools/package.json', JSON.stringify({ name: 'tools' }))
 }
 
 describe('sync — a scaffold is init’s decision, never a drift refresh’s', () => {
-  it('refuses from a workspace sub-package and points at the install it found above', () => {
+  it('refuses from a sub-package that does not depend on basalt-ui and points at the install above', () => {
     installAtRoot()
-    const { code, log } = capture(() => sync({}, join(dir, 'apps/dashboard')))
+    const { code, log } = capture(() => sync({}, join(dir, 'apps/tools')))
     expect(code).toBe(1)
     expect(log).toContain('refusing to scaffold')
     expect(log).toContain("This repo's install is at ../..")
   })
 
-  it('writes NOTHING when it refuses — not the files, and not the second basalt key', () => {
+  it('syncs the install above from a dependent sub-package and writes nothing into it', () => {
     installAtRoot()
-    capture(() => sync({}, join(dir, 'apps/dashboard')))
+    expect(capture(() => sync({}, join(dir, 'apps/dashboard'))).code).toBe(0)
     // The `basalt.roots` backfill is half the damage: a second config site means check-theme
     // silently scans a different tree depending on which directory it was invoked from.
     expect(JSON.parse(read('apps/dashboard/package.json'))['basalt']).toBeUndefined()

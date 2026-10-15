@@ -12,7 +12,7 @@ series token, never a literal.
 `.claude/rules/` > the `basalt-*` skills. Each rule bullet ends in the lint rule, guard kind or type
 that enforces it; skills are procedure, not law.
 
-**Run the local bin** (`./node_modules/.bin/basalt-ui` or a package script), never `bunx`; `init` is the
+**Run the local bin** (`./node_modules/.bin/basalt-ui`, or in a workspace the one in the package that depends on basalt-ui — `<pkg>/node_modules/.bin/basalt-ui` — or a package script), never `bunx`; `init` is the
 one exception.
 
 **Before guessing an import, read the installed `llms.txt`** at the install directory (in a workspace,
