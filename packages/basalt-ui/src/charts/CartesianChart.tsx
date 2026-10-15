@@ -10,7 +10,7 @@ import { useCallback, useId, useMemo, useState } from 'react'
 import type { CSSProperties, ReactElement, ReactNode } from 'react'
 import { useInChartCard } from './card-context'
 import { compileCartesian, refLegendSeries } from './compile'
-import type { CartesianDefinition } from './compile'
+import type { CartesianDefinition, PlotSize } from './compile'
 import { ChartEngine, idPrefixOf } from './host'
 import { ChartLegend, legendEntries } from './legend'
 import { INITIAL_WIDTH, useChartSize } from './sizing'
@@ -69,6 +69,8 @@ export type ShellContext = {
   coarse: boolean
   /** The measured width; 0 unless the shell was asked to track it (`byWidth`). */
   width: number
+  /** The plot area the engine last laid out; `null` until it has, or while `marks` ignores it. */
+  plot: PlotSize | null
 }
 
 export type ChartShellProps<T> = Pick<
@@ -99,9 +101,19 @@ export function ChartShell<T>(props: ChartShellProps<T>): ReactElement {
   // Unmeasured (the server, the first client frame) is the regular class, as the engine's
   // `initialWidth` is.
   const width = byWidth ? measured || INITIAL_WIDTH : 0
+  // The engine lays the plot out AFTER `marks` runs, so a chart whose marks read the plot size
+  // (and only that chart) takes it from the layout and recompiles once.
+  const [plot, setPlot] = useState<PlotSize | null>(null)
+  const onPlot = useCallback((next: PlotSize) => {
+    setPlot((prev) =>
+      prev && Math.abs(prev.width - next.width) < 0.01 && Math.abs(prev.height - next.height) < 0.01
+        ? prev
+        : next,
+    )
+  }, [])
   const definition = useMemo(
-    () => compile({ chartId, hidden, highlighted, coarse, width }),
-    [compile, chartId, hidden, highlighted, coarse, width],
+    () => compile({ chartId, hidden, highlighted, coarse, width, plot }),
+    [compile, chartId, hidden, highlighted, coarse, width, plot],
   )
 
   // ── legend: micro has none, compact shows dots, regular and wide show chips (CSS, § 9.6) ──────
@@ -153,6 +165,7 @@ export function ChartShell<T>(props: ChartShellProps<T>): ReactElement {
           height={height}
           idPrefix={idPrefixOf(chartId)}
           coarse={coarse}
+          onPlot={onPlot}
         />
       ) : (
         <ChartPlaceholder state={state} height={height} />

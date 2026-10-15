@@ -7,8 +7,10 @@
  * box is final in the server HTML and hydration only redraws the svg inside it (W10).
  */
 import { Chart } from '@tanstack/charts/react'
+import { useMemo } from 'react'
 import type { CSSProperties, ReactElement } from 'react'
-import type { CartesianDefinition } from './compile'
+import { readsPlot } from './compile'
+import type { CartesianDefinition, PlotSize } from './compile'
 import { ChartBox } from './box'
 import type { ChartBoxHeight } from './box'
 import { INITIAL_WIDTH } from './sizing'
@@ -22,6 +24,9 @@ export type ChartEngineProps = {
   idPrefix: string
   /** `touch-action: pan-y`: a vertical swipe across the chart still scrolls the page. */
   coarse: boolean
+  /** The plot area after each layout (the frame less the axis gutters), in px; fires only for a
+   * definition whose `marks` read it. */
+  onPlot?: (size: PlotSize) => void
 }
 
 /** `currentColor` is the axis ink. The font is pinned to mono (the 1.x tick look) and inherited by
@@ -40,7 +45,19 @@ export function ChartEngine({
   height,
   idPrefix,
   coarse,
+  onPlot,
 }: ChartEngineProps): ReactElement {
+  // Stable, so the engine does not re-register its render hook on every chart render.
+  const onRender = useMemo(
+    () =>
+      onPlot
+        ? ({ scene }: { scene: { chart: PlotSize } }): void => {
+            if (readsPlot(definition))
+              onPlot({ width: scene.chart.width, height: scene.chart.height })
+          }
+        : undefined,
+    [onPlot, definition],
+  )
   return (
     <ChartBox height={height}>
       <Chart
@@ -49,6 +66,7 @@ export function ChartEngine({
         initialWidth={INITIAL_WIDTH}
         idPrefix={idPrefix}
         className="basalt-chart"
+        {...(onRender && { onRender })}
         style={coarse ? COARSE_STYLE : HOST_STYLE}
       />
     </ChartBox>

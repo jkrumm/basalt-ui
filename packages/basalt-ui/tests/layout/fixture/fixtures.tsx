@@ -3,7 +3,8 @@ import type { ComponentProps, ReactElement } from 'react'
 import { ThreadFeedRow } from '../../../src/agent'
 import type { AgentThread, ChatMessage, TranscriptPart } from '../../../src/agent'
 import { ThreadTranscript } from '../../../src/agent/chat/thread-message'
-import { Bars, ChartCard, DualPanel, Lines } from '../../../src/charts'
+import { rect } from '@tanstack/charts/rect'
+import { Bars, CartesianChart, ChartCard, DualPanel, Lines } from '../../../src/charts'
 import type { BarsBar, ChartSeries } from '../../../src/charts'
 import { overlays } from '../../../src/commands'
 import { FilterSet, FormRow, SelectFilter, ViewTabs } from '../../../src/controls'
@@ -624,6 +625,8 @@ const CHART_COLORS = [
 ]
 
 const CHART_DAYS = 30
+/** The rail's stated thickness: the `rail` probe asserts it measures this many px. */
+const RAIL_PX = 3
 
 /** UTC days, so the fixture is deterministic whatever the host's timezone. */
 function buildChartData(seriesCount: number, days: number = CHART_DAYS): ChartPoint[] {
@@ -671,6 +674,26 @@ function ChartsFixture({ spec }: { spec: ChartsSpec }): ReactElement {
           negative: CHART_COLORS[1] as string,
           format: String,
         }}
+        {...height}
+      />
+    ) : spec.kind === 'rail' ? (
+      <CartesianChart
+        ariaLabel="Fixture rail"
+        data={data}
+        x={chartX}
+        series={buildLineSeries(1)}
+        y={{ domain: [0, 100] }}
+        marks={(plot) => [
+          rect([0], {
+            id: 'rail',
+            x1: () => data[0]?.at,
+            x2: () => data.at(-1)?.at,
+            y1: () => 100 - RAIL_PX * (100 / plot.plotHeight),
+            y2: () => 100,
+            fill: CHART_COLORS[1] as string,
+            inset: 0,
+          }),
+        ]}
         {...height}
       />
     ) : spec.kind === 'bars' ? (

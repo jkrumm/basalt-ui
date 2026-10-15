@@ -63,10 +63,12 @@ export type ChartSeries<T> = {
   /**
    * A cursor dot for a series whose mark the consumer draws itself (`marks`, so `getValue` stays
    * `null`): the y of the dot at each datum, `null` for none. The dot shows while the cursor is on
-   * that datum's x and takes the series color. A series drawn from `plot.rows` already has one.
+   * that datum's x and takes the series color, or `getMarker(d).color` when the series has one: the
+   * dot follows the datum. A series drawn from `plot.rows` already has one.
    */
   cursorValue?: ((d: T) => number | null) | undefined
-  /** A marker at a point (a PR star, a status dot); `null` for none. */
+  /** A marker at a point (a PR star, a status dot); `null` for none. On a `cursorValue` series
+   * only `color` applies, to the cursor dot. */
   getMarker?:
     | ((d: T) => {
         color?: string | undefined
@@ -241,9 +243,24 @@ export type PlotContext<T, X extends ChartX = ChartX> = {
   highlighted: string | null
   /** The measured container class (`regular` on the server). */
   containerClass: ContainerClass
-  /** The chart's size in px, for a kind that lays out labels against the plot. */
+  /** The chart's FRAME in px (plot plus axis gutters), for a kind that lays out labels against it. */
   width: number
   height: number
+  /**
+   * The plot area in px: the frame less the axis gutters. Pin a mark in pixels with it (a 3 px
+   * rail along the top is `yMax - 3 * (yMax - yMin) / plot.plotHeight` down from `yMax`). The
+   * engine measures its gutters after `marks` runs, so the first pass (the server HTML, the first
+   * client frame) reports the frame; the chart re-renders once with the measured area, and only a
+   * chart whose `marks` read these fields pays that render.
+   */
+  plotWidth: number
+  plotHeight: number
+  /**
+   * Every row of `data`, whatever the legend hides. For bucket-level marks only (absent columns,
+   * rails: the slot grid must not vanish with its last visible series); a series' own marks still
+   * draw `plot.rows(key)` and gate on `plot.visible`.
+   */
+  data: readonly T[]
   /** Bind a mark to the right axis with `yScale: plot.y2` (present only with a `y2` config). */
   y2: 'y2' | undefined
   /** The resolved y domain (and the right axis', with `y2`): basalt's, never the engine's. */
@@ -279,8 +296,8 @@ export type CartesianChartProps<T, X extends ChartX = ChartX> = BasaltProps & {
    * Default: the height law (measured width × class ratio, 160–420px, ≤ 45vh on touch). Always the
    * FRAME, in every kind: the plot plus the axis the engine measures. A `BandStrip` band is the
    * frame less the x axis (about 21 px at the default font and density, so `height: 65` for a
-   * 44 px band). There is no separate plot height: the box is CSS-owned before any measurement
-   * exists, and a plot height would add a guess to it.
+   * 44 px band). The box is CSS-owned before any measurement exists, so the plot area is read back
+   * from the engine's layout (`PlotContext.plotWidth`/`plotHeight`), never an input.
    */
   height?: number | ResponsiveChartHeight | undefined
   state?: ChartState | undefined
