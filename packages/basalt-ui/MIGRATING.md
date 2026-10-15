@@ -1348,7 +1348,15 @@ suppresses `AGENTS.md` — or still carries a basalt block.
 
 ## 1.40.3
 
-_Nothing to migrate in this release._
+No API change, but light-scheme colours moved to clear WCAG AA. A consumer that commits an emitted
+token file (`basalt-ui tokens:css`) or pins screenshots sees a diff:
+
+- `--vx-faint` (light) `#737376` → `#69696c`.
+- `--mantine-color-anchor` now resolves to `--vx-accent-hover`.
+- `--mantine-color-error` reads the `bad` solid pulled toward ink.
+- `Badge` light/outline text and inactive `SegmentedControl` labels read darker.
+
+Re-emit the token file and accept the diff; nothing to change in code.
 
 ## 1.40.2
 
