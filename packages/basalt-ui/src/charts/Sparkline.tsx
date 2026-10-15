@@ -48,6 +48,11 @@ type Point = { i: number; v: number | null }
 const LINE_WIDTH = 1.6
 const DOT_R = 2.5
 const BAR_GAP = 0.15
+// Pixel policy of the self-pooling (`poolSparkline`): the densest a series may draw.
+const LINE_PX_PER_POINT = 1
+const BAR_PX_PER_BAR = 2
+/** First, last and one min/max pair: the fewest points a pooled line can hold. */
+const LINE_POOL_MIN = 4
 
 const finite = (v: number): number | null => (Number.isFinite(v) ? v : null)
 
@@ -63,52 +68,99 @@ function extent(rows: readonly Point[]): readonly [number, number] | null {
   return lo <= hi ? [lo, hi] : null
 }
 
-/** Finite rows of one bucket: the lowest, then the highest, in index order (a lone value once). */
-function bucketExtremes(bucket: readonly Point[]): Point[] {
-  let lo: Point | undefined
-  let hi: Point | undefined
-  for (const r of bucket) {
-    if (r.v === null) continue
-    if (lo === undefined || r.v < (lo.v as number)) lo = r
-    if (hi === undefined || r.v > (hi.v as number)) hi = r
-  }
-  if (lo === undefined || hi === undefined) return bucket.slice(0, 1)
-  if (lo === hi) return [lo]
-  return lo.i < hi.i ? [lo, hi] : [hi, lo]
+/** A row with its value proven finite, so no cast carries it through the pooling. */
+type Sample = { row: Point; v: number }
+const sampleOf = (row: Point): Sample | null => (row.v === null ? null : { row, v: row.v })
+
+/** `rows` cut into `count` consecutive buckets of near-equal length (empty ones dropped). */
+function buckets(rows: readonly Point[], count: number): Point[][] {
+  const size = rows.length / count
+  return Array.from({ length: count }, (_, b) =>
+    rows.slice(Math.round(b * size), Math.round((b + 1) * size)),
+  ).filter((bucket) => bucket.length > 0)
+}
+
+/** One maximal stretch of finite rows inside a bucket. */
+type Run = { first: Sample; lo: Sample; hi: Sample; last: Sample; afterGap: boolean }
+
+/** A run's rows in index order: its min and max, plus the edge that touches a gap, so the gap
+ * stays exactly where the input had it. */
+function runRows(run: Run, beforeGap: boolean): Point[] {
+  const keep = [
+    run.lo,
+    run.hi,
+    ...(run.afterGap ? [run.first] : []),
+    ...(beforeGap ? [run.last] : []),
+  ]
+  const byIndex = new Map(keep.map((k) => [k.row.i, k.row]))
+  return [...byIndex.values()].toSorted((a, b) => a.i - b.i)
 }
 
 /**
- * Pools a series to what `width` px can show, so the caller never sizes it. A line keeps each
- * bucket's min and max (peaks and dips survive; `1px` per point is the ceiling) and the final
- * row; a bar keeps one bar per bucket, the value furthest from zero, at `2px` per bar. A series
- * at or under its cap is returned as is, so a short series draws exactly as before. `width <= 0`
- * (unmeasured) pools nothing.
+ * A line, pooled: the first and last rows, and each bucket's min and max between them. A null
+ * row is a gap and is never pooled across: a run is closed at every null, one null row (at the
+ * gap's first index) stands for the whole gap, and the finite rows beside it are kept.
+ */
+function poolLine(rows: readonly Point[], cap: number): readonly Point[] {
+  const first = rows[0]
+  const last = rows.at(-1)
+  if (first === undefined || last === undefined) return rows
+  if (cap < LINE_POOL_MIN) return [first, last]
+  const out: Point[] = [first]
+  const endsInGap = (): boolean => out.at(-1)?.v === null
+  for (const bucket of buckets(rows.slice(1, -1), Math.floor(cap / 2) - 1)) {
+    let run: Run | undefined
+    for (const row of bucket) {
+      const s = sampleOf(row)
+      if (s === null) {
+        if (run !== undefined) out.push(...runRows(run, true))
+        run = undefined
+        if (!endsInGap()) out.push(row)
+        continue
+      }
+      run =
+        run === undefined
+          ? { first: s, lo: s, hi: s, last: s, afterGap: endsInGap() }
+          : { ...run, lo: s.v < run.lo.v ? s : run.lo, hi: s.v > run.hi.v ? s : run.hi, last: s }
+    }
+    if (run !== undefined) out.push(...runRows(run, false))
+  }
+  return last.v === null && endsInGap() ? out : [...out, last]
+}
+
+/** Bars, pooled: the first and last rows and one bar per bucket between them, the value furthest
+ * from zero; a bucket of nulls is one null bar. Re-indexed 0..n-1 (a band x). */
+function poolBar(rows: readonly Point[], cap: number): readonly Point[] {
+  const first = rows[0]
+  const last = rows.at(-1)
+  if (first === undefined || last === undefined) return rows
+  const furthest = (group: readonly Point[]): number | null =>
+    group.reduce<number | null>((best, r) => {
+      if (r.v === null) return best
+      return best === null || Math.abs(r.v) > Math.abs(best) ? r.v : best
+    }, null)
+  if (cap < 2) return [{ i: 0, v: furthest(rows) }]
+  const values =
+    cap === 2
+      ? [first.v, last.v]
+      : [first.v, ...buckets(rows.slice(1, -1), cap - 2).map(furthest), last.v]
+  return values.map((v, i) => ({ i, v }))
+}
+
+/**
+ * Pools a series to what `width` px can show, so the caller never sizes it: at most one point
+ * per `LINE_PX_PER_POINT` (min/max-preserving) or one bar per `BAR_PX_PER_BAR`. A series at or
+ * under its cap is returned as is, so a short series draws exactly as before; `width <= 0`
+ * (unmeasured) pools nothing. A line is never pooled below its two endpoints.
  */
 export function poolSparkline(
   rows: readonly Point[],
   width: number,
   mark: 'line' | 'bar',
 ): readonly Point[] {
-  const cap = mark === 'bar' ? Math.floor(width / 2) : Math.floor(width)
-  if (width <= 0 || rows.length <= Math.max(cap, 2)) return rows
-  const head = rows.slice(0, -1)
-  const last = rows.at(-1) as Point
-  const buckets = Math.max(1, mark === 'bar' ? cap - 1 : Math.floor(cap / 2) - 1)
-  const size = head.length / buckets
-  const out: Point[] = []
-  for (let b = 0; b < buckets; b++) {
-    const bucket = head.slice(Math.round(b * size), Math.round((b + 1) * size))
-    if (bucket.length === 0) continue
-    if (mark === 'line') {
-      out.push(...bucketExtremes(bucket))
-      continue
-    }
-    const pick = bucketExtremes(bucket).reduce((a, r) =>
-      Math.abs(r.v ?? 0) > Math.abs(a.v ?? 0) ? r : a,
-    )
-    out.push({ i: out.length, v: pick.v })
-  }
-  return [...out, mark === 'bar' ? { i: out.length, v: last.v } : last]
+  const cap = Math.floor(width / (mark === 'bar' ? BAR_PX_PER_BAR : LINE_PX_PER_POINT))
+  if (width <= 0 || rows.length <= Math.max(cap, mark === 'bar' ? 1 : 2)) return rows
+  return mark === 'bar' ? poolBar(rows, cap) : poolLine(rows, cap)
 }
 
 function compileSparkline(

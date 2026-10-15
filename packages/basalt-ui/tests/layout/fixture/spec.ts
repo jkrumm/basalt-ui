@@ -165,7 +165,9 @@ export type AsideSpec = {
  */
 export type ChartsSpec = {
   /** A real kind from `basalt-ui/charts` — never a hand-rolled stand-in. */
-  kind: 'lines' | 'bars' | 'dual' | 'rail' | 'panel-rail'
+  kind: 'lines' | 'bars' | 'dual' | 'rail' | 'panel-rail' | 'spark'
+  /** `spark`: the row count of the one `Sparkline` (default 3000), in a `width`-px cell. */
+  sparkRows?: number
   /** Number of series (legend entries). Default 3. */
   legendEntries?: number
   /** Fixed height in px, forwarded to the kind. Omitted ⇒ the height law. */

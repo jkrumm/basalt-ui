@@ -309,6 +309,31 @@ layout('Charts — 2.0 layout', () => {
     expect(Math.abs((a[0] ?? 0) - (b[0] ?? 0))).toBeLessThanOrEqual(1)
   })
 
+  // ── a long sparkline pools itself to its cell (ledger row 100) ────────────────────────────
+  test('a 3,000-row sparkline in a 120 px cell draws about one point per px and ends at the right edge', async () => {
+    const p = await openFixture(chartFixture({ kind: 'spark', width: 120 }), DESKTOP)
+    await p.settle()
+    const probe = await p.raw.evaluate((frame) => {
+      const root = document.querySelector(frame)
+      const path = root?.querySelector('path[data-ts-key*=":segment:"]')
+      const dot = root?.querySelector('circle')
+      const svg = root?.querySelector('svg.ts-chart')
+      if (!path || !dot || !svg) throw new Error('LAYOUT: no sparkline line, dot or svg')
+      const box = svg.getBoundingClientRect()
+      const d = dot.getBoundingClientRect()
+      return {
+        points: (path.getAttribute('d') ?? '').split('C').length,
+        gap: box.right - (d.left + d.width / 2),
+        width: box.width,
+      }
+    }, FRAME)
+    expect(probe.points).toBeLessThanOrEqual(122)
+    expect(probe.points).toBeGreaterThan(20)
+    // The emphasis dot keeps its half-dot of air and sits at the right edge, not mid-cell.
+    expect(probe.gap).toBeGreaterThanOrEqual(0)
+    expect(probe.gap).toBeLessThanOrEqual(probe.width * 0.1)
+  })
+
   // ── the theme bridge reaches the portalled tooltip from :root (§ 9.5) ───────────────────────
   test('the tooltip inherits --ts-chart-* from :root and paints the --vx-* tooltip tokens', async () => {
     const p = await openFixture(chartFixture({ kind: 'lines', width: 640 }), DESKTOP)

@@ -94,6 +94,9 @@ export function xKindOf(values: readonly ChartX[]): XKind {
   return 'string'
 }
 
+/** A continuous x value as a number: a `Date` by timestamp. */
+const toNumber = (v: ChartX): number => (v instanceof Date ? v.getTime() : (v as number))
+
 const keyOf = (v: ChartX): number | string => (v instanceof Date ? v.getTime() : v)
 
 /** Distinct x values in data order (dates by timestamp). */
@@ -137,6 +140,22 @@ export type XScaleModel<X extends ChartX> = {
 
 const DAY_MS = 86_400_000
 
+/** The explicit x domain as `[min, max]` numbers, or `null` (unset, reversed, flat or not finite:
+ * the data's own extent stands, with a dev warning for a domain that was set but unusable). */
+function explicitDomain(xDomain: readonly [ChartX, ChartX] | undefined): [number, number] | null {
+  if (xDomain === undefined) {
+    return null
+  }
+  const [min, max] = [toNumber(xDomain[0]), toNumber(xDomain[1])]
+  if (Number.isFinite(min) && Number.isFinite(max) && min < max) {
+    return [min, max]
+  }
+  if (process.env.NODE_ENV !== 'production') {
+    console.warn('[basalt] CartesianChart: `xDomain` needs finite min < max; using the data extent')
+  }
+  return null
+}
+
 export function xScaleFor<X extends ChartX>(
   raw: readonly X[],
   band: boolean,
@@ -144,7 +163,8 @@ export function xScaleFor<X extends ChartX>(
   xDomain?: readonly [X, X],
 ): XScaleModel<X> {
   const values = distinctX(raw)
-  const kind = xKindOf(xDomain ? [xDomain[0]] : values)
+  // The kind comes from the data; an empty series has none to read, so the domain stands in.
+  const kind = xKindOf(values.length > 0 || xDomain === undefined ? values : [xDomain[0]])
   const n = values.length
 
   if (band || kind === 'string') {
@@ -185,7 +205,7 @@ export function xScaleFor<X extends ChartX>(
     }
   }
 
-  const nums = values.map((v) => (v instanceof Date ? v.getTime() : (v as number)))
+  const nums = values.map(toNumber)
   // A loop, not Math.min(...nums): a spread of a long series overflows the call stack.
   let lo = Infinity
   let hi = -Infinity
@@ -199,10 +219,10 @@ export function xScaleFor<X extends ChartX>(
     if (v > hi) hi = v
   }
   if (!Number.isFinite(lo)) [lo, hi] = [0, 1]
-  const bound = (v: X): number => (v instanceof Date ? v.getTime() : (v as number))
-  const explicit = xDomain ? ([bound(xDomain[0]), bound(xDomain[1])] as const) : null
-  if (explicit !== null && explicit[0] < explicit[1]) [lo, hi] = explicit
-  else if (lo === hi) {
+  const explicit = explicitDomain(xDomain)
+  if (explicit !== null) {
+    ;[lo, hi] = explicit
+  } else if (lo === hi) {
     // One sample: give the axis a day (or a unit) of width so the point sits in the middle.
     const half = kind === 'date' ? DAY_MS / 2 : 0.5
     lo -= half
@@ -225,7 +245,7 @@ export function xScaleFor<X extends ChartX>(
     extent: [lo, hi],
     step: medianGap,
     fraction: (x) => {
-      const v = x instanceof Date ? x.getTime() : (x as number)
+      const v = toNumber(x)
       return typeof v === 'number' && Number.isFinite(v) ? (v - lo) / span : null
     },
   }
