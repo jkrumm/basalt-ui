@@ -33,7 +33,7 @@ import {
   writeUnit,
 } from './index'
 import { seedTsconfigExtends } from './doctor-upgrade'
-import { readOxlintPresetPlugins } from './sync'
+import { readOxlintPresetPlugins, START_APP_NOTE, startAppSeeds } from './sync'
 
 /**
  * What a consumer LOSES by `init` keeping a file it already had — the half the aggregate
@@ -130,7 +130,10 @@ export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags =
   const routerSeeds: string[] = (
     Object.keys(ROUTER_SEED_DESTS) as (keyof typeof ROUTER_SEED_DESTS)[]
   ).map((seed) => routerSeedDest(placement.appRel, seed))
-  const files = managedFiles(placement).filter((f) => !(tokensOnly && routerSeeds.includes(f.dest)))
+  const startSeeds = startAppSeeds(cwd, placement.appRel)
+  const files = managedFiles(placement).filter(
+    (f) => !(tokensOnly && routerSeeds.includes(f.dest)) && !startSeeds?.includes(f.dest),
+  )
 
   const writtenFiles: string[] = []
   const keptFiles: string[] = []
@@ -205,6 +208,7 @@ export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags =
   const tsconfigLine = tokensOnly ? null : seedTsconfigExtends(cwd)
   if (tsconfigLine !== null) console.log(`basalt-ui init: ${tsconfigLine}`)
   if (buildNote !== null) console.log(`basalt-ui init: ${buildNote}`)
+  if (startSeeds) console.log(`basalt-ui init: ${START_APP_NOTE}`)
   const rootsMessages = rootsNotices(rootsState)
   for (const line of rootsMessages.log) console.log(`basalt-ui init: ${line}`)
   for (const line of rootsMessages.error) console.error(`⚠ basalt-ui init: ${line}`)

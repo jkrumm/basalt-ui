@@ -350,6 +350,24 @@ describe('router seeds — the nav module and the root route', () => {
     expect(log).not.toContain('skipped src/lib/nav.tsx')
   })
 
+  it('seeds nothing router-shaped into a TanStack Start app and names the in-tree seam', () => {
+    writeFixture(
+      'package.json',
+      JSON.stringify({ name: 'fixture', dependencies: { '@tanstack/react-start': '*' } }),
+    )
+    const initOut = capture(() => init(dir))
+    expect(initOut.log).toContain('TanStack Start app')
+    expect(initOut.log).toContain('<BasaltProvider>')
+    capture(() => sync({}, dir))
+    const syncOut = capture(() => sync({}, dir))
+    expect(syncOut.log).toContain('TanStack Start app')
+    for (const dest of ['src/lib/nav.tsx', 'src/routes/__root.tsx', 'src/main.tsx']) {
+      expect(existsSync(resolve(dir, dest))).toBe(false)
+    }
+    // The rest of the scaffold still lands.
+    expect(existsSync(resolve(dir, MANIFEST_PATH))).toBe(true)
+  })
+
   it('rejects the retired peer flags', () => {
     expect(run(['init', '--with-router'], dir)).toBe(1)
     expect(run(['init', '--merge-lint'], dir)).toBe(1)

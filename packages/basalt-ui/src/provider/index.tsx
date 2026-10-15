@@ -18,7 +18,7 @@ import { Spotlight } from '@mantine/spotlight'
 import type { SpotlightActionData } from '@mantine/spotlight'
 import { QueryClientProvider } from '@tanstack/react-query'
 import type { QueryClient } from '@tanstack/react-query'
-import { RouterProvider } from '@tanstack/react-router'
+import { RouterProvider, useRouter } from '@tanstack/react-router'
 import type { AnyRouter } from '@tanstack/react-router'
 import { Component, Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ErrorInfo, ReactNode } from 'react'
@@ -50,9 +50,7 @@ import { useRegistryHotkeys } from './hotkeys'
 import type { FlatNavItem } from '../router-tanstack/nav'
 import { buildSpotlightActions } from './spotlight-actions'
 
-export type BasaltProviderProps = {
-  /** From `createBasaltRouter`; the provider mounts it and reads its `queryClient`. */
-  router: BasaltRouter
+type BasaltProviderCommonProps = {
   /** Theme override merged onto the Basalt base. Defaults to `createBasaltTheme()`. */
   theme?: MantineProviderProps['theme']
   /**
@@ -92,7 +90,32 @@ export type BasaltProviderProps = {
    * entry with id `nav.<id>` replaces the generated one outright.
    */
   navCommandLabel?: (item: FlatNavItem) => string
+  /**
+   * Mount Basalt's `<Spotlight>` (Cmd+K) with the generated nav + command actions. Default `true`.
+   * Set `false` when the app owns its own palette: neither the component nor its action wiring mounts.
+   */
+  spotlight?: boolean
 } & Omit<MantineProviderProps, 'children' | 'theme' | 'defaultColorScheme' | 'cssVariablesResolver'>
+
+/**
+ * Two modes, never both: pass a `createBasaltRouter` `router` and the provider mounts it, or pass
+ * `children` and render the provider INSIDE a router the app does not own (TanStack Start's root
+ * route component or `shellComponent`) — the router then comes from `useRouter()` and must carry
+ * `context.queryClient` (its `getRouter()` builds the same context `createBasaltRouter` does).
+ */
+export type BasaltProviderProps = BasaltProviderCommonProps &
+  (
+    | {
+        /** From `createBasaltRouter`; the provider mounts it and reads its `queryClient`. */
+        router: BasaltRouter
+        children?: never
+      }
+    | {
+        router?: never
+        /** The subtree inside the app's own router; rendered where `<RouterProvider>` would be. */
+        children: ReactNode
+      }
+  )
 
 // ── Root error boundary ───────────────────────────────────────────────────────────────────────────
 
@@ -398,12 +421,12 @@ function useDataTelemetry(router: AnyRouter, client: QueryClient, emit: Telemetr
 
 const LazyDevDock = lazy(() => import('../dev-dock').then((m) => ({ default: m.BasaltDevDock })))
 
-function readQueryClient(router: AnyRouter): QueryClient {
-  const client = (router.options.context as Partial<BasaltRouterContext> | undefined)?.queryClient
+function readQueryClient(router: AnyRouter | null): QueryClient {
+  const client = (router?.options.context as Partial<BasaltRouterContext> | undefined)?.queryClient
   if (client === undefined) {
     throw new Error(
-      '[basalt] BasaltProvider: the router has no context.queryClient — create it with ' +
-        'createBasaltRouter({ routeTree }).',
+      '[basalt] BasaltProvider: no router with context.queryClient — pass one from ' +
+        'createBasaltRouter({ routeTree }), or render inside a router whose context carries it.',
     )
   }
   return client
@@ -412,7 +435,6 @@ function readQueryClient(router: AnyRouter): QueryClient {
 // ── Public provider ───────────────────────────────────────────────────────────────────────────────
 
 export function BasaltProvider({
-  router,
   theme,
   telemetry,
   fallback,
@@ -422,6 +444,9 @@ export function BasaltProvider({
   nonce,
   sizeClassHint = 'compact',
   navCommandLabel,
+  spotlight = true,
+  router: mountedRouter,
+  children,
   ...rest
 }: BasaltProviderProps) {
   useDuplicateProviderGuard()
@@ -438,6 +463,11 @@ export function BasaltProvider({
   // `overlays.confirm` is an imperative call; this tells it a `ModalsProvider` is live.
   useEffect(() => registerModalsProvider(), [])
 
+  // `warn: false` — in mount mode this provider sits ABOVE the router, so no context is expected.
+  // Embedded mode reads the router the host framework already mounted (SSR-safe: context only).
+  const ambientRouter = useRouter({ warn: false }) as AnyRouter | null
+  // `null` (no router anywhere) is refused by `readQueryClient` on the next line.
+  const router = (mountedRouter ?? ambientRouter) as AnyRouter
   const client = readQueryClient(router)
   useDataTelemetry(router, client, emit)
 
@@ -449,7 +479,9 @@ export function BasaltProvider({
     () => setActions(buildSpotlightActions(router, setDevTool, navCommandLabel)),
     [router, navCommandLabel],
   )
-  useEffect(refreshActions, [refreshActions])
+  useEffect(() => {
+    if (spotlight) refreshActions()
+  }, [spotlight, refreshActions])
 
   // `createBasaltTheme(theme)` — plus, when the theme lab's "Apply" switch is on, the delta of its
   // persisted config, so the dev tool moves the numeric `defaultProps` and `theme.spacing` a `<style>`
@@ -474,7 +506,11 @@ export function BasaltProvider({
               <QueryClientProvider client={client}>
                 {/* ModalsProvider WRAPS the router, so `useModals()` / `openContextModal` have real context. */}
                 <ModalsProvider>
-                  <RouterProvider router={router} />
+                  {mountedRouter === undefined ? (
+                    children
+                  ) : (
+                    <RouterProvider router={mountedRouter} />
+                  )}
                   {/* The literal read sits at the branch, so a production build drops the import. */}
                   {process.env.NODE_ENV !== 'production' && (
                     <Suspense fallback={null}>
@@ -488,12 +524,14 @@ export function BasaltProvider({
                 </ModalsProvider>
               </QueryClientProvider>
               <Notifications position="bottom-right" autoClose={4000} limit={5} />
-              <Spotlight
-                actions={actions}
-                onSpotlightOpen={refreshActions}
-                shortcut="mod + K"
-                maxHeight={420}
-              />
+              {spotlight && (
+                <Spotlight
+                  actions={actions}
+                  onSpotlightOpen={refreshActions}
+                  shortcut="mod + K"
+                  maxHeight={420}
+                />
+              )}
             </SizeClassHintContext.Provider>
           </TelemetryContext.Provider>
         </BasaltBridge>
