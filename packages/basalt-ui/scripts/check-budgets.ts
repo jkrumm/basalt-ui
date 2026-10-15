@@ -208,7 +208,35 @@ export function isOwnGraphId(id: string): boolean {
   return /^(?:\.{1,2}\/|\/|[A-Za-z]:\/)/.test(normalized) || id.startsWith('\u0000')
 }
 
-async function providerOnlyGzip(distEntry: string): Promise<number> {
+/** Dev-only surface: the dock, the theme lab, and any `*-devtools` package (always a peer here). */
+const DEV_ONLY = /(?:^|\/)(?:dev-dock|theme-lab)(?:\/|\.|$)|devtools/
+
+/**
+ * Every emitted chunk, loaded or not, whose module graph or imports reach dev-only code. A
+ * production build must emit none: a module-scope `lazy(() => import('../dev-dock'))` keeps the
+ * chunk graph alive even when its JSX use is dev-gated, and the PWA service worker then precaches
+ * it (obsidian: 34 KB, never requested). Exported for the unit test.
+ */
+export function devOnlyChunks(
+  chunks: readonly {
+    fileName: string
+    moduleIds: readonly string[]
+    imports: readonly string[]
+    dynamicImports: readonly string[]
+  }[],
+): string[] {
+  return chunks
+    .filter((c) =>
+      [c.fileName, ...c.moduleIds, ...c.imports, ...c.dynamicImports].some((id) =>
+        DEV_ONLY.test(id.replaceAll('\\', '/')),
+      ),
+    )
+    .map((c) => c.fileName)
+}
+
+async function providerOnlyGzip(
+  distEntry: string,
+): Promise<{ bytes: number; devChunks: string[] }> {
   const result = await build({
     configFile: false,
     logLevel: 'silent',
@@ -245,7 +273,7 @@ async function providerOnlyGzip(distEntry: string): Promise<number> {
     chunk.imports.forEach(visit)
   }
   visit(entry.fileName)
-  return bytes
+  return { bytes, devChunks: devOnlyChunks([...chunks.values()]) }
 }
 
 const PROVIDER_ONLY_LABEL = 'provider-only first paint (gzip B, dist)'
@@ -260,6 +288,8 @@ const PROVIDER_ONLY_LABEL = 'provider-only first paint (gzip B, dist)'
 // ~140 B (20796 locally, 20830 in CI). No honest saving: the new error strings must name both modes
 // (tested) and Spotlight is statically mounted by default, so lazying it would change first paint.
 const PROVIDER_ONLY_CEILING = 20880
+const DEV_CHUNKS_LABEL =
+  'dev-only chunks in a production consumer build (dock, theme lab, devtools)'
 
 /** An ANSI color sequence. Built from a char code: a control char in a regex literal is banned. */
 const ANSI_SGR = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, 'g')
@@ -285,19 +315,25 @@ function summarizeError(error: unknown): string {
  * `failed` with its first line — both print in order after the other budgets and both fail the
  * gate (an unmeasured number cannot vouch for the ceiling).
  */
-async function providerOnlyRow(distEntry: string): Promise<Budget> {
+async function providerOnlyRows(distEntry: string): Promise<Budget[]> {
   const row = { label: PROVIDER_ONLY_LABEL, ceiling: PROVIDER_ONLY_CEILING }
+  const devRow = { label: DEV_CHUNKS_LABEL, ceiling: 0 }
   if (!existsSync(distEntry)) {
-    return {
-      ...row,
-      value: null,
-      unmeasured: { kind: 'skipped', reason: 'dist/ missing, run `bun run build`' },
-    }
+    const unmeasured = { kind: 'skipped', reason: 'dist/ missing, run `bun run build`' } as const
+    return [
+      { ...row, value: null, unmeasured },
+      { ...devRow, value: null, unmeasured },
+    ]
   }
   try {
-    return { ...row, value: await providerOnlyGzip(distEntry) }
+    const { bytes, devChunks } = await providerOnlyGzip(distEntry)
+    return [{ ...row, value: bytes }, gateRow(DEV_CHUNKS_LABEL, devChunks)]
   } catch (error) {
-    return { ...row, value: null, unmeasured: { kind: 'failed', reason: summarizeError(error) } }
+    const unmeasured = { kind: 'failed', reason: summarizeError(error) } as const
+    return [
+      { ...row, value: null, unmeasured },
+      { ...devRow, value: null, unmeasured },
+    ]
   }
 }
 
@@ -385,7 +421,7 @@ async function budgets(providerOnlyDist: string): Promise<Budget[]> {
     // 4674 -> 4710: any-tag `router=` + spread detection in Start `app-wiring`, and `sync`'s stale-seed warning (rows 62, 67).
     // 4710 -> 4726: literal-aware provider tags, sticky spread match, and the split stale-seed warning (rows 62, 67).
     { label: 'CLI non-test lines (src/cli/**)', value: cliNonTestLines(), ceiling: 4726 },
-    await providerOnlyRow(providerOnlyDist),
+    ...(await providerOnlyRows(providerOnlyDist)),
   ]
 }
 

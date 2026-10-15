@@ -10,7 +10,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-import { isOwnGraphId, runBudgets } from './check-budgets'
+import { devOnlyChunks, isOwnGraphId, runBudgets } from './check-budgets'
 
 describe('isOwnGraphId', () => {
   test.each([
@@ -75,5 +75,28 @@ describe('runBudgets with an unmeasurable provider-only row', () => {
     // ANSI stripped — the row is plain text.
     expect(report.row).not.toContain('\u001b[')
     expect((await runQuiet({ reportOnly: false, providerOnlyDist: broken })).code).toBe(1)
+  })
+})
+
+describe('devOnlyChunks', () => {
+  const chunk = (fileName: string, moduleIds: string[] = [], dynamicImports: string[] = []) => ({
+    fileName,
+    moduleIds,
+    imports: [],
+    dynamicImports,
+  })
+
+  test('flags the dock, the theme lab and devtools peers; spares the rest', () => {
+    const flagged = devOnlyChunks([
+      chunk('basalt-ui.js', ['/dist/provider/index.js', '/dist/tokens/derive.js']),
+      chunk('dev-dock-x.js', ['/dist/dev-dock.js']),
+      chunk('lab-x.js', ['C:\\pkg\\dist\\theme-lab\\boot.js']),
+      chunk('entry.js', ['/dist/a.js'], ['@tanstack/react-router-devtools']),
+    ])
+    expect(flagged).toEqual(['dev-dock-x.js', 'lab-x.js', 'entry.js'])
+  })
+
+  test('a clean production graph yields nothing', () => {
+    expect(devOnlyChunks([chunk('basalt-ui.js', ['/dist/provider/index.js'])])).toEqual([])
   })
 })
