@@ -1,3 +1,10 @@
+## [2.7.2](https://github.com/jkrumm/basalt-ui/compare/v2.7.1...v2.7.2) (2026-10-15)
+
+
+### Bug Fixes
+
+* llms.txt lists component props for every subpath, one legend swatch shape ([80b1e91](https://github.com/jkrumm/basalt-ui/commit/80b1e91d372fdc063290776807bb38964cea22ea))
+
 ## [2.7.1](https://github.com/jkrumm/basalt-ui/compare/v2.7.0...v2.7.1) (2026-10-15)
 
 
