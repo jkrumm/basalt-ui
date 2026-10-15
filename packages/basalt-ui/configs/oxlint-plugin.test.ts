@@ -1957,6 +1957,44 @@ describe('basalt/control-outside-home', () => {
     expect(rules).toContain('control-outside-home')
   })
 
+  describe('a hand-rolled row action in a column cell', () => {
+    const TABLE_IMPORT = `import { createColumnHelper } from 'basalt-ui/table'\n`
+    const cell = (body: string) =>
+      `${TABLE_IMPORT}${MANTINE_IMPORT}const col = createColumnHelper<Row>()\n` +
+      `export const columns = [col.display({ id: 'a', cell: ({ row }) => ${body} })]\n`
+
+    it('flags a Mantine Menu in a col.display cell', () => {
+      const { code, rules } = run(
+        `import { Menu } from '@mantine/core'\n${cell('<Menu><Menu.Target><span /></Menu.Target></Menu>').replace(MANTINE_IMPORT, '')}`,
+      )
+      expect(code).toBe(1)
+      expect(rules).toContain('control-outside-home')
+    })
+
+    it('flags a Mantine ActionIcon in a cell renderer', () => {
+      const { rules } = run(
+        `import { ActionIcon } from '@mantine/core'\n${cell('<ActionIcon aria-label="x" />').replace(MANTINE_IMPORT, '')}`,
+      )
+      expect(rules).toContain('control-outside-home')
+    })
+
+    it('does NOT flag a Menu outside a cell renderer', () => {
+      const { rules } = run(
+        `import { Menu } from '@mantine/core'\nexport const C = () => <Menu><Menu.Target><span /></Menu.Target></Menu>\n`,
+      )
+      expect(rules).not.toContain('control-outside-home')
+    })
+
+    it('honours a theme-allow waiver', () => {
+      const { rules } = run(
+        `import { ActionIcon } from '@mantine/core'\n${TABLE_IMPORT}const col = createColumnHelper<Row>()\n` +
+          `export const columns = [col.display({ id: 'a', cell: () => (\n` +
+          `  // theme-allow control-outside-home — a one-off\n  <ActionIcon aria-label="x" />\n) })]\n`,
+      )
+      expect(rules).not.toContain('control-outside-home')
+    })
+  })
+
   it('does NOT flag one under a member-expression non-home (Menu.Dropdown)', () => {
     const { rules } = run(
       `${MANTINE_IMPORT}export const C = () => <Menu.Dropdown><Select data={[]} /></Menu.Dropdown>\n`,

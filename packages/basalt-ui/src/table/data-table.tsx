@@ -32,6 +32,7 @@
  * />
  */
 import {
+  ActionIcon,
   Box,
   Checkbox,
   Group,
@@ -69,8 +70,8 @@ import { HIT_COARSE } from '../common/hit-floor'
 import { useMeasuredWidths } from '../common/use-measured-widths'
 import { assertRequiredProps, useValidateProps } from '../common/validate'
 import { FilterSet } from '../controls'
-import { ActionGroup, BarActionSlot } from '../controls/actions'
-import type { BarAction, SlotActions } from '../controls/actions'
+import { ActionGroup, BarActionSlot, OverflowMenu } from '../controls/actions'
+import type { BarAction, BarActionItem, SlotActions } from '../controls/actions'
 // `EnumFilter` is deliberately NOT on the `./controls` barrel (`docs/CONTROLS-SPEC.md` §3 —
 // reaching for it directly is hand-rolling a filter, `basalt/hand-rolled-filter`); a facet column
 // is the one place inside the framework itself that legitimately builds a `FieldHandle` over
@@ -78,6 +79,7 @@ import type { BarAction, SlotActions } from '../controls/actions'
 import { EnumFilter } from '../controls/enum-filter'
 import { MultiSelectFilter } from '../controls/multi-select-filter'
 import { CtlSlot } from '../theme'
+import { IconSlot } from '../theme/icon-slot'
 import { alpha, VX } from '../tokens'
 import type { EnumField, FieldHandle, MultiField } from '../state/fields'
 import { WidgetHeader } from '../dashboard'
@@ -355,6 +357,75 @@ function selectionColumn<T extends RowData>(): ColumnDef<BasaltTableFeatures, T,
         />
       </label>
     ),
+  }
+}
+
+// ── Row actions ───────────────────────────────────────────────────────────────
+
+/** One per-row action: `BarActionItem`'s vocabulary with the row handed to the handler. */
+type DataTableRowAction<T> = {
+  key: string
+  label: string
+  /** A lone action with an icon renders as that icon button; anything else folds into the menu. */
+  icon?: ReactNode
+  onClick: (row: T) => void
+  danger?: boolean
+  disabled?: (row: T) => boolean
+}
+
+/** The synthetic trailing column `rowActions` appends — namespaced like {@link SELECT_COLUMN_ID}. */
+const ACTIONS_COLUMN_ID = '__basalt_actions__'
+
+/** Wide enough for one 30px control plus the cell's horizontal padding. */
+const ACTIONS_COLUMN_SIZE = 56
+
+function RowActionCell<T>({
+  actions,
+  row,
+}: {
+  actions: readonly DataTableRowAction<T>[]
+  row: T
+}): ReactNode {
+  const items: BarActionItem[] = actions.map((action) => ({
+    key: action.key,
+    label: action.label,
+    ...(action.icon !== undefined && { icon: action.icon }),
+    ...(action.danger === true && { danger: true }),
+    disabled: action.disabled?.(row) === true,
+    onClick: () => action.onClick(row),
+  }))
+  const [only] = items
+  if (items.length === 1 && only?.icon !== undefined) {
+    return (
+      <ActionIcon
+        variant="subtle"
+        size="ctl"
+        aria-label={only.label}
+        disabled={only.disabled === true}
+        {...(only.danger === true && { color: 'red' })}
+        onClick={only.onClick}
+      >
+        <IconSlot>{only.icon}</IconSlot>
+      </ActionIcon>
+    )
+  }
+  return <OverflowMenu actions={items} trigger="kebab" label="Row actions" />
+}
+
+/**
+ * Header-less: the `<th>` carries a screen-reader-only name and nothing sorts across it. Built per
+ * render for the same reason as {@link selectionColumn} (`ColumnDef` is generic in `T`).
+ */
+function rowActionsColumn<T extends RowData>(
+  actions: readonly DataTableRowAction<T>[],
+): ColumnDef<BasaltTableFeatures, T, unknown> {
+  return {
+    id: ACTIONS_COLUMN_ID,
+    size: ACTIONS_COLUMN_SIZE,
+    enableSorting: false,
+    enableHiding: false,
+    header: () => <span className={classes.srOnly}>Actions</span>,
+    cell: ({ row }) => <RowActionCell actions={actions} row={row.original} />,
   }
 }
 
@@ -660,6 +731,21 @@ export type BasaltDataTableProps<T extends RowData> = BasaltProps &
      * ]}
      */
     bulkActions?: (rows: T[]) => BarAction[]
+
+    /**
+     * Per-row actions as typed data — the table renders them itself in a trailing, pinned,
+     * header-less column: an icon button for one action that carries an `icon`, an overflow menu
+     * for anything else. Clicking either never fires `onRowActivate`. A `renderCard`
+     * projection owns its own card, so the column renders in the table body only. Never put a `Menu` or
+     * `ActionIcon` in a `display` / `cell` renderer (`basalt/control-outside-home`).
+     *
+     * @example
+     * rowActions={[
+     *   { key: 'edit', label: 'Edit', onClick: (row) => edit(row) },
+     *   { key: 'delete', label: 'Delete', danger: true, onClick: (row) => remove(row) },
+     * ]}
+     */
+    rowActions?: DataTableRowAction<T>[]
 
     // ── Pagination ────────────────────────────────────────────────────────────────
 
@@ -1354,6 +1440,7 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
     enableRowSelection = false,
     getRowId,
     bulkActions,
+    rowActions,
     enablePagination = false,
     pageSizeOptions = DEFAULT_PAGE_SIZE_OPTIONS,
     manualPagination = false,
@@ -1443,9 +1530,14 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
   // The checkbox column is PREPENDED here rather than asked of the caller, so `columns` stays the
   // caller's own data columns and `meta.align` / `numeral` never have to reason about a synthetic
   // one. Everything counting columns downstream reads `columnCount`, below.
+  const hasRowActions = rowActions !== undefined && rowActions.length > 0
   const tableColumns = useMemo(
-    () => (enableRowSelection ? [selectionColumn<T>(), ...facetColumns] : facetColumns),
-    [facetColumns, enableRowSelection],
+    () => [
+      ...(enableRowSelection ? [selectionColumn<T>()] : []),
+      ...facetColumns,
+      ...(hasRowActions ? [rowActionsColumn<T>(rowActions)] : []),
+    ],
+    [facetColumns, enableRowSelection, hasRowActions, rowActions],
   )
 
   // Enforced before the table is built, so the degraded options below are the ones TanStack gets —
@@ -1519,6 +1611,17 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
   const hasFolded = foldedColumns.size > 0
   const foldRows = useRowDisclosure({ data, getRowId })
 
+  // The actions column always sticks to the end edge, behind any end-pinned columns the caller
+  // asked for — so it is pinned through TanStack's own state, which also keeps their offsets right.
+  const pinningActive = enablePinning || hasRowActions
+  const tablePinning = useMemo(
+    () =>
+      hasRowActions
+        ? { ...columnPinning, end: [...columnPinning.end, ACTIONS_COLUMN_ID] }
+        : columnPinning,
+    [columnPinning, hasRowActions],
+  )
+
   const table = useTable({
     features: basaltTableFeatures,
     data,
@@ -1527,7 +1630,7 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
       sorting: tableState.sorting,
       globalFilter,
       columnFilters: tableState.columnFilters,
-      columnPinning,
+      columnPinning: tablePinning,
       columnVisibility,
       ...(enablePagination && { pagination: tableState.pagination }),
       ...(enableRowSelection && { rowSelection: tableState.rowSelection }),
@@ -1556,7 +1659,7 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
       ...(manualPagination && pageCount !== undefined && { pageCount }),
     }),
     enableSorting: sortingEnabled,
-    enableColumnPinning: enablePinning,
+    enableColumnPinning: pinningActive,
   })
 
   const showSearch = enableGlobalFilter && filteringEnabled
@@ -1575,7 +1678,11 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
   // the prepended checkbox column, one more again for the fold-disclosure toggle once anything has
   // folded — a stale count left the empty state and the error row short of the header.
   const columnCount =
-    columns.length + (enableRowSelection ? 1 : 0) + (hasFolded ? 1 : 0) - foldedColumns.size
+    columns.length +
+    (enableRowSelection ? 1 : 0) +
+    (hasRowActions ? 1 : 0) +
+    (hasFolded ? 1 : 0) -
+    foldedColumns.size
 
   // `getSelectedRowModel()` is TanStack's own memo, so its `rows` array keeps its identity until
   // the selection or the row model actually moves — which is what makes both memos below hold.
@@ -1594,7 +1701,7 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
         : bulkActions(selectedRows),
     [bulkActions, selectedRows],
   )
-  const headerGroups = enablePinning ? getOrderedHeaderGroups(table) : table.getHeaderGroups()
+  const headerGroups = pinningActive ? getOrderedHeaderGroups(table) : table.getHeaderGroups()
   // The rows actually rendered, not `data` — a filter or a page index that matches nothing leaves
   // `data` non-empty while the body has nothing in it, and a blank body reads as a broken table.
   const rows = table.getRowModel().rows
@@ -1672,18 +1779,19 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
               const canSort = sortingEnabled && header.column.getCanSort()
               const sorted = header.column.getIsSorted()
               const toggleSorting = header.column.getToggleSortingHandler()
-              const pinnedStyle = enablePinning
+              const pinnedStyle = pinningActive
                 ? getPinnedCellStyle(table, header.column)
                 : undefined
               const align = resolveAlign(header.column)
               const isSelectColumn = header.column.id === SELECT_COLUMN_ID
+              const isActionsColumn = header.column.id === ACTIONS_COLUMN_ID
               return (
                 <Table.Th
                   key={header.id}
                   {...(isSelectColumn && { className: classes.selectCell })}
                   // The measured fold's own read (`useColumnFold`) — never present on the
                   // selection column, which is never a fold candidate.
-                  {...(!isSelectColumn && { [FOLD_ID_ATTR]: header.column.id })}
+                  {...(!isSelectColumn && !isActionsColumn && { [FOLD_ID_ATTR]: header.column.id })}
                   onClick={canSort ? toggleSorting : undefined}
                   onKeyDown={
                     canSort
@@ -1731,7 +1839,7 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
           </Table.Tr>
         ) : (
           rows.map((row) => {
-            const cells = enablePinning
+            const cells = pinningActive
               ? [
                   ...row.getStartVisibleCells(),
                   ...row.getCenterVisibleCells(),
@@ -1755,7 +1863,7 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
                     </Table.Td>
                   )}
                   {cells.map((cell) => {
-                    const pinnedStyle = enablePinning
+                    const pinnedStyle = pinningActive
                       ? getPinnedCellStyle(table, cell.column)
                       : undefined
                     const align = resolveAlign(cell.column)
@@ -1769,6 +1877,11 @@ export function BasaltDataTable<T extends RowData>(props: BasaltDataTableProps<T
                           ...(cell.row.getCanSelect() && {
                             onClick: (event: ReactMouseEvent) => event.stopPropagation(),
                           }),
+                        })}
+                        {...(cell.column.id === ACTIONS_COLUMN_ID && {
+                          // The menu portals out of the cell but React bubbles through the portal,
+                          // so this one stop also keeps a menu-item click off `onRowActivate`.
+                          onClick: (event: ReactMouseEvent) => event.stopPropagation(),
                         })}
                         style={{
                           ...(typeof cell.getValue() === 'number' &&

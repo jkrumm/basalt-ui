@@ -987,10 +987,22 @@ optional, subpath-required peers.
 | `NavItemMeta`, `NavGroupMeta`, `AnyNavItem`, `AnyNavGroup`, `AnyNavLink`, `FlatNavItem`, `NavConfig`, `NavGroupId`, `NavTabId`, `NavIndex`, `UseNavOptions`, `NavBinding`, `NavAnchor`, `NavAnchorProps`, `NavMobilePlacement` | deleted                                                                                                                                                                                                                                                                                                                                                                                                                                                    | no consumer names them; derive with `ComponentProps` / `Parameters` |
 | `useNav`, and `BasaltShell`'s `sections` / `mobileNav` props                                                                                                                                                                   | deleted: pass `nav={NAV}` (plus `badges`, `isActive`, `getScrollElement` — the old `useNav` options) to `BasaltShell`; it resolves the sidebar, the mobile bar and the breadcrumb itself. `mobileNav` tuning moves to `defineNav`'s `mobile`. argo `apps/dashboard/src/routes/__root.tsx`: replace `const nav = useNav(NAV, { badges })` + `{...nav}` with `nav={NAV} badges={…}` (migrates in W12; 1.x consumers stay on their pinned version until then) |
 
-## Unreleased
+## Unreleased — a per-row action seam on `BasaltDataTable`
 
-_Nothing yet. Author the next section under this heading as `## Unreleased — <title>`; the
-release renames it and opens a new one here._
+- `BasaltDataTable` takes `rowActions` (argo friction row 48): typed data in `BarActionItem`'s
+  vocabulary — `{ key, label, icon?, onClick(row), danger?, disabled?(row) }`. The table appends a
+  trailing, end-pinned, header-less column (sr-only "Actions") and renders an icon button for one
+  action with an `icon`, an overflow menu (`Row actions`) otherwise. A click never reaches
+  `onRowActivate`. The column renders in the table body only; a `renderCard` card owns its own.
+  No export is added (the prop is typed through `BasaltDataTableProps`).
+- `basalt/control-outside-home` now also flags a Mantine `Menu`/`ActionIcon` inside a column
+  `cell`/`display` renderer, and the `basalt-controls` Homes rule names `rowActions`. Existing
+  hand-rolled action cells will start to report: move them to `rowActions`, or waive with
+  `theme-allow control-outside-home`.
+- On notice (adopt-or-delete): named consumers are argo's `strength-tracker/components/workouts-table.tsx`
+  (Edit + Delete) and `body-composition/components/skinfold-history-table.tsx` (Delete); neither
+  has migrated yet. They also pass `loading` on the delete icon, which `rowActions` does not model —
+  a gap to settle when argo adopts it.
 
 ## 2.6.1 — per-bar legend shades
 
