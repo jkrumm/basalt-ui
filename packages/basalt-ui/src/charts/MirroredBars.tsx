@@ -26,6 +26,7 @@ import { barMark, emphasis } from './marks'
 import { PanelRung, chartHeightOf, paneX, paneY, rowsOf } from './panel'
 import type { PaneBuilder, PanelInput, PanelPlan } from './panel'
 import { xScaleFor } from './scales'
+import { foldBands } from './band-fold'
 import { rowX } from './types'
 import type { CartesianChartProps, ChartSeries, ChartX, PlotRow } from './types'
 
@@ -95,16 +96,6 @@ const BAND_FILL = 0.8
 const clamp01 = (v: number | undefined): number =>
   v === undefined || !Number.isFinite(v) ? 0 : Math.min(Math.max(v, 0), 1)
 
-/** At most `cap` slots: adjacent data merged in equal runs. */
-function fold<T>(data: readonly T[], cap: number, merge: (group: T[]) => T): T[] {
-  if (cap <= 0) return []
-  if (data.length <= cap) return [...data]
-  const size = Math.ceil(data.length / cap)
-  const out: T[] = []
-  for (let i = 0; i < data.length; i += size) out.push(merge(data.slice(i, i + size)))
-  return out
-}
-
 /** One pane's upper bound; `|| 1` guards a window with no traffic (a zero-width domain is NaN). */
 function paneMax<T>(pane: MirroredBarPane, s: ChartSeries<T>, data: readonly T[], on: boolean) {
   if (pane.max !== undefined && pane.max !== 'auto') return pane.max || 1
@@ -149,7 +140,7 @@ export function MirroredBars<T, X extends ChartX = ChartX>(
       const upSeries = assertPaneKey('up', up.key, bars)
       const downSeries = assertPaneKey('down', down.key, bars)
       const drawn = foldConfig
-        ? fold(
+        ? foldBands(
             data,
             Math.floor(width / (foldConfig.minBandPx ?? DEFAULT_MIN_BAND_PX)),
             foldConfig.merge,

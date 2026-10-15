@@ -1043,6 +1043,8 @@ The `basalt-ui/router-tanstack` subpath is **removed** in 2.x, not moved: an imp
 
 ## Unreleased — llms.txt glossary, VX tree and constant values
 
+`basalt-ui/charts` now exports `foldBands(data, cap, merge)`, the fold `BandStrip` and `MirroredBars` run, as 2.0's table promised; `BandTooltipConfig` and `BandTooltipRowContext` never shipped (`ChartTooltipConfig` replaced them). The `absentState` colour must differ from every measured state's colour, not only by alpha.
+
 `llms.txt` gains a `## Types` glossary of the exported literal unions its signatures name (`CalloutKind`, …), lists the full `VX` token tree, and prints the values of literal-only constant maps (`CONTAINER_KEYS`). Docs output only; nothing to migrate.
 
 `basalt-ui sync` (and `--check`) now works from any workspace package that depends on basalt-ui — it syncs the install root above and says so — instead of refusing without `BASALT_CWD`; nothing to change.
@@ -1107,8 +1109,10 @@ Ledger rows 61-67 (`docs/waves/argo-friction.md`), found while the rest of the f
   `BasaltOverlays spotlight={false}`).
 - **`BandStrip` absent share (charts).** 1.x `BandSpan.absentFraction` returns, with
   `absentState="<states key>"` on the strip: a band's unmeasured share is painted flat in that
-  state's color (color it `VX.neutral`) from the band's right edge, legended, with its own tooltip
-  row. No hatch: `hatchFill`, `HatchPattern` and `hatchSizeFor` stay removed.
+  state's color from the band's right edge, legended, with its own tooltip
+  row. The absent colour must differ from every measured state's colour, not only by alpha: a
+  "clean" state that is also neutral would otherwise be told apart from "not measured" by opacity
+  alone. No hatch: `hatchFill`, `HatchPattern` and `hatchSizeFor` stay removed.
 
 ## 2.7.3
 
@@ -4371,12 +4375,12 @@ unconditionally and builds x as `scalePoint` — positions, no widths. `BandStri
 to axis; `MirroredBars` has two, and needs band widths. Both compose `ChartFrame` directly and
 declare themselves with `theme-allow-file hand-rolled-plot`, alongside `DualPanel`.
 
-| New on `basalt-ui/charts`                                                | Note                                                                                                                                                                                                                                                      |
-| ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `BandStrip` (+ `BandStripProps`, `BandStripSeries`, `BandSpan`)          | 1-D categorical bands. `getBand(d) => { state, fill?, absentFraction?, marker? }`; `series` IS the state set, so a strip cannot name a state it does not draw. `cursorResolution` defaults `'leading'`                                                    |
-| `MirroredBars` (+ `MirroredBarsProps`, `MirroredBarPane`)                | two bar panes, one x scale, one baseline, independent domains. `up`/`down` take `{ key, max?, autoMaxFloor?, ticks?, format }`; plus `upFraction` (the up pane's share of the band height, where the baseline sits), `getAbsentFraction`, `getBarOpacity` |
-| `foldBands` (+ `BandFold`, `BandTooltipConfig`, `BandTooltipRowContext`) | the width-driven fold both kinds run, exported so a consumer can test their `merge` against the real grouping                                                                                                                                             |
-| `HatchPattern`, `hatchFill`, `hatchSizeFor`                              | the absence fill                                                                                                                                                                                                                                          |
+| New on `basalt-ui/charts`                                       | Note                                                                                                                                                                                                                                                      |
+| --------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `BandStrip` (+ `BandStripProps`, `BandStripSeries`, `BandSpan`) | 1-D categorical bands. `getBand(d) => { state, fill?, absentFraction?, marker? }`; `series` IS the state set, so a strip cannot name a state it does not draw. `cursorResolution` defaults `'leading'`                                                    |
+| `MirroredBars` (+ `MirroredBarsProps`, `MirroredBarPane`)       | two bar panes, one x scale, one baseline, independent domains. `up`/`down` take `{ key, max?, autoMaxFloor?, ticks?, format }`; plus `upFraction` (the up pane's share of the band height, where the baseline sits), `getAbsentFraction`, `getBarOpacity` |
+| `foldBands(data, cap, merge)` (+ `BandFold`)                    | the width-driven fold both kinds run (`cap` = `floor(width / minBandPx)`), exported so a consumer can test their `merge` against the real grouping                                                                                                        |
+| `HatchPattern`, `hatchFill`, `hatchSizeFor`                     | the absence fill                                                                                                                                                                                                                                          |
 
 The shared choreography lives in an internal `useBandPlot` — **not exported**, deliberately: it is
 the kinds' contract with each other, not a public seam.

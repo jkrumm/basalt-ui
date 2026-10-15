@@ -17,6 +17,7 @@ export {
   type BandSpan,
   type BandFold,
 } from './BandStrip'
+export { foldBands } from './band-fold'
 export { Donut, type DonutProps, type DonutDatum } from './Donut'
 export { Heatmap, type HeatmapProps } from './Heatmap'
 export { DualPanel, type DualPanelProps, type DualPanelLine, type DualPanelBar } from './DualPanel'
