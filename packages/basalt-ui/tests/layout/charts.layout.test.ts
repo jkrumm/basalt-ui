@@ -479,4 +479,58 @@ layout('Charts — 2.0 layout', () => {
       expect(rail).toBeCloseTo(RAIL_PX, 1)
     })
   }
+
+  // ── axis polish (ledger rows 108–110) ──────────────────────────────────────────────────────
+  type Rect = { left: number; right: number; top: number; bottom: number }
+  const rectsOf = (p: LayoutPage, selector: string): Promise<Rect[]> =>
+    p.raw.evaluate(
+      ([sel, q]) =>
+        [...(document.querySelector(sel)?.querySelectorAll(q) ?? [])].map((el) => {
+          const r = el.getBoundingClientRect()
+          return { left: r.left, right: r.right, top: r.top, bottom: r.bottom }
+        }),
+      [SVG, selector] as const,
+    )
+  const overlap = (a: Rect, b: Rect): boolean =>
+    a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom
+
+  // Row 108: an end label sits right of the last point; it must never be cut by the svg edge.
+  test('wide end labels stay inside the chart when the last point sits on the plot edge', async () => {
+    const p = await openFixture(chartFixture({ kind: 'lines', width: 960 }), DESKTOP)
+    await p.settle()
+    const svg = await p.box('chart svg', SVG)
+    const labels = await rectsOf(p, '[data-ts-key$="-end-label"] text, [data-ts-key$="-end-label"]')
+    expect(labels.length).toBeGreaterThan(0)
+    for (const l of labels) expect(l.right).toBeLessThanOrEqual(svg.box.right + 0.5)
+  })
+
+  // Row 109: a bucketed (band) Date axis labels even, readable intervals.
+  test('a 60-bucket strip labels evenly spaced x ticks with room between them', async () => {
+    const p = await openFixture(chartFixture({ kind: 'strip', width: 640 }), DESKTOP)
+    await p.settle()
+    const ticks = (await rectsOf(p, '[data-ts-key^="x-tick-label:"]')).toSorted(
+      (a, b) => a.left - b.left,
+    )
+    expect(ticks.length).toBeGreaterThan(1)
+    const steps = ticks.slice(1).map((t, i) => t.left - (ticks[i] as Rect).left)
+    for (const s of steps) expect(Math.abs(s - (steps[0] as number))).toBeLessThanOrEqual(1.5)
+    ticks.slice(1).forEach((t, i) => expect(t.left - (ticks[i] as Rect).right).toBeGreaterThan(8))
+  })
+
+  // Row 110: the first x tick label must not sit on a y tick label at the plot origin.
+  for (const [name, spec, vp] of [
+    ['compact, law height', { kind: 'lines', width: 360, origin: true }, DESKTOP],
+    ['compact, inside labels', { kind: 'lines', width: 360, height: 160, origin: true }, DESKTOP],
+    ['390 px phone', { kind: 'lines', origin: true }, PHONE],
+    ['390 px phone, short', { kind: 'lines', height: 160, origin: true }, PHONE],
+  ] as const satisfies readonly (readonly [string, ChartsSpec, Viewport])[]) {
+    test(`no x tick label overlaps a y tick label (${name})`, async () => {
+      const p = await openFixture(chartFixture(spec), vp)
+      await p.settle()
+      const xs = await rectsOf(p, '[data-ts-key^="x-tick-label:"]')
+      const ys = await rectsOf(p, '[data-ts-key^="y-tick-label:"]')
+      expect(xs.length).toBeGreaterThan(0)
+      for (const x of xs) for (const y of ys) expect(overlap(x, y)).toBe(false)
+    })
+  }
 })

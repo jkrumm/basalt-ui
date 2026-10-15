@@ -67,4 +67,44 @@ describe('series gaps', () => {
     expect(host.querySelectorAll('g[data-ts-key="squat-marker-0"] circle').length).toBe(4)
     expect(marked()).toBe(marked())
   })
+
+  describe('a lone point (ledger row 107)', () => {
+    const loneRows = (values: (number | null)[]): Row[] =>
+      values.map((v, i) => ({ t: new Date(Date.UTC(2026, 8, i + 1)), squat: v, bench: null }))
+    const render = (rows: Row[], extra: Partial<ChartSeries<Row>> = {}): Document => {
+      const doc = document.implementation.createHTMLDocument('')
+      doc.body.innerHTML = renderToString(
+        <Lines
+          ariaLabel="Lone"
+          data={rows}
+          x={(d) => d.t}
+          series={[{ ...lift('squat'), ...extra }]}
+        />,
+      )
+      return doc
+    }
+    const dots = (doc: Document): number =>
+      doc.querySelectorAll('g[data-ts-key^="squat-lone"] circle').length
+
+    test('a one-point series draws its dot', () => {
+      expect(dots(render(loneRows([100])))).toBe(1)
+    })
+
+    test('a single finite value between nulls draws its dot', () => {
+      expect(dots(render(loneRows([null, 100, null])))).toBe(1)
+    })
+
+    test('every isolated point between gaps draws a dot; a connected run draws none', () => {
+      expect(dots(render(loneRows([100, null, 90, null, 80, 81, 82])))).toBe(2)
+    })
+
+    test("'connect' bridges the gaps, so only a series with one finite point is lone", () => {
+      expect(dots(render(loneRows([100, null, 90]), { gaps: 'connect' }))).toBe(0)
+      expect(dots(render(loneRows([null, 100, null]), { gaps: 'connect' }))).toBe(1)
+    })
+
+    test('a point the consumer already marks is not doubled', () => {
+      expect(dots(render(loneRows([null, 100, null]), { getMarker: () => ({}) }))).toBe(0)
+    })
+  })
 })

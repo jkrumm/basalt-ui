@@ -7,7 +7,15 @@ import { rect } from '@tanstack/charts/rect'
 import { ruleY } from '@tanstack/charts/rule'
 import { scaleLinear } from '@tanstack/charts/scales/linear'
 import { scaleUtc } from 'd3-scale'
-import { Bars, CartesianChart, ChartCard, DualPanel, Lines, Sparkline } from '../../../src/charts'
+import {
+  BandStrip,
+  Bars,
+  CartesianChart,
+  ChartCard,
+  DualPanel,
+  Lines,
+  Sparkline,
+} from '../../../src/charts'
 import { PanelRung, chartHeightOf, paneX, paneY } from '../../../src/charts/panel'
 import type { PaneBuilder, PaneContext, PanelInput, PanelPlan } from '../../../src/charts/panel'
 import { plotContext } from '../../../src/charts/plot-context'
@@ -661,6 +669,20 @@ function buildBars(seriesCount: number): BarsBar<ChartPoint>[] {
 
 const chartX = (d: ChartPoint): Date => d.at
 
+type StripSlot = { at: Date; state: 'up' | 'down' }
+const STRIP_STATES = [
+  { key: 'up', label: 'Up', color: CHART_COLORS[0] as string },
+  { key: 'down', label: 'Down', color: CHART_COLORS[1] as string },
+]
+
+/** One-minute buckets, the first at 18:13 UTC — the odd start that exposed the uneven ticks. */
+function buildStripData(buckets: number): StripSlot[] {
+  return Array.from({ length: buckets }, (_, i) => ({
+    at: new Date(Date.UTC(2024, 0, 1, 18, 13 + i)),
+    state: i % 17 === 0 ? 'down' : 'up',
+  }))
+}
+
 /** The rail idiom: `px` along the top of a `[0, RAIL_DOMAIN_MAX]` plot, sized from the plot area. */
 function railMark(data: readonly ChartPoint[], plotHeight: number): ReturnType<typeof rect> {
   return rect([0], {
@@ -764,6 +786,7 @@ function PanelRailChart({
 function ChartsFixture({ spec }: { spec: ChartsSpec }): ReactElement {
   const seriesCount = spec.legendEntries ?? 3
   const data = useMemo(() => buildChartData(seriesCount), [seriesCount])
+  const stripData = useMemo(() => buildStripData(spec.stripBuckets ?? 60), [spec.stripBuckets])
   const height = spec.height === undefined ? {} : { height: spec.height }
   const domain = useMemo(() => {
     const first = data[0]
@@ -779,6 +802,11 @@ function ChartsFixture({ spec }: { spec: ChartsSpec }): ReactElement {
         : data,
     [data, spec.xDomain],
   )
+  const originAxes = useMemo(() => {
+    const first = data[0]
+    const mid = data[Math.floor(data.length / 2)]
+    return first && mid ? { y: { domain: [0, 50] as const }, xTicks: [first.at, mid.at] } : {}
+  }, [data])
   const chart =
     spec.kind === 'dual' ? (
       <DualPanel
@@ -815,6 +843,15 @@ function ChartsFixture({ spec }: { spec: ChartsSpec }): ReactElement {
         height={spec.height ?? 40}
         emphasizeLast
       />
+    ) : spec.kind === 'strip' ? (
+      <BandStrip
+        ariaLabel="Fixture strip"
+        data={stripData}
+        x={(d) => d.at}
+        states={STRIP_STATES}
+        getBand={(d) => ({ state: d.state })}
+        {...height}
+      />
     ) : spec.kind === 'panel-rail' ? (
       <PanelRailChart data={data} height={spec.height} />
     ) : spec.kind === 'bars' ? (
@@ -831,6 +868,7 @@ function ChartsFixture({ spec }: { spec: ChartsSpec }): ReactElement {
         data={data}
         x={chartX}
         series={buildLineSeries(seriesCount)}
+        {...(spec.origin && originAxes)}
         {...domain}
         {...height}
       />
