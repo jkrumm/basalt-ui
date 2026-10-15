@@ -15,21 +15,15 @@ import {
   openFixture,
   serveDocument,
 } from './harness'
-import { basaltAppPlugin } from '../../src/vite'
+import { HTML_NO_VIEWPORT, getPlugin, resolveConfig, transformHtml } from '../support/vite-app'
 
 const ready = await initLayoutSuite()
 const layout = ready ? describe : describe.skip
 
-type EmittedTag = { tag: string; children?: string }
-
 function bootHead(colorScheme: 'dark' | 'light' | 'auto'): string {
-  const plugin = basaltAppPlugin({ name: 'Probe', colorScheme })[0] as unknown as {
-    configResolved: (config: { base: string }) => void
-    transformIndexHtml: { handler: (html: string) => { tags: EmittedTag[] } }
-  }
-  plugin.configResolved({ base: '/' })
-  const { tags } = plugin.transformIndexHtml.handler('<html><head></head><body></body></html>')
-  return tags
+  const plugin = getPlugin({ name: 'Probe', colorScheme })
+  resolveConfig(plugin, '/')
+  return transformHtml(plugin, HTML_NO_VIEWPORT)
     .filter((tag) => tag.tag === 'style' || tag.tag === 'script')
     .map((tag) => `<${tag.tag}>${tag.children ?? ''}</${tag.tag}>`)
     .join('')
@@ -106,9 +100,14 @@ layout('boot script — stored scheme drives the pre-boot paint', () => {
   })
 
   test('the boot rule expires once data-mantine-color-scheme is written', async () => {
-    const painted = await coldLoad('dark', 'light', 'dark', true)
-    // The boot rule no longer applies: neither the stored-light surface nor its color-scheme.
-    expect(painted.background).not.toBe(LIGHT_BG)
-    expect(painted.scheme).not.toBe('light')
+    // No Mantine stylesheet in the probe, so with the boot rule gone <html> is back to UA defaults.
+    const expired = { background: 'rgba(0, 0, 0, 0)', scheme: 'normal', boot: 'light' }
+    expect(await coldLoad('dark', 'light', 'dark', true)).toEqual(expired)
+    expect(await coldLoad('light', 'dark', 'light', true)).toEqual({ ...expired, boot: 'dark' })
+  })
+
+  test('stored auto + OS dark expires the same way', async () => {
+    const painted = await coldLoad('light', 'auto', 'dark', true)
+    expect(painted).toEqual({ background: 'rgba(0, 0, 0, 0)', scheme: 'normal', boot: 'dark' })
   })
 })

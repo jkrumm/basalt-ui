@@ -1,41 +1,19 @@
 import { describe, expect, test } from 'bun:test'
-import type { HtmlTagDescriptor, Plugin, ResolvedConfig } from 'vite'
+import type { HtmlTagDescriptor, Plugin } from 'vite'
 import { basaltAppPlugin } from './vite'
+import {
+  SCOPE,
+  THEME_COLOR,
+  getPlugin,
+  resolveConfig,
+  transform,
+  transformHtml,
+  HTML_NO_VIEWPORT,
+  LIGHT_VARIANT,
+  DARK_VARIANT,
+} from '../tests/support/vite-app'
 
 type BasaltAppOptions = Parameters<typeof basaltAppPlugin>[0]
-
-/** Fixed, palette-independent theme colors so these tests never couple to `tokens/palette.ts`. */
-const THEME_COLOR = { light: '#ffffff', dark: '#111111' } as const
-const SCOPE = 'html:not([data-mantine-color-scheme])'
-const LIGHT_VARIANT = `${SCOPE}[data-basalt-boot=light]{background-color:#ffffff;color-scheme:light}`
-const DARK_VARIANT = `${SCOPE}[data-basalt-boot=dark]{background-color:#111111;color-scheme:dark}`
-
-function getPlugin(options: BasaltAppOptions): Plugin {
-  // No `serviceWorker` option -> basaltAppPlugin returns a single, non-promise Plugin.
-  return basaltAppPlugin(options)[0] as Plugin
-}
-
-/** Invokes the plugin's `configResolved` hook with a minimal fake `ResolvedConfig`. */
-function resolveConfig(plugin: Plugin, base: string): void {
-  const configResolved = plugin.configResolved as unknown as (config: ResolvedConfig) => void
-  configResolved({ base } as unknown as ResolvedConfig)
-}
-
-type HtmlTransformResult = { html: string; tags: HtmlTagDescriptor[] }
-
-/** Invokes the plugin's `transformIndexHtml` hook (object form, `order: 'pre'`). */
-function transform(plugin: Plugin, html: string): HtmlTransformResult {
-  const hook = plugin.transformIndexHtml as unknown as {
-    order: 'pre'
-    handler: (html: string) => HtmlTransformResult
-  }
-  return hook.handler(html)
-}
-
-/** Invokes the plugin's `transformIndexHtml` hook and returns the emitted tags. */
-function transformHtml(plugin: Plugin, html: string): HtmlTagDescriptor[] {
-  return transform(plugin, html).tags
-}
 
 type FakeReq = { url: string }
 type FakeRes = { setHeader: (name: string, value: string) => void; end: (body: string) => void }
@@ -65,7 +43,25 @@ function runMiddleware(middleware: Middleware, url: string): string | undefined 
   return body
 }
 
-const HTML_NO_VIEWPORT = '<html><head></head><body></body></html>'
+const iconLinks = (icons: NonNullable<BasaltAppOptions['icons']>): HtmlTagDescriptor[] => {
+  const plugin = getPlugin({ name: 'rb', themeColor: THEME_COLOR, icons })
+  resolveConfig(plugin, '/')
+  return transformHtml(plugin, HTML_NO_VIEWPORT).filter(
+    (tag) => tag.tag === 'link' && String(tag.attrs?.['rel']).includes('icon'),
+  )
+}
+
+const readManifest = (options: Partial<BasaltAppOptions>): Record<string, unknown> => {
+  const plugin = getPlugin({ name: 'Test App', themeColor: THEME_COLOR, ...options })
+  const body = runMiddleware(getDevMiddleware(plugin, '/'), '/site.webmanifest')
+  return JSON.parse(body ?? '{}') as Record<string, unknown>
+}
+
+const tagsOf = (options: Partial<BasaltAppOptions>): HtmlTagDescriptor[] => {
+  const plugin = getPlugin({ name: 'Test App', themeColor: THEME_COLOR, ...options })
+  resolveConfig(plugin, '/')
+  return transformHtml(plugin, HTML_NO_VIEWPORT)
+}
 
 describe('basaltAppPlugin — base handling', () => {
   test('default base "/" regression: exact head tag output', () => {
@@ -269,14 +265,6 @@ describe('basaltAppPlugin — base handling', () => {
   })
 
   test('a named icon reaches the head only when it asks for a rel', () => {
-    const iconLinks = (icons: NonNullable<BasaltAppOptions['icons']>): HtmlTagDescriptor[] => {
-      const plugin = getPlugin({ name: 'rb', themeColor: THEME_COLOR, icons })
-      resolveConfig(plugin, '/')
-      return transformHtml(plugin, HTML_NO_VIEWPORT).filter(
-        (tag) => tag.tag === 'link' && String(tag.attrs?.['rel']).includes('icon'),
-      )
-    }
-
     // rb's index.html already links favicon.svg — the manifest gets fixed, the head is left alone.
     expect(iconLinks(RB_ICONS)).toHaveLength(0)
 
@@ -324,25 +312,14 @@ describe('basaltAppPlugin — base handling', () => {
 
 describe('basaltAppPlugin — the boot rule and the manifest', () => {
   test('the manifest theme_color follows the boot scheme', () => {
-    const read = (options: Partial<BasaltAppOptions>): Record<string, unknown> => {
-      const plugin = getPlugin({ name: 'Test App', themeColor: THEME_COLOR, ...options })
-      const body = runMiddleware(getDevMiddleware(plugin, '/'), '/site.webmanifest')
-      return JSON.parse(body ?? '{}') as Record<string, unknown>
-    }
-    expect(read({})['theme_color']).toBe('#111111')
-    expect(read({ colorScheme: 'auto' })['theme_color']).toBe('#111111')
-    expect(read({ colorScheme: 'light' })['theme_color']).toBe('#ffffff')
-    expect(read({ colorScheme: 'light' })['background_color']).toBe('#ffffff')
+    expect(readManifest({})['theme_color']).toBe('#111111')
+    expect(readManifest({ colorScheme: 'auto' })['theme_color']).toBe('#111111')
+    expect(readManifest({ colorScheme: 'light' })['theme_color']).toBe('#ffffff')
+    expect(readManifest({ colorScheme: 'light' })['background_color']).toBe('#ffffff')
   })
 })
 
 describe('basaltAppPlugin — boot tags', () => {
-  const tagsOf = (options: Partial<BasaltAppOptions>): HtmlTagDescriptor[] => {
-    const plugin = getPlugin({ name: 'Test App', themeColor: THEME_COLOR, ...options })
-    resolveConfig(plugin, '/')
-    return transformHtml(plugin, HTML_NO_VIEWPORT)
-  }
-
   test('the boot script lands after the charset meta and immediately after the boot style', () => {
     const tags = tagsOf({})
     const style = tags.findIndex((tag) => tag.tag === 'style')

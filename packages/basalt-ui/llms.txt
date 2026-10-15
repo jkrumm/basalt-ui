@@ -468,7 +468,7 @@ Signature: basaltAppPlugin(options: BasaltAppOptions): PluginOption[]
   shortName?: string
   description?: string
   themeColor?: "auto" | { light: string; dark: string; }
-  colorScheme?: false | "light" | "dark" | "auto"
+  colorScheme?: BootColorScheme
   bootScript?: boolean
   backgroundColor?: string
   display?: "standalone" | "minimal-ui" | "fullscreen" | "browser"
