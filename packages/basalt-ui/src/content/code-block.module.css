@@ -77,7 +77,10 @@
   );
 }
 
-.body :global(pre.shiki) {
+/* `.container .body` outranks Prose's `.root.article pre` block margin (0,2,1): without it the
+ * margin-vs-margin tie is decided by stylesheet order, so the inner pre kept 18px in source order
+ * and lost it in the built `styles.css` — the outer `.container` margin alone owns the rhythm. */
+.container .body :global(pre.shiki) {
   margin: 0;
   padding: 0;
   background: transparent !important;
@@ -91,6 +94,18 @@
 
 html[data-mantine-color-scheme='light'] .body :global(.shiki span) {
   color: var(--shiki-light);
+}
+
+/* The floating button sits over the body's top-right corner, so the body reserves its box: the
+ * first line starts below offset + button height instead of running underneath it on touch (always
+ * visible) or on hover. `--code-block-copy-size` mirrors ActionIcon size="sm" (Mantine scopes its
+ * own `--ai-size-sm` to the button, out of the body's reach); the layout suite pins the two. */
+.container[data-floating-copy] {
+  --code-block-copy-size: calc(1.375rem * var(--mantine-scale));
+}
+
+.container[data-floating-copy] .body {
+  padding-top: calc(var(--vx-space-code-block-floating-copy-offset) + var(--code-block-copy-size));
 }
 
 /* Floating copy button — shown only when there is no header (no title), revealed on hover/focus. */
