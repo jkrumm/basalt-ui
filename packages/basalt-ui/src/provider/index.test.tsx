@@ -18,11 +18,15 @@
  * needed live DOM behavior (event handling, layout, effects) rather than the static markup string.
  */
 import { act, render, screen } from '@testing-library/react'
+import { RouterProvider, useRouter } from '@tanstack/react-router'
+import { spotlight } from '@mantine/spotlight'
 import { describe, expect, spyOn, test } from 'bun:test'
+import { useEffect } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { BasaltProvider, RootBoundary, composeInjectedCss } from './index'
 import { setColorScheme } from '../commands/shell-bridge'
 import { testRouter } from './test-router'
+import type { BasaltRouter } from './create-router'
 import type { BasaltEvent } from '../telemetry'
 import { createBasaltTheme } from '../theme'
 import { buildDensityCss, buildFontsCss, buildPaletteCss, buildRadiusCss } from '../tokens/core'
@@ -116,9 +120,7 @@ describe('BasaltProvider mount', () => {
   })
 
   test('a router without context.queryClient is refused with a message naming the fix', () => {
-    const bare = { options: { context: {} } } as unknown as Parameters<
-      typeof BasaltProvider
-    >[0]['router']
+    const bare = { options: { context: {} } } as unknown as BasaltRouter
     const quiet = spyOn(console, 'error').mockImplementation(() => {})
     try {
       expect(() => render(<BasaltProvider router={bare} />)).toThrow(/createBasaltRouter/)
@@ -282,5 +284,68 @@ describe("BasaltProvider registers commands/shell-bridge.ts's setColorScheme han
     expect(document.documentElement.getAttribute('data-mantine-color-scheme')).toBe('dark')
     act(() => setColorScheme('light'))
     expect(document.documentElement.getAttribute('data-mantine-color-scheme')).toBe('light')
+  })
+})
+
+describe('BasaltProvider embedded in a router it does not own (children mode)', () => {
+  test('renders children inside the existing RouterProvider and mounts no second router', async () => {
+    const router = testRouter('host')
+    const seen: unknown[] = []
+    function Probe() {
+      const ambient = useRouter()
+      useEffect(() => void seen.push(ambient), [ambient])
+      return <div>embedded</div>
+    }
+    // The host (TanStack Start) mounts the router; the app's root component wraps its subtree.
+    const Host = router.routesById['__root__'].options
+    Host.component = () => (
+      <BasaltProvider>
+        <Probe />
+      </BasaltProvider>
+    )
+    render(<RouterProvider router={router} />)
+    expect(await screen.findByText('embedded')).toBeDefined()
+    // Mount mode would have rendered the route's own text a second time; the host's did not.
+    expect(screen.queryByText('host')).toBeNull()
+    expect(seen.at(-1)).toBe(router)
+  })
+
+  test('children mode outside any router is refused with a message naming both modes', () => {
+    const quiet = spyOn(console, 'error').mockImplementation(() => {})
+    try {
+      expect(() =>
+        render(
+          <BasaltProvider>
+            <div />
+          </BasaltProvider>,
+        ),
+      ).toThrow(/createBasaltRouter/)
+    } finally {
+      quiet.mockRestore()
+    }
+  })
+})
+
+describe('BasaltProvider spotlight opt-out (ledger row 67)', () => {
+  test('mounts the Spotlight by default and not at all with spotlight={false}', async () => {
+    const on = render(<BasaltProvider router={testRouter('a')} />)
+    await screen.findByText('a')
+    // Opening the store renders the search input only if a `<Spotlight>` is mounted to read it.
+    const open = async () => {
+      await act(async () => {
+        spotlight.open()
+      })
+      const input = document.querySelector('.mantine-Spotlight-search')
+      await act(async () => {
+        spotlight.close()
+      })
+      return input
+    }
+    expect(await open()).not.toBeNull()
+    on.unmount()
+
+    render(<BasaltProvider router={testRouter('b')} spotlight={false} />)
+    await screen.findByText('b')
+    expect(await open()).toBeNull()
   })
 })

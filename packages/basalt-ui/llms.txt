@@ -21,16 +21,6 @@ Description: Wiring (`BasaltProvider`, `createBasaltTheme`, `createBasaltRouter`
 Layer: mantine-coupled
 Rule: basalt-mantine
 Signature: BasaltProvider(props: BasaltProviderProps): JSX.Element
-  router: BasaltRouter
-  theme?: PartialObjectDeep<MantineTheme, { recurseIntoArrays: false;…
-  telemetry?: Telemetry
-  fallback?: ReactNode | ((error: unknown) => ReactNode)
-  injectPalette?: boolean
-  paletteOptions?: BuildPaletteOpts
-  defaultColorScheme?: MantineColorScheme
-  nonce?: string
-  sizeClassHint?: "compact" | "medium" | "expanded"
-  navCommandLabel?: (item: FlatNavItem) => string
 Signature: BasaltShell(props: BasaltShellProps<G, T>): JSX.Element
   className?: string
   style?: CSSProperties
@@ -447,7 +437,7 @@ Signature: buildPaletteCss(opts: BuildPaletteOpts, data: { ACCENT: { readonly ac
   groups?: readonly SeriesGroup[]
   derived?: string[]
   scheme?: ColorSchemeSelector
-  defaultScheme?: "light" | "dark" | "none"
+  defaultScheme?: "none" | "dark" | "light"
   mediaFallback?: boolean
   only?: "core" | "all"
   legacyAliases?: boolean
@@ -465,7 +455,7 @@ Signature: basaltAppPlugin(options: BasaltAppOptions): PluginOption[]
   shortName?: string
   description?: string
   themeColor?: "auto" | { light: string; dark: string; }
-  colorScheme?: false | "light" | "dark" | "auto"
+  colorScheme?: false | "auto" | "dark" | "light"
   backgroundColor?: string
   display?: "standalone" | "minimal-ui" | "fullscreen" | "browser"
   startUrl?: string
