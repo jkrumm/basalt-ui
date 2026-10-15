@@ -118,6 +118,29 @@ function collectTypeExports(): Set<string> {
   return names
 }
 
+type ExportsManifest = Record<string, { import?: string } | string>
+
+/** `package.json` `exports`, keyed by subpath (`.`, `./charts`, …). */
+function readExportsManifest(): ExportsManifest {
+  const manifest = JSON.parse(readFileSync(join(pkgRoot, 'package.json'), 'utf8')) as {
+    exports: ExportsManifest
+  }
+  return manifest.exports
+}
+
+/** `.` → `basalt-ui`, `./charts` → `basalt-ui/charts`. */
+function subpathSpec(subpath: string): string {
+  return subpath === '.' ? 'basalt-ui' : `basalt-ui${subpath.slice(1)}`
+}
+
+/** The source entry (`src/**`) behind one `exports` target's `import` path; undefined for assets. */
+export function resolveSubpathEntry(target: ExportsManifest[string]): string | undefined {
+  const js = typeof target === 'object' ? target.import : undefined
+  if (js === undefined) return undefined
+  const base = join(pkgRoot, 'src', js.replace(/^\.\/dist\//, '').replace(/\.js$/, ''))
+  return [`${base}.ts`, `${base}.tsx`, join(base, 'index.ts')].find(existsSync)
+}
+
 /**
  * The PUBLISHED surface per subpath (`basalt-ui`, `basalt-ui/charts`, …): value exports
  * (`export-surface.json`) plus the type names exported by the source entry of that `package.json`
@@ -128,19 +151,12 @@ export function collectPublishedBySubpath(): Map<string, Set<string>> {
   const values = JSON.parse(
     readFileSync(join(pkgRoot, 'scripts/export-surface.json'), 'utf8'),
   ) as Record<string, string[]>
-  const manifest = JSON.parse(readFileSync(join(pkgRoot, 'package.json'), 'utf8')) as {
-    exports: Record<string, { import?: string } | string>
-  }
   const bySubpath = new Map<string, Set<string>>()
-  for (const [subpath, target] of Object.entries(manifest.exports)) {
+  for (const [subpath, target] of Object.entries(readExportsManifest())) {
     const names = new Set(values[subpath] ?? [])
-    const js = typeof target === 'object' ? target.import : undefined
-    if (js !== undefined) {
-      const base = join(pkgRoot, 'src', js.replace(/^\.\/dist\//, '').replace(/\.js$/, ''))
-      const entry = [`${base}.ts`, `${base}.tsx`, join(base, 'index.ts')].find(existsSync)
-      if (entry !== undefined) addTypeNames(readFileSync(entry, 'utf8'), names)
-    }
-    bySubpath.set(subpath === '.' ? 'basalt-ui' : `basalt-ui${subpath.slice(1)}`, names)
+    const entry = resolveSubpathEntry(target)
+    if (entry !== undefined) addTypeNames(readFileSync(entry, 'utf8'), names)
+    bySubpath.set(subpathSpec(subpath), names)
   }
   return bySubpath
 }
@@ -883,86 +899,110 @@ export function checkLlmsNames(
 
 // ── Check I: backticked names in barrel doc comments + SURFACES descriptions are real exports ────
 
-/** `<subpath>:<name>` — backticked terms that read as exports but are deliberately not (platform APIs, env vars, named-as-internal). */
+/**
+ * `<subpath>:<name>` — backticked terms that are deliberately NOT exports of that subpath: props
+ * and options of its exports, platform APIs, env vars, names of internals. Every entry must still
+ * appear in that subpath's prose and still be absent from its exports (a test holds both).
+ */
 export const CHECK_I_NON_EXPORTS: ReadonlySet<string> = new Set([
-  'basalt-ui/commands:BasaltProvider', // the provider that mounts the bus lives on the root
-  'basalt-ui/content:CodeBlock', // named to say it is internal
-  'basalt-ui/content:MermaidDiagram', // named to say it is internal
+  'basalt-ui/commands:BasaltProvider', // the root provider that mounts the bus
+  'basalt-ui/content:CodeBlock', // internal
+  'basalt-ui/content:MermaidDiagram', // internal
   'basalt-ui/format:Intl', // the platform API the formatters wrap
-  'basalt-ui/vite:BASALT_LOCAL', // an env var, not an export
+  'basalt-ui/vite:BASALT_LOCAL', // an env var
+  'basalt-ui/vite:__APP_VERSION__', // a define the preset injects
+  'basalt-ui/vite:allowedHosts', // Vite server option
+  'basalt-ui/vite:strictPort', // Vite server option
+  'basalt-ui/vite:plugins', // Vite config key
+  'basalt-ui/vite:warnIfUnenforced', // internal check the preset runs
+  'basalt-ui/charts:marks', // prose: the marks a chart kind fixes
+  'basalt-ui/controls:ctl', // the size tier
+  'basalt-ui/controls:options', // a prop of NumberFilter
+  'basalt-ui/forms:key', // the React `key` prop
+  'basalt-ui/format:locale', // an option of the formatters
+  'basalt-ui/format:opts', // the options argument
+  'basalt-ui/format:undefined', // a return value
+  'basalt-ui/agent:ai', // the Vercel `ai` package
+  'basalt-ui/content:fenceRenderers', // a prop of Markdown
+  'basalt-ui/content:streaming', // a prop of Markdown
+  'basalt-ui/content:contentTrust', // a prop of Markdown
+  'basalt-ui/content:sanitizeSchema', // a prop of Markdown
 ])
-
-/** Export-shaped: `PascalCase` or a `useX` hook. Plain camelCase words (props, options) are prose. */
-const EXPORT_SHAPED_RE = /^(?:[A-Z][a-z0-9]\w*|use[A-Z]\w*)$/
 
 const BACKTICK_IDENT_RE = /`([A-Za-z_$][\w$]*)(?:\(\))?`/g
 
-/** The leading `/** … *\/` block of a barrel source, or '' when it opens with something else. */
-export function leadingDocComment(source: string): string {
-  const match = /^\s*\/\*\*([\s\S]*?)\*\//.exec(source)
-  return match?.[1] ?? ''
+/**
+ * The first JSDoc block before the first statement of a source file (line comments, plain block
+ * comments and whitespace may precede it), or undefined when a statement comes first.
+ * @throws when the JSDoc block is never closed.
+ */
+export function leadingDocComment(source: string): string | undefined {
+  let rest = source
+  for (;;) {
+    rest = rest.trimStart()
+    if (rest.startsWith('//')) {
+      const eol = rest.indexOf('\n')
+      if (eol === -1) return undefined
+      rest = rest.slice(eol + 1)
+      continue
+    }
+    if (!rest.startsWith('/*')) return undefined
+    const end = rest.indexOf('*/', 2)
+    if (end === -1) throw new Error('unterminated block comment')
+    if (rest.startsWith('/**') && !rest.startsWith('/**/')) return rest.slice(3, end)
+    rest = rest.slice(end + 2)
+  }
 }
 
-export type CheckIFailure = { where: string; name: string }
+export type CheckIFailure = { where: string; message: string }
 
 /**
- * Every backticked export-shaped identifier in `text` must be in `published` (this subpath's
- * exports) or allow-listed; a camelCase one only fails when it is an export of ANOTHER subpath
- * (`elsewhere`) — a moved or misattributed name. Plain camelCase words are prose.
+ * Fail closed: every backticked identifier in `text` must be an export of `spec` or allow-listed
+ * as `<spec>:<name>`. Prose words (`options`, `locale`) are allow-listed too — one explicit list.
  */
-export function checkDocNames(
-  where: string,
-  spec: string,
-  text: string,
-  published: ReadonlySet<string>,
-  elsewhere: ReadonlySet<string> = new Set(),
-  allow: ReadonlySet<string> = CHECK_I_NON_EXPORTS,
-): CheckIFailure[] {
-  const seen = new Set<string>()
+export function checkDocNames(opts: {
+  where: string
+  spec: string
+  text: string
+  published: ReadonlySet<string>
+  allow?: ReadonlySet<string>
+}): CheckIFailure[] {
+  const { where, spec, text, published, allow = CHECK_I_NON_EXPORTS } = opts
+  const bad = new Set<string>()
   for (const match of text.matchAll(BACKTICK_IDENT_RE)) {
     const name = match[1]
-    if (name === undefined || published.has(name) || allow.has(`${spec}:${name}`)) continue
-    if (EXPORT_SHAPED_RE.test(name) || elsewhere.has(name)) seen.add(name)
+    if (name !== undefined && !published.has(name) && !allow.has(`${spec}:${name}`)) bad.add(name)
   }
-  return [...seen].map((name) => ({ where, name }))
+  return [...bad].map((name) => ({
+    where,
+    message: `names \`${name}\`, which is not an export of ${spec} (fix the prose, or allow-list '${spec}:${name}' in CHECK_I_NON_EXPORTS)`,
+  }))
 }
 
-/** Barrel doc comment + SURFACES description of every published JS subpath. */
-export function checkI(published: ReadonlyMap<string, ReadonlySet<string>>): CheckIFailure[] {
-  const manifest = JSON.parse(readFileSync(join(pkgRoot, 'package.json'), 'utf8')) as {
-    exports: Record<string, { import?: string } | string>
-  }
+/** Barrel header + SURFACES description of every published JS subpath. */
+export function checkI(
+  published: ReadonlyMap<string, ReadonlySet<string>>,
+  allow: ReadonlySet<string> = CHECK_I_NON_EXPORTS,
+): CheckIFailure[] {
   const failures: CheckIFailure[] = []
-  const all = new Set([...published.values()].flatMap((names) => [...names]))
-  for (const [key, target] of Object.entries(manifest.exports)) {
-    const spec = key === '.' ? 'basalt-ui' : `basalt-ui${key.slice(1)}`
+  for (const [subpath, target] of Object.entries(readExportsManifest())) {
+    const spec = subpathSpec(subpath)
     const names = published.get(spec)
-    const js = typeof target === 'object' ? target.import : undefined
-    if (names === undefined || js === undefined) continue
-    const base = join(pkgRoot, 'src', js.replace(/^\.\/dist\//, '').replace(/\.js$/, ''))
-    const entry = [`${base}.ts`, `${base}.tsx`, join(base, 'index.ts')].find(existsSync)
-    if (entry !== undefined) {
-      failures.push(
-        ...checkDocNames(
-          `${relative(pkgRoot, entry)} (module doc comment)`,
-          spec,
-          leadingDocComment(readFileSync(entry, 'utf8')),
-          names,
-          all,
-        ),
-      )
+    const entry = resolveSubpathEntry(target)
+    if (names === undefined || entry === undefined) continue
+
+    const header = leadingDocComment(readFileSync(entry, 'utf8'))
+    const surface = subpath in SURFACES ? SURFACES[subpath as keyof typeof SURFACES] : undefined
+    const description = surface !== undefined && 'description' in surface ? surface.description : ''
+    const where = relative(pkgRoot, entry)
+    if (header === undefined) {
+      failures.push({ where, message: 'has no module doc comment before its first statement' })
     }
-    const surface = (SURFACES as Record<string, { description?: string }>)[key]
-    if (surface?.description !== undefined) {
-      failures.push(
-        ...checkDocNames(
-          `src/surfaces.ts ${key} description`,
-          spec,
-          surface.description,
-          names,
-          all,
-        ),
-      )
+    for (const [label, text] of [
+      [`${where} (module doc comment)`, header ?? ''],
+      [`src/surfaces.ts ${subpath} description`, description],
+    ] as const) {
+      failures.push(...checkDocNames({ where: label, spec, text, published: names, allow }))
     }
   }
   return failures
@@ -1027,10 +1067,7 @@ function main(): void {
     ),
     ...fFailures.map((f) => `${f.file}:${f.line}: ${f.message}`),
     ...hFailures.map((f) => `llms.txt:${f.line}: ${f.message}`),
-    ...iFailures.map(
-      (f) =>
-        `${f.where}: names \`${f.name}\`, which is not an export of that subpath (fix the prose, or allow-list it in CHECK_I_NON_EXPORTS)`,
-    ),
+    ...iFailures.map((f) => `${f.where}: ${f.message}`),
     ...gFailures.map((f) => `${f.file}:${f.line}: rule '${f.id}' ${f.why}`),
     ...selfFailures,
   ]

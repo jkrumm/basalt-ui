@@ -5,11 +5,11 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 import {
+  CHECK_I_NON_EXPORTS,
   checkDocNames,
   checkF,
-  checkI,
-  leadingDocComment,
   checkG,
+  checkI,
   checkLlmsNames,
   checkRuleSets,
   collectExportKeys,
@@ -18,6 +18,7 @@ import {
   findAgentFiles,
   findDeadSpecifiers,
   findRuleFiles,
+  leadingDocComment,
   loadTagSources,
   pluginRuleIds,
 } from './check-agent-doc-drift'
@@ -250,37 +251,68 @@ describe('checkLlmsNames', () => {
   })
 })
 
+describe('leadingDocComment', () => {
+  test('returns the JSDoc body when it comes first, whitespace before it allowed', () => {
+    expect(leadingDocComment('\n\n  /** hello `X` */\nexport {}')).toBe(' hello `X` ')
+  })
+
+  test('skips line comments and plain block comments before the JSDoc', () => {
+    expect(leadingDocComment('// licence\n/* note */\n/** doc */\nexport {}')).toBe(' doc ')
+  })
+
+  test('is undefined when a statement or a non-JSDoc comment only comes first', () => {
+    expect(leadingDocComment("import x from 'y'\n/** late */")).toBeUndefined()
+    expect(leadingDocComment('// only a line comment')).toBeUndefined()
+    expect(leadingDocComment('/**/ export {}')).toBeUndefined()
+    expect(leadingDocComment('')).toBeUndefined()
+  })
+
+  test('throws on an unterminated block', () => {
+    expect(() => leadingDocComment('/** never closed')).toThrow('unterminated')
+  })
+})
+
 describe('checkDocNames (Check I)', () => {
-  const exportsOf = new Set(['FormRow', 'useBasaltForm'])
-  const elsewhere = new Set(['BasaltProvider', 'createThing'])
+  const published = new Set(['FormRow', 'useBasaltForm'])
+  const run = (text: string, allow: ReadonlySet<string> = new Set()) =>
+    checkDocNames({ where: 'fixture', spec: 'basalt-ui/forms', text, published, allow })
 
   test('a barrel naming a missing export fails', () => {
-    const doc = leadingDocComment(
-      '/**\n * Uses `useBasaltForm`, `FormSection` and `useFormSubmit`.\n */\nexport {}',
-    )
-    expect(checkDocNames('fixture', 'basalt-ui/forms', doc, exportsOf).map((f) => f.name)).toEqual([
-      'FormSection',
-      'useFormSubmit',
+    const doc =
+      leadingDocComment('/**\n * `useBasaltForm`, `FormSection`, `useFormSubmit`.\n */') ?? ''
+    expect(run(doc).map((f) => f.message)).toEqual([
+      expect.stringContaining('`FormSection`'),
+      expect.stringContaining('`useFormSubmit`'),
     ])
   })
 
-  test('plain camelCase prose passes, but a camelCase export of another subpath fails', () => {
-    const text = 'the `options` prop, `createThing`'
-    expect(
-      checkDocNames('fixture', 'basalt-ui/forms', text, exportsOf, elsewhere).map((f) => f.name),
-    ).toEqual(['createThing'])
+  test('fails closed: an invented lower-camel, acronym-led or ALL_CAPS name fails', () => {
+    expect(run('`madeUpOption` `UUIDField` `CSSProps` `URL`')).toHaveLength(4)
   })
 
   test('an allow-listed <subpath>:<name> term passes only on that subpath', () => {
-    const allow = new Set(['basalt-ui/forms:Intl'])
-    expect(checkDocNames('f', 'basalt-ui/forms', '`Intl`', exportsOf, new Set(), allow)).toEqual([])
+    const allow = new Set(['basalt-ui/forms:key'])
+    expect(run('`key`', allow)).toEqual([])
     expect(
-      checkDocNames('f', 'basalt-ui/format', '`Intl`', exportsOf, new Set(), allow),
+      checkDocNames({ where: 'f', spec: 'basalt-ui/format', text: '`key`', published, allow }),
     ).toHaveLength(1)
   })
 
   test('the shipped barrels and SURFACES descriptions are clean', () => {
     expect(checkI(collectPublishedBySubpath())).toEqual([])
+  })
+
+  test('every CHECK_I_NON_EXPORTS entry is still needed: used in prose, absent from its subpath', () => {
+    const published = collectPublishedBySubpath()
+    const withoutAllowList = checkI(published, new Set()).map((f) => f.message)
+    for (const entry of CHECK_I_NON_EXPORTS) {
+      const [spec, name] = entry.split(':') as [string, string]
+      expect(published.get(spec)?.has(name), `${entry} is a real export now`).toBe(false)
+      expect(
+        withoutAllowList.some((m) => m.includes(`'${entry}'`)),
+        `${entry} no longer appears in prose`,
+      ).toBe(true)
+    }
   })
 })
 
