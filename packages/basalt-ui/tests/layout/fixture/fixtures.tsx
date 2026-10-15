@@ -880,7 +880,7 @@ function ConfirmFixture(): ReactElement {
 function AnchorFixture(): ReactElement {
   return (
     <>
-      <PageBar title="Anchors" />
+      <PageBar title="Anchors" tabs={<span>Overview</span>} />
       {[1, 2, 3].map((n) => (
         <Section key={n} id={`anchor-${n}`} title={`Anchor ${n}`}>
           {/* theme-allow -- a measured filler height IS the fixture's payload, not a themed size */}

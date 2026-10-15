@@ -87,6 +87,8 @@ export {
 } from './mobile-nav-model'
 export { AppBreadcrumbs, type AppBreadcrumbsProps } from './app-breadcrumbs'
 export { PageBar, type PageBarProps, type PageBarSlot } from './page-bar'
+// Internal (not listed in `src/index.ts`): `Section` clears a shell-less bar with these.
+export { PAGE_BAR_HEIGHT_VAR, useInPageBarShell } from './page-bar'
 export { PageAside, type PageAsideProps, type PageAsideSlot } from './page-aside'
 export { useSizeClass, type SizeClass } from './use-size-class'
 export { PageTitle, type PageTitleProps, type PageTitleSlot } from './page-title'
