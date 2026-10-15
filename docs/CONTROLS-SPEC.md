@@ -192,7 +192,7 @@ an already-fitting table renders unchanged. Never engages beside an explicit
 ```ts
 export type SidebarBlock =
   | { kind: 'list'; key: string; label: string; icon?: ReactNode; count?: number; max?: number   // 'Show more' past max
-      items: { key: string; label: string; meta?: string; icon?: ReactNode; tone?: StatCardTone
+      items: { key: string; label: string; meta?: string; icon?: ReactNode; tone?: Tone
                Anchor?: NavAnchor; href?: string; onClick?: () => void }[]
       placement?: 'nav' | 'bottom'; collapsible?: boolean; rail?: 'dot' | 'hidden'; mobile?: 'more' | 'hidden' }
   | { kind: 'progress'; key: string; label: string; value: number; total: number; onClick?: () => void
