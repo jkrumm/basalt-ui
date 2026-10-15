@@ -9,6 +9,7 @@ import { scaleLinear } from '@tanstack/charts/scales/linear'
 import { scaleUtc } from 'd3-scale'
 import {
   BandStrip,
+  MirroredBars,
   Bars,
   CartesianChart,
   ChartCard,
@@ -675,10 +676,16 @@ const STRIP_STATES = [
   { key: 'down', label: 'Down', color: CHART_COLORS[1] as string },
 ]
 
-/** One-minute buckets, the first at 18:13 UTC — the odd start that exposed the uneven ticks. */
-function buildStripData(buckets: number): StripSlot[] {
+const MIRRORED_SERIES = [
+  { key: 'rx', label: 'Down', color: CHART_COLORS[0] as string, getValue: () => 10 },
+  { key: 'tx', label: 'Up', color: CHART_COLORS[1] as string, getValue: () => 5 },
+]
+
+/** Fixed-width buckets, the first at 18:13 UTC — the odd start that exposed the uneven ticks. */
+function buildStripData(buckets: number, bucketMs: number): StripSlot[] {
+  const start = Date.UTC(2024, 0, 1, 18, 13)
   return Array.from({ length: buckets }, (_, i) => ({
-    at: new Date(Date.UTC(2024, 0, 1, 18, 13 + i)),
+    at: new Date(start + i * bucketMs),
     state: i % 17 === 0 ? 'down' : 'up',
   }))
 }
@@ -786,7 +793,10 @@ function PanelRailChart({
 function ChartsFixture({ spec }: { spec: ChartsSpec }): ReactElement {
   const seriesCount = spec.legendEntries ?? 3
   const data = useMemo(() => buildChartData(seriesCount), [seriesCount])
-  const stripData = useMemo(() => buildStripData(spec.stripBuckets ?? 60), [spec.stripBuckets])
+  const stripData = useMemo(
+    () => buildStripData(spec.stripBuckets ?? 60, spec.bucketMs ?? 60_000),
+    [spec.stripBuckets, spec.bucketMs],
+  )
   const height = spec.height === undefined ? {} : { height: spec.height }
   const domain = useMemo(() => {
     const first = data[0]
@@ -842,6 +852,16 @@ function ChartsFixture({ spec }: { spec: ChartsSpec }): ReactElement {
         )}
         height={spec.height ?? 40}
         emphasizeLast
+      />
+    ) : spec.kind === 'mirrored' ? (
+      <MirroredBars
+        ariaLabel="Fixture mirrored"
+        data={stripData}
+        x={(d) => d.at}
+        series={MIRRORED_SERIES}
+        up={{ key: 'rx', format: String }}
+        down={{ key: 'tx', format: String }}
+        {...height}
       />
     ) : spec.kind === 'strip' ? (
       <BandStrip

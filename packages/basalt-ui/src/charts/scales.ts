@@ -158,7 +158,9 @@ function explicitDomain(xDomain: readonly [ChartX, ChartX] | undefined): [number
 
 export function xScaleFor<X extends ChartX>(
   raw: readonly X[],
-  band: boolean,
+  /** `'flush'`: a band scale with no outer padding, so the first and last band meet the plot's
+   * edges (`MirroredBars`); `true` pads half a gap-and-a-bit at each end, as `Bars` does. */
+  band: boolean | 'flush',
   /** Continuous scales only: the explicit `[min, max]` that replaces the data's own extent. */
   xDomain?: readonly [X, X],
 ): XScaleModel<X> {
@@ -171,11 +173,9 @@ export function xScaleFor<X extends ChartX>(
     const keys = values as X[]
     const index = new Map(keys.map((k, i) => [keyOf(k), i] as const))
     if (band) {
-      const step = 1 / Math.max(1, n - BAND_PADDING_INNER + 2 * BAND_PADDING_OUTER)
-      const scale = scaleBand<X>()
-        .domain(keys)
-        .paddingInner(BAND_PADDING_INNER)
-        .paddingOuter(BAND_PADDING_OUTER)
+      const outer = band === 'flush' ? 0 : BAND_PADDING_OUTER
+      const step = 1 / Math.max(1, n - BAND_PADDING_INNER + 2 * outer)
+      const scale = scaleBand<X>().domain(keys).paddingInner(BAND_PADDING_INNER).paddingOuter(outer)
       return {
         kind,
         band: true,
@@ -186,7 +186,7 @@ export function xScaleFor<X extends ChartX>(
         fraction: (x) => {
           const i = index.get(keyOf(x))
           if (i === undefined) return null
-          return step * (BAND_PADDING_OUTER + i + (1 - BAND_PADDING_INNER) / 2)
+          return step * (outer + i + (1 - BAND_PADDING_INNER) / 2)
         },
       }
     }
