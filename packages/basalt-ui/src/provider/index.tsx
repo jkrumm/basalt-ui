@@ -419,7 +419,10 @@ function useDataTelemetry(router: AnyRouter, client: QueryClient, emit: Telemetr
 
 // ── Dev dock (dev-only, behind a literal NODE_ENV read at the lazy site) ──────────────────────────
 
-const LazyDevDock = lazy(() => import('../dev-dock').then((m) => ({ default: m.BasaltDevDock })))
+const LazyDevDock =
+  process.env.NODE_ENV !== 'production'
+    ? lazy(() => import('../dev-dock').then((m) => ({ default: m.BasaltDevDock })))
+    : null
 
 function readQueryClient(router: AnyRouter): QueryClient {
   const client = (router.options.context as Partial<BasaltRouterContext> | undefined)?.queryClient
@@ -524,7 +527,7 @@ export function BasaltProvider({
                     <RouterProvider router={mountedRouter} />
                   )}
                   {/* The literal read sits at the branch, so a production build drops the import. */}
-                  {process.env.NODE_ENV !== 'production' && (
+                  {LazyDevDock !== null && (
                     <Suspense fallback={null}>
                       <LazyDevDock
                         tool={devTool}

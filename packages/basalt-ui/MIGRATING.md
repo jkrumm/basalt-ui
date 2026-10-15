@@ -1055,6 +1055,8 @@ inside the SVG (a broken `family=var(--basalt-font-sans)` request per diagram), 
 `font-family` is the unquoted `var(--basalt-font-sans)` instead of an invalid quoted `'var(…)'`
 family. Behaviour fix; nothing to migrate.
 
+**Dev chunks.** A production build no longer emits (or lets a PWA service worker precache) the dev-dock, theme-lab and devtools chunks: `BasaltProvider`'s dock `import()` is now dead code under a literal `process.env.NODE_ENV` read. Nothing to migrate; `check-budgets` gates it.
+
 ## 2.8.0 — the fleet probe fixes
 
 Ledger rows 61-67 (`docs/waves/argo-friction.md`), found while the rest of the fleet probed 1.x → 2.x.
