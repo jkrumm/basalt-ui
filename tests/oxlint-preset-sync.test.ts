@@ -123,10 +123,14 @@ describe('oxlint preset sync contract', () => {
     }
   })
 
-  it('shipped overrides carry exactly the #app catch-all block (no narrower boundary overrides remain)', () => {
+  it('shipped overrides carry exactly the #app catch-all block and the route-file block (no narrower boundary overrides remain)', () => {
     const overrides = readOverrides(SHIPPED_CONFIG_PATH) as OverrideBlock[]
-    expect(overrides).toHaveLength(1)
+    expect(overrides).toHaveLength(2)
     expect(overrides[0]?.files).toEqual(['**/*.{ts,tsx}'])
+    expect(overrides[1]).toEqual({
+      files: ['**/routes/**', '**/__root.tsx'],
+      rules: { 'react/only-export-components': 'off' },
+    })
 
     const nri = noRestrictedImportsOf(overrides[0])
     const paths = nri?.[1].paths ?? []

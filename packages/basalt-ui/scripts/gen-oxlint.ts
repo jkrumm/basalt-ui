@@ -110,6 +110,17 @@ function hasRelevantRuleOverride(
 // never a blanket off. Delete an entry when its file is reworked; the sync test pins the output.
 export const PKG_ROOT = 'packages/basalt-ui/'
 
+/**
+ * TanStack file routes export `Route` beside their component. The router plugin owns fast refresh
+ * for route files (it splits the component out of the route chunk), so the generic fast-refresh
+ * export check is noise there. The rule's `allowExportNames` does not help: oxlint 1.87 still warns
+ * on the file's local component.
+ */
+export const ROUTE_FILE_OVERRIDE: OverrideBlock = {
+  files: ['**/routes/**', '**/__root.tsx'],
+  rules: { 'react/only-export-components': 'off' },
+}
+
 /** The React-compiler rules plus its sibling, `error` at the top level of both repo configs. */
 export const COMPILER_RULES = [
   'react/globals',
@@ -249,6 +260,8 @@ export function projectBanList(target: Target): OverrideBlock[] {
       blocks.push({ files, rules: { [rule]: 'off' } })
     }
   }
+
+  blocks.push(ROUTE_FILE_OVERRIDE)
 
   return blocks
 }
