@@ -241,14 +241,14 @@ export type FormsSpec = {
   widths: number[]
 }
 
+/** The `TocSpec` fixture's sticky title bar height, which is also each heading's `scroll-margin-top`. */
+export const TOC_SCROLL_MARGIN_PX = 48
+
 /**
  * A `TableOfContents` beside an article in the shell body — the scroll-spy's only real-geometry
  * test. The article scrolls inside Main under a STICKY title bar and its headings carry a
  * `scroll-margin-top`, so a clicked heading comes to rest ABOVE the spy's activation band.
  */
-/** The `TocSpec` fixture's sticky title bar height, which is also each heading's `scroll-margin-top`. */
-export const TOC_SCROLL_MARGIN_PX = 48
-
 export type TocSpec = {
   /** Section count; every section but the last is `sectionHeight` tall. */
   sections: number

@@ -1,12 +1,12 @@
 /** `ClickPin` — every transition of the TOC click machine (`toc-click-pin.ts`), with fake timers. */
-import { afterEach, beforeEach, describe, expect, jest, spyOn, test } from 'bun:test'
-import { CLICK_PIN_BACKSTOP_MS, ClickPin, HOLD_EPSILON_PX, isScrollIntent } from './toc-click-pin'
+import { afterEach, beforeEach, describe, expect, jest, mock, spyOn, test } from 'bun:test'
+import { ClickPin, HOLD_EPSILON_PX, INTENT_EVENTS, QUIET_MS, isScrollIntent } from './toc-click-pin'
 
 let port: HTMLElement
 let link: HTMLAnchorElement
 let field: HTMLInputElement
 let other: HTMLButtonElement
-let top: number
+let scrollPosition: number
 let idled: number
 let pin: ClickPin
 
@@ -18,24 +18,43 @@ beforeEach(() => {
   other = document.createElement('button')
   port.append(link, field, other)
   document.body.append(port)
-  top = 0
-  Object.defineProperty(port, 'scrollTop', { get: () => top, configurable: true })
+  scrollPosition = 0
+  Object.defineProperty(port, 'scrollTop', { get: () => scrollPosition, configurable: true })
   idled = 0
   pin = new ClickPin(() => void idled++)
 })
 
 afterEach(() => {
+  mock.restore()
   pin.dispose()
   port.remove()
   jest.useRealTimers()
 })
+
+/** `getTimerCount` does not drop on `clearTimeout`, so track the handles themselves. */
+function trackTimers() {
+  const made: unknown[] = []
+  const cleared: unknown[] = []
+  const set = globalThis.setTimeout
+  const clear = globalThis.clearTimeout
+  spyOn(globalThis, 'setTimeout').mockImplementation(((...args: Parameters<typeof set>) => {
+    const handle = set(...args)
+    made.push(handle)
+    return handle
+  }) as typeof set)
+  spyOn(globalThis, 'clearTimeout').mockImplementation(((handle?: Parameters<typeof clear>[0]) => {
+    cleared.push(handle)
+    return clear(handle)
+  }) as typeof clear)
+  return { leaked: () => made.filter((handle) => !cleared.includes(handle)) }
+}
 
 const key = (name: string) => new KeyboardEvent('keydown', { key: name, bubbles: true })
 const fire = (target: EventTarget, event: Event) => target.dispatchEvent(event)
 const scrollend = () => fire(port, new Event('scrollend'))
 /** The scroller moves for a reason that is not the reader's input. */
 const moveTo = (to: number) => {
-  top = to
+  scrollPosition = to
   fire(port, new Event('scroll'))
 }
 
@@ -51,17 +70,53 @@ describe('click → pinned → held', () => {
 
   test('the first scrollend holds the entry where the scroll settled', () => {
     pin.click('a', link, port)
-    top = 1234
+    scrollPosition = 1234
     scrollend()
     expect(pin.state).toEqual({ kind: 'held', id: 'a', top: 1234 })
   })
 
-  test('the backstop moves to HELD (never idle) when no scrollend arrives', () => {
+  test('scrollend clears the quiet timer', () => {
+    const timers = trackTimers()
     pin.click('a', link, port)
-    top = 40
-    jest.advanceTimersByTime(CLICK_PIN_BACKSTOP_MS)
+    scrollend()
+    expect(timers.leaked()).toEqual([])
+  })
+
+  test('a click that needs no scroll is held after the quiet window', () => {
+    scrollPosition = 40
+    pin.click('a', link, port)
+    jest.advanceTimersByTime(QUIET_MS - 1)
+    expect(pin.state.kind).toBe('pinned')
+    jest.advanceTimersByTime(1)
     expect(pin.state).toEqual({ kind: 'held', id: 'a', top: 40 })
     expect(idled).toBe(0)
+  })
+
+  test('a scroll still in flight past any fixed deadline stays pinned; held where it finally stops', () => {
+    pin.click('a', link, port)
+    for (let at = 100; at <= 4000; at += 100) {
+      scrollPosition = at
+      fire(port, new Event('scroll'))
+      jest.advanceTimersByTime(100)
+      expect(pin.state).toEqual({ kind: 'pinned', id: 'a' })
+    }
+    jest.advanceTimersByTime(QUIET_MS)
+    expect(pin.state).toEqual({ kind: 'held', id: 'a', top: 4000 })
+    expect(idled).toBe(0)
+  })
+
+  test.each([
+    ['held', () => scrollend()],
+    ['idle', () => fire(other, key('PageDown'))],
+    ['replaced', () => pin.click('b', link, port)],
+    ['disposed', () => pin.dispose()],
+  ])('leaving pinned (%s) clears the quiet timer', (_name, leave) => {
+    const timers = trackTimers()
+    pin.click('a', link, port)
+    moveTo(10) // re-arms: the first handle must be cleared too
+    leave()
+    pin.dispose()
+    expect(timers.leaked()).toEqual([])
   })
 
   test('a replaced click does not leak the first click’s listeners or timer', () => {
@@ -75,7 +130,7 @@ describe('click → pinned → held', () => {
 
 describe('held → idle on movement', () => {
   beforeEach(() => {
-    top = 500
+    scrollPosition = 500
     pin.click('a', link, port)
     scrollend()
   })
@@ -180,10 +235,16 @@ describe('removal and unmount', () => {
     expect(names(remove)).toEqual(names(add))
     expect(names(portRemove)).toEqual(names(portAdd))
     expect(names(add).length).toBeGreaterThan(0)
+    for (const type of INTENT_EVENTS) {
+      const added = add.mock.calls.find((call) => call[0] === type)
+      const removed = remove.mock.calls.find((call) => call[0] === type)
+      expect(added?.[2]).toMatchObject({ capture: true })
+      expect(removed?.[2]).toMatchObject({ capture: true })
+    }
 
     fire(document.body, key('PageDown'))
     fire(port, new Event('scrollend'))
-    jest.advanceTimersByTime(CLICK_PIN_BACKSTOP_MS * 2)
+    jest.advanceTimersByTime(QUIET_MS * 2)
     expect(pin.state).toEqual({ kind: 'idle' })
     expect(idled).toBe(0)
   })

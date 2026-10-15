@@ -241,12 +241,12 @@ layout('TableOfContents scroll-spy — real geometry', () => {
     await p.raw.context().close()
   })
 
-  test('a click that needs no scroll holds (backstop), then any movement releases it', async () => {
+  test('a click that needs no scroll holds (quiet window), then any movement releases it', async () => {
     const p = await openFixture(specOf(ARTICLE), DESKTOP_1440, '/', 'no-preference')
     await p.settle()
     await p.raw.click(link('s1')) // already at the top: no scroll, no scrollend
     expect(await active(p)).toBe('Section 1')
-    await p.raw.waitForTimeout(3300) // the 3 s backstop moves pinned → held
+    await p.raw.waitForTimeout(500) // 200 ms without scrolling moves pinned → held
     await scrollMain(p, 750)
     expect(await settled(p, 300, 1500)).toBe('Section 2')
     await p.raw.context().close()
