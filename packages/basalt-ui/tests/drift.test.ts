@@ -84,11 +84,13 @@ describe('agents-sync', () => {
 // ── llms-sync — committed llms.txt matches gen-llms.ts output ────────────────────────────────────
 
 describe('llms-sync', () => {
+  // Builds a TS program for the signatures and the `## Types` glossary — seconds, not milliseconds,
+  // so it gets an explicit timeout like the spawned runs below rather than bun's 5 s default.
   it('committed llms.txt matches gen-llms.ts output', () => {
     const committed = readFileSync(outPath, 'utf8')
     const generated = generateLlmsTxt()
     expect(generated).toBe(committed)
-  })
+  }, 30_000)
 })
 
 // ── gen-llms --check drift gate — exercises the --check flag itself, not just the diff ───────────
@@ -96,10 +98,11 @@ describe('llms-sync', () => {
 describe('gen-llms --check drift gate', () => {
   const SCRIPT_PATH = join(PKG_ROOT, 'scripts/gen-llms.ts')
 
+  // A full gen-llms run (TS program + glossary) in a subprocess: same 30 s as the mutation case.
   it('exits 0 when the committed llms.txt is in sync', () => {
     const result = Bun.spawnSync(['bun', SCRIPT_PATH, '--check'])
     expect(result.exitCode).toBe(0)
-  })
+  }, 30_000)
 
   it('exits non-zero and reports drift when llms.txt is mutated, then restores byte-exact', () => {
     const original = readFileSync(outPath, 'utf8')
