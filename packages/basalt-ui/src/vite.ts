@@ -23,6 +23,7 @@ import { dirname, resolve } from 'node:path'
 import { searchForWorkspaceRoot } from 'vite'
 import type { HtmlTagDescriptor, Plugin, PluginOption, UserConfig } from 'vite'
 import { SURFACE } from './tokens/palette'
+import { buildBootTags } from './vite-boot'
 import { resolveColorMix } from './vite-color-mix'
 
 type BasaltViteOptions = {
@@ -247,16 +248,22 @@ type BasaltAppOptions = {
    */
   colorScheme?: 'dark' | 'light' | 'auto' | false
   /**
-   * Default `true`. Injects a ~250-byte inline `<script>` that reads the scheme the user last chose
+   * Default `true`. Injects a ~300-byte inline `<script>` that reads the scheme the user last chose
    * (Mantine's default `mantine-color-scheme-value` localStorage key — `light`, `dark` or `auto`,
    * `auto` resolved through `prefers-color-scheme`) and sets a boot-only `data-basalt-boot`
    * attribute on `<html>`, so the pre-boot paint matches the stored scheme instead of the build-time
    * `colorScheme`. Storage unavailable or unset → the `colorScheme` paint stands. The script never
    * writes `data-mantine-color-scheme`, so the boot rule still expires when Mantine mounts.
    *
-   * Pass `false` under a strict CSP that forbids inline scripts (`script-src` without
-   * `'unsafe-inline'`/a hash), or when the app passes a custom `colorSchemeManager` /
-   * `colorSchemeStorageKey`-style override to `BasaltProvider` — the script only knows the default key.
+   * A stored value wins over the build-time `colorScheme`: an app that removes its scheme toggle
+   * should clear the stored key or set `bootScript: false`.
+   *
+   * CSP: Vite stamps `html.cspNonce` onto every `<script>`/`<style>` in the transformed HTML,
+   * plugin-injected ones included, so one nonce covers both boot tags. Without a nonce, a CSP that
+   * forbids inline scripts needs `bootScript: false`.
+   *
+   * Also set `false` when `BasaltProvider` gets a custom `colorSchemeManager` with another key
+   * (e.g. `localStorageColorSchemeManager({ key })`) — the script reads only the default key.
    */
   bootScript?: boolean
   /**
@@ -422,99 +429,6 @@ const VIEWPORT_TAG: HtmlTagDescriptor = {
   attrs: { name: 'viewport', content: 'width=device-width, initial-scale=1.0, viewport-fit=cover' },
 }
 
-// ── The anti-FOUC boot rule ───────────────────────────────────────────────────────────────────
-
-/**
- * The selector every anti-FOUC declaration is scoped to.
- *
- * The rule paints the page before any stylesheet lands, so it is UNLAYERED by construction — and an
- * unlayered declaration outranks every layered one regardless of specificity. Through 1.20.0 that
- * meant a flat `html{color-scheme:dark}` permanently beat Mantine's own
- * `@layer mantine{:root{color-scheme:var(--mantine-color-scheme)}}`: a light-scheme consumer got
- * dark scrollbars, dark `<select>` popups and dark date pickers forever, with no opt-out (found
- * independently by two consumers).
- *
- * `MantineProvider` writes `data-mantine-color-scheme` onto `<html>` as soon as it mounts, so
- * scoping the boot rule to its ABSENCE makes it expire exactly when the real theme exists — which
- * is the anti-FOUC contract stated honestly. A cascade layer would also work in principle and is
- * deliberately NOT used: a layer's position is fixed by where its name is first encountered, and in
- * dev Mantine's CSS is injected by JS after this `<style>` is already in the document, so the layer
- * order would depend on bundler mode. Selector scoping depends on nothing.
- */
-const BOOT_SCOPE = 'html:not([data-mantine-color-scheme])'
-
-/** Boot-only attribute `BOOT_SCRIPT` sets; never `data-mantine-color-scheme`, which would expire the rule. */
-const BOOT_ATTRIBUTE = 'data-basalt-boot'
-
-/**
- * Mirrors Mantine's default `localStorageColorSchemeManager` (`mantine-color-scheme-value`, a raw
- * `light` | `dark` | `auto` string — BasaltProvider installs no manager of its own). `auto` resolves
- * through `prefers-color-scheme`; a throwing or empty store leaves the attribute off.
- */
-const BOOT_SCRIPT =
-  "try{var v=localStorage.getItem('mantine-color-scheme-value');" +
-  "if(v==='auto')v=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';" +
-  `if(v==='light'||v==='dark')document.documentElement.setAttribute('${BOOT_ATTRIBUTE}',v)}catch(e){}`
-
-/** The `color-scheme` value each boot mode declares. `false` declares none. */
-const BOOT_COLOR_SCHEME = { dark: 'dark', light: 'light', auto: 'light dark' } as const
-
-/**
- * Builds the anti-FOUC stylesheet: paint the surface (and, unless opted out, tell the UA which
- * native-control palette to use) for the frames between first paint and Mantine's stylesheet.
- *
- * `'auto'` with no explicit `backgroundColor` emits a `prefers-color-scheme` pair so the pre-boot
- * paint follows the OS the same way `color-scheme: light dark` does; an explicit `backgroundColor`
- * is used verbatim for both, since the consumer has named one color on purpose.
- */
-function buildBootStyle(input: {
-  colorScheme: 'dark' | 'light' | 'auto' | false
-  themeColor: { light: string; dark: string }
-  backgroundColor: string
-  explicitBackground: boolean
-  storedSchemes: boolean
-}): string {
-  const { colorScheme, themeColor, backgroundColor, explicitBackground, storedSchemes } = input
-
-  const base = buildBaseBootStyle({ colorScheme, themeColor, backgroundColor, explicitBackground })
-  if (!storedSchemes) return base
-
-  // Stored-scheme variants: keyed off the attribute BOOT_SCRIPT sets, still inside BOOT_SCOPE so
-  // they expire with the rest. The extra attribute outranks the base rule and its `auto` media pair.
-  // An explicit backgroundColor is the consumer's one chosen color — only `color-scheme` follows.
-  const variants = (['light', 'dark'] as const)
-    .map((scheme) => {
-      const declarations = [
-        ...(explicitBackground ? [] : [`background-color:${themeColor[scheme]}`]),
-        ...(colorScheme === false ? [] : [`color-scheme:${scheme}`]),
-      ]
-      if (declarations.length === 0) return ''
-      return `${BOOT_SCOPE}[${BOOT_ATTRIBUTE}=${scheme}]{${declarations.join(';')}}`
-    })
-    .join('')
-  return base + variants
-}
-
-function buildBaseBootStyle(input: {
-  colorScheme: 'dark' | 'light' | 'auto' | false
-  themeColor: { light: string; dark: string }
-  backgroundColor: string
-  explicitBackground: boolean
-}): string {
-  const { colorScheme, themeColor, backgroundColor, explicitBackground } = input
-
-  if (colorScheme === false) return `${BOOT_SCOPE}{background-color:${backgroundColor}}`
-
-  const scheme = BOOT_COLOR_SCHEME[colorScheme]
-  if (colorScheme !== 'auto' || explicitBackground) {
-    return `${BOOT_SCOPE}{background-color:${backgroundColor};color-scheme:${scheme}}`
-  }
-  return (
-    `${BOOT_SCOPE}{background-color:${themeColor.light};color-scheme:${scheme}}` +
-    `@media(prefers-color-scheme:dark){${BOOT_SCOPE}{background-color:${themeColor.dark}}}`
-  )
-}
-
 // ── The encoding declaration ──────────────────────────────────────────────────────────────────
 
 /** `<meta charset="…">`, with the value in group 1/2/3 depending on the quoting style. */
@@ -603,8 +517,7 @@ function buildStaticTags(input: {
   options: BasaltAppOptions
   shortName: string
   themeColor: { light: string; dark: string }
-  bootStyle: string
-  bootScript: boolean
+  bootTags: HtmlTagDescriptor[]
   icons: ResolvedIcons
   darkreader: 'lock' | false
   manifestEnabled: boolean
@@ -615,8 +528,7 @@ function buildStaticTags(input: {
     options,
     shortName,
     themeColor,
-    bootStyle,
-    bootScript,
+    bootTags,
     icons,
     darkreader,
     manifestEnabled,
@@ -648,9 +560,8 @@ function buildStaticTags(input: {
   // Anti-FOUC — paints the boot surface before any stylesheet loads. injectTo defaults to
   // 'head-prepend', so this (and every tag below) lands immediately after <head> and the hoisted
   // <meta charset>, ahead of the consumer's own <link rel="stylesheet"> tags. Scoped to
-  // BOOT_SCOPE so it expires the moment Mantine resolves the real scheme — see buildBootStyle.
-  tags.push({ tag: 'style', children: bootStyle })
-  if (bootScript) tags.push({ tag: 'script', children: BOOT_SCRIPT })
+  // BOOT_SCOPE so it expires the moment Mantine resolves the real scheme — see ./vite-boot.ts.
+  tags.push(...bootTags)
 
   if (icons.mode === 'default') {
     tags.push(
@@ -820,13 +731,12 @@ function createMainPlugin(options: BasaltAppOptions): Plugin {
   const colorScheme = options.colorScheme ?? 'dark'
   const schemeColor = colorScheme === 'light' ? themeColor.light : themeColor.dark
   const backgroundColor = options.backgroundColor ?? schemeColor
-  const bootScript = options.bootScript !== false
-  const bootStyle = buildBootStyle({
+  const bootTags = buildBootTags({
     colorScheme,
-    storedSchemes: bootScript,
     themeColor,
     backgroundColor,
     explicitBackground: options.backgroundColor !== undefined,
+    bootScript: options.bootScript !== false,
   })
 
   // Icon hrefs, the manifest link, and the manifest's start_url/scope/icon src all depend on
@@ -864,8 +774,7 @@ function createMainPlugin(options: BasaltAppOptions): Plugin {
         options,
         shortName,
         themeColor,
-        bootStyle,
-        bootScript,
+        bootTags,
         icons,
         darkreader,
         manifestEnabled,
@@ -967,7 +876,7 @@ function createServiceWorkerPlugin(
  *  • It HOISTS the shell's `<meta charset>` ahead of everything it injects, so the encoding
  *    declaration stays inside the spec's first 1024 bytes (see `hoistCharset`).
  *  • The anti-FOUC `<style>` expires the moment Mantine resolves the real scheme, and `colorScheme`
- *    selects which surface it paints until then (see `BOOT_SCOPE` / `buildBootStyle`).
+ *    selects which surface it paints until then (see `./vite-boot.ts`).
  *
  * @example
  * // vite.config.ts
