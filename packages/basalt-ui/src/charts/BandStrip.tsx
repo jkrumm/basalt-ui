@@ -414,7 +414,11 @@ export function BandStrip<T, X extends ChartX = ChartX>(props: BandStripProps<T,
         const { primaryShown } = resolveAbsent(span, absentKey, (k) =>
           ctx.visible.some((s) => s.key === k),
         )
-        const readdPrimary = primary && primaryShown && absentShareOf(span, absentKey) === 1
+        const readdPrimary =
+          primary?.tooltip !== false &&
+          primary &&
+          primaryShown &&
+          absentShareOf(span, absentKey) === 1
         return [
           ...(readdPrimary
             ? [

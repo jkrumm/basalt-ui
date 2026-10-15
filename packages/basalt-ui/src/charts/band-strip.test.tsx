@@ -352,6 +352,18 @@ describe('BandStrip', () => {
       })
     })
 
+    test('a primary state with tooltip: false gets no re-added row; tooltip={false} shows none', async () => {
+      const hushed = { ...up, tooltip: false } as const
+      const quiet = await mount(<BandStrip {...partial(1)} states={[hushed, none]} />)
+      await toggleLegend(quiet, 'none')
+      expect(await hover(quiet)).not.toContain('Up')
+      act(() => root?.unmount())
+      document.body.innerHTML = ''
+      const off = await mount(<BandStrip {...partial(1)} tooltip={false} />)
+      await toggleLegend(off, 'none')
+      expect(await hover(off)).toBe('')
+    })
+
     test('absentFraction without an absentState throws in dev', () => {
       expect(() => renderToString(<BandStrip {...partial(0.5)} absentState={undefined} />)).toThrow(
         'absentState',
