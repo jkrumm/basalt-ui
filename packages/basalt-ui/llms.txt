@@ -365,13 +365,13 @@ Signature: BasaltDataTable(props: BasaltDataTableProps<T>): JSX.Element
   onRowSelectionChange?: (selection: RowSelectionState) => void
   getRowId?: (row: T, index: number) => string
   bulkActions?: (rows: T[]) => BarAction[]
+  rowActions?: DataTableRowAction<T>[]
+  rowLabel?: (row: T) => string
   enablePagination?: boolean
   pageSizeOptions?: number[]
   initialPagination?: PaginationState
   onPaginationChange?: (pagination: PaginationState) => void
-  manualPagination?: boolean
-  rowCount?: number
-  … +11 more
+  … +13 more
 Signature: createColumnHelper(): ColumnHelper<{ rowSortingFeature: TableFeature; columnFilteringFeatur…
 Install: bun add @tanstack/react-table@9.2.8
 
