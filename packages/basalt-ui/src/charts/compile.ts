@@ -29,6 +29,7 @@ import { VX } from '../tokens'
 import type { ContainerClass } from '../tokens/size-classes'
 import { cursorBinding, sourceOnlyFocus } from './cursor'
 import { cursorDots } from './marks'
+import { bucketTicks, strideEvery } from './ticks'
 import { MAIN_PANE, plotAccess, plotContext } from './plot-context'
 import type { PlotSizes } from './plot-context'
 import { resolveContainerClass } from '../tokens/size-classes'
@@ -101,6 +102,13 @@ const LADDER = {
 
 /** Space between the plot's left edge and a compact y label drawn inside it. */
 const INSIDE_LABEL_DX = 4
+
+/**
+ * A tick within this share of the x domain from its start counts as on the left edge: half a
+ * `DD.MM` label is ~15 px, 4–5% of a compact plot. Round ticks rarely land on the domain start
+ * exactly, so an equality test would miss the common case.
+ */
+const LEFT_EDGE_SHARE = 0.05
 const INSIDE_LABEL_DY = -6
 
 /**
@@ -280,39 +288,21 @@ export function yGuide<T>(opts: {
   }
 }
 
-/**
- * Ticks of a bucketed Date axis: the time scale's own round instants, each snapped to the bucket it
- * falls in. Labelling every bucket and letting the engine thin the collisions leaves an uneven,
- * near-touching subset ("18:13 18:17 18:21"); round instants are evenly spaced whenever the buckets
- * are. A bucket is used once, and a round instant with no bucket within a step of it is dropped.
- */
-export function bucketTicks(values: readonly Date[], count: number): Date[] {
-  const times = values.map((v) => v.getTime()).toSorted((a, b) => a - b)
-  const [first, last] = [times[0], times.at(-1)]
-  if (first === undefined || last === undefined || first === last) return [...values]
-  const gaps = times.slice(1).map((t, i) => t - (times[i] as number))
-  const step = gaps.toSorted((a, b) => a - b)[gaps.length >> 1] as number
-  const picked = new Set<number>()
-  for (const tick of scaleUtc()
-    .domain([new Date(first), new Date(last)])
-    .ticks(count)) {
-    const t = tick.getTime()
-    const near = times.reduce((best, c) => (Math.abs(c - t) < Math.abs(best - t) ? c : best))
-    if (Math.abs(near - t) < step) picked.add(near)
-  }
-  return picked.size >= 2 ? [...picked].map((t) => new Date(t)) : strideDates(values, count)
+/** The buckets of a band Date axis, or `null` for any other axis. */
+function bucketDates<X extends ChartX>(model: XScaleModel<X>): readonly Date[] | null {
+  if (!model.band || model.kind !== 'date') return null
+  const dates = model.values.filter((v): v is X & Date => v instanceof Date)
+  return dates.length === model.values.length ? dates : null
 }
-
-const strideDates = (values: readonly Date[], count: number): Date[] =>
-  values.filter((_, i) => i % Math.max(1, Math.ceil(values.length / count)) === 0)
 
 function xTickPolicy<X extends ChartX>(
   model: XScaleModel<X>,
   xTicks: number | readonly X[],
 ): { values: readonly ChartValue[] } | { count: number } {
   if (typeof xTicks === 'object') return { values: xTicks }
-  if (model.band && model.kind === 'date' && typeof xTicks === 'number')
-    return { values: bucketTicks(model.values as readonly Date[], xTicks) }
+  const buckets = typeof xTicks === 'number' ? bucketDates(model) : null
+  if (buckets !== null && typeof xTicks === 'number')
+    return { values: bucketTicks(buckets, xTicks) }
   if (model.band || model.kind === 'string') return { values: model.values }
   if (model.kind === 'date' && model.extent)
     return {
@@ -327,8 +317,7 @@ function xTickPolicy<X extends ChartX>(
  * the ones that collide, so a short-label grid (18 hour columns) would otherwise draw all of them.
  */
 export function strideTicks<V>(values: readonly V[], cls: ContainerClass): V[] {
-  const stride = Math.max(1, Math.ceil(values.length / LADDER[cls].xTicks))
-  return values.filter((_, i) => i % stride === 0)
+  return strideEvery(values, LADDER[cls].xTicks)
 }
 
 export function xGuide<X extends ChartX>(opts: {
@@ -343,8 +332,11 @@ export function xGuide<X extends ChartX>(opts: {
   const ladder = LADDER[cls]
   const inside = labelsInside(cls, height)
   const ticks = xTickPolicy(model, xTicks ?? ladder.xTicks)
-  // A continuous scale's left edge; a band scale pads its first slot, so no tick sits on it.
-  const originX = model.band ? Number.NaN : (model.extent?.[0] ?? Number.NaN)
+  // A continuous scale's domain start and span; a band scale pads its first slot, so none applies.
+  const [leftEdgeX, spanX] =
+    !model.band && model.extent
+      ? [model.extent[0], model.extent[1] - model.extent[0]]
+      : [Number.NaN, Number.NaN]
   return {
     axis: {
       line: AXIS_LINE,
@@ -353,11 +345,15 @@ export function xGuide<X extends ChartX>(opts: {
         fontSize: ladder.font,
         opacity: 1,
         thin: true,
-        // A locked-zero left margin (inside labels) must not clip the first label, and a label on
-        // the plot origin starts there: centred, half of it would sit under the gutter's bottom y
-        // label (outside labels) or off the plot's left edge.
-        anchor: ({ index, value }: { index: number; value: ChartValue }) =>
-          (inside && index === 0) || +value === originX ? ('start' as const) : undefined,
+        // A label centred on a tick near the plot's left edge hangs left of it, under the gutter's
+        // lowest y label (outside labels) or off the plot (inside labels, left margin locked to
+        // zero): start-anchor it. `+value` is a Date's timestamp, or the number itself.
+        anchor: ({ index, value }: { index: number; value: ChartValue }) => {
+          const pinnedFirst = inside && index === 0
+          const share = (+value - leftEdgeX) / spanX
+          const onLeftEdge = share >= 0 && share <= LEFT_EDGE_SHARE
+          return pinnedFirst || onLeftEdge ? ('start' as const) : undefined
+        },
       },
     },
   }

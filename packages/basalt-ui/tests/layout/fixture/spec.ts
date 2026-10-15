@@ -172,6 +172,8 @@ export type ChartsSpec = {
   stripBuckets?: number
   /** ...and each bucket's width in ms (default one minute — a one-hour range). */
   bucketMs?: number
+  /** `lines`: every series' label (and so its end label). Default `Series N`. */
+  endLabel?: string
   /** `lines`: y domain `[0, 50]` and an x tick on the first datum — a tick label at each axis' origin. */
   origin?: true
   /** Number of series (legend entries). Default 3. */

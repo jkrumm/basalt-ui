@@ -5,7 +5,8 @@
 import { describe, expect, test } from 'bun:test'
 import { renderToString } from 'react-dom/server'
 import { Lines } from './Lines'
-import type { ChartSeries } from './types'
+import { loneDots } from './marks'
+import type { ChartSeries, PlotRow } from './types'
 
 type Row = { t: Date; squat: number | null; bench: number | null }
 const data: Row[] = Array.from({ length: 8 }, (_, i) => ({
@@ -101,6 +102,47 @@ describe('series gaps', () => {
     test("'connect' bridges the gaps, so only a series with one finite point is lone", () => {
       expect(dots(render(loneRows([100, null, 90]), { gaps: 'connect' }))).toBe(0)
       expect(dots(render(loneRows([null, 100, null]), { gaps: 'connect' }))).toBe(1)
+    })
+
+    test('getMarker returning null leaves the point to the lone dot; a marker colour takes it over', () => {
+      expect(dots(render(loneRows([null, 100, null]), { getMarker: () => null }))).toBe(1)
+      expect(
+        dots(render(loneRows([null, 100, null]), { getMarker: () => ({ color: 'red' }) })),
+      ).toBe(0)
+    })
+
+    describe('loneDots directly', () => {
+      const row = (y: number | null, i: number): PlotRow<Row, Date> => ({
+        x: new Date(Date.UTC(2026, 8, i + 1)),
+        y,
+        series: 'squat',
+        datum: { t: new Date(), squat: y, bench: null },
+      })
+      const rowsOf = (ys: (number | null)[]): PlotRow<Row, Date>[] => ys.map(row)
+      const s = lift('squat')
+
+      test('a hidden series has no rows, so no dot', () => {
+        expect(loneDots(s, [], undefined, null)).toEqual([])
+      })
+
+      test('a highlighted other entry still draws the dot (dimmed), a highlighted own entry too', () => {
+        const ys = rowsOf([null, 5, null])
+        expect(loneDots(s, ys, undefined, 'bench')).toHaveLength(1)
+        expect(loneDots(s, ys, undefined, 'squat')).toHaveLength(1)
+      })
+
+      test('NaN and Infinity are not finite points: no dot for them, none made lone by them', () => {
+        expect(
+          loneDots(s, rowsOf([Number.NaN, Number.POSITIVE_INFINITY]), undefined, null),
+        ).toEqual([])
+        // 5 sits between two non-finite rows, so it is lone; the non-finite ones are not.
+        const mark = loneDots(s, rowsOf([Number.NaN, 5, Number.POSITIVE_INFINITY]), undefined, null)
+        expect(mark).toHaveLength(1)
+      })
+
+      test('one mark per series, however many lone points', () => {
+        expect(loneDots(s, rowsOf([1, null, 2, null, 3]), undefined, null)).toHaveLength(1)
+      })
     })
 
     test('a point the consumer already marks is not doubled', () => {

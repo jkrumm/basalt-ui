@@ -61,34 +61,38 @@ export function lineMark<T, X extends ChartX>(
 const isFinitePoint = <T, X extends ChartX>(r: PlotRow<T, X> | undefined): boolean =>
   r !== undefined && r.y !== null && Number.isFinite(r.y)
 
+/** A lone dot's radius as a multiple of the series' stroke width, so it reads as the line's end cap. */
+const LONE_DOT_STROKE_FACTOR = 1.25
+
 /**
- * The dot for a point a line cannot draw: a finite value with no finite neighbour in the drawn rows
- * (a one-point window, or a value between nulls). A path of one point has no length, so without
- * this the series is invisible. A point the series' own `getMarker` already marks is left to it.
+ * The dot for a point a line cannot draw: a finite value with no finite neighbour in `drawn` (the
+ * rows the line is drawn through: a one-point window, or a value between nulls). A path of one
+ * point has no length, so without this the series is invisible. One mark per series. A point the
+ * series' own `getMarker` already marks is left to it.
  */
 export function loneDots<T, X extends ChartX>(
-  plot: PlotContext<T, X>,
   s: ChartSeries<T>,
+  drawn: readonly PlotRow<T, X>[],
+  yScale: 'y2' | undefined,
+  highlighted: string | null,
 ): ChartMarks {
-  const rows = drawnRows(plot, s)
-  const lone = rows.filter(
+  const lone = drawn.filter(
     (r, i) =>
       isFinitePoint(r) &&
-      !isFinitePoint(rows[i - 1]) &&
-      !isFinitePoint(rows[i + 1]) &&
+      !isFinitePoint(drawn[i - 1]) &&
+      !isFinitePoint(drawn[i + 1]) &&
       !s.getMarker?.(r.datum),
   )
   if (lone.length === 0) return []
-  const yScale = yScaleOf(plot, s)
   return [
     decorative(
       dot(lone, {
         id: `${s.key}-lone`,
         x: rowX,
         y: 'y',
-        r: Math.max(VX.dotR - 1, (s.strokeWidth ?? LINE_STROKE_WIDTH) * 1.25),
+        r: Math.max(VX.dotR - 1, (s.strokeWidth ?? LINE_STROKE_WIDTH) * LONE_DOT_STROKE_FACTOR),
         fill: s.color,
-        fillOpacity: (s.strokeOpacity ?? 1) * emphasis(plot.highlighted, s),
+        fillOpacity: (s.strokeOpacity ?? 1) * emphasis(highlighted, s),
         ...(yScale !== undefined && { yScale }),
       }),
     ),
