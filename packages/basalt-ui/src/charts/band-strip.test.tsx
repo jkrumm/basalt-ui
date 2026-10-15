@@ -90,7 +90,7 @@ const GOOD = alpha(VX.good, 1)
 const width = (r: Element): number => Number(r.getAttribute('width'))
 const sumWidth = (rs: Element[]): number => rs.reduce((n, r) => n + width(r), 0)
 const isMeasured = (r: Element): boolean => r.getAttribute('fill') === GOOD
-const isMarker = (r: Element): boolean => r.getAttribute('fill') === 'var(--vx-good)'
+const isMarker = (r: Element): boolean => r.getAttribute('fill') === VX.good
 const partial = (fraction: number | undefined): BandStripProps<Slot, string> =>
   props({
     states: [up, none],
@@ -109,6 +109,15 @@ const withMarker = (f: number): Document =>
       })}
     />,
   )
+const foldedProps = (f: number) =>
+  props({
+    states: [up, none],
+    absentState: 'none',
+    data: slots(600),
+    fold: { merge: (g) => ({ ...(g[0] as Slot), a: f }) },
+    getBand: (d): BandSpan => ({ state: d.s, absentFraction: d.a }),
+  })
+const widthOf = (el: HTMLElement, fill: (r: Element) => boolean) => sumWidth(bands(el).filter(fill))
 async function toggleLegend(el: HTMLElement, key: string): Promise<void> {
   const toggle = el.querySelector(`button[data-legend-key="${key}"]`)
   if (!(toggle instanceof HTMLButtonElement)) throw new Error('no toggleable legend entry')
@@ -281,6 +290,66 @@ describe('BandStrip', () => {
         expect(rects.every((r) => r.getAttribute('fill') === NEUTRAL)).toBe(true)
       }
       expect(bands(html(<BandStrip {...partial(-0.25)} />)).every(isMeasured)).toBe(true)
+    })
+
+    test('a span fill overrides the primary part only; the absent part keeps its state color', () => {
+      const tint = alpha(VX.good, 0.4)
+      const doc = html(
+        <BandStrip
+          {...props({
+            states: [up, none],
+            absentState: 'none',
+            data: slots(4),
+            getBand: (): BandSpan => ({ state: 'up', fill: tint, absentFraction: 0.5 }),
+          })}
+        />,
+      )
+      expect(fills(doc)).toEqual(new Set([tint, NEUTRAL]))
+    })
+
+    describe('folded, with the legend toggled', () => {
+      test('hidden absent at 0.5 and 1: the primary fill spans every folded band', async () => {
+        for (const f of [0.5, 1]) {
+          const el = await mount(<BandStrip {...foldedProps(f)} />)
+          const whole = widthOf(el, () => true)
+          await toggleLegend(el, 'none')
+          expect(bands(el).every(isMeasured)).toBe(true)
+          expect(widthOf(el, isMeasured)).toBeCloseTo(whole, 3)
+          act(() => root?.unmount())
+          document.body.innerHTML = ''
+        }
+      })
+
+      test('hidden primary at 0.5: only the absent halves paint', async () => {
+        const el = await mount(<BandStrip {...foldedProps(0.5)} />)
+        const whole = widthOf(el, () => true)
+        await toggleLegend(el, 'up')
+        expect(bands(el).every((r) => r.getAttribute('fill') === NEUTRAL)).toBe(true)
+        expect(widthOf(el, () => true)).toBeCloseTo(whole / 2, 3)
+      })
+    })
+
+    describe('in production', () => {
+      const env = process.env.NODE_ENV
+      afterEach(() => {
+        process.env.NODE_ENV = env ?? 'test'
+      })
+
+      test('an unknown absentState degrades to primary-only paint and rows, no throw', async () => {
+        process.env.NODE_ENV = 'production'
+        const el = await mount(<BandStrip {...partial(0.5)} absentState="typo" />)
+        expect(bands(el).length).toBe(4)
+        expect(bands(el).every(isMeasured)).toBe(true)
+        const text = await hover(el)
+        expect(text).toContain('Up')
+        expect(text).not.toContain('Not measured')
+      })
+
+      test('absentFraction without an absentState paints the primary band, no throw', () => {
+        process.env.NODE_ENV = 'production'
+        const doc = html(<BandStrip {...partial(0.5)} absentState={undefined} />)
+        expect(bands(doc).every(isMeasured)).toBe(true)
+      })
     })
 
     test('absentFraction without an absentState throws in dev', () => {

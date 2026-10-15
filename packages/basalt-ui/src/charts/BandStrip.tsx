@@ -120,7 +120,7 @@ type Layer = { fill: string; opacity: number; cells: Cell[] }
 /** A run of adjacent slots drawn as one band; `items` are the source data it stands for. */
 type Group<T> = { start: number; items: T[] }
 /** A slot that answers the pointer: its own source datum, and the (possibly merged) one it reads. */
-type Hit<T> = { source: T; state: string; datum: T }
+type Hit<T> = { slot: number; source: T; state: string; datum: T }
 
 /** Adjacent data in groups of equal size, the last possibly shorter, at most `cap` groups. */
 function groupsOf<T>(data: readonly T[], cap: number): Group<T>[] {
@@ -171,36 +171,96 @@ function absentShareOf(span: BandSpan, absentKey: string | undefined): number {
 }
 
 /**
- * The one visibility-aware split paint, hits and the tooltip all read: the absent share that is
- * drawn (a hidden absent state gives its share back to the primary part) and whether the primary
- * part is drawn (a hidden primary state leaves its part unpainted, the absent part untouched).
+ * The one visibility-aware split that paint, hits and the tooltip all read: the absent share that
+ * is drawn (a hidden absent state gives its share back to the primary part) and whether the
+ * primary part is drawn (a hidden primary state leaves its part unpainted, the absent part
+ * untouched). `isVisible` is the legend's test, in whichever form the caller holds it.
  */
 function resolveAbsent(
   span: BandSpan,
   absentKey: string | undefined,
-  visible: ReadonlySet<string>,
+  isVisible: (key: string) => boolean,
 ): { share: number; primaryShown: boolean } {
-  const absentVisible = absentKey !== undefined && visible.has(absentKey)
-  const share = absentVisible ? absentShareOf(span, absentKey) : 0
-  return { share, primaryShown: share < 1 && visible.has(span.state) }
+  const share = absentKey !== undefined && isVisible(absentKey) ? absentShareOf(span, absentKey) : 0
+  return { share, primaryShown: share < 1 && isVisible(span.state) }
 }
+
+/** A state's tooltip value: its own reading, an em dash for `null`, empty when the name says it all. */
+const stateValue = <T,>(s: BandStripSeries<T>, d: T): string =>
+  s.formatValue ? (s.formatValue(d) ?? NON_FINITE) : ''
 
 const unknownState = (prop: string, got: string, known: Iterable<string>): Error =>
   new Error(oneOf('BandStrip', prop, [...known], got))
 
-/** Paints a band's primary part (when shown), then its absent share from the right edge. */
-function paintSplit(
-  layers: Map<string, Layer>,
+type PaintCtx<T> = {
+  base: Map<string, Layer>
+  markers: Map<string, Layer>
+  states: ReadonlyMap<string, BandStripSeries<T>>
+  visible: ReadonlySet<string>
+  height: number
+  emphasis: (key: string) => number
+  /** The strip's absent state, when it names a real entry of `states`. */
+  absentKey: string | undefined
+}
+
+/**
+ * Paints one band: its primary part (when shown), its absent share from the right edge, and its
+ * marker over the primary part. Returns which states answer the pointer for the band's slots.
+ */
+function paintSpan<T>(
+  ctx: PaintCtx<T>,
+  span: BandSpan,
   cell: { f0: number; f1: number },
-  primary: { share: number; fill: string; opacity: number; shown: boolean },
-  absent: { fill: string; opacity: number } | undefined,
-): number {
-  const split = cell.f1 - (cell.f1 - cell.f0) * primary.share
-  if (primary.shown)
-    paintInto(layers, primary.fill, primary.opacity, { ...cell, f1: split, y0: 0, y1: 1 })
-  if (primary.share > 0 && absent)
-    paintInto(layers, absent.fill, absent.opacity, { f0: split, f1: cell.f1, y0: 0, y1: 1 })
-  return split
+): { primary: boolean; absent: boolean } {
+  const { states, visible, absentKey } = ctx
+  const state = states.get(span.state)
+  if (!state && process.env.NODE_ENV !== 'production')
+    throw unknownState('BandSpan.state', span.state, states.keys())
+  if (
+    absentKey === undefined &&
+    clampFraction(span.absentFraction) > 0 &&
+    process.env.NODE_ENV !== 'production'
+  )
+    throw new Error(
+      requiredProp('BandStrip', 'absentState', 'a BandSpan carries an absentFraction'),
+    )
+  const { share, primaryShown } = resolveAbsent(span, absentKey, (k) => visible.has(k))
+  // An unknown state (production only) has no visibility to toggle: it always paints.
+  const primary = state ? primaryShown : share < 1
+  const absentStyle = absentKey === undefined ? undefined : states.get(absentKey)
+  const split = cell.f1 - (cell.f1 - cell.f0) * share
+  if (primary)
+    paintInto(
+      ctx.base,
+      span.fill ?? (state ? alpha(state.color, state.fillOpacity ?? 1) : UNKNOWN_FILL),
+      ctx.emphasis(span.state),
+      { ...cell, f1: split, y0: 0, y1: 1 },
+    )
+  if (share > 0 && absentStyle && absentKey !== undefined)
+    paintInto(
+      ctx.base,
+      alpha(absentStyle.color, absentStyle.fillOpacity ?? 1),
+      ctx.emphasis(absentKey),
+      { f0: split, f1: cell.f1, y0: 0, y1: 1 },
+    )
+
+  if (span.marker && primary) {
+    const markerKey = span.marker.state ?? span.state
+    const markerState = states.get(markerKey)
+    if (!markerState && process.env.NODE_ENV !== 'production')
+      throw unknownState('BandSpan.marker.state', markerKey, states.keys())
+    if (!markerState || visible.has(markerKey)) {
+      const inset = (span.marker.inset ?? DEFAULT_MARKER_INSET) / Math.max(ctx.height, 1)
+      paintInto(ctx.markers, markerState?.color ?? UNKNOWN_FILL, ctx.emphasis(markerKey), {
+        ...cell,
+        f1: split,
+        y0: inset,
+        y1: 1 - inset,
+      })
+    }
+  }
+  // An unknown state (production only) answers no pointer: a tooltip row needs its series.
+  return { primary: primary && state !== undefined, absent: share > 0 }
 }
 
 /**
@@ -213,79 +273,37 @@ function layoutBands<T>(input: LayoutInput<T>): {
   markers: Layer[]
   hits: Hit<T>[]
 } {
-  const { data, getBand, fold, states, visible, absentState: absentKey } = input
-  const absentStyle = absentKey === undefined ? undefined : states.get(absentKey)
-  if (absentKey !== undefined && !absentStyle && process.env.NODE_ENV !== 'production')
-    throw unknownState('BandStrip.absentState', absentKey, states.keys())
+  const { data, getBand, fold, absentState: absentKey } = input
   const cap = Math.floor(input.width / (fold?.minBandPx ?? DEFAULT_MIN_BAND_PX))
   const groups: Group<T>[] =
     fold && data.length > cap
       ? groupsOf(data, cap)
       : data.map((d, start) => ({ start, items: [d] }))
-  const base = new Map<string, Layer>()
-  const markers = new Map<string, Layer>()
+  const ctx: PaintCtx<T> = {
+    base: new Map(),
+    markers: new Map(),
+    states: input.states,
+    visible: input.visible,
+    height: input.height,
+    emphasis: input.emphasis,
+    absentKey,
+  }
   const hits: Hit<T>[] = []
 
   for (const g of groups) {
     const datum = fold && g.items.length > 1 ? fold.merge(g.items) : g.items[0]
     if (datum === undefined) continue
     const span = getBand(datum)
-    const state = states.get(span.state)
-    if (!state && process.env.NODE_ENV !== 'production')
-      throw unknownState('BandSpan.state', span.state, states.keys())
-    if (
-      absentKey === undefined &&
-      clampFraction(span.absentFraction) > 0 &&
-      process.env.NODE_ENV !== 'production'
-    )
-      throw new Error(
-        requiredProp('BandStrip', 'absentState', 'a BandSpan carries an absentFraction'),
-      )
-    const { share, primaryShown } = resolveAbsent(span, absentKey, visible)
-    // An unknown state (production only) has no visibility to toggle: it always paints.
-    const shown = state ? primaryShown : share < 1
-    if (!shown && share === 0) continue
     const cell = { f0: g.start / data.length, f1: (g.start + g.items.length) / data.length }
-    const split = paintSplit(
-      base,
-      cell,
-      {
-        share,
-        fill: span.fill ?? (state ? alpha(state.color, state.fillOpacity ?? 1) : UNKNOWN_FILL),
-        opacity: input.emphasis(span.state),
-        shown,
-      },
-      absentStyle && absentKey !== undefined
-        ? {
-            fill: alpha(absentStyle.color, absentStyle.fillOpacity ?? 1),
-            opacity: input.emphasis(absentKey),
-          }
-        : undefined,
-    )
-
-    if (span.marker && shown) {
-      const markerKey = span.marker.state ?? span.state
-      const markerState = states.get(markerKey)
-      if (!markerState && process.env.NODE_ENV !== 'production')
-        throw unknownState('BandSpan.marker.state', markerKey, states.keys())
-      if (!markerState || visible.has(markerKey)) {
-        const inset = (span.marker.inset ?? DEFAULT_MARKER_INSET) / Math.max(input.height, 1)
-        paintInto(markers, markerState?.color ?? UNKNOWN_FILL, input.emphasis(markerKey), {
-          ...cell,
-          f1: split,
-          y0: inset,
-          y1: 1 - inset,
-        })
-      }
-    }
-    // An unknown state (production only) answers no pointer: a tooltip row needs its series.
-    if (state)
-      for (const source of g.items) {
-        if (shown) hits.push({ source, state: span.state, datum })
-        if (share > 0 && absentKey !== undefined) hits.push({ source, state: absentKey, datum })
-      }
+    const answers = paintSpan(ctx, span, cell)
+    g.items.forEach((source, i) => {
+      const slot = g.start + i
+      if (answers.primary) hits.push({ slot, source, state: span.state, datum })
+      if (answers.absent && absentKey !== undefined)
+        hits.push({ slot, source, state: absentKey, datum })
+    })
   }
-  return { base: [...base.values()], markers: [...markers.values()], hits }
+  return { base: [...ctx.base.values()], markers: [...ctx.markers.values()], hits }
 }
 
 export function BandStrip<T, X extends ChartX = ChartX>(props: BandStripProps<T, X>): ReactElement {
@@ -299,6 +317,15 @@ export function BandStrip<T, X extends ChartX = ChartX>(props: BandStripProps<T,
     ...rest
   } = props
   const { data, x } = rest
+  // Resolved once: a misconfigured absent state degrades to primary-only paint, hits and rows.
+  const absentKey =
+    absentState !== undefined && states.some((s) => s.key === absentState) ? absentState : undefined
+  if (absentState !== undefined && absentKey === undefined && process.env.NODE_ENV !== 'production')
+    throw unknownState(
+      'BandStrip.absentState',
+      absentState,
+      states.map((s) => s.key),
+    )
 
   const series = useMemo<ChartSeries<T>[]>(
     () =>
@@ -312,12 +339,13 @@ export function BandStrip<T, X extends ChartX = ChartX>(props: BandStripProps<T,
         ...(s.note !== undefined && { note: s.note }),
         getValue: (d) => {
           const span = getBand(d)
-          if (span.state === s.key) return absentShareOf(span, absentState) < 1 ? 1 : null
-          return s.key === absentState && absentShareOf(span, absentState) > 0 ? 1 : null
+          const share = absentShareOf(span, absentKey)
+          if (span.state === s.key) return share < 1 ? 1 : null
+          return s.key === absentKey && share > 0 ? 1 : null
         },
-        formatValue: (_v, d) => (s.formatValue ? (s.formatValue(d) ?? NON_FINITE) : ''),
+        formatValue: (_v, d) => stateValue(s, d),
       })),
-    [states, getBand, absentState],
+    [states, getBand, absentKey],
   )
 
   const marks = useCallback(
@@ -326,19 +354,19 @@ export function BandStrip<T, X extends ChartX = ChartX>(props: BandStripProps<T,
         data,
         getBand,
         fold,
-        absentState,
+        absentState: absentKey,
         states: new Map(states.map((s) => [s.key, s])),
         visible: new Set(plot.visible.map((s) => s.key)),
         width: plot.width,
         height: plot.height,
         emphasis: (key) => emphasis(plot.highlighted, { key }),
       })
-      const rows: PlotRow<T, X>[] = hits.map((h) => ({
-        x: x(h.source),
-        y: 1,
-        series: h.state,
-        datum: h.datum,
-      }))
+      const rowKeys = new Map<PlotRow<T, X>, string>()
+      const rows: PlotRow<T, X>[] = hits.map((h) => {
+        const row = { x: x(h.source), y: 1, series: h.state, datum: h.datum }
+        rowKeys.set(row, `${h.slot}|${h.state}`)
+        return row
+      })
       return [
         ...[...base, ...markers].map(({ fill, opacity, cells }, i) =>
           decorative(
@@ -359,8 +387,8 @@ export function BandStrip<T, X extends ChartX = ChartX>(props: BandStripProps<T,
           ? [
               barY(rows, {
                 id: 'hit',
-                // One row per source slot and state; source x is unique even when a fold merges.
-                key: (r) => `${String(r.x)}|${r.series}`,
+                // One row per source slot and state, whatever the x values look like.
+                key: (r) => rowKeys.get(r) ?? '',
                 x: rowX,
                 y1: 0,
                 y2: 1,
@@ -370,33 +398,41 @@ export function BandStrip<T, X extends ChartX = ChartX>(props: BandStripProps<T,
           : []),
       ]
     },
-    [states, getBand, fold, absentState, data, x],
+    [states, getBand, fold, absentKey, data, x],
   )
 
-  // `getValue` cannot see the legend, so a fully absent band has no primary row; when the absent
-  // state is hidden the strip draws the primary fill instead, and its row is added back here.
+  // `getValue` cannot see the legend, so a fully absent band has no primary row. When the absent
+  // state is hidden the strip paints the primary fill instead, and its row is added back here by
+  // the same `resolveAbsent` that paints it.
   const tooltipWithPrimary = useMemo<BandStripProps<T, X>['tooltip']>(() => {
-    if (tooltip === false || absentState === undefined) return tooltip
+    if (tooltip === false || absentKey === undefined) return tooltip
     return {
       ...tooltip,
       rows: (d, ctx) => {
         const span = getBand(d)
-        const primary = ctx.visible.find((s) => s.key === span.state)
-        const absentHidden = ctx.hidden.some((s) => s.key === absentState)
-        const extra =
-          primary && absentHidden && absentShareOf(span, absentState) === 1
+        const primary = states.find((s) => s.key === span.state)
+        const { primaryShown } = resolveAbsent(span, absentKey, (k) =>
+          ctx.visible.some((s) => s.key === k),
+        )
+        const readdPrimary = primary && primaryShown && absentShareOf(span, absentKey) === 1
+        return [
+          ...(readdPrimary
             ? [
                 {
-                  label: primary.label,
-                  value: states.find((s) => s.key === primary.key)?.formatValue?.(d) ?? '',
+                  label:
+                    primary.note === undefined
+                      ? primary.label
+                      : `${primary.label} · ${primary.note}`,
+                  value: stateValue(primary, d),
                   color: primary.color,
                 },
               ]
-            : []
-        return [...extra, ...(tooltip?.rows?.(d, ctx) ?? [])]
+            : []),
+          ...(tooltip?.rows?.(d, ctx) ?? []),
+        ]
       },
     }
-  }, [tooltip, absentState, getBand, states])
+  }, [tooltip, absentKey, getBand, states])
 
   return (
     <CartesianRung
