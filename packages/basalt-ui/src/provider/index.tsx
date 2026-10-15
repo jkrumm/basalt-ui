@@ -421,15 +421,15 @@ function useDataTelemetry(router: AnyRouter, client: QueryClient, emit: Telemetr
 
 const LazyDevDock = lazy(() => import('../dev-dock').then((m) => ({ default: m.BasaltDevDock })))
 
-function readQueryClient(router: AnyRouter | null): QueryClient {
+function readQueryClient(router: AnyRouter | null): { router: AnyRouter; client: QueryClient } {
   const client = (router?.options.context as Partial<BasaltRouterContext> | undefined)?.queryClient
-  if (client === undefined) {
+  if (!router || client === undefined) {
     throw new Error(
-      '[basalt] BasaltProvider: no router with context.queryClient — pass one from ' +
-        'createBasaltRouter({ routeTree }), or render inside a router whose context carries it.',
+      '[basalt] BasaltProvider: no router with context.queryClient — pass `router` ' +
+        '(createBasaltRouter) to mount one, or `children` inside a router whose context carries it.',
     )
   }
-  return client
+  return { router, client }
 }
 
 // ── Public provider ───────────────────────────────────────────────────────────────────────────────
@@ -466,9 +466,7 @@ export function BasaltProvider({
   // `warn: false` — in mount mode this provider sits ABOVE the router, so no context is expected.
   // Embedded mode reads the router the host framework already mounted (SSR-safe: context only).
   const ambientRouter = useRouter({ warn: false }) as AnyRouter | null
-  // `null` (no router anywhere) is refused by `readQueryClient` on the next line.
-  const router = (mountedRouter ?? ambientRouter) as AnyRouter
-  const client = readQueryClient(router)
+  const { router, client } = readQueryClient(mountedRouter ?? ambientRouter)
   useDataTelemetry(router, client, emit)
 
   const [devTool, setDevTool] = useState<BasaltDevDockTool | null>(null)

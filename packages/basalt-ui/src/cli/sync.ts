@@ -23,7 +23,7 @@ import {
   readBasaltConfig,
   readIfExists,
   readManifest,
-  readPackageJson,
+  hasDependency,
   readSource,
   reconcileRoots,
   relativePosix,
@@ -65,12 +65,16 @@ export function parentInstallAdvice(cwd: string, parent: string, verb: string): 
   )
 }
 
+/** The router seeds' dests for an app dir (`main.tsx`, `nav.tsx`, `__root.tsx`). */
+export function routerSeedDests(appRel: string): string[] {
+  return (Object.keys(ROUTER_SEED_DESTS) as (keyof typeof ROUTER_SEED_DESTS)[]).map((seed) =>
+    routerSeedDest(appRel, seed),
+  )
+}
+
 /** A TanStack Start app owns its router, so its router seeds give way to an in-tree `<BasaltProvider>`. */
-export function startAppSeeds(cwd: string, appRel: string): string[] | null {
-  const pkg = readPackageJson<Record<string, Record<string, string>>>(resolve(cwd, appRel)) ?? {}
-  const deps = [pkg['dependencies'], pkg['devDependencies'], pkg['peerDependencies']]
-  if (!deps.some((d) => d?.['@tanstack/react-start'] !== undefined)) return null
-  return Object.keys(ROUTER_SEED_DESTS).map((s) => routerSeedDest(appRel, s as 'nav'))
+export function isStartApp(cwd: string, appRel: string): boolean {
+  return hasDependency(resolve(cwd, appRel), '@tanstack/react-start')
 }
 
 export const START_APP_NOTE =
@@ -144,8 +148,9 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
   const ctx = renderContext(cwd)
   const manifest = readManifest(cwd)
   const placement = resolvePlacement(cwd)
-  const startSeeds = startAppSeeds(cwd, placement.appRel)
-  const files = managedFiles(placement).filter((f) => !startSeeds?.includes(f.dest))
+  const startApp = isStartApp(cwd, placement.appRel)
+  const skipped = new Set(startApp ? routerSeedDests(placement.appRel) : [])
+  const files = managedFiles(placement).filter((f) => !skipped.has(f.dest))
 
   let updated = 0
   // `created` and `recreated` were one counter, and `0 updated, 20 recreated` is what a full
@@ -217,7 +222,7 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
   // Placement notices — informational, never affecting the exit code, and PERMANENT: `--check`
   // hides them behind `--verbose` (it sits in consumers' CI chains, where three unchanging
   // "skipped" paragraphs per run are noise indistinguishable from drift) but still prints the COUNT.
-  if (startSeeds && !opts.check) console.log(`basalt-ui sync: ${START_APP_NOTE}`)
+  if (startApp && !opts.check) console.log(`basalt-ui sync: ${START_APP_NOTE}`)
   const placementSkips = placementNotices(cwd, placement)
   if (opts.check !== true || syncFlags.includes('--verbose')) {
     for (const line of placementSkips) console.log(`basalt-ui sync: ${line}`)
