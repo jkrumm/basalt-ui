@@ -88,9 +88,11 @@ export function TableOfContents({
   const reduceMotion = useReducedMotion()
   // The rail's own node — the probe `scrollParentOf` walks from when there is no `containerRef`.
   const navRef = useRef<HTMLElement | null>(null)
-  // Which headings the observer currently reports inside its band.
+  // The spy's working set, resolved once per effect run: headings, scroller, and the band's members.
+  const elementsRef = useRef<HTMLElement[]>([])
+  const portRef = useRef<HTMLElement | null>(null)
   const intersectingRef = useRef<Set<string>>(new Set())
-  // Bumped when a click hands the rail back: the spy effect below re-subscribes, and re-resolves.
+  // Bumped when a click hands the rail back, so the rail re-resolves.
   const [idleTick, bumpIdle] = useReducer((n: number) => n + 1, 0)
   const pin = useClickPin(bumpIdle)
   const scrollerOf = useCallback(
@@ -120,12 +122,13 @@ export function TableOfContents({
       setActiveId(pin.activeId)
       return
     }
-    const elements = resolvedItems
-      .map((item) => document.getElementById(item.id))
-      .filter((el): el is HTMLElement => el !== null)
-    const id = pickActive(elements, intersectingRef.current, scrollMetrics(scrollerOf()))
+    const id = pickActive(
+      elementsRef.current,
+      intersectingRef.current,
+      scrollMetrics(portRef.current),
+    )
     if (id !== undefined) setActiveId(id)
-  }, [pin, resolvedItems, scrollerOf])
+  }, [pin])
 
   // Scroll-spy: one IntersectionObserver over every collected heading.
   useEffect(() => {
@@ -140,6 +143,8 @@ export function TableOfContents({
     const scroller: Window | HTMLElement = port ?? window
     const intersecting = intersectingRef.current
     intersecting.clear()
+    elementsRef.current = elements
+    portRef.current = port
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -161,8 +166,15 @@ export function TableOfContents({
     return () => {
       observer.disconnect()
       scroller.removeEventListener('scroll', resolve)
+      elementsRef.current = []
     }
-  }, [resolvedItems, scrollerOf, pin, resolve, idleTick])
+  }, [resolvedItems, scrollerOf, pin, resolve])
+
+  // A click handed the rail back: answer for where the reader is, next frame.
+  useEffect(() => {
+    const frame = requestAnimationFrame(resolve)
+    return () => cancelAnimationFrame(frame)
+  }, [idleTick, resolve])
 
   if (resolvedItems.length === 0) return null
 

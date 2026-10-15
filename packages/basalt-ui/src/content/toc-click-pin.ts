@@ -1,20 +1,24 @@
 /**
  * Which TOC entry the reader just ASKED for, until the page has caught up.
  *
- *   idle ──click──▶ pinned{id} ──first scrollend / backstop──▶ held{id, top}
+ *   idle ──click──▶ pinned{id} ──scrollend / 200 ms without scrolling──▶ held{id, top}
  *     ▲                │ scroll intent                            │ scroll moves > ε (any cause),
  *     └────────────────┴──────────────────────────────────────────┘ scroll intent, id gone, unmount
  *
  * The clicked heading rests under the sticky header, above the spy's band, so the spy cannot be
  * trusted while the click's scroll is in flight; once it has settled the spy's own answer is right
- * and the hold only has to cover the short-tail case. So: pinned while the scroll runs (to its first
- * `scrollend`, or a backstop where there is none), held where it settled, and handed back the moment
+ * and the hold only has to cover the short-tail case. So: pinned while the scroll runs (until its
+ * `scrollend`, or until the scroller has been quiet for a moment where there is none), held where it
+ * settled, and handed back the moment
  * the position moves for ANY reason — reader, find-in-page, focus, layout shift, app scroll.
  */
 import { useEffect, useState } from 'react'
 
-/** Backstop for a browser without `scrollend`, or a click that needs no scroll. Moves to HELD. */
-export const CLICK_PIN_BACKSTOP_MS = 3000
+/**
+ * How long the scroller must be quiet before a pinned click counts as settled: the fallback for a
+ * browser without a reliable `scrollend`, and the only signal for a click that needs no scroll.
+ */
+export const QUIET_MS = 200
 /** Scroll movement tolerated while held (sub-pixel offsets, fractional DPR). */
 export const HOLD_EPSILON_PX = 2
 
@@ -28,13 +32,22 @@ const SCROLL_KEYS: ReadonlySet<string> = new Set([
   ' ',
 ])
 
-const isEditable = (target: EventTarget | null): boolean =>
-  target instanceof HTMLElement &&
-  (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))
+/** Where the reader's input is aimed at text entry — through shadow roots, via the composed path. */
+const isEditable = (event: Event): boolean =>
+  event
+    .composedPath()
+    .some(
+      (node) =>
+        node instanceof HTMLElement &&
+        (node.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(node.tagName)),
+    )
+
+/** The document-level events that mean the reader is about to scroll (or may have). */
+export const INTENT_EVENTS = ['wheel', 'touchstart', 'keydown', 'pointerdown'] as const
 
 /**
  * Did the reader just do something that scrolls (or may scroll) the page? `link` is the rail link
- * that was activated: pressing Enter on it (not a scroll key) or pointing at it is the click itself.
+ * that was activated: pointing at it is the click itself, and Enter on it is not a scroll key.
  */
 export function isScrollIntent(event: Event, link: Element | null): boolean {
   switch (event.type) {
@@ -44,15 +57,13 @@ export function isScrollIntent(event: Event, link: Element | null): boolean {
     case 'pointerdown':
       return !(event.target instanceof Node && link?.contains(event.target))
     case 'keydown':
-      return (
-        event instanceof KeyboardEvent && SCROLL_KEYS.has(event.key) && !isEditable(event.target)
-      )
+      return event instanceof KeyboardEvent && SCROLL_KEYS.has(event.key) && !isEditable(event)
     default:
       return false
   }
 }
 
-export function scrollTopOf(scroller: HTMLElement | null): number {
+function scrollTopOf(scroller: HTMLElement | null): number {
   return scroller ? scroller.scrollTop : window.scrollY
 }
 
@@ -83,29 +94,38 @@ export class ClickPin {
     this.current = { kind: 'pinned', id }
 
     const target: Window | HTMLElement = scroller ?? window
+    let quiet: ReturnType<typeof setTimeout> | undefined
     const hold = () => {
+      clearTimeout(quiet)
       if (this.current.kind !== 'pinned') return
       this.current = { kind: 'held', id, top: scrollTopOf(scroller) }
     }
     const onScroll = () => {
-      const held = this.current
-      if (held.kind === 'held' && Math.abs(scrollTopOf(scroller) - held.top) > HOLD_EPSILON_PX) {
+      const state = this.current
+      if (state.kind === 'pinned') {
+        clearTimeout(quiet)
+        quiet = setTimeout(hold, QUIET_MS)
+      } else if (
+        state.kind === 'held' &&
+        Math.abs(scrollTopOf(scroller) - state.top) > HOLD_EPSILON_PX
+      ) {
         this.release()
       }
     }
     const onIntent = (event: Event) => {
       if (isScrollIntent(event, link)) this.release()
     }
-    const timer = setTimeout(hold, CLICK_PIN_BACKSTOP_MS)
-    const intents = ['wheel', 'touchstart', 'keydown', 'pointerdown'] as const
+    quiet = setTimeout(hold, QUIET_MS)
     target.addEventListener('scrollend', hold, { once: true })
     target.addEventListener('scroll', onScroll, { passive: true })
-    for (const type of intents) document.addEventListener(type, onIntent, { capture: true })
+    for (const type of INTENT_EVENTS) document.addEventListener(type, onIntent, { capture: true })
     this.stop = () => {
-      clearTimeout(timer)
+      clearTimeout(quiet)
       target.removeEventListener('scrollend', hold)
       target.removeEventListener('scroll', onScroll)
-      for (const type of intents) document.removeEventListener(type, onIntent, { capture: true })
+      for (const type of INTENT_EVENTS) {
+        document.removeEventListener(type, onIntent, { capture: true })
+      }
     }
   }
 
