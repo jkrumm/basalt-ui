@@ -6,6 +6,8 @@ import { MantineProvider } from '@mantine/core'
 import { render, waitFor } from '@testing-library/react'
 import { afterAll, afterEach, describe, expect, mock, test } from 'bun:test'
 
+// `mock.module` is process-global and bun's runner shares one process across test files, so this
+// mock would leak into mermaid-sanitize.test.ts if it were not undone in `afterAll`.
 // Captured BEFORE the mock lands (the factory below must not re-enter the mocked module); the
 // mock is process-global, so `afterAll` puts the real function back for later test files.
 const { sanitizeMermaidFonts: actual } = await import('./mermaid-sanitize')
