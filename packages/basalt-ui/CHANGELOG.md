@@ -1,3 +1,10 @@
+## [2.7.3](https://github.com/jkrumm/basalt-ui/compare/v2.7.2...v2.7.3) (2026-10-15)
+
+
+### Bug Fixes
+
+* state the TableOfContents ⇄ Markdown heading-id contract where agents read ([01ff90e](https://github.com/jkrumm/basalt-ui/commit/01ff90ea6999d5615aba9be73079a05bb8962c5f))
+
 ## [2.7.2](https://github.com/jkrumm/basalt-ui/compare/v2.7.1...v2.7.2) (2026-10-15)
 
 
