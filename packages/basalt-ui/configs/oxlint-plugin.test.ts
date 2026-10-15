@@ -1985,6 +1985,50 @@ describe('basalt/control-outside-home', () => {
       expect(rules).not.toContain('control-outside-home')
     })
 
+    it('reports a hand-rolled Menu + ActionIcon trigger once, not twice', () => {
+      const { output } = run(
+        `import { ActionIcon, Menu } from '@mantine/core'\n${TABLE_IMPORT}const col = createColumnHelper<Row>()\n` +
+          `export const columns = [col.display({ id: 'a', cell: () => (\n` +
+          `  <Menu><Menu.Target><ActionIcon aria-label="x" /></Menu.Target></Menu>\n) })]\n`,
+      )
+      expect(output.match(/\(basalt\/control-outside-home\)/g)).toHaveLength(1)
+    })
+
+    it('does NOT flag an ActionIcon already homed in a form row inside a cell', () => {
+      const { rules } = run(
+        `import { ActionIcon } from '@mantine/core'\nimport { FormRow } from 'basalt-ui/controls'\n${TABLE_IMPORT}` +
+          `const col = createColumnHelper<Row>()\nexport const columns = [col.display({ id: 'a', cell: () => (\n` +
+          `  <FormRow label="L"><ActionIcon aria-label="x" /></FormRow>\n) })]\n`,
+      )
+      expect(rules).not.toContain('control-outside-home')
+    })
+
+    it('does NOT flag one under a Menu.Dropdown inside a cell', () => {
+      const { rules } = run(
+        `import { ActionIcon } from '@mantine/core'\n${TABLE_IMPORT}const col = createColumnHelper<Row>()\n` +
+          `export const columns = [col.display({ id: 'a', cell: () => (\n` +
+          `  <Menu.Dropdown><ActionIcon aria-label="x" /></Menu.Dropdown>\n) })]\n`,
+      )
+      expect(rules).not.toContain('control-outside-home')
+    })
+
+    it('still flags in a file that imports @mantine/form', () => {
+      const { rules } = run(
+        `import { useForm } from '@mantine/form'\nimport { ActionIcon } from '@mantine/core'\n${TABLE_IMPORT}` +
+          `const col = createColumnHelper<Row>()\nexport const columns = [col.display({ id: 'a', cell: () => <ActionIcon aria-label="x" /> })]\n`,
+      )
+      expect(rules).toContain('control-outside-home')
+    })
+
+    it('does not see a cell renderer passed by reference (declared single-file limit)', () => {
+      const { rules } = run(
+        `import { ActionIcon } from '@mantine/core'\n${TABLE_IMPORT}const col = createColumnHelper<Row>()\n` +
+          `const renderActions = () => <ActionIcon aria-label="x" />\n` +
+          `export const columns = [col.display({ id: 'a', cell: renderActions })]\n`,
+      )
+      expect(rules).not.toContain('control-outside-home')
+    })
+
     it('honours a theme-allow waiver', () => {
       const { rules } = run(
         `import { ActionIcon } from '@mantine/core'\n${TABLE_IMPORT}const col = createColumnHelper<Row>()\n` +

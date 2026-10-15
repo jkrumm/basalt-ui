@@ -2536,7 +2536,15 @@ const ROW_ACTION_IN_CELL_MESSAGE =
 /** Tags that, in a column `cell` renderer, are a hand-rolled row action. */
 const ROW_ACTION_TAGS = new Set(['Menu', 'ActionIcon'])
 
-/** True when `node` sits inside a function that is the value of a `cell:` property (a column def). */
+/** An `ActionIcon` under a `Menu` is that menu's trigger: the `Menu` reports, once, for the pair. */
+const ROW_MENU_TAGS = new Set(['Menu'])
+
+/**
+ * True when `node` sits inside a function that is the value of a `cell:` property (a column def).
+ * Only an INLINE renderer is seen: `cell: renderActions` (a reference to a function declared
+ * elsewhere) is a cross-reference no single-file AST walk resolves — the same declared limit as
+ * the rule's cross-file C1 gap.
+ */
 function insideCellRenderer(node) {
   let current = node.parent
   for (let depth = 0; current !== null && current !== undefined; depth++) {
@@ -2610,18 +2618,24 @@ const controlOutsideHome = {
           captured: slots.capture(node),
           hosted: hasAncestorTag(node, CONTROL_HOST_TAGS),
           inCell: insideCellRenderer(node),
+          inMenu: jsxTagName(node.name) !== 'Menu' && hasAncestorTag(node, ROW_MENU_TAGS),
         })
       },
       'Program:exit'() {
-        if (importsMantineForm || owner.isOwner()) return
-        for (const { node, name, captured, hosted, inCell } of candidates) {
+        // Row actions first: a table file that imports `@mantine/form` or defines a basalt control
+        // still hosts column cells, so neither file-level exemption applies to them. An already-homed
+        // element (a form row, a menu dropdown, a slot) is still not a row action.
+        for (const { node, name, captured, hosted, inCell, inMenu } of candidates) {
+          if (!inCell || hosted || inMenu) continue
           const tag = resolveMantineTag(name, mantineImports)
-          if (tag !== undefined && inCell && ROW_ACTION_TAGS.has(tag)) {
-            if (!hasThemeAllow(context, node, 'control-outside-home')) {
-              context.report({ node, message: ROW_ACTION_IN_CELL_MESSAGE })
-            }
-            continue
-          }
+          if (tag === undefined || !ROW_ACTION_TAGS.has(tag)) continue
+          if (slots.resolve(captured) || slots.inSubtreeHome(captured)) continue
+          if (hasThemeAllow(context, node, 'control-outside-home')) continue
+          context.report({ node, message: ROW_ACTION_IN_CELL_MESSAGE })
+        }
+        if (importsMantineForm || owner.isOwner()) return
+        for (const { node, name, captured, hosted } of candidates) {
+          const tag = resolveMantineTag(name, mantineImports)
           if (tag === undefined || !RAW_FILTER_TAGS.has(tag)) continue
           if (hosted || slots.resolve(captured) || slots.inSubtreeHome(captured)) continue
           if (hasThemeAllow(context, node, 'control-outside-home')) continue
