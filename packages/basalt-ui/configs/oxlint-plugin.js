@@ -2527,6 +2527,33 @@ const CONTROL_OUTSIDE_HOME_MESSAGE =
   '(Modal/Drawer/Popover/Menu) and a form (@mantine/form) are the declared non-homes and never ' +
   `report. ${SHELL_LESS_HOME_HINT} (basalt/control-outside-home)`
 
+const ROW_ACTION_IN_CELL_MESSAGE =
+  'A Mantine `Menu`/`ActionIcon` inside a column `cell`/`display` renderer is a per-row action with ' +
+  'no home. Pass `BasaltDataTable rowActions={[{ key, label, icon, onClick: (row) => … }]}` — the ' +
+  'table renders the trailing, pinned actions column, keyboard access and the no-row-activation ' +
+  'guard itself. (basalt/control-outside-home)'
+
+/** Tags that, in a column `cell` renderer, are a hand-rolled row action. */
+const ROW_ACTION_TAGS = new Set(['Menu', 'ActionIcon'])
+
+/** True when `node` sits inside a function that is the value of a `cell:` property (a column def). */
+function insideCellRenderer(node) {
+  let current = node.parent
+  for (let depth = 0; current !== null && current !== undefined; depth++) {
+    if (depth > ANCESTRY_MAX_DEPTH || current.type === 'Program') return false
+    if (
+      current.type === 'Property' &&
+      (current.key?.name ?? current.key?.value) === 'cell' &&
+      (current.value?.type === 'ArrowFunctionExpression' ||
+        current.value?.type === 'FunctionExpression')
+    ) {
+      return true
+    }
+    current = current.parent
+  }
+  return false
+}
+
 /**
  * The cross-file half of C1, and the one rule here that is openly a HEURISTIC: "this control has
  * no home" is a claim about layout intent, which no AST can see. That is why it sat in grace from
@@ -2582,12 +2609,19 @@ const controlOutsideHome = {
           name: node.name,
           captured: slots.capture(node),
           hosted: hasAncestorTag(node, CONTROL_HOST_TAGS),
+          inCell: insideCellRenderer(node),
         })
       },
       'Program:exit'() {
         if (importsMantineForm || owner.isOwner()) return
-        for (const { node, name, captured, hosted } of candidates) {
+        for (const { node, name, captured, hosted, inCell } of candidates) {
           const tag = resolveMantineTag(name, mantineImports)
+          if (tag !== undefined && inCell && ROW_ACTION_TAGS.has(tag)) {
+            if (!hasThemeAllow(context, node, 'control-outside-home')) {
+              context.report({ node, message: ROW_ACTION_IN_CELL_MESSAGE })
+            }
+            continue
+          }
           if (tag === undefined || !RAW_FILTER_TAGS.has(tag)) continue
           if (hosted || slots.resolve(captured) || slots.inSubtreeHome(captured)) continue
           if (hasThemeAllow(context, node, 'control-outside-home')) continue
