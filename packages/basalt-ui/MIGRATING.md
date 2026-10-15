@@ -1050,6 +1050,9 @@ value wins over the build-time `colorScheme` (an app that removes its scheme tog
 key). Pass `bootScript: false` under a CSP that forbids inline scripts without a nonce
 (`html.cspNonce` covers both boot tags) or with a custom `colorSchemeManager` key.
 
+**Mermaid diagrams.** `MermaidDiagram` no longer ships beautiful-mermaid's Google Fonts `@import` inside the SVG (a
+broken `family=var(--basalt-font-sans)` request per diagram). Behaviour fix; nothing to migrate.
+
 ## 2.8.0 — the fleet probe fixes
 
 Ledger rows 61-67 (`docs/waves/argo-friction.md`), found while the rest of the fleet probed 1.x → 2.x.
