@@ -1064,7 +1064,7 @@ The `basalt-ui/router-tanstack` subpath is **removed** in 2.x, not moved: an imp
 
 `Section` anchors (`id`) now clear a shell-less `PageBar`: without `BasaltShell` the scroll-margin adds `--basalt-page-bar-h` to the clearance, so `#anchor` no longer lands under the sticky bar; inside the shell nothing changes.
 
-`Section` takes controlled `open` + `onOpenChange` (Mantine naming) — given `open`, neither local state nor `persistKey` is written; uncontrolled keeps the persisted fold and `onOpenChange` also fires. Open a section from a URL hash with it instead of reaching for `writePersistedValue`.
+`Section` takes controlled `open` + `onOpenChange` (Mantine naming) — given `open`, a click only calls `onOpenChange` and the value is mirrored into the local/persisted fold, so dropping `open` keeps what the reader last saw; uncontrolled keeps the persisted fold and `onOpenChange` also fires. Open a section from a URL hash with it instead of reaching for `writePersistedValue`.
 
 `PageBar` placement in 2.x: the primary action renders at the END of row 1 (after the secondaries), not first; `title` leads the one sticky bar when there is no shell.
 

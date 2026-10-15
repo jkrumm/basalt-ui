@@ -23,36 +23,45 @@ const specOf = (shell: boolean): FixtureSpec => ({
   anchor: { shell },
 })
 
-/** Heading top minus the sticky bar's bottom, after jumping to `#anchor-2`. */
-async function headingBelowBar(shell: boolean): Promise<{ gap: number; barBottom: number }> {
-  const page = await openFixture(specOf(shell), PHONE, '/')
-  const result = await page.raw.evaluate(async (shell) => {
-    const target = document.getElementById('anchor-2')
-    if (!target) throw new Error('FAILED: #anchor-2 did not render')
-    target.scrollIntoView({ behavior: 'instant' })
+/**
+ * COLD LOAD at `/#anchor-2`: no scrollIntoView from the test. Returns the heading's distance below
+ * the bar (shell-less) or below the scrollport's top (shell), plus the resolved clearance token.
+ */
+async function coldLoadGap(
+  shell: boolean,
+): Promise<{ gap: number; edge: number; clearance: number }> {
+  const page = await openFixture(specOf(shell), PHONE, '/#anchor-2')
+  return page.raw.evaluate(async (inShell) => {
     await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())))
+    const target = document.getElementById('anchor-2')
     // Shell: the scrollport's own top edge (the bars are outside it). No shell: the sticky bar.
-    const edge = document.querySelector(
-      shell ? '[data-basalt-scrollport]' : '[data-basalt-page-bar]',
+    const el = document.querySelector(
+      inShell ? '[data-basalt-scrollport]' : '[data-basalt-page-bar]',
     )
-    if (!edge) throw new Error('FAILED: no scrollport / PageBar rendered')
-    const barBottom = shell ? edge.getBoundingClientRect().top : edge.getBoundingClientRect().bottom
-    return { gap: target.getBoundingClientRect().top - barBottom, barBottom }
+    if (!target || !el) throw new Error('FAILED: #anchor-2 or the bar / scrollport did not render')
+    const rect = el.getBoundingClientRect()
+    const edge = inShell ? rect.top : rect.bottom
+    const probe = document.createElement('div')
+    probe.style.marginTop = 'var(--vx-space-sticky-header-clearance)'
+    document.body.append(probe)
+    const clearance = parseFloat(getComputedStyle(probe).marginTop)
+    probe.remove()
+    return { gap: target.getBoundingClientRect().top - edge, edge, clearance }
   }, shell)
-  return result
 }
 
 layout('Section anchor vs the sticky PageBar', () => {
-  test('shell-less: the anchored Section starts at or below the PageBar bottom', async () => {
-    const { gap, barBottom } = await headingBelowBar(false)
-    expect(barBottom).toBeGreaterThan(0)
+  test('shell-less cold load: the anchored Section sits within [0, clearance + 4] below the bar', async () => {
+    const { gap, edge, clearance } = await coldLoadGap(false)
+    expect(edge).toBeGreaterThan(0)
     expect(gap).toBeGreaterThanOrEqual(0)
+    expect(gap).toBeLessThanOrEqual(clearance + 4)
   })
 
-  test('in a shell: the anchored Section still lands just under the scrollport top', async () => {
-    const { gap } = await headingBelowBar(true)
+  test('in a shell: the anchored Section sits within [0, clearance + 4] below the scrollport top', async () => {
+    const { gap, clearance } = await coldLoadGap(true)
     // The band is outside the scrollport — an offset that counted it would add the bar's height.
     expect(gap).toBeGreaterThanOrEqual(0)
-    expect(gap).toBeLessThan(120)
+    expect(gap).toBeLessThanOrEqual(clearance + 4)
   })
 })

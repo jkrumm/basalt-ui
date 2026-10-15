@@ -45,7 +45,7 @@
  *   <UsageChart />
  * </Section>
  */
-import { useId } from 'react'
+import { useEffect, useId } from 'react'
 import type { ReactNode } from 'react'
 import { cx } from '../common/props'
 import type { BasaltProps, SlotStylesProps } from '../common/props'
@@ -58,7 +58,7 @@ import { useFilterSurface } from '../controls/filter-context'
 import { QueryState } from './query-state'
 import type { QueryEmptyCopy, QueryStateLike } from './query-state'
 import { usePersistedOrLocal } from '../state/persisted-or-local'
-import { PAGE_BAR_HEIGHT_VAR, useInPageBarShell } from '../shell/page-bar'
+import { PAGE_BAR_HEIGHT_VAR, useInPageBarShell } from '../shell'
 import { WidgetHeader } from './widget-header'
 import type { WidgetHeaderProps } from './widget-header'
 import classes from './section.module.css'
@@ -108,9 +108,9 @@ export type SectionProps = Omit<WidgetHeaderProps, 'tier' | 'classNames' | 'acti
     /** Persists the fold state at `basalt:section:<persistKey>`. Omit for a local, unpersisted fold
      * (`useState`). */
     persistKey?: string
-    /** Controlled fold state (Mantine naming). Given one, the section follows it and neither local
-     * state nor `persistKey` is written — `onOpenChange` is the only way it moves. Omit for the
-     * uncontrolled, optionally persisted fold. */
+    /** Controlled fold state (Mantine naming). Given one, the section follows it — a click only
+     * calls `onOpenChange`, and the value is mirrored into the local/persisted fold so dropping
+     * `open` keeps what the reader last saw. Omit for the uncontrolled, optionally persisted fold. */
     open?: boolean
     /** Called with the next fold state on every toggle, controlled or not. */
     onOpenChange?: (open: boolean) => void
@@ -121,7 +121,9 @@ export type SectionProps = Omit<WidgetHeaderProps, 'tier' | 'classNames' | 'acti
      * still states its headline figures, which is what makes collapsing it a real option. Keep it to
      * one row — the body is what `children` is for. */
     summary?: ReactNode
-    /** Turns the root into a scroll anchor (`id` + `scroll-margin-top` cleared for both sticky bars). */
+    /** Turns the root into a scroll anchor (`id` + `scroll-margin-top`). Inside `BasaltShell` the
+     * offset is the clearance token; without a shell it also clears `PageBar`, which assumes the
+     * document is the scrollport. */
     id?: string
     children: ReactNode
   }
@@ -159,6 +161,14 @@ function ChevronToggle({
       </svg>
     </button>
   )
+}
+
+const ANCHOR_CLEARANCE = 'var(--vx-space-sticky-header-clearance)'
+
+/** The `scroll-margin-top` of an anchored Section; the bar term only exists without a shell. */
+function anchorOffset(inShell: boolean): string {
+  if (inShell) return ANCHOR_CLEARANCE
+  return `calc(var(${PAGE_BAR_HEIGHT_VAR}, 0px) + ${ANCHOR_CLEARANCE})`
 }
 
 export function Section({
@@ -201,6 +211,10 @@ export function Section({
     initial: defaultOpen,
   })
   const open = openProp ?? stateOpen
+  // Dropping `open` falls back to what the reader last SAW, not to a stale persisted value.
+  useEffect(() => {
+    if (openProp !== undefined && openProp !== stateOpen) setStateOpen(openProp)
+  }, [openProp, stateOpen, setStateOpen])
   const setOpen = (next: boolean) => {
     if (openProp === undefined) setStateOpen(next)
     onOpenChange?.(next)
@@ -224,15 +238,7 @@ export function Section({
   // The one exception is a tree with NO shell: `PageBar` is then a sticky bar in the document flow,
   // the document is the scrollport, and its published height is exactly what an anchor must clear.
   const inShell = useInPageBarShell()
-  const clearance = 'var(--vx-space-sticky-header-clearance)'
-  const anchorStyle =
-    id === undefined
-      ? undefined
-      : {
-          scrollMarginTop: inShell
-            ? clearance
-            : `calc(var(${PAGE_BAR_HEIGHT_VAR}, 0px) + ${clearance})`,
-        }
+  const anchorStyle = id === undefined ? undefined : { scrollMarginTop: anchorOffset(inShell) }
   const rootStyle =
     anchorStyle === undefined && style === undefined ? undefined : { ...anchorStyle, ...style }
 

@@ -10,6 +10,7 @@ import { beforeEach, describe, expect, mock, spyOn, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { ReactElement } from 'react'
+import { renderToString } from 'react-dom/server'
 import { resetValidatedProps } from '../common/validate'
 import { FilterSetScope } from '../controls/filter-context'
 import { PageBar, ShellFrame } from '../shell'
@@ -152,9 +153,8 @@ describe('id — the scroll-anchor contract', () => {
       </>,
     )
     const style = container.querySelector('#usage')?.getAttribute('style') ?? ''
-    expect(style).toMatch(
-      /scroll-margin-top:\s*calc\(var\(--basalt-page-bar-h, 0px\) \+ var\(--vx-space-sticky-header-clearance\)\)/,
-    )
+    expect(style).toContain('--basalt-page-bar-h')
+    expect(style).toContain('--vx-space-sticky-header-clearance')
   })
 
   test('inside a shell the offset is the clearance alone — the bars are outside the scrollport', () => {
@@ -549,36 +549,47 @@ describe('actions — typed BarAction data', () => {
 })
 
 describe('controlled open / onOpenChange', () => {
-  test('a controlled section follows `open` and reports toggles without writing storage', () => {
-    const onOpenChange = mock((_next: boolean) => {})
-    const { rerender } = renderWith(
-      <Section
-        title="Usage"
-        collapsible
-        persistKey="usage"
-        open={false}
-        onOpenChange={onOpenChange}
-      >
+  const section = (props: Partial<React.ComponentProps<typeof Section>>) => (
+    <MantineProvider>
+      <Section title="Usage" collapsible persistKey="usage" {...props}>
         <div>body</div>
-      </Section>,
-    )
+      </Section>
+    </MantineProvider>
+  )
+
+  test('the prop wins over storage seeded the other way, and a click only reports', () => {
+    window.localStorage.setItem('basalt:section:usage', JSON.stringify({ v: 1, value: true }))
+    const onOpenChange = mock((_next: boolean) => {})
+    const { rerender } = render(section({ open: false, onOpenChange }))
     expect(screen.queryByText('body')).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'Expand section' }))
-    expect(onOpenChange).toHaveBeenCalledWith(true)
-    // Still closed: the parent has not said otherwise.
+    expect(onOpenChange).toHaveBeenLastCalledWith(true)
     expect(screen.queryByText('body')).toBeNull()
-    expect(window.localStorage.getItem('basalt:section:usage')).toBeNull()
-    rerender(
-      <MantineProvider>
-        <Section title="Usage" collapsible persistKey="usage" open onOpenChange={onOpenChange}>
-          <div>body</div>
-        </Section>
-      </MantineProvider>,
-    )
+    rerender(section({ open: true, onOpenChange }))
+    expect(screen.getByText('body')).toBeDefined()
+    fireEvent.click(screen.getByRole('button', { name: 'Collapse section' }))
+    expect(onOpenChange).toHaveBeenLastCalledWith(false)
     expect(screen.getByText('body')).toBeDefined()
   })
 
-  test('uncontrolled stays persisted and also reports through onOpenChange', () => {
+  test('controlled without onOpenChange: a click is a no-op and does not throw', () => {
+    render(section({ open: false }))
+    fireEvent.click(screen.getByRole('button', { name: 'Expand section' }))
+    expect(screen.queryByText('body')).toBeNull()
+  })
+
+  test('controlled → uncontrolled keeps what the reader last saw, and back again', () => {
+    const { rerender } = render(section({ open: false }))
+    expect(screen.queryByText('body')).toBeNull()
+    rerender(section({}))
+    expect(screen.queryByText('body')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Expand section' }))
+    expect(screen.getByText('body')).toBeDefined()
+    rerender(section({ open: false }))
+    expect(screen.queryByText('body')).toBeNull()
+  })
+
+  test('uncontrolled stays persisted and reports both transitions through onOpenChange', () => {
     const onOpenChange = mock((_next: boolean) => {})
     renderWith(
       <Section title="Usage" collapsible persistKey="usage" onOpenChange={onOpenChange}>
@@ -586,8 +597,36 @@ describe('controlled open / onOpenChange', () => {
       </Section>,
     )
     fireEvent.click(screen.getByRole('button', { name: 'Collapse section' }))
-    expect(onOpenChange).toHaveBeenCalledWith(false)
+    expect(onOpenChange).toHaveBeenLastCalledWith(false)
     expect(screen.queryByText('body')).toBeNull()
     expect(window.localStorage.getItem('basalt:section:usage')).not.toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Expand section' }))
+    expect(onOpenChange).toHaveBeenLastCalledWith(true)
+    expect(screen.getByText('body')).toBeDefined()
+  })
+})
+
+describe('SSR — the anchor offset markup', () => {
+  const anchored = (
+    <Section id="a" title="A">
+      <div />
+    </Section>
+  )
+  const scrollMargin = (html: string) => /scroll-margin-top:([^;"]*)/.exec(html)?.[1]
+
+  test('shell-less prints the 0px bar fallback; a shell prints the clearance alone — deterministically', () => {
+    const bare = renderToString(<MantineProvider>{anchored}</MantineProvider>)
+    expect(scrollMargin(bare)).toContain('--basalt-page-bar-h, 0px')
+    expect(renderToString(<MantineProvider>{anchored}</MantineProvider>)).toBe(bare)
+
+    const shell = renderToString(
+      <MantineProvider>
+        <ShellFrame brand={{ name: 'App' }} sections={[]}>
+          {anchored}
+        </ShellFrame>
+      </MantineProvider>,
+    )
+    expect(scrollMargin(shell)).not.toContain('--basalt-page-bar-h')
+    expect(scrollMargin(shell)).toContain('--vx-space-sticky-header-clearance')
   })
 })

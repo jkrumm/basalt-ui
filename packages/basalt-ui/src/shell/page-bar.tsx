@@ -309,8 +309,18 @@ export type PageBarProps = BasaltProps &
  */
 function publishBarHeight(node: HTMLElement): void {
   const { height } = node.getBoundingClientRect()
-  if (height > 0) {
-    document.documentElement.style.setProperty(PAGE_BAR_HEIGHT_VAR, `${height}px`)
+  if (height <= 0) return
+  const root = document.documentElement
+  const first = root.style.getPropertyValue(PAGE_BAR_HEIGHT_VAR) === ''
+  root.style.setProperty(PAGE_BAR_HEIGHT_VAR, `${height}px`)
+  // The browser's native fragment scroll on a cold `/page#anchor` load ran BEFORE this first
+  // publish, so `Section`'s scroll-margin read the 0px fallback and the heading sits under the bar.
+  // Re-aim it once, instantly (never a smooth scroll the reader would watch). Only the FIRST
+  // publish: later height changes must not yank a reader who has since scrolled away.
+  if (first && location.hash.length > 1) {
+    document.getElementById(decodeURIComponent(location.hash.slice(1)))?.scrollIntoView({
+      behavior: 'instant',
+    })
   }
 }
 
