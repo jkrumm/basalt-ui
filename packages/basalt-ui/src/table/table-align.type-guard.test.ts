@@ -41,18 +41,19 @@ describe('ColumnMeta.align (type-guard)', () => {
 })
 
 describe('DataTableRowAction (type-guard)', () => {
-  test('is importable from the barrel and types a stable rowActions constant', () => {
-    type Row = { id: string }
-    const ACTIONS: DataTableRowAction<Row>[] = [
-      { key: 'delete', label: 'Delete', danger: true, onClick: (row) => void row.id },
-    ]
-    expect(ACTIONS).toHaveLength(1)
-    const bad: DataTableRowAction<Row> = {
+  test('is importable from the barrel and types onClick by the row', () => {
+    type ActionRow = { id: string }
+    const ok: DataTableRowAction<ActionRow> = {
+      key: 'delete',
+      label: 'Delete',
+      onClick: (row) => void row.id,
+    }
+    const bad: DataTableRowAction<ActionRow> = {
       key: 'x',
       label: 'X',
       // @ts-expect-error — onClick receives the row type, not a number
       onClick: (row: number) => void row,
     }
-    expect(bad).toBeDefined()
+    void [ok, bad]
   })
 })

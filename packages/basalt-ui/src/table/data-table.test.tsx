@@ -1156,6 +1156,26 @@ describe('rowActions', () => {
     expect(container.querySelector('tbody tr:first-child td:last-child button')).not.toBeNull()
   })
 
+  test('a stable rowActions whose disabled(row) reads changing state updates the button', () => {
+    let locked = false
+    const stable = [edit(() => undefined, { disabled: () => locked })]
+    const view = () => (
+      <MantineProvider>
+        <BasaltDataTable data={ROWS} columns={COLUMNS} rowActions={stable} />
+      </MantineProvider>
+    )
+    const { rerender } = render(view())
+    const isDisabled = () => {
+      const b = screen.getAllByRole('button', { name: 'Edit' })[0]
+      return b?.hasAttribute('disabled') || b?.hasAttribute('data-disabled')
+    }
+    expect(isDisabled()).toBe(false)
+    locked = true
+    // Same array identity, new state: the table re-reads `disabled(row)` on render.
+    rerender(view())
+    expect(isDisabled()).toBe(true)
+  })
+
   test('the handler receives its own row, also after a sort reorders them', () => {
     const onClick = mock((_row: Row) => undefined)
     renderTable({ rowActions: [edit(onClick)], initialSorting: [{ id: 'cost', desc: false }] })

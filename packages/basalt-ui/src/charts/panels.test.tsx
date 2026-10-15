@@ -9,6 +9,7 @@ import { createRoot, hydrateRoot } from 'react-dom/client'
 import { renderToString } from 'react-dom/server'
 import { chartCursor } from './cursor'
 import { DualPanel } from './DualPanel'
+import { ChartLegend } from './legend'
 import type { DualPanelProps } from './DualPanel'
 import { MirroredBars } from './MirroredBars'
 import type { MirroredBarsProps } from './MirroredBars'
@@ -331,18 +332,71 @@ describe('DualPanel', () => {
     expect(legendButton(el, '__bar').textContent).toContain('Divergence')
   })
 
-  test('the bar legend entry shows both sign colours and toggles as one', async () => {
+  const SPLIT = 'linear-gradient(90deg, var(--vx-good) 50%, var(--vx-bad) 50%)'
+  const swatches = (entry: Element): HTMLElement[] => [
+    ...entry.querySelectorAll<HTMLElement>('span[aria-hidden]'),
+  ]
+
+  test('the bar legend entry is one toggle with an exact split swatch per mode', async () => {
     const el = await mount(<DualPanel {...dualProps} />)
     const entry = legendButton(el, '__bar')
-    const fills = [...entry.querySelectorAll<HTMLElement>('span[aria-hidden]')].map(
+    // `auto` renders the dot and the chip; both split.
+    expect(swatches(entry).map((n) => n.style.background)).toEqual([SPLIT, SPLIT])
+    expect(el.querySelectorAll('button[data-legend-key="__bar"]').length).toBe(1)
+  })
+
+  test('a non-signed series keeps a solid swatch in dots, chips and line modes', async () => {
+    const noop = (): void => undefined
+    const lineS = { key: 'l', label: 'L', color: 'var(--vx-line)', getValue: () => 1 }
+    const barS = { ...lineS, key: 'b', label: 'B', mark: 'bar' as const, colorNegative: '' }
+    const el = await mount(
+      <>
+        {(['dots', 'chips', 'auto'] as const).map((mode) => (
+          <ChartLegend
+            key={mode}
+            series={[lineS, barS]}
+            hidden={new Set()}
+            mode={mode}
+            groups={false}
+            toggle
+            onToggle={noop}
+            onHighlight={noop}
+          />
+        ))}
+      </>,
+    )
+    const fills = [...el.querySelectorAll<HTMLElement>('span[aria-hidden]')].map(
       (n) => n.style.background,
     )
     expect(fills.length).toBeGreaterThan(0)
-    for (const f of fills) {
-      expect(f).toContain(dualProps.bar.positive)
-      expect(f).toContain(dualProps.bar.negative)
-    }
-    expect(el.querySelectorAll('button[data-legend-key="__bar"]').length).toBe(1)
+    for (const f of fills) expect(f).not.toContain('linear-gradient')
+    // The line chip is an svg stroke, untouched.
+    expect(el.querySelector('svg line')?.getAttribute('stroke')).toBe('var(--vx-line)')
+  })
+
+  test('toggling the bar entry hides both halves; hovering another entry dims them', async () => {
+    const el = await mount(<DualPanel {...dualProps} />)
+    expect(markRects(el, 'bottom', 'bars').length).toBeGreaterThan(0)
+    await mouseOver(legendButton(el, 'a'))
+    for (const r of markRects(el, 'bottom', 'bars')) expect(r.getAttribute('fill')).toContain('18%')
+    await act(async () => legendButton(el, '__bar').click())
+    expect(markRects(el, 'bottom', 'bars').length).toBe(0)
+    expect(legendButton(el, '__bar').getAttribute('aria-pressed')).toBe('false')
+    expect(swatches(legendButton(el, '__bar')).map((n) => n.style.background)).toEqual([
+      SPLIT,
+      SPLIT,
+    ])
+  })
+
+  test('rerendering with only the negative colour changed updates the swatch', async () => {
+    const el = await mount(<DualPanel {...dualProps} />)
+    await act(async () => {
+      root?.render(<DualPanel {...withBar({ negative: 'var(--vx-warn)' })} />)
+    })
+    expect(swatches(legendButton(el, '__bar')).map((n) => n.style.background)).toEqual([
+      'linear-gradient(90deg, var(--vx-good) 50%, var(--vx-warn) 50%)',
+      'linear-gradient(90deg, var(--vx-good) 50%, var(--vx-warn) 50%)',
+    ])
   })
 
   test('hovering a legend entry dims the others, bars included', async () => {

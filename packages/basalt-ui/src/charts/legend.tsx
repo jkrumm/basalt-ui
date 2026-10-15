@@ -69,16 +69,21 @@ const buttonStyle: CSSProperties = {
 }
 const noteStyle: CSSProperties = { color: VX.axis }
 
+/**
+ * A legend entry that may be a sign-coloured bar: `colorNegative` is the below-zero colour and the
+ * swatch splits `color` | `colorNegative`. Only `DualPanel`'s bar sets it; the entry stays one
+ * toggle, so the sign halves hide together.
+ */
+export type SignedSeries<T> = ChartSeries<T> & { colorNegative?: string | undefined }
+
 type SwatchStyle = Pick<
-  ChartSeries<never>,
+  SignedSeries<never>,
   'color' | 'colorNegative' | 'mark' | 'dash' | 'strokeOpacity' | 'fillOpacity'
 >
 
 /** A swatch fill: the series colour, or a hard-stop split for a sign-coloured bar. */
 const swatchFill = (s: SwatchStyle): string =>
-  s.colorNegative === undefined
-    ? s.color
-    : `linear-gradient(90deg, ${s.color} 50%, ${s.colorNegative} 50%)`
+  s.colorNegative ? `linear-gradient(90deg, ${s.color} 50%, ${s.colorNegative} 50%)` : s.color
 
 function Swatch({ s, mode }: { s: SwatchStyle; mode: LegendMode }): ReactElement {
   if (mode === 'auto')
@@ -138,7 +143,7 @@ function Swatch({ s, mode }: { s: SwatchStyle; mode: LegendMode }): ReactElement
 }
 
 export type ChartLegendProps<T> = {
-  series: readonly ChartSeries<T>[]
+  series: readonly SignedSeries<T>[]
   hidden: ReadonlySet<string>
   mode: LegendMode
   groups: boolean

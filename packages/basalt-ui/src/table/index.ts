@@ -16,5 +16,5 @@
 
 export { BasaltDataTable } from './data-table'
 export { createColumnHelper } from './table-features'
-// argo (friction row 53) names it for a module-level `rowActions` constant.
+// The element type of `rowActions`, for a module-level constant.
 export type { DataTableRowAction } from './data-table'
