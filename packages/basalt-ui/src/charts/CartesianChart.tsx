@@ -10,7 +10,9 @@ import { useCallback, useId, useMemo, useState } from 'react'
 import type { CSSProperties, ReactElement, ReactNode } from 'react'
 import { useInChartCard } from './card-context'
 import { compileCartesian, refLegendSeries } from './compile'
-import type { CartesianDefinition, PlotSize } from './compile'
+import type { CartesianDefinition } from './compile'
+import { samePlots } from './plot-context'
+import type { PlotSizes } from './plot-context'
 import { ChartEngine, idPrefixOf } from './host'
 import { ChartLegend, legendEntries } from './legend'
 import { INITIAL_WIDTH, useChartSize } from './sizing'
@@ -69,8 +71,8 @@ export type ShellContext = {
   coarse: boolean
   /** The measured width; 0 unless the shell was asked to track it (`byWidth`). */
   width: number
-  /** The plot area the engine last laid out; `null` until it has, or while `marks` ignores it. */
-  plot: PlotSize | null
+  /** The plot area of each pane the engine last laid out; `null` until it has. */
+  plot: PlotSizes | null
 }
 
 export type ChartShellProps<T> = Pick<
@@ -103,13 +105,9 @@ export function ChartShell<T>(props: ChartShellProps<T>): ReactElement {
   const width = byWidth ? measured || INITIAL_WIDTH : 0
   // The engine lays the plot out AFTER `marks` runs, so a chart whose marks read the plot size
   // (and only that chart) takes it from the layout and recompiles once.
-  const [plot, setPlot] = useState<PlotSize | null>(null)
-  const onPlot = useCallback((next: PlotSize) => {
-    setPlot((prev) =>
-      prev && Math.abs(prev.width - next.width) < 0.01 && Math.abs(prev.height - next.height) < 0.01
-        ? prev
-        : next,
-    )
+  const [plot, setPlot] = useState<PlotSizes | null>(null)
+  const onPlot = useCallback((next: PlotSizes) => {
+    setPlot((prev) => (samePlots(prev, next) ? prev : next))
   }, [])
   const definition = useMemo(
     () => compile({ chartId, hidden, highlighted, coarse, width, plot }),

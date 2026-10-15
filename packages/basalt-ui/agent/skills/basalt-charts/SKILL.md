@@ -16,6 +16,8 @@ Procedure only; the contract is `.claude/rules/basalt-charts.md`.
 import { lineY } from '@tanstack/charts/line'
 import { rect } from '@tanstack/charts/rect'
 
+const [RAIL_PX, Y_MIN, Y_MAX] = [3, 0, 100] // px along the top of a [Y_MIN, Y_MAX] plot
+const railTop = (plotHeight: number) => Y_MAX - (RAIL_PX * (Y_MAX - Y_MIN)) / plotHeight
 ;<CartesianChart
   ariaLabel="HRV"
   data={data}
@@ -23,17 +25,15 @@ import { rect } from '@tanstack/charts/rect'
   series={[{ key: 'hrv', label: 'HRV', color: SERIES.hrv, getValue: (d) => d.hrv }]}
   marks={(plot) => [
     ...plot.visible.map((s) => lineY(plot.rows(s.key), { x: 'x', y: 'y', stroke: s.color })),
-    // px-pinned: `plot.plotHeight` is the plot, `plot.height` the frame; `plot.data` is every row.
-    // `fillOpacity` is one number per mark: bucket a measured opacity, one mark per step.
+    // `plot.plotHeight` is the plot (`plot.height` the frame); `plot.data` is every raw row; `fillOpacity`
+    // is one number per mark, so bucket a measured opacity: one mark per step.
     ...[...Map.groupBy(plot.data, (d) => Math.round(d.loss * 20) / 20)].map(([o, r]) =>
-      rect(r, { x1: 'at', y2: 100 - 300 / plot.plotHeight, fillOpacity: o }),
+      rect(r, { x1: 'at', y1: railTop(plot.plotHeight), y2: Y_MAX, fillOpacity: o }),
     ),
   ]}
 />
 ```
 
-A `cursorValue` series colours its cursor dot per datum with `getMarker: (d) => ({ color })`.
-
-4. Wrap it in `ChartCard`; pass `state={{ pending, error, empty }}` from the query.
+4. Wrap it in `ChartCard`; pass `state={{ pending, error, empty }}` from the query. A `cursorValue` series colours its cursor dot per datum with `getMarker: (d) => ({ color })`.
 5. Run the repo's own gate (e.g. `make check`), which runs lint, the theme guard and typecheck; fix every finding at its source.
 6. Check both color schemes and a pending query.

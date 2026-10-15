@@ -165,7 +165,7 @@ export type AsideSpec = {
  */
 export type ChartsSpec = {
   /** A real kind from `basalt-ui/charts` — never a hand-rolled stand-in. */
-  kind: 'lines' | 'bars' | 'dual' | 'rail'
+  kind: 'lines' | 'bars' | 'dual' | 'rail' | 'panel-rail'
   /** Number of series (legend entries). Default 3. */
   legendEntries?: number
   /** Fixed height in px, forwarded to the kind. Omitted ⇒ the height law. */
@@ -175,6 +175,11 @@ export type ChartsSpec = {
   /** Mounts a second `Lines` on the same Date x (`data-testid="chart-frame-2"`): the cursor pair. */
   pair?: true
 }
+
+/** The `rail` probe: a stated pixel thickness along the top of a plot whose y domain tops out at
+ * {@link RAIL_DOMAIN_MAX}. The test asserts the rail measures {@link RAIL_PX} px. */
+export const RAIL_PX = 3
+export const RAIL_DOMAIN_MAX = 100
 
 /**
  * A `basalt-ui/agent-chat` transcript, mounted in the shell body. Exists for the invariants happy-
