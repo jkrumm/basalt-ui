@@ -693,11 +693,45 @@ exit criterion holds, then flips to `done`.
   `startChatTurn` trace propagation, monorepo-aware `doctor`/`sync`, the managed CI workflow running `make check`.
 - **Open:** argo SSR (argo Wave 17) waits on owner call D4 (session cookie vs shell-only SSR).
 
-## Wave 15 — Learnings and the fleet <!-- status: active -->
+## Wave 15 — Learnings and the fleet <!-- status: done -->
 
-- [ ] Fold the loop's learnings into the shipped rules and skills and restate the no-majors doctrine.
-- [ ] Write one migration plan per remaining consumer, ordered by blast radius (weatherorb 4 chart
+- [x] Fold the loop's learnings into the shipped rules and skills and restate the no-majors doctrine.
+- [x] Write one migration plan per remaining consumer, ordered by blast radius (weatherorb 4 chart
       files, linewatch 22, rollhook, rb (visx used directly, not basalt charts), basalt-ui-obsidian).
       Each stays exact-pinned on 1.41.x until its plan runs, and feeds the same friction ledger.
 
 **Left behind:**
+
+- **No majors, again** (#248): `version_gate` refuses every computed major, any 1.x, any prerelease and a
+  recomputed 2.0.0; the registry read that only fed the once-only 2.0.0 path is deleted (−111 lines).
+  `MAINTAINING.md` § The one sanctioned major states the post-2.0 rule; AGENTS.md links to it.
+- **Learnings** (#249): rows 1-60 and the six DX trials were checked against the shipped layer; everything
+  but five items was already stated or enforced. Folded at zero net rule lines (277/277): the `basalt-app`
+  1.x→2.x upgrade path (land on 1.41 first, exact peers + oxlint floor, the tsc fix order with `Register`
+  wiring before removed exports, compiles-clean behaviour changes, no waivers for the React rules, the
+  silent `tokens.css` removal), the auth idiom (`beforeLoad`), run liveness (`status`, not `runs.has`),
+  date navigation in `filtersEnd`, `bun install` before `llms.txt` in a fresh worktree. **Needs code, not
+  prose:** a `ThreadRunState`-aware lint for run liveness; the auth seam stays row 9 / D4.
+- **Fleet plans**: `docs/waves/basalt-2-migration.md` in each repo, all waves `pending`, none started.
+  Probe = an exact 2.7.3 pin on a throwaway branch, deleted, never pushed.
+
+  | Order | Repo               | Plan landed                                                       | tsc on 2.7.3                       | Charts                        | Rating | Ready                                                                                                                                               |
+  | ----- | ------------------ | ----------------------------------------------------------------- | ---------------------------------- | ----------------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+  | 1     | rollhook           | master (PR jkrumm/rollhook#37)                                    | 0 (one `vite build` break: row 61) | 0 (its one chart is recharts) | small  | now; every wave through a PR                                                                                                                        |
+  | 2     | basalt-ui-obsidian | master `f250b3b`                                                  | 6, all in the demo                 | 0                             | small  | now; its D3 keeps the live checkout pinned until the visual check (`make refresh` rebuilds from it)                                                 |
+  | 3     | rb                 | master `016a836`                                                  | 6 (a floor: `Register` hides more) | 0                             | small  | now; D1 defaults to deleting nine unused `@visx/*` deps (the "uses visx directly" premise was wrong: zero imports)                                  |
+  | 4     | weatherorb         | branch `w15/basalt-2-migration-plan` only (`a00a20f`), not master | 86 (133 with the shipped tsconfig) | 8                             | medium | after its own PLAN.md Wave 32 and owner D1 (row 62, the Start router seam); its orchestrator lands the file and supersedes its pre-2.0 Wave 35 stub |
+  | 5     | linewatch          | master `644fda7`                                                  | 123 in 19 files (107 in charts)    | 11                            | medium | after row 64 (absent-state hatch) is fixed or the flat-fill fallback is accepted; master auto-deploys, so its Wave 2 lands with CD paused           |
+
+  Blast radius = tsc errors × charts × who sees a break; rollhook first because its dashboard is tokens-only.
+
+- **Ledger rows 61-67 opened** from the probes (tokens.css invisible to the gates, the Start router seam,
+  no oxlint floor in `doctor`, the absent-state hatch, `PlotContext` scales, `router-tanstack` doctor
+  miss, no Spotlight opt-out). 62 and 64 block a consumer wave; the rest are papercuts. rb's worry that
+  `sync` reverts a private repo's `runs-on` is unfounded: `check.yml` is `mode: 'seed'`.
+- **Probe trap for every fleet lead:** inside `.claude/worktrees/*`, `tsc` falls back to the main
+  checkout's `node_modules` for a subpath the worktree's install lacks, hiding errors (rb). Measure in a
+  fresh install.
+- **Next (not spawned):** a fleet-loop wave on the W14 model: fix rows 61-67, release a 2.x minor, then
+  the orchestrator activates Wave 1 of each consumer plan in the order above. Not authored here — the
+  orchestrator decides its shape after reviewing this close-out.
