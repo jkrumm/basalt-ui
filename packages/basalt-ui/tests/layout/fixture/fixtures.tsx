@@ -10,6 +10,8 @@ import { FilterSet, FormRow, SelectFilter, ViewTabs } from '../../../src/control
 import { BasaltDataTable } from '../../../src/table'
 import type { DataTableFacet } from '../../../src/table/data-table'
 import type { BasaltColumnDef } from '../../../src/table/table-features'
+import { Prose } from '../../../src/content'
+import { CodeBlock } from '../../../src/content/code-block'
 import { ActionIcon, Badge, Button } from '@mantine/core'
 import { PageAside, PageBar, StatCard, StatGroup } from '../../../src/index'
 import { ShellFrame } from '../../../src/shell'
@@ -304,6 +306,19 @@ function StatsFixture({ count, wide }: { count: number; wide: boolean }): ReactE
         />
       ))}
     </StatGroup>
+  )
+}
+
+const LONG_FIRST_LINE = `const value = '${'x'.repeat(200)}'\nconst second = 2`
+
+/** A fence between two paragraphs — the outer rhythm and the first-line/copy-button clearance. */
+function CodeBlockFixture({ title }: { title: string | undefined }): ReactElement {
+  return (
+    <Prose>
+      <p data-testid="codeblock-before">Before the fence.</p>
+      <CodeBlock code={LONG_FIRST_LINE} language="ts" {...(title !== undefined && { title })} />
+      <p data-testid="codeblock-after">After the fence.</p>
+    </Prose>
   )
 }
 
@@ -838,6 +853,7 @@ export function ShellFixture({ spec }: { spec: FixtureSpec }): ReactElement {
         <StatsFixture count={spec.stats} wide={spec.statsWide === true} />
       )}
       {spec.cards && <CardsFixture spec={spec.cards} />}
+      {spec.codeBlock && <CodeBlockFixture title={spec.codeBlock.title} />}
       {spec.forms && <FormsFixture spec={spec.forms} />}
       {spec.table && <TableFixture spec={spec.table} />}
       {spec.charts && <ChartsFixture spec={spec.charts} />}

@@ -273,6 +273,8 @@ export type FixtureSpec = {
   statsWide?: true
   /** Renders card-chrome probes: StatCards at fixed container widths, a stretched ChartCard. */
   cards?: CardsSpec
+  /** Renders a `CodeBlock` between two paragraphs (`data-testid="codeblock"`, long first line). */
+  codeBlock?: { title?: string }
   /** Renders `FormRow` container-width probes (n2). */
   forms?: FormsSpec
   /** Renders a `PageAside` (and, by default, the `PageBar` row 2 it projects into below `sm`). */

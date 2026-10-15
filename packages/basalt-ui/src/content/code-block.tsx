@@ -88,9 +88,14 @@ export function CodeBlock({
   }, [html, code])
 
   const containerClass = [classes.container, className].filter(Boolean).join(' ')
+  const floatingCopy = title === undefined && showCopy
 
   return (
-    <div className={containerClass} {...(style !== undefined && { style })}>
+    <div
+      className={containerClass}
+      {...(floatingCopy && { 'data-floating-copy': true })}
+      {...(style !== undefined && { style })}
+    >
       {title !== undefined && (
         <div className={classes.header}>
           <span className={classes.title}>{title}</span>
@@ -116,7 +121,7 @@ export function CodeBlock({
           <code>{code}</code>
         </pre>
       )}
-      {title === undefined && showCopy && (
+      {floatingCopy && (
         <div className={classes.floatingCopy}>
           <CopyAction value={code} ariaLabel="Copy code" />
         </div>
