@@ -160,8 +160,33 @@ type LayoutInput<T> = {
 const clampFraction = (f: number | undefined): number =>
   f === undefined || !Number.isFinite(f) ? 0 : Math.min(1, Math.max(0, f))
 
+/**
+ * The share of a band the strip's absent state owns. A band already in that state is absent in
+ * whole, so the fraction only qualifies the others.
+ */
+function absentShareOf(span: BandSpan, absentKey: string | undefined): number {
+  return absentKey === undefined || span.state === absentKey
+    ? 0
+    : clampFraction(span.absentFraction)
+}
+
 const unknownState = (prop: string, got: string, known: Iterable<string>): Error =>
   new Error(oneOf('BandStrip', prop, [...known], got))
+
+/** Paints a band as its measured part, then the absent share from the right edge. */
+function paintSplit(
+  layers: Map<string, Layer>,
+  cell: { f0: number; f1: number },
+  measured: { fill: string; opacity: number },
+  absent: { share: number; fill: string; opacity: number },
+): number {
+  const split = cell.f1 - (cell.f1 - cell.f0) * absent.share
+  if (absent.share < 1)
+    paintInto(layers, measured.fill, measured.opacity, { ...cell, f1: split, y0: 0, y1: 1 })
+  if (absent.share > 0)
+    paintInto(layers, absent.fill, absent.opacity, { f0: split, f1: cell.f1, y0: 0, y1: 1 })
+  return split
+}
 
 /**
  * Where every band and marker goes, and which slots answer the pointer. Pure: base layers and
@@ -173,10 +198,13 @@ function layoutBands<T>(input: LayoutInput<T>): {
   markers: Layer[]
   hits: Hit<T>[]
 } {
-  const { data, getBand, fold, states, visible, absentState } = input
-  const absentStyle = absentState === undefined ? undefined : states.get(absentState)
-  if (absentState !== undefined && !absentStyle && process.env.NODE_ENV !== 'production')
-    throw unknownState('BandStrip.absentState', absentState, states.keys())
+  const { data, getBand, fold, states, visible, absentState: absentKey } = input
+  const absentStyle = absentKey === undefined ? undefined : states.get(absentKey)
+  if (absentKey !== undefined && !absentStyle && process.env.NODE_ENV !== 'production')
+    throw unknownState('BandStrip.absentState', absentKey, states.keys())
+  // A hidden absent state paints nothing and answers no pointer: the measured fill spans the slot.
+  const absentVisible =
+    absentKey !== undefined && absentStyle !== undefined && visible.has(absentKey)
   const cap = Math.floor(input.width / (fold?.minBandPx ?? DEFAULT_MIN_BAND_PX))
   const groups: Group<T>[] =
     fold && data.length > cap
@@ -196,25 +224,27 @@ function layoutBands<T>(input: LayoutInput<T>): {
     if (state && !visible.has(span.state)) continue
     const cell = { f0: g.start / data.length, f1: (g.start + g.items.length) / data.length }
     const opacity = input.emphasis(span.state)
-    // A band already in the absent state is absent in whole; the fraction only qualifies others.
-    const absent =
-      absentStyle && span.state !== absentState ? clampFraction(span.absentFraction) : 0
-    const split = cell.f1 - (cell.f1 - cell.f0) * absent
-    if (absent < 1)
-      paintInto(
-        base,
-        span.fill ?? (state ? alpha(state.color, state.fillOpacity ?? 1) : UNKNOWN_FILL),
+    const declared = absentShareOf(span, absentKey)
+    if (
+      absentKey === undefined &&
+      clampFraction(span.absentFraction) > 0 &&
+      process.env.NODE_ENV !== 'production'
+    )
+      throw new Error('BandStrip: BandSpan.absentFraction needs the strip to name an `absentState`')
+    const absent = absentVisible ? declared : 0
+    const split = paintSplit(
+      base,
+      cell,
+      {
+        fill: span.fill ?? (state ? alpha(state.color, state.fillOpacity ?? 1) : UNKNOWN_FILL),
         opacity,
-        { ...cell, f1: split, y0: 0, y1: 1 },
-      )
-    const absentShown = absent > 0 && absentStyle && visible.has(absentState as string)
-    if (absentShown)
-      paintInto(
-        base,
-        alpha(absentStyle.color, absentStyle.fillOpacity ?? 1),
-        input.emphasis(absentState as string),
-        { f0: split, f1: cell.f1, y0: 0, y1: 1 },
-      )
+      },
+      {
+        share: absent,
+        fill: absentStyle ? alpha(absentStyle.color, absentStyle.fillOpacity ?? 1) : UNKNOWN_FILL,
+        opacity: absentKey === undefined ? 1 : input.emphasis(absentKey),
+      },
+    )
 
     if (span.marker && absent < 1) {
       const markerKey = span.marker.state ?? span.state
@@ -234,9 +264,8 @@ function layoutBands<T>(input: LayoutInput<T>): {
     // An unknown state (production only) answers no pointer: a tooltip row needs its series.
     if (state)
       for (const source of g.items) {
-        hits.push({ source, state: span.state, datum })
-        if (absent > 0 && absentState !== undefined)
-          hits.push({ source, state: absentState, datum })
+        if (absent < 1) hits.push({ source, state: span.state, datum })
+        if (absent > 0 && absentKey !== undefined) hits.push({ source, state: absentKey, datum })
       }
   }
   return { base: [...base.values()], markers: [...markers.values()], hits }
@@ -266,8 +295,9 @@ export function BandStrip<T, X extends ChartX = ChartX>(props: BandStripProps<T,
         ...(s.note !== undefined && { note: s.note }),
         getValue: (d) => {
           const span = getBand(d)
-          if (span.state === s.key) return 1
-          return s.key === absentState && clampFraction(span.absentFraction) > 0 ? 1 : null
+          const share = absentShareOf(span, absentState)
+          if (span.state === s.key) return share < 1 ? 1 : null
+          return s.key === absentState && share > 0 ? 1 : null
         },
         formatValue: (_v, d) => (s.formatValue ? (s.formatValue(d) ?? NON_FINITE) : ''),
       })),
