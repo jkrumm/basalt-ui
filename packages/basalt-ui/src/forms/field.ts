@@ -19,31 +19,52 @@ import type { GetInputPropsReturnType, LooseKeys, UseFormReturnType } from '@man
 import type { ReactNode } from 'react'
 
 /**
- * What `inputProps` returns: Mantine's shape with `error` typed. `.error` is the one typed way to
- * read a field's error — Mantine's `form.errors` is an index signature (dot access is TS4111), and
- * a raw control inside `FormRow` takes it as `<FormRow error={inputProps(form, path).error}>`.
- * A Mantine input spread with `inputProps` already renders it; passing it to `FormRow` as well
- * renders it twice.
+ * What `inputProps` returns: Mantine's shape with `error` typed (`any` upstream). `error` is always
+ * present — Mantine sets the key on every call, `undefined` on a clean field — so it is `ReactNode`,
+ * not optional. It is the one typed way to read a field error: `form.errors` is an index signature
+ * (dot access is TS4111), and a raw control inside `FormRow` takes
+ * `<FormRow error={inputProps(form, path).error}>`. A Mantine input spread with `inputProps` already
+ * renders it; passing it to `FormRow` as well renders it twice.
  */
-export type InputProps = Omit<GetInputPropsReturnType, 'error'> & { error?: ReactNode }
+export type InputProps = Omit<GetInputPropsReturnType, 'error'> & { error: ReactNode }
 
-type Depth = [unknown, unknown, unknown, unknown, unknown]
+type Digit = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
 
-/** Dot paths of `T` whose value is a boolean (objects and arrays, five levels deep). */
-type BooleanPath<T, D extends unknown[] = []> = D['length'] extends Depth['length']
+type AllDigits<S extends string> = S extends `${Digit}${infer Rest}`
+  ? Rest extends ''
+    ? true
+    : AllDigits<Rest>
+  : false
+
+/** A canonical array index: digits only, no sign, no decimal point, no exponent, no leading zero. */
+type IsIndex<S extends string> = S extends '0'
+  ? true
+  : S extends `0${string}`
+    ? false
+    : AllDigits<S>
+
+/** One path segment applied to a value; `never` when the segment does not exist there. */
+type Child<T, K extends string> =
+  NonNullable<T> extends infer N
+    ? N extends readonly (infer V)[]
+      ? IsIndex<K> extends true
+        ? V
+        : never
+      : K extends keyof N
+        ? N[K]
+        : never
+    : never
+
+type ValueAt<T, P extends string> = P extends `${infer Head}.${infer Rest}`
+  ? ValueAt<Child<T, Head>, Rest>
+  : Child<T, P>
+
+/** `Path` if the value at that dot path is a (possibly optional/nullable) boolean, else `never`. */
+type BooleanAt<Values, Path extends string> = [ValueAt<Values, Path>] extends [never]
   ? never
-  : T extends readonly (infer V)[]
-    ? (NonNullable<V> extends boolean ? `${number}` : never) | Nested<`${number}`, V, D>
-    : T extends object
-      ? {
-          [K in keyof T & string]-?:
-            | (NonNullable<T[K]> extends boolean ? K : never)
-            | Nested<K, T[K], D>
-        }[keyof T & string]
-      : never
-
-type Nested<K extends string, V, D extends unknown[]> =
-  NonNullable<V> extends object ? `${K}.${BooleanPath<NonNullable<V>, [...D, unknown]>}` : never
+  : [NonNullable<ValueAt<Values, Path>>] extends [boolean]
+    ? Path
+    : never
 
 // ── inputProps ────────────────────────────────────────────────────────────────
 
@@ -67,23 +88,32 @@ export function inputProps<Values extends Record<string, unknown>, Path extends 
   path: Path,
 ): InputProps
 /**
- * The boolean overload: `{ type: 'checkbox' }` returns `checked` / `onChange` for Mantine
- * `Checkbox` and `Switch`, and is only accepted on a path whose value is a boolean — a string
- * path is a type error, not a silently wrong binding.
+ * The boolean overload: `{ type: 'checkbox' }` binds a boolean field to Mantine `Checkbox` and
+ * `Switch`. It returns `onChange` plus `defaultChecked` in `useBasaltForm`'s default `uncontrolled`
+ * mode, or `checked` under `mode: 'controlled'` (Mantine decides; there is no `value`).
+ *
+ * Only a path whose value is a boolean (optional/nullable included) type-checks; a string path is a
+ * type error, not a silently wrong binding. Two limits of that check:
+ * - The path must be a literal. A `string`-typed path is rejected here (use a literal, or the
+ *   one-argument form), so the path argument does not autocomplete.
+ * - On a union parent, a key present on several members is accepted only when every member types it
+ *   as boolean; array segments must be canonical indices (`flags.0`, never `flags.1.5` or `flags.01`).
  *
  * @example
  * <Switch key={fieldKey(form, 'active')} {...inputProps(form, 'active', { type: 'checkbox' })} />
  */
-export function inputProps<
-  Values extends Record<string, unknown>,
-  Path extends BooleanPath<Values>,
->(form: UseFormReturnType<Values>, path: Path, options: { type: 'checkbox' }): InputProps
+export function inputProps<Values extends Record<string, unknown>, Path extends string>(
+  form: UseFormReturnType<Values>,
+  path: BooleanAt<Values, Path>,
+  options: { type: 'checkbox' },
+): InputProps
 export function inputProps<Values extends Record<string, unknown>>(
   form: UseFormReturnType<Values>,
   path: string,
   options?: { type: 'checkbox' },
 ): InputProps {
-  return options ? form.getInputProps(path, options) : form.getInputProps(path)
+  // Mantine types `error` optional but sets the key on every call (`withError` defaults to true).
+  return form.getInputProps(path, options) as InputProps
 }
 
 /**

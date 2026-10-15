@@ -987,7 +987,7 @@ optional, subpath-required peers.
 | `NavItemMeta`, `NavGroupMeta`, `AnyNavItem`, `AnyNavGroup`, `AnyNavLink`, `FlatNavItem`, `NavConfig`, `NavGroupId`, `NavTabId`, `NavIndex`, `UseNavOptions`, `NavBinding`, `NavAnchor`, `NavAnchorProps`, `NavMobilePlacement` | deleted                                                                                                                                                                                                                                                                                                                                                                                                                                                    | no consumer names them; derive with `ComponentProps` / `Parameters` |
 | `useNav`, and `BasaltShell`'s `sections` / `mobileNav` props                                                                                                                                                                   | deleted: pass `nav={NAV}` (plus `badges`, `isActive`, `getScrollElement` — the old `useNav` options) to `BasaltShell`; it resolves the sidebar, the mobile bar and the breadcrumb itself. `mobileNav` tuning moves to `defineNav`'s `mobile`. argo `apps/dashboard/src/routes/__root.tsx`: replace `const nav = useNav(NAV, { badges })` + `{...nav}` with `nav={NAV} badges={…}` (migrates in W12; 1.x consumers stay on their pinned version until then) |
 
-## Unreleased — a per-row action seam on `BasaltDataTable`
+## Unreleased — table row actions, checkbox bindings, typed field errors
 
 - `BasaltDataTable` takes `rowActions` (argo friction row 48): typed data in `BarActionItem`'s
   vocabulary — `{ key, label, icon?, onClick(row), danger?, disabled?(row), loading?(row) }`. The table appends a
@@ -1004,6 +1004,14 @@ optional, subpath-required peers.
 - On notice (adopt-or-delete): named consumers are argo's `strength-tracker/components/workouts-table.tsx`
   (Edit + Delete) and `body-composition/components/skinfold-history-table.tsx` (Delete); neither
   has migrated yet. Their delete icons pass `loading`, which `loading(row)` now models.
+- `basalt-ui/forms`: `inputProps(form, path, { type: 'checkbox' })` binds a boolean field to Mantine
+  `Checkbox`/`Switch` (`defaultChecked` + `onChange` in the default uncontrolled mode, `checked` under
+  `mode: 'controlled'`). It type-checks only on a literal path whose value is a boolean (dot paths,
+  array indices, optional/nullable booleans included). Additive.
+- `inputProps(...).error` narrowed from `any` to `ReactNode` (the key is always present, `undefined`
+  on a clean field). Read a field error there instead of `form.errors.x` (TS4111), and pass it to
+  `FormRow error` for a raw control. Code that treated it as `any` (a string method call, a
+  `Record` index) now needs a narrowing. The new `InputProps` type is exported from `basalt-ui/forms`.
 
 ## 2.6.1 — per-bar legend shades
 

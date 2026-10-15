@@ -303,7 +303,7 @@ Description: Mantine form layer: useBasaltForm + inputProps/fieldKey (two calls 
 Layer: mantine-coupled
 Rule: basalt-batteries
 Signature: fieldKey(form: UseFormReturnType<Values>, path: Path): string
-Signature: inputProps(form: UseFormReturnType<Values>, path: Path): GetInputPropsReturnType
+Signature: inputProps(form: UseFormReturnType<Values>, path: Path): InputProps
 Signature: useBasaltForm(opts: UseBasaltFormOptions<Values>): UseFormReturnType<Values>
   mode?: "controlled" | "uncontrolled"
   schema?: StandardSchemaV1<unknown, Values>
