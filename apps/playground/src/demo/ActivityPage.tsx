@@ -11,7 +11,7 @@ import { VX } from 'basalt-ui/tokens'
 
 const timestampStyle: CSSProperties = {
   fontFamily: 'var(--basalt-font-mono)',
-  // theme-allow: bespoke mono micro-timestamp condensed for a feed row, no matching token
+  // theme-allow no-raw-font-size — bespoke mono micro-timestamp condensed for a feed row, no matching token
   fontSize: 10.5,
   color: VX.faint,
 }

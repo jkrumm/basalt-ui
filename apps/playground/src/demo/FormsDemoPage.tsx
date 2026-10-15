@@ -91,7 +91,7 @@ function ProjectForm() {
             Submitted values:
           </Text>
           <Paper p="xs">
-            {/* theme-allow: bespoke raw JSON-dump sizing, no matching token */}
+            {/* theme-allow no-raw-font-size — bespoke raw JSON-dump sizing, no matching token */}
             <pre style={{ margin: 0, fontSize: 12 }}>{JSON.stringify(submitted, null, 2)}</pre>
           </Paper>
         </>
