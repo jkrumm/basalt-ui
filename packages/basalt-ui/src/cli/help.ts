@@ -76,7 +76,7 @@ export const USAGE =
   '           [--light-class <class>] [--dark-value <v>] [--light-value <v>]\n' +
   '           [--default-scheme <dark|light|none>] [--media-fallback] [--only <core|all>]\n' +
   '           [--no-legacy-aliases]\n' +
-  '  Emit the --vx-* stylesheet (stdout unless --out). Defaults reproduce basalt-ui/tokens.css.\n' +
+  '  Emit the --vx-* stylesheet (stdout unless --out). Defaults emit the stock identity; commit the output as your tokens file.\n' +
   '  --selector-class emits `:root.dark` instead of an attribute selector (the Tailwind convention).\n' +
   '  --check writes nothing and exits 1 when --out differs from what would be emitted (a CI gate).\n' +
   '  --no-legacy-aliases drops the deprecated camelCase spellings (--vx-accentFill and friends),\n' +

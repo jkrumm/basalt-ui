@@ -24,6 +24,8 @@ import {
   appWiringCheck,
   droppedSubpathsCheck,
   exactPeersCheck,
+  OXLINT_FLOOR,
+  oxlintFloorCheck,
   retiredLintRulesCheck,
   seedTsconfigExtends,
   SUBPATH_REQUIRED_PEERS,
@@ -306,6 +308,58 @@ describe('doctor — dropped-subpaths', () => {
     expect(problem).not.toContain('basalt-ui/state')
     expect(problem).not.toContain('basalt-ui/styles.css')
     expect(problem).toContain('MIGRATING.md § 2.0')
+  })
+
+  it('flags CSS @import forms of a dropped subpath and names the tokens:css fix', () => {
+    exportsMap()
+    write(
+      'src/app.css',
+      [
+        "@import 'basalt-ui/tokens.css';",
+        '@import "basalt-ui/tokens.css";',
+        "@import url('basalt-ui/tokens.css');",
+        '@import url(basalt-ui/tokens.css);',
+        "@import 'basalt-ui/styles.css';",
+        "/* @import 'basalt-ui/query'; */",
+      ].join('\n'),
+    )
+    write('src/main.ts', "import 'basalt-ui/tokens.css'\n")
+    const problem = text(check())
+    for (const line of [1, 2, 3, 4]) {
+      expect(problem).toContain(`src/app.css:${line} imports basalt-ui/tokens.css`)
+    }
+    expect(problem).toContain('src/main.ts:1 imports basalt-ui/tokens.css')
+    expect(problem).not.toContain('src/app.css:5')
+    expect(problem).not.toContain('src/app.css:6')
+    expect(problem).toContain('basalt-ui tokens:css --out')
+  })
+
+  it('flags router-tanstack even when the resolved install is a stale 1.x that exports it', () => {
+    write(
+      'node_modules/basalt-ui/package.json',
+      JSON.stringify({ name: 'basalt-ui', exports: { '.': {}, './router-tanstack': {} } }),
+    )
+    write('src/nav.ts', "import { defineNav } from 'basalt-ui/router-tanstack'\n")
+    const problem = text(check())
+    expect(problem).toContain('src/nav.ts:1 imports basalt-ui/router-tanstack')
+    expect(problem).toContain('`basalt-ui/state`')
+  })
+
+  it('scans the cwd source when the cwd lives under a .claude/worktrees dot-directory', () => {
+    const wt = join(dir, '.claude/worktrees/x')
+    mkdirSync(join(wt, 'src'), { recursive: true })
+    writeFileSync(join(wt, 'src/nav.ts'), "import { a } from 'basalt-ui/router-tanstack'\n")
+    writeFileSync(join(wt, 'src/app.css'), "@import 'basalt-ui/tokens.css';\n")
+    exportsMap()
+    const problem = text(
+      droppedSubpathsCheck(
+        wt,
+        { roots: ['src'] },
+        { ...installAt, dir: join(dir, 'node_modules/basalt-ui') },
+      ),
+    )
+    expect(problem).toContain('src/nav.ts:1 imports basalt-ui/router-tanstack')
+    expect(problem).toContain('src/app.css:1 imports basalt-ui/tokens.css')
   })
 
   it('does not fire on a commented-out import or a string that merely contains one', () => {
@@ -1158,5 +1212,35 @@ describe('doctor — subpath-peers', () => {
         expect(peersOf(sub)).toContain(peer)
       }
     }
+  })
+})
+
+describe('doctor — oxlint-floor', () => {
+  const withOxlint = (version: string): void => {
+    write('.oxlintrc.json', '{}')
+    write('node_modules/oxlint/package.json', JSON.stringify({ name: 'oxlint', version }))
+  }
+
+  it('fails below the floor, naming the floor and the install command', () => {
+    withOxlint('1.76.0')
+    const problem = text(oxlintFloorCheck(dir))
+    expect(problem).toContain('oxlint 1.76.0')
+    expect(problem).toContain(`>= ${OXLINT_FLOOR}`)
+    expect(problem).toContain(`bun add -D oxlint@^${OXLINT_FLOOR}`)
+  })
+
+  it('passes at and above the floor, including a higher minor with a lower patch', () => {
+    for (const v of [OXLINT_FLOOR, '1.87.2', '2.0.0']) {
+      withOxlint(v)
+      expect(oxlintFloorCheck(dir)).toBeNull()
+    }
+    withOxlint('1.100.0')
+    expect(oxlintFloorCheck(dir)).toBeNull()
+  })
+
+  it('passes when no oxlint is installed or no .oxlintrc.json exists', () => {
+    expect(oxlintFloorCheck(dir)).toBeNull()
+    write('node_modules/oxlint/package.json', JSON.stringify({ version: '1.60.0' }))
+    expect(oxlintFloorCheck(dir)).toBeNull()
   })
 })

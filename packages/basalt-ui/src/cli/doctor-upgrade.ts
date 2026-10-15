@@ -225,15 +225,36 @@ function basaltImports(src: string): [string, number][] {
     .map((m) => [m[2] as string, code.slice(0, m.index + m[0].length).split('\n').length])
 }
 
-/** `[subpath, file, line]` per `basalt-ui/<subpath>` import in the app's source files. */
+/** `@import 'basalt-ui/x'`, `@import "basalt-ui/x"`, `@import url(basalt-ui/x)` in a stylesheet. */
+const CSS_SUBPATH_IMPORT = /@import\s+(?:url\(\s*)?(['"]?)basalt-ui\/([^'")\s;]+)\1/g
+
+/** `[subpath, line]` per `basalt-ui/<subpath>` `@import` in a stylesheet (comments blanked). */
+function cssImports(src: string): [string, number][] {
+  const code = src.replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '))
+  return [...code.matchAll(CSS_SUBPATH_IMPORT)].map((m) => [
+    m[2] as string,
+    code.slice(0, m.index + m[0].length).split('\n').length,
+  ])
+}
+
+/** `[subpath, file, line]` per `basalt-ui/<subpath>` import in the app's source and style files. */
 const appImports = (cwd: string, cfg: BasaltConfig): [string, string, number][] =>
-  scannableFiles(cwd, cfg)
-    .filter((f) => /\.(?:[cm]?[jt]sx?|vue|astro)$/.test(f))
-    .flatMap((rel) =>
-      basaltImports(readIfExists(resolve(cwd, rel)) ?? '').map(
-        ([sub, line]): [string, string, number] => [sub, rel, line],
-      ),
+  scannableFiles(cwd, cfg).flatMap((rel) => {
+    const isCode = /\.(?:[cm]?[jt]sx?|vue|astro)$/.test(rel)
+    if (!isCode && !rel.endsWith('.css')) return []
+    const src = readIfExists(resolve(cwd, rel)) ?? ''
+    return (isCode ? basaltImports(src) : cssImports(src)).map(
+      ([sub, line]): [string, string, number] => [sub, rel, line],
     )
+  })
+
+/** Subpaths 2.x removed, checked besides the install's `exports`: a walked-up 1.x install exports them. */
+const DROPPED_FIXES: Record<string, string> = {
+  'tokens.css':
+    'commit the emit instead: `basalt-ui tokens:css --out src/tokens.css` and import that file',
+  'router-tanstack':
+    'nav symbols (`defineNav`, `navTarget`, …) now import from `basalt-ui`, stores (`createSearchStore`, `field`, …) from `basalt-ui/state`',
+}
 
 /** `dropped-subpaths`: `basalt-ui/<subpath>` imports the installed `exports` map does not have. */
 export function droppedSubpathsCheck(
@@ -253,13 +274,41 @@ export function droppedSubpathsCheck(
       keys.some(
         (k) => k === `./${sub}` || (k.endsWith('*') && `./${sub}`.startsWith(k.slice(0, -1))),
       )
-    const hits = appImports(cwd, cfg)
-      .filter(([sub]) => !has(sub))
-      .map(([sub, rel, line]) => `${rel}:${line} imports basalt-ui/${sub}`)
-    if (hits.length === 0) return null
+    const dropped = (sub: string): boolean => sub in DROPPED_FIXES || !has(sub)
+    const found = appImports(cwd, cfg).filter(([sub]) => dropped(sub))
+    if (found.length === 0) return null
+    const hits = found.map(([sub, rel, line]) => `${rel}:${line} imports basalt-ui/${sub}`)
     const more = hits.length > 10 ? ` (+${hits.length - 10} more)` : ''
+    const fixes = [...new Set(found.map(([sub]) => sub))]
+      .flatMap((sub) => (sub in DROPPED_FIXES ? [`basalt-ui/${sub}: ${DROPPED_FIXES[sub]}`] : []))
+      .map((f) => `${f}; `)
+      .join('')
     return {
-      fail: `${id}: ${hits.slice(0, 10).join('; ')}${more}. Fix: see MIGRATING.md § 2.0 for each subpath's replacement.`,
+      fail: `${id}: ${hits.slice(0, 10).join('; ')}${more}. Fix: ${fixes}see MIGRATING.md § 2.0 for each subpath's replacement.`,
+    }
+  })
+}
+
+/** The oldest oxlint that parses the shipped preset (1.78 lacks `react/globals` and friends). */
+export const OXLINT_FLOOR = '1.79.0'
+
+/** `oxlint-floor`: the installed oxlint is at least {@link OXLINT_FLOOR}, or the preset does not parse. */
+export function oxlintFloorCheck(cwd: string): Check {
+  const id = 'oxlint-floor'
+  return guarded(id, () => {
+    if (readIfExists(resolve(cwd, '.oxlintrc.json')) === null) return null
+    for (let d = cwd; ; d = dirname(d)) {
+      const version = readPackageJson<{ version?: string }>(
+        resolve(d, 'node_modules/oxlint'),
+      )?.version
+      if (version !== undefined) {
+        return version.localeCompare(OXLINT_FLOOR, undefined, { numeric: true }) < 0
+          ? {
+              fail: `${id}: oxlint ${version} is installed, but the shipped preset needs >= ${OXLINT_FLOOR} (older versions reject its react/* rules). Fix: \`bun add -D oxlint@^${OXLINT_FLOOR}\`.`,
+            }
+          : null
+      }
+      if (dirname(d) === d) return null // no oxlint: `oxlint-preset` already warns about the missing bin
     }
   })
 }
