@@ -8,7 +8,14 @@ import { dirname, relative, resolve } from 'node:path'
 
 import { BASALT_CONFIG_KEYS, RETIRED_CONFIG_KEYS } from './config'
 import type { BasaltConfig } from './config'
-import { isStartApp, parseJsonc, readIfExists, readPackageJson, scannableFiles } from './index'
+import {
+  isStartApp,
+  parseJsonc,
+  readIfExists,
+  readPackageJson,
+  routerSeedDest,
+  scannableFiles,
+} from './index'
 import type { BasaltInstall } from './index'
 
 export type Check = { fail: string } | { skip: string } | null
@@ -473,18 +480,54 @@ function routerCreatedInImports(cwd: string, entry: string): boolean {
   return false
 }
 
-/** A Start app owns its router and entry: the wiring is `<BasaltProvider>` in its root route. */
+/** The attribute text at brace depth 0 of every `<BasaltProvider …>` opening tag in `code`. */
+function providerTagAttrs(code: string): string[] {
+  return [...code.matchAll(/<BasaltProvider\b/g)].map((m) => {
+    let depth = 0
+    let attrs = ''
+    for (const ch of code.slice(m.index + m[0].length)) {
+      if (ch === '{') depth++
+      else if (ch === '}') depth--
+      else if (ch === '>' && depth === 0) break
+      else if (depth === 0) attrs += ch
+    }
+    return attrs
+  })
+}
+
+/**
+ * A Start app owns its router and entry: the wiring is an embedded `<BasaltProvider>` (children, no
+ * `router=`) in its root route. A `router=` there would mount a second router inside Start's.
+ */
 function startWiring(cwd: string): { fail: string } | null {
-  const root = 'src/routes/__root.tsx'
+  const root = routerSeedDest('', 'root')
   const text = readIfExists(resolve(cwd, root))
-  const { code, inLiteral } = tokenize(text ?? '')
-  const mounted = [...code.matchAll(/\bBasaltProvider\b/g)].some((m) => !inLiteral(m.index))
-  if (mounted) return null
+  const tags = providerTagAttrs(tokenize(text ?? '').code)
+  const embedded = tags.some((attrs) => !/(^|\s)router\s*=/.test(attrs))
+  if (embedded) return null
+  const problem =
+    text === null
+      ? 'does not exist'
+      : tags.length === 0
+        ? 'does not render <BasaltProvider>'
+        : 'passes router= to BasaltProvider, which mounts a second router inside Start'
   return {
-    fail:
-      `app-wiring: ${root} ${text === null ? 'does not exist' : 'does not use BasaltProvider'} ` +
-      '(TanStack Start app). Fix: render <BasaltProvider>{children}</BasaltProvider> in the root route.',
+    fail: `app-wiring: ${root} ${problem} (TanStack Start app). Fix: render <BasaltProvider>{children}</BasaltProvider> in the root route.`,
   }
+}
+
+/**
+ * Embedded mode reads `context.queryClient` off the Start router. A heuristic, not a proof: warn
+ * when `src/router.tsx` never mentions `queryClient`. Null when there is nothing to judge.
+ */
+export function startQueryClientWarning(cwd: string): string | null {
+  if (!isStartApp(cwd, '')) return null
+  const router = readIfExists(resolve(cwd, 'src/router.tsx'))
+  if (router === null || /queryClient/.test(router)) return null
+  return (
+    'app-wiring: src/router.tsx never mentions queryClient — embedded BasaltProvider needs ' +
+    'context.queryClient on the Start router (heuristic text check; ignore if you build it elsewhere).'
+  )
 }
 
 /**

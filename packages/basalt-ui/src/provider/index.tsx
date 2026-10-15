@@ -100,7 +100,7 @@ type BasaltProviderCommonProps = {
 /**
  * Two modes, never both: pass a `createBasaltRouter` `router` and the provider mounts it, or pass
  * `children` and render the provider INSIDE a router the app does not own (TanStack Start's root
- * route component or `shellComponent`) — the router then comes from `useRouter()` and must carry
+ * route component) — the router then comes from `useRouter()` and must carry
  * `context.queryClient` (its `getRouter()` builds the same context `createBasaltRouter` does).
  */
 export type BasaltProviderProps = BasaltProviderCommonProps &
