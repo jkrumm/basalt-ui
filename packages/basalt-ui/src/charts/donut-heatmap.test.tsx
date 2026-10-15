@@ -471,3 +471,129 @@ describe('Heatmap legend and tooltip labels', () => {
     expect(tip).not.toContain('Value')
   })
 })
+
+describe('Heatmap hit-testing at the grid edges', () => {
+  const sparse: Cell[] = [
+    { row: 'A', col: '0', v: 1 },
+    { row: 'C', col: '2', v: 2 },
+  ]
+  const edgeGrid = (): React.ReactNode => (
+    <Heatmap ariaLabel="H" data={sparse} {...grid} rows={['A', 'B', 'C']} cols={['0', '1', '2']} />
+  )
+
+  test('the first and last cell answer at their corners with their exact tooltip', async () => {
+    const el = await mount(edgeGrid())
+    expect(await hover(el, 30, 6)).toBe('A · 0Value1')
+    expect(await hover(el, 633, 256)).toBe('C · 2Value2')
+  })
+
+  test('an inert position in the last row or column opens nothing', async () => {
+    const el = await mount(edgeGrid())
+    // Travel from a measured cell, so a stale tooltip cannot pass for the answer.
+    await hover(el, 30, 6)
+    expect(await hover(el, 30, 256)).toBe('')
+    await hover(el, 633, 256)
+    expect(await hover(el, 633, 6)).toBe('')
+  })
+})
+
+describe('Heatmap default domain and stated cells', () => {
+  type S = Cell & { s?: 'failed' }
+  const states = [{ key: 'failed', label: 'Failed', color: 'var(--vx-bad)' }] as const
+  const data: S[] = [
+    { row: 'a', col: 'x', v: 50 },
+    { row: 'a', col: 'y', v: 100, s: 'failed' },
+  ]
+  const props = { ariaLabel: 'H', data, ...grid, states, getState: (d: S) => d.s }
+
+  test('a stated cell does not stretch the default domain: the 50 is full ink', async () => {
+    const el = await mount(<Heatmap {...props} />)
+    expect(inked(el)).toHaveLength(1)
+    expect(inked(el)[0]).toContain('100%')
+  })
+
+  test('an explicit domain wins over the data', async () => {
+    const el = await mount(<Heatmap {...props} domain={[0, 200]} />)
+    expect(inked(el)[0]).not.toContain('100%')
+  })
+})
+
+describe('Heatmap states: edges of the contract', () => {
+  type S = Cell & { s?: string }
+  const states = [{ key: 'failed', label: 'Failed', color: 'var(--vx-bad)', note: 'retry' }]
+  const data: S[] = [
+    { row: 'Mon', col: '0', v: 2 },
+    { row: 'Mon', col: '1', v: null, s: 'failed' },
+  ]
+  const props = {
+    ariaLabel: 'H',
+    data,
+    ...grid,
+    rows: ['Mon'],
+    cols: ['0', '1'],
+    states,
+    getState: (d: S) => d.s,
+  }
+
+  test('states without getState leave the grid unchanged: no legend, no state fill', async () => {
+    const el = await mount(<Heatmap {...props} getState={undefined} />)
+    expect(el.querySelector('[data-legend-key]')).toBeNull()
+    expect(plotRects(el).some((r) => r.getAttribute('fill') === 'var(--vx-bad)')).toBe(false)
+  })
+
+  test('the state chips follow the gradient and are named in a labelled legend', async () => {
+    const el = await mount(<Heatmap {...props} />)
+    const gradient = el.querySelector('.ts-chart__legend--gradient')
+    const chips = el.querySelector('fieldset[aria-label="Legend"]')
+    if (!gradient || !chips) throw new Error('legend parts missing')
+    expect(gradient.compareDocumentPosition(chips) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(chips.textContent).toContain('Failed')
+    expect(chips.textContent).toContain('retry')
+  })
+
+  test('legend: false on a state keeps it out of the chips but it still draws', async () => {
+    const hidden = [{ ...states[0]!, legend: false as const }]
+    const el = await mount(<Heatmap {...props} states={hidden} />)
+    expect(el.querySelector('[data-legend-key]')).toBeNull()
+    expect(plotRects(el).some((r) => r.getAttribute('fill') === 'var(--vx-bad)')).toBe(true)
+  })
+
+  test('a state chart conceals the state legend instead of removing it', async () => {
+    const el = await mount(<Heatmap {...props} state={{ pending: true }} />)
+    const chips = el.querySelector('fieldset[aria-label="Legend"]')
+    expect(chips?.getAttribute('aria-hidden')).toBe('true')
+  })
+
+  test('an unknown state key in production paints the plain ramp and does not throw', async () => {
+    const prior = process.env.NODE_ENV
+    process.env.NODE_ENV = 'production'
+    try {
+      const el = await mount(<Heatmap {...props} getState={() => 'nope'} />)
+      expect(inked(el)).toHaveLength(1)
+      expect(plotRects(el).some((r) => r.getAttribute('fill') === 'var(--vx-bad)')).toBe(false)
+    } finally {
+      if (prior === undefined) delete process.env.NODE_ENV
+      else process.env.NODE_ENV = prior
+    }
+  })
+
+  test('a stated cell shows its state and the caller rows; a null value is never formatted', async () => {
+    const formatted: unknown[] = []
+    const el = await mount(
+      <Heatmap
+        {...props}
+        formatValue={(v) => {
+          formatted.push(v)
+          return `${v} km`
+        }}
+        formatLegend={String}
+        tooltip={{ rows: () => [{ label: 'Reason', value: 'timeout' }] }}
+      />,
+    )
+    const tip = await hover(el, 400, 28)
+    expect(tip).toContain('Failed')
+    expect(tip).toContain('Reason')
+    expect(tip).toContain('timeout')
+    expect(formatted).toEqual([])
+  })
+})

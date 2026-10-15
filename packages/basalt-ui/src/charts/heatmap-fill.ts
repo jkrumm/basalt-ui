@@ -13,8 +13,7 @@ export const RAMP_FLOOR = 0.28
 export const ABSENT_OPACITY = 0.08
 
 /** The ramp's opacities, lowest to full ink. */
-export const rampOpacities = (): number[] =>
-  Array.from(
-    { length: RAMP_LEVELS },
-    (_, i) => RAMP_FLOOR + ((1 - RAMP_FLOOR) * i) / (RAMP_LEVELS - 1),
-  )
+export const RAMP_OPACITIES: readonly number[] = Array.from(
+  { length: RAMP_LEVELS },
+  (_, i) => RAMP_FLOOR + ((1 - RAMP_FLOOR) * i) / (RAMP_LEVELS - 1),
+)

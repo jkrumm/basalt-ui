@@ -21,7 +21,7 @@ import { NON_FINITE } from '../format/shared'
 import { VX, alpha } from '../tokens'
 import { CartesianRung } from './CartesianChart'
 import { groupsOf, resolveNamedState } from './band-fold'
-import type { Group } from './band-fold'
+import type { Group, NamedChartState } from './band-fold'
 import { emphasis } from './marks'
 import { rowX } from './types'
 import type {
@@ -35,10 +35,7 @@ import type {
 } from './types'
 
 /** A state a strip can draw. A band has no number to plot, so `formatValue` reads the datum. */
-export type BandStripSeries<T> = Pick<
-  ChartSeries<T>,
-  'key' | 'label' | 'color' | 'tooltip' | 'legend' | 'note' | 'fillOpacity'
-> & {
+export type BandStripSeries<T> = NamedChartState & {
   /**
    * The tooltip row's value for a band in this state. `null` is an ABSENT reading and renders an
    * em dash; omit the function when the state's name is the whole reading ("Not measured").

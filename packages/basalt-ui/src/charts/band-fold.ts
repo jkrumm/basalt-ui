@@ -1,4 +1,15 @@
 import { oneOf } from '../common/errors'
+import type { ChartSeries } from './types'
+
+/**
+ * The fields a named state carries wherever one is declared (`BandStrip`'s `states`, `Heatmap`'s):
+ * the key, its legend label and color, its fill opacity, and the legend / tooltip / note switches.
+ * One base so a field means the same thing on every kind.
+ */
+export type NamedChartState = Pick<
+  ChartSeries<never>,
+  'key' | 'label' | 'color' | 'tooltip' | 'legend' | 'note' | 'fillOpacity'
+>
 
 /** A run of adjacent slots drawn as one band; `items` are the source data it stands for. */
 export type Group<T> = { start: number; items: T[] }

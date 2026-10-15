@@ -13,6 +13,8 @@ export const CHART_PROBES = [
   'donut-responsive',
   'heatmap',
   'heatmap-fill',
+  'heatmap-states-loaded',
+  'heatmap-states-pending',
   'dual-panel',
   'mirrored-bars',
   'cartesian-chart',
