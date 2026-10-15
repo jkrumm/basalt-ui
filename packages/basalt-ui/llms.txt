@@ -54,16 +54,206 @@ Description: CartesianChart (the TanStack Charts rung), the Lines and Bars kinds
 Layer: headless
 Rule: basalt-charts
 Signature: BandStrip(props: BandStripProps<T, X>): ReactElement<unknown, string | JSXElementConstructor<any>>
+  className?: string
+  style?: CSSProperties
+  ariaLabel: string
+  data: readonly T[]
+  x: (d: T) => X
+  xTicks?: number | readonly X[]
+  formatX?: ((x: X) => string)
+  legend?: false | ChartLegendConfig
+  height?: number | ResponsiveChartHeight
+  state?: ChartState
+  cursorGroup?: string
+  cursorResolution?: CursorResolution
+  tooltip?: false | ChartTooltipConfig<T, X>
+  states: readonly BandStripSeries<T>[]
+  getBand: (d: T) => BandSpan
+  fold?: BandFold<T>
 Signature: Bars(props: BarsProps<T, X>): ReactElement<unknown, string | JSXElementConstructor<any>>
+  className?: string
+  style?: CSSProperties
+  ariaLabel: string
+  data: readonly T[]
+  x: (d: T) => X
+  y?: AxisConfig<T>
+  y2?: AxisConfig<T>
+  xTicks?: number | readonly X[]
+  formatX?: ((x: X) => string)
+  zones?: readonly ZoneSpec[]
+  xZones?: readonly XZoneSpec<X>[]
+  refLines?: readonly RefLine[]
+  legend?: false | ChartLegendConfig
+  height?: number | ResponsiveChartHeight
+  state?: ChartState
+  cursorGroup?: string
+  cursorResolution?: CursorResolution
+  tooltip?: false | ChartTooltipConfig<T, X>
+  bars: readonly BarsBar<T>[]
+  lines?: readonly BarsLine<T>[]
+  layout?: "stacked" | "grouped" | "normalized"
+  barOpacity?: ((d: T, key: string) => number)
 Signature: CartesianChart(props: CartesianChartProps<T, X>): ReactElement<unknown, string | JSXElementConstructor<any>>
+  className?: string
+  style?: CSSProperties
+  ariaLabel: string
+  data: readonly T[]
+  x: (d: T) => X
+  series: readonly ChartSeries<T>[]
+  marks: (plot: PlotContext<T, X>) => ChartMarks
+  y?: AxisConfig<T>
+  y2?: AxisConfig<T>
+  xTicks?: number | readonly X[]
+  formatX?: ((x: X) => string)
+  zones?: readonly ZoneSpec[]
+  xZones?: readonly XZoneSpec<X>[]
+  refLines?: readonly RefLine[]
+  legend?: false | ChartLegendConfig
+  height?: number | ResponsiveChartHeight
+  state?: ChartState
+  cursorGroup?: string
+  cursorResolution?: CursorResolution
+  tooltip?: false | ChartTooltipConfig<T, X>
 Signature: ChartCard(props: ChartCardProps): ReactElement<unknown, string | JSXElementConstructor<any>>
+  className?: string
+  style?: CSSProperties
+  classNames?: Partial<Record<ChartCardSlot, string>>
+  title?: string
+  icon?: ReactNode
+  subtitle?: string
+  info?: string
+  value?: string
+  delta?: number
+  deltaPeriod?: string
+  deltaPolarity?: DeltaPolarity
+  count?: number
+  actions?: ReactNode
+  state?: ChartState
+  placeholderHeight?: number | ResponsiveChartHeight
+  stateAction?: ReactNode
+  children?: ReactNode
 Signature: Donut(props: DonutProps<K>): ReactElement<unknown, string | JSXElementConstructor<any>>
+  className?: string
+  style?: CSSProperties
+  ariaLabel: string
+  data: readonly DonutDatum<K>[]
+  colorForKey: (key: K) => string
+  formatValue: (v: number) => string
+  seriesLabel?: ((key: K) => string)
+  centerLabel?: string
+  centerSubLabel?: string
+  height?: number | ResponsiveChartHeight
+  state?: ChartState
 Signature: DualPanel(props: DualPanelProps<T, X>): ReactElement<unknown, string | JSXElementConstructor<any>>
+  className?: string
+  style?: CSSProperties
+  ariaLabel: string
+  data: readonly T[]
+  x: (d: T) => X
+  formatX?: ((x: X) => string)
+  legend?: false | ChartLegendConfig
+  height?: number | ResponsiveChartHeight
+  state?: ChartState
+  cursorGroup?: string
+  cursorResolution?: CursorResolution
+  tooltip?: false | ChartTooltipConfig<T, X>
+  series: readonly DualPanelLine<T>[]
+  top?: { domain?: readonly [number, number] | "auto" | undefined; …
+  fillBetween?: { from: string; to: string; fill: string; aboveFill?: strin…
+  bar: DualPanelBar<T>
+  topFraction?: number
 Signature: Heatmap(props: HeatmapProps<T>): ReactElement<unknown, string | JSXElementConstructor<any>>
+  className?: string
+  style?: CSSProperties
+  ariaLabel: string
+  data: readonly T[]
+  getRow: (d: T) => string
+  getCol: (d: T) => string
+  getValue: (d: T) => number | null
+  rows?: readonly string[]
+  cols?: readonly string[]
+  color?: string
+  domain?: readonly [number, number]
+  formatValue?: ((v: number) => string)
+  formatRow?: ((row: string) => string)
+  formatCol?: ((col: string) => string)
+  legend?: false | { label?: string | undefined; }
+  tooltip?: false | { rows?: ((d: T) => readonly ChartTooltipRow[]) | u…
+  height?: number | ResponsiveChartHeight
+  matchHeight?: boolean
+  state?: ChartState
 Signature: Lines(props: LinesProps<T, X>): ReactElement<unknown, string | JSXElementConstructor<any>>
+  className?: string
+  style?: CSSProperties
+  ariaLabel: string
+  data: readonly T[]
+  x: (d: T) => X
+  series: readonly ChartSeries<T>[]
+  y?: AxisConfig<T>
+  y2?: AxisConfig<T>
+  xTicks?: number | readonly X[]
+  formatX?: ((x: X) => string)
+  zones?: readonly ZoneSpec[]
+  xZones?: readonly XZoneSpec<X>[]
+  refLines?: readonly RefLine[]
+  legend?: false | ChartLegendConfig
+  height?: number | ResponsiveChartHeight
+  state?: ChartState
+  cursorGroup?: string
+  cursorResolution?: CursorResolution
+  tooltip?: false | ChartTooltipConfig<T, X>
+  thresholds?: [X] extends [string] ? never : readonly Threshold[]
 Signature: MirroredBars(props: MirroredBarsProps<T, X>): ReactElement<unknown, string | JSXElementConstructor<any>>
+  className?: string
+  style?: CSSProperties
+  ariaLabel: string
+  data: readonly T[]
+  x: (d: T) => X
+  formatX?: ((x: X) => string)
+  legend?: false | ChartLegendConfig
+  height?: number | ResponsiveChartHeight
+  state?: ChartState
+  cursorGroup?: string
+  tooltip?: false | ChartTooltipConfig<T, X>
+  series: readonly MirroredBarsSeries<T>[]
+  up: MirroredBarPane
+  down: MirroredBarPane
+  upFraction?: number
+  getAbsentFraction?: ((d: T) => number)
+  getBarOpacity?: ((d: T) => number)
+  fold?: { minBandPx?: number | undefined; merge: (group: T[]) => T;…
+  cursorResolution?: CursorResolution
 Signature: Sparkline(props: SparklineProps): ReactElement<unknown, string | JSXElementConstructor<any>>
+  className?: string
+  style?: CSSProperties
+  ariaLabel: string
+  data: readonly number[]
+  height: number
+  width?: number
+  mark?: "line" | "bar"
+  color?: string
+  emphasizeLast?: boolean
+  emphasisColor?: string
+  state?: ChartState
 Signature: StackedArea(props: StackedAreaProps<T, X>): ReactElement<unknown, string | JSXElementConstructor<any>>
+  className?: string
+  style?: CSSProperties
+  ariaLabel: string
+  data: readonly T[]
+  x: (d: T) => X
+  xTicks?: number | readonly X[]
+  formatX?: ((x: X) => string)
+  zones?: readonly ZoneSpec[]
+  xZones?: readonly XZoneSpec<X>[]
+  refLines?: readonly RefLine[]
+  legend?: false | ChartLegendConfig
+  height?: number | ResponsiveChartHeight
+  state?: ChartState
+  cursorGroup?: string
+  cursorResolution?: CursorResolution
+  tooltip?: false | ChartTooltipConfig<T, X>
+  series: readonly StackedAreaBand<T>[]
+  y?: Omit<AxisConfig<T>, "scale">
 Signature: chartCursor(group: string): ChartCursorController<ChartValue, ChartValue>
 Signature: chartCurve(name: CurveName): ChartCurve
 Install: bun add @tanstack/charts@1.1.0 d3-scale@4.0.2
@@ -115,6 +305,8 @@ Rule: basalt-batteries
 Signature: fieldKey(form: UseFormReturnType<Values>, path: Path): string
 Signature: inputProps(form: UseFormReturnType<Values>, path: Path): GetInputPropsReturnType
 Signature: useBasaltForm(opts: UseBasaltFormOptions<Values>): UseFormReturnType<Values>
+  mode?: "controlled" | "uncontrolled"
+  schema?: StandardSchemaV1<unknown, Values>
 Install: bun add @mantine/form@^9.7.0
 
 ## basalt-ui/commands
@@ -139,6 +331,47 @@ Description: BasaltDataTable and createColumnHelper: a data table over TanStack 
 Layer: mantine-coupled
 Rule: basalt-batteries
 Signature: BasaltDataTable(props: BasaltDataTableProps<T>): JSX.Element
+  className?: string
+  style?: CSSProperties
+  classNames?: Partial<Record<BasaltDataTableSlot, string>>
+  title?: string
+  icon?: ReactNode
+  subtitle?: string
+  data: T[]
+  columns: BasaltColumnDef<T>[]
+  enableSorting?: boolean
+  manualSorting?: boolean
+  striped?: boolean | "odd" | "even"
+  highlightOnHover?: boolean
+  emptyState?: ReactNode
+  isLoading?: boolean
+  query?: QueryStateLike<unknown>
+  skeletonRows?: number
+  initialSorting?: SortingState
+  onSortingChange?: (sorting: SortingState) => void
+  enableGlobalFilter?: boolean
+  globalFilterPlaceholder?: string
+  searchIcon?: ReactNode
+  initialGlobalFilter?: string
+  onGlobalFilterChange?: (value: string) => void
+  facets?: DataTableFacet<T>[]
+  onColumnFiltersChange?: (filters: ColumnFiltersState) => void
+  manualFiltering?: boolean
+  actions?: SlotActions
+  onRowActivate?: (row: T) => void
+  renderCard?: (row: T) => ReactNode
+  enableRowSelection?: boolean
+  rowSelection?: RowSelectionState
+  onRowSelectionChange?: (selection: RowSelectionState) => void
+  getRowId?: (row: T, index: number) => string
+  bulkActions?: (rows: T[]) => BarAction[]
+  enablePagination?: boolean
+  pageSizeOptions?: number[]
+  initialPagination?: PaginationState
+  onPaginationChange?: (pagination: PaginationState) => void
+  manualPagination?: boolean
+  rowCount?: number
+  … +11 more
 Signature: createColumnHelper(): ColumnHelper<{ rowSortingFeature: TableFeature; columnFilteringFeatur…
 Install: bun add @tanstack/react-table@9.2.8
 
@@ -176,7 +409,7 @@ OptionalPeers: shiki@^4.5.0, @shikijs/langs@^4.5.0, @shikijs/themes@^4.5.0, beau
 
 ## basalt-ui/controls
 Import: import { ... } from 'basalt-ui/controls'
-Description: The control tier (docs/CONTROLS-SPEC.md §3): FilterSet (nowrap row + measured +N fold + the mobile Filters (n) sheet), RangeFilter/CompareFilter/SelectFilter/MultiSelectFilter/NumberFilter/SearchFilter/ToggleFilter (each bound to a FieldHandle — no value/onChange/size, law C2/C5; NumberFilter is the field.number lane, a radio list over `options` or a stepper without), ViewTabs, the action/sync family (ActionGroup, OverflowMenu, SyncButton, BarAction/GlobalAction), and the form layout FormSection/FormRow/FormGroup/FormActions (moved here from ./forms in 1.36.0 — FormRow is law C1’s form row and needs no @mantine/form). THREE surfaces, picked by the home and never by a prop (useFilterSurface): pill in a PageBar row, sheet in the mobile Filters (n) drawer, panel in a PageAside body — where every control renders an inspector/facet ROW instead of a chip (docs/ASIDE-SPEC.md §3). PanelRow is that row primitive (label above, hint, mono readout, an `end` control on the label line) and SliderControl is the one bound control with no pill form at all; the counts/max props on MultiSelectFilter render the Foundry facet list there. Every control owns its own desktop/mobile swap in CSS (C9) and renders size="ctl" internally. Resolves and renders with NO @mantine/dates installed — the custom date picker is injected through RangeFilter.customPicker from ./controls-dates.
+Description: The control tier (docs/CONTROLS-SPEC.md §3). Exports: `FilterSet` (nowrap row + measured +N fold + the mobile Filters (n) sheet), `RangeFilter`/`SelectFilter`/`MultiSelectFilter`/`NumberFilter`/`SearchFilter`/`ToggleFilter` (each bound to a FieldHandle — no value/onChange/size, law C2/C5; `NumberFilter` is the field.number lane, a radio list over `options` or a stepper without), `ViewTabs`, `SyncButton` with the `BarAction`/`GlobalAction` types, and the form layout `FormRow`/`FormGroup` (moved here from ./forms in 1.36.0 — `FormRow` is law C1’s form row and needs no @mantine/form). THREE surfaces, picked by the home and never by a prop: pill in a PageBar row, sheet in the mobile Filters (n) drawer, panel in a PageAside body — where every control renders an inspector/facet ROW instead of a chip (docs/ASIDE-SPEC.md §3); the counts/max props on `MultiSelectFilter` render the Foundry facet list there. Every control owns its own desktop/mobile swap in CSS (C9) and renders size="ctl" internally. Resolves and renders with NO @mantine/dates installed — the custom date picker is injected through RangeFilter.customPicker from ./controls-dates.
 Layer: mantine-coupled
 Rule: basalt-controls
 Signature: FilterSet(props: FilterSetProps): ReactNode

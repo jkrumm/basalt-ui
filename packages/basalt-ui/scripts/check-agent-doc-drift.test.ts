@@ -5,7 +5,10 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 import {
+  checkDocNames,
   checkF,
+  checkI,
+  leadingDocComment,
   checkG,
   checkLlmsNames,
   checkRuleSets,
@@ -244,6 +247,40 @@ describe('checkLlmsNames', () => {
   test('accepts the real shipped llms.txt', () => {
     const text = readFileSync(join(import.meta.dir, '..', 'llms.txt'), 'utf8')
     expect(checkLlmsNames(text, collectPublishedBySubpath())).toEqual([])
+  })
+})
+
+describe('checkDocNames (Check I)', () => {
+  const exportsOf = new Set(['FormRow', 'useBasaltForm'])
+  const elsewhere = new Set(['BasaltProvider', 'createThing'])
+
+  test('a barrel naming a missing export fails', () => {
+    const doc = leadingDocComment(
+      '/**\n * Uses `useBasaltForm`, `FormSection` and `useFormSubmit`.\n */\nexport {}',
+    )
+    expect(checkDocNames('fixture', 'basalt-ui/forms', doc, exportsOf).map((f) => f.name)).toEqual([
+      'FormSection',
+      'useFormSubmit',
+    ])
+  })
+
+  test('plain camelCase prose passes, but a camelCase export of another subpath fails', () => {
+    const text = 'the `options` prop, `createThing`'
+    expect(
+      checkDocNames('fixture', 'basalt-ui/forms', text, exportsOf, elsewhere).map((f) => f.name),
+    ).toEqual(['createThing'])
+  })
+
+  test('an allow-listed <subpath>:<name> term passes only on that subpath', () => {
+    const allow = new Set(['basalt-ui/forms:Intl'])
+    expect(checkDocNames('f', 'basalt-ui/forms', '`Intl`', exportsOf, new Set(), allow)).toEqual([])
+    expect(
+      checkDocNames('f', 'basalt-ui/format', '`Intl`', exportsOf, new Set(), allow),
+    ).toHaveLength(1)
+  })
+
+  test('the shipped barrels and SURFACES descriptions are clean', () => {
+    expect(checkI(collectPublishedBySubpath())).toEqual([])
   })
 })
 
