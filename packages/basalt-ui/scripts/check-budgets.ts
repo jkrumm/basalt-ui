@@ -437,8 +437,8 @@ async function budgets(providerOnlyDist: string): Promise<Budget[]> {
     // 4710 -> 4726: literal-aware provider tags, sticky spread match, and the split stale-seed warning (rows 62, 67).
     // 4726 -> 4859: #261's `router-wiring` module and `source-text` helper (rows 71, 72, 74) — comments restored rather than condensed.
     // 4859 -> 4890: `installRootAbove` (cli/install-root.ts) — one predicate for doctor and sync, with the same-install check (row 77, review of #267).
-    // 4890 -> 4930: the shell-less nav-seed skip in `router-wiring`/`init`/`sync` (ledger row 82, linewatch W2).
-    { label: 'CLI non-test lines (src/cli/**)', value: cliNonTestLines(), ceiling: 4930 },
+    // 4890 -> 4955: the declared `basalt.shell: false` — config key, seed skip, shared seed-retire notice and the doctor finding (ledger row 82, linewatch W2).
+    { label: 'CLI non-test lines (src/cli/**)', value: cliNonTestLines(), ceiling: 4955 },
     ...(await providerOnlyRows(providerOnlyDist)),
   ]
 }

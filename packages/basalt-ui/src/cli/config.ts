@@ -14,6 +14,14 @@ export type BasaltConfig = {
    * { app: 'apps/dashboard' }
    */
   app?: string
+  /**
+   * Declares the app renders no `BasaltShell` (a one-page app on `BasaltProvider` + `PageBar`).
+   * `false` stops `init`/`sync` placing the nav and root-route seeds — they are a pair, the root
+   * route imports the nav module — and retires their manifest entries. Default: `true`. Declared,
+   * never inferred: a heuristic over the app's imports mis-reads aliased and deeply nested shells.
+   * `doctor` warns when `false` is declared and the entry's imports render `<BasaltShell`.
+   */
+  shell?: boolean
   /** Source roots to scan. Default: `['src']`. Set explicitly for a monorepo layout. */
   roots?: string[]
   /** Files exempt from the scan (they ARE the palette source). Default: argo's exempt set. */
@@ -189,9 +197,17 @@ export function resolveRoots(cfg: BasaltConfig): string[] {
   return cfg.roots?.length ? cfg.roots : DEFAULT_ROOTS
 }
 
+/** A clear message when `basalt.shell` is set to something other than a boolean, else null. */
+export function shellConfigError(cfg: BasaltConfig): string | null {
+  const shell: unknown = cfg.shell
+  return shell === undefined || typeof shell === 'boolean'
+    ? null
+    : `basalt.shell must be a boolean (true | false), got ${JSON.stringify(shell)}.`
+}
+
 /** Every `BasaltConfig` key, as data for `doctor`'s `config-keys` (a test pins it to the type). */
 export const BASALT_CONFIG_KEYS = (
-  'app roots exempt profile include spacingSteps severity forbiddenAccents accentHue rawRadius rawSurface ' +
+  'app shell roots exempt profile include spacingSteps severity forbiddenAccents accentHue rawRadius rawSurface ' +
   'cardWithBorder offSystemSurfaceVar mantineShadeIndex rawHtmlLayout inlineSpacing inlineDisplay ' +
   'rawMotionValue rawFormControl sub16InputFont seriesModulePath exemptRules aiMajorSkewReason'
 ).split(' ') as (keyof BasaltConfig)[]

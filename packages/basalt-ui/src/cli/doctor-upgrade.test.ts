@@ -22,6 +22,7 @@ import { SURFACES } from '../surfaces'
 import { doctor } from './doctor'
 import {
   appWiringCheck,
+  shellDeclarationFindings,
   startWiringWarnings,
   droppedSubpathsCheck,
   exactPeersCheck,
@@ -954,6 +955,28 @@ describe('doctor — app-wiring', () => {
       'export const getRouter = () => createRouter({ context: { queryClient } })\n',
     )
     expect(startWiringWarnings(dir)).toEqual([])
+  })
+
+  it('shell: false warns only when the entry-reachable code renders <BasaltShell', () => {
+    write('src/main.tsx', "import { App } from './app'\nrender(<App />)\n")
+    write(
+      'src/app.tsx',
+      "// <BasaltShell />\nconst s = '<BasaltShell>'\nexport const App = () => <div />\n",
+    )
+    expect(shellDeclarationFindings(dir, { shell: false })).toEqual({ fail: null, warnings: [] })
+    write('src/app.tsx', 'export const App = () => <BasaltShell nav={NAV}><X /></BasaltShell>\n')
+    expect(shellDeclarationFindings(dir, { shell: false }).warnings.join()).toContain(
+      'declared basalt.shell: false but the app renders BasaltShell',
+    )
+    // Not declared: the shell is the default and nothing is judged.
+    expect(shellDeclarationFindings(dir, {})).toEqual({ fail: null, warnings: [] })
+    expect(shellDeclarationFindings(dir, { shell: true }).warnings).toEqual([])
+  })
+
+  it('a non-boolean shell fails the doctor finding', () => {
+    expect(shellDeclarationFindings(dir, { shell: 'no' as unknown as boolean }).fail).toContain(
+      'basalt.shell must be a boolean',
+    )
   })
 
   it('follows the entry named by index.html and accepts an existing routeTree.gen', () => {

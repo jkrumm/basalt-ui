@@ -27,12 +27,7 @@
     "import/no-default-export": "error",
     "import/consistent-type-specifier-style": "error",
     "react/hook-use-state": "warn",
-    "react/no-unstable-nested-components": [
-      "warn",
-      {
-        "allowAsProps": true
-      }
-    ],
+    "react/no-unstable-nested-components": ["warn", { "allowAsProps": true }],
     "basalt/no-raw-font-size": "error",
     "basalt/raw-size-literal": "error",
     "basalt/card-inset": "error",
@@ -236,12 +231,6 @@
       ],
       "rules": {
         "react/set-state-in-effect": "off"
-      }
-    },
-    {
-      "files": ["**/routes/**", "**/__root.tsx"],
-      "rules": {
-        "react/only-export-components": "off"
       }
     }
   ]

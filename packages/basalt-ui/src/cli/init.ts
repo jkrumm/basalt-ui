@@ -7,8 +7,8 @@ import { existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 import { deriveSpacing } from '../tokens/core'
+import { shellConfigError } from './config'
 import type { MergeLintResult, ScaffoldFlags } from './index'
-import { SHELL_LESS_NOTE } from './router-wiring'
 import {
   MANIFEST_PATH,
   declaredProfile,
@@ -84,6 +84,12 @@ export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags =
     )
   }
 
+  const shellError = shellConfigError(readBasaltConfig(cwd))
+  if (shellError !== null) {
+    console.error(`✖ basalt-ui init: ${shellError}`)
+    return 1
+  }
+
   const appError = resolvePlacement(cwd).appError
   if (appError !== null) {
     console.error(`✖ basalt-ui init: ${appError}`)
@@ -128,11 +134,11 @@ export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags =
   const placement = resolvePlacement(cwd)
   // A tokens-only consumer has no use for the Mantine/React scaffolds (doctor skips them there too).
   const tokensOnly = declaredProfile(readBasaltConfig(cwd), []) === 'tokens-only'
-  const {
-    skip: seedSkip,
-    skipped: skippedSeeds,
-    shellLess,
-  } = routerSeedPlan(cwd, placement.appRel, tokensOnly)
+  const { skip: seedSkip, skipped: skippedSeeds } = routerSeedPlan(
+    cwd,
+    placement.appRel,
+    tokensOnly,
+  )
   const files = managedFiles(placement).filter((f) => !skippedSeeds.has(f.dest))
 
   const writtenFiles: string[] = []
@@ -210,7 +216,6 @@ export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags =
   if (buildNote !== null) console.log(`basalt-ui init: ${buildNote}`)
   const skipNote = seedSkipNote(seedSkip)
   if (skipNote !== null) console.log(`basalt-ui init: ${skipNote}`)
-  if (shellLess) console.log(`basalt-ui init: ${SHELL_LESS_NOTE}`)
   const rootsMessages = rootsNotices(rootsState)
   for (const line of rootsMessages.log) console.log(`basalt-ui init: ${line}`)
   for (const line of rootsMessages.error) console.error(`⚠ basalt-ui init: ${line}`)

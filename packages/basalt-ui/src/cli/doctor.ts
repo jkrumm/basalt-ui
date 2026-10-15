@@ -37,6 +37,7 @@ import {
 import { resolveRoots } from './config'
 import {
   appWiringCheck,
+  shellDeclarationFindings,
   startWiringWarnings,
   droppedSubpathsCheck,
   exactPeersCheck,
@@ -414,6 +415,9 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
       ],
     ])
     for (const line of startWiringWarnings(appDir)) warn(line)
+    const shell = shellDeclarationFindings(appDir, cfg)
+    if (shell.fail !== null) fail(shell.fail)
+    for (const line of shell.warnings) warn(line)
   }
 
   // ── Report ──────────────────────────────────────────────────────────────────

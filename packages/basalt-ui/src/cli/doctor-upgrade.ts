@@ -6,12 +6,13 @@ import { writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { dirname, relative, resolve } from 'node:path'
 
-import { BASALT_CONFIG_KEYS, RETIRED_CONFIG_KEYS } from './config'
+import { BASALT_CONFIG_KEYS, RETIRED_CONFIG_KEYS, shellConfigError } from './config'
 import type { BasaltConfig } from './config'
 import { parseJsonc, routerSeedDest, scannableFiles } from './index'
 import type { BasaltInstall } from './index'
 import {
   appEntry,
+  callsIn,
   hasRouteTree,
   hasRouter,
   isCodeRoutedApp,
@@ -449,6 +450,27 @@ export function startWiringWarnings(cwd: string): string[] {
     )
   }
   return out
+}
+
+const BASALT_SHELL_TAG = /<BasaltShell\b/g
+
+/**
+ * `basalt.shell: false` is a declaration, never a heuristic — but a declaration can go stale: warn
+ * when a module reachable from the entry renders `<BasaltShell` (JSX open tag, outside literals),
+ * and fail on a non-boolean value. Empty when `shell` is not `false`.
+ */
+export function shellDeclarationFindings(
+  cwd: string,
+  cfg: BasaltConfig,
+): { fail: string | null; warnings: string[] } {
+  const fail = shellConfigError(cfg)
+  if (cfg.shell !== false || !callsIn(cwd, appEntry(cwd), BASALT_SHELL_TAG)) {
+    return { fail, warnings: [] }
+  }
+  return {
+    fail,
+    warnings: ['declared basalt.shell: false but the app renders BasaltShell — drop the key.'],
+  }
 }
 
 /**
