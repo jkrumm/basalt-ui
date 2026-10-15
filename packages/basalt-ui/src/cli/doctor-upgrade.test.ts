@@ -362,6 +362,22 @@ describe('doctor — dropped-subpaths', () => {
     expect(problem).toContain('src/app.css:1 imports basalt-ui/tokens.css')
   })
 
+  it('does not fire on a CSS @import that sits inside a declaration value', () => {
+    exportsMap()
+    write('src/a.css', '.a::before { content: "@import \'basalt-ui/tokens.css\'"; }\n')
+    write('src/b.css', "a { color: red; } @import 'basalt-ui/tokens.css';\n")
+    const problem = text(check())
+    expect(problem).not.toContain('src/a.css')
+    expect(problem).toContain('src/b.css:1')
+  })
+
+  it('treats Object.prototype names as ordinary subpaths', () => {
+    exportsMap()
+    write('src/a.ts', "import 'basalt-ui/constructor'\n")
+    expect(text(check())).toContain('src/a.ts:1 imports basalt-ui/constructor')
+    expect(text(check())).not.toContain('basalt-ui/constructor:')
+  })
+
   it('does not fire on a commented-out import or a string that merely contains one', () => {
     exportsMap()
     write(
@@ -1235,6 +1251,27 @@ describe('doctor — oxlint-floor', () => {
       expect(oxlintFloorCheck(dir)).toBeNull()
     }
     withOxlint('1.100.0')
+    expect(oxlintFloorCheck(dir)).toBeNull()
+  })
+
+  it('treats a prerelease of the floor as below it, and an unparseable version as absent', () => {
+    withOxlint(`${OXLINT_FLOOR}-beta.1`)
+    expect(text(oxlintFloorCheck(dir))).toContain('oxlint 1.79.0-beta.1')
+    withOxlint('nightly')
+    expect(oxlintFloorCheck(dir)).toBeNull()
+    write('node_modules/oxlint/package.json', JSON.stringify({ version: 179 }))
+    expect(oxlintFloorCheck(dir)).toBeNull()
+  })
+
+  it('judges the nearest oxlint: an old one below a newer ancestor fails', () => {
+    write('node_modules/oxlint/package.json', JSON.stringify({ version: '1.90.0' }))
+    write('app/.oxlintrc.json', '{}')
+    write('app/node_modules/oxlint/package.json', JSON.stringify({ version: '1.70.0' }))
+    expect(text(oxlintFloorCheck(join(dir, 'app')))).toContain('oxlint 1.70.0')
+  })
+
+  it('passes an old oxlint when there is no .oxlintrc.json', () => {
+    write('node_modules/oxlint/package.json', JSON.stringify({ version: '1.60.0' }))
     expect(oxlintFloorCheck(dir)).toBeNull()
   })
 

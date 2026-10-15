@@ -225,8 +225,8 @@ function basaltImports(src: string): [string, number][] {
     .map((m) => [m[2] as string, code.slice(0, m.index + m[0].length).split('\n').length])
 }
 
-/** `@import 'basalt-ui/x'`, `@import "basalt-ui/x"`, `@import url(basalt-ui/x)` in a stylesheet. */
-const CSS_SUBPATH_IMPORT = /@import\s+(?:url\(\s*)?(['"]?)basalt-ui\/([^'")\s;]+)\1/g
+/** `@import 'basalt-ui/x'`, `@import "basalt-ui/x"`, `@import url(basalt-ui/x)` in a stylesheet (at-rule position only). */
+const CSS_SUBPATH_IMPORT = /(?:^|[;{}])\s*@import\s+(?:url\(\s*)?(['"]?)basalt-ui\/([^'")\s;]+)\1/g
 
 /** `[subpath, line]` per `basalt-ui/<subpath>` `@import` in a stylesheet (comments blanked). */
 function cssImports(src: string): [string, number][] {
@@ -249,12 +249,16 @@ const appImports = (cwd: string, cfg: BasaltConfig): [string, string, number][] 
   })
 
 /** Subpaths 2.x removed, checked besides the install's `exports`: a walked-up 1.x install exports them. */
-const DROPPED_FIXES: Record<string, string> = {
-  'tokens.css':
+const DROPPED_FIXES = new Map([
+  [
+    'tokens.css',
     'commit the emit instead: `basalt-ui tokens:css --out src/tokens.css` and import that file',
-  'router-tanstack':
+  ],
+  [
+    'router-tanstack',
     'nav symbols (`defineNav`, `navTarget`, …) now import from `basalt-ui`, stores (`createSearchStore`, `field`, …) from `basalt-ui/state`',
-}
+  ],
+])
 
 /** `dropped-subpaths`: `basalt-ui/<subpath>` imports the installed `exports` map does not have. */
 export function droppedSubpathsCheck(
@@ -274,41 +278,47 @@ export function droppedSubpathsCheck(
       keys.some(
         (k) => k === `./${sub}` || (k.endsWith('*') && `./${sub}`.startsWith(k.slice(0, -1))),
       )
-    const dropped = (sub: string): boolean => sub in DROPPED_FIXES || !has(sub)
+    const dropped = (sub: string): boolean => DROPPED_FIXES.has(sub) || !has(sub)
     const found = appImports(cwd, cfg).filter(([sub]) => dropped(sub))
     if (found.length === 0) return null
     const hits = found.map(([sub, rel, line]) => `${rel}:${line} imports basalt-ui/${sub}`)
     const more = hits.length > 10 ? ` (+${hits.length - 10} more)` : ''
-    const fixes = [...new Set(found.map(([sub]) => sub))]
-      .flatMap((sub) => (sub in DROPPED_FIXES ? [`basalt-ui/${sub}: ${DROPPED_FIXES[sub]}`] : []))
-      .map((f) => `${f}; `)
-      .join('')
-    return {
-      fail: `${id}: ${hits.slice(0, 10).join('; ')}${more}. Fix: ${fixes}see MIGRATING.md § 2.0 for each subpath's replacement.`,
-    }
+    const fixes = [...new Set(found.map(([sub]) => sub))].flatMap((sub) => {
+      const fix = DROPPED_FIXES.get(sub)
+      return fix === undefined ? [] : [`basalt-ui/${sub}: ${fix}`]
+    })
+    fixes.push("see MIGRATING.md § 2.0 for each subpath's replacement")
+    return { fail: `${id}: ${hits.slice(0, 10).join('; ')}${more}. Fix: ${fixes.join('; ')}.` }
   })
 }
 
 /** The oldest oxlint that parses the shipped preset (1.78 lacks `react/globals` and friends). */
 export const OXLINT_FLOOR = '1.79.0'
 
-/** `oxlint-floor`: the installed oxlint is at least {@link OXLINT_FLOOR}, or the preset does not parse. */
+const SEMVER = /^(\d+)\.(\d+)\.(\d+)(-.+)?$/
+
+/** True when `version` is below `floor`; a prerelease of the floor is below it. Unparseable: false. */
+function isBelowFloor(version: string, floor: string): boolean {
+  const [v, f] = [SEMVER.exec(version), SEMVER.exec(floor)]
+  if (v === null || f === null) return false
+  for (const i of [1, 2, 3]) {
+    if (Number(v[i]) !== Number(f[i])) return Number(v[i]) < Number(f[i])
+  }
+  return v[4] !== undefined
+}
+
+/**
+ * `oxlint-floor`: the nearest installed oxlint is at least {@link OXLINT_FLOOR}, or the preset does
+ * not parse. Reads `cwd`, like `oxlint-preset` reads `.oxlintrc.json`; no oxlint is that check's warning.
+ */
 export function oxlintFloorCheck(cwd: string): Check {
   const id = 'oxlint-floor'
   return guarded(id, () => {
     if (readIfExists(resolve(cwd, '.oxlintrc.json')) === null) return null
-    for (let d = cwd; ; d = dirname(d)) {
-      const version = readPackageJson<{ version?: string }>(
-        resolve(d, 'node_modules/oxlint'),
-      )?.version
-      if (version !== undefined) {
-        return version.localeCompare(OXLINT_FLOOR, undefined, { numeric: true }) < 0
-          ? {
-              fail: `${id}: oxlint ${version} is installed, but the shipped preset needs >= ${OXLINT_FLOOR} (older versions reject its react/* rules). Fix: \`bun add -D oxlint@^${OXLINT_FLOOR}\`.`,
-            }
-          : null
-      }
-      if (dirname(d) === d) return null // no oxlint: `oxlint-preset` already warns about the missing bin
+    const version = installedVersion(cwd, 'oxlint')
+    if (typeof version !== 'string' || !isBelowFloor(version, OXLINT_FLOOR)) return null
+    return {
+      fail: `${id}: oxlint ${version} is installed, but the shipped preset needs >= ${OXLINT_FLOOR} (older versions reject its react/* rules). Fix: \`bun add -D oxlint@^${OXLINT_FLOOR}\`.`,
     }
   })
 }
