@@ -59,12 +59,7 @@ export type DoctorResult = {
   hardFailures: number
   /** Number of warnings (informational only). */
   warnings: number
-  /**
-   * Number of checks that could not RUN (as opposed to ran and passed). Counted separately and
-   * exits non-zero on its own: under bun's isolated linker `doctor` used to drop two of its five
-   * checks and still print "All checks passed", which is the same false-green this whole surface
-   * exists to remove. A check that cannot run is not a check that passed.
-   */
+  /** Checks that could not RUN (not ran-and-passed); exits non-zero on its own — a skipped check is no pass. */
   skipped: number
 }
 
@@ -95,23 +90,10 @@ function aiMajorsAt(dir: string): Partial<Record<AiMajorField, number>> {
 
 /**
  * Check a consumer repo's basalt integration and print a pass/warn report. One directory, no
- * workspace walking (see {@link resolveProjectDir}). Checks, in print order:
- *
- * Hard failures (exit non-zero):
- *   1. `.basalt/manifest.json` exists.
- *   2. `install-parity`: basalt-ui resolves, and its version matches the manifest's `basaltVersion`.
- *   3. `guard-scan`: `check-theme` would scan more than zero files (shares `scannableFiles`).
- *   4. `oxlint-preset`: `.oxlintrc.json` extends the shipped preset AND that path resolves.
- *   7. `ai-major-parity`: the `ai` major agrees across this package.json's dependency fields
- *      (exempt via `basalt.aiMajorSkewReason`; a stale reason warns).
- *   8-14. `tsconfig-base`, `retired-lint-rules`, `dropped-subpaths`, `app-wiring`, `exact-peers`,
- *      `subpath-peers`, `config-keys` (./doctor-upgrade; tokens-only runs `dropped-subpaths` only);
- *      a check that cannot run is SKIPPED and exits non-zero.
- *
- * Warning (non-fatal):
- *   5. `lefthook-preset`: a pre-commit command runs `check-theme` (read via `lefthook dump`).
- *   6. `claude-md`: a project-root `CLAUDE.md` that does not import `@AGENTS.md` suppresses it.
- *
+ * workspace walking (see {@link resolveProjectDir}). Hard failures (exit non-zero): the manifest,
+ * `install-parity`, `guard-scan`, `oxlint-preset`, `ai-major-parity`, and the 2.0 checks in
+ * ./doctor-upgrade (tokens-only runs `dropped-subpaths` only); a check that cannot run is SKIPPED
+ * and exits non-zero. Warnings: `lefthook-preset`, `claude-md`.
  * Returns the exit code: 0 = all good, 1 = one or more hard failures or skipped checks.
  */
 export function doctor(invocationCwd: string = process.cwd(), flags: string[] = []): number {
@@ -380,7 +362,6 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
   }
 
   // ── Hard checks 8-13: strictness and the 1.x → 2.0 upgrade path (./doctor-upgrade) ──────────
-  // tokens-only: no router or lint preset, but CSS subpath imports (where `tokens.css` was).
   const tokensOnly = profile === 'tokens-only'
   if (tokensOnly)
     pass('tsconfig-base / retired-lint-rules / app-wiring: n/a — a tokens-only consumer')

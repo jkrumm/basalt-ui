@@ -685,6 +685,138 @@ export function isStartApp(cwd: string, appRel: string): boolean {
 export const START_APP_NOTE =
   'TanStack Start app — no main.tsx/nav.tsx/__root.tsx seeded (Start owns the router); render ' +
   '<BasaltProvider><Outlet /></BasaltProvider> in your root route component.'
+/** Strings, template literals (captured) and comments. Known gap: a regex literal containing a quote, or a template nested in `${…}`. */
+const TOKEN =
+  /("(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*'|`(?:\\.|[^`\\])*`)|\/\/[^\n]*|\/\*[\s\S]*?\*\//g
+
+/** Source with comments blanked (and template text), plus a test for "offset sits inside a string". */
+export function tokenize(src: string): { code: string; inLiteral: (at: number) => boolean } {
+  const literals: [number, number][] = []
+  const code = src.replace(TOKEN, (m, literal: string | undefined, at: number) => {
+    if (literal === undefined) return m.replace(/[^\n]/g, ' ')
+    if (!literal.startsWith('`')) {
+      literals.push([at, at + m.length])
+      return m
+    }
+    // Template literal: blank the text, keep the delimiters and the `${…}` code scannable.
+    return m.replace(
+      /(\$\{[^}]*\})|[^\n`]/g,
+      (c, interpolation: string | undefined) => interpolation ?? ' ',
+    )
+  })
+  return { code, inLiteral: (at) => literals.some(([from, to]) => at >= from && at < to) }
+}
+
+const VITE_CONFIGS = ['ts', 'mts', 'cts', 'js', 'mjs', 'cjs'].map((e) => `vite.config.${e}`)
+/** The first local `<script type="module" src>` in index.html (comments and remote src skipped). */
+function htmlEntry(html: string): string | undefined {
+  for (const [, attrs = ''] of html
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .matchAll(/<script\b([^>]*)>/gi)) {
+    const src = /\bsrc\s*=\s*["']?([^"'\s>]+)/i.exec(attrs)?.[1]
+    if (
+      /\btype\s*=\s*["']?module\b/i.test(attrs) &&
+      src !== undefined &&
+      !/^(?:[a-z][a-z0-9+.-]*:)?\/\//i.test(src)
+    ) {
+      return src
+    }
+  }
+  return undefined
+}
+
+/** True when `code` calls a binding imported from `@tanstack/router-plugin` inside `plugins`. */
+function registersRouterPlugin(src: string): boolean {
+  const { code, inLiteral } = tokenize(src)
+  const pluginsAt = [...code.matchAll(/\bplugins\b/g)].find((m) => !inLiteral(m.index))?.index
+  if (pluginsAt === undefined) return false
+  const imports = code.matchAll(
+    /(?:^|;)[ \t]*import\s+(?:type\s+)?([^'"`;]*?)\s*from\s*(['"])@tanstack\/router-plugin(?:\/[^'"]*)?\2/gm,
+  )
+  return [...imports].some((m) => {
+    if (inLiteral(m.index)) return false
+    const names = (m[1] ?? '')
+      .replace(/[{}]/g, '')
+      .split(',')
+      .map((part) => part.trim())
+      .filter((part) => part !== '' && !/^type\s/.test(part))
+      .map((part) => part.split(/\s+as\s+/).pop() as string)
+    return names.some((name) =>
+      [
+        ...code.matchAll(
+          new RegExp(`(?<![.\\w$])${name.replace(/\$/g, '\\$')}(?:\\.\\w+)?\\s*\\(`, 'g'),
+        ),
+      ].some((call) => call.index > pluginsAt && !inLiteral(call.index)),
+    )
+  })
+}
+
+const RELATIVE_IMPORT =
+  /(?:\b(?:import|export)\b[^'";]*?\bfrom|\bimport)\s*['"](\.{1,2}\/[^'"]+)['"]/g
+
+/** The source file a relative specifier names: as written, `.ts`/`.tsx` appended, or a directory index. */
+function resolveRelative(from: string, spec: string): string | null {
+  const base = resolve(dirname(from), spec.replace(/\.[jt]sx?$/, ''))
+  return (
+    [
+      resolve(dirname(from), spec),
+      `${base}.ts`,
+      `${base}.tsx`,
+      `${base}/index.ts`,
+      `${base}/index.tsx`,
+    ].find((f) => /\.[jt]sx?$/.test(f) && existsSync(f)) ?? null
+  )
+}
+
+export const appEntry = (dir: string): string =>
+  (htmlEntry(readIfExists(resolve(dir, 'index.html')) ?? '') ?? 'src/main.tsx').replace(/^\//, '')
+
+/** Whether the entry or a module it imports (relative imports, three deep) calls `name`. */
+export function callsIn(dir: string, entry: string, name: RegExp): boolean {
+  const seen = new Set<string>()
+  let frontier = [resolve(dir, entry)]
+  for (let depth = 0; depth < 4 && frontier.length > 0; depth++) {
+    const next: string[] = []
+    for (const file of frontier) {
+      seen.add(file)
+      const text = readIfExists(file) ?? ''
+      const { code, inLiteral } = tokenize(text)
+      if ([...code.matchAll(name)].some((c) => !inLiteral(c.index))) return true
+      for (const m of text.matchAll(RELATIVE_IMPORT)) {
+        const dep = resolveRelative(file, m[1] ?? '')
+        if (dep !== null && !seen.has(dep)) next.push(dep)
+      }
+    }
+    frontier = next
+  }
+  return false
+}
+
+/** A TanStack router plugin in the vite config, or a `routeTree.gen.*` beside the entry (or in src/). */
+export function hasRouteTree(dir: string, entry: string): boolean {
+  const vite = VITE_CONFIGS.map((f) => readIfExists(resolve(dir, f))).find((t) => t !== null) ?? ''
+  return (
+    registersRouterPlugin(vite) ||
+    [dirname(entry), 'src'].some((d) =>
+      ['ts', 'tsx', 'js'].some((e) => existsSync(resolve(dir, d, `routeTree.gen.${e}`))),
+    )
+  )
+}
+
+/** Code-routed: `createBasaltRouter` with no route-tree plugin or file, and an entry that does not import one (a fresh seed does). */
+export function isCodeRoutedApp(cwd: string, appRel: string): boolean {
+  const dir = resolve(cwd, appRel)
+  const entry = appEntry(dir)
+  return (
+    callsIn(dir, entry, /\bcreateBasaltRouter\b/g) &&
+    !hasRouteTree(dir, entry) &&
+    !/routeTree\.gen/.test(readIfExists(resolve(dir, entry)) ?? '')
+  )
+}
+
+/** Why an app's router seeds are not placed: Start owns the router; code-routed has no generated tree. */
+export const routerSeedSkip = (cwd: string, appRel: string): 'start' | 'code-routed' | null =>
+  isStartApp(cwd, appRel) ? 'start' : isCodeRoutedApp(cwd, appRel) ? 'code-routed' : null
 
 /** The app directory a command's app-scoped half targets: `rel` is '' when it is the install root. */
 export type AppResolution = { dir: string; rel: string } | { error: string }
@@ -747,12 +879,20 @@ function hasDependency(cwd: string, pkgName: string): boolean {
   )
 }
 
-/** Where the seed engine runs relative to the consumer's git repo; `resolvePlacement` computes it. */
+/**
+ * Where the seed engine is running relative to the consumer's git repo — decides which
+ * repo-root-shaped seeds are safe to write. `init`/`sync` compute it once per run via
+ * `resolvePlacement` and print the matching skip notices themselves; `managedFiles` only reads it.
+ */
 export type PlacementFlags = {
-  /** True when the package dir IS the repo root (or no `.git` exists above it). False: a monorepo
-   *  subdirectory — lefthook and GitHub Actions only read the repo root, so they are not seeded. */
+  /** True when the package directory IS the detected repo root, or no `.git` exists anywhere above
+   *  it (a consumer not using git keeps today's behaviour exactly). False means the package lives
+   *  in a subdirectory of the repo (a monorepo's `web/`, say) — lefthook and GitHub Actions both
+   *  only read config at the repo root, so seeding either one there is worse than not seeding at
+   *  all. */
   isPackageRepoRoot: boolean
-  /** Absolute repo root; read only when `isPackageRepoRoot` is false. */
+  /** Absolute path of the detected repo root. Meaningful only when `isPackageRepoRoot` is false —
+   *  otherwise it equals the package dir and is never read. */
   repoRoot: string
   /** The app directory relative to the install root ('' = the root itself); see {@link resolveAppDir}. */
   appRel: string
@@ -769,8 +909,10 @@ export const ROOT_PLACEMENT: PlacementFlags = {
 }
 
 /**
- * Walks up from `dir` to a `.git` entry (a directory, or a FILE for a worktree/submodule). Returns
- * `dir` itself when none is found, so a consumer not using git keeps today's behaviour.
+ * Walks up from `dir` looking for a `.git` entry — ordinarily a directory, but a git worktree or
+ * submodule points it at a FILE instead, and both still mean "this directory is the repo root".
+ * Stops at the filesystem root. Returns `dir` itself when no `.git` is found anywhere, so a
+ * consumer not using git falls back to today's behaviour exactly.
  */
 export function findRepoRoot(dir: string): string {
   let current = dir

@@ -368,24 +368,59 @@ describe('router seeds — the nav module and the root route', () => {
     expect(existsSync(resolve(dir, MANIFEST_PATH))).toBe(true)
   })
 
-  it('a code-routed app gets no __root.tsx seed, and a deleted seed is not recreated', () => {
-    writeFixture('package.json', JSON.stringify({ name: 'fixture' }))
+  const ROUTER_SEEDS = ['src/lib/nav.tsx', 'src/routes/__root.tsx', 'src/main.tsx']
+  const manifestKeys = (): string[] =>
+    Object.keys(JSON.parse(readFileSync(resolve(dir, MANIFEST_PATH), 'utf8')).files)
+  const codeRouted = (): void => {
     writeFixture('index.html', '<script type="module" src="/src/main.tsx"></script>')
-    writeFixture('src/main.tsx', "import { router } from './lib/router'\nrouter\n")
-    writeFixture(
-      'src/lib/router.tsx',
-      'const root = createRootRouteWithContext<Ctx>()({})\nexport const router = createBasaltRouter({ routeTree: root })\n',
-    )
+    writeFixture('src/main.tsx', 'const router = createBasaltRouter({ routeTree })\n')
+  }
+
+  it.each([
+    [
+      'a router plugin',
+      'vite.config.ts',
+      "import { tanstackRouter } from '@tanstack/router-plugin/vite'\nexport default { plugins: [tanstackRouter()] }\n",
+    ],
+    ['a routeTree.gen.ts', 'src/routeTree.gen.ts', 'export const routeTree = {}\n'],
+  ])('a file-based app (%s) is not code-routed and keeps its router seeds', (_, file, body) => {
+    writeFixture('package.json', JSON.stringify({ name: 'fixture' }))
+    codeRouted()
+    writeFixture(file, body)
+    capture(() => init(dir))
+    capture(() => sync({}, dir))
+    for (const dest of ROUTER_SEEDS) expect(existsSync(resolve(dir, dest))).toBe(true)
+  })
+
+  it('a code-routed app gets no router seeds on init', () => {
+    writeFixture('package.json', JSON.stringify({ name: 'fixture' }))
+    codeRouted()
     capture(() => init(dir))
     expect(existsSync(resolve(dir, 'src/routes/__root.tsx'))).toBe(false)
-    capture(() => sync({}, dir))
-    expect(existsSync(resolve(dir, 'src/routes/__root.tsx'))).toBe(false)
-    rmSync(resolve(dir, 'src/lib/nav.tsx'))
-    capture(() => sync({}, dir))
-    const second = capture(() => sync({}, dir))
-    expect(second.log).toContain('0 created, 0 recreated')
     expect(existsSync(resolve(dir, 'src/lib/nav.tsx'))).toBe(false)
+    expect(manifestKeys().filter((k) => ROUTER_SEEDS.includes(k))).toEqual([])
+  })
+
+  it('sync retires the manifest entries of router seeds a code-routed app no longer takes', () => {
+    writeFixture('package.json', JSON.stringify({ name: 'fixture' }))
+    capture(() => init(dir))
+    expect(manifestKeys()).toEqual(expect.arrayContaining(ROUTER_SEEDS))
+    codeRouted()
+    const first = capture(() => sync({}, dir))
+    expect(first.log).toContain('code-routed app — dropped')
+    expect(first.log).toContain('src/routes/__root.tsx')
+    expect(manifestKeys().filter((k) => ROUTER_SEEDS.includes(k))).toEqual([])
+    expect(existsSync(resolve(dir, 'src/routes/__root.tsx'))).toBe(true)
+    expect(capture(() => sync({}, dir)).log).not.toContain('code-routed app')
     expect(capture(() => sync({ check: true }, dir)).code).toBe(0)
+  })
+
+  it('sync still recreates a deleted non-router seed (self-healing)', () => {
+    writeFixture('package.json', JSON.stringify({ name: 'fixture' }))
+    capture(() => init(dir))
+    rmSync(resolve(dir, 'lefthook.yml'))
+    expect(capture(() => sync({}, dir)).log).toContain('1 recreated')
+    expect(existsSync(resolve(dir, 'lefthook.yml'))).toBe(true)
   })
 
   it('sync after Start is added leaves the old seeds byte-identical and names them', () => {

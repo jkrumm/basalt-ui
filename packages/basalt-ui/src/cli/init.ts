@@ -11,8 +11,7 @@ import type { MergeLintResult, ScaffoldFlags } from './index'
 import {
   MANIFEST_PATH,
   declaredProfile,
-  isStartApp,
-  routerSeedDest,
+  routerSeedSkip,
   routerSeedDests,
   START_APP_NOTE,
   readBasaltConfig,
@@ -34,7 +33,7 @@ import {
   writeFileEnsuringDir,
   writeUnit,
 } from './index'
-import { isCodeRoutedApp, seedTsconfigExtends } from './doctor-upgrade'
+import { seedTsconfigExtends } from './doctor-upgrade'
 import { readOxlintPresetPlugins } from './sync'
 
 /**
@@ -129,10 +128,8 @@ export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags =
   const placement = resolvePlacement(cwd)
   // A tokens-only consumer has no use for the Mantine/React scaffolds (doctor skips them there too).
   const tokensOnly = declaredProfile(readBasaltConfig(cwd), []) === 'tokens-only'
-  const startApp = isStartApp(cwd, placement.appRel)
-  const skippedSeeds = new Set(tokensOnly || startApp ? routerSeedDests(placement.appRel) : [])
-  if (isCodeRoutedApp(cwd, placement.appRel))
-    skippedSeeds.add(routerSeedDest(placement.appRel, 'root'))
+  const seedSkip = routerSeedSkip(cwd, placement.appRel)
+  const skippedSeeds = new Set(tokensOnly || seedSkip ? routerSeedDests(placement.appRel) : [])
   const files = managedFiles(placement).filter((f) => !skippedSeeds.has(f.dest))
 
   const writtenFiles: string[] = []
@@ -208,7 +205,7 @@ export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags =
   const tsconfigLine = tokensOnly ? null : seedTsconfigExtends(cwd)
   if (tsconfigLine !== null) console.log(`basalt-ui init: ${tsconfigLine}`)
   if (buildNote !== null) console.log(`basalt-ui init: ${buildNote}`)
-  if (startApp && !tokensOnly) console.log(`basalt-ui init: ${START_APP_NOTE}`)
+  if (seedSkip === 'start' && !tokensOnly) console.log(`basalt-ui init: ${START_APP_NOTE}`)
   const rootsMessages = rootsNotices(rootsState)
   for (const line of rootsMessages.log) console.log(`basalt-ui init: ${line}`)
   for (const line of rootsMessages.error) console.error(`⚠ basalt-ui init: ${line}`)

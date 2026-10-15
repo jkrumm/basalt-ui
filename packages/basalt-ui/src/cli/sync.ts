@@ -12,7 +12,6 @@ import {
   diffSummary,
   findBasaltInstall,
   inspectLefthookGate,
-  isStartApp,
   isStringArray,
   managedFiles,
   normalizeForLedger,
@@ -31,8 +30,8 @@ import {
   reportPrune,
   resolvePlacement,
   resolveProjectDir,
-  routerSeedDest,
   routerSeedDests,
+  routerSeedSkip,
   rootsNotices,
   sha256,
   shippedAssetPath,
@@ -41,7 +40,6 @@ import {
   writeFileEnsuringDir,
   writeUnit,
 } from './index'
-import { isCodeRoutedApp } from './doctor-upgrade'
 
 /** The oxlint plugins the shipped preset switches on — read from the preset, never restated. */
 export function readOxlintPresetPlugins(pkgRoot: string): string[] {
@@ -79,14 +77,9 @@ export function findManifestAbove(dir: string): string | null {
 }
 
 /**
- * Reconcile managed files with the shipped versions via a sha256 three-way compare.
- *
- * - `--check` makes NO writes; exits non-zero if any managed file is out-of-date or locally drifted
- *   (a CI freshness gate), exit 0 when all current.
- * - `--force` overwrites locally-drifted files instead of skipping them.
- *
- * Runs against `resolveProjectDir(cwd)` and REFUSES rather than scaffolding when that project has no
- * manifest: `sync` refreshes, `init` scaffolds.
+ * Reconcile managed files with the shipped versions via a sha256 three-way compare. `--check` makes
+ * NO writes and exits non-zero on drift (a CI freshness gate); `--force` overwrites drifted files.
+ * REFUSES rather than scaffolding when the project has no manifest: `sync` refreshes, `init` scaffolds.
  */
 export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd()): number {
   const syncFlags = opts.flags ?? []
@@ -116,7 +109,7 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
   if (!existsSync(resolve(cwd, MANIFEST_PATH))) {
     const elsewhere = findManifestAbove(cwd)
     const refused = resolvePlacement(cwd)
-    const startSeeds = isStartApp(cwd, refused.appRel) ? routerSeedDests(refused.appRel) : []
+    const startSeeds = routerSeedSkip(cwd, refused.appRel) ? routerSeedDests(refused.appRel) : []
     const wouldWrite = managedFiles(refused).filter((f) => !startSeeds.includes(f.dest)).length
     console.error(
       `✖ basalt-ui sync: no ${MANIFEST_PATH} at ${cwd} — refusing to scaffold. ` +
@@ -136,15 +129,15 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
   const ctx = renderContext(cwd)
   const manifest = readManifest(cwd)
   const placement = resolvePlacement(cwd)
-  const startApp = isStartApp(cwd, placement.appRel)
-  const skipped = new Set(startApp ? routerSeedDests(placement.appRel) : [])
-  // A code-defined route tree has no `routes/__root.tsx` to seed.
-  if (!startApp && isCodeRoutedApp(cwd, placement.appRel))
-    skipped.add(routerSeedDest(placement.appRel, 'root'))
+  const seedSkip = routerSeedSkip(cwd, placement.appRel)
+  const skipped = new Set(seedSkip ? routerSeedDests(placement.appRel) : [])
   const files = managedFiles(placement).filter((f) => !skipped.has(f.dest))
 
   let updated = 0
-  // `recreated` = a manifest entry exists (basalt placed it once) but the file went missing.
+  // `created` and `recreated` were one counter, and `0 updated, 20 recreated` is what a full
+  // scaffold printed — a word that means "it was here, it went missing, I put it back" describing
+  // twenty files this directory never had. The ledger already knows which: an entry in
+  // `manifest.files` is basalt saying it placed the file once.
   let created = 0
   let recreated = 0
   let skippedDrift = 0
@@ -161,12 +154,12 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
 
     const tracked = manifest.files[file.dest] !== undefined
 
-    // `seed`: written once, then the consumer's. A tracked seed missing on disk is their deletion —
-    // the manifest entry records it; only `init` restores it.
+    // `seed` is written once, then owned by the consumer — never reconciled, never reported.
     if (file.mode === 'seed') {
-      if (state.current === null && !tracked && !opts.check) {
+      if (state.current === null && !opts.check) {
         manifest.files[file.dest] = writeUnit(file, cwd, state.desired)
-        created++
+        if (tracked) recreated++
+        else created++
       }
       continue
     }
@@ -211,9 +204,16 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
   // hides them behind `--verbose` (it sits in consumers' CI chains, where three unchanging
   // "skipped" paragraphs per run are noise indistinguishable from drift) but still prints the COUNT.
   // Start added AFTER a pre-Start init: the old seeds are the consumer's now — left untouched, named.
-  const stale = (startApp ? [...skipped] : []).filter(
+  const stale = (seedSkip === 'start' ? [...skipped] : []).filter(
     (d) => manifest.files[d] !== undefined && existsSync(resolve(cwd, d)),
   )
+  const dropped = seedSkip === 'code-routed' ? [...skipped].filter((d) => manifest.files[d]) : []
+  if (dropped.length > 0 && !opts.check) {
+    for (const d of dropped) delete manifest.files[d]
+    console.log(
+      `basalt-ui sync: code-routed app — dropped ${dropped.join(', ')} from the manifest (any file is yours).`,
+    )
+  }
   const mounting = stale.filter((d) => !d.endsWith('nav.tsx'))
   const inert = stale.filter((d) => d.endsWith('nav.tsx'))
   const embedded =
@@ -228,7 +228,7 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
       `⚠ basalt-ui sync: ${inert.join(', ')} was seeded before this became a Start app; it mounts nothing, so keep or delete it. Left untouched.`,
     )
   }
-  if (startApp && (!opts.check || syncFlags.includes('--verbose')))
+  if (seedSkip === 'start' && (!opts.check || syncFlags.includes('--verbose')))
     console.log(`basalt-ui sync: ${START_APP_NOTE}`)
   const placementSkips = placementNotices(cwd, placement)
   if (opts.check !== true || syncFlags.includes('--verbose')) {

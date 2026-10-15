@@ -2,19 +2,23 @@
  * `doctor`'s 2.0 strictness and upgrade checks. Each returns null (pass), `{ fail }` (the problem
  * plus its fix) or `{ skip }` (the check could not run: a check that cannot run is not a pass).
  */
-import { existsSync, writeFileSync } from 'node:fs'
+import { writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { dirname, relative, resolve } from 'node:path'
 
 import { BASALT_CONFIG_KEYS, RETIRED_CONFIG_KEYS } from './config'
 import type { BasaltConfig } from './config'
 import {
+  appEntry,
+  callsIn,
+  hasRouteTree,
   isStartApp,
   parseJsonc,
   readIfExists,
   readPackageJson,
   routerSeedDest,
   scannableFiles,
+  tokenize,
 } from './index'
 import type { BasaltInstall } from './index'
 
@@ -191,38 +195,12 @@ export function retiredLintRulesCheck(cwd: string, install: BasaltInstall): Chec
 }
 
 /**
- * Strings and template literals (captured) and comments. Known, accepted gap: a regex literal that
- * contains a quote (`/'/`) opens a string this tokenizer never closes, which can blank or hide code
- * after it on that line; a template literal nested inside a `${…}` is not tracked either.
- */
-const TOKEN =
-  /("(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*'|`(?:\\.|[^`\\])*`)|\/\/[^\n]*|\/\*[\s\S]*?\*\//g
-
-/**
  * A `basalt-ui/<subpath>` specifier in statement position: `import … from`, `import type … from`
  * (also split over lines), `export … from`, bare `import '…'`, `import('…')` and `require('…')`
  * (never a method call like `obj.require(…)`).
  */
 const SUBPATH_IMPORT =
   /(?:(?:^|;)[ \t]*(?:(?:import|export)\b[^'"`;]*?\bfrom|import)\s*|(?<![.\w$])(?:import|require)\s*\(\s*)(['"])basalt-ui\/([^'"]+)\1/gm
-
-/** Source with comments blanked (and template text), plus a test for "offset sits inside a string". */
-function tokenize(src: string): { code: string; inLiteral: (at: number) => boolean } {
-  const literals: [number, number][] = []
-  const code = src.replace(TOKEN, (m, literal: string | undefined, at: number) => {
-    if (literal === undefined) return m.replace(/[^\n]/g, ' ')
-    if (!literal.startsWith('`')) {
-      literals.push([at, at + m.length])
-      return m
-    }
-    // Template literal: blank the text, keep the delimiters and the `${…}` code scannable.
-    return m.replace(
-      /(\$\{[^}]*\})|[^\n`]/g,
-      (c, interpolation: string | undefined) => interpolation ?? ' ',
-    )
-  })
-  return { code, inLiteral: (at) => literals.some(([from, to]) => at >= from && at < to) }
-}
 
 /** `[subpath, line]` per `basalt-ui/<subpath>` import that sits in code, not in a comment or literal. */
 function basaltImports(src: string): [string, number][] {
@@ -345,10 +323,9 @@ const includesSrc = (config: Record<string, unknown> | null): boolean =>
   )
 
 /**
- * `init`'s tsconfig step: make the tsconfig that covers `src` (`tsconfig.json`, or the reference that
- * includes `src` in a stock Vite app) extend the preset, by inserting the key textually (the file is
- * JSONC, possibly with a BOM). Never creates one. Returns the line to print, or null when nothing
- * needs saying.
+ * `init`'s tsconfig step: make the tsconfig covering `src` (or the stock Vite reference that does)
+ * extend the preset, inserting the key textually (JSONC, maybe a BOM). Never creates one. Returns
+ * the line to print, or null.
  */
 export function seedTsconfigExtends(cwd: string): string | null {
   const root = resolve(cwd, 'tsconfig.json')
@@ -386,104 +363,11 @@ export function seedTsconfigExtends(cwd: string): string | null {
   return `added "extends": "${TSCONFIG_PRESET_ID}" to ${name}.`
 }
 
-const VITE_CONFIGS = ['ts', 'mts', 'cts', 'js', 'mjs', 'cjs'].map((e) => `vite.config.${e}`)
 const SEED_HINT = 'node_modules/basalt-ui/agent/templates/main.tpl'
 const ROUTER_PLUGIN_FIX =
   "Fix: `bun add -D @tanstack/router-plugin`, add `tanstackRouter({ target: 'react', autoCodeSplitting: true })` " +
   "from '@tanstack/router-plugin/vite' to `plugins` in vite.config.ts (before react()), then run vite once " +
-  'to generate src/routeTree.gen.ts.'
-
-/** The first local `<script type="module" src>` in index.html (comments and remote src skipped). */
-function htmlEntry(html: string): string | undefined {
-  for (const [, attrs = ''] of html
-    .replace(/<!--[\s\S]*?-->/g, '')
-    .matchAll(/<script\b([^>]*)>/gi)) {
-    const src = /\bsrc\s*=\s*["']?([^"'\s>]+)/i.exec(attrs)?.[1]
-    if (
-      /\btype\s*=\s*["']?module\b/i.test(attrs) &&
-      src !== undefined &&
-      !/^(?:[a-z][a-z0-9+.-]*:)?\/\//i.test(src)
-    ) {
-      return src
-    }
-  }
-  return undefined
-}
-
-/** True when `code` calls a binding imported from `@tanstack/router-plugin` inside `plugins`. */
-function registersRouterPlugin(src: string): boolean {
-  const { code, inLiteral } = tokenize(src)
-  const pluginsAt = [...code.matchAll(/\bplugins\b/g)].find((m) => !inLiteral(m.index))?.index
-  if (pluginsAt === undefined) return false
-  const imports = code.matchAll(
-    /(?:^|;)[ \t]*import\s+(?:type\s+)?([^'"`;]*?)\s*from\s*(['"])@tanstack\/router-plugin(?:\/[^'"]*)?\2/gm,
-  )
-  return [...imports].some((m) => {
-    if (inLiteral(m.index)) return false
-    const names = (m[1] ?? '')
-      .replace(/[{}]/g, '')
-      .split(',')
-      .map((part) => part.trim())
-      .filter((part) => part !== '' && !/^type\s/.test(part))
-      .map((part) => part.split(/\s+as\s+/).pop() as string)
-    return names.some((name) =>
-      [
-        ...code.matchAll(
-          new RegExp(`(?<![.\\w$])${name.replace(/\$/g, '\\$')}(?:\\.\\w+)?\\s*\\(`, 'g'),
-        ),
-      ].some((call) => call.index > pluginsAt && !inLiteral(call.index)),
-    )
-  })
-}
-
-const RELATIVE_IMPORT =
-  /(?:\b(?:import|export)\b[^'";]*?\bfrom|\bimport)\s*['"](\.{1,2}\/[^'"]+)['"]/g
-
-/** The source file a relative specifier names: as written, `.ts`/`.tsx` appended, or a directory index. */
-function resolveRelative(from: string, spec: string): string | null {
-  const base = resolve(dirname(from), spec.replace(/\.[jt]sx?$/, ''))
-  return (
-    [
-      resolve(dirname(from), spec),
-      `${base}.ts`,
-      `${base}.tsx`,
-      `${base}/index.ts`,
-      `${base}/index.tsx`,
-    ].find((f) => /\.[jt]sx?$/.test(f) && existsSync(f)) ?? null
-  )
-}
-
-/** Whether the entry or a module it imports (relative imports, three deep) calls `name`. */
-function reachesCall(cwd: string, entry: string, name: RegExp): boolean {
-  const seen = new Set([resolve(cwd, entry)])
-  let frontier = [...seen]
-  for (let depth = 0; depth < 4 && frontier.length > 0; depth++) {
-    const next: string[] = []
-    for (const file of frontier) {
-      const text = readIfExists(file) ?? ''
-      const { code, inLiteral } = tokenize(text)
-      if ([...code.matchAll(name)].some((c) => !inLiteral(c.index))) return true
-      for (const m of text.matchAll(RELATIVE_IMPORT)) {
-        const dep = resolveRelative(file, m[1] ?? '')
-        if (dep === null || seen.has(dep)) continue
-        seen.add(dep)
-        next.push(dep)
-      }
-    }
-    frontier = next
-  }
-  return false
-}
-
-/** The module `index.html` loads for the app at `dir` (default src/main.tsx). */
-const appEntry = (dir: string): string =>
-  (htmlEntry(readIfExists(resolve(dir, 'index.html')) ?? '') ?? 'src/main.tsx').replace(/^\//, '')
-
-/** A code-defined route tree: the entry or a module it imports calls `createRootRoute[WithContext]`. */
-export function isCodeRoutedApp(cwd: string, appRel: string): boolean {
-  const dir = resolve(cwd, appRel)
-  return reachesCall(dir, appEntry(dir), /\bcreateRootRoute(?:WithContext)?\b/g)
-}
+  'to generate src/routeTree.gen.ts — or define the tree in code (`createRootRoute` + `createRoute`) and pass it to createBasaltRouter.'
 
 /** True when `{` at `i` opens a `{...spread}`: sticky, so any whitespace width is read. */
 function isSpreadAt(code: string, i: number): boolean {
@@ -571,9 +455,10 @@ export function startWiringWarnings(cwd: string): string[] {
 /**
  * `app-wiring`: the entry module `index.html` loads (default src/main.tsx) mounts `BasaltProvider`
  * on a `createBasaltRouter` router (called in the entry or a module it imports), and the router tree
- * exists: defined in code (`isCodeRoutedApp`), generated by a binding imported from
- * `@tanstack/router-plugin` in the vite config `plugins`, or a `routeTree.gen.*` beside the entry
- * (or in src/). `basaltViteConfig` does not register that plugin, so naming it proves nothing.
+ * exists: the vite config calls a binding imported from `@tanstack/router-plugin` in `plugins`, a
+ * `routeTree.gen.*` sits beside the entry (or in src/), or a module the entry imports calls
+ * `createRootRoute[WithContext]` (a code-defined tree). `basaltViteConfig` does not register the
+ * plugin, so naming it proves nothing.
  */
 export function appWiringCheck(cwd: string): Check {
   return guarded('app-wiring', () => {
@@ -589,7 +474,7 @@ export function appWiringCheck(cwd: string): Check {
     const missing = ['BasaltProvider', 'createBasaltRouter'].filter(
       (name) =>
         !used(name) &&
-        !(name === 'createBasaltRouter' && reachesCall(cwd, entry, /\bcreateBasaltRouter\b/g)),
+        !(name === 'createBasaltRouter' && callsIn(cwd, entry, /\bcreateBasaltRouter\b/g)),
     )
     if (missing.length > 0) {
       return {
@@ -598,15 +483,11 @@ export function appWiringCheck(cwd: string): Check {
           `Fix: make it match ${SEED_HINT} (\`init\` seeds it only when the file is absent).`,
       }
     }
-    const vite =
-      VITE_CONFIGS.map((f) => readIfExists(resolve(cwd, f))).find((t) => t !== null) ?? ''
-    const dirs = [...new Set([dirname(entry), 'src'])]
-    const generated = dirs.some((d) =>
-      ['ts', 'tsx', 'js'].some((e) => existsSync(resolve(cwd, d, `routeTree.gen.${e}`))),
-    )
-    if (generated || registersRouterPlugin(vite) || isCodeRoutedApp(cwd, '')) return null
+    if (hasRouteTree(cwd, entry) || callsIn(cwd, entry, /\bcreateRootRoute(?:WithContext)?\b/g)) {
+      return null
+    }
     return {
-      fail: `app-wiring: no vite.config calls the TanStack router plugin and ${dirs.join(' or ')}/routeTree.gen.ts does not exist. ${ROUTER_PLUGIN_FIX}`,
+      fail: `app-wiring: no vite.config calls the TanStack router plugin, ${[...new Set([dirname(entry), 'src'])].join(' or ')}/routeTree.gen.ts does not exist, and no module the entry imports calls createRootRoute (a code-defined tree). ${ROUTER_PLUGIN_FIX}`,
     }
   })
 }
