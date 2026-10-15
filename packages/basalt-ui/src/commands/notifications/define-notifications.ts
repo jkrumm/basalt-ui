@@ -2,6 +2,9 @@
  * defineNotifications — const-generic factory for typed notification kind registries.
  * Mirrors the defineSeries pattern from ./tokens (const-generic, identity passthrough).
  *
+ * `emit` only accepts kinds registered here first: call `defineNotifications` and augment
+ * `BasaltRegister.notifications` before emitting.
+ *
  * Consumer augments BasaltRegister.notifications with the spec map type, then uses the typed
  * `emit` helper which resolves the registered kind at compile-time. An unknown kind is a tsc error.
  *

@@ -83,6 +83,50 @@ export const Revenue = ({ rows }: { rows: Row[] }) => (
 )
 ```
 
+## Add a form dialog
+
+A form dialog is a `defineOverlays` entry opened from a `BasaltDataTable` row action; success is an `emit` of a kind registered in `defineNotifications`. The form component lives in a `*-modal.tsx`:
+
+```tsx
+// @check
+import { Button, TextInput } from '@mantine/core'
+import { defineNotifications, defineOverlays, emit, overlays } from 'basalt-ui/commands'
+import { fieldKey, inputProps, useBasaltForm } from 'basalt-ui/forms'
+
+export const NOTIFICATIONS = defineNotifications({
+  'item:saved': { intent: 'success', toMessage: (p: { name: string }) => `Saved ${p.name}` },
+})
+function ItemForm({ name }: { name: string }) {
+  const form = useBasaltForm({ initialValues: { name } })
+  const save = form.onSubmit((v) => {
+    overlays.close() // after the mutation succeeds
+    emit('item:saved', { name: v.name })
+  })
+  return (
+    <form onSubmit={save}>
+      <TextInput key={fieldKey(form, 'name')} {...inputProps(form, 'name')} label="Name" />
+      <Button type="submit">Save</Button>
+    </form>
+  )
+}
+export const OVERLAYS = defineOverlays({
+  'item:edit': { title: 'Edit item', render: (p: { name: string }) => <ItemForm name={p.name} /> },
+})
+declare module 'basalt-ui' {
+  interface BasaltRegister {
+    notifications: typeof NOTIFICATIONS
+    overlays: typeof OVERLAYS
+  }
+}
+// BasaltDataTable rowActions entry
+export const editAction = {
+  key: 'edit',
+  label: 'Edit',
+  icon: <i />,
+  onClick: (row: { name: string }) => overlays.open('item:edit', { name: row.name }),
+}
+```
+
 ## Stream a slow section
 
 The shell holds no promise; the loader returns the slow promise unawaited (settled, so a failure renders the chart's error state), and the fallback is the same chart pending (it fills the final box):
@@ -126,74 +170,21 @@ export function Live() {
 ## Add a chat
 
 1. Install the `basalt-ui/agent` peers from its `Install:` line in `llms.txt`.
-2. Implement `ThreadsStore` (in memory here), bind one transport per thread, compose the feed:
+2. Implement `ThreadsStore` over your persistence, bind one transport per thread, compose the feed:
 
 ```tsx
 // @check
 import { Button } from '@mantine/core'
-import { useState } from 'react'
 import { ThreadFeed, ThreadFeedRow, aiSdkTransport, useAgentThreadRuns } from 'basalt-ui/agent'
-import type { AgentPart, AgentThread, AgentTransport, ThreadsStore } from 'basalt-ui/agent'
+import type { AgentPart, ThreadsStore } from 'basalt-ui/agent'
 
-type Thread = AgentThread<AgentPart>
-
-function useMemoryStore(): ThreadsStore<AgentPart> {
-  const [threads, setThreads] = useState<Thread[]>([])
-  const [activeId, select] = useState<string | null>(null)
-  const patch = (id: string, change: (t: Thread) => Thread) =>
-    setThreads((all) => all.map((t) => (t.id === id ? { ...change(t), updatedAt: Date.now() } : t)))
-  return {
-    threads,
-    activeId,
-    select,
-    hydrated: true,
-    error: undefined,
-    create: () => {
-      const id = crypto.randomUUID()
-      const now = Date.now()
-      const blank: Thread = {
-        id,
-        messages: [],
-        outcome: null,
-        status: 'pending',
-        read: true,
-        createdAt: now,
-        updatedAt: now,
-      }
-      setThreads((all) => [blank, ...all])
-      return id
-    },
-    appendMessage: (id, m) => patch(id, (t) => ({ ...t, messages: [...t.messages, m] })),
-    setOutcome: (id, outcome) => patch(id, (t) => ({ ...t, outcome })),
-    setStatus: (id, status) => patch(id, (t) => ({ ...t, status })),
-    setResumeToken: (id, token) =>
-      patch(id, ({ resumeToken: _old, ...t }) =>
-        token === undefined ? t : { ...t, resumeToken: token },
-      ),
-    markRead: (id) => patch(id, (t) => ({ ...t, read: true })),
-    remove: (id) => {
-      setThreads((all) => all.filter((t) => t.id !== id))
-      select((current) => (current === id ? null : current))
-    },
-    clear: () => {
-      setThreads([])
-      select(null)
-    },
-  }
-}
+// your persistence implements ThreadsStore (create, appendMessage, setOutcome, setStatus, …)
+declare function useThreadsStore(): ThreadsStore<AgentPart>
 
 const base = aiSdkTransport<AgentPart>({ api: '/api/chat' })
-// A mock (swap it in for `base.forThread(threadId)`). A text part is a DELTA: parts with the same
-// `id` are appended in order.
-export const mock: AgentTransport<AgentPart> = {
-  async *stream(input) {
-    const id = crypto.randomUUID()
-    for (const word of `Echo: ${input}`.split(' ')) yield { id, type: 'text', text: `${word} ` }
-  },
-}
 
 export function Chat() {
-  const store = useMemoryStore()
+  const store = useThreadsStore()
   const { runs, start, stop } = useAgentThreadRuns({
     transport: (threadId) => base.forThread(threadId),
     store,

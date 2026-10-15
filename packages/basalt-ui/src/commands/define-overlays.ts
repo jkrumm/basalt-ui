@@ -5,6 +5,9 @@
  * `overlays` imperative controller — unknown keys are tsc errors. The type slot gives the
  * compile-time key union; the module-level stash gives the runtime values.
  *
+ * A form dialog is an entry whose `render` returns the form; open it from a row action with
+ * `overlays.open('id', props)` and put its component in a `*-modal.tsx`.
+ *
  * Uses @mantine/modals under the hood. ModalsProvider must be mounted (BasaltProvider does this).
  *
  * @example
@@ -337,6 +340,8 @@ export const overlays = {
   /**
    * Open a registered overlay by key. Resolves the Overlay spec from the runtime stash and calls
    * modals.open() with the rendered body. The props type is inferred from the registered overlay.
+   *
+   * Needs the key registered first: `defineOverlays` plus the `BasaltRegister` `overlays` augmentation.
    *
    * `overlays.open('nonexistent', …)` is a tsc error when BasaltRegister.overlays is augmented.
    * Un-augmented: OverlayKey = never → effectively uncallable.
