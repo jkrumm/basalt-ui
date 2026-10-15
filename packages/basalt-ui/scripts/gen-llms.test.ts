@@ -38,7 +38,7 @@ describe('gen-llms signatures', () => {
     expect(text).toContain('Signature: alpha(token: string, a: number): string')
   })
 
-  test('table, charts and forms signatures carry an indented props block', () => {
+  test('every subpath carries an indented props block for object-taking exports', () => {
     const block = (name: string): string[] => {
       const lines = text.split('\n')
       const at = lines.findIndex((l) => l.startsWith(`Signature: ${name}(`))
@@ -57,8 +57,11 @@ describe('gen-llms signatures', () => {
       '  mode?: "controlled" | "uncontrolled"',
       '  schema?: StandardSchemaV1<unknown, Values>',
     ])
-    // Other subpaths stay one line.
-    expect(block('FilterSet')).toEqual([])
+    // Subpaths beyond table/charts/forms get their props too (friction row 57).
+    const aside = block('PageAside')
+    expect(aside.some((l) => l.startsWith('  title: '))).toBe(true)
+    expect(aside.some((l) => l.startsWith('  persistKey?: '))).toBe(true)
+    expect(block('FilterSet').length).toBeGreaterThan(0)
   })
 
   test('the committed llms.txt is in sync', () => {

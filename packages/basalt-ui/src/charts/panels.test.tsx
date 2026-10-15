@@ -345,6 +345,29 @@ describe('DualPanel', () => {
     expect(el.querySelectorAll('button[data-legend-key="__bar"]').length).toBe(1)
   })
 
+  test('the split swatch takes the mode shape: a circle in dots, a square in chips', async () => {
+    const noop = (): void => undefined
+    const bar = { key: 'b', label: 'B', color: 'var(--vx-good)', colorNegative: 'var(--vx-bad)' }
+    const shape = async (mode: 'dots' | 'chips'): Promise<[string, string, string]> => {
+      const el = await mount(
+        <ChartLegend
+          series={[{ ...bar, mark: 'bar' as const, getValue: () => 1 }]}
+          hidden={new Set()}
+          mode={mode}
+          groups={false}
+          toggle
+          onToggle={noop}
+          onHighlight={noop}
+        />,
+      )
+      const sw = el.querySelectorAll<HTMLElement>('span[aria-hidden]')
+      expect(sw.length).toBe(1)
+      return [sw[0]!.style.background, sw[0]!.style.borderRadius, sw[0]!.style.width]
+    }
+    expect(await shape('dots')).toEqual([SPLIT, '50%', '8px'])
+    expect(await shape('chips')).toEqual([SPLIT, '2px', '10px'])
+  })
+
   test('a non-signed series keeps a solid swatch in dots, chips and line modes', async () => {
     const noop = (): void => undefined
     const lineS = { key: 'l', label: 'L', color: 'var(--vx-line)', getValue: () => 1 }

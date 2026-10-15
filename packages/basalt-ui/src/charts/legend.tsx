@@ -9,7 +9,12 @@ import { VX } from '../tokens'
 import classes from './chart-legend.module.css'
 import type { ChartSeries } from './types'
 
-/** `auto` renders both swatches and lets the container decide: none, dots or chips (CSS). */
+/**
+ * `auto` renders both swatches and lets the container decide: none, dots or chips (CSS). The
+ * swatch SHAPE follows the mode, signed split included: below 480px a dot (8px circle), from 480px
+ * a chip (10px square) — so one `DualPanel` bar legend is a split circle on a narrow card and a
+ * split square on a wide one. By design (friction row 58), not a per-chart prop.
+ */
 export type LegendMode = 'dots' | 'chips' | 'auto'
 
 const ROLE_ORDER = ['series', 'overlay', 'reference'] as const

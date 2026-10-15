@@ -21,25 +21,198 @@ Description: Wiring (`BasaltProvider`, `createBasaltTheme`, `createBasaltRouter`
 Layer: mantine-coupled
 Rule: basalt-mantine
 Signature: BasaltProvider(props: BasaltProviderProps): JSX.Element
+  router: BasaltRouter
+  theme?: PartialObjectDeep<MantineTheme, { recurseIntoArrays: false;…
+  telemetry?: Telemetry
+  fallback?: ReactNode | ((error: unknown) => ReactNode)
+  injectPalette?: boolean
+  paletteOptions?: BuildPaletteOpts
+  defaultColorScheme?: MantineColorScheme
+  nonce?: string
+  sizeClassHint?: "compact" | "medium" | "expanded"
+  navCommandLabel?: (item: FlatNavItem) => string
 Signature: BasaltShell(props: BasaltShellProps<G, T>): JSX.Element
+  className?: string
+  style?: CSSProperties
+  brand: BrandConfig & { menu?: AccountMenuItem[]; }
+  globalActions?: GlobalAction[]
+  sidebarBlocks?: SidebarBlock[]
+  settingsMenuItems?: SettingsMenuItem[]
+  settingsMenu?: "auto" | "flat" | "menu"
+  account?: BasaltAccountProps
+  search?: SidebarSearchConfig & { actions?: SidebarSearchActions; }
+  storageKey?: string
+  collapsed?: boolean
+  onCollapsedChange?: (collapsed: boolean) => void
+  headerHeight?: number
+  children?: ReactNode
+  badges?: Partial<Record<Extract<keyof NavIndex<G>, string>, ReactNod…
+  isActive?: (item: NavItemMeta & { link: AnyNavLink; children?: Readonl…
+  getScrollElement?: () => HTMLElement | null
+  nav: NavConfig<G, T>
 Signature: DangerZone(props: SettingsSectionProps): JSX.Element
+  className?: string
+  style?: CSSProperties
+  classNames?: Partial<Record<SettingsSectionSlot, string>>
+  icon?: ReactNode
+  title: string
+  subtitle?: string
+  info?: string
+  actions?: ReactNode
+  children: ReactNode
 Signature: DeltaBadge(props: DeltaBadgeProps): JSX.Element
+  value: number
+  polarity?: DeltaPolarity
+  format?: (value: number) => string
+  withGlyph?: boolean
+  period?: string
 Signature: EmptyState(props: EmptyStateProps): JSX.Element
+  className?: string
+  style?: CSSProperties
+  classNames?: Partial<Record<EmptyStateSlot, string>>
+  icon?: ReactNode
+  title: string
+  description?: string
+  action?: ReactNode
+  tier?: "section" | "page"
 Signature: PageAside(props: PageAsideProps): ReactNode
+  className?: string
+  style?: CSSProperties
+  classNames?: Partial<Record<PageAsideSlot, string>>
+  title: string
+  persistKey?: string
+  defaultFolded?: boolean
+  children: ReactNode
 Signature: PageBar(props: PageBarProps): ReactNode
+  className?: string
+  style?: CSSProperties
+  classNames?: Partial<Record<PageBarSlot, string>>
+  title?: string
+  icon?: ReactNode
+  actions?: PageBarActions
+  sync?: Omit<SyncButtonProps, "scope">
+  filters?: ReactNode
+  filtersEnd?: BarAction[]
+  tabs?: ReactNode
 Signature: PageTitle(props: PageTitleProps): ReactNode
+  className?: string
+  style?: CSSProperties
+  classNames?: Partial<Record<PageTitleSlot, string>>
+  title: ReactNode
+  subtitle?: ReactNode
+  icon?: ReactNode
 Signature: Section(props: SectionProps): JSX.Element
+  icon?: ReactNode
+  className?: string
+  style?: CSSProperties
+  title: string
+  subtitle?: string
+  info?: string
+  value?: string
+  unit?: string
+  delta?: number
+  deltaPeriod?: string
+  deltaPolarity?: DeltaPolarity
+  deltaFormat?: (delta: number) => string
+  deltaGlyph?: boolean
+  sparkline?: ReactNode
+  count?: number
+  classNames?: Partial<Record<SectionSlot, string>>
+  actions?: SectionActions
+  query?: QueryStateLike<unknown>
+  empty?: QueryEmptyCopy
+  tabs?: ReactNode
+  collapsible?: boolean
+  persistKey?: string
+  defaultOpen?: boolean
+  summary?: ReactNode
+  id?: string
+  children: ReactNode
 Signature: SettingsRow(props: SettingsRowProps): JSX.Element
+  className?: string
+  style?: CSSProperties
+  classNames?: Partial<Record<SettingsRowSlot, string>>
+  label: string
+  description?: string
+  control?: ReactNode
+  children?: ReactNode
 Signature: SettingsSection(props: SettingsSectionProps): JSX.Element
+  className?: string
+  style?: CSSProperties
+  classNames?: Partial<Record<SettingsSectionSlot, string>>
+  icon?: ReactNode
+  title: string
+  subtitle?: string
+  info?: string
+  actions?: ReactNode
+  children: ReactNode
 Signature: StatCard(props: StatCardProps): JSX.Element
+  className?: string
+  style?: CSSProperties
+  classNames?: Partial<Record<StatCardSlot, string>>
+  icon?: ReactNode
+  title: string
+  subtitle?: string
+  info?: string
+  unit?: string
+  delta?: number
+  deltaPeriod?: string
+  deltaPolarity?: DeltaPolarity
+  deltaFormat?: (delta: number) => string
+  deltaGlyph?: boolean
+  value: string
+  breakdown?: readonly StatCardBreakdownRow[]
+  query?: QueryStateLike<unknown>
+  sparkline?: ReactNode | ((size: StatCardSparklineSize) => ReactNode)
+  sparklinePlacement?: "bleed" | "right"
+  actions?: ReactNode
+  tone?: Tone
 Signature: StatGroup(props: StatGroupProps): JSX.Element
+  className?: string
+  style?: CSSProperties
+  cols?: StatGroupCols
+  divided?: boolean
+  children: ReactNode
 Signature: ThemeToggle(props: ThemeToggleProps): JSX.Element
+  className?: string
+  style?: CSSProperties
+  openDelay?: number
+  closeDelay?: number
 Signature: WidgetHeader(props: WidgetHeaderProps): JSX.Element
+  className?: string
+  style?: CSSProperties
+  classNames?: Partial<Record<WidgetHeaderSlot, string>>
+  tier: WidgetHeaderTier
+  title: string
+  icon?: ReactNode
+  subtitle?: string
+  info?: string
+  value?: string
+  unit?: string
+  delta?: number
+  deltaPeriod?: string
+  deltaPolarity?: DeltaPolarity
+  deltaFormat?: (delta: number) => string
+  deltaGlyph?: boolean
+  sparkline?: ReactNode
+  count?: number
+  actions?: ReactNode
 Signature: createBasaltRouter(options: { routeTree: TRouteTree; context?: TContext; query?: QueryClientConfi…): BasaltRouter<TRouteTree>
+  routeTree: TRouteTree
+  context?: TContext
+  query?: QueryClientConfig
+  defaultViewTransition?: never
 Signature: createBasaltTheme(overrides: Omit<PartialObjectDeep<MantineTheme, { recurseIntoArrays: false; allo…, options: CreateBasaltThemeOptions | undefined): PartialObjectDeep<Ma…
 Signature: defineNav(config: "basalt: declare Register { router }"): NavConfig<G, T>
 Signature: flattenNav(config: { groups: ReadonlyArray<AnyNavGroup>; }): FlatNavItem[]
+  groups: readonly AnyNavGroup[]
 Signature: navGroup(meta: Exact<M, NavGroupMeta>, items: NavItemsInput<T>): M & { items: T; }
+  id: string
+  label: string
+  icon?: ReactNode
+  collapsible?: boolean
+  defaultCollapsed?: boolean
+  mobile?: false | NavSectionMobile
 Signature: navTarget(config: C, id: K): NavIndex<C["groups"]>[K]
 Signature: scrollParentOf(el: Element | null): HTMLElement | null
 Signature: unwrap(response: R): UnwrapResult<R>
@@ -270,6 +443,13 @@ Signature: CONTAINER_KEYS: { compact, regular, wide }
 Signature: VX: { lineWidth, line2Width, axisFont, dotR, dashArray, legendGap, legendFontSize, text, radiusCard, radiusCtrl, radiusPill, hit, space, line2Dark, good, goodSoft, bad, …
 Signature: alpha(token: string, a: number): string
 Signature: buildPaletteCss(opts: BuildPaletteOpts, data: { ACCENT: { readonly accent: ColorPair; readonly accentHover: ColorPa…): string
+  groups?: readonly SeriesGroup[]
+  derived?: string[]
+  scheme?: ColorSchemeSelector
+  defaultScheme?: "light" | "dark" | "none"
+  mediaFallback?: boolean
+  only?: "core" | "all"
+  legacyAliases?: boolean
 Signature: defineSeries(map: T): T
 Signature: groupTokens(name: string, map: T): { readonly [K in keyof T]: GroupRef; }
 Signature: p(fam: readonly string[], light: number, dark: number): ColorPair
@@ -280,7 +460,29 @@ Import: import { ... } from 'basalt-ui/vite'
 Description: basaltViteConfig(opts) — Vite preset for basalt-ui consumer apps; basaltAppPlugin(opts) — PWA head, manifest, and icon metadata derived from the token palette
 Layer: build-tooling
 Signature: basaltAppPlugin(options: BasaltAppOptions): PluginOption[]
+  name: string
+  shortName?: string
+  description?: string
+  themeColor?: "auto" | { light: string; dark: string; }
+  colorScheme?: false | "light" | "dark" | "auto"
+  backgroundColor?: string
+  display?: "standalone" | "minimal-ui" | "fullscreen" | "browser"
+  startUrl?: string
+  scope?: string
+  id?: string
+  icons?: false | { dir?: string; } | readonly BasaltAppIcon[]
+  darkreader?: false | "lock"
+  seo?: { url?: string; image?: string; twitterCard?: "summary" | "…
+  manifest?: false
+  serviceWorker?: boolean | Record<string, unknown>
 Signature: basaltViteConfig(opts: BasaltViteOptions): UserConfig
+  port: number
+  host?: string | boolean
+  allowedHosts?: string[]
+  apiTarget?: string
+  basaltSrc?: string
+  version?: string
+  enforcementNotice?: boolean
 Install: bun add 'vite@^7 || ^8'
 OptionalPeers: vite-plugin-pwa@^1.3.0
 
@@ -315,7 +517,14 @@ Description: defineCommands (typed command bus), defineOverlays/overlays (a form
 Layer: mantine-coupled
 Rule: basalt-batteries
 Signature: NotificationBell(props: NotificationBellProps): JSX.Element
+  className?: string
+  style?: CSSProperties
+  label?: string
 Signature: ShortcutsHelp(props: ShortcutsHelpProps): JSX.Element | null
+  className?: string
+  style?: CSSProperties
+  title?: string
+  maw?: string | number
 Signature: defineCommands(spec: T): T
 Signature: defineNotifications(spec: T): T
 Signature: defineOverlays(spec: T): T
@@ -381,13 +590,54 @@ Description: Streaming-chat surface: aiSdkTransport, useAgentThreadRuns, parseAg
 Layer: mantine-coupled
 Rule: basalt-batteries
 Signature: Composer(props: ComposerProps): JSX.Element
+  className?: string
+  style?: CSSProperties
+  classNames?: Partial<Record<ComposerSlot, string>>
+  ref?: Ref<ComposerHandle>
+  onSubmit: (payload: ComposerSubmit) => void | Promise<void>
+  placeholder?: string
+  autoFocus?: boolean
+  maxRows?: number
+  disabled?: boolean
+  streaming?: boolean
+  allowSubmitWhileStreaming?: boolean
+  onStop?: (() => void)
+  leftSection?: ReactNode
+  rightSection?: ReactNode
+  attachments?: readonly ComposerAttachment[]
+  onAttachmentsChange?: ((next: readonly ComposerAttachment[]) => void)
+  onPaste?: ((event: ClipboardEvent<HTMLTextAreaElement>) => void)
+  draftKey?: string
+  hint?: ReactNode
 Signature: ThreadFeed(props: ThreadFeedProps): JSX.Element
+  className?: string
+  style?: CSSProperties
+  threads: AgentThread[]
+  activeId: string | null
+  onSelect: (id: string) => void
+  variant?: "outcome" | "inline"
+  onSend?: ((thread: AgentThread, payload: ComposerSubmit) => void)
+  renderRow?: ((thread: AgentThread) => ReactNode)
+  anchor?: "start" | "end"
 Signature: ThreadFeedRow(props: ThreadFeedRowProps): JSX.Element
 Signature: ToolChip(props: ToolChipProps): JSX.Element
+  className?: string
+  style?: CSSProperties
+  part: ToolCallPart
+  defaultExpanded?: boolean
+  onApprove?: ((approvalId: string) => void)
+  onDeny?: ((approvalId: string, reason?: string) => void)
 Signature: aiSdkTransport(options: AiSdkTransportOptions): AiSdkTransport<TPart>
 Signature: parseAgentPart(raw: unknown): AgentPart | null
 Signature: toAgentError(error: unknown): AgentError
 Signature: useAgentThreadRuns(props: UseAgentThreadRunsArgs<TPart>): UseAgentThreadRunsReturn<TPart>
+  transport: AgentTransport<TPart, string> | ((threadId: string) => Agen…
+  store: ThreadsStore<TPart>
+  resolveOutcome: OutcomeResolver<TPart>
+  toUserParts?: ((input: string) => TPart[])
+  onError?: ((info: { readonly threadId: string; readonly error: unknow…
+  throttle?: number
+  telemetry?: Telemetry
 Install: bun add ai@^7.0.137 @ai-sdk/provider@^4.0.26 motion@14.1.0
 OptionalPeers: use-stick-to-bottom@^1.1.6, @tanstack/react-virtual@>=3.14.0 <4
 
@@ -397,12 +647,74 @@ Description: Prose (article/chat typography), Callout, TableOfContents, Markdown
 Layer: mantine-coupled
 Rule: basalt-batteries
 Signature: ArticleLayout(props: ArticleLayoutProps): JSX.Element
+  children: ReactNode
+  meta?: ArticleLayoutMeta
+  toc?: boolean
+  readingProgress?: boolean
+  prev?: ArticleNavTarget
+  next?: ArticleNavTarget
+  renderLink?: (target: ArticleNavTarget, node: ReactNode) => ReactNode
+  density?: ProseDensity
+  locale?: string
+  className?: string
+  style?: CSSProperties
 Signature: Callout(props: CalloutProps): JSX.Element
+  className?: string
+  style?: CSSProperties
+  kind?: CalloutKind
+  title?: string
+  icon?: ReactNode
+  children: ReactNode
 Signature: GuideLink(props: GuideLinkProps): JSX.Element
+  className?: string
+  style?: CSSProperties
+  label?: string
+  title: string
+  children?: ReactNode
+  markdown?: string
+  fullPageHref?: string
+  renderLink?: (target: ArticleNavTarget, node: ReactNode) => ReactNode
+  iconOnly?: boolean
 Signature: Markdown(props: MarkdownProps): JSX.Element
+  children: string
+  density?: ProseDensity
+  measure?: boolean
+  streaming?: boolean
+  contentTrust?: MarkdownContentTrust
+  components?: Components
+  fenceRenderers?: Readonly<Record<string, FenceRenderer>>
+  sanitizeSchema?: SanitizeSchemaExtension
+  allowedLinkPrefixes?: readonly string[]
+  allowedImagePrefixes?: readonly string[]
+  defaultOrigin?: string
+  remarkPlugins?: readonly unknown[]
+  rehypePlugins?: readonly unknown[]
+  className?: string
+  style?: CSSProperties
 Signature: Prose(props: ProseProps): JSX.Element
+  density?: ProseDensity
+  measure?: boolean
+  children: ReactNode
+  className?: string
+  style?: CSSProperties
 Signature: TableOfContents(props: TableOfContentsProps): JSX.Element | null
+  items?: TocItem[]
+  containerRef?: RefObject<HTMLElement | null>
+  levels?: readonly [number, number]
+  title?: string
+  onNavigate?: (id: string) => void
+  className?: string
 Signature: mergeSanitizeSchema(base: SanitizeSchemaInput, extensions: readonly (SanitizeSchemaExtension | undefined)[]): SanitizeSchema
+  allowComments?: boolean | null
+  allowDoctypes?: boolean | null
+  ancestors?: Readonly<Record<string, readonly string[]>> | null
+  attributes?: Readonly<Record<string, readonly SanitizePropertyDefinition…
+  clobber?: readonly string[] | null
+  clobberPrefix?: string | null
+  protocols?: Readonly<Record<string, readonly string[] | null | undefine…
+  required?: Readonly<Record<string, Readonly<Record<string, unknown>>>>…
+  strip?: readonly string[] | null
+  tagNames?: readonly string[] | null
 Signature: settledOnly(render: FenceRenderer): FenceRenderer
 Install: bun add react-markdown@^10.1.0
 OptionalPeers: shiki@^4.5.0, @shikijs/langs@^4.5.0, @shikijs/themes@^4.5.0, beautiful-mermaid@^1.1.0, remark-gfm@^4.0.1, rehype-sanitize@^6.0.0, remend@1.4.0
@@ -413,16 +725,112 @@ Description: The control tier (docs/CONTROLS-SPEC.md §3). Exports: `FilterSet` 
 Layer: mantine-coupled
 Rule: basalt-controls
 Signature: FilterSet(props: FilterSetProps): ReactNode
+  className?: string
+  style?: CSSProperties
+  classNames?: Partial<Record<"root" | "sheet", string>>
+  children: ReactNode
+  inline?: number
 Signature: FormGroup(props: FormGroupProps): JSX.Element
+  className?: string
+  style?: CSSProperties
+  label: string
+  hint?: string
+  error?: ReactNode
+  required?: boolean
+  direction?: "row" | "column"
+  children: ReactNode
 Signature: FormRow(props: FormRowProps): JSX.Element
+  className?: string
+  style?: CSSProperties
+  classNames?: Partial<Record<FormRowSlot, string>>
+  label: string
+  hint?: string
+  error?: ReactNode
+  required?: boolean
+  htmlFor?: string
+  children: ReactNode
 Signature: MultiSelectFilter(props: MultiSelectFilterProps<T>): ReactNode
+  className?: string
+  style?: CSSProperties
+  value?: never
+  onChange?: never
+  size?: never
+  field: FieldHandle<MultiField<T>>
+  label: string
+  icon?: ReactNode
+  noun?: string
+  options?: readonly FilterOption[]
+  counts?: Record<string, number>
+  max?: number
 Signature: NumberFilter(props: NumberFilterProps): ReactNode
+  className?: string
+  style?: CSSProperties
+  value?: never
+  onChange?: never
+  size?: never
+  field: FieldHandle<NumberField>
+  label: string
+  icon?: ReactNode
+  options?: readonly NumberFilterOption[]
+  step?: number
+  clearable?: boolean
 Signature: RangeFilter(props: RangeFilterProps<P, C>): ReactNode
+  className?: string
+  style?: CSSProperties
+  value?: never
+  onChange?: never
+  size?: never
+  field: FieldHandle<RangeField<P, C>>
+  icon?: ReactNode
+  label?: string
+  customPicker?: ComponentType<RangeCustomPickerProps>
 Signature: SearchFilter(props: SearchFilterProps): ReactNode
+  className?: string
+  style?: CSSProperties
+  value?: never
+  onChange?: never
+  size?: never
+  field: FieldHandle<StringField>
+  placeholder?: string
+  label?: string
 Signature: SelectFilter(props: SelectFilterEnumProps<T>): ReactNode
+  className?: string
+  style?: CSSProperties
+  value?: never
+  onChange?: never
+  size?: never
+  label: string
+  icon?: ReactNode
+  clearable?: boolean
+  field: FieldHandle<EnumField<T>>
+  options?: readonly FilterOption[]
 Signature: SyncButton(props: SyncButtonProps): ReactNode
+  className?: string
+  style?: CSSProperties
+  syncing: boolean
+  lastCompletedAt?: number | Date | null
+  onSync: () => void
+  scope: "page" | "global"
+  label?: string
+  error?: string
 Signature: ToggleFilter(props: ToggleFilterProps): ReactNode
+  className?: string
+  style?: CSSProperties
+  value?: never
+  onChange?: never
+  size?: never
+  field: FieldHandle<BooleanField>
+  label: string
+  icon?: ReactNode
 Signature: ViewTabs(props: ViewTabsProps<T>): ReactNode
+  className?: string
+  style?: CSSProperties
+  value?: never
+  onChange?: never
+  size?: never
+  field: FieldHandle<EnumField<T>>
+  options?: readonly ViewTabsOption<T>[]
+  label?: string
 
 ## basalt-ui/controls-dates
 Import: import { ... } from 'basalt-ui/controls-dates'
@@ -430,6 +838,8 @@ Description: DateRangePicker — the @mantine/dates implementation of RangeFilte
 Layer: mantine-coupled
 Rule: basalt-controls
 Signature: DateRangePicker(props: RangeCustomPickerProps): ReactNode
+  value: { readonly from?: string | undefined; readonly to?: string …
+  onChange: (next: { from: string; to: string; }) => void
 Install: bun add @mantine/dates@^9.7.0 dayjs@^1.11.0
 
 ## basalt-ui/state
@@ -438,9 +848,25 @@ Description: field.enum/multi/range/number/boolean/string (the store field vocab
 Layer: headless
 Rule: basalt-state
 Signature: createLocalStore(o: { key: string; fields: S; version?: number; }): LocalStore<S>
+  key: string
+  fields: S
+  version?: number
 Signature: createPersistedState(opts: PersistedStateOptions<T>): () => readonly [T, (next: T) => void]
+  key: string
+  version: number
+  initial: T
+  migrate?: (persisted: unknown, fromVersion: number) => T
+  schema?: StandardSchemaV1<unknown, T>
 Signature: createSearchStore(o: CreateSearchStoreOptions<S>): SearchStore<S>
+  key: string
+  fields: S
+  version?: number
+  resets?: readonly string[]
 Signature: externalField(o: { values: readonly T[]; fallback: NoInfer<T>; labels?: Partial<Record…): FieldHandle<EnumField<T, ResolvedLane>>
+  values: readonly T[]
+  fallback: NoInfer<T>
+  labels?: Partial<Record<T, string>>
+  store: ExternalStore<T>
 Signature: field: { enum, multi, range, number, boolean, string }
 
 ## basalt-ui/styles.css
