@@ -948,7 +948,7 @@ Lint: `basalt/visx-boundary`, `basalt/visx-tooltip`, `basalt/hand-rolled-plot`, 
 | -------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `data`         | `rows(key)`                                            | `PlotRow { x, y, series, datum }[]`; `[]` for a hidden series                                                                                                      |
 | `visible`      | `visible`                                              | unchanged: series minus what the legend toggled off                                                                                                                |
-| `hidden`       | none                                                   | derive from `visible`; `rows(key)` is already `[]` when hidden                                                                                                     |
+| `hidden`       | none                                                   | not exposed: it is your own `series` minus `plot.visible` (`rows(key)` is `[]` for a hidden key)                                                                   |
 | `xScale`       | none                                                   | pass `x: 'x'` on `rows(key)`; the engine scales it                                                                                                                 |
 | `yScale`       | none (`yDomain` is the resolved domain)                | a mark on the default axis takes no scale argument                                                                                                                 |
 | `y2Scale`      | `y2` (`'y2' \| undefined`)                             | a mark opts in with `yScale: plot.y2`, else it draws on the left; `y2Domain` is the domain                                                                         |
@@ -960,7 +960,7 @@ Lint: `basalt/visx-boundary`, `basalt/visx-tooltip`, `basalt/hand-rolled-plot`, 
 
 ### Overlays that were drawn from pixel scales
 
-A 1.x overlay that called `ctx.xScale(x)` / `ctx.yScale(y)` and returned `<line>` / `<rect>` / `<text>` has one 2.x route: declare it as a mark in data space from `@tanstack/charts/{line,rule,dot,text,rect,link,arrow,…}` (the `basalt/chart-engine-boundary` allowlist) and return it from `marks`. The engine runs the scales, so the overlay tracks resize and the legend. It does **not** follow `y2` on its own: a mark draws on the left axis unless it carries `yScale: plot.y2` (`undefined` without a `y2` config, so the spread is safe).
+A 1.x overlay that called `ctx.xScale(x)` / `ctx.yScale(y)` and returned `<line>` / `<rect>` / `<text>` has one 2.x route: declare it as a mark in data space from `@tanstack/charts/{line,rule,dot,text,rect,link,arrow,…}` (the `basalt/chart-engine-boundary` allowlist) and return it from `marks`. The engine runs the scales, so the overlay tracks resize and the legend. It does **not** follow `y2` on its own: a mark draws on the left axis unless it carries `yScale: plot.y2` (`undefined` without a `y2` config, which the mark options accept as is: no guard needed).
 
 ```tsx
 import { lineY } from '@tanstack/charts/line'
@@ -981,7 +981,7 @@ import { VX } from 'basalt-ui/tokens'
         y: 'y',
         z: 'series',
         stroke: s.color,
-        ...(s.axis === 'right' && plot.y2 !== undefined && { yScale: plot.y2 }),
+        ...(s.axis === 'right' && { yScale: plot.y2 }),
       }),
     ),
     ruleY([250], { stroke: VX.status.warn }), // left axis, data space
