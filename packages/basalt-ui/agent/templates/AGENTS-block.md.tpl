@@ -16,7 +16,7 @@ that enforces it; skills are procedure, not law.
 one exception.
 
 **Before guessing an import, read the installed `llms.txt`** at the install directory (in a workspace,
-under the depending package; `basalt-ui doctor` prints where).
+under the depending package; `basalt-ui doctor` prints where; a fresh worktree needs `bun install` first).
 
 @./DESIGN.md
 
