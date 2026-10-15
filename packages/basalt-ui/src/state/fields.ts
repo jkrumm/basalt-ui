@@ -305,7 +305,7 @@ export type LocalFieldHandle<F extends AnyField> = FieldHandle<F> & {
 export type FieldHandle<F extends AnyField> = {
   readonly kind: F['kind']
   readonly fallback: FieldValue<F>
-  /** enum / multi / range options, labelled by `labels()`. Empty for the other kinds. */
+  /** enum / multi / range options, labelled by `labels()`. A number lists only the values `labels()` names; empty for the other kinds. */
   readonly options: readonly FieldOption[]
   /**
    * Read + write. Reads the URL when the field is on the URL lane (`useSearch({ strict: false })`,
@@ -986,7 +986,12 @@ export function createStoreCore(o: StoreCoreOptions): StoreCore {
   const readRecord = (): StoreRecord => toRecord(readPersistedValue(o.key, version))
 
   const optionsFor = (entry: StoreEntry): readonly FieldOption[] => {
-    return labelledOptions(entry.codec.optionValues, labels.get(entry.name))
+    const named = labels.get(entry.name)
+    // A number has no closed value set, so its options are exactly the values `labels()` names —
+    // `{ 0: 'Any' }` names the unset state of a threshold, and `NumberFilter`'s pill reads it.
+    const values =
+      entry.codec.kind === 'number' ? Object.keys(named ?? {}) : entry.codec.optionValues
+    return labelledOptions(values, named)
   }
 
   const clearField = (name: string): void => {
