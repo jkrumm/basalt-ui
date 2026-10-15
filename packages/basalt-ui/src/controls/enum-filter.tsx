@@ -65,6 +65,9 @@ export type EnumFilterProps<T extends string> = BasaltProps & {
    * into, and `exactOptionalPropertyTypes` rejects a possibly-undefined member on a bare optional.
    */
   readonly options?: readonly FilterOption[] | undefined
+  /** Pill text for a value no rendered option matches, ahead of `label` — the name `.labels()` gave
+   *  an unset state that is deliberately not a row (`NumberFilter`'s preset form). */
+  readonly unmatchedLabel?: string | undefined
   /**
    * Mono pill label — forwarded to `FilterPill.numeric`. Set by `NumberFilter`, whose values ARE
    * numbers (`1` / `2` / `7`), and by nothing else: the same law `[data-numeric]` applies to a
@@ -80,6 +83,7 @@ export function EnumFilter<T extends string>({
   clearable,
   numeric,
   options: optionsProp,
+  unmatchedLabel,
   className,
   style,
 }: EnumFilterProps<T>): ReactNode {
@@ -163,7 +167,7 @@ export function EnumFilter<T extends string>({
 
   return (
     <FilterPill
-      label={selected?.label ?? label}
+      label={selected?.label ?? unmatchedLabel ?? label}
       active={!isDefault}
       {...(numeric === true && { numeric: true })}
       {...(icon !== undefined && { icon })}

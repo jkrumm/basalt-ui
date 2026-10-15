@@ -58,7 +58,8 @@
  *
  * @example
  * // "No filter" is the fallback, not a row: `clearable` writes it back, and the pill reads the
- * // filter's name while no preset is picked.
+ * // filter's name while no preset is picked — or the name `.labels({ difficulty: { 0: 'Any' } })`
+ * // gave the fallback, in this form as in the stepper's.
  * // difficulty: field.number({ fallback: 0, min: 0, max: 5, int: true })
  * <NumberFilter field={library.field.difficulty} label="Difficulty" options={LEVELS} clearable />
  */
@@ -176,6 +177,9 @@ function NumberChoice({
 }): ReactNode {
   const [value, setValue] = field.use()
   const rows = options.map((option) => ({ value: String(option.value), label: option.label }))
+  // The same `.labels()` naming the stepper pill reads: a value it names (`{ 0: 'Any' }`) prints
+  // that name though it is not a row, so "no filter" needs no literal `Any` option.
+  const named = field.options.find((option) => option.value === String(value))?.label
   const choice: ChoiceHandle<string> = {
     fallback: String(field.fallback),
     options: rows,
@@ -201,6 +205,7 @@ function NumberChoice({
       label={label}
       numeric
       options={rows}
+      {...(named !== undefined && { unmatchedLabel: named })}
       {...(clearable === true && { clearable: true })}
       {...(icon !== undefined && { icon })}
       {...(className !== undefined && { className })}

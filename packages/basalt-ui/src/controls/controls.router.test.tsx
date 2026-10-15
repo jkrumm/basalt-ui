@@ -898,6 +898,45 @@ describe('NumberFilter — the options form', () => {
   })
 })
 
+describe('NumberFilter — the options form names the unset state', () => {
+  const NIGHTS = [1, 2, 7].map((value) => ({ value, label: `${value} nights` }))
+
+  test('a value named by .labels() reads as that name though it is not an option', async () => {
+    const named = createSearchStore({
+      key: 'c-number-preset-named',
+      fields: { nights: field.number({ fallback: 0, min: 0, max: 14, int: true }) },
+    }).labels({ nights: { '0': 'Any' } })
+    const router = await mountPage({
+      validateSearch: named.validateSearch,
+      entry: '/dashboard',
+      Page: () => <NumberFilter field={named.field.nights} label="Nights" options={NIGHTS} />,
+    })
+
+    await openPill('Any')
+    expect(screen.queryByRole('radio', { name: 'Any', hidden: true })).toBeNull()
+    await act(async () => {
+      fireEvent.click(screen.getByRole('radio', { name: '2 nights', hidden: true }))
+    })
+    await waitFor(() => {
+      expect(search(router)['nights']).toBe(2)
+    })
+    expect(screen.getByRole('button', { name: '2 nights' })).toBeTruthy()
+  })
+
+  test('an unnamed unmatched value still reads the filter label', async () => {
+    const plain = createSearchStore({
+      key: 'c-number-preset-unnamed',
+      fields: { nights: field.number({ fallback: 0, min: 0, max: 14, int: true }) },
+    })
+    await mountPage({
+      validateSearch: plain.validateSearch,
+      entry: '/dashboard',
+      Page: () => <NumberFilter field={plain.field.nights} label="Nights" options={NIGHTS} />,
+    })
+    expect(screen.getByRole('button', { name: 'Nights' })).toBeTruthy()
+  })
+})
+
 describe('NumberFilter — the stepper form', () => {
   const store = createSearchStore({
     key: 'c-number-stepper',
