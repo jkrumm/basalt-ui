@@ -243,6 +243,7 @@ Signature: BandStrip(props: BandStripProps<T, X>): ReactElement<unknown, string 
   states: readonly BandStripSeries<T>[]
   getBand: (d: T) => BandSpan
   fold?: BandFold<T>
+  absentState?: string
 Signature: Bars(props: BarsProps<T, X>): ReactElement<unknown, string | JSXElementConstructor<any>>
   className?: string
   style?: CSSProperties
