@@ -1062,6 +1062,12 @@ The `basalt-ui/router-tanstack` subpath is **removed** in 2.x, not moved: an imp
 
 `rollhook` (`tokens:css --no-legacy-aliases`) must drop the flag when it bumps. The injected token CSS shrinks by 2468 bytes (13280 → 10812; gzip 2710 → 2325).
 
+`Section` anchors (`id`) now clear a shell-less `PageBar`: without `BasaltShell` the scroll-margin adds `--basalt-page-bar-h` to the clearance, so `#anchor` no longer lands under the sticky bar; inside the shell nothing changes.
+
+`Section` takes controlled `open` + `onOpenChange` (Mantine naming) — given `open`, neither local state nor `persistKey` is written; uncontrolled keeps the persisted fold and `onOpenChange` also fires. Open a section from a URL hash with it instead of reaching for `writePersistedValue`.
+
+`PageBar` placement in 2.x: the primary action renders at the END of row 1 (after the secondaries), not first; `title` leads the one sticky bar when there is no shell.
+
 `basalt-ui/charts` now exports `foldBands(data, cap, merge)`, the fold `BandStrip` and `MirroredBars` run, as 2.0's table promised; `BandTooltipConfig` and `BandTooltipRowContext` never shipped (`ChartTooltipConfig` replaced them). The `absentState` colour must differ from every measured state's colour, not only by alpha.
 
 `llms.txt` gains a `## Types` glossary of the exported literal unions its signatures name (`CalloutKind`, …), lists the full `VX` token tree, and prints the values of literal-only constant maps (`CONTAINER_KEYS`). Docs output only; nothing to migrate.

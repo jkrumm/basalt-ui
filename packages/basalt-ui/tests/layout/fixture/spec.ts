@@ -297,6 +297,12 @@ export type FixtureSpec = {
   codeBlock?: { title?: string; language?: string | null; showCopy?: false }
   /** Renders `FormRow` container-width probes (n2). */
   forms?: FormsSpec
+  /**
+   * A `PageBar` + three tall `Section id="anchor-1..3"` blocks. `shell: false` renders them with
+   * NO `BasaltShell` (the documented single-page shape, the document is the scrollport); `true`
+   * renders them as shell children. Exists for the anchor-clearance invariant.
+   */
+  anchor?: { shell: boolean }
   /** Renders a `PageAside` (and, by default, the `PageBar` row 2 it projects into below `sm`). */
   aside?: AsideSpec
   /** A `TableOfContents` + article inside Main's scrollport (the scroll-spy invariants). */

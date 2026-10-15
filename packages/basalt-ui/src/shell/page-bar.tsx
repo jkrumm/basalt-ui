@@ -199,6 +199,15 @@ export function PageBarBandOutlet({ className }: { className?: string }) {
   return <div ref={setBandTarget} className={className} />
 }
 
+/**
+ * Internal — whether a `BasaltShell` provides this tree. `Section` reads it: inside the shell the
+ * bars sit outside the scrollport, so an anchor needs no bar offset; without one `PageBar` is
+ * sticky in the document and `Section` must clear it.
+ */
+export function useInPageBarShell(): boolean {
+  return useContext(PageBarContext).inShell
+}
+
 /** Internal — `true` while a page's `ActionGroup` owns the header's one mobile kebab. */
 export function usePageKebabClaimed(): boolean {
   return useContext(PageBarContext).kebabClaims > 0
