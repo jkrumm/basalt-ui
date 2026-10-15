@@ -21,6 +21,18 @@ Description: Wiring (`BasaltProvider`, `createBasaltTheme`, `createBasaltRouter`
 Layer: mantine-coupled
 Rule: basalt-mantine
 Signature: BasaltProvider(props: BasaltProviderProps): JSX.Element
+  theme?: PartialObjectDeep<MantineTheme, { recurseIntoArrays: false;…
+  telemetry?: Telemetry
+  fallback?: ReactNode | ((error: unknown) => ReactNode)
+  injectPalette?: boolean
+  paletteOptions?: BuildPaletteOpts
+  defaultColorScheme?: MantineColorScheme
+  nonce?: string
+  sizeClassHint?: "compact" | "medium" | "expanded"
+  navCommandLabel?: (item: FlatNavItem) => string
+  spotlight?: boolean
+  router: BasaltRouter  [with router]
+  children: ReactNode  [with children]
 Signature: BasaltShell(props: BasaltShellProps<G, T>): JSX.Element
   className?: string
   style?: CSSProperties
@@ -437,7 +449,7 @@ Signature: buildPaletteCss(opts: BuildPaletteOpts, data: { ACCENT: { readonly ac
   groups?: readonly SeriesGroup[]
   derived?: string[]
   scheme?: ColorSchemeSelector
-  defaultScheme?: "none" | "dark" | "light"
+  defaultScheme?: "light" | "dark" | "none"
   mediaFallback?: boolean
   only?: "core" | "all"
   legacyAliases?: boolean
@@ -455,7 +467,7 @@ Signature: basaltAppPlugin(options: BasaltAppOptions): PluginOption[]
   shortName?: string
   description?: string
   themeColor?: "auto" | { light: string; dark: string; }
-  colorScheme?: false | "auto" | "dark" | "light"
+  colorScheme?: false | "light" | "dark" | "auto"
   backgroundColor?: string
   display?: "standalone" | "minimal-ui" | "fullscreen" | "browser"
   startUrl?: string
@@ -611,6 +623,28 @@ Signature: ThreadFeed(props: ThreadFeedProps): JSX.Element
   renderRow?: ((thread: AgentThread) => ReactNode)
   anchor?: "start" | "end"
 Signature: ThreadFeedRow(props: ThreadFeedRowProps): JSX.Element
+  thread: AgentThread<TranscriptPart>
+  expanded: boolean
+  onToggle: (id: string) => void
+  title?: string
+  summary?: string
+  headerLeft?: ReactNode
+  headerRight?: ReactNode
+  messages?: readonly ChatMessage<TranscriptPart>[]
+  liveParts?: readonly TranscriptPart[]
+  liveStatus?: StreamStatus
+  renderers?: Readonly<Record<string, PartRenderer<ForeignPart>>>
+  fallbackRenderer?: PartRenderer<ForeignPart>
+  affordances?: MessageAffordances
+  groupConsecutive?: boolean
+  onSend: (payload: ComposerSubmit) => void
+  onStop?: (() => void)
+  composerProps?: Omit<ComposerProps, "streaming" | "onSubmit" | "onStop">
+  virtualize?: false
+  height?: string | number
+  classNames?: Partial<Record<"root" | "header" | "body", string>>
+  className?: string
+  style?: CSSProperties
 Signature: ToolChip(props: ToolChipProps): JSX.Element
   className?: string
   style?: CSSProperties
@@ -619,6 +653,11 @@ Signature: ToolChip(props: ToolChipProps): JSX.Element
   onApprove?: ((approvalId: string) => void)
   onDeny?: ((approvalId: string, reason?: string) => void)
 Signature: aiSdkTransport(options: AiSdkTransportOptions): AiSdkTransport<TPart>
+  api: string  [with api]
+  headers: Record<string, string> | Headers  [with api]
+  credentials: RequestCredentials  [with api]
+  fetch: typeof fetch  [with api]
+  transport: ChatTransport<UIMessage<unknown, UIDataTypes, UITools>>  [with transport]
 Signature: parseAgentPart(raw: unknown): AgentPart | null
 Signature: toAgentError(error: unknown): AgentError
 Signature: useAgentThreadRuns(props: UseAgentThreadRunsArgs<TPart>): UseAgentThreadRunsReturn<TPart>

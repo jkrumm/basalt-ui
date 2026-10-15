@@ -109,9 +109,22 @@ describe('propShapeLines', () => {
     expect(lines).toEqual(['  a: string'])
   })
 
-  test('a union or a primitive first parameter gets no block', () => {
-    expect(firstParam('export function f(p: { a: 1 } | { b: 2 }) {}').lines).toEqual([])
+  test('a primitive first parameter gets no block', () => {
     expect(firstParam('export function f(p: string) {}').lines).toEqual([])
+  })
+
+  test('a union props type lists shared props plain and mode props tagged by mode', () => {
+    const { lines } = firstParam(
+      `type Mode =
+        | { router: string; children?: never }
+        | { router?: never; children: number }
+      export function f(p: { theme?: string } & Mode) {}`,
+    )
+    expect(lines).toEqual([
+      '  theme?: string',
+      '  router: string  [with router]',
+      '  children: number  [with children]',
+    ])
   })
 
   test('a long member type is clipped to MAX_PROP_TYPE', () => {
