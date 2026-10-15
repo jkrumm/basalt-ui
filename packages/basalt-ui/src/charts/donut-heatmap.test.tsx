@@ -355,3 +355,119 @@ describe('Heatmap', () => {
     expect(empty.textContent).toContain('No data')
   })
 })
+
+describe('Heatmap positions without a datum', () => {
+  const sparse = (): React.ReactNode => (
+    <Heatmap ariaLabel="H" data={cells} {...grid} rows={['Mon', 'Tue']} cols={['0', '1']} />
+  )
+
+  test('are inert: no tooltip, and the neighbouring cell is not snapped to', async () => {
+    const el = await mount(sparse())
+    expect(await hover(el, 100, 28)).toContain('Mon · 0')
+    // Tue / 0 has no datum; the pointer travels down from Mon / 0 onto it.
+    expect(await hover(el, 100, 200)).toBe('')
+  })
+
+  test('are not highlighted: hovering one leaves the marks as they were', async () => {
+    const el = await mount(sparse())
+    const before = el.querySelector('.ts-chart__marks')?.innerHTML
+    await hover(el, 100, 28)
+    await hover(el, 100, 200)
+    expect(el.querySelector('.ts-chart__marks')?.innerHTML).toBe(before)
+  })
+})
+
+describe('Heatmap states', () => {
+  type S = 'failed' | 'idle'
+  const states = [
+    { key: 'failed', label: 'Failed', color: 'var(--vx-bad)' },
+    { key: 'idle', label: 'Idle', color: 'var(--vx-good)' },
+  ] as const
+  const stated: (Cell & { s?: S })[] = [
+    { row: 'Mon', col: '0', v: 2 },
+    { row: 'Mon', col: '1', v: null, s: 'failed' },
+    { row: 'Tue', col: '0', v: null },
+    { row: 'Tue', col: '1', v: 8, s: 'idle' },
+  ]
+  const props = {
+    ariaLabel: 'H',
+    data: stated,
+    ...grid,
+    rows: ['Mon', 'Tue'],
+    cols: ['0', '1'],
+    states,
+    getState: (d: { s?: S }) => d.s,
+  }
+  const fillsOf = (el: HTMLElement, color: string): Element[] =>
+    plotRects(el).filter((r) => r.getAttribute('fill') === color)
+
+  test('a stated cell draws its flat state fill; the rest keep the ramp and the absent fill', async () => {
+    const el = await mount(<Heatmap {...props} />)
+    expect(fillsOf(el, 'var(--vx-bad)')).toHaveLength(1)
+    // A state beats the value: the idle cell has a value of 8 but is not ramp ink.
+    expect(fillsOf(el, 'var(--vx-good)')).toHaveLength(1)
+    expect(inked(el)).toHaveLength(1)
+    expect(flat(el)).toHaveLength(1)
+  })
+
+  test('the legend names every state next to the gradient', async () => {
+    const el = await mount(<Heatmap {...props} />)
+    expect(el.querySelector('.ts-chart__legend--gradient')).not.toBeNull()
+    expect(el.querySelector('[data-legend-key="failed"]')?.textContent).toContain('Failed')
+    expect(el.querySelector('[data-legend-key="idle"]')?.textContent).toContain('Idle')
+    const off = await mount(<Heatmap {...props} legend={false} />)
+    expect(off.querySelector('[data-legend-key]')).toBeNull()
+  })
+
+  test('the tooltip reads the state label on the value row', async () => {
+    const el = await mount(<Heatmap {...props} />)
+    const tip = await hover(el, 400, 28)
+    expect(tip).toContain('Mon · 1')
+    expect(tip).toContain('Failed')
+    expect(tip).not.toContain('No data')
+  })
+
+  test('without getState the grid is unchanged and draws no state legend', async () => {
+    const el = await mount(<Heatmap {...props} getState={undefined} states={undefined} />)
+    expect(fillsOf(el, 'var(--vx-bad)')).toHaveLength(0)
+    expect(inked(el)).toHaveLength(2)
+    expect(el.querySelector('[data-legend-key]')).toBeNull()
+  })
+
+  test('a state key that names nothing throws in dev, naming the valid set', async () => {
+    const bad = { ...props, getState: () => 'nope' as S }
+    await expect(mount(<Heatmap {...bad} />)).rejects.toThrow(/failed/)
+  })
+})
+
+describe('Heatmap legend and tooltip labels', () => {
+  const props = {
+    ariaLabel: 'H',
+    data: cells,
+    ...grid,
+    rows: ['Mon', 'Tue'],
+    cols: ['0', '1'],
+  }
+
+  test('formatLegend formats the gradient ends; formatValue stays on the tooltip', async () => {
+    const el = await mount(
+      <Heatmap {...props} formatValue={(v) => `${v} km long`} formatLegend={(v) => `${v}k`} />,
+    )
+    const legend = el.querySelector('.ts-chart__legend--gradient')?.textContent ?? ''
+    expect(legend).toContain('8k')
+    expect(legend).not.toContain('km long')
+    expect(await hover(el, 100, 28)).toContain('2 km long')
+  })
+
+  test('formatLegend defaults to formatValue', async () => {
+    const el = await mount(<Heatmap {...props} formatValue={(v) => `${v} km`} />)
+    expect(el.querySelector('.ts-chart__legend--gradient')?.textContent).toContain('8 km')
+  })
+
+  test('tooltip.valueLabel renames the value row', async () => {
+    const el = await mount(<Heatmap {...props} tooltip={{ valueLabel: 'Below fastest' }} />)
+    const tip = await hover(el, 100, 28)
+    expect(tip).toContain('Below fastest')
+    expect(tip).not.toContain('Value')
+  })
+})

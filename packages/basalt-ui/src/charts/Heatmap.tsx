@@ -1,12 +1,13 @@
 /**
  * `Heatmap` — a band × band matrix of `cell` marks (`docs/V2-SPEC.md` § 9.3). Intensity is ABSOLUTE:
  * the color scale spans `domain` (default `[0, max]`), never each row's own range, so two grids on
- * one page read against the same ink. A cell with no datum, or a `null` value, is ABSENT: a flat
- * `--vx-neutral` fill, no hatch. There is no cursor and no crosshair — the tooltip is per cell, its
- * rows are `tooltip.rows(d)` data.
+ * one page read against the same ink. A cell with a datum but a `null` value is ABSENT: a flat
+ * `--vx-neutral` fill, no hatch; a cell the consumer names a `states` entry for (failed, idle, …)
+ * draws that state's flat fill instead, legended next to the gradient. A position with NO datum is
+ * inert: it paints the absent fill and answers no pointer — no tooltip, no snap to a neighbour.
+ * There is no cursor and no crosshair — the tooltip is per cell, its rows are `tooltip.rows(d)` data.
  */
 import { colorGradientLegend } from '@tanstack/charts/legend'
-import { decorative } from '@tanstack/charts/mark/decorative'
 import { cell } from '@tanstack/charts/rect'
 import { scaleBand } from '@tanstack/charts/scales/band'
 import { tooltip as tooltipHost } from '@tanstack/charts/tooltip'
@@ -20,14 +21,27 @@ import { alpha, VX } from '../tokens'
 import { resolveContainerClass } from '../tokens/size-classes'
 import { engineRow, strideTicks } from './compile'
 import type { CartesianDefinition } from './compile'
+import { resolveNamedState } from './band-fold'
+import { ABSENT_OPACITY, RAMP_LEVELS, rampOpacities } from './heatmap-fill'
 import { ChartEngine, idPrefixOf } from './host'
+import { ChartLegend } from './legend'
 import { useCoarsePointer } from '../common/use-media-query'
 import { HEIGHT_MAX, HEIGHT_MIN } from './box'
 import { ChartPlaceholder, resolveChartState } from './state'
 import { AXIS_LINE, CHART_THEME } from './theme'
-import type { ChartState, ChartTooltipRow, ResponsiveChartHeight } from './types'
+import type { ChartSeries, ChartState, ChartTooltipRow, ResponsiveChartHeight } from './types'
 
-export type HeatmapProps<T> = BasaltProps & {
+/** A named cell state: its flat fill, its legend entry and its tooltip reading. */
+export type HeatmapState<K extends string = string> = {
+  key: K
+  label: string
+  /** A `VX.*` ref or a series token. */
+  color: string
+  /** Default 1. */
+  fillOpacity?: number | undefined
+}
+
+export type HeatmapProps<T, K extends string = string> = BasaltProps & {
   /** The accessible name. Required. */
   ariaLabel: string
   data: readonly T[]
@@ -44,15 +58,37 @@ export type HeatmapProps<T> = BasaltProps & {
   color?: string | undefined
   /** The value range the color scale spans. Default `[0, max]` of the data. */
   domain?: readonly [number, number] | undefined
-  /** Tooltip, legend-end and `aria` value format. Default: the number as-is. */
+  /** Tooltip value format. Default: the number as-is. */
   formatValue?: ((v: number) => string) | undefined
+  /**
+   * The gradient legend's two end labels. Default: `formatValue`. The engine labels only the ends
+   * (a 240px ramp), so a unit-bearing `formatValue` ("50.0% below fastest hour") overlaps its
+   * neighbour there — pass a compact form ("50%") when the tooltip's reads long.
+   */
+  formatLegend?: ((v: number) => string) | undefined
+  /**
+   * The state a datum is in, a `states` key, or `undefined` for the plain value ramp. A stated cell
+   * draws its state's flat fill whatever its value. Memoize it: a new function recompiles the chart.
+   */
+  getState?: ((d: T) => K | undefined) | undefined
+  /** The named states, legended after the gradient (hidden with `legend={false}`). */
+  states?: readonly HeatmapState<K>[] | undefined
   /** Band tick and tooltip header labels. Default: the band key. */
   formatRow?: ((row: string) => string) | undefined
   formatCol?: ((col: string) => string) | undefined
   /** `false` hides the gradient legend; `label` titles it. */
   legend?: false | { label?: string | undefined } | undefined
   /** Rows after the value row, per cell (a sample count, a failure reason). Called with the datum. */
-  tooltip?: (false | { rows?: ((d: T) => readonly ChartTooltipRow[]) | undefined }) | undefined
+  tooltip?:
+    | (
+        | false
+        | {
+            rows?: ((d: T) => readonly ChartTooltipRow[]) | undefined
+            /** The value row's label. Default "Value". */
+            valueLabel?: string | undefined
+          }
+      )
+    | undefined
   /** A fixed height, or one per container class. Default: by row count (160–420px). */
   height?: number | ResponsiveChartHeight | undefined
   /** Fill the parent's height instead. Overrides `height`. CSS-owned like every other kind's box
@@ -62,28 +98,34 @@ export type HeatmapProps<T> = BasaltProps & {
   state?: ChartState | undefined
 }
 
-/** Intensity steps: quantized, so the gradient legend and the cells are the same ramp. */
-const LEVELS = 8
-const MIN_LEVEL = 0.14
 const ROW_PITCH = 26
 const CHROME = 64
 const CELL_INSET = 1
 
 /** One grid position. `id` is its row-major index: the mark key, so no row/col pair can collide. */
-type Cell<T> = { id: number; row: string; col: string; value: number | null; datum: T | undefined }
+type Cell<T> = {
+  id: number
+  row: string
+  col: string
+  value: number | null
+  datum: T | undefined
+  state: string | undefined
+}
 
 const identityLabel = (band: string): string => band
 
 const firstSeen = (keys: Iterable<string>): string[] => [...new Set(keys)]
 
-const ramp = (color: string): string[] =>
-  Array.from({ length: LEVELS }, (_, i) =>
-    alpha(color, MIN_LEVEL + ((1 - MIN_LEVEL) * i) / (LEVELS - 1)),
-  )
+const ramp = (color: string): string[] => rampOpacities().map((a) => alpha(color, a))
+
+const noneHidden: ReadonlySet<string> = new Set()
+const noop = (): void => {}
+
+const noStates: readonly HeatmapState[] = []
 
 const fillStyle: CSSProperties = { position: 'relative', height: '100%', minHeight: HEIGHT_MIN }
 
-export function Heatmap<T>(props: HeatmapProps<T>): ReactElement {
+export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>): ReactElement {
   const {
     ariaLabel,
     data,
@@ -93,6 +135,9 @@ export function Heatmap<T>(props: HeatmapProps<T>): ReactElement {
     color = VX.line,
     domain,
     formatValue = String,
+    formatLegend = formatValue,
+    getState,
+    states = noStates as readonly HeatmapState<K>[],
     formatRow = identityLabel,
     formatCol = identityLabel,
     legend,
@@ -109,12 +154,20 @@ export function Heatmap<T>(props: HeatmapProps<T>): ReactElement {
   const legendLabel = legend === false ? undefined : legend?.label
   const showTooltip = tooltip !== false
   const tooltipRows = tooltip === false ? undefined : tooltip?.rows
+  const valueLabel = (tooltip === false ? undefined : tooltip?.valueLabel) ?? 'Value'
   const rows = useMemo(() => props.rows ?? firstSeen(data.map(getRow)), [props.rows, data, getRow])
   const cols = useMemo(() => props.cols ?? firstSeen(data.map(getCol)), [props.cols, data, getCol])
   const statedHeight =
     height ?? Math.min(Math.max(rows.length * ROW_PITCH + CHROME, HEIGHT_MIN), HEIGHT_MAX)
   const coarse = useCoarsePointer()
   const boxHeight = matchHeight ? 'fill' : statedHeight
+
+  // Resolved per datum below; a key naming nothing throws in dev, paints the ramp in production.
+  const stateKeys = useMemo(() => states.map((s) => s.key), [states])
+  const stateByKey = useMemo(
+    () => new Map<string, HeatmapState<K>>(states.map((s) => [s.key, s])),
+    [states],
+  )
 
   const definition = useMemo<CartesianDefinition>(() => {
     const byBand = new Map<string, Map<string, T>>()
@@ -124,8 +177,9 @@ export function Heatmap<T>(props: HeatmapProps<T>): ReactElement {
       inRow.set(getCol(d), d)
       byBand.set(row, inRow)
     }
-    // One pass: split the grid into measured, absent-with-a-datum and absent-with-none.
+    // One pass: split the grid into measured, stated, absent-with-a-datum and absent-with-none.
     const present: Cell<T>[] = []
+    const stated = new Map<string, Cell<T>[]>()
     const absentWithDatum: Cell<T>[] = []
     const absentEmpty: Cell<T>[] = []
     let max = 0
@@ -134,8 +188,14 @@ export function Heatmap<T>(props: HeatmapProps<T>): ReactElement {
         const datum = byBand.get(row)?.get(col)
         const raw = datum === undefined ? null : getValue(datum)
         const value = raw !== null && Number.isFinite(raw) ? raw : null
-        const cellAt: Cell<T> = { id: r * cols.length + c, row, col, datum, value }
-        if (value !== null) {
+        const stateKey =
+          datum === undefined || getState === undefined
+            ? undefined
+            : resolveNamedState('Heatmap', 'Heatmap.getState', getState(datum), stateKeys)
+        const cellAt: Cell<T> = { id: r * cols.length + c, row, col, datum, value, state: stateKey }
+        if (stateKey !== undefined) {
+          stated.set(stateKey, [...(stated.get(stateKey) ?? []), cellAt])
+        } else if (value !== null) {
           present.push(cellAt)
           max = Math.max(max, value)
         } else if (datum === undefined) absentEmpty.push(cellAt)
@@ -159,24 +219,37 @@ export function Heatmap<T>(props: HeatmapProps<T>): ReactElement {
           thin: true,
         }
         const marks = [
-          decorative(
-            cell(absentEmpty, {
-              id: 'absent-empty',
-              x: 'col',
-              y: 'row',
-              fill: VX.neutral,
-              fillOpacity: 0.12,
-              inset: CELL_INSET,
-            }),
-          ),
+          // Inert, not decorative: it must still win the hit test, so a pointer over an empty
+          // position lands on THIS cell (whose tooltip is empty) instead of snapping to a neighbour.
+          cell(absentEmpty, {
+            id: 'absent-empty',
+            x: 'col',
+            y: 'row',
+            fill: VX.neutral,
+            fillOpacity: ABSENT_OPACITY,
+            inset: CELL_INSET,
+            key: 'id',
+          }),
           cell(absentWithDatum, {
             id: 'absent',
             x: 'col',
             y: 'row',
             fill: VX.neutral,
-            fillOpacity: 0.12,
+            fillOpacity: ABSENT_OPACITY,
             inset: CELL_INSET,
             key: 'id',
+          }),
+          ...[...stated].map(([key, group]) => {
+            const named = stateByKey.get(key)
+            return cell(group, {
+              id: `state:${key}`,
+              x: 'col',
+              y: 'row',
+              fill: named?.color ?? VX.neutral,
+              ...(named?.fillOpacity !== undefined && { fillOpacity: named.fillOpacity }),
+              inset: CELL_INSET,
+              key: 'id',
+            })
           }),
           cell(present, {
             id: 'cells',
@@ -215,8 +288,8 @@ export function Heatmap<T>(props: HeatmapProps<T>): ReactElement {
             scale,
             ...(showLegend && {
               legend: colorGradientLegend({
-                steps: LEVELS,
-                format: formatValue,
+                steps: RAMP_LEVELS,
+                format: formatLegend,
                 placement: 'bottom',
                 ...(legendLabel !== undefined && { label: legendLabel }),
               }),
@@ -232,14 +305,16 @@ export function Heatmap<T>(props: HeatmapProps<T>): ReactElement {
             content: (points: readonly ChartPoint[]) => {
               const point = points[0]
               const c = point?.datum as Cell<T> | undefined
-              if (!point || !c) return { rows: [] }
+              if (!point || !c || c.datum === undefined) return { rows: [] }
               const extra = c.datum === undefined ? [] : (tooltipRows?.(c.datum) ?? [])
-              const value: readonly ChartTooltipRow[] =
-                c.value === null
-                  ? [{ label: 'Value', value: 'No data' }]
+              const named = c.state === undefined ? undefined : stateByKey.get(c.state)
+              const value: readonly ChartTooltipRow[] = named
+                ? [{ label: valueLabel, value: named.label, color: named.color }]
+                : c.value === null
+                  ? [{ label: valueLabel, value: 'No data' }]
                   : [
                       {
-                        label: 'Value',
+                        label: valueLabel,
                         value: formatValue(c.value),
                         ...(point.color && { color: point.color }),
                       },
@@ -259,6 +334,11 @@ export function Heatmap<T>(props: HeatmapProps<T>): ReactElement {
     color,
     domain,
     formatValue,
+    formatLegend,
+    getState,
+    stateKeys,
+    stateByKey,
+    valueLabel,
     formatRow,
     formatCol,
     legendLabel,
@@ -267,6 +347,18 @@ export function Heatmap<T>(props: HeatmapProps<T>): ReactElement {
     tooltipRows,
   ])
 
+  const legendSeries = useMemo<ChartSeries<T>[]>(
+    () =>
+      states.map((s) => ({
+        key: s.key,
+        label: s.label,
+        color: s.color,
+        mark: 'bar' as const,
+        ...(s.fillOpacity !== undefined && { fillOpacity: s.fillOpacity }),
+        getValue: () => null,
+      })),
+    [states],
+  )
   const resolved = resolveChartState(state)
   return (
     <div
@@ -284,6 +376,17 @@ export function Heatmap<T>(props: HeatmapProps<T>): ReactElement {
         />
       ) : (
         <ChartPlaceholder state={state} height={boxHeight} />
+      )}
+      {resolved === null && showLegend && states.length > 0 && (
+        <ChartLegend
+          series={legendSeries}
+          hidden={noneHidden}
+          mode="chips"
+          groups={false}
+          toggle={false}
+          onToggle={noop}
+          onHighlight={noop}
+        />
       )}
     </div>
   )

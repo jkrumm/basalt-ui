@@ -341,7 +341,7 @@ Signature: DualPanel(props: DualPanelProps<T, X>): ReactElement<unknown, string 
   fillBetween?: { from: string; to: string; fill: string; aboveFill?: strin…
   bar: DualPanelBar<T>
   topFraction?: number
-Signature: Heatmap(props: HeatmapProps<T>): ReactElement<unknown, string | JSXElementConstructor<any>>
+Signature: Heatmap(props: HeatmapProps<T, K>): ReactElement<unknown, string | JSXElementConstructor<any>>
   className?: string
   style?: CSSProperties
   ariaLabel: string
@@ -354,6 +354,9 @@ Signature: Heatmap(props: HeatmapProps<T>): ReactElement<unknown, string | JSXEl
   color?: string
   domain?: readonly [number, number]
   formatValue?: ((v: number) => string)
+  formatLegend?: ((v: number) => string)
+  getState?: ((d: T) => K | undefined)
+  states?: readonly HeatmapState<K>[]
   formatRow?: ((row: string) => string)
   formatCol?: ((col: string) => string)
   legend?: false | { label?: string | undefined; }
