@@ -24,7 +24,6 @@ import {
   appWiringCheck,
   droppedSubpathsCheck,
   exactPeersCheck,
-  OXLINT_FLOOR,
   oxlintFloorCheck,
   retiredLintRulesCheck,
   seedTsconfigExtends,
@@ -369,6 +368,21 @@ describe('doctor — dropped-subpaths', () => {
     const problem = text(check())
     expect(problem).not.toContain('src/a.css')
     expect(problem).toContain('src/b.css:1')
+  })
+
+  it('names each dropped subpath fix once, however many files import it', () => {
+    exportsMap()
+    write('src/a.ts', "import 'basalt-ui/tokens.css'\nimport 'basalt-ui/router-tanstack'\n")
+    write('src/b.ts', "import 'basalt-ui/tokens.css'\nimport 'basalt-ui/router-tanstack'\n")
+    const problem = text(check()) ?? ''
+    expect(problem.split('basalt-ui/tokens.css: commit').length).toBe(2)
+    expect(problem.split('basalt-ui/router-tanstack: nav').length).toBe(2)
+  })
+
+  it('ignores a ; inside a quoted CSS string before an @import-looking text', () => {
+    exportsMap()
+    write('src/a.css', '.a::before { content: "x; @import \'basalt-ui/tokens.css\'"; }\n')
+    expect(check()).toBeNull()
   })
 
   it('treats Object.prototype names as ordinary subpaths', () => {
@@ -1241,12 +1255,12 @@ describe('doctor — oxlint-floor', () => {
     withOxlint('1.76.0')
     const problem = text(oxlintFloorCheck(dir))
     expect(problem).toContain('oxlint 1.76.0')
-    expect(problem).toContain(`>= ${OXLINT_FLOOR}`)
-    expect(problem).toContain(`bun add -D oxlint@^${OXLINT_FLOOR}`)
+    expect(problem).toContain('>= 1.79.0')
+    expect(problem).toContain('bun add -D oxlint@^1.79.0')
   })
 
   it('passes at and above the floor, including a higher minor with a lower patch', () => {
-    for (const v of [OXLINT_FLOOR, '1.87.2', '2.0.0']) {
+    for (const v of ['1.79.0', '1.87.2', '2.0.0']) {
       withOxlint(v)
       expect(oxlintFloorCheck(dir)).toBeNull()
     }
@@ -1255,11 +1269,23 @@ describe('doctor — oxlint-floor', () => {
   })
 
   it('treats a prerelease of the floor as below it, and an unparseable version as absent', () => {
-    withOxlint(`${OXLINT_FLOOR}-beta.1`)
+    withOxlint('1.79.0-beta.1')
     expect(text(oxlintFloorCheck(dir))).toContain('oxlint 1.79.0-beta.1')
     withOxlint('nightly')
     expect(oxlintFloorCheck(dir)).toBeNull()
     write('node_modules/oxlint/package.json', JSON.stringify({ version: 179 }))
+    expect(oxlintFloorCheck(dir)).toBeNull()
+  })
+
+  it('ignores build metadata: 1.78.0+build.1 is below the floor, 1.79.0+build.1 is not', () => {
+    withOxlint('1.78.0+build.1')
+    expect(text(oxlintFloorCheck(dir))).toContain('oxlint 1.78.0+build.1')
+    withOxlint('1.79.0+build.1')
+    expect(oxlintFloorCheck(dir)).toBeNull()
+  })
+
+  it('passes when .oxlintrc.json exists but no oxlint is installed', () => {
+    write('.oxlintrc.json', '{}')
     expect(oxlintFloorCheck(dir)).toBeNull()
   })
 
