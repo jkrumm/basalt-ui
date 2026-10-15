@@ -75,6 +75,34 @@ describe('isCodeRoutedApp', () => {
     expect(isCodeRoutedApp(dir, '')).toBe(false)
   })
 
+  it('does not follow an import that only appears inside a string, or a method named import', () => {
+    write('src/main.tsx', "const s = \"import('./router')\"\nobj.import('./router')\n")
+    write('src/router.ts', CREATE)
+    expect(isCodeRoutedApp(dir, '')).toBe(false)
+  })
+
+  it('is not flipped by a string that merely mentions routeTree.gen, only by a real import', () => {
+    write('src/main.tsx', `console.log("see ./routeTree.gen")\n${CREATE}`)
+    expect(isCodeRoutedApp(dir, '')).toBe(true)
+    write('src/main.tsx', `export * from './routeTree.gen'\n${CREATE}`)
+    expect(isCodeRoutedApp(dir, '')).toBe(false)
+  })
+
+  it("resolves a '.js' specifier to the .ts file and a bare one to a directory index", () => {
+    write('src/main.tsx', "import('./router.js')\n")
+    write('src/router.ts', CREATE)
+    expect(isCodeRoutedApp(dir, '')).toBe(true)
+    write('src/main.tsx', "import './router'\n")
+    rmSync(join(dir, 'src/router.ts'))
+    write('src/router/index.ts', CREATE)
+    expect(isCodeRoutedApp(dir, '')).toBe(true)
+  })
+
+  it('detects a call with nested generics', () => {
+    write('src/main.tsx', 'const router = createBasaltRouter<Ctx<T>>({ routeTree })\n')
+    expect(isCodeRoutedApp(dir, '')).toBe(true)
+  })
+
   it('finds createBasaltRouter in a module the entry imports', () => {
     write('src/main.tsx', "import './router'\n")
     write('src/router.ts', CREATE)

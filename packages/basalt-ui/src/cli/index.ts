@@ -30,6 +30,7 @@ import { COMMAND_OPTIONS, USAGE, unknownFlag } from './help'
 import { init } from './init'
 import { sync } from './sync'
 import { CODE_ROUTED_NOTE, routerSeedSkip } from './router-wiring'
+import type { RouterSeedSkip } from './router-wiring'
 import { hasDependency, readIfExists, readPackageJson } from './source-text'
 import { fontsCss, normalizeColorFunctions, tokensCss } from './tokens-css'
 import { DEFAULT_ROOT, exemptRulePaths, resolveRoots } from './config'
@@ -672,13 +673,13 @@ export function routerSeedPlan(
   cwd: string,
   appRel: string,
   tokensOnly = false,
-): { skip: ReturnType<typeof routerSeedSkip>; skipped: Set<string> } {
-  const skip = routerSeedSkip(cwd, appRel)
+): { skip: RouterSeedSkip; skipped: Set<string> } {
+  const skip = tokensOnly ? null : routerSeedSkip(cwd, appRel)
   return { skip, skipped: new Set(tokensOnly || skip !== null ? routerSeedDests(appRel) : []) }
 }
 
 /** The note `init` prints for a router-seed skip, or null when nothing was skipped. */
-export function seedSkipNote(skip: ReturnType<typeof routerSeedSkip>): string | null {
+export function seedSkipNote(skip: RouterSeedSkip): string | null {
   if (skip === 'start') return START_APP_NOTE
   return skip === 'code-routed' ? CODE_ROUTED_NOTE : null
 }
