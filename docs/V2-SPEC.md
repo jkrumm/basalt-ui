@@ -662,7 +662,7 @@ numbers and the commands: `docs/waves/evidence/w1/charts.md`.
 **Accepted** (lead, W5, 2026-10-14; supersedes the +14.5 KB figure above): the real first-chart cost, `Lines` +31.5 KB over 1.x `ZonedLine`
 (`/charts` 129.9 KB beyond initial against 81.7 KB, `./charts` itself −32 %). Update p50 and first paint @1x are flat to 1.41 (−21 % update at W4); basalt's own 17.8 KB is the trim candidate if a later wave needs bytes.
 
-**Resolved (W5):** the absent state is a flat `--vx-neutral` fill, no custom hatch mark. Stacked `Bars`
+**Resolved (W5):** the absent state is a flat `--vx-neutral` fill, no custom hatch mark. **Confirmed (W16, row 64):** flat fill stays. `BandSpan.absentFraction` + `BandStrip.absentState` paint a folded band's unmeasured share flat from its right edge, legended, with a "Not measured" tooltip row. It differs from zero/low by `VX.neutral` hue against the state fills in both schemes, and by legend, tooltip and a fixed edge, not colour alone; hatch needs an SVG `<pattern>` decorative rects cannot carry. Stacked `Bars`
 on a log axis throws in dev and logs once in production, as 1.x did. `StackedArea` rejects
 `y.scale` in its type.
 
