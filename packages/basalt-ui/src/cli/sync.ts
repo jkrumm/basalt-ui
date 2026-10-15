@@ -12,6 +12,7 @@ import {
   diffSummary,
   findBasaltInstall,
   inspectLefthookGate,
+  isStartApp,
   isStringArray,
   managedFiles,
   normalizeForLedger,
@@ -23,7 +24,6 @@ import {
   readBasaltConfig,
   readIfExists,
   readManifest,
-  hasDependency,
   readSource,
   reconcileRoots,
   relativePosix,
@@ -31,11 +31,11 @@ import {
   reportPrune,
   resolvePlacement,
   resolveProjectDir,
-  ROUTER_SEED_DESTS,
-  routerSeedDest,
+  routerSeedDests,
   rootsNotices,
   sha256,
   shippedAssetPath,
+  START_APP_NOTE,
   unitState,
   writeFileEnsuringDir,
   writeUnit,
@@ -64,22 +64,6 @@ export function parentInstallAdvice(cwd: string, parent: string, verb: string): 
     'or set BASALT_CWD to it.'
   )
 }
-
-/** The router seeds' dests for an app dir (`main.tsx`, `nav.tsx`, `__root.tsx`). */
-export function routerSeedDests(appRel: string): string[] {
-  return (Object.keys(ROUTER_SEED_DESTS) as (keyof typeof ROUTER_SEED_DESTS)[]).map((seed) =>
-    routerSeedDest(appRel, seed),
-  )
-}
-
-/** A TanStack Start app owns its router, so its router seeds give way to an in-tree `<BasaltProvider>`. */
-export function isStartApp(cwd: string, appRel: string): boolean {
-  return hasDependency(resolve(cwd, appRel), '@tanstack/react-start')
-}
-
-export const START_APP_NOTE =
-  'TanStack Start app — no main.tsx/nav.tsx/__root.tsx seeded (Start owns the router); render ' +
-  '<BasaltProvider> with children inside your root route component.'
 
 /** The nearest ANCESTOR of `dir` (exclusive) carrying a basalt manifest, or null. */
 export function findManifestAbove(dir: string): string | null {
@@ -222,7 +206,8 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
   // Placement notices — informational, never affecting the exit code, and PERMANENT: `--check`
   // hides them behind `--verbose` (it sits in consumers' CI chains, where three unchanging
   // "skipped" paragraphs per run are noise indistinguishable from drift) but still prints the COUNT.
-  if (startApp && !opts.check) console.log(`basalt-ui sync: ${START_APP_NOTE}`)
+  if (startApp && (!opts.check || syncFlags.includes('--verbose')))
+    console.log(`basalt-ui sync: ${START_APP_NOTE}`)
   const placementSkips = placementNotices(cwd, placement)
   if (opts.check !== true || syncFlags.includes('--verbose')) {
     for (const line of placementSkips) console.log(`basalt-ui sync: ${line}`)

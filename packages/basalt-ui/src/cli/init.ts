@@ -11,6 +11,9 @@ import type { MergeLintResult, ScaffoldFlags } from './index'
 import {
   MANIFEST_PATH,
   declaredProfile,
+  isStartApp,
+  routerSeedDests,
+  START_APP_NOTE,
   readBasaltConfig,
   findBasaltInstall,
   managedFiles,
@@ -31,7 +34,7 @@ import {
   writeUnit,
 } from './index'
 import { seedTsconfigExtends } from './doctor-upgrade'
-import { readOxlintPresetPlugins, START_APP_NOTE, isStartApp, routerSeedDests } from './sync'
+import { readOxlintPresetPlugins } from './sync'
 
 /**
  * What a consumer LOSES by `init` keeping a file it already had — the half the aggregate

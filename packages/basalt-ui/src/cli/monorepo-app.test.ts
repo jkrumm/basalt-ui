@@ -99,6 +99,20 @@ describe('sync / init in a monorepo', () => {
     expect(existsSync(join(dir, 'src'))).toBe(false)
   })
 
+  it('detects a Start app by the app package, not the root, and seeds nothing router-shaped', () => {
+    monorepo(['web'])
+    pkg('apps/web/', {
+      name: 'web',
+      dependencies: { 'basalt-ui': '*', '@tanstack/react-start': '*' },
+    })
+    quiet(() => init(dir))
+    for (const seed of ['routes/__root.tsx', 'lib/nav.tsx', 'main.tsx']) {
+      expect(existsSync(join(dir, 'apps/web/src', seed))).toBe(seed === 'main.tsx')
+    }
+    // main.tsx pre-exists in the fixture; init must leave it alone and write no other router seed.
+    expect(existsSync(join(dir, 'apps/web/src/routes'))).toBe(false)
+  })
+
   it('refuses on an ambiguous app instead of guessing', () => {
     monorepo(['web', 'admin'])
     expect(quiet(() => init(dir))).toBe(1)

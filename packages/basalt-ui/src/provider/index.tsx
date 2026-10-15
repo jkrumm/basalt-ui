@@ -421,15 +421,31 @@ function useDataTelemetry(router: AnyRouter, client: QueryClient, emit: Telemetr
 
 const LazyDevDock = lazy(() => import('../dev-dock').then((m) => ({ default: m.BasaltDevDock })))
 
-function readQueryClient(router: AnyRouter | null): { router: AnyRouter; client: QueryClient } {
-  const client = (router?.options.context as Partial<BasaltRouterContext> | undefined)?.queryClient
-  if (!router || client === undefined) {
+function readQueryClient(router: AnyRouter): QueryClient {
+  const client = (router.options.context as Partial<BasaltRouterContext> | undefined)?.queryClient
+  if (client === undefined) {
     throw new Error(
-      '[basalt] BasaltProvider: no router with context.queryClient — pass `router` ' +
-        '(createBasaltRouter) to mount one, or `children` inside a router whose context carries it.',
+      '[basalt] BasaltProvider: no context.queryClient — pass `router` from createBasaltRouter, ' +
+        'or with `children` put a QueryClient in the router context.',
     )
   }
-  return { router, client }
+  return client
+}
+
+/**
+ * The router this provider serves: the one it mounts (`router`), else — embedded mode — the one the
+ * host already mounted above it. `warn: false`: mount mode sits ABOVE any router, so no context is
+ * expected there. The context read is SSR-safe.
+ */
+function useEffectiveRouter(mounted: BasaltRouter | undefined): AnyRouter {
+  const ambient: AnyRouter | undefined = useRouter<AnyRouter>({ warn: false })
+  const router = mounted ?? ambient
+  if (!router) {
+    throw new Error(
+      '[basalt] BasaltProvider: no router — pass `router` to mount one, or `children` inside one.',
+    )
+  }
+  return router
 }
 
 // ── Public provider ───────────────────────────────────────────────────────────────────────────────
@@ -463,10 +479,8 @@ export function BasaltProvider({
   // `overlays.confirm` is an imperative call; this tells it a `ModalsProvider` is live.
   useEffect(() => registerModalsProvider(), [])
 
-  // `warn: false` — in mount mode this provider sits ABOVE the router, so no context is expected.
-  // Embedded mode reads the router the host framework already mounted (SSR-safe: context only).
-  const ambientRouter = useRouter({ warn: false }) as AnyRouter | null
-  const { router, client } = readQueryClient(mountedRouter ?? ambientRouter)
+  const router = useEffectiveRouter(mountedRouter)
+  const client = readQueryClient(router)
   useDataTelemetry(router, client, emit)
 
   const [devTool, setDevTool] = useState<BasaltDevDockTool | null>(null)

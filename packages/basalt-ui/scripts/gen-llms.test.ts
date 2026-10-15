@@ -113,7 +113,7 @@ describe('propShapeLines', () => {
     expect(firstParam('export function f(p: string) {}').lines).toEqual([])
   })
 
-  test('a union props type lists shared props plain and mode props tagged by mode', () => {
+  test('a union props type lists the modes once, then each prop; a discriminant is not tagged with itself', () => {
     const { lines } = firstParam(
       `type Mode =
         | { router: string; children?: never }
@@ -121,10 +121,33 @@ describe('propShapeLines', () => {
       export function f(p: { theme?: string } & Mode) {}`,
     )
     expect(lines).toEqual([
+      '  one of: router | children',
       '  theme?: string',
-      '  router: string  [with router]',
-      '  children: number  [with children]',
+      '  router: string',
+      '  children: number',
     ])
+  })
+
+  test('`?` follows optionality, not the mode tag; a mode-only prop is tagged with the mode that owns it', () => {
+    const { lines } = firstParam(
+      `type Mode =
+        | { url: string; retries?: number }
+        | { client: object; retries?: never }
+      export function f(p: Mode) {}`,
+    )
+    expect(lines).toContain('  retries?: number  [with url]')
+    expect(lines).toContain('  url: string')
+  })
+
+  test('a prop shared by modes with different types merges them into one union', () => {
+    const { lines } = firstParam(
+      `type Mode =
+        | { kind: 'a'; a: string }
+        | { kind: 'b'; b: number }
+      export function f(p: Mode) {}`,
+    )
+    expect(lines).toContain('  kind: "a" | "b"')
+    expect(lines).toContain('  a: string')
   })
 
   test('a long member type is clipped to MAX_PROP_TYPE', () => {
