@@ -232,6 +232,31 @@ const calibration = (): number =>
 /** >= 1: how much slower than idle this process runs right now. Never shrinks a cap. */
 const loadFactor = (): number => Math.max(1, calibration() / CALIBRATION_IDLE_MS)
 
+/** Re-measured growth attempts before the gate fails. */
+const GROWTH_ATTEMPTS = 3
+
+/**
+ * The lowest LARGE/SMALL ratio over up to {@link GROWTH_ATTEMPTS} measurements. The SMALL render sits
+ * a few ms above the noise floor, so one scheduler hiccup on a loaded machine (CI, or parallel test
+ * workers) swings a single ratio past the bound; super-linear growth fails every attempt, noise does
+ * not. Stops at the first passing attempt.
+ */
+function bestGrowth(node: (n: number) => ReactElement, firstLarge: number): number {
+  let best = Number.POSITIVE_INFINITY
+  for (let attempt = 0; attempt < GROWTH_ATTEMPTS; attempt++) {
+    const large = attempt === 0 ? firstLarge : timeRender(() => node(LARGE))
+    const ratio =
+      large /
+      Math.max(
+        timeRender(() => node(SMALL)),
+        NOISE_FLOOR_MS,
+      )
+    best = Math.min(best, ratio)
+    if (best < MAX_GROWTH) break
+  }
+  return best
+}
+
 describe(`server render at ${LARGE} points`, () => {
   for (const { name, cap, growth, node } of KINDS) {
     test(`${name}: ${growth === false ? '' : `growth under ${MAX_GROWTH}x from ${SMALL} to ${LARGE}, and `}under ${cap} ms`, () => {
@@ -247,10 +272,11 @@ describe(`server render at ${LARGE} points`, () => {
       const factor = loadFactor()
       const large = timeRender(() => node(LARGE))
       if (growth !== false) {
-        const small = timeRender(() => node(SMALL))
-        expect(large / Math.max(small, NOISE_FLOOR_MS)).toBeLessThan(MAX_GROWTH)
+        expect(bestGrowth(node, large)).toBeLessThan(MAX_GROWTH)
       }
       expect(large).toBeLessThan(cap * factor)
-    })
+      // Several renders at 10k points plus up to GROWTH_ATTEMPTS re-measures: a few seconds of real
+      // work, so bun's 5 s default would time out under load before any assertion could fail.
+    }, 30_000)
   }
 })
