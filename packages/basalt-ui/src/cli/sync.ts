@@ -113,7 +113,9 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
   // Refuse BEFORE reconcileRoots, which writes `basalt.roots` into package.json.
   if (!existsSync(resolve(cwd, MANIFEST_PATH))) {
     const elsewhere = findManifestAbove(cwd)
-    const wouldWrite = managedFiles(resolvePlacement(cwd)).length
+    const refused = resolvePlacement(cwd)
+    const startSeeds = isStartApp(cwd, refused.appRel) ? routerSeedDests(refused.appRel) : []
+    const wouldWrite = managedFiles(refused).filter((f) => !startSeeds.includes(f.dest)).length
     console.error(
       `✖ basalt-ui sync: no ${MANIFEST_PATH} at ${cwd} — refusing to scaffold. ` +
         `\`sync\` refreshes an EXISTING basalt install; creating one is \`basalt-ui init\`'s ` +
@@ -206,6 +208,17 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
   // Placement notices — informational, never affecting the exit code, and PERMANENT: `--check`
   // hides them behind `--verbose` (it sits in consumers' CI chains, where three unchanging
   // "skipped" paragraphs per run are noise indistinguishable from drift) but still prints the COUNT.
+  // Start added AFTER a pre-Start init: the old seeds are the consumer's now — left untouched, named.
+  const stale = [...skipped].filter(
+    (d) => manifest.files[d] !== undefined && existsSync(resolve(cwd, d)),
+  )
+  if (stale.length > 0) {
+    console.error(
+      `⚠ basalt-ui sync: ${stale.join(', ')} were seeded before this became a TanStack Start app and ` +
+        'now mount a second router; left untouched. Delete them and render ' +
+        '<BasaltProvider><Outlet /></BasaltProvider> in the Start root route (embedded mode).',
+    )
+  }
   if (startApp && (!opts.check || syncFlags.includes('--verbose')))
     console.log(`basalt-ui sync: ${START_APP_NOTE}`)
   const placementSkips = placementNotices(cwd, placement)

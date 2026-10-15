@@ -22,7 +22,7 @@ import { SURFACES } from '../surfaces'
 import { doctor } from './doctor'
 import {
   appWiringCheck,
-  startQueryClientWarning,
+  startWiringWarnings,
   droppedSubpathsCheck,
   exactPeersCheck,
   oxlintFloorCheck,
@@ -873,7 +873,7 @@ describe('doctor — app-wiring', () => {
       'package.json',
       JSON.stringify({ name: 'fixture', devDependencies: { '@tanstack/react-start': '*' } }),
     )
-    write('src/routes/__root.tsx', '// <BasaltProvider>{children}</BasaltProvider>\nexport {}\n')
+    write('src/routes/__root.tsx', '// <BasaltProvider><Outlet /></BasaltProvider>\nexport {}\n')
     expect(text(appWiringCheck(dir))).toContain('does not render <BasaltProvider>')
     write(
       'src/routes/__root.tsx',
@@ -882,6 +882,25 @@ describe('doctor — app-wiring', () => {
     expect(text(appWiringCheck(dir))).toContain('mounts a second router')
     write('src/routes/__root.tsx', 'export const R = () => <BasaltProvider>{x}</BasaltProvider>\n')
     expect(appWiringCheck(dir)).toBeNull()
+    // ANY tag with router= fails, even beside an embedded one.
+    write(
+      'src/routes/__root.tsx',
+      'const A = () => <BasaltProvider>{x}</BasaltProvider>\nconst B = () => <BasaltProvider router={r} />\n',
+    )
+    expect(text(appWiringCheck(dir))).toContain('mounts a second router')
+    // `>` and `router=` inside a string attribute neither end the tag nor count as the prop.
+    write(
+      'src/routes/__root.tsx',
+      'const A = () => <BasaltProvider className="a > b router=x" nonce="router=y">{x}</BasaltProvider>\n',
+    )
+    expect(appWiringCheck(dir)).toBeNull()
+    // A spread could carry router=: not a failure, a warning.
+    write(
+      'src/routes/__root.tsx',
+      'const A = () => <BasaltProvider {...props}>{x}</BasaltProvider>\n',
+    )
+    expect(appWiringCheck(dir)).toBeNull()
+    expect(startWiringWarnings(dir).join()).toContain('spread')
   })
 
   it('warns, heuristically, when a Start router file never mentions queryClient', () => {
@@ -889,14 +908,14 @@ describe('doctor — app-wiring', () => {
       'package.json',
       JSON.stringify({ name: 'fixture', dependencies: { '@tanstack/react-start': '*' } }),
     )
-    expect(startQueryClientWarning(dir)).toBeNull()
+    expect(startWiringWarnings(dir)).toEqual([])
     write('src/router.tsx', 'export const getRouter = () => createRouter({})\n')
-    expect(startQueryClientWarning(dir)).toContain('heuristic')
+    expect(startWiringWarnings(dir).join()).toContain('heuristic')
     write(
       'src/router.tsx',
       'export const getRouter = () => createRouter({ context: { queryClient } })\n',
     )
-    expect(startQueryClientWarning(dir)).toBeNull()
+    expect(startWiringWarnings(dir)).toEqual([])
   })
 
   it('follows the entry named by index.html and accepts an existing routeTree.gen', () => {

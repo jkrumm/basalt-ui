@@ -368,6 +368,25 @@ describe('router seeds — the nav module and the root route', () => {
     expect(existsSync(resolve(dir, MANIFEST_PATH))).toBe(true)
   })
 
+  it('sync after Start is added leaves the old seeds byte-identical and names them', () => {
+    writeFixture('package.json', JSON.stringify({ name: 'fixture' }))
+    capture(() => init(dir))
+    const before = ['src/lib/nav.tsx', 'src/routes/__root.tsx', 'src/main.tsx'].map((d) =>
+      readFileSync(resolve(dir, d), 'utf8'),
+    )
+    writeFixture(
+      'package.json',
+      JSON.stringify({ name: 'fixture', dependencies: { '@tanstack/react-start': '*' } }),
+    )
+    const { log: warned } = capture(() => sync({}, dir))
+    expect(warned).toContain('src/main.tsx')
+    expect(warned).toContain('<BasaltProvider><Outlet /></BasaltProvider>')
+    const after = ['src/lib/nav.tsx', 'src/routes/__root.tsx', 'src/main.tsx'].map((d) =>
+      readFileSync(resolve(dir, d), 'utf8'),
+    )
+    expect(after).toEqual(before)
+  })
+
   it('sync --check prints the Start note only under --verbose', () => {
     writeFixture(
       'package.json',

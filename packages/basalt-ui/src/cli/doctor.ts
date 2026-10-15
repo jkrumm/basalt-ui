@@ -37,7 +37,7 @@ import {
 import { resolveRoots } from './config'
 import {
   appWiringCheck,
-  startQueryClientWarning,
+  startWiringWarnings,
   droppedSubpathsCheck,
   exactPeersCheck,
   oxlintFloorCheck,
@@ -419,8 +419,7 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
       else if ('fail' in check) fail(check.fail)
       else skip(check.skip)
     }
-    const queryClientWarning = startQueryClientWarning(appDir)
-    if (queryClientWarning !== null) warn(queryClientWarning)
+    for (const line of startWiringWarnings(appDir)) warn(line)
   }
 
   // ── Report ──────────────────────────────────────────────────────────────────

@@ -20,7 +20,7 @@
 import { act, render, screen } from '@testing-library/react'
 import { RouterProvider, createRootRoute, createRouter, useRouter } from '@tanstack/react-router'
 import { spotlight } from '@mantine/spotlight'
-import { describe, expect, spyOn, test } from 'bun:test'
+import { afterEach, describe, expect, spyOn, test } from 'bun:test'
 import { useEffect } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { BasaltProvider, RootBoundary, composeInjectedCss } from './index'
@@ -322,8 +322,8 @@ describe('BasaltProvider embedded in a router it does not own (children mode)', 
     const router = embeddedRouter(() => {})
     await router.load()
     const html = renderToStaticMarkup(<RouterProvider router={router} />)
-    expect(html).toContain('host')
-    expect(html).toContain('embedded')
+    expect(html.match(/>host</g)).toHaveLength(1)
+    expect(html.match(/>embedded</g)).toHaveLength(1)
   })
 
   test('children mode in a router without context.queryClient names both modes', async () => {
@@ -355,6 +355,10 @@ describe('BasaltProvider embedded in a router it does not own (children mode)', 
 })
 
 describe('BasaltProvider spotlight opt-out (ledger row 67)', () => {
+  afterEach(() => {
+    spotlight.close()
+  })
+
   test('mounts the Spotlight by default and not at all with spotlight={false}', async () => {
     const built = spyOn(actionsModule, 'buildSpotlightActions')
     const on = render(<BasaltProvider router={testRouter('a')} />)
