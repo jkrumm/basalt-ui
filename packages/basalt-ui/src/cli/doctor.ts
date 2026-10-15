@@ -39,6 +39,7 @@ import {
   appWiringCheck,
   droppedSubpathsCheck,
   exactPeersCheck,
+  oxlintFloorCheck,
   retiredLintRulesCheck,
   subpathPeersCheck,
   tsconfigBaseCheck,
@@ -397,6 +398,7 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
         'dropped-subpaths: no import of a basalt-ui subpath the install lacks',
         droppedSubpathsCheck(appDir, cfg, install),
       ],
+      ['oxlint-floor: the installed oxlint parses the shipped preset', oxlintFloorCheck(cwd)],
       [
         'app-wiring: the entry mounts BasaltProvider and the router tree is generated',
         appWiringCheck(appDir),
