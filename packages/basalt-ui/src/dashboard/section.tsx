@@ -22,9 +22,9 @@
  * separate slot rather than the first child: a section a reader folded away should still state its
  * headline figures, or folding it costs them the numbers they were watching.
  *
- * `id` turns the root into a scroll anchor, offset by both the shell header height and the
- * `PageBar`'s measured height (`--basalt-page-bar-h`, wave 4) so an anchor-jumped heading isn't
- * hidden under either sticky bar.
+ * `id` turns the root into a scroll anchor. Inside `BasaltShell` both bars sit outside the
+ * scrollport, so the offset is the clearance token alone; without a shell it adds `PageBar`'s
+ * measured height (`--basalt-page-bar-h`) so the heading isn't hidden under the sticky bar.
  *
  * @example
  * import { Section, StatCard } from 'basalt-ui'
@@ -58,6 +58,7 @@ import { useFilterSurface } from '../controls/filter-context'
 import { QueryState } from './query-state'
 import type { QueryEmptyCopy, QueryStateLike } from './query-state'
 import { usePersistedOrLocal } from '../state/persisted-or-local'
+import { PAGE_BAR_HEIGHT_VAR, useInPageBarShell } from '../shell/page-bar'
 import { WidgetHeader } from './widget-header'
 import type { WidgetHeaderProps } from './widget-header'
 import classes from './section.module.css'
@@ -107,6 +108,12 @@ export type SectionProps = Omit<WidgetHeaderProps, 'tier' | 'classNames' | 'acti
     /** Persists the fold state at `basalt:section:<persistKey>`. Omit for a local, unpersisted fold
      * (`useState`). */
     persistKey?: string
+    /** Controlled fold state (Mantine naming). Given one, the section follows it and neither local
+     * state nor `persistKey` is written — `onOpenChange` is the only way it moves. Omit for the
+     * uncontrolled, optionally persisted fold. */
+    open?: boolean
+    /** Called with the next fold state on every toggle, controlled or not. */
+    onOpenChange?: (open: boolean) => void
     /** The fold state a section opens on, respected only while no persisted value exists — a section
      * a reader has closed stays closed. `false` is what a long secondary block wants. @default true */
     defaultOpen?: boolean
@@ -162,6 +169,8 @@ export function Section({
   collapsible = false,
   persistKey,
   defaultOpen = true,
+  open: openProp,
+  onOpenChange,
   summary,
   id,
   children,
@@ -186,11 +195,16 @@ export function Section({
     [persistKey, collapsible, title],
   )
 
-  const [open, setOpen] = usePersistedOrLocal({
+  const [stateOpen, setStateOpen] = usePersistedOrLocal({
     scope: 'section',
     persistKey,
     initial: defaultOpen,
   })
+  const open = openProp ?? stateOpen
+  const setOpen = (next: boolean) => {
+    if (openProp === undefined) setStateOpen(next)
+    onOpenChange?.(next)
+  }
   const bodyId = useId()
   // The aside decides, not the call site (law C1): a Section on the PageAside panel surface, or on
   // its mobile sheet projection, renders the quiet `group` tier automatically — a Section never
@@ -206,8 +220,19 @@ export function Section({
   // row 2's band are shell regions rendered outside it — counting either would land every `#anchor`
   // that far below its own heading. What is left is breathing room, which is exactly what
   // `--vx-space-sticky-header-clearance` means (tokens/palette.ts, `deriveSpacing`).
+  //
+  // The one exception is a tree with NO shell: `PageBar` is then a sticky bar in the document flow,
+  // the document is the scrollport, and its published height is exactly what an anchor must clear.
+  const inShell = useInPageBarShell()
+  const clearance = 'var(--vx-space-sticky-header-clearance)'
   const anchorStyle =
-    id === undefined ? undefined : { scrollMarginTop: 'var(--vx-space-sticky-header-clearance)' }
+    id === undefined
+      ? undefined
+      : {
+          scrollMarginTop: inShell
+            ? clearance
+            : `calc(var(${PAGE_BAR_HEIGHT_VAR}, 0px) + ${clearance})`,
+        }
   const rootStyle =
     anchorStyle === undefined && style === undefined ? undefined : { ...anchorStyle, ...style }
 

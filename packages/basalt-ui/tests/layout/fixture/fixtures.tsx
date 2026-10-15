@@ -13,7 +13,7 @@ import type { BasaltColumnDef } from '../../../src/table/table-features'
 import { Prose } from '../../../src/content'
 import { CodeBlock } from '../../../src/content/code-block'
 import { ActionIcon, Badge, Button } from '@mantine/core'
-import { PageAside, PageBar, StatCard, StatGroup } from '../../../src/index'
+import { PageAside, PageBar, Section, StatCard, StatGroup } from '../../../src/index'
 import { ShellFrame } from '../../../src/shell'
 import type { SettingsMenuItem } from '../../../src/index'
 import type { GlobalAction } from '../../../src/controls'
@@ -877,7 +877,22 @@ function ConfirmFixture(): ReactElement {
   )
 }
 
+function AnchorFixture(): ReactElement {
+  return (
+    <>
+      <PageBar title="Anchors" />
+      {[1, 2, 3].map((n) => (
+        <Section key={n} id={`anchor-${n}`} title={`Anchor ${n}`}>
+          {/* theme-allow -- a measured filler height IS the fixture's payload, not a themed size */}
+          <div style={{ height: 1200 }} />
+        </Section>
+      ))}
+    </>
+  )
+}
+
 export function ShellFixture({ spec }: { spec: FixtureSpec }): ReactElement {
+  if (spec.anchor?.shell === false) return <AnchorFixture />
   const icons = spec.icons ?? true
   const sections: SidebarSection[] = spec.sections.map((section) => ({
     label: section.label,
@@ -898,6 +913,7 @@ export function ShellFixture({ spec }: { spec: FixtureSpec }): ReactElement {
         settingsMenuItems: settingsItemsFor(spec.sidebar.settings),
       })}
     >
+      {spec.anchor && <AnchorFixture />}
       {spec.aside && !spec.aside.noBar && <AsideBar />}
       {spec.bar && <BarFixture spec={spec.bar} />}
       {spec.stats !== undefined && (

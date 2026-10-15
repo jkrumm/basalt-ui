@@ -12,6 +12,7 @@ import { join } from 'node:path'
 import type { ReactElement } from 'react'
 import { resetValidatedProps } from '../common/validate'
 import { FilterSetScope } from '../controls/filter-context'
+import { PageBar, ShellFrame } from '../shell'
 import { Section } from './section'
 
 function renderWith(node: ReactElement) {
@@ -137,6 +138,35 @@ describe('id — the scroll-anchor contract', () => {
     // `PageBar` row 2's band are rendered outside that scrollport — counting either lands every
     // anchor that far below its own heading.
     expect(style).not.toContain('--app-shell-header-height')
+    // No shell here, no PageBar: the bar term is present but resolves to its 0px fallback.
+    expect(style).toContain('var(--basalt-page-bar-h, 0px)')
+  })
+
+  test("without a shell the offset adds PageBar's published height to the clearance", () => {
+    const { container } = renderWith(
+      <>
+        <PageBar title="Page" />
+        <Section id="usage" title="Usage">
+          <div>body</div>
+        </Section>
+      </>,
+    )
+    const style = container.querySelector('#usage')?.getAttribute('style') ?? ''
+    expect(style).toMatch(
+      /scroll-margin-top:\s*calc\(var\(--basalt-page-bar-h, 0px\) \+ var\(--vx-space-sticky-header-clearance\)\)/,
+    )
+  })
+
+  test('inside a shell the offset is the clearance alone — the bars are outside the scrollport', () => {
+    const { container } = renderWith(
+      <ShellFrame brand={{ name: 'App' }} sections={[]}>
+        <Section id="usage" title="Usage">
+          <div>body</div>
+        </Section>
+      </ShellFrame>,
+    )
+    const style = container.querySelector('#usage')?.getAttribute('style') ?? ''
+    expect(style).toContain('--vx-space-sticky-header-clearance')
     expect(style).not.toContain('--basalt-page-bar-h')
   })
 
@@ -515,5 +545,49 @@ describe('actions — typed BarAction data', () => {
     )
     fireEvent.click(screen.getAllByRole('button', { name: 'Export' })[0] as HTMLElement)
     expect(onClick).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('controlled open / onOpenChange', () => {
+  test('a controlled section follows `open` and reports toggles without writing storage', () => {
+    const onOpenChange = mock((_next: boolean) => {})
+    const { rerender } = renderWith(
+      <Section
+        title="Usage"
+        collapsible
+        persistKey="usage"
+        open={false}
+        onOpenChange={onOpenChange}
+      >
+        <div>body</div>
+      </Section>,
+    )
+    expect(screen.queryByText('body')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Expand section' }))
+    expect(onOpenChange).toHaveBeenCalledWith(true)
+    // Still closed: the parent has not said otherwise.
+    expect(screen.queryByText('body')).toBeNull()
+    expect(window.localStorage.getItem('basalt:section:usage')).toBeNull()
+    rerender(
+      <MantineProvider>
+        <Section title="Usage" collapsible persistKey="usage" open onOpenChange={onOpenChange}>
+          <div>body</div>
+        </Section>
+      </MantineProvider>,
+    )
+    expect(screen.getByText('body')).toBeDefined()
+  })
+
+  test('uncontrolled stays persisted and also reports through onOpenChange', () => {
+    const onOpenChange = mock((_next: boolean) => {})
+    renderWith(
+      <Section title="Usage" collapsible persistKey="usage" onOpenChange={onOpenChange}>
+        <div>body</div>
+      </Section>,
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Collapse section' }))
+    expect(onOpenChange).toHaveBeenCalledWith(false)
+    expect(screen.queryByText('body')).toBeNull()
+    expect(window.localStorage.getItem('basalt:section:usage')).not.toBeNull()
   })
 })

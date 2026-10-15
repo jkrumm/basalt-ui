@@ -127,6 +127,8 @@ Signature: Section(props: SectionProps): JSX.Element
   tabs?: ReactNode
   collapsible?: boolean
   persistKey?: string
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
   defaultOpen?: boolean
   summary?: ReactNode
   id?: string
