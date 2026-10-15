@@ -25,59 +25,18 @@
 #         scripts/release.sh         — dry run, confirm, publish
 #         YES=1 scripts/release.sh   — same without the prompt (non-interactive callers)
 
-# ── Library half: rules and registry reads ─────────────────────────────────
+# ── Library half: the version rule ─────────────────────────────────
 # Sourcing this file (scripts/release.test.ts) defines the functions below and returns before
 # `set -euo pipefail`, so it never changes the caller's shell options or releases anything.
 
-# versions_from_json — stdin: `npm view … versions --json` (an array, or a bare string when only one
-# version exists). Prints one version per line; any other shape (an object, mixed types) fails.
-versions_from_json() {
-  node -e '
-    let raw = ""
-    process.stdin.on("data", (chunk) => (raw += chunk)).on("end", () => {
-      let parsed
-      try { parsed = JSON.parse(raw) } catch { process.exit(1) }
-      const list = typeof parsed === "string" ? [parsed] : parsed
-      if (!Array.isArray(list) || list.length === 0 || !list.every((v) => typeof v === "string")) process.exit(1)
-      console.log(list.join("\n"))
-    })'
-}
-
-# registry_versions — every published version, one per line. Bounded retry (a transient failure
-# must not read as "no 2.x"); each attempt is bounded by npm's own fetch timeout. REGISTRY_READ_TIMEOUT
-# is this pre-release read; REGISTRY_TIMEOUT is the separate post-publish wait in `await_registry`.
-# On failure it returns 1 and prints the last attempt's stderr on ITS stderr (the caller's `die`
-# follows it).
-registry_versions() {
-  local deadline=$((SECONDS + ${REGISTRY_READ_TIMEOUT:-60})) json list err_file last_err=''
-  err_file=$(mktemp)
-  while :; do
-    if json=$(npm view --prefer-online --fetch-timeout=15000 --fetch-retries=0 basalt-ui versions --json 2>"$err_file") &&
-      list=$(versions_from_json <<<"$json"); then
-      rm -f "$err_file"
-      echo "$list"
-      return 0
-    fi
-    last_err=$(<"$err_file")
-    if [ "$SECONDS" -ge "$deadline" ]; then
-      rm -f "$err_file"
-      echo "registry read failed: ${last_err:-unexpected response shape}" >&2
-      return 1
-    fi
-    sleep "${REGISTRY_RETRY_SLEEP:-5}"
-  done
-}
-
-# version_gate <bump> <version> <registry-versions, one per line>
+# version_gate <bump> <version>
 # Fails closed on an unparsed bump or an empty version. A computed version is releasable only if it
 # is a stable 2.x AND the bump is not `major`: every major (a second 2.0.0, any 3.x), any 1.x and any
-# prerelease/build-metadata version returns 1 with the reason and remedy on stderr. It judges the
-# computed VERSION and bump, not the commit. The registry argument is unused — the rule no longer
-# depends on what is published; the parameter stays so callers do not change.
+# prerelease/build-metadata version returns 1 with the reason on stderr. It judges the computed
+# VERSION and bump, not the commit, and reads nothing from the registry.
 version_gate() {
   local bump="${1:-}" version="${2:-}"
   local stable_2x='^2\.[0-9]+\.[0-9]+$'
-  local remedy="Rewrite feat!:/BREAKING CHANGE as a plain feat: and add a MIGRATING.md row."
 
   case "$bump" in
     major | minor | patch) ;;
@@ -92,13 +51,13 @@ version_gate() {
   fi
 
   if [ "$bump" = major ]; then
-    echo "no majors: computed v$version is a major bump — 2.0.0 was the one exception and has shipped. $remedy" >&2
+    echo "no majors: computed v$version is a major bump — 2.0.0 was the one exception and has shipped. Rewrite feat!:/BREAKING CHANGE as a plain feat: and add a MIGRATING.md row." >&2
     return 1
   fi
   if [[ "$version" =~ $stable_2x ]]; then
     return 0
   fi
-  echo "only stable 2.x is releasable (computed v$version, $bump); 1.x is frozen and prereleases never ship. $remedy" >&2
+  echo "only stable 2.x is releasable: computed v$version ($bump) is a 1.x, a prerelease or build-metadata version." >&2
   return 1
 }
 
@@ -275,8 +234,7 @@ bump=$(grep -oE 'Analysis of [0-9]+ commits complete: [a-z]+ release' <<<"$log" 
 echo
 echo "  ${last_tag:-none} → v$version  (${bump:-unknown})"
 
-registry=$(registry_versions) || die "cannot read the published versions from the registry (reason above) — the version gate needs them."
-version_gate "$bump" "$version" "$registry" || die "v$version is not releasable (reason above)."
+version_gate "$bump" "$version" || die "v$version is not releasable (reason above)."
 
 # ── The C16 grace gate, against the version about to be cut ──────────────────
 # The test-time gate reads package.json, i.e. the version already PUBLISHED, so it can only go red
