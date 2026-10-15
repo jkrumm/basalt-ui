@@ -750,7 +750,7 @@ its friction lands in `argo-friction.md` (the one ledger) and ships as 2.x minor
       measured never looks like zero", with evidence); a `PlotContext` mapping in MIGRATING plus a documented
       route for pixel-scale overlays; `router-tanstack` as a removal with `doctor` catching it in a worktree;
       a Spotlight opt-out on `BasaltProvider`. Stop before release; the orchestrator publishes.
-- [ ] The orchestrator then runs each consumer's plan in order, filing friction as it comes; a consumer starts
+- [x] The orchestrator then runs each consumer's plan in order, filing friction as it comes; a consumer starts
       only when its repo has no other active wave.
 - [ ] Close-out: every consumer on 2.x and live-verified, the ledger's open rows owned or accepted.
 
@@ -767,3 +767,9 @@ fleet; #257–#264, each independently reviewed, failing-first tests). rollhook 
 plans promoted to `docs/waves/PLAN.md` so `rd wave` gates on them); rb and basalt-ui-obsidian deploying on
 2.8.1; row 73 (TOC) pending as the next patch; weatherorb is coordinated only through its own orchestrator
 (its Wave 35); linewatch after. D4 decided: argo stays client-rendered (row 9 closed).
+(step 2, 2026-10-15 close) Releases 2.8.0 → 2.11.1 (rows 61–112; #252–#283, each independently reviewed,
+failing-first tests; plus the owner-requested removal of the 1.x compatibility layer in 2.9.0, #270). rollhook,
+rb, basalt-ui-obsidian, linewatch and argo are LIVE on 2.11.1 and verified (rb/obsidian/linewatch deploy by
+`make`, not CD — obsidian needs `bun install` first). weatherorb runs its own migration as its Waves 37–45,
+coordinated only through its orchestrator. Process lessons in the rewrite memory: verify reviewer blockers
+against the code; freeze scope after two review rounds; prefer declared config over CLI shape heuristics.
