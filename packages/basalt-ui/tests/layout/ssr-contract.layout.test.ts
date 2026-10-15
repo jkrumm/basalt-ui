@@ -472,6 +472,7 @@ layout('SSR-first contract: hydration moves nothing', () => {
         ['band-strip-error', 'band-strip-loaded'],
         ['band-strip-empty', 'band-strip-loaded'],
         ['mirrored-bars-pending', 'mirrored-bars-loaded'],
+        ['heatmap-states-pending', 'heatmap-states-loaded'],
         ['lines-legend-pending', 'lines-legend-loaded'],
       ] as const)
         test(`${state} keeps ${loaded}'s height`, async () => {

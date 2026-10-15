@@ -86,6 +86,17 @@ const CELLS: Cell[] = ['Mon', 'Tue', 'Wed', 'Thu'].flatMap((row, r) =>
   Array.from({ length: 12 }, (_, c) => ({ row, col: String(c), v: (r + 1) * (c + 1) })),
 )
 
+const HEATMAP_STATES = [{ key: 'failed', label: 'Failed', color: 'var(--vx-bad)' }] as const
+const HEATMAP_STATE_PROPS = {
+  ariaLabel: 'Heat',
+  data: CELLS,
+  getRow: (d: Cell) => d.row,
+  getCol: (d: Cell) => d.col,
+  getValue: (d: Cell) => d.v,
+  states: HEATMAP_STATES,
+  getState: (d: Cell) => (d.v === 1 ? ('failed' as const) : undefined),
+}
+
 function Probe({ name, children }: { name: string; children: ReactElement }): ReactElement {
   return <div data-probe={name}>{children}</div>
 }
@@ -200,6 +211,12 @@ export function App(): ReactElement {
             getCol={(d) => d.col}
             getValue={(d) => d.v}
           />
+        </Probe>
+        <Probe name="heatmap-states-loaded">
+          <Heatmap {...HEATMAP_STATE_PROPS} />
+        </Probe>
+        <Probe name="heatmap-states-pending">
+          <Heatmap {...HEATMAP_STATE_PROPS} state={{ pending: true }} />
         </Probe>
         <Probe name="heatmap-fill">
           <div style={{ height: 300 }}>

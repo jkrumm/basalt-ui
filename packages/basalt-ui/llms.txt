@@ -245,7 +245,7 @@ Signature: BandStrip(props: BandStripProps<T, X, K>): ReactElement<unknown, stri
   cursorGroup?: string
   cursorResolution?: CursorResolution
   tooltip?: false | ChartTooltipConfig<T, X>
-  states: readonly (Pick<ChartSeries<T>, "label" | "legend" | "toolti…
+  states: readonly (NamedChartState & { formatValue?: ((d: T) => stri…
   getBand: (d: T) => BandSpan
   fold?: BandFold<T>
   absentState?: K

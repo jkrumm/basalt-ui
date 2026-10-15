@@ -1,16 +1,17 @@
 /**
  * The absent fill must stay distinguishable from EVERY ramp step in both schemes: a near-baseline
- * hour must not read as an unmeasured one (linewatch W7 row 105: ΔE ≈ 4 on a 14% floor vs a 12%
- * flat fill). Colors resolve per scheme in CSS, so this composites the real palette pairs over the
+ * hour must not read as an unmeasured one (a 14% floor against a 12% flat fill measured ΔE ≈ 4). Colors resolve per scheme in CSS, so this composites the real palette pairs over the
  * real surfaces and measures CIE76 ΔE*ab, a metric independent of the alpha arithmetic.
  */
 import { describe, expect, test } from 'bun:test'
 import { deltaE76 } from '../tokens/hct'
 import { buildPaletteData } from '../tokens/palette'
-import { ABSENT_OPACITY, RAMP_FLOOR, rampOpacities } from './heatmap-fill'
+import { ABSENT_OPACITY, RAMP_FLOOR, RAMP_OPACITIES } from './heatmap-fill'
 
-/** The stated minimum: the lowest ramp step vs the absent fill, ΔE*ab. */
+/** The stated minimum: every ramp step vs the absent fill, ΔE*ab. */
 const MIN_DELTA_E = 10
+/** Adjacent ramp steps must stay tellable apart, or the quantization is decoration. */
+const MIN_STEP_DELTA_E = 5
 
 const data = buildPaletteData()
 const channels = (hex: string): number[] =>
@@ -37,7 +38,7 @@ const inks = {
 
 describe('heatmap absent fill vs the ramp', () => {
   test('the ramp has eight steps and its floor clears the absent fill', () => {
-    const steps = rampOpacities()
+    const steps = RAMP_OPACITIES
     expect(steps).toHaveLength(8)
     expect(steps[0]).toBe(RAMP_FLOOR)
     expect(steps.at(-1)).toBe(1)
@@ -50,11 +51,29 @@ describe('heatmap absent fill vs the ramp', () => {
         test(`${scheme} / ${surface} / ${name}: every step is ≥ ${MIN_DELTA_E} ΔE from absent`, () => {
           const bg = data.SURFACE[surface][scheme]
           const absent = over(data.NEUTRAL.neutral[scheme], ABSENT_OPACITY, bg)
-          for (const a of rampOpacities()) {
+          for (const a of RAMP_OPACITIES) {
             expect(deltaE76(absent, over(ink[scheme], a, bg))).toBeGreaterThanOrEqual(MIN_DELTA_E)
           }
         })
       }
+    }
+  }
+
+  for (const scheme of ['light', 'dark'] as const) {
+    for (const [name, ink] of Object.entries(inks)) {
+      const bg = data.SURFACE.panel[scheme]
+      const steps = RAMP_OPACITIES.map((a) => over(ink[scheme], a, bg))
+
+      test(`${scheme} / ${name}: the ramp reads strictly darker-to-fuller away from the surface`, () => {
+        const away = steps.map((hex) => deltaE76(bg, hex))
+        for (let i = 1; i < away.length; i++) expect(away[i]!).toBeGreaterThan(away[i - 1]!)
+      })
+
+      test(`${scheme} / ${name}: adjacent steps are ≥ ${MIN_STEP_DELTA_E} ΔE apart`, () => {
+        for (let i = 1; i < steps.length; i++) {
+          expect(deltaE76(steps[i - 1]!, steps[i]!)).toBeGreaterThanOrEqual(MIN_STEP_DELTA_E)
+        }
+      })
     }
   }
 })
