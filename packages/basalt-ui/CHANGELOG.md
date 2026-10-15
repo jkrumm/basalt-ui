@@ -1,3 +1,19 @@
+# [2.7.0](https://github.com/jkrumm/basalt-ui/compare/v2.6.1...v2.7.0) (2026-10-15)
+
+
+### Bug Fixes
+
+* every export named in llms.txt and d.ts headers exists, with props ([7bc783f](https://github.com/jkrumm/basalt-ui/commit/7bc783f0c19330a3e2d22ae3eec5cbbfd8e75ec6))
+* make the doc-name check fail closed and test the props block ([44c0f00](https://github.com/jkrumm/basalt-ui/commit/44c0f00f08efce122bca079358ad396dc5bbc976))
+
+
+### Features
+
+* a typed per-row action seam on BasaltDataTable ([23cc77b](https://github.com/jkrumm/basalt-ui/commit/23cc77be8b2581a8142dd1325912be7568d0b89e))
+* checkbox and switch bindings and typed field errors in basalt-ui/forms ([0041e51](https://github.com/jkrumm/basalt-ui/commit/0041e511d8895fb6f14c856c772aad06240e8964))
+* rowActions loading, per-row names and a sharper row-action lint ([1e0fa59](https://github.com/jkrumm/basalt-ui/commit/1e0fa59f7779dd6b58185bf7cf4451c2704d47fe))
+* type the checkbox binding strictly and export InputProps ([a3538ab](https://github.com/jkrumm/basalt-ui/commit/a3538abeb028f8585c93c01c1d9aa50350a6eeaf))
+
 ## [2.6.1](https://github.com/jkrumm/basalt-ui/compare/v2.6.0...v2.6.1) (2026-10-15)
 
 
