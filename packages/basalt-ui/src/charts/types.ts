@@ -68,10 +68,10 @@ export type ChartSeries<T> = {
    */
   cursorValue?: ((d: T) => number | null) | undefined
   /** A marker at a point (a PR star, a status dot); `null` for none. Always-on markers are `Lines`'
-   * alone. On a `CartesianChart` with consumer `marks` nothing draws them: only the CURSOR dot of a
-   * `cursorValue` series reads `getMarker`, and only its `color` applies, so draw a persistent dot
-   * in `marks` yourself. Each distinct color is one extra mark: keep colors a small categorical
-   * set (statuses, buckets), never a continuous scale. */
+   * alone. On a `CartesianChart` with consumer `marks` only the CURSOR dot of a `cursorValue`
+   * series reads `getMarker` (its `color`): without `cursorValue` it is ignored there, so draw a
+   * persistent dot in `marks` yourself. Each distinct color is one extra mark: keep colors a small
+   * categorical set (statuses, buckets), never a continuous scale. */
   getMarker?:
     | ((d: T) => {
         color?: string | undefined
@@ -267,6 +267,12 @@ export type PlotContext<T, X extends ChartX = ChartX> = {
   data: readonly T[]
   /** Bind a mark to the right axis with `yScale: plot.y2` (present only with a `y2` config). */
   y2: 'y2' | undefined
+  /**
+   * Where an x value sits in the plot, 0 (left edge) to 1 (right edge), on the SAME x scale the
+   * axis draws: an explicit `xDomain` or the extent of every datum. Outside [0, 1] a value is
+   * clipped; `null` for a value the scale cannot place.
+   */
+  xFraction: (x: X) => number | null
   /** The resolved y domain (and the right axis', with `y2`): basalt's, never the engine's. */
   yDomain: readonly [number, number]
   y2Domain: readonly [number, number] | undefined

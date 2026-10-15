@@ -96,10 +96,10 @@ export function Lines<T, X extends ChartX = ChartX>(props: LinesProps<T, X>): Re
         out.push(...markersOf(s, plot.rows(s.key), yScale))
       }
       const labelled = plotted.filter((s) => s.role !== 'reference')
-      out.push(...endLabelMarks(endLabelPlan(plot, labelled, props.x, props.xDomain)))
+      out.push(...endLabelMarks(endLabelPlan(plot, labelled)))
       return out
     },
-    [series, thresholds, props.x, props.xDomain],
+    [series, thresholds],
   )
   return <CartesianRung {...rest} marks={marks} />
 }
