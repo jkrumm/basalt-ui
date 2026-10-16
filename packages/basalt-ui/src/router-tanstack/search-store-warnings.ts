@@ -6,13 +6,17 @@
  */
 
 /** True the first time `name` is seen in `seen`. */
-const first = (seen: Set<string>, name: string): boolean => !seen.has(name) && !!seen.add(name)
+function first(seen: Set<string>, name: string): boolean {
+  if (seen.has(name)) return false
+  seen.add(name)
+  return true
+}
 
 function describeValue(value: unknown): string {
   return typeof value === 'string' ? value : JSON.stringify(value)
 }
 
-export function patchOwnsFieldMessage(input: {
+function patchOwnsFieldMessage(input: {
   key: string
   name: string
   owner: string
@@ -28,7 +32,15 @@ export function patchOwnsFieldMessage(input: {
   )
 }
 
-export function createStoreWarnings(key: string) {
+export type StoreWarnings = {
+  linkPinsFallback: (input: { param: string; urlValue: unknown; storedValue: unknown }) => void
+  writeHasNowhereToGo: (input: { name: string; param: string }) => void
+  patchWasDropped: (input: { name: string; param: string }) => void
+  patchOwned: (input: { name: string; owner: string; param: string }) => void
+  foreignParam: (input: { name: string; param: string; path: string }) => void
+}
+
+export function createStoreWarnings(key: string): StoreWarnings {
   let pinned = false
   const nowhere = new Set<string>()
   const patchDropped = new Set<string>()
@@ -90,12 +102,13 @@ export function createStoreWarnings(key: string) {
       console.error(message)
     },
     /**
-     * Once per field: the param is in the URL, yet this store's `validateSearch` has never run — so
+     * Once per field and path: the param is in the URL, yet this store's `validateSearch` did not run for the location — so
      * a different store or a hand-rolled schema owns it, and presence-based ownership will let this
      * store's setter navigate on its behalf.
      */
-    foreignParam(input: { name: string; param: string }): void {
-      if (process.env['NODE_ENV'] === 'production' || !first(foreign, input.name)) return
+    foreignParam(input: { name: string; param: string; path: string }): void {
+      if (process.env['NODE_ENV'] === 'production') return
+      if (!first(foreign, `${input.name}@${input.path}`)) return
       warn(
         `\`${input.param}\` (field '${input.name}') is in the URL but this store's ` +
           '`validateSearch` has never run — another store or schema owns the param, and a write ' +

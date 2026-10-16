@@ -29,8 +29,8 @@
  *
  * Headless — no Mantine, no JSX. Same tier as `useBasaltNav` and `useRouterBreadcrumbs`.
  */
-import { useEffect } from 'react'
-import { useNavigate, useRouter, useSearch } from '@tanstack/react-router'
+import { useEffect, useRef } from 'react'
+import { useNavigate, useRouter, useRouterState, useSearch } from '@tanstack/react-router'
 import type { AnyRouter } from '@tanstack/react-router'
 import { createStoreCore } from '../state/fields'
 import { createStoreWarnings } from './search-store-warnings'
@@ -104,6 +104,51 @@ export type SearchStore<S extends Record<string, AnyField>> = {
 }
 
 // ── Implementation ─────────────────────────────────────────────────────────
+
+/**
+ * The router's SSR bootstrap (`window.$_TSR`) is present on a dehydrated page. Until the first
+ * reader has committed, the client must resolve exactly what the server did; after that the stored
+ * layer applies like on any client-only page. One page hydrates once, so this is module state.
+ */
+let hydrationDone = false
+
+/** @internal Tests only — a fresh page for the next hydration. */
+export function resetHydrationForTests(): void {
+  hydrationDone = false
+}
+
+const isDehydrating = (): boolean =>
+  typeof window !== 'undefined' && '$_TSR' in window && !hydrationDone
+
+/** A failed store navigate is reported, never swallowed and never an unhandled rejection. */
+function reportFailure(error: unknown): void {
+  if (typeof reportError === 'function') reportError(error)
+  else
+    queueMicrotask(() => {
+      throw error
+    })
+}
+
+type SearchNavigate = (options: {
+  to: '.'
+  search: (prev: Record<string, unknown>) => Record<string, unknown>
+  replace: boolean
+  resetScroll: false
+}) => Promise<unknown> | void
+
+/** One shared write: always replaces scroll-neutrally and reports a rejected navigate. */
+function navigateSearch(
+  navigate: SearchNavigate,
+  search: (prev: Record<string, unknown>) => Record<string, unknown>,
+  replace: boolean,
+): void {
+  // A filter lives halfway down a page as often as it lives in the bar, and the router's
+  // default scroll restoration treats this same-route search write as a navigation — so
+  // without this a select two screens down jumps the reader back to the top on every
+  // change. Never a prop: there is no filter write that WANTS the page to scroll.
+  const result = navigate({ to: '.', search, replace, resetScroll: false })
+  if (result !== undefined) result.catch(reportFailure)
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
@@ -196,8 +241,6 @@ export function createSearchStore<const S extends Record<string, AnyField>>(
   // touches the other two uses exclusively. Missing it there made the pinned-link warning fire on
   // correctly wired pages.
   let readerWired = false
-  /** Raw inputs this store's `validateSearch` has seen — how a composed route proves it ran it. */
-  const ranOn = new WeakSet<object>()
   const markReaderWired = (): void => {
     readerWired = true
   }
@@ -236,7 +279,8 @@ export function createSearchStore<const S extends Record<string, AnyField>>(
    * `urlUse` lends its router here from an EFFECT — never the render body, which a discarded or
    * StrictMode render would leave behind — so `clear()` navigates through the live router and
    * judges ownership against the location it is called at. With no mount reading the store it
-   * clears the mirror alone.
+   * clears the mirror alone. With several routers mounted it fans out over all of them, each
+   * judged against its own location.
    */
   const mounts = new Map<AnyRouter, number>()
 
@@ -260,9 +304,8 @@ export function createSearchStore<const S extends Record<string, AnyField>>(
     return out
   }
 
-  const maybeWarn = (raw: Record<string, unknown>): void => {
+  const maybeWarn = (raw: Record<string, unknown>, record: Record<string, unknown>): void => {
     if (process.env['NODE_ENV'] === 'production' || readerWired) return
-    const record = core.readRecord()
     for (const entry of core.urlEntries) {
       const fromUrl = entry.codec.fromSearch(raw)
       if (fromUrl === null || !entry.codec.equals(fromUrl, entry.codec.fallback)) continue
@@ -280,39 +323,32 @@ export function createSearchStore<const S extends Record<string, AnyField>>(
   }
 
   /**
-   * Pure on a server-rendered page (and on the server): the stored layer would make the client's
-   * first search differ from the HTML the server rendered, and a loader keyed on `search` would run
-   * with different deps on hydration. `window.$_TSR` is the router's own bootstrap payload — present
-   * exactly when the page was dehydrated by SSR. A client-only app has none, so a paramless visit
-   * still resolves URL ⊳ mirror ⊳ fallback; an SSR app reaches the mirror through `linkSearch`.
+   * Pure on the server and while a dehydrated page hydrates (see `isDehydrating`): the stored layer
+   * would make the client's first search differ from the HTML the server rendered, and a loader
+   * keyed on `search` would run with different deps. Everywhere else — a client-only app, or a
+   * dehydrated page once hydration committed — a paramless visit resolves URL ⊳ mirror ⊳ fallback.
    */
   const stored = (): Record<string, unknown> =>
-    typeof window === 'undefined' || '$_TSR' in window ? {} : core.readRecord()
+    typeof window === 'undefined' || isDehydrating() ? {} : core.readRecord()
 
   const validateSearch = (raw: Record<string, unknown>): SearchValues<S> => {
-    ranOn.add(raw)
-    maybeWarn(raw)
-    return flatten(raw, stored()) as SearchValues<S>
+    const record = stored()
+    maybeWarn(raw, record)
+    return flatten(raw, record) as SearchValues<S>
   }
 
-  /** Dev only: does any matched route run THIS store's `validateSearch`, directly or composed? */
-  const routesRunStore = (router: AnyRouter): boolean =>
-    router.state.matches.some((match) => {
-      const validate: unknown = router.routesById[match.routeId]?.options.validateSearch
-      if (typeof validate !== 'function') return false
-      if (validate === validateSearch) return true
-      const probe = {}
-      try {
-        validate(probe)
-      } catch {
-        // a schema may reject the probe; what matters is whether it reached this store first
-      }
-      return ranOn.has(probe)
-    })
+  const runsStore = (route: AnyRouter['routesById'][string] | undefined): boolean => {
+    const validate: unknown = route?.options.validateSearch
+    return (
+      typeof validate === 'function' &&
+      (validate === validateSearch ||
+        Function.prototype.toString.call(validate).includes('validateSearch'))
+    )
+  }
 
   const linkSearch = (): SearchValues<S> => {
     readerWired = true
-    return flatten(null, core.readRecord()) as SearchValues<S>
+    return flatten(null, stored()) as SearchValues<S>
   }
 
   const readStored = (): Partial<StoredValues<S>> => {
@@ -324,15 +360,19 @@ export function createSearchStore<const S extends Record<string, AnyField>>(
     const search = useCurrentSearch()
     const navigate = useNavigate()
     const router = useRouter()
+    const pathname = useRouterState({ select: (state) => state.location.pathname })
     const [record, setRecord] = core.usePersistedRecord()
     markReaderWired()
     const value = core.resolve(entry, search, record)
+    // Captured at render: true for every reader of the hydrating commit, false for a later mount.
+    const hydrating = useRef(isDehydrating())
     // The matched route validates this field iff its primary param is present (see the module
     // header). A foreign route gets the persist-only lane.
     const validated = Object.hasOwn(search, entry.codec.primary)
 
     useEffect(() => {
-      mounts.set(router, (mounts.get(router) ?? 0) + 1)
+      const count = mounts.get(router) ?? 0
+      mounts.set(router, count + 1)
       return () => {
         const left = (mounts.get(router) ?? 1) - 1
         if (left > 0) mounts.set(router, left)
@@ -340,11 +380,44 @@ export function createSearchStore<const S extends Record<string, AnyField>>(
       }
     }, [router])
 
+    // Hydration committed: the server's HTML was reproduced, so the stored layer may apply now.
     useEffect(() => {
-      if (process.env['NODE_ENV'] === 'production' || !validated) return
-      if (!routesRunStore(router))
-        warnings.foreignParam({ name: entry.name, param: entry.codec.primary })
-    }, [validated, router])
+      if (hydrating.current) hydrationDone = true
+    }, [])
+
+    // The record is the server snapshot until React re-renders with the client's, so this runs
+    // again once the mirror is readable. A URL still carrying the fallback was not chosen (the
+    // server pinned it), so it adopts the mirror — by REPLACING, so a loader keyed on `search`
+    // follows what the page shows. A deep link naming any other value is never overridden.
+    const mirrored = entry.codec.lane.persist ? entry.codec.decode(record[entry.name]) : null
+    const mirroredKey = mirrored === null ? null : JSON.stringify(entry.codec.toSearch(mirrored))
+    useEffect(() => {
+      if (!hydrating.current || mirrored === null) return
+      hydrating.current = false
+      if (!validated || entry.codec.equals(mirrored, entry.codec.fallback)) return
+      const urlValue = entry.codec.fromSearch(search)
+      if (urlValue !== null && !entry.codec.equals(urlValue, entry.codec.fallback)) return
+      navigateSearch(
+        (o) => router.navigate(o),
+        (prev) => ({ ...prev, ...entry.codec.toSearch(mirrored) }),
+        true,
+      )
+      // oxlint-disable-next-line react-hooks/exhaustive-deps -- one-shot per mirror value: the rest is read at that moment
+    }, [mirroredKey])
+
+    // Dev only. Reading the route options never calls a user validator: a route runs this store
+    // when its `validateSearch` IS the store's, or composes it (its source names `validateSearch`).
+    useEffect(() => {
+      if (process.env['NODE_ENV'] === 'production') return
+      // Everything from the committed MATCHES, so the verdict never mixes two locations.
+      const { matches } = router.state
+      const leaf = matches.at(-1)
+      if (leaf === undefined || !isRecord(leaf.search)) return
+      if (!Object.hasOwn(leaf.search, entry.codec.primary)) return
+      if (matches.some((match) => runsStore(router.routesById[match.routeId]))) return
+      warnings.foreignParam({ name: entry.name, param: entry.codec.primary, path: leaf.pathname })
+      // oxlint-disable-next-line react-hooks/exhaustive-deps -- re-judged per location; the router handle is stable
+    }, [pathname])
 
     return [
       value,
@@ -359,26 +432,21 @@ export function createSearchStore<const S extends Record<string, AnyField>>(
           else warnings.writeHasNowhereToGo({ name: entry.name, param: entry.codec.primary })
           return
         }
-        navigate({
-          to: '.',
-          // `patch` FIRST, the field's own params last: a patch is for keys the store does not
-          // own (clearing a sibling `detailDate` with `undefined`), so it must never be able to
-          // overwrite the value this very call is setting.
-          // `resets` only when the value moves: a no-op write (a debounced box settling back on
-          // what it held) must not throw the reader off the page they are on.
-          search: (prev: Record<string, unknown>) => ({
+        // `patch` FIRST, the field's own params last: a patch is for keys the store does not own
+        // (clearing a sibling `detailDate` with `undefined`), so it must never be able to overwrite
+        // the value this very call is setting.
+        // `resets` only when the value moves: a no-op write (a debounced box settling back on what
+        // it held) must not throw the reader off the page they are on.
+        navigateSearch(
+          (o) => navigate(o),
+          (prev) => ({
             ...prev,
             ...resetsFor(entry, prev, next),
             ...opts?.patch,
             ...entry.codec.toSearch(next),
           }),
-          replace: entry.codec.lane.history === 'replace',
-          // A filter lives halfway down a page as often as it lives in the bar, and the router's
-          // default scroll restoration treats this same-route search write as a navigation — so
-          // without this a select two screens down jumps the reader back to the top on every
-          // change. Never a prop: there is no filter write that WANTS the page to scroll.
-          resetScroll: false,
-        })
+          entry.codec.lane.history === 'replace',
+        )
         if (entry.codec.lane.persist) core.writeField(setRecord, entry.name, next)
       },
     ] as const
@@ -413,19 +481,16 @@ export function createSearchStore<const S extends Record<string, AnyField>>(
       // the last render happened to be.
       const { search } = router.state.location
       if (!isRecord(search) || !Object.hasOwn(search, entry.codec.primary)) continue
-      router
-        .navigate({
-          to: '.',
-          // Gated like the setter: clearing a field already at its fallback keeps the page.
-          search: (prev: Record<string, unknown>) => ({
-            ...prev,
-            ...resetsFor(entry, prev, entry.codec.fallback),
-            ...entry.codec.toSearch(entry.codec.fallback),
-          }),
-          replace: true,
-          resetScroll: false,
-        })
-        .catch(reportError)
+      // Gated like the setter: clearing a field already at its fallback keeps the page.
+      navigateSearch(
+        (o) => router.navigate(o),
+        (prev) => ({
+          ...prev,
+          ...resetsFor(entry, prev, entry.codec.fallback),
+          ...entry.codec.toSearch(entry.codec.fallback),
+        }),
+        true,
+      )
     }
   }
 
@@ -482,22 +547,19 @@ export function createSearchStore<const S extends Record<string, AnyField>>(
         for (const entry of validatedEntries) {
           Object.assign(patch, entry.codec.toSearch(entry.codec.fallback))
         }
-        navigate({
-          to: '.',
-          // `resets` only when some field actually moves — the same gate as the setter and
-          // `clear()`. A `Reset all` with everything already at its fallback must keep the page:
-          // this navigate REPLACES, so a page dropped here could not be got back with Back.
-          search: (prev: Record<string, unknown>) => {
+        // `resets` only when some field actually moves — the same gate as the setter and
+        // `clear()`. A `Reset all` with everything already at its fallback must keep the page:
+        // this navigate REPLACES, so a page dropped here could not be got back with Back.
+        navigateSearch(
+          (o) => navigate(o),
+          (prev) => {
             const moved = validatedEntries.some(
               (entry) => resetsFor(entry, prev, entry.codec.fallback) !== undefined,
             )
             return { ...prev, ...(moved ? resetPatch : undefined), ...patch }
           },
-          replace: true,
-          // Same reason as a single field's write above — a `Reset all` pressed from the mobile
-          // sheet must not also scroll the page it was pressed on.
-          resetScroll: false,
-        })
+          true,
+        )
       }
       if (memoryEntries.length > 0) core.resetMemory()
       if (!core.anyPersisted) return
