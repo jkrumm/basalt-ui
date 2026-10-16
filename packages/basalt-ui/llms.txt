@@ -688,7 +688,7 @@ Signature: useAgentThreadRuns(props: UseAgentThreadRunsArgs<TPart>): UseAgentThr
   onError?: ((info: { readonly threadId: string; readonly error: unknow…
   throttle?: number
   telemetry?: Telemetry
-Install: bun add ai@^7.0.137 @ai-sdk/provider@^4.0.26 motion@14.1.0
+Install: bun add ai@^7.0.137 @ai-sdk/provider@^4.0.26 motion@^14.1.0
 OptionalPeers: use-stick-to-bottom@^1.1.6, @tanstack/react-virtual@>=3.14.0 <4
 
 ## basalt-ui/content

@@ -189,7 +189,7 @@
     "beautiful-mermaid": "^1.1.0",
     "d3-scale": "4.0.2",
     "dayjs": "^1.11.0",
-    "motion": "14.1.0",
+    "motion": "^14.1.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "react-markdown": "^10.1.0",

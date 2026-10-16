@@ -2,7 +2,7 @@
  * `doctor`'s 2.0 strictness and upgrade checks. Each returns null (pass), `{ fail }` (the problem
  * plus its fix) or `{ skip }` (the check could not run: a check that cannot run is not a pass).
  */
-import { writeFileSync } from 'node:fs'
+import { existsSync, readdirSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { dirname, relative, resolve } from 'node:path'
 
@@ -405,51 +405,76 @@ function providerTags(src: string): ProviderTag[] {
 
 const carriesRouter = (tag: ProviderTag): boolean => /(^|\s)router\s*=/.test(tag.attrs)
 
+/** Every route file (relative to the cwd) that may hold the provider: the root and the pathless layouts. */
+function startProviderFiles(cwd: string): string[] {
+  const root = routerSeedDest('', 'root')
+  const routesDir = dirname(root)
+  const layouts: string[] = []
+  const walk = (rel: string): void => {
+    for (const entry of readdirSync(resolve(cwd, rel), { withFileTypes: true })) {
+      const path = `${rel}/${entry.name}`
+      if (entry.isDirectory()) walk(path)
+      else if (PATHLESS_LAYOUT.test(path.slice(routesDir.length + 1))) layouts.push(path)
+    }
+  }
+  if (existsSync(resolve(cwd, routesDir))) walk(routesDir)
+  return [root, ...layouts.toSorted()]
+}
+
+/** `_app.tsx` or `_app/route.tsx` at any depth: a pathless layout (`_app.map.tsx` is a child, `__root` is the root). */
+const PATHLESS_LAYOUT = /(^|\/)(_[^_./][^./]*\.[jt]sx|_[^_./][^./]*\/route\.[jt]sx)$/
+
+/** The root route declares its context from the package type: `createRootRouteWithContext<…BasaltRouterContext|queryClient…>()`. */
+const rootCarriesContext = (src: string): boolean =>
+  /createRootRouteWithContext\s*<[^()]*\b(BasaltRouterContext|queryClient)\b[^()]*>\s*\(/.test(
+    tokenize(src).code,
+  )
+
 /**
  * A Start app owns its router and entry: the wiring is an embedded `<BasaltProvider>` (no `router=`)
- * in its root route component, around `<Outlet />`. ANY tag with `router=` mounts a second router
- * inside Start's, so it fails even beside an embedded one.
+ * around `<Outlet />`, in the root route or a pathless layout (a landing kept at 0 JS mounts it in
+ * the layout). ANY tag with `router=` mounts a second router inside Start's, so it fails even beside
+ * an embedded one. The root route must also declare `queryClient` in its context type.
  */
 function startWiring(cwd: string): { fail: string } | null {
   const root = routerSeedDest('', 'root')
-  const text = readIfExists(resolve(cwd, root))
-  const tags = providerTags(text ?? '')
-  const mounting = tags.some(carriesRouter)
-  if (!mounting && tags.length > 0) return null
-  const problem =
-    text === null
-      ? 'does not exist'
-      : mounting
-        ? 'passes router= to BasaltProvider, which mounts a second router inside Start'
-        : 'does not render <BasaltProvider>'
+  const files = startProviderFiles(cwd).map((file) => ({
+    file,
+    tags: providerTags(readIfExists(resolve(cwd, file)) ?? ''),
+  }))
+  const mounting = files.find((f) => f.tags.some(carriesRouter))
+  const embedded = files.find((f) => f.tags.length > 0)
+  if (mounting || !embedded) {
+    const rootText = readIfExists(resolve(cwd, root))
+    const problem = mounting
+      ? `${mounting.file} passes router= to BasaltProvider, which mounts a second router inside Start`
+      : rootText === null
+        ? `${root} does not exist and no pathless layout renders <BasaltProvider>`
+        : `neither ${root} nor a pathless layout (src/routes/_<name>.tsx, _<name>/route.tsx) renders <BasaltProvider>`
+    return {
+      fail: `app-wiring: ${problem} (TanStack Start app). Fix: render <BasaltProvider><Outlet /></BasaltProvider> in the root route component or a pathless layout.`,
+    }
+  }
+  if (rootCarriesContext(readIfExists(resolve(cwd, root)) ?? '')) return null
   return {
-    fail: `app-wiring: ${root} ${problem} (TanStack Start app). Fix: render <BasaltProvider><Outlet /></BasaltProvider> in the root route component.`,
+    fail: `app-wiring: ${root} does not type its router context with queryClient, which the embedded BasaltProvider reads from context.queryClient. Fix: \`createRootRouteWithContext<BasaltRouterContext>()({ … })\` (import type { BasaltRouterContext } from 'basalt-ui') and pass the QueryClient in createRouter({ context }).`,
   }
 }
 
 /**
- * Warnings for a Start app's embedded provider; heuristics, not proofs. A `{...spread}` on the tag
- * could carry a `router`; `src/router.tsx` never mentioning `queryClient` means the embedded
- * provider will find no `context.queryClient`. Empty when there is nothing to judge.
+ * Warnings for a Start app's embedded provider; heuristics, not proofs. A `{...spread}` on a tag
+ * could carry a `router`. Empty when there is nothing to judge.
  */
 export function startWiringWarnings(cwd: string): string[] {
   if (!isStartApp(cwd, '')) return []
-  const out: string[] = []
-  const root = readIfExists(resolve(cwd, routerSeedDest('', 'root')))
-  if (root !== null && providerTags(root).some((t) => t.spread)) {
-    out.push(
-      'app-wiring: <BasaltProvider {...spread}> in the root route could pass router=, which mounts ' +
-        'a second router inside Start (heuristic: the spread is not followed).',
-    )
-  }
-  const router = readIfExists(resolve(cwd, 'src/router.tsx'))
-  if (router !== null && !/queryClient/.test(router)) {
-    out.push(
-      'app-wiring: src/router.tsx never mentions queryClient — embedded BasaltProvider needs ' +
-        'context.queryClient on the Start router (heuristic text check; ignore if you build it elsewhere).',
-    )
-  }
-  return out
+  const spreads = startProviderFiles(cwd).filter((file) =>
+    providerTags(readIfExists(resolve(cwd, file)) ?? '').some((t) => t.spread),
+  )
+  return spreads.map(
+    (file) =>
+      `app-wiring: <BasaltProvider {...spread}> in ${file} could pass router=, which mounts ` +
+      'a second router inside Start (heuristic: the spread is not followed).',
+  )
 }
 
 const BASALT_SHELL_TAG = /<BasaltShell\b/g

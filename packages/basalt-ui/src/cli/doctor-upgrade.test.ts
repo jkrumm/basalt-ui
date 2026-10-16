@@ -890,10 +890,15 @@ describe('doctor — app-wiring', () => {
     )
     expect(text(appWiringCheck(dir))).toContain('src/routes/__root.tsx does not exist')
     write('src/routes/__root.tsx', 'export const Route = { component: () => <html /> }\n')
-    expect(text(appWiringCheck(dir))).toContain('does not render <BasaltProvider>')
+    expect(text(appWiringCheck(dir))).toContain('renders <BasaltProvider>')
     write(
       'src/routes/__root.tsx',
       'export const Route = { component: () => <BasaltProvider><Outlet /></BasaltProvider> }\n',
+    )
+    expect(text(appWiringCheck(dir))).toContain('createRootRouteWithContext<BasaltRouterContext>')
+    write(
+      'src/routes/__root.tsx',
+      'const c = createRootRouteWithContext<BasaltRouterContext>()\nexport const R = () => <BasaltProvider><Outlet /></BasaltProvider>\n',
     )
     expect(appWiringCheck(dir)).toBeNull()
   })
@@ -903,14 +908,18 @@ describe('doctor — app-wiring', () => {
       'package.json',
       JSON.stringify({ name: 'fixture', devDependencies: { '@tanstack/react-start': '*' } }),
     )
+    const CTX = 'const c = createRootRouteWithContext<BasaltRouterContext>()\n'
     write('src/routes/__root.tsx', '// <BasaltProvider><Outlet /></BasaltProvider>\nexport {}\n')
-    expect(text(appWiringCheck(dir))).toContain('does not render <BasaltProvider>')
+    expect(text(appWiringCheck(dir))).toContain('renders <BasaltProvider>')
     write(
       'src/routes/__root.tsx',
       'export const R = () => <BasaltProvider router={router} telemetry={(e) => e}><X /></BasaltProvider>\n',
     )
     expect(text(appWiringCheck(dir))).toContain('mounts a second router')
-    write('src/routes/__root.tsx', 'export const R = () => <BasaltProvider>{x}</BasaltProvider>\n')
+    write(
+      'src/routes/__root.tsx',
+      CTX + 'export const R = () => <BasaltProvider>{x}</BasaltProvider>\n',
+    )
     expect(appWiringCheck(dir)).toBeNull()
     // ANY tag with router= fails, even beside an embedded one.
     write(
@@ -921,12 +930,13 @@ describe('doctor — app-wiring', () => {
     // `>` and `router=` inside a string attribute neither end the tag nor count as the prop.
     write(
       'src/routes/__root.tsx',
-      'const A = () => <BasaltProvider className="a > b router=x" nonce="router=y">{x}</BasaltProvider>\n',
+      CTX +
+        'const A = () => <BasaltProvider className="a > b router=x" nonce="router=y">{x}</BasaltProvider>\n',
     )
     expect(appWiringCheck(dir)).toBeNull()
     // A provider that only appears inside a string is no provider.
     write('src/routes/__root.tsx', 'const doc = "<BasaltProvider>{x}</BasaltProvider>"\n')
-    expect(text(appWiringCheck(dir))).toContain('does not render <BasaltProvider>')
+    expect(text(appWiringCheck(dir))).toContain('renders <BasaltProvider>')
     // Wide whitespace before the spread is still a spread.
     write(
       'src/routes/__root.tsx',
@@ -936,25 +946,68 @@ describe('doctor — app-wiring', () => {
     // A spread could carry router=: not a failure, a warning.
     write(
       'src/routes/__root.tsx',
-      'const A = () => <BasaltProvider {...props}>{x}</BasaltProvider>\n',
+      CTX + 'const A = () => <BasaltProvider {...props}>{x}</BasaltProvider>\n',
     )
     expect(appWiringCheck(dir)).toBeNull()
     expect(startWiringWarnings(dir).join()).toContain('spread')
   })
 
-  it('warns, heuristically, when a Start router file never mentions queryClient', () => {
+  describe('Start provider in a pathless layout', () => {
+    const ROOT = 'export const Route = createRootRouteWithContext<BasaltRouterContext>()({})\n'
+    const LAYOUT =
+      'export const Route = { component: () => <BasaltProvider><Outlet /></BasaltProvider> }\n'
+    const start = () => {
+      write(
+        'package.json',
+        JSON.stringify({ name: 'fixture', dependencies: { '@tanstack/react-start': '*' } }),
+      )
+      write('src/routes/__root.tsx', ROOT)
+    }
+
+    it('accepts _app.tsx and _app/route.tsx', () => {
+      start()
+      write('src/routes/_app.tsx', LAYOUT)
+      expect(appWiringCheck(dir)).toBeNull()
+      rmSync(join(dir, 'src/routes/_app.tsx'))
+      write('src/routes/_app/route.tsx', LAYOUT)
+      expect(appWiringCheck(dir)).toBeNull()
+    })
+
+    it('rejects a provider in a non-layout route, or nowhere', () => {
+      start()
+      expect(text(appWiringCheck(dir))).toContain('pathless layout')
+      write('src/routes/map.tsx', LAYOUT)
+      expect(text(appWiringCheck(dir))).toContain('pathless layout')
+      write('src/routes/_app.map.tsx', LAYOUT)
+      expect(text(appWiringCheck(dir))).toContain('pathless layout')
+    })
+
+    it('keeps the router= rejection and spread warning for the layout file', () => {
+      start()
+      write('src/routes/_app.tsx', '<BasaltProvider router={r}><Outlet /></BasaltProvider>\n')
+      expect(text(appWiringCheck(dir))).toContain('src/routes/_app.tsx passes router=')
+      write('src/routes/_app.tsx', '<BasaltProvider {...p}><Outlet /></BasaltProvider>\n')
+      expect(appWiringCheck(dir)).toBeNull()
+      expect(startWiringWarnings(dir).join()).toContain('src/routes/_app.tsx')
+    })
+  })
+
+  it('fails a Start root route whose context type omits queryClient', () => {
     write(
       'package.json',
       JSON.stringify({ name: 'fixture', dependencies: { '@tanstack/react-start': '*' } }),
     )
     expect(startWiringWarnings(dir)).toEqual([])
-    write('src/router.tsx', 'export const getRouter = () => createRouter({})\n')
-    expect(startWiringWarnings(dir).join()).toContain('heuristic')
     write(
-      'src/router.tsx',
-      'export const getRouter = () => createRouter({ context: { queryClient } })\n',
+      'src/routes/__root.tsx',
+      'export const Route = createRootRoute({ component: () => <BasaltProvider><Outlet /></BasaltProvider> })\n',
     )
-    expect(startWiringWarnings(dir)).toEqual([])
+    expect(text(appWiringCheck(dir))).toContain('createRootRouteWithContext<BasaltRouterContext>()')
+    write(
+      'src/routes/__root.tsx',
+      'export const Route = createRootRouteWithContext<{ queryClient: QueryClient; user: U }>()({ component: () => <BasaltProvider><Outlet /></BasaltProvider> })\n',
+    )
+    expect(appWiringCheck(dir)).toBeNull()
   })
 
   it('shell: false warns only when the entry-reachable code renders <BasaltShell', () => {

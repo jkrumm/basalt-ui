@@ -663,7 +663,7 @@ export function routerSeedDests(appRel: string): string[] {
 
 export const START_APP_NOTE =
   'TanStack Start app — no main.tsx/nav.tsx/__root.tsx seeded (Start owns the router); render ' +
-  '<BasaltProvider><Outlet /></BasaltProvider> in your root route component.'
+  '<BasaltProvider><Outlet /></BasaltProvider> in your root route component or a pathless layout.'
 
 /**
  * The router seeds an app does not get, for `init` and `sync`: why (`start` | `code-routed` |

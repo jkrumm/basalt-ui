@@ -705,6 +705,8 @@ strict flags), `react-app` (`base` + DOM/JSX libs) and `node` (`base` + Node typ
 { "extends": "basalt-ui/configs/tsconfig.react-app.json" }
 ```
 
+`tsc` checks every file in the program with the program's options, so a workspace package imported from source is checked under the preset's flags and no compiler option excludes it. Give each package its own tsconfig and link them with TS project references (`references` + `composite: true`), or consume the package's built `.d.ts`.
+
 `.oxfmtrc.json` has no `extends` of its own — copy `configs/oxfmt.json` verbatim (`basalt-ui init`
 does this for you).
 
