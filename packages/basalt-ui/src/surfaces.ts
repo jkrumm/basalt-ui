@@ -407,7 +407,7 @@ export const SURFACES = {
     guardKinds: [],
     pluginRules: [],
     description:
-      'defineCommands (typed command bus), defineOverlays/overlays (a form dialog is a registered overlay opened with overlays.open), setColorScheme, toggleSidebar, ShortcutsHelp, defineNotifications/emit/NotificationBell (emit only accepts kinds registered in defineNotifications; folded in from ./notifications); BasaltProvider mounts Spotlight, Modals and Notifications',
+      'defineCommands (typed command bus), defineOverlays/overlays (a form dialog is a registered overlay opened with overlays.open), setColorScheme, toggleSidebar, ShortcutsHelp, defineNotifications/emit/NotificationBell (emit only accepts kinds registered in defineNotifications; folded in from ./notifications); BasaltProvider mounts Notifications; Spotlight mounts once defineNav/defineCommands ran, Modals once defineOverlays/overlays.confirm ran',
     optionalPeers: ['@tanstack/react-hotkeys'],
     forbiddenImports: [],
   },
