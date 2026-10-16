@@ -1,10 +1,10 @@
 // theme-allow-file raw-hex — board.html is a standalone artefact: no basalt tokens exist in it
 // theme-allow-file inline-spacing — board.html is a standalone artefact: no Mantine spacing props
 /** `board.html`: one self-contained page (inline CSS, relative image paths) over a metrics.json. */
-import { SCHEMES, VIEWPORTS } from './types'
-import type { AnchorMetrics, ShotMetrics, ShotRecord, ShotState, Sides } from './types'
+import { PAGE_ANCHOR, SCHEMES, VIEWPORTS } from './types'
+import type { AnchorMetrics, Scale, ShotMetrics, ShotRecord, ShotState, Sides } from './types'
 
-export const esc = (s: string): string => s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`)
+const esc = (s: string): string => s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`)
 
 const CSS = `
 :root{color-scheme:light dark;--bg:#fff;--fg:#18181b;--mut:#71717a;--line:#d4d4d8;--bad:#b91c1c}
@@ -27,7 +27,8 @@ const cell = (shot: ShotRecord | undefined, label: string): string => {
   const caption = `<figcaption>${esc(label)}</figcaption>`
   if (!shot) return `<figure><div class="empty">not captured</div>${caption}</figure>`
   if (shot.status === 'ok' && shot.file) {
-    return `<figure><img src="${esc(shot.file)}" loading="lazy" alt="${esc(`${shot.name} ${label}`)}">${caption}</figure>`
+    const note = shot.note ? ` · ${esc(shot.note)}` : ''
+    return `<figure><img src="${esc(shot.file)}" loading="lazy" alt="${esc(`${shot.name} ${label}`)}"><figcaption>${esc(label)}${note}</figcaption></figure>`
   }
   const note = shot.note ? `: ${esc(shot.note)}` : ''
   return `<figure><div class="empty ${shot.status}">${shot.status}${note}</div>${caption}</figure>`
@@ -51,14 +52,23 @@ const metricsTable = (rows: AnchorMetrics[]): string => {
         `<li>${a.scheme}/${a.viewport} “${esc(f.text)}” ${f.ratio} (${esc(f.fg)} on ${esc(f.bg)}, ${f.fontSize}px)</li>`,
     ),
   )
-  const nested = rows[0]?.nested ?? []
+  const assumed = rows
+    .filter((a) => a.contrast.backdrop === 'assumed-white')
+    .map((a) => `${a.scheme}/${a.viewport}`)
+  const nested = rows
+    .filter((a) => a.nested.length > 0)
+    .map(
+      (a) =>
+        `<li>${a.scheme}/${a.viewport}<ul>${a.nested.map((n) => `<li>${esc(n.path)} r${n.radius} p ${sides(n.padding)}</li>`).join('')}</ul></li>`,
+    )
   return (
     `<table><tr><th></th><th>box</th><th>padding</th><th>gap r/c</th><th>radius</th><th>border</th>` +
     `<th>font px</th><th>empty</th><th>contrast min</th></tr>${rows.map(metricsRow).join('')}</table>` +
+    (assumed.length
+      ? `<p class="bad">backdrop assumed white (no opaque ancestor background): ${assumed.join(', ')}</p>`
+      : '') +
     (failures.length ? `<h4>Contrast failures</h4><ul class="bad">${failures.join('')}</ul>` : '') +
-    (nested.length
-      ? `<h4>Nested surfaces</h4><ul>${nested.map((n) => `<li>${esc(n.path)} r${n.radius} p ${sides(n.padding)}</li>`).join('')}</ul>`
-      : '')
+    (nested.length ? `<h4>Nested surfaces</h4><ul>${nested.join('')}</ul>` : '')
   )
 }
 
@@ -81,28 +91,49 @@ const grid = (shots: ShotRecord[], route: string, name: string, state: ShotState
   return `<h4>${state}</h4><div class="grid">${cells.join('')}</div>`
 }
 
+const anchorSection = (m: ShotMetrics, route: string, name: string): string =>
+  `<section><h3>${esc(name)}</h3><div class="row"><div>${m.states
+    .map((state) => grid(m.shots, route, name, state))
+    .join('')}</div><aside>${metricsTable(
+    m.anchors.filter((a) => a.route === route && a.name === name),
+  )}</aside></div></section>`
+
+const stepList = (steps: Record<string, number>): string =>
+  Object.entries(steps)
+    .map(([k, v]) => `${esc(k)} ${v}`)
+    .join(' · ') || '–'
+
+/** The resolved theme steps, shown once per distinct scale (usually one for every scheme × viewport). */
+const scaleBlock = (scale: Scale[]): string => {
+  if (scale.length === 0) return ''
+  const groups = new Map<string, { scale: Scale; where: string[] }>()
+  for (const s of scale) {
+    const key = JSON.stringify([s.spacing, s.radius, s.fontSizes])
+    const group = groups.get(key) ?? { scale: s, where: [] }
+    group.where.push(`${s.scheme}/${s.viewport}`)
+    groups.set(key, group)
+  }
+  const rows = [...groups.values()].map(
+    ({ scale: s, where }) =>
+      `<tr><td>${where.join(', ')}</td><td>${stepList(s.spacing)}</td><td>${stepList(s.radius)}</td><td>${stepList(s.fontSizes)}</td></tr>`,
+  )
+  return `<details open><summary>Theme scale (px)</summary><table><tr><th></th><th>spacing</th><th>radius</th><th>font size</th></tr>${rows.join('')}</table></details>`
+}
+
 export function buildBoard(m: ShotMetrics): string {
   const sections = m.routes.map((route) => {
     const names = [
-      ...new Set(m.shots.filter((s) => s.route === route && s.name !== '_page').map((s) => s.name)),
+      ...new Set(
+        m.shots.filter((s) => s.route === route && s.name !== PAGE_ANCHOR).map((s) => s.name),
+      ),
     ]
-    const page = `<h3>full page</h3>${grid(m.shots, route, '_page', 'rest')}`
     const anchors = names.length
-      ? names
-          .map(
-            (name) =>
-              `<section><h3>${esc(name)}</h3><div class="row"><div>${m.states
-                .map((state) => grid(m.shots, route, name, state))
-                .join(
-                  '',
-                )}</div><aside>${metricsTable(m.anchors.filter((a) => a.route === route && a.name === name))}</aside></div></section>`,
-          )
-          .join('')
+      ? names.map((name) => anchorSection(m, route, name)).join('')
       : '<p class="mut">no data-shot anchors on this route</p>'
-    return `<h2>${esc(route)}</h2>${page}${anchors}`
+    return `<h2>${esc(route)}</h2><h3>full page</h3>${grid(m.shots, route, PAGE_ANCHOR, 'rest')}${anchors}`
   })
   return (
     `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>basalt-ui shot</title><style>${CSS}</style></head><body>` +
-    `<h1>basalt-ui shot</h1><p class="mut">${esc(m.base)} · ${esc(m.generatedAt)} · states: ${m.states.join(', ')}</p>${sections.join('')}</body></html>\n`
+    `<h1>basalt-ui shot</h1><p class="mut">${esc(m.base)} · ${esc(m.generatedAt)} · states: ${m.states.join(', ')}</p>${scaleBlock(m.scale)}${sections.join('')}</body></html>\n`
   )
 }

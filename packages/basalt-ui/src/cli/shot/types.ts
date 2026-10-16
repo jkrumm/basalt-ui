@@ -4,6 +4,9 @@ export const STATES = ['rest', 'hover', 'focus', 'tooltip', 'empty', 'loading', 
 /** The states a page opts into with `data-shot-states`; reached through the `shot-state` URL param. */
 export const URL_STATES = ['empty', 'loading', 'error'] as const
 
+/** The `name` of a route's full-page shot: not a valid `data-shot` value. */
+export const PAGE_ANCHOR = '_page'
+
 export type Scheme = (typeof SCHEMES)[number]
 export type Viewport = (typeof VIEWPORTS)[number]
 export type ShotState = (typeof STATES)[number]
@@ -35,7 +38,12 @@ export type Measurement = {
   nested: { path: string; radius: number; padding: Sides }[]
   emptyRatio: number
   /** `min` is null when the anchor holds no text. */
-  contrast: { min: number | null; failures: ContrastFailure[] }
+  contrast: {
+    min: number | null
+    failures: ContrastFailure[]
+    /** Set when some text sat on no opaque ancestor background and white was assumed. */
+    backdrop?: 'assumed-white'
+  }
 }
 
 export type AnchorMetrics = Measurement & {
@@ -52,8 +60,17 @@ export type ShotRecord = {
   viewport: Viewport
   state: ShotState
   file: string | null
-  status: 'ok' | 'not-declared' | 'error'
+  status: 'ok' | 'not-declared' | 'skipped' | 'error'
   note?: string
+}
+
+/** The theme's resolved steps (px) for one scheme × viewport; a missing custom property is omitted. */
+export type Scale = {
+  scheme: Scheme
+  viewport: Viewport
+  spacing: Record<string, number>
+  radius: Record<string, number>
+  fontSizes: Record<string, number>
 }
 
 export type ShotMetrics = {
@@ -64,6 +81,7 @@ export type ShotMetrics = {
   viewports: Viewport[]
   schemes: Scheme[]
   states: ShotState[]
+  scale: Scale[]
   anchors: AnchorMetrics[]
   shots: ShotRecord[]
 }

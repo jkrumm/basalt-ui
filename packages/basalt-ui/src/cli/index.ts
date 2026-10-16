@@ -28,6 +28,7 @@ import { doctor } from './doctor'
 import { guardHook } from './guard-hook'
 import { COMMAND_OPTIONS, USAGE, unknownFlag } from './help'
 import { init } from './init'
+import { shot } from './shot'
 import { sync } from './sync'
 import type { BasaltInstall } from './basalt-install'
 import {
@@ -1768,7 +1769,7 @@ export function run(argv: string[], cwd: string = process.cwd()): number | Promi
     case 'fonts:css':
       return fontsCss(flags, cwd)
     case 'shot':
-      return import('./shot').then((m) => m.shot(flags, cwd))
+      return shot(flags, cwd)
     default:
       // Named, not just implied by a usage dump: a full-screen help block with no error line reads
       // like the command ran and chose to print help. Reported by a consumer who passed

@@ -2,8 +2,18 @@
  * `basalt-ui shot <route…> (--base <url> | --dist <dir>) [--out <dir>] [--states <list>]` — render
  * routes in a real browser and write `board.html`, `metrics.json` and `png/*` for a design round.
  */
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
-import { isAbsolute, join, relative, resolve } from 'node:path'
+import {
+  lstatSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  realpathSync,
+  renameSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs'
+import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path'
 import { parseArgs } from 'node:util'
 
 import { buildBoard } from './board'
@@ -75,28 +85,100 @@ export function parseShotArgs(flags: readonly string[]): ShotArgs {
   }
 }
 
-/** Empties `out`, drops a `*` .gitignore when it lives under `.basalt/`, and records `last.json`. */
-export function prepareOut(cwd: string, out: string, routes: readonly string[], now: Date): string {
+const PROTECTED_SEGMENTS = new Set(['.git', 'node_modules'])
+/** Files a shot writes beside its output: a dir holding only these counts as empty. */
+const OWN_FILES = new Set(['.gitignore', 'last.json'])
+
+const outside = (rel: string): boolean =>
+  rel === '..' || rel.startsWith('..' + sep) || isAbsolute(rel)
+
+const lexists = (path: string): boolean => {
+  try {
+    lstatSync(path)
+    return true
+  } catch {
+    return false
+  }
+}
+
+const isPreviousShot = (dir: string): boolean => {
+  try {
+    return (
+      (JSON.parse(readFileSync(join(dir, 'metrics.json'), 'utf8')) as { version?: unknown })
+        .version === 1
+    )
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Validates `out` WITHOUT touching it and returns its absolute path. A shot only ever empties what
+ * it wrote: the dir must be absent, empty, or hold a previous run's `metrics.json` (`version: 1`).
+ */
+export function planOut(cwd: string, out: string): string {
   const dir = resolve(cwd, out)
   const rel = relative(cwd, dir)
-  if (dir === cwd || rel === '' || rel.startsWith('..') || isAbsolute(rel)) {
-    throw new ShotError(`--out ${out} must be a directory inside the project (it is emptied first)`)
+  const refuse = (why: string): never => {
+    throw new ShotError(`--out ${out} ${why}`)
   }
+  if (rel === '' || outside(rel)) refuse('must be a directory inside the project')
+  if (rel === '.basalt' || rel.split(sep).some((part) => PROTECTED_SEGMENTS.has(part))) {
+    refuse('is (or sits inside) a protected directory (.git, node_modules, .basalt)')
+  }
+  let probe = dir
+  while (!lexists(probe)) probe = dirname(probe)
+  if (probe === dir && lstatSync(dir).isSymbolicLink())
+    refuse('is a symlink; refusing to follow it')
+  if (outside(relative(realpathSync(cwd), realpathSync(probe))))
+    refuse('resolves outside the project')
+  if (probe === dir) {
+    if (!statSync(dir).isDirectory()) refuse('exists and is not a directory')
+    const entries = readdirSync(dir)
+    if (!entries.every((e) => OWN_FILES.has(e)) && !isPreviousShot(dir)) {
+      refuse(
+        'exists and is not a previous shot output (no metrics.json with version 1); refusing to empty it',
+      )
+    }
+  }
+  return dir
+}
+
+/** Swaps the finished `tmp` render in for `outDir` (re-validated), then records `last.json` last. */
+export function commitOut(
+  cwd: string,
+  out: string,
+  tmp: string,
+  routes: readonly string[],
+  now: Date,
+): void {
+  const dir = planOut(cwd, out)
   rmSync(dir, { recursive: true, force: true })
-  mkdirSync(join(dir, 'png'), { recursive: true })
+  renameSync(tmp, dir)
   const home = join(cwd, '.basalt', 'shots')
   mkdirSync(home, { recursive: true })
   writeFileSync(join(home, '.gitignore'), '*\n')
-  if (rel.split(/[\\/]/)[0] === '.basalt') writeFileSync(join(dir, '.gitignore'), '*\n')
+  const rel = relative(cwd, dir).split(sep).join('/')
   writeFileSync(
     join(home, 'last.json'),
-    JSON.stringify(
-      { version: 1, at: now.toISOString(), out: rel.split('\\').join('/'), routes },
-      null,
-      2,
-    ) + '\n',
+    JSON.stringify({ version: 1, at: now.toISOString(), out: rel, routes }, null, 2) + '\n',
   )
-  return dir
+}
+
+/** One handler for SIGINT/SIGTERM: runs every stop (browser kill, server stop, temp cleanup), then exits. */
+function exitOnSignal(stops: readonly (() => unknown)[]): () => void {
+  const exitWith = (code: number) => (): void => {
+    void Promise.allSettled(stops.map((stop) => stop())).finally(() => process.exit(code))
+  }
+  const [onInt, onTerm] = [exitWith(130), exitWith(143)]
+  // The Bun/Node typings disagree on the signal overloads; the events are plain EventEmitter ones.
+  const events: NodeJS.EventEmitter = process
+  events.once('SIGINT', onInt)
+  events.once('SIGTERM', onTerm)
+  return () => {
+    events.removeListener('SIGINT', onInt)
+    events.removeListener('SIGTERM', onTerm)
+  }
 }
 
 export async function shot(
@@ -105,25 +187,36 @@ export async function shot(
   deps: ShotDeps = {},
 ): Promise<number> {
   const log = deps.log ?? ((line: string) => console.log(line))
+  const stops: (() => unknown)[] = []
+  const uninstall = exitOnSignal(stops)
   try {
     const args = parseShotArgs(flags)
+    const outDir = planOut(cwd, args.out)
     const pw: Playwright | null = (deps.resolve ?? resolvePlaywright)(cwd)
     if (!pw) throw new ShotError(INSTALL_LINE)
     const now = (deps.now ?? (() => new Date()))()
-    const outDir = prepareOut(cwd, args.out, args.routes, now)
     const server = args.dist ? serveDist(resolve(cwd, args.dist)) : null
+    if (server) stops.push(server.stop)
+    const tmp = `${outDir}.tmp-${process.pid}`
+    stops.push(() => rmSync(tmp, { recursive: true, force: true }))
     const base = server?.origin ?? args.base ?? ''
     try {
-      const run = deps.capture ?? capture
-      const { anchors, shots } = await withBrowser(pw, (browser) =>
-        run({
-          browser,
-          base,
-          routes: args.routes,
-          states: args.states,
-          pngDir: join(outDir, 'png'),
-          log,
-        }),
+      // The browser is up BEFORE the out dir is touched: a failed launch leaves the last board intact.
+      const { anchors, shots, scale } = await withBrowser(
+        pw,
+        (browser) => {
+          mkdirSync(join(tmp, 'png'), { recursive: true })
+          writeFileSync(join(tmp, '.gitignore'), '*\n')
+          return (deps.capture ?? capture)({
+            browser,
+            base,
+            routes: args.routes,
+            states: args.states,
+            pngDir: join(tmp, 'png'),
+            log,
+          })
+        },
+        { stops },
       )
       const metrics: ShotMetrics = {
         version: 1,
@@ -133,23 +226,36 @@ export async function shot(
         viewports: [...VIEWPORTS],
         schemes: [...SCHEMES],
         states: args.states,
+        scale,
         anchors,
         shots,
       }
-      writeFileSync(join(outDir, 'metrics.json'), JSON.stringify(metrics, null, 2) + '\n')
-      writeFileSync(join(outDir, 'board.html'), buildBoard(metrics))
-      const ok = shots.filter((s) => s.status === 'ok').length
-      const failed = shots.filter((s) => s.status === 'error').length
+      writeFileSync(join(tmp, 'metrics.json'), JSON.stringify(metrics, null, 2) + '\n')
+      writeFileSync(join(tmp, 'board.html'), buildBoard(metrics))
+      commitOut(cwd, args.out, tmp, args.routes, now)
+      const count = (status: string): number => shots.filter((s) => s.status === status).length
       log(
-        `[shot] ${ok} shots, ${shots.length - ok - failed} not declared, ${failed} failed → ${relative(cwd, outDir)}/board.html`,
+        `[shot] ${count('ok')} shots, ${count('not-declared')} not declared, ${count('skipped')} skipped, ${count('error')} failed → ${relative(cwd, outDir)}/board.html`,
       )
-      return ok === 0 ? 1 : 0
+      if (count('error') > 0) {
+        console.error(`basalt-ui shot: ${count('error')} shot(s) failed; see board.html`)
+        return 1
+      }
+      return count('ok') === 0 ? 1 : 0
     } finally {
+      rmSync(tmp, { recursive: true, force: true })
       server?.stop()
     }
   } catch (error) {
     if (!(error instanceof ShotError)) throw error
     console.error(error.message)
     return 1
+  } finally {
+    uninstall()
   }
 }
+
+export { openContext } from './capture'
+export { INSTALL_LINE, resolvePlaywright, withBrowser } from './playwright'
+export { serveDist } from './serve'
+export { VIEWPORT_SPECS } from './types'
