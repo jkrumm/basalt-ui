@@ -213,7 +213,20 @@ async function tabInto(page: PwPage, name: string): Promise<void> {
   throw new Error(`:focus-visible never reached the anchor in ${TAB_PRESSES} Tab presses`)
 }
 
+const FOCUSABLE =
+  'a[href], button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), summary, [tabindex]:not([tabindex^="-"]), [contenteditable=""], [contenteditable="true"]'
+
 async function captureFocus(c: Ctx, name: string): Promise<void> {
+  const target = c.page.locator(`${sel(name)}:is(${FOCUSABLE}), ${sel(name)} :is(${FOCUSABLE})`)
+  if ((await target.count()) === 0) {
+    record(c, {
+      name,
+      state: 'focus',
+      status: 'not-declared',
+      note: 'no focus target in the anchor',
+    })
+    return
+  }
   await attempt(c, name, 'focus', async (path) => {
     const anchor = anchorOf(c, name)
     await reveal(anchor)
@@ -289,35 +302,64 @@ async function captureUrlState(c: Ctx, state: ShotState): Promise<void> {
 
 const STEPS = ['xs', 'sm', 'md', 'lg', 'xl']
 
-/** Resolves each custom property to px through a probe's `width`, so `calc()`/`rem` values are read as the page sees them. */
-const readScale = (page: PwPage): Promise<Pick<Scale, 'spacing' | 'radius' | 'fontSizes'>> =>
-  page.evaluate(`(() => {
+/**
+ * Every step the page can name, in px: Mantine's own plus basalt's `--vx-space-*`, `--vx-text-*` and
+ * `--vx-radius-*` custom properties declared for the root (the steps its components lay out on).
+ * Each is resolved through a probe's `width`, so `calc()`/`rem` values are read as the page sees them.
+ */
+export const SCALE_SCRIPT = `(() => {
     const probe = document.createElement('div')
     probe.style.cssText = 'position:absolute;visibility:hidden'
     document.body.append(probe)
     const root = getComputedStyle(document.documentElement)
+    const px = (name) => {
+      if (!root.getPropertyValue(name).trim()) return undefined
+      probe.style.width = 'var(' + name + ')'
+      const value = parseFloat(getComputedStyle(probe).width)
+      return Number.isFinite(value) ? Math.round(value * 100) / 100 : undefined
+    }
     const read = (prefix, keys) => {
       const out = {}
       for (const key of keys) {
-        const name = prefix + key
-        if (!root.getPropertyValue(name).trim()) continue
-        probe.style.width = 'var(' + name + ')'
-        const px = parseFloat(getComputedStyle(probe).width)
-        if (Number.isFinite(px)) out[key] = Math.round(px * 100) / 100
+        const value = px(prefix + key)
+        if (value !== undefined) out[key] = value
+      }
+      return out
+    }
+    const declared = new Set()
+    const walk = (rules) => {
+      for (const rule of rules) {
+        if (rule.cssRules) walk(rule.cssRules)
+        const atRoot = (rule.selectorText || '').split(',').some((s) => /^(:root|html)$/.test(s.trim()))
+        if (atRoot) for (const name of rule.style) if (name.startsWith('--vx-')) declared.add(name)
+      }
+    }
+    for (const sheet of document.styleSheets) {
+      try { walk(sheet.cssRules) } catch {}
+    }
+    const vx = (kind) => {
+      const out = {}
+      for (const name of declared) {
+        if (!name.startsWith('--vx-' + kind + '-')) continue
+        const value = px(name)
+        if (value !== undefined && value > 0) out[name.slice(2)] = value
       }
       return out
     }
     const steps = ${JSON.stringify(STEPS)}
     try {
       return {
-      spacing: read('--mantine-spacing-', steps),
-      radius: { ...read('--mantine-radius-', [...steps, 'default']), ...read('--vx-radius-', ['card', 'ctrl']) },
-      fontSizes: read('--mantine-font-size-', steps),
-    }
+        spacing: { ...read('--mantine-spacing-', steps), ...vx('space') },
+        radius: { ...read('--mantine-radius-', [...steps, 'default']), ...vx('radius') },
+        fontSizes: { ...read('--mantine-font-size-', steps), ...vx('text') },
+      }
     } finally {
       probe.remove()
     }
-  })()`)
+  })()`
+
+const readScale = (page: PwPage): Promise<Pick<Scale, 'spacing' | 'radius' | 'fontSizes'>> =>
+  page.evaluate(SCALE_SCRIPT)
 
 async function capturePage(
   args: Omit<Ctx, 'facts' | 'anchors' | 'shots' | 'measured'> & { wantScale: boolean },

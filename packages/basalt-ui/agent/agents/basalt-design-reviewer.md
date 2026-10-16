@@ -30,7 +30,7 @@ Score per component, then add one line per page for the page items (Communicatio
 
 ### Craft
 
-1. **[measured]** Every inset, gap and radius is a step in `metrics.json` `scale` or on the even-pixel layout grid (2, 4, 6, 8, 10, 12, 14, 16, 20, 24, 32) that Mantine's own gaps use; a font size is a `scale.fontSizes` step or a named token (nano 10, micro 11, kpi 22–24, h1 26). Nested surfaces step by at least 3 px of radius. No `scale` → `unverified`. Never invent steps.
+1. **[measured]** Every inset, gap and radius is a step in `metrics.json` `scale`; nested surfaces step by at least 3 px of radius. No `scale` → `unverified`. Never invent steps.
 2. **[measured]** No more than three font sizes inside one component: `fontSizes` with more than 3 distinct values fails.
 3. **[measured]** No empty region of 40 % or more of the component's height: `emptyRatio` ≥ 0.4 fails. No dense-list row wraps at 390.
 4. One ring per surface, no bare hairline borders on cards, no accent on chrome: look at every crop for an accent hue on a tab underline, selected row, button, ring or solid-filled badge. Accent belongs only to the single primary action and active-nav icons; chrome takes ink.

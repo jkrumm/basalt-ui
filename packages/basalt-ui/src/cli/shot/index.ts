@@ -196,6 +196,7 @@ export function commitOut(
       throw new ShotError(`${relative(cwd, aside)} exists and is not a previous shot output`)
     rmSync(aside, { recursive: true, force: true })
   }
+  mkdirSync(dirname(dir), { recursive: true })
   const hadOld = lexists(dir)
   if (hadOld) renameSync(dir, aside)
   try {
