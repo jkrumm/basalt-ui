@@ -1044,37 +1044,86 @@ Mode and roles are unchanged from Part 1.
 - **Next:** owner review of the baseline board (`.design-parity/w29/board.html`, local), AUDIT.md and SPEC.md.
   Then the mother spawns Wave 31 (it is `active`). Stopped here as briefed: not released, Wave 31 not spawned.
 
-## Wave 31 — The loop's tools, shipped (dogfooded first) <!-- status: active -->
+## Wave 31 — The loop's tools, shipped (dogfooded first) <!-- status: done -->
 
 The mother spawns it only after the owner has reviewed Wave 30. Spec: `docs/waves/design-parity/SPEC.md`
 § 1, § 2, § 8, § 9.4, § 9.5. Pulls rows 135, 136 and 138 forward from Wave 21, because every later wave runs
 its rounds on these tools.
 
-- [ ] `basalt-ui shot <route…>`: renders routes at 1440×900 and 390×844, light and dark, in the rest, hover,
+- [x] `basalt-ui shot <route…>`: renders routes at 1440×900 and 390×844, light and dark, in the rest, hover,
       focus, tooltip, empty, loading and error states (reached by a declared `data-shot-state` toggle or URL
       param), and writes a local board (HTML + PNGs) plus a metrics file (computed insets, gaps, radii, font
       sizes, contrast per anchor) to a gitignored directory. Playwright is resolved from the consumer's dev
       dependencies, never a basalt dependency (SPEC § 9.5; `/research` its version first). `make compare`
       reuses it for the basalt column.
-- [ ] The reviewer subagent, installed by `sync` at the repo root sessions start in (SPEC § 9.4). It scores a
+- [x] The reviewer subagent, installed by `sync` at the repo root sessions start in (SPEC § 9.4). It scores a
       board and its metrics file on the three axes of SPEC § 8, cites crop and defect for every failure, and
       carries the banned-filler list verbatim. **Calibrate it** (SPEC § 8.5): seeded known-bad boards it must
       fail with the right citation, one known-good board it must pass.
-- [ ] The skill procedure in `basalt-design` (scenario → catalogue pick → at least three rounds → rubric →
+- [x] The skill procedure in `basalt-design` (scenario → catalogue pick → at least three rounds → rubric →
       owner after five failed rounds); `basalt-ui check` prints a notice when UI files changed and no board is
       newer than them; one rule line names the procedure.
-- [ ] Discovery: the managed AGENTS block names the skills and the reviewer (row 135); every rule's `paths:`
+- [x] Discovery: the managed AGENTS block names the skills and the reviewer (row 135); every rule's `paths:`
       renders from `basalt.roots` (row 136); `basalt-controls.md` and its guard agree on one ViewTabs
       placement (row 138).
-- [ ] Dogfood: the scenario route `apps/playground/src/routes/scenarios.$name.tsx` (SPEC § 2, D9) with the S4
+- [x] Dogfood: the scenario route `apps/playground/src/routes/scenarios.$name.tsx` (SPEC § 2, D9) with the S4
       fixture; run `shot` and the reviewer on today's S4 and commit the scored baseline under
       `docs/waves/design-parity/w31/`.
-- [ ] Budgets: CLI lines (5164/5165) and rule lines (277/277) are raised by exactly what this wave adds, each
+- [x] Budgets: CLI lines (5164/5165) and rule lines (277/277) are raised by exactly what this wave adds, each
       raise itemised in `scripts/check-budgets.ts`'s ceiling comment; one playground route is used (15/15).
       Acceptance: `make check` green, the calibration result recorded, the S4 baseline committed.
       **Left behind:**
 
-## Wave 32 — Scales <!-- status: pending -->
+- **Landed** (PRs #318 budget slots, #319 scenarios, #320 procedure, #321 `shot`, #322 discovery, #323 calibration,
+  #325 confirmation, plus the close-out; each reviewed by agent-gateway for two rounds, then scope frozen and the lead read the last fix
+  diff; `make check` green at every merge through `rd merge`). Nothing released.
+- **`basalt-ui shot <route…> (--base <url> | --dist <dir>) [--out] [--states]`** (`src/cli/shot/`): 1440×900 and 390×844,
+  light and dark, states rest/hover/focus/tooltip (desktop) and empty/loading/error (`?shot-state=` on a page that
+  declares `data-shot-states`); anchors are `data-shot`, targets `data-shot-hover`/`data-shot-tooltip`. Writes
+  `board.html`, `metrics.json` (insets, gaps, radii, font sizes, `emptyRatio`, WCAG contrast, and the theme `scale`
+  including basalt's own `--vx-space/text/radius-*` steps) and one **contact sheet per anchor** to
+  `.basalt/shots/latest` (self-gitignored), plus `.basalt/shots/last.json`. Statuses `ok`/`not-declared`/`skipped`/
+  `error`; exit 1 on any `error`. Out-dir safety: only empties a dir that is purely a previous shot; realpath
+  containment; swap via `<out>.prev`. Playwright is resolved from the consumer (`playwright`, then
+  `playwright-core`; 1.64.1 is current, this repo stays on `playwright-core` 1.63.0); `make compare` shares the
+  launcher, context and serve, pinned to `channel: 'chrome'`.
+- **Reviewer** `basalt-design-reviewer` (`agent/agents/`, installed by `init`/`sync` at the consumer root's
+  `.claude/agents/`, repo copy via `sync-self`): SPEC § 8 checklist with SPEC numbering, banned filler verbatim,
+  measured items from `metrics.json`, fail-closed (`unverified` = fail), must read every sheet and page shot.
+  **Calibration** (`docs/waves/design-parity/w31/calibration.md`): four iterations plus 4b; final: all five bad seeds
+  fail citing their expected item, `calibrate-good` passes. Iterations 2–4 were scored by fresh general-purpose agents
+  reading the reviewer file (a session does not reload an edited subagent). **Confirmed** with the real subagent type in
+  a fresh session (#325): every bad seed fails citing its expected item, `calibrate-good` passes on the first run,
+  every run read every sheet and page shot.
+- **Procedure**: the `basalt-design` skill runs scenario → encoding table (only exports that exist today) → at least
+  three `shot` rounds scored by the reviewer → owner after five failed rounds. `doctor` (not `check`, which Wave 21
+  builds) prints an info line when UI files are newer than `last.json` and reports Playwright as optional.
+- **Discovery** (rows 135, 136, 138 closed): the AGENTS block names the three skills and the reviewer; every rule's
+  `paths:` renders from `basalt.roots` (inferred roots, or the old globs when nothing is declared, so a monorepo root
+  install keeps coverage); one ViewTabs law: a `tabs` slot (`PageBar`, `Section`) or a card's `actions`, refused in every
+  other `PageBar` slot, `Section.actions` and a `FilterSet` (guard tightened, MIGRATING entry, playground
+  `DataStressPage` moved to `Section.tabs`). **No rule line names the procedure**: every rule bullet needs an enforcer
+  tag and nothing enforces "run /basalt-design"; the AGENTS block and the skill carry it instead.
+- **S4 baseline** (`w31/s4-baseline.md`, `s4-metrics.json` is the diff baseline): all seven components fail, the page
+  line passes. Flexibility gaps for the pattern waves: the filled `DeltaBadge` (Wave 33), nested radius 7/6 with no
+  ≥ 3 px step and `faint` axis/label ink at 4.06:1 (Wave 32), no target slot and a bare "—" empty state on `StatCard`
+  (Wave 33), same-hue categorical neighbours, the info glyph's tooltip overflowing a narrow card, chart tooltips
+  without `role="tooltip"` (Wave 33). Guidance gaps: status by a coloured edge only, a 390 table wrap, four font sizes
+  in one card.
+- **Budgets** (raised by exactly what landed, itemised): CLI 5165 → 7073 (`shot` +1691, install +75, notice +142);
+  rule lines 277 → 272; agent layer 659 → 679 (`basalt-design` 18 → 36, AGENTS block +7); the reviewer has its own
+  per-file budget outside the layer total; routes 15/15. `shot` is the bulk; a trimming pass is open (below).
+- **Not done / known gaps:** the three loose `compare.json` stand-ins (side-panel-card, status-pill, form-field) were
+  not re-pointed (S4 covers none of them; their scenarios come with Waves 35–39). A `shot` trimming pass (capture.ts
+  is past 300 lines; review round 2 named the sheet writer and in-page scripts as extractions). A shared contract
+  module for the `data-shot*` attribute names and the `last.json` shape. `tests/drift.test.ts` byte-checks rule copies
+  only, not skill or agent copies. The reviewer's scores vary run to run on S4; the contact sheets reduced it. Open
+  law question for Wave 32: the confirmation run failed the accent focus ring on an info glyph as Craft 4 ("accent on
+  chrome"); DESIGN-CORE should state whether the focus outline is exempt.
+- **Next:** owner review of the S4 baseline and calibration (`.design-parity/w31/`, local). Then the mother spawns
+  Wave 32. Stopped here as briefed: not released, Wave 32 not spawned.
+
+## Wave 32 — Scales <!-- status: active -->
 
 Spec: SPEC § 5, § 11. Scenarios S4 and S1 (build the S1 fixture). Consumers are shot before and after when they
 upgrade (Waves 40–41); in-wave boards are the playground's.
