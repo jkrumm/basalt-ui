@@ -176,7 +176,7 @@ export function reconcileCoverageBlocks(
  * spec argued, so they live beside the gate that reads them rather than in prose.
  */
 export const AGENT_LINE_BUDGETS: Readonly<Record<string, number>> = {
-  'agent/rules/basalt-tokens.md': 57,
+  'agent/rules/basalt-tokens.md': 56,
   'agent/rules/basalt-mantine.md': 48,
   'agent/rules/basalt-charts.md': 37,
   'agent/rules/basalt-state.md': 38,
