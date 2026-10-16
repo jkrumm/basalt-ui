@@ -8,6 +8,8 @@
  * Table sorting is ON so the headers are focusable: the focus shot needs something Tab can reach.
  * The board has NO hover/tooltip target by design (the definition is a one-line subtitle, not a
  * tooltip), so those states are `not-declared`, never failures.
+ *
+ * Route id: `probe-3` (neutral on purpose; the id → seed map lives in docs only).
  */
 import { Box, Stack } from '@mantine/core'
 import { Section, StatCard } from 'basalt-ui'
@@ -44,7 +46,7 @@ const TOP_THREE = PROJECTS_MTD.slice(0, 3)
 export function CalibrateGood() {
   return (
     <Stack gap="sm">
-      <Box data-shot="calibrate-good-card">
+      <Box data-shot="probe-3-card">
         <StatCard
           title={`Spend, ${WINDOW_LABEL}`}
           value={fmtEur(MTD_EUR)}
@@ -58,7 +60,7 @@ export function CalibrateGood() {
           )}
         />
       </Box>
-      <Box data-shot="calibrate-good-table">
+      <Box data-shot="probe-3-table">
         <Section title={`Top 3 projects, share of all spend, ${WINDOW_LABEL}`}>
           <BasaltDataTable data={TOP_THREE} columns={columns} />
         </Section>
