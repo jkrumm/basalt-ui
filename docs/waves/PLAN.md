@@ -838,6 +838,9 @@ Synthesis Wave 1. Validators: weatherorb (Start `getRouter()`, SSR hydration), a
 - **weatherorb validator:** `basaltRouterOptions` spreads in Start's `getRouter()`; the `weatherorb:apps/web/src/router.tsx` path in `consumers.json` comes from the audit doc, not from reading weatherorb. The orchestrator verifies on the real app.
 - **Ops notes:** the train rebases each branch and conflicts on `MIGRATING.md` every time two workers append (back to the worker, three times); a shipped `agent/rules/*.md` edit needs the byte-identical repo-root `.claude/rules` copy as a SEPARATE non-package commit and a rule-line budget of 277 (one added sentence broke both); an `rd say` "done" status can be stale, check for a new push before re-running the train; one worker's last commit silently deleted ~18 unrelated tests (caught by reading the diff, restored); a layout fixture silently lost its breadcrumb when `activeCrumb` became required (layout suite caught it).
 - **Next:** Wave 19 is `active`. Not released: the orchestrator releases and drives argo/rb/weatherorb validation.
+- **Released and validated (orchestrator):** #288 and #290 shipped in 2.13.0, #289 in 2.13.1. argo (#55, live, health
+  reports e1648fe) and rb (#5, `make deploy`, container on 2.13.1, `make verify` healthy) bumped from 2.11.1 with no code
+  change and no basalt friction; weatherorb checks `basaltRouterOptions` and SSR hydration in its Wave 42.
 
 ## Wave 19 — Format layer and small correctness bugs <!-- status: active -->
 
@@ -858,6 +861,8 @@ Synthesis Wave 3. Validators: argo, rb, linewatch, obsidian (lint runs).
 - [ ] Claims vs enforcement: one violating fixture per documented "never", or the sentence goes.
 - [ ] New rules (`as never` on router calls, `basalt/banned-import` from `SURFACES`, markdown trust); delete `query-fn-unwrap`.
 - [ ] No warn tier in the preset: every rule is error or off.
+- [ ] Row 130: a semantic fill token (`VX.warn/bad/good` and friends) used as a stroke, line or text colour fails —
+      by type (fill vs ink token types) or a `basalt/*` rule, whichever is cheaper to keep honest.
 - [ ] Toolbelt (owner, 2026-10-16): add oxlint's `react-perf` plugin (`jsx-no-new-object/array/function-as-prop`,
       `jsx-no-jsx-as-prop`, `no-array-index-key`, `no-object-type-as-default-prop`) and the full native React Compiler
       rule set (`purity`, `static-components`, `set-state-in-render`, `use-memo`, `void-use-memo`, `error-boundaries`,
