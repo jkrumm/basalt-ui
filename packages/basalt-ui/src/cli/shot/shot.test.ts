@@ -12,7 +12,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 import { buildBoard } from './board'
-import { capture, fileName, unionClip, withParam } from './capture'
+import { SCALE_SCRIPT, capture, fileName, unionClip, withParam } from './capture'
 import { unknownFlag } from '../help'
 import { commitOut, parseShotArgs, planOut, recoverOut, sanitizeBase, shot } from './index'
 import { contrastRatio, contrastThreshold, finishMeasurement } from './measure'
@@ -263,6 +263,13 @@ describe('commitOut', () => {
       'design/x',
     )
   })
+  test('creates the out dir parent when it does not exist yet', () => {
+    const cwd = tmp()
+    mkdirSync(join(cwd, 'x.tmp'))
+    writeFileSync(join(cwd, 'x.tmp/board.html'), 'new')
+    commitOut(cwd, 'missing/parent/x', join(cwd, 'x.tmp'), ['/'], new Date(0))
+    expect(readFileSync(join(cwd, 'missing/parent/x/board.html'), 'utf8')).toBe('new')
+  })
 })
 
 describe('recoverOut', () => {
@@ -383,6 +390,119 @@ describe('capture() with a fake browser', () => {
     expect(out.scale).toEqual([])
     expect(out.shots.filter((s) => s.status === 'ok')).toHaveLength(8)
     expect(out.anchors).toHaveLength(4)
+  })
+})
+
+describe('focus state', () => {
+  const pageWith = (focusable: number) => {
+    const locator = (selector: string) => ({
+      first: () => locator(selector),
+      count: () => Promise.resolve(selector.includes(':is(') ? focusable : 1),
+      scrollIntoViewIfNeeded: () => Promise.resolve(),
+      isVisible: () => Promise.resolve(true),
+      screenshot: () => Promise.resolve(),
+      boundingBox: () => Promise.resolve({ x: 0, y: 0, width: 10, height: 10 }),
+    })
+    const page = {
+      setDefaultTimeout: () => undefined,
+      goto: () => Promise.resolve(),
+      locator,
+      screenshot: () => Promise.resolve(),
+      mouse: { move: () => Promise.resolve() },
+      keyboard: { press: () => Promise.resolve() },
+      evaluate: (expression: string) => {
+        if (expression.includes('data-shot-states'))
+          return Promise.resolve({ anchors: ['card'], declared: [] })
+        // The Tab loop lands immediately when something is focusable.
+        if (expression.includes('activeElement')) return Promise.resolve(true)
+        return Promise.resolve(undefined)
+      },
+    }
+    return {
+      newContext: () =>
+        Promise.resolve({
+          newPage: () => Promise.resolve(page),
+          addInitScript: () => Promise.resolve(),
+          close: () => Promise.resolve(),
+        }),
+    } as never
+  }
+  const run = (focusable: number) =>
+    capture({
+      browser: pageWith(focusable),
+      base: 'http://x',
+      routes: ['/'],
+      states: ['focus' as const],
+      pngDir: '/unused',
+      log: () => undefined,
+      measure: () => Promise.resolve(measurement),
+    })
+
+  test('an anchor with no focusable descendant records not-declared, never error', async () => {
+    const out = await run(0)
+    const focus = out.shots.filter((s) => s.name === 'card' && s.state === 'focus')
+    expect(focus).toHaveLength(4)
+    expect(
+      focus.every((s) => s.status === 'not-declared' && /no focus target/.test(s.note ?? '')),
+    ).toBe(true)
+  })
+  test('an anchor with a focus target is still captured', async () => {
+    const out = await run(1)
+    const focus = out.shots.filter((s) => s.name === 'card' && s.state === 'focus')
+    expect(focus.every((s) => s.status === 'ok')).toBe(true)
+  })
+})
+
+describe('SCALE_SCRIPT', () => {
+  const rule = (selectorText: string, props: Record<string, string>) => ({
+    selectorText,
+    style: Object.keys(props),
+  })
+  const run = (props: Record<string, string>, sheets: unknown[]) => {
+    const probe = { style: { cssText: '', width: '' }, remove: () => undefined }
+    const doc = {
+      createElement: () => probe,
+      body: { append: () => undefined },
+      documentElement: {},
+      styleSheets: sheets,
+    }
+    const computed = (el: unknown) => ({
+      getPropertyValue: (name: string) => props[name] ?? '',
+      width:
+        el === probe
+          ? /var\((.+)\)/.exec(probe.style.width)
+            ? props[/var\((.+)\)/.exec(probe.style.width)![1]!]
+            : ''
+          : '',
+    })
+    return new Function('document', 'getComputedStyle', `return ${SCALE_SCRIPT}`)(doc, computed)
+  }
+
+  test("collects basalt's root-level --vx-space/text/radius steps next to Mantine's", () => {
+    const props = {
+      '--mantine-spacing-xs': '11px',
+      '--vx-space-3': '12px',
+      '--vx-space-agent-gap': '6px',
+      '--vx-text-micro': '11px',
+      '--vx-radius-card': '7px',
+      '--vx-color-accent': '#123456',
+    }
+    const out = run(props, [
+      { cssRules: [rule(':root', props), rule('.card', { '--vx-space-9': '9px' })] },
+    ])
+    expect(out.spacing).toEqual({ xs: 11, 'vx-space-3': 12, 'vx-space-agent-gap': 6 })
+    expect(out.fontSizes).toEqual({ 'vx-text-micro': 11 })
+    expect(out.radius).toEqual({ 'vx-radius-card': 7 })
+  })
+  test('an unreadable stylesheet is skipped, not fatal', () => {
+    const props = { '--vx-space-1': '4px' }
+    const blocked = {
+      get cssRules(): never {
+        throw new Error('cross-origin')
+      },
+    }
+    const out = run(props, [blocked, { cssRules: [rule('html', props)] }])
+    expect(out.spacing).toEqual({ 'vx-space-1': 4 })
   })
 })
 
