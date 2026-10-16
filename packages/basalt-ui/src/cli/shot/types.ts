@@ -51,6 +51,8 @@ export type AnchorMetrics = Measurement & {
   name: string
   scheme: Scheme
   viewport: Viewport
+  /** The anchor's contact sheet (`png/…__sheet.png`): every state × scheme × viewport on one image. Absent when it could not be written. */
+  sheet?: string
 }
 
 export type ShotRecord = {
@@ -82,6 +84,8 @@ export type ShotMetrics = {
   schemes: Scheme[]
   states: ShotState[]
   scale: Scale[]
+  /** Why `scale` is empty or partial; absent when it was read. */
+  scaleError?: string
   anchors: AnchorMetrics[]
   shots: ShotRecord[]
 }

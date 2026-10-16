@@ -26,6 +26,26 @@ describe('basalt-design-reviewer', () => {
     expect(items('Communication')).toEqual([1, 2, 3, 4, 5, 6])
   })
 
+  it('cites only rubric items that exist', () => {
+    const known: Record<string, number[]> = {
+      Craft: items('Craft'),
+      Expression: items('Expression'),
+      Communication: items('Communication'),
+    }
+    const cited = [...text.matchAll(/\b(Craft|Expression|Communication) (\d+)\b/g)]
+    expect(cited.length).toBeGreaterThan(0)
+    for (const [whole, axis, n] of cited) {
+      expect(known[axis!]).toContain(Number(n))
+      expect(whole).toBeTruthy()
+    }
+  })
+
+  it('makes the sheets and the Read line mandatory', () => {
+    expect(text).toContain("Read every anchor's `sheet` and every `_page` shot")
+    expect(text).toContain('`scaleError` set')
+    expect(text).toContain('Read: <sheet file>')
+  })
+
   it('carries the banned-filler list', () => {
     for (const phrase of [
       '"Here you can see…"',
