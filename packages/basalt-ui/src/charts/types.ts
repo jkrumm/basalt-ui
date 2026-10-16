@@ -70,8 +70,9 @@ export type ChartSeries<T> = {
   /** A marker at a point (a PR star, a status dot); `null` for none. Always-on markers are `Lines`'
    * alone. On a `CartesianChart` with consumer `marks` only the CURSOR dot of a `cursorValue`
    * series reads `getMarker` (its `color`): without `cursorValue` it is ignored there, so draw a
-   * persistent dot in `marks` yourself. The cursor dot is ONE mark whatever its colors: a continuous
-   * scale is fine there. */
+   * persistent dot in `marks` yourself. Each distinct color of an always-on marker is one extra mark:
+   * keep those a small categorical set (statuses, buckets), never a continuous scale. Only the
+   * `cursorValue` cursor dot is ONE mark whatever its colors. */
   getMarker?:
     | ((d: T) => {
         color?: string | undefined

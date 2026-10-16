@@ -157,14 +157,16 @@ export function cursorDots<T, X extends ChartX>(
   yScale: 'y2' | undefined,
 ): ChartMarks {
   const { getMarker } = s
-  // `dot.fill` is constant but a state style's is not: one mark whose focused fill reads the datum's
-  // own `getMarker` colour, however many colours the series has.
+  // `dot.fill` is constant but a state style's is not: one mark whose focused fill is the datum's
+  // own `getMarker` colour, resolved once per row here rather than on every focus repaint.
+  const colors = getMarker
+    ? new Map(rows.map((r) => [r, getMarker(r.datum)?.color ?? s.color]))
+    : undefined
   const focused = {
     fillOpacity: 1,
     strokeOpacity: 1,
-    ...(getMarker && {
-      fill: ({ datum }: { datum: PlotRow<T, X> }): string =>
-        getMarker(datum.datum)?.color ?? s.color,
+    ...(colors && {
+      fill: ({ datum }: { datum: PlotRow<T, X> }): string => colors.get(datum) ?? s.color,
     }),
   }
   return [

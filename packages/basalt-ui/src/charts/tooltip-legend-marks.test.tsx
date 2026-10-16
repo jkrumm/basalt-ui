@@ -9,12 +9,15 @@ import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { renderToString } from 'react-dom/server'
 import { CartesianChart } from './CartesianChart'
+import { ChartLegend } from './legend'
+import type { LegendMode } from './legend'
 import { compileCartesian, dashedSwatch, engineRow, refLegendSeries } from './compile'
 import type { CartesianDefinition } from './compile'
 import { VX } from '../tokens'
 import { contrastRatio } from '../tokens/hct'
 import { STATUS, SURFACE } from '../tokens/palette'
 import { chartCursor } from './cursor'
+import { hoverPlot } from './hover-test-util'
 import { Lines } from './Lines'
 import type { ChartSeries, RefLine } from './types'
 
@@ -445,15 +448,7 @@ describe('cursor dot per-datum colour (getMarker on a cursorValue series)', () =
   const marksOf = (el: Element): Element[] => [
     ...el.querySelectorAll('g[data-ts-key^="track-cursor"]'),
   ]
-  const hover = async (el: HTMLElement): Promise<void> => {
-    await act(async () => {
-      el.querySelector('svg')?.dispatchEvent(
-        new PointerEvent('pointermove', { clientX: 300, clientY: 100, bubbles: true }),
-      )
-      await new Promise((r) => setTimeout(r, 30))
-    })
-  }
-  const shown = (el: Element): string[] =>
+  const shownFills = (el: Element): string[] =>
     [...el.querySelectorAll('g[data-ts-key="track-cursor"] circle')]
       .filter((c) => c.getAttribute('fill-opacity') === '1')
       .map((c) => c.getAttribute('fill') ?? '')
@@ -472,16 +467,16 @@ describe('cursor dot per-datum colour (getMarker on a cursorValue series)', () =
 
   test('the focused dot takes the datum colour from getMarker, not the series colour', async () => {
     const el = await mount(chart(tracked(colorOf)))
-    await hover(el)
-    const fills = shown(el)
+    await hoverPlot(el.querySelector('svg'))
+    const fills = shownFills(el)
     expect(fills.length).toBe(1)
     expect(fills[0]).toMatch(/^var\(--c[1-4]\)$/)
   })
 
   test('a datum getMarker returns null for keeps the series colour', async () => {
     const el = await mount(chart(tracked(() => null)))
-    await hover(el)
-    expect(shown(el)).toEqual(['var(--vx-accent)'])
+    await hoverPlot(el.querySelector('svg'))
+    expect(shownFills(el)).toEqual(['var(--vx-accent)'])
   })
 
   test('5,000 rows stay in linear time in one mark', () => {
@@ -499,23 +494,53 @@ describe('cursor dot per-datum colour (getMarker on a cursorValue series)', () =
   })
 })
 
-describe('legend swatch follows the series mark at every size class', () => {
+describe('legend swatch follows the series mark in every mode', () => {
+  const solid: ChartSeries<Row> = { ...a, key: 's', label: 'Solid' }
   const dashed: ChartSeries<Row> = { ...a, key: 'd', label: 'Dashed', dash: 'dashed' }
-  const legendOf = (series: ChartSeries<Row>[]): HTMLElement =>
-    ssr(<Lines ariaLabel="L" data={data} x={x} series={series} />)
+  const bar: ChartSeries<Row> = { ...a, key: 'b', label: 'Bar', mark: 'bar' }
+  const legend = (mode: LegendMode): HTMLElement =>
+    ssr(
+      <ChartLegend
+        series={[solid, dashed, bar]}
+        hidden={new Set()}
+        mode={mode}
+        groups={false}
+        toggle={false}
+        onToggle={() => {}}
+        onHighlight={() => {}}
+      />,
+    )
+  const swatches = (el: Element, key: string): Element[] => [
+    ...(el
+      .querySelector(`[data-legend-key="${key}"]`)
+      ?.querySelectorAll(':scope > [aria-hidden]') ?? []),
+  ]
+  const stroke = (swatch: Element | undefined) => ({
+    width: swatch?.getAttribute('width'),
+    dash: swatch?.querySelector('line')?.getAttribute('stroke-dasharray') ?? null,
+  })
 
-  test('a dashed line keeps one dashed line swatch, with no dot variant to swap in below 480px', () => {
-    const el = legendOf([a, dashed])
-    const entry = el.querySelector('[data-legend-key="d"]')
-    expect(entry?.querySelectorAll('svg line[stroke-dasharray]').length).toBe(1)
-    expect(entry?.querySelectorAll('svg').length).toBe(1)
-    expect(entry?.querySelectorAll('span[aria-hidden]').length).toBe(0)
+  test('dots mode: a line series is an 8px stroke (dash kept), never a dot', () => {
+    const el = legend('dots')
+    expect(swatches(el, 's').map((n) => n.tagName)).toEqual(['svg'])
+    expect(stroke(swatches(el, 's')[0])).toEqual({ width: '8', dash: null })
+    expect(stroke(swatches(el, 'd')[0])).toEqual({ width: '8', dash: '2.5 2' })
+  })
+
+  test('chips mode: a line series is a 12px stroke (dash kept)', () => {
+    const el = legend('chips')
+    expect(stroke(swatches(el, 's')[0])).toEqual({ width: '12', dash: null })
+    expect(stroke(swatches(el, 'd')[0])).toEqual({ width: '12', dash: '4 3' })
+  })
+
+  test('auto mode renders the compact and the wide stroke, CSS picks one', () => {
+    const el = legend('auto')
+    expect(swatches(el, 'd').map((n) => stroke(n).width)).toEqual(['8', '12'])
+    expect(swatches(el, 'd').every((n) => n.tagName === 'svg')).toBe(true)
   })
 
   test('a bar series still swaps between the dot and the chip', () => {
-    const el = legendOf([{ ...a, key: 'b', label: 'Bar', mark: 'bar' }])
-    const entry = el.querySelector('[data-legend-key="b"]')
-    expect(entry?.querySelectorAll('svg').length).toBe(0)
-    expect(entry?.querySelectorAll('span[aria-hidden]').length).toBe(2)
+    const el = legend('auto')
+    expect(swatches(el, 'b').map((n) => n.tagName)).toEqual(['SPAN', 'SPAN'])
   })
 })

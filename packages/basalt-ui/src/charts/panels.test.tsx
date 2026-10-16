@@ -8,6 +8,7 @@ import { act } from 'react'
 import { createRoot, hydrateRoot } from 'react-dom/client'
 import { renderToString } from 'react-dom/server'
 import { chartCursor } from './cursor'
+import { hoverPlot } from './hover-test-util'
 import { DualPanel } from './DualPanel'
 import { ChartLegend } from './legend'
 import type { DualPanelProps } from './DualPanel'
@@ -179,6 +180,38 @@ const fillPoints = (el: Element): number =>
     (n, p) => n + (p.getAttribute('d')?.split(/[ML]/).length ?? 0),
     0,
   )
+
+describe('DualPanel as a cursor follower', () => {
+  const follow = async (onFollow: boolean): Promise<HTMLElement> => {
+    const el = await mount(
+      <>
+        <div id="L">
+          <DualPanel {...dualProps} ariaLabel="Leader" />
+        </div>
+        <div id="F">
+          <DualPanel {...dualProps} ariaLabel="Follower" tooltip={{ onFollow }} />
+        </div>
+      </>,
+    )
+    await hoverPlot(el.querySelector('#L svg'))
+    return el
+  }
+  const rings = (el: Element, id: string): number =>
+    el.querySelectorAll(`#${id} [data-ts-key^="default-focus"] circle`).length
+
+  test("draws the leader's dots at the shared x and keeps its tooltip silent", async () => {
+    const el = await follow(false)
+    expect(rings(el, 'L')).toBeGreaterThan(0)
+    expect(rings(el, 'F')).toBe(rings(el, 'L'))
+    expect(tooltips().length).toBe(1)
+    expect(document.querySelectorAll('[aria-live]').length).toBe(1)
+  })
+
+  test("tooltip.onFollow shows the follower's own tooltip as well", async () => {
+    await follow(true)
+    expect(tooltips().length).toBe(2)
+  })
+})
 
 describe('DualPanel', () => {
   test('one host, one label, two composed panes', async () => {

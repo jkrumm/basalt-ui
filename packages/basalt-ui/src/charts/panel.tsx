@@ -22,7 +22,7 @@ import { ChartShell } from './CartesianChart'
 import type { ChartShellProps, ShellContext } from './CartesianChart'
 import { defaultFormatX, engineRow, utcHeaderDate, visibleSeries, xGuide, yGuide } from './compile'
 import type { CartesianDefinition } from './compile'
-import { cursorBinding, quietWhileFollowing } from './cursor'
+import { cursorBinding, followerOptions, quietWhileFollowing } from './cursor'
 import { plotAccess } from './plot-context'
 import type { PlotAccess } from './plot-context'
 import type { XScaleModel } from './scales'
@@ -223,7 +223,7 @@ function panelDefinition<T, X extends ChartX>(
         ? false
         : {
             use: quietWhileFollowing,
-            ...(!tooltip?.onFollow && { follower: { group: cursorGroup, chartId } }),
+            ...followerOptions(tooltip, cursorGroup, chartId),
             portal,
             anchor: 'group-center',
             content: (points: readonly ChartPoint[]) => {

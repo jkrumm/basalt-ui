@@ -13,8 +13,8 @@ import type { ChartSeries } from './types'
  * `auto` renders both swatches and lets the container decide: none, dots or chips (CSS). The
  * swatch SHAPE follows the mode for a filled mark, signed split included: below 480px a dot (8px
  * circle), from 480px a chip (10px square) — so one `DualPanel` bar legend is a split circle on a
- * narrow card and a split square on a wide one. A LINE series keeps its short stroke, dash
- * included, at every size (friction row 125). Not a per-chart prop.
+ * narrow card and a split square on a wide one. A LINE series swaps a short stroke for a shorter
+ * one instead, dash included, so it is never a dot. Not a per-chart prop.
  */
 export type LegendMode = 'dots' | 'chips' | 'auto'
 
@@ -106,24 +106,33 @@ type SwatchStyle = Pick<
 const swatchFill = (s: SwatchStyle): string =>
   s.colorNegative ? `linear-gradient(90deg, ${s.color} 50%, ${s.colorNegative} 50%)` : s.color
 
+/** A line series' key: a short stroke with its dash, 8px below 480px and 12px from 480px. */
+function LineSwatch({ s, compact }: { s: SwatchStyle; compact: boolean }): ReactElement {
+  const width = compact ? 8 : 12
+  return (
+    <svg
+      aria-hidden
+      className={compact ? classes.dot : classes.chip}
+      width={width}
+      height={8}
+      style={{ flex: 'none' }}
+    >
+      <line
+        x1={1}
+        x2={width - 1}
+        y1={4}
+        y2={4}
+        stroke={s.color}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeOpacity={s.strokeOpacity ?? 1}
+        {...(s.dash === 'dashed' && { strokeDasharray: compact ? '2.5 2' : '4 3' })}
+      />
+    </svg>
+  )
+}
+
 function Swatch({ s, mode }: { s: SwatchStyle; mode: LegendMode }): ReactElement {
-  // A line series keeps its stroke (and its dash) at every size class: a dot cannot say "dashed".
-  if ((s.mark ?? 'line') === 'line')
-    return (
-      <svg aria-hidden width={12} height={8} style={{ flex: 'none' }}>
-        <line
-          x1={1}
-          x2={11}
-          y1={4}
-          y2={4}
-          stroke={s.color}
-          strokeWidth={2}
-          strokeLinecap="round"
-          strokeOpacity={s.strokeOpacity ?? 1}
-          {...(s.dash === 'dashed' && { strokeDasharray: '4 3' })}
-        />
-      </svg>
-    )
   if (mode === 'auto')
     return (
       <>
@@ -131,6 +140,7 @@ function Swatch({ s, mode }: { s: SwatchStyle; mode: LegendMode }): ReactElement
         <Swatch s={s} mode="chips" />
       </>
     )
+  if ((s.mark ?? 'line') === 'line') return <LineSwatch s={s} compact={mode === 'dots'} />
   if (mode === 'dots')
     return (
       <span
