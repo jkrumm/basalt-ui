@@ -75,6 +75,19 @@ describe('theme hit adopters', () => {
     expect(hits[0]?.className).toContain('close')
   })
 
+  test('Modal: the close button has an accessible name', () => {
+    render(
+      <MantineProvider theme={theme}>
+        <Modal opened onClose={() => {}} title="T" transitionProps={{ duration: 0 }}>
+          body
+        </Modal>
+      </MantineProvider>,
+    )
+    expect(document.body.querySelector('button[class*="close"]')?.getAttribute('aria-label')).toBe(
+      'Close',
+    )
+  })
+
   test('NumberInput: the stepper controls do not adopt the hit attribute', () => {
     const { container } = render(
       <MantineProvider theme={theme}>

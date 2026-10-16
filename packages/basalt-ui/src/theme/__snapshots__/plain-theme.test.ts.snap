@@ -473,6 +473,7 @@ exports[`createBasaltTheme() shape and resolver output default 1`] = `
       },
       "defaultProps": {
         "closeButtonProps": {
+          "aria-label": "Close",
           "data-basalt-hit": true,
         },
         "radius": 8,
@@ -1565,6 +1566,7 @@ exports[`createBasaltTheme() shape and resolver output all knobs 1`] = `
       },
       "defaultProps": {
         "closeButtonProps": {
+          "aria-label": "Close",
           "data-basalt-hit": true,
         },
         "radius": 11,
