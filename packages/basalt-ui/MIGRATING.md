@@ -1041,10 +1041,9 @@ The `basalt-ui/router-tanstack` subpath is **removed** in 2.x, not moved: an imp
 | `NavItemMeta`, `NavGroupMeta`, `AnyNavItem`, `AnyNavGroup`, `AnyNavLink`, `FlatNavItem`, `NavConfig`, `NavGroupId`, `NavTabId`, `NavIndex`, `UseNavOptions`, `NavBinding`, `NavAnchor`, `NavAnchorProps`, `NavMobilePlacement` | deleted                                                                                                                                                                                                                                                                                                                                                                                                                                                    | no consumer names them; derive with `ComponentProps` / `Parameters` |
 | `useNav`, and `BasaltShell`'s `sections` / `mobileNav` props                                                                                                                                                                   | deleted: pass `nav={NAV}` (plus `badges`, `isActive`, `getScrollElement` — the old `useNav` options) to `BasaltShell`; it resolves the sidebar, the mobile bar and the breadcrumb itself. `mobileNav` tuning moves to `defineNav`'s `mobile`. argo `apps/dashboard/src/routes/__root.tsx`: replace `const nav = useNav(NAV, { badges })` + `{...nav}` with `nav={NAV} badges={…}` (migrates in W12; 1.x consumers stay on their pinned version until then) |
 
-## Unreleased
+## Unreleased — the router defaults need no provider
 
-_Nothing yet. Author the next section under this heading as `## Unreleased — <title>`; the
-release renames it and opens a new one here._
+- **Behaviour: the default pending, error and not-found screens of `createBasaltRouter` / `basaltRouterOptions` are plain HTML, not Mantine components.** They render at the route that failed — above `BasaltProvider` for a root-level error or a pathless-layout provider — where Mantine threw "MantineProvider was not found". Same copy, "Try again" still calls `reset`; the spinner is an `<output>` (implicit `status`), the error `role="alert"`; the look follows `--vx-*` tokens with literal fallbacks (visual parity, not pixel-identical). **Opt-out:** pass your own `defaultPendingComponent` / `defaultErrorComponent` / `defaultNotFoundComponent` (after the spread) for Mantine screens.
 
 ## 2.13.2 — followers draw the cursor dots, a dashed line keeps its key
 

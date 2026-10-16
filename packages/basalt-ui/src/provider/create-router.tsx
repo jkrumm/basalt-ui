@@ -5,12 +5,12 @@
  * pending / error / not-found components, and the route view transition (direction from the
  * `BasaltShell` nav order, V2-SPEC § 5).
  */
-import { Button, Center, Loader, Stack, Text } from '@mantine/core'
 import type { QueryClient, QueryClientConfig } from '@tanstack/react-query'
 import { Router, createRouter } from '@tanstack/react-router'
 import type { AnyRoute, ErrorComponentProps, RouterHistory } from '@tanstack/react-router'
 import { toErrorMessage } from '../common/errors'
 import { makeQueryClient } from '../query-client'
+import classes from './route-defaults.module.css'
 import type { RouterHook } from '../telemetry'
 import {
   guardViewTransitionRejections,
@@ -49,36 +49,34 @@ export type BasaltRouter<
   readonly [basaltRouterBrand]: true
 }
 
+// Provider-free on purpose: a route's pending/error/not-found screen renders at the route that
+// failed, which can sit above `BasaltProvider` (a root-level error, or a pathless-layout provider).
 function PendingComponent() {
   return (
-    <Center py="xl">
-      <Loader size="sm" />
-    </Center>
+    <div className={classes.center}>
+      <output className={classes.spinner} aria-label="Loading" />
+    </div>
   )
 }
 
 function ErrorComponent({ error, reset }: ErrorComponentProps) {
   return (
-    <Stack align="flex-start" gap="xs" p="md">
-      <Text fw={600}>Something went wrong</Text>
-      <Text c="dimmed" size="sm">
-        {toErrorMessage(error)}
-      </Text>
-      <Button size="compact-sm" variant="default" onClick={reset}>
+    <div className={classes.stack} role="alert">
+      <p className={classes.title}>Something went wrong</p>
+      <p className={classes.text}>{toErrorMessage(error)}</p>
+      <button type="button" className={classes.retry} onClick={reset}>
         Try again
-      </Button>
-    </Stack>
+      </button>
+    </div>
   )
 }
 
 function NotFoundComponent() {
   return (
-    <Stack gap={4} p="md">
-      <Text fw={600}>Page not found</Text>
-      <Text c="dimmed" size="sm">
-        This address does not match any page.
-      </Text>
-    </Stack>
+    <div className={classes.stack}>
+      <p className={classes.title}>Page not found</p>
+      <p className={classes.text}>This address does not match any page.</p>
+    </div>
   )
 }
 
