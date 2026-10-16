@@ -321,7 +321,7 @@ export function DualPanel<T, X extends Date | number = Date | number>(
 
       return {
         keys: model.values,
-        extent: model.extent,
+        extent: [lo - pad, hi + pad],
         top: topPane,
         bottom: barPane,
         topFraction,

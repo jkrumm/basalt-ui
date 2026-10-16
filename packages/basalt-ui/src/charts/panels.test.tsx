@@ -227,7 +227,18 @@ describe('DualPanel as a cursor follower', () => {
     }
     await set(2)
     expect(rings(el, 'F')).toBeGreaterThan(0)
-    await set(1) // the exact domain edge
+    await act(async () => {
+      // Half a day before the first sample: inside the half-step pad the scale renders.
+      chartCursor().setState({
+        anchor: 'value',
+        value: { x: new Date(day(1).getTime() - 6 * 3_600_000) },
+        source: 'programmatic',
+        pinned: false,
+      })
+      await new Promise((r) => setTimeout(r, 30))
+    })
+    expect(rings(el, 'F')).toBeGreaterThan(0)
+    await set(1) // the data edge
     expect(rings(el, 'F')).toBeGreaterThan(0)
     await set(20)
     expect(rings(el, 'F')).toBe(0)
