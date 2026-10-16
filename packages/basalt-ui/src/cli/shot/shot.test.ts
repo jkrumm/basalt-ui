@@ -12,9 +12,9 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 import { buildBoard } from './board'
-import { unionClip, withParam } from './capture'
+import { capture, fileName, unionClip, withParam } from './capture'
 import { unknownFlag } from '../help'
-import { commitOut, parseShotArgs, planOut, shot } from './index'
+import { commitOut, parseShotArgs, planOut, recoverOut, sanitizeBase, shot } from './index'
 import { contrastRatio, contrastThreshold, finishMeasurement } from './measure'
 import type { TextReading } from './measure'
 import { INSTALL_LINE, ShotError, isPlaywright, withBrowser } from './playwright'
@@ -141,7 +141,7 @@ describe('parseShotArgs', () => {
   test('routes, --dist, defaults', () => {
     const a = parseShotArgs(['/', '/dashboard', '--dist', 'dist'])
     expect(a.routes).toEqual(['/', '/dashboard'])
-    expect(a.out).toBe('.basalt/shots')
+    expect(a.out).toBe('.basalt/shots/latest')
     expect(a.states).toEqual(['rest', 'hover', 'focus', 'tooltip', 'empty', 'loading', 'error'])
   })
   test('--states keeps canonical order', () => {
@@ -154,7 +154,7 @@ describe('parseShotArgs', () => {
   test.each([
     [[], /no route/],
     [['/a'], /exactly one of --base/],
-    [['/a', '--base', 'u', '--dist', 'd'], /exactly one of --base/],
+    [['/a', '--base', 'http://x', '--dist', 'd'], /exactly one of --base/],
     [['a', '--dist', 'd'], /must start with '\//],
     [['/a', '--dist', 'd', '--states', 'rest,nope'], /unknown state 'nope'/],
     [['/a', '--dist', 'd', '--bogus'], /bogus/],
@@ -176,7 +176,7 @@ describe('planOut', () => {
   test('refuses a populated dir that is not a previous shot (--out src)', () => {
     const cwd = tmp()
     seed(cwd, 'src')
-    expect(() => planOut(cwd, 'src')).toThrow(/not a previous shot output/)
+    expect(() => planOut(cwd, 'src')).toThrow(/not purely a previous shot output/)
     expect(existsSync(join(cwd, 'src/x.txt'))).toBe(true)
   })
   test('refuses the project root, escapes, files and protected dirs', () => {
@@ -206,12 +206,38 @@ describe('planOut', () => {
   test('accepts absent, empty, own-files-only, previous-run and `..shots` dirs', () => {
     const cwd = tmp()
     mkdirSync(join(cwd, 'empty'))
-    seed(cwd, 'own', 'last.json')
     seed(cwd, 'prev', 'metrics.json')
     writeFileSync(join(cwd, 'prev/metrics.json'), '{"version":1}')
-    for (const out of ['absent', 'a/b/absent', 'empty', 'own', 'prev', '..shots']) {
+    for (const out of [
+      'absent',
+      'a/b/absent',
+      'empty',
+      'prev',
+      '..shots',
+      '.basalt/shots/latest',
+    ]) {
       expect(planOut(cwd, out), out).toBe(join(cwd, out))
     }
+  })
+  test('a previous-shot dir with a foreign file is refused; shot-owned entries are fine', () => {
+    const cwd = tmp()
+    seed(cwd, 'prev', 'metrics.json')
+    writeFileSync(join(cwd, 'prev/metrics.json'), '{"version":1}')
+    mkdirSync(join(cwd, 'prev/png'))
+    writeFileSync(join(cwd, 'prev/board.html'), '')
+    writeFileSync(join(cwd, 'prev/.gitignore'), '*\n')
+    expect(planOut(cwd, 'prev')).toBe(join(cwd, 'prev'))
+    writeFileSync(join(cwd, 'prev/notes.md'), 'mine')
+    expect(() => planOut(cwd, 'prev')).toThrow(/not purely a previous shot output/)
+  })
+  test('the shot home itself is refused', () => {
+    expect(() => planOut(tmp(), '.basalt/shots')).toThrow(/shot home/)
+  })
+  test('a dangling symlink target or ancestor is a ShotError, not a stack trace', () => {
+    const cwd = tmp()
+    symlinkSync(join(cwd, 'nowhere'), join(cwd, 'dangling'))
+    expect(() => planOut(cwd, 'dangling')).toThrow(ShotError)
+    expect(() => planOut(cwd, 'dangling/inner')).toThrow(/dangling symlink/)
   })
   test('a metrics.json that is not version 1 is not a marker', () => {
     const cwd = tmp()
@@ -226,16 +252,137 @@ describe('commitOut', () => {
     const cwd = tmp()
     mkdirSync(join(cwd, 'design/x'), { recursive: true })
     writeFileSync(join(cwd, 'design/x/metrics.json'), '{"version":1}')
-    writeFileSync(join(cwd, 'design/x/stale.png'), 'old')
+    writeFileSync(join(cwd, 'design/x/board.html'), 'old')
     mkdirSync(join(cwd, 'design/x.tmp'))
     writeFileSync(join(cwd, 'design/x.tmp/board.html'), 'new')
     commitOut(cwd, 'design/x', join(cwd, 'design/x.tmp'), ['/'], new Date(0))
-    expect(existsSync(join(cwd, 'design/x/stale.png'))).toBe(false)
+    expect(existsSync(join(cwd, 'design/x.prev'))).toBe(false)
     expect(readFileSync(join(cwd, 'design/x/board.html'), 'utf8')).toBe('new')
     expect(readFileSync(join(cwd, '.basalt/shots/.gitignore'), 'utf8')).toBe('*\n')
     expect(JSON.parse(readFileSync(join(cwd, '.basalt/shots/last.json'), 'utf8')).out).toBe(
       'design/x',
     )
+  })
+})
+
+describe('recoverOut', () => {
+  test('rolls a leftover .prev back when there is no out; leaves it when out exists', () => {
+    const cwd = tmp()
+    mkdirSync(join(cwd, 'x.prev'))
+    writeFileSync(join(cwd, 'x.prev/board.html'), 'old')
+    recoverOut(join(cwd, 'x'))
+    expect(readFileSync(join(cwd, 'x/board.html'), 'utf8')).toBe('old')
+    expect(existsSync(join(cwd, 'x.prev'))).toBe(false)
+  })
+  test('shot() rolls back before doing anything else, even when the launch then fails', async () => {
+    const cwd = tmp()
+    mkdirSync(join(cwd, 'x.prev'))
+    writeFileSync(join(cwd, 'x.prev/metrics.json'), '{"version":1}')
+    const { result } = await errors(() =>
+      shot(['/', '--base', 'http://x', '--out', 'x'], cwd, {
+        resolve: () => fakePw([undefined, 'chrome']),
+      }),
+    )
+    expect(result).toBe(1)
+    expect(existsSync(join(cwd, 'x/metrics.json'))).toBe(true)
+  })
+})
+
+describe('sanitizeBase', () => {
+  test('keeps origin and path; drops credentials, query and fragment', () => {
+    expect(sanitizeBase('https://user:pw@example.com:8443/app/?token=abc#frag')).toBe(
+      'https://example.com:8443/app',
+    )
+    expect(sanitizeBase('http://127.0.0.1:5173/')).toBe('http://127.0.0.1:5173')
+    expect(() => sanitizeBase('not a url')).toThrow(ShotError)
+  })
+})
+
+describe('fileName', () => {
+  test('routes and names that slug alike still get distinct files', () => {
+    expect(fileName('/a/b', 'n', 'light', 'desktop', 'rest')).not.toBe(
+      fileName('/a-b', 'n', 'light', 'desktop', 'rest'),
+    )
+    expect(fileName('/', 'x y', 'light', 'desktop', 'rest')).not.toBe(
+      fileName('/', 'x-y', 'light', 'desktop', 'rest'),
+    )
+    expect(fileName('/a', 'n', 'dark', 'mobile', 'hover')).toMatch(
+      /^a-[0-9a-f]{6}__n-[0-9a-f]{6}__dark__mobile__hover\.png$/,
+    )
+  })
+})
+
+describe('capture() with a fake browser', () => {
+  const fakeBrowser = (scale: () => unknown) => {
+    const locator: Record<string, unknown> = {
+      first: () => locator,
+      count: () => Promise.resolve(1),
+      scrollIntoViewIfNeeded: () => Promise.resolve(),
+      isVisible: () => Promise.resolve(true),
+      screenshot: () => Promise.resolve(),
+    }
+    const page = {
+      setDefaultTimeout: () => undefined,
+      goto: () => Promise.resolve(),
+      locator: () => locator,
+      screenshot: () => Promise.resolve(),
+      mouse: { move: () => Promise.resolve() },
+      keyboard: { press: () => Promise.resolve() },
+      evaluate: (expression: string) => {
+        if (expression.includes('probe')) return Promise.resolve().then(scale)
+        if (expression.includes('data-shot-states'))
+          return Promise.resolve({ anchors: ['card'], declared: [] })
+        return Promise.resolve(undefined)
+      },
+    }
+    return {
+      newContext: () =>
+        Promise.resolve({
+          newPage: () => Promise.resolve(page),
+          addInitScript: () => Promise.resolve(),
+          close: () => Promise.resolve(),
+        }),
+    } as never
+  }
+  const input = (browser: never, over: object = {}) => ({
+    browser,
+    base: 'http://x',
+    routes: ['/'],
+    states: ['rest' as const],
+    pngDir: '/unused',
+    log: () => undefined,
+    ...over,
+  })
+
+  test('a throwing measurer keeps the PNG ok and notes the failure separately', async () => {
+    const out = await capture(
+      input(
+        fakeBrowser(() => ({ spacing: {}, radius: {}, fontSizes: {} })),
+        {
+          measure: () => Promise.reject(new Error('canvas gone\nstack')),
+        },
+      ),
+    )
+    const card = out.shots.filter((s) => s.name === 'card')
+    expect(card).toHaveLength(4)
+    expect(
+      card.every((s) => s.status === 'ok' && s.note === 'metrics unavailable: canvas gone'),
+    ).toBe(true)
+    expect(out.anchors).toEqual([])
+  })
+
+  test('a readScale failure is non-fatal: shots still record, scale is empty', async () => {
+    const out = await capture(
+      input(
+        fakeBrowser(() => {
+          throw new Error('no probe')
+        }),
+        { measure: () => Promise.resolve(measurement) },
+      ),
+    )
+    expect(out.scale).toEqual([])
+    expect(out.shots.filter((s) => s.status === 'ok')).toHaveLength(8)
+    expect(out.anchors).toHaveLength(4)
   })
 })
 
@@ -307,16 +454,16 @@ describe('shot()', () => {
 
   test('a failed launch exits 1 with the install line and leaves the previous board intact', async () => {
     const cwd = tmp()
-    mkdirSync(join(cwd, '.basalt/shots'), { recursive: true })
-    writeFileSync(join(cwd, '.basalt/shots/metrics.json'), '{"version":1}')
-    writeFileSync(join(cwd, '.basalt/shots/board.html'), 'previous')
+    mkdirSync(join(cwd, '.basalt/shots/latest'), { recursive: true })
+    writeFileSync(join(cwd, '.basalt/shots/latest/metrics.json'), '{"version":1}')
+    writeFileSync(join(cwd, '.basalt/shots/latest/board.html'), 'previous')
     const { result, lines } = await errors(() =>
       shot(['/', '--base', 'http://x'], cwd, { resolve: () => fakePw([undefined, 'chrome']) }),
     )
     expect(result).toBe(1)
     expect(lines[0]?.split('\n')[0]).toBe(INSTALL_LINE)
-    expect(readFileSync(join(cwd, '.basalt/shots/board.html'), 'utf8')).toBe('previous')
-    expect(readdirNames(join(cwd, '.basalt'))).toEqual(['shots'])
+    expect(readFileSync(join(cwd, '.basalt/shots/latest/board.html'), 'utf8')).toBe('previous')
+    expect(readdirNames(join(cwd, '.basalt/shots'))).toEqual(['latest'])
   })
 
   test('--out src is refused before anything is launched or deleted', async () => {
@@ -328,7 +475,7 @@ describe('shot()', () => {
       shot(['/', '--base', 'http://x', '--out', 'src'], cwd, { resolve: () => fakePw([], log) }),
     )
     expect(result).toBe(1)
-    expect(lines.join()).toMatch(/--out src exists and is not a previous shot output/)
+    expect(lines.join()).toMatch(/--out src exists and is not purely a previous shot output/)
     expect(log).toEqual([])
     expect(existsSync(join(cwd, 'src/keep.ts'))).toBe(true)
   })
@@ -380,6 +527,30 @@ describe('shot()', () => {
     expect(logs.join('\n')).toContain('2 shots')
     expect(logs.join('\n')).toContain('1 not declared, 1 skipped, 1 failed')
     expect(readdirNames(join(cwd, '.basalt/shots'))).toEqual(['.gitignore', 'last.json', 'r1'])
+  })
+
+  test('a named run, then the default run, then the default again all succeed', async () => {
+    const cwd = tmp()
+    const ok = fakeMetrics().shots.filter((s) => s.status === 'ok')
+    const go = (extra: string[]): Promise<number> =>
+      shot(['/dashboard', '--base', 'http://127.0.0.1:1', ...extra], cwd, {
+        resolve: () => fakePw([]),
+        log: () => undefined,
+        capture: () => Promise.resolve({ anchors: [], shots: ok, scale: [] }),
+      })
+    expect(await go(['--out', '.basalt/shots/r1'])).toBe(0)
+    expect(await go([])).toBe(0)
+    expect(await go([])).toBe(0)
+    expect(readdirNames(join(cwd, '.basalt/shots'))).toEqual([
+      '.gitignore',
+      'last.json',
+      'latest',
+      'r1',
+    ])
+    expect(JSON.parse(readFileSync(join(cwd, '.basalt/shots/last.json'), 'utf8')).out).toBe(
+      '.basalt/shots/latest',
+    )
+    expect(readFileSync(join(cwd, '.basalt/shots/latest/.gitignore'), 'utf8')).toBe('*\n')
   })
 
   test('exits 0 when every shot is ok, not-declared or skipped', async () => {

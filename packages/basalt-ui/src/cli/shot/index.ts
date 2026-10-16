@@ -5,6 +5,7 @@
 import {
   lstatSync,
   mkdirSync,
+  mkdtempSync,
   readFileSync,
   readdirSync,
   realpathSync,
@@ -24,7 +25,9 @@ import { serveDist } from './serve'
 import { SCHEMES, STATES, VIEWPORTS } from './types'
 import type { ShotMetrics, ShotState } from './types'
 
-const DEFAULT_OUT = '.basalt/shots'
+const HOME = '.basalt/shots'
+/** A run dir under the home, so `last.json` and a named run's dir never share the default out. */
+const DEFAULT_OUT = `${HOME}/latest`
 const USAGE_LINE =
   'usage: basalt-ui shot <route…> (--base <url> | --dist <dir>) [--out <dir>] [--states <list>]'
 
@@ -62,6 +65,7 @@ export function parseShotArgs(flags: readonly string[]): ShotArgs {
     throw new ShotError(`${error instanceof Error ? error.message : String(error)}\n${USAGE_LINE}`)
   }
   const { values, positionals } = parsed
+  if (values.base) sanitizeBase(values.base)
   if (positionals.length === 0) throw new ShotError(`no route given.\n${USAGE_LINE}`)
   const bad = positionals.find((r) => !r.startsWith('/'))
   if (bad) throw new ShotError(`route '${bad}' must start with '/'.\n${USAGE_LINE}`)
@@ -86,8 +90,8 @@ export function parseShotArgs(flags: readonly string[]): ShotArgs {
 }
 
 const PROTECTED_SEGMENTS = new Set(['.git', 'node_modules'])
-/** Files a shot writes beside its output: a dir holding only these counts as empty. */
-const OWN_FILES = new Set(['.gitignore', 'last.json'])
+/** What a shot writes into its out dir: only a dir made of these is ever emptied. */
+const SHOT_OWNED = new Set(['png', 'board.html', 'metrics.json', '.gitignore'])
 
 const outside = (rel: string): boolean =>
   rel === '..' || rel.startsWith('..' + sep) || isAbsolute(rel)
@@ -101,11 +105,17 @@ const lexists = (path: string): boolean => {
   }
 }
 
+/** A previous render: `metrics.json` (`version: 1`) and nothing but shot-owned entries. */
 const isPreviousShot = (dir: string): boolean => {
   try {
+    const marker = JSON.parse(readFileSync(join(dir, 'metrics.json'), 'utf8')) as {
+      version?: unknown
+    }
+    const png = join(dir, 'png')
     return (
-      (JSON.parse(readFileSync(join(dir, 'metrics.json'), 'utf8')) as { version?: unknown })
-        .version === 1
+      marker.version === 1 &&
+      readdirSync(dir).every((e) => SHOT_OWNED.has(e)) &&
+      (!lexists(png) || (lstatSync(png).isDirectory() && !lstatSync(png).isSymbolicLink()))
     )
   } catch {
     return false
@@ -123,6 +133,8 @@ export function planOut(cwd: string, out: string): string {
     throw new ShotError(`--out ${out} ${why}`)
   }
   if (rel === '' || outside(rel)) refuse('must be a directory inside the project')
+  if (relative(join(cwd, HOME), dir) === '')
+    refuse('is the shot home (holds last.json); use a subdirectory')
   if (rel === '.basalt' || rel.split(sep).some((part) => PROTECTED_SEGMENTS.has(part))) {
     refuse('is (or sits inside) a protected directory (.git, node_modules, .basalt)')
   }
@@ -130,21 +142,46 @@ export function planOut(cwd: string, out: string): string {
   while (!lexists(probe)) probe = dirname(probe)
   if (probe === dir && lstatSync(dir).isSymbolicLink())
     refuse('is a symlink; refusing to follow it')
-  if (outside(relative(realpathSync(cwd), realpathSync(probe))))
-    refuse('resolves outside the project')
+  let real = ''
+  try {
+    real = realpathSync(probe)
+  } catch {
+    refuse('sits behind a dangling symlink')
+  }
+  if (outside(relative(realpathSync(cwd), real))) refuse('resolves outside the project')
   if (probe === dir) {
     if (!statSync(dir).isDirectory()) refuse('exists and is not a directory')
-    const entries = readdirSync(dir)
-    if (!entries.every((e) => OWN_FILES.has(e)) && !isPreviousShot(dir)) {
+    if (readdirSync(dir).length > 0 && !isPreviousShot(dir)) {
       refuse(
-        'exists and is not a previous shot output (no metrics.json with version 1); refusing to empty it',
+        'exists and is not purely a previous shot output (metrics.json version 1 plus png/, board.html, .gitignore); refusing to empty it',
       )
     }
   }
   return dir
 }
 
-/** Swaps the finished `tmp` render in for `outDir` (re-validated), then records `last.json` last. */
+/** `--base` as recorded: origin and path only, never credentials, query or fragment. */
+export function sanitizeBase(base: string): string {
+  try {
+    const url = new URL(base)
+    return `${url.origin}${url.pathname}`.replace(/\/+$/, '')
+  } catch {
+    throw new ShotError(`--base ${base} is not a URL`)
+  }
+}
+
+/** An out dir moved aside while a swap ran. */
+const asideOf = (dir: string): string => `${dir}.prev`
+
+/** A swap killed between its two renames leaves `<out>.prev` and no `<out>`: put it back. */
+export function recoverOut(dir: string): void {
+  if (lexists(asideOf(dir)) && !lexists(dir)) renameSync(asideOf(dir), dir)
+}
+
+/**
+ * Swaps the finished `tmp` render in for `out` (re-validated): old aside, new in, aside removed —
+ * a failure between the renames restores the old render. `last.json` is written last.
+ */
 export function commitOut(
   cwd: string,
   out: string,
@@ -153,9 +190,22 @@ export function commitOut(
   now: Date,
 ): void {
   const dir = planOut(cwd, out)
-  rmSync(dir, { recursive: true, force: true })
-  renameSync(tmp, dir)
-  const home = join(cwd, '.basalt', 'shots')
+  const aside = asideOf(dir)
+  if (lexists(aside)) {
+    if (!isPreviousShot(aside))
+      throw new ShotError(`${relative(cwd, aside)} exists and is not a previous shot output`)
+    rmSync(aside, { recursive: true, force: true })
+  }
+  const hadOld = lexists(dir)
+  if (hadOld) renameSync(dir, aside)
+  try {
+    renameSync(tmp, dir)
+  } catch (error) {
+    if (hadOld) renameSync(aside, dir)
+    throw error
+  }
+  if (hadOld) rmSync(aside, { recursive: true, force: true })
+  const home = join(cwd, HOME)
   mkdirSync(home, { recursive: true })
   writeFileSync(join(home, '.gitignore'), '*\n')
   const rel = relative(cwd, dir).split(sep).join('/')
@@ -192,20 +242,25 @@ export async function shot(
   try {
     const args = parseShotArgs(flags)
     const outDir = planOut(cwd, args.out)
+    recoverOut(outDir)
     const pw: Playwright | null = (deps.resolve ?? resolvePlaywright)(cwd)
     if (!pw) throw new ShotError(INSTALL_LINE)
     const now = (deps.now ?? (() => new Date()))()
     const server = args.dist ? serveDist(resolve(cwd, args.dist)) : null
     if (server) stops.push(server.stop)
-    const tmp = `${outDir}.tmp-${process.pid}`
-    stops.push(() => rmSync(tmp, { recursive: true, force: true }))
+    let tmp = ''
+    stops.push(() => tmp && rmSync(tmp, { recursive: true, force: true }))
     const base = server?.origin ?? args.base ?? ''
     try {
       // The browser is up BEFORE the out dir is touched: a failed launch leaves the last board intact.
       const { anchors, shots, scale } = await withBrowser(
         pw,
         (browser) => {
-          mkdirSync(join(tmp, 'png'), { recursive: true })
+          const home = join(cwd, HOME)
+          mkdirSync(home, { recursive: true })
+          writeFileSync(join(home, '.gitignore'), '*\n')
+          tmp = mkdtempSync(join(home, 'tmp-'))
+          mkdirSync(join(tmp, 'png'))
           writeFileSync(join(tmp, '.gitignore'), '*\n')
           return (deps.capture ?? capture)({
             browser,
@@ -221,7 +276,7 @@ export async function shot(
       const metrics: ShotMetrics = {
         version: 1,
         generatedAt: now.toISOString(),
-        base,
+        base: sanitizeBase(base),
         routes: args.routes,
         viewports: [...VIEWPORTS],
         schemes: [...SCHEMES],
@@ -243,7 +298,7 @@ export async function shot(
       }
       return count('ok') === 0 ? 1 : 0
     } finally {
-      rmSync(tmp, { recursive: true, force: true })
+      if (tmp) rmSync(tmp, { recursive: true, force: true })
       server?.stop()
     }
   } catch (error) {
