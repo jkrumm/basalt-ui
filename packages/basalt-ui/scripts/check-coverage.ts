@@ -183,7 +183,7 @@ export const AGENT_LINE_BUDGETS: Readonly<Record<string, number>> = {
   'agent/rules/basalt-controls.md': 46,
   'agent/rules/basalt-batteries.md': 42,
   'agent/skills/basalt-app/SKILL.md': 300, // W10: +40 streaming snippet; +43 form-dialog snippet
-  'agent/skills/basalt-design/SKILL.md': 32, // W31: the design-round procedure
+  'agent/skills/basalt-design/SKILL.md': 36, // W31: the design-round procedure
   'agent/skills/basalt-charts/SKILL.md': 40,
   'agent/templates/AGENTS-block.md.tpl': 30,
   'agent/templates/DESIGN.md.tpl': 45,
@@ -194,7 +194,7 @@ export const AGENT_LINE_BUDGETS: Readonly<Record<string, number>> = {
  * can be satisfied by adding a seventh rule file or a fourth skill. The seeded `DESIGN.md.tpl` is
  * the consumer's own file after `init`, so it is outside the sum.
  */
-export const AGENT_LAYER_TOTAL_BUDGET = 673 // W10: +40 streaming snippet; +43 form-dialog snippet; W31: +14 design-round procedure
+export const AGENT_LAYER_TOTAL_BUDGET = 677 // W10: +40 streaming snippet; +43 form-dialog snippet; W31: +18 design-round procedure
 
 /**
  * Assert the 11 invariants against the live SURFACES + GUARD_RULES + the shipped agent layer, and
