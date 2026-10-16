@@ -458,7 +458,7 @@ reference lines, `y2`) and `Bars` (stacked, grouped or normalised, ± bars, over
 
 Charts share a cursor with no provider (`cursorGroup="…"` isolates one; `chartCursor(group?)` reads
 it for app code), and only the chart under the pointer or keyboard focus shows a tooltip
-(`tooltip.onFollow` opts a follower in). `x` ticks are `xTicks` (a count or the values) and
+(`tooltip.onFollow` opts a follower in); a follower still draws the leader's focus and cursor-value dots at the shared x. `x` ticks are `xTicks` (a count or the values) and
 collision is the engine's `tickLabels.thin`; labels never rotate.
 
 ### Query — `unwrap` (root barrel)

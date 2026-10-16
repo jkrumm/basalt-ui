@@ -1,8 +1,8 @@
 /**
  * `compileCartesian` — basalt's chart spec in, a TanStack definition out (`docs/V2-SPEC.md` § 9.2).
  * Pure and React-free: the host memoizes it, the tests call it directly. It owns the scales and
- * domains, the theme bridge, zones / x-zones / reference lines, the crosshair, grouped source-only
- * focus, the shared cursor binding, the tooltip content, and the container-class guide ladder.
+ * domains, the theme bridge, zones / x-zones / reference lines, the crosshair, the shared cursor
+ * binding, the tooltip content, and the container-class guide ladder.
  * TanStack owns margins (measured), layout, focus and keyboard, the tooltip surface and SSR.
  */
 import { crosshair } from '@tanstack/charts/crosshair'

@@ -158,7 +158,8 @@ export function cursorDots<T, X extends ChartX>(
 ): ChartMarks {
   const { getMarker } = s
   // `dot.fill` is constant but a state style's is not: one mark whose focused fill is the datum's
-  // own `getMarker` colour, resolved once per row here rather than on every focus repaint.
+  // own `getMarker` colour, resolved once per row here rather than on every focus repaint. The map
+  // is keyed by the row OBJECT: the engine hands the same objects back as the state context's datum.
   const colors = getMarker
     ? new Map(rows.map((r) => [r, getMarker(r.datum)?.color ?? s.color]))
     : undefined

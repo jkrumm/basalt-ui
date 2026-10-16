@@ -9,7 +9,7 @@ import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { renderToString } from 'react-dom/server'
 import { CartesianChart } from './CartesianChart'
-import { ChartLegend } from './legend'
+import { ChartLegend, LINE_SWATCH } from './legend'
 import type { LegendMode } from './legend'
 import { compileCartesian, dashedSwatch, engineRow, refLegendSeries } from './compile'
 import type { CartesianDefinition } from './compile'
@@ -17,7 +17,7 @@ import { VX } from '../tokens'
 import { contrastRatio } from '../tokens/hct'
 import { STATUS, SURFACE } from '../tokens/palette'
 import { chartCursor } from './cursor'
-import { hoverPlot } from './hover-test-util'
+import { hoverPlot } from '../../tests/support/hover-plot'
 import { Lines } from './Lines'
 import type { ChartSeries, RefLine } from './types'
 
@@ -518,24 +518,44 @@ describe('legend swatch follows the series mark in every mode', () => {
   const stroke = (swatch: Element | undefined) => ({
     width: swatch?.getAttribute('width'),
     dash: swatch?.querySelector('line')?.getAttribute('stroke-dasharray') ?? null,
+    cap: swatch?.querySelector('line')?.getAttribute('stroke-linecap'),
   })
 
   test('dots mode: a line series is an 8px stroke (dash kept), never a dot', () => {
     const el = legend('dots')
     expect(swatches(el, 's').map((n) => n.tagName)).toEqual(['svg'])
-    expect(stroke(swatches(el, 's')[0])).toEqual({ width: '8', dash: null })
-    expect(stroke(swatches(el, 'd')[0])).toEqual({ width: '8', dash: '2.5 2' })
+    expect(stroke(swatches(el, 's')[0])).toEqual({
+      width: String(LINE_SWATCH.compact.width),
+      dash: null,
+      cap: 'round',
+    })
+    expect(stroke(swatches(el, 'd')[0])).toEqual({
+      width: String(LINE_SWATCH.compact.width),
+      dash: LINE_SWATCH.compact.dash,
+      cap: 'butt',
+    })
   })
 
   test('chips mode: a line series is a 12px stroke (dash kept)', () => {
     const el = legend('chips')
-    expect(stroke(swatches(el, 's')[0])).toEqual({ width: '12', dash: null })
-    expect(stroke(swatches(el, 'd')[0])).toEqual({ width: '12', dash: '4 3' })
+    expect(stroke(swatches(el, 's')[0])).toEqual({
+      width: String(LINE_SWATCH.wide.width),
+      dash: null,
+      cap: 'round',
+    })
+    expect(stroke(swatches(el, 'd')[0])).toEqual({
+      width: String(LINE_SWATCH.wide.width),
+      dash: LINE_SWATCH.wide.dash,
+      cap: 'butt',
+    })
   })
 
   test('auto mode renders the compact and the wide stroke, CSS picks one', () => {
     const el = legend('auto')
-    expect(swatches(el, 'd').map((n) => stroke(n).width)).toEqual(['8', '12'])
+    expect(swatches(el, 'd').map((n) => stroke(n).width)).toEqual([
+      String(LINE_SWATCH.compact.width),
+      String(LINE_SWATCH.wide.width),
+    ])
     expect(swatches(el, 'd').every((n) => n.tagName === 'svg')).toBe(true)
   })
 
