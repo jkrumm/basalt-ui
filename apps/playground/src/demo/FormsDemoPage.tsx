@@ -43,14 +43,16 @@ function ProjectForm() {
     <Stack gap="md">
       <form onSubmit={form.onSubmit(handleSubmit)} noValidate>
         <Stack gap="sm">
-          <FormRow label="Project name">
-            <TextInput
-              key={fieldKey(form, 'name')}
-              {...inputProps(form, 'name')}
-              placeholder="My project"
-              required
-            />
-          </FormRow>
+          <div data-compare="form-field" style={{ display: 'contents' }}>
+            <FormRow label="Project name">
+              <TextInput
+                key={fieldKey(form, 'name')}
+                {...inputProps(form, 'name')}
+                placeholder="My project"
+                required
+              />
+            </FormRow>
+          </div>
           <FormRow label="Contact email">
             <TextInput
               key={fieldKey(form, 'email')}

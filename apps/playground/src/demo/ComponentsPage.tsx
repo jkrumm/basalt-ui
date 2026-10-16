@@ -298,17 +298,19 @@ function ComponentsSurfaces() {
       </SimpleGrid>
 
       <ComponentGroup title="Empty state">
-        <EmptyState
-          icon={<IconSearch />}
-          title="No results"
-          description="Try adjusting your filters or search terms."
-          action={
-            <Button size="xs" variant="default">
-              Clear filters
-            </Button>
-          }
-          tier="section"
-        />
+        <div data-compare="empty-state" style={{ display: 'contents' }}>
+          <EmptyState
+            icon={<IconSearch />}
+            title="No results"
+            description="Try adjusting your filters or search terms."
+            action={
+              <Button size="xs" variant="default">
+                Clear filters
+              </Button>
+            }
+            tier="section"
+          />
+        </div>
       </ComponentGroup>
 
       <Card py="xs" px="sm">
