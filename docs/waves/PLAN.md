@@ -934,7 +934,7 @@ scores the board on the three axes and must cite the crop and the defect for eve
 merges. **Owner review:** the mother shows the owner the boards at the close of every pattern family, not
 only once. Layout-suite geometry covers anything the rubric pins numerically.
 
-**Model:** Waves 29–32 are novel design work, so the mother spawns them with the high wave model
+**Model:** Waves 29–33 are novel design work, so the mother spawns them with the high wave model
 (`RD_WAVE_MODEL`, the owner asked for it). The rest use the default model unless a lead records why not.
 Mode and roles are unchanged from Part 1.
 
@@ -990,7 +990,7 @@ Mode and roles are unchanged from Part 1.
       17 lines of headroom; the last pattern wave folds the settled law into `DESIGN-CORE.md`. The spec covers
       the scenarios, the anatomy, scales, states and responsive behaviour per pattern, and the **three-axis
       rubric** with a banned-filler list. Reconcile it with `DESIGN-CORE.md`, and record each decision.
-- [x] Rewrite Waves 31–37 below to the spec (three to six steps each), and file the fleet's pattern needs
+- [x] Rewrite Waves 31–37 below to the spec (three to six steps each; review grew them to 31–41), and file the fleet's pattern needs
       (argo, rb, linewatch, obsidian, weatherorb, shutterflow) as ledger rows.
       **Owner review point:** the mother shows the owner the baseline board, the two-way scores and the spec
       before Wave 31 starts.
@@ -1001,123 +1001,178 @@ LEFT_BEHIND_PLACEHOLDER
 
 ## Wave 31 — The loop's tools, shipped (dogfooded first) <!-- status: active -->
 
-Waits for the owner review of Wave 30. Spec: `docs/waves/design-parity/SPEC.md` § 1, § 8, § 9.4. Pulls
-rows 135, 136 and 138 forward from Wave 21, because every later wave runs its rounds on these tools.
+The mother spawns it only after the owner has reviewed Wave 30. Spec: `docs/waves/design-parity/SPEC.md`
+§ 1, § 2, § 8, § 9.4, § 9.5. Pulls rows 135, 136 and 138 forward from Wave 21, because every later wave runs
+its rounds on these tools.
 
-- [ ] `basalt-ui shot <route…>`: renders routes with Playwright at 1440×900 and 390×844, light and dark, in
-      the rest, hover, focus, tooltip, empty, loading and error states (states reached by a declared
-      `data-shot-state` toggle or a URL param, SPEC § 7), and writes a local board (HTML + PNGs) to a
-      gitignored directory. `make compare` reuses it for the basalt column. The CLI is at 5164/5165 lines:
-      the PR raises the ceiling by the command's own size and says so, or offsets it.
-- [ ] The reviewer subagent, shipped and installed by `sync` at the repo root the session starts in (SPEC
-      § 9.4: agents are found only walking up). It scores a board on the three axes of SPEC § 8, cites crop
-      and defect for every failure, and returns pass or fail per component. Its prompt carries the banned-
-      filler list verbatim.
-- [ ] The skill procedure in `basalt-design`: scenario → catalogue pick → at least three rounds → rubric;
-      done means rendered, scored and revised. `basalt-ui check` prints a notice when UI files changed and no
-      board is newer than them. Rule lines are at 277/277: the procedure lives in the skill, the rule gets
-      one line that names it.
+- [ ] `basalt-ui shot <route…>`: renders routes at 1440×900 and 390×844, light and dark, in the rest, hover,
+      focus, tooltip, empty, loading and error states (reached by a declared `data-shot-state` toggle or URL
+      param), and writes a local board (HTML + PNGs) plus a metrics file (computed insets, gaps, radii, font
+      sizes, contrast per anchor) to a gitignored directory. Playwright is resolved from the consumer's dev
+      dependencies, never a basalt dependency (SPEC § 9.5; `/research` its version first). `make compare`
+      reuses it for the basalt column.
+- [ ] The reviewer subagent, installed by `sync` at the repo root sessions start in (SPEC § 9.4). It scores a
+      board and its metrics file on the three axes of SPEC § 8, cites crop and defect for every failure, and
+      carries the banned-filler list verbatim. **Calibrate it** (SPEC § 8.5): seeded known-bad boards it must
+      fail with the right citation, one known-good board it must pass.
+- [ ] The skill procedure in `basalt-design` (scenario → catalogue pick → at least three rounds → rubric →
+      owner after five failed rounds); `basalt-ui check` prints a notice when UI files changed and no board is
+      newer than them; one rule line names the procedure.
 - [ ] Discovery: the managed AGENTS block names the skills and the reviewer (row 135); every rule's `paths:`
       renders from `basalt.roots` (row 136); `basalt-controls.md` and its guard agree on one ViewTabs
       placement (row 138).
-- [ ] Dogfood: the scenario route `apps/playground/src/routes/scenarios.$name.tsx` (one route file, SPEC
-      § 2) with S4 as its first fixture; run `shot` and the reviewer on the current S4 once and commit the
-      scored baseline under `docs/waves/design-parity/w31/`.
+- [ ] Dogfood: the scenario route `apps/playground/src/routes/scenarios.$name.tsx` (SPEC § 2, D9) with the S4
+      fixture; run `shot` and the reviewer on today's S4 and commit the scored baseline under
+      `docs/waves/design-parity/w31/`.
+- [ ] Budgets: CLI lines (5164/5165) and rule lines (277/277) are raised by exactly what this wave adds, each
+      raise itemised in `scripts/check-budgets.ts`'s ceiling comment; one playground route is used (15/15).
+      Acceptance: `make check` green, the calibration result recorded, the S4 baseline committed.
       **Left behind:**
 
-## Wave 32 — Foundation: scales, the metric card, chart-in-card <!-- status: pending -->
+## Wave 32 — Scales <!-- status: pending -->
 
-Spec: SPEC § 5, § 6.1, § 6.2, § 6.10, § 6.12, § 11. Scenario S4 (spend and usage), then S1. Rounds run
-on Wave 31's tools.
+Spec: SPEC § 5, § 11. Scenarios S4 and S1 (build the S1 fixture). Validators: argo and rb shot once each at
+the close, before and after.
 
-- [ ] Scales through the derive config and constants (never a hex): the even-pixel spacing grid and the
-      Mantine scale, card inset 12/16, radius card 10 / control 6, row text `sm` 13/20, meta 12/16, hero
-      22/500 mono, h1 tracking, the dense 28 toolbar tier, gutter 24 at expanded (trial, D7). Re-baseline the
-      level-0 golden tests in the same PR.
-- [ ] The metric-card anatomy on `StatCard`: caption row with a qualifier slot, unit inline, text-only delta
-      (row 162), visual along the bottom edge, optional footer; fix the stale `Sparkline` JSDoc (row 162).
-- [ ] Chart-in-card chrome: axis-less sparkline at 22/24 px, 1.5 stroke, end dot on by default, neutral
-      unless earned; the span-aware date tick formatter that never repeats a label (row 137, with
-      weatherorb's zoned ticks).
-- [ ] Chrome: `Badge` defaults to `light`; subtle `Button` label and the active `Tabs` underline in ink, not
-      accent (verify the current colours in code first).
-- [ ] At least three rounds on S4 and S1 metric cards, scored by the shipped reviewer; boards to the owner
-      at the close (the first pattern family).
+- [ ] The even-pixel spacing grid and the Mantine scale (xs 8, sm 12, md 16, lg 20, xl 24) through the derive
+      constants; the `inline-spacing` guard's `DEFAULT_SPACING_STEPS` follows.
+- [ ] Card inset 12/16 (12 horizontal in a compact container), radius card 10 / control 6 / floating card + 1
+      / inset = control, gutter 24 at expanded (trial, D7).
+- [ ] Type roles: row text `sm` 13/20, meta 12/16, hero 22/500 mono; the dense 28 tier on toolbars and filter
+      rows at fine pointers.
+- [ ] Re-baseline in the same PR: `src/tokens/density.test.ts`, `src/theme/spacing.test.ts`,
+      `src/theme/radius.test.ts`, `src/theme/density-relations.test.ts`; update every shipped rule that states
+      a value; a MIGRATING entry with the old → new table and the `density`/`radius` knob that restores the
+      old feel. Layout-suite pins: card inset, card and control radius, table row 40 / header 36, toolbar in
+      one row at 1440.
+- [ ] At least three rounds on S4 and S1; revert any target a round fails (the gutter first) and record it.
       **Left behind:**
 
-## Wave 33 — Metric expression: meter, ranked list, strip, calendar <!-- status: pending -->
+## Wave 33 — The metric card and chart-in-card <!-- status: pending -->
 
-Spec: SPEC § 3, § 4, § 6.3–6.5. Scenarios S2 and S4. Validators: argo (dashboards), rb (stats, ingest).
-Each new export raises its own budget ceiling and names its consumer (SPEC § 4).
+Spec: SPEC § 6.1, § 6.2, § 6.10, § 6.12. Scenarios S4 and S1. Validators: argo, linewatch, rb.
 
-- [ ] `Meter` in `basalt-ui/charts`: `bar` with a target tick and end captions, `segments` for
-      committed/forecast and part of a whole, `ring` for one headline ratio; `role="meter"` and text captions
-      (rows 143–145, 152, 158).
-- [ ] `BarList` in `basalt-ui/charts` (rows 146, 160, 161).
-- [ ] `StatGroup` `variant="strip"` (rows 147, 156) and `Heatmap` `layout="calendar"` with month labels
-      (row 161).
-- [ ] Recipes in `basalt-design`: distribution in a card (row 153), entity card (row 150), decision card
-      (D4: promote to a component only if argo's and rb's converge).
-- [ ] At least three rounds on S2 and S4; owner sees the boards.
+- [ ] `StatCard`: caption row restyled, new `qualifier`, `subtitle` as the footer under the visual, icon off
+      in the recipe; `DeltaBadge` text-only (row 162); the stale `Sparkline` JSDoc fixed (row 162); MIGRATING
+      maps every changed prop.
+- [ ] `Sparkline` defaults: `emphasizeLast` on, `emphasisColor` `VX.line`, stroke 1.5; the `StatCard` slot
+      at 22 px; MIGRATING records the flip and the opt-out. The span-aware date tick formatter that never
+      repeats a label (row 137, with weatherorb's zoned ticks).
+- [ ] Chrome leaks: `Badge` defaults to `light`, the subtle `Button` label and the active `Tabs` underline in
+      ink. Blast radius: re-shoot one screen per consumer that renders a `Badge`, a subtle `Button` or `Tabs`
+      (argo, rb, linewatch, obsidian) and record each before/after.
+- [ ] Unit tests: no background on the delta in both schemes; the `Badge` default variant; the end dot's
+      colour.
+- [ ] At least three rounds on S4 and S1 metric cards with the shipped reviewer. **Owner review** of the first
+      pattern family's boards.
       **Left behind:**
 
-## Wave 34 — Data tables, responsive <!-- status: pending -->
+## Wave 34 — Meter and BarList <!-- status: pending -->
 
-Spec: SPEC § 6.6, § 9.1. Scenario S1 (outages) and S2 (sessions). Validators: argo, linewatch,
-shutterflow.
+Spec: SPEC § 3, § 4, § 6.3, § 6.4, D1, D2. Scenarios S4 and S2 (build the S2 fixture). Validators: argo
+(reading, usage), rb (course, ingest), linewatch (link against ceiling).
+
+- [ ] `Meter` in `src/dashboard`, exported from the root: `bar` with a target tick and end captions,
+      `segments` (committed/forecast with a boundary tick and a caption; categorical parts), `ring` for one
+      headline ratio; neutral by default; `role="meter"` with a required label (rows 143–145, 152, 158).
+- [ ] `BarList` in `src/dashboard`: shared scale, mono values, leader row may take the accent, 5–10 rows (rows
+      146, 160).
+- [ ] Unit tests: `aria-valuenow/min/max`, segments in `aria-describedby`, target tick position, 0 / max /
+      over-max / missing target, truncation with a `title`. Budgets: non-chart symbols +2, barrel types +2,
+      consumers named.
+- [ ] At least three rounds on S4 and S2; owner sees the boards.
+      **Left behind:**
+
+## Wave 35 — Stat strip and the card recipes <!-- status: pending -->
+
+Spec: SPEC § 6.5, § 6.9. Scenarios S2 and S3 (build the S3 fixture). Validators: argo (body composition,
+warden), rb (review queue, stats), linewatch (stat strip).
+
+- [ ] `StatGroup` `variant="strip"`: one surface, 1 px dividers, per-cell encodings, optional footer row, two
+      columns in a compact container (rows 147, 156).
+- [ ] Recipes in `basalt-design`: distribution in a card (row 153), entity card (row 150), decision card on S3
+      (D4: promote only if argo's and rb's converge), page summary.
+- [ ] Layout-suite pins: strip divider 1 px, two columns at 390, no empty lower 40 % in a recipe card.
+- [ ] At least three rounds on S2 and S3; owner sees the boards.
+      **Left behind:**
+
+## Wave 36 — Data tables, responsive <!-- status: pending -->
+
+Spec: SPEC § 6.6, § 9.1. Scenarios S1 (outages) and S2 (sessions). Validators: argo, linewatch.
 
 - [ ] Header on the body fill, sorted column brighter; row text `sm`; cell kinds via `meta.kind` (`entity`,
       `status`, `number`, `money`, `relative-time`, `meter`, `text`).
-- [ ] Responsive: `meta.priority` fold, then a pinned non-wrapping first column with keyboard-reachable
-      horizontal scroll at compact; `renderCard` stays opt-in; `aria-colcount`/`aria-colindex` stay correct and
-      a folded column stays reachable (rows 151, 157). Check each TanStack API against installed v9.
-- [ ] The toolbar in one row at the dense tier, filter chips with a muted label and a bright value.
-- [ ] At least three rounds; owner sees the boards.
+- [ ] Responsive: `meta.priority` fold, then a pinned non-wrapping first column (opaque, with a `minSize`)
+      and keyboard-reachable horizontal scroll at compact; `renderCard` stays opt-in; `aria-colcount` and
+      `aria-colindex` stay correct and a folded column stays reachable (rows 151, 157). Check each TanStack API
+      against the installed v9 source.
+- [ ] The toolbar in one row at the dense tier; filter chips with a muted label and a bright value.
+- [ ] Tests: each `meta.kind` renders; at compact the first column stays pinned and never wraps, the folded
+      column is reachable by keyboard. At least three rounds; owner sees the boards.
       **Left behind:**
 
-## Wave 35 — Event list, board and record page <!-- status: pending -->
+## Wave 37 — Event list <!-- status: pending -->
 
-Spec: SPEC § 6.7–6.9, § 9.2, § 9.3. Scenarios S3 and S5. Validators: argo warden, rb knot detail and
-journal, linewatch transitions.
+Spec: SPEC § 6.7, § 9.3, D11. Scenarios S5 (build the S5 fixture: the journal) and S3 (item timeline).
+Validators: argo (warden timeline, narratives), rb (journal, session history), linewatch (transitions).
 
-- [ ] `EventList` (`feed` and `timeline` densities, day groups, time pinned right, chips, optional rail);
-      virtualised above about 200 rows in a `"use no memo"` component with sticky day headers and
-      `anchorTo: 'end'` for "earlier" (rows 149, 155, 157).
-- [ ] `Board` (columns with count and totals, compact cards, keyboard navigation, single-column switcher on
-      compact; no drag, D3) for the warden (row 148).
-- [ ] The record-page recipe (header, joined strip, event list, `PageAside`) and the list-row recipe (row
-      159); decide the aside width on S5.
+- [ ] Extract one lazy virtualiser seam from `src/agent/chat/virtualize.ts` and move the chat onto it with no
+      behaviour change (its tests stay green).
+- [ ] `EventList`: `feed` and `timeline` densities, day groups, time pinned right, chips, optional rail;
+      above about 200 rows it virtualises through the seam in a `"use no memo"` component with sticky day
+      headers and `anchorTo: 'end'` for "earlier" (rows 149, 155, 157).
+- [ ] Tests: sticky header stays rendered while scrolled, prepend keeps the visible row in place, the plain
+      path below the threshold renders without the peer installed.
+- [ ] At least three rounds on S5 and S3; owner sees the boards.
+      **Left behind:**
+
+## Wave 38 — Board and the record page <!-- status: pending -->
+
+Spec: SPEC § 6.8, § 6.9, § 9.2, D3, D12. Scenarios S3 and S5. Validators: argo warden, rb knot detail,
+obsidian.
+
+- [ ] `Board`: columns with count and totals, compact cards with slots, roving-focus keyboard model with
+      announcements, one column at a time with a switcher on compact; no drag (row 148).
+- [ ] The record-page recipe on S5 (header, joined strip, event list, `PageAside`) and the list-row recipe
+      (row 159); decide the aside width (SPEC § 5) on S5.
+- [ ] Tests: arrow keys move across cards and columns, Enter opens, the compact switcher.
 - [ ] At least three rounds per pattern; owner sees the boards.
       **Left behind:**
 
-## Wave 36 — Forms, states and the guidance half <!-- status: pending -->
+## Wave 39 — Forms, states and the guidance half <!-- status: pending -->
 
-Spec: SPEC § 6.11, § 8, § 11. Scenario S6, then every scenario's state toggles.
+Spec: SPEC § 6.11, § 6.13, § 8, § 11. Scenario S6 (build it), then every scenario's state toggles.
 
-- [ ] Field, control and form-section quality on S6 (argo's workout form, shutterflow's account form as
-      the shapes).
+- [ ] Field, control and form-section quality on S6 (SPEC § 6.13).
 - [ ] Empty, loading and error states for every pattern above: the `EmptyState` anatomy (row 154) and a
       `StatCard` skeleton (row 147).
 - [ ] The catalogue ships as the decision table in `basalt-design` and `basalt-charts`; the rules name it in
-      one line each. Fold SPEC § 3, § 5, § 8 and § 11 into `DESIGN-CORE.md` (spec-prose budget: offset by
-      deleting what the fold replaces).
-- [ ] Re-score the whole inventory with the shipped reviewer. Every pattern still below the rubric gets a
-      step here or a recorded reason.
+      one line each (rule-line ceiling raised by exactly that). Fold SPEC § 3, § 5, § 8 and § 11 into
+      `DESIGN-CORE.md`, offsetting the spec-prose budget by deleting what the fold replaces.
+- [ ] Re-score the whole inventory with the shipped reviewer. Every pattern still below the rubric gets a step
+      here or a recorded reason.
       **Left behind:**
 
-## Wave 37 — Fleet rollout, the expression trial and convergence <!-- status: pending -->
+## Wave 40 — Release and rollout: argo and rb <!-- status: pending -->
 
-- [ ] Release, then upgrade argo, rb, linewatch and obsidian one at a time. Each runs the shipped loop on
-      its own screens, retires the hand-rolls its ledger rows name (143–161), and gets a before/after board.
-      Friction and ugliness become ledger rows and are fixed upstream.
+- [ ] Release through `make release` (the reason: the Part 3 patterns, rows 143–162).
+- [ ] argo upgrades, runs the shipped loop on its own screens, retires the hand-rolls its rows name (143–151),
+      deploys and gets a before/after board.
+- [ ] rb the same (rows 152–155); rb is never pushed by an agent, so its branch waits for the owner.
+- [ ] Friction and ugliness become ledger rows and are fixed upstream before Wave 41.
+      **Left behind:**
+
+## Wave 41 — Rollout, the expression trial and convergence <!-- status: pending -->
+
+- [ ] linewatch (rows 156–158) and obsidian (row 159) upgrade one at a time, each with a before/after board.
 - [ ] **Expression trial** (shaped like weatherorb's W45): a fresh agent in a scratch `init` app gets five
-      datasets (one per catalogue shape: trend, target, parts, ranking, events) and no component names. Did
-      it find and follow the shipped procedure, and which encodings did it pick? Score the boards. A fallback
-      to the default is a guidance row.
-- [ ] Brief weatherorb's orchestrator (row 160), and shutterflow's for its 2.x migration onto the new
-      patterns (row 161).
-- [ ] Re-run the full audit. If gaps remain, append Waves 38+ in the same shape. The track closes when a
-      fresh scorer finds nothing worth improving against basalt's rubric.
+      datasets (one per catalogue shape: trend, target, parts, ranking, events) and no component names. Did it
+      find and follow the shipped procedure, and which encodings did it pick? Score the boards. A fallback to
+      the default is a guidance row.
+- [ ] Brief weatherorb's orchestrator (row 160) and shutterflow's for its 2.x migration onto the new patterns,
+      including the deferred calendar heat grid (row 161, D10).
+- [ ] Re-run the full audit. If gaps remain, append Waves 42+ in the same shape. The track closes when a fresh
+      scorer finds nothing worth improving against basalt's rubric.
       **Left behind:**
 
 # Part 2, continued — queued behind Part 3
