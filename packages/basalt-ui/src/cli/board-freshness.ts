@@ -6,9 +6,9 @@ import { createRequire } from 'node:module'
 import { join, resolve } from 'node:path'
 
 const LAST_SHOT = join('.basalt', 'shots', 'last.json')
-const SKIPPED_DIRS = new Set(['node_modules', 'dist', '.git'])
+const SKIPPED_DIRS = new Set(['node_modules', 'dist', '.git', '.basalt'])
 const UI_FILE = /\.(tsx|css)$/
-/** Entries visited before the walk gives up: the notice is advisory, never worth a slow doctor. */
+/** Directories plus UI files visited before the walk gives up; other files are free, so a big non-UI tree cannot pin the notice on. */
 const WALK_CAP = 5000
 
 export const BOARD_NOTICE =
@@ -31,20 +31,23 @@ function walkUi(cwd: string, roots: string[], cap: number): Walk {
   const stack = roots.map((root) => resolve(cwd, root))
   let visited = 0
   for (let dir = stack.pop(); dir !== undefined; dir = stack.pop()) {
+    if (++visited > cap) return { ...walk, truncated: true }
     let entries: Dirent[]
     try {
       entries = readdirSync(dir, { withFileTypes: true })
-    } catch {
+    } catch (error) {
+      // Only a missing dir means "no UI here"; anything else leaves the scan unknown.
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') walk.truncated = true
       continue
     }
     for (const entry of entries) {
-      if (++visited > cap) return { ...walk, truncated: true }
       const path = join(dir, entry.name)
       if (entry.isDirectory()) {
         if (!SKIPPED_DIRS.has(entry.name)) stack.push(path)
         continue
       }
       if (!UI_FILE.test(entry.name)) continue
+      if (++visited > cap) return { ...walk, truncated: true }
       const mtime = mtimeOf(path)
       if (mtime !== null && (walk.newest === null || mtime > walk.newest)) walk.newest = mtime
     }
@@ -89,7 +92,7 @@ export type PackageLoader = (id: string) => { version?: string }
 /** The consumer's Playwright version (`playwright`, then `playwright-core`), or null when absent. */
 export function playwrightVersion(
   cwd: string,
-  load: PackageLoader = createRequire(join(cwd, 'package.json')),
+  load: PackageLoader = createRequire(resolve(cwd, 'package.json')),
 ): string | null {
   for (const name of ['playwright', 'playwright-core']) {
     try {
@@ -123,7 +126,7 @@ export function designLoopLines(
   lines.push(
     playwright === null
       ? `  → playwright is not installed (optional, needed by basalt-ui shot): ${PLAYWRIGHT_INSTALL}`
-      : `  ✓ playwright ${playwright} resolves (optional: basalt-ui shot)`,
+      : `  ✓ playwright resolves (${playwright === 'unknown' ? 'version unknown' : playwright}; optional: basalt-ui shot)`,
   )
   return lines
 }
