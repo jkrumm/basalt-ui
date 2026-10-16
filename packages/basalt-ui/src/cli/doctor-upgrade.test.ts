@@ -952,6 +952,74 @@ describe('doctor — app-wiring', () => {
     expect(startWiringWarnings(dir).join()).toContain('spread')
   })
 
+  describe('Start provider one import hop away', () => {
+    const ROOT = 'export const Route = createRootRouteWithContext<BasaltRouterContext>()({})\n'
+    const APP =
+      "import { Providers } from '../app/providers'\nconst A = () => <Providers><Outlet /></Providers>\n"
+    const PROVIDERS =
+      'export const Providers = (p) => <BasaltProvider>{p.children}</BasaltProvider>\n'
+    const start = () => {
+      write(
+        'package.json',
+        JSON.stringify({ name: 'fixture', dependencies: { '@tanstack/react-start': '*' } }),
+      )
+      write('src/routes/__root.tsx', ROOT)
+      write('src/routes/_app.tsx', APP)
+    }
+
+    it('passes a provider one relative hop away', () => {
+      start()
+      write('src/app/providers.tsx', PROVIDERS)
+      expect(appWiringCheck(dir)).toBeNull()
+    })
+
+    it('follows a tsconfig paths alias', () => {
+      start()
+      write('src/routes/_app.tsx', APP.replace('../app/providers', '~/app/providers'))
+      write(
+        'tsconfig.json',
+        '{ "compilerOptions": { "baseUrl": ".", "paths": { "~/*": ["./src/*"] } } }',
+      )
+      write('src/app/providers.tsx', PROVIDERS)
+      expect(appWiringCheck(dir)).toBeNull()
+    })
+
+    it('fails two hops away, naming the hop limit', () => {
+      start()
+      write(
+        'src/app/providers.tsx',
+        "import { Inner } from './inner'\nexport const Providers = () => <Inner />\n",
+      )
+      write('src/app/inner.tsx', PROVIDERS)
+      const msg = text(appWiringCheck(dir))
+      expect(msg).toContain('src/app/inner.tsx is two imports away')
+      expect(msg).toContain('one import hop')
+    })
+
+    it('fails a hop module that passes router=, naming it', () => {
+      start()
+      write('src/app/providers.tsx', '<BasaltProvider router={r} />\n')
+      expect(text(appWiringCheck(dir))).toContain('src/app/providers.tsx passes router=')
+    })
+
+    it('counts a hop provider beside another as two tags', () => {
+      start()
+      write('src/app/providers.tsx', PROVIDERS)
+      write('src/routes/__root.tsx', ROOT + PROVIDERS)
+      expect(text(appWiringCheck(dir))).toContain('2 <BasaltProvider> tags')
+    })
+
+    it('ignores a hop module that is imported but not rendered', () => {
+      start()
+      write(
+        'src/routes/_app.tsx',
+        "import { Providers } from '../app/providers'\nconst A = () => <Outlet />\n",
+      )
+      write('src/app/providers.tsx', PROVIDERS)
+      expect(text(appWiringCheck(dir))).toContain('renders <BasaltProvider>')
+    })
+  })
+
   describe('Start provider in a pathless layout', () => {
     const ROOT = 'export const Route = createRootRouteWithContext<BasaltRouterContext>()({})\n'
     const LAYOUT =

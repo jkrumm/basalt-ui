@@ -2002,7 +2002,7 @@ export const GUARD_RULES = {
     kind: 'raw-font-family',
     pattern: RAW_FONT_FAMILY,
     message:
-      'Route the font stack through createBasaltTheme(overrides, { fonts }) / the shipped --basalt-font-sans|head|mono vars instead of a hardcoded fontFamily literal.',
+      'Route the font stack through createBasaltTheme(overrides, { fonts }) / the shipped --basalt-font-sans|head|mono vars instead of a hardcoded fontFamily literal (provider-free page: `basalt-ui fonts:css`).',
   },
   'off-identity-accent': {
     kind: 'off-identity-accent',

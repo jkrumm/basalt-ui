@@ -4,6 +4,7 @@ import { resolve } from 'node:path'
 
 import { deriveSpacing } from '../tokens/core'
 import { shellConfigError } from './config'
+import { carriesRouter, providerTags } from './doctor-upgrade'
 import {
   MANIFEST_PATH,
   basaltPresetEntry,
@@ -208,15 +209,17 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
   })
   staleForCheck += pruned.removed.length + pruned.drifted.length
 
-  // A code-routed or declared shell-less app takes no router seeds: their manifest entries go
-  // (so the next sync does not resurrect them); any file stays the consumer's.
+  // A code-routed, Start or declared shell-less app takes no router seeds: their manifest entries
+  // go (so the next sync does not resurrect them); any file stays the consumer's.
   const isTracked = (d: string): boolean => manifest.files[d] !== undefined
   const retiredBecause =
     seedSkip === 'code-routed'
       ? 'code-routed app'
-      : seedSkip === 'shell-less'
-        ? 'basalt.shell: false'
-        : null
+      : seedSkip === 'start'
+        ? 'TanStack Start app'
+        : seedSkip === 'shell-less'
+          ? 'basalt.shell: false'
+          : null
   const retiredSeeds = retiredBecause === null ? [] : [...skipped].filter(isTracked)
   if (retiredSeeds.length > 0 && !opts.check) {
     for (const d of retiredSeeds) delete manifest.files[d]
@@ -228,20 +231,13 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
   // Placement notices — informational, never affecting the exit code, and PERMANENT: `--check`
   // hides them behind `--verbose` (it sits in consumers' CI chains, where three unchanging
   // "skipped" paragraphs per run are noise indistinguishable from drift) but still prints the COUNT.
-  // Start added AFTER a pre-Start init: the old seeds are the consumer's now — left untouched, named.
-  const startSkippedSeeds = seedSkip === 'start' ? [...skipped] : []
-  const stale = startSkippedSeeds.filter((d) => isTracked(d) && existsSync(resolve(cwd, d)))
-  const mounting = stale.filter((d) => !d.endsWith('nav.tsx'))
-  const inert = stale.filter((d) => d.endsWith('nav.tsx'))
-  const embedded = `Delete them and ${START_PROVIDER_HINT} (embedded mode).`
+  // A Start app's leftover seed is judged by CONTENT: only a `<BasaltProvider router=…>` tag mounts one.
+  const mounting = (seedSkip === 'start' ? [...skipped] : []).filter((d) =>
+    providerTags(readIfExists(resolve(cwd, d)) ?? '').some(carriesRouter),
+  )
   if (mounting.length > 0) {
     console.error(
-      `⚠ basalt-ui sync: ${mounting.join(', ')} mount a second router inside this TanStack Start app; left untouched. ${embedded}`,
-    )
-  }
-  if (inert.length > 0) {
-    console.error(
-      `⚠ basalt-ui sync: ${inert.join(', ')} was seeded before this became a Start app; it mounts nothing, so keep or delete it. Left untouched.`,
+      `⚠ basalt-ui sync: ${mounting.join(', ')} mount a second router inside this TanStack Start app; left untouched. Delete them and ${START_PROVIDER_HINT} (embedded mode).`,
     )
   }
   if (seedSkip === 'start' && (!opts.check || syncFlags.includes('--verbose')))

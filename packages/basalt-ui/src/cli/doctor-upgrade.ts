@@ -243,7 +243,7 @@ const appImports = (cwd: string, cfg: BasaltConfig): [string, string, number][] 
 const DROPPED_FIXES = new Map([
   [
     'tokens.css',
-    'commit the emit instead: `basalt-ui tokens:css --out src/tokens.css` and import that file',
+    'commit the emit instead: `basalt-ui tokens:css --out src/tokens.css` and import that file (a provider-free page also needs `basalt-ui fonts:css --out src/fonts.css`)',
   ],
   [
     'router-tanstack',
@@ -384,7 +384,7 @@ type ProviderTag = { attrs: string; spread: boolean }
  * with string literals skipped (so `className="a > b"` cannot end the tag, nor `"router="` count),
  * and whether a `{...spread}` could carry a `router`.
  */
-function providerTags(src: string): ProviderTag[] {
+export function providerTags(src: string): ProviderTag[] {
   const { code, inLiteral } = tokenize(src)
   return [...code.matchAll(/<BasaltProvider\b/g)]
     .filter((m) => !inLiteral(m.index))
@@ -404,7 +404,7 @@ function providerTags(src: string): ProviderTag[] {
     })
 }
 
-const carriesRouter = (tag: ProviderTag): boolean => /(^|\s)router\s*=/.test(tag.attrs)
+export const carriesRouter = (tag: ProviderTag): boolean => /(^|\s)router\s*=/.test(tag.attrs)
 
 /** `_app.tsx` or `_app/route.tsx` at any depth: a pathless layout (`_app.map.tsx` is a child, `__root` is the root). */
 const PATHLESS_LAYOUT = /(^|\/)(_[^_./][^./]*\.[jt]sx|_[^_./][^./]*\/route\.[jt]sx)$/
@@ -424,8 +424,57 @@ function filesUnder(cwd: string, rel: string): string[] {
 
 type RouteFile = { file: string; text: string | null; tags: ProviderTag[] }
 
-/** The root route and every pathless layout, each read once; `text` is null for a missing file. */
-function startProviderFiles(cwd: string): { root: RouteFile; layouts: RouteFile[] } {
+const MODULE_SUFFIXES = ['', '.tsx', '.ts', '.jsx', '.js', '/index.tsx', '/index.ts']
+
+/** tsconfig `compilerOptions.paths` as [prefix, targetDir] pairs for `alias/*` patterns; empty when unreadable. */
+function pathAliases(cwd: string): [string, string][] {
+  const opts = (parseJsonc(readIfExists(resolve(cwd, 'tsconfig.json')) ?? '')?.[
+    'compilerOptions'
+  ] ?? {}) as { baseUrl?: string; paths?: Record<string, string[]> }
+  return Object.entries(opts.paths ?? {}).flatMap(([pattern, targets]) => {
+    const target = targets[0]
+    if (!pattern.endsWith('/*') || !target?.endsWith('/*')) return []
+    return [[pattern.slice(0, -1), `${opts.baseUrl ?? '.'}/${target.slice(0, -1)}`]]
+  })
+}
+
+/** The local modules a file renders a component from: `<Name` in JSX, name imported from a relative or aliased specifier. */
+function renderedImports(cwd: string, file: string, text: string): string[] {
+  const code = tokenize(text).code
+  const aliases = pathAliases(cwd)
+  const found = new Set<string>()
+  for (const m of text.matchAll(/\bimport\s+(?!type\b)([^'"]*?)\s*from\s*['"]([^'"]+)['"]/g)) {
+    const spec = m[2]!
+    const base = spec.startsWith('.')
+      ? resolve(cwd, dirname(file), spec)
+      : aliases.flatMap(([prefix, dir]) =>
+          spec.startsWith(prefix) ? [dir + spec.slice(prefix.length)] : [],
+        )[0]
+    if (base === undefined) continue
+    const names = [...m[1]!.replace(/\btype\s+/g, '').matchAll(/(?:\bas\s+)?([A-Za-z_$][\w$]*)/g)]
+      .map((n) => n[1]!)
+      .filter((n) => n !== 'as')
+    if (!names.some((n) => new RegExp(`<${n.replace('$', '\\$')}\\b`).test(code))) continue
+    const rel = relative(cwd, resolve(cwd, base)).split('\\').join('/')
+    const hit = MODULE_SUFFIXES.map((x) => rel + x).find(
+      (c) => /\.[jt]sx?$/.test(c) && readIfExists(resolve(cwd, c)) !== null,
+    )
+    if (hit !== undefined) found.add(hit)
+  }
+  return [...found]
+}
+
+/**
+ * The root route and every pathless layout, each read once (`text` is null for a missing file), plus
+ * the modules they render a component from — ONE import hop, relative or tsconfig-`paths` aliased —
+ * so a `<Providers>` wrapper holding the tag counts. `far` lists files whose provider is a hop too far.
+ */
+function startProviderFiles(cwd: string): {
+  root: RouteFile
+  layouts: RouteFile[]
+  hops: RouteFile[]
+  far: string[]
+} {
   const rootFile = routerSeedDest('', 'root')
   const routesDir = dirname(rootFile)
   const load = (file: string): RouteFile => {
@@ -435,7 +484,24 @@ function startProviderFiles(cwd: string): { root: RouteFile; layouts: RouteFile[
   const layouts = filesUnder(cwd, routesDir)
     .filter((f) => PATHLESS_LAYOUT.test(f.slice(routesDir.length + 1)))
     .toSorted()
-  return { root: load(rootFile), layouts: layouts.map(load) }
+  const scanned = [load(rootFile), ...layouts.map(load)]
+  const seen = new Set(scanned.map((f) => f.file))
+  const hops: RouteFile[] = []
+  const far: string[] = []
+  for (const f of scanned) {
+    for (const mod of renderedImports(cwd, f.file, f.text ?? '')) {
+      if (seen.has(mod)) continue
+      seen.add(mod)
+      const hop = load(mod)
+      if (hop.tags.length > 0) hops.push(hop)
+      else {
+        for (const m of renderedImports(cwd, mod, hop.text ?? '')) {
+          if (providerTags(readIfExists(resolve(cwd, m)) ?? '').length > 0) far.push(m)
+        }
+      }
+    }
+  }
+  return { root: scanned[0]!, layouts: scanned.slice(1), hops, far }
 }
 
 /**
@@ -465,8 +531,8 @@ const fail = (problem: string, fix: string): { fail: string } => ({
  * missing `Route` export is skipped silently, and the context's type argument is left to TypeScript.
  */
 function startWiring(cwd: string): { fail: string } | null {
-  const { root, layouts } = startProviderFiles(cwd)
-  const withTags = [root, ...layouts].filter((f) => f.tags.length > 0)
+  const { root, layouts, hops, far } = startProviderFiles(cwd)
+  const withTags = [root, ...layouts, ...hops].filter((f) => f.tags.length > 0)
   const mounting = withTags.find((f) => f.tags.some(carriesRouter))
   if (mounting) {
     return fail(
@@ -479,7 +545,10 @@ function startWiring(cwd: string): { fail: string } | null {
     const problem =
       root.text === null
         ? `${root.file} does not exist and no pathless layout renders <BasaltProvider>`
-        : `neither ${root.file} nor a pathless layout (src/routes/_<name>.tsx, _<name>/route.tsx) renders <BasaltProvider>`
+        : `neither ${root.file} nor a pathless layout (src/routes/_<name>.tsx, _<name>/route.tsx) renders <BasaltProvider>` +
+          (far.length > 0
+            ? `, and the provider in ${far.join(', ')} is two imports away (doctor follows one import hop from a route file)`
+            : '')
     return fail(problem, START_PROVIDER_HINT)
   }
   const tagCount = withTags.reduce((n, f) => n + f.tags.length, 0)
@@ -508,8 +577,8 @@ function startWiring(cwd: string): { fail: string } | null {
  */
 export function startWiringWarnings(cwd: string): string[] {
   if (!isStartApp(cwd, '')) return []
-  const { root, layouts } = startProviderFiles(cwd)
-  return [root, ...layouts]
+  const { root, layouts, hops } = startProviderFiles(cwd)
+  return [root, ...layouts, ...hops]
     .filter((f) => f.tags.some((t) => t.spread))
     .map(
       (f) =>
