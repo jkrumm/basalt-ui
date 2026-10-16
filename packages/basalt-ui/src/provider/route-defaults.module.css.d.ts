@@ -5,9 +5,6 @@
 declare const classes: {
   readonly center: string
   readonly spinner: string
-  readonly stack: string
-  readonly title: string
-  readonly text: string
-  readonly retry: string
+  readonly notFound: string
 }
 export default classes

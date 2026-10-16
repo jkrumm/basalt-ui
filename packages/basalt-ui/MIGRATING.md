@@ -1043,7 +1043,7 @@ The `basalt-ui/router-tanstack` subpath is **removed** in 2.x, not moved: an imp
 
 ## Unreleased — the router defaults need no provider
 
-- **Behaviour: the default pending, error and not-found screens of `createBasaltRouter` / `basaltRouterOptions` are plain HTML, not Mantine components.** They render at the route that failed — above `BasaltProvider` for a root-level error or a pathless-layout provider — where Mantine threw "MantineProvider was not found". Same copy, "Try again" still calls `reset`; the spinner is an `<output>` (implicit `status`), the error `role="alert"`; the look follows `--vx-*` tokens with literal fallbacks (visual parity, not pixel-identical). **Opt-out:** pass your own `defaultPendingComponent` / `defaultErrorComponent` / `defaultNotFoundComponent` (after the spread) for Mantine screens.
+- **Behaviour: the default pending, error and not-found screens of `createBasaltRouter` / `basaltRouterOptions` are plain HTML, not Mantine components.** They render at the route that failed — above `BasaltProvider` for a root-level error or a pathless-layout provider — where Mantine threw "MantineProvider was not found". Same copy, "Try again" still calls `reset`; the spinner is an `<output>` (implicit `status`), the error `role="alert"`; the look matches the token look (`--vx-*` with literal fallbacks), not pixel-for-pixel. **What you lose:** theming through `components.Loader` / `components.Button` `defaultProps`, and `.mantine-Loader-root` / `.mantine-Button-root` selectors, no longer reach these screens. **Opt-out:** pass your own `defaultPendingComponent` / `defaultErrorComponent` / `defaultNotFoundComponent` (after the spread) for Mantine screens.
 
 ## 2.13.2 — followers draw the cursor dots, a dashed line keeps its key
 
