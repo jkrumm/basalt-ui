@@ -12,14 +12,18 @@ Method only; the law is `.claude/rules/basalt-*.md` and `./DESIGN.md`.
 2. **Scenario first.** Write down realistic fixture data, the user's question, and the decision the view supports. Decide which metrics earn a hue (trend, status, separation; the rest neutral), the one primary action per view, each control's home (a `SettingsRow` preference via `createLocalStore`, never `useState`).
 3. **Pick each encoding from the data's shape**, then the shipped composite (`StatCard`, `ChartCard`, `Section`, `WidgetHeader`, `BasaltDataTable`, `EmptyState`; a gap is reported, not routed around):
 
-   | Data shape                    | Encoding    | Component         |
-   | ----------------------------- | ----------- | ----------------- |
-   | One headline number + trend   | stat        | `StatCard`        |
-   | Value over time               | line / area | `CartesianChart`  |
-   | Compare categories            | bars        | `CartesianChart`  |
-   | Part of whole, few parts      | stacked bar | `CartesianChart`  |
-   | Many rows, several attributes | table       | `BasaltDataTable` |
-   | Nothing yet / failed          | empty state | `EmptyState`      |
+   | Data shape                    | Encoding                                                                                                | Component                                   |
+   | ----------------------------- | ------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+   | Single value with a trend     | figure, text delta, axis-less sparkline along the card's bottom                                         | `StatCard` + `sparkline` slot (`Sparkline`) |
+   | Value over time               | line or stacked area                                                                                    | `Lines` / `StackedArea` in a `ChartCard`    |
+   | Compare categories            | bars                                                                                                    | `Bars`                                      |
+   | Part of a whole, 2–6 parts    | one segmented (stacked) bar, parts in order — not a donut plus a total card, not a row of N `StatCard`s | `Bars` (stacked)                            |
+   | Distribution                  | small axis-less histogram                                                                               | `Bars` in a `ChartCard`                     |
+   | Status over time              | band strip; a heat grid for daily data                                                                  | `BandStrip` / `Heatmap`                     |
+   | Many rows, several attributes | table, right-aligned mono figures                                                                       | `BasaltDataTable`                           |
+   | Nothing yet / failed          | why + what to do                                                                                        | `EmptyState` / the component's own state    |
+
+   No row fits the data → say so; never default to a number in a box.
 
 4. Build with Mantine primitives and the composites; every color from `VX.*` or a series token. Tune by eye in the theme lab (`dev.theme` Spotlight command, dev only) in both schemes, then bake values into the `derive` knobs of `createBasaltTheme` and series colors into `src/lib/series.ts`.
 5. **Mark up for the board.** Tag each scored component `data-shot="<name>"`; hover and tooltip targets inside it get `data-shot-hover` / `data-shot-tooltip`. Declare supported states with `data-shot-states="empty loading error"` and render them when the `shot-state` URL param asks.
