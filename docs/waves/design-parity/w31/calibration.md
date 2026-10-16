@@ -107,7 +107,7 @@ What the fix does and does not change:
 
 ## Method caveat
 
-The shipped `basalt-design-reviewer` subagent has not yet run against these seeds. Its definition loads at session start and is not reloaded, so iteration 1 used the subagent with the old text, and iterations 2–4 used fresh general-purpose agents told to read the edited reviewer file and follow its body, tools limited to Read/Grep/Glob. The lead spawns a fresh-session confirmation with the real subagent type after merge. `/.claude/agents/basalt-design-reviewer.md` and `/.claude/skills/basalt-design/SKILL.md` are byte-identical to the package sources (`make sync-self`, then `cmp`).
+Iterations 1–4 only (the shipped subagent's own run is the confirmation section below). The subagent's definition loads at session start and is not reloaded, so iteration 1 used the subagent with the old text, and iterations 2–4 used fresh general-purpose agents told to read the edited reviewer file and follow its body, tools limited to Read/Grep/Glob. `/.claude/agents/basalt-design-reviewer.md` and `/.claude/skills/basalt-design/SKILL.md` are byte-identical to the package sources (`make sync-self`, then `cmp`).
 
 ## Baseline
 
@@ -121,7 +121,7 @@ The shipped `basalt-design-reviewer` subagent has not yet run against these seed
 
 Fresh session at the worktree root, so `/.claude/agents/basalt-design-reviewer.md` loaded as the real `basalt-design-reviewer` subagent type (listed by the Agent tool). Built the package and the playground, shot the six seeds and S4 into `.design-parity/w31/confirm-<name>`, one blind subagent per board (prompt names only the out dir). `shot` reported `error` shots, so it exits non-zero, on `calibrate-repeated-axis` (2, tooltip) and `s4-spend` (8, tooltip); the other five report 0 failed.
 
-| board                     | expected               | verdict | items cited                                                                          | sheets read                       | matches? |
+| board                     | expected               | verdict | items cited                                                                          | sheets read                       | correct? |
 | ------------------------- | ---------------------- | ------- | ------------------------------------------------------------------------------------ | --------------------------------- | -------- |
 | calibrate-good            | pass                   | pass    | —                                                                                    | 2 sheets + 4 page shots + metrics | yes      |
 | calibrate-delta-fill      | Craft 4 / Expression 3 | fail    | Craft 1, 4, Expression 3                                                             | sheet + 4 page shots + metrics    | yes      |
@@ -133,4 +133,12 @@ Fresh session at the worktree root, so `/.claude/agents/basalt-design-reviewer.m
 
 Every run printed a `Read:` line covering every anchor's sheet and all four `_page` shots; none opened a single crop. The S4 run said it read the dark-desktop anchor blocks of `metrics.json` only as a digest (min / emptyRatio / fontSizes), so its measured findings for those variants rest on the digest.
 
-Differences from iteration 4: the verdicts and expected items are identical, and `calibrate-good` passed on the first run (iteration 4 needed three). delta-fill, repeated-axis, accent-tab and banned-subtitle cite the same items as iteration 4 (banned-subtitle adds Craft 7, as in 4b). empty-half drops Expression 4 (the lone figure) and adds Craft 4 (accent-blue focus ring on the info icon) and Craft 6 (ring abutting "Oct"); both extras come from the focus crops and are the same class as the iteration 4 Craft 7 finding, not noise on a defect-free board. S4 fails every component but the page, as in the 4b baseline; the cited items were not diffed against `s4-baseline.md`. No reviewer, `shot` or seed file was edited.
+Differences from iteration 4 (one blind run per board, n = 1: a single pass does not establish the reviewer's false-positive rate):
+
+- Verdicts and expected items are identical; `calibrate-good` passed on the first run (iteration 4 needed three).
+- delta-fill, repeated-axis and accent-tab cite the same items as iteration 4.
+- banned-subtitle adds Craft 7, the same finding as in 4b.
+- empty-half drops Expression 4 (the lone figure) and adds Craft 4 (accent focus ring on the info icon) and Craft 6 (the ring abutting "Oct"); both come from the focus tiles on its contact sheet, the same class as iteration 4's Craft 7 finding, not noise on a defect-free board.
+- `s4-spend` is the S4 baseline board (`s4-baseline.md`); it fails every component but the page, as in 4b. Its cited items were not diffed against `s4-baseline.md`.
+
+No reviewer, `shot` or seed file was edited.
