@@ -1,3 +1,26 @@
+# [2.13.0](https://github.com/jkrumm/basalt-ui/compare/v2.12.0...v2.13.0) (2026-10-16)
+
+
+### Bug Fixes
+
+* adopt the mirror after hydration, gate linkSearch, report failed navigates ([0ca439b](https://github.com/jkrumm/basalt-ui/commit/0ca439b523f8733f0fcf2032dce2587fc0591e25))
+* break the sync/doctor import cycle and harden the provider hop ([418496e](https://github.com/jkrumm/basalt-ui/commit/418496ec72314c656addbcf41715ba175819ae96))
+* count the provider per render edge and make doctor a true leaf ([ad439c1](https://github.com/jkrumm/basalt-ui/commit/ad439c158395fa76e87b099787ebe186b53b6e64))
+* doctor follows the provider one hop, sync judges a Start root by content ([f87d285](https://github.com/jkrumm/basalt-ui/commit/f87d285b3e586514a7dbfd523acfbed087ed6913))
+* fold the SSR rule into the validateSearch line to hold the rule budget ([0e97e50](https://github.com/jkrumm/basalt-ui/commit/0e97e507bea0a7b4a1db8d81ad3d942dd5953892))
+* hydration-safe validateSearch, per-route foreign-param warning ([a734fb6](https://github.com/jkrumm/basalt-ui/commit/a734fb66b3cd3be71d59e6200f5546f45dc3a113))
+* pin resolver output in the theme snapshot ([14c0728](https://github.com/jkrumm/basalt-ui/commit/14c07286da1e4d99eaa83dbca74a38d49455d7c9))
+* prove the theme refactor against the pre-change code and harden its guard ([317eb3e](https://github.com/jkrumm/basalt-ui/commit/317eb3ede5ed058750ab74d419bf7efade2435d1))
+* pure validateSearch and search-store hygiene ([4481f55](https://github.com/jkrumm/basalt-ui/commit/4481f558fdc951f548f337cb0886481e4a447818))
+* review round 1 on basaltRouterOptions ([b5bddb3](https://github.com/jkrumm/basalt-ui/commit/b5bddb379f986059f6a2c0c50ba90f8db79ad745))
+* review round 2 on basaltRouterOptions ([251fa58](https://github.com/jkrumm/basalt-ui/commit/251fa5835a0d908ef23d2bafc08a769bf531d658))
+
+
+### Features
+
+* basaltRouterOptions factory, BasaltProviderProps, telemetry fixes ([6af03d4](https://github.com/jkrumm/basalt-ui/commit/6af03d496b0da63280f80a56700b66264b2db52d))
+* the theme reaches no Mantine component it configures ([1b9c314](https://github.com/jkrumm/basalt-ui/commit/1b9c314fea9c961f15c72783f642cdcb20a71414))
+
 # [2.12.0](https://github.com/jkrumm/basalt-ui/compare/v2.11.1...v2.12.0) (2026-10-16)
 
 
