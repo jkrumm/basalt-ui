@@ -182,8 +182,10 @@ const EUR = new Intl.NumberFormat('en-IE', {
 })
 
 export const fmtEur = (value: number): string => EUR.format(Math.round(value))
-export const fmtShare = (value: number): string => `${Math.round(value * 100)} %`
-export const fmtSignedShare = (value: number): string =>
-  `${value > 0 ? '+' : ''}${Math.round(value * 100)} %`
+export const fmtShare = (value: number): string => `${Math.round(value * 100)}%`
+export const fmtSignedShare = (value: number): string => {
+  const percent = Math.round(value * 100)
+  return percent < 0 ? `\u2212${-percent}%` : `+${percent}%`
+}
 export const fmtDay = (date: Date): string =>
   date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' })

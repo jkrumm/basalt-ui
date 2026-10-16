@@ -44,7 +44,7 @@ import {
 } from './spend-data'
 import type { DayRow, DistributionBin, ModelKey, ProjectKey, ProjectRow } from './spend-data'
 import { chartStateFor, queryFor } from './shot-state'
-import type { ScenarioProps, ShotState } from './shot-state'
+import type { ScenarioProps } from './shot-state'
 
 const MODEL_COLOR: Record<ModelKey, string> = {
   large: demoColors.sessions,
@@ -77,13 +77,14 @@ const PACE_EUR_PER_DAY = BUDGET_EUR / MONTH_DAYS
 const DAILY_DATA = [...DAILY]
 const DISTRIBUTION_DATA = [...DISTRIBUTION]
 const DONUT_DATA = PROJECTS_MTD.map((p) => ({ key: p.key, value: p.spend }))
+const PROJECT_ROWS = [...PROJECTS_MTD]
+const NO_ROWS: ProjectRow[] = []
 const PACE_LINES = [
   { value: PACE_EUR_PER_DAY, color: VX.faint, dashed: true, legend: { label: 'Budget pace' } },
 ]
 
 const USAGE_ERROR = 'The usage export did not answer. Retry, or reconnect it in Settings.'
 const USAGE_EMPTY = 'No spend recorded in the window. Check that the usage export is connected.'
-const STAT_SUBTITLE: Partial<Record<ShotState, string>> = { empty: USAGE_EMPTY, error: USAGE_ERROR }
 
 const retryCopy = (what: string): string =>
   `${what} failed to load. Retry, or check the usage export connection.`
@@ -114,10 +115,10 @@ function SpendStats({ shotState }: ScenarioProps) {
   const isAtRest = shotState === undefined
   const query = queryFor(shotState, USAGE_ERROR)
   // `StatCard` has no empty branch: `query` drives the sparkline and breakdown only, so the reason
-  // and the next step ride the subtitle. Computed once for all three cards.
-  const subtitle = isAtRest ? undefined : STAT_SUBTITLE[shotState]
+  // and the next step ride the subtitle. Error needs none (the `QueryState` alert already says it).
+  // Computed once for all three cards.
   const shared = {
-    ...(subtitle !== undefined && { subtitle }),
+    ...(shotState === 'empty' && { subtitle: USAGE_EMPTY }),
     ...(query !== undefined && { query }),
   }
   const value = (v: number): string => (isAtRest ? fmtEur(v) : '—')
@@ -238,12 +239,14 @@ function SpendDrivers({ shotState }: ScenarioProps) {
           {/* W34: bar-list — a ranked list with an inline bar per row; the table is the nearest. */}
           <BasaltDataTable
             // Rows only at rest: the empty branch needs `data` empty, the others have no rows yet.
-            data={shotState === undefined ? [...PROJECTS_MTD] : []}
+            data={shotState === undefined ? PROJECT_ROWS : NO_ROWS}
             columns={columns}
             enableSorting={false}
             {...(query !== undefined && { query })}
             emptyState={
-              <span>No project spend {WINDOW_LABEL}. Connect a project to the usage export.</span>
+              <span>
+                No project spent anything {WINDOW_LABEL}. Connect one to the usage export.
+              </span>
             }
           />
         </Section>
