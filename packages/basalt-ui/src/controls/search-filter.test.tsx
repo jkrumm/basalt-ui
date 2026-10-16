@@ -82,11 +82,61 @@ describe('SearchFilter debounce', () => {
     expect(input().value).toBe('reset')
   })
 
-  test('unmounting with a pending commit does not commit', async () => {
+  test('unmounting with a pending commit flushes it', async () => {
     const h = mountFilter()
     type('abc')
     h.unmount()
     await sleep(WAIT)
+    expect(h.writes).toEqual(['abc'])
+  })
+})
+
+describe('SearchFilter immediate commit', () => {
+  test('Enter commits the pending query inside the debounce window', () => {
+    const h = mountFilter()
+    type('abc')
     expect(h.writes).toEqual([])
+    fireEvent.keyDown(input(), { key: 'Enter' })
+    expect(h.writes).toEqual(['abc'])
+  })
+
+  test('blur commits the pending query inside the debounce window', () => {
+    const h = mountFilter()
+    type('abc')
+    fireEvent.blur(input())
+    expect(h.writes).toEqual(['abc'])
+  })
+
+  test('a flushed commit is not written a second time when the debounce elapses', async () => {
+    const h = mountFilter()
+    type('abc')
+    fireEvent.keyDown(input(), { key: 'Enter' })
+    await act(() => sleep(WAIT))
+    expect(h.writes).toEqual(['abc'])
+  })
+
+  test('Enter with nothing pending writes nothing', () => {
+    const h = mountFilter()
+    fireEvent.keyDown(input(), { key: 'Enter' })
+    expect(h.writes).toEqual([])
+  })
+
+  test('is a search input with a search enter key', () => {
+    mountFilter()
+    expect(input().type).toBe('search')
+    expect(input().getAttribute('enterkeyhint')).toBe('search')
+  })
+
+  test('a clear button appears when non-empty and clears the field at once', () => {
+    const h = mountFilter('abc')
+    fireEvent.click(screen.getByRole('button', { name: 'Clear search' }))
+    expect(h.writes).toEqual([''])
+    expect(input().value).toBe('')
+    expect(screen.queryByRole('button', { name: 'Clear search' })).toBeNull()
+  })
+
+  test('no clear button while empty', () => {
+    mountFilter()
+    expect(screen.queryByRole('button', { name: 'Clear search' })).toBeNull()
   })
 })

@@ -34,39 +34,23 @@ import { assertRequiredProps } from '../common/validate'
 import type { EnumField, FieldHandle } from '../state'
 import type { StringField } from '../state/fields'
 import { EnumFilter } from './enum-filter'
+import type { FilterBase, Option } from './filter-base'
 import type { UncontrolledProps } from './uncontrolled'
 
-/**
- * One row of a runtime catalogue. Wider than the store's own `FieldOption` by exactly one member:
- * `disabled` renders the row and refuses the selection, which a declared enum expresses by leaving
- * the value out and a live catalogue cannot (an archived project still labels the rows already
- * pointing at it).
- */
-export type FilterOption = {
-  readonly value: string
-  readonly label: string
-  readonly disabled?: boolean
-}
-
-type SelectFilterCommon = UncontrolledProps & {
-  readonly label: string
-  readonly icon?: ReactNode
-  /** Adds a `Clear` action that writes the field back to its fallback. */
-  readonly clearable?: boolean
-}
+type SelectFilterCommon = UncontrolledProps & FilterBase & { readonly label: string }
 
 /** A closed enum field: `options` relabels rows the field already declares, so it is optional. */
 export type SelectFilterEnumProps<T extends string> = SelectFilterCommon & {
   readonly field: FieldHandle<EnumField<T>>
   /** Overrides `field.options` at render — a runtime catalogue, labels included. */
-  readonly options?: readonly FilterOption[]
+  readonly options?: readonly Option[]
 }
 
 /** A string field: it declares no values, so `options` is the only row source and is required. */
 export type SelectFilterStringProps = SelectFilterCommon & {
   readonly field: FieldHandle<StringField>
   /** Required here — see this type's doc. */
-  readonly options: readonly FilterOption[]
+  readonly options: readonly Option[]
 }
 
 export type SelectFilterProps<T extends string> = SelectFilterEnumProps<T> | SelectFilterStringProps

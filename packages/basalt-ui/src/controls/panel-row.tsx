@@ -29,6 +29,7 @@ import { cx } from '../common/props'
 import type { BasaltProps } from '../common/props'
 import { CtlSlot } from '../theme'
 import { InfoGlyph } from '../dashboard/widget-header'
+import type { Option } from './filter-base'
 import classes from './panel-row.module.css'
 
 /**
@@ -122,18 +123,13 @@ export function PanelRow({
   )
 }
 
-/** One option as both surfaces render it — `disabled` is the `SegmentedControl` half. */
-export type PanelChoiceOption = {
-  readonly value: string
-  readonly label: string
-  readonly disabled?: boolean
-}
-
 export type PanelChoiceProps = {
   /** The control's accessible name, as `useControlName` resolved it for this surface. */
   readonly nameProps: { 'aria-labelledby': string } | { 'aria-label': string }
   readonly value: string
-  readonly options: readonly PanelChoiceOption[]
+  readonly options: readonly Option[]
+  /** The whole control is inert. */
+  readonly disabled?: boolean
   /** Numeric labels (`7d` / `30d`) get the mono treatment `segmented-control.module.css` owns. */
   readonly numeric?: boolean
   readonly onChange: (next: string) => void
@@ -355,6 +351,7 @@ export function PanelChoice({
   value,
   options,
   numeric,
+  disabled,
   onChange,
 }: PanelChoiceProps): ReactNode {
   const data = options.map((option) => ({
@@ -373,6 +370,7 @@ export function PanelChoice({
         fullWidth
         value={value}
         data={data}
+        {...(disabled === true && { disabled: true })}
         {...(numeric === true && { 'data-numeric': true })}
         onChange={onChange}
       />
@@ -384,6 +382,7 @@ export function PanelChoice({
       value={value}
       allowDeselect={false}
       data={data}
+      {...(disabled === true && { disabled: true })}
       onChange={(next) => {
         if (next !== null) onChange(next)
       }}

@@ -32,7 +32,7 @@ const store = createLocalStore({
     currency: field.enum(['USD', 'EUR'], 'USD'),
     compare: field.enum(['none', 'previous', 'year'] as const, 'none'),
     channels: field.multi(['web', 'email'], []),
-    range: field.range({ presets: ['7d', '30d'], fallback: '30d', custom: true }),
+    range: field.range({ presets: ['7d', '30d'], fallback: '30d' }),
     errorsOnly: field.boolean(false),
     q: field.string(),
     nights: field.number({ fallback: 2, min: 1, max: 14, int: true }),

@@ -17,15 +17,16 @@ import { assertRequiredProps } from '../common/validate'
 import type { FieldHandle } from '../state'
 import type { BooleanField } from '../state/fields'
 import { useFilterRegistration, useFilterSurface } from './filter-context'
+import type { FilterBase } from './filter-base'
 import { FilterPill } from './filter-pill'
 import { PanelRow } from './panel-row'
 import type { UncontrolledProps } from './uncontrolled'
 
-export type ToggleFilterProps = UncontrolledProps & {
-  readonly field: FieldHandle<BooleanField>
-  readonly label: string
-  readonly icon?: ReactNode
-}
+export type ToggleFilterProps = UncontrolledProps &
+  Omit<FilterBase, 'clearable'> & {
+    readonly field: FieldHandle<BooleanField>
+    readonly label: string
+  }
 
 export function ToggleFilter(props: ToggleFilterProps): ReactNode {
   // F-ERR-1 — without this a missing `field` surfaces as `undefined is not an object
@@ -33,7 +34,7 @@ export function ToggleFilter(props: ToggleFilterProps): ReactNode {
   assertRequiredProps('ToggleFilter', props, ['field'], {
     field: 'bind it to a store field (`store.field.<name>`), never a value/onChange pair.',
   })
-  const { field, label, icon, className, style } = props
+  const { field, label, icon, disabled, className, style } = props
   const [value, setValue] = field.use()
   const surface = useFilterSurface()
   const id = useId()
@@ -51,7 +52,7 @@ export function ToggleFilter(props: ToggleFilterProps): ReactNode {
         end={
           <Switch
             id={id}
-            aria-label={label}
+            {...(disabled === true && { disabled: true })}
             checked={value}
             onChange={(event) => {
               setValue(event.currentTarget.checked)
@@ -70,6 +71,7 @@ export function ToggleFilter(props: ToggleFilterProps): ReactNode {
       active={value}
       pressed={value}
       hideGlyph
+      {...(disabled === true && { disabled: true })}
       {...(icon !== undefined && { icon })}
       onClick={() => {
         setValue(!value)

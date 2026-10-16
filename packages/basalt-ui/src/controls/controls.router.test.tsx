@@ -528,7 +528,7 @@ describe('RangeFilter', () => {
     await mountPage({
       validateSearch: store.validateSearch,
       entry: '/dashboard',
-      Page: () => <RangeFilter field={store.field.range} label="Window" />,
+      Page: () => <RangeFilter field={store.field.range} label="Window" customPicker={Picker} />,
     })
     await openPill('30d')
     expect(screen.getByRole('radiogroup', { name: 'Window', hidden: true })).toBeDefined()
@@ -538,7 +538,7 @@ describe('RangeFilter', () => {
     await mountPage({
       validateSearch: store.validateSearch,
       entry: '/dashboard',
-      Page: () => <RangeFilter field={store.field.range} />,
+      Page: () => <RangeFilter field={store.field.range} customPicker={Picker} />,
     })
     expect(screen.getByRole('button', { name: '30d' }).hasAttribute('data-numeric')).toBe(true)
   })
@@ -561,10 +561,11 @@ describe('RangeFilter', () => {
     expect(screen.getByRole('button', { name: /Mar 1/ }).textContent).toContain('Mar 1 – Mar 14')
   })
 
-  test('no picker is injected → no custom affordance, presets only', async () => {
+  test('no picker is injected (untyped caller) → no custom affordance, presets only', async () => {
     await mountPage({
       validateSearch: store.validateSearch,
       entry: '/dashboard',
+      // @ts-expect-error `custom: true` requires `customPicker`; this pins the runtime fallback
       Page: () => <RangeFilter field={store.field.range} />,
     })
     await openPill('30d')
@@ -639,7 +640,7 @@ describe('SearchFilter', () => {
       entry: '/dashboard',
       Page: () => <SearchFilter field={store.field.q} />,
     })
-    expect(screen.getByRole('textbox', { name: 'Search' })).toBeDefined()
+    expect(screen.getByRole('searchbox', { name: 'Search' })).toBeDefined()
   })
 })
 

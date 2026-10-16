@@ -1,6 +1,6 @@
 /**
- * `RangeFilterProps` is generic over the FIELD's `custom` flag — the compile-time half, plus the one
- * runtime consequence of leaving `customPicker` out.
+ * `RangeFilterProps` is generic over the FIELD's `custom` flag — `customPicker` is required exactly
+ * when the field is `custom: true` and forbidden otherwise.
  *
  * Why a file of its own (the `actions.type-guard.test.ts` convention): pinning `C` to its default
  * `boolean` made `RangeFilter field={...}` reject a `field.range({ … })` that never declared
@@ -70,6 +70,10 @@ function Accepted(): ReactNode {
 function Rejected(): ReactNode {
   return (
     <>
+      {/* @ts-expect-error `custom: true` requires a `customPicker` */}
+      <RangeFilter field={customStore.field.withCustom} />
+      {/* @ts-expect-error a preset-only field forbids `customPicker` */}
+      <RangeFilter field={store.field.presetsOnly} customPicker={Picker} />
       {/* @ts-expect-error an enum handle is not a range handle, whatever `C` is */}
       <RangeFilter field={store.field.view} />
       {/* @ts-expect-error `value`/`onChange` is not the binding a basalt control takes (C2) */}
@@ -78,44 +82,23 @@ function Rejected(): ReactNode {
   )
 }
 
-/** The first argument of every captured warn call. */
-function lines(warn: { mock: { calls: unknown[][] } }): string[] {
-  return warn.mock.calls.map((call) => String(call[0]))
-}
-
 describe('RangeFilterProps (type-guard)', () => {
   test('both fixtures exist — tsc, not bun, is the assertion for the cases above', () => {
     expect(typeof Accepted).toBe('function')
     expect(typeof Rejected).toBe('function')
   })
 
-  test('a custom-capable field with no picker warns once in dev — the affordance is unreachable', () => {
+  test('a custom-capable field with no picker is a type error, and renders presets only', () => {
     const warn = spyOn(console, 'warn').mockImplementation(() => {})
     try {
       render(
         <MantineProvider>
+          {/* @ts-expect-error `custom: true` requires `customPicker` — the dev warning became a type */}
           <RangeFilter field={customStore.field.withCustom} label="Unreachable" />
         </MantineProvider>,
       )
       expect(screen.getByRole('button', { name: '30d' })).toBeDefined()
-      expect(
-        lines(warn).filter((line) => line.includes("RangeFilter('Unreachable')")),
-      ).toHaveLength(1)
-      expect(lines(warn)[0]).toContain('customPicker')
-    } finally {
-      warn.mockRestore()
-    }
-  })
-
-  test('a preset-only field is silent — presets only is a configuration, not a mistake', () => {
-    const warn = spyOn(console, 'warn').mockImplementation(() => {})
-    try {
-      render(
-        <MantineProvider>
-          <RangeFilter field={store.field.presetsOnly} label="Silent" />
-        </MantineProvider>,
-      )
-      expect(lines(warn).filter((line) => line.includes("RangeFilter('Silent')"))).toHaveLength(0)
+      expect(warn).not.toHaveBeenCalled()
     } finally {
       warn.mockRestore()
     }
