@@ -15,15 +15,14 @@ import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, join, relative, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { parseArgs } from 'node:util'
+import { chromium } from 'playwright-core'
 import type { Browser, Page } from 'playwright-core'
-import { openContext } from '../../packages/basalt-ui/src/cli/shot/capture'
 import {
-  INSTALL_LINE,
-  resolvePlaywright,
+  VIEWPORT_SPECS,
+  openContext,
+  serveDist,
   withBrowser,
-} from '../../packages/basalt-ui/src/cli/shot/playwright'
-import type { PwBrowser } from '../../packages/basalt-ui/src/cli/shot/playwright'
-import { VIEWPORT_SPECS } from '../../packages/basalt-ui/src/cli/shot/types'
+} from '../../packages/basalt-ui/src/cli/shot'
 import {
   PAIR_KEYS,
   SCHEMES,
@@ -47,7 +46,6 @@ import { IMG_KEEL, IMG_ROOT, PARITY_DIR, REPO_ROOT, assertOutDir } from './paths
 import type { FoundMapping, Metrics } from './compare-patterns'
 import { stableStringify } from './index'
 import { withTimeout } from './perf-util'
-import { serveDist } from './serve'
 
 const ROOT = REPO_ROOT
 const KEEL_DIR = join(PARITY_DIR, 'keel')
@@ -231,18 +229,21 @@ function measure(node: Node, rowLike: boolean): Metrics {
 
 /**
  * One Chrome for `fn`, through `basalt-ui shot`'s launcher (`launchServer` + `connect` + `kill()`;
- * a graceful `close()` hangs on this host) and killed afterwards even when `fn` times out. The real
- * Playwright types are restored here: shot types the browser through a minimal structural surface.
+ * a graceful `close()` hangs on this host), killed afterwards even when `fn` times out. Chrome is
+ * preferred, as before, so the evidence baseline does not move; the channel used is logged.
  */
 function withChrome<T>(
   fn: (browser: Browser) => Promise<T>,
   timeoutMs: number,
   what: string,
 ): Promise<T> {
-  const pw = resolvePlaywright(ROOT)
-  if (!pw) throw new Error(INSTALL_LINE)
-  return withBrowser(pw, (browser) =>
-    withTimeout(fn(browser as unknown as Browser), timeoutMs, what),
+  return withBrowser(
+    { chromium },
+    (browser, channel) => {
+      console.log(`[compare] ${what}: browser ${channel}`)
+      return withTimeout(fn(browser), timeoutMs, what)
+    },
+    { channels: ['chrome', undefined] },
   )
 }
 
@@ -309,9 +310,9 @@ async function captureAll(params: {
     async (browser) => {
       for (const scheme of SCHEMES) {
         for (const viewport of VIEWPORTS) {
-          const context = await openContext(browser as unknown as PwBrowser, scheme, viewport)
+          const context = await openContext(browser, scheme, viewport)
           try {
-            const page = (await context.newPage()) as unknown as Page
+            const page = await context.newPage()
             page.setDefaultTimeout(NAV_TIMEOUT_MS)
             for (const id of ids) {
               const mapping = mappingFor(id)
