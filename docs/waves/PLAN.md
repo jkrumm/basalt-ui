@@ -775,7 +775,7 @@ rb, basalt-ui-obsidian, linewatch and argo are LIVE on 2.11.1 and verified (rb/o
 coordinated only through its orchestrator. Process lessons in the rewrite memory: verify reviewer blockers
 against the code; freeze scope after two review rounds; prefer declared config over CLI shape heuristics.
 
-## Wave 17 — weatherorb Wave 37 friction (rows 113–118) <!-- status: active -->
+## Wave 17 — weatherorb Wave 37 friction (rows 113–118) <!-- status: done -->
 
 weatherorb's provider spike on 2.11.1 put `/map` over its ADR 0020 gzip bar before any chart landed. Its
 orchestrator re-measures on the newest 2.x in its Wave 42.
@@ -785,9 +785,13 @@ orchestrator re-measures on the newest 2.x in its Wave 42.
       `defineOverlays` ran; `ModalsProvider` becomes a sibling (rows 114, 118).
 - [x] #286: `doctor` accepts a pathless-layout provider and checks the exported root route's typed context;
       `motion` peer caret (rows 113, 115, 116). Row 117 is closed by design (TS project references).
-- [ ] Release the minor through `make release`, then tell weatherorb's orchestrator the version.
+- [x] Release the minor through `make release`, then tell weatherorb's orchestrator the version.
 
-**Left behind:**
+**Left behind:** 2.12.0 on npm (2026-10-16). Two independent review rounds per PR, then scope frozen and the last
+fix diff read by the orchestrator. Deferred into Wave 25: lazy mount loaders so importing `./commands` alone does
+not reach Spotlight, and `router-tanstack/nav.ts` importing the Spotlight mount (a documented exception to the
+headless barrel). CLI line ceiling 4955 → 5020; Wave 21's CLI split pays it back. The five live consumers stay on
+2.11.1 until Wave 18's minor, which they validate. weatherorb takes 2.12.0 in its Wave 42.
 
 # Part 2 — the maturation pass (2026-10-16)
 
@@ -813,7 +817,7 @@ lead fans out workers on disjoint file groups (`rd fan` / `rd merge`), and stops
 orchestrator releases, drives the consumer validators (weatherorb only through its own orchestrator), and
 files their friction.
 
-## Wave 18 — Wiring correctness and stability <!-- status: pending -->
+## Wave 18 — Wiring correctness and stability <!-- status: active -->
 
 Synthesis Wave 1. Validators: weatherorb (Start `getRouter()`, SSR hydration), argo, rb.
 
