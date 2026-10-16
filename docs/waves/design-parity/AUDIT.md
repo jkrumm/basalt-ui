@@ -9,13 +9,14 @@ scores live in [SPEC.md](SPEC.md); this page is the evidence.
   [BENCHMARK.md](BENCHMARK.md), [w29/compare.json](w29/compare.json) and the fleet survey in
   [SPEC.md § Fleet needs](SPEC.md#10-fleet-needs). The scorer was a fresh agent that did not write the code. The
   lead checked the sharpest claims against the source (the delta fill, the stale `StatCard` JSDoc, the Badge
-  default) and re-graded five verdicts (nav-item, loading-state, side-panel-card, and tab-bar and button-ghost to _learn_ once the accent leak was confirmed in code).
+  default) and re-graded three verdicts: nav-item, on par → basalt ahead on compact (bottom bar, badges); tab-bar and
+  button-ghost, on par → learn (the accent leak is deliberate in code).
 - **Verdicts:** _basalt ahead (keep)_, _on par_, _learn from the reference_, _missing_.
 - **Root-cause classes:** `token/scale`, `anatomy` (a component's structure), `missing component`,
   `chart-in-card` (chrome of a chart inside a card), `recipe` (basalt can already express it; nothing tells an
   agent to).
-- **Caveat on the evidence:** four basalt stand-ins are loose matches. side-panel-card maps to a buttons demo
-  card, empty-state to the table's no-results state, status-pill to Mantine's default solid Badge, and
+- **Caveat on the evidence:** three basalt stand-ins are loose matches. side-panel-card maps to a buttons demo
+  card, status-pill to Mantine's default solid Badge, and
   form-field to a label-left `FormRow`. Where the stand-in is the wrong job, the verdict says so.
 
 ## Counts
