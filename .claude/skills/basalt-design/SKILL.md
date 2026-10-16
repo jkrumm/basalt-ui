@@ -32,5 +32,5 @@ Method only; the law is `.claude/rules/basalt-*.md` and `./DESIGN.md`.
    - hand the out dir (`.basalt/shots`) to the `basalt-design-reviewer` subagent by name;
    - revise every failing item at its source, rebuild, and shoot again.
      Boards stay local (gitignored); the scored verdict and notes are worth committing.
-7. **Done** only when the reviewer passes every component. After five failed rounds stop and show the owner the boards and the failing items.
+7. **Done** only when the reviewer passes every component, and never before round three: a pass earlier does not end the loop. After five failed rounds stop and show the owner the boards and the failing items.
 8. Run the repo's own gate (e.g. `make check`); fix every finding at its source. `shot` captures desktop (1440) and mobile (390) in both schemes; check both.
