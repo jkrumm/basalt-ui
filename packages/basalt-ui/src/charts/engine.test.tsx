@@ -278,6 +278,79 @@ describe('shared cursor', () => {
     expect(shown.map((c) => c.getAttribute('fill'))).toEqual(['var(--vx-fill-red)'])
   })
 
+  describe('a follower whose x-domain does not contain the cursor', () => {
+    const early = rows(30).slice(0, 10) // 09-01 .. 09-10
+    const late = rows(10).slice(20) // 09-21 .. 09-30
+    const draw = async (xDomain?: readonly [Date, Date]): Promise<HTMLElement> => {
+      const el = document.createElement('div')
+      document.body.append(el)
+      root = createRoot(el)
+      await act(async () => {
+        root?.render(
+          <>
+            <div id="A">
+              <Lines data={early} x={x} series={[load]} ariaLabel="A" legend={false} />
+            </div>
+            <div id="B">
+              <Lines
+                data={late}
+                x={x}
+                series={[b]}
+                ariaLabel="B"
+                legend={false}
+                {...(xDomain && { xDomain })}
+              />
+            </div>
+          </>,
+        )
+      })
+      return el
+    }
+    const at = async (d: number): Promise<void> => {
+      await act(async () => {
+        chartCursor().setState({
+          anchor: 'value',
+          value: { x: day(d) },
+          source: 'programmatic',
+          pinned: false,
+        })
+        await new Promise((r) => setTimeout(r, 30))
+      })
+    }
+    const dots = (el: Element, id: string): number =>
+      el.querySelectorAll(`#${id} [data-ts-key^="default-focus"] circle`).length
+    const rule = (el: Element, id: string): boolean =>
+      el.querySelector(`#${id} .ts-chart__crosshair-rule--x`) !== null
+
+    test('outside: no crosshair, no dot (not one clamped to the edge datum)', async () => {
+      const el = await draw()
+      await at(5)
+      expect(dots(el, 'A')).toBe(1)
+      expect(rule(el, 'A')).toBe(true)
+      expect(dots(el, 'B')).toBe(0)
+      expect(rule(el, 'B')).toBe(false)
+    })
+
+    test('inside, and exactly on the domain edge: it draws', async () => {
+      const el = await draw()
+      await at(25)
+      expect(dots(el, 'B')).toBe(1)
+      expect(rule(el, 'B')).toBe(true)
+      await at(21)
+      expect(dots(el, 'B')).toBe(1)
+      await at(30)
+      expect(dots(el, 'B')).toBe(1)
+    })
+
+    test('an explicit xDomain is the domain: inside it draws, outside it does not', async () => {
+      const el = await draw([day(15), day(30)])
+      await at(17)
+      expect(dots(el, 'B')).toBe(1)
+      await at(10)
+      expect(dots(el, 'B')).toBe(0)
+    })
+  })
+
   test('the follower becomes the leader the moment the pointer moves onto it', async () => {
     const el = await hoverAOverB()
     expect(tooltips().length).toBe(1)
