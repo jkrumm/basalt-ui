@@ -3,8 +3,6 @@
  * takes ink, SPEC § 6.12). Defect: the active underline is pinned to the accent colour. Pinned
  * explicitly so the seed stays defective after the theme closes the leak. Tab labels and panel copy
  * are clean.
- *
- * Route id: `probe-4` (neutral on purpose; the id → seed map lives in docs only).
  */
 import { Box, Tabs, Text } from '@mantine/core'
 import { Section } from 'basalt-ui'

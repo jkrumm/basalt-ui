@@ -28,7 +28,14 @@ describe('findScenario', () => {
 
   it('registers S4 and the six calibration seeds', () => {
     expect(SCENARIO_NAMES).toContain('s4-spend')
-    expect(SCENARIO_NAMES.filter((n) => /^probe-\d$/.test(n))).toHaveLength(6)
+    expect(SCENARIO_NAMES.filter((n) => n.startsWith('probe-')).toSorted()).toEqual([
+      'probe-1',
+      'probe-2',
+      'probe-3',
+      'probe-4',
+      'probe-5',
+      'probe-6',
+    ])
   })
 
   it.each(['constructor', 'toString', '__proto__', 'hasOwnProperty', 'nope'])(
