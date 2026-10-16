@@ -74,14 +74,29 @@ describe('unwrap — Eden Treaty union envelope', () => {
 
 describe('unwrap — guards', () => {
   test('a non-native thenable is awaited, not treated as an envelope', async () => {
-    // oxlint-disable-next-line unicorn/no-thenable -- a non-native thenable is the case under test
-    const thenable = { then: (resolve: (v: unknown) => void) => resolve({ data: 7, error: null }) }
-    expect((await unwrap(thenable as never)) as unknown).toBe(7)
+    const thenable: PromiseLike<{ data: number; error: null }> = {
+      // oxlint-disable-next-line unicorn/no-thenable -- a non-native thenable is the case under test
+      then: (resolve) => Promise.resolve({ data: 7, error: null }).then(resolve),
+    }
+    expect(await unwrap(thenable)).toBe(7)
   })
 
-  test('a falsy-but-present error still throws', () => {
-    expect(() => unwrap({ data: 'ok', error: 0 })).toThrow()
-    expect(() => unwrap({ data: 'ok', error: '' })).toThrow()
+  test('a falsy-but-present error throws it (only null/undefined mean no error)', () => {
+    for (const error of [false, 0, '']) {
+      expect(() => unwrap({ data: 'ok', error })).toThrow()
+      let thrown: unknown = 'unset'
+      try {
+        unwrap({ data: 'ok', error })
+      } catch (e) {
+        thrown = e
+      }
+      expect(thrown).toBe(error)
+    }
+  })
+
+  test('null and undefined error with data resolve', () => {
+    expect(unwrap({ data: 'ok', error: null })).toBe('ok')
+    expect(unwrap({ data: 'ok', error: undefined })).toBe('ok')
   })
 })
 
@@ -99,13 +114,16 @@ describe('makeQueryClient — retry default', () => {
     ])
   })
 
-  test('never retries a 4xx', () => {
-    expect(retry(0, { status: 401 })).toBe(false)
-    expect(retry(0, { status: 404 })).toBe(false)
+  test('never retries a 4xx, except the transient 408, 425 and 429', () => {
+    for (const status of [400, 401, 403, 404, 422, 499]) expect(retry(0, { status })).toBe(false)
+    for (const status of [408, 425, 429]) expect(retry(0, { status })).toBe(true)
+    expect(retry(2, { status: 429 })).toBe(false)
   })
 
-  test('retries a 5xx and an error without a status', () => {
+  test('retries a 5xx, and an error without a numeric status', () => {
     expect(retry(0, { status: 503 })).toBe(true)
+    expect(retry(0, { status: '404' })).toBe(true)
+    expect(retry(0, null)).toBe(true)
     expect(retry(0, 'weird')).toBe(true)
   })
 })

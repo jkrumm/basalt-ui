@@ -58,11 +58,17 @@ type ChatAttrs = {
 export type BasaltEvent =
   | Ok<'route.navigate', RouteAttrs>
   | Err<'route.error', { 'basalt.route.id': string }>
-  | Err<'query.error', { 'basalt.query.hash': string; 'basalt.query.failure_count': number }>
+  | Err<
+      'query.error',
+      {
+        /** `groupingId(queryHash)`: an opaque grouping id, not the key. */ 'basalt.query.hash': string
+        'basalt.query.failure_count': number
+      }
+    >
   | Err<
       'mutation.error',
       {
-        /** `hashOf(JSON.stringify(key))` — keys embed ids and slugs. */ 'basalt.mutation.key': string
+        /** `groupingId(JSON.stringify(key))`: an opaque grouping id, not the key. */ 'basalt.mutation.key': string
       }
     >
   | Err<'render.error', { 'basalt.error.boundary': 'root' }>
@@ -133,8 +139,12 @@ export type Telemetry = ((event: BasaltEvent) => void) & {
 
 export const now = (): number => performance.timeOrigin + performance.now()
 
-/** djb2 in hex: an id for a value that must not leave the app (a mutation key embeds slugs). */
-export function hashOf(value: string): string {
+/**
+ * An opaque grouping id (32-bit djb2, hex) for a query or mutation key, so events from one key group
+ * together and the key's segments (ids, slugs) stay out of the event. NOT a privacy guarantee: it is
+ * non-cryptographic and a short or guessable key can be recovered by trying candidates.
+ */
+export function groupingId(value: string): string {
   let h = 5381
   for (let i = 0; i < value.length; i++) h = (h * 33) ^ value.charCodeAt(i)
   return (h >>> 0).toString(16)
@@ -182,17 +192,38 @@ export function createLiveEmitter(read: () => Telemetry | undefined): Telemetry 
  */
 export const TelemetryContext = createContext<Telemetry | undefined>(undefined)
 
-/** On `context.__basalt` of a `basaltRouterOptions` router: where its `defaultOnCatch` reports to. */
+/**
+ * On `context.__basalt` of a `basaltRouterOptions` router: where its `defaultOnCatch` reports to.
+ * The factory and `bindRouteError` are the only two places that know this key.
+ */
 export type RouterHook = { onRouteError?: ((error: unknown) => void) | undefined }
 
-/** Points the router's `route.error` hook at `handler` (the provider's emitter); returns the unbind. */
+function hookOf(context: unknown): RouterHook | undefined {
+  if (typeof context !== 'object' || context === null || !('__basalt' in context)) return undefined
+  const hook = context.__basalt
+  return typeof hook === 'object' && hook !== null ? hook : undefined
+}
+
+/**
+ * Points the router's `route.error` hook at `handler` (the provider's emitter); returns the unbind.
+ * The binding happens in the provider's effect, so a route error thrown before the first provider
+ * effect (a loader failing during the initial load) is logged in dev but not emitted. A router
+ * without the hook was not built with `basaltRouterOptions`: nothing is bound and dev warns.
+ */
 export function bindRouteError(
   router: { options: { context?: unknown } },
   handler: (error: unknown) => void,
 ): () => void {
-  const hook = (router.options.context as { __basalt?: RouterHook } | undefined)?.__basalt
-  if (hook) hook.onRouteError = handler
+  const hook = hookOf(router.options.context)
+  if (!hook) {
+    if (process.env.NODE_ENV !== 'production')
+      console.warn(
+        '[basalt] route.error telemetry is off: the router was not built with `basaltRouterOptions()` (or `createBasaltRouter`).',
+      )
+    return () => {}
+  }
+  hook.onRouteError = handler
   return () => {
-    if (hook?.onRouteError === handler) hook.onRouteError = undefined
+    if (hook.onRouteError === handler) hook.onRouteError = undefined
   }
 }

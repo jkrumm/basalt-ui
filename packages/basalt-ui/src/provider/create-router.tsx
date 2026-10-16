@@ -93,35 +93,60 @@ type ManagedKeys =
   | 'defaultOnCatch'
   | 'defaultViewTransition' // route transitions are basalt's (V2-SPEC § 5): the router's would double them
 
+/** `queryClient` and `__basalt` are basalt's: a consumer's would be replaced, so the type rejects them. */
+type ExtraContext = { queryClient?: never; __basalt?: never }
+type NoContext = Record<never, never>
+
 type RouterOptionsInput<TContext extends object> = {
   /** Context beyond `queryClient`; the root route's context type extends `BasaltRouterContext`. */
-  context?: TContext | undefined
-  /** Merged over basalt's QueryClient defaults (`staleTime` 30 s, `gcTime` 5 min, `retry` twice, never a 4xx, no refetch on focus). */
+  context?: (TContext & ExtraContext) | undefined
+  /** Merged over basalt's QueryClient defaults (`staleTime` 30 s, `gcTime` 5 min, `retry` twice, never a 4xx but 408/425/429, no refetch on focus). */
   query?: QueryClientConfig | undefined
+}
+
+/** What `basaltRouterOptions` returns: the router options basalt owns, plus the context. */
+export type BasaltRouterOptions<TContext extends object = NoContext> = {
+  context: TContext & BasaltRouterContext
+  defaultPreload: 'intent'
+  defaultPreloadStaleTime: number
+  scrollRestoration: boolean
+  defaultViewTransition: typeof routeViewTransition | false
+  defaultPendingComponent: typeof PendingComponent
+  defaultErrorComponent: typeof ErrorComponent
+  defaultNotFoundComponent: typeof NotFoundComponent
+  defaultOnCatch: (error: unknown) => void
 }
 
 /**
  * Everything `createBasaltRouter` sets, for a router the app builds itself (TanStack Start's
  * `getRouter()`): spread it into `createRouter`, and the provider mounted inside gets `route.error`
  * telemetry, intent preloading, the route transition and the default pending/error/not-found UI.
+ * A `TContext` with required keys makes `context` required. Spread it LAST: the keys are basalt's.
  * Side effect, once per document: wraps `document.startViewTransition` so a skipped route
  * transition (`AbortError`) never becomes an unhandled rejection (`guardViewTransitionRejections`).
  *
  * @example
  * export const getRouter = () => createRouter({ routeTree, ...basaltRouterOptions() })
  */
-export function basaltRouterOptions<TContext extends object = Record<never, never>>(
+export function basaltRouterOptions(options?: RouterOptionsInput<NoContext>): BasaltRouterOptions
+export function basaltRouterOptions<TContext extends object>(
+  options: RouterOptionsInput<TContext> & { context: TContext & ExtraContext },
+): BasaltRouterOptions<TContext>
+export function basaltRouterOptions<TContext extends object>(
   options: RouterOptionsInput<TContext> = {},
-) {
+): BasaltRouterOptions<TContext> {
   guardViewTransitionRejections()
   const hook: RouterHook = {}
+  // `options.context` is `TContext | undefined`; the overloads guarantee it is present when `TContext`
+  // has required keys, so the spread below is the whole `TContext`.
+  const context: TContext & BasaltRouterContext = {
+    ...(options.context as TContext),
+    queryClient: makeQueryClient(options.query),
+    __basalt: hook,
+  }
   return {
-    context: {
-      ...options.context,
-      queryClient: makeQueryClient(options.query),
-      __basalt: hook,
-    } as TContext & BasaltRouterContext,
-    defaultPreload: 'intent' as const,
+    context,
+    defaultPreload: 'intent',
     // Query owns freshness: a preload must not be cached a second time by the router.
     defaultPreloadStaleTime: 0,
     scrollRestoration: true,
@@ -131,12 +156,18 @@ export function basaltRouterOptions<TContext extends object = Record<never, neve
     defaultPendingComponent: PendingComponent,
     defaultErrorComponent: ErrorComponent,
     defaultNotFoundComponent: NotFoundComponent,
-    defaultOnCatch: (error: unknown) => {
+    defaultOnCatch: (error) => {
       if (process.env.NODE_ENV !== 'production') console.error('[basalt] route error', error)
       hook.onRouteError?.(error)
     },
   }
 }
+
+type CreateRouterInput<TRouteTree extends AnyRoute> = {
+  routeTree: TRouteTree
+  history?: RouterHistory
+  basepath?: string
+} & { [K in ManagedKeys]?: never }
 
 /**
  * @example
@@ -147,22 +178,24 @@ export function basaltRouterOptions<TContext extends object = Record<never, neve
  * // extra context (argo's auth) extends BasaltRouterContext:
  * const router = createBasaltRouter({ routeTree, context: { auth }, query: { queryCache } })
  */
-export function createBasaltRouter<
-  TRouteTree extends AnyRoute,
-  TContext extends object = Record<never, never>,
->({
+export function createBasaltRouter<TRouteTree extends AnyRoute>(
+  options: CreateRouterInput<TRouteTree> & RouterOptionsInput<NoContext>,
+): BasaltRouter<TRouteTree>
+export function createBasaltRouter<TRouteTree extends AnyRoute, TContext extends object>(
+  options: CreateRouterInput<TRouteTree> &
+    RouterOptionsInput<TContext> & { context: TContext & ExtraContext },
+): BasaltRouter<TRouteTree>
+export function createBasaltRouter<TRouteTree extends AnyRoute, TContext extends object>({
   routeTree,
   context,
   query,
   ...passthrough
-}: RouterOptionsInput<TContext> & {
-  routeTree: TRouteTree
-  history?: RouterHistory
-  basepath?: string
-} & { [K in ManagedKeys]?: never }): BasaltRouter<TRouteTree> {
-  return createRouter({
+}: CreateRouterInput<TRouteTree> & RouterOptionsInput<TContext>): BasaltRouter<TRouteTree> {
+  const router: BasaltRouterBase<TRouteTree> = createRouter({
     ...passthrough,
     routeTree,
-    ...basaltRouterOptions({ context, query }),
-  }) as BasaltRouter<TRouteTree>
+    ...basaltRouterOptions<TContext>({ context: context as TContext, query }),
+  })
+  // The brand is type-level only (see `BasaltRouter`), so the one cast adds nothing at runtime.
+  return router as BasaltRouter<TRouteTree>
 }
