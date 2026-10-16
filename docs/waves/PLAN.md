@@ -842,17 +842,26 @@ Synthesis Wave 1. Validators: weatherorb (Start `getRouter()`, SSR hydration), a
   reports e1648fe) and rb (#5, `make deploy`, container on 2.13.1, `make verify` healthy) bumped from 2.11.1 with no code
   change and no basalt friction; weatherorb checks `basaltRouterOptions` and SSR hydration in its Wave 42.
 
-## Wave 19 — Format layer and small correctness bugs <!-- status: active -->
+## Wave 19 — Format layer and small correctness bugs <!-- status: done -->
 
 Synthesis Wave 2. Validators: argo, rb, linewatch.
 
-- [ ] `money` keeps cents (row cf-01); `integer`/`km`/`kcal`; one alias spelling.
-- [ ] One relative-time formatter (delete the three copies).
-- [ ] Provider-level `locale` / `timeZone`; the formatters two or more apps duplicate.
-- [ ] Filter correctness (flush on Enter/blur/unmount, one accessible name, shared filter base).
-      **Left behind:**
+- [x] `money` keeps cents (row cf-01); `integer`/`km`/`kcal`; one alias spelling.
+- [x] One relative-time formatter (delete the three copies).
+- [x] Provider-level `locale` / `timeZone`; the formatters two or more apps duplicate.
+- [x] Filter correctness (flush on Enter/blur/unmount, one accessible name, shared filter base).
 
-## Wave 20 — Guard engine foundation and honesty <!-- status: pending -->
+**Left behind:**
+
+- **Landed** (3 PRs via `rd merge`, `make check` green on each rebased SHA; every diff agent-gateway reviewed for two rounds, scope then frozen and the lead read each last fix diff): #298 numbers + provider locale, #299 relative time + `date`/`time`/`dateTime`/`duration`, #300 filters. Lead commits on top: the barrel wiring (`date`, `time`, `dateTime`, `duration`), `llms.txt` and `export-surface.json` regenerated, ceilings (`nonChartSymbols` 99 → 103, `barrelTypes` 60) with named consumers, one `## Unreleased` MIGRATING entry. Not released.
+- **Source delta: NOT net-negative (stated).** Non-test `packages/basalt-ui/src`: +257/−92 (#298), +202/−129 (#299), +481/−385 (#300) = +940/−606, net +334. The format layer gained eight symbols (`compact`, `bytes`, `delta`, `defineFormat`, `date`, `time`, `dateTime`, `duration`); deleting the consumers' local copies is the fleet's side of the trade. Wave 22 (purge) takes the count back.
+- **Decided by the lead (flag if you disagree):** `locale`/`timeZone` stay a **module-global default** set by `BasaltProvider`/`defineFormat` (formatters are plain functions, no hooks), one value per process; documented as static for the provider's lifetime, not per-request and not re-rendering on change. Reviewers' SSR/concurrent-render objection was rejected on that basis: the six apps are single-locale and mostly client-rendered. Chat timestamps lost their hard-coded `en` (runtime or provider locale now). `RangeFilter`'s `customPicker` is now a type requirement (the break is in MIGRATING with the fix). `bytes` is decimal SI (1 kB = 1000 B). Rejected: a `useFilterDisabled` context, the `useDraft` hook extraction, a shared option→Mantine mapper, `format/` file splits, `<time>` elements, a dev warning for a bad timestamp.
+- **Not done / known gaps:** `disabled` is threaded as a prop through ~20 filter leaves (a context would be one edit); `range-filter.tsx` still builds its own `Intl.DateTimeFormat` (cf-08's format half: switch it to `date()`); `enum-filter`/`multi-select-filter` carry two clone blocks; `search-filter.tsx` holds the draft/debounce logic inline (~170 lines); `format/shared.ts` now holds defaults, caches, date coercion and scaling (split into `defaults.ts`/`scale.ts` if it grows); `dcc-12`'s click-only bell is Wave 24's. No `no-raw-Intl` lint rule yet (cf-06 waits for the locale story to be adopted).
+- **Validators (orchestrator drives):** argo (`walking-pad` `km`/`kcal`/`relativeTime`/duration spellings, the `fmtX` renames if any), rb (`lib/format.ts` en-US pin → `locale="en-US"` on the provider), linewatch (`lib/format.ts` null dash, `bytes`, `delta`); each runs the `RangeFilter` type-check for `custom: true` without a picker and queries `searchbox` for the search input. Consumer paths in `scripts/consumers.json` for the new symbols are planned call sites, not existing imports.
+- **Ops notes:** `rd fan` PRs open as drafts and `rd merge` fails "not merged after 3 attempts" with a misleading "main probably moved" until `gh pr ready`; a >10-minute train must run in the background (a foreground `timeout 590` killed the layout suite); each merge of a format/surface-touching PR needs `llms.txt` + `export-surface.json` regenerated (build first) and the symbol ceiling/consumers bumped, so every worker after the first conflicts on `check-budgets.ts` — brief them to leave it to the lead; `release-migrating --check` needs the old `## Unreleased` heading replaced, not kept above the new one; doc-drift Check I flags backticked non-exports in a barrel's module comment; the push hook blocks direct pushes to master here, so the close-out goes through a PR.
+- **Next:** Wave 20 is `active`. Not released: the orchestrator releases and drives argo/rb/linewatch validation.
+
+## Wave 20 — Guard engine foundation and honesty <!-- status: active -->
 
 Synthesis Wave 3. Validators: argo, rb, linewatch, obsidian (lint runs).
 
