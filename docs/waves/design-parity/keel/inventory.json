@@ -1,5 +1,5 @@
 {
-  "capturedAt": "2026-10-16T13:58:48.843Z",
+  "capturedAt": "2026-10-16T14:09:39.012Z",
   "origin": "https://keel-workspace.vercel.app",
   "patterns": [
     {
@@ -186,7 +186,7 @@
           "valueRole": "ink"
         }
       },
-      "notes": "A thin multi-segment bar carries target and commit; axis captions sit under it in mono type. Light scheme changes colour only; geometry is identical. Light background role: surface-raised."
+      "notes": "A thin multi-segment bar carries a target and a forecast split; axis captions sit under it in mono type. Light scheme changes colour only; geometry is identical. Light background role: surface-raised."
     },
     {
       "id": "decision-card",
