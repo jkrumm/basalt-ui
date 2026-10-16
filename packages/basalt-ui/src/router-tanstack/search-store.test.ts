@@ -283,6 +283,27 @@ describe('linkSearch', () => {
   })
 })
 
+describe('validateSearch on the server', () => {
+  test('is URL ⊳ fallback only — the stored layer never applies without a window', () => {
+    const store = createSearchStore({
+      key: 'k-server-pure',
+      fields: { range: field.enum(['1d', '7d', '30d'], '1d') },
+    })
+    persist('k-server-pure', { range: '30d' })
+    expect(store.validateSearch({})).toEqual({ range: '30d' })
+
+    const realWindow = globalThis.window
+    // @ts-expect-error -- simulating a server runtime, where `window` does not exist
+    globalThis.window = undefined
+    try {
+      expect(store.validateSearch({})).toEqual({ range: '1d' })
+      expect(store.validateSearch({ range: '7d' })).toEqual({ range: '7d' })
+    } finally {
+      globalThis.window = realWindow
+    }
+  })
+})
+
 describe('the pinned-link warning', () => {
   test('fires for a multi field — the fallback comparison is by CONTENT, not identity', () => {
     const store = createSearchStore({

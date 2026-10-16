@@ -29,8 +29,11 @@
  *
  * Headless — no Mantine, no JSX. Same tier as `useBasaltNav` and `useRouterBreadcrumbs`.
  */
-import { useNavigate, useSearch } from '@tanstack/react-router'
+import { useEffect } from 'react'
+import { useNavigate, useRouter, useSearch } from '@tanstack/react-router'
+import type { AnyRouter } from '@tanstack/react-router'
 import { createStoreCore } from '../state/fields'
+import { createStoreWarnings } from './search-store-warnings'
 import type {
   AnyField,
   FieldHandle,
@@ -100,104 +103,12 @@ export type SearchStore<S extends Record<string, AnyField>> = {
   useReset: () => () => void
 }
 
-/**
- * Dev-only, once per store: the URL is pinning `fallback` while something else is persisted, and
- * neither reader has ever been called. That combination has exactly one realistic cause — a nav
- * link declaring the param as a literal — and it is invisible otherwise, because every individual
- * piece looks correct and the feature merely never remembers anything.
- *
- * Deliberately NOT a timer over "was this store ever read": that fires in every test that builds a
- * store, and it cannot say what to do about it. This fires only in the broken state, and names the
- * fix.
- */
-function warnLinkPinsFallback(input: {
-  key: string
-  param: string
-  urlValue: string
-  storedValue: string
-}): void {
-  const { key, param, urlValue, storedValue } = input
-  // oxlint-disable-next-line no-console -- a dev-time wiring warning has no other channel
-  console.warn(
-    `[basalt-ui] createSearchStore('${key}'): the URL pinned \`${param}=${urlValue}\` ` +
-      '(the fallback) ' +
-      `while '${storedValue}' was persisted, and nothing has read this store back. A nav link is ` +
-      `almost certainly declaring \`search: { ${param}: '${urlValue}' }\` at module scope, which ` +
-      "overrides the stored value on every click — pass the store's own reader instead: " +
-      '`search: <store>.linkSearch`. (dev only)',
-  )
-}
-
 // ── Implementation ─────────────────────────────────────────────────────────
 
 /** Reads the merged search of every matched route, so a child or sibling needs no `from` (A3). */
 function useCurrentSearch(): Record<string, unknown> {
   const search = useSearch({ strict: false }) as unknown
   return typeof search === 'object' && search !== null ? (search as Record<string, unknown>) : {}
-}
-
-function describeValue(value: unknown): string {
-  return typeof value === 'string' ? value : JSON.stringify(value)
-}
-
-/**
- * Dev-only, once per field: a `persist: false` field was written from a route that does not
- * validate it, so the write had nowhere to go — no URL (the route owns no such param) and no mirror
- * (the field opted out of one). Silence is the wrong answer here: every other lane combination does
- * something, so a control that appears to work and changes nothing reads as a basalt bug.
- */
-function warnWriteHasNowhereToGo(input: { key: string; name: string; param: string }): void {
-  const { key, name, param } = input
-  // oxlint-disable-next-line no-console -- a dev-time wiring warning has no other channel
-  console.warn(
-    `[basalt-ui] createSearchStore('${key}'): wrote field '${name}' from a route that does not ` +
-      `validate \`${param}\`, and the field is \`persist: false\` — so the write was dropped. ` +
-      'Either render this control on the route wired to `validateSearch`, or give the field the ' +
-      'localStorage lane (drop `persist: false`) so a write from elsewhere survives until the ' +
-      'owning route reads it. (dev only)',
-  )
-}
-
-/**
- * Dev-only, once per param: a `patch` named a search param ANOTHER field of the same store owns.
- * The navigate would put it in the URL while the store's own write path never touched the mirror,
- * so the next paramless visit and every `linkSearch` link resolve the OLD value — the URL and the
- * mirror disagree from that click on, and nothing looks broken until a reader shares a link.
- *
- * Thrown in dev rather than warned: the call is a mistake with a one-line fix (write the other
- * field through its own setter), and the damage is silent. Production keeps the write — a thrown
- * error there would take a page down over a stale param — and logs it once.
- */
-function patchOwnsFieldMessage(input: {
-  key: string
-  name: string
-  owner: string
-  param: string
-}): string {
-  const { key, name, owner, param } = input
-  return (
-    `basalt-ui: createSearchStore('${key}'): set('${name}', …, { patch }) carries \`${param}\`, ` +
-    `which this store's field '${owner}' owns — the URL would take it while the localStorage ` +
-    'mirror kept the old value, so the next paramless visit and every `linkSearch` link disagree ' +
-    `with the page the write happened on. Write it through \`field.${owner}.use()[1]\` instead; ` +
-    'a `patch` is for keys the store does NOT own.'
-  )
-}
-
-/**
- * Dev-only, once per field: a patched write from a route that does not validate the field. The
- * write persists (A1), but the patch has no navigate to merge into and is dropped — the one case
- * where half of a two-part write silently disappears.
- */
-function warnPatchDropped(input: { key: string; name: string; param: string }): void {
-  const { key, name, param } = input
-  // oxlint-disable-next-line no-console -- a dev-time wiring warning has no other channel
-  console.warn(
-    `[basalt-ui] createSearchStore('${key}'): wrote field '${name}' with a \`patch\` from a route ` +
-      `that does not validate \`${param}\` — the field's value persisted (A1), but the patch was ` +
-      'DROPPED: there is no navigate to merge it into. Render the control on the route wired to ' +
-      '`validateSearch`, or apply that sibling param on the route that owns it. (dev only)',
-  )
 }
 
 /**
@@ -248,10 +159,28 @@ function isMemoryLane(entry: StoreEntry): boolean {
 }
 
 /**
- * The store's implementation. Not exported from the barrel — `createSearchStore` is the public
- * door.
+ * One store per page (or per feature), over typed fields. `key` is the localStorage key; each
+ * field's map key is its default URL param name.
+ *
+ * @example
+ * export const analytics = createSearchStore({
+ *   key: 'analytics',
+ *   fields: {
+ *     range: field.range({ presets: ['7d', '30d', '90d'], fallback: '30d', custom: true }),
+ *     compare: field.enum(['none', 'previous'], 'none'),
+ *     channels: field.multi(CHANNELS, []),
+ *   },
+ * }).labels({ range: { '7d': 'Last 7 days', '30d': 'Last 30 days', '90d': 'Last 90 days' } })
+ *
+ * export const Route = createFileRoute('/analytics')({
+ *   validateSearch: analytics.validateSearch,
+ *   loaderDeps: ({ search }) => search,
+ * })
+ *
+ * // in the page: <RangeFilter field={analytics.field.range} />
+ * // in the nav:  linkOptions({ to: '/analytics', search: analytics.linkSearch })
  */
-export function buildSearchStore<const S extends Record<string, AnyField>>(
+export function createSearchStore<const S extends Record<string, AnyField>>(
   o: CreateSearchStoreOptions<S>,
 ): SearchStore<S> {
   assertNoLazyUrlFallback(o.key, o.fields)
@@ -263,13 +192,11 @@ export function buildSearchStore<const S extends Record<string, AnyField>>(
   // touches the other two uses exclusively. Missing it there made the pinned-link warning fire on
   // correctly wired pages.
   let readerWired = false
-  let warned = false
+  let validatedOnce = false
   const markReaderWired = (): void => {
     readerWired = true
   }
-  const nowhereWarned = new Set<string>()
-  const patchDroppedWarned = new Set<string>()
-  const patchOwnerLogged = new Set<string>()
+  const warnings = createStoreWarnings(o.key)
 
   /** Every URL param this store owns, mapped to the field that owns it — what a `patch` may not name. */
   const paramOwners = new Map<string, string>()
@@ -300,24 +227,20 @@ export function buildSearchStore<const S extends Record<string, AnyField>>(
   )
 
   /**
-   * The URL lane's `clear()` needs a `navigate`, which only exists inside a render. Each render of
-   * `urlUse` therefore leaves the navigate its mount would use here, keyed by field — so `clear()`
-   * from an event handler on that mount navigates exactly as its setter would, and a field no mount
-   * has read falls back to clearing the mirror alone.
+   * The URL lane's `clear()` runs from an event handler, where no hook is in reach. A mounted
+   * `urlUse` lends its router here from an EFFECT — never the render body, which a discarded or
+   * StrictMode render would leave behind — so `clear()` navigates through the live router and
+   * judges ownership against the location it is called at. With no mount reading the store it
+   * clears the mirror alone.
    */
-  const urlClear = new Map<string, () => void>()
+  let mounted: { router: AnyRouter; count: number } | null = null
 
   const assertPatchNotOwned = (entry: StoreEntry, patch: Record<string, unknown>): void => {
     for (const param of Object.keys(patch)) {
       const owner = paramOwners.get(param)
       // The field's OWN params are harmless: its `toSearch` is spread after the patch and wins.
       if (owner === undefined || entry.codec.params.includes(param)) continue
-      const message = patchOwnsFieldMessage({ key: o.key, name: entry.name, owner, param })
-      if (process.env['NODE_ENV'] !== 'production') throw new Error(message)
-      if (patchOwnerLogged.has(param)) continue
-      patchOwnerLogged.add(param)
-      // oxlint-disable-next-line no-console -- production keeps the write; the log is the record
-      console.error(message)
+      warnings.patchOwned({ name: entry.name, owner, param })
     }
   }
 
@@ -333,7 +256,7 @@ export function buildSearchStore<const S extends Record<string, AnyField>>(
   }
 
   const maybeWarn = (raw: Record<string, unknown>, record: Record<string, unknown>): void => {
-    if (warned || readerWired || process.env['NODE_ENV'] === 'production') return
+    if (readerWired || process.env['NODE_ENV'] === 'production') return
     for (const entry of core.urlEntries) {
       const fromUrl = entry.codec.fromSearch(raw)
       if (fromUrl === null || !entry.codec.equals(fromUrl, entry.codec.fallback)) continue
@@ -341,19 +264,21 @@ export function buildSearchStore<const S extends Record<string, AnyField>>(
       if (stored === null || entry.codec.equals(stored, fromUrl)) continue
       // Describe both sides as the URL spells them (a range prints `30d`, not its whole value
       // object) — the message quotes a `search:` literal, so it has to be URL-shaped to be advice.
-      warned = true
-      warnLinkPinsFallback({
-        key: o.key,
+      warnings.linkPinsFallback({
+        readerWired,
         param: entry.codec.primary,
-        urlValue: describeValue(entry.codec.toSearch(fromUrl)[entry.codec.primary]),
-        storedValue: describeValue(entry.codec.toSearch(stored)[entry.codec.primary]),
+        urlValue: entry.codec.toSearch(fromUrl)[entry.codec.primary],
+        storedValue: entry.codec.toSearch(stored)[entry.codec.primary],
       })
       return
     }
   }
 
   const validateSearch = (raw: Record<string, unknown>): SearchValues<S> => {
-    const record = core.readRecord()
+    validatedOnce = true
+    // The stored layer is client-only: on the server `validateSearch` is URL ⊳ fallback, so the
+    // search a loader keys on never depends on a storage the server cannot see.
+    const record = typeof window === 'undefined' ? {} : core.readRecord()
     maybeWarn(raw, record)
     return flatten(raw, record) as SearchValues<S>
   }
@@ -377,20 +302,16 @@ export function buildSearchStore<const S extends Record<string, AnyField>>(
     // The matched route validates this field iff its primary param is present (see the module
     // header). A foreign route gets the persist-only lane.
     const validated = Object.hasOwn(search, entry.codec.primary)
-    urlClear.set(entry.name, () => {
-      if (!validated) return
-      navigate({
-        to: '.',
-        // Gated like the setter: clearing a field already at its fallback keeps the page.
-        search: (prev: Record<string, unknown>) => ({
-          ...prev,
-          ...resetsFor(entry, prev, entry.codec.fallback),
-          ...entry.codec.toSearch(entry.codec.fallback),
-        }),
-        replace: true,
-        resetScroll: false,
-      })
-    })
+    if (validated && !validatedOnce)
+      warnings.foreignParam({ name: entry.name, param: entry.codec.primary })
+    const router = useRouter()
+    useEffect(() => {
+      mounted = { router, count: (mounted?.count ?? 0) + 1 }
+      return () => {
+        mounted =
+          mounted !== null && mounted.count > 1 ? { ...mounted, count: mounted.count - 1 } : null
+      }
+    }, [router])
 
     return [
       value,
@@ -398,13 +319,8 @@ export function buildSearchStore<const S extends Record<string, AnyField>>(
         const patch = opts?.patch
         if (patch !== undefined && Object.keys(patch).length > 0) {
           assertPatchNotOwned(entry, patch)
-          if (
-            !validated &&
-            !patchDroppedWarned.has(entry.name) &&
-            process.env['NODE_ENV'] !== 'production'
-          ) {
-            patchDroppedWarned.add(entry.name)
-            warnPatchDropped({ key: o.key, name: entry.name, param: entry.codec.primary })
+          if (!validated) {
+            warnings.patchWasDropped({ name: entry.name, param: entry.codec.primary })
           }
         }
         if (validated) {
@@ -433,10 +349,8 @@ export function buildSearchStore<const S extends Record<string, AnyField>>(
           core.writeField(setRecord, entry.name, next)
           return
         }
-        if (validated || nowhereWarned.has(entry.name)) return
-        if (process.env['NODE_ENV'] === 'production') return
-        nowhereWarned.add(entry.name)
-        warnWriteHasNowhereToGo({ key: o.key, name: entry.name, param: entry.codec.primary })
+        if (!validated)
+          warnings.writeHasNowhereToGo({ name: entry.name, param: entry.codec.primary })
       },
     ] as const
   }
@@ -459,14 +373,30 @@ export function buildSearchStore<const S extends Record<string, AnyField>>(
   /**
    * Unsetting one field, per lane: drop the mirror key (never write the fallback — a thunk fallback
    * resolved into localStorage is a value nobody chose), drop the memory value, and on the URL lane
-   * navigate back to the fallback params through the last render of `use()`.
+   * navigate back to the fallback params through the mounted router.
    */
   const clearFor = (entry: StoreEntry) => (): void => {
     if (entry.codec.lane.persist) core.clearField(entry.name)
     else if (!entry.codec.lane.url) core.clearMemory(entry.name)
     if (!entry.codec.lane.url) return
-    const clearUrl = urlClear.get(entry.name)
-    if (clearUrl !== undefined) clearUrl()
+    if (mounted === null) return
+    const { router } = mounted
+    // Ownership is judged where the user is NOW, not where the last render happened to be.
+    if (
+      !Object.hasOwn(router.state.location.search as Record<string, unknown>, entry.codec.primary)
+    )
+      return
+    void router.navigate({
+      to: '.',
+      // Gated like the setter: clearing a field already at its fallback keeps the page.
+      search: (prev: Record<string, unknown>) => ({
+        ...prev,
+        ...resetsFor(entry, prev, entry.codec.fallback),
+        ...entry.codec.toSearch(entry.codec.fallback),
+      }),
+      replace: true,
+      resetScroll: false,
+    })
   }
 
   const field = {} as { [K in keyof S]: FieldHandle<S[K]> }
@@ -576,30 +506,5 @@ export function buildSearchStore<const S extends Record<string, AnyField>>(
   return store
 }
 
-/**
- * One store per page (or per feature), over typed fields. `key` is the localStorage key; each
- * field's map key is its default URL param name.
- *
- * @example
- * export const analytics = createSearchStore({
- *   key: 'analytics',
- *   fields: {
- *     range: field.range({ presets: ['7d', '30d', '90d'], fallback: '30d', custom: true }),
- *     compare: field.enum(['none', 'previous'], 'none'),
- *     channels: field.multi(CHANNELS, []),
- *   },
- * }).labels({ range: { '7d': 'Last 7 days', '30d': 'Last 30 days', '90d': 'Last 90 days' } })
- *
- * export const Route = createFileRoute('/analytics')({
- *   validateSearch: analytics.validateSearch,
- *   loaderDeps: ({ search }) => search,
- * })
- *
- * // in the page: <RangeFilter field={analytics.field.range} />
- * // in the nav:  linkOptions({ to: '/analytics', search: analytics.linkSearch })
- */
-export function createSearchStore<const S extends Record<string, AnyField>>(
-  o: CreateSearchStoreOptions<S>,
-): SearchStore<S> {
-  return buildSearchStore(o)
-}
+/** @deprecated Renamed to `createSearchStore` (the wrapper was a pass-through); removed after 2.13. */
+export const buildSearchStore = createSearchStore
