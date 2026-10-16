@@ -6,6 +6,39 @@
 import { dateFormat, NON_FINITE, numberFormat, toDate } from './shared'
 import type { LocaleOption } from './shared'
 
+type DateInput = Date | number | string | null | undefined
+
+const CALENDAR_DATE = /^(\d{4})-(\d{2})-(\d{2})$/
+
+/**
+ * A plain `YYYY-MM-DD` is a calendar date, not an instant. Returns `undefined` when `value` is not
+ * one, `null` when it is shaped like one but names no real day (`2026-02-31`), else midnight of
+ * that day — in UTC or in the local zone. `setFullYear` (not the `Date` constructor) so years
+ * 0–99 are not remapped to 19xx; the round-trip check rejects the overflow `Date` would roll over.
+ */
+function calendarDate(value: string, utc: boolean): Date | null | undefined {
+  const match = CALENDAR_DATE.exec(value)
+  if (match === null) return undefined
+  const year = Number(match[1])
+  const month = Number(match[2]) - 1
+  const day = Number(match[3])
+  const result = new Date(0)
+  if (utc) {
+    result.setUTCFullYear(year, month, day)
+    result.setUTCHours(0, 0, 0, 0)
+    const ok =
+      result.getUTCFullYear() === year &&
+      result.getUTCMonth() === month &&
+      result.getUTCDate() === day
+    return ok ? result : null
+  }
+  result.setFullYear(year, month, day)
+  result.setHours(0, 0, 0, 0)
+  const ok =
+    result.getFullYear() === year && result.getMonth() === month && result.getDate() === day
+  return ok ? result : null
+}
+
 export type WeekdayOptions = LocaleOption & {
   /** `Intl.DateTimeFormat`'s own weekday widths. Default `'short'` (`"Mon"`). */
   format?: 'short' | 'long' | 'narrow'
@@ -13,19 +46,14 @@ export type WeekdayOptions = LocaleOption & {
 
 /** Weekday name — seeded from `astro-window/formulas.ts#fmtWeekday`. A plain `YYYY-MM-DD` string
  * is parsed as a LOCAL calendar date (never UTC), matching that seed's own rationale: the weekday
- * must not shift a day depending on the reader's timezone. A non-finite/unparseable input prints
- * {@link NON_FINITE}. */
+ * must not shift a day depending on the reader's timezone. A non-finite/unparseable input (or a
+ * day that does not exist, `2026-02-31`) prints {@link NON_FINITE}. */
 export function weekday(value: Date | number | string, options: WeekdayOptions = {}): string {
-  const date =
-    typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)
-      ? (() => {
-          const [y, m, d] = value.split('-').map(Number)
-          return new Date(y ?? 1970, (m ?? 1) - 1, d ?? 1)
-        })()
-      : toDate(value)
-  if (date === null) return NON_FINITE
+  const parsed = typeof value === 'string' ? calendarDate(value, false) : undefined
+  const resolved = parsed === undefined ? toDate(value) : parsed
+  if (resolved === null) return NON_FINITE
   const { locale, format = 'short' } = options
-  return dateFormat(locale, { weekday: format }).format(date)
+  return dateFormat(locale, { weekday: format }).format(resolved)
 }
 
 export type RelativeTimeOptions = LocaleOption & {
@@ -37,6 +65,10 @@ export type RelativeTimeOptions = LocaleOption & {
   now?: number
 }
 
+const MINUTE_MS = 60_000
+
+/** Largest first: the first unit whose ROUNDED count is at least 1 wins, so 59.98 minutes is
+ * `1 hour` and 23.6 hours is `yesterday`. */
 const RELATIVE_TIME_UNITS: readonly {
   readonly unit: Intl.RelativeTimeFormatUnit
   readonly ms: number
@@ -46,111 +78,101 @@ const RELATIVE_TIME_UNITS: readonly {
   { unit: 'week', ms: 604_800_000 },
   { unit: 'day', ms: 86_400_000 },
   { unit: 'hour', ms: 3_600_000 },
-  { unit: 'minute', ms: 60_000 },
+  { unit: 'minute', ms: MINUTE_MS },
 ]
+
+/** `format(-0, …)` reads "0 seconds ago"; `format(0, …)` reads "in 0 seconds". */
+const NEGATIVE_ZERO = -0
 
 const relativeTimeFormatterCache = new Map<string, Intl.RelativeTimeFormat>()
 
 function relativeTimeFormat(
   locale: string | undefined,
-  options: Intl.RelativeTimeFormatOptions,
+  style: 'long' | 'short' | 'narrow',
+  numeric: 'auto' | 'always',
 ): Intl.RelativeTimeFormat {
-  const key = `${locale ?? ''}|${JSON.stringify(options)}`
+  const key = `${locale ?? ''}|${style}|${numeric}`
   const cached = relativeTimeFormatterCache.get(key)
   if (cached !== undefined) return cached
-  const created = new Intl.RelativeTimeFormat(locale, options)
+  const created = new Intl.RelativeTimeFormat(locale, { style, numeric })
   relativeTimeFormatterCache.set(key, created)
   return created
-}
-
-function toTimestamp(value: Date | number | string | null | undefined): number | null {
-  if (value === null || value === undefined) return null
-  const timestamp =
-    value instanceof Date ? value.getTime() : typeof value === 'number' ? value : Date.parse(value)
-  return Number.isFinite(timestamp) ? timestamp : null
 }
 
 /**
  * THE relative-time formatter on `Intl.RelativeTimeFormat` — `"3 hours ago"`, `"in 2 days"`,
  * `"now"`. Under a minute is `format(0, 'second')`, so "now" is the locale's own word. The count is
- * rounded FIRST and the unit promoted after, so 59.98 minutes reads `"1 hour ago"`, never
+ * rounded before the unit is chosen, so 59.98 minutes reads `"1 hour ago"`, never
  * `"60 minutes ago"`. Accepts epoch ms, `Date` or an ISO string; `null`/`undefined`/unparseable
  * prints {@link NON_FINITE} (`Intl` throws a `RangeError` on non-finite input, and this is
  * render-path code where one bad timestamp must not blank a list).
  */
-export function relativeTime(
-  value: number | Date | string | null | undefined,
-  options: RelativeTimeOptions = {},
-): string {
+export function relativeTime(value: DateInput, options: RelativeTimeOptions = {}): string {
   const { locale, style = 'long', numeric = 'auto', now = Date.now() } = options
-  const timestamp = toTimestamp(value)
-  if (timestamp === null) return NON_FINITE
-  const formatter = relativeTimeFormat(locale, { style, numeric })
+  const timestamp = value === null || value === undefined ? undefined : toDate(value)?.getTime()
+  if (timestamp === undefined) return NON_FINITE
+  const formatter = relativeTimeFormat(locale, style, numeric)
   const diffMs = timestamp - now
-  const absMs = Math.abs(diffMs)
-  if (absMs < 60_000) return formatter.format(diffMs < 0 ? -0 : 0, 'second') // -0 keeps "0 seconds ago" in numeric: 'always'
-  let index = RELATIVE_TIME_UNITS.findIndex(({ ms }) => absMs >= ms)
-  let count = Math.round(diffMs / RELATIVE_TIME_UNITS[index]!.ms)
-  const larger = RELATIVE_TIME_UNITS[index - 1]
-  if (larger !== undefined && Math.abs(count) * RELATIVE_TIME_UNITS[index]!.ms >= larger.ms) {
-    index -= 1
-    count = Math.round(diffMs / larger.ms)
+  if (Math.abs(diffMs) >= MINUTE_MS) {
+    for (const { unit, ms } of RELATIVE_TIME_UNITS) {
+      const count = Math.round(diffMs / ms)
+      if (Math.abs(count) >= 1) return formatter.format(count, unit)
+    }
   }
-  return formatter.format(count, RELATIVE_TIME_UNITS[index]!.unit)
+  return formatter.format(diffMs < 0 ? NEGATIVE_ZERO : 0, 'second')
 }
 
 export type DateOptions = LocaleOption & {
   /** `Intl.DateTimeFormat` `dateStyle`/`timeStyle` width. Default `'medium'`. */
   format?: 'short' | 'medium' | 'long'
-  /** IANA zone. Default `undefined` — passed straight through to `Intl`. */
+  /** IANA zone. Default `undefined` — passed straight through to `Intl`. Ignored for a plain
+   * `YYYY-MM-DD` string, which is a calendar date and prints the same day in every zone. */
   timeZone?: string
 }
 
-type DateInput = Date | number | string | null | undefined
-
-/** A plain `YYYY-MM-DD` is a calendar date, not an instant: pin it to UTC midnight and format in
- * UTC so it prints the same day in every reader's zone. */
+/** Resolves `value` to a `Date` plus the zone to format it in. A plain `YYYY-MM-DD` is pinned to
+ * UTC midnight and formatted in UTC; anything unrepresentable is `null`. */
 function resolveDateInput(
   value: DateInput,
   timeZone: string | undefined,
 ): { date: Date; timeZone: string | undefined } | null {
   if (value === null || value === undefined) return null
-  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
-    const [y, m, d] = value.split('-').map(Number)
-    return { date: new Date(Date.UTC(y ?? 1970, (m ?? 1) - 1, d ?? 1)), timeZone: 'UTC' }
-  }
+  const calendar = typeof value === 'string' ? calendarDate(value, true) : undefined
+  if (calendar !== undefined) return calendar === null ? null : { date: calendar, timeZone: 'UTC' }
   const parsed = toDate(value)
   return parsed === null ? null : { date: parsed, timeZone }
 }
 
-function formatDateParts(
-  value: DateInput,
-  options: DateOptions,
-  parts: { date: boolean; time: boolean },
-): string {
-  const { locale, format = 'medium', timeZone } = options
-  const resolved = resolveDateInput(value, timeZone)
-  if (resolved === null) return NON_FINITE
-  return dateFormat(locale, {
-    ...(parts.date ? { dateStyle: format } : {}),
-    ...(parts.time ? { timeStyle: format } : {}),
-    timeZone: resolved.timeZone,
-  }).format(resolved.date)
-}
-
 /** Calendar date — `"Sep 2, 2026"`. `null`/`undefined`/unparseable prints {@link NON_FINITE}. */
 export function date(value: DateInput, options: DateOptions = {}): string {
-  return formatDateParts(value, options, { date: true, time: false })
+  const resolved = resolveDateInput(value, options.timeZone)
+  if (resolved === null) return NON_FINITE
+  const { locale, format = 'medium' } = options
+  return dateFormat(locale, { dateStyle: format, timeZone: resolved.timeZone }).format(
+    resolved.date,
+  )
 }
 
-/** Time of day — `"3:04 PM"`. A date-only `YYYY-MM-DD` string reads as midnight UTC. */
+/** Time of day — `"3:04 PM"`. A plain `YYYY-MM-DD` string reads as midnight UTC. */
 export function time(value: DateInput, options: DateOptions = {}): string {
-  return formatDateParts(value, options, { date: false, time: true })
+  const resolved = resolveDateInput(value, options.timeZone)
+  if (resolved === null) return NON_FINITE
+  const { locale, format = 'medium' } = options
+  return dateFormat(locale, { timeStyle: format, timeZone: resolved.timeZone }).format(
+    resolved.date,
+  )
 }
 
 /** Date and time — `"9/2/26, 3:04 PM"`. */
 export function dateTime(value: DateInput, options: DateOptions = {}): string {
-  return formatDateParts(value, options, { date: true, time: true })
+  const resolved = resolveDateInput(value, options.timeZone)
+  if (resolved === null) return NON_FINITE
+  const { locale, format = 'medium' } = options
+  return dateFormat(locale, {
+    dateStyle: format,
+    timeStyle: format,
+    timeZone: resolved.timeZone,
+  }).format(resolved.date)
 }
 
 /** Clock-style duration — `"1:02:03"`, `"04:12"`. Seeded from `walking-pad/
@@ -173,18 +195,20 @@ export type DurationOptions = LocaleOption & {
   largest?: 'day' | 'hour' | 'minute'
 }
 
+/** `per`: how many of this unit make one of the next larger one (the first shown unit is uncapped). */
 const DURATION_UNITS = [
-  { unit: 'day', short: 'd', seconds: 86_400 },
-  { unit: 'hour', short: 'h', seconds: 3_600 },
-  { unit: 'minute', short: 'm', seconds: 60 },
-  { unit: 'second', short: 's', seconds: 1 },
+  { unit: 'day', short: 'd', seconds: 86_400, per: Infinity },
+  { unit: 'hour', short: 'h', seconds: 3_600, per: 24 },
+  { unit: 'minute', short: 'm', seconds: 60, per: 60 },
+  { unit: 'second', short: 's', seconds: 1, per: 60 },
 ] as const
 
 /**
  * THE duration formatter. `'clock'` is {@link durationClock}; `'compact'` and `'long'` trim leading
- * and trailing zero units but keep a zero between two non-zero ones (`"1h 00m 03s"`). `'long'`
- * labels through `Intl.NumberFormat` unit style (locale-aware) — `Intl.DurationFormat` is not in the
- * pinned TS lib. `null`/`undefined`/non-finite prints {@link NON_FINITE}; negatives clamp to zero.
+ * and trailing zero units but keep a zero between two non-zero ones (`"1h 00m 03s"`); zero is
+ * `"0s"` / `"0 seconds"`. `'long'` labels through `Intl.NumberFormat` unit style (locale-aware) —
+ * `Intl.DurationFormat` is not in the pinned TS lib. `null`/`undefined`/non-finite prints
+ * {@link NON_FINITE}; negatives clamp to zero.
  */
 export function duration(
   seconds: number | null | undefined,
@@ -193,20 +217,15 @@ export function duration(
   if (seconds === null || seconds === undefined || !Number.isFinite(seconds)) return NON_FINITE
   const { style = 'clock', largest = 'hour', locale } = options
   if (style === 'clock') return durationClock(seconds)
-  let rest = Math.max(0, Math.round(seconds))
-  const first = DURATION_UNITS.findIndex(({ unit }) => unit === largest)
-  const parts = DURATION_UNITS.slice(first).map(({ unit, short, seconds: size }) => {
-    const value = Math.floor(rest / size)
-    rest -= value * size
-    return { unit, short, value }
+  const total = Math.max(0, Math.round(seconds))
+  const shown = DURATION_UNITS.slice(DURATION_UNITS.findIndex(({ unit }) => unit === largest))
+  const parts = shown.map(({ unit, short, seconds: size, per }, i) => {
+    const count = Math.floor(total / size)
+    return { unit, short, value: i === 0 ? count : count % per }
   })
-  const start = parts.findIndex(({ value }) => value > 0)
-  if (start === -1) {
-    return style === 'compact'
-      ? '0s'
-      : numberFormat(locale, { style: 'unit', unit: 'second', unitDisplay: 'long' }).format(0)
-  }
-  const end = parts.findLastIndex(({ value }) => value > 0)
+  const firstNonZero = parts.findIndex(({ value }) => value > 0)
+  const start = firstNonZero === -1 ? parts.length - 1 : firstNonZero
+  const end = firstNonZero === -1 ? start : parts.findLastIndex(({ value }) => value > 0)
   return parts
     .slice(start, end + 1)
     .map(({ unit, short, value }, i) =>

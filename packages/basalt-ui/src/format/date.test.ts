@@ -52,7 +52,7 @@ describe('relativeTime', () => {
   test('rounds first, then promotes the unit', () => {
     expect(relativeTime(now - (HOUR - 1_000), { now, ...en })).toBe('1 hour ago')
     expect(relativeTime(now - (DAY - 60_000), { now, ...en })).toBe('yesterday')
-    expect(relativeTime(now - 59 * MIN, { now, ...en })).toBe('59 minutes ago')
+    expect(relativeTime(now - 29 * MIN, { now, ...en })).toBe('29 minutes ago')
   })
 
   test('numeric: "always" drops the idioms', () => {
@@ -66,6 +66,23 @@ describe('relativeTime', () => {
     expect(long).toBe('3 hours ago')
     expect(short).not.toBe(long)
     expect(short.length).toBeLessThan(long.length)
+  })
+
+  test('rounds to the nearest unit, largest first', () => {
+    expect(relativeTime(now - 359.6 * DAY, { now, ...en })).toBe('last year')
+    expect(relativeTime(now - 23.6 * HOUR, { now, ...en })).toBe('yesterday')
+  })
+
+  test('narrow is shorter than short', () => {
+    const narrow = relativeTime(now - 3 * HOUR, { now, style: 'narrow', ...en })
+    const short = relativeTime(now - 3 * HOUR, { now, style: 'short', ...en })
+    expect(narrow).not.toBe(short)
+    expect(narrow.length).toBeLessThanOrEqual(short.length)
+  })
+
+  test('numeric: "always" on a future stamp', () => {
+    expect(relativeTime(now + 30_000, { now, numeric: 'always', ...en })).toBe('in 0 seconds')
+    expect(relativeTime(now + DAY, { now, numeric: 'always', ...en })).toBe('in 1 day')
   })
 
   test('a de locale', () => {
@@ -83,6 +100,7 @@ describe('relativeTime', () => {
     expect(relativeTime(Infinity, { now })).toBe(NON_FINITE)
     expect(relativeTime(null, { now })).toBe(NON_FINITE)
     expect(relativeTime(undefined, { now })).toBe(NON_FINITE)
+    expect(relativeTime(new Date(NaN), { now })).toBe(NON_FINITE)
   })
 
   test('finite-but-absurd timestamps still format', () => {
@@ -125,8 +143,17 @@ describe('date / time / dateTime', () => {
     expect(dateTime(at, { ...utc, format: 'short' })).toBe('9/2/26, 3:04 PM')
   })
 
-  test('null, undefined and unparseable print the sentinel', () => {
+  test('year 1 survives, a day that does not exist is a dash', () => {
+    expect(date('0001-01-01', { ...en, timeZone: 'UTC', format: 'long' })).toBe('January 1, 1')
+    expect(date('2026-02-31', en)).toBe(NON_FINITE)
+    expect(date('2026-13-01', en)).toBe(NON_FINITE)
+    expect(weekday('2026-02-31', en)).toBe(NON_FINITE)
+    expect(weekday('2026-13-01', en)).toBe(NON_FINITE)
+  })
+
+  test('null, undefined, an invalid Date and unparseable print the sentinel', () => {
     for (const f of [date, time, dateTime]) {
+      expect(f(new Date(NaN))).toBe(NON_FINITE)
       expect(f(null)).toBe(NON_FINITE)
       expect(f(undefined)).toBe(NON_FINITE)
       expect(f('nope')).toBe(NON_FINITE)
@@ -158,6 +185,13 @@ describe('duration', () => {
     expect(duration(90_000, { style: 'compact' })).toBe('25h')
     expect(duration(90_000, { style: 'compact', largest: 'day' })).toBe('1d 01h')
     expect(duration(5400, { style: 'compact', largest: 'minute' })).toBe('90m')
+  })
+
+  test('zero, negatives, fractions and Infinity', () => {
+    expect(duration(0, { style: 'long', locale: 'en-US' })).toBe('0 seconds')
+    expect(duration(-5, { style: 'clock' })).toBe('00:00')
+    expect(duration(Infinity)).toBe(NON_FINITE)
+    expect(duration(0.4, { style: 'compact' })).toBe('0s')
   })
 
   test('null, undefined and non-finite print the sentinel; negatives clamp to zero', () => {

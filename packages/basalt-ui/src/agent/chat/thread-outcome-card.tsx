@@ -25,8 +25,8 @@ import type { AgentThread, ThreadStatus } from '../thread'
 import { assertRequiredProps } from '../../common/validate'
 import { cx } from '../../common/props'
 import type { BasaltProps } from '../../common/props'
-import { alpha, VX } from '../../tokens'
 import { relativeTime } from '../../format'
+import { alpha, VX } from '../../tokens'
 
 // ── Status badge — shown ONLY for states that need a glance (attention/error). ────
 // done/pending/streaming stay badge-free: a settled feed shouldn't be a wall of green chips —
