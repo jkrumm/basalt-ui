@@ -121,6 +121,11 @@ export type NavItemId<G> = Extract<keyof NavIndex<G>, string>
 export type NavGroupId<G> = G extends ReadonlyArray<{ id: infer I }> ? I : never
 export type NavTabId<G> = NavItemId<G> | NavGroupId<G>
 
+/**
+ * The resolved definition `defineNav` returns. Call `defineNav` at module scope: the shell caches
+ * each destination's anchor per config object, so one built inside a component remounts the links
+ * on every render.
+ */
 export type NavConfig<
   G extends ReadonlyArray<AnyNavGroup>,
   T extends ReadonlyArray<NavTabId<G>>,

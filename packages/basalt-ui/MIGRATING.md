@@ -1070,9 +1070,10 @@ release renames it and opens a new one here._
 - **Dev warning:** a URL-lane field read on a route none of whose matched `validateSearch` runs this store (directly or composed) warns once per field — another store or a hand-rolled schema owns the param. **Opt-out: none; wire `validateSearch: store.validateSearch`, or spread it into your own.**
 ### Stable nav anchors, narrow shell contexts, one PageAside owner
 
-- **Nav links no longer remount on navigation.** Each destination keeps one anchor component for the life of its `defineNav` config, so the sidebar, mobile bar and breadcrumb `<a>` nodes survive a route change and keyboard focus stays on the link you activated. **Opt-out: none** (nothing to opt out of; a test that relied on a fresh node per navigation must re-query).
-- **An inline `badges={{ … }}` is fine.** `useNav` compares badges shallowly per id, so a literal rebuilt every render no longer rebuilds the sections; the "hoist or memoize" guidance is gone. A `ReactNode` badge is still compared by identity, so memoize that one.
-- **A second concurrent `PageAside` warns in development, and the newest owns the fold.** The region's fold is now keyed to the claimant, so an outgoing aside releasing no longer resets the fold the incoming one published. Render one `PageAside` per page. **Opt-out: none.**
+- **Nav links no longer remount on navigation.** Each destination keeps one anchor component for the life of its `defineNav` config, so the sidebar, mobile bar and breadcrumb `<a>` nodes survive a route change and keyboard focus stays on the link you activated. **Requirement:** call `defineNav` at module scope. A `defineNav` inside a component is a new config every render and remounts the links as before. **Opt-out: none** (a test that relied on a fresh node per navigation must re-query).
+- **An inline `badges={{ … }}` of numbers or strings is fine.** `useNav` compares badges shallowly per id, so a literal rebuilt every render no longer rebuilds the sections; the "hoist or memoize" guidance is gone. A JSX `ReactNode` badge is a new element every render and still rebuilds them: memoize that one.
+- **A second concurrent `PageAside` warns in development.** The newest committed claimant (tree and commit order) owns the region, and the fold is keyed to the claimant, so an outgoing aside releasing no longer resets the fold the incoming one published. Render one `PageAside` per page. **Opt-out: none.**
+- **Internal:** `ShellFrame` takes a required `activeCrumb`, and `AppBreadcrumbs` loses its never-produced `parentHref` prop.
 
 ### the theme reaches no Mantine component it configures
 

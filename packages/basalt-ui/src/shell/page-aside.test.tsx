@@ -143,7 +143,7 @@ describe('PageAside inside a BasaltShell', () => {
   const renderInShell = (aside: ReactNode) =>
     render(
       <MantineProvider>
-        <ShellFrame brand={BRAND} sections={ONE_SECTION}>
+        <ShellFrame activeCrumb={undefined} brand={BRAND} sections={ONE_SECTION}>
           <div data-testid="main">Main column</div>
           {aside}
         </ShellFrame>
@@ -308,7 +308,7 @@ describe('PageAside docking', () => {
   const renderPage = (aside: ReactNode) => {
     render(
       <MantineProvider>
-        <ShellFrame brand={BRAND} sections={ONE_SECTION}>
+        <ShellFrame activeCrumb={undefined} brand={BRAND} sections={ONE_SECTION}>
           {aside}
         </ShellFrame>
       </MantineProvider>,
@@ -461,7 +461,7 @@ describe('PageAside in flow', () => {
     installMobileMatchMedia()
     render(
       <MantineProvider>
-        <ShellFrame brand={BRAND} sections={ONE_SECTION}>
+        <ShellFrame activeCrumb={undefined} brand={BRAND} sections={ONE_SECTION}>
           <div data-testid="main">Main column</div>
           <PageAside title="Panel">
             <div data-testid="aside-child">Composition</div>
@@ -509,7 +509,7 @@ describe('PageAside — the panel surface and the mobile projection', () => {
     installViewport(1400)
     render(
       <MantineProvider>
-        <ShellFrame brand={BRAND} sections={ONE_SECTION}>
+        <ShellFrame activeCrumb={undefined} brand={BRAND} sections={ONE_SECTION}>
           <div data-testid="main">Main column</div>
           <PageAside title="Panel">
             <SurfaceProbe />
@@ -525,7 +525,7 @@ describe('PageAside — the panel surface and the mobile projection', () => {
     installMobileMatchMedia()
     render(
       <MantineProvider>
-        <ShellFrame brand={BRAND} sections={ONE_SECTION}>
+        <ShellFrame activeCrumb={undefined} brand={BRAND} sections={ONE_SECTION}>
           <PageBar
             filters={
               <FilterSet>
@@ -567,7 +567,7 @@ describe('PageAside — the panel surface and the mobile projection', () => {
     installMobileMatchMedia()
     render(
       <MantineProvider>
-        <ShellFrame brand={BRAND} sections={ONE_SECTION}>
+        <ShellFrame activeCrumb={undefined} brand={BRAND} sections={ONE_SECTION}>
           <PageBar
             filters={
               <FilterSet>
@@ -603,7 +603,7 @@ describe('PageAside — the panel surface and the mobile projection', () => {
     installMobileMatchMedia()
     const Page = ({ aside }: { aside: 'weights' | 'origins' | null }) => (
       <MantineProvider>
-        <ShellFrame brand={BRAND} sections={ONE_SECTION}>
+        <ShellFrame activeCrumb={undefined} brand={BRAND} sections={ONE_SECTION}>
           <PageBar
             filters={
               <FilterSet>
@@ -644,7 +644,7 @@ describe('PageAside — the panel surface and the mobile projection', () => {
     const setDesktop = installMovableMatchMedia(true)
     render(
       <MantineProvider>
-        <ShellFrame brand={BRAND} sections={ONE_SECTION}>
+        <ShellFrame activeCrumb={undefined} brand={BRAND} sections={ONE_SECTION}>
           <div data-testid="main">Main column</div>
           <PageAside title="Weights">
             <div data-testid="aside-child">Composition</div>
@@ -682,7 +682,7 @@ describe('PageAside — the panel surface and the mobile projection', () => {
     const setDesktop = installMovableMatchMedia(true)
     render(
       <MantineProvider>
-        <ShellFrame brand={BRAND} sections={ONE_SECTION}>
+        <ShellFrame activeCrumb={undefined} brand={BRAND} sections={ONE_SECTION}>
           <div data-testid="main">Main column</div>
           <PageAside title="Weights">
             <div data-testid="aside-child">Composition</div>
@@ -709,7 +709,7 @@ describe('PageAside — the panel surface and the mobile projection', () => {
     installMobileMatchMedia()
     render(
       <MantineProvider>
-        <ShellFrame brand={BRAND} sections={ONE_SECTION}>
+        <ShellFrame activeCrumb={undefined} brand={BRAND} sections={ONE_SECTION}>
           <div data-testid="main">Main column</div>
           <PageAside title="Weights">
             <div data-testid="aside-child">Composition</div>
@@ -764,55 +764,80 @@ describe('PageAside claim ownership (two claimants)', () => {
   const FOLDED_W = '--app-shell-aside-width:calc(2.25rem * var(--mantine-scale))'
   const OPEN_W = '--app-shell-aside-width:calc(18.75rem * var(--mantine-scale))'
 
-  function Pair({ showA }: { showA: boolean }) {
+  type Mode = 'off' | 'open' | 'folded'
+  /** A layout aside (older) and a route aside (newer). A mode switched on LATER claims later. */
+  function Asides({ layout, route }: { layout: Mode; route: Mode }) {
     return (
-      <ShellFrame brand={BRAND} sections={ONE_SECTION}>
-        {showA && (
-          <PageAside title="Route" defaultFolded={false}>
+      <ShellFrame activeCrumb={undefined} brand={BRAND} sections={ONE_SECTION}>
+        {route !== 'off' && (
+          <PageAside title="Route" defaultFolded={route === 'folded'}>
             <div>route</div>
           </PageAside>
         )}
-        <PageAside title="Layout" defaultFolded>
-          <div>layout</div>
-        </PageAside>
+        {layout !== 'off' && (
+          <PageAside title="Layout" defaultFolded={layout === 'folded'}>
+            <div>layout</div>
+          </PageAside>
+        )}
       </ShellFrame>
     )
   }
 
-  test('the outgoing aside releasing does not reset the fold the incoming one published', () => {
-    const warn = spyOn(console, 'warn').mockImplementation(() => {})
+  function mount(layout: Mode, route: Mode) {
     const view = render(
       <MantineProvider>
-        <Pair showA={false} />
+        <Asides layout={layout} route={route} />
       </MantineProvider>,
     )
+    return (l: Mode, r: Mode) =>
+      view.rerender(
+        <MantineProvider>
+          <Asides layout={l} route={r} />
+        </MantineProvider>,
+      )
+  }
+
+  let warn: ReturnType<typeof spyOn<Console, 'warn'>>
+  beforeEach(() => {
+    warn = spyOn(console, 'warn').mockImplementation(() => {})
+  })
+  afterEach(() => warn.mockRestore())
+
+  test('the newest claimant owns the region; an older one publishing never reaches it', () => {
+    const show = mount('folded', 'off')
     expect(asideCss()).toContain(FOLDED_W)
-    // The transition overlap: a second aside mounts (open), then the first leaves.
-    view.rerender(
-      <MantineProvider>
-        <Pair showA />
-      </MantineProvider>,
-    )
-    view.rerender(
-      <MantineProvider>
-        <Pair showA={false} />
-      </MantineProvider>,
-    )
-    warn.mockRestore()
-    // The surviving aside is folded; the leaver's release must not have flipped it open.
+    show('folded', 'open')
+    expect(asideCss()).toContain(OPEN_W)
+  })
+
+  test('the owner releasing hands the region to the older claimant, fold included', () => {
+    const show = mount('folded', 'off')
+    show('folded', 'open')
+    show('folded', 'off')
     expect(asideCss()).toContain(FOLDED_W)
     expect(asideCss()).not.toContain(OPEN_W)
   })
 
-  test('a second concurrent claimant warns in development', () => {
-    const warn = spyOn(console, 'warn').mockImplementation(() => {})
-    render(
-      <MantineProvider>
-        <Pair showA />
-      </MantineProvider>,
-    )
-    const warned = warn.mock.calls.some((c) => String(c[0]).includes('more than one PageAside'))
-    warn.mockRestore()
-    expect(warned).toBe(true)
+  test('an older claimant releasing leaves the owner fold alone', () => {
+    const show = mount('open', 'off')
+    show('open', 'folded')
+    show('off', 'folded')
+    expect(asideCss()).toContain(FOLDED_W)
+  })
+
+  test('a released claimant leaves no stale fold behind for the next one', () => {
+    const show = mount('folded', 'off')
+    show('off', 'off')
+    show('open', 'off')
+    expect(asideCss()).toContain(OPEN_W)
+  })
+
+  test('a second concurrent claimant warns in development, a single one does not', () => {
+    const show = mount('open', 'off')
+    const warned = () =>
+      warn.mock.calls.some((c: unknown[]) => String(c[0]).includes('more than one PageAside'))
+    expect(warned()).toBe(false)
+    show('open', 'open')
+    expect(warned()).toBe(true)
   })
 })

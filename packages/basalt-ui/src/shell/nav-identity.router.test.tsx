@@ -34,6 +34,7 @@ const NAV = defineNav({
 })
 
 const badgeControl = { set: (_n: number) => {} }
+let shellExtra: { isActive?: (item: { id: string }) => boolean } = {}
 
 function Root() {
   const [count, setCount] = useState(1)
@@ -41,10 +42,13 @@ function Root() {
     badgeControl.set = setCount
   }, [])
   // An inline literal, rebuilt on every render of this component.
-  return <BasaltShell brand={{ name: 'Argo' }} nav={NAV} badges={{ dashboard: count }} />
+  return (
+    <BasaltShell brand={{ name: 'Argo' }} nav={NAV} badges={{ dashboard: count }} {...shellExtra} />
+  )
 }
 
-async function mountShell(entry: string) {
+async function mountShell(entry: string, extra: typeof shellExtra = {}) {
+  shellExtra = extra
   const rootRoute = createRootRoute({ component: Root })
   const childRoutes = ['/', '/dashboard', '/dashboard/sessions'].map((path) =>
     createRoute({ getParentRoute: () => rootRoute, path, component: () => null }),
@@ -70,13 +74,11 @@ const STABLE = [
   ['/dashboard', 'bar'],
 ] as const
 const stableLinks = (): HTMLAnchorElement[] => STABLE.map(([href, within]) => linkTo(href, within))
-const linkTo = (href: string, within: 'sidebar' | 'bar' | 'header'): HTMLAnchorElement => {
-  const root = {
-    sidebar: '.mantine-AppShell-navbar',
-    bar: 'nav[aria-label="Primary"]',
-    header: 'header',
-  }[within]
-  return document.querySelector<HTMLAnchorElement>(`${root} a[href="${href}"]`)!
+function linkTo(href: string, within: 'sidebar' | 'bar'): HTMLAnchorElement {
+  const root = within === 'sidebar' ? '.mantine-AppShell-navbar' : 'nav[aria-label="Primary"]'
+  const el = document.querySelector(`${root} a[href="${href}"]`)
+  if (!(el instanceof HTMLAnchorElement)) throw new Error(`no <a href="${href}"> in the ${within}`)
+  return el
 }
 
 afterEach(cleanup)
@@ -93,7 +95,7 @@ describe('nav anchor identity', () => {
     await act(() => router.navigate({ to: '/' }))
     await waitFor(() => expect(linkTo('/', 'sidebar').getAttribute('aria-current')).toBe('page'))
 
-    expect(stableLinks().every((a, i) => a === before[i])).toBe(true)
+    expect(stableLinks().every((a, i) => a === before[i] && a.isConnected)).toBe(true)
     expect(linkTo('/', 'sidebar')).toBe(clicked)
     expect(document.activeElement).toBe(clicked)
   })
@@ -103,6 +105,15 @@ describe('nav anchor identity', () => {
     const before = stableLinks()
     act(() => badgeControl.set(2))
     await waitFor(() => expect(linkTo('/dashboard', 'sidebar').textContent).toContain('2'))
-    expect(stableLinks().every((a, i) => a === before[i])).toBe(true)
+    expect(stableLinks().every((a, i) => a === before[i] && a.isConnected)).toBe(true)
+  })
+
+  test('under an isActive override the links also survive a navigation', async () => {
+    const router = await mountShell('/', { isActive: (item) => item.id === 'home' })
+    const before = stableLinks()
+    expect(before).toHaveLength(STABLE.length)
+    await act(() => router.navigate({ to: '/dashboard' }))
+    await waitFor(() => expect(router.state.location.pathname).toBe('/dashboard'))
+    expect(stableLinks().every((a, i) => a === before[i] && a.isConnected)).toBe(true)
   })
 })

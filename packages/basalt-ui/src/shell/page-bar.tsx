@@ -60,36 +60,24 @@ export type AsidePanelClaim = {
   readonly icon: ReactNode
 }
 
-/**
- * Three narrow contexts plus a boolean, each memoized: a page reading one is not re-rendered by a
- * change to another (a kebab claim must not re-render every `Section`).
- */
+/** Narrow, memoized contexts: a reader of one is not re-rendered by a change to another. */
 type PortalTargets = {
   /** The header node row 1 portals into. `null` outside a shell, and until the outlet mounts. */
   target: HTMLElement | null
   setTarget: (el: HTMLElement | null) => void
-  /**
-   * The BAND node row 2 portals into — a shell-owned box between the header and the scrollport.
-   * Same mechanism as `target` one region down, and it exists for the same reason: where a row
-   * renders must not depend on where the consumer wrote `<PageBar>` in its page tree. Row 2 used to
-   * render in flow at the top of Main and stick there, which meant a bar nested inside a `Stack`
-   * (every real page) had `position: sticky` clamped to that wrapper and sat one shell padding low.
-   * `null` outside a shell, and until the outlet mounts.
-   */
+  /** The shell-owned band between the header and the scrollport that row 2 portals into. */
   bandTarget: HTMLElement | null
   setBandTarget: (el: HTMLElement | null) => void
 }
 
 type AsidePanelSlot = {
-  /** True while a mounted `PageBar` is rendering a row 2 — the row that can host the aside's pill.
-   * Without one the aside keeps its in-flow mobile form; there is nowhere to put the trigger. */
+  /** True while a mounted `PageBar` renders a row 2 (the only host for the aside's pill). */
   panelHost: boolean
   claimPanelHost: () => () => void
-  /** The projecting aside, or `null`. At most one — the aside region holds one page at a time. */
+  /** The projecting aside, or `null`. */
   panel: AsidePanelClaim | null
   claimPanel: (panel: AsidePanelClaim) => () => void
-  /** The node inside the open panel sheet the aside's children portal into. `null` while closed —
-   * the Drawer unmounts its body, which is what keeps ONE node mounted at a time (law C9). */
+  /** The node inside the open panel sheet the aside's children portal into; `null` while closed. */
   panelTarget: HTMLElement | null
   setPanelTarget: (el: HTMLElement | null) => void
 }

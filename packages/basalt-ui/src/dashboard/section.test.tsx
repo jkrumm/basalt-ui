@@ -159,7 +159,7 @@ describe('id — the scroll-anchor contract', () => {
 
   test('inside a shell the offset is the clearance alone — the bars are outside the scrollport', () => {
     const { container } = renderWith(
-      <ShellFrame brand={{ name: 'App' }} sections={[]}>
+      <ShellFrame activeCrumb={undefined} brand={{ name: 'App' }} sections={[]}>
         <Section id="usage" title="Usage">
           <div>body</div>
         </Section>
@@ -621,7 +621,7 @@ describe('SSR — the anchor offset markup', () => {
 
     const shell = renderToString(
       <MantineProvider>
-        <ShellFrame brand={{ name: 'App' }} sections={[]}>
+        <ShellFrame activeCrumb={undefined} brand={{ name: 'App' }} sections={[]}>
           {anchored}
         </ShellFrame>
       </MantineProvider>,

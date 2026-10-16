@@ -1108,6 +1108,7 @@ export function ShellFixture({ spec }: { spec: FixtureSpec }): ReactElement {
   }))
   return (
     <ShellFrame
+      activeCrumb={undefined}
       brand={{ name: 'Fixture' }}
       sections={sections}
       {...(spec.headerHeight !== undefined && { headerHeight: spec.headerHeight })}
