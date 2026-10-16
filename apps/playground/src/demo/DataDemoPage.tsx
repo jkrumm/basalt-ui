@@ -154,7 +154,7 @@ function TableSection() {
   const data = cleared ? [] : EMPLOYEES
 
   return (
-    <Stack gap="xs">
+    <Stack gap="xs" data-compare="table">
       <Group justify="space-between" align="center">
         <Text size="xs" tt="uppercase" fw={600} c="dimmed">
           BasaltDataTable — sortable, filterable, paginated employee table
@@ -184,30 +184,28 @@ function TableSection() {
         <code>navigate({'{ search: { sorting } }'})</code>
         in a real TanStack Router app).
       </Text>
-      <div data-compare="table" style={{ display: 'contents' }}>
-        <BasaltDataTable
-          data={data}
-          columns={TABLE_COLUMNS}
-          enableSorting
-          striped
-          highlightOnHover
-          isLoading={isLoading}
-          skeletonRows={5}
-          enableGlobalFilter
-          searchIcon={<IconSearch />}
-          facets={TABLE_FACETS}
-          enablePagination
-          emptyState={
-            <EmptyState
-              icon={<IconSearch />}
-              title="No employees found"
-              description="Try adjusting your filters or search terms."
-              tier="section"
-            />
-          }
-          onSortingChange={setLastSorting}
-        />
-      </div>
+      <BasaltDataTable
+        data={data}
+        columns={TABLE_COLUMNS}
+        enableSorting
+        striped
+        highlightOnHover
+        isLoading={isLoading}
+        skeletonRows={5}
+        enableGlobalFilter
+        searchIcon={<IconSearch />}
+        facets={TABLE_FACETS}
+        enablePagination
+        emptyState={
+          <EmptyState
+            icon={<IconSearch />}
+            title="No employees found"
+            description="Try adjusting your filters or search terms."
+            tier="section"
+          />
+        }
+        onSortingChange={setLastSorting}
+      />
       {lastSorting !== null && (
         <Text size="xs" c="dimmed" ff="monospace">
           onSortingChange → {JSON.stringify(lastSorting)}

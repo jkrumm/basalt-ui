@@ -113,7 +113,7 @@ export function ComponentsPage() {
 
 function ComponentsSurfaces() {
   return (
-    <Stack gap="md">
+    <Stack gap="md" data-compare="surfaces">
       <SimpleGrid type="container" cols={{ base: 1, [CONTAINER_KEYS.regular]: 2 }}>
         <ComponentGroup title="Buttons">
           <Group gap="sm">
@@ -298,19 +298,17 @@ function ComponentsSurfaces() {
       </SimpleGrid>
 
       <ComponentGroup title="Empty state">
-        <div data-compare="empty-state" style={{ display: 'contents' }}>
-          <EmptyState
-            icon={<IconSearch />}
-            title="No results"
-            description="Try adjusting your filters or search terms."
-            action={
-              <Button size="xs" variant="default">
-                Clear filters
-              </Button>
-            }
-            tier="section"
-          />
-        </div>
+        <EmptyState
+          icon={<IconSearch />}
+          title="No results"
+          description="Try adjusting your filters or search terms."
+          action={
+            <Button size="xs" variant="default">
+              Clear filters
+            </Button>
+          }
+          tier="section"
+        />
       </ComponentGroup>
 
       <Card py="xs" px="sm">

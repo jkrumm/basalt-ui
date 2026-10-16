@@ -275,7 +275,7 @@ export function DashboardPage() {
   }, [])
 
   return (
-    <Stack gap="sm">
+    <Stack gap="sm" data-compare="dashboard">
       <PageBar
         actions={[
           // An ICON on the primary is what picks its mobile form (`docs/CONTROLS-SPEC.md` §2.1): with
@@ -355,71 +355,65 @@ export function DashboardPage() {
       />
 
       <StatGroup cols={4}>
-        {data.kpis.map((kpi, i) => (
-          // `display: contents`: the wrapper only carries the `make compare` anchor and makes no box.
-          <div
+        {data.kpis.map((kpi) => (
+          <StatCard
             key={kpi.key}
-            data-compare={i === 0 ? 'metric-card' : undefined}
-            style={{ display: 'contents' }}
-          >
-            <StatCard
-              icon={<IconActivity />}
-              title={kpi.title}
-              value={kpi.value}
-              // Compare='none' means there is no comparison window, so there is no delta to draw —
-              // omitting the prop hides the chip entirely rather than printing a stale number, and
-              // the period label comes from the compare field, never from the range.
-              {...(kpi.delta !== undefined && { delta: kpi.delta })}
-              // No `deltaPeriod` on a KPI card, deliberately: `vs prior` doubles the badge's width in
-              // a card that also holds a trend, and the period is already stated once for the whole
-              // page by the `Compare` pill in the bar. The big chart card below, which has the room,
-              // keeps it.
-              // Only the FIRST card carries one, deliberately: `docs/CONTROLS-SPEC.md` §2.2's
-              // `actions` slot is a per-card affordance, and four identical kebabs across a KPI row
-              // is chrome. It is a raw `ActionIcon` with no `size` — `StatCard` wraps the slot in a
-              // `CtlSlot`, so the tier comes from the home (law C5).
-              // `unit` + `breakdown` on ONE card, deliberately — the row is four cards wide and a
-              // breakdown under every one of them turns a KPI row into four small tables. `unit` is a
-              // separate channel from `value` (mono, muted, `text-sm` after the numeral) so `2,077`
-              // and `orders` are not one 24px string, and the rows carry NO hairline: §2.1 puts a
-              // horizontal rule between option rows and nowhere else.
-              {...(kpi.key === 'orders' && {
-                unit: 'orders',
-                breakdown: data.breakdown.slice(0, 2).map((row) => ({
-                  label: row.label,
-                  value: row.orders,
-                })),
-                // The demo query the `Breakdown` switcher (below, as a real `actions` JSX attribute —
-                // not the object-spread form the guard's ancestry walk cannot see through) drives,
-                // through the same four branches `StatesPage`'s chart does.
-                query: ordersQuery,
-              })}
-              // A JSX attribute, not the spread-object form above: `basalt/bound-control-outside-home`
-              // walks JSX attribute ancestry to resolve a control's home, and a bound control assigned
-              // inside a plain object literal (however that object later reaches `actions` via spread)
-              // is invisible to that walk.
-              actions={
-                kpi.key === 'sales' ? (
-                  <ActionIcon variant="subtle" aria-label="Card actions">
-                    <IconDots />
-                  </ActionIcon>
-                ) : kpi.key === 'orders' ? (
-                  // `SelectFilter`, not `ViewTabs`: four options is past `ViewTabs`' desktop
-                  // `SegmentedControl` width (its own >3-option collapse to a plain `Select` is
-                  // phone-only, `view-tabs.tsx`), and this 281px card has no room for a four-segment
-                  // track. `SelectFilter` is the field-bound, home-slot-legal shape of the same
-                  // `docs/CONTROLS-SPEC.md` `ViewTabs` row's ">3 → Select" rule — a raw Mantine
-                  // `Select` with `value`/`onChange` here trips `basalt/hand-rolled-filter` (laws
-                  // C1–C3: a control in a home slot takes a `field`, never a value/onChange pair).
-                  <SelectFilter
-                    field={cardViews.field.kpiQuery}
-                    label="Breakdown"
-                    options={KPI_QUERY_OPTIONS}
-                  />
-                ) : undefined
-              }
-            />
-          </div>
+            icon={<IconActivity />}
+            title={kpi.title}
+            value={kpi.value}
+            // Compare='none' means there is no comparison window, so there is no delta to draw —
+            // omitting the prop hides the chip entirely rather than printing a stale number, and
+            // the period label comes from the compare field, never from the range.
+            {...(kpi.delta !== undefined && { delta: kpi.delta })}
+            // No `deltaPeriod` on a KPI card, deliberately: `vs prior` doubles the badge's width in
+            // a card that also holds a trend, and the period is already stated once for the whole
+            // page by the `Compare` pill in the bar. The big chart card below, which has the room,
+            // keeps it.
+            // Only the FIRST card carries one, deliberately: `docs/CONTROLS-SPEC.md` §2.2's
+            // `actions` slot is a per-card affordance, and four identical kebabs across a KPI row
+            // is chrome. It is a raw `ActionIcon` with no `size` — `StatCard` wraps the slot in a
+            // `CtlSlot`, so the tier comes from the home (law C5).
+            // `unit` + `breakdown` on ONE card, deliberately — the row is four cards wide and a
+            // breakdown under every one of them turns a KPI row into four small tables. `unit` is a
+            // separate channel from `value` (mono, muted, `text-sm` after the numeral) so `2,077`
+            // and `orders` are not one 24px string, and the rows carry NO hairline: §2.1 puts a
+            // horizontal rule between option rows and nowhere else.
+            {...(kpi.key === 'orders' && {
+              unit: 'orders',
+              breakdown: data.breakdown.slice(0, 2).map((row) => ({
+                label: row.label,
+                value: row.orders,
+              })),
+              // The demo query the `Breakdown` switcher (below, as a real `actions` JSX attribute —
+              // not the object-spread form the guard's ancestry walk cannot see through) drives,
+              // through the same four branches `StatesPage`'s chart does.
+              query: ordersQuery,
+            })}
+            // A JSX attribute, not the spread-object form above: `basalt/bound-control-outside-home`
+            // walks JSX attribute ancestry to resolve a control's home, and a bound control assigned
+            // inside a plain object literal (however that object later reaches `actions` via spread)
+            // is invisible to that walk.
+            actions={
+              kpi.key === 'sales' ? (
+                <ActionIcon variant="subtle" aria-label="Card actions">
+                  <IconDots />
+                </ActionIcon>
+              ) : kpi.key === 'orders' ? (
+                // `SelectFilter`, not `ViewTabs`: four options is past `ViewTabs`' desktop
+                // `SegmentedControl` width (its own >3-option collapse to a plain `Select` is
+                // phone-only, `view-tabs.tsx`), and this 281px card has no room for a four-segment
+                // track. `SelectFilter` is the field-bound, home-slot-legal shape of the same
+                // `docs/CONTROLS-SPEC.md` `ViewTabs` row's ">3 → Select" rule — a raw Mantine
+                // `Select` with `value`/`onChange` here trips `basalt/hand-rolled-filter` (laws
+                // C1–C3: a control in a home slot takes a `field`, never a value/onChange pair).
+                <SelectFilter
+                  field={cardViews.field.kpiQuery}
+                  label="Breakdown"
+                  options={KPI_QUERY_OPTIONS}
+                />
+              ) : undefined
+            }
+          />
         ))}
       </StatGroup>
 
