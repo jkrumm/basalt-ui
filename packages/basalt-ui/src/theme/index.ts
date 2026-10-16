@@ -1485,7 +1485,7 @@ function buildCssVariablesResolver(data: PaletteData): CSSVariablesResolver {
       // Links: Mantine reads the accent FILL shade (4.38:1 on the light page, under WCAG AA); the hover
       // accent is the next step darker and clears 4.5:1 on every light text surface.
       '--mantine-color-anchor': 'var(--vx-accent-hover)',
-      // `--app-shell-border-color` is set by `components.AppShell.extend({ vars })` above — this
+      // `--app-shell-border-color` is set by `components.AppShell` `vars` above — this
       // entry was dead (an element-level declaration always beats an inherited `:root` value).
       // THE strict-surface lever. Mantine components do NOT chain border/surface colors through
       // `--mantine-color-default-*`; each hardcodes a RAW ramp step (`--mantine-color-gray-{2,3,4}`

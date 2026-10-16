@@ -67,6 +67,14 @@ describe('runBudgets with an unmeasurable provider-only row', () => {
     expect(devRow).toContain('skipped: dist/ missing')
   })
 
+  test('dist absent: the theme-only row is reported unmeasured too', async () => {
+    const lines: string[] = []
+    await runBudgets({ reportOnly: true, providerOnlyDist: absent, log: (l) => lines.push(l) })
+    const row = lines.find((l) => l.includes('createBasaltTheme only'))
+    expect(row).toStartWith('- ')
+    expect(row).toContain('skipped: dist/ missing')
+  })
+
   test('dist absent: the gate fails closed', async () => {
     expect((await runQuiet({ reportOnly: false, providerOnlyDist: absent })).code).toBe(1)
   })
