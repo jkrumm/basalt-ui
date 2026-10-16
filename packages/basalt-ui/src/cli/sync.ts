@@ -4,7 +4,8 @@ import { resolve } from 'node:path'
 
 import { deriveSpacing } from '../tokens/core'
 import { shellConfigError } from './config'
-import { carriesRouter, providerTags } from './doctor-upgrade'
+import type { RouterSeedSkip } from './router-wiring'
+import { carriesRouter, providerTags } from './provider-tags'
 import {
   MANIFEST_PATH,
   basaltPresetEntry,
@@ -67,6 +68,12 @@ export function parentInstallAdvice(cwd: string, parent: string, verb: string): 
     'or set BASALT_CWD to it.'
   )
 }
+
+const RETIRED_BECAUSE = {
+  'code-routed': 'code-routed app',
+  start: 'TanStack Start app',
+  'shell-less': 'basalt.shell: false',
+} as const satisfies Record<NonNullable<RouterSeedSkip>, string>
 
 /**
  * Reconcile managed files with the shipped versions via a sha256 three-way compare.
@@ -212,15 +219,10 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
   // A code-routed, Start or declared shell-less app takes no router seeds: their manifest entries
   // go (so the next sync does not resurrect them); any file stays the consumer's.
   const isTracked = (d: string): boolean => manifest.files[d] !== undefined
-  const retiredBecause =
-    seedSkip === 'code-routed'
-      ? 'code-routed app'
-      : seedSkip === 'start'
-        ? 'TanStack Start app'
-        : seedSkip === 'shell-less'
-          ? 'basalt.shell: false'
-          : null
+  const retiredBecause = seedSkip === null ? null : RETIRED_BECAUSE[seedSkip]
   const retiredSeeds = retiredBecause === null ? [] : [...skipped].filter(isTracked)
+  // Start is the new retirement: a gate green over seeds the next sync would drop is a stale gate.
+  if (opts.check && seedSkip === 'start') staleForCheck += retiredSeeds.length
   if (retiredSeeds.length > 0 && !opts.check) {
     for (const d of retiredSeeds) delete manifest.files[d]
     console.error(
@@ -232,9 +234,12 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
   // hides them behind `--verbose` (it sits in consumers' CI chains, where three unchanging
   // "skipped" paragraphs per run are noise indistinguishable from drift) but still prints the COUNT.
   // A Start app's leftover seed is judged by CONTENT: only a `<BasaltProvider router=…>` tag mounts one.
-  const mounting = (seedSkip === 'start' ? [...skipped] : []).filter((d) =>
-    providerTags(readIfExists(resolve(cwd, d)) ?? '').some(carriesRouter),
-  )
+  const mounting =
+    seedSkip === 'start'
+      ? [...skipped].filter((d) =>
+          providerTags(readIfExists(resolve(cwd, d)) ?? '').some(carriesRouter),
+        )
+      : []
   if (mounting.length > 0) {
     console.error(
       `⚠ basalt-ui sync: ${mounting.join(', ')} mount a second router inside this TanStack Start app; left untouched. Delete them and ${START_PROVIDER_HINT} (embedded mode).`,

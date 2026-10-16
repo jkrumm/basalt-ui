@@ -31,7 +31,9 @@ import { init } from './init'
 import { sync } from './sync'
 import { CODE_ROUTED_NOTE, SHELL_LESS_NOTE, routerSeedSkip } from './router-wiring'
 import type { RouterSeedSkip } from './router-wiring'
-import { hasDependency, readIfExists, readPackageJson } from './source-text'
+import { hasDependency, parseJsonc, readIfExists, readPackageJson, stripJsonc } from './source-text'
+
+export { parseJsonc }
 import { fontsCss, normalizeColorFunctions, tokensCss } from './tokens-css'
 import { DEFAULT_ROOT, exemptRulePaths, resolveRoots } from './config'
 import type { BasaltConfig } from './config'
@@ -1368,45 +1370,6 @@ export function rootsNotices(state: RootsState): { log: string[]; error: string[
         'should be guarded, or leave it if the exclusion is deliberate.',
     ],
     error: [],
-  }
-}
-
-/**
- * Strip JSONC comments and trailing commas so oxlint/tsconfig files can be READ (string-aware). A
- * mangled string fails as a parse error, which callers treat as "cannot tell", never as a pass.
- */
-function stripJsonc(text: string): string {
-  let out = ''
-  let inString = false
-  for (let i = 0; i < text.length; i++) {
-    const ch = text[i] as string
-    if (inString) {
-      out += ch
-      if (ch === '\\') out += text[++i] ?? ''
-      else if (ch === '"') inString = false
-      continue
-    }
-    if (ch === '"') inString = true
-    else if (ch === '/' && text[i + 1] === '/') {
-      while (i < text.length && text[i] !== '\n') i++
-      continue
-    } else if (ch === '/' && text[i + 1] === '*') {
-      i += 2
-      while (i < text.length && !(text[i] === '*' && text[i + 1] === '/')) i++
-      i++
-      continue
-    }
-    out += ch
-  }
-  return out.replace(/,(\s*[}\]])/g, '$1')
-}
-
-/** Parse a JSONC document, or null when it does not parse at all. */
-export function parseJsonc(text: string): Record<string, unknown> | null {
-  try {
-    return JSON.parse(stripJsonc(text.replace(/^\uFEFF/, ''))) as Record<string, unknown>
-  } catch {
-    return null
   }
 }
 

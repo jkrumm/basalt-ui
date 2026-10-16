@@ -1016,7 +1016,43 @@ describe('doctor — app-wiring', () => {
         "import { Providers } from '../app/providers'\nconst A = () => <Outlet />\n",
       )
       write('src/app/providers.tsx', PROVIDERS)
-      expect(text(appWiringCheck(dir))).toContain('renders <BasaltProvider>')
+      const msg = text(appWiringCheck(dir))
+      expect(msg).toContain('neither src/routes/__root.tsx nor a pathless layout')
+      expect(msg).not.toContain('two imports away')
+    })
+
+    it('fails a second provider two hops beyond a provider-holding hop module', () => {
+      start()
+      write(
+        'src/app/providers.tsx',
+        "import { Inner } from './inner'\nexport const Providers = () => <BasaltProvider><Inner /></BasaltProvider>\n",
+      )
+      write('src/app/inner.tsx', PROVIDERS)
+      const msg = text(appWiringCheck(dir))
+      expect(msg).toContain('src/app/inner.tsx')
+      expect(msg).toContain('two imports away')
+    })
+
+    it('treats a malformed tsconfig paths shape as no alias, never a crash', () => {
+      start()
+      write('src/routes/_app.tsx', APP.replace('../app/providers', '~/app/providers'))
+      write('src/app/providers.tsx', PROVIDERS)
+      for (const tsconfig of [
+        '{ "compilerOptions": { "baseUrl": 5, "paths": { "~/*": "./src/*" } } }',
+        '{ "compilerOptions": { "paths": [] } }',
+        '{ "compilerOptions": null }',
+        '[]',
+      ]) {
+        write('tsconfig.json', tsconfig)
+        expect(text(appWiringCheck(dir))).toContain('pathless layout')
+      }
+    })
+
+    it('resolves a specifier written with a .js extension', () => {
+      start()
+      write('src/routes/_app.tsx', APP.replace('../app/providers', '../app/providers.js'))
+      write('src/app/providers.tsx', PROVIDERS)
+      expect(appWiringCheck(dir)).toBeNull()
     })
   })
 

@@ -371,6 +371,14 @@ skipped per LINE, not per file**: the canonical two-line `@generated` header ear
 more than a chance, and then each line has to be a basalt custom property, a selector, a `}` or a
 self-closing comment. Whole-file marker trust was forgeable twice over.
 
+**`doctor`'s Start `app-wiring` follows exactly ONE import hop** (`cli/render-imports.ts`): from the
+root route and each pathless layout to a module whose component the file renders (`<Name` in JSX),
+so a `<Providers>` wrapper holding the `<BasaltProvider>` tag counts. A provider one hop further is
+named but never followed: with none nearer it is the failure, beside one it breaks the
+one-provider invariant. The resolver is textual and blind to tsconfig `extends` paths, `export …
+from` re-exports, dynamic `import()` and `paths` patterns with more than one wildcard; a malformed
+tsconfig means no alias, never a crash.
+
 ## Guards — shipping a stricter one
 
 **A change that makes the guard reject code it previously accepted ships `warn` for one minor, then

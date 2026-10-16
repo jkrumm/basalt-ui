@@ -20,6 +20,10 @@ import {
   isStartApp,
   routeTreeDirs,
 } from './router-wiring'
+import { FONTS_CSS_HINT } from '../guard/fonts-hint'
+import { carriesRouter } from './provider-tags'
+import { followProviderHops, loadModule } from './render-imports'
+import type { ModuleFile } from './render-imports'
 import { readIfExists, readPackageJson, tokenize } from './source-text'
 
 export type Check = { fail: string } | { skip: string } | null
@@ -243,7 +247,7 @@ const appImports = (cwd: string, cfg: BasaltConfig): [string, string, number][] 
 const DROPPED_FIXES = new Map([
   [
     'tokens.css',
-    'commit the emit instead: `basalt-ui tokens:css --out src/tokens.css` and import that file (a provider-free page also needs `basalt-ui fonts:css --out src/fonts.css`)',
+    `commit the emit instead: \`basalt-ui tokens:css --out src/tokens.css\` and import that file (${FONTS_CSS_HINT} --out src/fonts.css)`,
   ],
   [
     'router-tanstack',
@@ -370,42 +374,6 @@ const ROUTER_PLUGIN_FIX =
   "from '@tanstack/router-plugin/vite' to `plugins` in vite.config.ts (before react()), then run vite once " +
   'to generate src/routeTree.gen.ts — or define the tree in code (`createRootRoute` + `createRoute`), drop the routeTree.gen import and pass the tree to createBasaltRouter.'
 
-/** True when `{` at `i` opens a `{...spread}`: sticky, so any whitespace width is read. */
-function isSpreadAt(code: string, i: number): boolean {
-  const spread = /\{\s*\.\.\./y
-  spread.lastIndex = i
-  return spread.test(code)
-}
-
-type ProviderTag = { attrs: string; spread: boolean }
-
-/**
- * Every `<BasaltProvider …>` opening tag in a root route: its attribute text at JSX brace depth 0,
- * with string literals skipped (so `className="a > b"` cannot end the tag, nor `"router="` count),
- * and whether a `{...spread}` could carry a `router`.
- */
-export function providerTags(src: string): ProviderTag[] {
-  const { code, inLiteral } = tokenize(src)
-  return [...code.matchAll(/<BasaltProvider\b/g)]
-    .filter((m) => !inLiteral(m.index))
-    .map((m) => {
-      const tag: ProviderTag = { attrs: '', spread: false }
-      let depth = 0
-      for (let i = m.index + m[0].length; i < code.length; i++) {
-        const ch = code[i]!
-        if (inLiteral(i)) continue
-        if (ch === '{') {
-          if (depth++ === 0 && isSpreadAt(code, i)) tag.spread = true
-        } else if (ch === '}') depth--
-        else if (ch === '>' && depth === 0) break
-        else if (depth === 0) tag.attrs += ch
-      }
-      return tag
-    })
-}
-
-export const carriesRouter = (tag: ProviderTag): boolean => /(^|\s)router\s*=/.test(tag.attrs)
-
 /** `_app.tsx` or `_app/route.tsx` at any depth: a pathless layout (`_app.map.tsx` is a child, `__root` is the root). */
 const PATHLESS_LAYOUT = /(^|\/)(_[^_./][^./]*\.[jt]sx|_[^_./][^./]*\/route\.[jt]sx)$/
 
@@ -422,86 +390,21 @@ function filesUnder(cwd: string, rel: string): string[] {
   )
 }
 
-type RouteFile = { file: string; text: string | null; tags: ProviderTag[] }
-
-const MODULE_SUFFIXES = ['', '.tsx', '.ts', '.jsx', '.js', '/index.tsx', '/index.ts']
-
-/** tsconfig `compilerOptions.paths` as [prefix, targetDir] pairs for `alias/*` patterns; empty when unreadable. */
-function pathAliases(cwd: string): [string, string][] {
-  const opts = (parseJsonc(readIfExists(resolve(cwd, 'tsconfig.json')) ?? '')?.[
-    'compilerOptions'
-  ] ?? {}) as { baseUrl?: string; paths?: Record<string, string[]> }
-  return Object.entries(opts.paths ?? {}).flatMap(([pattern, targets]) => {
-    const target = targets[0]
-    if (!pattern.endsWith('/*') || !target?.endsWith('/*')) return []
-    return [[pattern.slice(0, -1), `${opts.baseUrl ?? '.'}/${target.slice(0, -1)}`]]
-  })
-}
-
-/** The local modules a file renders a component from: `<Name` in JSX, name imported from a relative or aliased specifier. */
-function renderedImports(cwd: string, file: string, text: string): string[] {
-  const code = tokenize(text).code
-  const aliases = pathAliases(cwd)
-  const found = new Set<string>()
-  for (const m of text.matchAll(/\bimport\s+(?!type\b)([^'"]*?)\s*from\s*['"]([^'"]+)['"]/g)) {
-    const spec = m[2]!
-    const base = spec.startsWith('.')
-      ? resolve(cwd, dirname(file), spec)
-      : aliases.flatMap(([prefix, dir]) =>
-          spec.startsWith(prefix) ? [dir + spec.slice(prefix.length)] : [],
-        )[0]
-    if (base === undefined) continue
-    const names = [...m[1]!.replace(/\btype\s+/g, '').matchAll(/(?:\bas\s+)?([A-Za-z_$][\w$]*)/g)]
-      .map((n) => n[1]!)
-      .filter((n) => n !== 'as')
-    if (!names.some((n) => new RegExp(`<${n.replace('$', '\\$')}\\b`).test(code))) continue
-    const rel = relative(cwd, resolve(cwd, base)).split('\\').join('/')
-    const hit = MODULE_SUFFIXES.map((x) => rel + x).find(
-      (c) => /\.[jt]sx?$/.test(c) && readIfExists(resolve(cwd, c)) !== null,
-    )
-    if (hit !== undefined) found.add(hit)
-  }
-  return [...found]
-}
-
-/**
- * The root route and every pathless layout, each read once (`text` is null for a missing file), plus
- * the modules they render a component from — ONE import hop, relative or tsconfig-`paths` aliased —
- * so a `<Providers>` wrapper holding the tag counts. `far` lists files whose provider is a hop too far.
- */
+/** The root route and every pathless layout, then the modules they render a provider from (`hops`, one import hop). */
 function startProviderFiles(cwd: string): {
-  root: RouteFile
-  layouts: RouteFile[]
-  hops: RouteFile[]
+  root: ModuleFile
+  layouts: ModuleFile[]
+  hops: ModuleFile[]
   far: string[]
 } {
   const rootFile = routerSeedDest('', 'root')
   const routesDir = dirname(rootFile)
-  const load = (file: string): RouteFile => {
-    const text = readIfExists(resolve(cwd, file))
-    return { file, text, tags: providerTags(text ?? '') }
-  }
+  const root = loadModule(cwd, rootFile)
   const layouts = filesUnder(cwd, routesDir)
     .filter((f) => PATHLESS_LAYOUT.test(f.slice(routesDir.length + 1)))
     .toSorted()
-  const scanned = [load(rootFile), ...layouts.map(load)]
-  const seen = new Set(scanned.map((f) => f.file))
-  const hops: RouteFile[] = []
-  const far: string[] = []
-  for (const f of scanned) {
-    for (const mod of renderedImports(cwd, f.file, f.text ?? '')) {
-      if (seen.has(mod)) continue
-      seen.add(mod)
-      const hop = load(mod)
-      if (hop.tags.length > 0) hops.push(hop)
-      else {
-        for (const m of renderedImports(cwd, mod, hop.text ?? '')) {
-          if (providerTags(readIfExists(resolve(cwd, m)) ?? '').length > 0) far.push(m)
-        }
-      }
-    }
-  }
-  return { root: scanned[0]!, layouts: scanned.slice(1), hops, far }
+    .map((f) => loadModule(cwd, f))
+  return { root, layouts, ...followProviderHops(cwd, [root, ...layouts]) }
 }
 
 /**
@@ -550,6 +453,12 @@ function startWiring(cwd: string): { fail: string } | null {
             ? `, and the provider in ${far.join(', ')} is two imports away (doctor follows one import hop from a route file)`
             : '')
     return fail(problem, START_PROVIDER_HINT)
+  }
+  if (far.length > 0) {
+    return fail(
+      `${first.file} renders a <BasaltProvider> and so does ${far.join(', ')}, two imports away (doctor follows one import hop from a route file); the extra one nests a duplicate Query/Mantine tree`,
+      'keep one',
+    )
   }
   const tagCount = withTags.reduce((n, f) => n + f.tags.length, 0)
   if (tagCount > 1) {
