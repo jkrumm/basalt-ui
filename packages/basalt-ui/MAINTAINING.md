@@ -161,7 +161,8 @@ bun run build   # tsup && tsc --emitDeclarationOnly && copy-assets && fix-esm-ex
   stay that way, so every peer stays listed in `peerDependencies` (`tests/required-peers.test.ts`
   pins both halves).
 - Exact-pinned peers: `@tanstack/charts`, `d3-scale`, `remend`, the three `@fontsource-variable/*`.
-  `motion` (`^14.1.0`, a caret-ranged peer) is subpath-required for `./agent` (the chat UI imports it
+  `motion` is caret-ranged (`^14.1.0`): the chat UI imports it eagerly and no reason for an exact pin is recorded.
+  It is subpath-required for `./agent` (the chat UI imports it
   eagerly) even though it is marked optional; `remend` is `./content`'s one eagerly-imported peer.
 - **NO** zustand, **NO** `@tanstack/*` as a dependency, **NO** icon package — icons are `ReactNode`.
 - `sideEffects: ['*.css']`.

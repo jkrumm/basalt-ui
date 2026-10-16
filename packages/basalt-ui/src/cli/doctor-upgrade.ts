@@ -9,7 +9,7 @@ import { dirname, relative, resolve } from 'node:path'
 
 import { BASALT_CONFIG_KEYS, RETIRED_CONFIG_KEYS, shellConfigError } from './config'
 import type { BasaltConfig } from './config'
-import { parseJsonc, routerSeedDest, scannableFiles } from './index'
+import { START_PROVIDER_HINT, parseJsonc, routerSeedDest, scannableFiles } from './index'
 import type { BasaltInstall } from './index'
 import {
   appEntry,
@@ -425,73 +425,81 @@ function filesUnder(cwd: string, rel: string): string[] {
 type RouteFile = { file: string; text: string | null; tags: ProviderTag[] }
 
 /** The root route and every pathless layout, each read once; `text` is null for a missing file. */
-function startProviderFiles(cwd: string): RouteFile[] {
-  const root = routerSeedDest('', 'root')
-  const routesDir = dirname(root)
+function startProviderFiles(cwd: string): { root: RouteFile; layouts: RouteFile[] } {
+  const rootFile = routerSeedDest('', 'root')
+  const routesDir = dirname(rootFile)
+  const load = (file: string): RouteFile => {
+    const text = readIfExists(resolve(cwd, file))
+    return { file, text, tags: providerTags(text ?? '') }
+  }
   const layouts = filesUnder(cwd, routesDir)
     .filter((f) => PATHLESS_LAYOUT.test(f.slice(routesDir.length + 1)))
     .toSorted()
-  return [root, ...layouts].map((file) => {
-    const text = readIfExists(resolve(cwd, file))
-    return { file, text, tags: providerTags(text ?? '') }
-  })
+  return { root: load(rootFile), layouts: layouts.map(load) }
 }
 
 /**
  * How the exported root route is created: `createRootRouteWithContext` is typed (TypeScript gates the
  * context at `createRouter`), `createRootRoute` is not. Anything else (a re-export, a wrapper, no
- * `export const Route`) is null and never fails.
+ * `export const Route`) is null and never fails. A type annotation on `Route` is allowed.
  */
 function rootRouteKind(src: string): 'typed' | 'untyped' | null {
-  const kind = /\bexport\s+const\s+Route\s*=\s*(createRootRouteWithContext|createRootRoute)\b/.exec(
-    tokenize(src).code,
-  )?.[1]
+  const kind =
+    /\bexport\s+const\s+Route\s*(?::[^=]+)?=\s*(createRootRouteWithContext|createRootRoute)\b/.exec(
+      tokenize(src).code,
+    )?.[1]
   if (kind === undefined) return null
   return kind === 'createRootRoute' ? 'untyped' : 'typed'
 }
 
+const fail = (problem: string, fix: string): { fail: string } => ({
+  fail: `app-wiring: ${problem} (TanStack Start app). Fix: ${fix}.`,
+})
+
 /**
- * A Start app owns its router and entry: the wiring is ONE embedded `<BasaltProvider>` (no `router=`)
- * around `<Outlet />`, in the root route or a pathless layout (a landing kept at 0 JS mounts it in
- * the layout). ANY tag with `router=` mounts a second router inside Start's, so it fails even beside
- * an embedded one. The exported root route must not be a bare `createRootRoute(`: the provider reads
- * `context.queryClient`. Only that untyped form fails — a re-export, wrapper or missing `Route`
- * export is skipped silently, and the context's type argument is left to TypeScript.
+ * A Start app owns its router and entry: the wiring is ONE embedded `<BasaltProvider>` tag (no
+ * `router=`) around `<Outlet />`, in the root route or a pathless layout (a landing kept at 0 JS
+ * mounts it in the layout). ANY tag with `router=` mounts a second router inside Start's, so it
+ * fails even beside an embedded one. The exported root route must not be a bare `createRootRoute(`:
+ * the provider reads `context.queryClient`. Only that untyped form fails — a re-export, wrapper or
+ * missing `Route` export is skipped silently, and the context's type argument is left to TypeScript.
  */
 function startWiring(cwd: string): { fail: string } | null {
-  const files = startProviderFiles(cwd)
-  const [rootFile] = files
-  const root = rootFile!.file
-  const fix =
-    'render <BasaltProvider><Outlet /></BasaltProvider> in the root route component or a pathless layout'
-  const mounting = files.find((f) => f.tags.some(carriesRouter))
+  const { root, layouts } = startProviderFiles(cwd)
+  const withTags = [root, ...layouts].filter((f) => f.tags.length > 0)
+  const mounting = withTags.find((f) => f.tags.some(carriesRouter))
   if (mounting) {
-    return {
-      fail: `app-wiring: ${mounting.file} passes router= to BasaltProvider, which mounts a second router inside Start (TanStack Start app). Fix: ${fix}.`,
-    }
+    return fail(
+      `${mounting.file} passes router= to BasaltProvider, which mounts a second router inside Start`,
+      START_PROVIDER_HINT,
+    )
   }
-  const embedded = files.filter((f) => f.tags.length > 0)
-  if (embedded.length === 0) {
+  const [first] = withTags
+  if (first === undefined) {
     const problem =
-      rootFile!.text === null
-        ? `${root} does not exist and no pathless layout renders <BasaltProvider>`
-        : `neither ${root} nor a pathless layout (src/routes/_<name>.tsx, _<name>/route.tsx) renders <BasaltProvider>`
-    return { fail: `app-wiring: ${problem} (TanStack Start app). Fix: ${fix}.` }
+      root.text === null
+        ? `${root.file} does not exist and no pathless layout renders <BasaltProvider>`
+        : `neither ${root.file} nor a pathless layout (src/routes/_<name>.tsx, _<name>/route.tsx) renders <BasaltProvider>`
+    return fail(problem, START_PROVIDER_HINT)
   }
-  if (embedded.length > 1) {
-    return {
-      fail: `app-wiring: ${embedded.map((f) => f.file).join(' and ')} both render <BasaltProvider>; the second nests a duplicate Query/Mantine tree (TanStack Start app). Fix: keep one.`,
-    }
+  const tagCount = withTags.reduce((n, f) => n + f.tags.length, 0)
+  if (tagCount > 1) {
+    return fail(
+      `${withTags.map((f) => f.file).join(' and ')} render ${tagCount} <BasaltProvider> tags; the extra ones nest a duplicate Query/Mantine tree`,
+      'keep one',
+    )
   }
-  if (rootFile!.text === null) {
-    return {
-      fail: `app-wiring: ${root} does not exist, so the provider in ${embedded[0]!.file} has no root route context (TanStack Start app). Fix: create it with \`export const Route = createRootRouteWithContext<BasaltRouterContext>()({ … })\`.`,
-    }
+  if (root.text === null) {
+    return fail(
+      `${root.file} does not exist, so the provider in ${first.file} has no root route context`,
+      'create it with `export const Route = createRootRouteWithContext<BasaltRouterContext>()({ … })`',
+    )
   }
-  if (rootRouteKind(rootFile!.text) !== 'untyped') return null
-  return {
-    fail: `app-wiring: ${root} exports a Route built with createRootRoute(), so its router context has no queryClient, which the embedded BasaltProvider reads from context.queryClient. Fix: \`createRootRouteWithContext<BasaltRouterContext>()({ … })\` (import type { BasaltRouterContext } from 'basalt-ui') and pass the QueryClient in createRouter({ context }).`,
-  }
+  if (rootRouteKind(root.text) !== 'untyped') return null
+  return fail(
+    `${root.file} exports a Route built with createRootRoute(), so its router context has no queryClient, which the embedded BasaltProvider reads from context.queryClient`,
+    "`createRootRouteWithContext<BasaltRouterContext>()({ … })` (import type { BasaltRouterContext } from 'basalt-ui') and pass the QueryClient in createRouter({ context })",
+  )
 }
 
 /**
@@ -500,7 +508,8 @@ function startWiring(cwd: string): { fail: string } | null {
  */
 export function startWiringWarnings(cwd: string): string[] {
   if (!isStartApp(cwd, '')) return []
-  return startProviderFiles(cwd)
+  const { root, layouts } = startProviderFiles(cwd)
+  return [root, ...layouts]
     .filter((f) => f.tags.some((t) => t.spread))
     .map(
       (f) =>

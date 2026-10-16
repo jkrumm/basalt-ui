@@ -36,6 +36,7 @@ import {
   sha256,
   shippedAssetPath,
   START_APP_NOTE,
+  START_PROVIDER_HINT,
   unitState,
   writeFileEnsuringDir,
   writeUnit,
@@ -232,8 +233,7 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
   const stale = startSkippedSeeds.filter((d) => isTracked(d) && existsSync(resolve(cwd, d)))
   const mounting = stale.filter((d) => !d.endsWith('nav.tsx'))
   const inert = stale.filter((d) => d.endsWith('nav.tsx'))
-  const embedded =
-    'Delete them and render <BasaltProvider><Outlet /></BasaltProvider> in the Start root route or a pathless layout (embedded mode).'
+  const embedded = `Delete them and ${START_PROVIDER_HINT} (embedded mode).`
   if (mounting.length > 0) {
     console.error(
       `⚠ basalt-ui sync: ${mounting.join(', ')} mount a second router inside this TanStack Start app; left untouched. ${embedded}`,
