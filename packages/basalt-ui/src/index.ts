@@ -11,6 +11,7 @@ export {
   basaltRouterOptions,
   createBasaltRouter,
   type BasaltRouter,
+  type BasaltRouterOptions,
   type BasaltRouterContext,
 } from './provider/create-router'
 export type { BasaltEvent, ChatTurnEnd, ChatTurnTrace, Telemetry, TraceHeaders } from './telemetry'

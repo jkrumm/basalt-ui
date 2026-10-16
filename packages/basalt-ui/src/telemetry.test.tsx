@@ -257,6 +257,10 @@ describe('groupingId', () => {
     expect(groupingId('["q",1]')).toBe(GROUP_Q1)
   })
 
+  test('the same segments in another order group apart', () => {
+    expect(groupingId('["a","b"]')).not.toBe(groupingId('["b","a"]'))
+  })
+
   test('distinct keys group apart; the same key groups together', () => {
     const ids = new Set(['["a"]', '["b"]', '["a","1"]', '["a","2"]', 'null'].map(groupingId))
     expect(ids.size).toBe(5)
@@ -340,6 +344,24 @@ describe('bindRouteError', () => {
     warn.mockRestore()
     expect(calls).toHaveLength(1)
     expect(String(calls[0]?.[0])).toContain('basaltRouterOptions')
+  })
+
+  test('in production the missing-hook warning fires once per document', async () => {
+    const env = process.env.NODE_ENV
+    const warn = spyOn(console, 'warn').mockImplementation(() => {})
+    try {
+      // dev has warned already in this file; production only adds one if it never has — so assert
+      // the later binds add none.
+      process.env.NODE_ENV = 'production'
+      bindRouteError(routerWith(undefined), () => {})
+      const afterFirst = warn.mock.calls.length
+      bindRouteError(routerWith(undefined), () => {})
+      bindRouteError(routerWith(undefined), () => {})
+      expect(warn.mock.calls.length).toBe(afterFirst)
+    } finally {
+      warn.mockRestore()
+      process.env.NODE_ENV = env ?? 'test'
+    }
   })
 
   test('a malformed hook (not an object) is treated as missing', () => {

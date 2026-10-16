@@ -9,7 +9,9 @@ import {
   Outlet,
   RouterProvider,
   createMemoryHistory,
+  createRootRoute,
   createRootRouteWithContext,
+  createRoute,
   createRouter,
 } from '@tanstack/react-router'
 import { hydrateRoot } from 'react-dom/client'
@@ -80,6 +82,44 @@ describe('basaltRouterOptions', () => {
       attributes: { 'exception.type': 'TypeError', 'basalt.error.kind': 'route' },
     })
     expect(JSON.stringify(events[0])).not.toContain('private detail')
+  })
+
+  test('a loader that throws under a mounted provider emits exactly one route.error', async () => {
+    const quiet = spyOn(console, 'error').mockImplementation(() => {})
+    const events: BasaltEvent[] = []
+    const root = createRootRoute({ component: Outlet })
+    const boom = createRoute({
+      getParentRoute: () => root,
+      path: '/',
+      loader: () => {
+        throw new RangeError('secret loader detail')
+      },
+      component: () => null,
+    })
+    const router = createBasaltRouter({
+      routeTree: root.addChildren([boom]),
+      history: createMemoryHistory({ initialEntries: ['/'] }),
+    })
+    render(<BasaltProvider router={router} telemetry={sink(events)} />)
+    await screen.findByText('Something went wrong')
+    quiet.mockRestore()
+    const routeErrors = events.filter((e) => e.type === 'route.error')
+    expect(routeErrors).toHaveLength(1)
+    expect(routeErrors[0]).toMatchObject({ attributes: { 'exception.type': 'RangeError' } })
+    expect(JSON.stringify(routeErrors)).not.toContain('secret loader detail')
+  })
+
+  test('an error with no bound handler still reaches the console, in production too', () => {
+    const env = process.env.NODE_ENV
+    process.env.NODE_ENV = 'production'
+    const log = spyOn(console, 'error').mockImplementation(() => {})
+    try {
+      embedded([]).options.defaultOnCatch?.(new Error('early'), {} as never)
+      expect(log).toHaveBeenCalledTimes(1)
+    } finally {
+      log.mockRestore()
+      process.env.NODE_ENV = env ?? 'test'
+    }
   })
 
   test('no provider mounted, no events — and no throw', () => {

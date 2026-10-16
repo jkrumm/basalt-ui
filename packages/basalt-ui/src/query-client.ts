@@ -9,7 +9,7 @@ const MAX_RETRIES = 2
 /** The 4xx that are transient: request timeout, too early, too many requests. */
 const TRANSIENT_4XX: ReadonlySet<number> = new Set([408, 425, 429])
 
-function statusOf(error: unknown): number | undefined {
+const statusOf = (error: unknown): number | undefined => {
   if (typeof error !== 'object' || error === null || !('status' in error)) return undefined
   return typeof error.status === 'number' ? error.status : undefined
 }
@@ -17,8 +17,9 @@ function statusOf(error: unknown): number | undefined {
 /** Twice, and not on a 4xx (the same request cannot start succeeding; a 401 is the app's to handle). */
 const retry = (failureCount: number, error: unknown): boolean => {
   const status = statusOf(error)
-  const clientError = status !== undefined && status >= 400 && status < 500
-  return failureCount < MAX_RETRIES && !(clientError && !TRANSIENT_4XX.has(status))
+  const retryable =
+    status === undefined || status < 400 || status >= 500 || TRANSIENT_4XX.has(status)
+  return failureCount < MAX_RETRIES && retryable
 }
 
 const BASALT_QUERY_DEFAULTS = {
