@@ -1018,7 +1018,10 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
       // behind it. Title = head font; close button = the ghost idiom (floating.module.css). Below the
       // `medium` size class the Modal is a bottom sheet (floating.module.css `sheet*`).
       Modal: ext<typeof Modal>({
-        defaultProps: { radius: radius.floating, closeButtonProps: { ...HIT_ATTR } },
+        defaultProps: {
+          radius: radius.floating,
+          closeButtonProps: { ...HIT_ATTR, 'aria-label': 'Close' },
+        },
         classNames: {
           close: floatingClasses.closeButton,
           inner: floatingClasses.sheetInner,
