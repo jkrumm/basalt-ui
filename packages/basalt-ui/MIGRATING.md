@@ -1041,10 +1041,24 @@ The `basalt-ui/router-tanstack` subpath is **removed** in 2.x, not moved: an imp
 | `NavItemMeta`, `NavGroupMeta`, `AnyNavItem`, `AnyNavGroup`, `AnyNavLink`, `FlatNavItem`, `NavConfig`, `NavGroupId`, `NavTabId`, `NavIndex`, `UseNavOptions`, `NavBinding`, `NavAnchor`, `NavAnchorProps`, `NavMobilePlacement` | deleted                                                                                                                                                                                                                                                                                                                                                                                                                                                    | no consumer names them; derive with `ComponentProps` / `Parameters` |
 | `useNav`, and `BasaltShell`'s `sections` / `mobileNav` props                                                                                                                                                                   | deleted: pass `nav={NAV}` (plus `badges`, `isActive`, `getScrollElement` — the old `useNav` options) to `BasaltShell`; it resolves the sidebar, the mobile bar and the breadcrumb itself. `mobileNav` tuning moves to `defineNav`'s `mobile`. argo `apps/dashboard/src/routes/__root.tsx`: replace `const nav = useNav(NAV, { badges })` + `{...nav}` with `nav={NAV} badges={…}` (migrates in W12; 1.x consumers stay on their pinned version until then) |
 
-## Unreleased
+## Unreleased — the format layer and the filter family
 
-_Nothing yet. Author the next section under this heading as `## Unreleased — <title>`; the
-release renames it and opens a new one here._
+### `basalt-ui/format`
+
+- **Behaviour: `money` keeps the currency's own digits.** `money(12.5, { currency: 'USD' })` was `$13`, is `$12.50`; `money(1234, …)` was `$1,234`, is `$1,234.00`; JPY stays whole. **Opt-out: `digits: 0`.** `compact: true` is unchanged.
+- **Behaviour: `km` and `kcal` go through `Intl`.** `kcal(1243)` was `1.24 k cal`, is `1.24k kcal`; `de` prints `5,30 km` / `1,24k kcal`. **Opt-out: pass `locale: 'en-US'`** (or set it once, below).
+- **Behaviour: `-0` and negatives that round to zero print `0`**; every number and measure formatter takes `null | undefined` and prints the dash. `LocaleOption.locale` is `string | undefined`.
+- **Behaviour: `relativeTime` is one Intl formatter** with `style: 'long' | 'short' | 'narrow'` and `numeric: 'auto' | 'always'`. Sub-minute is `now` (was the hard-coded `just now`), the count rounds before the unit promotes (59.6 min is `1 hour ago`), future and past are symmetric, the locale is the runtime's (or the provider's). The chat timestamps (message, feed row, outcome card) lost their hard-coded `en` and print the dash, not `''`, for a bad `createdAt`; `SyncButton`'s age (`2m ago` → `2 min. ago`) and the notification center follow. `formatAge` is removed; `relativeTime(ts, { style: 'short' })` replaces it. **Update any assertion on `just now` / `Nm ago`.** **Opt-out: none** (`locale` pins the language).
+- **Behaviour: `weekday('2026-02-31')` prints the dash** (it rolled to March 3) and years below 100 are no longer remapped.
+- **Renamed: `fmtCompact`, `fmtCurrency`, `fmtInt`, `fmtPercent` (+ `Fmt*Options`) → `compact`, `money`, `integer`, `percent` (`CompactOptions`, `MoneyOptions`, `PercentOptions`).**
+- **New: `date`, `time`, `dateTime`, `duration` (`style: 'clock' | 'compact' | 'long'`), `bytes` (decimal SI), `delta` (`+3.2`), `compact`, `defineFormat({ locale, timeZone })`.** `BasaltProvider` takes `locale` and `timeZone` and applies them as the process-wide default (one value per process, not per request; per-call `locale` overrides; an unset prop leaves the default alone). Delete local duration, signed-delta, byte and `en-US`-pinning helpers.
+
+### Controls
+
+- **Behaviour: `SearchFilter` commits on Enter, blur and unmount** (the pending phrase used to be lost inside the 200 ms window; unmount used to cancel it), is `type="search"` (role `searchbox`, was `textbox`) and shows a clear button. **Opt-out: `clearable={false}`; query `searchbox`.**
+- **Behaviour: `ToggleFilter`'s Switch is named by its label only** (the duplicate `aria-label` is gone).
+- **New: `disabled` on every filter**, `MultiSelectFilter` takes `clearable`, `NumberFilter` option rows take `disabled`. `FilterOption<V> { value, label, disabled? }` is the one option type (`NumberFilterOption`, `PanelChoiceOption` are gone; `ViewTabsOption` extends it); `RangeCustomPickerProps` is exported.
+- **Type break: `RangeFilter`'s `customPicker` is required exactly when the field is `custom: true`, and `never` otherwise.** A `field.range({ custom: true })` without a picker, a picker on a preset-only field, and a wrapper typed `RangeFilterProps<P>` (picker now required) fail `tsc`. **Fix: `customPicker={DateRangePicker}`, or drop `custom: true`.** This supersedes the dev warning described under 1.x's `RangeFilter` note.
 
 ## 2.13.3 — the router defaults need no provider
 
