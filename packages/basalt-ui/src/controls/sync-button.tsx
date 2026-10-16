@@ -27,6 +27,7 @@ import { cx } from '../common/props'
 import type { BasaltProps } from '../common/props'
 import { relativeTime } from '../format'
 import { IconSlot } from '../theme/icon-slot'
+import { RefreshGlyph } from './glyphs'
 import classes from './sync-button.module.css'
 
 export type SyncButtonProps = BasaltProps & {
@@ -82,27 +83,6 @@ const subscribeNever = (): (() => void) => () => {}
 function subscribeAgeTick(onTick: () => void): () => void {
   const id = setInterval(onTick, AGE_REFRESH_MS)
   return () => clearInterval(id)
-}
-
-function RefreshGlyph({ spinning }: { spinning: boolean }) {
-  return (
-    <svg
-      width={16}
-      height={16}
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden
-      className={spinning ? classes.spin : undefined}
-    >
-      <path
-        d="M20 11a8 8 0 1 0-2.34 5.66M20 5v6h-6"
-        stroke="currentColor"
-        strokeWidth={2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  )
 }
 
 /**
@@ -168,7 +148,7 @@ export function SyncButton({
           {...(style !== undefined && { style })}
         >
           <IconSlot>
-            <RefreshGlyph spinning={syncing} />
+            <RefreshGlyph {...(syncing && { className: classes.spin })} />
           </IconSlot>
         </ActionIcon>
       ) : (
@@ -178,7 +158,7 @@ export function SyncButton({
           {...(style !== undefined && { style })}
           leftSection={
             <IconSlot>
-              <RefreshGlyph spinning={syncing} />
+              <RefreshGlyph {...(syncing && { className: classes.spin })} />
             </IconSlot>
           }
           {...control}

@@ -74,38 +74,29 @@ import classes from './controls.module.css'
 import { EnumFilter } from './enum-filter'
 import type { ChoiceHandle } from './enum-filter'
 import { useFilterRegistration, useFilterSurface } from './filter-context'
+import type { FilterBase, Option } from './filter-base'
 import { FilterClearButton, FilterPill } from './filter-pill'
-import { useControlName } from './filter-sheet'
+import { useControlName } from './control-name'
 import { PanelRow } from './panel-row'
 import type { UncontrolledProps } from './uncontrolled'
 
-/** One row of a numeric preset set. Narrower than `FilterOption` — a preset is never `disabled`:
- *  the set is declared at the call site, so a row that should not be offered is left out. */
-export type NumberFilterOption = {
-  readonly value: number
-  readonly label: string
-}
-
-export type NumberFilterProps = UncontrolledProps & {
-  readonly field: FieldHandle<NumberField>
-  /** The popover/sheet heading and the accessible name — never the pill text, which reads the
-   *  VALUE (see `EnumFilter`'s doc for why a pill may only print what is selected). */
-  readonly label: string
-  readonly icon?: ReactNode
-  /** Present → the radio-list form. Absent → the stepper form. */
-  readonly options?: readonly NumberFilterOption[]
-  /**
-   * The stepper's increment, overriding the field's own. Ignored in the `options` form, which has
-   * no stepper.
-   *
-   * @default `field.step` — the field's declared grain, which is `1` for an `int: true` field that
-   * declared none. Absent on both, the input keeps Mantine's own default of 1.
-   */
-  readonly step?: number
-  /** Adds a `Clear` action that clears the field — the same `field.clear()` `Reset all` calls.
-   *  Parity with `SelectFilter`/`EnumFilter`, in both forms. */
-  readonly clearable?: boolean
-}
+export type NumberFilterProps = UncontrolledProps &
+  FilterBase & {
+    readonly field: FieldHandle<NumberField>
+    /** The popover/sheet heading and the accessible name — never the pill text, which reads the
+     *  VALUE (see `EnumFilter`'s doc for why a pill may only print what is selected). */
+    readonly label: string
+    /** Present → the radio-list form. Absent → the stepper form. */
+    readonly options?: readonly Option<number>[]
+    /**
+     * The stepper's increment, overriding the field's own. Ignored in the `options` form, which has
+     * no stepper.
+     *
+     * @default `field.step` — the field's declared grain, which is `1` for an `int: true` field that
+     * declared none. Absent on both, the input keeps Mantine's own default of 1.
+     */
+    readonly step?: number
+  }
 
 export function NumberFilter(props: NumberFilterProps): ReactNode {
   // F-ERR-1 — without this a missing `field` surfaces as `undefined is not an object
@@ -113,7 +104,7 @@ export function NumberFilter(props: NumberFilterProps): ReactNode {
   assertRequiredProps('NumberFilter', props, ['field'], {
     field: 'bind it to a store field (`store.field.<name>`), never a value/onChange pair.',
   })
-  const { field, label, icon, options, step, clearable, className, style } = props
+  const { field, label, icon, options, step, clearable, disabled, className, style } = props
   // Two BRANCHES, two components, and never a conditional hook: the radio form's state lives in
   // `EnumFilter` and the stepper's in `NumberStepper`, so which one mounts is decided once by a prop
   // that does not change across a mount's life.
@@ -124,6 +115,7 @@ export function NumberFilter(props: NumberFilterProps): ReactNode {
         label={label}
         options={options}
         {...(clearable === true && { clearable: true })}
+        {...(disabled === true && { disabled: true })}
         {...(icon !== undefined && { icon })}
         {...(className !== undefined && { className })}
         {...(style !== undefined && { style })}
@@ -138,6 +130,7 @@ export function NumberFilter(props: NumberFilterProps): ReactNode {
       field={field}
       label={label}
       {...(clearable === true && { clearable: true })}
+      {...(disabled === true && { disabled: true })}
       {...(icon !== undefined && { icon })}
       {...(grain !== undefined && { step: grain })}
       {...(className !== undefined && { className })}
@@ -166,17 +159,20 @@ function NumberChoice({
   icon,
   options,
   clearable,
+  disabled,
   className,
   style,
-}: BasaltProps & {
-  readonly field: FieldHandle<NumberField>
-  readonly label: string
-  readonly icon?: ReactNode
-  readonly options: readonly NumberFilterOption[]
-  readonly clearable?: boolean
-}): ReactNode {
+}: BasaltProps &
+  FilterBase & {
+    readonly field: FieldHandle<NumberField>
+    readonly label: string
+    readonly options: readonly Option<number>[]
+  }): ReactNode {
   const [value, setValue] = field.use()
-  const rows = options.map((option) => ({ value: String(option.value), label: option.label }))
+  const rows: readonly Option[] = options.map((option) => ({
+    ...option,
+    value: String(option.value),
+  }))
   // The same `.labels()` naming the stepper pill reads: a value it names (`{ 0: 'Any' }`) prints
   // that name though it is not a row, so "no filter" needs no literal `Any` option.
   const named = field.options.find((option) => option.value === String(value))?.label
@@ -207,6 +203,7 @@ function NumberChoice({
       options={rows}
       {...(named !== undefined && { unmatchedLabel: named })}
       {...(clearable === true && { clearable: true })}
+      {...(disabled === true && { disabled: true })}
       {...(icon !== undefined && { icon })}
       {...(className !== undefined && { className })}
       {...(style !== undefined && { style })}
@@ -221,15 +218,15 @@ function NumberStepper({
   icon,
   step,
   clearable,
+  disabled,
   className,
   style,
-}: BasaltProps & {
-  readonly field: FieldHandle<NumberField>
-  readonly label: string
-  readonly icon?: ReactNode
-  readonly step?: number
-  readonly clearable?: boolean
-}): ReactNode {
+}: BasaltProps &
+  FilterBase & {
+    readonly field: FieldHandle<NumberField>
+    readonly label: string
+    readonly step?: number
+  }): ReactNode {
   const [value, setValue] = field.use()
   const surface = useFilterSurface()
   const inSheet = surface === 'sheet'
@@ -245,6 +242,7 @@ function NumberStepper({
     <NumberInput
       {...nameProps}
       size="ctl"
+      {...(disabled === true && { disabled: true })}
       // The FIELD's bounds, straight off the handle — so the stepper stops at the limit and a typed
       // value cannot exceed it, instead of being silently corrected one commit later. The codec's
       // clamp stays the backstop for everything that does not come through this box.
@@ -289,6 +287,7 @@ function NumberStepper({
       label={field.options.find((option) => option.value === String(value))?.label ?? String(value)}
       numeric
       active={!isDefault}
+      {...(disabled === true && { disabled: true })}
       {...(icon !== undefined && { icon })}
       {...(className !== undefined && { className })}
       {...(style !== undefined && { style })}

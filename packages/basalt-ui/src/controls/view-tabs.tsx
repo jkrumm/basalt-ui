@@ -34,33 +34,32 @@ import { assertRequiredProps } from '../common/validate'
 import type { EnumField, FieldHandle } from '../state'
 import classes from './controls.module.css'
 import { useFilterSurface } from './filter-context'
-import { useControlName } from './filter-sheet'
+import { useControlName } from './control-name'
+import type { FilterBase, Option } from './filter-base'
 import { PanelChoice, PanelRow, useTrackFits } from './panel-row'
 import type { UncontrolledProps } from './uncontrolled'
 
 /** Past three options the phone form is a `Select`, not a track. */
 const PHONE_TRACK_MAX = 3
 
-export type ViewTabsOption<T extends string> = {
-  readonly value: T
-  readonly label: string
+export type ViewTabsOption<T extends string> = Option<T> & {
   /** Render this option on ONE viewport only. Omitted → both. */
   readonly only?: 'sm-up' | 'sm-down'
 }
 
-export type ViewTabsProps<T extends string> = UncontrolledProps & {
-  readonly field: FieldHandle<EnumField<T>>
-  /** Defaults to `field.options` (every declared value, labelled by `store.labels()`). */
-  readonly options?: readonly ViewTabsOption<T>[]
-  /**
-   * The switch's accessible name. Both forms render without a visible Mantine `label` (a home has
-   * no room for one), so without this the desktop track is an unnamed `radiogroup` and the phone
-   * form an unnamed `combobox`.
-   *
-   * @default 'View'
-   */
-  readonly label?: string
-}
+export type ViewTabsProps<T extends string> = UncontrolledProps &
+  Pick<FilterBase, 'label' | 'disabled'> & {
+    readonly field: FieldHandle<EnumField<T>>
+    /** Defaults to `field.options` (every declared value, labelled by `store.labels()`). */
+    readonly options?: readonly ViewTabsOption<T>[]
+    /**
+     * The switch's accessible name. Both forms render without a visible Mantine `label` (a home has
+     * no room for one), so without this the desktop track is an unnamed `radiogroup` and the phone
+     * form an unnamed `combobox`.
+     *
+     * @default 'View'
+     */
+  }
 
 export function ViewTabs<T extends string>(props: ViewTabsProps<T>): ReactNode {
   // F-ERR-1 — without this a missing `field` surfaces as `undefined is not an object
@@ -68,7 +67,7 @@ export function ViewTabs<T extends string>(props: ViewTabsProps<T>): ReactNode {
   assertRequiredProps('ViewTabs', props, ['field'], {
     field: 'bind it to a store field (`store.field.<name>`), never a value/onChange pair.',
   })
-  const { field, options, label = 'View', className, style } = props
+  const { field, options, label = 'View', disabled, className, style } = props
   const [value, setValue] = field.use()
   const surface = useFilterSurface()
   const inPanel = surface === 'panel'
@@ -84,7 +83,11 @@ export function ViewTabs<T extends string>(props: ViewTabsProps<T>): ReactNode {
     setValue(next as T)
   }
 
-  const phoneData = phone.map((option) => ({ value: option.value, label: option.label }))
+  const phoneData = phone.map((option) => ({
+    value: option.value,
+    label: option.label,
+    disabled: option.disabled === true,
+  }))
   const phoneCountFits = phone.length <= PHONE_TRACK_MAX
   // Called UNCONDITIONALLY, even on the panel branch that never renders the phone form — a hook
   // may not sit behind the `if (inPanel) return …` below (`react-hooks/rules-of-hooks`), and
@@ -106,7 +109,13 @@ export function ViewTabs<T extends string>(props: ViewTabsProps<T>): ReactNode {
         {...(className !== undefined && { className })}
         {...(style !== undefined && { style })}
       >
-        <PanelChoice nameProps={nameProps} value={value} options={all} onChange={commit} />
+        <PanelChoice
+          nameProps={nameProps}
+          value={value}
+          options={all}
+          onChange={commit}
+          {...(disabled === true && { disabled: true })}
+        />
       </PanelRow>
     )
   }
@@ -120,8 +129,13 @@ export function ViewTabs<T extends string>(props: ViewTabsProps<T>): ReactNode {
         aria-label={label}
         visibleFrom="sm"
         size="ctl"
+        {...(disabled === true && { disabled: true })}
         value={value}
-        data={desktop.map((option) => ({ value: option.value, label: option.label }))}
+        data={desktop.map((option) => ({
+          value: option.value,
+          label: option.label,
+          disabled: option.disabled === true,
+        }))}
         onChange={commit}
         {...(className !== undefined && { className })}
         {...(style !== undefined && { style })}
@@ -133,6 +147,7 @@ export function ViewTabs<T extends string>(props: ViewTabsProps<T>): ReactNode {
           hiddenFrom="sm"
           size="ctl"
           fullWidth
+          {...(disabled === true && { disabled: true })}
           value={value}
           data={phoneData}
           onChange={commit}
@@ -151,6 +166,7 @@ export function ViewTabs<T extends string>(props: ViewTabsProps<T>): ReactNode {
           {...(style !== undefined && { style })}
           value={value}
           allowDeselect={false}
+          {...(disabled === true && { disabled: true })}
           data={phoneData}
           onChange={(next) => {
             if (next !== null) commit(next)

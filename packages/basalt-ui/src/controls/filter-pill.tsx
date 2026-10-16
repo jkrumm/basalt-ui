@@ -41,6 +41,8 @@ export type FilterPillProps = BasaltProps & {
    * where `aria-expanded` (which Mantine's `Popover.Target` supplies) is the correct state.
    */
   readonly pressed?: boolean
+  /** Inert: the pill cannot be pressed, so its popover never opens. */
+  readonly disabled?: boolean
   /** Set by `FilterSet` on its own fold/sheet pills; a filter never passes either of these. */
   readonly hideGlyph?: boolean
   /** `data-shown` — the CSS hook that reveals the `+N` fold pill once folding is needed. */
@@ -56,6 +58,7 @@ export function FilterPill({
   onClick,
   ariaLabel,
   pressed,
+  disabled,
   className,
   style,
   hideGlyph,
@@ -79,6 +82,7 @@ export function FilterPill({
       {...(ariaLabel !== undefined && { 'aria-label': ariaLabel })}
       {...(pressed !== undefined && children === undefined && { 'aria-pressed': pressed })}
       {...(shown === true && { 'data-shown': true })}
+      {...(disabled === true && { disabled: true })}
       {...(icon !== undefined && {
         // `IconSlot` owns the 16px box and the optical centring; `.pillIcon` adds only the pill's
         // muted-then-ink colour law. A consumer's glyph can no longer set this row's height.

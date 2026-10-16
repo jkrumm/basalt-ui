@@ -32,10 +32,10 @@ import type { BasaltProps } from '../common/props'
 import type { FieldOption } from '../state/fields'
 import classes from './controls.module.css'
 import { POPOVER_ROW_HIT_GAP, useFilterRegistration, useFilterSurface } from './filter-context'
+import type { FilterBase, Option } from './filter-base'
 import { FilterClearButton, FilterPill } from './filter-pill'
-import { useControlName } from './filter-sheet'
+import { useControlName } from './control-name'
 import { PanelChoice, PanelRow } from './panel-row'
-import type { FilterOption } from './select-filter'
 
 /**
  * The slice of a `FieldHandle` this body actually binds to, generic over the VALUE rather than over
@@ -53,34 +53,33 @@ export type ChoiceHandle<T extends string> = {
   clear(): void
 }
 
-export type EnumFilterProps<T extends string> = BasaltProps & {
-  readonly field: ChoiceHandle<T>
-  readonly label: string
-  readonly icon?: ReactNode
-  /** Adds a `Clear` action that clears the field — the same `field.clear()` `Reset all` calls. */
-  readonly clearable?: boolean
-  /**
-   * Overrides `field.options` at render — a runtime catalogue whose labels carry live data, or the
-   * only row source a `StringField` has. `| undefined` explicitly: an internal component is spread
-   * into, and `exactOptionalPropertyTypes` rejects a possibly-undefined member on a bare optional.
-   */
-  readonly options?: readonly FilterOption[] | undefined
-  /** Pill text for a value no rendered option matches, ahead of `label` — the name `.labels()` gave
-   *  an unset state that is deliberately not a row (`NumberFilter`'s preset form). */
-  readonly unmatchedLabel?: string | undefined
-  /**
-   * Mono pill label — forwarded to `FilterPill.numeric`. Set by `NumberFilter`, whose values ARE
-   * numbers (`1` / `2` / `7`), and by nothing else: the same law `[data-numeric]` applies to a
-   * numeric SegmentedControl label. A word-valued filter never sets it.
-   */
-  readonly numeric?: boolean | undefined
-}
+export type EnumFilterProps<T extends string> = BasaltProps &
+  FilterBase & {
+    readonly field: ChoiceHandle<T>
+    readonly label: string
+    /**
+     * Overrides `field.options` at render — a runtime catalogue whose labels carry live data, or the
+     * only row source a `StringField` has. `| undefined` explicitly: an internal component is spread
+     * into, and `exactOptionalPropertyTypes` rejects a possibly-undefined member on a bare optional.
+     */
+    readonly options?: readonly Option[] | undefined
+    /** Pill text for a value no rendered option matches, ahead of `label` — the name `.labels()` gave
+     *  an unset state that is deliberately not a row (`NumberFilter`'s preset form). */
+    readonly unmatchedLabel?: string | undefined
+    /**
+     * Mono pill label — forwarded to `FilterPill.numeric`. Set by `NumberFilter`, whose values ARE
+     * numbers (`1` / `2` / `7`), and by nothing else: the same law `[data-numeric]` applies to a
+     * numeric SegmentedControl label. A word-valued filter never sets it.
+     */
+    readonly numeric?: boolean | undefined
+  }
 
 export function EnumFilter<T extends string>({
   field,
   label,
   icon,
   clearable,
+  disabled,
   numeric,
   options: optionsProp,
   unmatchedLabel,
@@ -96,7 +95,7 @@ export function EnumFilter<T extends string>({
 
   // The prop wins whole, never merged: a catalogue that has dropped a value must be able to drop
   // its row, which a merge with `field.options` would silently put back.
-  const options: readonly FilterOption[] = optionsProp ?? field.options
+  const options: readonly Option[] = optionsProp ?? field.options
   const selected = options.find((option) => option.value === value)
   const inSheet = surface === 'sheet'
   const inPanel = surface === 'panel'
@@ -123,6 +122,7 @@ export function EnumFilter<T extends string>({
           value={value}
           options={options}
           {...(numeric === true && { numeric: true })}
+          {...(disabled === true && { disabled: true })}
           onChange={(next) => {
             // Rendered from `options` — the cast restores what the codec already guarantees.
             setValue(next as T)
@@ -170,6 +170,7 @@ export function EnumFilter<T extends string>({
       label={selected?.label ?? unmatchedLabel ?? label}
       active={!isDefault}
       {...(numeric === true && { numeric: true })}
+      {...(disabled === true && { disabled: true })}
       {...(icon !== undefined && { icon })}
       {...(className !== undefined && { className })}
       {...(style !== undefined && { style })}

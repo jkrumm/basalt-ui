@@ -28,11 +28,12 @@ import type { CSSProperties, ReactNode } from 'react'
 import { assertRequiredProps } from '../common/validate'
 import type { FieldHandle } from '../state'
 import type { MultiField } from '../state/fields'
-import type { FilterOption } from './select-filter'
+import type { FilterBase, Option } from './filter-base'
 import classes from './controls.module.css'
 import { POPOVER_ROW_HIT_GAP, useFilterRegistration, useFilterSurface } from './filter-context'
 import { FilterClearButton, FilterPill } from './filter-pill'
-import { CheckGlyph, useControlName } from './filter-sheet'
+import { useControlName } from './control-name'
+import { CheckGlyph } from './glyphs'
 import { PanelRow } from './panel-row'
 import type { UncontrolledProps } from './uncontrolled'
 
@@ -40,39 +41,45 @@ import type { UncontrolledProps } from './uncontrolled'
  *  which a facet column stops being a list you scan and starts being one you scroll. */
 const PANEL_FACET_MAX = 6
 
-export type MultiSelectFilterProps<T extends string> = UncontrolledProps & {
-  readonly field: FieldHandle<MultiField<T>>
-  readonly label: string
-  readonly icon?: ReactNode
-  /**
-   * The plural noun in the `3 channels` count.
-   *
-   * @default the label, lowercased
-   */
-  readonly noun?: string
-  /**
-   * Overrides `field.options` at render — a runtime catalogue whose labels carry live data
-   * (`web · 1.2k`). The VALUES still belong to the field: a multi field is a closed set, so this
-   * relabels and reorders rows, it does not open new ones. Unlike `SelectFilter` there is no
-   * string-field shape to make it required.
-   */
-  readonly options?: readonly FilterOption[]
-  /**
-   * Per-option counts, rendered on the `panel` surface as a mono number plus a bar proportional to
-   * the LARGEST count in the map — the Foundry facet column (`docs/ASIDE-SPEC.md` §1). A missing
-   * key is a row with no count and no bar, not a zero.
-   *
-   * Ignored on the pill and sheet surfaces, where there is no room for a second data channel: put
-   * the number in the label there (`options`).
-   */
-  readonly counts?: Record<string, number>
-  /**
-   * How many facet rows the `panel` surface shows before the rest fold behind a `Show N more` row.
-   *
-   * @default 6
-   */
-  readonly max?: number
-}
+export type MultiSelectFilterProps<T extends string> = UncontrolledProps &
+  FilterBase & {
+    readonly field: FieldHandle<MultiField<T>>
+    readonly label: string
+    /**
+     * Adds a `Clear` action to the popover. Multi has always shown one.
+     *
+     * @default true
+     */
+    readonly clearable?: boolean
+    /**
+     * The plural noun in the `3 channels` count.
+     *
+     * @default the label, lowercased
+     */
+    readonly noun?: string
+    /**
+     * Overrides `field.options` at render — a runtime catalogue whose labels carry live data
+     * (`web · 1.2k`). The VALUES still belong to the field: a multi field is a closed set, so this
+     * relabels and reorders rows, it does not open new ones. Unlike `SelectFilter` there is no
+     * string-field shape to make it required.
+     */
+    readonly options?: readonly Option[]
+    /**
+     * Per-option counts, rendered on the `panel` surface as a mono number plus a bar proportional to
+     * the LARGEST count in the map — the Foundry facet column (`docs/ASIDE-SPEC.md` §1). A missing
+     * key is a row with no count and no bar, not a zero.
+     *
+     * Ignored on the pill and sheet surfaces, where there is no room for a second data channel: put
+     * the number in the label there (`options`).
+     */
+    readonly counts?: Record<string, number>
+    /**
+     * How many facet rows the `panel` surface shows before the rest fold behind a `Show N more` row.
+     *
+     * @default 6
+     */
+    readonly max?: number
+  }
 
 export function MultiSelectFilter<T extends string>(props: MultiSelectFilterProps<T>): ReactNode {
   // F-ERR-1 — without this a missing `field` surfaces as `undefined is not an object
@@ -80,7 +87,19 @@ export function MultiSelectFilter<T extends string>(props: MultiSelectFilterProp
   assertRequiredProps('MultiSelectFilter', props, ['field'], {
     field: 'bind it to a store field (`store.field.<name>`), never a value/onChange pair.',
   })
-  const { field, label, icon, noun, counts, max, options: optionsProp, className, style } = props
+  const {
+    field,
+    label,
+    icon,
+    noun,
+    counts,
+    max,
+    clearable = true,
+    disabled,
+    options: optionsProp,
+    className,
+    style,
+  } = props
   const [value, setValue] = field.use()
   const surface = useFilterSurface()
   const isDefault = field.isDefault(value)
@@ -90,7 +109,7 @@ export function MultiSelectFilter<T extends string>(props: MultiSelectFilterProp
 
   // The prop wins whole, never merged — same rule as `EnumFilter`: a catalogue that dropped a row
   // must be able to drop it, and `All channels` is counted against the rows actually shown.
-  const options: readonly FilterOption[] = optionsProp ?? field.options
+  const options: readonly Option[] = optionsProp ?? field.options
   const inSheet = surface === 'sheet'
   const inPanel = surface === 'panel'
   const carriesInformation = value.length > 0 && value.length < options.length
@@ -122,6 +141,7 @@ export function MultiSelectFilter<T extends string>(props: MultiSelectFilterProp
           options={options}
           selected={value}
           max={max ?? PANEL_FACET_MAX}
+          disabled={disabled === true}
           onToggle={toggle}
           {...(counts !== undefined && { counts })}
         />
@@ -154,7 +174,7 @@ export function MultiSelectFilter<T extends string>(props: MultiSelectFilterProp
           />
         ))}
       </Stack>
-      {!isDefault && <FilterClearButton onClear={() => field.clear()} />}
+      {clearable && !isDefault && <FilterClearButton onClear={() => field.clear()} />}
     </Checkbox.Group>
   )
 
@@ -162,6 +182,7 @@ export function MultiSelectFilter<T extends string>(props: MultiSelectFilterProp
     <FilterPill
       label={carriesInformation ? `${value.length} ${noun ?? label.toLowerCase()}` : label}
       active={!isDefault}
+      {...(disabled === true && { disabled: true })}
       {...(icon !== undefined && { icon })}
       {...(className !== undefined && { className })}
       {...(style !== undefined && { style })}
@@ -173,12 +194,13 @@ export function MultiSelectFilter<T extends string>(props: MultiSelectFilterProp
 
 type FacetListProps = {
   readonly labelId: string
-  readonly options: readonly FilterOption[]
+  readonly options: readonly Option[]
   readonly selected: readonly string[]
   readonly counts?: Record<string, number>
   /** Rows shown before the rest fold behind `Show N more`. */
   readonly max: number
   readonly onToggle: (value: string) => void
+  readonly disabled: boolean
 }
 
 /**
@@ -197,6 +219,7 @@ function FacetList({
   counts,
   max,
   onToggle,
+  disabled,
 }: FacetListProps): ReactNode {
   const [expanded, setExpanded] = useState(false)
   const shown = expanded ? options : options.slice(0, max)
@@ -208,7 +231,7 @@ function FacetList({
   return (
     // A real `<fieldset>` named by the row's own label — the native element carries the grouping
     // semantics, and the heading is already visible.
-    <fieldset className={classes.facetList} aria-labelledby={labelId}>
+    <fieldset className={classes.facetList} aria-labelledby={labelId} disabled={disabled}>
       {shown.map((option) => {
         const isSelected = selected.includes(option.value)
         const count = counts?.[option.value]

@@ -10,7 +10,7 @@ export { SyncButton } from './sync-button'
 // `FilterPill`, `FilterSheet` and the `EnumFilter` body are deliberately NOT here: reaching for
 // them is hand-rolling a filter (`basalt/hand-rolled-filter`).
 export { FilterSet } from './filter-set'
-export { RangeFilter } from './range-filter'
+export { RangeFilter, type RangeCustomPickerProps } from './range-filter'
 export { SelectFilter } from './select-filter'
 export { MultiSelectFilter } from './multi-select-filter'
 export { NumberFilter } from './number-filter'

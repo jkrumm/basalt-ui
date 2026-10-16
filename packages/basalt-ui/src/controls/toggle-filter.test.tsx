@@ -43,4 +43,31 @@ describe('ToggleFilter — panel surface', () => {
 
     expect(switchInput.checked).toBe(true)
   })
+
+  test('the switch is named by its label alone — no second aria-label', () => {
+    mount(<ToggleFilter field={store.field.errorsOnly} label="Errors only" />)
+    const switchInput = screen.getByRole('switch', { name: 'Errors only', hidden: true })
+    expect(switchInput.hasAttribute('aria-label')).toBe(false)
+  })
+
+  test('disabled makes the switch inert', () => {
+    mount(<ToggleFilter field={store.field.errorsOnly} label="Errors only" disabled />)
+    const switchInput = screen.getByRole('switch', { hidden: true }) as HTMLInputElement
+    expect(switchInput.disabled).toBe(true)
+  })
+})
+
+describe('ToggleFilter — pill surface', () => {
+  test('disabled disables the pill', () => {
+    render(
+      <MantineProvider>
+        <FilterSetScope surface="pill" registry={null}>
+          <ToggleFilter field={store.field.errorsOnly} label="Errors only" disabled />
+        </FilterSetScope>
+      </MantineProvider>,
+    )
+    expect(
+      (screen.getByRole('button', { name: 'Errors only' }) as HTMLButtonElement).disabled,
+    ).toBe(true)
+  })
 })
