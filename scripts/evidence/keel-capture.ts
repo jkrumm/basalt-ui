@@ -3,21 +3,21 @@
 /**
  * `bun scripts/evidence/keel-capture.ts [--stage routes|patterns|scales|all]` — look-only capture of the
  * Keel Workspace benchmark: screenshots plus measured numbers and colour roles. Nothing of Keel's
- * DOM, CSS, JS, assets or copy is written to a file; the only Keel-derived artefacts are PNGs (under the
- * gitignored `.design-parity/keel/`) and committed JSON of numbers and role names. Sequential, one page at a time, with a pause between navigations.
+ * DOM, CSS, JS, assets or copy is written to a file; the only Keel-derived artefacts are PNGs (under
+ * the gitignored `.design-parity/keel/`) and committed JSON of numbers and role names. Sequential,
+ * one page at a time, with a pause between navigations.
  */
 import { mkdir, rm, writeFile } from 'node:fs/promises'
-import { join, resolve } from 'node:path'
+import { join } from 'node:path'
 import { parseArgs } from 'node:util'
 import { chromium } from 'playwright-core'
 import type { Locator, Page } from 'playwright-core'
+import { IMG_KEEL, PARITY_DIR } from './paths'
 
 const ORIGIN = 'https://keel-workspace.vercel.app'
-const ROOT = resolve(import.meta.dirname, '../..')
-/** PNGs stay out of git (public repo, unlicensed benchmark); the text artefacts are committed. */
+/** Crop paths recorded in inventory.json: repo-root-relative. */
 const IMG_REL = '.design-parity/keel'
-const IMG_OUT = join(ROOT, IMG_REL)
-const OUT = join(ROOT, 'docs/waves/design-parity/keel')
+const OUT = join(PARITY_DIR, 'keel')
 /** `view` re-selects an alternate view of the same path (a board/table or board/list toggle). */
 type Route = { path: string; slug: string; view?: string }
 const ROUTES: readonly Route[] = [
@@ -106,7 +106,7 @@ async function shootFull(page: Page, vp: Viewport, file: string): Promise<number
 // ── Stage 1: routes ───────────────────────────────────────────────────────────────────────────
 
 async function captureRoutes(open: (v: Viewport, s: Scheme) => Promise<Page>): Promise<number> {
-  const dir = join(IMG_OUT, 'routes')
+  const dir = join(IMG_KEEL, 'routes')
   await rm(dir, { recursive: true, force: true }) // an orphan PNG must never survive a re-run
   await mkdir(dir, { recursive: true })
   let count = 0
@@ -783,7 +783,7 @@ async function measurePattern(
 async function runPatterns(
   open: (v: Viewport, s: Scheme) => Promise<Page>,
 ): Promise<Map<string, Record<string, Measured>>> {
-  const dir = join(IMG_OUT, 'patterns')
+  const dir = join(IMG_KEEL, 'patterns')
   await rm(dir, { recursive: true, force: true })
   await mkdir(dir, { recursive: true })
   const results = new Map<string, Record<string, Measured>>()

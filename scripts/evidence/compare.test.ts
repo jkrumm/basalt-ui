@@ -9,6 +9,7 @@ import {
   isInside,
 } from './compare-board'
 import type { BoardEntry } from './compare-board'
+import { IMG_ROOT, PARITY_DIR, REPO_ROOT, assertOutDir } from './paths'
 import { EXPECTED_IDS, PATTERNS, isMissing, mappingFor } from './compare-patterns'
 
 const entry = (over: Partial<BoardEntry> = {}): BoardEntry => ({
@@ -237,5 +238,19 @@ describe('board errored pairs', () => {
     })
     expect(html).toContain('light-mobile')
     expect(html).toContain('failed: anchor is off-screen')
+  })
+})
+
+describe('assertOutDir', () => {
+  test('accepts .design-parity and scratch dirs inside the repo', () => {
+    expect(() => assertOutDir(`${IMG_ROOT}/w30`)).not.toThrow()
+    expect(() => assertOutDir(`${REPO_ROOT}/.evidence/compare/x`)).not.toThrow()
+  })
+
+  test('rejects the parity docs tree, its children and anything outside the repo', () => {
+    expect(() => assertOutDir(PARITY_DIR)).toThrow(/never be committed/)
+    expect(() => assertOutDir(`${PARITY_DIR}/w30`)).toThrow(/never be committed/)
+    expect(() => assertOutDir('/tmp/elsewhere')).toThrow(/inside the repo/)
+    expect(() => assertOutDir(REPO_ROOT)).toThrow(/inside the repo/)
   })
 })

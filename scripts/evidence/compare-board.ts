@@ -25,7 +25,7 @@ export type InventoryPattern = {
   route: string
   selectorNote: string
   instances: number | null
-  /** Paths relative to the keel directory. */
+  /** Repo-root-relative paths, e.g. `.design-parity/keel/patterns/<id>--dark--desktop.png`. */
   crops: Partial<Record<PairKey, string>>
   metrics: Partial<Record<Viewport, Metrics>>
   notes: string

@@ -36,17 +36,14 @@ import type {
   Viewport,
 } from './compare-board'
 import { isMissing, mappingFor } from './compare-patterns'
+import { IMG_KEEL, IMG_ROOT, PARITY_DIR, REPO_ROOT, assertOutDir } from './paths'
 import type { FoundMapping, Metrics } from './compare-patterns'
 import { stableStringify } from './index'
 import { withTimeout } from './perf-util'
 import { serveDist } from './serve'
 
-const ROOT = resolve(import.meta.dirname, '../..')
-const KEEL_DIR = join(ROOT, 'docs/waves/design-parity/keel')
-const PARITY_DIR = join(ROOT, 'docs/waves/design-parity')
-/** Images and `board.html` live here, gitignored; only `compare.json` is committed under PARITY_DIR. */
-const IMG_ROOT = join(ROOT, '.design-parity')
-const IMG_KEEL = join(IMG_ROOT, 'keel')
+const ROOT = REPO_ROOT
+const KEEL_DIR = join(PARITY_DIR, 'keel')
 const BUILD_TIMEOUT_MS = 300_000
 const RUN_TIMEOUT_MS = 10 * 60_000
 const BOARD_TIMEOUT_MS = 2 * 60_000
@@ -412,7 +409,12 @@ async function keelCropsFor(
     const rel = keel.crops[key]
     if (!rel) continue
     const src = resolve(ROOT, rel)
-    if (!isInside(IMG_KEEL, src) || !existsSync(src)) continue
+    if (!isInside(IMG_KEEL, src) || !existsSync(src)) {
+      console.error(
+        `[compare] ${keel.id}: skipped keel crop ${key} (${rel}): missing or outside .design-parity/keel`,
+      )
+      continue
+    }
     if (inImages) {
       crops[key] = relative(outDir, src).split('\\').join('/')
     } else {
@@ -442,6 +444,7 @@ async function main(): Promise<number> {
     return 2
   }
   const outDir = values.out ? resolve(values.out) : join(IMG_ROOT, label)
+  assertOutDir(outDir)
   const inImages = outDir === IMG_ROOT || isInside(IMG_ROOT, outDir)
   // compare.json is text: committed beside the verdict when the board is under .design-parity/
   const jsonDir = inImages ? join(PARITY_DIR, relative(IMG_ROOT, outDir)) : outDir

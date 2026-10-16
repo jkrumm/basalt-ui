@@ -13,12 +13,11 @@ import { describe, expect, test } from 'bun:test'
 import { createHash } from 'node:crypto'
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { extname, join, resolve } from 'node:path'
+import { IMG_KEEL, PARITY_DIR, REPO_ROOT } from './paths'
 
-const ROOT = resolve(import.meta.dirname, '../../docs/waves/design-parity')
+const ROOT = PARITY_DIR
 const KEEL = join(ROOT, 'keel')
 // Images and boards live in the gitignored .design-parity/ (CI has none); text stays under ROOT.
-const IMG_ROOT = resolve(import.meta.dirname, '../../.design-parity')
-const IMG_KEEL = join(IMG_ROOT, 'keel')
 const HAS_IMAGES = existsSync(IMG_KEEL)
 const ORIGIN = 'https://keel-workspace.vercel.app'
 
@@ -228,13 +227,35 @@ const acceptInventoryString = (s: string): boolean =>
 
 const acceptAll = (): boolean => true
 
+/** Image or board files that must never be committed under docs/waves/design-parity. */
+const forbiddenImages = (paths: string[]): string[] =>
+  paths.filter((f) => ['.png', '.html'].includes(extname(f)))
+
+const IMG_CROP = /^\.design-parity\/[\w.-]+(\/[\w.-]+)*\.png$/
+
 const read = (path: string): string => readFileSync(path, 'utf8')
 
 describe('keel capture licence boundary', () => {
   test('the committed tree holds only json and md files (no png, no html)', () => {
     const all = walk(ROOT)
-    expect(all.filter((f) => ['.png', '.html'].includes(extname(f)))).toEqual([])
+    expect(forbiddenImages(all)).toEqual([])
     expect(all.filter((f) => !['.json', '.md'].includes(extname(f)))).toEqual([])
+  })
+
+  test('every crop path in inventory.json and compare.json is a .design-parity png path', () => {
+    const crops: string[] = []
+    const inventory = JSON.parse(read(join(KEEL, 'inventory.json'))) as {
+      patterns: Array<{ crops: Record<string, string> }>
+    }
+    for (const p of inventory.patterns) crops.push(...Object.values(p.crops))
+    for (const file of walk(ROOT).filter((f) => f.endsWith('compare.json'))) {
+      const board = JSON.parse(read(file)) as {
+        results: Record<string, { crops: Record<string, string> }>
+      }
+      for (const r of Object.values(board.results)) crops.push(...Object.values(r.crops))
+    }
+    expect(crops.length).toBeGreaterThan(0)
+    expect(crops.filter((c) => !IMG_CROP.test(c))).toEqual([])
   })
 
   test('markdown and raw json text carry no markup, CSS, class tokens or benchmark names', () => {
@@ -263,7 +284,7 @@ describe('keel capture licence boundary', () => {
       expect(pattern.id).toMatch(/^[a-z0-9]+(-[a-z0-9]+)*$/)
       for (const [slot, crop] of Object.entries(pattern.crops)) {
         expect(slot).toMatch(SLOT)
-        if (HAS_IMAGES) expect(existsSync(resolve(IMG_ROOT, '..', crop))).toBe(true)
+        if (HAS_IMAGES) expect(existsSync(resolve(REPO_ROOT, crop))).toBe(true)
       }
       for (const [slot, status] of Object.entries(pattern.slotStatus ?? {})) {
         expect(slot).toMatch(SLOT)
@@ -330,6 +351,17 @@ describe('guard positive controls', () => {
   test('json: an unexpected string or key shape is caught', () => {
     expect(dataProblems({ id: 'Some Copy Text' }, 'j', acceptInventoryString, fake)).toHaveLength(1)
     expect(dataProblems({ 'some key!': 1 }, 'j', acceptInventoryString, fake)).toHaveLength(1)
+  })
+
+  test('images: a synthetic board.html and x.png under the parity tree are flagged', () => {
+    const html = join(ROOT, 'w99/board.html')
+    const png = join(ROOT, 'keel/x.png')
+    expect(forbiddenImages([html, png, join(ROOT, 'a.json')])).toEqual([html, png])
+  })
+
+  test('images: a crop path outside .design-parity does not match the shape', () => {
+    expect(IMG_CROP.test('patterns/x--dark--desktop.png')).toBe(false)
+    expect(IMG_CROP.test('.design-parity/keel/patterns/x--dark--desktop.png')).toBe(true)
   })
 
   test('the real denylist is populated', () => {
