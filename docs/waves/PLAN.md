@@ -1076,7 +1076,7 @@ its rounds on these tools.
       **Left behind:**
 
 - **Landed** (PRs #318 budget slots, #319 scenarios, #320 procedure, #321 `shot`, #322 discovery, #323 calibration,
-  #325 confirmation, plus the close-out; each reviewed by agent-gateway for two rounds, then scope frozen and the lead read the last fix
+  #325 neutral-id confirmation, plus the close-out; each reviewed by agent-gateway for two rounds, then scope frozen and the lead read the last fix
   diff; `make check` green at every merge through `rd merge`). Nothing released.
 - **`basalt-ui shot <route…> (--base <url> | --dist <dir>) [--out] [--states]`** (`src/cli/shot/`): 1440×900 and 390×844,
   light and dark, states rest/hover/focus/tooltip (desktop) and empty/loading/error (`?shot-state=` on a page that
@@ -1090,12 +1090,14 @@ its rounds on these tools.
   launcher, context and serve, pinned to `channel: 'chrome'`.
 - **Reviewer** `basalt-design-reviewer` (`agent/agents/`, installed by `init`/`sync` at the consumer root's
   `.claude/agents/`, repo copy via `sync-self`): SPEC § 8 checklist with SPEC numbering, banned filler verbatim,
-  measured items from `metrics.json`, fail-closed (`unverified` = fail), must read every sheet and page shot.
-  **Calibration** (`docs/waves/design-parity/w31/calibration.md`): four iterations plus 4b; final: all five bad seeds
-  fail citing their expected item, `calibrate-good` passes. Iterations 2–4 were scored by fresh general-purpose agents
-  reading the reviewer file (a session does not reload an edited subagent). **Confirmed** with the real subagent type in
-  a fresh session (#325): every bad seed fails citing its expected item, `calibrate-good` passes on the first run,
-  every run read every sheet and page shot.
+  measured items from `metrics.json`, fail-closed (`unverified` = fail), must read every sheet and page shot; Craft 4's
+  accent sites state DESIGN-CORE § Accent discipline (it had wrongly failed focus rings). **Calibration**
+  (`docs/waves/design-parity/w31/calibration.md`): the seeds are `/scenarios/probe-1…6` (neutral ids; named routes had
+  leaked the defect class). Final: all five bad seeds fail on their expected item in every route-blinded run; the
+  known-good board was reduced to one metric card after its tables were rightly failed (a whole as a table, a time
+  series as a table) and passes n = 2. Limits: route-blinded, not proven blind (the map is readable in the repo; the
+  reviewer is told not to read source); the real subagent type ran once, before the accent fix; no known-good board
+  covers multi-component pages until Waves 33–34.
 - **Procedure**: the `basalt-design` skill runs scenario → encoding table (only exports that exist today) → at least
   three `shot` rounds scored by the reviewer → owner after five failed rounds. `doctor` (not `check`, which Wave 21
   builds) prints an info line when UI files are newer than `last.json` and reports Playwright as optional.
@@ -1118,9 +1120,8 @@ its rounds on these tools.
   not re-pointed (S4 covers none of them; their scenarios come with Waves 35–39). A `shot` trimming pass (capture.ts
   is past 300 lines; review round 2 named the sheet writer and in-page scripts as extractions). A shared contract
   module for the `data-shot*` attribute names and the `last.json` shape. `tests/drift.test.ts` byte-checks rule copies
-  only, not skill or agent copies. The reviewer's scores vary run to run on S4; the contact sheets reduced it. Open
-  law question for Wave 32: the confirmation run failed the accent focus ring on an info glyph as Craft 4 ("accent on
-  chrome"); DESIGN-CORE should state whether the focus outline is exempt.
+  only, not skill or agent copies. The reviewer's scores vary run to run on S4; the contact sheets reduced it. `WidgetHeader` folds a
+  subtitle into its info glyph on a short card, and the glyph's focus ring/tooltip crowd the title at 390 (Wave 33).
 - **Next:** owner review of the S4 baseline and calibration (`.design-parity/w31/`, local). Then the mother spawns
   Wave 32. Stopped here as briefed: not released, Wave 32 not spawned.
 
