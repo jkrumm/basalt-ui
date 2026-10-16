@@ -23,7 +23,7 @@ import { HotkeyBinder } from '../provider/hotkeys'
 import { registerSlot } from '../provider/slots'
 import { SpotlightMount } from '../provider/spotlight-mount'
 import type { Slot } from '../register'
-import { getActiveCommands, setActiveCommands } from './command-stash'
+import { setActiveCommands } from './command-stash'
 
 // ── Context ───────────────────────────────────────────────────────────────────
 
@@ -105,8 +105,6 @@ type Commands = Slot<'commands', CommandMap>
  */
 export type CommandId = Extract<keyof Commands, string>
 
-// ── Runtime stash ─────────────────────────────────────────────────────────────
-
 // ── defineCommands ────────────────────────────────────────────────────────────
 
 /**
@@ -150,5 +148,3 @@ export function defineCommands<const T extends CommandMap>(spec: T): T {
 export function defineCommand(cmd: Command): Command {
   return cmd
 }
-
-export { getActiveCommands }

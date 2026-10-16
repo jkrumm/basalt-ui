@@ -4,9 +4,12 @@
  * `@mantine/spotlight` store, real `@mantine/modals`.
  */
 import { act, cleanup, render, screen, waitFor } from '@testing-library/react'
+import { MantineProvider } from '@mantine/core'
+import { ModalsProvider, modals, useModals } from '@mantine/modals'
 import { detectPlatform, getHotkeyManager } from '@tanstack/react-hotkeys'
 import { spotlight } from '@mantine/spotlight'
 import { afterEach, beforeEach, describe, expect, spyOn, test } from 'bun:test'
+import { resetCommandStash } from '../commands/command-stash'
 import { defineCommands } from '../commands/define-commands'
 import { defineOverlays, overlays } from '../commands/define-overlays'
 import { defineNav } from '../router-tanstack/nav'
@@ -15,10 +18,13 @@ import { resetSlots, useSlots } from './slots'
 import * as actionsModule from './spotlight-actions'
 import { testRouter } from './test-router'
 
-beforeEach(resetSlots)
+beforeEach(() => {
+  resetSlots()
+  resetCommandStash()
+})
 afterEach(() => {
   cleanup()
-  defineCommands({})
+  resetCommandStash()
   resetSlots()
   spotlight.close()
 })
@@ -115,5 +121,59 @@ describe('provider slots', () => {
       confirmButton.click()
     })
     expect(await answer).toBe(true)
+  })
+
+  test('overlays.open right after a late defineOverlays still renders the dialog', async () => {
+    render(<BasaltProvider router={testRouter('open')} />)
+    await screen.findByText('open')
+    const OVERLAYS = defineOverlays({
+      note: { title: 'Heads up', render: (p: { text: string }) => <p>{p.text}</p> },
+    })
+    expect(OVERLAYS).toBeDefined()
+    // Typed through BasaltRegister in an app; the runtime stash is what open() resolves.
+    ;(overlays.open as (key: string, props: unknown) => void)('note', { text: 'late body' })
+    expect(await screen.findByText('late body')).toBeDefined()
+    expect(screen.getByText('Heads up')).toBeDefined()
+    await act(async () => {
+      modals.closeAll()
+    })
+  })
+
+  test('overlays.confirm with no mounted BasaltProvider rejects after the grace', async () => {
+    await expect(overlays.confirm({ title: 'Nobody home', onConfirm: () => {} })).rejects.toThrow(
+      /needs a mounted <ModalsProvider>/,
+    )
+  })
+
+  test('useModals() outside the sibling mount has no context, and a consumer ModalsProvider doubles every dialog', async () => {
+    function Consumer() {
+      useModals()
+      return <i>has-context</i>
+    }
+    const quiet = spyOn(console, 'error').mockImplementation(() => {})
+    try {
+      // The provider no longer wraps the app: a hook in the tree has no `ModalsProvider` above it.
+      expect(() => render(<Consumer />)).toThrow(/outside of context/)
+    } finally {
+      quiet.mockRestore()
+    }
+    cleanup()
+
+    // Mantine's modals ride a window event bus: every mounted ModalsProvider answers one `modals.open`.
+    defineOverlays({})
+    render(
+      <MantineProvider>
+        <BasaltProvider router={testRouter('twice')} />
+        <ModalsProvider>{null}</ModalsProvider>
+      </MantineProvider>,
+    )
+    await screen.findByText('twice')
+    await act(async () => {
+      modals.open({ title: 'Once?', children: 'dup-body' })
+    })
+    expect((await screen.findAllByText('dup-body')).length).toBe(2)
+    await act(async () => {
+      modals.closeAll()
+    })
   })
 })

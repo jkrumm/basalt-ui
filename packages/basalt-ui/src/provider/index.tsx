@@ -44,8 +44,8 @@ import {
 import type { Telemetry } from '../telemetry'
 import type { BasaltDevDockTool } from '../dev-dock'
 import type { BasaltRouter, BasaltRouterContext } from './create-router'
-import type { FlatNavItem } from '../router-tanstack/nav'
-import { useSlots } from './slots'
+import type { FlatNavItem } from '../router-tanstack/nav-stash'
+import { trackProvider, useSlots } from './slots'
 import type { SlotProps } from './slots'
 
 type BasaltProviderCommonProps = {
@@ -479,6 +479,8 @@ export function BasaltProvider({
   const emit = useMemo(() => createLiveEmitter(() => sinkRef.current), [])
   useWindowErrors(emit)
   const slots = useSlots()
+  // Tells the imperative overlay calls a provider is mounted to commit a slot they register late.
+  useEffect(trackProvider, [])
 
   const router = useEffectiveRouter(mountedRouter)
   const client = readQueryClient(router)

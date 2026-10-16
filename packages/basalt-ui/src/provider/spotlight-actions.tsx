@@ -7,8 +7,8 @@ import type { SpotlightActionData } from '@mantine/spotlight'
 import type { AnyRouter } from '@tanstack/react-router'
 import { getActiveCommands, runCommandSafely } from '../commands/command-stash'
 import { detectMac, formatShortcutDisplay } from '../commands/shortcut-format'
-import { flattenNav, getActiveNav } from '../router-tanstack/nav'
-import type { FlatNavItem } from '../router-tanstack/nav'
+import { flattenNav, getActiveNav } from '../router-tanstack/nav-stash'
+import type { FlatNavItem } from '../router-tanstack/nav-stash'
 import type { BasaltDevDockTool } from '../dev-dock'
 
 const DEV_TOOLS: ReadonlyArray<{ tool: BasaltDevDockTool; label: string }> = [

@@ -20,11 +20,13 @@
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { RouterProvider, createRootRoute, createRouter, useRouter } from '@tanstack/react-router'
 import { spotlight } from '@mantine/spotlight'
-import { afterEach, describe, expect, spyOn, test } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, spyOn, test } from 'bun:test'
 import { useEffect } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { BasaltProvider, RootBoundary, composeInjectedCss } from './index'
+import { resetCommandStash } from '../commands/command-stash'
 import { defineCommands } from '../commands/define-commands'
+import { resetSlots } from './slots'
 import { setColorScheme } from '../commands/shell-bridge'
 import * as actionsModule from './spotlight-actions'
 import { testRouter } from './test-router'
@@ -356,28 +358,40 @@ describe('BasaltProvider embedded in a router it does not own (children mode)', 
 })
 
 describe('BasaltProvider spotlight opt-out (ledger row 67)', () => {
+  beforeEach(() => {
+    resetSlots()
+    resetCommandStash()
+  })
   afterEach(() => {
     spotlight.close()
+    resetSlots()
+    resetCommandStash()
   })
 
-  test('mounts the Spotlight by default and not at all with spotlight={false}', async () => {
+  // Opening the store renders the search input only if a `<Spotlight>` is mounted to read it.
+  const open = async () => {
+    await act(async () => {
+      spotlight.open()
+    })
+    const input = document.querySelector('.mantine-Spotlight-search')
+    await act(async () => {
+      spotlight.close()
+    })
+    return input
+  }
+
+  test('a fresh registry mounts no Spotlight; defining commands mounts it; spotlight={false} suppresses it', async () => {
+    const bare = render(<BasaltProvider router={testRouter('a0')} />)
+    await screen.findByText('a0')
+    expect(await open()).toBeNull()
+    bare.unmount()
+
     defineCommands({})
     const built = spyOn(actionsModule, 'buildSpotlightActions')
     const on = render(<BasaltProvider router={testRouter('a')} />)
     await screen.findByText('a')
     expect(built).toHaveBeenCalled()
     built.mockRestore()
-    // Opening the store renders the search input only if a `<Spotlight>` is mounted to read it.
-    const open = async () => {
-      await act(async () => {
-        spotlight.open()
-      })
-      const input = document.querySelector('.mantine-Spotlight-search')
-      await act(async () => {
-        spotlight.close()
-      })
-      return input
-    }
     expect(await open()).not.toBeNull()
     on.unmount()
 
@@ -393,6 +407,8 @@ describe('BasaltProvider spotlight opt-out (ledger row 67)', () => {
 describe('BasaltProvider dev dock (module-scope NODE_ENV gate)', () => {
   afterEach(() => {
     spotlight.close()
+    resetSlots()
+    resetCommandStash()
   })
 
   test('outside production the dock mounts: the Theme lab Spotlight command opens it', async () => {

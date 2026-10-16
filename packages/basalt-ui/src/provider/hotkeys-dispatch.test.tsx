@@ -6,7 +6,9 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 import { cleanup, render, waitFor } from '@testing-library/react'
 import { detectPlatform, getHotkeyManager } from '@tanstack/react-hotkeys'
+import { resetCommandStash } from '../commands/command-stash'
 import { defineCommands } from '../commands/define-commands'
+import { resetSlots } from './slots'
 import { useRegistryHotkeys } from './hotkeys'
 
 function Bound(): null {
@@ -27,7 +29,11 @@ function press(): KeyboardEvent {
   return event
 }
 
-afterEach(cleanup)
+afterEach(() => {
+  cleanup()
+  resetCommandStash()
+  resetSlots()
+})
 
 describe('useRegistryHotkeys dispatch', () => {
   test('Mod+B runs once, honours when(), unregisters on unmount', async () => {
