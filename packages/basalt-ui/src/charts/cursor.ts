@@ -128,10 +128,15 @@ export function isForeign(group: string | undefined, chartId: string): boolean {
 const valueX = (state: CursorState): ChartValue | undefined =>
   state?.anchor === 'value' ? state.value.x : undefined
 
-/** Snaps a foreign x value onto this chart's own x values; `null` = no snap (exact). */
+/**
+ * Snaps a foreign x value onto this chart's own x values; `null` = no snap (exact). A value outside
+ * the rendered x extent (`extent`, else the keys' own) resolves to `undefined`: the chart claims no
+ * datum at an x it does not cover, so it draws neither crosshair nor dots. The edges are inside.
+ */
 function snapper(
   keys: readonly ChartX[],
   mode: CursorResolution,
+  extent?: readonly [number, number],
 ): ((x: ChartValue) => ChartValue | undefined) | null {
   const first = keys[0]
   if (first === undefined || typeof first === 'string') return null
@@ -139,12 +144,15 @@ function snapper(
   const ts = keys
     .map((k) => (k instanceof Date ? k.getTime() : (k as number)))
     .toSorted((a, b) => a - b)
+  const lo = extent?.[0] ?? (ts[0] as number)
+  const hi = extent?.[1] ?? (ts[ts.length - 1] as number)
   return (x) => {
     // Charts whose x value types differ never sync (the 1.x `DomainKind` partition).
     if (isDate !== x instanceof Date) return undefined
     if (!isDate && typeof x !== 'number') return undefined
-    if (mode === 'exact') return x
     const t = x instanceof Date ? x.getTime() : (x as number)
+    if (t < lo || t > hi) return undefined
+    if (mode === 'exact') return x
     let i = ts.findLastIndex((k) => k <= t)
     if (
       mode === 'nearest' &&
@@ -217,8 +225,9 @@ export function chartCursorView(
   chartId: string,
   keys: readonly ChartX[],
   mode: CursorResolution,
+  extent?: readonly [number, number],
 ): ChartCursorController {
-  const config: Snap = { snap: snapper(keys, mode), memo: new WeakMap() }
+  const config: Snap = { snap: snapper(keys, mode, extent), memo: new WeakMap() }
   if (isServer()) return makeView(group, chartId, () => config)
   const id = `${group ?? 'default'}\u0000${chartId}`
   const existing = views.get(id)
@@ -315,12 +324,14 @@ export function cursorBinding(opts: {
   chartId: string
   keys: readonly ChartX[]
   mode: CursorResolution
+  /** The x extent the chart renders (`xDomain`, else the data's); default: the keys' own. */
+  extent?: readonly [number, number] | undefined
   /** Activation pins and unpins the cursor — on for a coarse pointer (§ 9.6: tap to pin). */
   pin: boolean
 }): ChartCursorBinding {
   return {
     use: cursorHost,
-    controller: chartCursorView(opts.group, opts.chartId, opts.keys, opts.mode),
+    controller: chartCursorView(opts.group, opts.chartId, opts.keys, opts.mode, opts.extent),
     mode: 'focus',
     match: 'x',
     pin: opts.pin,

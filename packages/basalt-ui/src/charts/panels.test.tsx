@@ -207,6 +207,50 @@ describe('DualPanel as a cursor follower', () => {
     expect(document.querySelectorAll('[aria-live]').length).toBe(1)
   })
 
+  test('draws neither crosshair nor dot when the cursor is outside its x-domain', async () => {
+    const el = await mount(
+      <div id="F">
+        <DualPanel {...dualProps} ariaLabel="Follower" />
+      </div>,
+    )
+    const set = async (d: number): Promise<void> => {
+      await act(async () => {
+        chartCursor().setState({
+          anchor: 'value',
+          value: { x: day(d) },
+          source: 'programmatic',
+          pinned: false,
+        })
+        await new Promise((r) => setTimeout(r, 30))
+      })
+    }
+    await set(2)
+    expect(rings(el, 'F')).toBeGreaterThan(0)
+    await set(1) // the exact domain edge
+    expect(rings(el, 'F')).toBeGreaterThan(0)
+    await set(20)
+    expect(rings(el, 'F')).toBe(0)
+  })
+
+  test('a cursor first seen outside its x-domain draws no crosshair either', async () => {
+    const el = await mount(
+      <div id="F">
+        <DualPanel {...dualProps} ariaLabel="Follower" />
+      </div>,
+    )
+    await act(async () => {
+      chartCursor().setState({
+        anchor: 'value',
+        value: { x: day(20) },
+        source: 'programmatic',
+        pinned: false,
+      })
+      await new Promise((r) => setTimeout(r, 30))
+    })
+    expect(rings(el, 'F')).toBe(0)
+    expect(el.querySelector('#F .ts-chart__crosshair-rule--x')).toBeNull()
+  })
+
   test("tooltip.onFollow shows the follower's own tooltip as well", async () => {
     await follow(true)
     expect(tooltips().length).toBe(2)

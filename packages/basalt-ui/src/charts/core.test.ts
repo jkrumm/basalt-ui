@@ -114,6 +114,36 @@ describe('cursor groups', () => {
     chartCursor('snap').setState(null)
   })
 
+  test("a value outside the chart's x extent resolves to nothing; the edges still resolve", () => {
+    const off = chartCursor('extent').subscribe(() => {})
+    const keys = [day(7), day(8), day(9)]
+    const nearest = chartCursorView('extent', 'e-near', keys, 'nearest')
+    const exact = chartCursorView('extent', 'e-exact', keys, 'exact')
+    const wide = chartCursorView('extent', 'e-wide', keys, 'nearest', [
+      day(5).getTime(),
+      day(12).getTime(),
+    ])
+    const at = (d: number) => chartCursor('extent').setState(programmatic(day(d)))
+    const x = (s: ReturnType<typeof nearest.getState>) => (s?.anchor === 'value' ? s.value.x : null)
+    for (const view of [nearest, exact]) {
+      at(10)
+      expect(view.getState()).toBeNull()
+      at(6)
+      expect(view.getState()).toBeNull()
+      at(7)
+      expect(x(view.getState())).toEqual(day(7))
+      at(9)
+      expect(x(view.getState())).toEqual(day(9))
+    }
+    // An explicit xDomain is the extent the chart renders, wider than its data.
+    at(11)
+    expect(x(wide.getState())).toEqual(day(9))
+    at(13)
+    expect(wide.getState()).toBeNull()
+    off()
+    chartCursor('extent').setState(null)
+  })
+
   test('charts whose x value types differ never sync', () => {
     const off = chartCursor('kinds').subscribe(() => {})
     chartCursor('kinds').setState(programmatic(day(3)))

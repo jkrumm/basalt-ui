@@ -917,6 +917,7 @@ export function compileCartesian<T, X extends ChartX>(
       group: input.cursorGroup,
       chartId: input.chartId,
       keys: model.values,
+      extent: model.extent,
       mode: input.cursorResolution ?? 'nearest',
       pin: input.coarse === true,
     }),
