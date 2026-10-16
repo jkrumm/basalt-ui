@@ -28,7 +28,7 @@ import type { CSSProperties, ReactNode } from 'react'
 import { assertRequiredProps } from '../common/validate'
 import type { FieldHandle } from '../state'
 import type { MultiField } from '../state/fields'
-import type { FilterBase, Option } from './filter-base'
+import type { FilterBase, FilterOption } from './filter-base'
 import classes from './controls.module.css'
 import { POPOVER_ROW_HIT_GAP, useFilterRegistration, useFilterSurface } from './filter-context'
 import { FilterClearButton, FilterPill } from './filter-pill'
@@ -63,7 +63,7 @@ export type MultiSelectFilterProps<T extends string> = UncontrolledProps &
      * relabels and reorders rows, it does not open new ones. Unlike `SelectFilter` there is no
      * string-field shape to make it required.
      */
-    readonly options?: readonly Option[]
+    readonly options?: readonly FilterOption[]
     /**
      * Per-option counts, rendered on the `panel` surface as a mono number plus a bar proportional to
      * the LARGEST count in the map — the Foundry facet column (`docs/ASIDE-SPEC.md` §1). A missing
@@ -109,7 +109,7 @@ export function MultiSelectFilter<T extends string>(props: MultiSelectFilterProp
 
   // The prop wins whole, never merged — same rule as `EnumFilter`: a catalogue that dropped a row
   // must be able to drop it, and `All channels` is counted against the rows actually shown.
-  const options: readonly Option[] = optionsProp ?? field.options
+  const options: readonly FilterOption[] = optionsProp ?? field.options
   const inSheet = surface === 'sheet'
   const inPanel = surface === 'panel'
   const carriesInformation = value.length > 0 && value.length < options.length
@@ -141,7 +141,7 @@ export function MultiSelectFilter<T extends string>(props: MultiSelectFilterProp
           options={options}
           selected={value}
           max={max ?? PANEL_FACET_MAX}
-          disabled={disabled === true}
+          {...(disabled === true && { disabled: true })}
           onToggle={toggle}
           {...(counts !== undefined && { counts })}
         />
@@ -194,13 +194,13 @@ export function MultiSelectFilter<T extends string>(props: MultiSelectFilterProp
 
 type FacetListProps = {
   readonly labelId: string
-  readonly options: readonly Option[]
+  readonly options: readonly FilterOption[]
   readonly selected: readonly string[]
   readonly counts?: Record<string, number>
   /** Rows shown before the rest fold behind `Show N more`. */
   readonly max: number
   readonly onToggle: (value: string) => void
-  readonly disabled: boolean
+  readonly disabled?: boolean
 }
 
 /**

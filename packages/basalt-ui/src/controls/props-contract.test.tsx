@@ -10,6 +10,7 @@
 import { describe, expect, test } from 'bun:test'
 import type { ReactNode } from 'react'
 import { createLocalStore, field } from '../state'
+import type { FilterOption } from './index'
 import { MultiSelectFilter } from './multi-select-filter'
 import { NumberFilter } from './number-filter'
 import { RangeFilter } from './range-filter'
@@ -31,8 +32,8 @@ const local = createLocalStore({
   },
 })
 
-/** A runtime catalogue — the shape both `options` props take (`FilterOption[]`). */
-const PROJECTS = [
+/** A runtime catalogue — the shape both `options` props take. */
+const PROJECTS: readonly FilterOption[] = [
   { value: 'argo', label: 'Argo' },
   { value: 'linewatch', label: 'Linewatch', disabled: true },
 ]

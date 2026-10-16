@@ -17,7 +17,17 @@ import type { ReactNode } from 'react'
 const ICON_SIZE = 16
 const AFFORDANCE_SIZE = 14
 
-function Stroke({ size = ICON_SIZE, children }: { size?: number; children: ReactNode }): ReactNode {
+function Stroke({
+  size = ICON_SIZE,
+  strokeWidth = 1.75,
+  className,
+  children,
+}: {
+  size?: number
+  strokeWidth?: number
+  className?: string | undefined
+  children: ReactNode
+}): ReactNode {
   return (
     <svg
       width={size}
@@ -25,7 +35,8 @@ function Stroke({ size = ICON_SIZE, children }: { size?: number; children: React
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth={1.75}
+      strokeWidth={strokeWidth}
+      {...(className !== undefined && { className })}
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden
@@ -77,60 +88,27 @@ export function UpDownGlyph(): ReactNode {
  */
 export function CheckGlyph(): ReactNode {
   return (
-    <svg
-      width={16}
-      height={16}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2.25}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-    >
+    <Stroke strokeWidth={2.25}>
       <path d="M5 12.5l5 5l9 -11" />
-    </svg>
+    </Stroke>
   )
 }
 
 /** `SearchFilter`'s leading icon. */
 export function SearchGlyph(): ReactNode {
   return (
-    <svg
-      width={16}
-      height={16}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-    >
+    <Stroke strokeWidth={2}>
       <circle cx="11" cy="11" r="7" />
       <path d="M21 21l-4.35 -4.35" />
-    </svg>
+    </Stroke>
   )
 }
 
 /** `SyncButton`'s icon; the caller owns the spin class, which lives in its own stylesheet. */
 export function RefreshGlyph({ className }: { className?: string | undefined }): ReactNode {
   return (
-    <svg
-      width={16}
-      height={16}
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden
-      {...(className !== undefined && { className })}
-    >
-      <path
-        d="M20 11a8 8 0 1 0-2.34 5.66M20 5v6h-6"
-        stroke="currentColor"
-        strokeWidth={2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
+    <Stroke strokeWidth={2} className={className}>
+      <path d="M20 11a8 8 0 1 0-2.34 5.66M20 5v6h-6" />
+    </Stroke>
   )
 }

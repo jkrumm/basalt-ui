@@ -32,7 +32,7 @@ import type { BasaltProps } from '../common/props'
 import type { FieldOption } from '../state/fields'
 import classes from './controls.module.css'
 import { POPOVER_ROW_HIT_GAP, useFilterRegistration, useFilterSurface } from './filter-context'
-import type { FilterBase, Option } from './filter-base'
+import type { FilterBase, FilterOption } from './filter-base'
 import { FilterClearButton, FilterPill } from './filter-pill'
 import { useControlName } from './control-name'
 import { PanelChoice, PanelRow } from './panel-row'
@@ -62,7 +62,7 @@ export type EnumFilterProps<T extends string> = BasaltProps &
      * only row source a `StringField` has. `| undefined` explicitly: an internal component is spread
      * into, and `exactOptionalPropertyTypes` rejects a possibly-undefined member on a bare optional.
      */
-    readonly options?: readonly Option[] | undefined
+    readonly options?: readonly FilterOption[] | undefined
     /** Pill text for a value no rendered option matches, ahead of `label` — the name `.labels()` gave
      *  an unset state that is deliberately not a row (`NumberFilter`'s preset form). */
     readonly unmatchedLabel?: string | undefined
@@ -95,7 +95,7 @@ export function EnumFilter<T extends string>({
 
   // The prop wins whole, never merged: a catalogue that has dropped a value must be able to drop
   // its row, which a merge with `field.options` would silently put back.
-  const options: readonly Option[] = optionsProp ?? field.options
+  const options: readonly FilterOption[] = optionsProp ?? field.options
   const selected = options.find((option) => option.value === value)
   const inSheet = surface === 'sheet'
   const inPanel = surface === 'panel'

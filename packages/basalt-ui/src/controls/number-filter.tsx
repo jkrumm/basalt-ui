@@ -74,7 +74,7 @@ import classes from './controls.module.css'
 import { EnumFilter } from './enum-filter'
 import type { ChoiceHandle } from './enum-filter'
 import { useFilterRegistration, useFilterSurface } from './filter-context'
-import type { FilterBase, Option } from './filter-base'
+import type { FilterBase, FilterOption } from './filter-base'
 import { FilterClearButton, FilterPill } from './filter-pill'
 import { useControlName } from './control-name'
 import { PanelRow } from './panel-row'
@@ -87,7 +87,7 @@ export type NumberFilterProps = UncontrolledProps &
      *  VALUE (see `EnumFilter`'s doc for why a pill may only print what is selected). */
     readonly label: string
     /** Present → the radio-list form. Absent → the stepper form. */
-    readonly options?: readonly Option<number>[]
+    readonly options?: readonly FilterOption<number>[]
     /**
      * The stepper's increment, overriding the field's own. Ignored in the `options` form, which has
      * no stepper.
@@ -166,10 +166,10 @@ function NumberChoice({
   FilterBase & {
     readonly field: FieldHandle<NumberField>
     readonly label: string
-    readonly options: readonly Option<number>[]
+    readonly options: readonly FilterOption<number>[]
   }): ReactNode {
   const [value, setValue] = field.use()
-  const rows: readonly Option[] = options.map((option) => ({
+  const rows: readonly FilterOption[] = options.map((option) => ({
     ...option,
     value: String(option.value),
   }))

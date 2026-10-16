@@ -3,14 +3,13 @@
  * is not a pill: a text box states its own value, so wrapping it in a chip + popover would cost a
  * press per keystroke session for nothing.
  *
- * Keystrokes are DEBOUNCED (200ms) before they reach the field — and the pending phrase is committed
- * at once on Enter, on blur and on unmount, so a query typed and then submitted, tabbed away from or
- * navigated away from within the window is never lost.
- *
  * Keystrokes are DEBOUNCED (200ms) before they reach the field. `field.string()` already writes with
  * `history: 'replace'`, so an un-debounced input would still not stack history entries — what the
  * debounce buys is one navigation per phrase instead of one per character, which is the difference
- * between a typed query and a re-rendered route tree eight times over.
+ * between a typed query and a re-rendered route tree eight times over. The pending phrase is
+ * committed at once on Enter and blur, and on unmount while the store still holds the value the
+ * draft was based on, so a query submitted, tabbed away from or navigated away from inside the
+ * window is never lost.
  *
  * @example
  * // q: field.string({ max: 120 })
@@ -18,7 +17,7 @@
  */
 import { CloseButton, TextInput } from '@mantine/core'
 import { useDebouncedCallback } from '@mantine/hooks'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { assertRequiredProps } from '../common/validate'
 import type { FieldHandle } from '../state'
@@ -34,7 +33,7 @@ import type { UncontrolledProps } from './uncontrolled'
 const DEBOUNCE_MS = 200
 
 export type SearchFilterProps = UncontrolledProps &
-  Omit<FilterBase, 'icon'> & {
+  Omit<FilterBase, 'icon' | 'label' | 'clearable'> & {
     readonly field: FieldHandle<StringField>
     readonly placeholder?: string
     /** Sheet-form heading and the accessible name. @default 'Search' */
@@ -60,7 +59,9 @@ export function SearchFilter(props: SearchFilterProps): ReactNode {
   } = props
   const [value, setValue] = field.use()
   const surface = useFilterSurface()
-  const draft = useDebouncedField(value, setValue)
+  const draft = useDebouncedField(value, setValue, () => {
+    field.clear()
+  })
   useFilterRegistration(!field.isDefault(value), () => {
     field.clear()
   })
@@ -88,6 +89,10 @@ export function SearchFilter(props: SearchFilterProps): ReactNode {
               size="sm"
               aria-label="Clear search"
               disabled={disabled === true}
+              // Keeps focus in the box: a blur here would flush the phrase being cleared.
+              onMouseDown={(event) => {
+                event.preventDefault()
+              }}
               onClick={draft.clear}
             />
           ),
@@ -99,7 +104,8 @@ export function SearchFilter(props: SearchFilterProps): ReactNode {
       }}
       onBlur={draft.flush}
       onKeyDown={(event) => {
-        if (event.key === 'Enter') draft.flush()
+        // Enter that confirms an IME candidate is not a submit.
+        if (event.key === 'Enter' && !event.nativeEvent.isComposing) draft.flush()
       }}
       {...(isPill && className !== undefined && { className })}
       {...(isPill && style !== undefined && { style })}
@@ -125,29 +131,45 @@ export function SearchFilter(props: SearchFilterProps): ReactNode {
 
 /**
  * A local draft that lands on the field `DEBOUNCE_MS` after the last keystroke — or at once, via
- * `flush` (Enter, blur) and on unmount — and that follows the field when it changes from OUTSIDE the
- * input (`Reset all`, a back navigation, a deep link).
- * `seen` is what separates the two directions: it holds the last value this hook itself committed,
- * so an incoming change it did not cause is the only thing that overwrites the draft.
+ * `flush` (Enter, blur) — and that follows the field when it changes from OUTSIDE the input
+ * (`Reset all`, a back navigation, a deep link).
+ *
+ * `seen` is what separates the two directions: it is the last value the store is known to hold —
+ * written synchronously by this hook's own commits, adopted from the store otherwise — so an
+ * incoming change it did not cause is the only thing that overwrites the draft.
  */
 function useDebouncedField(
   value: string,
   setValue: (next: string) => void,
+  clearField: () => void,
 ): { value: string; set: (next: string) => void; flush: () => void; clear: () => void } {
   const [draft, setDraft] = useState(value)
   const seen = useRef(value)
-  const held = useRef(value)
+  const rendered = useRef(value)
+  const write = (next: string): void => {
+    seen.current = next
+    setValue(next)
+  }
+  const commit = useDebouncedCallback((next: string) => {
+    // A phrase typed and erased inside the window ends where it began: nothing to write.
+    if (next === seen.current) return
+    write(next)
+  }, DEBOUNCE_MS)
+
+  // Unmount: a layout cleanup runs before Mantine's own passive one cancels the timer. Flush only
+  // while the store still holds what the draft was based on — otherwise an outside change (a
+  // `Reset all` that also closed this filter) would be overwritten by a stale phrase.
+  const commitRef = useRef(commit)
   useEffect(() => {
-    held.current = value
+    rendered.current = value
+    commitRef.current = commit
   })
-  const commit = useDebouncedCallback(
-    (next: string) => {
-      // A phrase typed and erased inside the window ends where it began: nothing to write.
-      if (next === held.current) return
-      seen.current = next
-      setValue(next)
+  useLayoutEffect(
+    () => () => {
+      if (rendered.current === seen.current) commitRef.current.flush()
+      else commitRef.current.cancel()
     },
-    { delay: DEBOUNCE_MS, flushOnUnmount: true },
+    [],
   )
 
   useEffect(() => {
@@ -163,13 +185,16 @@ function useDebouncedField(
       setDraft(next)
       commit(next)
     },
-    flush: commit.flush,
+    flush: () => {
+      commit.flush()
+    },
+    // Through the field's own `clear()` — it unsets rather than writing the fallback over it — and
+    // unconditional: the store may still hold the old phrase, or an unflushed one.
     clear: () => {
       commit.cancel()
       setDraft('')
-      if (held.current === '') return
-      seen.current = ''
-      setValue('')
+      seen.current = rendered.current
+      clearField()
     },
   }
 }

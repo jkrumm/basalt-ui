@@ -29,7 +29,7 @@ import { cx } from '../common/props'
 import type { BasaltProps } from '../common/props'
 import { CtlSlot } from '../theme'
 import { InfoGlyph } from '../dashboard/widget-header'
-import type { Option } from './filter-base'
+import type { FilterOption } from './filter-base'
 import classes from './panel-row.module.css'
 
 /**
@@ -127,7 +127,7 @@ export type PanelChoiceProps = {
   /** The control's accessible name, as `useControlName` resolved it for this surface. */
   readonly nameProps: { 'aria-labelledby': string } | { 'aria-label': string }
   readonly value: string
-  readonly options: readonly Option[]
+  readonly options: readonly FilterOption[]
   /** The whole control is inert. */
   readonly disabled?: boolean
   /** Numeric labels (`7d` / `30d`) get the mono treatment `segmented-control.module.css` owns. */

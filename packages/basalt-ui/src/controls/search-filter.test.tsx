@@ -15,10 +15,15 @@ const WAIT = 260 // DEBOUNCE_MS (200) plus slack
 
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms))
 
-type Harness = { writes: string[]; setOutside: (next: string) => void; unmount: () => void }
+type Harness = {
+  writes: string[]
+  clears: number
+  setOutside: (next: string) => void
+  unmount: () => void
+}
 
 function mountFilter(initial = ''): Harness {
-  const harness: Harness = { writes: [], setOutside: () => {}, unmount: () => {} }
+  const harness: Harness = { writes: [], clears: 0, setOutside: () => {}, unmount: () => {} }
   function Page(): ReactNode {
     const [value, setValue] = useState(initial)
     useEffect(() => {
@@ -33,7 +38,10 @@ function mountFilter(initial = ''): Harness {
         },
       ],
       isDefault: (v: string) => v === '',
-      clear: () => setValue(''),
+      clear: () => {
+        harness.clears += 1
+        setValue('')
+      },
     } as unknown as FieldHandle<StringField>
     return <SearchFilter field={field} placeholder="Search" />
   }
@@ -127,11 +135,64 @@ describe('SearchFilter immediate commit', () => {
     expect(input().getAttribute('enterkeyhint')).toBe('search')
   })
 
-  test('a clear button appears when non-empty and clears the field at once', () => {
+  test('Enter that confirms an IME composition does not commit', () => {
+    const h = mountFilter()
+    type('にほん')
+    fireEvent.keyDown(input(), { key: 'Enter', isComposing: true })
+    expect(h.writes).toEqual([])
+  })
+
+  test('the clear button clears through the field, without flushing the phrase first', () => {
     const h = mountFilter('abc')
-    fireEvent.click(screen.getByRole('button', { name: 'Clear search' }))
-    expect(h.writes).toEqual([''])
+    type('abcd')
+    const clear = screen.getByRole('button', { name: 'Clear search' })
+    // mousedown must not move focus out of the box — a blur would flush `abcd` before the clear.
+    expect(fireEvent.mouseDown(clear)).toBe(false)
+    fireEvent.click(clear)
+    expect(h.clears).toBe(1)
+    expect(h.writes).toEqual([])
     expect(input().value).toBe('')
+    expect(screen.queryByRole('button', { name: 'Clear search' })).toBeNull()
+  })
+
+  test('clear cancels the pending timer', async () => {
+    const h = mountFilter()
+    type('abc')
+    fireEvent.click(screen.getByRole('button', { name: 'Clear search' }))
+    await act(() => sleep(WAIT))
+    expect(h.writes).toEqual([])
+    expect(h.clears).toBe(1)
+  })
+
+  test('unmount after an outside change does not write the stale phrase', async () => {
+    const h = mountFilter()
+    type('abc')
+    act(() => {
+      h.setOutside('reset')
+    })
+    h.unmount()
+    await sleep(WAIT)
+    expect(h.writes).toEqual([])
+  })
+
+  test('disabled: the box and the clear button are inert', () => {
+    render(
+      <MantineProvider>
+        <SearchFilter field={fixedField('abc')} placeholder="Search" disabled />
+      </MantineProvider>,
+    )
+    expect(input().disabled).toBe(true)
+    expect(
+      (screen.getByRole('button', { name: 'Clear search' }) as HTMLButtonElement).disabled,
+    ).toBe(true)
+  })
+
+  test('clearable={false} hides the clear button', () => {
+    render(
+      <MantineProvider>
+        <SearchFilter field={fixedField('abc')} placeholder="Search" clearable={false} />
+      </MantineProvider>,
+    )
     expect(screen.queryByRole('button', { name: 'Clear search' })).toBeNull()
   })
 
@@ -140,3 +201,11 @@ describe('SearchFilter immediate commit', () => {
     expect(screen.queryByRole('button', { name: 'Clear search' })).toBeNull()
   })
 })
+
+function fixedField(value: string): FieldHandle<StringField> {
+  return {
+    use: () => [value, () => {}],
+    isDefault: (v: string) => v === '',
+    clear: () => {},
+  } as unknown as FieldHandle<StringField>
+}
