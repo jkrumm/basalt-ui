@@ -1041,10 +1041,14 @@ The `basalt-ui/router-tanstack` subpath is **removed** in 2.x, not moved: an imp
 | `NavItemMeta`, `NavGroupMeta`, `AnyNavItem`, `AnyNavGroup`, `AnyNavLink`, `FlatNavItem`, `NavConfig`, `NavGroupId`, `NavTabId`, `NavIndex`, `UseNavOptions`, `NavBinding`, `NavAnchor`, `NavAnchorProps`, `NavMobilePlacement` | deleted                                                                                                                                                                                                                                                                                                                                                                                                                                                    | no consumer names them; derive with `ComponentProps` / `Parameters` |
 | `useNav`, and `BasaltShell`'s `sections` / `mobileNav` props                                                                                                                                                                   | deleted: pass `nav={NAV}` (plus `badges`, `isActive`, `getScrollElement` — the old `useNav` options) to `BasaltShell`; it resolves the sidebar, the mobile bar and the breadcrumb itself. `mobileNav` tuning moves to `defineNav`'s `mobile`. argo `apps/dashboard/src/routes/__root.tsx`: replace `const nav = useNav(NAV, { badges })` + `{...nav}` with `nav={NAV} badges={…}` (migrates in W12; 1.x consumers stay on their pinned version until then) |
 
-## Unreleased
+## Unreleased — followers draw the cursor dots, a dashed line keeps its key
 
-_Nothing yet. Author the next section under this heading as `## Unreleased — <title>`; the
-release renames it and opens a new one here._
+### Charts — a follower draws the cursor dots, a dashed line keeps its key, one dot mark per `getMarker` series
+
+- **Behaviour: a chart following a sibling's cursor draws the leader's dots by default** (the engine's focus ring on its lines, and the `cursorValue` dots, at the shared x; hidden series and `getMarker` colours respected). It used to paint the crosshair only. Its tooltip stays silent unless `tooltip.onFollow`: the host is hidden, not painted, for a follower, so no tooltip text or live-region announcement. **No opt-out.**
+- **Behaviour: the `cursorValue` cursor dot of a `getMarker` series is one mark, coloured per datum.** It was one mark per distinct colour (`<key>-cursor-<slug>`); it is now a single `<key>-cursor` mark whose focused fill is `getMarker(d).color`, so a continuous palette is fine there (always-on markers still cost one mark per distinct paint). **Opt-out: none** — the old key matches nothing; query `<key>-cursor`.
+- **Fix: a line series keeps its line swatch in the legend below 480px.** It got a dot there, so a dashed series lost its dashed key. The swatch is now a stroke at both sizes (`LINE_SWATCH` in `legend.tsx`): 8px below 480px (dash `2.5 2`) and 12px from 480px (was 16px; dash `4 3`); a dashed swatch has butt caps so the gap stays open. The line `svg` no longer carries `classes.chip` (it is the `dot` variant below 480px and the `chip` variant above, like the bar swatches), and the swatch is now rendered in `dots` mode. Selectors that expected a `span` dot for a line series, or a 16px svg, match the new `svg`s. Bar and area swatches are unchanged.
+- **`legend.maxRows` stays gone.** It was deliberately deprecated in 1.31 and removed in 1.32.0 (the legend fits by measured width and folds overflow into the `All N` chip); not restored.
 
 ## 2.13.1
 
