@@ -147,19 +147,13 @@ function ManualPaginationTable({
       title="Sessions"
       subtitle="manualPagination — the table renders exactly one page; the pager bar reads 'of N' from rowCount, not from data.length"
       count={filtered.length}
-      actions={[
-        {
-          key: 'actions',
-          kind: 'custom',
-          node: (
-            <ViewTabs
-              field={tableViews.field.queryVariant}
-              label="Query"
-              options={TABLE_QUERY_OPTIONS}
-            />
-          ),
-        },
-      ]}
+      tabs={
+        <ViewTabs
+          field={tableViews.field.queryVariant}
+          label="Query"
+          options={TABLE_QUERY_OPTIONS}
+        />
+      }
     >
       <BasaltDataTable
         data={tableQuery.data ?? []}
