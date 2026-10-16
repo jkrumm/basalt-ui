@@ -528,8 +528,8 @@ async function budgets(providerOnlyDist: string): Promise<Budget[]> {
     // 4726 -> 4859: #261's `router-wiring` module and `source-text` helper (rows 71, 72, 74) — comments restored rather than condensed.
     // 4859 -> 4890: `installRootAbove` (cli/install-root.ts) — one predicate for doctor and sync, with the same-install check (row 77, review of #267).
     // 4890 -> 4955: the declared `basalt.shell: false` — config key, seed skip, shared seed-retire notice and the doctor finding (ledger row 82, linewatch W2).
-    // 4955 -> 5009: `app-wiring` accepts one provider in the root or a pathless layout, fails an untyped `createRootRoute` and a missing root (ledger rows 113, 115, weatherorb W37).
-    { label: 'CLI non-test lines (src/cli/**)', value: cliNonTestLines(), ceiling: 5009 },
+    // 4955 -> 5020: `app-wiring` accepts one provider in the root or a pathless layout, fails an untyped `createRootRoute` and a missing root (ledger rows 113, 115, weatherorb W37).
+    { label: 'CLI non-test lines (src/cli/**)', value: cliNonTestLines(), ceiling: 5020 },
     ...(await providerOnlyRows(providerOnlyDist)),
   ]
 }

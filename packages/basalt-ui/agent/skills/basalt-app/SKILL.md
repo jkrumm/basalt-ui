@@ -9,7 +9,7 @@ Procedure only; the law is `.claude/rules/basalt-*.md`.
 ## Scaffold
 
 1. `bun add basalt-ui && bunx basalt-ui init` (the only `bunx` call; use `./node_modules/.bin/basalt-ui` after).
-2. Check the seeded `src/main.tsx` (`init` writes it when absent; on a TanStack Start app it seeds none: render `<BasaltProvider><Outlet /></BasaltProvider>` with no `router` in the root route component, `context.queryClient` set in `getRouter()`); `spotlight={false}` drops Basalt's Cmd+K for an app with its own. `basalt-ui/styles.css` is the only stylesheet import:
+2. Check the seeded `src/main.tsx` (`init` writes it when absent; on a TanStack Start app it seeds none: render `<BasaltProvider><Outlet /></BasaltProvider>` with no `router` in the root route component or a pathless layout, `context.queryClient` set in `getRouter()`); `spotlight={false}` drops Basalt's Cmd+K for an app with its own. `basalt-ui/styles.css` is the only stylesheet import:
 
 ```tsx
 // @check

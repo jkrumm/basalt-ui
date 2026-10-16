@@ -883,7 +883,7 @@ describe('doctor — app-wiring', () => {
     expect(text(appWiringCheck(dir))).toContain('does not use createBasaltRouter')
   })
 
-  it('a Start app is wired by <BasaltProvider> in its root route, not by src/main.tsx', () => {
+  it('a Start app is wired by <BasaltProvider> in its root route or a pathless layout, not by src/main.tsx', () => {
     write(
       'package.json',
       JSON.stringify({ name: 'fixture', dependencies: { '@tanstack/react-start': '*' } }),
@@ -998,7 +998,9 @@ describe('doctor — app-wiring', () => {
       write('src/routes/_app/route.tsx', LAYOUT)
       write('src/routes/__root.tsx', ROOT + LAYOUT)
       const both = text(appWiringCheck(dir))
-      expect(both).toContain('src/routes/__root.tsx and src/routes/_app/route.tsx both render')
+      expect(both).toContain(
+        'src/routes/__root.tsx and src/routes/_app/route.tsx render 2 <BasaltProvider> tags',
+      )
     })
 
     it('names a missing root route when the provider sits in a layout', () => {
@@ -1022,7 +1024,7 @@ describe('doctor — app-wiring', () => {
     })
   })
 
-  it('fails a Start root route whose context type omits queryClient', () => {
+  it('fails a Start root route exported from an untyped createRootRoute', () => {
     write(
       'package.json',
       JSON.stringify({ name: 'fixture', dependencies: { '@tanstack/react-start': '*' } }),
@@ -1055,6 +1057,30 @@ describe('doctor — app-wiring', () => {
       'export const Route = createRootRouteWithContext<{ queryClient: () => QueryClient }>()({ component: () => <BasaltProvider><Outlet /></BasaltProvider> })\n',
     )
     expect(appWiringCheck(dir)).toBeNull()
+    // An annotated export is still read; a wrapper around createRootRoute is not judged.
+    write(
+      'src/routes/__root.tsx',
+      'export const Route: AnyRoute = createRootRoute({ component: () => <BasaltProvider><Outlet /></BasaltProvider> })\n',
+    )
+    expect(text(appWiringCheck(dir))).toContain('createRootRoute()')
+    write(
+      'src/routes/__root.tsx',
+      'export const Route = withWrap(createRootRoute({ component: () => <BasaltProvider><Outlet /></BasaltProvider> }))\n',
+    )
+    expect(appWiringCheck(dir)).toBeNull()
+  })
+
+  it('fails two <BasaltProvider> tags in one file, naming it', () => {
+    write(
+      'package.json',
+      JSON.stringify({ name: 'fixture', dependencies: { '@tanstack/react-start': '*' } }),
+    )
+    write(
+      'src/routes/__root.tsx',
+      'const A = () => <BasaltProvider>{x}</BasaltProvider>\nconst B = () => <BasaltProvider>{y}</BasaltProvider>\n',
+    )
+    const problem = text(appWiringCheck(dir))
+    expect(problem).toContain('src/routes/__root.tsx render 2 <BasaltProvider> tags')
   })
 
   it('shell: false warns only when the entry-reachable code renders <BasaltShell', () => {
