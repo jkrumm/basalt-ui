@@ -21,10 +21,11 @@ export type LegendMode = 'dots' | 'chips' | 'auto'
 const ROLE_ORDER = ['series', 'overlay', 'reference'] as const
 
 /**
- * Dots sit wider apart than chips: a dot is 8px, and two 44px coarse-pointer hit areas centred on
- * 8px hosts only stop overlapping once the pitch clears 44 (44 − 8 − 2, plus headroom).
+ * Dots sit wider apart than chips, but 8px closer than they did (38) to pay for the 14px line key
+ * (was 8): the four-entry legend must still fit one row at 390px. The coarse-pointer hit areas are
+ * capped at this gap (`--vx-hit-gap`), so a tighter pitch cannot make them overlap.
  */
-const DOTS_GAP = 38
+const DOTS_GAP = 30
 
 /** The entries a series list derives, in display order (by role when `groups`). */
 export function legendEntries<T>(
@@ -107,13 +108,14 @@ const swatchFill = (s: SwatchStyle): string =>
   s.colorNegative ? `linear-gradient(90deg, ${s.color} 50%, ${s.colorNegative} 50%)` : s.color
 
 /**
- * A line series' key: a short stroke with its dash, compact below 480px and wide from 480px. A
+ * A line series' key: a stroke with its dash, compact below 480px and wide from 480px. Both are at
+ * least 14px with two or more clear dashes: a shorter key reads as two dots. A
  * dashed swatch has BUTT caps: a round cap grows each dash by half the stroke width per end and
  * would close the gap.
  */
 export const LINE_SWATCH = {
-  compact: { width: 8, dash: '2.5 2' },
-  wide: { width: 12, dash: '4 3' },
+  compact: { width: 14, dash: '4 3' },
+  wide: { width: 16, dash: '4 3' },
 } as const
 
 function LineSwatch({ s, compact }: { s: SwatchStyle; compact: boolean }): ReactElement {

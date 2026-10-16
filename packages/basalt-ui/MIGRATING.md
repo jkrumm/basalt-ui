@@ -1041,6 +1041,7 @@ The `basalt-ui/router-tanstack` subpath is **removed** in 2.x, not moved: an imp
 | `NavItemMeta`, `NavGroupMeta`, `AnyNavItem`, `AnyNavGroup`, `AnyNavLink`, `FlatNavItem`, `NavConfig`, `NavGroupId`, `NavTabId`, `NavIndex`, `UseNavOptions`, `NavBinding`, `NavAnchor`, `NavAnchorProps`, `NavMobilePlacement` | deleted                                                                                                                                                                                                                                                                                                                                                                                                                                                    | no consumer names them; derive with `ComponentProps` / `Parameters` |
 | `useNav`, and `BasaltShell`'s `sections` / `mobileNav` props                                                                                                                                                                   | deleted: pass `nav={NAV}` (plus `badges`, `isActive`, `getScrollElement` — the old `useNav` options) to `BasaltShell`; it resolves the sidebar, the mobile bar and the breadcrumb itself. `mobileNav` tuning moves to `defineNav`'s `mobile`. argo `apps/dashboard/src/routes/__root.tsx`: replace `const nav = useNav(NAV, { badges })` + `{...nav}` with `nav={NAV} badges={…}` (migrates in W12; 1.x consumers stay on their pinned version until then) |
 
+<<<<<<< HEAD
 ## Unreleased — the format layer, the filter family and chart fixes
 
 ### `basalt-ui/format`
@@ -1061,8 +1062,12 @@ The `basalt-ui/router-tanstack` subpath is **removed** in 2.x, not moved: an imp
 - **Type break: `RangeFilter`'s `customPicker` is required exactly when the field is `custom: true`, and `never` otherwise.** A `field.range({ custom: true })` without a picker, a picker on a preset-only field, and a wrapper typed `RangeFilterProps<P>` (picker now required) fail `tsc`. **Fix: `customPicker={DateRangePicker}`, or drop `custom: true`.** This supersedes the dev warning described under 1.x's `RangeFilter` note.
 
 ### Charts
+=======
+## Unreleased — a follower draws no cursor outside its x-domain, line keys read as dashes
+>>>>>>> 209af1c (fix: the line legend key reads as a dash at every size)
 
 - **Fix: a follower chart draws nothing when the shared cursor's x is outside its x-domain.** Since 2.13.2 a follower clamped the leader's cursor onto its edge datum, so a chart covering 20:00–08:00 drew a dot at 12:00 the next day that was not the cursor's hour. The domain is the one the chart renders (`xDomain`, else the data extent); a cursor exactly on an edge still draws, and the leader is unaffected. No crosshair, no dots and no tooltip outside the domain, on `CartesianChart`, its kinds and `DualPanel`. Pass one `xDomain` to charts that should cover the same range.
+- **Fix: the line legend key reads as a dash at every size.** `LINE_SWATCH` in `legend.tsx`: below 480px the key is 14px (was 8px, dash `2.5 2`, which read as two dots) with dash `4 3`; from 480px it is 16px (was 12px) with dash `4 3`. The dots-mode gap between entries goes 38 → 30px to pay for it, so a four-entry legend still fits one row at 390px. Selectors or snapshots that expected an 8px or 12px line key match the new widths.
 
 ## 2.13.3 — the router defaults need no provider
 
