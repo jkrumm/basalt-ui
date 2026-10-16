@@ -693,22 +693,64 @@ describe('managed reviewer subagent and rule paths', () => {
     expect(capture(() => sync({ check: true }, dir)).code).toBe(0)
   })
 
-  it('keeps the old broad globs when no roots are declared or inferable', () => {
+  it('init in a bare dir renders the src/ its own seeds create', () => {
     install()
-    expect(read(RULE)).toContain(
-      "paths:\n  - 'src/**'\n  - 'apps/**/src/**'\n  - 'packages/**/src/**'\n---",
+    expect(read(RULE)).toContain("paths:\n  - 'src/**'\n---")
+  })
+
+  it('renderRulePaths keeps the old broad globs when given no roots', () => {
+    expect(renderRulePaths("---\npaths:\n  - 'x'\n---\n", [])).toBe(
+      "---\npaths:\n  - 'src/**'\n  - 'apps/**/src/**'\n  - 'packages/**/src/**'\n---\n",
     )
   })
 
   it('renderRulePaths leaves a rule without paths: unchanged and throws on a malformed block', () => {
-    expect(renderRulePaths('# no frontmatter paths\n', ['src'])).toBe('# no frontmatter paths\n')
+    expect(renderRulePaths('---\nname: x\n---\n# body\n', ['src'])).toBe(
+      '---\nname: x\n---\n# body\n',
+    )
     expect(() => renderRulePaths('---\npaths: src/**\n---\n', ['src'])).toThrow('paths')
     expect(() => renderRulePaths('---\npaths:\n  - x\n---\n', ['a\nb'])).toThrow('line break')
   })
 
+  it('touches the front matter only, never a column-0 paths: in the body', () => {
+    const text = "---\npaths:\n  - 'x'\n---\n\npaths:\n  - 'keep'\n"
+    expect(renderRulePaths(text, ['src'])).toBe(
+      "---\npaths:\n  - 'src/**'\n---\n\npaths:\n  - 'keep'\n",
+    )
+    const noFront = "# body\npaths:\n  - 'keep'\n"
+    expect(renderRulePaths(noFront, ['src'])).toBe(noFront)
+  })
+
+  it('rejects roots that would match everywhere', () => {
+    const rule = "---\npaths:\n  - 'x'\n---\n"
+    for (const bad of ['/', '', '/abs/src', './']) {
+      expect(() => renderRulePaths(rule, [bad])).toThrow('relative directory')
+    }
+  })
+
+  it('sync --check renders with the roots a real sync would write, so they never disagree', () => {
+    writeFixture('package.json', JSON.stringify({ name: 'mono', workspaces: ['apps/*'] }))
+    writeFixture(
+      'apps/web/package.json',
+      JSON.stringify({ name: 'web', dependencies: { 'basalt-ui': '*' } }),
+    )
+    mkdirSync(resolve(dir, 'apps/web/src'), { recursive: true })
+    capture(() => init(dir))
+    // Lose the declaration (an old repo that never wrote it): check must still agree with sync.
+    writeFixture('package.json', JSON.stringify({ name: 'mono', workspaces: ['apps/*'] }))
+    const checked = capture(() => sync({ check: true }, dir))
+    expect(checked.code).toBe(0)
+    capture(() => sync({}, dir))
+    expect(read(RULE)).toContain("paths:\n  - 'apps/web/src/**'\n---")
+  })
+
   it('normalises "." and "./" roots', () => {
-    expect(renderRulePaths("paths:\n  - 'x'\n", ['.'])).toBe("paths:\n  - '**'\n")
-    expect(renderRulePaths("paths:\n  - 'x'\n", ['./src//'])).toBe("paths:\n  - 'src/**'\n")
+    expect(renderRulePaths("---\npaths:\n  - 'x'\n---\n", ['.'])).toBe(
+      "---\npaths:\n  - '**'\n---\n",
+    )
+    expect(renderRulePaths("---\npaths:\n  - 'x'\n---\n", ['./src//'])).toBe(
+      "---\npaths:\n  - 'src/**'\n---\n",
+    )
   })
 
   it('names the skills and the subagent in the AGENTS block', () => {

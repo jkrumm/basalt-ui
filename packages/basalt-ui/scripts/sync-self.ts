@@ -44,6 +44,7 @@ function entries(root: string, unit: 'file' | 'dir'): string[] {
 function syncNamespace(dir: string, unit: 'file' | 'dir'): { copied: number; pruned: number } {
   const src = join(PKG_ROOT, 'agent', dir)
   const dest = join(REPO_ROOT, '.claude', dir)
+  if (!existsSync(src)) throw new Error(`sync-self: shipped source dir missing: ${src}`)
   const shipped = entries(src, unit)
   mkdirSync(dest, { recursive: true })
   for (const name of shipped) {

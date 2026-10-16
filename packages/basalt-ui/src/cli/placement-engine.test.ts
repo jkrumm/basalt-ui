@@ -61,7 +61,7 @@ function read(relPath: string): string {
 /** The tokens rule as the installer renders it for the fixture's current `basalt.roots`. */
 function shippedRule(): string {
   const pkg = JSON.parse(read('package.json')) as { basalt?: { roots?: string[] } }
-  return renderRulePaths(RULE_SOURCE, pkg.basalt?.roots ?? [])
+  return renderRulePaths(RULE_SOURCE, pkg.basalt?.roots ?? ['src'])
 }
 
 function write(relPath: string, content: string): void {

@@ -61,7 +61,7 @@ function wave31CliLines(): number {
   const raises = {
     shot: 0,
 
-    install: 46,
+    install: 75,
 
     notice: 142,
   }

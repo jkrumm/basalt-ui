@@ -27,6 +27,7 @@ import {
   readManifest,
   readSource,
   reconcileRoots,
+  ruleRootsFor,
   relativePosix,
   renderContext,
   reportPrune,
@@ -143,7 +144,7 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
 
   // Before renderContext, which reads `basalt.roots` for the roots-derived template variables.
   const rootsState = reconcileRoots(cwd, { write: opts.check !== true })
-  const ctx = renderContext(cwd)
+  const ctx = renderContext(cwd, ruleRootsFor(rootsState))
   const manifest = readManifest(cwd)
   const placement = resolvePlacement(cwd)
   const { skip: seedSkip, skipped } = routerSeedPlan(cwd, placement.appRel)

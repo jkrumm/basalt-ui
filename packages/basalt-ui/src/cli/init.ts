@@ -24,6 +24,7 @@ import {
   pruneRetiredManagedFiles,
   readManifest,
   reconcileRoots,
+  ruleRootsFor,
   renderContext,
   reportPrune,
   resolvePlacement,
@@ -99,7 +100,13 @@ export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags =
   const rootsState = reconcileRoots(cwd, { write: true })
 
   // Built AFTER the roots patch — every roots-derived template variable reads the key just written.
-  const ctx = renderContext(cwd)
+  // Nothing inferable yet: init's own seeds create the app's `src/`, which a later sync will infer.
+  const appSrc = resolvePlacement(cwd).appRel
+  const ctx = renderContext(
+    cwd,
+    ruleRootsFor(rootsState) ??
+      (rootsState.kind === 'undetectable' ? [`${appSrc ? `${appSrc}/` : ''}src`] : undefined),
+  )
 
   // `basalt-tokens.md` tells the consumer to wire `oxlint . && basalt-ui check-theme` into their
   // lint, and init's own closing message says to run check-theme next — but nothing ever added a
