@@ -146,3 +146,20 @@ Result: the five bad seeds fail with their expected item. `calibrate-good` does 
 Differences from iteration 4: the expected items are unchanged for all five bad seeds. The known-good board passed in the named run and in iteration 4's third run, and fails here. I cannot tell from one run whether the name leak made the earlier passes easier or the reviewer is non-deterministic on this board; both findings look like the same real defect classes that iteration 4 fixed on the seed (Craft 6 on a focus tooltip, a part-to-whole without its whole). This is recorded, not fixed: no reviewer, `shot` or seed file other than the route ids was changed, and the lead decides.
 
 S4 was not re-run: it is not a calibration seed and its name leaks nothing. The earlier S4 run (all seven components fail, page passes) is unchanged and not diffed against `s4-baseline.md`.
+
+### Known-good board, seed fixed (n = 2)
+
+Lead decision after the table above: both probe-3 findings were real, so the seed was fixed, not the reviewer. Craft 6 (the focus ring and tooltip of the info glyph covering content at 390) is `WidgetHeader`'s own behaviour: a `subtitle` folds into the info glyph on any card under 280 px tall. **Basalt finding for Wave 33**, not a seed defect. The seed changes: the card has no `subtitle`/`info` (the basis rides `unit="EUR, all projects and models"`, the period rides the title), and the table gains an "Other projects" row so its parts sum to 100 %, retitled "Spend by project, share of all spend, …". Two fresh `basalt-design-reviewer` subagents scored it blind, one `run-<hex>` dir each, prompt naming only the out dir.
+
+| run                        | verdict | items cited                                                     |
+| -------------------------- | ------- | --------------------------------------------------------------- |
+| probe-3, fixed seed, run A | fail    | card: Craft 6, 7; table: Expression 1, 2; page: Communication 5 |
+| probe-3, fixed seed, run B | fail    | card: Craft 4; table: Craft 4; page passes                      |
+
+Neither run passes, and the two runs share no cited item. Both fail on things the seed fix did not target:
+
+- Run A, Craft 6 and 7: the focus ring on the sparkline draws as two horizontal lines and is clipped at the card edges.
+- Run A, Expression 1, 2 and Communication 5: the part-to-whole table (now complete) should be a catalogue encoding, not a plain text table.
+- Run B, Craft 4: the focus ring is accent blue on the sparkline and on the table header cell (chrome), and white in dark, so the hue changes between schemes.
+
+I did not iterate further, per the lead's instruction. Whether these are basalt defects (focus ring colour and clipping, which would be Wave 33 candidates), a reviewer that over-reads focus crops, or a rubric gap on whether a small part-to-whole table needs a chart, is the lead's call. For a gate that must pass `calibrate-good`, the n = 3 record on this board (one fail on Craft 6 + Expression 4, then two further fails above) says the board does not currently pass, and the failures vary run to run.
