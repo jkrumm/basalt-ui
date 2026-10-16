@@ -298,7 +298,7 @@ describe('shared cursor', () => {
                 series={[b]}
                 ariaLabel="B"
                 legend={false}
-                {...(xDomain && { xDomain })}
+                xDomain={xDomain}
               />
             </div>
           </>,
@@ -329,6 +329,17 @@ describe('shared cursor', () => {
       expect(rule(el, 'A')).toBe(true)
       expect(dots(el, 'B')).toBe(0)
       expect(rule(el, 'B')).toBe(false)
+    })
+
+    test('a leader hovering outside the follower domain leaves it without a tooltip', async () => {
+      const el = await draw()
+      await hoverPlot(el.querySelector('#A svg'))
+      expect(chartCursor().getState()?.source).toBe('pointer')
+      expect(dots(el, 'A')).toBe(1)
+      expect(dots(el, 'B')).toBe(0)
+      expect(el.querySelector('#B .ts-chart__crosshair-rule--x')).toBeNull()
+      expect(tooltips().length).toBe(1)
+      expect(el.querySelector('#B [aria-live]')).toBeNull()
     })
 
     test('inside, and exactly on the domain edge: it draws', async () => {

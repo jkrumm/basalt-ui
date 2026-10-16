@@ -51,10 +51,22 @@ describe('cursor groups', () => {
   })
 
   test('a chart keeps one cursor view across recompiles (TanStack compares it by reference)', () => {
-    const first = chartCursorView('stable', 'c1', [day(1)], 'nearest')
-    const again = chartCursorView('stable', 'c1', [day(1), day(2)], 'exact')
+    const first = chartCursorView({
+      group: 'stable',
+      chartId: 'c1',
+      keys: [day(1)],
+      mode: 'nearest',
+    })
+    const again = chartCursorView({
+      group: 'stable',
+      chartId: 'c1',
+      keys: [day(1), day(2)],
+      mode: 'exact',
+    })
     expect(again).toBe(first)
-    expect(chartCursorView('stable', 'c2', [day(1)], 'nearest')).not.toBe(first)
+    expect(
+      chartCursorView({ group: 'stable', chartId: 'c2', keys: [day(1)], mode: 'nearest' }),
+    ).not.toBe(first)
   })
 
   test('setState on a group nothing subscribes to is a no-op and creates nothing', () => {
@@ -64,14 +76,19 @@ describe('cursor groups', () => {
   })
 
   test('a view no chart ever subscribes (a placeholder render) is swept after a microtask', async () => {
-    chartCursorView('sweep', 'never-mounted', [day(1)], 'nearest')
+    chartCursorView({ group: 'sweep', chartId: 'never-mounted', keys: [day(1)], mode: 'nearest' })
     expect(hasCursorView('sweep', 'never-mounted')).toBe(true)
     await Promise.resolve()
     expect(hasCursorView('sweep', 'never-mounted')).toBe(false)
   })
 
   test('a subscribed view survives the sweep and goes after its last unsubscribe', async () => {
-    const view = chartCursorView('sweep', 'mounted', [day(1)], 'nearest')
+    const view = chartCursorView({
+      group: 'sweep',
+      chartId: 'mounted',
+      keys: [day(1)],
+      mode: 'nearest',
+    })
     const off = view.subscribe(() => {})
     await Promise.resolve()
     expect(hasCursorView('sweep', 'mounted')).toBe(true)
@@ -100,8 +117,18 @@ describe('cursor groups', () => {
   test('the resolving view snaps a foreign value onto its own keys, identity-preserving', () => {
     const off = chartCursor('snap').subscribe(() => {})
     const weekly = [day(7), day(14)]
-    const leading = chartCursorView('snap', 'w-lead', weekly, 'leading')
-    const nearest = chartCursorView('snap', 'w-near', weekly, 'nearest')
+    const leading = chartCursorView({
+      group: 'snap',
+      chartId: 'w-lead',
+      keys: weekly,
+      mode: 'leading',
+    })
+    const nearest = chartCursorView({
+      group: 'snap',
+      chartId: 'w-near',
+      keys: weekly,
+      mode: 'nearest',
+    })
     const state = programmatic(day(12))
     chartCursor('snap').setState(state)
     const x = (s: ReturnType<typeof leading.getState>) => (s?.anchor === 'value' ? s.value.x : null)
@@ -117,12 +144,15 @@ describe('cursor groups', () => {
   test("a value outside the chart's x extent resolves to nothing; the edges still resolve", () => {
     const off = chartCursor('extent').subscribe(() => {})
     const keys = [day(7), day(8), day(9)]
-    const nearest = chartCursorView('extent', 'e-near', keys, 'nearest')
-    const exact = chartCursorView('extent', 'e-exact', keys, 'exact')
-    const wide = chartCursorView('extent', 'e-wide', keys, 'nearest', [
-      day(5).getTime(),
-      day(12).getTime(),
-    ])
+    const nearest = chartCursorView({ group: 'extent', chartId: 'e-near', keys, mode: 'nearest' })
+    const exact = chartCursorView({ group: 'extent', chartId: 'e-exact', keys, mode: 'exact' })
+    const wide = chartCursorView({
+      group: 'extent',
+      chartId: 'e-wide',
+      keys,
+      mode: 'nearest',
+      extent: [day(5).getTime(), day(12).getTime()],
+    })
     const at = (d: number) => chartCursor('extent').setState(programmatic(day(d)))
     const x = (s: ReturnType<typeof nearest.getState>) => (s?.anchor === 'value' ? s.value.x : null)
     for (const view of [nearest, exact]) {
@@ -144,10 +174,39 @@ describe('cursor groups', () => {
     chartCursor('extent').setState(null)
   })
 
+  test('an xDomain reaching before the first datum: a cursor inside it but before the datum', () => {
+    const off = chartCursor('lead-in').subscribe(() => {})
+    const keys = [day(7), day(8), day(9)]
+    const extent = [day(3).getTime(), day(9).getTime()] as const
+    const view = (mode: 'nearest' | 'leading' | 'exact') =>
+      chartCursorView({ group: 'lead-in', chartId: `l-${mode}`, keys, mode, extent })
+    const x = (s: ReturnType<ReturnType<typeof view>['getState']>) =>
+      s?.anchor === 'value' ? s.value.x : null
+    chartCursor('lead-in').setState(programmatic(day(5)))
+    // Inside the domain, so it draws: the snapping modes land on the first datum (no earlier one
+    // exists), `exact` keeps the cursor's own x.
+    expect(x(view('nearest').getState())).toEqual(day(7))
+    expect(x(view('leading').getState())).toEqual(day(7))
+    expect(x(view('exact').getState())).toEqual(day(5))
+    chartCursor('lead-in').setState(programmatic(day(2)))
+    for (const mode of ['nearest', 'leading', 'exact'] as const) {
+      expect(view(mode).getState()).toBeNull()
+    }
+    off()
+    chartCursor('lead-in').setState(null)
+  })
+
   test('charts whose x value types differ never sync', () => {
     const off = chartCursor('kinds').subscribe(() => {})
     chartCursor('kinds').setState(programmatic(day(3)))
-    expect(chartCursorView('kinds', 'n', [1, 2, 3], 'nearest').getState()).toBeNull()
+    expect(
+      chartCursorView({
+        group: 'kinds',
+        chartId: 'n',
+        keys: [1, 2, 3],
+        mode: 'nearest',
+      }).getState(),
+    ).toBeNull()
     off()
   })
 })
@@ -474,7 +533,12 @@ describe('compile edges', () => {
 describe('string x follower', () => {
   test('a string-keyed view takes a foreign value verbatim, and an unsnapped one stays the same object', () => {
     const off = chartCursor('str').subscribe(() => {})
-    const view = chartCursorView('str', 'cat', ['a', 'b', 'c'], 'nearest')
+    const view = chartCursorView({
+      group: 'str',
+      chartId: 'cat',
+      keys: ['a', 'b', 'c'],
+      mode: 'nearest',
+    })
     const state = { anchor: 'value', value: { x: 'b' }, source: 'programmatic' } as never
     chartCursor('str').setState(state)
     expect(view.getState()).toBe(state)

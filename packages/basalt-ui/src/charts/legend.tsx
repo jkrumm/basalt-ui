@@ -21,9 +21,10 @@ export type LegendMode = 'dots' | 'chips' | 'auto'
 const ROLE_ORDER = ['series', 'overlay', 'reference'] as const
 
 /**
- * Dots sit wider apart than chips, but 8px closer than they did (38) to pay for the 14px line key
- * (was 8): the four-entry legend must still fit one row at 390px. The coarse-pointer hit areas are
- * capped at this gap (`--vx-hit-gap`), so a tighter pitch cannot make them overlap.
+ * The pitch between dots-mode entries: 8px under the old 38, to pay for the 14px line key so the
+ * four-entry legend still fits one row at 390px. `--vx-hit-gap` caps each coarse-pointer hit area
+ * at the entry plus 2px and this gap (`styles.css`), so neighbours never overlap; the trade is that
+ * a dots-mode hit target is 8 + 2 + 30 = 40px, not 44.
  */
 const DOTS_GAP = 30
 

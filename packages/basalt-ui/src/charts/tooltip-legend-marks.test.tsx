@@ -521,6 +521,23 @@ describe('legend swatch follows the series mark in every mode', () => {
     cap: swatch?.querySelector('line')?.getAttribute('stroke-linecap'),
   })
 
+  test('the line key never shrinks below a dash: literal floors, not the table', () => {
+    expect(LINE_SWATCH.compact.width).toBeGreaterThanOrEqual(14)
+    expect(LINE_SWATCH.wide.width).toBeGreaterThanOrEqual(14)
+    expect(LINE_SWATCH.compact.dash).toBe('4 3')
+    expect(LINE_SWATCH.wide.dash).toBe('4 3')
+    const el = legend('dots')
+    expect(swatches(el, 'd')[0]?.getAttribute('width')).toBe('14')
+    expect(swatches(el, 'd')[0]?.querySelector('line')?.getAttribute('stroke-dasharray')).toBe(
+      '4 3',
+    )
+  })
+
+  test('the dots legend caps its hit areas at the 30px entry gap', () => {
+    const row = legend('dots').querySelector('[data-legend-key]')?.parentElement
+    expect(row?.style.getPropertyValue('--vx-hit-gap')).toBe('30px')
+  })
+
   test('dots mode: a line series is a 14px stroke (dash kept), never a dot', () => {
     const el = legend('dots')
     expect(swatches(el, 's').map((n) => n.tagName)).toEqual(['svg'])
