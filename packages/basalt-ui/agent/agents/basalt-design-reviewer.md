@@ -16,7 +16,7 @@ A shot out dir (default `.basalt/shots`, or the `out` in `.basalt/shots/last.jso
 - `png/*.png` — the crops. Read them; they are images you can see. Score every anchor in both schemes and both viewports.
 - A layout-suite result, only if the out dir has one.
 
-A shot with status `not-declared` is not a defect. A missing hover, focus or tooltip crop for an anchor that has such a target is (Craft 7).
+A shot with status `not-declared` is not a defect. A missing hover, focus or tooltip crop for an anchor that has such a target is (Craft 8).
 
 ## Fail closed
 

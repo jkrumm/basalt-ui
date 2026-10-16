@@ -3082,11 +3082,11 @@ const BOUND_CONTROL_OUTSIDE_HOME_MESSAGE =
   '(basalt/bound-control-outside-home)'
 
 const VIEW_TABS_REFUSED_HOME_MESSAGE =
-  '`ViewTabs` is in a slot that is not its home. It switches a page or a section from a `tabs` ' +
-  "slot (`PageBar.tabs`, `Section.tabs`), or one card's view from a `ChartCard` / `WidgetHeader` " +
-  '`actions` slot; never `PageBar` `actions` / `filters` / `filtersEnd` / `sync`, ' +
-  '`Section.actions` or a `FilterSet` (agent/rules/basalt-controls.md). ' +
-  '(basalt/bound-control-outside-home)'
+  '`ViewTabs` is not in its home. It switches a page or a section from a `tabs` slot ' +
+  "(`PageBar.tabs`, `Section.tabs`), or one card's view from a `ChartCard` / `WidgetHeader` " +
+  '`actions` slot; it is refused outside any slot, in every other `PageBar` slot (`actions`, ' +
+  '`filters`, `filtersEnd`, `sync`), in `Section.actions` and in a `FilterSet` ' +
+  '(agent/rules/basalt-controls.md). (basalt/bound-control-outside-home)'
 
 /** A `ViewTabs` written directly in a refused slot — see {@link VIEW_TABS_REFUSED_HOME_MESSAGE}. */
 function viewTabsInRefusedSlot(slots, captured) {
@@ -3177,7 +3177,10 @@ const boundControlOutsideHome = {
           if (hasThemeAllow(context, node, 'bound-control-outside-home')) continue
           context.report({
             node,
-            message: refused ? VIEW_TABS_REFUSED_HOME_MESSAGE : BOUND_CONTROL_OUTSIDE_HOME_MESSAGE,
+            message:
+              exported === 'ViewTabs'
+                ? VIEW_TABS_REFUSED_HOME_MESSAGE
+                : BOUND_CONTROL_OUTSIDE_HOME_MESSAGE,
           })
         }
       },

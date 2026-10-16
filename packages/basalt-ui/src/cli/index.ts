@@ -551,22 +551,31 @@ function buildTemplateVars(pkgRoot: string, cwd: string, cfg: BasaltConfig): Tem
 /** Rule roots when nothing is declared or inferable — what the shipped rules matched before roots. */
 const LEGACY_RULE_ROOTS = ['src', 'apps/**/src', 'packages/**/src']
 
+const FRONT_MATTER = /^---\n[\s\S]*?\n---\n/
 const RULE_PATHS_BLOCK = /^paths:\n(?: {2}- .*\n)+/m
 
 /**
- * A rule's `paths:` block rendered from `roots`: one `'<root>/**'` item per root, normalised
- * (no `./`, no trailing slash) and single-quoted for YAML. A rule with no `paths:` is returned
- * unchanged; one whose `paths:` is not the expected list shape throws rather than ship unscoped.
+ * A rule's front-matter `paths:` block rendered from `roots`: one `'<root>/**'` item per root,
+ * normalised (no `./`, no trailing slash) and single-quoted for YAML. Only the leading `---…---`
+ * block is touched. Front matter without `paths:` is returned unchanged; a `paths:` that is not the
+ * expected list shape, or a root that would match everywhere (`''`, `/`, absolute), throws.
  */
 export function renderRulePaths(text: string, roots: readonly string[]): string {
-  if (!/^paths:/m.test(text)) return text
-  if (!RULE_PATHS_BLOCK.test(text)) throw new Error('rule `paths:` is not a list of `  - …` items')
+  const front = FRONT_MATTER.exec(text)?.[0]
+  if (front === undefined || !/^paths:/m.test(front)) return text
+  if (!RULE_PATHS_BLOCK.test(front)) throw new Error('rule `paths:` is not a list of `  - …` items')
   const items = (roots.length > 0 ? roots : LEGACY_RULE_ROOTS).map((raw) => {
     const root = raw.replace(/^(?:\.\/)+/, '').replace(/\/+$/, '')
     if (/[\n\r]/.test(root)) throw new Error(`basalt.roots entry has a line break: ${raw}`)
-    return `  - '${(root === '' || root === '.' ? '**' : `${root}/**`).replace(/'/g, "''")}'`
+    if (raw.startsWith('/') || root === '') {
+      throw new Error(`basalt.roots entry must be a relative directory, got ${JSON.stringify(raw)}`)
+    }
+    return `  - '${(root === '.' ? '**' : `${root}/**`).replace(/'/g, "''")}'`
   })
-  return text.replace(RULE_PATHS_BLOCK, () => `paths:\n${items.join('\n')}\n`)
+  return (
+    front.replace(RULE_PATHS_BLOCK, () => `paths:\n${items.join('\n')}\n`) +
+    text.slice(front.length)
+  )
 }
 
 /** Substitute every `{{KEY}}` placeholder from the variable map; unknown keys are left verbatim. */
@@ -1268,9 +1277,21 @@ export function diffSummary(file: ManagedFile, state: UnitState): string {
 }
 
 /** Build the render context for a run from the package root + consumer cwd/config. */
-export function renderContext(cwd: string): RenderContext {
+export function renderContext(cwd: string, ruleRoots?: readonly string[]): RenderContext {
   const pkgRoot = packageRoot()
-  return { pkgRoot, vars: buildTemplateVars(pkgRoot, cwd, readBasaltConfig(cwd)) }
+  const vars = buildTemplateVars(pkgRoot, cwd, readBasaltConfig(cwd))
+  return { pkgRoot, vars: ruleRoots === undefined ? vars : { ...vars, RULE_ROOTS: [...ruleRoots] } }
+}
+
+/**
+ * The rule roots a run renders with: what `reconcileRoots` wrote, or — on `--check`, which writes
+ * nothing — what a real sync would have written, so check and write never disagree.
+ */
+export function ruleRootsFor(state: RootsState): readonly string[] | undefined {
+  if (state.kind === 'wrote') return state.roots
+  return state.kind === 'declared' && state.declared.length === 0 && state.unscanned.length > 0
+    ? state.unscanned
+    : undefined
 }
 
 // ──────────────────────────────────────────────────────────────────────────────

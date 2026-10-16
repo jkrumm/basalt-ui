@@ -2142,6 +2142,13 @@ describe('basalt/control-outside-home', () => {
       allowed('(() => { const t = <ViewTabs field={f} />; return <PageBar actions={t} /> })()')
     })
 
+    it('uses the ViewTabs wording for one outside any slot', () => {
+      const { output } = run(
+        `${IMPORTS}export const C = () => <Section title="x"><ViewTabs field={f} /></Section>\n`,
+      )
+      expect(output).toContain('`ViewTabs` is not in its home')
+    })
+
     it('refuses Section.actions and a FilterSet', () => {
       refused('<Section title="x" actions={<ViewTabs field={f} />} />')
       refused('<FilterSet><ViewTabs field={f} /></FilterSet>')
