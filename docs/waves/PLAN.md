@@ -901,7 +901,9 @@ stylelint-declaration-strict-value.
 - [ ] Per consumer, one at a time (argo, rb, linewatch, basalt-ui-obsidian, rollhook): `sync`, then fix the findings
       to a clean `check`. Any finding that points at basalt becomes a ledger row and is fixed upstream. The consumer is
       deployed and live-verified.
-- [ ] weatherorb: its share goes into weatherorb's own PLAN through its orchestrator (never edited under a running wave).
+- [ ] weatherorb: its share goes into weatherorb's own PLAN through its orchestrator (never edited under a running wave). - [ ] From weatherorb (2026-10-16, its `apps/web/scripts/bundle-report.ts`): a `basalt-ui` per-route bundle report —
+      gzip per page following dynamic imports, with an optional budget per route — so every consumer can hold a
+      byte bar like weatherorb's `/map`. Named consumers: weatherorb, argo.
       **Left behind:**
 
 ## Wave 23 — Dead-surface purge <!-- status: pending -->
@@ -939,7 +941,14 @@ Synthesis Wave 7 (may ship as two minors). Validators: linewatch first, then arg
 - [ ] Viewport-gated follower tooltips owned by the chart shell.
 - [ ] `ChartCard` owns height (`'fill'`) and query state; empty data is a state; `placeholderHeight`/`matchHeight` deprecated.
 - [ ] Discriminated series union and first-class legend entries for zones and thresholds.
-- [ ] One chrome (`ChartShell`) under Heatmap, Donut and Sparkline; one annotation vocabulary; BandStrip without hacks.
+- [ ] One chrome (`ChartShell`) under Heatmap, Donut and Sparkline; one annotation vocabulary; BandStrip without hacks. - [ ] From weatherorb (2026-10-16, `apps/web/src/map/point/`, it deletes its copy once shipped): honest gaps —
+      a min–max band whose area breaks at a hole in either edge and a line that breaks at gaps, including a
+      series whose native step changes (hourly → 3-hourly) so a line never interpolates across it, isolated
+      points as dots (its `bandRows`/`bandMarks`/`lineMarks`, `steppedSegments`/`runsOf`); time ticks in an IANA
+      zone that is not the browser's (`localHourTicks`), reading the provider `timeZone`; a bar-width floor via
+      the plot pixel helpers (row 126, its `barWidthPx`); `chartCursor` driven by a NON-chart source (two-way,
+      released on unmount, no stale replay on remount — its `createCursorSync`). Second consumer to name per item
+      in the brief: linewatch (bands, gaps), argo (cursor).
       **Left behind:**
 
 ## Wave 26 — Shell, page frame and nav ergonomics <!-- status: pending -->
@@ -963,7 +972,8 @@ Synthesis Wave 9. Validators: argo, obsidian, weatherorb, rb.
 - [ ] Markdown trust required; sanitizer fails closed; a markdown seam for the chat UI.
 - [ ] Chat/run state unions.
 - [ ] Commands/notifications UX (one `Tone`, built-in shortcuts help).
-- [ ] Forms/controls remnants (`fieldKey` verdict, `BarActionItem` union).
+- [ ] Forms/controls remnants (`fieldKey` verdict, `BarActionItem` union). - [ ] From weatherorb (2026-10-16, `map/use-now-ms.ts`): one shared minute clock (`useNow`) so no component reads
+      `Date.now()` during render (React Compiler purity); the relative-time formatter takes it as `now`.
       **Left behind:**
 
 ## Wave 28 — Docs, tests and the 1.x sunset <!-- status: pending -->
