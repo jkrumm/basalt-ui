@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help check verify deploy logs pre test layout build evidence release release-dry sync-self
+.PHONY: help check verify deploy logs pre test layout build evidence compare release release-dry sync-self
 
 help: ## List targets
 	@grep -hE '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -57,6 +57,13 @@ build: ## Build the published package (dist-first tsup + declarations)
 evidence: ## Measure bundle/screens/lighthouse/...: make evidence LABEL=<label> [DIST=<dir>] [ROUTES=<file>] [LANES=a,b]
 	@test -n "$(LABEL)" || { echo "usage: make evidence LABEL=<label> [DIST=<dir>] [ROUTES=<file>] [LANES=a,b]"; exit 2; }
 	@bun scripts/evidence/index.ts --label "$(LABEL)" $(if $(DIST),--dist "$(DIST)") $(if $(ROUTES),--routes "$(ROUTES)") $(if $(LANES),--lanes "$(LANES)")
+
+# Design-parity board (scripts/evidence/compare.ts): crops each mapped playground pattern beside the committed
+# Keel reference (docs/waves/design-parity/keel/) into .evidence/compare/<LABEL>/ unless OUT is given (committed
+# boards go under docs/waves/design-parity/w<n>/). Builds the playground unless DIST is given.
+compare: ## Side-by-side design-parity board: make compare LABEL=<label> [OUT=<dir>] [DIST=<dir>] [PATTERNS=a,b]
+	@test -n "$(LABEL)" || { echo "usage: make compare LABEL=<label> [OUT=<dir>] [DIST=<dir>] [PATTERNS=a,b]"; exit 2; }
+	@bun scripts/evidence/compare.ts --label "$(LABEL)" $(if $(OUT),--out "$(OUT)") $(if $(DIST),--dist "$(DIST)") $(if $(PATTERNS),--patterns "$(PATTERNS)")
 
 release-dry: ## Preview the next release — dry run only, publishes nothing
 	@scripts/release.sh dry
