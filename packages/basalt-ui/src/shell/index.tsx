@@ -167,7 +167,8 @@ export type ShellBaseProps = BasaltProps & {
    * the rest fold into the header's single kebab (`mobile: 'bar' | 'more' | 'hidden'`, see
    * `GlobalAction`). That kebab is the SAME one `PageBar`'s ROW 1 opens — a route whose bar has
    * row-1 actions (or `filtersEnd`) lends it, any other route gets it from the shell. An
-   * `ActionGroup` a consumer mounts in some other home never inherits these rows.
+   * `ActionGroup` a consumer mounts in some other home never inherits these rows. Keep the array
+   * stable (module scope or memoized): a new one every render re-derives the header and kebab.
    */
   globalActions?: GlobalAction[]
   /**
@@ -262,6 +263,8 @@ export type BasaltShellProps<
      *
      * Define `nav` at module scope: its anchors are cached per config object, so a `defineNav`
      * call inside a component is a new config every render and remounts the links again.
+     * `isActive` must likewise be a module-scope or memoized function; a new one every render
+     * rebuilds the sections.
      */
     nav: NavConfig<G, T>
   }

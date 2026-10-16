@@ -840,4 +840,22 @@ describe('PageAside claim ownership (two claimants)', () => {
     show('open', 'open')
     expect(warned()).toBe(true)
   })
+
+  test('a keyed swap (route A to route B) takes the new aside fold, not the old one', () => {
+    const swap = (key: string, folded: boolean) => (
+      <MantineProvider>
+        <ShellFrame activeCrumb={undefined} brand={BRAND} sections={ONE_SECTION}>
+          <PageAside key={key} title={key} defaultFolded={folded}>
+            <div>{key}</div>
+          </PageAside>
+        </ShellFrame>
+      </MantineProvider>
+    )
+    const view = render(swap('a', true))
+    expect(asideCss()).toContain(FOLDED_W)
+    view.rerender(swap('b', false))
+    expect(asideCss()).toContain(OPEN_W)
+    view.rerender(swap('c', true))
+    expect(asideCss()).toContain(FOLDED_W)
+  })
 })

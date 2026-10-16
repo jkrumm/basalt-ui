@@ -10,8 +10,9 @@
  * headless probe: the hook renders no JSX itself (`./router-tanstack` is a no-JSX barrel), so the
  * probe component only reads its return value into a sink — no `MantineProvider` needed.
  */
-import { cleanup, render, waitFor } from '@testing-library/react'
+import { act, cleanup, render, waitFor } from '@testing-library/react'
 import { describe, expect, test } from 'bun:test'
+import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import {
   Outlet,
@@ -25,8 +26,8 @@ import type { SidebarItem, SidebarSection } from '../shell/nav-types'
 import type { AnyNavItem } from './nav'
 import { navGroup } from './nav'
 import { defineNav } from '../../tests/support/nav-test-utils'
-import { shallowEqual, useNav } from './use-nav'
-import type { ResolvedNav } from './use-nav'
+import { useNav } from './use-nav'
+import type { ResolvedNav, UseNavOptions } from './use-nav'
 
 const NAV = defineNav({
   groups: [
@@ -245,21 +246,66 @@ describe('useNav — anchor cache', () => {
   })
 })
 
-describe('shallowEqual', () => {
-  test('undefined and an empty object are equal', () => {
-    expect(shallowEqual(undefined, {})).toBe(true)
-    expect(shallowEqual({}, undefined)).toBe(true)
+describe('useNav — badges', () => {
+  type Badges = NonNullable<UseNavOptions<typeof NAV.groups>['badges']>
+
+  /** Mounts a probe whose badges the test swaps; `latest()` is the last resolved sections. */
+  async function mountBadges(initial: Badges) {
+    const control = { set: (_b: Badges) => {}, latest: undefined as SidebarSection[] | undefined }
+    function Probe(): ReactNode {
+      const [badges, setBadges] = useState(initial)
+      useEffect(() => {
+        control.set = setBadges
+      }, [])
+      const { sections } = useNav(NAV, { badges })
+      useEffect(() => {
+        control.latest = sections
+      })
+      return null
+    }
+    const rootRoute = createRootRoute({ component: Probe })
+    const router = createRouter({
+      routeTree: rootRoute.addChildren([
+        createRoute({ getParentRoute: () => rootRoute, path: '/', component: () => null }),
+      ]),
+      history: createMemoryHistory({ initialEntries: ['/'] }),
+    })
+    render(<RouterProvider router={router} />)
+    await waitFor(() => expect(router.state.status).toBe('idle'))
+    return {
+      latest: () => control.latest!,
+      swap: (next: Badges) => act(() => control.set(next)),
+      home: () => flattenItems(control.latest!).find((i) => i.key === 'home')!,
+    }
+  }
+
+  test('a number badge set to the same value keeps the same sections', async () => {
+    const m = await mountBadges({ home: 3 })
+    const before = m.latest()
+    m.swap({ home: 3 })
+    expect(m.latest()).toBe(before)
+    m.swap({ home: 4 })
+    expect(m.latest()).not.toBe(before)
+    expect(m.home().count).toBe(4)
   })
 
-  test('a swapped key with the same count is not equal', () => {
-    expect(shallowEqual({ a: 1 }, { b: 1 })).toBe(false)
-    expect(shallowEqual({ a: undefined }, { b: undefined })).toBe(false)
+  test('removing a badge key clears it', async () => {
+    const m = await mountBadges({ home: 3 })
+    expect(m.home().count).toBe(3)
+    m.swap({})
+    expect(m.home().count).toBeUndefined()
   })
 
-  test('compares values with Object.is, not identity of the object', () => {
-    expect(shallowEqual({ a: 1, b: 'x' }, { a: 1, b: 'x' })).toBe(true)
-    expect(shallowEqual({ a: 1 }, { a: 2 })).toBe(false)
-    expect(shallowEqual({ a: NaN }, { a: NaN })).toBe(true)
-    expect(shallowEqual({ a: {} }, { a: {} })).toBe(false)
+  test('a ReactNode badge is a new element every time and rebuilds the sections', async () => {
+    const m = await mountBadges({ home: <b>new</b> })
+    const before = m.latest()
+    m.swap({ home: <b>new</b> })
+    expect(m.latest()).not.toBe(before)
+  })
+
+  test('an inherited key such as toString is not mistaken for an own badge key', async () => {
+    const m = await mountBadges({ toString: Object.prototype.toString } as unknown as Badges)
+    m.swap({ home: 1 })
+    expect(m.home().count).toBe(1)
   })
 })
