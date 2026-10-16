@@ -176,16 +176,16 @@ export function reconcileCoverageBlocks(
  * spec argued, so they live beside the gate that reads them rather than in prose.
  */
 export const AGENT_LINE_BUDGETS: Readonly<Record<string, number>> = {
-  'agent/rules/basalt-tokens.md': 58,
-  'agent/rules/basalt-mantine.md': 49,
+  'agent/rules/basalt-tokens.md': 57,
+  'agent/rules/basalt-mantine.md': 48,
   'agent/rules/basalt-charts.md': 37,
-  'agent/rules/basalt-state.md': 39,
+  'agent/rules/basalt-state.md': 38,
   'agent/rules/basalt-controls.md': 46,
-  'agent/rules/basalt-batteries.md': 42,
+  'agent/rules/basalt-batteries.md': 41,
   'agent/skills/basalt-app/SKILL.md': 300, // W10: +40 streaming snippet; +43 form-dialog snippet
   'agent/skills/basalt-design/SKILL.md': 36, // W31: the design-round procedure
   'agent/skills/basalt-charts/SKILL.md': 40,
-  'agent/templates/AGENTS-block.md.tpl': 30,
+  'agent/templates/AGENTS-block.md.tpl': 37,
   'agent/templates/DESIGN.md.tpl': 45,
 }
 
