@@ -41,10 +41,10 @@ import type { GlobalAction } from '../controls/actions'
 import type { AccountMenuItem, BasaltAccountProps } from './account-types'
 import type { SidebarSearchActions, SidebarSearchConfig } from './sidebar-search'
 import type {
+  ActiveCrumb,
   MobileNavConfig,
   NavAnchor,
   SidebarBlock,
-  SidebarItem,
   SidebarSection,
 } from './nav-types'
 import { CtlSlot, useBasaltSpacing } from '../theme'
@@ -255,58 +255,13 @@ export type BasaltShellProps<
     /**
      * The `defineNav` definition — the ONE nav, resolved against the router here: the sidebar, the
      * mobile bar (its tuning rides `defineNav`'s `mobile`) and the breadcrumb all derive from it.
-     * Alongside it: `badges` (a `number` becomes `item.count`, anything else `item.badge`; hoist or
-     * memoize the object), `isActive` (override active detection) and `getScrollElement` (the
+     * Alongside it: `badges` (a `number` becomes `item.count`, anything else `item.badge`), `isActive` (override active detection) and `getScrollElement` (the
      * mobile bar's scroll container).
      */
     nav: NavConfig<G, T>
   }
 
-/** Active nav item across all sections → the breadcrumb's `{ section, parent?, …, page }`. */
-function findActiveCrumb(sections: SidebarSection[]): ActiveCrumb | undefined {
-  for (const section of sections) {
-    const found = findActiveWithParent(section.items)
-    if (found)
-      return {
-        section: section.label,
-        parent: found.parent,
-        parentAnchor: found.parentAnchor,
-        parentHref: found.parentHref,
-        page: found.page,
-      }
-  }
-  return undefined
-}
-
-type ActiveCrumb = {
-  section: string
-  parent?: string | undefined
-  parentAnchor?: NavAnchor | undefined
-  parentHref?: string | undefined
-  page: string
-}
-
-/**
- * Recursively search for the deepest active item, returning the parent's label and its ROUTER
- * ANCHOR (not just an href) when nested — the crumb navigates client-side through the same seam
- * every nav row uses, so no second render callback is needed for it.
- */
-function findActiveWithParent(
-  items: SidebarItem[],
-  parentLabel?: string | undefined,
-  parentAnchor?: NavAnchor | undefined,
-  parentHref?: string | undefined,
-): Omit<ActiveCrumb, 'section'> | undefined {
-  for (const item of items) {
-    // Recurse into children first — deeper active match wins over a prefix-matched parent.
-    if (item.children) {
-      const found = findActiveWithParent(item.children, item.label, item.Anchor, item.href)
-      if (found) return found
-    }
-    if (item.active) return { parent: parentLabel, parentAnchor, parentHref, page: item.label }
-  }
-  return undefined
-}
+const NO_ACTIONS: readonly GlobalAction[] = []
 
 /** Envelope version for the persisted collapse flag. Bump only if the value stops being a boolean. */
 const COLLAPSE_VERSION = 1
@@ -347,12 +302,14 @@ export function BasaltShell<
 >(props: BasaltShellProps<G, T>) {
   assertRequiredProps('BasaltShell', props, ['brand', 'nav'])
   const { nav, badges, isActive, getScrollElement, ...rest } = props
-  const { sections, mobileNav } = useNav(nav, {
+  const { sections, mobileNav, activeCrumb } = useNav(nav, {
     ...(badges !== undefined && { badges }),
     ...(isActive !== undefined && { isActive }),
     ...(getScrollElement !== undefined && { getScrollElement }),
   })
-  return <ShellFrame {...rest} sections={sections} mobileNav={mobileNav} />
+  return (
+    <ShellFrame {...rest} sections={sections} mobileNav={mobileNav} activeCrumb={activeCrumb} />
+  )
 }
 
 /**
@@ -365,6 +322,8 @@ export type ShellFrameProps = ShellBaseProps & {
   sections: SidebarSection[]
   /** Mobile bar tuning; every field optional (see `projectMobileNav`'s zero-config fallback). */
   mobileNav?: MobileNavConfig
+  /** The breadcrumb for the active destination, resolved by `useNav`. */
+  activeCrumb?: ActiveCrumb | undefined
 }
 
 /**
@@ -384,7 +343,7 @@ export type ShellFrameProps = ShellBaseProps & {
  */
 export function ShellFrame(props: ShellFrameProps) {
   return (
-    <PageBarProvider globalActions={props.globalActions ?? []}>
+    <PageBarProvider globalActions={props.globalActions ?? NO_ACTIONS}>
       <AsideProvider>
         <ShellBody {...props} />
       </AsideProvider>
@@ -396,6 +355,7 @@ function ShellBody({
   brand,
   sections,
   mobileNav,
+  activeCrumb,
   globalActions,
   sidebarBlocks,
   settingsMenuItems,
@@ -495,7 +455,6 @@ function ShellBody({
     return () => registerSidebarToggle(null)
   }, [toggleCollapse])
 
-  const activeCrumb = findActiveCrumb(sections)
   // The account row, every settings entry and every mobile-reachable sidebar block render as flat
   // rows in the More surface (there is no mobile sidebar to reach them through any more), so they
   // count toward BOTH `needsMore` and the menu-vs-sheet threshold. `accountRowCount` and
@@ -569,7 +528,7 @@ function ShellBody({
               <AppBreadcrumbs {...activeCrumb} />
             </div>
             <PageBarOutlet className={headerClasses.pageBar} />
-            <HeaderGlobalActions actions={globalActions ?? []} />
+            <HeaderGlobalActions actions={globalActions ?? NO_ACTIONS} />
           </div>
         </AppShell.Header>
 

@@ -11,15 +11,16 @@
  * `height > 0` guard correctly refuses to publish).
  */
 import { MantineProvider } from '@mantine/core'
-import { render, screen } from '@testing-library/react'
+import { act, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, spyOn, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
-import { ShellFrame, PageBar } from './index'
+import { ShellFrame, PageBar, useInPageBarShell } from './index'
 import { PageAside } from './page-aside'
+import { Section } from '../dashboard'
 import type { SidebarSection } from './index'
 
 const BRAND = { name: 'Argo' }
@@ -522,5 +523,42 @@ describe('the aside pill, and the row 2 it needs to exist at all', () => {
     )
     expect(warn).not.toHaveBeenCalled()
     warn.mockRestore()
+  })
+})
+
+describe('PageBar provider contexts', () => {
+  test('a Section does not re-render when a page bar claims the kebab', () => {
+    const control = { show: (_on: boolean) => {} }
+    function Toggle() {
+      const [on, set] = useState(false)
+      useEffect(() => {
+        control.show = set
+      }, [])
+      return on ? <PageBar actions={[{ key: 'x', label: 'X', primary: true }]} /> : null
+    }
+    // Three globals: the third is `mobile: 'more'`, so a page bar's action group claims the kebab.
+    const globals = ['a', 'b', 'c'].map((key) => ({ key, node: <span /> }))
+    let commits = 0
+    // The exact read `Section` makes. Created once below: a stable element, so only a CONTEXT
+    // change can re-render it.
+    function InShellProbe() {
+      useInPageBarShell()
+      commits++
+      return <Section title="Stable">body</Section>
+    }
+    const section = <InShellProbe />
+    render(
+      <MantineProvider>
+        <ShellFrame brand={BRAND} sections={ONE_SECTION} globalActions={globals}>
+          <Toggle />
+          {section}
+        </ShellFrame>
+      </MantineProvider>,
+    )
+    const mounted = commits
+    act(() => control.show(true))
+    // The claim really happened: the bar's action landed in the header.
+    expect(screen.getAllByText('X').length).toBeGreaterThan(0)
+    expect(commits).toBe(mounted)
   })
 })

@@ -26,6 +26,7 @@ import type { AnyNavItem } from './nav'
 import { navGroup } from './nav'
 import { defineNav } from '../../tests/support/nav-test-utils'
 import { useNav } from './use-nav'
+import type { ResolvedNav } from './use-nav'
 
 const NAV = defineNav({
   groups: [
@@ -72,7 +73,7 @@ const ROUTE_PATHS = [
 ]
 
 type NavProbeOpts = { isActive?: (item: AnyNavItem) => boolean }
-type NavResult = { sections: SidebarSection[] }
+type NavResult = Pick<ResolvedNav, 'sections' | 'activeCrumb'>
 type Sink = { current: NavResult | null }
 
 /** Depth-first flatten of the rendered `SidebarSection[]` — the same shape every downstream reader
@@ -98,7 +99,7 @@ async function mountNav(entry: string, opts?: NavProbeOpts): Promise<Sink> {
     onNav: (value: NonNullable<Sink['current']>) => void
   }): ReactNode {
     const nav = useNav(NAV, opts)
-    onNav({ sections: nav.sections })
+    onNav({ sections: nav.sections, activeCrumb: nav.activeCrumb })
     return null
   }
 
@@ -192,5 +193,32 @@ describe('useNav — exclusivity', () => {
     const items = flattenItems(sink.current!.sections)
     const activeCount = items.filter((item) => item.active).length
     expect(activeCount).toBe(1)
+  })
+})
+
+describe('useNav — activeCrumb', () => {
+  test('a top-level destination is section / page with no parent', async () => {
+    const crumb = (await mountNav('/components')).current!.activeCrumb
+    expect(crumb).toEqual({ section: 'Main', page: 'Components' })
+  })
+
+  test('a nested destination names its parent and carries the parent anchor', async () => {
+    const crumb = (await mountNav('/dashboard/traffic')).current!.activeCrumb
+    expect(crumb?.section).toBe('Main')
+    expect(crumb?.parent).toBe('Dashboard')
+    expect(crumb?.page).toBe('Traffic')
+    const dashboard = flattenItems((await mountNav('/dashboard/traffic')).current!.sections).find(
+      (item) => item.key === 'dashboard',
+    )
+    expect(crumb?.parentAnchor).toBe(dashboard?.Anchor)
+  })
+
+  test('the same destination keeps the same Anchor across resolves', async () => {
+    const a = flattenItems((await mountNav('/')).current!.sections).find((i) => i.key === 'home')
+    cleanup()
+    const b = flattenItems((await mountNav('/charts')).current!.sections).find(
+      (i) => i.key === 'home',
+    )
+    expect(a?.Anchor).toBe(b?.Anchor)
   })
 })
