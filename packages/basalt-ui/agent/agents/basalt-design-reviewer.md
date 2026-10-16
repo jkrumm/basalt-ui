@@ -30,20 +30,19 @@ Score per component, then add one line per page for the page items (Communicatio
 
 ### Craft
 
-1. **[measured]** Every inset, gap and radius is a step in `metrics.json` `scale`; nested surfaces step by at least 3 px of radius. No `scale` → `unverified`. Never invent steps.
+1. **[measured]** Every inset, gap and radius is a step in `metrics.json` `scale` or on the even-pixel layout grid (2, 4, 6, 8, 10, 12, 14, 16, 20, 24, 32) that Mantine's own gaps use; a font size is a `scale.fontSizes` step or a named token (nano 10, micro 11, kpi 22–24, h1 26). Nested surfaces step by at least 3 px of radius. No `scale` → `unverified`. Never invent steps.
 2. **[measured]** No more than three font sizes inside one component: `fontSizes` with more than 3 distinct values fails.
-3. **[measured]** No empty region of 40 % or more of the component's height: `emptyRatio` ≥ 0.4 fails.
-4. No dense-list row wraps at 390.
-5. One ring per surface, no bare hairline borders on cards, no accent on chrome.
-6. **[measured]** Text and meaningful marks meet contrast in both schemes (a non-empty `contrast.failures` fails); nothing is told apart only by colour.
-7. Nothing overflows, clips or truncates a value at 1440 or 390.
-8. Hover, focus and tooltip states are present in the shots; focus is the 2 px outline.
+3. **[measured]** No empty region of 40 % or more of the component's height: `emptyRatio` ≥ 0.4 fails. No dense-list row wraps at 390.
+4. One ring per surface, no bare hairline borders on cards, no accent on chrome: look at every crop for an accent hue on a tab underline, selected row, button, ring or solid-filled badge. Accent belongs only to the single primary action and active-nav icons; chrome takes ink.
+5. **[measured]** Text and meaningful marks meet contrast in both schemes (a non-empty `contrast.failures` fails); nothing is told apart only by colour.
+6. Nothing overflows, clips or truncates a value at 1440 or 390.
+7. Hover, focus and tooltip states are present in the shots; focus is the 2 px outline.
 
 ### Expression
 
 1. Name the data's shape and the encoding used; both must match a row of the encoding table (the catalogue) in the `/basalt-design` skill.
 2. Every visual answers the question its caption names; a decorative visual fails.
-3. A hue appears only for a trend, a status or a category; a single metric is neutral.
+3. A hue appears only for a trend, a status or a category; a single metric is neutral. A delta is neutral text with a trend glyph: a solid-filled badge or coloured fill on a delta fails here and Craft 4.
 4. A number with a target shows the target; a number with a history shows it; a whole with parts shows the parts.
 5. No axis repeats a label; ticks fit the span.
 
