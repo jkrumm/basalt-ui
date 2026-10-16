@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 import { integer } from './number'
-import { dateFormat, defineFormat, numberFormat } from './shared'
+import { dateFormat, defineFormat, numberFormat, resetFormatDefaults } from './shared'
 
-afterEach(() => defineFormat())
+afterEach(resetFormatDefaults)
 
 describe('defineFormat', () => {
   test('sets the default locale every formatter reads; per-call locale wins', () => {
@@ -17,10 +17,20 @@ describe('defineFormat', () => {
     defineFormat({ locale: 'de-DE' })
     defineFormat({ locale: 'de-DE' })
     expect(integer(1112)).toBe('1.112')
-    defineFormat()
+    resetFormatDefaults()
     expect(numberFormat(undefined, {}).resolvedOptions().locale).toBe(
       new Intl.NumberFormat().resolvedOptions().locale,
     )
+  })
+
+  test('merges: an undefined field keeps the earlier value', () => {
+    const at = new Date('2026-09-02T23:30:00Z')
+    const opts = { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' } as const
+    defineFormat({ timeZone: 'Asia/Tokyo' })
+    defineFormat({ locale: 'en-US' })
+    expect(dateFormat(undefined, opts).format(at)).toBe('08:30')
+    defineFormat({ locale: undefined })
+    expect(integer(1112)).toBe('1,112')
   })
 
   test('the default timeZone reaches date formatters; per-call timeZone wins', () => {

@@ -1,8 +1,8 @@
 /**
  * Distance/energy formatting. Both accept `null | undefined` and print {@link NON_FINITE} for it.
  */
-import { isNumeric, NON_FINITE, numberFormat } from './shared'
-import type { LocaleOption } from './shared'
+import { isFiniteNumber, NON_FINITE, numberFormat, scaleThousands } from './shared'
+import type { LocaleOption, Numeric } from './shared'
 
 export type KmOptions = LocaleOption & {
   /** Fraction digits. Default 2 (`"5.30 km"`). */
@@ -10,8 +10,8 @@ export type KmOptions = LocaleOption & {
 }
 
 /** Meters as kilometers — `"5.30 km"` (`"5,30 km"` in `de`). */
-export function km(meters: number | null | undefined, options: KmOptions = {}): string {
-  if (!isNumeric(meters)) return NON_FINITE
+export function km(meters: Numeric, options: KmOptions = {}): string {
+  if (!isFiniteNumber(meters)) return NON_FINITE
   const { digits = 2, locale } = options
   return numberFormat(locale, {
     signDisplay: 'negative',
@@ -30,13 +30,13 @@ export type KcalOptions = LocaleOption & {
 
 /** Kilocalories — `"842 kcal"`, and `"1.24k kcal"` from 1000 up. The unit string is always
  * `kcal`. */
-export function kcal(value: number | null | undefined, options: KcalOptions = {}): string {
-  if (!isNumeric(value)) return NON_FINITE
+export function kcal(value: Numeric, options: KcalOptions = {}): string {
+  if (!isFiniteNumber(value)) return NON_FINITE
   const { digits = 2, locale } = options
-  const thousands = Math.abs(value) >= 1000
+  const { scaled, unit } = scaleThousands(value, digits, 1)
   const text = numberFormat(locale, {
     signDisplay: 'negative',
-    maximumFractionDigits: thousands ? digits : 0,
-  }).format(thousands ? value / 1000 : value)
-  return `${text}${thousands ? 'k' : ''} kcal`
+    maximumFractionDigits: unit === 0 ? 0 : digits,
+  }).format(scaled)
+  return `${text}${unit === 0 ? '' : 'k'} kcal`
 }

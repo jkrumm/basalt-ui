@@ -33,6 +33,7 @@ import { useMediaQuery } from '../common/use-media-query'
 import { registerColorSchemeSetter } from '../commands/shell-bridge'
 import { useIsomorphicLayoutEffect } from '../common/isomorphic-layout-effect'
 import { defineFormat } from '../format/shared'
+import type { FormatDefaults } from '../format/shared'
 import { PageTitle } from '../shell/page-title'
 import { SizeClassHintContext } from '../shell/use-size-class'
 import type { SizeClass } from '../shell/use-size-class'
@@ -101,8 +102,9 @@ type BasaltProviderCommonProps = {
   spotlight?: boolean
   /**
    * Default BCP-47 locale for every `basalt-ui/format` formatter that gets no per-call `locale`
-   * (`integer(1112)` → `1,112` under `en-US`). Unset → the runtime's locale. Pass it on the server
-   * and the client alike so hydration agrees.
+   * (`integer(1112)` → `1,112` under `en-US`). Unset → the runtime's locale. This sets ONE
+   * app-wide default per process (formatters are plain functions, not hooks); a per-call `locale`
+   * is the per-request override. Removing the prop later does not unset it.
    */
   locale?: string
   /** Default IANA time zone for the date/time formatters. Unset → the runtime's zone. */
@@ -499,10 +501,13 @@ export function BasaltProvider({
 }: BasaltProviderProps) {
   useDuplicateProviderGuard()
   useHostAttribute()
-  // Synchronous and idempotent on purpose (no state, no effect): the first formatted child of this
-  // very render, server or client, already sees the value. Unset props leave a manual
-  // `defineFormat()` untouched.
-  if (locale !== undefined || timeZone !== undefined) defineFormat({ locale, timeZone })
+  // Applied during render so the first formatted child already sees it; only when a prop changed,
+  // and only the props received (an unset one leaves an earlier value or a manual `defineFormat`).
+  const appliedFormat = useRef<FormatDefaults>({})
+  if (appliedFormat.current.locale !== locale || appliedFormat.current.timeZone !== timeZone) {
+    appliedFormat.current = { locale, timeZone }
+    defineFormat({ locale, timeZone })
+  }
 
   // The sink is read through a ref, so an inline `telemetry` function does not re-subscribe.
   const sink = telemetry ?? (process.env.NODE_ENV === 'production' ? undefined : devConsoleSink)
