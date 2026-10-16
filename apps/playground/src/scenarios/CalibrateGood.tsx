@@ -4,6 +4,10 @@
  * table of its parts, both on the one month-to-date window. As clean as today's basalt allows; there
  * is deliberately no `delta`, because today's `DeltaBadge` still carries a fill and would seed a
  * defect this board must not have.
+ *
+ * Table sorting is ON so the headers are focusable: the focus shot needs something Tab can reach.
+ * The board has NO hover/tooltip target by design (the definition is a one-line subtitle, not a
+ * tooltip), so those states are `not-declared`, never failures.
  */
 import { Box, Stack } from '@mantine/core'
 import { Section, StatCard } from 'basalt-ui'
