@@ -1,0 +1,4720 @@
+{
+  "version": 1,
+  "generatedAt": "2026-10-16T21:04:20.977Z",
+  "base": "http://127.0.0.1:50936",
+  "routes": ["/scenarios/s4-spend"],
+  "viewports": ["desktop", "mobile"],
+  "schemes": ["light", "dark"],
+  "states": ["rest", "hover", "focus", "tooltip", "empty", "loading", "error"],
+  "scale": [
+    {
+      "scheme": "light",
+      "viewport": "desktop",
+      "spacing": {
+        "xs": 11,
+        "sm": 13,
+        "md": 18,
+        "lg": 20,
+        "xl": 26
+      },
+      "radius": {
+        "xs": 2,
+        "sm": 4,
+        "md": 6,
+        "lg": 16,
+        "xl": 32,
+        "default": 6,
+        "card": 7,
+        "ctrl": 6
+      },
+      "fontSizes": {
+        "xs": 12.5,
+        "sm": 13.5,
+        "md": 15,
+        "lg": 16,
+        "xl": 18
+      }
+    },
+    {
+      "scheme": "light",
+      "viewport": "mobile",
+      "spacing": {
+        "xs": 11,
+        "sm": 13,
+        "md": 18,
+        "lg": 20,
+        "xl": 26
+      },
+      "radius": {
+        "xs": 2,
+        "sm": 4,
+        "md": 6,
+        "lg": 16,
+        "xl": 32,
+        "default": 6,
+        "card": 7,
+        "ctrl": 6
+      },
+      "fontSizes": {
+        "xs": 12.5,
+        "sm": 13.5,
+        "md": 15,
+        "lg": 16,
+        "xl": 18
+      }
+    },
+    {
+      "scheme": "dark",
+      "viewport": "desktop",
+      "spacing": {
+        "xs": 11,
+        "sm": 13,
+        "md": 18,
+        "lg": 20,
+        "xl": 26
+      },
+      "radius": {
+        "xs": 2,
+        "sm": 4,
+        "md": 6,
+        "lg": 16,
+        "xl": 32,
+        "default": 6,
+        "card": 7,
+        "ctrl": 6
+      },
+      "fontSizes": {
+        "xs": 12.5,
+        "sm": 13.5,
+        "md": 15,
+        "lg": 16,
+        "xl": 18
+      }
+    },
+    {
+      "scheme": "dark",
+      "viewport": "mobile",
+      "spacing": {
+        "xs": 11,
+        "sm": 13,
+        "md": 18,
+        "lg": 20,
+        "xl": 26
+      },
+      "radius": {
+        "xs": 2,
+        "sm": 4,
+        "md": 6,
+        "lg": 16,
+        "xl": 32,
+        "default": 6,
+        "card": 7,
+        "ctrl": 6
+      },
+      "fontSizes": {
+        "xs": 12.5,
+        "sm": 13.5,
+        "md": 15,
+        "lg": 16,
+        "xl": 18
+      }
+    }
+  ],
+  "anchors": [
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "month-to-date",
+      "scheme": "light",
+      "viewport": "desktop",
+      "box": {
+        "width": 376,
+        "height": 139.03
+      },
+      "padding": {
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "gap": {
+        "row": 8,
+        "column": 8
+      },
+      "radius": 0,
+      "borderWidth": 0,
+      "fontSizes": [10, 12.5, 13.5, 24],
+      "nested": [
+        {
+          "path": "div.m_e615b15f",
+          "radius": 7,
+          "padding": {
+            "top": 11,
+            "right": 13,
+            "bottom": 11,
+            "left": 13
+          }
+        },
+        {
+          "path": "div.m_e615b15f > div._body_1xdoo_8 > div._header_1xdoo_15 > div._root_1jx89_21 > div._metrics_1jx89_158 > span._deltaBadge_1jx89_305",
+          "radius": 6,
+          "padding": {
+            "top": 2,
+            "right": 7,
+            "bottom": 2,
+            "left": 7
+          }
+        }
+      ],
+      "emptyRatio": 0.193,
+      "contrast": {
+        "min": 4.43,
+        "failures": [
+          {
+            "text": "0.1%",
+            "ratio": 4.43,
+            "fg": "#b5403d",
+            "bg": "#f1e2e4",
+            "fontSize": 12.5
+          },
+          {
+            "text": "▲",
+            "ratio": 4.43,
+            "fg": "#b5403d",
+            "bg": "#f1e2e4",
+            "fontSize": 10
+          },
+          {
+            "text": "vs 1–16 Sept",
+            "ratio": 4.43,
+            "fg": "#b5403d",
+            "bg": "#f1e2e4",
+            "fontSize": 12.5
+          }
+        ]
+      }
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "forecast",
+      "scheme": "light",
+      "viewport": "desktop",
+      "box": {
+        "width": 376,
+        "height": 139.03
+      },
+      "padding": {
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "gap": {
+        "row": 8,
+        "column": 8
+      },
+      "radius": 0,
+      "borderWidth": 0,
+      "fontSizes": [13.5, 15, 24],
+      "nested": [
+        {
+          "path": "div.m_e615b15f",
+          "radius": 7,
+          "padding": {
+            "top": 11,
+            "right": 13,
+            "bottom": 11,
+            "left": 13
+          }
+        },
+        {
+          "path": "div.m_e615b15f > div",
+          "radius": 0,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        }
+      ],
+      "emptyRatio": 0.359,
+      "contrast": {
+        "min": 7.47,
+        "failures": []
+      }
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "budget",
+      "scheme": "light",
+      "viewport": "desktop",
+      "box": {
+        "width": 376,
+        "height": 139.03
+      },
+      "padding": {
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "gap": {
+        "row": 8,
+        "column": 8
+      },
+      "radius": 0,
+      "borderWidth": 0,
+      "fontSizes": [13.5, 24],
+      "nested": [
+        {
+          "path": "div.m_e615b15f",
+          "radius": 7,
+          "padding": {
+            "top": 11,
+            "right": 13,
+            "bottom": 11,
+            "left": 13
+          }
+        }
+      ],
+      "emptyRatio": 0.105,
+      "contrast": {
+        "min": 5.01,
+        "failures": []
+      }
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-over-time",
+      "scheme": "light",
+      "viewport": "desktop",
+      "box": {
+        "width": 567,
+        "height": 352.72
+      },
+      "padding": {
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "gap": {
+        "row": 0,
+        "column": 6
+      },
+      "radius": 0,
+      "borderWidth": 0,
+      "fontSizes": [11, 13.5],
+      "nested": [
+        {
+          "path": "div",
+          "radius": 7,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > fieldset._auto_1b0dw_9 > button",
+          "radius": 6,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > fieldset._auto_1b0dw_9 > button > span._chip_1b0dw_13",
+          "radius": 2,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > fieldset._auto_1b0dw_9 > button",
+          "radius": 6,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > fieldset._auto_1b0dw_9 > button > span._chip_1b0dw_13",
+          "radius": 2,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > fieldset._auto_1b0dw_9 > button",
+          "radius": 6,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > fieldset._auto_1b0dw_9 > button > span._chip_1b0dw_13",
+          "radius": 2,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > fieldset._auto_1b0dw_9 > button",
+          "radius": 6,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        }
+      ],
+      "emptyRatio": 0.041,
+      "contrast": {
+        "min": 4.06,
+        "failures": [
+          {
+            "text": "01.08",
+            "ratio": 4.06,
+            "fg": "#7b7b7e",
+            "bg": "#fafafd",
+            "fontSize": 11
+          },
+          {
+            "text": "01.09",
+            "ratio": 4.06,
+            "fg": "#7b7b7e",
+            "bg": "#fafafd",
+            "fontSize": 11
+          },
+          {
+            "text": "01.10",
+            "ratio": 4.06,
+            "fg": "#7b7b7e",
+            "bg": "#fafafd",
+            "fontSize": 11
+          },
+          {
+            "text": "€0",
+            "ratio": 4.06,
+            "fg": "#7b7b7e",
+            "bg": "#fafafd",
+            "fontSize": 11
+          },
+          {
+            "text": "€20",
+            "ratio": 4.06,
+            "fg": "#7b7b7e",
+            "bg": "#fafafd",
+            "fontSize": 11
+          },
+          {
+            "text": "€40",
+            "ratio": 4.06,
+            "fg": "#7b7b7e",
+            "bg": "#fafafd",
+            "fontSize": 11
+          },
+          {
+            "text": "€60",
+            "ratio": 4.06,
+            "fg": "#7b7b7e",
+            "bg": "#fafafd",
+            "fontSize": 11
+          },
+          {
+            "text": "€80",
+            "ratio": 4.06,
+            "fg": "#7b7b7e",
+            "bg": "#fafafd",
+            "fontSize": 11
+          },
+          {
+            "text": "€100",
+            "ratio": 4.06,
+            "fg": "#7b7b7e",
+            "bg": "#fafafd",
+            "fontSize": 11
+          },
+          {
+            "text": "€120",
+            "ratio": 4.06,
+            "fg": "#7b7b7e",
+            "bg": "#fafafd",
+            "fontSize": 11
+          }
+        ]
+      }
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-by-project",
+      "scheme": "light",
+      "viewport": "desktop",
+      "box": {
+        "width": 567,
+        "height": 352.72
+      },
+      "padding": {
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "gap": {
+        "row": 0,
+        "column": 6
+      },
+      "radius": 0,
+      "borderWidth": 0,
+      "fontSizes": [11, 13.5, 16],
+      "nested": [
+        {
+          "path": "div",
+          "radius": 7,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > div._row_dx99y_7 > fieldset > button",
+          "radius": 6,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > div._row_dx99y_7 > fieldset > button > span._chip_1b0dw_13",
+          "radius": 2,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > div._row_dx99y_7 > fieldset > button",
+          "radius": 6,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > div._row_dx99y_7 > fieldset > button > span._chip_1b0dw_13",
+          "radius": 2,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > div._row_dx99y_7 > fieldset > button",
+          "radius": 6,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > div._row_dx99y_7 > fieldset > button > span._chip_1b0dw_13",
+          "radius": 2,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > div._row_dx99y_7 > fieldset > button",
+          "radius": 6,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > div._row_dx99y_7 > fieldset > button > span._chip_1b0dw_13",
+          "radius": 2,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > div._row_dx99y_7 > fieldset > button",
+          "radius": 6,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > div._row_dx99y_7 > fieldset > button > span._chip_1b0dw_13",
+          "radius": 2,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > div._row_dx99y_7 > fieldset > button",
+          "radius": 6,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > div._row_dx99y_7 > fieldset > button > span._chip_1b0dw_13",
+          "radius": 2,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        }
+      ],
+      "emptyRatio": 0.161,
+      "contrast": {
+        "min": 4.06,
+        "failures": [
+          {
+            "text": "Month to date",
+            "ratio": 4.06,
+            "fg": "#7b7b7e",
+            "bg": "#fafafd",
+            "fontSize": 11
+          },
+          {
+            "text": "€356 · 26%",
+            "ratio": 4.06,
+            "fg": "#7b7b7e",
+            "bg": "#fafafd",
+            "fontSize": 13.5
+          },
+          {
+            "text": "€321 · 23%",
+            "ratio": 4.06,
+            "fg": "#7b7b7e",
+            "bg": "#fafafd",
+            "fontSize": 13.5
+          },
+          {
+            "text": "€245 · 18%",
+            "ratio": 4.06,
+            "fg": "#7b7b7e",
+            "bg": "#fafafd",
+            "fontSize": 13.5
+          },
+          {
+            "text": "€209 · 15%",
+            "ratio": 4.06,
+            "fg": "#7b7b7e",
+            "bg": "#fafafd",
+            "fontSize": 13.5
+          },
+          {
+            "text": "€176 · 13%",
+            "ratio": 4.06,
+            "fg": "#7b7b7e",
+            "bg": "#fafafd",
+            "fontSize": 13.5
+          },
+          {
+            "text": "€62 · 4%",
+            "ratio": 4.06,
+            "fg": "#7b7b7e",
+            "bg": "#fafafd",
+            "fontSize": 13.5
+          }
+        ]
+      }
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "top-drivers",
+      "scheme": "light",
+      "viewport": "desktop",
+      "box": {
+        "width": 567,
+        "height": 352.72
+      },
+      "padding": {
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "gap": {
+        "row": 12,
+        "column": 12
+      },
+      "radius": 0,
+      "borderWidth": 0,
+      "fontSizes": [11, 13.5, 15],
+      "nested": [
+        {
+          "path": "div._root_1fuy4_20 > div._body_1fuy4_27 > div > div._foldWrapper_yt7cc_132 > div.m_a100c15 > div.m_62259741 > table._tableRoot_n0qrx_290 > thead.m_b242d975 > tr.m_4e7aa4fd",
+          "radius": 0,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div._root_1fuy4_20 > div._body_1fuy4_27 > div > div._foldWrapper_yt7cc_132 > div.m_a100c15 > div.m_62259741 > table._tableRoot_n0qrx_290 > tbody.m_b2404537 > tr.m_4e7aa4fd",
+          "radius": 0,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div._root_1fuy4_20 > div._body_1fuy4_27 > div > div._foldWrapper_yt7cc_132 > div.m_a100c15 > div.m_62259741 > table._tableRoot_n0qrx_290 > tbody.m_b2404537 > tr.m_4e7aa4fd",
+          "radius": 0,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div._root_1fuy4_20 > div._body_1fuy4_27 > div > div._foldWrapper_yt7cc_132 > div.m_a100c15 > div.m_62259741 > table._tableRoot_n0qrx_290 > tbody.m_b2404537 > tr.m_4e7aa4fd",
+          "radius": 0,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div._root_1fuy4_20 > div._body_1fuy4_27 > div > div._foldWrapper_yt7cc_132 > div.m_a100c15 > div.m_62259741 > table._tableRoot_n0qrx_290 > tbody.m_b2404537 > tr.m_4e7aa4fd",
+          "radius": 0,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div._root_1fuy4_20 > div._body_1fuy4_27 > div > div._foldWrapper_yt7cc_132 > div.m_a100c15 > div.m_62259741 > table._tableRoot_n0qrx_290 > tbody.m_b2404537 > tr.m_4e7aa4fd",
+          "radius": 0,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        }
+      ],
+      "emptyRatio": 0.113,
+      "contrast": {
+        "min": 4.9,
+        "failures": []
+      }
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-distribution",
+      "scheme": "light",
+      "viewport": "desktop",
+      "box": {
+        "width": 567,
+        "height": 352.72
+      },
+      "padding": {
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "gap": {
+        "row": 0,
+        "column": 6
+      },
+      "radius": 0,
+      "borderWidth": 0,
+      "fontSizes": [11, 13.5],
+      "nested": [
+        {
+          "path": "div",
+          "radius": 7,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > fieldset._auto_1b0dw_9 > span",
+          "radius": 6,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > fieldset._auto_1b0dw_9 > span > span._chip_1b0dw_13",
+          "radius": 2,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        }
+      ],
+      "emptyRatio": 0.041,
+      "contrast": {
+        "min": 4.06,
+        "failures": [
+          {
+            "text": "€30",
+            "ratio": 4.06,
+            "fg": "#7b7b7e",
+            "bg": "#fafafd",
+            "fontSize": 11
+          },
+          {
+            "text": "€40",
+            "ratio": 4.06,
+            "fg": "#7b7b7e",
+            "bg": "#fafafd",
+            "fontSize": 11
+          },
+          {
+            "text": "€50",
+            "ratio": 4.06,
+            "fg": "#7b7b7e",
+            "bg": "#fafafd",
+            "fontSize": 11
+          },
+          {
+            "text": "€60",
+            "ratio": 4.06,
+            "fg": "#7b7b7e",
+            "bg": "#fafafd",
+            "fontSize": 11
+          },
+          {
+            "text": "€70",
+            "ratio": 4.06,
+            "fg": "#7b7b7e",
+            "bg": "#fafafd",
+            "fontSize": 11
+          },
+          {
+            "text": "€80",
+            "ratio": 4.06,
+            "fg": "#7b7b7e",
+            "bg": "#fafafd",
+            "fontSize": 11
+          },
+          {
+            "text": "€90",
+            "ratio": 4.06,
+            "fg": "#7b7b7e",
+            "bg": "#fafafd",
+            "fontSize": 11
+          },
+          {
+            "text": "€100",
+            "ratio": 4.06,
+            "fg": "#7b7b7e",
+            "bg": "#fafafd",
+            "fontSize": 11
+          },
+          {
+            "text": "€110",
+            "ratio": 4.06,
+            "fg": "#7b7b7e",
+            "bg": "#fafafd",
+            "fontSize": 11
+          },
+          {
+            "text": "€120",
+            "ratio": 4.06,
+            "fg": "#7b7b7e",
+            "bg": "#fafafd",
+            "fontSize": 11
+          },
+          {
+            "text": "0",
+            "ratio": 4.06,
+            "fg": "#7b7b7e",
+            "bg": "#fafafd",
+            "fontSize": 11
+          },
+          {
+            "text": "5",
+            "ratio": 4.06,
+            "fg": "#7b7b7e",
+            "bg": "#fafafd",
+            "fontSize": 11
+          },
+          {
+            "text": "10",
+            "ratio": 4.06,
+            "fg": "#7b7b7e",
+            "bg": "#fafafd",
+            "fontSize": 11
+          },
+          {
+            "text": "15",
+            "ratio": 4.06,
+            "fg": "#7b7b7e",
+            "bg": "#fafafd",
+            "fontSize": 11
+          },
+          {
+            "text": "20",
+            "ratio": 4.06,
+            "fg": "#7b7b7e",
+            "bg": "#fafafd",
+            "fontSize": 11
+          },
+          {
+            "text": "25",
+            "ratio": 4.06,
+            "fg": "#7b7b7e",
+            "bg": "#fafafd",
+            "fontSize": 11
+          }
+        ]
+      }
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "month-to-date",
+      "scheme": "light",
+      "viewport": "mobile",
+      "box": {
+        "width": 181,
+        "height": 118.3
+      },
+      "padding": {
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "gap": {
+        "row": 8,
+        "column": 8
+      },
+      "radius": 0,
+      "borderWidth": 0,
+      "fontSizes": [10, 12.5, 13.5, 16],
+      "nested": [
+        {
+          "path": "div.m_e615b15f",
+          "radius": 7,
+          "padding": {
+            "top": 11,
+            "right": 11,
+            "bottom": 11,
+            "left": 11
+          }
+        },
+        {
+          "path": "div.m_e615b15f > div._body_1xdoo_8 > div._header_1xdoo_15 > div._root_1jx89_21 > div._metrics_1jx89_158 > span._deltaBadge_1jx89_305",
+          "radius": 6,
+          "padding": {
+            "top": 2,
+            "right": 7,
+            "bottom": 2,
+            "left": 7
+          }
+        }
+      ],
+      "emptyRatio": 0.123,
+      "contrast": {
+        "min": 4.43,
+        "failures": [
+          {
+            "text": "0.1%",
+            "ratio": 4.43,
+            "fg": "#b5403d",
+            "bg": "#f1e2e4",
+            "fontSize": 12.5
+          },
+          {
+            "text": "▲",
+            "ratio": 4.43,
+            "fg": "#b5403d",
+            "bg": "#f1e2e4",
+            "fontSize": 10
+          },
+          {
+            "text": "vs 1–16 Sept",
+            "ratio": 4.43,
+            "fg": "#b5403d",
+            "bg": "#f1e2e4",
+            "fontSize": 12.5
+          }
+        ]
+      }
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "forecast",
+      "scheme": "light",
+      "viewport": "mobile",
+      "box": {
+        "width": 181,
+        "height": 118.3
+      },
+      "padding": {
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "gap": {
+        "row": 8,
+        "column": 8
+      },
+      "radius": 0,
+      "borderWidth": 0,
+      "fontSizes": [13.5, 15, 16],
+      "nested": [
+        {
+          "path": "div.m_e615b15f",
+          "radius": 7,
+          "padding": {
+            "top": 11,
+            "right": 11,
+            "bottom": 11,
+            "left": 11
+          }
+        },
+        {
+          "path": "div.m_e615b15f > div",
+          "radius": 0,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        }
+      ],
+      "emptyRatio": 0.25,
+      "contrast": {
+        "min": 7.47,
+        "failures": []
+      }
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "budget",
+      "scheme": "light",
+      "viewport": "mobile",
+      "box": {
+        "width": 181,
+        "height": 138.56
+      },
+      "padding": {
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "gap": {
+        "row": 8,
+        "column": 8
+      },
+      "radius": 0,
+      "borderWidth": 0,
+      "fontSizes": [13.5, 16],
+      "nested": [
+        {
+          "path": "div.m_e615b15f",
+          "radius": 7,
+          "padding": {
+            "top": 11,
+            "right": 11,
+            "bottom": 11,
+            "left": 11
+          }
+        }
+      ],
+      "emptyRatio": 0.093,
+      "contrast": {
+        "min": 5.01,
+        "failures": []
+      }
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-over-time",
+      "scheme": "light",
+      "viewport": "mobile",
+      "box": {
+        "width": 374,
+        "height": 317.67
+      },
+      "padding": {
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "gap": {
+        "row": 8,
+        "column": 6
+      },
+      "radius": 0,
+      "borderWidth": 0,
+      "fontSizes": [10, 13.5],
+      "nested": [
+        {
+          "path": "div",
+          "radius": 7,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > fieldset._auto_1b0dw_9 > button",
+          "radius": 6,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > fieldset._auto_1b0dw_9 > button > span._dot_1b0dw_31",
+          "radius": 50,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > fieldset._auto_1b0dw_9 > button",
+          "radius": 6,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > fieldset._auto_1b0dw_9 > button > span._dot_1b0dw_31",
+          "radius": 50,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > fieldset._auto_1b0dw_9 > button",
+          "radius": 6,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > fieldset._auto_1b0dw_9 > button > span._dot_1b0dw_31",
+          "radius": 50,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > fieldset._auto_1b0dw_9 > button",
+          "radius": 6,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        }
+      ],
+      "emptyRatio": 0.036,
+      "contrast": {
+        "min": 4.06,
+        "failures": [
+          {
+            "text": "01.08",
+            "ratio": 4.06,
+            "fg": "#7b7b7e",
+            "bg": "#fafafd",
+            "fontSize": 10
+          },
+          {
+            "text": "01.09",
+            "ratio": 4.06,
+            "fg": "#7b7b7e",
+            "bg": "#fafafd",
+            "fontSize": 10
+          },
+          {
+            "text": "01.10",
+            "ratio": 4.06,
+            "fg": "#7b7b7e",
+            "bg": "#fafafd",
+            "fontSize": 10
+          },
+          {
+            "text": "€0",
+            "ratio": 4.06,
+            "fg": "#7b7b7e",
+            "bg": "#fafafd",
+            "fontSize": 10
+          },
+          {
+            "text": "€50",
+            "ratio": 4.06,
+            "fg": "#7b7b7e",
+            "bg": "#fafafd",
+            "fontSize": 10
+          },
+          {
+            "text": "€100",
+            "ratio": 4.06,
+            "fg": "#7b7b7e",
+            "bg": "#fafafd",
+            "fontSize": 10
+          }
+        ]
+      }
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-by-project",
+      "scheme": "light",
+      "viewport": "mobile",
+      "box": {
+        "width": 374,
+        "height": 369.66
+      },
+      "padding": {
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "gap": {
+        "row": 8,
+        "column": 6
+      },
+      "radius": 0,
+      "borderWidth": 0,
+      "fontSizes": [11, 13.5, 16],
+      "nested": [
+        {
+          "path": "div",
+          "radius": 7,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > div._row_dx99y_7 > fieldset > button",
+          "radius": 6,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > div._row_dx99y_7 > fieldset > button > span._chip_1b0dw_13",
+          "radius": 2,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > div._row_dx99y_7 > fieldset > button",
+          "radius": 6,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > div._row_dx99y_7 > fieldset > button > span._chip_1b0dw_13",
+          "radius": 2,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > div._row_dx99y_7 > fieldset > button",
+          "radius": 6,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > div._row_dx99y_7 > fieldset > button > span._chip_1b0dw_13",
+          "radius": 2,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > div._row_dx99y_7 > fieldset > button",
+          "radius": 6,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > div._row_dx99y_7 > fieldset > button > span._chip_1b0dw_13",
+          "radius": 2,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > div._row_dx99y_7 > fieldset > button",
+          "radius": 6,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > div._row_dx99y_7 > fieldset > button > span._chip_1b0dw_13",
+          "radius": 2,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > div._row_dx99y_7 > fieldset > button",
+          "radius": 6,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > div._row_dx99y_7 > fieldset > button > span._chip_1b0dw_13",
+          "radius": 2,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        }
+      ],
+      "emptyRatio": 0.032,
+      "contrast": {
+        "min": 4.06,
+        "failures": [
+          {
+            "text": "Month to date",
+            "ratio": 4.06,
+            "fg": "#7b7b7e",
+            "bg": "#fafafd",
+            "fontSize": 11
+          },
+          {
+            "text": "€356 · 26%",
+            "ratio": 4.06,
+            "fg": "#7b7b7e",
+            "bg": "#fafafd",
+            "fontSize": 13.5
+          },
+          {
+            "text": "€321 · 23%",
+            "ratio": 4.06,
+            "fg": "#7b7b7e",
+            "bg": "#fafafd",
+            "fontSize": 13.5
+          },
+          {
+            "text": "€245 · 18%",
+            "ratio": 4.06,
+            "fg": "#7b7b7e",
+            "bg": "#fafafd",
+            "fontSize": 13.5
+          },
+          {
+            "text": "€209 · 15%",
+            "ratio": 4.06,
+            "fg": "#7b7b7e",
+            "bg": "#fafafd",
+            "fontSize": 13.5
+          },
+          {
+            "text": "€176 · 13%",
+            "ratio": 4.06,
+            "fg": "#7b7b7e",
+            "bg": "#fafafd",
+            "fontSize": 13.5
+          },
+          {
+            "text": "€62 · 4%",
+            "ratio": 4.06,
+            "fg": "#7b7b7e",
+            "bg": "#fafafd",
+            "fontSize": 13.5
+          }
+        ]
+      }
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "top-drivers",
+      "scheme": "light",
+      "viewport": "mobile",
+      "box": {
+        "width": 374,
+        "height": 349.44
+      },
+      "padding": {
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "gap": {
+        "row": 8,
+        "column": 8
+      },
+      "radius": 0,
+      "borderWidth": 0,
+      "fontSizes": [11, 13.5, 15],
+      "nested": [
+        {
+          "path": "div._root_1fuy4_20 > div._body_1fuy4_27 > div > div._foldWrapper_yt7cc_132 > div.m_a100c15 > div.m_62259741 > table._tableRoot_n0qrx_290 > thead.m_b242d975 > tr.m_4e7aa4fd",
+          "radius": 0,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div._root_1fuy4_20 > div._body_1fuy4_27 > div > div._foldWrapper_yt7cc_132 > div.m_a100c15 > div.m_62259741 > table._tableRoot_n0qrx_290 > tbody.m_b2404537 > tr.m_4e7aa4fd",
+          "radius": 0,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div._root_1fuy4_20 > div._body_1fuy4_27 > div > div._foldWrapper_yt7cc_132 > div.m_a100c15 > div.m_62259741 > table._tableRoot_n0qrx_290 > tbody.m_b2404537 > tr.m_4e7aa4fd",
+          "radius": 0,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div._root_1fuy4_20 > div._body_1fuy4_27 > div > div._foldWrapper_yt7cc_132 > div.m_a100c15 > div.m_62259741 > table._tableRoot_n0qrx_290 > tbody.m_b2404537 > tr.m_4e7aa4fd",
+          "radius": 0,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div._root_1fuy4_20 > div._body_1fuy4_27 > div > div._foldWrapper_yt7cc_132 > div.m_a100c15 > div.m_62259741 > table._tableRoot_n0qrx_290 > tbody.m_b2404537 > tr.m_4e7aa4fd",
+          "radius": 0,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div._root_1fuy4_20 > div._body_1fuy4_27 > div > div._foldWrapper_yt7cc_132 > div.m_a100c15 > div.m_62259741 > table._tableRoot_n0qrx_290 > tbody.m_b2404537 > tr.m_4e7aa4fd",
+          "radius": 0,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        }
+      ],
+      "emptyRatio": 0.045,
+      "contrast": {
+        "min": 4.9,
+        "failures": []
+      }
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-distribution",
+      "scheme": "light",
+      "viewport": "mobile",
+      "box": {
+        "width": 374,
+        "height": 293.45
+      },
+      "padding": {
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "gap": {
+        "row": 8,
+        "column": 6
+      },
+      "radius": 0,
+      "borderWidth": 0,
+      "fontSizes": [10, 13.5],
+      "nested": [
+        {
+          "path": "div",
+          "radius": 7,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > fieldset._auto_1b0dw_9 > span",
+          "radius": 6,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > fieldset._auto_1b0dw_9 > span > span._dot_1b0dw_31",
+          "radius": 50,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        }
+      ],
+      "emptyRatio": 0.039,
+      "contrast": {
+        "min": 4.06,
+        "failures": [
+          {
+            "text": "€30",
+            "ratio": 4.06,
+            "fg": "#7b7b7e",
+            "bg": "#fafafd",
+            "fontSize": 10
+          },
+          {
+            "text": "€40",
+            "ratio": 4.06,
+            "fg": "#7b7b7e",
+            "bg": "#fafafd",
+            "fontSize": 10
+          },
+          {
+            "text": "€50",
+            "ratio": 4.06,
+            "fg": "#7b7b7e",
+            "bg": "#fafafd",
+            "fontSize": 10
+          },
+          {
+            "text": "€60",
+            "ratio": 4.06,
+            "fg": "#7b7b7e",
+            "bg": "#fafafd",
+            "fontSize": 10
+          },
+          {
+            "text": "€70",
+            "ratio": 4.06,
+            "fg": "#7b7b7e",
+            "bg": "#fafafd",
+            "fontSize": 10
+          },
+          {
+            "text": "€80",
+            "ratio": 4.06,
+            "fg": "#7b7b7e",
+            "bg": "#fafafd",
+            "fontSize": 10
+          },
+          {
+            "text": "€90",
+            "ratio": 4.06,
+            "fg": "#7b7b7e",
+            "bg": "#fafafd",
+            "fontSize": 10
+          },
+          {
+            "text": "€100",
+            "ratio": 4.06,
+            "fg": "#7b7b7e",
+            "bg": "#fafafd",
+            "fontSize": 10
+          },
+          {
+            "text": "€110",
+            "ratio": 4.06,
+            "fg": "#7b7b7e",
+            "bg": "#fafafd",
+            "fontSize": 10
+          },
+          {
+            "text": "€120",
+            "ratio": 4.06,
+            "fg": "#7b7b7e",
+            "bg": "#fafafd",
+            "fontSize": 10
+          },
+          {
+            "text": "0",
+            "ratio": 4.06,
+            "fg": "#7b7b7e",
+            "bg": "#fafafd",
+            "fontSize": 10
+          },
+          {
+            "text": "10",
+            "ratio": 4.06,
+            "fg": "#7b7b7e",
+            "bg": "#fafafd",
+            "fontSize": 10
+          },
+          {
+            "text": "20",
+            "ratio": 4.06,
+            "fg": "#7b7b7e",
+            "bg": "#fafafd",
+            "fontSize": 10
+          }
+        ]
+      }
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "month-to-date",
+      "scheme": "dark",
+      "viewport": "desktop",
+      "box": {
+        "width": 376,
+        "height": 139.03
+      },
+      "padding": {
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "gap": {
+        "row": 8,
+        "column": 8
+      },
+      "radius": 0,
+      "borderWidth": 0,
+      "fontSizes": [10, 12.5, 13.5, 24],
+      "nested": [
+        {
+          "path": "div.m_e615b15f",
+          "radius": 7,
+          "padding": {
+            "top": 11,
+            "right": 13,
+            "bottom": 11,
+            "left": 13
+          }
+        },
+        {
+          "path": "div.m_e615b15f > div._body_1xdoo_8 > div._header_1xdoo_15 > div._root_1jx89_21 > div._metrics_1jx89_158 > span._deltaBadge_1jx89_305",
+          "radius": 6,
+          "padding": {
+            "top": 2,
+            "right": 7,
+            "bottom": 2,
+            "left": 7
+          }
+        }
+      ],
+      "emptyRatio": 0.193,
+      "contrast": {
+        "min": 3.59,
+        "failures": [
+          {
+            "text": "0.1%",
+            "ratio": 3.59,
+            "fg": "#e06761",
+            "bg": "#423235",
+            "fontSize": 12.5
+          },
+          {
+            "text": "▲",
+            "ratio": 3.59,
+            "fg": "#e06761",
+            "bg": "#423235",
+            "fontSize": 10
+          },
+          {
+            "text": "vs 1–16 Sept",
+            "ratio": 3.59,
+            "fg": "#e06761",
+            "bg": "#423235",
+            "fontSize": 12.5
+          }
+        ]
+      }
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "forecast",
+      "scheme": "dark",
+      "viewport": "desktop",
+      "box": {
+        "width": 376,
+        "height": 139.03
+      },
+      "padding": {
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "gap": {
+        "row": 8,
+        "column": 8
+      },
+      "radius": 0,
+      "borderWidth": 0,
+      "fontSizes": [13.5, 15, 24],
+      "nested": [
+        {
+          "path": "div.m_e615b15f",
+          "radius": 7,
+          "padding": {
+            "top": 11,
+            "right": 13,
+            "bottom": 11,
+            "left": 13
+          }
+        },
+        {
+          "path": "div.m_e615b15f > div",
+          "radius": 0,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        }
+      ],
+      "emptyRatio": 0.359,
+      "contrast": {
+        "min": 9.55,
+        "failures": []
+      }
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "budget",
+      "scheme": "dark",
+      "viewport": "desktop",
+      "box": {
+        "width": 376,
+        "height": 139.03
+      },
+      "padding": {
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "gap": {
+        "row": 8,
+        "column": 8
+      },
+      "radius": 0,
+      "borderWidth": 0,
+      "fontSizes": [13.5, 24],
+      "nested": [
+        {
+          "path": "div.m_e615b15f",
+          "radius": 7,
+          "padding": {
+            "top": 11,
+            "right": 13,
+            "bottom": 11,
+            "left": 13
+          }
+        }
+      ],
+      "emptyRatio": 0.105,
+      "contrast": {
+        "min": 6.18,
+        "failures": []
+      }
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-over-time",
+      "scheme": "dark",
+      "viewport": "desktop",
+      "box": {
+        "width": 567,
+        "height": 352.72
+      },
+      "padding": {
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "gap": {
+        "row": 0,
+        "column": 6
+      },
+      "radius": 0,
+      "borderWidth": 0,
+      "fontSizes": [11, 13.5],
+      "nested": [
+        {
+          "path": "div",
+          "radius": 7,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > fieldset._auto_1b0dw_9 > button",
+          "radius": 6,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > fieldset._auto_1b0dw_9 > button > span._chip_1b0dw_13",
+          "radius": 2,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > fieldset._auto_1b0dw_9 > button",
+          "radius": 6,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > fieldset._auto_1b0dw_9 > button > span._chip_1b0dw_13",
+          "radius": 2,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > fieldset._auto_1b0dw_9 > button",
+          "radius": 6,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > fieldset._auto_1b0dw_9 > button > span._chip_1b0dw_13",
+          "radius": 2,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > fieldset._auto_1b0dw_9 > button",
+          "radius": 6,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        }
+      ],
+      "emptyRatio": 0.041,
+      "contrast": {
+        "min": 6.1,
+        "failures": []
+      }
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-by-project",
+      "scheme": "dark",
+      "viewport": "desktop",
+      "box": {
+        "width": 567,
+        "height": 352.72
+      },
+      "padding": {
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "gap": {
+        "row": 0,
+        "column": 6
+      },
+      "radius": 0,
+      "borderWidth": 0,
+      "fontSizes": [11, 13.5, 16],
+      "nested": [
+        {
+          "path": "div",
+          "radius": 7,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > div._row_dx99y_7 > fieldset > button",
+          "radius": 6,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > div._row_dx99y_7 > fieldset > button > span._chip_1b0dw_13",
+          "radius": 2,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > div._row_dx99y_7 > fieldset > button",
+          "radius": 6,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > div._row_dx99y_7 > fieldset > button > span._chip_1b0dw_13",
+          "radius": 2,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > div._row_dx99y_7 > fieldset > button",
+          "radius": 6,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > div._row_dx99y_7 > fieldset > button > span._chip_1b0dw_13",
+          "radius": 2,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > div._row_dx99y_7 > fieldset > button",
+          "radius": 6,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > div._row_dx99y_7 > fieldset > button > span._chip_1b0dw_13",
+          "radius": 2,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > div._row_dx99y_7 > fieldset > button",
+          "radius": 6,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > div._row_dx99y_7 > fieldset > button > span._chip_1b0dw_13",
+          "radius": 2,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > div._row_dx99y_7 > fieldset > button",
+          "radius": 6,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > div._row_dx99y_7 > fieldset > button > span._chip_1b0dw_13",
+          "radius": 2,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        }
+      ],
+      "emptyRatio": 0.161,
+      "contrast": {
+        "min": 6.1,
+        "failures": []
+      }
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "top-drivers",
+      "scheme": "dark",
+      "viewport": "desktop",
+      "box": {
+        "width": 567,
+        "height": 352.72
+      },
+      "padding": {
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "gap": {
+        "row": 12,
+        "column": 12
+      },
+      "radius": 0,
+      "borderWidth": 0,
+      "fontSizes": [11, 13.5, 15],
+      "nested": [
+        {
+          "path": "div._root_1fuy4_20 > div._body_1fuy4_27 > div > div._foldWrapper_yt7cc_132 > div.m_a100c15 > div.m_62259741 > table._tableRoot_n0qrx_290 > thead.m_b242d975 > tr.m_4e7aa4fd",
+          "radius": 0,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div._root_1fuy4_20 > div._body_1fuy4_27 > div > div._foldWrapper_yt7cc_132 > div.m_a100c15 > div.m_62259741 > table._tableRoot_n0qrx_290 > tbody.m_b2404537 > tr.m_4e7aa4fd",
+          "radius": 0,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div._root_1fuy4_20 > div._body_1fuy4_27 > div > div._foldWrapper_yt7cc_132 > div.m_a100c15 > div.m_62259741 > table._tableRoot_n0qrx_290 > tbody.m_b2404537 > tr.m_4e7aa4fd",
+          "radius": 0,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div._root_1fuy4_20 > div._body_1fuy4_27 > div > div._foldWrapper_yt7cc_132 > div.m_a100c15 > div.m_62259741 > table._tableRoot_n0qrx_290 > tbody.m_b2404537 > tr.m_4e7aa4fd",
+          "radius": 0,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div._root_1fuy4_20 > div._body_1fuy4_27 > div > div._foldWrapper_yt7cc_132 > div.m_a100c15 > div.m_62259741 > table._tableRoot_n0qrx_290 > tbody.m_b2404537 > tr.m_4e7aa4fd",
+          "radius": 0,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div._root_1fuy4_20 > div._body_1fuy4_27 > div > div._foldWrapper_yt7cc_132 > div.m_a100c15 > div.m_62259741 > table._tableRoot_n0qrx_290 > tbody.m_b2404537 > tr.m_4e7aa4fd",
+          "radius": 0,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        }
+      ],
+      "emptyRatio": 0.113,
+      "contrast": {
+        "min": 5.78,
+        "failures": []
+      }
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-distribution",
+      "scheme": "dark",
+      "viewport": "desktop",
+      "box": {
+        "width": 567,
+        "height": 352.72
+      },
+      "padding": {
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "gap": {
+        "row": 0,
+        "column": 6
+      },
+      "radius": 0,
+      "borderWidth": 0,
+      "fontSizes": [11, 13.5],
+      "nested": [
+        {
+          "path": "div",
+          "radius": 7,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > fieldset._auto_1b0dw_9 > span",
+          "radius": 6,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > fieldset._auto_1b0dw_9 > span > span._chip_1b0dw_13",
+          "radius": 2,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        }
+      ],
+      "emptyRatio": 0.041,
+      "contrast": {
+        "min": 6.1,
+        "failures": []
+      }
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "month-to-date",
+      "scheme": "dark",
+      "viewport": "mobile",
+      "box": {
+        "width": 181,
+        "height": 118.3
+      },
+      "padding": {
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "gap": {
+        "row": 8,
+        "column": 8
+      },
+      "radius": 0,
+      "borderWidth": 0,
+      "fontSizes": [10, 12.5, 13.5, 16],
+      "nested": [
+        {
+          "path": "div.m_e615b15f",
+          "radius": 7,
+          "padding": {
+            "top": 11,
+            "right": 11,
+            "bottom": 11,
+            "left": 11
+          }
+        },
+        {
+          "path": "div.m_e615b15f > div._body_1xdoo_8 > div._header_1xdoo_15 > div._root_1jx89_21 > div._metrics_1jx89_158 > span._deltaBadge_1jx89_305",
+          "radius": 6,
+          "padding": {
+            "top": 2,
+            "right": 7,
+            "bottom": 2,
+            "left": 7
+          }
+        }
+      ],
+      "emptyRatio": 0.123,
+      "contrast": {
+        "min": 3.59,
+        "failures": [
+          {
+            "text": "0.1%",
+            "ratio": 3.59,
+            "fg": "#e06761",
+            "bg": "#423235",
+            "fontSize": 12.5
+          },
+          {
+            "text": "▲",
+            "ratio": 3.59,
+            "fg": "#e06761",
+            "bg": "#423235",
+            "fontSize": 10
+          },
+          {
+            "text": "vs 1–16 Sept",
+            "ratio": 3.59,
+            "fg": "#e06761",
+            "bg": "#423235",
+            "fontSize": 12.5
+          }
+        ]
+      }
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "forecast",
+      "scheme": "dark",
+      "viewport": "mobile",
+      "box": {
+        "width": 181,
+        "height": 118.3
+      },
+      "padding": {
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "gap": {
+        "row": 8,
+        "column": 8
+      },
+      "radius": 0,
+      "borderWidth": 0,
+      "fontSizes": [13.5, 15, 16],
+      "nested": [
+        {
+          "path": "div.m_e615b15f",
+          "radius": 7,
+          "padding": {
+            "top": 11,
+            "right": 11,
+            "bottom": 11,
+            "left": 11
+          }
+        },
+        {
+          "path": "div.m_e615b15f > div",
+          "radius": 0,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        }
+      ],
+      "emptyRatio": 0.25,
+      "contrast": {
+        "min": 9.55,
+        "failures": []
+      }
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "budget",
+      "scheme": "dark",
+      "viewport": "mobile",
+      "box": {
+        "width": 181,
+        "height": 138.56
+      },
+      "padding": {
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "gap": {
+        "row": 8,
+        "column": 8
+      },
+      "radius": 0,
+      "borderWidth": 0,
+      "fontSizes": [13.5, 16],
+      "nested": [
+        {
+          "path": "div.m_e615b15f",
+          "radius": 7,
+          "padding": {
+            "top": 11,
+            "right": 11,
+            "bottom": 11,
+            "left": 11
+          }
+        }
+      ],
+      "emptyRatio": 0.093,
+      "contrast": {
+        "min": 6.18,
+        "failures": []
+      }
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-over-time",
+      "scheme": "dark",
+      "viewport": "mobile",
+      "box": {
+        "width": 374,
+        "height": 317.67
+      },
+      "padding": {
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "gap": {
+        "row": 8,
+        "column": 6
+      },
+      "radius": 0,
+      "borderWidth": 0,
+      "fontSizes": [10, 13.5],
+      "nested": [
+        {
+          "path": "div",
+          "radius": 7,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > fieldset._auto_1b0dw_9 > button",
+          "radius": 6,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > fieldset._auto_1b0dw_9 > button > span._dot_1b0dw_31",
+          "radius": 50,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > fieldset._auto_1b0dw_9 > button",
+          "radius": 6,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > fieldset._auto_1b0dw_9 > button > span._dot_1b0dw_31",
+          "radius": 50,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > fieldset._auto_1b0dw_9 > button",
+          "radius": 6,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > fieldset._auto_1b0dw_9 > button > span._dot_1b0dw_31",
+          "radius": 50,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > fieldset._auto_1b0dw_9 > button",
+          "radius": 6,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        }
+      ],
+      "emptyRatio": 0.036,
+      "contrast": {
+        "min": 6.1,
+        "failures": []
+      }
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-by-project",
+      "scheme": "dark",
+      "viewport": "mobile",
+      "box": {
+        "width": 374,
+        "height": 369.66
+      },
+      "padding": {
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "gap": {
+        "row": 8,
+        "column": 6
+      },
+      "radius": 0,
+      "borderWidth": 0,
+      "fontSizes": [11, 13.5, 16],
+      "nested": [
+        {
+          "path": "div",
+          "radius": 7,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > div._row_dx99y_7 > fieldset > button",
+          "radius": 6,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > div._row_dx99y_7 > fieldset > button > span._chip_1b0dw_13",
+          "radius": 2,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > div._row_dx99y_7 > fieldset > button",
+          "radius": 6,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > div._row_dx99y_7 > fieldset > button > span._chip_1b0dw_13",
+          "radius": 2,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > div._row_dx99y_7 > fieldset > button",
+          "radius": 6,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > div._row_dx99y_7 > fieldset > button > span._chip_1b0dw_13",
+          "radius": 2,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > div._row_dx99y_7 > fieldset > button",
+          "radius": 6,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > div._row_dx99y_7 > fieldset > button > span._chip_1b0dw_13",
+          "radius": 2,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > div._row_dx99y_7 > fieldset > button",
+          "radius": 6,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > div._row_dx99y_7 > fieldset > button > span._chip_1b0dw_13",
+          "radius": 2,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > div._row_dx99y_7 > fieldset > button",
+          "radius": 6,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > div._row_dx99y_7 > fieldset > button > span._chip_1b0dw_13",
+          "radius": 2,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        }
+      ],
+      "emptyRatio": 0.032,
+      "contrast": {
+        "min": 6.1,
+        "failures": []
+      }
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "top-drivers",
+      "scheme": "dark",
+      "viewport": "mobile",
+      "box": {
+        "width": 374,
+        "height": 349.44
+      },
+      "padding": {
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "gap": {
+        "row": 8,
+        "column": 8
+      },
+      "radius": 0,
+      "borderWidth": 0,
+      "fontSizes": [11, 13.5, 15],
+      "nested": [
+        {
+          "path": "div._root_1fuy4_20 > div._body_1fuy4_27 > div > div._foldWrapper_yt7cc_132 > div.m_a100c15 > div.m_62259741 > table._tableRoot_n0qrx_290 > thead.m_b242d975 > tr.m_4e7aa4fd",
+          "radius": 0,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div._root_1fuy4_20 > div._body_1fuy4_27 > div > div._foldWrapper_yt7cc_132 > div.m_a100c15 > div.m_62259741 > table._tableRoot_n0qrx_290 > tbody.m_b2404537 > tr.m_4e7aa4fd",
+          "radius": 0,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div._root_1fuy4_20 > div._body_1fuy4_27 > div > div._foldWrapper_yt7cc_132 > div.m_a100c15 > div.m_62259741 > table._tableRoot_n0qrx_290 > tbody.m_b2404537 > tr.m_4e7aa4fd",
+          "radius": 0,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div._root_1fuy4_20 > div._body_1fuy4_27 > div > div._foldWrapper_yt7cc_132 > div.m_a100c15 > div.m_62259741 > table._tableRoot_n0qrx_290 > tbody.m_b2404537 > tr.m_4e7aa4fd",
+          "radius": 0,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div._root_1fuy4_20 > div._body_1fuy4_27 > div > div._foldWrapper_yt7cc_132 > div.m_a100c15 > div.m_62259741 > table._tableRoot_n0qrx_290 > tbody.m_b2404537 > tr.m_4e7aa4fd",
+          "radius": 0,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div._root_1fuy4_20 > div._body_1fuy4_27 > div > div._foldWrapper_yt7cc_132 > div.m_a100c15 > div.m_62259741 > table._tableRoot_n0qrx_290 > tbody.m_b2404537 > tr.m_4e7aa4fd",
+          "radius": 0,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        }
+      ],
+      "emptyRatio": 0.045,
+      "contrast": {
+        "min": 5.78,
+        "failures": []
+      }
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-distribution",
+      "scheme": "dark",
+      "viewport": "mobile",
+      "box": {
+        "width": 374,
+        "height": 293.45
+      },
+      "padding": {
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "gap": {
+        "row": 8,
+        "column": 6
+      },
+      "radius": 0,
+      "borderWidth": 0,
+      "fontSizes": [10, 13.5],
+      "nested": [
+        {
+          "path": "div",
+          "radius": 7,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > fieldset._auto_1b0dw_9 > span",
+          "radius": 6,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        },
+        {
+          "path": "div > div > div > div > fieldset._auto_1b0dw_9 > span > span._dot_1b0dw_31",
+          "radius": 50,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          }
+        }
+      ],
+      "emptyRatio": 0.039,
+      "contrast": {
+        "min": 6.1,
+        "failures": []
+      }
+    }
+  ],
+  "shots": [
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "_page",
+      "scheme": "light",
+      "viewport": "desktop",
+      "state": "rest",
+      "file": "png/scenarios-s4-spend-ac51be___page-8b9a99__light__desktop__rest.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "month-to-date",
+      "scheme": "light",
+      "viewport": "desktop",
+      "state": "rest",
+      "file": "png/scenarios-s4-spend-ac51be__month-to-date-2296d1__light__desktop__rest.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "month-to-date",
+      "scheme": "light",
+      "viewport": "desktop",
+      "state": "hover",
+      "file": "png/scenarios-s4-spend-ac51be__month-to-date-2296d1__light__desktop__hover.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "month-to-date",
+      "scheme": "light",
+      "viewport": "desktop",
+      "state": "focus",
+      "file": "png/scenarios-s4-spend-ac51be__month-to-date-2296d1__light__desktop__focus.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "month-to-date",
+      "scheme": "light",
+      "viewport": "desktop",
+      "state": "tooltip",
+      "file": null,
+      "status": "error",
+      "note": "no visible [role=\"tooltip\"] after hover"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "forecast",
+      "scheme": "light",
+      "viewport": "desktop",
+      "state": "rest",
+      "file": "png/scenarios-s4-spend-ac51be__forecast-018c49__light__desktop__rest.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "forecast",
+      "scheme": "light",
+      "viewport": "desktop",
+      "state": "hover",
+      "file": "png/scenarios-s4-spend-ac51be__forecast-018c49__light__desktop__hover.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "forecast",
+      "scheme": "light",
+      "viewport": "desktop",
+      "state": "focus",
+      "file": "png/scenarios-s4-spend-ac51be__forecast-018c49__light__desktop__focus.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "forecast",
+      "scheme": "light",
+      "viewport": "desktop",
+      "state": "tooltip",
+      "file": null,
+      "status": "not-declared",
+      "note": "no [data-shot-tooltip] in the anchor"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "budget",
+      "scheme": "light",
+      "viewport": "desktop",
+      "state": "rest",
+      "file": "png/scenarios-s4-spend-ac51be__budget-81e4a5__light__desktop__rest.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "budget",
+      "scheme": "light",
+      "viewport": "desktop",
+      "state": "hover",
+      "file": "png/scenarios-s4-spend-ac51be__budget-81e4a5__light__desktop__hover.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "budget",
+      "scheme": "light",
+      "viewport": "desktop",
+      "state": "focus",
+      "file": "png/scenarios-s4-spend-ac51be__budget-81e4a5__light__desktop__focus.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "budget",
+      "scheme": "light",
+      "viewport": "desktop",
+      "state": "tooltip",
+      "file": null,
+      "status": "not-declared",
+      "note": "no [data-shot-tooltip] in the anchor"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-over-time",
+      "scheme": "light",
+      "viewport": "desktop",
+      "state": "rest",
+      "file": "png/scenarios-s4-spend-ac51be__spend-over-time-a9e8c1__light__desktop__rest.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-over-time",
+      "scheme": "light",
+      "viewport": "desktop",
+      "state": "hover",
+      "file": "png/scenarios-s4-spend-ac51be__spend-over-time-a9e8c1__light__desktop__hover.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-over-time",
+      "scheme": "light",
+      "viewport": "desktop",
+      "state": "focus",
+      "file": "png/scenarios-s4-spend-ac51be__spend-over-time-a9e8c1__light__desktop__focus.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-over-time",
+      "scheme": "light",
+      "viewport": "desktop",
+      "state": "tooltip",
+      "file": null,
+      "status": "error",
+      "note": "no visible [role=\"tooltip\"] after hover"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-by-project",
+      "scheme": "light",
+      "viewport": "desktop",
+      "state": "rest",
+      "file": "png/scenarios-s4-spend-ac51be__spend-by-project-ad9f7d__light__desktop__rest.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-by-project",
+      "scheme": "light",
+      "viewport": "desktop",
+      "state": "hover",
+      "file": "png/scenarios-s4-spend-ac51be__spend-by-project-ad9f7d__light__desktop__hover.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-by-project",
+      "scheme": "light",
+      "viewport": "desktop",
+      "state": "focus",
+      "file": "png/scenarios-s4-spend-ac51be__spend-by-project-ad9f7d__light__desktop__focus.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-by-project",
+      "scheme": "light",
+      "viewport": "desktop",
+      "state": "tooltip",
+      "file": null,
+      "status": "error",
+      "note": "no visible [role=\"tooltip\"] after hover"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "top-drivers",
+      "scheme": "light",
+      "viewport": "desktop",
+      "state": "rest",
+      "file": "png/scenarios-s4-spend-ac51be__top-drivers-a0d83b__light__desktop__rest.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "top-drivers",
+      "scheme": "light",
+      "viewport": "desktop",
+      "state": "hover",
+      "file": "png/scenarios-s4-spend-ac51be__top-drivers-a0d83b__light__desktop__hover.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "top-drivers",
+      "scheme": "light",
+      "viewport": "desktop",
+      "state": "focus",
+      "file": null,
+      "status": "error",
+      "note": ":focus-visible never reached the anchor in 80 Tab presses"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "top-drivers",
+      "scheme": "light",
+      "viewport": "desktop",
+      "state": "tooltip",
+      "file": null,
+      "status": "not-declared",
+      "note": "no [data-shot-tooltip] in the anchor"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-distribution",
+      "scheme": "light",
+      "viewport": "desktop",
+      "state": "rest",
+      "file": "png/scenarios-s4-spend-ac51be__spend-distribution-30a4cc__light__desktop__rest.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-distribution",
+      "scheme": "light",
+      "viewport": "desktop",
+      "state": "hover",
+      "file": "png/scenarios-s4-spend-ac51be__spend-distribution-30a4cc__light__desktop__hover.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-distribution",
+      "scheme": "light",
+      "viewport": "desktop",
+      "state": "focus",
+      "file": "png/scenarios-s4-spend-ac51be__spend-distribution-30a4cc__light__desktop__focus.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-distribution",
+      "scheme": "light",
+      "viewport": "desktop",
+      "state": "tooltip",
+      "file": null,
+      "status": "error",
+      "note": "no visible [role=\"tooltip\"] after hover"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "month-to-date",
+      "scheme": "light",
+      "viewport": "desktop",
+      "state": "empty",
+      "file": "png/scenarios-s4-spend-ac51be__month-to-date-2296d1__light__desktop__empty.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "forecast",
+      "scheme": "light",
+      "viewport": "desktop",
+      "state": "empty",
+      "file": "png/scenarios-s4-spend-ac51be__forecast-018c49__light__desktop__empty.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "budget",
+      "scheme": "light",
+      "viewport": "desktop",
+      "state": "empty",
+      "file": "png/scenarios-s4-spend-ac51be__budget-81e4a5__light__desktop__empty.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-over-time",
+      "scheme": "light",
+      "viewport": "desktop",
+      "state": "empty",
+      "file": "png/scenarios-s4-spend-ac51be__spend-over-time-a9e8c1__light__desktop__empty.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-by-project",
+      "scheme": "light",
+      "viewport": "desktop",
+      "state": "empty",
+      "file": "png/scenarios-s4-spend-ac51be__spend-by-project-ad9f7d__light__desktop__empty.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "top-drivers",
+      "scheme": "light",
+      "viewport": "desktop",
+      "state": "empty",
+      "file": "png/scenarios-s4-spend-ac51be__top-drivers-a0d83b__light__desktop__empty.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-distribution",
+      "scheme": "light",
+      "viewport": "desktop",
+      "state": "empty",
+      "file": "png/scenarios-s4-spend-ac51be__spend-distribution-30a4cc__light__desktop__empty.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "month-to-date",
+      "scheme": "light",
+      "viewport": "desktop",
+      "state": "loading",
+      "file": "png/scenarios-s4-spend-ac51be__month-to-date-2296d1__light__desktop__loading.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "forecast",
+      "scheme": "light",
+      "viewport": "desktop",
+      "state": "loading",
+      "file": "png/scenarios-s4-spend-ac51be__forecast-018c49__light__desktop__loading.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "budget",
+      "scheme": "light",
+      "viewport": "desktop",
+      "state": "loading",
+      "file": "png/scenarios-s4-spend-ac51be__budget-81e4a5__light__desktop__loading.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-over-time",
+      "scheme": "light",
+      "viewport": "desktop",
+      "state": "loading",
+      "file": "png/scenarios-s4-spend-ac51be__spend-over-time-a9e8c1__light__desktop__loading.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-by-project",
+      "scheme": "light",
+      "viewport": "desktop",
+      "state": "loading",
+      "file": "png/scenarios-s4-spend-ac51be__spend-by-project-ad9f7d__light__desktop__loading.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "top-drivers",
+      "scheme": "light",
+      "viewport": "desktop",
+      "state": "loading",
+      "file": "png/scenarios-s4-spend-ac51be__top-drivers-a0d83b__light__desktop__loading.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-distribution",
+      "scheme": "light",
+      "viewport": "desktop",
+      "state": "loading",
+      "file": "png/scenarios-s4-spend-ac51be__spend-distribution-30a4cc__light__desktop__loading.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "month-to-date",
+      "scheme": "light",
+      "viewport": "desktop",
+      "state": "error",
+      "file": "png/scenarios-s4-spend-ac51be__month-to-date-2296d1__light__desktop__error.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "forecast",
+      "scheme": "light",
+      "viewport": "desktop",
+      "state": "error",
+      "file": "png/scenarios-s4-spend-ac51be__forecast-018c49__light__desktop__error.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "budget",
+      "scheme": "light",
+      "viewport": "desktop",
+      "state": "error",
+      "file": "png/scenarios-s4-spend-ac51be__budget-81e4a5__light__desktop__error.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-over-time",
+      "scheme": "light",
+      "viewport": "desktop",
+      "state": "error",
+      "file": "png/scenarios-s4-spend-ac51be__spend-over-time-a9e8c1__light__desktop__error.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-by-project",
+      "scheme": "light",
+      "viewport": "desktop",
+      "state": "error",
+      "file": "png/scenarios-s4-spend-ac51be__spend-by-project-ad9f7d__light__desktop__error.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "top-drivers",
+      "scheme": "light",
+      "viewport": "desktop",
+      "state": "error",
+      "file": "png/scenarios-s4-spend-ac51be__top-drivers-a0d83b__light__desktop__error.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-distribution",
+      "scheme": "light",
+      "viewport": "desktop",
+      "state": "error",
+      "file": "png/scenarios-s4-spend-ac51be__spend-distribution-30a4cc__light__desktop__error.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "_page",
+      "scheme": "light",
+      "viewport": "mobile",
+      "state": "rest",
+      "file": "png/scenarios-s4-spend-ac51be___page-8b9a99__light__mobile__rest.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "month-to-date",
+      "scheme": "light",
+      "viewport": "mobile",
+      "state": "rest",
+      "file": "png/scenarios-s4-spend-ac51be__month-to-date-2296d1__light__mobile__rest.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "month-to-date",
+      "scheme": "light",
+      "viewport": "mobile",
+      "state": "hover",
+      "file": null,
+      "status": "skipped",
+      "note": "desktop only"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "month-to-date",
+      "scheme": "light",
+      "viewport": "mobile",
+      "state": "focus",
+      "file": "png/scenarios-s4-spend-ac51be__month-to-date-2296d1__light__mobile__focus.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "month-to-date",
+      "scheme": "light",
+      "viewport": "mobile",
+      "state": "tooltip",
+      "file": null,
+      "status": "skipped",
+      "note": "desktop only"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "forecast",
+      "scheme": "light",
+      "viewport": "mobile",
+      "state": "rest",
+      "file": "png/scenarios-s4-spend-ac51be__forecast-018c49__light__mobile__rest.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "forecast",
+      "scheme": "light",
+      "viewport": "mobile",
+      "state": "hover",
+      "file": null,
+      "status": "skipped",
+      "note": "desktop only"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "forecast",
+      "scheme": "light",
+      "viewport": "mobile",
+      "state": "focus",
+      "file": "png/scenarios-s4-spend-ac51be__forecast-018c49__light__mobile__focus.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "forecast",
+      "scheme": "light",
+      "viewport": "mobile",
+      "state": "tooltip",
+      "file": null,
+      "status": "skipped",
+      "note": "desktop only"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "budget",
+      "scheme": "light",
+      "viewport": "mobile",
+      "state": "rest",
+      "file": "png/scenarios-s4-spend-ac51be__budget-81e4a5__light__mobile__rest.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "budget",
+      "scheme": "light",
+      "viewport": "mobile",
+      "state": "hover",
+      "file": null,
+      "status": "skipped",
+      "note": "desktop only"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "budget",
+      "scheme": "light",
+      "viewport": "mobile",
+      "state": "focus",
+      "file": "png/scenarios-s4-spend-ac51be__budget-81e4a5__light__mobile__focus.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "budget",
+      "scheme": "light",
+      "viewport": "mobile",
+      "state": "tooltip",
+      "file": null,
+      "status": "skipped",
+      "note": "desktop only"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-over-time",
+      "scheme": "light",
+      "viewport": "mobile",
+      "state": "rest",
+      "file": "png/scenarios-s4-spend-ac51be__spend-over-time-a9e8c1__light__mobile__rest.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-over-time",
+      "scheme": "light",
+      "viewport": "mobile",
+      "state": "hover",
+      "file": null,
+      "status": "skipped",
+      "note": "desktop only"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-over-time",
+      "scheme": "light",
+      "viewport": "mobile",
+      "state": "focus",
+      "file": "png/scenarios-s4-spend-ac51be__spend-over-time-a9e8c1__light__mobile__focus.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-over-time",
+      "scheme": "light",
+      "viewport": "mobile",
+      "state": "tooltip",
+      "file": null,
+      "status": "skipped",
+      "note": "desktop only"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-by-project",
+      "scheme": "light",
+      "viewport": "mobile",
+      "state": "rest",
+      "file": "png/scenarios-s4-spend-ac51be__spend-by-project-ad9f7d__light__mobile__rest.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-by-project",
+      "scheme": "light",
+      "viewport": "mobile",
+      "state": "hover",
+      "file": null,
+      "status": "skipped",
+      "note": "desktop only"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-by-project",
+      "scheme": "light",
+      "viewport": "mobile",
+      "state": "focus",
+      "file": "png/scenarios-s4-spend-ac51be__spend-by-project-ad9f7d__light__mobile__focus.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-by-project",
+      "scheme": "light",
+      "viewport": "mobile",
+      "state": "tooltip",
+      "file": null,
+      "status": "skipped",
+      "note": "desktop only"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "top-drivers",
+      "scheme": "light",
+      "viewport": "mobile",
+      "state": "rest",
+      "file": "png/scenarios-s4-spend-ac51be__top-drivers-a0d83b__light__mobile__rest.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "top-drivers",
+      "scheme": "light",
+      "viewport": "mobile",
+      "state": "hover",
+      "file": null,
+      "status": "skipped",
+      "note": "desktop only"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "top-drivers",
+      "scheme": "light",
+      "viewport": "mobile",
+      "state": "focus",
+      "file": null,
+      "status": "error",
+      "note": ":focus-visible never reached the anchor in 80 Tab presses"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "top-drivers",
+      "scheme": "light",
+      "viewport": "mobile",
+      "state": "tooltip",
+      "file": null,
+      "status": "skipped",
+      "note": "desktop only"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-distribution",
+      "scheme": "light",
+      "viewport": "mobile",
+      "state": "rest",
+      "file": "png/scenarios-s4-spend-ac51be__spend-distribution-30a4cc__light__mobile__rest.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-distribution",
+      "scheme": "light",
+      "viewport": "mobile",
+      "state": "hover",
+      "file": null,
+      "status": "skipped",
+      "note": "desktop only"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-distribution",
+      "scheme": "light",
+      "viewport": "mobile",
+      "state": "focus",
+      "file": "png/scenarios-s4-spend-ac51be__spend-distribution-30a4cc__light__mobile__focus.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-distribution",
+      "scheme": "light",
+      "viewport": "mobile",
+      "state": "tooltip",
+      "file": null,
+      "status": "skipped",
+      "note": "desktop only"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "month-to-date",
+      "scheme": "light",
+      "viewport": "mobile",
+      "state": "empty",
+      "file": "png/scenarios-s4-spend-ac51be__month-to-date-2296d1__light__mobile__empty.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "forecast",
+      "scheme": "light",
+      "viewport": "mobile",
+      "state": "empty",
+      "file": "png/scenarios-s4-spend-ac51be__forecast-018c49__light__mobile__empty.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "budget",
+      "scheme": "light",
+      "viewport": "mobile",
+      "state": "empty",
+      "file": "png/scenarios-s4-spend-ac51be__budget-81e4a5__light__mobile__empty.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-over-time",
+      "scheme": "light",
+      "viewport": "mobile",
+      "state": "empty",
+      "file": "png/scenarios-s4-spend-ac51be__spend-over-time-a9e8c1__light__mobile__empty.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-by-project",
+      "scheme": "light",
+      "viewport": "mobile",
+      "state": "empty",
+      "file": "png/scenarios-s4-spend-ac51be__spend-by-project-ad9f7d__light__mobile__empty.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "top-drivers",
+      "scheme": "light",
+      "viewport": "mobile",
+      "state": "empty",
+      "file": "png/scenarios-s4-spend-ac51be__top-drivers-a0d83b__light__mobile__empty.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-distribution",
+      "scheme": "light",
+      "viewport": "mobile",
+      "state": "empty",
+      "file": "png/scenarios-s4-spend-ac51be__spend-distribution-30a4cc__light__mobile__empty.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "month-to-date",
+      "scheme": "light",
+      "viewport": "mobile",
+      "state": "loading",
+      "file": "png/scenarios-s4-spend-ac51be__month-to-date-2296d1__light__mobile__loading.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "forecast",
+      "scheme": "light",
+      "viewport": "mobile",
+      "state": "loading",
+      "file": "png/scenarios-s4-spend-ac51be__forecast-018c49__light__mobile__loading.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "budget",
+      "scheme": "light",
+      "viewport": "mobile",
+      "state": "loading",
+      "file": "png/scenarios-s4-spend-ac51be__budget-81e4a5__light__mobile__loading.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-over-time",
+      "scheme": "light",
+      "viewport": "mobile",
+      "state": "loading",
+      "file": "png/scenarios-s4-spend-ac51be__spend-over-time-a9e8c1__light__mobile__loading.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-by-project",
+      "scheme": "light",
+      "viewport": "mobile",
+      "state": "loading",
+      "file": "png/scenarios-s4-spend-ac51be__spend-by-project-ad9f7d__light__mobile__loading.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "top-drivers",
+      "scheme": "light",
+      "viewport": "mobile",
+      "state": "loading",
+      "file": "png/scenarios-s4-spend-ac51be__top-drivers-a0d83b__light__mobile__loading.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-distribution",
+      "scheme": "light",
+      "viewport": "mobile",
+      "state": "loading",
+      "file": "png/scenarios-s4-spend-ac51be__spend-distribution-30a4cc__light__mobile__loading.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "month-to-date",
+      "scheme": "light",
+      "viewport": "mobile",
+      "state": "error",
+      "file": "png/scenarios-s4-spend-ac51be__month-to-date-2296d1__light__mobile__error.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "forecast",
+      "scheme": "light",
+      "viewport": "mobile",
+      "state": "error",
+      "file": "png/scenarios-s4-spend-ac51be__forecast-018c49__light__mobile__error.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "budget",
+      "scheme": "light",
+      "viewport": "mobile",
+      "state": "error",
+      "file": "png/scenarios-s4-spend-ac51be__budget-81e4a5__light__mobile__error.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-over-time",
+      "scheme": "light",
+      "viewport": "mobile",
+      "state": "error",
+      "file": "png/scenarios-s4-spend-ac51be__spend-over-time-a9e8c1__light__mobile__error.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-by-project",
+      "scheme": "light",
+      "viewport": "mobile",
+      "state": "error",
+      "file": "png/scenarios-s4-spend-ac51be__spend-by-project-ad9f7d__light__mobile__error.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "top-drivers",
+      "scheme": "light",
+      "viewport": "mobile",
+      "state": "error",
+      "file": "png/scenarios-s4-spend-ac51be__top-drivers-a0d83b__light__mobile__error.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-distribution",
+      "scheme": "light",
+      "viewport": "mobile",
+      "state": "error",
+      "file": "png/scenarios-s4-spend-ac51be__spend-distribution-30a4cc__light__mobile__error.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "_page",
+      "scheme": "dark",
+      "viewport": "desktop",
+      "state": "rest",
+      "file": "png/scenarios-s4-spend-ac51be___page-8b9a99__dark__desktop__rest.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "month-to-date",
+      "scheme": "dark",
+      "viewport": "desktop",
+      "state": "rest",
+      "file": "png/scenarios-s4-spend-ac51be__month-to-date-2296d1__dark__desktop__rest.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "month-to-date",
+      "scheme": "dark",
+      "viewport": "desktop",
+      "state": "hover",
+      "file": "png/scenarios-s4-spend-ac51be__month-to-date-2296d1__dark__desktop__hover.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "month-to-date",
+      "scheme": "dark",
+      "viewport": "desktop",
+      "state": "focus",
+      "file": "png/scenarios-s4-spend-ac51be__month-to-date-2296d1__dark__desktop__focus.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "month-to-date",
+      "scheme": "dark",
+      "viewport": "desktop",
+      "state": "tooltip",
+      "file": null,
+      "status": "error",
+      "note": "no visible [role=\"tooltip\"] after hover"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "forecast",
+      "scheme": "dark",
+      "viewport": "desktop",
+      "state": "rest",
+      "file": "png/scenarios-s4-spend-ac51be__forecast-018c49__dark__desktop__rest.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "forecast",
+      "scheme": "dark",
+      "viewport": "desktop",
+      "state": "hover",
+      "file": "png/scenarios-s4-spend-ac51be__forecast-018c49__dark__desktop__hover.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "forecast",
+      "scheme": "dark",
+      "viewport": "desktop",
+      "state": "focus",
+      "file": "png/scenarios-s4-spend-ac51be__forecast-018c49__dark__desktop__focus.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "forecast",
+      "scheme": "dark",
+      "viewport": "desktop",
+      "state": "tooltip",
+      "file": null,
+      "status": "not-declared",
+      "note": "no [data-shot-tooltip] in the anchor"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "budget",
+      "scheme": "dark",
+      "viewport": "desktop",
+      "state": "rest",
+      "file": "png/scenarios-s4-spend-ac51be__budget-81e4a5__dark__desktop__rest.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "budget",
+      "scheme": "dark",
+      "viewport": "desktop",
+      "state": "hover",
+      "file": "png/scenarios-s4-spend-ac51be__budget-81e4a5__dark__desktop__hover.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "budget",
+      "scheme": "dark",
+      "viewport": "desktop",
+      "state": "focus",
+      "file": "png/scenarios-s4-spend-ac51be__budget-81e4a5__dark__desktop__focus.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "budget",
+      "scheme": "dark",
+      "viewport": "desktop",
+      "state": "tooltip",
+      "file": null,
+      "status": "not-declared",
+      "note": "no [data-shot-tooltip] in the anchor"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-over-time",
+      "scheme": "dark",
+      "viewport": "desktop",
+      "state": "rest",
+      "file": "png/scenarios-s4-spend-ac51be__spend-over-time-a9e8c1__dark__desktop__rest.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-over-time",
+      "scheme": "dark",
+      "viewport": "desktop",
+      "state": "hover",
+      "file": "png/scenarios-s4-spend-ac51be__spend-over-time-a9e8c1__dark__desktop__hover.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-over-time",
+      "scheme": "dark",
+      "viewport": "desktop",
+      "state": "focus",
+      "file": "png/scenarios-s4-spend-ac51be__spend-over-time-a9e8c1__dark__desktop__focus.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-over-time",
+      "scheme": "dark",
+      "viewport": "desktop",
+      "state": "tooltip",
+      "file": null,
+      "status": "error",
+      "note": "no visible [role=\"tooltip\"] after hover"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-by-project",
+      "scheme": "dark",
+      "viewport": "desktop",
+      "state": "rest",
+      "file": "png/scenarios-s4-spend-ac51be__spend-by-project-ad9f7d__dark__desktop__rest.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-by-project",
+      "scheme": "dark",
+      "viewport": "desktop",
+      "state": "hover",
+      "file": "png/scenarios-s4-spend-ac51be__spend-by-project-ad9f7d__dark__desktop__hover.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-by-project",
+      "scheme": "dark",
+      "viewport": "desktop",
+      "state": "focus",
+      "file": "png/scenarios-s4-spend-ac51be__spend-by-project-ad9f7d__dark__desktop__focus.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-by-project",
+      "scheme": "dark",
+      "viewport": "desktop",
+      "state": "tooltip",
+      "file": null,
+      "status": "error",
+      "note": "no visible [role=\"tooltip\"] after hover"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "top-drivers",
+      "scheme": "dark",
+      "viewport": "desktop",
+      "state": "rest",
+      "file": "png/scenarios-s4-spend-ac51be__top-drivers-a0d83b__dark__desktop__rest.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "top-drivers",
+      "scheme": "dark",
+      "viewport": "desktop",
+      "state": "hover",
+      "file": "png/scenarios-s4-spend-ac51be__top-drivers-a0d83b__dark__desktop__hover.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "top-drivers",
+      "scheme": "dark",
+      "viewport": "desktop",
+      "state": "focus",
+      "file": null,
+      "status": "error",
+      "note": ":focus-visible never reached the anchor in 80 Tab presses"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "top-drivers",
+      "scheme": "dark",
+      "viewport": "desktop",
+      "state": "tooltip",
+      "file": null,
+      "status": "not-declared",
+      "note": "no [data-shot-tooltip] in the anchor"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-distribution",
+      "scheme": "dark",
+      "viewport": "desktop",
+      "state": "rest",
+      "file": "png/scenarios-s4-spend-ac51be__spend-distribution-30a4cc__dark__desktop__rest.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-distribution",
+      "scheme": "dark",
+      "viewport": "desktop",
+      "state": "hover",
+      "file": "png/scenarios-s4-spend-ac51be__spend-distribution-30a4cc__dark__desktop__hover.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-distribution",
+      "scheme": "dark",
+      "viewport": "desktop",
+      "state": "focus",
+      "file": "png/scenarios-s4-spend-ac51be__spend-distribution-30a4cc__dark__desktop__focus.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-distribution",
+      "scheme": "dark",
+      "viewport": "desktop",
+      "state": "tooltip",
+      "file": null,
+      "status": "error",
+      "note": "no visible [role=\"tooltip\"] after hover"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "month-to-date",
+      "scheme": "dark",
+      "viewport": "desktop",
+      "state": "empty",
+      "file": "png/scenarios-s4-spend-ac51be__month-to-date-2296d1__dark__desktop__empty.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "forecast",
+      "scheme": "dark",
+      "viewport": "desktop",
+      "state": "empty",
+      "file": "png/scenarios-s4-spend-ac51be__forecast-018c49__dark__desktop__empty.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "budget",
+      "scheme": "dark",
+      "viewport": "desktop",
+      "state": "empty",
+      "file": "png/scenarios-s4-spend-ac51be__budget-81e4a5__dark__desktop__empty.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-over-time",
+      "scheme": "dark",
+      "viewport": "desktop",
+      "state": "empty",
+      "file": "png/scenarios-s4-spend-ac51be__spend-over-time-a9e8c1__dark__desktop__empty.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-by-project",
+      "scheme": "dark",
+      "viewport": "desktop",
+      "state": "empty",
+      "file": "png/scenarios-s4-spend-ac51be__spend-by-project-ad9f7d__dark__desktop__empty.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "top-drivers",
+      "scheme": "dark",
+      "viewport": "desktop",
+      "state": "empty",
+      "file": "png/scenarios-s4-spend-ac51be__top-drivers-a0d83b__dark__desktop__empty.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-distribution",
+      "scheme": "dark",
+      "viewport": "desktop",
+      "state": "empty",
+      "file": "png/scenarios-s4-spend-ac51be__spend-distribution-30a4cc__dark__desktop__empty.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "month-to-date",
+      "scheme": "dark",
+      "viewport": "desktop",
+      "state": "loading",
+      "file": "png/scenarios-s4-spend-ac51be__month-to-date-2296d1__dark__desktop__loading.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "forecast",
+      "scheme": "dark",
+      "viewport": "desktop",
+      "state": "loading",
+      "file": "png/scenarios-s4-spend-ac51be__forecast-018c49__dark__desktop__loading.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "budget",
+      "scheme": "dark",
+      "viewport": "desktop",
+      "state": "loading",
+      "file": "png/scenarios-s4-spend-ac51be__budget-81e4a5__dark__desktop__loading.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-over-time",
+      "scheme": "dark",
+      "viewport": "desktop",
+      "state": "loading",
+      "file": "png/scenarios-s4-spend-ac51be__spend-over-time-a9e8c1__dark__desktop__loading.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-by-project",
+      "scheme": "dark",
+      "viewport": "desktop",
+      "state": "loading",
+      "file": "png/scenarios-s4-spend-ac51be__spend-by-project-ad9f7d__dark__desktop__loading.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "top-drivers",
+      "scheme": "dark",
+      "viewport": "desktop",
+      "state": "loading",
+      "file": "png/scenarios-s4-spend-ac51be__top-drivers-a0d83b__dark__desktop__loading.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-distribution",
+      "scheme": "dark",
+      "viewport": "desktop",
+      "state": "loading",
+      "file": "png/scenarios-s4-spend-ac51be__spend-distribution-30a4cc__dark__desktop__loading.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "month-to-date",
+      "scheme": "dark",
+      "viewport": "desktop",
+      "state": "error",
+      "file": "png/scenarios-s4-spend-ac51be__month-to-date-2296d1__dark__desktop__error.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "forecast",
+      "scheme": "dark",
+      "viewport": "desktop",
+      "state": "error",
+      "file": "png/scenarios-s4-spend-ac51be__forecast-018c49__dark__desktop__error.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "budget",
+      "scheme": "dark",
+      "viewport": "desktop",
+      "state": "error",
+      "file": "png/scenarios-s4-spend-ac51be__budget-81e4a5__dark__desktop__error.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-over-time",
+      "scheme": "dark",
+      "viewport": "desktop",
+      "state": "error",
+      "file": "png/scenarios-s4-spend-ac51be__spend-over-time-a9e8c1__dark__desktop__error.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-by-project",
+      "scheme": "dark",
+      "viewport": "desktop",
+      "state": "error",
+      "file": "png/scenarios-s4-spend-ac51be__spend-by-project-ad9f7d__dark__desktop__error.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "top-drivers",
+      "scheme": "dark",
+      "viewport": "desktop",
+      "state": "error",
+      "file": "png/scenarios-s4-spend-ac51be__top-drivers-a0d83b__dark__desktop__error.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-distribution",
+      "scheme": "dark",
+      "viewport": "desktop",
+      "state": "error",
+      "file": "png/scenarios-s4-spend-ac51be__spend-distribution-30a4cc__dark__desktop__error.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "_page",
+      "scheme": "dark",
+      "viewport": "mobile",
+      "state": "rest",
+      "file": "png/scenarios-s4-spend-ac51be___page-8b9a99__dark__mobile__rest.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "month-to-date",
+      "scheme": "dark",
+      "viewport": "mobile",
+      "state": "rest",
+      "file": "png/scenarios-s4-spend-ac51be__month-to-date-2296d1__dark__mobile__rest.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "month-to-date",
+      "scheme": "dark",
+      "viewport": "mobile",
+      "state": "hover",
+      "file": null,
+      "status": "skipped",
+      "note": "desktop only"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "month-to-date",
+      "scheme": "dark",
+      "viewport": "mobile",
+      "state": "focus",
+      "file": "png/scenarios-s4-spend-ac51be__month-to-date-2296d1__dark__mobile__focus.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "month-to-date",
+      "scheme": "dark",
+      "viewport": "mobile",
+      "state": "tooltip",
+      "file": null,
+      "status": "skipped",
+      "note": "desktop only"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "forecast",
+      "scheme": "dark",
+      "viewport": "mobile",
+      "state": "rest",
+      "file": "png/scenarios-s4-spend-ac51be__forecast-018c49__dark__mobile__rest.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "forecast",
+      "scheme": "dark",
+      "viewport": "mobile",
+      "state": "hover",
+      "file": null,
+      "status": "skipped",
+      "note": "desktop only"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "forecast",
+      "scheme": "dark",
+      "viewport": "mobile",
+      "state": "focus",
+      "file": "png/scenarios-s4-spend-ac51be__forecast-018c49__dark__mobile__focus.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "forecast",
+      "scheme": "dark",
+      "viewport": "mobile",
+      "state": "tooltip",
+      "file": null,
+      "status": "skipped",
+      "note": "desktop only"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "budget",
+      "scheme": "dark",
+      "viewport": "mobile",
+      "state": "rest",
+      "file": "png/scenarios-s4-spend-ac51be__budget-81e4a5__dark__mobile__rest.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "budget",
+      "scheme": "dark",
+      "viewport": "mobile",
+      "state": "hover",
+      "file": null,
+      "status": "skipped",
+      "note": "desktop only"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "budget",
+      "scheme": "dark",
+      "viewport": "mobile",
+      "state": "focus",
+      "file": "png/scenarios-s4-spend-ac51be__budget-81e4a5__dark__mobile__focus.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "budget",
+      "scheme": "dark",
+      "viewport": "mobile",
+      "state": "tooltip",
+      "file": null,
+      "status": "skipped",
+      "note": "desktop only"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-over-time",
+      "scheme": "dark",
+      "viewport": "mobile",
+      "state": "rest",
+      "file": "png/scenarios-s4-spend-ac51be__spend-over-time-a9e8c1__dark__mobile__rest.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-over-time",
+      "scheme": "dark",
+      "viewport": "mobile",
+      "state": "hover",
+      "file": null,
+      "status": "skipped",
+      "note": "desktop only"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-over-time",
+      "scheme": "dark",
+      "viewport": "mobile",
+      "state": "focus",
+      "file": "png/scenarios-s4-spend-ac51be__spend-over-time-a9e8c1__dark__mobile__focus.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-over-time",
+      "scheme": "dark",
+      "viewport": "mobile",
+      "state": "tooltip",
+      "file": null,
+      "status": "skipped",
+      "note": "desktop only"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-by-project",
+      "scheme": "dark",
+      "viewport": "mobile",
+      "state": "rest",
+      "file": "png/scenarios-s4-spend-ac51be__spend-by-project-ad9f7d__dark__mobile__rest.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-by-project",
+      "scheme": "dark",
+      "viewport": "mobile",
+      "state": "hover",
+      "file": null,
+      "status": "skipped",
+      "note": "desktop only"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-by-project",
+      "scheme": "dark",
+      "viewport": "mobile",
+      "state": "focus",
+      "file": "png/scenarios-s4-spend-ac51be__spend-by-project-ad9f7d__dark__mobile__focus.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-by-project",
+      "scheme": "dark",
+      "viewport": "mobile",
+      "state": "tooltip",
+      "file": null,
+      "status": "skipped",
+      "note": "desktop only"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "top-drivers",
+      "scheme": "dark",
+      "viewport": "mobile",
+      "state": "rest",
+      "file": "png/scenarios-s4-spend-ac51be__top-drivers-a0d83b__dark__mobile__rest.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "top-drivers",
+      "scheme": "dark",
+      "viewport": "mobile",
+      "state": "hover",
+      "file": null,
+      "status": "skipped",
+      "note": "desktop only"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "top-drivers",
+      "scheme": "dark",
+      "viewport": "mobile",
+      "state": "focus",
+      "file": null,
+      "status": "error",
+      "note": ":focus-visible never reached the anchor in 80 Tab presses"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "top-drivers",
+      "scheme": "dark",
+      "viewport": "mobile",
+      "state": "tooltip",
+      "file": null,
+      "status": "skipped",
+      "note": "desktop only"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-distribution",
+      "scheme": "dark",
+      "viewport": "mobile",
+      "state": "rest",
+      "file": "png/scenarios-s4-spend-ac51be__spend-distribution-30a4cc__dark__mobile__rest.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-distribution",
+      "scheme": "dark",
+      "viewport": "mobile",
+      "state": "hover",
+      "file": null,
+      "status": "skipped",
+      "note": "desktop only"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-distribution",
+      "scheme": "dark",
+      "viewport": "mobile",
+      "state": "focus",
+      "file": "png/scenarios-s4-spend-ac51be__spend-distribution-30a4cc__dark__mobile__focus.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-distribution",
+      "scheme": "dark",
+      "viewport": "mobile",
+      "state": "tooltip",
+      "file": null,
+      "status": "skipped",
+      "note": "desktop only"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "month-to-date",
+      "scheme": "dark",
+      "viewport": "mobile",
+      "state": "empty",
+      "file": "png/scenarios-s4-spend-ac51be__month-to-date-2296d1__dark__mobile__empty.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "forecast",
+      "scheme": "dark",
+      "viewport": "mobile",
+      "state": "empty",
+      "file": "png/scenarios-s4-spend-ac51be__forecast-018c49__dark__mobile__empty.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "budget",
+      "scheme": "dark",
+      "viewport": "mobile",
+      "state": "empty",
+      "file": "png/scenarios-s4-spend-ac51be__budget-81e4a5__dark__mobile__empty.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-over-time",
+      "scheme": "dark",
+      "viewport": "mobile",
+      "state": "empty",
+      "file": "png/scenarios-s4-spend-ac51be__spend-over-time-a9e8c1__dark__mobile__empty.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-by-project",
+      "scheme": "dark",
+      "viewport": "mobile",
+      "state": "empty",
+      "file": "png/scenarios-s4-spend-ac51be__spend-by-project-ad9f7d__dark__mobile__empty.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "top-drivers",
+      "scheme": "dark",
+      "viewport": "mobile",
+      "state": "empty",
+      "file": "png/scenarios-s4-spend-ac51be__top-drivers-a0d83b__dark__mobile__empty.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-distribution",
+      "scheme": "dark",
+      "viewport": "mobile",
+      "state": "empty",
+      "file": "png/scenarios-s4-spend-ac51be__spend-distribution-30a4cc__dark__mobile__empty.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "month-to-date",
+      "scheme": "dark",
+      "viewport": "mobile",
+      "state": "loading",
+      "file": "png/scenarios-s4-spend-ac51be__month-to-date-2296d1__dark__mobile__loading.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "forecast",
+      "scheme": "dark",
+      "viewport": "mobile",
+      "state": "loading",
+      "file": "png/scenarios-s4-spend-ac51be__forecast-018c49__dark__mobile__loading.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "budget",
+      "scheme": "dark",
+      "viewport": "mobile",
+      "state": "loading",
+      "file": "png/scenarios-s4-spend-ac51be__budget-81e4a5__dark__mobile__loading.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-over-time",
+      "scheme": "dark",
+      "viewport": "mobile",
+      "state": "loading",
+      "file": "png/scenarios-s4-spend-ac51be__spend-over-time-a9e8c1__dark__mobile__loading.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-by-project",
+      "scheme": "dark",
+      "viewport": "mobile",
+      "state": "loading",
+      "file": "png/scenarios-s4-spend-ac51be__spend-by-project-ad9f7d__dark__mobile__loading.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "top-drivers",
+      "scheme": "dark",
+      "viewport": "mobile",
+      "state": "loading",
+      "file": "png/scenarios-s4-spend-ac51be__top-drivers-a0d83b__dark__mobile__loading.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-distribution",
+      "scheme": "dark",
+      "viewport": "mobile",
+      "state": "loading",
+      "file": "png/scenarios-s4-spend-ac51be__spend-distribution-30a4cc__dark__mobile__loading.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "month-to-date",
+      "scheme": "dark",
+      "viewport": "mobile",
+      "state": "error",
+      "file": "png/scenarios-s4-spend-ac51be__month-to-date-2296d1__dark__mobile__error.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "forecast",
+      "scheme": "dark",
+      "viewport": "mobile",
+      "state": "error",
+      "file": "png/scenarios-s4-spend-ac51be__forecast-018c49__dark__mobile__error.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "budget",
+      "scheme": "dark",
+      "viewport": "mobile",
+      "state": "error",
+      "file": "png/scenarios-s4-spend-ac51be__budget-81e4a5__dark__mobile__error.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-over-time",
+      "scheme": "dark",
+      "viewport": "mobile",
+      "state": "error",
+      "file": "png/scenarios-s4-spend-ac51be__spend-over-time-a9e8c1__dark__mobile__error.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-by-project",
+      "scheme": "dark",
+      "viewport": "mobile",
+      "state": "error",
+      "file": "png/scenarios-s4-spend-ac51be__spend-by-project-ad9f7d__dark__mobile__error.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "top-drivers",
+      "scheme": "dark",
+      "viewport": "mobile",
+      "state": "error",
+      "file": "png/scenarios-s4-spend-ac51be__top-drivers-a0d83b__dark__mobile__error.png",
+      "status": "ok"
+    },
+    {
+      "route": "/scenarios/s4-spend",
+      "name": "spend-distribution",
+      "scheme": "dark",
+      "viewport": "mobile",
+      "state": "error",
+      "file": "png/scenarios-s4-spend-ac51be__spend-distribution-30a4cc__dark__mobile__error.png",
+      "status": "ok"
+    }
+  ]
+}
