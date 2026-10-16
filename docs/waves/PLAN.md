@@ -737,7 +737,7 @@ exit criterion holds, then flips to `done`.
   orchestrator decides its shape after reviewing this close-out. Shipped rule lines sit at 277/277 and
   `basalt-app/SKILL.md` at 300/300: a fix that adds a line must pay for it, or raise a ceiling on purpose.
 
-## Wave 16 — The fleet loop <!-- status: active -->
+## Wave 16 — The fleet loop <!-- status: done -->
 
 The W14 model applied to the rest of the fleet, in W15's blast-radius order (rollhook, basalt-ui-obsidian,
 rb, weatherorb, linewatch). Each consumer runs its own `docs/waves/basalt-2-migration.md` as its own fleet;
@@ -752,7 +752,8 @@ its friction lands in `argo-friction.md` (the one ledger) and ships as 2.x minor
       a Spotlight opt-out on `BasaltProvider`. Stop before release; the orchestrator publishes.
 - [x] The orchestrator then runs each consumer's plan in order, filing friction as it comes; a consumer starts
       only when its repo has no other active wave.
-- [ ] Close-out: every consumer on 2.x and live-verified, the ledger's open rows owned or accepted.
+- [x] Close-out: every consumer on 2.x and live-verified, the ledger's open rows owned or accepted. Five of six are
+      live on 2.11.1; weatherorb's live check moved to Wave 27, where the 1.x sunset is gated on it.
 
 **Left behind:** (step 1) rows 61-67 fixed on master, unreleased, under MIGRATING
 `## Unreleased — the fleet probe fixes`: #252 doctor (CSS + forced dropped subpaths, `oxlint-floor` 1.79.0),
@@ -773,3 +774,150 @@ rb, basalt-ui-obsidian, linewatch and argo are LIVE on 2.11.1 and verified (rb/o
 `make`, not CD — obsidian needs `bun install` first). weatherorb runs its own migration as its Waves 37–45,
 coordinated only through its orchestrator. Process lessons in the rewrite memory: verify reviewer blockers
 against the code; freeze scope after two review rounds; prefer declared config over CLI shape heuristics.
+
+## Wave 17 — weatherorb Wave 37 friction (rows 113–118) <!-- status: active -->
+
+weatherorb's provider spike on 2.11.1 put `/map` over its ADR 0020 gzip bar before any chart landed. Its
+orchestrator re-measures on the newest 2.x in its Wave 42.
+
+- [x] File rows 113–118 in `argo-friction.md`.
+- [ ] #285: `BasaltProvider` bundles Spotlight, modals and hotkeys only when `defineNav` / `defineCommands` /
+      `defineOverlays` ran; `ModalsProvider` becomes a sibling (rows 114, 118).
+- [ ] #286: `doctor` accepts a pathless-layout provider and checks the exported root route's typed context;
+      `motion` peer caret (rows 113, 115, 116). Row 117 is closed by design (TS project references).
+- [ ] Release the minor through `make release`, then tell weatherorb's orchestrator the version.
+
+**Left behind:**
+
+# Part 2 — the maturation pass (2026-10-16)
+
+**Owner's ask (2026-10-16):** make the next cycles a drastic maturation pass over code quality, API
+strictness, wiring, foundations, guards and lint rules, the Claude Code setup, usage patterns, DX and
+protection against misuse. Breaking changes and deleting stale surface are allowed and wanted (greenfield:
+only the owner's six apps consume it). The no-majors law stands: every break ships as a plain `feat:` 2.x
+minor with a MIGRATING entry and its opt-out.
+
+**Source:** nine adversarially verified area audits, 215 findings kept and 13 refuted, plus their synthesis,
+in `docs/waves/maturation-v2/` (`SYNTHESIS.md` § 3 holds every step's finding ids, files and consumer
+migration; § 2 the resolved conflicts; § 4 what is deliberately NOT done). A wave below is the synthesis
+wave of the same title; its lead reads that section before briefing workers.
+
+**Gate (every wave):** `make check` green; every merged PR independently reviewed (two rounds, then scope
+frozen and the last fix diff read by the lead); a failing-first test per behaviour change; the wave's
+`packages/basalt-ui/src` line delta reported (Waves 18, 22, 23, 24, 26 and 27 must be net-negative); the minor released by the
+orchestrator; the named validator consumers upgraded, `make check` green there and live-verified, and their
+friction filed as ledger rows before the next wave starts.
+
+**Mode:** orchestrated fleet. The orchestrator spawns one lead per wave (`RD_ORCHESTRATED=1 rd wave`), the
+lead fans out workers on disjoint file groups (`rd fan` / `rd merge`), and stops before release. The
+orchestrator releases, drives the consumer validators (weatherorb only through its own orchestrator), and
+files their friction.
+
+## Wave 18 — Wiring correctness and stability <!-- status: pending -->
+
+Synthesis Wave 1. Validators: weatherorb (Start `getRouter()`, SSR hydration), argo, rb.
+
+- [ ] Stable nav anchors and badge identity; narrow memoized shell contexts (no remount per navigation).
+- [ ] `basaltRouterOptions` factory shared by mount mode and Start; public `BasaltProviderProps`.
+- [ ] Pure `validateSearch`; search-store hygiene; one renderToString+hydrate test per lane.
+- [ ] Telemetry correctness (mutation-key hashing, dev console sink, no retry on 4xx).
+- [ ] `PageAside` single-claimant ownership.
+      **Left behind:**
+
+## Wave 19 — Format layer and small correctness bugs <!-- status: pending -->
+
+Synthesis Wave 2. Validators: argo, rb, linewatch.
+
+- [ ] `money` keeps cents (row cf-01); `integer`/`km`/`kcal`; one alias spelling.
+- [ ] One relative-time formatter (delete the three copies).
+- [ ] Provider-level `locale` / `timeZone`; the formatters two or more apps duplicate.
+- [ ] Filter correctness (flush on Enter/blur/unmount, one accessible name, shared filter base).
+      **Left behind:**
+
+## Wave 20 — Guard engine foundation and honesty <!-- status: pending -->
+
+Synthesis Wave 3. Validators: argo, rb, linewatch, obsidian (lint runs).
+
+- [ ] Typed plugin sources built into `configs/oxlint-plugin.js`; one generated rule table.
+- [ ] Alias and namespace provenance in every JSX rule; meta-test against raw `node.name.name`.
+- [ ] Claims vs enforcement: one violating fixture per documented "never", or the sentence goes.
+- [ ] New rules (`as never` on router calls, `basalt/banned-import` from `SURFACES`, markdown trust); delete `query-fn-unwrap`.
+- [ ] No warn tier in the preset: every rule is error or off.
+      **Left behind:**
+
+## Wave 21 — Agent layer and one gate command <!-- status: pending -->
+
+Synthesis Wave 4. Validators: all five + a scratch `init` app.
+
+- [ ] Rule `paths:` rendered from `basalt.roots`; every lint and guard message names its rule file (research Claude Code `paths:` semantics first).
+- [ ] `init`/`sync` own the PreToolUse guard hook in `.claude/settings.json`, local bin.
+- [ ] `basalt-ui check`: doctor + sync --check + oxlint + check-theme, one report, `--json`.
+- [ ] Seeds and templates (AGENTS block routing table, skill split, lefthook preset = one `check`).
+- [ ] Config and manifest slimming; `cli/index.ts` split; budget tightened.
+      **Left behind:**
+
+## Wave 22 — Dead-surface purge <!-- status: pending -->
+
+Synthesis Wave 5. Every deletion carries a fleet grep in its PR. Validators: playground, argo.
+
+- [ ] Unused shell props and account surface; shared glyphs module.
+- [ ] The dead forms layer (FormRow/FormGroup/FormActions/FormSection/form-state).
+- [ ] Commands/notifications dead code; `DeriveControls` mounted in the dock or deleted.
+- [ ] Token and chart leftovers (zero-reader `VX` members, `vite-color-mix.ts`, unused chart helpers).
+- [ ] Budgets ratcheted to landed values; a dead-export check in `pre`.
+      **Left behind:**
+
+## Wave 23 — Token and theme pipeline <!-- status: pending -->
+
+Synthesis Wave 6. Validators: argo, rb (visual diff), rollhook (`--tailwind`), weatherorb.
+
+- [ ] One resolver-owned theme channel; `BasaltProvider theme` takes `BasaltThemeOptions`; `injectPalette` and the bridge `<style>` go.
+- [ ] The zinc tail derived from `neutral`/`darkLevel`; knob validation; level-0 golden tests.
+- [ ] Component geometry leaves `--vx-space-*` for its CSS modules.
+- [ ] Self-registering series groups; `paletteOptions.groups/derived` go.
+- [ ] CSS layering, ink ladder, `tokens:css --tailwind`.
+      **Left behind:**
+
+## Wave 24 — Charts <!-- status: pending -->
+
+Synthesis Wave 7 (may ship as two minors). Validators: linewatch first, then argo, rb.
+
+- [ ] Definition stability (recompile-proof props), one engine adapter, dev invariants.
+- [ ] Viewport-gated follower tooltips owned by the chart shell.
+- [ ] `ChartCard` owns height (`'fill'`) and query state; empty data is a state; `placeholderHeight`/`matchHeight` deprecated.
+- [ ] Discriminated series union and first-class legend entries for zones and thresholds.
+- [ ] One chrome (`ChartShell`) under Heatmap, Donut and Sparkline; one annotation vocabulary; BandStrip without hacks.
+      **Left behind:**
+
+## Wave 25 — Shell, page frame and nav ergonomics <!-- status: pending -->
+
+Synthesis Wave 8. Includes the #285 follow-ups (lazy mount loaders, `nav.ts` layering). Validators: linewatch, argo, rb, obsidian.
+
+- [ ] `BasaltPage` and `CenteredScreen`; published page-fill/bleed vars.
+- [ ] Nav model: group-id keys, state unions, icon as component, one meta type; registry re-audit after #285.
+- [ ] Shell options consumers hand-wire (`colorScheme`, `refresh`, `signOut`); one `ErrorScreen`.
+- [ ] `ContentGrid` and `StatusDot` (cut unless argo and rb adopt in the same cycle).
+- [ ] Shell internals split; layout-suite geometry instead of CSS-string tests.
+      **Left behind:**
+
+## Wave 26 — Controls, forms, data, content, commands <!-- status: pending -->
+
+Synthesis Wave 9. Validators: argo, obsidian, weatherorb, rb.
+
+- [ ] `BasaltDataTable` discriminated pagination/sorting/filtering; zero-consumer props deleted; file split.
+- [ ] Markdown trust required; sanitizer fails closed; a markdown seam for the chat UI.
+- [ ] Chat/run state unions.
+- [ ] Commands/notifications UX (one `Tone`, built-in shortcuts help).
+- [ ] Forms/controls remnants (`fieldKey` verdict, `BarActionItem` union).
+      **Left behind:**
+
+## Wave 27 — Docs, tests and the 1.x sunset <!-- status: pending -->
+
+Synthesis Wave 10. Gate: weatherorb's Waves 37–45 finished and weatherorb live on 2.x (the open W16 check).
+
+- [ ] Doc and comment truth; drift checks resolve identifiers and paths cited in JSDoc.
+- [ ] MIGRATING diet (per-minor index, line budget).
+- [ ] 1.x sunset: retire doctor's 1.x tables and the deprecated aliases from Waves 18 and 24.
+- [ ] Test hygiene.
+- [ ] Final dogfood audit: every consumer `basalt-ui check` green within `basalt.maxWaivers`; STATUS and ledgers updated.
+      **Left behind:**
