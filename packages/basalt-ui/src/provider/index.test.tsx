@@ -24,6 +24,7 @@ import { afterEach, describe, expect, spyOn, test } from 'bun:test'
 import { useEffect } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { BasaltProvider, RootBoundary, composeInjectedCss } from './index'
+import { defineCommands } from '../commands/define-commands'
 import { setColorScheme } from '../commands/shell-bridge'
 import * as actionsModule from './spotlight-actions'
 import { testRouter } from './test-router'
@@ -360,6 +361,7 @@ describe('BasaltProvider spotlight opt-out (ledger row 67)', () => {
   })
 
   test('mounts the Spotlight by default and not at all with spotlight={false}', async () => {
+    defineCommands({})
     const built = spyOn(actionsModule, 'buildSpotlightActions')
     const on = render(<BasaltProvider router={testRouter('a')} />)
     await screen.findByText('a')
@@ -397,6 +399,7 @@ describe('BasaltProvider dev dock (module-scope NODE_ENV gate)', () => {
     expect(process.env['NODE_ENV']).not.toBe('production')
     // A dock left mounted by another file in this process would satisfy the assertions below.
     cleanup()
+    defineCommands({})
     render(<BasaltProvider router={testRouter('dockhost')} />)
     await screen.findByText('dockhost')
     await act(async () => {

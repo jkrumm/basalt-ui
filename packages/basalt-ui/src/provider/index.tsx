@@ -1,8 +1,10 @@
 /**
  * BasaltProvider — the one provider tree (V2-SPEC § 2): `MantineProvider` with the Basalt theme and
  * resolver, the `--vx-*` palette `<style>`, and then
- * `QueryClientProvider > ModalsProvider > RouterProvider` with `Notifications` and `Spotlight` as
- * siblings. The consumer writes the route tree, the nav and the registries.
+ * `QueryClientProvider > RouterProvider` with `Notifications` as a sibling. Spotlight, the modals
+ * layer and the command hotkeys are slots: each mounts as a sibling only once the app's `defineNav` /
+ * `defineCommands` / `defineOverlays` call registered it (`./slots`), so an app defining none ships none
+ * of their runtimes. The consumer writes the route tree, the nav and the registries.
  *
  * It also owns the root error boundary, the `window` error listeners and the telemetry seam
  * (V2-SPEC § 7), the command hotkeys and Spotlight actions, and — in dev only — the dev dock.
@@ -12,15 +14,12 @@
  */
 import { MantineProvider, useMantineColorScheme, useMantineTheme } from '@mantine/core'
 import type { MantineProviderProps } from '@mantine/core'
-import { ModalsProvider } from '@mantine/modals'
 import { Notifications } from '@mantine/notifications'
-import { Spotlight } from '@mantine/spotlight'
-import type { SpotlightActionData } from '@mantine/spotlight'
 import { QueryClientProvider } from '@tanstack/react-query'
 import type { QueryClient } from '@tanstack/react-query'
 import { RouterProvider, useRouter } from '@tanstack/react-router'
 import type { AnyRouter } from '@tanstack/react-router'
-import { Component, Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Component, Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react'
 import type { ErrorInfo, ReactNode } from 'react'
 import fallbackClasses from './error-fallback.module.css'
 import { cssVariablesResolver } from '../theme'
@@ -30,7 +29,6 @@ import type { BuildPaletteOpts } from '../tokens/core'
 import { isDefaultDeriveConfig } from '../tokens/derive'
 import { buildPaletteData } from '../tokens/palette'
 import { useMediaQuery } from '../common/use-media-query'
-import { registerModalsProvider } from '../commands/define-overlays'
 import { registerColorSchemeSetter } from '../commands/shell-bridge'
 import { useIsomorphicLayoutEffect } from '../common/isomorphic-layout-effect'
 import { PageTitle } from '../shell/page-title'
@@ -46,9 +44,9 @@ import {
 import type { Telemetry } from '../telemetry'
 import type { BasaltDevDockTool } from '../dev-dock'
 import type { BasaltRouter, BasaltRouterContext } from './create-router'
-import { useRegistryHotkeys } from './hotkeys'
 import type { FlatNavItem } from '../router-tanstack/nav'
-import { buildSpotlightActions } from './spotlight-actions'
+import { useSlots } from './slots'
+import type { SlotProps } from './slots'
 
 type BasaltProviderCommonProps = {
   /** Theme override merged onto the Basalt base. Defaults to `createBasaltTheme()`. */
@@ -91,8 +89,10 @@ type BasaltProviderCommonProps = {
    */
   navCommandLabel?: (item: FlatNavItem) => string
   /**
-   * Mount Basalt's `<Spotlight>` (Cmd+K) with the generated nav + command actions. Default `true`.
-   * Set `false` when the app owns its own palette: neither the component nor its action wiring mounts.
+   * Mount Basalt's `<Spotlight>` (Cmd+K) with the generated nav + command actions. Default `true`, and
+   * it mounts only when the app calls `defineNav` or `defineCommands` (nav entries and commands are
+   * what it lists). Set `false` when the app owns its own palette: neither the component nor its
+   * action wiring mounts.
    */
   spotlight?: boolean
 } & Omit<MantineProviderProps, 'children' | 'theme' | 'defaultColorScheme' | 'cssVariablesResolver'>
@@ -478,31 +478,20 @@ export function BasaltProvider({
   })
   const emit = useMemo(() => createLiveEmitter(() => sinkRef.current), [])
   useWindowErrors(emit)
-  useRegistryHotkeys()
-  // `overlays.confirm` is an imperative call; this tells it a `ModalsProvider` is live.
-  useEffect(() => registerModalsProvider(), [])
+  const slots = useSlots()
 
   const router = useEffectiveRouter(mountedRouter)
   const client = readQueryClient(router)
   useDataTelemetry(router, client, emit)
 
   const [devTool, setDevTool] = useState<BasaltDevDockTool | null>(null)
-  // Rebuilt on mount and again at every open, so a command's `when()` is read when the palette
-  // appears, not frozen at mount — and `detectMac` (inside the builder) never runs during render.
-  const [actions, setActions] = useState<SpotlightActionData[]>([])
-  const refreshActions = useCallback(
-    () => setActions(buildSpotlightActions(router, setDevTool, navCommandLabel)),
-    [router, navCommandLabel],
-  )
-  useEffect(() => {
-    if (spotlight) refreshActions()
-  }, [spotlight, refreshActions])
-
   // `createBasaltTheme(theme)` — plus, when the theme lab's "Apply" switch is on, the delta of its
   // persisted config, so the dev tool moves the numeric `defaultProps` and `theme.spacing` a `<style>`
   // tag cannot reach. No lab override (every production app) → the consumer theme merged onto the
   // Basalt base and nothing else. See `./lab-theme.ts`.
   const resolvedTheme = useLabTheme(theme)
+  const { modals: Modals, hotkeys: Hotkeys, spotlight: Spotlight } = slots
+  const slotProps: SlotProps = { router, navCommandLabel, openDevTool: setDevTool }
 
   return (
     // `...rest` spreads FIRST so a consumer's `MantineProviderProps` can never shadow the three
@@ -519,34 +508,19 @@ export function BasaltProvider({
           <TelemetryContext.Provider value={emit}>
             <SizeClassHintContext.Provider value={sizeClassHint}>
               <QueryClientProvider client={client}>
-                {/* ModalsProvider WRAPS the router, so `useModals()` / `openContextModal` have real context. */}
-                <ModalsProvider>
-                  {mountedRouter === undefined ? (
-                    children
-                  ) : (
-                    <RouterProvider router={mountedRouter} />
-                  )}
-                  {/* `LazyDevDock` is `null` in production (module-scope gate above), so nothing mounts. */}
-                  {LazyDevDock !== null && (
-                    <Suspense fallback={null}>
-                      <LazyDevDock
-                        tool={devTool}
-                        onClose={() => setDevTool(null)}
-                        router={router}
-                      />
-                    </Suspense>
-                  )}
-                </ModalsProvider>
+                {mountedRouter === undefined ? children : <RouterProvider router={mountedRouter} />}
+                {/* A sibling, not a wrapper: a late `defineOverlays` mounts it without re-parenting the app. */}
+                {Modals !== undefined && <Modals {...slotProps} />}
+                {/* `LazyDevDock` is `null` in production (module-scope gate above), so nothing mounts. */}
+                {LazyDevDock !== null && (
+                  <Suspense fallback={null}>
+                    <LazyDevDock tool={devTool} onClose={() => setDevTool(null)} router={router} />
+                  </Suspense>
+                )}
               </QueryClientProvider>
               <Notifications position="bottom-right" autoClose={4000} limit={5} />
-              {spotlight && (
-                <Spotlight
-                  actions={actions}
-                  onSpotlightOpen={refreshActions}
-                  shortcut="mod + K"
-                  maxHeight={420}
-                />
-              )}
+              {Hotkeys !== undefined && <Hotkeys {...slotProps} />}
+              {spotlight && Spotlight !== undefined && <Spotlight {...slotProps} />}
             </SizeClassHintContext.Provider>
           </TelemetryContext.Provider>
         </BasaltBridge>

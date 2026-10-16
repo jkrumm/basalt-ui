@@ -9,10 +9,14 @@
  * silently. Compile-verified. A config whose selling point is "typos are compile errors" cannot
  * have a hole exactly where metadata typos live.
  *
- * No JSX and no Mantine in this module — `./router-tanstack` is a headless barrel by contract.
+ * No JSX and no Mantine in this module — `./router-tanstack` is a headless barrel by contract. The one
+ * exception is `defineNav`'s registration of the Spotlight mount (`../provider/slots`): nav entries
+ * feed the palette, and the mount is only reachable through this call.
  */
 import type { RegisteredRouter } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
+import { registerSlot } from '../provider/slots'
+import { SpotlightMount } from '../provider/spotlight-mount'
 import type { NavMobilePlacement, NavSectionMobile } from '../shell/nav-types'
 
 // ── authoring shapes ─────────────────────────────────────────────────────────────────────────────
@@ -158,6 +162,8 @@ export function defineNav<
 >(config: RegisteredOr<NavConfig<G, T>>): NavConfig<G, T> {
   const nav = config as unknown as NavConfig<G, T>
   activeNav = nav
+  // Nav entries feed the palette, so defining the nav is what puts Spotlight in the bundle.
+  registerSlot('spotlight', SpotlightMount)
   return nav
 }
 

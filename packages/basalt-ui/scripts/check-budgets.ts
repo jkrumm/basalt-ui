@@ -244,6 +244,30 @@ export function devOnlyChunks(
     .map((c) => c.fileName)
 }
 
+/**
+ * Feature runtimes a define-free provider must not ship — Spotlight, modals and hotkeys enter the
+ * graph only through `defineNav` / `defineCommands` / `defineOverlays`. Matched on a module id's
+ * `node_modules/<pkg>/` segment (any package-manager layout), so a chunk is flagged by what it
+ * contains, not by its name. Exported for the unit test.
+ */
+const FEATURE_RUNTIME =
+  /(?:^|\/)node_modules\/(?:@mantine\/(?:spotlight|modals)|@tanstack\/(?:react-)?hotkeys)\//
+
+export function featureRuntimeChunks(
+  chunks: readonly Pick<BundleChunk, 'fileName' | 'moduleIds'>[],
+): string[] {
+  return chunks
+    .filter((c) => c.moduleIds.some((id) => FEATURE_RUNTIME.test(id.replaceAll('\\', '/'))))
+    .map((c) => c.fileName)
+}
+
+/** Gzip bytes of every emitted chunk, dynamic ones included — a bundle-graph bar follows `import()`. */
+function allChunksGzip(chunks: ReadonlyMap<string, BundleChunk>): number {
+  let bytes = 0
+  for (const chunk of chunks.values()) bytes += gzipSync(chunk.code).length
+  return bytes
+}
+
 /** Gzip bytes of the entry chunk plus every chunk it statically imports (the first-paint set). */
 function firstPaintGzip(chunks: ReadonlyMap<string, BundleChunk>, entry: BundleChunk): number {
   const loaded = new Set<string>()
@@ -259,9 +283,18 @@ function firstPaintGzip(chunks: ReadonlyMap<string, BundleChunk>, entry: BundleC
   return bytes
 }
 
-/** The production bundle of the provider-only fixture: every emitted chunk and its entry. */
+/**
+ * Peer-bundled builds (the embedded fixture) keep only the React runtime external, so the peers'
+ * own bytes and chunks are counted the way a consumer's bundle-graph bar counts them.
+ */
+const REACT_RUNTIME = /^react(?:-dom)?(?:\/|$)/
+
+type BundleOpts = { fixture: string; bundlePeers: boolean }
+
+/** The production bundle of a fixture: every emitted chunk and its entry. */
 async function buildProviderOnlyBundle(
   distEntry: string,
+  { fixture, bundlePeers }: BundleOpts = { fixture: 'provider-only.ts', bundlePeers: false },
 ): Promise<{ chunks: Map<string, BundleChunk>; entry: BundleChunk }> {
   const result = await build({
     configFile: false,
@@ -272,9 +305,10 @@ async function buildProviderOnlyBundle(
     build: {
       write: false,
       minify: true,
-      lib: { entry: join(PKG_ROOT, 'scripts/fixtures/provider-only.ts'), formats: ['es'] },
+      lib: { entry: join(PKG_ROOT, 'scripts/fixtures', fixture), formats: ['es'] },
       rolldownOptions: {
-        external: (id) => id !== 'basalt-ui' && !isOwnGraphId(id),
+        external: (id) =>
+          bundlePeers ? REACT_RUNTIME.test(id) : id !== 'basalt-ui' && !isOwnGraphId(id),
       },
     },
   })
@@ -305,7 +339,16 @@ const PROVIDER_ONLY_LABEL = 'provider-only first paint (gzip B, dist)'
 // 20880 → 20340: the dock's lazy import() is dead code in production (20136 locally, was 20796);
 // ~1% over local clears CI's measured +34 B with room.
 // 20340 → 19940: the 32 camelCase `--vx-*` aliases leave the injected CSS (19744 locally, was 20136).
-const PROVIDER_ONLY_CEILING = 19940
+// 19940 → 19000: Spotlight and modals leave the entry (provider slots): 18810 locally, was 19755.
+const PROVIDER_ONLY_CEILING = 19000
+// Embedded provider, `spotlight={false}`, no defines, peers bundled, every chunk counted (a bundle-graph
+// bar follows `import()`). Before the provider slots (2.11.1): 190544 B, with the dynamic hotkeys chunk
+// (~14967 B) plus Spotlight and modals in the entry; after: 166834 B, zero feature chunks. ~1% over
+// landed, the same margin as the provider-only row.
+const EMBEDDED_CEILING = 168500
+const EMBEDDED_LABEL = 'embedded provider, no defines, peers bundled, all chunks (gzip B, dist)'
+const FEATURE_CHUNKS_LABEL =
+  'spotlight/modals/hotkeys modules in a define-free provider build (all chunks)'
 const DEV_CHUNKS_LABEL =
   'dev-only chunks in a production consumer build (dock, theme lab, devtools)'
 
@@ -336,16 +379,26 @@ function summarizeError(error: unknown): string {
 async function providerOnlyRows(distEntry: string): Promise<Budget[]> {
   const sizeRow = { label: PROVIDER_ONLY_LABEL, ceiling: PROVIDER_ONLY_CEILING }
   const devRow = { label: DEV_CHUNKS_LABEL, ceiling: 0 }
-  const unmeasured = (kind: 'skipped' | 'failed', reason: string): Budget[] => [
-    { ...sizeRow, value: null, unmeasured: { kind, reason } },
-    { ...devRow, value: null, unmeasured: { kind, reason } },
-  ]
+  const embeddedRow = { label: EMBEDDED_LABEL, ceiling: EMBEDDED_CEILING }
+  const featureRow = { label: FEATURE_CHUNKS_LABEL, ceiling: 0 }
+  const unmeasured = (kind: 'skipped' | 'failed', reason: string): Budget[] =>
+    [sizeRow, devRow, embeddedRow, featureRow].map((row) => ({
+      ...row,
+      value: null,
+      unmeasured: { kind, reason },
+    }))
   if (!existsSync(distEntry)) return unmeasured('skipped', 'dist/ missing, run `bun run build`')
   try {
     const { chunks, entry } = await buildProviderOnlyBundle(distEntry)
+    const embedded = await buildProviderOnlyBundle(distEntry, {
+      fixture: 'provider-embedded.tsx',
+      bundlePeers: true,
+    })
     return [
       { ...sizeRow, value: firstPaintGzip(chunks, entry) },
       gateRow(DEV_CHUNKS_LABEL, devOnlyChunks([...chunks.values()])),
+      { ...embeddedRow, value: allChunksGzip(embedded.chunks) },
+      gateRow(FEATURE_CHUNKS_LABEL, featureRuntimeChunks([...embedded.chunks.values()])),
     ]
   } catch (error) {
     return unmeasured('failed', summarizeError(error))

@@ -14,7 +14,8 @@ import { act, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, spyOn, test } from 'bun:test'
 import { useEffect } from 'react'
 import type { ReactNode } from 'react'
-import { overlays, registerModalsProvider } from './define-overlays'
+import { registerModalsProvider } from '../provider/modals-mount'
+import { overlays } from './define-overlays'
 
 /** A `ModalsProvider` plus its registration — what `BasaltProvider` mounts. */
 function ModalsHost({ children }: { children?: ReactNode }) {
