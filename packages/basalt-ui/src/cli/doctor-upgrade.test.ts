@@ -893,7 +893,7 @@ describe('doctor — app-wiring', () => {
     expect(text(appWiringCheck(dir))).toContain('renders <BasaltProvider>')
     write(
       'src/routes/__root.tsx',
-      'export const Route = { component: () => <BasaltProvider><Outlet /></BasaltProvider> }\n',
+      'export const Route = createRootRoute({ component: () => <BasaltProvider><Outlet /></BasaltProvider> })\n',
     )
     expect(text(appWiringCheck(dir))).toContain('createRootRouteWithContext<BasaltRouterContext>')
     write(
@@ -982,6 +982,36 @@ describe('doctor — app-wiring', () => {
       expect(text(appWiringCheck(dir))).toContain('pathless layout')
     })
 
+    it('counts a nested layout, not a double-underscore file', () => {
+      start()
+      write('src/routes/dashboard/_app.tsx', LAYOUT)
+      expect(appWiringCheck(dir)).toBeNull()
+      rmSync(join(dir, 'src/routes/dashboard/_app.tsx'))
+      write('src/routes/__other.tsx', LAYOUT)
+      expect(text(appWiringCheck(dir))).toContain('pathless layout')
+    })
+
+    it('rejects router= in _app/route.tsx and a second provider beside the root', () => {
+      start()
+      write('src/routes/_app/route.tsx', '<BasaltProvider router={r}><Outlet /></BasaltProvider>\n')
+      expect(text(appWiringCheck(dir))).toContain('src/routes/_app/route.tsx passes router=')
+      write('src/routes/_app/route.tsx', LAYOUT)
+      write('src/routes/__root.tsx', ROOT + LAYOUT)
+      const both = text(appWiringCheck(dir))
+      expect(both).toContain('src/routes/__root.tsx and src/routes/_app/route.tsx both render')
+    })
+
+    it('names a missing root route when the provider sits in a layout', () => {
+      write(
+        'package.json',
+        JSON.stringify({ name: 'fixture', dependencies: { '@tanstack/react-start': '*' } }),
+      )
+      write('src/routes/_app.tsx', LAYOUT)
+      expect(text(appWiringCheck(dir))).toContain(
+        'src/routes/__root.tsx does not exist, so the provider in src/routes/_app.tsx',
+      )
+    })
+
     it('keeps the router= rejection and spread warning for the layout file', () => {
       start()
       write('src/routes/_app.tsx', '<BasaltProvider router={r}><Outlet /></BasaltProvider>\n')
@@ -1003,9 +1033,26 @@ describe('doctor — app-wiring', () => {
       'export const Route = createRootRoute({ component: () => <BasaltProvider><Outlet /></BasaltProvider> })\n',
     )
     expect(text(appWiringCheck(dir))).toContain('createRootRouteWithContext<BasaltRouterContext>()')
+    // A dead createRootRouteWithContext call beside an untyped exported Route still fails.
     write(
       'src/routes/__root.tsx',
-      'export const Route = createRootRouteWithContext<{ queryClient: QueryClient; user: U }>()({ component: () => <BasaltProvider><Outlet /></BasaltProvider> })\n',
+      'const unused = createRootRouteWithContext<BasaltRouterContext>()\nexport const Route = createRootRoute({ component: () => <BasaltProvider><Outlet /></BasaltProvider> })\n',
+    )
+    expect(text(appWiringCheck(dir))).toContain('createRootRoute()')
+    // A re-export, wrapper or missing Route export is skipped, never failed.
+    write(
+      'src/routes/__root.tsx',
+      "export { Route } from './elsewhere'\nconst x = () => <BasaltProvider><Outlet /></BasaltProvider>\n",
+    )
+    expect(appWiringCheck(dir)).toBeNull()
+    write(
+      'src/routes/__root.tsx',
+      'type Ctx = { queryClient: () => QueryClient }\nexport const Route = createRootRouteWithContext<Ctx>()({ component: () => <BasaltProvider><Outlet /></BasaltProvider> })\n',
+    )
+    expect(appWiringCheck(dir)).toBeNull()
+    write(
+      'src/routes/__root.tsx',
+      'export const Route = createRootRouteWithContext<{ queryClient: () => QueryClient }>()({ component: () => <BasaltProvider><Outlet /></BasaltProvider> })\n',
     )
     expect(appWiringCheck(dir)).toBeNull()
   })
