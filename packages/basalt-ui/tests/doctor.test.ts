@@ -347,7 +347,7 @@ describe('doctor design-loop section', () => {
     const { code, out } = run({ notice: () => `${stale} — x`, playwright: () => '1.64.1' })
     expect(code).toBe(0)
     expect(out).toContain(stale)
-    expect(out).toContain('playwright 1.64.1 resolves')
+    expect(out).toContain('playwright resolves (1.64.1')
     expect(out).toContain('All checks passed.')
   })
   it('prints the notice when no board exists (real walk over the fixture)', () => {

@@ -71,7 +71,18 @@ describe('staleBoardNotice', () => {
     put('src/c.tsx', '', 1000)
     lastShot(2000)
     expect(staleBoardNotice(dir, ['src'], 2)).toBe(BOARD_NOTICE)
+    expect(staleBoardNotice(dir, ['src'], 4)).toBeNull()
+  })
+  it('does not count non-UI files against the cap: a big non-UI tree stays silent beside a fresh board', () => {
+    put('src/a.tsx', '', 1000)
+    for (let i = 0; i < 20; i++) put(`src/data/f${i}.json`, '')
+    lastShot(2000)
     expect(staleBoardNotice(dir, ['src'], 3)).toBeNull()
+  })
+  it('marks the scan unknown on a non-ENOENT readdir error', () => {
+    put('src', '') // a FILE where the root dir should be: ENOTDIR, not ENOENT
+    lastShot(2000)
+    expect(staleBoardNotice(dir, ['src'])).toBe(BOARD_NOTICE)
   })
   it('skips node_modules and dist', () => {
     put('src/node_modules/x/a.tsx', '', 3000)
@@ -108,9 +119,13 @@ describe('designLoopLines', () => {
     expect(lines[0]).toContain('UI changed since the last board')
     expect(lines[1]).toContain('bun add -d playwright')
   })
+  it('says "version unknown" instead of printing the placeholder', () => {
+    const [line] = designLoopLines(dir, ['src'], { notice: absent, playwright: () => 'unknown' })
+    expect(line).toBe('  ✓ playwright resolves (version unknown; optional: basalt-ui shot)')
+  })
   it('emits only the pass line when fresh and Playwright resolves', () => {
     expect(designLoopLines(dir, ['src'], { notice: absent, playwright: () => '1.64.1' })).toEqual([
-      '  ✓ playwright 1.64.1 resolves (optional: basalt-ui shot)',
+      '  ✓ playwright resolves (1.64.1; optional: basalt-ui shot)',
     ])
   })
 })
