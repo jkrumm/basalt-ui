@@ -60,12 +60,25 @@ describe('relativeTime', () => {
     expect(relativeTime(now - 30_000, { now, numeric: 'always', ...en })).toBe('0 seconds ago')
   })
 
-  test('style narrows the unit labels', () => {
-    const long = relativeTime(now - 3 * HOUR, { now, ...en })
-    const short = relativeTime(now - 3 * HOUR, { now, style: 'short', ...en })
-    expect(long).toBe('3 hours ago')
-    expect(short).not.toBe(long)
-    expect(short.length).toBeLessThan(long.length)
+  test('style: long, short and narrow', () => {
+    expect(relativeTime(now - 3 * HOUR, { now, style: 'long', ...en })).toBe('3 hours ago')
+    expect(relativeTime(now - 3 * HOUR, { now, style: 'short', ...en })).toBe('3 hr. ago')
+    expect(relativeTime(now - 3 * HOUR, { now, style: 'narrow', ...en })).toBe('3h ago')
+  })
+
+  test('symmetric rounding either side of the sign', () => {
+    expect(relativeTime(now - 30 * MIN, { now, ...en })).toBe('30 minutes ago')
+    expect(relativeTime(now + 30 * MIN, { now, ...en })).toBe('in 30 minutes')
+    expect(relativeTime(now - 1.5 * HOUR, { now, ...en })).toBe('2 hours ago')
+    expect(relativeTime(now + 1.5 * HOUR, { now, ...en })).toBe('in 2 hours')
+    expect(relativeTime(now - 45 * MIN, { now, ...en })).toBe('45 minutes ago')
+  })
+
+  test('promotes only once the rounded count fills the next unit', () => {
+    expect(relativeTime(now - 59.6 * MIN, { now, ...en })).toBe('1 hour ago')
+    expect(relativeTime(now + 59.6 * MIN, { now, ...en })).toBe('in 1 hour')
+    expect(relativeTime(now - 359.6 * DAY, { now, ...en })).toBe('last year')
+    expect(relativeTime(now + 359.6 * DAY, { now, ...en })).toBe('next year')
   })
 
   test('rounds to the nearest unit, largest first', () => {
@@ -143,6 +156,15 @@ describe('date / time / dateTime', () => {
     expect(dateTime(at, { ...utc, format: 'short' })).toBe('9/2/26, 3:04 PM')
   })
 
+  test('leap days', () => {
+    expect(date('2024-02-29', { ...en, format: 'long' })).toBe('February 29, 2024')
+    expect(date('2000-02-29', { ...en, format: 'long' })).toBe('February 29, 2000')
+    expect(date('2026-02-29', en)).toBe(NON_FINITE)
+    expect(date('1900-02-29', en)).toBe(NON_FINITE)
+    expect(weekday('2024-02-29', en)).toBe('Thu')
+    expect(weekday('1900-02-29', en)).toBe(NON_FINITE)
+  })
+
   test('year 1 survives, a day that does not exist is a dash', () => {
     expect(date('0001-01-01', { ...en, timeZone: 'UTC', format: 'long' })).toBe('January 1, 1')
     expect(date('2026-02-31', en)).toBe(NON_FINITE)
@@ -185,6 +207,20 @@ describe('duration', () => {
     expect(duration(90_000, { style: 'compact' })).toBe('25h')
     expect(duration(90_000, { style: 'compact', largest: 'day' })).toBe('1d 01h')
     expect(duration(5400, { style: 'compact', largest: 'minute' })).toBe('90m')
+  })
+
+  test('unit boundaries', () => {
+    expect(duration(60, { style: 'compact' })).toBe('1m')
+    expect(duration(3600, { style: 'compact' })).toBe('1h')
+    expect(duration(86_400, { style: 'compact' })).toBe('24h')
+    expect(duration(86_400, { style: 'compact', largest: 'day' })).toBe('1d')
+    expect(duration(125, { style: 'compact' })).toBe('2m 05s')
+  })
+
+  test('rounds half up to whole seconds', () => {
+    expect(duration(0.5, { style: 'compact' })).toBe('1s')
+    expect(duration(59.5, { style: 'compact' })).toBe('1m')
+    expect(duration(-0.5, { style: 'compact' })).toBe('0s')
   })
 
   test('zero, negatives, fractions and Infinity', () => {

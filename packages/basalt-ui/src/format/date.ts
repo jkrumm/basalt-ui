@@ -67,8 +67,9 @@ export type RelativeTimeOptions = LocaleOption & {
 
 const MINUTE_MS = 60_000
 
-/** Largest first: the first unit whose ROUNDED count is at least 1 wins, so 59.98 minutes is
- * `1 hour` and 23.6 hours is `yesterday`. */
+/** Largest first. The unit is picked by magnitude; the count is rounded on the absolute value
+ * (so +/- are symmetric) and the unit is promoted only once the rounded count fills the next
+ * larger unit — 45 minutes stays `45 minutes`, 59.6 minutes becomes `1 hour`. */
 const RELATIVE_TIME_UNITS: readonly {
   readonly unit: Intl.RelativeTimeFormatUnit
   readonly ms: number
@@ -113,11 +114,17 @@ export function relativeTime(value: DateInput, options: RelativeTimeOptions = {}
   if (timestamp === undefined) return NON_FINITE
   const formatter = relativeTimeFormat(locale, style, numeric)
   const diffMs = timestamp - now
-  if (Math.abs(diffMs) >= MINUTE_MS) {
-    for (const { unit, ms } of RELATIVE_TIME_UNITS) {
-      const count = Math.round(diffMs / ms)
-      if (Math.abs(count) >= 1) return formatter.format(count, unit)
-    }
+  const magnitude = Math.abs(diffMs)
+  const sign = diffMs < 0 ? -1 : 1
+  const index = RELATIVE_TIME_UNITS.findIndex(({ ms }) => magnitude >= ms)
+  const picked = RELATIVE_TIME_UNITS[index]
+  if (picked !== undefined) {
+    const larger = RELATIVE_TIME_UNITS[index - 1]
+    const unit =
+      larger !== undefined && Math.round(magnitude / picked.ms) * picked.ms >= larger.ms
+        ? larger
+        : picked
+    return formatter.format(sign * Math.round(magnitude / unit.ms), unit.unit)
   }
   return formatter.format(diffMs < 0 ? NEGATIVE_ZERO : 0, 'second')
 }
@@ -153,7 +160,7 @@ export function date(value: DateInput, options: DateOptions = {}): string {
   )
 }
 
-/** Time of day — `"3:04 PM"`. A plain `YYYY-MM-DD` string reads as midnight UTC. */
+/** Time of day — `"3:04:05 PM"` (`format: 'short'`: `"3:04 PM"`). A plain `YYYY-MM-DD` string reads as midnight UTC. */
 export function time(value: DateInput, options: DateOptions = {}): string {
   const resolved = resolveDateInput(value, options.timeZone)
   if (resolved === null) return NON_FINITE
@@ -163,7 +170,8 @@ export function time(value: DateInput, options: DateOptions = {}): string {
   )
 }
 
-/** Date and time — `"9/2/26, 3:04 PM"`. */
+/** Date and time — `"Sep 2, 2026, 3:04:05 PM"` (`format: 'short'`: `"9/2/26, 3:04 PM"`; the date/time
+ * separator is the runtime's). */
 export function dateTime(value: DateInput, options: DateOptions = {}): string {
   const resolved = resolveDateInput(value, options.timeZone)
   if (resolved === null) return NON_FINITE
@@ -195,12 +203,11 @@ export type DurationOptions = LocaleOption & {
   largest?: 'day' | 'hour' | 'minute'
 }
 
-/** `per`: how many of this unit make one of the next larger one (the first shown unit is uncapped). */
 const DURATION_UNITS = [
-  { unit: 'day', short: 'd', seconds: 86_400, per: Infinity },
-  { unit: 'hour', short: 'h', seconds: 3_600, per: 24 },
-  { unit: 'minute', short: 'm', seconds: 60, per: 60 },
-  { unit: 'second', short: 's', seconds: 1, per: 60 },
+  { unit: 'day', short: 'd', seconds: 86_400 },
+  { unit: 'hour', short: 'h', seconds: 3_600 },
+  { unit: 'minute', short: 'm', seconds: 60 },
+  { unit: 'second', short: 's', seconds: 1 },
 ] as const
 
 /**
@@ -219,19 +226,22 @@ export function duration(
   if (style === 'clock') return durationClock(seconds)
   const total = Math.max(0, Math.round(seconds))
   const shown = DURATION_UNITS.slice(DURATION_UNITS.findIndex(({ unit }) => unit === largest))
-  const parts = shown.map(({ unit, short, seconds: size, per }, i) => {
+  const parts = shown.map(({ unit, short, seconds: size }, i) => {
     const count = Math.floor(total / size)
-    return { unit, short, value: i === 0 ? count : count % per }
+    const upper = shown[i - 1]?.seconds
+    return { unit, short, value: upper === undefined ? count : count % (upper / size) }
   })
   const firstNonZero = parts.findIndex(({ value }) => value > 0)
   const start = firstNonZero === -1 ? parts.length - 1 : firstNonZero
   const end = firstNonZero === -1 ? start : parts.findLastIndex(({ value }) => value > 0)
   return parts
     .slice(start, end + 1)
-    .map(({ unit, short, value }, i) =>
-      style === 'compact'
-        ? `${i === 0 ? value : String(value).padStart(2, '0')}${short}`
-        : numberFormat(locale, { style: 'unit', unit, unitDisplay: 'long' }).format(value),
-    )
+    .map(({ unit, short, value }, i) => {
+      if (style === 'long') {
+        return numberFormat(locale, { style: 'unit', unit, unitDisplay: 'long' }).format(value)
+      }
+      const digits = i === 0 ? String(value) : String(value).padStart(2, '0')
+      return `${digits}${short}`
+    })
     .join(' ')
 }
