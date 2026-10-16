@@ -1076,8 +1076,9 @@ its rounds on these tools.
       **Left behind:**
 
 - **Landed** (PRs #318 budget slots, #319 scenarios, #320 procedure, #321 `shot`, #322 discovery, #323 calibration,
-  #325 neutral-id confirmation, plus the close-out; each reviewed by agent-gateway for two rounds, then scope frozen and the lead read the last fix
-  diff; `make check` green at every merge through `rd merge`). Nothing released.
+  #325 neutral-id confirmation, plus the close-out #326). #319–#323 and #326: agent-gateway review for two rounds, then
+  scope frozen and the lead read the last fix diff; #325 had a third round after its scope grew. Review: none on #318
+  (four zero-valued budget slots, no behaviour). `make check` green at every merge through `rd merge`. Nothing released.
 - **`basalt-ui shot <route…> (--base <url> | --dist <dir>) [--out] [--states]`** (`src/cli/shot/`): 1440×900 and 390×844,
   light and dark, states rest/hover/focus/tooltip (desktop) and empty/loading/error (`?shot-state=` on a page that
   declares `data-shot-states`); anchors are `data-shot`, targets `data-shot-hover`/`data-shot-tooltip`. Writes
