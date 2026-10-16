@@ -801,7 +801,11 @@ describe('PageAside claim ownership (two claimants)', () => {
   beforeEach(() => {
     warn = spyOn(console, 'warn').mockImplementation(() => {})
   })
-  afterEach(() => warn.mockRestore())
+  afterEach(() => {
+    warn.mockRestore()
+    restoreMatchMedia?.()
+    restoreMatchMedia = null
+  })
 
   test('the newest claimant owns the region; an older one publishing never reaches it', () => {
     const show = mount('folded', 'off')
