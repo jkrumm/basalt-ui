@@ -58,6 +58,7 @@
   "aiSdkTransport": "argo:apps/dashboard/src/features/hermes-chat/hermes-transport.ts",
   "alpha": "argo:apps/dashboard/src/features/strength-tracker/components/recent-records.tsx",
   "basaltAppPlugin": "argo:apps/dashboard/vite.config.ts",
+  "basaltRouterOptions": "weatherorb:apps/web/src/router.tsx",
   "basaltViteConfig": "argo:apps/dashboard/vite.config.ts",
   "buildPaletteCss": "rb:apps/web/src/lib/series.test.ts",
   "chartCursor": "weatherorb:apps/web/src/map/point/meteogram.tsx",

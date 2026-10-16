@@ -36,9 +36,11 @@ import { SizeClassHintContext } from '../shell/use-size-class'
 import type { SizeClass } from '../shell/use-size-class'
 import {
   TelemetryContext,
-  bindRouterTelemetry,
+  bindRouteError,
   createLiveEmitter,
+  devConsoleSink,
   errorName,
+  hashOf,
   now,
 } from '../telemetry'
 import type { Telemetry } from '../telemetry'
@@ -54,7 +56,7 @@ type BasaltProviderCommonProps = {
   /**
    * Typed events (V2-SPEC § 7) — navigations, route/query/mutation/render/window errors. Called
    * synchronously and wrapped in `try/catch`, so a throwing sink never breaks a render. Events carry
-   * ids, hashes, counts and durations only; no sink, no events.
+   * ids, hashes, counts and durations only. No sink, no events in production; in development an unset sink logs query and mutation failures to the console.
    */
   telemetry?: Telemetry
   /** The root error boundary's UI. Unset → a minimal page with a reload button; `null` renders nothing. */
@@ -101,7 +103,7 @@ type BasaltProviderCommonProps = {
  * Two modes, never both: pass a `createBasaltRouter` `router` and the provider mounts it, or pass
  * `children` and render the provider INSIDE a router the app does not own (around the `<Outlet />`
  * of TanStack Start's root route component) — the router then comes from `useRouter()` and must carry
- * `context.queryClient` (its `getRouter()` builds the same context `createBasaltRouter` does).
+ * `context.queryClient`: spread `basaltRouterOptions()` into its `createRouter` (Start's `getRouter()`).
  */
 export type BasaltProviderProps = BasaltProviderCommonProps &
   (
@@ -354,7 +356,20 @@ function useWindowErrors(emit: Telemetry): void {
 /** Router navigations and the QueryClient's caches → `route.*`, `query.error`, `mutation.error`. */
 function useDataTelemetry(router: AnyRouter, client: QueryClient, emit: Telemetry): void {
   useEffect(() => {
-    const unbind = bindRouterTelemetry(router, emit)
+    // `basaltRouterOptions`' `defaultOnCatch` reports to the handler bound here.
+    const routeId = (): string => router.state.matches.at(-1)?.routeId ?? 'unknown'
+    const onRouteError = (error: unknown): void =>
+      emit({
+        type: 'route.error',
+        failed: true,
+        start: now(),
+        attributes: {
+          'basalt.route.id': routeId(),
+          'exception.type': errorName(error),
+          'basalt.error.kind': 'route',
+        },
+      })
+    const unbind = bindRouteError(router, onRouteError)
 
     // Keyed by the target href: a newer navigation overwrites, and a resolve for any other target
     // (a superseded or redirected navigation) is dropped rather than paired with the wrong start.
@@ -372,7 +387,7 @@ function useDataTelemetry(router: AnyRouter, client: QueryClient, emit: Telemetr
         start,
         duration: now() - start,
         attributes: {
-          'basalt.route.id': router.state.matches.at(-1)?.routeId ?? 'unknown',
+          'basalt.route.id': routeId(),
           'basalt.route.from': from,
           'url.path': ev.toLocation.pathname,
         },
@@ -400,7 +415,7 @@ function useDataTelemetry(router: AnyRouter, client: QueryClient, emit: Telemetr
         failed: true,
         start: now(),
         attributes: {
-          'basalt.mutation.key': JSON.stringify(ev.mutation.options.mutationKey ?? null),
+          'basalt.mutation.key': hashOf(JSON.stringify(ev.mutation.options.mutationKey ?? null)),
           'exception.type': errorName(ev.action.error),
           'basalt.error.kind': 'mutation',
         },
@@ -472,9 +487,10 @@ export function BasaltProvider({
   useHostAttribute()
 
   // The sink is read through a ref, so an inline `telemetry` function does not re-subscribe.
-  const sinkRef = useRef(telemetry)
+  const sink = telemetry ?? (process.env.NODE_ENV === 'production' ? undefined : devConsoleSink)
+  const sinkRef = useRef(sink)
   useEffect(() => {
-    sinkRef.current = telemetry
+    sinkRef.current = sink
   })
   const emit = useMemo(() => createLiveEmitter(() => sinkRef.current), [])
   useWindowErrors(emit)

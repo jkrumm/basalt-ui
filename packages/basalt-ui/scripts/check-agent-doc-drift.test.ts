@@ -320,7 +320,7 @@ describe('collectPublishedNames', () => {
   test('covers the entry files only', () => {
     const names = collectPublishedNames()
     expect(names.has('BarAction')).toBe(true)
-    expect(names.has('BasaltProviderProps')).toBe(false)
+    expect(names.has('SlotProps')).toBe(false)
   })
 })
 

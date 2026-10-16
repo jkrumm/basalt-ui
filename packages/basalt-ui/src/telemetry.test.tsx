@@ -140,12 +140,47 @@ describe('BasaltProvider telemetry', () => {
     })
     expect(events.find((e) => e.type === 'mutation.error')).toMatchObject({
       attributes: {
-        'basalt.mutation.key': '["save"]',
+        'basalt.mutation.key': expect.stringMatching(/^[0-9a-f]+$/),
         'exception.type': 'SyntaxError',
         'basalt.error.kind': 'mutation',
       },
     })
     expect(JSON.stringify(events)).not.toContain('leaked')
+  })
+
+  test('with no sink, a query/mutation failure is logged to the console in dev', async () => {
+    const log = quiet()
+    const router = testRouter()
+    render(<BasaltProvider router={router} />)
+    await screen.findByText('content')
+    await queryClientOf(router)
+      .query({ queryKey: ['q'], retry: 0, queryFn: () => Promise.reject(new TypeError('x')) })
+      .catch(() => {})
+    const calls = log.mock.calls.filter((c) => c[0] === '[basalt] query.error')
+    log.mockRestore()
+    expect(calls).toHaveLength(1)
+    expect(JSON.stringify(calls[0])).not.toContain('"x"')
+  })
+
+  test('no event attribute carries a raw mutation key segment', async () => {
+    const events: BasaltEvent[] = []
+    const router = testRouter()
+    render(<BasaltProvider router={router} telemetry={(e) => events.push(e)} />)
+    await screen.findByText('content')
+    const client = queryClientOf(router)
+    await client
+      .getMutationCache()
+      .build(client, {
+        mutationKey: ['knot', 'private-slug-42', 'update'],
+        mutationFn: () => Promise.reject(new Error('x')),
+      })
+      .execute(undefined)
+      .catch(() => {})
+    const mutation = events.find((e) => e.type === 'mutation.error')
+    expect(mutation).toBeDefined()
+    for (const segment of ['knot', 'private-slug-42', 'update']) {
+      expect(JSON.stringify(mutation)).not.toContain(segment)
+    }
   })
 
   test('failed:false events carry neither exception.type nor basalt.error.kind', async () => {

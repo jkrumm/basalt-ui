@@ -10,7 +10,7 @@
  * `tsc --noEmit`, and a `.test.ts` name so tsup's build glob does not ship the fixture.
  */
 import { describe, expect, test } from 'bun:test'
-import { unwrap } from './query-client'
+import { unwrap } from './unwrap'
 
 type Thread = { id: string }
 type Envelope<TData> = { data: TData | null | undefined; error: unknown }

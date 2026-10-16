@@ -15,6 +15,7 @@
     "StatGroup",
     "ThemeToggle",
     "WidgetHeader",
+    "basaltRouterOptions",
     "createBasaltRouter",
     "createBasaltTheme",
     "defineNav",

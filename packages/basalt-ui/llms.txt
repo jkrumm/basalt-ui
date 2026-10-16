@@ -202,11 +202,15 @@ Signature: WidgetHeader(props: WidgetHeaderProps): JSX.Element
   sparkline?: ReactNode
   count?: number
   actions?: ReactNode
-Signature: createBasaltRouter(options: { routeTree: TRouteTree; context?: TContext; query?: QueryClientConfi…): BasaltRouter<TRouteTree>
-  routeTree: TRouteTree
+Signature: basaltRouterOptions(options: RouterOptionsInput<TContext>): { context: TContext & BasaltRouterContext; defaultPreload: "intent"; …
   context?: TContext
   query?: QueryClientConfig
-  defaultViewTransition?: never
+Signature: createBasaltRouter(props: RouterOptionsInput<TContext> & { routeTree: TRouteTree; history?: Rou…): BasaltRouter<TRouteTree>
+  context?: TContext
+  query?: QueryClientConfig
+  routeTree: TRouteTree
+  history?: RouterHistory
+  basepath?: string
 Signature: createBasaltTheme(overrides: Omit<PartialObjectDeep<MantineTheme, { recurseIntoArrays: false; allo…, options: CreateBasaltThemeOptions | undefined): PartialObjectDeep<Ma…
 Signature: defineNav(config: "basalt: declare Register { router }"): NavConfig<G, T>
 Signature: flattenNav(config: { groups: ReadonlyArray<AnyNavGroup>; }): FlatNavItem[]

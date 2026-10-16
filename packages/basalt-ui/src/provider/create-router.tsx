@@ -1,7 +1,7 @@
 /**
- * `createBasaltRouter` — the router + QueryClient wiring (V2-SPEC § 2). One `QueryClient` per call
- * (so an SSR entry gets one per request), carried on `context.queryClient`, plus the router
- * defaults basalt owns: intent preloading with Query-owned freshness, scroll restoration, the
+ * `basaltRouterOptions` / `createBasaltRouter` — the router + QueryClient wiring (V2-SPEC § 2). One
+ * `QueryClient` per call (so an SSR entry gets one per request), carried on `context.queryClient`,
+ * plus the router defaults basalt owns: intent preloading with Query-owned freshness, scroll restoration, the
  * pending / error / not-found components, and the route view transition (direction from the
  * `BasaltShell` nav order, V2-SPEC § 5).
  */
@@ -11,7 +11,7 @@ import { Router, createRouter } from '@tanstack/react-router'
 import type { AnyRoute, ErrorComponentProps, RouterHistory } from '@tanstack/react-router'
 import { toErrorMessage } from '../common/errors'
 import { makeQueryClient } from '../query-client'
-import { errorName, now, routerTelemetry } from '../telemetry'
+import type { RouterHook } from '../telemetry'
 import {
   guardViewTransitionRejections,
   routeViewTransition,
@@ -21,6 +21,8 @@ import {
 /** The root route's context: `createRootRouteWithContext<BasaltRouterContext>()`. */
 export type BasaltRouterContext = {
   queryClient: QueryClient
+  /** Set by `basaltRouterOptions`; the mounted provider points `onRouteError` at its emitter. */
+  __basalt?: RouterHook
 }
 
 type BasaltRouterBase<TRouteTree extends AnyRoute> = Router<
@@ -80,37 +82,46 @@ function NotFoundComponent() {
   )
 }
 
+/** The options `createBasaltRouter` owns. Each is `never` on it: basalt's, not a consumer knob. */
+type ManagedKeys =
+  | 'defaultPreload'
+  | 'defaultPreloadStaleTime'
+  | 'scrollRestoration'
+  | 'defaultPendingComponent'
+  | 'defaultErrorComponent'
+  | 'defaultNotFoundComponent'
+  | 'defaultOnCatch'
+  | 'defaultViewTransition' // route transitions are basalt's (V2-SPEC § 5): the router's would double them
+
+type RouterOptionsInput<TContext extends object> = {
+  /** Context beyond `queryClient`; the root route's context type extends `BasaltRouterContext`. */
+  context?: TContext | undefined
+  /** Merged over basalt's QueryClient defaults (`staleTime` 30 s, `gcTime` 5 min, `retry` twice, never a 4xx, no refetch on focus). */
+  query?: QueryClientConfig | undefined
+}
+
 /**
+ * Everything `createBasaltRouter` sets, for a router the app builds itself (TanStack Start's
+ * `getRouter()`): spread it into `createRouter`, and the provider mounted inside gets `route.error`
+ * telemetry, intent preloading, the route transition and the default pending/error/not-found UI.
  * Side effect, once per document: wraps `document.startViewTransition` so a skipped route
  * transition (`AbortError`) never becomes an unhandled rejection (`guardViewTransitionRejections`).
- * Nothing else global is touched.
  *
  * @example
- * const router = createBasaltRouter({ routeTree })
- * declare module '@tanstack/react-router' {
- *   interface Register { router: typeof router }
- * }
- * // extra context (argo's auth) extends BasaltRouterContext:
- * const router = createBasaltRouter({ routeTree, context: { auth }, query: { queryCache } })
+ * export const getRouter = () => createRouter({ routeTree, ...basaltRouterOptions() })
  */
-export function createBasaltRouter<
-  TRouteTree extends AnyRoute,
-  TContext extends object = Record<never, never>,
->(options: {
-  routeTree: TRouteTree
-  /** Context beyond `queryClient`; the root route's context type extends `BasaltRouterContext`. */
-  context?: TContext
-  /** Merged over basalt's QueryClient defaults (`staleTime` 30 s, `gcTime` 5 min, `retry` 2, no refetch on focus). */
-  query?: QueryClientConfig
-  /** Route transitions are basalt's (V2-SPEC § 5): the router's would double them. */
-  defaultViewTransition?: never
-}): BasaltRouter<TRouteTree> {
+export function basaltRouterOptions<TContext extends object = Record<never, never>>(
+  options: RouterOptionsInput<TContext> = {},
+) {
   guardViewTransitionRejections()
-  const queryClient = makeQueryClient(options.query)
-  const router: BasaltRouterBase<TRouteTree> = createRouter({
-    routeTree: options.routeTree,
-    context: { ...options.context, queryClient },
-    defaultPreload: 'intent',
+  const hook: RouterHook = {}
+  return {
+    context: {
+      ...options.context,
+      queryClient: makeQueryClient(options.query),
+      __basalt: hook,
+    } as TContext & BasaltRouterContext,
+    defaultPreload: 'intent' as const,
     // Query owns freshness: a preload must not be cached a second time by the router.
     defaultPreloadStaleTime: 0,
     scrollRestoration: true,
@@ -122,17 +133,36 @@ export function createBasaltRouter<
     defaultNotFoundComponent: NotFoundComponent,
     defaultOnCatch: (error: unknown) => {
       if (process.env.NODE_ENV !== 'production') console.error('[basalt] route error', error)
-      routerTelemetry(router)({
-        type: 'route.error',
-        failed: true,
-        start: now(),
-        attributes: {
-          'basalt.route.id': router.state.matches.at(-1)?.routeId ?? 'unknown',
-          'exception.type': errorName(error),
-          'basalt.error.kind': 'route',
-        },
-      })
+      hook.onRouteError?.(error)
     },
-  })
-  return router as BasaltRouter<TRouteTree>
+  }
+}
+
+/**
+ * @example
+ * const router = createBasaltRouter({ routeTree })
+ * declare module '@tanstack/react-router' {
+ *   interface Register { router: typeof router }
+ * }
+ * // extra context (argo's auth) extends BasaltRouterContext:
+ * const router = createBasaltRouter({ routeTree, context: { auth }, query: { queryCache } })
+ */
+export function createBasaltRouter<
+  TRouteTree extends AnyRoute,
+  TContext extends object = Record<never, never>,
+>({
+  routeTree,
+  context,
+  query,
+  ...passthrough
+}: RouterOptionsInput<TContext> & {
+  routeTree: TRouteTree
+  history?: RouterHistory
+  basepath?: string
+} & { [K in ManagedKeys]?: never }): BasaltRouter<TRouteTree> {
+  return createRouter({
+    ...passthrough,
+    routeTree,
+    ...basaltRouterOptions({ context, query }),
+  }) as BasaltRouter<TRouteTree>
 }

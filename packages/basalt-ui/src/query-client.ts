@@ -1,14 +1,20 @@
 /**
- * `unwrap` plus the QueryClient factory `createBasaltRouter` owns (V2-SPEC § 2): one client per
- * router, so an SSR entry gets one per request. Optional peer: @tanstack/react-query.
+ * The QueryClient factory `basaltRouterOptions` owns (V2-SPEC § 2): one client per router, so an
+ * SSR entry gets one per request. Optional peer: @tanstack/react-query.
  */
 import { QueryClient } from '@tanstack/react-query'
 import type { QueryClientConfig } from '@tanstack/react-query'
 
+/** Twice, and never a 4xx: the same request cannot start succeeding (a 401 is the app's to handle). */
+const retry = (failureCount: number, error: unknown): boolean => {
+  const status = (error as { status?: unknown } | null)?.status
+  return failureCount < 2 && !(typeof status === 'number' && status >= 400 && status < 500)
+}
+
 const BASALT_QUERY_DEFAULTS = {
   staleTime: 30_000,
   gcTime: 5 * 60 * 1000,
-  retry: 2,
+  retry,
   refetchOnWindowFocus: false,
 } as const
 
@@ -21,79 +27,4 @@ export function makeQueryClient(config?: QueryClientConfig): QueryClient {
       queries: { ...BASALT_QUERY_DEFAULTS, ...config?.defaultOptions?.queries },
     },
   })
-}
-
-// ── unwrap ────────────────────────────────────────────────────────────────────────────────────────
-
-/**
- * Transport-agnostic unwrap for any `{ data, error }` envelope (Eden Treaty, raw fetch wrappers,
- * etc.). TData is inferred from the data field. Throws on the error branch so failures surface
- * to the nearest error boundary or TanStack Query's error state.
- *
- * Absence guard: if `error` is falsy but `data` is `null` OR `undefined`, unwrap throws with a
- * descriptive message. This catches 204 No Content responses and silent transport failures that
- * return `{ data: null, error: null }` — both signal an unexpected absence of data and should not
- * silently resolve. `undefined` joined `null` here (C5 consolidation) so a hand-rolled fetch
- * wrapper that leaves `data` unset on a miss — rather than explicitly `null` — is caught the same
- * way; the two envelope shapes argo's own pre-basalt `unwrap` and basalt's ONLY differed on.
- *
- * **One generic signature, a conditional return** — a Promise of the envelope (basalt's original
- * shape, `queryFn: () => unwrap(api.x.get())`) or the ALREADY-RESOLVED envelope itself
- * (`unwrap(await api.x.get())`), both resolve `TData` off the same conditional. The two-overload
- * form this replaced (1.29.0) resolved `unwrap` to `unknown` whenever it was passed as a bare
- * callback — `.then(unwrap)` never applies an overload, it just reads the declared type of the
- * `unwrap` reference — so `api.threads.get().then(unwrap)` silently widened. A single generic
- * signature has exactly one type to read regardless of how the reference is used.
- *
- * **The conditional infers the raw `data` type and strips `null`/`undefined` from it**, rather
- * than inferring the already-narrowed `Envelope<TData>`'s `TData` directly — Eden Treaty's
- * response type is a UNION of envelope shapes (`{ data: T; error: null } | { data: null; error:
- * EdenFetchError }`), and inferring through `Envelope<infer TData>` reads `TData` off whichever
- * union member the conditional happens to match, landing on `T | null` at every Eden call site. A
- * conditional type distributes over a union input when the checked type is a bare type parameter,
- * so inferring `D` from `{ data: infer D; error: unknown }` and wrapping the result in
- * `NonNullable` runs the check per union member and unions the results back together —
- * `NonNullable<T> | NonNullable<null>` collapses to `T`.
- *
- * @example
- * import { unwrap } from 'basalt-ui'
- *
- * // Promise-of-envelope — queryFn:
- * queryFn: () => unwrap(api.users.get({ query: params }))
- * // mutation:
- * mutationFn: (body) => unwrap(api.resource.post({ body }))
- *
- * // resolved-envelope — either shape, including a bare `.then(unwrap)` callback:
- * const rows = unwrap(await api.users.get())
- * const rows2 = await api.users.get().then(unwrap)
- */
-export function unwrap<R extends Envelope | Promise<Envelope>>(response: R): UnwrapResult<R> {
-  if (response instanceof Promise) {
-    return response.then((envelope) => unwrapEnvelope(envelope)) as unknown as UnwrapResult<R>
-  }
-  return unwrapEnvelope(response as Envelope) as unknown as UnwrapResult<R>
-}
-
-/** Transport-agnostic `{ data, error }` result shape — Eden Treaty, a raw fetch wrapper, etc. */
-type Envelope<TData = unknown> = { data: TData | null | undefined; error: unknown }
-
-/** `unwrap`'s conditional return: a `Promise<TData>` when `R` is a promised envelope, `TData` when
- * it is an already-resolved one — inferred off the SAME `R` the overload used to split on, and
- * distributing over a union `R` (see the JSDoc above) so an Eden Treaty response's null branch
- * never leaks into the resolved type. */
-type UnwrapResult<R> =
-  R extends Promise<{ data: infer TData; error: unknown }>
-    ? Promise<NonNullable<TData>>
-    : R extends { data: infer TData; error: unknown }
-      ? NonNullable<TData>
-      : never
-
-function unwrapEnvelope<TData>(envelope: Envelope<TData>): TData {
-  const { data, error } = envelope
-  if (error) throw error
-  if (data === null || data === undefined)
-    throw new Error(
-      'unwrap: null/undefined data with no error — check for a 204 response or a transport failure',
-    )
-  return data
 }
