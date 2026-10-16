@@ -13,10 +13,10 @@ A shot out dir (default `.basalt/shots`, or the `out` in `.basalt/shots/last.jso
 
 - `board.html` — every crop, labelled by component, scheme, viewport and state.
 - `metrics.json` — per anchor: `padding`, `gap`, `radius`, `nested`, `fontSizes`, `emptyRatio`, `contrast`, `sheet`; `scale` (the theme's resolved spacing, radius and font-size steps) and `scaleError`; `shots[]` with each file's `status`.
-- `png/*.png` — the crops, images you can see. Each anchor has a contact sheet (`sheet`: every state × scheme × viewport on one image) and each route a full-page shot (`_page`). Score every anchor in both schemes and both viewports.
+- `png/*.png` — the crops, images you can see. Each anchor has a contact sheet (`sheet`: one image holding that anchor's crop for every state × scheme × viewport, each labelled, with the status text where a crop does not exist) and each route a full-page shot (`_page`). Score every anchor in both schemes and both viewports.
 - A layout-suite result, only if the out dir has one.
 
-A shot with status `not-declared` is not a defect. A missing hover, focus or tooltip crop for an anchor that has such a target is (Craft 7).
+A shot with status `not-declared` or `skipped` (mobile hover and tooltip: touch has no hover, by design) is not a defect. A missing hover, focus or tooltip crop for an anchor that has such a target is (Craft 7).
 
 ## Fail closed
 
