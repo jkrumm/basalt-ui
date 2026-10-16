@@ -969,114 +969,153 @@ Mode and roles are unchanged from Part 1.
 - **Ops notes:** `rd merge` needs `gh pr ready` first (the PRs open as drafts); each train ran about 10 minutes in the background. Workers committed under `chore:`/`docs:` because nothing touched `packages/basalt-ui`. The committed PNG weight is about 18 MB under `keel/` and 9.5 MB under `w29/`.
 - **Next:** Wave 30 is `active`. Its lead reads `BENCHMARK.md`, `keel/inventory.json` and `.design-parity/w29/board.html` (local only), then re-runs `make compare LABEL=w<n>` for every later board. Not released (no package change). Stopped here as briefed: the orchestrator spawns Wave 30.
 
-## Wave 30 — Two-way audit, the catalogue and the spec <!-- status: active -->
+## Wave 30 — Two-way audit, the catalogue and the spec <!-- status: done -->
 
-- [ ] Score every inventory pattern in both directions (_basalt ahead (keep)_ / _on par_ / _learn from the
+- [x] Score every inventory pattern in both directions (_basalt ahead (keep)_ / _on par_ / _learn from the
       reference_ / _missing_), with the reason in visual terms. Each gap gets a root cause: a token or scale,
       component anatomy, a missing component, chart-in-card chrome, or a recipe nobody wrote. Record where
       basalt is ahead, so it is protected rather than changed.
-- [ ] **Data-to-expression catalogue:** for every pattern, the dataset shape it encodes (single value with
+- [x] **Data-to-expression catalogue:** for every pattern, the dataset shape it encodes (single value with
       trend, progress to target, part of a whole, distribution, status over time, ranked list, event sequence,
       entity with facts, …), the best encoding and why it beats the default. Each basalt shortfall is classed as
       a flexibility gap (name the missing mark, slot, variant or density step) or a guidance gap. This is the
       core of the spec.
-- [ ] Decide each pattern's home: shipped component, a variant of an existing one, a token or derive change,
+- [x] Decide each pattern's home: shipped component, a variant of an existing one, a token or derive change,
       or a recipe in the skills. A new export names its first fleet consumer. A missing pattern with no fleet
       need is recorded and not built.
-- [ ] `/research`: TanStack Table responsive patterns (card-collapse vs column priority), a drag-and-drop
+- [x] `/research`: TanStack Table responsive patterns (card-collapse vs column priority), a drag-and-drop
       library for the kanban that fits React 19 and the Compiler, timeline virtualisation with TanStack
       Virtual, and Claude Code subagent and skill discovery semantics for the shipped reviewer.
-- [ ] Write `docs/waves/design-parity/SPEC.md`. It lives outside the `docs/*.md` spec-prose budget, which has
+- [x] Write `docs/waves/design-parity/SPEC.md`. It lives outside the `docs/*.md` spec-prose budget, which has
       17 lines of headroom; the last pattern wave folds the settled law into `DESIGN-CORE.md`. The spec covers
       the scenarios, the anatomy, scales, states and responsive behaviour per pattern, and the **three-axis
       rubric** with a banned-filler list. Reconcile it with `DESIGN-CORE.md`, and record each decision.
-- [ ] Rewrite Waves 31–37 below to the spec (three to six steps each), and file the fleet's pattern needs
+- [x] Rewrite Waves 31–37 below to the spec (three to six steps each), and file the fleet's pattern needs
       (argo, rb, linewatch, obsidian, weatherorb, shutterflow) as ledger rows.
       **Owner review point:** the mother shows the owner the baseline board, the two-way scores and the spec
       before Wave 31 starts.
+
+**Left behind:**
+
+LEFT_BEHIND_PLACEHOLDER
+
+## Wave 31 — The loop's tools, shipped (dogfooded first) <!-- status: active -->
+
+Waits for the owner review of Wave 30. Spec: `docs/waves/design-parity/SPEC.md` § 1, § 8, § 9.4. Pulls
+rows 135, 136 and 138 forward from Wave 21, because every later wave runs its rounds on these tools.
+
+- [ ] `basalt-ui shot <route…>`: renders routes with Playwright at 1440×900 and 390×844, light and dark, in
+      the rest, hover, focus, tooltip, empty, loading and error states (states reached by a declared
+      `data-shot-state` toggle or a URL param, SPEC § 7), and writes a local board (HTML + PNGs) to a
+      gitignored directory. `make compare` reuses it for the basalt column. The CLI is at 5164/5165 lines:
+      the PR raises the ceiling by the command's own size and says so, or offsets it.
+- [ ] The reviewer subagent, shipped and installed by `sync` at the repo root the session starts in (SPEC
+      § 9.4: agents are found only walking up). It scores a board on the three axes of SPEC § 8, cites crop
+      and defect for every failure, and returns pass or fail per component. Its prompt carries the banned-
+      filler list verbatim.
+- [ ] The skill procedure in `basalt-design`: scenario → catalogue pick → at least three rounds → rubric;
+      done means rendered, scored and revised. `basalt-ui check` prints a notice when UI files changed and no
+      board is newer than them. Rule lines are at 277/277: the procedure lives in the skill, the rule gets
+      one line that names it.
+- [ ] Discovery: the managed AGENTS block names the skills and the reviewer (row 135); every rule's `paths:`
+      renders from `basalt.roots` (row 136); `basalt-controls.md` and its guard agree on one ViewTabs
+      placement (row 138).
+- [ ] Dogfood: the scenario route `apps/playground/src/routes/scenarios.$name.tsx` (one route file, SPEC
+      § 2) with S4 as its first fixture; run `shot` and the reviewer on the current S4 once and commit the
+      scored baseline under `docs/waves/design-parity/w31/`.
       **Left behind:**
 
-## Wave 31 — The loop's tools, shipped (dogfooded first) <!-- status: pending -->
+## Wave 32 — Foundation: scales, the metric card, chart-in-card <!-- status: pending -->
 
-Provisional; Wave 30 rewrites it. Pulls Part 2's screenshot scaffolding (Wave 22) and rows 135/136/138
-(Wave 21) forward, because every later wave runs its rounds on these tools.
+Spec: SPEC § 5, § 6.1, § 6.2, § 6.10, § 6.12, § 11. Scenario S4 (spend and usage), then S1. Rounds run
+on Wave 31's tools.
 
-- [ ] `basalt-ui shot <route…>`: Playwright renders at the desktop and mobile viewports, in both schemes,
-      and in the tooltip, hover, focus, empty and loading states. It writes a local board. The internal
-      `make compare` reuses it for the reference column.
-- [ ] A shipped reviewer subagent (installed by `sync`). It scores shots on the three axes and must cite the
-      crop and the defect for every failure.
-- [ ] The skill procedure: scenario → at least three rounds → rubric. The definition of done is rendered,
-      reviewed and revised. A `check` notice when UI files changed with no fresh shots.
-- [ ] Discovery: a monorepo-root session finds the skills and the reviewer (row 135), the rule `paths:`
-      match real layouts (row 136), and the ViewTabs placement law is consistent (row 138).
+- [ ] Scales through the derive config and constants (never a hex): the even-pixel spacing grid and the
+      Mantine scale, card inset 12/16, radius card 10 / control 6, row text `sm` 13/20, meta 12/16, hero
+      22/500 mono, h1 tracking, the dense 28 toolbar tier, gutter 24 at expanded (trial, D7). Re-baseline the
+      level-0 golden tests in the same PR.
+- [ ] The metric-card anatomy on `StatCard`: caption row with a qualifier slot, unit inline, text-only delta
+      (row 162), visual along the bottom edge, optional footer; fix the stale `Sparkline` JSDoc (row 162).
+- [ ] Chart-in-card chrome: axis-less sparkline at 22/24 px, 1.5 stroke, end dot on by default, neutral
+      unless earned; the span-aware date tick formatter that never repeats a label (row 137, with
+      weatherorb's zoned ticks).
+- [ ] Chrome: `Badge` defaults to `light`; subtle `Button` label and the active `Tabs` underline in ink, not
+      accent (verify the current colours in code first).
+- [ ] At least three rounds on S4 and S1 metric cards, scored by the shipped reviewer; boards to the owner
+      at the close (the first pattern family).
       **Left behind:**
 
-## Wave 32 — Foundation: scales, density, card anatomy, chart-in-card <!-- status: pending -->
+## Wave 33 — Metric expression: meter, ranked list, strip, calendar <!-- status: pending -->
 
-Provisional.
+Spec: SPEC § 3, § 4, § 6.3–6.5. Scenarios S2 and S4. Validators: argo (dashboards), rb (stats, ingest).
+Each new export raises its own budget ceiling and names its consumer (SPEC § 4).
 
-- [ ] Spacing, type and radius changes from the spec, made through the derive config and constants and
-      never by editing hexes; then the level-0 golden tests.
-- [ ] One card anatomy (caption, value and unit, delta, inline chart, footer, explanation slot) that every
-      card composes.
-- [ ] Chart-in-card chrome: axis-less sparkline, area and bar, sized by the card. Labels never repeat
-      (row 137, with weatherorb's zoned ticks).
-- [ ] Rounds on the first scenario; the boards go to the owner.
-      **Left behind:**
-
-## Wave 33 — Metric cards and the dense dashboard <!-- status: pending -->
-
-Provisional. Validator: argo's dashboards.
-
-- [ ] The metric card family: each catalogue encoding (trend, progress to target, gauge, segmented bar,
-      distribution).
-- [ ] The dashboard scenario: grid rhythm, sections, and an activity stream.
-- [ ] Decision and entity cards, if a fleet app needs them (proposal, evidence, confidence, actions,
-      keyboard hints).
+- [ ] `Meter` in `basalt-ui/charts`: `bar` with a target tick and end captions, `segments` for
+      committed/forecast and part of a whole, `ring` for one headline ratio; `role="meter"` and text captions
+      (rows 143–145, 152, 158).
+- [ ] `BarList` in `basalt-ui/charts` (rows 146, 160, 161).
+- [ ] `StatGroup` `variant="strip"` (rows 147, 156) and `Heatmap` `layout="calendar"` with month labels
+      (row 161).
+- [ ] Recipes in `basalt-design`: distribution in a card (row 153), entity card (row 150), decision card
+      (D4: promote to a component only if argo's and rb's converge).
+- [ ] At least three rounds on S2 and S4; owner sees the boards.
       **Left behind:**
 
 ## Wave 34 — Data tables, responsive <!-- status: pending -->
 
-Provisional. Validators: argo, obsidian.
+Spec: SPEC § 6.6, § 9.1. Scenario S1 (outages) and S2 (sessions). Validators: argo, linewatch,
+shutterflow.
 
-- [ ] Table chrome: header, row density, cell types (entity, status, money, owner, relative time,
-      inline bar).
-- [ ] The responsive strategy from the spec, on TanStack Table and Virtual.
-- [ ] Toolbar, filters and views in the dense style.
+- [ ] Header on the body fill, sorted column brighter; row text `sm`; cell kinds via `meta.kind` (`entity`,
+      `status`, `number`, `money`, `relative-time`, `meter`, `text`).
+- [ ] Responsive: `meta.priority` fold, then a pinned non-wrapping first column with keyboard-reachable
+      horizontal scroll at compact; `renderCard` stays opt-in; `aria-colcount`/`aria-colindex` stay correct and
+      a folded column stays reachable (rows 151, 157). Check each TanStack API against installed v9.
+- [ ] The toolbar in one row at the dense tier, filter chips with a muted label and a bright value.
+- [ ] At least three rounds; owner sees the boards.
       **Left behind:**
 
-## Wave 35 — Kanban, timeline and record detail <!-- status: pending -->
+## Wave 35 — Event list, board and record page <!-- status: pending -->
 
-Provisional; each pattern only with a named fleet consumer.
+Spec: SPEC § 6.7–6.9, § 9.2, § 9.3. Scenarios S3 and S5. Validators: argo warden, rb knot detail and
+journal, linewatch transitions.
 
-- [ ] Kanban board (columns, cards, drag and drop, keyboard) on the chosen library.
-- [ ] Timeline and activity stream (grouping, sources, live vs earlier).
-- [ ] Record detail page layout (header, facts, timeline, aside).
+- [ ] `EventList` (`feed` and `timeline` densities, day groups, time pinned right, chips, optional rail);
+      virtualised above about 200 rows in a `"use no memo"` component with sticky day headers and
+      `anchorTo: 'end'` for "earlier" (rows 149, 155, 157).
+- [ ] `Board` (columns with count and totals, compact cards, keyboard navigation, single-column switcher on
+      compact; no drag, D3) for the warden (row 148).
+- [ ] The record-page recipe (header, joined strip, event list, `PageAside`) and the list-row recipe (row
+      159); decide the aside width on S5.
+- [ ] At least three rounds per pattern; owner sees the boards.
       **Left behind:**
 
 ## Wave 36 — Forms, states and the guidance half <!-- status: pending -->
 
-Provisional.
+Spec: SPEC § 6.11, § 8, § 11. Scenario S6, then every scenario's state toggles.
 
-- [ ] Field, control and form-section quality.
-- [ ] Empty, loading and error states for every pattern above.
-- [ ] The catalogue ships as the decision table in `basalt-design` and `basalt-charts` (dataset shape →
-      pattern → component). The rules name it, so an agent reaches it before it reaches for a card with a
-      number. Fold the settled law into `DESIGN-CORE.md`.
-- [ ] Re-score the whole inventory. Every pattern still below the rubric gets a step here or a recorded
-      reason.
+- [ ] Field, control and form-section quality on S6 (argo's workout form, shutterflow's account form as
+      the shapes).
+- [ ] Empty, loading and error states for every pattern above: the `EmptyState` anatomy (row 154) and a
+      `StatCard` skeleton (row 147).
+- [ ] The catalogue ships as the decision table in `basalt-design` and `basalt-charts`; the rules name it in
+      one line each. Fold SPEC § 3, § 5, § 8 and § 11 into `DESIGN-CORE.md` (spec-prose budget: offset by
+      deleting what the fold replaces).
+- [ ] Re-score the whole inventory with the shipped reviewer. Every pattern still below the rubric gets a
+      step here or a recorded reason.
       **Left behind:**
 
 ## Wave 37 — Fleet rollout, the expression trial and convergence <!-- status: pending -->
 
-- [ ] Release, then upgrade argo, rb, linewatch and obsidian one at a time. Each app runs the shipped loop
-      on its own screens and gets a before/after board. Friction and ugliness become ledger rows and are
-      fixed upstream.
+- [ ] Release, then upgrade argo, rb, linewatch and obsidian one at a time. Each runs the shipped loop on
+      its own screens, retires the hand-rolls its ledger rows name (143–161), and gets a before/after board.
+      Friction and ugliness become ledger rows and are fixed upstream.
 - [ ] **Expression trial** (shaped like weatherorb's W45): a fresh agent in a scratch `init` app gets five
-      datasets and no component names. Did it find and follow the shipped procedure, and which encodings did
-      it pick? Score the boards. A fallback to the default is a guidance row.
-- [ ] Brief weatherorb's orchestrator, and shutterflow's for its 2.x migration.
+      datasets (one per catalogue shape: trend, target, parts, ranking, events) and no component names. Did
+      it find and follow the shipped procedure, and which encodings did it pick? Score the boards. A fallback
+      to the default is a guidance row.
+- [ ] Brief weatherorb's orchestrator (row 160), and shutterflow's for its 2.x migration onto the new
+      patterns (row 161).
 - [ ] Re-run the full audit. If gaps remain, append Waves 38+ in the same shape. The track closes when a
       fresh scorer finds nothing worth improving against basalt's rubric.
       **Left behind:**
@@ -1107,7 +1146,7 @@ Synthesis Wave 3. Validators: argo, rb, linewatch, obsidian (lint runs).
 
 Synthesis Wave 4. Validators: all five + a scratch `init` app.
 
-- [ ] Rule `paths:` rendered from `basalt.roots`; every lint and guard message names its rule file (research Claude Code `paths:` semantics first).
+- [ ] Every lint and guard message names its rule file. (Rule `paths:` from `basalt.roots`, the skills pointer and the ViewTabs law, rows 135/136/138, moved to Wave 31.)
 - [ ] `init`/`sync` own the PreToolUse guard hook in `.claude/settings.json`, local bin.
 - [ ] `basalt-ui check`: doctor + sync --check + oxlint + check-theme, one report, `--json`; oxlint runs with its
       JSON or agent output format (verify both in the pinned oxlint).
@@ -1120,7 +1159,7 @@ Synthesis Wave 4. Validators: all five + a scratch `init` app.
 Owner, 2026-10-16 (handover from the agent-gateway session). Builds on Wave 20's preset and Wave 21's `basalt-ui check`.
 The owner wants it tuned back and forth until it is optimal, then the same iteration in every consumer. Zero-config analysers (react-doctor, fallow's dependency hygiene) run centrally in agent-gateway's
 check/review, so no repo installs them; basalt-ui keeps only what needs a repo opinion (the oxlint preset, the Playwright
-axe and screenshot scaffolding, the budgets). knip is dropped: fallow covers unused, unlisted and unresolved
+axe scaffolding on top of Wave 31's `basalt-ui shot`, the budgets). knip is dropped: fallow covers unused, unlisted and unresolved
 dependencies. Skipped on
 purpose: eslint-plugin-react-hooks and eslint-plugin-tailwindcss (both ESLint-only), and
 stylelint-declaration-strict-value.
