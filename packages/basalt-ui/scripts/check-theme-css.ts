@@ -85,7 +85,7 @@ function tsShadowSites(relPath: string, text: string): ShadowSite[] {
   const clean = stripTsComments(text)
   const lines = clean.split('\n')
   const SLOT = /^\s*(\w+):\s*\{\s*$/
-  const COMPONENT = /^\s*(\w+):\s*\w+\.extend\(\{\s*$/
+  const COMPONENT = /^\s*(\w+):\s*(?:\w+\.extend|ext<typeof [\w.]+>)\(\{\s*$/
   const LOOKBACK = 40
   const sites: ShadowSite[] = []
   for (const [i, line] of lines.entries()) {

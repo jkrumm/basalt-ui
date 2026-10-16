@@ -1041,7 +1041,7 @@ The `basalt-ui/router-tanstack` subpath is **removed** in 2.x, not moved: an imp
 | `NavItemMeta`, `NavGroupMeta`, `AnyNavItem`, `AnyNavGroup`, `AnyNavLink`, `FlatNavItem`, `NavConfig`, `NavGroupId`, `NavTabId`, `NavIndex`, `UseNavOptions`, `NavBinding`, `NavAnchor`, `NavAnchorProps`, `NavMobilePlacement` | deleted                                                                                                                                                                                                                                                                                                                                                                                                                                                    | no consumer names them; derive with `ComponentProps` / `Parameters` |
 | `useNav`, and `BasaltShell`'s `sections` / `mobileNav` props                                                                                                                                                                   | deleted: pass `nav={NAV}` (plus `badges`, `isActive`, `getScrollElement` — the old `useNav` options) to `BasaltShell`; it resolves the sidebar, the mobile bar and the breadcrumb itself. `mobileNav` tuning moves to `defineNav`'s `mobile`. argo `apps/dashboard/src/routes/__root.tsx`: replace `const nav = useNav(NAV, { badges })` + `{...nav}` with `nav={NAV} badges={…}` (migrates in W12; 1.x consumers stay on their pinned version until then) |
 
-## Unreleased
+## Unreleased — router options, search stores, and a theme that reaches no component it configures
 
 ### `basaltRouterOptions`, router passthrough, telemetry correctness
 
@@ -1063,6 +1063,10 @@ The `basalt-ui/router-tanstack` subpath is **removed** in 2.x, not moved: an imp
 - **A URL-lane `field.clear()` navigates through the mounted router, not a closure a render left behind.** It works from any event handler while a `use()` of the store is mounted (with several routers mounted it navigates each one that owns the field), judges ownership against the location it is called at, and a discarded/StrictMode render can no longer register a stale closure. With no mounted reader it still clears the mirror only. **Opt-out: none.**
 - **`buildSearchStore` is gone.** It was an internal pass-through of `createSearchStore`, never exported from `basalt-ui/state`; nothing public changes. **Opt-out: none needed.**
 - **Dev warning:** a URL-lane field read on a route none of whose matched `validateSearch` runs this store (directly or composed) warns once per field — another store or a hand-rolled schema owns the param. **Opt-out: none; wire `validateSearch: store.validateSearch`, or spread it into your own.**
+
+### the theme reaches no Mantine component it configures
+
+- **`createBasaltTheme` no longer value-imports the ~45 Mantine components it configures.** No consumer change; the produced theme is byte-identical. An app stops shipping the components the theme only configured (`AppShell*`, `Pagination*`, `Stepper*`, `Timeline*`, `MultiSelect`, `PasswordInput`, `Chip`, `Progress*`, `NavLink`, `Breadcrumbs`, …) — Mantine's `X.extend()` is `identity`, but calling it pulled each component module into every bundle. **Measured:** an embedded `<BasaltProvider spotlight={false}>` with no defines, peers bundled and every chunk counted, dropped from 166959 B to 54735 B gzip; `createBasaltTheme()` alone is 14420 B (`scripts/check-budgets.ts` gates both). **Opt-out: none.**
 
 ## 2.12.0 — the provider bundles only what the app defines; Start wiring accepts a pathless layout
 

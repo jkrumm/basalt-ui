@@ -16,6 +16,13 @@
  * layer emits, so there is no hand-duplicated hex to drift.
  */
 import {
+  createTheme,
+  defaultVariantColorsResolver,
+  getPrimaryShade,
+  mergeThemeOverrides,
+  rem,
+} from '@mantine/core'
+import type {
   Accordion,
   ActionIcon,
   Alert,
@@ -29,15 +36,11 @@ import {
   Chip,
   Code,
   Combobox,
-  createTheme,
-  defaultVariantColorsResolver,
   Drawer,
-  getPrimaryShade,
   Indicator,
   Input,
   Kbd,
   Menu,
-  mergeThemeOverrides,
   Modal,
   NavLink,
   Notification,
@@ -51,7 +54,6 @@ import {
   Progress,
   Radio,
   RadioCard,
-  rem,
   Select,
   SegmentedControl,
   Stepper,
@@ -62,8 +64,6 @@ import {
   TextInput,
   Timeline,
   Tooltip,
-} from '@mantine/core'
-import type {
   CSSVariablesResolver,
   MantineColorsTuple,
   MantineTheme,
@@ -90,6 +90,7 @@ import navLinkClasses from './nav-link.module.css'
 import segmentedControlClasses from './segmented-control.module.css'
 import timelineClasses from './timeline.module.css'
 import { HIT_ATTR } from './ctl-theme'
+import { ext } from './extend'
 
 /**
  * The `fonts` option's resolved shape — defined in `../tokens/core` (`BasaltFontsConfig`, paired
@@ -540,7 +541,7 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
       //   • radius     → `--vx-radius-card` (7px).
       // This is the single source the user's "strict surface across components" demands; the
       // `raw-surface` guard then stops consumers re-overriding any of it inline.
-      Card: Card.extend({
+      Card: ext<typeof Card>({
         styles: {
           root: {
             backgroundColor: 'var(--vx-surface-panel)',
@@ -549,7 +550,7 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
           },
         },
       }),
-      Paper: Paper.extend({
+      Paper: ext<typeof Paper>({
         styles: {
           root: {
             backgroundColor: 'var(--vx-surface-panel)',
@@ -561,12 +562,12 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
       // Mantine's default Badge radius is a full 1000px pill; the spec's delta/status badges sit at
       // radius 6 (docs/DESIGN-SPEC.md §4/§5). Count badges (radius 5) are a distinct, smaller-radius
       // usage left to the call site (`radius={5}` prop) since Badge has no state to key off here.
-      Badge: Badge.extend({ defaultProps: { radius: radius.ctrl } }),
+      Badge: ext<typeof Badge>({ defaultProps: { radius: radius.ctrl } }),
       // Alert renders its title in the body font by default; bring it onto the head-font idiom
       // (docs/DESIGN-SPEC.md §5) like every other titled surface. Radius/padding/color tint are
       // already on-system (defaultRadius 'md' control tier + the variant color resolver), so only
       // the title font is overridden.
-      Alert: Alert.extend({
+      Alert: ext<typeof Alert>({
         styles: {
           title: {
             fontFamily: 'var(--basalt-font-head)',
@@ -584,7 +585,7 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
       // Cast: `AppShellCssVariables` declares only `--app-shell-transition-duration` /
       // `-timing-function`, yet Mantine's OWN AppShell.css sets `--app-shell-border-color` on the
       // same root.
-      AppShell: AppShell.extend({
+      AppShell: ext<typeof AppShell>({
         vars: () =>
           ({ root: { '--app-shell-border-color': 'var(--vx-divider)' } }) as unknown as {
             root: Record<
@@ -608,7 +609,7 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
       // set at ink-6% by higher-specificity `:not([data-active])` rules in `nav-link.module.css` /
       // `app-sidebar.module.css` — so it exists to keep the active row responding to the pointer
       // now that its rest state sits in the same tint family as an inactive hover.
-      NavLink: NavLink.extend({
+      NavLink: ext<typeof NavLink>({
         vars: () => ({
           root: {
             '--nl-bg': 'color-mix(in srgb, var(--vx-ink) 9%, transparent)',
@@ -655,7 +656,7 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
       // legal home for the shadow's ring. Theming the base `Input` covers
       // TextInput/NumberInput/PasswordInput/Select/Textarea, which all render it internally (only
       // `size` needs per-component defaults, since each resolves its own).
-      Input: Input.extend({
+      Input: ext<typeof Input>({
         defaultProps: { size: 'md' },
         // Density coupling: Input's OWN `varsResolver` sets `--input-height` to
         // `getSize(props.size, 'input-height')` (`@mantine/core/esm/components/Input/Input.mjs`),
@@ -689,20 +690,20 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
         }),
         classNames: { wrapper: controlsClasses.inputWrapper, input: controlsClasses.input },
       }),
-      TextInput: TextInput.extend({ defaultProps: { size: 'md' } }),
+      TextInput: ext<typeof TextInput>({ defaultProps: { size: 'md' } }),
       // The stepper chevrons sit ~15px apart, so neither can own a 44px overlay; the coarse
       // `.input` min-height floor (theme/controls.module.css) is the touch floor.
-      NumberInput: NumberInput.extend({ defaultProps: { size: 'md' } }),
-      PasswordInput: PasswordInput.extend({ defaultProps: { size: 'md' } }),
-      Select: Select.extend({ defaultProps: { size: 'md' } }),
-      Textarea: Textarea.extend({ defaultProps: { size: 'md' } }),
+      NumberInput: ext<typeof NumberInput>({ defaultProps: { size: 'md' } }),
+      PasswordInput: ext<typeof PasswordInput>({ defaultProps: { size: 'md' } }),
+      Select: ext<typeof Select>({ defaultProps: { size: 'md' } }),
+      Textarea: ext<typeof Textarea>({ defaultProps: { size: 'md' } }),
       // PillsInput (MultiSelect/TagsInput's outer field) renders `InputBase` internally but under
       // its OWN `__staticSelector: 'PillsInput'`, so it never reads `theme.components.Input` — the
       // field idiom above never reached it. `PillsInput.classes === InputBase.classes`, so the SAME
       // part names apply here; reusing both control classes picks up the exact `[data-variant]` rules
       // in controls.module.css for free, no new CSS needed. Both slots are required — `wrapper` alone
       // would land the vars but leave the field flat, since the depth lives on `input`.
-      PillsInput: PillsInput.extend({
+      PillsInput: ext<typeof PillsInput>({
         classNames: { wrapper: controlsClasses.inputWrapper, input: controlsClasses.input },
       }),
       // Button / ActionIcon: depth for EVERY variant that owns a box (docs/DESIGN-SPEC.md §5's
@@ -730,7 +731,7 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
       // anchor's doc in `tokens/palette.ts`), so the two can never drift. Scoped to `size === 'md'`,
       // same rationale as Input's override: `undefined` leaves an explicitly different size (e.g.
       // `size="xs"`) on Mantine's own static height.
-      Button: Button.extend({
+      Button: ext<typeof Button>({
         classNames: { root: controlsClasses.buttonRoot },
         vars: (_theme, props) => ({
           root: {
@@ -741,7 +742,7 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
           },
         }),
       }),
-      ActionIcon: ActionIcon.extend({
+      ActionIcon: ext<typeof ActionIcon>({
         classNames: { root: controlsClasses.actionIconRoot },
         vars: (_theme, props) => ({
           root: {
@@ -764,10 +765,10 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
       // Neither component sets a background of its own, so panel bg is added alongside the shadow —
       // the same panel-bg + depth + no-border triad as Card/Paper — on `shadow-raised`, the shared
       // CONTROL depth, not Card/Paper's `shadow-card`: a selection card is something you click.
-      CheckboxCard: CheckboxCard.extend({
+      CheckboxCard: ext<typeof CheckboxCard>({
         classNames: { card: controlsClasses.checkboxCardRoot },
       }),
-      RadioCard: RadioCard.extend({
+      RadioCard: ext<typeof RadioCard>({
         classNames: { card: controlsClasses.radioCardRoot },
       }),
       // Chip: unlike Button/Input, Chip has no literal `variant="default"` — its OWN default (no
@@ -777,7 +778,7 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
       // no shadow) — borderless but flat, the same symptom as CheckboxCard/RadioCard above. The class
       // is wired conditionally (function-form `classNames`, same pattern as the `vars` on-color
       // re-points below) so it NEVER reaches a consumer-chosen `light`/`outline` Chip.
-      Chip: Chip.extend({
+      Chip: ext<typeof Chip>({
         classNames: (_theme, props) =>
           (props.variant ?? 'filled') === 'filled' ? { label: controlsClasses.chipLabel } : {},
       }),
@@ -813,7 +814,7 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
       // `tokens/palette.ts`), and `radius.card`/`RADIUS_STEP.tight` two lines below already track the
       // RADIUS knob together, so the inset between them must stay fixed at exactly 2 regardless of
       // density.
-      SegmentedControl: SegmentedControl.extend({
+      SegmentedControl: ext<typeof SegmentedControl>({
         defaultProps: { radius: radius.card },
         classNames: {
           label: segmentedControlClasses.label,
@@ -891,7 +892,7 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
         }),
       }),
       // Track = ink-8%; leader/section fill colors are a per-usage `color` prop (left to consumers).
-      Progress: Progress.extend({
+      Progress: ext<typeof Progress>({
         // `size` is a NUMBER, not a `var()` string — same rem()-comma-trap reasoning as Timeline's
         // `bulletSize`/`lineWidth` below, so it reads the resolved `spacing.step.progressBarSize`
         // (density-tracking) rather than a hand-typed literal.
@@ -910,7 +911,7 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
       // live in `timeline.module.css` instead. `TimelineItem` renders through the PARENT Timeline's
       // style context (`ctx.getStyles`), so `item`/`itemBullet`/`itemTitle`/`itemContent` are all
       // themed from this ONE extend — no separate `TimelineItem` override needed.
-      Timeline: Timeline.extend({
+      Timeline: ext<typeof Timeline>({
         // NUMBERS, not `var()` strings: `bulletSize`/`lineWidth` land through Timeline's own
         // `rem()` conversion (`@mantine/core/esm/core/utils/units-converters/rem.mjs` splits on `,`
         // and ` ` before checking numerics), which passes a bare `var(--x)` through intact but
@@ -945,7 +946,7 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
 
       // Tooltip is a standalone floating primitive (not Popover-based) — themed directly. Its arrow
       // ships border-less (`border: 0`), so the same edge is applied inline to keep the ring closed.
-      Tooltip: Tooltip.extend({
+      Tooltip: ext<typeof Tooltip>({
         defaultProps: { radius: radius.floating },
         styles: {
           tooltip: {
@@ -959,7 +960,7 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
       }),
       // Popover is the shared floating primitive underneath Menu (Menu renders `<Popover>`
       // internally with no `radius`/`shadow` of its own), so theming it here covers both.
-      Popover: Popover.extend({
+      Popover: ext<typeof Popover>({
         defaultProps: { radius: radius.floating },
         styles: {
           dropdown: {
@@ -973,7 +974,7 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
       // stripped from `styles` objects, and Menu's internal Popover does NOT consume
       // `components.Popover.styles`, so the dropdown surface is repeated here). Menu.Label = the
       // mono micro-label idiom; dividers use the layout-divider token.
-      Menu: Menu.extend({
+      Menu: ext<typeof Menu>({
         classNames: { item: floatingClasses.menuItem },
         styles: {
           dropdown: {
@@ -999,7 +1000,7 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
       }),
       // Combobox is the floating primitive underneath Select/Autocomplete/MultiSelect — like Menu,
       // it doesn't consume `components.Popover.styles`, so the overlay dropdown idiom is repeated.
-      Combobox: Combobox.extend({
+      Combobox: ext<typeof Combobox>({
         styles: {
           dropdown: {
             backgroundColor: 'var(--vx-surface-overlay)',
@@ -1016,7 +1017,7 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
       // background moves back to opaque, matching the content box it sits above rather than the page
       // behind it. Title = head font; close button = the ghost idiom (floating.module.css). Below the
       // `medium` size class the Modal is a bottom sheet (floating.module.css `sheet*`).
-      Modal: Modal.extend({
+      Modal: ext<typeof Modal>({
         defaultProps: { radius: radius.floating, closeButtonProps: { ...HIT_ATTR } },
         classNames: {
           close: floatingClasses.closeButton,
@@ -1037,7 +1038,7 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
           },
         },
       }),
-      Drawer: Drawer.extend({
+      Drawer: ext<typeof Drawer>({
         classNames: { close: floatingClasses.closeButton },
         styles: {
           content: {
@@ -1056,7 +1057,7 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
       // count-badge bg: ink 6–8%") — mono, ink-7% bg, radius 5.
       // Flat mono chip (mock's ⌘K badge) — Mantine's default Kbd draws a 3px "keyboard key" bottom
       // border that reads as a heavy off-system rule, so the border goes entirely.
-      Kbd: Kbd.extend({
+      Kbd: ext<typeof Kbd>({
         styles: {
           root: {
             backgroundColor: 'color-mix(in srgb, var(--vx-ink) 7%, transparent)',
@@ -1066,7 +1067,7 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
           },
         },
       }),
-      Code: Code.extend({
+      Code: ext<typeof Code>({
         styles: {
           root: {
             backgroundColor: 'color-mix(in srgb, var(--vx-ink) 7%, transparent)',
@@ -1083,7 +1084,7 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
       // rows) is not expressible by it at all. `height` on a table cell behaves as a MINIMUM, so a
       // wrapping cell still grows; `verticalSpacing` keeps working on top of it for a consumer that
       // wants a denser or looser table than the tier.
-      Table: Table.extend({
+      Table: ext<typeof Table>({
         classNames: { table: controlsClasses.tableRoot },
         styles: {
           th: {
@@ -1104,7 +1105,7 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
       // `track` is the Switch's <label>, so the invisible `--vx-hit` overlay (`data-basalt-hit`)
       // still toggles it. Checkbox/Radio boxes are bare <input>s under a plain <div> — an overlay
       // there would swallow clicks, so only their `label` (a real <label>) carries it.
-      Switch: Switch.extend({
+      Switch: ext<typeof Switch>({
         defaultProps: {
           withThumbIndicator: false,
           attributes: { track: HIT_ATTR },
@@ -1114,7 +1115,7 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
       // control chrome — it reads the divider token instead of the heavy gray-3/dark-4 line
       // (controls.module.css; custom properties are stripped from `styles` objects). The active tab
       // underline keeps `--tabs-color` (accent) untouched.
-      Tabs: Tabs.extend({
+      Tabs: ext<typeof Tabs>({
         classNames: { root: controlsClasses.tabsRoot },
         // The on-color re-point (see below). Cast: Mantine's `TabsCssVariables` type declares only
         // `--tabs-color` / `--tabs-radius`, yet Tabs' OWN varsResolver writes `--tabs-text-color` —
@@ -1132,7 +1133,7 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
       // foreground var. Theme `vars` merge AFTER a component's own `varsResolver` (Mantine
       // `useStyles`), so re-pointing that var here wins on every render path. Without this, a dark-mode
       // Checkbox/Radio paints a white checkmark on the light accent fill — invisible.
-      Checkbox: Checkbox.extend({
+      Checkbox: ext<typeof Checkbox>({
         defaultProps: { attributes: { label: HIT_ATTR } },
         vars: (theme, props) => ({
           root: {
@@ -1143,7 +1144,7 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
           },
         }),
       }),
-      Radio: Radio.extend({
+      Radio: ext<typeof Radio>({
         defaultProps: { attributes: { label: HIT_ATTR } },
         vars: (theme, props) => ({
           root: {
@@ -1152,7 +1153,7 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
           },
         }),
       }),
-      Pagination: Pagination.extend({
+      Pagination: ext<typeof Pagination>({
         vars: (theme, props) => ({
           root: { '--pagination-active-color': onColorFor(theme, props) },
         }),
@@ -1160,28 +1161,28 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
       // `Pagination`'s own controls (prev/next/page buttons) resolve `PaginationControl`'s
       // defaultProps independently of the parent — `data-basalt-hit` here is what closes the
       // gap Switch/Checkbox/Radio already close at their own theme entries.
-      PaginationControl: PaginationControl.extend({
+      PaginationControl: ext<typeof PaginationControl>({
         defaultProps: { ...HIT_ATTR },
       }),
-      Stepper: Stepper.extend({
+      Stepper: ext<typeof Stepper>({
         vars: (theme, props) => ({ root: { '--stepper-icon-color': onColorFor(theme, props) } }),
       }),
-      Indicator: Indicator.extend({
+      Indicator: ext<typeof Indicator>({
         vars: (theme, props) => ({ root: { '--indicator-text-color': onColorFor(theme, props) } }),
       }),
       // Accordion (default variant): hairline separators between items only — the color retune AND
       // the last item's outer border-bottom drop both live in controls.module.css.
-      Accordion: Accordion.extend({ classNames: { item: controlsClasses.accordionItem } }),
+      Accordion: ext<typeof Accordion>({ classNames: { item: controlsClasses.accordionItem } }),
       // Parents faint, separator line-colored — the current-page treatment (head font, weight) is a
       // shell-level concern (AppBreadcrumbs), not this generic Mantine primitive.
-      Breadcrumbs: Breadcrumbs.extend({
+      Breadcrumbs: ext<typeof Breadcrumbs>({
         styles: {
           breadcrumb: { color: 'var(--vx-faint)' },
           separator: { color: 'var(--vx-surface-border)' },
         },
       }),
       // Card idiom — same panel + shadow-card as every other surface.
-      Notification: Notification.extend({
+      Notification: ext<typeof Notification>({
         defaultProps: { radius: radius.floating },
         styles: {
           root: {
