@@ -26,8 +26,8 @@ export function CalibrateRepeatedAxis() {
   return (
     <Box data-shot="calibrate-repeated-axis">
       <ChartCard
-        title="Requests, last 48 h (a hour)"
-        info="API requests per hour across all projects, 14–16 Oct 2026, UTC."
+        title="Requests per hour, last 48 h"
+        info="API requests per hour across all projects, in UTC."
       >
         <Box data-shot-hover data-shot-tooltip>
           <Lines

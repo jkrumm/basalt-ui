@@ -4,19 +4,27 @@
  * trend glyph. Everything else on the card is clean.
  */
 import { Badge, Card, Group, Text } from '@mantine/core'
+import {
+  MTD_EUR,
+  PRIOR_MTD_EUR,
+  PRIOR_WINDOW_LABEL,
+  WINDOW_LABEL,
+  fmtEur,
+  fmtSignedShare,
+} from './spend-data'
 
 export function CalibrateDeltaFill() {
   return (
     <Card py="xs" px="sm" data-shot="calibrate-delta-fill">
       <Text size="xs" c="dimmed">
-        Spend, 1–16 Oct (€)
+        Spend, {WINDOW_LABEL} (€)
       </Text>
       <Group gap="xs" align="center">
         <Text data-numeric fw={600}>
-          €1,240
+          {fmtEur(MTD_EUR)}
         </Text>
         <Badge variant="filled" color="green" size="sm">
-          +12 % vs 1–16 Sep
+          {fmtSignedShare(MTD_EUR / PRIOR_MTD_EUR - 1)} vs {PRIOR_WINDOW_LABEL}
         </Badge>
       </Group>
     </Card>
