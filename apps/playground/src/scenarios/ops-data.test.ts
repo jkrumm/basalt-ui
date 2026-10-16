@@ -3,11 +3,13 @@
  */
 import { describe, expect, it } from 'bun:test'
 import {
+  DEGRADED_LOSS_PCT,
   DOWNTIME_MINUTES,
   HOURLY,
   LAST_OUTAGE,
   LATENCY_DISTRIBUTION,
   LOSS_24H_PCT,
+  LOSS_7D_PCT,
   MINUTE_LATENCY,
   NOW_DATE,
   OUTAGES,
@@ -18,6 +20,9 @@ import {
 } from './ops-data'
 
 const HOUR_MS = 3_600_000
+
+const mean = (rows: readonly { lossPct: number }[]): number =>
+  rows.reduce((acc, h) => acc + h.lossPct, 0) / rows.length
 
 describe('ops-data', () => {
   it('covers 168 consecutive hourly buckets ending at the reading time', () => {
@@ -45,9 +50,21 @@ describe('ops-data', () => {
     expect(UPTIME_PCT).toBeCloseTo((1 - DOWNTIME_MINUTES / (WINDOW_HOURS * 60)) * 100, 9)
   })
 
-  it('every outage hour is down and every other hour is up or degraded', () => {
+  it('an hour is down with any downtime, else degraded at the loss threshold, else up', () => {
     for (const row of HOURLY) {
-      expect(lineState(row) === 'down').toBe(row.downMinutes > 0)
+      if (row.downMinutes > 0) expect(lineState(row)).toBe('down')
+      else if (row.lossPct >= DEGRADED_LOSS_PCT) expect(lineState(row)).toBe('degraded')
+      else expect(lineState(row)).toBe('up')
+    }
+    const states = new Set(HOURLY.map(lineState))
+    expect(states).toEqual(new Set(['up', 'degraded', 'down']))
+  })
+
+  it('outages lie inside the window', () => {
+    const start = NOW_DATE.getTime() - WINDOW_HOURS * HOUR_MS
+    for (const o of OUTAGES) {
+      expect(o.start.getTime()).toBeGreaterThanOrEqual(start)
+      expect(o.end.getTime()).toBeLessThanOrEqual(NOW_DATE.getTime())
     }
   })
 
@@ -58,11 +75,10 @@ describe('ops-data', () => {
     expect(times).toEqual(times.toSorted((a, b) => b - a))
   })
 
-  it('an unmeasured hour has no throughput and no latency', () => {
+  it('readings are null for exactly the down hours', () => {
     for (const row of HOURLY) {
-      if (row.latencyMs !== null) continue
-      expect(row.downMbit).toBeNull()
-      expect(row.upMbit).toBeNull()
+      const unmeasured = [row.latencyMs, row.downMbit, row.upMbit].map((v) => v === null)
+      expect(unmeasured).toEqual(Array(3).fill(row.downMinutes > 0))
     }
   })
 
@@ -71,8 +87,13 @@ describe('ops-data', () => {
     expect(LATENCY_DISTRIBUTION.reduce((acc, b) => acc + b.hours, 0)).toBe(measured)
   })
 
-  it('has 60 minute readings and a positive 24 h loss', () => {
+  it('has 60 minute readings', () => {
     expect(MINUTE_LATENCY).toHaveLength(60)
+  })
+
+  it('loss figures are the mean of their hourly buckets', () => {
+    expect(LOSS_24H_PCT).toBeCloseTo(mean(HOURLY.slice(-24)), 9)
+    expect(LOSS_7D_PCT).toBeCloseTo(mean(HOURLY), 9)
     expect(LOSS_24H_PCT).toBeGreaterThan(0)
   })
 })

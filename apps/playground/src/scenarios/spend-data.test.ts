@@ -13,8 +13,8 @@ import {
   MTD_EUR,
   PRIOR_MTD_EUR,
   PROJECTS_MTD,
-  seeded,
 } from './spend-data'
+import { seeded } from './fixture-utils'
 
 const sum = (values: readonly number[]): number => values.reduce((a, b) => a + b, 0)
 

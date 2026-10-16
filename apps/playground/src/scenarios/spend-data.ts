@@ -5,6 +5,8 @@
  * from `TODAY`, so moving the reading date moves the copy with it.
  */
 
+import { seeded } from './fixture-utils'
+
 const PROJECT_KEYS = ['search', 'support', 'summaries', 'ingest', 'evals', 'sandbox'] as const
 export type ProjectKey = (typeof PROJECT_KEYS)[number]
 
@@ -56,17 +58,6 @@ const BASE_EUR: Record<ProjectKey, Record<ModelKey, number>> = {
   ingest: { large: 0, mid: 3, small: 6 },
   evals: { large: 6, mid: 2, small: 1 },
   sandbox: { large: 1, mid: 1, small: 1 },
-}
-
-/** mulberry32 — a 32-bit seeded generator, the smallest one with a flat enough spread for noise. */
-export function seeded(seed: number): () => number {
-  let state = seed
-  return () => {
-    state = (state + 0x6d2b79f5) | 0
-    let t = Math.imul(state ^ (state >>> 15), 1 | state)
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
-  }
 }
 
 type Entry = { project: ProjectKey; model: ModelKey; eur: number }
@@ -187,5 +178,3 @@ export const fmtSignedShare = (value: number): string => {
   const percent = Math.round(value * 100)
   return percent < 0 ? `\u2212${-percent}%` : `+${percent}%`
 }
-export const fmtDay = (date: Date): string =>
-  date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' })

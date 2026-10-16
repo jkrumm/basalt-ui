@@ -5,7 +5,7 @@
  * seeded generator runs once at module load and the reading time is fixed, so a re-render, a reload
  * and a screenshot read the same numbers.
  */
-import { seeded } from './spend-data'
+import { at as itemAt, fmtDay, seeded } from './fixture-utils'
 
 export type OutageCause = 'Modem reboot' | 'ISP upstream fault' | 'Line retrain'
 
@@ -51,7 +51,7 @@ const OUTAGES_ASC: readonly Outage[] = [
 export const OUTAGES: readonly Outage[] = OUTAGES_ASC.toSorted(
   (a, b) => b.start.getTime() - a.start.getTime(),
 )
-export const LAST_OUTAGE: Outage = OUTAGES[0] as Outage
+export const LAST_OUTAGE: Outage = itemAt(OUTAGES, 0)
 
 export type Transition = { at: Date; to: 'down' | 'up'; cause: OutageCause }
 
@@ -91,18 +91,17 @@ export const HOURLY: readonly HourRow[] = Array.from({ length: WINDOW_HOURS }, (
   const hour = start.getUTCHours()
   // Evening congestion (19–23 h) lifts latency and costs throughput.
   const evening = hour >= 19 && hour <= 23 ? 1 : 0
-  const mostlyDown = downMinutes >= 30
-  const share = 1 - downMinutes / 60
+  const wentDown = downMinutes > 0
   const latency = 13 + evening * 6 + random() * 4 + (degraded ? 38 : 0)
   const loss = random() * 0.3 + (degraded ? 2.4 + random() : 0) + (downMinutes / 60) * 100
-  const down = CONTRACT_DOWN_MBIT * (0.93 - evening * 0.12 + random() * 0.05) * share
-  const up = CONTRACT_UP_MBIT * (0.94 - evening * 0.04 + random() * 0.04) * share
+  const down = CONTRACT_DOWN_MBIT * (0.93 - evening * 0.12 + random() * 0.05)
+  const up = CONTRACT_UP_MBIT * (0.94 - evening * 0.04 + random() * 0.04)
   return {
     start,
-    latencyMs: mostlyDown ? null : latency,
+    latencyMs: wentDown ? null : latency,
     lossPct: Math.min(100, loss),
-    downMbit: mostlyDown ? null : down,
-    upMbit: mostlyDown ? null : up,
+    downMbit: wentDown ? null : down,
+    upMbit: wentDown ? null : up,
     downMinutes,
   }
 })
@@ -125,8 +124,8 @@ const median = (values: readonly number[]): number => {
   const sorted = values.toSorted((a, b) => a - b)
   const mid = Math.floor(sorted.length / 2)
   return sorted.length % 2
-    ? (sorted[mid] as number)
-    : ((sorted[mid - 1] as number) + (sorted[mid] as number)) / 2
+    ? itemAt(sorted, mid)
+    : (itemAt(sorted, mid - 1) + itemAt(sorted, mid)) / 2
 }
 
 export const DOWNTIME_MINUTES = sum(OUTAGES.map((o) => o.minutes))
@@ -144,7 +143,7 @@ export const MINUTE_LATENCY: readonly number[] = (() => {
   const minuteRandom = seeded(2026_10_17)
   return Array.from({ length: 60 }, (_, i) => 15 + minuteRandom() * 5 + (i === 41 ? 14 : 0))
 })()
-export const LATENCY_NOW_MS = MINUTE_LATENCY[MINUTE_LATENCY.length - 1] as number
+export const LATENCY_NOW_MS = itemAt(MINUTE_LATENCY, -1)
 
 export type LatencyBin = { from: number; label: string; hours: number }
 
@@ -159,7 +158,7 @@ export const LATENCY_DISTRIBUTION: readonly LatencyBin[] = (() => {
   for (let from = first; from <= last; from += BIN_WIDTH_MS) {
     bins.push({
       from,
-      label: `${from}`,
+      label: `${from} ms`,
       hours: values.filter((v) => v >= from && v < from + BIN_WIDTH_MS).length,
     })
   }
@@ -188,7 +187,4 @@ export const fmtHour = (date: Date): string =>
     hour12: false,
     timeZone: 'UTC',
   })
-export const fmtDay = (date: Date): string =>
-  date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' })
-
 export const WINDOW_LABEL = `${fmtDay(new Date(WINDOW_START))}–${fmtDay(NOW_DATE)}`
