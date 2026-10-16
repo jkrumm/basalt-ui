@@ -23,7 +23,7 @@ import type {
   StoredChartSpec,
 } from '@tanstack/charts/types/core'
 import { SHORT_CHART_HEIGHT } from './box'
-import { fmtCompact } from '../format/number'
+import { compact } from '../format/number'
 import { VX } from '../tokens'
 import type { ContainerClass } from '../tokens/size-classes'
 import { cursorBinding, followerOptions, quietWhileFollowing } from './cursor'
@@ -119,7 +119,7 @@ const labelsInside = (cls: ContainerClass, height: number): boolean =>
   cls === 'compact' && height > 0 && height < SHORT_CHART_HEIGHT
 
 export function defaultNumberFormat(v: number): string {
-  return fmtCompact(v, { digits: Math.abs(v) >= 1000 ? 1 : 2 })
+  return compact(v, { digits: Math.abs(v) >= 1000 ? 1 : 2 })
 }
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']

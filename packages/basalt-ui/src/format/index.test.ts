@@ -1,7 +1,7 @@
 /**
  * Coverage for the new `basalt-ui/format` names — the argo-facing wrappers and the date/duration/
  * measurement formatters seeded from argo's `features/*` files. The number-format law itself
- * (`fmtCompact`/`fmtPercent`/`fmtCurrency`/`fmtInt`, non-finite handling, locale pinning) is
+ * (`compact`/`percent`/`money`/`integer`, non-finite handling, locale pinning) is
  * already covered by `../charts/utils/format.test.ts`, which now exercises this module through
  * the re-export shim.
  */
@@ -13,7 +13,7 @@ const en = { locale: 'en-US' } as const
 
 describe('money / percent / integer', () => {
   test('money formats a currency amount', () => {
-    expect(money(1234, { ...en, currency: 'USD' })).toBe('$1,234')
+    expect(money(1234, { ...en, currency: 'USD' })).toBe('$1,234.00')
   })
 
   test('percent formats a ratio', () => {
@@ -78,13 +78,13 @@ describe('relativeTime', () => {
 
 describe('km / kcal', () => {
   test('km defaults to 2 fraction digits', () => {
-    expect(km(5300)).toBe('5.30 km')
-    expect(km(5300, { digits: 1 })).toBe('5.3 km')
+    expect(km(5300, en)).toBe('5.30 km')
+    expect(km(5300, { ...en, digits: 1 })).toBe('5.3 km')
   })
 
-  test('kcal compacts to "k cal" above 1000', () => {
-    expect(kcal(842)).toBe('842 kcal')
-    expect(kcal(1243)).toBe('1.24 k cal')
+  test('kcal compacts to "k kcal" above 1000', () => {
+    expect(kcal(842, en)).toBe('842 kcal')
+    expect(kcal(1243, en)).toBe('1.24k kcal')
   })
 
   test('non-finite input prints the sentinel', () => {

@@ -1,39 +1,42 @@
 /**
  * Number formatting — `Intl.NumberFormat` with the arguments already decided, so a caller states
  * WHAT a number is rather than how to punctuate it. One implementation: the chart layer imports
- * `fmtCompact` from here for its default axis format.
- *
- * `money`/`percent`/`integer`/`compact`/`deltaPct` are the argo-facing names (seeded from
- * `features/*\/{formatters,formulas}.ts`); `fmtCurrency`/`fmtPercent`/`fmtInt`/`fmtCompact` are the
- * original chart-formatter names, internal since 2.0 and delegated to by the public names.
+ * `compact` from here for its default axis format. Every formatter accepts `null | undefined` and
+ * prints {@link NON_FINITE} for it (as for `NaN` / `±Infinity`).
  */
-import { NON_FINITE, numberFormat } from './shared'
+import { isNumeric, NON_FINITE, numberFormat } from './shared'
 import type { LocaleOption } from './shared'
 
 export type { LocaleOption }
 export { NON_FINITE }
 
+type Numeric = number | null | undefined
+
 /** The compact `K` suffix, matched only where it follows the digits it qualifies — so a currency
  * prefix that happens to contain one (`HK$`) survives the lowercasing. */
 const COMPACT_K = /(\d\s?)K/
 
-export type FmtCompactOptions = LocaleOption & {
-  /** Significant-ish fraction digits on the compacted number. Default 1 (`1.2k`, `3.4M`). */
+/** `negative` hides the sign of `-0` and of a negative that rounds to zero (`-0.4` → `0`). */
+const SIGN: Intl.NumberFormatOptions = { signDisplay: 'negative' }
+
+export type CompactOptions = LocaleOption & {
+  /** Fraction digits on the compacted number. Default 1 (`1.2k`, `3.4M`). */
   digits?: number
 }
 
 /**
  * Compact notation: `1.2k`, `3.4M`, `-820`. The axis formatter for any count whose range spans
- * more than three digits. A non-finite value prints {@link NON_FINITE}.
+ * more than three digits.
  *
  * Note `Intl`'s compact notation is LOCALE text, not a suffix table: `en` gives `1.2K`, and this
  * lowercases the `K` to match the package's own numeral style while leaving every other locale's
  * word (`1,2 Mio.`) untouched.
  */
-export function fmtCompact(value: number, options: FmtCompactOptions = {}): string {
-  if (!Number.isFinite(value)) return NON_FINITE
+export function compact(value: Numeric, options: CompactOptions = {}): string {
+  if (!isNumeric(value)) return NON_FINITE
   const { digits = 1, locale } = options
   return numberFormat(locale, {
+    ...SIGN,
     notation: 'compact',
     compactDisplay: 'short',
     maximumFractionDigits: digits,
@@ -42,7 +45,7 @@ export function fmtCompact(value: number, options: FmtCompactOptions = {}): stri
     .replace(COMPACT_K, '$1k')
 }
 
-export type FmtPercentOptions = LocaleOption & {
+export type PercentOptions = LocaleOption & {
   /** Fraction digits. Default 0 (`42%`). */
   digits?: number
   /**
@@ -52,55 +55,91 @@ export type FmtPercentOptions = LocaleOption & {
   input?: 'ratio' | 'percent'
 }
 
-/** Percentages, from either a ratio or an already-scaled percentage. A non-finite value prints
- * {@link NON_FINITE}. */
-export function fmtPercent(value: number, options: FmtPercentOptions = {}): string {
-  if (!Number.isFinite(value)) return NON_FINITE
+/** Percentages, from either a ratio or an already-scaled percentage. */
+export function percent(value: Numeric, options: PercentOptions = {}): string {
+  if (!isNumeric(value)) return NON_FINITE
   const { digits = 0, input = 'ratio', locale } = options
   return numberFormat(locale, {
+    ...SIGN,
     style: 'percent',
     minimumFractionDigits: digits,
     maximumFractionDigits: digits,
   }).format(input === 'percent' ? value / 100 : value)
 }
 
-/** `percent` — the `basalt-ui/format` name for {@link fmtPercent}. */
-export const percent = fmtPercent
-
-export type FmtCurrencyOptions = LocaleOption & {
+export type MoneyOptions = LocaleOption & {
   /** ISO 4217 code — required. There is no default currency. */
   currency: string
   /** Compact notation for the amount (`$1.2k`). Default false. */
   compact?: boolean
-  /** Fraction digits. Default 0 compacted, else the currency's own default (`undefined`). */
+  /**
+   * Fraction digits. Unset → the currency's own default (USD 2, JPY 0) — or, compacted, up to 1.
+   * An explicit number (`0`) pins min and max: an opt-in to rounding away the cents.
+   */
   digits?: number
 }
 
-/** Money. `fmtCurrency(1234, { currency: 'USD' })` → `$1,234`. A non-finite amount prints
- * {@link NON_FINITE}. */
-export function fmtCurrency(value: number, options: FmtCurrencyOptions): string {
-  if (!Number.isFinite(value)) return NON_FINITE
+/** Money. `money(12.5, { currency: 'USD' })` → `$12.50`. */
+export function money(value: Numeric, options: MoneyOptions): string {
+  if (!isNumeric(value)) return NON_FINITE
   const { currency, compact: isCompact = false, digits, locale } = options
-  const fractionDigits = digits ?? (isCompact ? 1 : 0)
   return numberFormat(locale, {
+    ...SIGN,
     style: 'currency',
     currency,
     ...(isCompact && { notation: 'compact', compactDisplay: 'short' }),
-    minimumFractionDigits: isCompact ? 0 : fractionDigits,
-    maximumFractionDigits: fractionDigits,
+    ...(isCompact
+      ? { minimumFractionDigits: 0, maximumFractionDigits: digits ?? 1 }
+      : digits !== undefined && { minimumFractionDigits: digits, maximumFractionDigits: digits }),
   })
     .format(value)
     .replace(COMPACT_K, '$1k')
 }
 
-/** `money` — the `basalt-ui/format` name for {@link fmtCurrency}. */
-export const money = fmtCurrency
-
-/** Grouped integer: `12,480`. Rounds. A non-finite value prints {@link NON_FINITE}. */
-export function fmtInt(value: number, options: LocaleOption = {}): string {
-  if (!Number.isFinite(value)) return NON_FINITE
-  return numberFormat(options.locale, { maximumFractionDigits: 0 }).format(value)
+/** Grouped integer: `12,480`. Rounds. */
+export function integer(value: Numeric, options: LocaleOption = {}): string {
+  if (!isNumeric(value)) return NON_FINITE
+  return numberFormat(options.locale, { ...SIGN, maximumFractionDigits: 0 }).format(value)
 }
 
-/** `integer` — the `basalt-ui/format` name for {@link fmtInt}. */
-export const integer = fmtInt
+const BYTE_UNITS = ['B', 'kB', 'MB', 'GB', 'TB', 'PB'] as const
+
+export type BytesOptions = LocaleOption & {
+  /** Max fraction digits. Default 1 (`1.2 MB`). */
+  digits?: number
+}
+
+/**
+ * Byte sizes in DECIMAL (SI) units — `1 kB` is 1000 bytes, the convention of browsers' download
+ * UIs, storage vendors and `Intl`'s own `kilobyte`. `bytes(1_200_000)` → `1.2 MB`; below 1000 it
+ * prints whole bytes (`512 B`). Negative values keep their sign. The cap is `PB`.
+ */
+export function bytes(value: Numeric, options: BytesOptions = {}): string {
+  if (!isNumeric(value)) return NON_FINITE
+  const { digits = 1, locale } = options
+  let unit = 0
+  let scaled = value
+  while (Math.abs(scaled) >= 1000 && unit < BYTE_UNITS.length - 1) {
+    scaled /= 1000
+    unit += 1
+  }
+  const text = numberFormat(locale, {
+    ...SIGN,
+    maximumFractionDigits: unit === 0 ? 0 : digits,
+  }).format(scaled)
+  return `${text} ${BYTE_UNITS[unit]}`
+}
+
+export type DeltaOptions = LocaleOption & {
+  /** Max fraction digits. Default 1 (`+3.2`). */
+  digits?: number
+}
+
+/** A signed change: `+3.2`, `-1`, `0`. Zero (and anything that rounds to it) carries no sign. */
+export function delta(value: Numeric, options: DeltaOptions = {}): string {
+  if (!isNumeric(value)) return NON_FINITE
+  const { digits = 1, locale } = options
+  return numberFormat(locale, { signDisplay: 'exceptZero', maximumFractionDigits: digits }).format(
+    value,
+  )
+}

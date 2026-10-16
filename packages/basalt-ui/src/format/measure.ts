@@ -1,31 +1,42 @@
 /**
- * Distance/energy formatting — seeded from `walking-pad/formatters.ts#formatKm`/`#formatKcal`.
+ * Distance/energy formatting. Both accept `null | undefined` and print {@link NON_FINITE} for it.
  */
-import { NON_FINITE } from './shared'
+import { isNumeric, NON_FINITE, numberFormat } from './shared'
+import type { LocaleOption } from './shared'
 
-export type KmOptions = {
+export type KmOptions = LocaleOption & {
   /** Fraction digits. Default 2 (`"5.30 km"`). */
   digits?: number
 }
 
-/** Meters as kilometers — `"5.30 km"`. A non-finite value prints {@link NON_FINITE}. */
-export function km(meters: number, options: KmOptions = {}): string {
-  if (!Number.isFinite(meters)) return NON_FINITE
-  const { digits = 2 } = options
-  return `${(meters / 1000).toFixed(digits)} km`
+/** Meters as kilometers — `"5.30 km"` (`"5,30 km"` in `de`). */
+export function km(meters: number | null | undefined, options: KmOptions = {}): string {
+  if (!isNumeric(meters)) return NON_FINITE
+  const { digits = 2, locale } = options
+  return numberFormat(locale, {
+    signDisplay: 'negative',
+    style: 'unit',
+    unit: 'kilometer',
+    unitDisplay: 'short',
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  }).format(meters / 1000)
 }
 
-export type KcalOptions = {
-  /** Fraction digits once compacted to `k cal`. Default 2. Below 1000 kcal always rounds to a
-   * whole number, matching the seed (`formatKcal`). */
+export type KcalOptions = LocaleOption & {
+  /** Max fraction digits once scaled to thousands. Default 2. Below 1000 always whole. */
   digits?: number
 }
 
-/** Kilocalories, compacting to `"k cal"` above 1000 — `"842 kcal"`, `"1.24 k cal"`. A non-finite
- * value prints {@link NON_FINITE}. */
-export function kcal(value: number, options: KcalOptions = {}): string {
-  if (!Number.isFinite(value)) return NON_FINITE
-  const { digits = 2 } = options
-  if (value >= 1000) return `${(value / 1000).toFixed(digits)} k cal`
-  return `${Math.round(value)} kcal`
+/** Kilocalories — `"842 kcal"`, and `"1.24k kcal"` from 1000 up. The unit string is always
+ * `kcal`. */
+export function kcal(value: number | null | undefined, options: KcalOptions = {}): string {
+  if (!isNumeric(value)) return NON_FINITE
+  const { digits = 2, locale } = options
+  const thousands = Math.abs(value) >= 1000
+  const text = numberFormat(locale, {
+    signDisplay: 'negative',
+    maximumFractionDigits: thousands ? digits : 0,
+  }).format(thousands ? value / 1000 : value)
+  return `${text}${thousands ? 'k' : ''} kcal`
 }

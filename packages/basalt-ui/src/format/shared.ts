@@ -1,6 +1,7 @@
 /**
- * Shared low-level pieces of `basalt-ui/format` — the em-dash sentinel and the memoized
- * `Intl.NumberFormat` cache every number formatter in this module reuses. Moved here (out of
+ * Shared low-level pieces of `basalt-ui/format` — the em-dash sentinel, the default
+ * locale / time zone ({@link defineFormat}) and the memoized `Intl` caches every formatter in this
+ * module reuses. Moved here (out of
  * `src/charts/utils/format.ts`, C5 consolidation) so the subpath is the single implementation;
  * 2.0's chart layer imports it directly (`docs/V2-SPEC.md` § 9).
  */
@@ -12,43 +13,94 @@
  */
 export const NON_FINITE = '—'
 
-/** Options every number formatter here accepts. */
+/** Options every number/measure formatter accepts. */
 export type LocaleOption = {
-  /** BCP-47 tag. Default `undefined` — the runtime's own locale. */
-  locale?: string
+  /** BCP-47 tag. Default: the {@link defineFormat} default, else the runtime's own locale. */
+  locale?: string | undefined
+}
+
+export type FormatDefaults = {
+  /** BCP-47 tag every formatter uses when a call passes none. */
+  locale?: string | undefined
+  /** IANA time zone every date formatter uses when a call passes none. */
+  timeZone?: string | undefined
+}
+
+let defaults: FormatDefaults = {}
+
+/**
+ * Sets the locale / time zone every formatter in `basalt-ui/format` falls back to. Replaces the
+ * previous defaults wholesale (so `defineFormat()` resets) and is idempotent — `BasaltProvider`
+ * calls it during render from its `locale` / `timeZone` props. Unset stays `undefined`: the
+ * runtime's own locale and zone.
+ */
+export function defineFormat(next: FormatDefaults = {}): void {
+  defaults = { locale: next.locale, timeZone: next.timeZone }
 }
 
 /**
- * `Intl.NumberFormat` construction is the expensive half of formatting and a chart formats one
- * label per tick per frame, so instances are memoized on their own arguments. The key is the
- * serialized options because that is exactly what identifies an instance.
+ * Cache key: the options' own entries, sorted, joined — no serialization of the whole object per
+ * call (a chart formats one label per tick per frame). Option values here are primitives.
  */
-const formatterCache = new Map<string, Intl.NumberFormat>()
+function optionsKey(options: object): string {
+  let key = ''
+  for (const name of Object.keys(options).toSorted()) {
+    key += `${name}=${String((options as Record<string, unknown>)[name])};`
+  }
+  return key
+}
+
+/**
+ * `Intl` construction is the expensive half of formatting, so instances are memoized per RESOLVED
+ * locale (call locale, else the default) — a changed default can never serve a stale instance.
+ */
+const numberCaches = new Map<string, Map<string, Intl.NumberFormat>>()
+const dateCaches = new Map<string, Map<string, Intl.DateTimeFormat>>()
+
+function memoize<T>(
+  caches: Map<string, Map<string, T>>,
+  locale: string | undefined,
+  options: object,
+  create: () => T,
+): T {
+  const localeKey = locale ?? ''
+  let cache = caches.get(localeKey)
+  if (cache === undefined) {
+    cache = new Map()
+    caches.set(localeKey, cache)
+  }
+  const key = optionsKey(options)
+  const cached = cache.get(key)
+  if (cached !== undefined) return cached
+  const created = create()
+  cache.set(key, created)
+  return created
+}
 
 export function numberFormat(
   locale: string | undefined,
   options: Intl.NumberFormatOptions,
 ): Intl.NumberFormat {
-  const key = `${locale ?? ''}|${JSON.stringify(options)}`
-  const cached = formatterCache.get(key)
-  if (cached !== undefined) return cached
-  const created = new Intl.NumberFormat(locale, options)
-  formatterCache.set(key, created)
-  return created
+  const resolved = locale ?? defaults.locale
+  return memoize(numberCaches, resolved, options, () => new Intl.NumberFormat(resolved, options))
 }
-
-const dateFormatterCache = new Map<string, Intl.DateTimeFormat>()
 
 export function dateFormat(
   locale: string | undefined,
   options: Intl.DateTimeFormatOptions,
 ): Intl.DateTimeFormat {
-  const key = `${locale ?? ''}|${JSON.stringify(options)}`
-  const cached = dateFormatterCache.get(key)
-  if (cached !== undefined) return cached
-  const created = new Intl.DateTimeFormat(locale, options)
-  dateFormatterCache.set(key, created)
-  return created
+  const resolved = locale ?? defaults.locale
+  const withZone =
+    options.timeZone === undefined && defaults.timeZone !== undefined
+      ? { ...options, timeZone: defaults.timeZone }
+      : options
+  return memoize(dateCaches, resolved, withZone, () => new Intl.DateTimeFormat(resolved, withZone))
+}
+
+/** True for a finite number; `null`, `undefined`, `NaN` and `±Infinity` are the inputs every
+ * number/measure formatter answers with {@link NON_FINITE}. */
+export function isNumeric(value: number | null | undefined): value is number {
+  return typeof value === 'number' && Number.isFinite(value)
 }
 
 /** Coerces the flexible `Date | number | string` inputs this module's date formatters accept into
