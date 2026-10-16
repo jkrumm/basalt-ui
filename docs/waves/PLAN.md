@@ -817,18 +817,29 @@ lead fans out workers on disjoint file groups (`rd fan` / `rd merge`), and stops
 orchestrator releases, drives the consumer validators (weatherorb only through its own orchestrator), and
 files their friction.
 
-## Wave 18 — Wiring correctness and stability <!-- status: active -->
+## Wave 18 — Wiring correctness and stability <!-- status: done -->
 
 Synthesis Wave 1. Validators: weatherorb (Start `getRouter()`, SSR hydration), argo, rb.
 
-- [ ] Stable nav anchors and badge identity; narrow memoized shell contexts (no remount per navigation).
-- [ ] `basaltRouterOptions` factory shared by mount mode and Start; public `BasaltProviderProps`.
-- [ ] Pure `validateSearch`; search-store hygiene; one renderToString+hydrate test per lane.
-- [ ] Telemetry correctness (mutation-key hashing, dev console sink, no retry on 4xx).
-- [ ] `PageAside` single-claimant ownership.
-      **Left behind:**
+- [x] Stable nav anchors and badge identity; narrow memoized shell contexts (no remount per navigation).
+- [x] `basaltRouterOptions` factory shared by mount mode and Start; public `BasaltProviderProps`.
+- [x] Pure `validateSearch`; search-store hygiene; one renderToString+hydrate test per lane.
+- [x] Telemetry correctness (mutation-key hashing, dev console sink, no retry on 4xx).
+- [x] `PageAside` single-claimant ownership.
 
-## Wave 19 — Format layer and small correctness bugs <!-- status: pending -->
+**Left behind:**
+
+- **Landed** (3 PRs via `rd merge`, `make check` green on each rebased SHA; every diff agent-gateway reviewed for two rounds, scope then frozen and the lead read each last fix diff): #290 `basaltRouterOptions` + telemetry, #288 search-store, #289 shell stability. Isolation held: package-only commits; two follow-up non-package commits for the dogfood `.claude/rules` copy.
+- **Source delta: NOT net-negative (gate miss, stated).** Non-test `packages/basalt-ui/src`: +128 (#290), +114 (#288), +46 (#289) = +288; tests added far more. Every step is a correctness fix that adds mechanism (anchor cache, hydration gate, router-owned emitter). Wave 22 (purge) is where the line count comes back; do not count this wave toward the budget doctrine.
+- **Public surface:** +1 value (`basaltRouterOptions`), +1 type (`BasaltRouterOptions`), `BasaltProviderProps` exported; budgets raised to the landed values (`nonChartSymbols` 95, barrel types 58, provider-only first paint 19200). `ShellFrame.activeCrumb` is now a REQUIRED prop (ShellFrame is a shell-barrel export, not a root one; `useNav` resolves it).
+- **Behaviour changes (all in `MIGRATING.md` § Unreleased with opt-outs):** default `retry` is a predicate that skips 4xx except 408/425/429 (`retry: 2` restores); `unwrap` accepts any thenable and throws on a falsy-but-set `error`; `basalt.mutation.key` and `basalt.query.hash` now carry a 32-bit grouping id, not the key (dashboards keyed on the old value change meaning); an unset `telemetry` logs query/mutation failures to the console outside production; `createBasaltRouter` REQUIRES `context` when the context type has required keys; `validateSearch` is URL ⊳ fallback on the server and while a dehydrated page hydrates, the mirror is then adopted by a replace-navigation after hydration; the foreign-param dev warning is per route.
+- **Decided by the lead (flag if you disagree):** kept `useNav` returning `activeCrumb` (SYNTHESIS) over the architect's "derive in the shell"; rejected a runtime OTel adapter (recipe stays in the JSDoc), `basalt-ui/testing`, `HttpError`/`isHttpError`, the `__basalt` symbol/WeakMap move, a wider hash and additive `.group` attribute names; the foreign-param check reads route `validateSearch` SOURCE for the word `validateSearch` (dev-only heuristic, no user validator is invoked); `provider-07` shipped as a dev warning only.
+- **Not done / known gaps:** `search-store.ts` is ~530 lines (URL lane + mount registry could split); `ShellBody` 245 lines / `PageBar` 207 lines stay complexity hotspots; `routesRunStore`-style ownership is still presence-based (provider-07's exact ownership deferred); `labels` as a definition-time option (provider-21) not built; the `ReactNode` badge rebuilds sections (identity compare, documented); `isActive`/`globalActions` must be stable (documented, not enforced); the anchor cache is module-level keyed by `defineNav` config identity (define `nav` at module scope).
+- **weatherorb validator:** `basaltRouterOptions` spreads in Start's `getRouter()`; the `weatherorb:apps/web/src/router.tsx` path in `consumers.json` comes from the audit doc, not from reading weatherorb. The orchestrator verifies on the real app.
+- **Ops notes:** the train rebases each branch and conflicts on `MIGRATING.md` every time two workers append (back to the worker, three times); a shipped `agent/rules/*.md` edit needs the byte-identical repo-root `.claude/rules` copy as a SEPARATE non-package commit and a rule-line budget of 277 (one added sentence broke both); an `rd say` "done" status can be stale, check for a new push before re-running the train; one worker's last commit silently deleted ~18 unrelated tests (caught by reading the diff, restored); a layout fixture silently lost its breadcrumb when `activeCrumb` became required (layout suite caught it).
+- **Next:** Wave 19 is `active`. Not released: the orchestrator releases and drives argo/rb/weatherorb validation.
+
+## Wave 19 — Format layer and small correctness bugs <!-- status: active -->
 
 Synthesis Wave 2. Validators: argo, rb, linewatch.
 
