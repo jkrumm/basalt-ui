@@ -21,7 +21,6 @@ import { BasaltDataTable, createColumnHelper } from 'basalt-ui/table'
 import { CONTAINER_KEYS, VX } from 'basalt-ui/tokens'
 import {
   CONTRACT_DOWN_MBIT,
-  CONTRACT_UP_MBIT,
   DEGRADED_LOSS_PCT,
   DOWN_24H_MBIT,
   DOWN_PEAK_MBIT,
@@ -46,7 +45,7 @@ import {
   lineState,
 } from './ops-data'
 import type { HourRow, LatencyBin, Outage } from './ops-data'
-import { chartStateFor, queryFor } from './shot-state'
+import { chartStateFor, queryFor, retryCopy } from './shot-state'
 import type { ScenarioProps } from './shot-state'
 
 const LINE_STATES: BandStripSeries<HourRow>[] = [
@@ -99,8 +98,7 @@ const NO_OUTAGES: Outage[] = []
 const PROBE_ERROR = 'The probe did not answer. Retry, or check that the monitor is running.'
 const PROBE_EMPTY = 'No readings in the window. Check that the probe is reporting.'
 
-const retryCopy = (what: string): string =>
-  `${what} failed to load. Retry, or check the probe connection.`
+const retry = (what: string): string => retryCopy(what, 'probe')
 
 const columns = (() => {
   const col = createColumnHelper<Outage>()
@@ -133,7 +131,7 @@ function OpsStats({ shotState }: ScenarioProps) {
         <StatCard
           title="Latency, last minute"
           value={value(fmtMs(LATENCY_NOW_MS))}
-          info="Round-trip time to the probe target, last 60 minutes. The change compares with the median hour of the last 7 days."
+          info="Round-trip time in the last minute. The sparkline shows the last 60 minutes; the change compares with the 7-day median hour."
           {...(isAtRest && {
             delta: LATENCY_NOW_MS / LATENCY_MEDIAN_7D_MS - 1,
             deltaPeriod: 'vs 7-day median',
@@ -193,7 +191,7 @@ function OpsCharts({ shotState }: ScenarioProps) {
           info={`One band per hour. An outage is any hour with downtime; loss above ${DEGRADED_LOSS_PCT}% without downtime is degraded. Last outage: ${fmtStamp(LAST_OUTAGE.start)} UTC, ${fmtDuration(LAST_OUTAGE.minutes)}.`}
           state={chartStateFor(shotState, {
             empty: 'No hourly readings in the window. Check that the probe is reporting.',
-            error: retryCopy('Line state'),
+            error: retry('Line state'),
           })}
         >
           <Box data-shot-hover data-shot-tooltip>
@@ -218,7 +216,7 @@ function OpsCharts({ shotState }: ScenarioProps) {
             state={chartStateFor(shotState, {
               empty:
                 'No throughput readings in the window. Check that the speed test is scheduled.',
-              error: retryCopy('Throughput'),
+              error: retry('Throughput'),
             })}
           >
             <Box data-shot-hover data-shot-tooltip>
@@ -238,11 +236,11 @@ function OpsCharts({ shotState }: ScenarioProps) {
         </Box>
         <Box data-shot="latency-distribution" h="100%">
           <ChartCard
-            title="Hours by median latency (ms)"
-            info={`How many of the 168 hours landed in each 4 ms band of median round-trip time. Contract upload is ${CONTRACT_UP_MBIT} Mbit/s.`}
+            title="Hours by median latency"
+            info={`How many of the 168 hours landed in each 4 ms band of median round-trip time.`}
             state={chartStateFor(shotState, {
               empty: 'No latency readings to bin yet. The histogram needs at least one hour.',
-              error: retryCopy('The latency distribution'),
+              error: retry('The latency distribution'),
             })}
           >
             <Box data-shot-hover data-shot-tooltip>
@@ -261,7 +259,7 @@ function OpsCharts({ shotState }: ScenarioProps) {
 }
 
 function OpsOutages({ shotState }: ScenarioProps) {
-  const query = queryFor(shotState, retryCopy('Outages'))
+  const query = queryFor(shotState, retry('Outages'))
   return (
     <Box data-shot="outages" h="100%">
       <Section title={`Outages, ${WINDOW_LABEL}`}>

@@ -43,7 +43,7 @@ import {
   fmtSignedShare,
 } from './spend-data'
 import type { DayRow, DistributionBin, ModelKey, ProjectKey, ProjectRow } from './spend-data'
-import { chartStateFor, queryFor } from './shot-state'
+import { chartStateFor, queryFor, retryCopy } from './shot-state'
 import type { ScenarioProps } from './shot-state'
 
 const MODEL_COLOR: Record<ModelKey, string> = {
@@ -86,8 +86,7 @@ const PACE_LINES = [
 const USAGE_ERROR = 'The usage export did not answer. Retry, or reconnect it in Settings.'
 const USAGE_EMPTY = 'No spend recorded in the window. Check that the usage export is connected.'
 
-const retryCopy = (what: string): string =>
-  `${what} failed to load. Retry, or check the usage export connection.`
+const retry = (what: string): string => retryCopy(what, 'usage export')
 
 const columns = (() => {
   const col = createColumnHelper<ProjectRow>()
@@ -189,7 +188,7 @@ function SpendCharts({ shotState }: ScenarioProps) {
           info="Stacked daily spend per model. The dashed line is the daily pace that lands exactly on the monthly budget."
           state={chartStateFor(shotState, {
             empty: 'No spend in the last 90 days. Connect a project to the usage export.',
-            error: retryCopy('Daily spend'),
+            error: retry('Daily spend'),
           })}
         >
           <Box data-shot-hover data-shot-tooltip>
@@ -210,7 +209,7 @@ function SpendCharts({ shotState }: ScenarioProps) {
           info="Each project's share of month-to-date spend across all models."
           state={chartStateFor(shotState, {
             empty: `No project spent anything ${WINDOW_LABEL}. Connect one to the usage export.`,
-            error: retryCopy('Spend by project'),
+            error: retry('Spend by project'),
           })}
         >
           <Box data-shot-hover data-shot-tooltip>
@@ -231,7 +230,7 @@ function SpendCharts({ shotState }: ScenarioProps) {
 }
 
 function SpendDrivers({ shotState }: ScenarioProps) {
-  const query = queryFor(shotState, retryCopy('Top drivers'))
+  const query = queryFor(shotState, retry('Top drivers'))
   return (
     <SimpleGrid type="container" cols={{ base: 1, [CONTAINER_KEYS.regular]: 2 }}>
       <Box data-shot="top-drivers" h="100%">
@@ -257,7 +256,7 @@ function SpendDrivers({ shotState }: ScenarioProps) {
           info="How many of the last 90 days landed in each €10 band of total daily spend."
           state={chartStateFor(shotState, {
             empty: 'No days to bin yet. The histogram needs at least one day of spend.',
-            error: retryCopy('The distribution'),
+            error: retry('The distribution'),
           })}
         >
           <Box data-shot-hover data-shot-tooltip>

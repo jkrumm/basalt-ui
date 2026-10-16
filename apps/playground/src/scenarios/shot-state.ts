@@ -20,6 +20,10 @@ export function validateShotSearch(raw: Record<string, unknown>): { 'shot-state'
   return isShotState(value) ? { 'shot-state': value } : {}
 }
 
+/** The error copy of a failed load: what failed, and the connection to check. */
+export const retryCopy = (what: string, source: string): string =>
+  `${what} failed to load. Retry, or check the ${source} connection.`
+
 const noop = (): void => {}
 
 /** For `StatCard` / `Section` / `BasaltDataTable` `query`: undefined at rest. */
