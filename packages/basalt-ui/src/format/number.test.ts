@@ -60,6 +60,20 @@ describe('bytes', () => {
     expect(bytes(-1500, en)).toBe('-1.5 kB')
   })
 
+  test('never prints a fake unit or "1000 <unit>"', () => {
+    expect(bytes(1e15, en)).toBe('1 PB')
+    expect(bytes(999.9e15, en)).toBe('999.9 PB')
+    expect(bytes(1e18, en)).toBe('1,000 PB')
+    expect(bytes(1e21, en)).toBe('1,000,000 PB')
+  })
+
+  test('tie-like boundaries promote consistently at every digit count', () => {
+    expect(bytes(999.995, { ...en, digits: 2 })).toBe('1 kB')
+    expect(bytes(999_995, { ...en, digits: 0 })).toBe('1 MB')
+    expect(bytes(999_995, { ...en, digits: 1 })).toBe('1 MB')
+    expect(bytes(999_995, { ...en, digits: 2 })).toBe('1 MB')
+  })
+
   test('rounds first, then promotes the unit at the boundary', () => {
     expect(bytes(999, en)).toBe('999 B')
     expect(bytes(999.5, en)).toBe('1 kB')
