@@ -1062,7 +1062,8 @@ its rounds on these tools.
       fail with the right citation, one known-good board it must pass.
 - [x] The skill procedure in `basalt-design` (scenario → catalogue pick → at least three rounds → rubric →
       owner after five failed rounds); `basalt-ui check` prints a notice when UI files changed and no board is
-      newer than them; one rule line names the procedure.
+      newer than them; one rule line names the procedure. (Shipped as a `doctor` info line, D14; no rule line, D15:
+      the AGENTS block names the procedure.)
 - [x] Discovery: the managed AGENTS block names the skills and the reviewer (row 135); every rule's `paths:`
       renders from `basalt.roots` (row 136); `basalt-controls.md` and its guard agree on one ViewTabs
       placement (row 138).
