@@ -1,3 +1,43 @@
+# [2.15.0](https://github.com/jkrumm/basalt-ui/compare/v2.14.0...v2.15.0) (2026-10-16)
+
+
+### Bug Fixes
+
+* address review of the scenario route and seeds ([10c6abd](https://github.com/jkrumm/basalt-ui/commit/10c6abdaae7aa7b97bf31c66f88dac6f5ecff1a2))
+* align the reviewer's Craft numbering with SPEC and name accent leaks ([9213182](https://github.com/jkrumm/basalt-ui/commit/921318228048bf01198c11889d7edbc26174fec2))
+* crop the tooltip at its settled size, not mid-animation ([0aa00e8](https://github.com/jkrumm/basalt-ui/commit/0aa00e8c26346c6a2003a133a6a31064885aa9b8))
+* expect the reviewer's seven Craft items from SPEC 8.1 ([24cea30](https://github.com/jkrumm/basalt-ui/commit/24cea30b2c40b2add5b9dcd2eaf62de9d6c87a48))
+* give the calibration seeds neutral route ids ([d8b4b3f](https://github.com/jkrumm/basalt-ui/commit/d8b4b3fe3375134b419e71bb2b9028bbb0d72387))
+* give the good seed a focusable table and no dead tooltip target ([91767d5](https://github.com/jkrumm/basalt-ui/commit/91767d59f4aa97e7fe8247d73ad4ef9b0f9f28ca))
+* give the good seed a stated share denominator and no row wrap ([fde2537](https://github.com/jkrumm/basalt-ui/commit/fde253707d2aae020e9f6deba11bc883a532774c))
+* harden shot's out-dir swap, file names and metrics ([c5f17e6](https://github.com/jkrumm/basalt-ui/commit/c5f17e6274fb33ab43bd707fab4b1a08ea088a0e))
+* harden the stale-board walk and move doctor's design section ([310f3bb](https://github.com/jkrumm/basalt-ui/commit/310f3bbad21e74b652026a14091af6680b9071e8))
+* hold an opened tooltip in the hover and focus crops ([33c31df](https://github.com/jkrumm/basalt-ui/commit/33c31dfebc55d5bcbd62d6530acfd3bbfdff9775))
+* keep primary buttons and focus rings out of the reviewer's accent leaks ([d85456e](https://github.com/jkrumm/basalt-ui/commit/d85456ed134317a89819335e2941e34973cb64df))
+* make shot safe to re-run, and record the theme scale ([0630f36](https://github.com/jkrumm/basalt-ui/commit/0630f3675a7dbda1c2e807df99ed91d2a053e31b))
+* make the good calibration seed sum to its whole, drop its info glyph ([41ee04f](https://github.com/jkrumm/basalt-ui/commit/41ee04f518e730c45abf38999551f2a75173882b))
+* move the data-stress query tabs into Section.tabs ([d0d26d1](https://github.com/jkrumm/basalt-ui/commit/d0d26d1cd35cb02ec915473719659632d3d4b1c3))
+* pick only the tooltip an action opened and sweep stale tmp safely ([0b6208a](https://github.com/jkrumm/basalt-ui/commit/0b6208a8d2e3d1f75a9c476e5cdb3a4b0e8057e5))
+* pin the seed's ticks and tidy S4 copy after review round 2 ([de90bd5](https://github.com/jkrumm/basalt-ui/commit/de90bd5431559558a9e0c9956fc63fb9a506eac7))
+* read basalt's own scale in shot and drop the grid from the reviewer ([637c519](https://github.com/jkrumm/basalt-ui/commit/637c5196eda8a6cc469e33147bd588e04a6bb7d3))
+* reduce the good calibration board to its single metric card ([d1f97b3](https://github.com/jkrumm/basalt-ui/commit/d1f97b3e6c489c47450578cc0945e9c7470b9830))
+* state the reviewer's accent sites exactly as the design law lists them ([4fd0e66](https://github.com/jkrumm/basalt-ui/commit/4fd0e66a35688cf73ee3cb01e242defe7eba9546))
+* treat unreadable roots as unknown and require three design rounds ([27f6f24](https://github.com/jkrumm/basalt-ui/commit/27f6f248a46b65b1fbc2bca9fffc8e72a7f1343e))
+* use a recent-days table on the good calibration board ([a3107de](https://github.com/jkrumm/basalt-ui/commit/a3107de4bb3d649f0ef4cbef4b5422a5e722465b))
+* write a contact sheet per anchor and read component-scoped scale tokens ([951b832](https://github.com/jkrumm/basalt-ui/commit/951b83273b441baa40b1775327a5cb3227ac454c))
+
+
+### Features
+
+* add basalt-ui shot, a route renderer for design rounds ([1d4d520](https://github.com/jkrumm/basalt-ui/commit/1d4d520f784db6e7f6ee71c3f4f36f00103f3b4e))
+* add the scenario route with the S4 spend fixture ([7550408](https://github.com/jkrumm/basalt-ui/commit/755040835f76bf3a087c8ab43371847bb721b53c))
+* drop the untaggable design-procedure rule line, fix the placement test ([37b34aa](https://github.com/jkrumm/basalt-ui/commit/37b34aa0c3c7acba6d98d1cfda65e5710f5edb50))
+* harden rule path rendering, the ViewTabs guard and the reviewer ([6eda9f8](https://github.com/jkrumm/basalt-ui/commit/6eda9f89d707871d5b20984fdf90f72b5cee9365))
+* install the design reviewer and render rule paths from roots ([0044759](https://github.com/jkrumm/basalt-ui/commit/0044759f9be827d1d7cdfb993b4690c9ca88ae1a))
+* map the design table to the shipped chart kinds ([147cb88](https://github.com/jkrumm/basalt-ui/commit/147cb88e651b4fbf17a64d5abfd031765a7ec8e3))
+* render rule paths from the roots a sync would use, harden the edges ([47611ca](https://github.com/jkrumm/basalt-ui/commit/47611ca68226ba4086decc30c27000247e54d20a))
+* ship the design-round procedure and the stale-board notice ([2a7205b](https://github.com/jkrumm/basalt-ui/commit/2a7205b267b1aeb857030ab1a42448289726dae5))
+
 # [2.14.0](https://github.com/jkrumm/basalt-ui/compare/v2.13.3...v2.14.0) (2026-10-16)
 
 
