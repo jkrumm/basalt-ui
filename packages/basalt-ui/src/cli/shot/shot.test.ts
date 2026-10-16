@@ -668,6 +668,93 @@ describe('sweepStaleTmp', () => {
   })
 })
 
+describe('hover and focus crops include an opened tooltip', () => {
+  const ANCHOR = { x: 100, y: 100, width: 200, height: 60 }
+  const TIP = { x: 120, y: 170, width: 180, height: 40 }
+  const run = async (tooltip: boolean, state: 'hover' | 'focus') => {
+    const clips: unknown[] = []
+    const element: Record<string, unknown> = {
+      first: () => element,
+      count: () => Promise.resolve(1),
+      scrollIntoViewIfNeeded: () => Promise.resolve(),
+      isVisible: () => Promise.resolve(true),
+      hover: () => Promise.resolve(),
+      screenshot: () => {
+        clips.push('element')
+        return Promise.resolve()
+      },
+      boundingBox: () => Promise.resolve(ANCHOR),
+      evaluate: () => Promise.resolve(true),
+    }
+    const tip: Record<string, unknown> = {
+      first: () => tip,
+      waitFor: () => (tooltip ? Promise.resolve() : Promise.reject(new Error('timeout'))),
+      boundingBox: () => Promise.resolve(TIP),
+    }
+    const page = {
+      setDefaultTimeout: () => undefined,
+      goto: () => Promise.resolve(),
+      locator: (selector: string) => (selector.includes('tooltip') ? tip : element),
+      screenshot: (o: { clip?: unknown }) => {
+        clips.push(o.clip)
+        return Promise.resolve()
+      },
+      setContent: () => Promise.resolve(),
+      mouse: { move: () => Promise.resolve() },
+      keyboard: { press: () => Promise.resolve() },
+      evaluate: (e: unknown) =>
+        typeof e === 'function'
+          ? Promise.resolve({ mantine: { spacing: {}, radius: {}, fontSizes: {} }, vx: {} })
+          : String(e).includes('data-shot-states')
+            ? Promise.resolve({ anchors: ['card'], declared: [] })
+            : String(e).includes('activeElement')
+              ? Promise.resolve(true)
+              : Promise.resolve(undefined),
+    }
+    await capture({
+      browser: {
+        newContext: () =>
+          Promise.resolve({
+            newPage: () => Promise.resolve(page),
+            addInitScript: () => Promise.resolve(),
+            close: () => Promise.resolve(),
+          }),
+      } as never,
+      base: 'http://x',
+      routes: ['/'],
+      states: [state],
+      pngDir: '/unused',
+      log: () => undefined,
+      measure: () => Promise.resolve(measurement),
+    })
+    return clips
+  }
+  const covers = (clip: unknown): boolean => {
+    const c = clip as { x: number; y: number; width: number; height: number }
+    return (
+      c.x <= TIP.x &&
+      c.y <= TIP.y &&
+      c.x + c.width >= TIP.x + TIP.width &&
+      c.y + c.height >= TIP.y + TIP.height
+    )
+  }
+
+  test('a focus crop grows to hold the tooltip', async () => {
+    const clips = await run(true, 'focus')
+    expect(clips.length).toBeGreaterThan(0)
+    expect(clips.every(covers)).toBe(true)
+  })
+  test('a hover crop grows to hold the tooltip instead of cropping the anchor alone', async () => {
+    const clips = await run(true, 'hover')
+    expect(clips.length).toBeGreaterThan(0)
+    expect(clips.every(covers)).toBe(true)
+  })
+  test('with no tooltip a focus crop is the anchor alone and a hover crop the element', async () => {
+    expect((await run(false, 'focus')).every((c) => !covers(c))).toBe(true)
+    expect((await run(false, 'hover')).every((c) => c === 'element')).toBe(true)
+  })
+})
+
 describe('withBrowser', () => {
   test('falls back to the next channel and kills what it launched', async () => {
     const log: string[] = []

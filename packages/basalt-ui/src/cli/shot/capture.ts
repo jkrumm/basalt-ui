@@ -23,6 +23,7 @@ const HOVER_TIMEOUT_MS = 5_000
 const TOOLTIP_TIMEOUT_MS = 3_000
 const TAB_PRESSES = 80
 const FOCUS_MARGIN_PX = 8
+const TIP_PROBE_MS = 250
 
 export type CaptureInput = {
   browser: PwBrowser
@@ -196,6 +197,17 @@ async function captureRest(c: Ctx, name: string): Promise<void> {
   await attempt(c, name, 'rest', (path) => restCrop(c, name, path))
 }
 
+/** The box of a tooltip that opened (on hover or focus), or null when none shows up. */
+async function openTooltipBox(c: Ctx): Promise<Box | null> {
+  const tip = c.page.locator('[role="tooltip"]').first()
+  try {
+    await tip.waitFor({ state: 'visible', timeout: TIP_PROBE_MS })
+  } catch {
+    return null
+  }
+  return tip.boundingBox()
+}
+
 async function captureHover(c: Ctx, name: string): Promise<void> {
   if (skipOnMobile(c, name, 'hover')) return
   await attempt(c, name, 'hover', async (path) => {
@@ -203,7 +215,9 @@ async function captureHover(c: Ctx, name: string): Promise<void> {
     await reveal(anchor)
     const inner = c.page.locator(`${sel(name)} [data-shot-hover]`).first()
     await ((await inner.count()) > 0 ? inner : anchor).hover({ timeout: HOVER_TIMEOUT_MS })
-    await snap(anchor, path)
+    const [box, tip] = [await anchor.boundingBox(), await openTooltipBox(c)]
+    if (!box || !tip) return void (await snap(anchor, path))
+    await snap(c.page, path, { clip: unionClip([box, tip], FOCUS_MARGIN_PX, c.viewport) })
   })
   await c.page.mouse.move(0, 0)
 }
@@ -247,7 +261,10 @@ async function captureFocus(c: Ctx, name: string): Promise<void> {
     await tabInto(c.page, name)
     const box = await anchor.boundingBox()
     if (!box) throw new Error('anchor has no box')
-    await snap(c.page, path, { clip: unionClip([box], FOCUS_MARGIN_PX, c.viewport) })
+    const tip = await openTooltipBox(c)
+    await snap(c.page, path, {
+      clip: unionClip(tip ? [box, tip] : [box], FOCUS_MARGIN_PX, c.viewport),
+    })
   })
   await c.page.evaluate('document.activeElement?.blur()')
 }
