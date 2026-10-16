@@ -361,6 +361,17 @@ describe('sync-self', () => {
     }
   })
 
+  it('every shipped subagent has a byte-identical copy in /.claude/agents', () => {
+    const src = join(PKG_ROOT, 'agent/agents')
+    const dest = join(REPO_ROOT, '.claude/agents')
+    const names = readdirSync(src).filter((name) => name.endsWith('.md'))
+    expect(names.length).toBeGreaterThan(0)
+    for (const name of names) {
+      const installed = readFileSync(join(dest, name), 'utf8')
+      expect([name, installed]).toEqual([name, readFileSync(join(src, name), 'utf8')])
+    }
+  })
+
   // Same law, the skills half.
   it('the installed skills carry no orphan — every basalt-* dir in .claude/skills has a shipped source', () => {
     const installed = readdirSync(SKILLS_DEST, { withFileTypes: true }).filter(

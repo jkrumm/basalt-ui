@@ -599,3 +599,72 @@ describe('router seeds — the nav module and the root route', () => {
     expect(run(['init', '--merge-lint'], dir)).toBe(1)
   })
 })
+
+describe('managed reviewer subagent and rule paths', () => {
+  const AGENT = '.claude/agents/basalt-design-reviewer.md'
+  const RULE = '.claude/rules/basalt-controls.md'
+  const read = (rel: string): string => readFileSync(resolve(dir, rel), 'utf8')
+
+  function install(basalt?: { roots: string[] }): void {
+    writeFixture('package.json', JSON.stringify({ name: 'fixture', ...(basalt && { basalt }) }))
+    capture(() => init(dir))
+  }
+
+  it('init installs the reviewer at the consumer root', () => {
+    install()
+    expect(read(AGENT)).toContain('name: basalt-design-reviewer')
+  })
+
+  it('sync --check passes clean, then reports drift when the agent is edited', () => {
+    install()
+    expect(capture(() => sync({ check: true }, dir)).code).toBe(0)
+    writeFixture(AGENT, `${read(AGENT)}\nlocal edit\n`)
+    expect(capture(() => sync({ check: true }, dir)).code).toBe(1)
+  })
+
+  it('sync restores a deleted agent', () => {
+    install()
+    rmSync(resolve(dir, AGENT))
+    capture(() => sync({}, dir))
+    expect(existsSync(resolve(dir, AGENT))).toBe(true)
+  })
+
+  it('sync retires an orphaned basalt-* agent', () => {
+    install()
+    const orphan = '.claude/agents/basalt-legacy.md'
+    writeFixture(orphan, '---\nname: basalt-legacy\n---\n')
+    const manifestAbs = resolve(dir, MANIFEST_PATH)
+    const manifest = JSON.parse(readFileSync(manifestAbs, 'utf8')) as {
+      files: Record<string, string>
+    }
+    manifest.files[orphan] = createHash('sha256')
+      .update('---\nname: basalt-legacy\n---\n', 'utf8')
+      .digest('hex')
+    writeFixture(MANIFEST_PATH, JSON.stringify(manifest))
+    capture(() => sync({}, dir))
+    expect(existsSync(resolve(dir, orphan))).toBe(false)
+  })
+
+  it('renders every rule paths: from basalt.roots, one glob per root', () => {
+    install({ roots: ['apps/web/src', 'packages/ui/src'] })
+    const rule = read(RULE)
+    expect(rule).toContain("paths:\n  - 'apps/web/src/**'\n  - 'packages/ui/src/**'\n---")
+    expect(rule).not.toContain('**/src/**')
+  })
+
+  it('defaults to src/** and sync --check reports drift when the roots change', () => {
+    install()
+    expect(read(RULE)).toContain("paths:\n  - 'src/**'\n---")
+    writeFixture('package.json', JSON.stringify({ name: 'fixture', basalt: { roots: ['app'] } }))
+    expect(capture(() => sync({ check: true }, dir)).code).toBe(1)
+    capture(() => sync({}, dir))
+    expect(read(RULE)).toContain("paths:\n  - 'app/**'\n---")
+  })
+
+  it('names the skills and the subagent in the AGENTS block', () => {
+    install()
+    const agents = read('AGENTS.md')
+    expect(agents).toContain('/basalt-design')
+    expect(agents).toContain('basalt-design-reviewer')
+  })
+})

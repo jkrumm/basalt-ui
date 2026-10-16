@@ -454,6 +454,8 @@ type TemplateVars = {
   SERIES_MODULE_PATH: string
   /** The consumer's configured roots as space-separated quoted oxfmt globs, e.g. `'apps/web/src/**'`. */
   ROOTS_GLOBS: string
+  /** A rule's `paths:` list items — one `'<root>/**'` glob per configured root. */
+  RULE_PATHS: string
   /** Path to the shipped oxlint preset from the consumer dir — RESOLVED, never assumed at the root. */
   OXLINT_PRESET_PATH: string
   /** Path to the shipped lefthook preset from the consumer dir — same resolution. */
@@ -538,6 +540,9 @@ function buildTemplateVars(pkgRoot: string, cwd: string, cfg: BasaltConfig): Tem
     ACCENT_HUE: cfg.accentHue ?? 'blue',
     SERIES_MODULE_PATH: resolveSeriesModulePath(cfg),
     ROOTS_GLOBS: resolveRoots(cfg).map(toRootGlob).join(' '),
+    RULE_PATHS: resolveRoots(cfg)
+      .map((root) => `  - '${root.replace(/'/g, "''")}/**'`)
+      .join('\n'),
     OXLINT_PRESET_PATH: shippedAssetPath(install, cwd, OXLINT_FILES.preset),
     LEFTHOOK_PRESET_PATH: shippedAssetPath(install, cwd, 'configs/lefthook.yml'),
     BASALT_BIN: basaltBinCommand(install, cwd),
@@ -785,6 +790,9 @@ export function resolvePlacement(cwd: string): PlacementFlags {
   }
 }
 
+/** The shipped subagents, installed at `.claude/agents/<name>.md`. */
+const AGENT_NAMES = ['basalt-design-reviewer'] as const
+
 /** The full managed-file manifest. Stable, declarative — the single source of truth for init/sync. */
 export function managedFiles(placement: PlacementFlags = ROOT_PLACEMENT): ManagedFile[] {
   // ── managed: exactly what Claude reads ──────────────────────────────────────
@@ -792,7 +800,11 @@ export function managedFiles(placement: PlacementFlags = ROOT_PLACEMENT): Manage
     dest: `.claude/rules/basalt-${name}.md`,
     mode: 'managed' as const,
     source: `agent/rules/basalt-${name}.md`,
-    render: (ctx: RenderContext) => readSource(ctx.pkgRoot, `agent/rules/basalt-${name}.md`),
+    render: (ctx: RenderContext) => {
+      const text = readSource(ctx.pkgRoot, `agent/rules/basalt-${name}.md`)
+      // The shipped `paths:` is a stand-in; the consumer's roots decide where the rule loads.
+      return text?.replace(/^paths:\n(?: {2}- .*\n)+/m, `paths:\n${ctx.vars.RULE_PATHS}\n`) ?? null
+    },
   }))
 
   // Skills take the same managed path the rules do — Claude Code cannot load skills from
@@ -803,6 +815,14 @@ export function managedFiles(placement: PlacementFlags = ROOT_PLACEMENT): Manage
     mode: 'managed' as const,
     source: `agent/skills/${name}/SKILL.md`,
     render: (ctx: RenderContext) => readSource(ctx.pkgRoot, `agent/skills/${name}/SKILL.md`),
+  }))
+
+  // Subagents load only walking UP from the session cwd, so the consumer root is the right home.
+  const agents: ManagedFile[] = AGENT_NAMES.map((name) => ({
+    dest: `.claude/agents/${name}.md`,
+    mode: 'managed' as const,
+    source: `agent/agents/${name}.md`,
+    render: (ctx: RenderContext) => readSource(ctx.pkgRoot, `agent/agents/${name}.md`),
   }))
 
   // AGENTS.md, not CLAUDE.md: Claude Code loads a repo-root AGENTS.md directly, but ANY CLAUDE.md
@@ -940,7 +960,17 @@ export function managedFiles(placement: PlacementFlags = ROOT_PLACEMENT): Manage
   // lefthook/CI config, and writing over or beside it is worse than not writing at all.
   const rootTooling: ManagedFile[] = placement.isPackageRepoRoot ? [lefthook, ci] : []
 
-  return [...rules, ...skills, agentsBlock, design, oxfmt, ...rootTooling, oxlintrc, ...scaffolds]
+  return [
+    ...rules,
+    ...skills,
+    ...agents,
+    agentsBlock,
+    design,
+    oxfmt,
+    ...rootTooling,
+    oxlintrc,
+    ...scaffolds,
+  ]
 }
 
 /**
@@ -1016,11 +1046,11 @@ export function readManifest(cwd: string): Manifest {
 }
 
 /**
- * The two managed NAMESPACES whose membership is derived, not fixed: `RULE_NAMES` and `SKILL_NAMES`
- * decide which files `managedFiles()` places under them, so a rule or skill that is RETIRED
+ * The managed NAMESPACES whose membership is derived, not fixed: `RULE_NAMES`, `SKILL_NAMES` and
+ * `AGENT_NAMES` decide which files `managedFiles()` places under them, so a rule, skill or agent that is RETIRED
  * upstream leaves a file behind in every consumer that ever synced it — and Claude keeps loading it.
  *
- * Scoped to these two patterns on purpose, and never applied to the manifest wholesale: several
+ * Scoped to these patterns on purpose, and never applied to the manifest wholesale: several
  * managed/seed entries are legitimately absent from `managedFiles()` for a run (`lefthook.yml` and
  * `check.yml` when the package is not the repo root). Deleting a dest just because this run did not place it would
  * remove a consumer's CI workflow on a monorepo.
@@ -1028,6 +1058,7 @@ export function readManifest(cwd: string): Manifest {
 const RETIREABLE_DEST_PATTERNS: readonly RegExp[] = [
   /^\.claude\/rules\/basalt-[a-z0-9-]+\.md$/,
   /^\.claude\/skills\/basalt-[a-z0-9-]+\/SKILL\.md$/,
+  /^\.claude\/agents\/basalt-[a-z0-9-]+\.md$/,
 ]
 
 /** A tracked dest inside a derived namespace that this basalt version no longer ships. */

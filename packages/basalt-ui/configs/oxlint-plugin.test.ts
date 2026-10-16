@@ -2107,6 +2107,37 @@ describe('basalt/control-outside-home', () => {
     expect(rules).not.toContain('control-outside-home')
   })
 
+  describe('ViewTabs homes', () => {
+    const IMPORTS = `import { PageBar, Section, ChartCard } from 'basalt-ui'\nimport { FilterSet, ViewTabs } from 'basalt-ui/controls'\n`
+    const refused = (jsx: string): void => {
+      const { rules, output } = run(`${IMPORTS}export const C = () => ${jsx}\n`)
+      expect(rules).toContain('bound-control-outside-home')
+      expect(output).toContain('agent/rules/basalt-controls.md')
+    }
+    const allowed = (jsx: string): void => {
+      const { code, rules } = run(`${IMPORTS}export const C = () => ${jsx}\n`)
+      expect(code).toBe(0)
+      expect(rules).not.toContain('bound-control-outside-home')
+    }
+
+    it('allows PageBar.tabs, Section.tabs and a ChartCard actions slot', () => {
+      allowed('<PageBar tabs={<ViewTabs field={f} />} />')
+      allowed('<Section title="x" tabs={<ViewTabs field={f} />} />')
+      allowed('<ChartCard title="x" actions={<ViewTabs field={f} />} />')
+    })
+
+    it('refuses PageBar actions / filters / filtersEnd / sync', () => {
+      for (const slot of ['actions', 'filters', 'filtersEnd', 'sync']) {
+        refused(`<PageBar ${slot}={<ViewTabs field={f} />} />`)
+      }
+    })
+
+    it('refuses Section.actions and a FilterSet', () => {
+      refused('<Section title="x" actions={<ViewTabs field={f} />} />')
+      refused('<FilterSet><ViewTabs field={f} /></FilterSet>')
+    })
+  })
+
   it('does NOT flag one inside a FilterSet subtree', () => {
     const { rules } = run(
       `import { FilterSet } from 'basalt-ui/controls'\n${MANTINE_IMPORT}` +

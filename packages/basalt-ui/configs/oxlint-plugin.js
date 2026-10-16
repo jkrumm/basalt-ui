@@ -2324,6 +2324,7 @@ function createSlotContext(context) {
       const attr = enclosingSlotAttribute(node)
       return {
         directOwner: attr === undefined ? undefined : slotOwnerBinding(attr),
+        slotName: attr === undefined ? undefined : (attr.name?.name ?? attr.key?.name),
         declaratorName: enclosingDeclaratorName(node),
         subtreeHosts: ancestorTagBindings(node, BASALT_HOST_TAGS),
       }
@@ -2340,6 +2341,10 @@ function createSlotContext(context) {
         if (homes.has(owner)) return true
       }
       return false
+    },
+    /** The basalt EXPORTS of the subtree homes (`FilterSet`, `PageAside`, …) a captured node sits in. */
+    hostExports(captured) {
+      return captured.subtreeHosts.filter((b) => homes.has(b)).map((b) => homes.get(b))
     },
     /** Does `name` resolve to a basalt home component in this file? */
     isHome(name) {
@@ -3070,6 +3075,24 @@ const BOUND_CONTROL_OUTSIDE_HOME_MESSAGE =
   `declared non-homes and never report. ${SHELL_LESS_HOME_HINT} ` +
   '(basalt/bound-control-outside-home)'
 
+const VIEW_TABS_REFUSED_HOME_MESSAGE =
+  '`ViewTabs` is in a slot that is not its home. It switches a page or a section from a `tabs` ' +
+  "slot (`PageBar.tabs`, `Section.tabs`), or one card's view from a `ChartCard` / `WidgetHeader` " +
+  '`actions` slot; never `PageBar` `actions` / `filters` / `filtersEnd` / `sync`, ' +
+  '`Section.actions` or a `FilterSet` (agent/rules/basalt-controls.md). ' +
+  '(basalt/bound-control-outside-home)'
+
+/** A `ViewTabs` written directly in a refused slot — see {@link VIEW_TABS_REFUSED_HOME_MESSAGE}. */
+function viewTabsInRefusedSlot(slots, captured) {
+  if (slots.hostExports(captured).includes('FilterSet')) return true
+  if (captured.directOwner === undefined) return false
+  const owners = slots.ownerExports(captured)
+  return (
+    (owners.includes('PageBar') && captured.slotName !== 'tabs') ||
+    (owners.includes('Section') && captured.slotName === 'actions')
+  )
+}
+
 /**
  * A BOUND basalt control that is in no home at all — ledger G5 (`docs/ASIDE-SPEC.md` §2), the half
  * of law C1 that had no guard: `control-outside-home` matches raw Mantine tags only, so a
@@ -3142,7 +3165,13 @@ const boundControlOutsideHome = {
         for (const { node, root, captured, hosted } of candidates) {
           const exported = controls.get(root)
           if (exported === undefined || !BOUND_TAGS.has(exported)) continue
-          if (hosted || slots.resolve(captured) || slots.inSubtreeHome(captured)) continue
+          if (hosted) continue
+          if (exported === 'ViewTabs' && viewTabsInRefusedSlot(slots, captured)) {
+            if (hasThemeAllow(context, node, 'bound-control-outside-home')) continue
+            context.report({ node, message: VIEW_TABS_REFUSED_HOME_MESSAGE })
+            continue
+          }
+          if (slots.resolve(captured) || slots.inSubtreeHome(captured)) continue
           if (hasThemeAllow(context, node, 'bound-control-outside-home')) continue
           context.report({ node, message: BOUND_CONTROL_OUTSIDE_HOME_MESSAGE })
         }

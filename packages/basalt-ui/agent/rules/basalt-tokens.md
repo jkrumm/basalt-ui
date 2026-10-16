@@ -2,9 +2,7 @@
 source: basalt-ui
 description: Color, spacing, radius and type — route every value through the --vx-* token system.
 paths:
-  - 'src/**'
-  - 'apps/**/src/**'
-  - 'packages/**/src/**'
+  - '**/src/**'
 ---
 
 <!-- basalt:coverage -->
@@ -46,6 +44,7 @@ Every value is a `VX.*` reference or a theme prop; the palette is derived, never
 
 ## Theme config
 
+- Building or restyling a UI runs the `/basalt-design` procedure: scenario, `basalt-ui shot` rounds, then the `basalt-design-reviewer` subagent.
 - Retune the identity with `createBasaltTheme(overrides?, { derive, fonts, radius, density })`; `radius` is -5..5 and `density` is -3..3. [type createBasaltTheme]
 
 ## Escape hatch
