@@ -1,7 +1,7 @@
 /**
  * Region seams (docs/DESIGN-SPEC.md §5, §8 #12) — a mechanical inventory over what
  * `src/shell/*.module.css` still draws, now that the four `AppShell` region edges are Mantine's
- * own `[data-with-border]` lines, coloured through the theme's `AppShell.extend({ vars })`
+ * own `[data-with-border]` lines, coloured through the theme's `AppShell` `vars`
  * (`theme/index.ts`) rather than by any shell module.
  *
  * CSS-text idiom (`layout-rhythm-css.test.ts`'s), a NEW file rather than an addition there: that

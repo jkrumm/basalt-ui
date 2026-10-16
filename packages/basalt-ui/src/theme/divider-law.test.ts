@@ -37,7 +37,7 @@
  * drops borders on sticky cells — it appears and disappears with `withRowBorders`, so it is the same
  * line every other row gets and not a header rule — and the four `AppShell` region seams
  * (docs/DESIGN-SPEC.md §5): they live in Mantine's own CSS, painted through `[data-with-border]` and
- * the theme's `AppShell.extend({ vars })`, never in a `shell/*.module.css` module this file scans.
+ * the theme's `AppShell` `vars`, never in a `shell/*.module.css` module this file scans.
  */
 import { describe, expect, test } from 'bun:test'
 import { Glob } from 'bun'

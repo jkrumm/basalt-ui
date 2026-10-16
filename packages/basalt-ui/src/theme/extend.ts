@@ -1,7 +1,7 @@
 import type { MantineThemeComponent } from '@mantine/core'
 
-/** The input type of a Mantine component's `.extend()` — `defaultProps`/`classNames`/`styles`/`vars`
- * typed against THAT component, taken from the component type alone. */
+/** The input type of a Mantine component's `.extend()`: `defaultProps` / `classNames` / `styles` /
+ * `vars` typed against THAT component, taken from the component type alone. */
 type ExtendInput<C> = C extends { extend: (input: infer I) => unknown } ? I : never
 
 /**
@@ -11,6 +11,8 @@ type ExtendInput<C> = C extends { extend: (input: infer I) => unknown } ? I : ne
  * argument (`ext<typeof Card>({...})`, imported with `import type`) and the same compile-time
  * checking applies with nothing emitted.
  */
-export function ext<C>(input: ExtendInput<C>): MantineThemeComponent {
+export function ext<C extends { extend: (input: never) => unknown }>(
+  input: ExtendInput<C>,
+): MantineThemeComponent {
   return input as MantineThemeComponent
 }

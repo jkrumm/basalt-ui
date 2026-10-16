@@ -940,4 +940,4 @@ if (import.meta.main) {
   process.exit(main())
 }
 
-export { main }
+export { main, tsShadowSites }
