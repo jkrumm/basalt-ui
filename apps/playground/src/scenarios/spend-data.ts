@@ -1,17 +1,11 @@
 /**
  * S4 fixture data: ~90 days of daily spend in EUR across six projects and three models, shaped like
  * argo's usage-tracking. Deterministic — a seeded generator run once at module load, so a
- * re-render, a reload and a screenshot all read the same numbers.
+ * re-render, a reload and a screenshot all read the same numbers. Every period label is derived
+ * from `TODAY`, so moving the reading date moves the copy with it.
  */
 
-export const PROJECT_KEYS = [
-  'search',
-  'support',
-  'summaries',
-  'ingest',
-  'evals',
-  'sandbox',
-] as const
+const PROJECT_KEYS = ['search', 'support', 'summaries', 'ingest', 'evals', 'sandbox'] as const
 export type ProjectKey = (typeof PROJECT_KEYS)[number]
 
 export const MODEL_KEYS = ['large', 'mid', 'small'] as const
@@ -34,12 +28,25 @@ export const MODEL_LABEL: Record<ModelKey, string> = {
 
 /** The reading date. Fixed, so the month-to-date window never moves under a screenshot. */
 const TODAY = new Date(Date.UTC(2026, 9, 16))
+const DAY_MS = 86_400_000
 const WINDOW_DAYS = 90
 
-export const MONTH_LABEL = 'October 2026'
-export const MONTH_DAYS = 31
+export const YEAR = TODAY.getUTCFullYear()
+const month = TODAY.getUTCMonth()
+const priorMonthStart = new Date(Date.UTC(YEAR, month - 1, 1))
+
+const monthName = (date: Date, style: 'long' | 'short'): string =>
+  date.toLocaleDateString('en-GB', { month: style, timeZone: 'UTC' })
+
 export const DAYS_ELAPSED = TODAY.getUTCDate()
+export const MONTH_DAYS = new Date(Date.UTC(YEAR, month + 1, 0)).getUTCDate()
 export const BUDGET_EUR = 1500
+
+export const MONTH_NAME = monthName(TODAY, 'long')
+export const MONTH_LABEL = `${MONTH_NAME} ${YEAR}`
+/** `1–16 Oct` — the month-to-date window, and `1–16 Sep` the same days a month earlier. */
+export const WINDOW_LABEL = `1–${DAYS_ELAPSED} ${monthName(TODAY, 'short')}`
+export const PRIOR_WINDOW_LABEL = `1–${DAYS_ELAPSED} ${monthName(priorMonthStart, 'short')}`
 
 /** € per day per project and model at weight 1 — the scale the generator multiplies. */
 const BASE_EUR: Record<ProjectKey, Record<ModelKey, number>> = {
@@ -52,7 +59,7 @@ const BASE_EUR: Record<ProjectKey, Record<ModelKey, number>> = {
 }
 
 /** mulberry32 — a 32-bit seeded generator, the smallest one with a flat enough spread for noise. */
-function seeded(seed: number): () => number {
+export function seeded(seed: number): () => number {
   let state = seed
   return () => {
     state = (state + 0x6d2b79f5) | 0
@@ -62,79 +69,78 @@ function seeded(seed: number): () => number {
   }
 }
 
-export type DayRow = {
-  date: Date
-  large: number
-  mid: number
-  small: number
-  total: number
-}
-
-type ProjectDay = Record<ProjectKey, number>
+type Entry = { project: ProjectKey; model: ModelKey; eur: number }
+type RawDay = { date: Date; entries: Entry[] }
 
 const random = seeded(2026_10_16)
+const windowStart = TODAY.getTime() - (WINDOW_DAYS - 1) * DAY_MS
 
-const dayStart = TODAY.getTime() - (WINDOW_DAYS - 1) * 86_400_000
-
-const raw = Array.from({ length: WINDOW_DAYS }, (_, i) => {
-  const date = new Date(dayStart + i * 86_400_000)
+const RAW: readonly RawDay[] = Array.from({ length: WINDOW_DAYS }, (_, i) => {
+  const date = new Date(windowStart + i * DAY_MS)
   const weekend = date.getUTCDay() === 0 || date.getUTCDay() === 6
   // A slow climb (+0.5 % a day) and a weekend dip; Evals bursts on the 1st and 15th of a month.
   const level = (weekend ? 0.55 : 1) * (1 + i * 0.005)
-  const byProject = {} as ProjectDay
-  const byModel: Record<ModelKey, number> = { large: 0, mid: 0, small: 0 }
-  for (const project of PROJECT_KEYS) {
+  const entries = PROJECT_KEYS.flatMap((project) => {
     const burst = project === 'evals' && [1, 15].includes(date.getUTCDate()) ? 3.2 : 1
-    let projectTotal = 0
-    for (const model of MODEL_KEYS) {
-      const spend = BASE_EUR[project][model] * level * burst * (0.8 + random() * 0.4)
-      byModel[model] += spend
-      projectTotal += spend
-    }
-    byProject[project] = projectTotal
-  }
-  return { date, byProject, byModel }
+    return MODEL_KEYS.map((model) => ({
+      project,
+      model,
+      eur: BASE_EUR[project][model] * level * burst * (0.8 + random() * 0.4),
+    }))
+  })
+  return { date, entries }
 })
 
-export const DAILY: readonly DayRow[] = raw.map(({ date, byModel }) => ({
+const sum = (values: readonly number[]): number => values.reduce((a, b) => a + b, 0)
+const eurOf = (entries: readonly Entry[], match: (e: Entry) => boolean): number =>
+  sum(entries.filter(match).map((e) => e.eur))
+
+export type DayRow = { date: Date; large: number; mid: number; small: number; total: number }
+
+export const DAILY: readonly DayRow[] = RAW.map(({ date, entries }) => ({
   date,
-  ...byModel,
-  total: byModel.large + byModel.mid + byModel.small,
+  large: eurOf(entries, (e) => e.model === 'large'),
+  mid: eurOf(entries, (e) => e.model === 'mid'),
+  small: eurOf(entries, (e) => e.model === 'small'),
+  total: eurOf(entries, () => true),
 }))
 
-const sum = (values: readonly number[]): number => values.reduce((a, b) => a + b, 0)
-const inMonth = (date: Date, month: number): boolean =>
-  date.getUTCMonth() === month && date.getUTCDate() <= DAYS_ELAPSED
+const monthToDate = (monthStart: Date): RawDay[] =>
+  RAW.filter(
+    ({ date }) =>
+      date.getUTCFullYear() === monthStart.getUTCFullYear() &&
+      date.getUTCMonth() === monthStart.getUTCMonth() &&
+      date.getUTCDate() <= DAYS_ELAPSED,
+  )
 
-const MONTH = TODAY.getUTCMonth()
-const mtdIndexes = raw.flatMap((r, i) => (inMonth(r.date, MONTH) ? [i] : []))
-const priorIndexes = raw.flatMap((r, i) => (inMonth(r.date, MONTH - 1) ? [i] : []))
+const MTD_RAW = monthToDate(TODAY)
+const PRIOR_MTD_RAW = monthToDate(priorMonthStart)
+const MTD_ENTRIES = MTD_RAW.flatMap((d) => d.entries)
+const PRIOR_MTD_ENTRIES = PRIOR_MTD_RAW.flatMap((d) => d.entries)
 
-export const MTD_EUR = sum(mtdIndexes.map((i) => DAILY[i]?.total ?? 0))
-export const PRIOR_MTD_EUR = sum(priorIndexes.map((i) => DAILY[i]?.total ?? 0))
+export const MTD_EUR = eurOf(MTD_ENTRIES, () => true)
+export const PRIOR_MTD_EUR = eurOf(PRIOR_MTD_ENTRIES, () => true)
 
 /** Naive end-of-month forecast: the month-to-date daily average held flat to the last day. */
 export const FORECAST_EUR = (MTD_EUR / DAYS_ELAPSED) * MONTH_DAYS
 
-/** The last 30 days of total spend, oldest first — the StatCard trend. */
-export const LAST_30_TOTALS: readonly number[] = DAILY.slice(-30).map((d) => d.total)
+/** The month-to-date days, oldest first. */
+export const MTD_DAYS: readonly DayRow[] = DAILY.filter((d) =>
+  MTD_RAW.some((r) => r.date.getTime() === d.date.getTime()),
+)
+export const MTD_TOTALS: readonly number[] = MTD_DAYS.map((d) => d.total)
 
-export type ProjectRow = {
+type Part = { label: string; spend: number; /** 0..1 of the month-to-date total. */ share: number }
+
+export type ProjectRow = Part & {
   key: ProjectKey
-  label: string
-  spend: number
-  /** Share of the month-to-date total, 0..1. */
-  share: number
   /** Change against the same days of the prior month, as a fraction. */
   change: number
 }
 
-const projectSpend = (indexes: readonly number[], key: ProjectKey): number =>
-  sum(indexes.map((i) => raw[i]?.byProject[key] ?? 0))
-
 export const PROJECTS_MTD: readonly ProjectRow[] = PROJECT_KEYS.map((key) => {
-  const spend = projectSpend(mtdIndexes, key)
-  const prior = projectSpend(priorIndexes, key)
+  const spend = eurOf(MTD_ENTRIES, (e) => e.project === key)
+  const prior = eurOf(PRIOR_MTD_ENTRIES, (e) => e.project === key)
   return {
     key,
     label: PROJECT_LABEL[key],
@@ -142,6 +148,11 @@ export const PROJECTS_MTD: readonly ProjectRow[] = PROJECT_KEYS.map((key) => {
     share: spend / MTD_EUR,
     change: spend / prior - 1,
   }
+}).toSorted((a, b) => b.spend - a.spend)
+
+export const MODELS_MTD: readonly (Part & { key: ModelKey })[] = MODEL_KEYS.map((key) => {
+  const spend = eurOf(MTD_ENTRIES, (e) => e.model === key)
+  return { key, label: MODEL_LABEL[key], spend, share: spend / MTD_EUR }
 }).toSorted((a, b) => b.spend - a.spend)
 
 export type DistributionBin = { from: number; label: string; days: number }
@@ -172,3 +183,7 @@ const EUR = new Intl.NumberFormat('en-IE', {
 
 export const fmtEur = (value: number): string => EUR.format(Math.round(value))
 export const fmtShare = (value: number): string => `${Math.round(value * 100)} %`
+export const fmtSignedShare = (value: number): string =>
+  `${value > 0 ? '+' : ''}${Math.round(value * 100)} %`
+export const fmtDay = (date: Date): string =>
+  date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' })

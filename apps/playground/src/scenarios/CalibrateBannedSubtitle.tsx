@@ -5,13 +5,14 @@
  */
 import { Box } from '@mantine/core'
 import { StatCard } from 'basalt-ui'
+import { MTD_EUR, WINDOW_LABEL, fmtEur } from './spend-data'
 
 export function CalibrateBannedSubtitle() {
   return (
     <Box data-shot="calibrate-banned-subtitle">
       <StatCard
-        title="Spend, 1–16 Oct"
-        value="€1,240"
+        title={`Spend, ${WINDOW_LABEL}`}
+        value={fmtEur(MTD_EUR)}
         subtitle="Here you can see your spend at a glance"
         info="All projects and models, in EUR."
       />
