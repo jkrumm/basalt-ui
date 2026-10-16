@@ -864,11 +864,6 @@ Synthesis Wave 4. Validators: all five + a scratch `init` app.
 - [ ] `init`/`sync` own the PreToolUse guard hook in `.claude/settings.json`, local bin.
 - [ ] `basalt-ui check`: doctor + sync --check + oxlint + check-theme, one report, `--json`; oxlint runs with its
       JSON or agent output format (verify both in the pinned oxlint).
-- [ ] Evaluate react-doctor (millionco; bundles its own oxlint; `--json`, `--scope changed`, `--blocking`, `--score`;
-      always `--no-telemetry`) as an OPTIONAL `check` step, never a dependency of the published package. Its license
-      is ambiguous (README says MIT, npm says SEE LICENSE IN LICENSE): settle it first. Run it on basalt-ui and argo,
-      and record findings, false positives and overlap with `basalt/*` in `docs/waves/evidence/w21/react-doctor.md`;
-      keep only rules that pay.
 - [ ] Seeds and templates (AGENTS block routing table, skill split, lefthook preset = one `check`).
 - [ ] Config and manifest slimming; `cli/index.ts` split; budget tightened.
       **Left behind:**
@@ -876,11 +871,14 @@ Synthesis Wave 4. Validators: all five + a scratch `init` app.
 ## Wave 22 — Static-analysis toolbelt: tune, then the fleet <!-- status: pending -->
 
 Owner, 2026-10-16 (handover from the agent-gateway session). Builds on Wave 20's preset and Wave 21's `basalt-ui check`.
-The owner wants it tuned back and forth until it is optimal, then the same iteration in every consumer. Skipped on
+The owner wants it tuned back and forth until it is optimal, then the same iteration in every consumer. Zero-config analysers (react-doctor, fallow's dependency hygiene) run centrally in agent-gateway's
+check/review, so no repo installs them; basalt-ui keeps only what needs a repo opinion (the oxlint preset, the Playwright
+axe and screenshot scaffolding, the budgets). knip is dropped: fallow covers unused, unlisted and unresolved
+dependencies. Skipped on
 purpose: eslint-plugin-react-hooks and eslint-plugin-tailwindcss (both ESLint-only), and
 stylelint-declaration-strict-value.
 
-- [ ] Tune loop in basalt-ui: run the full gate (preset + React Compiler + react-perf + react-doctor if kept), fix or
+- [ ] Tune loop in basalt-ui: run the full gate (preset + React Compiler + react-perf), fix or
       turn off rule by rule with the reason recorded, and repeat until a run on the playground and the package is
       clean with no blanket waivers. Report the rule count, the finding count per round and the runtime.
 - [ ] Roll the tuned preset and gate out through `basalt-ui init` / `sync`; a scratch `init` app passes `check` clean.
@@ -898,8 +896,7 @@ Synthesis Wave 5. Every deletion carries a fleet grep in its PR. Validators: pla
 - [ ] The dead forms layer (FormRow/FormGroup/FormActions/FormSection/form-state).
 - [ ] Commands/notifications dead code; `DeriveControls` mounted in the dock or deleted.
 - [ ] Token and chart leftovers (zero-reader `VX` members, `vite-color-mix.ts`, unused chart helpers).
-- [ ] Budgets ratcheted to landed values; a dead-export check in `pre`. knip only for unused or unlisted
-      dependency hygiene (fallow already covers unused code). Decide size-limit (`@size-limit/file` over `dist`)
+- [ ] Budgets ratcheted to landed values; a dead-export check in `pre`. Decide size-limit (`@size-limit/file` over `dist`)
       against the existing `check-budgets` rows, and add `bun build --metafile-md` (Bun 1.3.8+) module-size reports to
       evidence.
       **Left behind:**
