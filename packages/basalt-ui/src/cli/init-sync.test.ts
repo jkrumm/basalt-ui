@@ -504,24 +504,32 @@ describe('router seeds — the nav module and the root route', () => {
     expect(existsSync(resolve(dir, 'lefthook.yml'))).toBe(true)
   })
 
-  it('sync after Start is added leaves the old seeds byte-identical and names them', () => {
+  it('sync after Start is added drops the old seeds from the manifest and warns by content', () => {
     writeFixture('package.json', JSON.stringify({ name: 'fixture' }))
     capture(() => init(dir))
-    const before = ['src/lib/nav.tsx', 'src/routes/__root.tsx', 'src/main.tsx'].map((d) =>
-      readFileSync(resolve(dir, d), 'utf8'),
-    )
+    const seeds = ['src/lib/nav.tsx', 'src/routes/__root.tsx', 'src/main.tsx']
+    const before = seeds.map((d) => readFileSync(resolve(dir, d), 'utf8'))
     writeFixture(
       'package.json',
       JSON.stringify({ name: 'fixture', dependencies: { '@tanstack/react-start': '*' } }),
     )
+    // A stale seed that mounts no router is not warned about, however the manifest tracked it.
+    writeFixture('src/routes/__root.tsx', 'export const Route = {}\n')
+    before[1] = 'export const Route = {}\n'
     const { log: warned } = capture(() => sync({}, dir))
-    expect(warned).toMatch(/src\/routes\/__root\.tsx, src\/main\.tsx mount a second router/)
-    expect(warned).toMatch(/src\/lib\/nav\.tsx was seeded .* mounts nothing/)
-    expect(warned).toContain('<BasaltProvider><Outlet /></BasaltProvider>')
-    const after = ['src/lib/nav.tsx', 'src/routes/__root.tsx', 'src/main.tsx'].map((d) =>
-      readFileSync(resolve(dir, d), 'utf8'),
+    expect(warned).toContain(
+      'dropped src/lib/nav.tsx, src/routes/__root.tsx, src/main.tsx from the manifest',
     )
-    expect(after).toEqual(before)
+    expect(warned).not.toMatch(/__root\.tsx.* mount a second router/)
+    expect(warned).toMatch(/src\/main\.tsx mount a second router/)
+    expect(warned).toContain('<BasaltProvider><Outlet /></BasaltProvider>')
+    const manifest = JSON.parse(readFileSync(resolve(dir, MANIFEST_PATH), 'utf8')) as {
+      files: Record<string, string>
+    }
+    for (const d of seeds) expect(manifest.files[d]).toBeUndefined()
+    expect(seeds.map((d) => readFileSync(resolve(dir, d), 'utf8'))).toEqual(before)
+    // Never re-placed: a later sync is quiet about the manifest and leaves the files alone.
+    expect(capture(() => sync({}, dir)).log).not.toContain('dropped')
   })
 
   it('sync --check prints the Start note only under --verbose', () => {
