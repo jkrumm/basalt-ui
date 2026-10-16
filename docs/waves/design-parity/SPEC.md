@@ -90,7 +90,7 @@ basalt agent reaches for today.
 A new export names its first fleet consumer on 2.x (adopt-or-delete; shutterflow is on 1.40.3 and counts only
 after its migration). Every budget in `scripts/check-budgets.ts` is gated at its landed value: non-chart value
 symbols 103/103, chart symbols 14/14, barrel types 60/60, subpaths 15/15, rule lines 277/277, CLI lines
-5164/5165, playground routes 14/15. Each PR raises a ceiling by exactly its own count, says so in the PR,
+5164/5165, playground routes 14/15 at Wave 30 (after Wave 31: rule lines 272, CLI lines 7073, routes 15/15). Each PR raises a ceiling by exactly its own count, says so in the PR,
 and names every new symbol's consumer in `scripts/consumers.json`. The charter's "fewer public symbols than
 1.41" holds with room: 1.41 had 395 value symbols, 2.x has 117, and this track adds at most 6 (plus types).
 
