@@ -81,7 +81,25 @@ All six seeds re-shot (with sheets) and scored by six fresh blind general-purpos
 | calibrate-accent-tab      | Craft 4                | fail           | Craft 4, Expression 1, 4       | sheet + 4 page shots    | yes      |
 | calibrate-banned-subtitle | Communication 1        | fail           | Communication 1, Craft 6       | sheet + 4 page shots    | yes      |
 
-All six read the anchor's sheet and the four page shots and opened no single crop; the `Read:` lines are in each run's output. Extra failures on bad seeds, checked: delta-fill Craft 1 (radius 6 in card 7), repeated-axis Craft 1/5/6 (same radius step, 4.06:1 axis ink, end label struck through) and empty-half Craft 7 (tooltip `not-declared` although the card has an info glyph) are real basalt/seed findings. banned-subtitle Craft 6 ("the subtitle clips at the bottom edge" in the mobile focus panel) is a `shot` artefact, not a UI defect: the focus crop's clip box ends at the anchor plus a margin and cuts the focus tooltip off. Treat it as a known shot gap (the focus crop should union the visible tooltip); it is not fixed here.
+All six read the anchor's sheet and the four page shots and opened no single crop; the `Read:` lines are in each run's output. Extra failures on bad seeds, checked: delta-fill Craft 1 (radius 6 in card 7), repeated-axis Craft 1/5/6 (same radius step, 4.06:1 axis ink, end label struck through) and empty-half Craft 7 (tooltip `not-declared` although the card has an info glyph) are real basalt/seed findings. banned-subtitle Craft 6 (the focus panel at 390) was suspected to be a `shot` artefact (the focus crop ended at the anchor and cut the focus tooltip); see iteration 4b.
+
+## Iteration 4b (lead: hover/focus crops must hold an opened tooltip)
+
+Changes in `shot`: the hover and focus crops now include a visible `[role="tooltip"]` that opened, with the same union clip as the tooltip state. The tooltip box is read once it has settled (two equal reads; the first read of an animating tooltip was too small). Tested: the focus and hover crops hold a tooltip that grows read by read; with no tooltip the crops are unchanged. Budget: `shot` 1602 → 1613 is the settle loop; 1585 → 1602 the union itself.
+
+Re-shot and re-scored only the affected boards, with fresh blind agents (each read the sheet and the four page shots):
+
+| board                     | expected        | verdict | items cited                       | correct? |
+| ------------------------- | --------------- | ------- | --------------------------------- | -------- |
+| calibrate-banned-subtitle | Communication 1 | fail    | Communication 1, Craft 6, Craft 7 | yes      |
+| S4 baseline               | —               | fail ×7 | see `s4-baseline.md`              | —        |
+
+What the fix does and does not change:
+
+- It works where the tooltip really lies outside the anchor: the banned-subtitle desktop focus crop now shows the whole tooltip below the card.
+- The hypothesis behind it was only partly right. The Craft 6 "tooltip text cut" findings on S4 forecast, budget and the three charts at 390 are NOT crop artefacts: the `info` bubble is an in-card `role="tooltip"` span (`WidgetHeader`'s `InfoGlyph`), and its box and text really overflow the card on a narrow card (the crop after the fix is identical to the one before). They stay as real findings.
+- banned-subtitle Craft 6 (mobile: the focus tooltip covers the subtitle and cuts it at the card's bottom edge; desktop: the ring on the info icon abuts "Oct") is therefore real too, not noise, and so is Craft 7 (the card has an info glyph but no `data-shot-tooltip` target, so no tooltip crop). The seed still fails with its expected item.
+- Hover crops of the S4 charts now show the chart tooltip, so the reviewer notes the separate tooltip-state `error` for those anchors: the `data-shot-tooltip` target the page declares and the tooltip that opens do not match.
 
 ## Method caveat
 
@@ -93,4 +111,4 @@ The shipped `basalt-design-reviewer` subagent has not yet run against these seed
 
 ## Final result
 
-5 of 5 bad seeds fail with their expected item; `calibrate-good` passes. Iterations used: 4 (the second ran through the stale subagent definition and does not count as a test of the edits; the reviewer-prompt budget of three counted iterations 1, 3 and 4 against genuinely different causes: reviewer numbering/cues, `shot`'s scale, coverage).
+5 of 5 bad seeds fail with their expected item; `calibrate-good` passes. Iterations used: 4 (plus 4b, a `shot` crop fix re-scoring two boards; the second ran through the stale subagent definition and does not count as a test of the edits; the reviewer-prompt budget of three counted iterations 1, 3 and 4 against genuinely different causes: reviewer numbering/cues, `shot`'s scale, coverage).

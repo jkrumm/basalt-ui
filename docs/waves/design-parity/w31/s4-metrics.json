@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "generatedAt": "2026-10-16T21:55:05.106Z",
-  "base": "http://127.0.0.1:61996",
+  "generatedAt": "2026-10-16T22:08:02.854Z",
+  "base": "http://127.0.0.1:50412",
   "routes": ["/scenarios/s4-spend"],
   "viewports": ["desktop", "mobile"],
   "schemes": ["light", "dark"],
