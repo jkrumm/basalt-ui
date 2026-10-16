@@ -201,7 +201,10 @@ function metricsTable(entry: BoardEntry, viewport: Viewport): string {
 
 function section(entry: BoardEntry): string {
   const pairs = PAIR_KEYS.filter(
-    (k) => entry.keelCrops[k] !== undefined || entry.basalt.crops[k] !== undefined,
+    (k) =>
+      entry.keelCrops[k] !== undefined ||
+      entry.basalt.crops[k] !== undefined ||
+      entry.basalt.errors[k] !== undefined,
   )
   // Nothing captured on either side still renders one row per default pair, so the gap is visible.
   const shown = pairs.length > 0 ? pairs : PAIR_KEYS.filter((k) => k.startsWith('dark-'))

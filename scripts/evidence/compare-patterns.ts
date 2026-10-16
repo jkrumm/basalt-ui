@@ -146,13 +146,85 @@ export const PATTERNS = {
     selector: '.mantine-AppShell-header',
     note: 'the shell header row that carries the PageBar',
   },
+  // ── Beyond the default list: ids the Keel capture added, mapped to basalt's closest current equivalent.
+  'metric-card-gauge': { missing: 'StatCard has no ring-gauge variant' },
+  'metric-card-bar': { missing: 'StatCard has no segmented progress-bar variant' },
+  'pipeline-column': { missing: 'basalt has no kanban or pipeline component' },
+  'deal-card': { missing: 'basalt has no deal or link-card component' },
+  'schedule-item': { missing: 'no meeting-list component or demo exists' },
+  'filter-toolbar': {
+    route: '/data',
+    anchor: 'table',
+    select: '.mantine-Group-root:has(.mantine-TextInput-root)',
+    note: 'BasaltDataTable toolbar (global search + facets)',
+  },
+  'record-header': {
+    missing: 'no record-header block (avatar + facts); the playground has no record detail page',
+  },
+  'stat-strip': {
+    route: '/dashboard',
+    anchor: 'dashboard',
+    select: 'div:has(> .mantine-Card-root)',
+    note: 'StatGroup grid of KPI StatCards',
+  },
+  'stat-cell': {
+    route: '/dashboard',
+    anchor: 'dashboard',
+    select: '.mantine-Card-root',
+    note: 'first StatCard of the StatGroup',
+  },
+  'side-panel-card': {
+    route: '/components',
+    anchor: 'surfaces',
+    select: '.mantine-Card-root',
+    note: 'SettingsSection card (header + rows); the closest panel card without a record page',
+  },
+  'segmented-control': {
+    route: '/components',
+    anchor: 'surfaces',
+    select: '.mantine-SegmentedControl-root',
+    note: 'Mantine SegmentedControl on the Components → Surfaces tab',
+  },
+  'tab-bar': {
+    route: '/components',
+    anchor: 'surfaces',
+    select: '.mantine-Tabs-list',
+    note: 'Mantine Tabs list on the Components → Surfaces tab',
+  },
+  'status-pill': {
+    route: '/components',
+    anchor: 'surfaces',
+    select: '.mantine-Badge-root',
+    note: 'first Mantine Badge on the Components → Surfaces tab',
+  },
+  'button-primary': {
+    route: '/components',
+    anchor: 'surfaces',
+    select: '.mantine-Button-root[data-variant="filled"]',
+    note: 'filled Button',
+  },
+  'button-secondary': {
+    route: '/components',
+    anchor: 'surfaces',
+    select: '.mantine-Button-root[data-variant="default"]',
+    note: 'default-variant Button',
+  },
+  'button-ghost': {
+    route: '/components',
+    anchor: 'surfaces',
+    select: '.mantine-Button-root[data-variant="subtle"]',
+    note: 'subtle-variant Button',
+  },
 } as const satisfies Record<string, PatternMapping>
 
-/** Ids every board shows, in order; the capture worker may add more. */
-export const EXPECTED_IDS: readonly string[] = Object.keys(PATTERNS)
+export type PatternId = keyof typeof PATTERNS
 
-/** The mapping for any id; one the basalt side has not mapped yet is `missing`, never a crash. */
+const isPatternId = (id: string): id is PatternId => Object.hasOwn(PATTERNS, id)
+
+/** Ids every board shows, in order — the table's own keys; the capture worker may add more. */
+export const EXPECTED_IDS: readonly PatternId[] = Object.keys(PATTERNS).filter(isPatternId)
+
+/** The mapping for any id; one the basalt side has not mapped (or an inherited name like `constructor`) is `missing`. */
 export function mappingFor(id: string): PatternMapping {
-  const table: Record<string, PatternMapping> = PATTERNS
-  return table[id] ?? { missing: 'no basalt mapping for this pattern yet' }
+  return isPatternId(id) ? PATTERNS[id] : { missing: 'no basalt mapping for this pattern yet' }
 }

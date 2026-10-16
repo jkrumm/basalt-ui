@@ -69,7 +69,10 @@ async function sh(cmd: string[], cwd: string, env: Record<string, string> = {}):
 
 async function buildPlayground(): Promise<string> {
   await sh(['bun', 'run', 'build'], join(ROOT, 'packages/basalt-ui'))
-  await sh(['bunx', 'vite', 'build', '--manifest'], join(ROOT, 'apps/playground'))
+  // Same build as index.ts (`VITE_TELEMETRY` bundles the telemetry chunk), so both commands grade one dist.
+  await sh(['bunx', 'vite', 'build', '--manifest'], join(ROOT, 'apps/playground'), {
+    VITE_TELEMETRY: '1',
+  })
   return join(ROOT, 'apps/playground/dist')
 }
 
@@ -178,7 +181,7 @@ function measure(node: Node, rowLike: boolean): Metrics {
 
   // Typography of the visible text nodes: largest size = value, smallest = label, most common = body.
   type Run = { size: number; weight: number; line: number; color: string; count: number }
-  const runs = new Map<number, Run>()
+  const runs = new Map<string, Run>()
   const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT)
   for (let n = walker.nextNode(); n; n = walker.nextNode()) {
     const parent = n.parentElement
@@ -187,10 +190,11 @@ function measure(node: Node, rowLike: boolean): Metrics {
     if (s.visibility === 'hidden' || s.display === 'none') continue
     const size = parseFloat(s.fontSize)
     const line = s.lineHeight === 'normal' ? px(size * 1.2) : parseFloat(s.lineHeight)
-    const prev = runs.get(size)
+    // Keyed by size + weight + colour, so a run's weight and role come from a node that really has them.
+    const key = `${size}|${s.fontWeight}|${s.color}`
+    const prev = runs.get(key)
     if (prev) prev.count++
-    else
-      runs.set(size, { size, weight: parseInt(s.fontWeight, 10), line, color: s.color, count: 1 })
+    else runs.set(key, { size, weight: parseInt(s.fontWeight, 10), line, color: s.color, count: 1 })
   }
   const sorted = [...runs.values()].toSorted((a, b) => a.size - b.size)
   const first = sorted[0]
@@ -254,13 +258,13 @@ async function captureOne(
   file: string,
 ): Promise<Metrics> {
   await page.goto(baseUrl + m.route, { waitUntil: 'networkidle' })
-  if (m.storage) {
-    await page.evaluate((entries) => {
-      for (const [k, v] of Object.entries(entries)) localStorage.setItem(k, v)
-    }, m.storage)
-    await page.reload({ waitUntil: 'networkidle' })
-  }
   try {
+    if (m.storage) {
+      await page.evaluate((entries) => {
+        for (const [k, v] of Object.entries(entries)) localStorage.setItem(k, v)
+      }, m.storage)
+      await page.reload({ waitUntil: 'networkidle' })
+    }
     await page.evaluate(() => document.fonts.ready.then(() => undefined))
     if (m.before) await page.click(m.before.click, { timeout: FIND_TIMEOUT_MS })
     const raw = viewport === 'mobile' ? (m.mobileSelector ?? m.selector) : m.selector
@@ -282,11 +286,11 @@ async function captureOne(
     await el.screenshot({ path: file, animations: 'disabled', caret: 'hide' })
     return await el.evaluate(measure, m.rowLike === true)
   } finally {
+    // Cleanup must never mask the capture's own failure.
     if (m.storage) {
-      await page.evaluate(
-        (keys) => keys.forEach((k) => localStorage.removeItem(k)),
-        Object.keys(m.storage),
-      )
+      await page
+        .evaluate((keys) => keys.forEach((k) => localStorage.removeItem(k)), Object.keys(m.storage))
+        .catch(() => undefined)
     }
   }
 }
@@ -319,36 +323,39 @@ async function captureAll(params: {
             (value) => localStorage.setItem('mantine-color-scheme-value', value),
             scheme,
           )
-          const page = await context.newPage()
-          page.setDefaultTimeout(NAV_TIMEOUT_MS)
-          for (const id of ids) {
-            const mapping = mappingFor(id)
-            const result = results.get(id)
-            if (isMissing(mapping) || !result) continue
-            const key = pairKey(scheme, viewport)
-            const name = `${id}--${scheme}--${viewport}.png`
-            try {
-              const measured = await captureOne(
-                page,
-                baseUrl,
-                id,
-                mapping,
-                viewport,
-                join(outDir, 'basalt', name),
-              )
-              result.crops[key] = `basalt/${name}`
-              // The board's metrics table reads the dark scheme; compare.json keeps both.
-              if (scheme === 'dark') result.metrics[viewport] = measured
-              metrics.push({ id, scheme, viewport, metrics: measured })
-              console.log(`[compare] ${id} ${key} ok`)
-            } catch (error) {
-              const msg =
-                (error instanceof Error ? error.message : String(error)).split('\n')[0] ?? ''
-              result.errors[key] = msg
-              console.error(`[compare] ${id} ${key} failed: ${msg}`)
+          try {
+            const page = await context.newPage()
+            page.setDefaultTimeout(NAV_TIMEOUT_MS)
+            for (const id of ids) {
+              const mapping = mappingFor(id)
+              const result = results.get(id)
+              if (isMissing(mapping) || !result) continue
+              const key = pairKey(scheme, viewport)
+              const name = `${id}--${scheme}--${viewport}.png`
+              try {
+                const measured = await captureOne(
+                  page,
+                  baseUrl,
+                  id,
+                  mapping,
+                  viewport,
+                  join(outDir, 'basalt', name),
+                )
+                result.crops[key] = `basalt/${name}`
+                // The board's metrics table reads the dark scheme; compare.json keeps both.
+                if (scheme === 'dark') result.metrics[viewport] = measured
+                metrics.push({ id, scheme, viewport, metrics: measured })
+                console.log(`[compare] ${id} ${key} ok`)
+              } catch (error) {
+                const msg =
+                  (error instanceof Error ? error.message : String(error)).split('\n')[0] ?? ''
+                result.errors[key] = msg
+                console.error(`[compare] ${id} ${key} failed: ${msg}`)
+              }
             }
+          } finally {
+            await context.close().catch(() => undefined)
           }
-          await context.close()
         }
       }
     },
@@ -368,10 +375,13 @@ async function shootBoards(outDir: string): Promise<void> {
           deviceScaleFactor: 1,
           reducedMotion: 'reduce',
         })
-        const page = await context.newPage()
-        await page.goto(pathToFileURL(join(outDir, 'board.html')).href, { waitUntil: 'load' })
-        await page.screenshot({ path: join(outDir, `board-${viewport}.png`), fullPage: true })
-        await context.close()
+        try {
+          const page = await context.newPage()
+          await page.goto(pathToFileURL(join(outDir, 'board.html')).href, { waitUntil: 'load' })
+          await page.screenshot({ path: join(outDir, `board-${viewport}.png`), fullPage: true })
+        } finally {
+          await context.close().catch(() => undefined)
+        }
       }
     },
     BOARD_TIMEOUT_MS,

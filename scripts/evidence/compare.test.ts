@@ -64,8 +64,9 @@ describe('patternIds', () => {
       JSON.stringify({ patterns: [{ id: 'tabs' }, { id: 'metric-card' }] }),
     )
     const ids = patternIds(inv)
-    expect(ids.slice(0, EXPECTED_IDS.length)).toEqual([...EXPECTED_IDS])
-    expect(EXPECTED_IDS).toEqual(Object.keys(PATTERNS))
+    const expected: string[] = [...EXPECTED_IDS]
+    expect(ids.slice(0, expected.length)).toEqual(expected)
+    expect(expected).toEqual(Object.keys(PATTERNS))
     expect(ids.at(-1)).toBe('tabs')
     expect(new Set(ids).size).toBe(ids.length)
   })
@@ -84,7 +85,7 @@ describe('patternIds', () => {
 
 describe('mappingFor', () => {
   test('an id the basalt side does not know is missing, not a crash', () => {
-    const m = mappingFor('status-pill')
+    const m = mappingFor('brand-new-pattern')
     expect(isMissing(m)).toBe(true)
   })
 })
@@ -190,5 +191,51 @@ describe('board html', () => {
 
   test('esc covers the five HTML metacharacters', () => {
     expect(esc(`<>&"'`)).toBe('&lt;&gt;&amp;&quot;&#39;')
+  })
+})
+
+describe('inherited ids', () => {
+  test('Object.prototype names from an inventory are missing, not mappings', () => {
+    for (const id of ['constructor', 'toString', '__proto__']) {
+      const m = mappingFor(id)
+      expect(isMissing(m)).toBe(true)
+    }
+  })
+})
+
+describe('playground anchors', () => {
+  test('every non-missing, tag-based mapping has a data-compare attribute in the playground', async () => {
+    const files = new Bun.Glob('**/*.tsx').scan({
+      cwd: new URL('../../apps/playground/src', import.meta.url).pathname,
+      absolute: true,
+    })
+    let source = ''
+    for await (const file of files) source += await Bun.file(file).text()
+    for (const id of EXPECTED_IDS) {
+      const m = mappingFor(id)
+      if (isMissing(m) || m.selector !== undefined) continue
+      const anchor = m.anchor ?? id
+      expect(source, `${id} needs data-compare="${anchor}"`).toContain(`data-compare="${anchor}"`)
+    }
+  })
+})
+
+describe('board errored pairs', () => {
+  test('a failed capture with no crop and no reference still renders its pair', () => {
+    const html = buildBoardHtml({
+      label: 'l',
+      inventory: parseInventory(null),
+      entries: [
+        entry({
+          basalt: {
+            crops: { 'dark-desktop': 'basalt/a.png' },
+            metrics: {},
+            errors: { 'light-mobile': 'anchor is off-screen' },
+          },
+        }),
+      ],
+    })
+    expect(html).toContain('light-mobile')
+    expect(html).toContain('failed: anchor is off-screen')
   })
 })
