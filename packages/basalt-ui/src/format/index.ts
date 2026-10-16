@@ -19,6 +19,6 @@
  * relativeTime(Date.now() - 3_600_000)     // "1 hour ago"
  */
 export { bytes, compact, delta, integer, money, percent } from './number'
-export { durationClock, relativeTime, weekday } from './date'
+export { date, dateTime, duration, durationClock, relativeTime, time, weekday } from './date'
 export { kcal, km } from './measure'
 export { defineFormat } from './shared'

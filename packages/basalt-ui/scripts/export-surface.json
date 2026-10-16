@@ -83,8 +83,11 @@
   "./format": [
     "bytes",
     "compact",
+    "date",
+    "dateTime",
     "defineFormat",
     "delta",
+    "duration",
     "durationClock",
     "integer",
     "kcal",
@@ -92,6 +95,7 @@
     "money",
     "percent",
     "relativeTime",
+    "time",
     "weekday"
   ],
   "./commands": [

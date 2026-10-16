@@ -520,17 +520,21 @@ Description: integer/money/percent/durationClock/relativeTime/weekday/km/kcal â€
 Layer: headless
 Signature: bytes(value: Numeric, options: BytesOptions): string
 Signature: compact(value: Numeric, options: CompactOptions): string
+Signature: date(value: DateInput, options: DateOptions): string
+Signature: dateTime(value: DateInput, options: DateOptions): string
 Signature: defineFormat(next: FormatDefaults): void
   locale?: string
   timeZone?: string
 Signature: delta(value: Numeric, options: DeltaOptions): string
+Signature: duration(seconds: number | null | undefined, options: DurationOptions): string
 Signature: durationClock(seconds: number): string
 Signature: integer(value: Numeric, options: LocaleOption): string
 Signature: kcal(value: Numeric, options: KcalOptions): string
 Signature: km(meters: Numeric, options: KmOptions): string
 Signature: money(value: Numeric, options: MoneyOptions): string
 Signature: percent(value: Numeric, options: PercentOptions): string
-Signature: relativeTime(value: string | number | Date, options: RelativeTimeOptions): string
+Signature: relativeTime(value: DateInput, options: RelativeTimeOptions): string
+Signature: time(value: DateInput, options: DateOptions): string
 Signature: weekday(value: string | number | Date, options: WeekdayOptions): string
 
 ## basalt-ui/forms
