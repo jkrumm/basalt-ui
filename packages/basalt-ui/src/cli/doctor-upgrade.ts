@@ -9,8 +9,7 @@ import { dirname, relative, resolve } from 'node:path'
 
 import { BASALT_CONFIG_KEYS, RETIRED_CONFIG_KEYS, shellConfigError } from './config'
 import type { BasaltConfig } from './config'
-import { START_PROVIDER_HINT, parseJsonc, routerSeedDest, scannableFiles } from './index'
-import type { BasaltInstall } from './index'
+import type { BasaltInstall } from './basalt-install'
 import {
   appEntry,
   callsIn,
@@ -19,12 +18,14 @@ import {
   isCodeRoutedApp,
   isStartApp,
   routeTreeDirs,
+  routerSeedDest,
+  START_PROVIDER_HINT,
 } from './router-wiring'
 import { FONTS_CSS_HINT } from '../guard/fonts-hint'
 import { carriesRouter } from './provider-tags'
 import { followProviderHops, loadModule } from './render-imports'
 import type { ModuleFile } from './render-imports'
-import { readIfExists, readPackageJson, tokenize } from './source-text'
+import { parseJsonc, readIfExists, readPackageJson, tokenize } from './source-text'
 
 export type Check = { fail: string } | { skip: string } | null
 
@@ -233,8 +234,8 @@ function cssImports(src: string): [string, number][] {
 }
 
 /** `[subpath, file, line]` per `basalt-ui/<subpath>` import in the app's source and style files. */
-const appImports = (cwd: string, cfg: BasaltConfig): [string, string, number][] =>
-  scannableFiles(cwd, cfg).flatMap((rel) => {
+const appImports = (cwd: string, scanned: string[]): [string, string, number][] =>
+  scanned.flatMap((rel) => {
     const isCode = /\.(?:[cm]?[jt]sx?|vue|astro)$/.test(rel)
     if (!isCode && !rel.endsWith('.css')) return []
     const src = readIfExists(resolve(cwd, rel)) ?? ''
@@ -247,7 +248,7 @@ const appImports = (cwd: string, cfg: BasaltConfig): [string, string, number][] 
 const DROPPED_FIXES = new Map([
   [
     'tokens.css',
-    `commit the emit instead: \`basalt-ui tokens:css --out src/tokens.css\` and import that file (${FONTS_CSS_HINT} --out src/fonts.css)`,
+    `commit the emit instead: \`basalt-ui tokens:css --out src/tokens.css\` and import that file (${FONTS_CSS_HINT})`,
   ],
   [
     'router-tanstack',
@@ -258,7 +259,7 @@ const DROPPED_FIXES = new Map([
 /** `dropped-subpaths`: `basalt-ui/<subpath>` imports the installed `exports` map does not have. */
 export function droppedSubpathsCheck(
   cwd: string,
-  cfg: BasaltConfig,
+  scanned: string[],
   install: BasaltInstall,
 ): Check {
   const id = 'dropped-subpaths'
@@ -274,7 +275,7 @@ export function droppedSubpathsCheck(
         (k) => k === `./${sub}` || (k.endsWith('*') && `./${sub}`.startsWith(k.slice(0, -1))),
       )
     const isDropped = (sub: string): boolean => DROPPED_FIXES.has(sub) || !hasExport(sub)
-    const found = appImports(cwd, cfg).filter(([sub]) => isDropped(sub))
+    const found = appImports(cwd, scanned).filter(([sub]) => isDropped(sub))
     if (found.length === 0) return null
     const hits = found.map(([sub, rel, line]) => `${rel}:${line} imports basalt-ui/${sub}`)
     const more = hits.length > 10 ? ` (+${hits.length - 10} more)` : ''
@@ -463,7 +464,7 @@ function startWiring(cwd: string): { fail: string } | null {
   const tagCount = withTags.reduce((n, f) => n + f.tags.length, 0)
   if (tagCount > 1) {
     return fail(
-      `${withTags.map((f) => f.file).join(' and ')} render ${tagCount} <BasaltProvider> tags; the extra ones nest a duplicate Query/Mantine tree`,
+      `${[...new Set(withTags.map((f) => f.file))].join(' and ')} render ${tagCount} <BasaltProvider> tags; the extra ones nest a duplicate Query/Mantine tree`,
       'keep one',
     )
   }
@@ -487,7 +488,7 @@ function startWiring(cwd: string): { fail: string } | null {
 export function startWiringWarnings(cwd: string): string[] {
   if (!isStartApp(cwd, '')) return []
   const { root, layouts, hops } = startProviderFiles(cwd)
-  return [root, ...layouts, ...hops]
+  return [...new Set([root, ...layouts, ...hops])]
     .filter((f) => f.tags.some((t) => t.spread))
     .map(
       (f) =>
@@ -636,12 +637,12 @@ export const SUBPATH_REQUIRED_PEERS: Readonly<Record<string, readonly string[]>>
  * `subpath-peers`: every `basalt-ui/<subpath>` the app imports has its required peers installed. A
  * missing one still builds, then throws "Could not resolve" when the chunk loads.
  */
-export function subpathPeersCheck(cwd: string, cfg: BasaltConfig, install: BasaltInstall): Check {
+export function subpathPeersCheck(cwd: string, scanned: string[], install: BasaltInstall): Check {
   const id = 'subpath-peers'
   return withInstall(id, install, 'peers', (dir) => {
     const missing = new Map<string, string[]>()
     for (const [sub, file] of new Map(
-      appImports(cwd, cfg)
+      appImports(cwd, scanned)
         .toReversed()
         .map(([s, f]) => [s, f]),
     )) {

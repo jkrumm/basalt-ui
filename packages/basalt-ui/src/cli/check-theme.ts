@@ -28,7 +28,6 @@ import {
   OXLINT_NO_BIN,
   oxlintBinResolves,
   packageRoot,
-  parseJsonc,
   readBasaltConfig,
   readIfExists,
   readSource,
@@ -38,6 +37,7 @@ import {
   SERIES_MODULE_HINT_RE,
   waiverHintFor,
 } from './index'
+import { parseJsonc } from './source-text'
 
 /**
  * What the `.oxlintrc.json` in `dir` does for the AST lane. A plugin load alone enables no rule, so

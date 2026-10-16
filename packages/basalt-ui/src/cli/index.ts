@@ -29,11 +29,20 @@ import { guardHook } from './guard-hook'
 import { COMMAND_OPTIONS, USAGE, unknownFlag } from './help'
 import { init } from './init'
 import { sync } from './sync'
-import { CODE_ROUTED_NOTE, SHELL_LESS_NOTE, routerSeedSkip } from './router-wiring'
+import type { BasaltInstall } from './basalt-install'
+import {
+  CODE_ROUTED_NOTE,
+  ROUTER_SEED_DESTS,
+  SHELL_LESS_NOTE,
+  START_PROVIDER_HINT,
+  routerSeedDest,
+  routerSeedDests,
+  routerSeedSkip,
+} from './router-wiring'
 import type { RouterSeedSkip } from './router-wiring'
-import { hasDependency, parseJsonc, readIfExists, readPackageJson, stripJsonc } from './source-text'
 
-export { parseJsonc }
+export type { BasaltInstall }
+import { hasDependency, parseJsonc, readIfExists, readPackageJson, stripJsonc } from './source-text'
 import { fontsCss, normalizeColorFunctions, tokensCss } from './tokens-css'
 import { DEFAULT_ROOT, exemptRulePaths, resolveRoots } from './config'
 import type { BasaltConfig } from './config'
@@ -215,14 +224,6 @@ export function relativePosix(fromDir: string, toPath: string): string {
  * resolution walks OUTWARD from the consumer dir, then across workspace packages, and every caller
  * renders its paths from the answer rather than assuming the root.
  */
-export type BasaltInstall = {
-  /** Absolute path of the resolved `node_modules/basalt-ui` directory, or null when unresolvable. */
-  dir: string | null
-  /** The resolved copy's own version, or null. */
-  version: string | null
-  /** How it was found — `null` when unresolved. `'workspace'` is the isolated-linker case. */
-  how: 'cwd' | 'ancestor' | 'workspace' | null
-}
 
 const UNRESOLVED_INSTALL: BasaltInstall = { dir: null, version: null, how: null }
 
@@ -644,28 +645,7 @@ export function importsAgentsMd(text: string): boolean {
 /** Scaffold options. `noMergeLint`: `--no-merge-lint` leaves an existing `.oxlintrc.json` untouched. */
 export type ScaffoldFlags = { noMergeLint?: boolean }
 
-/** The router seeds (TanStack Router and Query are required peers of `.`, so they are always written). */
-export const ROUTER_SEED_DESTS = {
-  nav: 'src/lib/nav.tsx',
-  root: 'src/routes/__root.tsx',
-  main: 'src/main.tsx',
-} as const
-
-/** A router seed's dest, relative to the install root: under the app dir when it is not the root. */
-export function routerSeedDest(appRel: string, seed: keyof typeof ROUTER_SEED_DESTS): string {
-  return appRel === '' ? ROUTER_SEED_DESTS[seed] : `${appRel}/${ROUTER_SEED_DESTS[seed]}`
-}
-
-/** The router seeds' dests for an app dir (`main.tsx`, `nav.tsx`, `__root.tsx`). */
-export function routerSeedDests(appRel: string): string[] {
-  return (Object.keys(ROUTER_SEED_DESTS) as (keyof typeof ROUTER_SEED_DESTS)[]).map((seed) =>
-    routerSeedDest(appRel, seed),
-  )
-}
-
-/** Where a Start app's embedded provider goes (doctor, init and sync all say it). */
-export const START_PROVIDER_HINT =
-  'render <BasaltProvider><Outlet /></BasaltProvider> in the root route component or a pathless layout'
+export { ROUTER_SEED_DESTS, START_PROVIDER_HINT, routerSeedDest, routerSeedDests }
 
 export const START_APP_NOTE = `TanStack Start app — no main.tsx/nav.tsx/__root.tsx seeded (Start owns the router); ${START_PROVIDER_HINT}.`
 

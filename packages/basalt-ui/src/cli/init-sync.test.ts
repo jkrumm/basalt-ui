@@ -539,7 +539,10 @@ describe('router seeds — the nav module and the root route', () => {
       'package.json',
       JSON.stringify({ name: 'fixture', dependencies: { '@tanstack/react-start': '*' } }),
     )
-    expect(capture(() => sync({ check: true }, dir)).code).toBe(1)
+    const stale = capture(() => sync({ check: true }, dir))
+    expect(stale.code).toBe(1)
+    expect(stale.log).toContain('src/main.tsx')
+    expect(stale.log).toContain('Fix: run `basalt-ui sync`')
     capture(() => sync({}, dir))
     expect(capture(() => sync({ check: true }, dir)).code).toBe(0)
   })
