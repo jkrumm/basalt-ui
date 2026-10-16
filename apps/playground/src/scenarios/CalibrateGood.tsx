@@ -1,6 +1,6 @@
 /**
  * Calibration — known-good board (SPEC § 8.5). Expected: every rubric item PASSES.
- * A metric card with a sparkline, a unit, a stated period and an explanatory tooltip, beside a compact
+ * A metric card with a sparkline, a unit, a stated period and a one-line definition, beside a compact
  * table of its parts, both on the one month-to-date window. As clean as today's basalt allows; there
  * is deliberately no `delta`, because today's `DeltaBadge` still carries a fill and would seed a
  * defect this board must not have.
@@ -44,21 +44,19 @@ export function CalibrateGood() {
         <StatCard
           title={`Spend, ${WINDOW_LABEL}`}
           value={fmtEur(MTD_EUR)}
-          info={`Sum of daily EUR spend across all projects and models, ${WINDOW_LABEL}, ${MONTH_LABEL}.`}
+          subtitle={`Sum of daily EUR spend across all projects and models, ${WINDOW_LABEL}, ${MONTH_LABEL}.`}
           sparkline={(size) => (
-            <Box data-shot-hover data-shot-tooltip>
-              <Sparkline
-                ariaLabel={`Daily spend, ${WINDOW_LABEL}, EUR`}
-                data={MTD_TOTALS}
-                {...size}
-              />
-            </Box>
+            <Sparkline
+              ariaLabel={`Daily spend, ${WINDOW_LABEL}, EUR`}
+              data={MTD_TOTALS}
+              {...size}
+            />
           )}
         />
       </Box>
       <Box data-shot="calibrate-good-table">
         <Section title={`Top 3 projects by spend, ${WINDOW_LABEL}`}>
-          <BasaltDataTable data={TOP_THREE} columns={columns} enableSorting={false} />
+          <BasaltDataTable data={TOP_THREE} columns={columns} />
         </Section>
       </Box>
     </Stack>
