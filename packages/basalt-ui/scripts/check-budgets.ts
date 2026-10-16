@@ -52,6 +52,22 @@ const CEILINGS = {
   ruleLines: 277, // landed (W9): the shipped rules, 450 is the spec target
 } as const
 
+/**
+ * Wave 31's CLI raises while its parallel PRs land, one line per change so the merge train never
+ * conflicts. Each PR sets only its own entry to the lines it adds; the wave close-out folds the sum
+ * into the ceiling with an itemised comment and deletes this.
+ */
+function wave31CliLines(): number {
+  const raises = {
+    shot: 0,
+
+    install: 0,
+
+    notice: 0,
+  }
+  return Object.values(raises).reduce((sum, n) => sum + n, 0)
+}
+
 type Budget = {
   readonly label: string
   /** `null` = could not be measured here (only ever tolerated under `--report`). */
@@ -538,7 +554,11 @@ async function budgets(providerOnlyDist: string): Promise<Budget[]> {
     // 4890 -> 4955: the declared `basalt.shell: false` — config key, seed skip, shared seed-retire notice and the doctor finding (ledger row 82, linewatch W2).
     // 4955 -> 5020: `app-wiring` accepts one provider in the root or a pathless layout, fails an untyped `createRootRoute` and a missing root (ledger rows 113, 115, weatherorb W37).
     // 5020 -> 5165: `app-wiring` follows one import hop (relative or tsconfig `paths`) to a provider wrapper; `sync` judges a Start seed by content (ledger rows 121-123, weatherorb W39); the hop resolver and provider-tag reader are leaf modules.
-    { label: 'CLI non-test lines (src/cli/**)', value: cliNonTestLines(), ceiling: 5165 },
+    {
+      label: 'CLI non-test lines (src/cli/**)',
+      value: cliNonTestLines(),
+      ceiling: 5165 + wave31CliLines(),
+    },
     ...(await providerOnlyRows(providerOnlyDist)),
   ]
 }
