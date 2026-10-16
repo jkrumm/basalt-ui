@@ -508,20 +508,20 @@ describe('router seeds — the nav module and the root route', () => {
     writeFixture('package.json', JSON.stringify({ name: 'fixture' }))
     capture(() => init(dir))
     const seeds = ['src/lib/nav.tsx', 'src/routes/__root.tsx', 'src/main.tsx']
+    // A stale seed that mounts no router is not warned about, however the manifest tracked it.
+    writeFixture('src/routes/__root.tsx', 'export const Route = {}\n')
     const before = seeds.map((d) => readFileSync(resolve(dir, d), 'utf8'))
     writeFixture(
       'package.json',
       JSON.stringify({ name: 'fixture', dependencies: { '@tanstack/react-start': '*' } }),
     )
-    // A stale seed that mounts no router is not warned about, however the manifest tracked it.
-    writeFixture('src/routes/__root.tsx', 'export const Route = {}\n')
-    before[1] = 'export const Route = {}\n'
     const { log: warned } = capture(() => sync({}, dir))
     expect(warned).toContain(
       'dropped src/lib/nav.tsx, src/routes/__root.tsx, src/main.tsx from the manifest',
     )
     expect(warned).not.toMatch(/__root\.tsx.* mount a second router/)
     expect(warned).toMatch(/src\/main\.tsx mount a second router/)
+    expect(warned).not.toContain('nav.tsx mount')
     expect(warned).toContain('<BasaltProvider><Outlet /></BasaltProvider>')
     const manifest = JSON.parse(readFileSync(resolve(dir, MANIFEST_PATH), 'utf8')) as {
       files: Record<string, string>
@@ -530,6 +530,31 @@ describe('router seeds — the nav module and the root route', () => {
     expect(seeds.map((d) => readFileSync(resolve(dir, d), 'utf8'))).toEqual(before)
     // Never re-placed: a later sync is quiet about the manifest and leaves the files alone.
     expect(capture(() => sync({}, dir)).log).not.toContain('dropped')
+  })
+
+  it('sync --check counts a retired Start seed as stale until sync drops it', () => {
+    writeFixture('package.json', JSON.stringify({ name: 'fixture' }))
+    capture(() => init(dir))
+    writeFixture(
+      'package.json',
+      JSON.stringify({ name: 'fixture', dependencies: { '@tanstack/react-start': '*' } }),
+    )
+    expect(capture(() => sync({ check: true }, dir)).code).toBe(1)
+    capture(() => sync({}, dir))
+    expect(capture(() => sync({ check: true }, dir)).code).toBe(0)
+  })
+
+  it('warns about router= in an untracked Start file, not about a leftover nav.tsx', () => {
+    writeFixture(
+      'package.json',
+      JSON.stringify({ name: 'fixture', dependencies: { '@tanstack/react-start': '*' } }),
+    )
+    capture(() => init(dir))
+    writeFixture('src/main.tsx', '<BasaltProvider router={router} />\n')
+    writeFixture('src/lib/nav.tsx', 'export const NAV = []\n')
+    const { log } = capture(() => sync({}, dir))
+    expect(log).toContain('src/main.tsx mount a second router')
+    expect(log).not.toContain('nav.tsx mount')
   })
 
   it('sync --check prints the Start note only under --verbose', () => {
