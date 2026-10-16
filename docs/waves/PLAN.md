@@ -753,7 +753,7 @@ its friction lands in `argo-friction.md` (the one ledger) and ships as 2.x minor
 - [x] The orchestrator then runs each consumer's plan in order, filing friction as it comes; a consumer starts
       only when its repo has no other active wave.
 - [x] Close-out: every consumer on 2.x and live-verified, the ledger's open rows owned or accepted. Five of six are
-      live on 2.11.1; weatherorb's live check moved to Wave 27, where the 1.x sunset is gated on it.
+      live on 2.11.1; weatherorb's live check moved to Wave 28, where the 1.x sunset is gated on it.
 
 **Left behind:** (step 1) rows 61-67 fixed on master, unreleased, under MIGRATING
 `## Unreleased — the fleet probe fixes`: #252 doctor (CSS + forced dropped subpaths, `oxlint-floor` 1.79.0),
@@ -788,7 +788,7 @@ orchestrator re-measures on the newest 2.x in its Wave 42.
 - [x] Release the minor through `make release`, then tell weatherorb's orchestrator the version.
 
 **Left behind:** 2.12.0 on npm (2026-10-16). Two independent review rounds per PR, then scope frozen and the last
-fix diff read by the orchestrator. Deferred into Wave 25: lazy mount loaders so importing `./commands` alone does
+fix diff read by the orchestrator. Deferred into Wave 26: lazy mount loaders so importing `./commands` alone does
 not reach Spotlight, and `router-tanstack/nav.ts` importing the Spotlight mount (a documented exception to the
 headless barrel). CLI line ceiling 4955 → 5020; Wave 21's CLI split pays it back. The five live consumers stay on
 2.11.1 until Wave 18's minor, which they validate. weatherorb takes 2.12.0 in its Wave 42.
@@ -808,7 +808,7 @@ wave of the same title; its lead reads that section before briefing workers.
 
 **Gate (every wave):** `make check` green; every merged PR independently reviewed (two rounds, then scope
 frozen and the last fix diff read by the lead); a failing-first test per behaviour change; the wave's
-`packages/basalt-ui/src` line delta reported (Waves 18, 22, 23, 24, 26 and 27 must be net-negative); the minor released by the
+`packages/basalt-ui/src` line delta reported (Waves 18, 23, 24, 25, 27 and 28 must be net-negative); the minor released by the
 orchestrator; the named validator consumers upgraded, `make check` green there and live-verified, and their
 friction filed as ledger rows before the next wave starts.
 
@@ -847,6 +847,13 @@ Synthesis Wave 3. Validators: argo, rb, linewatch, obsidian (lint runs).
 - [ ] Claims vs enforcement: one violating fixture per documented "never", or the sentence goes.
 - [ ] New rules (`as never` on router calls, `basalt/banned-import` from `SURFACES`, markdown trust); delete `query-fn-unwrap`.
 - [ ] No warn tier in the preset: every rule is error or off.
+- [ ] Toolbelt (owner, 2026-10-16): add oxlint's `react-perf` plugin (`jsx-no-new-object/array/function-as-prop`,
+      `jsx-no-jsx-as-prop`, `no-array-index-key`, `no-object-type-as-default-prop`) and the full native React Compiler
+      rule set (`purity`, `static-components`, `set-state-in-render`, `use-memo`, `void-use-memo`, `error-boundaries`,
+      `exhaustive-effect-dependencies`, `memo-dependencies`, `no-deriving-state-in-effect`, `capitalized-calls`,
+      `hooks`) to the shipped preset and the dogfood config, each error or off. Today 6 of 22 are on. `/research` the
+      oxlint version and the rule names before pinning. Measure on basalt-ui and argo first; a rule that only produces
+      false positives is off with its reason recorded.
       **Left behind:**
 
 ## Wave 21 — Agent layer and one gate command <!-- status: pending -->
@@ -855,12 +862,35 @@ Synthesis Wave 4. Validators: all five + a scratch `init` app.
 
 - [ ] Rule `paths:` rendered from `basalt.roots`; every lint and guard message names its rule file (research Claude Code `paths:` semantics first).
 - [ ] `init`/`sync` own the PreToolUse guard hook in `.claude/settings.json`, local bin.
-- [ ] `basalt-ui check`: doctor + sync --check + oxlint + check-theme, one report, `--json`.
+- [ ] `basalt-ui check`: doctor + sync --check + oxlint + check-theme, one report, `--json`; oxlint runs with its
+      JSON or agent output format (verify both in the pinned oxlint).
+- [ ] Evaluate react-doctor (millionco; bundles its own oxlint; `--json`, `--scope changed`, `--blocking`, `--score`;
+      always `--no-telemetry`) as an OPTIONAL `check` step, never a dependency of the published package. Its license
+      is ambiguous (README says MIT, npm says SEE LICENSE IN LICENSE): settle it first. Run it on basalt-ui and argo,
+      and record findings, false positives and overlap with `basalt/*` in `docs/waves/evidence/w21/react-doctor.md`;
+      keep only rules that pay.
 - [ ] Seeds and templates (AGENTS block routing table, skill split, lefthook preset = one `check`).
 - [ ] Config and manifest slimming; `cli/index.ts` split; budget tightened.
       **Left behind:**
 
-## Wave 22 — Dead-surface purge <!-- status: pending -->
+## Wave 22 — Static-analysis toolbelt: tune, then the fleet <!-- status: pending -->
+
+Owner, 2026-10-16 (handover from the agent-gateway session). Builds on Wave 20's preset and Wave 21's `basalt-ui check`.
+The owner wants it tuned back and forth until it is optimal, then the same iteration in every consumer. Skipped on
+purpose: eslint-plugin-react-hooks and eslint-plugin-tailwindcss (both ESLint-only), and
+stylelint-declaration-strict-value.
+
+- [ ] Tune loop in basalt-ui: run the full gate (preset + React Compiler + react-perf + react-doctor if kept), fix or
+      turn off rule by rule with the reason recorded, and repeat until a run on the playground and the package is
+      clean with no blanket waivers. Report the rule count, the finding count per round and the runtime.
+- [ ] Roll the tuned preset and gate out through `basalt-ui init` / `sync`; a scratch `init` app passes `check` clean.
+- [ ] Per consumer, one at a time (argo, rb, linewatch, basalt-ui-obsidian, rollhook): `sync`, then fix the findings
+      to a clean `check`. Any finding that points at basalt becomes a ledger row and is fixed upstream. The consumer is
+      deployed and live-verified.
+- [ ] weatherorb: its share goes into weatherorb's own PLAN through its orchestrator (never edited under a running wave).
+      **Left behind:**
+
+## Wave 23 — Dead-surface purge <!-- status: pending -->
 
 Synthesis Wave 5. Every deletion carries a fleet grep in its PR. Validators: playground, argo.
 
@@ -868,10 +898,13 @@ Synthesis Wave 5. Every deletion carries a fleet grep in its PR. Validators: pla
 - [ ] The dead forms layer (FormRow/FormGroup/FormActions/FormSection/form-state).
 - [ ] Commands/notifications dead code; `DeriveControls` mounted in the dock or deleted.
 - [ ] Token and chart leftovers (zero-reader `VX` members, `vite-color-mix.ts`, unused chart helpers).
-- [ ] Budgets ratcheted to landed values; a dead-export check in `pre`.
+- [ ] Budgets ratcheted to landed values; a dead-export check in `pre`. knip only for unused or unlisted
+      dependency hygiene (fallow already covers unused code). Decide size-limit (`@size-limit/file` over `dist`)
+      against the existing `check-budgets` rows, and add `bun build --metafile-md` (Bun 1.3.8+) module-size reports to
+      evidence.
       **Left behind:**
 
-## Wave 23 — Token and theme pipeline <!-- status: pending -->
+## Wave 24 — Token and theme pipeline <!-- status: pending -->
 
 Synthesis Wave 6. Validators: argo, rb (visual diff), rollhook (`--tailwind`), weatherorb.
 
@@ -879,10 +912,13 @@ Synthesis Wave 6. Validators: argo, rb (visual diff), rollhook (`--tailwind`), w
 - [ ] The zinc tail derived from `neutral`/`darkLevel`; knob validation; level-0 golden tests.
 - [ ] Component geometry leaves `--vx-space-*` for its CSS modules.
 - [ ] Self-registering series groups; `paletteOptions.groups/derived` go.
-- [ ] CSS layering, ink ladder, `tokens:css --tailwind`.
+- [ ] CSS layering, ink ladder, `tokens:css --tailwind`. Tailwind lane only (rollhook): oxlint-tailwindcss
+      (`prefer-scale-token`, `no-arbitrary-value`, via jsPlugins) and @evilmartians/design-lint (`no-raw-color`,
+      `no-arbitrary-typography`); not for Mantine consumers, where `basalt/*` owns tokens.
+- [ ] Visual diff for the token change: Playwright `toHaveScreenshot` with JSON/JUnit reporters, in `make evidence`.
       **Left behind:**
 
-## Wave 24 — Charts <!-- status: pending -->
+## Wave 25 — Charts <!-- status: pending -->
 
 Synthesis Wave 7 (may ship as two minors). Validators: linewatch first, then argo, rb.
 
@@ -893,7 +929,7 @@ Synthesis Wave 7 (may ship as two minors). Validators: linewatch first, then arg
 - [ ] One chrome (`ChartShell`) under Heatmap, Donut and Sparkline; one annotation vocabulary; BandStrip without hacks.
       **Left behind:**
 
-## Wave 25 — Shell, page frame and nav ergonomics <!-- status: pending -->
+## Wave 26 — Shell, page frame and nav ergonomics <!-- status: pending -->
 
 Synthesis Wave 8. Includes the #285 follow-ups (lazy mount loaders, `nav.ts` layering). Validators: linewatch, argo, rb, obsidian.
 
@@ -902,9 +938,11 @@ Synthesis Wave 8. Includes the #285 follow-ups (lazy mount loaders, `nav.ts` lay
 - [ ] Shell options consumers hand-wire (`colorScheme`, `refresh`, `signOut`); one `ErrorScreen`.
 - [ ] `ContentGrid` and `StatusDot` (cut unless argo and rb adopt in the same cycle).
 - [ ] Shell internals split; layout-suite geometry instead of CSS-string tests.
+- [ ] Runtime a11y in the layout suite: `@axe-core/playwright` (`AxeBuilder.analyze`), violations as structured
+      output; static a11y stays oxlint `jsx-a11y`.
       **Left behind:**
 
-## Wave 26 — Controls, forms, data, content, commands <!-- status: pending -->
+## Wave 27 — Controls, forms, data, content, commands <!-- status: pending -->
 
 Synthesis Wave 9. Validators: argo, obsidian, weatherorb, rb.
 
@@ -915,13 +953,13 @@ Synthesis Wave 9. Validators: argo, obsidian, weatherorb, rb.
 - [ ] Forms/controls remnants (`fieldKey` verdict, `BarActionItem` union).
       **Left behind:**
 
-## Wave 27 — Docs, tests and the 1.x sunset <!-- status: pending -->
+## Wave 28 — Docs, tests and the 1.x sunset <!-- status: pending -->
 
 Synthesis Wave 10. Gate: weatherorb's Waves 37–45 finished and weatherorb live on 2.x (the open W16 check).
 
 - [ ] Doc and comment truth; drift checks resolve identifiers and paths cited in JSDoc.
 - [ ] MIGRATING diet (per-minor index, line budget).
-- [ ] 1.x sunset: retire doctor's 1.x tables and the deprecated aliases from Waves 18 and 24.
+- [ ] 1.x sunset: retire doctor's 1.x tables and the deprecated aliases from Waves 18 and 25.
 - [ ] Test hygiene.
 - [ ] Final dogfood audit: every consumer `basalt-ui check` green within `basalt.maxWaivers`; STATUS and ledgers updated.
       **Left behind:**
