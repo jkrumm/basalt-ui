@@ -3,32 +3,18 @@
  * `shortcut`. `@tanstack/react-hotkeys` is subpath-required for `./commands`, so it is reached
  * through `import()` only and its runtime stays off first paint (V2-SPEC § 2).
  *
- * `defineCommands` has no loader-registration seam yet; when `./commands` grows one (it calls this
- * module's loader instead), this registry check is what goes away.
+ * `defineCommands` registers `HotkeyBinder` as the provider's `hotkeys` slot when a command has a
+ * shortcut, so this module (and the peer behind its `import()`) is reachable only from there.
  */
 import type { HotkeyRegistrationHandle } from '@tanstack/react-hotkeys'
-import { useEffect } from 'react'
-import { getActiveCommands } from '../commands/define-commands'
-import type { Command } from '../commands/define-commands'
-
-/**
- * Runs a command, swallowing a sync throw or async rejection so a failing command never becomes an
- * unhandled rejection (which the provider would report as a `window.error`). Dev logs it.
- */
-export function runCommandSafely(cmd: Command): void {
-  const report = (error: unknown): void => {
-    if (process.env.NODE_ENV !== 'production') console.error('[basalt] command failed', error)
-  }
-  try {
-    Promise.resolve(cmd.run()).catch(report)
-  } catch (error) {
-    report(error)
-  }
-}
+import { useEffect, useSyncExternalStore } from 'react'
+import { getActiveCommands, runCommandSafely, subscribeCommands } from '../commands/command-stash'
 
 export function useRegistryHotkeys(): void {
+  // A late `defineCommands` (a lazily loaded route) replaces the map; re-bind against the new one.
+  const registry = useSyncExternalStore(subscribeCommands, getActiveCommands, getActiveCommands)
   useEffect(() => {
-    const commands = Object.values(getActiveCommands()).filter((c) => c.shortcut !== undefined)
+    const commands = Object.values(registry).filter((c) => c.shortcut !== undefined)
     if (commands.length === 0) return
 
     let cancelled = false
@@ -66,5 +52,11 @@ export function useRegistryHotkeys(): void {
       cancelled = true
       for (const handle of handles) handle.unregister()
     }
-  }, [])
+  }, [registry])
+}
+
+/** The `hotkeys` slot mount: renders nothing, binds the registry's shortcuts. */
+export function HotkeyBinder(): null {
+  useRegistryHotkeys()
+  return null
 }

@@ -19,7 +19,11 @@
  */
 import type { Hotkey } from '@tanstack/react-hotkeys'
 import type { ReactNode } from 'react'
+import { HotkeyBinder } from '../provider/hotkeys'
+import { registerSlot } from '../provider/slots'
+import { SpotlightMount } from '../provider/spotlight-mount'
 import type { Slot } from '../register'
+import { getActiveCommands, setActiveCommands } from './command-stash'
 
 // ── Context ───────────────────────────────────────────────────────────────────
 
@@ -103,14 +107,6 @@ export type CommandId = Extract<keyof Commands, string>
 
 // ── Runtime stash ─────────────────────────────────────────────────────────────
 
-/**
- * Module-level runtime registry. The BasaltRegister type-slot gives the compile-time id union,
- * but the augmentation is erased at runtime — so defineCommands also stashes the runtime map here
- * for the provider and the projectors to resolve Command objects. Call defineCommands once (the
- * app's single command registry); the last call wins.
- */
-let activeCommands: CommandMap = {}
-
 // ── defineCommands ────────────────────────────────────────────────────────────
 
 /**
@@ -118,7 +114,8 @@ let activeCommands: CommandMap = {}
  * keys so the id union is exact after augmenting BasaltRegister.
  *
  * Stashes the runtime map so the provider resolves commands at runtime (type augmentation is
- * erased; the stash is the live source).
+ * erased; the stash is the live source), and registers the provider mounts that need it: Spotlight,
+ * plus the hotkey binder when any command has a `shortcut`. Nothing else pulls those into a bundle.
  *
  * @example
  * export const COMMANDS = defineCommands({
@@ -129,7 +126,10 @@ let activeCommands: CommandMap = {}
  * }
  */
 export function defineCommands<const T extends CommandMap>(spec: T): T {
-  activeCommands = spec
+  setActiveCommands(spec)
+  registerSlot('spotlight', SpotlightMount)
+  if (Object.values(spec).some((c) => c.shortcut !== undefined))
+    registerSlot('hotkeys', HotkeyBinder)
   return spec
 }
 
@@ -151,7 +151,4 @@ export function defineCommand(cmd: Command): Command {
   return cmd
 }
 
-/** @internal — exposed to the provider and projectors.ts to iterate the runtime stash. Returns a readonly view. */
-export function getActiveCommands(): Readonly<CommandMap> {
-  return activeCommands
-}
+export { getActiveCommands }

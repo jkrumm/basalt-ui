@@ -10,7 +10,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-import { devOnlyChunks, isOwnGraphId, runBudgets } from './check-budgets'
+import { devOnlyChunks, featureRuntimeChunks, isOwnGraphId, runBudgets } from './check-budgets'
 
 describe('isOwnGraphId', () => {
   test.each([
@@ -158,5 +158,36 @@ describe('devOnlyChunks', () => {
       "import { lazy } from 'react'\nexport const D = process.env.NODE_ENV !== 'production' ? lazy(() => import('./dev-dock.js')) : null\n"
     expect((await emit(old)).length).toBeGreaterThan(0)
     expect(await emit(gated)).toEqual([])
+  })
+})
+
+describe('featureRuntimeChunks', () => {
+  const chunk = (fileName: string, moduleIds: string[] = []) => ({ fileName, moduleIds })
+
+  test('flags a chunk holding spotlight, modals or either hotkeys package, in any install layout', () => {
+    expect(
+      featureRuntimeChunks([
+        chunk('entry.js', ['/repo/node_modules/@mantine/spotlight/esm/Spotlight.mjs']),
+        chunk('a.js', [
+          '/repo/node_modules/.bun/@mantine+modals@9/node_modules/@mantine/modals/esm/x.mjs',
+        ]),
+        chunk('b.js', ['/r/node_modules/@tanstack/hotkeys/dist/manager.js']),
+        chunk('c.js', ['C:\\r\\node_modules\\@tanstack\\react-hotkeys\\dist\\index.js']),
+      ]),
+    ).toEqual(['entry.js', 'a.js', 'b.js', 'c.js'])
+  })
+
+  test('spares basalt’s own modules and neighbouring packages', () => {
+    expect(
+      featureRuntimeChunks([
+        chunk('entry.js', [
+          '/dist/provider/index.js',
+          '/dist/provider/spotlight-mount.js',
+          '/repo/node_modules/@mantine/core/esm/index.mjs',
+          '/repo/node_modules/@mantine/notifications/esm/index.mjs',
+          '/repo/node_modules/@tanstack/react-query/build/index.js',
+        ]),
+      ]),
+    ).toEqual([])
   })
 })

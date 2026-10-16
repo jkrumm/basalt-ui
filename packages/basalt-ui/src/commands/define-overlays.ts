@@ -8,7 +8,8 @@
  * A form dialog is an entry whose `render` returns the form; open it from a row action with
  * `overlays.open('id', props)` and put its component in a `*-modal.tsx`.
  *
- * Uses @mantine/modals under the hood. ModalsProvider must be mounted (BasaltProvider does this).
+ * Uses @mantine/modals under the hood. Calling `defineOverlays` registers the `ModalsProvider` mount
+ * (a sibling of the router, in `BasaltProvider`) — an app that defines none ships none of the peer.
  *
  * @example
  * // overlays.ts (app-side)
@@ -31,6 +32,8 @@
 import type { ReactNode } from 'react'
 import { missingLayer } from '../common/errors'
 import type { Slot } from '../register'
+import { ModalsMount, whenModalsLive } from '../provider/modals-mount'
+import { registerSlot } from '../provider/slots'
 
 // ── Lazy @mantine/modals resolution ───────────────────────────────────────────
 // @mantine/modals is an OPTIONAL peer — never imported at module evaluation time, so importing
@@ -47,37 +50,8 @@ function loadModals(): Promise<ModalsSingleton | undefined> {
   return modalsPromise
 }
 
-// ── Modals-layer availability ─────────────────────────────────────────────────
-
-/**
- * How many `ModalsProvider`s are live right now — a COUNTER, not a flag: two overlapping mounts
- * are normal (a route swap mounts the next provider before unmounting the previous one), and a
- * last-write-wins boolean reports the teardown of the OLD one as "no layer" while the new one is
- * serving.
- *
- * It is the availability test `overlays.confirm` runs, because `@mantine/modals`' imperative API is
- * a window event bus: with nothing subscribed the dialog never appears and the promise never
- * settles.
- */
-let mountedModalsProviders = 0
-
-/**
- * Internal — `BasaltProvider` declares its `ModalsProvider` as live for as long as it is mounted,
- * and gets back the function that retracts it. There is no way to detect the provider from outside
- * React (its context is only readable through `useModals()`, and `confirm` is an imperative call),
- * so the registration is explicit. Not on the `./commands` barrel.
- */
-export function registerModalsProvider(): () => void {
-  mountedModalsProviders++
-  let released = false
-  return () => {
-    // Idempotent: an effect cleanup React runs twice (StrictMode remount) must not drive the count
-    // below the number of providers actually on screen.
-    if (released) return
-    released = true
-    mountedModalsProviders--
-  }
-}
+/** How long `confirm` waits for a `BasaltProvider` to commit the modals mount it just registered. */
+const MODALS_LIVE_GRACE_MS = 500
 
 // ── Overlay + OverlayMap ──────────────────────────────────────────────────────
 
@@ -150,6 +124,7 @@ let activeOverlays: OverlayMap = {}
  */
 export function defineOverlays<const T extends OverlayMap>(spec: T): T {
   activeOverlays = spec
+  registerSlot('modals', ModalsMount)
   return spec
 }
 
@@ -215,7 +190,7 @@ export type ConfirmDeleteOptions = {
  *
  * Rejects with a named `[basalt]` error when the modals layer cannot serve the dialog — the
  * `@mantine/modals` peer is absent, or no `ModalsProvider` is registered as live (see
- * {@link registerModalsProvider}). Both would otherwise leave the promise pending forever: the
+ * {@link ModalsMount}). Both would otherwise leave the promise pending forever: the
  * imperative API is a window event bus with nothing subscribed.
  *
  * @example
@@ -251,7 +226,9 @@ async function confirm(options: ConfirmOptions): Promise<boolean> {
       ),
     )
   }
-  if (mountedModalsProviders === 0) {
+  // `confirm` needs no registry entry, so it asks for the mount itself and waits for the provider to commit it.
+  registerSlot('modals', ModalsMount)
+  if (!(await whenModalsLive(MODALS_LIVE_GRACE_MS))) {
     throw new Error(
       missingLayer(
         'overlays.confirm',
