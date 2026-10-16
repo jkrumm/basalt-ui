@@ -1,9 +1,8 @@
 /**
  * Calibration — known-good board (SPEC § 8.5). Expected: every rubric item PASSES.
  * A metric card with a sparkline, a unit line stating the basis, and the period in its title, beside
- * a compact table of its parts that sums to the whole (an "Other projects" row), both on the one
- * month-to-date window. As clean as today's basalt allows; there
- * is deliberately no `delta`, because today's `DeltaBadge` still carries a fill and would seed a
+ * a compact table of recent days (many rows, several attributes: the catalogue's table row), both
+ * inside the month-to-date window. As clean as today's basalt allows; there is deliberately no `delta`, because today's `DeltaBadge` still carries a fill and would seed a
  * defect this board must not have.
  *
  * Table sorting is ON so the headers are focusable: the focus shot needs something Tab can reach.
@@ -17,31 +16,37 @@ import { Box, Stack } from '@mantine/core'
 import { Section, StatCard } from 'basalt-ui'
 import { Sparkline } from 'basalt-ui/charts'
 import { BasaltDataTable, createColumnHelper } from 'basalt-ui/table'
-import { MTD_EUR, MTD_TOTALS, PROJECTS_MTD, WINDOW_LABEL, fmtEur, fmtShare } from './spend-data'
+import {
+  MODEL_KEYS,
+  MODEL_LABEL,
+  MTD_DAYS,
+  MTD_EUR,
+  MTD_TOTALS,
+  WINDOW_LABEL,
+  fmtDay,
+  fmtEur,
+} from './spend-data'
+import type { DayRow } from './spend-data'
 
-type Part = { label: string; spend: number; share: number }
-
-const col = createColumnHelper<Part>()
+const col = createColumnHelper<DayRow>()
+const eurCell = { align: 'right', numeral: true } as const
 const columns = [
-  col.accessor('label', { header: 'Project' }),
-  col.accessor('spend', {
-    header: `Spend, ${WINDOW_LABEL} (€)`,
+  col.accessor('date', { header: 'Day', cell: (c) => fmtDay(c.getValue()) }),
+  ...MODEL_KEYS.map((key) =>
+    col.accessor(key, {
+      header: MODEL_LABEL[key],
+      cell: (c) => fmtEur(c.getValue()),
+      meta: eurCell,
+    }),
+  ),
+  col.accessor('total', {
+    header: 'Total',
     cell: (c) => fmtEur(c.getValue()),
-    meta: { align: 'right', numeral: true },
-  }),
-  col.accessor('share', {
-    header: 'Share',
-    cell: (c) => fmtShare(c.getValue()),
-    meta: { align: 'right', numeral: true },
+    meta: eurCell,
   }),
 ]
 
-const TOP_THREE = PROJECTS_MTD.slice(0, 3)
-const OTHER_SPEND = PROJECTS_MTD.slice(3).reduce((sum, p) => sum + p.spend, 0)
-const ROWS: Part[] = [
-  ...TOP_THREE,
-  { label: 'Other projects', spend: OTHER_SPEND, share: OTHER_SPEND / MTD_EUR },
-]
+const RECENT_DAYS = MTD_DAYS.slice(-5).toReversed()
 
 export function CalibrateGood() {
   return (
@@ -61,8 +66,8 @@ export function CalibrateGood() {
         />
       </Box>
       <Box data-shot="probe-3-table">
-        <Section title={`Spend by project, share of all spend, ${WINDOW_LABEL}`}>
-          <BasaltDataTable data={ROWS} columns={columns} />
+        <Section title="Daily spend by model, last 5 days (€)">
+          <BasaltDataTable data={RECENT_DAYS} columns={columns} />
         </Section>
       </Box>
     </Stack>
