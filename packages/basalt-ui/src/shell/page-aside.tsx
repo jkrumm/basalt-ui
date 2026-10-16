@@ -54,6 +54,8 @@ import {
   useCallback,
   useContext,
   useDeferredValue,
+  useEffect,
+  useId,
   useMemo,
   useRef,
   useState,
@@ -81,8 +83,10 @@ type AsideRegion = {
   claimed: boolean
   /** The claiming page's fold state, published back so the shell can size the region. */
   folded: boolean
-  claim: () => () => void
-  publishFolded: (folded: boolean) => void
+  /** Registers the claimant `id`; the returned release ignores everything but that id. */
+  claim: (id: string) => () => void
+  /** Publishes `id`'s fold. Only the current owner's counts (see `AsideProvider`). */
+  publishFolded: (id: string, folded: boolean) => void
   /**
    * Bumped by `requestClose` — never 0 again once a close has been requested, so `PageAside` can
    * treat "changed since mount" as "fold now" without a ref of its own. `ShellBody` is the one
@@ -113,32 +117,52 @@ const AsideContext = createContext<AsideRegion>(NO_REGION)
  */
 export function AsideProvider({ children }: { children: ReactNode }): ReactNode {
   const [target, setTarget] = useState<HTMLElement | null>(null)
-  const [claims, setClaims] = useState(0)
-  const [folded, setFolded] = useState(false)
+  // Claimed by identity, newest last. The OWNER is the newest claimant: during a route transition
+  // the incoming aside is the live one and the outgoing one is about to release.
+  const [claimants, setClaimants] = useState<readonly string[]>([])
+  // The fold is keyed to the claimant that published it, so a release or a publish from anyone but
+  // the owner can never reset or overwrite the owner's: the region reads the owner's entry only.
+  const [published, setPublished] = useState<Readonly<Record<string, boolean>>>({})
   const [closeSignal, setCloseSignal] = useState(0)
 
-  const claim = useCallback(() => {
-    setClaims((n) => n + 1)
+  const claim = useCallback((id: string) => {
+    setClaimants((ids) => [...ids, id])
     return () => {
-      setClaims((n) => n - 1)
-      // A route that leaves folded must not hand the next one a folded, unclaimed region.
-      setFolded(false)
+      setClaimants((ids) => ids.filter((x) => x !== id))
+      setPublished(({ [id]: _released, ...rest }) => rest)
     }
+  }, [])
+
+  const publishFolded = useCallback((id: string, folded: boolean) => {
+    setPublished((current) => (current[id] === folded ? current : { ...current, [id]: folded }))
   }, [])
 
   const requestClose = useCallback(() => setCloseSignal((n) => n + 1), [])
 
-  const value: AsideRegion = {
-    target,
-    setTarget,
-    inShell: true,
-    claimed: claims > 0,
-    folded,
-    claim,
-    publishFolded: setFolded,
-    closeSignal,
-    requestClose,
-  }
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'production' || claimants.length < 2) return
+    console.warn(
+      '[basalt] more than one PageAside is mounted at once. The shell has ONE aside region and the newest claimant owns its fold; render a single PageAside per page (a route and its layout must not both mount one).',
+    )
+  }, [claimants.length])
+
+  const owner = claimants.at(-1)
+  const folded = owner !== undefined && published[owner] === true
+
+  const value = useMemo<AsideRegion>(
+    () => ({
+      target,
+      setTarget,
+      inShell: true,
+      claimed: owner !== undefined,
+      folded,
+      claim,
+      publishFolded,
+      closeSignal,
+      requestClose,
+    }),
+    [target, owner, folded, claim, publishFolded, closeSignal, requestClose],
+  )
 
   return <AsideContext.Provider value={value}>{children}</AsideContext.Provider>
 }
@@ -257,6 +281,7 @@ export function PageAside(props: PageAsideProps): ReactNode {
   const { title, persistKey, defaultFolded, children, className, style, classNames } = props
   const { target, inShell, claim, publishFolded, closeSignal } = useContext(AsideContext)
   const docks = useContext(AsideDocksContext)
+  const id = useId()
   // Destructured, not held as one object: the hook returns a fresh literal every render, and the
   // claim effect below would then re-run (claim → release → claim) forever. `claimPanel` is a
   // `useCallback` on the provider, so it is the stable half.
@@ -309,13 +334,13 @@ export function PageAside(props: PageAsideProps): ReactNode {
 
   useIsomorphicLayoutEffect(() => {
     if (!portalled) return
-    return claim()
-  }, [portalled, claim])
+    return claim(id)
+  }, [portalled, claim, id])
 
   useIsomorphicLayoutEffect(() => {
     if (!portalled) return
-    publishFolded(folded)
-  }, [portalled, folded, publishFolded])
+    publishFolded(id, folded)
+  }, [portalled, folded, publishFolded, id])
 
   // The Escape hatch (`shell/index.tsx`'s `asideOverlay` effect): `closeSignal` is monotonic and
   // shared across every `PageAside` the shell ever mounts, so "past the initial 0" is the wrong

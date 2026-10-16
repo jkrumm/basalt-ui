@@ -222,3 +222,12 @@ export type MobileNavConfig = {
    */
   getScrollElement?: () => HTMLElement | null
 }
+
+/** The breadcrumb for the one active destination (`useNav` resolves it; the header renders it). */
+export type ActiveCrumb = {
+  section: string
+  parent?: string | undefined
+  parentAnchor?: NavAnchor | undefined
+  parentHref?: string | undefined
+  page: string
+}

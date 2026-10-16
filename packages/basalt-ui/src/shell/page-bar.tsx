@@ -22,7 +22,7 @@
  * Originally extracted from argo's `apps/dashboard/src/components/app-shell/page-header.tsx`;
  * linewatch's `page-header.tsx` measure-and-publish effect became the framework behaviour below.
  */
-import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { cx } from '../common/props'
@@ -50,7 +50,7 @@ export const PAGE_BAR_HEIGHT_VAR = '--basalt-page-bar-h'
  * What a `PageAside` publishes when it projects itself into row 2 below `sm`
  * (`docs/ASIDE-SPEC.md` §0 "Desktop and mobile are one declaration"). Metadata only — the aside's
  * CHILDREN never travel through this context: they are portalled into the sheet's own node
- * ({@link PageBarSlots.panelTarget}), because a `ReactNode` in state would be a fresh object on
+ * ({@link AsidePanelSlot.panelTarget}), because a `ReactNode` in state would be a fresh object on
  * every parent render and the claim effect would loop.
  */
 export type AsidePanelClaim = {
@@ -60,7 +60,11 @@ export type AsidePanelClaim = {
   readonly icon: ReactNode
 }
 
-type PageBarSlots = {
+/**
+ * Three narrow contexts plus a boolean, each memoized: a page reading one is not re-rendered by a
+ * change to another (a kebab claim must not re-render every `Section`).
+ */
+type PortalTargets = {
   /** The header node row 1 portals into. `null` outside a shell, and until the outlet mounts. */
   target: HTMLElement | null
   setTarget: (el: HTMLElement | null) => void
@@ -74,13 +78,9 @@ type PageBarSlots = {
    */
   bandTarget: HTMLElement | null
   setBandTarget: (el: HTMLElement | null) => void
-  /** True only under `BasaltShell` — the provider is shell-internal, so the context IS the probe. */
-  inShell: boolean
-  /** Shell `globalActions` marked `mobile: 'more'`, already shaped as kebab rows. */
-  mobileMoreActions: readonly BarAction[]
-  /** How many page kebabs are mounted. `> 0` means the shell must not render one of its own. */
-  kebabClaims: number
-  claimKebab: () => () => void
+}
+
+type AsidePanelSlot = {
   /** True while a mounted `PageBar` is rendering a row 2 — the row that can host the aside's pill.
    * Without one the aside keeps its in-flow mobile form; there is nowhere to put the trigger. */
   panelHost: boolean
@@ -94,15 +94,14 @@ type PageBarSlots = {
   setPanelTarget: (el: HTMLElement | null) => void
 }
 
-const NO_SLOTS: PageBarSlots = {
+const NO_TARGETS: PortalTargets = {
   target: null,
   setTarget: () => {},
   bandTarget: null,
   setBandTarget: () => {},
-  inShell: false,
-  mobileMoreActions: [],
-  kebabClaims: 0,
-  claimKebab: () => () => {},
+}
+
+const NO_PANEL_SLOT: AsidePanelSlot = {
   panelHost: false,
   claimPanelHost: () => () => {},
   panel: null,
@@ -111,7 +110,12 @@ const NO_SLOTS: PageBarSlots = {
   setPanelTarget: () => {},
 }
 
-const PageBarContext = createContext<PageBarSlots>(NO_SLOTS)
+const PortalTargetsContext = createContext<PortalTargets>(NO_TARGETS)
+const AsidePanelContext = createContext<AsidePanelSlot>(NO_PANEL_SLOT)
+/** True only under `BasaltShell` — the provider is shell-internal, so the context IS the probe. */
+const InShellContext = createContext(false)
+/** True while a page's `ActionGroup` holds the header's one mobile kebab. */
+const KebabClaimedContext = createContext(false)
 
 /**
  * Internal — mounted by `BasaltShell`. Owns the portal target, and the single-kebab claim that
@@ -151,37 +155,47 @@ export function PageBarProvider({
     }
   }, [])
 
-  const mobileMoreActions = globalActions
-    .filter((action, index) => (action.mobile ?? (index < 2 ? 'bar' : 'more')) === 'more')
-    .map(globalActionAsBarAction)
+  const mobileMoreActions = useMemo(
+    () =>
+      globalActions
+        .filter((action, index) => (action.mobile ?? (index < 2 ? 'bar' : 'more')) === 'more')
+        .map(globalActionAsBarAction),
+    [globalActions],
+  )
 
-  const value: PageBarSlots = {
-    target,
-    setTarget,
-    bandTarget,
-    setBandTarget,
-    inShell: true,
-    mobileMoreActions,
-    kebabClaims,
-    claimKebab,
-    panelHost: panelHostClaims > 0,
-    claimPanelHost,
-    panel,
-    claimPanel,
-    panelTarget,
-    setPanelTarget,
-  }
+  const targets = useMemo(
+    () => ({ target, setTarget, bandTarget, setBandTarget }),
+    [target, bandTarget],
+  )
+  const panelSlot = useMemo(
+    () => ({
+      panelHost: panelHostClaims > 0,
+      claimPanelHost,
+      panel,
+      claimPanel,
+      panelTarget,
+      setPanelTarget,
+    }),
+    [panelHostClaims, claimPanelHost, panel, claimPanel, panelTarget],
+  )
+  const extras = useMemo(() => ({ mobileMoreActions, claimKebab }), [mobileMoreActions, claimKebab])
 
   return (
-    <PageBarContext.Provider value={value}>
-      <BarExtrasProvider value={{ mobileMoreActions, claimKebab }}>{children}</BarExtrasProvider>
-    </PageBarContext.Provider>
+    <InShellContext.Provider value>
+      <PortalTargetsContext.Provider value={targets}>
+        <KebabClaimedContext.Provider value={kebabClaims > 0}>
+          <AsidePanelContext.Provider value={panelSlot}>
+            <BarExtrasProvider value={extras}>{children}</BarExtrasProvider>
+          </AsidePanelContext.Provider>
+        </KebabClaimedContext.Provider>
+      </PortalTargetsContext.Provider>
+    </InShellContext.Provider>
   )
 }
 
 /** Internal — the app-shell header node the active page's row 1 portals into. */
 export function PageBarOutlet({ className }: { className?: string }) {
-  const { setTarget } = useContext(PageBarContext)
+  const { setTarget } = useContext(PortalTargetsContext)
   return <div ref={setTarget} className={className} />
 }
 
@@ -195,7 +209,7 @@ export function PageBarOutlet({ className }: { className?: string }) {
  * `app-main.module.css` is what makes "nothing mounted" and "nothing painted" the same state.
  */
 export function PageBarBandOutlet({ className }: { className?: string }) {
-  const { setBandTarget } = useContext(PageBarContext)
+  const { setBandTarget } = useContext(PortalTargetsContext)
   return <div ref={setBandTarget} className={className} />
 }
 
@@ -205,12 +219,12 @@ export function PageBarBandOutlet({ className }: { className?: string }) {
  * sticky in the document and `Section` must clear it.
  */
 export function useInPageBarShell(): boolean {
-  return useContext(PageBarContext).inShell
+  return useContext(InShellContext)
 }
 
 /** Internal — `true` while a page's `ActionGroup` owns the header's one mobile kebab. */
 export function usePageKebabClaimed(): boolean {
-  return useContext(PageBarContext).kebabClaims > 0
+  return useContext(KebabClaimedContext)
 }
 
 /**
@@ -236,7 +250,8 @@ export function useAsidePanelSlot(): {
   claim: (panel: AsidePanelClaim) => () => void
   target: HTMLElement | null
 } {
-  const { panelHost, claimPanel, panelTarget, inShell } = useContext(PageBarContext)
+  const { panelHost, claimPanel, panelTarget } = useContext(AsidePanelContext)
+  const inShell = useContext(InShellContext)
   const [settled, setSettled] = useState(false)
   useIsomorphicLayoutEffect(() => {
     setSettled(true)
@@ -398,8 +413,9 @@ export function PageBar({
   style,
   classNames,
 }: PageBarProps): ReactNode {
-  const { target, bandTarget, inShell, panel, claimPanelHost, setPanelTarget } =
-    useContext(PageBarContext)
+  const { target, bandTarget } = useContext(PortalTargetsContext)
+  const { panel, claimPanelHost, setPanelTarget } = useContext(AsidePanelContext)
+  const inShell = useContext(InShellContext)
   // An overlay's open flag, like `FilterPill`'s and `FilterSet`'s — not page state (C3).
   const [panelOpened, setPanelOpened] = useState(false)
 

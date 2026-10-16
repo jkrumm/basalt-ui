@@ -9,10 +9,16 @@
  * No JSX — anchors are built with `createElement`, so `./router-tanstack` stays a headless,
  * no-JSX `.ts` module per its own barrel contract.
  */
-import { createElement, forwardRef, useMemo } from 'react'
+import { createElement, forwardRef, useMemo, useRef } from 'react'
 import type { AnchorHTMLAttributes, ElementType, ReactNode } from 'react'
 import { Link, useMatchRoute, useRouterState } from '@tanstack/react-router'
-import type { MobileNavConfig, NavAnchor, SidebarItem, SidebarSection } from '../shell/nav-types'
+import type {
+  ActiveCrumb,
+  MobileNavConfig,
+  NavAnchor,
+  SidebarItem,
+  SidebarSection,
+} from '../shell/nav-types'
 import { flattenNav } from './nav-stash'
 import type { AnyNavGroup, AnyNavItem, NavConfig, NavItemId, NavTabId } from './nav'
 
@@ -62,7 +68,64 @@ const OverriddenAnchor = forwardRef<HTMLAnchorElement, OverriddenAnchorProps>((p
 OverriddenAnchor.displayName = 'OverriddenAnchor'
 
 /** What this resolver turns a definition into: `ShellFrame`'s sidebar sections and mobile-bar tuning. */
-export type ResolvedNav = { sections: SidebarSection[]; mobileNav: MobileNavConfig }
+export type ResolvedNav = {
+  sections: SidebarSection[]
+  mobileNav: MobileNavConfig
+  /** The breadcrumb for the one active destination; `undefined` when nothing matches. */
+  activeCrumb: ActiveCrumb | undefined
+}
+
+/**
+ * One anchor per destination for the life of its `config`. An anchor is a component TYPE to React,
+ * so a fresh function per resolve unmounts every nav `<a>` on every navigation (focus lost, hover
+ * reset). Nothing per-render is closed over: active state travels as plain data on
+ * `SidebarItem.active` and arrives here as the `aria-current` prop. Keyed `override:id` because the
+ * `isActive` override swaps the host element (`OverriddenAnchor`).
+ */
+const anchorCache = new WeakMap<object, Map<string, NavAnchor>>()
+
+function anchorFor(config: object, item: AnyNavItem, overridden: boolean): NavAnchor {
+  let byId = anchorCache.get(config)
+  if (!byId) anchorCache.set(config, (byId = new Map()))
+  const key = `${overridden ? 1 : 0}:${item.id}`
+  const cached = byId.get(key)
+  if (cached) return cached
+  // `activeOptions: { exact: true, includeSearch: true }` makes `resolveState` the ONLY authority
+  // on active, and it is not a preference — a `Link` computes its own `isActive` (default
+  // `exact: false`, i.e. prefix) and spreads `{ 'data-status': 'active', 'aria-current': 'page' }`
+  // LAST, after `activeProps` and every caller prop (`@tanstack/react-router/dist/esm/link.js`).
+  // `aria-current` cannot be overridden from outside; the only lever is `isActive` itself. Left at
+  // its default, parent AND child anchors both carried `aria-current="page"` at
+  // `/dashboard/sessions` (verified in Chrome). `includeSearch` defaults to `true` upstream; naming
+  // it is belt-and-braces. Exact here does NOT narrow basalt's own law: `resolveState` still
+  // matches fuzzily, and an item whose exact route is never visited is named by the `aria-current`
+  // `app-sidebar.tsx` stamps itself. `Link as ElementType` is the single cast in the chain (the
+  // widened `AnyNavLink['search']` is `unknown`, which `LinkComponentProps` rejects); the consumer
+  // gets zero casts.
+  const Anchor: NavAnchor = (props) =>
+    createElement(Link as ElementType, {
+      ...item.link,
+      activeOptions: { exact: true, includeSearch: true },
+      ...(overridden && {
+        _asChild: OverriddenAnchor,
+        'data-basalt-current': props['aria-current'],
+      }),
+      ...props,
+    })
+  byId.set(key, Anchor)
+  return Anchor
+}
+
+/** Shallow structural equality, so an inline `badges={{ … }}` literal is not a new input. */
+function shallowEqual(a: object | undefined, b: object | undefined): boolean {
+  if (a === b) return true
+  if (!a || !b) return false
+  const ak = Object.keys(a)
+  return (
+    ak.length === Object.keys(b).length &&
+    ak.every((k) => Object.is((a as Record<string, unknown>)[k], (b as Record<string, unknown>)[k]))
+  )
+}
 
 /**
  * Resolve a nav definition against the live router into `BasaltShell`'s internal `ShellFrame`
@@ -79,10 +142,14 @@ export function useNav<
   // The change signal: one string that moves on every navigation, including search-param-only ones.
   const href = useRouterState({ select: (s) => s.location.href })
 
-  const badges = opts?.badges
+  // Compared structurally on a ref: the previous object is kept while every value is unchanged, so
+  // an inline literal never rebuilds the sections below.
+  const badgesRef = useRef(opts?.badges)
+  if (!shallowEqual(badgesRef.current, opts?.badges)) badgesRef.current = opts?.badges
+  const badges = badgesRef.current
   const isActiveOverride = opts?.isActive
 
-  const sections = useMemo<SidebarSection[]>(() => {
+  const resolved = useMemo<Pick<ResolvedNav, 'sections' | 'activeCrumb'>>(() => {
     const badgeOf = (id: string): number | ReactNode =>
       (badges as Record<string, number | ReactNode> | undefined)?.[id]
 
@@ -136,48 +203,27 @@ export function useNav<
       return { active: false, ancestor }
     }
 
-    const toSidebarItem = (item: AnyNavItem): SidebarItem => {
-      // One anchor per destination. Basalt renders every pixel of chrome around it (desktop row,
-      // 56px slot, 44px sheet row) and only hosts this component, so `preload`, middle-click and
-      // back/forward all keep working. `Link as ElementType` is the single cast in the whole
-      // chain: the widened `AnyNavLink['search']` is `unknown`, which `LinkComponentProps` rejects.
-      // The consumer gets zero casts, which is the point.
-      //
-      // `activeOptions: { exact: true, includeSearch: true }` is what makes `resolveState` above
-      // the ONLY authority on active, and it is not a preference — a `Link` computes its own
-      // `isActive` (default `activeOptions.exact: false`, i.e. prefix) and spreads
-      // `{ 'data-status': 'active', 'aria-current': 'page' }` LAST, after `activeProps` and after
-      // every caller prop (`@tanstack/react-router/dist/esm/link.js` — `...isActive &&
-      // STATIC_ACTIVE_PROPS` is the final entry of the returned object). So `aria-current` cannot
-      // be overridden from outside; the only lever is `isActive` itself. Left at its default, the
-      // router re-derived the exact fuzzy match this resolver exists to replace, and at
-      // `/dashboard/sessions` BOTH the parent and the child anchor carried `aria-current="page"`
-      // even with basalt's own model marking one of them an ancestor — verified in Chrome, and the
-      // reason the first attempt at this fix measured as no fix at all. `includeSearch` already
-      // defaults to `true` upstream; naming it here is belt-and-braces so a future default change
-      // cannot silently reopen the gap.
-      //
-      // Exact here does NOT narrow basalt's own law. `resolveState` still matches fuzzily and still
-      // lights an item whose exact route is never visited; that item is simply named by the
-      // `aria-current` `app-sidebar.tsx` stamps itself, which survives because the router's spread
-      // is conditional on ITS `isActive` being true. The CSS side no longer treats `aria-current`
-      // as a style hook either (`theme/nav-link.module.css`, `shell/app-sidebar.module.css`), so
-      // `use-nav`'s single `data-active` winner is the one visual authority even if the router's
-      // own `isActive` ever disagreed.
-      const Anchor: NavAnchor = (props) =>
-        createElement(Link as ElementType, {
-          ...item.link,
-          activeOptions: { exact: true, includeSearch: true },
-          ...(isActiveOverride !== undefined && {
-            _asChild: OverriddenAnchor,
-            'data-basalt-current': props['aria-current'],
-          }),
-          ...props,
-        })
+    let activeCrumb: ActiveCrumb | undefined
+    let sectionLabel = ''
+    const overridden = isActiveOverride !== undefined
 
+    const toSidebarItem = (item: AnyNavItem, parent?: AnyNavItem): SidebarItem => {
+      // One anchor per destination, hosted by basalt's own chrome (desktop row, 56px slot, 44px
+      // sheet row), so `preload`, middle-click and back/forward all keep working.
+      const Anchor = anchorFor(config, item, overridden)
       const badge = badgeOf(item.id)
-      const children = item.children?.map(toSidebarItem)
+      const children = item.children?.map((child) => toSidebarItem(child, item))
       const { active, ancestor } = resolveState(item)
+      if (active) {
+        activeCrumb = {
+          section: sectionLabel,
+          page: item.label,
+          ...(parent !== undefined && {
+            parent: parent.label,
+            parentAnchor: anchorFor(config, parent, overridden),
+          }),
+        }
+      }
 
       return {
         key: item.id,
@@ -202,14 +248,18 @@ export function useNav<
       }
     }
 
-    return config.groups.map((group) => ({
-      label: group.label,
-      items: group.items.map(toSidebarItem),
-      ...(group.icon !== undefined && { icon: group.icon }),
-      ...(group.collapsible !== undefined && { collapsible: group.collapsible }),
-      ...(group.defaultCollapsed !== undefined && { defaultCollapsed: group.defaultCollapsed }),
-      ...(group.mobile !== undefined && { mobile: group.mobile }),
-    }))
+    const sections = config.groups.map((group) => {
+      sectionLabel = group.label
+      return {
+        label: group.label,
+        items: group.items.map((item) => toSidebarItem(item)),
+        ...(group.icon !== undefined && { icon: group.icon }),
+        ...(group.collapsible !== undefined && { collapsible: group.collapsible }),
+        ...(group.defaultCollapsed !== undefined && { defaultCollapsed: group.defaultCollapsed }),
+        ...(group.mobile !== undefined && { mobile: group.mobile }),
+      }
+    })
+    return { sections, activeCrumb }
     // `href` is deliberately an unread dep, and the reason the memo is correct: `matchRoute` has a
     // STABLE identity (`useCallback(fn, [router])`), so nothing else in this list moves on a
     // navigation — while the `matchRoute` calls above read router state that just changed. `href`
@@ -239,5 +289,5 @@ export function useNav<
     }
   }, [config, mobile, getScrollElement])
 
-  return { sections, mobileNav }
+  return { ...resolved, mobileNav }
 }

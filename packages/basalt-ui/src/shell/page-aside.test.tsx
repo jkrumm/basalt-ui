@@ -13,7 +13,7 @@
  */
 import { MantineProvider } from '@mantine/core'
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, spyOn, test } from 'bun:test'
 import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { FilterSet, ToggleFilter } from '../controls'
@@ -752,5 +752,67 @@ describe('common props (`common/props.ts`)', () => {
       '[basalt] PageAside: prop "title" is required — it names the region — it is the header ' +
         'text AND the `aria-label` on the landmark.',
     )
+  })
+})
+
+describe('PageAside claim ownership (two claimants)', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    installViewport(1400)
+  })
+
+  const FOLDED_W = '--app-shell-aside-width:calc(2.25rem * var(--mantine-scale))'
+  const OPEN_W = '--app-shell-aside-width:calc(18.75rem * var(--mantine-scale))'
+
+  function Pair({ showA }: { showA: boolean }) {
+    return (
+      <ShellFrame brand={BRAND} sections={ONE_SECTION}>
+        {showA && (
+          <PageAside title="Route" defaultFolded={false}>
+            <div>route</div>
+          </PageAside>
+        )}
+        <PageAside title="Layout" defaultFolded>
+          <div>layout</div>
+        </PageAside>
+      </ShellFrame>
+    )
+  }
+
+  test('the outgoing aside releasing does not reset the fold the incoming one published', () => {
+    const warn = spyOn(console, 'warn').mockImplementation(() => {})
+    const view = render(
+      <MantineProvider>
+        <Pair showA={false} />
+      </MantineProvider>,
+    )
+    expect(asideCss()).toContain(FOLDED_W)
+    // The transition overlap: a second aside mounts (open), then the first leaves.
+    view.rerender(
+      <MantineProvider>
+        <Pair showA />
+      </MantineProvider>,
+    )
+    view.rerender(
+      <MantineProvider>
+        <Pair showA={false} />
+      </MantineProvider>,
+    )
+    warn.mockRestore()
+    // The surviving aside is folded; the leaver's release must not have flipped it open.
+    expect(asideCss()).toContain(FOLDED_W)
+    expect(asideCss()).not.toContain(OPEN_W)
+  })
+
+  test('a second concurrent claimant warns in development', () => {
+    const warn = spyOn(console, 'warn').mockImplementation(() => {})
+    render(
+      <MantineProvider>
+        <Pair showA />
+      </MantineProvider>,
+    )
+    const warned = warn.mock.calls.some((c) => String(c[0]).includes('more than one PageAside'))
+    warn.mockRestore()
+    expect(warned).toBe(true)
   })
 })
