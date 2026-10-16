@@ -323,3 +323,49 @@ describe('basalt doctor — the oxlint binary', () => {
     expect(out).toContain('oxlint config found but no oxlint binary')
   })
 })
+
+describe('doctor design-loop section', () => {
+  function run(
+    probes: Parameters<typeof doctor>[2],
+    flags: string[] = [],
+  ): { code: number; out: string } {
+    const originalLog = console.log
+    let out = ''
+    console.log = (...args: unknown[]) => {
+      out += `${args.join(' ')}\n`
+    }
+    try {
+      return { code: doctor(tmpDir, flags, probes), out }
+    } finally {
+      console.log = originalLog
+    }
+  }
+  const stale = 'UI changed since the last board'
+
+  it('prints the notice when UI is newer than the board, without changing the verdict', () => {
+    setupPassingLayout()
+    const { code, out } = run({ notice: () => `${stale} — x`, playwright: () => '1.64.1' })
+    expect(code).toBe(0)
+    expect(out).toContain(stale)
+    expect(out).toContain('playwright 1.64.1 resolves')
+    expect(out).toContain('All checks passed.')
+  })
+  it('prints the notice when no board exists (real walk over the fixture)', () => {
+    setupPassingLayout()
+    const { out } = run({ playwright: () => null })
+    expect(out).toContain(stale)
+  })
+  it('prints the missing-Playwright line and still exits 0 with no warning counted', () => {
+    setupPassingLayout()
+    const { code, out } = run({ notice: () => null, playwright: () => null })
+    expect(code).toBe(0)
+    expect(out).toContain('bun add -d playwright && bunx playwright install chromium')
+    expect(out).toContain('All checks passed.')
+  })
+  it('prints none of it for a tokens-only profile', () => {
+    setupPassingLayout()
+    const { out } = run({ notice: () => `${stale} — x`, playwright: () => null }, ['--tokens-only'])
+    expect(out).not.toContain(stale)
+    expect(out).not.toContain('playwright')
+  })
+})
