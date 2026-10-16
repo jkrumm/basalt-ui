@@ -32,6 +32,7 @@ import { buildPaletteData } from '../tokens/palette'
 import { useMediaQuery } from '../common/use-media-query'
 import { registerColorSchemeSetter } from '../commands/shell-bridge'
 import { useIsomorphicLayoutEffect } from '../common/isomorphic-layout-effect'
+import { defineFormat } from '../format/shared'
 import { PageTitle } from '../shell/page-title'
 import { SizeClassHintContext } from '../shell/use-size-class'
 import type { SizeClass } from '../shell/use-size-class'
@@ -98,6 +99,14 @@ type BasaltProviderCommonProps = {
    * action wiring mounts.
    */
   spotlight?: boolean
+  /**
+   * Default BCP-47 locale for every `basalt-ui/format` formatter that gets no per-call `locale`
+   * (`integer(1112)` → `1,112` under `en-US`). Unset → the runtime's locale. Pass it on the server
+   * and the client alike so hydration agrees.
+   */
+  locale?: string
+  /** Default IANA time zone for the date/time formatters. Unset → the runtime's zone. */
+  timeZone?: string
 } & Omit<MantineProviderProps, 'children' | 'theme' | 'defaultColorScheme' | 'cssVariablesResolver'>
 
 /**
@@ -482,12 +491,18 @@ export function BasaltProvider({
   sizeClassHint = 'compact',
   navCommandLabel,
   spotlight = true,
+  locale,
+  timeZone,
   router: mountedRouter,
   children,
   ...rest
 }: BasaltProviderProps) {
   useDuplicateProviderGuard()
   useHostAttribute()
+  // Synchronous and idempotent on purpose (no state, no effect): the first formatted child of this
+  // very render, server or client, already sees the value. Unset props leave a manual
+  // `defineFormat()` untouched.
+  if (locale !== undefined || timeZone !== undefined) defineFormat({ locale, timeZone })
 
   // The sink is read through a ref, so an inline `telemetry` function does not re-subscribe.
   const sink = telemetry ?? (process.env.NODE_ENV === 'production' ? undefined : devConsoleSink)

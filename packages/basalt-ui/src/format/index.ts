@@ -5,8 +5,9 @@
  * lines across four duration spellings) and the 1.x chart layer's own formatters (2.0's charts
  * import the internals directly).
  *
- * Every formatter takes `(value, opts?)`; `locale` on every `opts` defaults to `undefined` —
- * `Intl`'s own "use the runtime's locale". Every non-finite/unparseable input prints the same
+ * Every formatter takes `(value, opts?)`; `locale` on every `opts` defaults to what `defineFormat`
+ * (or `BasaltProvider`'s `locale` / `timeZone` props) set, else `undefined` — `Intl`'s own "use the
+ * runtime's locale". Number formatters accept `null | undefined`. Every non-finite/unparseable input prints the same
  * {@link NON_FINITE} em dash rather than `"NaN"` or throwing.
  *
  * @example
@@ -18,6 +19,7 @@
  * weekday('2026-09-02')                    // "Wed"
  * relativeTime(Date.now() - 3_600_000)     // "1 hour ago"
  */
-export { integer, money, percent } from './number'
+export { bytes, compact, delta, integer, money, percent } from './number'
 export { durationClock, relativeTime, weekday } from './date'
 export { kcal, km } from './measure'
+export { defineFormat } from './shared'
