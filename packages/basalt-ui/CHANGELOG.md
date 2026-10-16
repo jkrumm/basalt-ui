@@ -1,3 +1,14 @@
+## [2.13.2](https://github.com/jkrumm/basalt-ui/compare/v2.13.1...v2.13.2) (2026-10-16)
+
+
+### Bug Fixes
+
+* a line series keeps its dashed legend swatch below 480px ([d711f78](https://github.com/jkrumm/basalt-ui/commit/d711f78b4e0451719ccd87bb9e983479e77abbbf))
+* butt-capped dashed swatches, a paint before update hides, validate options ([c861eb4](https://github.com/jkrumm/basalt-ui/commit/c861eb4ef086c2b95d1a65ea622568bfb111e290))
+* followers draw the cursor dots, one cursor-dot mark per getMarker series ([5a1a70f](https://github.com/jkrumm/basalt-ui/commit/5a1a70fe6d1f7a6d67e144f04f233503cc173c41))
+* give the Modal close button an accessible name ([8e9527f](https://github.com/jkrumm/basalt-ui/commit/8e9527fc6b91431ecd4692d906e465fd2adcb6f7))
+* type the follower contract and narrow the compact line swatch ([45e08e6](https://github.com/jkrumm/basalt-ui/commit/45e08e6537593419cf92a47805d614cb3a393aa3))
+
 ## [2.13.1](https://github.com/jkrumm/basalt-ui/compare/v2.13.0...v2.13.1) (2026-10-16)
 
 
