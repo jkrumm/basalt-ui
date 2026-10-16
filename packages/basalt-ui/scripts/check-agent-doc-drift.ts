@@ -920,8 +920,6 @@ export const CHECK_I_NON_EXPORTS: ReadonlySet<string> = new Set([
   'basalt-ui/controls:options', // a prop of NumberFilter
   'basalt-ui/forms:key', // the React `key` prop
   'basalt-ui/format:locale', // an option of the formatters
-  'basalt-ui/format:opts', // the options argument
-  'basalt-ui/format:undefined', // a return value
   'basalt-ui/agent:ai', // the Vercel `ai` package
   'basalt-ui/content:fenceRenderers', // a prop of Markdown
   'basalt-ui/content:streaming', // a prop of Markdown
