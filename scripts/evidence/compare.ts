@@ -15,8 +15,15 @@ import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, join, relative, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { parseArgs } from 'node:util'
-import { chromium } from 'playwright-core'
 import type { Browser, Page } from 'playwright-core'
+import { openContext } from '../../packages/basalt-ui/src/cli/shot/capture'
+import {
+  INSTALL_LINE,
+  resolvePlaywright,
+  withBrowser,
+} from '../../packages/basalt-ui/src/cli/shot/playwright'
+import type { PwBrowser } from '../../packages/basalt-ui/src/cli/shot/playwright'
+import { VIEWPORT_SPECS } from '../../packages/basalt-ui/src/cli/shot/types'
 import {
   PAIR_KEYS,
   SCHEMES,
@@ -49,11 +56,6 @@ const RUN_TIMEOUT_MS = 10 * 60_000
 const BOARD_TIMEOUT_MS = 2 * 60_000
 const NAV_TIMEOUT_MS = 30_000
 const FIND_TIMEOUT_MS = 10_000
-
-const VIEWPORT_SPECS: Record<Viewport, { width: number; height: number; mobile: boolean }> = {
-  desktop: { width: 1440, height: 900, mobile: false },
-  mobile: { width: 390, height: 844, mobile: true },
-}
 
 // ── Build (the same two steps as `index.ts`, whose helper is not exported) ───────────────────
 
@@ -228,24 +230,20 @@ function measure(node: Node, rowLike: boolean): Metrics {
 // ── Browser run ──────────────────────────────────────────────────────────────────────────────
 
 /**
- * One Chrome for `fn`, killed afterwards even when `fn` times out. `launchServer` + `connect` +
- * `kill()` — a graceful `close()` hangs on this host (see index.ts).
+ * One Chrome for `fn`, through `basalt-ui shot`'s launcher (`launchServer` + `connect` + `kill()`;
+ * a graceful `close()` hangs on this host) and killed afterwards even when `fn` times out. The real
+ * Playwright types are restored here: shot types the browser through a minimal structural surface.
  */
-async function withChrome<T>(
+function withChrome<T>(
   fn: (browser: Browser) => Promise<T>,
   timeoutMs: number,
   what: string,
 ): Promise<T> {
-  const chrome = await chromium.launchServer({
-    channel: 'chrome',
-    chromiumSandbox: !process.env['CI'],
-  })
-  try {
-    const browser = await chromium.connect(chrome.wsEndpoint())
-    return await withTimeout(fn(browser), timeoutMs, what)
-  } finally {
-    await chrome.kill().catch(() => undefined)
-  }
+  const pw = resolvePlaywright(ROOT)
+  if (!pw) throw new Error(INSTALL_LINE)
+  return withBrowser(pw, (browser) =>
+    withTimeout(fn(browser as unknown as Browser), timeoutMs, what),
+  )
 }
 
 type Measured = { id: string; scheme: Scheme; viewport: Viewport; metrics: Metrics }
@@ -311,21 +309,9 @@ async function captureAll(params: {
     async (browser) => {
       for (const scheme of SCHEMES) {
         for (const viewport of VIEWPORTS) {
-          const spec = VIEWPORT_SPECS[viewport]
-          const context = await browser.newContext({
-            viewport: { width: spec.width, height: spec.height },
-            deviceScaleFactor: 1,
-            isMobile: spec.mobile,
-            hasTouch: spec.mobile,
-            colorScheme: scheme,
-            reducedMotion: 'reduce',
-          })
-          await context.addInitScript(
-            (value) => localStorage.setItem('mantine-color-scheme-value', value),
-            scheme,
-          )
+          const context = await openContext(browser as unknown as PwBrowser, scheme, viewport)
           try {
-            const page = await context.newPage()
+            const page = (await context.newPage()) as unknown as Page
             page.setDefaultTimeout(NAV_TIMEOUT_MS)
             for (const id of ids) {
               const mapping = mappingFor(id)
