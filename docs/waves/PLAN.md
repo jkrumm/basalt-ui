@@ -878,6 +878,15 @@ closing. It is still greenfield and 2.x only: breaks ship as plain `feat:` minor
 and the rows 132/133 follower fix finish and ship first. shutterflow's 1.x → 2.x migration is briefed in
 Wave 36, so it lands on the new patterns. weatherorb keeps its own plan and is told what moved.
 
+**Expression, not just layout (owner, 2026-10-16):** the thing Keel gets right is _expression through
+data_. Each dataset gets the component and encoding that shows it best: a progress-to-target bar, a
+distribution, a status-over-time strip, a ranked list, an event sequence. Space carries information, and
+the feel, spacing and density stay consistent across all those different forms. basalt-built UIs fall back
+to the easy default (a card with a big number, a line chart, a plain table). That has two causes, and the
+track fixes both: a **flexibility gap**, where basalt cannot express the better encoding (a missing mark, slot,
+variant or density step), and a **guidance gap**, where basalt can express it but nothing leads an agent to
+choose it. Quality is judged per component (card, table, chart, list), not only per page.
+
 **Licence boundary (binding):** Keel publishes no source and no licence, so it is **look-only**. Workers
 capture screenshots and measure rendered geometry (computed spacing, type sizes, radii, borders,
 densities, colour roles) as reference data. They never copy Keel's JS, CSS, markup, assets or copy text
@@ -940,8 +949,16 @@ Mode and roles are unchanged from Part 1.
 - [ ] `/research`: TanStack Table responsive patterns (card-collapse vs column priority), a drag-and-drop
       library for the kanban that fits React 19 and the Compiler, and timeline virtualisation with TanStack
       Virtual.
+- [ ] **Data-to-expression catalogue:** for every inventory pattern, record the dataset shape it encodes
+      (single value with trend, progress to target, part of a whole, distribution, status over time, ranked
+      list, event sequence, entity with facts, …), the encoding Keel chose, and why it beats the default.
+      Classify each basalt shortfall as a flexibility gap (name the missing mark, slot, variant or density
+      step) or a guidance gap (basalt can do it, but no skill or rule leads there). This catalogue is the
+      core of the spec.
 - [ ] Write `docs/waves/design-parity/SPEC.md` (outside the `docs/*.md` spec-prose budget, which has 17 lines of headroom; Wave 35 folds the settled law into `DESIGN-CORE.md`) (anatomy, scales, states, responsive behaviour per pattern) and the
-      **visual rubric** that later waves are scored against. Reconcile it with `DESIGN-CORE.md`: change the
+      **visual rubric** that later waves are scored against. The rubric scores each component on two axes:
+      **craft** (spacing, density, type, chrome) and **expression** (does the encoding fit the data, and does
+      the space carry information). Reconcile it with `DESIGN-CORE.md`: change the
       law where Keel shows it is wrong, and record each decision.
 - [ ] Rewrite Waves 31–36 below to the spec (keep three to six steps each), and file the fleet's
       pattern needs (argo, rb, linewatch, obsidian, weatherorb, shutterflow) as ledger rows.
@@ -993,6 +1010,9 @@ Provisional.
 
 - [ ] Field, control and form-section styling at parity.
 - [ ] Empty, loading and error states for every pattern above.
+- [ ] The guidance half: the catalogue ships as the decision table in the `basalt-design` and
+      `basalt-charts` skills (dataset shape → pattern → component). The rules name it, so an agent
+      reaches it before it reaches for a card with a number.
 - [ ] Rubric re-score of the whole inventory; every pattern still below `close` gets a step here or a
       recorded reason.
       **Left behind:**
@@ -1001,6 +1021,9 @@ Provisional.
 
 - [ ] Release, then upgrade argo, rb, linewatch and obsidian one at a time, each with a before/after board
       from the real app. Friction and ugliness found there become ledger rows and are fixed upstream.
+- [ ] **Expression trial** (shaped like weatherorb's W45): a fresh agent in a scratch `init` app gets five
+      datasets and no component names. Render what it builds, put it on a board next to the catalogue's
+      pattern, and score it on the rubric. A pick that falls back to the default becomes a guidance row.
 - [ ] Brief weatherorb's orchestrator, and shutterflow's for its 2.x migration.
 - [ ] Re-run the full comparison. If gaps remain, append Waves 37+ in the same shape. The track closes when
       a fresh scorer finds nothing worth closing.
