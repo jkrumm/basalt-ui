@@ -9,6 +9,7 @@
 import { describe, expect, test } from 'bun:test'
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { DEFAULT_THEME, mergeMantineTheme } from '@mantine/core'
 import ts from 'typescript'
 import { createBasaltTheme } from './index'
 
@@ -46,7 +47,7 @@ const stringOf = (node: ts.Node | undefined): string | undefined =>
  * side-effect, `export … from`, `import x = require()`, dynamic `import()` and `require()`. Parsed
  * with the compiler API, so formatting, comments and strings cannot hide one.
  */
-export function mantineValueBindings(text: string, fileName = 'fixture.tsx'): string[] {
+function mantineValueBindings(text: string, fileName = 'fixture.tsx'): string[] {
   const source = ts.createSourceFile(fileName, text, ts.ScriptTarget.Latest, true)
   const found: string[] = []
   const visit = (node: ts.Node): void => {
@@ -91,7 +92,7 @@ export function mantineValueBindings(text: string, fileName = 'fixture.tsx'): st
   return found
 }
 
-const sources = (readdirSync(DIR, { recursive: true }) as string[])
+const sources = readdirSync(DIR, { recursive: true, encoding: 'utf8' })
   .filter((f) => /\.tsx?$/.test(f) && !/\.test\.tsx?$/.test(f) && !f.endsWith('.d.ts'))
   .toSorted()
 
@@ -144,17 +145,86 @@ describe('mantineValueBindings catches every bypass form', () => {
   })
 })
 
-describe('createBasaltTheme().components shape', () => {
-  const shape = Object.fromEntries(
-    Object.entries(createBasaltTheme().components ?? {}).map(([name, c]) => [
-      name,
-      JSON.parse(
-        JSON.stringify(c, (_k, v: unknown) => (typeof v === 'function' ? '[fn]' : v)),
-      ) as unknown,
-    ]),
-  )
+const SIZES = [undefined, 'xs', 'sm', 'md', 'lg', 'xl', 'ctl', 'icon']
+const VARIANTS = [
+  undefined,
+  'filled',
+  'light',
+  'outline',
+  'subtle',
+  'default',
+  'transparent',
+  'white',
+]
+const COLORS = [undefined, 'blue', 'red', 'gray', 'dark', 'accent']
+const SCHEMES = ['light', 'dark'] as const
 
-  test('keys, defaultProps, classNames, styles, vars-presence', () => {
-    expect(shape).toMatchSnapshot()
+/** `(theme, props, ctx)` probes: size x variant x checked x color x scheme, plus icon-color cases. */
+const PROBES: ReadonlyArray<readonly [Record<string, unknown>, { scheme: string }]> = [
+  ...SCHEMES.flatMap((scheme) =>
+    SIZES.flatMap((size) =>
+      VARIANTS.flatMap((variant) =>
+        [undefined, true, false].flatMap((checked) =>
+          COLORS.map((color) => [{ size, variant, checked, color }, { scheme }] as const),
+        ),
+      ),
+    ),
+  ),
+  ...SCHEMES.flatMap((scheme) =>
+    [{ iconColor: 'red' }, { iconColor: 'var(--x)', size: 'md' }].map(
+      (props) => [props, { scheme }] as const,
+    ),
+  ),
+]
+
+/** Functions become their source text; resolver entries also become their distinct outputs. */
+function describeValue(value: unknown, theme: unknown, path: string): unknown {
+  if (typeof value === 'function') {
+    const isResolver = /\.(vars|classNames|styles|variantColorResolver)$/.test(path)
+    return isResolver
+      ? {
+          fn: String(value),
+          outputs: distinctOutputs(value as (...args: unknown[]) => unknown, theme, path),
+        }
+      : String(value)
+  }
+  if (value === null || typeof value !== 'object') return value
+  if (Array.isArray(value)) return value.map((v, i) => describeValue(v, theme, `${path}[${i}]`))
+  return Object.fromEntries(
+    Object.entries(value).map(([k, v]) => [k, describeValue(v, theme, `${path}.${k}`)]),
+  )
+}
+
+/** The distinct results of a resolver over the probes, with how many probes produced each. */
+function distinctOutputs(fn: (...args: unknown[]) => unknown, theme: unknown, path: string) {
+  const counts = new Map<string, number>()
+  const call = (...args: unknown[]): string => {
+    try {
+      return JSON.stringify(describeValue(fn(...args), theme, `${path}()`))
+    } catch (error) {
+      return `threw: ${String(error)}`
+    }
+  }
+  const calls = path.endsWith('variantColorResolver')
+    ? VARIANTS.flatMap((variant) =>
+        COLORS.flatMap((color) =>
+          [false, true].map((autoContrast) =>
+            call({ color, theme, variant, gradient: undefined, autoContrast }),
+          ),
+        ),
+      )
+    : PROBES.map(([props, ctx]) => call(theme, props, ctx))
+  for (const result of calls) counts.set(result, (counts.get(result) ?? 0) + 1)
+  return [...counts].map(([result, probes]) => ({ probes, result }))
+}
+
+describe('createBasaltTheme() shape and resolver output', () => {
+  test.each([
+    ['default', undefined],
+    ['all knobs', { derive: { accent: '#0b7285' }, radius: 3, density: -2 }],
+  ] as const)('%s', (_, options) => {
+    const theme = createBasaltTheme(undefined, options)
+    const resolved = mergeMantineTheme(DEFAULT_THEME, theme)
+    expect(describeValue(theme, resolved, '')).toMatchSnapshot()
   })
 })
