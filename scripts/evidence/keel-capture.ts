@@ -11,7 +11,6 @@ import { join, resolve } from 'node:path'
 import { parseArgs } from 'node:util'
 import { chromium } from 'playwright-core'
 import type { Locator, Page } from 'playwright-core'
-import { routeSlug } from './screens'
 
 const ORIGIN = 'https://keel-workspace.vercel.app'
 const OUT = resolve(import.meta.dirname, '../../docs/waves/design-parity/keel')
@@ -38,19 +37,41 @@ type Viewport = (typeof VIEWPORTS)[number]
 type Scheme = (typeof SCHEMES)[number]
 const FULL_PAGE_CAP = 3600
 const PAUSE_MS = 600
+const READY_TIMEOUT_MS = 10_000
+
+/** Per-route and per-pattern failures; any entry fails the run after everything else is written. */
+const failures: string[] = []
 
 const pause = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms))
 
 // ── Navigation ────────────────────────────────────────────────────────────────────────────────
 
-async function settle(page: Page, route: Route): Promise<void> {
+/** Navigates and waits for the app to render. Returns the readiness marker: the page shell has a
+ * visible main region with at least one heading, link or button in it. A page that never reaches it
+ * is unverified, never "absent". */
+async function settle(page: Page, route: Route): Promise<boolean> {
   await page.goto(ORIGIN + route.path, { waitUntil: 'networkidle' })
   await page.evaluate(() => document.fonts.ready.then(() => undefined))
   await pause(PAUSE_MS)
-  if (route.view) {
+  const ready = await page
+    .waitForFunction(
+      () =>
+        [...document.querySelectorAll('main h1, main a, main button')].some((el) => {
+          const r = el.getBoundingClientRect()
+          return r.width > 0 && r.height > 0
+        }),
+      undefined,
+      { timeout: READY_TIMEOUT_MS },
+    )
+    .then(
+      () => true,
+      () => false,
+    )
+  if (ready && route.view) {
     await page.locator(route.view).click()
     await pause(PAUSE_MS)
   }
+  return ready
 }
 
 /** The shell scrolls an inner container, so `fullPage` alone sees one viewport. Grow the viewport to
@@ -67,11 +88,14 @@ async function shootFull(page: Page, vp: Viewport, file: string): Promise<number
     return Math.max(best + window.innerHeight, document.documentElement.scrollHeight)
   })
   const height = Math.min(Math.max(needed, vp.height), FULL_PAGE_CAP)
-  await page.setViewportSize({ width: vp.width, height })
-  await pause(300)
-  await page.screenshot({ path: file, animations: 'disabled', caret: 'hide' })
-  await page.setViewportSize({ width: vp.width, height: vp.height })
-  await pause(200)
+  try {
+    await page.setViewportSize({ width: vp.width, height })
+    await pause(300)
+    await page.screenshot({ path: file, animations: 'disabled', caret: 'hide' })
+  } finally {
+    await page.setViewportSize({ width: vp.width, height: vp.height })
+    await pause(200)
+  }
   return needed
 }
 
@@ -84,15 +108,23 @@ async function captureRoutes(open: (v: Viewport, s: Scheme) => Promise<Page>): P
   for (const scheme of SCHEMES) {
     for (const vp of VIEWPORTS) {
       const page = await open(vp, scheme)
-      for (const route of ROUTES) {
-        await settle(page, route)
-        const base = join(dir, `${route.slug}--${scheme}--${vp.name}`)
-        await page.screenshot({ path: `${base}.png`, animations: 'disabled', caret: 'hide' })
-        const needed = await shootFull(page, vp, `${base}--full.png`)
-        count += 2
-        console.log(`routes ${route.slug} ${scheme} ${vp.name} (content ${needed}px)`)
+      try {
+        for (const route of ROUTES) {
+          const label = `${route.slug} ${scheme} ${vp.name}`
+          try {
+            if (!(await settle(page, route))) throw new Error('route did not render')
+            const base = join(dir, `${route.slug}--${scheme}--${vp.name}`)
+            await page.screenshot({ path: `${base}.png`, animations: 'disabled', caret: 'hide' })
+            const needed = await shootFull(page, vp, `${base}--full.png`)
+            count += 2
+            console.log(`routes ${label} (content ${needed}px)`)
+          } catch (error) {
+            failures.push(`routes ${label}: ${error instanceof Error ? error.message : error}`)
+          }
+        }
+      } finally {
+        await page.context().close()
       }
-      await page.context().close()
     }
   }
   return count
@@ -147,7 +179,7 @@ const PATTERNS: readonly PatternDef[] = [
     pick: 2,
     selectorNote: 'third tile of the KPI strip on the home route',
     notes:
-      'A thin multi-segment bar carries target and commit; axis captions sit under it in mono type.',
+      'A thin multi-segment bar carries a target and a forecast split; axis captions sit under it in mono type.',
   },
   {
     id: 'decision-card',
@@ -562,18 +594,12 @@ function measureInPage(root: Element, rowLike: boolean): Record<string, number |
   const own = parse(cs.backgroundColor)
   const lumDelta = lum(rootBg) - lum(parentBg)
   const bgHue = own[3] > 0 ? hueRole(rootBg) : null
-  out['backgroundRole'] =
-    own[3] === 0
-      ? 'transparent'
-      : bgHue
-        ? own[3] >= 0.9
-          ? `${bgHue}-fill`
-          : `${bgHue}-tint`
-        : lumDelta > 0.004
-          ? 'surface-raised'
-          : lumDelta < -0.004
-            ? 'sunken'
-            : 'surface'
+  let backgroundRole = 'surface'
+  if (own[3] === 0) backgroundRole = 'transparent'
+  else if (bgHue) backgroundRole = `${bgHue}-${own[3] >= 0.9 ? 'fill' : 'tint'}`
+  else if (lumDelta > 0.004) backgroundRole = 'surface-raised'
+  else if (lumDelta < -0.004) backgroundRole = 'sunken'
+  out['backgroundRole'] = backgroundRole
 
   // Border: a real border, else a 0-blur ring shadow, else none.
   const widths = [
@@ -609,7 +635,10 @@ function measureInPage(root: Element, rowLike: boolean): Record<string, number |
     out['borderRole'] = 'none'
   }
   const blur = Math.max(0, ...drop.map((s) => s.blur))
-  out['shadow'] = drop.length === 0 ? 'none' : blur >= 16 ? 'strong' : 'subtle'
+  let shadow = 'subtle'
+  if (drop.length === 0) shadow = 'none'
+  else if (blur >= 16) shadow = 'strong'
+  out['shadow'] = shadow
   if (root.tagName === 'TR') {
     // A row's hairline lives on its cells (as a border or an inset shadow), so it is a divider.
     out['shadow'] = 'none'
@@ -694,12 +723,9 @@ function measureInPage(root: Element, rowLike: boolean): Record<string, number |
   for (const el of [root, ...root.querySelectorAll('*')].slice(0, 80)) {
     if (root.tagName === 'TR') break
     const s = getComputedStyle(el)
-    const side =
-      num(s.borderBottomWidth) > 0
-        ? s.borderBottomColor
-        : num(s.borderTopWidth) > 0
-          ? s.borderTopColor
-          : null
+    let side: string | null = null
+    if (num(s.borderBottomWidth) > 0) side = s.borderBottomColor
+    else if (num(s.borderTopWidth) > 0) side = s.borderTopColor
     if (side && !(el === root && maxWidth > 0 && widths.every((w) => w > 0))) {
       out['dividerRole'] = lineRole(side, bgOf(el))
       break
@@ -708,10 +734,14 @@ function measureInPage(root: Element, rowLike: boolean): Record<string, number |
   return out
 }
 
+/** `absent`: the route rendered and no visible match exists. `unverified`: the route never reached
+ * the readiness marker or the lookup failed, so nothing is known about the pattern in this slot. */
+type SlotStatus = 'absent' | 'unverified'
 type Measured = {
   count: number
   metrics: Record<string, number | string>
   crop: string | null
+  status?: SlotStatus
 }
 
 async function visibleIndex(loc: Locator, pick: number): Promise<{ count: number; index: number }> {
@@ -724,6 +754,27 @@ async function visibleIndex(loc: Locator, pick: number): Promise<{ count: number
   return { count: visible.length, index: visible[pick] ?? -1 }
 }
 
+async function measurePattern(
+  page: Page,
+  def: PatternDef,
+  vp: Viewport,
+  scheme: Scheme,
+  dir: string,
+): Promise<Measured> {
+  if (vp.mobile && def.mobileOpen) {
+    await page.locator(def.mobileOpen).click()
+    await pause(400)
+  }
+  const loc = page.locator(def.selector)
+  const { count, index } = await visibleIndex(loc, def.pick ?? 0)
+  if (index < 0) return { count, metrics: {}, crop: null, status: 'absent' }
+  const target = loc.nth(index)
+  const metrics = await target.evaluate(measureInPage, def.rowLike ?? false)
+  const file = `${def.id}--${scheme}--${vp.name}.png`
+  await target.screenshot({ path: join(dir, file), animations: 'disabled', caret: 'hide' })
+  return { count, metrics, crop: `patterns/${file}` }
+}
+
 async function runPatterns(
   open: (v: Viewport, s: Scheme) => Promise<Page>,
 ): Promise<Map<string, Record<string, Measured>>> {
@@ -733,41 +784,47 @@ async function runPatterns(
   const routes = [...new Set(PATTERNS.map((p) => p.route))]
   for (const scheme of SCHEMES) {
     for (const vp of VIEWPORTS) {
+      const key = `${scheme}-${vp.name}`
       const page = await open(vp, scheme)
-      for (const path of routes) {
-        await settle(page, { path, slug: path })
-        for (const def of PATTERNS.filter((p) => p.route === path)) {
-          if (vp.mobile && def.mobileOpen) {
-            await page.locator(def.mobileOpen).click()
-            await pause(400)
+      try {
+        for (const path of routes) {
+          const defs = PATTERNS.filter((p) => p.route === path)
+          let ready = false
+          try {
+            ready = await settle(page, { path, slug: path })
+          } catch (error) {
+            failures.push(
+              `patterns ${path} ${key}: ${error instanceof Error ? error.message : error}`,
+            )
           }
-          const loc = page.locator(def.selector)
-          const { count, index } = await visibleIndex(loc, def.pick ?? 0)
-          const key = `${scheme}-${vp.name}`
-          const slot = results.get(def.id) ?? {}
-          results.set(def.id, slot)
-          if (index < 0) {
-            slot[key] = { count, metrics: {}, crop: null }
-            console.log(`patterns ${def.id} ${key}: not present`)
-          } else {
-            const target = loc.nth(index)
-            const metrics = await target.evaluate(measureInPage, def.rowLike ?? false)
-            const file = `${def.id}--${scheme}--${vp.name}.png`
-            await target.screenshot({
-              path: join(dir, file),
-              animations: 'disabled',
-              caret: 'hide',
-            })
-            slot[key] = { count, metrics, crop: `patterns/${file}` }
-            console.log(`patterns ${def.id} ${key}: ${count} visible`)
-          }
-          if (vp.mobile && def.mobileOpen) {
-            await page.keyboard.press('Escape')
-            await settle(page, { path, slug: path })
+          for (const def of defs) {
+            const slot = results.get(def.id) ?? {}
+            results.set(def.id, slot)
+            if (!ready) {
+              slot[key] = { count: 0, metrics: {}, crop: null, status: 'unverified' }
+              failures.push(`patterns ${def.id} ${key}: route did not render`)
+              continue
+            }
+            try {
+              slot[key] = await measurePattern(page, def, vp, scheme, dir)
+            } catch (error) {
+              slot[key] = { count: 0, metrics: {}, crop: null, status: 'unverified' }
+              failures.push(
+                `patterns ${def.id} ${key}: ${error instanceof Error ? error.message : error}`,
+              )
+            }
+            console.log(
+              `patterns ${def.id} ${key}: ${slot[key].status ?? `${slot[key].count} visible`}`,
+            )
+            if (vp.mobile && def.mobileOpen) {
+              await page.keyboard.press('Escape')
+              await settle(page, { path, slug: path })
+            }
           }
         }
+      } finally {
+        await page.context().close()
       }
-      await page.context().close()
     }
   }
   return results
@@ -793,12 +850,20 @@ async function writeInventory(results: Map<string, Record<string, Measured>>): P
     const lightRoles = ['desktop', 'mobile']
       .map((v) => slot[`light-${v}`]?.metrics['backgroundRole'])
       .filter(Boolean)
-    const missing = VIEWPORTS.filter((v) => !slot[`dark-${v.name}`]?.crop).map((v) => v.name)
+    const slotStatus: Record<string, SlotStatus> = {}
+    for (const [key, m] of Object.entries(slot)) if (m.status) slotStatus[key] = m.status
+    const absent = VIEWPORTS.filter((v) => slotStatus[`dark-${v.name}`] === 'absent').map(
+      (v) => v.name,
+    )
+    const unverified = Object.entries(slotStatus)
+      .filter(([, st]) => st === 'unverified')
+      .map(([key]) => key)
     const notes = [
       def.notes,
-      missing.length > 0
-        ? `Not present on ${missing.join(' and ')} (collapsed or restructured at that width).`
+      absent.length > 0
+        ? `Not present on ${absent.join(' and ')} (collapsed or restructured at that width).`
         : '',
+      unverified.length > 0 ? `Unverified slots: ${unverified.join(', ')}.` : '',
       geometryDrift.length > 0
         ? `Light scheme geometry differs: ${geometryDrift.join('; ')}.`
         : 'Light scheme changes colour only; geometry is identical.',
@@ -818,6 +883,7 @@ async function writeInventory(results: Map<string, Record<string, Measured>>): P
         mobile: slot['dark-mobile']?.metrics ?? {},
       },
       notes,
+      ...(Object.keys(slotStatus).length > 0 ? { slotStatus } : {}),
     }
   })
   const inventory = { capturedAt: new Date().toISOString(), origin: ORIGIN, patterns }
@@ -827,6 +893,19 @@ async function writeInventory(results: Map<string, Record<string, Measured>>): P
 // ── Stage 3: scales survey ────────────────────────────────────────────────────────────────────
 
 type Counts = Record<string, number>
+type ChartSample = {
+  width: number
+  height: number
+  paths: number
+  lines: number
+  rects: number
+  circles: number
+  textNodes: number
+  dashed: boolean
+  maxStroke: number
+  minStroke: number
+  insideCard: boolean
+}
 type Survey = {
   type: Counts
   padding: Counts
@@ -835,7 +914,7 @@ type Survey = {
   border: Counts
   ring: Counts
   shadow: Counts
-  charts: Array<Record<string, number | boolean>>
+  charts: ChartSample[]
   density: Record<string, number | number[]>
 }
 
@@ -968,14 +1047,33 @@ async function surveyScales(open: (v: Viewport, s: Scheme) => Promise<Page>): Pr
       density: {},
     }
     const perRoute: Record<string, { charts: number; density: Survey['density'] }> = {}
-    for (const route of ROUTES) {
-      await settle(page, route)
-      const s = await page.evaluate(surveyInPage)
-      for (const key of ['type', 'padding', 'gap', 'radius', 'border', 'ring', 'shadow'] as const)
-        merge(total[key], s[key])
-      total.charts.push(...s.charts.map((c) => ({ ...c, route: route.slug as unknown as number })))
-      perRoute[route.slug] = { charts: s.charts.length, density: s.density }
-      console.log(`scales ${route.slug} ${vp.name}`)
+    const routeCharts: Array<ChartSample & { route: string }> = []
+    try {
+      for (const route of ROUTES) {
+        try {
+          if (!(await settle(page, route))) throw new Error('route did not render')
+          const s = await page.evaluate(surveyInPage)
+          for (const key of [
+            'type',
+            'padding',
+            'gap',
+            'radius',
+            'border',
+            'ring',
+            'shadow',
+          ] as const)
+            merge(total[key], s[key])
+          routeCharts.push(...s.charts.map((c) => ({ ...c, route: route.slug })))
+          perRoute[route.slug] = { charts: s.charts.length, density: s.density }
+          console.log(`scales ${route.slug} ${vp.name}`)
+        } catch (error) {
+          failures.push(
+            `scales ${route.slug} ${vp.name}: ${error instanceof Error ? error.message : error}`,
+          )
+        }
+      }
+    } finally {
+      await page.context().close()
     }
     result[vp.name] = {
       viewport: `${vp.width}x${vp.height}`,
@@ -986,10 +1084,9 @@ async function surveyScales(open: (v: Viewport, s: Scheme) => Promise<Page>): Pr
       border: sorted(total.border),
       ring: sorted(total.ring),
       shadow: sorted(total.shadow),
-      charts: total.charts,
+      charts: routeCharts,
       perRoute,
     }
-    await page.context().close()
   }
   await writeFile(
     join(OUT, 'scales.json'),
@@ -1000,8 +1097,13 @@ async function surveyScales(open: (v: Viewport, s: Scheme) => Promise<Page>): Pr
 
 // ── Main ──────────────────────────────────────────────────────────────────────────────────────
 
+const STAGES = ['routes', 'patterns', 'scales', 'all'] as const
 const { values } = parseArgs({ options: { stage: { type: 'string', default: 'all' } } })
 const stage = values.stage ?? 'all'
+if (!(STAGES as readonly string[]).includes(stage)) {
+  console.error(`unknown --stage "${stage}"; valid stages: ${STAGES.join(', ')}`)
+  process.exit(1)
+}
 
 const chrome = await chromium.launchServer({
   channel: 'chrome',
@@ -1027,5 +1129,7 @@ try {
 } finally {
   chrome.kill()
 }
-
-export { routeSlug }
+if (failures.length > 0) {
+  console.error(`${failures.length} failure(s):\n${failures.map((f) => `  ${f}`).join('\n')}`)
+  process.exitCode = 1
+}
