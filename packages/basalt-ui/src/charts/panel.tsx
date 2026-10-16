@@ -6,7 +6,6 @@
  * `state`, cursor binding, tooltip surface, guides — is the rung's or lives here once.
  */
 import { crosshair } from '@tanstack/charts/crosshair'
-import { tooltip as tooltipHost } from '@tanstack/charts/tooltip'
 import { portal } from '@tanstack/charts/tooltip/portal'
 import type {
   ChartBuildContext,
@@ -23,7 +22,7 @@ import { ChartShell } from './CartesianChart'
 import type { ChartShellProps, ShellContext } from './CartesianChart'
 import { defaultFormatX, engineRow, utcHeaderDate, visibleSeries, xGuide, yGuide } from './compile'
 import type { CartesianDefinition } from './compile'
-import { cursorBinding, sourceOnlyFocus } from './cursor'
+import { cursorBinding, quietWhileFollowing } from './cursor'
 import { plotAccess } from './plot-context'
 import type { PlotAccess } from './plot-context'
 import type { XScaleModel } from './scales'
@@ -210,7 +209,7 @@ function panelDefinition<T, X extends ChartX>(
   }
   const definition: CartesianDefinition = {
     chart: () => composed,
-    focus: tooltip?.onFollow ? 'group-x' : sourceOnlyFocus(cursorGroup, chartId),
+    focus: 'group-x',
     maxFocusDistance: Number.POSITIVE_INFINITY,
     cursor: cursorBinding({
       group: cursorGroup,
@@ -223,7 +222,8 @@ function panelDefinition<T, X extends ChartX>(
       props.tooltip === false
         ? false
         : {
-            use: tooltipHost,
+            use: quietWhileFollowing,
+            ...(!tooltip?.onFollow && { follower: { group: cursorGroup, chartId } }),
             portal,
             anchor: 'group-center',
             content: (points: readonly ChartPoint[]) => {

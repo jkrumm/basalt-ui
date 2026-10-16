@@ -15,12 +15,9 @@
  */
 import { createChartCursor, cursorHost } from '@tanstack/charts/cursor'
 import type { ChartCursorController } from '@tanstack/charts/cursor'
-import { resolveChartFocusStrategy } from '@tanstack/charts/cursor/host'
-import type {
-  ChartCursorBinding,
-  ChartFocusStrategy,
-  ChartValue,
-} from '@tanstack/charts/types/core'
+import { tooltip } from '@tanstack/charts/tooltip'
+import type { ChartTooltipExtension } from '@tanstack/charts/tooltip'
+import type { ChartCursorBinding, ChartValue } from '@tanstack/charts/types/core'
 import type { ChartX, CursorResolution } from './types'
 
 type CursorState = ReturnType<ChartCursorController['getState']>
@@ -243,21 +240,34 @@ export function chartCursorView(
   return view.controller
 }
 
+/** Which chart a quiet tooltip belongs to: `isForeign(group, chartId)` decides when it stays silent. */
+export type FollowerRef = { readonly group: string | undefined; readonly chartId: string }
+
 /**
- * Source-only tooltips. A 1.1.0 host shows a tooltip (and its `role="status"` live region) exactly
- * when it resolves a focus point, and it resolves a shared cursor's point through the definition's
- * focus strategy. Wrapping `group-x` so it groups nothing while a FOREIGN state is current leaves a
- * follower with the crosshair (painted from the cursor presentation, not from focus) and nothing
- * else.
+ * Source-only tooltips. A follower resolves the same focus group as the leader (`group-x`), so the
+ * engine draws the same dots on its lines at the shared x. Its tooltip is silenced here instead:
+ * the host shows (and fills its `role="status"` live region) exactly when it paints, so while a
+ * FOREIGN state is current this wrapper hides it and never creates the element. The chart's
+ * `follower` option (set per compile on the tooltip options, so this token keeps one identity)
+ * names the cursor group; unset, or after `tooltip.onFollow`, the host is untouched.
  */
-export function sourceOnlyFocus(group: string | undefined, chartId: string): ChartFocusStrategy {
-  const base = resolveChartFocusStrategy<unknown, ChartValue, ChartValue>('group-x')
-  if (!base) throw new Error('[basalt] charts: the group-x focus strategy is missing')
-  return {
-    resolve: (points, context) => base.resolve(points, context),
-    navigation: (points) => base.navigation(points),
-    group: (points, context) => (isForeign(group, chartId) ? [] : base.group(points, context)),
-  }
+export const quietWhileFollowing: ChartTooltipExtension = {
+  ...tooltip,
+  create: (context) => {
+    const host = tooltip.create(context)
+    let follower: FollowerRef | undefined
+    return {
+      ...host,
+      update: (options) => {
+        follower = (options as { follower?: FollowerRef }).follower
+        host.update(options)
+      },
+      paint: (paint) => {
+        if (follower && isForeign(follower.group, follower.chartId)) host.hide()
+        else host.paint(paint)
+      },
+    }
+  },
 }
 
 export function cursorBinding(opts: {

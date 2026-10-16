@@ -245,6 +245,50 @@ describe('shared cursor', () => {
     expect(document.querySelectorAll('[aria-live]').length).toBe(1)
   })
 
+  test('a follower draws the same cursor dots as the leader, and still no tooltip', async () => {
+    const el = await hoverAOverB()
+    const dots = (id: string): number =>
+      el.querySelectorAll(`#${id} [data-ts-key^="default-focus"] circle`).length
+    expect(dots('A')).toBe(1)
+    expect(dots('B')).toBe(dots('A'))
+    expect(tooltips().length).toBe(1)
+  })
+
+  test('a follower draws its cursorValue dot at the shared x, in the getMarker colour', async () => {
+    const el = document.createElement('div')
+    document.body.append(el)
+    root = createRoot(el)
+    const track: ChartSeries<Row> = {
+      ...b,
+      key: 'track',
+      getValue: () => null,
+      cursorValue: (d) => d.v,
+      getMarker: () => ({ color: 'var(--vx-fill-red)' }),
+    }
+    await act(async () => {
+      root?.render(
+        <>
+          <div id="A">
+            <Lines data={rows(30)} x={x} series={[load]} ariaLabel="A" legend={false} />
+          </div>
+          <div id="B">
+            <Lines data={rows(10)} x={x} series={[track]} ariaLabel="B" legend={false} />
+          </div>
+        </>,
+      )
+    })
+    await act(async () => {
+      el.querySelector('#A svg')?.dispatchEvent(
+        new PointerEvent('pointermove', { clientX: 300, clientY: 100, bubbles: true }),
+      )
+      await new Promise((r) => setTimeout(r, 30))
+    })
+    const shown = [...el.querySelectorAll('#B g[data-ts-key="track-cursor"] circle')].filter(
+      (c) => c.getAttribute('fill-opacity') === '1',
+    )
+    expect(shown.map((c) => c.getAttribute('fill'))).toEqual(['var(--vx-fill-red)'])
+  })
+
   test('a re-render (new series identity) keeps the live cursor state', async () => {
     const el = await hoverAOverB()
     expect(chartCursor().getState()).not.toBeNull()

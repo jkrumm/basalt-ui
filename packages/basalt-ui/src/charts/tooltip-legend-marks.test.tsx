@@ -430,7 +430,7 @@ describe('band edge rules', () => {
 })
 
 describe('cursor dot per-datum colour (getMarker on a cursorValue series)', () => {
-  const RED = 'var(--vx-fill-red)'
+  const colorOf = (d: Row): { color: string } => ({ color: `var(--c${d.n})` })
   const tracked = (marker: ChartSeries<Row>['getMarker']): ChartSeries<Row> => ({
     key: 'track',
     label: 'Track',
@@ -439,53 +439,52 @@ describe('cursor dot per-datum colour (getMarker on a cursorValue series)', () =
     cursorValue: (d) => d.track,
     ...(marker && { getMarker: marker }),
   })
-  const render = (series: ChartSeries<Row>, rows: Row[] = data) =>
-    ssr(<CartesianChart ariaLabel="C" data={rows} x={x} series={[a, series]} marks={() => []} />)
+  const chart = (series: ChartSeries<Row>, rows: Row[] = data) => (
+    <CartesianChart ariaLabel="C" data={rows} x={x} series={[a, series]} marks={() => []} />
+  )
   const marksOf = (el: Element): Element[] => [
     ...el.querySelectorAll('g[data-ts-key^="track-cursor"]'),
   ]
-  const fills = (el: Element): string[] =>
-    [...el.querySelectorAll('g[data-ts-key^="track-cursor"] circle')].map(
-      (c) => c.getAttribute('fill') ?? '',
-    )
+  const hover = async (el: HTMLElement): Promise<void> => {
+    await act(async () => {
+      el.querySelector('svg')?.dispatchEvent(
+        new PointerEvent('pointermove', { clientX: 300, clientY: 100, bubbles: true }),
+      )
+      await new Promise((r) => setTimeout(r, 30))
+    })
+  }
+  const shown = (el: Element): string[] =>
+    [...el.querySelectorAll('g[data-ts-key="track-cursor"] circle')]
+      .filter((c) => c.getAttribute('fill-opacity') === '1')
+      .map((c) => c.getAttribute('fill') ?? '')
 
-  test('a datum with a marker colour gets its own cursor dot; the rest keep the series colour', () => {
-    const all = fills(render(tracked((d) => (d.n === 4 ? { color: RED } : null))))
-    expect(all.filter((f) => f === RED).length).toBe(1)
-    expect(all.filter((f) => f === 'var(--vx-accent)').length).toBe(2)
-  })
-
-  test('marks are keyed by colour: the series colour keeps `<key>-cursor`, others the colour slug', () => {
-    const keys = marksOf(render(tracked((d) => (d.n === 4 ? { color: RED } : null)))).map((g) =>
-      g.getAttribute('data-ts-key'),
-    )
-    expect(keys).toEqual(['track-cursor', 'track-cursor-var_--vx-fill-red_'])
-  })
-
-  test('a getMarker that returns null for every datum is the old single dot mark', () => {
-    const el = render(tracked(() => null))
-    expect(marksOf(el).length).toBe(1)
-    expect(keyed(el, 'track-cursor').length).toBe(1)
-    expect(fills(el).every((f) => f === 'var(--vx-accent)')).toBe(true)
-  })
-
-  test('one mark per distinct colour, however many datums share it', () => {
-    const colors = ['var(--a)', 'var(--b)', 'var(--c)', 'var(--d)', 'var(--e)']
+  test('however many colours a series has, its cursor dots are ONE mark', () => {
     const many: Row[] = Array.from({ length: 40 }, (_, i) => ({
       t: day(1 + i),
       a: i,
       track: i,
       n: i,
     }))
-    const el = render(
-      tracked((d) => ({ color: colors[d.n % colors.length] as string })),
-      many,
-    )
-    // five colours, none of them the series colour: the series-colour mark stays (empty)
-    expect(marksOf(el).length).toBe(colors.length + 1)
+    const el = ssr(chart(tracked(colorOf), many))
+    expect(marksOf(el).map((g) => g.getAttribute('data-ts-key'))).toEqual(['track-cursor'])
+    expect(el.querySelectorAll('g[data-ts-key="track-cursor"] circle').length).toBe(40)
   })
 
-  test('5,000 rows of one colour group in linear time into one mark', () => {
+  test('the focused dot takes the datum colour from getMarker, not the series colour', async () => {
+    const el = await mount(chart(tracked(colorOf)))
+    await hover(el)
+    const fills = shown(el)
+    expect(fills.length).toBe(1)
+    expect(fills[0]).toMatch(/^var\(--c[1-4]\)$/)
+  })
+
+  test('a datum getMarker returns null for keeps the series colour', async () => {
+    const el = await mount(chart(tracked(() => null)))
+    await hover(el)
+    expect(shown(el)).toEqual(['var(--vx-accent)'])
+  })
+
+  test('5,000 rows stay in linear time in one mark', () => {
     const big: Row[] = Array.from({ length: 5000 }, (_, i) => ({
       t: new Date(Date.UTC(2020, 0, 1) + i * 3_600_000),
       a: i,
@@ -493,12 +492,30 @@ describe('cursor dot per-datum colour (getMarker on a cursorValue series)', () =
       n: i,
     }))
     const start = performance.now()
-    const el = render(
-      tracked(() => ({ color: RED })),
-      big,
-    )
+    const el = ssr(chart(tracked(colorOf), big))
     const ms = performance.now() - start
-    expect(marksOf(el).filter((g) => g.querySelectorAll('circle').length > 0).length).toBe(1)
+    expect(marksOf(el).length).toBe(1)
     expect(ms).toBeLessThan(3000)
+  })
+})
+
+describe('legend swatch follows the series mark at every size class', () => {
+  const dashed: ChartSeries<Row> = { ...a, key: 'd', label: 'Dashed', dash: 'dashed' }
+  const legendOf = (series: ChartSeries<Row>[]): HTMLElement =>
+    ssr(<Lines ariaLabel="L" data={data} x={x} series={series} />)
+
+  test('a dashed line keeps one dashed line swatch, with no dot variant to swap in below 480px', () => {
+    const el = legendOf([a, dashed])
+    const entry = el.querySelector('[data-legend-key="d"]')
+    expect(entry?.querySelectorAll('svg line[stroke-dasharray]').length).toBe(1)
+    expect(entry?.querySelectorAll('svg').length).toBe(1)
+    expect(entry?.querySelectorAll('span[aria-hidden]').length).toBe(0)
+  })
+
+  test('a bar series still swaps between the dot and the chip', () => {
+    const el = legendOf([{ ...a, key: 'b', label: 'Bar', mark: 'bar' }])
+    const entry = el.querySelector('[data-legend-key="b"]')
+    expect(entry?.querySelectorAll('svg').length).toBe(0)
+    expect(entry?.querySelectorAll('span[aria-hidden]').length).toBe(2)
   })
 })
