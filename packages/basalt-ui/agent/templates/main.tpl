@@ -10,6 +10,7 @@ import { createRoot } from 'react-dom/client'
 import { BasaltProvider, createBasaltRouter } from 'basalt-ui'
 import { routeTree } from './routeTree.gen'
 
+// Telemetry: `<BasaltProvider telemetry={sink} />`; the `BasaltEvent` JSDoc has the OTel span mapping.
 const router = createBasaltRouter({ routeTree })
 
 declare module '@tanstack/react-router' {

@@ -59,7 +59,12 @@ export type BasaltEvent =
   | Ok<'route.navigate', RouteAttrs>
   | Err<'route.error', { 'basalt.route.id': string }>
   | Err<'query.error', { 'basalt.query.hash': string; 'basalt.query.failure_count': number }>
-  | Err<'mutation.error', { 'basalt.mutation.key': string }>
+  | Err<
+      'mutation.error',
+      {
+        /** `hashOf(JSON.stringify(key))` — keys embed ids and slugs. */ 'basalt.mutation.key': string
+      }
+    >
   | Err<'render.error', { 'basalt.error.boundary': 'root' }>
   | Err<'window.error', { 'basalt.error.source': 'error' | 'unhandledrejection' }>
   | Ok<'chat.turn', ChatAttrs>
@@ -128,6 +133,22 @@ export type Telemetry = ((event: BasaltEvent) => void) & {
 
 export const now = (): number => performance.timeOrigin + performance.now()
 
+/** djb2 in hex: an id for a value that must not leave the app (a mutation key embeds slugs). */
+export function hashOf(value: string): string {
+  let h = 5381
+  for (let i = 0; i < value.length; i++) h = (h * 33) ^ value.charCodeAt(i)
+  return (h >>> 0).toString(16)
+}
+
+/**
+ * The sink an unset `telemetry` gets outside production: query and mutation failures, which nothing
+ * else surfaces (route, render and window errors already log themselves). Ids and error names only.
+ */
+export const devConsoleSink: Telemetry = (event) => {
+  if (event.type === 'query.error' || event.type === 'mutation.error')
+    console.error(`[basalt] ${event.type}`, event.attributes)
+}
+
 /** `error.name`, `'Error'` for a non-`Error` throw. */
 export const errorName = (error: unknown): string => (error instanceof Error ? error.name : 'Error')
 
@@ -155,24 +176,23 @@ export function createLiveEmitter(read: () => Telemetry | undefined): Telemetry 
   })
 }
 
-function noop(): void {}
-
 /**
  * The provider's wrapped emitter, for hooks that emit their own events (`useAgentThreadRuns`'
  * `chat.turn`). `undefined` outside a `BasaltProvider`, where such a hook emits nothing.
  */
 export const TelemetryContext = createContext<Telemetry | undefined>(undefined)
 
-/** The event sink of the provider mounted on a router, read by `createBasaltRouter`'s `onCatch`. */
-const routerSinks = new WeakMap<object, Telemetry>()
+/** On `context.__basalt` of a `basaltRouterOptions` router: where its `defaultOnCatch` reports to. */
+export type RouterHook = { onRouteError?: ((error: unknown) => void) | undefined }
 
-export function bindRouterTelemetry(router: object, emit: Telemetry): () => void {
-  routerSinks.set(router, emit)
+/** Points the router's `route.error` hook at `handler` (the provider's emitter); returns the unbind. */
+export function bindRouteError(
+  router: { options: { context?: unknown } },
+  handler: (error: unknown) => void,
+): () => void {
+  const hook = (router.options.context as { __basalt?: RouterHook } | undefined)?.__basalt
+  if (hook) hook.onRouteError = handler
   return () => {
-    if (routerSinks.get(router) === emit) routerSinks.delete(router)
+    if (hook?.onRouteError === handler) hook.onRouteError = undefined
   }
-}
-
-export function routerTelemetry(router: object): Telemetry {
-  return routerSinks.get(router) ?? noop
 }

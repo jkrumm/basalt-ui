@@ -1,10 +1,8 @@
-import { afterEach, describe, expect, spyOn, test } from 'bun:test'
+import { afterEach, describe, expect, test } from 'bun:test'
 import { createRootRoute } from '@tanstack/react-router'
 import { createBasaltRouter } from './create-router'
 import { routeViewTransition, supportsViewTransitionTypes } from './route-transition'
 import { queryClientOf } from './test-router'
-import { bindRouterTelemetry } from '../telemetry'
-import type { BasaltEvent } from '../telemetry'
 
 const routeTree = createRootRoute()
 
@@ -27,7 +25,7 @@ describe('createBasaltRouter defaults (V2-SPEC § 2)', () => {
     expect(client.getDefaultOptions().queries).toEqual({
       staleTime: 30_000,
       gcTime: 5 * 60 * 1000,
-      retry: 2,
+      retry: expect.any(Function),
       refetchOnWindowFocus: false,
     })
   })
@@ -50,23 +48,6 @@ describe('createBasaltRouter defaults (V2-SPEC § 2)', () => {
   test('one QueryClient per call', () => {
     const other = createBasaltRouter({ routeTree })
     expect(queryClientOf(other)).not.toBe(queryClientOf(router))
-  })
-
-  test('defaultOnCatch emits route.error with the error name and no message once a provider is bound', () => {
-    const quiet = spyOn(console, 'error').mockImplementation(() => {})
-    const events: BasaltEvent[] = []
-    const unbind = bindRouterTelemetry(router, (e) => events.push(e))
-    router.options.defaultOnCatch?.(new TypeError('private detail'), {} as never)
-    unbind()
-    router.options.defaultOnCatch?.(new TypeError('after unbind'), {} as never)
-    quiet.mockRestore()
-    expect(events).toHaveLength(1)
-    expect(events[0]).toMatchObject({
-      type: 'route.error',
-      failed: true,
-      attributes: { 'exception.type': 'TypeError', 'basalt.error.kind': 'route' },
-    })
-    expect(JSON.stringify(events[0])).not.toContain('private detail')
   })
 })
 

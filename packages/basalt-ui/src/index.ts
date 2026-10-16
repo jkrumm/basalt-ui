@@ -6,8 +6,9 @@
  * `docs/waves/v2-surface.md`.
  */
 
-export { BasaltProvider } from './provider'
+export { BasaltProvider, type BasaltProviderProps } from './provider'
 export {
+  basaltRouterOptions,
   createBasaltRouter,
   type BasaltRouter,
   type BasaltRouterContext,
@@ -47,7 +48,7 @@ export {
   SettingsRow,
   DangerZone,
 } from './dashboard'
-export { unwrap } from './query-client'
+export { unwrap } from './unwrap'
 
 // The one augmentable seam: `declare module 'basalt-ui' { interface BasaltRegister { … } }` only
 // merges when the entry exports the interface. `v2-surface.md` marks it `delete` (no consumer

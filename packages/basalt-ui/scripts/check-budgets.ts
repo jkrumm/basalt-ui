@@ -48,8 +48,8 @@ const TARGETS = {
 const CEILINGS = {
   ...TARGETS,
   chartSymbols: 14, // landed (W5): the rung, nine kinds, `ChartCard`, `chartCursor`, `chartCurve` (argo friction row 27); +`foldBands` (linewatch band/throughput strip tests, ledger row 80)
-  nonChartSymbols: 94, // 2.6: `externalField` (argo timer-card.tsx, row 39); was 93 for `toAgentError` (row 18)
-  barrelTypes: 56, // 2.7.1: `DataTableRowAction` joined (argo module-level `rowActions`, friction row 53); 2.7: `InputProps` joined (`inputProps` return type, argo friction rows 49/51; consumer argo form code); 2.5: `Telemetry`/`ChatTurnTrace`/`ChatTurnEnd`/`TraceHeaders` + `AgentStreamContext` joined (argo lib/telemetry.ts + hermes-transport.ts, friction row 37); 2.2: `StatCardSparklineSize` joined (argo hero-stats.tsx, friction row 22); W9: `StreamStatus` left, `AgentTransport`/`ResumableAgentTransport` joined
+  nonChartSymbols: 95, // 2.13: `basaltRouterOptions` (weatherorb `getRouter()`, maturation-v2 provider-01); 2.6: `externalField` (argo timer-card.tsx, row 39); was 93 for `toAgentError` (row 18)
+  barrelTypes: 57, // 2.13: `BasaltProviderProps` joined (weatherorb wrapper props, provider-16); 2.7.1: `DataTableRowAction` joined (argo module-level `rowActions`, friction row 53); 2.7: `InputProps` joined (`inputProps` return type, argo friction rows 49/51; consumer argo form code); 2.5: `Telemetry`/`ChatTurnTrace`/`ChatTurnEnd`/`TraceHeaders` + `AgentStreamContext` joined (argo lib/telemetry.ts + hermes-transport.ts, friction row 37); 2.2: `StatCardSparklineSize` joined (argo hero-stats.tsx, friction row 22); W9: `StreamStatus` left, `AgentTransport`/`ResumableAgentTransport` joined
   ruleLines: 277, // landed (W9): the shipped rules, 450 is the spec target
 } as const
 
@@ -348,7 +348,9 @@ const PROVIDER_ONLY_LABEL = 'provider-only first paint (gzip B, dist)'
 // ~1% over local clears CI's measured +34 B with room.
 // 20340 → 19940: the 32 camelCase `--vx-*` aliases leave the injected CSS (19744 locally, was 20136).
 // 19940 → 19000: Spotlight and modals leave the entry (provider slots): 18810 locally, was 19755.
-const PROVIDER_ONLY_CEILING = 19000
+// 19000 → 19200: the provider owns the `route.error` emit now (it was in `createBasaltRouter`, outside
+// this entry) plus the mutation-key hash: 19034 locally, was 18923.
+const PROVIDER_ONLY_CEILING = 19200
 // Embedded provider, `spotlight={false}`, no defines, peers bundled, every chunk counted (a bundle-graph
 // bar follows `import()`). Before the provider slots (2.11.1): 190544 B, with the dynamic hotkeys chunk
 // (~14967 B) plus Spotlight and modals in the entry; after: 166834 B, zero feature chunks. ~1% over

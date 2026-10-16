@@ -1,11 +1,12 @@
 /**
  * `unwrap` — its runtime branches (a `Promise` of the envelope, or the already-resolved envelope
- * itself, one generic signature since 1.29.1 — see `query-client.type-guard.test.ts` for the
+ * itself, one generic signature since 1.29.1 — see `unwrap.type-guard.test.ts` for the
  * compile-time proof) and the null/undefined absence guard (C5 consolidation: `undefined` joined
  * `null`). `makeQueryClient` is covered in `provider/create-router.test.ts`.
  */
 import { describe, expect, test } from 'bun:test'
-import { unwrap } from './query-client'
+import { makeQueryClient } from './query-client'
+import { unwrap } from './unwrap'
 
 describe('unwrap — Promise-of-envelope overload', () => {
   test('resolves data through a Promise envelope', async () => {
@@ -68,5 +69,43 @@ describe('unwrap — Eden Treaty union envelope', () => {
 
   test('throws the error member', () => {
     expect(() => unwrap({ data: null, error: { status: 500 } })).toThrow()
+  })
+})
+
+describe('unwrap — guards', () => {
+  test('a non-native thenable is awaited, not treated as an envelope', async () => {
+    // oxlint-disable-next-line unicorn/no-thenable -- a non-native thenable is the case under test
+    const thenable = { then: (resolve: (v: unknown) => void) => resolve({ data: 7, error: null }) }
+    expect((await unwrap(thenable as never)) as unknown).toBe(7)
+  })
+
+  test('a falsy-but-present error still throws', () => {
+    expect(() => unwrap({ data: 'ok', error: 0 })).toThrow()
+    expect(() => unwrap({ data: 'ok', error: '' })).toThrow()
+  })
+})
+
+describe('makeQueryClient — retry default', () => {
+  const retry = makeQueryClient().getDefaultOptions().queries?.retry as (
+    failureCount: number,
+    error: unknown,
+  ) => boolean
+
+  test('retries twice, then stops', () => {
+    expect([retry(0, new Error('x')), retry(1, new Error('x')), retry(2, new Error('x'))]).toEqual([
+      true,
+      true,
+      false,
+    ])
+  })
+
+  test('never retries a 4xx', () => {
+    expect(retry(0, { status: 401 })).toBe(false)
+    expect(retry(0, { status: 404 })).toBe(false)
+  })
+
+  test('retries a 5xx and an error without a status', () => {
+    expect(retry(0, { status: 503 })).toBe(true)
+    expect(retry(0, 'weird')).toBe(true)
   })
 })
