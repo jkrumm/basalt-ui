@@ -58,9 +58,9 @@ evidence: ## Measure bundle/screens/lighthouse/...: make evidence LABEL=<label> 
 	@test -n "$(LABEL)" || { echo "usage: make evidence LABEL=<label> [DIST=<dir>] [ROUTES=<file>] [LANES=a,b]"; exit 2; }
 	@bun scripts/evidence/index.ts --label "$(LABEL)" $(if $(DIST),--dist "$(DIST)") $(if $(ROUTES),--routes "$(ROUTES)") $(if $(LANES),--lanes "$(LANES)")
 
-# Design-parity board (scripts/evidence/compare.ts): crops each mapped playground pattern beside the committed
-# Keel reference (docs/waves/design-parity/keel/) into .evidence/compare/<LABEL>/ unless OUT is given (committed
-# boards go under docs/waves/design-parity/w<n>/). Builds the playground unless DIST is given.
+# Design-parity board (scripts/evidence/compare.ts): crops each mapped playground pattern beside the local
+# Keel reference (.design-parity/keel/) into .design-parity/<LABEL>/ unless OUT is given. Images and board.html
+# never enter git; compare.json lands in docs/waves/design-parity/<LABEL>/. Builds the playground unless DIST is given.
 compare: ## Side-by-side design-parity board: make compare LABEL=<label> [OUT=<dir>] [DIST=<dir>] [PATTERNS=a,b]
 	@test -n "$(LABEL)" || { echo "usage: make compare LABEL=<label> [OUT=<dir>] [DIST=<dir>] [PATTERNS=a,b]"; exit 2; }
 	@bun scripts/evidence/compare.ts --label "$(LABEL)" $(if $(OUT),--out "$(OUT)") $(if $(DIST),--dist "$(DIST)") $(if $(PATTERNS),--patterns "$(PATTERNS)")

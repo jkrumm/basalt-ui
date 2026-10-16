@@ -2,12 +2,13 @@
 /**
  * `make compare` — side-by-side design-parity board. Builds (or takes) a playground dist, serves it,
  * crops each mapped pattern per scheme × viewport, measures its structure, and writes
- * `board.html` + `board-<viewport>.png` + `compare.json` next to the crops.
+ * `board.html` + `board-<viewport>.png` next to the crops under `.design-parity/<label>/`, and
+ * `compare.json` under `docs/waves/design-parity/<label>/`.
  *
  *   bun scripts/evidence/compare.ts --label <label> [--out <dir>] [--dist <dir>] [--patterns a,b]
  *
- * Keel is read only through the committed `docs/waves/design-parity/keel/` crops and
- * `inventory.json`; this script never fetches it. Structural metrics only — no pixel diff.
+ * Keel is read only through the local `.design-parity/keel/` crops and the committed
+ * `docs/waves/design-parity/keel/inventory.json`; this script never fetches it. Structural metrics only — no pixel diff.
  */
 import { existsSync } from 'node:fs'
 import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises'
@@ -43,6 +44,9 @@ import { serveDist } from './serve'
 const ROOT = resolve(import.meta.dirname, '../..')
 const KEEL_DIR = join(ROOT, 'docs/waves/design-parity/keel')
 const PARITY_DIR = join(ROOT, 'docs/waves/design-parity')
+/** Images and `board.html` live here, gitignored; only `compare.json` is committed under PARITY_DIR. */
+const IMG_ROOT = join(ROOT, '.design-parity')
+const IMG_KEEL = join(IMG_ROOT, 'keel')
 const BUILD_TIMEOUT_MS = 300_000
 const RUN_TIMEOUT_MS = 10 * 60_000
 const BOARD_TIMEOUT_MS = 2 * 60_000
@@ -400,22 +404,22 @@ async function readInventory(): Promise<string | null> {
 async function keelCropsFor(
   keel: InventoryPattern | undefined,
   outDir: string,
-  inParity: boolean,
+  inImages: boolean,
 ): Promise<Partial<Record<PairKey, string>>> {
   const crops: Partial<Record<PairKey, string>> = {}
   if (!keel) return crops
   for (const key of PAIR_KEYS) {
     const rel = keel.crops[key]
     if (!rel) continue
-    const src = resolve(KEEL_DIR, rel)
-    if (!isInside(KEEL_DIR, src) || !existsSync(src)) continue
-    if (inParity) {
+    const src = resolve(ROOT, rel)
+    if (!isInside(IMG_KEEL, src) || !existsSync(src)) continue
+    if (inImages) {
       crops[key] = relative(outDir, src).split('\\').join('/')
     } else {
-      const dest = join(outDir, 'keel', rel)
-      await mkdir(dirname(dest), { recursive: true })
-      await copyFile(src, dest)
-      crops[key] = `keel/${rel}`
+      const sub = relative(IMG_KEEL, src)
+      await mkdir(dirname(join(outDir, 'keel', sub)), { recursive: true })
+      await copyFile(src, join(outDir, 'keel', sub))
+      crops[key] = `keel/${sub.split('\\').join('/')}`
     }
   }
   return crops
@@ -437,8 +441,11 @@ async function main(): Promise<number> {
     )
     return 2
   }
-  const outDir = values.out ? resolve(values.out) : join(ROOT, '.evidence/compare', label)
-  const inParity = outDir === PARITY_DIR || isInside(PARITY_DIR, outDir)
+  const outDir = values.out ? resolve(values.out) : join(IMG_ROOT, label)
+  const inImages = outDir === IMG_ROOT || isInside(IMG_ROOT, outDir)
+  // compare.json is text: committed beside the verdict when the board is under .design-parity/
+  const jsonDir = inImages ? join(PARITY_DIR, relative(IMG_ROOT, outDir)) : outDir
+  const repoPath = (p: string): string => relative(ROOT, join(outDir, p)).split('\\').join('/')
 
   const inventory = parseInventory(await readInventory())
   const wanted = (values.patterns ?? '')
@@ -470,19 +477,28 @@ async function main(): Promise<number> {
       id,
       mapping: mappingFor(id),
       keel,
-      keelCrops: await keelCropsFor(keel, outDir, inParity),
+      keelCrops: await keelCropsFor(keel, outDir, inImages),
       basalt: results.get(id) ?? { crops: {}, metrics: {}, errors: {} },
     })
   }
   await writeFile(join(outDir, 'board.html'), buildBoardHtml({ label, inventory, entries }))
+  await mkdir(jsonDir, { recursive: true })
   await writeFile(
-    join(outDir, 'compare.json'),
+    join(jsonDir, 'compare.json'),
     stableStringify({
       label,
       viewports: VIEWPORT_SPECS,
       mapping: Object.fromEntries(entries.map((e) => [e.id, e.mapping])),
       results: Object.fromEntries(
-        entries.map((e) => [e.id, { errors: e.basalt.errors, crops: e.basalt.crops }]),
+        entries.map((e) => [
+          e.id,
+          {
+            errors: e.basalt.errors,
+            crops: Object.fromEntries(
+              Object.entries(e.basalt.crops).map(([k, v]) => [k, repoPath(v)]),
+            ),
+          },
+        ]),
       ),
       metrics: metrics.toSorted((a, b) =>
         `${a.id}${a.scheme}${a.viewport}`.localeCompare(`${b.id}${b.scheme}${b.viewport}`),
@@ -498,7 +514,7 @@ async function main(): Promise<number> {
     `[compare] patterns: ${found.length} mapped (${ok.length} captured, ${failed.length} with failures), ` +
       `${entries.length - found.length} missing; keel inventory ${inventory.patterns.length ? 'present' : 'absent'}`,
   )
-  console.log(`[compare] wrote ${outDir}`)
+  console.log(`[compare] wrote ${outDir} (compare.json: ${jsonDir})`)
   // A pattern absent at one viewport is a finding, not a broken run; nothing captured at all is.
   return ok.length === 0 && found.length > 0 ? 1 : 0
 }

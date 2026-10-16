@@ -9,10 +9,10 @@
       "selectorNote": "second link-card in the grid of six KPI tiles directly under the greeting header; the tile with a compact trend line",
       "instances": 6,
       "crops": {
-        "dark-desktop": "patterns/metric-card--dark--desktop.png",
-        "dark-mobile": "patterns/metric-card--dark--mobile.png",
-        "light-desktop": "patterns/metric-card--light--desktop.png",
-        "light-mobile": "patterns/metric-card--light--mobile.png"
+        "dark-desktop": ".design-parity/keel/patterns/metric-card--dark--desktop.png",
+        "dark-mobile": ".design-parity/keel/patterns/metric-card--dark--mobile.png",
+        "light-desktop": ".design-parity/keel/patterns/metric-card--light--desktop.png",
+        "light-mobile": ".design-parity/keel/patterns/metric-card--light--mobile.png"
       },
       "metrics": {
         "desktop": {
@@ -73,10 +73,10 @@
       "selectorNote": "first tile of the KPI strip on the home route",
       "instances": 6,
       "crops": {
-        "dark-desktop": "patterns/metric-card-gauge--dark--desktop.png",
-        "dark-mobile": "patterns/metric-card-gauge--dark--mobile.png",
-        "light-desktop": "patterns/metric-card-gauge--light--desktop.png",
-        "light-mobile": "patterns/metric-card-gauge--light--mobile.png"
+        "dark-desktop": ".design-parity/keel/patterns/metric-card-gauge--dark--desktop.png",
+        "dark-mobile": ".design-parity/keel/patterns/metric-card-gauge--dark--mobile.png",
+        "light-desktop": ".design-parity/keel/patterns/metric-card-gauge--light--desktop.png",
+        "light-mobile": ".design-parity/keel/patterns/metric-card-gauge--light--mobile.png"
       },
       "metrics": {
         "desktop": {
@@ -135,10 +135,10 @@
       "selectorNote": "third tile of the KPI strip on the home route",
       "instances": 6,
       "crops": {
-        "dark-desktop": "patterns/metric-card-bar--dark--desktop.png",
-        "dark-mobile": "patterns/metric-card-bar--dark--mobile.png",
-        "light-desktop": "patterns/metric-card-bar--light--desktop.png",
-        "light-mobile": "patterns/metric-card-bar--light--mobile.png"
+        "dark-desktop": ".design-parity/keel/patterns/metric-card-bar--dark--desktop.png",
+        "dark-mobile": ".design-parity/keel/patterns/metric-card-bar--dark--mobile.png",
+        "light-desktop": ".design-parity/keel/patterns/metric-card-bar--light--desktop.png",
+        "light-mobile": ".design-parity/keel/patterns/metric-card-bar--light--mobile.png"
       },
       "metrics": {
         "desktop": {
@@ -195,10 +195,10 @@
       "selectorNote": "second article in the primary column of the home route (the first is the emphasised one)",
       "instances": 3,
       "crops": {
-        "dark-desktop": "patterns/decision-card--dark--desktop.png",
-        "dark-mobile": "patterns/decision-card--dark--mobile.png",
-        "light-desktop": "patterns/decision-card--light--desktop.png",
-        "light-mobile": "patterns/decision-card--light--mobile.png"
+        "dark-desktop": ".design-parity/keel/patterns/decision-card--dark--desktop.png",
+        "dark-mobile": ".design-parity/keel/patterns/decision-card--dark--mobile.png",
+        "light-desktop": ".design-parity/keel/patterns/decision-card--light--desktop.png",
+        "light-mobile": ".design-parity/keel/patterns/decision-card--light--mobile.png"
       },
       "metrics": {
         "desktop": {
@@ -267,10 +267,10 @@
       "selectorNote": "first article in the three-column card grid on the crew route",
       "instances": 5,
       "crops": {
-        "dark-desktop": "patterns/entity-card--dark--desktop.png",
-        "dark-mobile": "patterns/entity-card--dark--mobile.png",
-        "light-desktop": "patterns/entity-card--light--desktop.png",
-        "light-mobile": "patterns/entity-card--light--mobile.png"
+        "dark-desktop": ".design-parity/keel/patterns/entity-card--dark--desktop.png",
+        "dark-mobile": ".design-parity/keel/patterns/entity-card--dark--mobile.png",
+        "light-desktop": ".design-parity/keel/patterns/entity-card--light--desktop.png",
+        "light-mobile": ".design-parity/keel/patterns/entity-card--light--mobile.png"
       },
       "metrics": {
         "desktop": {
@@ -339,10 +339,10 @@
       "selectorNote": "the header row of the only table on the companies route",
       "instances": 1,
       "crops": {
-        "dark-desktop": "patterns/table-header--dark--desktop.png",
-        "dark-mobile": "patterns/table-header--dark--mobile.png",
-        "light-desktop": "patterns/table-header--light--desktop.png",
-        "light-mobile": "patterns/table-header--light--mobile.png"
+        "dark-desktop": ".design-parity/keel/patterns/table-header--dark--desktop.png",
+        "dark-mobile": ".design-parity/keel/patterns/table-header--dark--mobile.png",
+        "light-desktop": ".design-parity/keel/patterns/table-header--light--desktop.png",
+        "light-mobile": ".design-parity/keel/patterns/table-header--light--mobile.png"
       },
       "metrics": {
         "desktop": {
@@ -397,10 +397,10 @@
       "selectorNote": "second body row of the table on the companies route",
       "instances": 24,
       "crops": {
-        "dark-desktop": "patterns/table-row--dark--desktop.png",
-        "dark-mobile": "patterns/table-row--dark--mobile.png",
-        "light-desktop": "patterns/table-row--light--desktop.png",
-        "light-mobile": "patterns/table-row--light--mobile.png"
+        "dark-desktop": ".design-parity/keel/patterns/table-row--dark--desktop.png",
+        "dark-mobile": ".design-parity/keel/patterns/table-row--dark--mobile.png",
+        "light-desktop": ".design-parity/keel/patterns/table-row--light--desktop.png",
+        "light-mobile": ".design-parity/keel/patterns/table-row--light--mobile.png"
       },
       "metrics": {
         "desktop": {
@@ -463,10 +463,10 @@
       "selectorNote": "first section on the work route that opens with a header element",
       "instances": 4,
       "crops": {
-        "dark-desktop": "patterns/kanban-column--dark--desktop.png",
-        "dark-mobile": "patterns/kanban-column--dark--mobile.png",
-        "light-desktop": "patterns/kanban-column--light--desktop.png",
-        "light-mobile": "patterns/kanban-column--light--mobile.png"
+        "dark-desktop": ".design-parity/keel/patterns/kanban-column--dark--desktop.png",
+        "dark-mobile": ".design-parity/keel/patterns/kanban-column--dark--mobile.png",
+        "light-desktop": ".design-parity/keel/patterns/kanban-column--light--desktop.png",
+        "light-mobile": ".design-parity/keel/patterns/kanban-column--light--mobile.png"
       },
       "metrics": {
         "desktop": {
@@ -533,10 +533,10 @@
       "selectorNote": "first card inside the first board column of the work route",
       "instances": 22,
       "crops": {
-        "dark-desktop": "patterns/kanban-card--dark--desktop.png",
-        "dark-mobile": "patterns/kanban-card--dark--mobile.png",
-        "light-desktop": "patterns/kanban-card--light--desktop.png",
-        "light-mobile": "patterns/kanban-card--light--mobile.png"
+        "dark-desktop": ".design-parity/keel/patterns/kanban-card--dark--desktop.png",
+        "dark-mobile": ".design-parity/keel/patterns/kanban-card--dark--mobile.png",
+        "light-desktop": ".design-parity/keel/patterns/kanban-card--light--desktop.png",
+        "light-mobile": ".design-parity/keel/patterns/kanban-card--light--mobile.png"
       },
       "metrics": {
         "desktop": {
@@ -603,10 +603,10 @@
       "selectorNote": "first board column on the deals route (board view is the default)",
       "instances": 4,
       "crops": {
-        "dark-desktop": "patterns/pipeline-column--dark--desktop.png",
-        "dark-mobile": "patterns/pipeline-column--dark--mobile.png",
-        "light-desktop": "patterns/pipeline-column--light--desktop.png",
-        "light-mobile": "patterns/pipeline-column--light--mobile.png"
+        "dark-desktop": ".design-parity/keel/patterns/pipeline-column--dark--desktop.png",
+        "dark-mobile": ".design-parity/keel/patterns/pipeline-column--dark--mobile.png",
+        "light-desktop": ".design-parity/keel/patterns/pipeline-column--light--desktop.png",
+        "light-mobile": ".design-parity/keel/patterns/pipeline-column--light--mobile.png"
       },
       "metrics": {
         "desktop": {
@@ -673,10 +673,10 @@
       "selectorNote": "first link-card of the first column on the deals route",
       "instances": 38,
       "crops": {
-        "dark-desktop": "patterns/deal-card--dark--desktop.png",
-        "dark-mobile": "patterns/deal-card--dark--mobile.png",
-        "light-desktop": "patterns/deal-card--light--desktop.png",
-        "light-mobile": "patterns/deal-card--light--mobile.png"
+        "dark-desktop": ".design-parity/keel/patterns/deal-card--dark--desktop.png",
+        "dark-mobile": ".design-parity/keel/patterns/deal-card--dark--mobile.png",
+        "light-desktop": ".design-parity/keel/patterns/deal-card--light--desktop.png",
+        "light-mobile": ".design-parity/keel/patterns/deal-card--light--mobile.png"
       },
       "metrics": {
         "desktop": {
@@ -735,10 +735,10 @@
       "selectorNote": "first list item of the ordered timeline in the record detail route",
       "instances": 14,
       "crops": {
-        "dark-desktop": "patterns/timeline-event--dark--desktop.png",
-        "dark-mobile": "patterns/timeline-event--dark--mobile.png",
-        "light-desktop": "patterns/timeline-event--light--desktop.png",
-        "light-mobile": "patterns/timeline-event--light--mobile.png"
+        "dark-desktop": ".design-parity/keel/patterns/timeline-event--dark--desktop.png",
+        "dark-mobile": ".design-parity/keel/patterns/timeline-event--dark--mobile.png",
+        "light-desktop": ".design-parity/keel/patterns/timeline-event--light--desktop.png",
+        "light-mobile": ".design-parity/keel/patterns/timeline-event--light--mobile.png"
       },
       "metrics": {
         "desktop": {
@@ -805,10 +805,10 @@
       "selectorNote": "first entry of the second panel in the right-hand column of the home route",
       "instances": 34,
       "crops": {
-        "dark-desktop": "patterns/activity-item--dark--desktop.png",
-        "dark-mobile": "patterns/activity-item--dark--mobile.png",
-        "light-desktop": "patterns/activity-item--light--desktop.png",
-        "light-mobile": "patterns/activity-item--light--mobile.png"
+        "dark-desktop": ".design-parity/keel/patterns/activity-item--dark--desktop.png",
+        "dark-mobile": ".design-parity/keel/patterns/activity-item--dark--mobile.png",
+        "light-desktop": ".design-parity/keel/patterns/activity-item--light--desktop.png",
+        "light-mobile": ".design-parity/keel/patterns/activity-item--light--mobile.png"
       },
       "metrics": {
         "desktop": {
@@ -877,10 +877,10 @@
       "selectorNote": "first entry of the first panel in the right-hand column of the home route",
       "instances": 2,
       "crops": {
-        "dark-desktop": "patterns/schedule-item--dark--desktop.png",
-        "dark-mobile": "patterns/schedule-item--dark--mobile.png",
-        "light-desktop": "patterns/schedule-item--light--desktop.png",
-        "light-mobile": "patterns/schedule-item--light--mobile.png"
+        "dark-desktop": ".design-parity/keel/patterns/schedule-item--dark--desktop.png",
+        "dark-mobile": ".design-parity/keel/patterns/schedule-item--dark--mobile.png",
+        "light-desktop": ".design-parity/keel/patterns/schedule-item--light--desktop.png",
+        "light-mobile": ".design-parity/keel/patterns/schedule-item--light--mobile.png"
       },
       "metrics": {
         "desktop": {
@@ -939,10 +939,10 @@
       "selectorNote": "first text input in the toolbar above the table on the companies route",
       "instances": 1,
       "crops": {
-        "dark-desktop": "patterns/form-field--dark--desktop.png",
-        "dark-mobile": "patterns/form-field--dark--mobile.png",
-        "light-desktop": "patterns/form-field--light--desktop.png",
-        "light-mobile": "patterns/form-field--light--mobile.png"
+        "dark-desktop": ".design-parity/keel/patterns/form-field--dark--desktop.png",
+        "dark-mobile": ".design-parity/keel/patterns/form-field--dark--mobile.png",
+        "light-desktop": ".design-parity/keel/patterns/form-field--light--desktop.png",
+        "light-mobile": ".design-parity/keel/patterns/form-field--light--mobile.png"
       },
       "metrics": {
         "desktop": {
@@ -981,10 +981,10 @@
       "selectorNote": "the flex row that holds the search input, the filter button and the sort and group controls",
       "instances": 1,
       "crops": {
-        "dark-desktop": "patterns/filter-toolbar--dark--desktop.png",
-        "dark-mobile": "patterns/filter-toolbar--dark--mobile.png",
-        "light-desktop": "patterns/filter-toolbar--light--desktop.png",
-        "light-mobile": "patterns/filter-toolbar--light--mobile.png"
+        "dark-desktop": ".design-parity/keel/patterns/filter-toolbar--dark--desktop.png",
+        "dark-mobile": ".design-parity/keel/patterns/filter-toolbar--dark--mobile.png",
+        "light-desktop": ".design-parity/keel/patterns/filter-toolbar--light--desktop.png",
+        "light-mobile": ".design-parity/keel/patterns/filter-toolbar--light--mobile.png"
       },
       "metrics": {
         "desktop": {
@@ -1043,10 +1043,10 @@
       "selectorNote": "the sidebar link whose path is the current route (active state)",
       "instances": 1,
       "crops": {
-        "dark-desktop": "patterns/nav-item--dark--desktop.png",
-        "dark-mobile": "patterns/nav-item--dark--mobile.png",
-        "light-desktop": "patterns/nav-item--light--desktop.png",
-        "light-mobile": "patterns/nav-item--light--mobile.png"
+        "dark-desktop": ".design-parity/keel/patterns/nav-item--dark--desktop.png",
+        "dark-mobile": ".design-parity/keel/patterns/nav-item--dark--mobile.png",
+        "light-desktop": ".design-parity/keel/patterns/nav-item--light--desktop.png",
+        "light-mobile": ".design-parity/keel/patterns/nav-item--light--mobile.png"
       },
       "metrics": {
         "desktop": {
@@ -1099,10 +1099,10 @@
       "selectorNote": "a sidebar link that is not the current route",
       "instances": 1,
       "crops": {
-        "dark-desktop": "patterns/nav-item-idle--dark--desktop.png",
-        "dark-mobile": "patterns/nav-item-idle--dark--mobile.png",
-        "light-desktop": "patterns/nav-item-idle--light--desktop.png",
-        "light-mobile": "patterns/nav-item-idle--light--mobile.png"
+        "dark-desktop": ".design-parity/keel/patterns/nav-item-idle--dark--desktop.png",
+        "dark-mobile": ".design-parity/keel/patterns/nav-item-idle--dark--mobile.png",
+        "light-desktop": ".design-parity/keel/patterns/nav-item-idle--light--desktop.png",
+        "light-mobile": ".design-parity/keel/patterns/nav-item-idle--light--mobile.png"
       },
       "metrics": {
         "desktop": {
@@ -1155,10 +1155,10 @@
       "selectorNote": "the one non-card tile in the agent card grid",
       "instances": 1,
       "crops": {
-        "dark-desktop": "patterns/empty-state--dark--desktop.png",
-        "dark-mobile": "patterns/empty-state--dark--mobile.png",
-        "light-desktop": "patterns/empty-state--light--desktop.png",
-        "light-mobile": "patterns/empty-state--light--mobile.png"
+        "dark-desktop": ".design-parity/keel/patterns/empty-state--dark--desktop.png",
+        "dark-mobile": ".design-parity/keel/patterns/empty-state--dark--mobile.png",
+        "light-desktop": ".design-parity/keel/patterns/empty-state--light--desktop.png",
+        "light-mobile": ".design-parity/keel/patterns/empty-state--light--mobile.png"
       },
       "metrics": {
         "desktop": {
@@ -1225,10 +1225,10 @@
       "selectorNote": "the grandparent of the primary heading on the work route",
       "instances": 1,
       "crops": {
-        "dark-desktop": "patterns/page-header--dark--desktop.png",
-        "dark-mobile": "patterns/page-header--dark--mobile.png",
-        "light-desktop": "patterns/page-header--light--desktop.png",
-        "light-mobile": "patterns/page-header--light--mobile.png"
+        "dark-desktop": ".design-parity/keel/patterns/page-header--dark--desktop.png",
+        "dark-mobile": ".design-parity/keel/patterns/page-header--dark--mobile.png",
+        "light-desktop": ".design-parity/keel/patterns/page-header--light--desktop.png",
+        "light-mobile": ".design-parity/keel/patterns/page-header--light--mobile.png"
       },
       "metrics": {
         "desktop": {
@@ -1285,10 +1285,10 @@
       "selectorNote": "the block three levels above the primary heading on the record detail route",
       "instances": 1,
       "crops": {
-        "dark-desktop": "patterns/record-header--dark--desktop.png",
-        "dark-mobile": "patterns/record-header--dark--mobile.png",
-        "light-desktop": "patterns/record-header--light--desktop.png",
-        "light-mobile": "patterns/record-header--light--mobile.png"
+        "dark-desktop": ".design-parity/keel/patterns/record-header--dark--desktop.png",
+        "dark-mobile": ".design-parity/keel/patterns/record-header--dark--mobile.png",
+        "light-desktop": ".design-parity/keel/patterns/record-header--light--desktop.png",
+        "light-mobile": ".design-parity/keel/patterns/record-header--light--mobile.png"
       },
       "metrics": {
         "desktop": {
@@ -1347,10 +1347,10 @@
       "selectorNote": "the four-cell grid under the record header (grandparent of the stage stepper)",
       "instances": 1,
       "crops": {
-        "dark-desktop": "patterns/stat-strip--dark--desktop.png",
-        "dark-mobile": "patterns/stat-strip--dark--mobile.png",
-        "light-desktop": "patterns/stat-strip--light--desktop.png",
-        "light-mobile": "patterns/stat-strip--light--mobile.png"
+        "dark-desktop": ".design-parity/keel/patterns/stat-strip--dark--desktop.png",
+        "dark-mobile": ".design-parity/keel/patterns/stat-strip--dark--mobile.png",
+        "light-desktop": ".design-parity/keel/patterns/stat-strip--light--desktop.png",
+        "light-mobile": ".design-parity/keel/patterns/stat-strip--light--mobile.png"
       },
       "metrics": {
         "desktop": {
@@ -1414,10 +1414,10 @@
       "selectorNote": "the first cell of the record stat strip (holds the stage stepper)",
       "instances": 1,
       "crops": {
-        "dark-desktop": "patterns/stat-cell--dark--desktop.png",
-        "dark-mobile": "patterns/stat-cell--dark--mobile.png",
-        "light-desktop": "patterns/stat-cell--light--desktop.png",
-        "light-mobile": "patterns/stat-cell--light--mobile.png"
+        "dark-desktop": ".design-parity/keel/patterns/stat-cell--dark--desktop.png",
+        "dark-mobile": ".design-parity/keel/patterns/stat-cell--dark--mobile.png",
+        "light-desktop": ".design-parity/keel/patterns/stat-cell--light--desktop.png",
+        "light-mobile": ".design-parity/keel/patterns/stat-cell--light--mobile.png"
       },
       "metrics": {
         "desktop": {
@@ -1474,10 +1474,10 @@
       "selectorNote": "second section of the right-hand column on the record detail route",
       "instances": 5,
       "crops": {
-        "dark-desktop": "patterns/side-panel-card--dark--desktop.png",
-        "dark-mobile": "patterns/side-panel-card--dark--mobile.png",
-        "light-desktop": "patterns/side-panel-card--light--desktop.png",
-        "light-mobile": "patterns/side-panel-card--light--mobile.png"
+        "dark-desktop": ".design-parity/keel/patterns/side-panel-card--dark--desktop.png",
+        "dark-mobile": ".design-parity/keel/patterns/side-panel-card--dark--mobile.png",
+        "light-desktop": ".design-parity/keel/patterns/side-panel-card--light--desktop.png",
+        "light-mobile": ".design-parity/keel/patterns/side-panel-card--light--mobile.png"
       },
       "metrics": {
         "desktop": {
@@ -1536,10 +1536,10 @@
       "selectorNote": "first radio group on the record detail route (the timeline filter)",
       "instances": 1,
       "crops": {
-        "dark-desktop": "patterns/segmented-control--dark--desktop.png",
-        "dark-mobile": "patterns/segmented-control--dark--mobile.png",
-        "light-desktop": "patterns/segmented-control--light--desktop.png",
-        "light-mobile": "patterns/segmented-control--light--mobile.png"
+        "dark-desktop": ".design-parity/keel/patterns/segmented-control--dark--desktop.png",
+        "dark-mobile": ".design-parity/keel/patterns/segmented-control--dark--mobile.png",
+        "light-desktop": ".design-parity/keel/patterns/segmented-control--light--desktop.png",
+        "light-mobile": ".design-parity/keel/patterns/segmented-control--light--mobile.png"
       },
       "metrics": {
         "desktop": {
@@ -1588,10 +1588,10 @@
       "selectorNote": "the first tab list on the companies route (the view tabs with counts)",
       "instances": 1,
       "crops": {
-        "dark-desktop": "patterns/tab-bar--dark--desktop.png",
-        "dark-mobile": "patterns/tab-bar--dark--mobile.png",
-        "light-desktop": "patterns/tab-bar--light--desktop.png",
-        "light-mobile": "patterns/tab-bar--light--mobile.png"
+        "dark-desktop": ".design-parity/keel/patterns/tab-bar--dark--desktop.png",
+        "dark-mobile": ".design-parity/keel/patterns/tab-bar--dark--mobile.png",
+        "light-desktop": ".design-parity/keel/patterns/tab-bar--light--desktop.png",
+        "light-mobile": ".design-parity/keel/patterns/tab-bar--light--mobile.png"
       },
       "metrics": {
         "desktop": {
@@ -1648,10 +1648,10 @@
       "selectorNote": "the pill inside the first data cell (the stage column) of the first table row",
       "instances": 1,
       "crops": {
-        "dark-desktop": "patterns/status-pill--dark--desktop.png",
-        "dark-mobile": "patterns/status-pill--dark--mobile.png",
-        "light-desktop": "patterns/status-pill--light--desktop.png",
-        "light-mobile": "patterns/status-pill--light--mobile.png"
+        "dark-desktop": ".design-parity/keel/patterns/status-pill--dark--desktop.png",
+        "dark-mobile": ".design-parity/keel/patterns/status-pill--dark--mobile.png",
+        "light-desktop": ".design-parity/keel/patterns/status-pill--light--desktop.png",
+        "light-mobile": ".design-parity/keel/patterns/status-pill--light--mobile.png"
       },
       "metrics": {
         "desktop": {
@@ -1700,10 +1700,10 @@
       "selectorNote": "first button inside the first decision card",
       "instances": 9,
       "crops": {
-        "dark-desktop": "patterns/button-primary--dark--desktop.png",
-        "dark-mobile": "patterns/button-primary--dark--mobile.png",
-        "light-desktop": "patterns/button-primary--light--desktop.png",
-        "light-mobile": "patterns/button-primary--light--mobile.png"
+        "dark-desktop": ".design-parity/keel/patterns/button-primary--dark--desktop.png",
+        "dark-mobile": ".design-parity/keel/patterns/button-primary--dark--mobile.png",
+        "light-desktop": ".design-parity/keel/patterns/button-primary--light--desktop.png",
+        "light-mobile": ".design-parity/keel/patterns/button-primary--light--mobile.png"
       },
       "metrics": {
         "desktop": {
@@ -1760,10 +1760,10 @@
       "selectorNote": "second button inside the first decision card",
       "instances": 9,
       "crops": {
-        "dark-desktop": "patterns/button-secondary--dark--desktop.png",
-        "dark-mobile": "patterns/button-secondary--dark--mobile.png",
-        "light-desktop": "patterns/button-secondary--light--desktop.png",
-        "light-mobile": "patterns/button-secondary--light--mobile.png"
+        "dark-desktop": ".design-parity/keel/patterns/button-secondary--dark--desktop.png",
+        "dark-mobile": ".design-parity/keel/patterns/button-secondary--dark--mobile.png",
+        "light-desktop": ".design-parity/keel/patterns/button-secondary--light--desktop.png",
+        "light-mobile": ".design-parity/keel/patterns/button-secondary--light--mobile.png"
       },
       "metrics": {
         "desktop": {
@@ -1814,10 +1814,10 @@
       "selectorNote": "third button inside the first decision card",
       "instances": 9,
       "crops": {
-        "dark-desktop": "patterns/button-ghost--dark--desktop.png",
-        "dark-mobile": "patterns/button-ghost--dark--mobile.png",
-        "light-desktop": "patterns/button-ghost--light--desktop.png",
-        "light-mobile": "patterns/button-ghost--light--mobile.png"
+        "dark-desktop": ".design-parity/keel/patterns/button-ghost--dark--desktop.png",
+        "dark-mobile": ".design-parity/keel/patterns/button-ghost--dark--mobile.png",
+        "light-desktop": ".design-parity/keel/patterns/button-ghost--light--desktop.png",
+        "light-mobile": ".design-parity/keel/patterns/button-ghost--light--mobile.png"
       },
       "metrics": {
         "desktop": {
