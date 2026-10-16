@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "generatedAt": "2026-10-16T21:26:21.558Z",
-  "base": "http://127.0.0.1:56528",
+  "generatedAt": "2026-10-16T21:55:05.106Z",
+  "base": "http://127.0.0.1:61996",
   "routes": ["/scenarios/s4-spend"],
   "viewports": ["desktop", "mobile"],
   "schemes": ["light", "dark"],
@@ -16,6 +16,7 @@
         "md": 18,
         "lg": 20,
         "xl": 26,
+        "vx-space-icon-size": 16,
         "vx-space-row-inset-x": 10,
         "vx-space-row-inset-y": 6,
         "vx-space-input-height": 42,
@@ -178,6 +179,7 @@
         "md": 18,
         "lg": 20,
         "xl": 26,
+        "vx-space-icon-size": 16,
         "vx-space-row-inset-x": 10,
         "vx-space-row-inset-y": 6,
         "vx-space-input-height": 42,
@@ -340,6 +342,7 @@
         "md": 18,
         "lg": 20,
         "xl": 26,
+        "vx-space-icon-size": 16,
         "vx-space-row-inset-x": 10,
         "vx-space-row-inset-y": 6,
         "vx-space-input-height": 42,
@@ -502,6 +505,7 @@
         "md": 18,
         "lg": 20,
         "xl": 26,
+        "vx-space-icon-size": 16,
         "vx-space-row-inset-x": 10,
         "vx-space-row-inset-y": 6,
         "vx-space-input-height": 42,
@@ -727,7 +731,8 @@
             "fontSize": 12.5
           }
         ]
-      }
+      },
+      "sheet": "png/scenarios-s4-spend-ac51be__month-to-date-2296d1__sheet.png"
     },
     {
       "route": "/scenarios/s4-spend",
@@ -777,7 +782,8 @@
       "contrast": {
         "min": 7.47,
         "failures": []
-      }
+      },
+      "sheet": "png/scenarios-s4-spend-ac51be__forecast-018c49__sheet.png"
     },
     {
       "route": "/scenarios/s4-spend",
@@ -817,7 +823,8 @@
       "contrast": {
         "min": 5.01,
         "failures": []
-      }
+      },
+      "sheet": "png/scenarios-s4-spend-ac51be__budget-81e4a5__sheet.png"
     },
     {
       "route": "/scenarios/s4-spend",
@@ -998,7 +1005,8 @@
             "fontSize": 11
           }
         ]
-      }
+      },
+      "sheet": "png/scenarios-s4-spend-ac51be__spend-over-time-a9e8c1__sheet.png"
     },
     {
       "route": "/scenarios/s4-spend",
@@ -1208,7 +1216,8 @@
             "fontSize": 13.5
           }
         ]
-      }
+      },
+      "sheet": "png/scenarios-s4-spend-ac51be__spend-by-project-ad9f7d__sheet.png"
     },
     {
       "route": "/scenarios/s4-spend",
@@ -1298,7 +1307,8 @@
       "contrast": {
         "min": 4.9,
         "failures": []
-      }
+      },
+      "sheet": "png/scenarios-s4-spend-ac51be__top-drivers-a0d83b__sheet.png"
     },
     {
       "route": "/scenarios/s4-spend",
@@ -1471,7 +1481,8 @@
             "fontSize": 11
           }
         ]
-      }
+      },
+      "sheet": "png/scenarios-s4-spend-ac51be__spend-distribution-30a4cc__sheet.png"
     },
     {
       "route": "/scenarios/s4-spend",
@@ -1543,7 +1554,8 @@
             "fontSize": 12.5
           }
         ]
-      }
+      },
+      "sheet": "png/scenarios-s4-spend-ac51be__month-to-date-2296d1__sheet.png"
     },
     {
       "route": "/scenarios/s4-spend",
@@ -1593,7 +1605,8 @@
       "contrast": {
         "min": 7.47,
         "failures": []
-      }
+      },
+      "sheet": "png/scenarios-s4-spend-ac51be__forecast-018c49__sheet.png"
     },
     {
       "route": "/scenarios/s4-spend",
@@ -1633,7 +1646,8 @@
       "contrast": {
         "min": 5.01,
         "failures": []
-      }
+      },
+      "sheet": "png/scenarios-s4-spend-ac51be__budget-81e4a5__sheet.png"
     },
     {
       "route": "/scenarios/s4-spend",
@@ -1786,7 +1800,8 @@
             "fontSize": 10
           }
         ]
-      }
+      },
+      "sheet": "png/scenarios-s4-spend-ac51be__spend-over-time-a9e8c1__sheet.png"
     },
     {
       "route": "/scenarios/s4-spend",
@@ -1996,7 +2011,8 @@
             "fontSize": 13.5
           }
         ]
-      }
+      },
+      "sheet": "png/scenarios-s4-spend-ac51be__spend-by-project-ad9f7d__sheet.png"
     },
     {
       "route": "/scenarios/s4-spend",
@@ -2086,7 +2102,8 @@
       "contrast": {
         "min": 4.9,
         "failures": []
-      }
+      },
+      "sheet": "png/scenarios-s4-spend-ac51be__top-drivers-a0d83b__sheet.png"
     },
     {
       "route": "/scenarios/s4-spend",
@@ -2238,7 +2255,8 @@
             "fontSize": 10
           }
         ]
-      }
+      },
+      "sheet": "png/scenarios-s4-spend-ac51be__spend-distribution-30a4cc__sheet.png"
     },
     {
       "route": "/scenarios/s4-spend",
@@ -2310,7 +2328,8 @@
             "fontSize": 12.5
           }
         ]
-      }
+      },
+      "sheet": "png/scenarios-s4-spend-ac51be__month-to-date-2296d1__sheet.png"
     },
     {
       "route": "/scenarios/s4-spend",
@@ -2360,7 +2379,8 @@
       "contrast": {
         "min": 9.55,
         "failures": []
-      }
+      },
+      "sheet": "png/scenarios-s4-spend-ac51be__forecast-018c49__sheet.png"
     },
     {
       "route": "/scenarios/s4-spend",
@@ -2400,7 +2420,8 @@
       "contrast": {
         "min": 6.18,
         "failures": []
-      }
+      },
+      "sheet": "png/scenarios-s4-spend-ac51be__budget-81e4a5__sheet.png"
     },
     {
       "route": "/scenarios/s4-spend",
@@ -2510,7 +2531,8 @@
       "contrast": {
         "min": 6.1,
         "failures": []
-      }
+      },
+      "sheet": "png/scenarios-s4-spend-ac51be__spend-over-time-a9e8c1__sheet.png"
     },
     {
       "route": "/scenarios/s4-spend",
@@ -2670,7 +2692,8 @@
       "contrast": {
         "min": 6.1,
         "failures": []
-      }
+      },
+      "sheet": "png/scenarios-s4-spend-ac51be__spend-by-project-ad9f7d__sheet.png"
     },
     {
       "route": "/scenarios/s4-spend",
@@ -2760,7 +2783,8 @@
       "contrast": {
         "min": 5.78,
         "failures": []
-      }
+      },
+      "sheet": "png/scenarios-s4-spend-ac51be__top-drivers-a0d83b__sheet.png"
     },
     {
       "route": "/scenarios/s4-spend",
@@ -2820,7 +2844,8 @@
       "contrast": {
         "min": 6.1,
         "failures": []
-      }
+      },
+      "sheet": "png/scenarios-s4-spend-ac51be__spend-distribution-30a4cc__sheet.png"
     },
     {
       "route": "/scenarios/s4-spend",
@@ -2892,7 +2917,8 @@
             "fontSize": 12.5
           }
         ]
-      }
+      },
+      "sheet": "png/scenarios-s4-spend-ac51be__month-to-date-2296d1__sheet.png"
     },
     {
       "route": "/scenarios/s4-spend",
@@ -2942,7 +2968,8 @@
       "contrast": {
         "min": 9.55,
         "failures": []
-      }
+      },
+      "sheet": "png/scenarios-s4-spend-ac51be__forecast-018c49__sheet.png"
     },
     {
       "route": "/scenarios/s4-spend",
@@ -2982,7 +3009,8 @@
       "contrast": {
         "min": 6.18,
         "failures": []
-      }
+      },
+      "sheet": "png/scenarios-s4-spend-ac51be__budget-81e4a5__sheet.png"
     },
     {
       "route": "/scenarios/s4-spend",
@@ -3092,7 +3120,8 @@
       "contrast": {
         "min": 6.1,
         "failures": []
-      }
+      },
+      "sheet": "png/scenarios-s4-spend-ac51be__spend-over-time-a9e8c1__sheet.png"
     },
     {
       "route": "/scenarios/s4-spend",
@@ -3252,7 +3281,8 @@
       "contrast": {
         "min": 6.1,
         "failures": []
-      }
+      },
+      "sheet": "png/scenarios-s4-spend-ac51be__spend-by-project-ad9f7d__sheet.png"
     },
     {
       "route": "/scenarios/s4-spend",
@@ -3342,7 +3372,8 @@
       "contrast": {
         "min": 5.78,
         "failures": []
-      }
+      },
+      "sheet": "png/scenarios-s4-spend-ac51be__top-drivers-a0d83b__sheet.png"
     },
     {
       "route": "/scenarios/s4-spend",
@@ -3402,7 +3433,8 @@
       "contrast": {
         "min": 6.1,
         "failures": []
-      }
+      },
+      "sheet": "png/scenarios-s4-spend-ac51be__spend-distribution-30a4cc__sheet.png"
     }
   ],
   "shots": [
