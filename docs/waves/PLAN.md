@@ -863,29 +863,57 @@ Synthesis Wave 2. Validators: argo, rb, linewatch.
 - **Ops notes:** `rd fan` PRs open as drafts and `rd merge` fails "not merged after 3 attempts" with a misleading "main probably moved" until `gh pr ready`; a >10-minute train must run in the background (a foreground `timeout 590` killed the layout suite); each merge of a format/surface-touching PR needs `llms.txt` + `export-surface.json` regenerated (build first) and the symbol ceiling/consumers bumped, so every worker after the first conflicts on `check-budgets.ts` — brief them to leave it to the lead; `release-migrating --check` needs the old `## Unreleased` heading replaced, not kept above the new one; doc-drift Check I flags backticked non-exports in a barrel's module comment; the push hook blocks direct pushes to master here, so the close-out goes through a PR.
 - **Next:** Wave 20 is `active`. Not released: the orchestrator releases and drives argo/rb/linewatch validation.
 
-# Part 3 — design parity (2026-10-16)
+# Part 3 — design quality, benchmarked (2026-10-16)
 
 **Owner's ask (2026-10-16):** basalt-ui renders correct but unremarkable UIs. Cards and metric panels in
-particular often look poor. The benchmark is Keel Workspace (`https://keel-workspace.vercel.app`): dense
-metric cards with inline charts and explicit units, entity and decision cards, data tables, a kanban
-board, record timelines and activity streams, and calm forms and controls with consistent spacing. basalt
-should ship that level out of the box, on Mantine and the TanStack stack, keeping its type safety,
-guards and rules. This includes drastic changes and a lot of trial and error in the playground, then argo
-and the rest of the fleet. The track runs until a side-by-side comparison finds no further gaps worth
-closing. It is still greenfield and 2.x only: breaks ship as plain `feat:` minors with a MIGRATING entry.
+particular often look poor. basalt should ship a much higher quality bar out of the box (cards, dense
+dashboards, tables, kanban, timelines, record pages, forms), on Mantine and the TanStack stack, keeping its
+type safety, guards and rules. Drastic changes and a lot of trial and error in the playground are expected,
+then argo and the rest of the fleet. It is still greenfield and 2.x only: breaks ship as plain `feat:` minors
+with a MIGRATING entry.
 
-**Priority:** Part 3 runs before Part 2's Waves 20–28, which stay `pending` and queued behind it. Wave 19
-and the rows 132/133 follower fix finish and ship first. shutterflow's 1.x → 2.x migration is briefed in
-Wave 36, so it lands on the new patterns. weatherorb keeps its own plan and is told what moved.
+**Keel is a reference, not the target (owner):** Keel Workspace (`https://keel-workspace.vercel.app`) does
+specific things better than basalt: expression through data, consistent density and spacing, cards,
+tables, kanban, timelines. basalt is ahead elsewhere (charts on TanStack, type safety, guards, derived
+theming) and keeps its own identity. Nothing is rebuilt to look like Keel. The bar is **basalt's own
+rubric** (below); Keel, and any later reference, is evidence for where that bar sits. Every pattern is scored
+in both directions: _basalt ahead (keep)_, _on par_, _learn from the reference_, or _missing_. A missing
+pattern is built only when a fleet app needs it (adopt-or-delete), not because a reference has it.
 
-**Expression, not just layout (owner, 2026-10-16):** the thing Keel gets right is _expression through
-data_. Each dataset gets the component and encoding that shows it best: a progress-to-target bar, a
-distribution, a status-over-time strip, a ranked list, an event sequence. Space carries information, and
-the feel, spacing and density stay consistent across all those different forms. basalt-built UIs fall back
-to the easy default (a card with a big number, a line chart, a plain table). That has two causes, and the
-track fixes both: a **flexibility gap**, where basalt cannot express the better encoding (a missing mark, slot,
-variant or density step), and a **guidance gap**, where basalt can express it but nothing leads an agent to
-choose it. Quality is judged per component (card, table, chart, list), not only per page.
+**Priority:** Part 3 runs before Part 2's Waves 20–28, which stay `pending` and queued behind it. shutterflow's
+1.x → 2.x migration is briefed in the rollout wave, so it lands on the new patterns. weatherorb keeps its
+own plan and is told what moved.
+
+**Expression, not just layout (owner):** the thing to learn is _expression through data_. Each dataset gets
+the component and encoding that shows it best: a progress-to-target bar, a distribution, a status-over-time
+strip, a ranked list, an event sequence. Space carries information, and the feel, spacing and density stay
+consistent across all those different forms. basalt-built UIs fall back to the easy default (a card with a
+big number, a line chart, a plain table). That has two causes, and the track fixes both: a **flexibility
+gap**, where basalt cannot express the better encoding (a missing mark, slot, variant or density step), and a
+**guidance gap**, where basalt can express it but nothing leads an agent to choose it. Quality is judged per
+component (card, table, chart, list), not only per page.
+
+**Method: concept first, then iterate (owner):** a clear, likeable UX only comes from several rounds; the UI
+follows from it. Every pattern family is built from a **scenario**: a realistic playground page (a sales
+pipeline, a training log, an ops monitor) with real-looking data, the user's question and the decision the
+view supports, written down before anything renders. Then **at least three rounds** of render → board →
+critique → revise. Every round's board is kept locally and its notes are committed. A family is done when the
+rubric passes, not when the rounds run out.
+
+**Rubric, three axes**, scored per component:
+
+- **Craft:** spacing, density, type, chrome, both schemes, desktop and mobile.
+- **Expression:** does the encoding fit the data, and does the space carry information.
+- **Communication:** no filler copy ("Here you can see…", decorative subtitles, a title restated);
+  precise labels with units; a tooltip or one-line explanation wherever a number needs context
+  (definition, period, source), and none where the number is obvious; a deliberate balance of numbers,
+  charts and tables.
+
+**Shipped, not internal (owner):** the method reaches every basalt app's coding agent through
+`basalt-ui init` / `sync`. It ships as the skill procedure (scenario → rounds → rubric), a `basalt-ui shot`
+command that renders routes in their states, a reviewer subagent, and the catalogue as the decision
+table. The design track dogfoods the same tools, so what basalt ships is what basalt used. Keel material
+never ships; the shipped exemplars are basalt's own boards.
 
 **Licence boundary (binding):** Keel publishes no source and no licence, so it is **look-only**. Workers
 capture screenshots and measure rendered geometry (computed spacing, type sizes, radii, borders,
@@ -894,16 +922,19 @@ into basalt, including code recovered from its shipped bundle. `github.com/morlu
 agent tool, not Keel's source. It must not be used to extract Keel's code, though it may be used to
 measure the page. Every basalt pattern is reimplemented in basalt's own idiom
 (Mantine 9, `--vx-*` tokens, derive config, `CartesianChart`). The design law in `docs/DESIGN-CORE.md`
-still binds: if Keel and the law disagree, the spec decides deliberately and records why.
+still binds: if a reference and the law disagree, the spec decides deliberately and records why.
 
 **Gate (every wave):** `make check` green. Every merged PR is independently reviewed for two rounds, then
 scope is frozen and the lead reads the last fix diff. Each changed pattern also gets a **visual verdict**:
-a paired board (Keel reference beside basalt playground, same viewport, desktop 1440 and mobile 390)
-written under the gitignored `.design-parity/w<n>/` (images never enter git: the repo is public and Keel is unlicensed); the scored verdict and `compare.json` are committed under `docs/waves/design-parity/w<n>/`. A fresh agent that did not write the code scores the
-board against the rubric from Wave 30, and only a pass merges. Layout-suite geometry covers anything
-the rubric pins numerically.
+boards (reference beside basalt where a reference exists, every round, desktop 1440 and mobile 390, both
+schemes, including the tooltip, hover, focus, empty and loading states) written under the gitignored
+`.design-parity/w<n>/`. Images never enter git: the repo is public and Keel is unlicensed. The scored verdict and
+`compare.json` are committed under `docs/waves/design-parity/w<n>/`. A fresh agent that did not write the code
+scores the board on the three axes and must cite the crop and the defect for every failed item. Only a pass
+merges. **Owner review:** the mother shows the owner the boards at the close of every pattern family, not
+only once. Layout-suite geometry covers anything the rubric pins numerically.
 
-**Model:** Waves 29, 30 and 31 are novel design work, so the mother spawns them with the high wave model
+**Model:** Waves 29–32 are novel design work, so the mother spawns them with the high wave model
 (`RD_WAVE_MODEL`, the owner asked for it). The rest use the default model unless a lead records why not.
 Mode and roles are unchanged from Part 1.
 
@@ -938,95 +969,116 @@ Mode and roles are unchanged from Part 1.
 - **Ops notes:** `rd merge` needs `gh pr ready` first (the PRs open as drafts); each train ran about 10 minutes in the background. Workers committed under `chore:`/`docs:` because nothing touched `packages/basalt-ui`. The committed PNG weight is about 18 MB under `keel/` and 9.5 MB under `w29/`.
 - **Next:** Wave 30 is `active`. Its lead reads `BENCHMARK.md`, `keel/inventory.json` and `.design-parity/w29/board.html` (local only), then re-runs `make compare LABEL=w<n>` for every later board. Not released (no package change). Stopped here as briefed: the orchestrator spawns Wave 30.
 
-## Wave 30 — Gap audit and the design-parity spec <!-- status: active -->
+## Wave 30 — Two-way audit, the catalogue and the spec <!-- status: active -->
 
-- [ ] Score every inventory pattern (missing / poor / close / at parity) with the reason in visual terms.
-      Each gap gets a root cause: a token or scale, component anatomy, a missing component, chart-in-card
-      chrome, or a recipe nobody wrote.
-- [ ] Decide each pattern's home: shipped component, a variant of an existing one, a token or derive change,
-      or a recipe in the skills. Apply the adopt-or-delete doctrine: a new export names its first fleet
-      consumer.
-- [ ] `/research`: TanStack Table responsive patterns (card-collapse vs column priority), a drag-and-drop
-      library for the kanban that fits React 19 and the Compiler, and timeline virtualisation with TanStack
-      Virtual.
-- [ ] **Data-to-expression catalogue:** for every inventory pattern, record the dataset shape it encodes
-      (single value with trend, progress to target, part of a whole, distribution, status over time, ranked
-      list, event sequence, entity with facts, …), the encoding Keel chose, and why it beats the default.
-      Classify each basalt shortfall as a flexibility gap (name the missing mark, slot, variant or density
-      step) or a guidance gap (basalt can do it, but no skill or rule leads there). This catalogue is the
+- [ ] Score every inventory pattern in both directions (_basalt ahead (keep)_ / _on par_ / _learn from the
+      reference_ / _missing_), with the reason in visual terms. Each gap gets a root cause: a token or scale,
+      component anatomy, a missing component, chart-in-card chrome, or a recipe nobody wrote. Record where
+      basalt is ahead, so it is protected rather than changed.
+- [ ] **Data-to-expression catalogue:** for every pattern, the dataset shape it encodes (single value with
+      trend, progress to target, part of a whole, distribution, status over time, ranked list, event sequence,
+      entity with facts, …), the best encoding and why it beats the default. Each basalt shortfall is classed as
+      a flexibility gap (name the missing mark, slot, variant or density step) or a guidance gap. This is the
       core of the spec.
-- [ ] Write `docs/waves/design-parity/SPEC.md` (outside the `docs/*.md` spec-prose budget, which has 17 lines of headroom; Wave 35 folds the settled law into `DESIGN-CORE.md`) (anatomy, scales, states, responsive behaviour per pattern) and the
-      **visual rubric** that later waves are scored against. The rubric scores each component on two axes:
-      **craft** (spacing, density, type, chrome) and **expression** (does the encoding fit the data, and does
-      the space carry information). Reconcile it with `DESIGN-CORE.md`: change the
-      law where Keel shows it is wrong, and record each decision.
-- [ ] Rewrite Waves 31–36 below to the spec (keep three to six steps each), and file the fleet's
-      pattern needs (argo, rb, linewatch, obsidian, weatherorb, shutterflow) as ledger rows.
-      **Owner review point:** the mother shows the owner the baseline board and the spec before Wave 31 starts.
+- [ ] Decide each pattern's home: shipped component, a variant of an existing one, a token or derive change,
+      or a recipe in the skills. A new export names its first fleet consumer. A missing pattern with no fleet
+      need is recorded and not built.
+- [ ] `/research`: TanStack Table responsive patterns (card-collapse vs column priority), a drag-and-drop
+      library for the kanban that fits React 19 and the Compiler, timeline virtualisation with TanStack
+      Virtual, and Claude Code subagent and skill discovery semantics for the shipped reviewer.
+- [ ] Write `docs/waves/design-parity/SPEC.md`. It lives outside the `docs/*.md` spec-prose budget, which has
+      17 lines of headroom; the last pattern wave folds the settled law into `DESIGN-CORE.md`. The spec covers
+      the scenarios, the anatomy, scales, states and responsive behaviour per pattern, and the **three-axis
+      rubric** with a banned-filler list. Reconcile it with `DESIGN-CORE.md`, and record each decision.
+- [ ] Rewrite Waves 31–37 below to the spec (three to six steps each), and file the fleet's pattern needs
+      (argo, rb, linewatch, obsidian, weatherorb, shutterflow) as ledger rows.
+      **Owner review point:** the mother shows the owner the baseline board, the two-way scores and the spec
+      before Wave 31 starts.
       **Left behind:**
 
-## Wave 31 — Foundation: scales, density and card anatomy <!-- status: pending -->
+## Wave 31 — The loop's tools, shipped (dogfooded first) <!-- status: pending -->
 
-Provisional; Wave 30 rewrites it.
+Provisional; Wave 30 rewrites it. Pulls Part 2's screenshot scaffolding (Wave 22) and rows 135/136/138
+(Wave 21) forward, because every later wave runs its rounds on these tools.
+
+- [ ] `basalt-ui shot <route…>`: Playwright renders at the desktop and mobile viewports, in both schemes,
+      and in the tooltip, hover, focus, empty and loading states. It writes a local board. The internal
+      `make compare` reuses it for the reference column.
+- [ ] A shipped reviewer subagent (installed by `sync`). It scores shots on the three axes and must cite the
+      crop and the defect for every failure.
+- [ ] The skill procedure: scenario → at least three rounds → rubric. The definition of done is rendered,
+      reviewed and revised. A `check` notice when UI files changed with no fresh shots.
+- [ ] Discovery: a monorepo-root session finds the skills and the reviewer (row 135), the rule `paths:`
+      match real layouts (row 136), and the ViewTabs placement law is consistent (row 138).
+      **Left behind:**
+
+## Wave 32 — Foundation: scales, density, card anatomy, chart-in-card <!-- status: pending -->
+
+Provisional.
 
 - [ ] Spacing, type and radius changes from the spec, made through the derive config and constants and
       never by editing hexes; then the level-0 golden tests.
-- [ ] One card anatomy (header, value and unit, delta, inline chart, footer) every card composes.
-- [ ] Chart-in-card chrome: axis-less sparkline, area and bar, sized by the card.
-- [ ] Rubric pass on the playground for the foundation patterns.
+- [ ] One card anatomy (caption, value and unit, delta, inline chart, footer, explanation slot) that every
+      card composes.
+- [ ] Chart-in-card chrome: axis-less sparkline, area and bar, sized by the card. Labels never repeat
+      (row 137, with weatherorb's zoned ticks).
+- [ ] Rounds on the first scenario; the boards go to the owner.
       **Left behind:**
 
-## Wave 32 — Metric cards and the dense dashboard <!-- status: pending -->
+## Wave 33 — Metric cards and the dense dashboard <!-- status: pending -->
 
 Provisional. Validator: argo's dashboards.
 
-- [ ] Metric and KPI card family at parity with Keel's top row.
-- [ ] The dashboard composition: a Today-style page in the playground with grid rhythm, sections and the
-      activity stream.
-- [ ] Decision and entity cards (proposal, evidence, confidence, actions, keyboard hints).
+- [ ] The metric card family: each catalogue encoding (trend, progress to target, gauge, segmented bar,
+      distribution).
+- [ ] The dashboard scenario: grid rhythm, sections, and an activity stream.
+- [ ] Decision and entity cards, if a fleet app needs them (proposal, evidence, confidence, actions,
+      keyboard hints).
       **Left behind:**
 
-## Wave 33 — Data tables, responsive <!-- status: pending -->
+## Wave 34 — Data tables, responsive <!-- status: pending -->
 
 Provisional. Validators: argo, obsidian.
 
-- [ ] Table chrome at parity: header, row density, cell types (entity, status, money, owner, relative time).
+- [ ] Table chrome: header, row density, cell types (entity, status, money, owner, relative time,
+      inline bar).
 - [ ] The responsive strategy from the spec, on TanStack Table and Virtual.
 - [ ] Toolbar, filters and views in the dense style.
       **Left behind:**
 
-## Wave 34 — Kanban, timeline and record detail <!-- status: pending -->
+## Wave 35 — Kanban, timeline and record detail <!-- status: pending -->
 
-Provisional.
+Provisional; each pattern only with a named fleet consumer.
 
 - [ ] Kanban board (columns, cards, drag and drop, keyboard) on the chosen library.
 - [ ] Timeline and activity stream (grouping, sources, live vs earlier).
 - [ ] Record detail page layout (header, facts, timeline, aside).
       **Left behind:**
 
-## Wave 35 — Forms, controls and states <!-- status: pending -->
+## Wave 36 — Forms, states and the guidance half <!-- status: pending -->
 
 Provisional.
 
-- [ ] Field, control and form-section styling at parity.
+- [ ] Field, control and form-section quality.
 - [ ] Empty, loading and error states for every pattern above.
-- [ ] The guidance half: the catalogue ships as the decision table in the `basalt-design` and
-      `basalt-charts` skills (dataset shape → pattern → component). The rules name it, so an agent
-      reaches it before it reaches for a card with a number.
-- [ ] Rubric re-score of the whole inventory; every pattern still below `close` gets a step here or a
-      recorded reason.
+- [ ] The catalogue ships as the decision table in `basalt-design` and `basalt-charts` (dataset shape →
+      pattern → component). The rules name it, so an agent reaches it before it reaches for a card with a
+      number. Fold the settled law into `DESIGN-CORE.md`.
+- [ ] Re-score the whole inventory. Every pattern still below the rubric gets a step here or a recorded
+      reason.
       **Left behind:**
 
-## Wave 36 — Fleet rollout and the convergence loop <!-- status: pending -->
+## Wave 37 — Fleet rollout, the expression trial and convergence <!-- status: pending -->
 
-- [ ] Release, then upgrade argo, rb, linewatch and obsidian one at a time, each with a before/after board
-      from the real app. Friction and ugliness found there become ledger rows and are fixed upstream.
+- [ ] Release, then upgrade argo, rb, linewatch and obsidian one at a time. Each app runs the shipped loop
+      on its own screens and gets a before/after board. Friction and ugliness become ledger rows and are
+      fixed upstream.
 - [ ] **Expression trial** (shaped like weatherorb's W45): a fresh agent in a scratch `init` app gets five
-      datasets and no component names. Render what it builds, put it on a board next to the catalogue's
-      pattern, and score it on the rubric. A pick that falls back to the default becomes a guidance row.
+      datasets and no component names. Did it find and follow the shipped procedure, and which encodings did
+      it pick? Score the boards. A fallback to the default is a guidance row.
 - [ ] Brief weatherorb's orchestrator, and shutterflow's for its 2.x migration.
-- [ ] Re-run the full comparison. If gaps remain, append Waves 37+ in the same shape. The track closes when
-      a fresh scorer finds nothing worth closing.
+- [ ] Re-run the full audit. If gaps remain, append Waves 38+ in the same shape. The track closes when a
+      fresh scorer finds nothing worth improving against basalt's rubric.
       **Left behind:**
 
 # Part 2, continued — queued behind Part 3
