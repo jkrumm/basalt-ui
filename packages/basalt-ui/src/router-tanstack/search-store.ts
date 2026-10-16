@@ -105,10 +105,14 @@ export type SearchStore<S extends Record<string, AnyField>> = {
 
 // ── Implementation ─────────────────────────────────────────────────────────
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
+}
+
 /** Reads the merged search of every matched route, so a child or sibling needs no `from` (A3). */
 function useCurrentSearch(): Record<string, unknown> {
-  const search = useSearch({ strict: false }) as unknown
-  return typeof search === 'object' && search !== null ? (search as Record<string, unknown>) : {}
+  const search: unknown = useSearch({ strict: false })
+  return isRecord(search) ? search : {}
 }
 
 /**
@@ -192,7 +196,8 @@ export function createSearchStore<const S extends Record<string, AnyField>>(
   // touches the other two uses exclusively. Missing it there made the pinned-link warning fire on
   // correctly wired pages.
   let readerWired = false
-  let validatedOnce = false
+  /** Raw inputs this store's `validateSearch` has seen — how a composed route proves it ran it. */
+  const ranOn = new WeakSet<object>()
   const markReaderWired = (): void => {
     readerWired = true
   }
@@ -233,7 +238,7 @@ export function createSearchStore<const S extends Record<string, AnyField>>(
    * judges ownership against the location it is called at. With no mount reading the store it
    * clears the mirror alone.
    */
-  let mounted: { router: AnyRouter; count: number } | null = null
+  const mounts = new Map<AnyRouter, number>()
 
   const assertPatchNotOwned = (entry: StoreEntry, patch: Record<string, unknown>): void => {
     for (const param of Object.keys(patch)) {
@@ -255,8 +260,9 @@ export function createSearchStore<const S extends Record<string, AnyField>>(
     return out
   }
 
-  const maybeWarn = (raw: Record<string, unknown>, record: Record<string, unknown>): void => {
-    if (readerWired || process.env['NODE_ENV'] === 'production') return
+  const maybeWarn = (raw: Record<string, unknown>): void => {
+    if (process.env['NODE_ENV'] === 'production' || readerWired) return
+    const record = core.readRecord()
     for (const entry of core.urlEntries) {
       const fromUrl = entry.codec.fromSearch(raw)
       if (fromUrl === null || !entry.codec.equals(fromUrl, entry.codec.fallback)) continue
@@ -265,7 +271,6 @@ export function createSearchStore<const S extends Record<string, AnyField>>(
       // Describe both sides as the URL spells them (a range prints `30d`, not its whole value
       // object) — the message quotes a `search:` literal, so it has to be URL-shaped to be advice.
       warnings.linkPinsFallback({
-        readerWired,
         param: entry.codec.primary,
         urlValue: entry.codec.toSearch(fromUrl)[entry.codec.primary],
         storedValue: entry.codec.toSearch(stored)[entry.codec.primary],
@@ -274,14 +279,36 @@ export function createSearchStore<const S extends Record<string, AnyField>>(
     }
   }
 
+  /**
+   * Pure on a server-rendered page (and on the server): the stored layer would make the client's
+   * first search differ from the HTML the server rendered, and a loader keyed on `search` would run
+   * with different deps on hydration. `window.$_TSR` is the router's own bootstrap payload — present
+   * exactly when the page was dehydrated by SSR. A client-only app has none, so a paramless visit
+   * still resolves URL ⊳ mirror ⊳ fallback; an SSR app reaches the mirror through `linkSearch`.
+   */
+  const stored = (): Record<string, unknown> =>
+    typeof window === 'undefined' || '$_TSR' in window ? {} : core.readRecord()
+
   const validateSearch = (raw: Record<string, unknown>): SearchValues<S> => {
-    validatedOnce = true
-    // The stored layer is client-only: on the server `validateSearch` is URL ⊳ fallback, so the
-    // search a loader keys on never depends on a storage the server cannot see.
-    const record = typeof window === 'undefined' ? {} : core.readRecord()
-    maybeWarn(raw, record)
-    return flatten(raw, record) as SearchValues<S>
+    ranOn.add(raw)
+    maybeWarn(raw)
+    return flatten(raw, stored()) as SearchValues<S>
   }
+
+  /** Dev only: does any matched route run THIS store's `validateSearch`, directly or composed? */
+  const routesRunStore = (router: AnyRouter): boolean =>
+    router.state.matches.some((match) => {
+      const validate: unknown = router.routesById[match.routeId]?.options.validateSearch
+      if (typeof validate !== 'function') return false
+      if (validate === validateSearch) return true
+      const probe = {}
+      try {
+        validate(probe)
+      } catch {
+        // a schema may reject the probe; what matters is whether it reached this store first
+      }
+      return ranOn.has(probe)
+    })
 
   const linkSearch = (): SearchValues<S> => {
     readerWired = true
@@ -296,22 +323,28 @@ export function createSearchStore<const S extends Record<string, AnyField>>(
   const urlUse = (entry: StoreEntry) => (): readonly [unknown, FieldWrite] => {
     const search = useCurrentSearch()
     const navigate = useNavigate()
+    const router = useRouter()
     const [record, setRecord] = core.usePersistedRecord()
     markReaderWired()
     const value = core.resolve(entry, search, record)
     // The matched route validates this field iff its primary param is present (see the module
     // header). A foreign route gets the persist-only lane.
     const validated = Object.hasOwn(search, entry.codec.primary)
-    if (validated && !validatedOnce)
-      warnings.foreignParam({ name: entry.name, param: entry.codec.primary })
-    const router = useRouter()
+
     useEffect(() => {
-      mounted = { router, count: (mounted?.count ?? 0) + 1 }
+      mounts.set(router, (mounts.get(router) ?? 0) + 1)
       return () => {
-        mounted =
-          mounted !== null && mounted.count > 1 ? { ...mounted, count: mounted.count - 1 } : null
+        const left = (mounts.get(router) ?? 1) - 1
+        if (left > 0) mounts.set(router, left)
+        else mounts.delete(router)
       }
     }, [router])
+
+    useEffect(() => {
+      if (process.env['NODE_ENV'] === 'production' || !validated) return
+      if (!routesRunStore(router))
+        warnings.foreignParam({ name: entry.name, param: entry.codec.primary })
+    }, [validated, router])
 
     return [
       value,
@@ -319,38 +352,34 @@ export function createSearchStore<const S extends Record<string, AnyField>>(
         const patch = opts?.patch
         if (patch !== undefined && Object.keys(patch).length > 0) {
           assertPatchNotOwned(entry, patch)
-          if (!validated) {
-            warnings.patchWasDropped({ name: entry.name, param: entry.codec.primary })
-          }
+          if (!validated) warnings.patchWasDropped({ name: entry.name, param: entry.codec.primary })
         }
-        if (validated) {
-          navigate({
-            to: '.',
-            // `patch` FIRST, the field's own params last: a patch is for keys the store does not
-            // own (clearing a sibling `detailDate` with `undefined`), so it must never be able to
-            // overwrite the value this very call is setting.
-            // `resets` only when the value moves: a no-op write (a debounced box settling back on
-            // what it held) must not throw the reader off the page they are on.
-            search: (prev: Record<string, unknown>) => ({
-              ...prev,
-              ...resetsFor(entry, prev, next),
-              ...opts?.patch,
-              ...entry.codec.toSearch(next),
-            }),
-            replace: entry.codec.lane.history === 'replace',
-            // A filter lives halfway down a page as often as it lives in the bar, and the router's
-            // default scroll restoration treats this same-route search write as a navigation — so
-            // without this a select two screens down jumps the reader back to the top on every
-            // change. Never a prop: there is no filter write that WANTS the page to scroll.
-            resetScroll: false,
-          })
-        }
-        if (entry.codec.lane.persist) {
-          core.writeField(setRecord, entry.name, next)
+        if (!validated) {
+          if (entry.codec.lane.persist) core.writeField(setRecord, entry.name, next)
+          else warnings.writeHasNowhereToGo({ name: entry.name, param: entry.codec.primary })
           return
         }
-        if (!validated)
-          warnings.writeHasNowhereToGo({ name: entry.name, param: entry.codec.primary })
+        navigate({
+          to: '.',
+          // `patch` FIRST, the field's own params last: a patch is for keys the store does not
+          // own (clearing a sibling `detailDate` with `undefined`), so it must never be able to
+          // overwrite the value this very call is setting.
+          // `resets` only when the value moves: a no-op write (a debounced box settling back on
+          // what it held) must not throw the reader off the page they are on.
+          search: (prev: Record<string, unknown>) => ({
+            ...prev,
+            ...resetsFor(entry, prev, next),
+            ...opts?.patch,
+            ...entry.codec.toSearch(next),
+          }),
+          replace: entry.codec.lane.history === 'replace',
+          // A filter lives halfway down a page as often as it lives in the bar, and the router's
+          // default scroll restoration treats this same-route search write as a navigation — so
+          // without this a select two screens down jumps the reader back to the top on every
+          // change. Never a prop: there is no filter write that WANTS the page to scroll.
+          resetScroll: false,
+        })
+        if (entry.codec.lane.persist) core.writeField(setRecord, entry.name, next)
       },
     ] as const
   }
@@ -379,24 +408,25 @@ export function createSearchStore<const S extends Record<string, AnyField>>(
     if (entry.codec.lane.persist) core.clearField(entry.name)
     else if (!entry.codec.lane.url) core.clearMemory(entry.name)
     if (!entry.codec.lane.url) return
-    if (mounted === null) return
-    const { router } = mounted
-    // Ownership is judged where the user is NOW, not where the last render happened to be.
-    if (
-      !Object.hasOwn(router.state.location.search as Record<string, unknown>, entry.codec.primary)
-    )
-      return
-    void router.navigate({
-      to: '.',
-      // Gated like the setter: clearing a field already at its fallback keeps the page.
-      search: (prev: Record<string, unknown>) => ({
-        ...prev,
-        ...resetsFor(entry, prev, entry.codec.fallback),
-        ...entry.codec.toSearch(entry.codec.fallback),
-      }),
-      replace: true,
-      resetScroll: false,
-    })
+    for (const router of mounts.keys()) {
+      // Ownership is judged where the user is NOW (the committed, validated location), not where
+      // the last render happened to be.
+      const { search } = router.state.location
+      if (!isRecord(search) || !Object.hasOwn(search, entry.codec.primary)) continue
+      router
+        .navigate({
+          to: '.',
+          // Gated like the setter: clearing a field already at its fallback keeps the page.
+          search: (prev: Record<string, unknown>) => ({
+            ...prev,
+            ...resetsFor(entry, prev, entry.codec.fallback),
+            ...entry.codec.toSearch(entry.codec.fallback),
+          }),
+          replace: true,
+          resetScroll: false,
+        })
+        .catch(reportError)
+    }
   }
 
   const field = {} as { [K in keyof S]: FieldHandle<S[K]> }
@@ -505,6 +535,3 @@ export function createSearchStore<const S extends Record<string, AnyField>>(
 
   return store
 }
-
-/** @deprecated Renamed to `createSearchStore` (the wrapper was a pass-through); removed after 2.13. */
-export const buildSearchStore = createSearchStore

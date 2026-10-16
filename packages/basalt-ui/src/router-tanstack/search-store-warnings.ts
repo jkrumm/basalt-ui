@@ -1,10 +1,12 @@
 /**
  * `createSearchStore`'s dev diagnostics and the once-only bookkeeping behind them, so the store
- * body is the lane logic only. Every function is silent in production except `patchOwned`, which
- * keeps the write and logs it.
+ * body is the lane logic only. Every method is silent in production except `patchOwned`, which
+ * keeps the write and logs it. Each reads `process.env['NODE_ENV']` literally at its own branch —
+ * a shared helper would keep the dev text in a production bundle (`src/common/dev-gate.test.ts`).
  */
 
-const isProd = (): boolean => process.env['NODE_ENV'] === 'production'
+/** True the first time `name` is seen in `seen`. */
+const first = (seen: Set<string>, name: string): boolean => !seen.has(name) && !!seen.add(name)
 
 function describeValue(value: unknown): string {
   return typeof value === 'string' ? value : JSON.stringify(value)
@@ -42,13 +44,8 @@ export function createStoreWarnings(key: string) {
      * Once per store: the URL pins `fallback` while something else is persisted and no reader was
      * ever called — almost always a nav link declaring the param as a module-scope literal.
      */
-    linkPinsFallback(input: {
-      readerWired: boolean
-      param: string
-      urlValue: unknown
-      storedValue: unknown
-    }): void {
-      if (pinned || input.readerWired || isProd()) return
+    linkPinsFallback(input: { param: string; urlValue: unknown; storedValue: unknown }): void {
+      if (process.env['NODE_ENV'] === 'production' || pinned) return
       pinned = true
       const { param } = input
       const urlValue = describeValue(input.urlValue)
@@ -62,8 +59,7 @@ export function createStoreWarnings(key: string) {
     },
     /** Once per field: a `persist: false` write from a route that does not validate it goes nowhere. */
     writeHasNowhereToGo(input: { name: string; param: string }): void {
-      if (isProd() || nowhere.has(input.name)) return
-      nowhere.add(input.name)
+      if (process.env['NODE_ENV'] === 'production' || !first(nowhere, input.name)) return
       warn(
         `wrote field '${input.name}' from a route that does not validate \`${input.param}\`, and ` +
           'the field is `persist: false` — so the write was dropped. Either render this control on ' +
@@ -74,8 +70,7 @@ export function createStoreWarnings(key: string) {
     },
     /** Once per field: a patched write from a route that does not validate the field. */
     patchWasDropped(input: { name: string; param: string }): void {
-      if (isProd() || patchDropped.has(input.name)) return
-      patchDropped.add(input.name)
+      if (process.env['NODE_ENV'] === 'production' || !first(patchDropped, input.name)) return
       warn(
         `wrote field '${input.name}' with a \`patch\` from a route that does not validate ` +
           `\`${input.param}\` — the field's value persisted (A1), but the patch was DROPPED: there ` +
@@ -89,9 +84,8 @@ export function createStoreWarnings(key: string) {
      */
     patchOwned(input: { name: string; owner: string; param: string }): void {
       const message = patchOwnsFieldMessage({ key, ...input })
-      if (!isProd()) throw new Error(message)
-      if (patchOwner.has(input.param)) return
-      patchOwner.add(input.param)
+      if (process.env['NODE_ENV'] !== 'production') throw new Error(message)
+      if (!first(patchOwner, input.param)) return
       // oxlint-disable-next-line no-console -- production keeps the write; the log is the record
       console.error(message)
     },
@@ -101,8 +95,7 @@ export function createStoreWarnings(key: string) {
      * store's setter navigate on its behalf.
      */
     foreignParam(input: { name: string; param: string }): void {
-      if (isProd() || foreign.has(input.name)) return
-      foreign.add(input.name)
+      if (process.env['NODE_ENV'] === 'production' || !first(foreign, input.name)) return
       warn(
         `\`${input.param}\` (field '${input.name}') is in the URL but this store's ` +
           '`validateSearch` has never run — another store or schema owns the param, and a write ' +

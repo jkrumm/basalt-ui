@@ -6,7 +6,7 @@
  * the route that validates the params, a CHILD of it (A3 — no `from`, the param still resolves),
  * and a sibling that knows nothing about the store (A1 — the write persists and does not navigate).
  */
-import { beforeEach, describe, expect, spyOn, test } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, spyOn, test } from 'bun:test'
 import { Component } from 'react'
 import type { ReactNode } from 'react'
 import { renderToString } from 'react-dom/server'
@@ -116,6 +116,16 @@ function persist(key: string, record: Record<string, unknown>): void {
 beforeEach(() => {
   localStorage.clear()
 })
+
+const handRolled = (raw: Record<string, unknown>) => ({
+  range: raw['range'] === '7d' ? '7d' : '1d',
+})
+
+// Stands in for argo's `zodSchema.parse({ ...store.validateSearch(raw) })`: copies and validates.
+const parse = (value: Record<string, unknown>): Record<string, unknown> => {
+  if (value['range'] !== '1d' && value['range'] !== '7d') throw new Error('bad range')
+  return { range: value['range'] }
+}
 
 describe('use() — reading', () => {
   test('a deep link WINS over the localStorage mirror (A8)', async () => {
@@ -350,6 +360,12 @@ describe('use() — writing', () => {
     expect(storedRecord('r-nowhere')).toBeNull()
     expect(warn).toHaveBeenCalledTimes(1)
     expect(String(warn.mock.calls[0]?.[0])).toContain('persist: false')
+
+    // Once per field, not once per click.
+    await act(async () => {
+      probe.current?.set(4)
+    })
+    expect(warn).toHaveBeenCalledTimes(1)
     warn.mockRestore()
   })
 
@@ -595,20 +611,58 @@ describe('store hooks', () => {
     expect(storedRecord('r-clear-moved')).toEqual({})
   })
 
-  test('a param another schema validates warns in dev — this store never ran', async () => {
+  test('a param another schema validates warns in dev — and only on the route that does', async () => {
     const store = createSearchStore({
       key: 'r-foreign-param',
       fields: { range: field.enum(['1d', '7d'], '1d') },
     })
     const warn = spyOn(console, 'warn').mockImplementation(() => {})
+    const rootRoute = createRootRoute({ component: () => <Outlet /> })
+    const own = createRoute({
+      getParentRoute: () => rootRoute,
+      path: '/own',
+      validateSearch: store.validateSearch,
+      component: fieldProbe(store.field.range, sink()),
+    })
+    const foreign = createRoute({
+      getParentRoute: () => rootRoute,
+      path: '/foreign',
+      validateSearch: handRolled,
+      component: fieldProbe(store.field.range, sink()),
+    })
+    const router = createRouter({
+      routeTree: rootRoute.addChildren([own, foreign]),
+      history: createMemoryHistory({ initialEntries: ['/own?range=7d'] }),
+    })
+    render(<RouterProvider router={router} />)
+    await waitFor(() => {
+      expect(router.state.status).toBe('idle')
+    })
+    expect(warn).not.toHaveBeenCalled()
 
+    await act(async () => {
+      await router.navigate({ to: '/foreign', search: { range: '7d' } })
+    })
+    await waitFor(() => {
+      expect(warn).toHaveBeenCalledTimes(1)
+    })
+    expect(String(warn.mock.calls[0]?.[0])).toContain('another store or schema owns the param')
+    warn.mockRestore()
+  })
+
+  test('a route composing the store with its own schema is not foreign', async () => {
+    const store = createSearchStore({
+      key: 'r-composed',
+      fields: { range: field.enum(['1d', '7d'], '1d') },
+    })
+    const warn = spyOn(console, 'warn').mockImplementation(() => {})
     await mountApp({
-      validateSearch: (raw) => ({ range: raw['range'] === '7d' ? '7d' : '1d' }),
+      validateSearch: (raw) => parse({ ...store.validateSearch(raw) }),
       entry: '/dashboard?range=7d',
       Dashboard: fieldProbe(store.field.range, sink()),
     })
 
-    expect(String(warn.mock.calls[0]?.[0])).toContain('another store or schema owns the param')
+    expect(warn).not.toHaveBeenCalled()
     warn.mockRestore()
   })
 
@@ -1190,7 +1244,7 @@ describe('use() — a patched write', () => {
     expect(currentSearch(router)['range']).toBe('30d')
   })
 
-  test('a patched write from a FOREIGN route drops the patch, and warns', async () => {
+  test('a patched write from a FOREIGN route drops the patch, and warns once', async () => {
     const store = createSearchStore({
       key: 'r-patch-foreign',
       fields: { tab: field.enum(['overview', 'detail'], 'overview') },
@@ -1211,6 +1265,11 @@ describe('use() — a patched write', () => {
     // The write persisted (A1); the patch had no navigate to merge into and is gone.
     expect(storedRecord('r-patch-foreign')).toEqual({ tab: 'detail' })
     expect(currentSearch(router)['detailDate']).toBe('2026-03-01')
+    expect(warn).toHaveBeenCalledTimes(1)
+
+    await act(async () => {
+      probe.current?.set('overview', { patch: { detailDate: undefined } })
+    })
     expect(warn).toHaveBeenCalledTimes(1)
     warn.mockRestore()
   })
@@ -1237,49 +1296,85 @@ describe('use() — a patched write', () => {
   })
 })
 
+const mounted: HTMLElement[] = []
+
 async function hydrate(markup: string, node: ReactNode): Promise<HTMLElement> {
   const container = document.createElement('div')
+  mounted.push(container)
   document.body.appendChild(container)
   container.innerHTML = markup
   const error = spyOn(console, 'error').mockImplementation(() => {})
-  await act(async () => {
-    hydrateRoot(container, node)
-  })
-  expect(error).not.toHaveBeenCalled()
-  error.mockRestore()
+  try {
+    await act(async () => {
+      hydrateRoot(container, node)
+    })
+    expect(error).not.toHaveBeenCalled()
+  } finally {
+    error.mockRestore()
+  }
   return container
 }
 
-const Show = (props: { handle: { use: () => readonly [unknown, unknown] } }): ReactNode => (
+const Show = <F extends AnyField>(props: { handle: FieldHandle<F> }): ReactNode => (
   <span>{String(props.handle.use()[0])}</span>
 )
 
+function rootAt<F extends AnyField>(
+  store: { validateSearch: AppInput['validateSearch'] },
+  handle: FieldHandle<F>,
+  url: string,
+) {
+  const rootRoute = createRootRoute({
+    validateSearch: store.validateSearch,
+    component: () => <Show handle={handle} />,
+  })
+  return createRouter({
+    routeTree: rootRoute,
+    history: createMemoryHistory({ initialEntries: [url] }),
+  })
+}
+
 describe('SSR — the server HTML is the first client render', () => {
+  afterEach(() => {
+    for (const container of mounted.splice(0)) container.remove()
+    Reflect.deleteProperty(window, '$_TSR')
+  })
+
   test('url lane: renders the URL value on both sides, then settles on it', async () => {
     const store = createSearchStore({
       key: 'ssr-url',
       fields: { range: field.enum(['1d', '7d', '30d'], '1d') },
     })
     persist('ssr-url', { range: '30d' })
-    const build = () => {
-      const rootRoute = createRootRoute({
-        validateSearch: store.validateSearch,
-        component: () => <Show handle={store.field.range} />,
-      })
-      return createRouter({
-        routeTree: rootRoute,
-        history: createMemoryHistory({ initialEntries: ['/?range=7d'] }),
-      })
-    }
-    const server = build()
+    const server = rootAt(store, store.field.range, '/?range=7d')
     await server.load()
     const markup = renderToString(<RouterProvider router={server} />)
     expect(markup).toContain('7d')
 
-    const client = build()
+    const client = rootAt(store, store.field.range, '/?range=7d')
     await client.load()
     const container = await hydrate(markup, <RouterProvider router={client} />)
     expect(container.textContent).toBe('7d')
+  })
+
+  test('url lane, NO param + a stored value on a dehydrated page: the first client render is the server HTML', async () => {
+    const store = createSearchStore({
+      key: 'ssr-url-bare',
+      fields: { range: field.enum(['1d', '7d', '30d'], '1d') },
+    })
+    persist('ssr-url-bare', { range: '30d' })
+    // The server never sees storage (unit-tested without a window); the client of a dehydrated
+    // page carries `window.$_TSR`, which is what this run simulates for both sides.
+    Object.assign(window, { $_TSR: {} })
+    const server = rootAt(store, store.field.range, '/')
+    await server.load()
+    const markup = renderToString(<RouterProvider router={server} />)
+    expect(markup).toContain('1d')
+
+    const client = rootAt(store, store.field.range, '/')
+    await client.load()
+    const container = await hydrate(markup, <RouterProvider router={client} />)
+    expect(container.textContent).toBe('1d')
   })
 
   test('stored lane: the server renders the fallback, hydration adopts the stored value', async () => {

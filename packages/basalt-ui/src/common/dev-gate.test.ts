@@ -34,6 +34,12 @@ const LEAKING_FORMS = [
       String.raw`function\s+\w+\s*\(\s*\)[^{]*\{\s*return\s+${NODE_ENV}\s*[!=]==?\s*['"]production['"]`,
     ),
   },
+  {
+    name: 'an arrow helper returning the NODE_ENV comparison',
+    pattern: new RegExp(
+      String.raw`(?:const|let|var)\s+\w+\s*=\s*(?:async\s*)?\([^)]*\)\s*(?::\s*\w+\s*)?=>\s*${NODE_ENV}\s*[!=]==?\s*['"]production['"]`,
+    ),
+  },
   { name: 'a call to the removed `isDev()` helper', pattern: /\bisDev\s*\(/ },
 ] as const
 
@@ -57,7 +63,7 @@ describe('dev-only gates fold in every bundler', () => {
 
   test('the scan sees the tree and each pattern catches its own form', () => {
     expect(files.length).toBeGreaterThan(100)
-    const [boolConst, helper, call] = LEAKING_FORMS
+    const [boolConst, helper, arrow, call] = LEAKING_FORMS
     expect(boolConst.pattern.test(`const DEV = process.env['NODE_ENV'] !== 'production'`)).toBe(
       true,
     )
@@ -74,6 +80,9 @@ describe('dev-only gates fold in every bundler', () => {
       helper.pattern.test(
         `export function dev(): boolean {\n  return process.env.NODE_ENV !== 'production'\n}`,
       ),
+    ).toBe(true)
+    expect(
+      arrow.pattern.test(`const isProd = (): boolean => process.env['NODE_ENV'] === 'production'`),
     ).toBe(true)
     expect(call.pattern.test(`if (isDev()) warn()`)).toBe(true)
   })
