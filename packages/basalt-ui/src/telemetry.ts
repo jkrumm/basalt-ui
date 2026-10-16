@@ -61,14 +61,16 @@ export type BasaltEvent =
   | Err<
       'query.error',
       {
-        /** `groupingId(queryHash)`: an opaque grouping id, not the key. */ 'basalt.query.hash': string
+        /** `groupingId(queryHash)`: an opaque grouping id, not the key. */
+        'basalt.query.hash': string
         'basalt.query.failure_count': number
       }
     >
   | Err<
       'mutation.error',
       {
-        /** `groupingId(JSON.stringify(key))`: an opaque grouping id, not the key. */ 'basalt.mutation.key': string
+        /** `groupingId(JSON.stringify(key))`: an opaque grouping id, not the key. */
+        'basalt.mutation.key': string
       }
     >
   | Err<'render.error', { 'basalt.error.boundary': 'root' }>
@@ -204,11 +206,15 @@ function hookOf(context: unknown): RouterHook | undefined {
   return typeof hook === 'object' && hook !== null ? hook : undefined
 }
 
+const MISSING_HOOK =
+  '[basalt] route.error telemetry is off: the router was not built with `basaltRouterOptions()` (or `createBasaltRouter`).'
+let warnedMissingHook = false
+
 /**
  * Points the router's `route.error` hook at `handler` (the provider's emitter); returns the unbind.
  * The binding happens in the provider's effect, so a route error thrown before the first provider
- * effect (a loader failing during the initial load) is logged in dev but not emitted. A router
- * without the hook was not built with `basaltRouterOptions`: nothing is bound and dev warns.
+ * effect (a loader failing during the initial load) reaches the console only, never the sink. A
+ * router without the hook was not built with `basaltRouterOptions`: nothing is bound and it warns.
  */
 export function bindRouteError(
   router: { options: { context?: unknown } },
@@ -216,10 +222,11 @@ export function bindRouteError(
 ): () => void {
   const hook = hookOf(router.options.context)
   if (!hook) {
-    if (process.env.NODE_ENV !== 'production')
-      console.warn(
-        '[basalt] route.error telemetry is off: the router was not built with `basaltRouterOptions()` (or `createBasaltRouter`).',
-      )
+    // Dev warns on every bind; production once per document.
+    if (process.env.NODE_ENV !== 'production' || !warnedMissingHook) {
+      warnedMissingHook = true
+      console.warn(MISSING_HOOK)
+    }
     return () => {}
   }
   hook.onRouteError = handler

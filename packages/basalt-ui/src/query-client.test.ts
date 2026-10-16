@@ -73,6 +73,11 @@ describe('unwrap — Eden Treaty union envelope', () => {
 })
 
 describe('unwrap — guards', () => {
+  test('null and undefined are not envelopes: they throw a TypeError', () => {
+    expect(() => unwrap(null as never)).toThrow(TypeError)
+    expect(() => unwrap(undefined as never)).toThrow(TypeError)
+  })
+
   test('a non-native thenable is awaited, not treated as an envelope', async () => {
     const thenable: PromiseLike<{ data: number; error: null }> = {
       // oxlint-disable-next-line unicorn/no-thenable -- a non-native thenable is the case under test
@@ -97,6 +102,15 @@ describe('unwrap — guards', () => {
   test('null and undefined error with data resolve', () => {
     expect(unwrap({ data: 'ok', error: null })).toBe('ok')
     expect(unwrap({ data: 'ok', error: undefined })).toBe('ok')
+  })
+})
+
+describe('makeQueryClient — a numeric retry replaces the predicate', () => {
+  test("retry: 0 and retry: 5 are the consumer's, 4xx included", () => {
+    const queries = (retry: number) =>
+      makeQueryClient({ defaultOptions: { queries: { retry } } }).getDefaultOptions().queries
+    expect(queries(0)?.retry).toBe(0)
+    expect(queries(5)?.retry).toBe(5)
   })
 })
 
