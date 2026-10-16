@@ -60,10 +60,37 @@ All six seeds re-shot and scored by six fresh, blind general-purpose agents read
 
 `calibrate-good` no longer fails Craft 1: every gap, inset and radius on it is now a step in `scale`, so there is no value in no token and no Wave 32 baseline failure to record from the good board. Extra failures on bad seeds, checked against the crops/metrics: delta-fill Craft 1 (radius 6 inside card 7) is real; repeated-axis Craft 5 (axis ticks 4.06:1) and Craft 6 (end label struck through by the line) are real basalt findings; repeated-axis Craft 7 (tooltip `error`: the seed marks a hover/tooltip target that opens no tooltip) is a seed annotation gap, not a reviewer error, and shot's exit 1 on it is by design; accent-tab Expression 1/4 and Communication 5 are real (a tab strip and one sentence). No reviewer noise remained.
 
+## Iteration 4 (review round 1: coverage, scoping, visibility)
+
+Changes:
+
+- `shot` now writes one contact sheet per anchor (`png/<anchor-stem>__sheet.png`: every state × scheme × viewport, labelled, rendered from the crops already on disk in the open browser, 2000 px wide) and lists it as `sheet` on the anchor's `metrics.json` entries. A sheet that cannot be written is logged and left unlisted.
+- `scale` collects component-scoped `--vx-space/text/radius-*` declarations from any style rule (not only `:root`), via a typed in-page function passed to `page.evaluate(fn, arg)`; the pure grouping is tested as a plain function. A failed read is `scaleError` in `metrics.json`, a `[shot] scale unavailable: <reason>` line and a banner on the board.
+- Focus: the target check runs inside `attempt` (a locator failure is that anchor's `error`, never an abort); `hasFocusTarget` excludes hidden inputs, `tabindex="-1"`, disabled controls and `hidden`/`inert` subtrees (tested). Tooltip's trigger check moved inside `attempt` too. Stale `.basalt/shots/tmp-*` older than an hour are swept at start.
+- Reviewer: it MUST read every anchor's sheet and every `_page` shot and print a `Read:` line per component; a component whose sheet was not read is `unverified`. `scaleError` or no `scale` makes Craft 1 `unverified`. Craft 3 says which half is measured (`emptyRatio`) and which is judged from the 390 crop. The stale "(Craft 8)" is Craft 7; a test asserts every `Craft N`/`Expression N`/`Communication N` cited in the body exists in the rubric. The skill's step 6 names the sheets.
+- `CalibrateGood` (playground only): the header says why table sorting is on (a focus target) and that the board has no hover/tooltip target by design. Two real defects the sheets exposed were removed from the seed, not argued with the reviewer: the `Share` column did not say share of what (Communication 3), and putting the definition in the column header made "Support bot" wrap at 390 (Craft 3); the section title now carries it ("Top 3 projects, share of all spend, …") and the header stays `Share`.
+
+All six seeds re-shot (with sheets) and scored by six fresh blind general-purpose agents reading the edited reviewer file. `calibrate-good` was scored three times: the first two runs failed on the two real seed defects above (the second run cited Craft 3 after my first fix widened a header); the third passes.
+
+| seed                      | expected               | verdict        | items cited                    | read per component      | correct? |
+| ------------------------- | ---------------------- | -------------- | ------------------------------ | ----------------------- | -------- |
+| calibrate-good            | pass                   | pass (3rd run) | —                              | sheet ×2 + 4 page shots | yes      |
+| calibrate-delta-fill      | Craft 4 / Expression 3 | fail           | Craft 1, 4, Expression 3       | sheet + 4 page shots    | yes      |
+| calibrate-empty-half      | Craft 3                | fail           | Craft 3, 7, Expression 4       | sheet + 4 page shots    | yes      |
+| calibrate-repeated-axis   | Expression 5           | fail           | Craft 1, 5, 6, 7, Expression 5 | sheet + 4 page shots    | yes      |
+| calibrate-accent-tab      | Craft 4                | fail           | Craft 4, Expression 1, 4       | sheet + 4 page shots    | yes      |
+| calibrate-banned-subtitle | Communication 1        | fail           | Communication 1, Craft 6       | sheet + 4 page shots    | yes      |
+
+All six read the anchor's sheet and the four page shots and opened no single crop; the `Read:` lines are in each run's output. Extra failures on bad seeds, checked: delta-fill Craft 1 (radius 6 in card 7), repeated-axis Craft 1/5/6 (same radius step, 4.06:1 axis ink, end label struck through) and empty-half Craft 7 (tooltip `not-declared` although the card has an info glyph) are real basalt/seed findings. banned-subtitle Craft 6 ("the subtitle clips at the bottom edge" in the mobile focus panel) is a `shot` artefact, not a UI defect: the focus crop's clip box ends at the anchor plus a margin and cuts the focus tooltip off. Treat it as a known shot gap (the focus crop should union the visible tooltip); it is not fixed here.
+
 ## Method caveat
 
-The `basalt-design-reviewer` subagent definition is loaded at session start and is not reloaded. Iteration 1 used the subagent; its iteration-2 re-runs still quoted the old prompt, so iterations 2 and 3 were scored by fresh general-purpose agents told to read the edited reviewer file and follow its body, tools limited to Read/Grep/Glob. A real-subagent confirmation runs in a fresh session after merge.
+The shipped `basalt-design-reviewer` subagent has not yet run against these seeds. Its definition loads at session start and is not reloaded, so iteration 1 used the subagent with the old text, and iterations 2–4 used fresh general-purpose agents told to read the edited reviewer file and follow its body, tools limited to Read/Grep/Glob. The lead spawns a fresh-session confirmation with the real subagent type after merge. `/.claude/agents/basalt-design-reviewer.md` and `/.claude/skills/basalt-design/SKILL.md` are byte-identical to the package sources (`make sync-self`, then `cmp`).
+
+## Baseline
+
+`s4-metrics.json` stays committed: it is the S4 baseline that later waves diff against.
 
 ## Final result
 
-5 of 5 bad seeds fail with their expected item; `calibrate-good` passes. Iterations used: 3 (the second ran through the stale subagent definition and does not count as a test of the edits).
+5 of 5 bad seeds fail with their expected item; `calibrate-good` passes. Iterations used: 4 (the second ran through the stale subagent definition and does not count as a test of the edits; the reviewer-prompt budget of three counted iterations 1, 3 and 4 against genuinely different causes: reviewer numbering/cues, `shot`'s scale, coverage).
