@@ -1,3 +1,29 @@
+# [2.14.0](https://github.com/jkrumm/basalt-ui/compare/v2.13.3...v2.14.0) (2026-10-16)
+
+
+### Bug Fixes
+
+* a follower draws no cursor outside its x-domain ([133e045](https://github.com/jkrumm/basalt-ui/commit/133e04516f94ca3e97cbae6a7d17019ab20a9e41))
+* address review on search clear, unmount flush and shared types ([8719b11](https://github.com/jkrumm/basalt-ui/commit/8719b11dce65324d66e007e8a45c447417a892c1))
+* flush search on Enter/blur/unmount, share FilterBase and Option ([5e04b4d](https://github.com/jkrumm/basalt-ui/commit/5e04b4de3e94c6ce6118e79f4d3e42c463fdf2c8))
+* keep the format module doc free of non-export names ([161f787](https://github.com/jkrumm/basalt-ui/commit/161f787f22f19e66c55680c8125abf56b2c7f7b8))
+* make clear reachable, reset-safe on unmount, and disabled end to end ([5140dc2](https://github.com/jkrumm/basalt-ui/commit/5140dc29d82f29e649b42c1fd9e55bb902e6de04))
+* pack-test money expectation, static provider format props, tidy cache key ([c53ec4b](https://github.com/jkrumm/basalt-ui/commit/c53ec4b18261eaac98aba4ef2cebd71d088c7f7a))
+* pass the panel extent, take cursor view options as an object ([a554f25](https://github.com/jkrumm/basalt-ui/commit/a554f251ad2cbe42c219470c63c7647096aaa42e))
+* remove sed backup files ([92ab245](https://github.com/jkrumm/basalt-ui/commit/92ab2459db411e6e30a6643f8166e098e6acb403))
+* round before promoting units, merge format defaults, drop SSR claims ([1c27bd6](https://github.com/jkrumm/basalt-ui/commit/1c27bd6a0175bcc3002ea15baf0b72618460382c))
+* round relative time symmetrically and tighten duration and date tests ([ef84fda](https://github.com/jkrumm/basalt-ui/commit/ef84fda2dc3a9f99679e63294f329416c3f84d82))
+* snap a followed cursor only onto keys inside the rendered extent ([cf283d0](https://github.com/jkrumm/basalt-ui/commit/cf283d02f0aaf98857cde5f5692507d72a796b43))
+* the line legend key reads as a dash at every size ([e21a6f8](https://github.com/jkrumm/basalt-ui/commit/e21a6f872c8d86fbf750cb9225aec4a809eaeafc))
+* validate calendar dates and pick relative units largest-first ([f95050a](https://github.com/jkrumm/basalt-ui/commit/f95050a7394960f4406a759cce8af2c309b36f29))
+
+
+### Features
+
+* export date, time, dateTime and duration from the format subpath ([b66c5bb](https://github.com/jkrumm/basalt-ui/commit/b66c5bb61f7c47401e0b74be050bc020d5023746))
+* money keeps cents, locale-aware km/kcal, provider locale and timeZone ([8332275](https://github.com/jkrumm/basalt-ui/commit/8332275b102849e65f4a3c84d8b8a5c86e179cab))
+* one relative-time formatter, plus date, time, dateTime and duration ([c5f3312](https://github.com/jkrumm/basalt-ui/commit/c5f33125c4d06331ecda374d7e3ed40d21d82a60))
+
 ## [2.13.3](https://github.com/jkrumm/basalt-ui/compare/v2.13.2...v2.13.3) (2026-10-16)
 
 
