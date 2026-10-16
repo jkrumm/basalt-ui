@@ -330,7 +330,7 @@ export type ShellFrameProps = ShellBaseProps & {
   sections: SidebarSection[]
   /** Mobile bar tuning; every field optional (see `projectMobileNav`'s zero-config fallback). */
   mobileNav?: MobileNavConfig
-  /** The breadcrumb for the active destination, resolved by `useNav`. */
+  /** The breadcrumb for the active destination, resolved by the nav resolver. */
   activeCrumb: ActiveCrumb | undefined
 }
 
