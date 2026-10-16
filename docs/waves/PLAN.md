@@ -898,28 +898,38 @@ the rubric pins numerically.
 (`RD_WAVE_MODEL`, the owner asked for it). The rest use the default model unless a lead records why not.
 Mode and roles are unchanged from Part 1.
 
-## Wave 29 — Benchmark capture and the comparison harness <!-- status: active -->
+## Wave 29 — Benchmark capture and the comparison harness <!-- status: done -->
 
-- [ ] Crawl Keel's routes (start: `/`, `/crew`, `/crew#scout`, `/records/companies`,
+- [x] Crawl Keel's routes (start: `/`, `/crew`, `/crew#scout`, `/records/companies`,
       `/records/companies/oakline-freight`, `/work`, plus every nav target found). Capture each route at
       1440×900 and 390×844, in the dark scheme and in light if it has one, into `docs/waves/design-parity/keel/`
       with a route index.
-- [ ] Build a pattern inventory: each distinct pattern (metric card with sparkline, decision card, entity
+- [x] Build a pattern inventory: each distinct pattern (metric card with sparkline, decision card, entity
       card, table row and header, kanban column and card, timeline event, activity item, form field, nav item,
       empty and loading states). For each, record a cropped screenshot and measured geometry from computed
       styles: padding, gaps, type sizes and weights, line heights, radii, border and divider treatment, icon
       size, and the colour role (not the hex).
-- [ ] Derive Keel's implied scales: spacing steps, type ramp, radius set, density (rows per 900 px viewport,
+- [x] Derive Keel's implied scales: spacing steps, type ramp, radius set, density (rows per 900 px viewport,
       card height), plus chart-in-card conventions (axis-less, unit placement, delta styling). Write them next
       to basalt's current values in `docs/waves/design-parity/BENCHMARK.md`.
-- [ ] Harness: `make compare` (on `scripts/evidence`) renders named basalt playground routes and pattern
+- [x] Harness: `make compare` (on `scripts/evidence`) renders named basalt playground routes and pattern
       fixtures at the same viewports, crops them by `data-compare` anchors, and writes a side-by-side board
       (reference | basalt) as one HTML page plus PNGs. Structural metrics only, no pixel diff, because the
       content differs.
-- [ ] Baseline board: the current basalt equivalent of every inventory pattern, or "missing".
-      **Left behind:**
+- [x] Baseline board: the current basalt equivalent of every inventory pattern, or "missing".
 
-## Wave 30 — Gap audit and the design-parity spec <!-- status: pending -->
+**Left behind:**
+
+- **Landed** (2 PRs via `rd merge`, `make check` green on each rebased SHA; each diff agent-gateway reviewed for two rounds, scope then frozen and the lead read each last fix diff): #311 Keel capture (`scripts/evidence/keel-capture.ts`, `docs/waves/design-parity/keel/` — 10 route views × 2 viewports × dark+light, viewport and `--full` shots, `ROUTES.md`, `inventory.json` with 31 patterns, `scales.json`, and `BENCHMARK.md`); #310 `make compare` (`scripts/evidence/compare*.ts`, attribute-only `data-compare` tags on five existing playground elements, byte-identical page screenshots before/after). Lead commit: the baseline board in `docs/waves/design-parity/w29/` (`board.html`, `board-desktop.png`, `board-mobile.png`, `compare.json`, 80 basalt crops). No package change, so the `packages/basalt-ui/src` delta is 0 and nothing to release.
+- **Baseline:** 20 of 31 inventory patterns have a current basalt equivalent and were captured at both viewports in both schemes, with 0 failures. 11 are **missing**: decision-card, entity-card, kanban-column, kanban-card, pipeline-column, deal-card, timeline-event, schedule-item, record-header, metric-card-gauge and metric-card-bar. Keel's loading state could not be provoked and is recorded as `unverified`, not absent. basalt's is captured (the `/data` skeleton, reached by a `before` click).
+- **Licence boundary held:** only screenshots, numbers, colour roles and our own prose are committed. `scripts/evidence/keel-licence.test.ts` (in `bun run pre`) fails on markup, CSS, class-like tokens, non-allowlisted strings in the data files, hashed-denylist names (accidental-copy detection only, not proof), orphan crops and any non-png/json/md file under `keel/`. Structural DOM selectors appear only in the capture script, where they locate elements to measure; no Keel class name or attribute value is written to a file. rea was not used. Route paths, such as the record-detail slug, are kept as paths.
+- **Headline gaps (data, not verdicts — Wave 30 scores them):** Keel's dominant padding is 12 and its page gutter 24. basalt's are 11/13 and 16. Keel's controls and nav rows are 28 against basalt's 32. Table row and header heights already match at 40/36. Keel sparklines are 22 px tall with a 1.5 px stroke, no axes and an end dot; basalt's are 26 px with 2.5/2 px strokes. Keel sets figures in proportional sans with negative tracking and mono only for captions and times; basalt sets metric values in mono 600. Keel's caption row is mono uppercase with the qualifier right-aligned. Keel's right column is 380 wide against basalt's 300 aside. Full tables: `BENCHMARK.md`.
+- **Decided by the lead (flag if you disagree):** a structural selector used only to locate an element for measurement counts as measuring, which the boundary allows; the reviewer's "selectors breach the boundary" finding was rejected on that basis. Route paths and the slugs derived from them stay, and a renamed record slug was rejected. The harness keeps Mantine class selectors (`.mantine-*`) and `select` sub-queries inside five broad anchors rather than tagging every pattern, which keeps the playground diff at five attribute-only lines. The board's metrics table shows the dark scheme only; `compare.json` holds both.
+- **Not done / known gaps:** the board scales every crop to its column, so wide rows such as a 1580 px Keel table row are hard to read in the PNG; open `board.html` or the crops. A natural-size or zoom view is a Wave 30 harness tweak if the rubric needs it. `keel-capture.ts` is about 1,130 lines and `compare.ts` about 500; neither is split, and the in-page colour maths is untested. `compare.ts` duplicates `index.ts`'s build helper, kept in sync by a comment. Neither tool writes atomically or has signal handlers, a per-pass timeout, an `--origin` override or a staleness policy for `capturedAt`. BENCHMARK's basalt column is hand-cited `file:line` with no drift check. `make compare` exits non-zero only when nothing was captured. Some basalt mappings are approximate (`stat-strip` uses a `div:has(> Card)` sub-query; `side-panel-card` is a SettingsSection card). The capture also opened overlays (the account menu, the palette) only to detect the schemes, and captured none of them.
+- **Ops notes:** `rd merge` needs `gh pr ready` first (the PRs open as drafts); each train ran about 10 minutes in the background. Workers committed under `chore:`/`docs:` because nothing touched `packages/basalt-ui`. The committed PNG weight is about 18 MB under `keel/` and 9.5 MB under `w29/`.
+- **Next:** Wave 30 is `active`. Its lead reads `BENCHMARK.md`, `keel/inventory.json` and `w29/board.html`, then re-runs `make compare LABEL=<label> OUT=docs/waves/design-parity/w<n>` for every later board. Not released (no package change). Stopped here as briefed: the orchestrator spawns Wave 30.
+
+## Wave 30 — Gap audit and the design-parity spec <!-- status: active -->
 
 - [ ] Score every inventory pattern (missing / poor / close / at parity) with the reason in visual terms.
       Each gap gets a root cause: a token or scale, component anatomy, a missing component, chart-in-card
