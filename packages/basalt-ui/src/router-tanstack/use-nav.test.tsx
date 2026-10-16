@@ -25,7 +25,7 @@ import type { SidebarItem, SidebarSection } from '../shell/nav-types'
 import type { AnyNavItem } from './nav'
 import { navGroup } from './nav'
 import { defineNav } from '../../tests/support/nav-test-utils'
-import { useNav } from './use-nav'
+import { shallowEqual, useNav } from './use-nav'
 import type { ResolvedNav } from './use-nav'
 
 const NAV = defineNav({
@@ -90,7 +90,11 @@ function flattenItems(sections: SidebarSection[]): SidebarItem[] {
   return out
 }
 
-async function mountNav(entry: string, opts?: NavProbeOpts): Promise<Sink> {
+async function mountNav(
+  entry: string,
+  opts?: NavProbeOpts,
+  config: typeof NAV = NAV,
+): Promise<Sink> {
   const sink: Sink = { current: null }
 
   function NavProbe({
@@ -98,7 +102,7 @@ async function mountNav(entry: string, opts?: NavProbeOpts): Promise<Sink> {
   }: {
     onNav: (value: NonNullable<Sink['current']>) => void
   }): ReactNode {
-    const nav = useNav(NAV, opts)
+    const nav = useNav(config, opts)
     onNav({ sections: nav.sections, activeCrumb: nav.activeCrumb })
     return null
   }
@@ -203,22 +207,59 @@ describe('useNav — activeCrumb', () => {
   })
 
   test('a nested destination names its parent and carries the parent anchor', async () => {
-    const crumb = (await mountNav('/dashboard/traffic')).current!.activeCrumb
+    const { activeCrumb: crumb, sections } = (await mountNav('/dashboard/traffic')).current!
     expect(crumb?.section).toBe('Main')
     expect(crumb?.parent).toBe('Dashboard')
     expect(crumb?.page).toBe('Traffic')
-    const dashboard = flattenItems((await mountNav('/dashboard/traffic')).current!.sections).find(
-      (item) => item.key === 'dashboard',
-    )
+    const dashboard = flattenItems(sections).find((item) => item.key === 'dashboard')
     expect(crumb?.parentAnchor).toBe(dashboard?.Anchor)
   })
 
-  test('the same destination keeps the same Anchor across resolves', async () => {
-    const a = flattenItems((await mountNav('/')).current!.sections).find((i) => i.key === 'home')
+  test('no match yields no crumb', async () => {
+    const crumb = (await mountNav('/', { isActive: () => false })).current!.activeCrumb
+    expect(crumb).toBeUndefined()
+  })
+})
+
+describe('useNav — anchor cache', () => {
+  const anchorOf = async (config: typeof NAV, key: string) => {
+    const sink = await mountNav('/', undefined, config)
     cleanup()
-    const b = flattenItems((await mountNav('/charts')).current!.sections).find(
-      (i) => i.key === 'home',
-    )
-    expect(a?.Anchor).toBe(b?.Anchor)
+    return flattenItems(sink.current!.sections).find((i) => i.key === key)?.Anchor
+  }
+
+  test('one config keeps one Anchor per destination across mounts', async () => {
+    expect(await anchorOf(NAV, 'home')).toBe(await anchorOf(NAV, 'home'))
+  })
+
+  test('a fresh defineNav object gets new Anchors (define at module scope)', async () => {
+    const fresh = defineNav({ groups: NAV.groups })
+    expect(await anchorOf(fresh, 'home')).not.toBe(await anchorOf(NAV, 'home'))
+  })
+
+  test('the isActive override uses a distinct Anchor from the router-driven one', async () => {
+    const plain = await anchorOf(NAV, 'home')
+    const sink = await mountNav('/', { isActive: () => true })
+    const overridden = flattenItems(sink.current!.sections).find((i) => i.key === 'home')?.Anchor
+    expect(overridden).not.toBe(plain)
+  })
+})
+
+describe('shallowEqual', () => {
+  test('undefined and an empty object are equal', () => {
+    expect(shallowEqual(undefined, {})).toBe(true)
+    expect(shallowEqual({}, undefined)).toBe(true)
+  })
+
+  test('a swapped key with the same count is not equal', () => {
+    expect(shallowEqual({ a: 1 }, { b: 1 })).toBe(false)
+    expect(shallowEqual({ a: undefined }, { b: undefined })).toBe(false)
+  })
+
+  test('compares values with Object.is, not identity of the object', () => {
+    expect(shallowEqual({ a: 1, b: 'x' }, { a: 1, b: 'x' })).toBe(true)
+    expect(shallowEqual({ a: 1 }, { a: 2 })).toBe(false)
+    expect(shallowEqual({ a: NaN }, { a: NaN })).toBe(true)
+    expect(shallowEqual({ a: {} }, { a: {} })).toBe(false)
   })
 })

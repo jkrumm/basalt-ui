@@ -82,7 +82,7 @@ describe('PageBar inside a BasaltShell', () => {
   const renderInShell = () =>
     render(
       <MantineProvider>
-        <ShellFrame brand={BRAND} sections={ONE_SECTION}>
+        <ShellFrame activeCrumb={undefined} brand={BRAND} sections={ONE_SECTION}>
           <PageBar
             actions={[
               { key: 'row1', kind: 'custom', node: <span data-testid="row1" />, primary: true },
@@ -141,7 +141,7 @@ describe('PageBar inside a BasaltShell', () => {
   test('title is ignored inside a shell — the breadcrumb names the page (law C8)', () => {
     render(
       <MantineProvider>
-        <ShellFrame brand={BRAND} sections={ONE_SECTION}>
+        <ShellFrame activeCrumb={undefined} brand={BRAND} sections={ONE_SECTION}>
           <PageBar title="Ignored" tabs={<span data-testid="row2" />} />
         </ShellFrame>
       </MantineProvider>,
@@ -328,7 +328,7 @@ describe('className reaches the bar root in both forms', () => {
   test('in a shell: it joins row 2s sticky wrapper, not the portalled row 1', () => {
     render(
       <MantineProvider>
-        <ShellFrame brand={BRAND} sections={ONE_SECTION}>
+        <ShellFrame activeCrumb={undefined} brand={BRAND} sections={ONE_SECTION}>
           <PageBar tabs={<span data-testid="row2" />} className="argo-bleed" />
         </ShellFrame>
       </MantineProvider>,
@@ -363,7 +363,7 @@ describe('row 2 folds into two declared lines, not a wrap', () => {
   test('tabs + filters: the tabs line precedes the pills line, both direct children of row 2', () => {
     render(
       <MantineProvider>
-        <ShellFrame brand={BRAND} sections={ONE_SECTION}>
+        <ShellFrame activeCrumb={undefined} brand={BRAND} sections={ONE_SECTION}>
           <PageBar tabs={<span data-testid="tabs" />} filters={<span data-testid="filters" />} />
         </ShellFrame>
       </MantineProvider>,
@@ -386,7 +386,7 @@ describe('row 2 folds into two declared lines, not a wrap', () => {
   test('tabs only: no pills line renders (law C14 — an empty line reserves nothing)', () => {
     render(
       <MantineProvider>
-        <ShellFrame brand={BRAND} sections={ONE_SECTION}>
+        <ShellFrame activeCrumb={undefined} brand={BRAND} sections={ONE_SECTION}>
           <PageBar tabs={<span data-testid="tabs" />} />
         </ShellFrame>
       </MantineProvider>,
@@ -398,7 +398,7 @@ describe('row 2 folds into two declared lines, not a wrap', () => {
   test('filters only: no tabs line renders', () => {
     render(
       <MantineProvider>
-        <ShellFrame brand={BRAND} sections={ONE_SECTION}>
+        <ShellFrame activeCrumb={undefined} brand={BRAND} sections={ONE_SECTION}>
           <PageBar filters={<span data-testid="filters" />} />
         </ShellFrame>
       </MantineProvider>,
@@ -417,7 +417,7 @@ describe('row 2 folds into two declared lines, not a wrap', () => {
   test('the tabs line wraps its content in exactly one `data-basalt-tier` slot — what the mobile CSS selects through', () => {
     render(
       <MantineProvider>
-        <ShellFrame brand={BRAND} sections={ONE_SECTION}>
+        <ShellFrame activeCrumb={undefined} brand={BRAND} sections={ONE_SECTION}>
           <PageBar tabs={<span data-testid="tabs" />} />
         </ShellFrame>
       </MantineProvider>,
@@ -468,7 +468,7 @@ describe('the aside pill, and the row 2 it needs to exist at all', () => {
     installMobileMatchMedia()
     render(
       <MantineProvider>
-        <ShellFrame brand={BRAND} sections={ONE_SECTION}>
+        <ShellFrame activeCrumb={undefined} brand={BRAND} sections={ONE_SECTION}>
           <PageBar tabs={<span data-testid="tabs" />} />
           <PageAside title="Inspector">
             <div data-testid="aside-child">Body</div>
@@ -491,7 +491,7 @@ describe('the aside pill, and the row 2 it needs to exist at all', () => {
     const warn = spyOn(console, 'warn').mockImplementation(() => {})
     render(
       <MantineProvider>
-        <ShellFrame brand={BRAND} sections={ONE_SECTION}>
+        <ShellFrame activeCrumb={undefined} brand={BRAND} sections={ONE_SECTION}>
           <PageBar actions={[{ key: 'new', label: 'New', primary: true }]} />
           <PageAside title="Inspector">
             <div data-testid="aside-child">Body</div>
@@ -513,7 +513,7 @@ describe('the aside pill, and the row 2 it needs to exist at all', () => {
     const warn = spyOn(console, 'warn').mockImplementation(() => {})
     render(
       <MantineProvider>
-        <ShellFrame brand={BRAND} sections={ONE_SECTION}>
+        <ShellFrame activeCrumb={undefined} brand={BRAND} sections={ONE_SECTION}>
           <PageBar tabs={<span data-testid="tabs" />} />
           <PageAside title="Inspector">
             <div data-testid="aside-child">Body</div>
@@ -549,7 +549,12 @@ describe('PageBar provider contexts', () => {
     const section = <InShellProbe />
     render(
       <MantineProvider>
-        <ShellFrame brand={BRAND} sections={ONE_SECTION} globalActions={globals}>
+        <ShellFrame
+          activeCrumb={undefined}
+          brand={BRAND}
+          sections={ONE_SECTION}
+          globalActions={globals}
+        >
           <Toggle />
           {section}
         </ShellFrame>

@@ -41,8 +41,6 @@ export type AppBreadcrumbsProps = BasaltProps & {
    * client-side. basalt still owns every pixel of the crumb — the anchor only hosts the label.
    */
   parentAnchor?: NavAnchor | undefined
-  /** Parent item href — the no-router fallback; ignored when `parentAnchor` is present. */
-  parentHref?: string | undefined
   page?: string
 }
 
@@ -50,7 +48,6 @@ export function AppBreadcrumbs({
   section,
   parent,
   parentAnchor,
-  parentHref,
   page,
   className,
   style,
@@ -89,15 +86,7 @@ export function AppBreadcrumbs({
               <Text style={separatorStyle}>/</Text>
             </>
           )}
-          {parent && !parentAnchor && parentHref && (
-            <>
-              <Anchor style={crumbStyle} underline="never" href={parentHref} truncate>
-                {parent}
-              </Anchor>
-              <Text style={separatorStyle}>/</Text>
-            </>
-          )}
-          {parent && !parentAnchor && !parentHref && (
+          {parent && !parentAnchor && (
             <>
               <Text style={crumbStyle} truncate>
                 {parent}

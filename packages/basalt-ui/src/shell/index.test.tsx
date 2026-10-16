@@ -49,6 +49,7 @@ describe('BasaltShell sidebarBlocks', () => {
     const { container } = render(
       <MantineProvider>
         <ShellFrame
+          activeCrumb={undefined}
           brand={BRAND}
           sections={ONE_SECTION}
           sidebarBlocks={[
@@ -70,7 +71,12 @@ describe('BasaltShell sidebarBlocks', () => {
   test('the same block projects to ONE More row that opens a nested sheet of its items', async () => {
     render(
       <MantineProvider>
-        <ShellFrame brand={BRAND} sections={ONE_SECTION} sidebarBlocks={[AWAITING]} />
+        <ShellFrame
+          activeCrumb={undefined}
+          brand={BRAND}
+          sections={ONE_SECTION}
+          sidebarBlocks={[AWAITING]}
+        />
       </MantineProvider>,
     )
 
@@ -94,6 +100,7 @@ describe('BasaltShell sidebarBlocks', () => {
     render(
       <MantineProvider>
         <ShellFrame
+          activeCrumb={undefined}
           brand={BRAND}
           sections={ONE_SECTION}
           sidebarBlocks={[
@@ -120,6 +127,7 @@ describe('BasaltShell sidebarBlocks', () => {
     render(
       <MantineProvider>
         <ShellFrame
+          activeCrumb={undefined}
           brand={BRAND}
           sections={[
             { label: 'Main', items: [{ key: 'home', label: 'Home', icon: null, mobile: 'tab' }] },
@@ -142,6 +150,7 @@ describe('BasaltShell — the removed ReactNode slots', () => {
   test('sidebarNavExtra and mobileNav.moreExtra no longer type-check', () => {
     const removedNavExtra = (
       <ShellFrame
+        activeCrumb={undefined}
         brand={BRAND}
         sections={ONE_SECTION}
         // @ts-expect-error sidebarNavExtra was replaced by `sidebarBlocks` kind 'custom' (C13)
@@ -150,6 +159,7 @@ describe('BasaltShell — the removed ReactNode slots', () => {
     )
     const removedMoreExtra = (
       <ShellFrame
+        activeCrumb={undefined}
         brand={BRAND}
         sections={ONE_SECTION}
         // @ts-expect-error mobileNav.moreExtra was replaced by `sidebarBlocks` kind 'list' (C13)
@@ -200,7 +210,13 @@ describe('BasaltShell extraMoreRows', () => {
   test('an account expanding past menuMax raises the SHEET, not an overflowing menu', async () => {
     render(
       <MantineProvider>
-        <ShellFrame brand={BRAND} sections={NAV} account={FAT_ACCOUNT} mobileNav={{ menuMax: 6 }} />
+        <ShellFrame
+          activeCrumb={undefined}
+          brand={BRAND}
+          sections={NAV}
+          account={FAT_ACCOUNT}
+          mobileNav={{ menuMax: 6 }}
+        />
       </MantineProvider>,
     )
 
@@ -213,7 +229,7 @@ describe('BasaltShell extraMoreRows', () => {
   test('the same account stays a MENU at the default menuMax of 12', async () => {
     render(
       <MantineProvider>
-        <ShellFrame brand={BRAND} sections={NAV} account={FAT_ACCOUNT} />
+        <ShellFrame activeCrumb={undefined} brand={BRAND} sections={NAV} account={FAT_ACCOUNT} />
       </MantineProvider>,
     )
 
@@ -226,7 +242,12 @@ describe('BasaltShell extraMoreRows', () => {
   test('a loading account produces no More slot at all', () => {
     render(
       <MantineProvider>
-        <ShellFrame brand={BRAND} sections={NAV} account={{ state: { status: 'loading' } }} />
+        <ShellFrame
+          activeCrumb={undefined}
+          brand={BRAND}
+          sections={NAV}
+          account={{ state: { status: 'loading' } }}
+        />
       </MantineProvider>,
     )
 
@@ -326,7 +347,12 @@ describe('BasaltShell collapse persistence', () => {
   const renderShell = (storageKey: string) =>
     render(
       <MantineProvider>
-        <ShellFrame brand={BRAND} sections={ONE_SECTION} storageKey={storageKey} />
+        <ShellFrame
+          activeCrumb={undefined}
+          brand={BRAND}
+          sections={ONE_SECTION}
+          storageKey={storageKey}
+        />
       </MantineProvider>,
     )
 
@@ -387,7 +413,12 @@ describe('BasaltShell collapse persistence', () => {
     installViewport(1024)
     const controlled = render(
       <MantineProvider>
-        <ShellFrame brand={BRAND} sections={ONE_SECTION} collapsed={false} />
+        <ShellFrame
+          activeCrumb={undefined}
+          brand={BRAND}
+          sections={ONE_SECTION}
+          collapsed={false}
+        />
       </MantineProvider>,
     )
     expect(
@@ -407,7 +438,7 @@ describe('BasaltShell header height (law C14)', () => {
   test('the AppShell header is ONE row — a single unconditional height declaration, no media override', () => {
     render(
       <MantineProvider>
-        <ShellFrame brand={BRAND} sections={ONE_SECTION} />
+        <ShellFrame activeCrumb={undefined} brand={BRAND} sections={ONE_SECTION} />
       </MantineProvider>,
     )
     // Mantine emits the AppShell dimensions as a `<style>` block: one `:root` rule plus one
@@ -434,7 +465,12 @@ describe('BasaltShell header height (law C14)', () => {
   test('headerHeight replaces the token, still as one unconditional declaration', () => {
     render(
       <MantineProvider>
-        <ShellFrame brand={BRAND} sections={ONE_SECTION} headerHeight={52} />
+        <ShellFrame
+          activeCrumb={undefined}
+          brand={BRAND}
+          sections={ONE_SECTION}
+          headerHeight={52}
+        />
       </MantineProvider>,
     )
     const css = [...document.querySelectorAll('style')]
@@ -450,7 +486,7 @@ describe('BasaltShell header height (law C14)', () => {
   test('a route with no PageAside pays for no aside column — zero width, collapsed', () => {
     render(
       <MantineProvider>
-        <ShellFrame brand={BRAND} sections={ONE_SECTION} />
+        <ShellFrame activeCrumb={undefined} brand={BRAND} sections={ONE_SECTION} />
       </MantineProvider>,
     )
     const css = [...document.querySelectorAll('style')]
@@ -480,7 +516,7 @@ describe('BasaltShell header height (law C14)', () => {
   test('the page gutter is a responsive PAIR — the phone token below `sm`, the desktop token above', () => {
     render(
       <MantineProvider>
-        <ShellFrame brand={BRAND} sections={ONE_SECTION} />
+        <ShellFrame activeCrumb={undefined} brand={BRAND} sections={ONE_SECTION} />
       </MantineProvider>,
     )
     const styles = [...document.querySelectorAll('style')].map((tag) => tag.textContent ?? '')
@@ -516,7 +552,7 @@ describe('BasaltShell header height (law C14)', () => {
   test('an empty PageBar contributes no node — not in the header, not in the page flow', () => {
     render(
       <MantineProvider>
-        <ShellFrame brand={BRAND} sections={ONE_SECTION}>
+        <ShellFrame activeCrumb={undefined} brand={BRAND} sections={ONE_SECTION}>
           <PageBar />
         </ShellFrame>
       </MantineProvider>,
@@ -542,7 +578,12 @@ describe('BasaltShell globalActions mobile policy', () => {
   const renderWithGlobals = () =>
     render(
       <MantineProvider>
-        <ShellFrame brand={BRAND} sections={ONE_SECTION} globalActions={ACTIONS} />
+        <ShellFrame
+          activeCrumb={undefined}
+          brand={BRAND}
+          sections={ONE_SECTION}
+          globalActions={ACTIONS}
+        />
       </MantineProvider>,
     )
 
@@ -571,7 +612,12 @@ describe('BasaltShell globalActions mobile policy', () => {
   test('a page ActionGroup takes over the kebab, so the header never shows two', () => {
     render(
       <MantineProvider>
-        <ShellFrame brand={BRAND} sections={ONE_SECTION} globalActions={ACTIONS}>
+        <ShellFrame
+          activeCrumb={undefined}
+          brand={BRAND}
+          sections={ONE_SECTION}
+          globalActions={ACTIONS}
+        >
           <PageBar actions={[{ key: 'export', label: 'Export', primary: true }]} />
         </ShellFrame>
       </MantineProvider>,
@@ -585,7 +631,12 @@ describe('BasaltShell globalActions mobile policy', () => {
     // SECOND kebab that re-mounted the global node. Now only row 1 is `host: 'page'`.
     render(
       <MantineProvider>
-        <ShellFrame brand={BRAND} sections={ONE_SECTION} globalActions={ACTIONS}>
+        <ShellFrame
+          activeCrumb={undefined}
+          brand={BRAND}
+          sections={ONE_SECTION}
+          globalActions={ACTIONS}
+        >
           <PageBar
             actions={[{ key: 'export', label: 'Export CSV', primary: true }]}
             filtersEnd={[{ key: 'metrics', label: 'Manage metrics' }]}
@@ -606,7 +657,12 @@ describe('BasaltShell globalActions mobile policy', () => {
   test('the global node reaches ONE dropdown, not two', async () => {
     render(
       <MantineProvider>
-        <ShellFrame brand={BRAND} sections={ONE_SECTION} globalActions={ACTIONS}>
+        <ShellFrame
+          activeCrumb={undefined}
+          brand={BRAND}
+          sections={ONE_SECTION}
+          globalActions={ACTIONS}
+        >
           <PageBar
             actions={[{ key: 'export', label: 'Export CSV', primary: true }]}
             filtersEnd={[{ key: 'metrics', label: 'Manage metrics' }]}
@@ -627,7 +683,12 @@ describe('BasaltShell globalActions mobile policy', () => {
   test("filtersEnd alone still yields exactly one kebab, and it is the header's", () => {
     render(
       <MantineProvider>
-        <ShellFrame brand={BRAND} sections={ONE_SECTION} globalActions={ACTIONS}>
+        <ShellFrame
+          activeCrumb={undefined}
+          brand={BRAND}
+          sections={ONE_SECTION}
+          globalActions={ACTIONS}
+        >
           <PageBar filtersEnd={[{ key: 'metrics', label: 'Manage metrics' }]} />
         </ShellFrame>
       </MantineProvider>,
@@ -642,7 +703,12 @@ describe('BasaltShell globalActions mobile policy', () => {
   test('a PageBar with no row-1 actions and no filtersEnd hands the kebab BACK to the shell', () => {
     render(
       <MantineProvider>
-        <ShellFrame brand={BRAND} sections={ONE_SECTION} globalActions={ACTIONS}>
+        <ShellFrame
+          activeCrumb={undefined}
+          brand={BRAND}
+          sections={ONE_SECTION}
+          globalActions={ACTIONS}
+        >
           <PageBar tabs={<span data-testid="tabs" />} />
         </ShellFrame>
       </MantineProvider>,
@@ -657,7 +723,12 @@ describe('BasaltShell globalActions mobile policy', () => {
     // globals — nor steal the claim, which would leave the shell's own kebab unrendered.
     render(
       <MantineProvider>
-        <ShellFrame brand={BRAND} sections={ONE_SECTION} globalActions={ACTIONS}>
+        <ShellFrame
+          activeCrumb={undefined}
+          brand={BRAND}
+          sections={ONE_SECTION}
+          globalActions={ACTIONS}
+        >
           <ActionGroup secondary={[{ key: 'a', label: 'Section action' }]} />
         </ShellFrame>
       </MantineProvider>,
@@ -674,7 +745,7 @@ describe('BasaltShell globalActions mobile policy', () => {
   test('no globalActions at all renders no kebab', () => {
     render(
       <MantineProvider>
-        <ShellFrame brand={BRAND} sections={ONE_SECTION} />
+        <ShellFrame activeCrumb={undefined} brand={BRAND} sections={ONE_SECTION} />
       </MantineProvider>,
     )
     expect(document.querySelector('[aria-label="More actions"]')).toBeNull()
@@ -685,7 +756,7 @@ describe('BasaltShell region seams', () => {
   test('header, navbar and footer carry data-with-border, coloured through the theme', () => {
     const { container } = render(
       <MantineProvider theme={baseTheme}>
-        <ShellFrame brand={BRAND} sections={ONE_SECTION} />
+        <ShellFrame activeCrumb={undefined} brand={BRAND} sections={ONE_SECTION} />
       </MantineProvider>,
     )
     for (const cls of ['header', 'navbar', 'footer']) {
@@ -702,7 +773,7 @@ describe('BasaltShell region seams', () => {
   test('the aside seam exists only while a PageAside claims the region', () => {
     const unclaimed = render(
       <MantineProvider theme={baseTheme}>
-        <ShellFrame brand={BRAND} sections={ONE_SECTION} />
+        <ShellFrame activeCrumb={undefined} brand={BRAND} sections={ONE_SECTION} />
       </MantineProvider>,
     )
     expect(
@@ -714,7 +785,7 @@ describe('BasaltShell region seams', () => {
 
     const claimed = render(
       <MantineProvider theme={baseTheme}>
-        <ShellFrame brand={BRAND} sections={ONE_SECTION}>
+        <ShellFrame activeCrumb={undefined} brand={BRAND} sections={ONE_SECTION}>
           <PageAside title="Panel">
             <div />
           </PageAside>
@@ -752,7 +823,7 @@ describe('BasaltShell aside overlay — Escape hatch', () => {
     try {
       render(
         <MantineProvider>
-          <ShellFrame brand={BRAND} sections={ONE_SECTION}>
+          <ShellFrame activeCrumb={undefined} brand={BRAND} sections={ONE_SECTION}>
             <PageAside title="Panel" defaultFolded={false}>
               <div />
             </PageAside>
@@ -784,7 +855,7 @@ describe('BasaltShell aside overlay — Escape hatch', () => {
     try {
       const { rerender } = render(
         <MantineProvider>
-          <ShellFrame brand={BRAND} sections={ONE_SECTION}>
+          <ShellFrame activeCrumb={undefined} brand={BRAND} sections={ONE_SECTION}>
             <PageAside key="first" title="Panel" defaultFolded={false}>
               <div />
             </PageAside>
@@ -801,7 +872,7 @@ describe('BasaltShell aside overlay — Escape hatch', () => {
       // shell's `closeSignal` stays bumped from the Escape above.
       rerender(
         <MantineProvider>
-          <ShellFrame brand={BRAND} sections={ONE_SECTION}>
+          <ShellFrame activeCrumb={undefined} brand={BRAND} sections={ONE_SECTION}>
             <PageAside key="second" title="Other panel" defaultFolded={false}>
               <div />
             </PageAside>
@@ -822,7 +893,7 @@ describe('BasaltShell aside overlay — Escape hatch', () => {
     try {
       const { container } = render(
         <MantineProvider>
-          <ShellFrame brand={BRAND} sections={ONE_SECTION}>
+          <ShellFrame activeCrumb={undefined} brand={BRAND} sections={ONE_SECTION}>
             <PageAside title="Panel" defaultFolded={false}>
               <div />
             </PageAside>
@@ -855,7 +926,7 @@ describe('BasaltShell aside overlay — Escape hatch', () => {
     try {
       render(
         <MantineProvider>
-          <ShellFrame brand={BRAND} sections={ONE_SECTION}>
+          <ShellFrame activeCrumb={undefined} brand={BRAND} sections={ONE_SECTION}>
             <PageAside title="Panel" defaultFolded={false}>
               <div />
             </PageAside>
@@ -895,7 +966,12 @@ describe('common props (`common/props.ts`)', () => {
   test('className reaches the AppShell root', () => {
     const { container } = render(
       <MantineProvider>
-        <ShellFrame brand={BRAND} sections={ONE_SECTION} className="my-shell" />
+        <ShellFrame
+          activeCrumb={undefined}
+          brand={BRAND}
+          sections={ONE_SECTION}
+          className="my-shell"
+        />
       </MantineProvider>,
     )
     expect(container.querySelector('.mantine-AppShell-root.my-shell')).not.toBeNull()

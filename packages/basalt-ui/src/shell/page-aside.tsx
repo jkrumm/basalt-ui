@@ -117,37 +117,45 @@ const AsideContext = createContext<AsideRegion>(NO_REGION)
  */
 export function AsideProvider({ children }: { children: ReactNode }): ReactNode {
   const [target, setTarget] = useState<HTMLElement | null>(null)
-  // Claimed by identity, newest last. The OWNER is the newest claimant: during a route transition
-  // the incoming aside is the live one and the outgoing one is about to release.
-  const [claimants, setClaimants] = useState<readonly string[]>([])
-  // The fold is keyed to the claimant that published it, so a release or a publish from anyone but
-  // the owner can never reset or overwrite the owner's: the region reads the owner's entry only.
-  const [published, setPublished] = useState<Readonly<Record<string, boolean>>>({})
+  // Claimants in claim order; the OWNER is the last one (the most recently committed claim, which
+  // during a route transition is the incoming aside). Folds are stored per claimant and the region
+  // reads the owner's entry only. One state object, so a release drops id and fold together.
+  const [{ ids, folds }, setClaims] = useState<{
+    ids: readonly string[]
+    folds: Readonly<Record<string, boolean>>
+  }>({ ids: [], folds: {} })
   const [closeSignal, setCloseSignal] = useState(0)
 
   const claim = useCallback((id: string) => {
-    setClaimants((ids) => [...ids, id])
-    return () => {
-      setClaimants((ids) => ids.filter((x) => x !== id))
-      setPublished(({ [id]: _released, ...rest }) => rest)
-    }
+    setClaims((s) => ({ ...s, ids: [...s.ids, id] }))
+    return () =>
+      setClaims(({ ids: all, folds: { [id]: _released, ...folds } }) => ({
+        ids: all.filter((x) => x !== id),
+        folds,
+      }))
   }, [])
 
+  // An id that is not (or no longer) a claimant publishes nothing, so a late publish cannot
+  // resurrect the fold of an aside that already released.
   const publishFolded = useCallback((id: string, folded: boolean) => {
-    setPublished((current) => (current[id] === folded ? current : { ...current, [id]: folded }))
+    setClaims((s) =>
+      !s.ids.includes(id) || s.folds[id] === folded
+        ? s
+        : { ...s, folds: { ...s.folds, [id]: folded } },
+    )
   }, [])
 
   const requestClose = useCallback(() => setCloseSignal((n) => n + 1), [])
 
   useEffect(() => {
-    if (process.env.NODE_ENV === 'production' || claimants.length < 2) return
+    if (process.env.NODE_ENV === 'production' || ids.length < 2) return
     console.warn(
-      '[basalt] more than one PageAside is mounted at once. The shell has ONE aside region and the newest claimant owns its fold; render a single PageAside per page (a route and its layout must not both mount one).',
+      '[basalt] more than one PageAside is mounted at once; the newest claimant owns the region. Render one per page.',
     )
-  }, [claimants.length])
+  }, [ids.length])
 
-  const owner = claimants.at(-1)
-  const folded = owner !== undefined && published[owner] === true
+  const owner = ids.at(-1)
+  const folded = owner !== undefined && folds[owner] === true
 
   const value = useMemo<AsideRegion>(
     () => ({

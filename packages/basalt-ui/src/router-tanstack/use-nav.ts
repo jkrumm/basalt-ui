@@ -9,7 +9,7 @@
  * No JSX — anchors are built with `createElement`, so `./router-tanstack` stays a headless,
  * no-JSX `.ts` module per its own barrel contract.
  */
-import { createElement, forwardRef, useMemo, useRef } from 'react'
+import { createElement, forwardRef, useMemo, useState } from 'react'
 import type { AnchorHTMLAttributes, ElementType, ReactNode } from 'react'
 import { Link, useMatchRoute, useRouterState } from '@tanstack/react-router'
 import type {
@@ -41,15 +41,10 @@ type OverriddenAnchorProps = AnchorHTMLAttributes<HTMLAnchorElement> & {
 }
 
 /**
- * The host `Link` renders as when `isActive` overrides the router. A `Link` computes its own
- * `isActive` and spreads `aria-current="page"` + `data-status="active"` as the LAST props it
- * applies (`@tanstack/react-router` 1.170.x `dist/esm/link.js`, `applyLinkState`), so under an
- * override a router-matched loser would still claim the page. `Link` renders `props._asChild` as
- * its host element in place of `'a'` (same file, `Link`: `const host = props._asChild || "a"`) —
- * an underscore-prefixed, undocumented seam, so `MAINTAINING.md` names it for re-verification on
- * every router bump. This host drops the router's two attributes and re-applies only basalt's own
- * verdict, which the anchor smuggles through `data-basalt-current`; `data-status` is re-stamped
- * for it so both paths expose the same hooks on the winner.
+ * The host `Link` renders as when `isActive` overrides the router (via the undocumented
+ * `props._asChild` seam, re-verified per router bump in `MAINTAINING.md`). It drops the router's
+ * `aria-current` / `data-status` and re-applies only basalt's verdict, passed as
+ * `data-basalt-current`, so a router-matched loser cannot claim the page.
  */
 const OverriddenAnchor = forwardRef<HTMLAnchorElement, OverriddenAnchorProps>((props, ref) => {
   const {
@@ -76,32 +71,22 @@ export type ResolvedNav = {
 }
 
 /**
- * One anchor per destination for the life of its `config`. An anchor is a component TYPE to React,
- * so a fresh function per resolve unmounts every nav `<a>` on every navigation (focus lost, hover
- * reset). Nothing per-render is closed over: active state travels as plain data on
- * `SidebarItem.active` and arrives here as the `aria-current` prop. Keyed `override:id` because the
- * `isActive` override swaps the host element (`OverriddenAnchor`).
+ * One anchor per destination for the life of its `config`: a fresh function per resolve is a new
+ * component TYPE and remounts every nav `<a>` on each navigation. Nothing per-render is closed over;
+ * active state arrives as the `aria-current` prop. Keyed by override mode because `isActive` swaps
+ * the host element (`OverriddenAnchor`).
  */
 const anchorCache = new WeakMap<object, Map<string, NavAnchor>>()
 
 function anchorFor(config: object, item: AnyNavItem, overridden: boolean): NavAnchor {
-  let byId = anchorCache.get(config)
-  if (!byId) anchorCache.set(config, (byId = new Map()))
+  const byId = anchorCache.get(config) ?? new Map<string, NavAnchor>()
+  anchorCache.set(config, byId)
   const key = `${overridden ? 1 : 0}:${item.id}`
   const cached = byId.get(key)
   if (cached) return cached
-  // `activeOptions: { exact: true, includeSearch: true }` makes `resolveState` the ONLY authority
-  // on active, and it is not a preference — a `Link` computes its own `isActive` (default
-  // `exact: false`, i.e. prefix) and spreads `{ 'data-status': 'active', 'aria-current': 'page' }`
-  // LAST, after `activeProps` and every caller prop (`@tanstack/react-router/dist/esm/link.js`).
-  // `aria-current` cannot be overridden from outside; the only lever is `isActive` itself. Left at
-  // its default, parent AND child anchors both carried `aria-current="page"` at
-  // `/dashboard/sessions` (verified in Chrome). `includeSearch` defaults to `true` upstream; naming
-  // it is belt-and-braces. Exact here does NOT narrow basalt's own law: `resolveState` still
-  // matches fuzzily, and an item whose exact route is never visited is named by the `aria-current`
-  // `app-sidebar.tsx` stamps itself. `Link as ElementType` is the single cast in the chain (the
-  // widened `AnyNavLink['search']` is `unknown`, which `LinkComponentProps` rejects); the consumer
-  // gets zero casts.
+  // `exact: true` makes `resolveState` the only authority on active: a `Link` spreads its own
+  // `aria-current` LAST and cannot be overridden from outside, so a prefix-matching parent would
+  // otherwise claim the page beside its child. `Link as ElementType` is the one cast in the chain.
   const Anchor: NavAnchor = (props) =>
     createElement(Link as ElementType, {
       ...item.link,
@@ -116,15 +101,45 @@ function anchorFor(config: object, item: AnyNavItem, overridden: boolean): NavAn
   return Anchor
 }
 
-/** Shallow structural equality, so an inline `badges={{ … }}` literal is not a new input. */
-function shallowEqual(a: object | undefined, b: object | undefined): boolean {
+const NO_BADGES: Readonly<Record<string, unknown>> = {}
+
+/** Shallow equality over own keys; `undefined` and `{}` are the same (no badges). */
+export function shallowEqual(
+  a: Readonly<Record<string, unknown>> = NO_BADGES,
+  b: Readonly<Record<string, unknown>> = NO_BADGES,
+): boolean {
   if (a === b) return true
-  if (!a || !b) return false
-  const ak = Object.keys(a)
-  return (
-    ak.length === Object.keys(b).length &&
-    ak.every((k) => Object.is((a as Record<string, unknown>)[k], (b as Record<string, unknown>)[k]))
-  )
+  const keys = Object.keys(a)
+  return keys.length === Object.keys(b).length && keys.every((k) => k in b && Object.is(a[k], b[k]))
+}
+
+/** The breadcrumb for `winnerId`: its group, and its immediate parent when nested. Pure. */
+function crumbOf(
+  config: { groups: ReadonlyArray<AnyNavGroup> },
+  winnerId: string | undefined,
+  overridden: boolean,
+): ActiveCrumb | undefined {
+  const find = (
+    items: ReadonlyArray<AnyNavItem>,
+    section: string,
+    parent?: AnyNavItem,
+  ): ActiveCrumb | undefined => {
+    for (const item of items) {
+      if (item.id === winnerId) {
+        const up = parent && {
+          parent: parent.label,
+          parentAnchor: anchorFor(config, parent, overridden),
+        }
+        return { section, page: item.label, ...up }
+      }
+      const nested = item.children && find(item.children, section, item)
+      if (nested) return nested
+    }
+  }
+  for (const group of config.groups) {
+    const found = find(group.items, group.label)
+    if (found) return found
+  }
 }
 
 /**
@@ -142,21 +157,18 @@ export function useNav<
   // The change signal: one string that moves on every navigation, including search-param-only ones.
   const href = useRouterState({ select: (s) => s.location.href })
 
-  // Compared structurally on a ref: the previous object is kept while every value is unchanged, so
-  // an inline literal never rebuilds the sections below.
-  const badgesRef = useRef(opts?.badges)
-  if (!shallowEqual(badgesRef.current, opts?.badges)) badgesRef.current = opts?.badges
-  const badges = badgesRef.current
+  // Keep the previous badges object while every value is unchanged, so an inline literal never
+  // rebuilds the sections below. Adjusting state during render is React's sanctioned form of this.
+  const [badges, setBadges] = useState(opts?.badges)
+  if (!shallowEqual(badges, opts?.badges)) setBadges(opts?.badges)
   const isActiveOverride = opts?.isActive
 
   const resolved = useMemo<Pick<ResolvedNav, 'sections' | 'activeCrumb'>>(() => {
     const badgeOf = (id: string): number | ReactNode =>
-      (badges as Record<string, number | ReactNode> | undefined)?.[id]
+      (badges as Readonly<Record<string, number | ReactNode>> | undefined)?.[id]
 
-    // Per-item match, exactly as before: the override wins when supplied, otherwise a router
-    // prefix match (`'/'` stays exact). What changed is that this boolean no longer BECOMES
-    // `active` on its own — it only says "on the path", and the pass below picks ONE winner
-    // across the whole definition so a parent and its child can no longer both read `active`.
+    // "On the path" only: the override wins, else a router prefix match (`'/'` stays exact). The
+    // pass below picks the ONE `active` winner.
     const matchOf = (item: AnyNavItem): boolean =>
       isActiveOverride?.(item as AnyNavItem & { id: NavItemId<G> }) ??
       Boolean(
@@ -167,13 +179,8 @@ export function useNav<
         }),
       )
 
-    // One pass over the WHOLE flattened definition (`flattenNav` — depth-first, parent then
-    // children, the same order every other reader of a nav config walks it) rather than a
-    // per-item independent check, which is what let a parent prefix-match stay lit alongside an
-    // exact-matching child. The most SPECIFIC match (most non-empty `/`-segments in `link.to`)
-    // wins; a tie (the playground's `reports`/`components` shape, both pointing at `/components`)
-    // keeps the FIRST item in definition order, since only a strictly later, strictly longer match
-    // ever replaces the current winner below.
+    // One pass over the flattened definition: the most SPECIFIC match (most `/`-segments in
+    // `link.to`) wins, and a tie keeps the FIRST item in definition order.
     const allItems = flattenNav(config)
     const specificity = (to: string): number => to.split('/').filter(Boolean).length
     const matchedById = new Map<string, boolean>()
@@ -191,11 +198,8 @@ export function useNav<
       }
     }
 
-    // `active` is true for the winner only. `ancestor` is true for a matched item that sits
-    // strictly on the winner's PATH (`winnerTo` starts with `item.link.to + '/'`) — a same-length
-    // tie loser matches nothing here (its own `to` cannot be a strict prefix of an equally long
-    // `winnerTo`), so it reads as neither active nor an ancestor, which is the point: two
-    // destinations sharing one route are siblings, not a hierarchy.
+    // `active` is the winner only; `ancestor` is a matched item strictly on the winner's path. Two
+    // destinations sharing one route are siblings, so a tie loser is neither.
     const resolveState = (item: AnyNavItem): { active: boolean; ancestor: boolean } => {
       if (item.id === winnerId) return { active: true, ancestor: false }
       const matched = matchedById.get(item.id) ?? false
@@ -203,37 +207,22 @@ export function useNav<
       return { active: false, ancestor }
     }
 
-    let activeCrumb: ActiveCrumb | undefined
-    let sectionLabel = ''
     const overridden = isActiveOverride !== undefined
 
-    const toSidebarItem = (item: AnyNavItem, parent?: AnyNavItem): SidebarItem => {
+    const toSidebarItem = (item: AnyNavItem): SidebarItem => {
       // One anchor per destination, hosted by basalt's own chrome (desktop row, 56px slot, 44px
       // sheet row), so `preload`, middle-click and back/forward all keep working.
       const Anchor = anchorFor(config, item, overridden)
       const badge = badgeOf(item.id)
-      const children = item.children?.map((child) => toSidebarItem(child, item))
+      const children = item.children?.map(toSidebarItem)
       const { active, ancestor } = resolveState(item)
-      if (active) {
-        activeCrumb = {
-          section: sectionLabel,
-          page: item.label,
-          ...(parent !== undefined && {
-            parent: parent.label,
-            parentAnchor: anchorFor(config, parent, overridden),
-          }),
-        }
-      }
 
       return {
         key: item.id,
         label: item.label,
         icon: item.icon,
         Anchor,
-        // Exactly one destination in the WHOLE definition reads `active` (`resolveState` above).
-        // Rolling that up into a mobile SLOT (any descendant active → the slot reads active) is
-        // still `projectMobileNav`'s job, which reads `children` for that. `ancestor` is the
-        // desktop-only middle state: a matched item that sits on the winner's path but isn't it.
+        // Exactly one destination reads `active`; `projectMobileNav` rolls it up into mobile slots.
         active,
         ...(ancestor && { ancestor }),
         ...(item.short !== undefined && { short: item.short }),
@@ -248,18 +237,15 @@ export function useNav<
       }
     }
 
-    const sections = config.groups.map((group) => {
-      sectionLabel = group.label
-      return {
-        label: group.label,
-        items: group.items.map((item) => toSidebarItem(item)),
-        ...(group.icon !== undefined && { icon: group.icon }),
-        ...(group.collapsible !== undefined && { collapsible: group.collapsible }),
-        ...(group.defaultCollapsed !== undefined && { defaultCollapsed: group.defaultCollapsed }),
-        ...(group.mobile !== undefined && { mobile: group.mobile }),
-      }
-    })
-    return { sections, activeCrumb }
+    const sections = config.groups.map((group) => ({
+      label: group.label,
+      items: group.items.map(toSidebarItem),
+      ...(group.icon !== undefined && { icon: group.icon }),
+      ...(group.collapsible !== undefined && { collapsible: group.collapsible }),
+      ...(group.defaultCollapsed !== undefined && { defaultCollapsed: group.defaultCollapsed }),
+      ...(group.mobile !== undefined && { mobile: group.mobile }),
+    }))
+    return { sections, activeCrumb: crumbOf(config, winnerId, overridden) }
     // `href` is deliberately an unread dep, and the reason the memo is correct: `matchRoute` has a
     // STABLE identity (`useCallback(fn, [router])`), so nothing else in this list moves on a
     // navigation — while the `matchRoute` calls above read router state that just changed. `href`

@@ -228,6 +228,5 @@ export type ActiveCrumb = {
   section: string
   parent?: string | undefined
   parentAnchor?: NavAnchor | undefined
-  parentHref?: string | undefined
   page: string
 }

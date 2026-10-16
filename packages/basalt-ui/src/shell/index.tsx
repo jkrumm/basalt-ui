@@ -255,8 +255,13 @@ export type BasaltShellProps<
     /**
      * The `defineNav` definition — the ONE nav, resolved against the router here: the sidebar, the
      * mobile bar (its tuning rides `defineNav`'s `mobile`) and the breadcrumb all derive from it.
-     * Alongside it: `badges` (a `number` becomes `item.count`, anything else `item.badge`), `isActive` (override active detection) and `getScrollElement` (the
-     * mobile bar's scroll container).
+     * Alongside it: `badges` (a `number` becomes `item.count`, anything else `item.badge`; an
+     * inline `{ … }` literal is fine for numbers and strings, but a JSX `ReactNode` value is a new
+     * element every render and rebuilds the sections — memoize it), `isActive` (override active
+     * detection) and `getScrollElement` (the mobile bar's scroll container).
+     *
+     * Define `nav` at module scope: its anchors are cached per config object, so a `defineNav`
+     * call inside a component is a new config every render and remounts the links again.
      */
     nav: NavConfig<G, T>
   }
@@ -323,7 +328,7 @@ export type ShellFrameProps = ShellBaseProps & {
   /** Mobile bar tuning; every field optional (see `projectMobileNav`'s zero-config fallback). */
   mobileNav?: MobileNavConfig
   /** The breadcrumb for the active destination, resolved by `useNav`. */
-  activeCrumb?: ActiveCrumb | undefined
+  activeCrumb: ActiveCrumb | undefined
 }
 
 /**
