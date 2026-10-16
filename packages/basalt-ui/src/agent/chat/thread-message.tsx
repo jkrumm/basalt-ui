@@ -56,7 +56,7 @@ import { CopyAction } from '../../content/copy-action'
 import { VX } from '../../tokens'
 import { DEFAULT_AFFORDANCES } from './message-affordances'
 import type { MessageAffordances } from './message-affordances'
-import { formatRelativeTime } from './relative-time'
+import { relativeTime } from '../../format'
 import { ToolChip } from './tool-chip'
 import { resolveVirtualize } from './virtualize'
 import type { VirtualizeOptions, VirtualizeProps } from './virtualize'
@@ -345,7 +345,7 @@ function MessageAffordanceRow({
   const timestampLabel =
     timestampMode === 'absolute'
       ? new Date(message.createdAt).toLocaleString()
-      : formatRelativeTime(message.createdAt)
+      : relativeTime(message.createdAt)
 
   return (
     <Group

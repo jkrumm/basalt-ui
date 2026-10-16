@@ -25,6 +25,7 @@ import { useSyncExternalStore } from 'react'
 import type { ReactNode } from 'react'
 import { cx } from '../common/props'
 import type { BasaltProps } from '../common/props'
+import { relativeTime } from '../format'
 import { IconSlot } from '../theme/icon-slot'
 import classes from './sync-button.module.css'
 
@@ -50,20 +51,6 @@ export type SyncButtonProps = BasaltProps & {
 /** How often the relative age re-renders. One interval, only while mounted. */
 export const AGE_REFRESH_MS = 30_000
 
-/**
- * Relative age, coarse on purpose: a sync indicator answers "is this stale?", not "how stale to
- * the second". Anything under a minute is `just now`, so the label stops flickering while a sync
- * has just landed.
- */
-export function formatAge(ms: number): string {
-  if (ms < 60_000) return 'just now'
-  const minutes = Math.floor(ms / 60_000)
-  if (minutes < 60) return `${minutes}m ago`
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours}h ago`
-  return `${Math.floor(hours / 24)}d ago`
-}
-
 function toMillis(at: number | Date | null | undefined): number | undefined {
   if (at === null || at === undefined) return undefined
   return at instanceof Date ? at.getTime() : at
@@ -75,17 +62,17 @@ function toMillis(at: number | Date | null | undefined): number | undefined {
  *
  * The clock is read through `useSyncExternalStore`, whose server snapshot omits the age. A global
  * `SyncButton` in `globalActions` renders inline in the shell header (no portal), so under SSR the
- * server would emit `just now` and a client hydrating a minute later would emit `1m ago` — a React
+ * server would emit `now` and a client hydrating a minute later would emit `1 min. ago` — a React
  * text mismatch that discards the subtree. Server and hydrating paint both omit the age; React
  * re-renders with the client snapshot right after. The snapshot is the formatted label, a bucketed
- * string (`just now`, `1m ago`, …), so it is stable across calls within a bucket and a tick only
+ * string (`now`, `1 min. ago`, …), so it is stable across calls within a bucket and a tick only
  * re-renders when the label changes. With no timestamp there is no subscription and no timer.
  */
 function useRelativeAge(at: number | Date | null | undefined): string | undefined {
   const timestamp = toMillis(at)
   return useSyncExternalStore(
     timestamp === undefined ? subscribeNever : subscribeAgeTick,
-    () => (timestamp === undefined ? undefined : formatAge(Date.now() - timestamp)),
+    () => (timestamp === undefined ? undefined : relativeTime(timestamp, { style: 'short' })),
     () => undefined,
   )
 }

@@ -26,7 +26,7 @@ import { assertRequiredProps } from '../../common/validate'
 import { cx } from '../../common/props'
 import type { BasaltProps } from '../../common/props'
 import { alpha, VX } from '../../tokens'
-import { formatRelativeTime } from './relative-time'
+import { relativeTime } from '../../format'
 
 // ── Status badge — shown ONLY for states that need a glance (attention/error). ────
 // done/pending/streaming stay badge-free: a settled feed shouldn't be a wall of green chips —
@@ -113,7 +113,7 @@ function OutcomeBody({ thread }: { thread: AgentThread }): JSX.Element {
       <Text
         style={{ fontFamily: 'var(--basalt-font-mono)', fontSize: VX.text.micro, color: VX.faint }}
       >
-        {formatRelativeTime(thread.updatedAt)}
+        {relativeTime(thread.updatedAt)}
       </Text>
     </Stack>
   )

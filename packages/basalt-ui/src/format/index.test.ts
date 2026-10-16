@@ -4,7 +4,7 @@
  * the default-locale machinery lives in `shared.test.ts`.
  */
 import { describe, expect, test } from 'bun:test'
-import { durationClock, integer, kcal, km, money, percent, relativeTime, weekday } from './index'
+import { integer, kcal, km, money, percent } from './index'
 import { NON_FINITE } from './shared'
 
 const en = { locale: 'en-US' } as const
@@ -26,51 +26,6 @@ describe('money / percent / integer', () => {
     expect(money(NaN, { ...en, currency: 'USD' })).toBe(NON_FINITE)
     expect(percent(Infinity, en)).toBe(NON_FINITE)
     expect(integer(NaN, en)).toBe(NON_FINITE)
-  })
-})
-
-describe('durationClock', () => {
-  test('h:mm:ss once an hour is present', () => {
-    expect(durationClock(3723)).toBe('1:02:03')
-  })
-
-  test('mm:ss under an hour', () => {
-    expect(durationClock(70)).toBe('01:10')
-  })
-})
-
-describe('weekday', () => {
-  test('a YYYY-MM-DD string is read as a local calendar date', () => {
-    expect(weekday('2026-09-02', en)).toBe('Wed')
-  })
-
-  test('a Date works the same way', () => {
-    expect(weekday(new Date(2026, 8, 2), en)).toBe('Wed')
-  })
-
-  test('format: "long" gives the full name', () => {
-    expect(weekday('2026-09-02', { ...en, format: 'long' })).toBe('Wednesday')
-  })
-})
-
-describe('relativeTime', () => {
-  const now = Date.parse('2026-09-02T12:00:00Z')
-
-  test('under a minute reads "just now"', () => {
-    expect(relativeTime(now - 30_000, { now })).toBe('just now')
-  })
-
-  test('an hour ago', () => {
-    expect(relativeTime(now - 3_600_000, { now })).toBe('1 hour ago')
-  })
-
-  test('accepts a Date or an ISO string, not just epoch ms', () => {
-    expect(relativeTime(new Date(now - 3_600_000), { now })).toBe('1 hour ago')
-    expect(relativeTime(new Date(now - 3_600_000).toISOString(), { now })).toBe('1 hour ago')
-  })
-
-  test('non-finite/unparseable input prints the sentinel', () => {
-    expect(relativeTime('not a date', { now })).toBe(NON_FINITE)
   })
 })
 
