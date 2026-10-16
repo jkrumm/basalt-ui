@@ -3,6 +3,7 @@
  * No browser, no file system; `compare.ts` feeds it. Keel is only ever read through the committed
  * `docs/waves/design-parity/keel/inventory.json`, which may be absent or partial.
  */
+import { isAbsolute, relative, sep } from 'node:path'
 import { EXPECTED_IDS, METRIC_KEYS, isMissing } from './compare-patterns'
 import type { MetricKey, Metrics, PatternMapping } from './compare-patterns'
 
@@ -74,21 +75,35 @@ function parsePattern(raw: unknown): InventoryPattern | null {
   }
 }
 
-/** Tolerant on purpose: absent, empty, malformed or half-written JSON all yield an empty inventory. */
+/**
+ * `null`/`undefined` (no file yet — the capture lands in parallel) is an empty inventory. A file that
+ * IS present but unparseable or the wrong shape throws: silently rendering "reference pending" for a
+ * corrupt reference would hide the breakage. Within a valid file, entries without an id are skipped.
+ */
 export function parseInventory(text: string | null | undefined): Inventory {
-  const empty: Inventory = { capturedAt: '', origin: '', patterns: [] }
-  if (!text?.trim()) return empty
+  if (text === null || text === undefined) return { capturedAt: '', origin: '', patterns: [] }
   let raw: unknown
   try {
     raw = JSON.parse(text)
-  } catch {
-    return empty
+  } catch (error) {
+    throw new Error(
+      `inventory.json is not valid JSON: ${error instanceof Error ? error.message : String(error)}`,
+      { cause: error },
+    )
   }
-  if (!isRecord(raw)) return empty
-  const patterns = Array.isArray(raw['patterns'])
-    ? raw['patterns'].map(parsePattern).filter((p): p is InventoryPattern => p !== null)
-    : []
+  if (!isRecord(raw) || !Array.isArray(raw['patterns'])) {
+    throw new Error('inventory.json is invalid: expected an object with a "patterns" array')
+  }
+  const patterns = raw['patterns']
+    .map(parsePattern)
+    .filter((p): p is InventoryPattern => p !== null)
   return { capturedAt: str(raw['capturedAt']), origin: str(raw['origin']), patterns }
+}
+
+/** True when `target` resolves strictly inside `root` — a sibling sharing a name prefix is outside. */
+export function isInside(root: string, target: string): boolean {
+  const rel = relative(root, target)
+  return rel !== '' && rel !== '..' && !rel.startsWith(`..${sep}`) && !isAbsolute(rel)
 }
 
 /** The expected ids first, then whatever else the capture added, each once. */
@@ -111,12 +126,11 @@ const round2 = (n: number): number => Math.round(n * 100) / 100
 
 /** `basalt − keel` for numbers (signed), `=`/`≠` for role strings, `–` when the types differ. */
 export function metricDelta(keel: number | string, basalt: number | string): string {
-  if (typeof keel === 'number' && typeof basalt === 'number') {
-    const d = round2(basalt - keel)
-    return d === 0 ? '0' : d > 0 ? `+${d}` : String(d)
-  }
   if (typeof keel === 'string' && typeof basalt === 'string') return keel === basalt ? '=' : '≠'
-  return '–'
+  if (typeof keel !== 'number' || typeof basalt !== 'number') return '–'
+  const delta = round2(basalt - keel)
+  // `String(-0)` is '0', so a negative zero cannot print as `-0`.
+  return delta > 0 ? `+${delta}` : String(delta)
 }
 
 /** Only keys both sides measured, in contract order. */

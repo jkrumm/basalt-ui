@@ -6,9 +6,10 @@ import {
   metricRows,
   parseInventory,
   patternIds,
+  isInside,
 } from './compare-board'
 import type { BoardEntry } from './compare-board'
-import { EXPECTED_IDS, PATTERNS, isMissing } from './compare-patterns'
+import { EXPECTED_IDS, PATTERNS, isMissing, mappingFor } from './compare-patterns'
 
 const entry = (over: Partial<BoardEntry> = {}): BoardEntry => ({
   id: 'metric-card',
@@ -20,9 +21,14 @@ const entry = (over: Partial<BoardEntry> = {}): BoardEntry => ({
 })
 
 describe('parseInventory', () => {
-  test('absent, empty and malformed input yield an empty inventory', () => {
-    for (const input of [null, undefined, '', '  ', '{not json', '[]', '"x"']) {
-      expect(parseInventory(input).patterns).toEqual([])
+  test('absent file (null/undefined) is an empty inventory', () => {
+    expect(parseInventory(null).patterns).toEqual([])
+    expect(parseInventory(undefined).patterns).toEqual([])
+  })
+
+  test('a present but corrupt file throws instead of reading as absent', () => {
+    for (const input of ['', '  ', '{not json', '[]', '"x"', '{}', '{"patterns":{}}']) {
+      expect(() => parseInventory(input)).toThrow(/inventory\.json/)
     }
   })
 
@@ -59,16 +65,38 @@ describe('patternIds', () => {
     )
     const ids = patternIds(inv)
     expect(ids.slice(0, EXPECTED_IDS.length)).toEqual([...EXPECTED_IDS])
+    expect(EXPECTED_IDS).toEqual(Object.keys(PATTERNS))
     expect(ids.at(-1)).toBe('tabs')
     expect(new Set(ids).size).toBe(ids.length)
   })
 
   test('the mapping covers every expected id', () => {
-    for (const id of EXPECTED_IDS) expect(PATTERNS[id]).toBeDefined()
-    for (const m of Object.values(PATTERNS)) {
+    expect(EXPECTED_IDS).toEqual(
+      expect.arrayContaining(['metric-card', 'kanban-card', 'page-header', 'loading-state']),
+    )
+    for (const id of EXPECTED_IDS) {
+      const m = mappingFor(id)
       if (isMissing(m)) expect(m.missing.length).toBeGreaterThan(0)
       else expect(m.route.startsWith('/')).toBe(true)
     }
+  })
+})
+
+describe('mappingFor', () => {
+  test('an id the basalt side does not know is missing, not a crash', () => {
+    const m = mappingFor('status-pill')
+    expect(isMissing(m)).toBe(true)
+  })
+})
+
+describe('isInside', () => {
+  test('rejects a sibling sharing the name prefix, ../ escapes and absolute paths', () => {
+    const root = '/repo/docs/keel'
+    expect(isInside(root, '/repo/docs/keel/a/b.png')).toBe(true)
+    expect(isInside(root, '/repo/docs/keel-evil/b.png')).toBe(false)
+    expect(isInside(root, '/repo/docs/keel/../secret.png')).toBe(false)
+    expect(isInside(root, '/etc/passwd')).toBe(false)
+    expect(isInside(root, root)).toBe(false)
   })
 })
 
@@ -77,6 +105,7 @@ describe('metrics table', () => {
     expect(metricDelta(10, 12)).toBe('+2')
     expect(metricDelta(12.5, 10)).toBe('-2.5')
     expect(metricDelta(7, 7)).toBe('0')
+    expect(metricDelta(-0.001, 0)).toBe('0')
     expect(metricDelta('--vx-ink', '--vx-ink')).toBe('=')
     expect(metricDelta('--vx-ink', 'unknown')).toBe('≠')
     expect(metricDelta(1, 'unknown')).toBe('–')

@@ -11,16 +11,17 @@
  */
 import { existsSync } from 'node:fs'
 import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises'
-import { dirname, isAbsolute, join, relative, resolve } from 'node:path'
+import { dirname, join, relative, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { parseArgs } from 'node:util'
 import { chromium } from 'playwright-core'
-import type { BrowserServer, ElementHandle, Page } from 'playwright-core'
+import type { Browser, Page } from 'playwright-core'
 import {
   PAIR_KEYS,
   SCHEMES,
   VIEWPORTS,
   buildBoardHtml,
+  isInside,
   pairKey,
   parseInventory,
   patternIds,
@@ -33,8 +34,8 @@ import type {
   Scheme,
   Viewport,
 } from './compare-board'
-import { PATTERNS, isMissing } from './compare-patterns'
-import type { FoundMapping, Metrics, PatternMapping } from './compare-patterns'
+import { isMissing, mappingFor } from './compare-patterns'
+import type { FoundMapping, Metrics } from './compare-patterns'
 import { stableStringify } from './index'
 import { withTimeout } from './perf-util'
 import { serveDist } from './serve'
@@ -44,6 +45,7 @@ const KEEL_DIR = join(ROOT, 'docs/waves/design-parity/keel')
 const PARITY_DIR = join(ROOT, 'docs/waves/design-parity')
 const BUILD_TIMEOUT_MS = 300_000
 const RUN_TIMEOUT_MS = 10 * 60_000
+const BOARD_TIMEOUT_MS = 2 * 60_000
 const NAV_TIMEOUT_MS = 30_000
 const FIND_TIMEOUT_MS = 10_000
 
@@ -75,18 +77,19 @@ async function buildPlayground(): Promise<string> {
 
 type ResolveArgs = { css: string; select: string | null }
 
-/** The measured element: the tagged one, or its only box when the tag is a `display: contents` wrapper. */
+/** The measured element: the tagged/selected root, then `select` resolved inside it (`:scope` = the root). */
 function resolveAnchor({ css, select }: ResolveArgs): Element | null {
-  let el = document.querySelector(css)
-  if (el && getComputedStyle(el).display === 'contents') el = el.firstElementChild
-  if (el && select) el = el.querySelector(select)
-  return el
+  const root = document.querySelector(css)
+  return root && select ? root.querySelector(select) : root
 }
 
 /** Structural metrics of one element. Roles are `--vx-*` names when a token's colour matches exactly. */
-function measure(el: Element, rowLike: boolean): Record<string, number | string> {
+function measure(node: Node, rowLike: boolean): Metrics {
+  const out: Metrics = {}
+  if (!(node instanceof Element)) return out
+  const el = node
   // oxlint-disable-next-line unicorn/consistent-function-scoping -- serialised into the page: no outer scope
-  const px = (v: string): number => Math.round(parseFloat(v) * 100) / 100
+  const px = (v: string | number): number => Math.round(parseFloat(String(v)) * 100) / 100
   const roles = new Map<string, string>()
   // The probe sits under a sentinel-coloured parent: a token that is not a colour makes `color: var()`
   // invalid at computed-value time, which inherits the parent — so the sentinel marks "not a colour".
@@ -101,7 +104,7 @@ function measure(el: Element, rowLike: boolean): Record<string, number | string>
     for (const rule of Array.from(rules)) {
       if (rule instanceof CSSStyleRule) {
         for (const name of Array.from(rule.style)) if (name.startsWith('--vx-')) names.add(name)
-      } else if ('cssRules' in rule) collect((rule as CSSGroupingRule).cssRules)
+      } else if (rule instanceof CSSGroupingRule) collect(rule.cssRules)
     }
   }
   for (const sheet of Array.from(document.styleSheets)) {
@@ -122,16 +125,15 @@ function measure(el: Element, rowLike: boolean): Record<string, number | string>
     return roles.get(color) ?? 'unknown'
   }
 
-  const out: Record<string, number | string> = {}
   const cs = getComputedStyle(el)
   const rect = el.getBoundingClientRect()
-  out['width'] = px(String(rect.width))
-  out['height'] = px(String(rect.height))
-  out['paddingTop'] = px(cs.paddingTop)
-  out['paddingRight'] = px(cs.paddingRight)
-  out['paddingBottom'] = px(cs.paddingBottom)
-  out['paddingLeft'] = px(cs.paddingLeft)
-  out['radius'] = px(cs.borderTopLeftRadius)
+  out.width = px(rect.width)
+  out.height = px(rect.height)
+  out.paddingTop = px(cs.paddingTop)
+  out.paddingRight = px(cs.paddingRight)
+  out.paddingBottom = px(cs.paddingBottom)
+  out.paddingLeft = px(cs.paddingLeft)
+  out.radius = px(cs.borderTopLeftRadius)
   const sides = [
     [cs.borderTopWidth, cs.borderTopColor],
     [cs.borderRightWidth, cs.borderRightColor],
@@ -139,27 +141,44 @@ function measure(el: Element, rowLike: boolean): Record<string, number | string>
     [cs.borderLeftWidth, cs.borderLeftColor],
   ] as const
   const widest = sides.reduce((a, b) => (parseFloat(b[0]) > parseFloat(a[0]) ? b : a))
-  out['borderWidth'] = px(widest[0])
-  if (parseFloat(widest[0]) > 0) out['borderRole'] = role(widest[1])
-  out['backgroundRole'] = role(cs.backgroundColor)
-  out['shadow'] = cs.boxShadow === 'none' ? 'none' : 'shadow'
-  if (rowLike) out['rowHeight'] = px(String(rect.height))
+  out.borderWidth = px(widest[0])
+  if (parseFloat(widest[0]) > 0) out.borderRole = role(widest[1])
+  out.backgroundRole = role(cs.backgroundColor)
+  out.shadow = cs.boxShadow === 'none' ? 'none' : 'shadow'
+  if (rowLike) out.rowHeight = px(rect.height)
 
   // gap: the first flex/grid box (root first, breadth-first) that actually spaces its children.
   const queue: Element[] = [el]
   for (let i = 0; i < queue.length && i < 60; i++) {
-    const node = queue[i]!
-    const s = getComputedStyle(node)
+    const item = queue[i]
+    if (!item) break
+    const s = getComputedStyle(item)
     if ((s.display.includes('flex') || s.display.includes('grid')) && parseFloat(s.rowGap) > 0) {
-      out['gap'] = px(s.rowGap)
+      out.gap = px(s.rowGap)
       break
     }
-    queue.push(...Array.from(node.children))
+    queue.push(...Array.from(item.children))
+  }
+
+  // dividerRole: the first descendant that draws a separator (an hr, or a border on its top/bottom edge).
+  for (const d of Array.from(el.querySelectorAll('*')).slice(0, 200)) {
+    const s = getComputedStyle(d)
+    if (d.tagName === 'HR' || d.getAttribute('role') === 'separator') {
+      out.dividerRole = role(s.borderTopWidth !== '0px' ? s.borderTopColor : s.backgroundColor)
+      break
+    }
+    const edge = parseFloat(s.borderBottomWidth) > 0 ? s.borderBottomColor : s.borderTopColor
+    if (parseFloat(s.borderBottomWidth) > 0 || parseFloat(s.borderTopWidth) > 0) {
+      const found = role(edge)
+      if (found === 'transparent') continue
+      out.dividerRole = found
+      break
+    }
   }
 
   // Typography of the visible text nodes: largest size = value, smallest = label, most common = body.
-  type Run = { size: number; weight: number; line: number; color: string }
-  const runs = new Map<number, Run & { count: number }>()
+  type Run = { size: number; weight: number; line: number; color: string; count: number }
+  const runs = new Map<number, Run>()
   const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT)
   for (let n = walker.nextNode(); n; n = walker.nextNode()) {
     const parent = n.parentElement
@@ -167,57 +186,71 @@ function measure(el: Element, rowLike: boolean): Record<string, number | string>
     const s = getComputedStyle(parent)
     if (s.visibility === 'hidden' || s.display === 'none') continue
     const size = parseFloat(s.fontSize)
-    const line =
-      s.lineHeight === 'normal' ? Math.round(size * 1.2 * 100) / 100 : parseFloat(s.lineHeight)
+    const line = s.lineHeight === 'normal' ? px(size * 1.2) : parseFloat(s.lineHeight)
     const prev = runs.get(size)
     if (prev) prev.count++
     else
       runs.set(size, { size, weight: parseInt(s.fontWeight, 10), line, color: s.color, count: 1 })
   }
   const sorted = [...runs.values()].toSorted((a, b) => a.size - b.size)
-  const put = (prefix: 'label' | 'value' | 'body', r: (typeof sorted)[number]): void => {
-    out[`${prefix}Size`] = r.size
-    out[`${prefix}Weight`] = r.weight
-    out[`${prefix}LineHeight`] = r.line
-    if (prefix !== 'body') out[`${prefix}Role`] = role(r.color)
-  }
-  if (sorted.length > 0) {
-    put('label', sorted[0]!)
-    put('value', sorted[sorted.length - 1]!)
-    put(
-      'body',
-      sorted.reduce((a, b) => (b.count >= a.count ? b : a)),
-    )
+  const first = sorted[0]
+  const last = sorted[sorted.length - 1]
+  if (first && last) {
+    out.labelSize = first.size
+    out.labelWeight = first.weight
+    out.labelLineHeight = first.line
+    out.labelRole = role(first.color)
+    out.valueSize = last.size
+    out.valueWeight = last.weight
+    out.valueLineHeight = last.line
+    out.valueRole = role(last.color)
+    const body = sorted.reduce((a, b) => (b.count >= a.count ? b : a))
+    out.bodySize = body.size
+    out.bodyWeight = body.weight
+    out.bodyLineHeight = body.line
   }
 
   for (const svg of Array.from(el.querySelectorAll('svg'))) {
     const r = svg.getBoundingClientRect()
     if (r.width === 0 || r.height === 0) continue
     if (r.height >= 24 && r.width >= 40) {
-      if (out['chartHeight'] === undefined) out['chartHeight'] = px(String(r.height))
-    } else if (out['iconSize'] === undefined) out['iconSize'] = px(String(r.width))
+      if (out.chartHeight === undefined) out.chartHeight = px(r.height)
+    } else if (out.iconSize === undefined) out.iconSize = px(r.width)
   }
   return out
 }
 
 // ── Browser run ──────────────────────────────────────────────────────────────────────────────
 
-const ROW_LIKE = new Set([
-  'table-row',
-  'table-header',
-  'nav-item',
-  'activity-item',
-  'timeline-event',
-])
+/**
+ * One Chrome for `fn`, killed afterwards even when `fn` times out. `launchServer` + `connect` +
+ * `kill()` — a graceful `close()` hangs on this host (see index.ts).
+ */
+async function withChrome<T>(
+  fn: (browser: Browser) => Promise<T>,
+  timeoutMs: number,
+  what: string,
+): Promise<T> {
+  const chrome = await chromium.launchServer({
+    channel: 'chrome',
+    chromiumSandbox: !process.env['CI'],
+  })
+  try {
+    const browser = await chromium.connect(chrome.wsEndpoint())
+    return await withTimeout(fn(browser), timeoutMs, what)
+  } finally {
+    await chrome.kill().catch(() => undefined)
+  }
+}
 
-const anchorCss = (id: string, m: FoundMapping): string =>
-  m.selector ?? `[data-compare="${m.anchor ?? id}"]`
+type Measured = { id: string; scheme: Scheme; viewport: Viewport; metrics: Metrics }
 
 async function captureOne(
   page: Page,
   baseUrl: string,
   id: string,
   m: FoundMapping,
+  viewport: Viewport,
   file: string,
 ): Promise<Metrics> {
   await page.goto(baseUrl + m.route, { waitUntil: 'networkidle' })
@@ -229,19 +262,25 @@ async function captureOne(
   }
   try {
     await page.evaluate(() => document.fonts.ready.then(() => undefined))
-    const args: ResolveArgs = { css: anchorCss(id, m), select: m.select ?? null }
+    if (m.before) await page.click(m.before.click, { timeout: FIND_TIMEOUT_MS })
+    const raw = viewport === 'mobile' ? (m.mobileSelector ?? m.selector) : m.selector
+    const args: ResolveArgs = {
+      css: raw ?? `[data-compare="${m.anchor ?? id}"]`,
+      select: m.select ?? null,
+    }
     const handle = await page.waitForFunction(resolveAnchor, args, { timeout: FIND_TIMEOUT_MS })
-    const el = handle.asElement() as ElementHandle<Element> | null
+    const el = handle.asElement()
     if (!el) throw new Error('anchor did not resolve to an element')
     await el.scrollIntoViewIfNeeded()
     if (!(await el.isVisible())) throw new Error('anchor is not visible at this viewport')
     const onScreen = await el.evaluate((node) => {
+      if (!(node instanceof Element)) return false
       const r = node.getBoundingClientRect()
       return r.right > 0 && r.left < innerWidth && r.bottom > 0 && r.top < innerHeight
     })
     if (!onScreen) throw new Error('anchor is off-screen at this viewport')
     await el.screenshot({ path: file, animations: 'disabled', caret: 'hide' })
-    return (await el.evaluate(measure, ROW_LIKE.has(id))) as Metrics
+    return await el.evaluate(measure, m.rowLike === true)
   } finally {
     if (m.storage) {
       await page.evaluate(
@@ -256,93 +295,88 @@ async function captureAll(params: {
   baseUrl: string
   outDir: string
   ids: readonly string[]
-  results: Map<string, BasaltResult>
-}): Promise<void> {
-  const { baseUrl, outDir, ids, results } = params
+}): Promise<{ results: Map<string, BasaltResult>; metrics: Measured[] }> {
+  const { baseUrl, outDir, ids } = params
   await mkdir(join(outDir, 'basalt'), { recursive: true })
-  // `launchServer` + `connect` + `kill()` — graceful `close()` hangs on this host (see index.ts).
-  const chrome: BrowserServer = await chromium.launchServer({
-    channel: 'chrome',
-    chromiumSandbox: !process.env['CI'],
-  })
-  try {
-    const browser = await chromium.connect(chrome.wsEndpoint())
-    for (const scheme of SCHEMES) {
+  const results = new Map<string, BasaltResult>(
+    ids.map((id) => [id, { crops: {}, metrics: {}, errors: {} }]),
+  )
+  const metrics: Measured[] = []
+  await withChrome(
+    async (browser) => {
+      for (const scheme of SCHEMES) {
+        for (const viewport of VIEWPORTS) {
+          const spec = VIEWPORT_SPECS[viewport]
+          const context = await browser.newContext({
+            viewport: { width: spec.width, height: spec.height },
+            deviceScaleFactor: 1,
+            isMobile: spec.mobile,
+            hasTouch: spec.mobile,
+            colorScheme: scheme,
+            reducedMotion: 'reduce',
+          })
+          await context.addInitScript(
+            (value) => localStorage.setItem('mantine-color-scheme-value', value),
+            scheme,
+          )
+          const page = await context.newPage()
+          page.setDefaultTimeout(NAV_TIMEOUT_MS)
+          for (const id of ids) {
+            const mapping = mappingFor(id)
+            const result = results.get(id)
+            if (isMissing(mapping) || !result) continue
+            const key = pairKey(scheme, viewport)
+            const name = `${id}--${scheme}--${viewport}.png`
+            try {
+              const measured = await captureOne(
+                page,
+                baseUrl,
+                id,
+                mapping,
+                viewport,
+                join(outDir, 'basalt', name),
+              )
+              result.crops[key] = `basalt/${name}`
+              // The board's metrics table reads the dark scheme; compare.json keeps both.
+              if (scheme === 'dark') result.metrics[viewport] = measured
+              metrics.push({ id, scheme, viewport, metrics: measured })
+              console.log(`[compare] ${id} ${key} ok`)
+            } catch (error) {
+              const msg =
+                (error instanceof Error ? error.message : String(error)).split('\n')[0] ?? ''
+              result.errors[key] = msg
+              console.error(`[compare] ${id} ${key} failed: ${msg}`)
+            }
+          }
+          await context.close()
+        }
+      }
+    },
+    RUN_TIMEOUT_MS,
+    'compare capture',
+  )
+  return { results, metrics }
+}
+
+async function shootBoards(outDir: string): Promise<void> {
+  await withChrome(
+    async (browser) => {
       for (const viewport of VIEWPORTS) {
         const spec = VIEWPORT_SPECS[viewport]
         const context = await browser.newContext({
           viewport: { width: spec.width, height: spec.height },
           deviceScaleFactor: 1,
-          isMobile: spec.mobile,
-          hasTouch: spec.mobile,
-          colorScheme: scheme,
           reducedMotion: 'reduce',
         })
-        await context.addInitScript(
-          (value) => localStorage.setItem('mantine-color-scheme-value', value),
-          scheme,
-        )
         const page = await context.newPage()
-        page.setDefaultTimeout(NAV_TIMEOUT_MS)
-        for (const id of ids) {
-          const mapping = PATTERNS[id as keyof typeof PATTERNS]
-          if (!mapping || isMissing(mapping)) continue
-          const result = results.get(id)!
-          const key = pairKey(scheme, viewport)
-          const name = `${id}--${scheme}--${viewport}.png`
-          try {
-            const metrics = await captureOne(
-              page,
-              baseUrl,
-              id,
-              mapping,
-              join(outDir, 'basalt', name),
-            )
-            result.crops[key] = `basalt/${name}`
-            // The board's metrics table reads the dark scheme; compare.json keeps both.
-            if (scheme === 'dark') result.metrics[viewport] = metrics
-            allMetrics.push({ id, scheme, viewport, metrics })
-            console.log(`[compare] ${id} ${key} ok`)
-          } catch (error) {
-            const msg = (error instanceof Error ? error.message : String(error)).split('\n')[0]!
-            result.errors[key] = msg
-            console.error(`[compare] ${id} ${key} failed: ${msg}`)
-          }
-        }
+        await page.goto(pathToFileURL(join(outDir, 'board.html')).href, { waitUntil: 'load' })
+        await page.screenshot({ path: join(outDir, `board-${viewport}.png`), fullPage: true })
         await context.close()
       }
-    }
-  } finally {
-    await chrome.kill().catch(() => undefined)
-  }
-}
-
-const allMetrics: Array<{ id: string; scheme: Scheme; viewport: Viewport; metrics: Metrics }> = []
-
-// ── Board screenshots ────────────────────────────────────────────────────────────────────────
-
-async function shootBoards(outDir: string): Promise<void> {
-  const chrome = await chromium.launchServer({
-    channel: 'chrome',
-    chromiumSandbox: !process.env['CI'],
-  })
-  try {
-    const browser = await chromium.connect(chrome.wsEndpoint())
-    for (const viewport of VIEWPORTS) {
-      const spec = VIEWPORT_SPECS[viewport]
-      const context = await browser.newContext({
-        viewport: { width: spec.width, height: spec.height },
-        deviceScaleFactor: 1,
-        reducedMotion: 'reduce',
-      })
-      const page = await context.newPage()
-      await page.goto(pathToFileURL(join(outDir, 'board.html')).href, { waitUntil: 'load' })
-      await page.screenshot({ path: join(outDir, `board-${viewport}.png`), fullPage: true })
-      await context.close()
-    }
-  } finally {
-    await chrome.kill().catch(() => undefined)
-  }
+    },
+    BOARD_TIMEOUT_MS,
+    'board screenshots',
+  )
 }
 
 // ── Main ─────────────────────────────────────────────────────────────────────────────────────
@@ -364,7 +398,7 @@ async function keelCropsFor(
     const rel = keel.crops[key]
     if (!rel) continue
     const src = resolve(KEEL_DIR, rel)
-    if (!src.startsWith(KEEL_DIR) || !existsSync(src)) continue
+    if (!isInside(KEEL_DIR, src) || !existsSync(src)) continue
     if (inParity) {
       crops[key] = relative(outDir, src).split('\\').join('/')
     } else {
@@ -387,15 +421,14 @@ async function main(): Promise<number> {
     },
   })
   const label = values.label
-  if (!label || !/^[\w.-]+$/.test(label)) {
+  if (!label || !/^[\w.-]+$/.test(label) || /^\.+$/.test(label)) {
     console.error(
       'usage: bun scripts/evidence/compare.ts --label <label> [--out <dir>] [--dist <dir>] [--patterns a,b]',
     )
     return 2
   }
   const outDir = values.out ? resolve(values.out) : join(ROOT, '.evidence/compare', label)
-  const inParity =
-    !relative(PARITY_DIR, outDir).startsWith('..') && !isAbsolute(relative(PARITY_DIR, outDir))
+  const inParity = outDir === PARITY_DIR || isInside(PARITY_DIR, outDir)
 
   const inventory = parseInventory(await readInventory())
   const wanted = (values.patterns ?? '')
@@ -411,32 +444,24 @@ async function main(): Promise<number> {
   if (!existsSync(join(distDir, 'index.html'))) throw new Error(`no index.html in ${distDir}`)
   await mkdir(outDir, { recursive: true })
 
-  const results = new Map<string, BasaltResult>(
-    ids.map((id) => [id, { crops: {}, metrics: {}, errors: {} }]),
-  )
   const server = serveDist(distDir)
+  let captured: Awaited<ReturnType<typeof captureAll>>
   try {
-    await withTimeout(
-      captureAll({ baseUrl: server.origin, outDir, ids, results }),
-      RUN_TIMEOUT_MS,
-      'compare capture',
-    )
+    captured = await captureAll({ baseUrl: server.origin, outDir, ids })
   } finally {
     server.stop()
   }
+  const { results, metrics } = captured
 
   const entries: BoardEntry[] = []
   for (const id of ids) {
     const keel = inventory.patterns.find((p) => p.id === id)
-    const mapping: PatternMapping = PATTERNS[id as keyof typeof PATTERNS] ?? {
-      missing: 'the Keel capture added this pattern after the basalt mapping was written',
-    }
     entries.push({
       id,
-      mapping,
+      mapping: mappingFor(id),
       keel,
       keelCrops: await keelCropsFor(keel, outDir, inParity),
-      basalt: results.get(id)!,
+      basalt: results.get(id) ?? { crops: {}, metrics: {}, errors: {} },
     })
   }
   await writeFile(join(outDir, 'board.html'), buildBoardHtml({ label, inventory, entries }))
@@ -445,11 +470,11 @@ async function main(): Promise<number> {
     stableStringify({
       label,
       viewports: VIEWPORT_SPECS,
-      mapping: Object.fromEntries(ids.map((id) => [id, entries.find((e) => e.id === id)!.mapping])),
+      mapping: Object.fromEntries(entries.map((e) => [e.id, e.mapping])),
       results: Object.fromEntries(
-        ids.map((id) => [id, { errors: results.get(id)!.errors, crops: results.get(id)!.crops }]),
+        entries.map((e) => [e.id, { errors: e.basalt.errors, crops: e.basalt.crops }]),
       ),
-      metrics: allMetrics.toSorted((a, b) =>
+      metrics: metrics.toSorted((a, b) =>
         `${a.id}${a.scheme}${a.viewport}`.localeCompare(`${b.id}${b.scheme}${b.viewport}`),
       ),
     }),
@@ -464,7 +489,7 @@ async function main(): Promise<number> {
       `${entries.length - found.length} missing; keel inventory ${inventory.patterns.length ? 'present' : 'absent'}`,
   )
   console.log(`[compare] wrote ${outDir}`)
-  // A pattern absent at one viewport (the desktop sidebar on a phone) is a finding, not a broken run.
+  // A pattern absent at one viewport is a finding, not a broken run; nothing captured at all is.
   return ok.length === 0 && found.length > 0 ? 1 : 0
 }
 
