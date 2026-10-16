@@ -21,7 +21,7 @@ describe('basalt-design-reviewer', () => {
   })
 
   it('lists every rubric item in order', () => {
-    expect(items('Craft')).toEqual([1, 2, 3, 4, 5, 6, 7, 8])
+    expect(items('Craft')).toEqual([1, 2, 3, 4, 5, 6, 7])
     expect(items('Expression')).toEqual([1, 2, 3, 4, 5])
     expect(items('Communication')).toEqual([1, 2, 3, 4, 5, 6])
   })
