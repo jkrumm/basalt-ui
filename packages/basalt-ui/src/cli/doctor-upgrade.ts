@@ -2,7 +2,8 @@
  * `doctor`'s 2.0 strictness and upgrade checks. Each returns null (pass), `{ fail }` (the problem
  * plus its fix) or `{ skip }` (the check could not run: a check that cannot run is not a pass).
  */
-import { existsSync, readdirSync, writeFileSync } from 'node:fs'
+import { readdirSync, writeFileSync } from 'node:fs'
+import type { Dirent } from 'node:fs'
 import { createRequire } from 'node:module'
 import { dirname, relative, resolve } from 'node:path'
 
@@ -405,59 +406,91 @@ function providerTags(src: string): ProviderTag[] {
 
 const carriesRouter = (tag: ProviderTag): boolean => /(^|\s)router\s*=/.test(tag.attrs)
 
-/** Every route file (relative to the cwd) that may hold the provider: the root and the pathless layouts. */
-function startProviderFiles(cwd: string): string[] {
-  const root = routerSeedDest('', 'root')
-  const routesDir = dirname(root)
-  const layouts: string[] = []
-  const walk = (rel: string): void => {
-    for (const entry of readdirSync(resolve(cwd, rel), { withFileTypes: true })) {
-      const path = `${rel}/${entry.name}`
-      if (entry.isDirectory()) walk(path)
-      else if (PATHLESS_LAYOUT.test(path.slice(routesDir.length + 1))) layouts.push(path)
-    }
-  }
-  if (existsSync(resolve(cwd, routesDir))) walk(routesDir)
-  return [root, ...layouts.toSorted()]
-}
-
 /** `_app.tsx` or `_app/route.tsx` at any depth: a pathless layout (`_app.map.tsx` is a child, `__root` is the root). */
 const PATHLESS_LAYOUT = /(^|\/)(_[^_./][^./]*\.[jt]sx|_[^_./][^./]*\/route\.[jt]sx)$/
 
-/** The root route declares its context from the package type: `createRootRouteWithContext<…BasaltRouterContext|queryClient…>()`. */
-const rootCarriesContext = (src: string): boolean =>
-  /createRootRouteWithContext\s*<[^()]*\b(BasaltRouterContext|queryClient)\b[^()]*>\s*\(/.test(
-    tokenize(src).code,
+/** Every file under `rel`, recursively; an unreadable directory has no files. */
+function filesUnder(cwd: string, rel: string): string[] {
+  let entries: Dirent[]
+  try {
+    entries = readdirSync(resolve(cwd, rel), { withFileTypes: true })
+  } catch {
+    return []
+  }
+  return entries.flatMap((e) =>
+    e.isDirectory() ? filesUnder(cwd, `${rel}/${e.name}`) : [`${rel}/${e.name}`],
   )
+}
+
+type RouteFile = { file: string; text: string | null; tags: ProviderTag[] }
+
+/** The root route and every pathless layout, each read once; `text` is null for a missing file. */
+function startProviderFiles(cwd: string): RouteFile[] {
+  const root = routerSeedDest('', 'root')
+  const routesDir = dirname(root)
+  const layouts = filesUnder(cwd, routesDir)
+    .filter((f) => PATHLESS_LAYOUT.test(f.slice(routesDir.length + 1)))
+    .toSorted()
+  return [root, ...layouts].map((file) => {
+    const text = readIfExists(resolve(cwd, file))
+    return { file, text, tags: providerTags(text ?? '') }
+  })
+}
 
 /**
- * A Start app owns its router and entry: the wiring is an embedded `<BasaltProvider>` (no `router=`)
+ * How the exported root route is created: `createRootRouteWithContext` is typed (TypeScript gates the
+ * context at `createRouter`), `createRootRoute` is not. Anything else (a re-export, a wrapper, no
+ * `export const Route`) is null and never fails.
+ */
+function rootRouteKind(src: string): 'typed' | 'untyped' | null {
+  const kind = /\bexport\s+const\s+Route\s*=\s*(createRootRouteWithContext|createRootRoute)\b/.exec(
+    tokenize(src).code,
+  )?.[1]
+  if (kind === undefined) return null
+  return kind === 'createRootRoute' ? 'untyped' : 'typed'
+}
+
+/**
+ * A Start app owns its router and entry: the wiring is ONE embedded `<BasaltProvider>` (no `router=`)
  * around `<Outlet />`, in the root route or a pathless layout (a landing kept at 0 JS mounts it in
  * the layout). ANY tag with `router=` mounts a second router inside Start's, so it fails even beside
- * an embedded one. The root route must also declare `queryClient` in its context type.
+ * an embedded one. The exported root route must not be a bare `createRootRoute(`: the provider reads
+ * `context.queryClient`. Only that untyped form fails — a re-export, wrapper or missing `Route`
+ * export is skipped silently, and the context's type argument is left to TypeScript.
  */
 function startWiring(cwd: string): { fail: string } | null {
-  const root = routerSeedDest('', 'root')
-  const files = startProviderFiles(cwd).map((file) => ({
-    file,
-    tags: providerTags(readIfExists(resolve(cwd, file)) ?? ''),
-  }))
+  const files = startProviderFiles(cwd)
+  const [rootFile] = files
+  const root = rootFile!.file
+  const fix =
+    'render <BasaltProvider><Outlet /></BasaltProvider> in the root route component or a pathless layout'
   const mounting = files.find((f) => f.tags.some(carriesRouter))
-  const embedded = files.find((f) => f.tags.length > 0)
-  if (mounting || !embedded) {
-    const rootText = readIfExists(resolve(cwd, root))
-    const problem = mounting
-      ? `${mounting.file} passes router= to BasaltProvider, which mounts a second router inside Start`
-      : rootText === null
-        ? `${root} does not exist and no pathless layout renders <BasaltProvider>`
-        : `neither ${root} nor a pathless layout (src/routes/_<name>.tsx, _<name>/route.tsx) renders <BasaltProvider>`
+  if (mounting) {
     return {
-      fail: `app-wiring: ${problem} (TanStack Start app). Fix: render <BasaltProvider><Outlet /></BasaltProvider> in the root route component or a pathless layout.`,
+      fail: `app-wiring: ${mounting.file} passes router= to BasaltProvider, which mounts a second router inside Start (TanStack Start app). Fix: ${fix}.`,
     }
   }
-  if (rootCarriesContext(readIfExists(resolve(cwd, root)) ?? '')) return null
+  const embedded = files.filter((f) => f.tags.length > 0)
+  if (embedded.length === 0) {
+    const problem =
+      rootFile!.text === null
+        ? `${root} does not exist and no pathless layout renders <BasaltProvider>`
+        : `neither ${root} nor a pathless layout (src/routes/_<name>.tsx, _<name>/route.tsx) renders <BasaltProvider>`
+    return { fail: `app-wiring: ${problem} (TanStack Start app). Fix: ${fix}.` }
+  }
+  if (embedded.length > 1) {
+    return {
+      fail: `app-wiring: ${embedded.map((f) => f.file).join(' and ')} both render <BasaltProvider>; the second nests a duplicate Query/Mantine tree (TanStack Start app). Fix: keep one.`,
+    }
+  }
+  if (rootFile!.text === null) {
+    return {
+      fail: `app-wiring: ${root} does not exist, so the provider in ${embedded[0]!.file} has no root route context (TanStack Start app). Fix: create it with \`export const Route = createRootRouteWithContext<BasaltRouterContext>()({ … })\`.`,
+    }
+  }
+  if (rootRouteKind(rootFile!.text) !== 'untyped') return null
   return {
-    fail: `app-wiring: ${root} does not type its router context with queryClient, which the embedded BasaltProvider reads from context.queryClient. Fix: \`createRootRouteWithContext<BasaltRouterContext>()({ … })\` (import type { BasaltRouterContext } from 'basalt-ui') and pass the QueryClient in createRouter({ context }).`,
+    fail: `app-wiring: ${root} exports a Route built with createRootRoute(), so its router context has no queryClient, which the embedded BasaltProvider reads from context.queryClient. Fix: \`createRootRouteWithContext<BasaltRouterContext>()({ … })\` (import type { BasaltRouterContext } from 'basalt-ui') and pass the QueryClient in createRouter({ context }).`,
   }
 }
 
@@ -467,14 +500,13 @@ function startWiring(cwd: string): { fail: string } | null {
  */
 export function startWiringWarnings(cwd: string): string[] {
   if (!isStartApp(cwd, '')) return []
-  const spreads = startProviderFiles(cwd).filter((file) =>
-    providerTags(readIfExists(resolve(cwd, file)) ?? '').some((t) => t.spread),
-  )
-  return spreads.map(
-    (file) =>
-      `app-wiring: <BasaltProvider {...spread}> in ${file} could pass router=, which mounts ` +
-      'a second router inside Start (heuristic: the spread is not followed).',
-  )
+  return startProviderFiles(cwd)
+    .filter((f) => f.tags.some((t) => t.spread))
+    .map(
+      (f) =>
+        `app-wiring: <BasaltProvider {...spread}> in ${f.file} could pass router=, which mounts ` +
+        'a second router inside Start (heuristic: the spread is not followed).',
+    )
 }
 
 const BASALT_SHELL_TAG = /<BasaltShell\b/g
