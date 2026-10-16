@@ -10,14 +10,14 @@ Method only; the law is `.claude/rules/basalt-*.md` and `./DESIGN.md`.
 
 1. Read `./DESIGN.md` and the rules `basalt-tokens.md`, `basalt-mantine.md`, `basalt-controls.md`, `basalt-charts.md`. No `DESIGN.md`: run `/basalt-app` first.
 2. **Scenario first.** Write down realistic fixture data, the user's question, and the decision the view supports. Decide which metrics earn a hue (trend, status, separation; the rest neutral), the one primary action per view, each control's home (a `SettingsRow` preference via `createLocalStore`, never `useState`).
-3. **Pick each encoding from the data's shape**, then the shipped composite (`StatCard`, `ChartCard`, `Section`, `WidgetHeader`, `BasaltDataTable`, `EmptyState`; a gap is reported, not routed around):
+3. **Pick each encoding from the data's shape**, then the shipped composite (`StatCard`, `ChartCard`, `Section`, `WidgetHeader`, `BasaltDataTable`, `EmptyState`; a gap is reported, not routed around). Chart kinds and `ChartCard` import from `basalt-ui/charts`, `BasaltDataTable` from `basalt-ui/table`, the rest from `basalt-ui`:
 
    | Data shape                    | Encoding                                                                                                | Component                                   |
    | ----------------------------- | ------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
    | Single value with a trend     | figure, text delta, axis-less sparkline along the card's bottom                                         | `StatCard` + `sparkline` slot (`Sparkline`) |
    | Value over time               | line or stacked area                                                                                    | `Lines` / `StackedArea` in a `ChartCard`    |
-   | Compare categories            | bars                                                                                                    | `Bars`                                      |
-   | Part of a whole, 2–6 parts    | one segmented (stacked) bar, parts in order — not a donut plus a total card, not a row of N `StatCard`s | `Bars` (stacked)                            |
+   | Compare categories            | bars                                                                                                    | `Bars layout="grouped"`                     |
+   | Part of a whole, 2–6 parts    | one segmented (stacked) bar, parts in order — not a donut plus a total card, not a row of N `StatCard`s | `Bars` (stacked, the default)               |
    | Distribution                  | small axis-less histogram                                                                               | `Bars` in a `ChartCard`                     |
    | Status over time              | band strip; a heat grid for daily data                                                                  | `BandStrip` / `Heatmap`                     |
    | Many rows, several attributes | table, right-aligned mono figures                                                                       | `BasaltDataTable`                           |
@@ -33,4 +33,4 @@ Method only; the law is `.claude/rules/basalt-*.md` and `./DESIGN.md`.
    - revise every failing item at its source, rebuild, and shoot again.
      Boards stay local (gitignored); the scored verdict and notes are worth committing.
 7. **Done** only when the reviewer passes every component. After five failed rounds stop and show the owner the boards and the failing items.
-8. Run the repo's own gate (e.g. `make check`); fix every finding at its source.
+8. Run the repo's own gate (e.g. `make check`); fix every finding at its source. `shot` captures desktop (1440) and mobile (390) in both schemes; check both.
