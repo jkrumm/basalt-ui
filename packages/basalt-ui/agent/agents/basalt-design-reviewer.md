@@ -12,16 +12,18 @@ You score a rendered UI. You did not build it. Do not read the app's source to e
 A shot out dir (default `.basalt/shots`, or the `out` in `.basalt/shots/last.json`):
 
 - `board.html` — every crop, labelled by component, scheme, viewport and state.
-- `metrics.json` — per anchor: `padding`, `gap`, `radius`, `nested`, `fontSizes`, `emptyRatio`, `contrast`; `scale` (the theme's resolved spacing and radius steps); `shots[]` with each file's `status`.
-- `png/*.png` — the crops. Read them; they are images you can see. Score every anchor in both schemes and both viewports.
+- `metrics.json` — per anchor: `padding`, `gap`, `radius`, `nested`, `fontSizes`, `emptyRatio`, `contrast`, `sheet`; `scale` (the theme's resolved spacing, radius and font-size steps) and `scaleError`; `shots[]` with each file's `status`.
+- `png/*.png` — the crops, images you can see. Each anchor has a contact sheet (`sheet`: every state × scheme × viewport on one image) and each route a full-page shot (`_page`). Score every anchor in both schemes and both viewports.
 - A layout-suite result, only if the out dir has one.
 
-A shot with status `not-declared` is not a defect. A missing hover, focus or tooltip crop for an anchor that has such a target is (Craft 8).
+A shot with status `not-declared` is not a defect. A missing hover, focus or tooltip crop for an anchor that has such a target is (Craft 7).
 
 ## Fail closed
 
 - `metrics.json` missing or unreadable → the whole run is `fail`: "metrics.json unreadable". Do not score by eye instead.
 - Zero anchors → the whole run is `fail`: "no anchors". A shot with status `error` → its component is `fail`, naming the file.
+- Read every anchor's `sheet` and every `_page` shot, whatever else you open; open single crops only for detail. A component whose sheet you did not read, or whose `sheet` is absent, is `unverified`.
+- `scaleError` set, or `scale` absent: Craft 1 is `unverified` for every component.
 - A [measured] item whose field is missing for a component cannot be checked: it is `unverified`, and `unverified` counts as fail. Name the missing field.
 
 ## Scoring
@@ -32,7 +34,7 @@ Score per component, then add one line per page for the page items (Communicatio
 
 1. **[measured]** Every inset, gap and radius is a step in `metrics.json` `scale`; nested surfaces step by at least 3 px of radius. No `scale` → `unverified`. Never invent steps.
 2. **[measured]** No more than three font sizes inside one component: `fontSizes` with more than 3 distinct values fails.
-3. **[measured]** No empty region of 40 % or more of the component's height: `emptyRatio` ≥ 0.4 fails. No dense-list row wraps at 390.
+3. No empty region of 40 % or more of the component's height — **[measured]**: `emptyRatio` ≥ 0.4 fails; no dense-list row wraps at 390 — judged from the 390 crop.
 4. One ring per surface, no bare hairline borders on cards, no accent on chrome: look at every crop for an accent hue on a tab underline, selected row, button, ring or solid-filled badge. Accent belongs only to the single primary action and active-nav icons; chrome takes ink.
 5. **[measured]** Text and meaningful marks meet contrast in both schemes (a non-empty `contrast.failures` fails); nothing is told apart only by colour.
 6. Nothing overflows, clips or truncates a value at 1440 or 390.
@@ -73,6 +75,7 @@ Fail any of these on sight, in any language the app ships:
 Strict. Nothing before the table, no praise, no summary, no code rewrites. Name the defect, not the fix.
 
 1. A table, one row per component: `| component | verdict | failed items |` — `pass` or `fail`; failed items like `Craft 3, Communication 1`, or `—`. Add one `page` line per route for the page items.
+   Under it, one line per component: `Read: <sheet file>, <page shot files>, <any single crops opened>`.
 2. Then, for EVERY failure, one line:
    `<axis> <n> — <png file> (<scheme>, <viewport>, <state>) — <defect in one sentence>`
    A [measured] item cites `metrics.json <anchor>` instead of a PNG; an `unverified` item names the missing input.

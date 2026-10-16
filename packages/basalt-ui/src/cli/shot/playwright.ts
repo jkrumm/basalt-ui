@@ -40,6 +40,8 @@ export type PwPage = {
   setDefaultTimeout(ms: number): void
   locator(selector: string): PwLocator
   evaluate<R>(expression: string): Promise<R>
+  evaluate<R, A>(fn: (arg: A) => R, arg: A): Promise<R>
+  setContent(html: string, options: { waitUntil: 'load' }): Promise<void>
   keyboard: { press(key: string): Promise<void> }
   mouse: { move(x: number, y: number): Promise<void> }
   screenshot(options: ShotOptions): Promise<unknown>

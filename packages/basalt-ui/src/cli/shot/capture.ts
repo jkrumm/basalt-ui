@@ -1,6 +1,9 @@
 /** Per route × scheme × viewport: full-page shot, then every `data-shot` anchor through every state. */
 import { createHash } from 'node:crypto'
-import { join } from 'node:path'
+import { readFileSync } from 'node:fs'
+import { basename, join } from 'node:path'
+
+import { buildSheet } from './board'
 
 import { finishMeasurement, measureAnchor } from './measure'
 import type { Box, PwBrowser, PwContext, PwLocator, PwPage, ShotOptions } from './playwright'
@@ -46,7 +49,8 @@ type Ctx = {
   shots: ShotRecord[]
   measured: Set<string>
   /** Read on the first page of a context that loads. */
-  scale?: Pick<Scale, 'spacing' | 'radius' | 'fontSizes'> | undefined
+  scale?: Steps | undefined
+  scaleError?: string | undefined
 }
 
 type Outcome = {
@@ -56,6 +60,9 @@ type Outcome = {
   file?: string
   note?: string
 }
+
+/** Thrown inside a capture when the anchor simply has no such target: recorded `not-declared`, not `error`. */
+class NotDeclared extends Error {}
 
 const hash = (text: string): string => createHash('sha1').update(text).digest('hex').slice(0, 6)
 const slug = (text: string): string => text.replace(/[^\w-]+/g, '-').replace(/^-+|-+$/g, '')
@@ -147,7 +154,8 @@ async function attempt(
   try {
     await run(join(c.input.pngDir, file))
   } catch (error) {
-    record(c, { name, state, status: 'error', note: firstLine(error) })
+    const status = error instanceof NotDeclared ? 'not-declared' : 'error'
+    record(c, { name, state, status, note: firstLine(error) })
     return
   }
   // The PNG is good: a measurement failure is recorded beside it, never instead of it.
@@ -213,22 +221,28 @@ async function tabInto(page: PwPage, name: string): Promise<void> {
   throw new Error(`:focus-visible never reached the anchor in ${TAB_PRESSES} Tab presses`)
 }
 
-const FOCUSABLE =
-  'a[href], button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), summary, [tabindex]:not([tabindex^="-"]), [contenteditable=""], [contenteditable="true"]'
+/**
+ * True when Tab can reach the anchor or something in it: a link, an enabled control, a `tabindex`
+ * ≥ 0 or editable host, outside any `hidden`/`inert` subtree. Runs in the page, so it is
+ * self-contained.
+ */
+export function hasFocusTarget(root: Element): boolean {
+  const candidates =
+    'a[href], button, input:not([type="hidden"]), select, textarea, summary, [tabindex], [contenteditable=""], [contenteditable="true"]'
+  return [root, ...Array.from(root.querySelectorAll(candidates))].some(
+    (el) =>
+      el.matches(candidates) &&
+      !el.matches(':disabled') &&
+      !el.getAttribute('tabindex')?.startsWith('-') &&
+      el.closest('[hidden], [inert]') === null,
+  )
+}
 
 async function captureFocus(c: Ctx, name: string): Promise<void> {
-  const target = c.page.locator(`${sel(name)}:is(${FOCUSABLE}), ${sel(name)} :is(${FOCUSABLE})`)
-  if ((await target.count()) === 0) {
-    record(c, {
-      name,
-      state: 'focus',
-      status: 'not-declared',
-      note: 'no focus target in the anchor',
-    })
-    return
-  }
   await attempt(c, name, 'focus', async (path) => {
     const anchor = anchorOf(c, name)
+    if (!(await anchor.evaluate(hasFocusTarget)))
+      throw new NotDeclared('no focus target in the anchor')
     await reveal(anchor)
     await tabInto(c.page, name)
     const box = await anchor.boundingBox()
@@ -241,16 +255,8 @@ async function captureFocus(c: Ctx, name: string): Promise<void> {
 async function captureTooltip(c: Ctx, name: string): Promise<void> {
   if (skipOnMobile(c, name, 'tooltip')) return
   const trigger = c.page.locator(`${sel(name)} [data-shot-tooltip]`).first()
-  if ((await trigger.count()) === 0) {
-    record(c, {
-      name,
-      state: 'tooltip',
-      status: 'not-declared',
-      note: 'no [data-shot-tooltip] in the anchor',
-    })
-    return
-  }
   await attempt(c, name, 'tooltip', async (path) => {
+    if ((await trigger.count()) === 0) throw new NotDeclared('no [data-shot-tooltip] in the anchor')
     const anchor = anchorOf(c, name)
     await reveal(anchor)
     await trigger.hover({ timeout: HOVER_TIMEOUT_MS })
@@ -300,66 +306,90 @@ async function captureUrlState(c: Ctx, state: ShotState): Promise<void> {
   }
 }
 
-const STEPS = ['xs', 'sm', 'md', 'lg', 'xl']
+const STEPS = ['xs', 'sm', 'md', 'lg', 'xl', 'default']
+
+type Steps = Pick<Scale, 'spacing' | 'radius' | 'fontSizes'>
+type ScaleRead = { mantine: Steps; vx: Record<string, number> }
 
 /**
- * Every step the page can name, in px: Mantine's own plus basalt's `--vx-space-*`, `--vx-text-*` and
- * `--vx-radius-*` custom properties declared for the root (the steps its components lay out on).
- * Each is resolved through a probe's `width`, so `calc()`/`rem` values are read as the page sees them.
+ * Runs in the page: Mantine's steps plus every `--vx-space-*`, `--vx-text-*` and `--vx-radius-*`
+ * custom property declared by ANY style rule (the root's and each component's own), resolved to px
+ * through a probe's `width` so `calc()`/`rem` read as the page sees them. Self-contained: it is
+ * serialised into the page.
  */
-export const SCALE_SCRIPT = `(() => {
-    const probe = document.createElement('div')
-    probe.style.cssText = 'position:absolute;visibility:hidden'
-    document.body.append(probe)
-    const root = getComputedStyle(document.documentElement)
-    const px = (name) => {
-      if (!root.getPropertyValue(name).trim()) return undefined
-      probe.style.width = 'var(' + name + ')'
-      const value = parseFloat(getComputedStyle(probe).width)
-      return Number.isFinite(value) ? Math.round(value * 100) / 100 : undefined
+export function readScaleInPage(steps: string[]): ScaleRead {
+  const probe = document.createElement('div')
+  probe.style.cssText = 'position:absolute;visibility:hidden'
+  document.body.append(probe)
+  const root = getComputedStyle(document.documentElement)
+  const px = (width: string): number | undefined => {
+    probe.style.width = ''
+    probe.style.width = width
+    const value = parseFloat(getComputedStyle(probe).width)
+    return Number.isFinite(value) ? Math.round(value * 100) / 100 : undefined
+  }
+  const read = (prefix: string): Record<string, number> => {
+    const out: Record<string, number> = {}
+    for (const key of steps) {
+      const name = prefix + key
+      const value = root.getPropertyValue(name).trim() ? px(`var(${name})`) : undefined
+      if (value !== undefined) out[key] = value
     }
-    const read = (prefix, keys) => {
-      const out = {}
-      for (const key of keys) {
-        const value = px(prefix + key)
-        if (value !== undefined) out[key] = value
+    return out
+  }
+  const declared = new Map<string, string>()
+  const walk = (rules: CSSRuleList): void => {
+    for (const rule of Array.from(rules)) {
+      if ('cssRules' in rule) walk((rule as CSSGroupingRule).cssRules)
+      const style = (rule as CSSStyleRule).style
+      if (!style) continue
+      for (const name of Array.from(style)) {
+        if (/^--vx-(space|text|radius)-/.test(name))
+          declared.set(name, style.getPropertyValue(name).trim())
       }
-      return out
     }
-    const declared = new Set()
-    const walk = (rules) => {
-      for (const rule of rules) {
-        if (rule.cssRules) walk(rule.cssRules)
-        const atRoot = (rule.selectorText || '').split(',').some((s) => /^(:root|html)$/.test(s.trim()))
-        if (atRoot) for (const name of rule.style) if (name.startsWith('--vx-')) declared.add(name)
+  }
+  try {
+    for (const sheet of Array.from(document.styleSheets)) {
+      try {
+        walk(sheet.cssRules)
+      } catch {
+        // A cross-origin stylesheet's rules throw SecurityError: its tokens are not ours to read.
       }
     }
-    for (const sheet of document.styleSheets) {
-      try { walk(sheet.cssRules) } catch {}
+    const vx: Record<string, number> = {}
+    for (const [name, value] of declared) {
+      // A token set on the root resolves through the cascade; a component-scoped one only by its text.
+      const resolved = root.getPropertyValue(name).trim() ? px(`var(${name})`) : px(value)
+      if (resolved !== undefined) vx[name] = resolved
     }
-    const vx = (kind) => {
-      const out = {}
-      for (const name of declared) {
-        if (!name.startsWith('--vx-' + kind + '-')) continue
-        const value = px(name)
-        if (value !== undefined && value > 0) out[name.slice(2)] = value
-      }
-      return out
+    return {
+      mantine: {
+        spacing: read('--mantine-spacing-'),
+        radius: read('--mantine-radius-'),
+        fontSizes: read('--mantine-font-size-'),
+      },
+      vx,
     }
-    const steps = ${JSON.stringify(STEPS)}
-    try {
-      return {
-        spacing: { ...read('--mantine-spacing-', steps), ...vx('space') },
-        radius: { ...read('--mantine-radius-', [...steps, 'default']), ...vx('radius') },
-        fontSizes: { ...read('--mantine-font-size-', steps), ...vx('text') },
-      }
-    } finally {
-      probe.remove()
-    }
-  })()`
+  } finally {
+    probe.remove()
+  }
+}
 
-const readScale = (page: PwPage): Promise<Pick<Scale, 'spacing' | 'radius' | 'fontSizes'>> =>
-  page.evaluate(SCALE_SCRIPT)
+/** Sorts the page's `--vx-*` readings into the three kinds; a step of 0 px (or an unresolvable one) is not a step. */
+export function groupScale({ mantine, vx }: ScaleRead): Steps {
+  const pick = (kind: string): Record<string, number> =>
+    Object.fromEntries(
+      Object.entries(vx)
+        .filter(([name, value]) => name.startsWith(`--vx-${kind}-`) && value > 0)
+        .map(([name, value]) => [name.slice(2), value]),
+    )
+  return {
+    spacing: { ...mantine.spacing, ...pick('space') },
+    radius: { ...mantine.radius, ...pick('radius') },
+    fontSizes: { ...mantine.fontSizes, ...pick('text') },
+  }
+}
 
 async function capturePage(
   args: Omit<Ctx, 'facts' | 'anchors' | 'shots' | 'measured'> & { wantScale: boolean },
@@ -385,7 +415,13 @@ async function capturePage(
     })
     return c
   }
-  if (wantScale) c.scale = await readScale(c.page).catch(() => undefined)
+  if (wantScale) {
+    try {
+      c.scale = groupScale(await c.page.evaluate(readScaleInPage, STEPS))
+    } catch (error) {
+      c.scaleError = firstLine(error)
+    }
+  }
   const usable = c.facts.anchors.filter((n) => slug(n) !== '' && n !== PAGE_ANCHOR)
   for (const name of c.facts.anchors.filter((n) => !usable.includes(n))) {
     record(c, { name, state: 'rest', status: 'error', note: 'unusable data-shot name' })
@@ -427,10 +463,76 @@ export async function openContext<C extends PwContext>(
   return context
 }
 
-export async function capture(
+const SHEET_WIDTH_PX = 2000
+
+/** `<route>-<hash>__<name>-<hash>__sheet.png`: one contact sheet per anchor, beside its crops. */
+export const sheetName = (route: string, name: string): string =>
+  `${slug(route) || 'root'}-${hash(route)}__${slug(name)}-${hash(name)}__sheet.png`
+
+const dataUri = (path: string): string =>
+  `data:image/png;base64,${readFileSync(path).toString('base64')}`
+
+/**
+ * One contact sheet per anchor: the board's section for it (every state × scheme × viewport,
+ * labelled), rendered in the open browser from the crops already on disk and screenshot whole. A
+ * failed sheet is logged and left unlisted — the reviewer treats an anchor without one as unverified.
+ */
+async function writeSheets(
   input: CaptureInput,
-): Promise<{ anchors: AnchorMetrics[]; shots: ShotRecord[]; scale: Scale[] }> {
-  const out = { anchors: [] as AnchorMetrics[], shots: [] as ShotRecord[], scale: [] as Scale[] }
+  out: { anchors: AnchorMetrics[]; shots: ShotRecord[] },
+): Promise<void> {
+  const targets = new Map<string, { route: string; name: string }>()
+  for (const s of out.shots) {
+    if (s.name !== PAGE_ANCHOR)
+      targets.set(`${s.route}\0${s.name}`, { route: s.route, name: s.name })
+  }
+  if (targets.size === 0) return
+  const context = await input.browser.newContext({
+    viewport: { width: SHEET_WIDTH_PX, height: 1000 },
+    deviceScaleFactor: 1,
+    isMobile: false,
+    hasTouch: false,
+    colorScheme: 'light',
+    reducedMotion: 'reduce',
+  })
+  try {
+    const page = await context.newPage()
+    for (const { route, name } of targets.values()) {
+      try {
+        const shots = out.shots
+          .filter((s) => s.route === route && s.name === name)
+          .map((s) =>
+            s.status === 'ok' && s.file
+              ? { ...s, file: dataUri(join(input.pngDir, basename(s.file))) }
+              : s,
+          )
+        await page.setContent(buildSheet(route, name, input.states, shots), { waitUntil: 'load' })
+        const file = sheetName(route, name)
+        await snap(page, join(input.pngDir, file), { fullPage: true })
+        for (const a of out.anchors) {
+          if (a.route === route && a.name === name) a.sheet = `png/${file}`
+        }
+      } catch (error) {
+        input.log(`[shot] ${route} ${name}: sheet not written: ${firstLine(error)}`)
+      }
+    }
+  } finally {
+    await context.close().catch(() => undefined)
+  }
+}
+
+export async function capture(input: CaptureInput): Promise<{
+  anchors: AnchorMetrics[]
+  shots: ShotRecord[]
+  scale: Scale[]
+  scaleError?: string
+}> {
+  const out = {
+    anchors: [] as AnchorMetrics[],
+    shots: [] as ShotRecord[],
+    scale: [] as Scale[],
+    scaleError: undefined as string | undefined,
+  }
   for (const scheme of SCHEMES) {
     for (const viewport of VIEWPORTS) {
       const context = await openContext(input.browser, scheme, viewport)
@@ -451,6 +553,10 @@ export async function capture(
             out.scale.push({ scheme, viewport, ...done.scale })
             scaled = true
           }
+          if (done.scaleError && out.scaleError === undefined) {
+            out.scaleError = done.scaleError
+            input.log(`[shot] scale unavailable: ${done.scaleError}`)
+          }
           out.anchors.push(...done.anchors)
           out.shots.push(...done.shots)
         }
@@ -459,5 +565,9 @@ export async function capture(
       }
     }
   }
-  return out
+  await writeSheets(input, out).catch((error: unknown) =>
+    input.log(`[shot] contact sheets not written: ${firstLine(error)}`),
+  )
+  const { anchors, shots, scale, scaleError } = out
+  return { anchors, shots, scale, ...(scaleError === undefined ? {} : { scaleError }) }
 }

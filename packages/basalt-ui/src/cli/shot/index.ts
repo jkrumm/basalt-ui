@@ -170,6 +170,20 @@ export function sanitizeBase(base: string): string {
   }
 }
 
+const STALE_TMP_MS = 60 * 60 * 1000
+
+/** Removes `<home>/tmp-*` render dirs a killed run left behind (older than an hour, so a live run's is safe). */
+export function sweepStaleTmp(home: string, now: Date): void {
+  if (!lexists(home)) return
+  for (const entry of readdirSync(home)) {
+    if (!entry.startsWith('tmp-')) continue
+    const path = join(home, entry)
+    if (now.getTime() - statSync(path).mtimeMs > STALE_TMP_MS) {
+      rmSync(path, { recursive: true, force: true })
+    }
+  }
+}
+
 /** An out dir moved aside while a swap ran. */
 const asideOf = (dir: string): string => `${dir}.prev`
 
@@ -247,6 +261,7 @@ export async function shot(
     const pw: Playwright | null = (deps.resolve ?? resolvePlaywright)(cwd)
     if (!pw) throw new ShotError(INSTALL_LINE)
     const now = (deps.now ?? (() => new Date()))()
+    sweepStaleTmp(join(cwd, HOME), now)
     const server = args.dist ? serveDist(resolve(cwd, args.dist)) : null
     if (server) stops.push(server.stop)
     let tmp = ''
@@ -254,7 +269,7 @@ export async function shot(
     const base = server?.origin ?? args.base ?? ''
     try {
       // The browser is up BEFORE the out dir is touched: a failed launch leaves the last board intact.
-      const { anchors, shots, scale } = await withBrowser(
+      const { anchors, shots, scale, scaleError } = await withBrowser(
         pw,
         (browser) => {
           const home = join(cwd, HOME)
@@ -283,6 +298,7 @@ export async function shot(
         schemes: [...SCHEMES],
         states: args.states,
         scale,
+        ...(scaleError ? { scaleError } : {}),
         anchors,
         shots,
       }

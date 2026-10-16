@@ -5,6 +5,7 @@ import {
   mkdtempSync,
   readFileSync,
   rmSync,
+  utimesSync,
   symlinkSync,
   writeFileSync,
 } from 'node:fs'
@@ -12,9 +13,26 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 import { buildBoard } from './board'
-import { SCALE_SCRIPT, capture, fileName, unionClip, withParam } from './capture'
+import {
+  capture,
+  fileName,
+  groupScale,
+  hasFocusTarget,
+  readScaleInPage,
+  sheetName,
+  unionClip,
+  withParam,
+} from './capture'
 import { unknownFlag } from '../help'
-import { commitOut, parseShotArgs, planOut, recoverOut, sanitizeBase, shot } from './index'
+import {
+  commitOut,
+  parseShotArgs,
+  planOut,
+  recoverOut,
+  sanitizeBase,
+  shot,
+  sweepStaleTmp,
+} from './index'
 import { contrastRatio, contrastThreshold, finishMeasurement } from './measure'
 import type { TextReading } from './measure'
 import { INSTALL_LINE, ShotError, isPlaywright, withBrowser } from './playwright'
@@ -335,9 +353,10 @@ describe('capture() with a fake browser', () => {
       screenshot: () => Promise.resolve(),
       mouse: { move: () => Promise.resolve() },
       keyboard: { press: () => Promise.resolve() },
-      evaluate: (expression: string) => {
-        if (expression.includes('probe')) return Promise.resolve().then(scale)
-        if (expression.includes('data-shot-states'))
+      setContent: () => Promise.resolve(),
+      evaluate: (expression: unknown) => {
+        if (typeof expression === 'function') return Promise.resolve().then(scale)
+        if (String(expression).includes('data-shot-states'))
           return Promise.resolve({ anchors: ['card'], declared: [] })
         return Promise.resolve(undefined)
       },
@@ -378,7 +397,7 @@ describe('capture() with a fake browser', () => {
     expect(out.anchors).toEqual([])
   })
 
-  test('a readScale failure is non-fatal: shots still record, scale is empty', async () => {
+  test('a readScale failure is non-fatal and visible: shots record, scale is empty, scaleError says why', async () => {
     const out = await capture(
       input(
         fakeBrowser(() => {
@@ -388,33 +407,39 @@ describe('capture() with a fake browser', () => {
       ),
     )
     expect(out.scale).toEqual([])
+    expect(out.scaleError).toBe('no probe')
     expect(out.shots.filter((s) => s.status === 'ok')).toHaveLength(8)
     expect(out.anchors).toHaveLength(4)
   })
 })
 
 describe('focus state', () => {
-  const pageWith = (focusable: number) => {
-    const locator = (selector: string) => ({
-      first: () => locator(selector),
-      count: () => Promise.resolve(selector.includes(':is(') ? focusable : 1),
+  const pageWith = (focusable: boolean, countFails = false) => {
+    const locator: Record<string, unknown> = {
+      first: () => locator,
+      count: () => (countFails ? Promise.reject(new Error('locator died')) : Promise.resolve(1)),
       scrollIntoViewIfNeeded: () => Promise.resolve(),
       isVisible: () => Promise.resolve(true),
       screenshot: () => Promise.resolve(),
       boundingBox: () => Promise.resolve({ x: 0, y: 0, width: 10, height: 10 }),
-    })
+      evaluate: () =>
+        countFails ? Promise.reject(new Error('locator died')) : Promise.resolve(focusable),
+    }
     const page = {
       setDefaultTimeout: () => undefined,
       goto: () => Promise.resolve(),
-      locator,
+      locator: () => locator,
       screenshot: () => Promise.resolve(),
+      setContent: () => Promise.resolve(),
       mouse: { move: () => Promise.resolve() },
       keyboard: { press: () => Promise.resolve() },
-      evaluate: (expression: string) => {
-        if (expression.includes('data-shot-states'))
+      evaluate: (expression: unknown) => {
+        if (typeof expression === 'function')
+          return Promise.resolve({ mantine: { spacing: {}, radius: {}, fontSizes: {} }, vx: {} })
+        if (String(expression).includes('data-shot-states'))
           return Promise.resolve({ anchors: ['card'], declared: [] })
-        // The Tab loop lands immediately when something is focusable.
-        if (expression.includes('activeElement')) return Promise.resolve(true)
+        // The Tab loop lands immediately.
+        if (String(expression).includes('activeElement')) return Promise.resolve(true)
         return Promise.resolve(undefined)
       },
     }
@@ -427,9 +452,9 @@ describe('focus state', () => {
         }),
     } as never
   }
-  const run = (focusable: number) =>
+  const run = (focusable: boolean, countFails = false) =>
     capture({
-      browser: pageWith(focusable),
+      browser: pageWith(focusable, countFails),
       base: 'http://x',
       routes: ['/'],
       states: ['focus' as const],
@@ -437,72 +462,209 @@ describe('focus state', () => {
       log: () => undefined,
       measure: () => Promise.resolve(measurement),
     })
+  const focus = (out: Awaited<ReturnType<typeof run>>) =>
+    out.shots.filter((s) => s.name === 'card' && s.state === 'focus')
 
   test('an anchor with no focusable descendant records not-declared, never error', async () => {
-    const out = await run(0)
-    const focus = out.shots.filter((s) => s.name === 'card' && s.state === 'focus')
-    expect(focus).toHaveLength(4)
+    const shots = focus(await run(false))
+    expect(shots).toHaveLength(4)
     expect(
-      focus.every((s) => s.status === 'not-declared' && /no focus target/.test(s.note ?? '')),
+      shots.every((s) => s.status === 'not-declared' && /no focus target/.test(s.note ?? '')),
     ).toBe(true)
   })
   test('an anchor with a focus target is still captured', async () => {
-    const out = await run(1)
-    const focus = out.shots.filter((s) => s.name === 'card' && s.state === 'focus')
-    expect(focus.every((s) => s.status === 'ok')).toBe(true)
+    expect(focus(await run(true)).every((s) => s.status === 'ok')).toBe(true)
+  })
+  test('a locator failure records error for that anchor and never aborts the run', async () => {
+    const shots = focus(await run(true, true))
+    expect(shots).toHaveLength(4)
+    expect(shots.every((s) => s.status === 'error' && s.note === 'locator died')).toBe(true)
   })
 })
 
-describe('SCALE_SCRIPT', () => {
-  const rule = (selectorText: string, props: Record<string, string>) => ({
-    selectorText,
-    style: Object.keys(props),
-  })
-  const run = (props: Record<string, string>, sheets: unknown[]) => {
-    const probe = { style: { cssText: '', width: '' }, remove: () => undefined }
-    const doc = {
-      createElement: () => probe,
-      body: { append: () => undefined },
-      documentElement: {},
-      styleSheets: sheets,
-    }
-    const computed = (el: unknown) => ({
-      getPropertyValue: (name: string) => props[name] ?? '',
-      width:
-        el === probe
-          ? /var\((.+)\)/.exec(probe.style.width)
-            ? props[/var\((.+)\)/.exec(probe.style.width)![1]!]
-            : ''
-          : '',
-    })
-    return new Function('document', 'getComputedStyle', `return ${SCALE_SCRIPT}`)(doc, computed)
+describe('hasFocusTarget', () => {
+  const host = (html: string): Element => {
+    document.body.innerHTML = `<div id="root">${html}</div>`
+    return document.getElementById('root') as Element
   }
-
-  test("collects basalt's root-level --vx-space/text/radius steps next to Mantine's", () => {
-    const props = {
-      '--mantine-spacing-xs': '11px',
-      '--vx-space-3': '12px',
-      '--vx-space-agent-gap': '6px',
-      '--vx-text-micro': '11px',
-      '--vx-radius-card': '7px',
-      '--vx-color-accent': '#123456',
-    }
-    const out = run(props, [
-      { cssRules: [rule(':root', props), rule('.card', { '--vx-space-9': '9px' })] },
-    ])
-    expect(out.spacing).toEqual({ xs: 11, 'vx-space-3': 12, 'vx-space-agent-gap': 6 })
-    expect(out.fontSizes).toEqual({ 'vx-text-micro': 11 })
-    expect(out.radius).toEqual({ 'vx-radius-card': 7 })
+  test('reaches links, enabled controls and tabindex >= 0', () => {
+    expect(hasFocusTarget(host('<a href="/x">x</a>'))).toBe(true)
+    expect(hasFocusTarget(host('<p><button>go</button></p>'))).toBe(true)
+    expect(hasFocusTarget(host('<div tabindex="0">x</div>'))).toBe(true)
   })
-  test('an unreadable stylesheet is skipped, not fatal', () => {
-    const props = { '--vx-space-1': '4px' }
-    const blocked = {
-      get cssRules(): never {
-        throw new Error('cross-origin')
+  test('skips hidden inputs, tabindex -1, disabled controls and hidden/inert subtrees', () => {
+    expect(hasFocusTarget(host('<input type="hidden">'))).toBe(false)
+    expect(hasFocusTarget(host('<button tabindex="-1">x</button>'))).toBe(false)
+    expect(hasFocusTarget(host('<button disabled>x</button>'))).toBe(false)
+    expect(hasFocusTarget(host('<div hidden><button>x</button></div>'))).toBe(false)
+    expect(hasFocusTarget(host('<div inert><a href="/x">x</a></div>'))).toBe(false)
+    expect(hasFocusTarget(host('<p>plain text</p>'))).toBe(false)
+  })
+})
+
+describe('scale', () => {
+  test('groupScale keeps basalt tokens by kind, drops zero and foreign names', () => {
+    const out = groupScale({
+      mantine: { spacing: { xs: 11 }, radius: { md: 6 }, fontSizes: { sm: 13.5 } },
+      vx: {
+        '--vx-space-3': 12,
+        '--vx-space-agent-gap': 6,
+        '--vx-space-zero': 0,
+        '--vx-text-micro': 11,
+        '--vx-radius-card': 7,
+        '--vx-color-accent': 99,
+      },
+    })
+    expect(out.spacing).toEqual({ xs: 11, 'vx-space-3': 12, 'vx-space-agent-gap': 6 })
+    expect(out.fontSizes).toEqual({ sm: 13.5, 'vx-text-micro': 11 })
+    expect(out.radius).toEqual({ md: 6, 'vx-radius-card': 7 })
+  })
+  test('readScaleInPage reads root tokens and component-scoped ones', () => {
+    document.head.innerHTML =
+      '<style>:root{--vx-space-3:12px;--mantine-spacing-xs:11px}.card{--vx-space-agent-gap:6px;--vx-text-micro:var(--vx-space-3)}.x{color:red}</style>'
+    const read = readScaleInPage(['xs'])
+    expect(read.mantine.spacing).toEqual({ xs: 11 })
+    expect(read.vx).toEqual({
+      '--vx-space-3': 12,
+      '--vx-space-agent-gap': 6,
+      '--vx-text-micro': 12,
+    })
+    document.head.innerHTML = ''
+  })
+})
+
+describe('contact sheets', () => {
+  test('one sheet per anchor is written and listed on the anchor', async () => {
+    const dir = tmp()
+    const png = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+      'base64',
+    )
+    const shots: string[] = []
+    const locator: Record<string, unknown> = {
+      first: () => locator,
+      count: () => Promise.resolve(1),
+      scrollIntoViewIfNeeded: () => Promise.resolve(),
+      isVisible: () => Promise.resolve(true),
+      screenshot: (o: { path: string }) => {
+        writeFileSync(o.path, png)
+        shots.push(o.path)
+        return Promise.resolve()
       },
     }
-    const out = run(props, [blocked, { cssRules: [rule('html', props)] }])
-    expect(out.spacing).toEqual({ 'vx-space-1': 4 })
+    let html = ''
+    const page = {
+      setDefaultTimeout: () => undefined,
+      goto: () => Promise.resolve(),
+      locator: () => locator,
+      screenshot: (o: { path: string }) => {
+        writeFileSync(o.path, png)
+        shots.push(o.path)
+        return Promise.resolve()
+      },
+      setContent: (h: string) => {
+        html = h
+        return Promise.resolve()
+      },
+      mouse: { move: () => Promise.resolve() },
+      keyboard: { press: () => Promise.resolve() },
+      evaluate: (e: unknown) =>
+        typeof e === 'function'
+          ? Promise.resolve({ mantine: { spacing: {}, radius: {}, fontSizes: {} }, vx: {} })
+          : String(e).includes('data-shot-states')
+            ? Promise.resolve({ anchors: ['card'], declared: [] })
+            : Promise.resolve(undefined),
+    }
+    const browser = {
+      newContext: () =>
+        Promise.resolve({
+          newPage: () => Promise.resolve(page),
+          addInitScript: () => Promise.resolve(),
+          close: () => Promise.resolve(),
+        }),
+    } as never
+    const out = await capture({
+      browser,
+      base: 'http://x',
+      routes: ['/'],
+      states: ['rest'],
+      pngDir: dir,
+      log: () => undefined,
+      measure: () => Promise.resolve(measurement),
+    })
+    const file = `png/${sheetName('/', 'card')}`
+    expect(out.anchors.every((a) => a.sheet === file)).toBe(true)
+    expect(existsSync(join(dir, sheetName('/', 'card')))).toBe(true)
+    expect(html).toContain('data:image/png;base64,')
+    expect(html).not.toContain('loading="lazy"')
+  })
+  test('a sheet that cannot be written is logged and left unlisted', async () => {
+    const log: string[] = []
+    const out = await capture({
+      browser: {
+        newContext: () =>
+          Promise.resolve({
+            newPage: () =>
+              Promise.resolve({
+                setDefaultTimeout: () => undefined,
+                goto: () => Promise.resolve(),
+                locator: () => ({
+                  first() {
+                    return this
+                  },
+                  count: () => Promise.resolve(1),
+                  scrollIntoViewIfNeeded: () => Promise.resolve(),
+                  isVisible: () => Promise.resolve(true),
+                  screenshot: () => Promise.resolve(),
+                }),
+                screenshot: () => Promise.resolve(),
+                setContent: () => Promise.reject(new Error('no content')),
+                mouse: { move: () => Promise.resolve() },
+                keyboard: { press: () => Promise.resolve() },
+                evaluate: (e: unknown) =>
+                  typeof e === 'function'
+                    ? Promise.resolve({
+                        mantine: { spacing: {}, radius: {}, fontSizes: {} },
+                        vx: {},
+                      })
+                    : String(e).includes('data-shot-states')
+                      ? Promise.resolve({ anchors: ['card'], declared: [] })
+                      : Promise.resolve(undefined),
+              }),
+            addInitScript: () => Promise.resolve(),
+            close: () => Promise.resolve(),
+          }),
+      } as never,
+      base: 'http://x',
+      routes: ['/'],
+      states: ['rest'],
+      pngDir: tmp(),
+      log: (l) => log.push(l),
+      measure: () => Promise.resolve(measurement),
+    })
+    expect(out.anchors.some((a) => a.sheet !== undefined)).toBe(false)
+    expect(log.some((l) => /sheet not written/.test(l))).toBe(true)
+  })
+})
+
+describe('sweepStaleTmp', () => {
+  test('removes tmp-* dirs older than an hour, keeps fresh ones and everything else', () => {
+    const home = tmp()
+    for (const d of ['tmp-old', 'tmp-new', 'keep']) mkdirSync(join(home, d))
+    const now = new Date(Date.now() + 2 * 60 * 60 * 1000)
+    // "now" is two hours ahead of the real mtimes: everything looks old except what is touched later.
+    utimesSync(
+      join(home, 'tmp-new'),
+      new Date(now.getTime() - 60_000),
+      new Date(now.getTime() - 60_000),
+    )
+    sweepStaleTmp(home, now)
+    expect(existsSync(join(home, 'tmp-old'))).toBe(false)
+    expect(existsSync(join(home, 'tmp-new'))).toBe(true)
+    expect(existsSync(join(home, 'keep'))).toBe(true)
+  })
+  test('a missing home is fine', () => {
+    expect(() => sweepStaleTmp(join(tmp(), 'nope'), new Date())).not.toThrow()
   })
 })
 

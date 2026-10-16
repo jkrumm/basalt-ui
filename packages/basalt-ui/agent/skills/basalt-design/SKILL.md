@@ -29,7 +29,7 @@ Method only; the law is `.claude/rules/basalt-*.md` and `./DESIGN.md`.
 5. **Mark up for the board.** Tag each scored component `data-shot="<name>"`; hover and tooltip targets inside it get `data-shot-hover` / `data-shot-tooltip`. Declare supported states with `data-shot-states="empty loading error"` and render them when the `shot-state` URL param asks.
 6. **Rounds, at least three.** Playwright is the app's dev dependency: `bun add -d playwright && bunx playwright install chromium`. Then:
    - `basalt-ui shot <routes> --dist <built app>` (or `--base <url>` for a running server);
-   - hand the out dir (`.basalt/shots`) to the `basalt-design-reviewer` subagent by name;
+   - hand the out dir (`.basalt/shots`) to the `basalt-design-reviewer` subagent by name; it reads each component's contact sheet (`png/*__sheet.png`) and every page shot;
    - revise every failing item at its source, rebuild, and shoot again.
      Boards stay local (gitignored); the scored verdict and notes are worth committing.
 7. **Done** only when the reviewer passes every component, and never before round three: a pass earlier does not end the loop. After five failed rounds stop and show the owner the boards and the failing items.

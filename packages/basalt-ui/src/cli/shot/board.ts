@@ -120,6 +120,21 @@ const scaleBlock = (scale: Scale[]): string => {
   return `<details open><summary>Theme scale (px)</summary><table><tr><th></th><th>spacing</th><th>radius</th><th>font size</th></tr>${rows.join('')}</table></details>`
 }
 
+/** An anchor's contact sheet: every state × scheme × viewport, labelled, on one standalone page. */
+export function buildSheet(
+  route: string,
+  name: string,
+  states: readonly ShotState[],
+  shots: ShotRecord[],
+): string {
+  const body = states.map((state) => grid(shots, route, name, state)).join('')
+  // Lazy images never load in a screenshot taken straight after `load`.
+  return (
+    `<!doctype html><html lang="en"><head><meta charset="utf-8"><style>${CSS}</style></head><body>` +
+    `<h3>${esc(name)} <span class="mut">${esc(route)}</span></h3>${body}</body></html>`
+  ).replaceAll(' loading="lazy"', '')
+}
+
 export function buildBoard(m: ShotMetrics): string {
   const sections = m.routes.map((route) => {
     const names = [
@@ -134,6 +149,6 @@ export function buildBoard(m: ShotMetrics): string {
   })
   return (
     `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>basalt-ui shot</title><style>${CSS}</style></head><body>` +
-    `<h1>basalt-ui shot</h1><p class="mut">${esc(m.base)} · ${esc(m.generatedAt)} · states: ${m.states.join(', ')}</p>${scaleBlock(m.scale)}${sections.join('')}</body></html>\n`
+    `<h1>basalt-ui shot</h1><p class="mut">${esc(m.base)} · ${esc(m.generatedAt)} · states: ${m.states.join(', ')}</p>${m.scaleError ? `<p class="bad">scale unavailable: ${esc(m.scaleError)}</p>` : ''}${scaleBlock(m.scale)}${sections.join('')}</body></html>\n`
   )
 }
