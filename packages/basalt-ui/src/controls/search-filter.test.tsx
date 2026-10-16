@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { FieldHandle } from '../state'
 import type { StringField } from '../state/fields'
+import { FilterSetScope, useFilterCensus } from './filter-context'
 import { SearchFilter } from './search-filter'
 
 const WAIT = 260 // DEBOUNCE_MS (200) plus slack
@@ -173,6 +174,63 @@ describe('SearchFilter immediate commit', () => {
     h.unmount()
     await sleep(WAIT)
     expect(h.writes).toEqual([])
+  })
+
+  test('the clear button is reachable: the right section takes pointer events', () => {
+    mountFilter('abc')
+    // Mantine publishes it as a var on the wrapper; the section's CSS reads it.
+    const wrapper = screen
+      .getByRole('button', { name: 'Clear search' })
+      .closest('.mantine-Input-wrapper')
+    expect(
+      (wrapper as HTMLElement).style.getPropertyValue('--input-right-section-pointer-events'),
+    ).toBe('all')
+  })
+
+  test('Reset all then unmount in one commit does not write the stale draft back', async () => {
+    const writes: string[] = []
+    let clears = 0
+    let resetAll = (): void => {}
+    let unmount = (): void => {}
+    function Page(): ReactNode {
+      const census = useFilterCensus()
+      useEffect(() => {
+        resetAll = census.resetAll
+      }, [census.resetAll])
+      const [value, setValue] = useState('')
+      const handle = {
+        use: () => [
+          value,
+          (next: string) => {
+            writes.push(next)
+            setValue(next)
+          },
+        ],
+        isDefault: (v: string) => v === '',
+        clear: () => {
+          clears += 1
+          setValue('')
+        },
+      } as unknown as FieldHandle<StringField>
+      return (
+        <FilterSetScope surface="pill" registry={census.registry}>
+          <SearchFilter field={handle} placeholder="Search" />
+        </FilterSetScope>
+      )
+    }
+    unmount = render(
+      <MantineProvider>
+        <Page />
+      </MantineProvider>,
+    ).unmount
+    type('abc')
+    act(() => {
+      resetAll()
+      unmount()
+    })
+    await sleep(WAIT)
+    expect(clears).toBe(1)
+    expect(writes).toEqual([])
   })
 
   test('disabled: the box and the clear button are inert', () => {

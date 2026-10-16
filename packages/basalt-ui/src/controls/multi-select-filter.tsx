@@ -103,9 +103,10 @@ export function MultiSelectFilter<T extends string>(props: MultiSelectFilterProp
   const [value, setValue] = field.use()
   const surface = useFilterSurface()
   const isDefault = field.isDefault(value)
-  useFilterRegistration(!isDefault, () => {
+  const clearFilter = (): void => {
     field.clear()
-  })
+  }
+  useFilterRegistration(!isDefault, clearFilter)
 
   // The prop wins whole, never merged — same rule as `EnumFilter`: a catalogue that dropped a row
   // must be able to drop it, and `All channels` is counted against the rows actually shown.
@@ -170,11 +171,11 @@ export function MultiSelectFilter<T extends string>(props: MultiSelectFilterProp
             key={option.value}
             value={option.value}
             label={option.label}
-            {...(option.disabled === true && { disabled: true })}
+            {...((option.disabled === true || disabled === true) && { disabled: true })}
           />
         ))}
       </Stack>
-      {clearable && !isDefault && <FilterClearButton onClear={() => field.clear()} />}
+      {clearable && !isDefault && disabled !== true && <FilterClearButton onClear={clearFilter} />}
     </Checkbox.Group>
   )
 
@@ -240,7 +241,7 @@ function FacetList({
             key={option.value}
             className={classes.facetOption}
             {...(isSelected && { 'data-selected': true })}
-            {...(option.disabled === true && { 'data-disabled': true })}
+            {...((option.disabled === true || disabled === true) && { 'data-disabled': true })}
           >
             {/* theme-allow raw-form-control — the input is NEVER PAINTED. Visually hidden
                 (`.facetInput`), it exists only to carry the row's semantics; the surface the reader
@@ -250,7 +251,7 @@ function FacetList({
               type="checkbox"
               value={option.value}
               checked={isSelected}
-              disabled={option.disabled === true}
+              disabled={option.disabled === true || disabled === true}
               aria-label={option.label}
               onChange={() => {
                 onToggle(option.value)

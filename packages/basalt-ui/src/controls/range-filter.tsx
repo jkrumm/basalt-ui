@@ -144,6 +144,9 @@ export function RangeFilter<P extends string>(
       <Picker
         value={{ from: value.from, to: value.to }}
         onChange={({ from, to }) => {
+          // The injected picker cannot be disabled through its props, so a disabled filter drops
+          // what it reports instead.
+          if (disabled === true) return
           setValue({ preset: 'custom', from, to } as RangeValue<P | 'custom'>)
         }}
       />

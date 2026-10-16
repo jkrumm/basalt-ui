@@ -7,10 +7,13 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, test } from 'bun:test'
 import type { ReactNode } from 'react'
 import { createLocalStore, field } from '../state'
+import type { FieldHandle } from '../state'
+import type { RangeField } from '../state/fields'
 import { FilterSetScope } from './filter-context'
 import { MultiSelectFilter } from './multi-select-filter'
 import { NumberFilter } from './number-filter'
 import { RangeFilter } from './range-filter'
+import type { RangeCustomPickerProps } from './range-filter'
 import { SelectFilter } from './select-filter'
 import { ViewTabs } from './view-tabs'
 
@@ -91,5 +94,47 @@ describe('disabled — panel surface', () => {
     for (const radio of screen.getAllByRole('radio', { hidden: true })) {
       expect((radio as HTMLInputElement).disabled).toBe(true)
     }
+  })
+})
+
+describe('disabled — injected and facet controls cannot change the value', () => {
+  test('RangeFilter: the custom picker reports into the void', () => {
+    const writes: unknown[] = []
+    const handle = {
+      kind: 'range',
+      fallback: { preset: '30d' },
+      options: [
+        { value: '30d', label: '30d' },
+        { value: 'custom', label: 'custom' },
+      ],
+      use: () => [
+        { preset: 'custom', from: '2026-03-01', to: '2026-03-02' },
+        (next: unknown) => writes.push(next),
+      ],
+      isDefault: () => false,
+      clear: () => {},
+    } as unknown as FieldHandle<RangeField<'30d', true>>
+    function Picker({ onChange }: RangeCustomPickerProps): ReactNode {
+      return (
+        <button
+          type="button"
+          onClick={() => {
+            onChange({ from: '2026-04-01', to: '2026-04-02' })
+          }}
+        >
+          pick april
+        </button>
+      )
+    }
+    mount('panel', <RangeFilter field={handle} customPicker={Picker} disabled />)
+    fireEvent.click(screen.getByRole('button', { name: 'pick april', hidden: true }))
+    expect(writes).toEqual([])
+  })
+
+  test('MultiSelectFilter: clicking a facet does not select it', () => {
+    mount('panel', <MultiSelectFilter field={store.field.channels} label="Channels" disabled />)
+    const web = screen.getByRole('checkbox', { name: 'web', hidden: true }) as HTMLInputElement
+    fireEvent.click(web)
+    expect(web.checked).toBe(false)
   })
 })
