@@ -2,8 +2,6 @@
  * Calibration seed — expected failing item: Craft 4 (accent/fill on chrome) / Expression 3 (a hue only
  * for a trend, status or category). Defect: the delta is a solid filled badge, not neutral text with a
  * trend glyph. Everything else on the card is clean.
- *
- * Route id: `probe-5` (neutral on purpose; the id → seed map lives in docs only).
  */
 import { Badge, Card, Group, Text } from '@mantine/core'
 import {

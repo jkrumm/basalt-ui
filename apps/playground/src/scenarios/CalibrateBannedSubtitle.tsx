@@ -2,8 +2,6 @@
  * Calibration seed — expected failing item: Communication 1 (banned filler, SPEC § 8.4). Defect: the
  * subtitle narrates the UI ("Here you can see … at a glance"). Title, value, unit and period are
  * clean.
- *
- * Route id: `probe-2` (neutral on purpose; the id → seed map lives in docs only).
  */
 import { Box } from '@mantine/core'
 import { StatCard } from 'basalt-ui'
