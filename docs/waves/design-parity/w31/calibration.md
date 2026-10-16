@@ -116,3 +116,21 @@ The shipped `basalt-design-reviewer` subagent has not yet run against these seed
 ## Final result
 
 5 of 5 bad seeds fail with their expected item; `calibrate-good` passes. Iterations used: 4 (plus 4b, a `shot` crop fix re-scoring two boards; the second ran through the stale subagent definition and does not count as a test of the edits; the reviewer-prompt budget of three counted iterations 1, 3 and 4 against genuinely different causes: reviewer numbering/cues, `shot`'s scale, coverage).
+
+## Confirmation with the shipped subagent (fresh session)
+
+Fresh session at the worktree root, so `/.claude/agents/basalt-design-reviewer.md` loaded as the real `basalt-design-reviewer` subagent type (listed by the Agent tool). Built the package and the playground, shot the six seeds and S4 into `.design-parity/w31/confirm-<name>`, one blind subagent per board (prompt names only the out dir). `shot` reported `error` shots, so it exits non-zero, on `calibrate-repeated-axis` (2, tooltip) and `s4-spend` (8, tooltip); the other five report 0 failed.
+
+| board                     | expected               | verdict | items cited                                                                          | sheets read                       | matches? |
+| ------------------------- | ---------------------- | ------- | ------------------------------------------------------------------------------------ | --------------------------------- | -------- |
+| calibrate-good            | pass                   | pass    | —                                                                                    | 2 sheets + 4 page shots + metrics | yes      |
+| calibrate-delta-fill      | Craft 4 / Expression 3 | fail    | Craft 1, 4, Expression 3                                                             | sheet + 4 page shots + metrics    | yes      |
+| calibrate-empty-half      | Craft 3                | fail    | Craft 3, 4, 6, 7                                                                     | sheet + 4 page shots              | yes      |
+| calibrate-repeated-axis   | Expression 5           | fail    | Craft 1, 5, 6, 7, Expression 5                                                       | sheet + 4 page shots + metrics    | yes      |
+| calibrate-accent-tab      | Craft 4                | fail    | Craft 4, Expression 1, 4                                                             | sheet + 4 page shots              | yes      |
+| calibrate-banned-subtitle | Communication 1        | fail    | Communication 1, Craft 6, 7                                                          | sheet + 4 page shots + metrics    | yes      |
+| s4-spend                  | — (baseline)           | fail ×7 | Craft 1–7 across components, Expression 3, 4, Communication 6, Craft 3 (top-drivers) | 7 sheets + 4 page shots + metrics | n/a      |
+
+Every run printed a `Read:` line covering every anchor's sheet and all four `_page` shots; none opened a single crop. The S4 run said it read the dark-desktop anchor blocks of `metrics.json` only as a digest (min / emptyRatio / fontSizes), so its measured findings for those variants rest on the digest.
+
+Differences from iteration 4: the verdicts and expected items are identical, and `calibrate-good` passed on the first run (iteration 4 needed three). delta-fill, repeated-axis, accent-tab and banned-subtitle cite the same items as iteration 4 (banned-subtitle adds Craft 7, as in 4b). empty-half drops Expression 4 (the lone figure) and adds Craft 4 (accent-blue focus ring on the info icon) and Craft 6 (ring abutting "Oct"); both extras come from the focus crops and are the same class as the iteration 4 Craft 7 finding, not noise on a defect-free board. S4 fails every component but the page, as in the 4b baseline; the cited items were not diffed against `s4-baseline.md`. No reviewer, `shot` or seed file was edited.
