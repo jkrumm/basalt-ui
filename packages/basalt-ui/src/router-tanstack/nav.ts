@@ -16,6 +16,7 @@
 import type { RegisteredRouter } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
 import { registerSlot } from '../provider/slots'
+import { setActiveNav } from './nav-stash'
 import { SpotlightMount } from '../provider/spotlight-mount'
 import type { NavMobilePlacement, NavSectionMobile } from '../shell/nav-types'
 
@@ -161,7 +162,7 @@ export function defineNav<
   const T extends ReadonlyArray<NavTabId<G>>,
 >(config: RegisteredOr<NavConfig<G, T>>): NavConfig<G, T> {
   const nav = config as unknown as NavConfig<G, T>
-  activeNav = nav
+  setActiveNav(nav)
   // Nav entries feed the palette, so defining the nav is what puts Spotlight in the bundle.
   registerSlot('spotlight', SpotlightMount)
   return nav
@@ -175,20 +176,6 @@ export function defineNav<
 type RegisteredOr<T> = 0 extends 1 & RegisteredRouter['routeTree']
   ? 'basalt: declare Register { router }'
   : T
-
-/**
- * The runtime stash `defineNav` fills (the last call wins, like `defineCommands`), read by
- * `BasaltProvider` to project the nav into Spotlight. Type augmentation is erased, so this is the
- * live source.
- *
- * @internal
- */
-let activeNav: { groups: ReadonlyArray<AnyNavGroup> } | undefined
-
-/** @internal */
-export function getActiveNav(): { groups: ReadonlyArray<AnyNavGroup> } | undefined {
-  return activeNav
-}
 
 // ── readers ──────────────────────────────────────────────────────────────────────────────────────
 
@@ -220,18 +207,5 @@ export function navTarget<
   throw new Error(`navTarget: no nav item with id "${id}"`)
 }
 
-/** A flattened destination, tagged with the group it was declared in. */
-export type FlatNavItem = AnyNavItem & { groupId: string; groupLabel: string }
-
-/** Depth-first flatten, parent then children — the leaf every other surface reads. */
-export function flattenNav(config: { groups: ReadonlyArray<AnyNavGroup> }): FlatNavItem[] {
-  const out: FlatNavItem[] = []
-  const walk = (items: ReadonlyArray<AnyNavItem>, groupId: string, groupLabel: string): void => {
-    for (const item of items) {
-      out.push({ ...item, groupId, groupLabel })
-      if (item.children) walk(item.children, groupId, groupLabel)
-    }
-  }
-  for (const g of config.groups) walk(g.items, g.id, g.label)
-  return out
-}
+export { flattenNav, getActiveNav } from './nav-stash'
+export type { FlatNavItem } from './nav-stash'

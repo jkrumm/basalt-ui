@@ -3,7 +3,7 @@
  * `ShortcutsHelp` renders. Reads the runtime stash (populated by `defineCommands`), not the
  * type-erased `BasaltRegister` slot; safe to call before any commands are registered.
  */
-import { getActiveCommands } from './define-commands'
+import { getActiveCommands } from './command-stash'
 
 // ── ShortcutEntry ─────────────────────────────────────────────────────────────
 

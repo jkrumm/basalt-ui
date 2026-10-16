@@ -3,15 +3,21 @@
  * the provider's hotkey binder, the Spotlight projector and `ShortcutsHelp` read it. Kept apart from
  * `define-commands.ts` so a reader never imports the module that registers feature mounts.
  */
+import { createNotifier } from '../provider/notifier'
 import type { Command, CommandMap } from './define-commands'
 
 let activeCommands: CommandMap = {}
-const listeners = new Set<() => void>()
+const store = createNotifier()
 
 /** @internal — `defineCommands` only. The last call wins; readers subscribed via {@link subscribeCommands} re-read. */
 export function setActiveCommands(spec: CommandMap): void {
   activeCommands = spec
-  for (const listener of listeners) listener()
+  store.notify()
+}
+
+/** @internal — test isolation only. */
+export function resetCommandStash(): void {
+  setActiveCommands({})
 }
 
 /** @internal — exposed to the provider and projectors.ts to iterate the runtime stash. Returns a readonly view. */
@@ -20,10 +26,7 @@ export function getActiveCommands(): Readonly<CommandMap> {
 }
 
 /** @internal — `useSyncExternalStore` subscribe for a late `defineCommands` (a lazily loaded route). */
-export function subscribeCommands(listener: () => void): () => void {
-  listeners.add(listener)
-  return () => void listeners.delete(listener)
-}
+export const subscribeCommands = store.subscribe
 
 /**
  * Runs a command, swallowing a sync throw or async rejection so a failing command never becomes an

@@ -8,7 +8,7 @@
  * so `ready` and `finished` are dropped on the floor.
  */
 import type { AnyRouter } from '@tanstack/react-router'
-import { flattenNav, getActiveNav } from '../router-tanstack/nav'
+import { flattenNav, getActiveNav } from '../router-tanstack/nav-stash'
 
 /** The three `:active-view-transition-type()` names `styles.css` animates. Namespaced: a consumer's own cannot collide. */
 export const ROUTE_TRANSITION_TYPES = {

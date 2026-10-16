@@ -13,7 +13,7 @@ import { createElement, forwardRef, useMemo } from 'react'
 import type { AnchorHTMLAttributes, ElementType, ReactNode } from 'react'
 import { Link, useMatchRoute, useRouterState } from '@tanstack/react-router'
 import type { MobileNavConfig, NavAnchor, SidebarItem, SidebarSection } from '../shell/nav-types'
-import { flattenNav } from './nav'
+import { flattenNav } from './nav-stash'
 import type { AnyNavGroup, AnyNavItem, NavConfig, NavItemId, NavTabId } from './nav'
 
 export type UseNavOptions<G extends ReadonlyArray<AnyNavGroup>> = {

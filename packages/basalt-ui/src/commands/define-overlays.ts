@@ -32,26 +32,8 @@
 import type { ReactNode } from 'react'
 import { missingLayer } from '../common/errors'
 import type { Slot } from '../register'
-import { ModalsMount, whenModalsLive } from '../provider/modals-mount'
-import { registerSlot } from '../provider/slots'
-
-// ── Lazy @mantine/modals resolution ───────────────────────────────────────────
-// @mantine/modals is an OPTIONAL peer — never imported at module evaluation time, so importing
-// this module (and the ./commands barrel that re-exports it) does not require the peer. Resolves
-// to undefined when the peer is absent — overlays.open/close then degrade to a no-op.
-
-type ModalsModule = typeof import('@mantine/modals')
-type ModalsSingleton = ModalsModule['modals']
-
-let modalsPromise: Promise<ModalsSingleton | undefined> | undefined
-
-function loadModals(): Promise<ModalsSingleton | undefined> {
-  modalsPromise ??= import('@mantine/modals').then((m) => m.modals).catch(() => undefined)
-  return modalsPromise
-}
-
-/** How long `confirm` waits for a `BasaltProvider` to commit the modals mount it just registered. */
-const MODALS_LIVE_GRACE_MS = 500
+import { modals } from '@mantine/modals'
+import { ensureModalsMount, registerModalsMount } from '../provider/modals-mount'
 
 // ── Overlay + OverlayMap ──────────────────────────────────────────────────────
 
@@ -124,7 +106,7 @@ let activeOverlays: OverlayMap = {}
  */
 export function defineOverlays<const T extends OverlayMap>(spec: T): T {
   activeOverlays = spec
-  registerSlot('modals', ModalsMount)
+  registerModalsMount()
   return spec
 }
 
@@ -188,10 +170,10 @@ export type ConfirmDeleteOptions = {
  * other exit (cancel, escape, click-outside, the close button). `onConfirm`/`onCancel` fire exactly
  * once each at most, before the promise settles.
  *
- * Rejects with a named `[basalt]` error when the modals layer cannot serve the dialog — the
- * `@mantine/modals` peer is absent, or no `ModalsProvider` is registered as live (see
- * {@link ModalsMount}). Both would otherwise leave the promise pending forever: the
- * imperative API is a window event bus with nothing subscribed.
+ * The first call registers the modals mount and waits for the `BasaltProvider` to commit it — a tick
+ * normally, up to 5 s while a provider is mounted and busy. Rejects with a named `[basalt]` error when
+ * no `BasaltProvider` is mounted (after a 500 ms grace for one mounting now): the imperative API is a
+ * window event bus, and with nothing subscribed the promise would stay pending forever.
  *
  * @example
  * if (await overlays.confirm({ title: 'Discard draft?', onConfirm: () => reset() })) navigate('/')
@@ -216,19 +198,8 @@ async function confirm(options: ConfirmOptions): Promise<boolean> {
     onCancel,
   } = options
 
-  const modals = await loadModals()
-  if (modals === undefined) {
-    throw new Error(
-      missingLayer(
-        'overlays.confirm',
-        '@mantine/modals',
-        'install the @mantine/modals peer and mount <BasaltProvider>',
-      ),
-    )
-  }
-  // `confirm` needs no registry entry, so it asks for the mount itself and waits for the provider to commit it.
-  registerSlot('modals', ModalsMount)
-  if (!(await whenModalsLive(MODALS_LIVE_GRACE_MS))) {
+  // `confirm` needs no registry entry, so it asks for the mount itself and waits for the provider.
+  if (!(await ensureModalsMount())) {
     throw new Error(
       missingLayer(
         'overlays.confirm',
@@ -333,12 +304,15 @@ export const overlays = {
         console.warn(`[basalt] overlays.open: no overlay registered for "${String(key)}"`)
       return
     }
-    void loadModals().then((modals) =>
-      modals?.open({
-        title: spec.title,
-        children: spec.render(props),
-      }),
-    )
+    // A `defineOverlays` made after first render has its mount committed a tick later: wait for it,
+    // or the dialog is published to a bus with no subscriber and lost.
+    void ensureModalsMount().then((live) => {
+      if (live) {
+        modals.open({ title: spec.title, children: spec.render(props) })
+      } else if (process.env.NODE_ENV !== 'production') {
+        console.warn('[basalt] overlays.open: no mounted <BasaltProvider> to show the overlay')
+      }
+    })
   },
 
   /**
@@ -364,6 +338,6 @@ export const overlays = {
    * overlays.close()
    */
   close(): void {
-    void loadModals().then((modals) => modals?.closeAll())
+    modals.closeAll()
   },
 }

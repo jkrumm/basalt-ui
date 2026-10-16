@@ -17,7 +17,7 @@
  * (`check-budgets.test.ts`); the CLI half runs only under `import.meta.main`.
  */
 import { existsSync, readFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import { gzipSync } from 'node:zlib'
 import { build } from 'vite'
 
@@ -301,7 +301,15 @@ async function buildProviderOnlyBundle(
     logLevel: 'silent',
     root: PKG_ROOT,
     define: { 'process.env.NODE_ENV': '"production"' },
-    resolve: { alias: [{ find: /^basalt-ui$/, replacement: distEntry }] },
+    resolve: {
+      alias: [
+        { find: /^basalt-ui$/, replacement: distEntry },
+        {
+          find: /^basalt-ui\/commands$/,
+          replacement: join(dirname(distEntry), 'commands/index.js'),
+        },
+      ],
+    },
     build: {
       write: false,
       minify: true,
@@ -348,7 +356,7 @@ const PROVIDER_ONLY_CEILING = 19000
 const EMBEDDED_CEILING = 168500
 const EMBEDDED_LABEL = 'embedded provider, no defines, peers bundled, all chunks (gzip B, dist)'
 const FEATURE_CHUNKS_LABEL =
-  'spotlight/modals/hotkeys modules in a define-free provider build (all chunks)'
+  'spotlight/modals/hotkeys modules in a define-free provider build (+ ShortcutsHelp)'
 const DEV_CHUNKS_LABEL =
   'dev-only chunks in a production consumer build (dock, theme lab, devtools)'
 
@@ -394,11 +402,21 @@ async function providerOnlyRows(distEntry: string): Promise<Budget[]> {
       fixture: 'provider-embedded.tsx',
       bundlePeers: true,
     })
+    // `ShortcutsHelp` is the `./commands` export a define-free app can read; gate it with the same zero row.
+    const shortcuts = await buildProviderOnlyBundle(distEntry, {
+      fixture: 'provider-shortcuts-help.tsx',
+      bundlePeers: true,
+    })
     return [
       { ...sizeRow, value: firstPaintGzip(chunks, entry) },
       gateRow(DEV_CHUNKS_LABEL, devOnlyChunks([...chunks.values()])),
       { ...embeddedRow, value: allChunksGzip(embedded.chunks) },
-      gateRow(FEATURE_CHUNKS_LABEL, featureRuntimeChunks([...embedded.chunks.values()])),
+      gateRow(FEATURE_CHUNKS_LABEL, [
+        ...featureRuntimeChunks([...embedded.chunks.values()]),
+        ...featureRuntimeChunks([...shortcuts.chunks.values()]).map(
+          (name) => `shortcuts-help: ${name}`,
+        ),
+      ]),
     ]
   } catch (error) {
     return unmeasured('failed', summarizeError(error))

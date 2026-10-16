@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 import type { AnyRouter } from '@tanstack/react-router'
+import { resetCommandStash } from '../commands/command-stash'
 import { defineCommands } from '../commands/define-commands'
 import { defineNav } from '../router-tanstack/nav'
 import { buildSpotlightActions } from './spotlight-actions'
@@ -24,19 +25,19 @@ function nav(): void {
 const navActions = (actions: ReturnType<typeof buildSpotlightActions>) =>
   actions.filter((a) => a.id?.startsWith('nav.'))
 
-afterEach(() => defineCommands({}))
+afterEach(resetCommandStash)
 
 describe('buildSpotlightActions nav entries', () => {
   test('default label is the destination label', () => {
     nav()
-    defineCommands({})
+    resetCommandStash()
     const labels = navActions(buildSpotlightActions(router, () => {})).map((a) => a.label)
     expect(labels).toEqual(['Home', 'About'])
   })
 
   test('navCommandLabel formats the generated labels', () => {
     nav()
-    defineCommands({})
+    resetCommandStash()
     const labels = navActions(
       buildSpotlightActions(
         router,

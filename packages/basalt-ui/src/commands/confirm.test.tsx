@@ -31,7 +31,7 @@ function renderModalsHost() {
   )
 }
 
-/** Settles the lazy `import('@mantine/modals')` inside `loadModals()` plus React's commit. */
+/** Settles the awaited modals-live check inside `confirm` plus React's commit. */
 async function flush(): Promise<void> {
   await act(async () => {
     await import('@mantine/modals')
