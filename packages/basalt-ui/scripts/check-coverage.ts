@@ -188,7 +188,7 @@ export const AGENT_LINE_BUDGETS: Readonly<Record<string, number>> = {
   'agent/skills/basalt-charts/SKILL.md': 40,
   'agent/templates/AGENTS-block.md.tpl': 37,
   // Outside the layer total: a subagent loads only when invoked, not into every session.
-  'agent/agents/basalt-design-reviewer.md': 81,
+  'agent/agents/basalt-design-reviewer.md': 80,
   'agent/templates/DESIGN.md.tpl': 45,
 }
 
