@@ -1059,10 +1059,10 @@ The `basalt-ui/router-tanstack` subpath is **removed** in 2.x, not moved: an imp
 
 ### search stores: a pure server `validateSearch`, an imperative `clear()`
 
-- **`store.validateSearch` no longer reads localStorage without a `window`.** On the server it is URL ⊳ fallback; the stored layer applies on the client only. Under SSR (TanStack Start) a loader keyed on `search` therefore sees the fallback server-side where it previously saw the same (storage was unreadable there, so nothing observable changes for a working app; a test runtime with a `localStorage` polyfill but no `window` now matches the server). **Opt-out: none.**
+- **`store.validateSearch` is pure URL ⊳ fallback on the server and on a dehydrated page.** It no longer merges the localStorage mirror when there is no `window`, or when the router's SSR bootstrap (`window.$_TSR`) is present, so the client's first search equals the server's and a loader keyed on `search` runs with the same deps on hydration. A client-only app (argo, rb: no `$_TSR`) is unchanged — a paramless visit still resolves URL ⊳ mirror ⊳ fallback. In an SSR app a paramless visit now shows the fallback; the mirror reaches the URL through `linkSearch`. **Opt-out: none for SSR; client-only apps are unaffected.**
 - **A URL-lane `field.clear()` navigates through the mounted router, not a closure a render left behind.** It works from any event handler while a `use()` of the store is mounted, judges ownership against the location it is called at, and a discarded/StrictMode render can no longer register a stale closure. With no mounted reader it still clears the mirror only. **Opt-out: none.**
-- **`buildSearchStore` is renamed `createSearchStore`** (it was a pass-through wrapper, never in the barrel). The old name stays as a `@deprecated` alias for one minor. **Opt-out: keep importing the alias until the next minor.**
-- **Dev warning:** a URL-lane field whose param is in the URL while its store's `validateSearch` never ran (another store or a hand-rolled schema owns the param) warns once. **Opt-out: none; wire `validateSearch: store.validateSearch`, or spread it into your own.**
+- **`buildSearchStore` is gone.** It was an internal pass-through of `createSearchStore`, never exported from `basalt-ui/state`; nothing public changes. **Opt-out: none needed.**
+- **Dev warning:** a URL-lane field read on a route none of whose matched `validateSearch` runs this store (directly or composed) warns once per field — another store or a hand-rolled schema owns the param. **Opt-out: none; wire `validateSearch: store.validateSearch`, or spread it into your own.**
 
 ## 2.12.0 — the provider bundles only what the app defines; Start wiring accepts a pathless layout
 

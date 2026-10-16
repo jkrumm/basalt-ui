@@ -283,12 +283,15 @@ describe('linkSearch', () => {
   })
 })
 
+const build = () =>
+  createSearchStore({
+    key: 'k-server-pure',
+    fields: { range: field.enum(['1d', '7d', '30d'], '1d') },
+  })
+
 describe('validateSearch on the server', () => {
   test('is URL ⊳ fallback only — the stored layer never applies without a window', () => {
-    const store = createSearchStore({
-      key: 'k-server-pure',
-      fields: { range: field.enum(['1d', '7d', '30d'], '1d') },
-    })
+    const store = build()
     persist('k-server-pure', { range: '30d' })
     expect(store.validateSearch({})).toEqual({ range: '30d' })
 
@@ -301,6 +304,33 @@ describe('validateSearch on the server', () => {
     } finally {
       globalThis.window = realWindow
     }
+  })
+
+  test('is identical on a dehydrated client page — it carries window.$_TSR', () => {
+    const store = build()
+    persist('k-server-pure', { range: '30d' })
+    Object.assign(window, { $_TSR: {} })
+    try {
+      expect(store.validateSearch({})).toEqual({ range: '1d' })
+    } finally {
+      Reflect.deleteProperty(window, '$_TSR')
+    }
+  })
+
+  test('a composed schema sees the same object on the server and on a client-only page', () => {
+    const store = build()
+    persist('k-server-pure', { range: '30d' })
+    const parse = (raw: Record<string, unknown>) => ({ ...store.validateSearch(raw) })
+    // The client-only page is the one that merges the mirror; the dehydrated one must not.
+    Object.assign(window, { $_TSR: {} })
+    const hydrating = parse({})
+    Reflect.deleteProperty(window, '$_TSR')
+    const realWindow = globalThis.window
+    // @ts-expect-error -- simulating a server runtime
+    globalThis.window = undefined
+    const server = parse({})
+    globalThis.window = realWindow
+    expect(hydrating).toEqual(server)
   })
 })
 
