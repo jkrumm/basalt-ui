@@ -5,6 +5,7 @@
 import { MantineProvider } from '@mantine/core'
 import { cleanup, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
+import type { ReactNode } from 'react'
 import { NotificationCenter } from '../../commands/notifications/center'
 import { add, clear } from '../../commands/notifications/store'
 import type { ChatMessage } from '../history'
@@ -39,10 +40,10 @@ function message(createdAt: number): ChatMessage<TranscriptPart>[] {
   ]
 }
 
-const wrap = (node: React.ReactNode) => <MantineProvider>{node}</MantineProvider>
+const withMantine = (node: ReactNode) => <MantineProvider>{node}</MantineProvider>
 
-const row = (updatedAt: number) =>
-  wrap(
+const renderFeedRow = (updatedAt: number) =>
+  withMantine(
     <ThreadFeedRow
       thread={thread(updatedAt)}
       expanded={false}
@@ -51,16 +52,17 @@ const row = (updatedAt: number) =>
     />,
   )
 
-const label = (createdAt: number) => {
+const transcriptTimestamp = (createdAt: number) => {
   render(
-    wrap(
+    withMantine(
       <ThreadTranscript messages={message(createdAt)} affordances={{ timestamp: 'relative' }} />,
     ),
   )
   return within(screen.getByTestId('message-affordances-m1')).getByText(/now|ago/).textContent
 }
 
-const item = (createdAt: number) => add({ id: 'n1', intent: 'error', message: 'body', createdAt })
+const addErrorNotification = (createdAt: number) =>
+  add({ id: 'n1', intent: 'error', message: 'body', createdAt })
 
 beforeEach(() => clear())
 afterEach(cleanup)
@@ -68,7 +70,7 @@ afterEach(cleanup)
 describe('ThreadOutcomeCard', () => {
   test('sub-minute reads "now"', () => {
     render(
-      wrap(
+      withMantine(
         <ThreadOutcomeCard
           thread={thread(Date.now() - 5_000)}
           selected={false}
@@ -81,7 +83,7 @@ describe('ThreadOutcomeCard', () => {
 
   test('a past hour reads "1 hour ago"', () => {
     render(
-      wrap(
+      withMantine(
         <ThreadOutcomeCard
           thread={thread(Date.now() - HOUR)}
           selected={false}
@@ -95,36 +97,48 @@ describe('ThreadOutcomeCard', () => {
 
 describe('ThreadFeedRow', () => {
   test('sub-minute reads "now"', () => {
-    render(row(Date.now() - 5_000))
+    render(renderFeedRow(Date.now() - 5_000))
     expect(screen.getByText('now')).toBeDefined()
   })
 
   test('a past hour reads "1 hour ago"', () => {
-    render(row(Date.now() - HOUR))
+    render(renderFeedRow(Date.now() - HOUR))
     expect(screen.getByText('1 hour ago')).toBeDefined()
   })
 })
 
 describe('ThreadTranscript timestamp', () => {
   test('sub-minute reads "now"', () => {
-    expect(label(Date.now() - 5_000)).toBe('now')
+    expect(transcriptTimestamp(Date.now() - 5_000)).toBe('now')
   })
 
   test('a past hour reads "1 hour ago"', () => {
-    expect(label(Date.now() - HOUR)).toBe('1 hour ago')
+    expect(transcriptTimestamp(Date.now() - HOUR)).toBe('1 hour ago')
   })
 })
 
 describe('NotificationCenter timestamp', () => {
   test('sub-minute reads "now"', () => {
-    item(Date.now() - 5_000)
-    render(wrap(<NotificationCenter />))
+    addErrorNotification(Date.now() - 5_000)
+    render(withMantine(<NotificationCenter />))
     expect(screen.getByText('now')).toBeDefined()
   })
 
   test('a past hour reads in the short style', () => {
-    item(Date.now() - HOUR)
-    render(wrap(<NotificationCenter />))
+    addErrorNotification(Date.now() - HOUR)
+    render(withMantine(<NotificationCenter />))
     expect(screen.getByText('1 hr. ago')).toBeDefined()
+  })
+
+  test('59.6 minutes promotes to "1 hr. ago"', () => {
+    addErrorNotification(Date.now() - 59.6 * 60_000)
+    render(withMantine(<NotificationCenter />))
+    expect(screen.getByText('1 hr. ago')).toBeDefined()
+  })
+
+  test('a non-finite createdAt renders the dash instead of throwing', () => {
+    addErrorNotification(Number.NaN)
+    render(withMantine(<NotificationCenter />))
+    expect(screen.getByText('—')).toBeDefined()
   })
 })
