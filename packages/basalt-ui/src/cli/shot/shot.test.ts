@@ -673,6 +673,7 @@ describe('hover and focus crops include an opened tooltip', () => {
   const TIP = { x: 120, y: 170, width: 180, height: 40 }
   const run = async (tooltip: boolean, state: 'hover' | 'focus') => {
     const clips: unknown[] = []
+    let reads = 0
     const element: Record<string, unknown> = {
       first: () => element,
       count: () => Promise.resolve(1),
@@ -689,7 +690,13 @@ describe('hover and focus crops include an opened tooltip', () => {
     const tip: Record<string, unknown> = {
       first: () => tip,
       waitFor: () => (tooltip ? Promise.resolve() : Promise.reject(new Error('timeout'))),
-      boundingBox: () => Promise.resolve(TIP),
+      // Grows read by read (an animation) before it settles at TIP: the crop must hold the final size.
+      boundingBox: () =>
+        Promise.resolve({
+          ...TIP,
+          width: Math.min(TIP.width, 20 + 40 * reads++),
+          height: TIP.height,
+        }),
     }
     const page = {
       setDefaultTimeout: () => undefined,

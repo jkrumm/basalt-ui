@@ -24,6 +24,8 @@ const TOOLTIP_TIMEOUT_MS = 3_000
 const TAB_PRESSES = 80
 const FOCUS_MARGIN_PX = 8
 const TIP_PROBE_MS = 250
+const TIP_SETTLE_MS = 60
+const TIP_SETTLE_READS = 10
 
 export type CaptureInput = {
   browser: PwBrowser
@@ -205,7 +207,16 @@ async function openTooltipBox(c: Ctx): Promise<Box | null> {
   } catch {
     return null
   }
-  return tip.boundingBox()
+  // The tooltip animates in: read its box once two reads agree, or the crop clips the final size.
+  let box = await tip.boundingBox()
+  for (let i = 0; i < TIP_SETTLE_READS; i++) {
+    await new Promise((done) => setTimeout(done, TIP_SETTLE_MS))
+    const next = await tip.boundingBox()
+    const settled = JSON.stringify(next) === JSON.stringify(box)
+    box = next
+    if (settled) break
+  }
+  return box
 }
 
 async function captureHover(c: Ctx, name: string): Promise<void> {
