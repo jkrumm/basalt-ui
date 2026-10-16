@@ -59,7 +59,7 @@ const CEILINGS = {
  */
 function wave31CliLines(): number {
   const raises = {
-    shot: 0,
+    shot: 944,
 
     install: 75,
 

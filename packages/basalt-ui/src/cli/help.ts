@@ -43,6 +43,12 @@ export const COMMAND_OPTIONS: Record<string, Record<string, { type: 'string' | '
     only: { type: 'string' },
   },
   'fonts:css': { out: { type: 'string' }, check: { type: 'boolean' } },
+  shot: {
+    base: { type: 'string' },
+    dist: { type: 'string' },
+    out: { type: 'string' },
+    states: { type: 'string' },
+  },
 }
 
 /** The first flag `cmd` does not accept, or null. Unknown commands return null — the dispatcher's
@@ -51,7 +57,7 @@ export function unknownFlag(cmd: string, flags: readonly string[]): string | nul
   const options = COMMAND_OPTIONS[cmd]
   if (options === undefined) return null
   try {
-    parseArgs({ args: [...flags], options, strict: true, allowPositionals: false })
+    parseArgs({ args: [...flags], options, strict: true, allowPositionals: cmd === 'shot' })
     return null
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
@@ -65,7 +71,8 @@ export const USAGE =
   'Usage: basalt-ui <--version | init [--no-merge-lint] |\n' +
   '                  sync [--force] [--check] [--verbose] [--tokens-only|--framework] |\n' +
   '                  check-theme [--audit-allows] |\n' +
-  '                  doctor [--tokens-only|--framework] | guard-hook | tokens:css | fonts:css | help>\n\n' +
+  '                  doctor [--tokens-only|--framework] | guard-hook | tokens:css | fonts:css |\n' +
+  '                  shot <route…> | help>\n\n' +
   'check-theme [--tokens-only|--framework] [--audit-allows]\n' +
   '  --audit-allows reports instead of scanning: every `theme-allow` annotation and every\n' +
   '  `basalt.exemptRules` entry, with what each one still suppresses — proved by re-running the\n' +
@@ -81,6 +88,11 @@ export const USAGE =
   'fonts:css [--out <path>] [--check]\n' +
   '  Emit the shipped --basalt-font-* stacks as plain CSS — the typeface half of the token layer,\n' +
   '  otherwise reachable only by importing styles.css.\n\n' +
+  'shot <route…> (--base <url> | --dist <dir>) [--out <dir>] [--states <list>]\n' +
+  '  Render routes in Chromium (Playwright from YOUR project: bun add -d playwright) and write\n' +
+  '  board.html, metrics.json and png/* — every data-shot anchor × light/dark × desktop/mobile ×\n' +
+  '  rest, hover, focus, tooltip, empty, loading, error. --dist serves a built SPA dir itself.\n' +
+  '  Default --out .basalt/shots (emptied each run); .basalt/shots/last.json names the last out dir.\n\n' +
   'doctor [--tokens-only|--framework]\n' +
   '  Checks THIS project only: the manifest exists, the oxlint preset is wired, the pre-commit\n' +
   '  hook runs check-theme (via `lefthook dump`), and the ai package major is consistent within\n' +
