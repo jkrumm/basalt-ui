@@ -20,6 +20,8 @@ export function rejected(): void {
   ext<typeof Card>({ classNames: { nope: 'x' } })
   // @ts-expect-error `nope` is not a Card styles part
   ext<typeof Card>({ styles: { nope: {} } })
+  // @ts-expect-error the component is the type argument; omitted, `C` is `unknown`
+  ext({ defaultProps: { size: 'md' } })
   // @ts-expect-error a non-component has no `extend`
   ext<string>({})
   // @ts-expect-error a plain object has no `extend`

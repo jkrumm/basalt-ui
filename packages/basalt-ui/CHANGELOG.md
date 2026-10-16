@@ -1,48 +1,55 @@
 # [2.12.0](https://github.com/jkrumm/basalt-ui/compare/v2.11.1...v2.12.0) (2026-10-16)
 
+
 ### Bug Fixes
 
-- accept a pathless-layout provider and read the router context from types ([a57f4f5](https://github.com/jkrumm/basalt-ui/commit/a57f4f549b82bad0981155baac0d6544d507fc56))
-- close cancels pending overlays, live counters share one helper ([474712e](https://github.com/jkrumm/basalt-ui/commit/474712e71d8fb877cdb415163df0ad4e5725c1cd))
-- count provider tags, not files, and share the Start provider hint ([2293494](https://github.com/jkrumm/basalt-ui/commit/2293494b46086f1142bcaa9e9e6918ee694089a4))
-- slot review — nav stash leaf, shared notifier, late overlay open ([5ad739d](https://github.com/jkrumm/basalt-ui/commit/5ad739db8ff06e71eb3a66a49b6fc29e300ba051))
-- tie the Start root-context check to the exported root route ([aefc446](https://github.com/jkrumm/basalt-ui/commit/aefc4465fbb2bee72f4d2ef4cd643d1e6c71dc5e))
+* accept a pathless-layout provider and read the router context from types ([a57f4f5](https://github.com/jkrumm/basalt-ui/commit/a57f4f549b82bad0981155baac0d6544d507fc56))
+* close cancels pending overlays, live counters share one helper ([474712e](https://github.com/jkrumm/basalt-ui/commit/474712e71d8fb877cdb415163df0ad4e5725c1cd))
+* count provider tags, not files, and share the Start provider hint ([2293494](https://github.com/jkrumm/basalt-ui/commit/2293494b46086f1142bcaa9e9e6918ee694089a4))
+* slot review — nav stash leaf, shared notifier, late overlay open ([5ad739d](https://github.com/jkrumm/basalt-ui/commit/5ad739db8ff06e71eb3a66a49b6fc29e300ba051))
+* tie the Start root-context check to the exported root route ([aefc446](https://github.com/jkrumm/basalt-ui/commit/aefc4465fbb2bee72f4d2ef4cd643d1e6c71dc5e))
+
 
 ### Features
 
-- provider bundles Spotlight, modals, hotkeys only when defined ([37c3477](https://github.com/jkrumm/basalt-ui/commit/37c347743a83db4b291173cf0238f37d6aa2fb42))
+* provider bundles Spotlight, modals, hotkeys only when defined ([37c3477](https://github.com/jkrumm/basalt-ui/commit/37c347743a83db4b291173cf0238f37d6aa2fb42))
 
 ## [2.11.1](https://github.com/jkrumm/basalt-ui/compare/v2.11.0...v2.11.1) (2026-10-15)
 
+
 ### Bug Fixes
 
-- end labels read the plot's own x model and plot height ([81780be](https://github.com/jkrumm/basalt-ui/commit/81780be14d37875c445f6f432439b8bb93302f03))
-- end-label room, bucket ticks and lone dots per review ([6011eb6](https://github.com/jkrumm/basalt-ui/commit/6011eb65f304e0de6e6893c5a68a30af69e513ca))
-- lone points, end labels and axis ticks render cleanly ([95f898f](https://github.com/jkrumm/basalt-ui/commit/95f898f16927e209daa11ee2e587267103031b27))
-- mirrored bars reach both plot edges ([d8d6d4a](https://github.com/jkrumm/basalt-ui/commit/d8d6d4a8ddd3a3689b50b8f2213fee9683cf56a4))
+* end labels read the plot's own x model and plot height ([81780be](https://github.com/jkrumm/basalt-ui/commit/81780be14d37875c445f6f432439b8bb93302f03))
+* end-label room, bucket ticks and lone dots per review ([6011eb6](https://github.com/jkrumm/basalt-ui/commit/6011eb65f304e0de6e6893c5a68a30af69e513ca))
+* lone points, end labels and axis ticks render cleanly ([95f898f](https://github.com/jkrumm/basalt-ui/commit/95f898f16927e209daa11ee2e587267103031b27))
+* mirrored bars reach both plot edges ([d8d6d4a](https://github.com/jkrumm/basalt-ui/commit/d8d6d4a8ddd3a3689b50b8f2213fee9683cf56a4))
 
 # [2.11.0](https://github.com/jkrumm/basalt-ui/compare/v2.10.0...v2.11.0) (2026-10-15)
 
+
 ### Bug Fixes
 
-- keep stated heatmap cells out of the domain and the state legend stable ([4f95cc7](https://github.com/jkrumm/basalt-ui/commit/4f95cc74ed7695b256c82644708fc9cc32173778))
-- never close a sparkline gap when pooling, and harden the x domain ([c92e37b](https://github.com/jkrumm/basalt-ui/commit/c92e37b0b1372e8d7e8f615e84e54664fb8f82a9))
+* keep stated heatmap cells out of the domain and the state legend stable ([4f95cc7](https://github.com/jkrumm/basalt-ui/commit/4f95cc74ed7695b256c82644708fc9cc32173778))
+* never close a sparkline gap when pooling, and harden the x domain ([c92e37b](https://github.com/jkrumm/basalt-ui/commit/c92e37b0b1372e8d7e8f615e84e54664fb8f82a9))
+
 
 ### Features
 
-- align charts on a shared x domain ([b0e037a](https://github.com/jkrumm/basalt-ui/commit/b0e037a10b8d8c79dbb9f9fa86fe90c683e50daf))
-- give chart marks the plot area, the rows and per-datum cursor dots ([fb2b68b](https://github.com/jkrumm/basalt-ui/commit/fb2b68b2b68820f763546a2cb2f032f433079213))
-- report the measured plot area from one builder for every chart kind ([ca26afe](https://github.com/jkrumm/basalt-ui/commit/ca26afea1837ed650e790388793f08e0ffc544d3))
+* align charts on a shared x domain ([b0e037a](https://github.com/jkrumm/basalt-ui/commit/b0e037a10b8d8c79dbb9f9fa86fe90c683e50daf))
+* give chart marks the plot area, the rows and per-datum cursor dots ([fb2b68b](https://github.com/jkrumm/basalt-ui/commit/fb2b68b2b68820f763546a2cb2f032f433079213))
+* report the measured plot area from one builder for every chart kind ([ca26afe](https://github.com/jkrumm/basalt-ui/commit/ca26afea1837ed650e790388793f08e0ffc544d3))
 
 # [2.10.0](https://github.com/jkrumm/basalt-ui/compare/v2.9.1...v2.10.0) (2026-10-15)
 
+
 ### Bug Fixes
 
-- name the unset state of a preset number filter ([ed43eeb](https://github.com/jkrumm/basalt-ui/commit/ed43eeb0cde5a1ff1bc42ae118ab637d08007d64))
+* name the unset state of a preset number filter ([ed43eeb](https://github.com/jkrumm/basalt-ui/commit/ed43eeb0cde5a1ff1bc42ae118ab637d08007d64))
+
 
 ### Features
 
-- band charts hide a pending legend and mirror their fills ([22a491e](https://github.com/jkrumm/basalt-ui/commit/22a491ef5cfdbcd9bfac1c5284c8566f453b50af))
+* band charts hide a pending legend and mirror their fills ([22a491e](https://github.com/jkrumm/basalt-ui/commit/22a491ef5cfdbcd9bfac1c5284c8566f453b50af))
 
 ## [2.9.1](https://github.com/jkrumm/basalt-ui/compare/v2.9.0...v2.9.1) (2026-10-15)
 

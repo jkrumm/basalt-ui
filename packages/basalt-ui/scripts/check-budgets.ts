@@ -351,11 +351,7 @@ const PROVIDER_ONLY_LABEL = 'provider-only first paint (gzip B, dist)'
 // 19000 → 19200: the provider owns the `route.error` emit now (it was in `createBasaltRouter`, outside
 // this entry) plus the mutation-key hash: 19034 locally, was 18923.
 const PROVIDER_ONLY_CEILING = 19200
-// Embedded provider, `spotlight={false}`, no defines, peers bundled, every chunk counted (a bundle-graph
-// bar follows `import()`). Before the provider slots (2.11.1): 190544 B, with the dynamic hotkeys chunk
-// (~14967 B) plus Spotlight and modals in the entry; after: 166834 B, zero feature chunks.
-// 168500 → 55300: `createBasaltTheme` stops value-importing the ~45 Mantine components it only
-// configures (`ext<typeof X>`, not `X.extend`): 166959 → 54735 locally. ~1% over landed.
+// Embedded `<BasaltProvider spotlight={false}>`, no defines, peers bundled, every chunk counted: 54735 B landed, ~1% margin.
 const EMBEDDED_CEILING = 55300
 // `createBasaltTheme()` alone, peers bundled, every chunk counted: 14420 locally. The theme reaching
 // no component it configures is what keeps this near Mantine's core; ~1% over landed.

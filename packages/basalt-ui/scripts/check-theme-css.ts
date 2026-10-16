@@ -448,7 +448,7 @@ const BORDER_ALLOWLIST: readonly BorderAllowlistEntry[] = [
     component: 'AppShell',
     kind: 'layout-divider',
     reason:
-      "The shell keeps every section's [data-with-border] ON — a structural boundary between page regions, not a default-variant control; colour is pinned to --vx-divider through AppShell.extend({ vars }).",
+      "The shell keeps every section's [data-with-border] ON — a structural boundary between page regions, not a default-variant control; colour is pinned to --vx-divider through the `AppShell` entry's `vars` in `buildTheme` (`theme/index.ts`).",
   },
   {
     component: 'Divider',
