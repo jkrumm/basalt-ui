@@ -22,7 +22,6 @@ import {
   OXLINT_FILES,
   OXLINT_NO_BIN,
   oxlintBinResolves,
-  parseJsonc,
   readBasaltConfig,
   readIfExists,
   readManifest,
@@ -34,6 +33,7 @@ import {
   scannableFiles,
   shippedAssetPath,
 } from './index'
+import { parseJsonc } from './source-text'
 import { resolveRoots } from './config'
 import {
   appWiringCheck,
@@ -377,7 +377,7 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
   // ── Hard checks 8-13: strictness and the 1.x → 2.0 upgrade path (./doctor-upgrade) ──────────
   const droppedCheck: [string, Check] = [
     'dropped-subpaths: no import of a basalt-ui subpath the install lacks',
-    droppedSubpathsCheck(appDir, cfg, install),
+    droppedSubpathsCheck(appDir, scannableFiles(appDir, cfg), install),
   ]
   const runChecks = (checks: [string, Check][]): void => {
     for (const [ok, check] of checks) {
@@ -407,7 +407,7 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
       ['exact-peers: installed exact-pinned peers match basalt-ui', exactPeersCheck(cwd, install)],
       [
         'subpath-peers: every imported basalt-ui subpath has its required peers installed',
-        subpathPeersCheck(appDir, cfg, install),
+        subpathPeersCheck(appDir, scannableFiles(appDir, cfg), install),
       ],
       [
         'config-keys: the basalt config block sets only keys basalt-ui reads',

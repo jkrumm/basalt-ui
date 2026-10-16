@@ -20,7 +20,6 @@ import {
   normalizeForLedger,
   noteRelocation,
   OXLINT_FILES,
-  parseJsonc,
   placementNotices,
   pruneRetiredManagedFiles,
   readBasaltConfig,
@@ -43,6 +42,7 @@ import {
   writeFileEnsuringDir,
   writeUnit,
 } from './index'
+import { parseJsonc } from './source-text'
 import { findManifestAbove, installRootAbove } from './install-root'
 
 /** The oxlint plugins the shipped preset switches on — read from the preset, never restated. */
@@ -222,7 +222,12 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
   const retiredBecause = seedSkip === null ? null : RETIRED_BECAUSE[seedSkip]
   const retiredSeeds = retiredBecause === null ? [] : [...skipped].filter(isTracked)
   // Start is the new retirement: a gate green over seeds the next sync would drop is a stale gate.
-  if (opts.check && seedSkip === 'start') staleForCheck += retiredSeeds.length
+  if (opts.check && seedSkip === 'start' && retiredSeeds.length > 0) {
+    staleForCheck += retiredSeeds.length
+    console.error(
+      `basalt-ui sync --check: ${retiredSeeds.join(', ')} still tracked in the manifest of a TanStack Start app. Fix: run \`basalt-ui sync\`.`,
+    )
+  }
   if (retiredSeeds.length > 0 && !opts.check) {
     for (const d of retiredSeeds) delete manifest.files[d]
     console.error(

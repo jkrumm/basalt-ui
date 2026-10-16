@@ -531,8 +531,8 @@ async function budgets(providerOnlyDist: string): Promise<Budget[]> {
     // 4859 -> 4890: `installRootAbove` (cli/install-root.ts) — one predicate for doctor and sync, with the same-install check (row 77, review of #267).
     // 4890 -> 4955: the declared `basalt.shell: false` — config key, seed skip, shared seed-retire notice and the doctor finding (ledger row 82, linewatch W2).
     // 4955 -> 5020: `app-wiring` accepts one provider in the root or a pathless layout, fails an untyped `createRootRoute` and a missing root (ledger rows 113, 115, weatherorb W37).
-    // 5020 -> 5145: `app-wiring` follows one import hop (relative or tsconfig `paths`) to a provider wrapper; `sync` judges a Start seed by content (ledger rows 121-123, weatherorb W39); the hop resolver and provider-tag reader are leaf modules.
-    { label: 'CLI non-test lines (src/cli/**)', value: cliNonTestLines(), ceiling: 5145 },
+    // 5020 -> 5165: `app-wiring` follows one import hop (relative or tsconfig `paths`) to a provider wrapper; `sync` judges a Start seed by content (ledger rows 121-123, weatherorb W39); the hop resolver and provider-tag reader are leaf modules.
+    { label: 'CLI non-test lines (src/cli/**)', value: cliNonTestLines(), ceiling: 5165 },
     ...(await providerOnlyRows(providerOnlyDist)),
   ]
 }

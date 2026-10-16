@@ -24,13 +24,13 @@ import {
   appWiringCheck,
   shellDeclarationFindings,
   startWiringWarnings,
-  droppedSubpathsCheck,
+  droppedSubpathsCheck as droppedSubpathsCheckOn,
   exactPeersCheck,
   oxlintFloorCheck,
   retiredLintRulesCheck,
   seedTsconfigExtends,
   SUBPATH_REQUIRED_PEERS,
-  subpathPeersCheck,
+  subpathPeersCheck as subpathPeersCheckOn,
   tsconfigBaseCheck,
   unknownConfigKeysCheck,
 } from './doctor-upgrade'
@@ -40,10 +40,11 @@ import {
   MANIFEST_PATH,
   mergeOxlintExtends,
   normalizeForLedger,
-  parseJsonc,
+  scannableFiles,
   sha256,
   sync,
 } from './index'
+import { parseJsonc } from './source-text'
 
 const PKG_ROOT = fileURLToPath(new URL('../../', import.meta.url))
 const PKG_VERSION = (
@@ -85,6 +86,17 @@ beforeEach(() => {
 afterEach(() => {
   rmSync(dir, { recursive: true, force: true })
 })
+
+const subpathPeersCheck = (
+  cwd: string,
+  cfg: Parameters<typeof scannableFiles>[1],
+  install: Parameters<typeof subpathPeersCheckOn>[2],
+) => subpathPeersCheckOn(cwd, scannableFiles(cwd, cfg), install)
+const droppedSubpathsCheck = (
+  cwd: string,
+  cfg: Parameters<typeof scannableFiles>[1],
+  install: Parameters<typeof droppedSubpathsCheckOn>[2],
+) => droppedSubpathsCheckOn(cwd, scannableFiles(cwd, cfg), install)
 
 describe('doctor — tsconfig-base', () => {
   it('passes when tsconfig.json extends the react-app or base preset', () => {
@@ -1046,6 +1058,25 @@ describe('doctor — app-wiring', () => {
         write('tsconfig.json', tsconfig)
         expect(text(appWiringCheck(dir))).toContain('pathless layout')
       }
+    })
+
+    it('counts the same wrapper once per render edge: root and a layout both rendering it fail', () => {
+      start()
+      write('src/app/providers.tsx', PROVIDERS)
+      write('src/routes/__root.tsx', ROOT + APP)
+      const msg = text(appWiringCheck(dir))
+      expect(msg).toContain('src/app/providers.tsx render 2 <BasaltProvider> tags')
+      expect(msg).toContain('Fix: keep one')
+    })
+
+    it('ignores an import statement inside a comment', () => {
+      start()
+      write(
+        'src/routes/_app.tsx',
+        "// import { Providers } from '../app/providers'\nconst A = () => <Providers><Outlet /></Providers>\n",
+      )
+      write('src/app/providers.tsx', PROVIDERS)
+      expect(text(appWiringCheck(dir))).toContain('pathless layout')
     })
 
     it('resolves a specifier written with a .js extension', () => {

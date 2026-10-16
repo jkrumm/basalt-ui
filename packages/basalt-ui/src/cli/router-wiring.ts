@@ -187,3 +187,26 @@ export function routerSeedSkip(cwd: string, appRel: string): RouterSeedSkip {
 
 export const SHELL_LESS_NOTE =
   '`basalt.shell: false` — no main.tsx/nav.tsx/__root.tsx seeded; the app owns its root route (or has none).'
+
+/** The router seeds (TanStack Router and Query are required peers of `.`, so they are always written). */
+export const ROUTER_SEED_DESTS = {
+  nav: 'src/lib/nav.tsx',
+  root: 'src/routes/__root.tsx',
+  main: 'src/main.tsx',
+} as const
+
+/** A router seed's dest, relative to the install root: under the app dir when it is not the root. */
+export function routerSeedDest(appRel: string, seed: keyof typeof ROUTER_SEED_DESTS): string {
+  return appRel === '' ? ROUTER_SEED_DESTS[seed] : `${appRel}/${ROUTER_SEED_DESTS[seed]}`
+}
+
+/** The router seeds' dests for an app dir (`main.tsx`, `nav.tsx`, `__root.tsx`). */
+export function routerSeedDests(appRel: string): string[] {
+  return (Object.keys(ROUTER_SEED_DESTS) as (keyof typeof ROUTER_SEED_DESTS)[]).map((seed) =>
+    routerSeedDest(appRel, seed),
+  )
+}
+
+/** Where a Start app's embedded provider goes (doctor, init and sync all say it). */
+export const START_PROVIDER_HINT =
+  'render <BasaltProvider><Outlet /></BasaltProvider> in the root route component or a pathless layout'

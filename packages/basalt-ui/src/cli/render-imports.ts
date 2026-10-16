@@ -25,14 +25,19 @@ type Alias = [prefix: string, dir: string]
 export function pathAliases(cwd: string): Alias[] {
   const opts = parseJsonc(readIfExists(resolve(cwd, 'tsconfig.json')) ?? '')?.['compilerOptions']
   if (typeof opts !== 'object' || opts === null) return []
-  const { baseUrl, paths } = opts as { baseUrl?: unknown; paths?: unknown }
-  if (typeof paths !== 'object' || paths === null) return []
+  const { baseUrl, paths } = opts as { baseUrl?: unknown; paths?: Record<string, unknown> | null }
+  if (typeof paths !== 'object' || paths === null || Array.isArray(paths)) return []
   const base = typeof baseUrl === 'string' ? baseUrl : '.'
   return Object.entries(paths).flatMap(([pattern, targets]) => {
     const target: unknown = Array.isArray(targets) ? targets[0] : undefined
     if (!pattern.endsWith('/*') || typeof target !== 'string' || !target.endsWith('/*')) return []
     return [[pattern.slice(0, -1), `${base}/${target.slice(0, -1)}`]]
   })
+}
+
+const aliasedBase = (cwd: string, spec: string, aliases: Alias[]): string | undefined => {
+  const hit = aliases.find(([prefix]) => spec.startsWith(prefix))
+  return hit === undefined ? undefined : resolve(cwd, hit[1] + spec.slice(hit[0].length))
 }
 
 const escapeRegex = (name: string): string => name.replaceAll('$', String.raw`\$`)
@@ -44,15 +49,14 @@ export function renderedImports(
   text: string,
   aliases: Alias[],
 ): string[] {
-  const code = tokenize(text).code
+  const { code, inLiteral } = tokenize(text)
   const found = new Set<string>()
-  for (const m of text.matchAll(/\bimport\s+(?!type\b)([^'"]*?)\s*from\s*['"]([^'"]+)['"]/g)) {
+  for (const m of code.matchAll(/\bimport\s+(?!type\b)([^'"]*?)\s*from\s*['"]([^'"]+)['"]/g)) {
+    if (inLiteral(m.index)) continue
     const spec = m[2]!.replace(/\.[jt]sx?$/, '')
     const base = spec.startsWith('.')
       ? resolve(cwd, dirname(file), spec)
-      : aliases.flatMap(([prefix, dir]) =>
-          spec.startsWith(prefix) ? [resolve(cwd, dir + spec.slice(prefix.length))] : [],
-        )[0]
+      : aliasedBase(cwd, spec, aliases)
     if (base === undefined) continue
     const names = [...m[1]!.replace(/\btype\s+/g, '').matchAll(/[A-Za-z_$][\w$]*/g)].map(
       (n) => n[0],
@@ -68,8 +72,8 @@ export function renderedImports(
 }
 
 /**
- * `hops`: modules (not already `scanned`) that a scanned file renders a component from and that hold
- * a provider tag. `far`: provider-holding modules one more hop out, which doctor does not follow but
+ * `hops`: one entry per render EDGE (scanned file -> rendered module holding a provider tag), so the
+ * same wrapper rendered from two route files counts twice. `far`: provider-holding modules one more hop out, which doctor does not follow but
  * names (the one-provider invariant and the failure message both need them).
  */
 export function followProviderHops(
@@ -87,7 +91,7 @@ export function followProviderHops(
   const far = new Set<string>()
   for (const f of scanned) {
     for (const mod of renderedImports(cwd, f.file, f.text ?? '', aliases)) {
-      if (scanned.some((s) => s.file === mod) || hops.some((h) => h.file === mod)) continue
+      if (scanned.some((s) => s.file === mod)) continue
       const hop = load(mod)
       if (hop.tags.length > 0) hops.push(hop)
       for (const next of renderedImports(cwd, mod, hop.text ?? '', aliases)) {
