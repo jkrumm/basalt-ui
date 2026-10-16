@@ -51,6 +51,8 @@ export type PaneBuilder = (ctx: PaneContext) => {
 export type PanelPlan<T> = {
   /** Every x value the cursor can land on, for snapping a foreign cursor. */
   keys: readonly ChartX[]
+  /** The x extent the shared scale renders; absent, the keys' own. */
+  extent?: readonly [number, number] | undefined
   top: PaneBuilder
   bottom: PaneBuilder
   /** The top pane's share of the grid, 0..1. */
@@ -215,6 +217,7 @@ function panelDefinition<T, X extends ChartX>(
       group: cursorGroup,
       chartId,
       keys: plan.keys,
+      extent: plan.extent,
       mode: cursorResolution,
       pin: ctx.coarse,
     }),

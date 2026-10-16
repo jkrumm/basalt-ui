@@ -10,6 +10,7 @@ import { renderToString } from 'react-dom/server'
 import { chartCursor } from './cursor'
 import { hoverPlot } from '../../tests/support/hover-plot'
 import { DualPanel } from './DualPanel'
+import { Lines } from './Lines'
 import { ChartLegend } from './legend'
 import type { DualPanelProps } from './DualPanel'
 import { MirroredBars } from './MirroredBars'
@@ -230,6 +231,46 @@ describe('DualPanel as a cursor follower', () => {
     expect(rings(el, 'F')).toBeGreaterThan(0)
     await set(20)
     expect(rings(el, 'F')).toBe(0)
+  })
+
+  test('a real leader outside the panel domain: no crosshair, no dot, no tooltip; inside: drawn', async () => {
+    const leader = (from: number) => data.map((r, i) => ({ ...r, t: day(from + i) }))
+    const lead = {
+      ariaLabel: 'Leader',
+      x: (r: Row) => r.t,
+      series: [{ key: 'a', label: 'A', color: 'var(--vx-line)', getValue: (r: Row) => r.a }],
+      legend: false as const,
+    }
+    const el = await mount(
+      <>
+        <div id="L">
+          <Lines {...lead} data={leader(20)} />
+        </div>
+        <div id="F">
+          <DualPanel {...dualProps} ariaLabel="Follower" />
+        </div>
+      </>,
+    )
+    await hoverPlot(el.querySelector('#L svg'))
+    expect(rings(el, 'L')).toBeGreaterThan(0)
+    expect(rings(el, 'F')).toBe(0)
+    expect(el.querySelector('#F .ts-chart__crosshair-rule--x')).toBeNull()
+    expect(tooltips().length).toBe(1)
+    await act(async () =>
+      root?.render(
+        <>
+          <div id="L">
+            <Lines {...lead} data={leader(1)} />
+          </div>
+          <div id="F">
+            <DualPanel {...dualProps} ariaLabel="Follower" />
+          </div>
+        </>,
+      ),
+    )
+    await hoverPlot(el.querySelector('#L svg'))
+    expect(rings(el, 'F')).toBeGreaterThan(0)
+    expect(tooltips().length).toBe(1)
   })
 
   test('a cursor first seen outside its x-domain draws no crosshair either', async () => {

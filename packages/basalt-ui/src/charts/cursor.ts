@@ -130,7 +130,7 @@ const valueX = (state: CursorState): ChartValue | undefined =>
 
 /**
  * Snaps a foreign x value onto this chart's own x values; `null` = no snap (exact). A value outside
- * the rendered x extent (`extent`, else the keys' own) resolves to `undefined`: the chart claims no
+ * the rendered x extent (`extent`; a caller with none gets the keys' own) resolves to `undefined`: the chart claims no
  * datum at an x it does not cover, so it draws neither crosshair nor dots. The edges are inside.
  */
 function snapper(
@@ -144,8 +144,9 @@ function snapper(
   const ts = keys
     .map((k) => (k instanceof Date ? k.getTime() : (k as number)))
     .toSorted((a, b) => a - b)
-  const lo = extent?.[0] ?? (ts[0] as number)
-  const hi = extent?.[1] ?? (ts[ts.length - 1] as number)
+  const lo = extent?.[0] ?? ts[0]
+  const hi = extent?.[1] ?? ts.at(-1)
+  if (lo === undefined || hi === undefined) return null
   return (x) => {
     // Charts whose x value types differ never sync (the 1.x `DomainKind` partition).
     if (isDate !== x instanceof Date) return undefined
@@ -209,6 +210,15 @@ function snappedState(state: NonNullable<CursorState>, x: ChartValue | undefined
   return { ...state, value: { ...state.value, x } }
 }
 
+export type CursorViewOptions = {
+  group: string | undefined
+  chartId: string
+  keys: readonly ChartX[]
+  mode: CursorResolution
+  /** The x extent the chart renders (`xDomain`, else the data's); default: the keys' own. */
+  extent?: readonly [number, number] | undefined
+}
+
 /**
  * Each chart's view of its group's controller. Two jobs:
  *  - stamp what this chart publishes with its id (ownership, above);
@@ -220,14 +230,9 @@ function snappedState(state: NonNullable<CursorState>, x: ChartValue | undefined
  * is dropped a microtask after its last subscription ends, or after its creation if nothing
  * subscribed by then.
  */
-export function chartCursorView(
-  group: string | undefined,
-  chartId: string,
-  keys: readonly ChartX[],
-  mode: CursorResolution,
-  extent?: readonly [number, number],
-): ChartCursorController {
-  const config: Snap = { snap: snapper(keys, mode, extent), memo: new WeakMap() }
+export function chartCursorView(opts: CursorViewOptions): ChartCursorController {
+  const { group, chartId } = opts
+  const config: Snap = { snap: snapper(opts.keys, opts.mode, opts.extent), memo: new WeakMap() }
   if (isServer()) return makeView(group, chartId, () => config)
   const id = `${group ?? 'default'}\u0000${chartId}`
   const existing = views.get(id)
@@ -319,19 +324,15 @@ export const quietWhileFollowing: ChartTooltipExtension = {
   },
 }
 
-export function cursorBinding(opts: {
-  group: string | undefined
-  chartId: string
-  keys: readonly ChartX[]
-  mode: CursorResolution
-  /** The x extent the chart renders (`xDomain`, else the data's); default: the keys' own. */
-  extent?: readonly [number, number] | undefined
-  /** Activation pins and unpins the cursor — on for a coarse pointer (§ 9.6: tap to pin). */
-  pin: boolean
-}): ChartCursorBinding {
+export function cursorBinding(
+  opts: CursorViewOptions & {
+    /** Activation pins and unpins the cursor — on for a coarse pointer (§ 9.6: tap to pin). */
+    pin: boolean
+  },
+): ChartCursorBinding {
   return {
     use: cursorHost,
-    controller: chartCursorView(opts.group, opts.chartId, opts.keys, opts.mode, opts.extent),
+    controller: chartCursorView(opts),
     mode: 'focus',
     match: 'x',
     pin: opts.pin,
