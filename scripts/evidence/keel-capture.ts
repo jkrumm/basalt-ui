@@ -6,7 +6,7 @@
  * DOM, CSS, JS, assets or copy is written to a file; the only Keel-derived artefacts are PNGs and
  * JSON of numbers and role names. Sequential, one page at a time, with a pause between navigations.
  */
-import { mkdir, writeFile } from 'node:fs/promises'
+import { mkdir, rm, writeFile } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 import { parseArgs } from 'node:util'
 import { chromium } from 'playwright-core'
@@ -103,6 +103,7 @@ async function shootFull(page: Page, vp: Viewport, file: string): Promise<number
 
 async function captureRoutes(open: (v: Viewport, s: Scheme) => Promise<Page>): Promise<number> {
   const dir = join(OUT, 'routes')
+  await rm(dir, { recursive: true, force: true }) // an orphan PNG must never survive a re-run
   await mkdir(dir, { recursive: true })
   let count = 0
   for (const scheme of SCHEMES) {
@@ -779,6 +780,7 @@ async function runPatterns(
   open: (v: Viewport, s: Scheme) => Promise<Page>,
 ): Promise<Map<string, Record<string, Measured>>> {
   const dir = join(OUT, 'patterns')
+  await rm(dir, { recursive: true, force: true })
   await mkdir(dir, { recursive: true })
   const results = new Map<string, Record<string, Measured>>()
   const routes = [...new Set(PATTERNS.map((p) => p.route))]
@@ -797,28 +799,46 @@ async function runPatterns(
               `patterns ${path} ${key}: ${error instanceof Error ? error.message : error}`,
             )
           }
-          for (const def of defs) {
+          if (!ready && !failures.some((f) => f.startsWith(`patterns ${path} ${key}:`))) {
+            failures.push(`patterns ${path} ${key}: route did not render`)
+          }
+          const markUnverified = (def: PatternDef): void => {
             const slot = results.get(def.id) ?? {}
             results.set(def.id, slot)
+            slot[key] = { count: 0, metrics: {}, crop: null, status: 'unverified' }
+          }
+          for (const [n, def] of defs.entries()) {
             if (!ready) {
-              slot[key] = { count: 0, metrics: {}, crop: null, status: 'unverified' }
-              failures.push(`patterns ${def.id} ${key}: route did not render`)
+              markUnverified(def)
               continue
             }
+            const slot = results.get(def.id) ?? {}
+            results.set(def.id, slot)
             try {
               slot[key] = await measurePattern(page, def, vp, scheme, dir)
             } catch (error) {
-              slot[key] = { count: 0, metrics: {}, crop: null, status: 'unverified' }
+              markUnverified(def)
               failures.push(
                 `patterns ${def.id} ${key}: ${error instanceof Error ? error.message : error}`,
               )
             }
             console.log(
-              `patterns ${def.id} ${key}: ${slot[key].status ?? `${slot[key].count} visible`}`,
+              `patterns ${def.id} ${key}: ${slot[key]?.status ?? `${slot[key]?.count} visible`}`,
             )
             if (vp.mobile && def.mobileOpen) {
-              await page.keyboard.press('Escape')
-              await settle(page, { path, slug: path })
+              // Reset the overlay; if the page cannot be restored, the rest of the route is unknown.
+              try {
+                await page.keyboard.press('Escape')
+                ready = await settle(page, { path, slug: path })
+                if (!ready) throw new Error('route did not render after the overlay reset')
+              } catch (error) {
+                failures.push(
+                  `patterns ${path} ${key}: ${error instanceof Error ? error.message : error}`,
+                )
+                ready = false
+                for (const rest of defs.slice(n + 1)) markUnverified(rest)
+                break
+              }
             }
           }
         }
@@ -833,12 +853,43 @@ async function runPatterns(
 /** Keys whose value is a colour role; they legitimately differ between schemes. */
 const isColourKey = (k: string): boolean => k.endsWith('Role') || k === 'shadow'
 
+const schemeNote = (drift: string[], compared: boolean): string => {
+  if (drift.length > 0) return `Light scheme geometry differs: ${drift.join('; ')}.`
+  if (!compared) return 'Light scheme geometry was not compared (a slot is missing).'
+  return 'Light scheme changes colour only; geometry is identical.'
+}
+
+/** A state the crawl could not provoke: navigation is instant and no pending or skeleton view
+ * appeared, even with the network throttled. Unverified, not absent: nothing proves it does not exist. */
+const LOADING_STATE = {
+  id: 'loading-state',
+  name: 'Loading / pending state',
+  route: '/',
+  selectorNote: 'none: no pending or skeleton view could be provoked on any route',
+  instances: 0,
+  crops: {},
+  metrics: { desktop: {}, mobile: {} },
+  notes:
+    'Could not be observed: in-app navigation is instant and throttling the network produced no placeholder view. Treat as unverified, not as missing.',
+  slotStatus: {
+    'dark-desktop': 'unverified',
+    'dark-mobile': 'unverified',
+    'light-desktop': 'unverified',
+    'light-mobile': 'unverified',
+  },
+} as const
+
 async function writeInventory(results: Map<string, Record<string, Measured>>): Promise<void> {
   const patterns = PATTERNS.map((def) => {
     const slot = results.get(def.id) ?? {}
     const crops: Record<string, string> = {}
     for (const [key, m] of Object.entries(slot)) if (m.crop) crops[key] = m.crop
     const geometryDrift: string[] = []
+    const bothSchemesMeasured = VIEWPORTS.every(
+      (v) =>
+        Object.keys(slot[`dark-${v.name}`]?.metrics ?? {}).length > 0 &&
+        Object.keys(slot[`light-${v.name}`]?.metrics ?? {}).length > 0,
+    )
     for (const vp of VIEWPORTS) {
       const dark = slot[`dark-${vp.name}`]?.metrics ?? {}
       const light = slot[`light-${vp.name}`]?.metrics ?? {}
@@ -864,9 +915,7 @@ async function writeInventory(results: Map<string, Record<string, Measured>>): P
         ? `Not present on ${absent.join(' and ')} (collapsed or restructured at that width).`
         : '',
       unverified.length > 0 ? `Unverified slots: ${unverified.join(', ')}.` : '',
-      geometryDrift.length > 0
-        ? `Light scheme geometry differs: ${geometryDrift.join('; ')}.`
-        : 'Light scheme changes colour only; geometry is identical.',
+      schemeNote(geometryDrift, bothSchemesMeasured),
       lightRoles.length > 0 ? `Light background role: ${[...new Set(lightRoles)].join(', ')}.` : '',
     ]
       .filter(Boolean)
@@ -886,7 +935,11 @@ async function writeInventory(results: Map<string, Record<string, Measured>>): P
       ...(Object.keys(slotStatus).length > 0 ? { slotStatus } : {}),
     }
   })
-  const inventory = { capturedAt: new Date().toISOString(), origin: ORIGIN, patterns }
+  const inventory = {
+    capturedAt: new Date().toISOString(),
+    origin: ORIGIN,
+    patterns: [...patterns, LOADING_STATE],
+  }
   await writeFile(join(OUT, 'inventory.json'), JSON.stringify(inventory, null, 2) + '\n')
 }
 
@@ -1048,6 +1101,7 @@ async function surveyScales(open: (v: Viewport, s: Scheme) => Promise<Page>): Pr
     }
     const perRoute: Record<string, { charts: number; density: Survey['density'] }> = {}
     const routeCharts: Array<ChartSample & { route: string }> = []
+    const unverifiedRoutes: string[] = []
     try {
       for (const route of ROUTES) {
         try {
@@ -1067,6 +1121,7 @@ async function surveyScales(open: (v: Viewport, s: Scheme) => Promise<Page>): Pr
           perRoute[route.slug] = { charts: s.charts.length, density: s.density }
           console.log(`scales ${route.slug} ${vp.name}`)
         } catch (error) {
+          unverifiedRoutes.push(route.slug)
           failures.push(
             `scales ${route.slug} ${vp.name}: ${error instanceof Error ? error.message : error}`,
           )
@@ -1086,6 +1141,7 @@ async function surveyScales(open: (v: Viewport, s: Scheme) => Promise<Page>): Pr
       shadow: sorted(total.shadow),
       charts: routeCharts,
       perRoute,
+      unverifiedRoutes,
     }
   }
   await writeFile(

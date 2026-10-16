@@ -2,8 +2,12 @@
  * Licence guard for the Keel benchmark (docs/waves/PLAN.md Part 3): Keel is look-only, so the only
  * Keel-derived artefacts allowed in the tree are screenshots, numbers, colour roles and our own
  * prose. This test fails on markup, CSS, class-like tokens, stray strings in the data files, and any
- * file type that could carry code or assets. The denylist holds hashes, not the words themselves,
- * so the repo never commits the benchmark's copy to guard against it.
+ * file type that could carry code or assets.
+ *
+ * The name denylist holds sha256 prefixes, not the words, so the repo never commits the copy it
+ * guards against. It detects ACCIDENTAL copy of the names it knows; it is not a proof that no other
+ * Keel text is present, and it cannot catch a word nobody listed. Positive controls below prove
+ * each rule can fail.
  */
 import { describe, expect, test } from 'bun:test'
 import { createHash } from 'node:crypto'
@@ -28,18 +32,28 @@ const textFiles = [
 
 // ── Allowed shapes ───────────────────────────────────────────────────────────────────────────
 
-const SLUGS = new Set([
-  'root',
-  'crew',
-  'crew-scout',
+const SLUGS = [
+  'records-companies-oakline-freight',
+  'records-deals-table',
   'records-companies',
   'records-people',
   'records-deals',
-  'records-deals-table',
-  'records-companies-oakline-freight',
-  'work',
+  'crew-scout',
   'work-list',
-])
+  'root',
+  'crew',
+  'work',
+]
+const ROUTE_PATHS = [
+  '/records/companies/oakline-freight',
+  '/records/companies',
+  '/records/people',
+  '/records/deals',
+  '/crew#scout',
+  '/crew',
+  '/work',
+]
+const SLUG_SET = new Set(SLUGS)
 const ROLE =
   /^(none|transparent|surface|surface-raised|sunken|subtle|strong|ink|ink-muted|ink-subtle|ink-faint|accent|positive|negative|warning|categorical|on-[a-z]+|[a-z]+-(fill|tint)|hairline-(subtle|default|strong)( \(ring shadow\))?)$/
 const TYPE_KEY = /^[\d.]+px\/\d+\/(normal|[\d.]+px) (sans|mono)( caps)?( ls-?[\d.]+)?$/
@@ -112,19 +126,34 @@ const hash = (word: string): string => createHash('sha256').update(word).digest(
 
 // ── Prose rules ──────────────────────────────────────────────────────────────────────────────
 
-const stripPaths = (text: string): string =>
+/** Removes our own route paths and slugs (they legitimately contain route words) and link targets. */
+const stripRoutes = (text: string): string => {
+  let out = text.replace(/\]\([^)]*\)/g, ' ').replace(/https?:\/\/\S+/g, ' ')
+  for (const route of [...ROUTE_PATHS, ...SLUGS]) out = out.split(route).join(' ')
+  return out
+}
+
+const stripCode = (text: string): string =>
   text
     .replace(/`[^`]*`/g, ' ')
     .replace(/\]\([^)]*\)/g, ' ')
     .replace(/https?:\/\/\S+/g, ' ')
     .replace(/[\w./-]+\.(?:tsx?|css|md|json):[\d,–:-]+/g, ' ')
 
-const proseProblems = (text: string): string[] => {
+const hasName = (text: string, names: Set<string>): boolean =>
+  (
+    stripRoutes(text)
+      .toLowerCase()
+      .match(/[a-z]+/g) ?? []
+  ).some((word) => names.has(hash(word)))
+
+const proseProblems = (text: string, names: Set<string> = NAME_HASHES): string[] => {
   const problems: string[] = []
   if (/<\/?[a-zA-Z!]/.test(text)) problems.push('markup tag')
   if (/\b(class|classname|style|href|src)\s*=/i.test(text)) problems.push('attribute')
-  if (/\b[a-z-]{3,}\s*:\s*[a-z0-9#.%()-]+(?:\s+[a-z0-9#.%()-]+){0,3}\s*;/.test(stripPaths(text)))
+  if (/\b[a-z-]{3,}\s*:\s*[a-z0-9#.%()-]+(?:\s+[a-z0-9#.%()-]+){0,3}\s*;/.test(stripCode(text))) {
     problems.push('CSS declaration')
+  }
   if (/\{[^}\n]*:[^}\n]*;[^}\n]*\}/.test(text)) problems.push('CSS block')
   if (/[A-Za-z]+_[a-f0-9]{6,}|__[A-Za-z0-9]{5,}|-module__/.test(text)) problems.push('hashed class')
   if (
@@ -134,11 +163,7 @@ const proseProblems = (text: string): string[] => {
   ) {
     problems.push('utility class')
   }
-  for (const word of stripPaths(text)
-    .toLowerCase()
-    .match(/[a-z]+/g) ?? []) {
-    if (NAME_HASHES.has(hash(word))) problems.push('benchmark name or label')
-  }
+  if (hasName(text, names)) problems.push('benchmark name or label')
   return problems
 }
 
@@ -146,34 +171,58 @@ const proseProblems = (text: string): string[] => {
 
 type Json = null | boolean | number | string | Json[] | { [key: string]: Json }
 
-/** Every string key or value outside the prose keys must be a number, role, path or known shape. */
-const dataProblems = (value: Json, path: string, accept: (s: string) => boolean): string[] => {
-  if (typeof value === 'string') return accept(value) ? [] : [`${path}: unexpected string`]
-  if (Array.isArray(value)) return value.flatMap((v, i) => dataProblems(v, `${path}[${i}]`, accept))
+const keyShapeOk = (k: string): boolean =>
+  SLUG_SET.has(k) ||
+  /^[a-zA-Z]+$/.test(k) ||
+  TYPE_KEY.test(k) ||
+  NUMERIC_KEY.test(k) ||
+  k === 'pill' ||
+  SLOT.test(k) ||
+  /^\d+x\d+$/.test(k)
+
+/** Every string key or value outside the prose keys must be a number, role, path or known shape,
+ * and no key or value may carry a denylisted name. */
+const dataProblems = (
+  value: Json,
+  path: string,
+  accept: (s: string) => boolean,
+  names: Set<string> = NAME_HASHES,
+): string[] => {
+  if (typeof value === 'string') {
+    const own = accept(value) ? [] : [`${path}: unexpected string`]
+    return hasName(value, names) ? own.concat(`${path}: benchmark name or label`) : own
+  }
+  if (Array.isArray(value)) {
+    return value.flatMap((v, i) => dataProblems(v, `${path}[${i}]`, accept, names))
+  }
   if (value && typeof value === 'object') {
     return Object.entries(value).flatMap(([k, v]) => {
+      const keyProblems: string[] = []
+      if (!keyShapeOk(k)) keyProblems.push(`${path}: unexpected key shape`)
+      if (hasName(k, names)) keyProblems.push(`${path}: benchmark name or label in a key`)
       if (PROSE_KEYS.has(k) && typeof v === 'string') {
-        return proseProblems(v)
-          .concat(/["“”]/.test(v) ? ['quoted string'] : [])
-          .map((p) => `${path}.${k}: ${p}`)
+        const prose = proseProblems(v, names).concat(/["“”]/.test(v) ? ['quoted string'] : [])
+        return keyProblems.concat(prose.map((p) => `${path}.${k}: ${p}`))
       }
-      const keyOk =
-        SLUGS.has(k) ||
-        /^[a-zA-Z]+$/.test(k) ||
-        TYPE_KEY.test(k) ||
-        NUMERIC_KEY.test(k) ||
-        k === 'pill' ||
-        SLOT.test(k) ||
-        /^[\d]+x[\d]+$/.test(k)
-      const own = keyOk ? [] : [`${path}: unexpected key ${k.length > 40 ? 'too long' : 'shape'}`]
-      return own.concat(dataProblems(v, `${path}.${k}`, accept))
+      return keyProblems.concat(dataProblems(v, `${path}.${k}`, accept, names))
     })
   }
   return []
 }
 
 const acceptScalesString = (s: string): boolean =>
-  s === ORIGIN || SLUGS.has(s) || /^\d+x\d+$/.test(s) || /^\d{4}-\d{2}-\d{2}T[\d:.]+Z$/.test(s)
+  s === ORIGIN || SLUG_SET.has(s) || /^\d+x\d+$/.test(s) || /^\d{4}-\d{2}-\d{2}T[\d:.]+Z$/.test(s)
+
+const acceptInventoryString = (s: string): boolean =>
+  s === ORIGIN ||
+  ROLE.test(s) ||
+  CROP.test(s) ||
+  /^(absent|unverified)$/.test(s) ||
+  /^[a-z0-9]+(-[a-z0-9]+)*$/.test(s) ||
+  /^\/[a-z0-9/-]*$/.test(s) ||
+  /^\d{4}-\d{2}-\d{2}T[\d:.]+Z$/.test(s)
+
+const acceptAll = (): boolean => true
 
 const read = (path: string): string => readFileSync(path, 'utf8')
 
@@ -183,10 +232,9 @@ describe('keel capture licence boundary', () => {
     expect(bad).toEqual([])
   })
 
-  test('markdown and json prose carries no markup, CSS, class tokens or benchmark names', () => {
+  test('markdown and raw json text carry no markup, CSS, class tokens or benchmark names', () => {
     for (const file of textFiles) {
-      const text = file.endsWith('.json') ? '' : read(file)
-      expect({ file, problems: proseProblems(text) }).toEqual({ file, problems: [] })
+      expect({ file, problems: proseProblems(read(file)) }).toEqual({ file, problems: [] })
     }
   })
 
@@ -203,15 +251,9 @@ describe('keel capture licence boundary', () => {
     }
     expect(inventory.origin).toBe(ORIGIN)
     expect(Number.isNaN(Date.parse(inventory.capturedAt))).toBe(false)
-    const accept = (s: string): boolean =>
-      s === ORIGIN ||
-      ROLE.test(s) ||
-      CROP.test(s) ||
-      /^(absent|unverified)$/.test(s) ||
-      /^[a-z0-9]+(-[a-z0-9]+)*$/.test(s) ||
-      /^\/[a-z0-9/-]*$/.test(s) ||
-      /^\d{4}-\d{2}-\d{2}T[\d:.]+Z$/.test(s)
-    expect(dataProblems(inventory as unknown as Json, 'inventory', accept)).toEqual([])
+    expect(dataProblems(inventory as unknown as Json, 'inventory', acceptInventoryString)).toEqual(
+      [],
+    )
     for (const pattern of inventory.patterns) {
       expect(pattern.id).toMatch(/^[a-z0-9]+(-[a-z0-9]+)*$/)
       for (const [slot, crop] of Object.entries(pattern.crops)) {
@@ -229,5 +271,62 @@ describe('keel capture licence boundary', () => {
   test('scales.json holds histograms of numbers and slug-keyed counts only', () => {
     const scales = JSON.parse(read(join(KEEL, 'scales.json'))) as Json
     expect(dataProblems(scales, 'scales', acceptScalesString)).toEqual([])
+  })
+
+  test('every png under keel/ is referenced by the route index or the inventory', () => {
+    const referenced = read(join(KEEL, 'ROUTES.md')) + read(join(KEEL, 'inventory.json'))
+    const orphans = files
+      .filter((f) => extname(f) === '.png')
+      .map((f) => f.slice(KEEL.length + 1))
+      .filter(
+        (rel) => !referenced.includes(rel) && !referenced.includes(rel.replace(/^routes\//, '')),
+      )
+    expect(orphans).toEqual([])
+  })
+})
+
+describe('guard positive controls', () => {
+  // A throwaway word stands in for a denylisted name, so the mechanism is tested without the list.
+  const fake = new Set([hash('zorblax')])
+  const mustFail: Array<[string, string]> = [
+    ['markup tag', 'a <div> here'],
+    ['attribute', 'see class="x"'],
+    ['utility class', 'uses px-4 and gap-2'],
+    ['hashed class', 'token geist_a71539c9 here'],
+    ['CSS declaration', 'color: red;'],
+    ['CSS block', 'a { color: red; } b'],
+    ['benchmark name or label', 'the Zorblax tile'],
+    ['benchmark name or label', 'the `zorblax` tile'],
+  ]
+  for (const [rule, text] of mustFail) {
+    test(`prose: ${rule} is caught in "${text}"`, () => {
+      expect(proseProblems(text, fake)).toContain(rule)
+    })
+  }
+
+  test('prose: a clean sentence passes', () => {
+    expect(proseProblems('A card grid with a stat panel; padding 12 and radius 8.', fake)).toEqual(
+      [],
+    )
+  })
+
+  test('json: a denylisted word is caught in a value, a key and raw text', () => {
+    expect(dataProblems({ id: 'zorblax' }, 'j', acceptAll, fake)).toHaveLength(1)
+    expect(dataProblems({ zorblax: 1 }, 'j', acceptAll, fake).length).toBeGreaterThan(0)
+    expect(proseProblems(JSON.stringify({ notes: 'the zorblax tile' }), fake)).toContain(
+      'benchmark name or label',
+    )
+    expect(
+      dataProblems({ notes: 'the zorblax tile' }, 'j', acceptAll, fake).length,
+    ).toBeGreaterThan(0)
+  })
+
+  test('json: an unexpected string or key shape is caught', () => {
+    expect(dataProblems({ id: 'Some Copy Text' }, 'j', acceptInventoryString, fake)).toHaveLength(1)
+    expect(dataProblems({ 'some key!': 1 }, 'j', acceptInventoryString, fake)).toHaveLength(1)
+  })
+
+  test('the real denylist is populated', () => {
+    expect(NAME_HASHES.size).toBeGreaterThan(40)
   })
 })
