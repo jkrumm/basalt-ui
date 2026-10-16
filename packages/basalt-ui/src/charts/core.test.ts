@@ -196,6 +196,82 @@ describe('cursor groups', () => {
     chartCursor('lead-in').setState(null)
   })
 
+  test('snap candidates are the keys inside the extent, never a datum outside it', () => {
+    const off = chartCursor('cands').subscribe(() => {})
+    const at = (x: number) =>
+      chartCursor('cands').setState({
+        anchor: 'value',
+        value: { x },
+        source: 'programmatic',
+        pinned: false,
+      })
+    const xOf = (view: ReturnType<typeof chartCursorView>) => {
+      const st = view.getState()
+      return st?.anchor === 'value' ? st.value.x : null
+    }
+    const near = chartCursorView({
+      group: 'cands',
+      chartId: 'c-near',
+      keys: [1, 2, 5.001],
+      mode: 'nearest',
+      extent: [1, 5],
+    })
+    at(4.9)
+    expect(xOf(near)).toBe(2)
+    const lead = chartCursorView({
+      group: 'cands',
+      chartId: 'c-lead',
+      keys: [-10, 1.8],
+      mode: 'leading',
+      extent: [1, 2],
+    })
+    at(1.5)
+    expect(xOf(lead)).toBe(1.8)
+    const none = chartCursorView({
+      group: 'cands',
+      chartId: 'c-none',
+      keys: [-10, 5],
+      mode: 'nearest',
+      extent: [1, 2],
+    })
+    at(1.5)
+    expect(none.getState()).toBeNull()
+    const exact = chartCursorView({
+      group: 'cands',
+      chartId: 'c-exact',
+      keys: [-10, 5],
+      mode: 'exact',
+      extent: [1, 2],
+    })
+    expect(xOf(exact)).toBe(1.5)
+    off()
+    chartCursor('cands').setState(null)
+  })
+
+  test('no keys and an explicit extent still gate on the extent', () => {
+    const off = chartCursor('empty').subscribe(() => {})
+    const view = chartCursorView({
+      group: 'empty',
+      chartId: 'e',
+      keys: [],
+      mode: 'nearest',
+      extent: [1, 2],
+    })
+    const at = (x: number) =>
+      chartCursor('empty').setState({
+        anchor: 'value',
+        value: { x },
+        source: 'programmatic',
+        pinned: false,
+      })
+    at(5)
+    expect(view.getState()).toBeNull()
+    at(1.5)
+    expect(view.getState()).toBeNull() // no datum to land on
+    off()
+    chartCursor('empty').setState(null)
+  })
+
   test('charts whose x value types differ never sync', () => {
     const off = chartCursor('kinds').subscribe(() => {})
     chartCursor('kinds').setState(programmatic(day(3)))

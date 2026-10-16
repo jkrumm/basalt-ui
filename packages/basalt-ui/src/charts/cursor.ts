@@ -129,9 +129,11 @@ const valueX = (state: CursorState): ChartValue | undefined =>
   state?.anchor === 'value' ? state.value.x : undefined
 
 /**
- * Snaps a foreign x value onto this chart's own x values; `null` = no snap (exact). A value outside
- * the rendered x extent (`extent`; a caller with none gets the keys' own) resolves to `undefined`: the chart claims no
- * datum at an x it does not cover, so it draws neither crosshair nor dots. The edges are inside.
+ * Snaps a foreign x value onto this chart's own x values; `null` = no snap (a string x). A value
+ * outside the rendered x extent (`extent`; a caller with none gets the keys' own) resolves to
+ * `undefined`: the chart claims no datum at an x it does not cover, so it draws neither crosshair
+ * nor dots. The edges are inside. Only keys inside the extent are candidates, so a snap never lands
+ * on a datum the chart does not render; with none inside, a snapping mode resolves to `undefined`.
  */
 function snapper(
   keys: readonly ChartX[],
@@ -139,31 +141,34 @@ function snapper(
   extent?: readonly [number, number],
 ): ((x: ChartValue) => ChartValue | undefined) | null {
   const first = keys[0]
-  if (first === undefined || typeof first === 'string') return null
-  const isDate = first instanceof Date
+  if (typeof first === 'string') return null
   const ts = keys
     .map((k) => (k instanceof Date ? k.getTime() : (k as number)))
     .toSorted((a, b) => a - b)
-  const lo = extent?.[0] ?? ts[0]
-  const hi = extent?.[1] ?? ts.at(-1)
+  const [lo, hi] = extent ?? [ts[0], ts.at(-1)]
   if (lo === undefined || hi === undefined) return null
+  const inside = ts.filter((k) => k >= lo && k <= hi)
+  // No keys to read the x type from (an extent-only chart): either type is compared by its time.
+  const isDate = first === undefined ? undefined : first instanceof Date
   return (x) => {
     // Charts whose x value types differ never sync (the 1.x `DomainKind` partition).
-    if (isDate !== x instanceof Date) return undefined
-    if (!isDate && typeof x !== 'number') return undefined
-    const t = x instanceof Date ? x.getTime() : (x as number)
+    if (isDate !== undefined && isDate !== x instanceof Date) return undefined
+    if (!(x instanceof Date) && typeof x !== 'number') return undefined
+    const t = x instanceof Date ? x.getTime() : x
     if (t < lo || t > hi) return undefined
     if (mode === 'exact') return x
-    let i = ts.findLastIndex((k) => k <= t)
+    const last = inside.length - 1
+    if (last < 0) return undefined
+    let i = inside.findLastIndex((k) => k <= t)
     if (
       mode === 'nearest' &&
-      i < ts.length - 1 &&
-      (i < 0 || (ts[i + 1] as number) - t < t - (ts[i] as number))
+      i < last &&
+      (i < 0 || (inside[i + 1] as number) - t < t - (inside[i] as number))
     )
       i += 1
-    const snapped = ts[Math.max(i, 0)] as number
+    const snapped = inside[Math.max(i, 0)] as number
     if (snapped === t) return x
-    return isDate ? new Date(snapped) : snapped
+    return x instanceof Date ? new Date(snapped) : snapped
   }
 }
 
