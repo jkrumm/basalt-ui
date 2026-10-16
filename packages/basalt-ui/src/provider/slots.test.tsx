@@ -176,4 +176,61 @@ describe('provider slots', () => {
       modals.closeAll()
     })
   })
+
+  test('overlays.close() during a pending late mount cancels the open', async () => {
+    defineOverlays({ note: { title: 'Nope', render: () => <p>cancelled-body</p> } })
+    ;(overlays.open as (key: string, props: unknown) => void)('note', {})
+    overlays.close()
+    render(<BasaltProvider router={testRouter('cancel')} />)
+    await screen.findByText('cancel')
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 50))
+    })
+    expect(screen.queryByText('cancelled-body')).toBeNull()
+  })
+
+  test('overlays.close() during a pending confirm resolves it false and runs onCancel', async () => {
+    let cancels = 0
+    const answer = overlays.confirm({
+      title: 'Cancelled?',
+      onConfirm: () => {},
+      onCancel: () => void cancels++,
+    })
+    overlays.close()
+    render(<BasaltProvider router={testRouter('cancel2')} />)
+    expect(await answer).toBe(false)
+    expect(cancels).toBe(1)
+    expect(screen.queryByText('Cancelled?')).toBeNull()
+  })
+
+  test('an overlay whose render throws is logged, never an unhandled rejection', async () => {
+    render(<BasaltProvider router={testRouter('boom')} />)
+    await screen.findByText('boom')
+    defineOverlays({
+      bad: {
+        render: () => {
+          throw new Error('render exploded')
+        },
+      },
+    })
+    const logged = spyOn(console, 'error').mockImplementation(() => {})
+    const unhandled: unknown[] = []
+    // Bun's `process` typings only know one event; the Node emitter underneath takes this one.
+    const emitter = process as unknown as NodeJS.EventEmitter
+    const onUnhandled = (e: unknown) => void unhandled.push(e)
+    emitter.on('unhandledRejection', onUnhandled)
+    try {
+      ;(overlays.open as (key: string, props: unknown) => void)('bad', {})
+      await act(async () => {
+        await new Promise((r) => setTimeout(r, 50))
+      })
+      expect(
+        logged.mock.calls.some((c) => String(c[0]).startsWith('[basalt] overlay failed')),
+      ).toBe(true)
+      expect(unhandled).toEqual([])
+    } finally {
+      emitter.removeListener('unhandledRejection', onUnhandled)
+      logged.mockRestore()
+    }
+  })
 })

@@ -11,7 +11,7 @@ import type { ComponentType } from 'react'
 import type { AnyRouter } from '@tanstack/react-router'
 import type { BasaltDevDockTool } from '../dev-dock'
 import type { FlatNavItem } from '../router-tanstack/nav-stash'
-import { createNotifier } from './notifier'
+import { createLiveCounter, createNotifier } from './notifier'
 
 /** What the provider hands every mount; a mount that needs none of it ignores it. */
 export type SlotProps = {
@@ -48,20 +48,12 @@ export function useSlots(): Slots {
 
 // ── Mounted providers ─────────────────────────────────────────────────────────
 
-let mountedProviders = 0
+const providers = createLiveCounter()
 
-/** @internal — `BasaltProvider` declares itself mounted; returns the retraction. Idempotent per call. */
-export function trackProvider(): () => void {
-  mountedProviders++
-  let released = false
-  return () => {
-    if (released) return
-    released = true
-    mountedProviders--
-  }
-}
+/** @internal — `BasaltProvider` declares itself mounted; returns the retraction. */
+export const trackProvider = providers.acquire
 
 /** @internal — whether a `BasaltProvider` is mounted to commit a slot registered right now. */
 export function hasMountedProvider(): boolean {
-  return mountedProviders > 0
+  return providers.count() > 0
 }

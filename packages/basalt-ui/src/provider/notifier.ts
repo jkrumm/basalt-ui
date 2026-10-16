@@ -17,3 +17,36 @@ export function createNotifier(): Notifier {
     },
   }
 }
+
+export type LiveCounter = {
+  count: () => number
+  /** Count one more live thing, notify subscribers, and return its retraction (idempotent). */
+  acquire: () => () => void
+  subscribe: Notifier['subscribe']
+}
+
+/**
+ * A COUNTER of live things — not a flag: two overlapping mounts are normal (a route swap mounts the
+ * next one before unmounting the previous), and a last-write-wins boolean would report the OLD one's
+ * teardown as "none live" while the new one serves.
+ */
+export function createLiveCounter(): LiveCounter {
+  let live = 0
+  const changes = createNotifier()
+  return {
+    count: () => live,
+    subscribe: changes.subscribe,
+    acquire() {
+      live++
+      changes.notify()
+      let released = false
+      return () => {
+        // A cleanup React runs twice (StrictMode remount) must not drive the count below the real one.
+        if (released) return
+        released = true
+        live--
+        changes.notify()
+      }
+    },
+  }
+}
