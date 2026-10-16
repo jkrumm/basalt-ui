@@ -1,5 +1,5 @@
 /**
- * Installs basalt-ui's OWN shipped rules + skills into this repo's `/.claude/` — the dogfood half
+ * Installs basalt-ui's OWN shipped rules, skills and subagents into this repo's `/.claude/` — the dogfood half
  * of C2 (`.claude/maturation/consolidation-plan.md`, "Dogfood"). Before this script, an agent
  * editing `packages/basalt-ui/src/**` never saw the 1,000+ lines of law the package ships to every
  * consumer (`agent/rules/*.md`, each skill's `agent/skills/<name>/SKILL.md`) — this repo carried
@@ -27,11 +27,20 @@ const RULES_SRC = join(PKG_ROOT, 'agent/rules')
 const RULES_DEST = join(REPO_ROOT, '.claude/rules')
 const SKILLS_SRC = join(PKG_ROOT, 'agent/skills')
 const SKILLS_DEST = join(REPO_ROOT, '.claude/skills')
+const AGENTS_SRC = join(PKG_ROOT, 'agent/agents')
+const AGENTS_DEST = join(REPO_ROOT, '.claude/agents')
 
 function syncRules(): number {
   mkdirSync(RULES_DEST, { recursive: true })
   const files = readdirSync(RULES_SRC).filter((name) => name.endsWith('.md'))
   for (const name of files) copyFileSync(join(RULES_SRC, name), join(RULES_DEST, name))
+  return files.length
+}
+
+function syncAgents(): number {
+  mkdirSync(AGENTS_DEST, { recursive: true })
+  const files = readdirSync(AGENTS_SRC).filter((name) => name.endsWith('.md'))
+  for (const name of files) copyFileSync(join(AGENTS_SRC, name), join(AGENTS_DEST, name))
   return files.length
 }
 
@@ -66,6 +75,17 @@ function pruneOrphans(): number {
     }
   }
 
+  if (existsSync(AGENTS_DEST)) {
+    const installed = readdirSync(AGENTS_DEST).filter(
+      (name) => name.startsWith('basalt-') && name.endsWith('.md'),
+    )
+    for (const name of installed) {
+      if (existsSync(join(AGENTS_SRC, name))) continue
+      rmSync(join(AGENTS_DEST, name))
+      pruned++
+    }
+  }
+
   if (existsSync(SKILLS_DEST)) {
     const installed = readdirSync(SKILLS_DEST, { withFileTypes: true }).filter(
       (e) => e.isDirectory() && e.name.startsWith('basalt-'),
@@ -83,9 +103,10 @@ function pruneOrphans(): number {
 function main(): void {
   const ruleCount = syncRules()
   const skillCount = syncSkills()
+  const agentCount = syncAgents()
   const prunedCount = pruneOrphans()
   console.log(
-    `✓ sync-self: ${ruleCount} rule(s) → .claude/rules, ${skillCount} skill(s) → .claude/skills` +
+    `✓ sync-self: ${ruleCount} rule(s) → .claude/rules, ${skillCount} skill(s) → .claude/skills, ${agentCount} agent(s) → .claude/agents` +
       (prunedCount > 0 ? `, ${prunedCount} orphan(s) pruned` : ''),
   )
 }

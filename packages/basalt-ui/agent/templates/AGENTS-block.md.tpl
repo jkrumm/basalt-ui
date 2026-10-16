@@ -18,6 +18,13 @@ the one exception. In a workspace: the app package's `node_modules/.bin/basalt-u
 **Before guessing an import, read the installed `llms.txt`** at the install directory (in a workspace,
 under the depending package; `basalt-ui doctor` prints where; a fresh worktree needs `bun install` first).
 
+**Skills and subagent** (installed in `.claude/`; invoke by name):
+
+- `/basalt-app`: scaffold, wire, upgrade or verify the app (`init`, `doctor`, `sync`).
+- `/basalt-design`: build or restyle a screen — scenario, `basalt-ui shot` rounds, review, revise.
+- `/basalt-charts`: add or extend a chart, register its series colors.
+- `basalt-design-reviewer` (subagent): scores a `basalt-ui shot` out dir per component; run it after every shot round, never on your own work.
+
 @./DESIGN.md
 
 **Restraint override (supersedes `/frontend-design`).** This is a calm, data-dense professional

@@ -1043,8 +1043,11 @@ The `basalt-ui/router-tanstack` subpath is **removed** in 2.x, not moved: an imp
 
 ## Unreleased
 
-_Nothing yet. Author the next section under this heading as `## Unreleased — <title>`; the
-release renames it and opens a new one here._
+## Unreleased — the reviewer subagent and the ViewTabs law
+
+- **Behaviour: `basalt/bound-control-outside-home` now reports a `ViewTabs` in `PageBar` `actions` / `filters` / `filtersEnd` / `sync`, in `Section.actions`, or inside a `FilterSet`.** It was accepted there (any slot was a home). A `ViewTabs` that switches a page or a section belongs in a `tabs` slot (`PageBar.tabs`, `Section.tabs`); one that switches only a card's view belongs in that `ChartCard` / `WidgetHeader` `actions` slot. **Fix: move it to `tabs`.** Only a `ViewTabs` written directly in the slot is seen; a hoisted binding is not.
+- **Behaviour: `sync` renders every rule's `paths:` from `basalt.roots`** (one `'<root>/**'` per root; default `src/**`). The shipped `basalt-charts.md` no longer matches `**/charts/**`. After upgrading, `sync --check` reports the rules as drifted until you run `sync`; a monorepo's rules now load for `apps/web/src/**` instead of never.
+- **Added: `sync` / `init` install the `basalt-design-reviewer` subagent** at `.claude/agents/basalt-design-reviewer.md`, and the managed AGENTS.md block names the skills and the subagent. A `.claude/agents/basalt-*.md` that basalt stops shipping is retired like a rule.
 
 ## 2.14.0 — the format layer, the filter family and chart fixes
 
