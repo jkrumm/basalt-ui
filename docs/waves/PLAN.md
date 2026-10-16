@@ -781,9 +781,9 @@ weatherorb's provider spike on 2.11.1 put `/map` over its ADR 0020 gzip bar befo
 orchestrator re-measures on the newest 2.x in its Wave 42.
 
 - [x] File rows 113–118 in `argo-friction.md`.
-- [ ] #285: `BasaltProvider` bundles Spotlight, modals and hotkeys only when `defineNav` / `defineCommands` /
+- [x] #285: `BasaltProvider` bundles Spotlight, modals and hotkeys only when `defineNav` / `defineCommands` /
       `defineOverlays` ran; `ModalsProvider` becomes a sibling (rows 114, 118).
-- [ ] #286: `doctor` accepts a pathless-layout provider and checks the exported root route's typed context;
+- [x] #286: `doctor` accepts a pathless-layout provider and checks the exported root route's typed context;
       `motion` peer caret (rows 113, 115, 116). Row 117 is closed by design (TS project references).
 - [ ] Release the minor through `make release`, then tell weatherorb's orchestrator the version.
 
