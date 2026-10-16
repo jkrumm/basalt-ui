@@ -29,14 +29,18 @@ import { tmpdir } from 'node:os'
 import { join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { classify, init, MANIFEST_PATH, normalizeForLedger, sha256, sync } from './index.ts'
+import {
+  classify,
+  init,
+  MANIFEST_PATH,
+  normalizeForLedger,
+  renderRulePaths,
+  sha256,
+  sync,
+} from './index.ts'
 
 const PKG_ROOT = fileURLToPath(new URL('../../', import.meta.url))
-// The fixture has no `basalt.roots`, so the installed copy renders the default root's `paths:`.
-const SHIPPED_RULE = readFileSync(
-  resolve(PKG_ROOT, 'agent/rules/basalt-tokens.md'),
-  'utf8',
-).replace("'**/src/**'", "'src/**'")
+const RULE_SOURCE = readFileSync(resolve(PKG_ROOT, 'agent/rules/basalt-tokens.md'), 'utf8')
 const SHIPPED_SKILL = readFileSync(resolve(PKG_ROOT, 'agent/skills/basalt-design/SKILL.md'), 'utf8')
 
 let dir: string
@@ -52,6 +56,12 @@ afterEach(() => {
 
 function read(relPath: string): string {
   return readFileSync(join(dir, relPath), 'utf8')
+}
+
+/** The tokens rule as the installer renders it for the fixture's current `basalt.roots`. */
+function shippedRule(): string {
+  const pkg = JSON.parse(read('package.json')) as { basalt?: { roots?: string[] } }
+  return renderRulePaths(RULE_SOURCE, pkg.basalt?.roots ?? [])
 }
 
 function write(relPath: string, content: string): void {
@@ -109,7 +119,7 @@ function capture(fn: () => number): { code: number; log: string } {
 describe('managed vs seed placement', () => {
   it('init places rules AND skills as managed files, plus the toolchain seeds', () => {
     silenced(() => init(dir))
-    expect(read('.claude/rules/basalt-tokens.md')).toBe(SHIPPED_RULE)
+    expect(read('.claude/rules/basalt-tokens.md')).toBe(shippedRule())
     expect(read('.claude/skills/basalt-design/SKILL.md')).toBe(SHIPPED_SKILL)
     expect(existsSync(join(dir, '.claude/skills/basalt-app/SKILL.md'))).toBe(true)
     expect(existsSync(join(dir, '.claude/skills/basalt-charts/SKILL.md'))).toBe(true)
@@ -142,7 +152,7 @@ describe('managed vs seed placement', () => {
     write('DESIGN.md', '# my design\n')
     write('lefthook.yml', 'pre-commit:\n  commands: {}\n')
     silenced(() => sync({ force: true }, dir))
-    expect(read('.claude/rules/basalt-tokens.md')).toBe(SHIPPED_RULE)
+    expect(read('.claude/rules/basalt-tokens.md')).toBe(shippedRule())
     expect(read('.claude/skills/basalt-design/SKILL.md')).toBe(SHIPPED_SKILL)
     expect(read('DESIGN.md')).toBe('# my design\n')
     expect(read('lefthook.yml')).toBe('pre-commit:\n  commands: {}\n')
@@ -165,7 +175,7 @@ describe('managed vs seed placement', () => {
     expect(read('.claude/rules/basalt-tokens.md')).toBe('# predates basalt\n')
     expect(silenced(() => sync({ check: true }, dir))).toBe(1)
     silenced(() => sync({ force: true }, dir))
-    expect(read('.claude/rules/basalt-tokens.md')).toBe(SHIPPED_RULE)
+    expect(read('.claude/rules/basalt-tokens.md')).toBe(shippedRule())
   })
 })
 

@@ -23,91 +23,49 @@ import { join } from 'node:path'
 const PKG_ROOT = join(import.meta.dir, '..')
 const REPO_ROOT = join(PKG_ROOT, '..', '..')
 
-const RULES_SRC = join(PKG_ROOT, 'agent/rules')
-const RULES_DEST = join(REPO_ROOT, '.claude/rules')
-const SKILLS_SRC = join(PKG_ROOT, 'agent/skills')
-const SKILLS_DEST = join(REPO_ROOT, '.claude/skills')
-const AGENTS_SRC = join(PKG_ROOT, 'agent/agents')
-const AGENTS_DEST = join(REPO_ROOT, '.claude/agents')
-
-function syncRules(): number {
-  mkdirSync(RULES_DEST, { recursive: true })
-  const files = readdirSync(RULES_SRC).filter((name) => name.endsWith('.md'))
-  for (const name of files) copyFileSync(join(RULES_SRC, name), join(RULES_DEST, name))
-  return files.length
-}
-
-function syncAgents(): number {
-  mkdirSync(AGENTS_DEST, { recursive: true })
-  const files = readdirSync(AGENTS_SRC).filter((name) => name.endsWith('.md'))
-  for (const name of files) copyFileSync(join(AGENTS_SRC, name), join(AGENTS_DEST, name))
-  return files.length
-}
-
-function syncSkills(): number {
-  const skillDirs = readdirSync(SKILLS_SRC, { withFileTypes: true }).filter((e) => e.isDirectory())
-  for (const dir of skillDirs) {
-    const dest = join(SKILLS_DEST, dir.name)
-    mkdirSync(dest, { recursive: true })
-    copyFileSync(join(SKILLS_SRC, dir.name, 'SKILL.md'), join(dest, 'SKILL.md'))
-  }
-  return skillDirs.length
-}
-
 /**
- * Deletes `.claude/rules/basalt-*.md` files and `.claude/skills/basalt-*` directories whose
- * source no longer exists under `agent/`. A plain copy (see the module doc) never removes a stale
- * file on its own — a rule or skill dropped from `agent/rules`/`agent/skills` stayed installed
- * here forever, which is how a retired doctrine kept being read as live long after it stopped
- * shipping.
+ * One row per installed namespace. `unit` is what a source entry is: a file (`rule.md`) or a
+ * directory holding `SKILL.md`. Rules, skills and agents share one copy and one prune.
  */
-function pruneOrphans(): number {
-  let pruned = 0
+const NAMESPACES = [
+  { name: 'rule', dir: 'rules', unit: 'file' },
+  { name: 'skill', dir: 'skills', unit: 'dir' },
+  { name: 'agent', dir: 'agents', unit: 'file' },
+] as const
 
-  if (existsSync(RULES_DEST)) {
-    const installed = readdirSync(RULES_DEST).filter(
-      (name) => name.startsWith('basalt-') && name.endsWith('.md'),
-    )
-    for (const name of installed) {
-      if (existsSync(join(RULES_SRC, name))) continue
-      rmSync(join(RULES_DEST, name))
-      pruned++
+function entries(root: string, unit: 'file' | 'dir'): string[] {
+  if (!existsSync(root)) return []
+  return readdirSync(root, { withFileTypes: true })
+    .filter((e) => (unit === 'dir' ? e.isDirectory() : e.name.endsWith('.md')))
+    .map((e) => e.name)
+}
+
+/** Copy every shipped entry into `/.claude/<dir>`, then delete `basalt-*` entries with no source. */
+function syncNamespace(dir: string, unit: 'file' | 'dir'): { copied: number; pruned: number } {
+  const src = join(PKG_ROOT, 'agent', dir)
+  const dest = join(REPO_ROOT, '.claude', dir)
+  const shipped = entries(src, unit)
+  mkdirSync(dest, { recursive: true })
+  for (const name of shipped) {
+    if (unit === 'file') copyFileSync(join(src, name), join(dest, name))
+    else {
+      mkdirSync(join(dest, name), { recursive: true })
+      copyFileSync(join(src, name, 'SKILL.md'), join(dest, name, 'SKILL.md'))
     }
   }
-
-  if (existsSync(AGENTS_DEST)) {
-    const installed = readdirSync(AGENTS_DEST).filter(
-      (name) => name.startsWith('basalt-') && name.endsWith('.md'),
-    )
-    for (const name of installed) {
-      if (existsSync(join(AGENTS_SRC, name))) continue
-      rmSync(join(AGENTS_DEST, name))
-      pruned++
-    }
-  }
-
-  if (existsSync(SKILLS_DEST)) {
-    const installed = readdirSync(SKILLS_DEST, { withFileTypes: true }).filter(
-      (e) => e.isDirectory() && e.name.startsWith('basalt-'),
-    )
-    for (const dir of installed) {
-      if (existsSync(join(SKILLS_SRC, dir.name))) continue
-      rmSync(join(SKILLS_DEST, dir.name), { recursive: true })
-      pruned++
-    }
-  }
-
-  return pruned
+  // A plain copy never removes a stale file: a rule, skill or agent dropped upstream stayed
+  // installed here forever, which is how a retired doctrine kept being read as live.
+  const orphans = entries(dest, unit).filter((n) => n.startsWith('basalt-') && !shipped.includes(n))
+  for (const name of orphans) rmSync(join(dest, name), { recursive: true })
+  return { copied: shipped.length, pruned: orphans.length }
 }
 
 function main(): void {
-  const ruleCount = syncRules()
-  const skillCount = syncSkills()
-  const agentCount = syncAgents()
-  const prunedCount = pruneOrphans()
+  const results = NAMESPACES.map((ns) => ({ ns, ...syncNamespace(ns.dir, ns.unit) }))
+  const pruned = results.reduce((sum, r) => sum + r.pruned, 0)
   console.log(
-    `✓ sync-self: ${ruleCount} rule(s) → .claude/rules, ${skillCount} skill(s) → .claude/skills, ${agentCount} agent(s) → .claude/agents` +
-      (prunedCount > 0 ? `, ${prunedCount} orphan(s) pruned` : ''),
+    `✓ sync-self: ${results.map((r) => `${r.copied} ${r.ns.name}(s) → .claude/${r.ns.dir}`).join(', ')}` +
+      (pruned > 0 ? `, ${pruned} orphan(s) pruned` : ''),
   )
 }
 

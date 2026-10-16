@@ -21,6 +21,7 @@ import { join, resolve } from 'node:path'
 import { GUARD_RULES } from '../src/guard'
 import {
   PLUGIN_RULE_ID_LIST,
+  AGENT_NAMES,
   RULE_NAMES,
   SKILL_NAMES,
   SURFACES,
@@ -186,6 +187,8 @@ export const AGENT_LINE_BUDGETS: Readonly<Record<string, number>> = {
   'agent/skills/basalt-design/SKILL.md': 36, // W31: the design-round procedure
   'agent/skills/basalt-charts/SKILL.md': 40,
   'agent/templates/AGENTS-block.md.tpl': 37,
+  // Outside the layer total: a subagent loads only when invoked, not into every session.
+  'agent/agents/basalt-design-reviewer.md': 81,
   'agent/templates/DESIGN.md.tpl': 45,
 }
 
@@ -194,7 +197,7 @@ export const AGENT_LINE_BUDGETS: Readonly<Record<string, number>> = {
  * can be satisfied by adding a seventh rule file or a fourth skill. The seeded `DESIGN.md.tpl` is
  * the consumer's own file after `init`, so it is outside the sum.
  */
-export const AGENT_LAYER_TOTAL_BUDGET = 677 // W10: +40 streaming snippet; +43 form-dialog snippet; W31: +18 design-round procedure
+export const AGENT_LAYER_TOTAL_BUDGET = 679 // W10: +40 streaming snippet; +43 form-dialog snippet; W31: +18 design-round procedure, +2 AGENTS block names the skills and reviewer (rules −5)
 
 /**
  * Assert the 11 invariants against the live SURFACES + GUARD_RULES + the shipped agent layer, and
@@ -387,6 +390,10 @@ export function checkCoverage(flags: readonly string[] = [], pkgRoot: string = P
     if (!existsSync(abs)) continue // assertions 2/3 already report a missing rule or skill
     const lines = readFileSync(abs, 'utf8').split('\n').length - 1
     if (lines > budget) failures.push(`${rel}: ${lines} lines exceeds its ${budget}-line budget`)
+  }
+  for (const name of AGENT_NAMES) {
+    if (!existsSync(resolve(pkgRoot, `agent/agents/${name}.md`)))
+      failures.push(`agent/agents/${name}.md: missing`)
   }
   // A missing rule or skill is already reported by assertions 2/3; the AGENTS block has no other
   // assertion, so its absence is reported here.

@@ -655,6 +655,11 @@ export const SKILL_NAMES = [
   ),
 ] as const satisfies readonly SkillName[]
 
+// ── PROJECTION 1c — AGENT_NAMES ───────────────────────────────────────────────────────────────────
+
+/** The shipped subagents (`agent/agents/<name>.md`), installed at `.claude/agents/`. */
+export const AGENT_NAMES = ['basalt-design-reviewer'] as const
+
 // ── Token-layer-boundary-via-plugin membership ────────────────────────────────────────────────────
 
 /**

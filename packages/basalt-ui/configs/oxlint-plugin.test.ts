@@ -2132,6 +2132,16 @@ describe('basalt/control-outside-home', () => {
       }
     })
 
+    it('reads a quoted-key slot spread the way the home resolver does', () => {
+      refused("<PageBar {...{ 'actions': <ViewTabs field={f} /> }} />")
+      allowed("<PageBar {...{ 'tabs': <ViewTabs field={f} /> }} />")
+    })
+
+    // Structural lint: only a ViewTabs written inside the slot is seen. Pinned so a change is deliberate.
+    it('does not see a hoisted binding handed to a refused slot', () => {
+      allowed('(() => { const t = <ViewTabs field={f} />; return <PageBar actions={t} /> })()')
+    })
+
     it('refuses Section.actions and a FilterSet', () => {
       refused('<Section title="x" actions={<ViewTabs field={f} />} />')
       refused('<FilterSet><ViewTabs field={f} /></FilterSet>')

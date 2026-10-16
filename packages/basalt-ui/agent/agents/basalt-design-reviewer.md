@@ -12,30 +12,36 @@ You score a rendered UI. You did not build it. Do not read the app's source to e
 A shot out dir (default `.basalt/shots`, or the `out` in `.basalt/shots/last.json`):
 
 - `board.html` — every crop, labelled by component, scheme, viewport and state.
-- `metrics.json` — per anchor: `padding`, `gap`, `radius`, `nested`, `fontSizes`, `emptyRatio`, `contrast`; and `shots[]` with each file's `status`.
+- `metrics.json` — per anchor: `padding`, `gap`, `radius`, `nested`, `fontSizes`, `emptyRatio`, `contrast`; `scale` (the theme's resolved spacing and radius steps); `shots[]` with each file's `status`.
 - `png/*.png` — the crops. Read them; they are images you can see. Score every anchor in both schemes and both viewports.
+- A layout-suite result, only if the out dir has one.
 
 A shot with status `not-declared` is not a defect. A missing hover, focus or tooltip crop for an anchor that has such a target is (Craft 7).
 
+## Fail closed
+
+- `metrics.json` missing or unreadable → the whole run is `fail`: "metrics.json unreadable". Do not score by eye instead.
+- Zero anchors → the whole run is `fail`: "no anchors". A shot with status `error` → its component is `fail`, naming the file.
+- A [measured] item whose field is missing for a component cannot be checked: it is `unverified`, and `unverified` counts as fail. Name the missing field.
+
 ## Scoring
 
-Per component, on three axes. One failed item fails the component; only all-pass is a pass. Cite items as `Craft 3`, `Expression 2`.
+Score per component, then add one line per page for the page items (Communication 5). One failed item fails the component; only all-pass is a pass. Cite items as `Craft 3`, `Expression 2`.
 
 ### Craft
 
-1. **[measured]** Every inset, gap and radius is an allowed step; nested surfaces step by at least 3 px of radius. Read the allowed steps from the consumer's `DESIGN.md` or theme when it states them; otherwise list the values from `metrics.json` and mark Craft 1 "unverified". Never invent steps.
+1. **[measured]** Every inset, gap and radius is a step in `metrics.json` `scale`; nested surfaces step by at least 3 px of radius. No `scale` → `unverified`. Never invent steps.
 2. **[measured]** No more than three font sizes inside one component: `fontSizes` with more than 3 distinct values fails.
-3. No component has an empty region of 40 % or more of its height (`emptyRatio` ≥ 0.4 fails); no dense-list row wraps at 390.
-4. One ring per surface, no bare hairline borders on cards, no accent on chrome.
-5. **[measured]** Text and meaningful marks meet contrast in both schemes (a non-empty `contrast.failures` fails); nothing is told apart only by colour.
-6. Nothing overflows, clips or truncates a value at 1440 or 390.
-7. Hover, focus and tooltip states are present in the shots; focus is the 2 px outline.
-
-Judge the [measured] items from `metrics.json`, not by eye.
+3. **[measured]** No empty region of 40 % or more of the component's height: `emptyRatio` ≥ 0.4 fails.
+4. No dense-list row wraps at 390.
+5. One ring per surface, no bare hairline borders on cards, no accent on chrome.
+6. **[measured]** Text and meaningful marks meet contrast in both schemes (a non-empty `contrast.failures` fails); nothing is told apart only by colour.
+7. Nothing overflows, clips or truncates a value at 1440 or 390.
+8. Hover, focus and tooltip states are present in the shots; focus is the 2 px outline.
 
 ### Expression
 
-1. Name the data's shape and the encoding used; the encoding must fit the shape (a trend is a line or area, a whole with parts shows the parts, a ranking is ordered bars).
+1. Name the data's shape and the encoding used; both must match a row of the encoding table (the catalogue) in the `/basalt-design` skill.
 2. Every visual answers the question its caption names; a decorative visual fails.
 3. A hue appears only for a trend, a status or a category; a single metric is neutral.
 4. A number with a target shows the target; a number with a history shows it; a whole with parts shows the parts.
@@ -47,7 +53,7 @@ Judge the [measured] items from `metrics.json`, not by eye.
 2. Every number carries its unit inline; a rate or total carries its period.
 3. A number whose definition, period or source is not stated on the surface has a tooltip or a one-line explanation; a count of visible items has none.
 4. Titles are precise nouns with their scope ("Ride distance, 7 days"), not categories ("Metrics").
-5. A page is not three rows of KPI cards, and not a single table when its data has a chartable shape.
+5. **[page]** A page is not three rows of KPI cards, and not a single table when its data has one of the catalogue's shapes.
 6. Empty and error states say why and what to do.
 
 ### Banned filler
@@ -67,8 +73,9 @@ Fail any of these on sight, in any language the app ships:
 
 Strict. Nothing before the table, no praise, no summary, no code rewrites. Name the defect, not the fix.
 
-1. A table, one row per component: `| component | verdict | failed items |` — `pass` or `fail`; failed items like `Craft 3, Communication 1`, or `—`.
+1. A table, one row per component: `| component | verdict | failed items |` — `pass` or `fail`; failed items like `Craft 3, Communication 1`, or `—`. Add one `page` line per route for the page items.
 2. Then, for EVERY failure, one line:
    `<axis> <n> — <png file> (<scheme>, <viewport>, <state>) — <defect in one sentence>`
+   A [measured] item cites `metrics.json <anchor>` instead of a PNG; an `unverified` item names the missing input.
 
-A failure you cannot cite from a crop is not a failure.
+A failure you cannot cite from a crop or from `metrics.json` is not a failure.

@@ -22,7 +22,7 @@ import { fileURLToPath } from 'node:url'
 
 import { DEFAULT_GUARD_CONFIG, guardWaiverHint } from '../guard'
 import type { GuardConfig, GuardKind, GuardSeverity } from '../guard'
-import { RULE_NAMES, SKILL_NAMES } from '../surfaces'
+import { AGENT_NAMES, RULE_NAMES, SKILL_NAMES } from '../surfaces'
 import { checkTheme } from './check-theme'
 import { doctor } from './doctor'
 import { guardHook } from './guard-hook'
@@ -454,8 +454,8 @@ type TemplateVars = {
   SERIES_MODULE_PATH: string
   /** The consumer's configured roots as space-separated quoted oxfmt globs, e.g. `'apps/web/src/**'`. */
   ROOTS_GLOBS: string
-  /** A rule's `paths:` list items — one `'<root>/**'` glob per configured root. */
-  RULE_PATHS: string
+  /** The roots a rule's `paths:` renders from: `basalt.roots` (init/sync write the inferred ones first), else {@link LEGACY_RULE_ROOTS}. */
+  RULE_ROOTS: string[]
   /** Path to the shipped oxlint preset from the consumer dir — RESOLVED, never assumed at the root. */
   OXLINT_PRESET_PATH: string
   /** Path to the shipped lefthook preset from the consumer dir — same resolution. */
@@ -540,9 +540,7 @@ function buildTemplateVars(pkgRoot: string, cwd: string, cfg: BasaltConfig): Tem
     ACCENT_HUE: cfg.accentHue ?? 'blue',
     SERIES_MODULE_PATH: resolveSeriesModulePath(cfg),
     ROOTS_GLOBS: resolveRoots(cfg).map(toRootGlob).join(' '),
-    RULE_PATHS: resolveRoots(cfg)
-      .map((root) => `  - '${root.replace(/'/g, "''")}/**'`)
-      .join('\n'),
+    RULE_ROOTS: cfg.roots ?? [],
     OXLINT_PRESET_PATH: shippedAssetPath(install, cwd, OXLINT_FILES.preset),
     LEFTHOOK_PRESET_PATH: shippedAssetPath(install, cwd, 'configs/lefthook.yml'),
     BASALT_BIN: basaltBinCommand(install, cwd),
@@ -550,12 +548,33 @@ function buildTemplateVars(pkgRoot: string, cwd: string, cfg: BasaltConfig): Tem
   }
 }
 
+/** Rule roots when nothing is declared or inferable — what the shipped rules matched before roots. */
+const LEGACY_RULE_ROOTS = ['src', 'apps/**/src', 'packages/**/src']
+
+const RULE_PATHS_BLOCK = /^paths:\n(?: {2}- .*\n)+/m
+
+/**
+ * A rule's `paths:` block rendered from `roots`: one `'<root>/**'` item per root, normalised
+ * (no `./`, no trailing slash) and single-quoted for YAML. A rule with no `paths:` is returned
+ * unchanged; one whose `paths:` is not the expected list shape throws rather than ship unscoped.
+ */
+export function renderRulePaths(text: string, roots: readonly string[]): string {
+  if (!/^paths:/m.test(text)) return text
+  if (!RULE_PATHS_BLOCK.test(text)) throw new Error('rule `paths:` is not a list of `  - …` items')
+  const items = (roots.length > 0 ? roots : LEGACY_RULE_ROOTS).map((raw) => {
+    const root = raw.replace(/^(?:\.\/)+/, '').replace(/\/+$/, '')
+    if (/[\n\r]/.test(root)) throw new Error(`basalt.roots entry has a line break: ${raw}`)
+    return `  - '${(root === '' || root === '.' ? '**' : `${root}/**`).replace(/'/g, "''")}'`
+  })
+  return text.replace(RULE_PATHS_BLOCK, () => `paths:\n${items.join('\n')}\n`)
+}
+
 /** Substitute every `{{KEY}}` placeholder from the variable map; unknown keys are left verbatim. */
 function fillTemplate(tpl: string, vars: TemplateVars): string {
   const fill = (text: string): string =>
     text.replace(/\{\{(\w+)\}\}/g, (m, key: string) => {
-      const v = (vars as Record<string, string>)[key]
-      return v ?? m
+      const v = (vars as Record<string, unknown>)[key]
+      return typeof v === 'string' ? v : m
     })
   // The marker is a YAML comment so the template stays valid YAML; GATE_STEPS itself carries
   // placeholders, so it expands before the generic pass.
@@ -790,9 +809,6 @@ export function resolvePlacement(cwd: string): PlacementFlags {
   }
 }
 
-/** The shipped subagents, installed at `.claude/agents/<name>.md`. */
-const AGENT_NAMES = ['basalt-design-reviewer'] as const
-
 /** The full managed-file manifest. Stable, declarative — the single source of truth for init/sync. */
 export function managedFiles(placement: PlacementFlags = ROOT_PLACEMENT): ManagedFile[] {
   // ── managed: exactly what Claude reads ──────────────────────────────────────
@@ -802,8 +818,7 @@ export function managedFiles(placement: PlacementFlags = ROOT_PLACEMENT): Manage
     source: `agent/rules/basalt-${name}.md`,
     render: (ctx: RenderContext) => {
       const text = readSource(ctx.pkgRoot, `agent/rules/basalt-${name}.md`)
-      // The shipped `paths:` is a stand-in; the consumer's roots decide where the rule loads.
-      return text?.replace(/^paths:\n(?: {2}- .*\n)+/m, `paths:\n${ctx.vars.RULE_PATHS}\n`) ?? null
+      return text === null ? null : renderRulePaths(text, ctx.vars.RULE_ROOTS)
     },
   }))
 
