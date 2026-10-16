@@ -2,6 +2,8 @@
  * Calibration seed — expected failing item: Craft 3 (no empty region of 40 % or more of the height).
  * Defect: a metric card forced to 320px tall with no sparkline or breakdown, so its lower half is
  * empty. Title, unit, period and tooltip are clean.
+ *
+ * Route id: `probe-6` (neutral on purpose; the id → seed map lives in docs only).
  */
 import { Box } from '@mantine/core'
 import { StatCard } from 'basalt-ui'
@@ -9,7 +11,7 @@ import { MTD_EUR, WINDOW_LABEL, fmtEur } from './spend-data'
 
 export function CalibrateEmptyHalf() {
   return (
-    <Box data-shot="calibrate-empty-half" h={320}>
+    <Box data-shot="probe-6" h={320}>
       <StatCard
         title={`Spend, ${WINDOW_LABEL}`}
         value={fmtEur(MTD_EUR)}

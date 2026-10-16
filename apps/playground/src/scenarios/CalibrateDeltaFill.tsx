@@ -2,6 +2,8 @@
  * Calibration seed — expected failing item: Craft 4 (accent/fill on chrome) / Expression 3 (a hue only
  * for a trend, status or category). Defect: the delta is a solid filled badge, not neutral text with a
  * trend glyph. Everything else on the card is clean.
+ *
+ * Route id: `probe-5` (neutral on purpose; the id → seed map lives in docs only).
  */
 import { Badge, Card, Group, Text } from '@mantine/core'
 import {
@@ -15,7 +17,7 @@ import {
 
 export function CalibrateDeltaFill() {
   return (
-    <Card py="xs" px="sm" data-shot="calibrate-delta-fill">
+    <Card py="xs" px="sm" data-shot="probe-5">
       <Text size="xs" c="dimmed">
         Spend, {WINDOW_LABEL} (€)
       </Text>

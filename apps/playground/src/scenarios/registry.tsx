@@ -1,6 +1,6 @@
 /**
  * The scenario registry: `$name` → fixture. The route stays thin; a new scenario is one entry here.
- * S1–S6 are SPEC § 2; `calibrate-*` are the reviewer's seeded boards (SPEC § 8.5), each with
+ * S1–S6 are SPEC § 2; `probe-1`…`probe-6` are the reviewer's seeded boards (ids neutral so a blind reviewer cannot read the defect from the route) (SPEC § 8.5), each with
  * exactly one defect named in its file header. A Map, so `/scenarios/constructor` is unknown
  * rather than an inherited `Object` member.
  */
@@ -16,12 +16,12 @@ import type { ScenarioProps } from './shot-state'
 
 const SCENARIOS = new Map<string, (props: ScenarioProps) => ReactElement>([
   ['s4-spend', (p) => <SpendScenario {...p} />],
-  ['calibrate-good', () => <CalibrateGood />],
-  ['calibrate-delta-fill', () => <CalibrateDeltaFill />],
-  ['calibrate-empty-half', () => <CalibrateEmptyHalf />],
-  ['calibrate-repeated-axis', () => <CalibrateRepeatedAxis />],
-  ['calibrate-accent-tab', () => <CalibrateAccentTab />],
-  ['calibrate-banned-subtitle', () => <CalibrateBannedSubtitle />],
+  ['probe-3', () => <CalibrateGood />],
+  ['probe-5', () => <CalibrateDeltaFill />],
+  ['probe-6', () => <CalibrateEmptyHalf />],
+  ['probe-1', () => <CalibrateRepeatedAxis />],
+  ['probe-4', () => <CalibrateAccentTab />],
+  ['probe-2', () => <CalibrateBannedSubtitle />],
 ])
 
 export const SCENARIO_NAMES: readonly string[] = [...SCENARIOS.keys()]

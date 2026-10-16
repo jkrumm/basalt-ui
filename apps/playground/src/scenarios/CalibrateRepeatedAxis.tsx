@@ -2,6 +2,8 @@
  * Calibration seed — expected failing item: Expression 5 (no axis repeats a label). Defect: a 48 h
  * hourly chart whose `formatX` prints only DD.MM, so every tick on the x-axis reads the same date; the ticks are pinned to one calendar day so that holds whatever density the engine would pick.
  * Series, unit, title and period are clean.
+ *
+ * Route id: `probe-1` (neutral on purpose; the id → seed map lives in docs only).
  */
 import { Box } from '@mantine/core'
 import { ChartCard, Lines } from 'basalt-ui/charts'
@@ -27,7 +29,7 @@ const ddmm = (d: Date): string =>
 
 export function CalibrateRepeatedAxis() {
   return (
-    <Box data-shot="calibrate-repeated-axis">
+    <Box data-shot="probe-1">
       <ChartCard
         title="Requests per hour, last 48 h"
         info="API requests per hour across all projects, in UTC."

@@ -28,7 +28,7 @@ describe('findScenario', () => {
 
   it('registers S4 and the six calibration seeds', () => {
     expect(SCENARIO_NAMES).toContain('s4-spend')
-    expect(SCENARIO_NAMES.filter((n) => n.startsWith('calibrate-'))).toHaveLength(6)
+    expect(SCENARIO_NAMES.filter((n) => /^probe-\d$/.test(n))).toHaveLength(6)
   })
 
   it.each(['constructor', 'toString', '__proto__', 'hasOwnProperty', 'nope'])(
