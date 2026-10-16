@@ -353,9 +353,14 @@ const PROVIDER_ONLY_LABEL = 'provider-only first paint (gzip B, dist)'
 const PROVIDER_ONLY_CEILING = 19200
 // Embedded provider, `spotlight={false}`, no defines, peers bundled, every chunk counted (a bundle-graph
 // bar follows `import()`). Before the provider slots (2.11.1): 190544 B, with the dynamic hotkeys chunk
-// (~14967 B) plus Spotlight and modals in the entry; after: 166834 B, zero feature chunks. ~1% over
-// landed, the same margin as the provider-only row.
-const EMBEDDED_CEILING = 168500
+// (~14967 B) plus Spotlight and modals in the entry; after: 166834 B, zero feature chunks.
+// 168500 → 55300: `createBasaltTheme` stops value-importing the ~45 Mantine components it only
+// configures (`ext<typeof X>`, not `X.extend`): 166959 → 54735 locally. ~1% over landed.
+const EMBEDDED_CEILING = 55300
+// `createBasaltTheme()` alone, peers bundled, every chunk counted: 14420 locally. The theme reaching
+// no component it configures is what keeps this near Mantine's core; ~1% over landed.
+const THEME_ONLY_CEILING = 14570
+const THEME_ONLY_LABEL = 'createBasaltTheme only, peers bundled, all chunks (gzip B, dist)'
 const EMBEDDED_LABEL = 'embedded provider, no defines, peers bundled, all chunks (gzip B, dist)'
 const FEATURE_CHUNKS_LABEL =
   'spotlight/modals/hotkeys modules in a define-free provider build (+ ShortcutsHelp)'
@@ -397,7 +402,8 @@ async function providerOnlyRows(distEntry: string): Promise<Budget[]> {
     reason: string,
   ): Budget[] => rows.map((row) => ({ ...row, value: null, unmeasured: { kind, reason } }))
   const baseRows: Budget[] = [sizeRow, devRow]
-  const embeddedRows: Budget[] = [embeddedRow, featureRow]
+  const themeOnlyRow = { label: THEME_ONLY_LABEL, ceiling: THEME_ONLY_CEILING }
+  const embeddedRows: Budget[] = [embeddedRow, themeOnlyRow, featureRow]
   if (!existsSync(distEntry)) {
     return unmeasured(
       [...baseRows, ...embeddedRows],
@@ -428,8 +434,13 @@ async function providerOnlyRows(distEntry: string): Promise<Budget[]> {
         fixture: 'provider-shortcuts-help.tsx',
         bundlePeers: true,
       })
+      const themeOnly = await buildProviderOnlyBundle(distEntry, {
+        fixture: 'provider-theme-only.tsx',
+        bundlePeers: true,
+      })
       return [
         { ...embeddedRow, value: allChunksGzip(embedded.chunks) },
+        { ...themeOnlyRow, value: allChunksGzip(themeOnly.chunks) },
         gateRow(FEATURE_CHUNKS_LABEL, [
           ...featureRuntimeChunks([...embedded.chunks.values()]),
           ...featureRuntimeChunks([...shortcuts.chunks.values()]).map(

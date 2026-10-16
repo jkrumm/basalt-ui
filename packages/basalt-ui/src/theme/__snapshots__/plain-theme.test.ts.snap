@@ -1,0 +1,356 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`createBasaltTheme().components shape keys, defaultProps, classNames, styles, vars-presence 1`] = `
+{
+  "Accordion": {
+    "classNames": {},
+  },
+  "ActionIcon": {
+    "classNames": {},
+    "vars": "[fn]",
+  },
+  "Alert": {
+    "styles": {
+      "title": {
+        "fontFamily": "var(--basalt-font-head)",
+        "fontStretch": "88%",
+        "fontWeight": 550,
+      },
+    },
+  },
+  "AppShell": {
+    "vars": "[fn]",
+  },
+  "Badge": {
+    "defaultProps": {
+      "radius": 6,
+    },
+  },
+  "Breadcrumbs": {
+    "styles": {
+      "breadcrumb": {
+        "color": "var(--vx-faint)",
+      },
+      "separator": {
+        "color": "var(--vx-surface-border)",
+      },
+    },
+  },
+  "Button": {
+    "classNames": {},
+    "vars": "[fn]",
+  },
+  "Card": {
+    "styles": {
+      "root": {
+        "backgroundColor": "var(--vx-surface-panel)",
+        "borderRadius": "var(--vx-radius-card)",
+        "boxShadow": "var(--vx-shadow-card)",
+      },
+    },
+  },
+  "Checkbox": {
+    "defaultProps": {
+      "attributes": {
+        "label": {
+          "data-basalt-hit": true,
+        },
+      },
+    },
+    "vars": "[fn]",
+  },
+  "CheckboxCard": {
+    "classNames": {},
+  },
+  "Chip": {
+    "classNames": "[fn]",
+  },
+  "Code": {
+    "styles": {
+      "root": {
+        "backgroundColor": "color-mix(in srgb, var(--vx-ink) 7%, transparent)",
+        "borderRadius": "var(--vx-radius-tight)",
+      },
+    },
+  },
+  "Combobox": {
+    "styles": {
+      "dropdown": {
+        "backgroundColor": "var(--vx-surface-overlay)",
+        "border": "1px solid var(--vx-surface-border)",
+        "boxShadow": "var(--vx-shadow-overlay)",
+      },
+    },
+  },
+  "Drawer": {
+    "classNames": {},
+    "styles": {
+      "content": {
+        "backgroundColor": "var(--vx-surface-overlay)",
+        "boxShadow": "var(--vx-shadow-overlay)",
+      },
+      "header": {
+        "backgroundColor": "var(--vx-surface-overlay)",
+      },
+      "title": {
+        "fontFamily": "var(--basalt-font-head)",
+        "fontStretch": "88%",
+        "fontWeight": 550,
+      },
+    },
+  },
+  "Indicator": {
+    "vars": "[fn]",
+  },
+  "Input": {
+    "classNames": {},
+    "defaultProps": {
+      "size": "md",
+    },
+    "vars": "[fn]",
+  },
+  "Kbd": {
+    "styles": {
+      "root": {
+        "backgroundColor": "color-mix(in srgb, var(--vx-ink) 7%, transparent)",
+        "border": "none",
+        "borderRadius": "var(--vx-radius-tight)",
+        "color": "var(--vx-ink2)",
+      },
+    },
+  },
+  "Menu": {
+    "classNames": {},
+    "styles": {
+      "divider": {
+        "borderColor": "var(--vx-divider)",
+      },
+      "dropdown": {
+        "backgroundColor": "var(--vx-surface-overlay)",
+        "border": "1px solid var(--vx-surface-border)",
+        "boxShadow": "var(--vx-shadow-overlay)",
+      },
+      "item": {
+        "borderRadius": "var(--vx-radius-ctrl)",
+        "fontSize": 15,
+        "padding": "var(--vx-space-row-inset-y) var(--vx-space-row-inset-x)",
+      },
+      "label": {
+        "color": "var(--vx-faint)",
+        "fontFamily": "var(--basalt-font-mono)",
+        "fontSize": 11,
+        "fontWeight": 500,
+        "letterSpacing": "0.06em",
+        "textTransform": "uppercase",
+      },
+    },
+  },
+  "Modal": {
+    "classNames": {},
+    "defaultProps": {
+      "closeButtonProps": {
+        "data-basalt-hit": true,
+      },
+      "radius": 8,
+    },
+    "styles": {
+      "content": {
+        "backgroundColor": "var(--vx-surface-overlay)",
+        "boxShadow": "var(--vx-shadow-overlay)",
+      },
+      "header": {
+        "backgroundColor": "var(--vx-surface-overlay)",
+      },
+      "title": {
+        "fontFamily": "var(--basalt-font-head)",
+        "fontStretch": "88%",
+        "fontWeight": 550,
+      },
+    },
+  },
+  "NavLink": {
+    "classNames": {},
+    "styles": {
+      "label": {
+        "fontSize": 15,
+        "lineHeight": "var(--vx-space-row-line-height)",
+      },
+      "root": {
+        "borderRadius": "var(--vx-radius-ctrl)",
+        "fontSize": 15,
+        "lineHeight": "var(--vx-space-row-line-height)",
+        "padding": "var(--vx-space-row-inset-y) var(--vx-space-row-inset-x)",
+      },
+    },
+    "vars": "[fn]",
+  },
+  "Notification": {
+    "defaultProps": {
+      "radius": 8,
+    },
+    "styles": {
+      "root": {
+        "backgroundColor": "var(--vx-surface-panel)",
+        "boxShadow": "var(--vx-shadow-card)",
+      },
+    },
+  },
+  "NumberInput": {
+    "defaultProps": {
+      "size": "md",
+    },
+  },
+  "Pagination": {
+    "vars": "[fn]",
+  },
+  "PaginationControl": {
+    "defaultProps": {
+      "data-basalt-hit": true,
+    },
+  },
+  "Paper": {
+    "styles": {
+      "root": {
+        "backgroundColor": "var(--vx-surface-panel)",
+        "borderRadius": "var(--vx-radius-card)",
+        "boxShadow": "var(--vx-shadow-card)",
+      },
+    },
+  },
+  "PasswordInput": {
+    "defaultProps": {
+      "size": "md",
+    },
+  },
+  "PillsInput": {
+    "classNames": {},
+  },
+  "Popover": {
+    "defaultProps": {
+      "radius": 8,
+    },
+    "styles": {
+      "dropdown": {
+        "backgroundColor": "var(--vx-surface-overlay)",
+        "border": "1px solid var(--vx-surface-border)",
+        "boxShadow": "var(--vx-shadow-overlay)",
+      },
+    },
+  },
+  "Progress": {
+    "defaultProps": {
+      "radius": 4,
+      "size": 6,
+    },
+    "styles": {
+      "root": {
+        "backgroundColor": "color-mix(in srgb, var(--vx-ink) 8%, transparent)",
+      },
+    },
+  },
+  "Radio": {
+    "defaultProps": {
+      "attributes": {
+        "label": {
+          "data-basalt-hit": true,
+        },
+      },
+    },
+    "vars": "[fn]",
+  },
+  "RadioCard": {
+    "classNames": {},
+  },
+  "SegmentedControl": {
+    "classNames": {},
+    "defaultProps": {
+      "radius": 7,
+    },
+    "styles": "[fn]",
+  },
+  "Select": {
+    "defaultProps": {
+      "size": "md",
+    },
+  },
+  "Stepper": {
+    "vars": "[fn]",
+  },
+  "Switch": {
+    "defaultProps": {
+      "attributes": {
+        "track": {
+          "data-basalt-hit": true,
+        },
+      },
+      "withThumbIndicator": false,
+    },
+  },
+  "Table": {
+    "classNames": {},
+    "styles": {
+      "td": {
+        "height": 40,
+      },
+      "th": {
+        "color": "var(--vx-faint)",
+        "fontFamily": "var(--basalt-font-mono)",
+        "fontSize": 11,
+        "fontWeight": 500,
+        "height": 36,
+        "letterSpacing": "0.06em",
+        "textTransform": "uppercase",
+      },
+    },
+  },
+  "Tabs": {
+    "classNames": {},
+    "vars": "[fn]",
+  },
+  "TextInput": {
+    "defaultProps": {
+      "size": "md",
+    },
+  },
+  "Textarea": {
+    "defaultProps": {
+      "size": "md",
+    },
+  },
+  "Timeline": {
+    "classNames": {},
+    "defaultProps": {
+      "bulletSize": 22,
+      "lineWidth": 1,
+    },
+    "styles": {
+      "itemContent": {
+        "color": "var(--vx-muted)",
+        "fontSize": 15,
+      },
+      "itemTitle": {
+        "color": "var(--vx-ink)",
+        "fontSize": 15,
+        "fontWeight": 600,
+      },
+    },
+    "vars": "[fn]",
+  },
+  "Tooltip": {
+    "defaultProps": {
+      "radius": 8,
+    },
+    "styles": {
+      "arrow": {
+        "border": "1px solid var(--vx-surface-border)",
+      },
+      "tooltip": {
+        "backgroundColor": "var(--vx-surface-overlay)",
+        "border": "1px solid var(--vx-surface-border)",
+        "boxShadow": "var(--vx-shadow-overlay)",
+        "color": "var(--vx-ink)",
+      },
+    },
+  },
+}
+`;

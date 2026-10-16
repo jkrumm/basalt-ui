@@ -30,13 +30,14 @@
  * tier"), and it is stated here because it is the kind of thing that otherwise gets rediscovered as
  * a bug. A consumer wanting a `lg` radio group puts it in a BODY, which no `CtlSlot` wraps.
  */
-import {
+import { Box, MantineThemeProvider } from '@mantine/core'
+import type {
   ActionIcon,
-  Box,
   Button,
   Checkbox,
   Input,
-  MantineThemeProvider,
+  MantineSize,
+  MantineThemeOverride,
   MultiSelect,
   NativeSelect,
   Radio,
@@ -45,8 +46,8 @@ import {
   Switch,
   TextInput,
 } from '@mantine/core'
-import type { MantineSize, MantineThemeOverride } from '@mantine/core'
 import type { ReactNode } from 'react'
+import { ext } from './extend'
 
 // Mantine's typed prop bags reject `data-*` literals; a spread carries the hit-area attribute in.
 // Lives here (not `./index`, which imports THIS module) rather than the reverse, so `./index`'s own
@@ -59,17 +60,17 @@ export const HIT_ATTR: Record<string, true> = { 'data-basalt-hit': true }
  * by `PageBar`/`Section`/the sidebar blocks) can reach the SAME tier without re-declaring it. */
 export const CTL_THEME: MantineThemeOverride = {
   components: {
-    Button: Button.extend({ defaultProps: { size: 'ctl' } }),
-    ActionIcon: ActionIcon.extend({ defaultProps: { size: 'ctl' } }),
-    Input: Input.extend({ defaultProps: { size: 'ctl' } }),
-    TextInput: TextInput.extend({ defaultProps: { size: 'ctl' } }),
-    Select: Select.extend({ defaultProps: { size: 'ctl' } }),
-    MultiSelect: MultiSelect.extend({ defaultProps: { size: 'ctl' } }),
-    SegmentedControl: SegmentedControl.extend({ defaultProps: { size: 'ctl' } }),
-    NativeSelect: NativeSelect.extend({ defaultProps: { size: 'ctl' } }),
+    Button: ext<typeof Button>({ defaultProps: { size: 'ctl' } }),
+    ActionIcon: ext<typeof ActionIcon>({ defaultProps: { size: 'ctl' } }),
+    Input: ext<typeof Input>({ defaultProps: { size: 'ctl' } }),
+    TextInput: ext<typeof TextInput>({ defaultProps: { size: 'ctl' } }),
+    Select: ext<typeof Select>({ defaultProps: { size: 'ctl' } }),
+    MultiSelect: ext<typeof MultiSelect>({ defaultProps: { size: 'ctl' } }),
+    SegmentedControl: ext<typeof SegmentedControl>({ defaultProps: { size: 'ctl' } }),
+    NativeSelect: ext<typeof NativeSelect>({ defaultProps: { size: 'ctl' } }),
     // The theme keys are the component names Mantine's own `useProps` looks up — `RadioGroup`, not
     // `Radio.Group` (`RadioGroup.mjs`: `useProps("RadioGroup", …)`).
-    Radio: Radio.extend({
+    Radio: ext<typeof Radio>({
       defaultProps: { size: 'ctl', attributes: { label: HIT_ATTR } },
     }),
     // Mantine types `RadioGroup.size` as a CLOSED `MantineSize`, while `Radio`, `Checkbox`,
@@ -78,15 +79,15 @@ export const CTL_THEME: MantineThemeOverride = {
     // upstream inconsistency, not a statement that `RadioGroup` cannot take a custom tier. At
     // runtime `getSize` interpolates the string identically for all six. The cast restores what
     // every sibling type already allows; it widens nothing.
-    RadioGroup: Radio.Group.extend({ defaultProps: { size: 'ctl' as MantineSize } }),
-    Checkbox: Checkbox.extend({
+    RadioGroup: ext<typeof Radio.Group>({ defaultProps: { size: 'ctl' as MantineSize } }),
+    Checkbox: ext<typeof Checkbox>({
       defaultProps: { size: 'ctl', attributes: { label: HIT_ATTR } },
     }),
-    CheckboxGroup: Checkbox.Group.extend({ defaultProps: { size: 'ctl' } }),
-    Switch: Switch.extend({
+    CheckboxGroup: ext<typeof Checkbox.Group>({ defaultProps: { size: 'ctl' } }),
+    Switch: ext<typeof Switch>({
       defaultProps: { size: 'ctl', attributes: { track: HIT_ATTR } },
     }),
-    SwitchGroup: Switch.Group.extend({ defaultProps: { size: 'ctl' } }),
+    SwitchGroup: ext<typeof Switch.Group>({ defaultProps: { size: 'ctl' } }),
   },
 }
 
@@ -120,7 +121,7 @@ export const CTL_THEME: MantineThemeOverride = {
  */
 const WIDGET_THEME: MantineThemeOverride = {
   components: {
-    ActionIcon: ActionIcon.extend({ defaultProps: { size: 'icon' } }),
+    ActionIcon: ext<typeof ActionIcon>({ defaultProps: { size: 'icon' } }),
   },
 }
 
