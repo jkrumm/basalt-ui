@@ -1111,8 +1111,8 @@ its rounds on these tools.
   without `role="tooltip"` (Wave 33). Guidance gaps: status by a coloured edge only, a 390 table wrap, four font sizes
   in one card.
 - **Budgets** (raised by exactly what landed, itemised): CLI 5165 → 7073 (`shot` +1691, install +75, notice +142);
-  rule lines 277 → 272; agent layer 659 → 679 (`basalt-design` 18 → 36, AGENTS block +7); the reviewer has its own
-  per-file budget outside the layer total; routes 15/15. `shot` is the bulk; a trimming pass is open (below).
+  rule lines 277 → 272; agent layer 659 → 679 (`basalt-design` +18, AGENTS block +7, rules −5); the reviewer has its own
+  per-file budget outside the layer total; routes 15/15. `shot` is the bulk; its trim is a Wave 21 step.
 - **Not done / known gaps:** the three loose `compare.json` stand-ins (side-panel-card, status-pill, form-field) were
   not re-pointed (S4 covers none of them; their scenarios come with Waves 35–39). A `shot` trimming pass (capture.ts
   is past 300 lines; review round 2 named the sheet writer and in-page scripts as extractions). A shared contract
@@ -1307,7 +1307,8 @@ Synthesis Wave 4. Validators: all five + a scratch `init` app.
 - [ ] `basalt-ui check`: doctor + sync --check + oxlint + check-theme, one report, `--json`; oxlint runs with its
       JSON or agent output format (verify both in the pinned oxlint).
 - [ ] Seeds and templates (AGENTS block routing table, skill split, lefthook preset = one `check`).
-- [ ] Config and manifest slimming; `cli/index.ts` split; budget tightened.
+- [ ] Config and manifest slimming; `cli/index.ts` split; the `cli/shot/` trim (Wave 31 left the sheet writer and the
+      in-page scripts inside `capture.ts`); budget tightened.
       **Left behind:**
 
 ## Wave 22 — Static-analysis toolbelt: tune, then the fleet <!-- status: pending -->
