@@ -38,7 +38,12 @@ import type { SettingsMenuItem } from '../../../src/index'
 import type { GlobalAction } from '../../../src/controls'
 import type { PageBarActions } from '../../../src/controls/actions'
 import type { BasaltAccountProps } from '../../../src/shell/account-types'
-import type { NavAnchor, SidebarItem, SidebarSection } from '../../../src/shell/nav-types'
+import type {
+  ActiveCrumb,
+  NavAnchor,
+  SidebarItem,
+  SidebarSection,
+} from '../../../src/shell/nav-types'
 import { TableOfContents } from '../../../src/content/toc'
 import { createLocalStore, field } from '../../../src/state'
 import type {
@@ -1096,6 +1101,29 @@ function AnchorFixture(): ReactElement {
   )
 }
 
+/** The breadcrumb the shell used to derive from the active item: its section, and parent if nested. */
+function crumbOf(sections: SidebarSection[]): ActiveCrumb | undefined {
+  const find = (
+    items: SidebarItem[],
+    parent?: SidebarItem,
+  ): Omit<ActiveCrumb, 'section'> | undefined => {
+    for (const item of items) {
+      const nested = item.children && find(item.children, item)
+      if (nested) return nested
+      if (item.active) {
+        return {
+          page: item.label,
+          ...(parent && { parent: parent.label, parentAnchor: parent.Anchor }),
+        }
+      }
+    }
+  }
+  for (const section of sections) {
+    const found = find(section.items)
+    if (found) return { section: section.label, ...found }
+  }
+}
+
 export function ShellFixture({ spec }: { spec: FixtureSpec }): ReactElement {
   if (spec.anchor?.shell === false) return <AnchorFixture />
   const icons = spec.icons ?? true
@@ -1108,7 +1136,7 @@ export function ShellFixture({ spec }: { spec: FixtureSpec }): ReactElement {
   }))
   return (
     <ShellFrame
-      activeCrumb={undefined}
+      activeCrumb={crumbOf(sections)}
       brand={{ name: 'Fixture' }}
       sections={sections}
       {...(spec.headerHeight !== undefined && { headerHeight: spec.headerHeight })}
