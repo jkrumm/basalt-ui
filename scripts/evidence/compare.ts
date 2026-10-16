@@ -229,8 +229,8 @@ function measure(node: Node, rowLike: boolean): Metrics {
 
 /**
  * One Chrome for `fn`, through `basalt-ui shot`'s launcher (`launchServer` + `connect` + `kill()`;
- * a graceful `close()` hangs on this host), killed afterwards even when `fn` times out. Chrome is
- * preferred, as before, so the evidence baseline does not move; the channel used is logged.
+ * a graceful `close()` hangs on this host), killed afterwards even when `fn` times out. Chrome only, as before: a missing Chrome
+ * fails loudly rather than moving the evidence baseline to another browser; the channel is logged.
  */
 function withChrome<T>(
   fn: (browser: Browser) => Promise<T>,
@@ -243,7 +243,7 @@ function withChrome<T>(
       console.log(`[compare] ${what}: browser ${channel}`)
       return withTimeout(fn(browser), timeoutMs, what)
     },
-    { channels: ['chrome', undefined] },
+    { channels: ['chrome'] },
   )
 }
 
