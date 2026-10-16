@@ -2509,37 +2509,37 @@
   "results": {
     "activity-item": {
       "crops": {
-        "dark-desktop": "basalt/activity-item--dark--desktop.png",
-        "dark-mobile": "basalt/activity-item--dark--mobile.png",
-        "light-desktop": "basalt/activity-item--light--desktop.png",
-        "light-mobile": "basalt/activity-item--light--mobile.png"
+        "dark-desktop": ".design-parity/w29/basalt/activity-item--dark--desktop.png",
+        "dark-mobile": ".design-parity/w29/basalt/activity-item--dark--mobile.png",
+        "light-desktop": ".design-parity/w29/basalt/activity-item--light--desktop.png",
+        "light-mobile": ".design-parity/w29/basalt/activity-item--light--mobile.png"
       },
       "errors": {}
     },
     "button-ghost": {
       "crops": {
-        "dark-desktop": "basalt/button-ghost--dark--desktop.png",
-        "dark-mobile": "basalt/button-ghost--dark--mobile.png",
-        "light-desktop": "basalt/button-ghost--light--desktop.png",
-        "light-mobile": "basalt/button-ghost--light--mobile.png"
+        "dark-desktop": ".design-parity/w29/basalt/button-ghost--dark--desktop.png",
+        "dark-mobile": ".design-parity/w29/basalt/button-ghost--dark--mobile.png",
+        "light-desktop": ".design-parity/w29/basalt/button-ghost--light--desktop.png",
+        "light-mobile": ".design-parity/w29/basalt/button-ghost--light--mobile.png"
       },
       "errors": {}
     },
     "button-primary": {
       "crops": {
-        "dark-desktop": "basalt/button-primary--dark--desktop.png",
-        "dark-mobile": "basalt/button-primary--dark--mobile.png",
-        "light-desktop": "basalt/button-primary--light--desktop.png",
-        "light-mobile": "basalt/button-primary--light--mobile.png"
+        "dark-desktop": ".design-parity/w29/basalt/button-primary--dark--desktop.png",
+        "dark-mobile": ".design-parity/w29/basalt/button-primary--dark--mobile.png",
+        "light-desktop": ".design-parity/w29/basalt/button-primary--light--desktop.png",
+        "light-mobile": ".design-parity/w29/basalt/button-primary--light--mobile.png"
       },
       "errors": {}
     },
     "button-secondary": {
       "crops": {
-        "dark-desktop": "basalt/button-secondary--dark--desktop.png",
-        "dark-mobile": "basalt/button-secondary--dark--mobile.png",
-        "light-desktop": "basalt/button-secondary--light--desktop.png",
-        "light-mobile": "basalt/button-secondary--light--mobile.png"
+        "dark-desktop": ".design-parity/w29/basalt/button-secondary--dark--desktop.png",
+        "dark-mobile": ".design-parity/w29/basalt/button-secondary--dark--mobile.png",
+        "light-desktop": ".design-parity/w29/basalt/button-secondary--light--desktop.png",
+        "light-mobile": ".design-parity/w29/basalt/button-secondary--light--mobile.png"
       },
       "errors": {}
     },
@@ -2553,10 +2553,10 @@
     },
     "empty-state": {
       "crops": {
-        "dark-desktop": "basalt/empty-state--dark--desktop.png",
-        "dark-mobile": "basalt/empty-state--dark--mobile.png",
-        "light-desktop": "basalt/empty-state--light--desktop.png",
-        "light-mobile": "basalt/empty-state--light--mobile.png"
+        "dark-desktop": ".design-parity/w29/basalt/empty-state--dark--desktop.png",
+        "dark-mobile": ".design-parity/w29/basalt/empty-state--dark--mobile.png",
+        "light-desktop": ".design-parity/w29/basalt/empty-state--light--desktop.png",
+        "light-mobile": ".design-parity/w29/basalt/empty-state--light--mobile.png"
       },
       "errors": {}
     },
@@ -2566,19 +2566,19 @@
     },
     "filter-toolbar": {
       "crops": {
-        "dark-desktop": "basalt/filter-toolbar--dark--desktop.png",
-        "dark-mobile": "basalt/filter-toolbar--dark--mobile.png",
-        "light-desktop": "basalt/filter-toolbar--light--desktop.png",
-        "light-mobile": "basalt/filter-toolbar--light--mobile.png"
+        "dark-desktop": ".design-parity/w29/basalt/filter-toolbar--dark--desktop.png",
+        "dark-mobile": ".design-parity/w29/basalt/filter-toolbar--dark--mobile.png",
+        "light-desktop": ".design-parity/w29/basalt/filter-toolbar--light--desktop.png",
+        "light-mobile": ".design-parity/w29/basalt/filter-toolbar--light--mobile.png"
       },
       "errors": {}
     },
     "form-field": {
       "crops": {
-        "dark-desktop": "basalt/form-field--dark--desktop.png",
-        "dark-mobile": "basalt/form-field--dark--mobile.png",
-        "light-desktop": "basalt/form-field--light--desktop.png",
-        "light-mobile": "basalt/form-field--light--mobile.png"
+        "dark-desktop": ".design-parity/w29/basalt/form-field--dark--desktop.png",
+        "dark-mobile": ".design-parity/w29/basalt/form-field--dark--mobile.png",
+        "light-desktop": ".design-parity/w29/basalt/form-field--light--desktop.png",
+        "light-mobile": ".design-parity/w29/basalt/form-field--light--mobile.png"
       },
       "errors": {}
     },
@@ -2592,19 +2592,19 @@
     },
     "loading-state": {
       "crops": {
-        "dark-desktop": "basalt/loading-state--dark--desktop.png",
-        "dark-mobile": "basalt/loading-state--dark--mobile.png",
-        "light-desktop": "basalt/loading-state--light--desktop.png",
-        "light-mobile": "basalt/loading-state--light--mobile.png"
+        "dark-desktop": ".design-parity/w29/basalt/loading-state--dark--desktop.png",
+        "dark-mobile": ".design-parity/w29/basalt/loading-state--dark--mobile.png",
+        "light-desktop": ".design-parity/w29/basalt/loading-state--light--desktop.png",
+        "light-mobile": ".design-parity/w29/basalt/loading-state--light--mobile.png"
       },
       "errors": {}
     },
     "metric-card": {
       "crops": {
-        "dark-desktop": "basalt/metric-card--dark--desktop.png",
-        "dark-mobile": "basalt/metric-card--dark--mobile.png",
-        "light-desktop": "basalt/metric-card--light--desktop.png",
-        "light-mobile": "basalt/metric-card--light--mobile.png"
+        "dark-desktop": ".design-parity/w29/basalt/metric-card--dark--desktop.png",
+        "dark-mobile": ".design-parity/w29/basalt/metric-card--dark--mobile.png",
+        "light-desktop": ".design-parity/w29/basalt/metric-card--light--desktop.png",
+        "light-mobile": ".design-parity/w29/basalt/metric-card--light--mobile.png"
       },
       "errors": {}
     },
@@ -2618,28 +2618,28 @@
     },
     "nav-item": {
       "crops": {
-        "dark-desktop": "basalt/nav-item--dark--desktop.png",
-        "dark-mobile": "basalt/nav-item--dark--mobile.png",
-        "light-desktop": "basalt/nav-item--light--desktop.png",
-        "light-mobile": "basalt/nav-item--light--mobile.png"
+        "dark-desktop": ".design-parity/w29/basalt/nav-item--dark--desktop.png",
+        "dark-mobile": ".design-parity/w29/basalt/nav-item--dark--mobile.png",
+        "light-desktop": ".design-parity/w29/basalt/nav-item--light--desktop.png",
+        "light-mobile": ".design-parity/w29/basalt/nav-item--light--mobile.png"
       },
       "errors": {}
     },
     "nav-item-idle": {
       "crops": {
-        "dark-desktop": "basalt/nav-item-idle--dark--desktop.png",
-        "dark-mobile": "basalt/nav-item-idle--dark--mobile.png",
-        "light-desktop": "basalt/nav-item-idle--light--desktop.png",
-        "light-mobile": "basalt/nav-item-idle--light--mobile.png"
+        "dark-desktop": ".design-parity/w29/basalt/nav-item-idle--dark--desktop.png",
+        "dark-mobile": ".design-parity/w29/basalt/nav-item-idle--dark--mobile.png",
+        "light-desktop": ".design-parity/w29/basalt/nav-item-idle--light--desktop.png",
+        "light-mobile": ".design-parity/w29/basalt/nav-item-idle--light--mobile.png"
       },
       "errors": {}
     },
     "page-header": {
       "crops": {
-        "dark-desktop": "basalt/page-header--dark--desktop.png",
-        "dark-mobile": "basalt/page-header--dark--mobile.png",
-        "light-desktop": "basalt/page-header--light--desktop.png",
-        "light-mobile": "basalt/page-header--light--mobile.png"
+        "dark-desktop": ".design-parity/w29/basalt/page-header--dark--desktop.png",
+        "dark-mobile": ".design-parity/w29/basalt/page-header--dark--mobile.png",
+        "light-desktop": ".design-parity/w29/basalt/page-header--light--desktop.png",
+        "light-mobile": ".design-parity/w29/basalt/page-header--light--mobile.png"
       },
       "errors": {}
     },
@@ -2657,73 +2657,73 @@
     },
     "segmented-control": {
       "crops": {
-        "dark-desktop": "basalt/segmented-control--dark--desktop.png",
-        "dark-mobile": "basalt/segmented-control--dark--mobile.png",
-        "light-desktop": "basalt/segmented-control--light--desktop.png",
-        "light-mobile": "basalt/segmented-control--light--mobile.png"
+        "dark-desktop": ".design-parity/w29/basalt/segmented-control--dark--desktop.png",
+        "dark-mobile": ".design-parity/w29/basalt/segmented-control--dark--mobile.png",
+        "light-desktop": ".design-parity/w29/basalt/segmented-control--light--desktop.png",
+        "light-mobile": ".design-parity/w29/basalt/segmented-control--light--mobile.png"
       },
       "errors": {}
     },
     "side-panel-card": {
       "crops": {
-        "dark-desktop": "basalt/side-panel-card--dark--desktop.png",
-        "dark-mobile": "basalt/side-panel-card--dark--mobile.png",
-        "light-desktop": "basalt/side-panel-card--light--desktop.png",
-        "light-mobile": "basalt/side-panel-card--light--mobile.png"
+        "dark-desktop": ".design-parity/w29/basalt/side-panel-card--dark--desktop.png",
+        "dark-mobile": ".design-parity/w29/basalt/side-panel-card--dark--mobile.png",
+        "light-desktop": ".design-parity/w29/basalt/side-panel-card--light--desktop.png",
+        "light-mobile": ".design-parity/w29/basalt/side-panel-card--light--mobile.png"
       },
       "errors": {}
     },
     "stat-cell": {
       "crops": {
-        "dark-desktop": "basalt/stat-cell--dark--desktop.png",
-        "dark-mobile": "basalt/stat-cell--dark--mobile.png",
-        "light-desktop": "basalt/stat-cell--light--desktop.png",
-        "light-mobile": "basalt/stat-cell--light--mobile.png"
+        "dark-desktop": ".design-parity/w29/basalt/stat-cell--dark--desktop.png",
+        "dark-mobile": ".design-parity/w29/basalt/stat-cell--dark--mobile.png",
+        "light-desktop": ".design-parity/w29/basalt/stat-cell--light--desktop.png",
+        "light-mobile": ".design-parity/w29/basalt/stat-cell--light--mobile.png"
       },
       "errors": {}
     },
     "stat-strip": {
       "crops": {
-        "dark-desktop": "basalt/stat-strip--dark--desktop.png",
-        "dark-mobile": "basalt/stat-strip--dark--mobile.png",
-        "light-desktop": "basalt/stat-strip--light--desktop.png",
-        "light-mobile": "basalt/stat-strip--light--mobile.png"
+        "dark-desktop": ".design-parity/w29/basalt/stat-strip--dark--desktop.png",
+        "dark-mobile": ".design-parity/w29/basalt/stat-strip--dark--mobile.png",
+        "light-desktop": ".design-parity/w29/basalt/stat-strip--light--desktop.png",
+        "light-mobile": ".design-parity/w29/basalt/stat-strip--light--mobile.png"
       },
       "errors": {}
     },
     "status-pill": {
       "crops": {
-        "dark-desktop": "basalt/status-pill--dark--desktop.png",
-        "dark-mobile": "basalt/status-pill--dark--mobile.png",
-        "light-desktop": "basalt/status-pill--light--desktop.png",
-        "light-mobile": "basalt/status-pill--light--mobile.png"
+        "dark-desktop": ".design-parity/w29/basalt/status-pill--dark--desktop.png",
+        "dark-mobile": ".design-parity/w29/basalt/status-pill--dark--mobile.png",
+        "light-desktop": ".design-parity/w29/basalt/status-pill--light--desktop.png",
+        "light-mobile": ".design-parity/w29/basalt/status-pill--light--mobile.png"
       },
       "errors": {}
     },
     "tab-bar": {
       "crops": {
-        "dark-desktop": "basalt/tab-bar--dark--desktop.png",
-        "dark-mobile": "basalt/tab-bar--dark--mobile.png",
-        "light-desktop": "basalt/tab-bar--light--desktop.png",
-        "light-mobile": "basalt/tab-bar--light--mobile.png"
+        "dark-desktop": ".design-parity/w29/basalt/tab-bar--dark--desktop.png",
+        "dark-mobile": ".design-parity/w29/basalt/tab-bar--dark--mobile.png",
+        "light-desktop": ".design-parity/w29/basalt/tab-bar--light--desktop.png",
+        "light-mobile": ".design-parity/w29/basalt/tab-bar--light--mobile.png"
       },
       "errors": {}
     },
     "table-header": {
       "crops": {
-        "dark-desktop": "basalt/table-header--dark--desktop.png",
-        "dark-mobile": "basalt/table-header--dark--mobile.png",
-        "light-desktop": "basalt/table-header--light--desktop.png",
-        "light-mobile": "basalt/table-header--light--mobile.png"
+        "dark-desktop": ".design-parity/w29/basalt/table-header--dark--desktop.png",
+        "dark-mobile": ".design-parity/w29/basalt/table-header--dark--mobile.png",
+        "light-desktop": ".design-parity/w29/basalt/table-header--light--desktop.png",
+        "light-mobile": ".design-parity/w29/basalt/table-header--light--mobile.png"
       },
       "errors": {}
     },
     "table-row": {
       "crops": {
-        "dark-desktop": "basalt/table-row--dark--desktop.png",
-        "dark-mobile": "basalt/table-row--dark--mobile.png",
-        "light-desktop": "basalt/table-row--light--desktop.png",
-        "light-mobile": "basalt/table-row--light--mobile.png"
+        "dark-desktop": ".design-parity/w29/basalt/table-row--dark--desktop.png",
+        "dark-mobile": ".design-parity/w29/basalt/table-row--dark--mobile.png",
+        "light-desktop": ".design-parity/w29/basalt/table-row--light--desktop.png",
+        "light-mobile": ".design-parity/w29/basalt/table-row--light--mobile.png"
       },
       "errors": {}
     },

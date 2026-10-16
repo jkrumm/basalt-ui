@@ -16,6 +16,10 @@ import { extname, join, resolve } from 'node:path'
 
 const ROOT = resolve(import.meta.dirname, '../../docs/waves/design-parity')
 const KEEL = join(ROOT, 'keel')
+// Images and boards live in the gitignored .design-parity/ (CI has none); text stays under ROOT.
+const IMG_ROOT = resolve(import.meta.dirname, '../../.design-parity')
+const IMG_KEEL = join(IMG_ROOT, 'keel')
+const HAS_IMAGES = existsSync(IMG_KEEL)
 const ORIGIN = 'https://keel-workspace.vercel.app'
 
 const walk = (dir: string): string[] =>
@@ -58,7 +62,7 @@ const ROLE =
   /^(none|transparent|surface|surface-raised|sunken|subtle|strong|ink|ink-muted|ink-subtle|ink-faint|accent|positive|negative|warning|categorical|on-[a-z]+|[a-z]+-(fill|tint)|hairline-(subtle|default|strong)( \(ring shadow\))?)$/
 const TYPE_KEY = /^[\d.]+px\/\d+\/(normal|[\d.]+px) (sans|mono)( caps)?( ls-?[\d.]+)?$/
 const NUMERIC_KEY = /^[-\d. ]+$/
-const CROP = /^patterns\/[a-z0-9-]+--(dark|light)--(desktop|mobile)\.png$/
+const CROP = /^\.design-parity\/keel\/patterns\/[a-z0-9-]+--(dark|light)--(desktop|mobile)\.png$/
 const SLOT = /^(dark|light)-(desktop|mobile)$/
 const PROSE_KEYS = new Set(['name', 'notes', 'selectorNote'])
 
@@ -227,9 +231,10 @@ const acceptAll = (): boolean => true
 const read = (path: string): string => readFileSync(path, 'utf8')
 
 describe('keel capture licence boundary', () => {
-  test('the committed tree holds only png, json and md files', () => {
-    const bad = files.filter((f) => !['.png', '.json', '.md'].includes(extname(f)))
-    expect(bad).toEqual([])
+  test('the committed tree holds only json and md files (no png, no html)', () => {
+    const all = walk(ROOT)
+    expect(all.filter((f) => ['.png', '.html'].includes(extname(f)))).toEqual([])
+    expect(all.filter((f) => !['.json', '.md'].includes(extname(f)))).toEqual([])
   })
 
   test('markdown and raw json text carry no markup, CSS, class tokens or benchmark names', () => {
@@ -258,7 +263,7 @@ describe('keel capture licence boundary', () => {
       expect(pattern.id).toMatch(/^[a-z0-9]+(-[a-z0-9]+)*$/)
       for (const [slot, crop] of Object.entries(pattern.crops)) {
         expect(slot).toMatch(SLOT)
-        expect(existsSync(join(KEEL, crop))).toBe(true)
+        if (HAS_IMAGES) expect(existsSync(resolve(IMG_ROOT, '..', crop))).toBe(true)
       }
       for (const [slot, status] of Object.entries(pattern.slotStatus ?? {})) {
         expect(slot).toMatch(SLOT)
@@ -273,16 +278,17 @@ describe('keel capture licence boundary', () => {
     expect(dataProblems(scales, 'scales', acceptScalesString)).toEqual([])
   })
 
-  test('every png under keel/ is referenced by the route index or the inventory', () => {
-    const referenced = read(join(KEEL, 'ROUTES.md')) + read(join(KEEL, 'inventory.json'))
-    const orphans = files
-      .filter((f) => extname(f) === '.png')
-      .map((f) => f.slice(KEEL.length + 1))
-      .filter(
-        (rel) => !referenced.includes(rel) && !referenced.includes(rel.replace(/^routes\//, '')),
-      )
-    expect(orphans).toEqual([])
-  })
+  test.skipIf(!HAS_IMAGES)(
+    'every png under .design-parity/keel/ is referenced by the route index or the inventory (skipped: no local images, as in CI)',
+    () => {
+      const referenced = read(join(KEEL, 'ROUTES.md')) + read(join(KEEL, 'inventory.json'))
+      const orphans = walk(IMG_KEEL)
+        .filter((f) => extname(f) === '.png')
+        .map((f) => `.design-parity/keel/${f.slice(IMG_KEEL.length + 1)}`)
+        .filter((rel) => !referenced.includes(rel))
+      expect(orphans).toEqual([])
+    },
+  )
 })
 
 describe('guard positive controls', () => {

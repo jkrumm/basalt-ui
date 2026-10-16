@@ -33,6 +33,9 @@ bun-debug.log*
 # Evidence harness output (the summary md under docs/waves/evidence is committed)
 .evidence/
 
+# Design-parity images + boards (public repo, unlicensed benchmark): the text artefacts stay in docs/waves/design-parity
+.design-parity/
+
 # Testing
 coverage/
 .nyc_output/
