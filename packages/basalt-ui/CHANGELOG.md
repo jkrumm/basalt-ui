@@ -1,3 +1,19 @@
+# [2.12.0](https://github.com/jkrumm/basalt-ui/compare/v2.11.1...v2.12.0) (2026-10-16)
+
+
+### Bug Fixes
+
+* accept a pathless-layout provider and read the router context from types ([a57f4f5](https://github.com/jkrumm/basalt-ui/commit/a57f4f549b82bad0981155baac0d6544d507fc56))
+* close cancels pending overlays, live counters share one helper ([474712e](https://github.com/jkrumm/basalt-ui/commit/474712e71d8fb877cdb415163df0ad4e5725c1cd))
+* count provider tags, not files, and share the Start provider hint ([2293494](https://github.com/jkrumm/basalt-ui/commit/2293494b46086f1142bcaa9e9e6918ee694089a4))
+* slot review — nav stash leaf, shared notifier, late overlay open ([5ad739d](https://github.com/jkrumm/basalt-ui/commit/5ad739db8ff06e71eb3a66a49b6fc29e300ba051))
+* tie the Start root-context check to the exported root route ([aefc446](https://github.com/jkrumm/basalt-ui/commit/aefc4465fbb2bee72f4d2ef4cd643d1e6c71dc5e))
+
+
+### Features
+
+* provider bundles Spotlight, modals, hotkeys only when defined ([37c3477](https://github.com/jkrumm/basalt-ui/commit/37c347743a83db4b291173cf0238f37d6aa2fb42))
+
 ## [2.11.1](https://github.com/jkrumm/basalt-ui/compare/v2.11.0...v2.11.1) (2026-10-15)
 
 
