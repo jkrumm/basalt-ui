@@ -122,7 +122,7 @@ type Facts = {
   /** The painted svg's height beside its box's (the engine measures the box). */
   svgFill: Record<string, { box: number; svg: number }>
   /** `display` of each legend swatch kind, per probe that has a legend. */
-  legend: Record<string, { dot: string; chip: string; row: string }>
+  legend: Record<string, { dot: string; chip: string; row: string; line: string }>
   donut: { ringRight: number; legendLeft: number; legendTop: number; ringBottom: number }
   headerLegend: { titleBottom: number; legendTop: number; chartTop: number }
   /** Each Donut's ring (the element its box fills) against its box and painted svg. */
@@ -193,12 +193,15 @@ const facts = (page: Page): Promise<Facts> =>
     for (const name of ['lines', 'stacked-area', 'card-header-legend']) {
       const row = probe(name).querySelector('[data-basalt-chart-legend]')
       const dot = row?.querySelector('span[aria-hidden]')
-      const chip = row?.querySelector('svg[aria-hidden], span[aria-hidden]:nth-of-type(2)')
-      if (!row || !dot) throw new Error(`LAYOUT: no legend in ${name}`)
+      const line = row?.querySelector('svg[aria-hidden]')
+      const chip = row?.querySelector('span[aria-hidden]:nth-of-type(2)')
+      if (!row || !(dot || line)) throw new Error(`LAYOUT: no legend in ${name}`)
       out.legend[name] = {
         row: getComputedStyle(row).display,
-        dot: getComputedStyle(dot).display,
+        dot: dot ? getComputedStyle(dot).display : 'none',
         chip: chip ? getComputedStyle(chip).display : 'none',
+        // A line series' swatch is one stroke, shown at every width (no dot / chip pair).
+        line: line ? getComputedStyle(line).display : 'none',
       }
     }
     const donut = probe('donut')
@@ -401,6 +404,10 @@ layout('SSR-first contract: hydration moves nothing', () => {
           for (const name of ['lines', 'stacked-area', 'card-header-legend']) {
             const mode = f.legend[name]!
             expect(mode.row).toBe('flex')
+            if (mode.line !== 'none') {
+              expect(mode.dot).toBe('none')
+              continue
+            }
             if (width >= 480) {
               expect(mode.dot).toBe('none')
               expect(mode.chip).not.toBe('none')
