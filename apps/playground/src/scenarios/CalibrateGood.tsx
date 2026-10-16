@@ -58,7 +58,7 @@ export function CalibrateGood() {
       </Box>
       <Box data-shot="calibrate-good-table">
         <Section title={`Top 3 projects by spend, ${WINDOW_LABEL}`}>
-          <BasaltDataTable data={[...TOP_THREE]} columns={columns} enableSorting={false} />
+          <BasaltDataTable data={TOP_THREE} columns={columns} enableSorting={false} />
         </Section>
       </Box>
     </Stack>
