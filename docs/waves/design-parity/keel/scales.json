@@ -1,0 +1,537 @@
+{
+  "capturedAt": "2026-10-16T13:54:24.588Z",
+  "origin": "https://keel-workspace.vercel.app",
+  "desktop": {
+    "viewport": "1440x900",
+    "type": {
+      "12px/400/16px sans": 917,
+      "13px/400/20px sans": 718,
+      "13px/500/20px sans": 445,
+      "12px/500/16px sans": 236,
+      "11px/500/16px sans": 88,
+      "11px/400/16px mono": 70,
+      "11px/400/16px sans": 62,
+      "10.5px/500/14px mono caps ls0.63": 51,
+      "20px/500/24px sans ls-0.4": 37,
+      "14px/400/20px sans": 19,
+      "13px/500/16px sans": 10,
+      "13px/600/20px sans": 10,
+      "14px/500/16px sans": 10,
+      "28px/500/34px sans ls-0.56": 9,
+      "14px/500/20px sans": 8,
+      "9.5px/400/12px mono ls0.19": 5,
+      "10.5px/400/20px sans": 4,
+      "16px/500/24px sans ls-0.1": 4,
+      "12px/400/18px sans": 2,
+      "10.5px/500/20px sans": 1,
+      "12px/400/16px mono": 1,
+      "13px/400/24px sans": 1,
+      "20px/600/28px sans ls-0.24": 1
+    },
+    "padding": {
+      "1": 33,
+      "2": 129,
+      "3": 8,
+      "4": 264,
+      "5": 2,
+      "6": 510,
+      "8": 676,
+      "10": 361,
+      "12": 1371,
+      "14": 54,
+      "16": 56,
+      "20": 8,
+      "24": 172,
+      "30": 30,
+      "32": 16,
+      "40": 58,
+      "56": 4
+    },
+    "gap": {
+      "1": 31,
+      "2": 253,
+      "3": 103,
+      "4": 163,
+      "6": 1053,
+      "8": 894,
+      "10": 146,
+      "12": 247,
+      "16": 3,
+      "20": 9,
+      "24": 8,
+      "40": 2,
+      "1.5": 71
+    },
+    "radius": {
+      "1": 75,
+      "2": 169,
+      "3": 6,
+      "4": 365,
+      "5": 226,
+      "6": 385,
+      "7": 8,
+      "8": 536,
+      "10": 10,
+      "12": 129,
+      "1.5": 1146,
+      "pill": 432,
+      "3.5": 60
+    },
+    "border": {
+      "1": 71
+    },
+    "ring": {
+      "1": 1328,
+      "2": 14,
+      "1.5": 61
+    },
+    "shadow": {
+      "0 0 0 0": 4690,
+      "0 -1 0 0": 524,
+      "0 1 0 0": 79,
+      "0 1 2 0": 25,
+      "-1 0 0 0": 20,
+      "0 1 1 0": 12,
+      "0 2 6 -1": 10,
+      "0 12 28 -6": 10,
+      "0 12 32 -8": 1
+    },
+    "charts": [
+      {
+        "width": 100,
+        "height": 61,
+        "paths": 20,
+        "lines": 1,
+        "rects": 0,
+        "circles": 0,
+        "textNodes": 0,
+        "dashed": false,
+        "maxStroke": 6,
+        "minStroke": 2,
+        "insideCard": true,
+        "route": "root"
+      },
+      {
+        "width": 40,
+        "height": 40,
+        "paths": 0,
+        "lines": 0,
+        "rects": 0,
+        "circles": 2,
+        "textNodes": 0,
+        "dashed": true,
+        "maxStroke": 4,
+        "minStroke": 4,
+        "insideCard": true,
+        "route": "root"
+      },
+      {
+        "width": 117,
+        "height": 22,
+        "paths": 2,
+        "lines": 0,
+        "rects": 0,
+        "circles": 0,
+        "textNodes": 0,
+        "dashed": false,
+        "maxStroke": 1.5,
+        "minStroke": 1,
+        "insideCard": true,
+        "route": "root"
+      },
+      {
+        "width": 276,
+        "height": 57,
+        "paths": 2,
+        "lines": 1,
+        "rects": 0,
+        "circles": 2,
+        "textNodes": 1,
+        "dashed": false,
+        "maxStroke": 2,
+        "minStroke": 1,
+        "insideCard": true,
+        "route": "root"
+      },
+      {
+        "width": 139,
+        "height": 24,
+        "paths": 2,
+        "lines": 0,
+        "rects": 0,
+        "circles": 0,
+        "textNodes": 0,
+        "dashed": false,
+        "maxStroke": 1.5,
+        "minStroke": 1,
+        "insideCard": false,
+        "route": "records-companies-oakline-freight"
+      },
+      {
+        "width": 139,
+        "height": 16,
+        "paths": 1,
+        "lines": 0,
+        "rects": 0,
+        "circles": 0,
+        "textNodes": 0,
+        "dashed": false,
+        "maxStroke": 1.5,
+        "minStroke": 1.5,
+        "insideCard": true,
+        "route": "work"
+      }
+    ],
+    "perRoute": {
+      "root": {
+        "charts": 4,
+        "density": {
+          "tableRowsVisible": 0,
+          "tableRowHeight": 0,
+          "articleHeights": [164, 164, 164],
+          "listItemHeights": [20, 54, 54, 54, 52, 52, 52, 52, 52, 52]
+        }
+      },
+      "crew": {
+        "charts": 0,
+        "density": {
+          "tableRowsVisible": 0,
+          "tableRowHeight": 0,
+          "articleHeights": [330, 330, 330, 330, 330],
+          "listItemHeights": [20]
+        }
+      },
+      "crew-scout": {
+        "charts": 0,
+        "density": {
+          "tableRowsVisible": 0,
+          "tableRowHeight": 0,
+          "articleHeights": [330, 330, 330, 330, 330],
+          "listItemHeights": [20, 36]
+        }
+      },
+      "records-companies": {
+        "charts": 0,
+        "density": {
+          "tableRowsVisible": 17,
+          "tableRowHeight": 40,
+          "articleHeights": [],
+          "listItemHeights": [20, 20]
+        }
+      },
+      "records-people": {
+        "charts": 0,
+        "density": {
+          "tableRowsVisible": 17,
+          "tableRowHeight": 40,
+          "articleHeights": [],
+          "listItemHeights": [20, 20]
+        }
+      },
+      "records-deals": {
+        "charts": 0,
+        "density": {
+          "tableRowsVisible": 0,
+          "tableRowHeight": 0,
+          "articleHeights": [186],
+          "listItemHeights": [20, 20, 120, 120, 84, 84, 84, 84, 120, 120, 120, 84]
+        }
+      },
+      "records-deals-table": {
+        "charts": 0,
+        "density": {
+          "tableRowsVisible": 0,
+          "tableRowHeight": 0,
+          "articleHeights": [],
+          "listItemHeights": [20, 20]
+        }
+      },
+      "records-companies-oakline-freight": {
+        "charts": 1,
+        "density": {
+          "tableRowsVisible": 0,
+          "tableRowHeight": 0,
+          "articleHeights": [124],
+          "listItemHeights": [20, 20, 20, 24, 24, 24, 24, 86, 86, 80, 60, 16]
+        }
+      },
+      "work": {
+        "charts": 1,
+        "density": {
+          "tableRowsVisible": 0,
+          "tableRowHeight": 0,
+          "articleHeights": [
+            104, 104, 104, 104, 104, 104, 114, 114, 114, 114, 114, 180, 180, 180, 104, 104, 104,
+            104, 104, 104
+          ],
+          "listItemHeights": [20, 104, 104, 104, 104, 104, 104, 114, 114, 114, 114, 114]
+        }
+      },
+      "work-list": {
+        "charts": 0,
+        "density": {
+          "tableRowsVisible": 0,
+          "tableRowHeight": 0,
+          "articleHeights": [],
+          "listItemHeights": [20, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36]
+        }
+      }
+    }
+  },
+  "mobile": {
+    "viewport": "390x844",
+    "type": {
+      "12px/400/16px sans": 876,
+      "13px/400/20px sans": 524,
+      "13px/500/20px sans": 440,
+      "12px/500/16px sans": 225,
+      "11px/400/16px mono": 68,
+      "11px/500/16px sans": 68,
+      "11px/400/16px sans": 57,
+      "10.5px/500/14px mono caps ls0.63": 51,
+      "20px/500/24px sans ls-0.4": 37,
+      "14px/400/20px sans": 19,
+      "14px/500/16px sans": 10,
+      "28px/500/34px sans ls-0.56": 9,
+      "14px/500/20px sans": 8,
+      "9.5px/400/12px mono ls0.19": 5,
+      "10.5px/400/20px sans": 4,
+      "16px/500/24px sans ls-0.1": 4,
+      "12px/400/18px sans": 2,
+      "10.5px/500/20px sans": 1,
+      "12px/400/16px mono": 1,
+      "20px/600/28px sans ls-0.24": 1
+    },
+    "padding": {
+      "1": 33,
+      "2": 129,
+      "3": 8,
+      "4": 196,
+      "5": 2,
+      "6": 400,
+      "8": 435,
+      "10": 311,
+      "12": 1371,
+      "14": 54,
+      "16": 56,
+      "20": 8,
+      "24": 172,
+      "32": 16,
+      "40": 58,
+      "56": 4
+    },
+    "gap": {
+      "1": 1,
+      "2": 238,
+      "3": 103,
+      "4": 150,
+      "6": 1027,
+      "8": 698,
+      "10": 136,
+      "12": 250,
+      "16": 3,
+      "20": 6,
+      "24": 8,
+      "40": 2,
+      "1.5": 71
+    },
+    "radius": {
+      "1": 75,
+      "2": 169,
+      "3": 6,
+      "4": 295,
+      "5": 166,
+      "6": 375,
+      "7": 8,
+      "8": 356,
+      "10": 10,
+      "12": 129,
+      "1.5": 1146,
+      "pill": 388,
+      "3.5": 60
+    },
+    "border": {
+      "1": 71
+    },
+    "ring": {
+      "1": 1187,
+      "2": 14,
+      "1.5": 28
+    },
+    "shadow": {
+      "0 0 0 0": 4458,
+      "0 -1 0 0": 524,
+      "0 1 0 0": 69,
+      "0 1 2 0": 25,
+      "-1 0 0 0": 20,
+      "0 1 1 0": 12,
+      "0 2 6 -1": 10,
+      "0 12 28 -6": 10,
+      "0 12 32 -8": 1
+    },
+    "charts": [
+      {
+        "width": 100,
+        "height": 61,
+        "paths": 20,
+        "lines": 1,
+        "rects": 0,
+        "circles": 0,
+        "textNodes": 0,
+        "dashed": false,
+        "maxStroke": 6,
+        "minStroke": 2,
+        "insideCard": true,
+        "route": "root"
+      },
+      {
+        "width": 40,
+        "height": 40,
+        "paths": 0,
+        "lines": 0,
+        "rects": 0,
+        "circles": 2,
+        "textNodes": 0,
+        "dashed": true,
+        "maxStroke": 4,
+        "minStroke": 4,
+        "insideCard": true,
+        "route": "root"
+      },
+      {
+        "width": 127,
+        "height": 22,
+        "paths": 2,
+        "lines": 0,
+        "rects": 0,
+        "circles": 0,
+        "textNodes": 0,
+        "dashed": false,
+        "maxStroke": 1.5,
+        "minStroke": 1,
+        "insideCard": true,
+        "route": "root"
+      },
+      {
+        "width": 270,
+        "height": 56,
+        "paths": 2,
+        "lines": 1,
+        "rects": 0,
+        "circles": 2,
+        "textNodes": 1,
+        "dashed": false,
+        "maxStroke": 2,
+        "minStroke": 1,
+        "insideCard": true,
+        "route": "root"
+      },
+      {
+        "width": 93,
+        "height": 16,
+        "paths": 1,
+        "lines": 0,
+        "rects": 0,
+        "circles": 0,
+        "textNodes": 0,
+        "dashed": false,
+        "maxStroke": 1.5,
+        "minStroke": 1.5,
+        "insideCard": true,
+        "route": "work"
+      }
+    ],
+    "perRoute": {
+      "root": {
+        "charts": 4,
+        "density": {
+          "tableRowsVisible": 0,
+          "tableRowHeight": 0,
+          "articleHeights": [],
+          "listItemHeights": [20]
+        }
+      },
+      "crew": {
+        "charts": 0,
+        "density": {
+          "tableRowsVisible": 0,
+          "tableRowHeight": 0,
+          "articleHeights": [330],
+          "listItemHeights": [20]
+        }
+      },
+      "crew-scout": {
+        "charts": 0,
+        "density": {
+          "tableRowsVisible": 0,
+          "tableRowHeight": 0,
+          "articleHeights": [330, 330],
+          "listItemHeights": []
+        }
+      },
+      "records-companies": {
+        "charts": 0,
+        "density": {
+          "tableRowsVisible": 16,
+          "tableRowHeight": 40,
+          "articleHeights": [],
+          "listItemHeights": [20, 20]
+        }
+      },
+      "records-people": {
+        "charts": 0,
+        "density": {
+          "tableRowsVisible": 16,
+          "tableRowHeight": 40,
+          "articleHeights": [],
+          "listItemHeights": [20, 20]
+        }
+      },
+      "records-deals": {
+        "charts": 0,
+        "density": {
+          "tableRowsVisible": 0,
+          "tableRowHeight": 0,
+          "articleHeights": [186],
+          "listItemHeights": [20, 20, 120, 120, 84, 120, 120, 136, 136, 120, 120, 84]
+        }
+      },
+      "records-deals-table": {
+        "charts": 0,
+        "density": {
+          "tableRowsVisible": 0,
+          "tableRowHeight": 0,
+          "articleHeights": [],
+          "listItemHeights": [20, 20]
+        }
+      },
+      "records-companies-oakline-freight": {
+        "charts": 0,
+        "density": {
+          "tableRowsVisible": 0,
+          "tableRowHeight": 0,
+          "articleHeights": [164],
+          "listItemHeights": [20, 20, 20, 24, 24, 24, 24]
+        }
+      },
+      "work": {
+        "charts": 1,
+        "density": {
+          "tableRowsVisible": 0,
+          "tableRowHeight": 0,
+          "articleHeights": [104, 104, 104, 104, 114, 114, 114, 114, 180, 180, 104, 104, 104, 104],
+          "listItemHeights": [20, 104, 104, 104, 104, 114, 114, 114, 114, 180, 180, 104]
+        }
+      },
+      "work-list": {
+        "charts": 0,
+        "density": {
+          "tableRowsVisible": 0,
+          "tableRowHeight": 0,
+          "articleHeights": [],
+          "listItemHeights": [20, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36]
+        }
+      }
+    }
+  }
+}
