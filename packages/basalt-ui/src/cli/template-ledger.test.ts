@@ -99,7 +99,11 @@ function simulateOxfmtReformat(host: string): string {
 
 beforeEach(() => {
   dir = mkdtempSync(resolve(tmpdir(), 'basalt-ledger-'))
-  writeFileSync(join(dir, 'package.json'), JSON.stringify({ name: 'fixture' }))
+  // Declared up front: undeclared roots flip between init (no `src/` yet) and the first sync.
+  writeFileSync(
+    join(dir, 'package.json'),
+    JSON.stringify({ name: 'fixture', basalt: { roots: ['src'] } }),
+  )
   silenced(() => init(dir))
 })
 

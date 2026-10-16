@@ -6,11 +6,19 @@
  */
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import { createHash } from 'node:crypto'
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 
-import { doctor, init, MANIFEST_PATH, run, sync } from './index.ts'
+import { doctor, init, MANIFEST_PATH, renderRulePaths, run, sync } from './index.ts'
 
 let dir: string
 
@@ -645,20 +653,62 @@ describe('managed reviewer subagent and rule paths', () => {
     expect(existsSync(resolve(dir, orphan))).toBe(false)
   })
 
-  it('renders every rule paths: from basalt.roots, one glob per root', () => {
-    install({ roots: ['apps/web/src', 'packages/ui/src'] })
-    const rule = read(RULE)
-    expect(rule).toContain("paths:\n  - 'apps/web/src/**'\n  - 'packages/ui/src/**'\n---")
-    expect(rule).not.toContain('**/src/**')
+  const SHIPPED_RULES = readdirSync(resolve(import.meta.dir, '../../agent/rules')).filter((n) =>
+    n.endsWith('.md'),
+  )
+
+  it('renders EVERY shipped rule from basalt.roots, normalised and YAML-safe', () => {
+    install({ roots: ['./apps/web/src/', "a$&b'c", 'packages/ui/src'] })
+    expect(SHIPPED_RULES.length).toBe(6)
+    for (const name of SHIPPED_RULES) {
+      const rule = read(`.claude/rules/${name}`)
+      expect([name, rule]).toEqual([
+        name,
+        expect.stringContaining(
+          "paths:\n  - 'apps/web/src/**'\n  - 'a$&b''c/**'\n  - 'packages/ui/src/**'\n---",
+        ),
+      ])
+    }
   })
 
-  it('defaults to src/** and sync --check reports drift when the roots change', () => {
+  it('renders the declared default root, and sync --check reports drift when roots change', () => {
+    mkdirSync(resolve(dir, 'src'))
     install()
     expect(read(RULE)).toContain("paths:\n  - 'src/**'\n---")
     writeFixture('package.json', JSON.stringify({ name: 'fixture', basalt: { roots: ['app'] } }))
     expect(capture(() => sync({ check: true }, dir)).code).toBe(1)
     capture(() => sync({}, dir))
     expect(read(RULE)).toContain("paths:\n  - 'app/**'\n---")
+  })
+
+  it('a root-installed monorepo with no roots renders the inferred workspace roots', () => {
+    writeFixture('package.json', JSON.stringify({ name: 'mono', workspaces: ['apps/*'] }))
+    writeFixture(
+      'apps/web/package.json',
+      JSON.stringify({ name: 'web', dependencies: { 'basalt-ui': '*' } }),
+    )
+    mkdirSync(resolve(dir, 'apps/web/src'), { recursive: true })
+    capture(() => init(dir))
+    expect(read(RULE)).toContain("paths:\n  - 'apps/web/src/**'\n---")
+    expect(capture(() => sync({ check: true }, dir)).code).toBe(0)
+  })
+
+  it('keeps the old broad globs when no roots are declared or inferable', () => {
+    install()
+    expect(read(RULE)).toContain(
+      "paths:\n  - 'src/**'\n  - 'apps/**/src/**'\n  - 'packages/**/src/**'\n---",
+    )
+  })
+
+  it('renderRulePaths leaves a rule without paths: unchanged and throws on a malformed block', () => {
+    expect(renderRulePaths('# no frontmatter paths\n', ['src'])).toBe('# no frontmatter paths\n')
+    expect(() => renderRulePaths('---\npaths: src/**\n---\n', ['src'])).toThrow('paths')
+    expect(() => renderRulePaths('---\npaths:\n  - x\n---\n', ['a\nb'])).toThrow('line break')
+  })
+
+  it('normalises "." and "./" roots', () => {
+    expect(renderRulePaths("paths:\n  - 'x'\n", ['.'])).toBe("paths:\n  - '**'\n")
+    expect(renderRulePaths("paths:\n  - 'x'\n", ['./src//'])).toBe("paths:\n  - 'src/**'\n")
   })
 
   it('names the skills and the subagent in the AGENTS block', () => {

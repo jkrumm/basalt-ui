@@ -2133,6 +2133,12 @@ function spreadSlotOwnerBinding(property) {
   return jsxRootName(owner.name)
 }
 
+/** The slot's prop name, spelled as {@link slotOwnerBinding} reads it (`tabs=` or `{ 'tabs': … }`). */
+function slotAttrName(attr) {
+  if (attr === undefined) return undefined
+  return attr.type === 'Property' ? (attr.key?.name ?? attr.key?.value) : attr.name?.name
+}
+
 /** The home slot attribute that ENCLOSES `node`, or undefined. Stops at the attribute, never the element. */
 function enclosingSlotAttribute(node) {
   let current = node.parent
@@ -2324,7 +2330,7 @@ function createSlotContext(context) {
       const attr = enclosingSlotAttribute(node)
       return {
         directOwner: attr === undefined ? undefined : slotOwnerBinding(attr),
-        slotName: attr === undefined ? undefined : (attr.name?.name ?? attr.key?.name),
+        slotName: slotAttrName(attr),
         declaratorName: enclosingDeclaratorName(node),
         subtreeHosts: ancestorTagBindings(node, BASALT_HOST_TAGS),
       }
@@ -3166,14 +3172,13 @@ const boundControlOutsideHome = {
           const exported = controls.get(root)
           if (exported === undefined || !BOUND_TAGS.has(exported)) continue
           if (hosted) continue
-          if (exported === 'ViewTabs' && viewTabsInRefusedSlot(slots, captured)) {
-            if (hasThemeAllow(context, node, 'bound-control-outside-home')) continue
-            context.report({ node, message: VIEW_TABS_REFUSED_HOME_MESSAGE })
-            continue
-          }
-          if (slots.resolve(captured) || slots.inSubtreeHome(captured)) continue
+          const refused = exported === 'ViewTabs' && viewTabsInRefusedSlot(slots, captured)
+          if (!refused && (slots.resolve(captured) || slots.inSubtreeHome(captured))) continue
           if (hasThemeAllow(context, node, 'bound-control-outside-home')) continue
-          context.report({ node, message: BOUND_CONTROL_OUTSIDE_HOME_MESSAGE })
+          context.report({
+            node,
+            message: refused ? VIEW_TABS_REFUSED_HOME_MESSAGE : BOUND_CONTROL_OUTSIDE_HOME_MESSAGE,
+          })
         }
       },
     }

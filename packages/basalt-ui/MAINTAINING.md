@@ -491,6 +491,7 @@ Code cannot load rules or skills from `node_modules`, which is the only reason a
   A rule bullet ends in its enforcement tag (`[basalt/<rule>]`, `[check-theme <kind>]`,
   `[type <Name>]`); `check-agent-doc-drift.ts` (Checks F–H) resolves the tags, rejects prose
   outside bullets, repo-local and removed rule ids, and unpublished names in the llms.txt header.
+- **Rule `paths:` differs by copy**: a consumer's installed rules get `'<root>/**'` per `basalt.roots` (rendered by `init`/`sync`); this repo's `/.claude/rules` keep the shipped `'**/src/**'` verbatim (`make sync-self`), which loads for `packages/*/src/**` and `apps/*/src/**`.
 - **Every rule file opens with a GENERATED `<!-- basalt:coverage -->` block** —
   `bun scripts/check-coverage.ts --write` renders it from `SURFACES` (the union over every surface
   sharing that `rule`), `--check` is the CI gate, and a block that DISAGREES is a hard failure. `not guarded`
