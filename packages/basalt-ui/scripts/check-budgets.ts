@@ -52,22 +52,6 @@ const CEILINGS = {
   ruleLines: 272, // landed (W9): the shipped rules, 450 is the spec target; -5 (W31): +1 (ViewTabs law), -6 (one `paths:` glob per rule)
 } as const
 
-/**
- * Wave 31's CLI raises while its parallel PRs land, one line per change so the merge train never
- * conflicts. Each PR sets only its own entry to the lines it adds; the wave close-out folds the sum
- * into the ceiling with an itemised comment and deletes this.
- */
-function wave31CliLines(): number {
-  const raises = {
-    shot: 1691,
-
-    install: 75,
-
-    notice: 142,
-  }
-  return Object.values(raises).reduce((sum, n) => sum + n, 0)
-}
-
 type Budget = {
   readonly label: string
   /** `null` = could not be measured here (only ever tolerated under `--report`). */
@@ -554,11 +538,11 @@ async function budgets(providerOnlyDist: string): Promise<Budget[]> {
     // 4890 -> 4955: the declared `basalt.shell: false` — config key, seed skip, shared seed-retire notice and the doctor finding (ledger row 82, linewatch W2).
     // 4955 -> 5020: `app-wiring` accepts one provider in the root or a pathless layout, fails an untyped `createRootRoute` and a missing root (ledger rows 113, 115, weatherorb W37).
     // 5020 -> 5165: `app-wiring` follows one import hop (relative or tsconfig `paths`) to a provider wrapper; `sync` judges a Start seed by content (ledger rows 121-123, weatherorb W39); the hop resolver and provider-tag reader are leaf modules.
-    // 6777 -> 7073 (W31 calibration, `shot` entry 1395 -> 1691): `scale` reads basalt's own tokens (component-scoped too) and reports `scaleError`; one contact sheet per anchor; focus `not-declared`; parent mkdir; stale tmp sweep; hover/focus crops hold an open tooltip once its animation settles, never a foreign tooltip; rendered-only focus targets; pid-aware tmp sweep.
+    // 5165 -> 7073 (W31): `basalt-ui shot` +1691 (cli/shot/: capture with per-state crops, contact sheets, the in-page measurer and theme scale incl. basalt's own `--vx-*` steps, the board, out-dir safety, the launcher; SPEC § 9.5); the reviewer install and rule `paths:` from `basalt.roots` +75 (rows 135-136); doctor's stale-board notice and optional Playwright line +142 (cli/board-freshness.ts).
     {
       label: 'CLI non-test lines (src/cli/**)',
       value: cliNonTestLines(),
-      ceiling: 5165 + wave31CliLines(),
+      ceiling: 7073,
     },
     ...(await providerOnlyRows(providerOnlyDist)),
   ]
