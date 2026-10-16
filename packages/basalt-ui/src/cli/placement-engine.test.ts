@@ -32,7 +32,11 @@ import { fileURLToPath } from 'node:url'
 import { classify, init, MANIFEST_PATH, normalizeForLedger, sha256, sync } from './index.ts'
 
 const PKG_ROOT = fileURLToPath(new URL('../../', import.meta.url))
-const SHIPPED_RULE = readFileSync(resolve(PKG_ROOT, 'agent/rules/basalt-tokens.md'), 'utf8')
+// The fixture has no `basalt.roots`, so the installed copy renders the default root's `paths:`.
+const SHIPPED_RULE = readFileSync(
+  resolve(PKG_ROOT, 'agent/rules/basalt-tokens.md'),
+  'utf8',
+).replace("'**/src/**'", "'src/**'")
 const SHIPPED_SKILL = readFileSync(resolve(PKG_ROOT, 'agent/skills/basalt-design/SKILL.md'), 'utf8')
 
 let dir: string
