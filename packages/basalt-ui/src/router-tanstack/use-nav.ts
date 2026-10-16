@@ -29,7 +29,7 @@ export type UseNavOptions<G extends ReadonlyArray<AnyNavGroup>> = {
    * Anything else becomes `item.badge` (desktop only).
    */
   badges?: Partial<Record<NavItemId<G>, number | ReactNode>>
-  /** Override active detection entirely. */
+  /** Override active detection entirely. Keep it stable (module scope or memoized). */
   isActive?: (item: AnyNavItem & { id: NavItemId<G> }) => boolean
   getScrollElement?: () => HTMLElement | null
 }
@@ -76,13 +76,14 @@ export type ResolvedNav = {
  * active state arrives as the `aria-current` prop. Keyed by override mode because `isActive` swaps
  * the host element (`OverriddenAnchor`).
  */
-const anchorCache = new WeakMap<object, Map<string, NavAnchor>>()
+const anchorCache = new WeakMap<object, Map<boolean, Map<string, NavAnchor>>>()
 
 function anchorFor(config: object, item: AnyNavItem, overridden: boolean): NavAnchor {
-  const byId = anchorCache.get(config) ?? new Map<string, NavAnchor>()
-  anchorCache.set(config, byId)
-  const key = `${overridden ? 1 : 0}:${item.id}`
-  const cached = byId.get(key)
+  let byMode = anchorCache.get(config)
+  if (!byMode) anchorCache.set(config, (byMode = new Map()))
+  let byId = byMode.get(overridden)
+  if (!byId) byMode.set(overridden, (byId = new Map()))
+  const cached = byId.get(item.id)
   if (cached) return cached
   // `exact: true` makes `resolveState` the only authority on active: a `Link` spreads its own
   // `aria-current` LAST and cannot be overridden from outside, so a prefix-matching parent would
@@ -97,23 +98,26 @@ function anchorFor(config: object, item: AnyNavItem, overridden: boolean): NavAn
       }),
       ...props,
     })
-  byId.set(key, Anchor)
+  byId.set(item.id, Anchor)
   return Anchor
 }
 
 const NO_BADGES: Readonly<Record<string, unknown>> = {}
 
 /** Shallow equality over own keys; `undefined` and `{}` are the same (no badges). */
-export function shallowEqual(
+function shallowEqual(
   a: Readonly<Record<string, unknown>> = NO_BADGES,
   b: Readonly<Record<string, unknown>> = NO_BADGES,
 ): boolean {
   if (a === b) return true
   const keys = Object.keys(a)
-  return keys.length === Object.keys(b).length && keys.every((k) => k in b && Object.is(a[k], b[k]))
+  return (
+    keys.length === Object.keys(b).length &&
+    keys.every((k) => Object.hasOwn(b, k) && Object.is(a[k], b[k]))
+  )
 }
 
-/** The breadcrumb for `winnerId`: its group, and its immediate parent when nested. Pure. */
+/** The breadcrumb for `winnerId`: its group, and its immediate parent when nested. */
 function crumbOf(
   config: { groups: ReadonlyArray<AnyNavGroup> },
   winnerId: string | undefined,
@@ -126,11 +130,11 @@ function crumbOf(
   ): ActiveCrumb | undefined => {
     for (const item of items) {
       if (item.id === winnerId) {
-        const up = parent && {
+        const parentCrumb = parent && {
           parent: parent.label,
           parentAnchor: anchorFor(config, parent, overridden),
         }
-        return { section, page: item.label, ...up }
+        return { section, page: item.label, ...parentCrumb }
       }
       const nested = item.children && find(item.children, section, item)
       if (nested) return nested

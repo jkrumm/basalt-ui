@@ -129,9 +129,9 @@ export function AsideProvider({ children }: { children: ReactNode }): ReactNode 
   const claim = useCallback((id: string) => {
     setClaims((s) => ({ ...s, ids: [...s.ids, id] }))
     return () =>
-      setClaims(({ ids: all, folds: { [id]: _released, ...folds } }) => ({
-        ids: all.filter((x) => x !== id),
-        folds,
+      setClaims((s) => ({
+        ids: s.ids.filter((x) => x !== id),
+        folds: Object.fromEntries(Object.entries(s.folds).filter(([k]) => k !== id)),
       }))
   }, [])
 

@@ -33,22 +33,25 @@ const NAV = defineNav({
   mobile: { tabs: ['home', 'dashboard'] },
 })
 
-const badgeControl = { set: (_n: number) => {} }
-let shellExtra: { isActive?: (item: { id: string }) => boolean } = {}
+type Isolated = (item: { id: string }) => boolean
 
-function Root() {
-  const [count, setCount] = useState(1)
-  useEffect(() => {
-    badgeControl.set = setCount
-  }, [])
-  // An inline literal, rebuilt on every render of this component.
-  return (
-    <BasaltShell brand={{ name: 'Argo' }} nav={NAV} badges={{ dashboard: count }} {...shellExtra} />
-  )
-}
-
-async function mountShell(entry: string, extra: typeof shellExtra = {}) {
-  shellExtra = extra
+async function mountShell(entry: string, isActive?: Isolated) {
+  const badges = { set: (_n: number) => {} }
+  function Root() {
+    const [count, setCount] = useState(1)
+    useEffect(() => {
+      badges.set = setCount
+    }, [])
+    // An inline literal, rebuilt on every render of this component.
+    return (
+      <BasaltShell
+        brand={{ name: 'Argo' }}
+        nav={NAV}
+        badges={{ dashboard: count }}
+        {...(isActive && { isActive })}
+      />
+    )
+  }
   const rootRoute = createRootRoute({ component: Root })
   const childRoutes = ['/', '/dashboard', '/dashboard/sessions'].map((path) =>
     createRoute({ getParentRoute: () => rootRoute, path, component: () => null }),
@@ -63,57 +66,81 @@ async function mountShell(entry: string, extra: typeof shellExtra = {}) {
     </MantineProvider>,
   )
   await waitFor(() => expect(router.state.status).toBe('idle'))
-  return router
+  return { router, setBadge: (n: number) => badges.set(n) }
+}
+
+type Place = 'sidebar' | 'bar' | 'header'
+function linkTo(href: string, within: Place): HTMLAnchorElement {
+  const root = {
+    sidebar: '.mantine-AppShell-navbar',
+    bar: 'nav[aria-label="Primary"]',
+    header: 'header',
+  }[within]
+  const el = document.querySelector(`${root} a[href="${href}"]`)
+  if (!(el instanceof HTMLAnchorElement)) throw new Error(`no <a href="${href}"> in the ${within}`)
+  return el
 }
 
 // The rows that stay structurally in place across a route change. (The expandable Dashboard row
 // legitimately swaps its collapsed/expanded branch, so it is not in this set.)
-const STABLE = [
+const STABLE: ReadonlyArray<readonly [string, Place]> = [
   ['/', 'sidebar'],
   ['/', 'bar'],
   ['/dashboard', 'bar'],
-] as const
-const stableLinks = (): HTMLAnchorElement[] => STABLE.map(([href, within]) => linkTo(href, within))
-function linkTo(href: string, within: 'sidebar' | 'bar'): HTMLAnchorElement {
-  const root = within === 'sidebar' ? '.mantine-AppShell-navbar' : 'nav[aria-label="Primary"]'
-  const el = document.querySelector(`${root} a[href="${href}"]`)
-  if (!(el instanceof HTMLAnchorElement)) throw new Error(`no <a href="${href}"> in the ${within}`)
-  return el
+]
+const linksOf = (set: ReadonlyArray<readonly [string, Place]>): HTMLAnchorElement[] =>
+  set.map(([href, within]) => linkTo(href, within))
+
+/** Every link in `set` is still the very node captured in `before`, and still attached. */
+function expectSameLinks(
+  set: ReadonlyArray<readonly [string, Place]>,
+  before: HTMLAnchorElement[],
+) {
+  const after = linksOf(set)
+  expect(after).toHaveLength(before.length)
+  after.forEach((a, i) => {
+    expect(a).toBe(before[i]!)
+    expect(a.isConnected).toBe(true)
+  })
 }
 
 afterEach(cleanup)
 
 describe('nav anchor identity', () => {
   test('navigating keeps every nav link (sidebar, mobile bar) mounted, focus included', async () => {
-    const router = await mountShell('/dashboard/sessions')
-    const before = stableLinks()
-    expect(linkTo('/dashboard', 'sidebar')).toBeDefined()
-    expect(linkTo('/', 'bar')).toBeDefined()
-
+    const { router } = await mountShell('/dashboard/sessions')
+    const before = linksOf(STABLE)
     const clicked = linkTo('/', 'sidebar')
     clicked.focus()
     await act(() => router.navigate({ to: '/' }))
     await waitFor(() => expect(linkTo('/', 'sidebar').getAttribute('aria-current')).toBe('page'))
 
-    expect(stableLinks().every((a, i) => a === before[i] && a.isConnected)).toBe(true)
-    expect(linkTo('/', 'sidebar')).toBe(clicked)
+    expectSameLinks(STABLE, before)
     expect(document.activeElement).toBe(clicked)
   })
 
+  test('the breadcrumb parent link survives a navigation within its page', async () => {
+    const { router } = await mountShell('/dashboard/sessions')
+    const withCrumb = [...STABLE, ['/dashboard', 'header'] as const]
+    const before = linksOf(withCrumb)
+    await act(() => router.navigate({ to: '/dashboard/sessions', search: { page: 2 } as never }))
+    await waitFor(() => expect(router.state.location.search).toEqual({ page: 2 }))
+    expectSameLinks(withCrumb, before)
+  })
+
   test('an inline badges literal with a new value does not remount a link', async () => {
-    await mountShell('/')
-    const before = stableLinks()
-    act(() => badgeControl.set(2))
+    const { setBadge } = await mountShell('/')
+    const before = linksOf(STABLE)
+    act(() => setBadge(2))
     await waitFor(() => expect(linkTo('/dashboard', 'sidebar').textContent).toContain('2'))
-    expect(stableLinks().every((a, i) => a === before[i] && a.isConnected)).toBe(true)
+    expectSameLinks(STABLE, before)
   })
 
   test('under an isActive override the links also survive a navigation', async () => {
-    const router = await mountShell('/', { isActive: (item) => item.id === 'home' })
-    const before = stableLinks()
-    expect(before).toHaveLength(STABLE.length)
+    const { router } = await mountShell('/', (item) => item.id === 'home')
+    const before = linksOf(STABLE)
     await act(() => router.navigate({ to: '/dashboard' }))
     await waitFor(() => expect(router.state.location.pathname).toBe('/dashboard'))
-    expect(stableLinks().every((a, i) => a === before[i] && a.isConnected)).toBe(true)
+    expectSameLinks(STABLE, before)
   })
 })
