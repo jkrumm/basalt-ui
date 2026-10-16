@@ -2,8 +2,7 @@
 source: basalt-ui
 description: Mantine v9 in a basalt-ui app — provider, shell, surfaces, scroll, breakpoints, motion.
 paths:
-  - 'src/**'
-  - 'apps/**/src/**'
+  - '**/src/**'
 ---
 
 <!-- basalt:coverage -->
