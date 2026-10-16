@@ -1,3 +1,15 @@
+## [2.13.1](https://github.com/jkrumm/basalt-ui/compare/v2.13.0...v2.13.1) (2026-10-16)
+
+
+### Bug Fixes
+
+* give the layout ShellFixture a real breadcrumb ([2d24459](https://github.com/jkrumm/basalt-ui/commit/2d244599d0f6c904d39082f9b6d2f911ef3e2a5e))
+* own-key badge compare, flat anchor cache and breadcrumb tests ([a53f295](https://github.com/jkrumm/basalt-ui/commit/a53f295caff8831fc1a68b6dbbe3db5b3902635b))
+* require ShellFrame activeCrumb and harden nav and aside tests ([f3ede67](https://github.com/jkrumm/basalt-ui/commit/f3ede67dbb8401919e9d0998d3299bd35ebf89f9))
+* restore matchMedia after the PageAside ownership tests ([861c1fe](https://github.com/jkrumm/basalt-ui/commit/861c1fe73780c7485e90a20df78c2e225d94961d))
+* stable nav anchors, narrow shell contexts and single-claimant PageAside ([8dbff8a](https://github.com/jkrumm/basalt-ui/commit/8dbff8a38d789d81e3853df298532e0d97d7bfb2))
+* stop naming the removed useNav in shell comments ([f874df4](https://github.com/jkrumm/basalt-ui/commit/f874df4331fbfa9b14d4f1fbe055154bd18dee0a))
+
 # [2.13.0](https://github.com/jkrumm/basalt-ui/compare/v2.12.0...v2.13.0) (2026-10-16)
 
 
