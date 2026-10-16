@@ -40,7 +40,7 @@ import {
   createLiveEmitter,
   devConsoleSink,
   errorName,
-  hashOf,
+  groupingId,
   now,
 } from '../telemetry'
 import type { Telemetry } from '../telemetry'
@@ -401,7 +401,7 @@ function useDataTelemetry(router: AnyRouter, client: QueryClient, emit: Telemetr
         failed: true,
         start: now(),
         attributes: {
-          'basalt.query.hash': ev.query.queryHash,
+          'basalt.query.hash': groupingId(ev.query.queryHash),
           'basalt.query.failure_count': ev.query.state.fetchFailureCount,
           'exception.type': errorName(ev.action.error),
           'basalt.error.kind': 'query',
@@ -415,7 +415,9 @@ function useDataTelemetry(router: AnyRouter, client: QueryClient, emit: Telemetr
         failed: true,
         start: now(),
         attributes: {
-          'basalt.mutation.key': hashOf(JSON.stringify(ev.mutation.options.mutationKey ?? null)),
+          'basalt.mutation.key': groupingId(
+            JSON.stringify(ev.mutation.options.mutationKey ?? null),
+          ),
           'exception.type': errorName(ev.action.error),
           'basalt.error.kind': 'mutation',
         },

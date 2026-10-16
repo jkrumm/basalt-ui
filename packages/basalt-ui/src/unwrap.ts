@@ -11,11 +11,16 @@
  * const rows = unwrap(await api.users.get())
  * const rows2 = await api.users.get().then(unwrap)
  */
-export function unwrap<R extends Envelope | Promise<Envelope>>(response: R): UnwrapResult<R> {
-  if (typeof (response as PromiseLike<Envelope>).then === 'function') {
-    return (response as PromiseLike<Envelope>).then(unwrapEnvelope) as UnwrapResult<R>
-  }
-  return unwrapEnvelope(response as Envelope) as UnwrapResult<R>
+export function unwrap<R extends Envelope | PromiseLike<Envelope>>(response: R): UnwrapResult<R> {
+  // `Promise.resolve` adopts any thenable, so the result is a real Promise.
+  const result = isThenable(response)
+    ? Promise.resolve(response).then(unwrapEnvelope)
+    : unwrapEnvelope(response)
+  return result as UnwrapResult<R>
+}
+
+function isThenable(value: Envelope | PromiseLike<Envelope>): value is PromiseLike<Envelope> {
+  return typeof (value as { then?: unknown }).then === 'function'
 }
 
 type Envelope<TData = unknown> = { data: TData | null | undefined; error: unknown }
@@ -23,7 +28,7 @@ type Envelope<TData = unknown> = { data: TData | null | undefined; error: unknow
 /** A `Promise<TData>` for a promised envelope, `TData` for a resolved one; `NonNullable` is applied
  * to the inferred `data` so it distributes over Eden's union of envelope shapes. */
 type UnwrapResult<R> =
-  R extends Promise<{ data: infer TData; error: unknown }>
+  R extends PromiseLike<{ data: infer TData; error: unknown }>
     ? Promise<NonNullable<TData>>
     : R extends { data: infer TData; error: unknown }
       ? NonNullable<TData>

@@ -5,10 +5,20 @@
 import { QueryClient } from '@tanstack/react-query'
 import type { QueryClientConfig } from '@tanstack/react-query'
 
-/** Twice, and never a 4xx: the same request cannot start succeeding (a 401 is the app's to handle). */
+const MAX_RETRIES = 2
+/** The 4xx that are transient: request timeout, too early, too many requests. */
+const TRANSIENT_4XX: ReadonlySet<number> = new Set([408, 425, 429])
+
+function statusOf(error: unknown): number | undefined {
+  if (typeof error !== 'object' || error === null || !('status' in error)) return undefined
+  return typeof error.status === 'number' ? error.status : undefined
+}
+
+/** Twice, and not on a 4xx (the same request cannot start succeeding; a 401 is the app's to handle). */
 const retry = (failureCount: number, error: unknown): boolean => {
-  const status = (error as { status?: unknown } | null)?.status
-  return failureCount < 2 && !(typeof status === 'number' && status >= 400 && status < 500)
+  const status = statusOf(error)
+  const clientError = status !== undefined && status >= 400 && status < 500
+  return failureCount < MAX_RETRIES && !(clientError && !TRANSIENT_4XX.has(status))
 }
 
 const BASALT_QUERY_DEFAULTS = {

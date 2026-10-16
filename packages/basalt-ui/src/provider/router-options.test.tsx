@@ -2,8 +2,9 @@
  * `basaltRouterOptions` — the factory a router the app builds itself (TanStack Start's
  * `getRouter()`) spreads, so it gets everything `createBasaltRouter` sets (provider-01/10).
  */
-import { cleanup, render, screen } from '@testing-library/react'
-import { afterEach, describe, expect, spyOn, test } from 'bun:test'
+import { act, cleanup, render, screen } from '@testing-library/react'
+import { QueryClient } from '@tanstack/react-query'
+import { afterEach, describe, expect, mock, spyOn, test } from 'bun:test'
 import {
   Outlet,
   RouterProvider,
@@ -11,6 +12,7 @@ import {
   createRootRouteWithContext,
   createRouter,
 } from '@tanstack/react-router'
+import { hydrateRoot } from 'react-dom/client'
 import { renderToString } from 'react-dom/server'
 import { BasaltProvider } from './index'
 import { basaltRouterOptions, createBasaltRouter } from './create-router'
@@ -108,7 +110,41 @@ describe('basaltRouterOptions', () => {
     createBasaltRouter({ routeTree: root, scrollRestoration: false })
   })
 
-  test('server HTML of a tree under the factory-built router equals the first client render', async () => {
+  test('a required-context type must be supplied; the empty case stays optional', () => {
+    type Auth = { auth: string }
+    basaltRouterOptions()
+    basaltRouterOptions({ query: {} })
+    basaltRouterOptions<Auth>({ context: { auth: 't' } })
+    // @ts-expect-error `Auth` has a required key, so `context` is required
+    basaltRouterOptions<Auth>()
+    // @ts-expect-error `context` is required too once `query` is given
+    basaltRouterOptions<Auth>({ query: {} })
+    // @ts-expect-error `queryClient` is basalt's: a consumer's would be silently replaced
+    basaltRouterOptions({ context: { queryClient: new QueryClient() } })
+  })
+
+  test('basalt wins every managed key even when a cast-through consumer passes one', () => {
+    const root = createRootRouteWithContext<BasaltRouterContext>()()
+    const own = new QueryClient()
+    const consumerCatch = mock(() => {})
+    const sneaky = {
+      defaultPreload: false,
+      defaultOnCatch: consumerCatch,
+      context: { queryClient: own },
+    } as object
+    const router = createBasaltRouter({ routeTree: root, ...sneaky })
+    expect(router.options.defaultPreload).toBe('intent')
+    expect(router.options.defaultOnCatch).not.toBe(consumerCatch)
+    const quiet = spyOn(console, 'error').mockImplementation(() => {})
+    router.options.defaultOnCatch?.(new Error('x'), {} as never)
+    quiet.mockRestore()
+    expect(consumerCatch).not.toHaveBeenCalled()
+
+    const { context } = basaltRouterOptions({ context: { queryClient: own } as never })
+    expect(context.queryClient).not.toBe(own)
+  })
+
+  test('the first client render hydrates the server HTML without a mismatch', async () => {
     const make = () => {
       const root = createRootRouteWithContext<BasaltRouterContext>()({
         component: () => (
@@ -132,9 +168,25 @@ describe('basaltRouterOptions', () => {
     await client.load()
     const container = document.createElement('div')
     document.body.append(container)
-    // `hydrateRoot` would warn on any mismatch; the first client render as HTML is the same check.
-    container.innerHTML = renderToString(<RouterProvider router={client} />)
-    expect(container.innerHTML).toBe(html)
+    container.innerHTML = html
+    const errors = spyOn(console, 'error').mockImplementation(() => {})
+    const recoverable: unknown[] = []
+    let root: ReturnType<typeof hydrateRoot> | undefined
+    await act(async () => {
+      root = hydrateRoot(container, <RouterProvider router={client} />, {
+        onRecoverableError: (error) => void recoverable.push(error),
+      })
+    })
+    const logged = errors.mock.calls.map(String)
+    errors.mockRestore()
+    await act(async () => root?.unmount())
     container.remove()
+    // `renderToString` cannot render the dev dock's Suspense boundary, so React re-renders just that
+    // boundary on the client and says so; every other recoverable error is a real mismatch.
+    const mismatches = recoverable
+      .map(String)
+      .filter((m) => !/Switched to client rendering/.test(m))
+    expect(mismatches).toEqual([])
+    expect(logged.filter((m) => /hydrat|mismatch/i.test(m))).toEqual([])
   })
 })

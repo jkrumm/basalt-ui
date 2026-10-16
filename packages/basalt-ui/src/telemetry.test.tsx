@@ -6,8 +6,8 @@ import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, spyOn, test } from 'bun:test'
 import { BasaltProvider } from './provider'
 import { queryClientOf, testRouter } from './provider/test-router'
-import { createLiveEmitter } from './telemetry'
-import type { BasaltEvent } from './telemetry'
+import { bindRouteError, createLiveEmitter, devConsoleSink, groupingId } from './telemetry'
+import type { BasaltEvent, RouterHook } from './telemetry'
 
 afterEach(cleanup)
 
@@ -48,6 +48,8 @@ function failure() {
   }
 }
 
+const GROUP_SAVE = '2473c7c2'
+const GROUP_Q1 = '7d3c17af'
 const quiet = () => spyOn(console, 'error').mockImplementation(() => {})
 
 describe('BasaltProvider telemetry', () => {
@@ -132,7 +134,7 @@ describe('BasaltProvider telemetry', () => {
     expect(events.find((e) => e.type === 'query.error')).toMatchObject({
       failed: true,
       attributes: {
-        'basalt.query.hash': '["q",1]',
+        'basalt.query.hash': groupingId('["q",1]'),
         'basalt.query.failure_count': 1,
         'exception.type': 'TypeError',
         'basalt.error.kind': 'query',
@@ -140,12 +142,61 @@ describe('BasaltProvider telemetry', () => {
     })
     expect(events.find((e) => e.type === 'mutation.error')).toMatchObject({
       attributes: {
-        'basalt.mutation.key': expect.stringMatching(/^[0-9a-f]+$/),
+        'basalt.mutation.key': groupingId('["save"]'),
         'exception.type': 'SyntaxError',
         'basalt.error.kind': 'mutation',
       },
     })
     expect(JSON.stringify(events)).not.toContain('leaked')
+  })
+
+  test('with no sink, a mutation failure is logged to the console in dev too', async () => {
+    const log = quiet()
+    const router = testRouter()
+    render(<BasaltProvider router={router} />)
+    await screen.findByText('content')
+    const client = queryClientOf(router)
+    await client
+      .getMutationCache()
+      .build(client, { mutationKey: ['m'], mutationFn: () => Promise.reject(new Error('x')) })
+      .execute(undefined)
+      .catch(() => {})
+    const calls = log.mock.calls.filter((c) => c[0] === '[basalt] mutation.error')
+    log.mockRestore()
+    expect(calls).toHaveLength(1)
+  })
+
+  test('an explicit sink silences the console default', async () => {
+    const log = quiet()
+    const router = testRouter()
+    render(<BasaltProvider router={router} telemetry={() => {}} />)
+    await screen.findByText('content')
+    await queryClientOf(router)
+      .query({ queryKey: ['q'], retry: 0, queryFn: () => Promise.reject(new Error('x')) })
+      .catch(() => {})
+    const calls = log.mock.calls.filter((c) => String(c[0]).startsWith('[basalt] query'))
+    log.mockRestore()
+    expect(calls).toHaveLength(0)
+  })
+
+  test('in production an unset sink is silent', async () => {
+    const env = process.env.NODE_ENV
+    process.env.NODE_ENV = 'production'
+    const log = quiet()
+    try {
+      const router = testRouter()
+      render(<BasaltProvider router={router} />)
+      await screen.findByText('content')
+      await queryClientOf(router)
+        .query({ queryKey: ['q'], retry: 0, queryFn: () => Promise.reject(new Error('x')) })
+        .catch(() => {})
+      expect(log.mock.calls.filter((c) => String(c[0]).startsWith('[basalt] query'))).toHaveLength(
+        0,
+      )
+    } finally {
+      log.mockRestore()
+      process.env.NODE_ENV = env ?? 'test'
+    }
   })
 
   test('with no sink, a query/mutation failure is logged to the console in dev', async () => {
@@ -196,5 +247,105 @@ describe('BasaltProvider telemetry', () => {
       expect(e.attributes).not.toHaveProperty('basalt.error.kind')
       expect('duration' in e).toBe(true)
     }
+  })
+})
+
+describe('groupingId', () => {
+  test('pins exact outputs (an id format change is a visible diff)', () => {
+    expect(groupingId('')).toBe('1505')
+    expect(groupingId('["save"]')).toBe(GROUP_SAVE)
+    expect(groupingId('["q",1]')).toBe(GROUP_Q1)
+  })
+
+  test('distinct keys group apart; the same key groups together', () => {
+    const ids = new Set(['["a"]', '["b"]', '["a","1"]', '["a","2"]', 'null'].map(groupingId))
+    expect(ids.size).toBe(5)
+    expect(groupingId('["a"]')).toBe(groupingId('["a"]'))
+  })
+})
+
+describe('devConsoleSink', () => {
+  const event = {
+    type: 'query.error',
+    failed: true,
+    start: 0,
+    attributes: {
+      'basalt.query.hash': 'abc',
+      'basalt.query.failure_count': 1,
+      'exception.type': 'Error',
+      'basalt.error.kind': 'query',
+    },
+  } as const satisfies BasaltEvent
+
+  test('logs query and mutation failures, nothing else', () => {
+    const log = quiet()
+    devConsoleSink(event)
+    devConsoleSink({
+      type: 'route.error',
+      failed: true,
+      start: 0,
+      attributes: failure(),
+    })
+    const calls = log.mock.calls
+    log.mockRestore()
+    expect(calls).toEqual([['[basalt] query.error', event.attributes]])
+  })
+})
+
+describe('bindRouteError', () => {
+  const routerWith = (hook: RouterHook | undefined) => ({
+    options: { context: hook ? { __basalt: hook } : {} },
+  })
+
+  test('the latest binding wins; a stale unbind never clears a newer one', () => {
+    const hook: RouterHook = {}
+    const router = routerWith(hook)
+    const a = () => {}
+    const b = () => {}
+    const unbindA = bindRouteError(router, a)
+    const unbindB = bindRouteError(router, b)
+    expect(hook.onRouteError).toBe(b)
+    unbindA()
+    expect(hook.onRouteError).toBe(b)
+    unbindB()
+    expect(hook.onRouteError).toBeUndefined()
+  })
+
+  test('two providers, one unmounts: the other keeps reporting only if it bound last', () => {
+    const hook: RouterHook = {}
+    const router = routerWith(hook)
+    const first = () => {}
+    const second = () => {}
+    const unbindFirst = bindRouteError(router, first)
+    bindRouteError(router, second)
+    unbindFirst()
+    expect(hook.onRouteError).toBe(second)
+  })
+
+  test('a remount rebinds after an unbind', () => {
+    const hook: RouterHook = {}
+    const router = routerWith(hook)
+    const handler = () => {}
+    bindRouteError(router, handler)()
+    expect(hook.onRouteError).toBeUndefined()
+    bindRouteError(router, handler)
+    expect(hook.onRouteError).toBe(handler)
+  })
+
+  test('a router without the hook warns in dev and unbinds harmlessly', () => {
+    const warn = spyOn(console, 'warn').mockImplementation(() => {})
+    const unbind = bindRouteError(routerWith(undefined), () => {})
+    expect(() => unbind()).not.toThrow()
+    const calls = warn.mock.calls
+    warn.mockRestore()
+    expect(calls).toHaveLength(1)
+    expect(String(calls[0]?.[0])).toContain('basaltRouterOptions')
+  })
+
+  test('a malformed hook (not an object) is treated as missing', () => {
+    const warn = spyOn(console, 'warn').mockImplementation(() => {})
+    const router = { options: { context: { __basalt: 'nope' } } }
+    expect(() => bindRouteError(router, () => {})()).not.toThrow()
+    warn.mockRestore()
   })
 })
