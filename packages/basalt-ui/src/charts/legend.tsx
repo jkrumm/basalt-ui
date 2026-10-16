@@ -106,9 +106,18 @@ type SwatchStyle = Pick<
 const swatchFill = (s: SwatchStyle): string =>
   s.colorNegative ? `linear-gradient(90deg, ${s.color} 50%, ${s.colorNegative} 50%)` : s.color
 
-/** A line series' key: a short stroke with its dash, 8px below 480px and 12px from 480px. */
+/**
+ * A line series' key: a short stroke with its dash, compact below 480px and wide from 480px. A
+ * dashed swatch has BUTT caps: a round cap grows each dash by half the stroke width per end and
+ * would close the gap.
+ */
+export const LINE_SWATCH = {
+  compact: { width: 8, dash: '2.5 2' },
+  wide: { width: 12, dash: '4 3' },
+} as const
+
 function LineSwatch({ s, compact }: { s: SwatchStyle; compact: boolean }): ReactElement {
-  const width = compact ? 8 : 12
+  const { width, dash } = compact ? LINE_SWATCH.compact : LINE_SWATCH.wide
   return (
     <svg
       aria-hidden
@@ -124,9 +133,9 @@ function LineSwatch({ s, compact }: { s: SwatchStyle; compact: boolean }): React
         y2={4}
         stroke={s.color}
         strokeWidth={2}
-        strokeLinecap="round"
+        strokeLinecap={s.dash === 'dashed' ? 'butt' : 'round'}
         strokeOpacity={s.strokeOpacity ?? 1}
-        {...(s.dash === 'dashed' && { strokeDasharray: compact ? '2.5 2' : '4 3' })}
+        {...(s.dash === 'dashed' && { strokeDasharray: dash })}
       />
     </svg>
   )
