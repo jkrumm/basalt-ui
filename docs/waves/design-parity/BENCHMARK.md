@@ -3,7 +3,7 @@
 Wave 29, steps 1–3 of `docs/waves/PLAN.md` Part 3. This page is **data, not a spec**: Wave 30 writes the spec and the rubric, so nothing here recommends a design.
 
 - Source: the look-only Keel Workspace capture (no source, no licence; screenshots and measured numbers only). Font family names and every other style value here are computed-style measurements of the rendered page, not font files or stylesheets; no font asset was fetched or committed. Route index: [keel/ROUTES.md](keel/ROUTES.md). Per-pattern crops and geometry: [keel/inventory.json](keel/inventory.json). Raw histograms behind every table below: [keel/scales.json](keel/scales.json). Reproduce with `bun scripts/evidence/keel-capture.ts`. basalt citations point at code (CSS, TypeScript), not comments.
-- Keel numbers are computed CSS px at 1440x900 desktop and 390x844 mobile, dark scheme, summed over the 10 captured route views. The light scheme changes colour only; the per-pattern notes in the inventory record any geometry difference (none were found).
+- Keel numbers are computed CSS px at 1440x900 desktop and 390x844 mobile, dark scheme, summed over the 10 captured route views. The histograms are dark scheme only. For each pattern, geometry was compared between dark and light and no difference was found (the inventory notes say so per pattern). Counts in the tables are desktop; the mobile value sets for padding, gap, radius, border, ring and shadow match desktop except that mobile has no 30 px padding, and mobile lacks three type triplets (see the type ramp).
 - basalt values are the level-0 defaults, cited as file:line. A "—" means basalt has no equivalent token or the value was not measured here.
 
 ## Spacing
@@ -50,7 +50,7 @@ Where they diverge:
 
 ## Type ramp
 
-Size / weight / line-height triplets, ranked by frequency across all visible text (desktop; the mobile ramp is the same list with slightly lower counts, nothing new, nothing missing).
+Size / weight / line-height triplets, ranked by frequency across all visible text (desktop; the mobile ramp is the same list minus three desktop-only sans triplets, 13/400/24, 13/500/16 and 13/600/20, with nothing mobile-only; the other counts are slightly lower).
 
 | Keel size/weight/line-height                  | Uses                    | Role observed                              |
 | --------------------------------------------- | ----------------------- | ------------------------------------------ |
@@ -130,7 +130,7 @@ Where they diverge:
 Where they diverge:
 
 - Both systems draw the card edge as a ring inside the shadow rather than a border; the construction matches.
-- Row and header dividers are the same weight (a hairline) in both; Keel draws them as an inset shadow, basalt as a table border colour.
+- Keel's row and header dividers are 1 px inset shadows in the subtle hairline role; basalt's are table borders in the hairline surface colour, width not measured here.
 - Keel has a second ring weight (1.5 px, 2 px) for emphasised and selected states (61 and 14 uses); basalt's ring is a single weight.
 
 ## Density
@@ -158,7 +158,7 @@ Where they diverge:
 
 Where they diverge:
 
-- Table rows and headers have the same height in both; every control, nav row and chip in Keel is 4 px shorter than basalt's control tier.
+- Table rows and headers have the same height in both (40 and 36). Keel's controls and nav rows (28) are 4 px shorter than basalt's ctl tier (32); its 20 px chips equal basalt's tag tier (20).
 - Keel's card heights are driven by content (a preview pane beside the text, a stat panel inside the card); basalt's StatCard and ChartCard are the only card shapes with a documented height behaviour.
 - Keel's right column is 80 px wider than basalt's aside.
 
@@ -191,4 +191,4 @@ Where they diverge:
 
 ## Pattern coverage in the inventory
 
-30 patterns, each cropped at desktop and mobile in dark and light (120 crops). Absent from Keel: a loading state, which could not be observed (see [keel/ROUTES.md](keel/ROUTES.md)). The compare harness (Wave 29, step 4) and the baseline board (step 5) read the inventory; the gap audit (Wave 30) scores each pattern.
+30 measured patterns, each cropped at desktop and mobile in dark and light (120 crops). Unverified: a loading state, which could not be observed (see [keel/ROUTES.md](keel/ROUTES.md)); the inventory carries it as a thirty-first entry with status unverified and no crops. The compare harness (Wave 29, step 4) and the baseline board (step 5) read the inventory; the gap audit (Wave 30) scores each pattern.
