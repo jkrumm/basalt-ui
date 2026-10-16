@@ -101,6 +101,10 @@ What the fix does and does not change:
 - banned-subtitle Craft 6 (mobile: the focus tooltip covers the subtitle and cuts it at the card's bottom edge; desktop: the ring on the info icon abuts "Oct") is therefore real too, not noise, and so is Craft 7 (the card has an info glyph but no `data-shot-tooltip` target, so no tooltip crop). The seed still fails with its expected item.
 - Hover crops of the S4 charts now show the chart tooltip, so the reviewer notes the separate tooltip-state `error` for those anchors: the `data-shot-tooltip` target the page declares and the tooltip that opens do not match.
 
+## Iteration 4c (review round 2: no crop changed, no re-score)
+
+`shot` fixes only: a tooltip is taken only if it became visible after a snapshot of the visible ones (or is the one the trigger names in `aria-describedby`); `hasFocusTarget` requires a rendered element; `scaleError` is set only when `scale` stayed empty; the stale-tmp sweep is per-entry safe and pid-aware. The reviewer treats `skipped` like `not-declared` and says exactly what a sheet holds. `shot /scenarios/calibrate-good` exits 0 and its 26 PNGs are byte-identical to the last scored run, so no board was re-scored.
+
 ## Method caveat
 
 The shipped `basalt-design-reviewer` subagent has not yet run against these seeds. Its definition loads at session start and is not reloaded, so iteration 1 used the subagent with the old text, and iterations 2–4 used fresh general-purpose agents told to read the edited reviewer file and follow its body, tools limited to Read/Grep/Glob. The lead spawns a fresh-session confirmation with the real subagent type after merge. `/.claude/agents/basalt-design-reviewer.md` and `/.claude/skills/basalt-design/SKILL.md` are byte-identical to the package sources (`make sync-self`, then `cmp`).
