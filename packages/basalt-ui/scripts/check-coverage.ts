@@ -197,7 +197,7 @@ export const AGENT_LINE_BUDGETS: Readonly<Record<string, number>> = {
  * can be satisfied by adding a seventh rule file or a fourth skill. The seeded `DESIGN.md.tpl` is
  * the consumer's own file after `init`, so it is outside the sum.
  */
-export const AGENT_LAYER_TOTAL_BUDGET = 679 // W10: +40 streaming snippet; +43 form-dialog snippet; W31: +18 design-round procedure, +2 AGENTS block names the skills and reviewer (rules −5)
+export const AGENT_LAYER_TOTAL_BUDGET = 679 // W10: +40 streaming snippet; +43 form-dialog snippet; W31: +18 design-round procedure, +2 net (AGENTS block +7 naming the skills and reviewer, rules −5)
 
 /**
  * Assert the 11 invariants against the live SURFACES + GUARD_RULES + the shipped agent layer, and
