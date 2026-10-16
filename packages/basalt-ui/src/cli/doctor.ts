@@ -33,6 +33,7 @@ import {
   scannableFiles,
   shippedAssetPath,
 } from './index'
+import { PLAYWRIGHT_INSTALL, playwrightVersion, staleBoardNotice } from './board-freshness'
 import { parseJsonc } from './source-text'
 import { resolveRoots } from './config'
 import {
@@ -418,6 +419,18 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
     const shell = shellDeclarationFindings(appDir, cfg)
     if (shell.fail !== null) fail(shell.fail)
     for (const line of shell.warnings) warn(line)
+  }
+
+  // ── Design loop: advisory info lines (no warning count — they never change the verdict) ─────
+  if (profile !== 'tokens-only') {
+    const boardNotice = staleBoardNotice(cwd, resolveRoots(cfg))
+    if (boardNotice !== null) lines.push(`  → ${boardNotice}`)
+    const playwright = playwrightVersion(cwd)
+    lines.push(
+      playwright === null
+        ? `  → playwright is not installed (optional, needed by basalt-ui shot): ${PLAYWRIGHT_INSTALL}`
+        : `  ✓ playwright ${playwright} resolves (optional: basalt-ui shot)`,
+    )
   }
 
   // ── Report ──────────────────────────────────────────────────────────────────
