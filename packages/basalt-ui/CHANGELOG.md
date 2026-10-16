@@ -1,3 +1,11 @@
+## [2.13.3](https://github.com/jkrumm/basalt-ui/compare/v2.13.2...v2.13.3) (2026-10-16)
+
+
+### Bug Fixes
+
+* router default screens render without a provider ([8391f36](https://github.com/jkrumm/basalt-ui/commit/8391f36d81ca53e7f7bc4a4912b59e98bc7c833f))
+* share the fallback styling, move the router defaults to their own module ([9efda55](https://github.com/jkrumm/basalt-ui/commit/9efda55175531a3f4f3b39c9c77bab350bd82a1f))
+
 ## [2.13.2](https://github.com/jkrumm/basalt-ui/compare/v2.13.1...v2.13.2) (2026-10-16)
 
 
