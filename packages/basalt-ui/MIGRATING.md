@@ -1068,7 +1068,7 @@ release renames it and opens a new one here._
 ### Charts
 
 - **Fix: a follower chart draws nothing when the shared cursor's x is outside its x-domain.** Since 2.13.2 a follower clamped the leader's cursor onto its edge datum, so a chart covering 20:00–08:00 drew a dot at 12:00 the next day that was not the cursor's hour. The domain is the one the chart renders (`xDomain`, else the data extent); a cursor exactly on an edge still draws, and the leader is unaffected. No crosshair, no dots and no tooltip outside the domain, on `CartesianChart`, its kinds and `DualPanel`. Pass one `xDomain` to charts that should cover the same range.
-- **Fix: the line legend key reads as a dash at every size.** `LINE_SWATCH` in `legend.tsx`: below 480px the key is 14px (was 8px, dash `2.5 2`, which read as two dots) with dash `4 3`; from 480px it is 16px (was 12px) with dash `4 3`. The dots-mode gap between entries goes 38 → 30px to pay for it, so a four-entry legend still fits one row at 390px. Selectors or snapshots that expected an 8px or 12px line key match the new widths.
+- **Fix: the line legend key reads as a dash at every size.** `LINE_SWATCH` in `legend.tsx`: below 480px of chart width (a container query on the chart, not the viewport) the key is 14px (was 8px, dash `2.5 2`, which read as two dots) with dash `4 3`; from 480px of chart width it is 16px (was 12px) with dash `4 3`. The dots-mode gap between entries goes 38 → 30px to pay for it, so a four-entry legend still fits one row at 390px. Selectors or snapshots that expected an 8px or 12px line key match the new widths.
 
 ## 2.13.3 — the router defaults need no provider
 
