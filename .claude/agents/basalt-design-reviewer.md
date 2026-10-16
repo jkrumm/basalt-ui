@@ -35,7 +35,7 @@ Score per component, then add one line per page for the page items (Communicatio
 1. **[measured]** Every inset, gap and radius is a step in `metrics.json` `scale`; nested surfaces step by at least 3 px of radius. No `scale` → `unverified`. Never invent steps.
 2. **[measured]** No more than three font sizes inside one component: `fontSizes` with more than 3 distinct values fails.
 3. No empty region of 40 % or more of the component's height — **[measured]**: `emptyRatio` ≥ 0.4 fails; no dense-list row wraps at 390 — judged from the 390 crop.
-4. One ring per surface, no bare hairline borders on cards, no accent on chrome: look at every crop for an accent hue on a tab underline, selected row, button, ring or solid-filled badge. Accent belongs only to the single primary action and active-nav icons; chrome takes ink.
+4. One ring per surface, no bare hairline borders on cards, no accent on chrome: look at every crop for an accent hue on a tab underline, selected row, button, ring or solid-filled badge. The accent sites are the primary data series, active-nav icons and active child labels, links, primary buttons, focus rings and the leader bar in meters; chrome (borders, inactive states, backgrounds, general icons) stays neutral, and selection state (active nav row, selected tab) never takes the accent.
 5. **[measured]** Text and meaningful marks meet contrast in both schemes (a non-empty `contrast.failures` fails); nothing is told apart only by colour.
 6. Nothing overflows, clips or truncates a value at 1440 or 390.
 7. Hover, focus and tooltip states are present in the shots; focus is the 2 px outline.
