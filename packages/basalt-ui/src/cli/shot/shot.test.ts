@@ -5,7 +5,6 @@ import {
   mkdtempSync,
   readFileSync,
   rmSync,
-  utimesSync,
   symlinkSync,
   writeFileSync,
 } from 'node:fs'
@@ -17,9 +16,12 @@ import {
   capture,
   fileName,
   groupScale,
+  describedByOf,
   hasFocusTarget,
+  markVisibleTooltips,
   readScaleInPage,
   sheetName,
+  tooltipSelector,
   unionClip,
   withParam,
 } from './capture'
@@ -500,6 +502,11 @@ describe('hasFocusTarget', () => {
     expect(hasFocusTarget(host('<div inert><a href="/x">x</a></div>'))).toBe(false)
     expect(hasFocusTarget(host('<p>plain text</p>'))).toBe(false)
   })
+  test('skips a candidate CSS never renders (display:none, visibility:hidden)', () => {
+    expect(hasFocusTarget(host('<button style="display:none">x</button>'))).toBe(false)
+    expect(hasFocusTarget(host('<div style="display:none"><a href="/x">x</a></div>'))).toBe(false)
+    expect(hasFocusTarget(host('<button style="visibility:hidden">x</button>'))).toBe(false)
+  })
 })
 
 describe('scale', () => {
@@ -530,6 +537,169 @@ describe('scale', () => {
       '--vx-text-micro': 12,
     })
     document.head.innerHTML = ''
+  })
+})
+
+describe('scaleError', () => {
+  const browserWith = (scale: () => unknown) => {
+    const locator: Record<string, unknown> = {
+      first: () => locator,
+      count: () => Promise.resolve(1),
+      scrollIntoViewIfNeeded: () => Promise.resolve(),
+      isVisible: () => Promise.resolve(true),
+      screenshot: () => Promise.resolve(),
+    }
+    const page = {
+      setDefaultTimeout: () => undefined,
+      goto: () => Promise.resolve(),
+      locator: () => locator,
+      screenshot: () => Promise.resolve(),
+      setContent: () => Promise.resolve(),
+      mouse: { move: () => Promise.resolve() },
+      keyboard: { press: () => Promise.resolve() },
+      evaluate: (e: unknown) =>
+        typeof e === 'function'
+          ? Promise.resolve().then(scale)
+          : String(e).includes('data-shot-states')
+            ? Promise.resolve({ anchors: ['card'], declared: [] })
+            : Promise.resolve(undefined),
+    }
+    return {
+      newContext: () =>
+        Promise.resolve({
+          newPage: () => Promise.resolve(page),
+          addInitScript: () => Promise.resolve(),
+          close: () => Promise.resolve(),
+        }),
+    } as never
+  }
+  const read = { mantine: { spacing: {}, radius: {}, fontSizes: {} }, vx: {} }
+  const run = (scale: () => unknown, log: string[] = []) =>
+    capture({
+      browser: browserWith(scale),
+      base: 'http://x',
+      routes: ['/'],
+      states: ['rest'],
+      pngDir: '/unused',
+      log: (l) => log.push(l),
+      measure: () => Promise.resolve(measurement),
+    })
+
+  test('a read that fails once and then succeeds leaves no scaleError', async () => {
+    let calls = 0
+    const log: string[] = []
+    const out = await run(() => {
+      if (calls++ === 0) throw new Error('first read failed')
+      return read
+    }, log)
+    expect(out.scale.length).toBe(3)
+    expect(out.scaleError).toBeUndefined()
+    expect(log.some((l) => /scale unavailable/.test(l))).toBe(false)
+  })
+  test('a scale that never reads reports the first reason once', async () => {
+    const log: string[] = []
+    const out = await run(() => {
+      throw new Error('never')
+    }, log)
+    expect(out.scale).toEqual([])
+    expect(out.scaleError).toBe('never')
+    expect(log.filter((l) => /scale unavailable: never/.test(l))).toHaveLength(1)
+  })
+})
+
+describe('tooltip lookup', () => {
+  test('tooltipSelector prefers the trigger’s own id, else excludes what was already open', () => {
+    expect(tooltipSelector('tip-1')).toBe('[role="tooltip"][id="tip-1"]')
+    expect(tooltipSelector('')).toBe('[role="tooltip"]:not([data-shot-seen])')
+  })
+  test('markVisibleTooltips marks only visible tooltips and forgets stale marks', () => {
+    document.body.innerHTML =
+      '<span id="a" role="tooltip">a</span><span id="b" role="tooltip">b</span><span id="c" data-shot-seen></span>'
+    const [a, b] = ['a', 'b'].map((id) => document.getElementById(id) as Element)
+    a!.getBoundingClientRect = () => ({ width: 10, height: 10 }) as DOMRect
+    b!.getBoundingClientRect = () => ({ width: 0, height: 0 }) as DOMRect
+    markVisibleTooltips()
+    expect(a!.hasAttribute('data-shot-seen')).toBe(true)
+    expect(b!.hasAttribute('data-shot-seen')).toBe(false)
+    expect(document.getElementById('c')!.hasAttribute('data-shot-seen')).toBe(false)
+  })
+  test('describedByOf reads the first id on the trigger or a descendant', () => {
+    document.body.innerHTML =
+      '<div id="t"><button aria-describedby="x y">i</button></div><p id="p"></p>'
+    expect(describedByOf(document.getElementById('t'))).toBe('x')
+    expect(describedByOf(document.getElementById('p'))).toBe('')
+    expect(describedByOf(null)).toBe('')
+  })
+  test('a foreign tooltip that was already open is not the one cropped', async () => {
+    const FOREIGN = { x: 900, y: 700, width: 100, height: 30 }
+    const ANCHOR = { x: 100, y: 100, width: 200, height: 60 }
+    const TIP = { x: 120, y: 170, width: 180, height: 40 }
+    const clips: unknown[] = []
+    const asked: string[] = []
+    const element: Record<string, unknown> = {
+      first: () => element,
+      count: () => Promise.resolve(1),
+      scrollIntoViewIfNeeded: () => Promise.resolve(),
+      isVisible: () => Promise.resolve(true),
+      hover: () => Promise.resolve(),
+      screenshot: () => Promise.resolve(),
+      boundingBox: () => Promise.resolve(ANCHOR),
+      evaluate: () => Promise.resolve(''),
+    }
+    const tipFor = (selector: string): Record<string, unknown> => {
+      const tip: Record<string, unknown> = {
+        first: () => tip,
+        waitFor: () => Promise.resolve(),
+        // A bare `[role="tooltip"]` finds the foreign one first; the snapshot-aware one finds ours.
+        boundingBox: () => Promise.resolve(selector.includes('data-shot-seen') ? TIP : FOREIGN),
+      }
+      return tip
+    }
+    const page = {
+      setDefaultTimeout: () => undefined,
+      goto: () => Promise.resolve(),
+      locator: (selector: string) => {
+        if (!selector.includes('tooltip')) return element
+        asked.push(selector)
+        return tipFor(selector)
+      },
+      screenshot: (o: { clip?: unknown }) => {
+        clips.push(o.clip)
+        return Promise.resolve()
+      },
+      setContent: () => Promise.resolve(),
+      mouse: { move: () => Promise.resolve() },
+      keyboard: { press: () => Promise.resolve() },
+      evaluate: (e: unknown) =>
+        typeof e === 'function'
+          ? Promise.resolve(undefined)
+          : String(e).includes('data-shot-states')
+            ? Promise.resolve({ anchors: ['card'], declared: [] })
+            : Promise.resolve(undefined),
+    }
+    await capture({
+      browser: {
+        newContext: () =>
+          Promise.resolve({
+            newPage: () => Promise.resolve(page),
+            addInitScript: () => Promise.resolve(),
+            close: () => Promise.resolve(),
+          }),
+      } as never,
+      base: 'http://x',
+      routes: ['/'],
+      states: ['hover'],
+      pngDir: '/unused',
+      log: () => undefined,
+      measure: () => Promise.resolve(measurement),
+    })
+    expect(asked.every((q) => q === '[role="tooltip"]:not([data-shot-seen])')).toBe(true)
+    expect(clips.length).toBeGreaterThan(0)
+    for (const clip of clips) {
+      const c = clip as { x: number; y: number; width: number; height: number }
+      expect(c.x + c.width).toBeLessThan(FOREIGN.x)
+      expect(c.y + c.height).toBeGreaterThan(TIP.y + TIP.height - 1)
+    }
   })
 })
 
@@ -648,22 +818,33 @@ describe('contact sheets', () => {
 })
 
 describe('sweepStaleTmp', () => {
-  test('removes tmp-* dirs older than an hour, keeps fresh ones and everything else', () => {
+  const HOUR_AHEAD = () => new Date(Date.now() + 2 * 60 * 60 * 1000)
+  const dead = () => false
+  test('removes old tmp dirs whose pid is gone, by age alone when the name has no pid', () => {
     const home = tmp()
-    for (const d of ['tmp-old', 'tmp-new', 'keep']) mkdirSync(join(home, d))
-    const now = new Date(Date.now() + 2 * 60 * 60 * 1000)
-    // "now" is two hours ahead of the real mtimes: everything looks old except what is touched later.
-    utimesSync(
-      join(home, 'tmp-new'),
-      new Date(now.getTime() - 60_000),
-      new Date(now.getTime() - 60_000),
-    )
-    sweepStaleTmp(home, now)
-    expect(existsSync(join(home, 'tmp-old'))).toBe(false)
-    expect(existsSync(join(home, 'tmp-new'))).toBe(true)
+    for (const d of ['tmp-4242-aaaaaa', 'tmp-oldstyle', 'keep']) mkdirSync(join(home, d))
+    sweepStaleTmp(home, HOUR_AHEAD(), dead)
+    expect(existsSync(join(home, 'tmp-4242-aaaaaa'))).toBe(false)
+    expect(existsSync(join(home, 'tmp-oldstyle'))).toBe(false)
     expect(existsSync(join(home, 'keep'))).toBe(true)
   })
-  test('a missing home is fine', () => {
+  test('keeps a dir whose pid is alive, however old, and one younger than an hour', () => {
+    const home = tmp()
+    mkdirSync(join(home, `tmp-${process.pid}-live`))
+    sweepStaleTmp(home, HOUR_AHEAD(), (pid) => pid === process.pid)
+    expect(existsSync(join(home, `tmp-${process.pid}-live`))).toBe(true)
+    mkdirSync(join(home, 'tmp-4242-fresh'))
+    sweepStaleTmp(home, new Date(), dead)
+    expect(existsSync(join(home, 'tmp-4242-fresh'))).toBe(true)
+  })
+  test('a plain file, a dangling symlink and a missing home never abort', () => {
+    const home = tmp()
+    writeFileSync(join(home, 'tmp-1-file'), 'x')
+    symlinkSync(join(home, 'nowhere'), join(home, 'tmp-2-dangling'))
+    mkdirSync(join(home, 'tmp-3-old'))
+    expect(() => sweepStaleTmp(home, HOUR_AHEAD(), dead)).not.toThrow()
+    expect(existsSync(join(home, 'tmp-1-file'))).toBe(true)
+    expect(existsSync(join(home, 'tmp-3-old'))).toBe(false)
     expect(() => sweepStaleTmp(join(tmp(), 'nope'), new Date())).not.toThrow()
   })
 })

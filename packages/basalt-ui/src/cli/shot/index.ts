@@ -172,14 +172,43 @@ export function sanitizeBase(base: string): string {
 
 const STALE_TMP_MS = 60 * 60 * 1000
 
-/** Removes `<home>/tmp-*` render dirs a killed run left behind (older than an hour, so a live run's is safe). */
-export function sweepStaleTmp(home: string, now: Date): void {
-  if (!lexists(home)) return
-  for (const entry of readdirSync(home)) {
+/** A pid is alive when signal 0 reaches it (EPERM: it exists, we just may not signal it). */
+function pidAlive(pid: number): boolean {
+  try {
+    process.kill(pid, 0)
+    return true
+  } catch (error) {
+    return (error as NodeJS.ErrnoException).code === 'EPERM'
+  }
+}
+
+/**
+ * Removes `<home>/tmp-<pid>-*` render dirs a killed run left behind: older than an hour AND owned
+ * by a pid that is gone (a name without a pid, from an older run, goes by age alone). Never follows
+ * a symlink, and an entry that vanishes, dangles or is a plain file is skipped, never fatal.
+ */
+export function sweepStaleTmp(
+  home: string,
+  now: Date,
+  alive: (pid: number) => boolean = pidAlive,
+): void {
+  let entries: string[]
+  try {
+    entries = readdirSync(home)
+  } catch {
+    return
+  }
+  for (const entry of entries) {
     if (!entry.startsWith('tmp-')) continue
     const path = join(home, entry)
-    if (now.getTime() - statSync(path).mtimeMs > STALE_TMP_MS) {
+    try {
+      const stat = lstatSync(path)
+      if (!stat.isDirectory() || now.getTime() - stat.mtimeMs <= STALE_TMP_MS) continue
+      const pid = /^tmp-(\d+)-/.exec(entry)?.[1]
+      if (pid !== undefined && alive(Number(pid))) continue
       rmSync(path, { recursive: true, force: true })
+    } catch {
+      // Gone already, or not ours to remove: the next run tries again.
     }
   }
 }
@@ -275,7 +304,7 @@ export async function shot(
           const home = join(cwd, HOME)
           mkdirSync(home, { recursive: true })
           writeFileSync(join(home, '.gitignore'), '*\n')
-          tmp = mkdtempSync(join(home, 'tmp-'))
+          tmp = mkdtempSync(join(home, `tmp-${process.pid}-`))
           mkdirSync(join(tmp, 'png'))
           writeFileSync(join(tmp, '.gitignore'), '*\n')
           return (deps.capture ?? capture)({

@@ -199,11 +199,44 @@ async function captureRest(c: Ctx, name: string): Promise<void> {
   await attempt(c, name, 'rest', (path) => restCrop(c, name, path))
 }
 
-/** The box of a tooltip that opened (on hover or focus), or null when none shows up. */
-async function openTooltipBox(c: Ctx): Promise<Box | null> {
-  const tip = c.page.locator('[role="tooltip"]').first()
+/**
+ * Runs in the page: forgets the previous marks, then marks every tooltip that is visible now, so
+ * a tooltip another component already holds open is never taken for the one a trigger opens.
+ */
+export function markVisibleTooltips(): void {
+  for (const el of Array.from(document.querySelectorAll('[data-shot-seen]')))
+    el.removeAttribute('data-shot-seen')
+  for (const el of Array.from(document.querySelectorAll('[role="tooltip"]'))) {
+    const rect = el.getBoundingClientRect()
+    if (rect.width > 0 && rect.height > 0 && getComputedStyle(el).visibility !== 'hidden')
+      el.setAttribute('data-shot-seen', '')
+  }
+}
+
+/** Runs in the page: the first id a trigger names in `aria-describedby`, looking at it and its descendants. */
+export function describedByOf(el: Element | null): string {
+  const named = el?.matches('[aria-describedby]') ? el : el?.querySelector('[aria-describedby]')
+  return named?.getAttribute('aria-describedby')?.split(/\s+/)[0] ?? ''
+}
+
+/** The tooltip the trigger names, else any that was not already visible at the snapshot. */
+export const tooltipSelector = (describedBy: string): string =>
+  describedBy
+    ? `[role="tooltip"][id=${JSON.stringify(describedBy)}]`
+    : '[role="tooltip"]:not([data-shot-seen])'
+
+/**
+ * The box of the tooltip an action opened, or null when none shows up. Call `markVisibleTooltips`
+ * before the action; `describedBy` is the trigger's own tooltip id, when it has one.
+ */
+async function openTooltipBox(
+  c: Ctx,
+  describedBy: string,
+  timeout = TIP_PROBE_MS,
+): Promise<Box | null> {
+  const tip = c.page.locator(tooltipSelector(describedBy)).first()
   try {
-    await tip.waitFor({ state: 'visible', timeout: TIP_PROBE_MS })
+    await tip.waitFor({ state: 'visible', timeout })
   } catch {
     return null
   }
@@ -219,14 +252,19 @@ async function openTooltipBox(c: Ctx): Promise<Box | null> {
   return box
 }
 
+const idOf = (value: unknown): string => (typeof value === 'string' ? value : '')
+
 async function captureHover(c: Ctx, name: string): Promise<void> {
   if (skipOnMobile(c, name, 'hover')) return
   await attempt(c, name, 'hover', async (path) => {
     const anchor = anchorOf(c, name)
     await reveal(anchor)
     const inner = c.page.locator(`${sel(name)} [data-shot-hover]`).first()
-    await ((await inner.count()) > 0 ? inner : anchor).hover({ timeout: HOVER_TIMEOUT_MS })
-    const [box, tip] = [await anchor.boundingBox(), await openTooltipBox(c)]
+    const target = (await inner.count()) > 0 ? inner : anchor
+    await c.page.evaluate(markVisibleTooltips, undefined)
+    await target.hover({ timeout: HOVER_TIMEOUT_MS })
+    const describedBy = idOf(await target.evaluate(describedByOf))
+    const [box, tip] = [await anchor.boundingBox(), await openTooltipBox(c, describedBy)]
     if (!box || !tip) return void (await snap(anchor, path))
     await snap(c.page, path, { clip: unionClip([box, tip], FOCUS_MARGIN_PX, c.viewport) })
   })
@@ -248,7 +286,7 @@ async function tabInto(page: PwPage, name: string): Promise<void> {
 
 /**
  * True when Tab can reach the anchor or something in it: a link, an enabled control, a `tabindex`
- * ≥ 0 or editable host, outside any `hidden`/`inert` subtree. Runs in the page, so it is
+ * ≥ 0 or editable host, outside any `hidden`/`inert` subtree, and actually rendered. Runs in the page, so it is
  * self-contained.
  */
 export function hasFocusTarget(root: Element): boolean {
@@ -259,7 +297,11 @@ export function hasFocusTarget(root: Element): boolean {
       el.matches(candidates) &&
       !el.matches(':disabled') &&
       !el.getAttribute('tabindex')?.startsWith('-') &&
-      el.closest('[hidden], [inert]') === null,
+      el.closest('[hidden], [inert]') === null &&
+      (typeof el.checkVisibility === 'function'
+        ? el.checkVisibility()
+        : el.getClientRects().length > 0) &&
+      getComputedStyle(el).visibility !== 'hidden',
   )
 }
 
@@ -269,10 +311,17 @@ async function captureFocus(c: Ctx, name: string): Promise<void> {
     if (!(await anchor.evaluate(hasFocusTarget)))
       throw new NotDeclared('no focus target in the anchor')
     await reveal(anchor)
+    await c.page.evaluate(markVisibleTooltips, undefined)
     await tabInto(c.page, name)
     const box = await anchor.boundingBox()
     if (!box) throw new Error('anchor has no box')
-    const tip = await openTooltipBox(c)
+    const focused = idOf(
+      await c.page.evaluate(
+        () => document.activeElement?.getAttribute('aria-describedby')?.split(/\s+/)[0] ?? '',
+        undefined,
+      ),
+    )
+    const tip = await openTooltipBox(c, focused)
     await snap(c.page, path, {
       clip: unionClip(tip ? [box, tip] : [box], FOCUS_MARGIN_PX, c.viewport),
     })
@@ -287,13 +336,13 @@ async function captureTooltip(c: Ctx, name: string): Promise<void> {
     if ((await trigger.count()) === 0) throw new NotDeclared('no [data-shot-tooltip] in the anchor')
     const anchor = anchorOf(c, name)
     await reveal(anchor)
+    await c.page.evaluate(markVisibleTooltips, undefined)
     await trigger.hover({ timeout: HOVER_TIMEOUT_MS })
-    const tip = c.page.locator('[role="tooltip"]').first()
-    await tip.waitFor({ state: 'visible', timeout: TOOLTIP_TIMEOUT_MS }).catch(() => {
-      throw new Error('no visible [role="tooltip"] after hover')
-    })
-    const [a, t] = [await anchor.boundingBox(), await tip.boundingBox()]
-    if (!a || !t) throw new Error('tooltip or anchor has no box')
+    const describedBy = idOf(await trigger.evaluate(describedByOf))
+    const t = await openTooltipBox(c, describedBy, TOOLTIP_TIMEOUT_MS)
+    if (!t) throw new Error('no visible [role="tooltip"] after hover')
+    const a = await anchor.boundingBox()
+    if (!a) throw new Error('tooltip or anchor has no box')
     await snap(c.page, path, { clip: unionClip([a, t], FOCUS_MARGIN_PX, c.viewport) })
   })
   await c.page.mouse.move(0, 0)
@@ -581,10 +630,7 @@ export async function capture(input: CaptureInput): Promise<{
             out.scale.push({ scheme, viewport, ...done.scale })
             scaled = true
           }
-          if (done.scaleError && out.scaleError === undefined) {
-            out.scaleError = done.scaleError
-            input.log(`[shot] scale unavailable: ${done.scaleError}`)
-          }
+          if (done.scaleError) out.scaleError = out.scaleError ?? done.scaleError
           out.anchors.push(...done.anchors)
           out.shots.push(...done.shots)
         }
@@ -596,6 +642,9 @@ export async function capture(input: CaptureInput): Promise<{
   await writeSheets(input, out).catch((error: unknown) =>
     input.log(`[shot] contact sheets not written: ${firstLine(error)}`),
   )
-  const { anchors, shots, scale, scaleError } = out
-  return { anchors, shots, scale, ...(scaleError === undefined ? {} : { scaleError }) }
+  // A scale that was read at all is a scale: the error is only for one that never was.
+  const { anchors, shots, scale } = out
+  if (scale.length > 0 || out.scaleError === undefined) return { anchors, shots, scale }
+  input.log(`[shot] scale unavailable: ${out.scaleError}`)
+  return { anchors, shots, scale, scaleError: out.scaleError }
 }
