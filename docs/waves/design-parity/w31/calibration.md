@@ -115,7 +115,7 @@ The shipped `basalt-design-reviewer` subagent was not exercised against the fina
 
 ## Final result
 
-In iteration 4, 5 of 5 bad seeds failed with their expected item and `calibrate-good` passed, under the partial blindness described above. The confirmation section below supersedes that with a run whose route ids, file names and out dirs carry no seed-derived text.
+The final result is stated in § Confirmation, run 4 at the end of this file; the confirmation sections below supersede iteration 4's partly un-blind numbers.
 
 Iterations used: 4, plus 4b. 4b was a `shot` crop fix that re-scored two boards; the second of them ran through the stale subagent definition and does not count as a test of the edits. The reviewer-prompt budget of three counted iterations 1, 3 and 4, against genuinely different causes: reviewer numbering and cues, `shot`'s scale, and coverage.
 
@@ -190,3 +190,23 @@ The five bad seeds fail with their expected item. The known-good board still fai
 - Run A also cites Communication 5 (one KPI card plus one table for data that has a catalogue shape). Run B also cites Communication 1 (a bare "Total" column header).
 
 Not iterated further, per the lead's instruction. The remaining options are the lead's call: a table whose rows are not a time series (e.g. recent sessions with project, model, cost) with fewer columns for 390, or a stacked `Bars` part-of-whole with captions.
+
+## Confirmation, run 4 (the good board is one component)
+
+Change: `probe-3` is now the metric card alone (the table is removed; the page is otherwise unchanged). The header comment says why: today's basalt has no clean part-of-whole or ranked primitive, so a richer known-good board waits for Wave 33/34. The reviewer is the run 3 text. Method as in run 3: fresh general-purpose agents told to read `/.claude/agents/basalt-design-reviewer.md` and follow its body with Read/Grep/Glob only, two fresh random `run-<hex>` dirs, blind (prompt names only the dir).
+
+| run            | verdict | items cited | read (per the run reports)                  |
+| -------------- | ------- | ----------- | ------------------------------------------- |
+| probe-3, run C | pass    | —           | sheet + 4 page shots                        |
+| probe-3, run D | pass    | —           | sheet + 4 page shots + 2 single focus crops |
+
+### Final result
+
+- **Bad seeds:** 5 of 5 fail on their expected item in every blind run since the ids were made neutral (the neutral-id run and run 3). The earlier named runs were not blind and are superseded.
+- **Good board:** `probe-3` is one component, the metric card, and passes in both blind runs (n = 2).
+- **Earlier good-board failures:** these were real seed defects, plus one reviewer error that is now fixed.
+  - A part-of-whole shown as a table (Expression 4, then Expression 1).
+  - A time series shown as a table (Expression 1, Craft 3 at 390).
+  - The `subtitle` that `WidgetHeader` folds into the info glyph, whose ring and tooltip crowd the title at 390 (a basalt finding for Wave 33).
+  - The reviewer error: its Craft 4 line contradicted `docs/DESIGN-CORE.md` § Accent discipline on the accent sites, and was corrected.
+- **Limits:** a known-good board of one component says little about cross-component rules; n = 2 per board; run 3 and run 4 used general-purpose agents on the reviewer file, not the real subagent type, which was proven only by the first neutral run.
