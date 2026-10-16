@@ -5,37 +5,23 @@
  */
 import { ModalsProvider } from '@mantine/modals'
 import { useEffect } from 'react'
-import { createNotifier } from './notifier'
+import { createLiveCounter } from './notifier'
 import { hasMountedProvider, registerSlot } from './slots'
 
 /**
- * How many `ModalsProvider`s are live right now — a COUNTER, not a flag: two overlapping mounts
- * are normal (a route swap mounts the next provider before unmounting the previous one), and a
- * last-write-wins boolean reports the teardown of the OLD one as "no layer" while the new one is
- * serving. `@mantine/modals`' imperative API is a window event bus: with nothing subscribed a dialog
- * never appears and a confirm promise never settles, so the calls wait for this to be non-zero.
+ * The live `ModalsProvider`s. `@mantine/modals`' imperative API is a window event bus: with nothing
+ * subscribed a dialog never appears and a confirm promise never settles, so the overlay calls wait for
+ * this to be non-zero.
  */
-let liveProviders = 0
-const live = createNotifier()
+const liveProviders = createLiveCounter()
 
 /**
- * Internal — `ModalsMount` declares its `ModalsProvider` as live for as long as it is mounted,
- * and gets back the function that retracts it. There is no way to detect the provider from outside
- * React (its context is only readable through `useModals()`, and the overlay calls are imperative),
- * so the registration is explicit.
+ * Internal — `ModalsMount` declares its `ModalsProvider` live for as long as it is mounted and gets
+ * back the retraction. There is no way to detect the provider from outside React (its context is only
+ * readable through `useModals()`, and the overlay calls are imperative), so the registration is explicit.
+ * Exported for the confirm tests, which mount their own host.
  */
-export function registerModalsProvider(): () => void {
-  liveProviders++
-  live.notify()
-  let released = false
-  return () => {
-    // Idempotent: an effect cleanup React runs twice (StrictMode remount) must not drive the count
-    // below the number of providers actually on screen.
-    if (released) return
-    released = true
-    liveProviders--
-  }
-}
+export const registerModalsProvider = liveProviders.acquire
 
 /** How long a call waits for a mounted `BasaltProvider` to commit the modals mount it asked for. */
 const COMMIT_WAIT_MS = 5000
@@ -44,16 +30,19 @@ const NO_PROVIDER_WAIT_MS = 500
 
 /** Resolves `true` once a `ModalsProvider` is live, `false` after `timeoutMs` without one. */
 function whenModalsLive(timeoutMs: number): Promise<boolean> {
-  if (liveProviders > 0) return Promise.resolve(true)
+  if (liveProviders.count() > 0) return Promise.resolve(true)
   return new Promise((resolve) => {
-    let unsubscribe = (): void => {}
+    let timer: ReturnType<typeof setTimeout> | undefined
+    let unsubscribe: (() => void) | undefined
     const finish = (isLive: boolean): void => {
-      unsubscribe()
       clearTimeout(timer)
+      unsubscribe?.()
       resolve(isLive)
     }
-    const timer = setTimeout(() => finish(false), timeoutMs)
-    unsubscribe = live.subscribe(() => liveProviders > 0 && finish(true))
+    timer = setTimeout(() => finish(false), timeoutMs)
+    unsubscribe = liveProviders.subscribe(() => {
+      if (liveProviders.count() > 0) finish(true)
+    })
   })
 }
 

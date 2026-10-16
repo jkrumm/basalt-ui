@@ -389,38 +389,57 @@ async function providerOnlyRows(distEntry: string): Promise<Budget[]> {
   const devRow = { label: DEV_CHUNKS_LABEL, ceiling: 0 }
   const embeddedRow = { label: EMBEDDED_LABEL, ceiling: EMBEDDED_CEILING }
   const featureRow = { label: FEATURE_CHUNKS_LABEL, ceiling: 0 }
-  const unmeasured = (kind: 'skipped' | 'failed', reason: string): Budget[] =>
-    [sizeRow, devRow, embeddedRow, featureRow].map((row) => ({
-      ...row,
-      value: null,
-      unmeasured: { kind, reason },
-    }))
-  if (!existsSync(distEntry)) return unmeasured('skipped', 'dist/ missing, run `bun run build`')
-  try {
-    const { chunks, entry } = await buildProviderOnlyBundle(distEntry)
-    const embedded = await buildProviderOnlyBundle(distEntry, {
-      fixture: 'provider-embedded.tsx',
-      bundlePeers: true,
-    })
-    // `ShortcutsHelp` is the `./commands` export a define-free app can read; gate it with the same zero row.
-    const shortcuts = await buildProviderOnlyBundle(distEntry, {
-      fixture: 'provider-shortcuts-help.tsx',
-      bundlePeers: true,
-    })
-    return [
-      { ...sizeRow, value: firstPaintGzip(chunks, entry) },
-      gateRow(DEV_CHUNKS_LABEL, devOnlyChunks([...chunks.values()])),
-      { ...embeddedRow, value: allChunksGzip(embedded.chunks) },
-      gateRow(FEATURE_CHUNKS_LABEL, [
-        ...featureRuntimeChunks([...embedded.chunks.values()]),
-        ...featureRuntimeChunks([...shortcuts.chunks.values()]).map(
-          (name) => `shortcuts-help: ${name}`,
-        ),
-      ]),
-    ]
-  } catch (error) {
-    return unmeasured('failed', summarizeError(error))
+  const unmeasured = (
+    rows: readonly Budget[],
+    kind: 'skipped' | 'failed',
+    reason: string,
+  ): Budget[] => rows.map((row) => ({ ...row, value: null, unmeasured: { kind, reason } }))
+  const baseRows: Budget[] = [sizeRow, devRow]
+  const embeddedRows: Budget[] = [embeddedRow, featureRow]
+  if (!existsSync(distEntry)) {
+    return unmeasured(
+      [...baseRows, ...embeddedRows],
+      'skipped',
+      'dist/ missing, run `bun run build`',
+    )
   }
+  // Two tries: a failure building the peer-bundled fixtures must not mark the older rows failed.
+  const base = await (async (): Promise<Budget[]> => {
+    try {
+      const { chunks, entry } = await buildProviderOnlyBundle(distEntry)
+      return [
+        { ...sizeRow, value: firstPaintGzip(chunks, entry) },
+        gateRow(DEV_CHUNKS_LABEL, devOnlyChunks([...chunks.values()])),
+      ]
+    } catch (error) {
+      return unmeasured(baseRows, 'failed', summarizeError(error))
+    }
+  })()
+  const embeddedResult = await (async (): Promise<Budget[]> => {
+    try {
+      const embedded = await buildProviderOnlyBundle(distEntry, {
+        fixture: 'provider-embedded.tsx',
+        bundlePeers: true,
+      })
+      // `ShortcutsHelp` is the `./commands` export a define-free app can read; gate it with the same zero row.
+      const shortcuts = await buildProviderOnlyBundle(distEntry, {
+        fixture: 'provider-shortcuts-help.tsx',
+        bundlePeers: true,
+      })
+      return [
+        { ...embeddedRow, value: allChunksGzip(embedded.chunks) },
+        gateRow(FEATURE_CHUNKS_LABEL, [
+          ...featureRuntimeChunks([...embedded.chunks.values()]),
+          ...featureRuntimeChunks([...shortcuts.chunks.values()]).map(
+            (name) => `shortcuts-help: ${name}`,
+          ),
+        ]),
+      ]
+    } catch (error) {
+      return unmeasured(embeddedRows, 'failed', summarizeError(error))
+    }
+  })()
+  return [...base, ...embeddedResult]
 }
 
 /** A gate-shaped row: `value` is the violation count, the ceiling is zero. */

@@ -35,6 +35,9 @@ import type { Slot } from '../register'
 import { modals } from '@mantine/modals'
 import { ensureModalsMount, registerModalsMount } from '../provider/modals-mount'
 
+/** Bumped by `overlays.close()`; a deferred open / confirm that started in an older generation is cancelled. */
+let closeGeneration = 0
+
 // ── Overlay + OverlayMap ──────────────────────────────────────────────────────
 
 /**
@@ -198,8 +201,15 @@ async function confirm(options: ConfirmOptions): Promise<boolean> {
     onCancel,
   } = options
 
+  const startedAt = closeGeneration
   // `confirm` needs no registry entry, so it asks for the mount itself and waits for the provider.
-  if (!(await ensureModalsMount())) {
+  const live = await ensureModalsMount()
+  if (startedAt !== closeGeneration) {
+    // `overlays.close()` ran while the mount was pending: the dialog never opens, the answer is "no".
+    onCancel?.()
+    return false
+  }
+  if (!live) {
     throw new Error(
       missingLayer(
         'overlays.confirm',
@@ -306,11 +316,20 @@ export const overlays = {
     }
     // A `defineOverlays` made after first render has its mount committed a tick later: wait for it,
     // or the dialog is published to a bus with no subscriber and lost.
+    const startedAt = closeGeneration
     void ensureModalsMount().then((live) => {
-      if (live) {
+      // `overlays.close()` ran while the mount was pending: it cancels this open.
+      if (startedAt !== closeGeneration) return
+      if (!live) {
+        if (process.env.NODE_ENV !== 'production') {
+          console.warn('[basalt] overlays.open: no mounted <BasaltProvider> to show the overlay')
+        }
+        return
+      }
+      try {
         modals.open({ title: spec.title, children: spec.render(props) })
-      } else if (process.env.NODE_ENV !== 'production') {
-        console.warn('[basalt] overlays.open: no mounted <BasaltProvider> to show the overlay')
+      } catch (error) {
+        if (process.env.NODE_ENV !== 'production') console.error('[basalt] overlay failed', error)
       }
     })
   },
@@ -338,6 +357,8 @@ export const overlays = {
    * overlays.close()
    */
   close(): void {
+    // Cancels every open / confirm still waiting for the modals mount.
+    closeGeneration++
     modals.closeAll()
   },
 }
