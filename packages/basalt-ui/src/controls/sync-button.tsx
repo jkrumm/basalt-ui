@@ -148,7 +148,7 @@ export function SyncButton({
           {...(style !== undefined && { style })}
         >
           <IconSlot>
-            <RefreshGlyph {...(syncing && { className: classes.spin })} />
+            <RefreshGlyph className={syncing ? classes.spin : undefined} />
           </IconSlot>
         </ActionIcon>
       ) : (
@@ -158,7 +158,7 @@ export function SyncButton({
           {...(style !== undefined && { style })}
           leftSection={
             <IconSlot>
-              <RefreshGlyph {...(syncing && { className: classes.spin })} />
+              <RefreshGlyph className={syncing ? classes.spin : undefined} />
             </IconSlot>
           }
           {...control}

@@ -17,8 +17,9 @@
  */
 import { CloseButton, TextInput } from '@mantine/core'
 import { useDebouncedCallback } from '@mantine/hooks'
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
+import { useIsomorphicLayoutEffect } from '../common/isomorphic-layout-effect'
 import { assertRequiredProps } from '../common/validate'
 import type { FieldHandle } from '../state'
 import type { StringField } from '../state/fields'
@@ -62,17 +63,17 @@ export function SearchFilter(props: SearchFilterProps): ReactNode {
   const draft = useDebouncedField(value, setValue, () => {
     field.clear()
   })
-  useFilterRegistration(!field.isDefault(value), () => {
-    field.clear()
-  })
+  // One clear for the button and for `Reset all`: both cancel the pending phrase, so an unmount in
+  // the same commit as a reset cannot write the stale draft back over it.
+  useFilterRegistration(!field.isDefault(value), draft.clear)
 
   // `placeholder` is optional and, even when set, stops being the name the moment the user types —
   // so the name comes from `label`, or from the visible heading when the surface draws one.
-  const named = surface === 'sheet' || surface === 'panel'
-  const { labelId, nameProps } = useControlName(label, named)
-  // The pill form has no wrapping home — the `TextInput` itself is the root, so it takes the class
-  // directly. The panel/sheet forms wrap it in a home that becomes the root instead.
-  const isPill = surface !== 'panel' && surface !== 'sheet'
+  // The sheet form is the panel form (`docs/CONTROLS-SPEC.md` §3: "sheet = panel rows inside a
+  // Drawer"). The pill form has no wrapping home — the `TextInput` itself is the root, so it takes
+  // the class directly; the panel/sheet forms wrap it in a home that becomes the root instead.
+  const inRow = surface === 'sheet' || surface === 'panel'
+  const { labelId, nameProps } = useControlName(label, inRow)
 
   const input = (
     <TextInput
@@ -82,6 +83,7 @@ export function SearchFilter(props: SearchFilterProps): ReactNode {
       enterKeyHint="search"
       value={draft.value}
       leftSection={<SearchGlyph />}
+      rightSectionPointerEvents="all"
       {...(clearable &&
         draft.value !== '' && {
           rightSection: (
@@ -107,14 +109,12 @@ export function SearchFilter(props: SearchFilterProps): ReactNode {
         // Enter that confirms an IME candidate is not a submit.
         if (event.key === 'Enter' && !event.nativeEvent.isComposing) draft.flush()
       }}
-      {...(isPill && className !== undefined && { className })}
-      {...(isPill && style !== undefined && { style })}
+      {...(!inRow && className !== undefined && { className })}
+      {...(!inRow && style !== undefined && { style })}
     />
   )
 
-  // The sheet form is the panel form (`docs/CONTROLS-SPEC.md` §3: "sheet = panel rows inside a
-  // Drawer") — the same `PanelRow` label-above-control row on both surfaces.
-  if (surface === 'panel' || surface === 'sheet') {
+  if (inRow) {
     return (
       <PanelRow
         label={label}
@@ -164,7 +164,7 @@ function useDebouncedField(
     rendered.current = value
     commitRef.current = commit
   })
-  useLayoutEffect(
+  useIsomorphicLayoutEffect(
     () => () => {
       if (rendered.current === seen.current) commitRef.current.flush()
       else commitRef.current.cancel()

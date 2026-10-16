@@ -89,9 +89,10 @@ export function EnumFilter<T extends string>({
   const [value, setValue] = field.use()
   const surface = useFilterSurface()
   const isDefault = field.isDefault(value)
-  useFilterRegistration(!isDefault, () => {
+  const clearFilter = (): void => {
     field.clear()
-  })
+  }
+  useFilterRegistration(!isDefault, clearFilter)
 
   // The prop wins whole, never merged: a catalogue that has dropped a value must be able to drop
   // its row, which a merge with `field.options` would silently put back.
@@ -161,7 +162,7 @@ export function EnumFilter<T extends string>({
           />
         ))}
       </Stack>
-      {clearable === true && !isDefault && <FilterClearButton onClear={() => field.clear()} />}
+      {clearable === true && !isDefault && <FilterClearButton onClear={clearFilter} />}
     </Radio.Group>
   )
 

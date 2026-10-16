@@ -10,7 +10,7 @@
 import { describe, expect, test } from 'bun:test'
 import type { ReactNode } from 'react'
 import { createLocalStore, field } from '../state'
-import type { FilterOption } from './index'
+import type { FilterOption } from './filter-base'
 import { MultiSelectFilter } from './multi-select-filter'
 import { NumberFilter } from './number-filter'
 import { RangeFilter } from './range-filter'

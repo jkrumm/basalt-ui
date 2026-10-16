@@ -231,9 +231,10 @@ function NumberStepper({
   const surface = useFilterSurface()
   const inSheet = surface === 'sheet'
   const isDefault = field.isDefault(value)
-  useFilterRegistration(!isDefault, () => {
+  const clearFilter = (): void => {
     field.clear()
-  })
+  }
+  useFilterRegistration(!isDefault, clearFilter)
   const inPanel = surface === 'panel'
   const { labelId, nameProps } = useControlName(label, inSheet || inPanel)
   const draft = useCommittedNumber(value, setValue, { min: field.min, max: field.max })
@@ -296,7 +297,7 @@ function NumberStepper({
         {input}
         {/* Same placement as `EnumFilter`'s: popover only — the sheet and panel rows reset through
             the `FilterSet` registration above. The draft follows the clear via its effect. */}
-        {clearable === true && !isDefault && <FilterClearButton onClear={() => field.clear()} />}
+        {clearable === true && !isDefault && <FilterClearButton onClear={clearFilter} />}
       </div>
     </FilterPill>
   )
