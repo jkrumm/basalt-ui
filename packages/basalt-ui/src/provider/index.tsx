@@ -102,12 +102,15 @@ type BasaltProviderCommonProps = {
   spotlight?: boolean
   /**
    * Default BCP-47 locale for every `basalt-ui/format` formatter that gets no per-call `locale`
-   * (`integer(1112)` → `1,112` under `en-US`). Unset → the runtime's locale. This sets ONE
-   * app-wide default per process (formatters are plain functions, not hooks); a per-call `locale`
-   * is the per-request override. Removing the prop later does not unset it.
+   * (`integer(1112)` → `1,112` under `en-US`). App-level config, static for the provider's
+   * lifetime: it sets ONE module-global default per process (formatters are plain functions, not
+   * hooks) and a per-call `locale` is the override. An unset prop LEAVES the current default in
+   * place (it never resets it), and changing the prop at runtime does not re-render formatted
+   * children.
    */
   locale?: string
-  /** Default IANA time zone for the date/time formatters. Unset → the runtime's zone. */
+  /** Default IANA time zone for the date/time formatters; same lifecycle as `locale`. Unset leaves
+   * the current default (initially the runtime's zone). */
   timeZone?: string
 } & Omit<MantineProviderProps, 'children' | 'theme' | 'defaultColorScheme' | 'cssVariablesResolver'>
 

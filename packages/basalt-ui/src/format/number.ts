@@ -77,21 +77,25 @@ export type MoneyOptions = LocaleOption & {
   digits?: number
 }
 
+function fractionDigitOptions(
+  isCompact: boolean,
+  digits: number | undefined,
+): Intl.NumberFormatOptions {
+  if (isCompact) return { minimumFractionDigits: 0, maximumFractionDigits: digits ?? 1 }
+  if (digits === undefined) return {}
+  return { minimumFractionDigits: digits, maximumFractionDigits: digits }
+}
+
 /** Money. `money(12.5, { currency: 'USD' })` → `$12.50`. */
 export function money(value: Numeric, options: MoneyOptions): string {
   if (!isFiniteNumber(value)) return NON_FINITE
   const { currency, compact: isCompact = false, digits, locale } = options
-  const fraction: Intl.NumberFormatOptions = isCompact
-    ? { minimumFractionDigits: 0, maximumFractionDigits: digits ?? 1 }
-    : digits === undefined
-      ? {}
-      : { minimumFractionDigits: digits, maximumFractionDigits: digits }
   return numberFormat(locale, {
     ...SIGN,
     style: 'currency',
     currency,
     ...(isCompact && { notation: 'compact', compactDisplay: 'short' }),
-    ...fraction,
+    ...fractionDigitOptions(isCompact, digits),
   })
     .format(value)
     .replace(COMPACT_K, '$1k')

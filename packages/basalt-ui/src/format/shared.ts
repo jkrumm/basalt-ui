@@ -25,6 +25,13 @@ export type FormatDefaults = {
   timeZone?: string | undefined
 }
 
+/**
+ * `Intl` construction is the expensive half of formatting, so instances are memoized per RESOLVED
+ * locale (call locale, else the default) — a changed default can never serve a stale instance.
+ */
+const numberCaches = new Map<string, Map<string, Intl.NumberFormat>>()
+const dateCaches = new Map<string, Map<string, Intl.DateTimeFormat>>()
+
 let defaults: FormatDefaults = {}
 
 /**
@@ -59,18 +66,11 @@ export function resetFormatDefaults(): void {
  */
 function optionsKey(options: object): string {
   let key = ''
-  for (const name of Object.keys(options).toSorted()) {
-    key += `${name}=${String((options as Record<string, unknown>)[name])};`
+  for (const [name, value] of Object.entries(options).sort(([a], [b]) => (a < b ? -1 : 1))) {
+    key += `${name}=${String(value)};`
   }
   return key
 }
-
-/**
- * `Intl` construction is the expensive half of formatting, so instances are memoized per RESOLVED
- * locale (call locale, else the default) — a changed default can never serve a stale instance.
- */
-const numberCaches = new Map<string, Map<string, Intl.NumberFormat>>()
-const dateCaches = new Map<string, Map<string, Intl.DateTimeFormat>>()
 
 function memoize<T>(
   caches: Map<string, Map<string, T>>,

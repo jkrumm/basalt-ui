@@ -168,7 +168,7 @@ if (typeof tokens.buildPaletteCss !== 'function') throw new Error('tokens.buildP
 // the Mantine-free, React-free format entry must load and format
 const format = await import('basalt-ui/format')
 if (typeof format.money !== 'function') throw new Error('format.money missing')
-if (format.money(1234, { currency: 'USD', locale: 'en-US' }) !== '$1,234') {
+if (format.money(1234, { currency: 'USD', locale: 'en-US' }) !== '$1,234.00') {
   throw new Error('format.money did not format as expected')
 }
 

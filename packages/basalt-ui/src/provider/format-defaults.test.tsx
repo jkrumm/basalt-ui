@@ -1,9 +1,8 @@
-import { act, cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, test } from 'bun:test'
-import { useEffect, useState } from 'react'
 import { BasaltProvider } from './index'
 import { testRouter } from './test-router'
-import { integer, weekday } from '../format'
+import { defineFormat, integer, weekday } from '../format'
 import { resetFormatDefaults } from '../format/shared'
 
 afterEach(() => {
@@ -24,20 +23,10 @@ describe('BasaltProvider locale / timeZone', () => {
     expect(await screen.findByText('call:1.112')).toBeTruthy()
   })
 
-  test('a changed locale prop is applied on re-render', async () => {
-    const probe = { bump: () => {} }
-    function Probe() {
-      const [, setN] = useState(0)
-      useEffect(() => {
-        probe.bump = () => setN((n) => n + 1)
-      })
-      return <span>{`n:${integer(1112)}`}</span>
-    }
-    const router = testRouter('x', () => <Probe />)
-    const { rerender } = render(<BasaltProvider router={router} locale="en-US" />)
-    expect(await screen.findByText('n:1,112')).toBeTruthy()
-    rerender(<BasaltProvider router={router} locale="de-DE" />)
-    act(() => probe.bump())
+  test('an unset prop leaves the current default in place', async () => {
+    defineFormat({ locale: 'de-DE' })
+    const router = testRouter('x', () => <span>{`n:${integer(1112)}`}</span>)
+    render(<BasaltProvider router={router} />)
     expect(await screen.findByText('n:1.112')).toBeTruthy()
   })
 

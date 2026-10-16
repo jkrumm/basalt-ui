@@ -42,6 +42,9 @@ describe('kcal', () => {
     expect(kcal(-999.6, en)).toBe('-1k kcal')
     expect(kcal(-1243, en)).toBe('-1.24k kcal')
     expect(kcal(1000, en)).toBe('1k kcal')
+    expect(kcal(1_500_000, en)).toBe('1,500k kcal')
+    expect(kcal(999_995, en)).toBe('1,000k kcal')
+    expect(kcal(999.995, { ...en, digits: 0 })).toBe('1k kcal')
   })
 
   test('negative zero and nullish', () => {
