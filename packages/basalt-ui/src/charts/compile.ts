@@ -11,7 +11,6 @@ import { rect } from '@tanstack/charts/rect'
 import { ruleX, ruleY } from '@tanstack/charts/rule'
 import { scaleLinear } from '@tanstack/charts/scales/linear'
 import { scaleUtc } from 'd3-scale'
-import { tooltip as tooltipHost } from '@tanstack/charts/tooltip'
 import { portal } from '@tanstack/charts/tooltip/portal'
 import type {
   ChartBuildContext,
@@ -27,7 +26,7 @@ import { SHORT_CHART_HEIGHT } from './box'
 import { fmtCompact } from '../format/number'
 import { VX } from '../tokens'
 import type { ContainerClass } from '../tokens/size-classes'
-import { cursorBinding, sourceOnlyFocus } from './cursor'
+import { cursorBinding, quietWhileFollowing } from './cursor'
 import { cursorDots } from './marks'
 import { bucketTicks, strideEvery } from './ticks'
 import { MAIN_PANE, plotAccess, plotContext } from './plot-context'
@@ -804,8 +803,11 @@ function tooltipSpec<T, X extends ChartX>(opts: {
   const rowSeries = (input.reverseRows ? visible.toReversed() : visible).filter(
     (s) => s.tooltip !== false,
   )
+  const onFollow = typeof input.tooltip === 'object' && input.tooltip.onFollow === true
   return {
-    use: tooltipHost,
+    use: quietWhileFollowing,
+    // Read by `quietWhileFollowing`; absent, a follower paints its own tooltip.
+    ...(!onFollow && { follower: { group: input.cursorGroup, chartId: input.chartId } }),
     portal,
     anchor: 'group-center',
     content: (points: readonly ChartPoint[]) => {
@@ -909,11 +911,9 @@ export function compileCartesian<T, X extends ChartX>(
         ...(labelsInside(cls, height) && { margin: { left: 0, ...(axes.right && { right: 0 }) } }),
       }
     },
-    // Followers paint the crosshair only, unless the chart opts into following tooltips.
-    focus:
-      typeof input.tooltip === 'object' && input.tooltip.onFollow
-        ? 'group-x'
-        : sourceOnlyFocus(input.cursorGroup, input.chartId),
+    // Followers resolve the leader's group, so they draw its dots; `quietWhileFollowing` mutes the
+    // tooltip unless the chart opts into following tooltips.
+    focus: 'group-x',
     maxFocusDistance: Number.POSITIVE_INFINITY,
     cursor: cursorBinding({
       group: input.cursorGroup,

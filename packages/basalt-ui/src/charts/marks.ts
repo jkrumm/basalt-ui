@@ -156,37 +156,33 @@ export function cursorDots<T, X extends ChartX>(
   rows: readonly PlotRow<T, X>[],
   yScale: 'y2' | undefined,
 ): ChartMarks {
-  // `dot.fill` is constant, so a series with `getMarker` gets one mark per distinct datum colour.
-  const byColor = new Map<string, PlotRow<T, X>[]>([[s.color, []]])
-  for (const row of rows) {
-    const color = s.getMarker?.(row.datum)?.color ?? s.color
-    const group = byColor.get(color)
-    if (group) group.push(row)
-    else byColor.set(color, [row])
+  const { getMarker } = s
+  // `dot.fill` is constant but a state style's is not: one mark whose focused fill reads the datum's
+  // own `getMarker` colour, however many colours the series has.
+  const focused = {
+    fillOpacity: 1,
+    strokeOpacity: 1,
+    ...(getMarker && {
+      fill: ({ datum }: { datum: PlotRow<T, X> }): string =>
+        getMarker(datum.datum)?.color ?? s.color,
+    }),
   }
-  return [...byColor].flatMap(([color, group]) =>
-    // The series colour keeps `<key>-cursor` even when no datum uses it; others are keyed by colour.
-    group.length === 0 && color !== s.color
-      ? []
-      : [
-          dot(group, {
-            id: color === s.color ? `${s.key}-cursor` : `${s.key}-cursor-${colorSlug(color)}`,
-            x: rowX,
-            y: 'y',
-            r: VX.dotR,
-            fill: color,
-            fillOpacity: 0,
-            stroke: VX.surface.panel,
-            strokeWidth: 1.5,
-            strokeOpacity: 0,
-            states: [{ when: { focus: 'x' }, style: { fillOpacity: 1, strokeOpacity: 1 } }],
-            ...(yScale !== undefined && { yScale }),
-          }),
-        ],
-  )
+  return [
+    dot(rows, {
+      id: `${s.key}-cursor`,
+      x: rowX,
+      y: 'y',
+      r: VX.dotR,
+      fill: s.color,
+      fillOpacity: 0,
+      stroke: VX.surface.panel,
+      strokeWidth: 1.5,
+      strokeOpacity: 0,
+      states: [{ when: { focus: 'x' }, style: focused }],
+      ...(yScale !== undefined && { yScale }),
+    }),
+  ]
 }
-
-const colorSlug = (color: string): string => color.replaceAll(/[^\w-]+/g, '_')
 
 /**
  * A single-series `barY`. The engine stacks every `barY` that has no explicit extent, and a row with
