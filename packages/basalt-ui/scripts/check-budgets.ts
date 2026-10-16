@@ -59,7 +59,7 @@ const CEILINGS = {
  */
 function wave31CliLines(): number {
   const raises = {
-    shot: 1602,
+    shot: 1613,
 
     install: 75,
 
@@ -554,7 +554,7 @@ async function budgets(providerOnlyDist: string): Promise<Budget[]> {
     // 4890 -> 4955: the declared `basalt.shell: false` — config key, seed skip, shared seed-retire notice and the doctor finding (ledger row 82, linewatch W2).
     // 4955 -> 5020: `app-wiring` accepts one provider in the root or a pathless layout, fails an untyped `createRootRoute` and a missing root (ledger rows 113, 115, weatherorb W37).
     // 5020 -> 5165: `app-wiring` follows one import hop (relative or tsconfig `paths`) to a provider wrapper; `sync` judges a Start seed by content (ledger rows 121-123, weatherorb W39); the hop resolver and provider-tag reader are leaf modules.
-    // 6777 -> 6984 (W31 calibration, `shot` entry 1395 -> 1602): `scale` reads basalt's own tokens (component-scoped too) and reports `scaleError`; one contact sheet per anchor; focus `not-declared`; parent mkdir; stale tmp sweep; hover/focus crops hold an open tooltip.
+    // 6777 -> 6995 (W31 calibration, `shot` entry 1395 -> 1613): `scale` reads basalt's own tokens (component-scoped too) and reports `scaleError`; one contact sheet per anchor; focus `not-declared`; parent mkdir; stale tmp sweep; hover/focus crops hold an open tooltip once its animation settles.
     {
       label: 'CLI non-test lines (src/cli/**)',
       value: cliNonTestLines(),
