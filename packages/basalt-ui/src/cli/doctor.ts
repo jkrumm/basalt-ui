@@ -33,7 +33,8 @@ import {
   scannableFiles,
   shippedAssetPath,
 } from './index'
-import { PLAYWRIGHT_INSTALL, playwrightVersion, staleBoardNotice } from './board-freshness'
+import { designLoopLines } from './board-freshness'
+import type { DesignLoopProbes } from './board-freshness'
 import { parseJsonc } from './source-text'
 import { resolveRoots } from './config'
 import {
@@ -122,7 +123,11 @@ function aiMajorsAt(dir: string): Partial<Record<AiMajorField, number>> {
  *
  * Returns the exit code: 0 = all good, 1 = one or more hard failures or skipped checks.
  */
-export function doctor(invocationCwd: string = process.cwd(), flags: string[] = []): number {
+export function doctor(
+  invocationCwd: string = process.cwd(),
+  flags: string[] = [],
+  designLoop: DesignLoopProbes = {},
+): number {
   if (conflictingProfileFlags('doctor', flags)) return 1
   const project = resolveProjectDir(invocationCwd)
   // Inside the app package of a monorepo the manifest is above: read the install root instead.
@@ -422,16 +427,7 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
   }
 
   // ── Design loop: advisory info lines (no warning count — they never change the verdict) ─────
-  if (profile !== 'tokens-only') {
-    const boardNotice = staleBoardNotice(cwd, resolveRoots(cfg))
-    if (boardNotice !== null) lines.push(`  → ${boardNotice}`)
-    const playwright = playwrightVersion(cwd)
-    lines.push(
-      playwright === null
-        ? `  → playwright is not installed (optional, needed by basalt-ui shot): ${PLAYWRIGHT_INSTALL}`
-        : `  ✓ playwright ${playwright} resolves (optional: basalt-ui shot)`,
-    )
-  }
+  if (profile !== 'tokens-only') lines.push(...designLoopLines(cwd, resolveRoots(cfg), designLoop))
 
   // ── Report ──────────────────────────────────────────────────────────────────
   lines.push('')

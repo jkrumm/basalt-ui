@@ -63,7 +63,7 @@ function wave31CliLines(): number {
 
     install: 0,
 
-    notice: 87,
+    notice: 139,
   }
   return Object.values(raises).reduce((sum, n) => sum + n, 0)
 }
