@@ -23,7 +23,7 @@ import {
 import type { FieldHandle } from '../state'
 import type { AnyField, FieldSetOptions } from '../state/fields'
 import { field } from '../state'
-import { createSearchStore } from './search-store'
+import { createSearchStore, resetHydrationForTests } from './search-store'
 
 type Probe = { value: unknown; set: (next: unknown, opts?: FieldSetOptions) => void }
 type Sink = { current: Probe | null }
@@ -115,6 +115,11 @@ function persist(key: string, record: Record<string, unknown>): void {
 
 beforeEach(() => {
   localStorage.clear()
+})
+
+afterEach(() => {
+  Reflect.deleteProperty(window, '$_TSR')
+  resetHydrationForTests()
 })
 
 const handRolled = (raw: Record<string, unknown>) => ({
@@ -264,6 +269,31 @@ describe('use() — writing', () => {
     })
     expect(currentSearch(router)['from']).toBeUndefined()
     expect(currentSearch(router)['to']).toBeUndefined()
+  })
+
+  test('a rejected navigate from the setter is reported, not left unhandled', async () => {
+    const store = createSearchStore({
+      key: 'r-reject',
+      fields: { range: field.enum(['1d', '7d'], '1d') },
+    })
+    const probe = sink()
+    const report = spyOn(globalThis, 'reportError').mockImplementation(() => {})
+    const router = await mountApp({
+      validateSearch: store.validateSearch,
+      entry: '/dashboard?range=1d',
+      Dashboard: fieldProbe(store.field.range, probe),
+    })
+    const failure = new Error('navigate failed')
+    spyOn(router, 'navigate').mockRejectedValue(failure)
+
+    await act(async () => {
+      probe.current?.set('7d')
+    })
+
+    await waitFor(() => {
+      expect(report).toHaveBeenCalledWith(failure)
+    })
+    report.mockRestore()
   })
 
   test('a write from a FOREIGN route persists only — it never navigates (A1)', async () => {
@@ -617,7 +647,15 @@ describe('store hooks', () => {
       fields: { range: field.enum(['1d', '7d'], '1d') },
     })
     const warn = spyOn(console, 'warn').mockImplementation(() => {})
-    const rootRoute = createRootRoute({ component: () => <Outlet /> })
+    const Layout = fieldProbe(store.field.range, sink())
+    const rootRoute = createRootRoute({
+      component: () => (
+        <>
+          <Layout />
+          <Outlet />
+        </>
+      ),
+    })
     const own = createRoute({
       getParentRoute: () => rootRoute,
       path: '/own',
@@ -647,6 +685,12 @@ describe('store hooks', () => {
       expect(warn).toHaveBeenCalledTimes(1)
     })
     expect(String(warn.mock.calls[0]?.[0])).toContain('another store or schema owns the param')
+
+    // Back and forth is the same two verdicts: the foreign path warned once, the owner never.
+    await act(async () => {
+      await router.navigate({ to: '/own', search: { range: '7d' } })
+    })
+    expect(warn).toHaveBeenCalledTimes(1)
     warn.mockRestore()
   })
 
@@ -1337,7 +1381,6 @@ function rootAt<F extends AnyField>(
 describe('SSR — the server HTML is the first client render', () => {
   afterEach(() => {
     for (const container of mounted.splice(0)) container.remove()
-    Reflect.deleteProperty(window, '$_TSR')
   })
 
   test('url lane: renders the URL value on both sides, then settles on it', async () => {
@@ -1357,7 +1400,7 @@ describe('SSR — the server HTML is the first client render', () => {
     expect(container.textContent).toBe('7d')
   })
 
-  test('url lane, NO param + a stored value on a dehydrated page: the first client render is the server HTML', async () => {
+  test('url lane, NO param + a stored value on a dehydrated page: server HTML == first client render, then the mirror', async () => {
     const store = createSearchStore({
       key: 'ssr-url-bare',
       fields: { range: field.enum(['1d', '7d', '30d'], '1d') },
@@ -1374,7 +1417,56 @@ describe('SSR — the server HTML is the first client render', () => {
     const client = rootAt(store, store.field.range, '/')
     await client.load()
     const container = await hydrate(markup, <RouterProvider router={client} />)
-    expect(container.textContent).toBe('1d')
+    // `hydrate` fails on a mismatch, so the first client render was the server's `1d`; the mirror
+    // then applies.
+    expect(container.textContent).toBe('30d')
+  })
+
+  test('after hydration the stored value is adopted, and a later paramless nav resolves it', async () => {
+    const store = createSearchStore({
+      key: 'ssr-adopt',
+      fields: { range: field.enum(['1d', '7d', '30d'], '1d') },
+    })
+    persist('ssr-adopt', { range: '30d' })
+    Object.assign(window, { $_TSR: {} })
+    const server = rootAt(store, store.field.range, '/')
+    await server.load()
+    const markup = renderToString(<RouterProvider router={server} />)
+    expect(markup).toContain('1d')
+
+    const client = rootAt(store, store.field.range, '/')
+    await client.load()
+    const container = await hydrate(markup, <RouterProvider router={client} />)
+
+    await waitFor(() => {
+      expect(currentSearch(client)['range']).toBe('30d')
+    })
+    expect(container.textContent).toBe('30d')
+    expect(storedRecord('ssr-adopt')).toEqual({ range: '30d' })
+
+    // Hydration is over: a paramless client navigation resolves URL ⊳ mirror like any client page.
+    await act(async () => {
+      await client.navigate({ to: '/', search: {} })
+    })
+    expect(currentSearch(client)['range']).toBe('30d')
+  })
+
+  test('a deep link that is not the fallback is never overridden by the mirror', async () => {
+    const store = createSearchStore({
+      key: 'ssr-deeplink',
+      fields: { range: field.enum(['1d', '7d', '30d'], '1d') },
+    })
+    persist('ssr-deeplink', { range: '30d' })
+    Object.assign(window, { $_TSR: {} })
+    const server = rootAt(store, store.field.range, '/?range=7d')
+    await server.load()
+    const markup = renderToString(<RouterProvider router={server} />)
+    const client = rootAt(store, store.field.range, '/?range=7d')
+    await client.load()
+    const container = await hydrate(markup, <RouterProvider router={client} />)
+
+    expect(container.textContent).toBe('7d')
+    expect(currentSearch(client)['range']).toBe('7d')
   })
 
   test('stored lane: the server renders the fallback, hydration adopts the stored value', async () => {

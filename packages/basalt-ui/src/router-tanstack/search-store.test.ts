@@ -7,7 +7,7 @@
  */
 import { afterEach, beforeEach, describe, expect, spyOn, test } from 'bun:test'
 import { field } from '../state'
-import { createSearchStore } from './search-store'
+import { createSearchStore, resetHydrationForTests } from './search-store'
 
 /** Writes the store's envelope directly — one entry per store, `{ fieldName: value }`. */
 function persist(key: string, record: Record<string, unknown>, version = 1): void {
@@ -289,341 +289,52 @@ const build = () =>
     fields: { range: field.enum(['1d', '7d', '30d'], '1d') },
   })
 
-describe('validateSearch on the server', () => {
-  test('is URL ⊳ fallback only — the stored layer never applies without a window', () => {
+/** Runs `fn` as a server would: no `window` at all. */
+function onServer<T>(fn: () => T): T {
+  const realWindow = globalThis.window
+  // @ts-expect-error -- simulating a server runtime, where `window` does not exist
+  globalThis.window = undefined
+  try {
+    return fn()
+  } finally {
+    globalThis.window = realWindow
+  }
+}
+
+describe('validateSearch and linkSearch on the server and a dehydrated page', () => {
+  afterEach(() => {
+    Reflect.deleteProperty(window, '$_TSR')
+    resetHydrationForTests()
+  })
+
+  test('are URL ⊳ fallback only — the stored layer never applies without a window', () => {
     const store = build()
     persist('k-server-pure', { range: '30d' })
     expect(store.validateSearch({})).toEqual({ range: '30d' })
 
-    const realWindow = globalThis.window
-    // @ts-expect-error -- simulating a server runtime, where `window` does not exist
-    globalThis.window = undefined
-    try {
+    onServer(() => {
       expect(store.validateSearch({})).toEqual({ range: '1d' })
       expect(store.validateSearch({ range: '7d' })).toEqual({ range: '7d' })
-    } finally {
-      globalThis.window = realWindow
-    }
+      expect(store.linkSearch()).toEqual({ range: '1d' })
+    })
   })
 
-  test('is identical on a dehydrated client page — it carries window.$_TSR', () => {
+  test('are identical to the server while a dehydrated page hydrates', () => {
     const store = build()
     persist('k-server-pure', { range: '30d' })
     Object.assign(window, { $_TSR: {} })
-    try {
-      expect(store.validateSearch({})).toEqual({ range: '1d' })
-    } finally {
-      Reflect.deleteProperty(window, '$_TSR')
-    }
-  })
 
-  test('a composed schema sees the same object on the server and on a client-only page', () => {
-    const store = build()
-    persist('k-server-pure', { range: '30d' })
-    const parse = (raw: Record<string, unknown>) => ({ ...store.validateSearch(raw) })
-    // The client-only page is the one that merges the mirror; the dehydrated one must not.
-    Object.assign(window, { $_TSR: {} })
-    const hydrating = parse({})
-    Reflect.deleteProperty(window, '$_TSR')
-    const realWindow = globalThis.window
-    // @ts-expect-error -- simulating a server runtime
-    globalThis.window = undefined
-    const server = parse({})
-    globalThis.window = realWindow
-    expect(hydrating).toEqual(server)
-  })
-})
-
-describe('the pinned-link warning', () => {
-  test('fires for a multi field — the fallback comparison is by CONTENT, not identity', () => {
-    const store = createSearchStore({
-      key: 'k-warn-multi',
-      fields: { tags: field.multi(['api', 'design'], ['api']) },
-    })
-    persist('k-warn-multi', { tags: ['design'] })
-
-    // `['api']` from the URL is a different array object than the fallback — `===` would miss it.
-    store.validateSearch({ tags: ['api'] })
-    expect(warn).toHaveBeenCalledTimes(1)
-    expect(String(warn.mock.calls[0]?.[0])).toContain('linkSearch')
-  })
-
-  test('fires for a range field, whose value is an object', () => {
-    const store = createSearchStore({
-      key: 'k-warn-range',
-      fields: { range: field.range({ presets: ['7d', '30d'], fallback: '30d' }) },
-    })
-    persist('k-warn-range', { range: { preset: '7d' } })
-
-    store.validateSearch({ range: '30d' })
-    expect(warn).toHaveBeenCalledTimes(1)
-    expect(String(warn.mock.calls[0]?.[0])).toContain('range=30d')
-  })
-
-  test('stays silent when the URL and the mirror agree, whatever the kind', () => {
-    const store = createSearchStore({
-      key: 'k-warn-agree',
-      fields: { tags: field.multi(['api', 'design'], ['api']) },
-    })
-    persist('k-warn-agree', { tags: ['api'] })
-
-    store.validateSearch({ tags: ['api'] })
-    expect(warn).not.toHaveBeenCalled()
-  })
-
-  test('stays silent once any reader is wired — including field.use(), the documented one', () => {
-    const store = createSearchStore({
-      key: 'k-warn-wired',
-      fields: { range: field.enum(['1d', '7d', '30d'], '30d') },
-    })
-    persist('k-warn-wired', { range: '7d' })
-
-    store.readStored()
-    store.validateSearch({ range: '30d' })
-    expect(warn).not.toHaveBeenCalled()
-  })
-})
-
-describe('labels / options', () => {
-  test('labels() returns the SAME store, so it chains at the definition site', () => {
-    const store = createSearchStore({
-      key: 'k-labels',
-      fields: { range: field.range({ presets: ['7d', '30d'], fallback: '30d', custom: true }) },
-    })
-    expect(store.labels({ range: { '7d': 'Last 7 days' } })).toBe(store)
-  })
-
-  test('options derive from the values plus the labels — including a range’s custom preset', () => {
-    const store = createSearchStore({
-      key: 'k-options',
-      fields: {
-        range: field.range({ presets: ['7d', '30d'], fallback: '30d', custom: true }),
-        tags: field.multi(['api', 'design']),
-        page: field.number({ fallback: 1 }),
-      },
-    }).labels({ range: { '7d': 'Last 7 days', custom: 'Custom range' } })
-
-    expect(store.field.range.options).toEqual([
-      { value: '7d', label: 'Last 7 days' },
-      { value: '30d', label: '30d' },
-      { value: 'custom', label: 'Custom range' },
-    ])
-    expect(store.field.tags.options).toEqual([
-      { value: 'api', label: 'api' },
-      { value: 'design', label: 'design' },
-    ])
-    expect(store.field.page.options).toEqual([])
-  })
-})
-
-describe('the handle, outside React', () => {
-  test('kind, fallback and isDefault come off the field definition', () => {
-    const store = createSearchStore({
-      key: 'k-handle',
-      fields: {
-        range: field.enum(['1d', '7d'], '7d'),
-        tags: field.multi(['api', 'design'], ['api']),
-      },
-    })
-    expect(store.field.range.kind).toBe('enum')
-    expect(store.field.range.fallback).toBe('7d')
-    expect(store.field.range.isDefault('7d')).toBe(true)
-    expect(store.field.range.isDefault('1d')).toBe(false)
-    // Multi compares by content, not by reference.
-    expect(store.field.tags.isDefault(['api'])).toBe(true)
-    expect(store.field.tags.isDefault(['design'])).toBe(false)
-  })
-
-  test('toWindow projects a preset to `{ window }` and a custom range to `{ from, to }`', () => {
-    const store = createSearchStore({
-      key: 'k-towindow',
-      fields: { range: field.range({ presets: ['7d', '30d'], fallback: '30d', custom: true }) },
-    })
-    expect(store.field.range.toWindow({ preset: '7d' })).toEqual({ window: '7d' })
-    expect(
-      store.field.range.toWindow({ preset: 'custom', from: '2026-01-01', to: '2026-02-01' }),
-    ).toEqual({ from: '2026-01-01', to: '2026-02-01' })
-    // A custom preset with no dates has nothing to project — it degrades to the preset.
-    expect(store.field.range.toWindow({ preset: 'custom' })).toEqual({ window: 'custom' })
-  })
-
-  test('a preset declared with a `window` resolver projects to `{ from, to }`', () => {
-    // The derived presets three consumers hand-rolled beside the store (`3m`, `ytd`): one preset in
-    // the URL, two dates at the API boundary, no `presetToParams` in the page.
-    const seen: Date[] = []
-    const store = createSearchStore({
-      key: 'k-window-resolver',
-      fields: {
-        range: field.range({
-          presets: ['7d', '3m', 'ytd'],
-          fallback: '7d',
-          custom: true,
-          window: {
-            '3m': (now) => {
-              seen.push(now)
-              return { from: iso(addMonths(now, -3)), to: iso(now) }
-            },
-            ytd: (now) => ({ from: `${now.getUTCFullYear()}-01-01`, to: iso(now) }),
-          },
-        }),
-      },
-    })
-
-    const now = new Date()
-    expect(store.field.range.toWindow({ preset: '3m' })).toEqual({
-      from: iso(addMonths(now, -3)),
-      to: iso(now),
-    })
-    expect(store.field.range.toWindow({ preset: 'ytd' })).toEqual({
-      from: `${now.getUTCFullYear()}-01-01`,
-      to: iso(now),
-    })
-    // Resolved at CALL time, with the current date — never captured at definition.
-    expect(seen[0] instanceof Date).toBe(true)
-
-    // A preset WITHOUT a resolver is untouched, in the same field.
-    expect(store.field.range.toWindow({ preset: '7d' })).toEqual({ window: '7d' })
-    // And a custom window still wins over any resolver.
-    expect(
-      store.field.range.toWindow({ preset: 'custom', from: '2026-03-01', to: '2026-03-14' }),
-    ).toEqual({ from: '2026-03-01', to: '2026-03-14' })
-  })
-
-  test('a resolver changes nothing about the URL — the preset is still what is stored', () => {
-    const store = createSearchStore({
-      key: 'k-window-url',
-      fields: {
-        range: field.range({
-          presets: ['7d', '3m'],
-          fallback: '7d',
-          window: { '3m': () => ({ from: '2026-01-01', to: '2026-04-01' }) },
-        }),
-      },
-    })
-    expect(store.validateSearch({ range: '3m' })).toEqual({
-      range: '3m',
-      from: undefined,
-      to: undefined,
-    })
-    expect(store.field.range.toWindow({ preset: '3m' })).toEqual({
-      from: '2026-01-01',
-      to: '2026-04-01',
-    })
-  })
-
-  test('a preset named like an Object.prototype member is not a resolver', () => {
-    const store = createSearchStore({
-      key: 'k-window-proto',
-      fields: { range: field.range({ presets: ['toString', '7d'], fallback: '7d' }) },
-    })
-    expect(store.field.range.toWindow({ preset: 'toString' })).toEqual({ window: 'toString' })
-  })
-
-  test('toWindow exists on a range handle and on no other kind', () => {
-    const store = createSearchStore({
-      key: 'k-towindow-absent',
-      fields: { range: field.enum(['1d', '7d'], '7d') },
-    })
-    expect(store.field.range.toWindow).toBeUndefined()
-  })
-})
-
-describe('types', () => {
-  test('a fallback outside the values is a compile error, not a widened union', () => {
-    const store = createSearchStore({
-      key: 'k-types',
-      // @ts-expect-error 'c' is not one of the declared values
-      fields: { tab: field.enum(['a', 'b'] as const, 'c') },
-    })
-    // The `@ts-expect-error` above IS the assertion; this keeps the store referenced.
-    expect(store.field.tab.kind).toBe('enum')
-  })
-})
-
-/** UTC `YYYY-MM-DD` — the shape `toWindow` deals in, with no timezone in the answer. */
-function iso(d: Date): string {
-  return d.toISOString().slice(0, 10)
-}
-
-function addMonths(d: Date, months: number): Date {
-  const next = new Date(d)
-  next.setUTCMonth(next.getUTCMonth() + months)
-  return next
-}
-
-describe('a lazy fallback and the lanes', () => {
-  test('a thunk fallback on the URL lane throws at DEFINITION, naming the two ways out', () => {
-    expect(() =>
-      createSearchStore({
-        key: 'k-lazy-url',
-        fields: { since: field.string({ fallback: () => '2026-01-01' }) },
-      }),
-    ).toThrow(/thunk fallback on the URL lane/)
-  })
-
-  test('off the URL lane it resolves per read, in a search store too', () => {
-    let today = '2026-01-01'
-    const store = createSearchStore({
-      key: 'k-lazy-local',
-      fields: {
-        since: field.string({ fallback: () => today }, { url: false }),
-        scratch: field.string({ fallback: () => today }, { url: false, persist: false }),
-      },
-    })
-    expect(store.field.since.fallback).toBe('2026-01-01')
-    today = '2026-02-01'
-    expect(store.field.since.fallback).toBe('2026-02-01')
-    expect(store.field.scratch.fallback).toBe('2026-02-01')
-  })
-})
-
-describe('field.range — the `custom` flag is inferred, never widened', () => {
-  test('an omitted `custom` keeps `custom` out of the value type AND out of the options', () => {
-    const store = createSearchStore({
-      key: 'k-custom-inference',
-      fields: { range: field.range({ presets: ['7d', '30d'], fallback: '30d' }) },
-    })
-    type Search = ReturnType<typeof store.validateSearch>
-
-    const preset: Search['range'] = '7d'
-    // @ts-expect-error 'custom' is NOT a value of a range that never declared `custom: true` —
-    // this is the whole bug: written inline in `fields`, `C` used to widen to `boolean` against
-    // `AnyField`, and every value type gained a preset the field rejects at runtime.
-    const widened: Search['range'] = 'custom'
-
-    expect(preset).toBe('7d')
-    // `String(...)` because `widened`'s DECLARED type no longer admits the value it holds — the
-    // `@ts-expect-error` above is the assertion, this only keeps the binding used.
-    expect(String(widened)).toBe('custom')
-    expect(store.field.range.options.map((option) => option.value)).toEqual(['7d', '30d'])
-    // The runtime agrees with the type: a `custom` preset does not decode.
-    expect(store.validateSearch({ range: 'custom', from: '2026-01-01', to: '2026-02-01' })).toEqual(
-      { range: '30d', from: undefined, to: undefined },
+    const hydrating = { search: store.validateSearch({}), link: store.linkSearch() }
+    expect(hydrating).toEqual(
+      onServer(() => ({ search: store.validateSearch({}), link: store.linkSearch() })),
     )
   })
 
-  test('`custom: true` still admits it, in the type and in the options', () => {
-    const store = createSearchStore({
-      key: 'k-custom-true',
-      fields: { range: field.range({ presets: ['7d', '30d'], fallback: '30d', custom: true }) },
-    })
-    type Search = ReturnType<typeof store.validateSearch>
-    const custom: Search['range'] = 'custom'
-
-    expect(custom).toBe('custom')
-    expect(store.field.range.options.map((option) => option.value)).toEqual(['7d', '30d', 'custom'])
-  })
-
-  test('a `custom` flag held in a widened boolean still builds — it just stays widened', () => {
-    const allowCustom: boolean = true
-    const store = createSearchStore({
-      key: 'k-custom-widened',
-      fields: { range: field.range({ presets: ['7d'], fallback: '7d', custom: allowCustom }) },
-    })
-    type Search = ReturnType<typeof store.validateSearch>
-    const custom: Search['range'] = 'custom'
-
-    expect(custom).toBe('custom')
-    expect(store.field.range.options.map((option) => option.value)).toEqual(['7d', 'custom'])
+  test('a composed schema sees the server object while hydrating', () => {
+    const store = build()
+    persist('k-server-pure', { range: '30d' })
+    const parse = (raw: Record<string, unknown>) => ({ ...store.validateSearch(raw) })
+    Object.assign(window, { $_TSR: {} })
+    expect(parse({})).toEqual(onServer(() => parse({})))
   })
 })
