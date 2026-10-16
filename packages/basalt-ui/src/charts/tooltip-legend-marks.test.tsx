@@ -521,7 +521,7 @@ describe('legend swatch follows the series mark in every mode', () => {
     cap: swatch?.querySelector('line')?.getAttribute('stroke-linecap'),
   })
 
-  test('dots mode: a line series is an 8px stroke (dash kept), never a dot', () => {
+  test('dots mode: a line series is a 14px stroke (dash kept), never a dot', () => {
     const el = legend('dots')
     expect(swatches(el, 's').map((n) => n.tagName)).toEqual(['svg'])
     expect(stroke(swatches(el, 's')[0])).toEqual({
@@ -536,7 +536,7 @@ describe('legend swatch follows the series mark in every mode', () => {
     })
   })
 
-  test('chips mode: a line series is a 12px stroke (dash kept)', () => {
+  test('chips mode: a line series is a 16px stroke (dash kept)', () => {
     const el = legend('chips')
     expect(stroke(swatches(el, 's')[0])).toEqual({
       width: String(LINE_SWATCH.wide.width),
