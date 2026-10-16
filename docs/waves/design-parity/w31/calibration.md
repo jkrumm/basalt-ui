@@ -163,3 +163,30 @@ Neither run passes, and the two runs share no cited item. Both fail on things th
 - Run B, Craft 4: the focus ring is accent blue on the sparkline and on the table header cell (chrome), and white in dark, so the hue changes between schemes.
 
 I did not iterate further, per the lead's instruction. Whether these are basalt defects (focus ring colour and clipping, which would be Wave 33 candidates), a reviewer that over-reads focus crops, or a rubric gap on whether a small part-to-whole table needs a chart, is the lead's call. For a gate that must pass `calibrate-good`, the n = 3 record on this board (one fail on Craft 6 + Expression 4, then two further fails above) says the board does not currently pass, and the failures vary run to run.
+
+## Confirmation, run 3 (reviewer accent-site fix)
+
+Changes since the runs above, one commit each:
+
+- Reviewer Craft 4 now states the accent sites exactly as `docs/DESIGN-CORE.md` § Accent discipline lists them (primary data series, active-nav icons and active child labels, links, primary buttons, focus rings, the leader bar in meters; chrome stays neutral; selection state never takes the accent). The old line ("only the single primary action and active-nav icons") contradicted the law and was the reviewer error behind the focus-ring Craft 4 failures. The repo copy was refreshed with `make sync-self`, and `reviewer-agent.test.ts` stays green.
+- Seed `probe-3`: the table is now "Daily spend by model, last 5 days (€)" (day, three model columns, total), chosen as the catalogue's "many rows, several attributes" row.
+
+Method, stated honestly: this session cannot reload the edited subagent, so these seven runs used fresh general-purpose agents told to read `/.claude/agents/basalt-design-reviewer.md` and follow its body with Read/Grep/Glob only, not the real subagent type. The real type's discovery and run were proven by the first neutral run above. All six probes were re-shot into fresh random `run-<hex>` dirs, with no seed-derived text in any name, and `probe-3` was scored twice. Per the run reports, every scorer read each anchor's sheet and all four page shots; transcripts are not retained.
+
+| id             | seed (hidden from the scorer) | expected               | verdict | items cited                                                       | matches? |
+| -------------- | ----------------------------- | ---------------------- | ------- | ----------------------------------------------------------------- | -------- |
+| probe-1        | calibrate-repeated-axis       | Expression 5           | fail    | Craft 1, 5, 6, 7, Expression 5                                    | yes      |
+| probe-2        | calibrate-banned-subtitle     | Communication 1        | fail    | Communication 1, Craft 6, 7                                       | yes      |
+| probe-3, run A | calibrate-good                | pass                   | fail    | table: Craft 3, Expression 1; page: Communication 5; card passes  | **no**   |
+| probe-3, run B | calibrate-good                | pass                   | fail    | table: Craft 3, Expression 1, Communication 1; card and page pass | **no**   |
+| probe-4        | calibrate-accent-tab          | Craft 4                | fail    | Craft 4, Expression 1, 2, 4                                       | yes      |
+| probe-5        | calibrate-delta-fill          | Craft 4 / Expression 3 | fail    | Craft 1, 4, Expression 1, 3, 4                                    | yes      |
+| probe-6        | calibrate-empty-half          | Craft 3                | fail    | Craft 3, 6, 7, Expression 4                                       | yes      |
+
+The five bad seeds fail with their expected item. The known-good board still fails, but the failures changed: the card passes in both runs, no focus-ring Craft 4 or Craft 6 remains, and the two runs now agree on the table.
+
+- Craft 3: at 390 every body row wraps its day cell onto two lines and the "LARGE MODEL / MID MODEL / SMALL MODEL" headers wrap. This is a seed width problem (five columns at 390).
+- Expression 1: the reviewer reads daily spend per model as "Value over time" (`Lines` / `StackedArea`), not "Many rows, several attributes". It is a judgment on my table choice, and a recent-days table is arguably time-series data.
+- Run A also cites Communication 5 (one KPI card plus one table for data that has a catalogue shape). Run B also cites Communication 1 (a bare "Total" column header).
+
+Not iterated further, per the lead's instruction. The remaining options are the lead's call: a table whose rows are not a time series (e.g. recent sessions with project, model, cost) with fewer columns for 390, or a stacked `Bars` part-of-whole with captions.
