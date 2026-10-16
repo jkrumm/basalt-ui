@@ -184,28 +184,30 @@ function TableSection() {
         <code>navigate({'{ search: { sorting } }'})</code>
         in a real TanStack Router app).
       </Text>
-      <BasaltDataTable
-        data={data}
-        columns={TABLE_COLUMNS}
-        enableSorting
-        striped
-        highlightOnHover
-        isLoading={isLoading}
-        skeletonRows={5}
-        enableGlobalFilter
-        searchIcon={<IconSearch />}
-        facets={TABLE_FACETS}
-        enablePagination
-        emptyState={
-          <EmptyState
-            icon={<IconSearch />}
-            title="No employees found"
-            description="Try adjusting your filters or search terms."
-            tier="section"
-          />
-        }
-        onSortingChange={setLastSorting}
-      />
+      <div data-compare="table" style={{ display: 'contents' }}>
+        <BasaltDataTable
+          data={data}
+          columns={TABLE_COLUMNS}
+          enableSorting
+          striped
+          highlightOnHover
+          isLoading={isLoading}
+          skeletonRows={5}
+          enableGlobalFilter
+          searchIcon={<IconSearch />}
+          facets={TABLE_FACETS}
+          enablePagination
+          emptyState={
+            <EmptyState
+              icon={<IconSearch />}
+              title="No employees found"
+              description="Try adjusting your filters or search terms."
+              tier="section"
+            />
+          }
+          onSortingChange={setLastSorting}
+        />
+      </div>
       {lastSorting !== null && (
         <Text size="xs" c="dimmed" ff="monospace">
           onSortingChange → {JSON.stringify(lastSorting)}
