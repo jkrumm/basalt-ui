@@ -2,14 +2,13 @@
  * `SyncButton` — the age formatting and the syncing state (law C12, `docs/CONTROLS-SPEC.md` §3).
  *
  * The age is the part that had four hand-rolled copies across consumers, each with its own
- * rounding; `formatAge` is asserted directly so the boundaries are pinned, not inferred from one
- * rendered string.
+ * rounding; it now comes from `format/relativeTime` (boundaries pinned in `format/date.test.ts`).
  */
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, test } from 'bun:test'
-import { AGE_REFRESH_MS, SyncButton, formatAge } from './sync-button'
+import { AGE_REFRESH_MS, SyncButton } from './sync-button'
 
 function renderSync(props: Partial<Parameters<typeof SyncButton>[0]> = {}) {
   return render(
@@ -19,19 +18,11 @@ function renderSync(props: Partial<Parameters<typeof SyncButton>[0]> = {}) {
   )
 }
 
-describe('formatAge', () => {
-  test('anything under a minute is `just now`, so a fresh sync stops flickering', () => {
-    expect(formatAge(0)).toBe('just now')
-    expect(formatAge(59_000)).toBe('just now')
-  })
-
-  test('minutes, then hours, then days', () => {
-    expect(formatAge(60_000)).toBe('1m ago')
-    expect(formatAge(2 * 60_000)).toBe('2m ago')
-    expect(formatAge(59 * 60_000)).toBe('59m ago')
-    expect(formatAge(60 * 60_000)).toBe('1h ago')
-    expect(formatAge(23 * 60 * 60_000)).toBe('23h ago')
-    expect(formatAge(24 * 60 * 60_000)).toBe('1d ago')
+describe('age label', () => {
+  test('anything under a minute reads as the locale\'s "now", so a fresh sync stops flickering', () => {
+    renderSync({ lastCompletedAt: Date.now() - 5_000 })
+    expect(screen.getByRole('button').textContent).toContain('now')
+    expect(screen.getByRole('button').textContent).not.toContain('ago')
   })
 
   test('the refresh interval is coarser than the smallest unit it renders', () => {
@@ -43,12 +34,12 @@ describe('SyncButton', () => {
   test('renders the age beside the label on desktop', () => {
     renderSync({ lastCompletedAt: Date.now() - 2 * 60_000 })
     expect(screen.getByRole('button').textContent).toContain('Sync')
-    expect(screen.getByRole('button').textContent).toContain('2m ago')
+    expect(screen.getByRole('button').textContent).toContain('2 min. ago')
   })
 
   test('a Date and an epoch number are the same input', () => {
     renderSync({ lastCompletedAt: new Date(Date.now() - 3 * 60_000) })
-    expect(screen.getByRole('button').textContent).toContain('3m ago')
+    expect(screen.getByRole('button').textContent).toContain('3 min. ago')
   })
 
   test('no age at all when nothing has completed yet', () => {

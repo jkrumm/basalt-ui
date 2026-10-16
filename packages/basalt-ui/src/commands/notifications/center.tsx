@@ -29,23 +29,11 @@ import {
 } from '@mantine/core'
 import type { BasaltProps } from '../../common/props'
 import { cx } from '../../common/props'
+import { relativeTime } from '../../format'
 import { VX } from '../../tokens'
 import { resolveAction } from './define-notifications'
 import { useNotificationHistory } from './store'
 import type { NotificationHistoryItem, NotificationIntent } from './store'
-
-// ── Relative time ─────────────────────────────────────────────────────────────
-
-function relativeTime(createdAt: number): string {
-  const seconds = Math.floor((Date.now() - createdAt) / 1000)
-  if (seconds < 60) return 'just now'
-  const minutes = Math.floor(seconds / 60)
-  if (minutes < 60) return `${minutes}m ago`
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours}h ago`
-  const days = Math.floor(hours / 24)
-  return `${days}d ago`
-}
 
 // ── Intent → Mantine color (drives the action Button's own `light`-variant tint) ──────────────
 
@@ -136,7 +124,7 @@ function NotificationItem({
           </Text>
           <Group gap="xs" align="center" mt={2} wrap="nowrap">
             <Text ff="monospace" c="var(--vx-faint)" style={{ fontSize: VX.text.micro }}>
-              {relativeTime(item.createdAt)}
+              {relativeTime(item.createdAt, { style: 'short' })}
             </Text>
             {resolved !== undefined && (
               <Button variant="light" color={color} size="compact-xs" onClick={handleAction}>

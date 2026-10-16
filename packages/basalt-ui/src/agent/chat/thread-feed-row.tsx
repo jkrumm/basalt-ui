@@ -47,7 +47,7 @@ import { VX } from '../../tokens'
 import type { ComposerProps, ComposerSubmit } from './composer'
 import { Composer } from './composer'
 import type { MessageAffordances } from './message-affordances'
-import { formatRelativeTime } from './relative-time'
+import { relativeTime } from '../../format'
 import { ThreadTranscript } from './thread-message'
 import { resolveRowHeight } from './virtualize'
 import type { RowHeightProps, VirtualizeProps } from './virtualize'
@@ -309,7 +309,7 @@ export function ThreadFeedRow(props: ThreadFeedRowProps): JSX.Element {
               flexShrink: 0,
             }}
           >
-            {formatRelativeTime(thread.updatedAt)}
+            {relativeTime(thread.updatedAt)}
           </Text>
           <ChevronGlyph expanded={expanded} />
         </Group>
