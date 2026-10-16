@@ -1,9 +1,8 @@
 /**
- * Shared low-level pieces of `basalt-ui/format` — the em-dash sentinel, the default
- * locale / time zone ({@link defineFormat}) and the memoized `Intl` caches every formatter in this
- * module reuses. Moved here (out of
- * `src/charts/utils/format.ts`, C5 consolidation) so the subpath is the single implementation;
- * 2.0's chart layer imports it directly (`docs/V2-SPEC.md` § 9).
+ * Shared low-level pieces of `basalt-ui/format`: the {@link NON_FINITE} sentinel, the default
+ * locale / time zone ({@link defineFormat}), the memoized `Intl` caches and the number-input
+ * guard every formatter in this module reuses. The subpath is the single implementation; the chart
+ * layer imports it directly (`docs/V2-SPEC.md` § 9).
  */
 
 /**
@@ -29,13 +28,29 @@ export type FormatDefaults = {
 let defaults: FormatDefaults = {}
 
 /**
- * Sets the locale / time zone every formatter in `basalt-ui/format` falls back to. Replaces the
- * previous defaults wholesale (so `defineFormat()` resets) and is idempotent — `BasaltProvider`
- * calls it during render from its `locale` / `timeZone` props. Unset stays `undefined`: the
- * runtime's own locale and zone.
+ * Sets the locale / time zone every formatter in `basalt-ui/format` falls back to when a call
+ * passes none. Merges: only DEFINED fields are applied, `undefined` leaves the earlier value.
+ *
+ * The default is ONE module-global per process (formatters are plain functions, not hooks), so it
+ * is an app-wide setting, not a per-request one — a server rendering many locales passes `locale`
+ * per call instead. `BasaltProvider`'s `locale` / `timeZone` props call this.
  */
 export function defineFormat(next: FormatDefaults = {}): void {
-  defaults = { locale: next.locale, timeZone: next.timeZone }
+  const merged: FormatDefaults = {
+    locale: next.locale ?? defaults.locale,
+    timeZone: next.timeZone ?? defaults.timeZone,
+  }
+  if (merged.locale === defaults.locale && merged.timeZone === defaults.timeZone) return
+  defaults = merged
+  numberCaches.clear()
+  dateCaches.clear()
+}
+
+/** Clears the {@link defineFormat} defaults back to the runtime's own locale and zone. */
+export function resetFormatDefaults(): void {
+  defaults = {}
+  numberCaches.clear()
+  dateCaches.clear()
 }
 
 /**
@@ -97,10 +112,34 @@ export function dateFormat(
   return memoize(dateCaches, resolved, withZone, () => new Intl.DateTimeFormat(resolved, withZone))
 }
 
+/** What every number/measure formatter accepts. */
+export type Numeric = number | null | undefined
+
 /** True for a finite number; `null`, `undefined`, `NaN` and `±Infinity` are the inputs every
  * number/measure formatter answers with {@link NON_FINITE}. */
-export function isNumeric(value: number | null | undefined): value is number {
+export function isFiniteNumber(value: Numeric): value is number {
   return typeof value === 'number' && Number.isFinite(value)
+}
+
+/**
+ * Scales `value` down by 1000 per step (up to `maxUnit`) and returns the step. Rounds FIRST, then
+ * promotes when the rounded magnitude reaches 1000 — `999.6` at step 0 is `1000` and belongs to
+ * the next unit, not `1,000 B`. Step 0 is whole numbers; higher steps round to `digits`.
+ */
+export function scaleThousands(
+  value: number,
+  digits: number,
+  maxUnit: number,
+): { scaled: number; unit: number } {
+  let scaled = value
+  let unit = 0
+  while (unit < maxUnit) {
+    const factor = 10 ** (unit === 0 ? 0 : digits)
+    if (Math.round(Math.abs(scaled) * factor) / factor < 1000) break
+    scaled /= 1000
+    unit += 1
+  }
+  return { scaled, unit }
 }
 
 /** Coerces the flexible `Date | number | string` inputs this module's date formatters accept into

@@ -1,9 +1,7 @@
 /**
- * Coverage for the new `basalt-ui/format` names — the argo-facing wrappers and the date/duration/
- * measurement formatters seeded from argo's `features/*` files. The number-format law itself
- * (`compact`/`percent`/`money`/`integer`, non-finite handling, locale pinning) is
- * already covered by `../charts/utils/format.test.ts`, which now exercises this module through
- * the re-export shim.
+ * Coverage for the date/duration formatters and the barrel's money/percent/integer smoke checks.
+ * The number and measure formatters have their own files (`number.test.ts`, `measure.test.ts`);
+ * the default-locale machinery lives in `shared.test.ts`.
  */
 import { describe, expect, test } from 'bun:test'
 import { durationClock, integer, kcal, km, money, percent, relativeTime, weekday } from './index'

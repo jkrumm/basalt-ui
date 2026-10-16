@@ -1,10 +1,10 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 import { bytes, compact, delta, integer, money, percent } from './number'
-import { defineFormat, NON_FINITE } from './shared'
+import { NON_FINITE, resetFormatDefaults } from './shared'
 
 const en = { locale: 'en-US' } as const
 
-afterEach(() => defineFormat())
+afterEach(resetFormatDefaults)
 
 describe('money', () => {
   test('keeps the currency default fraction digits', () => {
@@ -16,6 +16,10 @@ describe('money', () => {
   test('explicit digits is an opt-in', () => {
     expect(money(1234.56, { ...en, currency: 'USD', digits: 0 })).toBe('$1,235')
     expect(money(12, { ...en, currency: 'USD', digits: 1 })).toBe('$12.0')
+  })
+
+  test('compact digits sets the max fraction digits', () => {
+    expect(money(1234, { ...en, currency: 'USD', compact: true, digits: 2 })).toBe('$1.23k')
   })
 
   test('compact keeps one optional fraction digit', () => {
@@ -53,6 +57,18 @@ describe('bytes', () => {
     expect(bytes(1_200_000, en)).toBe('1.2 MB')
     expect(bytes(1_234_567, { ...en, digits: 2 })).toBe('1.23 MB')
     expect(bytes(1500, { locale: 'de-DE' })).toBe('1,5 kB')
+    expect(bytes(-1500, en)).toBe('-1.5 kB')
+  })
+
+  test('rounds first, then promotes the unit at the boundary', () => {
+    expect(bytes(999, en)).toBe('999 B')
+    expect(bytes(999.5, en)).toBe('1 kB')
+    expect(bytes(999.6, en)).toBe('1 kB')
+    expect(bytes(-999.6, en)).toBe('-1 kB')
+    expect(bytes(999_949, en)).toBe('999.9 kB')
+    expect(bytes(999_950, en)).toBe('1 MB')
+    expect(bytes(999_999, en)).toBe('1 MB')
+    expect(bytes(1_000_000, en)).toBe('1 MB')
   })
 })
 

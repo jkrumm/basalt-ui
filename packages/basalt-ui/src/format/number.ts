@@ -4,13 +4,11 @@
  * `compact` from here for its default axis format. Every formatter accepts `null | undefined` and
  * prints {@link NON_FINITE} for it (as for `NaN` / `±Infinity`).
  */
-import { isNumeric, NON_FINITE, numberFormat } from './shared'
-import type { LocaleOption } from './shared'
+import { isFiniteNumber, NON_FINITE, numberFormat, scaleThousands } from './shared'
+import type { LocaleOption, Numeric } from './shared'
 
 export type { LocaleOption }
 export { NON_FINITE }
-
-type Numeric = number | null | undefined
 
 /** The compact `K` suffix, matched only where it follows the digits it qualifies — so a currency
  * prefix that happens to contain one (`HK$`) survives the lowercasing. */
@@ -33,7 +31,7 @@ export type CompactOptions = LocaleOption & {
  * word (`1,2 Mio.`) untouched.
  */
 export function compact(value: Numeric, options: CompactOptions = {}): string {
-  if (!isNumeric(value)) return NON_FINITE
+  if (!isFiniteNumber(value)) return NON_FINITE
   const { digits = 1, locale } = options
   return numberFormat(locale, {
     ...SIGN,
@@ -57,7 +55,7 @@ export type PercentOptions = LocaleOption & {
 
 /** Percentages, from either a ratio or an already-scaled percentage. */
 export function percent(value: Numeric, options: PercentOptions = {}): string {
-  if (!isNumeric(value)) return NON_FINITE
+  if (!isFiniteNumber(value)) return NON_FINITE
   const { digits = 0, input = 'ratio', locale } = options
   return numberFormat(locale, {
     ...SIGN,
@@ -81,16 +79,19 @@ export type MoneyOptions = LocaleOption & {
 
 /** Money. `money(12.5, { currency: 'USD' })` → `$12.50`. */
 export function money(value: Numeric, options: MoneyOptions): string {
-  if (!isNumeric(value)) return NON_FINITE
+  if (!isFiniteNumber(value)) return NON_FINITE
   const { currency, compact: isCompact = false, digits, locale } = options
+  const fraction: Intl.NumberFormatOptions = isCompact
+    ? { minimumFractionDigits: 0, maximumFractionDigits: digits ?? 1 }
+    : digits === undefined
+      ? {}
+      : { minimumFractionDigits: digits, maximumFractionDigits: digits }
   return numberFormat(locale, {
     ...SIGN,
     style: 'currency',
     currency,
     ...(isCompact && { notation: 'compact', compactDisplay: 'short' }),
-    ...(isCompact
-      ? { minimumFractionDigits: 0, maximumFractionDigits: digits ?? 1 }
-      : digits !== undefined && { minimumFractionDigits: digits, maximumFractionDigits: digits }),
+    ...fraction,
   })
     .format(value)
     .replace(COMPACT_K, '$1k')
@@ -98,7 +99,7 @@ export function money(value: Numeric, options: MoneyOptions): string {
 
 /** Grouped integer: `12,480`. Rounds. */
 export function integer(value: Numeric, options: LocaleOption = {}): string {
-  if (!isNumeric(value)) return NON_FINITE
+  if (!isFiniteNumber(value)) return NON_FINITE
   return numberFormat(options.locale, { ...SIGN, maximumFractionDigits: 0 }).format(value)
 }
 
@@ -115,14 +116,9 @@ export type BytesOptions = LocaleOption & {
  * prints whole bytes (`512 B`). Negative values keep their sign. The cap is `PB`.
  */
 export function bytes(value: Numeric, options: BytesOptions = {}): string {
-  if (!isNumeric(value)) return NON_FINITE
+  if (!isFiniteNumber(value)) return NON_FINITE
   const { digits = 1, locale } = options
-  let unit = 0
-  let scaled = value
-  while (Math.abs(scaled) >= 1000 && unit < BYTE_UNITS.length - 1) {
-    scaled /= 1000
-    unit += 1
-  }
+  const { scaled, unit } = scaleThousands(value, digits, BYTE_UNITS.length - 1)
   const text = numberFormat(locale, {
     ...SIGN,
     maximumFractionDigits: unit === 0 ? 0 : digits,
@@ -137,7 +133,7 @@ export type DeltaOptions = LocaleOption & {
 
 /** A signed change: `+3.2`, `-1`, `0`. Zero (and anything that rounds to it) carries no sign. */
 export function delta(value: Numeric, options: DeltaOptions = {}): string {
-  if (!isNumeric(value)) return NON_FINITE
+  if (!isFiniteNumber(value)) return NON_FINITE
   const { digits = 1, locale } = options
   return numberFormat(locale, { signDisplay: 'exceptZero', maximumFractionDigits: digits }).format(
     value,

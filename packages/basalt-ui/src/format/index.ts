@@ -1,19 +1,18 @@
 /**
- * `basalt-ui/format` — Mantine-free, React-free `Intl`-backed formatting. One implementation for
- * numbers/percentages/money, dates/times/durations and the two measurement units argo needed
- * (`km`/`kcal`) — replacing argo's `features/*\/{formatters,formulas,format}.ts` (~350 of 643
- * lines across four duration spellings) and the 1.x chart layer's own formatters (2.0's charts
- * import the internals directly).
+ * `basalt-ui/format` — Mantine-free, React-free `Intl`-backed formatting: numbers, percentages,
+ * money, bytes and signed deltas, dates and durations, and the two measurement units argo needed
+ * (`km`/`kcal`).
  *
- * Every formatter takes `(value, opts?)`; `locale` on every `opts` defaults to what `defineFormat`
- * (or `BasaltProvider`'s `locale` / `timeZone` props) set, else `undefined` — `Intl`'s own "use the
- * runtime's locale". Number formatters accept `null | undefined`. Every non-finite/unparseable input prints the same
- * {@link NON_FINITE} em dash rather than `"NaN"` or throwing.
+ * Every formatter takes `(value, opts?)`. `locale` defaults to what `defineFormat` (or
+ * `BasaltProvider`'s `locale` / `timeZone` props) set, else the runtime's locale. That default is
+ * ONE value per process; pass `locale` per call to override it. Number formatters accept
+ * `null | undefined`, and every non-finite/unparseable input prints the same {@link NON_FINITE}
+ * em dash rather than `"NaN"` or throwing.
  *
  * @example
  * import { money, percent, durationClock, weekday, relativeTime } from 'basalt-ui/format'
  *
- * money(1234, { currency: 'USD' })        // "$1,234"
+ * money(1234, { currency: 'USD' })        // "$1,234.00"
  * percent(0.42)                            // "42%"
  * durationClock(3_723)                    // "1:02:03"
  * weekday('2026-09-02')                    // "Wed"
