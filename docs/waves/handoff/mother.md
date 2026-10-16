@@ -35,7 +35,7 @@ whole memory: read it, then `docs/waves/PLAN.md` (Part 2), then `docs/waves/argo
 2. Wave 19 close-out: review PLAN's Left behind and the diffs, `rd close basalt-ui-w19`, release, then
    the validators (argo, rb, linewatch per the plan) via `mcp__agent-gateway__dispatch` tier implement
    in each repo: bump the pin, `bunx basalt-ui sync`, `make check`, and a "basalt friction" section
-   in the PR. Merge, deploy, verify live. Then spawn the next lead (template below).
+   in the PR. Merge, deploy, verify live. Then spawn **Wave 29** (Part 3, design parity — owner priority 2026-10-16; Waves 20–28 are queued behind it) with `RD_WAVE_MODEL` on the high tier, same template.
 3. A docs PR filing rows 132–134 (132/133 → the follow-up PR, 134 info: retires once weatherorb adopts
    `basaltRouterOptions`) and closing 125/127/128 (2.13.2) and 131 (2.13.3).
 4. Bring basalt-ui-obsidian, linewatch and rollhook to the newest 2.x at the next release.
