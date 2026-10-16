@@ -821,9 +821,11 @@ Signature: MultiSelectFilter(props: MultiSelectFilterProps<T>): ReactNode
   value?: never
   onChange?: never
   size?: never
-  field: FieldHandle<MultiField<T>>
   label: string
   icon?: ReactNode
+  clearable?: boolean
+  disabled?: boolean
+  field: FieldHandle<MultiField<T>>
   noun?: string
   options?: readonly FilterOption[]
   counts?: Record<string, number>
@@ -834,21 +836,23 @@ Signature: NumberFilter(props: NumberFilterProps): ReactNode
   value?: never
   onChange?: never
   size?: never
-  field: FieldHandle<NumberField>
   label: string
   icon?: ReactNode
-  options?: readonly NumberFilterOption[]
-  step?: number
   clearable?: boolean
+  disabled?: boolean
+  field: FieldHandle<NumberField>
+  options?: readonly FilterOption<number>[]
+  step?: number
 Signature: RangeFilter(props: RangeFilterProps<P, C>): ReactNode
   className?: string
   style?: CSSProperties
   value?: never
   onChange?: never
   size?: never
-  field: FieldHandle<RangeField<P, C>>
   icon?: ReactNode
+  disabled?: boolean
   label?: string
+  field: FieldHandle<RangeField<P, C>>
   customPicker?: ComponentType<RangeCustomPickerProps>
 Signature: SearchFilter(props: SearchFilterProps): ReactNode
   className?: string
@@ -856,9 +860,11 @@ Signature: SearchFilter(props: SearchFilterProps): ReactNode
   value?: never
   onChange?: never
   size?: never
+  disabled?: boolean
   field: FieldHandle<StringField>
   placeholder?: string
   label?: string
+  clearable?: boolean
 Signature: SelectFilter(props: SelectFilterEnumProps<T>): ReactNode
   className?: string
   style?: CSSProperties
@@ -868,6 +874,7 @@ Signature: SelectFilter(props: SelectFilterEnumProps<T>): ReactNode
   label: string
   icon?: ReactNode
   clearable?: boolean
+  disabled?: boolean
   field: FieldHandle<EnumField<T>>
   options?: readonly FilterOption[]
 Signature: SyncButton(props: SyncButtonProps): ReactNode
@@ -885,15 +892,17 @@ Signature: ToggleFilter(props: ToggleFilterProps): ReactNode
   value?: never
   onChange?: never
   size?: never
-  field: FieldHandle<BooleanField>
   label: string
   icon?: ReactNode
+  disabled?: boolean
+  field: FieldHandle<BooleanField>
 Signature: ViewTabs(props: ViewTabsProps<T>): ReactNode
   className?: string
   style?: CSSProperties
   value?: never
   onChange?: never
   size?: never
+  disabled?: boolean
   field: FieldHandle<EnumField<T>>
   options?: readonly ViewTabsOption<T>[]
   label?: string
