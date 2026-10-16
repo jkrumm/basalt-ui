@@ -94,14 +94,14 @@ layout('Charts — 2.0 layout', () => {
     readonly width: number
     readonly height: number
     readonly yLabels: 'none' | 'inside' | 'outside'
-    readonly legend: 'none' | 'line' | 'dots' | 'chips'
+    readonly legend: 'none' | 'dots' | 'chips'
   }
   const CLASSES: readonly ClassCase[] = [
     // The height law: width × class ratio, clamped 160–420 (≤ 45vh = 405 at 900 tall).
     { cls: 'micro', width: 200, height: 160, yLabels: 'none', legend: 'none' },
-    { cls: 'compact', width: 360, height: 223, yLabels: 'outside', legend: 'line' },
-    { cls: 'regular', width: 640, height: 320, yLabels: 'outside', legend: 'line' },
-    { cls: 'wide', width: 960, height: 384, yLabels: 'outside', legend: 'line' },
+    { cls: 'compact', width: 360, height: 223, yLabels: 'outside', legend: 'dots' },
+    { cls: 'regular', width: 640, height: 320, yLabels: 'outside', legend: 'chips' },
+    { cls: 'wide', width: 960, height: 384, yLabels: 'outside', legend: 'chips' },
   ]
 
   for (const c of CLASSES) {
@@ -137,9 +137,7 @@ layout('Charts — 2.0 layout', () => {
         (sel) => {
           const row = document.querySelector(`${sel} [data-basalt-chart-legend]`)
           if (!row || getComputedStyle(row).display === 'none') return 'none'
-          // A line series keeps its stroke at every width: that is neither the dot nor the chip.
-          if (row.querySelector('svg[aria-hidden]')) return 'line'
-          const dot = row.querySelector('span[aria-hidden]')
+          const dot = row.querySelector('[data-legend-key] > [aria-hidden]')
           return dot && getComputedStyle(dot).display !== 'none' ? 'dots' : 'chips'
         },
         FRAME,

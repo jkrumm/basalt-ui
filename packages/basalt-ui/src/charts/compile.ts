@@ -26,7 +26,7 @@ import { SHORT_CHART_HEIGHT } from './box'
 import { fmtCompact } from '../format/number'
 import { VX } from '../tokens'
 import type { ContainerClass } from '../tokens/size-classes'
-import { cursorBinding, quietWhileFollowing } from './cursor'
+import { cursorBinding, followerOptions, quietWhileFollowing } from './cursor'
 import { cursorDots } from './marks'
 import { bucketTicks, strideEvery } from './ticks'
 import { MAIN_PANE, plotAccess, plotContext } from './plot-context'
@@ -803,11 +803,9 @@ function tooltipSpec<T, X extends ChartX>(opts: {
   const rowSeries = (input.reverseRows ? visible.toReversed() : visible).filter(
     (s) => s.tooltip !== false,
   )
-  const onFollow = typeof input.tooltip === 'object' && input.tooltip.onFollow === true
   return {
     use: quietWhileFollowing,
-    // Read by `quietWhileFollowing`; absent, a follower paints its own tooltip.
-    ...(!onFollow && { follower: { group: input.cursorGroup, chartId: input.chartId } }),
+    ...followerOptions(input.tooltip, input.cursorGroup, input.chartId),
     portal,
     anchor: 'group-center',
     content: (points: readonly ChartPoint[]) => {

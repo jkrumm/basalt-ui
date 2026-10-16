@@ -240,26 +240,50 @@ export function chartCursorView(
   return view.controller
 }
 
-/** Which chart a quiet tooltip belongs to: `isForeign(group, chartId)` decides when it stays silent. */
-export type FollowerRef = { readonly group: string | undefined; readonly chartId: string }
+/**
+ * The extra key a chart puts on its tooltip options to name itself to {@link quietWhileFollowing}.
+ * Absent, the tooltip paints for followers too.
+ */
+export type TooltipFollowerOptions = {
+  readonly follower?: { readonly group: string | undefined; readonly chartId: string } | undefined
+}
+
+const isFollowerOptions = (options: unknown): options is TooltipFollowerOptions =>
+  typeof options === 'object' && options !== null && 'follower' in options
 
 /**
- * Source-only tooltips. A follower resolves the same focus group as the leader (`group-x`), so the
- * engine draws the same dots on its lines at the shared x. Its tooltip is silenced here instead:
- * the host shows (and fills its `role="status"` live region) exactly when it paints, so while a
- * FOREIGN state is current this wrapper hides it and never creates the element. The chart's
- * `follower` option (set per compile on the tooltip options, so this token keeps one identity)
- * names the cursor group; unset, or after `tooltip.onFollow`, the host is untouched.
+ * The tooltip options a chart spreads next to `use: quietWhileFollowing`: its identity, unless the
+ * chart opted into following tooltips (`tooltip.onFollow`). The one place `onFollow` is read for
+ * this, shared by `compileCartesian` and the panel rung.
+ */
+export function followerOptions(
+  tooltip: { onFollow?: boolean | undefined } | false | undefined,
+  group: string | undefined,
+  chartId: string,
+): TooltipFollowerOptions {
+  const onFollow = typeof tooltip === 'object' && tooltip.onFollow === true
+  return onFollow ? {} : ({ follower: { group, chartId } } satisfies TooltipFollowerOptions)
+}
+
+/**
+ * The engine's DOM tooltip host, silent while this chart FOLLOWS another's cursor. A follower
+ * resolves the leader's focus group (so the engine draws the same dots at the shared x); the host
+ * would then paint a tooltip and fill its `role="status"` live region. This wrapper hides the host
+ * instead of painting whenever `isForeign` holds, so a follower never creates the element, and
+ * defers to the host otherwise (leader, no `follower` option, or after the leader clears).
+ *
+ * It wraps `create`/`update`/`paint` of the engine's tooltip host, whose lifecycle is undocumented:
+ * re-check this wrapper, the live region included, on every `@tanstack/charts` upgrade.
  */
 export const quietWhileFollowing: ChartTooltipExtension = {
   ...tooltip,
   create: (context) => {
     const host = tooltip.create(context)
-    let follower: FollowerRef | undefined
+    let follower: TooltipFollowerOptions['follower']
     return {
       ...host,
       update: (options) => {
-        follower = (options as { follower?: FollowerRef }).follower
+        follower = isFollowerOptions(options) ? options.follower : undefined
         host.update(options)
       },
       paint: (paint) => {

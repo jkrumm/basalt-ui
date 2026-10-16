@@ -15,6 +15,7 @@ import { createRoot } from 'react-dom/client'
 import { renderToString } from 'react-dom/server'
 import { compileCartesian } from './compile'
 import { chartCursor, hasCursorGroup } from './cursor'
+import { hoverPlot } from './hover-test-util'
 import { Lines } from './Lines'
 import type { LinesProps } from './Lines'
 import { chartEngineCss } from './theme'
@@ -218,14 +219,7 @@ describe('shared cursor', () => {
         </>,
       )
     })
-    const svgA = el.querySelector('#A svg')
-    if (!svgA) throw new Error('chart A did not mount')
-    await act(async () => {
-      svgA.dispatchEvent(
-        new PointerEvent('pointermove', { clientX: 300, clientY: 100, bubbles: true }),
-      )
-      await new Promise((r) => setTimeout(r, 30))
-    })
+    await hoverPlot(el.querySelector('#A svg'))
     return el
   }
 
@@ -277,16 +271,114 @@ describe('shared cursor', () => {
         </>,
       )
     })
-    await act(async () => {
-      el.querySelector('#A svg')?.dispatchEvent(
-        new PointerEvent('pointermove', { clientX: 300, clientY: 100, bubbles: true }),
-      )
-      await new Promise((r) => setTimeout(r, 30))
-    })
+    await hoverPlot(el.querySelector('#A svg'))
     const shown = [...el.querySelectorAll('#B g[data-ts-key="track-cursor"] circle')].filter(
       (c) => c.getAttribute('fill-opacity') === '1',
     )
     expect(shown.map((c) => c.getAttribute('fill'))).toEqual(['var(--vx-fill-red)'])
+  })
+
+  test('the follower becomes the leader the moment the pointer moves onto it', async () => {
+    const el = await hoverAOverB()
+    expect(tooltips().length).toBe(1)
+    await hoverPlot(el.querySelector('#B svg'))
+    // A's element stays (hidden) once it has painted; B, now the leader, has painted its own.
+    expect(
+      tooltips()
+        .map((t) => t.textContent)
+        .join(' '),
+    ).toContain('B')
+    expect(tooltips().length).toBe(2)
+  })
+
+  test('a follower repaints its tooltip once the leader has cleared', async () => {
+    const el = await hoverAOverB()
+    await act(async () => {
+      chartCursor().setState(null)
+    })
+    await hoverPlot(el.querySelector('#B svg'))
+    expect(
+      tooltips()
+        .map((t) => t.textContent)
+        .join(' '),
+    ).toContain('B')
+  })
+
+  test('an explicit cursorGroup (and the unnamed one) both keep a follower silent', async () => {
+    const el = document.createElement('div')
+    document.body.append(el)
+    root = createRoot(el)
+    await act(async () => {
+      root?.render(
+        <>
+          <div id="A">
+            <Lines
+              data={rows(30)}
+              x={x}
+              series={[load]}
+              ariaLabel="A"
+              legend={false}
+              cursorGroup="g"
+            />
+          </div>
+          <div id="B">
+            <Lines
+              data={rows(10)}
+              x={x}
+              series={[b]}
+              ariaLabel="B"
+              legend={false}
+              cursorGroup="g"
+            />
+          </div>
+          <div id="C">
+            <Lines data={rows(10)} x={x} series={[b]} ariaLabel="C" legend={false} />
+          </div>
+        </>,
+      )
+    })
+    await hoverPlot(el.querySelector('#A svg'))
+    expect(chartCursor('g').getState()).not.toBeNull()
+    expect(chartCursor().getState()).toBeNull()
+    expect(tooltips().length).toBe(1)
+    expect(el.querySelectorAll('#B [data-ts-key^="default-focus"] circle').length).toBe(1)
+    expect(el.querySelectorAll('#C [data-ts-key^="default-focus"] circle').length).toBe(0)
+  })
+
+  test('a follower draws no dot for a series it does not plot (legend-hidden)', async () => {
+    const el = document.createElement('div')
+    document.body.append(el)
+    root = createRoot(el)
+    const track = (key: string): ChartSeries<Row> => ({
+      ...b,
+      key,
+      getValue: () => null,
+      cursorValue: (d) => d.v,
+    })
+    await act(async () => {
+      root?.render(
+        <>
+          <div id="A">
+            <Lines data={rows(30)} x={x} series={[load]} ariaLabel="A" legend={false} />
+          </div>
+          <div id="B">
+            <Lines data={rows(10)} x={x} series={[track('t1'), track('t2')]} ariaLabel="B" />
+          </div>
+        </>,
+      )
+    })
+    await act(async () => {
+      el.querySelector('#B [data-legend-key="t2"]')?.dispatchEvent(
+        new MouseEvent('click', { bubbles: true }),
+      )
+    })
+    await hoverPlot(el.querySelector('#A svg'))
+    const shown = (key: string): number =>
+      [...el.querySelectorAll(`#B g[data-ts-key="${key}-cursor"] circle`)].filter(
+        (c) => c.getAttribute('fill-opacity') === '1',
+      ).length
+    expect(shown('t1')).toBe(1)
+    expect(shown('t2')).toBe(0)
   })
 
   test('a re-render (new series identity) keeps the live cursor state', async () => {
