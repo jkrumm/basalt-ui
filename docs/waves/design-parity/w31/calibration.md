@@ -103,11 +103,11 @@ What the fix does and does not change:
 
 ## Iteration 4c (review round 2: no crop changed, no re-score)
 
-`shot` fixes only: a tooltip is taken only if it became visible after a snapshot of the visible ones (or is the one the trigger names in `aria-describedby`); `hasFocusTarget` requires a rendered element; `scaleError` is set only when `scale` stayed empty; the stale-tmp sweep is per-entry safe and pid-aware. The reviewer treats `skipped` like `not-declared` and says exactly what a sheet holds. `shot /scenarios/calibrate-good` exits 0 and its 26 PNGs are byte-identical to the last scored run, so no board was re-scored.
+`shot` fixes only: a tooltip is taken only if it became visible after a snapshot of the visible ones (or is the one the trigger names in `aria-describedby`); `hasFocusTarget` requires a rendered element; `scaleError` is set only when `scale` stayed empty; the stale-tmp sweep is per-entry safe and pid-aware. The reviewer treats `skipped` like `not-declared` and says exactly what a sheet holds. `shot /scenarios/calibrate-good (now `/scenarios/probe-3`)` exits 0 and its 26 PNGs are byte-identical to the last scored run, so no board was re-scored.
 
 ## Method caveat
 
-The shipped `basalt-design-reviewer` subagent was not exercised against the final reviewer text until the confirmation section below. Iterations 1 and 4b used the subagent type, but with the definition it had at session start, which was the old text. Iterations 2, 3 and 4 used fresh general-purpose agents told to read the edited reviewer file and follow its body, with tools limited to Read/Grep/Glob. Iterations 1–4 also saw the seed names (route, file and out-dir names), so their blindness was partial. `/.claude/agents/basalt-design-reviewer.md` and `/.claude/skills/basalt-design/SKILL.md` are byte-identical to the package sources (`make sync-self`, then `cmp`).
+Iterations 1 and 4b used the `basalt-design-reviewer` subagent type with the definition it had at session start, so they did not test that iteration's edits. Iterations 2–4 used fresh general-purpose agents told to read the edited reviewer file and follow its body, tools limited to Read/Grep/Glob. Iterations 1–4 also saw the seed names (`calibrate-*`) in routes, files and out dirs, so their blindness was partial. In the confirmation runs below the route ids are neutral (`probe-N`), but the id → seed map stays readable in the repo (component names, seed headers, this file): the reviewer is instructed not to read the app's source, and transcripts are not retained, so these runs are **route-blinded**, not proven blind. The real subagent type ran once, in the first neutral-id run, before the Craft 4 accent-site fix; the final reviewer text has no real-type run yet.
 
 ## Baseline
 
@@ -202,8 +202,8 @@ Change: `probe-3` is now the metric card alone (the table is removed; the page i
 
 ### Final result
 
-- **Bad seeds:** 5 of 5 fail on their expected item in every blind run since the ids were made neutral (the neutral-id run and run 3). The earlier named runs were not blind and are superseded.
-- **Good board:** `probe-3` is one component, the metric card, and passes in both blind runs (n = 2).
+- **Bad seeds:** 5 of 5 fail on their expected item in every route-blinded run (the neutral-id run and run 3). The earlier named runs leaked the defect class through names and are superseded.
+- **Good board:** `probe-3` was reduced to one component, the metric card, after its multi-component versions failed on real seed defects; the reduced board passes both route-blinded runs (n = 2, too few to show stability). It gates single-card composition only: no known-good board covers sections, tables or multi-component pages (an open gap until Waves 33–34 add the primitives).
 - **Earlier good-board failures:** these were real seed defects, plus one reviewer error that is now fixed.
   - A part-of-whole shown as a table (Expression 4, then Expression 1).
   - A time series shown as a table (Expression 1, Craft 3 at 390).
