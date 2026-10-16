@@ -32,6 +32,8 @@ Signature: BasaltProvider(props: BasaltProviderProps): JSX.Element
   sizeClassHint?: "compact" | "medium" | "expanded"
   navCommandLabel?: (item: FlatNavItem) => string
   spotlight?: boolean
+  locale?: string
+  timeZone?: string
   router: BasaltRouter
   children: ReactNode
 Signature: BasaltShell(props: BasaltShellProps<G, T>): JSX.Element
@@ -516,12 +518,18 @@ OptionalPeers: vite-plugin-pwa@^1.3.0
 Import: import { ... } from 'basalt-ui/format'
 Description: integer/money/percent/durationClock/relativeTime/weekday/km/kcal — Intl-backed, Mantine-free, React-free formatting; the chart layer formats through the same implementation
 Layer: headless
+Signature: bytes(value: Numeric, options: BytesOptions): string
+Signature: compact(value: Numeric, options: CompactOptions): string
+Signature: defineFormat(next: FormatDefaults): void
+  locale?: string
+  timeZone?: string
+Signature: delta(value: Numeric, options: DeltaOptions): string
 Signature: durationClock(seconds: number): string
-Signature: integer(value: number, options: LocaleOption): string
-Signature: kcal(value: number, options: KcalOptions): string
-Signature: km(meters: number, options: KmOptions): string
-Signature: money(value: number, options: FmtCurrencyOptions): string
-Signature: percent(value: number, options: FmtPercentOptions): string
+Signature: integer(value: Numeric, options: LocaleOption): string
+Signature: kcal(value: Numeric, options: KcalOptions): string
+Signature: km(meters: Numeric, options: KmOptions): string
+Signature: money(value: Numeric, options: MoneyOptions): string
+Signature: percent(value: Numeric, options: PercentOptions): string
 Signature: relativeTime(value: string | number | Date, options: RelativeTimeOptions): string
 Signature: weekday(value: string | number | Date, options: WeekdayOptions): string
 
