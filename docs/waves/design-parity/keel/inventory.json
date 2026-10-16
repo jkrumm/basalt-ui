@@ -1,5 +1,5 @@
 {
-  "capturedAt": "2026-10-16T14:09:39.012Z",
+  "capturedAt": "2026-10-16T14:25:17.893Z",
   "origin": "https://keel-workspace.vercel.app",
   "patterns": [
     {
@@ -1858,6 +1858,25 @@
         }
       },
       "notes": "No fill, no border, muted label. Light scheme changes colour only; geometry is identical. Light background role: transparent."
+    },
+    {
+      "id": "loading-state",
+      "name": "Loading / pending state",
+      "route": "/",
+      "selectorNote": "none: no pending or skeleton view could be provoked on any route",
+      "instances": 0,
+      "crops": {},
+      "metrics": {
+        "desktop": {},
+        "mobile": {}
+      },
+      "notes": "Could not be observed: in-app navigation is instant and throttling the network produced no placeholder view. Treat as unverified, not as missing.",
+      "slotStatus": {
+        "dark-desktop": "unverified",
+        "dark-mobile": "unverified",
+        "light-desktop": "unverified",
+        "light-mobile": "unverified"
+      }
     }
   ]
 }

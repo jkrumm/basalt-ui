@@ -1,5 +1,5 @@
 {
-  "capturedAt": "2026-10-16T14:11:47.832Z",
+  "capturedAt": "2026-10-16T14:25:47.655Z",
   "origin": "https://keel-workspace.vercel.app",
   "desktop": {
     "viewport": "1440x900",
@@ -276,7 +276,8 @@
           "listItemHeights": [20, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36]
         }
       }
-    }
+    },
+    "unverifiedRoutes": []
   },
   "mobile": {
     "viewport": "390x844",
@@ -532,6 +533,7 @@
           "listItemHeights": [20, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36]
         }
       }
-    }
+    },
+    "unverifiedRoutes": []
   }
 }
