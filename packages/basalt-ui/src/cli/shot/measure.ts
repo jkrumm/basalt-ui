@@ -30,6 +30,8 @@ export type TextReading = {
   bg: number[]
   fontSize: number
   bold: boolean
+  /** No opaque ancestor background was found: `bg` is white by assumption. */
+  assumedWhite: boolean
 }
 export type Reading = Omit<Measurement, 'contrast'> & { texts: TextReading[] }
 
@@ -40,18 +42,23 @@ const hex = (c: readonly number[]): string =>
     .map((n) => Math.round(n).toString(16).padStart(2, '0'))
     .join('')
 
-/** Contrast per text reading: `min` over all, `failures` below the WCAG AA threshold. */
+/**
+ * Contrast per text reading: `min` over all, `failures` below the WCAG AA threshold. The threshold
+ * is tested on the UNROUNDED ratio; only the stored value is rounded.
+ */
 export function finishMeasurement({ texts, ...rest }: Reading): Measurement {
   const failures: ContrastFailure[] = []
   let min: number | null = null
   for (const t of texts) {
-    const ratio = Math.round(contrastRatio(t.fg, t.bg) * 100) / 100
+    const exact = contrastRatio(t.fg, t.bg)
+    const ratio = Math.round(exact * 100) / 100
     min = min === null ? ratio : Math.min(min, ratio)
-    if (ratio < contrastThreshold(t.fontSize, t.bold)) {
+    if (exact < contrastThreshold(t.fontSize, t.bold)) {
       failures.push({ text: t.text, ratio, fg: hex(t.fg), bg: hex(t.bg), fontSize: t.fontSize })
     }
   }
-  return { ...rest, contrast: { min, failures } }
+  const backdrop = texts.some((t) => t.assumedWhite) ? ({ backdrop: 'assumed-white' } as const) : {}
+  return { ...rest, contrast: { min, failures, ...backdrop } }
 }
 
 /* oxlint-disable unicorn/consistent-function-scoping -- the helpers below are serialised into the page with it: no outer scope */
@@ -64,15 +71,26 @@ export function measureAnchor(root: Element): Reading {
     left: px(s[`${p}Left`]),
   })
   const ctx = document.createElement('canvas').getContext('2d', { willReadFrequently: true })
-  // Any CSS colour syntax (oklch, color-mix, …) → sRGBA, by letting the canvas parse it.
-  const rgba = (css: string): number[] => {
-    if (!ctx) return [0, 0, 0, 1]
+  if (!ctx) throw new Error('no 2d canvas context: cannot read colours')
+  const parsed = new Map<string, number[]>()
+  const paint = (start: string, css: string): number[] => {
     ctx.clearRect(0, 0, 1, 1)
-    ctx.fillStyle = '#000'
+    ctx.fillStyle = start
     ctx.fillStyle = css
     ctx.fillRect(0, 0, 1, 1)
-    const d = ctx.getImageData(0, 0, 1, 1).data
-    return [d[0] ?? 0, d[1] ?? 0, d[2] ?? 0, (d[3] ?? 0) / 255]
+    return Array.from(ctx.getImageData(0, 0, 1, 1).data)
+  }
+  // Any CSS colour syntax (oklch, color-mix, …) → sRGBA, by letting the canvas parse it. An
+  // unparseable value leaves the start colour in place, so two different starts disagree.
+  const rgba = (css: string): number[] => {
+    const known = parsed.get(css)
+    if (known) return known
+    const onBlack = paint('#000000', css)
+    const onWhite = paint('#ffffff', css)
+    if (onBlack.some((v, i) => v !== onWhite[i])) throw new Error(`unparseable colour: ${css}`)
+    const out = [onBlack[0] ?? 0, onBlack[1] ?? 0, onBlack[2] ?? 0, (onBlack[3] ?? 0) / 255]
+    parsed.set(css, out)
+    return out
   }
   const over = (top: number[], under: number[]): number[] => {
     const a = top[3] ?? 1
@@ -85,15 +103,17 @@ export function measureAnchor(root: Element): Reading {
       ? null
       : s
   }
-  /** The effective background: layers up to and including the first opaque ancestor, composited. */
-  const backdrop = (el: Element): number[] => {
+  /** The effective background: layers up to the first opaque ancestor (html/body included), composited. */
+  const backdrop = (el: Element): { color: number[]; assumedWhite: boolean } => {
     const layers: number[][] = []
-    for (let n: Element | null = el; n; n = n.parentElement) {
+    let opaque = false
+    for (let n: Element | null = el; n && !opaque; n = n.parentElement) {
       const c = rgba(getComputedStyle(n).backgroundColor)
       if ((c[3] ?? 0) > 0) layers.push(c)
-      if ((c[3] ?? 0) >= 0.99) break
+      opaque = (c[3] ?? 0) >= 0.99
     }
-    return layers.toReversed().reduce((under, c) => over(c, under), [255, 255, 255, 1])
+    const color = layers.toReversed().reduce((under, c) => over(c, under), [255, 255, 255, 1])
+    return { color, assumedWhite: !opaque }
   }
 
   const cs = getComputedStyle(root)
@@ -133,7 +153,7 @@ export function measureAnchor(root: Element): Reading {
     return parts.join(' > ')
   }
   const range = document.createRange()
-  for (const el of Array.from(root.querySelectorAll('*'))) {
+  for (const el of [root, ...Array.from(root.querySelectorAll('*'))]) {
     const s = visible(el)
     if (!s) continue
     const r = el.getBoundingClientRect()
@@ -141,7 +161,7 @@ export function measureAnchor(root: Element): Reading {
     const hasBorder = ['Top', 'Right', 'Bottom', 'Left'].some(
       (e) => px(s.getPropertyValue(`border-${e.toLowerCase()}-width`)) > 0,
     )
-    if ((hasBg || hasBorder) && nested.length < 60) {
+    if (el !== root && (hasBg || hasBorder) && nested.length < 60) {
       nested.push({
         path: pathOf(el),
         radius: px(s.borderTopLeftRadius),
@@ -150,8 +170,9 @@ export function measureAnchor(root: Element): Reading {
     }
     // Wrappers that span the anchor are layout, not content: only smaller painted boxes count.
     if (
-      /^(svg|img|canvas|video|input|textarea)$/i.test(el.tagName) ||
-      ((hasBg || hasBorder) && r.height < rect.height * 0.9)
+      el !== root &&
+      (/^(svg|img|canvas|video|input|textarea)$/i.test(el.tagName) ||
+        ((hasBg || hasBorder) && r.height < rect.height * 0.9))
     ) {
       painted.push([r.top, r.bottom])
     }
@@ -166,12 +187,12 @@ export function measureAnchor(root: Element): Reading {
       const tr = range.getBoundingClientRect()
       painted.push([tr.top, tr.bottom])
     }
-    const fg = over(rgba(s.color), backdrop(el))
-    const bg = backdrop(el)
+    const back = backdrop(el)
     texts.push({
       text: (text[0]?.textContent ?? '').trim().slice(0, 40),
-      fg,
-      bg,
+      fg: over(rgba(s.color), back.color),
+      bg: back.color,
+      assumedWhite: back.assumedWhite,
       fontSize: size,
       bold: parseInt(s.fontWeight, 10) >= 700,
     })

@@ -1,9 +1,14 @@
 import { existsSync, statSync } from 'node:fs'
 import { join, normalize, resolve, sep } from 'node:path'
 
+import { ShotError } from './playwright'
+
 /** Static server for a built SPA dir: real files as-is, extensionless misses fall back to index.html. */
 export function serveDist(distDir: string): { origin: string; stop: () => void } {
   const root = resolve(distDir)
+  if (!existsSync(root) || !statSync(root).isDirectory()) {
+    throw new ShotError(`--dist ${distDir} is not a directory`)
+  }
   const fileFor = (pathname: string): string | null => {
     const file = normalize(join(root, decodeURIComponent(pathname)))
     if (file !== root && !file.startsWith(root + sep)) return null
