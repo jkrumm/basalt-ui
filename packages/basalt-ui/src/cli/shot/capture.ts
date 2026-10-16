@@ -1,10 +1,19 @@
 /** Per route × scheme × viewport: full-page shot, then every `data-shot` anchor through every state. */
+import { createHash } from 'node:crypto'
 import { join } from 'node:path'
 
 import { finishMeasurement, measureAnchor } from './measure'
 import type { Box, PwBrowser, PwContext, PwLocator, PwPage, ShotOptions } from './playwright'
 import { PAGE_ANCHOR, SCHEMES, URL_STATES, VIEWPORTS, VIEWPORT_SPECS } from './types'
-import type { AnchorMetrics, Scale, Scheme, ShotRecord, ShotState, Viewport } from './types'
+import type {
+  AnchorMetrics,
+  Measurement,
+  Scale,
+  Scheme,
+  ShotRecord,
+  ShotState,
+  Viewport,
+} from './types'
 
 const NAV_TIMEOUT_MS = 30_000
 const HOVER_TIMEOUT_MS = 5_000
@@ -18,6 +27,8 @@ export type CaptureInput = {
   routes: readonly string[]
   states: readonly ShotState[]
   pngDir: string
+  /** Replaces the in-page measurer (tests). */
+  measure?: (anchor: PwLocator) => Promise<Measurement>
   log: (line: string) => void
 }
 
@@ -35,7 +46,7 @@ type Ctx = {
   shots: ShotRecord[]
   measured: Set<string>
   /** Read on the first page of a context that loads. */
-  scale?: Pick<Scale, 'spacing' | 'radius' | 'fontSizes'>
+  scale?: Pick<Scale, 'spacing' | 'radius' | 'fontSizes'> | undefined
 }
 
 type Outcome = {
@@ -46,11 +57,22 @@ type Outcome = {
   note?: string
 }
 
+const hash = (text: string): string => createHash('sha1').update(text).digest('hex').slice(0, 6)
 const slug = (text: string): string => text.replace(/[^\w-]+/g, '-').replace(/^-+|-+$/g, '')
 const firstLine = (error: unknown): string =>
   (error instanceof Error ? error.message : String(error)).split('\n')[0] ?? ''
 const sel = (name: string): string => `[data-shot=${JSON.stringify(name)}]`
 const anchorOf = (c: Ctx, name: string): PwLocator => c.page.locator(sel(name)).first()
+
+/** `<route>-<hash>__<name>-<hash>__…`: the hash of the RAW text keeps `/a/b` and `/a-b` apart. */
+export const fileName = (
+  route: string,
+  name: string,
+  scheme: Scheme,
+  viewport: Viewport,
+  state: ShotState,
+): string =>
+  `${slug(route) || 'root'}-${hash(route)}__${slug(name)}-${hash(name)}__${scheme}__${viewport}__${state}.png`
 
 /** The state URL: the query goes before any `#fragment`. */
 export function withParam(route: string, state: ShotState): string {
@@ -121,18 +143,33 @@ async function attempt(
   run: (path: string) => Promise<void>,
   note?: string,
 ): Promise<void> {
-  const file = `${slug(c.route) || 'root'}__${slug(name)}__${c.scheme}__${c.viewport}__${state}.png`
+  const file = fileName(c.route, name, c.scheme, c.viewport, state)
   try {
     await run(join(c.input.pngDir, file))
-    if (name !== PAGE_ANCHOR && !c.measured.has(name)) {
-      const m = finishMeasurement(await anchorOf(c, name).evaluate(measureAnchor))
-      c.anchors.push({ route: c.route, name, scheme: c.scheme, viewport: c.viewport, ...m })
-      c.measured.add(name)
-    }
-    record(c, { name, state, status: 'ok', file: `png/${file}`, ...(note ? { note } : {}) })
   } catch (error) {
     record(c, { name, state, status: 'error', note: firstLine(error) })
+    return
   }
+  // The PNG is good: a measurement failure is recorded beside it, never instead of it.
+  let notes = note ? [note] : []
+  if (name !== PAGE_ANCHOR && !c.measured.has(name)) {
+    try {
+      const measure =
+        c.input.measure ?? ((a: PwLocator) => a.evaluate(measureAnchor).then(finishMeasurement))
+      const m = await measure(anchorOf(c, name))
+      c.anchors.push({ route: c.route, name, scheme: c.scheme, viewport: c.viewport, ...m })
+      c.measured.add(name)
+    } catch (error) {
+      notes = [...notes, `metrics unavailable: ${firstLine(error)}`]
+    }
+  }
+  record(c, {
+    name,
+    state,
+    status: 'ok',
+    file: `png/${file}`,
+    ...(notes.length ? { note: notes.join('; ') } : {}),
+  })
 }
 
 const skipOnMobile = (c: Ctx, name: string, state: ShotState): boolean => {
@@ -271,13 +308,15 @@ const readScale = (page: PwPage): Promise<Pick<Scale, 'spacing' | 'radius' | 'fo
       return out
     }
     const steps = ${JSON.stringify(STEPS)}
-    const result = {
+    try {
+      return {
       spacing: read('--mantine-spacing-', steps),
       radius: { ...read('--mantine-radius-', [...steps, 'default']), ...read('--vx-radius-', ['card', 'ctrl']) },
       fontSizes: read('--mantine-font-size-', steps),
     }
-    probe.remove()
-    return result
+    } finally {
+      probe.remove()
+    }
   })()`)
 
 async function capturePage(
@@ -295,7 +334,6 @@ async function capturePage(
   try {
     await load(c.page, input.base + route)
     c.facts = await readFacts(c.page)
-    if (wantScale) c.scale = await readScale(c.page)
   } catch (error) {
     record(c, {
       name: PAGE_ANCHOR,
@@ -305,6 +343,7 @@ async function capturePage(
     })
     return c
   }
+  if (wantScale) c.scale = await readScale(c.page).catch(() => undefined)
   const usable = c.facts.anchors.filter((n) => slug(n) !== '' && n !== PAGE_ANCHOR)
   for (const name of c.facts.anchors.filter((n) => !usable.includes(n))) {
     record(c, { name, state: 'rest', status: 'error', note: 'unusable data-shot name' })
