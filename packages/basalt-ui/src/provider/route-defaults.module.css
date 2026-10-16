@@ -1,7 +1,5 @@
-/* The router's default pending / error / not-found screens render at the route that failed, which
-   can be ABOVE BasaltProvider — so they are plain HTML styled here, no Mantine primitive. Every
-   --vx-* read carries a literal fallback: they look right with the provider, with only tokens.css,
-   or with nothing. */
+/* The router's default screens render at the route that failed, which can be ABOVE BasaltProvider.
+   Shared stack/title/text/action live in fallback.module.css; same literal-fallback rule. */
 .center {
   display: flex;
   justify-content: center;
@@ -11,6 +9,8 @@
 .spinner {
   width: 1.25rem;
   height: 1.25rem;
+  border: 2px solid currentColor;
+  border-top-color: currentColor;
   border: 2px solid color-mix(in srgb, currentColor 20%, transparent);
   border-top-color: var(--vx-accent, currentColor);
   border-radius: 50%;
@@ -23,39 +23,17 @@
   }
 }
 
+/* A static ring is still a loading mark; the aria-label carries the state. */
 @media (prefers-reduced-motion: reduce) {
   .spinner {
-    animation-duration: 2.4s;
+    animation: none;
   }
 }
 
-.stack {
+/* Not-found is a statement, not an error with an action: its own column, no flex-start alignment. */
+.notFound {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: var(--vx-space-stack-xs, 0.5rem);
+  gap: 4px;
   padding: var(--vx-space-stack-md, 1rem);
-}
-
-.title {
-  margin: 0;
-  font-weight: 600;
-}
-
-.text {
-  margin: 0;
-  font-size: var(--vx-text-sm, 0.875rem);
-  color: var(--vx-ink2, inherit);
-  opacity: 0.8;
-}
-
-.retry {
-  font: inherit;
-  font-size: var(--vx-text-sm, 0.875rem);
-  cursor: pointer;
-  padding: 0.25rem var(--vx-space-stack-md, 0.75rem);
-  border: 1px solid var(--vx-divider, color-mix(in srgb, currentColor 25%, transparent));
-  border-radius: var(--vx-radius-ctrl, 6px);
-  background: transparent;
-  color: inherit;
 }

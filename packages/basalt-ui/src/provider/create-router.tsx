@@ -7,11 +7,10 @@
  */
 import type { QueryClient, QueryClientConfig } from '@tanstack/react-query'
 import { Router, createRouter } from '@tanstack/react-router'
-import type { AnyRoute, ErrorComponentProps, RouterHistory } from '@tanstack/react-router'
-import { toErrorMessage } from '../common/errors'
+import type { AnyRoute, RouterHistory } from '@tanstack/react-router'
 import { makeQueryClient } from '../query-client'
-import classes from './route-defaults.module.css'
 import type { RouterHook } from '../telemetry'
+import { ErrorComponent, NotFoundComponent, PendingComponent } from './route-defaults'
 import {
   guardViewTransitionRejections,
   routeViewTransition,
@@ -47,37 +46,6 @@ export type BasaltRouter<
   TRouteTree extends AnyRoute = any, // oxlint-disable-line typescript/no-explicit-any -- see JSDoc
 > = BasaltRouterBase<TRouteTree> & {
   readonly [basaltRouterBrand]: true
-}
-
-// Provider-free on purpose: a route's pending/error/not-found screen renders at the route that
-// failed, which can sit above `BasaltProvider` (a root-level error, or a pathless-layout provider).
-function PendingComponent() {
-  return (
-    <div className={classes.center}>
-      <output className={classes.spinner} aria-label="Loading" />
-    </div>
-  )
-}
-
-function ErrorComponent({ error, reset }: ErrorComponentProps) {
-  return (
-    <div className={classes.stack} role="alert">
-      <p className={classes.title}>Something went wrong</p>
-      <p className={classes.text}>{toErrorMessage(error)}</p>
-      <button type="button" className={classes.retry} onClick={reset}>
-        Try again
-      </button>
-    </div>
-  )
-}
-
-function NotFoundComponent() {
-  return (
-    <div className={classes.stack}>
-      <p className={classes.title}>Page not found</p>
-      <p className={classes.text}>This address does not match any page.</p>
-    </div>
-  )
 }
 
 /** The options `createBasaltRouter` owns. Each is `never` on it: basalt's, not a consumer knob. */

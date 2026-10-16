@@ -4,6 +4,5 @@
  */
 declare const classes: {
   readonly root: string
-  readonly reload: string
 }
 export default classes

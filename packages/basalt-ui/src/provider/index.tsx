@@ -22,6 +22,7 @@ import type { AnyRouter } from '@tanstack/react-router'
 import { Component, Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react'
 import type { ErrorInfo, ReactNode } from 'react'
 import fallbackClasses from './error-fallback.module.css'
+import sharedFallback from './fallback.module.css'
 import { cssVariablesResolver } from '../theme'
 import { useLabTheme } from './lab-theme'
 import { buildDensityCss, buildFontsCss, buildPaletteCss, buildRadiusCss } from '../tokens/core'
@@ -142,7 +143,7 @@ function DefaultErrorFallback(): ReactNode {
       />
       <button
         type="button"
-        className={fallbackClasses.reload}
+        className={sharedFallback.action}
         onClick={() => window.location.reload()}
       >
         Reload page
