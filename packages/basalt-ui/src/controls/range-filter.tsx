@@ -66,7 +66,9 @@ export type RangeCustomPickerProps = {
 
 /** Everything about the props that does not depend on the field's `custom` flag. */
 type RangeFilterCommon<P extends string, C extends boolean> = UncontrolledProps &
-  Omit<FilterBase, 'clearable'> & {
+  Omit<FilterBase, 'clearable' | 'label'> & {
+    /** Sheet-form heading. The pill's own label is the VALUE, which is what a bar reads. @default 'Range' */
+    readonly label?: string
     /**
      * A range handle from either store factory. Generic over the field's `custom` flag so a
      * `field.range({ ... })` WITHOUT `custom` (whose handle is `RangeField<P, false>`, and whose
@@ -89,21 +91,22 @@ export type RangeFilterProps<P extends string, C extends boolean = boolean> = Ra
     ? { readonly customPicker?: never }
     : { readonly customPicker: ComponentType<RangeCustomPickerProps> })
 
-/** What the body handles: both arms, with the picker optional. Never a public signature. */
-type RangeFilterImplProps<P extends string> = RangeFilterCommon<P, boolean> & {
-  readonly customPicker?: ComponentType<RangeCustomPickerProps> | undefined
-}
-
 export function RangeFilter<P extends string, C extends boolean = boolean>(
   props: RangeFilterProps<P, C>,
 ): ReactNode
-export function RangeFilter<P extends string>(props: RangeFilterImplProps<P>): ReactNode {
+// The implementation signature is the widest arm, picker optional; the overload above is the only
+// one a caller sees.
+export function RangeFilter<P extends string>(
+  props: Omit<RangeFilterProps<P, boolean>, 'customPicker'> & {
+    readonly customPicker?: ComponentType<RangeCustomPickerProps> | undefined
+  },
+): ReactNode {
   // F-ERR-1 — without this a missing `field` surfaces as `undefined is not an object
   // (evaluating 'field.use')`, caught by `RootBoundary`.
   assertRequiredProps('RangeFilter', props, ['field'], {
     field: 'bind it to a store field (`store.field.<name>`), never a value/onChange pair.',
   })
-  const { field, icon, disabled, customPicker, label = 'Range', className, style } = props
+  const { field, icon, disabled, customPicker: Picker, label = 'Range', className, style } = props
   const [value, setValue] = field.use()
   const surface = useFilterSurface()
   const isDefault = field.isDefault(value)
@@ -137,8 +140,13 @@ export function RangeFilter<P extends string>(props: RangeFilterImplProps<P>): R
     setCustomOpen(value.preset === 'custom')
   }, [value.preset])
   const picker =
-    allowsCustom && customPicker !== undefined ? (
-      <CustomPicker picker={customPicker} value={value} onChange={setValue} />
+    allowsCustom && Picker !== undefined ? (
+      <Picker
+        value={{ from: value.from, to: value.to }}
+        onChange={({ from, to }) => {
+          setValue({ preset: 'custom', from, to } as RangeValue<P | 'custom'>)
+        }}
+      />
     ) : null
 
   // The sheet form is the panel form (`docs/CONTROLS-SPEC.md` §3: "sheet = panel rows inside a
@@ -215,26 +223,6 @@ export function RangeFilter<P extends string>(props: RangeFilterImplProps<P>): R
     >
       <div className={classes.optionList}>{body}</div>
     </FilterPill>
-  )
-}
-
-/** The injected picker, wired to the field's `custom` window — one body for the panel and the pill. */
-function CustomPicker<P extends string>({
-  picker: Picker,
-  value,
-  onChange,
-}: {
-  readonly picker: ComponentType<RangeCustomPickerProps>
-  readonly value: RangeValue<P | 'custom'>
-  readonly onChange: (next: RangeValue<P | 'custom'>) => void
-}): ReactNode {
-  return (
-    <Picker
-      value={{ from: value.from, to: value.to }}
-      onChange={({ from, to }) => {
-        onChange({ preset: 'custom', from, to } as RangeValue<P | 'custom'>)
-      }}
-    />
   )
 }
 

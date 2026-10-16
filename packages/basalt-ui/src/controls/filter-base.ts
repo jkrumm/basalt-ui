@@ -24,7 +24,7 @@ export type FilterBase = {
  * One row of any option list. `disabled` renders the row and refuses the selection — a live
  * catalogue cannot leave an archived value out, because rows already pointing at it still label it.
  */
-export type Option<V extends string | number = string> = {
+export type FilterOption<V extends string | number = string> = {
   readonly value: V
   readonly label: string
   readonly disabled?: boolean

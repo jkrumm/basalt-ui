@@ -35,20 +35,31 @@ import type { EnumField, FieldHandle } from '../state'
 import classes from './controls.module.css'
 import { useFilterSurface } from './filter-context'
 import { useControlName } from './control-name'
-import type { FilterBase, Option } from './filter-base'
+import type { FilterBase, FilterOption } from './filter-base'
 import { PanelChoice, PanelRow, useTrackFits } from './panel-row'
 import type { UncontrolledProps } from './uncontrolled'
+
+/** The `data` both Mantine controls take — `disabled` always a boolean, never absent. */
+function toSegmentData(
+  options: readonly FilterOption[],
+): { value: string; label: string; disabled: boolean }[] {
+  return options.map((option) => ({
+    value: option.value,
+    label: option.label,
+    disabled: option.disabled === true,
+  }))
+}
 
 /** Past three options the phone form is a `Select`, not a track. */
 const PHONE_TRACK_MAX = 3
 
-export type ViewTabsOption<T extends string> = Option<T> & {
+export type ViewTabsOption<T extends string> = FilterOption<T> & {
   /** Render this option on ONE viewport only. Omitted → both. */
   readonly only?: 'sm-up' | 'sm-down'
 }
 
 export type ViewTabsProps<T extends string> = UncontrolledProps &
-  Pick<FilterBase, 'label' | 'disabled'> & {
+  Pick<FilterBase, 'disabled'> & {
     readonly field: FieldHandle<EnumField<T>>
     /** Defaults to `field.options` (every declared value, labelled by `store.labels()`). */
     readonly options?: readonly ViewTabsOption<T>[]
@@ -59,6 +70,7 @@ export type ViewTabsProps<T extends string> = UncontrolledProps &
      *
      * @default 'View'
      */
+    readonly label?: string
   }
 
 export function ViewTabs<T extends string>(props: ViewTabsProps<T>): ReactNode {
@@ -83,11 +95,7 @@ export function ViewTabs<T extends string>(props: ViewTabsProps<T>): ReactNode {
     setValue(next as T)
   }
 
-  const phoneData = phone.map((option) => ({
-    value: option.value,
-    label: option.label,
-    disabled: option.disabled === true,
-  }))
+  const phoneData = toSegmentData(phone)
   const phoneCountFits = phone.length <= PHONE_TRACK_MAX
   // Called UNCONDITIONALLY, even on the panel branch that never renders the phone form — a hook
   // may not sit behind the `if (inPanel) return …` below (`react-hooks/rules-of-hooks`), and
@@ -131,11 +139,7 @@ export function ViewTabs<T extends string>(props: ViewTabsProps<T>): ReactNode {
         size="ctl"
         {...(disabled === true && { disabled: true })}
         value={value}
-        data={desktop.map((option) => ({
-          value: option.value,
-          label: option.label,
-          disabled: option.disabled === true,
-        }))}
+        data={toSegmentData(desktop)}
         onChange={commit}
         {...(className !== undefined && { className })}
         {...(style !== undefined && { style })}
