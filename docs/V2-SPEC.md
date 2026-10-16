@@ -561,9 +561,10 @@ import { lineY } from '@tanstack/charts/line'
   the chart under the pointer or keyboard focus shows a tooltip and a live region.
   - A 1.1.0 host shows a tooltip only for a resolved focus point. It resolves a shared state's
     point through the definition's focus strategy; the crosshair needs no point.
-  - basalt therefore wraps the public `group-x` strategy (`resolveChartFocusStrategy`,
-    `@tanstack/charts/cursor/host`): `group` returns `[]` while the state isn't this chart's stamp,
-    so unstamped programmatic states show only the crosshair.
+  - basalt therefore resolves `group-x` on every chart and wraps the tooltip host
+    (`quietWhileFollowing`, `cursor.ts`), which hides instead of painting while the state isn't
+    this chart's stamp. A follower thus also draws the leader's focus and `cursorValue` dots at the
+    shared x; only the tooltip and live region stay with the chart under the pointer.
 - `tooltip.onFollow: true` opts a follower back in (7 of 59 charts). Spike: 1 tooltip, 2 with
   `onFollow`; the engine trace is in the evidence file.
 
