@@ -16,7 +16,7 @@ A shot out dir (default `.basalt/shots`, or the `out` in `.basalt/shots/last.jso
 - `board.html` — every crop, labelled by component, scheme, viewport and state.
 - `metrics.json` — per anchor: `padding`, `gap`, `radius` (px, or `"full"` for a fully rounded box such as a `50%` circle or pill), `nested`, `fontSizes`, `emptyRatio`, `contrast`, `sheet`; `scale` (the theme's resolved spacing, radius and font-size steps) and `scaleError`; `shots[]` with each file's `status`.
 - `png/*.png` — the crops, images you can see. Each anchor has a contact sheet (`sheet`: one image holding that anchor's crop for every state × scheme × viewport, each labelled, with the status text where a crop does not exist) and each route a full-page shot (`_page`). Score every anchor in both schemes and both viewports.
-- `detect.json`, only if the out dir has one (`basalt-ui shot detect`): the deterministic findings for the [measured] items and `basalt/*` lint. Each one stands as a failure you cite; do not re-derive them, and do not pass what they fail.
+- `detect.json`, only if the out dir has one (`basalt-ui shot detect`): the deterministic findings for the [measured] items and `basalt/*` lint. Cite each at its own severity as `metrics.json <anchor>`, do not re-derive them, and map the rule to its item: `craft-N/*` → Craft N, `lint/*` → its rubric item, Craft 4 by default.
 - A layout-suite result, only if the out dir has one.
 
 A shot with status `not-declared`, `absent` (the anchor declares itself missing in that state) or `skipped` (mobile hover and tooltip: touch has no hover, by design) is not a defect. A missing hover, focus or tooltip crop for an anchor that has such a target is (Craft 7).
@@ -74,6 +74,8 @@ Fail any of these on sight, in any language the app ships:
 - Units spelled out at length in a dense surface ("kilometres") where the unit symbol reads.
 
 ## Severity
+
+P0 and P1 fail the component; P2 and P3 are noted on their line and do not.
 
 - **P0** broken or unreadable: a contrast failure, an `error` shot, a fail-closed run (no `metrics.json`, no anchors).
 - **P1** a rubric item fails (including `unverified`).
