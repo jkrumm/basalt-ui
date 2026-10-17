@@ -7,6 +7,11 @@ import { clamp01, toPct } from './scale'
 
 export type MeterSegment = { value: number; label: string; color?: string; forecast?: boolean }
 export type MeterZone = { from: number; to: number; label: string; color?: string }
+/** A mark on the track at `at` (in the reading's units). A label is captioned beside it. */
+export type MeterTick = { at: number; label?: string }
+
+/** One tick on the track: its percent position and what it says (caption `label`, aria `text`). */
+export type TickMark = { key: string; pct: number; label: string | undefined; text: string }
 
 /** A fill on the track, as fractions (0–1) of the span, with the segment it was laid out from. */
 export type Part = {
@@ -32,6 +37,31 @@ export type ZoneLabel = { key: string; label: string; startPct: number; holding:
 export type CaptionMode = 'reading' | 'parts' | 'forecast'
 
 type Format = (value: number) => string
+
+/**
+ * The ticks that sit on the track, in the order given. A tick outside `[min, max]` (or not a number)
+ * is DROPPED, never clamped: a mark pinned to the end would state a position it is not at.
+ */
+export function tickMarks(
+  ticks: readonly MeterTick[] | undefined,
+  min: number,
+  max: number,
+  format: Format,
+): TickMark[] {
+  const { span } = spanOf(min, max)
+  return (ticks ?? []).flatMap((t, i) =>
+    Number.isFinite(t.at) && t.at >= min && t.at <= max
+      ? [
+          {
+            key: String(i),
+            pct: toPct((t.at - min) / span),
+            label: t.label,
+            text: `${t.label ?? 'Tick'} ${format(t.at)}`,
+          },
+        ]
+      : [],
+  )
+}
 
 export const isReading = (n: number | null | undefined): n is number =>
   typeof n === 'number' && Number.isFinite(n)
@@ -124,6 +154,7 @@ export type BarInput = {
   segments?: readonly MeterSegment[] | undefined
   zones?: readonly MeterZone[] | undefined
   target?: number | undefined
+  ticks?: readonly MeterTick[] | undefined
   color?: string | undefined
   forecastCaption?: string | undefined
 }
@@ -140,6 +171,7 @@ export type BarModel = {
   partCaptions: readonly PartCaption[]
   /** Only on a zoned track: every zone's name, in zone order. Empty otherwise. */
   zoneLabels: readonly ZoneLabel[]
+  ticks: readonly TickMark[]
   markerPct: number | undefined
   targetPct: number | undefined
   /** The default start caption (the zone is named on the band, so it is the bare reading); `startCaption` decides whether it shows. */
@@ -197,6 +229,7 @@ export function startCaptionText(model: BarModel, override: ReactNode | undefine
 
 export function modelBar(input: BarInput): BarModel {
   const { reading, min, max, format, segments, zones, target } = input
+  const ticks = tickMarks(input.ticks, min, max, format)
   const { span } = spanOf(min, max)
   const zoned = zones !== undefined && zones.length > 0
   const holding = zoned ? findHoldingZone(zones, reading) : undefined
@@ -221,6 +254,7 @@ export function modelBar(input: BarInput): BarModel {
     ...(segments?.map((s) => segmentText(s, format)) ?? []),
     ...zoneText,
     ...(target === undefined ? [] : [`Target ${format(target)}`]),
+    ...ticks.map((t) => t.text),
   ]
 
   return {
@@ -241,6 +275,7 @@ export function modelBar(input: BarInput): BarModel {
           startPct: zoneBand(z, min, span).start,
           holding: z === holding,
         })),
+    ticks,
     markerPct: zoned ? toPct((reading - min) / span) : undefined,
     targetPct: target === undefined ? undefined : toPct((target - min) / span),
     startText: format(reading),

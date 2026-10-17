@@ -12,11 +12,16 @@ import {
   zoneBand,
   zoneLabelsFit,
 } from './meter-model'
-import type { MeterSegment, MeterZone, Part, ZoneLabel } from './meter-model'
+import type { MeterSegment, MeterTick, MeterZone, Part, TickMark, ZoneLabel } from './meter-model'
 import classes from './meter.module.css'
 import { toPct } from './scale'
 
-export type Shell = { className: string | undefined; style: CSSProperties | undefined }
+export type Shell = {
+  className: string | undefined
+  style: CSSProperties | undefined
+  /** `size="row"`: one text line tall, no caption rows. */
+  row: boolean
+}
 
 /**
  * The one root contract of every Meter state. `data-basalt-meter` is the handle `StatCard` keys its
@@ -24,7 +29,7 @@ export type Shell = { className: string | undefined; style: CSSProperties | unde
  */
 function rootProps(shell: Shell) {
   return {
-    className: cx(classes.root, shell.className),
+    className: cx(classes.root, shell.row && classes.row, shell.className),
     style: shell.style,
     'data-basalt-meter': '',
   } as const
@@ -293,6 +298,54 @@ function ZoneLabels({ labels }: { labels: readonly ZoneLabel[] }) {
   )
 }
 
+/** Ticks past the middle caption to the left of their mark, so a caption near the end stays on the row. */
+const TICK_LABEL_FLIP_PCT = 50
+
+/**
+ * Captions the labelled ticks above the track, each hugging its mark. Same fit rule as the zone names:
+ * when two would overlap (or one would leave the row) the band hides and the labels wrap as a list in
+ * tick order. Decorative: the ticks are in the described-by text.
+ */
+function TickLabels({ ticks }: { ticks: readonly TickMark[] }) {
+  const rowRef = useRef<HTMLDivElement>(null)
+  const fits = useZoneLabelLayout(rowRef, ticks.map((t) => `${t.label}@${t.pct}`).join('\u0000'))
+  return (
+    <div className={classes.tickLabels}>
+      <div
+        ref={rowRef}
+        className={classes.tickBand}
+        data-meter-tick-band
+        data-collapsed={fits ? undefined : ''}
+        aria-hidden
+      >
+        {ticks.map((t) => (
+          <span
+            key={t.key}
+            className={classes.tickLabel}
+            data-meter-tick-label=""
+            style={
+              t.pct > TICK_LABEL_FLIP_PCT
+                ? { insetInlineEnd: `${100 - t.pct}%` }
+                : { insetInlineStart: `${t.pct}%` }
+            }
+          >
+            {t.label}
+          </span>
+        ))}
+      </div>
+      {!fits && (
+        <div className={classes.zoneList} data-meter-tick-list aria-hidden>
+          {ticks.map((t) => (
+            <span key={t.key} className={classes.zoneListItem}>
+              {t.label}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function MeterBar(props: {
   label: string
   reading: number
@@ -303,6 +356,8 @@ export function MeterBar(props: {
   segments: readonly MeterSegment[] | undefined
   zones: readonly MeterZone[] | undefined
   target: number | undefined
+  ticks: readonly MeterTick[] | undefined
+  tone: 'muted' | undefined
   forecastCaption: string | undefined
   startCaption: ReactNode
   endCaption: ReactNode
@@ -311,17 +366,24 @@ export function MeterBar(props: {
   const { label, reading, min, max, format, zones, shell } = props
   const describedId = useId()
   const model = modelBar(props)
-  const start = startCaptionText(model, props.startCaption)
-  const end = props.endCaption === undefined ? model.endText : props.endCaption
+  const compact = shell.row
+  const start = compact ? null : startCaptionText(model, props.startCaption)
+  const end = compact ? null : props.endCaption === undefined ? model.endText : props.endCaption
   const anchored = model.markerPct !== undefined && start !== null
-  const hasCaptions = (start !== null && !anchored) || end !== null || model.forecastText !== null
-  const hasParts = model.partCaptions.length > 0
+  const hasCaptions =
+    (start !== null && !anchored) || end !== null || (!compact && model.forecastText !== null)
+  const hasParts = !compact && model.partCaptions.length > 0
+  const tickLabels = compact ? [] : model.ticks.filter((t) => t.label !== undefined)
   const describedBy =
     model.describedByText === null ? {} : ({ 'aria-describedby': describedId } as const)
 
   const root = rootProps(shell)
   return (
-    <div {...root} className={cx(root.className, model.zoneLabels.length > 0 && classes.zoned)}>
+    <div
+      {...root}
+      className={cx(root.className, !compact && model.zoneLabels.length > 0 && classes.zoned)}
+    >
+      {tickLabels.length > 0 && <TickLabels ticks={tickLabels} />}
       <div
         className={classes.trackBox}
         aria-label={label}
@@ -343,15 +405,21 @@ export function MeterBar(props: {
               key={i}
               className={cx(classes.fill, p.forecast && classes.forecastFill)}
               data-meter-fill={p.forecast ? 'forecast' : 'committed'}
+              data-tone={
+                props.tone === 'muted' && p.color === undefined && !p.forecast ? 'muted' : undefined
+              }
               style={fillStyle(p)}
             />
           ))}
         </div>
         <Tick kind="marker" className={classes.marker} pct={model.markerPct} />
         <Tick kind="boundary" className={classes.boundaryTick} pct={model.boundaryPct} />
+        {model.ticks.map((t) => (
+          <Tick key={t.key} kind="tick" className={classes.tick} pct={t.pct} />
+        ))}
         <Tick kind="target" className={classes.tick} pct={model.targetPct} />
       </div>
-      {model.zoneLabels.length > 0 && <ZoneLabels labels={model.zoneLabels} />}
+      {!compact && model.zoneLabels.length > 0 && <ZoneLabels labels={model.zoneLabels} />}
       {anchored && <ZoneReading pct={model.markerPct ?? 0}>{start}</ZoneReading>}
       {model.describedByText !== null && (
         <VisuallyHidden id={describedId}>{model.describedByText}</VisuallyHidden>
@@ -376,7 +444,7 @@ export function MeterBar(props: {
       {hasCaptions && (
         <div className={classes.captions} data-meter-captions>
           {start !== null && !anchored && <span className={classes.caption}>{start}</span>}
-          {model.forecastText !== null && (
+          {!compact && model.forecastText !== null && (
             <span className={classes.caption}>{model.forecastText}</span>
           )}
           {end !== null && <span className={classes.captionEnd}>{end}</span>}
@@ -386,22 +454,27 @@ export function MeterBar(props: {
   )
 }
 
+/** A tick's width: the end tick's start edge sits this far inside the track. */
+const TICK_WIDTH = '2px'
+
+/**
+ * Centred on its percent, except at the track end: centred there it is half outside the track (and
+ * clipped or hidden by a full fill), so its end edge sits ON the track end and it reads inside.
+ */
+function tickPosition(pct: number): CSSProperties {
+  if (pct < 100) return { insetInlineStart: `${pct}%` }
+  return { insetInlineStart: `calc(100% - ${TICK_WIDTH})`, marginInlineStart: 0 }
+}
+
 function Tick({
   kind,
   className,
   pct,
 }: {
-  kind: 'marker' | 'boundary' | 'target'
+  kind: 'marker' | 'boundary' | 'target' | 'tick'
   className: string
   pct: number | undefined
 }) {
   if (pct === undefined) return null
-  return (
-    <div
-      className={className}
-      data-meter-tick={kind}
-      style={{ insetInlineStart: `${pct}%` }}
-      aria-hidden
-    />
-  )
+  return <div className={className} data-meter-tick={kind} style={tickPosition(pct)} aria-hidden />
 }

@@ -1053,6 +1053,19 @@ which disables the readout.
 New, additive: `reference={n | 'mean'}` draws a dashed `--vx-line` hairline and widens the y domain
 to include it (`'mean'` is over the plotted values).
 
+### `Meter` captions share one size, and gains `ticks`, `tone`, `size`
+
+**Changed default:** the `Meter` empty line ("No data") was `--vx-text-sm`; every Meter caption
+(reading, target, forecast, part, zone and tick names, the empty line) now reads one token,
+`--basalt-meter-caption`, defaulting to `--vx-text-micro`. **Opt out** (or follow the host text) per
+Meter: `style={{ '--basalt-meter-caption': 'var(--vx-text-sm)' }}`, or `1em` to inherit the host size.
+The target tick now also carries a 1px track-coloured halo, and at `target === max` sits inside the
+track end instead of straddling it.
+
+New, additive: `ticks={[{ at, label? }]}` (several marks; out-of-range ticks are dropped, not
+clamped), `tone="muted"` (a non-verdict fill, 3:1 against the track in both schemes), `size="row"`
+(one text line tall, no caption rows), and root types `MeterSegment`, `MeterZone`, `MeterTick`.
+
 ### `relativeTime` honours the format locale
 
 `relativeTime` (and `SyncButton`, which calls it with no locale) now falls back to the

@@ -54,6 +54,9 @@ export {
   DangerZone,
   Meter,
   type MeterProps,
+  type MeterSegment,
+  type MeterTick,
+  type MeterZone,
   BarList,
   type BarListProps,
 } from './dashboard'

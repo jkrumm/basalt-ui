@@ -104,6 +104,9 @@ Signature: Meter(props: MeterProps): JSX.Element
   emptyText?: string
   shape?: "bar" | "ring"
   target?: number  [with segments | zones]
+  ticks?: readonly MeterTick[]  [with segments | zones]
+  tone?: "muted"  [with segments | zones]
+  size?: "row"  [with segments | zones]
   startCaption?: ReactNode  [with segments | zones]
   endCaption?: ReactNode  [with segments | zones]
   value?: number | null  [with zones]
