@@ -41,7 +41,7 @@ import {
 } from './spend-data'
 import type { CumulativeRow, DistributionBin } from './spend-data'
 import { RETRY_ACTION } from './retry-action'
-import { fmtEur, fmtShare, fmtSignedEur } from './fixture-utils'
+import { fmtEur, fmtInt, fmtShare, fmtSignedEur } from './fixture-utils'
 import { cardStateProps, chartStateFor, retryCopy } from './shot-state'
 import type { ScenarioProps } from './shot-state'
 
@@ -277,7 +277,7 @@ function SpendCharts({ shotState }: ScenarioProps) {
               data={CUMULATIVE_DATA}
               ariaLabel={`Cumulative spend, ${MONTH_LABEL}, EUR, against the ${fmtEur(BUDGET_EUR)} budget`}
               x={(d) => d.date}
-              y={{ format: fmtEur, domain: [0, TRACK_END_EUR] }}
+              y={{ format: fmtInt, domain: [0, TRACK_END_EUR] }}
               series={CUMULATIVE_SERIES}
               refLines={BUDGET_LINES}
               tooltip={{ rows: forecastRow }}

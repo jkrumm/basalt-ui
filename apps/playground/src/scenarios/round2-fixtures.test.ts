@@ -7,6 +7,7 @@ import { createElement } from 'react'
 import type { ReactElement } from 'react'
 import { afterEach, describe, expect, it } from 'bun:test'
 import { ComponentsSurfaces } from '../demo/ComponentsPage'
+import { STUCK } from './agents-data'
 import { AgentsScenario } from './S3Agents'
 import { SpendScenario } from './S4Spend'
 import { TrainingScenario } from './S2Training'
@@ -39,7 +40,7 @@ describe('S4 spend', () => {
     expect(tickLabels(cell)).toEqual(['Budget'])
   })
 
-  it('states the euro unit once per card: in the facts, not the title', () => {
+  it('keeps the € out of the card titles and in the facts value', () => {
     const c = mount(createElement(SpendScenario, { shotState: undefined }))
     for (const name of ['spend-over-time', 'spend-by-project', 'top-drivers']) {
       const card = anchor(c, name)
@@ -160,10 +161,16 @@ describe('composition', () => {
     expect(shareGrid(c, 'hit-rate', 'readiness')).toBe(false)
   })
 
-  it('S3 pairs the waiting list with the flow chart', () => {
+  it('S3 gives the waiting list and the flow chart a full-width row each', () => {
     const c = mount(createElement(AgentsScenario, { shotState: undefined }))
     expect(order(c).slice(-2)).toEqual(['stuck-items', 'item-flow'])
-    expect(shareGrid(c, 'stuck-items', 'item-flow')).toBe(true)
+    expect(anchor(c, 'stuck-items')?.closest('.mantine-SimpleGrid-root')).toBeNull()
+    expect(anchor(c, 'item-flow')?.closest('.mantine-SimpleGrid-root')).toBeNull()
+  })
+
+  it('S3 lists every waiting or blocked item', () => {
+    const c = mount(createElement(AgentsScenario, { shotState: undefined }))
+    expect(anchor(c, 'stuck-items')?.querySelectorAll('li')).toHaveLength(STUCK.length)
   })
 
   it('S4 pairs chart with chart and list with list', () => {

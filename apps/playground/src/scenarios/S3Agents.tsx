@@ -13,12 +13,12 @@
  * `strip-footer-day` / `strip-footer-week`, present in every state; the empty / error note
  * `strip-footer-note` sits inside the day cell); `ChartCard` does not forward `data-*`, so those anchors are wrapping `Box`es.
  */
-import { Box, SimpleGrid, Stack } from '@mantine/core'
+import { Box, Stack } from '@mantine/core'
 import { BarList, DeltaBadge, Meter, PageBar, StatGroup, StatusVerdict } from 'basalt-ui'
 import type { StatStripCell } from 'basalt-ui'
 import { Bars, ChartCard, Sparkline } from 'basalt-ui/charts'
 import type { BarsBar } from 'basalt-ui/charts'
-import { CONTAINER_KEYS, VX } from 'basalt-ui/tokens'
+import { VX } from 'basalt-ui/tokens'
 import { demoColors } from '../demo/series'
 import {
   ABANDON_HOURS,
@@ -82,10 +82,7 @@ const stuckStatus = (i: (typeof STUCK)[number]) =>
     <StatusVerdict color={VX.faint} word="Needs you" />
   )
 
-/** The oldest rows only: nine rows stand 518 px tall at 1440 against the 386 px flow chart, six
- * stand level with it. The rest stay in the fact line's count, not in the list. */
-const STUCK_SHOWN = 6
-const STUCK_ITEMS = STUCK.slice(0, STUCK_SHOWN).map((i) => ({
+const STUCK_ITEMS = STUCK.map((i) => ({
   key: i.id,
   label: `${i.title} · ${i.repo}`,
   value: i.waitHours,
@@ -283,15 +280,15 @@ function QueueStrip({ shotState }: ScenarioProps) {
 }
 
 /**
- * Column rule: both columns end within one row-gap at 1440, by composition, never by stretching.
- * Measured: the 6-row list (oldest first) and the flow chart both stand ≈ 386 px at 1440 (chart
- * at its default height). At 390 the order is the list (470), then the flow (331).
+ * Column rule: a card with no short partner spans the row alone rather than pairing with a
+ * mismatched one. Measured at 1440: the 9-row list is 478 and the flow chart 542 (its default
+ * height at full width), one row each. At 390 the order is the list (651), then the flow (331).
  */
 function QueueRow({ shotState }: ScenarioProps) {
   const empty = shotState === 'empty'
   return (
-    <SimpleGrid type="container" cols={{ base: 1, [CONTAINER_KEYS.regular]: 2 }}>
-      <Box data-shot="stuck-items" h="100%">
+    <Stack gap="sm">
+      <Box data-shot="stuck-items">
         <ChartCard
           title="Waiting or blocked, by age"
           info={`Items waiting on your decision and items blocked on something else, oldest first. The status marks a wait past the ${WARN_LABEL} warning.`}
@@ -302,7 +299,7 @@ function QueueRow({ shotState }: ScenarioProps) {
             facts: {
               value: fmtInt(STUCK.length),
               unit: 'items',
-              period: `${NEEDS_YOU} need you · oldest ${STUCK_SHOWN} shown`,
+              period: `${NEEDS_YOU} need you`,
             },
           })}
           {...cardStateProps(shotState, retry('Waiting and blocked items'), STUCK_PLACEHOLDER)}
@@ -321,7 +318,7 @@ function QueueRow({ shotState }: ScenarioProps) {
           </Box>
         </ChartCard>
       </Box>
-      <Box data-shot="item-flow" h="100%">
+      <Box data-shot="item-flow">
         <ChartCard
           title="Items opened and closed per day"
           info="Items warden opened and items it closed each day, UTC. A queue that opens more than it closes grows."
@@ -348,7 +345,7 @@ function QueueRow({ shotState }: ScenarioProps) {
           </Box>
         </ChartCard>
       </Box>
-    </SimpleGrid>
+    </Stack>
   )
 }
 
