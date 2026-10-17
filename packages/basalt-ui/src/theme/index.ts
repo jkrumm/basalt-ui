@@ -86,7 +86,7 @@ import { CTL_HEIGHT_VARS } from '../tokens/ctl-vars'
 import type { CtlHeightVar } from '../tokens/ctl-vars'
 import { SIZE_CLASS_BREAKPOINTS } from '../tokens/size-classes'
 import type { BasaltFontsConfig } from '../tokens/core'
-import { onColor, onColorFor, subtleInkVars, tabsVars } from './chrome-vars'
+import { onColor, onColorFor, inkVars, tabsVars } from './chrome-vars'
 import controlsClasses from './controls.module.css'
 import floatingClasses from './floating.module.css'
 import navLinkClasses from './nav-link.module.css'
@@ -314,9 +314,9 @@ const basaltVariantColorResolver: VariantColorsResolver = (input) => {
     return autoContrast ? { ...resolved, color: on } : resolved
   }
 
-  // `subtle`/`light`/`outline` stay Mantine's: an unnamed-colour Button and ActionIcon get ink in `subtleInkVars`
-  // (the resolver is always handed `color || primaryColor`, so it cannot tell "unnamed" from an
-  // explicit primary colour — only the component props can).
+  // `subtle`, `light` and `outline` stay Mantine's: a Button or ActionIcon that names no colour gets
+  // ink for them in `inkVars` (the resolver is always handed `color || primaryColor`, so it cannot
+  // tell "unnamed" from an explicit primary colour — only the component props can).
   // `outline`: the tone's own text colour, pulled toward ink so the label keeps its hue at AA
   // (grey outline badges measured 3.9:1 on the light page).
   if (input.variant === 'outline') {
@@ -676,7 +676,7 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
       Button: ext<typeof Button>({
         classNames: { root: controlsClasses.buttonRoot },
         vars: (_theme, props) => {
-          const ink = subtleInkVars(props)
+          const ink = inkVars(props)
           return {
             root: {
               '--button-height':
@@ -694,7 +694,7 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
       ActionIcon: ext<typeof ActionIcon>({
         classNames: { root: controlsClasses.actionIconRoot },
         vars: (_theme, props) => {
-          const ink = subtleInkVars(props)
+          const ink = inkVars(props)
           return {
             root: {
               '--ai-size':

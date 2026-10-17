@@ -194,7 +194,7 @@ exports[`createBasaltTheme() shape and resolver output default 1`] = `
       "vars": {
         "fn": 
 "(_theme, props) => {
-          const ink = subtleInkVars(props);
+          const ink = inkVars(props);
           return {
             root: {
               "--ai-size": props.size === "md" ? "calc(var(--vx-space-control-height) * var(--mantine-scale))" : void 0,
@@ -213,7 +213,7 @@ exports[`createBasaltTheme() shape and resolver output default 1`] = `
           },
           {
             "probes": 42,
-            "result": "{"root":{"--ai-color":"var(--vx-ink)","--ai-hover":"var(--mantine-color-gray-light-hover)","--ai-bg":"var(--mantine-color-gray-light)"}}",
+            "result": "{"root":{"--ai-color":"var(--vx-ink)","--ai-hover":"color-mix(in srgb, var(--vx-ink) 6%, var(--vx-surface-subtle))","--ai-bg":"var(--vx-surface-subtle)"}}",
           },
           {
             "probes": 42,
@@ -229,7 +229,7 @@ exports[`createBasaltTheme() shape and resolver output default 1`] = `
           },
           {
             "probes": 6,
-            "result": "{"root":{"--ai-size":"calc(var(--vx-space-control-height) * var(--mantine-scale))","--ai-color":"var(--vx-ink)","--ai-hover":"var(--mantine-color-gray-light-hover)","--ai-bg":"var(--mantine-color-gray-light)"}}",
+            "result": "{"root":{"--ai-size":"calc(var(--vx-space-control-height) * var(--mantine-scale))","--ai-color":"var(--vx-ink)","--ai-hover":"color-mix(in srgb, var(--vx-ink) 6%, var(--vx-surface-subtle))","--ai-bg":"var(--vx-surface-subtle)"}}",
           },
           {
             "probes": 6,
@@ -289,7 +289,7 @@ exports[`createBasaltTheme() shape and resolver output default 1`] = `
       "vars": {
         "fn": 
 "(_theme, props) => {
-          const ink = subtleInkVars(props);
+          const ink = inkVars(props);
           return {
             root: {
               "--button-height": props.size === "md" ? "calc(var(--vx-space-control-height) * var(--mantine-scale))" : void 0,
@@ -308,7 +308,7 @@ exports[`createBasaltTheme() shape and resolver output default 1`] = `
           },
           {
             "probes": 42,
-            "result": "{"root":{"--button-color":"var(--vx-ink)","--button-hover":"var(--mantine-color-gray-light-hover)","--button-bg":"var(--mantine-color-gray-light)"}}",
+            "result": "{"root":{"--button-color":"var(--vx-ink)","--button-hover":"color-mix(in srgb, var(--vx-ink) 6%, var(--vx-surface-subtle))","--button-bg":"var(--vx-surface-subtle)"}}",
           },
           {
             "probes": 42,
@@ -324,7 +324,7 @@ exports[`createBasaltTheme() shape and resolver output default 1`] = `
           },
           {
             "probes": 6,
-            "result": "{"root":{"--button-height":"calc(var(--vx-space-control-height) * var(--mantine-scale))","--button-color":"var(--vx-ink)","--button-hover":"var(--mantine-color-gray-light-hover)","--button-bg":"var(--mantine-color-gray-light)"}}",
+            "result": "{"root":{"--button-height":"calc(var(--vx-space-control-height) * var(--mantine-scale))","--button-color":"var(--vx-ink)","--button-hover":"color-mix(in srgb, var(--vx-ink) 6%, var(--vx-surface-subtle))","--button-bg":"var(--vx-surface-subtle)"}}",
           },
           {
             "probes": 6,
@@ -1372,7 +1372,7 @@ exports[`createBasaltTheme() shape and resolver output all knobs 1`] = `
       "vars": {
         "fn": 
 "(_theme, props) => {
-          const ink = subtleInkVars(props);
+          const ink = inkVars(props);
           return {
             root: {
               "--ai-size": props.size === "md" ? "calc(var(--vx-space-control-height) * var(--mantine-scale))" : void 0,
@@ -1391,7 +1391,7 @@ exports[`createBasaltTheme() shape and resolver output all knobs 1`] = `
           },
           {
             "probes": 42,
-            "result": "{"root":{"--ai-color":"var(--vx-ink)","--ai-hover":"var(--mantine-color-gray-light-hover)","--ai-bg":"var(--mantine-color-gray-light)"}}",
+            "result": "{"root":{"--ai-color":"var(--vx-ink)","--ai-hover":"color-mix(in srgb, var(--vx-ink) 6%, var(--vx-surface-subtle))","--ai-bg":"var(--vx-surface-subtle)"}}",
           },
           {
             "probes": 42,
@@ -1407,7 +1407,7 @@ exports[`createBasaltTheme() shape and resolver output all knobs 1`] = `
           },
           {
             "probes": 6,
-            "result": "{"root":{"--ai-size":"calc(var(--vx-space-control-height) * var(--mantine-scale))","--ai-color":"var(--vx-ink)","--ai-hover":"var(--mantine-color-gray-light-hover)","--ai-bg":"var(--mantine-color-gray-light)"}}",
+            "result": "{"root":{"--ai-size":"calc(var(--vx-space-control-height) * var(--mantine-scale))","--ai-color":"var(--vx-ink)","--ai-hover":"color-mix(in srgb, var(--vx-ink) 6%, var(--vx-surface-subtle))","--ai-bg":"var(--vx-surface-subtle)"}}",
           },
           {
             "probes": 6,
@@ -1467,7 +1467,7 @@ exports[`createBasaltTheme() shape and resolver output all knobs 1`] = `
       "vars": {
         "fn": 
 "(_theme, props) => {
-          const ink = subtleInkVars(props);
+          const ink = inkVars(props);
           return {
             root: {
               "--button-height": props.size === "md" ? "calc(var(--vx-space-control-height) * var(--mantine-scale))" : void 0,
@@ -1486,7 +1486,7 @@ exports[`createBasaltTheme() shape and resolver output all knobs 1`] = `
           },
           {
             "probes": 42,
-            "result": "{"root":{"--button-color":"var(--vx-ink)","--button-hover":"var(--mantine-color-gray-light-hover)","--button-bg":"var(--mantine-color-gray-light)"}}",
+            "result": "{"root":{"--button-color":"var(--vx-ink)","--button-hover":"color-mix(in srgb, var(--vx-ink) 6%, var(--vx-surface-subtle))","--button-bg":"var(--vx-surface-subtle)"}}",
           },
           {
             "probes": 42,
@@ -1502,7 +1502,7 @@ exports[`createBasaltTheme() shape and resolver output all knobs 1`] = `
           },
           {
             "probes": 6,
-            "result": "{"root":{"--button-height":"calc(var(--vx-space-control-height) * var(--mantine-scale))","--button-color":"var(--vx-ink)","--button-hover":"var(--mantine-color-gray-light-hover)","--button-bg":"var(--mantine-color-gray-light)"}}",
+            "result": "{"root":{"--button-height":"calc(var(--vx-space-control-height) * var(--mantine-scale))","--button-color":"var(--vx-ink)","--button-hover":"color-mix(in srgb, var(--vx-ink) 6%, var(--vx-surface-subtle))","--button-bg":"var(--vx-surface-subtle)"}}",
           },
           {
             "probes": 6,

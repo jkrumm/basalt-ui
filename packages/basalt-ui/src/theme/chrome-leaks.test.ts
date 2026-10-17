@@ -5,6 +5,8 @@
 import { DEFAULT_THEME, mergeMantineTheme } from '@mantine/core'
 import type { MantineTheme, MantineThemeOverride } from '@mantine/core'
 import { describe, expect, test } from 'bun:test'
+import { readFileSync } from 'node:fs'
+import { dirname } from 'node:path'
 import { contrastRatio } from '../tokens/hct'
 import { INK, RADIUS_STEP, SURFACE } from '../tokens/palette'
 import { tabsVars } from './chrome-vars'
@@ -16,6 +18,18 @@ const merge = (override: MantineThemeOverride): MantineTheme =>
 const theme = merge(baseTheme)
 const SCHEMES = ['light', 'dark'] as const
 const AA = 4.5
+
+type Props = { color?: string; variant?: string; size?: string }
+type Root = Record<string, string | undefined>
+type Resolver = (t: MantineTheme, props: Props, ctx: unknown) => { root: Root }
+
+/** The theme's own `vars` resolver for a component, typed by what it is called with and returns. */
+const rootVars = (component: 'Button' | 'ActionIcon', t: MantineTheme, props: Props): Root => {
+  const resolve: unknown = baseTheme.components?.[component]?.vars
+  if (typeof resolve !== 'function') throw new Error(`${component} sets no vars resolver`)
+  const typed: Resolver = (...args) => resolve(...args)
+  return typed(t, props, undefined).root
+}
 
 describe('Badge is the status chip', () => {
   const badge = baseTheme.components?.['Badge']
@@ -43,13 +57,7 @@ describe('Badge is the status chip', () => {
 
 describe('subtle Button / ActionIcon: only an unnamed colour takes ink', () => {
   const greenPrimary = merge({ ...baseTheme, primaryColor: 'green' })
-  const vars = (component: 'Button' | 'ActionIcon', t: MantineTheme, props: object) => {
-    const resolve = baseTheme.components?.[component]?.vars as (
-      t: MantineTheme,
-      props: object,
-    ) => { root: Record<string, string | undefined> }
-    return resolve(t, props).root
-  }
+  const vars = rootVars
   const KEYS = {
     Button: ['--button-color', '--button-hover'],
     ActionIcon: ['--ai-color', '--ai-hover'],
@@ -86,14 +94,20 @@ describe('subtle Button / ActionIcon: only an unnamed colour takes ink', () => {
   }
 })
 
-describe('light / outline Button / ActionIcon: only an unnamed colour takes ink', () => {
-  const vars = (component: 'Button' | 'ActionIcon', props: object) => {
-    const resolve = baseTheme.components?.[component]?.vars as (
-      t: MantineTheme,
-      props: object,
-    ) => { root: Record<string, string | undefined> }
-    return resolve(theme, props).root
+test("Mantine's disabled rule sets colour, background and border directly, so the ink vars cannot leak into it", () => {
+  const dir = dirname(require.resolve('@mantine/core/package.json'))
+  for (const css of ['Button', 'ActionIcon']) {
+    const source = readFileSync(`${dir}/styles/${css}.css`, 'utf8')
+    const rule = /:where\(:disabled:not\(\[data-loading\]\)[^{]*\{([^}]*)\}/.exec(source)?.[1] ?? ''
+    expect(rule).toContain('color: var(--mantine-color-disabled-color)')
+    expect(rule).toContain('background: var(--mantine-color-disabled)')
+    expect(rule).toContain('border:')
   }
+})
+
+describe('light / outline Button / ActionIcon: only an unnamed colour takes ink', () => {
+  const vars = (component: 'Button' | 'ActionIcon', props: Props) =>
+    rootVars(component, theme, props)
   const KEYS = {
     Button: {
       color: '--button-color',
@@ -107,11 +121,9 @@ describe('light / outline Button / ActionIcon: only an unnamed colour takes ink'
   for (const component of ['Button', 'ActionIcon'] as const) {
     const k = KEYS[component]
 
-    test(`${component}: light, no colour -> neutral tint, ink label`, () => {
+    test(`${component}: light, no colour -> subtle surface, ink label`, () => {
       const root = vars(component, { variant: 'light' })
       expect(root[k.color]).toBe('var(--vx-ink)')
-      expect(root[k.bg]).toBe('var(--mantine-color-gray-light)')
-      expect(root[k.hover]).toBe('var(--mantine-color-gray-light-hover)')
       expect(root[k.bd]).toBeUndefined()
     })
 
@@ -132,9 +144,23 @@ describe('light / outline Button / ActionIcon: only an unnamed colour takes ink'
       }
     }
 
-    test(`${component}: filled is untouched`, () => {
-      const root = vars(component, { variant: 'filled' })
-      for (const key of Object.values(k)) expect(root[key]).toBeUndefined()
+    for (const variant of ['filled', 'default', 'white', 'transparent', undefined]) {
+      test(`${component}: variant ${variant ?? '(omitted)'} emits none of the four keys`, () => {
+        const root = vars(component, variant ? { variant } : {})
+        for (const key of Object.values(k)) expect(root[key]).toBeUndefined()
+      })
+    }
+
+    for (const variant of ['light', 'outline']) {
+      test(`${component}: ${variant} color="" counts as unnamed -> ink`, () => {
+        expect(vars(component, { variant, color: '' })[k.color]).toBe('var(--vx-ink)')
+      })
+    }
+
+    test(`${component}: light hover is one ink step off the light bg`, () => {
+      const root = vars(component, { variant: 'light' })
+      expect(root[k.bg]).toBe('var(--vx-surface-subtle)')
+      expect(root[k.hover]).toBe('color-mix(in srgb, var(--vx-ink) 6%, var(--vx-surface-subtle))')
     })
   }
 })
