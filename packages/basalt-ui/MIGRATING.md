@@ -1186,9 +1186,8 @@ left-aligned stack of dot, "Could not load this chart", the message and `stateAc
 old body clipped Retry at 390px, so there is no layout worth restoring; pass your own `state` copy via the
 error's message.
 
-**Changed default — tick size.** Chart tick labels are `--vx-text-micro` at every container width (they were
-the 10px nano rung below 480px). **No opt-out:** one size is the law; a host that wants smaller ticks sets a
-smaller `font-size` on the chart host.
+**Changed default — tick size.** Chart tick labels (every kind, `Heatmap` included) are `--vx-text-micro`
+at every container width; they were the 10px nano rung below 480px. **No opt-out:** one size is the law.
 
 **Changed default — `Meter` captions.** They wrap with `text-wrap: balance`, and the last two words of a
 caption `Meter` composes are joined by a no-break space when the last is 6 characters or fewer

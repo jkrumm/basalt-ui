@@ -261,7 +261,7 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
         const ticks = { line: false as const, size: 0 }
         const cls = resolveContainerClass(width)
         const tickLabels = {
-          fontSize: cls === 'wide' ? VX.text.micro : VX.text.nano,
+          fontSize: VX.text.micro,
           opacity: 1,
           thin: true,
         }
