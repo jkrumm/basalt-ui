@@ -8,6 +8,7 @@ import {
   DISTANCE_7D_TREND,
   DISTANCE_CHANGE_PCT,
   GOAL_SESSIONS,
+  HIT_HISTORY,
   HIT_MONTHS,
   HIT_RATE_PCT,
   HIT_RANGE_LABEL,
@@ -115,5 +116,12 @@ describe('training-data', () => {
     expect(Number.isFinite(LOAD_RATIO)).toBe(true)
     expect(LOAD_RATIO).toBeGreaterThan(0)
     expect(LOAD_RATIO).toBeLessThan(LOAD_MAX)
+  })
+
+  it('the hit-rate history labels every complete month and agrees with the rate', () => {
+    expect(HIT_HISTORY.length).toBeGreaterThanOrEqual(6)
+    expect(HIT_HISTORY.map((m) => m.label)).toEqual(['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'])
+    expect(HIT_HISTORY.map((m) => m.sessions)).toEqual([...MONTHLY_SESSIONS])
+    expect(HIT_HISTORY.filter((m) => m.sessions >= GOAL_SESSIONS)).toHaveLength(MONTHS_HIT)
   })
 })

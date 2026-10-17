@@ -238,3 +238,11 @@ export const MONTHLY_SESSIONS: readonly number[] = Array.from({ length: HIT_MONT
 })
 export const MONTHS_HIT = MONTHLY_SESSIONS.filter((n) => n >= GOAL_SESSIONS).length
 export const HIT_RATE_PCT = Math.round((MONTHS_HIT / HIT_MONTHS) * 100)
+
+/** Each complete month with its short name and whether it reached the goal, oldest first. */
+export const HIT_HISTORY: readonly { label: string; sessions: number }[] = MONTHLY_SESSIONS.map(
+  (sessions, k) => ({
+    label: monthName(new Date(Date.UTC(YEAR, month - HIT_MONTHS + k, 1)), 'short'),
+    sessions,
+  }),
+)

@@ -105,12 +105,27 @@ export const FLEET: readonly { state: ItemState; label: string; count: number }[
 ).filter((s) => s.count > 0)
 export const FLEET_TOTAL = ITEMS.length
 
+/** The 24 h the failures are read over: `end` is the reading time, `start` 24 h before it. */
+export const FAILURES_WINDOW = {
+  start: new Date(Date.UTC(2026, 9, 15, 15)),
+  end: new Date(Date.UTC(2026, 9, 16, 15)),
+}
+const HOUR_MS = 3_600_000
+/** When each failed run ended, oldest first (UTC). */
+export const FAILURE_TIMES: readonly Date[] = [
+  Date.UTC(2026, 9, 15, 19, 20),
+  Date.UTC(2026, 9, 16, 8, 5),
+  Date.UTC(2026, 9, 16, 13, 40),
+].map((t) => new Date(t))
 /** Failed agent runs in the last 24 h, and in the 24 h before. */
-export const FAILURES_24H = { count: 3, prior: 1 }
+export const FAILURES_24H = { count: FAILURE_TIMES.length, prior: 1 }
 /** Failed runs per hour over the last 24 h, oldest first; sums to `FAILURES_24H.count`. */
-export const FAILURES_BY_HOUR: readonly number[] = [
-  0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0,
-]
+export const FAILURES_BY_HOUR: readonly number[] = Array.from({ length: 24 }, (_, h) => {
+  const from = FAILURES_WINDOW.start.getTime() + h * HOUR_MS
+  return FAILURE_TIMES.filter((t) => t.getTime() >= from && t.getTime() < from + HOUR_MS).length
+})
+/** `13:00 UTC` — when the latest failed run ended. */
+export const FAILURES_LATEST_LABEL = `${String(FAILURE_TIMES.at(-1)?.getUTCHours() ?? 0).padStart(2, '0')}:00 UTC`
 
 /** Dispatch spend per day in EUR, 14 days, oldest first; the last entry is today so far. */
 export const DISPATCH_DAILY: readonly number[] = [

@@ -10,13 +10,15 @@
  * draw their own loading and empty states (`shot-state` → `loading` / no reading); the card only
  * takes the error.
  */
-import { Box, Group, SimpleGrid, Skeleton, Stack, Text } from '@mantine/core'
+import { Box, SimpleGrid, Skeleton, Stack, Text } from '@mantine/core'
 import { BarList, Meter, PageBar, StatCard, StatGroup } from 'basalt-ui'
-import { ChartCard, Sparkline } from 'basalt-ui/charts'
-import { CONTAINER_KEYS } from 'basalt-ui/tokens'
+import { Bars, ChartCard, Sparkline } from 'basalt-ui/charts'
+import type { BarsBar } from 'basalt-ui/charts'
+import { CONTAINER_KEYS, VX } from 'basalt-ui/tokens'
 import { demoColors } from '../demo/series'
 import { fmtInt, fmtKg, fmtKm, fmtRatio, fmtShare } from './fixture-utils'
-import { cardStateProps, queryFor, retryCopy } from './shot-state'
+import { RETRY_ACTION } from './retry-action'
+import { cardStateProps, chartStateFor, queryFor, retryCopy } from './shot-state'
 import type { ScenarioProps } from './shot-state'
 import {
   ACUTE_LOAD,
@@ -27,6 +29,7 @@ import {
   DISTANCE_CHANGE_PCT,
   DISTANCE_MTD_KM,
   GOAL_SESSIONS,
+  HIT_HISTORY,
   HIT_MONTHS,
   HIT_RANGE_LABEL,
   HIT_RATE_PCT,
@@ -69,7 +72,7 @@ const TRAINING_EMPTY = 'No sessions logged this month. Log a workout to start th
 const retry = (what: string): string => retryCopy(what, 'training log')
 
 /** Body heights for the error placeholder, so a failed card stays near its resting size. */
-const PLACEHOLDER = { meter: 72, ring: 104, readiness: 168, lifts: 184 }
+const PLACEHOLDER = { meter: 72, readiness: 168, lifts: 184 }
 
 /** `Low under 60, Fair 60–79, Good 80+` — the legend, built from the zones the Meter draws. */
 const READINESS_INFO = `Mean of the four contributors below, each scored 0–100: ${READINESS_ZONES.map(
@@ -77,7 +80,6 @@ const READINESS_INFO = `Mean of the four contributors below, each scored 0–100
     `${z.label} ${i === 0 ? `under ${z.to}` : i === all.length - 1 ? `${z.from}+` : `${z.from}–${z.to - 1}`}`,
 ).join(', ')}.`
 
-const percent = (value: number): string => `${Math.round(value)}%`
 const aheadOrBehind = (gap: number): string =>
   gap === 0 ? 'on pace' : `${Math.abs(gap)} ${gap > 0 ? 'ahead of' : 'behind'} pace`
 
@@ -95,6 +97,13 @@ const READINESS_ITEMS = CONTRIBUTORS.toSorted((a, b) => b.value - a.value).map((
   value: c.value,
   secondary: readinessLevel(c.value),
 }))
+const HIT_BARS: BarsBar<(typeof HIT_HISTORY)[number]>[] = [
+  { key: 'sessions', label: 'Sessions', color: demoColors.sessions, getValue: (d) => d.sessions },
+]
+const HIT_DATA = [...HIT_HISTORY]
+const HIT_TICKS = HIT_HISTORY.map((m) => m.label)
+/** The goal line sits inside the y domain: the tallest month and the goal both fit under it. */
+const HIT_Y_MAX = 40
 const TOP_LIFT_COUNT = 6
 const LIFT_ITEMS = TOP_LIFTS.slice(0, TOP_LIFT_COUNT).map((l) => ({
   label: l.name,
@@ -195,8 +204,9 @@ function TrainingStats({ shotState }: ScenarioProps) {
 }
 
 /**
- * The goal and the mix are short meter cards stacked in one column, beside the taller ring card:
- * two like-height columns, so neither card is stretched into an empty lower half.
+ * Column rule: both columns of a row end within one row-gap at 1440, by composition, never by
+ * stretching. Measured: goal 95 + mix 115 + load 151 + 2 gaps = 385 against the history chart 386.
+ * At 390 the order is goal, mix, load, history.
  */
 function GoalRow({ shotState }: ScenarioProps) {
   const empty = shotState === 'empty'
@@ -245,28 +255,43 @@ function GoalRow({ shotState }: ScenarioProps) {
             </Box>
           </ChartCard>
         </Box>
+        <LoadCard shotState={shotState} />
       </Stack>
       <Box data-shot="hit-rate" h="100%">
         <ChartCard
           title={`Goal hit rate, ${HIT_RANGE_LABEL}`}
-          info={`Share of the last ${HIT_MONTHS} complete months that reached ${GOAL_SESSIONS} sessions.`}
-          {...cardStateProps(shotState, retry('The goal hit rate'), PLACEHOLDER.ring)}
+          {...(shotState === undefined && {
+            facts: {
+              value: `${MONTHS_HIT} of ${HIT_MONTHS}`,
+              unit: 'months',
+              period: `reached ${GOAL_SESSIONS} sessions (${HIT_RATE_PCT}%)`,
+            },
+          })}
+          info={`Sessions per complete month against the goal of ${GOAL_SESSIONS}; the hit rate is the share of the last ${HIT_MONTHS} months that reached it.`}
+          state={chartStateFor(shotState, {
+            empty: 'No complete month logged yet. The history appears after the first full month.',
+            error: retry('The goal hit rate'),
+          })}
+          {...(shotState === 'error' && { stateAction: RETRY_ACTION })}
         >
-          <Group gap="lg" wrap="nowrap">
-            <Meter
-              shape="ring"
-              label={`Goal hit rate, ${HIT_RANGE_LABEL}`}
-              value={empty ? null : HIT_RATE_PCT}
-              format={percent}
-              loading={loading}
-              emptyText="No complete month logged yet. The rate appears after the first full month."
+          <Box data-shot-hover data-shot-tooltip>
+            <Bars
+              data={HIT_DATA}
+              ariaLabel={`Sessions per month against the goal of ${GOAL_SESSIONS}, ${HIT_RANGE_LABEL}`}
+              x={(d) => d.label}
+              xTicks={HIT_TICKS}
+              y={{ domain: [0, HIT_Y_MAX] }}
+              bars={HIT_BARS}
+              refLines={[
+                {
+                  value: GOAL_SESSIONS,
+                  color: VX.faint,
+                  dashed: true,
+                  label: `Goal ${GOAL_SESSIONS}`,
+                },
+              ]}
             />
-            {shotState === undefined && (
-              <Text size="sm" c="dimmed">
-                {MONTHS_HIT} of {HIT_MONTHS} months reached {GOAL_SESSIONS} sessions.
-              </Text>
-            )}
-          </Group>
+          </Box>
         </ChartCard>
       </Box>
     </SimpleGrid>
@@ -301,7 +326,10 @@ function LoadCard({ shotState }: ScenarioProps) {
   )
 }
 
-/** Two tall BarList cards side by side: like heights, so the row has no empty half. */
+/**
+ * Column rule: cards of like natural height share a row, so neither is stretched. Measured at
+ * 1440: readiness 283 and top lifts 283. At 390 the order is readiness, then lifts.
+ */
 function ReadinessRow({ shotState }: ScenarioProps) {
   const empty = shotState === 'empty'
   const loading = shotState === 'loading'
@@ -372,7 +400,6 @@ export function TrainingScenario({ shotState }: ScenarioProps) {
       <Summary shotState={shotState} />
       <TrainingStats shotState={shotState} />
       <GoalRow shotState={shotState} />
-      <LoadCard shotState={shotState} />
       <ReadinessRow shotState={shotState} />
     </Stack>
   )

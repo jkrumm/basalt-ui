@@ -41,7 +41,7 @@ import {
 } from './spend-data'
 import type { CumulativeRow, DistributionBin } from './spend-data'
 import { RETRY_ACTION } from './retry-action'
-import { fmtEur, fmtShare, fmtSignedEur } from './fixture-utils'
+import { fmtEur, fmtInt, fmtShare, fmtSignedEur } from './fixture-utils'
 import { cardStateProps, chartStateFor, retryCopy } from './shot-state'
 import type { ScenarioProps } from './shot-state'
 
@@ -184,7 +184,7 @@ function SpendStats({ shotState }: ScenarioProps) {
       ...(overBudget && { tone: 'bad' as const }),
       loading,
       ...(overBudget && {
-        footer: `${fmtEur(FORECAST_EUR - BUDGET_EUR)} over the ${fmtEur(BUDGET_EUR)} budget`,
+        footer: `${fmtEur(FORECAST_EUR - BUDGET_EUR)} over budget`,
       }),
       ...(!hidden && {
         visual: (
@@ -197,7 +197,7 @@ function SpendStats({ shotState }: ScenarioProps) {
               { value: MTD_EUR, label: 'Spent' },
               { value: FORECAST_EUR - MTD_EUR, label: 'Forecast', forecast: true },
             ]}
-            forecastCaption={`Forecast ${fmtEur(FORECAST_EUR)}`}
+            forecastCaption="Forecast"
             startCaption={`Spent ${fmtEur(MTD_EUR)}`}
           />
         ),
@@ -250,12 +250,17 @@ function SpendStats({ shotState }: ScenarioProps) {
   )
 }
 
+/**
+ * Column rule: cards of one kind share a row, so natural heights match and nothing is stretched.
+ * Measured at 1440: the two charts 386 each, the two 6-row BarLists 252 each. At 390 the order is
+ * cumulative, distribution, by project, drivers.
+ */
 function SpendCharts({ shotState }: ScenarioProps) {
   return (
     <SimpleGrid type="container" cols={{ base: 1, [CONTAINER_KEYS.regular]: 2 }}>
       <Box data-shot="spend-over-time" h="100%">
         <ChartCard
-          title="Cumulative spend (€)"
+          title="Cumulative spend"
           facts={{
             value: fmtEur(MTD_EUR),
             period: `spent ${WINDOW_LABEL}, of ${fmtEur(BUDGET_EUR)} budget`,
@@ -272,7 +277,7 @@ function SpendCharts({ shotState }: ScenarioProps) {
               data={CUMULATIVE_DATA}
               ariaLabel={`Cumulative spend, ${MONTH_LABEL}, EUR, against the ${fmtEur(BUDGET_EUR)} budget`}
               x={(d) => d.date}
-              y={{ format: fmtEur, domain: [0, TRACK_END_EUR] }}
+              y={{ format: fmtInt, domain: [0, TRACK_END_EUR] }}
               series={CUMULATIVE_SERIES}
               refLines={BUDGET_LINES}
               tooltip={{ rows: forecastRow }}
@@ -280,63 +285,7 @@ function SpendCharts({ shotState }: ScenarioProps) {
           </Box>
         </ChartCard>
       </Box>
-      <Box data-shot="spend-by-project" h="100%">
-        {/* A BarList, not a segmented Meter (SPEC § 3): six parts is the top of the "2–6 parts" row,
-            and six near-identical hues with captions under 5 % segments do not survive 390 px; the
-            question is also "which project", a ranking, which length on a shared scale answers. */}
-        <ChartCard
-          title="Spend by project (€)"
-          {...(shotState === undefined && {
-            facts: { value: fmtEur(MTD_EUR), period: `all projects, ${WINDOW_LABEL}` },
-          })}
-          info="Each project's share of month-to-date spend across all models."
-          {...cardStateProps(shotState, retry('Spend by project'), PROJECT_PLACEHOLDER)}
-        >
-          <Box data-shot-hover>
-            <BarList
-              label={`Spend by project, ${WINDOW_LABEL}, EUR`}
-              items={shotState === 'empty' ? [] : PROJECT_ITEMS}
-              format={fmtEur}
-              accentLeader
-              loading={shotState === 'loading'}
-              emptyText={`No project spent anything ${WINDOW_LABEL}. Connect one to the usage export.`}
-            />
-          </Box>
-        </ChartCard>
-      </Box>
-    </SimpleGrid>
-  )
-}
-
-function SpendDrivers({ shotState }: ScenarioProps) {
-  return (
-    <SimpleGrid
-      type="container"
-      cols={{ base: 1, [CONTAINER_KEYS.regular]: 2 }}
-      style={{ alignItems: 'start' }}
-    >
-      <Box data-shot="top-drivers">
-        <ChartCard
-          title={`Top drivers, ${WINDOW_LABEL} vs ${PRIOR_WINDOW_LABEL}`}
-          info={`The € each project added against ${PRIOR_WINDOW_LABEL}, with the relative change.`}
-          {...cardStateProps(shotState, retry('Top drivers'), PROJECT_PLACEHOLDER)}
-        >
-          <Box data-shot-hover>
-            <BarList
-              label={`Spend added against ${PRIOR_WINDOW_LABEL} by project, EUR`}
-              items={shotState === 'empty' ? [] : DRIVER_ITEMS}
-              format={fmtSignedEur}
-              loading={shotState === 'loading'}
-              emptyText={
-                shotState === 'empty'
-                  ? USAGE_EMPTY
-                  : `No project spent more than ${PRIOR_WINDOW_LABEL}. Spend is flat or falling.`
-              }
-            />
-          </Box>
-        </ChartCard>
-      </Box>
-      <Box data-shot="spend-distribution">
+      <Box data-shot="spend-distribution" h="100%">
         <ChartCard
           title="Days by total spend per day"
           facts={{ value: fmtEur(MEDIAN_DAY_EUR), unit: 'a day', period: 'median, last 90 days' }}
@@ -363,6 +312,64 @@ function SpendDrivers({ shotState }: ScenarioProps) {
   )
 }
 
+function SpendBreakdown({ shotState }: ScenarioProps) {
+  return (
+    <SimpleGrid type="container" cols={{ base: 1, [CONTAINER_KEYS.regular]: 2 }}>
+      <Box data-shot="spend-by-project" h="100%">
+        {/* A BarList, not a segmented Meter (SPEC § 3): six parts is the top of the "2–6 parts" row,
+            and six near-identical hues with captions under 5 % segments do not survive 390 px; the
+            question is also "which project", a ranking, which length on a shared scale answers. */}
+        <ChartCard
+          title="Spend by project"
+          {...(shotState === undefined && {
+            facts: { value: fmtEur(MTD_EUR), period: `all projects, ${WINDOW_LABEL}` },
+          })}
+          info="Each project's share of month-to-date spend across all models."
+          {...cardStateProps(shotState, retry('Spend by project'), PROJECT_PLACEHOLDER)}
+        >
+          <Box data-shot-hover>
+            <BarList
+              label={`Spend by project, ${WINDOW_LABEL}, EUR`}
+              items={shotState === 'empty' ? [] : PROJECT_ITEMS}
+              format={fmtEur}
+              accentLeader
+              loading={shotState === 'loading'}
+              emptyText={`No project spent anything ${WINDOW_LABEL}. Connect one to the usage export.`}
+            />
+          </Box>
+        </ChartCard>
+      </Box>
+      <Box data-shot="top-drivers" h="100%">
+        <ChartCard
+          title={`Top drivers, ${WINDOW_LABEL} vs ${PRIOR_WINDOW_LABEL}`}
+          {...(shotState === undefined && {
+            facts: {
+              value: fmtEur(DRIVERS.reduce((a, p) => a + p.delta, 0)),
+              period: `added by ${DRIVERS.length} projects vs ${PRIOR_WINDOW_LABEL}`,
+            },
+          })}
+          info={`The € each project added against ${PRIOR_WINDOW_LABEL}, with the relative change.`}
+          {...cardStateProps(shotState, retry('Top drivers'), PROJECT_PLACEHOLDER)}
+        >
+          <Box data-shot-hover>
+            <BarList
+              label={`Spend added against ${PRIOR_WINDOW_LABEL} by project, EUR`}
+              items={shotState === 'empty' ? [] : DRIVER_ITEMS}
+              format={fmtSignedEur}
+              loading={shotState === 'loading'}
+              emptyText={
+                shotState === 'empty'
+                  ? USAGE_EMPTY
+                  : `No project spent more than ${PRIOR_WINDOW_LABEL}. Spend is flat or falling.`
+              }
+            />
+          </Box>
+        </ChartCard>
+      </Box>
+    </SimpleGrid>
+  )
+}
+
 export function SpendScenario({ shotState }: ScenarioProps) {
   return (
     <Stack gap="sm" data-shot-states="empty loading error">
@@ -371,7 +378,7 @@ export function SpendScenario({ shotState }: ScenarioProps) {
       />
       <SpendStats shotState={shotState} />
       <SpendCharts shotState={shotState} />
-      <SpendDrivers shotState={shotState} />
+      <SpendBreakdown shotState={shotState} />
     </Stack>
   )
 }

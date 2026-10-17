@@ -13,12 +13,12 @@
  * `strip-footer-day` / `strip-footer-week`, present in every state; the empty / error note
  * `strip-footer-note` sits inside the day cell); `ChartCard` does not forward `data-*`, so those anchors are wrapping `Box`es.
  */
-import { Box, SimpleGrid, Stack } from '@mantine/core'
+import { Box, Stack } from '@mantine/core'
 import { BarList, DeltaBadge, Meter, PageBar, StatGroup, StatusVerdict } from 'basalt-ui'
 import type { StatStripCell } from 'basalt-ui'
 import { Bars, ChartCard, Sparkline } from 'basalt-ui/charts'
 import type { BarsBar } from 'basalt-ui/charts'
-import { CONTAINER_KEYS, VX } from 'basalt-ui/tokens'
+import { VX } from 'basalt-ui/tokens'
 import { demoColors } from '../demo/series'
 import {
   ABANDON_HOURS,
@@ -26,6 +26,7 @@ import {
   DISPATCH_COMPLETE_DAYS,
   FAILURES_24H,
   FAILURES_BY_HOUR,
+  FAILURES_LATEST_LABEL,
   FLEET,
   FLEET_TOTAL,
   FLOW,
@@ -172,7 +173,9 @@ function QueueStrip({ shotState }: ScenarioProps) {
       info: 'Agent runs that ended in an error in the last 24 hours.',
       value: none ? null : fmtInt(FAILURES_24H.count),
       unit: 'runs',
-      // Hourly bars answer "is it still happening?": three runs, but a burst or a trickle.
+      // Hourly bars answer "is it still happening?": three runs, but a burst or a trickle. The
+      // footer prints when each ran, so the marks read without colour and against a clock.
+      ...(!hidden && { footer: `Latest ${FAILURES_LATEST_LABEL}` }),
       ...(!hidden && {
         visual: (
           <Sparkline
@@ -263,6 +266,7 @@ function QueueStrip({ shotState }: ScenarioProps) {
       error ? WEEK_ERROR : 'No dispatch spend this week.',
     ),
   }
+  // TODO(w36): data-shot-absent — drop this workaround once `shot` can declare an absent anchor.
   // Both footer anchors exist in every state (`shot` errors on an anchor that vanishes); the
   // empty / error note is the day meter's emptyText, wrapped so it keeps its own anchor.
   const footer = [
@@ -275,11 +279,16 @@ function QueueStrip({ shotState }: ScenarioProps) {
   return <StatGroup variant="strip" label="Agent queue" cols={5} cells={cells} footer={footer} />
 }
 
+/**
+ * Column rule: a card with no short partner spans the row alone rather than pairing with a
+ * mismatched one. Measured at 1440: the 9-row list is 478 and the flow chart 542 (its default
+ * height at full width), one row each. At 390 the order is the list (651), then the flow (331).
+ */
 function QueueRow({ shotState }: ScenarioProps) {
   const empty = shotState === 'empty'
   return (
-    <SimpleGrid type="container" cols={{ base: 1, [CONTAINER_KEYS.regular]: 2 }}>
-      <Box data-shot="stuck-items" h="100%">
+    <Stack gap="sm">
+      <Box data-shot="stuck-items">
         <ChartCard
           title="Waiting or blocked, by age"
           info={`Items waiting on your decision and items blocked on something else, oldest first. The status marks a wait past the ${WARN_LABEL} warning.`}
@@ -287,7 +296,11 @@ function QueueRow({ shotState }: ScenarioProps) {
             subtitle: `Warden abandons an item at ${ABANDON_LABEL}`,
           })}
           {...(shotState === undefined && {
-            facts: { value: fmtInt(STUCK.length), unit: 'items', period: `${NEEDS_YOU} need you` },
+            facts: {
+              value: fmtInt(STUCK.length),
+              unit: 'items',
+              period: `${NEEDS_YOU} need you`,
+            },
           })}
           {...cardStateProps(shotState, retry('Waiting and blocked items'), STUCK_PLACEHOLDER)}
         >
@@ -305,7 +318,7 @@ function QueueRow({ shotState }: ScenarioProps) {
           </Box>
         </ChartCard>
       </Box>
-      <Box data-shot="item-flow" h="100%">
+      <Box data-shot="item-flow">
         <ChartCard
           title="Items opened and closed per day"
           info="Items warden opened and items it closed each day, UTC. A queue that opens more than it closes grows."
@@ -332,7 +345,7 @@ function QueueRow({ shotState }: ScenarioProps) {
           </Box>
         </ChartCard>
       </Box>
-    </SimpleGrid>
+    </Stack>
   )
 }
 
