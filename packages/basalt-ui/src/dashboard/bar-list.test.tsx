@@ -162,7 +162,11 @@ describe('BarList', () => {
 
 describe('BarList — the track is the label column', () => {
   test('the bar lives inside the label track, not beside the value', () => {
-    const { container } = mount({ label: 'L', items: [{ label: 'a', value: 5 }] })
+    const { container } = mount({
+      label: 'L',
+      variant: 'inline',
+      items: [{ label: 'a', value: 5 }],
+    })
     const li = container.querySelector('li') as HTMLElement
     const track = li.querySelector('[data-bar-track]') as HTMLElement
     expect(track.contains(li.querySelector('[aria-hidden]'))).toBe(true)
@@ -173,6 +177,7 @@ describe('BarList — the track is the label column', () => {
 
   test('secondary values sit outside the track, one cell per row once any row has one', () => {
     const { container } = mount({
+      variant: 'inline',
       label: 'L',
       items: [
         { label: 'a', value: 5, secondary: 'x' },
@@ -188,6 +193,7 @@ describe('BarList — the track is the label column', () => {
 
   test('a null or false secondary does not open the secondary column', () => {
     const { container } = mount({
+      variant: 'inline',
       label: 'L',
       items: [
         { label: 'a', value: 5, secondary: null },

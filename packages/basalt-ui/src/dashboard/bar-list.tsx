@@ -8,8 +8,9 @@
  * A row may carry its own `max` (points of 40 / 35 / 25): its bar fills value / row.max and the value
  * column reads "32 / 40". The shared scale — `max` prop, else the largest value — is computed over the
  * rows WITHOUT their own `max` only. A row's `tick` (on that row's scale) draws a hairline across the
- * bar, named for assistive tech. `variant="thin"` puts the label on its own line above a thin bar with
- * the value right-aligned on the label line.
+ * bar, named for assistive tech. The default (`variant="thin"`) puts the label on its own line above a
+ * thin bar with the value right-aligned on the label line; `variant="inline"` is the older heavy track
+ * with the label inside it.
  *
  * Thin rows sit flush: no inline inset on the label or the rail.
  *
@@ -22,10 +23,9 @@
  * // Recovery contributors on a fixed 0–100 scale, the qualitative level as the secondary value:
  * <BarList label="Recovery contributors" max={100} items={[{ label: 'Sleep', value: 82, secondary: 'Good' }]} />
  *
- * // Points of different maxima, thin rows, a threshold tick ("32 / 40 pts"; the tick is named for AT):
+ * // Points of different maxima, a threshold tick ("32 / 40 pts"; the tick is named for AT):
  * <BarList
  *   label="Recovery contributors"
- *   variant="thin"
  *   format={(n, part) => (part === 'max' ? `${n} pts` : String(n))}
  *   items={[{ label: 'Sleep', value: 32, max: 40, tick: 30, tickLabel: 'Target' }, { label: 'HRV', value: 14, max: 35 }]}
  * />
@@ -69,8 +69,11 @@ export type BarListProps = BasaltProps & {
   format?: (value: number, part: 'value' | 'max') => string
   /** Scale end shared by rows without their own `max`. Default: the largest of those rows' values. */
   max?: number
-  /** `thin`: label on its own line above a thin bar, value right-aligned on that line. */
-  variant?: 'default' | 'thin'
+  /**
+   * `thin` (default): label on its own line above a thin bar, value right-aligned on that line.
+   * `inline`: the label sits inside a heavier track, the value outside it.
+   */
+  variant?: 'thin' | 'inline'
   /** The first row's bar takes the accent. Off by default. */
   accentLeader?: boolean
   /** Renders row-shaped skeletons. */
@@ -90,7 +93,7 @@ export function BarList({
   items,
   format = asText,
   max,
-  variant = 'default',
+  variant = 'thin',
   accentLeader = false,
   loading = false,
   loadingRows = 5,
@@ -133,7 +136,7 @@ export function BarList({
       role="list"
       aria-label={label}
       data-secondary={hasSecondary ? '' : undefined}
-      data-variant={thin ? 'thin' : undefined}
+      data-variant={variant}
     >
       {items.map((item, i) => {
         const isLeader = accentLeader && i === 0
