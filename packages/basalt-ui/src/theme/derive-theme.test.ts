@@ -99,3 +99,14 @@ describe('a malformed accent seed throws through createBasaltTheme', () => {
     expect(() => createBasaltTheme(undefined, { derive: { accent: '#zzzzzz' } })).toThrow()
   })
 })
+
+describe('derive levels outside -5..5 clamp', () => {
+  test('lightLevel 6 produces the lightLevel 5 palette', () => {
+    const over = createBasaltTheme(undefined, { derive: { lightLevel: 6 } })
+    const edge = createBasaltTheme(undefined, { derive: { lightLevel: 5 } })
+    expect(over.colors).toEqual(edge.colors)
+    expect(
+      buildPaletteCss(undefined, buildPaletteData(resolveDeriveConfig({ lightLevel: 6 }))),
+    ).toBe(buildPaletteCss(undefined, buildPaletteData(resolveDeriveConfig({ lightLevel: 5 }))))
+  })
+})

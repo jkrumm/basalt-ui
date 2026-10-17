@@ -1048,14 +1048,16 @@ The `basalt-ui/router-tanstack` subpath is **removed** in 2.x, not moved: an imp
 Wave 34 of the design-parity track (`docs/waves/design-parity/SPEC.md` § 12 D22). No export is
 added, removed or renamed.
 
-`--vx-status-good|warn|bad` are painted as text (`DeltaBadge`, a toned row), but their tones were
-fixed while the surfaces move with `lightLevel`, `darkLevel` and `neutral`; off the defaults they
-read 3.2–3.9:1. Each solid is now derived from the surfaces the palette produced: it moves along its
-lightness axis only (light darkens, dark lightens; hue preserved, chroma may clip at the gamut edge) to the first tone that
-clears 4.5:1 on every text surface (`bg`, `panel`, `panelHover`, `elevated`, `subtle`, `field`).
+`--vx-status-good`, `--vx-status-warn` and `--vx-status-bad` (light and dark) are painted as text
+(`DeltaBadge`, a toned row), but their tones were fixed while the surfaces move with `lightLevel`,
+`darkLevel` and `neutral`; off the defaults they read 3.2–3.9:1. Each solid is now derived from the
+surfaces the palette produced: **it shifts in lightness only when needed to restore the 4.5:1
+floor** on every text surface (`bg`, `panel`, `panelHover`, `elevated`, `subtle`, `field`). Light
+darkens, dark lightens; hue is preserved and chroma may clip at the gamut edge.
 
 - **Defaults are unchanged**: at the default config every status hex is byte-identical.
-- At a non-default `lightLevel`, `darkLevel` or `neutral` the status solids shift in lightness.
+- At a non-default `lightLevel`, `darkLevel` or `neutral` the status solids shift in lightness only as far as the floor needs.
+- `lightLevel` / `darkLevel` outside -5..5 are clamped to the nearest bound (non-finite becomes 0).
 - No opt-out is needed. A consumer that pins a status hex at a non-default config passes its own
   colour and owns the contrast.
 

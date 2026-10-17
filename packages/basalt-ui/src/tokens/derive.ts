@@ -10,6 +10,7 @@
  * constants below, never hand-editing a hex in `palette.ts`.
  */
 import { contrastRatio, hctToHex, hexToHct, yToTone } from './hct'
+import { deriveStatusHexes } from './status-text'
 import type { ColorPair } from './core'
 
 export type DeriveConfig = {
@@ -316,62 +317,6 @@ const INK_TONE: Record<Side, Record<InkKey, number>> = {
 // ── Status/semantic — three baked hues, each with its own calibrated tone+chroma stop per scheme.
 export type StatusKey = 'good' | 'warn' | 'bad'
 
-export const STATUS_HUE: Record<StatusKey, number> = { good: 151.975, warn: 76.64, bad: 29.905 }
-// Every stop is painted as TEXT somewhere (`DeltaBadge`, a toned breakdown row), so it must clear
-// WCAG AA (4.5:1) on every text surface of the palette it ships in. These are the calibrated
-// starting stops; `deriveStatusHex` keeps one unchanged when it already clears every surface (the
-// default config) and otherwise walks it along its lightness axis only — light darkens, dark
-// lightens, hue preserved (chroma may clip at the gamut edge) — to the first tone that does.
-const STATUS_STOP: Record<StatusKey, Record<Side, { tone: number; chroma: number }>> = {
-  good: { light: { tone: 45.75, chroma: 37.75 }, dark: { tone: 70.23, chroma: 53.23 } },
-  warn: { light: { tone: 46, chroma: 61.12 }, dark: { tone: 72.34, chroma: 62.55 } },
-  bad: { light: { tone: 43.86, chroma: 54.46 }, dark: { tone: 66.5, chroma: 53.79 } },
-}
-
-/** The surfaces status text is painted on — exhaustive, so a new `SurfaceKey` must pick a side. */
-export const STATUS_TEXT_SURFACES: Record<SurfaceKey, boolean> = {
-  bg: true,
-  panel: true,
-  panelHover: true,
-  elevated: true,
-  subtle: true,
-  field: true,
-  border: false,
-  hairline: false,
-}
-export const STATUS_TEXT_CONTRAST_MIN = 4.5
-const STATUS_TONE_STEP = 0.25
-
-/**
- * The status hex for one side: the calibrated stop, moved along its lightness axis just far enough
- * to clear 4.5:1 on every text surface of the derived palette. Bounded by the tone range (0..100);
- * throws when no tone is attainable.
- */
-function deriveStatusHex(
-  stop: { tone: number; chroma: number },
-  hue: number,
-  side: Side,
-  surfaces: Record<SurfaceKey, ColorPair>,
-): string {
-  const direction = side === 'light' ? -1 : 1
-  const textSurfaces = (Object.keys(STATUS_TEXT_SURFACES) as SurfaceKey[]).filter(
-    (key) => STATUS_TEXT_SURFACES[key],
-  )
-  for (let tone = stop.tone; tone >= 0 && tone <= 100; tone += direction * STATUS_TONE_STEP) {
-    const hex = hctToHex({ hue, chroma: stop.chroma, tone })
-    if (
-      textSurfaces.every(
-        (key) => contrastRatio(hex, surfaces[key][side]) >= STATUS_TEXT_CONTRAST_MIN,
-      )
-    ) {
-      return hex
-    }
-  }
-  throw new Error(
-    `status text: no ${side} tone reaches ${STATUS_TEXT_CONTRAST_MIN}:1 on every surface`,
-  )
-}
-
 /**
  * Continuous derivation parameters — the derivation CORE's inputs, decoupled from the -5..5
  * slider levels. `deriveTokens` maps levels onto these (with the re-centered baselines baked in).
@@ -401,37 +346,30 @@ export type DerivedPalette = {
   status: Record<StatusKey, ColorPair>
 }
 
-const SURFACE_LEVEL_RANGE = { min: -5, max: 5 }
+/** The accepted `lightLevel` / `darkLevel` range; `deriveTokens` clamps to it. */
+export const DERIVE_LEVEL_RANGE = { min: -5, max: 5 } as const
 
-function assertSurfaceLevel(name: string, level: number): void {
-  if (
-    !Number.isFinite(level) ||
-    level < SURFACE_LEVEL_RANGE.min ||
-    level > SURFACE_LEVEL_RANGE.max
-  ) {
-    throw new RangeError(
-      `deriveTokens: ${name} must be in [${SURFACE_LEVEL_RANGE.min}, ${SURFACE_LEVEL_RANGE.max}], got ${level}`,
-    )
-  }
+function clampLevel(level: number): number {
+  return Number.isFinite(level) ? clamp(level, DERIVE_LEVEL_RANGE.min, DERIVE_LEVEL_RANGE.max) : 0
 }
 
 /** Derive the full palette from a seed accent + neutral family + surface levels.
  * Public level-based entry: maps the -5..5 sliders onto `DeriveParams` (vibrancy x0.72 center,
  * surface +2 baseline) and delegates to `deriveTokensRaw`.
  *
- * @throws RangeError when `lightLevel` / `darkLevel` is outside -5..5.
- * @throws Error when no status tone clears 4.5:1 on every text surface (unreachable for in-range
- * levels; only a raw shift outside the slider range gets there).
+ * `lightLevel` / `darkLevel` are clamped to {@link DERIVE_LEVEL_RANGE} (non-finite → 0).
+ * @throws Error when no status tone clears 4.5:1 on every text surface — unreachable for clamped
+ * levels (the test grid proves it); only a raw shift outside the slider range gets there.
  */
 export function deriveTokens(config: DeriveConfig): DerivedPalette {
   assertValidAccentHex(config.accent)
-  assertSurfaceLevel('lightLevel', config.lightLevel)
-  assertSurfaceLevel('darkLevel', config.darkLevel)
   return deriveTokensRaw(config, {
     chromaMult: vibrancyChromaMult(config.vibrancy),
     accentToneShift: config.accentBrightness * ACCENT_BRIGHTNESS_TONE_STEP,
-    lightSurfaceShift: SURFACE_LEVEL_TONE_STEP * config.lightLevel + SURFACE_BASELINE_TONE_SHIFT,
-    darkSurfaceShift: SURFACE_LEVEL_TONE_STEP * config.darkLevel + SURFACE_BASELINE_TONE_SHIFT,
+    lightSurfaceShift:
+      SURFACE_LEVEL_TONE_STEP * clampLevel(config.lightLevel) + SURFACE_BASELINE_TONE_SHIFT,
+    darkSurfaceShift:
+      SURFACE_LEVEL_TONE_STEP * clampLevel(config.darkLevel) + SURFACE_BASELINE_TONE_SHIFT,
   })
 }
 
@@ -522,14 +460,7 @@ export function deriveTokensRaw(
     }
   }
 
-  const status = {} as Record<StatusKey, ColorPair>
-  for (const key of Object.keys(STATUS_HUE) as StatusKey[]) {
-    const hue = STATUS_HUE[key]
-    status[key] = {
-      light: deriveStatusHex(STATUS_STOP[key].light, hue, 'light', surface),
-      dark: deriveStatusHex(STATUS_STOP[key].dark, hue, 'dark', surface),
-    }
-  }
+  const status = deriveStatusHexes(surface)
 
   return {
     accent: { light: accentFill, dark: accentInkDark },
