@@ -1170,6 +1170,26 @@ whole below it). Chart axis ticks (the chart host's font) are the proportional s
 with a no-break space, so `textContent` carries U+00A0 there; its visually-hidden summary now reads the caption
 size instead of the inherited body size.
 
+### Round-2 board fixes: sparkline readout, chart error, tick size, captions, thin rows
+
+**Changed default:** the `Sparkline` hover readout is an opaque chip on the line just ABOVE the plot box
+(it used to sit inside it and covered the line's last segment, a bar or the end dot). A sparkline in a
+slot that clips its overflow (`StatCard` `sparklinePlacement="right"`) therefore clips the chip too.
+**Opt out:** none; give the slot `overflow: visible`.
+
+**Changed default:** a `ChartCard` (or any chart) error body is StatCard's anatomy: a left-aligned stack
+of dot, "Could not load this chart", the message and `stateAction`. It was a centred "Error" word. The
+body now GROWS past the chart's height instead of clipping the action. **Opt out:** none.
+
+**Changed default:** chart tick labels are one size (`--vx-text-micro`) at every container width; they were
+the 10 px nano rung below 480 px. **Opt out:** none.
+
+**Changed default:** `Meter` captions wrap with `text-wrap: balance`, and the last two words of a caption
+`Meter` composes are joined by a no-break space when the last is 6 characters or fewer (`textContent`
+carries U+00A0 there). `BarList variant="thin"`: the label wraps to two lines before truncating (its
+`title` has the whole text), the secondary column takes at most 40% of the list, and any `secondary`
+node (a `StatusVerdict` is mono) renders in the proportional sans. **Opt out:** none.
+
 ## 2.19.0 — the status dot, ink buttons and Meter refinements
 
 ### Status is a dot and a word, not an edge stripe (`StatCard`, `Callout`, notification centre)

@@ -168,6 +168,8 @@ export type ChartsSpec = {
   kind: 'lines' | 'bars' | 'dual' | 'rail' | 'panel-rail' | 'spark' | 'strip' | 'mirrored'
   /** `spark`: the row count of the one `Sparkline` (default 3000), in a `width`-px cell. */
   sparkRows?: number
+  /** `spark`: draw bars (a short fixed series with zeros) instead of the sine line. */
+  sparkBars?: true
   /** `spark`: mount the Sparkline in a 300px `StatCard` sparkline slot (`card`) or a strip cell
    * `visual` (`strip`) instead of bare. */
   sparkIn?: 'card' | 'strip'

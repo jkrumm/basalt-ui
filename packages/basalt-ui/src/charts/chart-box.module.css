@@ -62,3 +62,33 @@
   width: 100%;
   height: 100%;
 }
+
+/* An error body: the box's height is the floor, so its content (and the action) always fit. */
+.grow {
+  height: auto;
+  max-height: none;
+  min-height: var(--bc-micro);
+}
+
+@container (min-width: 240px) {
+  .grow {
+    min-height: var(--bc-compact);
+  }
+}
+
+@container (min-width: 480px) {
+  .grow {
+    min-height: var(--bc-regular);
+  }
+}
+
+@container (min-width: 800px) {
+  .grow {
+    min-height: var(--bc-wide);
+  }
+}
+
+.grow > .state {
+  height: auto;
+  min-height: inherit;
+}

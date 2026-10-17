@@ -256,6 +256,83 @@ layout('Meter / BarList geometry', () => {
     expect(await modeAt(360)).toBe('band')
   })
 
+  test('no Meter caption leaves a lone short word on its last line (strip width, 96px)', async () => {
+    const lines = await p.raw.evaluate(() => {
+      const row = document.querySelector('[data-testid="dash-meter-orphans"] [data-meter-captions]')
+      if (!row) throw new Error('LAYOUT: no orphan probe')
+      return ([...row.children] as HTMLElement[]).map((c) => {
+        const node = c.firstChild
+        const text = node?.textContent ?? ''
+        // Chunks are split on the ordinary space only: a no-break space is one unbreakable chunk.
+        const chunks: { text: string; top: number }[] = []
+        let at = 0
+        for (const part of text.split(' ')) {
+          const range = document.createRange()
+          if (node) range.setStart(node, at)
+          if (node) range.setEnd(node, at + part.length)
+          chunks.push({ text: part, top: Math.round(range.getBoundingClientRect().top) })
+          at += part.length + 1
+        }
+        const byLine = new Map<number, string[]>()
+        for (const k of chunks) byLine.set(k.top, [...(byLine.get(k.top) ?? []), k.text])
+        return [...byLine.values()].map((l) => l.join(' '))
+      })
+    })
+    expect(lines.length).toBeGreaterThanOrEqual(2)
+    for (const caption of lines) {
+      if (caption.length < 2) continue
+      for (const line of caption) expect(line.length).toBeGreaterThan(6)
+    }
+  })
+
+  test('a thin BarList keeps its titles readable at a phone width, and its secondary is the sans', async () => {
+    const m = await p.raw.evaluate(() => {
+      const root = document.querySelector('[data-testid="dash-bar-thin"]')
+      const label = root?.querySelector<HTMLElement>('li [title]')
+      const word = root?.querySelector<HTMLElement>('[data-verdict-word]')
+      const value = root?.querySelector<HTMLElement>('li > span:nth-child(2)')
+      if (!root || !label || !word || !value) throw new Error('LAYOUT: no thin BarList probe')
+      const style = getComputedStyle(label)
+      return {
+        labelWidth: label.getBoundingClientRect().width,
+        lineHeight: Number.parseFloat(style.lineHeight),
+        labelHeight: label.getBoundingClientRect().height,
+        clamp: style.getPropertyValue('-webkit-line-clamp'),
+        truncated: label.scrollHeight > label.clientHeight + 1,
+        title: label.getAttribute('title'),
+        secondaryFont: getComputedStyle(word).fontFamily,
+        valueFont: getComputedStyle(value).fontFamily,
+      }
+    })
+    expect(m.labelWidth).toBeGreaterThanOrEqual(110)
+    expect(m.clamp).toBe('2')
+    expect(m.labelHeight).toBeLessThanOrEqual(2 * m.lineHeight + 1)
+    expect(m.title).not.toBeNull()
+    expect(m.secondaryFont).toBe(m.valueFont)
+  })
+
+  test("a ChartCard error is StatCard's anatomy and the card grows to hold its action", async () => {
+    const m = await p.raw.evaluate(() => {
+      const root = document.querySelector('[data-testid="dash-chart-error"]')
+      const alert = root?.querySelector<HTMLElement>('[role="alert"]')
+      const action = root?.querySelector<HTMLElement>('button')
+      if (!root || !alert || !action) throw new Error('LAYOUT: no chart error probe')
+      const a = action.getBoundingClientRect()
+      const c = root.getBoundingClientRect()
+      return {
+        text: alert.textContent ?? '',
+        align: getComputedStyle(alert).alignItems,
+        textAlign: getComputedStyle(alert).textAlign,
+        actionInside:
+          a.top >= c.top && a.bottom <= c.bottom && a.left >= c.left && a.right <= c.right,
+      }
+    })
+    expect(m.text).toContain('Could not load this chart')
+    expect(m.textAlign).not.toBe('center')
+    expect(m.align).toBe('flex-start')
+    expect(m.actionInside).toBe(true)
+  })
+
   test('a Meter caption row wraps at a narrow width without truncating', async () => {
     const result = await p.raw.evaluate(() => {
       const root = document.querySelector<HTMLElement>('[data-testid="dash-meter-wrap"]')
@@ -367,7 +444,7 @@ layout('Meter / BarList geometry', () => {
       if (!caps?.lastElementChild) throw new Error('LAYOUT: no end caption')
       return caps.lastElementChild.textContent
     })
-    expect(text).toBe('Target €2400 · €250 over')
+    expect(text).toBe('Target €2400 · €250\u00a0over')
   })
 
   test('a sparkline in the bleed slot keeps its fixed height and bleeds to the card edges', async () => {

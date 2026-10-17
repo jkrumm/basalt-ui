@@ -94,3 +94,5 @@ export function ChartBox(props: {
 }
 
 export const stateClass = classes.state
+/** Lets the box outgrow its stated height (an error body holding an action). */
+export const growClass = classes.grow

@@ -300,7 +300,7 @@ describe('caption wrapping', () => {
       startCaption: null,
       endCaption: 'Warns at 24 h · abandoned at 7 d',
     })
-    expect(captionText(container)).toEqual(['Warns at 24\u00a0h · abandoned at 7\u00a0d'])
+    expect(captionText(container)).toEqual(['Warns at 24\u00a0h · abandoned at\u00a07\u00a0d'])
   })
 
   test("'3 of 7' and other non-unit words stay breakable", () => {
@@ -311,7 +311,7 @@ describe('caption wrapping', () => {
       startCaption: null,
       endCaption: '3 of 7 · 2 over',
     })
-    expect(captionText(container)).toEqual(['3 of 7 · 2 over'])
+    expect(captionText(container)).toEqual(['3 of 7 · 2\u00a0over'])
   })
 
   test('words that are not a unit keep their ordinary space', () => {
@@ -324,11 +324,11 @@ describe('caption wrapping', () => {
     expect(captionText(container).join()).toContain('2400 over')
   })
 
-  test('the caption rows set text-wrap: pretty so a last word is not orphaned', () => {
+  test('the caption rows set text-wrap: balance so a short caption does not orphan a word', () => {
     for (const selector of ['.captions', '.partCaptions', '.caption']) {
       const body =
         new RegExp(`${selector.replace('.', '\\.')}\\s*\\{([^}]*)\\}`).exec(css)?.[1] ?? ''
-      expect(body, selector).toContain('text-wrap: pretty')
+      expect(body, selector).toContain('text-wrap: balance')
     }
   })
 })

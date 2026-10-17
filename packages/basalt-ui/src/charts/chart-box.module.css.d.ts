@@ -8,5 +8,6 @@ declare const classes: {
   readonly fillFrame: string
   readonly fill: string
   readonly state: string
+  readonly grow: string
 }
 export default classes

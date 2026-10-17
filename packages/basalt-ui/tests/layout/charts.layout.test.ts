@@ -652,6 +652,46 @@ layout('Charts — 2.0 layout', () => {
     }
   }
 
+  describe('a Sparkline readout never overlaps a mark', () => {
+    test.each([
+      ['the line end point', { kind: 'spark', sparkRows: 12, height: 22, width: 240 }, 0.98],
+      ['a bar', { kind: 'spark', sparkBars: true, height: 22, width: 240 }, 0.05],
+    ] as const)('%s', async (_name, spec, fx) => {
+      const p = await openFixture(chartFixture(spec), DESKTOP)
+      await p.settle()
+      const box = await p.raw.evaluate(() => {
+        const r = document.querySelector('[data-basalt-sparkline]')?.getBoundingClientRect()
+        if (!r) throw new Error('LAYOUT: no sparkline')
+        return { x: r.x, y: r.y, w: r.width, h: r.height }
+      })
+      await p.raw.mouse.move(box.x + box.w * 0.5, box.y + box.h / 2)
+      await p.raw.mouse.move(box.x + box.w * fx, box.y + box.h / 2)
+      const m = await p.raw.evaluate(() => {
+        const readout = document.querySelector('[data-basalt-sparkline-readout]')
+        if (!readout) throw new Error('LAYOUT: no readout')
+        const a = readout.getBoundingClientRect()
+        const hits = [
+          ...document.querySelectorAll(
+            '[data-basalt-sparkline] svg.ts-chart g.ts-chart__marks *, [data-basalt-sparkline-dot]',
+          ),
+        ].filter((el) => {
+          const b = el.getBoundingClientRect()
+          return (
+            b.width > 0 &&
+            b.height > 0 &&
+            a.left < b.right &&
+            a.right > b.left &&
+            a.top < b.bottom &&
+            a.bottom > b.top
+          )
+        })
+        return { text: readout.textContent, hits: hits.map((h) => h.tagName) }
+      })
+      expect(m.text).not.toBe('')
+      expect(m.hits).toEqual([])
+    })
+  })
+
   describe('a Sparkline in a StatCard slot or a strip cell answers hover with a readout inside the cell', () => {
     test.each(['card', 'strip'] as const)('%s', async (sparkIn) => {
       const p = await openFixture(chartFixture({ kind: 'spark', sparkIn }), DESKTOP)

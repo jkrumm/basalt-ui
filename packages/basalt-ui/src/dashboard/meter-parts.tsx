@@ -74,8 +74,14 @@ function RingSvg({ fraction, color }: { fraction?: number; color?: string | unde
  */
 const UNITS = 'h|d|w|mo|y|s|ms|min|m|km|mi|g|kg|%|€|pts|bpm|AU|kcal|KB|MB|GB|TB'
 const UNIT_AFTER_NUMBER = new RegExp(`(\\d) (?=(?:${UNITS})(?![\\p{L}\\d]))`, 'gu')
-const glue = (text: ReactNode): ReactNode =>
+/** The last two words of a caption Meter composes are one unit when the last is short, so no
+ * line ends on a lone "budget" or "d". */
+// Ordinary spaces only: an already-glued unit (`7\u00a0d`) counts as one word.
+const SHORT_LAST_WORD = /([^ ]) ([^ ]{1,6})$/u
+const glueUnits = (text: ReactNode): ReactNode =>
   typeof text === 'string' ? text.replace(UNIT_AFTER_NUMBER, '$1\u00a0') : text
+const glue = (text: ReactNode): ReactNode =>
+  typeof text === 'string' ? String(glueUnits(text)).replace(SHORT_LAST_WORD, '$1\u00a0$2') : text
 
 export function MeterLoading({
   label,
@@ -448,7 +454,7 @@ export function MeterBar(props: {
                 style={{ background: c.color ?? 'var(--vx-line)' }}
                 aria-hidden
               />
-              {glue(`${c.label} ${c.text}`)}
+              {glueUnits(`${c.label} ${c.text}`)}
             </li>
           ))}
         </ul>

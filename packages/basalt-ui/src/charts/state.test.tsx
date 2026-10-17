@@ -9,7 +9,8 @@ describe('ChartPlaceholder error idiom', () => {
     )
     const alert = container.querySelector('[role="alert"]')
     expect(alert?.querySelector('[data-basalt-status-dot]')).not.toBeNull()
-    expect(alert?.textContent).toContain('Error')
+    // StatCard's anatomy: the same title pattern, then the message, then the action.
+    expect(alert?.textContent).toContain('Could not load this chart')
     expect(alert?.textContent).toContain('boom')
     expect(alert?.querySelector('button')?.textContent).toBe('Retry')
   })

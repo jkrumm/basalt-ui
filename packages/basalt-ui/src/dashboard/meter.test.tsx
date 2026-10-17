@@ -630,3 +630,33 @@ describe('zone name layout', () => {
     })
   })
 })
+
+describe('Meter — caption orphans', () => {
+  test('the last two words of a composed caption are glued when the last is short', () => {
+    const { container } = mount({
+      label: 'Wait',
+      value: 1,
+      max: 5,
+      startCaption: 'Warden abandons an item at 7 d',
+      endCaption: 'forecast over budget',
+    })
+    const caps = [...container.querySelectorAll('[data-meter-captions] > span')].map(
+      (c) => c.textContent,
+    )
+    expect(caps).toContain('Warden abandons an item at\u00a07\u00a0d')
+    expect(caps).toContain('forecast over\u00a0budget')
+  })
+
+  test('a long last word keeps its ordinary space', () => {
+    const { container } = mount({
+      label: 'Wait',
+      value: 1,
+      max: 5,
+      endCaption: 'over the threshold',
+    })
+    expect(container.querySelector('[data-meter-captions]')?.textContent).toContain('the threshold')
+    expect(container.querySelector('[data-meter-captions]')?.textContent).not.toContain(
+      'the\u00a0threshold',
+    )
+  })
+})
