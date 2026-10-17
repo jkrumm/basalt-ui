@@ -880,3 +880,42 @@ describe('check-theme exemptRules path shapes', () => {
     expect(err).not.toContain('matched none')
   })
 })
+
+describe('series-palette — the exempt series file is judged by computed checks', () => {
+  // The first blue is far too dark for the light scheme (OKLCH L well under 0.43).
+  const BAD_SERIES = `export const S = defineSeries({
+  blue: { light: '#10306a', dark: '#609cdd' },
+  orange: { light: '#905110', dark: '#df7a30' },
+})\n`
+
+  function withSeries(source: string, basalt: Record<string, unknown> = { roots: ['src'] }): void {
+    fixture(`export const C = () => null\n`, basalt)
+    mkdirSync(resolve(dir, 'src', 'lib'), { recursive: true })
+    writeFileSync(resolve(dir, 'src', 'lib', 'series.ts'), source)
+  }
+
+  it('warns (exit 0) in its grace minor, naming the key, scheme, number and threshold', () => {
+    withSeries(BAD_SERIES)
+    const { code, err } = run()
+    expect(code).toBe(0)
+    expect(err).toContain('series-palette')
+    expect(err).toContain('src/lib/series.ts')
+    expect(err).toMatch(/blue \(light\) OKLCH lightness 0\.\d+ is outside 0\.43–0\.77/)
+  })
+
+  it('fails (exit 1) when basalt.severity turns it to error', () => {
+    withSeries(BAD_SERIES, { roots: ['src'], severity: { 'series-palette': 'error' } })
+    const { code, err } = run()
+    expect(code).toBe(1)
+    expect(err).toContain('series-palette')
+  })
+
+  it('stays silent for a good series file and for a project with none', () => {
+    withSeries(
+      `export const S = defineSeries({\n  blue: { light: '#3770c3', dark: '#609cdd' },\n  orange: { light: '#905110', dark: '#df7a30' },\n})\n`,
+    )
+    expect(run().err).not.toContain('series-palette')
+    fixture(`export const C = () => null\n`)
+    expect(run().err).not.toContain('series-palette')
+  })
+})
