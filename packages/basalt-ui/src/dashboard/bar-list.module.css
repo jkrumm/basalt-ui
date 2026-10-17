@@ -98,7 +98,6 @@
   inset-block: 0;
   inline-size: 0;
   border-inline-start: 1px solid var(--vx-ink);
-  pointer-events: auto;
 }
 
 /*
@@ -127,4 +126,9 @@
 
 .root[data-variant='thin'] .bar.leader {
   background: var(--vx-accent);
+}
+
+/* The mark outgrows the rail so a 1px line stays visible against a 4px bar. */
+.root[data-variant='thin'] .tick {
+  inset-block: calc(var(--vx-space-stack-xs, 0.25rem) * -1);
 }
