@@ -119,7 +119,6 @@ function SpendStats({ shotState }: ScenarioProps) {
     emptyText: USAGE_EMPTY,
     ...(query !== undefined && { query }),
   }
-  const value = (v: number): string => (isAtRest ? fmtEur(v) : '—')
   const left = BUDGET_EUR - MTD_EUR
   const overBudget = isAtRest && FORECAST_EUR > BUDGET_EUR
 
@@ -129,7 +128,7 @@ function SpendStats({ shotState }: ScenarioProps) {
         <StatCard
           title="Spend"
           qualifier="month to date"
-          value={value(MTD_EUR)}
+          value={fmtEur(MTD_EUR)}
           info={`All projects and models, ${WINDOW_LABEL} ${YEAR}, in EUR.`}
           {...(isAtRest && {
             delta: MTD_EUR / PRIOR_MTD_EUR - 1,
@@ -149,6 +148,7 @@ function SpendStats({ shotState }: ScenarioProps) {
         />
       </Box>
       <Box data-shot="forecast" h="100%">
+        {/* W34: a meter with the budget as its target replaces the bare figure. */}
         <StatCard
           title="Forecast"
           // The verdict in words beside the rail: the rail alone carries it in colour only.
@@ -157,7 +157,7 @@ function SpendStats({ shotState }: ScenarioProps) {
               ? `end of ${MONTH_NAME} · over budget by ${fmtEur(FORECAST_EUR - BUDGET_EUR)}`
               : `end of ${MONTH_NAME}`
           }
-          value={value(FORECAST_EUR)}
+          value={fmtEur(FORECAST_EUR)}
           info={`Average per day so far (${fmtEur(MTD_EUR / DAYS_ELAPSED)}) held flat for all ${MONTH_DAYS} days. Ignores weekends and bursts.`}
           {...(overBudget && { tone: 'bad' as const })}
           {...shared}
@@ -167,7 +167,7 @@ function SpendStats({ shotState }: ScenarioProps) {
         <StatCard
           title="Budget"
           qualifier={MONTH_LABEL}
-          value={value(BUDGET_EUR)}
+          value={fmtEur(BUDGET_EUR)}
           info={`Monthly cap in EUR. ${fmtEur(PACE_EUR_PER_DAY)} a day keeps spend on pace.`}
           // W34: meter — the spent share against the cap belongs in a Meter; two rows is the nearest.
           {...(isAtRest && {
