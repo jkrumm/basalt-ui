@@ -185,7 +185,7 @@ export const latencyBand = (bin: LatencyBin): string =>
   `${bin.from}–${bin.from + LATENCY_BIN_MS}${NBSP}ms`
 export const fmtLoss = (value: number): string => `${value.toFixed(2)}%`
 export const fmtUptime = (value: number): string => `${value.toFixed(2)}%`
-export const fmtDuration = (minutes: number): string => `${minutes} min`
+export const fmtDuration = (minutes: number): string => `${minutes}${NBSP}min`
 export const fmtStamp = (date: Date): string =>
   date.toLocaleString('en-GB', {
     day: 'numeric',

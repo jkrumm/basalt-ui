@@ -50,7 +50,8 @@ import {
   lineState,
 } from './ops-data'
 import type { HourRow, LatencyBin, Outage } from './ops-data'
-import { RETRY_ACTION, chartStateFor, queryFor, retryCopy } from './shot-state'
+import { RETRY_ACTION } from './retry-action'
+import { chartStateFor, queryFor, retryCopy } from './shot-state'
 import type { ScenarioProps } from './shot-state'
 
 const LINE_STATES: BandStripSeries<HourRow>[] = [
@@ -229,7 +230,7 @@ function OpsCharts({ shotState }: ScenarioProps) {
             empty: 'No hourly readings in the window. Check that the probe is reporting.',
             error: retry('Line state'),
           })}
-          stateAction={RETRY_ACTION}
+          {...(shotState === 'error' && { stateAction: RETRY_ACTION })}
         >
           <Box data-shot-hover data-shot-tooltip>
             <BandStrip<HourRow, Date>
@@ -254,7 +255,7 @@ function OpsCharts({ shotState }: ScenarioProps) {
                 'No throughput readings in the window. Check that the speed test is scheduled.',
               error: retry('Throughput'),
             })}
-            stateAction={RETRY_ACTION}
+            {...(shotState === 'error' && { stateAction: RETRY_ACTION })}
           >
             <Box data-shot-hover data-shot-tooltip>
               <Lines<HourRow, Date>
@@ -279,7 +280,7 @@ function OpsCharts({ shotState }: ScenarioProps) {
               empty: 'No latency readings to bin yet. The histogram needs at least one hour.',
               error: retry('The latency distribution'),
             })}
-            stateAction={RETRY_ACTION}
+            {...(shotState === 'error' && { stateAction: RETRY_ACTION })}
           >
             <Box data-shot-hover data-shot-tooltip>
               <Bars

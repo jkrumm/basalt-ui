@@ -112,8 +112,9 @@ const PRIOR_MTD_ENTRIES = PRIOR_MTD_RAW.flatMap((d) => d.entries)
 export const MTD_EUR = eurOf(MTD_ENTRIES, () => true)
 export const PRIOR_MTD_EUR = eurOf(PRIOR_MTD_ENTRIES, () => true)
 
-/** The month-to-date change against the same days of the prior month, in percent: the spend-weighted
- * combination of the per-project changes, so the total can never disagree with the drivers table. */
+/** The month-to-date change against the same days of the prior month, in percent: the ratio of the
+ * two totals, which is the spend-weighted combination of the per-project changes, so it cannot
+ * disagree with the drivers table. */
 export const MTD_CHANGE_PCT = (MTD_EUR / PRIOR_MTD_EUR - 1) * 100
 
 /** Naive end-of-month forecast: the month-to-date daily average held flat to the last day. */
