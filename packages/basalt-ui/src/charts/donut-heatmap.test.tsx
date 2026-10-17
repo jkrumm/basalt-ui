@@ -5,6 +5,7 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 import { act } from 'react'
 import { createRoot } from 'react-dom/client'
+import { TOOLTIP_READOUT } from './cursor'
 import { Donut } from './Donut'
 import { Heatmap } from './Heatmap'
 
@@ -35,7 +36,7 @@ async function hover(el: HTMLElement, x: number, y: number): Promise<string> {
     svg.dispatchEvent(new PointerEvent('pointermove', { clientX: x, clientY: y, bubbles: true }))
     await new Promise((r) => setTimeout(r, 30))
   })
-  return document.querySelector('.ts-chart-tooltip')?.textContent ?? ''
+  return document.querySelector(TOOLTIP_READOUT)?.textContent ?? ''
 }
 
 const arcs = (el: HTMLElement): Element[] => [...el.querySelectorAll('.ts-chart__arc path')]
@@ -146,7 +147,7 @@ describe('Donut', () => {
     expect(tip).toContain('A')
     expect(tip).toContain('$30')
     expect(tip).toContain('75%')
-    expect(document.querySelector('.ts-chart-tooltip')?.getAttribute('role')).toBe('tooltip')
+    expect(document.querySelector(TOOLTIP_READOUT)?.getAttribute('role')).toBe('tooltip')
   })
 
   test('data=[] without a state draws an empty ring, no slices and no legend', async () => {
@@ -312,6 +313,7 @@ describe('Heatmap', () => {
     expect(tip).toContain('Day Mon · 0')
     expect(tip).toContain('2 km')
     expect(tip).toContain('Samples')
+    expect(document.querySelector(TOOLTIP_READOUT)?.getAttribute('role')).toBe('tooltip')
   })
 
   test('a caller row with swatch dashed paints a dashed swatch, a plain one the color', async () => {
