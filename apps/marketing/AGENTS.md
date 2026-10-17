@@ -46,13 +46,11 @@ src/
 ### Astro-Specific
 
 **Pages:**
-
 - Use `.astro` files for static content
 - Use `client:load` directive for interactive React components
 - Import basalt-ui CSS in Layout.astro
 
 **Islands Architecture:**
-
 ```astro
 <!-- Static component (no JS shipped) -->
 <Card>...</Card>
@@ -64,25 +62,22 @@ src/
 ### React Components
 
 **File Naming:**
-
 - Components: `PascalCase.tsx`
 - Utilities: `kebab-case.ts`
 
 **Component Pattern:**
-
 ```tsx
 // Named export only (no default exports)
 export function MyComponent({ prop }: Props) {
-  return <div>{prop}</div>
+  return <div>{prop}</div>;
 }
 ```
 
 **Imports:**
-
 ```tsx
 // Use @/ path aliases
-import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 ```
 
 ### Styling with Tailwind v4
@@ -99,24 +94,21 @@ Theme: `.dark` class on `<html>`
 ### ShadCN Components
 
 **Adding Components:**
-
 ```bash
 # From apps/web directory
 bunx shadcn@latest add button
 ```
 
 **Using Components:**
-
 ```tsx
-import { Button } from '@/components/ui/button'
+import { Button } from '@/components/ui/button';
 
-;<Button variant="outline" size="lg">
+<Button variant="outline" size="lg">
   Click me
 </Button>
 ```
 
 **Customization:**
-
 - Components are copied to `src/components/ui/`
 - Edit directly for project-specific needs
 - Use `cn()` helper to merge Tailwind classes
@@ -124,18 +116,16 @@ import { Button } from '@/components/ui/button'
 ### TypeScript
 
 **Strict Mode:**
-
 - All props must have explicit types
 - No `any` types
 - Use `interface` for props, `type` for unions
 
 **Example:**
-
 ```tsx
 interface ButtonProps {
-  variant?: 'default' | 'outline' | 'ghost'
-  size?: 'sm' | 'md' | 'lg'
-  children: React.ReactNode
+  variant?: 'default' | 'outline' | 'ghost';
+  size?: 'sm' | 'md' | 'lg';
+  children: React.ReactNode;
 }
 
 export function Button({ variant = 'default', size = 'md', children }: ButtonProps) {
@@ -146,7 +136,6 @@ export function Button({ variant = 'default', size = 'md', children }: ButtonPro
 ### SEO Best Practices
 
 **Page Meta:**
-
 ```astro
 <Layout
   title="Page Title - Basalt UI"
@@ -155,7 +144,6 @@ export function Button({ variant = 'default', size = 'md', children }: ButtonPro
 ```
 
 **Requirements:**
-
 - Unique title per page
 - Description < 160 characters
 - Semantic HTML (`<main>`, `<article>`, `<section>`)
@@ -164,7 +152,6 @@ export function Button({ variant = 'default', size = 'md', children }: ButtonPro
 ### Performance
 
 **Image Optimization:**
-
 ```astro
 import { Image } from 'astro:assets';
 import myImage from '../assets/image.png';
@@ -173,7 +160,6 @@ import myImage from '../assets/image.png';
 ```
 
 **Component Hydration:**
-
 - Only use `client:load` when interactivity is needed
 - Static components ship zero JavaScript
 - Defer non-critical hydration with `client:visible`
@@ -196,7 +182,6 @@ bun run pre              # Full validation (format + lint + typecheck)
 ```
 
 **Workflow:**
-
 1. Make changes to components/pages
 2. Check `package.json` for validation commands
 3. Run `bun run pre` from root to validate everything
@@ -208,20 +193,18 @@ bun run pre              # Full validation (format + lint + typecheck)
 ## Integration with basalt-ui Package
 
 **Importing CSS in Workspace:**
-
 ```css
 /* src/styles/global.css */
-@import 'tailwindcss';
+@import "tailwindcss";
 
 /* Import basalt-ui tokens from workspace using relative path */
-@import '../../../../packages/basalt-ui/src/index.css';
+@import "../../../../packages/basalt-ui/src/index.css";
 ```
 
 **Why relative path?**
 In Bun workspaces, CSS imports from workspace packages work best with relative paths. When publishing to npm, consumers can use `import "basalt-ui/css"`, but within the monorepo, relative paths are more reliable.
 
 **What You Get:**
-
 - Tailwind v4 base styles
 - Light/dark theme CSS variables
 - Color tokens (background, foreground, primary, muted, border, ring)
@@ -229,7 +212,6 @@ In Bun workspaces, CSS imports from workspace packages work best with relative p
 - Border radius tokens
 
 **Workspace Dependency:**
-
 ```json
 {
   "dependencies": {
@@ -245,7 +227,6 @@ This project uses **Tremor Raw** for data visualization components. Tremor Raw i
 ### Architecture
 
 **Component Structure:**
-
 ```
 src/
 ├── components/
@@ -259,7 +240,6 @@ src/
 ```
 
 **Dependencies:**
-
 - **Tremor-specific**: `tailwind-variants`, `@remixicon/react`, `recharts`
 - **Shared with ShadCN**: `clsx`, `tailwind-merge`, Radix UI primitives
 - **Coexistence**: Both CVA (ShadCN) and tailwind-variants (Tremor) work together
@@ -292,7 +272,6 @@ import { AreaChart } from '@/components/tremor/AreaChart';
 ```
 
 **Why `client:only="react"` is required:**
-
 - Tremor uses **Recharts** internally for all chart rendering
 - Recharts accesses browser APIs (`window`, `document`) during render
 - SSR will fail with "window is not defined" errors
@@ -300,7 +279,6 @@ import { AreaChart } from '@/components/tremor/AreaChart';
 - Solution: Skip server rendering entirely with `client:only`
 
 **Alternative directives that WON'T work:**
-
 - ❌ `client:load` - Still attempts SSR, causes hydration errors
 - ❌ `client:visible` - Same SSR issue
 - ❌ No directive - Will fail at build time
@@ -312,20 +290,18 @@ Tremor components automatically use Basalt UI color tokens through the CSS defin
 ```tsx
 // Named colors map to Basalt UI tokens
 <AreaChart
-  colors={['blue', 'emerald', 'violet']}
+  colors={["blue", "emerald", "violet"]}
   // Uses --color-blue-500, --color-emerald-500, --color-violet-500
 />
 ```
 
 **Available chart colors:**
-
 - `blue` (primary), `red` (error), `emerald` (success - maps to green), `amber` (warning - maps to yellow)
 - `violet` (accent - maps to purple), `cyan`, `indigo`
 - `chart-1` through `chart-5` (categorical: blue, red, green, yellow, purple)
 - `chart-blue-1` through `chart-blue-8` (sequential blues)
 
 **How it works:**
-
 - Basalt UI CSS defines all color shades (50-950) for each named color
 - Tremor's `chartUtils.ts` generates classes like `bg-blue-500`, `stroke-emerald-600`
 - These Tailwind classes are mapped to Basalt UI OKLCH tokens via `@theme inline` block
@@ -353,7 +329,6 @@ export const hasErrorInput = [...]
 ```
 
 **Why both `cn()` and `cx()`?**
-
 - ShadCN components import `cn()`, Tremor components import `cx()`
 - Identical implementation (both use clsx + tailwind-merge)
 - Keeps both libraries' import statements unchanged
@@ -376,7 +351,6 @@ export const hasOnlyOneValueForKey = (array, keyToCheck) => {...}
 ### Common Patterns
 
 **Basic Area Chart:**
-
 ```astro
 ---
 const data = [
@@ -401,7 +375,6 @@ const data = [
 ```
 
 **Multi-Series Chart:**
-
 ```astro
 <AreaChart
   client:only="react"
@@ -414,7 +387,6 @@ const data = [
 
 **Chart Height:**
 Always wrap charts in containers with explicit height (Recharts needs defined viewport):
-
 ```astro
 ✅ <div class="h-72"><AreaChart ... /></div>
 ✅ <div class="h-96"><AreaChart ... /></div>
@@ -427,42 +399,34 @@ Astro's `client:only` cannot serialize functions, so props like `valueFormatter`
 ### Known Issues & Solutions
 
 **Issue: Recharts "width(-1) and height(-1)" error**
-
 - **Root cause**: ResponsiveContainer calculates dimensions before container is sized
 - **Solution**: AreaChart component uses inline `style={{ width: '100%', height: 320 }}` on wrapper div to provide explicit dimensions immediately on mount
 - **For custom charts**: Always use inline styles for height, not just Tailwind classes
 
 **Issue: Chart renders at 0px height**
-
 - **Solution**: Wrap in container with explicit Tailwind height class (`h-72`, `h-96`, etc.)
 
 **Issue: Chart disappears on hover / "valueFormatter is not a function" error**
-
 - **Root cause**: Astro's `client:only` serialization converts functions to `null`
 - **Solution**: Don't pass `valueFormatter`, `onValueChange`, `tooltipCallback`, or `customTooltip` from `.astro` files
 - **Workaround**: Create a wrapper React component (`.tsx`) if custom formatting is needed
 
 **Issue: "Encountered two children with the same key" warning**
-
 - **Root cause**: Duplicate `key` props on nested elements within `React.Fragment`
 - **Solution**: Only put `key` on `React.Fragment`, not on children `<defs>` or `<linearGradient>`
 
 **Issue: "window is not defined" error**
-
 - **Solution**: Use `client:only="react"` directive (not `client:load`)
 
 **Issue: Hydration mismatch warnings**
-
 - **Solution**: Use `client:only="react"` to skip SSR entirely
 
 **Issue: Charts don't respect dark mode**
-
 - **Solution**: Verify Tremor components use `dark:` prefix classes (should work automatically with `.dark` on `<html>`)
 
 ### Adding More Tremor Components
 
 **Copy from official docs:**
-
 1. Visit https://www.tremor.so/docs/components
 2. Copy component code
 3. Paste into `src/components/tremor/[ComponentName].tsx`
@@ -498,7 +462,9 @@ This app uses Starlight v0.37+ for documentation at `/docs/*`.
    sidebar: [
      {
        label: 'Section Name',
-       items: [{ label: 'Page Title', slug: 'docs/page-slug' }],
+       items: [
+         { label: 'Page Title', slug: 'docs/page-slug' },
+       ],
      },
    ]
    ```
@@ -519,20 +485,17 @@ Starlight styling is handled entirely by the `basalt-ui` package via a dedicated
 **Clean Package Export:**
 
 The basalt-ui package exports a dedicated Starlight integration file:
-
 - Published packages: `import "basalt-ui/starlight"`
 - Monorepo: Reference `../packages/basalt-ui/src/starlight.css` directly
 - This file imports the complete design system with all Starlight mappings
 
 **Why this approach?**
-
 - Starlight support is reusable across any app using basalt-ui
 - Follows same pattern as Tremor integration (centralized in package)
 - Single source of truth - update package, all apps benefit
 - Philosophy: "basalt-ui offers Starlight support" (not "app customizes Starlight")
 
 **Available Starlight Features:**
-
 - Navigation (sidebar, top nav, mobile menu) - all styled
 - Table of contents - automatic with Basalt colors
 - Search - Pagefind integration with Basalt styling
@@ -550,7 +513,6 @@ The basalt-ui package exports a dedicated Starlight integration file:
 ### Dark Mode
 
 Starlight uses its own theme switcher that sets `data-theme="light"` attribute:
-
 - Dark mode: No attribute or `data-theme="dark"` (default)
 - Light mode: `data-theme="light"` on `<html>`
 - Basalt UI CSS automatically handles both via `:root[data-theme='light']` selector
@@ -559,27 +521,22 @@ Starlight uses its own theme switcher that sets `data-theme="light"` attribute:
 ## Critical Gotchas
 
 **Framework:**
-
 - ❌ DON'T use `@astrojs/tailwind` (deprecated for Tailwind v4)
 - ✅ DO use `@tailwindcss/vite` plugin
 
 **React Islands:**
-
 - ❌ DON'T forget `client:load` on interactive components
 - ✅ DO add hydration directive explicitly
 
 **Imports:**
-
 - ❌ DON'T mix path styles: `../components` vs `@/components`
 - ✅ DO use `@/` prefix consistently
 
 **Exports:**
-
 - ❌ DON'T use default exports
 - ✅ DO use named exports only
 
 **Formatting + Linting:**
-
 - `.astro` files are formatted by **Prettier** (better Astro support + Tailwind sorting)
 - `.ts/.tsx` files are formatted by **Biome** (25x faster)
 - All files are linted by **Biome**
@@ -590,13 +547,13 @@ Starlight uses its own theme switcher that sets `data-theme="light"` attribute:
 
 ## Architecture Decisions
 
-| Decision             | Rationale                                  |
-| -------------------- | ------------------------------------------ |
-| Astro over Next.js   | Static-first, framework-agnostic showcase  |
-| Islands architecture | Optimal performance, ship minimal JS       |
-| ShadCN copy-paste    | Full customization, no dependency bloat    |
-| Path aliases `@/`    | Matches monorepo convention, clean imports |
-| React 19             | Latest stable, no forwardRefs needed       |
+| Decision | Rationale |
+|----------|-----------|
+| Astro over Next.js | Static-first, framework-agnostic showcase |
+| Islands architecture | Optimal performance, ship minimal JS |
+| ShadCN copy-paste | Full customization, no dependency bloat |
+| Path aliases `@/` | Matches monorepo convention, clean imports |
+| React 19 | Latest stable, no forwardRefs needed |
 
 ## Testing Strategy (Future)
 
