@@ -4,37 +4,51 @@ Rewritten 2026-10-16 by the orchestrator in herdr pane wK:p5T. This file is the 
 then `docs/waves/PLAN.md` Part 3 (header and the active wave), `docs/waves/design-parity/SPEC.md` § 11, and
 `docs/waves/argo-friction.md` from row 119.
 
-## Mission (owner)
+## Mission (owner, restated 2026-10-17)
 
-- **Now (Part 3, Waves 29–41):** basalt-ui's design quality, so cards, dashboards, tables, event lists,
-  boards and forms express their data well out of the box. The work is built concept-first from scenarios and
-  iterated in at least three render → board → critique rounds. It is scored on basalt's rubric, with Keel as
-  a reference only. It ships to every consumer's agent through `init`/`sync`: `basalt-ui shot`, the
-  `basalt-design-reviewer` subagent and the skill procedure. Then it is proven in the playground, in a fresh
-  `init` app (the expression trial) and in argo, rb, linewatch and obsidian, until a fresh scorer finds
-  nothing left worth improving.
-- **Queued behind it (Part 2, Waves 20–28):** the maturation pass (guards, agent layer, toolbelt, purge,
-  tokens, charts, shell, controls, the 1.x sunset).
-- Always: the consumer loop. Friction becomes a ledger row, then an upstream fix, a release and adoption.
-  Breaks ship as plain `feat:` 2.x minors with a MIGRATING entry, and there are no majors.
+The owner judged basalt-built UIs "slopped out" next to Keel Workspace (a look-only reference). basalt must
+produce dashboards at the highest quality by default, and every app's coding agent must be taught that flow through
+`init`/`sync`: UX research first (a concept doc), then the encoding (the chart-or-not router and the catalogue), then
+the build, then rendered critique (`basalt-ui shot` rounds scored by an isolated `basalt-design-reviewer`).
 
-## State
+**Three phases, in order:**
 
-- npm latest: **2.14.0** (Wave 19 format layer and filters, plus rows 132/133). weatherorb is live on 2.14.0.
-  argo and rb are on 2.13.1; obsidian, linewatch and rollhook are on 2.11.1. Wave 19's validator bumps
-  were deferred to the design-track rollout (Waves 40–41) on the owner's "queue the integrations".
-- Done: Waves 29 (Keel benchmark and the `make compare` harness), 30 (AUDIT.md, SPEC.md, Waves 31–41
-  rewritten, rows 143–162). **Wave 31 is active** (lead `basalt-ui-w31`): `basalt-ui shot` and the reviewer
-  subagent have landed; the skill procedure and the scenario pages were still landing at the time of writing.
+1. **Converge (this mother).** basalt Waves 35 (argo's craft friction) and 36 (the UX-first procedure, shipped),
+   argo Waves 22–23 (`~/SourceRoot/argo/docs/waves/PLAN.md` Part 2; 23 is the all-pages convergence pass the
+   orchestrator adds after basalt Wave 35 ships), and the expression trial on a fresh `init` app. Iterate until the
+   **exit gate** holds:
+   - every argo page passes a fresh, isolated reviewer on all three axes at 1440 and 390, in both schemes;
+   - a side-by-side read of every Keel capture against argo and the playground finds no category where Keel is ahead;
+   - the fresh-agent trial (data only, no component names) writes a concept, picks the catalogue's encodings and
+     passes the reviewer;
+   - the owner signs off on the boards.
+2. **Rotate, then the fleet.** Rewrite this file and start a fresh mother. It runs the proven loop app by app: rb,
+   linewatch, basalt-ui-obsidian, rollhook, then the 1.x → 2.x migrations of shutterflow (1.13), email-gateway
+   (1.36) and image-gateway (1.41). Each app's friction becomes a ledger row, an upstream fix and a release.
+3. **weatherorb's UX/UI rewrite** is the final validation, handed to weatherorb's own orchestrator when phase 2 has
+   settled. Its UI waves are held until then (its renumbered Waves 51+).
+
+Queued behind all of it: Part 2's maturation Waves 20–28.
+
+## State (2026-10-17)
+
+- npm latest **2.19.0**. argo is live on 2.19.0, with 10 of 13 pages redesigned (argo Waves 18–21); argo Wave 22 is
+  running (lead `argo-w22`). basalt Wave 35 is running (lead `basalt-ui-w35`). rb is on 2.13.1; obsidian,
+  linewatch and rollhook are on 2.11.1; weatherorb is on 2.14.0 with its UI held.
+- Boards for the owner: `~/Downloads/{basalt,argo}-design-review/` on the MacBook (rsync over `ssh iumac`).
+- agent-gateway was disconnected on 2026-10-17. Independent reviews run as fresh subagents with no shared context.
+- Owner decisions this cycle: Keel is a reference, not the target; the Wave 30 spec was approved; status text is
+  derived per surface; light/outline buttons are ink; no git-history purge of the Keel captures; only argo was
+  upgraded in parallel (the rest wait for phase 2); the dotfiles `frontend-routing.md` rule routes basalt vs
+  `/dataviz` vs plain React.
 
 ## In flight (next actions, in order)
 
-1. Wave 31 close-out: read the Left behind and the diffs, check that `CHANGELOG.md` is untouched, then
-   `rd close`, then `make release` (package changes). Then spawn Wave 32 (scales) with the template below.
-2. From Wave 32 on, every pattern-family close is an **owner review**: rsync that wave's `.design-parity/w<n>`
-   board to the MacBook and summarise the scored verdicts.
-3. Waves 40–41: release, then upgrade argo, rb, linewatch and obsidian (they also pick up Wave 19), run the
-   expression trial, and brief weatherorb and shutterflow.
+1. basalt Wave 35 close-out → release → argo bump and deletion of its workarounds (the wave's last step) → spawn
+   basalt Wave 36.
+2. argo Wave 22 close-out → add argo Wave 23 (adopt Wave 35, then the all-pages convergence re-score) → spawn it.
+3. After basalt Wave 36: the expression trial, then the exit-gate check above. Gaps become basalt Wave 37+ and
+   argo Wave 24+.
 
 ## Consumers and how to reach them
 
@@ -88,6 +102,15 @@ then `docs/waves/PLAN.md` Part 3 (header and the active wave), `docs/waves/desig
   `.claude/worktrees/<name>` and `git worktree prune`. A fresh worktree needs `bun install` for commitlint
   and a package build for the `check-theme` hook.
 - Show the owner boards by `rsync -a --relative .design-parity/<w> iumac:Downloads/basalt-design-review/`.
+
+- A lead may end its turn while its fan workers still run, and then nothing wakes it. Say so in every spawn
+  prompt: "wait for workers in the foreground (wave-watch.sh, bounded); never end your turn with workers running".
+- A wave lead also writes boards into worker worktrees that `rd fan --clean` deletes, so the brief must name the MAIN
+  checkout's `.design-parity/w<n>/`. argo writes to `apps/dashboard/.design-shots/`.
+- `make release` needs a clean main checkout and green CI on the exact head. With a lead working in that checkout,
+  release between its merges.
+- Screenshot live argo yourself with a Playwright script that reads the token from `secrets-run read
+  op://common/api/SECRET` through an env var, and never pass the token through a tool argument.
 
 ## Spawning a wave lead (template)
 
