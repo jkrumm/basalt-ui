@@ -1297,6 +1297,34 @@ function DashFixture(): ReactElement {
         />
       </div>
       {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
+      <div data-testid="dash-meter-zones-160" style={{ width: 160 }}>
+        <Meter
+          label="Training load"
+          max={1000}
+          value={400}
+          zones={[
+            { from: 0, to: 250, label: 'Low' },
+            { from: 250, to: 500, label: 'Optimal' },
+            { from: 500, to: 750, label: 'High' },
+            { from: 750, to: 1000, label: 'Overreaching' },
+          ]}
+        />
+      </div>
+      {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
+      <div data-testid="dash-meter-zones-360" style={{ width: 360 }}>
+        <Meter
+          label="Training load"
+          max={1000}
+          value={400}
+          zones={[
+            { from: 0, to: 250, label: 'Low' },
+            { from: 250, to: 500, label: 'Optimal' },
+            { from: 500, to: 750, label: 'High' },
+            { from: 750, to: 1000, label: 'Overreaching' },
+          ]}
+        />
+      </div>
+      {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
       <div data-testid="dash-meter-ring" style={{ width: 160 }}>
         <Meter
           shape="ring"
