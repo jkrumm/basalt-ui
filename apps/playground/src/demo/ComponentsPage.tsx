@@ -140,7 +140,9 @@ function ComponentsSurfaces() {
           <Group gap="sm">
             <Button variant="filled">Filled</Button>
             <Button variant="default">Default</Button>
-            <Button variant="light">Light</Button>
+            <Button variant="light" data-shot-hover>
+              Light
+            </Button>
             <Button variant="outline">Outline</Button>
             <Button variant="subtle">Subtle</Button>
           </Group>
@@ -172,7 +174,9 @@ function ComponentsSurfaces() {
           <Tabs defaultValue="deploys">
             <Tabs.List>
               <Tabs.Tab value="deploys">Deploys</Tabs.Tab>
-              <Tabs.Tab value="incidents">Incidents</Tabs.Tab>
+              <Tabs.Tab value="incidents" data-shot-hover>
+                Incidents
+              </Tabs.Tab>
               <Tabs.Tab value="alerts">Alerts</Tabs.Tab>
             </Tabs.List>
             <Tabs.Panel value="deploys" pt="sm">
