@@ -18,7 +18,7 @@
  * Usage: bun packages/basalt-ui/scripts/sync-self.ts
  */
 import { copyFileSync, existsSync, mkdirSync, readdirSync, rmSync } from 'node:fs'
-import { join } from 'node:path'
+import { dirname, join, relative } from 'node:path'
 
 const PKG_ROOT = join(import.meta.dir, '..')
 const REPO_ROOT = join(PKG_ROOT, '..', '..')
@@ -50,8 +50,15 @@ function syncNamespace(dir: string, unit: 'file' | 'dir'): { copied: number; pru
   for (const name of shipped) {
     if (unit === 'file') copyFileSync(join(src, name), join(dest, name))
     else {
-      mkdirSync(join(dest, name), { recursive: true })
-      copyFileSync(join(src, name, 'SKILL.md'), join(dest, name, 'SKILL.md'))
+      // A skill is its whole directory (SKILL.md + references/**). Clear first so a reference
+      // dropped upstream does not outlive the copy.
+      rmSync(join(dest, name), { recursive: true, force: true })
+      for (const e of readdirSync(join(src, name), { recursive: true, withFileTypes: true })) {
+        if (!e.isFile()) continue
+        const rel = relative(join(src, name), join(e.parentPath, e.name))
+        mkdirSync(dirname(join(dest, name, rel)), { recursive: true })
+        copyFileSync(join(e.parentPath, e.name), join(dest, name, rel))
+      }
     }
   }
   // A plain copy never removes a stale file: a rule, skill or agent dropped upstream stayed

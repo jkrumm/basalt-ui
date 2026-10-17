@@ -17,7 +17,7 @@ import {
   unlinkSync,
   writeFileSync,
 } from 'node:fs'
-import { dirname, isAbsolute, relative, resolve } from 'node:path'
+import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { DEFAULT_GUARD_CONFIG, guardWaiverHint } from '../guard'
@@ -819,8 +819,22 @@ export function resolvePlacement(cwd: string): PlacementFlags {
   }
 }
 
+/** Every file under a shipped skill dir, relative and sorted; `SKILL.md` first. Empty if the dir is absent. */
+function skillFiles(pkgRoot: string, name: string): string[] {
+  const root = resolve(pkgRoot, 'agent/skills', name)
+  if (!existsSync(root)) return []
+  const rels = readdirSync(root, { recursive: true, withFileTypes: true })
+    .filter((e) => e.isFile())
+    .map((e) => relative(root, join(e.parentPath, e.name)).split(sep).join('/'))
+    .toSorted()
+  return [...rels.filter((r) => r === 'SKILL.md'), ...rels.filter((r) => r !== 'SKILL.md')]
+}
+
 /** The full managed-file manifest. Stable, declarative — the single source of truth for init/sync. */
-export function managedFiles(placement: PlacementFlags = ROOT_PLACEMENT): ManagedFile[] {
+export function managedFiles(
+  placement: PlacementFlags = ROOT_PLACEMENT,
+  pkgRoot: string = packageRoot(),
+): ManagedFile[] {
   // ── managed: exactly what Claude reads ──────────────────────────────────────
   const rules: ManagedFile[] = RULE_NAMES.map((name) => ({
     dest: `.claude/rules/basalt-${name}.md`,
@@ -835,12 +849,16 @@ export function managedFiles(placement: PlacementFlags = ROOT_PLACEMENT): Manage
   // Skills take the same managed path the rules do — Claude Code cannot load skills from
   // node_modules, and a plugin cannot ship rules, so init/sync is the one delivery channel for the
   // whole agentic layer. The `basalt-` filename prefix keeps the /basalt-design ergonomics.
-  const skills: ManagedFile[] = SKILL_NAMES.map((name) => ({
-    dest: `.claude/skills/${name}/SKILL.md`,
-    mode: 'managed' as const,
-    source: `agent/skills/${name}/SKILL.md`,
-    render: (ctx: RenderContext) => readSource(ctx.pkgRoot, `agent/skills/${name}/SKILL.md`),
-  }))
+  // Every file under `agent/skills/<name>/` is its own managed unit (SKILL.md plus `references/**`),
+  // found by walking the shipped tree — no per-file list to maintain.
+  const skills: ManagedFile[] = SKILL_NAMES.flatMap((name) =>
+    skillFiles(pkgRoot, name).map((rel) => ({
+      dest: `.claude/skills/${name}/${rel}`,
+      mode: 'managed' as const,
+      source: `agent/skills/${name}/${rel}`,
+      render: (ctx: RenderContext) => readSource(ctx.pkgRoot, `agent/skills/${name}/${rel}`),
+    })),
+  )
 
   // Subagents load only walking UP from the session cwd, so the consumer root is the right home.
   const agents: ManagedFile[] = AGENT_NAMES.map((name) => ({
@@ -1082,7 +1100,7 @@ export function readManifest(cwd: string): Manifest {
  */
 const RETIREABLE_DEST_PATTERNS: readonly RegExp[] = [
   /^\.claude\/rules\/basalt-[a-z0-9-]+\.md$/,
-  /^\.claude\/skills\/basalt-[a-z0-9-]+\/SKILL\.md$/,
+  /^\.claude\/skills\/basalt-[a-z0-9-]+\/.+$/,
   /^\.claude\/agents\/basalt-[a-z0-9-]+\.md$/,
 ]
 
@@ -1164,6 +1182,8 @@ function removeEmptyParentDir(fileAbs: string): void {
   const dir = dirname(fileAbs)
   try {
     if (readdirSync(dir).length === 0) rmdirSync(dir)
+    // A skill's `references/` empties first; then the skill dir itself may be empty too.
+    if (basename(dir) === 'references') removeEmptyParentDir(dir)
   } catch {
     /* not empty, not readable, or already gone — nothing to clean up */
   }

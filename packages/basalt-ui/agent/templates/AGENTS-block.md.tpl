@@ -21,7 +21,7 @@ under the depending package; `basalt-ui doctor` prints where; a fresh worktree n
 **Skills and subagent** (installed in `.claude/`; invoke by name):
 
 - `/basalt-app`: scaffold, wire, upgrade or verify the app (`init`, `doctor`, `sync`).
-- `/basalt-design`: build or restyle a screen — scenario, `basalt-ui shot` rounds, review, revise.
+- `/basalt-design`: build or restyle a screen — scenario, `basalt-ui shot` rounds, review, revise; routes to its `references/` on demand.
 - `/basalt-charts`: add or extend a chart, register its series colors.
 - `basalt-design-reviewer` (subagent): scores a `basalt-ui shot` out dir per component; run it after every shot round, never on your own work.
 
@@ -31,7 +31,7 @@ under the depending package; `basalt-ui doctor` prints where; a fresh worktree n
 surface: no "bold aesthetic direction", gradient meshes, grain or dramatic motion. Neutral by default,
 the single accent spent only when earned.
 
-**Chart override.** The `basalt-charts` rule supersedes any global visx or chart rule: compose
-`CartesianChart`.
+**Chart override.** `/basalt-design`, `/basalt-charts` and the `basalt-charts` rule supersede any global chart rule and
+the bundled `/dataviz` skill (its palette, marks, forms yield to basalt's tokens, catalogue, guards): compose `CartesianChart`.
 
 <!-- basalt:end -->
