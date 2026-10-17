@@ -53,7 +53,7 @@ type BarListItem = {
   max?: number
   /** A hairline mark at this position on the row's scale (a threshold). */
   tick?: number
-  /** Names the tick for assistive tech and the hover title. Default "Threshold". */
+  /** Names the tick for assistive tech (visually hidden text in the track). Default "Threshold". */
   tickLabel?: string
 }
 
