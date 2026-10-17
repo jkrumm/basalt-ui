@@ -1175,28 +1175,67 @@ upgrade (Waves 40–41); in-wave boards are the playground's.
 - **Next:** owner review of the Wave 32 boards (`.design-parity/w32/`, local). Stopped here as briefed: not
   released; Wave 33 is marked active in this plan but not spawned (the orchestrator spawns it).
 
-## Wave 33 — The metric card and chart-in-card <!-- status: active -->
+## Wave 33 — The metric card and chart-in-card <!-- status: done -->
 
 Spec: SPEC § 6.1, § 6.2, § 6.10, § 6.12. Scenarios S4 and S1. Consumer before/after: Waves 40–41.
 
-- [ ] `StatCard`: caption row restyled, new `qualifier`, `subtitle` as the footer under the visual, icon off
+- [x] `StatCard`: caption row restyled, new `qualifier`, `subtitle` as the footer under the visual, icon off
       in the recipe; `DeltaBadge` text-only (row 162); the stale `Sparkline` JSDoc fixed (row 162); MIGRATING
       maps every changed prop.
-- [ ] `Sparkline` defaults: `emphasizeLast` on, `emphasisColor` `VX.line`, stroke 1.5; the `StatCard` slot
+- [x] `Sparkline` defaults: `emphasizeLast` on, `emphasisColor` `VX.line`, stroke 1.5; the `StatCard` slot
       at 22 px; MIGRATING records the flip and the opt-out. The span-aware date tick formatter that never
       repeats a label, in `CartesianChart`'s date axis (row 137, with weatherorb's zoned ticks).
-- [ ] Chrome: `Badge` defaults to `light`, 20 high, radius `tight`, optional leading glyph; the subtle
+- [x] Chrome: `Badge` defaults to `light`, 20 high, radius `tight`, optional leading glyph; the subtle
       `Button` label and the active `Tabs` underline in ink (SPEC § 6.10, § 6.12). Re-shoot every playground
       surface that renders them.
-- [ ] States: a `StatCard` skeleton with the card's footprint (row 147) and the card's empty and error
+- [x] States: a `StatCard` skeleton with the card's footprint (row 147) and the card's empty and error
       branches, shot with the rest.
-- [ ] Unit tests: no background on the delta in both schemes; the `Badge` default variant; the end dot's
+- [x] Unit tests: no background on the delta in both schemes; the `Badge` default variant; the end dot's
       colour; `qualifier` on the caption row and `subtitle` in the footer.
-- [ ] At least three rounds on S4 and S1 metric cards with the shipped reviewer. **Owner review** of the first
+- [x] At least three rounds on S4 and S1 metric cards with the shipped reviewer. **Owner review** of the first
       pattern family's boards.
       **Left behind:**
 
-## Wave 34 — Meter and BarList <!-- status: pending -->
+- **Landed** (PRs #331 chrome anchors, #332 date ticks, #333 chrome, #334 metric card, #335 round-1 board items).
+  Each: agent-gateway review for two rounds, then scope frozen and the lead read the last fix diff. `make check`
+  green at every merge through `rd merge`; master CI's three gzip ceilings set from its Linux measurement in the
+  close-out PR. Nothing released.
+- **Metric card** (MIGRATING § Unreleased — the metric card and chrome): `StatCard` renders its own caption row
+  (mono uppercase `micro` caption, `info`, new `qualifier`, which wraps under the caption instead of truncating),
+  value row (hero, unit, text-only delta), visual and a footer (`subtitle` moved under the visual); no longer
+  composes `WidgetHeader`. States: a footprint skeleton (pending branch or new `loading`), `emptyText`, an error
+  with retry; one `resolveQueryBranch` (error > pending > empty > ready) exported from `query-state.tsx`.
+  `StatCardSparklineSize.state` removed. Parts in `stat-card-parts.tsx`.
+- **Delta and palette:** `DeltaBadge` is text only; `STATUS_STOP` retuned so the status solids clear 4.5:1 as text
+  on the panel at the default derive config (D22; the level-knob extremes fall to ~2.5–3.9:1, for Wave 24).
+- **Sparkline:** `emphasizeLast` on, `emphasisColor` `VX.line`, stroke 1.5; the StatCard slot is 22 px. It has no
+  reference-line mark, so the S1 contract target sits in the qualifier.
+- **Charts:** span-aware default date ticks with one resolver for every kind (D26, row 137 closed); the hover
+  readout is `role="tooltip"` for every kind through one stamped `engineTooltip` (aria-live kept). The info bubble
+  opens in the top layer as a native popover (D23): a `react-dom` portal broke the `./charts` layering guard.
+- **Chrome:** `Badge` defaults `light`, `gray` (D21), radius `tight`, a 12 px `leftSection` glyph; the subtle
+  `Button`/`ActionIcon` label and the active `Tabs` underline are ink unless `color=` is passed (explicit primary
+  included). Re-shot on the `/components` specimens only: the other playground pages that render Badge/Tabs/Button
+  carry no shot anchors.
+- **`shot`:** picks only a visible tooltip and takes a `data-shot-at="x,y"` hover point (fractions, half-open),
+  documented in the shipped `basalt-design` skill. The shipped reviewer is recalibrated (D24).
+- **Rounds** (`docs/waves/design-parity/w33/rounds.md`; boards in `.design-parity/w33/r0`, `r0-chrome`, `r1`–`r3`):
+  by r3 every metric card and both W33 charts pass; no failed item is a Wave 33 target. Decisions D21–D26 in SPEC
+  § 12. Ledger rows 137 and 162 closed, 147 half (the strip is Wave 35).
+- **For Wave 34:** forecast (target, empty lower 40 %), budget (two-part whole as text rows) and the
+  spend-by-project donut (+ near-identical blues, a bare "Value" readout row) fail Expression 1 / Craft 3 / Craft 5
+  until `Meter` lands. **For Wave 35:** the full-axis histograms; S4's value-over-time as stacked bars. **For
+  Wave 36:** outages/top-drivers at 390; table delta cells without a glyph.
+- **Owner decisions:** `light`/`outline` Buttons still carry the accent (r1–r3 Craft 4; not in SPEC § 6.12).
+  Before releasing 2.17, D19's grace entries (`card-inset`, `raw-spacing`, `inline-spacing` → `error`) have to
+  be deleted in their own commit, or 2.17 ships them at `warn` again.
+- **Budgets** raised by exactly what landed, itemised in `scripts/check-budgets.ts`: CLI lines 7100 → 7124 (the
+  shot hover point); gzip from CI: provider-only 19200 → 19308, embedded 55404 → 55601, theme-only 14580 → 14771.
+- **Next:** owner review of the first pattern family's boards (`.design-parity/w33/`, local; copied to the
+  MacBook's `Downloads/basalt-design-review/`). Stopped here as briefed: not released; Wave 34 is marked active
+  but not spawned.
+
+## Wave 34 — Meter and BarList <!-- status: active -->
 
 Spec: SPEC § 3, § 4, § 6.3, § 6.4, D1, D2. Scenarios S4 and S2 (build the S2 fixture). Validators: argo
 (reading, usage), rb (course, ingest), linewatch (link against ceiling).
