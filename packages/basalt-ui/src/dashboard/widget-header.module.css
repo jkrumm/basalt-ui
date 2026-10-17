@@ -143,7 +143,8 @@
   border-radius: var(--vx-radius-ctrl);
   background: var(--vx-surface-subtle);
   padding: var(--vx-space-badge-inset-y) var(--vx-space-badge-inset-x);
-  font-family: var(--basalt-font-mono);
+  font-family: var(--basalt-font-numeral, var(--basalt-font-sans));
+  font-variant-numeric: lining-nums;
   font-size: var(--vx-text-xs);
   font-weight: 500;
   color: var(--vx-faint);
@@ -172,7 +173,8 @@
 .value {
   min-width: 0;
   overflow-wrap: anywhere;
-  font-family: var(--basalt-font-mono);
+  font-family: var(--basalt-font-numeral, var(--basalt-font-sans));
+  font-variant-numeric: lining-nums;
   font-size: var(--vx-text-kpi);
   font-weight: 500;
   letter-spacing: -0.02em;
@@ -180,15 +182,16 @@
 }
 
 /*
- * The unit beside the hero value. Mono like the number it qualifies (so `412 TSS` sits on one
- * baseline grid), `--vx-text-sm` and `--vx-muted` so it never competes with the numeral — the whole
+ * The unit beside the hero value. Sans like the number it qualifies (so `412 TSS` sits on one
+ * baseline), `--vx-text-sm` and `--vx-muted` so it never competes with the numeral — the whole
  * point is that a unit is the SMALL half of the pair. `flex-shrink: 0`: a unit clipped to `TS…`
  * would state nothing.
  */
 .unit {
   flex-shrink: 0;
   align-self: baseline;
-  font-family: var(--basalt-font-mono);
+  font-family: var(--basalt-font-numeral, var(--basalt-font-sans));
+  font-variant-numeric: lining-nums;
   font-size: var(--vx-text-sm);
   font-weight: 500;
   color: var(--vx-muted);
@@ -343,7 +346,8 @@
   white-space: nowrap;
   align-items: baseline;
   gap: 3px;
-  font-family: var(--basalt-font-mono);
+  font-family: var(--basalt-font-numeral, var(--basalt-font-sans));
+  font-variant-numeric: lining-nums;
   font-size: var(--vx-text-sm);
   font-weight: 500;
   line-height: 1;

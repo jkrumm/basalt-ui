@@ -1063,6 +1063,30 @@ The fix is in `relativeTime`'s formatter only: `duration` and the date builders 
 **Opt-out:** pass `locale` per call, or leave `defineFormat` / the provider `locale` unset to keep
 the runtime locale. argo can drop its `APP_LOCALE` wrapper around `relativeTime`.
 
+### Proportional numerals (`StatCard`, `WidgetHeader`, `DeltaBadge`, `BarList`, `Meter`)
+
+Hero values, row labels and body text are now the proportional sans with lining figures; mono is
+for captions, times and code only (`docs/DESIGN-CORE.md`). Before, every numeral rendered in
+JetBrains Mono.
+
+- **What changed:** `StatCard` / `WidgetHeader` hero value, unit and count chip, `StatCard`
+  breakdown values, `DeltaBadge`, `BarList` value and secondary, and `Meter` ring value, captions
+  and zone labels now read `font-family: var(--basalt-font-numeral, var(--basalt-font-sans))` with
+  `font-variant-numeric: lining-nums`. Sizes, weights and letter-spacing are unchanged. Headings
+  (`h1`–`h6`, `.mantine-Title-root`) drop the face's slashed zero (`font-feature-settings: 'zero' 0`).
+- **Unchanged:** uppercase captions, qualifiers, the group-tier heading and times stay mono;
+  `src/table/**`, `[data-numeric]` controls and axis ticks keep tabular figures.
+- **Opt out (old mono heroes):** one declaration restores every site above:
+
+  ```css
+  :root {
+    --basalt-font-numeral: var(--basalt-font-mono);
+  }
+  ```
+
+  Heading zeros: `h1, h2, h3, h4, h5, h6, .mantine-Title-root { font-feature-settings: normal; }`
+  (needs to out-rank `@layer basalt` — declare it unlayered).
+
 ## 2.19.0 — the status dot, ink buttons and Meter refinements
 
 ### Status is a dot and a word, not an edge stripe (`StatCard`, `Callout`, notification centre)

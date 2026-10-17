@@ -421,7 +421,7 @@ describe('forwards every WidgetHeader prop (unit, deltaPolarity, deltaFormat, de
     expect(screen.getByTestId('load-spark')).toBeDefined()
   })
 
-  test('count renders a mono tag after the title', () => {
+  test('count renders a tag after the title', () => {
     renderWith(
       <Section title="Orders" count={42}>
         <div>body</div>
