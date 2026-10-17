@@ -22,14 +22,13 @@ export type Part = {
 /** One categorical part's caption: its position key, name, formatted amount and fill colour (`undefined` = neutral). */
 export type PartCaption = { key: string; label: string; text: string; color: string | undefined }
 
-/**
- * What the caption row says. `reading`: the formatted reading ; `parts`:
- * categorical segments name every part instead; `forecast`: committed/forecast keeps the reading
- * plus the forecast caption.
- */
 /** One zone's name on the band: where its band starts (percent) and whether it holds the reading. */
 export type ZoneLabel = { key: string; label: string; startPct: number; holding: boolean }
 
+/**
+ * What the caption row says. `reading`: the formatted reading; `parts`: categorical segments name
+ * every part instead; `forecast`: committed/forecast keeps the reading plus the forecast caption.
+ */
 export type CaptionMode = 'reading' | 'parts' | 'forecast'
 
 type Format = (value: number) => string
@@ -84,6 +83,27 @@ export function layoutSegments(segments: readonly MeterSegment[], span: number):
 export function findHoldingZone(zones: readonly MeterZone[], value: number): MeterZone | undefined {
   const end = Math.max(...zones.map((z) => z.to))
   return zones.find((z) => value >= z.from && (value < z.to || (value === z.to && z.to === end)))
+}
+
+/** Sub-pixel rounding in measured boxes: two labels touching within this do not collide. */
+export const LABEL_SUBPIXEL = 0.5
+
+/** A measured label box on one axis (any shared origin), in CSS pixels. */
+export type LabelBox = { left: number; right: number }
+
+/**
+ * Whether every zone name fits on the band: inside `[0, rowWidth]` and clear of every other name
+ * (pairwise, so a long name cannot hide behind a short one between it and a distant neighbour).
+ * Boxes are relative to the row's own start edge.
+ */
+export function zoneLabelsFit(boxes: readonly LabelBox[], rowWidth: number): boolean {
+  const sorted = boxes.toSorted((a, b) => a.left - b.left)
+  return sorted.every(
+    (a, i) =>
+      a.left >= -LABEL_SUBPIXEL &&
+      a.right <= rowWidth + LABEL_SUBPIXEL &&
+      sorted.slice(i + 1).every((b) => a.right <= b.left + LABEL_SUBPIXEL),
+  )
 }
 
 /** A zone band as left edge + width in percent, clipped to the track. */

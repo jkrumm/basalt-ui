@@ -1,9 +1,17 @@
 /** Meter's internal pieces: bar, ring, empty and loading. `meter.tsx` dispatches between them. */
 import { Skeleton, VisuallyHidden } from '@mantine/core'
-import { useId, useLayoutEffect, useRef, useState } from 'react'
-import type { CSSProperties, ReactNode } from 'react'
+import { useId, useRef, useState } from 'react'
+import type { CSSProperties, HTMLAttributes, ReactNode, RefObject } from 'react'
+import { useIsomorphicLayoutEffect } from '../common/isomorphic-layout-effect'
 import { cx } from '../common/props'
-import { ariaValues, modelBar, ringFraction, startCaptionText, zoneBand } from './meter-model'
+import {
+  ariaValues,
+  modelBar,
+  ringFraction,
+  startCaptionText,
+  zoneBand,
+  zoneLabelsFit,
+} from './meter-model'
 import type { MeterSegment, MeterZone, Part, ZoneLabel } from './meter-model'
 import classes from './meter.module.css'
 import { toPct } from './scale'
@@ -143,40 +151,71 @@ function zoneStyle(zone: MeterZone, index: number, count: number, min: number, s
   } satisfies CSSProperties
 }
 
-/** Overlap on one axis between neighbouring label boxes, or a box leaving the row, is a collision. */
-function collides(boxes: readonly DOMRect[], row: DOMRect): boolean {
-  const sorted = boxes.toSorted((a, b) => a.left - b.left)
-  return sorted.some(
-    (box, i) =>
-      box.left < row.left - 0.5 ||
-      box.right > row.right + 0.5 ||
-      (i > 0 && box.left < (sorted[i - 1]?.right ?? 0) + 0.5),
+/** Joins the names with a character no label carries, so the effect re-runs only when they change. */
+const labelsKey = (labels: readonly ZoneLabel[]) => labels.map((l) => l.label).join('\u0000')
+
+/**
+ * Whether the zone names fit on the band, re-measured when the row resizes, when web fonts finish
+ * loading (a mono swap changes label widths without resizing the row) and when the names change.
+ * Server markup shows the band; the list may appear after mount, when the measurement fails.
+ */
+function useZoneLabelLayout(rowRef: RefObject<HTMLDivElement | null>, key: string): boolean {
+  const [fits, setFits] = useState(true)
+
+  // Keyed on a string of the names, not the `labels` array: the model rebuilds that every render.
+  useIsomorphicLayoutEffect(() => {
+    const row = rowRef.current
+    if (!row) return
+    const measure = () => {
+      const origin = row.getBoundingClientRect()
+      const boxes = [...row.children].map((c) => {
+        const r = c.getBoundingClientRect()
+        return { left: r.left - origin.left, right: r.right - origin.left }
+      })
+      setFits(zoneLabelsFit(boxes, origin.width))
+    }
+    measure()
+    const observer = typeof ResizeObserver === 'undefined' ? undefined : new ResizeObserver(measure)
+    observer?.observe(row)
+    // `document.fonts` is absent (or partial) outside a full browser; every use is guarded.
+    const fonts =
+      typeof document === 'undefined' ? undefined : (document.fonts as FontFaceSet | undefined)
+    let live = true
+    void fonts?.ready?.then(() => live && measure())
+    fonts?.addEventListener?.('loadingdone', measure)
+    return () => {
+      live = false
+      observer?.disconnect()
+      fonts?.removeEventListener?.('loadingdone', measure)
+    }
+  }, [rowRef, key])
+
+  return fits
+}
+
+function ZoneName({ label, ...rest }: { label: ZoneLabel } & HTMLAttributes<HTMLSpanElement>) {
+  return (
+    <span
+      {...rest}
+      className={cx(rest.className, label.holding && classes.zoneLabelHolding)}
+      data-meter-zone-label={label.label}
+      data-holding={label.holding || undefined}
+    >
+      {label.label}
+    </span>
   )
 }
 
 /**
- * Names each zone under its band, the holding one in ink. Labels sit left-aligned at their band
- * start; when two would overlap (or one would leave the row) the band hides and the same names wrap
- * as a list in zone order instead. The band stays laid out (hidden, not removed) so a resize can
- * measure it again. Decorative: the zone names and the holding zone are in the described-by text.
+ * Names each zone under its band, the holding one in ink and a heavier weight. Labels sit
+ * left-aligned at their band start; when two would overlap (or one would leave the row) the band
+ * hides and the same names wrap as a list in zone order instead. The band stays laid out (hidden,
+ * not removed) so a resize can measure it again. Decorative: the zone names and the holding zone
+ * are in the described-by text.
  */
 function ZoneLabels({ labels }: { labels: readonly ZoneLabel[] }) {
   const rowRef = useRef<HTMLDivElement>(null)
-  const [list, setList] = useState(false)
-
-  useLayoutEffect(() => {
-    const row = rowRef.current
-    if (!row) return
-    const measure = () => {
-      const boxes = [...row.children].map((c) => c.getBoundingClientRect())
-      setList(collides(boxes, row.getBoundingClientRect()))
-    }
-    measure()
-    if (typeof ResizeObserver === 'undefined') return
-    const observer = new ResizeObserver(measure)
-    observer.observe(row)
-    return () => observer.disconnect()
-  }, [labels])
+  const fits = useZoneLabelLayout(rowRef, labelsKey(labels))
 
   return (
     <>
@@ -184,32 +223,22 @@ function ZoneLabels({ labels }: { labels: readonly ZoneLabel[] }) {
         ref={rowRef}
         className={classes.zoneBand}
         data-meter-zone-labels="band"
-        data-collapsed={list || undefined}
+        data-collapsed={fits ? undefined : ''}
         aria-hidden
       >
         {labels.map((l) => (
-          <span
+          <ZoneName
             key={l.key}
-            className={cx(classes.zoneLabel, l.holding && classes.zoneLabelHolding)}
-            data-meter-zone-label={l.label}
-            data-holding={l.holding || undefined}
+            label={l}
+            className={classes.zoneLabel}
             style={{ insetInlineStart: `${l.startPct}%` }}
-          >
-            {l.label}
-          </span>
+          />
         ))}
       </div>
-      {list && (
+      {!fits && (
         <div className={classes.zoneList} data-meter-zone-labels="list" aria-hidden>
           {labels.map((l) => (
-            <span
-              key={l.key}
-              className={cx(classes.zoneListItem, l.holding && classes.zoneLabelHolding)}
-              data-meter-zone-label={l.label}
-              data-holding={l.holding || undefined}
-            >
-              {l.label}
-            </span>
+            <ZoneName key={l.key} label={l} className={classes.zoneListItem} />
           ))}
         </div>
       )}
@@ -242,8 +271,9 @@ export function MeterBar(props: {
   const describedBy =
     model.describedByText === null ? {} : ({ 'aria-describedby': describedId } as const)
 
+  const root = rootProps(shell)
   return (
-    <div {...rootProps(shell)}>
+    <div {...root} className={cx(root.className, model.zoneLabels.length > 0 && classes.zoned)}>
       <div
         className={classes.trackBox}
         aria-label={label}
