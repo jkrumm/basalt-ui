@@ -44,7 +44,8 @@ export type DeltaBadgeProps = {
   withGlyph?: boolean
   /** Optional comparison period rendered after the value, muted, as `<periodPrefix> <period>`
    * (`period="last week"` → "vs last week"). One rule: the prefix is prepended unless the period
-   * already starts with it, so a caller still writing "vs last week" renders it once. */
+   * already starts with it (case-insensitive, optional trailing dot: "vs", "VS", "vs."), so a caller
+   * still writing "vs last week" renders it once. Other words ("versus") are not detected. */
   period?: string | undefined
   /** The word composed before `period`. Defaults to `'vs'`; pass your locale's word, or `''` to
    * render `period` raw. */
@@ -55,8 +56,8 @@ const defaultFormat = (value: number): string => `${Math.abs(value).toFixed(1)}%
 
 function composePeriod(period: string, prefix: string): string {
   if (prefix === '') return period
-  const lead = `${prefix} `.toLowerCase()
-  return period.toLowerCase().startsWith(lead) ? period : `${prefix} ${period}`
+  const escaped = prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  return new RegExp(`^${escaped}\\.?(\\s|$)`, 'i').test(period) ? period : `${prefix} ${period}`
 }
 
 function resolveTone(value: number, polarity: DeltaPolarity): string {
@@ -89,6 +90,7 @@ export function DeltaBadge({
     <span className={classes.deltaBadge} style={{ color: tone }}>
       {showGlyph && <span className={classes.deltaGlyph}>{glyph}</span>}
       {format(value)}
+      {period !== undefined && ' '}
       {period !== undefined && (
         <span className={classes.deltaPeriod}>{composePeriod(period, periodPrefix)}</span>
       )}

@@ -1115,7 +1115,7 @@ every `Card` and `Paper`. Before, a bare `<Card>` got Mantine's 16 px all round 
 
 ### `DeltaBadge` `period` composes "vs <period>"
 
-`period` (and `deltaPeriod` on `StatCard`, `WidgetHeader`, `Section`) now renders `vs <period>`: `period="MoM"` reads "vs MoM" where it read "MoM". A period that already starts with the prefix is left alone, so a caller passing `"vs last week"` still renders "vs last week", not "vs vs last week". **Opt out** with `periodPrefix=""` on `DeltaBadge` (renders the period raw), or pass your locale's word (`periodPrefix="gegenüber"`). Drop the hand-written "vs " at your leisure.
+`period` (and `deltaPeriod` on `StatCard`, `WidgetHeader`, `Section`) now renders `vs <period>`: `period="MoM"` reads "vs MoM" where it read "MoM". A period that already starts with the prefix is left alone, so a caller passing `"vs last week"` still renders "vs last week", not "vs vs last week". **Opt out** with `periodPrefix=""` on `DeltaBadge` (renders the period raw), or pass your locale's word (`periodPrefix="gegenüber"`). A period that is not a comparison (`"30d"`, a change over a window) now reads wrongly ("vs 30d"): pass `periodPrefix=""` on `DeltaBadge` itself, or reword it through the card props (`"30 days ago"`). Drop the hand-written "vs " at your leisure.
 
 ## 2.19.0 — the status dot, ink buttons and Meter refinements
 
