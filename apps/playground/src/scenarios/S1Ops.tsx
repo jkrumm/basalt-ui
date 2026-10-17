@@ -226,7 +226,7 @@ function OpsCharts({ shotState }: ScenarioProps) {
       <SimpleGrid type="container" cols={{ base: 1, [CONTAINER_KEYS.regular]: 2 }}>
         <Box data-shot="throughput" h="100%">
           <ChartCard
-            title="Throughput per hour (Mbit/s)"
+            title={`Throughput per hour (Mbit/s), ${WINDOW_LABEL}`}
             info="Mean measured speed per hour. The dashed line is the contracted download speed; hours with an outage have no reading."
             state={chartStateFor(shotState, {
               empty:
