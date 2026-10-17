@@ -146,12 +146,12 @@ Worked rule: a multi-toggle bar chart colours bars `isMulti ? series.x : VX.line
   Owned in the theme, not inherited.
 - **Type carried by size + weight.** A three-font system, not a single system-sans: body
   (`'Nunito Sans Variable'`), head (`'Hubot Sans Variable'`, headings/brand/card titles at
-  `font-stretch: 88%`), and mono (`'JetBrains Mono Variable'`) for captions, times and code only. **Numerals are
-  proportional sans with lining figures**: hero values, row labels, deltas, bar-list and meter
-  figures and body text all use `--basalt-font-numeral` (default `var(--basalt-font-sans)`) with
-  `font-variant-numeric: lining-nums`; `tabular-nums` stays in table columns and axis ticks, where
-  alignment is the job. The heading face keeps lining figures and no slashed zero. The type ladder itself is defined once in
-  `src/tokens/index.ts` (`VX.text.*` / `--vx-text-*`) — no font-size literals at call sites.
+  `font-stretch: 88%`), and mono (`'JetBrains Mono Variable'`) for captions, times and code only.
+  **Numerals are proportional sans with lining figures**: hero values, row labels, deltas, bar-list
+  and meter figures and body text all use `--basalt-font-numeral` (default
+  `var(--basalt-font-sans)`) with `font-variant-numeric: lining-nums`; `tabular-nums` stays in
+  table columns and axis ticks, where alignment is the job. The heading face keeps lining figures
+  and no slashed zero. The type ladder itself is defined once in `src/tokens/index.ts` (`VX.text.*` / `--vx-text-*`) — no font-size literals at call sites.
 - **Responsive is three independent axes, not one breakpoint.** (1) **Size class** — the viewport,
   `compact` < 840 / `medium` < 1200 / `expanded` (`SIZE_CLASSES`); **shell chrome only** (bottom bar,
   rail, sidebar, aside docking); `theme.breakpoints` derives from it. (2) **Container class** — a
