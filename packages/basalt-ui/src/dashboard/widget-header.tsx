@@ -290,6 +290,7 @@ export function InfoGlyph({
         ref={triggerRef}
         type="button"
         data-basalt-hit
+        data-info-trigger
         className={classes.infoTrigger}
         // The GLYPH is named, not the text — `text` reaches AT through `aria-describedby` below, so
         // it never lands in the heading's or the button's accessible name.
@@ -372,7 +373,9 @@ export function WidgetHeader({
           {icon !== undefined && (
             <IconSlot className={cx(classes.icon, classNames?.icon)}>{icon}</IconSlot>
           )}
-          <span className={classes.titleText}>{title}</span>
+          <span className={classes.titleText} data-widget-title>
+            {title}
+          </span>
         </Heading>
         {/* OUTSIDE the heading on purpose — see `info`'s own doc. */}
         {info !== undefined && (
