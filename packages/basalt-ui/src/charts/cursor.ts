@@ -294,10 +294,12 @@ export function followerOptions(
   return onFollow ? {} : ({ follower: { group, chartId } } satisfies TooltipFollowerOptions)
 }
 
+const READOUT = '.ts-chart-tooltip'
+
 /**
  * The engine's DOM tooltip host, silent while this chart FOLLOWS another's cursor. A follower
  * resolves the leader's focus group (so the engine draws the same dots at the shared x); the host
- * would then paint a tooltip and fill its `role="status"` live region. Whenever `isForeign` holds,
+ * would then paint a tooltip and fill its live region. Whenever `isForeign` holds,
  * this wrapper calls the host's `hide()` instead of `paint()`: a follower that has never led never
  * creates the element, and one that has led keeps it in the DOM, hidden. Otherwise (leader, no
  * `follower` option, or after the leader clears) it defers to the host.
@@ -312,6 +314,8 @@ export const quietWhileFollowing: ChartTooltipExtension = {
   ...tooltip,
   create: (context) => {
     const host = tooltip.create(context)
+    const doc = context.container.ownerDocument
+    let readout: Element | undefined
     let configured = false
     let follower: TooltipFollowerOptions['follower']
     return {
@@ -323,7 +327,14 @@ export const quietWhileFollowing: ChartTooltipExtension = {
       },
       paint: (paint) => {
         if (!configured || (follower && isForeign(follower.group, follower.chartId))) host.hide()
-        else host.paint(paint)
+        else {
+          const before = readout ? undefined : new Set(doc.querySelectorAll(READOUT))
+          host.paint(paint)
+          readout ??= [...doc.querySelectorAll(READOUT)].find((el) => !before?.has(el))
+          // The host stamps `role="status"` on every paint; a hover readout is a tooltip. The
+          // live region stays (`aria-live`), so the reading is still announced.
+          if (readout?.getAttribute('role') === 'status') readout.setAttribute('role', 'tooltip')
+        }
       },
     }
   },

@@ -151,6 +151,40 @@ export function dateTicks(domain: readonly [Date, Date], count: number, stepMs: 
   return days.length >= 2 ? days : ticks.filter((_, i, all) => i === 0 || i === all.length - 1)
 }
 
+const utcClock = (d: Date): string => `${pad2(d.getUTCHours())}:${pad2(d.getUTCMinutes())}`
+const MONTH_STEP_MS = 27 * DAY_MS
+const isUtcMidnight = (d: Date): boolean => d.getTime() % DAY_MS === 0
+
+/**
+ * The default Date tick labels, chosen from the TICK step (not the data step) and UTC like the
+ * scale: sub-day steps read `HH:MM` with `DD.MM` on a midnight tick (the day marker), day steps
+ * `DD.MM`, month steps the month with the year on January. A level that would label two ticks
+ * alike widens to carry the date or year, so one axis never repeats a label.
+ */
+export function dateTickFormat(ticks: readonly Date[]): (v: ChartValue) => string {
+  const times = [...new Set(ticks.map((t) => t.getTime()))].toSorted((a, b) => a - b)
+  const step = times.reduce(
+    (min, t, i) => (i === 0 ? min : Math.min(min, t - times[i - 1]!)),
+    Infinity,
+  )
+  const levels: ((d: Date) => string)[] =
+    step < DAY_MS || (step === Infinity && !ticks.every(isUtcMidnight))
+      ? [
+          (d) => (isUtcMidnight(d) ? utcAxisDate(d) : utcClock(d)),
+          (d) => `${utcAxisDate(d)} ${utcClock(d)}`,
+        ]
+      : step < MONTH_STEP_MS
+        ? [utcAxisDate, (d) => `${utcAxisDate(d)}.${String(d.getUTCFullYear()).slice(2)}`]
+        : [
+            (d) => (d.getUTCMonth() === 0 ? String(d.getUTCFullYear()) : MONTHS[d.getUTCMonth()]!),
+            (d) => `${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`,
+          ]
+  const level =
+    levels.find((fmt) => new Set(times.map((t) => fmt(new Date(t)))).size === times.length) ??
+    levels[levels.length - 1]!
+  return (v) => (v instanceof Date ? level(v) : defaultFormatX(v))
+}
+
 export function defaultFormatX(v: ChartValue): string {
   if (v instanceof Date) return utcAxisDate(v)
   if (typeof v === 'number') return defaultNumberFormat(v)
@@ -322,15 +356,21 @@ export function strideTicks<V>(values: readonly V[], cls: ContainerClass): V[] {
 export function xGuide<X extends ChartX>(opts: {
   model: XScaleModel<X>
   xTicks: number | readonly X[] | undefined
-  format: (v: ChartValue) => string
+  /** A consumer's formatter; absent, Date ticks get the span-aware {@link dateTickFormat}. */
+  format: ((v: ChartValue) => string) | undefined
   cls: ContainerClass
   /** The whole chart's height: decides whether the left margin is locked to zero. */
   height: number
 }): Omit<ChartPositionScaleOptions<ChartValue>, 'scale'> {
-  const { model, xTicks, format, cls, height } = opts
+  const { model, xTicks, cls, height } = opts
   const ladder = LADDER[cls]
   const inside = labelsInside(cls, height)
   const ticks = xTickPolicy(model, xTicks ?? ladder.xTicks)
+  const tickDates = 'values' in ticks ? ticks.values : []
+  const dates = tickDates.filter((v): v is Date => v instanceof Date)
+  const format =
+    opts.format ??
+    (dates.length > 0 && dates.length === tickDates.length ? dateTickFormat(dates) : defaultFormatX)
   // A continuous scale's domain start and span; a band scale pads its first slot, so none applies.
   const [leftEdgeX, spanX] =
     !model.band && model.extent
@@ -703,7 +743,13 @@ function buildScales<T, X extends ChartX>(opts: {
   return {
     x: {
       scale: model.scale,
-      ...xGuide({ model, xTicks: input.xTicks, format: formatX, cls, height }),
+      ...xGuide({
+        model,
+        xTicks: input.xTicks,
+        format: input.formatX ? formatX : undefined,
+        cls,
+        height,
+      }),
     },
     y: {
       scale: yScaleFor(input.y, left.domain),

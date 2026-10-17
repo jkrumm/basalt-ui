@@ -1046,6 +1046,29 @@ The `basalt-ui/router-tanstack` subpath is **removed** in 2.x, not moved: an imp
 _Nothing yet. Author the next section under this heading as `## Unreleased — <title>`; the
 release renames it and opens a new one here._
 
+### Date ticks
+
+The default x tick labels of a Date axis (`CartesianChart`, so `Lines`, `Bars`, `StackedArea`) follow
+the tick step instead of printing `DD.MM` everywhere, and never repeat on one axis. Reads stay UTC.
+
+| Tick step            | Old                   | New                                                                           |
+| -------------------- | --------------------- | ----------------------------------------------------------------------------- |
+| under a day          | `17.10`, `17.10`, ... | `HH:MM`, with `DD.MM` on the midnight tick                                    |
+| days                 | `DD.MM`               | `DD.MM` (unchanged)                                                           |
+| a month or more      | `DD.MM`               | `Oct`, the year on January (`2027`)                                           |
+| would repeat a label | -                     | widens: `17.10 06:00` for sub-day, `DD.MM.YY` for days, `Oct 2026` for months |
+
+Opt out: pass `formatX` (it always wins), e.g. the old one-liner:
+
+```ts
+const ddmm = (d: Date) =>
+  `${String(d.getUTCDate()).padStart(2, '0')}.${String(d.getUTCMonth() + 1).padStart(2, '0')}`
+<Lines formatX={ddmm} … />
+```
+
+The hover readout now carries `role="tooltip"` (it was the engine's `role="status"`) and keeps
+`aria-live="polite"`; a test that queried `.ts-chart-tooltip[role="status"]` must follow.
+
 ## 2.16.0 — the even-pixel grid
 
 Wave 32 of the design-parity track moves the spacing, inset, radius and type scales onto an

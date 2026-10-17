@@ -575,6 +575,49 @@ layout('Charts — 2.0 layout', () => {
     })
   }
 
+  // Ledger row 137 / W32 r3: the default date labels are distinct and clear of each other where the
+  // tick count drops (compact class, 390 phone).
+  for (const [name, spec, vp] of [
+    ['compact 360', { kind: 'lines', width: 360 }, DESKTOP],
+    ['390 px phone', { kind: 'lines' }, PHONE],
+  ] as const satisfies readonly (readonly [string, ChartsSpec, Viewport])[]) {
+    test(`default date tick labels are distinct and do not collide (${name})`, async () => {
+      const p = await openFixture(chartFixture(spec), vp)
+      await p.settle()
+      const texts = await p.raw.evaluate(
+        (sel) =>
+          [...document.querySelectorAll(`${sel} [data-ts-key^="x-tick-label:"]`)].map(
+            (el) => el.textContent ?? '',
+          ),
+        SVG,
+      )
+      expect(texts.length).toBeGreaterThan(1)
+      expect(new Set(texts).size).toBe(texts.length)
+      const ticks = (await rectsOf(p, '[data-ts-key^="x-tick-label:"]')).toSorted(
+        (a, b) => a.left - b.left,
+      )
+      ticks.slice(1).forEach((t, i) => expect(overlap(t, ticks[i] as Rect)).toBe(false))
+    })
+  }
+
+  // W32 r2: the hover readout is never cut by the viewport's top edge — it flips below the anchor.
+  test('the tooltip stays inside the viewport when the chart sits at its top edge', async () => {
+    const p = await openFixture(chartFixture({ kind: 'lines' }), DESKTOP)
+    await p.settle()
+    await p.raw.evaluate(
+      (sel) => document.querySelector(sel)?.scrollIntoView({ block: 'start' }),
+      FRAME,
+    )
+    await p.settle()
+    await hover(p, FRAME, 0.5, 0.02)
+    const box = await p.box('tooltip', `${TOOLTIP}:not([hidden])`)
+    expect(box.box.top).toBeGreaterThanOrEqual(0)
+    expect(box.box.bottom).toBeLessThanOrEqual(DESKTOP.height)
+    expect(
+      await p.raw.evaluate((sel) => document.querySelector(sel)?.getAttribute('role'), TOOLTIP),
+    ).toBe('tooltip')
+  })
+
   // Row 112: the last band/bar ends on the plot's right edge, not a bucket-padding short of it.
   const DAY_MS = 86_400_000
   const edgeCases = [

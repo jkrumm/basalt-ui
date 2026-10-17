@@ -234,7 +234,7 @@ describe('shared cursor', () => {
     expect(ruleX('B')).toBe(ruleX('A'))
     const tips = tooltips()
     expect(tips.length).toBe(1)
-    expect(tips[0]?.getAttribute('role')).toBe('status')
+    expect(tips[0]?.getAttribute('role')).toBe('tooltip')
     expect(tips[0]?.textContent).toContain('Load')
     expect(document.querySelectorAll('[aria-live]').length).toBe(1)
   })
