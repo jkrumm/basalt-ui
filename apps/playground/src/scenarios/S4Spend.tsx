@@ -13,7 +13,7 @@
  * `forecast` → `strip-forecast`, `budget` → `strip-budget`.
  */
 import { Box, SimpleGrid, Stack, Text } from '@mantine/core'
-import { BarList, DeltaBadge, Meter, PageBar, Section, StatGroup } from 'basalt-ui'
+import { BarList, DeltaBadge, Meter, PageBar, StatGroup } from 'basalt-ui'
 import type { StatStripCell } from 'basalt-ui'
 import { Bars, ChartCard, Lines, Sparkline } from 'basalt-ui/charts'
 import type { BarsBar, ChartSeries, ChartTooltipRow } from 'basalt-ui/charts'
@@ -42,7 +42,7 @@ import {
 import type { CumulativeRow, DistributionBin } from './spend-data'
 import { RETRY_ACTION } from './retry-action'
 import { fmtEur, fmtShare, fmtSignedEur } from './fixture-utils'
-import { cardStateProps, chartStateFor, queryFor, retryCopy } from './shot-state'
+import { cardStateProps, chartStateFor, retryCopy } from './shot-state'
 import type { ScenarioProps } from './shot-state'
 
 const CUMULATIVE_SERIES: ChartSeries<CumulativeRow>[] = [
@@ -191,7 +191,7 @@ function SpendStats({ shotState }: ScenarioProps) {
           <Meter
             label={`Forecast against the ${fmtEur(BUDGET_EUR)} budget`}
             max={TRACK_END_EUR}
-            target={BUDGET_EUR}
+            ticks={[{ at: BUDGET_EUR, label: 'Budget' }]}
             format={fmtEur}
             segments={[
               { value: MTD_EUR, label: 'Spent' },
@@ -309,7 +309,6 @@ function SpendCharts({ shotState }: ScenarioProps) {
 }
 
 function SpendDrivers({ shotState }: ScenarioProps) {
-  const query = queryFor(shotState, retry('Top drivers'))
   return (
     <SimpleGrid
       type="container"
@@ -317,9 +316,10 @@ function SpendDrivers({ shotState }: ScenarioProps) {
       style={{ alignItems: 'start' }}
     >
       <Box data-shot="top-drivers">
-        <Section
+        <ChartCard
           title={`Top drivers, ${WINDOW_LABEL} vs ${PRIOR_WINDOW_LABEL}`}
-          {...(query !== undefined && shotState === 'error' && { query })}
+          info={`The € each project added against ${PRIOR_WINDOW_LABEL}, with the relative change.`}
+          {...cardStateProps(shotState, retry('Top drivers'), PROJECT_PLACEHOLDER)}
         >
           <Box data-shot-hover>
             <BarList
@@ -334,7 +334,7 @@ function SpendDrivers({ shotState }: ScenarioProps) {
               }
             />
           </Box>
-        </Section>
+        </ChartCard>
       </Box>
       <Box data-shot="spend-distribution">
         <ChartCard
