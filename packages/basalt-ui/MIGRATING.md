@@ -1061,6 +1061,18 @@ darkens, dark lightens; hue is preserved and chroma may clip at the gamut edge.
 - No opt-out is needed. A consumer that pins a status hex at a non-default config passes its own
   colour and owns the contrast.
 
+### `shot` on a real app
+
+- `basalt-ui shot` captures a signed-in app with live data. `--local-storage <key>=<@env:NAME|@file:path>` seeds
+  localStorage on the app origin before any page script (an argo-style bearer token); `--api /api=https://app.example.com`
+  makes the `--dist` server proxy GET/HEAD under that prefix (other methods get 405 unless `--api-allow-writes`);
+  `--header authorization=@env:NAME` is added to every proxied request, to every `--api` origin (https required), never
+  to a page navigation; `--wait <ms>` adds a settle after `networkidle` (default none); `--auto-anchors` crops every
+  Card, Paper and table over 120×60 px on a page with no `data-shot`. A 401/403 or unreachable API fails the page shot.
+  Secret values are never printed or written to `board.html` or `metrics.json`. Shots of real data reach the reviewer
+  subagent's model provider: point `--api` at staging or synthetic data for an app holding third parties' data. No
+  action needed; every flag is opt-in.
+
 ## 2.17.0 — the metric card and chrome
 
 Wave 33 of the design-parity track (`docs/waves/design-parity/SPEC.md` § 6.10, § 6.12). No export is

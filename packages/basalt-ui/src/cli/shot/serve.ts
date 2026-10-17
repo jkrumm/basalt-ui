@@ -3,8 +3,11 @@ import { join, normalize, resolve, sep } from 'node:path'
 
 import { ShotError } from './playwright'
 
-/** Static server for a built SPA dir: real files as-is, extensionless misses fall back to index.html. */
-export function serveDist(distDir: string): { origin: string; stop: () => void } {
+/** Static server for a built SPA dir: real files as-is, extensionless misses fall back to index.html; `proxy` answers first. */
+export function serveDist(
+  distDir: string,
+  proxy?: (req: Request) => Promise<Response | null>,
+): { origin: string; stop: () => void } {
   const root = resolve(distDir)
   if (!existsSync(root) || !statSync(root).isDirectory()) {
     throw new ShotError(`--dist ${distDir} is not a directory`)
@@ -20,8 +23,18 @@ export function serveDist(distDir: string): { origin: string; stop: () => void }
   const server = Bun.serve({
     port: 0,
     hostname: '127.0.0.1',
-    fetch(req) {
+    async fetch(req) {
       try {
+        // With a proxy live, only the shot's own browser may talk to this port (no DNS rebinding, no other page).
+        const own = `127.0.0.1:${server.port}`
+        const from = req.headers.get('origin')
+        if (
+          proxy &&
+          (req.headers.get('host') !== own || (from !== null && from !== `http://${own}`))
+        )
+          return new Response('forbidden', { status: 403 })
+        const proxied = await proxy?.(req)
+        if (proxied) return proxied
         const file = fileFor(new URL(req.url).pathname)
         return file
           ? new Response(Bun.file(file), { headers: { 'cache-control': 'no-store' } })

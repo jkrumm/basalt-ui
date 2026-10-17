@@ -21,6 +21,8 @@ import { buildBoard } from './board'
 import { capture } from './capture'
 import { INSTALL_LINE, ShotError, resolvePlaywright, withBrowser } from './playwright'
 import type { Playwright, PlaywrightResolver } from './playwright'
+import { apiProxy, parseApi, parseHeaders, parseStorage } from './real-data'
+import type { ApiRoute, Pair, Source } from './real-data'
 import { serveDist } from './serve'
 import { SCHEMES, STATES, VIEWPORTS } from './types'
 import type { ShotMetrics, ShotState } from './types'
@@ -29,7 +31,7 @@ const HOME = '.basalt/shots'
 /** A run dir under the home, so `last.json` and a named run's dir never share the default out. */
 const DEFAULT_OUT = `${HOME}/latest`
 const USAGE_LINE =
-  'usage: basalt-ui shot <route…> (--base <url> | --dist <dir>) [--out <dir>] [--states <list>]'
+  'usage: basalt-ui shot <route…> (--base <url> | --dist <dir>) [--out <dir>] [--states <list>] [--local-storage k=@env:X] [--api /p=origin] [--header n=@env:X] [--api-allow-writes] [--wait ms] [--auto-anchors]'
 
 export type ShotDeps = {
   resolve?: PlaywrightResolver
@@ -45,10 +47,21 @@ export type ShotArgs = {
   dist?: string
   out: string
   states: ShotState[]
+  /** Resolved secrets: held for the browser only, never written anywhere. */
+  localStorage: Pair[]
+  api: ApiRoute[]
+  headers: Pair[]
+  /** Extra settle in ms after networkidle. */
+  wait: number
+  allowWrites: boolean
+  autoAnchors: boolean
 }
 
 /** Parses argv; throws `ShotError` with the one-line reason. */
-export function parseShotArgs(flags: readonly string[]): ShotArgs {
+export function parseShotArgs(
+  flags: readonly string[],
+  src: Source = { env: process.env, cwd: process.cwd() },
+): ShotArgs {
   let parsed
   try {
     parsed = parseArgs({
@@ -59,6 +72,12 @@ export function parseShotArgs(flags: readonly string[]): ShotArgs {
         dist: { type: 'string' },
         out: { type: 'string' },
         states: { type: 'string' },
+        'local-storage': { type: 'string', multiple: true },
+        api: { type: 'string', multiple: true },
+        header: { type: 'string', multiple: true },
+        wait: { type: 'string' },
+        'auto-anchors': { type: 'boolean' },
+        'api-allow-writes': { type: 'boolean' },
       },
     })
   } catch (error) {
@@ -80,8 +99,22 @@ export function parseShotArgs(flags: readonly string[]): ShotArgs {
     : [...STATES]
   const unknown = states.find((s) => !(STATES as readonly string[]).includes(s))
   if (unknown) throw new ShotError(`unknown state '${unknown}'. Known: ${STATES.join(', ')}`)
+  const api = parseApi(values.api ?? [], (values.header?.length ?? 0) > 0)
+  if (api.length > 0 && !values.dist)
+    throw new ShotError(`--api needs --dist (it proxies the static server).\n${USAGE_LINE}`)
+  if ((values.header?.length ?? 0) > 0 && api.length === 0)
+    throw new ShotError(`--header is sent on --api requests only; pass --api.\n${USAGE_LINE}`)
+  const wait = values.wait ?? 'networkidle'
+  if (wait !== 'networkidle' && !/^\d+$/.test(wait))
+    throw new ShotError(`--wait takes milliseconds or 'networkidle'.\n${USAGE_LINE}`)
   return {
     routes: positionals,
+    localStorage: parseStorage(values['local-storage'] ?? [], src),
+    api,
+    headers: parseHeaders(values.header ?? [], src),
+    wait: wait === 'networkidle' ? 0 : Number(wait),
+    allowWrites: values['api-allow-writes'] ?? false,
+    autoAnchors: values['auto-anchors'] ?? false,
     ...(values.base ? { base: values.base.replace(/\/+$/, '') } : {}),
     ...(values.dist ? { dist: values.dist } : {}),
     out: values.out ?? DEFAULT_OUT,
@@ -284,14 +317,18 @@ export async function shot(
   const stops: (() => unknown)[] = []
   const uninstall = exitOnSignal(stops)
   try {
-    const args = parseShotArgs(flags)
+    const args = parseShotArgs(flags, { env: process.env, cwd })
     const outDir = planOut(cwd, args.out)
     recoverOut(outDir)
     const pw: Playwright | null = (deps.resolve ?? resolvePlaywright)(cwd)
     if (!pw) throw new ShotError(INSTALL_LINE)
     const now = (deps.now ?? (() => new Date()))()
     sweepStaleTmp(join(cwd, HOME), now)
-    const server = args.dist ? serveDist(resolve(cwd, args.dist)) : null
+    const proxy =
+      args.api.length > 0
+        ? apiProxy(args.api, args.headers, { log, allowWrites: args.allowWrites })
+        : null
+    const server = args.dist ? serveDist(resolve(cwd, args.dist), proxy?.handle) : null
     if (server) stops.push(server.stop)
     let tmp = ''
     stops.push(() => tmp && rmSync(tmp, { recursive: true, force: true }))
@@ -313,6 +350,10 @@ export async function shot(
             routes: args.routes,
             states: args.states,
             pngDir: join(tmp, 'png'),
+            localStorage: args.localStorage,
+            wait: args.wait,
+            autoAnchors: args.autoAnchors,
+            ...(proxy && { apiProblems: proxy.drain }),
             log,
           })
         },

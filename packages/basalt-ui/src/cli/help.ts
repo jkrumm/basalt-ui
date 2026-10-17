@@ -12,7 +12,10 @@
  */
 import { parseArgs } from 'node:util'
 
-export const COMMAND_OPTIONS: Record<string, Record<string, { type: 'string' | 'boolean' }>> = {
+export const COMMAND_OPTIONS: Record<
+  string,
+  Record<string, { type: 'string' | 'boolean'; multiple?: boolean }>
+> = {
   init: {
     'no-merge-lint': { type: 'boolean' },
   },
@@ -48,6 +51,12 @@ export const COMMAND_OPTIONS: Record<string, Record<string, { type: 'string' | '
     dist: { type: 'string' },
     out: { type: 'string' },
     states: { type: 'string' },
+    'local-storage': { type: 'string', multiple: true },
+    api: { type: 'string', multiple: true },
+    header: { type: 'string', multiple: true },
+    wait: { type: 'string' },
+    'auto-anchors': { type: 'boolean' },
+    'api-allow-writes': { type: 'boolean' },
   },
 }
 
@@ -92,7 +101,18 @@ export const USAGE =
   '  Render routes in Chromium (Playwright from YOUR project: bun add -d playwright) and write\n' +
   '  board.html, metrics.json and png/* — every data-shot anchor × light/dark × desktop/mobile ×\n' +
   '  rest, hover, focus, tooltip, empty, loading, error. --dist serves a built SPA dir itself.\n' +
-  '  Default --out .basalt/shots (emptied each run); .basalt/shots/last.json names the last out dir.\n\n' +
+  '  Default --out .basalt/shots (emptied each run); .basalt/shots/last.json names the last out dir.\n' +
+  '  A real, signed-in app: [--local-storage <key>=<@env:NAME|@file:path>]… seeds localStorage (app origin\n' +
+  '  only) before any page script; [--api <prefix>=<origin>]… (with --dist) proxies GET/HEAD under that\n' +
+  '  prefix to the origin (other methods get 405 unless --api-allow-writes); [--header <name>=@env:NAME]… is\n' +
+  '  added to every proxied request, to EVERY --api origin (never on a navigation; https required);\n' +
+  '  [--wait <ms|networkidle>] adds ms of settle AFTER networkidle (default none); [--auto-anchors] crops\n' +
+  '  each Card, Paper and table over 120×60 px on a page with no data-shot. Values are never printed or\n' +
+  '  written; a 401/403 or unreachable API marks the page shot failed. Shots of real data go to the\n' +
+  '  reviewer subagent and so to its model provider: point --api at staging or synthetic data when the\n' +
+  "  app holds other people's data. Example:\n" +
+  '    basalt-ui shot /overview --dist dist --api /api=https://app.example.com \\\n' +
+  '      --local-storage auth-token=@env:APP_TOKEN --header authorization=@env:APP_BEARER --auto-anchors\n\n' +
   'doctor [--tokens-only|--framework]\n' +
   '  Checks THIS project only: the manifest exists, the oxlint preset is wired, the pre-commit\n' +
   '  hook runs check-theme (via `lefthook dump`), and the ai package major is consistent within\n' +
