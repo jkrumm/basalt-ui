@@ -1238,6 +1238,14 @@ function crumbOf(sections: SidebarSection[]): ActiveCrumb | undefined {
 }
 
 /** Meter / BarList probes at fixed widths — the geometry happy-dom cannot see (SPEC § 6.3, § 6.4). */
+/** Four zones whose longest name cannot fit its quarter of a 160px row. */
+const TRAINING_ZONES = [
+  { from: 0, to: 250, label: 'Low' },
+  { from: 250, to: 500, label: 'Optimal' },
+  { from: 500, to: 750, label: 'High' },
+  { from: 750, to: 1000, label: 'Overreaching' },
+]
+
 function DashFixture(): ReactElement {
   const items = [
     {
@@ -1298,31 +1306,11 @@ function DashFixture(): ReactElement {
       </div>
       {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
       <div data-testid="dash-meter-zones-160" style={{ width: 160 }}>
-        <Meter
-          label="Training load"
-          max={1000}
-          value={400}
-          zones={[
-            { from: 0, to: 250, label: 'Low' },
-            { from: 250, to: 500, label: 'Optimal' },
-            { from: 500, to: 750, label: 'High' },
-            { from: 750, to: 1000, label: 'Overreaching' },
-          ]}
-        />
+        <Meter label="Training load" max={1000} value={400} zones={TRAINING_ZONES} />
       </div>
       {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
       <div data-testid="dash-meter-zones-360" style={{ width: 360 }}>
-        <Meter
-          label="Training load"
-          max={1000}
-          value={400}
-          zones={[
-            { from: 0, to: 250, label: 'Low' },
-            { from: 250, to: 500, label: 'Optimal' },
-            { from: 500, to: 750, label: 'High' },
-            { from: 750, to: 1000, label: 'Overreaching' },
-          ]}
-        />
+        <Meter label="Training load" max={1000} value={400} zones={TRAINING_ZONES} />
       </div>
       {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
       <div data-testid="dash-meter-ring" style={{ width: 160 }}>

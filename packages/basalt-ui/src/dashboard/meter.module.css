@@ -5,11 +5,14 @@
  */
 
 .root {
-  position: relative;
   display: flex;
   flex-direction: column;
   gap: var(--vx-space-stack-xs, 0.25rem);
   min-width: 0;
+}
+
+.root.zoned {
+  position: relative;
 }
 
 .track {
@@ -49,12 +52,14 @@
  */
 .zoneBand {
   position: relative;
+  /* Labels are absolutely placed, so the row needs its own line height. */
   height: 1.25em;
   font-family: var(--basalt-font-mono);
   font-size: var(--vx-text-micro);
   color: var(--vx-muted);
 }
 
+/* Hidden but laid out, so a resize can measure it again. Absolute against the zoned root. */
 .zoneBand[data-collapsed] {
   position: absolute;
   inset-inline: 0;
@@ -69,6 +74,7 @@
 }
 
 .zoneLabelHolding {
+  font-weight: 500;
   color: var(--vx-ink);
 }
 

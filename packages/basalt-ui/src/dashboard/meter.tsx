@@ -11,8 +11,11 @@
  * track end; the caption still states the real value.
  *
  * `zones` (bar only) draws the track as contiguous bands (neutral at stepped strengths unless a zone
- * passes a status colour) and the reading becomes a MARKER on the track, not a fill; each zone is named under the band at its start (the one holding the value in ink; names that
- * would collide wrap as a list instead; `from` inclusive). Use it for a reading judged against ranges.
+ * passes a status colour) and the reading becomes a MARKER on the track, not a fill. Each zone is
+ * named under the band at its start, the one holding the value (`from` inclusive) in ink and a
+ * heavier weight; names that would collide wrap as a list instead. The fit is measured in the
+ * browser, so server markup shows the band and the list may appear after mount. Use it for a
+ * reading judged against ranges.
  *
  * Every state (bar, ring, empty, loading) carries `data-basalt-meter` on its root. That attribute is
  * the contract with `StatCard`: a Meter passed as its `sparkline` visual makes the slot size to content

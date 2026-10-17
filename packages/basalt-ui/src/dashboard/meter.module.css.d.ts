@@ -4,6 +4,7 @@
  */
 declare const classes: {
   readonly root: string
+  readonly zoned: string
   readonly track: string
   readonly trackBox: string
   readonly fill: string

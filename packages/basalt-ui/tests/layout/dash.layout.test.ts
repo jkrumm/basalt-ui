@@ -141,7 +141,6 @@ layout('Meter / BarList geometry', () => {
         }
       }, `dash-meter-zones-${width}`)
       expect(m.boxes).toHaveLength(4)
-      expect(m.mode).toBe(width === 160 ? 'list' : 'band')
       for (const [i, a] of m.boxes.entries()) {
         expect(a.left).toBeGreaterThanOrEqual(m.rootLeft - SUBPIXEL)
         expect(a.right).toBeLessThanOrEqual(m.rootRight + SUBPIXEL)
@@ -154,7 +153,7 @@ layout('Meter / BarList geometry', () => {
           expect(apart).toBe(true)
         }
       }
-      // The list keeps zone order.
+      // Whichever mode the width produced, the list keeps zone order.
       if (m.mode === 'list') {
         expect(m.boxes.map((b) => b.name)).toEqual(['Low', 'Optimal', 'High', 'Overreaching'])
       }
@@ -162,6 +161,20 @@ layout('Meter / BarList geometry', () => {
       expect(m.holdingColor).not.toBe(m.otherColor)
     },
   )
+
+  test('Meter zone names collapse to a list when the row narrows and return when it widens', async () => {
+    const modeAt = (width: number) =>
+      p.raw.evaluate(async (w) => {
+        const host = document.querySelector<HTMLElement>('[data-testid="dash-meter-zones-360"]')
+        if (!host) throw new Error('LAYOUT: no dash-meter-zones-360')
+        host.style.width = `${w}px`
+        // A ResizeObserver callback lands before the next paint; two frames is enough to see it.
+        await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
+        return host.querySelector('[data-meter-zone-labels="list"]') ? 'list' : 'band'
+      }, width)
+    expect(await modeAt(120)).toBe('list')
+    expect(await modeAt(360)).toBe('band')
+  })
 
   test('a Meter caption row wraps at a narrow width without truncating', async () => {
     const result = await p.raw.evaluate(() => {

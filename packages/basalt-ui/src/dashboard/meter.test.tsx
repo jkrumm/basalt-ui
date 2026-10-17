@@ -1,6 +1,6 @@
 import { MantineProvider } from '@mantine/core'
-import { cleanup, render } from '@testing-library/react'
-import { afterEach, describe, expect, test } from 'bun:test'
+import { act, cleanup, render } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import { Meter } from './meter'
 import type { MeterProps } from './meter'
 
@@ -446,5 +446,118 @@ describe('Meter — captions and roots', () => {
   ])('the %s root carries data-basalt-meter', (_, props) => {
     const { container } = mount(props)
     expect(container.querySelector('[data-basalt-meter]')).toBeTruthy()
+  })
+})
+
+describe('zone name layout', () => {
+  const ZONES = [
+    { from: 0, to: 250, label: 'Low' },
+    { from: 250, to: 500, label: 'Optimal' },
+    { from: 500, to: 750, label: 'High' },
+  ]
+  const LABEL_WIDTH = 50
+  let rowWidth = 300
+  let observers: FakeResizeObserver[] = []
+
+  class FakeResizeObserver {
+    disconnected = false
+    constructor(readonly callback: () => void) {
+      observers.push(this)
+    }
+    observe() {}
+    unobserve() {}
+    disconnect() {
+      this.disconnected = true
+    }
+  }
+
+  let ownRect: PropertyDescriptor | undefined
+  let realObserver = globalThis.ResizeObserver
+
+  beforeEach(() => {
+    // Captured per test, not at load: other files stub the same prototype.
+    ownRect = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'getBoundingClientRect')
+    realObserver = globalThis.ResizeObserver
+    rowWidth = 300
+    observers = []
+    globalThis.ResizeObserver = FakeResizeObserver as unknown as typeof ResizeObserver
+    // happy-dom has no layout: the row is `rowWidth` wide, each name `LABEL_WIDTH` from its start.
+    HTMLElement.prototype.getBoundingClientRect = function (this: HTMLElement) {
+      const box = (left: number, width: number) =>
+        ({ left, right: left + width, width, top: 0, bottom: 10, height: 10 }) as DOMRect
+      if (this.hasAttribute('data-meter-zone-label')) {
+        return box((Number.parseFloat(this.style.insetInlineStart) / 100) * rowWidth, LABEL_WIDTH)
+      }
+      return this.hasAttribute('data-meter-zone-labels') ? box(0, rowWidth) : box(0, 0)
+    }
+  })
+  afterEach(() => {
+    // Restore (or remove) the OWN property: assigning the inherited function back would shadow
+    // the `Element.prototype` stub other files install.
+    if (ownRect) Object.defineProperty(HTMLElement.prototype, 'getBoundingClientRect', ownRect)
+    else Reflect.deleteProperty(HTMLElement.prototype, 'getBoundingClientRect')
+    globalThis.ResizeObserver = realObserver
+  })
+
+  const props = { label: 'Load', max: 750, value: 300, zones: ZONES } as const
+  const mode = (c: HTMLElement) =>
+    c.querySelector('[data-meter-zone-labels="list"]') ? 'list' : 'band'
+  const resize = (width: number) => {
+    rowWidth = width
+    act(() => {
+      for (const o of observers) o.callback()
+    })
+  }
+  const names = (c: HTMLElement, which: 'band' | 'list') =>
+    [...c.querySelectorAll(`[data-meter-zone-labels="${which}"] [data-meter-zone-label]`)].map(
+      (l) => l.textContent,
+    )
+
+  test('fits on a wide row, drops to the list when narrowed, and returns to the band when widened', () => {
+    const { container } = mount(props)
+    expect(mode(container)).toBe('band')
+    resize(120)
+    expect(mode(container)).toBe('list')
+    expect(names(container, 'list')).toEqual(['Low', 'Optimal', 'High'])
+    resize(300)
+    expect(mode(container)).toBe('band')
+  })
+
+  test('the holding zone is flagged in both modes', () => {
+    const { container } = mount(props)
+    const holding = () =>
+      [...container.querySelectorAll('[data-holding]')].map((l) => l.textContent)
+    expect(holding()).toEqual(['Optimal'])
+    resize(120)
+    expect(holding()).toEqual(['Optimal', 'Optimal'])
+  })
+
+  test('the described-by text names every zone and the holding one in both modes', () => {
+    const { container } = mount(props)
+    const text = () => {
+      const id = meter(container).getAttribute('aria-describedby') as string
+      return container.querySelector(`[id="${id}"]`)?.textContent
+    }
+    for (const width of [300, 120]) {
+      resize(width)
+      expect(text()).toContain('Low 0 to 250')
+      expect(text()).toContain('Optimal 250 to 500')
+      expect(text()).toContain('High 500 to 750')
+      expect(text()).toContain('300 is in Optimal')
+    }
+  })
+
+  test('disconnects the observer on unmount', () => {
+    const { unmount } = mount(props)
+    expect(observers.every((o) => !o.disconnected)).toBe(true)
+    unmount()
+    expect(observers.length).toBeGreaterThan(0)
+    expect(observers.every((o) => o.disconnected)).toBe(true)
+  })
+
+  test('without a ResizeObserver it renders the band and does not throw', () => {
+    // @ts-expect-error simulating an environment without the API
+    delete globalThis.ResizeObserver
+    expect(mode(mount(props).container)).toBe('band')
   })
 })
