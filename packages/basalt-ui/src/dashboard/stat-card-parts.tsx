@@ -41,7 +41,9 @@ export function CaptionRow({ title, icon, info, qualifier, tone, actions }: Capt
         <div className={classes.lead}>
           <h3 className={classes.caption}>
             {icon !== undefined && <IconSlot className={classes.icon}>{icon}</IconSlot>}
-            <span className={classes.captionText}>{title}</span>
+            <span className={classes.captionText} data-widget-title>
+              {title}
+            </span>
           </h3>
           {/* OUTSIDE the heading on purpose: `info` would otherwise become part of its name. */}
           {info !== undefined && <InfoGlyph text={info} />}

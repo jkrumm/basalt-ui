@@ -247,12 +247,15 @@
  * overlay — axe and assistive tech measure the element. The negative margin hands the extra
  * (24 - 11) / 2 back on every side, so the glyph and the row around it keep their drawn size. */
 .infoTrigger {
+  --basalt-info-glyph: 11px;
+  --basalt-info-ring-offset: 2px;
+  --basalt-info-ring-width: 2px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   min-width: 24px;
   min-height: 24px;
-  margin: calc((11px - 24px) / 2);
+  margin: calc((var(--basalt-info-glyph) - 24px) / 2);
   position: relative;
   appearance: none;
   padding: 0;
@@ -262,25 +265,27 @@
   cursor: help;
 }
 
-/* The keyboard ring hugs the 11px glyph, not the 24px hit box: drawn on the box it reached 6.5px
- * past the glyph and painted over the title's last letter and a neighbouring status dot. The
- * `::before` is the glyph + a 2px offset on each side, outlined 2px, so the ring ends 4px from the
- * glyph — inside the 6px control gap. (`::after` is the hit overlay's.) */
+/* The keyboard ring hugs the glyph, not the 24px hit box: drawn on the box it reached 6.5px past
+ * the glyph and painted over the title's last letter and a neighbouring status dot. The `::before`
+ * is the glyph + the offset on each side, outlined by the ring width, so the ring ends 4px from the
+ * glyph — inside the 6px control gap. (`::after` is the hit overlay's.)
+ * Forced colors: the ring is an `outline`, which the UA keeps and recolours to a system colour, so
+ * it stays visible without a `forced-colors` override. */
 .infoTrigger:focus-visible {
   outline: none;
-}
 
-.infoTrigger:focus-visible::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  translate: -50% -50%;
-  width: calc(11px + 2 * 2px);
-  height: calc(11px + 2 * 2px);
-  border-radius: var(--vx-radius-fine);
-  outline: 2px solid var(--vx-accent);
-  pointer-events: none;
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    translate: -50% -50%;
+    width: calc(var(--basalt-info-glyph) + 2 * var(--basalt-info-ring-offset));
+    height: calc(var(--basalt-info-glyph) + 2 * var(--basalt-info-ring-offset));
+    border-radius: var(--vx-radius-fine);
+    outline: var(--basalt-info-ring-width) solid var(--vx-accent);
+    pointer-events: none;
+  }
 }
 
 .infoTrigger:hover,

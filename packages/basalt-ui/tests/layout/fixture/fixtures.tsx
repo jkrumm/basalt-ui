@@ -27,7 +27,6 @@ import type { BandStripSeries, BarsBar, ChartSeries } from '../../../src/charts'
 import { overlays } from '../../../src/commands'
 import { FilterSet, FormRow, SelectFilter, ViewTabs } from '../../../src/controls'
 import { BasaltDataTable } from '../../../src/table'
-import { InfoRingFixture } from './info-ring-fixture'
 import type { DataTableFacet } from '../../../src/table/data-table'
 import type { BasaltColumnDef } from '../../../src/table/table-features'
 import { Prose } from '../../../src/content'
@@ -67,6 +66,7 @@ import type {
   ItemSpec,
   TableSpec,
 } from './spec'
+import { InfoRingFixture } from './info-ring-fixture'
 import { RAIL_DOMAIN_MAX, RAIL_PX, TOC_SCROLL_MARGIN_PX } from './spec'
 
 /** A consumer-sized (18px) glyph — the bar normalizes it to `--vx-space-mobile-nav-icon-size` in

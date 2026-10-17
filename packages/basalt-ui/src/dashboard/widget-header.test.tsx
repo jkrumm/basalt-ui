@@ -244,7 +244,8 @@ describe('the subtitle folds into the info glyph in a card under 480px (CSS-only
     const trigger = block('.infoTrigger')
     expect(trigger).toContain('min-width: 24px')
     expect(trigger).toContain('min-height: 24px')
-    expect(trigger).toContain('margin: calc((11px - 24px) / 2)')
+    expect(trigger).toContain('--basalt-info-glyph: 11px')
+    expect(trigger).toContain('margin: calc((var(--basalt-info-glyph) - 24px) / 2)')
   })
 
   test('the container rules hide the visible subtitle and show the fold pieces, and only there', () => {
