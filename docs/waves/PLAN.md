@@ -1320,7 +1320,7 @@ Spec: SPEC § 3, § 4, § 6.3, § 6.4, D1, D2. Scenarios S4 and S2 (build the S2
 procedure. The old Waves 36–41 are now 37–42, so a wave number of 36 or more cited in SPEC.md or AUDIT.md reads one higher.
 The old Wave 35's card recipes moved into Wave 38 (record page) and the strip into the new Wave 35.
 
-## Wave 35 — argo's friction: typography, primitive props and the strip <!-- status: active -->
+## Wave 35 — argo's friction: typography, primitive props and the strip <!-- status: done -->
 
 Owner, 2026-10-17: argo is now the proving ground (argo PLAN Part 2). After argo's Waves 19–20 the structure of
 the pages is right, but the craft is not yet, and most of what is missing is basalt's. Source:
@@ -1342,7 +1342,7 @@ Validators: argo, which deletes its local workarounds in the same cycle (net-neg
       explicit pair as redundant, there is a sanctioned flush idiom (`Card.Section` or a variant), and the message
       names it. Wave 34's leftovers: the S4 histogram and stacked value-over-time, the invisible Tabs hover in
       dark, and the active sidebar row's accent fill.
-- [ ] Rounds (r0–r3 done; the argo validation run is open): at least three on S2/S3/S4, plus an argo validation run. argo bumps, deletes `FactsLine`, its three
+- [x] Rounds (r0–r3 done; the argo validation run moved to argo Wave 23 on 2.20.0, released 2026-10-18): at least three on S2/S3/S4, plus an argo validation run. argo bumps, deletes `FactsLine`, its three
       strip prototypes, the `relativeTime` wrapper and the `alpha(VX.muted, …)` meter hacks, then live-shots
       Garmin, Agents, Warden and Home. Report the argo line delta.
       **Left behind:**
@@ -1381,7 +1381,7 @@ Validators: argo, which deletes its local workarounds in the same cycle (net-neg
 - **Next — stopped: awaiting owner review** of the boards (`.design-parity/w35/r0`–`r3`) and the release decision that
   unblocks the argo validation run. Not released; nothing spawned.
 
-## Wave 36 — The UX-first procedure, shipped <!-- status: pending -->
+## Wave 36 — The UX-first procedure, shipped <!-- status: active -->
 
 Owner, 2026-10-17: the flow basalt teaches every consumer's agent through `init`/`sync` is UX research first,
 then encoding, then the build, then rendered critique. Inputs: argo's concept-doc format (proven in argo Waves
@@ -1403,6 +1403,15 @@ catalogue). This wave takes over old Wave 39's catalogue-shipping step.
       series folds into Other).
 - [ ] **Discovery and precedence:** the AGENTS block also supersedes the bundled `/dataviz` skill inside a
       basalt app, and a monorepo-root session demonstrably loads the skill and the reviewer.
+- [ ] **Wave 35's leftovers and the mother's r3 read** (2.20.0 boards, `.design-parity/w35/r3`): Wave 35's
+      Left behind list (strip `state`, one Retry in the error anatomy, `tone="muted"` as the non-verdict Meter
+      default, shot's absent-anchor declaration, fixture items), plus four composition defects on every scenario
+      page at 1440: - columns end unbalanced with a dead void beside a short card (S2 hit rate, S3 right column, S4
+      spend by project) — the layout idiom must pair heights or let a card span; - the default `BarList` reads as
+      heavy grey slabs with labels inside (S2 readiness, S4 drivers) where a thin track carries the same data; -
+      a Meter marker re-states the headline value under the track (S2 training load `1.19`, readiness `76`); - the
+      S3 failures cell draws three unlabelled red ticks with no axis. Each fix lands as a playground round with
+      before/after boards.
 - [ ] **Expression trial v0:** a scratch `init` app with a fresh agent and three datasets (a ratio against a
       limit, a status-over-time series, a ranked list), and no component names. Did it write a concept, which
       encodings did it pick, and how does the board score? A fallback to a default is a ledger row. Compare
