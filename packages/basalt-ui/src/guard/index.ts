@@ -1,5 +1,7 @@
 /**
- * ./guard — headless policy core. Mantine-free, dependency-free.
+ * ./guard — headless policy core. Mantine-free and light: it may import dependency-free leaves
+ * (`tokens/space-scale`, `common/*`), never `tokens/palette` or `derive` (colour math on every
+ * Write/Edit).
  *
  * GUARD_RULES: the closed registry of all 26 violation kinds.
  * checkSource:  pure (text, relPath, cfg) → Finding[]. No FS, no walk, no console.
@@ -193,7 +195,7 @@ const DECLARED_CONTAINER_NAMES = new Set(['basalt-card', 'basalt-form', 'basalt-
 
 /**
  * `CONTAINER_CLASSES` (`src/tokens/size-classes.ts`) boundaries, duplicated per the `CTL_THEME_TAGS`
- * convention in the oxlint plugin — this module is dependency-free by contract (file header) and
+ * convention in the oxlint plugin — this module keeps to the leaves its file header names and
  * must not import `../tokens`. Pinned against the real table by `check-source.test.ts`. Judged only
  * against `basalt-card` and unnamed queries: the other declared names have no shipped numeric table
  * yet. `0` is the container's own floor, not a class boundary, but `(width >= 0px)` is a legitimate
@@ -823,7 +825,9 @@ const SUB_16_FONT_SIZE = /font-?[Ss]ize\s*:\s*['"]?(-?\d+(?:\.\d+)?)(?:px)?['"]?
  * A consumer whose theme moves the scale (`createBasaltTheme({ density })`, or its own overrides)
  * sets `basalt.spacingSteps` in package.json rather than living with this default.
  */
-const DEFAULT_SPACING_STEPS: readonly number[] = Object.values(SPACE_SCALE_LEVEL0)
+const DEFAULT_SPACING_STEPS: readonly number[] = Object.values(SPACE_SCALE_LEVEL0).toSorted(
+  (a, b) => a - b,
+)
 /** Default off-identity Mantine accent families. */
 const DEFAULT_FORBIDDEN_ACCENTS: readonly string[] = ['teal', 'violet', 'grape', 'indigo', 'pink']
 
