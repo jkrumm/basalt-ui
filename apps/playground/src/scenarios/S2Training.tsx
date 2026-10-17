@@ -215,7 +215,7 @@ function GoalRow({ shotState }: ScenarioProps) {
                 label={`Sessions this month against the goal of ${GOAL_SESSIONS}`}
                 value={empty ? null : SESSIONS_MTD}
                 max={GOAL_SESSIONS}
-                target={PACE_SESSIONS}
+                ticks={[{ at: PACE_SESSIONS, label: 'Pace' }]}
                 format={(v) => `${fmtInt(v)} sessions`}
                 startCaption={`${fmtInt(SESSIONS_MTD)} of ${GOAL_SESSIONS} sessions`}
                 endCaption={`Pace ${fmtInt(PACE_SESSIONS)} sessions by ${TODAY_LABEL}`}

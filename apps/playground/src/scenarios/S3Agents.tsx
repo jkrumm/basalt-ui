@@ -46,6 +46,8 @@ import { cardStateProps, chartStateFor, retryCopy } from './shot-state'
 import type { ScenarioProps } from './shot-state'
 
 const WARDEN_ERROR = 'The queue did not answer. Retry, or check the warden connection.'
+const WEEK_ERROR =
+  'The queue did not answer for the weekly budget. Retry, or check the warden connection.'
 const WARDEN_EMPTY = 'No agent work in the queue. Dispatch an item to start.'
 const retry = (what: string): string => retryCopy(what, 'warden')
 
@@ -122,6 +124,27 @@ function QueueStrip({ shotState }: ScenarioProps) {
       }),
     },
     {
+      key: 'dispatch-spend',
+      caption: 'Dispatch spend',
+      qualifier: 'today',
+      info: `Agent dispatch cost so far today, in EUR; the daily cap is ${fmtEur(BUDGETS.day.cap)}. The sparkline and its dashed mean cover the ${DISPATCH_COMPLETE_DAYS.length} complete days before today.`,
+      value: none ? null : fmtEur(BUDGETS.day.spent),
+      ...(!hidden && {
+        visual: (
+          <Box data-shot-hover>
+            <Sparkline
+              ariaLabel={`Dispatch spend per day, last ${DISPATCH_COMPLETE_DAYS.length} complete days, EUR`}
+              data={DISPATCH_COMPLETE_DAYS}
+              height={SPARK_HEIGHT}
+              reference="mean"
+              format={fmtEur}
+            />
+          </Box>
+        ),
+      }),
+      loading,
+    },
+    {
       key: 'oldest-wait',
       caption: 'Oldest wait',
       info: `The longest an item has waited on you. Warden warns past ${WARN_LABEL} and closes an item as abandoned at ${ABANDON_LABEL}.`,
@@ -164,27 +187,6 @@ function QueueStrip({ shotState }: ScenarioProps) {
           />
         ),
       }),
-    },
-    {
-      key: 'dispatch-spend',
-      caption: 'Dispatch spend',
-      qualifier: 'today',
-      info: `Agent dispatch cost so far today, in EUR; the daily cap is ${fmtEur(BUDGETS.day.cap)}. The sparkline and its dashed mean cover the ${DISPATCH_COMPLETE_DAYS.length} complete days before today.`,
-      value: none ? null : fmtEur(BUDGETS.day.spent),
-      ...(!hidden && {
-        visual: (
-          <Box data-shot-hover>
-            <Sparkline
-              ariaLabel={`Dispatch spend per day, last ${DISPATCH_COMPLETE_DAYS.length} complete days, EUR`}
-              data={DISPATCH_COMPLETE_DAYS}
-              height={SPARK_HEIGHT}
-              reference="mean"
-              format={fmtEur}
-            />
-          </Box>
-        ),
-      }),
-      loading,
     },
     {
       key: 'failures',
@@ -258,7 +260,7 @@ function QueueStrip({ shotState }: ScenarioProps) {
       BUDGETS.week.spent,
       BUDGETS.week.cap,
       'Last 7 days',
-      error ? 'Weekly budget unavailable.' : 'No dispatch spend this week.',
+      error ? WEEK_ERROR : 'No dispatch spend this week.',
     ),
   }
   // Both footer anchors exist in every state (`shot` errors on an anchor that vanishes); the

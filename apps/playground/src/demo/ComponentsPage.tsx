@@ -132,7 +132,7 @@ export function ComponentsPage() {
   )
 }
 
-function ComponentsSurfaces() {
+export function ComponentsSurfaces() {
   return (
     <Stack gap="md" data-compare="surfaces">
       <SimpleGrid
@@ -140,16 +140,28 @@ function ComponentsSurfaces() {
         cols={{ base: 1, [CONTAINER_KEYS.regular]: 2 }}
         style={{ alignItems: 'start' }}
       >
-        <ComponentGroup title="Buttons" shot="buttons">
-          <Group gap="sm">
-            <Button variant="filled">Filled</Button>
-            <Button variant="default">Default</Button>
-            <Button variant="light" data-shot-hover>
-              Light
-            </Button>
-            <Button variant="outline">Outline</Button>
-            <Button variant="subtle">Subtle</Button>
-          </Group>
+        <ComponentGroup title="Button variants and sizes" shot="buttons">
+          <Stack gap="sm">
+            <Group gap="sm">
+              <Button variant="filled">Filled</Button>
+              <Button variant="default">Default</Button>
+              <Button variant="light" data-shot-hover>
+                Light
+              </Button>
+              <Button variant="outline">Outline</Button>
+              <Button variant="subtle">Subtle</Button>
+            </Group>
+            <Group gap="sm" align="center">
+              <Button size="xs">Extra small</Button>
+              <Button size="sm">Small</Button>
+              <Button size="md">Medium</Button>
+              <Button size="lg">Large</Button>
+            </Group>
+            <Group gap="sm">
+              <Button disabled>Disabled</Button>
+              <Button loading>Loading</Button>
+            </Group>
+          </Stack>
         </ComponentGroup>
 
         <ComponentGroup title="Inputs">
@@ -174,31 +186,40 @@ function ComponentsSurfaces() {
           </Stack>
         </ComponentGroup>
 
-        <ComponentGroup title="Tabs" shot="tabs">
-          <Tabs defaultValue="deploys">
-            <Tabs.List>
-              <Tabs.Tab value="deploys">Deploys</Tabs.Tab>
-              <Tabs.Tab value="incidents" data-shot-hover>
-                Incidents
-              </Tabs.Tab>
-              <Tabs.Tab value="alerts">Alerts</Tabs.Tab>
-            </Tabs.List>
-            <Tabs.Panel value="deploys" pt="sm">
-              <Text size="sm" c="dimmed">
-                14 deploys this week; the last one shipped at 09:12 UTC.
-              </Text>
-            </Tabs.Panel>
-            <Tabs.Panel value="incidents" pt="sm">
-              <Text size="sm" c="dimmed">
-                One incident in 30 days, resolved in 18 minutes.
-              </Text>
-            </Tabs.Panel>
-            <Tabs.Panel value="alerts" pt="sm">
-              <Text size="sm" c="dimmed">
-                Alerts page the on-call engineer after two failed checks.
-              </Text>
-            </Tabs.Panel>
-          </Tabs>
+        <ComponentGroup title="Tabs: default and pills" shot="tabs">
+          <Stack gap="md">
+            <Tabs defaultValue="deploys">
+              <Tabs.List>
+                <Tabs.Tab value="deploys">Deploys</Tabs.Tab>
+                <Tabs.Tab value="incidents" data-shot-hover>
+                  Incidents
+                </Tabs.Tab>
+                <Tabs.Tab value="alerts">Alerts</Tabs.Tab>
+              </Tabs.List>
+              <Tabs.Panel value="deploys" pt="sm">
+                <Text size="sm" c="dimmed">
+                  14 deploys this week; the last one shipped at 09:12 UTC.
+                </Text>
+              </Tabs.Panel>
+              <Tabs.Panel value="incidents" pt="sm">
+                <Text size="sm" c="dimmed">
+                  One incident in 30 days, resolved in 18 minutes.
+                </Text>
+              </Tabs.Panel>
+              <Tabs.Panel value="alerts" pt="sm">
+                <Text size="sm" c="dimmed">
+                  Alerts page the on-call engineer after two failed checks.
+                </Text>
+              </Tabs.Panel>
+            </Tabs>
+            <Tabs defaultValue="all" variant="pills">
+              <Tabs.List>
+                <Tabs.Tab value="all">All</Tabs.Tab>
+                <Tabs.Tab value="open">Open</Tabs.Tab>
+                <Tabs.Tab value="closed">Closed</Tabs.Tab>
+              </Tabs.List>
+            </Tabs>
+          </Stack>
         </ComponentGroup>
 
         <ComponentGroup title="Segmented control">
@@ -296,7 +317,7 @@ function ComponentsSurfaces() {
       </SimpleGrid>
 
       <SimpleGrid type="container" cols={{ base: 1, [CONTAINER_KEYS.regular]: 2 }}>
-        <ComponentGroup title="Badges" shot="badges">
+        <ComponentGroup title="Status badges and counts" shot="badges">
           <Stack gap="sm">
             <Group gap="sm">
               <Badge color="green">Healthy</Badge>
