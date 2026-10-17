@@ -519,7 +519,7 @@ export function AppSidebar(props: AppSidebarProps) {
                 target. `SettingsMenuItem.icon` stays optional; supply one per row in the flat form
                 and the gear never appears. */}
             <span className={classes.footerIconSlot}>{entry.icon ?? <IconGear />}</span>
-            <Text className={classes.footerText} fz={VX.text.md}>
+            <Text className={classes.footerText} fz={VX.text.sm}>
               {entry.label}
             </Text>
             {/* The rail ring rides the FIRST row only — one progress block is one mark. */}
@@ -539,7 +539,7 @@ export function AppSidebar(props: AppSidebarProps) {
           <Menu.Target>
             <UnstyledButton className={classes.footerBtn} aria-label="Settings">
               <IconGear />
-              <Text className={classes.footerText} fz={VX.text.md}>
+              <Text className={classes.footerText} fz={VX.text.sm}>
                 Settings
               </Text>
               {ringMark}

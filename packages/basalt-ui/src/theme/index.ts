@@ -81,7 +81,7 @@ import {
 import type { PaletteData, RadiusValues, SpaceValues } from '../tokens/palette'
 import { DEFAULT_DERIVE_CONFIG, isDefaultDeriveConfig, resolveDeriveConfig } from '../tokens/derive'
 import type { DeriveConfig } from '../tokens/derive'
-import { pxRem, VX } from '../tokens/core'
+import { pxRem, TEXT_LINE, VX } from '../tokens/core'
 import { SIZE_CLASS_BREAKPOINTS } from '../tokens/size-classes'
 import type { BasaltFontsConfig } from '../tokens/core'
 import controlsClasses from './controls.module.css'
@@ -467,7 +467,7 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
     // buttons ≥28px sit at ~6px). `radius.md` = 0.375rem = 6px, mirrored by `--vx-radius-ctrl` — every
     // control without its own explicit `radius` prop (Button, ActionIcon, TextInput, NumberInput,
     // PasswordInput, Select, Textarea) falls back to this default. Card/Paper bypass this scale
-    // entirely — they resolve straight to `var(--vx-radius-card)` (7px, see the
+    // entirely — they resolve straight to `var(--vx-radius-card)` (10px, see the
     // `components.Card`/`Paper` overrides below).
     defaultRadius: 'md',
     // Named weight ladder (v9 fontWeights).
@@ -484,6 +484,11 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
       md: rem(VX.text.md),
       lg: rem(VX.text.lg),
       xl: rem(VX.text.xl),
+    },
+    // Dense rungs get grid-aligned line boxes (13/20, 12/16); md and up keep Mantine's ratios.
+    lineHeights: {
+      xs: String(TEXT_LINE.xs / VX.text.xs),
+      sm: String(TEXT_LINE.sm / VX.text.sm),
     },
     // Deliberate, OWNED spacing + radius scales — the single edit point, not inherited Mantine
     // defaults. Denser than Mantine's stock lg/xl for a tighter, data-driven surface. 10 12 16 18 24.
@@ -538,7 +543,7 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
       // resolves to the SAME three tokens:
       //   • background → `--vx-surface-panel` (the panel surface, NOT the page body).
       //   • depth      → `--vx-shadow-card` (whisper shadow + ring, replaces `withBorder`).
-      //   • radius     → `--vx-radius-card` (7px).
+      //   • radius     → `--vx-radius-card` (10px).
       // This is the single source the user's "strict surface across components" demands; the
       // `raw-surface` guard then stops consumers re-overriding any of it inline.
       Card: ext<typeof Card>({
@@ -634,19 +639,19 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
             // `--nl-padding` var), so the spec padding is forced inline here, where it wins
             // deterministically on every render path.
             padding: 'var(--vx-space-row-inset-y) var(--vx-space-row-inset-x)',
-            // The body step on the ROOT, not just the label: the body element sizes itself from the
+            // The dense-row step (`sm`) on the ROOT, not just the label: the body element sizes itself from the
             // root's inherited line-height (which, left at the default 1.55, alone pushed rows to
-            // ~37px). The tightened 1.35 keeps rows compact as the scale grows. Reads
+            // ~37px). The 1.54 (a 20px line at 13px) keeps rows compact as the scale grows. Reads
             // `--vx-space-row-line-height` (density-tracking, ADDITIVE law — see `deriveSpacing`'s
             // doc in `tokens/palette.ts` for why this one differs from the padding's multiplier).
-            fontSize: VX.text.md,
+            fontSize: VX.text.sm,
             lineHeight: 'var(--vx-space-row-line-height)',
             // Nav rows sit in the 5-6px radius tier (docs/DESIGN-SPEC.md §4), not square.
             borderRadius: 'var(--vx-radius-ctrl)',
           },
           // Mantine pins the label at `font-size-sm` explicitly, so the root value alone
           // doesn't reach it.
-          label: { fontSize: VX.text.md, lineHeight: 'var(--vx-space-row-line-height)' },
+          label: { fontSize: VX.text.sm, lineHeight: 'var(--vx-space-row-line-height)' },
         },
       }),
       // Field idiom (docs/DESIGN-SPEC.md §5): field surface + `shadow-raised` depth + faint placeholder,
@@ -810,12 +815,12 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
       //
       // The track's padding is `SPACE_FIXED.segmentedTrackInset`, a plain literal — NOT a
       // `--vx-space-*` var — because it is density-EXEMPT: it is load-bearing for the nested-corner
-      // law (`RADIUS.card === RADIUS_STEP.tight + segmentedTrackInset`, see that constant's doc in
-      // `tokens/palette.ts`), and `radius.card`/`RADIUS_STEP.tight` two lines below already track the
+      // law (`RADIUS.ctrl === RADIUS_STEP.fine + segmentedTrackInset`, see that constant's doc in
+      // `tokens/palette.ts`), and `radius.ctrl`/`RADIUS_STEP.fine` below already track the
       // RADIUS knob together, so the inset between them must stay fixed at exactly 2 regardless of
       // density.
       SegmentedControl: ext<typeof SegmentedControl>({
-        defaultProps: { radius: radius.card },
+        defaultProps: { radius: radius.ctrl },
         classNames: {
           label: segmentedControlClasses.label,
           control: segmentedControlClasses.control,
@@ -852,7 +857,7 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
             // ink-12% fill sat one shade from the track and read as a hover state.
             boxShadow: 'var(--vx-shadow-raised)',
             outline: '1px solid color-mix(in srgb, var(--vx-ink) 14%, transparent)',
-            borderRadius: 'var(--vx-radius-tight)',
+            borderRadius: 'var(--vx-radius-fine)',
           },
           // Conditionally spread the WHOLE key (never a present `label: undefined`) — the package
           // builds under `exactOptionalPropertyTypes`, which treats a key present-but-`undefined` as
@@ -925,12 +930,12 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
         },
         styles: {
           itemTitle: {
-            fontSize: VX.text.md,
+            fontSize: VX.text.sm,
             fontWeight: 600,
             color: 'var(--vx-ink)',
           },
           itemContent: {
-            fontSize: VX.text.md,
+            fontSize: VX.text.sm,
             color: 'var(--vx-muted)',
           },
         },
@@ -983,7 +988,7 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
             boxShadow: 'var(--vx-shadow-overlay)',
           },
           item: {
-            fontSize: VX.text.md,
+            fontSize: VX.text.sm,
             borderRadius: 'var(--vx-radius-ctrl)',
             padding: 'var(--vx-space-row-inset-y) var(--vx-space-row-inset-x)',
           },
@@ -1099,7 +1104,7 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
             textTransform: 'uppercase',
             color: 'var(--vx-faint)',
           },
-          td: { height: spacing.step.tableRowHeight },
+          td: { height: spacing.step.tableRowHeight, fontSize: VX.text.sm },
         },
       }),
       // The v9 thumb indicator is a center dot painted in the TRACK color — over the remapped

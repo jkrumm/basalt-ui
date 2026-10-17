@@ -349,7 +349,7 @@ function MessageAffordanceRow({
 
   return (
     <Group
-      gap={8}
+      gap="xs"
       data-testid={`message-affordances-${message.id}`}
       style={{ opacity: visible ? 1 : 0, transition: 'opacity 120ms ease' }}
     >

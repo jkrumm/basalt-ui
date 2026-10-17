@@ -525,7 +525,7 @@ describe('tokens:css — a committable artifact', () => {
     const css = emit([])
     expect(css.endsWith('}\n')).toBe(true)
     expect(css).not.toMatch(/rgba\(\d+,\d/)
-    expect(css).toContain('rgba(255, 255, 255, 0.6)')
+    expect(css).toContain('rgba(255, 255, 255, 0.12)')
   })
 
   it('emits no trailing-zero alpha — the last thing keeping the sheet out of a linter', () => {

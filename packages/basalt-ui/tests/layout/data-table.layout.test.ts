@@ -13,7 +13,7 @@
  * ASSERTIONS ARE RELATIONS, NEVER EXACT PIXELS — the invariant is "the header's top edge IS the
  * scroller's top edge", which holds at any font metric, density level or viewport.
  */
-import { afterAll, describe, test } from 'bun:test'
+import { afterAll, describe, expect, test } from 'bun:test'
 import type { FixtureSpec } from './fixture/spec'
 import type { LayoutPage, Named, Viewport } from './harness'
 import {
@@ -392,6 +392,36 @@ layout('BasaltDataTable sticky header — real layout', () => {
           `${SEARCH_BASIS}px\n  actual:   ${search.box.width}px`,
       )
     }
+  })
+
+  // Wave 32's dense tier: a 28px toolbar at a fine pointer is what lets the search, its facet pills
+  // and the actions share ONE row at 1440 (the 32px tier wrapped them). A row is one when every
+  // visible item starts within a pixel of the same top edge.
+  test('the toolbar stays in one row at 1440 and its controls are 28px tall (fine pointer)', async () => {
+    const p = await openFixture(toolbarSpec, DESKTOP, '/', 'reduce', 'fine')
+    const tops = await p.raw.evaluate((sel) => {
+      const group = document.querySelector(sel)
+      if (!group) throw new Error(`no toolbar under ${sel}`)
+      return [...group.children]
+        .map((child) => child.getBoundingClientRect())
+        .filter((rect) => rect.height > 0)
+        .map((rect) => Math.round(rect.top))
+    }, TOOLBAR)
+    expect(tops.length).toBeGreaterThan(1)
+    expect(Math.max(...tops) - Math.min(...tops)).toBeLessThanOrEqual(1)
+    expect((await p.box('search', SEARCH)).box.height).toBe(28)
+  })
+
+  test('a coarse pointer keeps the 32px tier; the 44px floor is the hit overlay', async () => {
+    const p = await openFixture(toolbarSpec, DESKTOP)
+    expect((await p.box('search', SEARCH)).box.height).toBeGreaterThanOrEqual(44)
+  })
+
+  test('data rows are 40px and the header 36px; controls round at 6', async () => {
+    const p = await openFixture(toolbarSpec, DESKTOP)
+    expect((await p.box('header', 'table thead th')).box.height).toBe(36)
+    expect((await p.box('row', 'table tbody tr:nth-child(1) td')).box.height).toBe(40)
+    expect(await p.computed('.mantine-TextInput-input', 'border-top-left-radius')).toBe('6px')
   })
 
   test('the toolbar sits fully inside Main on a phone', async () => {

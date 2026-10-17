@@ -81,7 +81,7 @@ export function SettingsSection({
   return (
     <Card
       className={cx(classNames?.root, className)}
-      style={{ padding: 'var(--mantine-spacing-xs) var(--mantine-spacing-sm)', ...style }}
+      style={{ padding: 'var(--vx-space-card-inset-y) var(--vx-space-card-inset-x)', ...style }}
     >
       <div className={cx(classes.header, classNames?.header)}>
         <WidgetHeader
@@ -155,7 +155,7 @@ export function DangerZone({
     <Card
       className={cx(classNames?.root, className)}
       style={{
-        padding: 'var(--mantine-spacing-xs) var(--mantine-spacing-sm)',
+        padding: 'var(--vx-space-card-inset-y) var(--vx-space-card-inset-x)',
         boxShadow: `${VX.shadowCard}, 0 0 0 1px ${alpha(VX.status.bad, 0.25)}`,
         ...style,
       }}

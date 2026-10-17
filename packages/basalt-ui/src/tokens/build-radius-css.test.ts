@@ -16,10 +16,10 @@ describe('buildRadiusCss', () => {
   test('emits all five overriding declarations under one :root block', () => {
     const css = buildRadiusCss(deriveRadius(2))
     expect(css).toContain(':root {')
-    expect(css).toContain('--vx-radius-card: 9px;')
+    expect(css).toContain('--vx-radius-card: 12px;')
     expect(css).toContain('--vx-radius-ctrl: 8px;')
     expect(css).toContain('--vx-radius-tight: 7px;')
     expect(css).toContain('--vx-radius-fine: 6px;')
-    expect(css).toContain('--vx-radius-floating: 10px;')
+    expect(css).toContain('--vx-radius-floating: 13px;')
   })
 })

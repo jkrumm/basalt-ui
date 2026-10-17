@@ -1,6 +1,6 @@
 /**
  * StatCard — the KPI atom (docs/DESIGN-SPEC.md §5, docs/CONTROLS-SPEC.md §2.2): a panel +
- * shadow-card + card-radius card (spacing xs/sm inset, no min-height — the content states the
+ * shadow-card + card-radius card (spacing sm/md inset, no min-height — the content states the
  * height, ~88-96px for the title/hero/trend shape). The header composes
  * `WidgetHeader tier="widget"` — title/icon/value/delta/deltaPeriod all render through it, on the
  * shared hero-metric row under the title. `actions` (e.g. a ghost "..." menu trigger) is wrapped in
@@ -400,10 +400,10 @@ export function StatCard({
     <Card
       className={cx(classNames?.root, className)}
       style={{
-        // Card inset = the `cardInsetY`/`cardInsetX` role tokens (11/13 at level 0 — the same
-        // `xs`/`sm` rungs this used to spell as `--mantine-spacing-*`), matching every other basalt
+        // Card inset = the `cardInsetY`/`cardInsetX` role tokens (12/16 at level 0, the `sm`/`md`
+        // rungs of the spacing grid), matching every other basalt
         // card because `ChartCard` reads the SAME two vars. Below `sm` the horizontal one steps a
-        // rung down on its own: the responsive half of the ladder lives in `spaceMobileDecls`
+        // rung down (to 12) on its own: the responsive half of the ladder lives in `spaceMobileDecls`
         // (`tokens/index.ts`), which is the only home that can reach an inline style like this one.
         // `overflow: hidden` clips
         // the full-bleed sparkline to the card's rounded corners; an element's own `box-shadow`
@@ -417,7 +417,7 @@ export function StatCard({
         // body is `height: 100%` and the sparkline is `margin-top: auto`. The content is what states
         // the height now (~88-96px), and four cards in a `SimpleGrid` still match because a grid row
         // stretches its items.
-        padding: 'var(--vx-space-card-inset-y, 0.6875rem) var(--vx-space-card-inset-x, 0.8125rem)',
+        padding: 'var(--vx-space-card-inset-y, 0.75rem) var(--vx-space-card-inset-x, 1rem)',
         overflow: 'hidden',
         // Anchors the tone rail. Set unconditionally so a card's stacking context does not change
         // depending on whether it happens to have crossed a threshold this render.

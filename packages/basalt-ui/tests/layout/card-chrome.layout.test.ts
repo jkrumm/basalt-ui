@@ -79,6 +79,15 @@ layout('card chrome by container', () => {
     expect(glyphs.some((g) => g.height > 0)).toBe(!shown)
   })
 
+  // The even-pixel grid (SPEC § 5, Wave 32): a card insets 12 vertical / 16 horizontal and rounds at
+  // 10. Read off the resolved box, so a retuned token and a stale CSS fallback both fail here.
+  test('a StatCard insets 12 vertical, 16 horizontal and rounds at 10 (desktop)', async () => {
+    const card = '[data-testid="card-900"] > div'
+    expect(await p.computed(card, 'padding-top')).toBe('12px')
+    expect(await p.computed(card, 'padding-left')).toBe('16px')
+    expect(await p.computed(card, 'border-top-left-radius')).toBe('10px')
+  })
+
   test('a ChartCard stretched by a 400px grid row gives the spare height to its body', async () => {
     const row = await p.box('row', '[data-testid="stretch-row"]')
     const card = await p.box('card', '[data-testid="stretch-row"] > div')

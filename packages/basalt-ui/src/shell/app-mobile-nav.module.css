@@ -245,7 +245,7 @@
  * touch target with a `min-height` floor and symmetric inset, so growing one side of it would make
  * that row read as a different size from its siblings. */
 .menuDropdown .menuSectionStart {
-  margin-top: 8px;
+  margin-top: var(--vx-space-stack-sm, 8px);
 }
 
 /*

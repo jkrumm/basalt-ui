@@ -13,8 +13,8 @@ import { RADIUS, RADIUS_STEP } from '../tokens/palette'
 import { baseTheme } from './index'
 
 describe('the two anchors match the shipped identity', () => {
-  test('RADIUS.card is 7', () => {
-    expect(RADIUS.card).toBe(7)
+  test('RADIUS.card is 10', () => {
+    expect(RADIUS.card).toBe(10)
   })
 
   test('RADIUS.ctrl is 6', () => {
@@ -23,8 +23,8 @@ describe('the two anchors match the shipped identity', () => {
 })
 
 describe('every derived/independent step reproduces its exact shipped number', () => {
-  test('floating (Tooltip/Popover/Modal/Notification) = card + 1 = 8', () => {
-    expect(RADIUS_STEP.floating).toBe(8)
+  test('floating (Tooltip/Popover/Modal/Notification) = card + 1 = 11', () => {
+    expect(RADIUS_STEP.floating).toBe(11)
   })
 
   test('tight (SegmentedControl indicator, Kbd, Code) = ctrl - 1 = 5', () => {
@@ -67,9 +67,9 @@ describe('every re-pointed component defaultProps/styles radius matches its ship
     expect(baseTheme.components?.['Badge']?.defaultProps?.['radius']).toBe(6)
   })
 
-  test('SegmentedControl root = 7, indicator = 5', () => {
+  test('SegmentedControl root = 6 (the control radius), indicator = 4 (fine)', () => {
     const sc = baseTheme.components?.['SegmentedControl']
-    expect(sc?.defaultProps?.['radius']).toBe(7)
+    expect(sc?.defaultProps?.['radius']).toBe(6)
     // `styles` is function-form (size='ctl' gates a label override — see `theme/index.ts`), not a
     // flat object, so it has to be called rather than indexed directly.
     const stylesFn = sc?.styles as
@@ -80,27 +80,27 @@ describe('every re-pointed component defaultProps/styles radius matches its ship
         ) => Record<string, Record<string, unknown>>)
       | undefined
     const resolved = stylesFn?.({}, {}, {})
-    expect(resolved?.['indicator']?.['borderRadius']).toBe('var(--vx-radius-tight)')
+    expect(resolved?.['indicator']?.['borderRadius']).toBe('var(--vx-radius-fine)')
   })
 
   test('Progress = 4', () => {
     expect(baseTheme.components?.['Progress']?.defaultProps?.['radius']).toBe(4)
   })
 
-  test('Tooltip = 8', () => {
-    expect(baseTheme.components?.['Tooltip']?.defaultProps?.['radius']).toBe(8)
+  test('Tooltip = 11', () => {
+    expect(baseTheme.components?.['Tooltip']?.defaultProps?.['radius']).toBe(11)
   })
 
-  test('Popover = 8', () => {
-    expect(baseTheme.components?.['Popover']?.defaultProps?.['radius']).toBe(8)
+  test('Popover = 11', () => {
+    expect(baseTheme.components?.['Popover']?.defaultProps?.['radius']).toBe(11)
   })
 
-  test('Modal = 8', () => {
-    expect(baseTheme.components?.['Modal']?.defaultProps?.['radius']).toBe(8)
+  test('Modal = 11', () => {
+    expect(baseTheme.components?.['Modal']?.defaultProps?.['radius']).toBe(11)
   })
 
-  test('Notification = 8', () => {
-    expect(baseTheme.components?.['Notification']?.defaultProps?.['radius']).toBe(8)
+  test('Notification = 11', () => {
+    expect(baseTheme.components?.['Notification']?.defaultProps?.['radius']).toBe(11)
   })
 
   test('NavLink root = 6', () => {
@@ -131,8 +131,8 @@ describe('every re-pointed component defaultProps/styles radius matches its ship
 describe('--vx-radius-card / --vx-radius-ctrl are emitted from the SAME constants', () => {
   const css = buildPaletteCss()
 
-  test('emits 7px / 6px, unchanged', () => {
-    expect(css).toContain('--vx-radius-card: 7px;')
+  test('emits 10px / 6px', () => {
+    expect(css).toContain('--vx-radius-card: 10px;')
     expect(css).toContain('--vx-radius-ctrl: 6px;')
   })
 

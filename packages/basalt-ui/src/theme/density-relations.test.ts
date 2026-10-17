@@ -116,21 +116,17 @@ describe('Fix 2 — the 4px stack rhythm holds its 2:1 pairs at every level', ()
 })
 
 describe('Fix 3 — SegmentedControl concentricity holds at every RADIUS level', () => {
-  test('RADIUS.card === RADIUS_STEP.tight + segmentedTrackInset, every RADIUS level (the full [-5, 5] range, not the narrower density range)', () => {
+  test('the indicator radius is the track radius minus the track inset (floored at 0), every RADIUS level (the full [-5, 5] range, not the narrower density range)', () => {
     for (const level of ALL_RADIUS_LEVELS) {
       const radius = deriveRadius(level)
-      expect(radius.card).toBe(radius.tight + SPACE_FIXED.segmentedTrackInset)
+      expect(radius.fine).toBe(Math.max(0, radius.ctrl - SPACE_FIXED.segmentedTrackInset))
     }
   })
 
-  test('at the radius floor (-5), tight is clamped exactly to 0 while card is not — the closest the accepted range gets to breaking concentricity', () => {
+  test('at the radius floor (-5), fine is clamped to 0 while ctrl is not — the 1px track radius sits inside a 2px inset, so the indicator is square exactly as concentricity demands', () => {
     const radius = deriveRadius(RADIUS_LEVEL_RANGE.min)
-    expect(radius.tight).toBe(0) // clampRadius(ctrl - 1) = clampRadius((6 - 5) - 1) = clampRadius(0)
-    expect(radius.card).toBe(2) // clampRadius(7 - 5) = 2, still positive — the clamp doesn't engage
-    // Concentricity holds here only because `ctrl - 1` landed EXACTLY on the clamp floor (0), not
-    // below it: one level further down (out of the accepted range) would clamp `tight` to 0 while
-    // `card` kept falling, breaking `card === tight + 2` — which is exactly why the range stops here.
-    expect(radius.card).toBe(radius.tight + SPACE_FIXED.segmentedTrackInset)
+    expect(radius.fine).toBe(0) // clampRadius(ctrl - 2) = clampRadius((6 - 5) - 2) = clampRadius(-1)
+    expect(radius.ctrl).toBe(1)
   })
 
   test("segmentedTrackInset never moves with density — it's a SPACE_FIXED constant, not part of deriveSpacing's step output at ANY level", () => {
@@ -331,8 +327,8 @@ describe("Fix 7 — the knob's resolution is honest at every notch", () => {
     // begin with; its own law is asserted by the dedicated describe block in `tokens/density.test.ts`
     // (specific low/zero/high values) AND by the "Fix 8" describe block below in this same file
     // (the generic `clearance = anchors.stackMd` relation, looped over every level).
-    expect(deriveSpacing(-3).rowLineHeight).toBe(1.25)
-    expect(deriveSpacing(3).rowLineHeight).toBe(1.45)
+    expect(deriveSpacing(-3).rowLineHeight).toBe(1.44)
+    expect(deriveSpacing(3).rowLineHeight).toBe(1.64)
   })
 })
 

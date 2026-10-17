@@ -451,7 +451,7 @@ exports[`createBasaltTheme() shape and resolver output default 1`] = `
         },
         "item": {
           "borderRadius": "var(--vx-radius-ctrl)",
-          "fontSize": 15,
+          "fontSize": 13,
           "padding": "var(--vx-space-row-inset-y) var(--vx-space-row-inset-x)",
         },
         "label": {
@@ -476,7 +476,7 @@ exports[`createBasaltTheme() shape and resolver output default 1`] = `
           "aria-label": "Close",
           "data-basalt-hit": true,
         },
-        "radius": 8,
+        "radius": 11,
       },
       "styles": {
         "content": {
@@ -499,12 +499,12 @@ exports[`createBasaltTheme() shape and resolver output default 1`] = `
       },
       "styles": {
         "label": {
-          "fontSize": 15,
+          "fontSize": 13,
           "lineHeight": "var(--vx-space-row-line-height)",
         },
         "root": {
           "borderRadius": "var(--vx-radius-ctrl)",
-          "fontSize": 15,
+          "fontSize": 13,
           "lineHeight": "var(--vx-space-row-line-height)",
           "padding": "var(--vx-space-row-inset-y) var(--vx-space-row-inset-x)",
         },
@@ -530,7 +530,7 @@ exports[`createBasaltTheme() shape and resolver output default 1`] = `
     },
     "Notification": {
       "defaultProps": {
-        "radius": 8,
+        "radius": 11,
       },
       "styles": {
         "root": {
@@ -602,7 +602,7 @@ exports[`createBasaltTheme() shape and resolver output default 1`] = `
     },
     "Popover": {
       "defaultProps": {
-        "radius": 8,
+        "radius": 11,
       },
       "styles": {
         "dropdown": {
@@ -675,7 +675,7 @@ exports[`createBasaltTheme() shape and resolver output default 1`] = `
         "label": undefined,
       },
       "defaultProps": {
-        "radius": 7,
+        "radius": 6,
       },
       "styles": {
         "fn": 
@@ -688,7 +688,7 @@ exports[`createBasaltTheme() shape and resolver output default 1`] = `
           indicator: {
             boxShadow: "var(--vx-shadow-raised)",
             outline: "1px solid color-mix(in srgb, var(--vx-ink) 14%, transparent)",
-            borderRadius: "var(--vx-radius-tight)"
+            borderRadius: "var(--vx-radius-fine)"
           },
           ...props.size === "ctl" ? {
             label: {
@@ -703,11 +703,11 @@ exports[`createBasaltTheme() shape and resolver output default 1`] = `
         "outputs": [
           {
             "probes": 2020,
-            "result": "{"root":{"backgroundColor":"color-mix(in srgb, var(--vx-ink) 8%, transparent)","padding":"2px","minWidth":"max-content"},"indicator":{"boxShadow":"var(--vx-shadow-raised)","outline":"1px solid color-mix(in srgb, var(--vx-ink) 14%, transparent)","borderRadius":"var(--vx-radius-tight)"}}",
+            "result": "{"root":{"backgroundColor":"color-mix(in srgb, var(--vx-ink) 8%, transparent)","padding":"2px","minWidth":"max-content"},"indicator":{"boxShadow":"var(--vx-shadow-raised)","outline":"1px solid color-mix(in srgb, var(--vx-ink) 14%, transparent)","borderRadius":"var(--vx-radius-fine)"}}",
           },
           {
             "probes": 288,
-            "result": "{"root":{"backgroundColor":"color-mix(in srgb, var(--vx-ink) 8%, transparent)","padding":"2px","minWidth":"max-content"},"indicator":{"boxShadow":"var(--vx-shadow-raised)","outline":"1px solid color-mix(in srgb, var(--vx-ink) 14%, transparent)","borderRadius":"var(--vx-radius-tight)"},"label":{"display":"inline-flex","alignItems":"center","minHeight":"calc(var(--vx-space-control-height-ctl) * var(--mantine-scale) - 4px)"}}",
+            "result": "{"root":{"backgroundColor":"color-mix(in srgb, var(--vx-ink) 8%, transparent)","padding":"2px","minWidth":"max-content"},"indicator":{"boxShadow":"var(--vx-shadow-raised)","outline":"1px solid color-mix(in srgb, var(--vx-ink) 14%, transparent)","borderRadius":"var(--vx-radius-fine)"},"label":{"display":"inline-flex","alignItems":"center","minHeight":"calc(var(--vx-space-control-height-ctl) * var(--mantine-scale) - 4px)"}}",
           },
         ],
       },
@@ -760,6 +760,7 @@ exports[`createBasaltTheme() shape and resolver output default 1`] = `
       },
       "styles": {
         "td": {
+          "fontSize": 13,
           "height": 40,
         },
         "th": {
@@ -825,11 +826,11 @@ exports[`createBasaltTheme() shape and resolver output default 1`] = `
       "styles": {
         "itemContent": {
           "color": "var(--vx-muted)",
-          "fontSize": 15,
+          "fontSize": 13,
         },
         "itemTitle": {
           "color": "var(--vx-ink)",
-          "fontSize": 15,
+          "fontSize": 13,
           "fontWeight": 600,
         },
       },
@@ -861,7 +862,7 @@ exports[`createBasaltTheme() shape and resolver output default 1`] = `
     },
     "Tooltip": {
       "defaultProps": {
-        "radius": 8,
+        "radius": 11,
       },
       "styles": {
         "arrow": {
@@ -882,9 +883,9 @@ exports[`createBasaltTheme() shape and resolver output default 1`] = `
   "fontSizes": {
     "lg": "calc(1rem * var(--mantine-scale))",
     "md": "calc(0.9375rem * var(--mantine-scale))",
-    "sm": "calc(0.84375rem * var(--mantine-scale))",
+    "sm": "calc(0.8125rem * var(--mantine-scale))",
     "xl": "calc(1.125rem * var(--mantine-scale))",
-    "xs": "calc(0.78125rem * var(--mantine-scale))",
+    "xs": "calc(0.75rem * var(--mantine-scale))",
   },
   "fontWeights": {
     "bold": "700",
@@ -895,6 +896,10 @@ exports[`createBasaltTheme() shape and resolver output default 1`] = `
   "headings": {
     "fontFamily": "var(--basalt-font-head, var(--basalt-font-sans, ui-sans-serif, sans-serif))",
     "fontWeight": "550",
+  },
+  "lineHeights": {
+    "sm": "1.5384615384615385",
+    "xs": "1.3333333333333333",
   },
   "luminanceThreshold": 0.45,
   "primaryColor": "blue",
@@ -909,10 +914,10 @@ exports[`createBasaltTheme() shape and resolver output default 1`] = `
   "respectReducedMotion": true,
   "spacing": {
     "lg": "1.25rem",
-    "md": "1.125rem",
-    "sm": "0.8125rem",
-    "xl": "1.625rem",
-    "xs": "0.6875rem",
+    "md": "1rem",
+    "sm": "0.75rem",
+    "xl": "1.5rem",
+    "xs": "0.5rem",
   },
   "variantColorResolver": {
     "fn": 
@@ -1544,7 +1549,7 @@ exports[`createBasaltTheme() shape and resolver output all knobs 1`] = `
         },
         "item": {
           "borderRadius": "var(--vx-radius-ctrl)",
-          "fontSize": 15,
+          "fontSize": 13,
           "padding": "var(--vx-space-row-inset-y) var(--vx-space-row-inset-x)",
         },
         "label": {
@@ -1569,7 +1574,7 @@ exports[`createBasaltTheme() shape and resolver output all knobs 1`] = `
           "aria-label": "Close",
           "data-basalt-hit": true,
         },
-        "radius": 11,
+        "radius": 14,
       },
       "styles": {
         "content": {
@@ -1592,12 +1597,12 @@ exports[`createBasaltTheme() shape and resolver output all knobs 1`] = `
       },
       "styles": {
         "label": {
-          "fontSize": 15,
+          "fontSize": 13,
           "lineHeight": "var(--vx-space-row-line-height)",
         },
         "root": {
           "borderRadius": "var(--vx-radius-ctrl)",
-          "fontSize": 15,
+          "fontSize": 13,
           "lineHeight": "var(--vx-space-row-line-height)",
           "padding": "var(--vx-space-row-inset-y) var(--vx-space-row-inset-x)",
         },
@@ -1623,7 +1628,7 @@ exports[`createBasaltTheme() shape and resolver output all knobs 1`] = `
     },
     "Notification": {
       "defaultProps": {
-        "radius": 11,
+        "radius": 14,
       },
       "styles": {
         "root": {
@@ -1695,7 +1700,7 @@ exports[`createBasaltTheme() shape and resolver output all knobs 1`] = `
     },
     "Popover": {
       "defaultProps": {
-        "radius": 11,
+        "radius": 14,
       },
       "styles": {
         "dropdown": {
@@ -1768,7 +1773,7 @@ exports[`createBasaltTheme() shape and resolver output all knobs 1`] = `
         "label": undefined,
       },
       "defaultProps": {
-        "radius": 10,
+        "radius": 9,
       },
       "styles": {
         "fn": 
@@ -1781,7 +1786,7 @@ exports[`createBasaltTheme() shape and resolver output all knobs 1`] = `
           indicator: {
             boxShadow: "var(--vx-shadow-raised)",
             outline: "1px solid color-mix(in srgb, var(--vx-ink) 14%, transparent)",
-            borderRadius: "var(--vx-radius-tight)"
+            borderRadius: "var(--vx-radius-fine)"
           },
           ...props.size === "ctl" ? {
             label: {
@@ -1796,11 +1801,11 @@ exports[`createBasaltTheme() shape and resolver output all knobs 1`] = `
         "outputs": [
           {
             "probes": 2020,
-            "result": "{"root":{"backgroundColor":"color-mix(in srgb, var(--vx-ink) 8%, transparent)","padding":"2px","minWidth":"max-content"},"indicator":{"boxShadow":"var(--vx-shadow-raised)","outline":"1px solid color-mix(in srgb, var(--vx-ink) 14%, transparent)","borderRadius":"var(--vx-radius-tight)"}}",
+            "result": "{"root":{"backgroundColor":"color-mix(in srgb, var(--vx-ink) 8%, transparent)","padding":"2px","minWidth":"max-content"},"indicator":{"boxShadow":"var(--vx-shadow-raised)","outline":"1px solid color-mix(in srgb, var(--vx-ink) 14%, transparent)","borderRadius":"var(--vx-radius-fine)"}}",
           },
           {
             "probes": 288,
-            "result": "{"root":{"backgroundColor":"color-mix(in srgb, var(--vx-ink) 8%, transparent)","padding":"2px","minWidth":"max-content"},"indicator":{"boxShadow":"var(--vx-shadow-raised)","outline":"1px solid color-mix(in srgb, var(--vx-ink) 14%, transparent)","borderRadius":"var(--vx-radius-tight)"},"label":{"display":"inline-flex","alignItems":"center","minHeight":"calc(var(--vx-space-control-height-ctl) * var(--mantine-scale) - 4px)"}}",
+            "result": "{"root":{"backgroundColor":"color-mix(in srgb, var(--vx-ink) 8%, transparent)","padding":"2px","minWidth":"max-content"},"indicator":{"boxShadow":"var(--vx-shadow-raised)","outline":"1px solid color-mix(in srgb, var(--vx-ink) 14%, transparent)","borderRadius":"var(--vx-radius-fine)"},"label":{"display":"inline-flex","alignItems":"center","minHeight":"calc(var(--vx-space-control-height-ctl) * var(--mantine-scale) - 4px)"}}",
           },
         ],
       },
@@ -1853,6 +1858,7 @@ exports[`createBasaltTheme() shape and resolver output all knobs 1`] = `
       },
       "styles": {
         "td": {
+          "fontSize": 13,
           "height": 32,
         },
         "th": {
@@ -1918,11 +1924,11 @@ exports[`createBasaltTheme() shape and resolver output all knobs 1`] = `
       "styles": {
         "itemContent": {
           "color": "var(--vx-muted)",
-          "fontSize": 15,
+          "fontSize": 13,
         },
         "itemTitle": {
           "color": "var(--vx-ink)",
-          "fontSize": 15,
+          "fontSize": 13,
           "fontWeight": 600,
         },
       },
@@ -1954,7 +1960,7 @@ exports[`createBasaltTheme() shape and resolver output all knobs 1`] = `
     },
     "Tooltip": {
       "defaultProps": {
-        "radius": 11,
+        "radius": 14,
       },
       "styles": {
         "arrow": {
@@ -1975,9 +1981,9 @@ exports[`createBasaltTheme() shape and resolver output all knobs 1`] = `
   "fontSizes": {
     "lg": "calc(1rem * var(--mantine-scale))",
     "md": "calc(0.9375rem * var(--mantine-scale))",
-    "sm": "calc(0.84375rem * var(--mantine-scale))",
+    "sm": "calc(0.8125rem * var(--mantine-scale))",
     "xl": "calc(1.125rem * var(--mantine-scale))",
-    "xs": "calc(0.78125rem * var(--mantine-scale))",
+    "xs": "calc(0.75rem * var(--mantine-scale))",
   },
   "fontWeights": {
     "bold": "700",
@@ -1989,12 +1995,17 @@ exports[`createBasaltTheme() shape and resolver output all knobs 1`] = `
     "fontFamily": "var(--basalt-font-head, var(--basalt-font-sans, ui-sans-serif, sans-serif))",
     "fontWeight": "550",
   },
+  "lineHeights": {
+    "sm": "1.5384615384615385",
+    "xs": "1.3333333333333333",
+  },
   "luminanceThreshold": 0.45,
   "other": {
     "basaltDensity": {
       "anchors": {
         "controlHeight": 34,
         "controlHeightCtl": 28,
+        "controlHeightDense": 24,
         "controlHeightTag": 18,
         "controlHeightWidget": 22,
         "inputHeight": 34,
@@ -2006,13 +2017,13 @@ exports[`createBasaltTheme() shape and resolver output all knobs 1`] = `
         "stackXl": 18,
         "stackXs": 3,
       },
-      "rowLineHeight": 1.28,
+      "rowLineHeight": 1.47,
       "scale": {
         "lg": 16,
-        "md": 14,
+        "md": 13,
         "sm": 10,
-        "xl": 21,
-        "xs": 9,
+        "xl": 19,
+        "xs": 6,
       },
       "step": {
         "agentCodeInset": 6,
@@ -2029,6 +2040,7 @@ exports[`createBasaltTheme() shape and resolver output all knobs 1`] = `
         "appShellHeaderHeight": 35,
         "appShellHeaderLeadMin": 77,
         "appShellInset": 13,
+        "appShellInsetExpanded": 19,
         "appShellInsetMobile": 6,
         "appShellNavbarRailWidth": 38,
         "appShellNavbarWidth": 205,
@@ -2051,8 +2063,8 @@ exports[`createBasaltTheme() shape and resolver output all knobs 1`] = `
         "calloutInsetX": 11,
         "calloutInsetY": 8,
         "calloutTitleRowGap": 6,
-        "cardInsetX": 10,
-        "cardInsetY": 9,
+        "cardInsetX": 13,
+        "cardInsetY": 10,
         "chartDotR": 4,
         "chartLegendGap": 18,
         "chartMarginBottom": 24,
@@ -2152,10 +2164,10 @@ exports[`createBasaltTheme() shape and resolver output all knobs 1`] = `
       "vibrancy": 0,
     },
     "basaltRadius": {
-      "card": 10,
+      "card": 13,
       "ctrl": 9,
       "fine": 7,
-      "floating": 11,
+      "floating": 14,
       "tight": 8,
     },
   },
@@ -2171,10 +2183,10 @@ exports[`createBasaltTheme() shape and resolver output all knobs 1`] = `
   "respectReducedMotion": true,
   "spacing": {
     "lg": "1rem",
-    "md": "0.875rem",
+    "md": "0.8125rem",
     "sm": "0.625rem",
-    "xl": "1.3125rem",
-    "xs": "0.5625rem",
+    "xl": "1.1875rem",
+    "xs": "0.375rem",
   },
   "variantColorResolver": {
     "fn": 

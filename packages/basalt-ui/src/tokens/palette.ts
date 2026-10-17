@@ -172,10 +172,10 @@ export const RADIUS_LEVEL_RANGE = { min: -5, max: 5 } as const
 /**
  * Derive the two radius anchors (`card`/`ctrl`) and their dependent offsets from a single integer
  * `level` (`docs/DESIGN-SPEC.md` §4) — the radius analog of `deriveTokens`'s color knobs. `level: 0`
- * reproduces the shipped identity exactly (`card: 7, ctrl: 6, floating: 8, tight: 5, fine: 4`,
+ * reproduces the shipped identity exactly (`card: 10, ctrl: 6, floating: 11, tight: 5, fine: 4`,
  * locked by `theme/radius.test.ts`).
  *
- * The law: `card = 7 + level`, `ctrl = 6 + level`, both clamped to `≥ 0`; every offset then follows
+ * The law: `card = 10 + level`, `ctrl = 6 + level`, both clamped to `≥ 0`; every offset then follows
  * its anchor — `floating = card + 1`, `tight = ctrl - 1`, `fine = ctrl - 2` — each ALSO clamped to
  * `≥ 0` (so an aggressive negative level flattens the smaller tiers to square before the larger
  * ones). The three independent Mantine-scale stops (`RADIUS_STEP.scaleXs/scaleLg/scaleXl`) are not
@@ -194,7 +194,7 @@ export function deriveRadius(level: number): RadiusValues {
       `deriveRadius: level must be an integer in [${RADIUS_LEVEL_RANGE.min}, ${RADIUS_LEVEL_RANGE.max}], got ${level}`,
     )
   }
-  const card = clampRadius(7 + level)
+  const card = clampRadius(10 + level)
   const ctrl = clampRadius(6 + level)
   return {
     card,
@@ -236,7 +236,7 @@ export const RADIUS = {
 export const RADIUS_STEP = {
   /** Tooltip / Popover / Modal / Notification (`docs/DESIGN-SPEC.md` §5 floating tier) — one step
    * above the card radius. */
-  floating: DEFAULT_RADIUS_VALUES.floating, // 8
+  floating: DEFAULT_RADIUS_VALUES.floating, // 11
   /** SegmentedControl's active indicator, Kbd, Code — one step below the control radius. */
   tight: DEFAULT_RADIUS_VALUES.tight, // 5
   /** Progress bar, and the Mantine scale's `sm` step — two steps below the control radius. */
@@ -321,6 +321,12 @@ const SPACE_ANCHORS_BASE = {
    * and the whole band looked unresolved. 32 lands the entire chrome tier on ONE number, which is
    * also the smallest square that still holds a 16px icon with a 8px surround. */
   controlHeightCtl: 32,
+  /** The DENSE control tier (`docs/waves/design-parity/SPEC.md` § 5, D6) — INTERNAL, no public export.
+   * `BasaltDataTable`'s toolbar and `FilterSet` rows re-point the `ctl` tier's size vars at this
+   * (`styles.css`, `[data-basalt-dense]`) at FINE pointers only, so a search, its filter pills and the
+   * actions share one row at 1440. A coarse pointer keeps `ctl` and the 44px hit overlay. Floored at
+   * 24px in {@link deriveSpacing} (WCAG 2.5.8). */
+  controlHeightDense: 28,
 } as const
 
 /**
@@ -339,11 +345,11 @@ const SPACE_ANCHORS_BASE = {
  * table for {@link deriveSpacing}.
  */
 const SPACE_SCALE_BASE = {
-  xs: 11,
-  sm: 13,
-  md: 18,
+  xs: 8,
+  sm: 12,
+  md: 16,
   lg: 20,
-  xl: 26,
+  xl: 24,
 } as const
 
 /**
@@ -659,6 +665,11 @@ const SPACE_STEP_BASE = {
    *  (`shell/app-brand.module.css`), so the page gutter is free to be a gutter. The header's
    *  breadcrumb, the page-bar band and Main all land on this one number. */
   appShellInset: 16,
+  /** The page gutter at the EXPANDED size class only — a TRIAL (`docs/waves/design-parity/SPEC.md`
+   *  D7): the reference measures 24 at 1440, and 16 was a deliberate earlier choice down from 20, so
+   *  the wider gutter applies where the evidence is and is reverted by setting this to
+   *  `appShellInset` (one line). Medium keeps `appShellInset`, compact keeps `appShellInsetMobile`. */
+  appShellInsetExpanded: 24,
   /** The page gutter BELOW `sm` — the phone half of `appShellInset` above. A separate entry rather
    *  than one responsive value for the same reason `appShellNavbarWidth` is one: there is no sidebar
    *  seam to align to on a phone, so the number is answering a different question (how much of a
@@ -762,7 +773,7 @@ const SPACE_STEP_BASE = {
   // it never moved, so a 390px phone still read "content spacing too big" after the gutter fix.
   //
   // Each value is deliberately the rung of an existing ladder rather than a fresh literal: the card
-  // inset IS `SPACE_SCALE.xs`/`.sm` (which is what `StatCard`/`ChartCard` spelled as
+  // inset IS `SPACE_SCALE.sm`/`.md` (12/16; the compact horizontal step is `.sm`) (which is what `StatCard`/`ChartCard` spelled as
   // `--mantine-spacing-xs`/`-sm` before they were named here) and the Section gap IS
   // `SPACE.stackMd`. Naming them buys the ROLE, not a new number — a role the `< sm` override can
   // then re-point without touching the scale every other consumer of `xs`/`sm` reads.
@@ -776,10 +787,10 @@ const SPACE_STEP_BASE = {
    *  must render identically (a StatCard and a ChartCard sit in the same grid row). Does NOT step
    *  below `sm`: the phone is short of WIDTH, and shaving the vertical inset of a card that already
    *  hugs its content buys a few pixels at the cost of the card's own breathing room. */
-  cardInsetY: 11,
+  cardInsetY: 12,
   /** Card inset, HORIZONTAL — same two files, same must-match reason. This IS the half that steps
-   *  below `sm` (to `SPACE_SCALE.xs`), because horizontal is where a 390px viewport is short. */
-  cardInsetX: 13,
+   *  in a compact container (to `SPACE_SCALE.sm`, 12), because horizontal is where a 390px viewport is short. */
+  cardInsetX: 16,
   /** `dashboard/section.module.css`'s header→body and body-child gap — a page-level GROUPING
    *  rhythm, which is why it reads the stack scale rather than the card-inset one. Steps to
    *  `SPACE.stackSm` below `sm`. Distinct from `sidebarSectionGap` above, which is the gap between
@@ -834,10 +845,11 @@ export const SPACE_FIXED = {
   readingProgressHeight: 2,
   /** SegmentedControl track's optical inset (`styles.root` padding) — moved OUT of `SPACE_STEP` and
    * exempted from the density knob because it is load-bearing for the nested-corner law
-   * (docs/DESIGN-SPEC.md §4): `RADIUS.card === RADIUS_STEP.tight + segmentedTrackInset` (`7 = 5 +
-   * 2`). `RADIUS.card`/`RADIUS_STEP.tight` both shift together under the RADIUS knob (`card = 7 +
-   * level`, `tight = ctrl - 1 = 5 + level`), so their difference is ALWAYS exactly 2 regardless of
-   * that knob — a density-tracking inset would break concentricity in both directions (verified: this
+   * (docs/DESIGN-SPEC.md §4): `RADIUS.ctrl === RADIUS_STEP.fine + segmentedTrackInset` (`6 = 4 +
+   * 2`; the track takes the control radius, the indicator the `fine` tier). `RADIUS.ctrl`/
+   * `RADIUS_STEP.fine` both shift together under the RADIUS knob (`ctrl = 6 + level`, `fine = ctrl
+   * - 2`), so their difference is exactly 2 regardless of that knob (down to level -4; at -5 `fine`
+   * clamps to 0 against `ctrl` 1) — a density-tracking inset would break concentricity in both directions (verified: this
    * inset's own value, HAD it stayed density-tracking, resolves via `scaleSpace(2, level, multiplier)`
    * to 1 at density's floor level -3 and 3 at its ceiling level +3 — the widest swing `deriveSpacing`'s
    * `[-3, 3]` range can produce) for no compensating benefit, since the two radii it sits between
@@ -984,15 +996,15 @@ const ROW_LINE_HEIGHT_STEP = 1 / 30
  *    still overrides `--vx-space-sticky-header-clearance`. Documented on the `./content` surface too
  *    (`docs/CONTENT-SPEC.md` §5), not only here.
  *
- * `rowLineHeight` is the ONE exception to the multiplier entirely: `1.35 + ROW_LINE_HEIGHT_STEP *
+ * `rowLineHeight` is the ONE exception to the multiplier entirely: `1.54 + ROW_LINE_HEIGHT_STEP *
  * level`, ADDITIVE, its own gentler, INDEPENDENT coefficient (see {@link ROW_LINE_HEIGHT_STEP}'s own
  * doc for why it must stay independent of `multiplier`). It carries the NavLink row's
- * `lineHeight: '1.35'` (`theme/index.ts`, load-bearing for row height) along with the row's padding,
- * but the multiplier law would overshoot it — `1.35 * 1.3` at level +3 is already a much larger
+ * `lineHeight: '1.54'` (`theme/index.ts`, load-bearing for row height) along with the row's padding,
+ * but the multiplier law would overshoot it — `1.54 * 1.3` at level +3 is already a much larger
  * relative move than the padding it accompanies, well past the readable line-height range. The
- * additive step instead lands `1.25`..`1.45` across the full range, a proportionate nudge. Rounded
- * to 2 decimals (`Math.round(x * 100) / 100`) to avoid floating-point noise (`1.35 +
- * ROW_LINE_HEIGHT_STEP * 3` is not exactly `1.45` in raw IEEE-754 arithmetic).
+ * additive step instead lands `1.44`..`1.64` across the full range, a proportionate nudge. Rounded
+ * to 2 decimals (`Math.round(x * 100) / 100`) to avoid floating-point noise (`1.54 +
+ * ROW_LINE_HEIGHT_STEP * 3` is not exactly `1.64` in raw IEEE-754 arithmetic).
  *
  * `SPACE_FIXED` is NEVER part of this law — see that constant's own doc for why.
  *
@@ -1073,6 +1085,7 @@ export function deriveSpacing(level: number): SpaceValues {
   anchors.controlHeightTag = Math.max(18, anchors.controlHeightTag)
   anchors.controlHeightWidget = Math.max(22, anchors.controlHeightWidget)
   anchors.controlHeightCtl = Math.max(28, anchors.controlHeightCtl)
+  anchors.controlHeightDense = Math.max(24, anchors.controlHeightDense)
 
   const mappedStep = mapSpaceGroup(SPACE_STEP_BASE, level, multiplier)
   // WCAG 2.5.8 minimum interactive-target size — see this function's doc for why the trigger's
@@ -1108,7 +1121,7 @@ export function deriveSpacing(level: number): SpaceValues {
     step,
     // Additive, gentler, INDEPENDENT law than the multiplier — see `ROW_LINE_HEIGHT_STEP`'s own doc
     // for why it must NOT be computed from `multiplier`.
-    rowLineHeight: Math.round((1.35 + ROW_LINE_HEIGHT_STEP * level) * 100) / 100,
+    rowLineHeight: Math.round((1.54 + ROW_LINE_HEIGHT_STEP * level) * 100) / 100,
   }
 }
 
@@ -1137,7 +1150,7 @@ export const SPACE_SCALE = DEFAULT_SPACE_VALUES.scale
  * doc (third bullet) for why. */
 export const SPACE_STEP = DEFAULT_SPACE_VALUES.step
 
-/** NavLink row line-height at the shipped identity (`1.35`) — `deriveSpacing(0)`'s `rowLineHeight`,
+/** NavLink row line-height at the shipped identity (`1.54`, a 20px line at `sm`) — `deriveSpacing(0)`'s `rowLineHeight`,
  * UNCHANGED from the shipped identity (locked by `theme/spacing.test.ts`). */
 export const ROW_LINE_HEIGHT = DEFAULT_SPACE_VALUES.rowLineHeight
 
@@ -1207,7 +1220,10 @@ function buildPaletteDataUncached(config: DeriveConfig) {
   const NEUTRAL = {
     line: { light: BP.gray[0], dark: BP.gray[4] }, // primary line
     line2: { light: BP.gray[1], dark: BP.gray[2] }, // secondary line
-    axis: { light: inkRgba(inkLight, 0.6), dark: 'rgba(255, 255, 255, 0.6)' },
+    // Axis ticks / small chart labels at 10–11px: the DERIVED `faint` ink (opaque, tone stops in
+    // `derive.ts`'s `INK_TONE`, ≥ 4.5:1 on every text surface), not an ink-at-60% alpha — that
+    // measured 4.06:1 on the light panel (`docs/waves/design-parity/w31/s4-baseline.md`, Craft 5).
+    axis: DERIVED.ink.faint,
     axisStroke: { light: inkRgba(inkLight, 0.12), dark: 'rgba(255, 255, 255, 0.12)' },
     grid: { light: inkRgba(inkLight, 0.07), dark: 'rgba(255, 255, 255, 0.06)' },
     crosshair: { light: inkRgba(inkLight, 0.32), dark: 'rgba(255, 255, 255, 0.42)' },

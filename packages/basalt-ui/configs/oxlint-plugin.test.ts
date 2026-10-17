@@ -226,13 +226,19 @@ describe('basalt/raw-size-literal', () => {
 
 describe('basalt/card-inset', () => {
   it('flags an off-idiom padding value on Card', () => {
-    const { code, rules } = run(`export const C = () => <Card p="md" />\n`)
+    const { code, rules } = run(`export const C = () => <Card p="lg" />\n`)
     expect(code).toBe(1)
     expect(rules).toContain('card-inset')
   })
 
-  it('does NOT flag the xs/sm inset idiom on Paper', () => {
+  it('does NOT flag the older xs/sm inset pair on Paper (accepted through the upgrade)', () => {
     const { code, rules } = run(`export const C = () => <Paper py="xs" px="sm" />\n`)
+    expect(code).toBe(0)
+    expect(rules).not.toContain('card-inset')
+  })
+
+  it('does NOT flag the sm/md inset idiom on Paper', () => {
+    const { code, rules } = run(`export const C = () => <Paper py="sm" px="md" />\n`)
     expect(code).toBe(0)
     expect(rules).not.toContain('card-inset')
   })

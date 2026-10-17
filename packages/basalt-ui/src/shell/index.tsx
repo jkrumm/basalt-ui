@@ -390,7 +390,7 @@ function ShellBody({
   // `appShellInset` / `appShellInsetMobile` pair (see their entries in `tokens/palette.ts`).
   //
   // On a 390px phone that is 8 a side instead of 13 — 10px more line width, and 10px less vertical
-  // chrome, since `padding` is Main's vertical inset too. From `sm` up it is 20, which is the x the
+  // chrome, since `padding` is Main's vertical inset too. From `sm` up it is 16 (24 at the expanded class, a trial — `appShellInsetExpanded`), which was the x the
   // sidebar's nav icon column already sits at, so the brand mark, the nav icons and the page's
   // first column all start on one vertical line.
   //
@@ -406,7 +406,12 @@ function ShellBody({
   // `calc(0.5rem * var(--mantine-scale))` — rather than looked up, which is exactly why these are
   // numbers: a spacing KEY resolves to `var(--mantine-spacing-sm)` and hands the gutter back to
   // Mantine's own scale, which is where the 13px came from.
-  const inset = { base: step.appShellInsetMobile, sm: step.appShellInset }
+  // `md` is the expanded class's boundary (`SIZE_CLASS_BREAKPOINTS`): the gutter widens there only.
+  const inset = {
+    base: step.appShellInsetMobile,
+    sm: step.appShellInset,
+    md: step.appShellInsetExpanded,
+  }
   const aside = useAsideRegion()
   const sizeClass = useSizeClass()
   const [storedCollapsed, setStoredCollapsed, collapseIsSet] = collapseStore(storageKey)()
