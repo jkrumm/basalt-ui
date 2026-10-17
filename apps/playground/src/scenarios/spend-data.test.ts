@@ -4,6 +4,8 @@
 import { describe, expect, it } from 'bun:test'
 import {
   DAILY,
+  BUDGET_EUR,
+  CUMULATIVE,
   DAYS_ELAPSED,
   DISTRIBUTION,
   DRIVERS,
@@ -70,11 +72,34 @@ describe('spend-data', () => {
   })
 
   it('a bin reads as the band it covers', () => {
-    expect(spendBand({ from: 40, label: '€40', days: 1 })).toBe('€40–50')
+    expect(spendBand({ from: 40 })).toBe('€40–50')
   })
 
   it('the distribution counts every day of the window exactly once', () => {
     expect(sum(DISTRIBUTION.map((b) => b.days))).toBe(DAILY.length)
+  })
+
+  it('every bin is labelled with the band it covers, and bands are contiguous', () => {
+    for (const [i, bin] of DISTRIBUTION.entries()) {
+      expect(bin.label).toBe(spendBand(bin))
+      const next = DISTRIBUTION[i + 1]
+      if (next) expect(next.from - bin.from).toBe(10)
+    }
+  })
+
+  it('cumulative spend covers the whole month: actual to today, forecast from today to the last day', () => {
+    expect(CUMULATIVE).toHaveLength(MONTH_DAYS)
+    const actual = CUMULATIVE.filter((r) => r.spent !== null)
+    expect(actual).toHaveLength(DAYS_ELAPSED)
+    expect(actual.at(-1)?.spent).toBeCloseTo(MTD_EUR, 6)
+    const spent = actual.map((r) => r.spent ?? 0)
+    expect(spent).toEqual(spent.toSorted((a, b) => a - b))
+    // The forecast starts where the actual line ends and lands on FORECAST_EUR on the last day.
+    expect(CUMULATIVE[DAYS_ELAPSED - 1]?.forecast).toBeCloseTo(MTD_EUR, 6)
+    expect(CUMULATIVE.at(-1)?.forecast).toBeCloseTo(FORECAST_EUR, 6)
+    expect(CUMULATIVE.at(-1)?.spent).toBeNull()
+    expect(CUMULATIVE[0]?.forecast).toBeNull()
+    expect(BUDGET_EUR).toBeGreaterThan(0)
   })
 
   it('is deterministic: a seed reproduces its sequence', () => {
