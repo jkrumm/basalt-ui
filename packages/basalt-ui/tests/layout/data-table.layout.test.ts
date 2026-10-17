@@ -410,11 +410,12 @@ layout('BasaltDataTable sticky header — real layout', () => {
     expect(tops.length).toBeGreaterThan(1)
     expect(Math.max(...tops) - Math.min(...tops)).toBeLessThanOrEqual(1)
     expect((await p.box('search', SEARCH)).box.height).toBe(28)
+    expect((await p.box('pills', '[data-filter-row]')).box.height).toBe(28)
   })
 
-  test('a coarse pointer keeps the 32px tier; the 44px floor is the hit overlay', async () => {
+  test('a coarse pointer keeps the 32px tier on the filter pills (the 44px floor is the hit overlay)', async () => {
     const p = await openFixture(toolbarSpec, DESKTOP)
-    expect((await p.box('search', SEARCH)).box.height).toBeGreaterThanOrEqual(44)
+    expect((await p.box('pills', '[data-filter-row]')).box.height).toBe(32)
   })
 
   test('data rows are 40px and the header 36px; controls round at 6', async () => {
