@@ -406,11 +406,11 @@ export function StatCard({
         // the responsive half of the ladder lives in `spaceMobileDecls` (`tokens/index.ts`), which
         // is the only home that can reach an inline style like this one.
         //
-        // `overflow: hidden` clips the full-bleed sparkline to the card's rounded corners; an element's own `box-shadow`
-        // renders outside its border box and is NOT clipped by its own `overflow`, so the
-        // shadow-card ring is unaffected (verified — only an ANCESTOR's overflow clips a
-        // descendant's shadow). Mantine's Card root already sets `overflow: hidden`; this is
-        // explicit for intent.
+        // `overflow: hidden` clips the full-bleed sparkline to the card's rounded corners. An
+        // element's own `box-shadow` renders outside its border box and is NOT clipped by its own
+        // `overflow`, so the shadow-card ring is unaffected (verified — only an ANCESTOR's overflow
+        // clips a descendant's shadow). Mantine's Card root already sets `overflow: hidden`; this
+        // is explicit for intent.
         //
         // NO `minHeight`. It was 118px, which is ~25px of dead space under a card holding a title
         // row, a hero row and a 26px trend — and it was dead space the card could not use, since the

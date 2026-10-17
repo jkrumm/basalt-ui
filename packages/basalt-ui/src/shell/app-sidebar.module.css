@@ -644,7 +644,7 @@
 }
 
 .childList :global(.mantine-NavLink-label) {
-  font-size: var(--vx-text-sm);
+  font-size: var(--vx-text-xs);
 }
 
 /*
