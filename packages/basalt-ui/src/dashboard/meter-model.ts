@@ -7,16 +7,26 @@ import { clamp01, toPct } from './scale'
 export type MeterSegment = { value: number; label: string; color?: string; forecast?: boolean }
 export type MeterZone = { from: number; to: number; label: string; color?: string }
 
-/** A fill on the track, as fractions (0–1) of the span. */
+/** A fill on the track, as fractions (0–1) of the span, with the segment it was laid out from. */
 export type Part = {
   readonly start: number
   readonly size: number
   readonly color: string | undefined
   readonly forecast: boolean
+  readonly label: string
+  /** The segment's own (normalised) amount, in the reading's units — what its caption states. */
+  readonly amount: number
 }
 
 /** One categorical part's caption: its name, formatted amount and fill colour (`undefined` = neutral). */
-export type PartCaption = { label: string; text: string; color: string | undefined }
+export type PartCaption = { key: string; label: string; text: string; color: string | undefined }
+
+/**
+ * What the caption row says. `reading`: the formatted reading (or `Zone · reading`); `parts`:
+ * categorical segments name every part instead; `forecast`: committed/forecast keeps the reading
+ * plus the forecast caption.
+ */
+export type CaptionMode = 'reading' | 'parts' | 'forecast'
 
 type Format = (value: number) => string
 
@@ -53,7 +63,14 @@ export function layoutSegments(segments: readonly MeterSegment[], span: number):
     const size = Math.max(0, Math.min(clamp01(s.value / span), 1 - cursor))
     const forecast = s.forecast === true
     // A forecast stays the lighter neutral: a colour would turn the committed/forecast pair into hue.
-    const part = { start: cursor, size, color: forecast ? undefined : s.color, forecast }
+    const part = {
+      start: cursor,
+      size,
+      color: forecast ? undefined : s.color,
+      forecast,
+      label: s.label,
+      amount: s.value,
+    }
     cursor += size
     return part
   })
@@ -94,12 +111,13 @@ export type BarModel = {
   /** Percent where the first forecast part starts; absent when the forecast opens the track. */
   boundaryPct: number | undefined
   forecastText: string | null
-  /** Categorical segments (no forecast): one caption per part, in order. Empty otherwise. */
+  captionMode: CaptionMode
+  /** Only in `parts` mode: one caption per part, in order. Empty otherwise. */
   partCaptions: readonly PartCaption[]
   markerPct: number | undefined
   targetPct: number | undefined
-  /** `null` when the part captions name the reading instead. */
-  startText: string | null
+  /** The default start caption; `startCaption` decides whether it shows. */
+  startText: string
   endText: string | null
   describedByText: string | null
 }
@@ -121,6 +139,27 @@ function fillParts(input: BarInput, span: number, zoned: boolean): Part[] {
 export const segmentReading = (segments: readonly MeterSegment[], min: number): number =>
   segments.reduce((sum, s) => sum + s.value, min)
 
+/** Keys are the label; a repeated label gets its occurrence appended so the key stays unique. */
+function partCaptionsOf(parts: readonly Part[], format: Format): PartCaption[] {
+  const seen = new Map<string, number>()
+  return parts.map((p) => {
+    const n = seen.get(p.label) ?? 0
+    seen.set(p.label, n + 1)
+    return {
+      key: n === 0 ? p.label : `${p.label}#${n}`,
+      label: p.label,
+      text: format(p.amount),
+      color: p.color,
+    }
+  })
+}
+
+/** The start caption: the consumer's override, else the model's default — absent in `parts` mode. */
+export function startCaptionText<T>(model: BarModel, override: T | undefined): string | T | null {
+  if (override !== undefined) return override
+  return model.captionMode === 'parts' ? null : model.startText
+}
+
 export function modelBar(input: BarInput): BarModel {
   const { reading, min, max, format, segments, zones, target } = input
   const { span } = spanOf(min, max)
@@ -132,10 +171,13 @@ export function modelBar(input: BarInput): BarModel {
   const forecastLabels =
     segments?.filter((s) => s.forecast === true).map((s) => `${s.label} ${format(s.value)}`) ?? []
 
-  const categorical = segments !== undefined && firstForecast < 0
-  const partCaptions = categorical
-    ? segments.map((s, i) => ({ label: s.label, text: format(s.value), color: parts[i]?.color }))
-    : []
+  const captionMode: CaptionMode =
+    segments === undefined || segments.length === 0
+      ? 'reading'
+      : firstForecast < 0
+        ? 'parts'
+        : 'forecast'
+  const partCaptions = captionMode === 'parts' ? partCaptionsOf(parts, format) : []
 
   const zoneText = !zoned
     ? []
@@ -159,14 +201,11 @@ export function modelBar(input: BarInput): BarModel {
       forecastLabels.length === 0
         ? null
         : (input.forecastCaption ?? `Forecast: ${forecastLabels.join(', ')}`),
+    captionMode,
     partCaptions,
     markerPct: zoned ? toPct((reading - min) / span) : undefined,
     targetPct: target === undefined ? undefined : toPct((target - min) / span),
-    startText: categorical
-      ? null
-      : holding === undefined
-        ? format(reading)
-        : `${holding.label} · ${format(reading)}`,
+    startText: holding === undefined ? format(reading) : `${holding.label} · ${format(reading)}`,
     endText: endCaptionText(reading, target, format),
     describedByText: describedBy.length > 0 ? describedBy.join('; ') : null,
   }

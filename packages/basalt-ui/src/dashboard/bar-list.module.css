@@ -80,10 +80,12 @@
 }
 
 .empty {
+  grid-column: 1 / -1;
   font-size: var(--vx-text-sm);
   color: var(--vx-muted);
 }
 
 .skeletonRow {
+  grid-column: 1 / -1;
   height: calc(var(--vx-space-control-height-widget, 1.5rem) * var(--mantine-scale, 1));
 }

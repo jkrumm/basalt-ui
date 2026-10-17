@@ -32,7 +32,15 @@ import type { BasaltColumnDef } from '../../../src/table/table-features'
 import { Prose } from '../../../src/content'
 import { CodeBlock } from '../../../src/content/code-block'
 import { ActionIcon, Badge, Button } from '@mantine/core'
-import { PageAside, PageBar, Section, StatCard, StatGroup } from '../../../src/index'
+import {
+  BarList,
+  Meter,
+  PageAside,
+  PageBar,
+  Section,
+  StatCard,
+  StatGroup,
+} from '../../../src/index'
 import { ShellFrame } from '../../../src/shell'
 import type { SettingsMenuItem } from '../../../src/index'
 import type { GlobalAction } from '../../../src/controls'
@@ -1228,6 +1236,89 @@ function crumbOf(sections: SidebarSection[]): ActiveCrumb | undefined {
   }
 }
 
+/** Meter / BarList probes at fixed widths — the geometry happy-dom cannot see (SPEC § 6.3, § 6.4). */
+function DashFixture(): ReactElement {
+  const items = [
+    {
+      label: 'Support bot with a deliberately long label that must truncate',
+      value: 321,
+      secondary: '41%',
+    },
+    { label: 'Infra', value: 160, secondary: '20%' },
+    { label: 'Tools', value: 40 },
+  ]
+  return (
+    <>
+      {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
+      <div data-testid="dash-barlist" style={{ width: 320 }}>
+        <BarList label="Spend" items={items} format={(v) => `€${v}`} />
+      </div>
+      {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
+      <div data-testid="dash-barlist-states" style={{ width: 320 }}>
+        <BarList label="Loading" items={[]} loading />
+        <BarList label="Empty" items={[]} />
+      </div>
+      {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
+      <div data-testid="dash-meter-parts" style={{ width: 160 }}>
+        <Meter
+          label="Spend split"
+          max={3000}
+          format={(v) => `€${v}`}
+          segments={[
+            { value: 1200, label: 'Support bot', color: 'var(--vx-accent)' },
+            { value: 900, label: 'Infrastructure' },
+            { value: 400, label: 'Tooling' },
+          ]}
+        />
+      </div>
+      {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
+      <div data-testid="dash-meter-wrap" style={{ width: 160 }}>
+        <Meter
+          label="Budget"
+          max={3000}
+          target={2400}
+          format={(v) => `€${v}`}
+          segments={[
+            { value: 1800, label: 'Spent' },
+            { value: 850, label: 'Planned', forecast: true },
+          ]}
+          endCaption="Target €2,400 · €250 over"
+        />
+      </div>
+      {[360, 560].map((w) => (
+        // theme-allow -- the wrapper width IS the fixture's payload (a container probe)
+        <div key={w} data-testid={`dash-card-${w}`} style={{ width: w }}>
+          <StatCard
+            title="Spend"
+            value="€2,650"
+            sparkline={<Meter label="Budget" value={1800} max={3000} target={2400} />}
+          />
+        </div>
+      ))}
+      {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
+      <div data-testid="dash-card-spark" style={{ width: 360 }}>
+        <StatCard
+          title="Users"
+          value="12,483"
+          sparkline={
+            // theme-allow -- fills the slot so the slot's own box is what is measured
+            <div data-testid="dash-spark" style={{ height: '100%' }} />
+          }
+        />
+      </div>
+      {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
+      <div data-testid="dash-card-right" style={{ width: 560 }}>
+        <StatCard
+          title="Spend"
+          value="€2,650"
+          sparklinePlacement="right"
+          sparkline={<Meter label="Budget" value={1800} max={3000} target={2400} />}
+        />
+      </div>
+    </>
+  )
+}
+
 export function ShellFixture({ spec }: { spec: FixtureSpec }): ReactElement {
   if (spec.anchor?.shell === false) return <AnchorFixture />
   const icons = spec.icons ?? true
@@ -1258,6 +1349,7 @@ export function ShellFixture({ spec }: { spec: FixtureSpec }): ReactElement {
         <StatsFixture count={spec.stats} wide={spec.statsWide === true} />
       )}
       {spec.cards && <CardsFixture spec={spec.cards} />}
+      {spec.dash && <DashFixture />}
       {spec.codeBlock && <CodeBlockFixture spec={spec.codeBlock} />}
       {spec.forms && <FormsFixture spec={spec.forms} />}
       {spec.table && <TableFixture spec={spec.table} />}

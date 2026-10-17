@@ -14,6 +14,13 @@
  * passes a status colour) and the reading becomes a MARKER on the track, not a fill; the caption names
  * the zone that holds the value (`from` inclusive). Use it for a reading judged against ranges.
  *
+ * Every state (bar, ring, empty, loading) carries `data-basalt-meter` on its root. That attribute is
+ * the contract with `StatCard`: a Meter passed as its `sparkline` visual makes the slot size to content
+ * and keep the card's inline inset (both placements) instead of the sparkline's fixed height and bleed.
+ *
+ * Categorical `segments` (no `forecast` part) are captioned one per part — swatch, name, value — under
+ * the track; committed/forecast keeps the reading plus the forecast caption.
+ *
  * @example
  * import { Meter } from 'basalt-ui'
  *

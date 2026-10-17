@@ -293,6 +293,13 @@ export type TocSpec = {
 
 export type FixtureSpec = {
   sections: SectionSpec[]
+  /**
+   * Renders the Meter / BarList probes (`data-testid="dash-*"`) at fixed container widths:
+   * a BarList with a long label and a secondary column, its skeleton and empty states, a wrapping
+   * segment Meter and a forecast Meter in a narrow box, and StatCards holding a Meter or a plain
+   * sparkline node in the visual slot (bleed, and right).
+   */
+  dash?: true
   nav?: { maxTabs?: number; menuMax?: number; moreLabel?: string }
   /** −3..+3 density knob. Every touch-target floor must hold at every level. */
   density?: BasaltDensityLevel

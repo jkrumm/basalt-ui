@@ -1,8 +1,9 @@
 /**
  * BarList — a ranked list: label, an inline bar on ONE shared scale, a mono right-aligned value and
  * an optional muted secondary value. Choose it for "top N" (the bar ranks by length before anything
- * is read). The bar spans the label column only — values sit outside it. Intended for 5–10 rows; past 10 use a table with an inline `Meter` cell. An HTML/CSS
- * primitive, not a chart kind.
+ * is read). The bar spans the label column only — values sit outside it, so a full-scale bar ends
+ * before its value. Intended for 5–10 rows; past 10 use a table with an inline `Meter` cell. An
+ * HTML/CSS primitive, not a chart kind.
  *
  * Colour law: bars are neutral. `accentLeader` (opt-in) lets the top row take the accent — the
  * leader bar, and nothing else. Each value is rendered as text, never only a bar length.
