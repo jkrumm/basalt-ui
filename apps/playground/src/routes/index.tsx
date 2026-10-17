@@ -1,14 +1,11 @@
-import { createFileRoute, redirect } from '@tanstack/react-router'
-import { dashboardFilters } from '../demo/dashboard-range-store'
+import { createFileRoute } from '@tanstack/react-router'
+import { ScenarioIndex } from '../demo/ScenarioIndex'
 
-// The shell's first destination is the dashboard; `/` has no content of its own.
-//
-// `linkSearch()` is the store's own click-time reader — the complete stored ⊳ fallback object — so
-// this redirect restates NO defaults. Writing `range: stored.range ?? '30d'` here would pin '30d'
-// forever the day the store's fallback moves, which is exactly the drift law C10 and the
-// `warnLinkPinsFallback` dev warning exist to catch.
+// The landing page lists the scenarios; the dashboard is one nav entry away. `/` used to redirect to
+// the dashboard with `dashboardFilters.linkSearch()` — the store's own click-time reader, so the
+// redirect restated no defaults (law C10: writing `range: stored.range ?? '30d'` would pin '30d' the
+// day the store's fallback moves). Any link added here to a store-backed route keeps that rule.
 export const Route = createFileRoute('/')({
-  beforeLoad: () => {
-    throw redirect({ to: '/dashboard', search: dashboardFilters.linkSearch() })
-  },
+  staticData: { title: 'Playground' },
+  component: ScenarioIndex,
 })
