@@ -612,7 +612,7 @@ function attrValue(attr) {
   return unwrapExpressionContainer(attr.value)
 }
 
-// Ships: warn (grace → 2.24.0)
+// Ships: warn (grace → 2.26.0)
 const cardInset = {
   meta: {
     type: 'suggestion',
@@ -4238,8 +4238,8 @@ const routeViewTransition = {
 export const PLUGIN_RULE_GRACE = {
   'card-inset': {
     since: '2.16.0',
-    promote: '2.24.0',
-    why: 'Tightened in 2.16.0: only py="sm" px="md" together (or neither) passed. Inverted in 2.20.0 (Wave 35): the theme owns the 12/16 inset, so the pair is now a "redundant" finding and "neither" is the idiom; flush is variant="flush" or Card.Section. Every explicit inset is still a finding, so the promote date holds.',
+    promote: '2.26.0',
+    why: 'Tightened in 2.16.0: only py="sm" px="md" together (or neither) passed. Inverted in 2.20.0 (Wave 35): the theme owns the 12/16 inset, so the pair is now a "redundant" finding and "neither" is the idiom; flush is variant="flush" or Card.Section. The redundant pair is a NEW finding class first shipping in 2.20.0, so consumers get the full grace again: promote moved 2.24.0 → 2.26.0.',
   },
 }
 

@@ -490,11 +490,9 @@ export function StatCard({
     <Card
       className={cx(classNames?.root, className)}
       style={{
-        // Card inset = the `cardInsetY`/`cardInsetX` role tokens (12/16 at level 0, the `sm`/`md`
-        // rungs of the spacing grid), matching every other basalt card because `ChartCard` reads
-        // the SAME two vars. Below `sm` the horizontal one steps a rung down (to 12) on its own:
-        // the responsive half of the ladder lives in `spaceMobileDecls` (`tokens/index.ts`), which
-        // is the only home that can reach an inline style like this one.
+        // The inset is the theme's (`card-inset.module.css`: the `cardInsetY`/`cardInsetX` tokens, 12/16
+        // at level 0, stepping the horizontal one down a rung below `sm`), so it is NOT restated here —
+        // an inline copy would bypass `variant="flush"`.
         //
         // `overflow: hidden` clips the full-bleed sparkline to the card's rounded corners. An
         // element's own `box-shadow` renders outside its border box and is NOT clipped by its own
@@ -502,7 +500,6 @@ export function StatCard({
         //
         // NO `minHeight`: the content states the height (the foot reserves its own), and cards in a
         // grid row stretch to the tallest.
-        padding: 'var(--vx-space-card-inset-y, 0.75rem) var(--vx-space-card-inset-x, 1rem)',
         overflow: 'hidden',
         // Consumers may anchor overlays (badges, menus) to the card, so it stays a positioned box.
         position: 'relative',

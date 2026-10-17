@@ -328,6 +328,11 @@ export type FixtureSpec = {
    * reach the edge (`fixtures.tsx`'s `WIDE_STAT_VALUES` states the measured widths).
    */
   statsWide?: true
+  /**
+   * Renders the theme-owned card inset probes (`data-testid="inset-*"`): a bare Card and Paper, a
+   * flush Card, a Card with a `Card.Section`, and a Card whose own class sets `padding: 0`.
+   */
+  cardInset?: true
   /** Renders card-chrome probes: StatCards at fixed container widths, a stretched ChartCard. */
   cards?: CardsSpec
   /** A `StatCard` with `info` + `tone` (`data-testid="info-ring-stat"`) — the info glyph's focus-ring probe. */

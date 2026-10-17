@@ -31,7 +31,7 @@ import type { DataTableFacet } from '../../../src/table/data-table'
 import type { BasaltColumnDef } from '../../../src/table/table-features'
 import { Prose } from '../../../src/content'
 import { CodeBlock } from '../../../src/content/code-block'
-import { ActionIcon, Badge, Button } from '@mantine/core'
+import { ActionIcon, Badge, Button, Card, Paper } from '@mantine/core'
 import {
   BarList,
   Meter,
@@ -454,6 +454,27 @@ function FootprintFixture(): ReactElement {
           />
         </div>
       ))}
+    </>
+  )
+}
+
+/** Bare Card / Paper, a flush Card, a Card with a Section, a Card with its own `padding: 0` class. */
+function CardInsetFixture(): ReactElement {
+  return (
+    <>
+      <style>{'.inset-probe-zero { padding: 0; }'}</style>
+      <Card data-testid="inset-card">bare</Card>
+      <Paper data-testid="inset-paper">bare</Paper>
+      <Card variant="flush" data-testid="inset-flush">
+        flush
+      </Card>
+      <Card data-testid="inset-section">
+        <Card.Section data-testid="inset-section-bar">bleed</Card.Section>
+        body
+      </Card>
+      <Card className="inset-probe-zero" data-testid="inset-override">
+        override
+      </Card>
     </>
   )
 }
@@ -1436,6 +1457,7 @@ export function ShellFixture({ spec }: { spec: FixtureSpec }): ReactElement {
       {spec.stats !== undefined && (
         <StatsFixture count={spec.stats} wide={spec.statsWide === true} />
       )}
+      {spec.cardInset && <CardInsetFixture />}
       {spec.cards && <CardsFixture spec={spec.cards} />}
       {spec.dash && <DashFixture />}
       {spec.infoRing && <InfoRingFixture />}

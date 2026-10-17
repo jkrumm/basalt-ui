@@ -8,7 +8,8 @@
  * and `variant="flush"`, which zeroes the pair — a flush card's sections then cancel nothing.
  *
  * Components that render a `Paper` of their own (Modal / Drawer content, Dialog, ActionBar,
- * FloatingWindow) carry their padding on other parts; the `:not()` list keeps this off them.
+ * FloatingWindow) carry their padding on other parts; the `:not()` list keeps this off them. It sits in
+ * `:where()` so the rule stays (0,1,0) and a consumer's own class-based padding wins on source order.
  */
 /* `--card-padding` is Mantine's: the class default is neutralised to the guaranteed-invalid value so
    `var()` falls through to the token, while an inline `--card-padding` (what a Card `padding` prop
@@ -28,13 +29,15 @@
   padding: 0;
 }
 
-.inset:not(
-  [data-variant='flush'],
-  [class*='mantine-Modal-'],
-  [class*='mantine-Drawer-'],
-  [class*='mantine-Dialog-'],
-  [class*='mantine-ActionBar-'],
-  [class*='mantine-FloatingWindow-']
+.inset:where(
+  :not(
+    [data-variant='flush'],
+    [class*='mantine-Modal-'],
+    [class*='mantine-Drawer-'],
+    [class*='mantine-Dialog-'],
+    [class*='mantine-ActionBar-'],
+    [class*='mantine-FloatingWindow-']
+  )
 ) {
   padding: var(--card-inset-y) var(--card-inset-x);
 }
