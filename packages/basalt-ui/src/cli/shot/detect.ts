@@ -11,7 +11,7 @@
  * | scan/no-anchors              | content | P0                                                |
  * | craft-5/contrast             | content | P0                                                |
  * | craft-5/assumed-backdrop     | content | P2                                                |
- * | craft-1/scale-error          | layout  | P1                                                |
+ * | craft-1/scale-error, -missing| layout  | P1                                                |
  * | craft-1/off-scale-inset, -gap| layout  | P1; P3 when every off value is within 1 px of a step |
  * | craft-3/empty-region         | layout  | P1                                                |
  * | craft-1/off-scale-radius     | style   | P1; P3 when every off value is within 1 px of a step |
@@ -19,11 +19,12 @@
  * | craft-2/font-sizes           | style   | P1                                                |
  * | lint/basalt/<rule>           | style   | P1 for an error, P2 for a warning                 |
  *
+ * P0 and P1 fail the run (exit 2); P2 and P3 are listed findings that do not (exit 0).
  * Findings run content → layout → style, the order the reviewer reports in.
  * Score = 100 − (25·P0 + 10·P1 + 3·P2 + 1·P3), floored at 0.
  */
 import { execFileSync } from 'node:child_process'
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { isAbsolute, join, relative, resolve } from 'node:path'
 import { parseArgs } from 'node:util'
 
@@ -103,7 +104,7 @@ type Draft = Omit<Finding, 'where'> & { where: string }
 
 /** Distance from `value` to the nearest step; 0 and `'full'` need no step. */
 function offScale(value: number | 'full', steps: readonly number[]): number | null {
-  if (value === 'full' || value === 0) return null
+  if (value === 'full' || value === 0 || steps.length === 0) return null
   const nearest = Math.min(...steps.map((s) => Math.abs(s - value)))
   return nearest < 0.011 ? null : nearest
 }
@@ -244,8 +245,7 @@ function anchorFindings(a: AnchorMetrics, scale: Scale | undefined): Draft[] {
 
 function lintFindings(report: LintReport): Draft[] {
   return report.diagnostics.flatMap((d) => {
-    const id =
-      /^basalt\((.+)\)$/.exec(d.code ?? '')?.[1] ?? /^basalt\/(.+)$/.exec(d.code ?? '')?.[1]
+    const id = /^basalt\((.+)\)$/.exec(d.code ?? '')?.[1]
     if (!id) return []
     const span = d.labels?.[0]?.span
     const file = d.filename ?? '?'
@@ -303,6 +303,18 @@ export function detectFindings(m: ShotMetrics, lint?: LintReport): Finding[] {
   }
   for (const a of m.anchors) {
     const scale = m.scale.find((s) => s.scheme === a.scheme && s.viewport === a.viewport)
+    if (!scale && m.scale.length > 0) {
+      drafts.push({
+        rule: 'craft-1/scale-missing',
+        severity: 'P1',
+        layer: 'layout',
+        anchor: a.name,
+        route: a.route,
+        where: where(a),
+        cite: `metrics.json scale[${where(a)}]`,
+        defect: `No theme scale was read for ${where(a)}, so Craft 1 is unverified there.`,
+      })
+    }
     drafts.push(...anchorFindings(a, scale))
   }
   if (lint) drafts.push(...lintFindings(lint))
@@ -390,24 +402,59 @@ const gitHead = (cwd: string): string | undefined => {
   }
 }
 
-/** Appends the run to `<home>/history.json` and returns the last scores, oldest first. */
-function appendHistory(home: string, entry: HistoryEntry, log: (line: string) => void): number[] {
-  const path = join(home, 'history.json')
-  let runs: HistoryEntry[] = []
-  if (existsSync(path)) {
-    try {
-      const parsed: unknown = JSON.parse(readFileSync(path, 'utf8'))
-      if (!Array.isArray(parsed)) throw new TypeError('not an array')
-      runs = parsed as HistoryEntry[]
-    } catch {
-      log(`[detect] ${path} is unreadable; starting a new history`)
-    }
+/** Runs an fs step; any I/O failure becomes a clean `DetectError`. */
+function io<T>(what: string, step: () => T): T {
+  try {
+    return step()
+  } catch (error) {
+    throw new DetectError(
+      `cannot ${what}: ${error instanceof Error ? error.message : String(error)}`,
+    )
   }
-  runs.push(entry)
-  mkdirSync(home, { recursive: true })
-  if (!existsSync(join(home, '.gitignore'))) writeFileSync(join(home, '.gitignore'), '*\n')
-  writeFileSync(path, JSON.stringify(runs, null, 2) + '\n')
-  return runs.slice(-TREND_RUNS).map((r) => r.score)
+}
+
+/**
+ * The runs on record plus `entry`. A history that is not an array of runs is moved to
+ * `history.json.bak` (never overwritten in place) and a new one starts.
+ */
+function nextHistory(
+  path: string,
+  entry: HistoryEntry,
+  log: (line: string) => void,
+): HistoryEntry[] {
+  if (!existsSync(path)) return [entry]
+  try {
+    const parsed: unknown = JSON.parse(readFileSync(path, 'utf8'))
+    if (!Array.isArray(parsed)) throw new TypeError('not an array')
+    return [...(parsed as HistoryEntry[]), entry]
+  } catch {
+    io(`move the unreadable ${path} aside`, () => renameSync(path, `${path}.bak`))
+    log(`[detect] ${path} was unreadable; kept as history.json.bak, starting a new history`)
+    return [entry]
+  }
+}
+
+/**
+ * Writes `detect.json` and `history.json` through temp files and renames both only after both are
+ * written, so a failed write never leaves one without the other. Returns the last scores.
+ */
+function persist(
+  files: { detectPath: string; report: object; home: string; entry: HistoryEntry },
+  log: (line: string) => void,
+): number[] {
+  const { detectPath, report, home, entry } = files
+  const historyPath = join(home, 'history.json')
+  return io('write detect.json or history.json', () => {
+    mkdirSync(home, { recursive: true })
+    if (!existsSync(join(home, '.gitignore'))) writeFileSync(join(home, '.gitignore'), '*\n')
+    const runs = nextHistory(historyPath, entry, log)
+    const json = (value: unknown): string => JSON.stringify(value, null, 2) + '\n'
+    writeFileSync(`${historyPath}.tmp`, json(runs))
+    writeFileSync(`${detectPath}.tmp`, json(report))
+    renameSync(`${historyPath}.tmp`, historyPath)
+    renameSync(`${detectPath}.tmp`, detectPath)
+    return runs.slice(-TREND_RUNS).map((r) => r.score)
+  })
 }
 
 const compactWhere = (w: string[]): string => (w.length >= 4 ? 'all' : w.join(','))
@@ -430,7 +477,7 @@ function table(findings: readonly Finding[]): string[] {
   )
 }
 
-/** `shot detect`: exit 0 clean, 2 findings, 1 scan failure. */
+/** `shot detect`: exit 0 (none, or only P2/P3), 2 on a P0/P1 finding, 1 scan failure. */
 export async function detect(
   flags: readonly string[],
   cwd: string,
@@ -460,17 +507,13 @@ export async function detect(
     const rel = relative(cwd, outDir)
     const out = rel === '' || rel.startsWith('..') || isAbsolute(rel) ? outDir : rel
     const commit = (deps.commit ?? gitHead)(cwd)
-    writeFileSync(
-      join(outDir, 'detect.json'),
-      JSON.stringify(
-        { version: 1, at, out, ...(commit && { commit }), counts, score, findings },
-        null,
-        2,
-      ) + '\n',
-    )
-    const trend = appendHistory(
-      join(cwd, SHOT_HOME),
-      { at, out, ...(commit && { commit }), counts, score },
+    const trend = persist(
+      {
+        detectPath: join(outDir, 'detect.json'),
+        report: { version: 1, at, out, ...(commit && { commit }), counts, score, findings },
+        home: join(cwd, SHOT_HOME),
+        entry: { at, out, ...(commit && { commit }), counts, score },
+      },
       log,
     )
     const summary = SEVERITIES.filter((s) => counts[s] > 0)
@@ -481,7 +524,7 @@ export async function detect(
     )
     for (const line of table(findings)) log(line)
     log(`[detect] trend ${trend.join(' → ')} · ${relative(cwd, join(outDir, 'detect.json'))}`)
-    return findings.length === 0 ? 0 : 2
+    return counts.P0 + counts.P1 > 0 ? 2 : 0
   } catch (error) {
     if (!(error instanceof DetectError)) throw error
     console.error(`basalt-ui shot detect: ${error.message}`)

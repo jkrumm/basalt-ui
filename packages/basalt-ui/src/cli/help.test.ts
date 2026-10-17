@@ -175,7 +175,7 @@ describe('shot detect help', () => {
     const { code, log } = capture(() => run(['--help'], dir))
     expect(code).toBe(0)
     expect(log).toContain('shot detect [--out <dir>] [--lint <oxlint-json-file>]')
-    expect(log).toContain('0 clean, 2 findings, 1 scan failure')
+    expect(log).toContain('0 clean (P2/P3 findings are listed, not failing), 2 a P0 or P1 finding')
     for (const sev of ['P0', 'P1', 'P2', 'P3']) expect(log).toContain(`${sev} `)
     expect(log).toContain('score = 100')
   })

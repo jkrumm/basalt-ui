@@ -77,6 +77,12 @@ describe('basalt-design-reviewer', () => {
     )
   })
 
+  it('fails the component on P0 and P1 only, and maps detect.json rules to rubric items', () => {
+    expect(text).toContain('P0 and P1 fail the component; P2 and P3 are noted')
+    expect(text).toContain('`craft-N/*` → Craft N')
+    expect(text).toContain('Craft 4 by default')
+  })
+
   it('ends with a score line and points at `basalt-ui shot detect`', () => {
     expect(text).toContain('Score: <0-100>')
     expect(text).toContain('basalt-ui shot detect')
