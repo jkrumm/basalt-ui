@@ -1,7 +1,7 @@
 /**
  * Unit tests for checkSource — the pure (text, relPath, cfg) → Finding[] core.
  *
- * Covers all 26 guard kinds. Co-located with the guard, excluded from tsc
+ * Covers all 27 guard kinds. Co-located with the guard, excluded from tsc
  * (tsconfig exclude: src/**\/*.test.ts), run via `bun test`.
  *
  * The walker/reporter half is covered by the integration test in
@@ -3133,11 +3133,13 @@ describe("profile: 'tokens-only'", () => {
     // A `var(--vx-*)` name basalt does not emit — `tokens.css` is exactly what a tokens-only
     // consumer links, so a removed name there fails the same silent way.
     'unknown-vx-token': false,
+    // Judged over the series FILE, not a Mantine API — a tokens-only consumer has one too.
+    'series-palette': false,
   }
 
   it('classifies every kind in the registry — the table is exhaustive', () => {
     expect(Object.keys(MANTINE_COUPLED).toSorted()).toEqual(Object.keys(GUARD_RULES).toSorted())
-    expect(Object.keys(MANTINE_COUPLED)).toHaveLength(26)
+    expect(Object.keys(MANTINE_COUPLED)).toHaveLength(27)
   })
 
   it('the disabled set is exactly the Mantine-coupled half — a complete partition', () => {

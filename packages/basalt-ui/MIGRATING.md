@@ -77,7 +77,7 @@ consumer read this index, found nothing, and diffed a KPI row that had silently 
 | **dashboard** (`.`) | `StatCard`: `unit`, `breakdown`, delta format (§ `StatCard`) | `StatGroup`, `WidgetGrid`, query-aware `StatCard` — additive | — | **the column law keys on the CONTAINER; `cols={4}` is 2-up at `sm`** (§ Dashboard) | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | § 1.x compatibility layer removed | — | — | — | — | — | — | — | — | — | — | — | card inset 12/16, `kpi` 22 / 500 (§ 2.16.0) | — | — | StatCard status dot, Meter/BarList refinements (§ 2.19.0) | — | — |
 | **toolchain** (`./configs/*`) | — | — | the shipped lefthook preset's `check-theme` BROKE — the CLI resolver stopped ascending (§ CLI) | the preset's default bin, and the `root:` recipe (§ Toolchain) | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — |
 | **CLI** (`basalt-ui`) | — | — | **resolver stops relocating; `doctor` loses 6 of 10 checks** (§ CLI) | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | the managed block moves `CLAUDE.md` → `AGENTS.md` (§ 1.41.0) | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | `doctor`: CSS + forced dropped subpaths, `oxlint-floor`, Start wiring (§ 2.8.0) | — | § 1.x compatibility layer removed | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — |
-| **guards** | five rules → `error` (§ Guards) | six new ids at `warn` (§ preamble) | `query-dual-import` retired in 1.29.1 (§ Guards) | four rules → `error` (§ Guards) | — | — | — | `raw-breakpoint`: the container-grid answer, `error` at 1.33.0 (§ 1.32.0) | `FormRow`/`FormGroup` homes in both lanes; `basalt-main` dropped (§ Fixes) | C1 + breakpoint pairs → `error`; `unknown-vx-token` `warn` (§ Guards) | — | — | — | `unknown-vx-token` → `error`; the token factories throw (§ Guards) | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | § 1.x compatibility layer removed | — | — | — | — | — | — | — | — | — | — | — | `inline-spacing` steps, `card-inset` accepts both pairs (§ 2.16.0) | — | — | — | — | — |
+| **guards** | five rules → `error` (§ Guards) | six new ids at `warn` (§ preamble) | `query-dual-import` retired in 1.29.1 (§ Guards) | four rules → `error` (§ Guards) | — | — | — | `raw-breakpoint`: the container-grid answer, `error` at 1.33.0 (§ 1.32.0) | `FormRow`/`FormGroup` homes in both lanes; `basalt-main` dropped (§ Fixes) | C1 + breakpoint pairs → `error`; `unknown-vx-token` `warn` (§ Guards) | — | — | — | `unknown-vx-token` → `error`; the token factories throw (§ Guards) | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | § 1.x compatibility layer removed | — | — | — | — | — | — | — | — | — | — | — | `inline-spacing` steps, `card-inset` accepts both pairs (§ 2.16.0) | — | — | — | — | `series-palette` at `warn` (§ Unreleased) |
 
 ---
 
@@ -1041,10 +1041,33 @@ The `basalt-ui/router-tanstack` subpath is **removed** in 2.x, not moved: an imp
 | `NavItemMeta`, `NavGroupMeta`, `AnyNavItem`, `AnyNavGroup`, `AnyNavLink`, `FlatNavItem`, `NavConfig`, `NavGroupId`, `NavTabId`, `NavIndex`, `UseNavOptions`, `NavBinding`, `NavAnchor`, `NavAnchorProps`, `NavMobilePlacement` | deleted                                                                                                                                                                                                                                                                                                                                                                                                                                                    | no consumer names them; derive with `ComponentProps` / `Parameters` |
 | `useNav`, and `BasaltShell`'s `sections` / `mobileNav` props                                                                                                                                                                   | deleted: pass `nav={NAV}` (plus `badges`, `isActive`, `getScrollElement` — the old `useNav` options) to `BasaltShell`; it resolves the sidebar, the mobile bar and the breadcrumb itself. `mobileNav` tuning moves to `defineNav`'s `mobile`. argo `apps/dashboard/src/routes/__root.tsx`: replace `const nav = useNav(NAV, { badges })` + `{...nav}` with `nav={NAV} badges={…}` (migrates in W12; 1.x consumers stay on their pinned version until then) |
 
-## Unreleased
+## Unreleased — the series palette is computed
 
-_Nothing yet. Author the next section under this heading as `## Unreleased — <title>`; the
-release renames it and opens a new one here._
+### New guard kind `series-palette` (ships `warn`)
+
+`check-theme` now judges the series module (`basalt.seriesModulePath`, default
+`<root>/lib/series.ts`) — the file the line scan exempts. Each `defineSeries({...})` call is one
+ordered categorical group; each scheme is measured against its own surface (the derive engine's
+default `surface.panel`; a consumer's `derive` overrides are not read). One finding per failed
+check, naming the key(s), scheme, measured number and threshold:
+
+| Check                                                                        | Threshold                                                 |
+| ---------------------------------------------------------------------------- | --------------------------------------------------------- |
+| OKLCH lightness                                                              | light 0.43–0.77, dark 0.58–0.88                           |
+| OKLCH chroma                                                                 | ≥ 0.10 per categorical series                             |
+| Adjacent series under protanopia / deuteranopia (Machado 2009, severity 1.0) | OKLab ΔE×100 ≥ 8                                          |
+| Worst pair in the group, normal vision                                       | OKLab ΔE×100 ≥ 15                                         |
+| Contrast against the surface                                                 | ≥ 3:1                                                     |
+| Group size / repeats                                                         | ≤ 8 series (a 9th folds into `other`), no repeated colour |
+
+Only literal `{ light: '#hex', dark: '#hex' }` entries are read. A deliberately neutral series is
+keyed `other`: it skips the chroma floor and nothing else. The kind is a grace kind — `warn` from
+2.21.0, `error` from 2.23.0 — so the upgrade stays green; the fix is to retune the hex in the series
+file, not to waive anything.
+
+**Opt-out:** `"basalt": { "severity": { "series-palette": "warn" } }` keeps it a warning past
+2.23.0, `"basalt": { "exemptRules": { "series-palette": ["<series file>"] } }` silences it for the
+file. The guard now has 27 kinds.
 
 ## 2.20.0 — the sparkline reference and readout
 

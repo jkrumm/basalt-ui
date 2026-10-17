@@ -3,13 +3,14 @@
  * (`tokens/space-scale`, `common/*`), never `tokens/palette` or `derive` (colour math on every
  * Write/Edit).
  *
- * GUARD_RULES: the closed registry of all 26 violation kinds.
+ * GUARD_RULES: the closed registry of all 27 violation kinds.
  * checkSource:  pure (text, relPath, cfg) → Finding[]. No FS, no walk, no console.
  */
 import type { Finding, GuardConfig, GuardKind, GuardSeverity } from './types'
 import { vxFamilyOf } from '../common/vx-family'
 import { BASALT_VX_FAMILIES } from '../common/vx-families'
 import { FONTS_CSS_HINT } from './fonts-hint'
+import { auditSeriesGroups, parseSeriesGroups } from './palette'
 import { BASALT_VX_NAMES } from './vx-names'
 import { SPACE_SCALE_LEVEL0 } from '../tokens/space-scale'
 
@@ -910,6 +911,11 @@ export const GRACE_PERIOD_KINDS: Partial<Record<GuardKind, GraceEntry>> = {
     since: '2.16.0',
     promote: '2.24.0',
     why: 'The scale moved to 8/12/16/20/24 and the CSS micro ceiling dropped 10 → 7 in 2.16.0: a literal 8px/10px in CSS is newly a finding.',
+  },
+  'series-palette': {
+    since: '2.21.0',
+    promote: '2.23.0',
+    why: 'New in 2.21.0: the series file is judged by computed lightness, chroma, colour-blind separation and contrast; a palette that was tuned by eye is newly a finding.',
   },
 }
 
@@ -1982,7 +1988,7 @@ type GuardRule = {
 }
 
 /**
- * The closed registry of all 26 guard kinds. The triad test asserts
+ * The closed registry of all 27 guard kinds. The triad test asserts
  * `surface.guardKinds ⊆ keyof GUARD_RULES` at runtime.
  *
  * raw-surface, raw-html-layout, and sub-16-input-font are handled inline in checkSource
@@ -2207,6 +2213,13 @@ export const GUARD_RULES = {
     kind: 'unknown-vx-token',
     pattern: VX_VAR_REF, // handled inline (basalt-owned families); entry keeps the registry complete
     message: `var() names a --vx-* token basalt does not emit, so it resolves to its fallback (or to nothing) with no error anywhere. Judged: every name inside a basalt-owned family (${[...BASALT_VX_FAMILY_SET].join(', ')}), plus any name basalt used to emit in any family — pick the token from the stylesheet basalt-ui tokens:css emits; your own series belong in a family of their own (groupTokens throws on one inside basalt's, in dev builds). A removed name is reported with its replacement on the finding line (MIGRATING.md has the table). Any other name outside a basalt family is never judged, because groupTokens may declare it in a file this scan cannot see.`,
+  },
+  'series-palette': {
+    kind: 'series-palette',
+    pattern: /(?!)/, // never matches: judged over the whole series FILE by `checkSeriesPalette`, not per line
+    appliesTo: () => false,
+    message:
+      "The series file's palette fails a computed check (OKLCH lightness band, chroma floor, colour-blind separation of neighbours, worst-pair separation, 3:1 contrast against the surface, ≤ 8 series without a repeat) — retune the hex in the series file; it is judged per scheme, light against the light panel and dark against the dark one. A deliberately neutral series is keyed `other`.",
   },
 } as const satisfies Record<GuardKind, GuardRule>
 
@@ -2734,6 +2747,23 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
       text: textForFinding(lines[f.line - 1], f.token),
       severity: severityOf(f.kind, cfg),
     }))
+}
+
+/**
+ * Judge ONE series file's palette (`series-palette`): one finding per failed check, naming the key(s),
+ * scheme, measured number and threshold. The series module is exempt from every line-scan kind, so
+ * `check-theme` hands it here separately. Honors `severity` and `exemptRules` like any other kind.
+ */
+export function checkSeriesPalette(source: string, relPath: string, cfg: GuardConfig): Finding[] {
+  if (isRuleExempt('series-palette', relPath, cfg.exemptRules)) return []
+  return auditSeriesGroups(parseSeriesGroups(source)).map((issue) => ({
+    relPath,
+    line: issue.line,
+    token: issue.keys.join(', '),
+    text: issue.message,
+    kind: 'series-palette' as const,
+    severity: severityOf('series-palette', cfg),
+  }))
 }
 
 // ── Allow-annotation enumeration (check-theme --audit-allows) ─────────────────────────────────────

@@ -183,6 +183,7 @@ export const KNOWN_RULE_IDS = new Set([
   'raw-selection-control',
   'raw-media-query',
   'unknown-vx-token',
+  'series-palette',
   // Retired guard kinds — no longer in GUARD_RULES, but a `theme-allow` naming one must still
   // parse as a real (dead) waiver rather than an unknown-id typo. See RETIRED_RULE_IDS above.
   ...RETIRED_RULE_IDS,
