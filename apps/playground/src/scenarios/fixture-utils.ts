@@ -17,8 +17,10 @@ export const fmtDay = (date: Date): string =>
   date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' })
 
 /** The value at `index`, or a throw naming the fixture — a fixture list is never sparse. */
-export function at<T>(items: readonly T[], index: number): T {
-  const item = items.at(index)
-  if (item === undefined) throw new Error(`fixture list has no item at ${index}`)
-  return item
+export function itemAt<T>(items: readonly T[], index: number): T {
+  const resolved = index < 0 ? items.length + index : index
+  if (resolved < 0 || resolved >= items.length) {
+    throw new Error(`fixture list of ${items.length} has no item at ${index}`)
+  }
+  return items[resolved] as T
 }

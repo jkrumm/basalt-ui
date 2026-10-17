@@ -5,7 +5,7 @@
  * seeded generator runs once at module load and the reading time is fixed, so a re-render, a reload
  * and a screenshot read the same numbers.
  */
-import { at as itemAt, fmtDay, seeded } from './fixture-utils'
+import { fmtDay, itemAt, seeded } from './fixture-utils'
 
 export type OutageCause = 'Modem reboot' | 'ISP upstream fault' | 'Line retrain'
 
@@ -17,7 +17,7 @@ export const WINDOW_HOURS = 168
 const WINDOW_START = NOW - WINDOW_HOURS * HOUR_MS
 
 export const CONTRACT_DOWN_MBIT = 250
-export const CONTRACT_UP_MBIT = 40
+const CONTRACT_UP_MBIT = 40
 
 export const NOW_DATE = new Date(NOW)
 
@@ -73,7 +73,7 @@ const downMinutesIn = (startMs: number): number =>
 
 export type HourRow = {
   start: Date
-  /** Median round-trip to the probe target. `null` when most of the hour was down. */
+  /** Median round-trip to the probe target. `null` when any of the hour was down. */
   latencyMs: number | null
   lossPct: number
   downMbit: number | null
@@ -147,23 +147,29 @@ export const LATENCY_NOW_MS = itemAt(MINUTE_LATENCY, -1)
 
 export type LatencyBin = { from: number; label: string; hours: number }
 
-const BIN_WIDTH_MS = 4
+export const LATENCY_BIN_MS = 4
 
-/** Hours by median latency, in 4 ms bins — the shape of a normal hour and how heavy the tail is. */
+/** Hours by median latency, in `LATENCY_BIN_MS` bins — the shape of a normal hour and how heavy the tail is. */
 export const LATENCY_DISTRIBUTION: readonly LatencyBin[] = (() => {
   const values = present(HOURLY.map((h) => h.latencyMs))
-  const first = Math.floor(Math.min(...values) / BIN_WIDTH_MS) * BIN_WIDTH_MS
-  const last = Math.floor(Math.max(...values) / BIN_WIDTH_MS) * BIN_WIDTH_MS
+  const first = Math.floor(Math.min(...values) / LATENCY_BIN_MS) * LATENCY_BIN_MS
+  const last = Math.floor(Math.max(...values) / LATENCY_BIN_MS) * LATENCY_BIN_MS
   const bins: LatencyBin[] = []
-  for (let from = first; from <= last; from += BIN_WIDTH_MS) {
+  for (let from = first; from <= last; from += LATENCY_BIN_MS) {
     bins.push({
       from,
       label: `${from} ms`,
-      hours: values.filter((v) => v >= from && v < from + BIN_WIDTH_MS).length,
+      hours: values.filter((v) => v >= from && v < from + LATENCY_BIN_MS).length,
     })
   }
   return bins
 })()
+
+/** Hours with a latency reading — the outage hours have none and are not binned. */
+export const MEASURED_HOURS = HOURLY.filter((h) => h.latencyMs !== null).length
+
+/** Headroom above the contracted download so the ceiling line is not clipped by the plot edge. */
+export const CEILING_HEADROOM_MBIT = 10
 
 export const fmtMs = (value: number): string => `${Math.round(value)} ms`
 export const fmtMbit = (value: number): string => `${Math.round(value)} Mbit/s`
