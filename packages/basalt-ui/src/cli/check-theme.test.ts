@@ -278,17 +278,19 @@ describe('check-theme raw-html-layout', () => {
 })
 
 describe('check-theme inline-spacing', () => {
+  // `inline-spacing` rides the 2.16 grace minor (warn → error at 2.17.0): reported, not fatal.
   it('flags an inline padding literal', () => {
     fixture(`export const C = () => <Box style={{ padding: 16 }} />\n`)
     const { code, err } = run()
-    expect(code).toBe(1)
+    expect(code).toBe(0)
+    expect(err).toContain('⚠ Theme guard')
     expect(err).toContain('inline-spacing')
   })
 
   it('flags an inline marginTop string literal', () => {
     fixture(`export const C = () => <Box style={{ marginTop: '12px' }} />\n`)
     const { code, err } = run()
-    expect(code).toBe(1)
+    expect(code).toBe(0)
     expect(err).toContain('inline-spacing')
   })
 
@@ -654,9 +656,8 @@ describe('severity — warnings report, errors fail', () => {
   })
 
   it('still fails when errors accompany warnings, and reports both blocks', () => {
-    fixture(`export const C = () => <div style={{ color: '#ff0000' }} p={18} />`, {
+    fixture(`export const C = () => <Box radius={4} style={{ color: '#ff0000' }} />`, {
       roots: ['src'],
-      spacingSteps: [18],
       severity: { 'raw-hex': 'warn' },
     })
     const { code, err } = run()
