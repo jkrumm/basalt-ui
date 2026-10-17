@@ -33,7 +33,27 @@ export type TextReading = {
   /** No opaque ancestor background was found: `bg` is white by assumption. */
   assumedWhite: boolean
 }
-export type Reading = Omit<Measurement, 'contrast'> & { texts: TextReading[] }
+/** A computed `border-top-left-radius` as the page read it, with the box it rounds. */
+export type RawRadius = { value: string; width: number; height: number }
+export type Reading = Omit<Measurement, 'contrast' | 'radius' | 'nested'> & {
+  radius: RawRadius
+  nested: { path: string; radius: RawRadius; padding: Measurement['padding'] }[]
+  texts: TextReading[]
+}
+
+/**
+ * A radius in px, or `'full'` when it rounds the box completely (a `50%` or `9999px` pill/circle,
+ * i.e. a radius of at least half the shorter side). A percentage is resolved against the box, so
+ * `50%` is never reported as 50px.
+ */
+export function radiusReading({ value, width, height }: RawRadius): number | 'full' {
+  const first = value.trim().split(/\s+/)[0] ?? ''
+  const n = Number.parseFloat(first)
+  if (!Number.isFinite(n) || n <= 0) return 0
+  const resolved = first.endsWith('%') ? (n / 100) * width : n
+  if (resolved >= Math.min(width, height) / 2) return 'full'
+  return Math.round(resolved * 100) / 100
+}
 
 const hex = (c: readonly number[]): string =>
   '#' +
@@ -46,7 +66,7 @@ const hex = (c: readonly number[]): string =>
  * Contrast per text reading: `min` over all, `failures` below the WCAG AA threshold. The threshold
  * is tested on the UNROUNDED ratio; only the stored value is rounded.
  */
-export function finishMeasurement({ texts, ...rest }: Reading): Measurement {
+export function finishMeasurement({ texts, radius, nested, ...rest }: Reading): Measurement {
   const failures: ContrastFailure[] = []
   let min: number | null = null
   for (const t of texts) {
@@ -58,7 +78,12 @@ export function finishMeasurement({ texts, ...rest }: Reading): Measurement {
     }
   }
   const backdrop = texts.some((t) => t.assumedWhite) ? ({ backdrop: 'assumed-white' } as const) : {}
-  return { ...rest, contrast: { min, failures, ...backdrop } }
+  return {
+    ...rest,
+    radius: radiusReading(radius),
+    nested: nested.map((n) => ({ ...n, radius: radiusReading(n.radius) })),
+    contrast: { min, failures, ...backdrop },
+  }
 }
 
 /* oxlint-disable unicorn/consistent-function-scoping -- the helpers below are serialised into the page with it: no outer scope */
@@ -143,7 +168,7 @@ export function measureAnchor(root: Element): Reading {
   const fontSizes = new Set<number>()
   const texts: Reading['texts'] = []
   const painted: [number, number][] = []
-  const nested: Measurement['nested'] = []
+  const nested: Reading['nested'] = []
   const pathOf = (el: Element): string => {
     const parts: string[] = []
     for (let n: Element | null = el; n && n !== root; n = n.parentElement) {
@@ -164,7 +189,7 @@ export function measureAnchor(root: Element): Reading {
     if (el !== root && (hasBg || hasBorder) && nested.length < 60) {
       nested.push({
         path: pathOf(el),
-        radius: px(s.borderTopLeftRadius),
+        radius: { value: s.borderTopLeftRadius, width: px(r.width), height: px(r.height) },
         padding: sides(s, 'padding'),
       })
     }
@@ -215,7 +240,7 @@ export function measureAnchor(root: Element): Reading {
     box: { width: px(rect.width), height: px(rect.height) },
     padding: sides(cs, 'padding'),
     gap,
-    radius: px(cs.borderTopLeftRadius),
+    radius: { value: cs.borderTopLeftRadius, width: px(rect.width), height: px(rect.height) },
     borderWidth: widest,
     fontSizes: [...fontSizes].toSorted((a, b) => a - b),
     nested,

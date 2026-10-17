@@ -32,10 +32,11 @@ export type Measurement = {
   box: { width: number; height: number }
   padding: Sides
   gap: { row: number; column: number }
-  radius: number
+  /** px, or `'full'` for a radius that rounds the box completely (`50%`, `9999px`). */
+  radius: number | 'full'
   borderWidth: number
   fontSizes: number[]
-  nested: { path: string; radius: number; padding: Sides }[]
+  nested: { path: string; radius: number | 'full'; padding: Sides }[]
   emptyRatio: number
   /** `min` is null when the anchor holds no text. */
   contrast: {

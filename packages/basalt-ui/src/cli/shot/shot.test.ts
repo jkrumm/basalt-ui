@@ -35,7 +35,7 @@ import {
   shot,
   sweepStaleTmp,
 } from './index'
-import { contrastRatio, contrastThreshold, finishMeasurement } from './measure'
+import { contrastRatio, contrastThreshold, finishMeasurement, radiusReading } from './measure'
 import type { TextReading } from './measure'
 import { INSTALL_LINE, ShotError, isPlaywright, withBrowser } from './playwright'
 import type { Playwright } from './playwright'
@@ -1178,8 +1178,43 @@ describe('contrast maths', () => {
   })
 })
 
+describe('radiusReading', () => {
+  const box = { width: 40, height: 40 }
+  test('a 50% radius is "full", never 50px', () => {
+    expect(radiusReading({ value: '50%', ...box })).toBe('full')
+    expect(radiusReading({ value: '50% 50%', width: 120, height: 24 })).toBe('full')
+  })
+  test('a pill radius (9999px) or one at half the shorter side is "full"', () => {
+    expect(radiusReading({ value: '9999px', width: 80, height: 24 })).toBe('full')
+    expect(radiusReading({ value: '12px', width: 80, height: 24 })).toBe('full')
+  })
+  test('a smaller radius stays in px, a percentage resolved against the box', () => {
+    expect(radiusReading({ value: '10px', width: 80, height: 40 })).toBe(10)
+    expect(radiusReading({ value: '10%', width: 80, height: 80 })).toBe(8)
+    expect(radiusReading({ value: '0px', ...box })).toBe(0)
+  })
+  test('finishMeasurement reports it on the anchor and on nested boxes', () => {
+    const { contrast: _, radius: __, nested: ___, ...tail } = measurement
+    const out = finishMeasurement({
+      ...tail,
+      radius: { value: '50%', ...box },
+      nested: [
+        {
+          path: 'span',
+          radius: { value: '6px', width: 100, height: 40 },
+          padding: { top: 0, right: 0, bottom: 0, left: 0 },
+        },
+      ],
+      texts: [],
+    })
+    expect(out.radius).toBe('full')
+    expect(out.nested[0]?.radius).toBe(6)
+  })
+})
+
 describe('finishMeasurement', () => {
-  const { contrast: _, ...rest } = measurement
+  const { contrast: _, radius: __, nested: ___, ...tail } = measurement
+  const rest = { ...tail, radius: { value: '8px', width: 100, height: 100 }, nested: [] }
   const text = (over: Partial<TextReading>): TextReading => ({
     text: 't',
     fg: [0, 0, 0],
