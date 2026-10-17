@@ -156,7 +156,7 @@ function OpsStats({ shotState }: ScenarioProps) {
           })}
           {...shared}
           sparkline={(size) => (
-            <Box data-shot-hover data-shot-tooltip>
+            <Box data-shot-hover>
               <Sparkline
                 ariaLabel="Latency per minute, last 60 minutes, ms"
                 data={MINUTE_LATENCY}
@@ -180,7 +180,7 @@ function OpsStats({ shotState }: ScenarioProps) {
           })}
           {...shared}
           sparkline={(size) => (
-            <Box data-shot-hover data-shot-tooltip>
+            <Box data-shot-hover>
               <Sparkline
                 ariaLabel="Packet loss per hour, last 24 hours, percent"
                 data={LOSS_24H_SERIES}
@@ -205,7 +205,7 @@ function OpsStats({ shotState }: ScenarioProps) {
           })}
           {...shared}
           sparkline={(size) => (
-            <Box data-shot-hover data-shot-tooltip>
+            <Box data-shot-hover>
               <Sparkline
                 ariaLabel="Download per hour, last 24 hours, Mbit/s"
                 data={DOWN_24H_SERIES}
