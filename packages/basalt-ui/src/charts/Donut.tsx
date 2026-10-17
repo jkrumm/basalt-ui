@@ -15,6 +15,7 @@ import type { CSSProperties, ReactElement } from 'react'
 import type { BasaltProps } from '../common/props'
 import { alpha, VX } from '../tokens'
 import type { CartesianDefinition } from './compile'
+import { withTooltipRole } from './cursor'
 import { ChartEngine, idPrefixOf } from './host'
 import { ChartLegend } from './legend'
 import { useCoarsePointer } from '../common/use-media-query'
@@ -184,7 +185,7 @@ export function Donut<K extends string = string>(props: DonutProps<K>): ReactEle
         theme: CHART_THEME,
       }),
       tooltip: {
-        use: tooltipHost,
+        use: withTooltipRole(tooltipHost),
         portal,
         content: (points: readonly ChartPoint[]) => {
           const slice = points[0]?.datum as Slice | undefined
