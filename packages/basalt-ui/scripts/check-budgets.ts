@@ -555,10 +555,11 @@ async function budgets(providerOnlyDist: string): Promise<Budget[]> {
     // 7073 -> 7098 (W32): `shot` reports a full-round radius as "full" — the raw radius reading, `radiusReading` and its two call sites in cli/shot/ (+25).
     // 7098 -> 7100 (W32): `radiusReading`'s zero-size and percentage branches (+2).
     // 7100 -> 7124 (W33): `shot` hovers a declared `data-shot-at` point and probes for a rendered readout only (+24).
+    // 7124 -> 7132 (W33 review): `data-shot-at` parsed by one anchored pattern within [0, 1] (+8).
     {
       label: 'CLI non-test lines (src/cli/**)',
       value: cliNonTestLines(),
-      ceiling: 7124,
+      ceiling: 7132,
     },
     ...(await providerOnlyRows(providerOnlyDist)),
   ]

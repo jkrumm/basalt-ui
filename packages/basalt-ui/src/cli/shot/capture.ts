@@ -237,12 +237,20 @@ export function hoverAtOf(el: Element | null): string {
   return el?.getAttribute('data-shot-at') ?? ''
 }
 
+const HOVER_AT = /^\s*(\d*\.?\d+)\s*,\s*(\d*\.?\d+)\s*$/
+
+/**
+ * Exactly two non-negative numbers, each within [0, 1]. Anything else (a missing half, a third
+ * field, a value outside the box, a sign) is null, so the trigger is hovered at its centre.
+ */
 export function parseHoverAt(raw: string): { x: number; y: number } | null {
-  const [x, y] = raw.split(',').map(Number)
-  return Number.isFinite(x) && Number.isFinite(y) ? { x: x!, y: y! } : null
+  const m = HOVER_AT.exec(raw)
+  if (!m) return null
+  const [x, y] = [Number(m[1]), Number(m[2])]
+  return x <= 1 && y <= 1 ? { x, y } : null
 }
 
-async function hoverTrigger(target: PwLocator): Promise<void> {
+export async function hoverTrigger(target: PwLocator): Promise<void> {
   const at = parseHoverAt(String(await target.evaluate(hoverAtOf)))
   const box = at ? await target.boundingBox() : null
   const position = at && box ? { x: at.x * box.width, y: at.y * box.height } : undefined
