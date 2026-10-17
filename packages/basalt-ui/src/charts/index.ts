@@ -27,7 +27,7 @@ export {
   type MirroredBarsSeries,
   type MirroredBarPane,
 } from './MirroredBars'
-export { ChartCard, type ChartCardProps, type ChartCardSlot } from './ChartCard'
+export { ChartCard, type ChartCardProps, type ChartCardSlot, type ChartFact } from './ChartCard'
 export { chartCursor } from './cursor'
 export { chartCurve, type CurveName } from './curves'
 export type {

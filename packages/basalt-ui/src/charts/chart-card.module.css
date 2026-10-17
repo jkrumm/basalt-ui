@@ -27,21 +27,25 @@
 /*
  * The facts line (`facts` prop): the headline figure under the title, in place of a subtitle. It wraps
  * (rows and the pieces inside a row), so a half-width card never clips the value. The value is the
- * proportional sans with lining figures (Wave 35); the unit and period are muted.
+ * proportional sans with lining figures (Wave 35); the unit and period are muted. Weight and tracking
+ * are StatCard's hero values (`stat-card.module.css` `.value`: 500 / -0.02em, which no token names).
  */
 .facts {
+  margin-top: var(--vx-space-stack-xs);
+}
+
+.factsRow {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 2px 16px;
-  margin-top: 4px;
+  gap: var(--vx-space-stack-xs) var(--vx-space-stack-md);
 }
 
 .fact {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 2px 6px;
+  gap: var(--vx-space-stack-xs);
   min-width: 0;
 }
 
@@ -57,7 +61,12 @@
 }
 
 .factUnit,
-.factPeriod {
+.factPeriod,
+.factsBasis {
   font-size: var(--vx-text-sm);
   color: var(--vx-muted);
+}
+
+.factsBasis {
+  margin: var(--vx-space-stack-xs) 0 0;
 }

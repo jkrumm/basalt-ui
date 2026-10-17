@@ -5,6 +5,8 @@
 declare const classes: {
   readonly header: string
   readonly facts: string
+  readonly factsRow: string
+  readonly factsBasis: string
   readonly fact: string
   readonly factValue: string
   readonly factUnit: string
