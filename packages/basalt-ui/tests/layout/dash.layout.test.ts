@@ -213,13 +213,20 @@ layout('Meter / BarList geometry', () => {
     },
   )
 
-  test.each(['spark', 'meter', 'meter-own'])(
+  test.each([
+    'dash-card-loading-spark',
+    'dash-card-loading-meter',
+    'dash-card-slot-meter-loading',
+    // Breakdown + sparkline below the 480 px container: the narrow `right` slot must not bleed it.
+    'dash-card-loading-right',
+  ])(
     'a loading visual-slot skeleton keeps the card inline inset on both sides (%s)',
-    async (kind) => {
+    async (testId) => {
       const m = await p.raw.evaluate((root) => {
         const card = document.querySelector<HTMLElement>(`${root} .mantine-Card-root`)
+        // The card's visual skeleton, or a Meter's own track skeleton sitting in the slot.
         const sk = card?.querySelector<HTMLElement>(
-          '.mantine-Skeleton-root:not([class*="skeletonValue"]):not([class*="skeletonFooter"])',
+          '[class*="skeletonVisual"], [class*="skeletonTrack"]',
         )
         if (!card || !sk) throw new Error(`LAYOUT: no skeleton in ${root}`)
         const c = card.getBoundingClientRect()
@@ -229,7 +236,7 @@ layout('Meter / BarList geometry', () => {
           right: c.right - r.right,
           inset: parseFloat(getComputedStyle(card).paddingInlineStart),
         }
-      }, `[data-testid="dash-card-loading-${kind}"]`)
+      }, `[data-testid="${testId}"]`)
       expect(Math.abs(m.left - m.inset)).toBeLessThanOrEqual(SUBPIXEL)
       expect(Math.abs(m.right - m.inset)).toBeLessThanOrEqual(SUBPIXEL)
     },
