@@ -1254,7 +1254,7 @@ Spec: SPEC § 6.1, § 6.2, § 6.10, § 6.12. Scenarios S4 and S1. Consumer befor
     stay `warn` until the fleet is clean in Waves 40–41, then promote in their own commit. No consumer is on
     2.16, so a 2.17 promotion would turn them into errors with no warn period.
 
-## Wave 34 — Meter and BarList <!-- status: active -->
+## Wave 34 — Meter and BarList <!-- status: done -->
 
 Spec: SPEC § 3, § 4, § 6.3, § 6.4, D1, D2. Scenarios S4 and S2 (build the S2 fixture). Validators: argo
 (reading, usage), rb (course, ingest), linewatch (link against ceiling).
@@ -1275,7 +1275,7 @@ Spec: SPEC § 3, § 4, § 6.3, § 6.4, D1, D2. Scenarios S4 and S2 (build the S2
 - [x] **No coloured status edge (owner steer, 2026-10-17):** status is a dot plus a word, or the value's own ink;
       the `StatCard` rail, the `Callout` border and the notification-centre edge go; the shipped reviewer fails
       the pattern (D28).
-- [ ] At least three rounds on S4 and S2; owner sees the boards. (Rounds done: r0–r4; the owner review is open.)
+- [x] At least three rounds on S4 and S2; owner sees the boards. (Rounds done: r0–r4; the owner review is open.)
       **Left behind:**
 
 - **Landed** (all through `rd merge`, `make check` green at every merge): #338 status text per surface, #339
@@ -1316,22 +1316,66 @@ Spec: SPEC § 3, § 4, § 6.3, § 6.4, D1, D2. Scenarios S4 and S2 (build the S2
 - **Next — stopped: awaiting owner review** of the Meter/BarList boards (r0–r4), the one unticked step. Once the
   owner has seen them, tick it, flip Wave 34 to `done` and Wave 35 to `active`. Not released; nothing spawned.
 
-## Wave 35 — Stat strip and the card recipes <!-- status: pending -->
+**Renumbered 2026-10-17:** Waves 35 and 36 below were inserted for the argo-first loop and the UX-first
+procedure. The old Waves 36–41 are now 37–42, so a wave number of 36 or more cited in SPEC.md or AUDIT.md reads one higher.
+The old Wave 35's card recipes moved into Wave 38 (record page) and the strip into the new Wave 35.
 
-Spec: SPEC § 6.5, § 6.9. Scenarios S2 and S3 (build the S3 fixture). Validators: argo (body composition,
-warden), rb (review queue, stats), linewatch (stat strip).
+## Wave 35 — argo's friction: typography, primitive props and the strip <!-- status: active -->
 
-- [ ] `StatGroup` `variant="strip"`: one surface, 1 px dividers, per-cell encodings, optional footer row, two
-      columns in a compact container (rows 147, 156).
-- [ ] Recipes in `basalt-design`: distribution in a card (row 153), entity card (row 150), decision card on S3
-      (D4: promote only if argo's and rb's converge), page summary.
-- [ ] Layout-suite pins: strip divider 1 px, two columns at 390, no empty lower 40 % in a recipe card. Unit
-      test: the default `StatGroup` output is unchanged. Budgets: barrel types raised only if a strip type is
-      exported.
-- [ ] At least three rounds on S2 and S3; owner sees the boards.
+Owner, 2026-10-17: argo is now the proving ground (argo PLAN Part 2). After argo's Waves 19–20 the structure of
+the pages is right, but the craft is not yet, and most of what is missing is basalt's. Source:
+`argo/docs/design/UPSTREAM.md` § basalt friction (2.18.0) and the Wave 20 tables, each row naming the exact prop.
+Validators: argo, which deletes its local workarounds in the same cycle (net-negative in argo), and S2/S3/S4.
+
+- [ ] **Typography law change (owner + landscape research #5):** hero values, row labels and body text are
+      proportional sans with lining figures. `tabular-nums` only in table columns and axis ticks; mono only for
+      captions, times and code. Change DESIGN-CORE, the DESIGN.md seed, `StatCard`, `Meter`, `BarList`,
+      `WidgetHeader` and the strip, and record it in SPEC § 12. Add a MIGRATING entry with the opt-out.
+- [ ] **Primitive props argo needed** (one PR per export, each with a failing-first test): - `Meter`: `ticks: {at, label?}[]`, `tone="muted"` (a non-verdict fill that is not near-white in dark),
+      `size="row"`, a caption size that follows the host, a `target` tick visible at `max`, and
+      `MeterSegment`/`MeterZone` exported from the root. - `BarList`: a per-row `max` with a denominator, a thin label-outside row, and a per-row tick. - `Sparkline`: `reference: number | 'mean'` plus a hover readout. - `DeltaBadge`: a `period` that composes "vs <period>". - `ChartCard`: a `facts` slot (value, unit, comparison, period; replaces the filler subtitle). - `Bars`/`Lines`: `refLines[].label`. - `relativeTime` and `SyncButton` honour the provider/`defineFormat` locale. - `Button`: paddings on the spacing scale.
+- [ ] **`StatGroup variant="strip"`**, converged from argo's three prototypes
+      (`features/{garmin-health,agents,warden}/stat-strip.tsx`): joined cells with 1 px dividers; cell
+      `{caption, qualifier, info, value, unit, delta, visual, footer}`; a multi-row cell (Garmin's
+      RHR/HRV/VO2max `rows`); a strip `footer` row; two columns in a compact container (rows 147, 156).
+- [ ] **Card inset owned by the theme** (rows 163, 165): the theme sets 12/16, `basalt/card-inset` flags an
+      explicit pair as redundant, there is a sanctioned flush idiom (`Card.Section` or a variant), and the message
+      names it. Wave 34's leftovers: the S4 histogram and stacked value-over-time, the invisible Tabs hover in
+      dark, and the active sidebar row's accent fill.
+- [ ] Rounds: at least three on S2/S3/S4, plus an argo validation run. argo bumps, deletes `FactsLine`, its three
+      strip prototypes, the `relativeTime` wrapper and the `alpha(VX.muted, …)` meter hacks, then live-shots
+      Garmin, Agents, Warden and Home. Report the argo line delta.
       **Left behind:**
 
-## Wave 36 — Data tables, responsive <!-- status: pending -->
+## Wave 36 — The UX-first procedure, shipped <!-- status: pending -->
+
+Owner, 2026-10-17: the flow basalt teaches every consumer's agent through `init`/`sync` is UX research first,
+then encoding, then the build, then rendered critique. Inputs: argo's concept-doc format (proven in argo Waves
+18–20), `docs/waves/design-parity/SKILL-LANDSCAPE.md` (ranked adopt and reject lists), and SPEC § 3/§ 4 (the
+catalogue). This wave takes over old Wave 39's catalogue-shipping step.
+
+- [ ] **`basalt-design` as a router plus references** (landscape #13). Step 1 is a mandatory concept doc. Ship
+      argo's format as a template in references: the question, the decision it supports, a datasets table
+      (source, shape, chosen encoding, reason), the layout at 1440 and 390, the copy, and the pass criteria.
+      Nothing is built before the concept exists.
+- [ ] **The decision layer** in references: - the "is it even a chart?" router (landscape #3); - the data-to-expression catalogue as the decision table (dataset shape → pattern → basalt export); - the stat-tile slot contract (#2); - the nine encoding non-negotiables (#4); - tooltips never gate data, and a refetch keeps the frame (#6, #7); - fact-only copy and the dashboard anti-defaults list (#15): equal rounded cards, one radius everywhere, the same
+      shadow everywhere, a delta with no period, a coloured left edge, filler-question subtitles.
+- [ ] **Reviewer, two isolated passes** (#9, #10): A is the `basalt-design-reviewer` (design and craft, cited
+      crops); B is a deterministic detector over `metrics.json` and the lint output. A review run inline by the
+      builder starts with a `DEGRADED` banner. Order the review content → layout → style, with P0–P3 severities
+      and a per-run score trend in `.basalt/shots/`.
+- [ ] **Palette validator as a guard** (#1) over `defineSeries` files: OKLCH lightness band, a chroma floor, CVD
+      ΔE ≥ 8, normal-vision worst-pair ΔE ≥ 15, ≥ 3:1 against the surface, and a fixed categorical order (a 9th
+      series folds into Other).
+- [ ] **Discovery and precedence:** the AGENTS block also supersedes the bundled `/dataviz` skill inside a
+      basalt app, and a monorepo-root session demonstrably loads the skill and the reviewer.
+- [ ] **Expression trial v0:** a scratch `init` app with a fresh agent and three datasets (a ratio against a
+      limit, a status-over-time series, a ranked list), and no component names. Did it write a concept, which
+      encodings did it pick, and how does the board score? A fallback to a default is a ledger row. Compare
+      with weatherorb's W45 trial.
+      **Left behind:**
+
+## Wave 37 — Data tables, responsive <!-- status: pending -->
 
 Spec: SPEC § 6.6, § 9.1. Scenarios S1 (outages) and S2 (sessions). Validators: argo, linewatch.
 
@@ -1346,7 +1390,7 @@ Spec: SPEC § 6.6, § 9.1. Scenarios S1 (outages) and S2 (sessions). Validators:
       column is reachable by keyboard. At least three rounds; owner sees the boards.
       **Left behind:**
 
-## Wave 37 — Event list <!-- status: pending -->
+## Wave 38 — Event list <!-- status: pending -->
 
 Spec: SPEC § 6.7, § 9.3, D11. Scenarios S5 (build the S5 fixture: the journal) and S3 (item timeline).
 Validators: argo (warden timeline, narratives), rb (journal, session history), linewatch (transitions).
@@ -1363,7 +1407,7 @@ Validators: argo (warden timeline, narratives), rb (journal, session history), l
 - [ ] At least three rounds on S5 and S3; owner sees the boards.
       **Left behind:**
 
-## Wave 38 — Board and the record page <!-- status: pending -->
+## Wave 39 — Board and the record page <!-- status: pending -->
 
 Spec: SPEC § 6.8, § 6.9, § 9.2, D3, D12. Scenarios S3 and S5. Validators: argo warden, rb knot detail,
 obsidian.
@@ -1374,24 +1418,26 @@ obsidian.
       (row 159); decide the aside width (SPEC § 5) on S5.
 - [ ] Tests: arrow keys move across cards and columns, Enter opens, the compact switcher; an empty column.
       Budgets: non-chart symbols +1, barrel types +1, argo named as the consumer.
-- [ ] At least three rounds per pattern; owner sees the boards.
+- [ ] At least three rounds per pattern; owner sees the boards. - [ ] (From the old Wave 35.) Recipes in `basalt-design`: distribution in a card (row 153), the entity card
+      (row 150, argo's `features/agents/entity-card.tsx`), the decision card (argo's
+      `components/upstream/decision-card.tsx`; promote it to an export only if rb's converges, D4), and the page
+      summary sentence.
       **Left behind:**
 
-## Wave 39 — Forms, states and the guidance half <!-- status: pending -->
+## Wave 40 — Forms, states and the guidance half <!-- status: pending -->
 
 Spec: SPEC § 6.11, § 6.13, § 8, § 11. Scenario S6 (build it), then every scenario's state toggles.
 
 - [ ] Field, control and form-section quality on S6 (SPEC § 6.13).
 - [ ] The `EmptyState` anatomy (row 154); align every pattern's empty, loading and error states on it and
       re-shoot them.
-- [ ] The catalogue ships as the decision table in `basalt-design` and `basalt-charts`; the rules name it in
-      one line each (rule-line ceiling raised by exactly that). Fold SPEC § 3, § 5, § 8 and § 11 into
+- [ ] (The catalogue shipped in Wave 36.) Fold SPEC § 3, § 5, § 8 and § 11 into
       `DESIGN-CORE.md`, offsetting the spec-prose budget by deleting what the fold replaces.
 - [ ] Re-score the whole inventory with the shipped reviewer. Every pattern still below the rubric gets a step
       here or a recorded reason.
       **Left behind:**
 
-## Wave 40 — Release and rollout: argo and rb <!-- status: pending -->
+## Wave 41 — Release and rollout: argo and rb <!-- status: pending -->
 
 - [ ] Release through `make release` (the reason: the Part 3 patterns, rows 143–162).
 - [ ] argo upgrades, runs the shipped loop on its own screens, retires the hand-rolls its rows name (143–151),
@@ -1400,7 +1446,7 @@ Spec: SPEC § 6.11, § 6.13, § 8, § 11. Scenario S6 (build it), then every sce
 - [ ] Friction and ugliness become ledger rows and are fixed upstream before Wave 41.
       **Left behind:**
 
-## Wave 41 — Rollout, the expression trial and convergence <!-- status: pending -->
+## Wave 42 — Rollout, the expression trial and convergence <!-- status: pending -->
 
 - [ ] linewatch (rows 156–158) and obsidian (row 159) upgrade one at a time, each with a before/after board.
 - [ ] **Expression trial** (shaped like weatherorb's W45): a fresh agent in a scratch `init` app gets five
