@@ -122,7 +122,6 @@ describe('training-data', () => {
     expect(HIT_HISTORY.length).toBeGreaterThanOrEqual(6)
     expect(HIT_HISTORY.map((m) => m.label)).toEqual(['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'])
     expect(HIT_HISTORY.map((m) => m.sessions)).toEqual([...MONTHLY_SESSIONS])
-    expect(HIT_HISTORY.filter((m) => m.hit)).toHaveLength(MONTHS_HIT)
-    expect(HIT_HISTORY.every((m) => m.hit === m.sessions >= GOAL_SESSIONS)).toBe(true)
+    expect(HIT_HISTORY.filter((m) => m.sessions >= GOAL_SESSIONS)).toHaveLength(MONTHS_HIT)
   })
 })

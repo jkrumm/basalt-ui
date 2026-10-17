@@ -184,7 +184,7 @@ function SpendStats({ shotState }: ScenarioProps) {
       ...(overBudget && { tone: 'bad' as const }),
       loading,
       ...(overBudget && {
-        footer: `${fmtEur(FORECAST_EUR - BUDGET_EUR)} over the cap`,
+        footer: `${fmtEur(FORECAST_EUR - BUDGET_EUR)} over budget`,
       }),
       ...(!hidden && {
         visual: (
@@ -252,8 +252,8 @@ function SpendStats({ shotState }: ScenarioProps) {
 
 /**
  * Column rule: cards of one kind share a row, so natural heights match and nothing is stretched.
- * Row 1 pairs the two charts (≈ 360 each), row 2 the two 6-row BarLists (≈ 300 each). At 390 the
- * order is cumulative, distribution, by project, drivers.
+ * Measured at 1440: the two charts 386 each, the two 6-row BarLists 252 each. At 390 the order is
+ * cumulative, distribution, by project, drivers.
  */
 function SpendCharts({ shotState }: ScenarioProps) {
   return (
@@ -342,6 +342,12 @@ function SpendBreakdown({ shotState }: ScenarioProps) {
       <Box data-shot="top-drivers" h="100%">
         <ChartCard
           title={`Top drivers, ${WINDOW_LABEL} vs ${PRIOR_WINDOW_LABEL}`}
+          {...(shotState === undefined && {
+            facts: {
+              value: fmtEur(DRIVERS.reduce((a, p) => a + p.delta, 0)),
+              period: `added by ${DRIVERS.length} projects vs ${PRIOR_WINDOW_LABEL}`,
+            },
+          })}
           info={`The € each project added against ${PRIOR_WINDOW_LABEL}, with the relative change.`}
           {...cardStateProps(shotState, retry('Top drivers'), PROJECT_PLACEHOLDER)}
         >

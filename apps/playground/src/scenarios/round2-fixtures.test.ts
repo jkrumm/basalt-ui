@@ -39,20 +39,23 @@ describe('S4 spend', () => {
     expect(tickLabels(cell)).toEqual(['Budget'])
   })
 
-  it('states the euro unit on the ticks and facts, not in the titles', () => {
+  it('states the euro unit once per card: in the facts, not the title', () => {
     const c = mount(createElement(SpendScenario, { shotState: undefined }))
-    for (const name of ['spend-over-time', 'spend-by-project']) {
-      expect(anchor(c, name)?.textContent).not.toContain('(€)')
+    for (const name of ['spend-over-time', 'spend-by-project', 'top-drivers']) {
+      const card = anchor(c, name)
+      expect(card?.textContent).not.toContain('(€)')
+      expect(card?.querySelector('[data-basalt-fact-value]')?.textContent).toContain('€')
     }
   })
 
-  it('keeps the forecast footer short enough not to orphan a word at 390', () => {
+  it('keeps the forecast footer to a few words so nothing orphans at 390', () => {
     const cell = anchor(
       mount(createElement(SpendScenario, { shotState: undefined })),
       'strip-forecast',
     )
-    expect(cell?.textContent).toContain('€1,152 over the cap')
-    expect(cell?.textContent).not.toContain('€1,500 budget')
+    const footer = cell?.lastElementChild?.textContent ?? ''
+    expect(footer).toBe('€1,152 over budget')
+    expect(footer.split(' ').length).toBeLessThanOrEqual(4)
   })
 
   it.each<ShotState>(['empty', 'error'])(
@@ -84,7 +87,7 @@ describe('S3 agents', () => {
     const c = mount(createElement(AgentsScenario, { shotState: undefined }))
     const text = anchor(c, 'strip-failures')?.textContent
     expect(text).toContain('last 24 h')
-    expect(text).toContain('19:00 · 08:00 · 13:00 UTC')
+    expect(text).toContain('Latest 13:00 UTC')
   })
 
   it('pairs cells of similar height in the two-column layout', () => {
@@ -124,5 +127,55 @@ describe('components page', () => {
     expect(titles).not.toContain('Tabs')
     expect(titles).toContain('Status badges and counts')
     expect(titles).not.toContain('Badges')
+  })
+})
+
+/** The `data-shot` anchors in document order (the 390 single-column reading order). */
+const order = (c: HTMLElement): string[] =>
+  [...c.querySelectorAll('[data-shot]')].map((n) => n.getAttribute('data-shot') ?? '')
+
+/** Whether two anchors sit in the same grid, i.e. share one row at two columns. */
+const shareGrid = (c: HTMLElement, a: string, b: string): boolean => {
+  const grid = anchor(c, a)?.closest('.mantine-SimpleGrid-root')
+  return (
+    grid !== null &&
+    grid !== undefined &&
+    grid === anchor(c, b)?.closest('.mantine-SimpleGrid-root')
+  )
+}
+
+describe('composition', () => {
+  it('S2 reads goal, mix, load, history, then readiness and lifts', () => {
+    const c = mount(createElement(TrainingScenario, { shotState: undefined }))
+    expect(order(c).slice(-6)).toEqual([
+      'goal',
+      'session-mix',
+      'training-load',
+      'hit-rate',
+      'readiness',
+      'top-lifts',
+    ])
+    expect(shareGrid(c, 'training-load', 'hit-rate')).toBe(true)
+    expect(shareGrid(c, 'readiness', 'top-lifts')).toBe(true)
+    expect(shareGrid(c, 'hit-rate', 'readiness')).toBe(false)
+  })
+
+  it('S3 pairs the waiting list with the flow chart', () => {
+    const c = mount(createElement(AgentsScenario, { shotState: undefined }))
+    expect(order(c).slice(-2)).toEqual(['stuck-items', 'item-flow'])
+    expect(shareGrid(c, 'stuck-items', 'item-flow')).toBe(true)
+  })
+
+  it('S4 pairs chart with chart and list with list', () => {
+    const c = mount(createElement(SpendScenario, { shotState: undefined }))
+    expect(order(c).slice(-4)).toEqual([
+      'spend-over-time',
+      'spend-distribution',
+      'spend-by-project',
+      'top-drivers',
+    ])
+    expect(shareGrid(c, 'spend-over-time', 'spend-distribution')).toBe(true)
+    expect(shareGrid(c, 'spend-by-project', 'top-drivers')).toBe(true)
+    expect(shareGrid(c, 'spend-distribution', 'spend-by-project')).toBe(false)
   })
 })

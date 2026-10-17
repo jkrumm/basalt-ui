@@ -9,7 +9,7 @@ import {
   DISPATCH_DAILY,
   FAILURES_24H,
   FAILURES_BY_HOUR,
-  FAILURES_TIMES_LABEL,
+  FAILURES_LATEST_LABEL,
   FAILURES_WINDOW,
   FAILURE_TIMES,
   FLEET,
@@ -97,6 +97,6 @@ describe('agents-data', () => {
       const hour = Math.floor((t.getTime() - FAILURES_WINDOW.start.getTime()) / 3_600_000)
       expect(FAILURES_BY_HOUR[hour]).toBeGreaterThan(0)
     }
-    expect(FAILURES_TIMES_LABEL).toBe('19:00 · 08:00 · 13:00 UTC')
+    expect(FAILURES_LATEST_LABEL).toBe('13:00 UTC')
   })
 })

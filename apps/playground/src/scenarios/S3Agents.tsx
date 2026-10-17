@@ -26,7 +26,7 @@ import {
   DISPATCH_COMPLETE_DAYS,
   FAILURES_24H,
   FAILURES_BY_HOUR,
-  FAILURES_TIMES_LABEL,
+  FAILURES_LATEST_LABEL,
   FLEET,
   FLEET_TOTAL,
   FLOW,
@@ -56,8 +56,6 @@ const retry = (what: string): string => retryCopy(what, 'warden')
 const STUCK_PLACEHOLDER = 190
 
 const SPARK_HEIGHT = 28
-/** Frame height of the flow chart: its card then ends level with the 9-row list beside it. */
-const FLOW_CHART_HEIGHT = { base: 220, regular: 270 }
 
 const STATE_COLOR: Record<ItemState, string> = {
   awaiting: VX.status.warn,
@@ -84,7 +82,10 @@ const stuckStatus = (i: (typeof STUCK)[number]) =>
     <StatusVerdict color={VX.faint} word="Needs you" />
   )
 
-const STUCK_ITEMS = STUCK.map((i) => ({
+/** The oldest rows only: nine rows stand 518 px tall at 1440 against the 386 px flow chart, six
+ * stand level with it. The rest stay in the fact line's count, not in the list. */
+const STUCK_SHOWN = 6
+const STUCK_ITEMS = STUCK.slice(0, STUCK_SHOWN).map((i) => ({
   key: i.id,
   label: `${i.title} · ${i.repo}`,
   value: i.waitHours,
@@ -177,7 +178,7 @@ function QueueStrip({ shotState }: ScenarioProps) {
       unit: 'runs',
       // Hourly bars answer "is it still happening?": three runs, but a burst or a trickle. The
       // footer prints when each ran, so the marks read without colour and against a clock.
-      ...(!hidden && { footer: `Failed ${FAILURES_TIMES_LABEL}` }),
+      ...(!hidden && { footer: `Latest ${FAILURES_LATEST_LABEL}` }),
       ...(!hidden && {
         visual: (
           <Sparkline
@@ -283,8 +284,8 @@ function QueueStrip({ shotState }: ScenarioProps) {
 
 /**
  * Column rule: both columns end within one row-gap at 1440, by composition, never by stretching.
- * The 9-row list (≈ 350) takes the left; the flow chart's own height (270) matches its body.
- * At 390 the order is the list, then the flow.
+ * Measured: the 6-row list (oldest first) and the flow chart both stand ≈ 386 px at 1440 (chart
+ * at its default height). At 390 the order is the list (470), then the flow (331).
  */
 function QueueRow({ shotState }: ScenarioProps) {
   const empty = shotState === 'empty'
@@ -298,7 +299,11 @@ function QueueRow({ shotState }: ScenarioProps) {
             subtitle: `Warden abandons an item at ${ABANDON_LABEL}`,
           })}
           {...(shotState === undefined && {
-            facts: { value: fmtInt(STUCK.length), unit: 'items', period: `${NEEDS_YOU} need you` },
+            facts: {
+              value: fmtInt(STUCK.length),
+              unit: 'items',
+              period: `${NEEDS_YOU} need you · oldest ${STUCK_SHOWN} shown`,
+            },
           })}
           {...cardStateProps(shotState, retry('Waiting and blocked items'), STUCK_PLACEHOLDER)}
         >
@@ -339,7 +344,6 @@ function QueueRow({ shotState }: ScenarioProps) {
               x={(d) => d.date}
               bars={FLOW_BARS}
               layout="grouped"
-              height={FLOW_CHART_HEIGHT}
             />
           </Box>
         </ChartCard>
