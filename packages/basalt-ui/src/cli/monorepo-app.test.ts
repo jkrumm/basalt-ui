@@ -2,8 +2,9 @@
  * Monorepo awareness: `resolveAppDir` picks the app package once, `sync`/`init` seed the router
  * files there (never at the install root), and `doctor` checks the app from either directory.
  */
-import { afterEach, beforeEach, describe, expect, it, spyOn } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, it, onTestFinished, spyOn } from 'bun:test'
 import {
+  cpSync,
   existsSync,
   mkdirSync,
   readFileSync,
@@ -13,7 +14,7 @@ import {
   writeFileSync,
 } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join, resolve } from 'node:path'
+import { basename, join, resolve } from 'node:path'
 
 import { doctor } from './doctor'
 import { init, packageRoot, resolveAppDir, sync } from './index'
@@ -116,12 +117,21 @@ describe('sync / init in a monorepo', () => {
     // (docs/waves/design-parity/SPEC.md § 9.4), so a session at the repo root — not in `apps/web` —
     // must find all of them there, and none of them inside the app package.
     monorepo(['web'])
-    quiet(() => init(dir))
-    const shipped = join(packageRoot(), 'agent/skills/basalt-design')
+    // A scratch package that ships a reference: the real tree may carry none yet.
+    const pkgRoot = join(dir, '..', `${basename(dir)}-pkg`)
+    for (const d of ['agent', 'configs'])
+      cpSync(join(packageRoot(), d), join(pkgRoot, d), { recursive: true })
+    cpSync(join(packageRoot(), 'package.json'), join(pkgRoot, 'package.json'))
+    mkdirSync(join(pkgRoot, 'agent/skills/basalt-design/references'), { recursive: true })
+    writeFileSync(join(pkgRoot, 'agent/skills/basalt-design/references/x.md'), 'x\n')
+    onTestFinished(() => rmSync(pkgRoot, { recursive: true, force: true }))
+    quiet(() => init(dir, { pkgRoot }))
+    const shipped = join(pkgRoot, 'agent/skills/basalt-design')
     const files = readdirSync(shipped, { recursive: true, withFileTypes: true })
       .filter((e) => e.isFile())
       .map((e) => join(e.parentPath, e.name).slice(shipped.length + 1))
     expect(files).toContain('SKILL.md')
+    expect(files).toContain('references/x.md')
     for (const rel of files) {
       expect(existsSync(join(dir, '.claude/skills/basalt-design', rel))).toBe(true)
       expect(existsSync(join(dir, 'apps/web/.claude/skills/basalt-design', rel))).toBe(false)

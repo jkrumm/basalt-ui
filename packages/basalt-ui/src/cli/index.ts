@@ -17,7 +17,7 @@ import {
   unlinkSync,
   writeFileSync,
 } from 'node:fs'
-import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path'
+import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { DEFAULT_GUARD_CONFIG, guardWaiverHint } from '../guard'
@@ -677,7 +677,11 @@ export function importsAgentsMd(text: string): boolean {
 }
 
 /** Scaffold options. `noMergeLint`: `--no-merge-lint` leaves an existing `.oxlintrc.json` untouched. */
-export type ScaffoldFlags = { noMergeLint?: boolean }
+export type ScaffoldFlags = {
+  noMergeLint?: boolean
+  /** Shipped-source root; defaults to this package. Tests point it at a scratch package. */
+  pkgRoot?: string
+}
 
 export { ROUTER_SEED_DESTS, START_PROVIDER_HINT, routerSeedDest, routerSeedDests }
 
@@ -819,13 +823,14 @@ export function resolvePlacement(cwd: string): PlacementFlags {
   }
 }
 
-/** Every file under a shipped skill dir, relative and sorted; `SKILL.md` first. Empty if the dir is absent. */
+/** Every `.md` file under a shipped skill dir (no dot-segments), relative and sorted; `SKILL.md` first. Empty if the dir is absent. */
 function skillFiles(pkgRoot: string, name: string): string[] {
   const root = resolve(pkgRoot, 'agent/skills', name)
   if (!existsSync(root)) return []
   const rels = readdirSync(root, { recursive: true, withFileTypes: true })
-    .filter((e) => e.isFile())
+    .filter((e) => e.isFile() && e.name.endsWith('.md'))
     .map((e) => relative(root, join(e.parentPath, e.name)).split(sep).join('/'))
+    .filter((rel) => !rel.split('/').some((seg) => seg.startsWith('.')))
     .toSorted()
   return [...rels.filter((r) => r === 'SKILL.md'), ...rels.filter((r) => r !== 'SKILL.md')]
 }
@@ -856,7 +861,7 @@ export function managedFiles(
       dest: `.claude/skills/${name}/${rel}`,
       mode: 'managed' as const,
       source: `agent/skills/${name}/${rel}`,
-      render: (ctx: RenderContext) => readSource(ctx.pkgRoot, `agent/skills/${name}/${rel}`),
+      render: () => readSource(pkgRoot, `agent/skills/${name}/${rel}`),
     })),
   )
 
@@ -1100,7 +1105,7 @@ export function readManifest(cwd: string): Manifest {
  */
 const RETIREABLE_DEST_PATTERNS: readonly RegExp[] = [
   /^\.claude\/rules\/basalt-[a-z0-9-]+\.md$/,
-  /^\.claude\/skills\/basalt-[a-z0-9-]+\/.+$/,
+  /^\.claude\/skills\/basalt-[a-z0-9-]+\/(SKILL\.md|references\/.+\.md)$/,
   /^\.claude\/agents\/basalt-[a-z0-9-]+\.md$/,
 ]
 
@@ -1179,13 +1184,16 @@ export function pruneRetiredManagedFiles(
  * reason to keep it, not an error to report.
  */
 function removeEmptyParentDir(fileAbs: string): void {
-  const dir = dirname(fileAbs)
-  try {
-    if (readdirSync(dir).length === 0) rmdirSync(dir)
-    // A skill's `references/` empties first; then the skill dir itself may be empty too.
-    if (basename(dir) === 'references') removeEmptyParentDir(dir)
-  } catch {
-    /* not empty, not readable, or already gone — nothing to clean up */
+  const inSkill = /[\\/]\.claude[\\/]skills[\\/]basalt-[^\\/]+(?:[\\/]|$)/
+  // The file's own dir always; then upward only inside `.claude/skills/<name>` (never `.claude/skills`).
+  for (let dir = dirname(fileAbs), first = true; first || inSkill.test(dir); dir = dirname(dir)) {
+    first = false
+    try {
+      if (readdirSync(dir).length > 0) return
+      rmdirSync(dir)
+    } catch {
+      return
+    }
   }
 }
 
@@ -1298,8 +1306,11 @@ export function diffSummary(file: ManagedFile, state: UnitState): string {
 }
 
 /** Build the render context for a run from the package root + consumer cwd/config. */
-export function renderContext(cwd: string, ruleRoots?: readonly string[]): RenderContext {
-  const pkgRoot = packageRoot()
+export function renderContext(
+  cwd: string,
+  ruleRoots?: readonly string[],
+  pkgRoot: string = packageRoot(),
+): RenderContext {
   const vars = buildTemplateVars(pkgRoot, cwd, readBasaltConfig(cwd))
   return { pkgRoot, vars: ruleRoots === undefined ? vars : { ...vars, RULE_ROOTS: [...ruleRoots] } }
 }

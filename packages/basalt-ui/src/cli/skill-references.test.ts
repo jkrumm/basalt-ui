@@ -5,7 +5,15 @@
  * references the shipped skills carry today.
  */
 import { afterEach, beforeEach, describe, expect, it, spyOn } from 'bun:test'
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import {
+  cpSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 
@@ -15,6 +23,7 @@ import {
   MANIFEST_PATH,
   readManifest,
   managedFiles,
+  packageRoot,
   pruneRetiredManagedFiles,
   ROOT_PLACEMENT,
   sha256,
@@ -57,12 +66,85 @@ describe('skill tree walk', () => {
     const ref = managedFiles(ROOT_PLACEMENT, scratch).find((f) => f.dest.endsWith('scenario.md'))
     expect(ref?.mode).toBe('managed')
     expect(ref?.source).toBe('agent/skills/basalt-design/references/scenario.md')
-    expect(ref?.render({ pkgRoot: scratch, vars: {} as never })).toBe('# scenario\n')
+    expect(ref?.render({ pkgRoot: '/elsewhere', vars: {} as never })).toBe('# scenario\n')
+  })
+
+  it('places only markdown outside dot-segments', () => {
+    put(scratch, 'agent/skills/basalt-design/SKILL.md', '# router\n')
+    put(scratch, 'agent/skills/basalt-design/references/a.md', 'a\n')
+    put(scratch, 'agent/skills/basalt-design/references/.DS_Store', 'junk')
+    put(scratch, 'agent/skills/basalt-design/references/notes.txt', 'junk')
+    put(scratch, 'agent/skills/basalt-design/.hidden/b.md', 'junk')
+    expect(skillDests(scratch)).toEqual([
+      '.claude/skills/basalt-design/SKILL.md',
+      '.claude/skills/basalt-design/references/a.md',
+    ])
   })
 
   it('a skill without references still places just SKILL.md', () => {
     put(scratch, 'agent/skills/basalt-design/SKILL.md', '# router\n')
     expect(skillDests(scratch)).toEqual(['.claude/skills/basalt-design/SKILL.md'])
+  })
+})
+
+/** A scratch package: the real shipped `agent/` + `configs/`, plus a reference under basalt-design. */
+function fixturePackage(): string {
+  const pkg = join(scratch, 'pkg')
+  for (const dir of ['agent', 'configs'])
+    cpSync(join(packageRoot(), dir), join(pkg, dir), { recursive: true })
+  cpSync(join(packageRoot(), 'package.json'), join(pkg, 'package.json'))
+  put(pkg, 'agent/skills/basalt-design/references/x.md', 'x v1\n')
+  return pkg
+}
+
+function consumerApp(): string {
+  const app = join(scratch, 'app')
+  put(app, 'package.json', JSON.stringify({ name: 'app', dependencies: { 'basalt-ui': '*' } }))
+  put(app, 'src/main.tsx', '// entry\n')
+  put(
+    app,
+    'node_modules/basalt-ui/package.json',
+    JSON.stringify({ name: 'basalt-ui', version: '1.0.0' }),
+  )
+  return app
+}
+
+describe('end to end through init and sync', () => {
+  it('places a reference, then `sync --check` goes red on a local edit and green on restore', () => {
+    const pkgRoot = fixturePackage()
+    const app = consumerApp()
+    const ref = join(app, '.claude/skills/basalt-design/references/x.md')
+    quiet(() => init(app, { pkgRoot }))
+    expect(readFileSync(ref, 'utf8')).toBe('x v1\n')
+    expect(quiet(() => sync({ pkgRoot }, app))).toBe(0)
+    expect(quiet(() => sync({ check: true, pkgRoot }, app))).toBe(0)
+    writeFileSync(ref, 'edited locally\n')
+    expect(quiet(() => sync({ check: true, pkgRoot }, app))).not.toBe(0)
+    writeFileSync(ref, 'x v1\n')
+    expect(quiet(() => sync({ check: true, pkgRoot }, app))).toBe(0)
+  })
+
+  it('prunes a nested reference and every directory it empties, but not a consumer file beside it', () => {
+    const pkgRoot = fixturePackage()
+    put(pkgRoot, 'agent/skills/basalt-design/references/deep/y.md', 'y\n')
+    const app = consumerApp()
+    quiet(() => init(app, { pkgRoot }))
+    const skill = join(app, '.claude/skills/basalt-design')
+    expect(existsSync(join(skill, 'references/deep/y.md'))).toBe(true)
+    rmSync(join(pkgRoot, 'agent/skills/basalt-design/references'), { recursive: true })
+    put(app, '.claude/skills/basalt-design/references/mine.md', 'consumer-owned\n')
+    expect(quiet(() => sync({ pkgRoot }, app))).toBe(0)
+    expect(existsSync(join(skill, 'references/x.md'))).toBe(false)
+    expect(existsSync(join(skill, 'references/deep'))).toBe(false)
+    expect(readFileSync(join(skill, 'references/mine.md'), 'utf8')).toBe('consumer-owned\n')
+    // Nothing left but the consumer file: now drop it and prune the empty chain.
+    rmSync(join(skill, 'references/mine.md'))
+    put(pkgRoot, 'agent/skills/basalt-design/references/z.md', 'z\n')
+    quiet(() => sync({ pkgRoot }, app))
+    rmSync(join(pkgRoot, 'agent/skills/basalt-design/references'), { recursive: true })
+    quiet(() => sync({ pkgRoot }, app))
+    expect(existsSync(join(skill, 'references'))).toBe(false)
+    expect(existsSync(join(skill, 'SKILL.md'))).toBe(true)
   })
 })
 
