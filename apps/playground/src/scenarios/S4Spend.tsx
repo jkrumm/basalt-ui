@@ -7,10 +7,12 @@
  * Forecast and budget are `Meter`s, spend by project and top drivers are `BarList`s (Wave 34).
  * Actions ("Raise budget") are inert in fixtures.
  *
- * Anchors for `basalt-ui shot`: every scored component carries `data-shot`; `StatCard`, `ChartCard`
- * and `Section` do not forward `data-*`, so the anchor is the wrapping `Box`.
+ * Anchors for `basalt-ui shot`: every scored component carries `data-shot`; `ChartCard` and
+ * `Section` do not forward `data-*`, so the anchor is the wrapping `Box`. The three stat cards are
+ * one strip whose cells derive their own anchors: `month-to-date` → `strip-month-to-date`,
+ * `forecast` → `strip-forecast`, `budget` → `strip-budget`.
  */
-import { Box, SimpleGrid, Stack } from '@mantine/core'
+import { Box, SimpleGrid, Stack, Text } from '@mantine/core'
 import { BarList, DeltaBadge, Meter, PageBar, Section, StatGroup } from 'basalt-ui'
 import type { StatStripCell } from 'basalt-ui'
 import { Bars, ChartCard, Lines, Sparkline } from 'basalt-ui/charts'
@@ -148,7 +150,6 @@ function SpendStats({ shotState }: ScenarioProps) {
       info: `All projects and models, ${WINDOW_LABEL} ${YEAR}, in EUR. The dashed line is the daily mean.`,
       value: none ? null : fmtEur(MTD_EUR),
       loading,
-      ...(note !== undefined && { footer: note }),
       ...(isAtRest && {
         delta: (
           <DeltaBadge
@@ -180,7 +181,6 @@ function SpendStats({ shotState }: ScenarioProps) {
       value: none ? null : fmtEur(FORECAST_EUR),
       ...(overBudget && { tone: 'bad' as const }),
       loading,
-      ...(note !== undefined && { footer: note }),
       ...(overBudget && {
         footer: `${fmtEur(FORECAST_EUR - BUDGET_EUR)} over the ${fmtEur(BUDGET_EUR)} budget`,
       }),
@@ -208,7 +208,6 @@ function SpendStats({ shotState }: ScenarioProps) {
       info: `Monthly cap in EUR. ${fmtEur(PACE_EUR_PER_DAY)} a day keeps spend on pace.`,
       value: none ? null : fmtEur(BUDGET_EUR),
       loading,
-      ...(note !== undefined && { footer: note }),
       ...(!hidden && {
         visual: (
           <Meter
@@ -226,7 +225,27 @@ function SpendStats({ shotState }: ScenarioProps) {
     },
   ]
 
-  return <StatGroup variant="strip" label="Spend against budget" cols={3} cells={cells} />
+  // The empty / error note is one line in the footer row, not repeated in every cell.
+  return (
+    <StatGroup
+      variant="strip"
+      label="Spend against budget"
+      cols={3}
+      cells={cells}
+      {...(note !== undefined && {
+        footer: [
+          {
+            key: 'note',
+            content: (
+              <Text size="sm" c="dimmed">
+                {note}
+              </Text>
+            ),
+          },
+        ],
+      })}
+    />
+  )
 }
 
 function SpendCharts({ shotState }: ScenarioProps) {
@@ -265,7 +284,9 @@ function SpendCharts({ shotState }: ScenarioProps) {
             question is also "which project", a ranking, which length on a shared scale answers. */}
         <ChartCard
           title="Spend by project (€)"
-          facts={{ value: fmtEur(MTD_EUR), period: `all projects, ${WINDOW_LABEL}` }}
+          {...(shotState === undefined && {
+            facts: { value: fmtEur(MTD_EUR), period: `all projects, ${WINDOW_LABEL}` },
+          })}
           info="Each project's share of month-to-date spend across all models."
           {...cardStateProps(shotState, retry('Spend by project'), PROJECT_PLACEHOLDER)}
         >
