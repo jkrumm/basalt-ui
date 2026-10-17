@@ -45,3 +45,22 @@ describe('the ink ramp clears WCAG AA on every text surface', () => {
     }
   }
 })
+
+describe('the status solids clear WCAG AA as text on every text surface', () => {
+  const data = deriveTokens(DEFAULT_DERIVE_CONFIG)
+  const TEXT_SURFACES = ['bg', 'panel', 'panelHover', 'elevated', 'subtle', 'field'] as const
+
+  // `DeltaBadge` paints `var(--vx-status-good|bad)` as text and a toned `breakdown` row paints
+  // `warn`; a fill-less delta has no tint to lean on, so the solid itself carries the ratio.
+  for (const side of ['light', 'dark'] as const) {
+    for (const key of ['good', 'warn', 'bad'] as const) {
+      test(`${side} ${key} ≥ 4.5:1`, () => {
+        for (const surface of TEXT_SURFACES) {
+          expect(
+            contrastRatio(data.status[key][side], data.surface[surface][side]),
+          ).toBeGreaterThanOrEqual(4.5)
+        }
+      })
+    }
+  }
+})

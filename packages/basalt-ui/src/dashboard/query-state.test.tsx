@@ -17,7 +17,7 @@ import { render, screen } from '@testing-library/react'
 import { describe, expect, test } from 'bun:test'
 import type { ReactNode } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { LoadingState, QueryState } from './query-state'
+import { LoadingState, QueryState, resolveQueryBranch } from './query-state'
 import type { QueryStateLike } from './query-state'
 
 type Row = { id: number }
@@ -256,5 +256,58 @@ describe('tier', () => {
         ),
       ),
     ).toBe(false)
+  })
+})
+
+describe('resolveQueryBranch — error > pending > empty > ready', () => {
+  const q = <T,>(over: Partial<QueryStateLike<T>>): QueryStateLike<T> => ({
+    data: undefined,
+    isError: false,
+    error: null,
+    fetchStatus: 'idle',
+    refetch: () => undefined,
+    ...over,
+  })
+
+  test('no data, nothing in flight → empty (an `enabled: false` query)', () => {
+    expect(resolveQueryBranch(q({})).kind).toBe('empty')
+  })
+
+  test('no data, fetching or paused → pending', () => {
+    expect(resolveQueryBranch(q({ fetchStatus: 'fetching' })).kind).toBe('pending')
+    expect(resolveQueryBranch(q({ fetchStatus: 'paused' })).kind).toBe('pending')
+  })
+
+  test('no data and failed → error, whatever the fetch status', () => {
+    for (const fetchStatus of ['idle', 'fetching'] as const) {
+      const branch = resolveQueryBranch(q({ isError: true, error: new Error('x'), fetchStatus }))
+      expect(branch.kind).toBe('error')
+    }
+  })
+
+  test('`[]`, `{ data: [] }` and null are empty by QueryState’s own rule', () => {
+    expect(resolveQueryBranch(q({ data: [] })).kind).toBe('empty')
+    expect(resolveQueryBranch(q({ data: { data: [] } })).kind).toBe('empty')
+    expect(resolveQueryBranch(q({ data: null })).kind).toBe('empty')
+  })
+
+  test('data → ready; a failed background refetch over it is ready with refreshFailed', () => {
+    const ok = resolveQueryBranch(q({ data: [1] }))
+    expect(ok.kind === 'ready' && ok.data).toEqual([1])
+    const stale = resolveQueryBranch(q({ data: [1], isError: true, error: new Error('x') }))
+    expect(stale.kind === 'ready' && stale.refreshFailed).toBe(true)
+  })
+
+  test('an errored refetch over cached-EMPTY data is an error, never "no data"', () => {
+    const branch = resolveQueryBranch(q({ data: [], isError: true, error: new Error('boom') }))
+    expect(branch.kind).toBe('error')
+  })
+
+  test('a custom isEmpty replaces the default rule', () => {
+    expect(resolveQueryBranch(q({ data: [] }), () => false).kind).toBe('ready')
+  })
+
+  test('a malformed envelope throws, like QueryState', () => {
+    expect(() => resolveQueryBranch({} as QueryStateLike<unknown>)).toThrow(/QueryState/)
   })
 })

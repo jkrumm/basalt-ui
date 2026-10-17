@@ -19,6 +19,8 @@ declare const classes: {
   readonly skeletonValue: string
   readonly skeletonVisual: string
   readonly skeletonFooter: string
+  readonly skeletonRowBox: string
+  readonly skeletonRow: string
   readonly foot: string
   readonly footer: string
   readonly header: string

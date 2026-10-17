@@ -317,10 +317,14 @@ const INK_TONE: Record<Side, Record<InkKey, number>> = {
 export type StatusKey = 'good' | 'warn' | 'bad'
 
 const STATUS_HUE: Record<StatusKey, number> = { good: 151.975, warn: 76.64, bad: 29.905 }
+// Every stop is read as TEXT somewhere (`DeltaBadge`, a toned breakdown row), so each clears WCAG AA
+// (4.5:1) on every text surface (bg / panel / panelHover / elevated / subtle / field) at the default
+// seed — pinned in `derive.test.ts`. `warn` light sat at tone 54.64 (3.64:1 on the panel) and `bad`
+// dark at 58.58 (4.22:1); both moved along their lightness axis only, hue and chroma untouched.
 const STATUS_STOP: Record<StatusKey, Record<Side, { tone: number; chroma: number }>> = {
   good: { light: { tone: 45.75, chroma: 37.75 }, dark: { tone: 70.23, chroma: 53.23 } },
-  warn: { light: { tone: 54.64, chroma: 61.12 }, dark: { tone: 72.34, chroma: 62.55 } },
-  bad: { light: { tone: 43.86, chroma: 54.46 }, dark: { tone: 58.58, chroma: 53.79 } },
+  warn: { light: { tone: 46, chroma: 61.12 }, dark: { tone: 72.34, chroma: 62.55 } },
+  bad: { light: { tone: 43.86, chroma: 54.46 }, dark: { tone: 66.5, chroma: 53.79 } },
 }
 
 /**

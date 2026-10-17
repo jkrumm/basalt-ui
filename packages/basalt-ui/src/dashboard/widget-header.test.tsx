@@ -248,11 +248,13 @@ describe('the subtitle folds into the info glyph in a card under 480px (CSS-only
   })
 
   test('the container rules hide the visible subtitle and show the fold pieces, and only there', () => {
-    expect(block('.foldGlyph,\n.foldNote')).toContain('display: none')
+    expect(block('.foldGlyph,\n.foldProbe,\n.foldNote')).toContain('display: none')
     const narrow = CSS.slice(CSS.indexOf('@container basalt-card (max-width: 479.9px)'))
     expect(narrow).toContain('.subtitle {\n    display: none')
     expect(narrow).toContain('.foldGlyph {\n    display: inline-flex')
-    expect(narrow).toContain('.foldNote {\n    display: block')
+    // the portalled bubble reveals its note from `data-folded`; the probe rides the card's rule
+    expect(narrow).toContain('.foldProbe {\n    display: block')
+    expect(CSS).toContain(".infoBubble[data-folded='true'] .foldNote {\n  display: block")
   })
 })
 
@@ -431,6 +433,40 @@ describe('the info bubble is placed inside the viewport', () => {
   test('the stylesheet makes it fixed and viewport-capped', () => {
     const rule = block('.infoBubble')
     expect(rule).toContain('position: fixed')
-    expect(rule).toContain('max-width: min(260px, calc(100vw - 16px))')
+    expect(rule).toContain('max-width: min(260px, calc(100% - 16px))')
+  })
+})
+
+// The note (folded subtitle) is revealed from the card's fold signal, which the portalled bubble no
+// longer sits under: the glyph reads a probe inside the card and writes `data-folded` on the bubble.
+describe('the folded note follows the card’s fold signal', () => {
+  const original = window.getComputedStyle
+  afterEach(() => {
+    window.getComputedStyle = original
+  })
+
+  function folded(display: string): string | undefined {
+    render(
+      <WidgetHeader tier="widget" title="Revenue" info="Method." subtitle="Trailing 30 days" />,
+    )
+    const trigger = screen.getByRole('button', { name: 'More information' })
+    // Only the probe (the lone aria-hidden span) is faked, after the role query has run.
+    window.getComputedStyle = ((el: Element, pseudo?: string | null) =>
+      el.tagName === 'SPAN' && el.getAttribute('aria-hidden') === 'true'
+        ? ({
+            display,
+            getPropertyValue: (n: string) => (n === 'display' ? display : ''),
+          } as CSSStyleDeclaration)
+        : original.call(window, el, pseudo)) as typeof window.getComputedStyle
+    fireEvent.focus(trigger)
+    return screen.getByRole('tooltip').dataset['folded']
+  }
+
+  test('probe shown (card narrow or short) → data-folded true', () => {
+    expect(folded('block')).toBe('true')
+  })
+
+  test('probe hidden (card wide) → data-folded false', () => {
+    expect(folded('none')).toBe('false')
   })
 })

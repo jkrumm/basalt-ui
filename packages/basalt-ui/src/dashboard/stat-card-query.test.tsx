@@ -15,7 +15,8 @@
  * spinner inside a card.
  */
 import { MantineProvider } from '@mantine/core'
-import { describe, expect, test } from 'bun:test'
+import { render as renderIntoDom } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { StatCard } from './stat-card'
 import type { QueryStateLike } from './query-state'
@@ -157,5 +158,70 @@ describe('loading — the same skeleton, no query', () => {
     )
     expect(markup).not.toContain('aria-busy')
     expect(markup).not.toContain('mantine-Skeleton-root')
+  })
+})
+
+// The sparkline render prop is handed the slot's measured box. happy-dom measures 0, so the box is
+// stubbed to 300px wide; the contract under test is WHEN the prop is called and with what height.
+describe('the sparkline render prop', () => {
+  const original = Element.prototype.getBoundingClientRect
+  beforeEach(() => {
+    Element.prototype.getBoundingClientRect = () => ({ width: 300, height: 22 }) as DOMRect
+  })
+  afterEach(() => {
+    Element.prototype.getBoundingClientRect = original
+  })
+
+  function heights(props: {
+    placement?: 'bleed' | 'right'
+    loading?: boolean
+    q?: QueryStateLike<Row[]>
+  }): number[] {
+    const seen: number[] = []
+    renderIntoDom(
+      <MantineProvider>
+        <StatCard
+          title="Latency"
+          value="42"
+          {...(props.placement !== undefined && { sparklinePlacement: props.placement })}
+          {...(props.loading === true && { loading: true })}
+          {...(props.q !== undefined && { query: props.q })}
+          sparkline={(size) => {
+            seen.push(size.height)
+            return <span>spark</span>
+          }}
+        />
+      </MantineProvider>,
+    )
+    return seen
+  }
+
+  test.each(['bleed', 'right'] as const)(
+    'is called with height 22 when ready (%s)',
+    (placement) => {
+      const seen = heights({ placement })
+      expect(seen.length).toBeGreaterThan(0)
+      expect(new Set(seen)).toEqual(new Set([22]))
+    },
+  )
+
+  test.each(['bleed', 'right'] as const)(
+    'is not called while pending, loading, failed or empty (%s)',
+    (placement) => {
+      expect(heights({ placement, loading: true })).toEqual([])
+      expect(heights({ placement, q: query({ fetchStatus: 'fetching' }) })).toEqual([])
+      expect(heights({ placement, q: query({ isError: true, error: new Error('x') }) })).toEqual([])
+      expect(heights({ placement, q: query({ data: [] }) })).toEqual([])
+    },
+  )
+
+  test('an error over cached-empty data shows the error, not "No data"', () => {
+    const markup = render(query({ data: [], isError: true, error: new Error('refetch exploded') }))
+    expect(markup).toContain('refetch exploded')
+    expect(markup).not.toContain('No data for this period')
+  })
+
+  test('the pending card says what is loading, to assistive tech', () => {
+    expect(render(query({ fetchStatus: 'fetching' }))).toContain('Loading Active users')
   })
 })

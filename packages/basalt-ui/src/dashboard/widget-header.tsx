@@ -29,9 +29,10 @@
  *   actions={<ActionIcon variant="subtle"><IconDots /></ActionIcon>}
  * />
  */
-import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import type { ReactNode, RefObject } from 'react'
 import { createPortal } from 'react-dom'
+import { useIsomorphicLayoutEffect } from '../common/isomorphic-layout-effect'
 import { cx } from '../common/props'
 import type { BasaltProps, SlotStylesProps } from '../common/props'
 import { IconSlot } from '../theme/icon-slot'
@@ -165,24 +166,26 @@ export type WidgetHeaderDeltaProps = Pick<
 
 /** Gap between the glyph and its bubble, and the least air the bubble keeps from a viewport edge. */
 const BUBBLE_GAP = 7
+/** Keep in step with `.infoBubble`'s `max-width` (`calc(100% - 2 × BUBBLE_EDGE)`, in CSS). */
 const BUBBLE_EDGE = 8
+
+type BubblePos = { top: number; left: number }
 
 /**
  * Places the bubble in the VIEWPORT: below the glyph, flipped above when it would overflow the
- * bottom edge, shifted sideways to stay inside the left and right edges. Re-places on scroll and
- * resize while open. The bubble is portalled to `document.body` and `position: fixed`, so a card's
- * `overflow: hidden` (every basalt card has one) can never clip it — the W32 round 0-3 defect at 390.
+ * bottom edge, shifted sideways to stay inside the left and right edges. Re-places on scroll, resize
+ * and when the bubble's own box changes while open. The bubble is portalled to `document.body` and
+ * `position: fixed`, so a card's `overflow: hidden` (every basalt card has one) can never clip it —
+ * the W32 round 0-3 defect at 390. `clear` forgets the position on close, so a reopen starts hidden.
  */
 function useBubblePosition(
   open: boolean,
   triggerRef: RefObject<HTMLButtonElement | null>,
   bubbleRef: RefObject<HTMLSpanElement | null>,
-): { top: number; left: number } | null {
-  const [pos, setPos] = useState<{ top: number; left: number } | null>(null)
+): { pos: BubblePos | null; clear: () => void } {
+  const [pos, setPos] = useState<BubblePos | null>(null)
 
-  useLayoutEffect(() => {
-    // Closed: nothing to place. The last position is kept; the bubble is unmounted meanwhile and the
-    // first layout effect after reopening replaces it before paint.
+  useIsomorphicLayoutEffect(() => {
     if (!open) return
     const place = () => {
       const trigger = triggerRef.current
@@ -202,13 +205,20 @@ function useBubblePosition(
     place()
     window.addEventListener('scroll', place, true)
     window.addEventListener('resize', place)
+    // The bubble's box changes after open (a late font, the folded note appearing): re-place then too.
+    const observer =
+      typeof ResizeObserver === 'undefined' || bubbleRef.current === null
+        ? undefined
+        : new ResizeObserver(place)
+    if (observer !== undefined && bubbleRef.current !== null) observer.observe(bubbleRef.current)
     return () => {
       window.removeEventListener('scroll', place, true)
       window.removeEventListener('resize', place)
+      observer?.disconnect()
     }
   }, [open, triggerRef, bubbleRef])
 
-  return pos
+  return { pos, clear: () => setPos(null) }
 }
 
 /**
@@ -243,16 +253,34 @@ export function InfoGlyph({
   const tipId = useId()
   const triggerRef = useRef<HTMLButtonElement>(null)
   const bubbleRef = useRef<HTMLSpanElement>(null)
-  const pos = useBubblePosition(open, triggerRef, bubbleRef)
+  const probeRef = useRef<HTMLSpanElement>(null)
+  // The folded subtitle (`note`) is revealed by the CARD's container query / short-card flag, which
+  // the portalled bubble no longer sits under. The probe is a hidden sibling of the trigger, inside
+  // the card, that those same rules reveal: its computed display is the one fold signal, read at open
+  // and written onto the bubble as `data-folded` (a DOM write, not state, so it never re-renders).
+  // Declared before the position hook so the note is in the box the first placement measures.
+  useIsomorphicLayoutEffect(() => {
+    const probe = probeRef.current
+    const bubble = bubbleRef.current
+    if (!open || probe === null || bubble === null) return
+    bubble.dataset['folded'] = String(getComputedStyle(probe).display !== 'none')
+  }, [open])
+  const { pos, clear } = useBubblePosition(open, triggerRef, bubbleRef)
+  const close = () => {
+    setOpen(false)
+    clear()
+  }
 
   useEffect(() => {
     if (!open) return
     const handlePointerDown = (event: PointerEvent) => {
       if (triggerRef.current?.contains(event.target as Node)) return
-      setOpen(false)
+      close()
     }
     document.addEventListener('pointerdown', handlePointerDown)
     return () => document.removeEventListener('pointerdown', handlePointerDown)
+    // `close` only calls two stable setters.
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
 
   return (
@@ -268,18 +296,21 @@ export function InfoGlyph({
         aria-describedby={open ? tipId : undefined}
         data-open={open}
         onMouseEnter={() => setOpen(true)}
-        onMouseLeave={() => setOpen(false)}
+        onMouseLeave={close}
         onFocus={() => setOpen(true)}
-        onBlur={() => setOpen(false)}
+        onBlur={close}
         onClick={() => setOpen(true)}
         onKeyDown={(event) => {
-          if (event.key === 'Escape') setOpen(false)
+          if (event.key === 'Escape') close()
         }}
       >
         <svg width={11} height={11} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
           <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm0 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3zm0 5a1 1 0 0 1 1 1v7a1 1 0 1 1-2 0v-7a1 1 0 0 1 1-1z" />
         </svg>
       </button>
+      {note !== undefined && (
+        <span ref={probeRef} className={classes.foldProbe} aria-hidden="true" />
+      )}
       {open &&
         createPortal(
           // `open` only ever flips true from a client event, so `document` exists here. Hidden until

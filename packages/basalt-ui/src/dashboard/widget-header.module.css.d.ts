@@ -19,6 +19,7 @@ declare const classes: {
   readonly infoTrigger: string
   readonly foldGlyph: string
   readonly foldNote: string
+  readonly foldProbe: string
   readonly infoBubble: string
   readonly deltaBadge: string
   readonly deltaGlyph: string

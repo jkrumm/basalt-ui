@@ -174,6 +174,42 @@ function defaultIsEmpty(data: unknown): boolean {
 }
 
 /**
+ * The body a card-sized consumer should show for `query`, resolved by ONE precedence:
+ * error > pending > empty > ready.
+ *
+ *  - `error`: the fetch failed and there is nothing to show — no data, or data that is empty (an
+ *    errored refetch over a cached `[]` is a failure, never "no data");
+ *  - `pending`: no data, not failed, and a fetch is in flight or paused;
+ *  - `empty`: no data and nothing in flight (an `enabled: false` query), or data that is empty by
+ *    the same rule as {@link QueryState} (`null`, `[]`, `{ data: [] }`);
+ *  - `ready`: data worth showing; `refreshFailed` is true when a background refetch failed over it
+ *    (the "showing cached data" banner case).
+ *
+ * `QueryState` renders a whole region and keeps its own branch order; this is for a consumer that
+ * swaps one region of a larger surface (`StatCard`'s figure) and needs the same words for the same
+ * states. Switch over `kind` and end with `default: return branch satisfies never`.
+ */
+export type QueryBranch<TData> =
+  | { kind: 'error'; query: QueryStateLike<TData>; error: unknown }
+  | { kind: 'pending'; query: QueryStateLike<TData> }
+  | { kind: 'empty'; query: QueryStateLike<TData> }
+  | { kind: 'ready'; query: QueryStateLike<TData>; data: TData; refreshFailed: boolean }
+
+export function resolveQueryBranch<TData>(
+  query: QueryStateLike<TData>,
+  isEmpty: (data: TData) => boolean = defaultIsEmpty,
+): QueryBranch<TData> {
+  assertQueryStateLike('QueryState', query)
+  const { data, isError, error, fetchStatus } = query
+  if (data === undefined) {
+    if (isError) return { kind: 'error', query, error }
+    return fetchStatus === 'idle' ? { kind: 'empty', query } : { kind: 'pending', query }
+  }
+  if (isEmpty(data)) return isError ? { kind: 'error', query, error } : { kind: 'empty', query }
+  return { kind: 'ready', query, data, refreshFailed: isError }
+}
+
+/**
  * ONE slot, and the single-member union is the statement (`common/props.ts` lists this among the
  * composites): `root` is whichever branch is live — the error alert's stack, the spinner's centre,
  * the empty state, or the cached-data wrapper. `QueryState` renders exactly one of them at a time

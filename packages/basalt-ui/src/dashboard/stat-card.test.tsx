@@ -651,36 +651,33 @@ describe('stat-card.module.css — caption, value row, foot', () => {
     expect(rule('.captionMain')).toContain('flex-wrap: wrap')
   })
 
-  test('exactly three sizes: hero (kpi), sm (unit, footer), micro (caption, qualifier)', () => {
+  test('exactly three sizes: hero (figure), sm (unit, footer), micro (caption, qualifier)', () => {
     const sizes = new Set(
-      [...decls.matchAll(/font-size:\s*([^;]+);/g)].map((m) => m[1]?.replace(/\s+/g, ' ').trim()),
+      [...decls.matchAll(/font-size:\s*([^;]+);/g)].map((m) => m[1]?.replace(/\\s+/g, ' ').trim()),
     )
-    // the cqi clamp shrinks the hero by container; its ends are the `lg` and `kpi` steps
     expect([...sizes].toSorted()).toEqual(
-      [
-        'clamp(var(--vx-text-lg), 8cqi, var(--vx-text-kpi))',
-        'var(--vx-text-kpi)',
-        'var(--vx-text-micro)',
-        'var(--vx-text-sm)',
-      ].toSorted(),
+      ['var(--basalt-stat-figure-size)', 'var(--vx-text-micro)', 'var(--vx-text-sm)'].toSorted(),
     )
+  })
+
+  test('the hero figure is the kpi step, shrinking by container to the lg step', () => {
+    expect(rule('.body')).toContain('--basalt-stat-figure-size: var(--vx-text-kpi)')
+    expect(decls).toContain(
+      '--basalt-stat-figure-size: clamp(var(--vx-text-lg), 8cqi, var(--vx-text-kpi))',
+    )
+  })
+
+  test('the empty line and the skeleton take the figure box, so nothing jumps', () => {
+    for (const selector of ['.empty', '.skeletonValue']) {
+      expect(rule(selector)).toContain('var(--basalt-stat-figure-h)')
+    }
+    expect(rule('.value')).toContain('line-height: var(--basalt-stat-figure-line)')
   })
 
   test('the sparkline slot is 22px in both placements', () => {
     expect(rule('.body')).toContain('--basalt-stat-visual-h: 1.375rem')
     expect(rule('.sparklineBleed')).toContain('height: var(--basalt-stat-visual-h)')
     expect(rule('.sparklineRight')).toContain('var(--basalt-stat-sparkline-h, 1.375rem)')
-  })
-
-  test('the bled sparkline no longer bleeds through the card bottom', () => {
-    expect(rule('.sparklineBleed')).not.toContain('margin-bottom')
-  })
-
-  test('the foot reserves visual + gap + footer and pins to the bottom', () => {
-    const r = rule('.foot')
-    expect(r).toContain('margin-top: auto')
-    expect(r).toMatch(/min-height:\s*calc\(\s*var\(--basalt-stat-visual-h\)/)
-    expect(r).toContain('var(--basalt-stat-footer-h)')
   })
 
   test('the footer is one muted sm line', () => {

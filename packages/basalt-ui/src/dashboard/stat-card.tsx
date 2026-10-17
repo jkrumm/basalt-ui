@@ -90,24 +90,29 @@
  *   tone={hasCoverage ? (downtimeMinutes === 0 ? 'good' : 'bad') : undefined}
  * />
  */
-import { Box, Card, Skeleton, VisuallyHidden } from '@mantine/core'
+import { Box, Card, VisuallyHidden } from '@mantine/core'
 import { useEffect, useState } from 'react'
-import type { CSSProperties, ReactNode } from 'react'
-import { InfoGlyph } from './widget-header'
+import type { ReactNode } from 'react'
+import {
+  BreakdownSkeleton,
+  CaptionRow,
+  FooterSkeleton,
+  Foot,
+  ValueSkeleton,
+  VisualSkeleton,
+  rightSlotStyle,
+} from './stat-card-parts'
 import type {
   WidgetHeaderDeltaProps,
   WidgetHeaderMetricProps,
   WidgetHeaderTitleProps,
 } from './widget-header'
 import { DeltaBadge } from './delta-badge'
-import { CtlSlot } from '../theme'
-import { IconSlot } from '../theme/icon-slot'
 import { VX } from '../tokens'
 import { cx } from '../common/props'
 import type { BasaltProps, SlotStylesProps, Tone } from '../common/props'
-import { QueryState } from './query-state'
+import { QueryState, resolveQueryBranch } from './query-state'
 import type { QueryStateLike } from './query-state'
-import { assertQueryStateLike } from '../common/query-state-like'
 import classes from './stat-card.module.css'
 
 /**
@@ -186,27 +191,6 @@ function useSlotWidth(active: boolean): {
   }, [active, node])
 
   return { ref: setNode, width }
-}
-
-/** Which of the card's four bodies the `query` asks for, by `QueryState`'s precedence. */
-type QueryBranch = 'ready' | 'pending' | 'error' | 'empty'
-
-/** `[]` and `{ data: [] }` (the pagination envelope) are empty; any other defined value is data. */
-function isEmptyData(data: unknown): boolean {
-  if (Array.isArray(data)) return data.length === 0
-  if (typeof data === 'object' && data !== null && Array.isArray((data as { data?: unknown }).data))
-    return (data as { data: unknown[] }).data.length === 0
-  return false
-}
-
-function queryBranch(query: QueryStateLike<unknown> | undefined): QueryBranch {
-  if (query === undefined) return 'ready'
-  assertQueryStateLike('StatCard', query)
-  if (query.data === undefined) {
-    if (query.isError) return 'error'
-    return query.fetchStatus === 'idle' ? 'empty' : 'pending'
-  }
-  return isEmptyData(query.data) ? 'empty' : 'ready'
 }
 
 /** The rail's width, in px. Wide enough to read as a deliberate mark at a glance, narrow enough
@@ -354,8 +338,10 @@ export function StatCard({
   const bleeds = sparklinePlacement === 'bleed'
   // Only a render prop needs a measurement; a plain node sizes itself.
   const { ref: slotRef, width: slotWidth } = useSlotWidth(isRender)
-  const branch = queryBranch(query)
-  const pending = loading || branch === 'pending'
+  const resolved = query === undefined ? undefined : resolveQueryBranch(query)
+  const kind = resolved?.kind ?? 'ready'
+  const pending = loading || kind === 'pending'
+  const ready = !pending && kind === 'ready'
   const measured: StatCardSparklineSize = { width: slotWidth, height: SPARKLINE_HEIGHT }
 
   // A `<dl>`, not a table and not a stack of divs: each row IS a term and its value, which is the
@@ -387,7 +373,7 @@ export function StatCard({
       </QueryState>
     )
 
-  const sparklineNode: ReactNode =
+  const sparklineSlot: ReactNode =
     sparkline === undefined ? null : (
       <div
         ref={slotRef}
@@ -395,17 +381,7 @@ export function StatCard({
           bleeds ? classes.sparklineBleed : classes.sparklineRight,
           classNames?.sparkline,
         )}
-        {...(!bleeds && {
-          // CUSTOM PROPERTIES, not `flexBasis`/`height` directly. A React inline style beats every
-          // stylesheet rule, so an inline `flexBasis: 72` also applied in a narrow card — where `'right'`
-          // collapses `.metricsRow` to a COLUMN and flex-basis is therefore the main-axis HEIGHT.
-          // Handed to CSS as values instead, the container query can reset the box and the numbers
-          // still live in one place.
-          style: {
-            '--basalt-stat-sparkline-w': `${SPARKLINE_RIGHT_WIDTH}px`,
-            '--basalt-stat-sparkline-h': `${SPARKLINE_HEIGHT}px`,
-          } as CSSProperties,
-        })}
+        {...(!bleeds && { style: rightSlotStyle(SPARKLINE_RIGHT_WIDTH, SPARKLINE_HEIGHT) })}
       >
         {/* A measured slot renders nothing on the first commit (width 0) — an SVG at width 0 is a
             visible 0-width box that then jumps, which is worse than one frame of nothing. */}
@@ -431,40 +407,53 @@ export function StatCard({
     </div>
   )
 
-  // The value row's body per branch. The caption row above it is identical in all of them.
-  let valueBody: ReactNode
-  if (pending) {
-    valueBody = <Skeleton className={classes.skeletonValue} radius="sm" />
-  } else if (branch === 'error' && query !== undefined) {
-    valueBody = (
-      <QueryState query={query} tier="section" errorTitle="Could not load this figure">
-        {null}
-      </QueryState>
-    )
-  } else if (branch === 'empty') {
-    valueBody = <p className={classes.empty}>{emptyText}</p>
-  } else {
-    valueBody = figure
-  }
-  const ready = !pending && branch === 'ready'
+  // The value row's body per branch (error > pending > empty > ready, `resolveQueryBranch`). The
+  // caption row above it is identical in all of them.
+  const valueBody = ((): ReactNode => {
+    if (loading) return <ValueSkeleton />
+    if (resolved === undefined) return figure
+    switch (resolved.kind) {
+      case 'pending':
+        return <ValueSkeleton />
+      case 'error':
+        return (
+          <QueryState query={resolved.query} tier="section" errorTitle="Could not load this figure">
+            {null}
+          </QueryState>
+        )
+      case 'empty':
+        return <p className={classes.empty}>{emptyText}</p>
+      case 'ready':
+        return figure
+      default:
+        return resolved satisfies never
+    }
+  })()
 
-  // The foot holds a visual and a footer line whenever either exists, at a fixed height, so a card
-  // with a sparkline and no footer and one with both are the same height (SPEC § 6.1 footprint).
-  const hasVisual = sparkline !== undefined && bleeds
-  const hasFoot = hasVisual || subtitle !== undefined
-  const foot = hasFoot && (
-    <div className={classes.foot}>
-      {pending
-        ? hasVisual && <Skeleton className={classes.skeletonVisual} />
-        : ready && bleeds && sparklineNode}
-      {subtitle !== undefined &&
-        (pending ? (
-          <Skeleton className={classes.skeletonFooter} radius="sm" />
-        ) : (
-          <p className={classes.footer}>{subtitle}</p>
-        ))}
-    </div>
+  const breakdownCount = breakdown?.length ?? 0
+  const hasBreakdown = breakdownCount > 0
+  // `'right'` keeps its row — and the 72×22 slot in it — while pending, so the card does not jump
+  // when the reading lands.
+  const rightRow =
+    !bleeds &&
+    (ready
+      ? breakdownContent !== null || sparklineSlot !== null
+      : pending && (hasBreakdown || sparkline !== undefined))
+
+  const hasBleedVisual = sparkline !== undefined && bleeds
+  const visualNode: ReactNode = !hasBleedVisual ? null : pending ? (
+    <VisualSkeleton />
+  ) : (
+    ready && sparklineSlot
   )
+  const footerNode: ReactNode =
+    subtitle === undefined ? null : pending ? (
+      <FooterSkeleton />
+    ) : (
+      <p className={classes.footer} title={subtitle}>
+        {subtitle}
+      </p>
+    )
 
   return (
     <Card
@@ -522,41 +511,54 @@ export function StatCard({
         data-placement={sparklinePlacement}
         {...(pending && { 'aria-busy': true })}
       >
+        {pending && <VisuallyHidden>{`Loading ${title}`}</VisuallyHidden>}
         <div className={cx(classes.header, classNames?.header)}>
-          <div className={classes.captionRow}>
-            <div className={classes.captionMain}>
-              <h3 className={classes.caption}>
-                {icon !== undefined && <IconSlot className={classes.icon}>{icon}</IconSlot>}
-                <span className={classes.captionText}>{title}</span>
-              </h3>
-              {/* OUTSIDE the heading on purpose: `info` would otherwise become part of its name. */}
-              {info !== undefined && <InfoGlyph text={info} />}
-              {qualifier !== undefined && <span className={classes.qualifier}>{qualifier}</span>}
-            </div>
-            {/* `tier="widget"`: the caption row is 24px (`--vx-space-control-height-widget`), so a
-                card with a kebab is the same height as one without (`theme/ctl-theme.tsx`). */}
-            {actions !== undefined && (
-              <span className={classes.actions} data-basalt-hit-scope>
-                <CtlSlot tier="widget">{actions}</CtlSlot>
-              </span>
-            )}
-          </div>
+          <CaptionRow
+            title={title}
+            {...(icon !== undefined && { icon })}
+            {...(info !== undefined && { info })}
+            {...(qualifier !== undefined && { qualifier })}
+            {...(actions !== undefined && { actions })}
+          />
 
           {valueBody}
 
           {/* INSIDE `.header` for `bleed` ONLY (`right` puts it beside the sparkline in
               `.metricsRow`, so the header stays the full card width in both placements). */}
-          {ready && bleeds && breakdownContent}
+          {bleeds &&
+            (pending
+              ? hasBreakdown && <BreakdownSkeleton rows={breakdownCount} />
+              : ready && breakdownContent)}
         </div>
 
-        {ready && !bleeds && (breakdownContent !== null || sparklineNode !== null) && (
+        {rightRow && (
           <div className={classes.metricsRow}>
-            {breakdownContent}
-            {sparklineNode}
+            {ready ? (
+              <>
+                {breakdownContent}
+                {sparklineSlot}
+              </>
+            ) : (
+              <>
+                {hasBreakdown && <BreakdownSkeleton rows={breakdownCount} />}
+                {sparkline !== undefined && (
+                  <div
+                    className={classes.sparklineRight}
+                    style={rightSlotStyle(SPARKLINE_RIGHT_WIDTH, SPARKLINE_HEIGHT)}
+                  >
+                    <VisualSkeleton />
+                  </div>
+                )}
+              </>
+            )}
           </div>
         )}
 
-        {foot}
+        <Foot
+          reserve={hasBleedVisual || subtitle !== undefined}
+          visualNode={visualNode}
+          footerNode={footerNode}
+        />
       </div>
     </Card>
   )

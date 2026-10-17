@@ -23,7 +23,6 @@
  * <DeltaBadge value={182} format={(v) => `${Math.abs(v)}ms`} withGlyph={false} />
  * <DeltaBadge value={35.9} polarity="up-bad" />         // ▲ 35.9%, danger colour — a rise is bad here
  */
-import type { CSSProperties } from 'react'
 import { VX } from '../tokens'
 import classes from './widget-header.module.css'
 
@@ -55,6 +54,13 @@ function resolveTone(value: number, polarity: DeltaPolarity): string {
   return good ? VX.status.good : VX.status.bad
 }
 
+/** The direction mark for a signed value; zero has none. Direction only, never the verdict. */
+function directionGlyph(value: number): '▲' | '▼' | undefined {
+  if (value > 0) return '▲'
+  if (value < 0) return '▼'
+  return undefined
+}
+
 export function DeltaBadge({
   value,
   polarity = 'up-good',
@@ -63,13 +69,11 @@ export function DeltaBadge({
   period,
 }: DeltaBadgeProps) {
   const tone = resolveTone(value, polarity)
-  const glyph = value > 0 ? '▲' : value < 0 ? '▼' : undefined
+  const glyph = directionGlyph(value)
   const showGlyph = withGlyph && glyph !== undefined
 
   return (
-    // The tone rides a custom property; `.deltaBadge` mixes 12% ink into it (the dark-scheme `bad`
-    // solid is 4.22:1 on the card, under the 4.5 text floor a fill-less delta needs).
-    <span className={classes.deltaBadge} style={{ '--basalt-delta-tone': tone } as CSSProperties}>
+    <span className={classes.deltaBadge} style={{ color: tone }}>
       {showGlyph && <span className={classes.deltaGlyph}>{glyph}</span>}
       {format(value)}
       {period !== undefined && <span className={classes.deltaPeriod}>{period}</span>}

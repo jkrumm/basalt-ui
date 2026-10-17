@@ -115,13 +115,19 @@ layout('card chrome by container', () => {
 
   // SPEC § 6.1 footprint: the foot reserves a visual AND a footer line, so cards with and without
   // either are the same height, and a grid row stretches the rest to it.
-  test('cards with a visual, a footer, both or neither (in the foot) hold the same height', async () => {
-    const heights: Record<string, number> = {}
-    for (const id of ['both', 'visual', 'footer']) {
-      heights[id] = (await p.box(id, `[data-testid="foot-${id}"] > div`)).box.height
+  test('cards with a visual, a footer, or both (in the foot) hold the same height', async () => {
+    const heights: Record<'both' | 'visual' | 'footer', number> = { both: 0, visual: 0, footer: 0 }
+    for (const id of ['both', 'visual', 'footer'] as const) {
+      heights[id] = Math.round((await p.box(id, `[data-testid="foot-${id}"] > div`)).box.height)
     }
-    expect(Math.round(heights['visual'] ?? 0)).toBe(Math.round(heights['both'] ?? -1))
-    expect(Math.round(heights['footer'] ?? 0)).toBe(Math.round(heights['both'] ?? -1))
+    expect(heights.visual).toBe(heights.both)
+    expect(heights.footer).toBe(heights.both)
+  })
+
+  test('a `right` placement card holds its height pending and ready', async () => {
+    const pending = await p.box('p', '[data-testid="foot-right-pending"] > div')
+    const ready = await p.box('r', '[data-testid="foot-right-ready"] > div')
+    expect(Math.round(pending.box.height)).toBe(Math.round(ready.box.height))
   })
 
   test('a card with no foot stretches to its grid row siblings', async () => {

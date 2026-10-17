@@ -255,9 +255,10 @@ export type CardsSpec = {
    * StatCard footprint probes (SPEC § 6.1): `data-testid="foot-natural"` holds four 240px cards in a
    * NON-stretching flex row — a visual + footer, a visual only, a footer only, neither — so each
    * card's own height is measurable; `data-testid="foot-grid"` holds three of them in a `StatGroup`
-   * grid row, where the row must stretch them to one height.
+   * grid row, where the row must stretch them to one height. `data-testid="foot-right-pending"` and
+   * `"foot-right-ready"` hold the same `sparklinePlacement="right"` card pending and ready.
    */
-  footprint?: boolean
+  footprint?: true
 }
 
 /**
