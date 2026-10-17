@@ -22,7 +22,6 @@ declare const classes: {
   readonly ring: string
   readonly ringTrack: string
   readonly ringArc: string
-  readonly ringForecast: string
   readonly ringValue: string
   readonly skeletonRing: string
 }

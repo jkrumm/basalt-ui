@@ -24,7 +24,7 @@ Signature: BarList(props: BarListProps): JSX.Element
   className?: string
   style?: CSSProperties
   label: string
-  items: readonly { label: string; value: number; secondary?: ReactN…
+  items: readonly BarListItem[]
   format?: (value: number) => string
   max?: number
   accentLeader?: boolean

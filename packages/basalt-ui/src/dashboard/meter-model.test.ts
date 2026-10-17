@@ -1,5 +1,12 @@
-import { describe, expect, spyOn, test } from 'bun:test'
-import { findHoldingZone, layoutSegments, modelBar, segmentReading, spanOf } from './meter-model'
+import { describe, expect, test } from 'bun:test'
+import {
+  findHoldingZone,
+  layoutSegments,
+  modelBar,
+  normalizeSegments,
+  segmentReading,
+  spanOf,
+} from './meter-model'
 
 const fmt = (n: number) => String(n)
 const ZONES = [
@@ -22,6 +29,18 @@ describe('findHoldingZone', () => {
   })
 })
 
+describe('normalizeSegments', () => {
+  test('negative and non-finite amounts become 0, in one place', () => {
+    const out = normalizeSegments([
+      { value: -5, label: 'a' },
+      { value: Number.NaN, label: 'b' },
+      { value: 7, label: 'c' },
+    ])
+    expect(out.map((s) => s.value)).toEqual([0, 0, 7])
+    expect(segmentReading(out, 10)).toBe(17)
+  })
+})
+
 describe('layoutSegments', () => {
   test('parts accumulate and stop at the track end', () => {
     const parts = layoutSegments(
@@ -36,37 +55,18 @@ describe('layoutSegments', () => {
       [0.7, 0.30000000000000004],
     ])
   })
-  test('a negative amount draws nothing', () => {
-    expect(layoutSegments([{ value: -5, label: 'a' }], 100)[0]?.size).toBe(0)
-  })
-})
-
-describe('segmentReading', () => {
-  test('is min plus the sum', () => {
-    expect(
-      segmentReading(
-        [
-          { value: 5, label: 'a' },
-          { value: 7, label: 'b' },
-        ],
-        10,
-      ),
-    ).toBe(22)
+  test('a forecast part ignores its colour', () => {
+    const [part] = layoutSegments([{ value: 10, label: 'f', forecast: true, color: 'red' }], 100)
+    expect(part?.color).toBeUndefined()
   })
 })
 
 describe('spanOf', () => {
-  test('max <= min falls back to 1 and warns outside production', () => {
-    const warn = spyOn(console, 'warn').mockImplementation(() => {})
-    expect(spanOf(5, 5)).toBe(1)
-    expect(warn).toHaveBeenCalledTimes(1)
-    warn.mockRestore()
+  test('is pure: max <= min is the fallback span, flagged invalid', () => {
+    expect(spanOf(5, 5)).toEqual({ span: 1, valid: false })
   })
-  test('a valid track is its width and silent', () => {
-    const warn = spyOn(console, 'warn').mockImplementation(() => {})
-    expect(spanOf(10, 50)).toBe(40)
-    expect(warn).not.toHaveBeenCalled()
-    warn.mockRestore()
+  test('a valid track is its width', () => {
+    expect(spanOf(10, 50)).toEqual({ span: 40, valid: true })
   })
 })
 

@@ -86,6 +86,11 @@
   text-align: end;
 }
 
+/* Alone in the row, the end caption still sits at the end. */
+.captionEnd:first-child {
+  margin-inline-start: auto;
+}
+
 .empty {
   font-size: var(--vx-text-sm);
   color: var(--vx-muted);
@@ -129,10 +134,6 @@
 .ringArc {
   fill: none;
   stroke: var(--vx-line);
-}
-
-.ringForecast {
-  stroke: color-mix(in srgb, var(--vx-line) 45%, transparent);
 }
 
 .ringValue {

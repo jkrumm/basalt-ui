@@ -27,11 +27,13 @@ import type { BasaltProps } from '../common/props'
 import classes from './bar-list.module.css'
 import { asText, barPercent } from './scale'
 
+type BarListItem = { label: string; value: number; secondary?: ReactNode; key?: string }
+
 export type BarListProps = BasaltProps & {
   /** Accessible name of the list. Required. */
   label: string
   /** Rows in display order (sort them yourself; the list does not reorder). */
-  items: readonly { label: string; value: number; secondary?: ReactNode; key?: string }[]
+  items: readonly BarListItem[]
   /** Formats each value. Default: the number as written. */
   format?: (value: number) => string
   /** Scale end shared by every bar. Default: the largest value. */
@@ -76,7 +78,8 @@ export function BarList({
     )
   }
 
-  const scale = max ?? Math.max(...items.map((i) => i.value))
+  const scale =
+    max ?? items.reduce((top, i) => (Number.isFinite(i.value) ? Math.max(top, i.value) : top), 0)
   return (
     // The explicit role is deliberate: `list-style: none` makes Safari/VoiceOver drop the implicit one.
     // oxlint-disable-next-line jsx-a11y/no-redundant-roles
@@ -89,13 +92,15 @@ export function BarList({
             <span
               className={cx(classes.bar, isLeader && classes.leader)}
               style={{ width: `${barPercent(item.value, scale)}%` }}
-              {...(isLeader && { 'data-bar-leader': '' })}
+              data-bar-leader={isLeader ? '' : undefined}
               aria-hidden
             />
             <span className={classes.label} title={item.label}>
               {item.label}
             </span>
-            <span className={classes.value}>{format(item.value)}</span>
+            <span className={classes.value}>
+              {Number.isFinite(item.value) ? format(item.value) : '—'}
+            </span>
             {item.secondary !== undefined && (
               <span className={classes.secondary}>{item.secondary}</span>
             )}

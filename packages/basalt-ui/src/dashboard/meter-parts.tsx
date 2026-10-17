@@ -66,9 +66,10 @@ export function MeterLoading({
   )
 }
 
-export function MeterEmpty({ text, ring, shell }: { text: string; ring: boolean; shell: Shell }) {
+export function MeterEmpty(props: { label: string; text: string; ring: boolean; shell: Shell }) {
+  const { label, text, ring, shell } = props
   return (
-    <div className={cx(classes.root, shell.className)} style={shell.style}>
+    <output className={cx(classes.root, shell.className)} style={shell.style} aria-label={label}>
       {ring ? (
         <span className={classes.ringBox}>
           <RingSvg />
@@ -79,7 +80,7 @@ export function MeterEmpty({ text, ring, shell }: { text: string; ring: boolean;
         </div>
       )}
       <span className={classes.empty}>{text}</span>
-    </div>
+    </output>
   )
 }
 
@@ -111,21 +112,24 @@ function fillStyle(p: Part): CSSProperties {
   return { width: `${toPct(p.size)}%`, ...(p.color !== undefined && { background: p.color }) }
 }
 
-function zoneStyle(zone: MeterZone, index: number, count: number, min: number, span: number) {
-  const band = zoneBand(zone, min, span)
-  const strength =
-    count > 1 ? ZONE_STRENGTH_MIN + (index / (count - 1)) * ZONE_STRENGTH_STEP : ZONE_STRENGTH_SOLO
-  return {
-    insetInlineStart: `${band.start}%`,
-    width: `${band.width}%`,
-    background: zone.color ?? `color-mix(in srgb, var(--vx-line) ${strength}%, transparent)`,
-  } satisfies CSSProperties
-}
-
 /** Uncoloured zones step from `MIN` to `MIN + STEP` percent of the neutral, so order reads without hue. */
 const ZONE_STRENGTH_MIN = 15
 const ZONE_STRENGTH_STEP = 45
 const ZONE_STRENGTH_SOLO = 40
+/** Every band after the first gives up its leading pixel, so a boundary never relies on fill strength. */
+const ZONE_GAP = '1px'
+
+function zoneStyle(zone: MeterZone, index: number, count: number, min: number, span: number) {
+  const band = zoneBand(zone, min, span)
+  const gap = index > 0
+  const strength =
+    count > 1 ? ZONE_STRENGTH_MIN + (index / (count - 1)) * ZONE_STRENGTH_STEP : ZONE_STRENGTH_SOLO
+  return {
+    insetInlineStart: gap ? `calc(${band.start}% + ${ZONE_GAP})` : `${band.start}%`,
+    width: gap ? `calc(${band.width}% - ${ZONE_GAP})` : `${band.width}%`,
+    background: zone.color ?? `color-mix(in srgb, var(--vx-line) ${strength}%, transparent)`,
+  } satisfies CSSProperties
+}
 
 export function MeterBar(props: {
   label: string
@@ -203,7 +207,7 @@ function Tick({
   className,
   pct,
 }: {
-  kind: string
+  kind: 'marker' | 'boundary' | 'target'
   className: string
   pct: number | undefined
 }) {

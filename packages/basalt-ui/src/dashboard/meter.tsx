@@ -30,7 +30,7 @@
  *     { from: 750, to: 1000, label: 'High' },
  *   ]}
  * />
- * // Garmin recovery on its 0–100 scale (contributors: <BarList max={100} … secondary="Good" />).
+ * // A readiness score on its 0–100 scale (its contributors: <BarList max={100} … secondary="Good" />).
  * <Meter label="Recovery" value={72} max={100} />
  * <Meter
  *   label="Course progress"
@@ -41,7 +41,7 @@
  */
 import type { ReactNode } from 'react'
 import type { BasaltProps } from '../common/props'
-import { isReading, segmentReading } from './meter-model'
+import { isReading, normalizeSegments, segmentReading, spanOf } from './meter-model'
 import type { MeterSegment, MeterZone } from './meter-model'
 import { MeterBar, MeterEmpty, MeterLoading, MeterRing } from './meter-parts'
 import { asText } from './scale'
@@ -72,8 +72,11 @@ type BarCommon = Common & {
 }
 
 /**
- * Exactly one reading form per bar: a `value`, ordered `segments`, or a `value` read against `zones`;
- * a ring takes a `value` alone (one headline ratio — no segments, zones, target or captions).
+ * One of four forms; mixing them is a compile error.
+ * - Bar `value` (+ `target`, `color`): one reading on a neutral track.
+ * - Bar `segments`: ordered parts that sum to the reading (committed/forecast, part of a whole).
+ * - Bar `value` + `zones`: the reading is a marker against contiguous bands.
+ * - Ring (`shape: 'ring'`) `value` (+ `color`): one headline ratio; no target, captions, segments or zones.
  */
 export type MeterProps =
   | (BarCommon & {
@@ -115,16 +118,30 @@ export type MeterProps =
       endCaption?: never
     })
 
+let warnedTrack = false
+/** One dev warning per page load for a track that ends at or before its start. */
+function warnInvalidTrack(min: number, max: number) {
+  if (warnedTrack || spanOf(min, max).valid || process.env.NODE_ENV === 'production') return
+  warnedTrack = true
+  console.warn(
+    `[basalt] Meter: max (${max}) must be greater than min (${min}); drawing an empty track`,
+  )
+}
+
 export function Meter(props: MeterProps) {
   const { label, min = 0, max = 100, format = asText, className, style } = props
   const shell = { className, style }
   const ring = props.shape === 'ring'
+  warnInvalidTrack(min, max)
 
   if (props.loading === true) return <MeterLoading label={label} ring={ring} shell={shell} />
 
-  const reading = props.segments === undefined ? props.value : segmentReading(props.segments, min)
-  if (!isReading(reading)) {
-    return <MeterEmpty text={props.emptyText ?? 'No data'} ring={ring} shell={shell} />
+  const segments = props.segments === undefined ? undefined : normalizeSegments(props.segments)
+  const reading = segments === undefined ? props.value : segmentReading(segments, min)
+  if (!isReading(reading) || segments?.length === 0) {
+    return (
+      <MeterEmpty label={label} text={props.emptyText ?? 'No data'} ring={ring} shell={shell} />
+    )
   }
 
   if (props.shape === 'ring') {
@@ -134,9 +151,9 @@ export function Meter(props: MeterProps) {
     <MeterBar
       {...{ label, reading, min, max, format, shell }}
       color={props.color}
-      segments={props.segments}
+      segments={segments}
       zones={props.zones}
-      target={props.target}
+      target={isReading(props.target) ? props.target : undefined}
       forecastCaption={props.segments === undefined ? undefined : props.forecastCaption}
       startCaption={props.startCaption}
       endCaption={props.endCaption}
