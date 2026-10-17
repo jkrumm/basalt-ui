@@ -27,7 +27,6 @@ import {
   Card,
   Checkbox,
   Code,
-  Divider,
   Group,
   Menu,
   Popover,
@@ -170,25 +169,25 @@ function ComponentsSurfaces() {
         </ComponentGroup>
 
         <ComponentGroup title="Tabs" shot="tabs">
-          <Tabs defaultValue="overview">
+          <Tabs defaultValue="deploys">
             <Tabs.List>
-              <Tabs.Tab value="overview">Overview</Tabs.Tab>
-              <Tabs.Tab value="activity">Activity</Tabs.Tab>
-              <Tabs.Tab value="settings">Settings</Tabs.Tab>
+              <Tabs.Tab value="deploys">Deploys</Tabs.Tab>
+              <Tabs.Tab value="incidents">Incidents</Tabs.Tab>
+              <Tabs.Tab value="alerts">Alerts</Tabs.Tab>
             </Tabs.List>
-            <Tabs.Panel value="overview" pt="sm">
+            <Tabs.Panel value="deploys" pt="sm">
               <Text size="sm" c="dimmed">
-                Overview panel content.
+                14 deploys this week; the last one shipped at 09:12 UTC.
               </Text>
             </Tabs.Panel>
-            <Tabs.Panel value="activity" pt="sm">
+            <Tabs.Panel value="incidents" pt="sm">
               <Text size="sm" c="dimmed">
-                Activity panel content.
+                One incident in 30 days, resolved in 18 minutes.
               </Text>
             </Tabs.Panel>
-            <Tabs.Panel value="settings" pt="sm">
+            <Tabs.Panel value="alerts" pt="sm">
               <Text size="sm" c="dimmed">
-                Settings panel content.
+                Alerts page the on-call engineer after two failed checks.
               </Text>
             </Tabs.Panel>
           </Tabs>
@@ -289,14 +288,33 @@ function ComponentsSurfaces() {
       </SimpleGrid>
 
       <SimpleGrid type="container" cols={{ base: 1, [CONTAINER_KEYS.regular]: 2 }}>
-        <ComponentGroup title="Badges & code" shot="badges">
+        <ComponentGroup title="Badges" shot="badges">
           <Stack gap="sm">
             <Group gap="sm">
-              <Badge color="green">Active</Badge>
-              <Badge color="gray">Draft</Badge>
-              <Badge>Default</Badge>
+              <Badge color="green">Healthy</Badge>
+              <Badge color="yellow">Degraded</Badge>
+              <Badge color="red">Down</Badge>
+              <Badge color="orange">Pending</Badge>
+              <Badge color="gray">Paused</Badge>
             </Group>
-            <Divider />
+            <Group gap="sm">
+              <Badge
+                color="green"
+                leftSection={
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3}>
+                    <path d="M5 12.5l4.5 4.5L19 7.5" />
+                  </svg>
+                }
+              >
+                Verified
+              </Badge>
+              <Badge variant="filled">12</Badge>
+            </Group>
+          </Stack>
+        </ComponentGroup>
+
+        <ComponentGroup title="Code">
+          <Stack gap="sm">
             <Text size="sm">
               Inline <Code>VX.line</Code> is a token ref.
             </Text>
