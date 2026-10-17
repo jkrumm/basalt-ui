@@ -68,10 +68,16 @@ describe('BarList per-row max', () => {
 describe('BarList thin variant', () => {
   const items = [{ label: 'Sleep', value: 32, max: 40, secondary: 'Good' }]
 
-  test('default variant keeps the label inside the track', () => {
+  test('no variant renders thin rows: label outside the track', () => {
     const { container } = mount({ label: 'L', items })
+    expect(container.querySelector('ul')?.getAttribute('data-variant')).toBe('thin')
+    expect(container.querySelector('[data-bar-track] [title="Sleep"]')).toBeNull()
+  })
+
+  test('variant="inline" keeps the label inside the track', () => {
+    const { container } = mount({ label: 'L', items, variant: 'inline' })
+    expect(container.querySelector('ul')?.getAttribute('data-variant')).toBe('inline')
     expect(container.querySelector('[data-bar-track] [title="Sleep"]')).toBeTruthy()
-    expect(container.querySelector('ul')?.hasAttribute('data-variant')).toBe(false)
   })
 
   test('thin puts the label outside the track, before the value', () => {
@@ -130,6 +136,7 @@ describe('BarList tick', () => {
   test('the hidden tick text sits in the track, so value/secondary stay the last children', () => {
     const { container } = mount({
       label: 'L',
+      variant: 'inline',
       items: [
         { label: 'a', value: 1, secondary: 'x', tick: 1 },
         { label: 'b', value: 2, secondary: 'y' },

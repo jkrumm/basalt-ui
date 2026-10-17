@@ -177,10 +177,12 @@ describe('tone="muted"', () => {
     expect(fill(verdict.container)?.style.background).toBe('var(--vx-status-warn)')
   })
 
-  test('the default fill stays untoned', () => {
-    expect(fill(mount({ label: 'Load', value: 40 }).container)?.hasAttribute('data-tone')).toBe(
-      false,
+  test('with no colour and no tone the fill is muted; tone="ink" opts back into the ink fill', () => {
+    expect(fill(mount({ label: 'Load', value: 40 }).container)?.getAttribute('data-tone')).toBe(
+      'muted',
     )
+    const ink = fill(mount({ label: 'Load', value: 40, tone: 'ink' }).container)
+    expect(ink?.hasAttribute('data-tone')).toBe(false)
   })
 
   test('is built from --vx-muted only (no hex) and clears 3:1 against the track in both schemes', () => {
