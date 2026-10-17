@@ -43,13 +43,14 @@ import {
   fmtDuration,
   fmtLoss,
   fmtMbit,
+  latencyBand,
   fmtMs,
   fmtStamp,
   fmtUptime,
   lineState,
 } from './ops-data'
 import type { HourRow, LatencyBin, Outage } from './ops-data'
-import { chartStateFor, queryFor, retryCopy } from './shot-state'
+import { RETRY_ACTION, chartStateFor, queryFor, retryCopy } from './shot-state'
 import type { ScenarioProps } from './shot-state'
 
 const LINE_STATES: BandStripSeries<HourRow>[] = [
@@ -148,7 +149,7 @@ function OpsStats({ shotState }: ScenarioProps) {
           value={fmtMs(LATENCY_NOW_MS)}
           info="Round-trip time in the last minute. The sparkline shows the last 60 minutes; the change compares with the 7-day median hour."
           {...(isAtRest && {
-            delta: LATENCY_NOW_MS / LATENCY_MEDIAN_7D_MS - 1,
+            delta: (LATENCY_NOW_MS / LATENCY_MEDIAN_7D_MS - 1) * 100,
             deltaPeriod: 'vs 7-day median',
             deltaPolarity: 'up-bad' as const,
           })}
@@ -228,6 +229,7 @@ function OpsCharts({ shotState }: ScenarioProps) {
             empty: 'No hourly readings in the window. Check that the probe is reporting.',
             error: retry('Line state'),
           })}
+          stateAction={RETRY_ACTION}
         >
           <Box data-shot-hover data-shot-tooltip>
             <BandStrip<HourRow, Date>
@@ -252,6 +254,7 @@ function OpsCharts({ shotState }: ScenarioProps) {
                 'No throughput readings in the window. Check that the speed test is scheduled.',
               error: retry('Throughput'),
             })}
+            stateAction={RETRY_ACTION}
           >
             <Box data-shot-hover data-shot-tooltip>
               <Lines<HourRow, Date>
@@ -276,6 +279,7 @@ function OpsCharts({ shotState }: ScenarioProps) {
               empty: 'No latency readings to bin yet. The histogram needs at least one hour.',
               error: retry('The latency distribution'),
             })}
+            stateAction={RETRY_ACTION}
           >
             <Box data-shot-hover data-shot-tooltip>
               <Bars
@@ -283,6 +287,7 @@ function OpsCharts({ shotState }: ScenarioProps) {
                 ariaLabel={`Hours by median latency, ${LATENCY_BIN_MS} ms bands, last 7 days`}
                 x={(d) => d.label}
                 bars={LATENCY_BARS}
+                tooltip={{ formatHeader: (_, d) => latencyBand(d) }}
               />
             </Box>
           </ChartCard>

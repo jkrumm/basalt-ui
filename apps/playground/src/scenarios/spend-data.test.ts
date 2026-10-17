@@ -11,7 +11,9 @@ import {
   MONTH_DAYS,
   MTD_DAYS,
   MTD_EUR,
+  MTD_CHANGE_PCT,
   PRIOR_MTD_EUR,
+  spendBand,
   PROJECTS_MTD,
 } from './spend-data'
 import { seeded } from './fixture-utils'
@@ -48,6 +50,18 @@ describe('spend-data', () => {
     expect(MTD_DAYS).toHaveLength(DAYS_ELAPSED)
     expect(FORECAST_EUR).toBeCloseTo((MTD_EUR / DAYS_ELAPSED) * MONTH_DAYS, 6)
     expect(PRIOR_MTD_EUR).toBeGreaterThan(0)
+  })
+
+  it('the total change is the spend-weighted change of the project rows, in percent', () => {
+    const prior = sum(PROJECTS_MTD.map((p) => p.spend / (1 + p.change)))
+    expect(MTD_CHANGE_PCT).toBeCloseTo((MTD_EUR / prior - 1) * 100, 6)
+    const changes = PROJECTS_MTD.map((p) => p.change * 100)
+    expect(MTD_CHANGE_PCT).toBeGreaterThanOrEqual(Math.min(...changes))
+    expect(MTD_CHANGE_PCT).toBeLessThanOrEqual(Math.max(...changes))
+  })
+
+  it('a bin reads as the band it covers', () => {
+    expect(spendBand({ from: 40, label: '€40', days: 1 })).toBe('€40–50')
   })
 
   it('the distribution counts every day of the window exactly once', () => {
