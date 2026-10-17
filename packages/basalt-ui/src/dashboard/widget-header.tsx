@@ -310,7 +310,7 @@ export function InfoGlyph({
         </svg>
       </button>
       {open && (
-        // Rendered IN PLACE as a manual popover, shown into the top layer by `useShowPopover`: the top
+        // Rendered IN PLACE as a manual popover, shown into the top layer by `useBubblePosition`: the top
         // layer escapes every ancestor's `overflow: hidden` and `container-type` (a card's), so the
         // bubble needs no portal — `react-dom` is outside `./charts`' allowed import set
         // (`scripts/check-dist-layering.mjs`, V2-SPEC § 9.8). Hidden until the first measure lands: a
