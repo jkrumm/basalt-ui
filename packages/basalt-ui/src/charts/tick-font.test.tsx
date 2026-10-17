@@ -6,7 +6,9 @@
  */
 import { describe, expect, test } from 'bun:test'
 import type { ChartTheme, StoredChartSpec } from '@tanstack/charts/types/core'
+import { act } from 'react'
 import type { ReactElement } from 'react'
+import { createRoot } from 'react-dom/client'
 import { renderToString } from 'react-dom/server'
 import { VX } from '../tokens'
 import { BandStrip } from './BandStrip'
@@ -116,5 +118,32 @@ describe('chart tick size', () => {
       [900, 320],
     ] as const)
       for (const size of fonts(w, h)) expect(size).toBe(VX.text.micro)
+  })
+
+  test('Heatmap: the tick labels are the caption size, not the nano rung (unmeasured host = micro class)', async () => {
+    const el = document.createElement('div')
+    document.body.append(el)
+    const root = createRoot(el)
+    await act(async () => {
+      root.render(
+        <Heatmap
+          ariaLabel="H"
+          data={[
+            { row: 'Mon', col: 'a', v: 2 },
+            { row: 'Tue', col: 'b', v: 3 },
+          ]}
+          getRow={(d) => d.row}
+          getCol={(d) => d.col}
+          getValue={(d) => d.v}
+        />,
+      )
+    })
+    const sizes = [...el.querySelectorAll('text[data-ts-key*="tick-label"]')].map((t) =>
+      t.getAttribute('font-size'),
+    )
+    act(() => root.unmount())
+    el.remove()
+    expect(sizes.length).toBeGreaterThan(0)
+    for (const size of sizes) expect(size).toBe(String(VX.text.micro))
   })
 })
