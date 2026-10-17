@@ -1043,8 +1043,21 @@ The `basalt-ui/router-tanstack` subpath is **removed** in 2.x, not moved: an imp
 
 ## Unreleased
 
-_Nothing yet. Author the next section under this heading as `## Unreleased — <title>`; the
-release renames it and opens a new one here._
+### Status text derived per surface
+
+Wave 34 of the design-parity track (`docs/waves/design-parity/SPEC.md` § 12 D22). No export is
+added, removed or renamed.
+
+`--vx-status-good|warn|bad` are painted as text (`DeltaBadge`, a toned row), but their tones were
+fixed while the surfaces move with `lightLevel`, `darkLevel` and `neutral`; off the defaults they
+read 3.2–3.9:1. Each solid is now derived from the surfaces the palette produced: it moves along its
+lightness axis only (light darkens, dark lightens, hue and chroma untouched) to the first tone that
+clears 4.5:1 on every text surface (`bg`, `panel`, `panelHover`, `elevated`, `subtle`, `field`).
+
+- **Defaults are unchanged**: at the default config every status hex is byte-identical.
+- At a non-default `lightLevel`, `darkLevel` or `neutral` the status solids shift in lightness.
+- No opt-out is needed. A consumer that pins a status hex at a non-default config passes its own
+  colour and owns the contrast.
 
 ## 2.17.0 — the metric card and chrome
 
