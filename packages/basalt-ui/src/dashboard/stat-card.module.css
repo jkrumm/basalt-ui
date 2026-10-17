@@ -45,9 +45,19 @@
   flex: 1 1 0;
   flex-wrap: wrap;
   align-items: center;
+  /* Caption left, qualifier right; a qualifier that wraps is alone on its line, so it sits at the start. */
+  justify-content: space-between;
   column-gap: var(--vx-space-control-gap, 0.375rem);
   min-width: 0;
   min-height: calc(var(--vx-space-control-height-widget, 1.5rem) * var(--mantine-scale, 1));
+}
+
+/* Caption and info glyph travel together: the pair is the first item of the row. */
+.lead {
+  display: inline-flex;
+  align-items: center;
+  column-gap: var(--vx-space-control-gap, 0.375rem);
+  min-width: 0;
 }
 
 .caption {
@@ -76,11 +86,9 @@
 }
 
 .qualifier {
-  margin-inline-start: auto;
   font-family: var(--basalt-font-mono);
   font-size: var(--vx-text-micro);
   color: var(--vx-muted);
-  text-align: end;
   /* Wraps before it is ever cut: a qualifier too long for the row on its own line breaks its words. */
   overflow-wrap: anywhere;
   min-width: 0;
