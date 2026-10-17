@@ -1,6 +1,6 @@
 /** Meter's internal pieces: bar, ring, empty and loading. `meter.tsx` dispatches between them. */
 import { Skeleton, VisuallyHidden } from '@mantine/core'
-import { useId, useRef, useState } from 'react'
+import { useContext, useId, useRef, useState } from 'react'
 import type { CSSProperties, HTMLAttributes, ReactNode, RefObject } from 'react'
 import { useIsomorphicLayoutEffect } from '../common/isomorphic-layout-effect'
 import { cx } from '../common/props'
@@ -14,6 +14,7 @@ import {
 } from './meter-model'
 import type { MeterSegment, MeterTick, MeterZone, Part, TickMark, ZoneLabel } from './meter-model'
 import classes from './meter.module.css'
+import { VisualSlotContext } from './visual-slot'
 import { toPct } from './scale'
 
 export type Shell = {
@@ -383,7 +384,10 @@ export function MeterBar(props: {
   const describedId = useId()
   const model = modelBar(props)
   const compact = shell.row
-  const start = compact ? null : startCaptionText(model, props.startCaption)
+  // A host that already shows the value as its hero (StatCard, a strip cell) owns the reading: a
+  // zoned track keeps its marker and zone labels but does not print the number a second time.
+  const hosted = useContext(VisualSlotContext) && model.markerPct !== undefined
+  const start = compact || hosted ? null : startCaptionText(model, props.startCaption)
   const end = compact ? null : props.endCaption === undefined ? model.endText : props.endCaption
   const anchored = model.markerPct !== undefined && start !== null
   const hasCaptions =

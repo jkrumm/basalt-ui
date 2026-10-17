@@ -124,7 +124,11 @@ type ChartCardBaseProps = BasaltProps &
      * unsized chart takes — pass the chart's own `height` when it states one, so a `<Suspense
      * fallback={<ChartCard state={{ pending: true }} …/>}>` reserves the final size. */
     placeholderHeight?: number | ResponsiveChartHeight | undefined
-    /** A retry button or a "clear filters" link under the placeholder. */
+    /** An errored `state` shows the shared Retry button (the one `ErrorState` renders). */
+    onRetry?: (() => void) | undefined
+    /** A refetch is in flight: Retry is inert and marked busy. */
+    retrying?: boolean | undefined
+    /** Any other action under the placeholder, e.g. a "clear filters" link; after Retry. */
     stateAction?: ReactNode
     children?: ReactNode
   }
@@ -191,6 +195,8 @@ export function ChartCard({
   state,
   placeholderHeight,
   stateAction,
+  onRetry,
+  retrying,
   className,
   classNames,
   style,
@@ -240,6 +246,8 @@ export function ChartCard({
             <ChartPlaceholder
               state={state}
               {...(placeholderHeight !== undefined && { height: placeholderHeight })}
+              {...(onRetry !== undefined && { onRetry })}
+              {...(retrying !== undefined && { retrying })}
               action={stateAction}
             />
           )}

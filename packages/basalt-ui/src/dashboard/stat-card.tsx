@@ -112,6 +112,7 @@ import type { BasaltProps, SlotStylesProps, Tone } from '../common/props'
 import { ErrorState, QueryState, resolveQueryBranch } from './query-state'
 import type { QueryBranch, QueryStateLike } from './query-state'
 import classes from './stat-card.module.css'
+import { VisualSlotContext } from './visual-slot'
 
 /**
  * The boxes `StatCard` paints, and the whole styling seam it offers (`common/props.ts`).
@@ -448,7 +449,9 @@ export function StatCard({
       >
         {/* A measured slot renders nothing on the first commit (width 0) — an SVG at width 0 is a
             visible 0-width box that then jumps, which is worse than one frame of nothing. */}
-        {isRender ? measured.width > 0 && sparkline(measured) : sparkline}
+        <VisualSlotContext.Provider value>
+          {isRender ? measured.width > 0 && sparkline(measured) : sparkline}
+        </VisualSlotContext.Provider>
       </div>
     )
 

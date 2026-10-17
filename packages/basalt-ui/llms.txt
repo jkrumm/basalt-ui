@@ -370,6 +370,8 @@ Signature: ChartCard(props: ChartCardProps): ReactElement<unknown, string | JSXE
   actions?: ReactNode
   state?: ChartState
   placeholderHeight?: number | ResponsiveChartHeight
+  onRetry?: (() => void)
+  retrying?: boolean
   stateAction?: ReactNode
   children?: ReactNode
   facts: ChartFact | readonly ChartFact[]
