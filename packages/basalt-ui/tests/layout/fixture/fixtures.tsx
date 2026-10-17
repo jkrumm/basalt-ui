@@ -1340,11 +1340,25 @@ function DashFixture(): ReactElement {
           <StatCard title="Spend" value="€2,650" loading sparkline={visual} />
         </div>
       ))}
-      <div data-testid="dash-card-loading-meter-own" style={{ width: 360 }}>
+      <div data-testid="dash-card-slot-meter-loading" style={{ width: 360 }}>
         <StatCard
           title="Spend"
           value="€2,650"
           sparkline={<Meter label="Budget" value={1800} max={3000} loading />}
+        />
+      </div>
+      {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
+      <div data-testid="dash-card-loading-right" style={{ width: 360 }}>
+        <StatCard
+          title="Latency"
+          value="42"
+          loading
+          sparklinePlacement="right"
+          sparkline={<div />}
+          breakdown={[
+            { label: 'Peak', value: '88 ms' },
+            { label: 'Median', value: '31 ms' },
+          ]}
         />
       </div>
       {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}

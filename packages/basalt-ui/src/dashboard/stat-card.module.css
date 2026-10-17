@@ -392,7 +392,7 @@
     margin-inline: calc(-1 * var(--vx-space-card-inset-x, 1rem));
   }
 
-  .metricsRow .sparklineRight:has(> [data-basalt-meter]) {
+  .metricsRow .sparklineRight:has(> [data-basalt-meter], > .skeletonVisual) {
     margin-inline: 0;
   }
 }
