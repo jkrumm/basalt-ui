@@ -1126,26 +1126,56 @@ its rounds on these tools.
 - **Next:** owner review of the S4 baseline and calibration (`.design-parity/w31/`, local). Then the mother spawns
   Wave 32. Stopped here as briefed: not released, Wave 32 not spawned.
 
-## Wave 32 — Scales <!-- status: active -->
+## Wave 32 — Scales <!-- status: done -->
 
 Spec: SPEC § 5, § 11. Scenarios S4 and S1 (build the S1 fixture). Consumers are shot before and after when they
 upgrade (Waves 40–41); in-wave boards are the playground's.
 
-- [ ] The even-pixel spacing grid and the Mantine scale (xs 8, sm 12, md 16, lg 20, xl 24) through the derive
+- [x] The even-pixel spacing grid and the Mantine scale (xs 8, sm 12, md 16, lg 20, xl 24) through the derive
       constants; the `inline-spacing` guard's `DEFAULT_SPACING_STEPS` follows.
-- [ ] Card inset 12/16 (12 horizontal in a compact container), radius card 10 / control 6 / floating card + 1
+- [x] Card inset 12/16 (12 horizontal in a compact container), radius card 10 / control 6 / floating card + 1
       / inset = control, gutter 24 at expanded (trial, D7).
-- [ ] Type roles: row text `sm` 13/20, meta 12/16, hero 22/500 mono; the dense 28 tier on toolbars and filter
+- [x] Type roles: row text `sm` 13/20, meta 12/16, hero 22/500 mono; the dense 28 tier on toolbars and filter
       rows at fine pointers.
-- [ ] Re-baseline in the same PR: `src/tokens/density.test.ts`, `src/theme/spacing.test.ts`,
+- [x] Re-baseline in the same PR: `src/tokens/density.test.ts`, `src/theme/spacing.test.ts`,
       `src/theme/radius.test.ts`, `src/theme/density-relations.test.ts`; update every shipped rule and every
       DESIGN-CORE sentence that states a changed value (card padding, radii); a MIGRATING entry with the old → new table and the `density`/`radius` knob that restores the
       old feel. Layout-suite pins: card inset, card and control radius, table row 40 / header 36, toolbar in
       one row at 1440.
-- [ ] At least three rounds on S4 and S1; revert any target a round fails (the gutter first) and record it.
+- [x] At least three rounds on S4 and S1; revert any target a round fails (the gutter first) and record it.
       **Left behind:**
 
-## Wave 33 — The metric card and chart-in-card <!-- status: pending -->
+- **Landed** (PRs #327 S1 fixture, #328 scales). Both: agent-gateway review for two rounds, then scope frozen and
+  the lead read the last fix diff. `make check` green at both merges through `rd merge`. Nothing released.
+- **Scales at level 0** (MIGRATING § Unreleased has the old → new table and the partial restore): Mantine spacing
+  8/12/16/20/24 (one dependency-free home, `src/tokens/space-scale.ts`, read by the palette and the guard); card
+  inset 12/16, 12 horizontal below `sm`; radius card 10 / control 6 / floating 11; gutter 24 at the expanded class
+  (16 medium, 8 compact); type `sm` 13/20 for dense rows (table cells, nav, menu, footer, mobile nav), `xs` 12/16,
+  `kpi` 22/500; the internal dense 28 control tier (`--vx-space-control-height-dense`) on `PageBar`'s filter row
+  and the table toolbar at a fine pointer, emitted beside `coarseHitBlock` from one `CTL_HEIGHT_VARS` list; the axis
+  ink is the `faint` ink (≥ 4.5:1 on every text surface, both schemes; 117 measured failures → 0).
+- **Guards:** `inline-spacing`/`raw-spacing` default steps follow the scale (micro ceiling 10 → 7); `basalt/card-inset`
+  accepts only `py="sm" px="md"` together or neither. All three ship `warn` in 2.16 and promote to `error` at 2.17
+  (grace entries; deleting them is the promotion, in its own commit).
+- **`shot`** reports a fully rounded corner as `full` (zero-size boxes read 0), which removed the reviewer's false
+  Craft 1 on legend dots.
+- **Rounds** (`docs/waves/design-parity/w32/rounds.md`; boards in `.design-parity/w32/r0…r3`): r0 master, r1–r3 the
+  branch. By r3 no failed item is a Wave 32 item; every remaining failure is attributed to Waves 33–36 in the notes.
+  No target was reverted; D7's gutter trial passed (SPEC D20). Moves recorded in SPEC § 12: D17 (segmented-control
+  concentricity restated on the control radius), D18 (the compact inset steps on the viewport, not a container),
+  D19 (the guard grace), D20 (gutter kept).
+- **S1 fixture** (`apps/playground/src/scenarios/S1Ops.tsx`, `ops-data.ts`, shared `fixture-utils.ts`):
+  three stat cards, line state per hour (`BandStrip`), throughput against the contract, latency histogram, outages
+  table. `Meter` (Wave 34) and `EventList` (Wave 37) are left out and named in the header; `TRANSITIONS` is ready.
+- **For Wave 33:** the sparkline `StatCard` renders shorter than its row siblings (S1 latency-now, S4 month-to-date;
+  also on master); the delta glyph renders at 9.6 px (0.8 em of `xs`), off the ladder; date and bin ticks collide at
+  390 (row 137). **For Wave 36:** outages and top-drivers overflow 390 by their columns, not their row text.
+- **Budgets** raised by exactly what landed, itemised in `scripts/check-budgets.ts`: CLI 7073 → 7100 (`shot` radius
+  reading), embedded-provider gzip 55300 → 55391, theme-only 14570 → 14571.
+- **Next:** owner review of the Wave 32 boards (`.design-parity/w32/`, local). Stopped here as briefed: not
+  released, Wave 33 not spawned.
+
+## Wave 33 — The metric card and chart-in-card <!-- status: active -->
 
 Spec: SPEC § 6.1, § 6.2, § 6.10, § 6.12. Scenarios S4 and S1. Consumer before/after: Waves 40–41.
 
