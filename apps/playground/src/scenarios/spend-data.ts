@@ -161,6 +161,10 @@ export type DistributionBin = { from: number; label: string; days: number }
 
 const BIN_WIDTH_EUR = 10
 
+/** A spend bin as the band it covers: "€40–50". */
+export const spendBand = (bin: Pick<DistributionBin, 'from'>): string =>
+  `€${bin.from}–${bin.from + BIN_WIDTH_EUR}`
+
 /** Days by total spend, in €10 bins — the shape of a typical day and how heavy the tail is. */
 export const DISTRIBUTION: readonly DistributionBin[] = (() => {
   const totals = DAILY.map((d) => d.total)
@@ -170,13 +174,33 @@ export const DISTRIBUTION: readonly DistributionBin[] = (() => {
   for (let from = first; from <= last; from += BIN_WIDTH_EUR) {
     bins.push({
       from,
-      label: `€${from}`,
+      label: spendBand({ from }),
       days: totals.filter((t) => t >= from && t < from + BIN_WIDTH_EUR).length,
     })
   }
   return bins
 })()
 
-/** A spend bin as the band it covers: "€40–50". */
-export const spendBand = (bin: DistributionBin): string =>
-  `€${bin.from}–${bin.from + BIN_WIDTH_EUR}`
+export type CumulativeRow = {
+  date: Date
+  /** Month-to-date spend through this day; `null` after today. */
+  spent: number | null
+  /** The naive forecast, from today's actual to the month-end figure; `null` before today. */
+  forecast: number | null
+}
+
+/** Cumulative spend over the whole month: the actual line to today, the forecast line on from it. */
+export const CUMULATIVE: readonly CumulativeRow[] = (() => {
+  const monthStart = Date.UTC(YEAR, month, 1)
+  const perDay = MTD_EUR / DAYS_ELAPSED
+  let running = 0
+  return Array.from({ length: MONTH_DAYS }, (_, i) => {
+    const date = new Date(monthStart + i * DAY_MS)
+    const day = MTD_DAYS[i]
+    if (day) {
+      running += day.total
+      return { date, spent: running, forecast: i === DAYS_ELAPSED - 1 ? running : null }
+    }
+    return { date, spent: null, forecast: MTD_EUR + perDay * (i + 1 - DAYS_ELAPSED) }
+  })
+})()

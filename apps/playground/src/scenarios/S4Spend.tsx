@@ -12,19 +12,17 @@
  */
 import { Box, SimpleGrid, Stack } from '@mantine/core'
 import { BarList, DeltaBadge, Meter, PageBar, Section, StatCard, StatGroup } from 'basalt-ui'
-import { Bars, ChartCard, Sparkline } from 'basalt-ui/charts'
-import type { BarsBar } from 'basalt-ui/charts'
+import { Bars, ChartCard, Lines, Sparkline } from 'basalt-ui/charts'
+import type { BarsBar, ChartSeries } from 'basalt-ui/charts'
 import { CONTAINER_KEYS, VX } from 'basalt-ui/tokens'
 import { demoColors } from '../demo/series'
 import {
   BUDGET_EUR,
-  DAILY,
+  CUMULATIVE,
   DAYS_ELAPSED,
   DISTRIBUTION,
   DRIVERS,
   FORECAST_EUR,
-  MODEL_KEYS,
-  MODEL_LABEL,
   MONTH_DAYS,
   MONTH_LABEL,
   MONTH_NAME,
@@ -37,33 +35,48 @@ import {
   YEAR,
   spendBand,
 } from './spend-data'
-import type { DayRow, DistributionBin, ModelKey } from './spend-data'
+import type { CumulativeRow, DistributionBin } from './spend-data'
 import { RETRY_ACTION } from './retry-action'
 import { fmtEur, fmtShare, fmtSignedEur } from './fixture-utils'
 import { cardStateProps, chartStateFor, queryFor, retryCopy } from './shot-state'
 import type { ScenarioProps } from './shot-state'
 
-const MODEL_COLOR: Record<ModelKey, string> = {
-  large: demoColors.sessions,
-  mid: demoColors.signups,
-  small: demoColors.revenue,
-}
-
-const MODEL_BARS: BarsBar<DayRow>[] = MODEL_KEYS.map((key) => ({
-  key,
-  label: MODEL_LABEL[key],
-  color: MODEL_COLOR[key],
-  getValue: (d) => d[key],
-  formatValue: fmtEur,
-}))
+const CUMULATIVE_SERIES: ChartSeries<CumulativeRow>[] = [
+  {
+    key: 'spent',
+    label: 'Spent',
+    color: demoColors.sessions,
+    getValue: (d) => d.spent,
+    formatValue: fmtEur,
+    area: true,
+  },
+  {
+    key: 'forecast',
+    label: 'Forecast',
+    color: demoColors.sessions,
+    dash: 'dashed',
+    getValue: (d) => d.forecast,
+    formatValue: fmtEur,
+  },
+]
+const BUDGET_LINES = [
+  {
+    value: BUDGET_EUR,
+    color: VX.status.bad,
+    dashed: true,
+    legend: { label: `Budget ${fmtEur(BUDGET_EUR)}` },
+  },
+]
 
 const DISTRIBUTION_BARS: BarsBar<DistributionBin>[] = [
   { key: 'days', label: 'Days', color: VX.neutral, getValue: (d) => d.days },
 ]
 
 const PACE_EUR_PER_DAY = BUDGET_EUR / MONTH_DAYS
-const DAILY_DATA = [...DAILY]
+const CUMULATIVE_DATA = [...CUMULATIVE]
 const DISTRIBUTION_DATA = [...DISTRIBUTION]
+/** Every other band is named on the axis: a range label is wide, and the bars still carry the rest. */
+const DISTRIBUTION_TICKS = DISTRIBUTION.filter((_, i) => i % 2 === 0).map((b) => b.label)
 /** Spend by project: label, month-to-date EUR, share as the muted secondary. */
 const PROJECT_ITEMS = PROJECTS_MTD.map((p) => ({
   key: p.key,
@@ -89,9 +102,6 @@ const TRACK_HEADROOM = 1.1
 const TRACK_STEP_EUR = 100
 const TRACK_END_EUR =
   Math.ceil((Math.max(BUDGET_EUR, FORECAST_EUR) * TRACK_HEADROOM) / TRACK_STEP_EUR) * TRACK_STEP_EUR
-const PACE_LINES = [
-  { value: PACE_EUR_PER_DAY, color: VX.faint, dashed: true, legend: { label: 'Budget pace' } },
-]
 
 /** Body height of the error placeholder for the BarList cards, so a failed card stays near its resting size. */
 const PROJECT_PLACEHOLDER = 190
@@ -207,22 +217,22 @@ function SpendCharts({ shotState }: ScenarioProps) {
     <SimpleGrid type="container" cols={{ base: 1, [CONTAINER_KEYS.regular]: 2 }}>
       <Box data-shot="spend-over-time" h="100%">
         <ChartCard
-          title="Spend by model, last 90 days (€ a day)"
-          info="Stacked daily spend per model. The dashed line is the daily pace that lands exactly on the monthly budget."
+          title={`Cumulative spend, ${MONTH_LABEL} (€)`}
+          info={`Month-to-date spend per day against the ${fmtEur(BUDGET_EUR)} budget. The dashed line holds the ${fmtEur(MTD_EUR / DAYS_ELAPSED)} daily average flat to the last day.`}
           state={chartStateFor(shotState, {
-            empty: 'No spend in the last 90 days. Connect a project to the usage export.',
-            error: retry('Daily spend'),
+            empty: 'No spend this month. Connect a project to the usage export.',
+            error: retry('Cumulative spend'),
           })}
           {...(shotState === 'error' && { stateAction: RETRY_ACTION })}
         >
           <Box data-shot-hover data-shot-tooltip>
-            <Bars
-              data={DAILY_DATA}
-              ariaLabel="Daily spend by model, last 90 days, EUR"
+            <Lines<CumulativeRow, Date>
+              data={CUMULATIVE_DATA}
+              ariaLabel={`Cumulative spend, ${MONTH_LABEL}, EUR, against the ${fmtEur(BUDGET_EUR)} budget`}
               x={(d) => d.date}
-              y={{ format: fmtEur }}
-              bars={MODEL_BARS}
-              refLines={PACE_LINES}
+              y={{ format: fmtEur, domain: [0, TRACK_END_EUR] }}
+              series={CUMULATIVE_SERIES}
+              refLines={BUDGET_LINES}
             />
           </Box>
         </ChartCard>
@@ -278,8 +288,8 @@ function SpendDrivers({ shotState }: ScenarioProps) {
       </Box>
       <Box data-shot="spend-distribution" h="100%">
         <ChartCard
-          title="Days by total spend, last 90 days"
-          info="How many of the last 90 days landed in each €10 band of total daily spend."
+          title="Days by total spend per day, last 90 days"
+          info="Each bar counts the days whose total spend across all projects landed in that €10 band (€ a day)."
           state={chartStateFor(shotState, {
             empty: 'No days to bin yet. The histogram needs at least one day of spend.',
             error: retry('The distribution'),
@@ -291,6 +301,7 @@ function SpendDrivers({ shotState }: ScenarioProps) {
               data={DISTRIBUTION_DATA}
               ariaLabel="Days by total daily spend, €10 bands, last 90 days"
               x={(d) => d.label}
+              xTicks={DISTRIBUTION_TICKS}
               bars={DISTRIBUTION_BARS}
               tooltip={{ formatHeader: (_, d) => spendBand(d) }}
             />
