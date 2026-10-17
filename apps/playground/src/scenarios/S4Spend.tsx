@@ -84,7 +84,6 @@ const BUDGET_LINES = [
     color: FORECAST_EUR > BUDGET_EUR ? VX.status.bad : VX.faint,
     dashed: true,
     label: `Budget ${fmtEur(BUDGET_EUR)}`,
-    legend: { label: `Budget ${fmtEur(BUDGET_EUR)}` },
   },
 ]
 
