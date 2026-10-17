@@ -107,6 +107,10 @@ export const FLEET_TOTAL = ITEMS.length
 
 /** Failed agent runs in the last 24 h, and in the 24 h before. */
 export const FAILURES_24H = { count: 3, prior: 1 }
+/** Failed runs per hour over the last 24 h, oldest first; sums to `FAILURES_24H.count`. */
+export const FAILURES_BY_HOUR: readonly number[] = [
+  0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0,
+]
 
 /** Dispatch spend per day in EUR, 14 days, oldest first; the last entry is today so far. */
 export const DISPATCH_DAILY: readonly number[] = [

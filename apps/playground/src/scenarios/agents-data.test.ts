@@ -8,6 +8,7 @@ import {
   DISPATCH_COMPLETE_DAYS,
   DISPATCH_DAILY,
   FAILURES_24H,
+  FAILURES_BY_HOUR,
   FLEET,
   FLEET_TOTAL,
   FLOW,
@@ -76,5 +77,11 @@ describe('agents-data', () => {
     expect(fmtAge(5)).toBe('5 h')
     expect(fmtAge(26)).toBe('1 d 2 h')
     expect(fmtAge(48)).toBe('2 d')
+  })
+
+  it('failures by hour covers 24 hours and sums to the failure count', () => {
+    expect(FAILURES_BY_HOUR).toHaveLength(24)
+    expect(sum(FAILURES_BY_HOUR)).toBe(FAILURES_24H.count)
+    expect(FAILURES_BY_HOUR.every((n) => Number.isInteger(n) && n >= 0)).toBe(true)
   })
 })

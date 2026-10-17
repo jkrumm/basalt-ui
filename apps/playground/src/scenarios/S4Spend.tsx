@@ -83,6 +83,7 @@ const BUDGET_LINES = [
     // A verdict colour only when the forecast lands past the cap, like the Budget Meter.
     color: FORECAST_EUR > BUDGET_EUR ? VX.status.bad : VX.faint,
     dashed: true,
+    label: `Budget ${fmtEur(BUDGET_EUR)}`,
     legend: { label: `Budget ${fmtEur(BUDGET_EUR)}` },
   },
 ]
@@ -309,8 +310,12 @@ function SpendCharts({ shotState }: ScenarioProps) {
 function SpendDrivers({ shotState }: ScenarioProps) {
   const query = queryFor(shotState, retry('Top drivers'))
   return (
-    <SimpleGrid type="container" cols={{ base: 1, [CONTAINER_KEYS.regular]: 2 }}>
-      <Box data-shot="top-drivers" h="100%">
+    <SimpleGrid
+      type="container"
+      cols={{ base: 1, [CONTAINER_KEYS.regular]: 2 }}
+      style={{ alignItems: 'start' }}
+    >
+      <Box data-shot="top-drivers">
         <Section
           title={`Top drivers, ${WINDOW_LABEL} vs ${PRIOR_WINDOW_LABEL}`}
           {...(query !== undefined && shotState === 'error' && { query })}
@@ -330,7 +335,7 @@ function SpendDrivers({ shotState }: ScenarioProps) {
           </Box>
         </Section>
       </Box>
-      <Box data-shot="spend-distribution" h="100%">
+      <Box data-shot="spend-distribution">
         <ChartCard
           title="Days by total spend per day"
           facts={{ value: fmtEur(MEDIAN_DAY_EUR), unit: 'a day', period: 'median, last 90 days' }}
