@@ -225,20 +225,25 @@ describe('basalt/raw-size-literal', () => {
 // ── card-inset ───────────────────────────────────────────────────────────────
 
 describe('basalt/card-inset', () => {
-  it('flags an off-idiom padding value on Card', () => {
-    const { code, rules } = run(`export const C = () => <Card p="lg" />\n`)
+  it.each([
+    ['uniform p="lg"', '<Card p="lg" />'],
+    ['uniform p="md"', '<Card p="md" />'],
+    ['uniform padding={12}', '<Card padding={12} />'],
+    ['py="md"', '<Paper py="md" px="md" />'],
+    ['px="xs"', '<Paper py="sm" px="xs" />'],
+    ['the old xs/sm pair', '<Paper py="xs" px="sm" />'],
+    ['an explicit radius', '<Card radius="md" />'],
+  ])('flags %s', (_name, jsx) => {
+    const { code, rules } = run(`export const C = () => ${jsx}\n`)
     expect(code).toBe(1)
     expect(rules).toContain('card-inset')
   })
 
-  it('does NOT flag the older xs/sm inset pair on Paper (accepted through the upgrade)', () => {
-    const { code, rules } = run(`export const C = () => <Paper py="xs" px="sm" />\n`)
-    expect(code).toBe(0)
-    expect(rules).not.toContain('card-inset')
-  })
-
-  it('does NOT flag the sm/md inset idiom on Paper', () => {
-    const { code, rules } = run(`export const C = () => <Paper py="sm" px="md" />\n`)
+  it.each([
+    ['the sm/md pair', '<Paper py="sm" px="md" />'],
+    ['no padding at all', '<Card />'],
+  ])('does NOT flag %s', (_name, jsx) => {
+    const { code, rules } = run(`export const C = () => ${jsx}\n`)
     expect(code).toBe(0)
     expect(rules).not.toContain('card-inset')
   })
