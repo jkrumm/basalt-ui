@@ -312,6 +312,26 @@ function stampTooltipRole(container: Element): void {
 }
 
 /**
+ * Decorates a tooltip host so every `paint` is followed by {@link stampTooltipRole}. The one
+ * stamping seam: `quietWhileFollowing` and any chart that wires the engine host directly (Donut).
+ */
+export function withTooltipRole(extension: ChartTooltipExtension): ChartTooltipExtension {
+  return {
+    ...extension,
+    create: (context) => {
+      const host = extension.create(context)
+      return {
+        ...host,
+        paint: (paint) => {
+          host.paint(paint)
+          stampTooltipRole(context.container)
+        },
+      }
+    },
+  }
+}
+
+/**
  * The engine's DOM tooltip host, silent while this chart FOLLOWS another's cursor. A follower
  * resolves the leader's focus group (so the engine draws the same dots at the shared x); the host
  * would then paint a tooltip and fill its live region. Whenever `isForeign` holds,

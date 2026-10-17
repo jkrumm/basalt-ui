@@ -35,7 +35,7 @@ async function hover(el: HTMLElement, x: number, y: number): Promise<string> {
     svg.dispatchEvent(new PointerEvent('pointermove', { clientX: x, clientY: y, bubbles: true }))
     await new Promise((r) => setTimeout(r, 30))
   })
-  return document.querySelector('[role="status"]')?.textContent ?? ''
+  return document.querySelector('.ts-chart-tooltip')?.textContent ?? ''
 }
 
 const arcs = (el: HTMLElement): Element[] => [...el.querySelectorAll('.ts-chart__arc path')]
@@ -146,6 +146,7 @@ describe('Donut', () => {
     expect(tip).toContain('A')
     expect(tip).toContain('$30')
     expect(tip).toContain('75%')
+    expect(document.querySelector('.ts-chart-tooltip')?.getAttribute('role')).toBe('tooltip')
   })
 
   test('data=[] without a state draws an empty ring, no slices and no legend', async () => {
