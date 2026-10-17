@@ -13,7 +13,7 @@
 import { Box, SimpleGrid, Stack } from '@mantine/core'
 import { BarList, DeltaBadge, Meter, PageBar, Section, StatCard, StatGroup } from 'basalt-ui'
 import { Bars, ChartCard, Lines, Sparkline } from 'basalt-ui/charts'
-import type { BarsBar, ChartSeries } from 'basalt-ui/charts'
+import type { BarsBar, ChartSeries, ChartTooltipRow } from 'basalt-ui/charts'
 import { CONTAINER_KEYS, VX } from 'basalt-ui/tokens'
 import { demoColors } from '../demo/series'
 import {
@@ -57,12 +57,27 @@ const CUMULATIVE_SERIES: ChartSeries<CumulativeRow>[] = [
     dash: 'dashed',
     getValue: (d) => d.forecast,
     formatValue: fmtEur,
+    // On today the forecast joins the actual line and would repeat its tooltip row; the row below
+    // lists the forecast for the days after today only.
+    tooltip: false,
   },
 ]
+const forecastRow = (d: CumulativeRow): ChartTooltipRow[] =>
+  d.spent === null && d.forecast !== null
+    ? [
+        {
+          label: 'Forecast',
+          value: fmtEur(d.forecast),
+          color: demoColors.sessions,
+          swatch: 'dashed',
+        },
+      ]
+    : []
 const BUDGET_LINES = [
   {
     value: BUDGET_EUR,
-    color: VX.status.bad,
+    // A verdict colour only when the forecast lands past the cap, like the Budget Meter.
+    color: FORECAST_EUR > BUDGET_EUR ? VX.status.bad : VX.faint,
     dashed: true,
     legend: { label: `Budget ${fmtEur(BUDGET_EUR)}` },
   },
@@ -233,6 +248,7 @@ function SpendCharts({ shotState }: ScenarioProps) {
               y={{ format: fmtEur, domain: [0, TRACK_END_EUR] }}
               series={CUMULATIVE_SERIES}
               refLines={BUDGET_LINES}
+              tooltip={{ rows: forecastRow }}
             />
           </Box>
         </ChartCard>
