@@ -417,7 +417,7 @@ export function StatCard({
         // body is `height: 100%` and the sparkline is `margin-top: auto`. The content is what states
         // the height now (~88-96px), and four cards in a `SimpleGrid` still match because a grid row
         // stretches its items.
-        padding: 'var(--vx-space-card-inset-y) var(--vx-space-card-inset-x)',
+        padding: 'var(--vx-space-card-inset-y, 0.75rem) var(--vx-space-card-inset-x, 1rem)',
         overflow: 'hidden',
         // Anchors the tone rail. Set unconditionally so a card's stacking context does not change
         // depending on whether it happens to have crossed a threshold this render.
