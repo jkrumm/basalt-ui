@@ -261,6 +261,19 @@
   cursor: help;
 }
 
+/* The keyboard ring hugs the 11px glyph, not the 24px hit box: drawn on the box it reached 6.5px
+ * past the glyph and painted over the title's last letter and a neighbouring status dot. 2px
+ * width + 2px offset stays inside the 6px control gap that separates the glyph from its neighbours. */
+.infoTrigger:focus-visible {
+  outline: none;
+}
+
+.infoTrigger:focus-visible > svg {
+  outline: 2px solid var(--vx-accent);
+  outline-offset: 2px;
+  border-radius: var(--vx-radius-fine);
+}
+
 .infoTrigger:hover,
 .infoTrigger:focus-visible,
 .infoTrigger[data-open='true'] {
