@@ -1090,16 +1090,23 @@ bare "Over".
 Two other shipped status edges went the same way, each visible without any prop change:
 
 - **`Callout`** loses its 2 px coloured left border. The tint, icon and title still carry the kind's
-  colour (`info` / `good` / `warn` / `bad`); a consumer's CSS that restyled the border has nothing to
-  target.
+  colour (`info` / `good` / `warn` / `bad`), and a visually hidden kind word ("Info", "Success",
+  "Warning", "Error") means a title-less callout is never tint-only. A consumer's CSS that restyled
+  the border has nothing to target.
 - **Notification-centre rows** (`NotificationCenter`) lose their 3 px coloured leading border and show
-  a 6 px status dot before the title instead (success / error / warning / info), with the intent as a
-  visually hidden word ("Success", "Error", "Warning", "Info") beside it.
+  a 6 px status dot plus the intent as a visible muted word ("Success", "Error", "Warning", "Info")
+  before the title, or before the message on an untitled row. The `info` dot is neutral ink, not the
+  accent.
 
 `tone?: 'good' | 'warn' | 'bad'` keeps its API, and omitting it still renders neither dot nor word.
 There is no opt-out: a coloured edge for status is retired (owner decision). A consumer's own
 `[data-tone]` CSS that targeted the rail element should target the card (`[data-tone]` stays on the
-root) or drop the rule. The shipped reviewer now fails a status drawn as a coloured edge stripe.
+root) or drop the rule.
+
+The shipped `basalt-design-reviewer` now fails a status drawn as a coloured edge stripe (Craft 4,
+Expression 3), so boards that passed before this release can fail now: re-score them. The verdict
+words (`OK`, `Watch`, `Over`, and the phrases screen readers hear) are fixed English; for i18n, omit
+`tone` and render your own dot and word.
 
 ## 2.17.0 — the metric card and chrome
 

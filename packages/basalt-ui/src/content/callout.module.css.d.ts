@@ -12,5 +12,6 @@ declare const classes: {
   readonly icon: string
   readonly title: string
   readonly body: string
+  readonly kindWord: string
 }
 export default classes

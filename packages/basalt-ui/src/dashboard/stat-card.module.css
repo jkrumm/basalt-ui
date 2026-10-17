@@ -94,19 +94,6 @@
   min-width: 0;
 }
 
-/* The tone verdict: a `StatusDot` plus a short word, after the caption and info glyph. The dot
- * carries the colour; the word is muted ink, so the verdict reads in shape and text, not colour
- * alone. `flex: none` keeps it whole when a long caption truncates. */
-.verdict {
-  display: inline-flex;
-  flex: none;
-  align-items: center;
-  gap: 5px;
-  font-family: var(--basalt-font-mono);
-  font-size: var(--vx-text-micro);
-  color: var(--vx-muted);
-}
-
 /* Law C15: the shared hit overlay; `--vx-hit-gap` caps the expansion at the control gap. */
 .actions {
   --vx-hit-gap: var(--vx-space-control-gap);
@@ -334,7 +321,8 @@
  * A row past a threshold. Same vocabulary and the same per-scheme solids as the card's own tone dot
  * (`VX.status[tone]`), so a row saying `bad` and a dot saying `bad` are one claim at two scales.
  * Colour is not the only carrier at the CARD level (the dot ships a word); at
- * the ROW level the label is the carrier — a row reading `Paid · 1,204` states its own subject either way, and the tint only ranks it.
+ * the ROW level the label is the carrier — a row reading `Paid · 1,204` states its own subject
+ * either way, and the tint only ranks it.
  */
 .breakdownRow[data-tone='good'] .breakdownValue {
   color: var(--vx-status-good);

@@ -1,0 +1,23 @@
+/* A status dot plus its word: the dot carries the colour, the word is muted ink. `flex: none` keeps
+ * it whole when a neighbouring caption or title truncates. */
+.verdict {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--basalt-font-mono);
+  font-size: var(--vx-text-micro);
+  color: var(--vx-muted);
+}
+
+/* Visually hidden, still read by assistive tech. */
+.hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

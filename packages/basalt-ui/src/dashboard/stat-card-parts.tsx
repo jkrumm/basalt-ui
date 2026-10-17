@@ -3,11 +3,11 @@
  * skeletons that hold their footprint while a reading is pending. Split out so `stat-card.tsx`
  * orchestrates (which branch, which placement) and these draw. Internal: not exported from any barrel.
  */
-import { Skeleton, VisuallyHidden } from '@mantine/core'
+import { Skeleton } from '@mantine/core'
 import type { CSSProperties, ReactNode } from 'react'
 import { IconSlot } from '../theme/icon-slot'
 import { CtlSlot } from '../theme'
-import { StatusDot } from '../theme/status-dot'
+import { StatusVerdict } from '../theme/status-verdict'
 import { VX } from '../tokens'
 import type { Tone } from '../common/props'
 import { InfoGlyph } from './widget-header'
@@ -45,14 +45,12 @@ export function CaptionRow({ title, icon, info, qualifier, tone, actions }: Capt
           </h3>
           {/* OUTSIDE the heading on purpose: `info` would otherwise become part of its name. */}
           {info !== undefined && <InfoGlyph text={info} />}
-          {/* The dot carries the colour (`VX.status[tone]`, per scheme); the word is muted ink and
-              carries the meaning. The visible word is hidden from AT in favour of the full phrase. */}
           {tone !== undefined && (
-            <span className={classes.verdict} data-verdict={tone}>
-              <StatusDot color={VX.status[tone]} />
-              <span aria-hidden="true">{TONE_WORD[tone].word}</span>
-              <VisuallyHidden>{TONE_WORD[tone].phrase}</VisuallyHidden>
-            </span>
+            <StatusVerdict
+              color={VX.status[tone]}
+              word={TONE_WORD[tone].word}
+              phrase={TONE_WORD[tone].phrase}
+            />
           )}
         </div>
         {qualifier !== undefined && <span className={classes.qualifier}>{qualifier}</span>}

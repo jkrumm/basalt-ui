@@ -25,12 +25,28 @@ describe('className and style reach the root', () => {
     const { container } = render(<Callout>body</Callout>)
     const root = container.firstElementChild as HTMLElement
     expect(root.getAttribute('style')).toBeNull()
-    expect(root.textContent).toBe('body')
+    expect(root.textContent).toBe('Infobody')
   })
 
   test('the title row renders only with a title — the body always does', () => {
     const { container } = render(<Callout icon={<span data-testid="glyph">!</span>}>body</Callout>)
     expect(screen.queryByTestId('glyph')).toBeNull()
-    expect(container.textContent).toBe('body')
+    expect(container.textContent).toBe('Infobody')
   })
+})
+
+describe('a title-less callout still names its kind, so it is never tint-only', () => {
+  const KINDS = [
+    ['info', 'Info'],
+    ['good', 'Success'],
+    ['warn', 'Warning'],
+    ['bad', 'Error'],
+  ] as const
+
+  for (const [kind, word] of KINDS) {
+    test(kind, () => {
+      const { container } = render(<Callout kind={kind}>body</Callout>)
+      expect(container.querySelector('[data-callout-kind-word]')?.textContent).toBe(word)
+    })
+  }
 })

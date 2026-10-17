@@ -7,7 +7,7 @@
  */
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render } from '@testing-library/react'
-import { describe, expect, test } from 'bun:test'
+import { afterEach, describe, expect, test } from 'bun:test'
 import { NotificationCenter } from './center'
 import { add, clear } from './store'
 
@@ -35,7 +35,9 @@ describe('NotificationCenter width (M4)', () => {
   })
 })
 
-describe('NotificationCenter rows state the intent as a word, not colour alone', () => {
+afterEach(clear)
+
+describe('NotificationCenter rows state the intent as a visible word, not colour alone', () => {
   const INTENTS = [
     ['success', 'Success'],
     ['error', 'Error'],
@@ -43,16 +45,43 @@ describe('NotificationCenter rows state the intent as a word, not colour alone',
     ['info', 'Info'],
   ] as const
 
+  function open(intent: (typeof INTENTS)[number][0], title?: string) {
+    add({
+      id: `intent-${intent}`,
+      intent,
+      message: 'M',
+      createdAt: Date.now(),
+      ...(title !== undefined && { title }),
+    })
+    const view = renderCenter()
+    // Only error/warning rows reach the Inbox; the All view lists every intent.
+    fireEvent.click(view.getByText('All'))
+    return view
+  }
+
   for (const [intent, word] of INTENTS) {
-    test(`${intent} → "${word}", beside a status dot, with no leading border`, () => {
-      add({ id: `intent-${intent}`, intent, title: 'T', message: 'M', createdAt: Date.now() })
-      const { container, getByText } = renderCenter()
-      // Only error/warning rows reach the Inbox; the All view lists every intent.
-      fireEvent.click(getByText('All'))
-      expect(getByText(word)).toBeTruthy()
-      expect(container.querySelector('[data-basalt-status-dot]')).not.toBeNull()
+    test(`${intent} → "${word}" beside an aria-hidden status dot, no leading border`, () => {
+      const { container } = open(intent, 'T')
+      const wordEl = container.querySelector('[data-verdict-word]')
+      expect(wordEl?.textContent).toBe(word)
+      expect(wordEl?.getAttribute('aria-hidden')).toBeNull()
+      const dot = container.querySelector('[data-basalt-status-dot]')
+      expect(dot?.getAttribute('aria-hidden')).toBe('true')
       expect(container.innerHTML).not.toContain('border-inline-start')
-      clear()
     })
   }
+
+  test('an untitled row keeps the dot and word inline with the message', () => {
+    const { container, getByText } = open('error')
+    const word = container.querySelector('[data-verdict-word]')
+    expect(word?.textContent).toBe('Error')
+    expect(word?.closest('[class*="Group"]')?.contains(getByText('M'))).toBe(true)
+  })
+
+  test('the info dot is neutral ink, not the accent', () => {
+    const { container } = open('info', 'T')
+    const style = container.querySelector('[data-basalt-status-dot]')?.getAttribute('style')
+    expect(style).toContain('var(--vx-muted)')
+    expect(style).not.toContain('accent')
+  })
 })

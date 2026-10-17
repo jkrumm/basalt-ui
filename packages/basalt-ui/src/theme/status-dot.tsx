@@ -1,7 +1,7 @@
 /**
  * `StatusDot` — the one status mark: a 6px round dot that carries a colour and nothing else. It is
- * decoration (`aria-hidden`); the meaning always travels as a word beside it, so a verdict is never
- * colour alone. INTERNAL: not on any barrel; `StatCard` and the notification centre compose it.
+ * decoration (`aria-hidden`); the meaning always travels as a word beside it (`StatusVerdict`), so a
+ * verdict is never colour alone. INTERNAL: not on any barrel.
  */
 import type { CSSProperties } from 'react'
 import classes from './status-dot.module.css'
@@ -11,14 +11,9 @@ export type StatusDotProps = {
   color: string
 }
 
+type DotStyle = CSSProperties & { '--basalt-status-dot': string }
+
 export function StatusDot({ color }: StatusDotProps) {
-  return (
-    // theme-allow hidden-inline-style — the colour is the one dynamic value; geometry is the CSS module's
-    <span
-      className={classes.dot}
-      data-basalt-status-dot=""
-      aria-hidden="true"
-      style={{ '--basalt-status-dot': color } as CSSProperties}
-    />
-  )
+  const style: DotStyle = { '--basalt-status-dot': color }
+  return <span className={classes.dot} data-basalt-status-dot="" aria-hidden="true" style={style} />
 }
