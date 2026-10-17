@@ -57,6 +57,7 @@ export const COMMAND_OPTIONS: Record<
     wait: { type: 'string' },
     'auto-anchors': { type: 'boolean' },
     'api-allow-writes': { type: 'boolean' },
+    lint: { type: 'string' },
   },
 }
 
@@ -81,7 +82,7 @@ export const USAGE =
   '                  sync [--force] [--check] [--verbose] [--tokens-only|--framework] |\n' +
   '                  check-theme [--audit-allows] |\n' +
   '                  doctor [--tokens-only|--framework] | guard-hook | tokens:css | fonts:css |\n' +
-  '                  shot <route…> | help>\n\n' +
+  '                  shot <route…> | shot detect | help>\n\n' +
   'check-theme [--tokens-only|--framework] [--audit-allows]\n' +
   '  --audit-allows reports instead of scanning: every `theme-allow` annotation and every\n' +
   '  `basalt.exemptRules` entry, with what each one still suppresses — proved by re-running the\n' +
@@ -113,6 +114,21 @@ export const USAGE =
   "  app holds other people's data. Example:\n" +
   '    basalt-ui shot /overview --dist dist --api /api=https://app.example.com \\\n' +
   '      --local-storage auth-token=@env:APP_TOKEN --header authorization=@env:APP_BEARER --auto-anchors\n\n' +
+  'shot detect [--out <dir>] [--lint <oxlint-json-file>]\n' +
+  '  The deterministic second review pass, no browser and no model: reads <out>/metrics.json (default: the\n' +
+  '  out dir in .basalt/shots/last.json) and, with --lint, the basalt/* diagnostics of `oxlint --format json`\n' +
+  '  output saved to a file. Writes <out>/detect.json and a findings table, content, then layout, then style:\n' +
+  '  off-scale inset/gap/radius, nested radius step under 3 px, more than 3 font sizes, an empty region of\n' +
+  '  40 % or more, contrast failures, error shots, a missing scale or no anchors.\n' +
+  '  Exit codes: 0 clean, 2 findings, 1 scan failure (missing or unreadable metrics.json or lint file).\n' +
+  '    P0  broken, unreadable or a contrast failure; an error shot; no anchors\n' +
+  '    P1  a rubric item fails (off-scale value, font sizes, empty region, nested radius, lint error)\n' +
+  '    P2  degraded: a lint warning, a contrast measured on an assumed white backdrop\n' +
+  '    P3  polish: an off-scale value within 1 px of a step\n' +
+  '  score = 100 - (25 per P0 + 10 per P1 + 3 per P2 + 1 per P3), floored at 0. Each run appends\n' +
+  '  {at, out, commit, counts, score} to .basalt/shots/history.json and prints the last 5 scores as a trend.\n' +
+  '  A component can declare a rest anchor absent in a URL state with data-shot-absent="empty error": that\n' +
+  '  cell is recorded `absent`, not `error`.\n\n' +
   'doctor [--tokens-only|--framework]\n' +
   '  Checks THIS project only: the manifest exists, the oxlint preset is wired, the pre-commit\n' +
   '  hook runs check-theme (via `lefthook dump`), and the ai package major is consistent within\n' +
