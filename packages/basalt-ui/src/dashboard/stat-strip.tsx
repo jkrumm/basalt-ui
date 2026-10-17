@@ -85,13 +85,16 @@ function StripCell({ cell }: { cell: StatStripCell }) {
       {...(cell.stale && { 'data-stale': 'true' })}
     >
       <div className={classes.captionLine}>
-        <span className={classes.caption} id={captionId} data-strip-caption>
-          {cell.caption}
+        {/* The caption and its info glyph are one unit: the qualifier wraps whole, never between them. */}
+        <span className={classes.lead}>
+          <span className={classes.caption} id={captionId} title={cell.caption} data-strip-caption>
+            {cell.caption}
+          </span>
+          {cell.info !== undefined && <InfoGlyph text={cell.info} />}
         </span>
         {cell.qualifier !== undefined && (
-          <span className={classes.qualifier}>· {cell.qualifier}</span>
+          <span className={classes.qualifier}>{cell.qualifier}</span>
         )}
-        {cell.info !== undefined && <InfoGlyph text={cell.info} />}
       </div>
       {hasHero &&
         (loading ? (

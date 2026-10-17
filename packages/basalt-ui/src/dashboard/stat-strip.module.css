@@ -65,8 +65,21 @@
   min-width: 0;
 }
 
+/* Caption and info glyph are one unit: the caption truncates, the glyph never leaves its line. */
+.lead {
+  display: inline-flex;
+  align-items: center;
+  column-gap: var(--vx-space-control-gap);
+  min-width: 0;
+  max-width: 100%;
+}
+
 .caption {
   margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-family: var(--basalt-font-mono);
   font-size: var(--vx-text-micro);
   font-weight: 500;
@@ -75,8 +88,9 @@
   color: var(--vx-faint);
 }
 
+/* The lowercase qualifier is the muted sans (mono is for the UPPERCASE caption only). It is one flex
+ * item, so when it does not fit beside the caption it wraps WHOLE onto its own line below. */
 .qualifier {
-  font-family: var(--basalt-font-mono);
   font-size: var(--vx-text-micro);
   color: var(--vx-muted);
   overflow-wrap: anywhere;
