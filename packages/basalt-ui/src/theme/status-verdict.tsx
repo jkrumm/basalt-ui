@@ -6,10 +6,12 @@
  * @example
  * <StatusVerdict color={VX.status.error} word="Over" phrase="Over budget" />
  */
+import { cx } from '../common/props'
+import type { BasaltProps } from '../common/props'
 import { StatusDot } from './status-dot'
 import classes from './status-verdict.module.css'
 
-export type StatusVerdictProps = {
+export type StatusVerdictProps = BasaltProps & {
   color: string
   /** The short visible word ("Over", "Error"). */
   word: string
@@ -17,9 +19,9 @@ export type StatusVerdictProps = {
   phrase?: string
 }
 
-export function StatusVerdict({ color, word, phrase }: StatusVerdictProps) {
+export function StatusVerdict({ color, word, phrase, className, style }: StatusVerdictProps) {
   return (
-    <span className={classes.verdict}>
+    <span className={cx(classes.verdict, className)} {...(style !== undefined && { style })}>
       <StatusDot color={color} />
       <span data-verdict-word="" {...(phrase !== undefined && { 'aria-hidden': true })}>
         {word}
