@@ -70,11 +70,11 @@ consumer read this index, found nothing, and diffed a KPI row that had silently 
 | ----------------------------- | ------------------------------------------------------------ | -------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | --------------------------------------------------------------------- | ------ | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | ---------------------------------- | ------ | ------ | -------------------------------------------------------------------------------------------- | ------ | ------ | ------ | ------ | ------ | ----------------------------------------------- | ------ | ------ | ------ | ------ | ------------------------------------------------------------ | ---------- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | **tokens** (`./tokens`) | — | `--vx-divider` → `rgba()` on both schemes (§ Shell) | `--vx-space-touch-target` added (§ Additions) | eight spacing numbers (§ Chrome) | — | — | `--vx-hit` replaces the touch vars; `SIZE_CLASSES` (§ 1.31.0) | — | `SIZE_CLASSES`/`CONTAINER_CLASSES` actually exported (§ Fixes) | `CONTAINER_GRID_BREAKPOINTS`; `raw-breakpoint` trusts it (§ 1.33.0) | `CONTAINER_KEYS` (§ 1.34.0) | — | — | — | — | — | — | — | | `appShellInset` 20 → 16 (§ 1.38.1) | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | § 1.x compatibility layer removed | — | — | — | — | — | — | — | — | — | — | — | spacing, radius, type and the dense tier (§ 2.16.0) | — | — | — |
 | **charts** (`./charts`) | — | phone tier, `curve`, formatters, `state`, log axis (§ preamble) | `ChartState.empty: string`, `AxisBottomNumeric` (§ Additions) | responsive `height`, `legend.maxRows` (§ Charts) | `height` reaches the kinds; `maxRows` beats the `fill` fit (§ Charts) | — | container-class tier + `height` keys (§ 1.31.0) | — | `ResponsiveChartHeight` `sm` → key (§ Container recipes) | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | `BandSpan.absentFraction` + `absentState` (§ 2.8.0) | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — |
-| **shell** (`.`) | — | scrollport, region seams, **the brand left the sidebar** (§§ scrollport, brand, Shell) | `PageTitle`, `BasaltDevDock`, `useBreakpoint` (§ Additions) | More popover, aside pill, the responsive gutter, `useBasaltSpacing` (§ Chrome) | — | — | `theme.breakpoints` derived, `useSizeClass`, `data-basalt-host`, `useBreakpoint` on notice (§ 1.31.0) | `useBreakpoint` removal → 1.33.0; `useSizeClass` is shell-only (§ 1.32.0) | shell-less `shell/` gutter, `AppShell` breakpoints, `useSizeClass` for overlays (§§ Shell-less, `useSizeClass`) | — | `useBreakpoint` removed (§ 1.34.0) | — | — | `useCoarsePointer()` (§ `useCoarsePointer()`) | — | — | — | — | | content gutter 16, block 8 from `sm` (§ 1.38.1) | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | `BasaltProvider` embedded mode, `spotlight` (§ 2.8.0) | — | — | — | — | — | — | — | — | — | — | — | — | — | expanded gutter 24 (§ 2.16.0) | — | — | — |
+| **shell** (`.`) | — | scrollport, region seams, **the brand left the sidebar** (§§ scrollport, brand, Shell) | `PageTitle`, `BasaltDevDock`, `useBreakpoint` (§ Additions) | More popover, aside pill, the responsive gutter, `useBasaltSpacing` (§ Chrome) | — | — | `theme.breakpoints` derived, `useSizeClass`, `data-basalt-host`, `useBreakpoint` on notice (§ 1.31.0) | `useBreakpoint` removal → 1.33.0; `useSizeClass` is shell-only (§ 1.32.0) | shell-less `shell/` gutter, `AppShell` breakpoints, `useSizeClass` for overlays (§§ Shell-less, `useSizeClass`) | — | `useBreakpoint` removed (§ 1.34.0) | — | — | `useCoarsePointer()` (§ `useCoarsePointer()`) | — | — | — | — | | content gutter 16, block 8 from `sm` (§ 1.38.1) | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | `BasaltProvider` embedded mode, `spotlight` (§ 2.8.0) | — | — | — | — | — | — | — | — | — | — | — | — | — | expanded gutter 24 (§ 2.16.0) | — | — | light/outline Buttons ink, no status edges (§ Unreleased) |
 | **controls** (`./controls`) | `NumberFilter`, `field.number` (§ Controls) | sheet renders panel rows; `PanelRow`, `SliderControl` (§ `basalt-ui/controls`) | — | — | — | — | — | — | — | `NumberFilter clearable`; `createSearchStore` `resets` (§ State and controls) | — | — | — | `FormSection`/`FormRow`/`FormGroup`/`FormActions` move here (§ The form layout moves) | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | dense 28 tier at a fine pointer (§ 2.16.0) | — | — | — |
 | **forms** (`./forms`) | — | `field` → `inputProps`, **`inputProps` drops `key`**, the layout tier (§ `inputProps`) | `field` DELETED — and the `--fix` recipe no longer works (§ Consolidation) | — | — | — | — | — | `FormGroup` row no longer stretches (§ Fixes) | — | — | — | — | the layout + `useForm`/`schemaResolver` deprecated, removed 1.37.0 (§ The form layout moves) | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | § 1.x compatibility layer removed | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — |
 | **data** (`./data/table`) | — | root is a `<div>`, row selection, `getItemKey` required (§ `basalt-ui/data`) | `./data` + `./query` + `./connectivity` dropped (§ Consolidation) | — | — | — | — | — | `renderCard` documented (§ `renderCard`) | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — |
-| **dashboard** (`.`) | `StatCard`: `unit`, `breakdown`, delta format (§ `StatCard`) | `StatGroup`, `WidgetGrid`, query-aware `StatCard` — additive | — | **the column law keys on the CONTAINER; `cols={4}` is 2-up at `sm`** (§ Dashboard) | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | § 1.x compatibility layer removed | — | — | — | — | — | — | — | — | — | — | — | card inset 12/16, `kpi` 22 / 500 (§ 2.16.0) | — | — | — |
+| **dashboard** (`.`) | `StatCard`: `unit`, `breakdown`, delta format (§ `StatCard`) | `StatGroup`, `WidgetGrid`, query-aware `StatCard` — additive | — | **the column law keys on the CONTAINER; `cols={4}` is 2-up at `sm`** (§ Dashboard) | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | § 1.x compatibility layer removed | — | — | — | — | — | — | — | — | — | — | — | card inset 12/16, `kpi` 22 / 500 (§ 2.16.0) | — | — | StatCard status dot, Meter/BarList refinements (§ Unreleased) |
 | **toolchain** (`./configs/*`) | — | — | the shipped lefthook preset's `check-theme` BROKE — the CLI resolver stopped ascending (§ CLI) | the preset's default bin, and the `root:` recipe (§ Toolchain) | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — |
 | **CLI** (`basalt-ui`) | — | — | **resolver stops relocating; `doctor` loses 6 of 10 checks** (§ CLI) | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | the managed block moves `CLAUDE.md` → `AGENTS.md` (§ 1.41.0) | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | `doctor`: CSS + forced dropped subpaths, `oxlint-floor`, Start wiring (§ 2.8.0) | — | § 1.x compatibility layer removed | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — |
 | **guards** | five rules → `error` (§ Guards) | six new ids at `warn` (§ preamble) | `query-dual-import` retired in 1.29.1 (§ Guards) | four rules → `error` (§ Guards) | — | — | — | `raw-breakpoint`: the container-grid answer, `error` at 1.33.0 (§ 1.32.0) | `FormRow`/`FormGroup` homes in both lanes; `basalt-main` dropped (§ Fixes) | C1 + breakpoint pairs → `error`; `unknown-vx-token` `warn` (§ Guards) | — | — | — | `unknown-vx-token` → `error`; the token factories throw (§ Guards) | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | § 1.x compatibility layer removed | — | — | — | — | — | — | — | — | — | — | — | `inline-spacing` steps, `card-inset` accepts both pairs (§ 2.16.0) | — | — | — |
@@ -1041,42 +1041,7 @@ The `basalt-ui/router-tanstack` subpath is **removed** in 2.x, not moved: an imp
 | `NavItemMeta`, `NavGroupMeta`, `AnyNavItem`, `AnyNavGroup`, `AnyNavLink`, `FlatNavItem`, `NavConfig`, `NavGroupId`, `NavTabId`, `NavIndex`, `UseNavOptions`, `NavBinding`, `NavAnchor`, `NavAnchorProps`, `NavMobilePlacement` | deleted                                                                                                                                                                                                                                                                                                                                                                                                                                                    | no consumer names them; derive with `ComponentProps` / `Parameters` |
 | `useNav`, and `BasaltShell`'s `sections` / `mobileNav` props                                                                                                                                                                   | deleted: pass `nav={NAV}` (plus `badges`, `isActive`, `getScrollElement` — the old `useNav` options) to `BasaltShell`; it resolves the sidebar, the mobile bar and the breadcrumb itself. `mobileNav` tuning moves to `defineNav`'s `mobile`. argo `apps/dashboard/src/routes/__root.tsx`: replace `const nav = useNav(NAV, { badges })` + `{...nav}` with `nav={NAV} badges={…}` (migrates in W12; 1.x consumers stay on their pinned version until then) |
 
-## Unreleased
-
-_Nothing yet. Author the next section under this heading as `## Unreleased — <title>`; the
-release renames it and opens a new one here._
-
-## 2.18.0
-
-### Status text derived per surface
-
-Wave 34 of the design-parity track (`docs/waves/design-parity/SPEC.md` § 12 D22). No export is
-added, removed or renamed.
-
-`--vx-status-good`, `--vx-status-warn` and `--vx-status-bad` (light and dark) are painted as text
-(`DeltaBadge`, a toned row), but their tones were fixed while the surfaces move with `lightLevel`,
-`darkLevel` and `neutral`; off the defaults they read 3.2–3.9:1. Each solid is now derived from the
-surfaces the palette produced: **it shifts in lightness only when needed to restore the 4.5:1
-floor** on every text surface (`bg`, `panel`, `panelHover`, `elevated`, `subtle`, `field`). Light
-darkens, dark lightens; hue is preserved and chroma may clip at the gamut edge.
-
-- **Defaults are unchanged**: at the default config every status hex is byte-identical.
-- At a non-default `lightLevel`, `darkLevel` or `neutral` the status solids shift in lightness only as far as the floor needs.
-- `lightLevel` / `darkLevel` outside -5..5 are clamped to the nearest bound (non-finite becomes 0).
-- No opt-out is needed. A consumer that pins a status hex at a non-default config passes its own
-  colour and owns the contrast.
-
-### `shot` on a real app
-
-- `basalt-ui shot` captures a signed-in app with live data. `--local-storage <key>=<@env:NAME|@file:path>` seeds
-  localStorage on the app origin before any page script (an argo-style bearer token); `--api /api=https://app.example.com`
-  makes the `--dist` server proxy GET/HEAD under that prefix (other methods get 405 unless `--api-allow-writes`);
-  `--header authorization=@env:NAME` is added to every proxied request, to every `--api` origin (https required), never
-  to a page navigation; `--wait <ms>` adds a settle after `networkidle` (default none); `--auto-anchors` crops every
-  Card, Paper and table over 120×60 px on a page with no `data-shot`. A redirect, 401/403/404, 5xx or unreachable API fails every shot of that page; a localStorage key the app already holds is not overwritten; `--header` is refused when `--api` names more than one origin; any secret (`--header` or `--local-storage`) requires an https `--api` origin.
-  Secret values are never printed or written to `board.html` or `metrics.json`. Shots of real data reach the reviewer
-  subagent's model provider: point `--api` at staging or synthetic data for an app holding third parties' data. No
-  action needed; every flag is opt-in.
+## Unreleased — the status dot, ink buttons and Meter refinements
 
 ### Status is a dot and a word, not an edge stripe (`StatCard`, `Callout`, notification centre)
 
@@ -1122,6 +1087,55 @@ An empty or `null` `color` now counts as unnamed everywhere, matching Mantine's 
 
 Opt out: name the primary colour explicitly — `color="<primary>"`, your theme's `primaryColor` name.
 Omitting `color`, or passing `""` or `null`, does not restore the accent.
+
+### `Meter` and `BarList` refinements since 2.18.0
+
+No export, prop or type changes; the rendering moved after the Wave 34 board rounds:
+
+- **`Meter` categorical `segments`** (no forecast part) caption every part under the track (swatch, name,
+  value) and drop the default start caption that stated the total; pass `startCaption` to keep a total.
+- **`Meter` zones** name every zone on the band (the holding zone in ink and a weight step, a wrapped list
+  when the names would collide) and anchor the reading at the marker; the start caption is the bare reading,
+  no longer `Zone · reading`.
+- **`Meter` captions** wrap and never truncate; the ring value is on the hero type role and the ring grows
+  square when the value is wider than its inner circle; ticks and the marker take the `fine` radius.
+- **`Meter` in a `StatCard` visual (`sparkline`) slot** sizes to its content and keeps the card inset
+  instead of a 22 px bleed. The slot's loading skeleton keeps the card inset on both sides.
+- **`BarList`**: the bar spans the label column only, so a full-scale bar ends before its value; value and
+  secondary are shared grid columns, and the secondary is `sm`.
+- A selector that targeted the old markup (`li > span[aria-hidden]` for a BarList bar) needs `[data-bar-track]`.
+
+## 2.18.0
+
+### Status text derived per surface
+
+Wave 34 of the design-parity track (`docs/waves/design-parity/SPEC.md` § 12 D22). No export is
+added, removed or renamed.
+
+`--vx-status-good`, `--vx-status-warn` and `--vx-status-bad` (light and dark) are painted as text
+(`DeltaBadge`, a toned row), but their tones were fixed while the surfaces move with `lightLevel`,
+`darkLevel` and `neutral`; off the defaults they read 3.2–3.9:1. Each solid is now derived from the
+surfaces the palette produced: **it shifts in lightness only when needed to restore the 4.5:1
+floor** on every text surface (`bg`, `panel`, `panelHover`, `elevated`, `subtle`, `field`). Light
+darkens, dark lightens; hue is preserved and chroma may clip at the gamut edge.
+
+- **Defaults are unchanged**: at the default config every status hex is byte-identical.
+- At a non-default `lightLevel`, `darkLevel` or `neutral` the status solids shift in lightness only as far as the floor needs.
+- `lightLevel` / `darkLevel` outside -5..5 are clamped to the nearest bound (non-finite becomes 0).
+- No opt-out is needed. A consumer that pins a status hex at a non-default config passes its own
+  colour and owns the contrast.
+
+### `shot` on a real app
+
+- `basalt-ui shot` captures a signed-in app with live data. `--local-storage <key>=<@env:NAME|@file:path>` seeds
+  localStorage on the app origin before any page script (an argo-style bearer token); `--api /api=https://app.example.com`
+  makes the `--dist` server proxy GET/HEAD under that prefix (other methods get 405 unless `--api-allow-writes`);
+  `--header authorization=@env:NAME` is added to every proxied request, to every `--api` origin (https required), never
+  to a page navigation; `--wait <ms>` adds a settle after `networkidle` (default none); `--auto-anchors` crops every
+  Card, Paper and table over 120×60 px on a page with no `data-shot`. A redirect, 401/403/404, 5xx or unreachable API fails every shot of that page; a localStorage key the app already holds is not overwritten; `--header` is refused when `--api` names more than one origin; any secret (`--header` or `--local-storage`) requires an https `--api` origin.
+  Secret values are never printed or written to `board.html` or `metrics.json`. Shots of real data reach the reviewer
+  subagent's model provider: point `--api` at staging or synthetic data for an app holding third parties' data. No
+  action needed; every flag is opt-in.
 
 ## 2.17.0 — the metric card and chrome
 
