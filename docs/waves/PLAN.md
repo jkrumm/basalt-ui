@@ -1160,7 +1160,7 @@ upgrade (Waves 40–41); in-wave boards are the playground's.
 - **`shot`** reports a fully rounded corner as `full` (zero-size boxes read 0), which removed the reviewer's false
   Craft 1 on legend dots.
 - **Rounds** (`docs/waves/design-parity/w32/rounds.md`; boards in `.design-parity/w32/r0…r3`): r0 master, r1–r3 the
-  branch. By r3 no failed item is a Wave 32 item; every remaining failure is attributed to Waves 33–36 in the notes.
+  branch. By r3 no Wave 32 target is unmet; every remaining failure is attributed to Waves 33–36 in the notes.
   No target was reverted; D7's gutter trial passed (SPEC D20). Moves recorded in SPEC § 12: D17 (segmented-control
   concentricity restated on the control radius), D18 (the compact inset steps on the viewport, not a container),
   D19 (the guard grace), D20 (gutter kept).
@@ -1168,12 +1168,12 @@ upgrade (Waves 40–41); in-wave boards are the playground's.
   three stat cards, line state per hour (`BandStrip`), throughput against the contract, latency histogram, outages
   table. `Meter` (Wave 34) and `EventList` (Wave 37) are left out and named in the header; `TRANSITIONS` is ready.
 - **For Wave 33:** the sparkline `StatCard` renders shorter than its row siblings (S1 latency-now, S4 month-to-date;
-  also on master); the delta glyph renders at 9.6 px (0.8 em of `xs`), off the ladder; date and bin ticks collide at
+  also on master); the delta glyph renders at 9.6 px, off the ladder (a Wave 32 cause: 0.8 em of the new `xs` 12); date and bin ticks collide at
   390 (row 137). **For Wave 36:** outages and top-drivers overflow 390 by their columns, not their row text.
 - **Budgets** raised by exactly what landed, itemised in `scripts/check-budgets.ts`: CLI 7073 → 7100 (`shot` radius
   reading), embedded-provider gzip 55300 → 55391, theme-only 14570 → 14571.
 - **Next:** owner review of the Wave 32 boards (`.design-parity/w32/`, local). Stopped here as briefed: not
-  released, Wave 33 not spawned.
+  released; Wave 33 is marked active in this plan but not spawned (the orchestrator spawns it).
 
 ## Wave 33 — The metric card and chart-in-card <!-- status: active -->
 
