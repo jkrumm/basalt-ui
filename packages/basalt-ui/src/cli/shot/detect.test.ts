@@ -1,5 +1,13 @@
-import { afterEach, describe, expect, test } from 'bun:test'
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { afterEach, describe, expect, spyOn, test } from 'bun:test'
+import {
+  chmodSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
@@ -98,8 +106,17 @@ describe('detectFindings', () => {
     const m = metrics({ anchors: [anchor({ radius: 8.5 })] })
     expect(detectFindings(m)[0]).toMatchObject({ rule: 'craft-1/off-scale-radius', severity: 'P3' })
   })
-  test('a scheme × viewport with no scale entry is not judged off-scale', () => {
+  test('a scheme × viewport with no scale entry is unverified, not judged off-scale (P1)', () => {
     const m = metrics({ anchors: [anchor({ scheme: 'dark', radius: 99 })] })
+    expect(detectFindings(m).map((f) => [f.rule, f.severity])).toEqual([
+      ['craft-1/scale-missing', 'P1'],
+    ])
+  })
+  test('an empty step list judges nothing off-scale', () => {
+    const m = metrics({
+      scale: [{ scheme: 'light', viewport: 'desktop', spacing: {}, radius: {}, fontSizes: {} }],
+      anchors: [anchor({ radius: 99, gap: { row: 99, column: 99 } })],
+    })
     expect(rules(m)).toEqual([])
   })
   test('craft-1/nested-radius-step: a nested surface within 3 px of its parent fails', () => {
@@ -170,6 +187,13 @@ describe('detectFindings', () => {
 
   test('the same defect across schemes and viewports is one finding listing where', () => {
     const m = metrics({
+      scale: (['light', 'dark'] as const).flatMap((scheme) =>
+        (['desktop', 'mobile'] as const).map((viewport) => ({
+          ...metrics().scale[0]!,
+          scheme,
+          viewport,
+        })),
+      ),
       anchors: [
         anchor({ emptyRatio: 0.5 }),
         anchor({ emptyRatio: 0.5, viewport: 'mobile' }),
@@ -220,6 +244,11 @@ describe('detectFindings', () => {
     test('a warning is P2', () => {
       const f = detectFindings(metrics(), { diagnostics: [diag('basalt(card-inset)', 'warning')] })
       expect(f[0]?.severity).toBe('P2')
+    })
+    test('only the real `basalt(rule)` code is read', () => {
+      expect(
+        detectFindings(metrics(), { diagnostics: [diag('basalt/card-inset', 'error')] }),
+      ).toEqual([])
     })
   })
 })
@@ -281,6 +310,28 @@ describe('detect command', () => {
     ])
   })
 
+  test('P2 and P3 findings are listed but exit 0; a P1 exits 2', async () => {
+    const polish = setup(metrics({ anchors: [anchor({ radius: 8.5 })] }))
+    const p3 = await run(['--out', polish.out], polish.cwd)
+    expect(p3.code).toBe(0)
+    expect(p3.text).toContain('P3')
+    expect(p3.text).toContain('craft-1/off-scale-radius')
+    const backdrop = setup(
+      metrics({
+        anchors: [anchor({ contrast: { min: 7, failures: [], backdrop: 'assumed-white' } })],
+      }),
+    )
+    expect((await run(['--out', backdrop.out], backdrop.cwd)).code).toBe(0)
+    const lint = join(polish.cwd, 'lint.json')
+    writeFileSync(
+      lint,
+      JSON.stringify({
+        diagnostics: [{ code: 'basalt(card-inset)', severity: 'warning', filename: 'a.tsx' }],
+      }),
+    )
+    expect((await run(['--out', polish.out, '--lint', lint], polish.cwd)).code).toBe(0)
+  })
+
   test('exits 2 with findings in a compact table, content first', async () => {
     const { cwd, out } = setup(metrics({ anchors: [anchor({ radius: 10, emptyRatio: 0.5 })] }))
     const { code, text } = await run(['--out', out], cwd)
@@ -302,6 +353,54 @@ describe('detect command', () => {
     expect(history).toHaveLength(6)
     expect(text).toContain('trend 90 → 90 → 90 → 90 → 90')
     expect(text.match(/→/g)).toHaveLength(4)
+  })
+
+  describe('history file', () => {
+    const history = (cwd: string): string => join(cwd, '.basalt/shots/history.json')
+    const seed = (cwd: string, body: string): void => {
+      mkdirSync(join(cwd, '.basalt/shots'), { recursive: true })
+      writeFileSync(history(cwd), body)
+    }
+    test('a corrupt history is kept as .bak and a new one starts; detect still runs', async () => {
+      const { cwd, out } = setup(metrics({ anchors: [anchor({ emptyRatio: 0.5 })] }))
+      seed(cwd, '[')
+      const { code, text } = await run(['--out', out], cwd)
+      expect(code).toBe(2)
+      expect(text).toContain('history.json.bak')
+      expect(readFileSync(`${history(cwd)}.bak`, 'utf8')).toBe('[')
+      expect(JSON.parse(readFileSync(history(cwd), 'utf8'))).toHaveLength(1)
+    })
+    test('a non-array history is treated the same way', async () => {
+      const { cwd, out } = setup()
+      seed(cwd, '{"runs":[]}')
+      expect((await run(['--out', out], cwd)).code).toBe(0)
+      expect(readFileSync(`${history(cwd)}.bak`, 'utf8')).toBe('{"runs":[]}')
+      expect(JSON.parse(readFileSync(history(cwd), 'utf8'))).toHaveLength(1)
+    })
+    test('no temp file is left behind', async () => {
+      const { cwd, out } = setup()
+      await run(['--out', out], cwd)
+      expect(existsSync(`${history(cwd)}.tmp`)).toBe(false)
+      expect(existsSync(join(out, 'detect.json.tmp'))).toBe(false)
+    })
+    test('an unwritable out dir is exit 1 with a clean message and no history entry', async () => {
+      const { cwd, out } = setup()
+      chmodSync(out, 0o555)
+      try {
+        const err: string[] = []
+        const spy = spyOn(console, 'error').mockImplementation((l: string) => void err.push(l))
+        const { code } = await run(['--out', out], cwd)
+        spy.mockRestore()
+        // Root ignores the mode bits; only assert the contract where the mode is honoured.
+        if (process.getuid?.() !== 0) {
+          expect(code).toBe(1)
+          expect(err.join('\n')).toContain('cannot write detect.json or history.json')
+          expect(existsSync(history(cwd))).toBe(false)
+        }
+      } finally {
+        chmodSync(out, 0o755)
+      }
+    })
   })
 
   test('exit 1: missing or unreadable metrics.json writes nothing', async () => {
