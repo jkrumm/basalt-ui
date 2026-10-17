@@ -1053,13 +1053,14 @@ added, removed or renamed; three theme defaults change, each with a one-prop way
 | `Badge` default variant         | `filled` (accent fill, on-colour text) | `light` (13% status tint, ink-pulled text)             | `variant="filled"`                   |
 | `Badge` radius                  | `ctrl` (6 at level 0)                  | `tight` (5 at level 0; follows the `radius` knob)      | `radius="md"`                        |
 | `Badge` leading glyph           | Mantine's section, 4px gap, unsized    | `leftSection` svg is 12px, 4px gap, centred at 20 high | none needed                          |
-| `Button variant="subtle"` label | accent ink                             | neutral ink (`--vx-ink`); hover unchanged              | `color="blue"` (any explicit colour) |
+| `Button variant="subtle"` label | accent ink                             | neutral ink (`--vx-ink`)                               | `color="blue"` (any explicit colour) |
 | `Tabs` active underline         | accent (`--tabs-color`)                | ink (`--vx-ink`)                                       | `color="blue"` on `Tabs`             |
 
 - `Badge` height stays 20 (Mantine `md`). `filled` remains right for a count on an accent surface.
-- A `Button`/`ActionIcon` with an explicit `color` keeps its own hue on the label, as before.
+- The subtle opt-out is any explicit `color` prop, the primary colour included. An explicit colour
+  keeps Mantine's own tinted label **and hover**: the ink-6% hover (1.x–2.16) now applies only to a
+  subtle control that names no colour, so `color="blue"` hovers into the accent tint again.
 - `Tabs variant="pills"` is untouched: it fills with the colour, so it keeps the accent.
-- The active nav icon keeps the accent (DESIGN-CORE § Accent discipline lists it).
 
 ### Date ticks
 

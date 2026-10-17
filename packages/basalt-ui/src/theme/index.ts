@@ -283,6 +283,29 @@ function onColorFor(
   return autoContrast ? onColor(theme, props.color) : undefined
 }
 
+/**
+ * Tabs vars: the on-color re-point, plus the active underline in ink (SPEC § 6.12). Cast: Mantine's
+ * `TabsCssVariables` type declares only `--tabs-color` / `--tabs-radius`, yet Tabs' OWN
+ * varsResolver writes `--tabs-text-color` — an upstream type gap, cast at the `Tabs` entry. Only the underline `default`
+ * variant takes ink (`pills` fills with the colour); an explicit `color=` opts out.
+ */
+export function tabsVars(
+  theme: MantineTheme,
+  props: {
+    color?: string | undefined
+    variant?: string | undefined
+    autoContrast?: boolean | undefined
+  },
+): { root: Record<'--tabs-color' | '--tabs-text-color', string | undefined> } {
+  const underline = !hasExplicitColor(props.color) && (props.variant ?? 'default') === 'default'
+  return {
+    root: {
+      '--tabs-text-color': onColorFor(theme, props),
+      '--tabs-color': underline ? 'var(--vx-ink)' : undefined,
+    },
+  }
+}
+
 /** WCAG 2.x relative luminance. */
 function relativeLuminance(hex: string): number {
   const channels = hexToRgb(hex).map((c) => {
@@ -355,6 +378,32 @@ function onColorVars(
  * "status tint bg (delta badges): color-mix(in srgb, <status> 13%, transparent)"), which this
  * resolver is the single implementation of (Badge's `light` variant IS the status-tint idiom).
  */
+/** The chrome opt-out: a call site that names a colour (even the primary one) keeps its hue. */
+function hasExplicitColor(color: string | undefined): boolean {
+  return color !== undefined
+}
+
+/**
+ * A `subtle` Button / ActionIcon that names no colour takes neutral ink for its label and an
+ * ink-6% hover (`docs/DESIGN-SPEC.md` §5 ghost idiom; SPEC § 6.12). An explicit `color=` — the
+ * primary one included — keeps Mantine's tinted label and hover: `color="red"` on a destructive
+ * text action carries its hue as the whole signal. Declared on the component's own vars (`label`
+ * / `hover`: `--button-color`/`--button-hover`, `--ai-color`/`--ai-hover`).
+ */
+export function subtleInkVars(props: {
+  color?: string | undefined
+  variant?: string | undefined
+}): {
+  color: string | undefined
+  hover: string | undefined
+} {
+  const ink = props.variant === 'subtle' && !hasExplicitColor(props.color)
+  return {
+    color: ink ? 'var(--vx-ink)' : undefined,
+    hover: ink ? 'color-mix(in srgb, var(--vx-ink) 6%, transparent)' : undefined,
+  }
+}
+
 const basaltVariantColorResolver: VariantColorsResolver = (input) => {
   const resolved = defaultVariantColorsResolver(input)
   const colorName = input.color ?? input.theme.primaryColor
@@ -367,30 +416,9 @@ const basaltVariantColorResolver: VariantColorsResolver = (input) => {
     return autoContrast ? { ...resolved, color: on } : resolved
   }
 
-  // `subtle`: hover is a NEUTRAL ink tint, not Mantine's accent tint
-  // (`--mantine-color-{c}-light`). `docs/DESIGN-SPEC.md` §5 specifies the ghost idiom as "hover
-  // ink-6% + ink icon", and a subtle Button had never followed it — it hovered into a saturated
-  // accent block that read as a filled control appearing under the cursor. Fixing it HERE rather
-  // than in controls.module.css is what makes Button and ActionIcon agree: both resolve `subtle`
-  // through this one function, and §5's ghost icon button and a `variant="subtle"` Button are meant
-  // to be the same idiom at two sizes.
-  //
-  // Scoped to the DEFAULT color on purpose. An explicitly-colored subtle control (`color="red"` on a
-  // destructive text action) carries its hue as the whole signal, so neutralizing its hover would
-  // erase the one thing that marks it dangerous — those keep Mantine's own tinted hover.
-  if (input.variant === 'subtle') {
-    const isDefaultColor = input.color === undefined || input.color === input.theme.primaryColor
-    // The LABEL takes neutral ink too (SPEC § 6.12): the accent on a text button is a selection
-    // signal the chrome must not spend. `color="…"` is the opt-out.
-    return isDefaultColor
-      ? {
-          ...resolved,
-          color: 'var(--vx-ink)',
-          hover: `color-mix(in srgb, var(--vx-ink) 6%, transparent)`,
-        }
-      : resolved
-  }
-
+  // `subtle` stays Mantine's: Button and ActionIcon get their ink label + hover in `subtleInkVars`
+  // (the resolver is always handed `color || primaryColor`, so it cannot tell "unnamed" from an
+  // explicit primary colour — only the component props can).
   // `outline`: the tone's own text colour, pulled toward ink so the label keeps its hue at AA
   // (grey outline badges measured 3.9:1 on the light page).
   if (input.variant === 'outline') {
@@ -572,10 +600,7 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
           },
         },
       }),
-      // Status chip (SPEC § 6.10): `light` (the status-tint idiom the variant resolver implements),
-      // 20 high (Mantine's `md` height), the `tight` radius. `variant="filled"` stays for a count on
-      // an accent surface. A `leftSection` glyph is sized and spaced by `badgeSection` so the state
-      // reads by shape as well as colour.
+      // Status chip (SPEC § 6.10): `light` + `tight`; a `leftSection` glyph is sized in `badgeSection`.
       Badge: ext<typeof Badge>({
         defaultProps: { variant: 'light', radius: radius.tight },
         classNames: { section: controlsClasses.badgeSection },
@@ -757,6 +782,8 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
               props.size === 'md'
                 ? 'calc(var(--vx-space-control-height) * var(--mantine-scale))'
                 : undefined,
+            '--button-color': subtleInkVars(props).color,
+            '--button-hover': subtleInkVars(props).hover,
           },
         }),
       }),
@@ -768,6 +795,8 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
               props.size === 'md'
                 ? 'calc(var(--vx-space-control-height) * var(--mantine-scale))'
                 : undefined,
+            '--ai-color': subtleInkVars(props).color,
+            '--ai-hover': subtleInkVars(props).hover,
           },
         }),
       }),
@@ -1139,20 +1168,8 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
       // `color=` opts back in. Only the underline `default` variant — `pills` fills with the colour.
       Tabs: ext<typeof Tabs>({
         classNames: { root: controlsClasses.tabsRoot },
-        // The on-color re-point (see below). Cast: Mantine's `TabsCssVariables` type declares only
-        // `--tabs-color` / `--tabs-radius`, yet Tabs' OWN varsResolver writes `--tabs-text-color` —
-        // an upstream type gap, so the var it actually paints the active tab with is otherwise
-        // unreachable from the theme.
         vars: (theme, props) =>
-          ({
-            root: {
-              '--tabs-text-color': onColorFor(theme, props),
-              '--tabs-color':
-                props.color === undefined && (props.variant ?? 'default') === 'default'
-                  ? 'var(--vx-ink)'
-                  : undefined,
-            },
-          }) as unknown as {
+          tabsVars(theme, props) as unknown as {
             root: Record<'--tabs-color' | '--tabs-radius', string | undefined>
           },
       }),

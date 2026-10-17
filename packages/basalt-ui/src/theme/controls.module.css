@@ -313,7 +313,8 @@ html .tableRoot tbody tr:last-of-type {
   --badge-section-margin: calc(0.25rem * var(--mantine-scale));
 }
 
-.badgeSection svg {
+.badgeSection svg,
+.badgeSection img {
   width: calc(0.75rem * var(--mantine-scale));
   height: calc(0.75rem * var(--mantine-scale));
 }
