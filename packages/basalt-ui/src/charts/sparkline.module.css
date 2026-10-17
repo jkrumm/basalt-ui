@@ -14,7 +14,7 @@
   box-sizing: border-box;
   padding: 0 4px;
   overflow: hidden;
-  font-family: var(--basalt-font-sans);
+  font-family: var(--basalt-font-numeral, var(--basalt-font-sans));
   font-variant-numeric: lining-nums;
   font-size: var(--vx-text-xs);
   line-height: 1.25;

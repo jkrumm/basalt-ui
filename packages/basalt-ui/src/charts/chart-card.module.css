@@ -52,7 +52,7 @@
 .factValue {
   min-width: 0;
   overflow-wrap: anywhere;
-  font-family: var(--basalt-font-sans);
+  font-family: var(--basalt-font-numeral, var(--basalt-font-sans));
   font-size: var(--vx-text-kpi);
   font-weight: 500;
   font-variant-numeric: lining-nums;

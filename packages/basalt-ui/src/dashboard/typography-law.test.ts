@@ -21,6 +21,9 @@ const statCard = read('dashboard/stat-card.module.css')
 const widgetHeader = read('dashboard/widget-header.module.css')
 const meter = read('dashboard/meter.module.css')
 const barList = read('dashboard/bar-list.module.css')
+const statStrip = read('dashboard/stat-strip.module.css')
+const chartCard = read('charts/chart-card.module.css')
+const sparkline = read('charts/sparkline.module.css')
 const styles = read('styles.css')
 
 const NUMERALS: ReadonlyArray<readonly [string, string, string]> = [
@@ -39,6 +42,10 @@ const NUMERALS: ReadonlyArray<readonly [string, string, string]> = [
   ['Meter part captions', meter, '.partCaptions'],
   ['Meter zone band', meter, '.zoneBand'],
   ['Meter zone list', meter, '.zoneList'],
+  ['StatStrip hero value', statStrip, '.value'],
+  ['StatStrip row value', statStrip, '.rowValue'],
+  ['ChartCard fact value', chartCard, '.factValue'],
+  ['Sparkline readout', sparkline, '.readout'],
 ]
 
 describe('numerals are proportional sans with lining figures', () => {

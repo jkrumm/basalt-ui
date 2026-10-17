@@ -90,11 +90,11 @@
   min-width: 0;
 }
 
-/* The proportional sans with lining figures (Wave 35 typography law): never mono. */
+/* The numeral face (proportional sans, lining figures; Wave 35 typography law): never mono. */
 .value {
   min-width: 0;
   overflow-wrap: anywhere;
-  font-family: var(--basalt-font-sans);
+  font-family: var(--basalt-font-numeral, var(--basalt-font-sans));
   font-size: var(--vx-text-kpi);
   line-height: 1.25;
   font-weight: 500;
@@ -159,6 +159,7 @@
 }
 
 .rowValue {
+  font-family: var(--basalt-font-numeral, var(--basalt-font-sans));
   font-size: var(--vx-text-sm);
   font-weight: 500;
   font-variant-numeric: lining-nums;
