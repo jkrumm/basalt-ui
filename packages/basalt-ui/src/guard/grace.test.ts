@@ -135,7 +135,7 @@ describe('scripts/check-grace.ts', () => {
   // 1.27.0 promoted five of the six wave-6 plugin rules and one of the two guard kinds; 1.30.0
   // promoted four more; 1.33.0 the C1 and breakpoint pairs; 1.36.0 the last, `unknown-vx-token`
   // (its grace ran one minor past 1.35.0). The 2.16 spacing entries (two guard kinds + `card-inset`)
-  // are the 3 entries every version below 2.17.0 is clear of; below the first deprecation `removeIn`
+  // are the 3 entries every version below 2.24.0 is clear of; below the first deprecation `removeIn`
   // the deprecation half is clear too. That the gate REFUSES a due entry is
   // proven on synthetic ledgers in `scripts/check-grace.test.ts`.
   it.each(['1.30.0', '1.34.9', '1.35.0', '1.36.0', '1.36.9', '1.37.0', '1.38.0', '1.38.9'])(
