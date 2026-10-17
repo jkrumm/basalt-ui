@@ -18,7 +18,7 @@
 | Filler-question subtitles ("How is my training going?")    | A number or fact line, or nothing                                                                             |
 | A big number in a box with no history, target or parts     | Add a `sparkline` slot (`Sparkline`, or `Meter` with `target`); if there is none, it belongs in a strip cell  |
 | Columns ending unbalanced, a dead void beside a short card | Pair cards of similar height in a row, or let the short card span or move                                     |
-| Heavy filled bar slabs with labels inside                  | `BarList variant="thin"`: a thin track carries the same data                                                  |
+| Heavy filled bar slabs with labels inside                  | `BarList`'s default rows: a thin track carries the same data; avoid the slab look                             |
 | A marker that restates the headline value                  | Mark the target or the limit, not the reading                                                                 |
 | Unlabelled marks with no axis or scale                     | Direct-label the end points, or add an axis; or use a table (`BasaltDataTable`)                               |
 | Three rows of KPI cards                                    | One strip, then the chart or list that explains it                                                            |
