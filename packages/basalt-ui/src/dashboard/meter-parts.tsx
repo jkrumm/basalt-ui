@@ -151,8 +151,13 @@ function zoneStyle(zone: MeterZone, index: number, count: number, min: number, s
   } satisfies CSSProperties
 }
 
-/** Joins the names with a character no label carries, so the effect re-runs only when they change. */
-const labelsKey = (labels: readonly ZoneLabel[]) => labels.map((l) => l.label).join('\u0000')
+/**
+ * Joins the names with a character no label carries, so the effect re-runs only when they change.
+ * The holding zone is part of the key: its label is bolder, so a reading that crosses a boundary
+ * changes widths with no row resize.
+ */
+const labelsKey = (labels: readonly ZoneLabel[]) =>
+  labels.map((l) => l.label + (l.holding ? '*' : '')).join('\u0000')
 
 /**
  * Whether the zone names fit on the band, re-measured when the row resizes, when web fonts finish
@@ -222,7 +227,7 @@ function ZoneLabels({ labels }: { labels: readonly ZoneLabel[] }) {
       <div
         ref={rowRef}
         className={classes.zoneBand}
-        data-meter-zone-labels="band"
+        data-meter-zone-band
         data-collapsed={fits ? undefined : ''}
         aria-hidden
       >
@@ -236,7 +241,7 @@ function ZoneLabels({ labels }: { labels: readonly ZoneLabel[] }) {
         ))}
       </div>
       {!fits && (
-        <div className={classes.zoneList} data-meter-zone-labels="list" aria-hidden>
+        <div className={classes.zoneList} data-meter-zone-list aria-hidden>
           {labels.map((l) => (
             <ZoneName key={l.key} label={l} className={classes.zoneListItem} />
           ))}

@@ -113,7 +113,7 @@ layout('Meter / BarList geometry', () => {
         if (!host) throw new Error(`LAYOUT: no ${root}`)
         const visible = [
           ...host.querySelectorAll<HTMLElement>(
-            '[data-meter-zone-labels]:not([data-collapsed]) [data-meter-zone-label], [data-meter-zone-labels="list"] [data-meter-zone-label]',
+            '[data-meter-zone-band]:not([data-collapsed]) [data-meter-zone-label], [data-meter-zone-list] [data-meter-zone-label]',
           ),
         ]
         const boxes = visible.map((el) => {
@@ -132,7 +132,7 @@ layout('Meter / BarList geometry', () => {
           boxes,
           rootLeft: box.left,
           rootRight: box.right,
-          mode: host.querySelector('[data-meter-zone-labels="list"]') ? 'list' : 'band',
+          mode: host.querySelector('[data-meter-zone-list]') ? 'list' : 'band',
           holdingName: holding?.textContent,
           holdingColor: holding ? getComputedStyle(holding).color : '',
           otherColor: getComputedStyle(
@@ -153,7 +153,7 @@ layout('Meter / BarList geometry', () => {
           expect(apart).toBe(true)
         }
       }
-      // Whichever mode the width produced, the list keeps zone order.
+      expect(m.mode).toBe(width === 160 ? 'list' : 'band')
       if (m.mode === 'list') {
         expect(m.boxes.map((b) => b.name)).toEqual(['Low', 'Optimal', 'High', 'Overreaching'])
       }
@@ -170,7 +170,7 @@ layout('Meter / BarList geometry', () => {
         host.style.width = `${w}px`
         // A ResizeObserver callback lands before the next paint; two frames is enough to see it.
         await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
-        return host.querySelector('[data-meter-zone-labels="list"]') ? 'list' : 'band'
+        return host.querySelector('[data-meter-zone-list]') ? 'list' : 'band'
       }, width)
     expect(await modeAt(120)).toBe('list')
     expect(await modeAt(360)).toBe('band')

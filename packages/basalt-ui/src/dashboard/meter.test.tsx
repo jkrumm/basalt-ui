@@ -127,12 +127,12 @@ describe('Meter', () => {
     const base = { label: 'Training load', max: 1000, zones } as const
 
     const holdingLabel = (container: HTMLElement) =>
-      container.querySelector('[data-meter-zone-labels="band"] [data-holding]')?.textContent
+      container.querySelector('[data-meter-zone-band] [data-holding]')?.textContent
 
     test('names every zone under the band and the holding one is marked', () => {
       const { container, getByText } = mount({ ...base, value: 612 })
       const labels = [
-        ...container.querySelectorAll('[data-meter-zone-labels="band"] [data-meter-zone-label]'),
+        ...container.querySelectorAll('[data-meter-zone-band] [data-meter-zone-label]'),
       ]
       expect(labels.map((l) => l.textContent)).toEqual(['Low', 'Optimal', 'High'])
       expect((labels[1] as HTMLElement).style.insetInlineStart).toBe('30%')
@@ -455,7 +455,8 @@ describe('zone name layout', () => {
     { from: 250, to: 500, label: 'Optimal' },
     { from: 500, to: 750, label: 'High' },
   ]
-  const LABEL_WIDTH = 50
+  let labelWidth = 50
+  let holdingExtra = 0
   let rowWidth = 300
   let observers: FakeResizeObserver[] = []
 
@@ -479,6 +480,8 @@ describe('zone name layout', () => {
     ownRect = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'getBoundingClientRect')
     realObserver = globalThis.ResizeObserver
     rowWidth = 300
+    labelWidth = 50
+    holdingExtra = 0
     observers = []
     globalThis.ResizeObserver = FakeResizeObserver as unknown as typeof ResizeObserver
     // happy-dom has no layout: the row is `rowWidth` wide, each name `LABEL_WIDTH` from its start.
@@ -486,9 +489,12 @@ describe('zone name layout', () => {
       const box = (left: number, width: number) =>
         ({ left, right: left + width, width, top: 0, bottom: 10, height: 10 }) as DOMRect
       if (this.hasAttribute('data-meter-zone-label')) {
-        return box((Number.parseFloat(this.style.insetInlineStart) / 100) * rowWidth, LABEL_WIDTH)
+        return box(
+          (Number.parseFloat(this.style.insetInlineStart) / 100) * rowWidth,
+          labelWidth + (this.hasAttribute('data-holding') ? holdingExtra : 0),
+        )
       }
-      return this.hasAttribute('data-meter-zone-labels') ? box(0, rowWidth) : box(0, 0)
+      return this.hasAttribute('data-meter-zone-band') ? box(0, rowWidth) : box(0, 0)
     }
   })
   afterEach(() => {
@@ -500,8 +506,7 @@ describe('zone name layout', () => {
   })
 
   const props = { label: 'Load', max: 750, value: 300, zones: ZONES } as const
-  const mode = (c: HTMLElement) =>
-    c.querySelector('[data-meter-zone-labels="list"]') ? 'list' : 'band'
+  const mode = (c: HTMLElement) => (c.querySelector('[data-meter-zone-list]') ? 'list' : 'band')
   const resize = (width: number) => {
     rowWidth = width
     act(() => {
@@ -509,7 +514,7 @@ describe('zone name layout', () => {
     })
   }
   const names = (c: HTMLElement, which: 'band' | 'list') =>
-    [...c.querySelectorAll(`[data-meter-zone-labels="${which}"] [data-meter-zone-label]`)].map(
+    [...c.querySelectorAll(`[data-meter-zone-${which}] [data-meter-zone-label]`)].map(
       (l) => l.textContent,
     )
 
@@ -559,5 +564,69 @@ describe('zone name layout', () => {
     // @ts-expect-error simulating an environment without the API
     delete globalThis.ResizeObserver
     expect(mode(mount(props).container)).toBe('band')
+  })
+
+  test('a reading that moves the bold label re-measures with no resize', () => {
+    // A 0-500, B 500-600, C 600-750 on a 300px row: names start at 0, 200 and 240.
+    const zones = [
+      { from: 0, to: 500, label: 'A' },
+      { from: 500, to: 600, label: 'B' },
+      { from: 600, to: 750, label: 'C' },
+    ]
+    labelWidth = 30
+    holdingExtra = 20
+    const tree = (value: number) => (
+      <MantineProvider>
+        <Meter label="Load" max={750} value={value} zones={zones} />
+      </MantineProvider>
+    )
+    const { container, rerender } = render(tree(100))
+    expect(mode(container)).toBe('band')
+    // B holding is bolder: 200 + 50 runs into C at 240. No observer callback fires.
+    rerender(tree(550))
+    expect(mode(container)).toBe('list')
+    rerender(tree(100))
+    expect(mode(container)).toBe('band')
+  })
+
+  describe('web fonts', () => {
+    let ownFonts: PropertyDescriptor | undefined
+    let loadingDone: (() => void) | undefined
+    let removed: string[] = []
+
+    beforeEach(() => {
+      ownFonts = Object.getOwnPropertyDescriptor(document, 'fonts')
+      loadingDone = undefined
+      removed = []
+      Object.defineProperty(document, 'fonts', {
+        configurable: true,
+        value: {
+          ready: new Promise(() => {}),
+          addEventListener: (type: string, fn: () => void) => {
+            if (type === 'loadingdone') loadingDone = fn
+          },
+          removeEventListener: (type: string) => removed.push(type),
+        },
+      })
+    })
+    afterEach(() => {
+      if (ownFonts) Object.defineProperty(document, 'fonts', ownFonts)
+      else Reflect.deleteProperty(document, 'fonts')
+    })
+
+    test('loadingdone re-measures: widths that changed with no resize flip the mode', () => {
+      const { container } = mount(props)
+      expect(mode(container)).toBe('band')
+      labelWidth = 120
+      act(() => loadingDone?.())
+      expect(mode(container)).toBe('list')
+    })
+
+    test('the listener is removed on unmount', () => {
+      const { unmount } = mount(props)
+      expect(removed).toEqual([])
+      unmount()
+      expect(removed).toEqual(['loadingdone'])
+    })
   })
 })

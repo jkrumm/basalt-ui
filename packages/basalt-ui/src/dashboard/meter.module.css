@@ -59,9 +59,13 @@
   color: var(--vx-muted);
 }
 
-/* Hidden but laid out, so a resize can measure it again. Absolute against the zoned root. */
+/*
+ * Hidden but laid out, so a resize can measure it again. Absolute against `.root.zoned`, which has
+ * no inline padding, so `inset-inline: 0` gives the band the same width as when it was in flow.
+ */
 .zoneBand[data-collapsed] {
   position: absolute;
+  top: 0;
   inset-inline: 0;
   visibility: hidden;
   pointer-events: none;
@@ -81,7 +85,7 @@
 .zoneList {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--vx-space-stack-xs, 0.25rem) var(--vx-space-stack-sm);
+  gap: var(--vx-space-stack-xs) var(--vx-space-stack-sm);
   font-family: var(--basalt-font-mono);
   font-size: var(--vx-text-micro);
   color: var(--vx-muted);
