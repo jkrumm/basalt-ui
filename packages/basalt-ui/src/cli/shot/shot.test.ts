@@ -14,18 +14,19 @@ import { join } from 'node:path'
 import { buildBoard } from './board'
 import {
   capture,
+  describedByOf,
   fileName,
   groupScale,
-  describedByOf,
   hasFocusTarget,
+  hoverAtOf,
+  hoverTrigger,
   markVisibleTooltips,
+  parseHoverAt,
   readScaleInPage,
   sheetName,
   tooltipSelector,
-  visibleTooltip,
-  hoverAtOf,
-  parseHoverAt,
   unionClip,
+  visibleTooltip,
   withParam,
 } from './capture'
 import { unknownFlag } from '../help'
@@ -618,12 +619,56 @@ describe('tooltip lookup', () => {
   test('the probe narrows to a rendered readout', () => {
     expect(visibleTooltip('')).toBe('[role="tooltip"]:not([data-shot-seen]):visible')
   })
-  test('data-shot-at gives fractions of the trigger box; anything else hovers the centre', () => {
+  test('data-shot-at is two fractions of the box; anything else is null, so the centre', () => {
     expect(parseHoverAt('0.25,0.5')).toEqual({ x: 0.25, y: 0.5 })
-    expect(parseHoverAt('')).toBeNull()
-    expect(parseHoverAt('a,b')).toBeNull()
+    expect(parseHoverAt(' 0 , 1 ')).toEqual({ x: 0, y: 1 })
+    expect(parseHoverAt('.5,.5')).toEqual({ x: 0.5, y: 0.5 })
+    for (const bad of [
+      '',
+      'a,b',
+      '0.5,',
+      ',0.5',
+      ',',
+      '1.5,-0.2',
+      '-1,0.5',
+      '0.5,0.5,0.5',
+      '1.01,0',
+    ])
+      expect(parseHoverAt(bad)).toBeNull()
     document.body.innerHTML = '<i id="t" data-shot-at="0.1,0.2"></i>'
     expect(hoverAtOf(document.getElementById('t'))).toBe('0.1,0.2')
+    expect(hoverAtOf(null)).toBe('')
+  })
+  describe('hoverTrigger', () => {
+    const run = async (attr: string, box: { width: number; height: number } | null) => {
+      const hovered: unknown[] = []
+      const target = {
+        evaluate: () => Promise.resolve(attr),
+        boundingBox: () => Promise.resolve(box),
+        hover: (o: unknown) => {
+          hovered.push(o)
+          return Promise.resolve()
+        },
+      }
+      await hoverTrigger(target as unknown as Parameters<typeof hoverTrigger>[0])
+      return hovered[0] as { timeout: number; position?: { x: number; y: number } }
+    }
+    test('a declared point hovers at the fractions of the box', async () => {
+      const o = await run('0.25,0.5', { width: 400, height: 200 })
+      expect(o.position).toEqual({ x: 100, y: 100 })
+      expect(typeof o.timeout).toBe('number')
+    })
+    test('no attribute, a malformed one, or no box hovers the centre', async () => {
+      for (const [attr, box] of [
+        ['', { width: 400, height: 200 }],
+        ['0.5,', { width: 400, height: 200 }],
+        ['0.25,0.5', null],
+      ] as const) {
+        const o = await run(attr, box)
+        expect(o.position).toBeUndefined()
+        expect(typeof o.timeout).toBe('number')
+      }
+    })
   })
   test('markVisibleTooltips marks only visible tooltips and forgets stale marks', () => {
     document.body.innerHTML =
