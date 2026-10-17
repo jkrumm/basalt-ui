@@ -1259,21 +1259,62 @@ Spec: SPEC § 6.1, § 6.2, § 6.10, § 6.12. Scenarios S4 and S1. Consumer befor
 Spec: SPEC § 3, § 4, § 6.3, § 6.4, D1, D2. Scenarios S4 and S2 (build the S2 fixture). Validators: argo
 (reading, usage), rb (course, ingest), linewatch (link against ceiling).
 
-- [ ] `Meter` in `src/dashboard`, exported from the root: `bar` with a target tick and end captions,
+- [x] `Meter` in `src/dashboard`, exported from the root: `bar` with a target tick and end captions,
       `segments` (committed/forecast with a boundary tick and a caption; categorical parts), `ring` for one
       headline ratio; neutral by default; `role="meter"` with a required label (rows 143–145, 152, 158).
-- [ ] `BarList` in `src/dashboard`: shared scale, mono values, leader row may take the accent, 5–10 rows (rows
+- [x] `BarList` in `src/dashboard`: shared scale, mono values, leader row may take the accent, 5–10 rows (rows
       146, 160).
-- [ ] Unit tests: `aria-valuenow/min/max`, segments in `aria-describedby`, target tick position, 0 / max /
+- [x] Unit tests: `aria-valuenow/min/max`, segments in `aria-describedby`, target tick position, 0 / max /
       over-max / missing target, truncation with a `title`; empty and loading states for both. Budgets: non-chart symbols +2, barrel types +2,
       consumers named.
-- [ ] **Status text per surface (D22, owner):** derive the status solids used as text per surface, so they
+- [x] **Status text per surface (D22, owner):** derive the status solids used as text per surface, so they
       clear 4.5:1 at every `lightLevel`/`darkLevel` value, both schemes. Add golden tests at the knob
       extremes, restore the AGENTS.md "guaranteed by derivation" wording, and add a MIGRATING entry.
-- [ ] **Light and outline Buttons are ink by default (owner):** only the filled primary and an explicit `color=`
+- [x] **Light and outline Buttons are ink by default (owner):** only the filled primary and an explicit `color=`
       carry the accent. Record it in SPEC § 6.12 and add a MIGRATING entry.
-- [ ] At least three rounds on S4 and S2; owner sees the boards.
+- [x] **No coloured status edge (owner steer, 2026-10-17):** status is a dot plus a word, or the value's own ink;
+      the `StatCard` rail, the `Callout` border and the notification-centre edge go; the shipped reviewer fails
+      the pattern (D28).
+- [ ] At least three rounds on S4 and S2; owner sees the boards. (Rounds done: r0–r4; the owner review is open.)
       **Left behind:**
+
+- **Landed** (all through `rd merge`, `make check` green at every merge): #338 status text per surface, #339
+  light/outline Buttons ink, #341 `Meter` and `BarList`, #343 no status edge, #344 the S2 fixture and S4 on the
+  new primitives, #345 round-1 board fixes, #347 the info-glyph focus ring, #348 zone names on the band, #349
+  round-3 board fixes. Every PR had two review rounds, then scope was frozen and the lead read the last fix diff.
+  Reviews ran on agent-gateway until #348 round 2, when the gateway queue stalled (jobs `pending` 30+ min, no
+  worker), so #348 r2 and #349 r1–r2 were reviewed by a fresh independent subagent instead. **2.18.0 was released mid-wave by another session** (09:56,
+  semantic-release; it carries #338, #341 and the parallel `shot` auth work for row 167). Everything merged after it
+  (#339, #343–#349) is unreleased; their MIGRATING entries had landed under `## 2.18.0` by rebase and were moved under
+  `## Unreleased — the status dot, ink buttons and Meter refinements` in the close-out, with a note for the
+  post-2.18 `Meter`/`BarList` rendering changes. This wave released nothing.
+- **`Meter`** (D1, D2, D29–D31): a discriminated union — `bar` takes a `value`, `segments`, or a `value` with
+  `zones`; `ring` a `value` only. Categorical segments caption each part; committed/forecast keeps the boundary
+  tick and caption; zones draw bands with the reading as a marker, zone names on the band (holding zone in ink and
+  weight, a wrapped list when they collide, re-measured on font load), the reading anchored at the marker. Pure
+  model in `meter-model.ts`, views in `meter-parts.tsx`. In a `StatCard` visual slot it sizes to content and keeps
+  the card inset (`:has(> [data-basalt-meter])`, no new prop). The argo steer's three cases are expressible:
+  recovery on its scale with contributor bars (`Meter` + `BarList max={100}`), training load as a zone band with
+  a marker, spend against a budget (target tick, overage caption, verdict colour).
+- **`BarList`** (D32): the bar spans the label column; value and secondary are shared grid columns outside it.
+- **Status text (D22):** `src/tokens/status-text.ts` walks each status solid along lightness until it clears 4.5:1
+  on every text surface; defaults byte-identical; `lightLevel`/`darkLevel` clamp to −5..5 (non-finite → 0).
+  AGENTS.md's "guaranteed by derivation" holds again.
+- **Chrome:** light/outline `Button`/`ActionIcon` with no colour (or `""`/`null`) are ink (D27); `StatCard tone`
+  is a dot plus `OK`/`Watch`/`Over` with a hidden full phrase; `Callout` lost its left border; notification rows
+  show a dot and a visible intent word (D28). The info glyph's focus ring hugs the glyph.
+- **Rounds** (`docs/waves/design-parity/w34/rounds.md`; boards in `.design-parity/w34/r0`–`r4`, copied to the
+  MacBook under `~/Downloads/basalt-design-review/`): by r4 every Wave 34 component passes in both schemes at 1440
+  and 390 in every state. Ledger rows 143–146, 152, 158 closed, 160 half (weatherorb in Wave 41).
+- **For Wave 35:** S4 spend-distribution (axis-full histogram, bin ticks at the centre, Expression 1/5) and
+  spend-over-time (stacked value-over-time, Expression 1); the Tabs hover is invisible in dark (r4 Craft 7, a W33
+  chrome item); the active sidebar row carries an accent fill (r0, outside the anchors). argo's rows 163 and 165
+  (Card/Paper inset, a flush-card idiom) are Wave 35's too.
+- **Budgets:** non-chart symbols 103 → 105, barrel types 60 → 62 (`Meter`/`MeterProps`, `BarList`/`BarListProps`;
+  consumers in `scripts/consumers.json`). Gzip ceilings were set per PR from that PR's CI Linux run: provider-only
+  19308 → 19732, embedded 55601 → 56033, theme-only 14771 → 15183 (status-text solver ~+300, ink vars ~+130).
+- **Next — stopped: awaiting owner review** of the Meter/BarList boards (r0–r4), the one unticked step. Once the
+  owner has seen them, tick it, flip Wave 34 to `done` and Wave 35 to `active`. Not released; nothing spawned.
 
 ## Wave 35 — Stat strip and the card recipes <!-- status: pending -->
 
