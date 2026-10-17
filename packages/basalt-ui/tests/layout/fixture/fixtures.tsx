@@ -1312,13 +1312,20 @@ function DashFixture(): ReactElement {
       <div data-testid="dash-meter-zones-360" style={{ width: 360 }}>
         <Meter label="Training load" max={1000} value={400} zones={TRAINING_ZONES} />
       </div>
-      {[160, 360].flatMap((w) =>
-        [0, 500, 1000].map((v) => (
-          // theme-allow -- the wrapper width IS the fixture's payload (a container probe)
-          <div key={`${w}-${v}`} data-testid={`dash-meter-reading-${w}-${v}`} style={{ width: w }}>
-            <Meter label="Training load" max={1000} value={v} zones={TRAINING_ZONES} />
-          </div>
-        )),
+      {(['ltr', 'rtl'] as const).flatMap((dir) =>
+        [160, 360].flatMap((w) =>
+          [0, 500, 1000].map((v) => (
+            // theme-allow -- the wrapper width IS the fixture's payload (a container probe)
+            <div
+              key={`${dir}-${w}-${v}`}
+              dir={dir}
+              data-testid={`dash-meter-reading-${dir}-${w}-${v}`}
+              style={{ width: w }}
+            >
+              <Meter label="Training load" max={1000} value={v} zones={TRAINING_ZONES} />
+            </div>
+          )),
+        ),
       )}
       {[
         ['spark', <div key="s" />],

@@ -199,22 +199,25 @@ function useZoneLabelLayout(rowRef: RefObject<HTMLDivElement | null>, key: strin
 }
 
 /**
- * The reading on a zoned track, centred on the marker so number and notch are one mark. The centre
- * is clamped to half the label's width from either edge, so it never leaves the track. Observing
- * the label as well as the row catches a font swap that changes its width with no row resize. Until
- * the measurement runs (server markup) it sits unclamped at the marker.
+ * The reading on a zoned track, centred on the marker so number and notch are one mark. Measured,
+ * its start edge is clamped to the row (a label wider than the row overflows the end, never the
+ * start) and placed logically, so it holds under `dir="rtl"`. Observing the label as well as the row
+ * catches a font swap that changes its width with no row resize. Until the first measure (server
+ * markup) it sits at the marker, centred by a direction-aware translate, and the row clips.
  */
 function ZoneReading({ pct, children }: { pct: number; children: ReactNode }) {
   const rowRef = useRef<HTMLDivElement>(null)
   const textRef = useRef<HTMLSpanElement>(null)
-  const [centre, setCentre] = useState<number>()
+  const [start, setStart] = useState<number>()
   useIsomorphicLayoutEffect(() => {
     const row = rowRef.current
     const text = textRef.current
     if (!row || !text) return
     const measure = () => {
-      const half = text.offsetWidth / 2
-      setCentre(Math.min(Math.max((row.clientWidth * pct) / 100, half), row.clientWidth - half))
+      const centre = (row.clientWidth * pct) / 100
+      setStart(
+        Math.max(0, Math.min(centre - text.offsetWidth / 2, row.clientWidth - text.offsetWidth)),
+      )
     }
     measure()
     if (typeof ResizeObserver === 'undefined') return
@@ -228,7 +231,8 @@ function ZoneReading({ pct, children }: { pct: number; children: ReactNode }) {
       <span
         ref={textRef}
         className={classes.zoneReading}
-        style={{ insetInlineStart: centre === undefined ? `${pct}%` : `${centre}px` }}
+        data-measured={start === undefined ? undefined : ''}
+        style={{ insetInlineStart: start === undefined ? `${pct}%` : `${start}px` }}
       >
         {children}
       </span>
