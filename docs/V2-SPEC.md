@@ -598,7 +598,8 @@ tooltip under `<body>` (spike). Inheritance from `:root` is a W4 layout-suite as
 | `crosshair-label-halo`, `crosshair-marker-fill`, `focus-fill` | `var(--vx-surface-panel)`                                                                                  |
 
 - The host sets `color: var(--vx-axis)` (`currentColor` = axis ink) and pins
-  `font-family: var(--basalt-font-mono)` (tick labels in mono, the 1.x look). Series
+  `font-family: var(--basalt-chart-font, var(--basalt-font-sans))` with `tabular-nums` (tick labels in
+  the proportional sans with tabular figures; mono is for captions, times and code). Series
   paint is `ChartSeries.color` (`VX.*` or a consumer series token); `raw-hex`/`raw-color-fn` cover
   mark paint. The spike asserts zero TanStack default hexes in the SSR output.
 
