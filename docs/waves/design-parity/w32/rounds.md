@@ -50,6 +50,8 @@ Everything else is unchanged from r0 and stays with its owning wave (table above
 
 ## Round 2 — after review round 1 and the board fixes (r2)
 
+From r2 on, `shot` reads a full-round corner as `full`; r0/r1 and r2/r3 radius findings are not like-for-like.
+
 `shot` now reports a fully rounded corner as `full` (16 legend dots), so nested radii read 10 (card), 6 (control,
 badge), 2 (marks) and `full`; the axis-ink failures stay at 0. Reviewer: no Craft 1 or Craft 5-ink finding on any
 component; both pages pass. The expanded gutter (24 at 1440) is kept: the content frames evenly against the sidebar
@@ -68,7 +70,7 @@ Everything else is unchanged and stays with its owning wave.
 
 Measured: no axis-ink contrast failure (the only `contrast.failures` left are the filled delta badge, W33); nested
 radii 10 / 6 / 2 / `full`; card inset 12/16 desktop, 12/12 compact. Reviewer: both pages pass; every component
-still fails, and **no failed item is a Wave 32 scale item**. Communication 4 (throughput time scope) is cleared.
+still fails. No failed item is a Wave 32 target left unmet; one has a Wave 32 cause: the delta glyph is 0.8 em of the new `xs` 12, so it renders at 9.6 px (off the ladder), and its fix belongs to the delta anatomy (W33). Communication 4 (throughput time scope) is cleared.
 
 | Remaining item                                                                                            | Owner                                         |
 | --------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
