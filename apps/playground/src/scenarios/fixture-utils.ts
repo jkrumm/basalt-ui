@@ -13,8 +13,31 @@ export function seeded(seed: number): () => number {
   }
 }
 
-export const fmtDay = (date: Date): string =>
-  date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' })
+const MONTHS = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+] as const
+
+/**
+ * A UTC month name from a fixed table: ICU data differs by platform (Linux renders September as
+ * "Sept"), and the labels are pinned in tests and screenshots.
+ */
+export const monthName = (date: Date, style: 'long' | 'short'): string => {
+  const name = MONTHS[date.getUTCMonth()] ?? ''
+  return style === 'long' ? name : name.slice(0, 3)
+}
+
+export const fmtDay = (date: Date): string => `${date.getUTCDate()} ${monthName(date, 'short')}`
 
 /** The value at `index`, or a throw naming the fixture — a fixture list is never sparse. */
 export function itemAt<T>(items: readonly T[], index: number): T {

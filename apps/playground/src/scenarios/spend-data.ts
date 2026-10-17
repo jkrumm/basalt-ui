@@ -5,7 +5,7 @@
  * from `TODAY`, so moving the reading date moves the copy with it.
  */
 
-import { seeded } from './fixture-utils'
+import { monthName, seeded } from './fixture-utils'
 
 const PROJECT_KEYS = ['search', 'support', 'summaries', 'ingest', 'evals', 'sandbox'] as const
 export type ProjectKey = (typeof PROJECT_KEYS)[number]
@@ -36,9 +36,6 @@ const WINDOW_DAYS = 90
 export const YEAR = TODAY.getUTCFullYear()
 const month = TODAY.getUTCMonth()
 const priorMonthStart = new Date(Date.UTC(YEAR, month - 1, 1))
-
-const monthName = (date: Date, style: 'long' | 'short'): string =>
-  date.toLocaleDateString('en-GB', { month: style, timeZone: 'UTC' })
 
 export const DAYS_ELAPSED = TODAY.getUTCDate()
 export const MONTH_DAYS = new Date(Date.UTC(YEAR, month + 1, 0)).getUTCDate()
