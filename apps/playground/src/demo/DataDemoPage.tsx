@@ -310,7 +310,7 @@ export function DataDemoPage() {
         BasaltDataTable (TanStack Table + Mantine)
       </Text>
 
-      <Paper p="sm">
+      <Paper py="sm" px="md">
         <Stack gap="xs">
           <Text size="xs" tt="uppercase" fw={600} c="dimmed">
             About
@@ -330,7 +330,7 @@ export function DataDemoPage() {
           the bar above. The panels stay Mantine's, so `keepMounted` behaviour is unchanged. */}
       <Tabs value={tab}>
         <Tabs.Panel value="overview">
-          <Paper p="sm">
+          <Paper py="sm" px="md">
             <Stack gap="md">
               <TableSection />
               <Divider />

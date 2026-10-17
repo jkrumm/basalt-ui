@@ -160,7 +160,7 @@ function QueryClientPanel({
           prod-safe) + error-envelope edge state
         </Text>
 
-        <Paper p="sm">
+        <Paper py="sm" px="md">
           <Stack gap="xs">
             <Text size="xs" tt="uppercase" fw={600} c="dimmed">
               Client defaults
@@ -172,7 +172,7 @@ function QueryClientPanel({
           </Stack>
         </Paper>
 
-        <Paper p="sm">
+        <Paper py="sm" px="md">
           <Stack gap="sm">
             <Group justify="space-between" align="center">
               <Text size="xs" tt="uppercase" fw={600} c="dimmed">
