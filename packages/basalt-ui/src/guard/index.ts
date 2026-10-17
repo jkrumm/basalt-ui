@@ -896,7 +896,18 @@ export type GraceEntry = { since: string; promote: string; why: string }
  *   'raw-font-family': { since: '1.4.0', promote: '1.5.0', why: 'introduced 1.4.0 — …' },
  * }
  */
-export const GRACE_PERIOD_KINDS: Partial<Record<GuardKind, GraceEntry>> = {}
+export const GRACE_PERIOD_KINDS: Partial<Record<GuardKind, GraceEntry>> = {
+  'raw-spacing': {
+    since: '2.16.0',
+    promote: '2.17.0',
+    why: 'The spacing scale moved to 8/12/16/20/24 in 2.16.0: a prop value equal to a NEW step (p={16}) is newly a finding.',
+  },
+  'inline-spacing': {
+    since: '2.16.0',
+    promote: '2.17.0',
+    why: 'The scale moved to 8/12/16/20/24 and the CSS micro ceiling dropped 10 → 7 in 2.16.0: a literal 8px/10px in CSS is newly a finding.',
+  },
+}
 
 /** A kind's effective severity: consumer override first, then the grace table, then `error`. */
 function severityOf(kind: GuardKind, cfg: GuardConfig): GuardSeverity {

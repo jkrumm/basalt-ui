@@ -190,13 +190,13 @@ describe('evaluateGuardHook', () => {
         tool_name: 'Write',
         tool_input: {
           file_path: 'src/Page.tsx',
-          file_text: "const C = () => <div style={{ color: '#abc123', gap: 12 }} />",
+          file_text: "const C = () => <Box radius={4} style={{ color: '#abc123' }} />",
         },
       },
       { ...DEFAULT_GUARD_CONFIG, severity: { 'raw-hex': 'warn' } },
     )
     expect(result.permissionDecision).toBe('deny')
-    expect(result.reason).toContain('inline-spacing')
+    expect(result.reason).toContain('raw-radius')
     // The warn-tier kind is absent from the deny reason — it is not what blocked the write.
     expect(result.reason).not.toContain('raw-hex')
   })
