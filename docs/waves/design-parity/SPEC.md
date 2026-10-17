@@ -251,11 +251,13 @@ on an accent surface.
 
 ### 6.12 Chrome leaks to close
 
-The subtle `Button` label takes neutral ink, not the accent. So do `light` and `outline` Buttons (and `ActionIcon`s) with no `color`: only the filled primary and an explicit `color=` carry the accent (D27). The active `Tabs` underline takes ink, not the
-accent: today it deliberately keeps `--tabs-color` (`src/theme/index.ts:1117-1120`), which contradicts
-DESIGN-CORE § Accent discipline ("never spend it on … selected tab"). The active nav **icon** keeps the accent: DESIGN-CORE lists
-"active-nav icons" as an accent site and forbids only the row fill. Both closed leaks are global theme changes: in-wave they
-are re-shot on the playground; each consumer's before/after is taken when it upgrades (Waves 40–41).
+The subtle `Button` label takes neutral ink, not the accent. So do `light` and `outline` Buttons (and
+`ActionIcon`s) with no `color`: only the filled primary and an explicit `color=` carry the accent (D27).
+The active `Tabs` underline takes ink, not the accent: today it deliberately keeps `--tabs-color`
+(`src/theme/index.ts:1117-1120`), which contradicts DESIGN-CORE § Accent discipline ("never spend it on …
+selected tab"). The active nav **icon** keeps the accent: DESIGN-CORE lists "active-nav icons" as an
+accent site and forbids only the row fill. Both closed leaks are global theme changes: in-wave they are
+re-shot on the playground; each consumer's before/after is taken when it upgrades (Waves 40–41).
 
 ### 6.13 Forms
 
