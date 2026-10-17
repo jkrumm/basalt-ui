@@ -240,14 +240,14 @@ export function hoverAtOf(el: Element | null): string {
 const HOVER_AT = /^\s*(\d*\.?\d+)\s*,\s*(\d*\.?\d+)\s*$/
 
 /**
- * Exactly two non-negative numbers, each within [0, 1]. Anything else (a missing half, a third
+ * Exactly two non-negative numbers, each in [0, 1): 1 is the box's far edge, outside it. Anything else (a missing half, a third
  * field, a value outside the box, a sign) is null, so the trigger is hovered at its centre.
  */
 export function parseHoverAt(raw: string): { x: number; y: number } | null {
   const m = HOVER_AT.exec(raw)
   if (!m) return null
   const [x, y] = [Number(m[1]), Number(m[2])]
-  return x <= 1 && y <= 1 ? { x, y } : null
+  return x < 1 && y < 1 ? { x, y } : null
 }
 
 export async function hoverTrigger(target: PwLocator): Promise<void> {

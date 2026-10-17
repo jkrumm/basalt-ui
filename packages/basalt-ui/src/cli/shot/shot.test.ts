@@ -621,7 +621,7 @@ describe('tooltip lookup', () => {
   })
   test('data-shot-at is two fractions of the box; anything else is null, so the centre', () => {
     expect(parseHoverAt('0.25,0.5')).toEqual({ x: 0.25, y: 0.5 })
-    expect(parseHoverAt(' 0 , 1 ')).toEqual({ x: 0, y: 1 })
+    expect(parseHoverAt(' 0 , 0.99 ')).toEqual({ x: 0, y: 0.99 })
     expect(parseHoverAt('.5,.5')).toEqual({ x: 0.5, y: 0.5 })
     for (const bad of [
       '',
