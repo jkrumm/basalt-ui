@@ -2,9 +2,10 @@
  * DeltaBadge — the KPI trend readout (docs/DESIGN-CORE.md: "up/down deltas are text colour only,
  * never a fill"): a glyph and a signed figure in the trend colour, mono `sm`, with NO fill, border
  * or padding in either scheme. The optional ▲/▼ glyph sits on the `micro` rung and `period` is
- * `micro` muted. `polarity` decides the TONE the sign maps to — `'up-good'` (default) reads a rise as success and
- * a fall as danger; `'up-bad'` inverts that for a metric where a rise is the worse reading (a
- * cycle-top index, latency, error rate); `'neutral'` renders every sign in a faint, non-verdict
+ * `micro` muted. `polarity` decides the TONE the sign maps to — `'up-good'` (default) reads a rise
+ * as success and a fall as danger; `'up-bad'` inverts that for a metric where a rise is the worse
+ * reading (a cycle-top index, latency, error rate); `'neutral'` renders every sign in a faint,
+ * non-verdict
  * colour. Zero is always faint with no glyph, under every polarity. The label never carries a
  * leading "+"; pass `format` to control the magnitude string (defaults to a one-decimal percentage
  * of the absolute value). The ▲/▼ glyph is DIRECTION, not verdict, and stays polarity-independent —
@@ -21,7 +22,7 @@
  * <DeltaBadge value={-3.1} />                           // ▼ 3.1%, danger colour
  * <DeltaBadge value={0} />                              // 0.0%, faint, no glyph
  * <DeltaBadge value={182} format={(v) => `${Math.abs(v)}ms`} withGlyph={false} />
- * <DeltaBadge value={35.9} polarity="up-bad" />         // ▲ 35.9%, danger colour — a rise is bad here
+ * <DeltaBadge value={35.9} polarity="up-bad" />         // ▲ 35.9%, danger — a rise is bad here
  */
 import { VX } from '../tokens'
 import classes from './widget-header.module.css'

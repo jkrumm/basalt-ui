@@ -111,8 +111,8 @@ import { DeltaBadge } from './delta-badge'
 import { VX } from '../tokens'
 import { cx } from '../common/props'
 import type { BasaltProps, SlotStylesProps, Tone } from '../common/props'
-import { QueryState, resolveQueryBranch } from './query-state'
-import type { QueryStateLike } from './query-state'
+import { ErrorState, QueryState, resolveQueryBranch } from './query-state'
+import type { QueryBranch, QueryStateLike } from './query-state'
 import classes from './stat-card.module.css'
 
 /**
@@ -269,8 +269,8 @@ export type StatCardProps = BasaltProps &
      *  - pending → the skeleton (caption, value bar, visual slot), never a spinner;
      *  - error with no data → `QueryState`'s error at the `'section'` tier: one sentence and Retry;
      *  - empty (`[]`, `{ data: [] }`, or idle with no data) → one muted line, {@link emptyText};
-     *  - data → the figure, with `breakdown` behind `QueryState` (so a failed background refetch
-     *    shows its "cached data" banner).
+     *  - data → the figure, with `breakdown` behind `QueryState`. A failed background refetch shows
+     *    its "cached data" banner over the breakdown only; the figure path adds no banner.
      *
      * The BRANCH is basalt's; the number is not — `value` is still whatever you formatted.
      *
@@ -309,6 +309,78 @@ export type StatCardProps = BasaltProps &
     tone?: Tone
   }
 
+/**
+ * The value row's body per branch (loading > error > pending > empty > ready; the resolver orders the
+ * query branches). The caption row above it is identical in all of them.
+ */
+function renderValueBody({
+  pending,
+  resolved,
+  figure,
+  emptyText,
+}: {
+  pending: boolean
+  resolved: QueryBranch<unknown> | undefined
+  figure: ReactNode
+  emptyText: string
+}): ReactNode {
+  if (resolved === undefined) return pending ? <ValueSkeleton /> : figure
+  // `loading` with a query still shows the skeleton, but a failed query is never hidden by it.
+  if (pending && resolved.kind !== 'error') return <ValueSkeleton />
+  switch (resolved.kind) {
+    case 'pending':
+      return <ValueSkeleton />
+    case 'error':
+      // The error state itself — not `QueryState` with nothing to wrap, which over cached-empty data
+      // would draw its "cached data" banner above an empty region.
+      return (
+        <ErrorState
+          error={resolved.error}
+          title="Could not load this figure"
+          tier="section"
+          onRetry={() => void resolved.query.refetch()}
+          retrying={resolved.query.fetchStatus === 'fetching'}
+        />
+      )
+    case 'empty':
+      return <p className={classes.empty}>{emptyText}</p>
+    case 'ready':
+      return figure
+    default:
+      return resolved satisfies never
+  }
+}
+
+function renderVisualNode({
+  show,
+  pending,
+  slot,
+}: {
+  show: boolean
+  pending: boolean
+  slot: ReactNode
+}): ReactNode {
+  if (!show) return null
+  if (pending) return <VisualSkeleton />
+  return slot
+}
+
+function renderFooterNode({
+  subtitle,
+  pending,
+}: {
+  subtitle: string | undefined
+  pending: boolean
+}): ReactNode {
+  if (subtitle === undefined) return null
+  if (pending) return <FooterSkeleton />
+  return (
+    <p className={classes.footer} title={subtitle}>
+      {subtitle}
+    </p>
+  )
+}
+
 export function StatCard({
   title,
   icon,
@@ -338,7 +410,7 @@ export function StatCard({
   const bleeds = sparklinePlacement === 'bleed'
   // Only a render prop needs a measurement; a plain node sizes itself.
   const { ref: slotRef, width: slotWidth } = useSlotWidth(isRender)
-  const resolved = query === undefined ? undefined : resolveQueryBranch(query)
+  const resolved = query === undefined ? undefined : resolveQueryBranch(query, 'StatCard')
   const kind = resolved?.kind ?? 'ready'
   const pending = loading || kind === 'pending'
   const ready = !pending && kind === 'ready'
@@ -373,8 +445,10 @@ export function StatCard({
       </QueryState>
     )
 
+  // Built ONLY when ready: the render prop must not run in a pending / failed / empty branch, where
+  // the last measured width is stale.
   const sparklineSlot: ReactNode =
-    sparkline === undefined ? null : (
+    !ready || sparkline === undefined ? null : (
       <div
         ref={slotRef}
         className={cx(
@@ -407,28 +481,7 @@ export function StatCard({
     </div>
   )
 
-  // The value row's body per branch (error > pending > empty > ready, `resolveQueryBranch`). The
-  // caption row above it is identical in all of them.
-  const valueBody = ((): ReactNode => {
-    if (loading) return <ValueSkeleton />
-    if (resolved === undefined) return figure
-    switch (resolved.kind) {
-      case 'pending':
-        return <ValueSkeleton />
-      case 'error':
-        return (
-          <QueryState query={resolved.query} tier="section" errorTitle="Could not load this figure">
-            {null}
-          </QueryState>
-        )
-      case 'empty':
-        return <p className={classes.empty}>{emptyText}</p>
-      case 'ready':
-        return figure
-      default:
-        return resolved satisfies never
-    }
-  })()
+  const valueBody = renderValueBody({ pending, resolved, figure, emptyText })
 
   const breakdownCount = breakdown?.length ?? 0
   const hasBreakdown = breakdownCount > 0
@@ -441,19 +494,8 @@ export function StatCard({
       : pending && (hasBreakdown || sparkline !== undefined))
 
   const hasBleedVisual = sparkline !== undefined && bleeds
-  const visualNode: ReactNode = !hasBleedVisual ? null : pending ? (
-    <VisualSkeleton />
-  ) : (
-    ready && sparklineSlot
-  )
-  const footerNode: ReactNode =
-    subtitle === undefined ? null : pending ? (
-      <FooterSkeleton />
-    ) : (
-      <p className={classes.footer} title={subtitle}>
-        {subtitle}
-      </p>
-    )
+  const visualNode = renderVisualNode({ show: hasBleedVisual, pending, slot: sparklineSlot })
+  const footerNode = renderFooterNode({ subtitle, pending })
 
   return (
     <Card
@@ -556,6 +598,7 @@ export function StatCard({
 
         <Foot
           reserve={hasBleedVisual || subtitle !== undefined}
+          visualBand={bleeds}
           visualNode={visualNode}
           footerNode={footerNode}
         />

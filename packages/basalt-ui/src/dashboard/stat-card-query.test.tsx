@@ -218,7 +218,33 @@ describe('the sparkline render prop', () => {
   test('an error over cached-empty data shows the error, not "No data"', () => {
     const markup = render(query({ data: [], isError: true, error: new Error('refetch exploded') }))
     expect(markup).toContain('refetch exploded')
+    expect(markup).toContain('Retry')
+    expect(markup).not.toContain('Showing cached data')
     expect(markup).not.toContain('No data for this period')
+  })
+
+  test('is not invoked again after a ready → pending rerender (no stale width)', () => {
+    const calls: string[] = []
+    const card = (q: QueryStateLike<Row[]>) => (
+      <MantineProvider>
+        <StatCard
+          title="Latency"
+          value="42"
+          query={q}
+          sparkline={() => {
+            calls.push('call')
+            return <span>spark</span>
+          }}
+        />
+      </MantineProvider>
+    )
+    const view = renderIntoDom(card(query({ data: [{ label: 'a' }] })))
+    expect(calls.length).toBeGreaterThan(0)
+    const before = calls.length
+    view.rerender(card(query({ fetchStatus: 'fetching' })))
+    view.rerender(card(query({ isError: true, error: new Error('x') })))
+    view.rerender(card(query({ data: [] })))
+    expect(calls.length).toBe(before)
   })
 
   test('the pending card says what is loading, to assistive tech', () => {

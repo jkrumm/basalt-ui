@@ -267,10 +267,10 @@
   color: var(--vx-muted);
 }
 
-/* Folded-subtitle pieces: hidden until a `basalt-card` narrower than 480px shows them (below). The
- * `.foldProbe` rides the same rules as the glyph: the bubble is portalled out of the card, so it
- * cannot be revealed by a card selector — `InfoGlyph` reads the probe's display onto the bubble as
- * `data-folded` and `.infoBubble[data-folded='true'] .foldNote` reveals from that. */
+/* Folded-subtitle pieces: hidden until a `basalt-card` narrower than 480px shows them (below).
+ * The `.foldProbe` rides the same rules as the glyph: the bubble is portalled out of the card, so
+ * it cannot be revealed by a card selector. `InfoGlyph` reads the probe's display onto the bubble
+ * as `data-folded` and `.infoBubble[data-folded='true'] .foldNote` reveals from that. */
 .foldGlyph,
 .foldProbe,
 .foldNote {
@@ -283,14 +283,15 @@
 
 /*
  * The tooltip bubble reads like every other floating surface — panel bg + `shadow-card` + card
- * radius (docs/DESIGN-SPEC.md §5). It opens DOWNWARD and flips up at the viewport edge. `pointer-events: none` so it can never swallow the pointer on its way back to the
- * trigger's `mouseleave`. Mantine-free by design (this whole folder is), so it is a plain
+ * radius (docs/DESIGN-SPEC.md §5). It opens DOWNWARD and flips up at the viewport edge.
+ * `pointer-events: none` so it can never swallow the pointer on its way back to the trigger's
+ * `mouseleave`. Mantine-free by design (this whole folder is), so it is a plain
  * state-driven bubble rather than a Mantine Tooltip — which is also what makes it composable from
  * inside the `charts/` boundary.
  */
 .infoBubble {
-  /* Portalled to <body> and placed from the trigger's rect (`useBubblePosition`): fixed, so no card's
-   * `overflow: hidden` clips it; `top`/`left` arrive inline. */
+  /* Portalled to <body> and placed from the trigger's rect (`useBubblePosition`): fixed, so no
+   * card's `overflow: hidden` clips it; `top`/`left` arrive inline. */
   position: fixed;
   z-index: var(--mantine-z-index-popover, 300);
   width: max-content;

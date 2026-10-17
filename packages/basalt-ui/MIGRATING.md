@@ -1064,7 +1064,7 @@ added, removed or renamed; three theme defaults change, each with a one-prop way
 
 ### StatCard and Sparkline
 
-Wave 33 of the design-parity track restyles the metric card (`docs/waves/design-parity/SPEC.md` § 6.1, § 6.2) and flips the `Sparkline` defaults. No export is removed or renamed; **the defaults and the card's anatomy change**.
+Wave 33 of the design-parity track restyles the metric card (`docs/waves/design-parity/SPEC.md` § 6.1, § 6.2) and flips the `Sparkline` defaults. No export is removed or renamed, but **the `state` field of the `StatCardSparklineSize` type is removed** and the defaults and the card's anatomy change.
 
 | What                          | Old                                                                               | New                                                                                                                                                                                                      | Opt-out / replacement                                                                                  |
 | ----------------------------- | --------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |

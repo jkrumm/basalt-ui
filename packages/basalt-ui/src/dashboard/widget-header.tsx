@@ -182,7 +182,8 @@ function useBubblePosition(
   open: boolean,
   triggerRef: RefObject<HTMLButtonElement | null>,
   bubbleRef: RefObject<HTMLSpanElement | null>,
-): { pos: BubblePos | null; clear: () => void } {
+  probeRef: RefObject<HTMLSpanElement | null>,
+): { pos: BubblePos | null; setPos: (pos: BubblePos | null) => void } {
   const [pos, setPos] = useState<BubblePos | null>(null)
 
   useIsomorphicLayoutEffect(() => {
@@ -191,6 +192,11 @@ function useBubblePosition(
       const trigger = triggerRef.current
       const bubble = bubbleRef.current
       if (trigger === null || bubble === null) return
+      // The fold signal is the CARD's (container query / short-card flag), so it is re-read on every
+      // placement: a resize while open can fold or unfold the note, which changes the bubble's box.
+      const probe = probeRef.current
+      if (probe !== null)
+        bubble.dataset['folded'] = String(getComputedStyle(probe).display !== 'none')
       const t = trigger.getBoundingClientRect()
       const b = bubble.getBoundingClientRect()
       // The documentElement's client box is the viewport minus classic scrollbars.
@@ -216,9 +222,9 @@ function useBubblePosition(
       window.removeEventListener('resize', place)
       observer?.disconnect()
     }
-  }, [open, triggerRef, bubbleRef])
+  }, [open, triggerRef, bubbleRef, probeRef])
 
-  return { pos, clear: () => setPos(null) }
+  return { pos, setPos }
 }
 
 /**
@@ -254,34 +260,27 @@ export function InfoGlyph({
   const triggerRef = useRef<HTMLButtonElement>(null)
   const bubbleRef = useRef<HTMLSpanElement>(null)
   const probeRef = useRef<HTMLSpanElement>(null)
-  // The folded subtitle (`note`) is revealed by the CARD's container query / short-card flag, which
-  // the portalled bubble no longer sits under. The probe is a hidden sibling of the trigger, inside
-  // the card, that those same rules reveal: its computed display is the one fold signal, read at open
-  // and written onto the bubble as `data-folded` (a DOM write, not state, so it never re-renders).
-  // Declared before the position hook so the note is in the box the first placement measures.
-  useIsomorphicLayoutEffect(() => {
-    const probe = probeRef.current
-    const bubble = bubbleRef.current
-    if (!open || probe === null || bubble === null) return
-    bubble.dataset['folded'] = String(getComputedStyle(probe).display !== 'none')
-  }, [open])
-  const { pos, clear } = useBubblePosition(open, triggerRef, bubbleRef)
+  // The probe is a hidden sibling of the trigger, inside the card, that the card's fold rules reveal;
+  // `useBubblePosition` reads its display onto the portalled bubble as `data-folded`.
+  const { pos, setPos } = useBubblePosition(open, triggerRef, bubbleRef, probeRef)
   const close = () => {
     setOpen(false)
-    clear()
+    setPos(null)
   }
 
   useEffect(() => {
     if (!open) return
     const handlePointerDown = (event: PointerEvent) => {
-      if (triggerRef.current?.contains(event.target as Node)) return
-      close()
+      const target = event.target
+      if (!(target instanceof Node)) return
+      // The bubble is portalled out of the trigger's subtree, so it needs its own exemption.
+      if (triggerRef.current?.contains(target) || bubbleRef.current?.contains(target)) return
+      setOpen(false)
+      setPos(null)
     }
     document.addEventListener('pointerdown', handlePointerDown)
     return () => document.removeEventListener('pointerdown', handlePointerDown)
-    // `close` only calls two stable setters.
-    // oxlint-disable-next-line react-hooks/exhaustive-deps
-  }, [open])
+  }, [open, setPos])
 
   return (
     <span className={cx(classes.info, className)}>

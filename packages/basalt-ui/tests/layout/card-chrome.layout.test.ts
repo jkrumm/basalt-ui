@@ -124,6 +124,13 @@ layout('card chrome by container', () => {
     expect(heights.footer).toBe(heights.both)
   })
 
+  test('a `right` card with a footer and no sparkline adds one footer line, not a visual band', async () => {
+    const bare = await p.box('b', '[data-testid="foot-right-bare"] > div')
+    const footer = await p.box('f', '[data-testid="foot-right-footer"] > div')
+    // gap (8) + one 20px footer line; reserving the 22px band as well would add 26 more.
+    expect(Math.round(footer.box.height - bare.box.height)).toBeLessThanOrEqual(28)
+  })
+
   test('a `right` placement card holds its height pending and ready', async () => {
     const pending = await p.box('p', '[data-testid="foot-right-pending"] > div')
     const ready = await p.box('r', '[data-testid="foot-right-ready"] > div')
