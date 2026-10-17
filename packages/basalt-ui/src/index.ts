@@ -48,6 +48,10 @@ export {
   SettingsSection,
   SettingsRow,
   DangerZone,
+  Meter,
+  type MeterProps,
+  BarList,
+  type BarListProps,
 } from './dashboard'
 export { unwrap } from './unwrap'
 

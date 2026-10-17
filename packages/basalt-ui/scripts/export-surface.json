@@ -1,10 +1,12 @@
 {
   ".": [
+    "BarList",
     "BasaltProvider",
     "BasaltShell",
     "DangerZone",
     "DeltaBadge",
     "EmptyState",
+    "Meter",
     "PageAside",
     "PageBar",
     "PageTitle",
