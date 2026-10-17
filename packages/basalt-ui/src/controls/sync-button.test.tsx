@@ -184,12 +184,20 @@ describe('format locale', () => {
     }
   }
   beforeEach(() => {
-    Intl.RelativeTimeFormat = GermanHost as typeof Intl.RelativeTimeFormat
+    Object.defineProperty(Intl, 'RelativeTimeFormat', {
+      value: GermanHost,
+      configurable: true,
+      writable: true,
+    })
   })
   afterEach(() => {
     cleanup()
     resetFormatDefaults()
-    Intl.RelativeTimeFormat = Original
+    Object.defineProperty(Intl, 'RelativeTimeFormat', {
+      value: Original,
+      configurable: true,
+      writable: true,
+    })
   })
 
   async function ageUnder(locale: string) {
