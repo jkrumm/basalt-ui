@@ -13,7 +13,7 @@
  * `strip-footer-day` / `strip-footer-week`, present in every state; the empty / error note
  * `strip-footer-note` sits inside the day cell); `ChartCard` does not forward `data-*`, so those anchors are wrapping `Box`es.
  */
-import { Box, SimpleGrid, Stack, Text } from '@mantine/core'
+import { Box, SimpleGrid, Stack } from '@mantine/core'
 import { BarList, DeltaBadge, Meter, PageBar, StatGroup, StatusVerdict } from 'basalt-ui'
 import type { StatStripCell } from 'basalt-ui'
 import { Bars, ChartCard, Sparkline } from 'basalt-ui/charts'
@@ -244,7 +244,7 @@ function QueueStrip({ shotState }: ScenarioProps) {
       BUDGETS.day.spent,
       BUDGETS.day.cap,
       'Today',
-      WARDEN_EMPTY,
+      note ?? WARDEN_EMPTY,
     ),
   }
   const weekMeter = {
@@ -257,22 +257,14 @@ function QueueStrip({ shotState }: ScenarioProps) {
       error ? 'Weekly budget unavailable.' : 'No dispatch spend this week.',
     ),
   }
-  // Empty / error: the day cell carries the one-line note, the week cell stays a (null) meter, so
-  // both footer anchors exist in every state (`shot` errors on an anchor that vanishes).
-  const footer =
+  // Both footer anchors exist in every state (`shot` errors on an anchor that vanishes); the
+  // empty / error note is the day meter's emptyText, wrapped so it keeps its own anchor.
+  const footer = [
     note === undefined
-      ? [dayMeter, weekMeter]
-      : [
-          {
-            key: 'day',
-            content: (
-              <Text data-shot="strip-footer-note" size="sm" c="dimmed">
-                {note}
-              </Text>
-            ),
-          },
-          weekMeter,
-        ]
+      ? dayMeter
+      : { ...dayMeter, content: <Box data-shot="strip-footer-note">{dayMeter.content}</Box> },
+    weekMeter,
+  ]
 
   return <StatGroup variant="strip" label="Agent queue" cols={5} cells={cells} footer={footer} />
 }
