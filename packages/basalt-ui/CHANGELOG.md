@@ -1,3 +1,43 @@
+# [2.19.0](https://github.com/jkrumm/basalt-ui/compare/v2.18.0...v2.19.0) (2026-10-17)
+
+
+### Bug Fixes
+
+* address round 1 on the S2 and S4 scenarios ([8ebc318](https://github.com/jkrumm/basalt-ui/commit/8ebc318b93c4ef1971705752c31378b943842667))
+* address round 2 on the S2 and S4 scenarios ([48e992c](https://github.com/jkrumm/basalt-ui/commit/48e992cc8c65304ae87080b477a40974915185d2))
+* anchor the zone reading at its marker and inset skeletons ([0f734ae](https://github.com/jkrumm/basalt-ui/commit/0f734ae56fabc5600d0c9e1e45330b650e983b63))
+* caption Meter segments, wrap captions, size Meter in StatCard ([8125541](https://github.com/jkrumm/basalt-ui/commit/81255416395fbb01062a830a87114b5f1e6c9592))
+* centre the zone reading logically and pin it in RTL ([6176606](https://github.com/jkrumm/basalt-ui/commit/61766066b3bd6f0c8ab58cc4e2720d9007908d8b))
+* close review round 2 on Meter captions and the StatCard slot ([421ac71](https://github.com/jkrumm/basalt-ui/commit/421ac7144518a80b11e0f7f0a846d19be798500d))
+* draw the info focus ring on a glyph-sized pseudo-element ([f11bf1c](https://github.com/jkrumm/basalt-ui/commit/f11bf1cc1a6ed03e28b7987d61be06839510a657))
+* drop the shot hover from sparkline wrappers ([a2e2f5c](https://github.com/jkrumm/basalt-ui/commit/a2e2f5cf914ec6b08fb16afbf010b6562d85fd02))
+* harden Meter caption modes and pin the layout in a browser ([0ab822d](https://github.com/jkrumm/basalt-ui/commit/0ab822ddc38ea62085dd2664edcc0fdcf28ec78c))
+* keep the BarList bar inside the label column ([a227c53](https://github.com/jkrumm/basalt-ui/commit/a227c53be55e7692f1312367f63dfe3d0d1b406a))
+* keep the fixture month labels independent of ICU data ([a226543](https://github.com/jkrumm/basalt-ui/commit/a226543d6f5b5bb1b3d91b582bfee77e6f356180))
+* keep the info glyph focus ring off the caption text ([d66d178](https://github.com/jkrumm/basalt-ui/commit/d66d1782d479520edd1b6cd1267189f5f516368a))
+* keep the loading skeleton inset in the narrow right slot ([cda6c98](https://github.com/jkrumm/basalt-ui/commit/cda6c98da806f61a88259783d81d1a1b1cc65579))
+* key the Meter zone fit on the holding zone and test fonts ([7854b74](https://github.com/jkrumm/basalt-ui/commit/7854b74aa6eed8a9034d3f9fa7f41bd6686f2336))
+* name the info glyph ring knobs and harden its layout test ([c7fb542](https://github.com/jkrumm/basalt-ui/commit/c7fb5428b68fa1805d1ae03eab497b937074d0d1))
+* name the Meter zones on the band ([b321399](https://github.com/jkrumm/basalt-ui/commit/b321399230b86f6f4ae5160fc5bed401606374c1))
+* name the S2 pace unit and hover specimens on /components ([d0a014d](https://github.com/jkrumm/basalt-ui/commit/d0a014d056c782a2ba5349629c116a3b6ab02136))
+* name the status in words and share one StatusDot ([d3a16b8](https://github.com/jkrumm/basalt-ui/commit/d3a16b867037468296d07e435f638ec8c913f8c5))
+* name the window under the S4 month-to-date sparkline ([67b59d0](https://github.com/jkrumm/basalt-ui/commit/67b59d0b981aa36b56155dbaace61bb2513a82d6))
+* put the Meter ring padding on a spacing token ([ed28b4a](https://github.com/jkrumm/basalt-ui/commit/ed28b4a106170fa2179bfe56721b4d6fe9e82c36))
+* re-measure Meter zone names on font load and prove the fit ([2390900](https://github.com/jkrumm/basalt-ui/commit/23909008a1aa6536d18a6314d46c37607225ca85))
+* render the sparkline directly in the StatCard slot ([1c56983](https://github.com/jkrumm/basalt-ui/commit/1c56983f62d2c15e31a175efa0a7ca2c729a6fc4))
+* show the notification intent word and share StatusVerdict ([64bb580](https://github.com/jkrumm/basalt-ui/commit/64bb5809a7ddef74afcf26c6e4f009ed8c6ade2d))
+* treat an empty or null color as unnamed for ink vars ([4930bda](https://github.com/jkrumm/basalt-ui/commit/4930bdaff6f05d94aa359f5b174bbc05ab30390d))
+
+
+### Features
+
+* build the S2 training-log scenario ([94a7f91](https://github.com/jkrumm/basalt-ui/commit/94a7f9122ef47d5272889c6f7acd484ade06c69b))
+* ink the light button on the subtle surface and add edge tests ([6fe99fa](https://github.com/jkrumm/basalt-ui/commit/6fe99fa2194337d4a7bb36993c5d59ea0c8c31f1))
+* name the Callout and notification-center edges in MIGRATING ([2da8c8d](https://github.com/jkrumm/basalt-ui/commit/2da8c8d9ba2836ba3094efe497c02c3cc61c0813))
+* paint light and outline buttons in ink by default ([47d566b](https://github.com/jkrumm/basalt-ui/commit/47d566b9b8b79351a0218a9f14ac53a2196a6090))
+* put the S4 spend scenario on Meter and BarList ([37530a9](https://github.com/jkrumm/basalt-ui/commit/37530a9a54f6ed353c8e2a3faf0fcdbb1de22875))
+* state a StatCard verdict as a dot and a word, not a rail ([1a4085d](https://github.com/jkrumm/basalt-ui/commit/1a4085db453aa05fd3195adf9436c7b3edecb0cc))
+
 # [2.18.0](https://github.com/jkrumm/basalt-ui/compare/v2.17.0...v2.18.0) (2026-10-17)
 
 
