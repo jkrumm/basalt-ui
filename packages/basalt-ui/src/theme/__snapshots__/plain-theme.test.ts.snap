@@ -803,17 +803,7 @@ exports[`createBasaltTheme() shape and resolver output default 1`] = `
         "root": undefined,
       },
       "vars": {
-        "fn": 
-"function tabsVars(theme, props) {
-  const underline = !hasExplicitColor(props.color) && (props.variant ?? "default") === "default";
-  return {
-    root: {
-      "--tabs-text-color": onColorFor(theme, props),
-      "--tabs-color": underline ? "var(--vx-ink)" : void 0
-    }
-  };
-}"
-,
+        "fn": "(theme, props) => tabsVars(theme, props)",
         "outputs": [
           {
             "probes": 100,
@@ -1937,17 +1927,7 @@ exports[`createBasaltTheme() shape and resolver output all knobs 1`] = `
         "root": undefined,
       },
       "vars": {
-        "fn": 
-"function tabsVars(theme, props) {
-  const underline = !hasExplicitColor(props.color) && (props.variant ?? "default") === "default";
-  return {
-    root: {
-      "--tabs-text-color": onColorFor(theme, props),
-      "--tabs-color": underline ? "var(--vx-ink)" : void 0
-    }
-  };
-}"
-,
+        "fn": "(theme, props) => tabsVars(theme, props)",
         "outputs": [
           {
             "probes": 100,
