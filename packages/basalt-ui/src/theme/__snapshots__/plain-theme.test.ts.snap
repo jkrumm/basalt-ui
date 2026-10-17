@@ -293,6 +293,7 @@ exports[`createBasaltTheme() shape and resolver output default 1`] = `
           return {
             root: {
               "--button-height": props.size === "md" ? "calc(var(--vx-space-control-height) * var(--mantine-scale))" : void 0,
+              "--button-padding-x": buttonPaddingX(props.size),
               "--button-color": ink.color,
               "--button-hover": ink.hover,
               "--button-bg": ink.bg,
@@ -303,36 +304,100 @@ exports[`createBasaltTheme() shape and resolver output default 1`] = `
 ,
         "outputs": [
           {
-            "probes": 1892,
-            "result": "{"root":{}}",
+            "probes": 542,
+            "result": "{"root":{"--button-padding-x":"calc((var(--vx-space-stack-lg)) * var(--mantine-scale))"}}",
           },
           {
-            "probes": 42,
-            "result": "{"root":{"--button-color":"var(--vx-ink)","--button-hover":"color-mix(in srgb, var(--vx-ink) 6%, var(--vx-surface-subtle))","--button-bg":"var(--vx-surface-subtle)"}}",
+            "probes": 12,
+            "result": "{"root":{"--button-padding-x":"calc((var(--vx-space-stack-lg)) * var(--mantine-scale))","--button-color":"var(--vx-ink)","--button-hover":"color-mix(in srgb, var(--vx-ink) 6%, var(--vx-surface-subtle))","--button-bg":"var(--vx-surface-subtle)"}}",
           },
           {
-            "probes": 42,
-            "result": "{"root":{"--button-color":"var(--vx-ink)","--button-hover":"var(--vx-surface-subtle)","--button-bd":"calc(0.0625rem * var(--mantine-scale)) solid var(--vx-surface-border)"}}",
+            "probes": 12,
+            "result": "{"root":{"--button-padding-x":"calc((var(--vx-space-stack-lg)) * var(--mantine-scale))","--button-color":"var(--vx-ink)","--button-hover":"var(--vx-surface-subtle)","--button-bd":"calc(0.0625rem * var(--mantine-scale)) solid var(--vx-surface-border)"}}",
           },
           {
-            "probes": 42,
-            "result": "{"root":{"--button-color":"var(--vx-ink)","--button-hover":"color-mix(in srgb, var(--vx-ink) 6%, transparent)"}}",
+            "probes": 12,
+            "result": "{"root":{"--button-padding-x":"calc((var(--vx-space-stack-lg)) * var(--mantine-scale))","--button-color":"var(--vx-ink)","--button-hover":"color-mix(in srgb, var(--vx-ink) 6%, transparent)"}}",
+          },
+          {
+            "probes": 270,
+            "result": "{"root":{"--button-padding-x":"calc((var(--vx-space-stack-md)) * var(--mantine-scale))"}}",
+          },
+          {
+            "probes": 6,
+            "result": "{"root":{"--button-padding-x":"calc((var(--vx-space-stack-md)) * var(--mantine-scale))","--button-color":"var(--vx-ink)","--button-hover":"color-mix(in srgb, var(--vx-ink) 6%, var(--vx-surface-subtle))","--button-bg":"var(--vx-surface-subtle)"}}",
+          },
+          {
+            "probes": 6,
+            "result": "{"root":{"--button-padding-x":"calc((var(--vx-space-stack-md)) * var(--mantine-scale))","--button-color":"var(--vx-ink)","--button-hover":"var(--vx-surface-subtle)","--button-bd":"calc(0.0625rem * var(--mantine-scale)) solid var(--vx-surface-border)"}}",
+          },
+          {
+            "probes": 6,
+            "result": "{"root":{"--button-padding-x":"calc((var(--vx-space-stack-md)) * var(--mantine-scale))","--button-color":"var(--vx-ink)","--button-hover":"color-mix(in srgb, var(--vx-ink) 6%, transparent)"}}",
           },
           {
             "probes": 272,
-            "result": "{"root":{"--button-height":"calc(var(--vx-space-control-height) * var(--mantine-scale))"}}",
+            "result": "{"root":{"--button-height":"calc(var(--vx-space-control-height) * var(--mantine-scale))","--button-padding-x":"calc((var(--vx-space-stack-lg) + var(--vx-space-stack-xs)) * var(--mantine-scale))"}}",
           },
           {
             "probes": 6,
-            "result": "{"root":{"--button-height":"calc(var(--vx-space-control-height) * var(--mantine-scale))","--button-color":"var(--vx-ink)","--button-hover":"color-mix(in srgb, var(--vx-ink) 6%, var(--vx-surface-subtle))","--button-bg":"var(--vx-surface-subtle)"}}",
+            "result": "{"root":{"--button-height":"calc(var(--vx-space-control-height) * var(--mantine-scale))","--button-padding-x":"calc((var(--vx-space-stack-lg) + var(--vx-space-stack-xs)) * var(--mantine-scale))","--button-color":"var(--vx-ink)","--button-hover":"color-mix(in srgb, var(--vx-ink) 6%, var(--vx-surface-subtle))","--button-bg":"var(--vx-surface-subtle)"}}",
           },
           {
             "probes": 6,
-            "result": "{"root":{"--button-height":"calc(var(--vx-space-control-height) * var(--mantine-scale))","--button-color":"var(--vx-ink)","--button-hover":"var(--vx-surface-subtle)","--button-bd":"calc(0.0625rem * var(--mantine-scale)) solid var(--vx-surface-border)"}}",
+            "result": "{"root":{"--button-height":"calc(var(--vx-space-control-height) * var(--mantine-scale))","--button-padding-x":"calc((var(--vx-space-stack-lg) + var(--vx-space-stack-xs)) * var(--mantine-scale))","--button-color":"var(--vx-ink)","--button-hover":"var(--vx-surface-subtle)","--button-bd":"calc(0.0625rem * var(--mantine-scale)) solid var(--vx-surface-border)"}}",
           },
           {
             "probes": 6,
-            "result": "{"root":{"--button-height":"calc(var(--vx-space-control-height) * var(--mantine-scale))","--button-color":"var(--vx-ink)","--button-hover":"color-mix(in srgb, var(--vx-ink) 6%, transparent)"}}",
+            "result": "{"root":{"--button-height":"calc(var(--vx-space-control-height) * var(--mantine-scale))","--button-padding-x":"calc((var(--vx-space-stack-lg) + var(--vx-space-stack-xs)) * var(--mantine-scale))","--button-color":"var(--vx-ink)","--button-hover":"color-mix(in srgb, var(--vx-ink) 6%, transparent)"}}",
+          },
+          {
+            "probes": 270,
+            "result": "{"root":{"--button-padding-x":"calc((var(--vx-space-stack-xl)) * var(--mantine-scale))"}}",
+          },
+          {
+            "probes": 6,
+            "result": "{"root":{"--button-padding-x":"calc((var(--vx-space-stack-xl)) * var(--mantine-scale))","--button-color":"var(--vx-ink)","--button-hover":"color-mix(in srgb, var(--vx-ink) 6%, var(--vx-surface-subtle))","--button-bg":"var(--vx-surface-subtle)"}}",
+          },
+          {
+            "probes": 6,
+            "result": "{"root":{"--button-padding-x":"calc((var(--vx-space-stack-xl)) * var(--mantine-scale))","--button-color":"var(--vx-ink)","--button-hover":"var(--vx-surface-subtle)","--button-bd":"calc(0.0625rem * var(--mantine-scale)) solid var(--vx-surface-border)"}}",
+          },
+          {
+            "probes": 6,
+            "result": "{"root":{"--button-padding-x":"calc((var(--vx-space-stack-xl)) * var(--mantine-scale))","--button-color":"var(--vx-ink)","--button-hover":"color-mix(in srgb, var(--vx-ink) 6%, transparent)"}}",
+          },
+          {
+            "probes": 270,
+            "result": "{"root":{"--button-padding-x":"calc((var(--vx-space-stack-xl) + var(--vx-space-stack-sm)) * var(--mantine-scale))"}}",
+          },
+          {
+            "probes": 6,
+            "result": "{"root":{"--button-padding-x":"calc((var(--vx-space-stack-xl) + var(--vx-space-stack-sm)) * var(--mantine-scale))","--button-color":"var(--vx-ink)","--button-hover":"color-mix(in srgb, var(--vx-ink) 6%, var(--vx-surface-subtle))","--button-bg":"var(--vx-surface-subtle)"}}",
+          },
+          {
+            "probes": 6,
+            "result": "{"root":{"--button-padding-x":"calc((var(--vx-space-stack-xl) + var(--vx-space-stack-sm)) * var(--mantine-scale))","--button-color":"var(--vx-ink)","--button-hover":"var(--vx-surface-subtle)","--button-bd":"calc(0.0625rem * var(--mantine-scale)) solid var(--vx-surface-border)"}}",
+          },
+          {
+            "probes": 6,
+            "result": "{"root":{"--button-padding-x":"calc((var(--vx-space-stack-xl) + var(--vx-space-stack-sm)) * var(--mantine-scale))","--button-color":"var(--vx-ink)","--button-hover":"color-mix(in srgb, var(--vx-ink) 6%, transparent)"}}",
+          },
+          {
+            "probes": 540,
+            "result": "{"root":{}}",
+          },
+          {
+            "probes": 12,
+            "result": "{"root":{"--button-color":"var(--vx-ink)","--button-hover":"color-mix(in srgb, var(--vx-ink) 6%, var(--vx-surface-subtle))","--button-bg":"var(--vx-surface-subtle)"}}",
+          },
+          {
+            "probes": 12,
+            "result": "{"root":{"--button-color":"var(--vx-ink)","--button-hover":"var(--vx-surface-subtle)","--button-bd":"calc(0.0625rem * var(--mantine-scale)) solid var(--vx-surface-border)"}}",
+          },
+          {
+            "probes": 12,
+            "result": "{"root":{"--button-color":"var(--vx-ink)","--button-hover":"color-mix(in srgb, var(--vx-ink) 6%, transparent)"}}",
           },
         ],
       },
@@ -1478,6 +1543,7 @@ exports[`createBasaltTheme() shape and resolver output all knobs 1`] = `
           return {
             root: {
               "--button-height": props.size === "md" ? "calc(var(--vx-space-control-height) * var(--mantine-scale))" : void 0,
+              "--button-padding-x": buttonPaddingX(props.size),
               "--button-color": ink.color,
               "--button-hover": ink.hover,
               "--button-bg": ink.bg,
@@ -1488,36 +1554,100 @@ exports[`createBasaltTheme() shape and resolver output all knobs 1`] = `
 ,
         "outputs": [
           {
-            "probes": 1892,
-            "result": "{"root":{}}",
+            "probes": 542,
+            "result": "{"root":{"--button-padding-x":"calc((var(--vx-space-stack-lg)) * var(--mantine-scale))"}}",
           },
           {
-            "probes": 42,
-            "result": "{"root":{"--button-color":"var(--vx-ink)","--button-hover":"color-mix(in srgb, var(--vx-ink) 6%, var(--vx-surface-subtle))","--button-bg":"var(--vx-surface-subtle)"}}",
+            "probes": 12,
+            "result": "{"root":{"--button-padding-x":"calc((var(--vx-space-stack-lg)) * var(--mantine-scale))","--button-color":"var(--vx-ink)","--button-hover":"color-mix(in srgb, var(--vx-ink) 6%, var(--vx-surface-subtle))","--button-bg":"var(--vx-surface-subtle)"}}",
           },
           {
-            "probes": 42,
-            "result": "{"root":{"--button-color":"var(--vx-ink)","--button-hover":"var(--vx-surface-subtle)","--button-bd":"calc(0.0625rem * var(--mantine-scale)) solid var(--vx-surface-border)"}}",
+            "probes": 12,
+            "result": "{"root":{"--button-padding-x":"calc((var(--vx-space-stack-lg)) * var(--mantine-scale))","--button-color":"var(--vx-ink)","--button-hover":"var(--vx-surface-subtle)","--button-bd":"calc(0.0625rem * var(--mantine-scale)) solid var(--vx-surface-border)"}}",
           },
           {
-            "probes": 42,
-            "result": "{"root":{"--button-color":"var(--vx-ink)","--button-hover":"color-mix(in srgb, var(--vx-ink) 6%, transparent)"}}",
+            "probes": 12,
+            "result": "{"root":{"--button-padding-x":"calc((var(--vx-space-stack-lg)) * var(--mantine-scale))","--button-color":"var(--vx-ink)","--button-hover":"color-mix(in srgb, var(--vx-ink) 6%, transparent)"}}",
+          },
+          {
+            "probes": 270,
+            "result": "{"root":{"--button-padding-x":"calc((var(--vx-space-stack-md)) * var(--mantine-scale))"}}",
+          },
+          {
+            "probes": 6,
+            "result": "{"root":{"--button-padding-x":"calc((var(--vx-space-stack-md)) * var(--mantine-scale))","--button-color":"var(--vx-ink)","--button-hover":"color-mix(in srgb, var(--vx-ink) 6%, var(--vx-surface-subtle))","--button-bg":"var(--vx-surface-subtle)"}}",
+          },
+          {
+            "probes": 6,
+            "result": "{"root":{"--button-padding-x":"calc((var(--vx-space-stack-md)) * var(--mantine-scale))","--button-color":"var(--vx-ink)","--button-hover":"var(--vx-surface-subtle)","--button-bd":"calc(0.0625rem * var(--mantine-scale)) solid var(--vx-surface-border)"}}",
+          },
+          {
+            "probes": 6,
+            "result": "{"root":{"--button-padding-x":"calc((var(--vx-space-stack-md)) * var(--mantine-scale))","--button-color":"var(--vx-ink)","--button-hover":"color-mix(in srgb, var(--vx-ink) 6%, transparent)"}}",
           },
           {
             "probes": 272,
-            "result": "{"root":{"--button-height":"calc(var(--vx-space-control-height) * var(--mantine-scale))"}}",
+            "result": "{"root":{"--button-height":"calc(var(--vx-space-control-height) * var(--mantine-scale))","--button-padding-x":"calc((var(--vx-space-stack-lg) + var(--vx-space-stack-xs)) * var(--mantine-scale))"}}",
           },
           {
             "probes": 6,
-            "result": "{"root":{"--button-height":"calc(var(--vx-space-control-height) * var(--mantine-scale))","--button-color":"var(--vx-ink)","--button-hover":"color-mix(in srgb, var(--vx-ink) 6%, var(--vx-surface-subtle))","--button-bg":"var(--vx-surface-subtle)"}}",
+            "result": "{"root":{"--button-height":"calc(var(--vx-space-control-height) * var(--mantine-scale))","--button-padding-x":"calc((var(--vx-space-stack-lg) + var(--vx-space-stack-xs)) * var(--mantine-scale))","--button-color":"var(--vx-ink)","--button-hover":"color-mix(in srgb, var(--vx-ink) 6%, var(--vx-surface-subtle))","--button-bg":"var(--vx-surface-subtle)"}}",
           },
           {
             "probes": 6,
-            "result": "{"root":{"--button-height":"calc(var(--vx-space-control-height) * var(--mantine-scale))","--button-color":"var(--vx-ink)","--button-hover":"var(--vx-surface-subtle)","--button-bd":"calc(0.0625rem * var(--mantine-scale)) solid var(--vx-surface-border)"}}",
+            "result": "{"root":{"--button-height":"calc(var(--vx-space-control-height) * var(--mantine-scale))","--button-padding-x":"calc((var(--vx-space-stack-lg) + var(--vx-space-stack-xs)) * var(--mantine-scale))","--button-color":"var(--vx-ink)","--button-hover":"var(--vx-surface-subtle)","--button-bd":"calc(0.0625rem * var(--mantine-scale)) solid var(--vx-surface-border)"}}",
           },
           {
             "probes": 6,
-            "result": "{"root":{"--button-height":"calc(var(--vx-space-control-height) * var(--mantine-scale))","--button-color":"var(--vx-ink)","--button-hover":"color-mix(in srgb, var(--vx-ink) 6%, transparent)"}}",
+            "result": "{"root":{"--button-height":"calc(var(--vx-space-control-height) * var(--mantine-scale))","--button-padding-x":"calc((var(--vx-space-stack-lg) + var(--vx-space-stack-xs)) * var(--mantine-scale))","--button-color":"var(--vx-ink)","--button-hover":"color-mix(in srgb, var(--vx-ink) 6%, transparent)"}}",
+          },
+          {
+            "probes": 270,
+            "result": "{"root":{"--button-padding-x":"calc((var(--vx-space-stack-xl)) * var(--mantine-scale))"}}",
+          },
+          {
+            "probes": 6,
+            "result": "{"root":{"--button-padding-x":"calc((var(--vx-space-stack-xl)) * var(--mantine-scale))","--button-color":"var(--vx-ink)","--button-hover":"color-mix(in srgb, var(--vx-ink) 6%, var(--vx-surface-subtle))","--button-bg":"var(--vx-surface-subtle)"}}",
+          },
+          {
+            "probes": 6,
+            "result": "{"root":{"--button-padding-x":"calc((var(--vx-space-stack-xl)) * var(--mantine-scale))","--button-color":"var(--vx-ink)","--button-hover":"var(--vx-surface-subtle)","--button-bd":"calc(0.0625rem * var(--mantine-scale)) solid var(--vx-surface-border)"}}",
+          },
+          {
+            "probes": 6,
+            "result": "{"root":{"--button-padding-x":"calc((var(--vx-space-stack-xl)) * var(--mantine-scale))","--button-color":"var(--vx-ink)","--button-hover":"color-mix(in srgb, var(--vx-ink) 6%, transparent)"}}",
+          },
+          {
+            "probes": 270,
+            "result": "{"root":{"--button-padding-x":"calc((var(--vx-space-stack-xl) + var(--vx-space-stack-sm)) * var(--mantine-scale))"}}",
+          },
+          {
+            "probes": 6,
+            "result": "{"root":{"--button-padding-x":"calc((var(--vx-space-stack-xl) + var(--vx-space-stack-sm)) * var(--mantine-scale))","--button-color":"var(--vx-ink)","--button-hover":"color-mix(in srgb, var(--vx-ink) 6%, var(--vx-surface-subtle))","--button-bg":"var(--vx-surface-subtle)"}}",
+          },
+          {
+            "probes": 6,
+            "result": "{"root":{"--button-padding-x":"calc((var(--vx-space-stack-xl) + var(--vx-space-stack-sm)) * var(--mantine-scale))","--button-color":"var(--vx-ink)","--button-hover":"var(--vx-surface-subtle)","--button-bd":"calc(0.0625rem * var(--mantine-scale)) solid var(--vx-surface-border)"}}",
+          },
+          {
+            "probes": 6,
+            "result": "{"root":{"--button-padding-x":"calc((var(--vx-space-stack-xl) + var(--vx-space-stack-sm)) * var(--mantine-scale))","--button-color":"var(--vx-ink)","--button-hover":"color-mix(in srgb, var(--vx-ink) 6%, transparent)"}}",
+          },
+          {
+            "probes": 540,
+            "result": "{"root":{}}",
+          },
+          {
+            "probes": 12,
+            "result": "{"root":{"--button-color":"var(--vx-ink)","--button-hover":"color-mix(in srgb, var(--vx-ink) 6%, var(--vx-surface-subtle))","--button-bg":"var(--vx-surface-subtle)"}}",
+          },
+          {
+            "probes": 12,
+            "result": "{"root":{"--button-color":"var(--vx-ink)","--button-hover":"var(--vx-surface-subtle)","--button-bd":"calc(0.0625rem * var(--mantine-scale)) solid var(--vx-surface-border)"}}",
+          },
+          {
+            "probes": 12,
+            "result": "{"root":{"--button-color":"var(--vx-ink)","--button-hover":"color-mix(in srgb, var(--vx-ink) 6%, transparent)"}}",
           },
         ],
       },

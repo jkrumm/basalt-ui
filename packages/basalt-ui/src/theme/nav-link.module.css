@@ -1,9 +1,8 @@
 /*
- * Active nav row = an ACCENT-tinted fill plus heavier weight, so the row reads unambiguously as
- * SELECTED rather than merely hovered (docs/DESIGN-SPEC.md §5). The fill was previously the ink
- * tint `--nl-bg` carries (theme/index.ts) at 9% — visually indistinguishable from the 6% ink hover
- * tint on a dark surface, which is what let a hovered row read as a second active item. NO depth:
- * an active row is a SELECTED ROW, not a raised control.
+ * Active nav row = a NEUTRAL ink fill (10%, twice the 5% inactive hover) plus heavier weight, so the
+ * row reads as SELECTED rather than merely hovered (docs/DESIGN-SPEC.md §5). Never the accent
+ * (DESIGN-CORE § Accent discipline, SPEC § 6.12): the accent stays on the focus ring, the filled
+ * primary and the active ICON below. NO depth: an active row is a SELECTED ROW, not a raised control.
  *
  * `[data-active]` is the ONLY style hook here — `use-nav.ts` already resolves exactly one winner
  * per route and stamps `data-active` on it, so keying these selectors on `aria-current="page"` too
@@ -17,7 +16,7 @@
  * there throws a React warning), so the state selectors live here.
  */
 .root[data-active] {
-  background-color: color-mix(in srgb, var(--vx-accent) 12%, transparent);
+  background-color: color-mix(in srgb, var(--vx-ink) 10%, transparent);
   font-weight: 600;
 }
 
@@ -32,7 +31,7 @@
  * still reads as feedback rather than as a flat, unresponsive selection. */
 @media (hover: hover) {
   .root[data-active]:hover {
-    background-color: color-mix(in srgb, var(--vx-accent) 16%, transparent);
+    background-color: color-mix(in srgb, var(--vx-ink) 14%, transparent);
   }
 }
 
@@ -61,10 +60,9 @@
 
 /*
  * Inactive hover — the ink-5% ghost tint + ink text/icon (docs/DESIGN-SPEC.md §5; dropped from 6%
- * so it reads clearly below the active row's 12% accent fill instead of nearly matching its old 9%
- * ink fill). Lives here (not only in the shell module) so a consumer's `SidebarItem.Anchor` path
+ * so it reads clearly below the active row's 10% ink fill). Lives here (not only in the shell module) so a consumer's `SidebarItem.Anchor` path
  * gets the same hover; Mantine's own hover fill uses `:where(scheme) .m_*:hover` (gray-0/dark-6),
- * which this outranks on specificity. Active rows keep their accent fill above, untouched here.
+ * which this outranks on specificity. Active rows keep their ink fill above, untouched here.
  */
 @media (hover: hover) {
   .root:not([data-active]):hover {

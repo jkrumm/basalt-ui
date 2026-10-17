@@ -280,6 +280,9 @@ html .accordionItem {
  */
 html[data-mantine-color-scheme] .tabsRoot {
   --tab-border-color: var(--vx-divider);
+  /* Mantine's dark hover (dark-6) is the page itself, so a hovered tab read identical to rest. The
+   * ink-5% step is NavLink's inactive hover, and resolves per scheme. */
+  --tab-hover-color: color-mix(in srgb, var(--vx-ink) 5%, transparent);
 }
 
 /*
