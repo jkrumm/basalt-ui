@@ -318,7 +318,7 @@ const SPACE_ANCHORS_BASE = {
    * 32, up from 30. At 30 this tier was the ONLY chrome number in the shell that did not agree with
    * its neighbours: the sidebar search trigger is 32 (`sidebarSearchTriggerHeight`), a sidebar block
    * row is 32 (`sidebarBlockRowHeight`), and a NavLink row resolves to ~32 (`2 * rowInsetY +
-   * rowLineHeight * text.md`) — so a `size="ctl"` button sitting beside any of them read 2px short
+   * rowLineHeight * text.sm`, 12 + 1.54 * 13 = 32.02) — so a `size="ctl"` button sitting beside any of them read 2px short
    * and the whole band looked unresolved. 32 lands the entire chrome tier on ONE number, which is
    * also the smallest square that still holds a 16px icon with a 8px surround. */
   controlHeightCtl: 32,

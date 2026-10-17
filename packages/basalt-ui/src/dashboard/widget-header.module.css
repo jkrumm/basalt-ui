@@ -102,7 +102,7 @@
 
 /*
  * The icon slot PINS its glyph's box. A consumer's icon arrives at whatever size its own component
- * chose (the playground's is 18px), and an 18px mark beside a 13.5px title is a bullet, not a label
+ * chose (the playground's is 18px), and an 18px mark beside a 13px title is a bullet, not a label
  * icon — so the tier states the size here rather than asking every call site to pass one.
  */
 /*
