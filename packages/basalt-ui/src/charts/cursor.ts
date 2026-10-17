@@ -333,7 +333,11 @@ export function withTooltipRole(extension: ChartTooltipExtension): ChartTooltipE
   }
 }
 
-const stampedTooltip = withTooltipRole(tooltip)
+/**
+ * The engine's tooltip host with its readout stamped, built once: a chart passes this as
+ * `tooltip.use`, so the extension keeps one identity across memo rebuilds.
+ */
+export const engineTooltip = withTooltipRole(tooltip)
 
 /**
  * The engine's DOM tooltip host, silent while this chart FOLLOWS another's cursor. A follower
@@ -350,9 +354,9 @@ const stampedTooltip = withTooltipRole(tooltip)
  * re-check this wrapper, the live region included, on every `@tanstack/charts` upgrade.
  */
 export const quietWhileFollowing: ChartTooltipExtension = {
-  ...stampedTooltip,
+  ...engineTooltip,
   create: (context) => {
-    const host = stampedTooltip.create(context)
+    const host = engineTooltip.create(context)
     let configured = false
     let follower: TooltipFollowerOptions['follower']
     return {

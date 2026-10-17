@@ -6,7 +6,6 @@
  * container or wider, below it otherwise (`donut.module.css`, decided in CSS so the server HTML is
  * the hydrated layout). No cursor: a ring has no shared axis.
  */
-import { tooltip as tooltipHost } from '@tanstack/charts/tooltip'
 import { portal } from '@tanstack/charts/tooltip/portal'
 import { pie, polar, radialArc } from '@tanstack/charts/polar'
 import type { ChartPoint, StoredChartSpec } from '@tanstack/charts/types/core'
@@ -15,7 +14,7 @@ import type { CSSProperties, ReactElement } from 'react'
 import type { BasaltProps } from '../common/props'
 import { alpha, VX } from '../tokens'
 import type { CartesianDefinition } from './compile'
-import { withTooltipRole } from './cursor'
+import { engineTooltip } from './cursor'
 import { ChartEngine, idPrefixOf } from './host'
 import { ChartLegend } from './legend'
 import { useCoarsePointer } from '../common/use-media-query'
@@ -185,7 +184,7 @@ export function Donut<K extends string = string>(props: DonutProps<K>): ReactEle
         theme: CHART_THEME,
       }),
       tooltip: {
-        use: withTooltipRole(tooltipHost),
+        use: engineTooltip,
         portal,
         content: (points: readonly ChartPoint[]) => {
           const slice = points[0]?.datum as Slice | undefined

@@ -10,7 +10,6 @@
 import { colorGradientLegend } from '@tanstack/charts/legend'
 import { cell } from '@tanstack/charts/rect'
 import { scaleBand } from '@tanstack/charts/scales/band'
-import { tooltip as tooltipHost } from '@tanstack/charts/tooltip'
 import { portal } from '@tanstack/charts/tooltip/portal'
 import type { ChartBuildContext, ChartPoint, StoredChartSpec } from '@tanstack/charts/types/core'
 import { scaleQuantize } from 'd3-scale'
@@ -24,7 +23,7 @@ import type { CartesianDefinition } from './compile'
 import { resolveNamedState } from './band-fold'
 import type { NamedChartState } from './band-fold'
 import { ABSENT_OPACITY, RAMP_LEVELS, RAMP_OPACITIES } from './heatmap-fill'
-import { withTooltipRole } from './cursor'
+import { engineTooltip } from './cursor'
 import { ChartEngine, idPrefixOf } from './host'
 import { ChartLegend } from './legend'
 import { useCoarsePointer } from '../common/use-media-query'
@@ -240,7 +239,7 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
       cell(group, { id, x: 'col', y: 'row', inset: CELL_INSET, key: 'id', ...paint })
     const tooltipOptions = showTooltip
       ? {
-          use: withTooltipRole(tooltipHost),
+          use: engineTooltip,
           portal,
           content: (points: readonly ChartPoint[]) => {
             const point = points[0]
