@@ -26,6 +26,7 @@ import {
   DISPATCH_COMPLETE_DAYS,
   FAILURES_24H,
   FAILURES_BY_HOUR,
+  FAILURES_TIMES_LABEL,
   FLEET,
   FLEET_TOTAL,
   FLOW,
@@ -55,6 +56,8 @@ const retry = (what: string): string => retryCopy(what, 'warden')
 const STUCK_PLACEHOLDER = 190
 
 const SPARK_HEIGHT = 28
+/** Frame height of the flow chart: its card then ends level with the 9-row list beside it. */
+const FLOW_CHART_HEIGHT = { base: 220, regular: 270 }
 
 const STATE_COLOR: Record<ItemState, string> = {
   awaiting: VX.status.warn,
@@ -172,7 +175,9 @@ function QueueStrip({ shotState }: ScenarioProps) {
       info: 'Agent runs that ended in an error in the last 24 hours.',
       value: none ? null : fmtInt(FAILURES_24H.count),
       unit: 'runs',
-      // Hourly bars answer "is it still happening?": three runs, but a burst or a trickle.
+      // Hourly bars answer "is it still happening?": three runs, but a burst or a trickle. The
+      // footer prints when each ran, so the marks read without colour and against a clock.
+      ...(!hidden && { footer: `Failed ${FAILURES_TIMES_LABEL}` }),
       ...(!hidden && {
         visual: (
           <Sparkline
@@ -263,6 +268,7 @@ function QueueStrip({ shotState }: ScenarioProps) {
       error ? WEEK_ERROR : 'No dispatch spend this week.',
     ),
   }
+  // TODO(w36): data-shot-absent — drop this workaround once `shot` can declare an absent anchor.
   // Both footer anchors exist in every state (`shot` errors on an anchor that vanishes); the
   // empty / error note is the day meter's emptyText, wrapped so it keeps its own anchor.
   const footer = [
@@ -275,6 +281,11 @@ function QueueStrip({ shotState }: ScenarioProps) {
   return <StatGroup variant="strip" label="Agent queue" cols={5} cells={cells} footer={footer} />
 }
 
+/**
+ * Column rule: both columns end within one row-gap at 1440, by composition, never by stretching.
+ * The 9-row list (≈ 350) takes the left; the flow chart's own height (270) matches its body.
+ * At 390 the order is the list, then the flow.
+ */
 function QueueRow({ shotState }: ScenarioProps) {
   const empty = shotState === 'empty'
   return (
@@ -328,6 +339,7 @@ function QueueRow({ shotState }: ScenarioProps) {
               x={(d) => d.date}
               bars={FLOW_BARS}
               layout="grouped"
+              height={FLOW_CHART_HEIGHT}
             />
           </Box>
         </ChartCard>

@@ -9,6 +9,9 @@ import {
   DISPATCH_DAILY,
   FAILURES_24H,
   FAILURES_BY_HOUR,
+  FAILURES_TIMES_LABEL,
+  FAILURES_WINDOW,
+  FAILURE_TIMES,
   FLEET,
   FLEET_TOTAL,
   FLOW,
@@ -83,5 +86,17 @@ describe('agents-data', () => {
     expect(FAILURES_BY_HOUR).toHaveLength(24)
     expect(sum(FAILURES_BY_HOUR)).toBe(FAILURES_24H.count)
     expect(FAILURES_BY_HOUR.every((n) => Number.isInteger(n) && n >= 0)).toBe(true)
+  })
+
+  it('failure timestamps sit inside the stated 24 h window and fill the hourly bars', () => {
+    expect(FAILURES_WINDOW.end.getTime() - FAILURES_WINDOW.start.getTime()).toBe(86_400_000)
+    expect(FAILURE_TIMES).toHaveLength(FAILURES_24H.count)
+    for (const t of FAILURE_TIMES) {
+      expect(t.getTime()).toBeGreaterThanOrEqual(FAILURES_WINDOW.start.getTime())
+      expect(t.getTime()).toBeLessThan(FAILURES_WINDOW.end.getTime())
+      const hour = Math.floor((t.getTime() - FAILURES_WINDOW.start.getTime()) / 3_600_000)
+      expect(FAILURES_BY_HOUR[hour]).toBeGreaterThan(0)
+    }
+    expect(FAILURES_TIMES_LABEL).toBe('19:00 · 08:00 · 13:00 UTC')
   })
 })
