@@ -1,5 +1,5 @@
 /**
- * Component `vars` that carry the Wave 33 chrome (`docs/waves/design-parity/SPEC.md` § 6.12) and the
+ * Component `vars` that carry the Wave 33 chrome (`MIGRATING.md` § Light and outline Buttons are ink, D27) and the
  * ON-COLOR re-point they sit beside. Pure functions of theme + props, kept out of `theme/index.ts`
  * so the tests can call them directly.
  */
@@ -40,7 +40,7 @@ import type { MantineTheme } from '@mantine/core'
  * Stepper / Indicator / Timeline all call Mantine's `getContrastColor` directly) are re-pointed at
  * it too, in `components` below. Regression-locked by `contrast.test.ts`.
  */
-export function onColor(theme: MantineTheme, color: string | undefined): string | undefined {
+export function onColor(theme: MantineTheme, color: string | null | undefined): string | undefined {
   const name = color ?? theme.primaryColor
   if (!Object.prototype.hasOwnProperty.call(theme.colors, name)) return undefined // hex / `blue.5`
   return `var(--vx-on-${name})`
@@ -53,7 +53,7 @@ export function onColor(theme: MantineTheme, color: string | undefined): string 
  */
 export function onColorFor(
   theme: MantineTheme,
-  props: { color?: string | undefined; autoContrast?: boolean | undefined },
+  props: { color?: string | null | undefined; autoContrast?: boolean | undefined },
 ): string | undefined {
   const autoContrast = props.autoContrast ?? theme.autoContrast
   return autoContrast ? onColor(theme, props.color) : undefined
@@ -61,10 +61,11 @@ export function onColorFor(
 
 /**
  * The chrome opt-out: a call site that names a colour (even the primary one) keeps its hue. An
- * empty string names nothing — Mantine would fall back to the primary colour for it too.
+ * empty string and `null` name nothing — Mantine reads `color || primaryColor`, so they fall back to
+ * the primary colour too.
  */
-export function hasExplicitColor(color: string | undefined): boolean {
-  return color !== undefined && color !== ''
+export function hasExplicitColor(color: string | null | undefined): boolean {
+  return typeof color === 'string' && color !== ''
 }
 
 type InkVars = {
@@ -78,7 +79,7 @@ const INK = 'var(--vx-ink)'
 const SUBTLE = 'var(--vx-surface-subtle)'
 
 /** Per variant: what an unnamed-colour Button / ActionIcon paints instead of the accent. */
-const INK_BY_VARIANT: Record<string, InkVars> = {
+const INK_BY_VARIANT: Partial<Record<'subtle' | 'light' | 'outline', InkVars>> = {
   subtle: { color: INK, hover: 'color-mix(in srgb, var(--vx-ink) 6%, transparent)' },
   light: { color: INK, bg: SUBTLE, hover: `color-mix(in srgb, var(--vx-ink) 6%, ${SUBTLE})` },
   outline: {
@@ -90,7 +91,7 @@ const INK_BY_VARIANT: Record<string, InkVars> = {
 
 /**
  * A `subtle`, `light` or `outline` Button / ActionIcon that names no colour is ink, not the accent
- * (`docs/waves/design-parity/SPEC.md` § 6.12, D27). `subtle`: ink label, ink-6% hover
+ * (`MIGRATING.md` § Light and outline Buttons are ink, D27). `subtle`: ink label, ink-6% hover
  * (`docs/DESIGN-SPEC.md` §5 ghost idiom). `light`: the subtle surface with an ink label, hover one
  * ink step on top (Mantine's gray-light roles collapse bg and hover to one colour in light). `outline`:
  * the surface border, ink label, subtle-surface hover. An explicit `color=` — the primary one
@@ -99,14 +100,14 @@ const INK_BY_VARIANT: Record<string, InkVars> = {
  * component props can tell "unnamed" from "primary" — hence vars, not the resolver. Disabled needs no
  * gate: Mantine's disabled rule sets colour, background and border directly, not through these vars.
  */
-export function inkVars(props: { color?: string | undefined; variant?: string | undefined }): {
-  color: string | undefined
-  hover: string | undefined
-  bg: string | undefined
-  border: string | undefined
-} {
-  const ink = hasExplicitColor(props.color) ? undefined : INK_BY_VARIANT[props.variant ?? '']
-  return { color: ink?.color, hover: ink?.hover, bg: ink?.bg, border: ink?.border }
+export function inkVars(props: {
+  color?: string | null | undefined
+  variant?: string | undefined
+}): InkVars {
+  const { variant } = props
+  if (hasExplicitColor(props.color) || variant === undefined) return {}
+  if (!Object.hasOwn(INK_BY_VARIANT, variant)) return {}
+  return INK_BY_VARIANT[variant as keyof typeof INK_BY_VARIANT] ?? {}
 }
 
 /**
@@ -119,7 +120,7 @@ export function inkVars(props: { color?: string | undefined; variant?: string | 
 export function tabsVars(
   theme: MantineTheme,
   props: {
-    color?: string | undefined
+    color?: string | null | undefined
     variant?: string | undefined
     autoContrast?: boolean | undefined
   },
