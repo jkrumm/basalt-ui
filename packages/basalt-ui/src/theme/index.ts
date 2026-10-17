@@ -314,7 +314,7 @@ const basaltVariantColorResolver: VariantColorsResolver = (input) => {
     return autoContrast ? { ...resolved, color: on } : resolved
   }
 
-  // `subtle` stays Mantine's: Button and ActionIcon get their ink label + hover in `subtleInkVars`
+  // `subtle`/`light`/`outline` stay Mantine's: an unnamed-colour Button and ActionIcon get ink in `subtleInkVars`
   // (the resolver is always handed `color || primaryColor`, so it cannot tell "unnamed" from an
   // explicit primary colour — only the component props can).
   // `outline`: the tone's own text colour, pulled toward ink so the label keeps its hue at AA
@@ -685,6 +685,8 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
                   : undefined,
               '--button-color': ink.color,
               '--button-hover': ink.hover,
+              '--button-bg': ink.bg,
+              '--button-bd': ink.border,
             },
           }
         },
@@ -701,6 +703,8 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
                   : undefined,
               '--ai-color': ink.color,
               '--ai-hover': ink.hover,
+              '--ai-bg': ink.bg,
+              '--ai-bd': ink.border,
             },
           }
         },

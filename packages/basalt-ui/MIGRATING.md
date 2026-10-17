@@ -1108,6 +1108,16 @@ Expression 3), so boards that passed before this release can fail now: re-score 
 words (`OK`, `Watch`, `Over`, and the phrases screen readers hear) are fixed English; for i18n, omit
 `tone` and render your own dot and word.
 
+### Light and outline Buttons are ink
+
+A `Button` or `ActionIcon` with `variant="light"` or `variant="outline"` and no `color` used to paint
+the primary (accent) colour. It is now ink: `light` takes the neutral gray tint (hover one step) with
+an ink label; `outline` takes the surface border with an ink label and the subtle-surface hover.
+Only `variant="filled"` and any explicit `color=` carry the accent. `default`, `filled`, `subtle`,
+`transparent` and `white` are unchanged, as are disabled, loading and focus-ring behaviour.
+
+Opt out: pass `color="<primary>"` (your theme's primary colour name) to restore the accent.
+
 ## 2.17.0 — the metric card and chrome
 
 Wave 33 of the design-parity track (`docs/waves/design-parity/SPEC.md` § 6.10, § 6.12). No export is

@@ -65,11 +65,13 @@ export function hasExplicitColor(color: string | undefined): boolean {
 }
 
 /**
- * A `subtle` Button / ActionIcon that names no colour takes neutral ink for its label and an
- * ink-6% hover (`docs/DESIGN-SPEC.md` §5 ghost idiom). An explicit `color=` — the primary one
- * included — keeps Mantine's tinted label and hover: `color="red"` on a destructive text action
- * carries its hue as the whole signal. Mantine hands the variant resolver `color || primaryColor`,
- * so only the component props can tell "unnamed" from "primary" — hence vars, not the resolver.
+ * A `subtle`, `light` or `outline` Button / ActionIcon that names no colour is ink, not the accent
+ * (`docs/waves/design-parity/SPEC.md` § 6.12, D27). `subtle`: ink label, ink-6% hover
+ * (`docs/DESIGN-SPEC.md` §5 ghost idiom). `light`: the neutral gray light tint, ink label. `outline`:
+ * the surface border, ink label, subtle-surface hover. An explicit `color=` — the primary one
+ * included — keeps Mantine's tinted vars: `color="red"` on a destructive action carries its hue as
+ * the whole signal. Mantine hands the variant resolver `color || primaryColor`, so only the
+ * component props can tell "unnamed" from "primary" — hence vars, not the resolver.
  */
 export function subtleInkVars(props: {
   color?: string | undefined
@@ -77,11 +79,31 @@ export function subtleInkVars(props: {
 }): {
   color: string | undefined
   hover: string | undefined
+  bg: string | undefined
+  border: string | undefined
 } {
-  const ink = props.variant === 'subtle' && !hasExplicitColor(props.color)
-  return {
-    color: ink ? 'var(--vx-ink)' : undefined,
-    hover: ink ? 'color-mix(in srgb, var(--vx-ink) 6%, transparent)' : undefined,
+  const none = { color: undefined, hover: undefined, bg: undefined, border: undefined }
+  if (hasExplicitColor(props.color)) return none
+  const color = 'var(--vx-ink)'
+  switch (props.variant) {
+    case 'subtle':
+      return { ...none, color, hover: 'color-mix(in srgb, var(--vx-ink) 6%, transparent)' }
+    case 'light':
+      return {
+        ...none,
+        color,
+        bg: 'var(--mantine-color-gray-light)',
+        hover: 'var(--mantine-color-gray-light-hover)',
+      }
+    case 'outline':
+      return {
+        ...none,
+        color,
+        border: 'calc(0.0625rem * var(--mantine-scale)) solid var(--vx-surface-border)',
+        hover: 'var(--vx-surface-subtle)',
+      }
+    default:
+      return none
   }
 }
 

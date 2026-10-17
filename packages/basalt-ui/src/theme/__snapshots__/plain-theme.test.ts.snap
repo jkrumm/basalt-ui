@@ -199,23 +199,41 @@ exports[`createBasaltTheme() shape and resolver output default 1`] = `
             root: {
               "--ai-size": props.size === "md" ? "calc(var(--vx-space-control-height) * var(--mantine-scale))" : void 0,
               "--ai-color": ink.color,
-              "--ai-hover": ink.hover
+              "--ai-hover": ink.hover,
+              "--ai-bg": ink.bg,
+              "--ai-bd": ink.border
             }
           };
         }"
 ,
         "outputs": [
           {
-            "probes": 1976,
+            "probes": 1892,
             "result": "{"root":{}}",
+          },
+          {
+            "probes": 42,
+            "result": "{"root":{"--ai-color":"var(--vx-ink)","--ai-hover":"var(--mantine-color-gray-light-hover)","--ai-bg":"var(--mantine-color-gray-light)"}}",
+          },
+          {
+            "probes": 42,
+            "result": "{"root":{"--ai-color":"var(--vx-ink)","--ai-hover":"var(--vx-surface-subtle)","--ai-bd":"calc(0.0625rem * var(--mantine-scale)) solid var(--vx-surface-border)"}}",
           },
           {
             "probes": 42,
             "result": "{"root":{"--ai-color":"var(--vx-ink)","--ai-hover":"color-mix(in srgb, var(--vx-ink) 6%, transparent)"}}",
           },
           {
-            "probes": 284,
+            "probes": 272,
             "result": "{"root":{"--ai-size":"calc(var(--vx-space-control-height) * var(--mantine-scale))"}}",
+          },
+          {
+            "probes": 6,
+            "result": "{"root":{"--ai-size":"calc(var(--vx-space-control-height) * var(--mantine-scale))","--ai-color":"var(--vx-ink)","--ai-hover":"var(--mantine-color-gray-light-hover)","--ai-bg":"var(--mantine-color-gray-light)"}}",
+          },
+          {
+            "probes": 6,
+            "result": "{"root":{"--ai-size":"calc(var(--vx-space-control-height) * var(--mantine-scale))","--ai-color":"var(--vx-ink)","--ai-hover":"var(--vx-surface-subtle)","--ai-bd":"calc(0.0625rem * var(--mantine-scale)) solid var(--vx-surface-border)"}}",
           },
           {
             "probes": 6,
@@ -276,23 +294,41 @@ exports[`createBasaltTheme() shape and resolver output default 1`] = `
             root: {
               "--button-height": props.size === "md" ? "calc(var(--vx-space-control-height) * var(--mantine-scale))" : void 0,
               "--button-color": ink.color,
-              "--button-hover": ink.hover
+              "--button-hover": ink.hover,
+              "--button-bg": ink.bg,
+              "--button-bd": ink.border
             }
           };
         }"
 ,
         "outputs": [
           {
-            "probes": 1976,
+            "probes": 1892,
             "result": "{"root":{}}",
+          },
+          {
+            "probes": 42,
+            "result": "{"root":{"--button-color":"var(--vx-ink)","--button-hover":"var(--mantine-color-gray-light-hover)","--button-bg":"var(--mantine-color-gray-light)"}}",
+          },
+          {
+            "probes": 42,
+            "result": "{"root":{"--button-color":"var(--vx-ink)","--button-hover":"var(--vx-surface-subtle)","--button-bd":"calc(0.0625rem * var(--mantine-scale)) solid var(--vx-surface-border)"}}",
           },
           {
             "probes": 42,
             "result": "{"root":{"--button-color":"var(--vx-ink)","--button-hover":"color-mix(in srgb, var(--vx-ink) 6%, transparent)"}}",
           },
           {
-            "probes": 284,
+            "probes": 272,
             "result": "{"root":{"--button-height":"calc(var(--vx-space-control-height) * var(--mantine-scale))"}}",
+          },
+          {
+            "probes": 6,
+            "result": "{"root":{"--button-height":"calc(var(--vx-space-control-height) * var(--mantine-scale))","--button-color":"var(--vx-ink)","--button-hover":"var(--mantine-color-gray-light-hover)","--button-bg":"var(--mantine-color-gray-light)"}}",
+          },
+          {
+            "probes": 6,
+            "result": "{"root":{"--button-height":"calc(var(--vx-space-control-height) * var(--mantine-scale))","--button-color":"var(--vx-ink)","--button-hover":"var(--vx-surface-subtle)","--button-bd":"calc(0.0625rem * var(--mantine-scale)) solid var(--vx-surface-border)"}}",
           },
           {
             "probes": 6,
@@ -1341,23 +1377,41 @@ exports[`createBasaltTheme() shape and resolver output all knobs 1`] = `
             root: {
               "--ai-size": props.size === "md" ? "calc(var(--vx-space-control-height) * var(--mantine-scale))" : void 0,
               "--ai-color": ink.color,
-              "--ai-hover": ink.hover
+              "--ai-hover": ink.hover,
+              "--ai-bg": ink.bg,
+              "--ai-bd": ink.border
             }
           };
         }"
 ,
         "outputs": [
           {
-            "probes": 1976,
+            "probes": 1892,
             "result": "{"root":{}}",
+          },
+          {
+            "probes": 42,
+            "result": "{"root":{"--ai-color":"var(--vx-ink)","--ai-hover":"var(--mantine-color-gray-light-hover)","--ai-bg":"var(--mantine-color-gray-light)"}}",
+          },
+          {
+            "probes": 42,
+            "result": "{"root":{"--ai-color":"var(--vx-ink)","--ai-hover":"var(--vx-surface-subtle)","--ai-bd":"calc(0.0625rem * var(--mantine-scale)) solid var(--vx-surface-border)"}}",
           },
           {
             "probes": 42,
             "result": "{"root":{"--ai-color":"var(--vx-ink)","--ai-hover":"color-mix(in srgb, var(--vx-ink) 6%, transparent)"}}",
           },
           {
-            "probes": 284,
+            "probes": 272,
             "result": "{"root":{"--ai-size":"calc(var(--vx-space-control-height) * var(--mantine-scale))"}}",
+          },
+          {
+            "probes": 6,
+            "result": "{"root":{"--ai-size":"calc(var(--vx-space-control-height) * var(--mantine-scale))","--ai-color":"var(--vx-ink)","--ai-hover":"var(--mantine-color-gray-light-hover)","--ai-bg":"var(--mantine-color-gray-light)"}}",
+          },
+          {
+            "probes": 6,
+            "result": "{"root":{"--ai-size":"calc(var(--vx-space-control-height) * var(--mantine-scale))","--ai-color":"var(--vx-ink)","--ai-hover":"var(--vx-surface-subtle)","--ai-bd":"calc(0.0625rem * var(--mantine-scale)) solid var(--vx-surface-border)"}}",
           },
           {
             "probes": 6,
@@ -1418,23 +1472,41 @@ exports[`createBasaltTheme() shape and resolver output all knobs 1`] = `
             root: {
               "--button-height": props.size === "md" ? "calc(var(--vx-space-control-height) * var(--mantine-scale))" : void 0,
               "--button-color": ink.color,
-              "--button-hover": ink.hover
+              "--button-hover": ink.hover,
+              "--button-bg": ink.bg,
+              "--button-bd": ink.border
             }
           };
         }"
 ,
         "outputs": [
           {
-            "probes": 1976,
+            "probes": 1892,
             "result": "{"root":{}}",
+          },
+          {
+            "probes": 42,
+            "result": "{"root":{"--button-color":"var(--vx-ink)","--button-hover":"var(--mantine-color-gray-light-hover)","--button-bg":"var(--mantine-color-gray-light)"}}",
+          },
+          {
+            "probes": 42,
+            "result": "{"root":{"--button-color":"var(--vx-ink)","--button-hover":"var(--vx-surface-subtle)","--button-bd":"calc(0.0625rem * var(--mantine-scale)) solid var(--vx-surface-border)"}}",
           },
           {
             "probes": 42,
             "result": "{"root":{"--button-color":"var(--vx-ink)","--button-hover":"color-mix(in srgb, var(--vx-ink) 6%, transparent)"}}",
           },
           {
-            "probes": 284,
+            "probes": 272,
             "result": "{"root":{"--button-height":"calc(var(--vx-space-control-height) * var(--mantine-scale))"}}",
+          },
+          {
+            "probes": 6,
+            "result": "{"root":{"--button-height":"calc(var(--vx-space-control-height) * var(--mantine-scale))","--button-color":"var(--vx-ink)","--button-hover":"var(--mantine-color-gray-light-hover)","--button-bg":"var(--mantine-color-gray-light)"}}",
+          },
+          {
+            "probes": 6,
+            "result": "{"root":{"--button-height":"calc(var(--vx-space-control-height) * var(--mantine-scale))","--button-color":"var(--vx-ink)","--button-hover":"var(--vx-surface-subtle)","--button-bd":"calc(0.0625rem * var(--mantine-scale)) solid var(--vx-surface-border)"}}",
           },
           {
             "probes": 6,
