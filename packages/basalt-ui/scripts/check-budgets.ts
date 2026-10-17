@@ -355,7 +355,8 @@ const PROVIDER_ONLY_LABEL = 'provider-only first paint (gzip B, dist)'
 // 19305 → 19308 (W33 CI, all five W33 PRs merged): +3 B.
 // 19308 → 19473 (2.18): +165 B, status text derived per surface — contrastRatio + bounded tone walk in derive (a no-op at the default config).
 // 19473 → 19577 (2.18, review round): +104 B, the lightLevel/darkLevel RangeError and the exhaustive text-surface record.
-const PROVIDER_ONLY_CEILING = 19577
+// 19577 → 19607 (2.18, CI Linux measurement): +30 B over the macOS build.
+const PROVIDER_ONLY_CEILING = 19607
 // Embedded `<BasaltProvider spotlight={false}>`, no defines, peers bundled, every chunk counted: 54735 B landed, ~1% margin.
 // 55300 → 55391 (W32): +91 B for the Wave 32 scales — the dense control tier rule in the palette CSS, the row line-height and `lineHeights` ratios, the expanded gutter, and the card/radius/type retunes.
 // 55391 → 55404 (W32 CI): the gate is CI's Linux build, which gzips 13 B larger than the macOS build the lead measured.
@@ -365,7 +366,8 @@ const PROVIDER_ONLY_CEILING = 19577
 // 55599 → 55601 (W33 CI, all five W33 PRs merged): +2 B.
 // 55601 → 55776 (2.18): +175 B, the same status-text derivation (walk is a no-op at the default config).
 // 55776 → 55859 (2.18, review round): +83 B, the same move.
-const EMBEDDED_CEILING = 55859
+// 55859 → 55878 (2.18, CI Linux measurement): +19 B over the macOS build.
+const EMBEDDED_CEILING = 55878
 // `createBasaltTheme()` alone, peers bundled, every chunk counted: 14420 locally. The theme reaching
 // no component it configures is what keeps this near Mantine's core; ~1% over landed.
 // 14570 → 14571 (W32): +1 B, the `lineHeights` ratios.
@@ -376,7 +378,8 @@ const EMBEDDED_CEILING = 55859
 // 14768 → 14771 (W33 CI, all five W33 PRs merged): +3 B.
 // 14771 → 14953 (2.18): +182 B, the same status-text derivation (walk is a no-op at the default config).
 // 14953 → 15036 (2.18, review round): +83 B, the same move.
-const THEME_ONLY_CEILING = 15036
+// 15036 → 15047 (2.18, CI Linux measurement): +11 B over the macOS build.
+const THEME_ONLY_CEILING = 15047
 const THEME_ONLY_LABEL = 'createBasaltTheme only, peers bundled, all chunks (gzip B, dist)'
 const EMBEDDED_LABEL = 'embedded provider, no defines, peers bundled, all chunks (gzip B, dist)'
 const FEATURE_CHUNKS_LABEL =
