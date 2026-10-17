@@ -346,6 +346,7 @@ Signature: ChartCard(props: ChartCardProps): ReactElement<unknown, string | JSXE
   title?: string
   icon?: ReactNode
   subtitle?: string
+  facts?: ChartFact | readonly ChartFact[]
   info?: string
   value?: string
   delta?: number

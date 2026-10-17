@@ -4,5 +4,10 @@
  */
 declare const classes: {
   readonly header: string
+  readonly facts: string
+  readonly fact: string
+  readonly factValue: string
+  readonly factUnit: string
+  readonly factPeriod: string
 }
 export default classes

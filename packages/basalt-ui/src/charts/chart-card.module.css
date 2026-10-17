@@ -23,3 +23,41 @@
 :is([data-basalt-card-short], [data-basalt-chart-card]:has([data-basalt-chart-short])) .header {
   padding-top: 4px;
 }
+
+/*
+ * The facts line (`facts` prop): the headline figure under the title, in place of a subtitle. It wraps
+ * (rows and the pieces inside a row), so a half-width card never clips the value. The value is the
+ * proportional sans with lining figures (Wave 35); the unit and period are muted.
+ */
+.facts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 16px;
+  margin-top: 4px;
+}
+
+.fact {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 6px;
+  min-width: 0;
+}
+
+.factValue {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-family: var(--basalt-font-sans);
+  font-size: var(--vx-text-kpi);
+  font-weight: 500;
+  font-variant-numeric: lining-nums;
+  letter-spacing: -0.02em;
+  color: var(--vx-ink);
+}
+
+.factUnit,
+.factPeriod {
+  font-size: var(--vx-text-sm);
+  color: var(--vx-muted);
+}

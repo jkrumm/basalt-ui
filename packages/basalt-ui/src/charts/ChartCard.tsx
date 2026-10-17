@@ -87,6 +87,16 @@ const bodyClipStyle: CSSProperties = {
   padding: '2px var(--vx-space-card-inset-x, 1rem) var(--vx-space-card-inset-y, 0.75rem)',
 }
 
+/** One headline figure: the value is the hero, then its unit, a comparison node and the period. */
+type ChartFact = {
+  value: ReactNode
+  unit?: string | undefined
+  /** Usually a `DeltaBadge`. */
+  comparison?: ReactNode
+  /** Plain text the figure covers, e.g. `last 30 d`. */
+  period?: string | undefined
+}
+
 /** The three boxes a `ChartCard` paints. */
 export type ChartCardSlot = 'root' | 'header' | 'body'
 
@@ -96,6 +106,9 @@ export type ChartCardProps = BasaltProps &
     icon?: ReactNode
     /** A muted line below the title row; does not by itself render the header. */
     subtitle?: string | undefined
+    /** The headline figure(s) under the title: value, unit, comparison, period. Takes the subtitle
+     * row's place, so `subtitle` is not rendered beside it. Wraps at half width, never clips. */
+    facts?: ChartFact | readonly ChartFact[] | undefined
     /** `WidgetHeader`'s info glyph beside the title. */
     info?: string | undefined
     /** A pre-formatted metric value, with `delta` on the hero row. */
@@ -125,7 +138,23 @@ const definedOnly = <T extends object>(o: T): { [K in keyof T]?: Exclude<T[K], u
   }
 
 /** A header renders when one of these is set (a subtitle or delta alone does not). */
-const HEADER_TRIGGERS = ['title', 'info', 'value', 'icon', 'count'] as const
+const HEADER_TRIGGERS = ['title', 'info', 'value', 'icon', 'count', 'facts'] as const
+
+function Facts({ facts }: { facts: ChartFact | readonly ChartFact[] }): ReactElement {
+  const list: readonly ChartFact[] = Array.isArray(facts) ? facts : [facts as ChartFact]
+  return (
+    <div data-basalt-facts="" className={classes.facts}>
+      {list.map((f, i) => (
+        <span key={i} data-basalt-fact="" className={classes.fact}>
+          <span className={classes.factValue}>{f.value}</span>
+          {f.unit !== undefined && <span className={classes.factUnit}>{f.unit}</span>}
+          {f.comparison}
+          {f.period !== undefined && <span className={classes.factPeriod}>{f.period}</span>}
+        </span>
+      ))}
+    </div>
+  )
+}
 
 export function ChartCard({
   actions,
@@ -136,11 +165,18 @@ export function ChartCard({
   classNames,
   style,
   children,
+  facts,
   ...header
 }: ChartCardProps): ReactElement {
   const { ref, short } = useShortCard()
   const resolved = resolveChartState(state)
-  const hasHeader = actions !== undefined || HEADER_TRIGGERS.some((k) => header[k] !== undefined)
+  const hasHeader =
+    actions !== undefined ||
+    facts !== undefined ||
+    HEADER_TRIGGERS.some((k) => k !== 'facts' && header[k] !== undefined)
+  // Facts replace the subtitle row: a filler line beside a figure is the banned subtitle (SPEC § 8.4).
+  const { subtitle: _subtitle, ...headerNoSubtitle } = header
+  const headerProps = facts === undefined ? header : headerNoSubtitle
 
   return (
     <ChartCardContext.Provider value>
@@ -156,12 +192,13 @@ export function ChartCard({
           <div className={cx(classes.header, classNames?.header)}>
             <WidgetHeader
               tier="widget"
-              {...definedOnly(header)}
+              {...definedOnly(headerProps)}
               title={header.title ?? ''}
               {...(actions !== undefined && {
                 actions: <span data-basalt-tier="widget">{actions}</span>,
               })}
             />
+            {facts !== undefined && <Facts facts={facts} />}
           </div>
         )}
         <div
