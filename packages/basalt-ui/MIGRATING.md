@@ -1046,6 +1046,8 @@ The `basalt-ui/router-tanstack` subpath is **removed** in 2.x, not moved: an imp
 Wave 33 of the design-parity track (`docs/waves/design-parity/SPEC.md` § 6.10, § 6.12). No export is
 added, removed or renamed; three theme defaults change, each with a one-prop way back.
 
+- **Grace extended: `basalt/card-inset`, `raw-spacing` and `inline-spacing` stay `warn` until 2.24.0** (they were dated 2.17.0). No consumer has run 2.16 yet, so promoting them now would skip their warn period. They become `error` at the fleet rollout.
+
 ### Badge, subtle Button, Tabs
 
 | What                            | Old                                    | New                                                       | Opt out                                                              |
@@ -1153,7 +1155,7 @@ number below changes at level 0**, so a layout that was tuned against the old sc
 
 - **Behaviour: spacing props and `--mantine-spacing-*` reads shrink.** `p="xs"` is 8 (was 11), `"sm"` 12 (was 13), `"md"` 16 (was 18), `"xl"` 24 (was 26); `"lg"` is unchanged. Hand-written `px={18}` / `gap={26}` no longer equal a step, and `raw-spacing` reports them.
 - **Behaviour: the CSS sub-scale ceiling of `inline-spacing` drops from 10px to 7px** (it sits one below the smallest stop, now 8). A CSS `padding: 8px` or `10px` is now a finding; 2 / 4 / 6px clusters stay legal.
-- **Behaviour: `basalt/card-inset` is strict.** The only accepted inset is the pair `py="sm" px="md"` (12/16) or leaving both to the theme. Uniform `p`/`padding` (any value) and every other pair, including the old `py="xs" px="sm"` (now 8/12), are findings. **Severity: `warn` for this minor, `error` from 2.17.0** (`PLUGIN_RULE_GRACE`, one entry for the rule); that also demotes the rule's older findings (explicit `radius`, `p="lg"`) to `warn` for the minor, because a level is per rule id. Also flagged now: numeric or non-literal `py`/`px`, and a lone `py="sm"` or `px="md"` without its partner. Move each `<Card py="xs" px="sm">` to `py="sm" px="md"`.
+- **Behaviour: `basalt/card-inset` is strict.** The only accepted inset is the pair `py="sm" px="md"` (12/16) or leaving both to the theme. Uniform `p`/`padding` (any value) and every other pair, including the old `py="xs" px="sm"` (now 8/12), are findings. **Severity: `warn` for this minor, `error` from 2.24.0** (re-dated in 2.17.0) (`PLUGIN_RULE_GRACE`, one entry for the rule); that also demotes the rule's older findings (explicit `radius`, `p="lg"`) to `warn` for the minor, because a level is per rule id. Also flagged now: numeric or non-literal `py`/`px`, and a lone `py="sm"` or `px="md"` without its partner. Move each `<Card py="xs" px="sm">` to `py="sm" px="md"`.
 - **Behaviour: the compact card inset reads `--vx-space-card-inset-x` below `sm`**, and `StatCard`'s full-bleed sparkline now bleeds by the card inset tokens rather than the `sm`/`xs` scale stops, so the bleed matches the inset at every width.
 - **Behaviour: the `SegmentedControl` concentricity law restated.** `RADIUS.card === RADIUS_STEP.tight + segmentedTrackInset` could not hold at card 10, so the track now takes the control radius and the indicator the `fine` tier: `RADIUS.ctrl === RADIUS_STEP.fine + 2`, exact down to `radius: -4` (at `-5`, `fine` clamps to 0 against a 1px track).
 - **Behaviour: `shot` `metrics.json` `radius` may be the string `"full"`** (also on `nested[]`) for a fully rounded box (a `50%` circle or `9999px` pill); it was the number `50` or `9999`. A consumer reading it as a number checks the type first.
@@ -1164,7 +1166,7 @@ number below changes at level 0**, so a layout that was tuned against the old sc
 
 ### Migrating the guards
 
-`raw-spacing` and `inline-spacing` ship at **`warn` for this minor and `error` from 2.17.0** (`GRACE_PERIOD_KINDS`, since 2.16.0): their steps follow the new scale, so after the upgrade `p={16}` and `gap={24}` are findings (use `"md"` / `"xl"`) and `p={18}` / `gap={26}` are no longer flagged. To migrate on your own schedule, in the consumer's `package.json`:
+`raw-spacing` and `inline-spacing` ship at **`warn` for this minor and `error` from 2.24.0** (re-dated in 2.17.0) (`GRACE_PERIOD_KINDS`, since 2.16.0): their steps follow the new scale, so after the upgrade `p={16}` and `gap={24}` are findings (use `"md"` / `"xl"`) and `p={18}` / `gap={26}` are no longer flagged. To migrate on your own schedule, in the consumer's `package.json`:
 
 ```json
 "basalt": {
@@ -1173,7 +1175,7 @@ number below changes at level 0**, so a layout that was tuned against the old sc
 }
 ```
 
-`spacingSteps` keeps the guard on the old numbers (matching a scale you have not moved off yet); `severity` pins both at `warn` past 2.17.0, when the grace entries are deleted and they become `error`. Drop both once the call sites read tokens. The CSS sub-scale ceiling (10 → 7px: a CSS `padding: 8px` or `10px` is now a finding) has no switch of its own; it rides on `inline-spacing`'s severity.
+`spacingSteps` keeps the guard on the old numbers (matching a scale you have not moved off yet); `severity` pins both at `warn` past 2.24.0, when the grace entries are deleted and they become `error`. Drop both once the call sites read tokens. The CSS sub-scale ceiling (10 → 7px: a CSS `padding: 8px` or `10px` is now a finding) has no switch of its own; it rides on `inline-spacing`'s severity.
 
 ### Restoring the old feel
 

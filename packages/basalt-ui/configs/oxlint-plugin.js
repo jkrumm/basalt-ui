@@ -606,7 +606,7 @@ function attrValue(attr) {
   return unwrapExpressionContainer(attr.value)
 }
 
-// Ships: warn (grace → 2.17.0)
+// Ships: warn (grace → 2.24.0)
 const cardInset = {
   meta: {
     type: 'suggestion',
@@ -4224,7 +4224,7 @@ const routeViewTransition = {
 export const PLUGIN_RULE_GRACE = {
   'card-inset': {
     since: '2.16.0',
-    promote: '2.17.0',
+    promote: '2.24.0',
     why: 'Tightened in 2.16.0: only py="sm" px="md" together (or neither) passes; uniform p/padding, a lone half, numbers and expressions are findings.',
   },
 }
