@@ -146,13 +146,13 @@ function change(current: number, prior: number): number | undefined {
 }
 
 /**
- * The delta badge's suffix. Read from the COMPARE field, never from the range — a 24-hour window
- * compared against the previous one is not `MoM`, and printing it anyway is how a badge stops
+ * The delta badge's period (the badge composes the "vs"). Read from the COMPARE field, never from the range — a 24-hour window
+ * compared against the previous one is not "last month", and printing it anyway is how a badge stops
  * meaning anything.
  */
 export function deltaPeriodLabel(compare: CompareMode): string | undefined {
   if (compare === 'none') return undefined
-  return compare === 'year' ? 'YoY' : 'vs prior'
+  return compare === 'year' ? 'last year' : 'prior period'
 }
 
 /** `{ delta }` when there is a comparison to make, `{}` otherwise — spreadable into a card. */

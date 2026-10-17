@@ -38,7 +38,7 @@ function WidgetHeaderTierBlock() {
           value="48,204"
           unit="USD"
           delta={3.1}
-          deltaPeriod="MoM"
+          deltaPeriod="last month"
           count={12}
           actions={<Button variant="subtle">Export</Button>}
         />
@@ -56,7 +56,7 @@ function WidgetHeaderTierBlock() {
           value="0.62"
           delta={4.4}
           deltaPolarity="up-bad"
-          deltaPeriod="WoW"
+          deltaPeriod="last week"
           actions={<Button variant="subtle">Pin to top</Button>}
         />
       </Card>
