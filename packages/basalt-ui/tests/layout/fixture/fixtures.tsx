@@ -40,6 +40,7 @@ import {
   Section,
   StatCard,
   StatGroup,
+  StatusVerdict,
 } from '../../../src/index'
 import { ShellFrame } from '../../../src/shell'
 import type { SettingsMenuItem } from '../../../src/index'
@@ -1011,10 +1012,15 @@ function ChartsFixture({ spec }: { spec: ChartsSpec }): ReactElement {
     ) : spec.kind === 'spark' ? (
       <Sparkline
         ariaLabel="Fixture spark"
-        data={Array.from(
-          { length: spec.sparkRows ?? 3000 },
-          (_, i) => 20 + 12 * Math.sin(i / 9) + (i % 13),
-        )}
+        data={
+          spec.sparkBars
+            ? [0, 0, 1, 0, 2, 3, 3, 3]
+            : Array.from(
+                { length: spec.sparkRows ?? 3000 },
+                (_, i) => 20 + 12 * Math.sin(i / 9) + (i % 13),
+              )
+        }
+        {...(spec.sparkBars && { mark: 'bar' as const })}
         height={spec.height ?? 40}
         emphasizeLast
       />
@@ -1307,6 +1313,52 @@ function DashFixture(): ReactElement {
       {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
       <div data-testid="dash-barlist" style={{ width: 320 }}>
         <BarList label="Spend" items={items} format={(v) => `€${v}`} />
+      </div>
+      {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
+      <div data-testid="dash-bar-thin" style={{ width: 342 }}>
+        <BarList
+          label="Waiting or blocked"
+          variant="thin"
+          format={(v) => `${v} h`}
+          items={[
+            {
+              label: 'Upgrade the dependency graph resolver · basalt-ui',
+              value: 58,
+              secondary: (
+                <StatusVerdict
+                  color="var(--vx-status-bad)"
+                  word="Blocked · Waits on the API change"
+                />
+              ),
+            },
+            {
+              label: 'Drop the legacy exporter · argo',
+              value: 14,
+              secondary: <StatusVerdict color="var(--vx-faint)" word="Needs you" />,
+            },
+          ]}
+        />
+      </div>
+      {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
+      <div data-testid="dash-meter-orphans" style={{ width: 96 }}>
+        <Meter
+          label="Oldest wait"
+          value={26}
+          max={168}
+          startCaption="Warden abandons an item at 7 d"
+          endCaption="forecast over budget"
+        />
+      </div>
+      {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
+      <div data-testid="dash-chart-error" style={{ width: 342 }}>
+        <ChartCard
+          title="Goal"
+          state={{ error: new Error('The request failed.') }}
+          placeholderHeight={96}
+          stateAction={<button type="button">Retry</button>}
+        >
+          <div />
+        </ChartCard>
       </div>
       {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
       <div data-testid="dash-barlist-states" style={{ width: 320 }}>

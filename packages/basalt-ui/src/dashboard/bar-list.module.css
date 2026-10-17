@@ -81,6 +81,13 @@
   white-space: nowrap;
 }
 
+/* Whatever a consumer puts here (a `StatusVerdict` is mono) reads in the proportional sans: mono is
+ * for UPPERCASE micro-captions, times and code. */
+.root .secondary * {
+  font-family: inherit;
+  font-size: inherit;
+}
+
 .empty {
   grid-column: 1 / -1;
   font-size: var(--vx-text-sm);
@@ -131,4 +138,37 @@
 /* The mark outgrows the rail so a 1px line stays visible against a 4px bar. */
 .root[data-variant='thin'] .tick {
   inset-block: calc(var(--vx-space-stack-xs, 0.25rem) * -1);
+}
+
+/*
+ * Thin rows get a phone's width: the label wraps up to two lines, then truncates (its `title` carries
+ * the whole text), and the secondary column takes at most 40% of the list, clipped, so a long status
+ * never squeezes the title down to a few characters.
+ */
+.root[data-variant='thin'][data-secondary] {
+  grid-template-columns: minmax(0, 1fr) auto fit-content(40%);
+}
+
+.root[data-variant='thin'] .label {
+  display: -webkit-box;
+  overflow: hidden;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+.root[data-variant='thin'] .secondary {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.root[data-variant='thin'] .secondary [data-verdict-word] {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

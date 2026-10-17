@@ -5,6 +5,9 @@
  * kind; `--basalt-chart-font` retunes the face from outside.
  */
 import { describe, expect, test } from 'bun:test'
+import type { StoredChartSpec } from '@tanstack/charts/types/core'
+import { compileCartesian } from './compile'
+import { VX } from '../tokens'
 import type { ReactElement } from 'react'
 import { renderToString } from 'react-dom/server'
 import { BandStrip } from './BandStrip'
@@ -76,5 +79,34 @@ describe('chart tick font', () => {
     const html = renderToString(KINDS.find(([n]) => n === 'Donut')?.[1]())
     expect(html).toMatch(/font-family:var\(--basalt-font-numeral, var\(--basalt-font-sans\)\)/)
     expect(html).toContain('font-variant-numeric:lining-nums')
+  })
+})
+
+describe('chart tick size', () => {
+  const def = compileCartesian({
+    chartId: 'tick-size',
+    data: days,
+    x: (r) => r.t,
+    series,
+    marks: () => [],
+  })
+  const fonts = (width: number, height: number): unknown[] => {
+    const spec: StoredChartSpec = def.chart({ width, height, defaultTheme: {} as never })
+    return ['x', 'y'].flatMap((k) => {
+      const axis = spec.scales[k]?.axis
+      return axis && typeof axis === 'object' && typeof axis.tickLabels === 'object'
+        ? [axis.tickLabels.fontSize]
+        : []
+    })
+  }
+
+  test('one tick size at every container width: the caption size, never the nano rung', () => {
+    for (const [w, h] of [
+      [390, 240],
+      [360, 179],
+      [600, 280],
+      [900, 320],
+    ] as const)
+      for (const size of fonts(w, h)) expect(size).toBe(VX.text.micro)
   })
 })

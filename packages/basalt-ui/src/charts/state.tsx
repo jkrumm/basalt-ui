@@ -5,7 +5,7 @@
 import type { CSSProperties, ReactElement, ReactNode } from 'react'
 import { toErrorMessage } from '../common/errors'
 import { VX } from '../tokens'
-import { ChartBox, stateClass } from './box'
+import { ChartBox, growClass, stateClass } from './box'
 import type { ChartBoxHeight } from './box'
 import type { ChartState } from './types'
 
@@ -48,6 +48,14 @@ const dotStyle: CSSProperties = {
   borderRadius: '50%',
   background: VX.status.bad,
 }
+// StatCard's error anatomy (`ErrorState` at the section tier): a left-aligned stack, never centred.
+const errorStyle: CSSProperties = {
+  ...boxStyle,
+  alignItems: 'flex-start',
+  textAlign: 'start',
+  fontSize: VX.text.sm,
+  gap: 8,
+}
 const errorHeadStyle: CSSProperties = {
   display: 'inline-flex',
   alignItems: 'center',
@@ -55,6 +63,8 @@ const errorHeadStyle: CSSProperties = {
   color: VX.ink,
   fontWeight: 500,
 }
+
+const errorMessageStyle: CSSProperties = { color: VX.muted }
 
 const emptyLabel = (state: ChartState | undefined): string =>
   typeof state?.empty === 'string' ? state.empty : 'No data'
@@ -71,9 +81,13 @@ export function ChartPlaceholder(props: {
 }): ReactElement | null {
   const kind = resolveChartState(props.state)
   if (kind === null) return null
-  const style = kind === 'pending' ? pendingStyle : boxStyle
+  const style = kind === 'pending' ? pendingStyle : kind === 'error' ? errorStyle : boxStyle
+  // An error GROWS past the final chart's height rather than clip its action: the box's height is
+  // the floor, not the size.
   const fit = (node: ReactElement): ReactElement => (
-    <ChartBox height={props.height}>{node}</ChartBox>
+    <ChartBox height={props.height} {...(kind === 'error' && { className: growClass })}>
+      {node}
+    </ChartBox>
   )
   if (kind === 'pending')
     return fit(
@@ -90,10 +104,10 @@ export function ChartPlaceholder(props: {
       {kind === 'error' && (
         <span style={errorHeadStyle}>
           <span aria-hidden="true" data-basalt-status-dot="" style={dotStyle} />
-          Error
+          Could not load this chart
         </span>
       )}
-      <span>{label}</span>
+      <span style={errorMessageStyle}>{label}</span>
       {props.action}
     </>
   )

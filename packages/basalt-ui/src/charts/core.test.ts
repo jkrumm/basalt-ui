@@ -319,9 +319,9 @@ describe('container-class ladder', () => {
       throw new Error(`no ${scale} axis`)
     return axis.tickLabels
   }
-  test('micro (< 240): no y axis, nano labels', () => {
+  test('micro (< 240): no y axis, the one caption tick size', () => {
     expect(yAxis(at(200))).toBe(false)
-    expect(tickFont(at(200), 'x')).toBe(10)
+    expect(tickFont(at(200), 'x')).toBe(11)
   })
   test('compact (< 480) and short: y labels inside the plot, the left margin locked to zero', () => {
     const spec = at(360, 179)
@@ -330,14 +330,14 @@ describe('container-class ladder', () => {
     expect(tick.dx).toBeGreaterThan(0)
     expect(labelTick(spec, 'x').anchor).toBeFunction()
     expect(spec.margin).toEqual({ left: 0 })
-    expect(tickFont(spec, 'x')).toBe(10)
+    expect(tickFont(spec, 'x')).toBe(11)
   })
   test('compact at SHORT_CHART_HEIGHT (180) and above: a left gutter, margin and x anchor untouched', () => {
     for (const height of [180, 280]) {
       const spec = at(360, height)
       expect(labelTick(spec, 'y').anchor).toBeUndefined()
       expect(spec.margin).toBeUndefined()
-      expect(tickFont(spec, 'y')).toBe(10)
+      expect(tickFont(spec, 'y')).toBe(11)
       // The x anchor only starts a label on the plot origin; every other tick keeps the default.
       const anchor = labelTick(spec, 'x').anchor
       if (typeof anchor !== 'function') throw new Error('x anchor is not a callback')

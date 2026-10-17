@@ -93,13 +93,16 @@ export type CartesianInput<T, X extends ChartX> = Pick<
   plot?: PlotSizes | null
 }
 
-/** Font size and tick counts per container class (§ 9.6). */
+/** The one tick-label size, at every container width: the caption size, so a card never mixes sizes. */
+const TICK_FONT = VX.text.micro
+
+/** Tick counts per container class (§ 9.6). */
 const LADDER = {
-  micro: { font: VX.text.nano, xTicks: 2, yTicks: 0 },
-  compact: { font: VX.text.nano, xTicks: 3, yTicks: 3 },
-  regular: { font: VX.text.micro, xTicks: 5, yTicks: 5 },
-  wide: { font: VX.text.micro, xTicks: 6, yTicks: 5 },
-} as const satisfies Record<ContainerClass, { font: number; xTicks: number; yTicks: number }>
+  micro: { xTicks: 2, yTicks: 0 },
+  compact: { xTicks: 3, yTicks: 3 },
+  regular: { xTicks: 5, yTicks: 5 },
+  wide: { xTicks: 6, yTicks: 5 },
+} as const satisfies Record<ContainerClass, { xTicks: number; yTicks: number }>
 
 /** Space between the plot's left edge and a compact y label drawn inside it. */
 const INSIDE_LABEL_DX = 4
@@ -270,7 +273,7 @@ export function yGuide<T>(opts: {
       line: false,
       ticks: { ...ticks, format: axis.format, line: false, ...(inside && { size: 0, padding: 0 }) },
       tickLabels: {
-        fontSize: ladder.font,
+        fontSize: TICK_FONT,
         opacity: 1,
         ...(inside && {
           anchor: side === 'left' ? ('start' as const) : ('end' as const),
@@ -356,7 +359,7 @@ export function xGuide<X extends ChartX>(opts: {
       line: AXIS_LINE,
       ticks: { ...ticks, format, line: false, size: 0 },
       tickLabels: {
-        fontSize: ladder.font,
+        fontSize: TICK_FONT,
         opacity: 1,
         thin: true,
         // A label centred on a tick near the plot's left edge hangs left of it, under the gutter's

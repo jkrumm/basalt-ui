@@ -176,14 +176,14 @@
   font-family: var(--basalt-font-numeral, var(--basalt-font-sans));
   font-variant-numeric: lining-nums;
   font-size: var(--basalt-meter-caption);
-  text-wrap: pretty;
+  text-wrap: balance;
   color: var(--vx-muted);
 }
 
 /* Captions never truncate: the row wraps, and a caption wider than the row wraps inside itself. */
 .caption {
   min-width: 0;
-  text-wrap: pretty;
+  text-wrap: balance;
   overflow-wrap: anywhere;
 }
 
@@ -211,7 +211,7 @@
   font-family: var(--basalt-font-numeral, var(--basalt-font-sans));
   font-variant-numeric: lining-nums;
   font-size: var(--basalt-meter-caption);
-  text-wrap: pretty;
+  text-wrap: balance;
   color: var(--vx-muted);
 }
 
