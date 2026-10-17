@@ -1,0 +1,48 @@
+/*
+ * The sparkline's hover / focus readout: one quiet line inside the cell, never a floating tooltip,
+ * so a narrow cell cannot be escaped. It sits on the side away from the hovered point.
+ */
+
+.root {
+  position: relative;
+}
+
+.readout {
+  position: absolute;
+  top: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 0 4px;
+  overflow: hidden;
+  font-family: var(--basalt-font-mono);
+  font-size: var(--vx-text-xs);
+  line-height: 1.25;
+  color: var(--vx-ink);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  pointer-events: none;
+  background: color-mix(in srgb, var(--vx-surface-elevated) 88%, transparent);
+  border-radius: var(--vx-radius-ctrl);
+}
+
+.start {
+  left: 0;
+}
+
+.end {
+  right: 0;
+}
+
+.label {
+  color: var(--vx-muted);
+}
+
+.dot {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  pointer-events: none;
+  background: var(--vx-ink);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}

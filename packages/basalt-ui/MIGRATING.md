@@ -1041,10 +1041,17 @@ The `basalt-ui/router-tanstack` subpath is **removed** in 2.x, not moved: an imp
 | `NavItemMeta`, `NavGroupMeta`, `AnyNavItem`, `AnyNavGroup`, `AnyNavLink`, `FlatNavItem`, `NavConfig`, `NavGroupId`, `NavTabId`, `NavIndex`, `UseNavOptions`, `NavBinding`, `NavAnchor`, `NavAnchorProps`, `NavMobilePlacement` | deleted                                                                                                                                                                                                                                                                                                                                                                                                                                                    | no consumer names them; derive with `ComponentProps` / `Parameters` |
 | `useNav`, and `BasaltShell`'s `sections` / `mobileNav` props                                                                                                                                                                   | deleted: pass `nav={NAV}` (plus `badges`, `isActive`, `getScrollElement` — the old `useNav` options) to `BasaltShell`; it resolves the sidebar, the mobile bar and the breadcrumb itself. `mobileNav` tuning moves to `defineNav`'s `mobile`. argo `apps/dashboard/src/routes/__root.tsx`: replace `const nav = useNav(NAV, { badges })` + `{...nav}` with `nav={NAV} badges={…}` (migrates in W12; 1.x consumers stay on their pinned version until then) |
 
-## Unreleased
+## Unreleased — the sparkline reference and readout
 
-_Nothing yet. Author the next section under this heading as `## Unreleased — <title>`; the
-release renames it and opens a new one here._
+**`Sparkline` now answers hover and keyboard focus.** A pointer over the cell, or arrow keys /
+Home / End on the focused chart, show the point's value in one quiet in-cell line (Escape or blur
+clears it) and mark the point with a dot. It was inert before. Value text comes from the new
+`format` prop (default: the compact number format), the x text from the new `labels` array
+(index-aligned with `data`). **Opt out** with `decorative`, which also sets `aria-hidden`; an
+`aria-hidden` ancestor disables it too.
+
+New, additive: `reference={n | 'mean'}` draws a dashed `--vx-line` hairline and widens the y domain
+to include it (`'mean'` is over the plotted values).
 
 ## 2.19.0 — the status dot, ink buttons and Meter refinements
 

@@ -8,18 +8,22 @@
 import { dot } from '@tanstack/charts/dot'
 import { decorative } from '@tanstack/charts/mark/decorative'
 import { lineY } from '@tanstack/charts/line'
+import { ruleY } from '@tanstack/charts/rule'
 import { scaleBand } from '@tanstack/charts/scales/band'
 import { scaleLinear } from '@tanstack/charts/scales/linear'
-import { useId, useMemo } from 'react'
-import type { ReactElement } from 'react'
+import { useId, useMemo, useState } from 'react'
+import type { FocusEvent, KeyboardEvent, PointerEvent, ReactElement } from 'react'
+import { cx } from '../common/props'
 import type { BasaltProps } from '../common/props'
 import { VX } from '../tokens'
 import type { CartesianDefinition } from './compile'
 import { chartCurve } from './curves'
 import { barMark } from './marks'
+import { defaultNumberFormat } from './compile'
 import { ChartEngine, idPrefixOf } from './host'
+import classes from './sparkline.module.css'
 import { ChartPlaceholder, resolveChartState } from './state'
-import { CHART_THEME } from './theme'
+import { CHART_THEME, DASH } from './theme'
 import type { ChartState } from './types'
 
 export type SparklineProps = BasaltProps & {
@@ -43,6 +47,15 @@ export type SparklineProps = BasaltProps & {
   /** Pending / error / empty, the same contract as every other kind. The placeholder fills the
    * sparkline's own `width` × `height`, so a loading tile does not shift when the trend lands. */
   state?: ChartState | undefined
+  /** A quiet dashed hairline at a value, or at the mean of the plotted values (`'mean'`). The y
+   * domain widens to include it. Not a legend item, never a status colour. */
+  reference?: number | 'mean' | undefined
+  /** Formats the readout's value. Default: the number as is. */
+  format?: ((value: number) => string) | undefined
+  /** The readout's x label per point, index-aligned with `data`. Omitted: the value alone. */
+  labels?: readonly string[] | undefined
+  /** Purely decorative: hidden from assistive tech and no hover / focus readout. */
+  decorative?: boolean | undefined
 }
 
 type Point = { i: number; v: number | null }
@@ -165,13 +178,45 @@ export function poolSparkline(
   return mark === 'bar' ? poolBar(rows, cap) : poolLine(rows, cap)
 }
 
+type Frame = { x: readonly [number, number]; y: readonly [number, number] }
+
+/** The domains a series is drawn in — shared by the compile and the readout's dot, which
+ * must land where the mark did. A bar's x is a band, so only its y is a continuous domain. */
+function frameOf(
+  [lo, hi]: readonly [number, number],
+  mark: 'line' | 'bar',
+  count: number,
+  hasEnd: boolean,
+): Frame {
+  if (mark === 'bar') return { x: [0, count], y: [Math.min(lo, 0), Math.max(hi, 0) || 1] }
+  // A flat or single-point series needs an extent; 10% air keeps the stroke inside the box.
+  const pad = (hi - lo) * 0.1 || 1
+  // Half a dot of air at each end, in index units, so the last-point dot is not clipped.
+  const xPad = hasEnd ? (count - 1) * 0.04 || 0.5 : 0
+  return { x: [-xPad, Math.max(count - 1, 1) + xPad], y: [lo - pad, hi + pad] }
+}
+
 function compileSparkline(
   source: readonly Point[],
-  [lo, hi]: readonly [number, number],
+  extentOf: readonly [number, number],
   mark: 'line' | 'bar',
   color: string,
   emphasisColor: string | null,
+  reference: number | null,
 ): CartesianDefinition {
+  const frame = frameOf(extentOf, mark, source.length, emphasisColor !== null)
+  const referenceMark = (): readonly ReturnType<typeof ruleY>[] =>
+    reference === null
+      ? []
+      : [
+          ruleY([reference], {
+            id: 'reference',
+            stroke: VX.line,
+            strokeOpacity: 1,
+            strokeWidth: 1,
+            strokeDasharray: DASH,
+          }),
+        ]
   return {
     chart: ({ width }) => {
       const rows = poolSparkline(source, width, mark)
@@ -179,6 +224,7 @@ function compileSparkline(
       if (mark === 'bar') {
         return {
           marks: [
+            ...referenceMark(),
             barMark(rows, {
               id: 'bars',
               x: 'i',
@@ -195,7 +241,7 @@ function compileSparkline(
               axis: false as const,
             },
             y: {
-              scale: scaleLinear().domain([Math.min(lo, 0), Math.max(hi, 0) || 1]),
+              scale: scaleLinear().domain(frame.y),
               axis: false as const,
             },
           },
@@ -204,12 +250,9 @@ function compileSparkline(
           margin: 0,
         }
       }
-      // A flat or single-point series needs an extent; 10% air keeps the stroke inside the box.
-      const pad = (hi - lo) * 0.1 || 1
-      // Half a dot of air at each end, in index units, so the last-point dot is not clipped.
-      const xPad = emphasisColor === null ? 0 : (source.length - 1) * 0.04 || 0.5
       return {
         marks: [
+          ...referenceMark(),
           lineY(rows, {
             id: 'line',
             x: 'i',
@@ -228,10 +271,10 @@ function compileSparkline(
         ],
         scales: {
           x: {
-            scale: scaleLinear().domain([-xPad, Math.max(source.length - 1, 1) + xPad]),
+            scale: scaleLinear().domain(frame.x),
             axis: false as const,
           },
-          y: { scale: scaleLinear().domain([lo - pad, hi + pad]), axis: false as const },
+          y: { scale: scaleLinear().domain(frame.y), axis: false as const },
         },
         theme: CHART_THEME,
         guides: false,
@@ -241,7 +284,31 @@ function compileSparkline(
   }
 }
 
-/** `useId` output (`«r1»`, `:r1:`) is not a safe SVG id fragment. */
+/** An `aria-hidden` ancestor makes the sparkline decorative, whatever its own props say. */
+const hidden = (el: HTMLElement): boolean => el.closest('[aria-hidden="true"]') !== null
+
+/** The point `from` steps to along `dir`, skipping gaps; `from` itself when there is none. */
+function stepFrom(rows: readonly Point[], from: number, dir: 1 | -1): number {
+  for (let i = from + dir; i >= 0 && i < rows.length; i += dir) if (rows[i]?.v !== null) return i
+  return from
+}
+
+const lastFinite = (rows: readonly Point[]): number | null => {
+  const i = rows.findLastIndex((r) => r.v !== null)
+  return i < 0 ? null : i
+}
+
+/** The mean of the plotted (finite) values. */
+function meanOf(rows: readonly Point[]): number {
+  let sum = 0
+  let n = 0
+  for (const r of rows) {
+    if (r.v === null) continue
+    sum += r.v
+    n += 1
+  }
+  return sum / n
+}
 
 export function Sparkline(props: SparklineProps): ReactElement {
   const {
@@ -254,33 +321,124 @@ export function Sparkline(props: SparklineProps): ReactElement {
     emphasizeLast = true,
     emphasisColor = VX.line,
     state,
+    reference,
+    format = defaultNumberFormat,
+    labels,
+    decorative: isDecorative = false,
     className,
     style,
   } = props
   const id = useId()
-  const definition = useMemo(() => {
+  const [active, setActive] = useState<number | null>(null)
+  const model = useMemo(() => {
     const rows: Point[] = data.map((v, i) => ({ i, v: finite(v) }))
     const range = extent(rows)
     // No finite value means nothing to scale: the empty render, never an Infinity domain.
     if (range === null) return null
-    return compileSparkline(rows, range, mark, color, emphasizeLast ? emphasisColor : null)
-  }, [data, mark, color, emphasizeLast, emphasisColor])
+    const at = reference === 'mean' ? meanOf(rows) : (reference ?? null)
+    const ref = at !== null && Number.isFinite(at) ? at : null
+    // The reference is part of the extent, so it is never clipped.
+    const full: readonly [number, number] =
+      ref === null ? range : [Math.min(range[0], ref), Math.max(range[1], ref)]
+    const end = emphasizeLast ? emphasisColor : null
+    return {
+      rows,
+      frame: frameOf(full, mark, rows.length, end !== null),
+      definition: compileSparkline(rows, full, mark, color, end, ref),
+    }
+  }, [data, mark, color, emphasizeLast, emphasisColor, reference])
   const resolved = resolveChartState(state)
+  const rows = model?.rows
+  const interactive = !isDecorative && resolved === null && model !== null
+
+  const onPointerMove = (e: PointerEvent<HTMLDivElement>): void => {
+    if (!interactive || rows === undefined || hidden(e.currentTarget)) return
+    const box = e.currentTarget.getBoundingClientRect()
+    if (box.width <= 0) return
+    const frac = Math.min(Math.max((e.clientX - box.left) / box.width, 0), 1)
+    const [x0, x1] = model.frame.x
+    const i =
+      mark === 'bar'
+        ? Math.min(Math.floor(frac * rows.length), rows.length - 1)
+        : Math.min(Math.max(Math.round(x0 + frac * (x1 - x0)), 0), rows.length - 1)
+    setActive(rows[i]?.v === null ? null : i)
+  }
+  const onKeyDown = (e: KeyboardEvent<HTMLDivElement>): void => {
+    if (!interactive || rows === undefined || hidden(e.currentTarget)) return
+    const from = active ?? lastFinite(rows)
+    if (from === null) return
+    const next =
+      e.key === 'ArrowLeft'
+        ? stepFrom(rows, from, -1)
+        : e.key === 'ArrowRight'
+          ? stepFrom(rows, from, 1)
+          : e.key === 'Home'
+            ? stepFrom(rows, -1, 1)
+            : e.key === 'End'
+              ? stepFrom(rows, rows.length, -1)
+              : e.key === 'Escape'
+                ? null
+                : undefined
+    if (next === undefined) return
+    e.preventDefault()
+    setActive(next)
+  }
+  const onFocus = (e: FocusEvent<HTMLDivElement>): void => {
+    if (!interactive || rows === undefined || active !== null || hidden(e.currentTarget)) return
+    setActive(lastFinite(rows))
+  }
+
+  const value = active === null ? null : (rows?.[active]?.v ?? null)
+  const at =
+    interactive && active !== null && value !== null
+      ? {
+          value,
+          fx:
+            mark === 'bar'
+              ? (active + 0.5) / model.rows.length
+              : (active - model.frame.x[0]) / (model.frame.x[1] - model.frame.x[0]),
+          fy: (model.frame.y[1] - value) / (model.frame.y[1] - model.frame.y[0]),
+          label: labels?.[active],
+        }
+      : null
   return (
     <div
       data-basalt-sparkline=""
-      {...(className !== undefined && { className })}
+      role="presentation"
+      className={cx(classes.root, className)}
       style={{ width: width ?? '100%', height, minWidth: 0, ...style }}
+      {...(isDecorative && { 'aria-hidden': true })}
+      onPointerMove={onPointerMove}
+      onPointerLeave={() => setActive(null)}
+      onKeyDown={onKeyDown}
+      onFocus={onFocus}
+      onBlur={() => setActive(null)}
     >
       {resolved !== null && <ChartPlaceholder state={state} height={height} compact />}
-      {resolved === null && definition !== null && (
+      {resolved === null && model !== null && (
         <ChartEngine
-          definition={definition}
+          definition={model.definition}
           ariaLabel={ariaLabel}
           height={height}
           idPrefix={idPrefixOf(id, 'spark')}
           coarse={false}
         />
+      )}
+      {at !== null && (
+        <>
+          <span
+            data-basalt-sparkline-dot=""
+            className={classes.dot}
+            style={{ left: `${at.fx * 100}%`, top: `${at.fy * 100}%` }}
+          />
+          <output
+            data-basalt-sparkline-readout=""
+            className={cx(classes.readout, at.fx > 0.5 ? classes.start : classes.end)}
+          >
+            {at.label !== undefined && <span className={classes.label}>{at.label} </span>}
+            {format(at.value)}
+          </output>
+        </>
       )}
     </div>
   )
