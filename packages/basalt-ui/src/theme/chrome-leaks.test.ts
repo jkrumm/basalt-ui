@@ -24,6 +24,10 @@ describe('Badge is the status chip', () => {
     expect(badge?.defaultProps?.['variant']).toBe('light')
   })
 
+  test('defaults to the neutral colour, so the accent is spent only where a caller names it', () => {
+    expect(badge?.defaultProps?.['color']).toBe('gray')
+  })
+
   test('radius is the tight role, not the pill', () => {
     expect(badge?.defaultProps?.['radius']).toBe(RADIUS_STEP.tight)
   })
