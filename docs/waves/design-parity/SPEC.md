@@ -271,7 +271,7 @@ re-shot on the playground; each consumer's before/after is taken when it upgrade
 
 Wave 35 closes four more: Button inline padding maps to `--vx-space-stack-*` steps (no 14 px / 7 px; `ctl`
 keeps 10); a hovered `Tab` is the ink-5 % step in both schemes (dark was identical to rest); the selected nav
-row is an ink 10 % fill, never the accent (the accent stays on the icon); the error placeholder is a status dot,
+row is an ink 10 % fill, never the accent (the accent stays on the icon); the error placeholder (`ErrorState` and `ChartCard`) is a status dot,
 the title, the message and a retry on the neutral surface, not a tinted `Alert`.
 
 ### 6.13 Forms
