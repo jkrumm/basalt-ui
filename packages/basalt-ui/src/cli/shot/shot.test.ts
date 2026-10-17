@@ -22,6 +22,9 @@ import {
   readScaleInPage,
   sheetName,
   tooltipSelector,
+  visibleTooltip,
+  hoverAtOf,
+  parseHoverAt,
   unionClip,
   withParam,
 } from './capture'
@@ -612,6 +615,16 @@ describe('tooltip lookup', () => {
     expect(tooltipSelector('tip-1')).toBe('[role="tooltip"][id="tip-1"]')
     expect(tooltipSelector('')).toBe('[role="tooltip"]:not([data-shot-seen])')
   })
+  test('the probe narrows to a rendered readout', () => {
+    expect(visibleTooltip('')).toBe('[role="tooltip"]:not([data-shot-seen]):visible')
+  })
+  test('data-shot-at gives fractions of the trigger box; anything else hovers the centre', () => {
+    expect(parseHoverAt('0.25,0.5')).toEqual({ x: 0.25, y: 0.5 })
+    expect(parseHoverAt('')).toBeNull()
+    expect(parseHoverAt('a,b')).toBeNull()
+    document.body.innerHTML = '<i id="t" data-shot-at="0.1,0.2"></i>'
+    expect(hoverAtOf(document.getElementById('t'))).toBe('0.1,0.2')
+  })
   test('markVisibleTooltips marks only visible tooltips and forgets stale marks', () => {
     document.body.innerHTML =
       '<span id="a" role="tooltip">a</span><span id="b" role="tooltip">b</span><span id="c" data-shot-seen></span>'
@@ -693,7 +706,7 @@ describe('tooltip lookup', () => {
       log: () => undefined,
       measure: () => Promise.resolve(measurement),
     })
-    expect(asked.every((q) => q === '[role="tooltip"]:not([data-shot-seen])')).toBe(true)
+    expect(asked.every((q) => q === '[role="tooltip"]:not([data-shot-seen]):visible')).toBe(true)
     expect(clips.length).toBeGreaterThan(0)
     for (const clip of clips) {
       const c = clip as { x: number; y: number; width: number; height: number }

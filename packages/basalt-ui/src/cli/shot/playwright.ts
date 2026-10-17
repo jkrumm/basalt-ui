@@ -26,7 +26,7 @@ export type ShotOptions = {
 export type PwLocator = {
   first(): PwLocator
   count(): Promise<number>
-  hover(options?: { timeout?: number }): Promise<void>
+  hover(options?: { timeout?: number; position?: { x: number; y: number } }): Promise<void>
   isVisible(): Promise<boolean>
   boundingBox(): Promise<Box | null>
   scrollIntoViewIfNeeded(): Promise<void>
