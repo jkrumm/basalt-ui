@@ -24,3 +24,16 @@ export function itemAt<T>(items: readonly T[], index: number): T {
   }
   return items[resolved] as T
 }
+
+/** A contiguous band of a scale; `from` is inclusive. */
+type Zone = { from: number; to: number; label: string }
+
+/** The zone holding `value`: a value below the scale falls in the first zone, one past it in the last. */
+export function zoneFor<const Z extends readonly Zone[]>(zones: Z, value: number): Z[number] {
+  return zones.find((z) => value >= z.from && value < z.to) ?? itemAt(zones, value < 0 ? 0 : -1)
+}
+
+export const fmtShare = (value: number): string => `${Math.round(value * 100)}%`
+
+const INT = new Intl.NumberFormat('en-GB', { maximumFractionDigits: 0 })
+export const fmtInt = (value: number): string => INT.format(value)

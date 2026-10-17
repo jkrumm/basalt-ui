@@ -11,9 +11,9 @@
  * and `Section` do not forward `data-*`, so the anchor is the wrapping `Box`.
  */
 import { Box, SimpleGrid, Stack } from '@mantine/core'
-import { BarList, Meter, PageBar, Section, StatCard, StatGroup } from 'basalt-ui'
+import { BarList, DeltaBadge, Meter, PageBar, Section, StatCard, StatGroup } from 'basalt-ui'
 import { Bars, ChartCard, Sparkline } from 'basalt-ui/charts'
-import type { BarsBar, ChartState } from 'basalt-ui/charts'
+import type { BarsBar } from 'basalt-ui/charts'
 import { CONTAINER_KEYS, VX } from 'basalt-ui/tokens'
 import { demoColors } from '../demo/series'
 import {
@@ -36,14 +36,13 @@ import {
   WINDOW_LABEL,
   YEAR,
   fmtEur,
-  fmtShare,
   spendBand,
   fmtSignedEur,
-  fmtSignedShare,
 } from './spend-data'
 import type { DayRow, DistributionBin, ModelKey } from './spend-data'
 import { RETRY_ACTION } from './retry-action'
-import { chartStateFor, queryFor, retryCopy } from './shot-state'
+import { fmtShare } from './fixture-utils'
+import { cardStateProps, chartStateFor, queryFor, retryCopy } from './shot-state'
 import type { ScenarioProps } from './shot-state'
 
 const MODEL_COLOR: Record<ModelKey, string> = {
@@ -79,7 +78,13 @@ const DRIVER_ITEMS = DRIVERS.map((p) => ({
   key: p.key,
   label: p.label,
   value: p.delta,
-  secondary: fmtSignedShare(p.change),
+  secondary: (
+    <DeltaBadge
+      value={p.change * 100}
+      polarity="up-bad"
+      format={(v) => `${Math.round(Math.abs(v))}%`}
+    />
+  ),
 }))
 /** The forecast track runs past both the budget and the forecast so an overage stays on the track. */
 const TRACK_END_EUR = Math.ceil((Math.max(BUDGET_EUR, FORECAST_EUR) * 1.1) / 100) * 100
@@ -87,14 +92,13 @@ const PACE_LINES = [
   { value: PACE_EUR_PER_DAY, color: VX.faint, dashed: true, legend: { label: 'Budget pace' } },
 ]
 
+/** Body height of the error placeholder for the BarList cards, so a failed card stays near its resting size. */
+const PROJECT_PLACEHOLDER = 190
+
 const USAGE_ERROR = 'The usage export did not answer. Retry, or reconnect it in Settings.'
 const USAGE_EMPTY = 'No spend recorded in the window. Check that the usage export is connected.'
 
 const retry = (what: string): string => retryCopy(what, 'usage export')
-
-/** A Meter or BarList draws its own loading and empty states; the card only takes the error. */
-const errorOnly = (state: ScenarioProps['shotState'], copy: string): ChartState | undefined =>
-  state === 'error' ? { error: new Error(copy) } : undefined
 
 function SpendStats({ shotState }: ScenarioProps) {
   const isAtRest = shotState === undefined
@@ -136,7 +140,7 @@ function SpendStats({ shotState }: ScenarioProps) {
       <Box data-shot="forecast" h="100%">
         <StatCard
           title="Forecast"
-          // The verdict in words beside the rail: the rail alone carries it in colour only.
+          // `tone` states the verdict as a dot and a word; the qualifier carries the amount.
           qualifier={
             overBudget
               ? `end of ${MONTH_NAME} · over budget by ${fmtEur(FORECAST_EUR - BUDGET_EUR)}`
@@ -144,7 +148,10 @@ function SpendStats({ shotState }: ScenarioProps) {
           }
           value={fmtEur(FORECAST_EUR)}
           info={`Average per day so far (${fmtEur(MTD_EUR / DAYS_ELAPSED)}) held flat for all ${MONTH_DAYS} days. Ignores weekends and bursts.`}
+          {...(overBudget && { tone: 'bad' as const })}
           {...shared}
+          // The Meter rides in the `sparkline` slot: it is the card's one visual. A package change
+          // makes that slot content-sized for a Meter; until then the foot grows to fit.
           sparkline={() => (
             <Meter
               label={`Forecast against the ${fmtEur(BUDGET_EUR)} budget`}
@@ -168,6 +175,7 @@ function SpendStats({ shotState }: ScenarioProps) {
           value={fmtEur(BUDGET_EUR)}
           info={`Monthly cap in EUR. ${fmtEur(PACE_EUR_PER_DAY)} a day keeps spend on pace.`}
           {...shared}
+          // Same slot as the forecast card's Meter.
           sparkline={() => (
             <Meter
               label={`Spent against the ${fmtEur(BUDGET_EUR)} budget`}
@@ -218,8 +226,7 @@ function SpendCharts({ shotState }: ScenarioProps) {
         <ChartCard
           title={`Spend by project, ${WINDOW_LABEL} (€)`}
           info="Each project's share of month-to-date spend across all models."
-          state={errorOnly(shotState, retry('Spend by project'))}
-          {...(shotState === 'error' && { stateAction: RETRY_ACTION })}
+          {...cardStateProps(shotState, retry('Spend by project'), PROJECT_PLACEHOLDER)}
         >
           <Box data-shot-hover>
             <BarList
@@ -228,7 +235,6 @@ function SpendCharts({ shotState }: ScenarioProps) {
               format={fmtEur}
               accentLeader
               loading={shotState === 'loading'}
-              loadingRows={PROJECT_ITEMS.length}
               emptyText={`No project spent anything ${WINDOW_LABEL}. Connect one to the usage export.`}
             />
           </Box>
@@ -253,8 +259,11 @@ function SpendDrivers({ shotState }: ScenarioProps) {
               items={shotState === 'empty' ? [] : DRIVER_ITEMS}
               format={fmtSignedEur}
               loading={shotState === 'loading'}
-              loadingRows={DRIVER_ITEMS.length}
-              emptyText={`No project spent more than ${PRIOR_WINDOW_LABEL}. Spend is flat or falling.`}
+              emptyText={
+                shotState === 'empty'
+                  ? USAGE_EMPTY
+                  : `No project spent more than ${PRIOR_WINDOW_LABEL}. Spend is flat or falling.`
+              }
             />
           </Box>
         </Section>

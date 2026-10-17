@@ -3,8 +3,10 @@
  * into each container's own empty / loading / error props — a scenario never fakes a state by
  * hand where a component already has the prop.
  */
+import type { ReactNode } from 'react'
 import type { ChartState } from 'basalt-ui/charts'
 import type { QueryStateLike } from '../demo/query-state-like'
+import { RETRY_ACTION } from './retry-action'
 
 const SHOT_STATES = ['empty', 'loading', 'error'] as const
 export type ShotState = (typeof SHOT_STATES)[number]
@@ -55,4 +57,23 @@ export function chartStateFor(
   if (state === 'loading') return { pending: true }
   if (state === 'error') return { error: new Error(copy.error) }
   return { empty: copy.empty }
+}
+
+/** A Meter or BarList draws its own loading and empty states; the card only takes the error. */
+export const errorOnly = (state: ShotState | undefined, copy: string): ChartState | undefined =>
+  state === 'error' ? { error: new Error(copy) } : undefined
+
+/**
+ * `ChartCard` props for a card that hosts a Meter or BarList: the error placeholder (with a retry),
+ * sized to the card's own body. Without `placeholderHeight` the error branch reserves the height of
+ * a chart, which is ~4x what a meter needs.
+ */
+export function cardStateProps(
+  state: ShotState | undefined,
+  errorCopy: string,
+  placeholderHeight: number,
+): { state?: ChartState | undefined; stateAction?: ReactNode; placeholderHeight: number } {
+  return state === 'error'
+    ? { state: errorOnly(state, errorCopy), stateAction: RETRY_ACTION, placeholderHeight }
+    : { placeholderHeight }
 }
