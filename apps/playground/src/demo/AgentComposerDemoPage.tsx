@@ -231,7 +231,7 @@ function ComposerDemo() {
         comes back.
       </Text>
 
-      <Paper p="sm">
+      <Paper py="sm" px="md">
         <Text size="xs" tt="uppercase" fw={600} c="dimmed" mb={4}>
           Try the caret behaviour
         </Text>
@@ -284,7 +284,7 @@ function ComposerDemo() {
         </Group>
       )}
 
-      <Paper p="sm">
+      <Paper py="sm" px="md">
         <Composer
           ref={composerRef}
           draftKey="agent-composer-demo"
@@ -314,7 +314,7 @@ function ComposerDemo() {
         />
       </Paper>
 
-      <Paper p="sm">
+      <Paper py="sm" px="md">
         <Group gap={6} mb="xs">
           <IconSparkle />
           <Text size="xs" tt="uppercase" fw={600} c="dimmed">

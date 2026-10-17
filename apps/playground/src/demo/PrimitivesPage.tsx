@@ -14,7 +14,7 @@ import { IconChart } from './icons'
 
 function Card({ children }: { children: ReactNode }) {
   return (
-    <Paper p="sm" withBorder>
+    <Paper py="sm" px="md" withBorder>
       {children}
     </Paper>
   )

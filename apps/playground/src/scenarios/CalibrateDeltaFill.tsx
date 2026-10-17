@@ -15,7 +15,7 @@ import {
 
 export function CalibrateDeltaFill() {
   return (
-    <Card py="xs" px="sm" data-shot="probe-5">
+    <Card py="sm" px="md" data-shot="probe-5">
       <Text size="xs" c="dimmed">
         Spend, {WINDOW_LABEL} (€)
       </Text>
