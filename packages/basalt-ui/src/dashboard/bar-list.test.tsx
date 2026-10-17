@@ -1,6 +1,8 @@
 import { MantineProvider } from '@mantine/core'
 import { cleanup, render } from '@testing-library/react'
 import { afterEach, describe, expect, test } from 'bun:test'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { BarList } from './bar-list'
 import type { BarListProps } from './bar-list'
 
@@ -19,7 +21,9 @@ const ITEMS = [
   { label: 'a-very-long-project-name-that-must-truncate-in-a-narrow-card', value: 40 },
   { label: 'rb', value: 20 },
 ]
-const bars = (c: HTMLElement) => [...c.querySelectorAll<HTMLElement>('li > span[aria-hidden]')]
+const bars = (c: HTMLElement) => [
+  ...c.querySelectorAll<HTMLElement>('li > [data-bar-track] > span[aria-hidden]'),
+]
 
 describe('BarList', () => {
   test('is a list with an accessible name and text values', () => {
@@ -155,5 +159,39 @@ describe('BarList', () => {
     cleanup()
     const nan = mount({ label: 'L', max: Number.NaN, items: [{ label: 'a', value: 5 }] })
     expect(bars(nan.container).map((x) => x.style.width)).toEqual(['0%'])
+  })
+})
+
+describe('BarList — the track is the label column', () => {
+  const css = readFileSync(resolve(import.meta.dirname, 'bar-list.module.css'), 'utf8')
+
+  test('the bar lives inside the label track, not beside the value', () => {
+    const { container } = mount({ label: 'L', items: [{ label: 'a', value: 5 }] })
+    const li = container.querySelector('li') as HTMLElement
+    const track = li.querySelector('[data-bar-track]') as HTMLElement
+    expect(track.contains(li.querySelector('[aria-hidden]'))).toBe(true)
+    expect(track.textContent).toBe('a')
+    expect(li.lastElementChild?.textContent).toBe('5')
+    expect(track.contains(li.lastElementChild)).toBe(false)
+  })
+
+  test('secondary values sit outside the track, one cell per row once any row has one', () => {
+    const { container } = mount({
+      label: 'L',
+      items: [
+        { label: 'a', value: 5, secondary: 'x' },
+        { label: 'b', value: 3 },
+      ],
+    })
+    expect(container.querySelector('ul')?.hasAttribute('data-secondary')).toBe(true)
+    for (const li of container.querySelectorAll('li')) {
+      expect(li.querySelector('[data-bar-track]')?.contains(li.lastElementChild)).toBe(false)
+      expect(li.children.length).toBe(3)
+    }
+  })
+
+  test('columns are shared by every row, so one scale holds', () => {
+    expect(css).toMatch(/\.row \{[^}]*grid-template-columns: subgrid/)
+    expect(css).not.toMatch(/\.value \{[^}]*position: absolute/)
   })
 })

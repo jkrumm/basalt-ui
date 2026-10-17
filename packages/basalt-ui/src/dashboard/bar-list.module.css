@@ -1,28 +1,44 @@
 /*
- * BarList — ranked rows on one shared scale (docs/waves/design-parity/SPEC.md § 6.4). The bar sits
- * BEHIND the label and value; the row never wraps: the label truncates, the value is nowrap.
+ * BarList — ranked rows on one shared scale (docs/waves/design-parity/SPEC.md § 6.4). The bar track
+ * is the LABEL column only; the value (and secondary) columns sit outside it, so a full-scale bar ends
+ * before the value. The columns are shared by every row (subgrid), which is what keeps one scale. The
+ * row never wraps: the label truncates, the value is nowrap.
  */
 
 .root {
-  display: flex;
-  flex-direction: column;
-  gap: var(--vx-space-stack-xs, 0.25rem);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: var(--vx-space-control-gap, 0.375rem);
+  row-gap: var(--vx-space-stack-xs, 0.25rem);
   margin: 0;
   padding: 0;
   list-style: none;
   min-width: 0;
 }
 
+.root[data-secondary] {
+  grid-template-columns: minmax(0, 1fr) auto auto;
+}
+
 .row {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  align-items: center;
+  min-width: 0;
+  min-height: calc(var(--vx-space-control-height-widget, 1.5rem) * var(--mantine-scale, 1));
+  font-size: var(--vx-text-sm);
+  color: var(--vx-ink);
+}
+
+/* The bar's scale: `.bar` is a percentage of THIS box, never of the row. */
+.track {
   position: relative;
   display: flex;
   align-items: center;
-  gap: var(--vx-space-control-gap, 0.375rem);
+  align-self: stretch;
   min-width: 0;
-  min-height: calc(var(--vx-space-control-height-widget, 1.5rem) * var(--mantine-scale, 1));
   padding-inline: var(--vx-space-stack-sm);
-  font-size: var(--vx-text-sm);
-  color: var(--vx-ink);
 }
 
 .bar {
@@ -39,7 +55,6 @@
 
 .label {
   position: relative;
-  flex: 1 1 0;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -47,18 +62,19 @@
 }
 
 .value {
-  position: relative;
-  flex: none;
   font-family: var(--basalt-font-mono);
   text-align: end;
   white-space: nowrap;
 }
 
+.value:last-child,
+.secondary:last-child {
+  padding-inline-end: var(--vx-space-stack-sm);
+}
+
 .secondary {
-  position: relative;
-  flex: none;
   font-family: var(--basalt-font-mono);
-  font-size: var(--vx-text-xs);
+  font-size: var(--vx-text-sm);
   color: var(--vx-muted);
   white-space: nowrap;
 }
