@@ -1123,7 +1123,7 @@ const ddmm = (d: Date) =>
 
 The hover readout now carries `role="tooltip"` (it was the engine's `role="status"`) and keeps
 `aria-live="polite"` on purpose: a tooltip role alone is not announced, and keyboard users should still
-hear the reading; a test that queried `.ts-chart-tooltip[role="status"]` must follow. `Donut`'s readout follows.
+hear the reading; a test that queried `.ts-chart-tooltip[role="status"]` must follow. `Donut`'s and `Heatmap`'s readouts follow.
 
 ## 2.16.0 — the even-pixel grid
 
