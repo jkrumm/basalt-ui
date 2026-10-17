@@ -132,6 +132,8 @@ export type ProjectRow = Part & {
   key: ProjectKey
   /** Change against the same days of the prior month, as a fraction. */
   change: number
+  /** The same change in EUR: this window's spend minus the prior window's. */
+  delta: number
 }
 
 export const PROJECTS_MTD: readonly ProjectRow[] = PROJECT_KEYS.map((key) => {
@@ -143,8 +145,15 @@ export const PROJECTS_MTD: readonly ProjectRow[] = PROJECT_KEYS.map((key) => {
     spend,
     share: spend / MTD_EUR,
     change: spend / prior - 1,
+    delta: spend - prior,
   }
 }).toSorted((a, b) => b.spend - a.spend)
+
+/** The projects that spent more than in the prior window, largest increase first — what is driving
+ * the month. A project that fell is not a driver, so it is not ranked. */
+export const DRIVERS: readonly ProjectRow[] = PROJECTS_MTD.filter((p) => p.delta > 0).toSorted(
+  (a, b) => b.delta - a.delta,
+)
 
 export const MODELS_MTD: readonly (Part & { key: ModelKey })[] = MODEL_KEYS.map((key) => {
   const spend = eurOf(MTD_ENTRIES, (e) => e.model === key)
@@ -182,6 +191,8 @@ export const spendBand = (bin: DistributionBin): string =>
   `€${bin.from}–${bin.from + BIN_WIDTH_EUR}`
 
 export const fmtEur = (value: number): string => EUR.format(Math.round(value))
+export const fmtSignedEur = (value: number): string =>
+  `${value < 0 ? '\u2212' : '+'}${fmtEur(Math.abs(value))}`
 export const fmtShare = (value: number): string => `${Math.round(value * 100)}%`
 export const fmtSignedShare = (value: number): string => {
   const percent = Math.round(value * 100)
