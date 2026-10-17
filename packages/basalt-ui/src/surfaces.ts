@@ -347,6 +347,8 @@ export const SURFACES = {
       'surface-shadow-override',
       // A `var(--vx-*)` naming a token basalt no longer (or never) emits.
       'unknown-vx-token',
+      // The series file's computed palette checks (lightness, chroma, CVD separation, contrast).
+      'series-palette',
       // Not a token kind — the kind that judges the ANNOTATION rather than the code. It lands here
       // because `agent/rules/basalt-tokens.md` is where the `theme-allow` grammar is documented
       // (said once, on purpose), so this is the header that must name its enforcement.
