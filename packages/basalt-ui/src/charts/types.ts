@@ -303,7 +303,8 @@ export type CartesianChartProps<T, X extends ChartX = ChartX> = BasaltProps & {
    * extent (and warns in dev). A no-op on a string or band x (`Bars`, `MirroredBars`, `BandStrip`).
    */
   xDomain?: readonly [X, X] | undefined
-  /** Tick label for an x value. Default: `DD.MM` for dates, compact numbers, strings verbatim. */
+  /** Tick label for an x value. Default: dates follow the tick step (`HH:MM` with the day on midnight, `DD.MM`, a month with
+   * the year on January; never two alike), compact numbers, strings verbatim. */
   formatX?: ((x: X) => string) | undefined
   zones?: readonly ZoneSpec[] | undefined
   xZones?: readonly XZoneSpec<X>[] | undefined

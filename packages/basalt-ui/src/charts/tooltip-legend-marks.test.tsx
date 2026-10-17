@@ -581,3 +581,13 @@ describe('legend swatch follows the series mark in every mode', () => {
     expect(swatches(el, 'b').map((n) => n.tagName)).toEqual(['SPAN', 'SPAN'])
   })
 })
+
+describe('hover readout semantics', () => {
+  test('the floating readout carries role="tooltip" and stays a live region', async () => {
+    const el = await mount(<Lines ariaLabel="L" data={data} x={x} series={[a]} />)
+    await hoverPlot(el.querySelector('svg'))
+    const tip = document.querySelector('.ts-chart-tooltip')
+    expect(tip?.getAttribute('role')).toBe('tooltip')
+    expect(tip?.getAttribute('aria-live')).toBe('polite')
+  })
+})
