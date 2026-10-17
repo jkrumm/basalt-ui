@@ -8,6 +8,7 @@ declare const classes: {
   readonly track: string
   readonly bar: string
   readonly leader: string
+  readonly tick: string
   readonly label: string
   readonly value: string
   readonly secondary: string

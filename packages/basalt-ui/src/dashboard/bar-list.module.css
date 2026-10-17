@@ -91,3 +91,40 @@
   grid-column: 1 / -1;
   height: calc(var(--vx-space-control-height-widget, 1.5rem) * var(--mantine-scale, 1));
 }
+
+/* A row's threshold: a hairline across the bar at a position on the row's own scale. */
+.tick {
+  position: absolute;
+  inset-block: 0;
+  inline-size: 0;
+  border-inline-start: 1px solid var(--vx-ink);
+  pointer-events: auto;
+}
+
+/*
+ * Thin: label and value share the first line, the bar is a thin rail on the second spanning every
+ * column. The label column is still shared (subgrid), so the value columns stay aligned.
+ */
+.root[data-variant='thin'] .row {
+  grid-template-rows: auto auto;
+  row-gap: var(--vx-space-stack-xs, 0.25rem);
+  align-items: baseline;
+  padding-block: var(--vx-space-stack-xs, 0.25rem);
+}
+
+.root[data-variant='thin'] .track {
+  grid-column: 1 / -1;
+  align-self: auto;
+  block-size: 0.25rem;
+  padding-inline: 0;
+  border-radius: var(--vx-radius-fine);
+  background: color-mix(in srgb, var(--vx-line) 20%, transparent);
+}
+
+.root[data-variant='thin'] .bar {
+  background: color-mix(in srgb, var(--vx-line) 80%, transparent);
+}
+
+.root[data-variant='thin'] .bar.leader {
+  background: var(--vx-accent);
+}
