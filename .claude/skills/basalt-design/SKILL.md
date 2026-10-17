@@ -14,7 +14,7 @@ Method only; the law is `.claude/rules/basalt-*.md` and `./DESIGN.md`.
 
    | Data shape                    | Encoding                                                                                                | Component                                   |
    | ----------------------------- | ------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
-   | Single value with a trend     | figure, text delta, axis-less sparkline along the card's bottom                                         | `StatCard` + `sparkline` slot (`Sparkline`) |
+   | Single value with a trend     | figure, text delta, `qualifier`, axis-less sparkline (end dot) along the card's bottom                  | `StatCard` + `sparkline` slot (`Sparkline`) |
    | Value over time               | line or stacked area                                                                                    | `Lines` / `StackedArea` in a `ChartCard`    |
    | Compare categories            | bars                                                                                                    | `Bars layout="grouped"`                     |
    | Part of a whole, 2–6 parts    | one segmented (stacked) bar, parts in order — not a donut plus a total card, not a row of N `StatCard`s | `Bars` (stacked, the default)               |
