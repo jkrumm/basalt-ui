@@ -13,10 +13,7 @@ theme's config knobs (see the `basalt-tokens` rule) — so nothing here restates
 
 - **Accent hue:** {{ACCENT_HUE}} (default: the shipped seed; a single-series mark stays neutral)
 - **Theme knobs:** _(none — `createBasaltTheme()` bare)_ · record any non-zero `derive`/`fonts`/
-  `radius`/`density` level here, with its reason.
-- **Type:** hero values, row labels and body text are proportional sans with lining figures;
-  `tabular-nums` only in table columns and axis ticks; mono only for captions, times and code.
-  Record a `--basalt-font-numeral` override here, with its reason.
+  `radius`/`density` level or `--basalt-font-numeral` override here, with its reason.
 
 ## Series dictionary
 
