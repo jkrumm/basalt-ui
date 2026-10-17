@@ -3,12 +3,20 @@
  * files there (never at the install root), and `doctor` checks the app from either directory.
  */
 import { afterEach, beforeEach, describe, expect, it, spyOn } from 'bun:test'
-import { existsSync, mkdirSync, readFileSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  mkdtempSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 
 import { doctor } from './doctor'
-import { init, resolveAppDir, sync } from './index'
+import { init, packageRoot, resolveAppDir, sync } from './index'
 
 let dir: string
 
@@ -101,6 +109,25 @@ describe('sync / init in a monorepo', () => {
     expect(existsSync(join(dir, 'src/routes/__root.tsx'))).toBe(false)
     expect(quiet(() => sync({}, dir))).toBe(0)
     expect(existsSync(join(dir, 'src'))).toBe(false)
+  })
+
+  it('places the design skill, its references and the reviewer at the root a monorepo-root session discovers', () => {
+    // Claude Code reads `.claude/skills` and `.claude/agents` from the session's project root
+    // (docs/waves/design-parity/SPEC.md § 9.4), so a session at the repo root — not in `apps/web` —
+    // must find all of them there, and none of them inside the app package.
+    monorepo(['web'])
+    quiet(() => init(dir))
+    const shipped = join(packageRoot(), 'agent/skills/basalt-design')
+    const files = readdirSync(shipped, { recursive: true, withFileTypes: true })
+      .filter((e) => e.isFile())
+      .map((e) => join(e.parentPath, e.name).slice(shipped.length + 1))
+    expect(files).toContain('SKILL.md')
+    for (const rel of files) {
+      expect(existsSync(join(dir, '.claude/skills/basalt-design', rel))).toBe(true)
+      expect(existsSync(join(dir, 'apps/web/.claude/skills/basalt-design', rel))).toBe(false)
+    }
+    expect(existsSync(join(dir, '.claude/agents/basalt-design-reviewer.md'))).toBe(true)
+    expect(existsSync(join(dir, 'apps/web/.claude'))).toBe(false)
   })
 
   const MANAGED = [

@@ -582,10 +582,11 @@ async function budgets(providerOnlyDist: string): Promise<Budget[]> {
     // 7100 -> 7124 (W33): `shot` hovers a declared `data-shot-at` point and probes for a rendered readout only (+24).
     // 7124 -> 7132 (W33 review): `data-shot-at` parsed by one anchored pattern within [0, 1] (+8).
     // 7132 -> 7478 (fix/shot-real-data): `shot` on a real, signed-in app (+346). Owner-requested (2026-10-17), consumer: argo. cli/shot/real-data.ts +165 (`@env`/`@file` resolution, header and `--api` validation, the read-only proxy with its depth-only log, status classes and timeout, the origin-guarded absent-only seed script), capture.ts +89 (one `visit` that loads, auto-anchors and checks the data; per-visit problem scoping with `collect`/`flagProblems`; `--wait`), index.ts +46 (six flags and their rules, proxy wiring), serve.ts +25 (Host/Origin/Fetch-Metadata guard), help.ts +20 (flags, `multiple` in the option type, the real-app example).
+    // 7478 -> 7498 (W36): `managedFiles` walks `agent/skills/<name>/` so a skill's `references/**` are managed files too (+20). Consumer: every basalt app via init/sync; the walk is one function, `skillFiles`, plus the nested-dir prune.
     {
       label: 'CLI non-test lines (src/cli/**)',
       value: cliNonTestLines(),
-      ceiling: 7478,
+      ceiling: 7498,
     },
     ...(await providerOnlyRows(providerOnlyDist)),
   ]
