@@ -554,10 +554,11 @@ async function budgets(providerOnlyDist: string): Promise<Budget[]> {
     // 5165 -> 7073 (W31): `basalt-ui shot` +1691 (cli/shot/: capture with per-state crops, contact sheets, the in-page measurer and theme scale incl. basalt's own `--vx-*` steps, the board, out-dir safety, the launcher; SPEC § 9.5); the reviewer install and rule `paths:` from `basalt.roots` +75 (rows 135-136); doctor's stale-board notice and optional Playwright line +142 (cli/board-freshness.ts).
     // 7073 -> 7098 (W32): `shot` reports a full-round radius as "full" — the raw radius reading, `radiusReading` and its two call sites in cli/shot/ (+25).
     // 7098 -> 7100 (W32): `radiusReading`'s zero-size and percentage branches (+2).
+    // 7100 -> 7124 (W33): `shot` hovers a declared `data-shot-at` point and probes for a rendered readout only (+24).
     {
       label: 'CLI non-test lines (src/cli/**)',
       value: cliNonTestLines(),
-      ceiling: 7100,
+      ceiling: 7124,
     },
     ...(await providerOnlyRows(providerOnlyDist)),
   ]
