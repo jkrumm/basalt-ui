@@ -185,6 +185,31 @@ describe('tone="muted"', () => {
     expect(ink?.hasAttribute('data-tone')).toBe(false)
   })
 
+  test('segments + forecast and zones keep their fills; an explicit tone still applies to them', () => {
+    const seg = mount({
+      label: 'P',
+      segments: [
+        { value: 70, label: 'Done' },
+        { value: 25, label: 'Planned', forecast: true },
+      ],
+    })
+    expect(seg.container.querySelectorAll('[data-tone]').length).toBe(0)
+    const zones = mount({
+      label: 'Z',
+      max: 1000,
+      value: 600,
+      zones: [
+        { from: 0, to: 500, label: 'Low' },
+        { from: 500, to: 1000, label: 'High' },
+      ],
+    })
+    expect(zones.container.querySelectorAll('[data-tone]').length).toBe(0)
+    const toned = mount({ label: 'P', segments: [{ value: 70, label: 'Done' }], tone: 'muted' })
+    expect(toned.container.querySelectorAll('[data-tone="muted"]').length).toBe(1)
+  })
+
+  // The track is always `--vx-surface-subtle`, whatever surface the Meter sits on, so the fill/track
+  // ratio below is surface-independent. INK/SURFACE are the derived palette at the default seed.
   test('is built from --vx-muted only (no hex) and clears 3:1 against the track in both schemes', () => {
     const rule =
       /\[data-tone='muted'\][^{]*\{[^}]*background:\s*color-mix\(in srgb, var\(--vx-muted\) (\d+)%, transparent\)/.exec(
