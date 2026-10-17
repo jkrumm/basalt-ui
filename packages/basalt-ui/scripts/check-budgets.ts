@@ -388,8 +388,8 @@ const EMBEDDED_CEILING = 56097
 // 15036 → 15047 (2.18, CI Linux measurement): +11 B over the macOS build.
 // 15047 → 15057 (2.18, review round 2, CI Linux measurement): +10 B, the same move.
 // 15057 → 15183 (2.18, light/outline Button+ActionIcon ink vars, CI Linux measurement): +126 B.
-// 15183 → 15234 (W35, the theme owns the card inset, CI Linux measurement): +51 B.
-const THEME_ONLY_CEILING = 15234
+// 15183 → 15235 (W35, the theme owns the card inset, CI Linux measurement): +52 B.
+const THEME_ONLY_CEILING = 15235
 const THEME_ONLY_LABEL = 'createBasaltTheme only, peers bundled, all chunks (gzip B, dist)'
 const EMBEDDED_LABEL = 'embedded provider, no defines, peers bundled, all chunks (gzip B, dist)'
 const FEATURE_CHUNKS_LABEL =
