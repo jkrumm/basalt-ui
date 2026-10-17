@@ -1312,6 +1312,34 @@ function DashFixture(): ReactElement {
       <div data-testid="dash-meter-zones-360" style={{ width: 360 }}>
         <Meter label="Training load" max={1000} value={400} zones={TRAINING_ZONES} />
       </div>
+      {[160, 360].flatMap((w) =>
+        [0, 500, 1000].map((v) => (
+          // theme-allow -- the wrapper width IS the fixture's payload (a container probe)
+          <div key={`${w}-${v}`} data-testid={`dash-meter-reading-${w}-${v}`} style={{ width: w }}>
+            <Meter label="Training load" max={1000} value={v} zones={TRAINING_ZONES} />
+          </div>
+        )),
+      )}
+      {[
+        ['spark', <div key="s" />],
+        ['meter', <Meter key="m" label="Budget" value={1800} max={3000} />],
+      ].map(([kind, visual]) => (
+        // theme-allow -- the wrapper width IS the fixture's payload (a container probe)
+        <div
+          key={String(kind)}
+          data-testid={`dash-card-loading-${String(kind)}`}
+          style={{ width: 360 }}
+        >
+          <StatCard title="Spend" value="€2,650" loading sparkline={visual} />
+        </div>
+      ))}
+      <div data-testid="dash-card-loading-meter-own" style={{ width: 360 }}>
+        <StatCard
+          title="Spend"
+          value="€2,650"
+          sparkline={<Meter label="Budget" value={1800} max={3000} loading />}
+        />
+      </div>
       {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
       <div data-testid="dash-meter-ring" style={{ width: 160 }}>
         <Meter

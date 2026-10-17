@@ -96,6 +96,23 @@
   overflow-wrap: anywhere;
 }
 
+/* The reading under the band, centred on the marker (its centre is set inline, clamped to the row). */
+.zoneReadingRow {
+  position: relative;
+  height: 1.25em;
+  font-family: var(--basalt-font-mono);
+  font-size: var(--vx-text-micro);
+}
+
+.zoneReading {
+  position: absolute;
+  top: 0;
+  translate: -50% 0;
+  white-space: nowrap;
+  font-weight: 500;
+  color: var(--vx-ink);
+}
+
 /* The reading on a zone track: a notch standing proud of the bands, in ink. */
 .marker {
   position: absolute;
