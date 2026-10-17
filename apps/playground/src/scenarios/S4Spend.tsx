@@ -44,7 +44,8 @@ import {
   fmtSignedShare,
 } from './spend-data'
 import type { DayRow, DistributionBin, ModelKey, ProjectKey, ProjectRow } from './spend-data'
-import { RETRY_ACTION, chartStateFor, queryFor, retryCopy } from './shot-state'
+import { RETRY_ACTION } from './retry-action'
+import { chartStateFor, queryFor, retryCopy } from './shot-state'
 import type { ScenarioProps } from './shot-state'
 
 const MODEL_COLOR: Record<ModelKey, string> = {
@@ -199,7 +200,7 @@ function SpendCharts({ shotState }: ScenarioProps) {
             empty: 'No spend in the last 90 days. Connect a project to the usage export.',
             error: retry('Daily spend'),
           })}
-          stateAction={RETRY_ACTION}
+          {...(shotState === 'error' && { stateAction: RETRY_ACTION })}
         >
           <Box data-shot-hover data-shot-tooltip>
             <Bars
@@ -221,7 +222,7 @@ function SpendCharts({ shotState }: ScenarioProps) {
             empty: `No project spent anything ${WINDOW_LABEL}. Connect one to the usage export.`,
             error: retry('Spend by project'),
           })}
-          stateAction={RETRY_ACTION}
+          {...(shotState === 'error' && { stateAction: RETRY_ACTION })}
         >
           <Box data-shot-hover data-shot-tooltip data-shot-at="0.23,0.12">
             <Donut
@@ -269,7 +270,7 @@ function SpendDrivers({ shotState }: ScenarioProps) {
             empty: 'No days to bin yet. The histogram needs at least one day of spend.',
             error: retry('The distribution'),
           })}
-          stateAction={RETRY_ACTION}
+          {...(shotState === 'error' && { stateAction: RETRY_ACTION })}
         >
           <Box data-shot-hover data-shot-tooltip>
             <Bars

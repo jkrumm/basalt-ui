@@ -3,11 +3,7 @@
  * into each container's own empty / loading / error props — a scenario never fakes a state by
  * hand where a component already has the prop.
  */
-import { Button } from '@mantine/core'
-import type { ButtonProps } from '@mantine/core'
 import type { ChartState } from 'basalt-ui/charts'
-import { createElement } from 'react'
-import type { ComponentType, ReactNode } from 'react'
 import type { QueryStateLike } from '../demo/query-state-like'
 
 const SHOT_STATES = ['empty', 'loading', 'error'] as const
@@ -29,15 +25,6 @@ export const retryCopy = (what: string, source: string): string =>
   `${what} failed to load. Retry, or check the ${source} connection.`
 
 const noop = (): void => {}
-
-/** The retry control an error `ChartCard` offers (`stateAction`); the handler is a no-op in a fixture. */
-// Mantine's polymorphic `Button` does not infer through `createElement`; the plain props are all this needs.
-const RetryButton = Button as ComponentType<ButtonProps & { onClick: () => void }>
-export const RETRY_ACTION: ReactNode = createElement(
-  RetryButton,
-  { variant: 'subtle', onClick: noop },
-  'Retry',
-)
 
 /** For `StatCard` / `Section` / `BasaltDataTable` `query`: undefined at rest. */
 export function queryFor(
