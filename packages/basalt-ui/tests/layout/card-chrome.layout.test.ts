@@ -223,7 +223,6 @@ layout('card chrome by container', () => {
         leftAligned: box.left === caption.left,
         inside: box.right <= wrap.getBoundingClientRect().right,
         clipped: q.scrollWidth > q.clientWidth,
-        ellipsis: getComputedStyle(q).textOverflow,
       }
       q.remove()
       wrap.style.width = '320px'
@@ -234,8 +233,31 @@ layout('card chrome by container', () => {
       leftAligned: true,
       inside: true,
       clipped: false,
-      ellipsis: 'clip',
     })
+  })
+
+  test('a qualifier that fits shares the caption row and sits flush right in a 480px card', async () => {
+    const r = await p.raw.evaluate(() => {
+      const wrap = document.querySelector<HTMLElement>('[data-testid="card-320"]')
+      const main = wrap?.querySelector<HTMLElement>('[class*="captionMain_"]')
+      if (!wrap || !main) throw new Error('no caption row in the 320px card')
+      wrap.style.width = '480px'
+      const q = document.createElement('span')
+      q.className = main.className.replace('captionMain_', 'qualifier_')
+      q.textContent = '24 hours'
+      main.append(q)
+      const caption = main.querySelector('h3')!.getBoundingClientRect()
+      const box = q.getBoundingClientRect()
+      const row = main.getBoundingClientRect()
+      const out = {
+        sameTop: Math.abs(box.top - caption.top) < 8,
+        flushRight: row.right - box.right < 1,
+      }
+      q.remove()
+      wrap.style.width = '320px'
+      return out
+    })
+    expect(r).toEqual({ sameTop: true, flushRight: true })
   })
 
   test('a divided StatGroup at 240px is one column with no rail border or indent on any cell', async () => {

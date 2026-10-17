@@ -1,204 +1,186 @@
 # [2.16.0](https://github.com/jkrumm/basalt-ui/compare/v2.15.0...v2.16.0) (2026-10-17)
 
-
 ### Bug Fixes
 
-* derive the guard's spacing steps and micro ceiling from the scale ([233530a](https://github.com/jkrumm/basalt-ui/commit/233530a1e8af571920846fd6692311380f0f3a52))
-* derive the latency histogram copy from the measured hours ([b706787](https://github.com/jkrumm/basalt-ui/commit/b706787e1d6420b3eddf1e0246c56788eabae81b))
-* derive the nav row from the sm step and drop the stale 13.5px notes ([3d17c7d](https://github.com/jkrumm/basalt-ui/commit/3d17c7d46073a0f6520a1b543faefd2d6fefedf0))
-* drop restated token fallbacks, round line heights and settle comments ([69980e7](https://github.com/jkrumm/basalt-ui/commit/69980e734c30d78fc300fe2c68a833bf786ef340))
-* emit the dense tier from the palette CSS builder, typed over one var list ([ce2b60c](https://github.com/jkrumm/basalt-ui/commit/ce2b60c03281364e96cdba52950bb6ef8a946a38))
-* keep the card-inset consistency test where the plugin is typed ([374a25d](https://github.com/jkrumm/basalt-ui/commit/374a25dcff14ba3949ef83f305886f1ba867806e))
-* keep the card-inset fallbacks on the chart and stat cards ([0e9d08f](https://github.com/jkrumm/basalt-ui/commit/0e9d08f51d1de7db8763b12f998d23a224d71598))
-* keep the pack-test fixtures off the new spacing grid ([65247f4](https://github.com/jkrumm/basalt-ui/commit/65247f4711cfcdec1c3318e5dea23db9a345d4ca))
-* make basalt/card-inset accept only the sm/md pair ([c0b5526](https://github.com/jkrumm/basalt-ui/commit/c0b55266fb072f6c62731974085d2e0ab016a9e5))
-* mobile menu and child rows follow the sm step; reflow two comments ([be1e462](https://github.com/jkrumm/basalt-ui/commit/be1e462ac79090b121271a582b9939b3450bb1e3))
-* null every reading in an outage hour and share the scenario fixture helpers ([7a523ce](https://github.com/jkrumm/basalt-ui/commit/7a523ce09c70fcad37a2a59f4e9108aa15dc075c))
-* one card-inset fallback rule, pinned against the scale ([fa68c1c](https://github.com/jkrumm/basalt-ui/commit/fa68c1ca4f248c6bbe70968584aeed21c69342b0))
-* report a fully rounded radius as full in shot ([a19d93f](https://github.com/jkrumm/basalt-ui/commit/a19d93f3c8b298eebc7af7658f8c02c06ee2a79c))
-* scope the dense control tier to the hosting row and generate its overrides ([b604b07](https://github.com/jkrumm/basalt-ui/commit/b604b0722e2e6ae983919f177a0920938b0a596b))
-* shot reads a zero-size box as 0 and a percentage radius by its percentage ([421ab83](https://github.com/jkrumm/basalt-ui/commit/421ab83b0933306f8296097671ece1e5ef04ed93))
-* sort the guard's default steps and state what the guard may import ([ad4a407](https://github.com/jkrumm/basalt-ui/commit/ad4a4070862225ef751b0e2019f57fa4817d061b))
-* tighten card-inset to the whole pair and ship it through a grace minor ([3968892](https://github.com/jkrumm/basalt-ui/commit/3968892ebdd38b7e0c20b6f240063fc8232fdaba))
-
+- derive the guard's spacing steps and micro ceiling from the scale ([233530a](https://github.com/jkrumm/basalt-ui/commit/233530a1e8af571920846fd6692311380f0f3a52))
+- derive the latency histogram copy from the measured hours ([b706787](https://github.com/jkrumm/basalt-ui/commit/b706787e1d6420b3eddf1e0246c56788eabae81b))
+- derive the nav row from the sm step and drop the stale 13.5px notes ([3d17c7d](https://github.com/jkrumm/basalt-ui/commit/3d17c7d46073a0f6520a1b543faefd2d6fefedf0))
+- drop restated token fallbacks, round line heights and settle comments ([69980e7](https://github.com/jkrumm/basalt-ui/commit/69980e734c30d78fc300fe2c68a833bf786ef340))
+- emit the dense tier from the palette CSS builder, typed over one var list ([ce2b60c](https://github.com/jkrumm/basalt-ui/commit/ce2b60c03281364e96cdba52950bb6ef8a946a38))
+- keep the card-inset consistency test where the plugin is typed ([374a25d](https://github.com/jkrumm/basalt-ui/commit/374a25dcff14ba3949ef83f305886f1ba867806e))
+- keep the card-inset fallbacks on the chart and stat cards ([0e9d08f](https://github.com/jkrumm/basalt-ui/commit/0e9d08f51d1de7db8763b12f998d23a224d71598))
+- keep the pack-test fixtures off the new spacing grid ([65247f4](https://github.com/jkrumm/basalt-ui/commit/65247f4711cfcdec1c3318e5dea23db9a345d4ca))
+- make basalt/card-inset accept only the sm/md pair ([c0b5526](https://github.com/jkrumm/basalt-ui/commit/c0b55266fb072f6c62731974085d2e0ab016a9e5))
+- mobile menu and child rows follow the sm step; reflow two comments ([be1e462](https://github.com/jkrumm/basalt-ui/commit/be1e462ac79090b121271a582b9939b3450bb1e3))
+- null every reading in an outage hour and share the scenario fixture helpers ([7a523ce](https://github.com/jkrumm/basalt-ui/commit/7a523ce09c70fcad37a2a59f4e9108aa15dc075c))
+- one card-inset fallback rule, pinned against the scale ([fa68c1c](https://github.com/jkrumm/basalt-ui/commit/fa68c1ca4f248c6bbe70968584aeed21c69342b0))
+- report a fully rounded radius as full in shot ([a19d93f](https://github.com/jkrumm/basalt-ui/commit/a19d93f3c8b298eebc7af7658f8c02c06ee2a79c))
+- scope the dense control tier to the hosting row and generate its overrides ([b604b07](https://github.com/jkrumm/basalt-ui/commit/b604b0722e2e6ae983919f177a0920938b0a596b))
+- shot reads a zero-size box as 0 and a percentage radius by its percentage ([421ab83](https://github.com/jkrumm/basalt-ui/commit/421ab83b0933306f8296097671ece1e5ef04ed93))
+- sort the guard's default steps and state what the guard may import ([ad4a407](https://github.com/jkrumm/basalt-ui/commit/ad4a4070862225ef751b0e2019f57fa4817d061b))
+- tighten card-inset to the whole pair and ship it through a grace minor ([3968892](https://github.com/jkrumm/basalt-ui/commit/3968892ebdd38b7e0c20b6f240063fc8232fdaba))
 
 ### Features
 
-* add the S1 ops-monitor scenario fixture to the playground ([429457e](https://github.com/jkrumm/basalt-ui/commit/429457e29f5e41e8e0bbb6ecba15a9b09ec49bc5))
-* move spacing, inset, radius and type scales onto an even-pixel grid ([b13526b](https://github.com/jkrumm/basalt-ui/commit/b13526b4ab93086309b593e3283e4915d75a066a))
+- add the S1 ops-monitor scenario fixture to the playground ([429457e](https://github.com/jkrumm/basalt-ui/commit/429457e29f5e41e8e0bbb6ecba15a9b09ec49bc5))
+- move spacing, inset, radius and type scales onto an even-pixel grid ([b13526b](https://github.com/jkrumm/basalt-ui/commit/b13526b4ab93086309b593e3283e4915d75a066a))
 
 # [2.15.0](https://github.com/jkrumm/basalt-ui/compare/v2.14.0...v2.15.0) (2026-10-16)
 
-
 ### Bug Fixes
 
-* address review of the scenario route and seeds ([10c6abd](https://github.com/jkrumm/basalt-ui/commit/10c6abdaae7aa7b97bf31c66f88dac6f5ecff1a2))
-* align the reviewer's Craft numbering with SPEC and name accent leaks ([9213182](https://github.com/jkrumm/basalt-ui/commit/921318228048bf01198c11889d7edbc26174fec2))
-* crop the tooltip at its settled size, not mid-animation ([0aa00e8](https://github.com/jkrumm/basalt-ui/commit/0aa00e8c26346c6a2003a133a6a31064885aa9b8))
-* expect the reviewer's seven Craft items from SPEC 8.1 ([24cea30](https://github.com/jkrumm/basalt-ui/commit/24cea30b2c40b2add5b9dcd2eaf62de9d6c87a48))
-* give the calibration seeds neutral route ids ([d8b4b3f](https://github.com/jkrumm/basalt-ui/commit/d8b4b3fe3375134b419e71bb2b9028bbb0d72387))
-* give the good seed a focusable table and no dead tooltip target ([91767d5](https://github.com/jkrumm/basalt-ui/commit/91767d59f4aa97e7fe8247d73ad4ef9b0f9f28ca))
-* give the good seed a stated share denominator and no row wrap ([fde2537](https://github.com/jkrumm/basalt-ui/commit/fde253707d2aae020e9f6deba11bc883a532774c))
-* harden shot's out-dir swap, file names and metrics ([c5f17e6](https://github.com/jkrumm/basalt-ui/commit/c5f17e6274fb33ab43bd707fab4b1a08ea088a0e))
-* harden the stale-board walk and move doctor's design section ([310f3bb](https://github.com/jkrumm/basalt-ui/commit/310f3bbad21e74b652026a14091af6680b9071e8))
-* hold an opened tooltip in the hover and focus crops ([33c31df](https://github.com/jkrumm/basalt-ui/commit/33c31dfebc55d5bcbd62d6530acfd3bbfdff9775))
-* keep primary buttons and focus rings out of the reviewer's accent leaks ([d85456e](https://github.com/jkrumm/basalt-ui/commit/d85456ed134317a89819335e2941e34973cb64df))
-* make shot safe to re-run, and record the theme scale ([0630f36](https://github.com/jkrumm/basalt-ui/commit/0630f3675a7dbda1c2e807df99ed91d2a053e31b))
-* make the good calibration seed sum to its whole, drop its info glyph ([41ee04f](https://github.com/jkrumm/basalt-ui/commit/41ee04f518e730c45abf38999551f2a75173882b))
-* move the data-stress query tabs into Section.tabs ([d0d26d1](https://github.com/jkrumm/basalt-ui/commit/d0d26d1cd35cb02ec915473719659632d3d4b1c3))
-* pick only the tooltip an action opened and sweep stale tmp safely ([0b6208a](https://github.com/jkrumm/basalt-ui/commit/0b6208a8d2e3d1f75a9c476e5cdb3a4b0e8057e5))
-* pin the seed's ticks and tidy S4 copy after review round 2 ([de90bd5](https://github.com/jkrumm/basalt-ui/commit/de90bd5431559558a9e0c9956fc63fb9a506eac7))
-* read basalt's own scale in shot and drop the grid from the reviewer ([637c519](https://github.com/jkrumm/basalt-ui/commit/637c5196eda8a6cc469e33147bd588e04a6bb7d3))
-* reduce the good calibration board to its single metric card ([d1f97b3](https://github.com/jkrumm/basalt-ui/commit/d1f97b3e6c489c47450578cc0945e9c7470b9830))
-* state the reviewer's accent sites exactly as the design law lists them ([4fd0e66](https://github.com/jkrumm/basalt-ui/commit/4fd0e66a35688cf73ee3cb01e242defe7eba9546))
-* treat unreadable roots as unknown and require three design rounds ([27f6f24](https://github.com/jkrumm/basalt-ui/commit/27f6f248a46b65b1fbc2bca9fffc8e72a7f1343e))
-* use a recent-days table on the good calibration board ([a3107de](https://github.com/jkrumm/basalt-ui/commit/a3107de4bb3d649f0ef4cbef4b5422a5e722465b))
-* write a contact sheet per anchor and read component-scoped scale tokens ([951b832](https://github.com/jkrumm/basalt-ui/commit/951b83273b441baa40b1775327a5cb3227ac454c))
-
+- address review of the scenario route and seeds ([10c6abd](https://github.com/jkrumm/basalt-ui/commit/10c6abdaae7aa7b97bf31c66f88dac6f5ecff1a2))
+- align the reviewer's Craft numbering with SPEC and name accent leaks ([9213182](https://github.com/jkrumm/basalt-ui/commit/921318228048bf01198c11889d7edbc26174fec2))
+- crop the tooltip at its settled size, not mid-animation ([0aa00e8](https://github.com/jkrumm/basalt-ui/commit/0aa00e8c26346c6a2003a133a6a31064885aa9b8))
+- expect the reviewer's seven Craft items from SPEC 8.1 ([24cea30](https://github.com/jkrumm/basalt-ui/commit/24cea30b2c40b2add5b9dcd2eaf62de9d6c87a48))
+- give the calibration seeds neutral route ids ([d8b4b3f](https://github.com/jkrumm/basalt-ui/commit/d8b4b3fe3375134b419e71bb2b9028bbb0d72387))
+- give the good seed a focusable table and no dead tooltip target ([91767d5](https://github.com/jkrumm/basalt-ui/commit/91767d59f4aa97e7fe8247d73ad4ef9b0f9f28ca))
+- give the good seed a stated share denominator and no row wrap ([fde2537](https://github.com/jkrumm/basalt-ui/commit/fde253707d2aae020e9f6deba11bc883a532774c))
+- harden shot's out-dir swap, file names and metrics ([c5f17e6](https://github.com/jkrumm/basalt-ui/commit/c5f17e6274fb33ab43bd707fab4b1a08ea088a0e))
+- harden the stale-board walk and move doctor's design section ([310f3bb](https://github.com/jkrumm/basalt-ui/commit/310f3bbad21e74b652026a14091af6680b9071e8))
+- hold an opened tooltip in the hover and focus crops ([33c31df](https://github.com/jkrumm/basalt-ui/commit/33c31dfebc55d5bcbd62d6530acfd3bbfdff9775))
+- keep primary buttons and focus rings out of the reviewer's accent leaks ([d85456e](https://github.com/jkrumm/basalt-ui/commit/d85456ed134317a89819335e2941e34973cb64df))
+- make shot safe to re-run, and record the theme scale ([0630f36](https://github.com/jkrumm/basalt-ui/commit/0630f3675a7dbda1c2e807df99ed91d2a053e31b))
+- make the good calibration seed sum to its whole, drop its info glyph ([41ee04f](https://github.com/jkrumm/basalt-ui/commit/41ee04f518e730c45abf38999551f2a75173882b))
+- move the data-stress query tabs into Section.tabs ([d0d26d1](https://github.com/jkrumm/basalt-ui/commit/d0d26d1cd35cb02ec915473719659632d3d4b1c3))
+- pick only the tooltip an action opened and sweep stale tmp safely ([0b6208a](https://github.com/jkrumm/basalt-ui/commit/0b6208a8d2e3d1f75a9c476e5cdb3a4b0e8057e5))
+- pin the seed's ticks and tidy S4 copy after review round 2 ([de90bd5](https://github.com/jkrumm/basalt-ui/commit/de90bd5431559558a9e0c9956fc63fb9a506eac7))
+- read basalt's own scale in shot and drop the grid from the reviewer ([637c519](https://github.com/jkrumm/basalt-ui/commit/637c5196eda8a6cc469e33147bd588e04a6bb7d3))
+- reduce the good calibration board to its single metric card ([d1f97b3](https://github.com/jkrumm/basalt-ui/commit/d1f97b3e6c489c47450578cc0945e9c7470b9830))
+- state the reviewer's accent sites exactly as the design law lists them ([4fd0e66](https://github.com/jkrumm/basalt-ui/commit/4fd0e66a35688cf73ee3cb01e242defe7eba9546))
+- treat unreadable roots as unknown and require three design rounds ([27f6f24](https://github.com/jkrumm/basalt-ui/commit/27f6f248a46b65b1fbc2bca9fffc8e72a7f1343e))
+- use a recent-days table on the good calibration board ([a3107de](https://github.com/jkrumm/basalt-ui/commit/a3107de4bb3d649f0ef4cbef4b5422a5e722465b))
+- write a contact sheet per anchor and read component-scoped scale tokens ([951b832](https://github.com/jkrumm/basalt-ui/commit/951b83273b441baa40b1775327a5cb3227ac454c))
 
 ### Features
 
-* add basalt-ui shot, a route renderer for design rounds ([1d4d520](https://github.com/jkrumm/basalt-ui/commit/1d4d520f784db6e7f6ee71c3f4f36f00103f3b4e))
-* add the scenario route with the S4 spend fixture ([7550408](https://github.com/jkrumm/basalt-ui/commit/755040835f76bf3a087c8ab43371847bb721b53c))
-* drop the untaggable design-procedure rule line, fix the placement test ([37b34aa](https://github.com/jkrumm/basalt-ui/commit/37b34aa0c3c7acba6d98d1cfda65e5710f5edb50))
-* harden rule path rendering, the ViewTabs guard and the reviewer ([6eda9f8](https://github.com/jkrumm/basalt-ui/commit/6eda9f89d707871d5b20984fdf90f72b5cee9365))
-* install the design reviewer and render rule paths from roots ([0044759](https://github.com/jkrumm/basalt-ui/commit/0044759f9be827d1d7cdfb993b4690c9ca88ae1a))
-* map the design table to the shipped chart kinds ([147cb88](https://github.com/jkrumm/basalt-ui/commit/147cb88e651b4fbf17a64d5abfd031765a7ec8e3))
-* render rule paths from the roots a sync would use, harden the edges ([47611ca](https://github.com/jkrumm/basalt-ui/commit/47611ca68226ba4086decc30c27000247e54d20a))
-* ship the design-round procedure and the stale-board notice ([2a7205b](https://github.com/jkrumm/basalt-ui/commit/2a7205b267b1aeb857030ab1a42448289726dae5))
+- add basalt-ui shot, a route renderer for design rounds ([1d4d520](https://github.com/jkrumm/basalt-ui/commit/1d4d520f784db6e7f6ee71c3f4f36f00103f3b4e))
+- add the scenario route with the S4 spend fixture ([7550408](https://github.com/jkrumm/basalt-ui/commit/755040835f76bf3a087c8ab43371847bb721b53c))
+- drop the untaggable design-procedure rule line, fix the placement test ([37b34aa](https://github.com/jkrumm/basalt-ui/commit/37b34aa0c3c7acba6d98d1cfda65e5710f5edb50))
+- harden rule path rendering, the ViewTabs guard and the reviewer ([6eda9f8](https://github.com/jkrumm/basalt-ui/commit/6eda9f89d707871d5b20984fdf90f72b5cee9365))
+- install the design reviewer and render rule paths from roots ([0044759](https://github.com/jkrumm/basalt-ui/commit/0044759f9be827d1d7cdfb993b4690c9ca88ae1a))
+- map the design table to the shipped chart kinds ([147cb88](https://github.com/jkrumm/basalt-ui/commit/147cb88e651b4fbf17a64d5abfd031765a7ec8e3))
+- render rule paths from the roots a sync would use, harden the edges ([47611ca](https://github.com/jkrumm/basalt-ui/commit/47611ca68226ba4086decc30c27000247e54d20a))
+- ship the design-round procedure and the stale-board notice ([2a7205b](https://github.com/jkrumm/basalt-ui/commit/2a7205b267b1aeb857030ab1a42448289726dae5))
 
 # [2.14.0](https://github.com/jkrumm/basalt-ui/compare/v2.13.3...v2.14.0) (2026-10-16)
 
-
 ### Bug Fixes
 
-* a follower draws no cursor outside its x-domain ([133e045](https://github.com/jkrumm/basalt-ui/commit/133e04516f94ca3e97cbae6a7d17019ab20a9e41))
-* address review on search clear, unmount flush and shared types ([8719b11](https://github.com/jkrumm/basalt-ui/commit/8719b11dce65324d66e007e8a45c447417a892c1))
-* flush search on Enter/blur/unmount, share FilterBase and Option ([5e04b4d](https://github.com/jkrumm/basalt-ui/commit/5e04b4de3e94c6ce6118e79f4d3e42c463fdf2c8))
-* keep the format module doc free of non-export names ([161f787](https://github.com/jkrumm/basalt-ui/commit/161f787f22f19e66c55680c8125abf56b2c7f7b8))
-* make clear reachable, reset-safe on unmount, and disabled end to end ([5140dc2](https://github.com/jkrumm/basalt-ui/commit/5140dc29d82f29e649b42c1fd9e55bb902e6de04))
-* pack-test money expectation, static provider format props, tidy cache key ([c53ec4b](https://github.com/jkrumm/basalt-ui/commit/c53ec4b18261eaac98aba4ef2cebd71d088c7f7a))
-* pass the panel extent, take cursor view options as an object ([a554f25](https://github.com/jkrumm/basalt-ui/commit/a554f251ad2cbe42c219470c63c7647096aaa42e))
-* remove sed backup files ([92ab245](https://github.com/jkrumm/basalt-ui/commit/92ab2459db411e6e30a6643f8166e098e6acb403))
-* round before promoting units, merge format defaults, drop SSR claims ([1c27bd6](https://github.com/jkrumm/basalt-ui/commit/1c27bd6a0175bcc3002ea15baf0b72618460382c))
-* round relative time symmetrically and tighten duration and date tests ([ef84fda](https://github.com/jkrumm/basalt-ui/commit/ef84fda2dc3a9f99679e63294f329416c3f84d82))
-* snap a followed cursor only onto keys inside the rendered extent ([cf283d0](https://github.com/jkrumm/basalt-ui/commit/cf283d02f0aaf98857cde5f5692507d72a796b43))
-* the line legend key reads as a dash at every size ([e21a6f8](https://github.com/jkrumm/basalt-ui/commit/e21a6f872c8d86fbf750cb9225aec4a809eaeafc))
-* validate calendar dates and pick relative units largest-first ([f95050a](https://github.com/jkrumm/basalt-ui/commit/f95050a7394960f4406a759cce8af2c309b36f29))
-
+- a follower draws no cursor outside its x-domain ([133e045](https://github.com/jkrumm/basalt-ui/commit/133e04516f94ca3e97cbae6a7d17019ab20a9e41))
+- address review on search clear, unmount flush and shared types ([8719b11](https://github.com/jkrumm/basalt-ui/commit/8719b11dce65324d66e007e8a45c447417a892c1))
+- flush search on Enter/blur/unmount, share FilterBase and Option ([5e04b4d](https://github.com/jkrumm/basalt-ui/commit/5e04b4de3e94c6ce6118e79f4d3e42c463fdf2c8))
+- keep the format module doc free of non-export names ([161f787](https://github.com/jkrumm/basalt-ui/commit/161f787f22f19e66c55680c8125abf56b2c7f7b8))
+- make clear reachable, reset-safe on unmount, and disabled end to end ([5140dc2](https://github.com/jkrumm/basalt-ui/commit/5140dc29d82f29e649b42c1fd9e55bb902e6de04))
+- pack-test money expectation, static provider format props, tidy cache key ([c53ec4b](https://github.com/jkrumm/basalt-ui/commit/c53ec4b18261eaac98aba4ef2cebd71d088c7f7a))
+- pass the panel extent, take cursor view options as an object ([a554f25](https://github.com/jkrumm/basalt-ui/commit/a554f251ad2cbe42c219470c63c7647096aaa42e))
+- remove sed backup files ([92ab245](https://github.com/jkrumm/basalt-ui/commit/92ab2459db411e6e30a6643f8166e098e6acb403))
+- round before promoting units, merge format defaults, drop SSR claims ([1c27bd6](https://github.com/jkrumm/basalt-ui/commit/1c27bd6a0175bcc3002ea15baf0b72618460382c))
+- round relative time symmetrically and tighten duration and date tests ([ef84fda](https://github.com/jkrumm/basalt-ui/commit/ef84fda2dc3a9f99679e63294f329416c3f84d82))
+- snap a followed cursor only onto keys inside the rendered extent ([cf283d0](https://github.com/jkrumm/basalt-ui/commit/cf283d02f0aaf98857cde5f5692507d72a796b43))
+- the line legend key reads as a dash at every size ([e21a6f8](https://github.com/jkrumm/basalt-ui/commit/e21a6f872c8d86fbf750cb9225aec4a809eaeafc))
+- validate calendar dates and pick relative units largest-first ([f95050a](https://github.com/jkrumm/basalt-ui/commit/f95050a7394960f4406a759cce8af2c309b36f29))
 
 ### Features
 
-* export date, time, dateTime and duration from the format subpath ([b66c5bb](https://github.com/jkrumm/basalt-ui/commit/b66c5bb61f7c47401e0b74be050bc020d5023746))
-* money keeps cents, locale-aware km/kcal, provider locale and timeZone ([8332275](https://github.com/jkrumm/basalt-ui/commit/8332275b102849e65f4a3c84d8b8a5c86e179cab))
-* one relative-time formatter, plus date, time, dateTime and duration ([c5f3312](https://github.com/jkrumm/basalt-ui/commit/c5f33125c4d06331ecda374d7e3ed40d21d82a60))
+- export date, time, dateTime and duration from the format subpath ([b66c5bb](https://github.com/jkrumm/basalt-ui/commit/b66c5bb61f7c47401e0b74be050bc020d5023746))
+- money keeps cents, locale-aware km/kcal, provider locale and timeZone ([8332275](https://github.com/jkrumm/basalt-ui/commit/8332275b102849e65f4a3c84d8b8a5c86e179cab))
+- one relative-time formatter, plus date, time, dateTime and duration ([c5f3312](https://github.com/jkrumm/basalt-ui/commit/c5f33125c4d06331ecda374d7e3ed40d21d82a60))
 
 ## [2.13.3](https://github.com/jkrumm/basalt-ui/compare/v2.13.2...v2.13.3) (2026-10-16)
 
-
 ### Bug Fixes
 
-* router default screens render without a provider ([8391f36](https://github.com/jkrumm/basalt-ui/commit/8391f36d81ca53e7f7bc4a4912b59e98bc7c833f))
-* share the fallback styling, move the router defaults to their own module ([9efda55](https://github.com/jkrumm/basalt-ui/commit/9efda55175531a3f4f3b39c9c77bab350bd82a1f))
+- router default screens render without a provider ([8391f36](https://github.com/jkrumm/basalt-ui/commit/8391f36d81ca53e7f7bc4a4912b59e98bc7c833f))
+- share the fallback styling, move the router defaults to their own module ([9efda55](https://github.com/jkrumm/basalt-ui/commit/9efda55175531a3f4f3b39c9c77bab350bd82a1f))
 
 ## [2.13.2](https://github.com/jkrumm/basalt-ui/compare/v2.13.1...v2.13.2) (2026-10-16)
 
-
 ### Bug Fixes
 
-* a line series keeps its dashed legend swatch below 480px ([d711f78](https://github.com/jkrumm/basalt-ui/commit/d711f78b4e0451719ccd87bb9e983479e77abbbf))
-* butt-capped dashed swatches, a paint before update hides, validate options ([c861eb4](https://github.com/jkrumm/basalt-ui/commit/c861eb4ef086c2b95d1a65ea622568bfb111e290))
-* followers draw the cursor dots, one cursor-dot mark per getMarker series ([5a1a70f](https://github.com/jkrumm/basalt-ui/commit/5a1a70fe6d1f7a6d67e144f04f233503cc173c41))
-* give the Modal close button an accessible name ([8e9527f](https://github.com/jkrumm/basalt-ui/commit/8e9527fc6b91431ecd4692d906e465fd2adcb6f7))
-* type the follower contract and narrow the compact line swatch ([45e08e6](https://github.com/jkrumm/basalt-ui/commit/45e08e6537593419cf92a47805d614cb3a393aa3))
+- a line series keeps its dashed legend swatch below 480px ([d711f78](https://github.com/jkrumm/basalt-ui/commit/d711f78b4e0451719ccd87bb9e983479e77abbbf))
+- butt-capped dashed swatches, a paint before update hides, validate options ([c861eb4](https://github.com/jkrumm/basalt-ui/commit/c861eb4ef086c2b95d1a65ea622568bfb111e290))
+- followers draw the cursor dots, one cursor-dot mark per getMarker series ([5a1a70f](https://github.com/jkrumm/basalt-ui/commit/5a1a70fe6d1f7a6d67e144f04f233503cc173c41))
+- give the Modal close button an accessible name ([8e9527f](https://github.com/jkrumm/basalt-ui/commit/8e9527fc6b91431ecd4692d906e465fd2adcb6f7))
+- type the follower contract and narrow the compact line swatch ([45e08e6](https://github.com/jkrumm/basalt-ui/commit/45e08e6537593419cf92a47805d614cb3a393aa3))
 
 ## [2.13.1](https://github.com/jkrumm/basalt-ui/compare/v2.13.0...v2.13.1) (2026-10-16)
 
-
 ### Bug Fixes
 
-* give the layout ShellFixture a real breadcrumb ([2d24459](https://github.com/jkrumm/basalt-ui/commit/2d244599d0f6c904d39082f9b6d2f911ef3e2a5e))
-* own-key badge compare, flat anchor cache and breadcrumb tests ([a53f295](https://github.com/jkrumm/basalt-ui/commit/a53f295caff8831fc1a68b6dbbe3db5b3902635b))
-* require ShellFrame activeCrumb and harden nav and aside tests ([f3ede67](https://github.com/jkrumm/basalt-ui/commit/f3ede67dbb8401919e9d0998d3299bd35ebf89f9))
-* restore matchMedia after the PageAside ownership tests ([861c1fe](https://github.com/jkrumm/basalt-ui/commit/861c1fe73780c7485e90a20df78c2e225d94961d))
-* stable nav anchors, narrow shell contexts and single-claimant PageAside ([8dbff8a](https://github.com/jkrumm/basalt-ui/commit/8dbff8a38d789d81e3853df298532e0d97d7bfb2))
-* stop naming the removed useNav in shell comments ([f874df4](https://github.com/jkrumm/basalt-ui/commit/f874df4331fbfa9b14d4f1fbe055154bd18dee0a))
+- give the layout ShellFixture a real breadcrumb ([2d24459](https://github.com/jkrumm/basalt-ui/commit/2d244599d0f6c904d39082f9b6d2f911ef3e2a5e))
+- own-key badge compare, flat anchor cache and breadcrumb tests ([a53f295](https://github.com/jkrumm/basalt-ui/commit/a53f295caff8831fc1a68b6dbbe3db5b3902635b))
+- require ShellFrame activeCrumb and harden nav and aside tests ([f3ede67](https://github.com/jkrumm/basalt-ui/commit/f3ede67dbb8401919e9d0998d3299bd35ebf89f9))
+- restore matchMedia after the PageAside ownership tests ([861c1fe](https://github.com/jkrumm/basalt-ui/commit/861c1fe73780c7485e90a20df78c2e225d94961d))
+- stable nav anchors, narrow shell contexts and single-claimant PageAside ([8dbff8a](https://github.com/jkrumm/basalt-ui/commit/8dbff8a38d789d81e3853df298532e0d97d7bfb2))
+- stop naming the removed useNav in shell comments ([f874df4](https://github.com/jkrumm/basalt-ui/commit/f874df4331fbfa9b14d4f1fbe055154bd18dee0a))
 
 # [2.13.0](https://github.com/jkrumm/basalt-ui/compare/v2.12.0...v2.13.0) (2026-10-16)
 
-
 ### Bug Fixes
 
-* adopt the mirror after hydration, gate linkSearch, report failed navigates ([0ca439b](https://github.com/jkrumm/basalt-ui/commit/0ca439b523f8733f0fcf2032dce2587fc0591e25))
-* break the sync/doctor import cycle and harden the provider hop ([418496e](https://github.com/jkrumm/basalt-ui/commit/418496ec72314c656addbcf41715ba175819ae96))
-* count the provider per render edge and make doctor a true leaf ([ad439c1](https://github.com/jkrumm/basalt-ui/commit/ad439c158395fa76e87b099787ebe186b53b6e64))
-* doctor follows the provider one hop, sync judges a Start root by content ([f87d285](https://github.com/jkrumm/basalt-ui/commit/f87d285b3e586514a7dbfd523acfbed087ed6913))
-* fold the SSR rule into the validateSearch line to hold the rule budget ([0e97e50](https://github.com/jkrumm/basalt-ui/commit/0e97e507bea0a7b4a1db8d81ad3d942dd5953892))
-* hydration-safe validateSearch, per-route foreign-param warning ([a734fb6](https://github.com/jkrumm/basalt-ui/commit/a734fb66b3cd3be71d59e6200f5546f45dc3a113))
-* pin resolver output in the theme snapshot ([14c0728](https://github.com/jkrumm/basalt-ui/commit/14c07286da1e4d99eaa83dbca74a38d49455d7c9))
-* prove the theme refactor against the pre-change code and harden its guard ([317eb3e](https://github.com/jkrumm/basalt-ui/commit/317eb3ede5ed058750ab74d419bf7efade2435d1))
-* pure validateSearch and search-store hygiene ([4481f55](https://github.com/jkrumm/basalt-ui/commit/4481f558fdc951f548f337cb0886481e4a447818))
-* review round 1 on basaltRouterOptions ([b5bddb3](https://github.com/jkrumm/basalt-ui/commit/b5bddb379f986059f6a2c0c50ba90f8db79ad745))
-* review round 2 on basaltRouterOptions ([251fa58](https://github.com/jkrumm/basalt-ui/commit/251fa5835a0d908ef23d2bafc08a769bf531d658))
-
+- adopt the mirror after hydration, gate linkSearch, report failed navigates ([0ca439b](https://github.com/jkrumm/basalt-ui/commit/0ca439b523f8733f0fcf2032dce2587fc0591e25))
+- break the sync/doctor import cycle and harden the provider hop ([418496e](https://github.com/jkrumm/basalt-ui/commit/418496ec72314c656addbcf41715ba175819ae96))
+- count the provider per render edge and make doctor a true leaf ([ad439c1](https://github.com/jkrumm/basalt-ui/commit/ad439c158395fa76e87b099787ebe186b53b6e64))
+- doctor follows the provider one hop, sync judges a Start root by content ([f87d285](https://github.com/jkrumm/basalt-ui/commit/f87d285b3e586514a7dbfd523acfbed087ed6913))
+- fold the SSR rule into the validateSearch line to hold the rule budget ([0e97e50](https://github.com/jkrumm/basalt-ui/commit/0e97e507bea0a7b4a1db8d81ad3d942dd5953892))
+- hydration-safe validateSearch, per-route foreign-param warning ([a734fb6](https://github.com/jkrumm/basalt-ui/commit/a734fb66b3cd3be71d59e6200f5546f45dc3a113))
+- pin resolver output in the theme snapshot ([14c0728](https://github.com/jkrumm/basalt-ui/commit/14c07286da1e4d99eaa83dbca74a38d49455d7c9))
+- prove the theme refactor against the pre-change code and harden its guard ([317eb3e](https://github.com/jkrumm/basalt-ui/commit/317eb3ede5ed058750ab74d419bf7efade2435d1))
+- pure validateSearch and search-store hygiene ([4481f55](https://github.com/jkrumm/basalt-ui/commit/4481f558fdc951f548f337cb0886481e4a447818))
+- review round 1 on basaltRouterOptions ([b5bddb3](https://github.com/jkrumm/basalt-ui/commit/b5bddb379f986059f6a2c0c50ba90f8db79ad745))
+- review round 2 on basaltRouterOptions ([251fa58](https://github.com/jkrumm/basalt-ui/commit/251fa5835a0d908ef23d2bafc08a769bf531d658))
 
 ### Features
 
-* basaltRouterOptions factory, BasaltProviderProps, telemetry fixes ([6af03d4](https://github.com/jkrumm/basalt-ui/commit/6af03d496b0da63280f80a56700b66264b2db52d))
-* the theme reaches no Mantine component it configures ([1b9c314](https://github.com/jkrumm/basalt-ui/commit/1b9c314fea9c961f15c72783f642cdcb20a71414))
+- basaltRouterOptions factory, BasaltProviderProps, telemetry fixes ([6af03d4](https://github.com/jkrumm/basalt-ui/commit/6af03d496b0da63280f80a56700b66264b2db52d))
+- the theme reaches no Mantine component it configures ([1b9c314](https://github.com/jkrumm/basalt-ui/commit/1b9c314fea9c961f15c72783f642cdcb20a71414))
 
 # [2.12.0](https://github.com/jkrumm/basalt-ui/compare/v2.11.1...v2.12.0) (2026-10-16)
 
-
 ### Bug Fixes
 
-* accept a pathless-layout provider and read the router context from types ([a57f4f5](https://github.com/jkrumm/basalt-ui/commit/a57f4f549b82bad0981155baac0d6544d507fc56))
-* close cancels pending overlays, live counters share one helper ([474712e](https://github.com/jkrumm/basalt-ui/commit/474712e71d8fb877cdb415163df0ad4e5725c1cd))
-* count provider tags, not files, and share the Start provider hint ([2293494](https://github.com/jkrumm/basalt-ui/commit/2293494b46086f1142bcaa9e9e6918ee694089a4))
-* slot review — nav stash leaf, shared notifier, late overlay open ([5ad739d](https://github.com/jkrumm/basalt-ui/commit/5ad739db8ff06e71eb3a66a49b6fc29e300ba051))
-* tie the Start root-context check to the exported root route ([aefc446](https://github.com/jkrumm/basalt-ui/commit/aefc4465fbb2bee72f4d2ef4cd643d1e6c71dc5e))
-
+- accept a pathless-layout provider and read the router context from types ([a57f4f5](https://github.com/jkrumm/basalt-ui/commit/a57f4f549b82bad0981155baac0d6544d507fc56))
+- close cancels pending overlays, live counters share one helper ([474712e](https://github.com/jkrumm/basalt-ui/commit/474712e71d8fb877cdb415163df0ad4e5725c1cd))
+- count provider tags, not files, and share the Start provider hint ([2293494](https://github.com/jkrumm/basalt-ui/commit/2293494b46086f1142bcaa9e9e6918ee694089a4))
+- slot review — nav stash leaf, shared notifier, late overlay open ([5ad739d](https://github.com/jkrumm/basalt-ui/commit/5ad739db8ff06e71eb3a66a49b6fc29e300ba051))
+- tie the Start root-context check to the exported root route ([aefc446](https://github.com/jkrumm/basalt-ui/commit/aefc4465fbb2bee72f4d2ef4cd643d1e6c71dc5e))
 
 ### Features
 
-* provider bundles Spotlight, modals, hotkeys only when defined ([37c3477](https://github.com/jkrumm/basalt-ui/commit/37c347743a83db4b291173cf0238f37d6aa2fb42))
+- provider bundles Spotlight, modals, hotkeys only when defined ([37c3477](https://github.com/jkrumm/basalt-ui/commit/37c347743a83db4b291173cf0238f37d6aa2fb42))
 
 ## [2.11.1](https://github.com/jkrumm/basalt-ui/compare/v2.11.0...v2.11.1) (2026-10-15)
 
-
 ### Bug Fixes
 
-* end labels read the plot's own x model and plot height ([81780be](https://github.com/jkrumm/basalt-ui/commit/81780be14d37875c445f6f432439b8bb93302f03))
-* end-label room, bucket ticks and lone dots per review ([6011eb6](https://github.com/jkrumm/basalt-ui/commit/6011eb65f304e0de6e6893c5a68a30af69e513ca))
-* lone points, end labels and axis ticks render cleanly ([95f898f](https://github.com/jkrumm/basalt-ui/commit/95f898f16927e209daa11ee2e587267103031b27))
-* mirrored bars reach both plot edges ([d8d6d4a](https://github.com/jkrumm/basalt-ui/commit/d8d6d4a8ddd3a3689b50b8f2213fee9683cf56a4))
+- end labels read the plot's own x model and plot height ([81780be](https://github.com/jkrumm/basalt-ui/commit/81780be14d37875c445f6f432439b8bb93302f03))
+- end-label room, bucket ticks and lone dots per review ([6011eb6](https://github.com/jkrumm/basalt-ui/commit/6011eb65f304e0de6e6893c5a68a30af69e513ca))
+- lone points, end labels and axis ticks render cleanly ([95f898f](https://github.com/jkrumm/basalt-ui/commit/95f898f16927e209daa11ee2e587267103031b27))
+- mirrored bars reach both plot edges ([d8d6d4a](https://github.com/jkrumm/basalt-ui/commit/d8d6d4a8ddd3a3689b50b8f2213fee9683cf56a4))
 
 # [2.11.0](https://github.com/jkrumm/basalt-ui/compare/v2.10.0...v2.11.0) (2026-10-15)
 
-
 ### Bug Fixes
 
-* keep stated heatmap cells out of the domain and the state legend stable ([4f95cc7](https://github.com/jkrumm/basalt-ui/commit/4f95cc74ed7695b256c82644708fc9cc32173778))
-* never close a sparkline gap when pooling, and harden the x domain ([c92e37b](https://github.com/jkrumm/basalt-ui/commit/c92e37b0b1372e8d7e8f615e84e54664fb8f82a9))
-
+- keep stated heatmap cells out of the domain and the state legend stable ([4f95cc7](https://github.com/jkrumm/basalt-ui/commit/4f95cc74ed7695b256c82644708fc9cc32173778))
+- never close a sparkline gap when pooling, and harden the x domain ([c92e37b](https://github.com/jkrumm/basalt-ui/commit/c92e37b0b1372e8d7e8f615e84e54664fb8f82a9))
 
 ### Features
 
-* align charts on a shared x domain ([b0e037a](https://github.com/jkrumm/basalt-ui/commit/b0e037a10b8d8c79dbb9f9fa86fe90c683e50daf))
-* give chart marks the plot area, the rows and per-datum cursor dots ([fb2b68b](https://github.com/jkrumm/basalt-ui/commit/fb2b68b2b68820f763546a2cb2f032f433079213))
-* report the measured plot area from one builder for every chart kind ([ca26afe](https://github.com/jkrumm/basalt-ui/commit/ca26afea1837ed650e790388793f08e0ffc544d3))
+- align charts on a shared x domain ([b0e037a](https://github.com/jkrumm/basalt-ui/commit/b0e037a10b8d8c79dbb9f9fa86fe90c683e50daf))
+- give chart marks the plot area, the rows and per-datum cursor dots ([fb2b68b](https://github.com/jkrumm/basalt-ui/commit/fb2b68b2b68820f763546a2cb2f032f433079213))
+- report the measured plot area from one builder for every chart kind ([ca26afe](https://github.com/jkrumm/basalt-ui/commit/ca26afea1837ed650e790388793f08e0ffc544d3))
 
 # [2.10.0](https://github.com/jkrumm/basalt-ui/compare/v2.9.1...v2.10.0) (2026-10-15)
 
-
 ### Bug Fixes
 
-* name the unset state of a preset number filter ([ed43eeb](https://github.com/jkrumm/basalt-ui/commit/ed43eeb0cde5a1ff1bc42ae118ab637d08007d64))
-
+- name the unset state of a preset number filter ([ed43eeb](https://github.com/jkrumm/basalt-ui/commit/ed43eeb0cde5a1ff1bc42ae118ab637d08007d64))
 
 ### Features
 
-* band charts hide a pending legend and mirror their fills ([22a491e](https://github.com/jkrumm/basalt-ui/commit/22a491ef5cfdbcd9bfac1c5284c8566f453b50af))
+- band charts hide a pending legend and mirror their fills ([22a491e](https://github.com/jkrumm/basalt-ui/commit/22a491ef5cfdbcd9bfac1c5284c8566f453b50af))
 
 ## [2.9.1](https://github.com/jkrumm/basalt-ui/compare/v2.9.0...v2.9.1) (2026-10-15)
 
