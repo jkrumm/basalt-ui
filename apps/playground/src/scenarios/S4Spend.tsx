@@ -119,6 +119,7 @@ function SpendStats({ shotState }: ScenarioProps) {
         <StatCard
           title="Spend"
           qualifier="month to date"
+          subtitle={`Daily, ${WINDOW_LABEL}`}
           value={fmtEur(MTD_EUR)}
           info={`All projects and models, ${WINDOW_LABEL} ${YEAR}, in EUR.`}
           {...(isAtRest && {
