@@ -3,7 +3,7 @@
  * seeded from argo consumers (`features/{walking-pad,reading,astro-window,garmin-health}/{formatters,format,
  * formulas}.ts` — read those files' own JSDoc for the exact call sites this generalizes).
  */
-import { dateFormat, NON_FINITE, numberFormat, toDate } from './shared'
+import { dateFormat, NON_FINITE, numberFormat, resolveLocale, toDate } from './shared'
 import type { LocaleOption } from './shared'
 
 type DateInput = Date | number | string | null | undefined
@@ -92,11 +92,10 @@ function relativeTimeFormat(
   style: 'long' | 'short' | 'narrow',
   numeric: 'auto' | 'always',
 ): Intl.RelativeTimeFormat {
-  // Same resolution as `numberFormat`/`dateFormat`: call locale, else the `defineFormat` default,
-  // else the runtime's own. Reading it through `numberFormat` keeps one copy of the default; the
-  // RESOLVED tag keys the cache, so a changed default never serves a stale instance.
-  const resolved = locale ?? numberFormat(undefined, {}).resolvedOptions().locale
-  const key = `${resolved}|${style}|${numeric}`
+  // Same resolution as `numberFormat`/`dateFormat`. The RESOLVED tag keys the cache (`\0` marks
+  // "runtime locale", which no real tag can equal), so a changed default never serves a stale one.
+  const resolved = resolveLocale(locale)
+  const key = `${resolved ?? '\0'}|${style}|${numeric}`
   const cached = relativeTimeFormatterCache.get(key)
   if (cached !== undefined) return cached
   const created = new Intl.RelativeTimeFormat(resolved, { style, numeric })

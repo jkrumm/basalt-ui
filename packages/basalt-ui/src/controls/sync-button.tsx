@@ -86,6 +86,9 @@ function subscribeAgeTick(onTick: () => void): () => void {
 }
 
 /**
+ * The age label follows the `BasaltProvider` / `defineFormat` locale. It is read when the label is
+ * formatted, so a locale switch shows on the next age tick or re-render (no new subscription).
+ *
  * @example
  * // page scope — the page's own data
  * <PageBar sync={{ syncing, lastCompletedAt, onSync: refetch }} />

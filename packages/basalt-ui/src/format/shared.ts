@@ -92,11 +92,20 @@ function memoize<T>(
   return created
 }
 
+/**
+ * The ONE locale resolution every formatter shares: the call's own tag, else the
+ * {@link defineFormat} default, else `undefined` (the runtime's own locale). Internal — not
+ * re-exported from the public barrel.
+ */
+export function resolveLocale(locale?: string): string | undefined {
+  return locale ?? defaults.locale
+}
+
 export function numberFormat(
   locale: string | undefined,
   options: Intl.NumberFormatOptions,
 ): Intl.NumberFormat {
-  const resolved = locale ?? defaults.locale
+  const resolved = resolveLocale(locale)
   return memoize(numberCaches, resolved, options, () => new Intl.NumberFormat(resolved, options))
 }
 
@@ -104,7 +113,7 @@ export function dateFormat(
   locale: string | undefined,
   options: Intl.DateTimeFormatOptions,
 ): Intl.DateTimeFormat {
-  const resolved = locale ?? defaults.locale
+  const resolved = resolveLocale(locale)
   const withZone =
     options.timeZone === undefined && defaults.timeZone !== undefined
       ? { ...options, timeZone: defaults.timeZone }
