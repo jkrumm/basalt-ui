@@ -647,6 +647,12 @@ describe('stat-card.module.css — caption, value row, foot', () => {
     expect(rule('.captionMain')).toContain('justify-content: space-between')
   })
 
+  test('the qualifier never cuts: it breaks its own words and does not hold nowrap', () => {
+    const r = rule('.qualifier')
+    expect(r).toContain('overflow-wrap: anywhere')
+    expect(r).not.toContain('nowrap')
+  })
+
   test('the caption main wraps, so the qualifier drops under the caption instead of truncating', () => {
     expect(rule('.captionMain')).toContain('flex-wrap: wrap')
   })

@@ -27,14 +27,14 @@ export function CaptionRow({ title, icon, info, qualifier, actions }: CaptionRow
   return (
     <div className={classes.captionRow}>
       <div className={classes.captionMain}>
-        <span className={classes.lead}>
+        <div className={classes.lead}>
           <h3 className={classes.caption}>
             {icon !== undefined && <IconSlot className={classes.icon}>{icon}</IconSlot>}
             <span className={classes.captionText}>{title}</span>
           </h3>
           {/* OUTSIDE the heading on purpose: `info` would otherwise become part of its name. */}
           {info !== undefined && <InfoGlyph text={info} />}
-        </span>
+        </div>
         {qualifier !== undefined && <span className={classes.qualifier}>{qualifier}</span>}
       </div>
       {/* `tier="widget"`: the caption row is 24px (`--vx-space-control-height-widget`), so a card
