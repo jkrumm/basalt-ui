@@ -162,9 +162,13 @@ layout('Meter / BarList geometry', () => {
     },
   )
 
-  test.each([160, 360].flatMap((w) => [0, 500, 1000].map((v) => [w, v] as const)))(
-    'the zoned reading sits under its marker, inside the track, off the zone names (%ipx, %i)',
-    async (width, value) => {
+  test.each(
+    (['ltr', 'rtl'] as const).flatMap((dir) =>
+      [160, 360].flatMap((w) => [0, 500, 1000].map((v) => [dir, w, v] as const)),
+    ),
+  )(
+    'the zoned reading sits under its marker, inside the track, off the zone names (%s, %ipx, %i)',
+    async (dir, width, value) => {
       const m = await p.raw.evaluate((root) => {
         const host = document.querySelector<HTMLElement>(`[data-testid="${root}"]`)
         const reading = host?.querySelector<HTMLElement>('[data-meter-reading-row] > span')
@@ -187,18 +191,25 @@ layout('Meter / BarList geometry', () => {
           markerCentre: (k.left + k.right) / 2,
           trackLeft: t.left,
           trackRight: t.right,
+          nameCount: names.length,
           nameBottom: Math.max(...names.map((n) => n.bottom)),
           captionsInReadingRow: host.querySelector('[data-meter-captions]') !== null,
         }
-      }, `dash-meter-reading-${width}-${value}`)
+      }, `dash-meter-reading-${dir}-${width}-${value}`)
+      // The names were found (an empty list would make `nameBottom` -Infinity and pass vacuously).
+      expect(m.nameCount).toBe(4)
       expect(m.readingLeft).toBeGreaterThanOrEqual(m.trackLeft - SUBPIXEL)
       expect(m.readingRight).toBeLessThanOrEqual(m.trackRight + SUBPIXEL)
       expect(m.readingTop).toBeGreaterThanOrEqual(m.nameBottom - SUBPIXEL)
       expect(m.captionsInReadingRow).toBe(false)
-      // Centred on the marker unless the clamp holds it inside the track.
-      const clamped =
-        m.readingLeft <= m.trackLeft + SUBPIXEL || m.readingRight >= m.trackRight - SUBPIXEL
-      if (!clamped) expect(Math.abs(m.centre - m.markerCentre)).toBeLessThan(SNAP)
+      if (value === 500) {
+        expect(Math.abs(m.centre - m.markerCentre)).toBeLessThan(SNAP)
+        return
+      }
+      // At an end the label is clamped: it touches the track edge the marker is on.
+      const nearLeft = m.markerCentre < (m.trackLeft + m.trackRight) / 2
+      const gap = nearLeft ? m.readingLeft - m.trackLeft : m.trackRight - m.readingRight
+      expect(Math.abs(gap)).toBeLessThanOrEqual(SUBPIXEL)
     },
   )
 

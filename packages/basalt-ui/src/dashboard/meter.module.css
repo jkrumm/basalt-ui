@@ -96,21 +96,33 @@
   overflow-wrap: anywhere;
 }
 
-/* The reading under the band, centred on the marker (its centre is set inline, clamped to the row). */
+/* The reading under the band, centred on the marker. Clipped so it never widens the row before the first measure. */
 .zoneReadingRow {
+  --basalt-reading-dir: 1;
   position: relative;
   height: 1.25em;
+  overflow: clip;
   font-family: var(--basalt-font-mono);
   font-size: var(--vx-text-micro);
 }
 
+.zoneReadingRow:dir(rtl) {
+  --basalt-reading-dir: -1;
+}
+
+/* Before the first measure the start edge sits AT the marker, so the label shifts back half its width
+ * along the inline axis (the physical `translate` flips sign in RTL). Measured, the start edge is exact. */
 .zoneReading {
   position: absolute;
   top: 0;
-  translate: -50% 0;
+  translate: calc(-50% * var(--basalt-reading-dir)) 0;
   white-space: nowrap;
   font-weight: 500;
   color: var(--vx-ink);
+}
+
+.zoneReading[data-measured] {
+  translate: none;
 }
 
 /* The reading on a zone track: a notch standing proud of the bands, in ink. */
