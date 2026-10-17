@@ -351,10 +351,12 @@ const PROVIDER_ONLY_LABEL = 'provider-only first paint (gzip B, dist)'
 // this entry) plus the mutation-key hash: 19034 locally, was 18923.
 const PROVIDER_ONLY_CEILING = 19200
 // Embedded `<BasaltProvider spotlight={false}>`, no defines, peers bundled, every chunk counted: 54735 B landed, ~1% margin.
-const EMBEDDED_CEILING = 55300
+// 55300 → 55391 (W32): +91 B for the Wave 32 scales — the dense control tier rule in the palette CSS, the row line-height and `lineHeights` ratios, the expanded gutter, and the card/radius/type retunes.
+const EMBEDDED_CEILING = 55391
 // `createBasaltTheme()` alone, peers bundled, every chunk counted: 14420 locally. The theme reaching
 // no component it configures is what keeps this near Mantine's core; ~1% over landed.
-const THEME_ONLY_CEILING = 14570
+// 14570 → 14571 (W32): +1 B, the `lineHeights` ratios.
+const THEME_ONLY_CEILING = 14571
 const THEME_ONLY_LABEL = 'createBasaltTheme only, peers bundled, all chunks (gzip B, dist)'
 const EMBEDDED_LABEL = 'embedded provider, no defines, peers bundled, all chunks (gzip B, dist)'
 const FEATURE_CHUNKS_LABEL =
@@ -540,10 +542,11 @@ async function budgets(providerOnlyDist: string): Promise<Budget[]> {
     // 5020 -> 5165: `app-wiring` follows one import hop (relative or tsconfig `paths`) to a provider wrapper; `sync` judges a Start seed by content (ledger rows 121-123, weatherorb W39); the hop resolver and provider-tag reader are leaf modules.
     // 5165 -> 7073 (W31): `basalt-ui shot` +1691 (cli/shot/: capture with per-state crops, contact sheets, the in-page measurer and theme scale incl. basalt's own `--vx-*` steps, the board, out-dir safety, the launcher; SPEC § 9.5); the reviewer install and rule `paths:` from `basalt.roots` +75 (rows 135-136); doctor's stale-board notice and optional Playwright line +142 (cli/board-freshness.ts).
     // 7073 -> 7098 (W32): `shot` reports a full-round radius as "full" — the raw radius reading, `radiusReading` and its two call sites in cli/shot/ (+25).
+    // 7098 -> 7100 (W32): `radiusReading`'s zero-size and percentage branches (+2).
     {
       label: 'CLI non-test lines (src/cli/**)',
       value: cliNonTestLines(),
-      ceiling: 7098,
+      ceiling: 7100,
     },
     ...(await providerOnlyRows(providerOnlyDist)),
   ]
