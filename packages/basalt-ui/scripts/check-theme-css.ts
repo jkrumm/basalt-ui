@@ -147,6 +147,15 @@ type ShadowSurfaceEntry = ShadowSite & {
  */
 const SHADOW_SURFACES: readonly ShadowSurfaceEntry[] = [
   {
+    file: 'common/retry-button.module.css',
+    site: '.retry',
+    roundedBy:
+      'border-radius: var(--vx-radius-ctrl) declared on `.retry` itself — the same element that ' +
+      'carries `shadow-raised` (the shared Retry is a plain <button>, so there is no wrapper or ' +
+      "Mantine radius var in between). It reads the control radius Mantine's default radius " +
+      'resolves to, so it matches the Button it stands in for.',
+  },
+  {
     file: 'theme/controls.module.css',
     site: ".input[data-variant='default']",
     roundedBy:
