@@ -158,7 +158,7 @@ export const LATENCY_DISTRIBUTION: readonly LatencyBin[] = (() => {
   for (let from = first; from <= last; from += LATENCY_BIN_MS) {
     bins.push({
       from,
-      label: `${from} ms`,
+      label: `${from}`,
       hours: values.filter((v) => v >= from && v < from + LATENCY_BIN_MS).length,
     })
   }

@@ -76,8 +76,20 @@ const LINE_STATES: BandStripSeries<HourRow>[] = [
 const bandOf = (d: HourRow): BandSpan => ({ state: lineState(d) })
 
 const THROUGHPUT_SERIES: ChartSeries<HourRow>[] = [
-  { key: 'down', label: 'Download', color: VX.accent, getValue: (d) => d.downMbit },
-  { key: 'up', label: 'Upload', color: VX.faint, getValue: (d) => d.upMbit },
+  {
+    key: 'down',
+    label: 'Download',
+    color: VX.accent,
+    getValue: (d) => d.downMbit,
+    formatValue: fmtMbit,
+  },
+  {
+    key: 'up',
+    label: 'Upload',
+    color: VX.faint,
+    getValue: (d) => d.upMbit,
+    formatValue: fmtMbit,
+  },
 ]
 
 const CEILING_LINES = [
@@ -239,7 +251,7 @@ function OpsCharts({ shotState }: ScenarioProps) {
         </Box>
         <Box data-shot="latency-distribution" h="100%">
           <ChartCard
-            title="Hours by median latency"
+            title="Hours by median latency (ms), last 7 days"
             info={`How many of the ${MEASURED_HOURS} hours with a reading landed in each ${LATENCY_BIN_MS} ms band of median round-trip time. Outage hours have no reading.`}
             state={chartStateFor(shotState, {
               empty: 'No latency readings to bin yet. The histogram needs at least one hour.',
