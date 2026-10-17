@@ -67,7 +67,7 @@ export function ActivityPage() {
         title); only the timestamp is a call-site style override.
       </Text>
 
-      <Paper py="sm" px="md" data-compare="activity">
+      <Paper data-compare="activity">
         <Timeline active={0}>
           {ACTIVITY_EVENTS.map((event) => (
             <Timeline.Item key={event.id} title={event.title}>

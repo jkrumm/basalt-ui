@@ -90,7 +90,7 @@ function ProjectForm() {
           <Text size="sm" fw={600} c="teal">
             Submitted values:
           </Text>
-          <Paper py="sm" px="md">
+          <Paper>
             {/* theme-allow no-raw-font-size — bespoke raw JSON-dump sizing, no matching token */}
             <pre style={{ margin: 0, fontSize: 12 }}>{JSON.stringify(submitted, null, 2)}</pre>
           </Paper>
@@ -111,7 +111,7 @@ export function FormsDemoPage() {
         <code>./forms</code>: useBasaltForm + inputProps/fieldKey, laid out through FormRow
       </Text>
 
-      <Paper py="sm" px="md">
+      <Paper>
         <Stack gap="xs">
           <Text size="xs" tt="uppercase" fw={600} c="dimmed">
             Behaviour
@@ -120,7 +120,7 @@ export function FormsDemoPage() {
         </Stack>
       </Paper>
 
-      <Paper py="sm" px="md">
+      <Paper>
         <ProjectForm />
       </Paper>
     </Stack>

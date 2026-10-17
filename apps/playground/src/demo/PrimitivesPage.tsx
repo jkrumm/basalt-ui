@@ -13,11 +13,7 @@ import { DeltaBadge, WidgetHeader } from 'basalt-ui'
 import { IconChart } from './icons'
 
 function Card({ children }: { children: ReactNode }) {
-  return (
-    <Paper py="sm" px="md" withBorder>
-      {children}
-    </Paper>
-  )
+  return <Paper withBorder>{children}</Paper>
 }
 
 function WidgetHeaderTierBlock() {
