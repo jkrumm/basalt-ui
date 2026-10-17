@@ -94,10 +94,9 @@
   min-width: 0;
 }
 
-/* The tone verdict: a status dot plus a short word, after the caption and info glyph. The dot is a
- * § 5 step (6px) and carries the colour inline (`VX.status[tone]`); the word is muted ink, so the
- * verdict reads in shape and text, not colour alone. `flex: none` keeps it whole when a long
- * caption truncates. */
+/* The tone verdict: a `StatusDot` plus a short word, after the caption and info glyph. The dot
+ * carries the colour; the word is muted ink, so the verdict reads in shape and text, not colour
+ * alone. `flex: none` keeps it whole when a long caption truncates. */
 .verdict {
   display: inline-flex;
   flex: none;
@@ -106,12 +105,6 @@
   font-family: var(--basalt-font-mono);
   font-size: var(--vx-text-micro);
   color: var(--vx-muted);
-}
-
-.verdictDot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
 }
 
 /* Law C15: the shared hit overlay; `--vx-hit-gap` caps the expansion at the control gap. */

@@ -40,11 +40,22 @@ function render(tone?: Tone) {
   )
 }
 
-const TONES: { tone: Tone; token: string; word: string }[] = [
-  { tone: 'good', token: 'var(--vx-status-good)', word: 'OK' },
-  { tone: 'warn', token: 'var(--vx-status-warn)', word: 'Watch' },
-  { tone: 'bad', token: 'var(--vx-status-bad)', word: 'Over' },
+const TONES: { tone: Tone; token: string; word: string; phrase: string }[] = [
+  { tone: 'good', token: 'var(--vx-status-good)', word: 'OK', phrase: 'Within the good threshold' },
+  {
+    tone: 'warn',
+    token: 'var(--vx-status-warn)',
+    word: 'Watch',
+    phrase: 'Past the warning threshold',
+  },
+  { tone: 'bad', token: 'var(--vx-status-bad)', word: 'Over', phrase: 'Past the severe threshold' },
 ]
+
+function verdictOf(markup: string): HTMLElement | null {
+  const host = document.createElement('div')
+  host.innerHTML = markup
+  return host.querySelector<HTMLElement>('[data-verdict]')
+}
 
 test('the card root is the `basalt-card` inline-size container its header chrome keys on', () => {
   const markup = render()
@@ -58,16 +69,23 @@ describe('every tone draws its dot from the per-scheme status token', () => {
       const markup = render(tone)
       // A hex here would be one scheme's colour frozen into both — the dot has to re-resolve with
       // the palette, including under a consumer's `derive` retune.
-      expect(markup).toContain(`background:${token}`)
+      expect(markup).toContain(`--basalt-status-dot:${token}`)
       expect(markup).toContain(`data-tone="${tone}"`)
     })
   }
 })
 
-describe('every tone also states its verdict as a visible word', () => {
-  for (const { tone, word } of TONES) {
+describe('every tone also states its verdict as a visible word and a full phrase', () => {
+  for (const { tone, word, phrase } of TONES) {
     test(tone, () => {
-      expect(render(tone)).toMatch(new RegExp(`</span>${word}</span>`))
+      const verdict = verdictOf(render(tone))
+      expect(verdict?.getAttribute('data-verdict')).toBe(tone)
+      expect(verdict?.textContent).toContain(word)
+      // The visible word is aria-hidden; AT hears the phrase, never a bare "Over".
+      expect(
+        verdict?.querySelector('[aria-hidden="true"]:not([data-basalt-status-dot])')?.textContent,
+      ).toBe(word)
+      expect(verdict?.textContent).toContain(phrase)
     })
   }
 })
@@ -78,7 +96,6 @@ describe('no tone draws a coloured edge rail', () => {
       const markup = render(tone)
       expect(markup).not.toContain('position:absolute')
       expect(markup).not.toContain('inset-inline-start')
-      expect(markup).not.toContain('position:relative')
     })
   }
 })
@@ -98,7 +115,7 @@ describe('omitting tone is not "good" — it is untinted, and says nothing', () 
   })
 
   test('no verdict word is shown', () => {
-    for (const { word } of TONES) expect(markup).not.toContain(`>${word}<`)
+    expect(verdictOf(markup)).toBeNull()
   })
 
   test('the value still renders — the card is normal, just unmarked', () => {

@@ -26,10 +26,12 @@ import {
   SegmentedControl,
   Stack,
   Text,
+  VisuallyHidden,
 } from '@mantine/core'
 import type { BasaltProps } from '../../common/props'
 import { cx } from '../../common/props'
 import { relativeTime } from '../../format'
+import { StatusDot } from '../../theme/status-dot'
 import { VX } from '../../tokens'
 import { resolveAction } from './define-notifications'
 import { useNotificationHistory } from './store'
@@ -52,6 +54,14 @@ const INTENT_STATUS: Record<NotificationIntent, string> = {
   error: VX.status.bad,
   warning: VX.status.warn,
   info: VX.accent,
+}
+
+// The intent as a word beside the dot, so it is never colour alone.
+const INTENT_WORD: Record<NotificationIntent, string> = {
+  success: 'Success',
+  error: 'Error',
+  warning: 'Warning',
+  info: 'Info',
 }
 
 type CenterView = 'inbox' | 'all'
@@ -107,21 +117,16 @@ function NotificationItem({
       }}
     >
       <Group gap="xs" align="flex-start" wrap="nowrap">
-        <Box
-          aria-hidden="true"
-          w={6}
-          h={6}
-          mt={6}
-          bdrs="xl"
-          bg={statusAccent}
-          style={{ flex: 'none' }}
-        />
         <Stack gap={2} style={{ minWidth: 0, flex: 1 }}>
-          {item.title !== undefined && (
-            <Text size="sm" fw={isUnread ? 600 : 500} lh={1.2} truncate="end">
-              {item.title}
-            </Text>
-          )}
+          <Group gap="xs" align="center" wrap="nowrap">
+            <StatusDot color={statusAccent} />
+            <VisuallyHidden>{INTENT_WORD[item.intent]}</VisuallyHidden>
+            {item.title !== undefined && (
+              <Text size="sm" fw={isUnread ? 600 : 500} lh={1.2} truncate="end">
+                {item.title}
+              </Text>
+            )}
+          </Group>
           <Text
             size="sm"
             lh={1.3}

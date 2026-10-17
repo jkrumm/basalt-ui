@@ -1083,8 +1083,9 @@ darkens, dark lightens; hue is preserved and chroma may clip at the gamut edge.
 Wave 34. `StatCard`'s `tone` no longer draws a 3 px coloured rail down the card's leading edge. It
 now puts a 6 px status dot and a short word on the caption row, after the title and `info` glyph:
 `good` → `OK`, `warn` → `Watch`, `bad` → `Over`. The dot carries the colour (`VX.status[tone]`);
-the word is muted ink and carries the meaning, so the verdict no longer rides on colour alone. The
-`VisuallyHidden` sentence ("Past the severe threshold") is gone — the visible word replaces it.
+the word is muted ink and carries the meaning, so the verdict no longer rides on colour alone. Screen
+readers still hear the full phrase ("Past the severe threshold") from a visually hidden sibling, not a
+bare "Over".
 
 Two other shipped status edges went the same way, each visible without any prop change:
 
@@ -1092,7 +1093,8 @@ Two other shipped status edges went the same way, each visible without any prop 
   colour (`info` / `good` / `warn` / `bad`); a consumer's CSS that restyled the border has nothing to
   target.
 - **Notification-centre rows** (`NotificationCenter`) lose their 3 px coloured leading border and show
-  a 6 px status dot before the text instead (success / error / warning / info).
+  a 6 px status dot before the title instead (success / error / warning / info), with the intent as a
+  visually hidden word ("Success", "Error", "Warning", "Info") beside it.
 
 `tone?: 'good' | 'warn' | 'bad'` keeps its API, and omitting it still renders neither dot nor word.
 There is no opt-out: a coloured edge for status is retired (owner decision). A consumer's own

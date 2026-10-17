@@ -24,7 +24,7 @@
 import { DEFAULT_THEME, getPrimaryShade, mergeMantineTheme } from '@mantine/core'
 import type { MantineTheme } from '@mantine/core'
 import { describe, expect, test } from 'bun:test'
-import { ACCENT, FILL, INK, NEUTRAL, SURFACE } from '../tokens/palette'
+import { ACCENT, FILL, INK, NEUTRAL, STATUS, SURFACE } from '../tokens/palette'
 import { baseTheme, cssVariablesResolver } from './index'
 
 const theme: MantineTheme = mergeMantineTheme(DEFAULT_THEME, baseTheme)
@@ -343,6 +343,19 @@ describe('doctrine inversion #1 reaches every default-variant CONTROL, not just 
     expect(border).toContain('solid var(--mantine-color-default-border)')
     expect(border).not.toContain('surface-border')
   })
+})
+
+describe("the status dot reads against the panel it's drawn on", () => {
+  // Guards the dot (`theme/status-dot.tsx`): a non-text mark carrying a status, so it takes WCAG's
+  // 3:1 non-text floor against `--vx-surface-panel` in BOTH schemes. The status solids are DERIVED,
+  // so retuning the generator could sink one into the panel without anything else failing.
+  for (const scheme of SCHEMES) {
+    for (const tone of ['good', 'warn', 'bad'] as const) {
+      test(`${tone} / ${scheme}`, () => {
+        expect(contrastRatio(STATUS[tone][scheme], SURFACE.panel[scheme])).toBeGreaterThanOrEqual(3)
+      })
+    }
+  }
 })
 
 describe('the StatCard verdict word reads against the panel it is drawn on', () => {

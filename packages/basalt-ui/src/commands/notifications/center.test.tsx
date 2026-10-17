@@ -6,9 +6,10 @@
  * the `style` merge order (a caller's own `width` still wins).
  */
 import { MantineProvider } from '@mantine/core'
-import { render } from '@testing-library/react'
+import { fireEvent, render } from '@testing-library/react'
 import { describe, expect, test } from 'bun:test'
 import { NotificationCenter } from './center'
+import { add, clear } from './store'
 
 function renderCenter(props?: Parameters<typeof NotificationCenter>[0]) {
   return render(
@@ -32,4 +33,26 @@ describe('NotificationCenter width (M4)', () => {
     expect(root.style.width).toBe('480px')
     expect(root.style.marginTop).toBe('4px')
   })
+})
+
+describe('NotificationCenter rows state the intent as a word, not colour alone', () => {
+  const INTENTS = [
+    ['success', 'Success'],
+    ['error', 'Error'],
+    ['warning', 'Warning'],
+    ['info', 'Info'],
+  ] as const
+
+  for (const [intent, word] of INTENTS) {
+    test(`${intent} → "${word}", beside a status dot, with no leading border`, () => {
+      add({ id: `intent-${intent}`, intent, title: 'T', message: 'M', createdAt: Date.now() })
+      const { container, getByText } = renderCenter()
+      // Only error/warning rows reach the Inbox; the All view lists every intent.
+      fireEvent.click(getByText('All'))
+      expect(getByText(word)).toBeTruthy()
+      expect(container.querySelector('[data-basalt-status-dot]')).not.toBeNull()
+      expect(container.innerHTML).not.toContain('border-inline-start')
+      clear()
+    })
+  }
 })
