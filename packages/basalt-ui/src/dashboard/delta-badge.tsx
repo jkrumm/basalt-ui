@@ -1,7 +1,7 @@
 /**
  * DeltaBadge — the KPI trend readout (docs/DESIGN-CORE.md: "up/down deltas are text colour only,
- * never a fill"): a glyph and a signed figure in the trend colour, proportional-sans `sm` with lining figures, with NO fill, border
- * or padding in either scheme. The optional ▲/▼ glyph sits on the `micro` rung and `period` is
+ * never a fill"): a glyph and a signed figure in the trend colour, proportional-sans `sm` with
+ * lining figures, with NO fill, border or padding in either scheme. The optional ▲/▼ glyph sits on the `micro` rung and `period` is
  * `micro` muted. `polarity` decides the TONE the sign maps to — `'up-good'` (default) reads a rise
  * as success and a fall as danger; `'up-bad'` inverts that for a metric where a rise is the worse
  * reading (a cycle-top index, latency, error rate); `'neutral'` renders every sign in a faint,

@@ -5,7 +5,7 @@
  *  1. the CAPTION row — `title` as a mono uppercase `micro` faint label, the optional `info` glyph,
  *     `qualifier` right-aligned (period, target or source; it takes its own line UNDER the caption,
  *     left-aligned, when the card is too narrow for both), and the `actions` slot;
- *  2. the VALUE row — the hero figure (`kpi`, mono 500), `unit` inline at `sm` muted on the same
+ *  2. the VALUE row — the hero figure (`kpi`, sans 500, lining), `unit` inline at `sm` muted on the same
  *     baseline, then the delta (text only — see `DeltaBadge`) and its muted `deltaPeriod`;
  *  3. the FOOT — the `sparkline` visual (22 px, bled to the card's side edges) and one muted `sm`
  *     `subtitle` line under it (a source or "as of", never a restatement of the caption).
@@ -211,7 +211,7 @@ export type StatCardProps = BasaltProps &
   Omit<WidgetHeaderTitleProps, 'subtitle'> &
   Omit<WidgetHeaderMetricProps, 'value'> &
   WidgetHeaderDeltaProps & {
-    /** Pre-formatted hero figure (mono `kpi`, weight 500, ink). Required here, unlike on
+    /** Pre-formatted hero figure (sans `kpi`, weight 500, lining, ink). Required here, unlike on
      * `WidgetHeader`: see the type's own doc. */
     value: string
     /**

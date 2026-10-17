@@ -1,5 +1,5 @@
 /**
- * BarList — a ranked list: label, an inline bar on ONE shared scale, a mono right-aligned value and
+ * BarList — a ranked list: label, an inline bar on ONE shared scale, a right-aligned sans value and
  * an optional muted secondary value. Choose it for "top N" (the bar ranks by length before anything
  * is read). The bar spans the label column only — values sit outside it, so a full-scale bar ends
  * before its value. Intended for 5–10 rows; past 10 use a table with an inline `Meter` cell. An
