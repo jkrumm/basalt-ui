@@ -142,7 +142,7 @@ export function StatStrip({ label, cells, footer, cols, className, style }: Stat
   const mid = desktop === 4 ? 2 : Math.min(desktop, 3)
   return (
     <div className={cx(classes.container, className)} style={style}>
-      <Card py="sm" px="md">
+      <Card>
         <Card.Section
           component="section"
           aria-label={label}
