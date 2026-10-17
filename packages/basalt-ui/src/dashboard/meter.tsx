@@ -53,7 +53,7 @@
 import type { ReactNode } from 'react'
 import type { BasaltProps } from '../common/props'
 import { isReading, normalizeSegments, segmentReading, spanOf } from './meter-model'
-import type { MeterSegment, MeterZone } from './meter-model'
+import type { MeterSegment, MeterTick, MeterZone } from './meter-model'
 import { MeterBar, MeterEmpty, MeterLoading, MeterRing } from './meter-parts'
 import { asText } from './scale'
 
@@ -76,6 +76,24 @@ type BarCommon = Common & {
   shape?: 'bar'
   /** Target position; draws a tick and states it in the end caption (with the overage past it). */
   target?: number
+  /**
+   * More marks on the track (cut-offs, a window mean). Each is drawn at `at`; a `label` is captioned
+   * above the track, wrapping to a list when two collide. A tick outside `[min, max]` is dropped, not
+   * clamped. All are listed in the accessible description. Works with `value`, `zones`, `segments`
+   * and `target`.
+   */
+  ticks?: readonly MeterTick[]
+  /**
+   * `'muted'`: a non-verdict fill (a load, not a verdict) in `--vx-muted` at a strength that holds
+   * 3:1 against the track in both schemes — the neutral fill is near-white in dark. A `color` wins.
+   */
+  tone?: 'muted'
+  /**
+   * `'row'`: in-line use — a track one text line tall and no caption rows (reading, target, forecast,
+   * part, zone and tick captions). The label stays as `aria-label`; the described-by text keeps the
+   * rest. Put the value beside it in your own layout.
+   */
+  size?: 'row'
   /** Start caption (default: the formatted reading). `null` drops it. */
   startCaption?: ReactNode
   /** End caption (default: `Target <target>`). `null` drops it. */
@@ -125,6 +143,9 @@ export type MeterProps =
       segments?: never
       zones?: never
       target?: never
+      ticks?: never
+      tone?: never
+      size?: never
       startCaption?: never
       endCaption?: never
     })
@@ -141,7 +162,8 @@ function warnInvalidTrack(min: number, max: number) {
 
 export function Meter(props: MeterProps) {
   const { label, min = 0, max = 100, format = asText, className, style } = props
-  const shell = { className, style }
+  const row = props.size === 'row'
+  const shell = { className, style, row }
   const ring = props.shape === 'ring'
   warnInvalidTrack(min, max)
 
@@ -165,6 +187,8 @@ export function Meter(props: MeterProps) {
       segments={segments}
       zones={props.zones}
       target={isReading(props.target) ? props.target : undefined}
+      ticks={props.ticks}
+      tone={props.tone}
       forecastCaption={props.segments === undefined ? undefined : props.forecastCaption}
       startCaption={props.startCaption}
       endCaption={props.endCaption}

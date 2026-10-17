@@ -35,5 +35,9 @@ declare const classes: {
   readonly ringArc: string
   readonly ringValue: string
   readonly skeletonRing: string
+  readonly tickLabels: string
+  readonly tickBand: string
+  readonly tickLabel: string
+  readonly row: string
 }
 export default classes

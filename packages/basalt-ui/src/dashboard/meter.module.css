@@ -9,6 +9,9 @@
   flex-direction: column;
   gap: var(--vx-space-stack-xs, 0.25rem);
   min-width: 0;
+  /* The ONE caption size: every caption below reads it. A host that wants captions at its own text
+   * size sets `--basalt-meter-caption: 1em` on the Meter. */
+  --basalt-meter-caption: var(--vx-text-micro);
 }
 
 .root.zoned {
@@ -36,6 +39,14 @@
 }
 
 /* The committed/forecast pair: the same neutral at two strengths. Flat, never hatched. */
+/*
+ * A non-verdict reading: --vx-muted at 65%. 35% (argo's alpha) measures 1.7:1 (light) / 2.4:1 (dark)
+ * against the track; 65% clears 3:1 in both, and is not the near-white of --vx-line in dark.
+ */
+.fill[data-tone='muted'] {
+  background: color-mix(in srgb, var(--vx-muted) 65%, transparent);
+}
+
 .forecastFill {
   background: color-mix(in srgb, var(--vx-line) 45%, transparent);
 }
@@ -56,7 +67,7 @@
   height: 1.25em;
   font-family: var(--basalt-font-numeral, var(--basalt-font-sans));
   font-variant-numeric: lining-nums;
-  font-size: var(--vx-text-micro);
+  font-size: var(--basalt-meter-caption);
   color: var(--vx-muted);
 }
 
@@ -89,7 +100,7 @@
   gap: var(--vx-space-stack-xs) var(--vx-space-stack-sm);
   font-family: var(--basalt-font-numeral, var(--basalt-font-sans));
   font-variant-numeric: lining-nums;
-  font-size: var(--vx-text-micro);
+  font-size: var(--basalt-meter-caption);
   color: var(--vx-muted);
 }
 
@@ -106,7 +117,7 @@
   overflow: clip;
   font-family: var(--basalt-font-numeral, var(--basalt-font-sans));
   font-variant-numeric: lining-nums;
-  font-size: var(--vx-text-micro);
+  font-size: var(--basalt-meter-caption);
 }
 
 .zoneReadingRow:dir(rtl) {
@@ -147,6 +158,8 @@
   margin-inline-start: -1px;
   border-radius: var(--vx-radius-fine);
   background: var(--vx-ink);
+  /* A track-coloured halo keeps an ink tick readable on a fill that is itself near-ink (dark). */
+  box-shadow: 0 0 0 1px var(--vx-surface-subtle);
 }
 
 .boundaryTick {
@@ -162,7 +175,7 @@
   gap: var(--vx-space-control-gap, 0.375rem);
   font-family: var(--basalt-font-numeral, var(--basalt-font-sans));
   font-variant-numeric: lining-nums;
-  font-size: var(--vx-text-micro);
+  font-size: var(--basalt-meter-caption);
   color: var(--vx-muted);
 }
 
@@ -189,7 +202,7 @@
   list-style: none;
   font-family: var(--basalt-font-numeral, var(--basalt-font-sans));
   font-variant-numeric: lining-nums;
-  font-size: var(--vx-text-micro);
+  font-size: var(--basalt-meter-caption);
   color: var(--vx-muted);
 }
 
@@ -210,7 +223,7 @@
 }
 
 .empty {
-  font-size: var(--vx-text-sm);
+  font-size: var(--basalt-meter-caption);
   color: var(--vx-muted);
 }
 
@@ -271,4 +284,54 @@
 .skeletonRing {
   width: 5rem;
   height: 5rem;
+}
+
+/* ── tick captions ───────────────────────────────────────────────────────────────────────────── */
+
+/* Above the track, so they never share a row with the zone names or the captions below it. */
+.tickLabels {
+  position: relative;
+}
+
+.tickBand {
+  position: relative;
+  height: 1.25em;
+  font-family: var(--basalt-font-numeral, var(--basalt-font-sans));
+  font-variant-numeric: lining-nums;
+  font-size: var(--basalt-meter-caption);
+  color: var(--vx-muted);
+}
+
+/* Hidden but laid out, so a resize can measure it again. */
+.tickBand[data-collapsed] {
+  position: absolute;
+  top: 0;
+  inset-inline: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.tickLabel {
+  position: absolute;
+  top: 0;
+  white-space: nowrap;
+}
+
+/* ── size="row" ──────────────────────────────────────────────────────────────────────────────── */
+
+.row {
+  gap: 0;
+  justify-content: center;
+}
+
+.row .track {
+  height: 1lh;
+}
+
+.row .skeletonTrack {
+  height: 1lh;
+}
+
+.row .skeletonCaption {
+  display: none;
 }
