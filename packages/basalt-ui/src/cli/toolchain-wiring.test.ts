@@ -528,6 +528,19 @@ describe('tokens:css — a committable artifact', () => {
     expect(css).toContain('rgba(255, 255, 255, 0.12)')
   })
 
+  it('emits --vx-axis as the derived faint ink, per scheme (small chart ink clears AA)', () => {
+    const css = emit([])
+    const block = (scheme: 'light' | 'dark') =>
+      css.slice(css.indexOf(`html[data-mantine-color-scheme='${scheme}']`))
+    for (const scheme of ['light', 'dark'] as const) {
+      const scoped = block(scheme)
+      const axis = /--vx-axis: ([^;]+);/.exec(scoped)?.[1]
+      const faint = /--vx-faint: ([^;]+);/.exec(scoped)?.[1]
+      expect(axis).toBeDefined()
+      expect(axis).toBe(faint)
+    }
+  })
+
   it('emits no trailing-zero alpha — the last thing keeping the sheet out of a linter', () => {
     // prettier rewrites `rgba(28, 25, 23, 0.10)` → `0.1`, so the two light shadow tokens failed
     // `format/prettier` while `--fix` put the file straight into `tokens:css --check` drift. The
