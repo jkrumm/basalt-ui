@@ -1,3 +1,32 @@
+# [2.16.0](https://github.com/jkrumm/basalt-ui/compare/v2.15.0...v2.16.0) (2026-10-17)
+
+
+### Bug Fixes
+
+* derive the guard's spacing steps and micro ceiling from the scale ([233530a](https://github.com/jkrumm/basalt-ui/commit/233530a1e8af571920846fd6692311380f0f3a52))
+* derive the latency histogram copy from the measured hours ([b706787](https://github.com/jkrumm/basalt-ui/commit/b706787e1d6420b3eddf1e0246c56788eabae81b))
+* derive the nav row from the sm step and drop the stale 13.5px notes ([3d17c7d](https://github.com/jkrumm/basalt-ui/commit/3d17c7d46073a0f6520a1b543faefd2d6fefedf0))
+* drop restated token fallbacks, round line heights and settle comments ([69980e7](https://github.com/jkrumm/basalt-ui/commit/69980e734c30d78fc300fe2c68a833bf786ef340))
+* emit the dense tier from the palette CSS builder, typed over one var list ([ce2b60c](https://github.com/jkrumm/basalt-ui/commit/ce2b60c03281364e96cdba52950bb6ef8a946a38))
+* keep the card-inset consistency test where the plugin is typed ([374a25d](https://github.com/jkrumm/basalt-ui/commit/374a25dcff14ba3949ef83f305886f1ba867806e))
+* keep the card-inset fallbacks on the chart and stat cards ([0e9d08f](https://github.com/jkrumm/basalt-ui/commit/0e9d08f51d1de7db8763b12f998d23a224d71598))
+* keep the pack-test fixtures off the new spacing grid ([65247f4](https://github.com/jkrumm/basalt-ui/commit/65247f4711cfcdec1c3318e5dea23db9a345d4ca))
+* make basalt/card-inset accept only the sm/md pair ([c0b5526](https://github.com/jkrumm/basalt-ui/commit/c0b55266fb072f6c62731974085d2e0ab016a9e5))
+* mobile menu and child rows follow the sm step; reflow two comments ([be1e462](https://github.com/jkrumm/basalt-ui/commit/be1e462ac79090b121271a582b9939b3450bb1e3))
+* null every reading in an outage hour and share the scenario fixture helpers ([7a523ce](https://github.com/jkrumm/basalt-ui/commit/7a523ce09c70fcad37a2a59f4e9108aa15dc075c))
+* one card-inset fallback rule, pinned against the scale ([fa68c1c](https://github.com/jkrumm/basalt-ui/commit/fa68c1ca4f248c6bbe70968584aeed21c69342b0))
+* report a fully rounded radius as full in shot ([a19d93f](https://github.com/jkrumm/basalt-ui/commit/a19d93f3c8b298eebc7af7658f8c02c06ee2a79c))
+* scope the dense control tier to the hosting row and generate its overrides ([b604b07](https://github.com/jkrumm/basalt-ui/commit/b604b0722e2e6ae983919f177a0920938b0a596b))
+* shot reads a zero-size box as 0 and a percentage radius by its percentage ([421ab83](https://github.com/jkrumm/basalt-ui/commit/421ab83b0933306f8296097671ece1e5ef04ed93))
+* sort the guard's default steps and state what the guard may import ([ad4a407](https://github.com/jkrumm/basalt-ui/commit/ad4a4070862225ef751b0e2019f57fa4817d061b))
+* tighten card-inset to the whole pair and ship it through a grace minor ([3968892](https://github.com/jkrumm/basalt-ui/commit/3968892ebdd38b7e0c20b6f240063fc8232fdaba))
+
+
+### Features
+
+* add the S1 ops-monitor scenario fixture to the playground ([429457e](https://github.com/jkrumm/basalt-ui/commit/429457e29f5e41e8e0bbb6ecba15a9b09ec49bc5))
+* move spacing, inset, radius and type scales onto an even-pixel grid ([b13526b](https://github.com/jkrumm/basalt-ui/commit/b13526b4ab93086309b593e3283e4915d75a066a))
+
 # [2.15.0](https://github.com/jkrumm/basalt-ui/compare/v2.14.0...v2.15.0) (2026-10-16)
 
 
