@@ -133,6 +133,9 @@ export const UPTIME_PCT = (1 - DOWNTIME_MINUTES / (WINDOW_HOURS * 60)) * 100
 
 const LAST_DAY = HOURLY.slice(-24)
 export const LOSS_24H_PCT = mean(LAST_DAY.map((h) => h.lossPct))
+/** Hourly loss and download over the last 24 hours, oldest first — the metric cards' sparklines. */
+export const LOSS_24H_SERIES: readonly number[] = LAST_DAY.map((h) => h.lossPct)
+export const DOWN_24H_SERIES: readonly number[] = present(LAST_DAY.map((h) => h.downMbit))
 export const LOSS_7D_PCT = mean(HOURLY.map((h) => h.lossPct))
 export const DOWN_24H_MBIT = mean(present(LAST_DAY.map((h) => h.downMbit)))
 export const DOWN_PEAK_MBIT = Math.max(...present(HOURLY.map((h) => h.downMbit)))
