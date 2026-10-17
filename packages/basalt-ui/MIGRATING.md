@@ -1078,7 +1078,7 @@ darkens, dark lightens; hue is preserved and chroma may clip at the gamut edge.
   subagent's model provider: point `--api` at staging or synthetic data for an app holding third parties' data. No
   action needed; every flag is opt-in.
 
-### Status is a dot and a word, not an edge stripe
+### Status is a dot and a word, not an edge stripe (`StatCard`, `Callout`, notification centre)
 
 Wave 34. `StatCard`'s `tone` no longer draws a 3 px coloured rail down the card's leading edge. It
 now puts a 6 px status dot and a short word on the caption row, after the title and `info` glyph:
@@ -1086,9 +1086,13 @@ now puts a 6 px status dot and a short word on the caption row, after the title 
 the word is muted ink and carries the meaning, so the verdict no longer rides on colour alone. The
 `VisuallyHidden` sentence ("Past the severe threshold") is gone — the visible word replaces it.
 
-Two other status edges went the same way: `Callout` loses its left border (the tint, icon and title
-keep the kind's colour), and a notification-centre row shows a status dot instead of a 3 px
-leading border.
+Two other shipped status edges went the same way, each visible without any prop change:
+
+- **`Callout`** loses its 2 px coloured left border. The tint, icon and title still carry the kind's
+  colour (`info` / `good` / `warn` / `bad`); a consumer's CSS that restyled the border has nothing to
+  target.
+- **Notification-centre rows** (`NotificationCenter`) lose their 3 px coloured leading border and show
+  a 6 px status dot before the text instead (success / error / warning / info).
 
 `tone?: 'good' | 'warn' | 'bad'` keeps its API, and omitting it still renders neither dot nor word.
 There is no opt-out: a coloured edge for status is retired (owner decision). A consumer's own
