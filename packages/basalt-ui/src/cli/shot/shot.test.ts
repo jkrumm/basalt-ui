@@ -2068,3 +2068,103 @@ const everythingWritten = (cwd: string, logs: string[], lines: string[]): string
       readFileSync(join(cwd, f), 'utf8'),
     ),
   ].join('\n')
+
+describe('absent anchors', () => {
+  const run = async () => {
+    let url = ''
+    const page = quietPage({
+      goto: (u: string) => {
+        url = u
+        return Promise.resolve()
+      },
+      evaluate: (expression: unknown) =>
+        Promise.resolve(
+          typeof expression === 'string' && expression.includes('data-shot-states')
+            ? url.includes('shot-state=')
+              ? { anchors: [], declared: ['empty'] }
+              : {
+                  anchors: ['chart', 'table'],
+                  declared: ['empty'],
+                  absent: { chart: ['empty', 'error'] },
+                }
+            : undefined,
+        ),
+    })
+    const out = await capture({
+      browser: scriptedBrowser(page),
+      base: 'http://x',
+      routes: ['/'],
+      states: ['empty'],
+      pngDir: '/unused',
+      log: () => undefined,
+    })
+    return out.shots.filter((s) => s.state === 'empty')
+  }
+
+  test('a rest anchor that declared itself absent in the state is `absent`, not an error', async () => {
+    const chart = (await run()).filter((s) => s.name === 'chart')
+    expect(chart).toHaveLength(4)
+    expect(chart.every((s) => s.status === 'absent' && s.file === null)).toBe(true)
+  })
+  test('an undeclared absence stays an error', async () => {
+    const table = (await run()).filter((s) => s.name === 'table')
+    expect(
+      table.every((s) => s.status === 'error' && /absent in this state/.test(s.note ?? '')),
+    ).toBe(true)
+  })
+  test('the board labels an absent cell and the summary counts it', () => {
+    const html = buildBoard({
+      ...fakeMetrics(),
+      shots: [
+        {
+          route: '/dashboard',
+          name: 'chart',
+          scheme: 'light',
+          viewport: 'desktop',
+          state: 'tooltip',
+          file: null,
+          status: 'absent',
+          note: 'declared absent in this state',
+        },
+      ],
+    })
+    expect(html).toContain('empty absent">absent: declared absent in this state')
+  })
+  test('a run with only absent and ok shots exits 0 and reports the count', async () => {
+    const logs: string[] = []
+    const cwd = tmp()
+    writeFileSync(join(cwd, 'package.json'), '{}')
+    const code = await shot(['/', '--base', 'http://x'], cwd, {
+      resolve: () => fakePw([]),
+      now: () => new Date('2026-10-16T00:00:00.000Z'),
+      log: (l) => void logs.push(l),
+      capture: () =>
+        Promise.resolve({
+          anchors: [],
+          scale: [],
+          shots: [
+            {
+              route: '/',
+              name: 'a',
+              scheme: 'light',
+              viewport: 'desktop',
+              state: 'rest',
+              file: 'png/a.png',
+              status: 'ok',
+            },
+            {
+              route: '/',
+              name: 'a',
+              scheme: 'light',
+              viewport: 'desktop',
+              state: 'empty',
+              file: null,
+              status: 'absent',
+            },
+          ],
+        }),
+    })
+    expect(code).toBe(0)
+    expect(logs.join('\n')).toContain('1 absent')
+  })
+})

@@ -48,7 +48,12 @@ export type CaptureInput = {
   log: (line: string) => void
 }
 
-type PageFacts = { anchors: string[]; declared: string[] }
+type PageFacts = {
+  anchors: string[]
+  declared: string[]
+  /** Anchor → the URL states it declares itself absent in (`data-shot-absent="empty error"`). */
+  absent?: Record<string, string[]>
+}
 
 /** Everything one page visit shares: where the records go and what was already measured. */
 type Ctx = {
@@ -156,6 +161,7 @@ const readFacts = (page: PwPage): Promise<PageFacts> =>
   page.evaluate(`(() => ({
     anchors: [...new Set([...document.querySelectorAll('[data-shot]')].map((e) => e.getAttribute('data-shot')).filter(Boolean))],
     declared: [...document.querySelectorAll('[data-shot-states]')].flatMap((e) => (e.getAttribute('data-shot-states') ?? '').split(/\\s+/)).filter(Boolean),
+    absent: Object.fromEntries([...document.querySelectorAll('[data-shot][data-shot-absent]')].map((e) => [e.getAttribute('data-shot'), (e.getAttribute('data-shot-absent') ?? '').split(/\\s+/).filter(Boolean)])),
   }))()`)
 
 const addProblem = (c: Ctx, problem: string): void => {
@@ -477,7 +483,14 @@ async function captureUrlState(c: Ctx, state: ShotState): Promise<void> {
   }
   for (const name of new Set([...restNames, ...here.anchors])) {
     if (!here.anchors.includes(name)) {
-      record(c, { name, state, status: 'error', note: 'anchor absent in this state' })
+      // The declaration lives on the element, which is gone in this state: it is read from the rest render.
+      const declared = c.facts.absent?.[name]?.includes(state) ?? false
+      record(
+        c,
+        declared
+          ? { name, state, status: 'absent', note: 'declared absent in this state' }
+          : { name, state, status: 'error', note: 'anchor absent in this state' },
+      )
       continue
     }
     const note = restNames.includes(name) ? undefined : 'anchor only present in this state'
