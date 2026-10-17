@@ -220,7 +220,7 @@ function SpendCharts({ shotState }: ScenarioProps) {
             error: retry('Spend by project'),
           })}
         >
-          <Box data-shot-hover data-shot-tooltip data-shot-at="0.27,0.2">
+          <Box data-shot-hover data-shot-tooltip data-shot-at="0.23,0.12">
             <Donut
               ariaLabel={`Spend by project, ${WINDOW_LABEL}, EUR`}
               data={DONUT_DATA}
