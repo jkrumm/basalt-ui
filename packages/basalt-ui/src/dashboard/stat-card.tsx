@@ -3,8 +3,8 @@
  * card-radius card (inset `cardInsetY`/`cardInsetX`, no min-height) holding, top to bottom,
  *
  *  1. the CAPTION row — `title` as a mono uppercase `micro` faint label, the optional `info` glyph,
- *     `qualifier` right-aligned (period, target or source; it wraps UNDER the caption when the card
- *     is too narrow for both), and the `actions` slot;
+ *     `qualifier` right-aligned (period, target or source; it takes its own line UNDER the caption,
+ *     left-aligned, when the card is too narrow for both), and the `actions` slot;
  *  2. the VALUE row — the hero figure (`kpi`, mono 500), `unit` inline at `sm` muted on the same
  *     baseline, then the delta (text only — see `DeltaBadge`) and its muted `deltaPeriod`;
  *  3. the FOOT — the `sparkline` visual (22 px, bled to the card's side edges) and one muted `sm`

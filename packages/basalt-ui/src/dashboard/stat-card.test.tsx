@@ -644,7 +644,7 @@ describe('stat-card.module.css — caption, value row, foot', () => {
     const r = rule('.qualifier')
     expect(r).toContain('font-size: var(--vx-text-micro)')
     expect(r).toContain('color: var(--vx-muted)')
-    expect(r).toContain('margin-inline-start: auto')
+    expect(rule('.captionMain')).toContain('justify-content: space-between')
   })
 
   test('the caption main wraps, so the qualifier drops under the caption instead of truncating', () => {

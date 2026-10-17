@@ -206,7 +206,7 @@ layout('card chrome by container', () => {
 
   // SPEC § 7: the qualifier drops under the caption when both do not fit, and is never cut. The
   // fixture card has no qualifier, so one is added with the module's own class (same hash).
-  test('a long qualifier wraps under the caption in a 358px card and is not truncated', async () => {
+  test('a long qualifier takes its own line under the caption, left-aligned, in a 358px card', async () => {
     const r = await p.raw.evaluate(() => {
       const wrap = document.querySelector<HTMLElement>('[data-testid="card-320"]')
       const main = wrap?.querySelector<HTMLElement>('[class*="captionMain_"]')
@@ -220,6 +220,7 @@ layout('card chrome by container', () => {
       const box = q.getBoundingClientRect()
       const out = {
         under: box.top >= caption.bottom - 1,
+        leftAligned: box.left === caption.left,
         inside: box.right <= wrap.getBoundingClientRect().right,
         clipped: q.scrollWidth > q.clientWidth,
         ellipsis: getComputedStyle(q).textOverflow,
@@ -228,7 +229,13 @@ layout('card chrome by container', () => {
       wrap.style.width = '320px'
       return out
     })
-    expect(r).toEqual({ under: true, inside: true, clipped: false, ellipsis: 'clip' })
+    expect(r).toEqual({
+      under: true,
+      leftAligned: true,
+      inside: true,
+      clipped: false,
+      ellipsis: 'clip',
+    })
   })
 
   test('a divided StatGroup at 240px is one column with no rail border or indent on any cell', async () => {

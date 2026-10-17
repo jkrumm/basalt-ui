@@ -6,6 +6,7 @@ declare const classes: {
   readonly body: string
   readonly captionRow: string
   readonly captionMain: string
+  readonly lead: string
   readonly caption: string
   readonly captionText: string
   readonly icon: string
