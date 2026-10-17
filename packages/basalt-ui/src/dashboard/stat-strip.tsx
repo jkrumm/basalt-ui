@@ -120,9 +120,7 @@ function CellState({ state }: { state: StatStripCellState }) {
         <StatusDot color={VX.status.bad} />
         Failed
       </span>
-      <p className={classes.reason} title={message}>
-        {message}
-      </p>
+      <p className={classes.reason}>{message}</p>
       {state.onRetry !== undefined && (
         <RetryButton onClick={state.onRetry} retrying={state.retrying ?? false} />
       )}
@@ -177,7 +175,7 @@ function StripCell({ cell }: { cell: StatStripCell }) {
         ))}
       {state === undefined && cell.visual !== undefined && (
         <div className={classes.visual}>
-          <VisualSlotContext.Provider value>{cell.visual}</VisualSlotContext.Provider>
+          <VisualSlotContext.Provider value={hasHero}>{cell.visual}</VisualSlotContext.Provider>
         </div>
       )}
       {state === undefined &&

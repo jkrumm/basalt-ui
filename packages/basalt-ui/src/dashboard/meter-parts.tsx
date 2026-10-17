@@ -385,8 +385,12 @@ export function MeterBar(props: {
   const model = modelBar(props)
   const compact = shell.row
   // A host that already shows the value as its hero (StatCard, a strip cell) owns the reading: a
-  // zoned track keeps its marker and zone labels but does not print the number a second time.
-  const hosted = useContext(VisualSlotContext) && model.markerPct !== undefined
+  // zoned track keeps its marker and zone labels but does not print the number a second time. A
+  // consumer's own `startCaption` is not the reading and still renders.
+  const hosted =
+    useContext(VisualSlotContext) &&
+    model.markerPct !== undefined &&
+    props.startCaption === undefined
   const start = compact || hosted ? null : startCaptionText(model, props.startCaption)
   const end = compact ? null : props.endCaption === undefined ? model.endText : props.endCaption
   const anchored = model.markerPct !== undefined && start !== null

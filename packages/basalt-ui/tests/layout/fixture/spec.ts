@@ -342,6 +342,8 @@ export type FixtureSpec = {
   cards?: CardsSpec
   /** A `StatCard` with `info` + `tone` (`data-testid="info-ring-stat"`) — the info glyph's focus-ring probe. */
   infoRing?: true
+  /** A Mantine `Button size="xs" variant="default"` beside the shared `RetryButton` (`data-testid="retry-mantine"` / `"retry-shared"`). */
+  retryParity?: true
   /**
    * Renders a `CodeBlock` in a `Prose` between `data-testid="codeblock-before"` and
    * `"codeblock-after"` paragraphs, over a long first line. `language` defaults to `'ts'`; pass
