@@ -87,6 +87,7 @@ import type { CtlHeightVar } from '../tokens/ctl-vars'
 import { SIZE_CLASS_BREAKPOINTS } from '../tokens/size-classes'
 import type { BasaltFontsConfig } from '../tokens/core'
 import { onColor, onColorFor, inkVars, tabsVars } from './chrome-vars'
+import cardInsetClasses from './card-inset.module.css'
 import controlsClasses from './controls.module.css'
 import floatingClasses from './floating.module.css'
 import navLinkClasses from './nav-link.module.css'
@@ -480,7 +481,11 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
       //   • radius     → `--vx-radius-card` (10px).
       // This is the single source the user's "strict surface across components" demands; the
       // `raw-surface` guard then stops consumers re-overriding any of it inline.
+      //   • inset      → `card-inset.module.css`: the density-scaled 12/16 tokens, on Paper too (Mantine
+      //     gives a bare Paper 0 and a bare Card 16); `variant="flush"` zeroes it and `Card.Section`
+      //     cancels exactly it. A Card `padding` prop still wins (see the CSS).
       Card: ext<typeof Card>({
+        classNames: { root: cardInsetClasses.inset, section: cardInsetClasses.section },
         styles: {
           root: {
             backgroundColor: 'var(--vx-surface-panel)',
@@ -490,6 +495,7 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
         },
       }),
       Paper: ext<typeof Paper>({
+        classNames: { root: cardInsetClasses.inset },
         styles: {
           root: {
             backgroundColor: 'var(--vx-surface-panel)',

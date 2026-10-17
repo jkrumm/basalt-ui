@@ -249,12 +249,42 @@ describe('basalt/card-inset', () => {
   })
 
   it.each([
-    ['the sm/md pair', '<Paper py="sm" px="md" />'],
-    ['the pair in either order', '<Card px="md" py="sm" />'],
     ['no padding at all', '<Card />'],
+    ['a bare Paper', '<Paper />'],
+    ['the flush Card', '<Card variant="flush" />'],
+    ['the flush Paper', '<Paper variant="flush" />'],
+    ['a full-bleed Card.Section in a padded card', '<Card><Card.Section /></Card>'],
+    [
+      'an explicit inset with a waiver',
+      '<div>\n{/* theme-allow card-inset — hero map */}\n<Card p={0} />\n</div>',
+    ],
   ])('does NOT flag %s', (_name, jsx) => {
     const { rules } = run(`export const C = () => ${jsx}\n`)
     expect(rules).not.toContain('card-inset')
+  })
+
+  // The theme owns the 12/16 inset (Wave 35), so restating it is noise that drifts.
+  it.each([
+    ['the sm/md pair', '<Paper py="sm" px="md" />'],
+    ['the pair in either order', '<Card px="md" py="sm" />'],
+    ['the pair in expression containers', '<Card py={"sm"} px={"md"} />'],
+  ])('flags %s as redundant', (_name, jsx) => {
+    const { rules, output } = run(`export const C = () => ${jsx}\n`)
+    expect(rules).toContain('card-inset')
+    expect(output).toContain('redundant')
+    expect(output).toContain('theme owns')
+  })
+
+  it('names the flush idiom on any other explicit inset, and not "redundant"', () => {
+    const { output } = run(`export const C = () => <Card py={0} px={0} />\n`)
+    expect(output).toContain('variant="flush"')
+    expect(output).toContain('Card.Section')
+    expect(output).not.toContain('redundant')
+  })
+
+  it('flush does not excuse an explicit padding next to it', () => {
+    const { rules } = run(`export const C = () => <Card variant="flush" p="lg" />\n`)
+    expect(rules).toContain('card-inset')
   })
 
   it('ships warn through its grace minor, so a flagged card does not fail the run', () => {

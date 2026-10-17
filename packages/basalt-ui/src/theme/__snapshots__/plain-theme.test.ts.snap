@@ -338,6 +338,10 @@ exports[`createBasaltTheme() shape and resolver output default 1`] = `
       },
     },
     "Card": {
+      "classNames": {
+        "root": undefined,
+        "section": undefined,
+      },
       "styles": {
         "root": {
           "backgroundColor": "var(--vx-surface-panel)",
@@ -648,6 +652,9 @@ exports[`createBasaltTheme() shape and resolver output default 1`] = `
       },
     },
     "Paper": {
+      "classNames": {
+        "root": undefined,
+      },
       "styles": {
         "root": {
           "backgroundColor": "var(--vx-surface-panel)",
@@ -1516,6 +1523,10 @@ exports[`createBasaltTheme() shape and resolver output all knobs 1`] = `
       },
     },
     "Card": {
+      "classNames": {
+        "root": undefined,
+        "section": undefined,
+      },
       "styles": {
         "root": {
           "backgroundColor": "var(--vx-surface-panel)",
@@ -1826,6 +1837,9 @@ exports[`createBasaltTheme() shape and resolver output all knobs 1`] = `
       },
     },
     "Paper": {
+      "classNames": {
+        "root": undefined,
+      },
       "styles": {
         "root": {
           "backgroundColor": "var(--vx-surface-panel)",

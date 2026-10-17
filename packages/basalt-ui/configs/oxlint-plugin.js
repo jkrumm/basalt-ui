@@ -588,15 +588,21 @@ const rawSizeLiteral = {
 
 const CARD_TAGS = new Set(['Card', 'Paper'])
 
-// The idiom is the PAIR py="sm" px="md" (12/16), or leaving both to the theme. Never a uniform
-// `p`/`padding` (whatever its value or form), never one half of the pair alone, never a number, an
-// expression or any other step. The pair is the level-0 inset (`cardInsetY`/`cardInsetX` =
-// `SPACE_SCALE.sm`/`.md`); `tokens/space-scale.test.ts` pins that.
+// The THEME owns the inset (Wave 35): a bare Card/Paper resolves to the level-0 12/16 pair
+// (`cardInsetY`/`cardInsetX` = `SPACE_SCALE.sm`/`.md`; `tokens/space-scale.test.ts` pins that), so
+// the idiom is to write nothing. The pair spelled out (`py="sm" px="md"`) is therefore REDUNDANT, any
+// other explicit inset/radius is off-idiom, and flush is `variant="flush"` (whole card) or
+// `Card.Section` (a full-bleed region of a padded card). `p`/`padding` take one value, so no
+// uniform form can equal the 12/16 pair — they are always off-idiom.
 export const CARD_INSET_PY = 'sm'
 export const CARD_INSET_PX = 'md'
 const CARD_INSET_MESSAGE =
-  'Card/Paper is off the card idiom — use the spacing sm/md inset together (py="sm" px="md") and ' +
-  "the theme's card radius, not an explicit p/padding, a lone py/px, or a radius. (basalt/card-inset)"
+  'Card/Paper is off the card idiom — the theme owns the 12/16 inset and radius, so write no ' +
+  'p/padding/py/px/radius. Flush whole card: variant="flush"; full-bleed region in a padded card: ' +
+  '<Card.Section>; a deliberate exception: {/* theme-allow card-inset — reason */}. (basalt/card-inset)'
+const CARD_INSET_REDUNDANT_MESSAGE =
+  'Card/Paper inset is redundant — the theme owns it (12/16, density-scaled); delete ' +
+  'py="sm" px="md". (basalt/card-inset)'
 
 function isStringLiteral(node) {
   return node !== null && node.type === 'Literal' && typeof node.value === 'string'
@@ -639,16 +645,24 @@ const cardInset = {
         for (const name of ['p', 'padding', 'radius']) {
           if (attrs.has(name)) offenders.push(attrs.get(name))
         }
-        // The pair stands or falls together: each half must be exactly its step, and neither
-        // may appear without the other.
-        const pyOk = isExactly(py, CARD_INSET_PY)
-        const pxOk = isExactly(px, CARD_INSET_PX)
-        if (py && !(pyOk && pxOk)) offenders.push(py)
-        if (px && !(pyOk && pxOk)) offenders.push(px)
+        // The theme's own pair, restated, is redundant; any other py/px (or a lone half) is
+        // off-idiom.
+        const isThemePair = isExactly(py, CARD_INSET_PY) && isExactly(px, CARD_INSET_PX)
+        const redundant = []
+        if (isThemePair) redundant.push(py, px)
+        else {
+          if (py) offenders.push(py)
+          if (px) offenders.push(px)
+        }
 
-        for (const attr of offenders) {
-          if (hasThemeAllow(context, attr, 'card-inset')) continue
-          context.report({ node: attr, message: CARD_INSET_MESSAGE })
+        for (const [list, message] of [
+          [offenders, CARD_INSET_MESSAGE],
+          [redundant, CARD_INSET_REDUNDANT_MESSAGE],
+        ]) {
+          for (const attr of list) {
+            if (hasThemeAllow(context, attr, 'card-inset')) continue
+            context.report({ node: attr, message })
+          }
         }
       },
     }
@@ -4225,7 +4239,7 @@ export const PLUGIN_RULE_GRACE = {
   'card-inset': {
     since: '2.16.0',
     promote: '2.24.0',
-    why: 'Tightened in 2.16.0: only py="sm" px="md" together (or neither) passes; uniform p/padding, a lone half, numbers and expressions are findings.',
+    why: 'Tightened in 2.16.0: only py="sm" px="md" together (or neither) passed. Inverted in 2.20.0 (Wave 35): the theme owns the 12/16 inset, so the pair is now a "redundant" finding and "neither" is the idiom; flush is variant="flush" or Card.Section. Every explicit inset is still a finding, so the promote date holds.',
   },
 }
 

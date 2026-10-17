@@ -1087,6 +1087,32 @@ JetBrains Mono.
   Heading zeros: `h1, h2, h3, h4, h5, h6, .mantine-Title-root { font-feature-settings: normal; }`
   (needs to out-rank `@layer basalt` — declare it unlayered).
 
+### `<Card>` and `<Paper>` default to the 12/16 inset
+
+The theme now sets the inset itself — `--vx-space-card-inset-y` 12 / `-x` 16, density-scaled — on
+every `Card` and `Paper`. Before, a bare `<Card>` got Mantine's 16 px all round and a bare
+`<Paper>` got 0, so both missed the law and consumers wrote `py="sm" px="md"` on every card.
+
+| You wrote                      | Before       | Now                                                           |
+| ------------------------------ | ------------ | ------------------------------------------------------------- |
+| `<Card>`                       | 16 all round | 12 / 16                                                       |
+| `<Paper>`                      | 0            | 12 / 16                                                       |
+| `<Card py="sm" px="md">`       | 12 / 16      | 12 / 16 — and `basalt/card-inset` flags the pair as redundant |
+| `<Card padding={0}>` / `p={0}` | flush        | flush, flagged: use `variant="flush"`                         |
+
+- **Delete** every `py="sm" px="md"` on a `Card` or `Paper`.
+- **Flush whole card** (a map, an image, a table that owns its own padding): `variant="flush"` on
+  `Card` or `Paper`. **Full-bleed region inside a padded card**: `<Card.Section>`, whose negative
+  margins now cancel the 12/16 pair rather than one `--card-padding`.
+- **Opt out of the theme inset for one card**: an explicit padding with
+  `{/* theme-allow card-inset — <why> */}`. A Card `padding` prop still works (it retargets the same
+  pair), and `p`/`py`/`px` style props win as inline styles.
+- A `Paper` you relied on being padding-free (a bare wrapper, a custom overlay) now has 12/16:
+  add `variant="flush"`. Mantine's own `Modal`, `Drawer`, `Dialog`, `ActionBar` and `FloatingWindow`
+  are excluded and gain nothing.
+- `basalt/card-inset` stays at `warn` (grace → 2.24.0); the redundant pair is a new finding, so a
+  codebase that was clean last release will report until the pairs are deleted.
+
 ## 2.19.0 — the status dot, ink buttons and Meter refinements
 
 ### Status is a dot and a word, not an edge stripe (`StatCard`, `Callout`, notification centre)

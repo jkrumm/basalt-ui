@@ -1,0 +1,73 @@
+/*
+ * The theme owns the card inset (Wave 35, ledger rows 163/165). Mantine's own defaults miss the law:
+ * a bare `Card` is 16 px all round and a bare `Paper` is 0. Both resolve here to the density-scaled
+ * 12/16 tokens, so a consumer writes nothing.
+ *
+ * `--card-inset-y/x` are the one pair every part reads: the root's padding, a `Card.Section`'s
+ * negative margins (Mantine derives them from ONE `--card-padding`, which cannot express 12/16),
+ * and `variant="flush"`, which zeroes the pair — a flush card's sections then cancel nothing.
+ *
+ * Components that render a `Paper` of their own (Modal / Drawer content, Dialog, ActionBar,
+ * FloatingWindow) carry their padding on other parts; the `:not()` list keeps this off them.
+ */
+/* `--card-padding` is Mantine's: the class default is neutralised to the guaranteed-invalid value so
+   `var()` falls through to the token, while an inline `--card-padding` (what a Card `padding` prop
+   writes) is still seen and wins. Doubled class: it must out-rank Mantine's own `--card-padding`. */
+.inset.inset {
+  --card-padding: initial;
+}
+
+.inset {
+  --card-inset-y: var(--card-padding, var(--vx-space-card-inset-y, 12px));
+  --card-inset-x: var(--card-padding, var(--vx-space-card-inset-x, 16px));
+}
+
+.inset[data-variant='flush'] {
+  --card-inset-y: 0px;
+  --card-inset-x: 0px;
+  padding: 0;
+}
+
+.inset:not(
+  [data-variant='flush'],
+  [class*='mantine-Modal-'],
+  [class*='mantine-Drawer-'],
+  [class*='mantine-Dialog-'],
+  [class*='mantine-ActionBar-'],
+  [class*='mantine-FloatingWindow-']
+) {
+  padding: var(--card-inset-y) var(--card-inset-x);
+}
+
+.section[data-orientation='vertical'] {
+  margin-inline: calc(var(--card-inset-x, 16px) * -1);
+}
+
+.section[data-orientation='vertical']:first-child {
+  margin-top: calc(var(--card-inset-y, 12px) * -1);
+}
+
+.section[data-orientation='vertical']:last-child {
+  margin-bottom: calc(var(--card-inset-y, 12px) * -1);
+}
+
+.section[data-orientation='vertical'][data-inherit-padding] {
+  padding-inline: var(--card-inset-x, 16px);
+}
+
+.section[data-orientation='horizontal'] {
+  margin-block: calc(var(--card-inset-y, 12px) * -1);
+  margin-inline: 0;
+}
+
+.section[data-orientation='horizontal']:first-child {
+  margin-inline-start: calc(var(--card-inset-x, 16px) * -1);
+}
+
+.section[data-orientation='horizontal']:last-child {
+  margin-inline-end: calc(var(--card-inset-x, 16px) * -1);
+}
+
+.section[data-orientation='horizontal'][data-inherit-padding] {
+  padding-block: var(--card-inset-y, 12px);
+}
