@@ -288,7 +288,7 @@
   z-index: 10;
   width: max-content;
   max-width: 260px;
-  padding: 7px var(--vx-space-row-inset-x, 10px);
+  padding: var(--vx-space-stack-sm) var(--vx-space-row-inset-x);
   border-radius: var(--vx-radius-card);
   background-color: var(--vx-surface-panel);
   box-shadow: var(--vx-shadow-card);

@@ -7,7 +7,8 @@
  * band makes the next request answerable with arithmetic instead of taste.
  */
 import { describe, expect, it } from 'bun:test'
-import { VX } from './core'
+import { baseTheme } from '../theme'
+import { TEXT_LINE, VX } from './core'
 
 /** Every rung of the shipped ladder, ascending. */
 const STEPS = Object.values(VX.text)
@@ -57,5 +58,16 @@ describe('the type ladder', () => {
 
   it('pins the iOS input floor, which is a rung with an external constraint', () => {
     expect(VX.text.lg).toBe(16)
+  })
+
+  it('pins the hero numeral at 22', () => {
+    expect(VX.text.kpi).toBe(22)
+  })
+
+  it('resolves the dense rungs to grid-aligned line boxes (xs 16px, sm 20px)', () => {
+    const { lineHeights } = baseTheme
+    expect(Number(lineHeights?.['xs']) * VX.text.xs).toBeCloseTo(TEXT_LINE.xs, 1)
+    expect(Number(lineHeights?.['sm']) * VX.text.sm).toBeCloseTo(TEXT_LINE.sm, 1)
+    expect(lineHeights?.['sm']).toBe('1.5385')
   })
 })

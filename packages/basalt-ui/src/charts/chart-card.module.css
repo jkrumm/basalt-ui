@@ -7,12 +7,12 @@
  */
 
 .header {
-  padding: 4px var(--vx-space-card-inset-x, 1rem) 4px;
+  padding: 4px var(--vx-space-card-inset-x) 4px;
 }
 
 @container (min-width: 480px) {
   .header {
-    padding-top: var(--vx-space-card-inset-y, 0.75rem);
+    padding-top: var(--vx-space-card-inset-y);
   }
 }
 

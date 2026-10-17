@@ -898,8 +898,8 @@ exports[`createBasaltTheme() shape and resolver output default 1`] = `
     "fontWeight": "550",
   },
   "lineHeights": {
-    "sm": "1.5384615384615385",
-    "xs": "1.3333333333333333",
+    "sm": "1.5385",
+    "xs": "1.3333",
   },
   "luminanceThreshold": 0.45,
   "primaryColor": "blue",
@@ -1996,8 +1996,8 @@ exports[`createBasaltTheme() shape and resolver output all knobs 1`] = `
     "fontWeight": "550",
   },
   "lineHeights": {
-    "sm": "1.5384615384615385",
-    "xs": "1.3333333333333333",
+    "sm": "1.5385",
+    "xs": "1.3333",
   },
   "luminanceThreshold": 0.45,
   "other": {

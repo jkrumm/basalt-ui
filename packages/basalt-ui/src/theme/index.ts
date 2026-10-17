@@ -82,6 +82,7 @@ import type { PaletteData, RadiusValues, SpaceValues } from '../tokens/palette'
 import { DEFAULT_DERIVE_CONFIG, isDefaultDeriveConfig, resolveDeriveConfig } from '../tokens/derive'
 import type { DeriveConfig } from '../tokens/derive'
 import { pxRem, TEXT_LINE, VX } from '../tokens/core'
+import { CTL_HEIGHT_VARS } from './ctl-vars'
 import { SIZE_CLASS_BREAKPOINTS } from '../tokens/size-classes'
 import type { BasaltFontsConfig } from '../tokens/core'
 import controlsClasses from './controls.module.css'
@@ -487,8 +488,8 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
     },
     // Dense rungs get grid-aligned line boxes (13/20, 12/16); md and up keep Mantine's ratios.
     lineHeights: {
-      xs: String(TEXT_LINE.xs / VX.text.xs),
-      sm: String(TEXT_LINE.sm / VX.text.sm),
+      xs: lineRatio(TEXT_LINE.xs, VX.text.xs),
+      sm: lineRatio(TEXT_LINE.sm, VX.text.sm),
     },
     // Deliberate, OWNED spacing + radius scales — the single edit point, not inherited Mantine
     // defaults. Denser than Mantine's stock lg/xl for a tighter, data-driven surface. 10 12 16 18 24.
@@ -639,9 +640,10 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
             // `--nl-padding` var), so the spec padding is forced inline here, where it wins
             // deterministically on every render path.
             padding: 'var(--vx-space-row-inset-y) var(--vx-space-row-inset-x)',
-            // The dense-row step (`sm`) on the ROOT, not just the label: the body element sizes itself from the
-            // root's inherited line-height (which, left at the default 1.55, alone pushed rows to
-            // ~37px). The 1.54 (a 20px line at 13px) keeps rows compact as the scale grows. Reads
+            // The dense-row step (`sm`) on the ROOT, not just the label: the body element sizes
+            // itself from the root's inherited line-height (which, left at the default 1.55, alone
+            // pushed rows to ~37px). The row line-height (1.54, a 20px line at 13px) keeps rows
+            // compact as the scale grows. Reads
             // `--vx-space-row-line-height` (density-tracking, ADDITIVE law — see `deriveSpacing`'s
             // doc in `tokens/palette.ts` for why this one differs from the padding's multiplier).
             fontSize: VX.text.sm,
@@ -1400,11 +1402,9 @@ const CTL_SLIDER_TRACK_SIZE = 6
 function ctlSizeVars(): Record<string, string> {
   const ctlHeight = 'calc(var(--vx-space-control-height-ctl) * var(--mantine-scale))'
   return {
-    '--button-height-ctl': ctlHeight,
+    ...Object.fromEntries(CTL_HEIGHT_VARS.map((name) => [name, ctlHeight])),
     '--button-padding-x-ctl': `calc(${pxRem(CTL_PADDING_X)} * var(--mantine-scale))`,
-    '--input-height-ctl': ctlHeight,
     '--input-padding-y-ctl': `calc(${pxRem(CTL_INPUT_PADDING_Y)} * var(--mantine-scale))`,
-    '--ai-size-ctl': ctlHeight,
     '--ai-size-icon': 'calc(var(--vx-space-control-height-widget) * var(--mantine-scale))',
     // A shorthand pair (`<y> <x>`), the shape SegmentedControl's own `--sc-padding-*` vars take.
     // `y` stays a bare literal (the label's own box height is now enforced by the `size === 'ctl'`
@@ -1415,7 +1415,6 @@ function ctlSizeVars(): Record<string, string> {
     '--combobox-chevron-size-ctl': pxRem(CTL_CHEVRON_SIZE),
     '--ni-chevron-size-ctl': pxRem(CTL_NUMBER_CHEVRON_SIZE),
     '--ni-right-section-width-ctl': `calc(${pxRem(CTL_NUMBER_RIGHT_SECTION_WIDTH)} * var(--mantine-scale))`,
-    '--badge-height-ctl': ctlHeight,
     '--badge-padding-x-ctl': `calc(${pxRem(CTL_PADDING_X)} * var(--mantine-scale))`,
     '--badge-fz-ctl': `calc(${pxRem(VX.text.xs)} * var(--mantine-scale))`,
     // `= VX.text.sm` per `docs/CONTROLS-SPEC.md` §5 — same `calc(<rem> * var(--mantine-scale))`
@@ -1441,6 +1440,12 @@ function ctlSizeVars(): Record<string, string> {
     // padding, the vertical hit box) is derived from it in `Slider.css`.
     '--slider-size-ctl': `calc(${pxRem(CTL_SLIDER_TRACK_SIZE)} * var(--mantine-scale))`,
   }
+}
+
+/** A px line box as the unitless ratio Mantine's `lineHeights` take, to 4 decimals (like
+ * `rowLineHeight`, which rounds to 2) so the emitted var carries no float noise. */
+function lineRatio(linePx: number, fontPx: number): string {
+  return String(Math.round((linePx / fontPx) * 10000) / 10000)
 }
 
 /** `radius` knob: an integer level, so an out-of-range value is a tsc error (V2-SPEC §3). */

@@ -229,8 +229,8 @@
 }
 
 /*
- * Footer settings row — IDENTICAL geometry to a nav row (padding 6px 10px, radius 6, gap 10,
- * 15px): muted text + faint icon at rest, ink-6% tint + ink on hover, exactly like an inactive
+ * Footer settings row — IDENTICAL geometry to a nav row (the row inset tokens, control radius, nav
+ * icon gap, `sm` type): muted text + faint icon at rest, ink-6% tint + ink on hover, exactly like an inactive
  * nav item, so the footer never reads as a separate control family.
  */
 .footerBtn {
@@ -329,7 +329,7 @@
 
 /* Identity name — weight 600, ink. */
 .accountName {
-  font-size: var(--vx-text-md);
+  font-size: var(--vx-text-sm);
   font-weight: 600;
   color: var(--vx-ink);
 }
