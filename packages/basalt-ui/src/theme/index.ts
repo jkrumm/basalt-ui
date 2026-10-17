@@ -82,7 +82,8 @@ import type { PaletteData, RadiusValues, SpaceValues } from '../tokens/palette'
 import { DEFAULT_DERIVE_CONFIG, isDefaultDeriveConfig, resolveDeriveConfig } from '../tokens/derive'
 import type { DeriveConfig } from '../tokens/derive'
 import { pxRem, TEXT_LINE, VX } from '../tokens/core'
-import { CTL_HEIGHT_VARS } from './ctl-vars'
+import { CTL_HEIGHT_VARS } from '../tokens/ctl-vars'
+import type { CtlHeightVar } from '../tokens/ctl-vars'
 import { SIZE_CLASS_BREAKPOINTS } from '../tokens/size-classes'
 import type { BasaltFontsConfig } from '../tokens/core'
 import controlsClasses from './controls.module.css'
@@ -1399,10 +1400,10 @@ const CTL_SLIDER_TRACK_SIZE = 6
  * (`docs/CONTROLS-SPEC.md` §2.1) is the same 30px as the buttons beside it — Mantine's tallest
  * shipped Badge is 32px `xl`, and none of its tiers is 30.
  */
-function ctlSizeVars(): Record<string, string> {
+function ctlSizeVars(): Record<string, string> & Record<CtlHeightVar, string> {
   const ctlHeight = 'calc(var(--vx-space-control-height-ctl) * var(--mantine-scale))'
   return {
-    ...Object.fromEntries(CTL_HEIGHT_VARS.map((name) => [name, ctlHeight])),
+    ...heightVars(ctlHeight),
     '--button-padding-x-ctl': `calc(${pxRem(CTL_PADDING_X)} * var(--mantine-scale))`,
     '--input-padding-y-ctl': `calc(${pxRem(CTL_INPUT_PADDING_Y)} * var(--mantine-scale))`,
     '--ai-size-icon': 'calc(var(--vx-space-control-height-widget) * var(--mantine-scale))',
@@ -1440,6 +1441,15 @@ function ctlSizeVars(): Record<string, string> {
     // padding, the vertical hit box) is derived from it in `Slider.css`.
     '--slider-size-ctl': `calc(${pxRem(CTL_SLIDER_TRACK_SIZE)} * var(--mantine-scale))`,
   }
+}
+
+/** Every `ctl` height var set to one value — typed over {@link CTL_HEIGHT_VARS} so a var added to the
+ * list cannot be missing from the tier. */
+function heightVars(height: string): Record<CtlHeightVar, string> {
+  return Object.fromEntries(CTL_HEIGHT_VARS.map((name) => [name, height])) as Record<
+    CtlHeightVar,
+    string
+  >
 }
 
 /** A px line box as the unitless ratio Mantine's `lineHeights` take, to 4 decimals (like

@@ -286,6 +286,12 @@ describe('the toolbar has no fixed-width literals and resolves controls to the c
     // The width itself is pinned by the layout suite (`data-table.layout.test.ts`), not by a string.
   })
 
+  test('the toolbar carries the dense control tier marker', () => {
+    const { container } = renderTable({ enableGlobalFilter: true })
+    const toolbar = container.querySelector('[data-basalt-tier="ctl"] > .mantine-Group-root')
+    expect(toolbar?.hasAttribute('data-basalt-dense')).toBe(true)
+  })
+
   test('the toolbar renders inside a data-basalt-tier="ctl" slot', () => {
     const { container } = renderTable({
       enableGlobalFilter: true,
