@@ -690,7 +690,7 @@ const REF_LABEL_DY_ABOVE = -5
 const REF_LABEL_DY_BELOW = 11
 
 /** The caption naming a reference line, at the plot end clear of its own axis' tick labels. */
-const refLabelMark = (r: RefLine, i: number, axes: Axes<unknown>): ChartMarks[number] => {
+const refLabelMark = <T>(r: RefLine, i: number, axes: Axes<T>): ChartMarks[number] => {
   const [lo, hi] = axes.axisOf(r.axis).domain
   const nearTop = hi !== lo && (r.value - lo) / (hi - lo) > 1 - REF_LABEL_TOP_SHARE
   const atStart = r.axis === 'right' && axes.scaleId(r.axis) === 'y2'
@@ -729,7 +729,7 @@ const refLineMarks = <T, X extends ChartX>(
             yScale: axes.scaleId(r.axis),
             ...(r.dashed && { strokeDasharray: DASH }),
           }),
-          ...(r.label ? [refLabelMark(r, i, axes as Axes<unknown>)] : []),
+          ...(r.label ? [refLabelMark(r, i, axes)] : []),
         ],
   )
 
