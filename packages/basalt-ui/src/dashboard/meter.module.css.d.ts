@@ -9,6 +9,11 @@ declare const classes: {
   readonly fill: string
   readonly forecastFill: string
   readonly zone: string
+  readonly zoneBand: string
+  readonly zoneLabel: string
+  readonly zoneLabelHolding: string
+  readonly zoneList: string
+  readonly zoneListItem: string
   readonly marker: string
   readonly tick: string
   readonly boundaryTick: string

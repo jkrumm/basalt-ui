@@ -126,19 +126,36 @@ describe('Meter', () => {
     ]
     const base = { label: 'Training load', max: 1000, zones } as const
 
-    test('names the zone that holds the value in the caption', () => {
-      const { getByText } = mount({ ...base, value: 612 })
-      expect(getByText('Optimal · 612')).toBeTruthy()
+    const holdingLabel = (container: HTMLElement) =>
+      container.querySelector('[data-meter-zone-labels="band"] [data-holding]')?.textContent
+
+    test('names every zone under the band and the holding one is marked', () => {
+      const { container, getByText } = mount({ ...base, value: 612 })
+      const labels = [
+        ...container.querySelectorAll('[data-meter-zone-labels="band"] [data-meter-zone-label]'),
+      ]
+      expect(labels.map((l) => l.textContent)).toEqual(['Low', 'Optimal', 'High'])
+      expect((labels[1] as HTMLElement).style.insetInlineStart).toBe('30%')
+      expect(holdingLabel(container)).toBe('Optimal')
+      // The zone is named on the band, so the caption is the bare reading.
+      expect(getByText('612')).toBeTruthy()
     })
 
     test('a value on a boundary belongs to the zone that starts there', () => {
-      const { getByText } = mount({ ...base, value: 300 })
-      expect(getByText('Optimal · 300')).toBeTruthy()
+      expect(holdingLabel(mount({ ...base, value: 300 }).container)).toBe('Optimal')
     })
 
     test('a value on the last zone end still belongs to it', () => {
-      const { getByText } = mount({ ...base, value: 1000 })
-      expect(getByText('High · 1000')).toBeTruthy()
+      expect(holdingLabel(mount({ ...base, value: 1000 }).container)).toBe('High')
+    })
+
+    test('a value outside every zone marks no zone', () => {
+      const { container } = mount({
+        ...base,
+        value: 50,
+        zones: [{ from: 100, to: 200, label: 'Only' }],
+      })
+      expect(container.querySelector('[data-holding]')).toBeNull()
     })
 
     test('draws bands and a marker at the value, no fill', () => {

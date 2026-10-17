@@ -74,9 +74,7 @@ describe('spanOf', () => {
 describe('modelBar', () => {
   const base = { min: 0, max: 100, format: fmt }
   test('captions: zone + reading, overage past a target', () => {
-    expect(modelBar({ ...base, reading: 612, max: 1000, zones: ZONES }).startText).toBe(
-      'Optimal · 612',
-    )
+    expect(modelBar({ ...base, reading: 612, max: 1000, zones: ZONES }).startText).toBe('612')
     expect(modelBar({ ...base, reading: 120, target: 100 }).endText).toBe('Target 100 · 20 over')
   })
   test('a forecast in first position still has a caption but no boundary tick', () => {
@@ -140,7 +138,7 @@ describe('caption mode', () => {
     })
     expect(m.captionMode).toBe('reading')
     expect(m.partCaptions).toEqual([])
-    expect(startCaptionText(m, undefined)).toBe('All · 30')
+    expect(startCaptionText(m, undefined)).toBe('30')
   })
   test('no segments, and empty segments, are never categorical', () => {
     expect(modelBar(base).captionMode).toBe('reading')

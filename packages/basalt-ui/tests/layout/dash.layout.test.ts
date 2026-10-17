@@ -105,6 +105,64 @@ layout('Meter / BarList geometry', () => {
     expect(Math.abs(empty.text - empty.list)).toBeLessThan(SNAP)
   })
 
+  test.each([160, 360])(
+    'Meter zone names never overlap or leave the row, at %ipx',
+    async (width) => {
+      const m = await p.raw.evaluate((root) => {
+        const host = document.querySelector<HTMLElement>(`[data-testid="${root}"]`)
+        if (!host) throw new Error(`LAYOUT: no ${root}`)
+        const visible = [
+          ...host.querySelectorAll<HTMLElement>(
+            '[data-meter-zone-labels]:not([data-collapsed]) [data-meter-zone-label], [data-meter-zone-labels="list"] [data-meter-zone-label]',
+          ),
+        ]
+        const boxes = visible.map((el) => {
+          const r = el.getBoundingClientRect()
+          return {
+            name: el.textContent,
+            left: r.left,
+            right: r.right,
+            top: r.top,
+            bottom: r.bottom,
+          }
+        })
+        const box = host.getBoundingClientRect()
+        const holding = host.querySelector<HTMLElement>('[data-holding]')
+        return {
+          boxes,
+          rootLeft: box.left,
+          rootRight: box.right,
+          mode: host.querySelector('[data-meter-zone-labels="list"]') ? 'list' : 'band',
+          holdingName: holding?.textContent,
+          holdingColor: holding ? getComputedStyle(holding).color : '',
+          otherColor: getComputedStyle(
+            host.querySelector<HTMLElement>('[data-meter-zone-label]:not([data-holding])') ?? host,
+          ).color,
+        }
+      }, `dash-meter-zones-${width}`)
+      expect(m.boxes).toHaveLength(4)
+      expect(m.mode).toBe(width === 160 ? 'list' : 'band')
+      for (const [i, a] of m.boxes.entries()) {
+        expect(a.left).toBeGreaterThanOrEqual(m.rootLeft - SUBPIXEL)
+        expect(a.right).toBeLessThanOrEqual(m.rootRight + SUBPIXEL)
+        for (const b of m.boxes.slice(i + 1)) {
+          const apart =
+            a.right <= b.left + SUBPIXEL ||
+            b.right <= a.left + SUBPIXEL ||
+            a.bottom <= b.top + SUBPIXEL ||
+            b.bottom <= a.top + SUBPIXEL
+          expect(apart).toBe(true)
+        }
+      }
+      // The list keeps zone order.
+      if (m.mode === 'list') {
+        expect(m.boxes.map((b) => b.name)).toEqual(['Low', 'Optimal', 'High', 'Overreaching'])
+      }
+      expect(m.holdingName).toBe('Optimal')
+      expect(m.holdingColor).not.toBe(m.otherColor)
+    },
+  )
+
   test('a Meter caption row wraps at a narrow width without truncating', async () => {
     const result = await p.raw.evaluate(() => {
       const root = document.querySelector<HTMLElement>('[data-testid="dash-meter-wrap"]')

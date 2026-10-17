@@ -23,10 +23,13 @@ export type Part = {
 export type PartCaption = { key: string; label: string; text: string; color: string | undefined }
 
 /**
- * What the caption row says. `reading`: the formatted reading (or `Zone · reading`); `parts`:
+ * What the caption row says. `reading`: the formatted reading ; `parts`:
  * categorical segments name every part instead; `forecast`: committed/forecast keeps the reading
  * plus the forecast caption.
  */
+/** One zone's name on the band: where its band starts (percent) and whether it holds the reading. */
+export type ZoneLabel = { key: string; label: string; startPct: number; holding: boolean }
+
 export type CaptionMode = 'reading' | 'parts' | 'forecast'
 
 type Format = (value: number) => string
@@ -115,9 +118,11 @@ export type BarModel = {
   captionMode: CaptionMode
   /** Only in `parts` mode: one caption per part, in order. Empty otherwise. */
   partCaptions: readonly PartCaption[]
+  /** Only on a zoned track: every zone's name, in zone order. Empty otherwise. */
+  zoneLabels: readonly ZoneLabel[]
   markerPct: number | undefined
   targetPct: number | undefined
-  /** The default start caption; `startCaption` decides whether it shows. */
+  /** The default start caption (the zone is named on the band, so it is the bare reading); `startCaption` decides whether it shows. */
   startText: string
   endText: string | null
   describedByText: string | null
@@ -208,9 +213,17 @@ export function modelBar(input: BarInput): BarModel {
         : (input.forecastCaption ?? `Forecast: ${forecastLabels.join(', ')}`),
     captionMode,
     partCaptions,
+    zoneLabels: !zoned
+      ? []
+      : zones.map((z, i) => ({
+          key: String(i),
+          label: z.label,
+          startPct: zoneBand(z, min, span).start,
+          holding: z === holding,
+        })),
     markerPct: zoned ? toPct((reading - min) / span) : undefined,
     targetPct: target === undefined ? undefined : toPct((target - min) / span),
-    startText: holding === undefined ? format(reading) : `${holding.label} · ${format(reading)}`,
+    startText: format(reading),
     endText: endCaptionText(reading, target, format),
     describedByText: describedBy.length > 0 ? describedBy.join('; ') : null,
   }

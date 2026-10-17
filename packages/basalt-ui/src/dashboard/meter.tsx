@@ -11,8 +11,8 @@
  * track end; the caption still states the real value.
  *
  * `zones` (bar only) draws the track as contiguous bands (neutral at stepped strengths unless a zone
- * passes a status colour) and the reading becomes a MARKER on the track, not a fill; the caption names
- * the zone that holds the value (`from` inclusive). Use it for a reading judged against ranges.
+ * passes a status colour) and the reading becomes a MARKER on the track, not a fill; each zone is named under the band at its start (the one holding the value in ink; names that
+ * would collide wrap as a list instead; `from` inclusive). Use it for a reading judged against ranges.
  *
  * Every state (bar, ring, empty, loading) carries `data-basalt-meter` on its root. That attribute is
  * the contract with `StatCard`: a Meter passed as its `sparkline` visual makes the slot size to content
@@ -27,7 +27,7 @@
  *
  * // Spend against a budget: past the target the end caption states the overage.
  * <Meter label="Monthly spend" value={512} max={600} target={450} color="var(--vx-status-bad)" format={usd} />
- * // Training load as a zone band with a marker: caption reads "Optimal · 612".
+ * // Training load as a zone band with a marker: the zones are named under the band, "Optimal" in ink.
  * <Meter
  *   label="Training load"
  *   max={1000}
@@ -73,7 +73,7 @@ type BarCommon = Common & {
   shape?: 'bar'
   /** Target position; draws a tick and states it in the end caption (with the overage past it). */
   target?: number
-  /** Start caption (default: the formatted reading, or `Zone · reading`). `null` drops it. */
+  /** Start caption (default: the formatted reading). `null` drops it. */
   startCaption?: ReactNode
   /** End caption (default: `Target <target>`). `null` drops it. */
   endCaption?: ReactNode
@@ -108,7 +108,7 @@ export type MeterProps =
       value?: number | null | undefined
       /**
        * Contiguous bands drawn as the track, positioned from each `from`. The reading becomes a marker
-       * and the caption names the band that holds it.
+       * and each band is named under the track, the one that holds it in ink.
        */
       zones: readonly MeterZone[]
       segments?: never
