@@ -218,7 +218,7 @@ function GoalRow({ shotState }: ScenarioProps) {
                 ticks={[{ at: PACE_SESSIONS, label: 'Pace' }]}
                 format={(v) => `${fmtInt(v)} sessions`}
                 startCaption={`${fmtInt(SESSIONS_MTD)} of ${GOAL_SESSIONS} sessions`}
-                endCaption={`Pace ${fmtInt(PACE_SESSIONS)} sessions by ${TODAY_LABEL}`}
+                endCaption={`${fmtInt(PACE_SESSIONS)} sessions by ${TODAY_LABEL}`}
                 loading={loading}
                 emptyText={TRAINING_EMPTY}
               />
