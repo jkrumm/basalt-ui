@@ -1,3 +1,44 @@
+# [2.17.0](https://github.com/jkrumm/basalt-ui/compare/v2.16.0...v2.17.0) (2026-10-17)
+
+
+### Bug Fixes
+
+* address review of the metric card ([68711e0](https://github.com/jkrumm/basalt-ui/commit/68711e06a000b2f1eaa08c996095fa6b512f61cc))
+* calibrate the design reviewer on deltas and verdict rails ([da6cefa](https://github.com/jkrumm/basalt-ui/commit/da6cefa3ec13f23b3a45adb47bd91aa166bae61b))
+* close the review round 2 gaps in the metric card ([4798400](https://github.com/jkrumm/basalt-ui/commit/479840069a396b7c750dc5ebf6255ab46b33fe90))
+* close the review round-1 gaps in the stat card and Badge ([6064357](https://github.com/jkrumm/basalt-ui/commit/6064357eafaec6e03adfcda6753208912ebed59f))
+* close the round-2 playground fixture items ([3e0f2fe](https://github.com/jkrumm/basalt-ui/commit/3e0f2fe8f282d7883bd0eeb508823019958b7855))
+* default Badge to the neutral colour ([b14c7c0](https://github.com/jkrumm/basalt-ui/commit/b14c7c014c5758578a14d13be8781d1fd280b213))
+* drop the stat card qualifier under the caption, left-aligned ([dae196b](https://github.com/jkrumm/basalt-ui/commit/dae196ba97b39c157942200193216dd0741894c6))
+* give the components page real tab copy and a badges group ([424797d](https://github.com/jkrumm/basalt-ui/commit/424797dc3f2cbac8531219ddd9b0fc5bb8c4b76d))
+* hover the donut at mid-band on the 12 o'clock slice ([7d11ba4](https://github.com/jkrumm/basalt-ui/commit/7d11ba4fe9b1136dee0c1d546d0eb94ecb2814ec))
+* key the subtle ink opt-out on an unnamed colour ([4333c2f](https://github.com/jkrumm/basalt-ui/commit/4333c2fc746ea4e414a983a155fa54accc3a52e3))
+* label the donut hover readout as a tooltip ([6f36e86](https://github.com/jkrumm/basalt-ui/commit/6f36e8649aa8e4f272f1a822bcfea5d6786ccc4d))
+* move the chrome vars into chrome-vars and harden the badge glyph ([5bbc263](https://github.com/jkrumm/basalt-ui/commit/5bbc263b638e36eaf4625d0a1a556941a8a115d8))
+* pick a rendered tooltip in shot, hover at a declared point ([13a2a65](https://github.com/jkrumm/basalt-ui/commit/13a2a65c8a1a5c996fbbd3002f2f46bc82cb2d90))
+* refresh the plain-theme snapshot for the final tabsVars shape ([84b3728](https://github.com/jkrumm/basalt-ui/commit/84b3728e2a550ce1889fefac0c67f4ca52450586))
+* reject a malformed data-shot-at in shot ([451dea6](https://github.com/jkrumm/basalt-ui/commit/451dea62a791331f1863f5658ab7a967ef35d08e))
+* share one stamped engine tooltip across the readouts ([806115d](https://github.com/jkrumm/basalt-ui/commit/806115dc44c65e8cae4541dce8f138a50fa7b975))
+* shorten the download breakdown label to fit a half-width card ([9677a92](https://github.com/jkrumm/basalt-ui/commit/9677a928c806e3145291776afab15180686af2f4))
+* show the info bubble as a popover instead of a portal ([059b01e](https://github.com/jkrumm/basalt-ui/commit/059b01e5dd798526a5f2192fe0c6ff6e8cb8924f))
+* show the retry action only in the error state ([4db2fa2](https://github.com/jkrumm/basalt-ui/commit/4db2fa2b0d6e6ebfaacbfeaddbf71e3c4e81fbc4))
+* stamp the tooltip role in every readout through one seam ([7abb72a](https://github.com/jkrumm/basalt-ui/commit/7abb72adf328de1beff2b043ea8239b71aa66fb3))
+* take the half-open box for a data-shot-at point ([8e0f4a3](https://github.com/jkrumm/basalt-ui/commit/8e0f4a321c1ccd629ad516d8cf90e7de13456395))
+* tidy the round-1 playground fixtures ([026533a](https://github.com/jkrumm/basalt-ui/commit/026533a65a8a2a9247e782124add6e1d20e5f713))
+* type the shared retry action ([17ad66e](https://github.com/jkrumm/basalt-ui/commit/17ad66ee2a7b448a97644cf8f918e55467f9e0b2))
+* type the withTooltipRole test host ([a4ad85d](https://github.com/jkrumm/basalt-ui/commit/a4ad85d31c6f4dcf43b91445062662ca449d2f06))
+* wrap a long stat card qualifier instead of cutting it ([181f7f5](https://github.com/jkrumm/basalt-ui/commit/181f7f5995deed6244715a634990c52f0e130605))
+
+
+### Features
+
+* guarantee unique date tick labels in their own module ([8511602](https://github.com/jkrumm/basalt-ui/commit/8511602b637487d2be91c8091f21385b4a9d3630))
+* let a recurring clock tick sit behind its day marker ([9267c7f](https://github.com/jkrumm/basalt-ui/commit/9267c7f736d98bf507890f9e9ee6c013741b72e4))
+* light status badges and ink for subtle buttons and tabs ([1a174aa](https://github.com/jkrumm/basalt-ui/commit/1a174aab5f01c73472fd38fe88910376ca7445ad))
+* restyle the metric card and flip the sparkline defaults ([d299bc6](https://github.com/jkrumm/basalt-ui/commit/d299bc62855dd8d9de96f564f1d201a14802ac2f))
+* route every panel kind through the span-aware date ticks ([4cf813e](https://github.com/jkrumm/basalt-ui/commit/4cf813e8d2a50827fde7dcadf19d30fb48bcc577))
+* span-aware date ticks and a labelled chart tooltip ([d95fabc](https://github.com/jkrumm/basalt-ui/commit/d95fabc88872fa905f2f125524fe5f53eaf48d65))
+
 # [2.16.0](https://github.com/jkrumm/basalt-ui/compare/v2.15.0...v2.16.0) (2026-10-17)
 
 ### Bug Fixes
