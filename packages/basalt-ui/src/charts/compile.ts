@@ -5,7 +5,7 @@
  * binding, the tooltip content, and the container-class guide ladder.
  * TanStack owns margins (measured), layout, focus and keyboard, the tooltip surface and SSR.
  */
-import { MONTHS, dateTickFormat, pad2, utcAxisDate } from './date-tick-format'
+import { dateTickFormat, monthName, pad2, utcAxisDate } from './date-tick-format'
 import { crosshair } from '@tanstack/charts/crosshair'
 import { decorative } from '@tanstack/charts/mark/decorative'
 import { rect } from '@tanstack/charts/rect'
@@ -127,7 +127,7 @@ const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
 /** `Mon Sep 1 2026`, in UTC; a non-midnight instant adds `HH:MM`. */
 export function utcHeaderDate(d: Date): string {
-  const date = `${DAYS[d.getUTCDay()]} ${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()} ${d.getUTCFullYear()}`
+  const date = `${DAYS[d.getUTCDay()]} ${monthName(d)} ${d.getUTCDate()} ${d.getUTCFullYear()}`
   const ms = d.getTime() % DAY_MS
   return ms === 0 ? date : `${date} ${pad2(d.getUTCHours())}:${pad2(d.getUTCMinutes())}`
 }
@@ -144,8 +144,6 @@ export function dateTicks(domain: readonly [Date, Date], count: number, stepMs: 
   const days = ticks.filter((t) => t.getTime() % DAY_MS === 0)
   return days.length >= 2 ? days : ticks.filter((_, i, all) => i === 0 || i === all.length - 1)
 }
-
-export { utcAxisDate }
 
 export function defaultFormatX(v: ChartValue): string {
   if (v instanceof Date) return utcAxisDate(v)
@@ -315,11 +313,27 @@ export function strideTicks<V>(values: readonly V[], cls: ContainerClass): V[] {
   return strideEvery(values, LADDER[cls].xTicks)
 }
 
+/**
+ * The one decision between a consumer's x format and the default: the consumer's wins; else dates
+ * read span-aware from the given tick values; else the plain default (numbers, strings, and a lone
+ * Date with no ticks to read a span from).
+ */
+export function xTickFormat(
+  consumer: ((v: ChartValue) => string) | undefined,
+  tickValues: readonly ChartValue[],
+): (v: ChartValue) => string {
+  if (consumer) return consumer
+  if (tickValues.length === 0 || !tickValues.every((v): v is Date => v instanceof Date))
+    return defaultFormatX
+  const dateFormat = dateTickFormat(tickValues)
+  return (v) => (v instanceof Date ? dateFormat(v) : defaultFormatX(v))
+}
+
 export function xGuide<X extends ChartX>(opts: {
   model: XScaleModel<X>
   xTicks: number | readonly X[] | undefined
-  /** A consumer's formatter; absent, Date ticks get the span-aware {@link dateTickFormat}. */
-  format: ((v: ChartValue) => string) | undefined
+  /** A consumer's formatter; absent, Date ticks get the span-aware {@link xTickFormat}. */
+  format?: ((v: ChartValue) => string) | undefined
   cls: ContainerClass
   /** The whole chart's height: decides whether the left margin is locked to zero. */
   height: number
@@ -330,14 +344,7 @@ export function xGuide<X extends ChartX>(opts: {
   const ticks = xTickPolicy(model, xTicks ?? ladder.xTicks)
   // A Date axis always resolves to `values` (the time scale has an extent; a band axis lists its
   // buckets), so `{ count }` is only ever a number axis and never needs the date formatter.
-  const tickValues = 'values' in ticks ? ticks.values : []
-  const dates = tickValues.every((v): v is Date => v instanceof Date) ? tickValues : []
-  const dateFormat = dates.length > 0 ? dateTickFormat(dates) : undefined
-  const format =
-    opts.format ??
-    (dateFormat
-      ? (v: ChartValue) => (v instanceof Date ? dateFormat(v) : defaultFormatX(v))
-      : defaultFormatX)
+  const format = xTickFormat(opts.format, 'values' in ticks ? ticks.values : [])
   // A continuous scale's domain start and span; a band scale pads its first slot, so none applies.
   const [leftEdgeX, spanX] =
     !model.band && model.extent

@@ -1059,8 +1059,9 @@ the tick step instead of printing `DD.MM` everywhere, and never repeat on one ax
 
 A clock or month may recur on one axis, always behind a day or year label. With no such marker in
 reach (36 h with no midnight tick; two Aprils with no January) the first tick of each day carries
-its date (`17.10 06:00`), or the month its year (`Apr 2026`). `BandStrip` takes the same default;
-`DualPanel` and `MirroredBars` format their own x axis and keep `DD.MM`.
+its date (`17.10 06:00`), or the month its year (`Apr 2026`); sub-minute steps add seconds, then
+milliseconds. `BandStrip`, `DualPanel` and `MirroredBars` take the same default (they printed
+`DD.MM`).
 
 Opt out: pass `formatX` (it always wins), e.g. the old one-liner:
 
@@ -1069,6 +1070,10 @@ const ddmm = (d: Date) =>
   `${String(d.getUTCDate()).padStart(2, '0')}.${String(d.getUTCMonth() + 1).padStart(2, '0')}`
 <Lines formatX={ddmm} … />
 ```
+
+| Hover readout selector             | Old               | New                                 |
+| ---------------------------------- | ----------------- | ----------------------------------- |
+| `.ts-chart-tooltip[role="status"]` | the engine's role | `.ts-chart-tooltip[role="tooltip"]` |
 
 The hover readout now carries `role="tooltip"` (it was the engine's `role="status"`) and keeps
 `aria-live="polite"` on purpose: a tooltip role alone is not announced, and keyboard users should still

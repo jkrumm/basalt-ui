@@ -21,7 +21,7 @@ import { useCallback, useMemo } from 'react'
 import type { ReactElement } from 'react'
 import { VX, alpha } from '../tokens'
 import { resolveContainerClass } from '../tokens/size-classes'
-import { defaultFormatX, defaultNumberFormat, seriesRow, visibleSeries } from './compile'
+import { defaultNumberFormat, seriesRow, visibleSeries } from './compile'
 import { barMark, emphasis } from './marks'
 import { PanelRung, chartHeightOf, paneX, paneY, rowsOf } from './panel'
 import type { PaneBuilder, PanelInput, PanelPlan } from './panel'
@@ -191,7 +191,7 @@ export function MirroredBars<T, X extends ChartX = ChartX, K extends string = st
         : VX.neutral
       const upOn = visible.includes(upSeries)
       const downOn = visible.includes(downSeries)
-      const format = (v: ChartValue): string => (formatX ? formatX(v as X) : defaultFormatX(v))
+      const format = formatX ? (v: ChartValue): string => formatX(v as X) : undefined
       const upMax = paneMax(up, upSeries, drawn, upOn)
       const downMax = paneMax(down, downSeries, drawn, downOn)
       const bandWidth = 2 * model.halfStep * BAND_FILL

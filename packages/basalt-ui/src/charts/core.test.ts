@@ -4,7 +4,8 @@
  */
 import { describe, expect, spyOn, test } from 'bun:test'
 import type { StoredChartSpec } from '@tanstack/charts/types/core'
-import { compileCartesian, dateTicks, utcAxisDate, utcHeaderDate } from './compile'
+import { compileCartesian, dateTicks, utcHeaderDate } from './compile'
+import { utcAxisDate } from './date-tick-format'
 import { bucketTicks } from './ticks'
 import { chartCursor, chartCursorView, hasCursorGroup, hasCursorView } from './cursor'
 import { chartCurve } from './curves'

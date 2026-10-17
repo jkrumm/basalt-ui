@@ -2,25 +2,14 @@
  * The default Date x tick labels: chosen from the TICK step (not the data step), read in UTC like
  * the scale that placed them. A label may recur on one axis only behind a MARKER label (a day or a
  * year) — `12:00, 18:00, 18.10, 06:00, 12:00` is fine, `17.10, 17.10, 18.10` is not. Each span has
- * a ladder of levels, plainest first; the first level that holds the invariant wins, and the last
- * level of every ladder is unique by construction.
+ * a ladder of levels, plainest first; the first level that holds the invariant wins. The last rung
+ * of every ladder names the whole date (or instant) of its tick, so the invariant always holds.
  */
 
-export const MONTHS = [
-  'Jan',
-  'Feb',
-  'Mar',
-  'Apr',
-  'May',
-  'Jun',
-  'Jul',
-  'Aug',
-  'Sep',
-  'Oct',
-  'Nov',
-  'Dec',
-]
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 export const pad2 = (n: number): string => String(n).padStart(2, '0')
+
+export const monthName = (d: Date): string => MONTHS[d.getUTCMonth()]!
 
 const DAY_MS = 86_400_000
 const HOUR_MS = 3_600_000
@@ -37,6 +26,8 @@ export function utcAxisDate(d: Date): string {
 
 const utcClock = (d: Date): string => `${pad2(d.getUTCHours())}:${pad2(d.getUTCMinutes())}`
 const utcClockSeconds = (d: Date): string => `${utcClock(d)}:${pad2(d.getUTCSeconds())}`
+const utcClockMillis = (d: Date): string =>
+  `${utcClockSeconds(d)}.${String(d.getUTCMilliseconds()).padStart(3, '0')}`
 /** Two digits: a widened day label stays 8 characters and still reads as the `DD.MM` family. */
 const utcAxisDateYear = (d: Date): string =>
   `${utcAxisDate(d)}.${String(d.getUTCFullYear()).slice(2)}`
@@ -70,11 +61,17 @@ const subDayLevels: Level[] = [
         : plain(utcClock(d)),
   ),
   each((_, d) => marker(`${utcAxisDate(d)} ${utcClock(d)}`)),
-  // Sub-minute steps: the seconds make it unique.
+  // Sub-minute steps: the seconds, then (sub-second steps) the milliseconds. Every label names its
+  // whole instant to the millisecond, and `dateTickFormat` dedupes ticks to the millisecond, so
+  // the last rung cannot repeat.
   each((_, d) => marker(`${utcAxisDate(d)} ${utcClockSeconds(d)}`)),
+  each((_, d) => marker(`${utcAxisDate(d)} ${utcClockMillis(d)}`)),
 ]
 
-/** A day or more: `DD.MM`. */
+/**
+ * A day or more: `DD.MM`. Ticks are at least a day apart here, so they fall on different UTC days
+ * and the last rung, which names the full date, cannot repeat.
+ */
 const dayLevels: Level[] = [
   each((_, d) => marker(utcAxisDate(d))),
   each((_, d) => marker(utcAxisDateYear(d))),
@@ -82,11 +79,10 @@ const dayLevels: Level[] = [
 
 /** A month or more: the month, a January tick carries the year. */
 const monthLevels: Level[] = [
-  each((_, d) =>
-    isJanuary(d) ? marker(String(d.getUTCFullYear())) : plain(MONTHS[d.getUTCMonth()]!),
-  ),
-  each((_, d) => marker(`${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`)),
-  // Ticks a month apart in name only (Jan 1 and Jan 31): fall to the day ladder.
+  each((_, d) => (isJanuary(d) ? marker(String(d.getUTCFullYear())) : plain(monthName(d)))),
+  each((_, d) => marker(`${monthName(d)} ${d.getUTCFullYear()}`)),
+  // Ticks a month apart in name only (Jan 1 and Jan 31): fall to the day ladder (ticks here are
+  // >= 27 days apart, so its full-date last rung is unique).
   ...dayLevels,
 ]
 
@@ -104,7 +100,7 @@ function holdsInvariant(labels: readonly Label[]): boolean {
   return true
 }
 
-/** The first level whose labels hold the invariant; the last level is unique by construction. */
+/** The first level whose labels hold the invariant, else the last (see each ladder's last rung). */
 function pickLabels(levels: readonly Level[], times: readonly number[]): Label[] {
   let labels: Label[] = []
   for (const level of levels) {

@@ -123,6 +123,15 @@ describe('dateTickFormat', () => {
     ])
   })
 
+  test('sub-second ticks widen to the millisecond', () => {
+    const t = (ms: number): Date => new Date(Date.UTC(2026, 9, 17, 6, 0, 0, ms))
+    expect(read([t(0), t(250), t(500)])).toEqual([
+      '17.10 06:00:00.000',
+      '17.10 06:00:00.250',
+      '17.10 06:00:00.500',
+    ])
+  })
+
   test('a Date outside the tick set reads as plain DD.MM', () => {
     const ticks = [at(17), at(18)]
     expect(dateTickFormat(ticks)(at(20, 5))).toBe('20.10')
@@ -180,5 +189,53 @@ describe('default date tick labels', () => {
   test('a consumer formatX still wins', () => {
     const out = labels(oct17, HOUR, 49, { formatX: (d) => `x${d.getUTCHours()}` })
     expect(out.every((l) => l.startsWith('x'))).toBe(true)
+  })
+})
+
+describe('the tick label invariant over a sweep of spans', () => {
+  // A label is date-bearing (a marker) when it starts with `DD.MM` or is a bare year.
+  const isMarker = (l: string): boolean => /^(\d\d\.\d\d|\d{4}$)/.test(l)
+  const STEPS_MS = [
+    250,
+    1_000,
+    15_000,
+    60_000,
+    300_000,
+    HOUR,
+    6 * HOUR,
+    12 * HOUR,
+    DAY,
+    7 * DAY,
+    30 * DAY,
+    90 * DAY,
+    365 * DAY,
+  ]
+  const STARTS = [Date.UTC(2026, 0, 1), Date.UTC(2026, 9, 17, 6, 13, 7, 250)]
+  const COUNTS = [2, 3, 7, 24, 49, 200]
+
+  test('equal labels only ever sit apart behind a marker, and markers are unique', () => {
+    let cases = 0
+    for (const start of STARTS)
+      for (const step of STEPS_MS)
+        for (const n of COUNTS) {
+          const domain: [Date, Date] = [new Date(start), new Date(start + (n - 1) * step)]
+          for (const count of [3, 6]) {
+            const ticks = dateTicks(domain, count, step)
+            const out = read(ticks)
+            const where = `${start}/${step}/${n}/${count}`
+            const markers = out.filter(isMarker)
+            expect(new Set(markers).size, `markers ${where}: ${out}`).toBe(markers.length)
+            out.forEach((l, i) => {
+              const j = out.indexOf(l, i + 1)
+              if (j < 0) return
+              expect(
+                out.slice(i + 1, j).some(isMarker),
+                `${where}: "${l}" repeats with no marker between: ${out}`,
+              ).toBe(true)
+            })
+            cases += 1
+          }
+        }
+    expect(cases).toBe(STARTS.length * STEPS_MS.length * COUNTS.length * 2)
   })
 })

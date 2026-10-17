@@ -14,7 +14,7 @@ import { useCallback, useMemo } from 'react'
 import type { ReactElement } from 'react'
 import { VX, alpha } from '../tokens'
 import { resolveContainerClass } from '../tokens/size-classes'
-import { defaultFormatX, defaultNumberFormat, engineRow, seriesRow, visibleSeries } from './compile'
+import { defaultNumberFormat, engineRow, seriesRow, visibleSeries } from './compile'
 import { barMark, emphasis, lineMark, markersOf, thinFill } from './marks'
 import { PanelRung, chartHeightOf, paneX, paneY, rowsOf } from './panel'
 import type { PaneBuilder, PanelInput, PanelPlan } from './panel'
@@ -182,7 +182,7 @@ export function DualPanel<T, X extends Date | number = Date | number>(
       // A row's x as a fraction of the plot (the domain is padded half a step each side).
       const fillAt = (v: Date | number): number =>
         ((v instanceof Date ? v.getTime() : v) - (lo - pad)) / (hi - lo + 2 * pad)
-      const format = (v: ChartValue): string => (formatX ? formatX(v as X) : defaultFormatX(v))
+      const format = formatX ? (v: ChartValue): string => formatX(v as X) : undefined
 
       const visible = visibleSeries(lines, hidden)
       const barOn = !hidden.has(BAR_KEY)
