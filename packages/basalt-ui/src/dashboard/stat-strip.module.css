@@ -33,6 +33,11 @@
   min-width: 0;
   padding: var(--vx-space-stack-md);
   border-inline-start: 1px solid var(--vx-divider);
+}
+
+/* The top line is adjacent-sibling: the first cell draws none (it leads the strip), every later one
+ * draws its top edge, which is the rule between wrapped rows. */
+.cell + .cell {
   border-block-start: 1px solid var(--vx-divider);
 }
 
