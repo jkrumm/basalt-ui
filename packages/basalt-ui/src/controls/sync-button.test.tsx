@@ -5,10 +5,12 @@
  * rounding; it now comes from `format/relativeTime` (boundaries pinned in `format/date.test.ts`).
  */
 import { MantineProvider } from '@mantine/core'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { afterEach, describe, expect, test } from 'bun:test'
-import { defineFormat, resetFormatDefaults } from '../format/shared'
+import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
+import { resetFormatDefaults } from '../format/shared'
+import { BasaltProvider } from '../provider'
+import { testRouter } from '../provider/test-router'
 import { AGE_REFRESH_MS, SyncButton } from './sync-button'
 
 function renderSync(props: Partial<Parameters<typeof SyncButton>[0]> = {}) {
@@ -175,11 +177,39 @@ describe('the shape follows the scope', () => {
 })
 
 describe('format locale', () => {
-  afterEach(resetFormatDefaults)
+  const Original = Intl.RelativeTimeFormat
+  class GermanHost extends Original {
+    constructor(locales?: string | string[], options?: Intl.RelativeTimeFormatOptions) {
+      super(locales ?? 'de', options)
+    }
+  }
+  beforeEach(() => {
+    Intl.RelativeTimeFormat = GermanHost as typeof Intl.RelativeTimeFormat
+  })
+  afterEach(() => {
+    cleanup()
+    resetFormatDefaults()
+    Intl.RelativeTimeFormat = Original
+  })
 
-  test('the age reads in the defineFormat locale', () => {
-    defineFormat({ locale: 'de' })
-    renderSync({ lastCompletedAt: Date.now() - 2 * 60_000 })
-    expect(screen.getByRole('button').textContent).toContain('vor 2 Min.')
+  async function ageUnder(locale: string) {
+    const router = testRouter('x', () => (
+      <SyncButton
+        syncing={false}
+        scope="page"
+        onSync={() => {}}
+        lastCompletedAt={Date.now() - 2 * 60_000}
+      />
+    ))
+    render(<BasaltProvider router={router} locale={locale} />)
+    return (await screen.findByRole('button', { name: /sync/i })).textContent
+  }
+
+  test('BasaltProvider locale="en-GB" wins over a German host', async () => {
+    expect(await ageUnder('en-GB')).toContain('2 min ago')
+  })
+
+  test('BasaltProvider locale="de" reads German', async () => {
+    expect(await ageUnder('de')).toContain('vor 2 Min.')
   })
 })

@@ -2,7 +2,7 @@
  * Coverage for `format/date.ts` — weekday, relativeTime, date/time/dateTime and the duration
  * family. `now` is injected everywhere so no test reads the wall clock.
  */
-import { afterEach, describe, expect, test } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import { date, dateTime, duration, durationClock, relativeTime, time, weekday } from './date'
 import { NON_FINITE, defineFormat, resetFormatDefaults } from './shared'
 
@@ -238,8 +238,34 @@ describe('duration', () => {
   })
 })
 
+/** A German host: `Intl.RelativeTimeFormat` with no locale resolves to `de`, as on a German system. */
+function stubGermanHost(): () => void {
+  const Original = Intl.RelativeTimeFormat
+  class GermanHost extends Original {
+    constructor(locales?: string | string[], options?: Intl.RelativeTimeFormatOptions) {
+      super(locales ?? 'de', options)
+    }
+  }
+  Intl.RelativeTimeFormat = GermanHost as typeof Intl.RelativeTimeFormat
+  return () => {
+    Intl.RelativeTimeFormat = Original
+  }
+}
+
 describe('defineFormat default locale', () => {
-  afterEach(resetFormatDefaults)
+  let restore: () => void
+  beforeEach(() => {
+    restore = stubGermanHost()
+  })
+  afterEach(() => {
+    resetFormatDefaults()
+    restore()
+  })
+
+  test('the default beats a German host', () => {
+    defineFormat({ locale: 'en-GB' })
+    expect(relativeTime(now - 4 * DAY, { now })).toBe('4 days ago')
+  })
 
   test('relativeTime falls back to the defined locale, a call locale still wins', () => {
     defineFormat({ locale: 'de' })
@@ -254,6 +280,7 @@ describe('defineFormat default locale', () => {
     expect(relativeTime(now - 3 * HOUR, { now })).toBe('3 hours ago')
   })
 
+  // Regression guard, not failing-first: these resolved the default before this change.
   test('duration and the date family already honour it', () => {
     defineFormat({ locale: 'de', timeZone: 'UTC' })
     expect(duration(3900, { style: 'long' })).toBe('1 Stunde 5 Minuten')
