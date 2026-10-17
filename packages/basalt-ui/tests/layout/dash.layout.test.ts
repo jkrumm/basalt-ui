@@ -162,6 +162,68 @@ layout('Meter / BarList geometry', () => {
     },
   )
 
+  test.each([160, 360].flatMap((w) => [0, 500, 1000].map((v) => [w, v] as const)))(
+    'the zoned reading sits under its marker, inside the track, off the zone names (%ipx, %i)',
+    async (width, value) => {
+      const m = await p.raw.evaluate((root) => {
+        const host = document.querySelector<HTMLElement>(`[data-testid="${root}"]`)
+        const reading = host?.querySelector<HTMLElement>('[data-meter-reading-row] > span')
+        const marker = host?.querySelector<HTMLElement>('[data-meter-tick="marker"]')
+        const track = host?.querySelector<HTMLElement>('[data-meter-track]')
+        if (!host || !reading || !marker || !track) throw new Error(`LAYOUT: no reading in ${root}`)
+        const r = reading.getBoundingClientRect()
+        const k = marker.getBoundingClientRect()
+        const t = track.getBoundingClientRect()
+        const names = [
+          ...host.querySelectorAll<HTMLElement>(
+            '[data-meter-zone-band]:not([data-collapsed]) [data-meter-zone-label], [data-meter-zone-list] [data-meter-zone-label]',
+          ),
+        ].map((el) => el.getBoundingClientRect())
+        return {
+          readingLeft: r.left,
+          readingRight: r.right,
+          readingTop: r.top,
+          centre: (r.left + r.right) / 2,
+          markerCentre: (k.left + k.right) / 2,
+          trackLeft: t.left,
+          trackRight: t.right,
+          nameBottom: Math.max(...names.map((n) => n.bottom)),
+          captionsInReadingRow: host.querySelector('[data-meter-captions]') !== null,
+        }
+      }, `dash-meter-reading-${width}-${value}`)
+      expect(m.readingLeft).toBeGreaterThanOrEqual(m.trackLeft - SUBPIXEL)
+      expect(m.readingRight).toBeLessThanOrEqual(m.trackRight + SUBPIXEL)
+      expect(m.readingTop).toBeGreaterThanOrEqual(m.nameBottom - SUBPIXEL)
+      expect(m.captionsInReadingRow).toBe(false)
+      // Centred on the marker unless the clamp holds it inside the track.
+      const clamped =
+        m.readingLeft <= m.trackLeft + SUBPIXEL || m.readingRight >= m.trackRight - SUBPIXEL
+      if (!clamped) expect(Math.abs(m.centre - m.markerCentre)).toBeLessThan(SNAP)
+    },
+  )
+
+  test.each(['spark', 'meter', 'meter-own'])(
+    'a loading visual-slot skeleton keeps the card inline inset on both sides (%s)',
+    async (kind) => {
+      const m = await p.raw.evaluate((root) => {
+        const card = document.querySelector<HTMLElement>(`${root} .mantine-Card-root`)
+        const sk = card?.querySelector<HTMLElement>(
+          '.mantine-Skeleton-root:not([class*="skeletonValue"]):not([class*="skeletonFooter"])',
+        )
+        if (!card || !sk) throw new Error(`LAYOUT: no skeleton in ${root}`)
+        const c = card.getBoundingClientRect()
+        const r = sk.getBoundingClientRect()
+        return {
+          left: r.left - c.left,
+          right: c.right - r.right,
+          inset: parseFloat(getComputedStyle(card).paddingInlineStart),
+        }
+      }, `[data-testid="dash-card-loading-${kind}"]`)
+      expect(Math.abs(m.left - m.inset)).toBeLessThanOrEqual(SUBPIXEL)
+      expect(Math.abs(m.right - m.inset)).toBeLessThanOrEqual(SUBPIXEL)
+    },
+  )
+
   test('Meter zone names collapse to a list when the row narrows and return when it widens', async () => {
     const modeAt = (width: number) =>
       p.raw.evaluate(async (w) => {

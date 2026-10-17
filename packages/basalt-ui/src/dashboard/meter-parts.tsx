@@ -198,6 +198,44 @@ function useZoneLabelLayout(rowRef: RefObject<HTMLDivElement | null>, key: strin
   return fits
 }
 
+/**
+ * The reading on a zoned track, centred on the marker so number and notch are one mark. The centre
+ * is clamped to half the label's width from either edge, so it never leaves the track. Observing
+ * the label as well as the row catches a font swap that changes its width with no row resize. Until
+ * the measurement runs (server markup) it sits unclamped at the marker.
+ */
+function ZoneReading({ pct, children }: { pct: number; children: ReactNode }) {
+  const rowRef = useRef<HTMLDivElement>(null)
+  const textRef = useRef<HTMLSpanElement>(null)
+  const [centre, setCentre] = useState<number>()
+  useIsomorphicLayoutEffect(() => {
+    const row = rowRef.current
+    const text = textRef.current
+    if (!row || !text) return
+    const measure = () => {
+      const half = text.offsetWidth / 2
+      setCentre(Math.min(Math.max((row.clientWidth * pct) / 100, half), row.clientWidth - half))
+    }
+    measure()
+    if (typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver(measure)
+    observer.observe(row)
+    observer.observe(text)
+    return () => observer.disconnect()
+  }, [pct])
+  return (
+    <div ref={rowRef} className={classes.zoneReadingRow} data-meter-reading-row>
+      <span
+        ref={textRef}
+        className={classes.zoneReading}
+        style={{ insetInlineStart: centre === undefined ? `${pct}%` : `${centre}px` }}
+      >
+        {children}
+      </span>
+    </div>
+  )
+}
+
 function ZoneName({ label, ...rest }: { label: ZoneLabel } & HTMLAttributes<HTMLSpanElement>) {
   return (
     <span
@@ -271,7 +309,8 @@ export function MeterBar(props: {
   const model = modelBar(props)
   const start = startCaptionText(model, props.startCaption)
   const end = props.endCaption === undefined ? model.endText : props.endCaption
-  const hasCaptions = start !== null || end !== null || model.forecastText !== null
+  const anchored = model.markerPct !== undefined && start !== null
+  const hasCaptions = (start !== null && !anchored) || end !== null || model.forecastText !== null
   const hasParts = model.partCaptions.length > 0
   const describedBy =
     model.describedByText === null ? {} : ({ 'aria-describedby': describedId } as const)
@@ -309,6 +348,7 @@ export function MeterBar(props: {
         <Tick kind="target" className={classes.tick} pct={model.targetPct} />
       </div>
       {model.zoneLabels.length > 0 && <ZoneLabels labels={model.zoneLabels} />}
+      {anchored && <ZoneReading pct={model.markerPct ?? 0}>{start}</ZoneReading>}
       {model.describedByText !== null && (
         <VisuallyHidden id={describedId}>{model.describedByText}</VisuallyHidden>
       )}
@@ -331,7 +371,7 @@ export function MeterBar(props: {
       )}
       {hasCaptions && (
         <div className={classes.captions} data-meter-captions>
-          {start !== null && <span className={classes.caption}>{start}</span>}
+          {start !== null && !anchored && <span className={classes.caption}>{start}</span>}
           {model.forecastText !== null && (
             <span className={classes.caption}>{model.forecastText}</span>
           )}

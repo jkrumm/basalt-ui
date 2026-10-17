@@ -15,6 +15,8 @@ declare const classes: {
   readonly zoneLabelHolding: string
   readonly zoneList: string
   readonly zoneListItem: string
+  readonly zoneReadingRow: string
+  readonly zoneReading: string
   readonly marker: string
   readonly tick: string
   readonly boundaryTick: string

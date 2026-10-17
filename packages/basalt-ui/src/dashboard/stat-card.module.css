@@ -173,15 +173,15 @@
   height: var(--basalt-stat-figure-h);
 }
 
+/* Inset on both sides, unlike the sparkline at rest (which bleeds): a placeholder that touches one
+ * card edge and stops short of the other reads as misaligned, and a Meter in the slot is inset anyway. */
 .skeletonVisual {
   --skeleton-radius: 0;
   height: var(--basalt-stat-visual-h);
-  margin-inline: calc(-1 * var(--vx-space-card-inset-x, 1rem));
 }
 
 .sparklineRight .skeletonVisual {
   flex: 1 1 auto;
-  margin-inline: 0;
 }
 
 .skeletonRowBox {
