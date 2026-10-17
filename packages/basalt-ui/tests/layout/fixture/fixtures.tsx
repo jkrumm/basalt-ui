@@ -1314,13 +1314,12 @@ function DashFixture(): ReactElement {
     <>
       {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
       <div data-testid="dash-barlist" style={{ width: 320 }}>
-        <BarList label="Spend" items={items} format={(v) => `€${v}`} />
+        <BarList label="Spend" variant="inline" items={items} format={(v) => `€${v}`} />
       </div>
       {/* theme-allow -- the wrapper width IS the fixture's payload (a container probe) */}
       <div data-testid="dash-bar-thin" style={{ width: 342 }}>
         <BarList
           label="Waiting or blocked"
-          variant="thin"
           format={(v) => `${v} h`}
           items={[
             {
@@ -1337,6 +1336,11 @@ function DashFixture(): ReactElement {
               label: 'Drop the legacy exporter · argo',
               value: 14,
               secondary: <StatusVerdict color="var(--vx-faint)" word="Needs you" />,
+            },
+            {
+              label: 'Sleep',
+              value: 8,
+              secondary: <StatusVerdict color="var(--vx-faint)" word="Good" />,
             },
           ]}
         />

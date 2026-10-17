@@ -286,12 +286,13 @@ layout('Meter / BarList geometry', () => {
     }
   })
 
-  test('a thin BarList keeps its titles readable at a phone width, and its secondary is the sans', async () => {
+  test('a BarList with no variant (thin) keeps its titles readable at a phone width, and its secondary is the sans', async () => {
     const m = await p.raw.evaluate(() => {
       const root = document.querySelector('[data-testid="dash-bar-thin"]')
       const label = root?.querySelector<HTMLElement>('li [title]')
+      const short = root?.querySelector<HTMLElement>('li [title="Sleep"]')
       const word = root?.querySelector<HTMLElement>('[data-verdict-word]')
-      if (!root || !label || !word) throw new Error('LAYOUT: no thin BarList probe')
+      if (!root || !label || !word || !short) throw new Error('LAYOUT: no thin BarList probe')
       const probe = document.createElement('span')
       probe.style.fontFamily = 'var(--basalt-font-mono)'
       root.append(probe)
@@ -304,6 +305,9 @@ layout('Meter / BarList geometry', () => {
         labelHeight: label.getBoundingClientRect().height,
         clamp: style.getPropertyValue('-webkit-line-clamp'),
         truncated: label.scrollHeight > label.clientHeight + 1,
+        shortTruncated:
+          short.scrollWidth > short.clientWidth + 1 || short.scrollHeight > short.clientHeight + 1,
+        thin: root.querySelector('ul')?.getAttribute('data-variant'),
         title: label.getAttribute('title'),
         secondaryFont: getComputedStyle(word).fontFamily,
         monoFont,
@@ -311,6 +315,8 @@ layout('Meter / BarList geometry', () => {
     })
     expect(m.labelWidth).toBeGreaterThanOrEqual(110)
     expect(m.clamp).toBe('2')
+    expect(m.thin).toBe('thin')
+    expect(m.shortTruncated).toBe(false)
     expect(m.labelHeight).toBeLessThanOrEqual(2 * m.lineHeight + 1)
     expect(m.title).not.toBeNull()
     expect(m.secondaryFont).not.toBe(m.monoFont)

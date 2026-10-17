@@ -27,7 +27,7 @@ Signature: BarList(props: BarListProps): JSX.Element
   items: readonly BarListItem[]
   format?: (value: number, part: "value" | "max") => string
   max?: number
-  variant?: "default" | "thin"
+  variant?: "thin" | "inline"
   accentLeader?: boolean
   loading?: boolean
   loadingRows?: number
@@ -105,7 +105,7 @@ Signature: Meter(props: MeterProps): JSX.Element
   shape?: "bar" | "ring"
   target?: number  [with segments | zones]
   ticks?: readonly MeterTick[]  [with segments | zones]
-  tone?: "muted"  [with segments | zones]
+  tone?: "muted" | "ink"  [with segments | zones]
   size?: "row"  [with segments | zones]
   startCaption?: ReactNode  [with segments | zones]
   endCaption?: ReactNode  [with segments | zones]
@@ -711,7 +711,7 @@ Signature: ThreadFeed(props: ThreadFeedProps): JSX.Element
   threads: AgentThread[]
   activeId: string | null
   onSelect: (id: string) => void
-  variant?: "outcome" | "inline"
+  variant?: "inline" | "outcome"
   onSend?: ((thread: AgentThread, payload: ComposerSubmit) => void)
   renderRow?: ((thread: AgentThread) => ReactNode)
   anchor?: "start" | "end"

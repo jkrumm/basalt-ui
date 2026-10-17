@@ -74,7 +74,7 @@ consumer read this index, found nothing, and diffed a KPI row that had silently 
 | **controls** (`./controls`) | `NumberFilter`, `field.number` (§ Controls) | sheet renders panel rows; `PanelRow`, `SliderControl` (§ `basalt-ui/controls`) | — | — | — | — | — | — | — | `NumberFilter clearable`; `createSearchStore` `resets` (§ State and controls) | — | — | — | `FormSection`/`FormRow`/`FormGroup`/`FormActions` move here (§ The form layout moves) | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | dense 28 tier at a fine pointer (§ 2.16.0) | — | — | — | — | — |
 | **forms** (`./forms`) | — | `field` → `inputProps`, **`inputProps` drops `key`**, the layout tier (§ `inputProps`) | `field` DELETED — and the `--fix` recipe no longer works (§ Consolidation) | — | — | — | — | — | `FormGroup` row no longer stretches (§ Fixes) | — | — | — | — | the layout + `useForm`/`schemaResolver` deprecated, removed 1.37.0 (§ The form layout moves) | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | § 1.x compatibility layer removed | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — |
 | **data** (`./data/table`) | — | root is a `<div>`, row selection, `getItemKey` required (§ `basalt-ui/data`) | `./data` + `./query` + `./connectivity` dropped (§ Consolidation) | — | — | — | — | — | `renderCard` documented (§ `renderCard`) | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — |
-| **dashboard** (`.`) | `StatCard`: `unit`, `breakdown`, delta format (§ `StatCard`) | `StatGroup`, `WidgetGrid`, query-aware `StatCard` — additive | — | **the column law keys on the CONTAINER; `cols={4}` is 2-up at `sm`** (§ Dashboard) | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | § 1.x compatibility layer removed | — | — | — | — | — | — | — | — | — | — | — | card inset 12/16, `kpi` 22 / 500 (§ 2.16.0) | — | — | StatCard status dot, Meter/BarList refinements (§ 2.19.0) | — | — |
+| **dashboard** (`.`) | `StatCard`: `unit`, `breakdown`, delta format (§ `StatCard`) | `StatGroup`, `WidgetGrid`, query-aware `StatCard` — additive | — | **the column law keys on the CONTAINER; `cols={4}` is 2-up at `sm`** (§ Dashboard) | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | § 1.x compatibility layer removed | — | — | — | — | — | — | — | — | — | — | — | card inset 12/16, `kpi` 22 / 500 (§ 2.16.0) | — | — | StatCard status dot, Meter/BarList refinements (§ 2.19.0) | — | plain `Meter` value bar fill muted (`tone="ink"` to opt out); `BarList` default `thin`, `variant="default"` → `inline` (§ Unreleased) |
 | **toolchain** (`./configs/*`) | — | — | the shipped lefthook preset's `check-theme` BROKE — the CLI resolver stopped ascending (§ CLI) | the preset's default bin, and the `root:` recipe (§ Toolchain) | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — |
 | **CLI** (`basalt-ui`) | — | — | **resolver stops relocating; `doctor` loses 6 of 10 checks** (§ CLI) | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | the managed block moves `CLAUDE.md` → `AGENTS.md` (§ 1.41.0) | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | `doctor`: CSS + forced dropped subpaths, `oxlint-floor`, Start wiring (§ 2.8.0) | — | § 1.x compatibility layer removed | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — |
 | **guards** | five rules → `error` (§ Guards) | six new ids at `warn` (§ preamble) | `query-dual-import` retired in 1.29.1 (§ Guards) | four rules → `error` (§ Guards) | — | — | — | `raw-breakpoint`: the container-grid answer, `error` at 1.33.0 (§ 1.32.0) | `FormRow`/`FormGroup` homes in both lanes; `basalt-main` dropped (§ Fixes) | C1 + breakpoint pairs → `error`; `unknown-vx-token` `warn` (§ Guards) | — | — | — | `unknown-vx-token` → `error`; the token factories throw (§ Guards) | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | § 1.x compatibility layer removed | — | — | — | — | — | — | — | — | — | — | — | `inline-spacing` steps, `card-inset` accepts both pairs (§ 2.16.0) | — | — | — | — | — |
@@ -1071,6 +1071,24 @@ with a footer note.
 suppress it; the track, marker and zone labels stay, and a standalone `Meter` is unchanged.
 **Opt out:** render the reading yourself where you want it (the value is in the Meter's `aria-valuetext`),
 or place the `Meter` outside those two slots.
+
+### `Meter`: the non-verdict fill is now muted
+
+**Changed default:** plain `value` bars only (no `segments`, no `zones`, no `color`, no `tone`);
+`segments` (incl. forecast) and `zones` keep today's fills. A bar `Meter` with no `color` used to
+draw the full ink fill (`--vx-line`), near-white in dark. With no `color` and no `tone` it now draws
+`tone="muted"` (`--vx-muted` at a strength that holds 3:1 against the track in both schemes).
+Verdict colours (`color`, status tones) are unchanged; the ring is unchanged. Opt out: `tone="ink"`.
+
+### `BarList`: the thin track is the default
+
+**Changed default:** `variant` is now `'thin' | 'inline'`, default `'thin'`
+(label on its own line above a thin bar, value right-aligned). The old default look is
+`variant="inline"`. The `'default'` literal is gone, so `variant="default"` is a type error: replace
+it with `variant="inline"` to keep the heavy label-in-track slabs, or delete the prop to take thin.
+`variant="thin"` is now redundant and still valid. The root now always carries `data-variant`
+(`thin` or `inline`) — it was absent on the old default, so `[data-variant]`-absent selectors must
+become `[data-variant='inline']`.
 
 ## 2.20.0 — the sparkline reference and readout
 
