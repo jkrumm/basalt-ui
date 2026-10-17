@@ -77,11 +77,11 @@ export type WidgetHeaderProps = BasaltProps &
      * click — so a keyboard user gets it too. Mantine-free: a plain state bubble, not a Tooltip.
      */
     info?: string
-    /** Pre-formatted metric value (mono, hero size, never truncated). Renders on its own row with
+    /** Pre-formatted metric value (sans, lining figures, hero size, never truncated). Renders on its own row with
      * `delta` under the title row, or on the title row in a card 480px or wider. */
     value?: string
     /**
-     * The value's unit, rendered immediately after it on the hero row: muted, mono, `--vx-text-sm`.
+     * The value's unit, rendered immediately after it on the hero row: muted, sans, `--vx-text-sm`.
      *
      * It exists because `value` is a pre-formatted `string` and a KPI's unit is not part of the
      * number: `412` and `TSS` are two facts at two weights, and jamming them into one string paints
@@ -120,7 +120,7 @@ export type WidgetHeaderProps = BasaltProps &
     /** Trend visual slot, rendered below the metric row. Carries `data-placement="right"` so a
      * wave-3 composer's `bleed` layout can select it. */
     sparkline?: ReactNode
-    /** Mono count tag rendered after the title (C11 — every table/list states its count). `0` is a
+    /** Count tag rendered after the title (C11 — every table/list states its count). `0` is a
      * real count and renders, distinct from omitting the prop entirely. */
     count?: number
     /** Right-aligned slot (`margin-inline-start: auto`) — the C1/C5 home for header actions. */
