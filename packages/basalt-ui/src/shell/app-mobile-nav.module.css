@@ -158,7 +158,7 @@
 }
 
 .menuItem :global(.mantine-Menu-itemLabel) {
-  font-size: var(--mantine-font-size-md) !important;
+  font-size: var(--mantine-font-size-sm) !important;
 }
 
 /* An active destination reads the same in the More surface as it does in the sheet. */

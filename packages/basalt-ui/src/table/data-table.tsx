@@ -1020,9 +1020,7 @@ const SEARCH_WIDTH = 220
 /** How long the global search waits after the last keystroke before filtering. */
 const SEARCH_DEBOUNCE_MS = 250
 const TABLE_SEARCH_STYLE: CSSProperties = {
-  // `width` as well as the basis: the toolbar is sized by its items' max-content contributions, and
-  // an input's own (~196px) is below the basis, so the row came out 24px too narrow for its own
-  // items and wrapped the facet pills under the search at 1440.
+  // `width` as well as the basis — see the `SEARCH_WIDTH` JSDoc.
   width: SEARCH_WIDTH,
   flex: `0 1 ${SEARCH_WIDTH}px`,
   minWidth: '12ch',
