@@ -351,20 +351,23 @@ const PROVIDER_ONLY_LABEL = 'provider-only first paint (gzip B, dist)'
 // this entry) plus the mutation-key hash: 19034 locally, was 18923.
 // 19200 → 19202 (W33 CI): the light Badge default, ink Tabs underline and the badge glyph rule in the theme + palette CSS.
 // 19202 → 19281 (W33 CI, review round): the subtle ink label/hover moved from the resolver into Button/ActionIcon `vars`, plus `tabsVars`.
-const PROVIDER_ONLY_CEILING = 19281
+// 19281 → 19305 (W33 CI, chrome-vars move): +24 B.
+const PROVIDER_ONLY_CEILING = 19305
 // Embedded `<BasaltProvider spotlight={false}>`, no defines, peers bundled, every chunk counted: 54735 B landed, ~1% margin.
 // 55300 → 55391 (W32): +91 B for the Wave 32 scales — the dense control tier rule in the palette CSS, the row line-height and `lineHeights` ratios, the expanded gutter, and the card/radius/type retunes.
 // 55391 → 55404 (W32 CI): the gate is CI's Linux build, which gzips 13 B larger than the macOS build the lead measured.
 // 55404 → 55482 (W33 CI): +78 B, the same Badge/Tabs/subtle-Button chrome changes.
 // 55482 → 55569 (W33 CI, review round): +87 B, the same move.
-const EMBEDDED_CEILING = 55569
+// 55569 → 55599 (W33 CI, chrome-vars move): +30 B.
+const EMBEDDED_CEILING = 55599
 // `createBasaltTheme()` alone, peers bundled, every chunk counted: 14420 locally. The theme reaching
 // no component it configures is what keeps this near Mantine's core; ~1% over landed.
 // 14570 → 14571 (W32): +1 B, the `lineHeights` ratios.
 // 14571 → 14580 (W32 CI): the same Linux-vs-macOS gzip difference, 9 B. Raise gzip ceilings from CI's numbers.
 // 14580 → 14653 (W33 CI): +73 B, the same chrome changes.
 // 14653 → 14719 (W33 CI, review round): +66 B, the same move.
-const THEME_ONLY_CEILING = 14719
+// 14719 → 14768 (W33 CI, chrome-vars move): +49 B.
+const THEME_ONLY_CEILING = 14768
 const THEME_ONLY_LABEL = 'createBasaltTheme only, peers bundled, all chunks (gzip B, dist)'
 const EMBEDDED_LABEL = 'embedded provider, no defines, peers bundled, all chunks (gzip B, dist)'
 const FEATURE_CHUNKS_LABEL =
