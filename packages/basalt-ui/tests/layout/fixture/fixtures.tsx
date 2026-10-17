@@ -345,6 +345,8 @@ function StatsFixture({ count, wide }: { count: number; wide: boolean }): ReactE
   )
 }
 
+const SLOT_SPARK = [1, 5, 3, 8, 2, 9, 4]
+
 const LONG_FIRST_LINE = `const value = '${'x'.repeat(200)}'\nconst second = 2`
 
 /** A fence between two paragraphs — the outer rhythm and the first-line/copy-button clearance. */
@@ -983,6 +985,29 @@ function ChartsFixture({ spec }: { spec: ChartsSpec }): ReactElement {
         marks={(plot) => [railMark(data, plot.plotHeight)]}
         {...height}
       />
+    ) : spec.kind === 'spark' && spec.sparkIn !== undefined ? (
+      <div style={{ width: 300 }}>
+        {spec.sparkIn === 'card' ? (
+          <StatCard
+            title="Slot"
+            value="12"
+            sparkline={(size) => <Sparkline ariaLabel="Slot spark" data={SLOT_SPARK} {...size} />}
+          />
+        ) : (
+          <StatGroup
+            variant="strip"
+            label="Slot strip"
+            cells={[
+              {
+                key: 'a',
+                caption: 'Slot',
+                value: '12',
+                visual: <Sparkline ariaLabel="Slot spark" data={SLOT_SPARK} height={28} />,
+              },
+            ]}
+          />
+        )}
+      </div>
     ) : spec.kind === 'spark' ? (
       <Sparkline
         ariaLabel="Fixture spark"

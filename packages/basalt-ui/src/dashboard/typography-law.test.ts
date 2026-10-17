@@ -114,7 +114,7 @@ describe('max three font sizes per component', () => {
     expect([...used].toSorted()).toEqual(ROLES)
   })
   test('the Meter visually-hidden summary reads the caption size, not the inherited body 15', () => {
-    expect(rule(meter, '.summary')).toContain('font-size: var(--basalt-meter-caption)')
+    expect(rule(meter, '.root .summary')).toContain('font-size: var(--basalt-meter-caption)')
   })
 })
 

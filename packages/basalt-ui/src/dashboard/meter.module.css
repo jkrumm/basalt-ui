@@ -196,7 +196,7 @@
 
 /* The visually-hidden summary and loading text are still text: they read the caption size, not the
  * body size they would inherit. */
-.summary {
+.root .summary {
   font-size: var(--basalt-meter-caption);
 }
 

@@ -239,7 +239,15 @@ export function Donut<K extends string = string>(props: DonutProps<K>): ReactEle
           {resolved === null && (centerLabel !== undefined || centerSubLabel !== undefined) && (
             <div style={centerStyle}>
               {centerLabel !== undefined && (
-                <span style={{ color: VX.ink, fontSize: VX.text.lg, fontWeight: 600 }}>
+                <span
+                  style={{
+                    color: VX.ink,
+                    fontFamily: 'var(--basalt-font-numeral, var(--basalt-font-sans))',
+                    fontVariantNumeric: 'lining-nums',
+                    fontSize: VX.text.lg,
+                    fontWeight: 600,
+                  }}
+                >
                   {centerLabel}
                 </span>
               )}
