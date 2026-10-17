@@ -16,6 +16,7 @@ import {
   DEFAULT_GUARD_CONFIG,
   findAllowAnnotations,
   GENERATED_HEADER_LINE,
+  GRACE_PERIOD_KINDS,
   guardKindRemedy,
   REMOVED_VX_NAMES,
   guardWaiverHint,
@@ -297,6 +298,10 @@ describe('raw-spacing', () => {
   it('flags a prop value equal to a scale step', () => {
     expect(kinds(find(`<Box p={${SPACE_SCALE.md}} />`))).toContain('raw-spacing')
     expect(kinds(find(`<Stack gap={${SPACE_SCALE.sm}} />`))).toContain('raw-spacing')
+  })
+
+  it('flags p={8} — it equals the xs step and should be the token', () => {
+    expect(kinds(find(`<Box p={8} />`))).toContain('raw-spacing')
   })
 
   it('does NOT flag p={6} (sub-scale micro-spacing, no token to prefer)', () => {
@@ -1645,9 +1650,9 @@ describe('severity', () => {
 
   it('scopes the override to the named kind only', () => {
     const cfg = { ...DEFAULT_GUARD_CONFIG, severity: { 'raw-hex': 'warn' as const } }
-    const f = checkSource(`<Box p={${SPACE_SCALE.md}} style={{ color: '#ff0000' }} />`, PATH, cfg)
+    const f = checkSource(`<Box radius={4} style={{ color: '#ff0000' }} />`, PATH, cfg)
     expect(f.find((v) => v.kind === 'raw-hex')?.severity).toBe('warn')
-    expect(f.find((v) => v.kind === 'raw-spacing')?.severity).toBe('error')
+    expect(f.find((v) => v.kind === 'raw-radius')?.severity).toBe('error')
   })
 
   // The grace ledger. These five kinds landed warn-only in the round-4 guard minor and sat there
@@ -1686,7 +1691,13 @@ describe('severity', () => {
       cfg,
     )
     expect(everyKind.length).toBeGreaterThan(0)
-    expect(everyKind.every((v) => v.severity === 'error')).toBe(true)
+    // The two 2.16 spacing kinds are the ledger: warn until 2.17.0, error for everything else.
+    for (const v of everyKind) {
+      expect([v.kind, v.severity]).toEqual([
+        v.kind,
+        Object.hasOwn(GRACE_PERIOD_KINDS, v.kind) ? 'warn' : 'error',
+      ])
+    }
   })
 })
 

@@ -588,13 +588,15 @@ const rawSizeLiteral = {
 
 const CARD_TAGS = new Set(['Card', 'Paper'])
 
-// The idiom is the pair py="sm" px="md" (12/16), or leaving both to the theme. Uniform `p`/`padding`
-// is never the idiom, whatever its value.
-const CARD_INSET_PY = new Set(['sm'])
-const CARD_INSET_PX = new Set(['md'])
+// The idiom is the PAIR py="sm" px="md" (12/16), or leaving both to the theme. Never a uniform
+// `p`/`padding` (whatever its value or form), never one half of the pair alone, never a number, an
+// expression or any other step. The pair is the level-0 inset (`cardInsetY`/`cardInsetX` =
+// `SPACE_SCALE.sm`/`.md`); `tokens/space-scale.test.ts` pins that.
+export const CARD_INSET_PY = 'sm'
+export const CARD_INSET_PX = 'md'
 const CARD_INSET_MESSAGE =
-  'Card/Paper is off the card idiom — use the spacing sm/md inset (py="sm" px="md") and the ' +
-  "theme's card radius, not an explicit p/padding or radius. (basalt/card-inset)"
+  'Card/Paper is off the card idiom — use the spacing sm/md inset together (py="sm" px="md") and ' +
+  "the theme's card radius, not an explicit p/padding, a lone py/px, or a radius. (basalt/card-inset)"
 
 function isStringLiteral(node) {
   return node !== null && node.type === 'Literal' && typeof node.value === 'string'
@@ -604,7 +606,7 @@ function attrValue(attr) {
   return unwrapExpressionContainer(attr.value)
 }
 
-// Ships: error
+// Ships: warn (grace → 2.17.0)
 const cardInset = {
   meta: {
     type: 'suggestion',
@@ -616,24 +618,35 @@ const cardInset = {
   create(context) {
     return {
       JSXOpeningElement(node) {
-        const tagName = node.name?.name
-        if (!CARD_TAGS.has(tagName)) return
+        if (!CARD_TAGS.has(node.name?.name)) return
 
+        /** @type {Map<string, any>} */
+        const attrs = new Map()
         for (const attr of node.attributes) {
-          if (attr.type !== 'JSXAttribute') continue
-          const attrName = attr.name?.name
+          if (attr.type === 'JSXAttribute' && typeof attr.name?.name === 'string') {
+            attrs.set(attr.name.name, attr)
+          }
+        }
+        const isExactly = (attr, expected) => {
+          if (!attr) return false
           const value = attrValue(attr)
+          return isStringLiteral(value) && value.value === expected
+        }
+        const py = attrs.get('py')
+        const px = attrs.get('px')
+        const offenders = []
+        // A uniform inset is never the idiom, in any form (string, number, expression).
+        for (const name of ['p', 'padding', 'radius']) {
+          if (attrs.has(name)) offenders.push(attrs.get(name))
+        }
+        // The pair stands or falls together: each half must be exactly its step, and neither
+        // may appear without the other.
+        const pyOk = isExactly(py, CARD_INSET_PY)
+        const pxOk = isExactly(px, CARD_INSET_PX)
+        if (py && !(pyOk && pxOk)) offenders.push(py)
+        if (px && !(pyOk && pxOk)) offenders.push(px)
 
-          const isUniformPadding =
-            (attrName === 'p' || attrName === 'padding') &&
-            (isStringLiteral(value) || isNumericLiteral(value))
-          const isOffPy =
-            attrName === 'py' && isStringLiteral(value) && !CARD_INSET_PY.has(value.value)
-          const isOffPx =
-            attrName === 'px' && isStringLiteral(value) && !CARD_INSET_PX.has(value.value)
-          const isRadius = attrName === 'radius'
-
-          if (!isUniformPadding && !isOffPy && !isOffPx && !isRadius) continue
+        for (const attr of offenders) {
           if (hasThemeAllow(context, attr, 'card-inset')) continue
           context.report({ node: attr, message: CARD_INSET_MESSAGE })
         }
@@ -4208,7 +4221,13 @@ const routeViewTransition = {
  *
  * @type {Record<string, GraceEntry>}
  */
-export const PLUGIN_RULE_GRACE = {}
+export const PLUGIN_RULE_GRACE = {
+  'card-inset': {
+    since: '2.16.0',
+    promote: '2.17.0',
+    why: 'Tightened in 2.16.0: only py="sm" px="md" together (or neither) passes; uniform p/padding, a lone half, numbers and expressions are findings.',
+  },
+}
 
 // ── Plugin export ───────────────────────────────────────────────────────────────────────────────
 

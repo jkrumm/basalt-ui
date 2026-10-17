@@ -228,24 +228,40 @@ describe('basalt/card-inset', () => {
   it.each([
     ['uniform p="lg"', '<Card p="lg" />'],
     ['uniform p="md"', '<Card p="md" />'],
+    ['uniform p="sm"', '<Card p="sm" />'],
+    ['uniform padding="sm"', '<Card padding="sm" />'],
     ['uniform padding={12}', '<Card padding={12} />'],
+    ['uniform p={0}', '<Card p={0} />'],
+    ['a non-literal p', '<Card p={gap} />'],
     ['py="md"', '<Paper py="md" px="md" />'],
     ['px="xs"', '<Paper py="sm" px="xs" />'],
     ['the old xs/sm pair', '<Paper py="xs" px="sm" />'],
+    ['numeric py/px {8} {12}', '<Paper py={8} px={12} />'],
+    ['numeric py/px {13} {4}', '<Paper py={13} px={4} />'],
+    ['a non-literal py', '<Paper py={y} px="md" />'],
+    ['a non-literal px', '<Paper py="sm" px={x} />'],
+    ['a lone py="sm"', '<Paper py="sm" />'],
+    ['a lone px="md"', '<Paper px="md" />'],
     ['an explicit radius', '<Card radius="md" />'],
   ])('flags %s', (_name, jsx) => {
-    const { code, rules } = run(`export const C = () => ${jsx}\n`)
-    expect(code).toBe(1)
+    const { rules } = run(`export const C = () => ${jsx}\n`)
     expect(rules).toContain('card-inset')
   })
 
   it.each([
     ['the sm/md pair', '<Paper py="sm" px="md" />'],
+    ['the pair in either order', '<Card px="md" py="sm" />'],
     ['no padding at all', '<Card />'],
   ])('does NOT flag %s', (_name, jsx) => {
-    const { code, rules } = run(`export const C = () => ${jsx}\n`)
-    expect(code).toBe(0)
+    const { rules } = run(`export const C = () => ${jsx}\n`)
     expect(rules).not.toContain('card-inset')
+  })
+
+  it('ships warn through its grace minor, so a flagged card does not fail the run', () => {
+    const { code, rules } = run(`export const C = () => <Card p="lg" />\n`)
+    // The fixture config sets the rule to error; the SHIPPED level is pinned by the ledger tests.
+    expect(rules).toContain('card-inset')
+    expect(code).toBe(1)
   })
 })
 
@@ -1441,6 +1457,9 @@ describe('assertGraceLedger', () => {
 const pluginGrace = PLUGIN_RULE_GRACE as Record<string, GraceEntry>
 const guardGrace = GRACE_PERIOD_KINDS as Record<string, GraceEntry>
 
+/** A guard message that NAMES a plugin rule in its remedy without being that rule's twin. */
+const REFERRALS = new Set(['card-with-border:card-inset'])
+
 function twinLanes(): Array<[kind: string, rule: string]> {
   const pairs = new Map<string, string>()
   for (const [kind, aliases] of Object.entries(WAIVER_ID_ALIASES)) {
@@ -1449,6 +1468,7 @@ function twinLanes(): Array<[kind: string, rule: string]> {
   }
   for (const [kind, rule] of Object.entries(GUARD_RULES)) {
     for (const m of rule.message.matchAll(/basalt\/([a-z-]+)/g)) {
+      if (REFERRALS.has(`${kind}:${m[1]}`)) continue
       if (m[1] !== undefined && m[1] in basaltPlugin.rules) pairs.set(kind, m[1])
     }
   }

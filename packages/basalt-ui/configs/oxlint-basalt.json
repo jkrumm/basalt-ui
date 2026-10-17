@@ -3,7 +3,7 @@
   "rules": {
     "basalt/no-raw-font-size": "error",
     "basalt/raw-size-literal": "error",
-    "basalt/card-inset": "error",
+    "basalt/card-inset": "warn",
     "basalt/chart-in-raw-surface": "error",
     "basalt/shadow-basalt-export": "error",
     "basalt/hand-rolled-shell": "error",
