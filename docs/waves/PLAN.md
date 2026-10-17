@@ -992,7 +992,7 @@ Mode and roles are unchanged from Part 1.
       the scenarios, the anatomy, scales, states and responsive behaviour per pattern, and the **three-axis
       rubric** with a banned-filler list. Reconcile it with `DESIGN-CORE.md`, and record each decision.
 - [x] Rewrite Waves 31–37 below to the spec (three to six steps each; review grew them to 31–41), and file the fleet's pattern needs
-      (argo, rb, linewatch, obsidian, weatherorb, shutterflow) as ledger rows.
+      (argo, rb, linewatch, obsidian, weatherorb) as ledger rows. shutterflow is out of this track (owner, 2026-10-17).
       **Owner review point:** the mother shows the owner the baseline board, the two-way scores and the spec
       before Wave 31 starts.
 
@@ -1453,7 +1453,7 @@ Spec: SPEC § 6.11, § 6.13, § 8, § 11. Scenario S6 (build it), then every sce
       datasets (one per catalogue shape: trend, target, parts, ranking, events) and no component names. Did it
       find and follow the shipped procedure, and which encodings did it pick? Score the boards. A fallback to
       the default is a guidance row.
-- [ ] Brief weatherorb's orchestrator (row 160) and shutterflow's for its 2.x migration onto the new patterns,
+- [ ] Brief weatherorb's orchestrator (row 160). shutterflow is out of this track: the owner coordinates its UX re-establishment from the MacBook,
       including the deferred calendar heat grid (row 161, D10).
 - [ ] Re-run the full audit. If gaps remain, append Waves 42+ in the same shape. The track closes when a fresh
       scorer finds nothing worth improving against basalt's rubric.
