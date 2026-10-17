@@ -1152,6 +1152,23 @@ describe('buildBoard', () => {
       '<td>light/desktop, dark/desktop</td><td>xs 10 · sm 12</td><td>md 8 · card 7</td><td>sm 14</td>',
     )
   })
+  test('a full-round radius renders as "full" on the anchor and as "r full" on a nested box', () => {
+    const m = fakeMetrics()
+    const [anchor] = m.anchors
+    if (!anchor) throw new Error('fixture has no anchor')
+    m.anchors = [
+      {
+        ...anchor,
+        radius: 'full',
+        nested: [
+          { path: 'span.dot', radius: 'full', padding: { top: 0, right: 0, bottom: 0, left: 0 } },
+        ],
+      },
+    ]
+    const out = buildBoard(m)
+    expect(out).toContain('<td>full</td>')
+    expect(out).toContain('span.dot r full p')
+  })
   test('a route without anchors says so', () => {
     const m = fakeMetrics()
     m.anchors = []
@@ -1182,7 +1199,8 @@ describe('radiusReading', () => {
   const box = { width: 40, height: 40 }
   test('a 50% radius is "full", never 50px', () => {
     expect(radiusReading({ value: '50%', ...box })).toBe('full')
-    expect(radiusReading({ value: '50% 50%', width: 120, height: 24 })).toBe('full')
+    expect(radiusReading({ value: '50%', width: 120, height: 24 })).toBe('full')
+    expect(radiusReading({ value: '60%', width: 400, height: 40 })).toBe('full')
   })
   test('a pill radius (9999px) or one at half the shorter side is "full"', () => {
     expect(radiusReading({ value: '9999px', width: 80, height: 24 })).toBe('full')
@@ -1192,6 +1210,13 @@ describe('radiusReading', () => {
     expect(radiusReading({ value: '10px', width: 80, height: 40 })).toBe(10)
     expect(radiusReading({ value: '10%', width: 80, height: 80 })).toBe(8)
     expect(radiusReading({ value: '0px', ...box })).toBe(0)
+  })
+  test('a 20% radius on a wide, short box is not full', () => {
+    expect(radiusReading({ value: '20%', width: 400, height: 40 })).toBe(8)
+  })
+  test('a zero-size box has nothing to round', () => {
+    expect(radiusReading({ value: '50%', width: 0, height: 0 })).toBe(0)
+    expect(radiusReading({ value: '9999px', width: 0, height: 24 })).toBe(0)
   })
   test('finishMeasurement reports it on the anchor and on nested boxes', () => {
     const { contrast: _, radius: __, nested: ___, ...tail } = measurement
