@@ -44,6 +44,8 @@ export {
   type StatCardBreakdownRow,
   type StatCardSparklineSize,
   StatGroup,
+  type StatStripCell,
+  type StatStripRow,
   EmptyState,
   SettingsSection,
   SettingsRow,

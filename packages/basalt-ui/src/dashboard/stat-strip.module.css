@@ -1,0 +1,167 @@
+/*
+ * StatGroup `variant="strip"`: one joined surface, cells split by 1px hairlines.
+ *
+ * The hairlines are LEADING borders (inline-start + block-start) on every cell, and `.clip` hides
+ * the ones that lead a row or the strip by pulling the grid 1px up/left inside an `overflow: hidden`
+ * box. That is why the rail survives any column count and any wrap with no `nth-child` bookkeeping
+ * (`stat-group.module.css` needs it because its cells are not clipped). No shadow per cell, no
+ * coloured edge: the one surface is the Card's.
+ *
+ * The column law keys on the CONTAINER like `StatGroup`'s own: two columns at < 480px (the `regular` class boundary) with an odd
+ * last cell spanning, never one; up to three below 800px; the full `cols` from 800px.
+ */
+
+.container {
+  container-type: inline-size;
+  container-name: basalt-grid;
+}
+
+.clip {
+  overflow: hidden;
+}
+
+.cells {
+  display: grid;
+  grid-template-columns: repeat(var(--basalt-strip-cols-sm), minmax(0, 1fr));
+  margin: -1px 0 0 -1px;
+}
+
+.cell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vx-space-stack-sm);
+  min-width: 0;
+  padding: var(--vx-space-stack-md);
+  border-inline-start: 1px solid var(--vx-divider);
+  border-block-start: 1px solid var(--vx-divider);
+}
+
+@container basalt-grid (max-width: 479.9px) {
+  .cells {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .cells > .cell:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+}
+
+@container basalt-grid (min-width: 800px) {
+  .cells {
+    grid-template-columns: repeat(var(--basalt-strip-cols), minmax(0, 1fr));
+  }
+}
+
+.captionLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: var(--vx-space-control-gap, 0.375rem);
+  min-width: 0;
+}
+
+.caption {
+  margin: 0;
+  font-family: var(--basalt-font-mono);
+  font-size: var(--vx-text-micro);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--vx-faint);
+}
+
+.qualifier {
+  font-family: var(--basalt-font-mono);
+  font-size: var(--vx-text-micro);
+  color: var(--vx-muted);
+  overflow-wrap: anywhere;
+}
+
+.valueRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: var(--vx-space-stack-sm);
+  min-width: 0;
+}
+
+/* The proportional sans with lining figures (Wave 35 typography law): never mono. */
+.value {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-family: var(--basalt-font-sans);
+  font-size: var(--vx-text-kpi);
+  line-height: 1.25;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  font-variant-numeric: lining-nums;
+  color: var(--vx-ink);
+}
+
+.unit {
+  flex-shrink: 0;
+  font-size: var(--vx-text-sm);
+  font-weight: 500;
+  color: var(--vx-muted);
+}
+
+.skeletonValue {
+  width: 45%;
+  height: calc(var(--vx-text-kpi) * 1.25);
+}
+
+.visual {
+  min-width: 0;
+}
+
+.footer {
+  margin-top: auto;
+  font-size: var(--vx-text-sm);
+  color: var(--vx-muted);
+}
+
+/* ── multi-row cell: label · visual · value · delta ──────────────────────────────────────────── */
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vx-space-stack-sm);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(3.5rem, auto) minmax(0, 1fr) auto auto;
+  align-items: center;
+  column-gap: var(--vx-space-stack-sm);
+}
+
+.rowLabel {
+  font-size: var(--vx-text-sm);
+  color: var(--vx-muted);
+}
+
+.rowValue {
+  font-size: var(--vx-text-md, var(--vx-text-sm));
+  font-weight: 500;
+  font-variant-numeric: lining-nums;
+  color: var(--vx-ink);
+}
+
+/* ── footer row: wider cells under the cells, split by the same hairline ─────────────────────── */
+
+.footerRow {
+  display: flex;
+  flex-wrap: wrap;
+  margin-left: -1px;
+}
+
+.footerCell {
+  flex: 1 1 14rem;
+  min-width: 0;
+  padding: var(--vx-space-stack-md);
+  border-inline-start: 1px solid var(--vx-divider);
+  border-block-start: 1px solid var(--vx-divider);
+}
