@@ -9,6 +9,7 @@ import { vxFamilyOf } from '../common/vx-family'
 import { BASALT_VX_FAMILIES } from '../common/vx-families'
 import { FONTS_CSS_HINT } from './fonts-hint'
 import { BASALT_VX_NAMES } from './vx-names'
+import { SPACE_SCALE_LEVEL0 } from '../tokens/space-scale'
 
 export type { Finding, GuardConfig, GuardKind, GuardSeverity }
 
@@ -494,7 +495,7 @@ const INLINE_SPACING = new RegExp(
  * `exemptPatternMatches`; the escape stays because a per-file exemption is still the wrong shape
  * for a value that has no token).
  */
-const MICRO_SPACING_CEILING_PX = 7
+const MICRO_SPACING_CEILING_PX = SPACE_SCALE_LEVEL0.xs - 1
 
 /**
  * Object-literal openers that make the properties under them CSS.
@@ -812,19 +813,17 @@ const SUB_16_FONT_SIZE = /font-?[Ss]ize\s*:\s*['"]?(-?\d+(?:\.\d+)?)(?:px)?['"]?
 /** Default spacing steps (px) flagged as raw spacing props. */
 /**
  * The `xs…xl` spacing scale, as raw numbers — what `raw-spacing` flags, because a prop value that
- * EQUALS a step should be written as the token (`p="md"`, not `p={18}`).
+ * EQUALS a step should be written as the token (`p="md"`, not `p={16}`).
  *
- * Mirrors `SPACE_SCALE` at level 0. Kept as a literal rather than imported from `tokens/palette` so
- * the headless guard core stays a single file: it runs on every Write/Edit through the PreToolUse
- * hook, and pulling the palette in would drag `derive.ts` + `hct.ts`'s color math along with it.
- * `check-source.test.ts` asserts the two agree, so the copy cannot drift — which it did: this list
- * still read `[10, 12, 16, 20, 32]` after the level-0 retune, telling consumers to replace `p={16}`
- * with a `p="md"` that resolves to 18.
+ * Read from `tokens/space-scale` — the dependency-free module the token layer's scale is defined
+ * from — so the guard cannot drift from it (a separate copy once did: it read `[10, 12, 16, 20, 32]`
+ * after a retune and told consumers to replace `p={16}` with a `p="md"` worth 18). The palette itself
+ * stays out of the hook: it would drag `derive.ts` + `hct.ts`'s colour math along.
  *
  * A consumer whose theme moves the scale (`createBasaltTheme({ density })`, or its own overrides)
  * sets `basalt.spacingSteps` in package.json rather than living with this default.
  */
-const DEFAULT_SPACING_STEPS: readonly number[] = [8, 12, 16, 20, 24]
+const DEFAULT_SPACING_STEPS: readonly number[] = Object.values(SPACE_SCALE_LEVEL0)
 /** Default off-identity Mantine accent families. */
 const DEFAULT_FORBIDDEN_ACCENTS: readonly string[] = ['teal', 'violet', 'grape', 'indigo', 'pink']
 
