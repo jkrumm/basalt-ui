@@ -31,7 +31,7 @@ Checkable sentences. Each one is a reviewer fail.
 
 ## Filter grammar
 
-- One left-aligned filter row above what it scopes (`PageBar` `filters`, `FilterSet`, `RangeFilter`).
+- One left-aligned filter row above what it scopes (`PageBar` `filters` from `basalt-ui`; `FilterSet` (`basalt-ui/controls`), `RangeFilter` (`basalt-ui/controls`)).
 - Date range comes first.
 - Filters scope everything below them; never a filter inside one chart.
 - A filter that empties a view offers "clear filters" in the `EmptyState`.
