@@ -269,6 +269,11 @@ selected tab"). The active nav **icon** keeps the accent: DESIGN-CORE lists "act
 accent site and forbids only the row fill. Both closed leaks are global theme changes: in-wave they are
 re-shot on the playground; each consumer's before/after is taken when it upgrades (Waves 40–41).
 
+Wave 35 closes four more: Button inline padding maps to `--vx-space-stack-*` steps (no 14 px / 7 px; `ctl`
+keeps 10); a hovered `Tab` is the ink-5 % step in both schemes (dark was identical to rest); the selected nav
+row is an ink 10 % fill, never the accent (the accent stays on the icon); the error placeholder is a status dot,
+the title, the message and a retry on the neutral surface, not a tinted `Alert`.
+
 ### 6.13 Forms
 
 - `FormRow`: label left at the expanded container, above below it (exists); description `xs` muted under the
