@@ -42,17 +42,19 @@ export type Reading = Omit<Measurement, 'contrast' | 'radius' | 'nested'> & {
 }
 
 /**
- * A radius in px, or `'full'` when it rounds the box completely (a `50%` or `9999px` pill/circle,
- * i.e. a radius of at least half the shorter side). A percentage is resolved against the box, so
- * `50%` is never reported as 50px.
+ * A radius in px, or `'full'` when it rounds the box completely: a percentage of 50 or more
+ * (`50%` is a circle/pill however the box is shaped), or a px radius of at least half the shorter
+ * side (`9999px`). A zero-size box has nothing to round: 0. A smaller percentage stays a number,
+ * resolved against the shorter side — the radius a reader sees on a wide, short box.
  */
 export function radiusReading({ value, width, height }: RawRadius): number | 'full' {
-  const first = value.trim().split(/\s+/)[0] ?? ''
+  const first = value.trim()
   const n = Number.parseFloat(first)
-  if (!Number.isFinite(n) || n <= 0) return 0
-  const resolved = first.endsWith('%') ? (n / 100) * width : n
-  if (resolved >= Math.min(width, height) / 2) return 'full'
-  return Math.round(resolved * 100) / 100
+  if (width <= 0 || height <= 0 || !Number.isFinite(n) || n <= 0) return 0
+  if (first.endsWith('%'))
+    return n >= 50 ? 'full' : Math.round((n / 100) * Math.min(width, height) * 100) / 100
+  if (n >= Math.min(width, height) / 2) return 'full'
+  return Math.round(n * 100) / 100
 }
 
 const hex = (c: readonly number[]): string =>
