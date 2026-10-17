@@ -29,6 +29,7 @@
  * `STATUS.excellent`/`STATUS.neutral`) stays hand-authored, unchanged.
  */
 
+import { SPACE_SCALE_LEVEL0 } from './space-scale'
 import { DEFAULT_DERIVE_CONFIG, deriveTokens, isDefaultDeriveConfig } from './derive'
 import type { DeriveConfig } from './derive'
 import type { ColorPair } from './core'
@@ -344,13 +345,7 @@ const SPACE_ANCHORS_BASE = {
  * control tier IS the `md` stop, hence `defaultRadius: 'md'` — no such relation exists here). Base
  * table for {@link deriveSpacing}.
  */
-const SPACE_SCALE_BASE = {
-  xs: 8,
-  sm: 12,
-  md: 16,
-  lg: 20,
-  xl: 24,
-} as const
+const SPACE_SCALE_BASE = SPACE_SCALE_LEVEL0
 
 /**
  * Density-tracking, genuine one-offs — named insets that fit neither the anchor vertical rhythm/
