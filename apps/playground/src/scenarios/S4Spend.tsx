@@ -176,7 +176,7 @@ function SpendStats({ shotState }: ScenarioProps) {
               {
                 label: `Left, ${MONTH_DAYS - DAYS_ELAPSED} days`,
                 value: fmtEur(left),
-                tone: left < 0 ? ('bad' as const) : ('good' as const),
+                ...(left < 0 && { tone: 'bad' as const }),
               },
             ],
           })}
@@ -220,7 +220,7 @@ function SpendCharts({ shotState }: ScenarioProps) {
             error: retry('Spend by project'),
           })}
         >
-          <Box data-shot-hover data-shot-tooltip>
+          <Box data-shot-hover data-shot-tooltip data-shot-at="0.27,0.2">
             <Donut
               ariaLabel={`Spend by project, ${WINDOW_LABEL}, EUR`}
               data={DONUT_DATA}

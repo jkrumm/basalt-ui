@@ -189,12 +189,4 @@ export const fmtStamp = (date: Date): string =>
     hour12: false,
     timeZone: 'UTC',
   })
-export const fmtHour = (date: Date): string =>
-  date.toLocaleString('en-GB', {
-    day: 'numeric',
-    month: 'short',
-    hour: '2-digit',
-    hour12: false,
-    timeZone: 'UTC',
-  })
 export const WINDOW_LABEL = `${fmtDay(new Date(WINDOW_START))}–${fmtDay(NOW_DATE)}`
